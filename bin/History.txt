@@ -1,4 +1,10 @@
-v1.0.84b (19 August 2016)
+v1.0.90b (19 August 2016)
++ now checking updates worked
+- fixed statusbar redraw forgotten
+- updated translation
+- ui fixes
+
+v1.0.84b
 + now compiled with "treat warnings as error" parameter
 + added global rules configuration
 + added "disable windows firewall" param
