@@ -9,9 +9,9 @@ Simple firewall (WFP frontend).
 - "Black list" - block network access for selected applications.
 
 #### Features:
-- Simple configuration (you can understand UI not working in NASA).
+- Simple configuration (for understand it not necessary work in NASA).
 - Localization support (you may translate interface into your language).
-- Tunable rules
+- Ad-Ware, Telemetry blocking
 
 You can download either the installer or portable version. For correct working, need administrator rights.
 ```
