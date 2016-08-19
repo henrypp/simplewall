@@ -1,10 +1,8 @@
-v1.0.90b (19 August 2016)
-+ now checking updates worked
-- fixed statusbar redraw forgotten
-- updated translation
-- ui fixes
+v1.0.92b (20 August 2016)
+- fixed tray icon does not change on firewall enable
+- fixed block list editor
 
-v1.0.84b
+v1.0.90b (19 August 2016)
 + now compiled with "treat warnings as error" parameter
 + added global rules configuration
 + added "disable windows firewall" param
@@ -15,6 +13,10 @@ v1.0.84b
 - removed duplicate filters
 - fixed memory leaks on change window icon
 - ui improvements
++ now checking updates worked
+- fixed statusbar redraw forgotten
+- updated translation
+- ui fixes
 
 v1.0.81a (18 August 2016)
 + added indication allowed/blocked item count
