@@ -1,6 +1,15 @@
-v1.0.92b (20 August 2016)
-- fixed tray icon does not change on firewall enable
-- fixed block list editor
+v1.0.96b (21 August 2016)
+- settings improvements
+- fixed duplicate popup on startup
+- cleanup code/resources
+- updated translation
+
+v1.0.94b (20 August 2016)
+- updated translation
+- removed excess tray popups
+- filters not applied when firewall started manually
+- tray icon does not change on firewall enable
+- improved block list editor
 
 v1.0.90b (19 August 2016)
 + now compiled with "treat warnings as error" parameter

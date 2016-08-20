@@ -1,3 +1,9 @@
+v1.0.96b (21 August 2016)
+- settings improvements
+- fixed duplicate popup on startup
+- cleanup code/resources
+- updated translation
+
 v1.0.94b (20 August 2016)
 - updated translation
 - removed excess tray popups
