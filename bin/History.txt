@@ -1,3 +1,8 @@
+v1.0.98b (22 August 2016)
++ added ballon tip on remove filters
+- changed default rules for all
+- changed default rules for allowed
+
 v1.0.96b (21 August 2016)
 - settings improvements
 - fixed duplicate popup on startup
