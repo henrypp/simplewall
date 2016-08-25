@@ -1,3 +1,13 @@
+v1.0.99 (25 August 2016)
++ added windows update and http protocol allow rule
+- blocking list editor context menu does not showed
+- blocking list editor first item cannot be edited
+- fix rules checkbox displaying in settings window
+- rules re-grouped by OSI model
+- changed listview custom draw
+- updated translation
+- updated ui
+
 v1.0.98b (22 August 2016)
 + added ballon tip on remove filters
 - changed default rules for all
