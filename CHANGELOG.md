@@ -1,3 +1,22 @@
+v1.0.101 (7 September 2016)
++ added outbound connections configuration for rules
++ added color configuration
+- changed weight for sublayer
+- removed startup popup notification
+- updated translation
+
+v1.0.100 (30 August 2016)
++ added individual applicaiton rules
++ added highlight for invalid items
++ added icons for process popup menu
+- rewritten process retrieving code (fixed many bugs)
+- restored "Refresh" listview feature
+- prevent for duplicate filters on some configurations
+- unlocked application layer configuration in "for all (global)" rules
+- loaded default rules on initilize settings
+- updated translation
+- fixed bugs
+
 v1.0.99 (25 August 2016)
 + added windows update and http protocol allow rule
 - blocking list editor context menu does not showed
