@@ -1,3 +1,10 @@
+v1.0.101 (7 September 2016)
++ added outbound connections configuration for rules
++ added color configuration
+- changed weight for sublayer
+- removed startup popup notification
+- updated translation
+
 v1.0.100 (30 August 2016)
 + added individual applicaiton rules
 + added highlight for invalid items
