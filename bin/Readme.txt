@@ -1,19 +1,15 @@
-simplewall
+Wfp Tool
 
-Simple firewall (WFP frontend).
-
-Firewall mode:
-- "White list" - allow network access for selected applications.
-- "Black list" - block network access for selected applications.
+Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
 
 Features:
-- Simple configuration (for understand it not necessary work in NASA).
+- Simple configuration (to understand it not necessary to work in NASA).
 - Localization support (you may translate interface into your language).
-- Ad-Ware, Telemetry blocking
+- Adware, telemetry blocking
 
 You can download either the installer or portable version. For correct working, need administrator rights.
 
-To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
+To activate portable mode, create "wfptool.ini" in application folder, or move it from "%APPDATA%\Henry++\Wfp Tool".
 
 Website: www.henrypp.org
 Support: support@henrypp.org
