@@ -1,3 +1,6 @@
+v1.1.112 (20 September 2016)
+- fixed filters removed on exit
+
 v1.1.111 (20 September 2016)
 * project renamed
 + added "trust no one" mode
