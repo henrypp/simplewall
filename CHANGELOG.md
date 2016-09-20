@@ -1,7 +1,13 @@
-v1.1.112 (20 September 2016)
-- fixed filters removed on exit
+v1.1.113 (20 September 2016)
+- fixed cannot delete application from list bug
+- fixed default values for settings
+- filters for services do not set
+- fixed dhcpv6 ports configuration
+- fixed windows firewall configuration
+- updated translation
+- fixed bugs
 
-v1.1.111 (20 September 2016)
+v1.1.111 (19 September 2016)
 * project renamed
 + added "trust no one" mode
 + added dropped packets logging to debugview
