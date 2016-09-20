@@ -7,7 +7,7 @@ v1.1.113 (20 September 2016)
 - updated translation
 - fixed bugs
 
-v1.1.111 (19 September 2016)
+v1.1.112 (19 September 2016)
 * project renamed
 + added "trust no one" mode
 + added dropped packets logging to debugview
