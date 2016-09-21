@@ -1,3 +1,6 @@
+v1.1.114 (21 September 2016)
+- rules in settings dialog cannot be saved
+
 v1.1.113 (20 September 2016)
 - fixed cannot delete application from list bug
 - fixed default values for settings
