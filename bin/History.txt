@@ -1,3 +1,9 @@
+v1.1.115 (22 September 2016)
++ added more inforamation to dropped packets logging (win7 and above)
+- fixed inbound dont't blocking
+- cannot add port in rules editor
+- updated translation
+
 v1.1.114 (21 September 2016)
 - rules in settings dialog cannot be saved
 
@@ -13,7 +19,7 @@ v1.1.113 (20 September 2016)
 v1.1.112 (19 September 2016)
 * project renamed
 + added "trust no one" mode
-+ added dropped packets logging to debugview
++ added dropped packets logging to debugview (win7 and above)
 + added automatic rules applying on insert device
 + added name for filters
 + moved telemetry rules to the resources
