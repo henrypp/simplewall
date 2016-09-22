@@ -1,5 +1,5 @@
 v1.1.115 (22 September 2016)
-+ added more inforamation to dropped packets logging (win7 and above)
++ added more information to dropped packets logging (win7 and above)
 - fixed inbound dont't blocking
 - cannot add port in rules editor
 - updated translation
