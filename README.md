@@ -5,9 +5,10 @@
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
 
 #### Features:
-- Simple configuration (to understand it not necessary to work in NASA).
-- Localization support (you may translate interface into your language).
-- Adware, telemetry blocking
+- Simple interface without annoying pop ups
+- Dropped packets logging (Windows 7 and above)
+- Internal blocking lists (malware, telemetry)
+- Localization support
 
 You can download either the installer or portable version. For correct working, need administrator rights.
 ```

@@ -1,3 +1,13 @@
+v1.1.116 (30 September 2016)
++ added "listen" layer blocking
++ added forgotten rules into settings menu
++ added open folder by double click for listview
++ added shared resources highlighting
+- dropped packets logging optimizations
+- fixed process list menu icons with classic ui
+- updated translation
+- minor improvements
+
 v1.1.115 (22 September 2016)
 + added more information to dropped packets logging (win7 and above)
 - fixed inbound dont't blocking
