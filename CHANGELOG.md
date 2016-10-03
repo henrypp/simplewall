@@ -1,3 +1,11 @@
+v1.2.117 (4 October 2016)
+* changed ui by IAEA safety standards (issue #2)
++ added logging configuration
+- now filters disabled by default
+- inbound ports doesn't blocked for custom rules
+- updated translation
+- minor improvements
+
 v1.1.116 (30 September 2016)
 + added "listen" layer blocking
 + added forgotten rules into settings menu

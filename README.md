@@ -8,7 +8,9 @@ Simple tool to configure Windows Filtering Platform (WFP) which can configure ne
 - Simple interface without annoying pop ups
 - Dropped packets logging (Windows 7 and above)
 - Internal blocking lists (malware, telemetry)
+- Free and open source
 - Localization support
+- IPv4/IPv6 support
 
 You can download either the installer or portable version. For correct working, need administrator rights.
 ```
