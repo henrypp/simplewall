@@ -1,3 +1,10 @@
+v1.2.118 (5 October 2016)
+- fixed crash on filters installation
+- save sort order into profile (regression)
+- unable to clear log path config
+- stability improvements
+- updated translation
+
 v1.2.117 (4 October 2016)
 * changed ui by IAEA safety standards (issue #2)
 + added logging configuration
