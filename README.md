@@ -1,6 +1,6 @@
 ##Wfp Tool
 
-![Wfp Tool](http://www.henrypp.org/images/wfptool.jpg?stupidgithubcachigfix)
+![Wfp Tool](http://www.henrypp.org/images/wfptool.jpg?stupidgithubcachingfix)
 
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
 

@@ -1,3 +1,20 @@
+v1.3 (15 October 2016)
++ disable/enable windows firewall on filters installation/deletion
++ normalize nt paths for dropped packets callback
++ exclude "svchost.exe" & "system" from log configuration
++ abbility to show/clear log
++ resize support as in alpha builds
++ hotkeys for menu items
++ PathUnExpandEnvStrings for log path
++ confirmation settings for exit/deleting application/log clear
+- changed message boxes style
+- changed default color for invalid application
+- fixed access denied for some processes
+- config doesn't saved if user don't trigger apply filters
+- improved windows firewall control
+- stability improvements
+- updated translation
+
 v1.2.118 (5 October 2016)
 - fixed crash on filters installation
 - save sort order into profile (regression)
