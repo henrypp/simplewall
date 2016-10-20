@@ -4,6 +4,8 @@ v1.3.1 (21 October 2016)
 + added option for disable notification sound
 + added middle click on tray icon now open log file
 + added empty listview text indication
++ added rules highlighting
++ added usage examples to rules.xml 
 - reorganized log settings
 - fixed unit of time for notification timeout had in minutes (instead seconds)
 - fixed custom rules saved twice
