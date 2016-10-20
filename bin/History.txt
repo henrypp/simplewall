@@ -1,3 +1,21 @@
+v1.3.1 (21 October 2016)
++ added option to set application for open log file
++ added option to exclude application from log
++ added option for disable notification sound
++ added middle click on tray icon now open log file
++ added empty listview text indication
+- reorganized log settings
+- fixed unit of time for notification timeout had in minutes (instead seconds)
+- fixed custom rules saved twice
+- fixed skip user account control not worked
+- fixed custom rules saved empty when filters not installed
+- fixed system rules cannot be unchecked automatically
+- changed auto byte order mask for xml load/save
+- replaced QueryFullProcessImageName to NtQueryInformationProcess
+- stability improvements
+- updated translation
+- ui improvements
+
 v1.3 (15 October 2016)
 + disable/enable windows firewall on filters installation/deletion
 + normalize nt paths for dropped packets callback
