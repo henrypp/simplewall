@@ -1,3 +1,24 @@
+v1.3.2 (29 October 2016)
++ added domain\username indication to log events
++ added filter name to log events
++ added ip/port range support for rules
++ combined ip and port rules settings page
++ added save checkbox state on install/delete message
++ added listen loopback permission
++ added inbound events logging
+- set xml load encoding to auto
+- improved logic for detect incorrect applications
+- listview empty text indication doesn't changed at locale change
+- changed default log parameters for "system" & "svchost.exe"
+- fixed inbound ip doesn't affected in applied rules
+- changed default color for silent applications
+- removed output log into debug log feature
+- improved open/save file dialog flags
+- optimized log callback
+- updated blocklist
+- updated translation
+- minor improvements
+
 v1.3.1 (21 October 2016)
 + added option to set application for open log file
 + added option to exclude application from log
@@ -28,7 +49,7 @@ v1.3 (15 October 2016)
 + PathUnExpandEnvStrings for log path
 + confirmation settings for exit/deleting application/log clear
 - changed message boxes style
-- changed default color for invalid application
+- changed default color for invalid applications
 - fixed access denied for some processes
 - config doesn't saved if user don't trigger apply filters
 - improved windows firewall control
