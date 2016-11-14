@@ -1,3 +1,17 @@
+v1.3.3 (14 November 2016)
++ added boot-time filters for prevent data leak during system startup, even before "Base Filtering Engine" (BFE) service starts
++ added "purge unused applications" feature
++ added "hide icons" feature
++ added documentation for rules editor and filter page
++ added special rules to main menu/tray menu
+- fixed multi-select configuration in listview
+- fixed system imagelist destroying
+- fixed dropped packets filters decription empty sometimes
+- fixed find dialog crash
+- removed inbound events logging for some reason
+- updated translation
+- updated pugixml
+
 v1.3.2 (29 October 2016)
 + added domain\username indication to log events
 + added filter name to log events
@@ -29,9 +43,9 @@ v1.3.1 (21 October 2016)
 + added usage examples to rules.xml 
 - reorganized log settings
 - fixed unit of time for notification timeout had in minutes (instead seconds)
-- fixed custom rules saved twice
+- fixed special rules saved twice
 - fixed skip user account control not worked
-- fixed custom rules saved empty when filters not installed
+- fixed special rules saved empty when filters not installed
 - fixed system rules cannot be unchecked automatically
 - changed auto byte order mask for xml load/save
 - replaced QueryFullProcessImageName to NtQueryInformationProcess
@@ -67,7 +81,7 @@ v1.2.117 (4 October 2016)
 * changed ui by IAEA safety standards (issue #2)
 + added logging configuration
 - now filters disabled by default
-- inbound ports doesn't blocked for custom rules
+- inbound ports doesn't blocked for special rules
 - updated translation
 - minor improvements
 

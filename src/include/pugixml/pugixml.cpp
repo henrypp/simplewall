@@ -1,5 +1,5 @@
 /**
- * pugixml parser - version 1.7
+ * pugixml parser - version 1.8
  * --------------------------------------------------------
  * Copyright (C) 2006-2016, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
  * Report bugs and download new versions at http://pugixml.org/
@@ -1119,9 +1119,6 @@ PUGI__NS_BEGIN
 	{
 		xml_document_struct(xml_memory_page* page): xml_node_struct(page, node_document), xml_allocator(page), buffer(0), extra_buffers(0)
 		{
-		#ifdef PUGIXML_COMPACT
-			_hash = &hash;
-		#endif
 		}
 
 		const char_t* buffer;
@@ -2567,7 +2564,7 @@ PUGI__NS_BEGIN
 	#define PUGI__ENDSWITH(c, e)        ((c) == (e) || ((c) == 0 && endch == (e)))
 	#define PUGI__SKIPWS()              { while (PUGI__IS_CHARTYPE(*s, ct_space)) ++s; }
 	#define PUGI__OPTSET(OPT)           ( optmsk & (OPT) )
-	#define PUGI__PUSHNODE(TYPE)        { cursor = append_new_node(cursor, alloc, TYPE); if (!cursor) PUGI__THROW_ERROR(status_out_of_memory, s); }
+	#define PUGI__PUSHNODE(TYPE)        { cursor = append_new_node(cursor, *alloc, TYPE); if (!cursor) PUGI__THROW_ERROR(status_out_of_memory, s); }
 	#define PUGI__POPNODE()             { cursor = cursor->parent; }
 	#define PUGI__SCANFOR(X)            { while (*s != 0 && !(X)) ++s; }
 	#define PUGI__SCANWHILE(X)          { while (X) ++s; }
@@ -2891,18 +2888,12 @@ PUGI__NS_BEGIN
 
 	struct xml_parser
 	{
-		xml_allocator alloc;
-		xml_allocator* alloc_state;
+		xml_allocator* alloc;
 		char_t* error_offset;
 		xml_parse_status error_status;
 
-		xml_parser(xml_allocator* alloc_): alloc(*alloc_), alloc_state(alloc_), error_offset(0), error_status(status_ok)
+		xml_parser(xml_allocator* alloc_): alloc(alloc_), error_offset(0), error_status(status_ok)
 		{
-		}
-
-		~xml_parser()
-		{
-			*alloc_state = alloc;
 		}
 
 		// DOCTYPE consists of nested sections of the following possible types:
@@ -3263,7 +3254,7 @@ PUGI__NS_BEGIN
 
 								if (PUGI__IS_CHARTYPE(*s, ct_start_symbol)) // <... #...
 								{
-									xml_attribute_struct* a = append_new_attribute(cursor, alloc); // Make space for this attribute.
+									xml_attribute_struct* a = append_new_attribute(cursor, *alloc); // Make space for this attribute.
 									if (!a) PUGI__THROW_ERROR(status_out_of_memory, s);
 
 									a->name = s; // Save the offset.
@@ -3355,18 +3346,20 @@ PUGI__NS_BEGIN
 					{
 						++s;
 
+						mark = s;
+
 						char_t* name = cursor->name;
-						if (!name) PUGI__THROW_ERROR(status_end_element_mismatch, s);
+						if (!name) PUGI__THROW_ERROR(status_end_element_mismatch, mark);
 
 						while (PUGI__IS_CHARTYPE(*s, ct_symbol))
 						{
-							if (*s++ != *name++) PUGI__THROW_ERROR(status_end_element_mismatch, s);
+							if (*s++ != *name++) PUGI__THROW_ERROR(status_end_element_mismatch, mark);
 						}
 
 						if (*name)
 						{
 							if (*s == 0 && name[0] == endch && name[1] == 0) PUGI__THROW_ERROR(status_bad_end_element, s);
-							else PUGI__THROW_ERROR(status_end_element_mismatch, s);
+							else PUGI__THROW_ERROR(status_end_element_mismatch, mark);
 						}
 
 						PUGI__POPNODE(); // Pop.
@@ -4087,12 +4080,23 @@ PUGI__NS_BEGIN
 		{
 			if (!node->first_child)
 			{
-				if ((flags & format_raw) == 0)
-					writer.write(' ');
+				if (flags & format_no_empty_element_tags)
+				{
+					writer.write('>', '<', '/');
+					writer.write_string(name);
+					writer.write('>');
 
-				writer.write('/', '>');
+					return false;
+				}
+				else
+				{
+					if ((flags & format_raw) == 0)
+						writer.write(' ');
 
-				return false;
+					writer.write('/', '>');
+
+					return false;
+				}
 			}
 			else
 			{
@@ -6812,18 +6816,18 @@ namespace pugi
 
 	PUGI__FN xml_document::xml_document(): _buffer(0)
 	{
-		create();
+		_create();
 	}
 
 	PUGI__FN xml_document::~xml_document()
 	{
-		destroy();
+		_destroy();
 	}
 
 	PUGI__FN void xml_document::reset()
 	{
-		destroy();
-		create();
+		_destroy();
+		_create();
 	}
 
 	PUGI__FN void xml_document::reset(const xml_document& proto)
@@ -6834,7 +6838,7 @@ namespace pugi
 			append_copy(cur);
 	}
 
-	PUGI__FN void xml_document::create()
+	PUGI__FN void xml_document::_create()
 	{
 		assert(!_root);
 
@@ -6867,11 +6871,16 @@ namespace pugi
 		// setup sentinel page
 		page->allocator = static_cast<impl::xml_document_struct*>(_root);
 
+		// setup hash table pointer in allocator
+	#ifdef PUGIXML_COMPACT
+		page->allocator->_hash = &static_cast<impl::xml_document_struct*>(_root)->hash;
+	#endif
+
 		// verify the document allocation
 		assert(reinterpret_cast<char*>(_root) + sizeof(impl::xml_document_struct) <= _memory + sizeof(_memory));
 	}
 
-	PUGI__FN void xml_document::destroy()
+	PUGI__FN void xml_document::_destroy()
 	{
 		assert(_root);
 
@@ -10781,9 +10790,14 @@ PUGI__NS_BEGIN
 
 		void optimize(xpath_allocator* alloc)
 		{
-			if (_left) _left->optimize(alloc);
-			if (_right) _right->optimize(alloc);
-			if (_next) _next->optimize(alloc);
+			if (_left)
+				_left->optimize(alloc);
+
+			if (_right)
+				_right->optimize(alloc);
+
+			if (_next)
+				_next->optimize(alloc);
 
 			optimize_self(alloc);
 		}
@@ -10968,7 +10982,8 @@ PUGI__NS_BEGIN
 		{
 			assert(argc <= 1);
 
-			if (argc == 1 && args[0]->rettype() != xpath_type_node_set) throw_error("Function has to be applied to node set");
+			if (argc == 1 && args[0]->rettype() != xpath_type_node_set)
+				throw_error("Function has to be applied to node set");
 
 			return new (alloc_node()) xpath_ast_node(argc == 0 ? type0 : type1, xpath_type_string, args[0]);
 		}
@@ -10986,7 +11001,9 @@ PUGI__NS_BEGIN
 			case 'c':
 				if (name == PUGIXML_TEXT("count") && argc == 1)
 				{
-					if (args[0]->rettype() != xpath_type_node_set) throw_error("Function has to be applied to node set");
+					if (args[0]->rettype() != xpath_type_node_set)
+						throw_error("Function has to be applied to node set");
+
 					return new (alloc_node()) xpath_ast_node(ast_func_count, xpath_type_number, args[0]);
 				}
 				else if (name == PUGIXML_TEXT("contains") && argc == 2)
@@ -11307,7 +11324,8 @@ PUGI__NS_BEGIN
 
 				xpath_ast_node* expr = parse_expression();
 
-				if (n->rettype() != xpath_type_node_set) throw_error("Predicate has to be applied to node set");
+				if (n->rettype() != xpath_type_node_set)
+					throw_error("Predicate has to be applied to node set");
 
 				n = new (alloc_node()) xpath_ast_node(ast_filter, n, expr, predicate_default);
 
@@ -11366,11 +11384,13 @@ PUGI__NS_BEGIN
 				if (_lexer.current() == lex_double_colon)
 				{
 					// parse axis name
-					if (axis_specified) throw_error("Two axis specifiers in one step");
+					if (axis_specified)
+						throw_error("Two axis specifiers in one step");
 
 					axis = parse_axis_name(nt_name, axis_specified);
 
-					if (!axis_specified) throw_error("Unknown axis");
+					if (!axis_specified)
+						throw_error("Unknown axis");
 
 					// read actual node test
 					_lexer.next();
@@ -11402,7 +11422,8 @@ PUGI__NS_BEGIN
 
 							nt_type = parse_node_test_type(nt_name);
 
-							if (nt_type == nodetest_none) throw_error("Unrecognized node type");
+							if (nt_type == nodetest_none)
+								throw_error("Unrecognized node type");
 
 							nt_name = xpath_lexer_string();
 						}
@@ -11420,8 +11441,9 @@ PUGI__NS_BEGIN
 							_lexer.next();
 						}
 						else
+						{
 							throw_error("Unmatched brace near node type test");
-
+						}
 					}
 					// QName or NCName:*
 					else
@@ -11432,7 +11454,10 @@ PUGI__NS_BEGIN
 
 							nt_type = nodetest_all_in_namespace;
 						}
-						else nt_type = nodetest_name;
+						else
+						{
+							nt_type = nodetest_name;
+						}
 					}
 				}
 			}
@@ -11441,9 +11466,13 @@ PUGI__NS_BEGIN
 				nt_type = nodetest_all;
 				_lexer.next();
 			}
-			else throw_error("Unrecognized node test");
+			else
+			{
+				throw_error("Unrecognized node test");
+			}
 
-			xpath_ast_node* n = new (alloc_node()) xpath_ast_node(ast_step, set, axis, nt_type, alloc_string(nt_name));
+			const char_t* nt_name_copy = alloc_string(nt_name);
+			xpath_ast_node* n = new (alloc_node()) xpath_ast_node(ast_step, set, axis, nt_type, nt_name_copy);
 
 			xpath_ast_node* last = 0;
 
@@ -11548,7 +11577,8 @@ PUGI__NS_BEGIN
 					if (*state != '(') return parse_location_path();
 
 					// This looks like a function call; however this still can be a node-test. Check it.
-					if (parse_node_test_type(_lexer.contents()) != nodetest_none) return parse_location_path();
+					if (parse_node_test_type(_lexer.contents()) != nodetest_none)
+						return parse_location_path();
 				}
 
 				xpath_ast_node* n = parse_filter_expression();
@@ -11560,7 +11590,8 @@ PUGI__NS_BEGIN
 
 					if (l == lex_double_slash)
 					{
-						if (n->rettype() != xpath_type_node_set) throw_error("Step has to be applied to node set");
+						if (n->rettype() != xpath_type_node_set)
+							throw_error("Step has to be applied to node set");
 
 						n = new (alloc_node()) xpath_ast_node(ast_step, n, axis_descendant_or_self, nodetest_type_node, 0);
 					}
@@ -11581,7 +11612,9 @@ PUGI__NS_BEGIN
 				return new (alloc_node()) xpath_ast_node(ast_op_negate, xpath_type_number, expr);
 			}
 			else
+			{
 				return parse_location_path();
+			}
 		}
 
 		struct binary_op_t
@@ -11711,11 +11744,9 @@ PUGI__NS_BEGIN
 		{
 			xpath_ast_node* result = parse_expression();
 
+			// check if there are unparsed tokens left
 			if (_lexer.current() != lex_eof)
-			{
-				// there are still unparsed tokens left, error
 				throw_error("Incorrect query");
-			}
 
 			return result;
 		}
@@ -11923,7 +11954,7 @@ namespace pugi
 		}
 	}
 
-#if __cplusplus >= 201103
+#ifdef PUGIXML_HAS_MOVE
 	PUGI__FN void xpath_node_set::_move(xpath_node_set& rhs)
 	{
 		_type = rhs._type;
@@ -11966,7 +11997,7 @@ namespace pugi
 		return *this;
 	}
 
-#if __cplusplus >= 201103
+#ifdef PUGIXML_HAS_MOVE
 	PUGI__FN xpath_node_set::xpath_node_set(xpath_node_set&& rhs): _type(type_unsorted), _begin(&_storage), _end(&_storage)
 	{
 		_move(rhs);
@@ -12166,7 +12197,7 @@ namespace pugi
 		return *this;
 	}
 
-#if __cplusplus >= 201103
+#ifdef PUGIXML_HAS_MOVE
 	PUGI__FN xpath_variable_set::xpath_variable_set(xpath_variable_set&& rhs)
 	{
 		for (size_t i = 0; i < sizeof(_data) / sizeof(_data[0]); ++i)
@@ -12360,7 +12391,7 @@ namespace pugi
 			impl::xpath_query_impl::destroy(static_cast<impl::xpath_query_impl*>(_impl));
 	}
 
-#if __cplusplus >= 201103
+#ifdef PUGIXML_HAS_MOVE
 	PUGI__FN xpath_query::xpath_query(xpath_query&& rhs)
 	{
 		_impl = rhs._impl;

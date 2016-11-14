@@ -1,5 +1,5 @@
 /**
- * pugixml parser - version 1.7
+ * pugixml parser - version 1.8
  * --------------------------------------------------------
  * Copyright (C) 2006-2016, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
  * Report bugs and download new versions at http://pugixml.org/
@@ -13,7 +13,7 @@
 
 #ifndef PUGIXML_VERSION
 // Define version macro; evaluates to major * 100 + minor so that it's safe to use in less-than comparisons
-#	define PUGIXML_VERSION 170
+#	define PUGIXML_VERSION 180
 #endif
 
 // Include user configuration file (this can define various configuration macros)
@@ -69,6 +69,24 @@
 #		define PUGIXML_HAS_LONG_LONG
 #	elif defined(_MSC_VER) && _MSC_VER >= 1400
 #		define PUGIXML_HAS_LONG_LONG
+#	endif
+#endif
+
+// If the platform is known to have move semantics support, compile move ctor/operator implementation
+#ifndef PUGIXML_HAS_MOVE
+#	if __cplusplus >= 201103
+#		define PUGIXML_HAS_MOVE
+#	elif defined(_MSC_VER) && _MSC_VER >= 1600
+#		define PUGIXML_HAS_MOVE
+#	endif
+#endif
+
+// If C++ is 2011 or higher, add 'override' qualifiers
+#ifndef PUGIXML_OVERRIDE
+#	if __cplusplus >= 201103
+#		define PUGIXML_OVERRIDE override
+#	else
+#		define PUGIXML_OVERRIDE
 #	endif
 #endif
 
@@ -211,6 +229,9 @@ namespace pugi
 	// Write every attribute on a new line with appropriate indentation. This flag is off by default.
 	const unsigned int format_indent_attributes = 0x40;
 
+	// Don't output empty element tags, instead writing an explicit start and end tag even if there are no children. This flag is off by default.
+	const unsigned int format_no_empty_element_tags = 0x80;
+
 	// The default set of formatting flags.
 	// Nodes are indented depending on their depth in DOM tree, a default declaration is output if document has none.
 	const unsigned int format_default = format_indent;
@@ -273,7 +294,7 @@ namespace pugi
 		// Construct writer from a FILE* object; void* is used to avoid header dependencies on stdio
 		xml_writer_file(void* file);
 
-		virtual void write(const void* data, size_t size);
+		virtual void write(const void* data, size_t size) PUGIXML_OVERRIDE;
 
 	private:
 		void* file;
@@ -288,7 +309,7 @@ namespace pugi
 		xml_writer_stream(std::basic_ostream<char, std::char_traits<char> >& stream);
 		xml_writer_stream(std::basic_ostream<wchar_t, std::char_traits<wchar_t> >& stream);
 
-		virtual void write(const void* data, size_t size);
+		virtual void write(const void* data, size_t size) PUGIXML_OVERRIDE;
 
 	private:
 		std::basic_ostream<char, std::char_traits<char> >* narrow_stream;
@@ -960,8 +981,8 @@ namespace pugi
 		xml_document(const xml_document&);
 		xml_document& operator=(const xml_document&);
 
-		void create();
-		void destroy();
+		void _create();
+		void _destroy();
 
 	public:
 		// Default constructor, makes empty document
@@ -1108,7 +1129,7 @@ namespace pugi
 		xpath_variable_set(const xpath_variable_set& rhs);
 		xpath_variable_set& operator=(const xpath_variable_set& rhs);
 
-	#if __cplusplus >= 201103
+	#ifdef PUGIXML_HAS_MOVE
 		// Move semantics support
 		xpath_variable_set(xpath_variable_set&& rhs);
 		xpath_variable_set& operator=(xpath_variable_set&& rhs);
@@ -1152,7 +1173,7 @@ namespace pugi
 		// Destructor
 		~xpath_query();
 
-	#if __cplusplus >= 201103
+	#ifdef PUGIXML_HAS_MOVE
 		// Move semantics support
 		xpath_query(xpath_query&& rhs);
 		xpath_query& operator=(xpath_query&& rhs);
@@ -1214,7 +1235,7 @@ namespace pugi
 		explicit xpath_exception(const xpath_parse_result& result);
 
 		// Get error message
-		virtual const char* what() const throw();
+		virtual const char* what() const throw() PUGIXML_OVERRIDE;
 
 		// Get parse result
 		const xpath_parse_result& result() const;
@@ -1293,7 +1314,7 @@ namespace pugi
 		xpath_node_set(const xpath_node_set& ns);
 		xpath_node_set& operator=(const xpath_node_set& ns);
 
-	#if __cplusplus >= 201103
+	#ifdef PUGIXML_HAS_MOVE
 		// Move semantics support
 		xpath_node_set(xpath_node_set&& rhs);
 		xpath_node_set& operator=(xpath_node_set&& rhs);
