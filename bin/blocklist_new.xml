@@ -7,7 +7,7 @@ Author: klass@bk.ru
 https://yadi.sk/d/aZGTEaiiuzt4k
 http://forum.ru-board.com/topic.cgi?forum=2&topic=5493
 
-Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
+Last-Modified: Fri, 04 Nov 2016 08:55:10 +0000
 
 ------------------------------------------------------------->
 
@@ -49,7 +49,7 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_13.107.8.21" rule="13.107.8.21-13.107.255.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-0-33-43.deploy.static.akamaitechnologies.com" rule="23.0.33.43" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-0-34-39.deploy.static.akamaitechnologies.com" rule="23.0.34.39" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_23.0.38.97" rule="23.0.38.97" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a23-0-38-97.deploy.static.akamaitechnologies.com" rule="23.0.38.97" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-9-208-244.deploy.static.akamaitechnologies.com" rule="23.9.208.244" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-9-216-221.deploy.static.akamaitechnologies.com" rule="23.9.216.221" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-32-246-73.deploy.static.akamaitechnologies.com" rule="23.32.246.73" direction="0" is_block="1" is_enabled="1" />
@@ -58,10 +58,10 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a23-37-42-235.deploy.static.akamaitechnologies.com" rule="23.37.42.235" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-37-43-27.deploy.static.akamaitechnologies.com" rule="23.37.43.27" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-37-45-183.deploy.static.akamaitechnologies.com" rule="23.37.45.183" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_a23-37-52-187.deploy.static.akamaitechnologies.com" rule="23.37.52.187" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_23.37.52.187" rule="23.37.52.187" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-37-52-236.deploy.static.akamaitechnologies.com" rule="23.37.52.236" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-37-61-16.deploy.static.akamaitechnologies.com" rule="23.37.61.16" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_23.38.58.86" rule="23.38.58.86" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a23-38-58-86.deploy.static.akamaitechnologies.com" rule="23.38.58.86" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-43-133-163.deploy.static.akamaitechnologies.com" rule="23.43.133.163" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-43-134-135.deploy.static.akamaitechnologies.com" rule="23.43.134.135" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-43-134-201.deploy.static.akamaitechnologies.com" rule="23.43.134.201" direction="0" is_block="1" is_enabled="1" />
@@ -69,12 +69,12 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a23-43-136-190.deploy.static.akamaitechnologies.com" rule="23.43.136.190" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-43-139-27.deploy.static.akamaitechnologies.com" rule="23.43.139.27" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-45-104-182.deploy.static.akamaitechnologies.com" rule="23.45.104.182" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_a23-46-117-163.deploy.static.akamaitechnologies.com" rule="23.46.117.163" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_23.46.117.163" rule="23.46.117.163" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-46-120-70.deploy.static.akamaitechnologies.com" rule="23.46.120.70" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-46-123-27.deploy.static.akamaitechnologies.com" rule="23.46.123.27" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-52-21-163.deploy.static.akamaitechnologies.com" rule="23.52.21.163" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-52-24-70.deploy.static.akamaitechnologies.com" rule="23.52.24.70" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_23.52.27.27" rule="23.52.27.27" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a23-52-27-27.deploy.static.akamaitechnologies.com" rule="23.52.27.27" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-54-0-144.deploy.static.akamaitechnologies.com" rule="23.54.0.144" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-54-2-193.deploy.static.akamaitechnologies.com" rule="23.54.2.193" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-54-10-162.deploy.static.akamaitechnologies.com" rule="23.54.10.162" direction="0" is_block="1" is_enabled="1" />
@@ -83,9 +83,9 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a23-61-215-30.deploy.static.akamaitechnologies.com" rule="23.61.215.30" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-61-219-168.deploy.static.akamaitechnologies.com" rule="23.61.219.168" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-61-230-39.deploy.static.akamaitechnologies.com" rule="23.61.230.39" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_a23-61-232-190.deploy.static.akamaitechnologies.com" rule="23.61.232.190" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_23.61.232.190" rule="23.61.232.190" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-67-129-56.deploy.static.akamaitechnologies.com" rule="23.67.129.56" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_23.67.137.91" rule="23.67.137.91" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a23-67-137-91.deploy.static.akamaitechnologies.com" rule="23.67.137.91" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_23.96.0.0" rule="23.96.0.0-23.96.52.52" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_23.96.52.54" rule="23.96.52.54-23.97.134.154" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_23.97.134.156" rule="23.97.134.156-23.97.141.38" direction="0" is_block="1" is_enabled="1" />
@@ -110,7 +110,7 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a23-206-5-114.deploy.static.akamaitechnologies.com" rule="23.206.5.114" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a23-206-37-50.deploy.static.akamaitechnologies.com" rule="23.206.37.50" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_37.252.160.0" rule="37.252.160.0-37.252.175.255" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_37.252.247.67" rule="37.252.247.67" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_server23307.teamviewer.com" rule="37.252.247.67" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_40.64.0.0" rule="40.64.0.0-40.68.251.6" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_40.68.251.8" rule="40.68.251.8-40.68.253.46" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_40.68.253.48" rule="40.68.253.48-40.71.255.255" direction="0" is_block="1" is_enabled="1" />
@@ -190,7 +190,6 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_52.178.25.38" rule="52.178.25.38-52.178.29.10" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_52.178.29.12" rule="52.178.29.12-52.178.38.114" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_52.178.38.116" rule="52.178.38.116-52.191.255.255" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_52.178.147.240" rule="52.178.147.240" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_ec2-52-192-0-0.ap-northeast-1.compute.amazonaws.com" rule="52.192.0.0-52.223.255.255" direction="0" is_block="1" is_enabled="0" />
 	<item name="blocklist_52.224.0.0" rule="52.224.0.0-52.255.255.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_ec2-54-160-0-0.compute-1.amazonaws.com" rule="54.160.0.0-54.175.255.255" direction="0" is_block="1" is_enabled="0" />
@@ -202,25 +201,25 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_baymsgr2012503.gateway.messenger.live.com" rule="64.4.46.221-64.4.63.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_64.4.54.254" rule="64.4.54.254" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_64.208.140.0" rule="64.208.140.0-64.208.143.255" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_65.52.0.0" rule="65.52.0.0-65.52.103.101" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_65.52.0.0" rule="65.52.0.0-65.52.103.101" direction="0" is_block="1" is_enabled="0" />
 	<item name="blocklist_65.52.103.103" rule="65.52.103.103-65.52.103.105" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.52.103.107" rule="65.52.103.107-65.52.108.73" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_msnbot-65-52-108-75.search.msn.com" rule="65.52.108.75-65.52.139.167" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.52.139.169" rule="65.52.139.169-65.52.140.71" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.52.140.73" rule="65.52.140.73-65.54.184.18" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_baymsgr1020520.gateway.edge.messenger.live.com" rule="65.54.184.20-65.54.225.166" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_65.54.225.169" rule="65.54.225.169-65.54.226.150" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_65.54.225.169" rule="65.54.225.169-65.54.226.150" direction="0" is_block="1" is_enabled="0" />
 	<item name="blocklist_65.54.226.152" rule="65.54.226.152-65.54.247.99" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.54.247.103" rule="65.54.247.103-65.55.68.118" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.55.44.109" rule="65.55.44.109" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_65.55.68.120" rule="65.55.68.120-65.55.138.115" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_snt405-m.hotmail.com" rule="65.55.68.120-65.55.138.115" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.55.138.117" rule="65.55.138.117-65.55.164.214" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.55.164.216" rule="65.55.164.216-65.55.223.11" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.55.223.49" rule="65.55.223.49-65.55.252.56" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_65.55.252.58" rule="65.55.252.58-65.55.255.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_66.119.144.0" rule="66.119.144.0-66.119.159.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_vip1.UE-anycast1.cachefly.net" rule="66.225.197.197" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_ip480067.lax1.adnexus.net" rule="68.67.128.0-68.67.191.255" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_68.67.128.0" rule="68.67.128.0-68.67.191.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_70.37.0.0" rule="70.37.0.0-70.37.191.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_yandex.ru" rule="77.88.55.55" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_yandex.ru" rule="77.88.55.66" direction="0" is_block="1" is_enabled="1" />
@@ -228,7 +227,7 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a84-53-167-128.deploy.akamaitechnologies.com" rule="84.53.167.128" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_suggest.yandex.net" rule="87.250.250.63" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_suggest.yandex.net" rule="87.250.251.63" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_suggest.yandex.net" rule="93.158.134.63" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_93.158.134.63" rule="93.158.134.63" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_93.184.220.20" rule="93.184.220.20" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_93.184.220.29" rule="93.184.220.29" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_93.184.221.200" rule="93.184.221.200" direction="0" is_block="1" is_enabled="1" />
@@ -236,12 +235,12 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a95-100-0-42.deploy.akamaitechnologies.com" rule="95.100.0.42" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a95-100-5-117.deploy.akamaitechnologies.com" rule="95.100.5.117" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a95-100-7-30.deploy.akamaitechnologies.com" rule="95.100.7.30" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_a95-100-11-168.deploy.akamaitechnologies.com" rule="95.100.11.168" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_95.100.11.168" rule="95.100.11.168" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a95-101-47-86.deploy.akamaitechnologies.com" rule="95.101.47.86" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a95-101-93-83.deploy.akamaitechnologies.com" rule="95.101.93.83" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a95-101-95-107.deploy.akamaitechnologies.com" rule="95.101.95.107" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a95-101-95-200.deploy.akamaitechnologies.com" rule="95.101.95.200" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_96.6.15.29" rule="96.6.15.29" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a96-6-15-29.deploy.akamaitechnologies.com" rule="96.6.15.29" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a96-6-15-244.deploy.akamaitechnologies.com" rule="96.6.15.244" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a96-7-18-100.deploy.akamaitechnologies.com" rule="96.7.18.100" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_ip480140.sin1.adnexus.net" rule="103.243.222.0-103.243.222.255" direction="0" is_block="1" is_enabled="1" />
@@ -270,24 +269,24 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a104-69-48-229.deploy.static.akamaitechnologies.com" rule="104.69.48.229" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-76-23-189.deploy.static.akamaitechnologies.com" rule="104.76.23.189" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-76-27-18.deploy.static.akamaitechnologies.com" rule="104.76.27.18" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_a104-76-43-189.deploy.static.akamaitechnologies.com" rule="104.76.43.189" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_104.76.43.189" rule="104.76.43.189" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-76-60-208.deploy.static.akamaitechnologies.com" rule="104.76.60.208" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-76-61-210.deploy.static.akamaitechnologies.com" rule="104.76.61.210" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-84-158-108.deploy.static.akamaitechnologies.com" rule="104.84.158.108" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-94-21-5.deploy.static.akamaitechnologies.com" rule="104.94.21.5" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_104.94.33.160" rule="104.94.33.160" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a104-94-33-160.deploy.static.akamaitechnologies.com" rule="104.94.33.160" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-94-37-99.deploy.static.akamaitechnologies.com" rule="104.94.37.99" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-94-44-83.deploy.static.akamaitechnologies.com" rule="104.94.44.83" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-94-48-31.deploy.static.akamaitechnologies.com" rule="104.94.48.31" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-94-48-181.deploy.static.akamaitechnologies.com" rule="104.94.48.181" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-94-50-218.deploy.static.akamaitechnologies.com" rule="104.94.50.218" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-94-55-76.deploy.static.akamaitechnologies.com" rule="104.94.55.76" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_a104-94-57-15.deploy.static.akamaitechnologies.com" rule="104.94.57.15" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_104.94.57.15" rule="104.94.57.15" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-94-58-244.deploy.static.akamaitechnologies.com" rule="104.94.58.244" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-108-52-78.deploy.static.akamaitechnologies.com" rule="104.108.52.78" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-108-59-233.deploy.static.akamaitechnologies.com" rule="104.108.59.233" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-108-148-173.deploy.static.akamaitechnologies.com" rule="104.108.148.173" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_104.109.61.79" rule="104.109.61.79" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a104-109-61-79.deploy.static.akamaitechnologies.com" rule="104.109.61.79" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-109-105-197.deploy.static.akamaitechnologies.com" rule="104.109.105.197" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-109-106-84.deploy.static.akamaitechnologies.com" rule="104.109.106.84" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a104-109-121-230.deploy.static.akamaitechnologies.com" rule="104.109.121.230" direction="0" is_block="1" is_enabled="1" />
@@ -299,7 +298,7 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_104.215.197.167" rule="104.215.197.167-104.215.255.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_104.254.148.0" rule="104.254.148.0-104.254.151.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_ec2-107-20-0-0.compute-1.amazonaws.com" rule="107.20.0.0-107.23.255.255" direction="0" is_block="1" is_enabled="0" />
-	<item name="blocklist_6bb6e6c6.setaptr.net" rule="107.182.230.198" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_relay1" rule="107.182.230.198" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_111.221.16.0" rule="111.221.16.0-111.221.23.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_111.221.29.0" rule="111.221.29.0-111.221.29.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_111.221.29.254" rule="111.221.29.254" direction="0" is_block="1" is_enabled="1" />
@@ -342,7 +341,6 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_157.55.130.194" rule="157.55.130.194-157.55.235.139" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_157.55.235.177" rule="157.55.235.177-157.56.52.11" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_157.56.52.49" rule="157.56.52.49-157.56.148.22" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_157.56.77.149" rule="157.56.77.149" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_157.56.148.24" rule="157.56.148.24-157.56.198.38" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_157.56.198.42" rule="157.56.198.42-157.60.255.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_164.215.74.150" rule="164.215.74.150" direction="0" is_block="1" is_enabled="1" />
@@ -366,8 +364,8 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a172-227-100-79.deploy.static.akamaitechnologies.com" rule="172.227.100.79" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a172-227-115-35.deploy.static.akamaitechnologies.com" rule="172.227.115.35" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a172-227-115-82.deploy.static.akamaitechnologies.com" rule="172.227.115.82" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_a172-227-132-68.deploy.static.akamaitechnologies.com" rule="172.227.132.68" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_172.227.132.223" rule="172.227.132.223" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_172.227.132.68" rule="172.227.132.68" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a172-227-132-223.deploy.static.akamaitechnologies.com" rule="172.227.132.223" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a172-227-136-226.deploy.static.akamaitechnologies.com" rule="172.227.136.226" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_ec2-176-34-0-0.ap-northeast-1.compute.amazonaws.com" rule="176.34.0.0-176.34.255.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_static.eu.criteo.net" rule="178.250.0.78" direction="0" is_block="1" is_enabled="1" />
@@ -377,8 +375,8 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_a184-25-216-202.deploy.static.akamaitechnologies.com" rule="184.25.216.202" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a184-28-180-55.deploy.static.akamaitechnologies.com" rule="184.28.180.55" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a184-30-212-117.deploy.static.akamaitechnologies.com" rule="184.30.212.117" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_184.31.87.198" rule="184.31.87.198" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_ec2-184-72-0-0.us-west-1.compute.amazonaws.com" rule="184.72.0.0-184.73.255.255" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_a184-31-87-198.deploy.static.akamaitechnologies.com" rule="184.31.87.198" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_184.72.0.0" rule="184.72.0.0-184.73.255.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a184-84-235-212.deploy.static.akamaitechnologies.com" rule="184.84.235.212" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a184-85-84-128.deploy.static.akamaitechnologies.com" rule="184.85.84.128" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_a184-85-158-46.deploy.static.akamaitechnologies.com" rule="184.85.158.46" direction="0" is_block="1" is_enabled="1" />
@@ -417,10 +415,10 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_bay402-ad.hotmail.com" rule="207.46.101.13-207.46.150.194" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_207.46.150.196" rule="207.46.150.196-207.46.194.9" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_207.46.154.200" rule="207.46.154.200" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_msnbot-207-46-194-11.search.msn.com" rule="207.46.194.11-207.46.194.28" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_207.46.194.30" rule="207.46.194.30-207.46.197.28" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_207.46.194.11" rule="207.46.194.11-207.46.194.28" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_msnbot-207-46-194-30.search.msn.com" rule="207.46.194.30-207.46.197.28" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_207.46.197.30" rule="207.46.197.30-207.46.255.255" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_d15f383c.setaptr.net" rule="209.95.56.60" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_tracker2.resilio.com" rule="209.95.56.60" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_209.240.192.0" rule="209.240.192.0-209.240.223.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_213.174.157.151" rule="213.174.157.151" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_suggest.yandex.net" rule="213.180.204.63" direction="0" is_block="1" is_enabled="1" />
@@ -429,5 +427,5 @@ Last-Modified: Sun, 30 Oct 2016 08:31:19 +0000
 	<item name="blocklist_213.199.160.0" rule="213.199.160.0-213.199.191.255" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_216.52.1.12" rule="216.52.1.12" direction="0" is_block="1" is_enabled="1" />
 	<item name="blocklist_216.252.164.0" rule="216.252.164.0-216.252.167.255" direction="0" is_block="1" is_enabled="1" />
-	<item name="blocklist_server21810.teamviewer.com" rule="217.146.1.46" direction="0" is_block="1" is_enabled="1" />
+	<item name="blocklist_217.146.1.46" rule="217.146.1.46" direction="0" is_block="1" is_enabled="1" />
 </root>
