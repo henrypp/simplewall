@@ -1,3 +1,6 @@
+v1.3.4 (16 November 2016)
+- fixed xml saving (critical)
+
 v1.3.3 (14 November 2016)
 + added boot-time filters for prevent data leak during system startup, even before "Base Filtering Engine" (BFE) service starts
 + added "purge unused applications" feature

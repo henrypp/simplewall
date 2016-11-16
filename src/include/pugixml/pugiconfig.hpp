@@ -1,7 +1,7 @@
 /**
- * pugixml parser - version 1.8
+ * pugixml parser - version 1.6
  * --------------------------------------------------------
- * Copyright (C) 2006-2016, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
+ * Copyright (C) 2006-2015, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
  * Report bugs and download new versions at http://pugixml.org/
  *
  * This library is distributed under the MIT License. See notice at the end
