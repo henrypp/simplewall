@@ -1,4 +1,5 @@
-v1.3.4 (16 November 2016)
+v1.3.5 (17 November 2016)
+- fixed configuration saving (critical)
 - fixed xml saving (critical)
 
 v1.3.3 (14 November 2016)
