@@ -1,3 +1,11 @@
+v1.3.6 (20 November 2016)
++ added loopback permission for boot-time filters
++ added ip:port syntax for special rules
++ added default values for new special rules
+- fixed restore listview selection
+- fixed special rules crash on delete item
+- fixed log path unexpand environment strings
+
 v1.3.5 (17 November 2016)
 - fixed configuration saving (critical)
 - fixed xml saving (critical)
