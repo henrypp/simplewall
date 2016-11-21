@@ -1,3 +1,8 @@
+v1.3.7 (21 November 2016)
+- fixed special rules crash on apply settings
+- fixed special rules reinitialization in main menu/tray menu
+- updated translation
+
 v1.3.6 (20 November 2016)
 + added loopback permission for boot-time filters
 + added ip:port syntax for special rules
