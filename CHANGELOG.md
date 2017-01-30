@@ -1,3 +1,29 @@
+v1.4.0 (31 January 2017)
+* revert original project name
++ added mode changing confirmation
++ added reading information about "System" process
++ added protocol and version (ports only) option into the rules editor
++ added blocklist editor (set it "on" or "off" only)
++ added custom rules applying to the apps feature
++ added "show filenames only" option
++ added icon indication for rules
++ added loopback permission for "trust no one" mode
++ moved system rules into the "rules_system.xml" file
++ clear log even if logging to a file is not enabled
+- do not load information about apps from shared resources
+- fixed profile not saved if filters is not installed
+- removed tray balloon tips on filters changing
+- boot-time filters marked as experimental
+- improved working under uac (no rights)
+- improved system apps detection
+- cosmetic fixes in process list
+- cosmetic fixes in apps tooltip
+- fixed race conditions
+- updated translation
+- updated blocklist
+- updated ui
+- fixed bugs
+
 v1.3.7 (21 November 2016)
 - fixed special rules crash on apply settings
 - fixed special rules reinitialization in main menu/tray menu

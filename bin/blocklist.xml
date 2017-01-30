@@ -1,198 +1,267 @@
+<!------------------------------------------------------------
+
+Rules to block Windows spy / telemetry
+https://github.com/crazy-max/WindowsSpyBlocker
+
+Last-Modified: Wed, 25 Jan 2017 15:48:35 +0000
+
+------------------------------------------------------------->
+
 <?xml version="1.0"?>
 <root>
-	<item name="telemetry_vortex.data.microsoft.com" rule="191.232.139.254" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_telecommand.telemetry.microsoft.com" rule="65.55.252.92" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_oca.telemetry.microsoft.com" rule="65.55.252.63" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_sqm.telemetry.microsoft.com" rule="65.55.252.93" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_watson.telemetry.microsoft.com" rule="65.55.252.43" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_watson2.telemetry.microsoft.com" rule="65.52.108.29" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_redir.metaservices.microsoft.com" rule="194.44.4.200" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_redir2.metaservices.microsoft.com" rule="194.44.4.208" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_choice.microsoft.com" rule="157.56.91.77" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_df.telemetry.microsoft.com" rule="65.52.100.7" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_reports.wes.df.telemetry.microsoft.com" rule="65.52.100.91" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_wes.df.telemetry.microsoft.com" rule="65.52.100.93" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_services.wes.df.telemetry.microsoft.com" rule="65.52.100.92" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_sqm.df.telemetry.microsoft.com" rule="65.52.100.94" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_telemetry.microsoft.com" rule="65.52.100.9" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_watson.ppe.telemetry.microsoft.com" rule="65.52.100.11" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_telemetry.appex.bing.net" rule="168.63.108.233" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_telemetry.urs.microsoft.com" rule="157.56.74.250" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_settings" rule="111.221.29.177" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_vortex" rule="64.4.54.32" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_survey.watson.microsoft.com" rule="207.68.166.254" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_watson.live.com" rule="207.46.223.94" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_watson.microsoft.com" rule="65.55.252.71" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_statsfe2.ws.microsoft.com" rule="64.4.54.22" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_corpext.msitadfs.glbdns2.microsoft.com" rule="131.107.113.238" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_compatexchange.cloudapp.net" rule="23.99.10.11" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_sls.update.microsoft.com.akadns.net" rule="157.56.77.139" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_fe2.update.microsoft.com.akadns.net" rule="134.170.58.121" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_fe23.update.microsoft.com.akadns.net" rule="134.170.58.123" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_fe24.update.microsoft.com.akadns.net" rule="134.170.53.29" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_fe25.update.microsoft.com.akadns.net" rule="66.119.144.190" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_fe26.update.microsoft.com.akadns.net" rule="134.170.58.189" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_fe27.update.microsoft.com.akadns.net" rule="134.170.58.118" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_fe28.update.microsoft.com.akadns.net" rule="134.170.53.30" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_fe29.update.microsoft.com.akadns.net" rule="134.170.51.190" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_diagnostics.support.microsoft.com" rule="157.56.121.89" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_statsfe1.ws.microsoft.com" rule="134.170.115.60" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_i1.services.social.microsoft.com" rule="104.82.22.249" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_feedback.windows.com" rule="134.170.185.70" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_feedback.microsoft" rule="64.4.6.100" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_feedback2.microsoft" rule="65.55.39.10" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_feedback.search.microsoft.com" rule="157.55.129.21" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_rad.msn.com" rule="207.46.194.25" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_preview.msn.com" rule="23.102.21.4" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_dart.l.doubleclick.net" rule="173.194.113.220" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_dart2.l.doubleclick.net" rule="173.194.113.219" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_dart3.l.doubleclick.net" rule="216.58.209.166" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_ads.msn.com" rule="157.56.91.82" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_ads2.msn.com" rule="157.56.23.91" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_ads3.msn.com" rule="104.82.14.146" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_ads6.msn.com" rule="8.254.209.254" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_a.ads1.msn.com" rule="198.78.208.254" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_a.ads1.msn.com" rule="185.13.160.61" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_global.msads.net.c.footprint.net" rule="207.123.56.252" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_ssw.live.com" rule="207.46.101.29" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_msnbot" rule="65.55.108.23" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_a23" rule="23.218.212.69" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft.com" rule="104.96.147.3" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft01.com" rule="11.221.29.253" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft02.com" rule="111.221.64.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft03.com" rule="131.253.40.37" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft04.com" rule="134.170.165.248" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft05.com" rule="134.170.165.253" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft06.com" rule="134.170.30.202" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft07.com" rule="137.116.81.24" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft08.com" rule="137.117.235.16" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft09.com" rule="157.55.130.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft10.com" rule="157.55.133.204" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft11.com" rule="157.55.235.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft12.com" rule="157.55.236.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft13.com" rule="157.55.52.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft14.com" rule="157.55.56.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft15.com" rule="157.56.106.189" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft16.com" rule="157.56.124.87" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft17.com" rule="191.232.139.2" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft18.com" rule="191.232.80.58" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft19.com" rule="191.232.80.62" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft20.com" rule="191.237.208.126" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft21.com" rule="195.138.255.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft22.com" rule="2.22.61.43" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft23.com" rule="2.22.61.66" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft24.com" rule="207.46.114.58" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft25.com" rule="212.30.134.204" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft26.com" rule="212.30.134.205" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft27.com" rule="213.199.179.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft28.com" rule="23.223.20.82" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft29.com" rule="23.57.101.163" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft30.com" rule="23.57.107.163" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft31.com" rule="23.57.107.27" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft32.com" rule="64.4.23.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft33.com" rule="65.39.117.230" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft34.com" rule="65.52.108.33" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft35.com" rule="65.55.138.114" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft36.com" rule="65.55.138.126" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft37.com" rule="65.55.223.0" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft38.com" rule="65.55.138.186" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft39.com" rule="65.55.29.238" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_microsoft40.com" rule="77.67.29.176" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_1" rule="206.33.58.254" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_2" rule="8.12.207.125" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_3" rule="8.253.37.126" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_a" rule="204.79.197.201" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_a" rule="204.79.197.206" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_a" rule="204.79.197.204" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_a" rule="204.79.197.208" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_a" rule="204.79.197.209" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_a" rule="204.79.197.210" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_a" rule="204.79.197.211" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ac3.msn.com" rule="131.253.14.76" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ad.doubleclick.net" rule="172.217.20.230" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_adnexus.net" rule="37.252.169.43" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_01.auth.nym2.appnexus.net" rule="68.67.155.138" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_01.auth.lax1.appnexus.net" rule="68.67.133.169" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_01.auth.ams1.appnexus.net" rule="37.252.164.5" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ns1.gslb.com" rule="8.19.31.10" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ns2.gslb.com" rule="8.19.31.11" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ads.msn.com" rule="65.55.128.80" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ads1.msn.com" rule="192.221.106.126" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_de" rule="198.78.208.155" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_es" rule="8.254.34.155" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_b.ns.nsatc.net" rule="8.254.92.155" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_nl" rule="4.23.39.155" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_uk" rule="8.254.119.155" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_aidps.msn.com.nsatc.net" rule="131.253.14.121" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ns1.a" rule="204.79.197.1" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ns2.a" rule="204.79.197.2" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ns3.a" rule="131.253.21.1" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_apps.skype.com" rule="95.100.177.217" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_az512334.vo.msecnd.net" rule="50.63.202.65" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_bs.serving" rule="82.199.80.141" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_65choice.microsoft.com" rule="65.55.128.81" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_db3aqu.atdmt.com" rule="94.245.121.176" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_choice.microsoft.com.nsatc.net" rule="94.245.121.177" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_c.msn.com" rule="94.245.121.178" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_c2.msn.com" rule="94.245.121.179" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_diagnostics.support.microsoft.com" rule="134.170.52.151" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_fe2.update.microsoft.com.akadns.net" rule="134.10.58.118" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ns1.msft.net" rule="208.84.0.53" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ns3.msft.net" rule="192.221.113.53" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_ns4.msft.net" rule="208.76.45.53" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_flex.msn.com" rule="207.46.194.8" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_g.msn.com" rule="207.46.194.14" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_i1.services.social.microsoft.com" rule="23.74.190.252" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_lb1.www.ms.akadns.net" rule="65.55.57.27" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_live.rads.msn.com" rule="40.127.139.224" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_m.adnxs.com" rule="37.252.170.82" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_m1.adnxs.com" rule="37.252.170.81" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_m2.adnxs.com" rule="37.252.170.141" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_m3.adnxs.com" rule="37.252.170.142" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_m4.adnxs.com" rule="37.252.170.80" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_m5.adnxs.com" rule="37.252.170.140" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_m6.adnxs.com" rule="37.252.170.1" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_m.hotmail.com" rule="134.170.3.199" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_msedge.net" rule="204.79.19.197" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_msntest.serving" rule="2.21.246.8" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_msnbot" rule="2.21.246.10" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_redir.metaservices.microsoft.com" rule="2.21.246.42" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_redir2.metaservices.microsoft.com" rule="2.21.246.58" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_s0.2mdn.net" rule="172.217.21.166" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_db5.skype.msnmessenger.msn.com.akadns.net" rule="191.232.139.13" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_schemas.microsoft.akadns.net" rule="65.54.226.187" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure.adnxs.com" rule="37.252.163.207" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure1.adnxs.com" rule="37.252.163.3" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure2.adnxs.com" rule="37.252.163.244" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure3.adnxs.com" rule="37.252.162.216" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure4.adnxs.com" rule="37.252.163.215" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure5.adnxs.com" rule="37.252.162.228" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure6.adnxs.com" rule="37.252.163.106" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure7.adnxs.com" rule="37.252.163.88" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_secure.flashtalking.com" rule="95.101.244.134" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_settings" rule="191.232.140.76" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_sls.update.microsoft.com.akadns.net" rule="157.56.96.58" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_statsfe1.ws.microsoft.com" rule="207.46.114.61" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_statsfe2.ws.microsoft.com" rule="65.52.108.153" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_telemetry.appex.bing.net" rule="168.61.24.141" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_telemetry.urs.microsoft.com" rule="65.55.44.85" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_view.atdmt.com" rule="179.60.192.10" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_www.msftncsi.com" rule="2.21.246.26" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_www.msftncsi2.com" rule="2.21.246.24" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_a" rule="204.79.197.203" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_cs697.wac.thetacdn.net" rule="192.229.233.249" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_db5.settings.data.microsoft.com.akadns.net" rule="191.232.139.253" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_co4.telecommand.telemetry.microsoft.com.akadns.net" rule="65.55.252.190" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_oca.telemetry.microsoft.com.nsatc.net" rule="64.4.54.153" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_telemetry.appex.search.prod.ms.akadns.net" rule="65.52.161.64" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_t.urs.microsoft.com.nsatc.net" rule="64.4.54.167" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_watson.microsoft.com.nsatc.net" rule="65.52.108.154" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_statsfe2.ws.microsoft.com.nsatc.net" rule="131.253.14.153" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_sls.update.microsoft.com.akadns.net" rule="157.56.77.138" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_dart.l.doubleclick.net" rule="172.217.20.134" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_ssw.live.com.nsatc.net" rule="207.46.7.252" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_urs.microsoft.com.nsatc.net" rule="192.232.139.180" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_urs.microsoft.com.nsatc.net" rule="157.55.233.125" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_geo" rule="191.232.139.212" direction="0" is_block="1" is_enabled="1" />
-	<item name="telemetry_new_c.microsoft.akadns.net" rule="134.170.188.139" direction="0" is_block="1" is_enabled="1" />
+	<item name="extra_13.80.12.54" rule="13.80.12.54" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_64.4.54.22" rule="64.4.54.22" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.98.231" rule="65.52.98.231" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.100.11" rule="65.52.100.11" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.100.93" rule="65.52.100.93" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.108.29" rule="65.52.108.29" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.108.33" rule="65.52.108.33" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.108.59" rule="65.52.108.59" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.108.153" rule="65.52.108.153" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.108.154" rule="65.52.108.154" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.52.108.251" rule="65.52.108.251" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_65.55.108.23" rule="65.55.108.23" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_104.215.146.200" rule="104.215.146.200" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_168.63.18.79" rule="168.63.18.79" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_191.232.139.0-191.232.139.25" rule="191.232.139.0-191.232.139.25" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_204.79.197.197-204.79.197.214" rule="204.79.197.197-204.79.197.214" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_204.79.197.200" rule="204.79.197.200" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_207.46.134.255" rule="207.46.134.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_207.46.194.14" rule="207.46.194.14" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_207.46.194.25" rule="207.46.194.25" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_207.46.194.33" rule="207.46.194.33" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_207.46.223.94" rule="207.46.223.94" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="spy_13.76.218.117" rule="13.76.218.117" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_13.76.219.191" rule="13.76.219.191" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_13.76.219.210" rule="13.76.219.210" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_13.107.3.128" rule="13.107.3.128" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_13.107.5.88" rule="13.107.5.88" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.97.61.137" rule="23.97.61.137" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.97.178.173" rule="23.97.178.173" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.97.209.97" rule="23.97.209.97" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.98.49.14" rule="23.98.49.14" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.99.10.11" rule="23.99.10.11" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.99.49.121" rule="23.99.49.121" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.99.109.44" rule="23.99.109.44" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.99.109.64" rule="23.99.109.64" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.99.116.116" rule="23.99.116.116" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.99.121.207" rule="23.99.121.207" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.102.4.253" rule="23.102.4.253" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.102.21.4" rule="23.102.21.4" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.102.155.140" rule="23.102.155.140" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_23.103.182.126" rule="23.103.182.126" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.69.40.157" rule="40.69.40.157" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.76.1.176" rule="40.76.1.176" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.76.12.4" rule="40.76.12.4" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.76.12.162" rule="40.76.12.162" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.77.226.0-40.77.226.255" rule="40.77.226.0-40.77.226.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.77.226.249" rule="40.77.226.249" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.77.226.250" rule="40.77.226.250" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.77.229.0-40.77.229.255" rule="40.77.229.0-40.77.229.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.83.189.49" rule="40.83.189.49" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.113.8.255" rule="40.113.8.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.113.10.78" rule="40.113.10.78" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.113.14.159" rule="40.113.14.159" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.113.22.47" rule="40.113.22.47" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.114.149.220" rule="40.114.149.220" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.114.241.141" rule="40.114.241.141" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.115.1.44" rule="40.115.1.44" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.117.144.240" rule="40.117.144.240" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.117.151.29" rule="40.117.151.29" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.118.103.7" rule="40.118.103.7" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.121.144.182" rule="40.121.144.182" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_52.164.240.33" rule="52.164.240.33" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_52.164.240.59" rule="52.164.240.59" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_52.164.241.205" rule="52.164.241.205" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_52.178.147.240" rule="52.178.147.240" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_52.178.151.212" rule="52.178.151.212" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_64.4.6.100" rule="64.4.6.100" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_64.4.23.0-64.4.23.255" rule="64.4.23.0-64.4.23.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_64.4.27.50" rule="64.4.27.50" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_64.4.54.0-64.4.54.255" rule="64.4.54.0-64.4.54.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_64.4.54.253" rule="64.4.54.253" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_64.4.54.254" rule="64.4.54.254" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.39.117.230" rule="65.39.117.230" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.52.26.28" rule="65.52.26.28" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.52.100.0-65.52.100.255" rule="65.52.100.0-65.52.100.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.52.108.116" rule="65.52.108.116" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.52.108.135" rule="65.52.108.135" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.52.108.136" rule="65.52.108.136" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.52.161.64" rule="65.52.161.64" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.52.219.207" rule="65.52.219.207" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.29.238" rule="65.55.29.238" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.39.10" rule="65.55.39.10" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.44.51" rule="65.55.44.51" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.44.54" rule="65.55.44.54" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.44.108" rule="65.55.44.108" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.44.109" rule="65.55.44.109" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.83.120" rule="65.55.83.120" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.113.11" rule="65.55.113.11" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.113.12" rule="65.55.113.12" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.113.13" rule="65.55.113.13" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.130.50" rule="65.55.130.50" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.176.90" rule="65.55.176.90" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.223.0-65.55.223.255" rule="65.55.223.0-65.55.223.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.252.43" rule="65.55.252.43" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.252.63" rule="65.55.252.63" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.252.71" rule="65.55.252.71" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.252.92" rule="65.55.252.92" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.252.93" rule="65.55.252.93" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_65.55.252.190" rule="65.55.252.190" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_66.119.144.157" rule="66.119.144.157" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_66.119.144.158" rule="66.119.144.158" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_66.119.144.189" rule="66.119.144.189" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_66.119.144.190" rule="66.119.144.190" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_66.119.147.131" rule="66.119.147.131" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_77.67.29.176" rule="77.67.29.176" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.41.207.73" rule="104.41.207.73" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.43.137.66" rule="104.43.137.66" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.43.139.21" rule="104.43.139.21" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.43.140.223" rule="104.43.140.223" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.43.228.53" rule="104.43.228.53" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.43.228.202" rule="104.43.228.202" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.43.237.169" rule="104.43.237.169" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.45.11.195" rule="104.45.11.195" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.45.214.112" rule="104.45.214.112" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.46.1.211" rule="104.46.1.211" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.46.38.64" rule="104.46.38.64" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.46.50.125" rule="104.46.50.125" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.210.4.77" rule="104.210.4.77" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.210.40.87" rule="104.210.40.87" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.210.212.243" rule="104.210.212.243" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_104.214.35.244" rule="104.214.35.244" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_111.221.29.13" rule="111.221.29.13" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_111.221.29.177" rule="111.221.29.177" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_111.221.29.253" rule="111.221.29.253" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_111.221.29.254" rule="111.221.29.254" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_111.221.64.0-111.221.127.255" rule="111.221.64.0-111.221.127.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_131.253.14.231" rule="131.253.14.231" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_131.253.40.37" rule="131.253.40.37" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_131.253.61.0-131.253.61.255" rule="131.253.61.0-131.253.61.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.30.202" rule="134.170.30.202" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.30.203" rule="134.170.30.203" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.30.204" rule="134.170.30.204" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.30.221" rule="134.170.30.221" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.51.187" rule="134.170.51.187" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.51.188" rule="134.170.51.188" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.52.151" rule="134.170.52.151" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.106.0-134.170.106.255" rule="134.170.106.0-134.170.106.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.107.24" rule="134.170.107.24" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.107.48" rule="134.170.107.48" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.107.96" rule="134.170.107.96" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.108.24" rule="134.170.108.24" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.108.48" rule="134.170.108.48" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.108.72" rule="134.170.108.72" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.108.224" rule="134.170.108.224" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.111.0-134.170.111.255" rule="134.170.111.0-134.170.111.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.120.24" rule="134.170.120.24" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.120.48" rule="134.170.120.48" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.120.72" rule="134.170.120.72" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.120.96" rule="134.170.120.96" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.178.97" rule="134.170.178.97" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.179.87" rule="134.170.179.87" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.185.70" rule="134.170.185.70" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.188.248" rule="134.170.188.248" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_134.170.235.16" rule="134.170.235.16" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_137.116.81.24" rule="137.116.81.24" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_137.116.139.114" rule="137.116.139.114" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_137.117.235.16" rule="137.117.235.16" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.55.52.0-157.55.52.255" rule="157.55.52.0-157.55.52.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.55.56.0-157.55.56.255" rule="157.55.56.0-157.55.56.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.55.109.226" rule="157.55.109.226" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.55.109.230" rule="157.55.109.230" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.55.129.21" rule="157.55.129.21" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.55.130.0-157.55.130.255" rule="157.55.130.0-157.55.130.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.55.235.0-157.55.235.255" rule="157.55.235.0-157.55.235.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.55.236.0-157.55.236.255" rule="157.55.236.0-157.55.236.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.57.5" rule="157.56.57.5" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.74.250" rule="157.56.74.250" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.91.77" rule="157.56.91.77" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.106.184" rule="157.56.106.184" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.106.185" rule="157.56.106.185" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.106.189" rule="157.56.106.189" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.113.217" rule="157.56.113.217" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.121.89" rule="157.56.121.89" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.124.87" rule="157.56.124.87" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.149.250" rule="157.56.149.250" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.194.72" rule="157.56.194.72" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.194.73" rule="157.56.194.73" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_157.56.194.74" rule="157.56.194.74" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_168.61.24.141" rule="168.61.24.141" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_168.61.146.25" rule="168.61.146.25" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_168.61.149.17" rule="168.61.149.17" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_168.61.172.71" rule="168.61.172.71" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_168.62.187.13" rule="168.62.187.13" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_168.63.100.61" rule="168.63.100.61" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_168.63.108.233" rule="168.63.108.233" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.232.139.0-191.232.139.255" rule="191.232.139.0-191.232.139.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.232.139.182" rule="191.232.139.182" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.232.139.253" rule="191.232.139.253" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.232.139.254" rule="191.232.139.254" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.236.155.80" rule="191.236.155.80" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.237.208.126" rule="191.237.208.126" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.237.218.239" rule="191.237.218.239" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.239.50.18" rule="191.239.50.18" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.239.50.77" rule="191.239.50.77" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.239.52.100" rule="191.239.52.100" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_191.239.54.52" rule="191.239.54.52" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_195.138.255.0-195.138.255.255" rule="195.138.255.0-195.138.255.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_207.46.7.252" rule="207.46.7.252" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_207.46.101.29" rule="207.46.101.29" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_207.46.153.155" rule="207.46.153.155" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_207.46.194.40" rule="207.46.194.40" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_207.68.166.254" rule="207.68.166.254" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_213.199.179.0-213.199.179.255" rule="213.199.179.0-213.199.179.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="update_13.107.4.50" rule="13.107.4.50" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_23.103.189.125" rule="23.103.189.125" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_23.103.189.126" rule="23.103.189.126" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_23.103.189.157" rule="23.103.189.157" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_23.103.189.158" rule="23.103.189.158" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_65.55.138.0-65.55.138.255" rule="65.55.138.0-65.55.138.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_65.55.138.112" rule="65.55.138.112" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_65.55.138.114" rule="65.55.138.114" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_65.55.138.126" rule="65.55.138.126" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_65.55.138.186" rule="65.55.138.186" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_65.55.163.221" rule="65.55.163.221" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_65.55.163.222" rule="65.55.163.222" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_65.55.242.254" rule="65.55.242.254" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_131.253.14.153" rule="131.253.14.153" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.51.0-134.170.51.255" rule="134.170.51.0-134.170.51.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.51.190" rule="134.170.51.190" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.51.246" rule="134.170.51.246" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.51.247" rule="134.170.51.247" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.51.248" rule="134.170.51.248" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.53.29" rule="134.170.53.29" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.53.30" rule="134.170.53.30" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.58.0-134.170.58.255" rule="134.170.58.0-134.170.58.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.115.56" rule="134.170.115.56" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.115.60" rule="134.170.115.60" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.115.62" rule="134.170.115.62" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.165.248" rule="134.170.165.248" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.165.249" rule="134.170.165.249" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.165.251" rule="134.170.165.251" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_134.170.165.253" rule="134.170.165.253" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.55.133.204" rule="157.55.133.204" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.55.240.89" rule="157.55.240.89" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.55.240.126" rule="157.55.240.126" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.55.240.220" rule="157.55.240.220" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.77.138" rule="157.56.77.138" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.77.139" rule="157.56.77.139" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.77.140" rule="157.56.77.140" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.77.141" rule="157.56.77.141" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.77.148" rule="157.56.77.148" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.77.149" rule="157.56.77.149" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.96.54" rule="157.56.96.54" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.96.58" rule="157.56.96.58" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.96.123" rule="157.56.96.123" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_157.56.96.157" rule="157.56.96.157" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_191.232.80.58" rule="191.232.80.58" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_191.232.80.60" rule="191.232.80.60" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_191.232.80.62" rule="191.232.80.62" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_191.234.72.183" rule="191.234.72.183" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_191.234.72.186" rule="191.234.72.186" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_191.234.72.188" rule="191.234.72.188" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_191.234.72.190" rule="191.234.72.190" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_207.46.114.58" rule="207.46.114.58" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="update_207.46.114.61" rule="207.46.114.61" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
 </root>
