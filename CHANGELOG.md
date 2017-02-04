@@ -1,3 +1,8 @@
+v1.4.1 (4 February 2017)
+- fixed suspended drop event callback (critical)
+- fixed suspended apply filters thread (critical)
+- fixed purge unused apps
+
 v1.4.0 (31 January 2017)
 * revert original project name
 + added mode changing confirmation
