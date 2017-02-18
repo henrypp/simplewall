@@ -1,3 +1,10 @@
+v1.4.2 (19 February 2017)
++ added hints to rules pages
+- fixed filter creation for nonexistent apps (critical)
+- fixed resource definition
+- fixed purge unused apps
+- cosmetic changes about rules tooltip
+
 v1.4.1 (4 February 2017)
 - fixed suspended drop event callback (critical)
 - fixed suspended apply filters thread (critical)
