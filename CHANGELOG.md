@@ -1,3 +1,12 @@
+v1.4.3 (27 March 2017)
++ added provider information into the log/notifications
++ added displaying error messages on filters configuration via tray popup
+- fixed link processing in settings window
+- cosmetic changes about debug error messages
+- removed "nlatunicast" flag from loopback permissions
+- updated blocklist
+- code cleanup
+
 v1.4.2 (19 February 2017)
 + added hints to rules pages
 - fixed filter creation for nonexistent apps (critical)
