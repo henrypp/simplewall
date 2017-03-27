@@ -1,3 +1,10 @@
+v1.4.4 (28 March 2017)
++ added ipsec connections monitoring into the log (win8 and above)
+- cosmetic fixes about tray notifications
+- fixed dropped packets callback crash (critical)
+- fixed displaying tray notifications on win10
+- fixed possible duplicate filters
+
 v1.4.3 (27 March 2017)
 + added provider information into the log/notifications
 + added displaying error messages on filters configuration via tray popup
