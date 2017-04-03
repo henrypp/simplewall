@@ -1,3 +1,9 @@
+v1.4.5 (4 April 2017)
++ added pico support (subsystem for unix-based applications) for win10
++ added l2tp/ipsec for system rules
++ added localhost for custom rules
+- fixed access denied for some self protected applications (like "ekrn.exe" for nod32)
+
 v1.4.4 (28 March 2017)
 + added ipsec connections monitoring into the log (win8 and above)
 - cosmetic fixes about tray notifications
