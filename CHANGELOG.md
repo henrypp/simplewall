@@ -1,3 +1,8 @@
+v1.4.6 (5 April 2017)
++ added write error logs into a file feature
+- updated translations
+- fixed bugs
+
 v1.4.5 (4 April 2017)
 + added pico support (subsystem for unix-based applications) for win10
 + added l2tp/ipsec for system rules

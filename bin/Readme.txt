@@ -6,6 +6,7 @@ Features:
 - Simple interface without annoying pop ups
 - Dropped packets logging (Windows 7 and above)
 - Internal blocklist (block Windows spy / telemetry)
+- Custom blocklist (your own rules)
 - Free and open source
 - Localization support
 - IPv4/IPv6 support
