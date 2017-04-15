@@ -18,7 +18,7 @@
 #define PUGIXML_WCHAR_MODE
 
 // Uncomment this to enable compact mode
-#define PUGIXML_COMPACT
+// #define PUGIXML_COMPACT
 
 // Uncomment this to disable XPath
 #define PUGIXML_NO_XPATH

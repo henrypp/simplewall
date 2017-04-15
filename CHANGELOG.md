@@ -1,3 +1,28 @@
+v1.5 (15 April 2017)
++ added index flag to the filters, to help enable faster lookup during classification (win8 and above)
++ added app container loopback traffic permission (win8 and above)
++ added "allow listen connections for all" config
++ added ctrl+f4 hotkey to hide main window (request)
++ added loopback indication for dropped packets log
+- copy real path instead display path on copy command in main window listview
+- do not show dropped packets notifications when filters are not installed
+- if boot-time filters enabled then apply system rules for boot-time too
+- custom rules for apps does not saved sometimes
+- removed running without admin rights feature
+- changed notification about errors logic
+- cosmetic fixes for tooltips
+- fixed disabling windows firewall on some systems
+- fixed settings tabstop doesn't work
+- fixed incorrect listview icons for some apps
+- fixed process list some apps have no icons
+- fixed possible duplicate filters
+- fixed purge unused apps
+- stability improvements
+- updated translations
+- updated system rules
+- updated pugixml
+- fixed bugs
+
 v1.4.6 (5 April 2017)
 + added write error logs into a file feature
 - updated translations
