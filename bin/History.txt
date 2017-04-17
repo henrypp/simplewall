@@ -1,3 +1,11 @@
+v1.5.1 (17 April 2017)
++ added remember window position and size feature
++ added "enable errors notifications" config
++ added f11 hotkey for maximize window
+- disable wow64 filesystem redirection
+- changed error log notification text
+- fixed possible memory leak
+
 v1.5 (15 April 2017)
 + added index flag to the filters, to help enable faster lookup during classification (win8 and above)
 + added app container loopback traffic permission (win8 and above)
