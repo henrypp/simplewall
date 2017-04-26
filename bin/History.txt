@@ -1,3 +1,14 @@
+v1.5.2 (27 April 2017)
+- fixed dropped packets log spinlock cannot be unlocked (critical)
+- fixed displaying "file not found" errors
+- restore listview selection after application delete
+- disable main button on filters installation
+- improved shutting down windows firewall feature
+- removed unnecessary whitespace trims
+- optimized window resizing
+- updated to the latest sdk
+- fixed bugs
+
 v1.5.1 (17 April 2017)
 + added remember window position and size feature
 + added "enable errors notifications" config
