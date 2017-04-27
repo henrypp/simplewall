@@ -1,3 +1,7 @@
+v1.5.3 (27 April 2017)
+- fixed restoring windows firewall state
+- fixed incorrect size restoring sometimes
+
 v1.5.2 (27 April 2017)
 - fixed dropped packets log spinlock cannot be unlocked (critical)
 - fixed displaying "file not found" errors
