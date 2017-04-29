@@ -143,7 +143,7 @@
       </EnableCOMDATFolding>
       <LargeAddressAware>true</LargeAddressAware>
       <SubSystem>Windows</SubSystem>
-      <MinimumRequiredVersion>5.1</MinimumRequiredVersion>
+      <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
       <TurnOffAssemblyGeneration>
       </TurnOffAssemblyGeneration>
       <ImageHasSafeExceptionHandlers>
@@ -187,7 +187,7 @@
       <ImageHasSafeExceptionHandlers>
       </ImageHasSafeExceptionHandlers>
       <AdditionalOptions>/OPT:NOLBR %(AdditionalOptions)</AdditionalOptions>
-      <MinimumRequiredVersion>5.2</MinimumRequiredVersion>
+      <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -196,7 +196,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
-      <Optimization>Full</Optimization>
+      <Optimization>MinSpace</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>
@@ -217,6 +217,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <TreatWarningAsError>true</TreatWarningAsError>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>No</GenerateDebugInformation>
@@ -228,7 +229,7 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <LargeAddressAware>true</LargeAddressAware>
       <SubSystem>Windows</SubSystem>
-      <MinimumRequiredVersion>5.1</MinimumRequiredVersion>
+      <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
       <TurnOffAssemblyGeneration>
       </TurnOffAssemblyGeneration>
       <ImageHasSafeExceptionHandlers>
@@ -239,7 +240,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
-      <Optimization>Full</Optimization>
+      <Optimization>MinSpace</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>
@@ -260,6 +261,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <TreatWarningAsError>true</TreatWarningAsError>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>No</GenerateDebugInformation>
@@ -276,7 +278,7 @@
       <ImageHasSafeExceptionHandlers>
       </ImageHasSafeExceptionHandlers>
       <AdditionalOptions>/OPT:NOLBR %(AdditionalOptions)</AdditionalOptions>
-      <MinimumRequiredVersion>5.2</MinimumRequiredVersion>
+      <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
