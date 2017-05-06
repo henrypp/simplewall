@@ -1,3 +1,12 @@
+v1.5.5 (6 May 2017)
++ added installer
++ added static wfp session key
++ copy filter name if description is not available for dropped packets log
+- revert trim rules back (request)
+- fixed index flag cannot be set (win8 and above)
+- removed "file not found" xml parsing errors
+- fixed ui bugs
+
 v1.5.4 (30 April 2017)
 - trim executable version string
 - fixed filters uninstallation
