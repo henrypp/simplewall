@@ -1,10 +1,26 @@
+v1.6 (19 May 2017)
++ added prevent port scanning option
++ added acl (access control list) to the engine
++ added gridline for the listview config
++ added item into the custom rules menu for open rules editor
++ added version-independent network events api call (win7 and above)
++ added dropped packets log file size limit to 1mb (win7 and above)
++ reset windows firewall to its initial state when restore it back
++ blocklist marked as experimental
+- removed custom rules from package
+- fixed dropped packets logging stop sometimes (win7 and above)
+- fixed removing custom rules
+- fixed classic ui
+- fixed bugs
+- ui fixes
+
 v1.5.5 (6 May 2017)
 + added installer
 + added static wfp session key
 + copy filter name if description is not available for dropped packets log
+- removed "file not found" xml parsing errors
 - revert trim rules back (request)
 - fixed index flag cannot be set (win8 and above)
-- removed "file not found" xml parsing errors
 - fixed ui bugs
 
 v1.5.4 (30 April 2017)
