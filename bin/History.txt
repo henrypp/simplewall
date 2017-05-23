@@ -1,3 +1,10 @@
+v1.6.1 (23 May 2017)
++ added username and domain information to the window title
++ added configuration refresh on user logon
+- removed static wfp session key (request)
+- fixed com library initialization
+- fixed incorrect return value on file not found error
+
 v1.6 (19 May 2017)
 + added prevent port scanning option
 + added acl (access control list) to the engine
