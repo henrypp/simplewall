@@ -1,3 +1,12 @@
+v1.6.2 (24 May 2017)
++ create filter even if file doesn't exists (drive must be mounted)
++ allow inbound & listen traffic only if stealth-mode does not enabled
++ added required rules for the ipv6 stack to work properly
++ stealth-mode marked as experimental
+- fixed com library initialization (again!)
+- fixed stealth-mode
+- fixed bugs
+
 v1.6.1 (23 May 2017)
 + added username and domain information to the window title
 + added configuration refresh on user logon
@@ -6,7 +15,7 @@ v1.6.1 (23 May 2017)
 - fixed incorrect return value on file not found error
 
 v1.6 (19 May 2017)
-+ added prevent port scanning option
++ added stealth-mode (to prevent udp/tcp port scanning)
 + added acl (access control list) to the engine
 + added gridline for the listview config
 + added item into the custom rules menu for open rules editor
