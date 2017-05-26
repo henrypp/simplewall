@@ -1,3 +1,12 @@
+v1.6.3 (27 May 2017)
++ generate unique session key at startup
+- fixed custom app rules crash on delete
+- fixed lookup account sid length mismatch
+- fixed dropped packets logging crash (win7 and above)
+- stability improvements
+- updated system rules
+- fixed bugs
+
 v1.6.2 (24 May 2017)
 + create filter even if file doesn't exists (drive must be mounted)
 + allow inbound & listen traffic only if stealth-mode does not enabled
