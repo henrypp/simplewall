@@ -1,7 +1,7 @@
 <!-- Rules to block Windows spy / telemetry -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
 
-<!-- Last-Modified: Wed, 24 May 2017 07:21:45 +0000 -->
+<!-- Last-Modified: Mon, 29 May 2017 14:30:26 +0000 -->
 
 <?xml version="1.0"?>
 <root>
@@ -13,6 +13,7 @@
 	<item name="extra_40.118.103.7" rule="40.118.103.7" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
 	<item name="extra_40.118.106.130" rule="40.118.106.130" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
 	<item name="extra_64.4.54.22" rule="64.4.54.22" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
+	<item name="extra_64.4.54.32" rule="64.4.54.32" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
 	<item name="extra_65.52.98.231" rule="65.52.98.231" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
 	<item name="extra_65.52.100.11" rule="65.52.100.11" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
 	<item name="extra_65.52.100.93" rule="65.52.100.93" dir="0" protocol="0" version="0" is_block="1" is_enabled="0" />
@@ -89,7 +90,6 @@
 	<item name="spy_64.4.6.100" rule="64.4.6.100" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_64.4.23.0-64.4.23.255" rule="64.4.23.0-64.4.23.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_64.4.27.50" rule="64.4.27.50" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
-	<item name="spy_64.4.54.0-64.4.54.255" rule="64.4.54.0-64.4.54.255" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_64.4.54.253" rule="64.4.54.253" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_64.4.54.254" rule="64.4.54.254" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_64.233.164.188" rule="64.233.164.188" dir="0" protocol="0" version="0" is_block="1" is_enabled="1" />
