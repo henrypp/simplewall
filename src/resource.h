@@ -376,6 +376,10 @@
 
 #define IDS_STATUS_ERROR 10006
 
+// RC data
+#define IDR_RULES_BLOCKLIST 1
+#define IDR_RULES_SYSTEM 2
+
 // Icons
 #define IDI_MAIN 100
 #define IDI_INACTIVE 101

@@ -1,3 +1,11 @@
+v1.6.4 (31 May 2017)
++ added fallback if blocklist and/or system rules not found
++ added more dropped events logging (win7 and above)
+- fixed dropped events subscription duplicate (win7 and above)
+- fixed run as admin does not work sometimes
+- updated blocklist
+- fixed bugs
+
 v1.6.3 (27 May 2017)
 + generate unique session key at startup
 - fixed custom app rules crash on delete
