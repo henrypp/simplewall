@@ -1,5 +1,6 @@
 v1.6.5 (1 June 2017)
 + do not block listen connections on stealth-mode
++ do not block listen connections on boot-time
 - fixed dropped events does not shutdown on exit (win7 and above)
 - fixed memory leak
 
