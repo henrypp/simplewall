@@ -1,3 +1,8 @@
+v1.6.5 (1 June 2017)
++ do not block listen connections on stealth-mode
+- fixed dropped events does not shutdown on exit (win7 and above)
+- fixed memory leak
+
 v1.6.4 (31 May 2017)
 + added fallback if blocklist and/or system rules not found
 + added more dropped events logging (win7 and above)
