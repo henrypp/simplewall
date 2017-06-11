@@ -9,7 +9,7 @@ Features:
 - Custom blocklist (your own rules)
 - Free and open source
 - Localization support
-- IPv4/IPv6 support
+- IPv6 support
 
 You can download either the installer or portable version. For correct working, need administrator rights.
 
