@@ -2522,7 +2522,7 @@ size_t _app_notifygetcurrent ()
 	if (count)
 	{
 		if (count == 1)
-			return 1;
+			return 0;
 
 		const size_t idx = (size_t)GetWindowLongPtr (config.hnotification, GWLP_USERDATA);
 

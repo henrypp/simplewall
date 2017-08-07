@@ -1,3 +1,6 @@
+v2.0.2b (7 August 2017)
+- fixed incorrect vector index
+
 v2.0.1b (7 August 2017)
 + added update checking for new beta version
 + added flush dns cache after filters applied
