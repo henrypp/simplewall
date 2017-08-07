@@ -1,6 +1,6 @@
-simplewall
+## simplewall
 
-How it works:
+#### How it works:
 The simplewall is implemented through WFP (Windows Filtering Platform) at user-mode level (no drivers etc.)
 
 *********************
