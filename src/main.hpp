@@ -61,7 +61,7 @@
 
 // memory limitation
 #define RULE_NAME_CCH_MAX 64
-#define RULE_RULE_CCH_MAX 512
+#define RULE_RULE_CCH_MAX 256
 #define RULE_APPS_CCH_MAX 2048
 
 // libs

@@ -2536,12 +2536,18 @@ VOID _app_notifyremove (const size_t idx)
 {
 	ITEM_LOG* ptr = notifications.at (idx);
 
-	if (ptr->hicon)
-		DestroyIcon (ptr->hicon);
+	if (ptr)
+	{
+		if (ptr->hicon)
+		{
+			DestroyIcon (ptr->hicon);
+			ptr->hicon = nullptr;
+		}
 
-	SecureZeroMemory (ptr, sizeof (ITEM_LOG));
-	free (ptr);
-	ptr = nullptr;
+		SecureZeroMemory (ptr, sizeof (ITEM_LOG));
+		free (ptr);
+		ptr = nullptr;
+	}
 
 	notifications.erase (notifications.begin () + idx);
 }
@@ -2562,7 +2568,7 @@ VOID _app_notifycommand (HWND hwnd, BOOL is_block)
 		hash = ptr->hash;
 
 		if (IsDlgButtonChecked (hwnd, IDC_DISABLENOTIFY_ID))
-			apps[ptr->hash].is_silent = true;
+			apps[hash].is_silent = true;
 
 		if (!is_block)
 		{
@@ -2607,40 +2613,43 @@ VOID _app_notifycommand (HWND hwnd, BOOL is_block)
 					// create rule
 					ITEM_RULE* rule_ptr = (ITEM_RULE*)malloc (sizeof (ITEM_RULE));
 
-					SecureZeroMemory (rule_ptr, sizeof (ITEM_RULE));
+					if (rule_ptr)
+					{
+						SecureZeroMemory (rule_ptr, sizeof (ITEM_RULE));
 
-					const size_t name_length = min (wcslen (rule), RULE_NAME_CCH_MAX) + 1;
-					const size_t path_length = min (wcslen (ptr->full_path), RULE_APPS_CCH_MAX) + 1;
+						const size_t name_length = min (wcslen (rule), RULE_NAME_CCH_MAX) + 1;
+						const size_t path_length = min (wcslen (ptr->full_path), RULE_APPS_CCH_MAX) + 1;
 
-					rule_ptr->name = (LPWSTR)malloc ((name_length + 1) * sizeof (WCHAR));
-					rule_ptr->rule = (LPWSTR)malloc ((rule_length + 1) * sizeof (WCHAR));
-					rule_ptr->apps = (LPWSTR)malloc ((path_length + 1) * sizeof (WCHAR));
+						rule_ptr->name = (LPWSTR)malloc ((name_length + 1) * sizeof (WCHAR));
+						rule_ptr->rule = (LPWSTR)malloc ((rule_length + 1) * sizeof (WCHAR));
+						rule_ptr->apps = (LPWSTR)malloc ((path_length + 1) * sizeof (WCHAR));
 
-					StringCchCopy (rule_ptr->name, name_length + 1, rule);
-					StringCchCopy (rule_ptr->rule, rule_length + 1, rule);
-					StringCchCopy (rule_ptr->apps, path_length + 1, ptr->full_path);
+						StringCchCopy (rule_ptr->name, name_length + 1, rule);
+						StringCchCopy (rule_ptr->rule, rule_length + 1, rule);
+						StringCchCopy (rule_ptr->apps, path_length + 1, ptr->full_path);
 
-					//rule_ptr->protocol = ptr->protocol8;
-					rule_ptr->dir = (ptr->direction == FWP_DIRECTION_IN) ? DirInbound : DirOutbound;
-					rule_ptr->is_block = false;
-					rule_ptr->is_enabled = false;
+						//rule_ptr->protocol = ptr->protocol8;
+						rule_ptr->dir = (ptr->direction == FWP_DIRECTION_IN) ? DirInbound : DirOutbound;
+						rule_ptr->is_block = false;
+						rule_ptr->is_enabled = false;
 
-					rule_id = rules_custom.size ();
-					rules_custom.push_back (rule_ptr);
+						rule_id = rules_custom.size ();
+						rules_custom.push_back (rule_ptr);
+					}
 				}
 				else
 				{
 					// modify rule
 				}
 
-				apps_rules[ptr->hash].push_back (rule_id);
+				apps_rules[hash].push_back (rule_id);
 			}
 			else
 			{
 				// allow entire app
-				apps[ptr->hash].is_enabled = true;
+				apps[hash].is_enabled = true;
 
-				_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), ptr->hash), TRUE);
+				_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), hash), TRUE);
 			}
 
 			SetEvent (config.install_evt);
@@ -2648,9 +2657,9 @@ VOID _app_notifycommand (HWND hwnd, BOOL is_block)
 		else
 		{
 			// block entire app
-			//apps[ptr->hash].is_enabled = false;
+			//apps[hash].is_enabled = false;
 
-			//_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), ptr->hash), FALSE);
+			//_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), hash), FALSE);
 		}
 
 		_app_profilesave (app.GetHWND ());
@@ -2667,7 +2676,7 @@ VOID _app_notifycommand (HWND hwnd, BOOL is_block)
 
 		for (size_t i = 0; i < notifications.size (); i++)
 		{
-			ITEM_LOG* p = notifications.at (i);
+			ITEM_LOG const* p = notifications.at (i);
 
 			if (p && p->hash == hash)
 			{
@@ -2677,7 +2686,7 @@ VOID _app_notifycommand (HWND hwnd, BOOL is_block)
 
 		for (size_t i = 0; i < idx_array.size (); i++)
 		{
-			_app_notifyremove (idx_array.at (i));
+			_app_notifyremove (i);
 		}
 	}
 
