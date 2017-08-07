@@ -1,0 +1,5 @@
+How it works:
+The simplewall is implemented through WFP (Windows Filtering Platform) at user-mode level (no drivers etc.)
+
+*********************
+Only in final version

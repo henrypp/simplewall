@@ -126,13 +126,14 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>false</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_APP_BETA;_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>
       </MinimalRebuild>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <CompileAs>Default</CompileAs>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
@@ -165,13 +166,14 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>false</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_APP_BETA;_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>
       </MinimalRebuild>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <CompileAs>Default</CompileAs>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
@@ -210,7 +212,7 @@
       <MinimalRebuild>
       </MinimalRebuild>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_APP_BETA;_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
@@ -218,6 +220,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <CompileAs>Default</CompileAs>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>No</GenerateDebugInformation>
@@ -255,13 +258,14 @@
       <MinimalRebuild>
       </MinimalRebuild>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_APP_BETA;_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <TreatWarningAsError>true</TreatWarningAsError>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <CompileAs>Default</CompileAs>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>No</GenerateDebugInformation>
@@ -292,14 +296,15 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\routine\rapp.h" />
-    <ClInclude Include="..\routine\rconfig.h" />
-    <ClInclude Include="..\routine\routine.h" />
-    <ClInclude Include="..\routine\rstring.h" />
+    <ClInclude Include="..\routine\rapp.hpp" />
+    <ClInclude Include="..\routine\rconfig.hpp" />
+    <ClInclude Include="..\routine\routine.hpp" />
+    <ClInclude Include="..\routine\rstring.hpp" />
+    <ClInclude Include="src\app.hpp" />
     <ClInclude Include="src\include\pugixml\pugiconfig.hpp" />
     <ClInclude Include="src\include\pugixml\pugixml.hpp" />
-    <ClInclude Include="src\main.h" />
-    <ClInclude Include="src\resource.h" />
+    <ClInclude Include="src\main.hpp" />
+    <ClInclude Include="src\resource.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="src\resource.rc" />

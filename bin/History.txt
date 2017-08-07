@@ -1,3 +1,39 @@
+v2.0.1b (7 August 2017)
++ added update checking for new beta version
++ added flush dns cache after filters applied
++ set max prefix length for ipv6 addresses to 64
++ new rules editor interface
++ changed minimum width for a main window
+- fixed running with "/minimized" argument under uac
+- updated localization
+- fixed bugs
+
+v2.0b (1 August 2017)
++ new notification ui
++ show notifications only for whitelist mode
++ allow listen connections for all is enabled by default
++ added import custom rules from file feature
++ added support to load large xml files
++ added more information into the main window
++ added apps grouping (allowed/blocked)
++ added custom rules syntax checking
++ added support dns resolution for custom rules
++ added resolving shortcut path
++ added notification display timeout config
++ save internal rules configuration into xml
++ purgen remove only apps with errors
++ minimized dropped packets log size (union remote and local address information)
++ minimized memory usage
+- removed "trust no one" mode
+- updated system rules
+- updated blocklist
+- fixed dropped packets logging hibernation (win7 and above)
+- fixed remember windows size and position sometimes
+- fixed version string trimming
+- fixed ui bugs
+- fixed memory leaks
+- fixed bugs
+
 v1.6.5 (1 June 2017)
 + do not block listen connections on stealth-mode
 + do not block listen connections on boot-time
