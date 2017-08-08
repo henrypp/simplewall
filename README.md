@@ -1,6 +1,9 @@
 ## simplewall
 
-![simplewall](http://www.henrypp.org/images/simplewall.jpg?cachefix)
+<p align="center"> 
+<img src="http://www.henrypp.org/images/simplewall.jpg?cachefix">
+</p>
+
 
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
 
