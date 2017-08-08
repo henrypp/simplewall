@@ -20,5 +20,6 @@ To activate portable mode, create "simplewall.ini" in application folder, or mov
 
 Website: www.henrypp.org<br />
 Support: support@henrypp.org<br />
+Donations: [Blockchain (BTC)](https://blockchain.info/address/1LrRTXPsvHcQWCNZotA9RcwjsGcRghG96c) or [PayPal (USD)](https://www.paypal.me/henrypp/15)<br />
 <br />
 (c) 2016, 2017 Henry++
