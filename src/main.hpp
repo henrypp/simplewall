@@ -103,11 +103,21 @@ extern "C" {
 };
 
 // enums
-enum EnumDirection
+enum EnumRuleDirection
 {
 	DirOutbound,
 	DirInbound,
 	DirBoth,
+};
+
+enum EnumRuleType
+{
+	TypeUnknown = 0,
+	TypeHost = 1,
+	TypeIp = 2,
+	TypePort = 4,
+	//TypeIpRange = 4,
+	//TypePortRange = 5,
 };
 
 enum EnumMode
@@ -143,6 +153,7 @@ struct STATIC_DATA
 	HANDLE install_evt = nullptr;
 	HANDLE destroy_evt = nullptr;
 	HANDLE stop_evt = nullptr;
+	HANDLE finish_evt = nullptr;
 
 	WCHAR title[128] = {0};
 	WCHAR apps_path[MAX_PATH] = {0};
@@ -164,7 +175,6 @@ struct STATIC_DATA
 	volatile LONG lock_access = 0;
 	volatile LONG lock_apply = 0;
 	volatile LONG lock_writelog = 0;
-	volatile LONG lock_writestate = 0;
 };
 
 struct ITEM_APPLICATION
@@ -193,13 +203,14 @@ struct ITEM_APPLICATION
 
 struct ITEM_RULE
 {
-	EnumDirection dir = DirOutbound;
+	bool is_enabled = false;
+	bool is_block = false;
+
+	EnumRuleDirection dir = DirOutbound;
+	EnumRuleType type = TypeUnknown;
 
 	UINT8 protocol = 0;
 	ADDRESS_FAMILY version = AF_UNSPEC;
-
-	bool is_enabled = false;
-	bool is_block = false;
 
 	LPWSTR name = nullptr;
 	LPWSTR rule = nullptr;
@@ -209,9 +220,9 @@ struct ITEM_RULE
 
 struct ITEM_LOG
 {
-	size_t hash = 0;
-
 	bool is_loopback = false;
+
+	size_t hash = 0;
 
 	HICON hicon = nullptr;
 
@@ -266,14 +277,11 @@ struct ITEM_PROTOCOL
 	WCHAR t[16] = {0};
 };
 
-#define RULE_TYPE_PORT 1
-#define RULE_TYPE_PORT_RANGE 2
-#define RULE_TYPE_IP 3
-#define RULE_TYPE_IP_RANGE 4
-
 struct ITEM_ADDRESS
 {
-	USHORT type = 0;
+	bool is_range = false;
+
+	EnumRuleType type = TypeUnknown;
 
 	NET_ADDRESS_FORMAT format;
 

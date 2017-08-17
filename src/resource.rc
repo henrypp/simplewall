@@ -34,6 +34,11 @@ IDM_MAIN MENU
 {
 	POPUP " "
 	{
+		MENUITEM " ", IDM_ADD_FILE
+		MENUITEM SEPARATOR
+		MENUITEM " ", IDM_IMPORT
+		MENUITEM " ", IDM_EXPORT
+		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_EXIT
 	}
 	POPUP " "
@@ -99,11 +104,6 @@ IDM_MAIN MENU
 		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_SETTINGS
 	}
-	//POPUP "Service"
-	//{
-	//	MENUITEM "Windows Firewall", IDM_WEBSITE
-	//	MENUITEM SEPARATOR
-	//}
 	POPUP " "
 	{
 		MENUITEM " ", IDM_WEBSITE
@@ -437,6 +437,7 @@ STRINGTABLE
 	IDS_EDIT2 "Edit..."
 	IDS_DELETE "Delete"
 	IDS_IMPORT "Import..."
+	IDS_EXPORT "Export..."
 
 	IDS_MODE_WHITELIST "White list (allow selected)"
 	IDS_MODE_BLACKLIST "Black list (block selected)"
@@ -481,7 +482,7 @@ STRINGTABLE
 
 	IDS_RULES_HELP "Ip: 192.168.0.1\r\nIP with port: 192.168.0.1:80\r\nIP range: 192.168.0.1-192.168.0.55\r\nIP with prefix length (CIDR): 192.168.0.1/16\r\nHost: www.example.com\r\nHost with port: www.example.com:80\r\nPorts: 21, 21-44\r\n\r\n<a href=""https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xml"">Service name and port number registry</a>\r\n<a href=""https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#IPv4_CIDR_blocks"">Classless Inter-Domain Routing (CIDR) prefixes</a>"
 
-	IDS_ENABLED_CHK "Enabled"
+	IDS_ENABLED_CHK "Enable"
 
 	IDS_SETTINGS_1 "General"
 	IDS_SETTINGS_3 "Interface"
@@ -538,9 +539,10 @@ STRINGTABLE
 	IDS_RULES_SYSTEM_HINT "Predefined rules applied for system services and protocols."
 	IDS_RULES_CUSTOM_HINT "Custom rules with high priority."
 
-	IDS_NOTIFY_CREATERULEFORADDRESS "Create a rule to allow connection for ""%s"" address"
-	IDS_NOTIFY_CREATERULEFORPORT "Create a rule to allow connection for ""%d"" port"
-	IDS_NOTIFY_DISABLENOTIFICATIONSFOR "Disable notifications for ""%s"""
+	IDS_NOTIFY_CREATERULE_ADDRESS "Create a rule for ""%s"" address"
+	IDS_NOTIFY_CREATERULE_PORT "Create a rule for ""%d"" port"
+	IDS_NOTIFY_DISABLENOTIFICATIONS "Disable notifications for ""%s"""
+	IDS_NOTIFY_TOOLTIP "Create a rule to allow/block access to address and/or port for this application."
 
 	IDS_ALWAYSPERFORMTHISCHECK_CHK "Always perform this check"
 
@@ -559,8 +561,8 @@ STRINGTABLE
 //
 // RC data
 //
-IDR_RULES_BLOCKLIST			RCDATA		"res\\blocklist.xml"
-IDR_RULES_SYSTEM			RCDATA		"res\\rules_system.xml"
+IDR_RULES_BLOCKLIST			RCDATA		"..\\bin\\blocklist.xml"
+IDR_RULES_SYSTEM			RCDATA		"..\\bin\\rules_system.xml"
 
 //
 // Icon resources

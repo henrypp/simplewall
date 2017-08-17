@@ -1,7 +1,11 @@
 simplewall
 
-How it works:
+How it works?
 The simplewall is implemented through WFP (Windows Filtering Platform) at user-mode level (no drivers etc.)
+https://msdn.microsoft.com/en-us/library/windows/desktop/aa363967(v=vs.85).aspx
 
-*********************
-Only in final version
+Disabling of Windows Firewall is required?
+Yes.
+
+Did it compatible with Windows Firewall?
+Yes. simplewall installs and configure his own WFP (Windows Filtering Platform) provider, it means that simplewall does not change any of Windows Firewall configuration, but Windows Firewall filters have high priority and processed first, thats why you need disable Windows Firewall.

@@ -1,21 +1,21 @@
 <?xml version="1.0"?>
-<root timestamp="1495834818">
-	<item name="DHCP" rule="67-68" dir="2" protocol="17" version="2" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="1" />
-	<item name="DHCPv6" rule="546-547" dir="2" protocol="17" version="23" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="1" />
-	<item name="DNS+LLMNR" rule="53;5355" dir="2" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="1" />
-	<item name="FTP" rule="20-21;49152-65534" dir="0" protocol="6" version="0" is_block="0" is_enabled="0" />
+<root timestamp="1502832016">
+	<item name="DHCP" rule="67-68" dir="2" type="4" protocol="17" version="2" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="1" />
+	<item name="DHCPv6" rule="546-547" dir="2" type="4" protocol="17" version="23" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="1" />
+	<item name="DNS+LLMNR" rule="53;5355" dir="2" type="4" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="1" />
+	<item name="FTP" rule="20-21;49152-65534" dir="0" type="4" protocol="6" version="0" is_block="0" is_enabled="0" />
 	<item name="ICMP" rule="*" dir="0" protocol="1" version="0" is_block="0" is_enabled="0" />
 	<item name="ICMPv6" rule="*" dir="0" protocol="58" version="0" is_block="0" is_enabled="0" />
-	<item name="IGMP" rule="224.0.0.0/4" dir="0" protocol="2" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
-	<item name="L2TP/IPsec" rule="500;1701;4500" dir="2" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
-	<item name="NetBIOS" rule="137-139" dir="2" protocol="17" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
-	<item name="NTP" rule="123" dir="0" protocol="17" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
-	<item name="POP3/IMAP/SMTP" rule="110;995;143;993;25;2525;465" dir="0" protocol="6" version="0" is_block="0" is_enabled="0" />
-	<item name="RDP" rule="3389" dir="1" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
-	<item name="SMB (shared network)" rule="445;3702" dir="2" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
-	<item name="SNMP" rule="161-162" dir="2" protocol="17" version="0" apps="System;%systemroot%\system32\svchost.exe;%systemroot%\system32\spoolsv.exe" is_block="0" is_enabled="0" />
-	<item name="SSDP (UPnP)" rule="1900" dir="2" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
-	<item name="SSH (SFTP)" rule="22" dir="0" protocol="6" version="0" is_block="0" is_enabled="0" />
-	<item name="Telnet" rule="23" dir="0" protocol="6" version="0" is_block="0" is_enabled="0" />
-	<item name="Windows Update" rule="80;443" dir="2" protocol="6" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
+	<item name="IGMP" rule="224.0.0.0/4" dir="0" type="2" protocol="2" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
+	<item name="L2TP/IPsec" rule="500;1701;4500" dir="2" type="4" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
+	<item name="NetBIOS" rule="137-139" dir="2" type="4" protocol="17" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
+	<item name="NTP" rule="123" dir="0" type="4" protocol="17" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
+	<item name="POP3/IMAP/SMTP" rule="110;995;143;993;25;2525;465" dir="0" type="4" protocol="6" version="0" is_block="0" is_enabled="0" />
+	<item name="RDP" rule="3389" dir="1" type="4" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
+	<item name="SMB (shared network)" rule="445;3702" dir="2" type="4" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
+	<item name="SNMP" rule="161-162" dir="2" type="4" protocol="17" version="0" apps="System;%systemroot%\system32\svchost.exe;%systemroot%\system32\spoolsv.exe" is_block="0" is_enabled="0" />
+	<item name="SSDP (UPnP)" rule="1900" dir="2" type="4" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
+	<item name="SSH (SFTP)" rule="22" dir="0" type="4" protocol="6" version="0" is_block="0" is_enabled="0" />
+	<item name="Telnet" rule="23" dir="0" type="4" protocol="6" version="0" is_block="0" is_enabled="0" />
+	<item name="Windows Update" rule="80;443" dir="2" type="4" protocol="6" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="0" is_enabled="0" />
 </root>

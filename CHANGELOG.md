@@ -1,7 +1,25 @@
-v2.0.2b (7 August 2017)
+v2.0.3 Beta (17 August 2017)
++ added import/export applications list feature
++ added mode selection into installation dialog
++ added tooltips into the notifications ui
++ added remembering collapsed state for the listview groups
++ increased internal rules loading speed (please update blocklist.xml and rules_system.xml to latest versions)
++ increased rules list icons size
+- changed default sorting configuration
+- fixed notifications ui logic
+- fixed filters installation state flag
+- fixed support some domains
+- fixed carriage return type for rules_system.xml
+- fixed thread spinlock
+- updated localization
+- updated project sdk
+- updated blocklist
+- fixed bugs
+
+v2.0.2 Beta (7 August 2017)
 - fixed incorrect vector index
 
-v2.0.1b (7 August 2017)
+v2.0.1 Beta (7 August 2017)
 + added update checking for new beta version
 + added flush dns cache after filters applied
 + set max prefix length for ipv6 addresses to 64
@@ -11,7 +29,7 @@ v2.0.1b (7 August 2017)
 - updated localization
 - fixed bugs
 
-v2.0b (1 August 2017)
+v2.0 Beta (1 August 2017)
 + new notification ui
 + show notifications only for whitelist mode
 + allow listen connections for all is enabled by default
