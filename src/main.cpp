@@ -7146,8 +7146,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					rstring buffer;
 
-					_R_SPINLOCK (config.lock_access);
-
 					while ((item = (INT)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != -1)
 					{
 						const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
@@ -7179,13 +7177,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 							else if (LOWORD (wparam) == IDM_CHECK || LOWORD (wparam) == IDM_UNCHECK)
 							{
-								ptr->is_enabled = (LOWORD (wparam) == IDM_CHECK) ? TRUE : FALSE;
+								ptr->is_enabled = (LOWORD (wparam) == IDM_CHECK) ? true : false;
 								_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, LOWORD (wparam) == IDM_CHECK ? TRUE : FALSE);
 							}
 						}
 					}
-
-					_R_SPINUNLOCK (config.lock_access);
 
 					if (LOWORD (wparam) == IDM_DISABLENOTIFICATIONS)
 					{
