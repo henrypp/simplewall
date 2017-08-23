@@ -21,6 +21,12 @@
 #define PATH_NTOSKRNL L"%systemroot%\\system32\\ntoskrnl.exe"
 #define PATH_SVCHOST L"%systemroot%\\system32\\svchost.exe"
 
+#define XML_APPS L"apps.xml"
+#define XML_BLOCKLIST L"blocklist.xml"
+#define XML_RULES_CONFIG L"rules_config.xml"
+#define XML_RULES_CUSTOM L"rules_custom.xml"
+#define XML_RULES_SYSTEM L"rules_system.xml"
+
 #define NA_TEXT L"<empty>"
 #define TAB_SPACE L"   "
 #define ERR_FORMAT L"%s() failed with error code 0x%.8lx (%s)"

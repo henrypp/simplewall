@@ -1,3 +1,11 @@
+v2.0.4 Beta (23 August 2017)
++ added grouping for rules
+- removed listen connections blocking feature
+- improved import/export xml database
+- fixed open rules editor action in main window
+- fixed crash on delete rules
+- fixed bugs
+
 v2.0.3 Beta (17 August 2017)
 + added import/export applications list feature
 + added mode selection into installation dialog
