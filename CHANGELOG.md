@@ -4,6 +4,7 @@ v2.0.4 Beta (23 August 2017)
 - improved import/export xml database
 - fixed open rules editor action in main window
 - fixed crash on delete rules
+- fixed ui bugs
 - fixed bugs
 
 v2.0.3 Beta (17 August 2017)
