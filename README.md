@@ -1,6 +1,6 @@
 ## simplewall
 
-![simplewall](http://www.henrypp.org/images/simplewall.png)
+![simplewall](https://www.henrypp.org/images/simplewall.png)
 
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
 
@@ -20,7 +20,7 @@ You can download either the installer or portable version. For correct working, 
 To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
 ```
 
-Website: www.henrypp.org<br />
+Website: [www.henrypp.org](https://www.henrypp.org)<br />
 Support: support@henrypp.org<br />
 <br />
 (c) 2016, 2017 Henry++
