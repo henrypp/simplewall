@@ -122,8 +122,6 @@ enum EnumRuleType
 	TypeHost = 1,
 	TypeIp = 2,
 	TypePort = 4,
-	//TypeIpRange = 4,
-	//TypePortRange = 5,
 };
 
 enum EnumMode
@@ -140,7 +138,6 @@ struct STATIC_DATA
 	GUID* psession = nullptr;
 
 	bool is_securityinfoset = false;
-
 	bool is_filtersinstalled = false;
 	bool is_firstapply = false;
 	bool is_popuperrors = false;
@@ -178,7 +175,7 @@ struct STATIC_DATA
 
 	size_t ntoskrnl_hash = 0;
 
-	volatile LONG lock_access = 0;
+	//volatile LONG lock_access = 0;
 	volatile LONG lock_apply = 0;
 	volatile LONG lock_writelog = 0;
 };
@@ -257,8 +254,6 @@ struct ITEM_LOG
 
 struct ITEM_PROCESS
 {
-	HBITMAP hbmp = nullptr;
-
 	WCHAR display_path[64] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
 };

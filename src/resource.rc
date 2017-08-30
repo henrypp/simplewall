@@ -220,7 +220,7 @@ FONT 8, "Ms Shell Dlg"
 {
 	CONTROL			"", IDC_LISTVIEW, WC_LISTVIEW, NOT WS_BORDER | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SHAREIMAGELISTS, 0, 0, 308, 168
 
-	PUSHBUTTON		"", IDC_START_BTN, 8, 178, 94, 14
+	PUSHBUTTON		"", IDC_START_BTN, 8, 178, 100, 14
 	PUSHBUTTON		"", IDC_SETTINGS_BTN, 144, 178, 66, 14
 	PUSHBUTTON		"", IDC_EXIT_BTN, 214, 178, 66, 14
 
@@ -292,7 +292,7 @@ STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU | WS_TABSTOP
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Ms Shell Dlg"
 {
-	GROUPBOX		"", IDC_TITLE_7, 0, 0, 262, 128
+	GROUPBOX		"", IDC_TITLE_7, 0, 0, 262, 124
 
 	AUTOCHECKBOX	"", IDC_USEBLOCKLIST_CHK, 8, 14, 246, 10
 	LTEXT "", IDC_USEBLOCKLIST_HINT, 8, 28, 246, 18
@@ -303,10 +303,10 @@ FONT 8, "Ms Shell Dlg"
 	AUTOCHECKBOX	"", IDC_INSTALLBOOTTIMEFILTERS_CHK, 8, 86, 246, 10
 	LTEXT "", IDC_INSTALLBOOTTIMEFILTERS_HINT, 8, 100, 246, 18
 
-	GROUPBOX		"", IDC_TITLE_6, 0, 130, 262, 46
+	GROUPBOX		"", IDC_TITLE_6, 0, 126, 262, 50
 
-	AUTOCHECKBOX	"", IDC_RULE_ALLOWINBOUND, 8, 144, 246, 10
-	LTEXT "", IDC_RULE_ALLOWINBOUND_HINT, 8, 158, 246, 10
+	AUTOCHECKBOX	"", IDC_RULE_ALLOWINBOUND, 8, 140, 246, 10
+	LTEXT "", IDC_RULE_ALLOWINBOUND_HINT, 8, 154, 246, 16
 }
 
 IDD_SETTINGS_3 DIALOGEX 110, 8, 262, 176
@@ -395,6 +395,10 @@ STRINGTABLE
 	IDS_UPDATE_NO "No updates available."
 	IDS_UPDATE_YES "New version (%s) available. Open download page?"
 
+	IDS_DONATE "Donate"
+	IDS_DONATE_TEXT "Development is powered by your donations!"
+	IDS_SHOWATSTARTUP_CHK "Show at startup"
+
 	IDS_FILE "File"
 	IDS_SETTINGS "Settings"
 	IDS_EXIT "Exit"
@@ -411,7 +415,6 @@ STRINGTABLE
 	IDS_LANGUAGE "Language"
 	IDS_HELP "Help"
 	IDS_WEBSITE "Website"
-	IDS_DONATE "Donate"
 	IDS_CHECKUPDATES "Check for updates"
 	IDS_ABOUT "About"
 
@@ -481,6 +484,7 @@ STRINGTABLE
 	IDS_GROUP_BLOCKED "Blocked apps"
 
 	IDS_GROUP_ENABLED "Enabled rules"
+	IDS_GROUP_SPECIAL "Special rules"
 	IDS_GROUP_DISABLED "Disabled rules"
 
 	IDS_DIRECTION_1 "Outbound"
@@ -509,7 +513,7 @@ STRINGTABLE
 	IDS_TITLE_4 "Notifications:"
 	IDS_TITLE_5 "Highlighting:"
 	IDS_TITLE_6 "Advanced:"
-	IDS_TITLE_7 "Experimental:"
+	IDS_TITLE_7 "Experts-only:"
 
 	IDS_ALWAYSONTOP_CHK "Always on top"
 	IDS_LOADONSTARTUP_CHK "Load on system startup"
@@ -520,11 +524,11 @@ STRINGTABLE
 
 	IDS_LANGUAGE_HINT "Select language:"
 
-	IDS_USEBLOCKLIST_CHK "Enable blocklist (experimental)"
+	IDS_USEBLOCKLIST_CHK "Enable blocklist (experts-only)"
 	IDS_USEBLOCKLIST_HINT "Apply special rules to block spying in Windows. List of rules available in ""Blocklist"" page."
-	IDS_USESTEALTHMODE_CHK "Enable stealth-mode (experimental)"
+	IDS_USESTEALTHMODE_CHK "Enable stealth-mode (experts-only)"
 	IDS_USESTEALTHMODE_HINT "Prevent port scanning using silent drop inbound TCP RST and outbound ICMP ""Destination Unreachable"" to prevent UDP port scanning."
-	IDS_INSTALLBOOTTIMEFILTERS_CHK "Install boot-time filters (experimental)"
+	IDS_INSTALLBOOTTIMEFILTERS_CHK "Install boot-time filters (experts-only)"
 	IDS_INSTALLBOOTTIMEFILTERS_HINT "Prevent data leak during system startup, even before ""Base Filtering Engine"" (BFE) service starts."
 
 	IDS_DISABLEWINDOWSFIREWALL_CHK "Disable Windows Firewall (recommended)"
@@ -565,6 +569,8 @@ STRINGTABLE
 	IDS_QUESTION_EXIT "Do you really want to exit?"
 
 	IDS_STATUS_TOTAL "Total apps: %d"
+	IDS_STATUS_SELECTED "%d selected"
+
 	IDS_STATUS_EMPTY "<empty>"
 
 	IDS_STATUS_ERROR "Error occured, click here to see details or open log file in application directory!"

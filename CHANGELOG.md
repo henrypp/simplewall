@@ -1,3 +1,16 @@
+v2.0.5 Beta (30 August 2017)
++ added proxy support (win8 and above only)
++ added indication for inbound connections for all (when stealth-mode enabled)
++ added group for special rules (rules applied for apps)
++ added apps list selection indication
+- changed experimental settings mark into "for experts only"
+- removed process list menu icons
+- improved retrieving file path by handle
+- improved notifications ui
+- updated project sdk
+- fixed ui bugs
+- fixed bugs
+
 v2.0.4 Beta (23 August 2017)
 + added grouping for rules
 - removed listen connections blocking feature
