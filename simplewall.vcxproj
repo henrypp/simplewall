@@ -292,17 +292,16 @@
     <ClCompile Include="..\routine\rapp.cpp" />
     <ClCompile Include="..\routine\routine.cpp" />
     <ClCompile Include="..\routine\rstring.cpp" />
-    <ClCompile Include="src\include\pugixml\pugixml.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\pugixml\src\pugixml.hpp" />
     <ClInclude Include="..\routine\rapp.hpp" />
     <ClInclude Include="..\routine\rconfig.hpp" />
     <ClInclude Include="..\routine\routine.hpp" />
     <ClInclude Include="..\routine\rstring.hpp" />
     <ClInclude Include="src\app.hpp" />
     <ClInclude Include="src\include\pugixml\pugiconfig.hpp" />
-    <ClInclude Include="src\include\pugixml\pugixml.hpp" />
     <ClInclude Include="src\main.hpp" />
     <ClInclude Include="src\resource.hpp" />
   </ItemGroup>

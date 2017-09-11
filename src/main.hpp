@@ -34,7 +34,7 @@
 
 // notification timer
 #define NOTIFY_WIDTH 328
-#define NOTIFY_HEIGHT 246
+#define NOTIFY_HEIGHT 264
 #define NOTIFY_SPACER 6
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 #define NOTIFY_TIMER_ID 1524
@@ -51,11 +51,13 @@
 #define PUGIXML_SAVE_ENCODING (pugi::encoding_wchar)
 
 // default colors
-#define LISTVIEW_COLOR_CUSTOM RGB (255, 248, 202)
-#define LISTVIEW_COLOR_INVALID RGB (255, 192, 203)
+#define LISTVIEW_COLOR_SPECIAL RGB (255, 255, 170)
+#define LISTVIEW_COLOR_INVALID RGB (255, 125, 148)
 #define LISTVIEW_COLOR_NETWORK RGB (204, 187, 255)
+#define LISTVIEW_COLOR_PICO RGB (0, 128, 255)
+#define LISTVIEW_COLOR_SIGNED RGB (175, 228, 163)
 #define LISTVIEW_COLOR_SILENT RGB (181, 181, 181)
-#define LISTVIEW_COLOR_SYSTEM RGB(204, 255, 255)
+#define LISTVIEW_COLOR_SYSTEM RGB(170, 204, 255)
 
 // filter weights
 #define FILTER_WEIGHT_HIGHEST_IMPORTANT 0xF
@@ -71,6 +73,7 @@
 #define RULE_APPS_CCH_MAX 2048
 
 // libs
+#pragma comment(lib, "crypt32.lib")
 #pragma comment(lib, "dnsapi.lib")
 #pragma comment(lib, "fwpuclnt.lib")
 #pragma comment(lib, "iphlpapi.lib")
@@ -193,9 +196,11 @@ struct ITEM_APPLICATION
 	bool is_network = false;
 	bool is_system = false;
 	bool is_silent = false;
+	bool is_signed = false;
 	bool is_picoapp = false; // win10 and above
 
 	LPWSTR description = nullptr;
+	LPWSTR signer = nullptr;
 
 	WCHAR file_name[64] = {0};
 	WCHAR file_dir[MAX_PATH] = {0};

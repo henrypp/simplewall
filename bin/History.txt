@@ -1,3 +1,13 @@
+v2.0.6 Beta (11 September 2017)
++ added signature checking for apps
++ added set default language as in system
+- changed default listview colors
+- updated project sdk
+- fixed allowed apps cannot recieve any data from network (when stealth-mode enabled)
+- fixed retrieving nt path for reparse point files (issue #59)
+- fixed update checking not working on some systems
+- fixed bugs
+
 v2.0.5 Beta (30 August 2017)
 + added proxy support (win8 and above only)
 + added indication for inbound connections for all (when stealth-mode enabled)
