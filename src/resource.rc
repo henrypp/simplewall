@@ -75,6 +75,8 @@ IDM_MAIN MENU
 		{
 			MENUITEM " ", IDM_LANGUAGE
 		}
+		MENUITEM SEPARATOR
+		MENUITEM " ", IDM_FONT
 	}
 	POPUP " "
 	{
@@ -413,6 +415,7 @@ STRINGTABLE
 	IDS_ICONSLARGE "Large"
 	IDS_ICONSISHIDDEN "Hide icons"
 	IDS_LANGUAGE "Language"
+	IDS_FONT "Font..."
 	IDS_HELP "Help"
 	IDS_WEBSITE "Website"
 	IDS_CHECKUPDATES "Check for updates"

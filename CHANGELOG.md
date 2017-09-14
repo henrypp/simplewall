@@ -1,3 +1,17 @@
+v2.0.7 Beta (14 September 2017)
++ added count marks for all groups
++ added font selection for listview
++ prefer "blocklist_full.xml" parsing if it's presented
+- improved signatures checking
+- optimized listview redraw items
+- optimized listview autosizing columns
+- disable retrieving icon handle for network paths for notification dialog
+- changed default listview colors
+- optimized loading speed
+- code cleanup
+- fixed ui hanging in some cases
+- fixed bugs
+
 v2.0.6 Beta (11 September 2017)
 + added signature checking for apps
 + added set default language as in system

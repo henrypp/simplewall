@@ -23,6 +23,7 @@
 
 #define XML_APPS L"apps.xml"
 #define XML_BLOCKLIST L"blocklist.xml"
+#define XML_BLOCKLIST_FULL L"blocklist_full.xml"
 #define XML_RULES_CONFIG L"rules_config.xml"
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 #define XML_RULES_SYSTEM L"rules_system.xml"
@@ -38,6 +39,7 @@
 #define NOTIFY_SPACER 6
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 #define NOTIFY_TIMER_ID 1524
+#define NOTIFY_TIMER_FADEOUT_ID 1525
 #define NOTIFY_TIMER_MOUSE 250
 #define NOTIFY_TIMER_POPUP 350
 #define NOTIFY_TIMER_DEFAULT 10 // sec.
@@ -53,8 +55,8 @@
 // default colors
 #define LISTVIEW_COLOR_SPECIAL RGB (255, 255, 170)
 #define LISTVIEW_COLOR_INVALID RGB (255, 125, 148)
-#define LISTVIEW_COLOR_NETWORK RGB (204, 187, 255)
-#define LISTVIEW_COLOR_PICO RGB (0, 128, 255)
+#define LISTVIEW_COLOR_NETWORK RGB (255, 178, 255)
+#define LISTVIEW_COLOR_PICO RGB (51, 153, 255)
 #define LISTVIEW_COLOR_SIGNED RGB (175, 228, 163)
 #define LISTVIEW_COLOR_SILENT RGB (181, 181, 181)
 #define LISTVIEW_COLOR_SYSTEM RGB(170, 204, 255)
@@ -150,6 +152,8 @@ struct STATIC_DATA
 	size_t def_icon_id = 0;
 	HICON def_hicon = nullptr;
 	HICON def_hicon_sm = nullptr;
+
+	HFONT hfont = nullptr;
 
 	HANDLE hengine = nullptr;
 	HANDLE hevent = nullptr;
