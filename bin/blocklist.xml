@@ -1,13 +1,15 @@
 <?xml version="1.0"?>
 <!-- Block spying and tracking on Windows -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
-<!-- Date: Wed, 16 Aug 2017 06:38:41 +0000 -->
-<root timestamp="1502865521">
+<!-- Date: Wed, 20 Sep 2017 16:12:29 +0000 -->
+<root timestamp="1505923949">
 	<item name="spy_13.68.82.8" rule="13.68.82.8" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_13.68.87.47" rule="13.68.87.47" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_13.68.88.129" rule="13.68.88.129" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_13.76.218.117" rule="13.76.218.117" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_13.76.219.191" rule="13.76.219.191" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_13.76.219.210" rule="13.76.219.210" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_13.78.184.44" rule="13.78.184.44" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_13.78.188.147" rule="13.78.188.147" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_13.79.239.69" rule="13.79.239.69" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_13.81.5.53" rule="13.81.5.53" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
@@ -28,6 +30,7 @@
 	<item name="spy_23.102.155.140" rule="23.102.155.140" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_23.103.182.126" rule="23.103.182.126" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_40.69.40.157" rule="40.69.40.157" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_40.69.222.109" rule="40.69.222.109" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_40.70.220.248" rule="40.70.220.248" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_40.70.221.249" rule="40.70.221.249" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_40.76.1.176" rule="40.76.1.176" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
@@ -190,6 +193,7 @@
 	<item name="spy_191.239.52.100" rule="191.239.52.100" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_191.239.54.52" rule="191.239.54.52" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_195.138.255.0-195.138.255.255" rule="195.138.255.0-195.138.255.255" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
+	<item name="spy_207.46.41.202" rule="207.46.41.202" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_207.68.166.254" rule="207.68.166.254" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 	<item name="spy_213.199.179.0-213.199.179.255" rule="213.199.179.0-213.199.179.255" dir="0" type="2" protocol="0" version="0" is_block="1" is_enabled="1" />
 </root>
