@@ -1,3 +1,13 @@
+v2.0.8 Beta (21 September 2017)
++ new logo
+- changed minimal size of main window
+- updated notification ui
+- updated icons pack
+- updated blocklist
+- fixed font quality (use cleartype ever)
+- fixed notifications sound
+- fixed bugs
+
 v2.0.7 Beta (14 September 2017)
 + added count marks for all groups
 + added font selection for listview

@@ -34,8 +34,8 @@
 #define RULE_DELIMETER L";"
 
 // notification timer
-#define NOTIFY_WIDTH 328
-#define NOTIFY_HEIGHT 264
+#define NOTIFY_WIDTH 368
+#define NOTIFY_HEIGHT 234
 #define NOTIFY_SPACER 6
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 #define NOTIFY_TIMER_ID 1524
@@ -44,6 +44,8 @@
 #define NOTIFY_TIMER_POPUP 350
 #define NOTIFY_TIMER_DEFAULT 10 // sec.
 #define NOTIFY_TIMEOUT 10 // sec.
+#define NOTIFY_LIMIT_SIZE 10 // vector size
+#define NOTIFY_SOUND L"MailBeep"
 
 // pugixml document configuration
 #define PUGIXML_LOAD_FLAGS (pugi::parse_escapes)
