@@ -38,8 +38,9 @@
 #define NOTIFY_HEIGHT 234
 #define NOTIFY_SPACER 6
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
-#define NOTIFY_TIMER_ID 1524
-#define NOTIFY_TIMER_FADEOUT_ID 1525
+#define NOTIFY_TIMER_DISPLAY_ID 1001
+#define NOTIFY_TIMER_TIMEOUT_ID 2002
+#define NOTIFY_TIMER_MOUSELEAVE_ID 3003
 #define NOTIFY_TIMER_MOUSE 250
 #define NOTIFY_TIMER_POPUP 350
 #define NOTIFY_TIMER_DEFAULT 10 // sec.
@@ -139,8 +140,6 @@ enum EnumMode
 
 struct STATIC_DATA
 {
-	HWND htracked_window = nullptr;
-
 	SID* psid = nullptr;
 	GUID* psession = nullptr;
 
@@ -148,6 +147,8 @@ struct STATIC_DATA
 	bool is_filtersinstalled = false;
 	bool is_firstapply = false;
 	bool is_popuperrors = false;
+	bool is_notifytimeout = false;
+	bool is_notifymouse = false;
 
 	HIMAGELIST himg = nullptr;
 
@@ -192,7 +193,6 @@ struct STATIC_DATA
 struct ITEM_APPLICATION
 {
 	__time64_t timestamp = 0;
-	__time64_t lastnotified = 0;
 
 	size_t icon_id = 0;
 
@@ -265,6 +265,8 @@ struct ITEM_LOG
 
 struct ITEM_PROCESS
 {
+	HBITMAP hbmp = nullptr;
+
 	WCHAR display_path[64] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
 };
@@ -365,103 +367,11 @@ typedef struct FWPM_NET_EVENT3_
 
 typedef void (CALLBACK *FWPM_NET_EVENT_CALLBACK2)(_Inout_ void* context, _In_ const FWPM_NET_EVENT3* event);
 
-typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, HANDLE*); // subscribe win7
-typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, HANDLE*); // subscribe win8
-typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, HANDLE*); // subscribe win10
+typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, HANDLE*); // subscribe( win7)
+typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, HANDLE*); // subscribe (win8)
+typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, HANDLE*); // subscribe (win10)
 
-typedef DWORD (WINAPI *FWPMNEU) (HANDLE, HANDLE); // unsubcribe
+typedef DWORD (WINAPI *FWPMNEU) (HANDLE, HANDLE); // unsubcribe (all)
 
-// query process information
-typedef struct _CLIENT_ID
-{
-	HANDLE UniqueProcess;
-	HANDLE UniqueThread;
-} CLIENT_ID, *PCLIENT_ID;
-
-typedef struct _SYSTEM_THREAD_INFORMATION
-{
-	LARGE_INTEGER KernelTime;
-	LARGE_INTEGER UserTime;
-	LARGE_INTEGER CreateTime;
-	ULONG WaitTime;
-	PVOID StartAddress;
-	CLIENT_ID ClientId;
-	LONG Priority;
-	LONG BasePriority;
-	ULONG ContextSwitches;
-	ULONG ThreadState;
-	ULONG WaitReason;
-} SYSTEM_THREAD_INFORMATION, *PSYSTEM_THREAD_INFORMATION;
-
-typedef struct _SYSTEM_PROCESS_INFORMATION
-{
-	ULONG NextEntryOffset;
-	ULONG NumberOfThreads;
-	LARGE_INTEGER WorkingSetPrivateSize; // since VISTA
-	ULONG HardFaultCount; // since WIN7
-	ULONG NumberOfThreadsHighWatermark; // since WIN7
-	ULONGLONG CycleTime; // since WIN7
-	LARGE_INTEGER CreateTime;
-	LARGE_INTEGER UserTime;
-	LARGE_INTEGER KernelTime;
-	UNICODE_STRING ImageName;
-	LONG BasePriority;
-	HANDLE UniqueProcessId;
-	HANDLE InheritedFromUniqueProcessId;
-	ULONG HandleCount;
-	ULONG SessionId;
-	ULONG_PTR UniqueProcessKey; // since VISTA (requires SystemExtendedProcessInformation)
-	SIZE_T PeakVirtualSize;
-	SIZE_T VirtualSize;
-	ULONG PageFaultCount;
-	SIZE_T PeakWorkingSetSize;
-	SIZE_T WorkingSetSize;
-	SIZE_T QuotaPeakPagedPoolUsage;
-	SIZE_T QuotaPagedPoolUsage;
-	SIZE_T QuotaPeakNonPagedPoolUsage;
-	SIZE_T QuotaNonPagedPoolUsage;
-	SIZE_T PagefileUsage;
-	SIZE_T PeakPagefileUsage;
-	SIZE_T PrivatePageCount;
-	LARGE_INTEGER ReadOperationCount;
-	LARGE_INTEGER WriteOperationCount;
-	LARGE_INTEGER OtherOperationCount;
-	LARGE_INTEGER ReadTransferCount;
-	LARGE_INTEGER WriteTransferCount;
-	LARGE_INTEGER OtherTransferCount;
-	SYSTEM_THREAD_INFORMATION Threads[1];
-} SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
-
-struct OBJECT_NAME_INFORMATION
-{
-	UNICODE_STRING Name; // defined in winternl.h
-	WCHAR NameBuffer;
-};
-
-#define SystemProcessInformation 5
-#define ObjectNameInformation 1
-
-extern "C" {
-	NTSYSCALLAPI
-		NTSTATUS
-		NTAPI
-		NtQuerySystemInformation (
-		_In_ UINT SystemInformationClass,
-		_Out_writes_bytes_opt_ (SystemInformationLength) PVOID SystemInformation,
-		_In_ ULONG SystemInformationLength,
-		_Out_opt_ PULONG ReturnLength
-		);
-
-	NTSYSCALLAPI
-		NTSTATUS
-		NTAPI
-		NtQueryObject (
-		_In_ HANDLE Handle,
-		_In_ UINT ObjectInformationClass,
-		_Out_writes_bytes_opt_ (ObjectInformationLength) PVOID ObjectInformation,
-		_In_ ULONG ObjectInformationLength,
-		_Out_opt_ PULONG ReturnLength
-		);
-};
 
 #endif // __MAIN_H__

@@ -1,3 +1,11 @@
+v2.0.9 Beta (25 September 2017)
+- improved notifications cleanup
+- revert processes icons
+- fixed nt path conversions (regression)
+- fixed notification ui display timeout
+- fixed ui bugs
+- fixed bugs
+
 v2.0.8 Beta (21 September 2017)
 + new logo
 - changed minimal size of main window
