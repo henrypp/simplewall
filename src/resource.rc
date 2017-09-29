@@ -572,6 +572,7 @@ STRINGTABLE
 	IDS_ALWAYSPERFORMTHISCHECK_CHK "Always perform this check"
 
 	IDS_QUESTION "Are you sure?"
+	IDS_QUESTION_DELETE "Are you sure you want to delete %d item(s)?"
 	IDS_QUESTION_START "This will forbid network access for apps accordingly selected configuration! Do you want to continue?"
 	IDS_QUESTION_STOP "This will restore network access for all blocked apps! Do you want to continue?"
 	IDS_QUESTION_EXIT "Do you really want to exit?"

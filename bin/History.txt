@@ -1,3 +1,16 @@
+v2.0.10 Beta (29 September 2017)
++ added selection counting for remove items dialog
++ show signature information in notification app icon tooltip
++ show exit confirmation dialog when filters are installing
++ set low-limit for notification timeout
+- revert forgotten privelege (regression)
+- fixed filters for non existing paths (regression)
+- fixed string case for cyrillic symbols
+- fixed filters thread
+- fixed minimize button
+- fixed ui bugs
+- fixed bugs
+
 v2.0.9 Beta (25 September 2017)
 - improved notifications cleanup
 - revert processes icons

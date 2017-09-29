@@ -45,8 +45,9 @@
 #define NOTIFY_TIMER_POPUP 350
 #define NOTIFY_TIMER_DEFAULT 10 // sec.
 #define NOTIFY_TIMEOUT 10 // sec.
+#define NOTIFY_TIMEOUT_MINIMUM 8 // sec.
 #define NOTIFY_LIMIT_SIZE 10 // vector size
-#define NOTIFY_SOUND L"MailBeep"
+#define NOTIFY_SOUND_DEFAULT L"MailBeep"
 
 // pugixml document configuration
 #define PUGIXML_LOAD_FLAGS (pugi::parse_escapes)
@@ -158,13 +159,11 @@ struct STATIC_DATA
 
 	HFONT hfont = nullptr;
 
+	HANDLE hthread = nullptr;
 	HANDLE hengine = nullptr;
 	HANDLE hevent = nullptr;
 	HANDLE hlog = nullptr;
 
-	HANDLE hthread = nullptr;
-	HANDLE install_evt = nullptr;
-	HANDLE destroy_evt = nullptr;
 	HANDLE stop_evt = nullptr;
 	HANDLE finish_evt = nullptr;
 
@@ -174,6 +173,7 @@ struct STATIC_DATA
 	WCHAR rules_custom_path[MAX_PATH] = {0};
 	WCHAR rules_system_path[MAX_PATH] = {0};
 	WCHAR rules_config_path[MAX_PATH] = {0};
+	WCHAR notify_snd_path[MAX_PATH] = {0};
 
 	HWND hnotification = nullptr;
 
@@ -185,7 +185,7 @@ struct STATIC_DATA
 
 	size_t ntoskrnl_hash = 0;
 
-	//volatile LONG lock_access = 0;
+	volatile LONG lock_access = 0;
 	volatile LONG lock_apply = 0;
 	volatile LONG lock_writelog = 0;
 };
@@ -280,15 +280,15 @@ struct ITEM_COLOR
 	COLORREF default_clr = 0;
 	COLORREF clr = 0;
 
-	WCHAR locale_sid[64] = {0};
-	WCHAR config[64] = {0};
-	WCHAR config_color[64] = {0};
+	LPWSTR locale_sid = nullptr;
+	LPWSTR config = nullptr;
+	LPWSTR config_color = nullptr;
 };
 
 struct ITEM_PROTOCOL
 {
-	UINT8 v = 0;
-	WCHAR t[16] = {0};
+	UINT8 id = 0;
+	LPWSTR name = nullptr;
 };
 
 struct ITEM_ADDRESS
