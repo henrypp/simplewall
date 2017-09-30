@@ -68,6 +68,9 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 void _app_notifysettimeout (HWND hwnd, UINT_PTR id, bool is_create, UINT timeout);
 void _app_notifyrefresh ();
 
+bool _wfp_logsubscribe ();
+bool _wfp_logunsubscribe ();
+
 #define LANG_MENU 5
 
 void _app_logerror (LPCWSTR fn, DWORD result, LPCWSTR desc, bool is_nopopups = false)
@@ -672,11 +675,10 @@ size_t _app_addapplication (HWND hwnd, rstring path, __time64_t timestamp, bool 
 	{
 		const size_t len = path.GetLength ();
 
-		if (path.GetLength () > 4 && _wcsnicmp (path.GetString () + (len - 4), L".lnk", 4) == 0)
+		if (len > 4 && _wcsnicmp (path.GetString () + (len - 4), L".lnk", 4) == 0)
 			path = _app_getshortcutpath (hwnd, path);
 	}
 
-	path.ToLower ();
 	const size_t hash = path.Hash ();
 
 	if (apps.find (hash) != apps.end ())
@@ -821,14 +823,14 @@ bool _app_freeapplication (ITEM_APPLICATION *ptr, size_t hash)
 
 	if (hash)
 	{
-		_app_freenotify (LAST_VALUE, hash);
-		_app_notifyrefresh ();
-
 		if (apps_rules.find (hash) != apps_rules.end ())
 		{
 			apps_rules.erase (hash);
 			is_enabled = true;
 		}
+
+		_app_freenotify (LAST_VALUE, hash);
+		_app_notifyrefresh ();
 
 		apps.erase (hash);
 	}
@@ -870,6 +872,10 @@ void _app_freerule (ITEM_RULE** ptr)
 UINT _wfp_destroyfilters (bool is_full)
 {
 	UINT error_count = 0;
+
+	// net events unsubscribe (win7 and above)
+	if (_r_sys_validversion (6, 1))
+		_wfp_logunsubscribe ();
 
 	_r_spinlock (&config.lock_access);
 
@@ -951,8 +957,6 @@ UINT _wfp_destroyfilters (bool is_full)
 		app.TraySetInfo (_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_INACTIVE), GetSystemMetrics (SM_CXSMICON)), nullptr);
 
 		SetDlgItemText (app.GetHWND (), IDC_START_BTN, I18N (&app, IDS_TRAY_START, 0));
-
-		config.is_filtersinstalled = false;
 	}
 
 	return error_count;
@@ -1494,7 +1498,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** ptr)
 
 		// file is inaccessible or not found, maybe low-level driver preventing file access?
 		// try another way!
-		if (result == ERROR_ACCESS_DENIED || result == ERROR_FILE_NOT_FOUND)
+		if (result == ERROR_ACCESS_DENIED || result == ERROR_FILE_NOT_FOUND || result == ERROR_PATH_NOT_FOUND)
 		{
 			// file path (root)
 			WCHAR path_root[16] = {0};
@@ -1618,7 +1622,7 @@ bool _wfp_createrulefilter (LPCWSTR name, LPCWSTR rule, LPCWSTR path, EnumRuleDi
 
 		if (retn != ERROR_SUCCESS)
 		{
-			_app_logerror (L"FwpmGetAppIdFromFileName", retn, path, ((retn == ERROR_FILE_NOT_FOUND) || (retn == ERROR_PATH_NOT_FOUND)));
+			_app_logerror (L"FwpmGetAppIdFromFileName", retn, path, false);
 			return false;
 		}
 		else
@@ -1912,10 +1916,9 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::ve
 
 		if (root)
 		{
-			size_t idx = 0;
-
 			for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
 			{
+				const size_t idx = ptr->size ();
 				ITEM_RULE* rule_ptr = (ITEM_RULE*)malloc (sizeof (ITEM_RULE));
 
 				if (rule_ptr)
@@ -1943,9 +1946,7 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::ve
 					rule_ptr->dir = (EnumRuleDirection)item.attribute (L"dir").as_uint ();
 
 					if (!item.attribute (L"type").empty ())
-					{
 						rule_ptr->type = (EnumRuleType)item.attribute (L"type").as_uint ();
-					}
 
 					rule_ptr->protocol = (UINT8)item.attribute (L"protocol").as_uint ();
 					rule_ptr->version = (ADDRESS_FAMILY)item.attribute (L"version").as_uint ();
@@ -1959,7 +1960,36 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::ve
 						rule_ptr->apps = (LPWSTR)malloc ((apps_length + 1) * sizeof (WCHAR));
 
 						if (rule_ptr->apps)
+						{
 							StringCchCopy (rule_ptr->apps, apps_length, attr_apps);
+
+							if (!is_internal)
+							{
+								rstring::rvector arr = rstring (rule_ptr->apps).AsVector (RULE_DELIMETER);
+
+								for (size_t i = 0; i < arr.size (); i++)
+								{
+									const rstring path_app = _r_path_expand (arr.at (i).Trim (L"\r\n "));
+
+									if (!path_app.IsEmpty ())
+									{
+										const size_t hash = path_app.Hash ();
+
+										if (hash)
+										{
+											_r_spinlock (&config.lock_access);
+
+											if (apps.find (hash) == apps.end ())
+												_app_addapplication (hwnd, path_app, 0, false, false, true);
+
+											_r_spinunlock (&config.lock_access);
+
+											apps_rules[hash].push_back (idx);
+										}
+									}
+								}
+							}
+						}
 					}
 
 					rule_ptr->is_block = item.attribute (L"is_block").as_bool ();
@@ -1973,40 +2003,8 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::ve
 						else
 							rules_config[rule_ptr->name] = rule_ptr->is_enabled;
 					}
-					else
-					{
-						// custom rules (if memory allocated)
-						if (!item.attribute (L"apps").empty () && rule_ptr->apps)
-						{
-							rstring::rvector arr = rstring (rule_ptr->apps).AsVector (RULE_DELIMETER);
-
-							for (size_t i = 0; i < arr.size (); i++)
-							{
-								const rstring path2 = _r_path_expand (arr.at (i).Trim (L"\r\n "));
-
-								if (!path2.IsEmpty ())
-								{
-									const size_t hash = path2.Hash ();
-
-									if (hash)
-									{
-										_r_spinlock (&config.lock_access);
-
-										if (apps.find (hash) == apps.end ())
-											_app_addapplication (hwnd, path2, 0, false, false, true);
-
-										_r_spinunlock (&config.lock_access);
-
-										apps_rules[hash].push_back (idx);
-									}
-								}
-							}
-						}
-					}
 
 					ptr->push_back (rule_ptr);
-
-					idx += 1;
 				}
 			}
 		}
@@ -2066,6 +2064,7 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 		ShowItem (hwnd, IDC_LISTVIEW, item_id, scroll_pos);
 	}
 
+	// load rules config
 	{
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file (config.rules_config_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
@@ -2205,24 +2204,24 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			{
 				for (size_t i = 0; i < rules_custom.size (); i++)
 				{
-					ITEM_RULE const* ptr = rules_custom.at (i);
+					ITEM_RULE const* ptr_rule = rules_custom.at (i);
 
-					if (!ptr)
+					if (!ptr_rule)
 						continue;
 
 					pugi::xml_node item = root.append_child (L"item");
 
 					if (item)
 					{
-						item.append_attribute (L"name").set_value (ptr->name);
-						item.append_attribute (L"rule").set_value (ptr->rule);
-						item.append_attribute (L"dir").set_value (ptr->dir);
+						item.append_attribute (L"name").set_value (ptr_rule->name);
+						item.append_attribute (L"rule").set_value (ptr_rule->rule);
+						item.append_attribute (L"dir").set_value (ptr_rule->dir);
 
-						if (ptr->type != TypeUnknown)
-							item.append_attribute (L"type").set_value (ptr->type);
+						if (ptr_rule->type != TypeUnknown)
+							item.append_attribute (L"type").set_value (ptr_rule->type);
 
-						item.append_attribute (L"protocol").set_value (ptr->protocol);
-						item.append_attribute (L"version").set_value (ptr->version);
+						item.append_attribute (L"protocol").set_value (ptr_rule->protocol);
+						item.append_attribute (L"version").set_value (ptr_rule->version);
 
 						// add apps attribute
 						{
@@ -2263,8 +2262,8 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 							}
 						}
 
-						item.append_attribute (L"is_block").set_value (ptr->is_block);
-						item.append_attribute (L"is_enabled").set_value (ptr->is_enabled);
+						item.append_attribute (L"is_block").set_value (ptr_rule->is_block);
+						item.append_attribute (L"is_enabled").set_value (ptr_rule->is_enabled);
 					}
 				}
 
@@ -2328,14 +2327,14 @@ UINT _wfp_installfilters ()
 			if (_r_sys_validversion (6, 2))
 				fwfc[0].conditionValue.uint32 |= (FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK | FWP_CONDITION_FLAG_IS_NON_APPCONTAINER_LOOPBACK);
 
-			error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FALSE, FALSE);
-			error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FALSE, FALSE);
+			error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FALSE, false);
+			error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FALSE, false);
 
 			// boot-time filters loopback permission
 			if (app.ConfigGet (L"InstallBoottimeFilters", false).AsBool ())
 			{
-				error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FALSE, TRUE);
-				error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FALSE, TRUE);
+				error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FALSE, true);
+				error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FALSE, true);
 			}
 
 			// ipv4/ipv6 loopback
@@ -2365,16 +2364,16 @@ UINT _wfp_installfilters ()
 						fwfc[1].conditionValue.v4AddrMask = &addr4;
 
 						fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
-						error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FALSE, FALSE);
+						error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FALSE, false);
 
 						if (app.ConfigGet (L"InstallBoottimeFilters", false).AsBool ())
-							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FALSE, TRUE);
+							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FALSE, true);
 
 						fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
-						error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, FALSE, FALSE);
+						error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, FALSE, false);
 
 						if (app.ConfigGet (L"InstallBoottimeFilters", false).AsBool ())
-							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, FALSE, TRUE);
+							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, FALSE, true);
 					}
 					else if (addr.format == NET_ADDRESS_IPV6)
 					{
@@ -2382,16 +2381,16 @@ UINT _wfp_installfilters ()
 						fwfc[1].conditionValue.v6AddrMask = &addr6;
 
 						fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
-						error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FALSE, FALSE);
+						error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FALSE, false);
 
 						if (app.ConfigGet (L"InstallBoottimeFilters", false).AsBool ())
-							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FALSE, TRUE);
+							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FALSE, true);
 
 						fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
-						error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FALSE, FALSE);
+						error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FALSE, false);
 
 						if (app.ConfigGet (L"InstallBoottimeFilters", false).AsBool ())
-							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FALSE, TRUE);
+							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FALSE, true);
 					}
 				}
 
@@ -2409,6 +2408,12 @@ UINT _wfp_installfilters ()
 
 			for (auto& p : apps)
 			{
+				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
+				{
+					FwpmTransactionAbort (config.hengine);
+					return 0;
+				}
+
 				_r_spinlock (&config.lock_access);
 
 				ITEM_APPLICATION* ptr_app = &p.second;
@@ -2416,17 +2421,11 @@ UINT _wfp_installfilters ()
 				if (!ptr_app->is_enabled)
 					continue;
 
-				ptr_app->error_count = !_wfp_createrulefilter (ptr_app->file_name, nullptr, ptr_app->display_path, DirBoth, nullptr, 0, AF_UNSPEC, is_block, FILTER_WEIGHT_APPLICATION, false);
+				ptr_app->error_count = !_wfp_createrulefilter (nullptr, nullptr, ptr_app->display_path, DirBoth, nullptr, 0, AF_UNSPEC, is_block, FILTER_WEIGHT_APPLICATION, false);
 
 				error_count += ptr_app->error_count;
 
 				_r_spinunlock (&config.lock_access);
-
-				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-				{
-					FwpmTransactionAbort (config.hengine);
-					return 0;
-				}
 			}
 
 			// unlock this app
@@ -2438,25 +2437,25 @@ UINT _wfp_installfilters ()
 		{
 			for (size_t i = 0; i < rules_blocklist.size (); i++)
 			{
+				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
+				{
+					FwpmTransactionAbort (config.hengine);
+					return 0;
+				}
+
 				ITEM_RULE* ptr = rules_blocklist.at (i);
 
 				if (!ptr || !ptr->is_enabled)
 					continue;
 
-				rstring::rvector arr = rstring (ptr->rule).AsVector (RULE_DELIMETER);
+				rstring::rvector rule_arr = rstring (ptr->rule).AsVector (RULE_DELIMETER);
 
-				for (size_t j = 0; j < arr.size (); j++)
+				for (size_t j = 0; j < rule_arr.size (); j++)
 				{
-					const rstring rule = arr.at (j).Trim (L"\r\n ");
+					const rstring rule = rule_arr.at (j).Trim (L"\r\n ");
 
 					if (!rule.IsEmpty ())
 						error_count += !_wfp_createrulefilter (ptr->name, rule, nullptr, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_BLOCKLIST, false);
-
-					if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-					{
-						FwpmTransactionAbort (config.hengine);
-						return 0;
-					}
 				}
 			}
 		}
@@ -2465,16 +2464,22 @@ UINT _wfp_installfilters ()
 		{
 			for (size_t i = 0; i < rules_system.size (); i++)
 			{
+				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
+				{
+					FwpmTransactionAbort (config.hengine);
+					return 0;
+				}
+
 				ITEM_RULE* ptr = rules_system.at (i);
 
 				if (!ptr || !ptr->is_enabled)
 					continue;
 
-				rstring::rvector arr = rstring (ptr->rule).AsVector (RULE_DELIMETER);
+				rstring::rvector rule_arr = rstring (ptr->rule).AsVector (RULE_DELIMETER);
 
-				for (size_t j = 0; j < arr.size (); j++)
+				for (size_t j = 0; j < rule_arr.size (); j++)
 				{
-					const rstring rule = arr.at (j).Trim (L"\r\n ");
+					const rstring rule = rule_arr.at (j).Trim (L"\r\n ");
 
 					if (rule.IsEmpty ())
 						continue;
@@ -2482,96 +2487,97 @@ UINT _wfp_installfilters ()
 					if (ptr->apps)
 					{
 						// apply rules for specified apps
-						rstring::rvector arr2 = rstring (ptr->apps).AsVector (RULE_DELIMETER);
+						rstring::rvector path_arr = rstring (ptr->apps).AsVector (RULE_DELIMETER);
 
-						for (size_t k = 0; k < arr2.size (); k++)
+						for (size_t k = 0; k < path_arr.size (); k++)
 						{
-							const rstring path = _r_path_expand (arr2.at (k)).Trim (L"\r\n ");
+							const rstring path = _r_path_expand (path_arr.at (k)).Trim (L"\r\n ");
 
 							if (!path.IsEmpty ())
-								error_count += !_wfp_createrulefilter (ptr->name, rule, path, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_CUSTOM, FALSE);
+								error_count += !_wfp_createrulefilter (ptr->name, rule, path, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_CUSTOM, false);
 						}
 					}
 					else
 					{
 						// apply rules for all apps
-						error_count += !_wfp_createrulefilter (ptr->name, rule, nullptr, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_CUSTOM, FALSE);
-					}
-
-					if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-					{
-						FwpmTransactionAbort (config.hengine);
-						return 0;
+						error_count += !_wfp_createrulefilter (ptr->name, rule, nullptr, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_CUSTOM, false);
 					}
 				}
 			}
 		}
 
-		// apply custom rules for apps
+		// apply special rules for apps
+		for (auto const &p : apps_rules)
 		{
-			for (auto const &p : apps_rules)
+			if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
 			{
-				ITEM_APPLICATION const* ptr_app = _app_getapplication (p.first);
+				FwpmTransactionAbort (config.hengine);
+				return 0;
+			}
 
-				if (ptr_app)
+			ITEM_APPLICATION const* ptr_app = _app_getapplication (p.first);
+
+			if (ptr_app)
+			{
+				LPCWSTR path = ptr_app->display_path;
+
+				for (size_t i = 0; i < p.second.size (); i++)
 				{
-					const rstring path = ptr_app->display_path;
-
-					for (size_t i = 0; i < p.second.size (); i++)
+					if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
 					{
-						ITEM_RULE* ptr = rules_custom.at (i);
+						FwpmTransactionAbort (config.hengine);
+						return 0;
+					}
 
-						// prevent filters duplicate, if rule is checked: guilty! next case.
-						if (!ptr || ptr->is_enabled)
-							continue;
+					ITEM_RULE* ptr_rule = rules_custom.at (p.second.at (i));
 
-						const rstring arr = ptr->rule;
-						rstring::rvector vc = arr.AsVector (RULE_DELIMETER);
+					// prevent filters duplicate, if rule is checked: guilty! next case.
+					if (!ptr_rule || ptr_rule->is_enabled)
+						continue;
 
-						for (size_t j = 0; j < vc.size (); j++)
-						{
-							const rstring rule = vc.at (j).Trim (L"\r\n ");
+					rstring::rvector rule_arr = rstring (ptr_rule->rule).AsVector (RULE_DELIMETER);
 
-							if (!rule.IsEmpty ())
-								error_count += !_wfp_createrulefilter (ptr->name, rule, path, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_CUSTOM, FALSE);
+					for (size_t j = 0; j < rule_arr.size (); j++)
+					{
+						const rstring rule = rule_arr.at (j).Trim (L"\r\n ");
 
-							if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-							{
-								FwpmTransactionAbort (config.hengine);
-								return 0;
-							}
-						}
+						if (!rule.IsEmpty ())
+							error_count += !_wfp_createrulefilter (ptr_rule->name, rule, path, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_CUSTOM, false);
 					}
 				}
 			}
 		}
 
 		// apply custom rules for all
+		for (size_t i = 0; i < rules_custom.size (); i++)
 		{
-			for (size_t i = 0; i < rules_custom.size (); i++)
+			if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
 			{
-				ITEM_RULE* ptr = rules_custom.at (i);
+				FwpmTransactionAbort (config.hengine);
+				return 0;
+			}
 
-				// only if enabled
-				if (!ptr || !ptr->is_enabled)
-					continue;
+			ITEM_RULE* ptr_rule = rules_custom.at (i);
 
-				const rstring arr = ptr->rule;
-				rstring::rvector vc = arr.AsVector (RULE_DELIMETER);
+			// only if enabled
+			if (!ptr_rule || !ptr_rule->is_enabled)
+				continue;
 
-				for (size_t j = 0; j < vc.size (); j++)
+			const rstring arr = ptr_rule->rule;
+			rstring::rvector vc = arr.AsVector (RULE_DELIMETER);
+
+			for (size_t j = 0; j < vc.size (); j++)
+			{
+				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
 				{
-					const rstring rule = vc.at (j).Trim (L"\r\n ");
-
-					if (!rule.IsEmpty ())
-						error_count += !_wfp_createrulefilter (ptr->name, rule, nullptr, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_CUSTOM, FALSE);
-
-					if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-					{
-						FwpmTransactionAbort (config.hengine);
-						return 0;
-					}
+					FwpmTransactionAbort (config.hengine);
+					return 0;
 				}
+
+				const rstring rule = vc.at (j).Trim (L"\r\n ");
+
+				if (!rule.IsEmpty ())
+					error_count += !_wfp_createrulefilter (ptr_rule->name, rule, nullptr, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_CUSTOM, FALSE);
 			}
 		}
 
@@ -2677,7 +2683,9 @@ UINT _wfp_installfilters ()
 
 		SetDlgItemText (app.GetHWND (), IDC_START_BTN, I18N (&app, IDS_TRAY_STOP, 0));
 
-		config.is_filtersinstalled = true;
+		// net events subscribe (win7 and above)
+		if (_r_sys_validversion (6, 1))
+			_wfp_logsubscribe ();
 	}
 
 	return error_count;
@@ -3380,9 +3388,6 @@ void _app_notifyadd (ITEM_LOG const* ptr)
 
 void CALLBACK _app_logcallback (const FILETIME* pft, const UINT8* app_id, SID* user_id, UINT64 filter_id, UINT32 flags, UINT8 proto, FWP_IP_VERSION ipver, BOOL is_loopback, FWP_BYTE_ARRAY16 const* remoteaddr, UINT16 remoteport, FWP_BYTE_ARRAY16 const* localaddr, UINT16 localport, UINT32 direction)
 {
-	if (!config.is_filtersinstalled)
-		return;
-
 	const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
 	const bool is_notificationenabled = app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ();
 	bool is_myprovider = false;
@@ -4074,8 +4079,6 @@ BOOL initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
 			_app_profileload (hwnd);
 			_app_listviewsort (hwnd, -1, false);
 
-			_app_loginit (true); // enable dropped packets logging (win7 and above)
-
 			CheckMenuItem (GetMenu (hwnd), IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AlwaysOnTop", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (GetMenu (hwnd), IDM_SHOWFILENAMESONLY_CHK, MF_BYCOMMAND | (app.ConfigGet (L"ShowFilenames", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (GetMenu (hwnd), IDM_AUTOSIZECOLUMNS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AutoSizeColumns", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
@@ -4364,9 +4367,7 @@ BOOL initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
 
 		case _RM_UNINITIALIZE:
 		{
-			_app_loginit (false); // disable dropped packets logging (win7 and above)
 			app.TrayDestroy (UID);
-
 			break;
 		}
 	}
@@ -5461,6 +5462,94 @@ void ResizeWindow (HWND hwnd, INT width, INT height)
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 }
 
+bool _wfp_logunsubscribe ()
+{
+	bool result = false;
+
+	_app_loginit (false); // destroy log file handle if present
+
+	if (config.hevent)
+	{
+		FWPMNEU _FwpmNetEventUnsubscribe = (FWPMNEU)GetProcAddress (GetModuleHandle (L"fwpuclnt.dll"), "FwpmNetEventUnsubscribe0");
+
+		if (_FwpmNetEventUnsubscribe)
+		{
+			DWORD rc = _FwpmNetEventUnsubscribe (config.hengine, config.hevent);
+
+			if (rc == ERROR_SUCCESS)
+			{
+				config.hevent = nullptr;
+				result = true;
+			}
+		}
+	}
+
+	return result;
+}
+
+bool _wfp_logsubscribe ()
+{
+	bool result = false;
+
+	if (!config.hevent)
+	{
+		HINSTANCE hmodule = GetModuleHandle (L"fwpuclnt.dll");
+
+		if (hmodule)
+		{
+			FWPMNES2 _FwpmNetEventSubscribe2 = nullptr;
+			FWPMNES1 _FwpmNetEventSubscribe1 = nullptr;
+			FWPMNES0 _FwpmNetEventSubscribe0 = nullptr;
+
+			_FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hmodule, "FwpmNetEventSubscribe2"); // win10
+
+			if (!_FwpmNetEventSubscribe2)
+			{
+				_FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hmodule, "FwpmNetEventSubscribe1"); // win8
+
+				if (!_FwpmNetEventSubscribe1)
+					_FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hmodule, "FwpmNetEventSubscribe0"); // win7
+			}
+
+			if (!_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
+			{
+				_app_logerror (L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
+			}
+			else
+			{
+				SecureZeroMemory (&subscription, sizeof (subscription));
+				SecureZeroMemory (&enum_template, sizeof (enum_template));
+
+				if (config.psession)
+					memcpy_s (&subscription.sessionKey, sizeof (GUID), config.psession, sizeof (GUID));
+
+				subscription.enumTemplate = &enum_template;
+
+				DWORD rc = 0;
+
+				if (_FwpmNetEventSubscribe2)
+					rc = _FwpmNetEventSubscribe2 (config.hengine, &subscription, _app_logcallback2, nullptr, &config.hevent);
+				else if (_FwpmNetEventSubscribe1)
+					rc = _FwpmNetEventSubscribe1 (config.hengine, &subscription, _app_logcallback1, nullptr, &config.hevent);
+				else if (_FwpmNetEventSubscribe0)
+					rc = _FwpmNetEventSubscribe0 (config.hengine, &subscription, _app_logcallback0, nullptr, &config.hevent);
+
+				if (rc != ERROR_SUCCESS)
+				{
+					_app_logerror (L"FwpmNetEventSubscribe", rc, nullptr);
+				}
+				else
+				{
+					_app_loginit (true); // create log file
+					result = true;
+				}
+			}
+		}
+	}
+
+	return result;
+}
+
 bool _wfp_initialize (bool is_full)
 {
 	bool result = true;
@@ -5601,58 +5690,6 @@ bool _wfp_initialize (bool is_full)
 		{
 			_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
 		}
-		else
-		{
-			HINSTANCE hmodule = GetModuleHandle (L"fwpuclnt.dll");
-
-			if (hmodule)
-			{
-				FWPMNES2 _FwpmNetEventSubscribe2 = nullptr;
-				FWPMNES1 _FwpmNetEventSubscribe1 = nullptr;
-				FWPMNES0 _FwpmNetEventSubscribe0 = nullptr;
-
-				_FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hmodule, "FwpmNetEventSubscribe2"); // win10
-
-				if (!_FwpmNetEventSubscribe2)
-				{
-					_FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hmodule, "FwpmNetEventSubscribe1"); // win8
-
-					if (!_FwpmNetEventSubscribe1)
-						_FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hmodule, "FwpmNetEventSubscribe0"); // win7
-				}
-
-				if (!_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
-				{
-					_app_logerror (L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
-				}
-				else
-				{
-					SecureZeroMemory (&subscription, sizeof (subscription));
-					SecureZeroMemory (&enum_template, sizeof (enum_template));
-
-					if (config.psession)
-						memcpy_s (&subscription.sessionKey, sizeof (GUID), config.psession, sizeof (GUID));
-
-					subscription.enumTemplate = &enum_template;
-
-					if (_FwpmNetEventSubscribe2)
-						rc = _FwpmNetEventSubscribe2 (config.hengine, &subscription, _app_logcallback2, nullptr, &config.hevent);
-					else if (_FwpmNetEventSubscribe1)
-						rc = _FwpmNetEventSubscribe1 (config.hengine, &subscription, _app_logcallback1, nullptr, &config.hevent);
-					else if (_FwpmNetEventSubscribe0)
-						rc = _FwpmNetEventSubscribe0 (config.hengine, &subscription, _app_logcallback0, nullptr, &config.hevent);
-
-					if (rc != ERROR_SUCCESS)
-					{
-						_app_logerror (L"FwpmNetEventSubscribe", rc, nullptr);
-					}
-					else
-					{
-						_app_loginit (true); // create log file
-					}
-				}
-			}
-		}
 	}
 
 	if (is_full && config.hengine && !_wfp_isfiltersinstalled ())
@@ -5719,8 +5756,6 @@ void _wfp_uninitialize (bool is_force)
 {
 	DWORD result = 0;
 
-	_app_loginit (false); // destroy log file handle if present
-
 	if (config.hengine)
 	{
 		if (is_force)
@@ -5767,18 +5802,7 @@ void _wfp_uninitialize (bool is_force)
 		// net events unsubscribe (win7 and above)
 		if (_r_sys_validversion (6, 1))
 		{
-			if (config.hevent)
-			{
-				FWPMNEU _FwpmNetEventUnsubscribe = (FWPMNEU)GetProcAddress (GetModuleHandle (L"fwpuclnt.dll"), "FwpmNetEventUnsubscribe0");
-
-				if (_FwpmNetEventUnsubscribe)
-				{
-					result = _FwpmNetEventUnsubscribe (config.hengine, config.hevent);
-
-					if (result == ERROR_SUCCESS)
-						config.hevent = nullptr;
-				}
-			}
+			_wfp_logunsubscribe ();
 
 			FWP_VALUE val;
 			SecureZeroMemory (&val, sizeof (val));
@@ -6391,7 +6415,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_notifycreatewindow ();
 
 			break;
-	}
+		}
 
 		case WM_DROPFILES:
 		{
@@ -7112,8 +7136,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (_wfp_isfiltersinstalled ())
 					{
-						_app_loginit (true);
-
 						if (_wfp_initialize (true))
 							_app_installfilters (true);
 					}
@@ -7129,8 +7151,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case WTS_SESSION_LOGOFF:
 				{
 					_app_profilesave (hwnd);
-					_app_loginit (false);
-
 					_wfp_uninitialize (false);
 
 					break;
@@ -7937,7 +7957,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			break;
 		}
-}
+	}
 
 	return FALSE;
 }

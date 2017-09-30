@@ -1,3 +1,8 @@
+v2.0.11 Beta (30 September 2017)
++ subscribe for net events only when filters are installed
+- fixed incorrect filters applied for special rules
+- fixed all apps are in lowercase
+
 v2.0.10 Beta (29 September 2017)
 + added selection counting for remove items dialog
 + show signature information in notification app icon tooltip

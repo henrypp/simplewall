@@ -145,7 +145,6 @@ struct STATIC_DATA
 	GUID* psession = nullptr;
 
 	bool is_securityinfoset = false;
-	bool is_filtersinstalled = false;
 	bool is_firstapply = false;
 	bool is_popuperrors = false;
 	bool is_notifytimeout = false;
