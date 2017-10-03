@@ -11,7 +11,7 @@ v2.0.12 RC (3 October 2017)
 - fixed ui bugs
 
 v2.0.11 Beta (30 September 2017)
-+ subscribe for net events only when filters are installed
++ subscribe for net events only when filters are installed (win7 and above)
 - fixed incorrect filters applied for special rules
 - fixed all apps are in lowercase
 
