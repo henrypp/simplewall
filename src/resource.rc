@@ -484,12 +484,11 @@ STRINGTABLE
 	IDS_ACTION "Action"
 	IDS_RULE "Rule"
 	IDS_DATE "Date"
-	IDS_FILEPATH "File"
+	IDS_FILEPATH "Path"
 	IDS_SIGNATURE "Signature"
 	IDS_ADDRESS "Address"
 	IDS_FILTER "Filter"
 	IDS_NOTES "Notes"
-	IDS_APPLICATION "Application"
 	IDS_ADDED "Added"
 
 	IDS_SIGN_SIGNED "Signed"
