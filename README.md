@@ -11,6 +11,7 @@ You can download either the installer or portable version. For correct working, 
 - Simple interface without annoying pop ups
 - Dropped packets logging (Windows 7 and above)
 - Internal blocklist (block Windows spy / telemetry)
+- Proxy support (Windows 8 and above)
 - Custom blocklist (your own rules)
 - Free and open source
 - Localization support

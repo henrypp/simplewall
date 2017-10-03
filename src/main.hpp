@@ -46,7 +46,7 @@
 #define NOTIFY_TIMER_DEFAULT 10 // sec.
 #define NOTIFY_TIMEOUT 10 // sec.
 #define NOTIFY_TIMEOUT_MINIMUM 8 // sec.
-#define NOTIFY_LIMIT_SIZE 10 // vector size
+#define NOTIFY_LIMIT_SIZE 10 //limit vector size
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 
 // pugixml document configuration
@@ -279,9 +279,11 @@ struct ITEM_COLOR
 	COLORREF default_clr = 0;
 	COLORREF clr = 0;
 
+	HBRUSH hbr = nullptr;
+
 	LPWSTR locale_sid = nullptr;
-	LPWSTR config = nullptr;
-	LPWSTR config_color = nullptr;
+	LPWSTR config_name = nullptr;
+	LPWSTR config_value = nullptr;
 };
 
 struct ITEM_PROTOCOL

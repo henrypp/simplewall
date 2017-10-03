@@ -1,3 +1,15 @@
+v2.0.12 RC (3 October 2017)
++ use colors and tooltip for notification icon same as in main window
++ do not show notifications on tray hover when it is disabled
++ do not bring notifications window into the foreground when it shows
++ revert error log tray menu
+- fixed network paths detection
+- fixed displaying non interesting errors
+- fixed some device path conversions
+- fixed notifications cleanup
+- updated localization
+- fixed ui bugs
+
 v2.0.11 Beta (30 September 2017)
 + subscribe for net events only when filters are installed
 - fixed incorrect filters applied for special rules
