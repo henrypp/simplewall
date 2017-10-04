@@ -23,7 +23,7 @@
 #include "rapp.hpp"
 #include "routine.hpp"
 
-#include "include\pugiconfig.hpp"
+#include "pugiconfig.hpp"
 #include "..\..\pugixml\src\pugixml.hpp"
 
 #include "resource.hpp"
@@ -4796,7 +4796,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 			switch (page->dlg_id)
 			{
-				case IDD_SETTINGS_1:
+				case IDD_SETTINGS_GENERAL:
 				{
 					// localize
 					SetDlgItemText (hwnd, IDC_ALWAYSONTOP_CHK, I18N (&app, IDS_ALWAYSONTOP_CHK, 0));
@@ -4825,7 +4825,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					break;
 				}
 
-				case IDD_SETTINGS_2:
+				case IDD_SETTINGS_FILTERS:
 				{
 					// localize
 					SetDlgItemText (hwnd, IDC_USEBLOCKLIST_CHK, I18N (&app, IDS_USEBLOCKLIST_CHK, 0));
@@ -4851,7 +4851,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					break;
 				}
 
-				case IDD_SETTINGS_3:
+				case IDD_SETTINGS_INTERFACE:
 				{
 					// localize
 					SetDlgItemText (hwnd, IDC_CONFIRMEXIT_CHK, I18N (&app, IDS_CONFIRMEXIT_CHK, 0));
@@ -4884,14 +4884,14 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 							if (app.ConfigGet (p.second.config_name, p.second.is_enabled).AsBool ())
 								_r_listview_setitemcheck (hwnd, IDC_COLORS, idx, true);
 
-							idx = +1;
+							idx += 1;
 						}
 					}
 
 					break;
 				}
 
-				case IDD_SETTINGS_4:
+				case IDD_SETTINGS_LOG:
 				{
 					// localize
 					SetDlgItemText (hwnd, IDC_ENABLELOG_CHK, I18N (&app, IDS_ENABLELOG_CHK, 0));
@@ -4938,9 +4938,9 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					break;
 				}
 
-				case IDD_SETTINGS_5:
-				case IDD_SETTINGS_6:
-				case IDD_SETTINGS_7:
+				case IDD_SETTINGS_RULES_BLOCKLIST:
+				case IDD_SETTINGS_RULES_SYSTEM:
+				case IDD_SETTINGS_RULES_CUSTOM:
 				{
 					// localize
 					SetDlgItemText (hwnd, IDC_RULES_BLOCKLIST_HINT, I18N (&app, IDS_RULES_BLOCKLIST_HINT, 0));
@@ -4972,30 +4972,30 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					_r_listview_addgroup (hwnd, IDC_EDITOR, I18N (&app, IDS_GROUP_SPECIAL, 0), 1, 0, LVGS_COLLAPSIBLE | (group2_collapsed ? LVGS_COLLAPSED : 0));
 					_r_listview_addgroup (hwnd, IDC_EDITOR, I18N (&app, IDS_GROUP_DISABLED, 0), 2, 0, LVGS_COLLAPSIBLE | (group3_collapsed ? LVGS_COLLAPSED : 0));
 
-					std::vector<ITEM_RULE*> const* ptr = nullptr;
+					std::vector<ITEM_RULE*> const* ptr_rules = nullptr;
 
-					if (page->dlg_id == IDD_SETTINGS_5)
+					if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
 					{
-						ptr = &rules_system;
+						ptr_rules = &rules_blocklist;
 					}
-					else if (page->dlg_id == IDD_SETTINGS_6)
+					else if (page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
 					{
-						ptr = &rules_custom;
+						ptr_rules = &rules_system;
 					}
-					else if (page->dlg_id == IDD_SETTINGS_7)
+					else if (page->dlg_id == IDD_SETTINGS_RULES_CUSTOM)
 					{
-						ptr = &rules_blocklist;
+						ptr_rules = &rules_custom;
 					}
 
-					if (ptr)
+					if (ptr_rules)
 					{
 						size_t group1_count = 0;
 						size_t group2_count = 0;
 						size_t group3_count = 0;
 
-						for (size_t i = 0; i < ptr->size (); i++)
+						for (size_t i = 0; i < ptr_rules->size (); i++)
 						{
-							ITEM_RULE const* ptr_rule = ptr->at (i);
+							ITEM_RULE const* ptr_rule = ptr_rules->at (i);
 
 							if (!ptr_rule)
 								continue;
@@ -5025,7 +5025,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 							size_t group_id = 0;
 
-							if (page->dlg_id == IDD_SETTINGS_6 && !ptr_rule->is_enabled && ptr_rule->apps)
+							if (page->dlg_id == IDD_SETTINGS_RULES_CUSTOM && !ptr_rule->is_enabled && ptr_rule->apps)
 							{
 								group_id = 1;
 								group2_count += 1;
@@ -5087,12 +5087,12 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 							const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, lpnmlv->iItem);
 
-							if (page->dlg_id == IDD_SETTINGS_6)
-								ptr = rules_custom[idx];
-							else if (page->dlg_id == IDD_SETTINGS_7)
+							if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
 								ptr = rules_blocklist[idx];
-							else if (page->dlg_id == IDD_SETTINGS_5)
+							else if (page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
 								ptr = rules_system[idx];
+							else if (page->dlg_id == IDD_SETTINGS_RULES_CUSTOM)
+								ptr = rules_custom[idx];
 
 							if (ptr)
 							{
@@ -5143,7 +5143,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 									{
 										if (!(lpnmlv->nmcd.dwItemSpec % 2))
 										{
-											lpnmlv->clrTextBk = _R_COLOR_SHADE (GetSysColor (COLOR_WINDOW), 95.0);
+											lpnmlv->clrTextBk = GetSysColor (COLOR_3DFACE);
 											_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
 
 											result = CDRF_NEWFONT;
@@ -5262,7 +5262,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 							EnableMenuItem (submenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 						}
 
-						if (page->dlg_id != IDD_SETTINGS_6)
+						if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
 						{
 							DeleteMenu (submenu, IDM_ADD, MF_BYCOMMAND);
 							DeleteMenu (submenu, IDM_EDIT, MF_BYCOMMAND);
@@ -5353,7 +5353,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 						case IDM_ADD:
 						{
-							if (page->dlg_id != IDD_SETTINGS_6)
+							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
 								break;
 
 							ITEM_RULE* ptr = (ITEM_RULE*)malloc (sizeof (ITEM_RULE));
@@ -5379,7 +5379,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 						case IDM_EDIT:
 						{
-							if (page->dlg_id != IDD_SETTINGS_6)
+							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
 								break;
 
 							const size_t item = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
@@ -5401,7 +5401,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 						case IDM_DELETE:
 						{
-							if (page->dlg_id != IDD_SETTINGS_6)
+							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
 								break;
 
 							if (_r_msg (hwnd, MB_YESNO | MB_ICONQUESTION, APP_NAME, nullptr, I18N (&app, IDS_QUESTION_DELETE, 0), SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETSELECTEDCOUNT, 0, 0)) != IDYES)
@@ -5472,7 +5472,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 		{
 			switch (page->dlg_id)
 			{
-				case IDD_SETTINGS_1:
+				case IDD_SETTINGS_GENERAL:
 				{
 					app.ConfigSet (L"AlwaysOnTop", (IsDlgButtonChecked (hwnd, IDC_ALWAYSONTOP_CHK) == BST_CHECKED) ? true : false);
 
@@ -5495,7 +5495,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					break;
 				}
 
-				case IDD_SETTINGS_2:
+				case IDD_SETTINGS_FILTERS:
 				{
 					app.ConfigSet (L"UseBlocklist2", (IsDlgButtonChecked (hwnd, IDC_USEBLOCKLIST_CHK) == BST_CHECKED) ? true : false);
 					app.ConfigSet (L"UseStealthMode", (IsDlgButtonChecked (hwnd, IDC_USESTEALTHMODE_CHK) == BST_CHECKED) ? true : false);
@@ -5506,33 +5506,34 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					break;
 				}
 
-				case IDD_SETTINGS_3:
+				case IDD_SETTINGS_INTERFACE:
 				{
 					app.ConfigSet (L"ConfirmExit", (IsDlgButtonChecked (hwnd, IDC_CONFIRMEXIT_CHK) == BST_CHECKED) ? true : false);
 					app.ConfigSet (L"ConfirmDelete", (IsDlgButtonChecked (hwnd, IDC_CONFIRMDELETE_CHK) == BST_CHECKED) ? true : false);
 					app.ConfigSet (L"ConfirmLogClear", (IsDlgButtonChecked (hwnd, IDC_CONFIRMLOGCLEAR_CHK) == BST_CHECKED) ? true : false);
 
-					{
-						size_t idx = 0;
-
-						for (auto &p : colors)
+						for (size_t i = 0; i < _r_listview_getitemcount(hwnd, IDC_COLORS); i++)
 						{
-							app.ConfigSet (p.second.config_name, _r_listview_isitemchecked (hwnd, IDC_COLORS, idx));
-							app.ConfigSet (p.second.config_value, p.second.clr);
+							size_t idx = _r_listview_getitemlparam (hwnd, IDC_COLORS, i);
 
-							if (p.second.hbr)
-								DeleteObject (p.second.hbr);
+							ITEM_COLOR* ptr_clr = &colors.at(idx);
 
-							p.second.hbr = CreateSolidBrush (p.second.clr);
+							if (ptr_clr)
+							{
+								app.ConfigSet (ptr_clr->config_name, _r_listview_isitemchecked (hwnd, IDC_COLORS, i));
+								app.ConfigSet (ptr_clr->config_value, ptr_clr->clr);
 
-							idx += 1;
+								if (ptr_clr->hbr)
+									DeleteObject (ptr_clr->hbr);
+
+								ptr_clr->hbr = CreateSolidBrush (ptr_clr->clr);
+							}
 						}
-					}
 
 					break;
 				}
 
-				case IDD_SETTINGS_4:
+				case IDD_SETTINGS_LOG:
 				{
 					app.ConfigSet (L"IsLogEnabled", (IsDlgButtonChecked (hwnd, IDC_ENABLELOG_CHK) == BST_CHECKED) ? true : false);
 					app.ConfigSet (L"LogPath", _r_ctrl_gettext (hwnd, IDC_LOGPATH));
@@ -5547,8 +5548,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					break;
 				}
 
-				case IDD_SETTINGS_7:
-				case IDD_SETTINGS_5:
+				case IDD_SETTINGS_RULES_BLOCKLIST:
+				case IDD_SETTINGS_RULES_SYSTEM:
 				{
 					for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_EDITOR); i++)
 					{
@@ -5556,9 +5557,9 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 						ITEM_RULE* ptr = nullptr;
 
-						if (page->dlg_id == IDD_SETTINGS_7)
+						if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
 							ptr = rules_blocklist.at (idx);
-						else if (page->dlg_id == IDD_SETTINGS_5)
+						else if (page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
 							ptr = rules_system.at (idx);
 
 						if (ptr)
@@ -5571,7 +5572,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					break;
 				}
 
-				case IDD_SETTINGS_6:
+				case IDD_SETTINGS_RULES_CUSTOM:
 				{
 					for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_EDITOR); i++)
 					{
@@ -6526,18 +6527,18 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			DragAcceptFiles (hwnd, TRUE);
 
 			// settings
-			app.AddSettingsPage (nullptr, IDD_SETTINGS_1, IDS_SETTINGS_1, L"IDS_SETTINGS_1", &settings_callback);
-			app.AddSettingsPage (nullptr, IDD_SETTINGS_3, IDS_SETTINGS_3, L"IDS_SETTINGS_3", &settings_callback);
+			app.AddSettingsPage (nullptr, IDD_SETTINGS_GENERAL, IDS_SETTINGS_1, L"IDS_SETTINGS_1", &settings_callback);
+			app.AddSettingsPage (nullptr, IDD_SETTINGS_INTERFACE, IDS_SETTINGS_3, L"IDS_SETTINGS_3", &settings_callback);
 
 			{
-				const size_t page_id = app.AddSettingsPage (nullptr, IDD_SETTINGS_2, IDS_TRAY_FILTERS, L"IDS_TRAY_FILTERS", &settings_callback);
+				const size_t page_id = app.AddSettingsPage (nullptr, IDD_SETTINGS_FILTERS, IDS_TRAY_FILTERS, L"IDS_TRAY_FILTERS", &settings_callback);
 
-				app.AddSettingsPage (nullptr, IDD_SETTINGS_7, IDS_TRAY_BLOCKLIST_RULES, L"IDS_TRAY_BLOCKLIST_RULES", &settings_callback, page_id);
-				app.AddSettingsPage (nullptr, IDD_SETTINGS_5, IDS_TRAY_SYSTEM_RULES, L"IDS_TRAY_SYSTEM_RULES", &settings_callback, page_id);
-				app.AddSettingsPage (nullptr, IDD_SETTINGS_6, IDS_TRAY_CUSTOM_RULES, L"IDS_TRAY_CUSTOM_RULES", &settings_callback, page_id);
+				app.AddSettingsPage (nullptr, IDD_SETTINGS_RULES_BLOCKLIST, IDS_TRAY_BLOCKLIST_RULES, L"IDS_TRAY_BLOCKLIST_RULES", &settings_callback, page_id);
+				app.AddSettingsPage (nullptr, IDD_SETTINGS_RULES_SYSTEM, IDS_TRAY_SYSTEM_RULES, L"IDS_TRAY_SYSTEM_RULES", &settings_callback, page_id);
+				app.AddSettingsPage (nullptr, IDD_SETTINGS_RULES_CUSTOM, IDS_TRAY_CUSTOM_RULES, L"IDS_TRAY_CUSTOM_RULES", &settings_callback, page_id);
 			}
 
-			app.AddSettingsPage (nullptr, IDD_SETTINGS_4, IDS_TRAY_LOG, L"IDS_TRAY_LOG", &settings_callback);
+			app.AddSettingsPage (nullptr, IDD_SETTINGS_LOG, IDS_TRAY_LOG, L"IDS_TRAY_LOG", &settings_callback);
 
 			// load colors
 			{
@@ -7244,7 +7245,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				if (lbhdr->dbch_devicetype == DBT_DEVTYP_VOLUME)
 				{
+					_app_profilesave (hwnd);
 					_app_profileload (hwnd);
+
 					_app_installfilters (false);
 				}
 			}

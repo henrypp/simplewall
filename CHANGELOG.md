@@ -1,3 +1,8 @@
+v2.0.13 (4 October 2017)
++ new settings style
+- fixed settings reset on device arrival
+- fixed colors configuration checkboxes
+
 v2.0.12 RC (3 October 2017)
 + use colors and tooltip for notification icon same as in main window
 + do not show notifications on tray hover when it is disabled
