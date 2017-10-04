@@ -145,7 +145,6 @@ struct STATIC_DATA
 	GUID* psession = nullptr;
 
 	bool is_securityinfoset = false;
-	bool is_firstapply = false;
 	bool is_popuperrors = false;
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
@@ -185,6 +184,7 @@ struct STATIC_DATA
 	size_t ntoskrnl_hash = 0;
 
 	volatile LONG lock_access = 0;
+	volatile LONG lock_checkbox = 0;
 	volatile LONG lock_apply = 0;
 	volatile LONG lock_writelog = 0;
 };

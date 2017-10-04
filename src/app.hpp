@@ -6,8 +6,8 @@
 
 #define APP_NAME L"simplewall"
 #define APP_NAME_SHORT L"simplewall"
-#define APP_VERSION L"2.0.13"
-#define APP_VERSION_RES 2,0,13,0
+#define APP_VERSION L"2.0.14"
+#define APP_VERSION_RES 2,0,14,0
 #define APP_COPYRIGHT L"(c) 2016, 2017 " _APP_AUTHOR L". All Rights Reserved."
 
 #define _APP_BETA_RC

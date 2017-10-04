@@ -1,5 +1,13 @@
+v2.0.14 (5 October 2017)
++ apply settings on demand (too much faster)
+- revert listen connections blocking feature (request)
+- set font also for settings lists
+- revert forgotten rules editor button
+- updated localization
+- fixed ui bugs
+
 v2.0.13 (4 October 2017)
-+ new settings style
++ new settings ui
 - fixed settings reset on device arrival
 - fixed colors configuration checkboxes
 
