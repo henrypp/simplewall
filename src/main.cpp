@@ -5653,6 +5653,9 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 										_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, new_val);
 
+										if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST || page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
+											rules_config[ptr_rule->name] = new_val;
+
 										_r_spinunlock (&config.lock_checkbox);
 									}
 								}

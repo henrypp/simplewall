@@ -1,3 +1,6 @@
+v2.0.16 (6 October 2017)
+- fixed internal rules configuration saving
+
 v2.0.15 (6 October 2017)
 + make current settings backup before import
 - changed default listview font
