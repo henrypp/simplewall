@@ -221,7 +221,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 	if (!plf)
 		return false;
 
-	rstring buffer = app.ConfigGet (L"Font", nullptr);
+	rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
 
 	if (buffer.IsEmpty ())
 	{
@@ -3074,7 +3074,7 @@ void _app_notifycreatewindow ()
 		const UINT height = app.GetDPI (NOTIFY_HEIGHT);
 		const UINT spacer = app.GetDPI (NOTIFY_SPACER);
 
-		config.hnotification = CreateWindowEx (WS_EX_TOOLWINDOW | WS_EX_TOPMOST, NOTIFY_CLASS_DLG, APP_NAME, WS_POPUP, 0, 0, width, height, nullptr, nullptr, wcex.hInstance, nullptr);
+		config.hnotification = CreateWindowEx (WS_EX_TOOLWINDOW | WS_EX_TOPMOST, NOTIFY_CLASS_DLG, nullptr, WS_POPUP, 0, 0, width, height, nullptr, nullptr, wcex.hInstance, nullptr);
 
 		if (!config.hnotification)
 		{
@@ -5151,7 +5151,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 							_r_spinlock (&config.lock_checkbox);
 
-							_r_listview_setitem (hwnd, IDC_EDITOR, ptr_rule->name, i, 0);
+							_r_listview_setitem (hwnd, IDC_EDITOR, ptr_rule->name, i, 0, ptr_rule->is_block ? 1 : 0, group_id);
 							_r_listview_setitem (hwnd, IDC_EDITOR, dir, i, 1);
 							_r_listview_setitem (hwnd, IDC_EDITOR, protocol, i, 2);
 							_r_listview_setitem (hwnd, IDC_EDITOR, af, i, 3);
@@ -5200,8 +5200,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 		case _RM_CLOSE:
 		{
-			_app_profilesave (app.GetHWND ());
-			break;
+			return TRUE;
 		}
 
 		case _RM_MESSAGE:
@@ -5283,6 +5282,9 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 											if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST || page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
 												rules_config[ptr_rule->name] = new_val;
+
+											_app_profilesave (app.GetHWND ());
+											settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page);
 										}
 									}
 								}
@@ -5463,6 +5465,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 					if (ctrl_id != IDC_EDITOR)
 						break;
+
 					HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_EDITOR)), submenu = GetSubMenu (menu, 0);
 
 					// localize
@@ -5529,8 +5532,10 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 								{
 									rules_custom.push_back (ptr_rule);
 
-									settings_callback (page->hwnd, _RM_INITIALIZE, nullptr, page); // reinititalize page
-									settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page); // reinititalize page
+									_app_profilesave (app.GetHWND ());
+
+									settings_callback (page->hwnd, _RM_INITIALIZE, nullptr, page);
+									settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page);
 								}
 								else
 								{
@@ -5556,6 +5561,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 								if (ptr && DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr))
 								{
+									_app_profilesave (app.GetHWND ());
+
 									settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
 								}
 							}
@@ -5598,6 +5605,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 									_app_freerule (&rules_custom.at (idx));
 								}
 							}
+
+							_app_profilesave (app.GetHWND ());
 
 							_r_listview_redraw (hwnd, IDC_EDITOR);
 
@@ -5644,6 +5653,10 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 										_r_spinunlock (&config.lock_checkbox);
 									}
 								}
+
+								_app_profilesave (app.GetHWND ());
+
+								settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
 							}
 
 							break;
@@ -7656,6 +7669,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (GetOpenFileName (&ofn))
 					{
+						// make backup
+						if (LOWORD (wparam) == IDM_IMPORT_APPS)
+							_r_fs_copy (config.apps_path, _r_fmt (L"%s.bak", config.apps_path));
+
+						else if (LOWORD (wparam) == IDM_IMPORT_RULES)
+							_r_fs_copy (config.rules_custom_path, _r_fmt (L"%s.bak", config.rules_custom_path));
+
 						_app_profileload (hwnd, ((LOWORD (wparam) == IDM_IMPORT_APPS) ? path : nullptr), ((LOWORD (wparam) == IDM_IMPORT_RULES) ? path : nullptr));
 						_app_profilesave (hwnd);
 
@@ -7756,7 +7776,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 						else
 						{
-							app.ConfigSet (L"Font", nullptr);
+							app.ConfigSet (L"Font", UI_FONT_DEFAULT);
 						}
 
 						_app_listviewsetfont (hwnd, IDC_LISTVIEW);
@@ -8274,10 +8294,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			break;
 		}
-}
+	}
 
 	return FALSE;
-	}
+}
 
 
 INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)

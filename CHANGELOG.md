@@ -1,3 +1,10 @@
+v2.0.15 (6 October 2017)
++ make current settings backup before import
+- changed default listview font
+- fixed settings listview groups does not changed immediately
+- fixed notification window display at startup
+- fixed uninstaller do not removed some files
+
 v2.0.14 (5 October 2017)
 + apply settings on demand (too much faster)
 - revert listen connections blocking feature (request)

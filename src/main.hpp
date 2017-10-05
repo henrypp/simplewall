@@ -32,6 +32,7 @@
 #define TAB_SPACE L"   "
 #define ERR_FORMAT L"%s() failed with error code 0x%.8lx (%s)"
 #define RULE_DELIMETER L";"
+#define UI_FONT_DEFAULT L"Segoe UI Light;10;300"
 
 // notification timer
 #define NOTIFY_WIDTH 368
