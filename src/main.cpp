@@ -4800,7 +4800,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					ptr->dir = (EnumRuleDirection)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
 					ptr->is_block = SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0) ? true : false;
-					ptr->is_enabled = IsDlgButtonChecked (hwnd, IDC_ENABLED_CHK) == BST_CHECKED;
+					ptr->is_enabled = (IsDlgButtonChecked (hwnd, IDC_ENABLED_CHK) == BST_CHECKED) ? true : false;
 
 					EndDialog (hwnd, 1);
 
@@ -5080,10 +5080,6 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					_r_listview_setcolumn (hwnd, IDC_EDITOR, 2, I18N (&app, IDS_PROTOCOL, 0), 0);
 					_r_listview_setcolumn (hwnd, IDC_EDITOR, 3, I18N (&app, IDS_IPVERSION, 0), 0);
 
-					_r_listview_setgroup (hwnd, IDC_EDITOR, 0, I18N (&app, IDS_GROUP_ENABLED, 0), nullptr);
-					_r_listview_setgroup (hwnd, IDC_EDITOR, 1, I18N (&app, IDS_GROUP_SPECIAL, 0), nullptr);
-					_r_listview_setgroup (hwnd, IDC_EDITOR, 2, I18N (&app, IDS_GROUP_DISABLED, 0), nullptr);
-
 					std::vector<ITEM_RULE*> const* ptr_rules = nullptr;
 
 					if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
@@ -5101,9 +5097,10 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 						size_t group2_count = 0;
 						size_t group3_count = 0;
 
-						for (size_t i = 0; i < ptr_rules->size (); i++)
+						for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_EDITOR); i++)
 						{
-							ITEM_RULE const* ptr_rule = ptr_rules->at (i);
+							const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, i);
+							ITEM_RULE const* ptr_rule = ptr_rules->at (idx);
 
 							if (!ptr_rule)
 								continue;
@@ -5284,7 +5281,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 												rules_config[ptr_rule->name] = new_val;
 
 											_app_profilesave (app.GetHWND ());
-											settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page);
+											settings_callback (hwnd, _RM_LOCALIZE, nullptr, page);
 										}
 									}
 								}
@@ -5532,10 +5529,16 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 								{
 									rules_custom.push_back (ptr_rule);
 
+									_r_spinlock (&config.lock_checkbox);
+
+									_r_listview_additem (hwnd, IDC_EDITOR, ptr_rule->name, LAST_VALUE, 0, LAST_VALUE, 0, rules_custom.size () - 1);
+									_r_listview_setitemcheck (hwnd, IDC_EDITOR, LAST_VALUE, ptr_rule->is_enabled);
+
+									_r_spinunlock (&config.lock_checkbox);
+
 									_app_profilesave (app.GetHWND ());
 
-									settings_callback (page->hwnd, _RM_INITIALIZE, nullptr, page);
-									settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page);
+									settings_callback (hwnd, _RM_LOCALIZE, nullptr, page);
 								}
 								else
 								{
@@ -5563,7 +5566,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 								{
 									_app_profilesave (app.GetHWND ());
 
-									settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
+									settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
 								}
 							}
 
@@ -5656,7 +5659,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 								_app_profilesave (app.GetHWND ());
 
-								settings_callback (page->hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
+								settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
 							}
 
 							break;
