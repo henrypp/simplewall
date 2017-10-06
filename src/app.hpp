@@ -10,6 +10,4 @@
 #define APP_VERSION_RES 2,0,16
 #define APP_COPYRIGHT L"(c) 2016, 2017 " _APP_AUTHOR L". All Rights Reserved."
 
-#define _APP_BETA_RC
-
 #endif // __APP_H__
