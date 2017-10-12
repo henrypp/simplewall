@@ -33,7 +33,6 @@ CONST UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
 rapp app (APP_NAME, APP_NAME_SHORT, APP_VERSION, APP_COPYRIGHT);
 
 std::unordered_map<size_t, ITEM_APPLICATION> apps;
-std::unordered_map<size_t, std::vector<size_t>> apps_rules;
 std::unordered_map<size_t, __time64_t> notifications_last;
 
 std::unordered_map<rstring, bool, rstring::hash, rstring::is_equal> rules_config;
@@ -57,6 +56,10 @@ FWPM_NET_EVENT_ENUM_TEMPLATE enum_template;
 
 EXTERN_C const IID IID_IImageList;
 
+_R_FASTLOCK lock_apply;
+_R_FASTLOCK lock_access;
+_R_FASTLOCK lock_writelog;
+
 bool _wfp_initialize (bool is_full);
 void _wfp_uninitialize (bool is_full);
 
@@ -66,12 +69,10 @@ UINT WINAPI ApplyThread (LPVOID lparam);
 LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 void _app_notifysettimeout (HWND hwnd, UINT_PTR id, bool is_create, UINT timeout);
-void _app_notifyrefresh ();
+bool _app_notifyrefresh ();
 
 bool _wfp_logsubscribe ();
 bool _wfp_logunsubscribe ();
-
-#define LANG_MENU 5
 
 void _app_logerror (LPCWSTR fn, DWORD result, LPCWSTR desc, bool is_nopopups = false)
 {
@@ -81,7 +82,7 @@ void _app_logerror (LPCWSTR fn, DWORD result, LPCWSTR desc, bool is_nopopups = f
 	{
 		config.is_popuperrors = true;
 
-		app.TrayPopup (NIIF_ERROR | (app.ConfigGet (L"IsNotificationsSilent", false).AsBool () ? NIIF_NOSOUND : 0), APP_NAME, I18N (&app, IDS_STATUS_ERROR, 0));
+		app.TrayPopup (UID, NIIF_ERROR | (app.ConfigGet (L"IsNotificationsSilent", false).AsBool () ? NIIF_NOSOUND : 0), APP_NAME, I18N (&app, IDS_STATUS_ERROR, 0));
 	}
 }
 
@@ -726,28 +727,26 @@ size_t _app_addapplication (HWND hwnd, rstring path, __time64_t timestamp, bool 
 
 	const size_t item = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
 
-	_r_spinlock (&config.lock_checkbox);
+	config.is_nocheckboxnotify = true;
 
 	_r_listview_additem (hwnd, IDC_LISTVIEW, app.ConfigGet (L"ShowFilenames", true).AsBool () ? ptr_app->file_name : path, item, 0, ptr_app->icon_id, ptr_app->is_enabled ? 0 : 1, hash);
-	_r_listview_additem (hwnd, IDC_LISTVIEW, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME), item, 1);
+	_r_listview_setitem (hwnd, IDC_LISTVIEW, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME), item, 1);
 
 	_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, is_checked);
 
-	_r_spinunlock (&config.lock_checkbox);
+	config.is_nocheckboxnotify = false;
 
 	return hash;
 }
 
 ITEM_APPLICATION* _app_getapplication (size_t hash)
 {
-	ITEM_APPLICATION *ptr = nullptr;
+	ITEM_APPLICATION *ptr_app = nullptr;
 
 	if (hash && apps.find (hash) != apps.end ())
-	{
-		ptr = &apps.at (hash);
-	}
+		ptr_app = &apps.at (hash);
 
-	return ptr;
+	return ptr_app;
 }
 
 void _app_freenotify (size_t idx, size_t hash)
@@ -805,34 +804,34 @@ void _app_freenotify (size_t idx, size_t hash)
 	}
 }
 
-bool _app_freeapplication (ITEM_APPLICATION *ptr, size_t hash)
+bool _app_freeapplication (ITEM_APPLICATION* ptr_app, size_t hash)
 {
 	bool is_enabled = false;
 
-	if (ptr)
-	{
-		is_enabled = ptr->is_enabled;
+	if (!ptr_app)
+		ptr_app = _app_getapplication (hash);
 
-		if (ptr->description)
+	if (ptr_app)
+	{
+		is_enabled = ptr_app->is_enabled;
+
+		if (ptr_app->description)
 		{
-			free (ptr->description);
-			ptr->description = nullptr;
+			free (ptr_app->description);
+			ptr_app->description = nullptr;
 		}
 
-		if (ptr->signer)
+		if (ptr_app->signer)
 		{
-			free (ptr->signer);
-			ptr->signer = nullptr;
+			free (ptr_app->signer);
+			ptr_app->signer = nullptr;
 		}
 	}
 
 	if (hash)
 	{
-		if (apps_rules.find (hash) != apps_rules.end ())
-		{
-			apps_rules.erase (hash);
+		if (ptr_app && !ptr_app->rules.empty ())
 			is_enabled = true;
-		}
 
 		_app_freenotify (LAST_VALUE, hash);
 		_app_notifyrefresh ();
@@ -847,70 +846,73 @@ void _app_freerule (ITEM_RULE** ptr)
 {
 	if (ptr && *ptr)
 	{
-		ITEM_RULE* rule = *ptr;
+		ITEM_RULE *ptr_rule = *ptr;
 
-		if (rule->name)
+		if (ptr_rule->name)
 		{
-			free (rule->name);
-			rule->name = nullptr;
+			free (ptr_rule->name);
+			ptr_rule->name = nullptr;
 		}
 
-		if (rule->rule)
+		if (ptr_rule->rule)
 		{
-			free (rule->rule);
-			rule->rule = nullptr;
+			free (ptr_rule->rule);
+			ptr_rule->rule = nullptr;
 		}
 
-		if (rule->apps)
+		if (ptr_rule->apps)
 		{
-			free (rule->apps);
-			rule->apps = nullptr;
+			free (ptr_rule->apps);
+			ptr_rule->apps = nullptr;
 		}
 
-		free (rule);
+		free (ptr_rule);
 
-		rule = nullptr;
+		ptr_rule = nullptr;
 		*ptr = nullptr;
 	}
 }
 
 DWORD_PTR _app_getcolor (size_t hash, bool is_brush)
 {
-	ITEM_APPLICATION const* ptr_app = _app_getapplication (hash);
-
-	if (!ptr_app)
-		return 0;
+	_r_fastlock_acquireshared (&lock_access);
 
 	rstring color_value;
+	ITEM_APPLICATION const* ptr_app = _app_getapplication (hash);
 
-	if (app.ConfigGet (L"IsHighlightInvalid", true).AsBool () && ((ptr_app->is_enabled && ptr_app->error_count) || (!ptr_app->is_picoapp && !ptr_app->is_network && ptr_app->real_path[0] != L'\\' && !_r_fs_exists (ptr_app->real_path))))
+	if (ptr_app)
 	{
-		color_value = L"ColorInvalid";
+		if (app.ConfigGet (L"IsHighlightInvalid", true).AsBool () && ((ptr_app->is_enabled && ptr_app->error_count) || (!ptr_app->is_picoapp && !ptr_app->is_network && ptr_app->real_path[0] != L'\\' && !_r_fs_exists (ptr_app->real_path))))
+		{
+			color_value = L"ColorInvalid";
+		}
+		else if (app.ConfigGet (L"IsHighlightSpecial", true).AsBool () && !ptr_app->rules.empty ())
+		{
+			color_value = L"ColorSpecial";
+		}
+		else if (ptr_app->is_silent && app.ConfigGet (L"IsHighlightSilent", true).AsBool ())
+		{
+			color_value = L"ColorSilent";
+		}
+		else if (ptr_app->is_signed && app.ConfigGet (L"IsHighlightSigned", true).AsBool ())
+		{
+			color_value = L"ColorSigned";
+		}
+		else if (ptr_app->is_picoapp && app.ConfigGet (L"IsHighlightPico", true).AsBool ())
+		{
+			color_value = L"ColorPico";
+		}
+		else if (ptr_app->is_network && app.ConfigGet (L"IsHighlightNetwork", true).AsBool ())
+		{
+			color_value = L"ColorNetwork";
+		}
+		else if (ptr_app->is_system && app.ConfigGet (L"IsHighlightSystem", true).AsBool ())
+		{
+			color_value = L"ColorSystem";
+		}
 	}
-	else if (app.ConfigGet (L"IsHighlightSpecial", true).AsBool () && (apps_rules.find (hash) != apps_rules.end () && !apps_rules[hash].empty ()))
-	{
-		color_value = L"ColorSpecial";
-	}
-	else if (ptr_app->is_silent && app.ConfigGet (L"IsHighlightSilent", true).AsBool ())
-	{
-		color_value = L"ColorSilent";
-	}
-	else if (ptr_app->is_signed && app.ConfigGet (L"IsHighlightSigned", true).AsBool ())
-	{
-		color_value = L"ColorSigned";
-	}
-	else if (ptr_app->is_picoapp && app.ConfigGet (L"IsHighlightPico", true).AsBool ())
-	{
-		color_value = L"ColorPico";
-	}
-	else if (ptr_app->is_network && app.ConfigGet (L"IsHighlightNetwork", true).AsBool ())
-	{
-		color_value = L"ColorNetwork";
-	}
-	else if (ptr_app->is_system && app.ConfigGet (L"IsHighlightSystem", true).AsBool ())
-	{
-		color_value = L"ColorSystem";
-	}
+
+	_r_fastlock_releaseshared (&lock_access);
 
 	if (!color_value.IsEmpty ())
 	{
@@ -928,6 +930,8 @@ DWORD_PTR _app_getcolor (size_t hash, bool is_brush)
 rstring _app_gettooltip (size_t hash)
 {
 	rstring result;
+
+	_r_fastlock_acquireshared (&lock_access);
 
 	ITEM_APPLICATION* ptr_app = _app_getapplication (hash);
 
@@ -987,7 +991,7 @@ rstring _app_gettooltip (size_t hash)
 			if (ptr_app->is_silent)
 				buffer.Append (TAB_SPACE + I18N (&app, IDS_HIGHLIGHT_SILENT, 0) + L"\r\n");
 
-			if ((apps_rules.find (hash) != apps_rules.end () && !apps_rules[hash].empty ()))
+			if (!ptr_app->rules.empty ())
 				buffer.Append (TAB_SPACE + I18N (&app, IDS_HIGHLIGHT_SPECIAL, 0) + L"\r\n");
 
 			if (ptr_app->is_system)
@@ -1001,6 +1005,8 @@ rstring _app_gettooltip (size_t hash)
 		}
 	}
 
+	_r_fastlock_releaseshared (&lock_access);
+
 	return result;
 }
 
@@ -1012,12 +1018,12 @@ UINT _wfp_destroyfilters (bool is_full)
 	if (_r_sys_validversion (6, 1))
 		_wfp_logunsubscribe ();
 
-	_r_spinlock (&config.lock_access);
+	_r_fastlock_acquireexclusive (&lock_access);
 
 	for (auto &p : apps)
 		p.second.error_count = 0;
 
-	_r_spinunlock (&config.lock_access);
+	_r_fastlock_releaseexclusive (&lock_access);
 
 	DWORD result = FwpmTransactionBegin (config.hengine, 0);
 
@@ -1089,7 +1095,7 @@ UINT _wfp_destroyfilters (bool is_full)
 	{
 		// set icons
 		app.SetIcon (IDI_INACTIVE);
-		app.TraySetInfo (_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_INACTIVE), GetSystemMetrics (SM_CXSMICON)), nullptr);
+		app.TraySetInfo (UID, _r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_INACTIVE), GetSystemMetrics (SM_CXSMICON)), nullptr);
 
 		SetDlgItemText (app.GetHWND (), IDC_START_BTN, I18N (&app, IDS_TRAY_START, 0));
 	}
@@ -1227,7 +1233,11 @@ void _app_listviewsort (HWND hwnd, INT subitem, bool is_notifycode)
 
 	_r_listview_setcolumnsortindex (hwnd, IDC_LISTVIEW, subitem, is_descend ? -1 : 1);
 
+	_r_fastlock_acquireshared (&lock_access);
+
 	SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_SORTITEMS, lparam, (LPARAM)&_app_listviewcompare);
+
+	_r_fastlock_releaseshared (&lock_access);
 
 	_app_refreshstatus (hwnd, true, true);
 }
@@ -2043,9 +2053,9 @@ LPVOID _app_loadresource (UINT rc, PDWORD size)
 	return nullptr;
 }
 
-void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::vector<ITEM_RULE*>* ptr)
+void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::vector<ITEM_RULE*> *ptr_rules)
 {
-	if (!ptr)
+	if (!ptr_rules)
 		return;
 
 	pugi::xml_document doc;
@@ -2074,9 +2084,11 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::ve
 
 		if (root)
 		{
+			_r_fastlock_acquireexclusive (&lock_access);
+
 			for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
 			{
-				const size_t idx = ptr->size ();
+				const size_t idx = ptr_rules->size ();
 				ITEM_RULE* rule_ptr = (ITEM_RULE*)malloc (sizeof (ITEM_RULE));
 
 				if (rule_ptr)
@@ -2135,14 +2147,10 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::ve
 
 										if (hash)
 										{
-											_r_spinlock (&config.lock_access);
-
 											if (apps.find (hash) == apps.end ())
 												_app_addapplication (hwnd, path_app, 0, false, false, true);
 
-											_r_spinunlock (&config.lock_access);
-
-											apps_rules[hash].push_back (idx);
+											apps[hash].rules.push_back (idx);
 										}
 									}
 								}
@@ -2162,9 +2170,11 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, UINT rc, bool is_internal, std::ve
 							rules_config[rule_ptr->name] = rule_ptr->is_enabled;
 					}
 
-					ptr->push_back (rule_ptr);
+					ptr_rules->push_back (rule_ptr);
 				}
 			}
+
+			_r_fastlock_releaseexclusive (&lock_access);
 		}
 	}
 }
@@ -2176,9 +2186,9 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 		const size_t item_id = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 		const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, IDC_LISTVIEW), SB_VERT);
 
-		_r_spinlock (&config.lock_access);
+		_r_fastlock_acquireexclusive (&lock_access);
 
-		// clear apps
+		// clear apps and rules
 		for (auto &p : apps)
 			_app_freeapplication (&p.second, 0);
 
@@ -2186,35 +2196,34 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			_app_freerule (&rules_custom.at (i));
 
 		apps.clear ();
-		apps_rules.clear ();
 		rules_custom.clear ();
 
 		_r_listview_deleteallitems (hwnd, IDC_LISTVIEW);
 
-		_r_spinunlock (&config.lock_access);
+		_r_fastlock_releaseexclusive (&lock_access);
 
-		pugi::xml_document doc;
-		pugi::xml_parse_result result = doc.load_file (path_apps ? path_apps : config.apps_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
-
-		if (!result)
 		{
-			// show only syntax, memory and i/o errors...
-			if (result.status != pugi::status_file_not_found)
-				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d, offset: %d, text: %s, file: %s", result.status, result.offset, rstring (result.description ()), config.apps_path));
-		}
-		else
-		{
-			pugi::xml_node root = doc.child (L"root");
+			pugi::xml_document doc;
+			pugi::xml_parse_result result = doc.load_file (path_apps ? path_apps : config.apps_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
-			if (root)
+			if (!result)
 			{
-				for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
+				// show only syntax, memory and i/o errors...
+				if (result.status != pugi::status_file_not_found)
+					_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d, offset: %d, text: %s, file: %s", result.status, result.offset, rstring (result.description ()), config.apps_path));
+			}
+			else
+			{
+				pugi::xml_node root = doc.child (L"root");
+
+				if (root)
 				{
-					_r_spinlock (&config.lock_access);
+					_r_fastlock_acquireexclusive (&lock_access);
 
-					_app_addapplication (hwnd, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_ullong (), item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool (), true);
+					for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
+						_app_addapplication (hwnd, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_ullong (), item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool (), true);
 
-					_r_spinunlock (&config.lock_access);
+					_r_fastlock_releaseexclusive (&lock_access);
 				}
 			}
 		}
@@ -2256,13 +2265,15 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
 {
-	// apps rules
+	// apps list
 	{
 		pugi::xml_document doc;
 		pugi::xml_node root = doc.append_child (L"root");
 
 		if (root)
 		{
+			_r_fastlock_acquireshared (&lock_access);
+
 			const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
 
 			if (count)
@@ -2277,19 +2288,15 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 						if (item)
 						{
-							_r_spinlock (&config.lock_access);
+							ITEM_APPLICATION const *ptr_app = _app_getapplication (hash);
 
-							ITEM_APPLICATION const* ptr = _app_getapplication (hash);
-
-							if (ptr)
+							if (ptr_app)
 							{
-								item.append_attribute (L"path").set_value (ptr->display_path);
-								item.append_attribute (L"timestamp").set_value (ptr->timestamp);
-								item.append_attribute (L"is_silent").set_value (ptr->is_silent);
-								item.append_attribute (L"is_enabled").set_value (ptr->is_enabled);
+								item.append_attribute (L"path").set_value (ptr_app->display_path);
+								item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
+								item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
+								item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
 							}
-
-							_r_spinunlock (&config.lock_access);
 						}
 					}
 				}
@@ -2306,31 +2313,32 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 						if (item)
 						{
-							_r_spinlock (&config.lock_access);
+							ITEM_APPLICATION const *ptr_app = &p.second;
 
-							ITEM_APPLICATION const* ptr = &p.second;
-
-							item.append_attribute (L"path").set_value (ptr->display_path);
-							item.append_attribute (L"timestamp").set_value (ptr->timestamp);
-							item.append_attribute (L"is_silent").set_value (ptr->is_silent);
-							item.append_attribute (L"is_enabled").set_value (ptr->is_enabled);
-
-							_r_spinunlock (&config.lock_access);
+							item.append_attribute (L"path").set_value (ptr_app->display_path);
+							item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
+							item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
+							item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
 						}
 					}
 				}
 			}
 
+			_r_fastlock_releaseshared (&lock_access);
+
 			doc.save_file (path_apps ? path_apps : config.apps_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 		}
 	}
 
+	// internal rules config
 	{
 		pugi::xml_document doc;
 		pugi::xml_node root = doc.append_child (L"root");
 
 		if (root)
 		{
+			_r_fastlock_acquireshared (&lock_access);
+
 			for (auto const &p : rules_config)
 			{
 				pugi::xml_node item = root.append_child (L"item");
@@ -2341,6 +2349,8 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 					item.append_attribute (L"is_enabled").set_value (p.second);
 				}
 			}
+
+			_r_fastlock_releaseshared (&lock_access);
 
 			doc.save_file (config.rules_config_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 		}
@@ -2360,45 +2370,42 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 			if (root)
 			{
+				_r_fastlock_acquireshared (&lock_access);
+
 				for (size_t i = 0; i < rules_custom.size (); i++)
 				{
 					ITEM_RULE const* ptr_rule = rules_custom.at (i);
 
-					if (!ptr_rule)
-						continue;
-
-					pugi::xml_node item = root.append_child (L"item");
-
-					if (item)
+					if (ptr_rule)
 					{
-						item.append_attribute (L"name").set_value (ptr_rule->name);
-						item.append_attribute (L"rule").set_value (ptr_rule->rule);
-						item.append_attribute (L"dir").set_value (ptr_rule->dir);
+						pugi::xml_node item = root.append_child (L"item");
 
-						if (ptr_rule->type != TypeUnknown)
-							item.append_attribute (L"type").set_value (ptr_rule->type);
-
-						item.append_attribute (L"protocol").set_value (ptr_rule->protocol);
-						item.append_attribute (L"version").set_value (ptr_rule->version);
-
-						// add apps attribute
+						if (item)
 						{
-							rstring arr;
-							bool is_haveapps = false;
+							item.append_attribute (L"name").set_value (ptr_rule->name);
+							item.append_attribute (L"rule").set_value (ptr_rule->rule);
+							item.append_attribute (L"dir").set_value (ptr_rule->dir);
 
-							for (auto const &p : apps_rules)
+							if (ptr_rule->type != TypeUnknown)
+								item.append_attribute (L"type").set_value (ptr_rule->type);
+
+							item.append_attribute (L"protocol").set_value (ptr_rule->protocol);
+							item.append_attribute (L"version").set_value (ptr_rule->version);
+
+							// add apps attribute
 							{
-								const size_t hash = p.first;
+								rstring arr;
+								bool is_haveapps = false;
 
-								if (hash)
+								for (auto const &p : apps)
 								{
-									for (size_t j = 0; j < p.second.size (); j++)
-									{
-										if (p.second.at (j) == i)
-										{
-											ITEM_APPLICATION const* ptr_app = _app_getapplication (hash);
+									ITEM_APPLICATION const* ptr_app = _app_getapplication (p.first);
 
-											if (ptr_app)
+									if (ptr_app)
+									{
+										for (size_t j = 0; j < p.second.rules.size (); j++)
+										{
+											if (p.second.rules.at (j) == i)
 											{
 												arr.Append (_r_path_unexpand (ptr_app->display_path));
 												arr.Append (RULE_DELIMETER);
@@ -2410,20 +2417,22 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 										}
 									}
 								}
+
+								if (is_haveapps)
+								{
+									arr.Trim (RULE_DELIMETER);
+
+									item.append_attribute (L"apps").set_value (arr);
+								}
 							}
 
-							if (is_haveapps)
-							{
-								arr.Trim (RULE_DELIMETER);
-
-								item.append_attribute (L"apps").set_value (arr);
-							}
+							item.append_attribute (L"is_block").set_value (ptr_rule->is_block);
+							item.append_attribute (L"is_enabled").set_value (ptr_rule->is_enabled);
 						}
-
-						item.append_attribute (L"is_block").set_value (ptr_rule->is_block);
-						item.append_attribute (L"is_enabled").set_value (ptr_rule->is_enabled);
 					}
 				}
+
+				_r_fastlock_releaseshared (&lock_access);
 
 				doc.save_file (path_rules ? path_rules : config.rules_custom_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 			}
@@ -2500,6 +2509,12 @@ UINT _wfp_installfilters ()
 
 			for (size_t i = 0; i < _countof (ip_list); i++)
 			{
+				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
+				{
+					FwpmTransactionAbort (config.hengine);
+					return 0;
+				}
+
 				FWP_V4_ADDR_AND_MASK addr4 = {0};
 				FWP_V6_ADDR_AND_MASK addr6 = {0};
 
@@ -2551,12 +2566,6 @@ UINT _wfp_installfilters ()
 							error_count += ERROR_SUCCESS != _wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FALSE, true);
 					}
 				}
-
-				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-				{
-					FwpmTransactionAbort (config.hengine);
-					return 0;
-				}
 			}
 		}
 
@@ -2564,29 +2573,64 @@ UINT _wfp_installfilters ()
 		{
 			const bool is_block = (mode == ModeBlacklist) ? true : false;
 
+			_r_fastlock_acquireshared (&lock_access);
+
 			for (auto& p : apps)
 			{
 				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
 				{
+					_r_fastlock_releaseshared (&lock_access);
+
 					FwpmTransactionAbort (config.hengine);
 					return 0;
 				}
 
-				_r_spinlock (&config.lock_access);
-
 				ITEM_APPLICATION* ptr_app = &p.second;
 
-				if (!ptr_app->is_enabled)
-					continue;
+				if (ptr_app)
+				{
+					LPCWSTR path = ptr_app->display_path;
 
-				ptr_app->error_count = !_wfp_createrulefilter (nullptr, nullptr, ptr_app->display_path, DirBoth, nullptr, 0, AF_UNSPEC, is_block, FILTER_WEIGHT_APPLICATION, false);
+					// apply general rule (allow/block)
+					if (ptr_app->is_enabled)
+					{
+						ptr_app->error_count = !_wfp_createrulefilter (nullptr, nullptr, path, DirBoth, nullptr, 0, AF_UNSPEC, is_block, FILTER_WEIGHT_APPLICATION, false);
+						error_count += ptr_app->error_count;
+					}
 
-				error_count += ptr_app->error_count;
+					// apply special rules for apps
+					for (size_t i = 0; i < ptr_app->rules.size (); i++)
+					{
+						if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
+						{
+							_r_fastlock_releaseshared (&lock_access);
 
-				_r_spinunlock (&config.lock_access);
+							FwpmTransactionAbort (config.hengine);
+							return 0;
+						}
+
+						ITEM_RULE* ptr_rule = rules_custom.at (ptr_app->rules.at (i));
+
+						// prevent filters duplicate, if rule is checked: guilty! next case.
+						if (!ptr_rule || ptr_rule->is_enabled)
+							continue;
+
+						rstring::rvector rule_arr = rstring (ptr_rule->rule).AsVector (RULE_DELIMETER);
+
+						for (size_t j = 0; j < rule_arr.size (); j++)
+						{
+							const rstring rule = rule_arr.at (j).Trim (L"\r\n ");
+
+							if (!rule.IsEmpty ())
+								error_count += !_wfp_createrulefilter (ptr_rule->name, rule, path, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_CUSTOM, false);
+						}
+					}
+				}
 			}
 
-			// unlock this app
+			_r_fastlock_releaseshared (&lock_access);
+
+			// unlock main app
 			error_count += !_wfp_createrulefilter (nullptr, nullptr, app.GetBinaryPath (), DirBoth, nullptr, 0, AF_UNSPEC, false, FILTER_WEIGHT_APPLICATION, false);
 		}
 
@@ -2601,19 +2645,19 @@ UINT _wfp_installfilters ()
 					return 0;
 				}
 
-				ITEM_RULE* ptr = rules_blocklist.at (i);
+				ITEM_RULE* ptr_rule = rules_blocklist.at (i);
 
-				if (!ptr || !ptr->is_enabled)
+				if (!ptr_rule || !ptr_rule->is_enabled)
 					continue;
 
-				rstring::rvector rule_arr = rstring (ptr->rule).AsVector (RULE_DELIMETER);
+				rstring::rvector rule_arr = rstring (ptr_rule->rule).AsVector (RULE_DELIMETER);
 
 				for (size_t j = 0; j < rule_arr.size (); j++)
 				{
 					const rstring rule = rule_arr.at (j).Trim (L"\r\n ");
 
 					if (!rule.IsEmpty ())
-						error_count += !_wfp_createrulefilter (ptr->name, rule, nullptr, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_BLOCKLIST, false);
+						error_count += !_wfp_createrulefilter (ptr_rule->name, rule, nullptr, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_BLOCKLIST, false);
 				}
 			}
 		}
@@ -2628,12 +2672,12 @@ UINT _wfp_installfilters ()
 					return 0;
 				}
 
-				ITEM_RULE* ptr = rules_system.at (i);
+				ITEM_RULE* ptr_rule = rules_system.at (i);
 
-				if (!ptr || !ptr->is_enabled)
+				if (!ptr_rule || !ptr_rule->is_enabled)
 					continue;
 
-				rstring::rvector rule_arr = rstring (ptr->rule).AsVector (RULE_DELIMETER);
+				rstring::rvector rule_arr = rstring (ptr_rule->rule).AsVector (RULE_DELIMETER);
 
 				for (size_t j = 0; j < rule_arr.size (); j++)
 				{
@@ -2642,101 +2686,69 @@ UINT _wfp_installfilters ()
 					if (rule.IsEmpty ())
 						continue;
 
-					if (ptr->apps)
+					if (ptr_rule->apps)
 					{
 						// apply rules for specified apps
-						rstring::rvector path_arr = rstring (ptr->apps).AsVector (RULE_DELIMETER);
+						rstring::rvector path_arr = rstring (ptr_rule->apps).AsVector (RULE_DELIMETER);
 
 						for (size_t k = 0; k < path_arr.size (); k++)
 						{
 							const rstring path = _r_path_expand (path_arr.at (k)).Trim (L"\r\n ");
 
 							if (!path.IsEmpty ())
-								error_count += !_wfp_createrulefilter (ptr->name, rule, path, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_CUSTOM, false);
+								error_count += !_wfp_createrulefilter (ptr_rule->name, rule, path, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_CUSTOM, false);
 						}
 					}
 					else
 					{
 						// apply rules for all apps
-						error_count += !_wfp_createrulefilter (ptr->name, rule, nullptr, ptr->dir, &ptr->type, ptr->protocol, ptr->version, ptr->is_block, FILTER_WEIGHT_CUSTOM, false);
-					}
-				}
-			}
-		}
-
-		// apply special rules for apps
-		for (auto const &p : apps_rules)
-		{
-			if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-			{
-				FwpmTransactionAbort (config.hengine);
-				return 0;
-			}
-
-			ITEM_APPLICATION const* ptr_app = _app_getapplication (p.first);
-
-			if (ptr_app)
-			{
-				LPCWSTR path = ptr_app->display_path;
-
-				for (size_t i = 0; i < p.second.size (); i++)
-				{
-					if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-					{
-						FwpmTransactionAbort (config.hengine);
-						return 0;
-					}
-
-					ITEM_RULE* ptr_rule = rules_custom.at (p.second.at (i));
-
-					// prevent filters duplicate, if rule is checked: guilty! next case.
-					if (!ptr_rule || ptr_rule->is_enabled)
-						continue;
-
-					rstring::rvector rule_arr = rstring (ptr_rule->rule).AsVector (RULE_DELIMETER);
-
-					for (size_t j = 0; j < rule_arr.size (); j++)
-					{
-						const rstring rule = rule_arr.at (j).Trim (L"\r\n ");
-
-						if (!rule.IsEmpty ())
-							error_count += !_wfp_createrulefilter (ptr_rule->name, rule, path, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_CUSTOM, false);
+						error_count += !_wfp_createrulefilter (ptr_rule->name, rule, nullptr, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_CUSTOM, false);
 					}
 				}
 			}
 		}
 
 		// apply custom rules for all
-		for (size_t i = 0; i < rules_custom.size (); i++)
 		{
-			if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
-			{
-				FwpmTransactionAbort (config.hengine);
-				return 0;
-			}
+			_r_fastlock_acquireshared (&lock_access);
 
-			ITEM_RULE* ptr_rule = rules_custom.at (i);
-
-			// only if enabled
-			if (!ptr_rule || !ptr_rule->is_enabled)
-				continue;
-
-			const rstring arr = ptr_rule->rule;
-			rstring::rvector vc = arr.AsVector (RULE_DELIMETER);
-
-			for (size_t j = 0; j < vc.size (); j++)
+			for (size_t i = 0; i < rules_custom.size (); i++)
 			{
 				if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
 				{
+					_r_fastlock_releaseshared (&lock_access);
+
 					FwpmTransactionAbort (config.hengine);
 					return 0;
 				}
 
-				const rstring rule = vc.at (j).Trim (L"\r\n ");
+				ITEM_RULE* ptr_rule = rules_custom.at (i);
 
-				if (!rule.IsEmpty ())
-					error_count += !_wfp_createrulefilter (ptr_rule->name, rule, nullptr, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_CUSTOM, FALSE);
+				// only if enabled
+				if (!ptr_rule || !ptr_rule->is_enabled)
+					continue;
+
+				const rstring arr = ptr_rule->rule;
+				rstring::rvector vc = arr.AsVector (RULE_DELIMETER);
+
+				for (size_t j = 0; j < vc.size (); j++)
+				{
+					if (WaitForSingleObjectEx (config.stop_evt, 0, FALSE) == WAIT_OBJECT_0)
+					{
+						_r_fastlock_releaseshared (&lock_access);
+
+						FwpmTransactionAbort (config.hengine);
+						return 0;
+					}
+
+					const rstring rule = vc.at (j).Trim (L"\r\n ");
+
+					if (!rule.IsEmpty ())
+						error_count += !_wfp_createrulefilter (ptr_rule->name, rule, nullptr, ptr_rule->dir, &ptr_rule->type, ptr_rule->protocol, ptr_rule->version, ptr_rule->is_block, FILTER_WEIGHT_CUSTOM, FALSE);
+				}
 			}
+
+			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		// firewall service rules
@@ -2844,7 +2856,7 @@ UINT _wfp_installfilters ()
 
 		// set icons
 		app.SetIcon (IDI_ACTIVE);
-		app.TraySetInfo (_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_ACTIVE), GetSystemMetrics (SM_CXSMICON)), nullptr);
+		app.TraySetInfo (UID, _r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_ACTIVE), GetSystemMetrics (SM_CXSMICON)), nullptr);
 
 		SetDlgItemText (app.GetHWND (), IDC_START_BTN, I18N (&app, IDS_TRAY_STOP, 0));
 
@@ -2862,7 +2874,7 @@ bool _app_installfilters (bool is_forced)
 	{
 		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
 
-		if (_r_spinislocked (&config.lock_apply) || config.hthread)
+		if (_r_fastlock_islocked (&lock_apply) || config.hthread)
 		{
 			SetEvent (config.stop_evt);
 			WaitForSingleObjectEx (config.finish_evt, 8000, FALSE);
@@ -2889,7 +2901,7 @@ bool _app_uninstallfilters ()
 {
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
 
-	if (_r_spinislocked (&config.lock_apply) || config.hthread)
+	if (_r_fastlock_islocked (&lock_apply) || config.hthread)
 	{
 		SetEvent (config.stop_evt);
 		WaitForSingleObjectEx (config.finish_evt, 8000, FALSE);
@@ -2934,7 +2946,7 @@ bool _app_loginit (bool is_install)
 		return false;
 
 	// reset all handles
-	_r_spinlock (&config.lock_writelog);
+	_r_fastlock_acquireexclusive (&lock_writelog);
 
 	if (config.hlog != nullptr && config.hlog != INVALID_HANDLE_VALUE)
 	{
@@ -2942,7 +2954,7 @@ bool _app_loginit (bool is_install)
 		config.hlog = nullptr;
 	}
 
-	_r_spinunlock (&config.lock_writelog);
+	_r_fastlock_releaseexclusive (&lock_writelog);
 
 	if (!is_install)
 		return true; // already closed
@@ -2957,7 +2969,7 @@ bool _app_loginit (bool is_install)
 	{
 		const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", PATH_LOG));
 
-		_r_spinlock (&config.lock_writelog);
+		_r_fastlock_acquireexclusive (&lock_writelog);
 
 		config.hlog = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH, nullptr);
 
@@ -2984,57 +2996,57 @@ bool _app_loginit (bool is_install)
 			result = true;
 		}
 
-		_r_spinunlock (&config.lock_writelog);
+		_r_fastlock_releaseexclusive (&lock_writelog);
 	}
 
 	return result;
 }
 
-void _app_logwrite (ITEM_LOG const* ptr)
+void _app_logwrite (ITEM_LOG const *ptr_log)
 {
-	if (!ptr)
+	if (!ptr_log)
 		return;
 
 	if (config.hlog != nullptr && config.hlog != INVALID_HANDLE_VALUE)
 	{
-		_r_spinlock (&config.lock_writelog);
+		_r_fastlock_acquireexclusive (&lock_writelog);
 
 		_app_logchecklimit ();
 
 		rstring addr;
-		addr.Format (L"%s:%s", ptr->protocol, ((ptr->direction == FWP_DIRECTION_IN) ? ptr->local_addr : ptr->remote_addr));
+		addr.Format (L"%s:%s", ptr_log->protocol, ((ptr_log->direction == FWP_DIRECTION_IN) ? ptr_log->local_addr : ptr_log->remote_addr));
 
-		if (ptr->direction == FWP_DIRECTION_IN)
+		if (ptr_log->direction == FWP_DIRECTION_IN)
 		{
-			if (ptr->local_port)
-				addr.Append (_r_fmt (L":%d", ptr->local_port));
+			if (ptr_log->local_port)
+				addr.Append (_r_fmt (L":%d", ptr_log->local_port));
 
-			if ((ptr->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0)
-				addr.Append (_r_fmt (L" (from %s)", ptr->remote_port ? _r_fmt (L"%s:%d", ptr->remote_addr, ptr->remote_port) : ptr->remote_addr));
+			if ((ptr_log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0)
+				addr.Append (_r_fmt (L" (from %s)", ptr_log->remote_port ? _r_fmt (L"%s:%d", ptr_log->remote_addr, ptr_log->remote_port) : ptr_log->remote_addr));
 		}
-		else if (ptr->direction == FWP_DIRECTION_OUT && ptr->remote_port)
+		else if (ptr_log->direction == FWP_DIRECTION_OUT)
 		{
-			if (ptr->remote_port)
-				addr.Append (_r_fmt (L":%d", ptr->remote_port));
+			if (ptr_log->remote_port)
+				addr.Append (_r_fmt (L":%d", ptr_log->remote_port));
 
-			if ((ptr->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0)
-				addr.Append (_r_fmt (L" (from %s)", ptr->local_port ? _r_fmt (L"%s:%d", ptr->local_addr, ptr->local_port) : ptr->local_addr));
+			if ((ptr_log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0)
+				addr.Append (_r_fmt (L" (from %s)", ptr_log->local_port ? _r_fmt (L"%s:%d", ptr_log->local_addr, ptr_log->local_port) : ptr_log->local_addr));
 		}
 
 		rstring filter;
 
-		if (ptr->provider_name[0])
-			filter.Format (L"%s\\%s", ptr->provider_name, ptr->filter_name);
+		if (ptr_log->provider_name[0])
+			filter.Format (L"%s\\%s", ptr_log->provider_name, ptr_log->filter_name);
 		else
-			filter = ptr->filter_name;
+			filter = ptr_log->filter_name;
 
 		rstring buffer;
-		buffer.Format (L"[%s] %s (%s) [%s] %s [%s]\r\n", ptr->date, ptr->full_path, ptr->username, addr, filter, ((ptr->direction == FWP_DIRECTION_IN) ? L"In" : L"Out"));
+		buffer.Format (L"[%s] %s (%s) [%s] %s [%s]\r\n", ptr_log->date, ptr_log->full_path, ptr_log->username, addr, filter, ((ptr_log->direction == FWP_DIRECTION_IN) ? L"In" : L"Out"));
 
 		DWORD written = 0;
 		WriteFile (config.hlog, buffer.GetString (), DWORD (buffer.GetLength () * sizeof (WCHAR)), &written, nullptr);
 
-		_r_spinunlock (&config.lock_writelog);
+		_r_fastlock_releaseexclusive (&lock_writelog);
 	}
 }
 
@@ -3187,21 +3199,24 @@ void _app_notifycreatewindow ()
 size_t _app_notifygetcurrent ()
 {
 	const size_t count = notifications.size ();
+	size_t new_idx = LAST_VALUE;
 
 	if (count)
 	{
 		if (count == 1)
-			return 0;
-
-		const size_t idx = (size_t)GetWindowLongPtr (config.hnotification, GWLP_USERDATA);
-		const size_t new_idx = max (0, min (idx, count - 1));
-
-		SetWindowLongPtr (config.hnotification, GWLP_USERDATA, new_idx);
-
-		return new_idx;
+		{
+			new_idx = 0;
+		}
+		else
+		{
+			const size_t idx = (size_t)GetWindowLongPtr (config.hnotification, GWLP_USERDATA);
+			new_idx = max (0, min (idx, count - 1));
+		}
 	}
 
-	return LAST_VALUE;
+	SetWindowLongPtr (config.hnotification, GWLP_USERDATA, new_idx);
+
+	return new_idx;
 }
 
 void _app_notifycommand (HWND hwnd, bool is_block)
@@ -3216,138 +3231,132 @@ void _app_notifycommand (HWND hwnd, bool is_block)
 	if (!ptr_log || (ptr_log && !ptr_log->hash))
 		return;
 
-	_r_spinlock (&config.lock_access);
-
 	const size_t hash = ptr_log->hash;
 	ITEM_APPLICATION* ptr_app = _app_getapplication (hash);
 
-	if (!ptr_app)
+	if (ptr_app)
 	{
-		_r_spinunlock (&config.lock_access);
-		return;
-	}
+		if (IsDlgButtonChecked (hwnd, IDC_DISABLENOTIFY_ID) == BST_CHECKED)
+			ptr_app->is_silent = true;
 
-	if (IsDlgButtonChecked (hwnd, IDC_DISABLENOTIFY_ID) == BST_CHECKED)
-		ptr_app->is_silent = true;
+		const bool is_createaddrrule = IsDlgButtonChecked (hwnd, IDC_CREATERULE_ADDR_ID) == BST_CHECKED;
+		const bool is_createportrule = IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED;
 
-	const bool is_createaddrrule = IsDlgButtonChecked (hwnd, IDC_CREATERULE_ADDR_ID) == BST_CHECKED;
-	const bool is_createportrule = IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED;
-
-	if (is_createaddrrule || is_createportrule)
-	{
-		WCHAR rule[128] = {0};
-
-		if (is_createaddrrule)
-			StringCchCopy (rule, _countof (rule), ptr_log->remote_addr);
-
-		if (is_createportrule)
+		if (is_createaddrrule || is_createportrule)
 		{
+			WCHAR rule[128] = {0};
+
 			if (is_createaddrrule)
-				StringCchCat (rule, _countof (rule), L":");
+				StringCchCopy (rule, _countof (rule), ptr_log->remote_addr);
 
-			StringCchCat (rule, _countof (rule), _r_fmt (L"%d", ptr_log->remote_port));
-		}
-
-		size_t rule_id = LAST_VALUE;
-
-		const size_t rule_length = min (wcslen (rule), RULE_RULE_CCH_MAX) + 1;
-
-		for (size_t i = 0; i < rules_custom.size (); i++)
-		{
-			ITEM_RULE const* rule_ptr = rules_custom.at (i);
-
-			if (rule_ptr)
+			if (is_createportrule)
 			{
-				if ((rule_ptr->is_block == is_block) && rule_ptr->rule && _wcsnicmp (rule_ptr->rule, rule, rule_length) == 0)
+				if (is_createaddrrule)
+					StringCchCat (rule, _countof (rule), L":");
+
+				StringCchCat (rule, _countof (rule), _r_fmt (L"%d", ptr_log->remote_port));
+			}
+
+			size_t rule_id = LAST_VALUE;
+
+			const size_t rule_length = min (wcslen (rule), RULE_RULE_CCH_MAX) + 1;
+
+			for (size_t i = 0; i < rules_custom.size (); i++)
+			{
+				ITEM_RULE const* rule_ptr = rules_custom.at (i);
+
+				if (rule_ptr)
 				{
-					rule_id = i;
-					break;
+					if ((rule_ptr->is_block == is_block) && rule_ptr->rule && _wcsnicmp (rule_ptr->rule, rule, rule_length) == 0)
+					{
+						rule_id = i;
+						break;
+					}
 				}
 			}
-		}
 
-		if (rule_id == LAST_VALUE)
-		{
-			// create rule
-			ITEM_RULE* rule_ptr = (ITEM_RULE*)malloc (sizeof (ITEM_RULE));
-
-			if (rule_ptr)
+			if (rule_id == LAST_VALUE)
 			{
-				SecureZeroMemory (rule_ptr, sizeof (ITEM_RULE));
+				// create rule
+				ITEM_RULE* rule_ptr = (ITEM_RULE*)malloc (sizeof (ITEM_RULE));
 
-				const size_t name_length = min (wcslen (rule), RULE_NAME_CCH_MAX) + 1;
-				const size_t path_length = min (wcslen (ptr_log->full_path), RULE_APPS_CCH_MAX) + 1;
+				if (rule_ptr)
+				{
+					SecureZeroMemory (rule_ptr, sizeof (ITEM_RULE));
 
-				rule_ptr->name = (LPWSTR)malloc ((name_length + 1) * sizeof (WCHAR));
-				rule_ptr->rule = (LPWSTR)malloc ((rule_length + 1) * sizeof (WCHAR));
-				rule_ptr->apps = (LPWSTR)malloc ((path_length + 1) * sizeof (WCHAR));
+					const size_t name_length = min (wcslen (rule), RULE_NAME_CCH_MAX) + 1;
+					const size_t path_length = min (wcslen (ptr_log->full_path), RULE_APPS_CCH_MAX) + 1;
 
-				StringCchCopy (rule_ptr->name, name_length + 1, rule);
-				StringCchCopy (rule_ptr->rule, rule_length + 1, rule);
-				StringCchCopy (rule_ptr->apps, path_length + 1, ptr_log->full_path);
+					rule_ptr->name = (LPWSTR)malloc ((name_length + 1) * sizeof (WCHAR));
+					rule_ptr->rule = (LPWSTR)malloc ((rule_length + 1) * sizeof (WCHAR));
+					rule_ptr->apps = (LPWSTR)malloc ((path_length + 1) * sizeof (WCHAR));
 
-				//rule_ptr->protocol = ptr_log->protocol8;
-				rule_ptr->dir = (ptr_log->direction == FWP_DIRECTION_IN) ? DirInbound : DirOutbound;
-				rule_ptr->is_block = is_block ? true : false;
-				rule_ptr->is_enabled = false;
+					StringCchCopy (rule_ptr->name, name_length + 1, rule);
+					StringCchCopy (rule_ptr->rule, rule_length + 1, rule);
+					StringCchCopy (rule_ptr->apps, path_length + 1, ptr_log->full_path);
 
-				rule_id = rules_custom.size ();
-				rules_custom.push_back (rule_ptr);
+					//rule_ptr->protocol = ptr_log->protocol8;
+					rule_ptr->dir = (ptr_log->direction == FWP_DIRECTION_IN) ? DirInbound : DirOutbound;
+					rule_ptr->is_block = is_block ? true : false;
+					rule_ptr->is_enabled = false;
+
+					rule_id = rules_custom.size ();
+					rules_custom.push_back (rule_ptr);
+				}
+			}
+			else
+			{
+				// modify rule
+			}
+
+			// add rule for app
+			if (rule_id != LAST_VALUE)
+				ptr_app->rules.push_back (rule_id);
+		}
+		else
+		{
+			if (!is_block)
+			{
+				// allow entire app
+				ptr_app->is_enabled = true;
+
+				config.is_nocheckboxnotify = true;
+
+				_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), hash), true);
+
+				config.is_nocheckboxnotify = false;
+			}
+			else
+			{
+				// block entire app (do not block entire app, it may be enabled but user was create custom rule affected on app.)
+
+				//	ptr_app->is_enabled = false;
+
+				// config.is_nocheckboxnotify = true;
+
+				// _r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), hash), FALSE);
+
+				// config.is_nocheckboxnotify = false;
 			}
 		}
-		else
-		{
-			// modify rule
-		}
 
-		if (hash && (rule_id != LAST_VALUE))
-			apps_rules[hash].push_back (rule_id);
-	}
-	else
-	{
-		if (!is_block)
-		{
-			// allow entire app
-			ptr_app->is_enabled = true;
-
-			if (hash)
-				_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), hash), true);
-		}
-		else
-		{
-			// block entire app (do not block entire app, it may be enabled but user was create custom rule affected on app.)
-
-			//	ptr_app->is_enabled = false;
-
-			//	if (hash)
-			//		_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), hash), FALSE);
-		}
-	}
-
-	if (hash)
 		notifications_last[hash] = _r_unixtime_now ();
 
-	// clear notifications (only for "full-enabled")
-	if (!is_createaddrrule && !is_createportrule)
-	{
+		// clear notifications
 		_app_freenotify (LAST_VALUE, hash);
-	}
-	else
-	{
-		_app_freenotify (idx, 0);
-	}
 
-	_r_spinunlock (&config.lock_access);
+		_app_notifyrefresh ();
 
-	_app_notifyrefresh ();
+		// apply rules
+		{
+			_app_profilesave (app.GetHWND ());
+			_app_profileload (app.GetHWND ());
 
-	// apply rules
-	{
-		_app_profilesave (app.GetHWND ());
-		_app_profileload (app.GetHWND ());
+			_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
 
-		if (!is_block)
-			_app_installfilters (false);
+			if (!is_block)
+				_app_installfilters (false);
+		}
 	}
 }
 
@@ -3474,7 +3483,7 @@ bool _app_notifyshow (size_t idx)
 	return false;
 }
 
-void _app_notifyrefresh ()
+bool _app_notifyrefresh ()
 {
 	const size_t idx = _app_notifygetcurrent ();
 
@@ -3483,10 +3492,10 @@ void _app_notifyrefresh ()
 		_app_notifysettimeout (config.hnotification, 0, false, 0);
 		ShowWindow (config.hnotification, SW_HIDE);
 
-		return;
+		return false;
 	}
 
-	_app_notifyshow (idx);
+	return _app_notifyshow (idx);
 }
 
 // Play notification sound even if system have "nosound" mode
@@ -3522,13 +3531,13 @@ void _app_notifysound ()
 		PlaySound (NOTIFY_SOUND_DEFAULT, nullptr, SND_SENTRY | SND_SYSTEM | SND_ASYNC);
 }
 
-void _app_notifyadd (ITEM_LOG const* ptr)
+void _app_notifyadd (ITEM_LOG const *ptr_log)
 {
 	// do not show notifications if file is not present
-	if (!ptr || !ptr->hash)
+	if (!ptr_log || !ptr_log->hash)
 		return;
 
-	ITEM_APPLICATION* ptr_app = _app_getapplication (ptr->hash);
+	ITEM_APPLICATION* ptr_app = _app_getapplication (ptr_log->hash);
 
 	if (!ptr_app || (ptr_app && ptr_app->is_silent))
 		return;
@@ -3537,7 +3546,7 @@ void _app_notifyadd (ITEM_LOG const* ptr)
 	{
 		const UINT notification_timeout = max (app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT).AsUint (), NOTIFY_TIMEOUT_MINIMUM);
 
-		if ((_r_unixtime_now () - notifications_last[ptr->hash]) <= notification_timeout)
+		if ((_r_unixtime_now () - notifications_last[ptr_log->hash]) <= notification_timeout)
 			return;
 	}
 
@@ -3548,16 +3557,16 @@ void _app_notifyadd (ITEM_LOG const* ptr)
 		_app_notifyrefresh ();
 	}
 
-	ITEM_LOG* ptr_log = (ITEM_LOG*)malloc (sizeof (ITEM_LOG));
+	ITEM_LOG* ptr_log2 = (ITEM_LOG*)malloc (sizeof (ITEM_LOG));
 
-	if (ptr_log)
+	if (ptr_log2)
 	{
-		SecureZeroMemory (ptr_log, sizeof (ITEM_LOG));
+		SecureZeroMemory (ptr_log2, sizeof (ITEM_LOG));
 
-		memcpy_s (ptr_log, sizeof (ITEM_LOG), ptr, sizeof (ITEM_LOG));
+		memcpy_s (ptr_log2, sizeof (ITEM_LOG), ptr_log, sizeof (ITEM_LOG));
 
-		notifications_last[ptr->hash] = _r_unixtime_now ();
-		notifications.push_back (ptr_log);
+		notifications_last[ptr_log->hash] = _r_unixtime_now ();
+		notifications.push_back (ptr_log2);
 
 		const size_t total_size = notifications.size ();
 		const size_t idx = total_size - 1;
@@ -3866,16 +3875,15 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 		Wow64EnableWow64FsRedirection (FALSE);
 #endif
 
-	_r_spinlock (&config.lock_apply);
-
 	if (WaitForSingleObjectEx (config.stop_evt, 1000, FALSE) == WAIT_OBJECT_0)
 	{
-		_r_spinunlock (&config.lock_apply);
 		SetEvent (config.finish_evt);
 		config.hthread = nullptr;
 
 		return ERROR_SUCCESS;
 	}
+
+	_r_fastlock_acquireexclusive (&lock_apply);
 
 	const bool is_install = lparam ? true : false;
 
@@ -3901,7 +3909,7 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 	_app_freednscache ();
 
-	_r_spinunlock (&config.lock_apply);
+	_r_fastlock_releaseexclusive (&lock_apply);
 
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
 
@@ -4307,17 +4315,17 @@ BOOL initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
 				{
 					for (size_t i = 0; i < rules_system.size (); i++)
 					{
-						ITEM_RULE const* ptr = rules_system.at (i);
+						ITEM_RULE const *ptr_rule = rules_system.at (i);
 
-						if (!ptr)
+						if (!ptr_rule)
 							continue;
 
 						WCHAR buffer[128] = {0};
-						StringCchPrintf (buffer, _countof (buffer), L"[%s] %s", ptr->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr->name);
+						StringCchPrintf (buffer, _countof (buffer), L"[%s] %s", ptr_rule->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr_rule->name);
 
 						AppendMenu (submenu, MF_STRING, IDM_RULES_SYSTEM + i, buffer);
 
-						if (ptr->is_enabled)
+						if (ptr_rule->is_enabled)
 							CheckMenuItem (submenu, IDM_RULES_SYSTEM + UINT (i), MF_BYCOMMAND | MF_CHECKED);
 					}
 				}
@@ -4344,17 +4352,17 @@ BOOL initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
 				{
 					for (size_t i = 0; i < rules_custom.size (); i++)
 					{
-						ITEM_RULE const* ptr = rules_custom.at (i);
+						ITEM_RULE const *ptr_rule = rules_custom.at (i);
 
-						if (!ptr)
+						if (!ptr_rule)
 							continue;
 
 						WCHAR buffer[128] = {0};
-						StringCchPrintf (buffer, _countof (buffer), I18N (&app, IDS_RULE_TITLE_1, 0), ptr->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr->name);
+						StringCchPrintf (buffer, _countof (buffer), I18N (&app, IDS_RULE_TITLE_1, 0), ptr_rule->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr_rule->name);
 
 						AppendMenu (submenu, MF_STRING, IDM_RULES_CUSTOM + i, buffer);
 
-						if (ptr->is_enabled)
+						if (ptr_rule->is_enabled)
 							CheckMenuItem (submenu, IDM_RULES_CUSTOM + UINT (i), MF_BYCOMMAND | MF_CHECKED);
 					}
 				}
@@ -4465,17 +4473,17 @@ BOOL initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
 				{
 					for (size_t i = 0; i < rules_system.size (); i++)
 					{
-						ITEM_RULE const* ptr = rules_system.at (i);
+						ITEM_RULE const *ptr_rule = rules_system.at (i);
 
-						if (!ptr)
+						if (!ptr_rule)
 							continue;
 
 						WCHAR buffer[128] = {0};
-						StringCchPrintf (buffer, _countof (buffer), L"[%s] %s", ptr->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr->name);
+						StringCchPrintf (buffer, _countof (buffer), L"[%s] %s", ptr_rule->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr_rule->name);
 
 						AppendMenu (submenu, MF_STRING, IDM_RULES_SYSTEM + i, buffer);
 
-						if (ptr->is_enabled)
+						if (ptr_rule->is_enabled)
 							CheckMenuItem (submenu, IDM_RULES_SYSTEM + UINT (i), MF_BYCOMMAND | MF_CHECKED);
 					}
 				}
@@ -4502,17 +4510,17 @@ BOOL initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
 				{
 					for (size_t i = 0; i < rules_custom.size (); i++)
 					{
-						ITEM_RULE const* ptr = rules_custom.at (i);
+						ITEM_RULE const *ptr_rule = rules_custom.at (i);
 
-						if (!ptr)
+						if (!ptr_rule)
 							continue;
 
 						WCHAR buffer[128] = {0};
-						StringCchPrintf (buffer, _countof (buffer), I18N (&app, IDS_RULE_TITLE_1, 0), ptr->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr->name);
+						StringCchPrintf (buffer, _countof (buffer), I18N (&app, IDS_RULE_TITLE_1, 0), ptr_rule->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr_rule->name);
 
 						AppendMenu (submenu, MF_STRING, IDM_RULES_CUSTOM + i, buffer);
 
-						if (ptr->is_enabled)
+						if (ptr_rule->is_enabled)
 							CheckMenuItem (submenu, IDM_RULES_CUSTOM + UINT (i), MF_BYCOMMAND | MF_CHECKED);
 					}
 				}
@@ -4570,13 +4578,13 @@ BOOL initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
 
 INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	static ITEM_RULE* ptr = nullptr;
+	static ITEM_RULE *ptr_rule = nullptr;
 
 	switch (msg)
 	{
 		case WM_INITDIALOG:
 		{
-			ptr = (ITEM_RULE*)lparam;
+			ptr_rule = (ITEM_RULE*)lparam;
 
 			// configure window
 			_r_wnd_center (hwnd);
@@ -4601,18 +4609,18 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 			// set data
-			if (ptr->name)
-				SetDlgItemText (hwnd, IDC_NAME_EDIT, ptr->name);
+			if (ptr_rule->name)
+				SetDlgItemText (hwnd, IDC_NAME_EDIT, ptr_rule->name);
 
-			if (ptr->rule)
-				SetDlgItemText (hwnd, IDC_RULES_EDIT, ptr->rule);
+			if (ptr_rule->rule)
+				SetDlgItemText (hwnd, IDC_RULES_EDIT, ptr_rule->rule);
 
 			// direction
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 0, (LPARAM)I18N (&app, IDS_DIRECTION_1, 0).GetString ());
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 1, (LPARAM)I18N (&app, IDS_DIRECTION_2, 0).GetString ());
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 2, (LPARAM)I18N (&app, IDS_DIRECTION_3, 0).GetString ());
 
-			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_SETCURSEL, (WPARAM)ptr->dir, 0);
+			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->dir, 0);
 
 			// protocol
 			SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, 0, (LPARAM)I18N (&app, IDS_ALL, 0).GetString ());
@@ -4623,7 +4631,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)protocols.at (i).name);
 				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETITEMDATA, i + 1, (LPARAM)protocols.at (i).id);
 
-				if (ptr->protocol == protocols.at (i).id)
+				if (ptr_rule->protocol == protocols.at (i).id)
 					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETCURSEL, (WPARAM)i + 1, 0);
 			}
 
@@ -4637,21 +4645,21 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_INSERTSTRING, 2, (LPARAM)L"IPv6");
 			SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_SETITEMDATA, 2, (LPARAM)AF_INET6);
 
-			if (ptr->version == AF_UNSPEC)
+			if (ptr_rule->version == AF_UNSPEC)
 				SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_SETCURSEL, (WPARAM)0, 0);
-			else if (ptr->version == AF_INET)
+			else if (ptr_rule->version == AF_INET)
 				SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_SETCURSEL, (WPARAM)1, 0);
-			else if (ptr->version == AF_INET6)
+			else if (ptr_rule->version == AF_INET6)
 				SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_SETCURSEL, (WPARAM)2, 0);
 
 			// action
 			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_INSERTSTRING, 0, (LPARAM)I18N (&app, IDS_ACTION_1, 0).GetString ());
 			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_INSERTSTRING, 1, (LPARAM)I18N (&app, IDS_ACTION_2, 0).GetString ());
 
-			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_SETCURSEL, (WPARAM)ptr->is_block, 0);
+			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->is_block, 0);
 
 			// state
-			CheckDlgButton (hwnd, IDC_ENABLED_CHK, ptr->is_enabled ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton (hwnd, IDC_ENABLED_CHK, ptr_rule->is_enabled ? BST_CHECKED : BST_UNCHECKED);
 
 			// set limitation
 			SendDlgItemMessage (hwnd, IDC_NAME_EDIT, EM_LIMITTEXT, RULE_NAME_CCH_MAX - 1, 0);
@@ -4710,6 +4718,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (!IsWindowEnabled (GetDlgItem (hwnd, IDC_SAVE)))
 						return FALSE;
 
+					_r_fastlock_acquireexclusive (&lock_access);
+
 					// destination of the rule
 					{
 						rstring rule = _r_ctrl_gettext (hwnd, IDC_RULES_EDIT);
@@ -4735,31 +4745,33 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 										_r_ctrl_showtip (hwnd, IDC_RULES_EDIT, APP_NAME, _r_fmt (I18N (&app, IDS_STATUS_SYNTAX_ERROR, 0), rule_single), TTI_ERROR);
 										_r_ctrl_enable (hwnd, IDC_SAVE, false);
 
+										_r_fastlock_releaseexclusive (&lock_access);
+
 										return FALSE;
 									}
 								}
 							}
 
-							if (ptr->rule)
+							if (ptr_rule->rule)
 							{
-								LPVOID tmp_ptr = realloc (ptr->rule, new_sizeb);
+								LPVOID tmp_ptr = realloc (ptr_rule->rule, new_sizeb);
 
 								if (tmp_ptr)
 								{
-									ptr->rule = (LPWSTR)tmp_ptr;
+									ptr_rule->rule = (LPWSTR)tmp_ptr;
 								}
 								else
 								{
-									free (ptr->rule);
-									ptr->rule = (LPWSTR)malloc (new_sizeb);
+									free (ptr_rule->rule);
+									ptr_rule->rule = (LPWSTR)malloc (new_sizeb);
 								}
 							}
 							else
 							{
-								ptr->rule = (LPWSTR)malloc (new_sizeb);
+								ptr_rule->rule = (LPWSTR)malloc (new_sizeb);
 							}
 
-							StringCchCopy (ptr->rule, rule_length, rule);
+							StringCchCopy (ptr_rule->rule, rule_length, rule);
 						}
 					}
 
@@ -4772,35 +4784,37 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							const size_t name_length = min (name.GetLength (), RULE_NAME_CCH_MAX) + 1;
 							const size_t new_sizeb = (name_length + 1) * sizeof (WCHAR);
 
-							if (ptr->name)
+							if (ptr_rule->name)
 							{
-								LPVOID tmp_ptr = realloc (ptr->name, new_sizeb);
+								LPVOID tmp_ptr = realloc (ptr_rule->name, new_sizeb);
 
 								if (tmp_ptr)
 								{
-									ptr->name = (LPWSTR)tmp_ptr;
+									ptr_rule->name = (LPWSTR)tmp_ptr;
 								}
 								else
 								{
-									free (ptr->name);
-									ptr->name = (LPWSTR)malloc (new_sizeb);
+									free (ptr_rule->name);
+									ptr_rule->name = (LPWSTR)malloc (new_sizeb);
 								}
 							}
 							else
 							{
-								ptr->name = (LPWSTR)malloc (new_sizeb);
+								ptr_rule->name = (LPWSTR)malloc (new_sizeb);
 							}
 
-							StringCchCopy (ptr->name, name_length, name);
+							StringCchCopy (ptr_rule->name, name_length, name);
 						}
 					}
 
-					ptr->protocol = (UINT8)SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETCURSEL, 0, 0), 0);
-					ptr->version = (ADDRESS_FAMILY)SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_GETCURSEL, 0, 0), 0);
+					ptr_rule->protocol = (UINT8)SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETCURSEL, 0, 0), 0);
+					ptr_rule->version = (ADDRESS_FAMILY)SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_IPVERSION_EDIT, CB_GETCURSEL, 0, 0), 0);
 
-					ptr->dir = (EnumRuleDirection)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
-					ptr->is_block = SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0) ? true : false;
-					ptr->is_enabled = (IsDlgButtonChecked (hwnd, IDC_ENABLED_CHK) == BST_CHECKED) ? true : false;
+					ptr_rule->dir = (EnumRuleDirection)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
+					ptr_rule->is_block = SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0) ? true : false;
+					ptr_rule->is_enabled = (IsDlgButtonChecked (hwnd, IDC_ENABLED_CHK) == BST_CHECKED) ? true : false;
+
+					_r_fastlock_releaseexclusive (&lock_access);
 
 					EndDialog (hwnd, 1);
 
@@ -4886,12 +4900,12 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 						{
 							p.second.clr = app.ConfigGet (p.second.config_value, p.second.default_clr).AsUlong ();
 
-							_r_spinlock (&config.lock_checkbox);
+							config.is_nocheckboxnotify = true;
 
 							_r_listview_additem (hwnd, IDC_COLORS, I18N (&app, p.second.locale_id, p.second.locale_sid), idx, 0, LAST_VALUE, LAST_VALUE, p.first);
 							_r_listview_setitemcheck (hwnd, IDC_COLORS, idx, app.ConfigGet (p.second.config_name, p.second.is_enabled).AsBool ());
 
-							_r_spinunlock (&config.lock_checkbox);
+							config.is_nocheckboxnotify = false;
 
 							idx += 1;
 						}
@@ -4951,12 +4965,12 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 							else if (!ptr_rule->is_enabled)
 								group_id = 2;
 
-							_r_spinlock (&config.lock_checkbox);
+							config.is_nocheckboxnotify = true;
 
 							_r_listview_additem (hwnd, IDC_EDITOR, ptr_rule->name, i, 0, ptr_rule->is_block ? 1 : 0, group_id, i);
 							_r_listview_setitemcheck (hwnd, IDC_EDITOR, i, ptr_rule->is_enabled);
 
-							_r_spinunlock (&config.lock_checkbox);
+							config.is_nocheckboxnotify = false;
 						}
 
 						_r_listview_redraw (hwnd, IDC_EDITOR);
@@ -5146,7 +5160,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 								group1_count += 1;
 							}
 
-							_r_spinlock (&config.lock_checkbox);
+							config.is_nocheckboxnotify = true;
 
 							_r_listview_setitem (hwnd, IDC_EDITOR, ptr_rule->name, i, 0, ptr_rule->is_block ? 1 : 0, group_id);
 							_r_listview_setitem (hwnd, IDC_EDITOR, dir, i, 1);
@@ -5155,7 +5169,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 							_r_listview_setitemcheck (hwnd, IDC_EDITOR, i, ptr_rule->is_enabled);
 
-							_r_spinunlock (&config.lock_checkbox);
+							config.is_nocheckboxnotify = false;
 						}
 
 						_r_listview_setgroup (hwnd, IDC_EDITOR, 0, _r_fmt (L"%s (%d)", I18N (&app, IDS_GROUP_ENABLED, 0), group1_count), nullptr);
@@ -5234,7 +5248,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					{
 						case LVN_ITEMCHANGED:
 						{
-							if (_r_spinislocked (&config.lock_checkbox))
+							if (config.is_nocheckboxnotify)
 								break;
 
 							LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)pmsg->lParam;
@@ -5514,239 +5528,84 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 				{
 					switch (LOWORD (pmsg->wParam))
 					{
-						case IDM_ADD:
-						{
-							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
-								break;
-
-							ITEM_RULE* ptr_rule = (ITEM_RULE*)malloc (sizeof (ITEM_RULE));
-
-							if (ptr_rule)
-							{
-								SecureZeroMemory (ptr_rule, sizeof (ITEM_RULE));
-
-								if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
-								{
-									rules_custom.push_back (ptr_rule);
-
-									_r_spinlock (&config.lock_checkbox);
-
-									_r_listview_additem (hwnd, IDC_EDITOR, ptr_rule->name, LAST_VALUE, 0, LAST_VALUE, 0, rules_custom.size () - 1);
-									_r_listview_setitemcheck (hwnd, IDC_EDITOR, LAST_VALUE, ptr_rule->is_enabled);
-
-									_r_spinunlock (&config.lock_checkbox);
-
-									_app_profilesave (app.GetHWND ());
-
-									settings_callback (hwnd, _RM_LOCALIZE, nullptr, page);
-								}
-								else
-								{
-									_app_freerule (&ptr_rule);
-								}
-							}
-
-							break;
-						}
-
-						case IDM_EDIT:
-						{
-							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
-								break;
-
-							const size_t item = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
-
-							if (item != LAST_VALUE)
-							{
-								const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
-
-								ITEM_RULE* ptr = rules_custom[idx];
-
-								if (ptr && DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr))
-								{
-									_app_profilesave (app.GetHWND ());
-
-									settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
-								}
-							}
-
-							break;
-						}
-
-						case IDM_DELETE:
-						{
-							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
-								break;
-
-							if (_r_msg (hwnd, MB_YESNO | MB_ICONQUESTION, APP_NAME, nullptr, I18N (&app, IDS_QUESTION_DELETE, 0), SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETSELECTEDCOUNT, 0, 0)) != IDYES)
-								break;
-
-							const size_t count = _r_listview_getitemcount (hwnd, IDC_EDITOR) - 1;
-
-							for (size_t i = count; i != LAST_VALUE; i--)
-							{
-								if (ListView_GetItemState (GetDlgItem (hwnd, IDC_EDITOR), i, LVNI_SELECTED))
-								{
-									const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, i);
-
-									for (auto &p : apps_rules)
-									{
-										const size_t hash = p.first;
-
-										if (hash)
-										{
-											for (size_t j = 0; j < p.second.size (); j++)
-											{
-												if (p.second.at (j) == idx)
-													p.second.erase (p.second.begin () + j);
-											}
-										}
-									}
-
-									SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_DELETEITEM, i, 0);
-
-									_app_freerule (&rules_custom.at (idx));
-								}
-							}
-
-							_app_profilesave (app.GetHWND ());
-
-							_r_listview_redraw (hwnd, IDC_EDITOR);
-
-							break;
-						}
-
-						case IDM_CHECK:
-						case IDM_UNCHECK:
-						case IDM_CHECKALL:
-						case IDM_UNCHECKALL:
-						{
-							std::vector<ITEM_RULE*> const* ptr_rules = nullptr;
-
-							if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
-								ptr_rules = &rules_blocklist;
-
-							else if (page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
-								ptr_rules = &rules_system;
-
-							else if (page->dlg_id == IDD_SETTINGS_RULES_CUSTOM)
-								ptr_rules = &rules_custom;
-
-							if (ptr_rules)
-							{
-								const bool new_val = ((LOWORD (pmsg->wParam) == IDM_CHECK) || (LOWORD (pmsg->wParam) == IDM_CHECKALL)) ? true : false;
-								const INT flag = ((LOWORD (pmsg->wParam) == IDM_CHECK) || (LOWORD (pmsg->wParam) == IDM_UNCHECK)) ? LVNI_SELECTED : LVNI_ALL;
-
-								INT item = -1;
-
-								while ((item = (INT)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, item, flag)) != -1)
-								{
-									const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
-
-									ITEM_RULE* ptr_rule = ptr_rules->at (idx);
-
-									if (ptr_rule)
-									{
-										ptr_rule->is_enabled = new_val;
-
-										_r_spinlock (&config.lock_checkbox);
-
-										_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, new_val);
-
-										if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST || page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
-											rules_config[ptr_rule->name] = new_val;
-
-										_r_spinunlock (&config.lock_checkbox);
-									}
-								}
-
-								_app_profilesave (app.GetHWND ());
-
-								settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
-							}
-
-							break;
-						}
-
 						case IDC_ALWAYSONTOP_CHK:
 						case IDC_LOADONSTARTUP_CHK:
 						case IDC_SKIPUACWARNING_CHK:
 						case IDC_CHECKUPDATES_CHK:
 						case IDC_LANGUAGE:
-						{
-							const UINT ctrl_id = LOWORD (pmsg->wParam);
-
-							if (ctrl_id == IDC_ALWAYSONTOP_CHK)
-								app.ConfigSet (L"AlwaysOnTop", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							else if (ctrl_id == IDC_LOADONSTARTUP_CHK)
-								app.AutorunEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
-
-							else if (ctrl_id == IDC_SKIPUACWARNING_CHK)
-								app.SkipUacEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
-
-							else if (ctrl_id == IDC_CHECKUPDATES_CHK)
-								app.ConfigSet (L"CheckUpdates", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							else if (ctrl_id == IDC_LANGUAGE && HIWORD (pmsg->wParam) == CBN_SELCHANGE)
-								app.LocaleApplyFromControl (hwnd, ctrl_id);
-
-							break;
-						}
-
 						case IDC_USEBLOCKLIST_CHK:
 						case IDC_USESTEALTHMODE_CHK:
 						case IDC_INSTALLBOOTTIMEFILTERS_CHK:
 						case IDC_RULE_ALLOWINBOUND:
 						case IDC_RULE_ALLOWLISTEN:
-						{
-							const UINT ctrl_id = LOWORD (pmsg->wParam);
-
-							if (ctrl_id == IDC_USEBLOCKLIST_CHK)
-								app.ConfigSet (L"UseBlocklist2", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							else if (ctrl_id == IDC_USESTEALTHMODE_CHK)
-								app.ConfigSet (L"UseStealthMode", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							else if (ctrl_id == IDC_INSTALLBOOTTIMEFILTERS_CHK)
-								app.ConfigSet (L"InstallBoottimeFilters", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							else if (ctrl_id == IDC_RULE_ALLOWINBOUND)
-								app.ConfigSet (L"AllowInboundConnections", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							else if (ctrl_id == IDC_RULE_ALLOWLISTEN)
-								app.ConfigSet (L"AllowListenConnections2", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							break;
-						}
-
 						case IDC_CONFIRMEXIT_CHK:
 						case IDC_CONFIRMDELETE_CHK:
 						case IDC_CONFIRMLOGCLEAR_CHK:
-						{
-							const UINT ctrl_id = LOWORD (pmsg->wParam);
-
-							if (ctrl_id == IDC_CONFIRMEXIT_CHK)
-								app.ConfigSet (L"ConfirmExit", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							else if (ctrl_id == IDC_CONFIRMDELETE_CHK)
-								app.ConfigSet (L"ConfirmDelete", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							else if (ctrl_id == IDC_CONFIRMLOGCLEAR_CHK)
-								app.ConfigSet (L"ConfirmLogClear", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-							break;
-						}
-
 						case IDC_ENABLELOG_CHK:
 						case IDC_LOGPATH:
 						case IDC_LOGPATH_BTN:
 						case IDC_LOGBACKUP_CHK:
 						case IDC_ENABLENOTIFICATIONS_CHK:
+						case IDC_LOGSIZELIMIT_CTRL:
+						case IDC_NOTIFICATIONDISPLAYTIMEOUT_CTRL:
+						case IDC_NOTIFICATIONTIMEOUT_CTRL:
 						{
 							const UINT ctrl_id = LOWORD (pmsg->wParam);
+							const UINT notify_code = HIWORD (pmsg->wParam);
 
-							if (ctrl_id == IDC_ENABLELOG_CHK)
+							if (ctrl_id == IDC_ALWAYSONTOP_CHK)
+							{
+								app.ConfigSet (L"AlwaysOnTop", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_LOADONSTARTUP_CHK)
+							{
+								app.AutorunEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+							}
+							else if (ctrl_id == IDC_SKIPUACWARNING_CHK)
+							{
+								app.SkipUacEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+							}
+							else if (ctrl_id == IDC_CHECKUPDATES_CHK)
+							{
+								app.ConfigSet (L"CheckUpdates", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_LANGUAGE && notify_code == CBN_SELCHANGE)
+							{
+								app.LocaleApplyFromControl (hwnd, ctrl_id);
+							}
+							else if (ctrl_id == IDC_USEBLOCKLIST_CHK)
+							{
+								app.ConfigSet (L"UseBlocklist2", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_USESTEALTHMODE_CHK)
+							{
+								app.ConfigSet (L"UseStealthMode", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_INSTALLBOOTTIMEFILTERS_CHK)
+							{
+								app.ConfigSet (L"InstallBoottimeFilters", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_RULE_ALLOWINBOUND)
+							{
+								app.ConfigSet (L"AllowInboundConnections", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_RULE_ALLOWLISTEN)
+							{
+								app.ConfigSet (L"AllowListenConnections2", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_CONFIRMEXIT_CHK)
+							{
+								app.ConfigSet (L"ConfirmExit", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_CONFIRMDELETE_CHK)
+							{
+								app.ConfigSet (L"ConfirmDelete", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_CONFIRMLOGCLEAR_CHK)
+							{
+								app.ConfigSet (L"ConfirmLogClear", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_ENABLELOG_CHK)
 							{
 								const bool is_enabled = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 
@@ -5759,7 +5618,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 								_r_ctrl_enable (hwnd, IDC_LOGBACKUP_CHK, is_enabled); // button
 							}
-							else if (ctrl_id == IDC_LOGPATH && HIWORD (pmsg->wParam) == EN_CHANGE)
+							else if (ctrl_id == IDC_LOGPATH && notify_code == EN_KILLFOCUS)
 							{
 								app.ConfigSet (L"LogPath", _r_ctrl_gettext (hwnd, ctrl_id));
 							}
@@ -5803,6 +5662,185 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 								EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0), is_enabled);
 								EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONDISPLAYTIMEOUT, UDM_GETBUDDY, 0, 0), is_enabled);
+							}
+							else if (ctrl_id == IDC_LOGSIZELIMIT_CTRL && notify_code == EN_KILLFOCUS)
+							{
+								app.ConfigSet (L"LogSizeLimit", (DWORD)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0));
+							}
+							else if (ctrl_id == IDC_NOTIFICATIONDISPLAYTIMEOUT_CTRL && notify_code == EN_KILLFOCUS)
+							{
+								app.ConfigSet (L"NotificationsDisplayTimeout", (DWORD)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONDISPLAYTIMEOUT, UDM_GETPOS32, 0, 0));
+							}
+							else if (ctrl_id == IDC_NOTIFICATIONTIMEOUT_CTRL && notify_code == EN_KILLFOCUS)
+							{
+								app.ConfigSet (L"NotificationsTimeout", (DWORD)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETPOS32, 0, 0));
+							}
+
+							break;
+						}
+
+						case IDM_ADD:
+						{
+							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
+								break;
+
+							ITEM_RULE *ptr_rule = (ITEM_RULE*)malloc (sizeof (ITEM_RULE));
+
+							if (ptr_rule)
+							{
+								SecureZeroMemory (ptr_rule, sizeof (ITEM_RULE));
+
+								if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
+								{
+									_r_fastlock_acquireexclusive (&lock_access);
+
+									rules_custom.push_back (ptr_rule);
+
+									_r_fastlock_releaseexclusive (&lock_access);
+
+									config.is_nocheckboxnotify = true;
+
+									_r_listview_additem (hwnd, IDC_EDITOR, ptr_rule->name, LAST_VALUE, 0, LAST_VALUE, 0, rules_custom.size () - 1);
+									_r_listview_setitemcheck (hwnd, IDC_EDITOR, LAST_VALUE, ptr_rule->is_enabled);
+
+									config.is_nocheckboxnotify = false;
+
+									_app_profilesave (app.GetHWND ());
+
+									settings_callback (hwnd, _RM_LOCALIZE, nullptr, page);
+								}
+								else
+								{
+									_app_freerule (&ptr_rule);
+								}
+							}
+
+							break;
+						}
+
+						case IDM_EDIT:
+						{
+							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
+								break;
+
+							const size_t item = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+
+							if (item != LAST_VALUE)
+							{
+								const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
+
+								ITEM_RULE *ptr_rule = rules_custom.at (idx);
+
+								if (ptr_rule && DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
+								{
+									_app_profilesave (app.GetHWND ());
+
+									settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
+								}
+							}
+
+							break;
+						}
+
+						case IDM_DELETE:
+						{
+							if (page->dlg_id != IDD_SETTINGS_RULES_CUSTOM)
+								break;
+
+							if (_r_msg (hwnd, MB_YESNO | MB_ICONQUESTION, APP_NAME, nullptr, I18N (&app, IDS_QUESTION_DELETE, 0), SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETSELECTEDCOUNT, 0, 0)) != IDYES)
+								break;
+
+							const size_t count = _r_listview_getitemcount (hwnd, IDC_EDITOR) - 1;
+
+							_r_fastlock_acquireexclusive (&lock_access);
+
+							for (size_t i = count; i != LAST_VALUE; i--)
+							{
+								if (ListView_GetItemState (GetDlgItem (hwnd, IDC_EDITOR), i, LVNI_SELECTED))
+								{
+									const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, i);
+
+									// clear special rules
+									for (auto &p : apps)
+									{
+										ITEM_APPLICATION* ptr_app = &p.second;
+
+										if (ptr_app)
+										{
+											for (size_t j = 0; j < ptr_app->rules.size (); j++)
+											{
+												if (ptr_app->rules.at (j) == idx)
+													ptr_app->rules.erase (ptr_app->rules.begin () + j);
+											}
+										}
+									}
+
+									SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_DELETEITEM, i, 0);
+
+									_app_freerule (&rules_custom.at (idx));
+								}
+							}
+
+							_r_fastlock_releaseexclusive (&lock_access);
+
+							_app_profilesave (app.GetHWND ());
+
+							_r_listview_redraw (hwnd, IDC_EDITOR);
+
+							break;
+						}
+
+						case IDM_CHECK:
+						case IDM_UNCHECK:
+						case IDM_CHECKALL:
+						case IDM_UNCHECKALL:
+						{
+							std::vector<ITEM_RULE*> const* ptr_rules = nullptr;
+
+							if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
+								ptr_rules = &rules_blocklist;
+
+							else if (page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
+								ptr_rules = &rules_system;
+
+							else if (page->dlg_id == IDD_SETTINGS_RULES_CUSTOM)
+								ptr_rules = &rules_custom;
+
+							if (ptr_rules)
+							{
+								const bool new_val = ((LOWORD (pmsg->wParam) == IDM_CHECK) || (LOWORD (pmsg->wParam) == IDM_CHECKALL)) ? true : false;
+								const INT flag = ((LOWORD (pmsg->wParam) == IDM_CHECK) || (LOWORD (pmsg->wParam) == IDM_UNCHECK)) ? LVNI_SELECTED : LVNI_ALL;
+
+								INT item = -1;
+
+								_r_fastlock_acquireexclusive (&lock_access);
+
+								while ((item = (INT)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, item, flag)) != -1)
+								{
+									const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
+
+									ITEM_RULE* ptr_rule = ptr_rules->at (idx);
+
+									if (ptr_rule)
+									{
+										ptr_rule->is_enabled = new_val;
+
+										config.is_nocheckboxnotify = true;
+
+										_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, new_val);
+
+										if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST || page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
+											rules_config[ptr_rule->name] = new_val;
+
+										config.is_nocheckboxnotify = false;
+									}
+								}
+
+								_r_fastlock_releaseexclusive (&lock_access);
+
+								_app_profilesave (app.GetHWND ());
+
+								settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
 							}
 
 							break;
@@ -6453,21 +6491,52 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							if (idx != LAST_VALUE)
 							{
-								ITEM_LOG const* ptr = notifications.at (idx);
+								ITEM_LOG const* ptr_log = notifications.at (idx);
 
-								if (ptr)
+								if (ptr_log)
 								{
-									ITEM_APPLICATION* ptr_app = _app_getapplication (ptr->hash);
+									ITEM_APPLICATION* ptr_app = _app_getapplication (ptr_log->hash);
 
 									if (ptr_app)
 									{
 										if (ctrl_id == IDC_ICON_ID)
 										{
-											StringCchCopy (buffer, _countof (buffer), _app_gettooltip (ptr->hash));
+											StringCchCopy (buffer, _countof (buffer), _app_gettooltip (ptr_log->hash));
 										}
 										else if (ctrl_id == IDC_FILE_ID)
 										{
-											StringCchPrintf (buffer, _countof (buffer), L"%s: %s [%s]", I18N (&app, IDS_FILEPATH, 0), ptr->full_path, ptr_app->is_signed ? I18N (&app, IDS_SIGN_SIGNED, 0) : I18N (&app, IDS_SIGN_UNSIGNED, 0));
+											StringCchPrintf (buffer, _countof (buffer), L"%s: %s [%s]", I18N (&app, IDS_FILEPATH, 0), ptr_log->full_path, ptr_app->is_signed ? I18N (&app, IDS_SIGN_SIGNED, 0) : I18N (&app, IDS_SIGN_UNSIGNED, 0));
+										}
+										else if (ctrl_id == IDC_ADDRESS_ID)
+										{
+											WCHAR remote_addr[48] = {0};
+											WCHAR local_addr[48] = {0};
+
+											if ((ptr_log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0)
+											{
+												StringCchCopy (remote_addr, _countof (remote_addr), ptr_log->remote_addr);
+
+												if (ptr_log->remote_port)
+													StringCchCat (remote_addr, _countof (remote_addr), _r_fmt (L":%d", ptr_log->remote_port));
+											}
+											else
+											{
+												StringCchCopy (local_addr, _countof (local_addr), I18N (&app, IDS_STATUS_EMPTY, 0));
+											}
+
+											if ((ptr_log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0)
+											{
+												StringCchCopy (local_addr, _countof (local_addr), ptr_log->local_addr);
+
+												if (ptr_log->local_port)
+													StringCchCat (local_addr, _countof (local_addr), _r_fmt (L":%d", ptr_log->local_port));
+											}
+											else
+											{
+												StringCchCopy (local_addr, _countof (local_addr), I18N (&app, IDS_STATUS_EMPTY, 0));
+											}
+
+											StringCchPrintf (buffer, _countof (buffer), L"%s: %s [Remote]\r\n%s: %s [Local]\r\n", I18N (&app, IDS_ADDRESS, 0), remote_addr, I18N (&app, IDS_ADDRESS, 0), local_addr);
 										}
 										else
 										{
@@ -6800,6 +6869,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			UINT numfiles = DragQueryFile ((HDROP)wparam, 0xFFFFFFFF, nullptr, 0);
 			size_t item = 0;
 
+			_r_fastlock_acquireexclusive (&lock_access);
+
 			for (UINT i = 0; i < numfiles; i++)
 			{
 				const UINT length = DragQueryFile ((HDROP)wparam, i, nullptr, 0);
@@ -6816,6 +6887,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 			}
 
+			_r_fastlock_releaseexclusive (&lock_access);
+
 			_app_listviewsort (hwnd, -1, false);
 			_app_profilesave (hwnd);
 
@@ -6828,7 +6901,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_CLOSE:
 		{
-			if (app.ConfigGet (L"ConfirmExit", true).AsBool () || _r_spinislocked (&config.lock_apply))
+			if (app.ConfigGet (L"ConfirmExit", true).AsBool () || _r_fastlock_islocked (&lock_apply))
 			{
 				WCHAR main[128] = {0};
 				WCHAR flag[64] = {0};
@@ -6880,7 +6953,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			app.ConfigSet (L"Group1IsCollaped", ((SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETGROUPSTATE, 0, LVGS_COLLAPSED) & LVGS_COLLAPSED) != 0) ? true : false);
 			app.ConfigSet (L"Group2IsCollaped", ((SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETGROUPSTATE, 1, LVGS_COLLAPSED) & LVGS_COLLAPSED) != 0) ? true : false);
 
-			if (_r_spinislocked (&config.lock_apply))
+			if (_r_fastlock_islocked (&lock_apply))
 			{
 				WaitForSingleObjectEx (config.finish_evt, 8000, FALSE);
 			}
@@ -6988,7 +7061,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						const size_t hash = lpnmlv->lParam;
 
-						if (!hash || _r_spinislocked (&config.lock_checkbox))
+						if (!hash || config.is_nocheckboxnotify)
 							return FALSE;
 
 						ITEM_APPLICATION* ptr_app = _app_getapplication (hash);
@@ -7000,6 +7073,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						_r_listview_setitemgroup (hwnd, IDC_LISTVIEW, lpnmlv->iItem, ptr_app->is_enabled ? 0 : 1);
 
+						if (lpnmlv->uNewState == 8192)
+							_app_freenotify (LAST_VALUE, hash);
+
+						_app_notifyrefresh ();
 						_app_installfilters (false);
 					}
 					else if (((lpnmlv->uNewState ^ lpnmlv->uOldState) & LVIS_SELECTED) != 0)
@@ -7113,14 +7190,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const size_t item = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED); // get first item
 					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
 
-					if (hash)
-					{
-						{
-							ITEM_APPLICATION const* ptr_app = _app_getapplication (hash);
+					_r_fastlock_acquireshared (&lock_access);
 
-							if (ptr_app)
-								CheckMenuItem (submenu, IDM_DISABLENOTIFICATIONS, MF_BYCOMMAND | (ptr_app->is_silent ? MF_CHECKED : MF_UNCHECKED));
-						}
+					ITEM_APPLICATION const* ptr_app = _app_getapplication (hash);
+
+					if (ptr_app)
+					{
+						CheckMenuItem (submenu, IDM_DISABLENOTIFICATIONS, MF_BYCOMMAND | (ptr_app->is_silent ? MF_CHECKED : MF_UNCHECKED));
 
 						AppendMenu (submenu3, MF_SEPARATOR, 0, nullptr);
 
@@ -7133,47 +7209,46 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							for (size_t i = 0; i < rules_custom.size (); i++)
 							{
-								ITEM_RULE const* ptr = rules_custom.at (i);
+								ITEM_RULE const* ptr_rule = rules_custom.at (i);
 
-								if (!ptr)
-									continue;
-
-								MENUITEMINFO mii = {0};
-
-								bool is_checked = false;
-
-								if ((apps_rules.find (hash) != apps_rules.end ()) && !apps_rules[hash].empty ())
+								if (ptr_rule)
 								{
-									for (size_t j = 0; j < apps_rules[hash].size (); j++)
+									MENUITEMINFO mii = {0};
+
+									bool is_checked = false;
+
+									for (size_t j = 0; j < ptr_app->rules.size (); j++)
 									{
-										if (apps_rules[hash].at (j) == i)
+										if (ptr_app->rules.at (j) == i)
 										{
 											is_checked = true;
 											break;
 										}
 									}
+
+									WCHAR buffer[128] = {0};
+									StringCchPrintf (buffer, _countof (buffer), I18N (&app, IDS_RULE_TITLE_2, 0), ptr_rule->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr_rule->name);
+
+									mii.cbSize = sizeof (mii);
+									mii.fMask = MIIM_ID | MIIM_STATE | MIIM_STRING;
+									mii.fType = MFT_STRING;
+									mii.dwTypeData = buffer;
+									mii.fState = (is_checked ? MF_CHECKED : MF_UNCHECKED);
+									mii.wID = IDM_RULES_APPS + UINT (i);
+
+									if (ptr_rule->is_enabled)
+										mii.fState |= MF_DISABLED | MF_GRAYED;
+
+									InsertMenuItem (submenu3, mii.wID, FALSE, &mii);
 								}
-
-								WCHAR buffer[128] = {0};
-								StringCchPrintf (buffer, _countof (buffer), I18N (&app, IDS_RULE_TITLE_2, 0), ptr->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr->name);
-
-								mii.cbSize = sizeof (mii);
-								mii.fMask = MIIM_ID | MIIM_STATE | MIIM_STRING;
-								mii.fType = MFT_STRING;
-								mii.dwTypeData = buffer;
-								mii.fState = (is_checked ? MF_CHECKED : MF_UNCHECKED);
-								mii.wID = IDM_RULES_APPS + UINT (i);
-
-								if (ptr->is_enabled)
-									mii.fState |= MF_DISABLED | MF_GRAYED;
-
-								InsertMenuItem (submenu3, mii.wID, FALSE, &mii);
 							}
 						}
 
 						AppendMenu (submenu3, MF_SEPARATOR, 0, nullptr);
 						AppendMenu (submenu3, MF_STRING, IDM_OPENRULESEDITOR, I18N (&app, IDS_OPENRULESEDITOR, 0));
 					}
+
+					_r_fastlock_releaseshared (&lock_access);
 				}
 
 				POINT pt = {0};
@@ -7315,7 +7390,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					CheckMenuItem (submenu, IDM_TRAY_ENABLELOG_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsLogEnabled", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 					CheckMenuItem (submenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 
-					if (_r_spinislocked (&config.lock_apply))
+					if (_r_fastlock_islocked (&lock_apply))
 						EnableMenuItem (submenu, IDM_TRAY_START, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
 					if (rules_blocklist.empty ())
@@ -7345,17 +7420,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							for (size_t i = 0; i < rules_system.size (); i++)
 							{
-								ITEM_RULE const *ptr = rules_system.at (i);
+								ITEM_RULE const *ptr_rule = rules_system.at (i);
 
-								if (!ptr)
+								if (!ptr_rule)
 									continue;
 
 								WCHAR buffer[128] = {0};
-								StringCchPrintf (buffer, _countof (buffer), L"[%s] %s", ptr->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr->name);
+								StringCchPrintf (buffer, _countof (buffer), L"[%s] %s", ptr_rule->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr_rule->name);
 
 								AppendMenu (submenu_sub, MF_STRING, IDM_RULES_SYSTEM + i, buffer);
 
-								if (ptr->is_enabled)
+								if (ptr_rule->is_enabled)
 									CheckMenuItem (submenu_sub, IDM_RULES_SYSTEM + UINT (i), MF_BYCOMMAND | MF_CHECKED);
 							}
 						}
@@ -7374,21 +7449,25 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 						else
 						{
+							_r_fastlock_acquireshared (&lock_access);
+
 							for (size_t i = 0; i < rules_custom.size (); i++)
 							{
-								ITEM_RULE const *ptr = rules_custom.at (i);
+								ITEM_RULE const *ptr_rule = rules_custom.at (i);
 
-								if (!ptr)
+								if (!ptr_rule)
 									continue;
 
 								WCHAR buffer[128] = {0};
-								StringCchPrintf (buffer, _countof (buffer), I18N (&app, IDS_RULE_TITLE_1, 0), ptr->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr->name);
+								StringCchPrintf (buffer, _countof (buffer), I18N (&app, IDS_RULE_TITLE_1, 0), ptr_rule->is_block ? I18N (&app, IDS_ACTION_2, 0) : I18N (&app, IDS_ACTION_1, 0), ptr_rule->name);
 
 								AppendMenu (submenu_sub, MF_STRING, IDM_RULES_CUSTOM + i, buffer);
 
-								if (ptr->is_enabled)
+								if (ptr_rule->is_enabled)
 									CheckMenuItem (submenu_sub, IDM_RULES_CUSTOM + UINT (i), MF_BYCOMMAND | MF_CHECKED);
 							}
+
+							_r_fastlock_releaseshared (&lock_access);
 						}
 
 						AppendMenu (submenu_sub, MF_SEPARATOR, 0, nullptr);
@@ -7534,45 +7613,48 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				INT item = -1;
 				BOOL is_remove = BOOL (-1);
 
+				_r_fastlock_acquireexclusive (&lock_access);
+
 				while ((item = (INT)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != -1)
 				{
 					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
 
-					if (hash)
+					ITEM_APPLICATION* ptr_app = _app_getapplication (hash);
+
+					if (ptr_app)
 					{
 						if (is_remove == BOOL (-1))
 						{
 							is_remove = FALSE;
 
-							if (apps_rules.find (hash) != apps_rules.end () && !apps_rules[hash].empty ())
+							for (size_t i = 0; i < ptr_app->rules.size (); i++)
 							{
-								for (size_t j = 0; j < apps_rules[hash].size (); j++)
+								if (ptr_app->rules.at (i) == idx)
 								{
-									if (apps_rules[hash].at (j) == idx)
-									{
-										is_remove = TRUE;
-										break;
-									}
+									is_remove = TRUE;
+									break;
 								}
 							}
 						}
 
 						if (is_remove)
 						{
-							for (size_t j = 0; j < apps_rules[hash].size (); j++)
+							for (size_t i = 0; i < ptr_app->rules.size (); i++)
 							{
-								if (apps_rules[hash].at (j) == idx)
+								if (ptr_app->rules.at (i) == idx)
 								{
-									apps_rules[hash].erase (apps_rules[hash].begin () + j);
+									ptr_app->rules.erase (ptr_app->rules.begin () + i);
 								}
 							}
 						}
 						else
 						{
-							apps_rules[hash].push_back (idx);
+							ptr_app->rules.push_back (idx);
 						}
 					}
 				}
+
+				_r_fastlock_releaseexclusive (&lock_access);
 
 				_app_profilesave (hwnd);
 				_app_profileload (hwnd);
@@ -7712,6 +7794,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_app_profileload (hwnd);
 					_app_listviewsort (hwnd, -1, false);
+
 					_r_listview_redraw (hwnd, IDC_LISTVIEW);
 
 					break;
@@ -7750,8 +7833,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					break;
 				}
-
-
 
 				case IDM_FONT:
 				{
@@ -7979,12 +8060,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (config.hlog != nullptr && config.hlog != INVALID_HANDLE_VALUE)
 						{
-							_r_spinlock (&config.lock_writelog);
+							_r_fastlock_acquireexclusive (&lock_writelog);
 
 							SetFilePointer (config.hlog, 2, nullptr, FILE_BEGIN);
 							SetEndOfFile (config.hlog);
 
-							_r_spinunlock (&config.lock_writelog);
+							_r_fastlock_releaseexclusive (&lock_writelog);
 						}
 						else
 						{
@@ -8053,6 +8134,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (GetOpenFileName (&ofn))
 					{
+						_r_fastlock_acquireexclusive (&lock_access);
+
 						if (files[ofn.nFileOffset - 1] != 0)
 						{
 							item = _app_addapplication (hwnd, files, 0, false, false, false);
@@ -8071,6 +8154,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									item = _app_addapplication (hwnd, _r_fmt (L"%s\\%s", dir, p), 0, false, false, false);
 							}
 						}
+
+						_r_fastlock_releaseexclusive (&lock_access);
 
 						_app_listviewsort (hwnd, -1, false);
 						_app_profilesave (hwnd);
@@ -8134,17 +8219,20 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								new_val = !ptr_app->is_silent;
 
 							ptr_app->is_silent = new_val ? true : false;
+
+							if (new_val)
+								_app_freenotify (LAST_VALUE, hash);
 						}
 						else if (LOWORD (wparam) == IDM_CHECK || LOWORD (wparam) == IDM_UNCHECK)
 						{
-							_r_spinlock (&config.lock_checkbox);
+							config.is_nocheckboxnotify = true;
 
 							ptr_app->is_enabled = (LOWORD (wparam) == IDM_CHECK) ? true : false;
 
 							_r_listview_setitemgroup (hwnd, IDC_LISTVIEW, item, ptr_app->is_enabled ? 0 : 1);
 							_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-							_r_spinunlock (&config.lock_checkbox);
+							config.is_nocheckboxnotify = false;
 						}
 					}
 
@@ -8155,6 +8243,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					else if (LOWORD (wparam) == IDM_DISABLENOTIFICATIONS)
 					{
 						_app_profilesave (hwnd);
+						_app_notifyrefresh ();
+
 						_r_listview_redraw (hwnd, IDC_LISTVIEW);
 					}
 					else if (LOWORD (wparam) == IDM_COPY)
@@ -8205,6 +8295,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					size_t item = LAST_VALUE;
 
+					_r_fastlock_acquireexclusive (&lock_access);
+
 					for (size_t i = count; i != LAST_VALUE; i--)
 					{
 						if (ListView_GetItemState (GetDlgItem (hwnd, IDC_LISTVIEW), i, LVNI_SELECTED))
@@ -8222,11 +8314,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
+					_r_fastlock_releaseexclusive (&lock_access);
+
 					if (item != LAST_VALUE)
 						ShowItem (hwnd, IDC_LISTVIEW, min (item, _r_listview_getitemcount (hwnd, IDC_LISTVIEW) - 1), -1);
 
 					_app_profilesave (hwnd);
 					_app_profileload (hwnd);
+					_app_notifyrefresh ();
 
 					if (is_checked)
 					{
@@ -8247,30 +8342,35 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW) - 1;
 
+					_r_fastlock_acquireexclusive (&lock_access);
+
 					for (size_t i = count; i != LAST_VALUE; i--)
 					{
 						const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, i);
+						ITEM_APPLICATION* ptr_app = _app_getapplication (hash);
 
-						if (hash)
+						if (ptr_app)
 						{
-							ITEM_APPLICATION* ptr = &apps[hash];
-
-							if (ptr->is_enabled && ptr->error_count || (!ptr->is_picoapp && !ptr->is_network && ptr->real_path[0] != L'\\' && !_r_fs_exists (ptr->real_path)))
+							if (ptr_app->is_enabled && ptr_app->error_count || (!ptr_app->is_picoapp && !ptr_app->is_network && ptr_app->real_path[0] != L'\\' && !_r_fs_exists (ptr_app->real_path)))
 							{
 								SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_DELETEITEM, i, 0);
 
 								is_deleted = true;
 
-								if (_app_freeapplication (ptr, hash))
+								if (_app_freeapplication (ptr_app, hash))
 									is_checked = true;
 							}
 						}
 					}
 
+					_r_fastlock_releaseexclusive (&lock_access);
+
 					if (is_deleted)
 					{
 						_app_profilesave (hwnd);
 						_app_profileload (hwnd);
+
+						_app_notifyrefresh ();
 
 						if (is_checked)
 						{

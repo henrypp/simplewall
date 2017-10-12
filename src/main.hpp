@@ -6,6 +6,7 @@
 
 #include <windows.h>
 #include <commctrl.h>
+#include <vector>
 #include "resource.hpp"
 #include "app.hpp"
 
@@ -28,6 +29,7 @@
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 #define XML_RULES_SYSTEM L"rules_system.xml"
 
+#define LANG_MENU 5
 #define NA_TEXT L"<empty>"
 #define TAB_SPACE L"   "
 #define ERR_FORMAT L"%s() failed with error code 0x%.8lx (%s)"
@@ -149,6 +151,7 @@ struct STATIC_DATA
 	bool is_popuperrors = false;
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
+	bool is_nocheckboxnotify = false;
 
 	HIMAGELIST himg = nullptr;
 
@@ -183,11 +186,6 @@ struct STATIC_DATA
 	size_t wd_length = 0;
 
 	size_t ntoskrnl_hash = 0;
-
-	volatile LONG lock_access = 0;
-	volatile LONG lock_checkbox = 0;
-	volatile LONG lock_apply = 0;
-	volatile LONG lock_writelog = 0;
 };
 
 struct ITEM_APPLICATION
@@ -213,6 +211,8 @@ struct ITEM_APPLICATION
 
 	WCHAR display_path[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
+
+	std::vector<size_t> rules;
 };
 
 struct ITEM_RULE

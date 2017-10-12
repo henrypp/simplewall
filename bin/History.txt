@@ -1,3 +1,12 @@
+v2.0.17 (12 October 2017)
++ clear notifications cache on apply filters and configuration
++ show more address information on notification window tooltip
+- fixed redraw listview after notification actions
+- fixed ui hangouts for a long time sometimes
+- fixed race conditions
+- fixed ui bugs
+- fixed bugs
+
 v2.0.16 (6 October 2017)
 - fixed internal rules configuration saving
 
