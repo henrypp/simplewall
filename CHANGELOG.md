@@ -1,3 +1,15 @@
+v2.0.18 (20 October 2017)
++ added setting to disable proxy support (win8 and above only)
++ prevent notifications duplicate
+- fixed windows firewall disabling on win10
+- fixed notifications sound configuration does not saved
+- fixed notifications sound does not played on some systems
+- cosmetic fixes about notifications cross button
+- updated localization
+- updated blocklist
+- fixed dpi support
+- fixed ui bugs
+
 v2.0.17 (12 October 2017)
 + clear notifications cache on apply filters and configuration
 + show more address information on notification window tooltip
@@ -5,7 +17,7 @@ v2.0.17 (12 October 2017)
 - fixed ui hangouts for a long time sometimes
 - fixed race conditions
 - fixed ui bugs
-- fixed bugs 
+- fixed bugs
 
 v2.0.16 (6 October 2017)
 - fixed internal rules configuration saving

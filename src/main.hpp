@@ -320,56 +320,9 @@ struct ITEM_ADDRESS
 #define FWP_DIRECTION_OUT 0x00003901L
 #endif
 
-typedef struct FWPM_NET_EVENT_HEADER3_
-{
-	FILETIME       timeStamp;
-	UINT32         flags;
-	FWP_IP_VERSION ipVersion;
-	UINT8          ipProtocol;
-	union
-	{
-		UINT32           localAddrV4;
-		FWP_BYTE_ARRAY16 localAddrV6;
-	};
-	union
-	{
-		UINT32           remoteAddrV4;
-		FWP_BYTE_ARRAY16 remoteAddrV6;
-	};
-	UINT16         localPort;
-	UINT16         remotePort;
-	UINT32         scopeId;
-	FWP_BYTE_BLOB  appId;
-	SID            *userId;
-	FWP_AF         addressFamily;
-	SID            *packageSid;
-	wchar_t        *enterpriseId;
-	UINT64         policyFlags;
-	FWP_BYTE_BLOB  effectiveName;
-} FWPM_NET_EVENT_HEADER3;
-
-typedef struct FWPM_NET_EVENT3_
-{
-	FWPM_NET_EVENT_HEADER3 header;
-	FWPM_NET_EVENT_TYPE    type;
-	union
-	{
-		FWPM_NET_EVENT_IKEEXT_MM_FAILURE1 *ikeMmFailure;
-		FWPM_NET_EVENT_IKEEXT_QM_FAILURE0 *ikeQmFailure;
-		FWPM_NET_EVENT_IKEEXT_EM_FAILURE1 *ikeEmFailure;
-		FWPM_NET_EVENT_CLASSIFY_DROP2     *classifyDrop;
-		FWPM_NET_EVENT_IPSEC_KERNEL_DROP0 *ipsecDrop;
-		FWPM_NET_EVENT_IPSEC_DOSP_DROP0   *idpDrop;
-		FWPM_NET_EVENT_CLASSIFY_ALLOW0    *classifyAllow;
-		FWPM_NET_EVENT_CAPABILITY_DROP0   *capabilityDrop;
-		FWPM_NET_EVENT_CAPABILITY_ALLOW0  *capabilityAllow;
-		FWPM_NET_EVENT_CLASSIFY_DROP_MAC0 *classifyDropMac;
-	};
-} FWPM_NET_EVENT3;
-
 typedef void (CALLBACK *FWPM_NET_EVENT_CALLBACK2)(_Inout_ void* context, _In_ const FWPM_NET_EVENT3* event);
 
-typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, HANDLE*); // subscribe( win7)
+typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, HANDLE*); // subscribe (win7)
 typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, HANDLE*); // subscribe (win8)
 typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, HANDLE*); // subscribe (win10)
 
