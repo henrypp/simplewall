@@ -1,4 +1,4 @@
-## simplewall
+# simplewall
 
 ![simplewall](https://www.henrypp.org/images/simplewall.png?cachefx)
 
@@ -7,12 +7,12 @@ Simple tool to configure Windows Filtering Platform (WFP) which can configure ne
 The lightweight application is less than a megabyte, and it is compatible with Windows Vista and higher operating systems.
 You can download either the installer or portable version. For correct working, need administrator rights.
 
-#### Features:
+### Features:
 - Simple interface without annoying pop ups
-- Dropped packets logging (Windows 7 and above)
-- Internal blocklist (block Windows spy / telemetry)
-- Proxy support (Windows 8 and above)
-- Custom blocklist (your own rules)
+- Dropped packets notifications (Windows 7 and above)
+- Proxy support (Windows 8 and above) [BETA]
+- [Internal blocklist](https://github.com/crazy-max/WindowsSpyBlocker/wiki/dataSimplewall) (block Windows spy / telemetry)
+- [Rules editor](https://github.com/henrypp/simplewall/wiki/Rules-editor) (create your own rules)
 - Free and open source
 - Localization support
 - IPv6 support
