@@ -9,8 +9,8 @@ Features:
 - Simple interface without annoying pop ups
 - Dropped packets logging (Windows 7 and above)
 - Internal blocklist (block Windows spy / telemetry)
-- Proxy support (Windows 8 and above)
-- Custom blocklist (your own rules)
+- Proxy support (Windows 8 and above) [BETA]
+- Rules editor (create your own rules)
 - Free and open source
 - Localization support
 - IPv6 support
