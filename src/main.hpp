@@ -36,6 +36,9 @@
 #define RULE_DELIMETER L";"
 #define UI_FONT_DEFAULT L"Segoe UI Light;10;300"
 
+#define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
+#define BLOCKLIST_URL L"https://github.com/henrypp/simplewall/blob/master/bin/blocklist.xml"
+
 // notification timer
 #define NOTIFY_WIDTH 368
 #define NOTIFY_HEIGHT 234
@@ -49,7 +52,7 @@
 #define NOTIFY_TIMER_DEFAULT 10 // sec.
 #define NOTIFY_TIMEOUT 10 // sec.
 #define NOTIFY_TIMEOUT_MINIMUM 8 // sec.
-#define NOTIFY_LIMIT_SIZE 10 //limit vector size
+#define NOTIFY_LIMIT_SIZE 6 //limit vector size
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 
 // pugixml document configuration
@@ -131,15 +134,15 @@ enum EnumRuleDirection
 enum EnumRuleType
 {
 	TypeUnknown = 0,
-	TypeHost = 1,
 	TypeIp = 2,
 	TypePort = 4,
+	TypeHost = 1,
 };
 
 enum EnumMode
 {
-	ModeWhitelist,
-	ModeBlacklist,
+	ModeWhitelist = 0,
+	ModeBlacklist = 1,
 };
 
 struct STATIC_DATA
@@ -194,7 +197,7 @@ struct ITEM_APPLICATION
 
 	size_t icon_id = 0;
 
-	UINT error_count = 0;
+	bool error_count = false;
 
 	bool is_enabled = false;
 	bool is_network = false;
@@ -203,8 +206,8 @@ struct ITEM_APPLICATION
 	bool is_signed = false;
 	bool is_picoapp = false; // win10 and above
 
-	LPWSTR description = nullptr;
-	LPWSTR signer = nullptr;
+	LPCWSTR description = nullptr;
+	LPCWSTR signer = nullptr;
 
 	WCHAR file_name[64] = {0};
 	WCHAR file_dir[MAX_PATH] = {0};
@@ -217,6 +220,8 @@ struct ITEM_APPLICATION
 
 struct ITEM_RULE
 {
+	bool error_count = false;
+
 	bool is_enabled = false;
 	bool is_block = false;
 
@@ -226,10 +231,10 @@ struct ITEM_RULE
 	UINT8 protocol = 0;
 	ADDRESS_FAMILY version = AF_UNSPEC;
 
-	LPWSTR name = nullptr;
-	LPWSTR rule = nullptr;
+	LPWSTR pname = nullptr;
+	LPWSTR prule = nullptr;
 
-	LPWSTR apps = nullptr;
+	LPWSTR papps = nullptr;
 };
 
 struct ITEM_LOG
@@ -252,8 +257,8 @@ struct ITEM_LOG
 
 	WCHAR date[32] = {0};
 
-	WCHAR remote_addr[48] = {0};
-	WCHAR local_addr[48] = {0};
+	WCHAR remote_addr[68] = {0};
+	WCHAR local_addr[68] = {0};
 
 	WCHAR username[MAX_PATH] = {0};
 
@@ -301,14 +306,14 @@ struct ITEM_ADDRESS
 
 	NET_ADDRESS_FORMAT format;
 
-	LPWSTR* addr_dns = nullptr;
+	LPWSTR* paddr_dns = nullptr;
 
 	UINT16 port = 0;
 
-	FWP_V4_ADDR_AND_MASK* addr4 = nullptr;
-	FWP_V6_ADDR_AND_MASK* addr6 = nullptr;
+	FWP_V4_ADDR_AND_MASK* paddr4 = nullptr;
+	FWP_V6_ADDR_AND_MASK* paddr6 = nullptr;
 
-	FWP_RANGE* range = nullptr;
+	FWP_RANGE* prange = nullptr;
 };
 
 // dropped events callback subscription (win7 and above)

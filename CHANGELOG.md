@@ -1,3 +1,18 @@
+v2.0.19 (1 November 2017)
++ new rules editor ui
++ added highlighting rules with errors
++ automatically sorting rules after changing
++ added feature to set custom dns ipv4 server ("DnsServerV4" in .ini)
++ added option to exclude blocklist rules from notifications
++ show process information in statusbar on menu item hover
++ optimized signature information retrieving from binaries
+- updated localization
+- fixed saving profile in some cases
+- fixed parsing rules types (issue #70)
+- fixed dns queries
+- fixed ui bugs
+- fixed bugs
+
 v2.0.18 (20 October 2017)
 + added setting to disable proxy support (win8 and above only)
 + prevent notifications duplicate
