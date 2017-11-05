@@ -1,3 +1,19 @@
+v2.0.20 (6 November 2017)
++ now custom rules will overwrite system rules
++ added warning message for listen connections option
++ apply filters on demand in settings dialog
++ added port support for ip ranges
+- removed rules configuration from menu (use settings dialog instead)
+- fixed rule apps does not saved when checkbox are checked
+- fixed rule genration from notification window
+- fixed listen connections does not blocked
+- fixed highlighting special rules for apps
+- fixed running under non-admin account
+- fixed skip-uac working directory
+- fixed listview sorting
+- fixed ui bugs
+- fixed bugs
+
 v2.0.19 (1 November 2017)
 + new rules editor ui
 + added highlighting rules with errors

@@ -98,14 +98,6 @@ IDM_MAIN MENU
 		}
 		POPUP " "
 		{
-			MENUITEM SEPARATOR
-		}
-		POPUP " "
-		{
-			MENUITEM SEPARATOR
-		}
-		POPUP " "
-		{
 			MENUITEM " ", IDM_ENABLELOG_CHK
 			MENUITEM " ", IDM_ENABLENOTIFICATIONS_CHK
 			MENUITEM SEPARATOR
@@ -146,14 +138,6 @@ IDM_TRAY MENU
 			MENUITEM SEPARATOR
 			MENUITEM " ", IDM_TRAY_RULE_ALLOWINBOUND
 			MENUITEM " ", IDM_TRAY_RULE_ALLOWLISTEN
-		}
-		POPUP " "
-		{
-			MENUITEM SEPARATOR
-		}
-		POPUP " "
-		{
-			MENUITEM SEPARATOR
 		}
 		POPUP " "
 		{
@@ -517,6 +501,7 @@ STRINGTABLE
 
 	IDS_ACTION_1 "Allow"
 	IDS_ACTION_2 "Block"
+	IDS_ACTION_3 "Ignore"
 
 	IDS_RULE_TITLE_1 "[%s] ""%s"" for all apps (global)"
 	IDS_RULE_TITLE_2 "[%s] ""%s"" for selected apps (special)"
@@ -585,7 +570,7 @@ STRINGTABLE
 	IDS_NOTIFY_CREATERULE_ADDRESS "Create a rule for ""%s"" address"
 	IDS_NOTIFY_CREATERULE_PORT "Create a rule for ""%d"" port"
 	IDS_NOTIFY_DISABLENOTIFICATIONS "Disable notifications for ""%s"""
-	IDS_NOTIFY_TOOLTIP "Create a rule to allow/block access to address and/or port for this application."
+	IDS_NOTIFY_TOOLTIP "Create a special rule to allow access to address and/or port for this application."
 
 	IDS_ALWAYSPERFORMTHISCHECK_CHK "Always perform this check"
 
@@ -594,6 +579,7 @@ STRINGTABLE
 	IDS_QUESTION_START "This will forbid network access for apps accordingly selected configuration! Do you want to continue?"
 	IDS_QUESTION_STOP "This will restore network access for all blocked apps! Do you want to continue?"
 	IDS_QUESTION_EXIT "Do you really want to exit?"
+	IDS_QUESTION_LISTEN "Disabling this option <a href=""%s"">can cause software freezes</a>, do you want to disable this option?"
 
 	IDS_STATUS_TOTAL "Total apps: %d"
 	IDS_STATUS_SELECTED "%d selected"

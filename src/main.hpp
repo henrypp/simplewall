@@ -36,8 +36,12 @@
 #define RULE_DELIMETER L";"
 #define UI_FONT_DEFAULT L"Segoe UI Light;10;300"
 
+#define LEN_IP_MAX 68
+#define LEN_HOST_MAX 512
+
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 #define BLOCKLIST_URL L"https://github.com/henrypp/simplewall/blob/master/bin/blocklist.xml"
+#define LISTENS_ISSUE_URL L"https://github.com/henrypp/simplewall/issues/9"
 
 // notification timer
 #define NOTIFY_WIDTH 368
@@ -76,8 +80,9 @@
 #define FILTER_WEIGHT_HIGHEST 0xE
 #define FILTER_WEIGHT_BLOCKLIST 0xD
 #define FILTER_WEIGHT_CUSTOM 0xC
-#define FILTER_WEIGHT_APPLICATION 0xB
-#define FILTER_WEIGHT_LOWEST 0xA
+#define FILTER_WEIGHT_SYSTEM 0xB
+#define FILTER_WEIGHT_APPLICATION 0xA
+#define FILTER_WEIGHT_LOWEST 0x9
 
 // memory limitation
 #define RULE_NAME_CCH_MAX 64
@@ -306,14 +311,14 @@ struct ITEM_ADDRESS
 
 	NET_ADDRESS_FORMAT format;
 
-	LPWSTR* paddr_dns = nullptr;
-
 	UINT16 port = 0;
 
 	FWP_V4_ADDR_AND_MASK* paddr4 = nullptr;
 	FWP_V6_ADDR_AND_MASK* paddr6 = nullptr;
 
 	FWP_RANGE* prange = nullptr;
+
+	WCHAR host[LEN_HOST_MAX] = {0};
 };
 
 // dropped events callback subscription (win7 and above)
