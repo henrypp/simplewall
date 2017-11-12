@@ -21,6 +21,7 @@
 
 #define PATH_NTOSKRNL L"%systemroot%\\system32\\ntoskrnl.exe"
 #define PATH_SVCHOST L"%systemroot%\\system32\\svchost.exe"
+#define PATH_STORE L"%systemroot%\\system32\\wsreset.exe"
 
 #define XML_APPS L"apps.xml"
 #define XML_BLOCKLIST L"blocklist.xml"
@@ -70,6 +71,7 @@
 #define LISTVIEW_COLOR_SPECIAL RGB (255, 255, 170)
 #define LISTVIEW_COLOR_INVALID RGB (255, 125, 148)
 #define LISTVIEW_COLOR_NETWORK RGB (255, 178, 255)
+#define LISTVIEW_COLOR_PACKAGE RGB(189, 251, 240)
 #define LISTVIEW_COLOR_PICO RGB (51, 153, 255)
 #define LISTVIEW_COLOR_SIGNED RGB (175, 228, 163)
 #define LISTVIEW_COLOR_SILENT RGB (181, 181, 181)
@@ -163,9 +165,12 @@ struct STATIC_DATA
 
 	HIMAGELIST himg = nullptr;
 
-	size_t def_icon_id = 0;
-	HICON def_hicon = nullptr;
-	HICON def_hicon_sm = nullptr;
+	size_t icon_id = 0;
+	size_t icon_package_id = 0;
+	HICON hicon_large = nullptr;
+	HICON hicon_small = nullptr;
+	HICON hicon_package_small = nullptr;
+	HBITMAP hbitmap_package_small = nullptr;
 
 	HFONT hfont = nullptr;
 
@@ -173,6 +178,7 @@ struct STATIC_DATA
 	HANDLE hengine = nullptr;
 	HANDLE hevent = nullptr;
 	HANDLE hlog = nullptr;
+	HANDLE hpackages = nullptr;
 
 	HANDLE stop_evt = nullptr;
 	HANDLE finish_evt = nullptr;
@@ -209,15 +215,17 @@ struct ITEM_APPLICATION
 	bool is_system = false;
 	bool is_silent = false;
 	bool is_signed = false;
+	bool is_storeapp = false; // win8 and above
 	bool is_picoapp = false; // win10 and above
 
 	LPCWSTR description = nullptr;
 	LPCWSTR signer = nullptr;
 
-	WCHAR file_name[64] = {0};
-	WCHAR file_dir[MAX_PATH] = {0};
+	//WCHAR file_name[64] = {0};
+	//WCHAR file_dir[MAX_PATH] = {0};
 
-	WCHAR display_path[MAX_PATH] = {0};
+	WCHAR display_name[MAX_PATH] = {0};
+	WCHAR original_path[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
 
 	std::vector<size_t> rules;
@@ -262,15 +270,24 @@ struct ITEM_LOG
 
 	WCHAR date[32] = {0};
 
-	WCHAR remote_addr[68] = {0};
-	WCHAR local_addr[68] = {0};
+	WCHAR remote_addr[LEN_IP_MAX] = {0};
+	WCHAR local_addr[LEN_IP_MAX] = {0};
 
 	WCHAR username[MAX_PATH] = {0};
 
-	WCHAR full_path[MAX_PATH] = {0};
-
 	WCHAR provider_name[MAX_PATH] = {0};
 	WCHAR filter_name[MAX_PATH] = {0};
+};
+
+struct ITEM_PACKAGE
+{
+	HBITMAP hbmp = nullptr;
+
+	size_t hash = 0;
+
+	WCHAR sid[MAX_PATH] = {0};
+	WCHAR display_name[MAX_PATH] = {0};
+	WCHAR real_path[MAX_PATH] = {0};
 };
 
 struct ITEM_PROCESS
@@ -284,6 +301,8 @@ struct ITEM_PROCESS
 struct ITEM_COLOR
 {
 	bool is_enabled = false;
+
+	size_t hash = 0;
 
 	UINT locale_id = 0;
 
@@ -338,5 +357,6 @@ typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, F
 
 typedef DWORD (WINAPI *FWPMNEU) (HANDLE, HANDLE); // unsubcribe (all)
 
+typedef DWORD (WINAPI *NIEAC) (DWORD, LPDWORD, PINET_FIREWALL_APP_CONTAINER*); // NetworkIsolationEnumAppContainers
 
 #endif // __MAIN_H__

@@ -1,3 +1,17 @@
+v2.1 Beta (12 November 2017)
++ added windows store apps support (win8 and above)
+- revert allowing loopback connection feature
+- converted log limit unit to kilobytes
+- dropped packets log cosmetic fixes
+- improved confirmation dialogs
+- updated localization
+- fixed settings will not be applied for main menu
+- fixed displaying icons for some processes
+- fixed rules editor crash (issue #89)
+- fixed color items reorganization
+- fixed ui bugs
+- fixed bugs
+
 v2.0.20 (6 November 2017)
 + now custom rules will overwrite system rules
 + added warning message for listen connections option

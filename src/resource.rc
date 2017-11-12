@@ -89,12 +89,14 @@ IDM_MAIN MENU
 		POPUP " "
 		{
 			MENUITEM " ", IDM_USEBLOCKLIST_CHK
-			MENUITEM " ", IDM_STEALTHMODE_CHK
+			MENUITEM " ", IDM_USESTEALTHMODE_CHK
 			MENUITEM " ", IDM_INSTALLBOOTTIMEFILTERS_CHK
 			MENUITEM " ", IDM_PROXYSUPPORT_CHK
 			MENUITEM SEPARATOR
 			MENUITEM " ", IDM_RULE_ALLOWINBOUND
 			MENUITEM " ", IDM_RULE_ALLOWLISTEN
+			MENUITEM SEPARATOR
+			MENUITEM " ", IDM_RULE_ALLOWLOOPBACK
 		}
 		POPUP " "
 		{
@@ -138,6 +140,8 @@ IDM_TRAY MENU
 			MENUITEM SEPARATOR
 			MENUITEM " ", IDM_TRAY_RULE_ALLOWINBOUND
 			MENUITEM " ", IDM_TRAY_RULE_ALLOWLISTEN
+			MENUITEM SEPARATOR
+			MENUITEM " ", IDM_TRAY_RULE_ALLOWLOOPBACK
 		}
 		POPUP " "
 		{
@@ -169,7 +173,11 @@ IDM_LISTVIEW MENU
 		MENUITEM " ", IDM_ADD_FILE
 		POPUP " "
 		{
-			MENUITEM " ", IDM_ALL
+			MENUITEM " ", IDM_ALL_PROCESSES
+		}
+		POPUP " "
+		{
+			MENUITEM " ", IDM_ALL_PACKAGES
 		}
 		MENUITEM SEPARATOR
 		POPUP " "
@@ -366,7 +374,7 @@ FONT 8, "Ms Shell Dlg"
 
 	LTEXT			"", IDC_LOGSIZELIMIT_HINT, 12, 50, 194, 12, SS_CENTERIMAGE
 	EDITTEXT		IDC_LOGSIZELIMIT_CTRL, 214, 50, 44, 12, ES_AUTOHSCROLL | ES_NUMBER | ES_MULTILINE
-	CONTROL			"", IDC_LOGSIZELIMIT, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK | UDS_SETBUDDYINT | UDS_WRAP, 0, 0, 0, 0
+	CONTROL			"", IDC_LOGSIZELIMIT, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK | UDS_SETBUDDYINT, 0, 0, 0, 0
 
 	AUTOCHECKBOX	"", IDC_LOGBACKUP_CHK, 12, 64, 250, 10
 
@@ -432,6 +440,7 @@ STRINGTABLE
 
 	IDS_ADD_FILE "Add file..."
 	IDS_ADD_PROCESS "Add process"
+	IDS_ADD_PACKAGE "Add package"
 	IDS_ALL "All"
 	IDS_DISABLENOTIFICATIONS "Disable notifications"
 	IDS_OPENRULESEDITOR "Create rule..."
@@ -459,9 +468,11 @@ STRINGTABLE
 
 	IDS_RULE_ALLOWINBOUND "Allow inbound connections for all"
 	IDS_RULE_ALLOWLISTEN "Allow listen connections for all (recommended)"
+	IDS_RULE_ALLOWLOOPBACK "Allow loopback connections for all (recommended)"
 
 	IDS_HIGHLIGHT_INVALID "File not found"
 	IDS_HIGHLIGHT_NETWORK "Shared network file"
+	IDS_HIGHLIGHT_PACKAGE "Windows Store app"
 	IDS_HIGHLIGHT_PICO "Pico app"
 	IDS_HIGHLIGHT_SIGNED "Signed app"
 	IDS_HIGHLIGHT_SILENT "Disabled notifications"
@@ -554,7 +565,7 @@ STRINGTABLE
 	IDS_LOGSHOW "Show log"
 	IDS_LOGCLEAR "Clear log"
 
-	IDS_LOGSIZELIMIT_HINT "Maximum log size: (mb.)"
+	IDS_LOGSIZELIMIT_HINT "Maximum log size: (kB)"
 	IDS_LOGBACKUP_CHK "Backup log file before truncate"
 
 	IDS_ENABLENOTIFICATIONS_CHK "Enable dropped packets notifications"
@@ -572,14 +583,13 @@ STRINGTABLE
 	IDS_NOTIFY_DISABLENOTIFICATIONS "Disable notifications for ""%s"""
 	IDS_NOTIFY_TOOLTIP "Create a special rule to allow access to address and/or port for this application."
 
-	IDS_ALWAYSPERFORMTHISCHECK_CHK "Always perform this check"
-
 	IDS_QUESTION "Are you sure?"
 	IDS_QUESTION_DELETE "Are you sure you want to delete %d item(s)?"
 	IDS_QUESTION_START "This will forbid network access for apps accordingly selected configuration! Do you want to continue?"
 	IDS_QUESTION_STOP "This will restore network access for all blocked apps! Do you want to continue?"
 	IDS_QUESTION_EXIT "Do you really want to exit?"
-	IDS_QUESTION_LISTEN "Disabling this option <a href=""%s"">can cause software freezes</a>, do you want to disable this option?"
+	IDS_QUESTION_LISTEN "Disabling listen connections <a href=""%s"">can cause software freezes</a>, disable option?"
+	IDS_QUESTION_FLAG_CHK "Do not ask again"
 
 	IDS_STATUS_TOTAL "Total apps: %d"
 	IDS_STATUS_SELECTED "%d selected"
