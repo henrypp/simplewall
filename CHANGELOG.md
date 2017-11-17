@@ -1,3 +1,18 @@
+v2.1.1 Beta (17 November 2017)
++ reworked filter settings page
++ added option to disable hosts support for rules
++ added option to load blocklist extra rules
+- cosmetic fixes for ipv6 address format
+- fixed dns resolutions where it does not required (issue #94)
+- fixed various rules editor crashes (issue #89)
+- fixed windows store icon destroying
+- removed filters configuration from menu (use settings dialog instead)
+- removed internal rules files from distro
+- updated internal rules
+- updated localization
+- fixed ui bugs
+- fixed bugs
+
 v2.1 Beta (12 November 2017)
 + added windows store apps support (win8 and above)
 - revert allowing loopback connection feature

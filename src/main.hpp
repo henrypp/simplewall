@@ -25,7 +25,6 @@
 
 #define XML_APPS L"apps.xml"
 #define XML_BLOCKLIST L"blocklist.xml"
-#define XML_BLOCKLIST_FULL L"blocklist_full.xml"
 #define XML_RULES_CONFIG L"rules_config.xml"
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 #define XML_RULES_SYSTEM L"rules_system.xml"
@@ -169,7 +168,7 @@ struct STATIC_DATA
 	size_t icon_package_id = 0;
 	HICON hicon_large = nullptr;
 	HICON hicon_small = nullptr;
-	HICON hicon_package_small = nullptr;
+	HICON hicon_package = nullptr;
 	HBITMAP hbitmap_package_small = nullptr;
 
 	HFONT hfont = nullptr;
@@ -185,9 +184,7 @@ struct STATIC_DATA
 
 	WCHAR title[128] = {0};
 	WCHAR apps_path[MAX_PATH] = {0};
-	WCHAR blocklist_path[MAX_PATH] = {0};
 	WCHAR rules_custom_path[MAX_PATH] = {0};
-	WCHAR rules_system_path[MAX_PATH] = {0};
 	WCHAR rules_config_path[MAX_PATH] = {0};
 	WCHAR notify_snd_path[MAX_PATH] = {0};
 
