@@ -8,6 +8,7 @@ The lightweight application is less than a megabyte, and it is compatible with W
 You can download either the installer or portable version. For correct working, need administrator rights.
 
 ### Features:
+- Windows Store apps support (Windows 8 and above)
 - Simple interface without annoying pop ups
 - Dropped packets notifications (Windows 7 and above)
 - Proxy support (Windows 8 and above) [BETA]

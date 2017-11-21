@@ -1,3 +1,47 @@
+v2.1.2 RC (21 November 2017)
++ added option to disable apps signature checking
++ set selected apps when you are open rules editor from main window
+- reworked special rules (minimized memory usage and speed improvements, also removed limit in apps selection for special rules)
+- removed ocsp signature verification (issue #94)
+- improved apps version receiving
+- renamed "filters" into "rules"
+- fixed various rules editor crashes (issue #89)
+- fixed race conditions (it may fix issue #73)
+- fixed blocklist incorrect check state
+- fixed restoring after hibernation
+- updated localization
+- fixed ui bugs
+- fixed bugs
+
+v2.1.1 Beta (17 November 2017)
++ reworked filter settings page
++ added option to disable hosts support for rules
++ added option to load blocklist extra rules
+- cosmetic fixes for ipv6 address format
+- fixed dns resolutions where it does not required (issue #94)
+- fixed various rules editor crashes (issue #89)
+- fixed windows store icon destroying
+- removed filters configuration from menu (use settings dialog instead)
+- removed internal rules files from distro
+- updated internal rules
+- updated localization
+- fixed ui bugs
+- fixed bugs
+
+v2.1 Beta (12 November 2017)
++ added windows store apps support (win8 and above)
+- revert allowing loopback connection feature
+- converted log limit unit to kilobytes
+- dropped packets log cosmetic fixes
+- improved confirmation dialogs
+- updated localization
+- fixed settings will not be applied for main menu
+- fixed displaying icons for some processes
+- fixed rules editor crash (issue #89)
+- fixed color items reorganization
+- fixed ui bugs
+- fixed bugs
+
 v2.0.20 (6 November 2017)
 + now custom rules will overwrite system rules
 + added warning message for listen connections option
@@ -5,7 +49,7 @@ v2.0.20 (6 November 2017)
 + added port support for ip ranges
 - removed rules configuration from menu (use settings dialog instead)
 - fixed rule apps does not saved when checkbox are checked
-- fixed rule genration from notification window
+- fixed rule generation from notification window
 - fixed listen connections does not blocked
 - fixed highlighting special rules for apps
 - fixed running under non-admin account
