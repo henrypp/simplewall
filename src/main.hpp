@@ -6,7 +6,7 @@
 
 #include <windows.h>
 #include <commctrl.h>
-#include <vector>
+#include <unordered_map>
 #include "resource.hpp"
 #include "app.hpp"
 
@@ -55,7 +55,7 @@
 #define NOTIFY_TIMER_POPUP 350
 #define NOTIFY_TIMER_DEFAULT 10 // sec.
 #define NOTIFY_TIMEOUT 10 // sec.
-#define NOTIFY_TIMEOUT_MINIMUM 8 // sec.
+#define NOTIFY_TIMEOUT_MINIMUM 6 // sec.
 #define NOTIFY_LIMIT_SIZE 6 //limit vector size
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 
@@ -88,7 +88,6 @@
 // memory limitation
 #define RULE_NAME_CCH_MAX 64
 #define RULE_RULE_CCH_MAX 256
-#define RULE_APPS_CCH_MAX 2048
 
 // libs
 #pragma comment(lib, "crypt32.lib")
@@ -98,7 +97,6 @@
 #pragma comment(lib, "ntdll.lib")
 #pragma comment(lib, "version.lib")
 #pragma comment(lib, "ws2_32.lib")
-#pragma comment(lib, "wtsapi32.lib")
 #pragma comment(lib, "winmm.lib")
 
 // guid
@@ -218,14 +216,9 @@ struct ITEM_APPLICATION
 	LPCWSTR description = nullptr;
 	LPCWSTR signer = nullptr;
 
-	//WCHAR file_name[64] = {0};
-	//WCHAR file_dir[MAX_PATH] = {0};
-
 	WCHAR display_name[MAX_PATH] = {0};
 	WCHAR original_path[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
-
-	std::vector<size_t> rules;
 };
 
 struct ITEM_RULE
@@ -244,7 +237,7 @@ struct ITEM_RULE
 	LPWSTR pname = nullptr;
 	LPWSTR prule = nullptr;
 
-	LPWSTR papps = nullptr;
+	std::unordered_map<size_t, bool> apps;
 };
 
 struct ITEM_LOG

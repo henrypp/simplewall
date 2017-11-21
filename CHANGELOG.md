@@ -1,3 +1,18 @@
+v2.1.2 RC (21 November 2017)
++ added option to disable apps signature checking
++ set selected apps when you are open rules editor from main window
+- reworked special rules (minimized memory usage and speed improvements, also removed limit in apps selection for special rules)
+- removed ocsp signature verification (issue #94)
+- improved apps version receiving
+- renamed "filters" into "rules"
+- fixed various rules editor crashes (issue #89)
+- fixed race conditions (it may fix issue #73)
+- fixed blocklist incorrect check state
+- fixed restoring after hibernation
+- updated localization
+- fixed ui bugs
+- fixed bugs
+
 v2.1.1 Beta (17 November 2017)
 + reworked filter settings page
 + added option to disable hosts support for rules

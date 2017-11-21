@@ -286,7 +286,7 @@ FONT 8, "Ms Shell Dlg"
 	LTEXT			"", IDC_COLORS_HINT, 12, 162, 246, 10
 }
 
-IDD_SETTINGS_FILTERS DIALOGEX 107, 0, 272, 186
+IDD_SETTINGS_RULES DIALOGEX 107, 0, 272, 186
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU | WS_TABSTOP
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Ms Shell Dlg"
@@ -304,9 +304,10 @@ FONT 8, "Ms Shell Dlg"
 	AUTOCHECKBOX	"", IDC_INSTALLBOOTTIMEFILTERS_CHK, 12, 102, 246, 10
 	AUTOCHECKBOX	"", IDC_PROXYSUPPORT_CHK, 12, 114, 246, 10
 
-	GROUPBOX		"", IDC_TITLE_ADVANCED, 4, 136, 262, 34
+	GROUPBOX		"", IDC_TITLE_ADVANCED, 4, 136, 262, 44
 
 	AUTOCHECKBOX	"", IDC_USEHOSTS_CHK, 12, 150, 246, 10
+	AUTOCHECKBOX	"", IDC_USECERTIFICATES_CHK, 12, 162, 246, 10
 }
 
 IDD_SETTINGS_RULES_BLOCKLIST DIALOGEX 107, 0, 272, 186
@@ -407,7 +408,7 @@ STRINGTABLE
 	IDS_TRAY_START "Install filters"
 	IDS_TRAY_STOP "Uninstall filters"
 	IDS_TRAY_MODE "Mode"
-	IDS_TRAY_FILTERS "Filters"
+	IDS_TRAY_RULES "Rules"
 	IDS_TRAY_BLOCKLIST_RULES "Blocklist"
 	IDS_TRAY_SYSTEM_RULES "System rules"
 	IDS_TRAY_CUSTOM_RULES "Custom rules"
@@ -442,7 +443,7 @@ STRINGTABLE
 	IDS_MODE_WHITELIST "White list (allow selected)"
 	IDS_MODE_BLACKLIST "Black list (block selected)"
 
-	IDS_RULE_ALLOWINBOUND "Allow inbound connections for all"
+	IDS_RULE_ALLOWINBOUND "Allow inbound connections for all (not recommended)"
 	IDS_RULE_ALLOWLISTEN "Allow listen connections for all (recommended)"
 	IDS_RULE_ALLOWLOOPBACK "Allow loopback connections for all (recommended)"
 
@@ -490,7 +491,6 @@ STRINGTABLE
 	IDS_ACTION_2 "Block"
 	IDS_ACTION_3 "Ignore"
 
-	IDS_RULE_TITLE_1 "[%s] ""%s"" for all apps (global)"
 	IDS_RULE_TITLE_2 "[%s] ""%s"" for selected apps (special)"
 
 	IDS_RULES_WIKI "<a href=""%s"">Rules editor documentation</a>"
@@ -530,6 +530,7 @@ STRINGTABLE
 	IDS_PROXYSUPPORT_HINT "Blocks all proxy connections. It may incompatible with thirdparty software."
 
 	IDS_USEHOSTS_CHK "Allow hosts support for rules"
+	IDS_USECERTIFICATES_CHK "Check apps for digital signatures"
 
 	IDS_DISABLEWINDOWSFIREWALL_CHK "Disable Windows Firewall (recommended)"
 	IDS_ENABLEWINDOWSFIREWALL_CHK "Enable Windows Firewall (recommended)"
