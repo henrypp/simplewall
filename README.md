@@ -8,12 +8,13 @@ The lightweight application is less than a megabyte, and it is compatible with W
 You can download either the installer or portable version. For correct working, need administrator rights.
 
 ### Features:
-- Windows Store apps support (Windows 8 and above)
 - Simple interface without annoying pop ups
-- Dropped packets notifications (Windows 7 and above)
-- Proxy support (Windows 8 and above) [BETA]
-- [Internal blocklist](https://github.com/crazy-max/WindowsSpyBlocker/wiki/dataSimplewall) (block Windows spy / telemetry)
 - [Rules editor](https://github.com/henrypp/simplewall/wiki/Rules-editor) (create your own rules)
+- [Internal blocklist](https://github.com/crazy-max/WindowsSpyBlocker/wiki/dataSimplewall) (block Windows spy / telemetry)
+- Dropped packets information with notification and logging to a file feature (Windows 7 and above)
+- Windows Store support (Windows 8 and above)
+- Windows Subsystem for Linux (WSL) support (Windows 10)
+- Proxy support (Windows 8 and above) [BETA]
 - Free and open source
 - Localization support
 - IPv6 support
