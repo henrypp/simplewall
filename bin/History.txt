@@ -1,3 +1,8 @@
+v2.1.3 (22 November 2017)
+- disabled loopback and digital signatures config by default
+- fixed displaying name of store apps (win8 and above) (issue #98)
+- fixed network paths rules (issue #102)
+
 v2.1.2 RC (21 November 2017)
 + added option to disable apps signature checking
 + set selected apps when you are open rules editor from main window

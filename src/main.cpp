@@ -648,7 +648,7 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 
 bool _app_verifysignature (size_t hash, LPCWSTR path, LPCWSTR* psigner)
 {
-	if (!app.ConfigGet (L"IsCerificatesEnabled", true).AsBool ())
+	if (!app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
 		return false;
 
 	if (!psigner)
@@ -797,8 +797,17 @@ bool _app_package_get (size_t hash, rstring* display_name, rstring* real_path)
 	{
 		if (packages.at (i).hash == hash)
 		{
-			if (display_name && packages.at (i).display_name[0])
-				*display_name = packages.at (i).display_name;
+			if (display_name)
+			{
+				if (packages.at (i).display_name[0])
+					*display_name = packages.at (i).display_name;
+
+				else if (packages.at (i).real_path[0])
+					*display_name = packages.at (i).real_path;
+
+				else if (packages.at (i).sid[0])
+					*display_name = packages.at (i).sid;
+			}
 
 			if (real_path && packages.at (i).real_path[0])
 				*real_path = packages.at (i).real_path;
@@ -850,9 +859,7 @@ void _app_package_generate ()
 
 							// get package name
 							{
-								SHLoadIndirectString (pAppContainers[containerIndex].displayName, item.display_name, _countof (item.display_name), nullptr);
-
-								if (!item.display_name[0])
+								if (!SUCCEEDED (SHLoadIndirectString (pAppContainers[containerIndex].displayName, item.display_name, _countof (item.display_name), nullptr)) || !item.display_name[0])
 									StringCchCopy (item.display_name, _countof (item.display_name), pAppContainers[containerIndex].appContainerName);
 							}
 
@@ -921,12 +928,18 @@ size_t _app_addapplication (HWND hwnd, rstring path, __time64_t timestamp, bool 
 		ptr_app->is_storeapp = true;
 		_app_package_get (hash, &display_name, &real_path);
 	}
-	else
+	else if (_wcsnicmp (path, L"\\device\\", 8) == 0) // device path
+	{
+		ptr_app->is_devicepath = true;
+	}
+
+	if (!ptr_app->is_storeapp)
 	{
 		real_path = path;
 
 		if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
 			display_name = _r_path_extractfile (path);
+
 		else
 			display_name = path;
 	}
@@ -940,7 +953,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, __time64_t timestamp, bool 
 	ptr_app->is_enabled = is_checked;
 	ptr_app->is_silent = is_silent;
 
-	if (!ptr_app->is_storeapp)
+	if (!ptr_app->is_storeapp && !ptr_app->is_devicepath)
 	{
 		ptr_app->is_system = is_ntoskrnl || (((dwAttr != INVALID_FILE_ATTRIBUTES && dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_wcsnicmp (ptr_app->real_path, config.windows_dir, config.wd_length) == 0);
 		ptr_app->is_picoapp = (wcsstr (ptr_app->real_path, L"\\") == nullptr);
@@ -948,10 +961,10 @@ size_t _app_addapplication (HWND hwnd, rstring path, __time64_t timestamp, bool 
 
 	ptr_app->timestamp = timestamp ? timestamp : _r_unixtime_now ();
 
-	if (!ptr_app->is_storeapp && !ptr_app->is_picoapp)
+	if (!ptr_app->is_storeapp && !ptr_app->is_picoapp && !ptr_app->is_devicepath)
 		ptr_app->is_network = PathIsNetworkPath (ptr_app->real_path) ? true : false;
 
-	if (!ptr_app->is_picoapp && !ptr_app->is_network && ptr_app->real_path[0] != L'\\')
+	if (!ptr_app->is_picoapp && !ptr_app->is_network && !ptr_app->is_devicepath)
 	{
 		ptr_app->is_signed = _app_verifysignature (hash, ptr_app->real_path, &ptr_app->signer);
 
@@ -1015,8 +1028,6 @@ rstring _app_rulesexpand (ITEM_RULE const *ptr_rule)
 
 	if (ptr_rule)
 	{
-		_r_fastlock_acquireshared (&lock_access);
-
 		for (auto const &p : ptr_rule->apps)
 		{
 			ITEM_APPLICATION const *ptr_app = _app_getapplication (p.first);
@@ -1025,14 +1036,13 @@ rstring _app_rulesexpand (ITEM_RULE const *ptr_rule)
 			{
 				if (ptr_app->is_storeapp)
 					result.Append (ptr_app->display_name);
+
 				else
 					result.Append (ptr_app->original_path);
 
 				result.Append (L"\r\n" TAB_SPACE);
 			}
 		}
-
-		_r_fastlock_releaseshared (&lock_access);
 
 		result.Trim (L"\r\n" TAB_SPACE);
 	}
@@ -1211,7 +1221,7 @@ DWORD_PTR _app_getcolor (size_t hash, bool is_brush)
 
 	if (ptr_app)
 	{
-		if (app.ConfigGet (L"IsHighlightInvalid", true).AsBool () && ((ptr_app->is_enabled && ptr_app->error_count) || (ptr_app->is_storeapp && !_app_package_get (hash, nullptr, nullptr)) || (!ptr_app->is_storeapp && !ptr_app->is_picoapp && !ptr_app->is_network && ptr_app->real_path[0] != L'\\' && !_r_fs_exists (ptr_app->real_path))))
+		if (app.ConfigGet (L"IsHighlightInvalid", true).AsBool () && ((ptr_app->is_enabled && ptr_app->error_count) || (ptr_app->is_storeapp && !_app_package_get (hash, nullptr, nullptr)) || (!ptr_app->is_storeapp && !ptr_app->is_picoapp && !ptr_app->is_network && !ptr_app->is_devicepath && !_r_fs_exists (ptr_app->real_path))))
 			color_value = L"ColorInvalid";
 
 		else if (app.ConfigGet (L"IsHighlightSpecial", true).AsBool () && _app_apphaverule (hash))
@@ -1223,7 +1233,7 @@ DWORD_PTR _app_getcolor (size_t hash, bool is_brush)
 		else if (ptr_app->is_storeapp && app.ConfigGet (L"IsHighlightPackage", true).AsBool ())
 			color_value = L"ColorPackage";
 
-		else if (ptr_app->is_signed && app.ConfigGet (L"IsHighlightSigned", true).AsBool () && app.ConfigGet (L"IsCerificatesEnabled", true).AsBool ())
+		else if (ptr_app->is_signed && app.ConfigGet (L"IsHighlightSigned", true).AsBool () && app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
 			color_value = L"ColorSigned";
 
 		else if (ptr_app->is_picoapp && app.ConfigGet (L"IsHighlightPico", true).AsBool ())
@@ -1251,10 +1261,14 @@ rstring _app_gettooltip (size_t hash)
 
 	if (ptr_app)
 	{
-		result = ptr_app->real_path;
+		if (ptr_app->real_path[0])
+			result = ptr_app->real_path;
+
+		else
+			result = ptr_app->display_name;
 
 		// file information
-		if (!ptr_app->is_storeapp && !ptr_app->is_network && !ptr_app->is_picoapp && ptr_app->real_path[0] != L'\\')
+		if (!ptr_app->is_storeapp && !ptr_app->is_network && !ptr_app->is_picoapp && !ptr_app->is_devicepath)
 		{
 			rstring buffer;
 
@@ -1269,7 +1283,7 @@ rstring _app_gettooltip (size_t hash)
 		}
 
 		// signature
-		if (ptr_app->is_signed && ptr_app->signer && app.ConfigGet (L"IsCerificatesEnabled", true).AsBool ())
+		if (ptr_app->is_signed && ptr_app->signer && app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
 			result.AppendFormat (L"\r\n%s:\r\n" TAB_SPACE L"%s", I18N (&app, IDS_SIGNATURE, 0), ptr_app->signer);
 
 		// notes
@@ -1285,7 +1299,7 @@ rstring _app_gettooltip (size_t hash)
 			if (ptr_app->is_picoapp)
 				buffer.AppendFormat (TAB_SPACE L"%s\r\n", I18N (&app, IDS_HIGHLIGHT_PICO, 0));
 
-			if (ptr_app->is_signed && app.ConfigGet (L"IsCerificatesEnabled", true).AsBool ())
+			if (ptr_app->is_signed && app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
 				buffer.AppendFormat (TAB_SPACE L"%s\r\n", I18N (&app, IDS_HIGHLIGHT_SIGNED, 0));
 
 			if (ptr_app->is_silent)
@@ -1675,7 +1689,7 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 	PDNS_RECORD ppQueryResultsSet = nullptr;
 	PIP4_ARRAY pSrvList = nullptr;
 
-	DWORD options = DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_NO_NETBT | DNS_QUERY_NO_MULTICAST | DNS_QUERY_NO_LOCAL_NAME;
+	DWORD options = DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_NO_NETBT | DNS_QUERY_NO_MULTICAST | DNS_QUERY_NO_LOCAL_NAME | DNS_QUERY_DONT_RESET_TTL_VALUES | DNS_QUERY_TREAT_AS_FQDN;
 
 	// use custom dns-server (if present)
 	WCHAR dnsServer[INET_ADDRSTRLEN] = {0};
@@ -1691,7 +1705,7 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 			{
 				pSrvList->AddrCount = 1;
 
-				options = DNS_QUERY_WIRE_ONLY;
+				options = DNS_QUERY_WIRE_ONLY | DNS_QUERY_DONT_RESET_TTL_VALUES | DNS_QUERY_TREAT_AS_FQDN;
 			}
 			else
 			{
@@ -2043,7 +2057,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** ptr)
 	DWORD result = ERROR_SUCCESS;
 
 	// check for filename-only and device paths (do not touch them)
-	if (path_buff.Find (L'\\', 0) != rstring::npos && path_buff.At (0) != L'\\')
+	if (path_buff.Find (L'\\', 0) != rstring::npos && _wcsnicmp (path, L"\\device\\", 8) != 0)
 	{
 		result = _r_path_ntpathfromdos (path_buff);
 
@@ -2882,7 +2896,7 @@ UINT _wfp_installfilters ()
 		FWPM_FILTER_CONDITION fwfc[6] = {0};
 
 		// add loopback connections permission
-		if (app.ConfigGet (L"AllowLoopbackConnections", true).AsBool ())
+		if (app.ConfigGet (L"AllowLoopbackConnections", false).AsBool ())
 		{
 			// match all loopback (localhost) data
 			fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
@@ -3077,6 +3091,7 @@ UINT _wfp_installfilters ()
 
 		// firewall service rules
 		// https://msdn.microsoft.com/en-us/library/gg462153.aspx
+		if (app.ConfigGet (L"AllowIPv6", true).AsBool ())
 		{
 			// allows 6to4 tunneling, which enables ipv6 to run over an ipv4 network
 			fwfc[0].fieldKey = FWPM_CONDITION_IP_PROTOCOL;
@@ -3351,8 +3366,13 @@ void _app_logwrite (ITEM_LOG const *ptr_log)
 			if (ptr_app)
 			{
 				if (ptr_app->is_storeapp)
-					path = ptr_app->real_path;
+				{
+					if (ptr_app->real_path[0])
+						path = ptr_app->real_path;
 
+					else
+						path = ptr_app->display_name;
+				}
 				else
 					path = ptr_app->original_path;
 			}
@@ -3804,7 +3824,7 @@ bool _app_notifyshow (size_t idx)
 
 			rstring is_signed;
 
-			if (app.ConfigGet (L"IsCerificatesEnabled", true).AsBool ())
+			if (app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
 				is_signed.Format (L" [%s]", ptr_app->is_signed ? I18N (&app, IDS_SIGN_SIGNED, 0) : I18N (&app, IDS_SIGN_UNSIGNED, 0));
 
 			_r_ctrl_settext (config.hnotification, IDC_FILE_ID, L"%s: %s%s", I18N (&app, IDS_FILE, 0), _r_path_extractfile (ptr_app->display_name).GetString (), is_signed.GetString ());
@@ -4213,7 +4233,7 @@ void CALLBACK _app_logcallback (FILETIME const* pft, UINT8 const* app_id, SID* p
 
 			if (ptr_app)
 			{
-				if (!ptr_app->is_network && !ptr_app->is_picoapp && ptr_app->real_path[0] != L'\\')
+				if (!ptr_app->is_network && !ptr_app->is_picoapp && !ptr_app->is_devicepath)
 				{
 					if (ptr_app->is_storeapp)
 						log.hicon = CopyIcon (config.hicon_package);
@@ -4905,10 +4925,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						config.is_nocheckboxnotify = true;
 
 						_r_listview_additem (hwnd, IDC_FILES_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, LAST_VALUE, p.first);
-
-						// if present
-						if (ptr_rule && !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ()))
-							_r_listview_setitemcheck (hwnd, IDC_FILES_LV, item, true);
+						_r_listview_setitemcheck (hwnd, IDC_FILES_LV, item, ptr_rule && !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ()));
 
 						config.is_nocheckboxnotify = false;
 
@@ -5263,7 +5280,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 				{
 					CheckDlgButton (hwnd, IDC_RULE_ALLOWINBOUND, app.ConfigGet (L"AllowInboundConnections", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_RULE_ALLOWLISTEN, app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
-					CheckDlgButton (hwnd, IDC_RULE_ALLOWLOOPBACK, app.ConfigGet (L"AllowLoopbackConnections", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_RULE_ALLOWLOOPBACK, app.ConfigGet (L"AllowLoopbackConnections", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
 					CheckDlgButton (hwnd, IDC_USEFULLBLOCKLIST_CHK, app.ConfigGet (L"IsExtraRulesEnabled", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_USESTEALTHMODE_CHK, app.ConfigGet (L"UseStealthMode", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
@@ -5271,7 +5288,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					CheckDlgButton (hwnd, IDC_PROXYSUPPORT_CHK, app.ConfigGet (L"EnableProxySupport", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
 					CheckDlgButton (hwnd, IDC_USEHOSTS_CHK, app.ConfigGet (L"IsHostsEnabled", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
-					CheckDlgButton (hwnd, IDC_USECERTIFICATES_CHK, app.ConfigGet (L"IsCerificatesEnabled", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_USECERTIFICATES_CHK, app.ConfigGet (L"IsCerificatesEnabled", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
 					_r_ctrl_settip (hwnd, IDC_USEFULLBLOCKLIST_CHK, LPSTR_TEXTCALLBACK);
 					_r_ctrl_settip (hwnd, IDC_USESTEALTHMODE_CHK, LPSTR_TEXTCALLBACK);
@@ -5747,6 +5764,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 							ITEM_RULE const *ptr_rule = nullptr;
 
+							_r_fastlock_acquireshared (&lock_access);
+
 							const size_t idx = _r_listview_getitemlparam (hwnd, ctrl_id, lpnmlv->iItem);
 
 							if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
@@ -5773,6 +5792,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 								if (!ptr_rule->apps.empty ())
 									StringCchCat (lpnmlv->pszText, lpnmlv->cchTextMax, _r_fmt (L"\r\n%s:\r\n%s%s", I18N (&app, IDS_FILEPATH, 0), TAB_SPACE, _app_rulesexpand (ptr_rule).GetString ()));
 							}
+
+							_r_fastlock_releaseshared (&lock_access);
 
 							break;
 						}
@@ -6096,7 +6117,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 									{
 										ITEM_APPLICATION *ptr_app = &p.second;
 
-										if (!ptr_app->is_picoapp && !ptr_app->is_network && ptr_app->real_path[0] != L'\\')
+										if (!ptr_app->is_picoapp && !ptr_app->is_network && !ptr_app->is_devicepath)
 											ptr_app->is_signed = _app_verifysignature (p.first, ptr_app->real_path, &ptr_app->signer);
 									}
 
@@ -8853,7 +8874,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_app)
 						{
-							if (ptr_app->is_enabled && ptr_app->error_count || (ptr_app->is_storeapp && !_app_package_get (hash, nullptr, nullptr)) || (!ptr_app->is_storeapp && !ptr_app->is_picoapp && !ptr_app->is_network && ptr_app->real_path[0] != L'\\' && !_r_fs_exists (ptr_app->real_path)))
+							if (ptr_app->is_enabled && ptr_app->error_count || (ptr_app->is_storeapp && !_app_package_get (hash, nullptr, nullptr)) || (!ptr_app->is_storeapp && !ptr_app->is_picoapp && !ptr_app->is_network && !ptr_app->is_devicepath && !_r_fs_exists (ptr_app->real_path)))
 							{
 								SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_DELETEITEM, i, 0);
 

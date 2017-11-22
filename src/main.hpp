@@ -210,6 +210,7 @@ struct ITEM_APPLICATION
 	bool is_system = false;
 	bool is_silent = false;
 	bool is_signed = false;
+	bool is_devicepath = false;
 	bool is_storeapp = false; // win8 and above
 	bool is_picoapp = false; // win10 and above
 

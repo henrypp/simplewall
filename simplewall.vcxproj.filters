@@ -18,13 +18,13 @@
     <ClCompile Include="..\routine\routine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\routine\rstring.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\routine\rapp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
