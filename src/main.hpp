@@ -53,8 +53,8 @@
 #define NOTIFY_TIMER_MOUSELEAVE_ID 3003
 #define NOTIFY_TIMER_MOUSE 250
 #define NOTIFY_TIMER_POPUP 350
-#define NOTIFY_TIMER_DEFAULT 10 // sec.
-#define NOTIFY_TIMEOUT 10 // sec.
+#define NOTIFY_TIMER_DEFAULT 20 // sec.
+#define NOTIFY_TIMEOUT 30 // sec.
 #define NOTIFY_TIMEOUT_MINIMUM 6 // sec.
 #define NOTIFY_LIMIT_SIZE 6 //limit vector size
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
@@ -249,8 +249,6 @@ struct ITEM_LOG
 
 	HICON hicon = nullptr;
 
-	UINT8 protocol8 = 0;
-
 	UINT16 remote_port = 0;
 	UINT16 local_port = 0;
 
@@ -272,13 +270,11 @@ struct ITEM_LOG
 
 struct ITEM_PACKAGE
 {
-	HBITMAP hbmp = nullptr;
-
 	size_t hash = 0;
 
 	WCHAR sid[MAX_PATH] = {0};
 	WCHAR display_name[MAX_PATH] = {0};
-	WCHAR real_path[MAX_PATH] = {0};
+	//WCHAR real_path[MAX_PATH] = {0};
 };
 
 struct ITEM_PROCESS
@@ -347,7 +343,5 @@ typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, F
 typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, HANDLE*); // subscribe (win10)
 
 typedef DWORD (WINAPI *FWPMNEU) (HANDLE, HANDLE); // unsubcribe (all)
-
-typedef DWORD (WINAPI *NIEAC) (DWORD, LPDWORD, PINET_FIREWALL_APP_CONTAINER*); // NetworkIsolationEnumAppContainers
 
 #endif // __MAIN_H__

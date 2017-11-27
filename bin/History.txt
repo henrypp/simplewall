@@ -1,3 +1,14 @@
+v2.1.4 (27 November 2017)
++ do not verify signatures for store apps (win8 and above)
+- optimized digital signatures verification (issue #94)
+- fixed appcontainers listing (removed firewallapi.dll dependence) (win8 and above) (issue #104)
+- fixed notifications race conditions (it may fix issue #73)
+- fixed status does not changed when app deleted
+- fixed "system" process marked as pico
+- updated blocklist
+- code cleanup
+- fixed bugs
+
 v2.1.3 (22 November 2017)
 - disabled loopback and digital signatures config by default
 - fixed displaying name of store apps (win8 and above) (issue #98)
@@ -11,7 +22,7 @@ v2.1.2 RC (21 November 2017)
 - improved apps version receiving
 - renamed "filters" into "rules"
 - fixed various rules editor crashes (issue #89)
-- fixed race conditions (it may fix issue #73)
+- fixed notifications race conditions (it may fix issue #73)
 - fixed blocklist incorrect check state
 - fixed restoring after hibernation
 - updated localization

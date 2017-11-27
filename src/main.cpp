@@ -17,7 +17,6 @@
 #include <ws2tcpip.h>
 #include <wintrust.h>
 #include <softpub.h>
-#include <netfw.h>
 #include <algorithm>
 
 #include "main.hpp"
@@ -711,12 +710,11 @@ bool _app_verifysignature (size_t hash, LPCWSTR path, LPCWSTR* psigner)
 							AUTHENTICODE_EXTRA_CERT_CHAIN_POLICY_PARA extra_policy = {0};
 							extra_policy.cbSize = sizeof (extra_policy);
 							extra_policy.dwRegPolicySettings = 0;
-
-							if (signer_info)
-								extra_policy.pSignerInfo = signer_info;
+							extra_policy.pSignerInfo = signer_info;
 
 							CERT_CHAIN_POLICY_PARA policy = {0};
 							policy.cbSize = sizeof (policy);
+							policy.dwFlags = CERT_CHAIN_POLICY_IGNORE_WRONG_USAGE_FLAG | CERT_CHAIN_POLICY_IGNORE_ALL_NOT_TIME_VALID_FLAGS | CERT_CHAIN_POLICY_IGNORE_END_REV_UNKNOWN_FLAG | CERT_CHAIN_POLICY_IGNORE_CTL_SIGNER_REV_UNKNOWN_FLAG | CERT_CHAIN_POLICY_IGNORE_CA_REV_UNKNOWN_FLAG | CERT_CHAIN_POLICY_IGNORE_ALL_REV_UNKNOWN_FLAGS | CERT_CHAIN_POLICY_IGNORE_NOT_SUPPORTED_CRITICAL_EXT_FLAG | CERT_CHAIN_POLICY_IGNORE_PEER_TRUST_FLAG;
 							policy.pvExtraPolicyPara = &extra_policy;
 
 							CERT_CHAIN_POLICY_STATUS status = {0};
@@ -724,11 +722,7 @@ bool _app_verifysignature (size_t hash, LPCWSTR path, LPCWSTR* psigner)
 
 							if (CertVerifyCertificateChainPolicy (CERT_CHAIN_POLICY_AUTHENTICODE, chain_context, &policy, &status))
 							{
-								if (
-									status.dwError != CERT_E_UNTRUSTEDROOT &&
-									status.dwError != CERT_E_EXPIRED &&
-									status.dwError != CRYPT_E_REVOKED
-									)
+								if (!status.dwError)
 								{
 									// get signature information
 									{
@@ -791,7 +785,7 @@ HBITMAP _app_ico2bmp (HICON hico)
 	return hbitmap;
 }
 
-bool _app_package_get (size_t hash, rstring* display_name, rstring* real_path)
+bool _app_package_get (size_t hash, rstring* display_name, rstring* /*real_path*/)
 {
 	for (size_t i = 0; i < packages.size (); i++)
 	{
@@ -802,15 +796,15 @@ bool _app_package_get (size_t hash, rstring* display_name, rstring* real_path)
 				if (packages.at (i).display_name[0])
 					*display_name = packages.at (i).display_name;
 
-				else if (packages.at (i).real_path[0])
-					*display_name = packages.at (i).real_path;
+				//else if (packages.at (i).real_path[0])
+				//	*display_name = packages.at (i).real_path;
 
 				else if (packages.at (i).sid[0])
 					*display_name = packages.at (i).sid;
 			}
 
-			if (real_path && packages.at (i).real_path[0])
-				*real_path = packages.at (i).real_path;
+			//if (real_path && packages.at (i).real_path[0])
+			//	*real_path = packages.at (i).real_path;
 
 			return true;
 		}
@@ -821,76 +815,73 @@ bool _app_package_get (size_t hash, rstring* display_name, rstring* real_path)
 
 void _app_package_generate ()
 {
-	UINT32 numAppContainers = 0;
-	INET_FIREWALL_APP_CONTAINER* pAppContainers = 0;
+	packages.clear ();
 
-	const HMODULE hlib = LoadLibrary (L"firewallapi.dll");
+	HKEY hkey = nullptr;
+	HKEY hsubkey = nullptr;
+	LONG result = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings", 0, KEY_READ, &hkey);
 
-	if (hlib)
+	if (result != ERROR_SUCCESS)
 	{
-		const NIEAC _NetworkIsolationEnumAppContainers = (NIEAC)GetProcAddress (hlib, "NetworkIsolationEnumAppContainers");
+		_app_logerror (L"RegOpenKeyEx", result, nullptr, true);
+	}
+	else
+	{
+		DWORD index = 0;
 
-		if (_NetworkIsolationEnumAppContainers)
+		while (true)
 		{
-			const DWORD status = _NetworkIsolationEnumAppContainers (NETISO_FLAG_FORCE_COMPUTE_BINARIES, (LPDWORD)&numAppContainers, &pAppContainers);
+			WCHAR package_sid[MAX_PATH] = {0};
+			DWORD size = _countof (package_sid);
 
-			if (status == ERROR_SUCCESS)
+			if (RegEnumKeyEx (hkey, index++, package_sid, &size, 0, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
+				break;
+
+			result = RegOpenKeyEx (hkey, package_sid, 0, KEY_READ, &hsubkey);
+
+			if (result != ERROR_SUCCESS)
 			{
-				packages.clear ();
-
-				std::unordered_map<size_t, bool> checker;
-
-				for (UINT32 containerIndex = 0; containerIndex < numAppContainers; containerIndex++)
-				{
-					LPWSTR appsid = nullptr;
-
-					if (pAppContainers[containerIndex].appContainerSid && ConvertSidToStringSid (pAppContainers[containerIndex].appContainerSid, &appsid))
-					{
-						const size_t hash = _r_str_hash (appsid);
-
-						if (checker.find (hash) == checker.end ())
-						{
-							checker[hash] = true;
-
-							ITEM_PACKAGE item = {0};
-
-							item.hash = hash;
-							StringCchCopy (item.sid, _countof (item.sid), appsid);
-
-							// get package name
-							{
-								if (!SUCCEEDED (SHLoadIndirectString (pAppContainers[containerIndex].displayName, item.display_name, _countof (item.display_name), nullptr)) || !item.display_name[0])
-									StringCchCopy (item.display_name, _countof (item.display_name), pAppContainers[containerIndex].appContainerName);
-							}
-
-							// get package path
-							if (pAppContainers[containerIndex].binaries.count)
-							{
-								if (pAppContainers[containerIndex].binaries.binaries[0][0] == L'\\')
-									StringCchCopy (item.real_path, _countof (item.real_path), pAppContainers[containerIndex].binaries.binaries[0] + 4);
-
-								else
-									StringCchCopy (item.real_path, _countof (item.real_path), pAppContainers[containerIndex].binaries.binaries[0]);
-							}
-
-							// get file icon
-							item.hbmp = config.hbitmap_package_small;
-
-							packages.push_back (item);
-						}
-
-						if (appsid)
-							LocalFree (appsid);
-					}
-				}
+				_app_logerror (L"RegOpenKeyEx", result, package_sid, true);
 			}
 			else
 			{
-				_app_logerror (L"NetworkIsolationEnumAppContainers", status, nullptr, true);
+				const size_t hash = _r_str_hash (package_sid);
+
+				ITEM_PACKAGE item = {0};
+
+				item.hash = hash;
+				StringCchCopy (item.sid, _countof (item.sid), package_sid);
+
+				size = _countof (item.display_name) * sizeof (WCHAR);
+				result = RegQueryValueEx (hsubkey, L"DisplayName", nullptr, nullptr, (LPBYTE)item.display_name, &size);
+
+				if (result != ERROR_SUCCESS)
+				{
+					_app_logerror (L"RegQueryValueEx", result, package_sid, true);
+				}
+
+				if (item.display_name[0] == L'@')
+				{
+					if (!SUCCEEDED (SHLoadIndirectString (rstring (item.display_name), item.display_name, _countof (item.display_name), nullptr)))
+						item.display_name[0] = 0;
+				}
+
+				if (!item.display_name[0])
+				{
+					size = _countof (item.display_name) * sizeof (WCHAR);
+					RegQueryValueEx (hsubkey, L"Moniker", nullptr, nullptr, (LPBYTE)item.display_name, &size);
+				}
+
+				if (!item.display_name[0])
+					StringCchCopy (item.display_name, _countof (item.display_name), package_sid);
+
+				packages.push_back (item);
+
+				RegCloseKey (hsubkey);
 			}
 		}
 
-		FreeLibrary (hlib);
+		RegCloseKey (hkey);
 	}
 }
 
@@ -923,17 +914,17 @@ size_t _app_addapplication (HWND hwnd, rstring path, __time64_t timestamp, bool 
 		real_path = _r_path_expand (PATH_NTOSKRNL);
 		display_name = path;
 	}
+	else if (_wcsnicmp (path, L"\\device\\", 8) == 0) // device path
+	{
+		ptr_app->is_devicepath = true;
+	}
 	else if (_wcsnicmp (path, L"S-1-", 4) == 0) // windows store (win8 and above)
 	{
 		ptr_app->is_storeapp = true;
 		_app_package_get (hash, &display_name, &real_path);
 	}
-	else if (_wcsnicmp (path, L"\\device\\", 8) == 0) // device path
-	{
-		ptr_app->is_devicepath = true;
-	}
 
-	if (!ptr_app->is_storeapp)
+	if (!ptr_app->is_storeapp && !is_ntoskrnl)
 	{
 		real_path = path;
 
@@ -956,7 +947,9 @@ size_t _app_addapplication (HWND hwnd, rstring path, __time64_t timestamp, bool 
 	if (!ptr_app->is_storeapp && !ptr_app->is_devicepath)
 	{
 		ptr_app->is_system = is_ntoskrnl || (((dwAttr != INVALID_FILE_ATTRIBUTES && dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_wcsnicmp (ptr_app->real_path, config.windows_dir, config.wd_length) == 0);
-		ptr_app->is_picoapp = (wcsstr (ptr_app->real_path, L"\\") == nullptr);
+
+		if (!is_ntoskrnl)
+			ptr_app->is_picoapp = (wcsstr (ptr_app->real_path, L"\\") == nullptr);
 	}
 
 	ptr_app->timestamp = timestamp ? timestamp : _r_unixtime_now ();
@@ -966,13 +959,15 @@ size_t _app_addapplication (HWND hwnd, rstring path, __time64_t timestamp, bool 
 
 	if (!ptr_app->is_picoapp && !ptr_app->is_network && !ptr_app->is_devicepath)
 	{
-		ptr_app->is_signed = _app_verifysignature (hash, ptr_app->real_path, &ptr_app->signer);
-
 		if (ptr_app->is_storeapp)
+		{
 			ptr_app->icon_id = config.icon_package_id;
-
+		}
 		else
+		{
 			ptr_app->icon_id = _app_geticonid (ptr_app->real_path);
+			ptr_app->is_signed = _app_verifysignature (hash, ptr_app->real_path, &ptr_app->signer);
+		}
 	}
 	else
 	{
@@ -1071,7 +1066,7 @@ void _app_freenotify (size_t idx, size_t hash)
 			{
 				idx_array.push_back (i);
 
-				if (idx != LAST_VALUE && idx == i)
+				if (!is_idxadded && idx != LAST_VALUE && idx == i)
 					is_idxadded = true;
 			}
 		}
@@ -3568,7 +3563,6 @@ void _app_notifycreatewindow ()
 
 			{
 				RECT rc2 = {0};
-
 				rc2.left = rc2.right = app.GetDPI (5);
 
 				SendDlgItemMessage (config.hnotification, IDC_ALLOW_BTN, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
@@ -3594,8 +3588,8 @@ void _app_notifycreatewindow ()
 
 size_t _app_notifygetcurrent ()
 {
-	const size_t count = notifications.size ();
 	size_t new_idx = LAST_VALUE;
+	const size_t count = notifications.size ();
 
 	if (count)
 	{
@@ -3639,9 +3633,10 @@ bool _app_notifycommand (HWND hwnd, bool is_block)
 
 				if (!is_block)
 				{
-					const bool is_createaddrrule = IsDlgButtonChecked (hwnd, IDC_CREATERULE_ADDR_ID) == BST_CHECKED;
-					const bool is_createportrule = IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED;
+					const bool is_createaddrrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_ADDR_ID) == BST_CHECKED);
+					const bool is_createportrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED);
 
+					// just create rule
 					if (is_createaddrrule || is_createportrule)
 					{
 						WCHAR rule[128] = {0};
@@ -3698,8 +3693,8 @@ bool _app_notifycommand (HWND hwnd, bool is_block)
 								ptr_rule->is_block = false;
 								ptr_rule->is_enabled = true;
 
-								rule_id = rules_custom.size ();
 								rules_custom.push_back (ptr_rule);
+								rule_id = rules_custom.size () - 1;
 							}
 						}
 						else
@@ -3788,38 +3783,43 @@ void _app_notifysettimeout (HWND hwnd, UINT_PTR id, bool is_create, UINT timeout
 	}
 }
 
-bool _app_notifyshow (size_t idx)
+bool _app_notifypopup (size_t idx)
 {
-	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ())
+	_r_fastlock_acquireshared (&lock_notification);
+
+	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () || notifications.empty () || idx == LAST_VALUE)
+	{
+		if (notifications.empty () || idx == LAST_VALUE)
+			SetWindowLongPtr (config.hnotification, GWLP_USERDATA, LAST_VALUE);
+
+		_r_fastlock_releaseshared (&lock_notification);
+
 		return false;
+	}
 
 	const size_t total_size = notifications.size ();
-
-	if (!total_size)
-		return false;
 
 	if (total_size == 1)
 	{
 		idx = 0;
 	}
-	else if (idx == LAST_VALUE)
+	else
 	{
-		idx = _app_notifygetcurrent ();
-
-		if (idx == LAST_VALUE)
-			return false;
+		idx = (std::max) ((size_t)0, (std::min) (idx, total_size - 1));
 	}
 
-	_r_fastlock_acquireshared (&lock_notification);
-
-	ITEM_LOG const* ptr_log = notifications.at ((std::max) ((size_t)0, (std::min) (idx, total_size - 1)));
+	ITEM_LOG const *ptr_log = notifications.at (idx);
 
 	if (ptr_log)
 	{
+		_r_fastlock_acquireshared (&lock_access);
+
 		ITEM_APPLICATION const* ptr_app = _app_getapplication (ptr_log->hash);
 
 		if (ptr_app)
 		{
+			SetWindowLongPtr (config.hnotification, GWLP_USERDATA, idx);
+
 			SendDlgItemMessage (config.hnotification, IDC_ICON_ID, STM_SETIMAGE, IMAGE_ICON, (WPARAM)(ptr_log->hicon ? ptr_log->hicon : config.hicon_large));
 
 			rstring is_signed;
@@ -3854,8 +3854,6 @@ bool _app_notifyshow (size_t idx)
 			CheckDlgButton (config.hnotification, IDC_CREATERULE_PORT_ID, BST_UNCHECKED);
 			CheckDlgButton (config.hnotification, IDC_DISABLENOTIFY_ID, BST_UNCHECKED);
 
-			SetWindowLongPtr (config.hnotification, GWLP_USERDATA, idx);
-
 			_app_notifysetpos (config.hnotification);
 
 			if (total_size > 1)
@@ -3882,10 +3880,14 @@ bool _app_notifyshow (size_t idx)
 			}
 
 			_r_fastlock_releaseshared (&lock_notification);
+			_r_fastlock_releaseshared (&lock_access);
+
 			ShowWindow (config.hnotification, SW_SHOW);
 
 			return true;
 		}
+
+		_r_fastlock_releaseshared (&lock_access);
 	}
 
 	_r_fastlock_releaseshared (&lock_notification);
@@ -3895,6 +3897,14 @@ bool _app_notifyshow (size_t idx)
 
 bool _app_notifyrefresh ()
 {
+	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ())
+	{
+		_app_notifysettimeout (config.hnotification, 0, false, 0);
+		ShowWindow (config.hnotification, SW_HIDE);
+
+		return true;
+	}
+
 	_r_fastlock_acquireshared (&lock_notification);
 
 	const size_t idx = _app_notifygetcurrent ();
@@ -3903,6 +3913,7 @@ bool _app_notifyrefresh ()
 	{
 		_app_notifysettimeout (config.hnotification, 0, false, 0);
 		ShowWindow (config.hnotification, SW_HIDE);
+
 		_r_fastlock_releaseshared (&lock_notification);
 
 		return false;
@@ -3910,15 +3921,12 @@ bool _app_notifyrefresh ()
 
 	_r_fastlock_releaseshared (&lock_notification);
 
-	return _app_notifyshow (idx);
+	return _app_notifypopup (idx);
 }
 
 // Play notification sound even if system have "nosound" mode
-void _app_notifysound ()
+void _app_notifyplaysound ()
 {
-	if (app.ConfigGet (L"IsNotificationsSilent", false).AsBool ())
-		return;
-
 	bool result = false;
 
 	if (!config.notify_snd_path[0])
@@ -3949,13 +3957,12 @@ void _app_notifysound ()
 
 void _app_notifyadd (ITEM_LOG const *ptr_log)
 {
-	// do not show notifications if file is not present
-	if (!ptr_log || !ptr_log->hash)
+	if (!ptr_log)
 		return;
 
 	ITEM_APPLICATION* ptr_app = _app_getapplication (ptr_log->hash);
 
-	if (!ptr_app || (ptr_app && ptr_app->is_silent))
+	if (!ptr_app)
 		return;
 
 	// check for last display time
@@ -3990,14 +3997,15 @@ void _app_notifyadd (ITEM_LOG const *ptr_log)
 		notifications_last[ptr_log->hash] = _r_unixtime_now ();
 		notifications.push_back (ptr_log2);
 
-		_r_fastlock_releaseexclusive (&lock_notification);
-
 		const size_t total_size = notifications.size ();
 		const size_t idx = total_size - 1;
 
-		if (_app_notifyshow (idx))
+		_r_fastlock_releaseexclusive (&lock_notification);
+
+		if (_app_notifypopup (idx))
 		{
-			_app_notifysound ();
+			if (!app.ConfigGet (L"IsNotificationsSilent", false).AsBool ())
+				_app_notifyplaysound ();
 
 			const UINT display_timeout = app.ConfigGet (L"NotificationsDisplayTimeout", NOTIFY_TIMER_DEFAULT).AsUint ();
 
@@ -4010,15 +4018,14 @@ void _app_notifyadd (ITEM_LOG const *ptr_log)
 void CALLBACK _app_logcallback (FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT64 filter_id, UINT32 flags, UINT8 proto, FWP_IP_VERSION ipver, BOOL is_loopback, FWP_BYTE_ARRAY16 const* remoteaddr, UINT16 remoteport, FWP_BYTE_ARRAY16 const* localaddr, UINT16 localport, UINT32 direction)
 {
 	const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
-	const bool is_notificationenabled = app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ();
+	const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
 	bool is_myprovider = false;
 	bool is_blocklist = false;
 
 	LPWSTR sidstring = nullptr;
 	WCHAR path[MAX_PATH] = {0};
 
-	ITEM_LOG log;
-	SecureZeroMemory (&log, sizeof (log));
+	ITEM_LOG log = {0};
 
 	// copy date and time
 	if (pft)
@@ -4057,11 +4064,11 @@ void CALLBACK _app_logcallback (FILETIME const* pft, UINT8 const* app_id, SID* p
 	}
 
 	// apps collector
-	if (log.hash && apps.find (log.hash) == apps.end ())
+	if (log.hash && !_app_getapplication (log.hash))
 	{
 		const UINT notification_timeout = (std::max) (app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT).AsUint (), (UINT)NOTIFY_TIMEOUT_MINIMUM);
 
-		if (!notification_timeout || (_r_unixtime_now () - notifications_last[log.hash]) > notification_timeout)
+		if (!notification_timeout || ((_r_unixtime_now () - notifications_last[log.hash]) > notification_timeout))
 		{
 			_r_fastlock_acquireexclusive (&lock_access);
 
@@ -4069,8 +4076,8 @@ void CALLBACK _app_logcallback (FILETIME const* pft, UINT8 const* app_id, SID* p
 
 			_r_fastlock_releaseexclusive (&lock_access);
 
-			_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 			_app_profilesave (app.GetHWND ());
+			_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 		}
 	}
 
@@ -4132,9 +4139,6 @@ void CALLBACK _app_logcallback (FILETIME const* pft, UINT8 const* app_id, SID* p
 			if (!log.filter_name[0])
 				StringCchPrintf (log.filter_name, _countof (log.filter_name), L"#%d", filter_id);
 		}
-
-		if (!log.filter_name[0])
-			StringCchCopy (log.filter_name, _countof (log.filter_name), NA_TEXT);
 	}
 
 	// protocol
@@ -4146,8 +4150,6 @@ void CALLBACK _app_logcallback (FILETIME const* pft, UINT8 const* app_id, SID* p
 				if (protocols.at (i).id == proto)
 					StringCchCopy (log.protocol, _countof (log.protocol), protocols.at (i).name);
 			}
-
-			log.protocol8 = proto;
 		}
 
 		if (!log.protocol[0])
@@ -4218,20 +4220,23 @@ void CALLBACK _app_logcallback (FILETIME const* pft, UINT8 const* app_id, SID* p
 	if (is_logenabled)
 		_app_logwrite (&log);
 
-	// show notification only for whitelist mode
-	if (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist)
+	// show notification (only for my own provider and file is present)
+	if (is_notificationenabled && is_myprovider && log.hash && (flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0)
 	{
-		// show notification (only for my own provider and file is present)
-		if (is_notificationenabled && is_myprovider && log.hash && (flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0)
+		if (is_blocklist && app.ConfigGet (L"IsNotificationsExcludeBlocklist", true).AsBool ())
+			return;
+
+		_r_fastlock_acquireshared (&lock_access);
+
+		ITEM_APPLICATION const *ptr_app = _app_getapplication (log.hash);
+
+		if (ptr_app)
 		{
-			if (is_blocklist && app.ConfigGet (L"IsNotificationsExcludeBlocklist", true).AsBool ())
-				return;
-
-			_r_fastlock_acquireshared (&lock_access);
-
-			ITEM_APPLICATION const *ptr_app = _app_getapplication (log.hash);
-
-			if (ptr_app)
+			if (ptr_app->is_silent)
+			{
+				_r_fastlock_releaseshared (&lock_access);
+			}
+			else
 			{
 				if (!ptr_app->is_network && !ptr_app->is_picoapp && !ptr_app->is_devicepath)
 				{
@@ -4239,17 +4244,17 @@ void CALLBACK _app_logcallback (FILETIME const* pft, UINT8 const* app_id, SID* p
 						log.hicon = CopyIcon (config.hicon_package);
 
 					else
-						_app_getfileicon (path, false, nullptr, &log.hicon);
+						_app_getfileicon (ptr_app->real_path, false, nullptr, &log.hicon);
 				}
 
 				_r_fastlock_releaseshared (&lock_access);
 
 				_app_notifyadd (&log);
 			}
-			else
-			{
-				_r_fastlock_releaseshared (&lock_access);
-			}
+		}
+		else
+		{
+			_r_fastlock_releaseshared (&lock_access);
 		}
 	}
 }
@@ -6233,6 +6238,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 								EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0), is_enabled);
 								EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONDISPLAYTIMEOUT, UDM_GETBUDDY, 0, 0), is_enabled);
+
+								_app_notifyrefresh ();
 							}
 							else if (ctrl_id == IDC_NOTIFICATIONSILENT_CHK)
 							{
@@ -6503,7 +6510,11 @@ bool _wfp_logsubscribe ()
 	{
 		HINSTANCE hmodule = GetModuleHandle (L"fwpuclnt.dll");
 
-		if (hmodule)
+		if (!hmodule)
+		{
+			_app_logerror (L"GetModuleHandle", GetLastError (), L"fwpuclnt.dll");
+		}
+		else
 		{
 			FWPMNES2 _FwpmNetEventSubscribe2 = nullptr;
 			FWPMNES1 _FwpmNetEventSubscribe1 = nullptr;
@@ -6604,7 +6615,7 @@ bool _wfp_initialize (bool is_full)
 	}
 
 	// set security info
-	if (is_full && config.hengine && !config.is_securityinfoset)
+	if (is_full && result && config.hengine && !config.is_securityinfoset)
 	{
 		if (config.hengine && config.psid)
 		{
@@ -6687,10 +6698,9 @@ bool _wfp_initialize (bool is_full)
 	}
 
 	// dropped packets logging (win7 and above)
-	if (is_full && config.hengine && !config.hevent && _r_sys_validversion (6, 1))
+	if (is_full && result && config.hengine && !config.hevent && _r_sys_validversion (6, 1))
 	{
 		FWP_VALUE val;
-		SecureZeroMemory (&val, sizeof (val));
 
 		val.type = FWP_UINT32;
 		val.uint32 = 1;
@@ -6698,9 +6708,7 @@ bool _wfp_initialize (bool is_full)
 		rc = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 
 		if (rc != ERROR_SUCCESS)
-		{
 			_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
-		}
 	}
 
 	if (is_full && config.hengine && !_wfp_isfiltersinstalled ())
@@ -6816,7 +6824,6 @@ void _wfp_uninitialize (bool is_force)
 			_wfp_logunsubscribe ();
 
 			FWP_VALUE val;
-			SecureZeroMemory (&val, sizeof (val));
 
 			val.type = FWP_UINT32;
 			val.uint32 = 0;
@@ -6907,11 +6914,11 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
-		case WM_SIZE:
-		{
-			InvalidateRect (hwnd, nullptr, FALSE);
-			break;
-		}
+		//case WM_SIZE:
+		//{
+		//	InvalidateRect (hwnd, nullptr, FALSE);
+		//	break;
+		//}
 
 		case WM_TIMER:
 		{
@@ -7099,59 +7106,59 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 								if (ptr_log)
 								{
-									_r_fastlock_acquireshared (&lock_access);
-									ITEM_APPLICATION* ptr_app = _app_getapplication (ptr_log->hash);
-
-									if (ptr_app)
+									if (ctrl_id == IDC_ICON_ID)
 									{
-										if (ctrl_id == IDC_ICON_ID)
-										{
-											StringCchCopy (buffer, _countof (buffer), _app_gettooltip (ptr_log->hash));
-										}
-										else if (ctrl_id == IDC_FILE_ID)
+										StringCchCopy (buffer, _countof (buffer), _app_gettooltip (ptr_log->hash));
+									}
+									else if (ctrl_id == IDC_FILE_ID)
+									{
+										_r_fastlock_acquireshared (&lock_access);
+										ITEM_APPLICATION* ptr_app = _app_getapplication (ptr_log->hash);
+
+										if (ptr_app)
 										{
 											StringCchPrintf (buffer, _countof (buffer), L"%s: %s", I18N (&app, IDS_FILE, 0), ptr_app->real_path[0] ? ptr_app->real_path : ptr_app->display_name);
 										}
-										else if (ctrl_id == IDC_ADDRESS_ID)
+
+										_r_fastlock_releaseshared (&lock_access);
+									}
+									else if (ctrl_id == IDC_ADDRESS_ID)
+									{
+										WCHAR remote_addr[LEN_IP_MAX] = {0};
+										WCHAR local_addr[LEN_IP_MAX] = {0};
+
+										if ((ptr_log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0)
 										{
-											WCHAR remote_addr[LEN_IP_MAX] = {0};
-											WCHAR local_addr[LEN_IP_MAX] = {0};
+											StringCchCopy (remote_addr, _countof (remote_addr), ptr_log->remote_addr);
 
-											if ((ptr_log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0)
-											{
-												StringCchCopy (remote_addr, _countof (remote_addr), ptr_log->remote_addr);
-
-												if (ptr_log->remote_port)
-													StringCchCat (remote_addr, _countof (remote_addr), _r_fmt (L":%d", ptr_log->remote_port));
-											}
-											else
-											{
-												StringCchCopy (local_addr, _countof (local_addr), I18N (&app, IDS_STATUS_EMPTY, 0));
-											}
-
-											if ((ptr_log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0)
-											{
-												StringCchCopy (local_addr, _countof (local_addr), ptr_log->local_addr);
-
-												if (ptr_log->local_port)
-													StringCchCat (local_addr, _countof (local_addr), _r_fmt (L":%d", ptr_log->local_port));
-											}
-											else
-											{
-												StringCchCopy (local_addr, _countof (local_addr), I18N (&app, IDS_STATUS_EMPTY, 0));
-											}
-
-											StringCchPrintf (buffer, _countof (buffer), L"%s (Remote): %s\r\n%s (Local): %s\r\n", I18N (&app, IDS_ADDRESS, 0), remote_addr, I18N (&app, IDS_ADDRESS, 0), local_addr);
+											if (ptr_log->remote_port)
+												StringCchCat (remote_addr, _countof (remote_addr), _r_fmt (L":%d", ptr_log->remote_port));
 										}
 										else
 										{
-											StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, ctrl_id));
+											StringCchCopy (local_addr, _countof (local_addr), I18N (&app, IDS_STATUS_EMPTY, 0));
 										}
 
-										lpnmdi->lpszText = buffer;
+										if ((ptr_log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0)
+										{
+											StringCchCopy (local_addr, _countof (local_addr), ptr_log->local_addr);
+
+											if (ptr_log->local_port)
+												StringCchCat (local_addr, _countof (local_addr), _r_fmt (L":%d", ptr_log->local_port));
+										}
+										else
+										{
+											StringCchCopy (local_addr, _countof (local_addr), I18N (&app, IDS_STATUS_EMPTY, 0));
+										}
+
+										StringCchPrintf (buffer, _countof (buffer), L"%s (Remote): %s\r\n%s (Local): %s\r\n", I18N (&app, IDS_ADDRESS, 0), remote_addr, I18N (&app, IDS_ADDRESS, 0), local_addr);
+									}
+									else
+									{
+										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, ctrl_id));
 									}
 
-									_r_fastlock_releaseshared (&lock_access);
+									lpnmdi->lpszText = buffer;
 								}
 							}
 
@@ -7199,48 +7206,56 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				case IDC_PREV_ID:
 				{
+					_r_fastlock_acquireshared (&lock_notification);
+
 					const size_t current_idx = _app_notifygetcurrent ();
 
 					if (current_idx != LAST_VALUE)
 					{
-						const size_t count = notifications.size ();
+						const size_t total_size = notifications.size ();
 
 						if (!current_idx)
 						{
-							_app_notifyshow (count - 1);
+							_app_notifypopup (total_size - 1);
 						}
 						else
 						{
 							const size_t idx = (size_t)current_idx - 1;
 
-							if (idx >= 0 && idx <= (count - 1))
-								_app_notifyshow (idx);
+							if (idx >= 0 && idx <= (total_size - 1))
+								_app_notifypopup (idx);
 						}
 					}
+
+					_r_fastlock_releaseshared (&lock_notification);
 
 					break;
 				}
 
 				case IDC_NEXT_ID:
 				{
+					_r_fastlock_acquireshared (&lock_notification);
+
 					const size_t current_idx = _app_notifygetcurrent ();
 
 					if (current_idx != LAST_VALUE)
 					{
-						const size_t count = notifications.size ();
+						const size_t total_size = notifications.size ();
 
-						if (current_idx >= count - 1)
+						if (current_idx >= (total_size - 1))
 						{
-							_app_notifyshow (0);
+							_app_notifypopup (0);
 						}
 						else
 						{
 							const size_t idx = (size_t)current_idx + 1;
 
-							if (idx >= 0 && idx <= (count - 1))
-								_app_notifyshow (idx);
+							if (idx >= 0 && idx <= (total_size - 1))
+								_app_notifypopup (idx);
 						}
 					}
+
+					_r_fastlock_releaseshared (&lock_notification);
 
 					break;
 				}
@@ -7703,16 +7718,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 			}
 			// show package information in statusbar
-			else if ((LOWORD (wparam) >= IDM_PACKAGE && LOWORD (wparam) <= IDM_PACKAGE + packages.size ()) && (GetMenuState ((HMENU)lparam, LOWORD (wparam), MF_BYCOMMAND) != 0xFFFFFFFF))
-			{
-				if (((HIWORD (wparam) & MF_HILITE) != 0) || ((HIWORD (wparam) & MF_MOUSESELECT) != 0))
-				{
-					ITEM_PACKAGE const *ptr_package = &packages.at (LOWORD (wparam) - IDM_PACKAGE);
+			//else if ((LOWORD (wparam) >= IDM_PACKAGE && LOWORD (wparam) <= IDM_PACKAGE + packages.size ()) && (GetMenuState ((HMENU)lparam, LOWORD (wparam), MF_BYCOMMAND) != 0xFFFFFFFF))
+			//{
+			//	if (((HIWORD (wparam) & MF_HILITE) != 0) || ((HIWORD (wparam) & MF_MOUSESELECT) != 0))
+			//	{
+			//		ITEM_PACKAGE const *ptr_package = &packages.at (LOWORD (wparam) - IDM_PACKAGE);
 
-					if (ptr_package)
-						_r_status_settext (hwnd, IDC_STATUSBAR, 0, ptr_package->real_path);
-				}
-			}
+			//		if (ptr_package)
+			//			_r_status_settext (hwnd, IDC_STATUSBAR, 0, ptr_package->real_path);
+			//	}
+			//}
 			else
 			{
 				_app_refreshstatus (hwnd, true, false);
@@ -7731,6 +7746,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				const HMENU submenu2 = GetSubMenu (submenu, 2);
 				const HMENU submenu3 = GetSubMenu (submenu, 4);
 
+				_app_getprocesslist (&processes);
+
 				// localize
 				app.LocaleMenu (submenu, I18N (&app, IDS_ADD, 0), 0, true, nullptr);
 				app.LocaleMenu (submenu, I18N (&app, IDS_ADD_FILE, 0), IDM_ADD_FILE, false, nullptr);
@@ -7738,8 +7755,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				app.LocaleMenu (submenu, I18N (&app, IDS_ADD_PACKAGE, 0), 2, true, nullptr);
 				app.LocaleMenu (submenu, I18N (&app, IDS_SETTINGS, 0), 4, true, nullptr);
 				app.LocaleMenu (submenu, I18N (&app, IDS_DISABLENOTIFICATIONS, 0), IDM_DISABLENOTIFICATIONS, false, nullptr);
-				app.LocaleMenu (submenu, I18N (&app, IDS_ALL, 0), IDM_ALL_PROCESSES, false, nullptr);
-				app.LocaleMenu (submenu, I18N (&app, IDS_ALL, 0), IDM_ALL_PACKAGES, false, nullptr);
+				app.LocaleMenu (submenu, I18N (&app, IDS_ALL, 0), IDM_ALL_PROCESSES, false, _r_fmt (L" (%d)", processes.size ()));
+				app.LocaleMenu (submenu, I18N (&app, IDS_ALL, 0), IDM_ALL_PACKAGES, false, _r_fmt (L" (%d)", packages.size ()));
 				app.LocaleMenu (submenu, I18N (&app, IDS_REFRESH, 0), IDM_REFRESH2, false, L"\tF5");
 				app.LocaleMenu (submenu, I18N (&app, IDS_EXPLORE, 0), IDM_EXPLORE, false, nullptr);
 				app.LocaleMenu (submenu, I18N (&app, IDS_COPY, 0), IDM_COPY, false, L"\tCtrl+C");
@@ -7759,8 +7776,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				// generate processes popup menu
 				{
-					_app_getprocesslist (&processes);
-
 					if (processes.empty ())
 					{
 						MENUITEMINFO mii = {0};
@@ -7820,8 +7835,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							mii.fState = MFS_DEFAULT;
 							mii.dwTypeData = packages.at (i).display_name;
 							mii.wID = IDM_PACKAGE + UINT (i);
-							mii.hbmpChecked = packages.at (i).hbmp;
-							mii.hbmpUnchecked = packages.at (i).hbmp;
+							mii.hbmpChecked = config.hbitmap_package_small;
+							mii.hbmpUnchecked = config.hbitmap_package_small;
 
 							InsertMenuItem (submenu2, IDM_PACKAGE + UINT (i), FALSE, &mii);
 							total_added += 1;
@@ -7929,7 +7944,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case NIN_POPUPOPEN:
 				{
-					if (_app_notifyshow (LAST_VALUE))
+					if (_app_notifypopup (_app_notifygetcurrent ()))
 						_app_notifysettimeout (config.hnotification, NOTIFY_TIMER_DISPLAY_ID, false, 0);
 
 					break;
@@ -8096,9 +8111,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								delete ptr_log;
 								ptr_log = nullptr;
 							}
-
-							notifications.erase (notifications.begin () + i);
 						}
+
+						notifications.clear ();
 					}
 
 					_r_fastlock_releaseexclusive (&lock_notification);
@@ -8483,7 +8498,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						fr.Flags = FR_FINDNEXT;
 						fr.lpstrFindWhat = config.search_string;
 
-						PostMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)&fr);
+						SendMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)&fr);
 					}
 
 					break;
@@ -8520,6 +8535,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					CheckMenuItem (GetMenu (hwnd), IDM_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"IsNotificationsEnabled", new_val);
+
+					_app_notifyrefresh ();
 
 					break;
 				}
@@ -8853,7 +8870,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_app_installfilters (false);
 
 					else
+					{
 						_r_listview_redraw (hwnd, IDC_LISTVIEW);
+						_app_refreshstatus (hwnd, true, true);
+					}
 
 					break;
 				}
@@ -8898,7 +8918,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_installfilters (false);
 
 						else
+						{
 							_r_listview_redraw (hwnd, IDC_LISTVIEW);
+							_app_refreshstatus (hwnd, true, true);
+						}
 					}
 
 					break;
