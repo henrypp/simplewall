@@ -1,3 +1,23 @@
+v2.2 Beta (x January 2018)
++ now simplewall added to the apps list automatically (issue #106)
++ added windows services support [beta] (issue #88)
++ added group total items count indication
++ added timers (issue #96)
++ new localization engine (single .lng file)
++ more sensitive notifications (issue #107)
+- optimized apps types recognition
+- improved tray context menu (issue #103)
+- improved memory allocation
+- changed verify signatures algorithm (issue #94)
+- changed default font
+- stability improvements
+- updated default colors
+- updated localization
+- fixed multi-monitor support
+- fixed steal focus at startup and when notification displaying
+- fixed ui bugs
+- fixed bugs
+
 v2.1.4 (27 November 2017)
 + do not verify signatures for store apps (win8 and above)
 - optimized digital signatures verification (issue #94)

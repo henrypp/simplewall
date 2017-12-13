@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016, 2017 Henry++
+// Copyright (c) 2016-2018 Henry++
 
 #ifndef __MAIN_H__
 #define __MAIN_H__
@@ -22,6 +22,7 @@
 #define PATH_NTOSKRNL L"%systemroot%\\system32\\ntoskrnl.exe"
 #define PATH_SVCHOST L"%systemroot%\\system32\\svchost.exe"
 #define PATH_STORE L"%systemroot%\\system32\\wsreset.exe"
+#define PATH_SERVICES L"%systemroot%\\system32\\services.msc"
 
 #define XML_APPS L"apps.xml"
 #define XML_BLOCKLIST L"blocklist.xml"
@@ -34,7 +35,7 @@
 #define TAB_SPACE L"   "
 #define ERR_FORMAT L"%s() failed with error code 0x%.8lx (%s)"
 #define RULE_DELIMETER L";"
-#define UI_FONT_DEFAULT L"Segoe UI Light;10;300"
+#define UI_FONT_DEFAULT L"Segoe UI;9;400"
 
 #define LEN_IP_MAX 68
 #define LEN_HOST_MAX 512
@@ -53,9 +54,9 @@
 #define NOTIFY_TIMER_MOUSELEAVE_ID 3003
 #define NOTIFY_TIMER_MOUSE 250
 #define NOTIFY_TIMER_POPUP 350
-#define NOTIFY_TIMER_DEFAULT 20 // sec.
-#define NOTIFY_TIMEOUT 30 // sec.
-#define NOTIFY_TIMEOUT_MINIMUM 6 // sec.
+#define NOTIFY_TIMER_DEFAULT 6 // sec.
+#define NOTIFY_TIMEOUT 120 // sec.
+#define NOTIFY_TIMEOUT_MINIMUM 8 // sec.
 #define NOTIFY_LIMIT_SIZE 6 //limit vector size
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 
@@ -67,13 +68,14 @@
 #define PUGIXML_SAVE_ENCODING (pugi::encoding_wchar)
 
 // default colors
-#define LISTVIEW_COLOR_SPECIAL RGB (255, 255, 170)
 #define LISTVIEW_COLOR_INVALID RGB (255, 125, 148)
 #define LISTVIEW_COLOR_NETWORK RGB (255, 178, 255)
 #define LISTVIEW_COLOR_PACKAGE RGB(189, 251, 240)
 #define LISTVIEW_COLOR_PICO RGB (51, 153, 255)
+#define LISTVIEW_COLOR_SERVICE RGB (170, 240, 208)
 #define LISTVIEW_COLOR_SIGNED RGB (175, 228, 163)
-#define LISTVIEW_COLOR_SILENT RGB (181, 181, 181)
+#define LISTVIEW_COLOR_SILENT RGB (206, 206, 206)
+#define LISTVIEW_COLOR_SPECIAL RGB (255, 255, 170)
 #define LISTVIEW_COLOR_SYSTEM RGB(170, 204, 255)
 
 // filter weights
@@ -98,6 +100,7 @@
 #pragma comment(lib, "version.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "wintrust.lib")
 
 // guid
 extern "C" {
@@ -149,10 +152,20 @@ enum EnumMode
 	ModeBlacklist = 1,
 };
 
+enum EnumAppType
+{
+	AppRegular = 0,
+	AppDevice = 1,
+	AppNetwork = 2,
+	AppService = 3,
+	AppStore = 4, // win8 and above
+	AppPico = 5 // win10 and above
+};
+
 struct STATIC_DATA
 {
-	SID* psid = nullptr;
-	GUID* psession = nullptr;
+	PSID psid = nullptr;
+	LPGUID psession = nullptr;
 
 	bool is_securityinfoset = false;
 	bool is_popuperrors = false;
@@ -164,12 +177,16 @@ struct STATIC_DATA
 
 	size_t icon_id = 0;
 	size_t icon_package_id = 0;
+	size_t icon_service_id = 0;
 	HICON hicon_large = nullptr;
 	HICON hicon_small = nullptr;
 	HICON hicon_package = nullptr;
+	HICON hicon_service = nullptr;
 	HBITMAP hbitmap_package_small = nullptr;
+	HBITMAP hbitmap_service_small = nullptr;
 
 	HFONT hfont = nullptr;
+	HFONT hfont_bold = nullptr;
 
 	HANDLE hthread = nullptr;
 	HANDLE hengine = nullptr;
@@ -194,7 +211,11 @@ struct STATIC_DATA
 	WCHAR windows_dir[MAX_PATH] = {0};
 	size_t wd_length = 0;
 
+	WCHAR tmp1_dir[MAX_PATH] = {0};
+	size_t tmp1_length = 0;
+
 	size_t ntoskrnl_hash = 0;
+	size_t myhash = 0;
 };
 
 struct ITEM_APPLICATION
@@ -206,13 +227,12 @@ struct ITEM_APPLICATION
 	bool error_count = false;
 
 	bool is_enabled = false;
-	bool is_network = false;
 	bool is_system = false;
 	bool is_silent = false;
 	bool is_signed = false;
-	bool is_devicepath = false;
-	bool is_storeapp = false; // win8 and above
-	bool is_picoapp = false; // win10 and above
+	bool is_temp = false;
+
+	EnumAppType type = AppRegular;
 
 	LPCWSTR description = nullptr;
 	LPCWSTR signer = nullptr;
@@ -220,6 +240,12 @@ struct ITEM_APPLICATION
 	WCHAR display_name[MAX_PATH] = {0};
 	WCHAR original_path[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
+
+	union
+	{
+		PSECURITY_DESCRIPTOR psd = nullptr; // service app
+		PSID psid; // store app (win8 and above)
+	};
 };
 
 struct ITEM_RULE
@@ -268,21 +294,20 @@ struct ITEM_LOG
 	WCHAR filter_name[MAX_PATH] = {0};
 };
 
-struct ITEM_PACKAGE
+struct ITEM_ADD
 {
 	size_t hash = 0;
 
-	WCHAR sid[MAX_PATH] = {0};
-	WCHAR display_name[MAX_PATH] = {0};
-	//WCHAR real_path[MAX_PATH] = {0};
-};
-
-struct ITEM_PROCESS
-{
 	HBITMAP hbmp = nullptr;
 
-	WCHAR display_path[64] = {0};
+	WCHAR sid[MAX_PATH] = {0};
+	WCHAR display_name[MAX_PATH] = {0};
+	WCHAR service_name[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
+
+	PSID psid = nullptr;
+	PSECURITY_DESCRIPTOR psd = nullptr;
+
 };
 
 struct ITEM_COLOR
@@ -296,7 +321,7 @@ struct ITEM_COLOR
 	COLORREF default_clr = 0;
 	COLORREF clr = 0;
 
-	HBRUSH hbr = nullptr;
+	HBRUSH hbrush = nullptr;
 
 	LPWSTR locale_sid = nullptr;
 	LPWSTR config_name = nullptr;

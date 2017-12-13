@@ -26,4 +26,4 @@ To activate portable mode, create "simplewall.ini" in application folder, or mov
 Website: [www.henrypp.org](https://www.henrypp.org)<br />
 Support: support@henrypp.org<br />
 <br />
-(c) 2016, 2017 Henry++
+(c) 2016-2018 Henry++

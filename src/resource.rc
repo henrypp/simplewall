@@ -21,6 +21,7 @@ IDA_MAIN ACCELERATORS
 	"X", IDM_LOGCLEAR, CONTROL, VIRTKEY
 	VK_DELETE, IDM_DELETE, VIRTKEY
 	VK_DELETE, IDM_PURGEN, CONTROL, VIRTKEY
+	VK_F1, IDM_ABOUT, VIRTKEY
 	VK_F3, IDM_FINDNEXT, VIRTKEY
 	VK_F4, IDM_TRAY_SHOW, ALT, VIRTKEY
 	VK_F5, IDM_REFRESH, VIRTKEY
@@ -34,8 +35,6 @@ IDM_MAIN MENU
 {
 	POPUP " "
 	{
-		MENUITEM " ", IDM_ADD_FILE
-		MENUITEM SEPARATOR
 		POPUP " "
 		{
 			MENUITEM " ", IDM_EXPORT_APPS
@@ -99,7 +98,6 @@ IDM_MAIN MENU
 	POPUP " "
 	{
 		MENUITEM " ", IDM_WEBSITE
-		MENUITEM " ", IDM_DONATE
 		MENUITEM " ", IDM_CHECKUPDATES
 		MENUITEM " ", IDM_ABOUT
 	}
@@ -116,6 +114,23 @@ IDM_TRAY MENU
 		{
 			MENUITEM " ", IDM_TRAY_MODEWHITELIST
 			MENUITEM " ", IDM_TRAY_MODEBLACKLIST
+		}
+		POPUP " "
+		{
+			MENUITEM " ", IDM_ADD_FILE
+			MENUITEM SEPARATOR
+			POPUP " "
+			{
+				MENUITEM " ", IDM_ALL_PROCESSES
+			}
+			POPUP " "
+			{
+				MENUITEM " ", IDM_ALL_PACKAGES
+			}
+			POPUP " "
+			{
+				MENUITEM " ", IDM_ALL_SERVICES
+			}
 		}
 		MENUITEM SEPARATOR
 		POPUP " "
@@ -145,19 +160,32 @@ IDM_LISTVIEW MENU
 {
 	POPUP ""
 	{
-		MENUITEM " ", IDM_ADD_FILE
 		POPUP " "
 		{
-			MENUITEM " ", IDM_ALL_PROCESSES
-		}
-		POPUP " "
-		{
-			MENUITEM " ", IDM_ALL_PACKAGES
+			MENUITEM " ", IDM_ADD_FILE
+			MENUITEM SEPARATOR
+			POPUP " "
+			{
+				MENUITEM " ", IDM_ALL_PROCESSES
+			}
+			POPUP " "
+			{
+				MENUITEM " ", IDM_ALL_PACKAGES
+			}
+			POPUP " "
+			{
+				MENUITEM " ", IDM_ALL_SERVICES
+			}
 		}
 		MENUITEM SEPARATOR
 		POPUP " "
 		{
 			MENUITEM " ", IDM_DISABLENOTIFICATIONS
+		}
+		POPUP "Set time limit"
+		{
+			MENUITEM "30 sec.", IDM_TIMER30S
+			MENUITEM "10 min.", IDM_TIMER10M
 		}
 		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_REFRESH2
@@ -180,8 +208,6 @@ IDM_EDITOR MENU
 		MENUITEM " ", IDM_EDIT
 		MENUITEM " ", IDM_DELETE
 		MENUITEM SEPARATOR
-		MENUITEM " ", IDM_CHECKALL
-		MENUITEM " ", IDM_UNCHECKALL
 		MENUITEM " ", IDM_CHECK
 		MENUITEM " ", IDM_UNCHECK
 	}
@@ -205,7 +231,7 @@ FONT 8, "Ms Shell Dlg"
 	CONTROL			"", IDC_STATUSBAR, STATUSCLASSNAME, 0, 0, 0, 0, 0
 }
 
-IDD_EDITOR DIALOG 0, 0, 290, 218
+IDD_EDITOR DIALOG 0, 0, 290, 212
 STYLE WS_POPUP | WS_SYSMENU | WS_CAPTION | DS_MODALFRAME | DS_SHELLFONT
 CAPTION ""
 FONT 8, "Ms Shell Dlg"
@@ -229,14 +255,14 @@ FONT 8, "Ms Shell Dlg"
 	COMBOBOX		IDC_ACTION_EDIT, 8, 168, 132, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
 
 	LTEXT			"", IDC_FILES, 150, 6, 132, 10
-	CONTROL			"", IDC_FILES_LV, WC_LISTVIEW, LVS_REPORT | LVS_SHOWSELALWAYS | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP | WS_VSCROLL | LVS_SHAREIMAGELISTS | LVS_SINGLESEL, 150, 18, 132, 146
+	CONTROL			"", IDC_FILES_LV, WC_LISTVIEW, LVS_REPORT | LVS_SHOWSELALWAYS | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP | WS_VSCROLL | LVS_SHAREIMAGELISTS, 150, 18, 132, 146
 
 	CONTROL			"", IDC_RULES_WIKI, WC_LINK, 0, 150, 170, 160, 10
 
-	AUTOCHECKBOX	"", IDC_ENABLED_CHK, 8, 196, 160, 14, BS_VCENTER
+	AUTOCHECKBOX	"", IDC_ENABLED_CHK, 8, 190, 160, 14, BS_VCENTER
 
-	PUSHBUTTON		"", IDC_SAVE, 178, 196, 50, 14
-	PUSHBUTTON		"", IDC_CLOSE, 232, 196, 50, 14
+	PUSHBUTTON		"", IDC_SAVE, 178, 190, 50, 14
+	PUSHBUTTON		"", IDC_CLOSE, 232, 190, 50, 14
 }
 
 IDD_SETTINGS DIALOGEX 0, 0, 380, 214
@@ -281,7 +307,7 @@ FONT 8, "Ms Shell Dlg"
 
 	GROUPBOX		"", IDC_TITLE_HIGHLIGHTING, 4, 64, 262, 116
 
-	CONTROL			"", IDC_COLORS, WC_LISTVIEW, LVS_REPORT | LVS_SHOWSELALWAYS | LVS_NOCOLUMNHEADER | LVS_SINGLESEL | WS_BORDER | WS_TABSTOP | WS_VSCROLL, 12, 78, 246, 78
+	CONTROL			"", IDC_COLORS, WC_LISTVIEW, LVS_REPORT | LVS_SHOWSELALWAYS | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP | WS_VSCROLL, 12, 78, 246, 78
 
 	LTEXT			"", IDC_COLORS_HINT, 12, 162, 246, 10
 }
@@ -380,10 +406,6 @@ STRINGTABLE
 	IDS_UPDATE_NO "No updates available."
 	IDS_UPDATE_YES "New version (%s) available. Open download page?"
 
-	IDS_DONATE "Donate"
-	IDS_DONATE_TEXT "Development is powered by your donations!"
-	IDS_SHOWATSTARTUP_CHK "Show at startup"
-
 	IDS_FILE "File"
 	IDS_SETTINGS "Settings"
 	IDS_EXIT "Exit"
@@ -402,6 +424,7 @@ STRINGTABLE
 	IDS_HELP "Help"
 	IDS_WEBSITE "Website"
 	IDS_CHECKUPDATES "Check for updates"
+	IDS_DONATE "Donate"
 	IDS_ABOUT "About"
 
 	IDS_TRAY_SHOW "Show/Hide"
@@ -418,18 +441,17 @@ STRINGTABLE
 	IDS_ADD_FILE "Add file..."
 	IDS_ADD_PROCESS "Add process"
 	IDS_ADD_PACKAGE "Add package"
+	IDS_ADD_SERVICE "Add service"
 	IDS_ALL "All"
 	IDS_DISABLENOTIFICATIONS "Disable notifications"
-	IDS_OPENRULESEDITOR "Create rule..."
+	IDS_OPENRULESEDITOR "Create rule"
 	IDS_EXPLORE "Open containing folder"
 	IDS_COPY "Copy"
-	IDS_CHECKALL "Check all"
-	IDS_UNCHECKALL "Uncheck all"
-	IDS_CHECK "Check selected"
-	IDS_UNCHECK "Uncheck selected"
+	IDS_CHECK "Enable selected"
+	IDS_UNCHECK "Disable selected"
 
-	IDS_ADD "Add..."
-	IDS_EDIT2 "Edit..."
+	IDS_ADD "Add"
+	IDS_EDIT2 "Edit"
 	IDS_DELETE "Delete"
 	IDS_EXPORT "Export"
 	IDS_IMPORT "Import"
@@ -440,17 +462,18 @@ STRINGTABLE
 	IDS_IMPORT_APPS "Import apps... (%s)"
 	IDS_IMPORT_RULES "Import rules... (%s)"
 
-	IDS_MODE_WHITELIST "White list (allow selected)"
-	IDS_MODE_BLACKLIST "Black list (block selected)"
+	IDS_MODE_WHITELIST "Whitelist (allow selected)"
+	IDS_MODE_BLACKLIST "Blacklist (block selected)"
 
 	IDS_RULE_ALLOWINBOUND "Allow inbound connections for all (not recommended)"
 	IDS_RULE_ALLOWLISTEN "Allow listen connections for all (recommended)"
 	IDS_RULE_ALLOWLOOPBACK "Allow loopback connections for all (recommended)"
 
 	IDS_HIGHLIGHT_INVALID "File not found"
-	IDS_HIGHLIGHT_NETWORK "Shared network file"
+	IDS_HIGHLIGHT_NETWORK "Shared network app"
 	IDS_HIGHLIGHT_PACKAGE "Windows Store app"
 	IDS_HIGHLIGHT_PICO "Pico app"
+	IDS_HIGHLIGHT_SERVICE "Windows service"
 	IDS_HIGHLIGHT_SIGNED "Signed app"
 	IDS_HIGHLIGHT_SILENT "Disabled notifications"
 	IDS_HIGHLIGHT_SPECIAL "Special rules"
@@ -479,8 +502,8 @@ STRINGTABLE
 	IDS_GROUP_ALLOWED "Allowed apps"
 	IDS_GROUP_BLOCKED "Blocked apps"
 
-	IDS_GROUP_GLOBAL "Global rules"
-	IDS_GROUP_SPECIAL "Special rules"
+	IDS_GROUP_ENABLED "Enabled rules (for all)"
+	IDS_GROUP_SPECIAL "Enabled rules (for apps)"
 	IDS_GROUP_DISABLED "Disabled rules"
 
 	IDS_DIRECTION_1 "Outbound"
@@ -491,7 +514,7 @@ STRINGTABLE
 	IDS_ACTION_2 "Block"
 	IDS_ACTION_3 "Ignore"
 
-	IDS_RULE_TITLE_2 "[%s] ""%s"" for selected apps (special)"
+	IDS_RULE_TITLE_2 "[%s] ""%s"" for selected apps"
 
 	IDS_RULES_WIKI "<a href=""%s"">Rules editor documentation</a>"
 
@@ -508,7 +531,7 @@ STRINGTABLE
 	IDS_TITLE_CONFIRMATIONS "Confirmations:"
 	IDS_TITLE_HIGHLIGHTING "Highlighting:"
 	IDS_TITLE_EXPERTS "Experts-only:"
-	IDS_TITLE_NOTIFICATIONS "Notifications:"
+	IDS_TITLE_NOTIFICATIONS "Notifications (whitelist only):"
 	IDS_TITLE_ADVANCED "Advanced:"
 
 	IDS_ALWAYSONTOP_CHK "Always on top"
@@ -567,7 +590,7 @@ STRINGTABLE
 	IDS_QUESTION_DELETE "Are you sure you want to delete %d item(s)?"
 	IDS_QUESTION_START "This will forbid network access for apps accordingly selected configuration! Do you want to continue?"
 	IDS_QUESTION_STOP "This will restore network access for all blocked apps! Do you want to continue?"
-	IDS_QUESTION_EXIT "Do you really want to exit?"
+	IDS_QUESTION_EXIT "Do you really want to exit? All current installed filters are still works, even if you exit."
 	IDS_QUESTION_LISTEN "Disabling listen connections <a href=""%s"">can cause software freezes</a>, disable option?"
 	IDS_QUESTION_EXPERT "This option definitely for advanced users only! Do you want to continue?"
 	IDS_QUESTION_FLAG_CHK "Do not ask again"
