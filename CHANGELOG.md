@@ -5,11 +5,13 @@ v2.2 Beta (x January 2018)
 + added timers (issue #96)
 + new localization engine (single .lng file)
 + more sensitive notifications (issue #107)
++ make internal apps undeletable
 - optimized apps types recognition
 - improved tray context menu (issue #103)
 - improved memory allocation
 - changed verify signatures algorithm (issue #94)
 - changed default font
+- cosmetic fixes (issue #108)
 - stability improvements
 - updated default colors
 - updated localization

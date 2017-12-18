@@ -117,6 +117,15 @@ IDM_TRAY MENU
 		}
 		POPUP " "
 		{
+			MENUITEM " ", IDM_TRAY_ENABLELOG_CHK
+			MENUITEM " ", IDM_TRAY_ENABLENOTIFICATIONS_CHK
+			MENUITEM SEPARATOR
+			MENUITEM " ", IDM_TRAY_LOGSHOW
+			MENUITEM " ", IDM_TRAY_LOGCLEAR
+		}
+		MENUITEM SEPARATOR
+		POPUP " "
+		{
 			MENUITEM " ", IDM_ADD_FILE
 			MENUITEM SEPARATOR
 			POPUP " "
@@ -131,15 +140,6 @@ IDM_TRAY MENU
 			{
 				MENUITEM " ", IDM_ALL_SERVICES
 			}
-		}
-		MENUITEM SEPARATOR
-		POPUP " "
-		{
-			MENUITEM " ", IDM_TRAY_ENABLELOG_CHK
-			MENUITEM " ", IDM_TRAY_ENABLENOTIFICATIONS_CHK
-			MENUITEM SEPARATOR
-			MENUITEM " ", IDM_TRAY_LOGSHOW
-			MENUITEM " ", IDM_TRAY_LOGCLEAR
 		}
 		POPUP " "
 		{
@@ -182,10 +182,16 @@ IDM_LISTVIEW MENU
 		{
 			MENUITEM " ", IDM_DISABLENOTIFICATIONS
 		}
-		POPUP "Set time limit"
+		POPUP " "
 		{
-			MENUITEM "30 sec.", IDM_TIMER30S
-			MENUITEM "10 min.", IDM_TIMER10M
+			MENUITEM " ", IDM_DISABLETIMER
+			MENUITEM SEPARATOR
+			MENUITEM "15 min.", IDM_TIMER_1
+			MENUITEM "30 min.", IDM_TIMER_2
+			MENUITEM "2 hr.", IDM_TIMER_3
+			MENUITEM "6 hr.", IDM_TIMER_4
+			MENUITEM "12 hr.", IDM_TIMER_5
+			MENUITEM "24 hr.", IDM_TIMER_6
 		}
 		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_REFRESH2
@@ -435,16 +441,18 @@ STRINGTABLE
 	IDS_TRAY_BLOCKLIST_RULES "Blocklist"
 	IDS_TRAY_SYSTEM_RULES "System rules"
 	IDS_TRAY_CUSTOM_RULES "Custom rules"
-	IDS_TRAY_LOG "Dropped packets log"
+	IDS_TRAY_LOG "Notifications"
 	IDS_TRAY_LOGERR "Errors log"
 
-	IDS_ADD_FILE "Add file..."
+	IDS_ADD_FILE "Add file"
 	IDS_ADD_PROCESS "Add process"
 	IDS_ADD_PACKAGE "Add package"
 	IDS_ADD_SERVICE "Add service"
 	IDS_ALL "All"
 	IDS_DISABLENOTIFICATIONS "Disable notifications"
 	IDS_OPENRULESEDITOR "Create rule"
+	IDS_TIMER "Set time limit"
+	IDS_DISABLE "Disable"
 	IDS_EXPLORE "Open containing folder"
 	IDS_COPY "Copy"
 	IDS_CHECK "Enable selected"
@@ -478,6 +486,7 @@ STRINGTABLE
 	IDS_HIGHLIGHT_SILENT "Disabled notifications"
 	IDS_HIGHLIGHT_SPECIAL "Special rules"
 	IDS_HIGHLIGHT_SYSTEM "System app"
+	IDS_HIGHLIGHT_TEMP "Temporary app"
 
 	IDS_EDITOR "Rules editor"
 
@@ -495,6 +504,7 @@ STRINGTABLE
 	IDS_NOTES "Notes"
 	IDS_ADDED "Added"
 	IDS_APPLYTO "Apply rule to"
+	IDS_TIMER_LEFT "Timer left"
 
 	IDS_SIGN_SIGNED "Signed"
 	IDS_SIGN_UNSIGNED "Not signed"
@@ -515,7 +525,6 @@ STRINGTABLE
 	IDS_ACTION_3 "Ignore"
 
 	IDS_RULE_TITLE_2 "[%s] ""%s"" for selected apps"
-
 	IDS_RULES_WIKI "<a href=""%s"">Rules editor documentation</a>"
 
 	IDS_ENABLERULE_CHK "Enable rule"
@@ -590,9 +599,11 @@ STRINGTABLE
 	IDS_QUESTION_DELETE "Are you sure you want to delete %d item(s)?"
 	IDS_QUESTION_START "This will forbid network access for apps accordingly selected configuration! Do you want to continue?"
 	IDS_QUESTION_STOP "This will restore network access for all blocked apps! Do you want to continue?"
+	IDS_QUESTION_MODE "Are you sure you want to change mode to ""%s""?"
 	IDS_QUESTION_EXIT "Do you really want to exit? All current installed filters are still works, even if you exit."
 	IDS_QUESTION_LISTEN "Disabling listen connections <a href=""%s"">can cause software freezes</a>, disable option?"
 	IDS_QUESTION_EXPERT "This option definitely for advanced users only! Do you want to continue?"
+	IDS_QUESTION_TIMER "%d timers are active, exit?"
 	IDS_QUESTION_FLAG_CHK "Do not ask again"
 
 	IDS_STATUS_TOTAL "Total apps: %d"
