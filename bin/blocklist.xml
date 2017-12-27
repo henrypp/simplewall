@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!-- Block spying and tracking on Windows -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
-<!-- Date: Wed, 27 Dec 2017 14:20:58 +0000 -->
-<root timestamp="1514384458">
+<!-- Date: Wed, 27 Dec 2017 14:25:59 +0000 -->
+<root timestamp="1514384759">
 	<item name="extra_13.80.12.54" rule="13.80.12.54" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="extra_13.107.3.128" rule="13.107.3.128" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="extra_13.107.13.88" rule="13.107.13.88" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
@@ -295,9 +295,6 @@
 	<item name="spy_207.46.134.255" rule="207.46.134.255" dir="0" type="2" protocol="0" version="0" is_block="true" is_enabled="true" />
 	<item name="spy_207.68.166.254" rule="207.68.166.254" dir="0" type="2" protocol="0" version="0" is_block="true" is_enabled="true" />
 	<item name="spy_213.199.179.0-213.199.179.255" rule="213.199.179.0-213.199.179.255" dir="0" type="2" protocol="0" version="0" is_block="true" is_enabled="true" />
-	<item name="spy_<<<<<<< HEAD" rule="<<<<<<< HEAD" dir="0" type="2" protocol="0" version="0" is_block="true" is_enabled="true" />
-	<item name="spy_=======" rule="=======" dir="0" type="2" protocol="0" version="0" is_block="true" is_enabled="true" />
-	<item name="spy_>>>>>>> 8aa4e30f1ff8c2856fa5ee88a130376b62e27abc" rule=">>>>>>> 8aa4e30f1ff8c2856fa5ee88a130376b62e27abc" dir="0" type="2" protocol="0" version="0" is_block="true" is_enabled="true" />
 	<item name="update_13.68.87.47" rule="13.68.87.47" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_13.68.87.175" rule="13.68.87.175" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_13.74.179.117" rule="13.74.179.117" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
@@ -374,7 +371,4 @@
 	<item name="update_191.234.72.190" rule="191.234.72.190" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_207.46.114.58" rule="207.46.114.58" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_207.46.114.61" rule="207.46.114.61" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
-	<item name="update_<<<<<<< HEAD" rule="<<<<<<< HEAD" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
-	<item name="update_=======" rule="=======" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
-	<item name="update_>>>>>>> 8aa4e30f1ff8c2856fa5ee88a130376b62e27abc" rule=">>>>>>> 8aa4e30f1ff8c2856fa5ee88a130376b62e27abc" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 </root>
