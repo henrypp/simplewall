@@ -1,22 +1,32 @@
 v2.2 Beta (x January 2018)
++ new notification ui
 + now simplewall added to the apps list automatically (issue #106)
 + added windows services support [beta] (issue #88)
 + added group total items count indication
++ added network address resolution
 + added timers (issue #96)
++ app paths case correction
 + new localization engine (single .lng file)
++ transparent menu bitmap checks
 + more sensitive notifications (issue #107)
 + make internal apps undeletable
++ set process high priority
+- removed wow64 redirection (use simplewall 64-bit binaries for win64)
+- revert "purge unused apps" feature
 - optimized apps types recognition
 - improved tray context menu (issue #103)
 - improved memory allocation
 - changed verify signatures algorithm (issue #94)
+- changed "purge invalid apps" hotkey
 - changed default font
+- cosmetics for filter names
 - cosmetic fixes (issue #108)
 - stability improvements
 - updated default colors
 - updated localization
-- fixed multi-monitor support
 - fixed steal focus at startup and when notification displaying
+- fixed working under blacklist mode
+- fixed multi-monitor support
 - fixed ui bugs
 - fixed bugs
 
