@@ -9,10 +9,10 @@ Features:
 - Simple interface without annoying pop ups
 - Rules editor (create your own rules)
 - Internal blocklist rules (block Windows spy / telemetry)
-- Dropped packets information with notification and logging to a file feature (Windows 7 and above)
-- Windows Store support (Windows 8 and above)
-- Windows Subsystem for Linux (WSL) support (Windows 10)
-- Proxy support (Windows 8 and above) [BETA]
+- Dropped packets information with notification and logging to a file feature (win7+)
+- Windows Store support (win8+)
+- Windows Subsystem for Linux (WSL) support (win10)
+- Proxy support (win8+) [BETA]
 - Free and open source
 - Localization support
 - IPv6 support

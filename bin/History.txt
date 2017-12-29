@@ -11,6 +11,7 @@ v2.2 Beta (x January 2018)
 + more sensitive notifications (issue #107)
 + make internal apps undeletable
 + set process high priority
++ lock-free dropped events callback (win7+)
 - removed wow64 redirection (use simplewall 64-bit binaries for win64)
 - revert "purge unused apps" feature
 - optimized apps types recognition
@@ -31,9 +32,9 @@ v2.2 Beta (x January 2018)
 - fixed bugs
 
 v2.1.4 (27 November 2017)
-+ do not verify signatures for store apps (win8 and above)
++ do not verify signatures for store apps (win8+)
 - optimized digital signatures verification (issue #94)
-- fixed appcontainers listing (removed firewallapi.dll dependence) (win8 and above) (issue #104)
+- fixed appcontainers listing (removed firewallapi.dll dependence) (win8+) (issue #104)
 - fixed notifications race conditions (it may fix issue #73)
 - fixed status does not changed when app deleted
 - fixed "system" process marked as pico
@@ -43,7 +44,7 @@ v2.1.4 (27 November 2017)
 
 v2.1.3 (22 November 2017)
 - disabled loopback and digital signatures config by default
-- fixed displaying name of store apps (win8 and above) (issue #98)
+- fixed displaying name of store apps (win8+) (issue #98)
 - fixed network paths rules (issue #102)
 
 v2.1.2 RC (21 November 2017)
@@ -77,7 +78,7 @@ v2.1.1 Beta (17 November 2017)
 - fixed bugs
 
 v2.1 Beta (12 November 2017)
-+ added windows store apps support (win8 and above)
++ added windows store apps support (win8+)
 - revert allowing loopback connection feature
 - converted log limit unit to kilobytes
 - dropped packets log cosmetic fixes
@@ -122,7 +123,7 @@ v2.0.19 (1 November 2017)
 - fixed bugs
 
 v2.0.18 (20 October 2017)
-+ added setting to disable proxy support (win8 and above only)
++ added setting to disable proxy support (win8+)
 + prevent notifications duplicate
 - fixed windows firewall disabling on win10
 - fixed notifications sound configuration does not saved
@@ -178,7 +179,7 @@ v2.0.12 RC (3 October 2017)
 - fixed ui bugs
 
 v2.0.11 Beta (30 September 2017)
-+ subscribe for net events only when filters are installed (win7 and above)
++ subscribe for net events only when filters are installed (win7+)
 - fixed incorrect filters applied for special rules
 - fixed all apps are in lowercase
 
@@ -238,7 +239,7 @@ v2.0.6 Beta (11 September 2017)
 - fixed bugs
 
 v2.0.5 Beta (30 August 2017)
-+ added proxy support (win8 and above only)
++ added proxy support (win8+)
 + added indication for inbound connections for all (when stealth-mode enabled)
 + added group for special rules (rules applied for apps)
 + added apps list selection indication
@@ -309,7 +310,7 @@ v2.0 Beta (1 August 2017)
 - removed "trust no one" mode
 - updated system rules
 - updated blocklist
-- fixed dropped packets logging hibernation (win7 and above)
+- fixed dropped packets logging hibernation (win7+)
 - fixed remember windows size and position sometimes
 - fixed version string trimming
 - fixed ui bugs
@@ -319,13 +320,13 @@ v2.0 Beta (1 August 2017)
 v1.6.5 (1 June 2017)
 + do not block listen connections on stealth-mode
 + do not block listen connections on boot-time
-- fixed dropped events does not shutdown on exit (win7 and above)
+- fixed dropped events does not shutdown on exit (win7+)
 - fixed memory leak
 
 v1.6.4 (31 May 2017)
 + added fallback if blocklist and/or system rules not found
-+ added more dropped events logging (win7 and above)
-- fixed dropped events subscription duplicate (win7 and above)
++ added more dropped events logging (win7+)
+- fixed dropped events subscription duplicate (win7+)
 - fixed run as admin does not work sometimes
 - updated blocklist
 - fixed bugs
@@ -334,7 +335,7 @@ v1.6.3 (27 May 2017)
 + generate unique session key at startup
 - fixed custom app rules crash on delete
 - fixed lookup account sid length mismatch
-- fixed dropped packets logging crash (win7 and above)
+- fixed dropped packets logging crash (win7+)
 - stability improvements
 - updated system rules
 - fixed bugs
@@ -360,12 +361,12 @@ v1.6 (19 May 2017)
 + added acl (access control list) to the engine
 + added gridline for the listview config
 + added item into the custom rules menu for open rules editor
-+ added version-independent network events api call (win7 and above)
-+ added dropped packets log file size limit to 1mb (win7 and above)
++ added version-independent network events api call (win7+)
++ added dropped packets log file size limit to 1mb (win7+)
 + reset windows firewall to its initial state when restore it back
 + blocklist marked as experimental
 - removed custom rules from package
-- fixed dropped packets logging stop sometimes (win7 and above)
+- fixed dropped packets logging stop sometimes (win7+)
 - fixed removing custom rules
 - fixed classic ui
 - fixed bugs
@@ -377,7 +378,7 @@ v1.5.5 (6 May 2017)
 + copy filter name if description is not available for dropped packets log
 - removed "file not found" xml parsing errors
 - revert trim rules back (request)
-- fixed index flag cannot be set (win8 and above)
+- fixed index flag cannot be set (win8+)
 - fixed ui bugs
 
 v1.5.4 (30 April 2017)
@@ -410,8 +411,8 @@ v1.5.1 (17 April 2017)
 - fixed possible memory leak
 
 v1.5 (15 April 2017)
-+ added index flag to the filters, to help enable faster lookup during classification (win8 and above)
-+ added app container loopback traffic permission (win8 and above)
++ added index flag to the filters, to help enable faster lookup during classification (win8+)
++ added app container loopback traffic permission (win8+)
 + added "allow listen connections for all" config
 + added loopback indication for dropped packets log
 - copy real path instead display path on copy command in main window listview
@@ -447,7 +448,7 @@ v1.4.5 (4 April 2017)
 - fixed access denied for some self protected applications (like "ekrn.exe" for nod32)
 
 v1.4.4 (28 March 2017)
-+ added ipsec connections monitoring into the log (win8 and above)
++ added ipsec connections monitoring into the log (win8+)
 - cosmetic fixes about tray notifications
 - fixed dropped packets callback crash (critical)
 - fixed displaying tray notifications on win10
@@ -615,7 +616,7 @@ v1.1.116 (30 September 2016)
 - minor improvements
 
 v1.1.115 (22 September 2016)
-+ added more information to dropped packets logging (win7 and above)
++ added more information to dropped packets logging (win7+)
 - fixed inbound dont't blocking
 - cannot add port in rules editor
 - updated translation
@@ -635,7 +636,7 @@ v1.1.113 (20 September 2016)
 v1.1.112 (19 September 2016)
 * project renamed
 + added "trust no one" mode
-+ added dropped packets logging to debugview (win7 and above)
++ added dropped packets logging to debugview (win7+)
 + added automatic rules applying on insert device
 + added name for filters
 + moved telemetry rules to the resources

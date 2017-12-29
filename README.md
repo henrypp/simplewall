@@ -11,10 +11,10 @@ You can download either the installer or portable version. For correct working, 
 - Simple interface without annoying pop ups
 - [Rules editor](https://github.com/henrypp/simplewall/wiki/Rules-editor) (create your own rules)
 - [Internal blocklist](https://github.com/crazy-max/WindowsSpyBlocker/wiki/dataSimplewall) (block Windows spy / telemetry)
-- Dropped packets information with notification and logging to a file feature (Windows 7 and above)
-- Windows Store support (Windows 8 and above)
+- Dropped packets information with notification and logging to a file feature (win7+)
+- Windows Store support (win8+e)
 - Windows Subsystem for Linux (WSL) support (Windows 10)
-- Proxy support (Windows 8 and above) [BETA]
+- Proxy support (win8+) [BETA]
 - Free and open source
 - Localization support
 - IPv6 support

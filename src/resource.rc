@@ -79,7 +79,7 @@ IDM_MAIN MENU
 		}
 		POPUP " "
 		{
-			MENUITEM " ", IDM_LANGUAGE
+			MENUITEM " ", IDX_LANGUAGE
 		}
 		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_FONT
@@ -537,14 +537,14 @@ STRINGTABLE
 	IDS_SAVE "Save"
 	IDS_CLOSE "Close"
 
-	IDS_TITLE_GENERAL "General configuration:"
-	IDS_TITLE_LANGUAGE "Language:"
-	IDS_TITLE_CONFIRMATIONS "Confirmations:"
-	IDS_TITLE_HIGHLIGHTING "Highlighting:"
-	IDS_TITLE_EXPERTS "Experts-only:"
-	IDS_TITLE_NOTIFICATIONS "Notifications (whitelist only):"
-	IDS_TITLE_LOGGING "Dropped packets logging:"
-	IDS_TITLE_ADVANCED "Advanced:"
+	IDS_TITLE_GENERAL "General configuration"
+	IDS_TITLE_LANGUAGE "Language"
+	IDS_TITLE_CONFIRMATIONS "Confirmations"
+	IDS_TITLE_HIGHLIGHTING "Highlighting"
+	IDS_TITLE_EXPERTS "Experts-only"
+	IDS_TITLE_LOGGING "Dropped packets logging"
+	IDS_TITLE_NOTIFICATIONS "Notifications (whitelist only)"
+	IDS_TITLE_ADVANCED "Advanced"
 
 	IDS_ALWAYSONTOP_CHK "Always on top"
 	IDS_LOADONSTARTUP_CHK "Load on system startup"
