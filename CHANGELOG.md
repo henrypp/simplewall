@@ -2,16 +2,17 @@ v2.2 Beta (x January 2018)
 + new notification ui
 + now simplewall added to the apps list automatically (issue #106)
 + added windows services support [beta] (issue #88)
-+ added group total items count indication
-+ added network address resolution
-+ added timers (issue #96)
-+ app paths case correction
 + new localization engine (single .lng file)
-+ transparent menu bitmap checks
 + more sensitive notifications (issue #107)
-+ make internal apps undeletable
-+ set process high priority
 + lock-free dropped events callback (win7+)
++ added group total items count indication
++ automatic profile backup (issue #110)
++ added network address resolution
++ make internal apps undeletable
++ menu bitmap transparent icons
++ app paths case correction
++ added timers (issue #96)
++ set process high priority
 - removed wow64 redirection (use simplewall 64-bit binaries for win64)
 - revert "purge unused apps" feature
 - optimized apps types recognition
