@@ -13,6 +13,7 @@ v2.2 Beta (x January 2018)
 + app paths case correction
 + added timers (issue #96)
 + set process high priority
++ ipsec dropped packets logging (win8+)
 - removed wow64 redirection (use simplewall 64-bit binaries for win64)
 - revert "purge unused apps" feature
 - optimized apps types recognition
