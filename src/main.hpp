@@ -12,6 +12,7 @@
 
 // config
 #define WM_TRAYICON WM_APP + 1
+#define LANG_MENU 5
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
 #define PROC_SYSTEM_PID 4
@@ -30,7 +31,12 @@
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 #define XML_RULES_SYSTEM L"rules_system.xml"
 
-#define LANG_MENU 5
+#define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
+#define BLOCKLIST_URL L"https://github.com/henrypp/simplewall/blob/master/bin/blocklist.xml"
+#define LISTENS_ISSUE_URL L"https://github.com/henrypp/simplewall/issues/9"
+
+#define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;; CCRC;;;%s)"
+
 #define NA_TEXT L"<empty>"
 #define TAB_SPACE L"   "
 #define ERR_FORMAT L"%s() failed with error code 0x%.8lx (%s)"
@@ -40,25 +46,28 @@
 #define LEN_IP_MAX 68
 #define LEN_HOST_MAX 512
 
-#define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
-#define BLOCKLIST_URL L"https://github.com/henrypp/simplewall/blob/master/bin/blocklist.xml"
-#define LISTENS_ISSUE_URL L"https://github.com/henrypp/simplewall/issues/9"
+#define TIMER_DEFAULT 2
+#define TIMER_LOG_CALLBACK 10000
 
-// notification timer
+// notifications
+#define NOTIFY_CLASS_DLG L"NotificationDlg"
+
 #define NOTIFY_WIDTH 368
 #define NOTIFY_HEIGHT 234
-#define NOTIFY_SPACER 6
-#define NOTIFY_CLASS_DLG L"NotificationDlg"
-#define NOTIFY_TIMER_DISPLAY_ID 1001
+#define NOTIFY_BTN_WIDTH 106
+
+#define NOTIFY_TIMER_POPUP_ID 1001
 #define NOTIFY_TIMER_TIMEOUT_ID 2002
-#define NOTIFY_TIMER_MOUSELEAVE_ID 3003
-#define NOTIFY_TIMER_MOUSE 250
+
 #define NOTIFY_TIMER_POPUP 350
+
 #define NOTIFY_TIMER_DEFAULT 6 // sec.
 #define NOTIFY_TIMEOUT 120 // sec.
 #define NOTIFY_TIMEOUT_MINIMUM 8 // sec.
-#define NOTIFY_LIMIT_SIZE 6 //limit vector size
+#define NOTIFY_LIMIT_SIZE 10 //limit vector size
+
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
+#define NOTIFY_BORDER_COLOR RGB(255,98,98)
 
 // pugixml document configuration
 #define PUGIXML_LOAD_FLAGS (pugi::parse_escapes)
@@ -69,14 +78,14 @@
 
 // default colors
 #define LISTVIEW_COLOR_INVALID RGB (255, 125, 148)
-#define LISTVIEW_COLOR_NETWORK RGB (255, 178, 255)
-#define LISTVIEW_COLOR_PACKAGE RGB(189, 251, 240)
+#define LISTVIEW_COLOR_PACKAGE RGB(134, 227, 227)
 #define LISTVIEW_COLOR_PICO RGB (51, 153, 255)
-#define LISTVIEW_COLOR_SERVICE RGB (170, 240, 208)
+#define LISTVIEW_COLOR_SERVICE RGB (198, 159, 255)
 #define LISTVIEW_COLOR_SIGNED RGB (175, 228, 163)
-#define LISTVIEW_COLOR_SILENT RGB (206, 206, 206)
+#define LISTVIEW_COLOR_SILENT RGB (165, 171, 199)
 #define LISTVIEW_COLOR_SPECIAL RGB (255, 255, 170)
-#define LISTVIEW_COLOR_SYSTEM RGB(170, 204, 255)
+#define LISTVIEW_COLOR_SYSTEM RGB(151, 196, 251)
+#define LISTVIEW_COLOR_TIMER RGB(255, 190, 142)
 
 // filter weights
 #define FILTER_WEIGHT_HIGHEST_IMPORTANT 0xF
@@ -131,13 +140,6 @@ extern "C" {
 };
 
 // enums
-enum EnumRuleDirection
-{
-	DirOutbound,
-	DirInbound,
-	DirBoth,
-};
-
 enum EnumRuleType
 {
 	TypeUnknown = 0,
@@ -158,8 +160,15 @@ enum EnumAppType
 	AppDevice = 1,
 	AppNetwork = 2,
 	AppService = 3,
-	AppStore = 4, // win8 and above
-	AppPico = 5 // win10 and above
+	AppStore = 4, // win8+
+	AppPico = 5 // win10+
+};
+
+enum EnumNotifyCommand
+{
+	CmdAllow = 0,
+	CmdIgnore = 1,
+	CmdMute = 2,
 };
 
 struct STATIC_DATA
@@ -172,6 +181,7 @@ struct STATIC_DATA
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
 	bool is_nocheckboxnotify = false;
+	bool is_wsainit = false;
 
 	HIMAGELIST himg = nullptr;
 
@@ -181,7 +191,7 @@ struct STATIC_DATA
 	HICON hicon_large = nullptr;
 	HICON hicon_small = nullptr;
 	HICON hicon_package = nullptr;
-	HICON hicon_service = nullptr;
+	HICON hicon_service_small = nullptr;
 	HBITMAP hbitmap_package_small = nullptr;
 	HBITMAP hbitmap_service_small = nullptr;
 
@@ -196,6 +206,10 @@ struct STATIC_DATA
 
 	HANDLE stop_evt = nullptr;
 	HANDLE finish_evt = nullptr;
+	HANDLE log_evt = nullptr;
+
+	HANDLE htimer = nullptr;
+	time_t timer_low = 0;
 
 	WCHAR title[128] = {0};
 	WCHAR apps_path[MAX_PATH] = {0};
@@ -218,13 +232,13 @@ struct STATIC_DATA
 	size_t myhash = 0;
 };
 
-struct ITEM_APPLICATION
+typedef struct _ITEM_APP
 {
 	__time64_t timestamp = 0;
 
 	size_t icon_id = 0;
 
-	bool error_count = false;
+	bool is_haveerrors = false;
 
 	bool is_enabled = false;
 	bool is_system = false;
@@ -244,18 +258,17 @@ struct ITEM_APPLICATION
 	union
 	{
 		PSECURITY_DESCRIPTOR psd = nullptr; // service app
-		PSID psid; // store app (win8 and above)
+		PSID psid; // store app (win8+)
 	};
-};
+} ITEM_APP, *PITEM_APP;
 
-struct ITEM_RULE
+typedef struct _ITEM_RULE
 {
-	bool error_count = false;
-
 	bool is_enabled = false;
 	bool is_block = false;
+	bool is_haveerrors = false;
 
-	EnumRuleDirection dir = DirOutbound;
+	FWP_DIRECTION dir = FWP_DIRECTION_OUTBOUND;
 	EnumRuleType type = TypeUnknown;
 
 	UINT8 protocol = 0;
@@ -265,36 +278,57 @@ struct ITEM_RULE
 	LPWSTR prule = nullptr;
 
 	std::unordered_map<size_t, bool> apps;
-};
+} ITEM_RULE, *PITEM_RULE;
 
-struct ITEM_LOG
+typedef struct _ITEM_LOG
 {
 	bool is_loopback = false;
+	bool is_blocklist = false;
+	bool is_myprovider = false;
 
 	size_t hash = 0;
 
-	HICON hicon = nullptr;
+	time_t date = 0;
+
+	ADDRESS_FAMILY af = 0;
+
+	UINT8 protocol = 0;
 
 	UINT16 remote_port = 0;
 	UINT16 local_port = 0;
 
-	UINT32 flags = 0;
-	UINT32 direction = 0;
+	union
+	{
+		IN_ADDR remote_addr;
+		IN6_ADDR remote_addr6;
+	};
 
-	WCHAR protocol[16] = {0};
+	union
+	{
+		IN_ADDR local_addr;
+		IN6_ADDR local_addr6;
+	};
 
-	WCHAR date[32] = {0};
+	FWP_DIRECTION direction = FWP_DIRECTION_OUTBOUND;
 
-	WCHAR remote_addr[LEN_IP_MAX] = {0};
-	WCHAR local_addr[LEN_IP_MAX] = {0};
+	WCHAR remote_fmt[192] = {0};
+	WCHAR local_fmt[192] = {0};
 
-	WCHAR username[MAX_PATH] = {0};
+	WCHAR username[192] = {0};
 
 	WCHAR provider_name[MAX_PATH] = {0};
 	WCHAR filter_name[MAX_PATH] = {0};
-};
 
-struct ITEM_ADD
+	WCHAR path[MAX_PATH] = {0};
+} ITEM_LOG, *PITEM_LOG;
+
+typedef struct _ITEM_LIST_ENTRY
+{
+	SLIST_ENTRY ListEntry;
+	ULONG_PTR Body;
+} ITEM_LIST_ENTRY, *PITEM_LIST_ENTRY;
+
+typedef struct _ITEM_ADD
 {
 	size_t hash = 0;
 
@@ -305,12 +339,14 @@ struct ITEM_ADD
 	WCHAR service_name[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
 
-	PSID psid = nullptr;
-	PSECURITY_DESCRIPTOR psd = nullptr;
+	union
+	{
+		PSID psid = nullptr;
+		PSECURITY_DESCRIPTOR psd;
+	};
+} ITEM_ADD, *PITEM_ADD;
 
-};
-
-struct ITEM_COLOR
+typedef struct _ITEM_COLOR
 {
 	bool is_enabled = false;
 
@@ -323,18 +359,17 @@ struct ITEM_COLOR
 
 	HBRUSH hbrush = nullptr;
 
-	LPWSTR locale_sid = nullptr;
 	LPWSTR config_name = nullptr;
 	LPWSTR config_value = nullptr;
-};
+} ITEM_COLOR, *PITEM_COLOR;
 
-struct ITEM_PROTOCOL
+typedef struct _ITEM_PROTOCOL
 {
 	UINT8 id = 0;
 	LPWSTR name = nullptr;
-};
+} ITEM_PROTOCOL, *PITEM_PROTOCOL;
 
-struct ITEM_ADDRESS
+typedef struct _ITEM_ADDRESS
 {
 	bool is_range = false;
 
@@ -350,9 +385,9 @@ struct ITEM_ADDRESS
 	FWP_RANGE* prange = nullptr;
 
 	WCHAR host[LEN_HOST_MAX] = {0};
-};
+} ITEM_ADDRESS, *PITEM_ADDRESS;
 
-// dropped events callback subscription (win7 and above)
+// dropped events callback subscription (win7+)
 #ifndef FWP_DIRECTION_IN
 #define FWP_DIRECTION_IN 0x00003900L
 #endif
@@ -361,11 +396,9 @@ struct ITEM_ADDRESS
 #define FWP_DIRECTION_OUT 0x00003901L
 #endif
 
-typedef void (CALLBACK *FWPM_NET_EVENT_CALLBACK2)(_Inout_ void* context, _In_ const FWPM_NET_EVENT3* event);
-
-typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, HANDLE*); // subscribe (win7)
-typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, HANDLE*); // subscribe (win8)
-typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, HANDLE*); // subscribe (win10)
+typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, LPHANDLE); // subscribe (win10+)
+typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, LPHANDLE); // subscribe (win8+)
+typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, LPHANDLE); // subscribe (win7+)
 
 typedef DWORD (WINAPI *FWPMNEU) (HANDLE, HANDLE); // unsubcribe (all)
 
