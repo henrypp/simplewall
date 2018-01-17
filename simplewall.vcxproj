@@ -130,12 +130,12 @@
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <StringPooling>true</StringPooling>
       <CallingConvention>StdCall</CallingConvention>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -176,12 +176,12 @@
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <StringPooling>true</StringPooling>
       <CallingConvention>StdCall</CallingConvention>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -228,8 +228,8 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>Sync</ExceptionHandling>
       <MinimalRebuild>false</MinimalRebuild>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
@@ -279,8 +279,8 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <OmitFramePointers>true</OmitFramePointers>
       <MinimalRebuild>false</MinimalRebuild>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>
