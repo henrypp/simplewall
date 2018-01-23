@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <root timestamp="1502832016">
 	<item name="DHCP" rule="67-68;546-547" dir="2" type="4" protocol="17" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="false" is_enabled="true" />
-	<item name="DNS" rule="53;5355" dir="2" type="4" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="false" is_enabled="false" />
+	<item name="DNS" rule="53;5355" dir="2" type="4" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="false" is_enabled="true" />
 	<item name="FTP" rule="20-21;49152-65534" dir="0" type="4" protocol="6" version="0" is_block="false" is_enabled="false" />
 	<item name="ICMP" rule="*" dir="0" protocol="1" version="0" is_block="false" is_enabled="false" />
 	<item name="ICMPv6" rule="*" dir="0" protocol="58" version="0" is_block="false" is_enabled="false" />
