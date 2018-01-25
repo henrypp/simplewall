@@ -94,7 +94,7 @@ void _app_logerror (LPCWSTR fn, DWORD result, LPCWSTR desc, bool is_nopopups = f
 	{
 		config.is_popuperrors = true;
 
-		app.TrayPopup (UID, NIIF_USER | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? NIIF_NOSOUND : 0), APP_NAME, app.LocaleString (IDS_STATUS_ERROR, nullptr));
+		app.TrayPopup (UID, NIIF_USER | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? 0 : NIIF_NOSOUND), APP_NAME, app.LocaleString (IDS_STATUS_ERROR, nullptr));
 	}
 }
 
@@ -1319,26 +1319,24 @@ bool _app_apphaverule (size_t hash)
 
 bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR buffer, DWORD length)
 {
-
-	paddr = paddr;
-	struct sockaddr_in ipv4Address = {0};
-	struct sockaddr_in6 ipv6Address = {0};
-	struct sockaddr* psock = {0};
+	SOCKADDR_IN ipv4Address = {0};
+	SOCKADDR_IN6 ipv6Address = {0};
+	PSOCKADDR psock = {0};
 	socklen_t size = 0;
 
 	if (af == AF_INET)
 	{
 		ipv4Address.sin_family = af;
-		//ipv4Address.sin_addr.S_un = (IN_ADDR)*paddr;
-		psock = (struct sockaddr *)&ipv4Address;
+		ipv4Address.sin_addr = *PIN_ADDR (paddr);
+		psock = (PSOCKADDR)&ipv4Address;
 		size = sizeof (ipv4Address);
 	}
 	else if (af == AF_INET6)
 	{
 		ipv6Address.sin6_family = af;
-		//ipv6Address.sin6_addr = (IN6_ADDR*)paddr;
+		ipv6Address.sin6_addr = *PIN6_ADDR (paddr);
 
-		psock = (struct sockaddr *)&ipv6Address;
+		psock = (PSOCKADDR)&ipv6Address;
 		size = sizeof (ipv6Address);
 	}
 	else
@@ -2937,7 +2935,7 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 
 	if (!result)
 	{
-		// if file not found or parsing error, lolad backup
+		// if file not found or parsing error, load from backup
 		if (path_backup)
 		{
 			if (is_internal)
@@ -2950,7 +2948,8 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 			}
 			else
 			{
-				result = doc.load_file (path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+				if (_r_fs_exists (path_backup))
+					result = doc.load_file (path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 			}
 		}
 
@@ -3020,7 +3019,7 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 									_app_addapplication (hwnd, path_app, 0, false, false, true);
 
 								if (is_internal)
-									apps_undelete[hash] = true; // prevent deletion for internal apps
+									apps_undelete[hash] = true; // prevent deletion for internal rules apps
 
 								rule_ptr->apps[hash] = true;
 							}
@@ -3076,7 +3075,13 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 			// load backup
 			if (!result)
-				result = doc.load_file (_r_fmt (L"%s.bak", config.apps_path), PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+			{
+				rstring path_apps_backup;
+				path_apps_backup.Format (L"%s.bak", config.apps_path);
+
+				if (_r_fs_exists (path_apps_backup))
+					result = doc.load_file (path_apps_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+			}
 
 			if (!result)
 			{
@@ -3747,14 +3752,14 @@ bool _app_logchecklimit ()
 
 	if (_r_fs_size (config.hlog) >= (limit * _R_BYTESIZE_KB))
 	{
-		// make backup before log truncate
-		if (app.ConfigGet (L"IsLogBackup", true).AsBool ())
-		{
-			const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", PATH_LOG));
+		//// make backup before log truncate
+		//if (app.ConfigGet (L"IsLogBackup", true).AsBool ())
+		//{
+		//	const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", PATH_LOG));
 
-			_r_fs_delete (path + L".bak");
-			_r_fs_copy (path, path + L".bak");
-		}
+		//	_r_fs_delete (path + L".bak");
+		//	_r_fs_copy (path, path + L".bak");
+		//}
 
 		SetFilePointer (config.hlog, 2, nullptr, FILE_BEGIN);
 		SetEndOfFile (config.hlog);
@@ -3842,41 +3847,28 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 	{
 		addrv4 = (dir == FWP_DIRECTION_OUTBOUND) ? &ptr_log->remote_addr : &ptr_log->local_addr;
 
-		if (!IN4_IS_ADDR_UNSPECIFIED (addrv4))
-		{
-			InetNtop (ptr_log->af, addrv4, dest, cchDest);
+		InetNtop (ptr_log->af, addrv4, dest, cchDest);
 
-			result = true;
-		}
+		result = !IN4_IS_ADDR_UNSPECIFIED (addrv4);
 	}
 	else if (ptr_log->af == AF_INET6)
 	{
 		addrv6 = (dir == FWP_DIRECTION_OUTBOUND) ? &ptr_log->remote_addr6 : &ptr_log->local_addr6;
 
-		if (!IN6_IS_ADDR_UNSPECIFIED (addrv6))
-		{
-			InetNtop (ptr_log->af, addrv6, dest, cchDest);
+		InetNtop (ptr_log->af, addrv6, dest, cchDest);
 
-			result = true;
-		}
+		result = !IN6_IS_ADDR_UNSPECIFIED (addrv6);
 	}
 
-	if (result)
-	{
-		if (port)
-			StringCchCat (dest, cchDest, _r_fmt (L":%d", port));
+	if (port)
+		StringCchCat (dest, cchDest, _r_fmt (L":%d", port));
 
-		if (is_appenddns && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && _app_canihaveaccess ())
-		{
-			WCHAR hostBuff[NI_MAXHOST] = {0};
-
-			if (_app_resolveaddress (ptr_log->af, (ptr_log->af == AF_INET) ? (LPVOID)addrv4 : (LPVOID)addrv6, hostBuff, _countof (hostBuff)))
-				StringCchCat (dest, cchDest, _r_fmt (L" (%s)", hostBuff));
-		}
-	}
-	else
+	if (result && is_appenddns && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && _app_canihaveaccess ())
 	{
-		StringCchCopy (dest, cchDest, NA_TEXT);
+		WCHAR hostBuff[NI_MAXHOST] = {0};
+
+		if (_app_resolveaddress (ptr_log->af, (ptr_log->af == AF_INET) ? (LPVOID)addrv4 : (LPVOID)addrv6, hostBuff, _countof (hostBuff)))
+			StringCchCat (dest, cchDest, _r_fmt (L" (%s)", hostBuff));
 	}
 
 	return result;
@@ -4100,7 +4092,6 @@ void _app_notifysetpos (HWND hwnd)
 void _app_notifyhide (HWND hwnd)
 {
 	_app_notifysettimeout (hwnd, 0, false, 0);
-	//KillTimer (hwnd, NOTIFY_TIMER_FOREGROUND_ID);
 
 	ShowWindow (hwnd, SW_HIDE);
 }
@@ -4140,8 +4131,8 @@ void _app_notifycreatewindow ()
 
 				if (SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
 				{
-					LOGFONT* lf_title = &ncm.lfCaptionFont;
-					LOGFONT* lf_text = &ncm.lfMessageFont;
+					PLOGFONT lf_title = &ncm.lfCaptionFont;
+					PLOGFONT lf_text = &ncm.lfMessageFont;
 
 					lf_title->lfHeight = _r_dc_fontsizetoheight (10);
 					lf_text->lfHeight = _r_dc_fontsizetoheight (9);
@@ -4153,8 +4144,8 @@ void _app_notifycreatewindow ()
 					lf_title->lfQuality = CLEARTYPE_QUALITY;
 					lf_text->lfQuality = CLEARTYPE_QUALITY;
 
-					StringCchCopy (lf_title->lfFaceName, LF_FACESIZE, L"Segoe UI");
-					StringCchCopy (lf_text->lfFaceName, LF_FACESIZE, L"Segoe UI");
+					StringCchCopy (lf_title->lfFaceName, LF_FACESIZE, UI_FONT);
+					StringCchCopy (lf_text->lfFaceName, LF_FACESIZE, UI_FONT);
 
 					hfont_title = CreateFontIndirect (lf_title);
 					hfont_text = CreateFontIndirect (lf_text);
@@ -4175,17 +4166,25 @@ void _app_notifycreatewindow ()
 			hwnd = CreateWindow (WC_LINK, nullptr, WS_CHILD | WS_VISIBLE, app.GetDPI (12), app.GetDPI (38), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
 
-			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (56), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (56), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (74), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (74), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (92), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (92), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_NOTIFY | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (110), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (110), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | BS_CHECKBOX | BS_NOTIFY, app.GetDPI (12), app.GetDPI (138), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_CREATERULE_ADDR_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
@@ -4193,24 +4192,23 @@ void _app_notifycreatewindow ()
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | BS_CHECKBOX | BS_NOTIFY, app.GetDPI (12), app.GetDPI (156), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_CREATERULE_PORT_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
 
+			hwnd = CreateWindow (WC_COMBOBOX, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | CBS_HASSTRINGS, app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width - app.GetDPI (12), app.GetDPI (24), config.hnotification, (HMENU)IDC_TIMER_CB, nullptr, nullptr);
+			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, wnd_width - ((btn_width + app.GetDPI (8)) * 2), wnd_height - app.GetDPI (36), btn_width, app.GetDPI (24), config.hnotification, (HMENU)IDC_ALLOW_BTN, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
 			SendMessage (hwnd, BM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_ALLOW), cxsmIcon));
 
-			//hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, wnd_width - btn_width - app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width, app.GetDPI (24), config.hnotification, (HMENU)IDC_BLOCK_BTN, nullptr, nullptr);
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, wnd_width - btn_width - app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width, app.GetDPI (24), config.hnotification, (HMENU)IDC_IGNORE_BTN, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
 			//SendMessage (hwnd, BM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_BLOCK), cxsmIcon));
-
-			hwnd = CreateWindow (WC_COMBOBOX, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | CBS_HASSTRINGS, app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width - app.GetDPI (12), app.GetDPI (24), config.hnotification, (HMENU)IDC_TIMER_CB, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
 
 			{
 				RECT rc2 = {0};
 				rc2.left = rc2.right = app.GetDPI (4);
 
 				SendDlgItemMessage (config.hnotification, IDC_ALLOW_BTN, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
-				//SendDlgItemMessage (config.hnotification, IDC_BLOCK_BTN, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
+				//SendDlgItemMessage (config.hnotification, IDC_IGNORE_BTN, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
 			}
 
 			_r_ctrl_settip (config.hnotification, IDC_MUTE_BTN, LPSTR_TEXTCALLBACK);
@@ -4288,9 +4286,7 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 						WCHAR rule[128] = {0};
 
 						if (is_createaddrrule)
-						{
 							_app_formataddress (rule, _countof (rule), ptr_log, FWP_DIRECTION_OUTBOUND, 0, false);
-						}
 
 						if (is_createportrule)
 						{
@@ -4454,13 +4450,13 @@ bool _app_notifysettimeout (HWND hwnd, UINT_PTR timer_id, bool is_create, UINT t
 	return true;
 }
 
-bool _app_notifypopup (size_t idx, bool is_forced)
+bool _app_notifyshow (size_t idx, bool is_forced)
 {
 	if (!is_forced)
 	{
 		QUERY_USER_NOTIFICATION_STATE state = QUNS_NOT_PRESENT;
 
-		if (!SUCCEEDED (SHQueryUserNotificationState (&state)) || state != QUNS_ACCEPTS_NOTIFICATIONS)
+		if (SUCCEEDED (SHQueryUserNotificationState (&state)) && state != QUNS_ACCEPTS_NOTIFICATIONS)
 			return false;
 	}
 
@@ -4507,12 +4503,13 @@ bool _app_notifypopup (size_t idx, bool is_forced)
 			_r_ctrl_settext (config.hnotification, IDC_FILTER_ID, L"%s: %s", app.LocaleString (IDS_FILTER, nullptr).GetString (), ptr_log->filter_name);
 			_r_ctrl_settext (config.hnotification, IDC_DATE_ID, L"%s: %s", app.LocaleString (IDS_DATE, nullptr).GetString (), _r_fmt_date (ptr_log->date, FDTF_LONGDATE | FDTF_LONGTIME).GetString ());
 
-			WCHAR addr_format[100] = {0};
-			_app_formataddress (addr_format, _countof (addr_format), ptr_log, FWP_DIRECTION_OUTBOUND, 0, false);
+			WCHAR addr_format[LEN_IP_MAX] = {0};
+			const bool is_addressset = _app_formataddress (addr_format, _countof (addr_format), ptr_log, FWP_DIRECTION_OUTBOUND, 0, false);
 
 			_r_ctrl_settext (config.hnotification, IDC_CREATERULE_ADDR_ID, app.LocaleString (IDS_NOTIFY_CREATERULE_ADDRESS, nullptr), addr_format);
 			_r_ctrl_settext (config.hnotification, IDC_CREATERULE_PORT_ID, app.LocaleString (IDS_NOTIFY_CREATERULE_PORT, nullptr), ptr_log->remote_port);
 
+			_r_ctrl_enable (config.hnotification, IDC_CREATERULE_ADDR_ID, is_addressset);
 			_r_ctrl_enable (config.hnotification, IDC_CREATERULE_PORT_ID, ptr_log->remote_port != 0);
 
 			_r_ctrl_settext (config.hnotification, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_1, nullptr));
@@ -4587,7 +4584,7 @@ bool _app_notifyrefresh ()
 
 	_r_fastlock_releaseshared (&lock_notification);
 
-	return _app_notifypopup (idx, false);
+	return _app_notifyshow (idx, false);
 }
 
 // Play notification sound even if system have "nosound" mode
@@ -4691,9 +4688,9 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 
 		_r_fastlock_releaseexclusive (&lock_notification);
 
-		if (_app_notifypopup (idx, false))
+		if (_app_notifyshow (idx, false))
 		{
-			if (!app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
+			if (app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
 				_app_notifyplaysound ();
 
 			const UINT display_timeout = app.ConfigGet (L"NotificationsDisplayTimeout", NOTIFY_TIMER_DEFAULT).AsUint ();
@@ -6222,8 +6219,6 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETRANGE32, 64, 2048);
 					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETPOS32, 0, app.ConfigGet (L"LogSizeLimitKb", 256).AsUint ());
 
-					CheckDlgButton (hwnd, IDC_LOGBACKUP_CHK, app.ConfigGet (L"IsLogBackup", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
-
 					CheckDlgButton (hwnd, IDC_ENABLENOTIFICATIONS_CHK, app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_NOTIFICATIONSOUND_CHK, app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_NOTIFICATIONNOBLOCKLIST_CHK, app.ConfigGet (L"IsNotificationsExcludeBlocklist", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
@@ -6438,7 +6433,6 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					SetDlgItemText (hwnd, IDC_ENABLELOG_CHK, app.LocaleString (IDS_ENABLELOG_CHK, nullptr));
 
 					SetDlgItemText (hwnd, IDC_LOGSIZELIMIT_HINT, app.LocaleString (IDS_LOGSIZELIMIT_HINT, nullptr));
-					SetDlgItemText (hwnd, IDC_LOGBACKUP_CHK, app.LocaleString (IDS_LOGBACKUP_CHK, nullptr));
 
 					SetDlgItemText (hwnd, IDC_ENABLENOTIFICATIONS_CHK, app.LocaleString (IDS_ENABLENOTIFICATIONS_CHK, nullptr));
 					SetDlgItemText (hwnd, IDC_NOTIFICATIONSOUND_CHK, app.LocaleString (IDS_NOTIFICATIONSOUND_CHK, nullptr));
@@ -6830,7 +6824,6 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 						case IDC_LOGPATH:
 						case IDC_LOGPATH_BTN:
 						case IDC_LOGSIZELIMIT_CTRL:
-						case IDC_LOGBACKUP_CHK:
 						case IDC_ENABLENOTIFICATIONS_CHK:
 						case IDC_NOTIFICATIONSOUND_CHK:
 						case IDC_NOTIFICATIONNOBLOCKLIST_CHK:
@@ -6981,8 +6974,6 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 								EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0), is_enabled);
 
-								_r_ctrl_enable (hwnd, IDC_LOGBACKUP_CHK, is_enabled); // button
-
 								_app_loginit (is_enabled);
 							}
 							else if (ctrl_id == IDC_LOGPATH && notify_code == EN_KILLFOCUS)
@@ -7023,10 +7014,6 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 							else if (ctrl_id == IDC_LOGSIZELIMIT_CTRL && notify_code == EN_KILLFOCUS)
 							{
 								app.ConfigSet (L"LogSizeLimitKb", (DWORD)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0));
-							}
-							else if (ctrl_id == IDC_LOGBACKUP_CHK)
-							{
-								app.ConfigSet (L"IsLogBackup", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 							}
 							else if (ctrl_id == IDC_ENABLENOTIFICATIONS_CHK)
 							{
@@ -7765,7 +7752,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				case WA_INACTIVE:
 				{
 					if (!config.is_notifytimeout)
-						_app_notifysettimeout (hwnd, NOTIFY_TIMER_POPUP_ID, true, NOTIFY_TIMER_POPUP);
+						_app_notifyhide (hwnd);
 
 					break;
 				}
@@ -7847,6 +7834,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 		}
 
 		case WM_CTLCOLORBTN:
+		case WM_CTLCOLOREDIT:
 		case WM_CTLCOLORSTATIC:
 		{
 			const UINT ctrl_id = GetDlgCtrlID ((HWND)lparam);
@@ -8096,7 +8084,6 @@ void _app_generate_addmenu (HMENU submenu)
 				mii.cbSize = sizeof (mii);
 				mii.fMask = MIIM_ID | MIIM_CHECKMARKS | MIIM_STRING;
 				mii.fType = MFT_STRING;
-				mii.fState = MFS_DEFAULT;
 				mii.dwTypeData = processes.at (i).display_name;
 				mii.wID = IDX_PROCESS + UINT (i);
 				mii.hbmpChecked = processes.at (i).hbmp;
@@ -8127,7 +8114,6 @@ void _app_generate_addmenu (HMENU submenu)
 				mii.cbSize = sizeof (mii);
 				mii.fMask = MIIM_ID | MIIM_CHECKMARKS | MIIM_STRING;
 				mii.fType = MFT_STRING;
-				mii.fState = MFS_DEFAULT;
 				mii.dwTypeData = packages.at (i).display_name;
 				mii.wID = IDX_PACKAGE + UINT (i);
 				mii.hbmpChecked = config.hbitmap_package_small;
@@ -8176,7 +8162,6 @@ void _app_generate_addmenu (HMENU submenu)
 				mii.cbSize = sizeof (mii);
 				mii.fMask = MIIM_ID | MIIM_CHECKMARKS | MIIM_STRING;
 				mii.fType = MFT_STRING;
-				mii.fState = MFS_DEFAULT;
 				mii.dwTypeData = services.at (i).display_name;
 				mii.wID = IDX_SERVICE + UINT (i);
 				mii.hbmpChecked = config.hbitmap_service_small;
@@ -8884,7 +8869,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case NIN_POPUPOPEN:
 				{
-					if (_app_notifypopup (_app_notifygetcurrent (), true))
+					if (_app_notifyshow (_app_notifygetcurrent (), true))
 						_app_notifysettimeout (config.hnotification, NOTIFY_TIMER_POPUP_ID, false, 0);
 
 					break;
@@ -9473,7 +9458,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_REFRESH:
 				case IDM_REFRESH2:
 				{
-					_app_profilesave (hwnd);
+					//_app_profilesave (hwnd);
 					_app_profileload (hwnd);
 
 					_app_installfilters (false);
@@ -9945,8 +9930,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					ShowWindow (hwnd, IsZoomed (hwnd) ? SW_RESTORE : SW_MAXIMIZE);
 					break;
 				}
-#ifdef TEST
-				case IDM_NOTIFICATIONTEST:
+
+				case 999:
 				{
 					notifications_last.erase (config.myhash);
 
@@ -9973,7 +9958,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					break;
 				}
-#endif
 			}
 
 			break;
