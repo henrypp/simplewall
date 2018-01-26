@@ -2,6 +2,7 @@
 
 ![simplewall](https://www.henrypp.org/images/simplewall.png)
 
+### Description:
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
 
 The lightweight application is less than a megabyte, and it is compatible with Windows Vista and higher operating systems.
