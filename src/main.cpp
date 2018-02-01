@@ -233,9 +233,6 @@ void _app_listviewsetimagelist (HWND hwnd, UINT ctrl_id)
 
 bool _app_listviewinitfont (PLOGFONT plf)
 {
-	if (!plf)
-		return false;
-
 	rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
 
 	if (buffer.IsEmpty ())
@@ -299,12 +296,24 @@ bool _app_listviewinitfont (PLOGFONT plf)
 	return true;
 }
 
-void _app_listviewsetfont (HWND hwnd, UINT ctrl_id)
+void _app_listviewsetfont (HWND hwnd, UINT ctrl_id, bool is_redraw)
 {
 	LOGFONT lf = {0};
 
-	if (!config.hfont)
+	if (is_redraw || !config.hfont)
 	{
+		if (config.hfont)
+		{
+			DeleteObject (config.hfont);
+			config.hfont = nullptr;
+		}
+
+		if (config.hfont_bold)
+		{
+			DeleteObject (config.hfont_bold);
+			config.hfont_bold = nullptr;
+		}
+
 		if (_app_listviewinitfont (&lf))
 		{
 			const LONG prev_weight = lf.lfWeight;
@@ -314,22 +323,11 @@ void _app_listviewsetfont (HWND hwnd, UINT ctrl_id)
 
 			lf.lfWeight = prev_weight;
 			config.hfont = CreateFontIndirect (&lf);
-
-			if (config.hfont)
-				SendDlgItemMessage (hwnd, ctrl_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
-
-			return;
-		}
-		else
-		{
-			SendDlgItemMessage (hwnd, ctrl_id, WM_SETFONT, 0, TRUE);
 		}
 	}
-	else
-	{
+
+	if (config.hfont)
 		SendDlgItemMessage (hwnd, ctrl_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
-	}
-
 }
 
 ITEM_APP* _app_getapplication (size_t hash)
@@ -1061,7 +1059,7 @@ void _app_generate_services ()
 					// now traverse each service to get information
 					for (DWORD i = 0; i < dwServicesReturned; i++)
 					{
-						//						LPCWSTR display_name = (pServices + i)->lpDisplayName;
+						//LPCWSTR display_name = (pServices + i)->lpDisplayName;
 						LPCWSTR service_name = (pServices + i)->lpServiceName;
 
 						WCHAR buffer[MAX_PATH] = {0};
@@ -1091,31 +1089,6 @@ void _app_generate_services ()
 									PathUnquoteSpaces (real_path);
 
 									_app_applycasestyle (real_path, wcslen (real_path)); // apply case-style
-
-									//// query description
-									//LPSERVICE_DESCRIPTION lpsd = nullptr;
-
-									//QueryServiceConfig2 (hsvc, SERVICE_CONFIG_DESCRIPTION, nullptr, 0, &bytes_needed);
-
-									//if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
-									//{
-									//	lpsd = new SERVICE_DESCRIPTION[bytes_needed];
-
-									//	if (lpsd)
-									//	{
-									//		if (QueryServiceConfig2 (hsvc, SERVICE_CONFIG_DESCRIPTION, (LPBYTE)lpsd, bytes_needed, &bytes_needed))
-									//		{
-									//			if (lpsd->lpDescription)
-									//			{
-									//				const size_t len = wcslen (lpsd->lpDescription) + 1;
-									//				ptrdesc = new WCHAR[len];
-									//				StringCchCopy (ptrdesc, len, lpsd->lpDescription);
-									//			}
-									//		}
-
-									//		delete[] lpsd;
-									//	}
-									//}
 								}
 								else
 								{
@@ -1157,7 +1130,7 @@ void _app_generate_services ()
 						{
 							ITEM_ADD item = {0};
 
-							StringCchCopy (item.display_name, _countof (item.display_name), service_name/*display_name*/);
+							StringCchCopy (item.display_name, _countof (item.display_name), service_name);
 							StringCchCopy (item.service_name, _countof (item.service_name), service_name);
 							StringCchCopy (item.real_path, _countof (item.real_path), real_path);
 							StringCchCopy (item.sid, _countof (item.sid), sidstring);
@@ -1576,7 +1549,7 @@ DWORD_PTR _app_getcolor (size_t hash, bool is_brush, HDC hdc)
 
 	if (ptr_app)
 	{
-		if (hdc && hash == config.myhash)
+		if (hdc && hash == config.myhash && config.hfont_bold)
 			SelectObject (hdc, config.hfont_bold);
 
 		if (app.ConfigGet (L"IsHighlightInvalid", true).AsBool () && !_app_isexists (ptr_app))
@@ -4153,7 +4126,7 @@ void _app_notifycreatewindow ()
 			}
 
 			HWND hwnd = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (12), app.GetDPI (8), wnd_width - app.GetDPI (64 + 12 + 10 + 24), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_title, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_title, true);
 
 			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, app.GetDPI (8), app.GetDPI (8), IconSize, IconSize, config.hnotification, (HMENU)IDC_ICON_ID, nullptr, nullptr);
 
@@ -4164,43 +4137,43 @@ void _app_notifycreatewindow ()
 			SendMessage (hwnd, STM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_CLOSE), cxsmIcon));
 
 			hwnd = CreateWindow (WC_LINK, nullptr, WS_CHILD | WS_VISIBLE, app.GetDPI (12), app.GetDPI (38), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 
 			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (56), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
 			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (74), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
 			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (92), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
 			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (110), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | BS_CHECKBOX | BS_NOTIFY, app.GetDPI (12), app.GetDPI (138), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_CREATERULE_ADDR_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | BS_CHECKBOX | BS_NOTIFY, app.GetDPI (12), app.GetDPI (156), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_CREATERULE_PORT_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 
 			hwnd = CreateWindow (WC_COMBOBOX, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | CBS_HASSTRINGS, app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width - app.GetDPI (12), app.GetDPI (24), config.hnotification, (HMENU)IDC_TIMER_CB, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, wnd_width - ((btn_width + app.GetDPI (8)) * 2), wnd_height - app.GetDPI (36), btn_width, app.GetDPI (24), config.hnotification, (HMENU)IDC_ALLOW_BTN, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, BM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_ALLOW), cxsmIcon));
 
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, wnd_width - btn_width - app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width, app.GetDPI (24), config.hnotification, (HMENU)IDC_IGNORE_BTN, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (LPARAM)hfont_text, true);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			//SendMessage (hwnd, BM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_BLOCK), cxsmIcon));
 
 			{
@@ -5066,16 +5039,16 @@ UINT WINAPI LogThread (LPVOID lparam)
 			const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
 			const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
 
-			for (;;)
+			while (true)
 			{
-				PITEM_LIST_ENTRY pNode = (PITEM_LIST_ENTRY)InterlockedPopEntrySList (log_stack);
+				PITEM_LIST_ENTRY pnode = (PITEM_LIST_ENTRY)InterlockedPopEntrySList (log_stack);
 
-				if (!pNode)
+				if (!pnode)
 					break;
 
-				PITEM_LOG ptr_log = (PITEM_LOG)pNode->Body;
+				PITEM_LOG ptr_log = (PITEM_LOG)pnode->Body;
 
-				_aligned_free (pNode);
+				_aligned_free (pnode);
 
 				if (ptr_log)
 				{
@@ -5671,7 +5644,6 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SetDlgItemText (hwnd, IDC_PORTVERSION, app.LocaleString (IDS_PORTVERSION, L":"));
 			SetDlgItemText (hwnd, IDC_ACTION, app.LocaleString (IDS_ACTION, L":"));
 
-			_r_ctrl_settext (hwnd, IDC_RULES_WIKI, app.LocaleString (IDS_RULES_WIKI, nullptr), WIKI_URL);
 			SetDlgItemText (hwnd, IDC_ENABLED_CHK, app.LocaleString (IDS_ENABLERULE_CHK, nullptr));
 
 			SetDlgItemText (hwnd, IDC_SAVE, app.LocaleString (IDS_SAVE, nullptr));
@@ -5683,7 +5655,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_listview_addcolumn (hwnd, IDC_FILES_LV, 0, nullptr, 95, LVCFMT_LEFT);
 
 			_app_listviewsetimagelist (hwnd, IDC_FILES_LV);
-			_app_listviewsetfont (hwnd, IDC_FILES_LV);
+			_app_listviewsetfont (hwnd, IDC_FILES_LV, false);
 
 			// name
 			if (ptr_rule && ptr_rule->pname)
@@ -5791,6 +5763,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SendDlgItemMessage (hwnd, IDC_NAME_EDIT, EM_LIMITTEXT, RULE_NAME_CCH_MAX - 1, 0);
 			SendDlgItemMessage (hwnd, IDC_RULES_EDIT, EM_LIMITTEXT, RULE_RULE_CCH_MAX - 1, 0);
 
+			_r_wnd_addstyle (hwnd, IDC_WIKI, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_SAVE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
@@ -5819,6 +5792,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				DeleteMenu (submenu, IDM_EDIT, MF_BYCOMMAND);
 				DeleteMenu (submenu, IDM_DELETE, MF_BYCOMMAND);
 				DeleteMenu (submenu, 0, MF_BYPOSITION);
+				DeleteMenu (submenu, IDM_SELECT_ALL, MF_BYCOMMAND);
+				DeleteMenu (submenu, 0, MF_BYPOSITION);
 
 				POINT pt = {0};
 				GetCursorPos (&pt);
@@ -5837,20 +5812,6 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			switch (nmlp->code)
 			{
-				case NM_CLICK:
-				case NM_RETURN:
-				{
-					if (nmlp->idFrom == IDC_RULES_WIKI)
-					{
-						PNMLINK nmlink = (PNMLINK)lparam;
-
-						if (nmlink->item.szUrl)
-							ShellExecute (hwnd, nullptr, nmlink->item.szUrl, nullptr, nullptr, SW_SHOWDEFAULT);
-					}
-
-					break;
-				}
-
 				case NM_CUSTOMDRAW:
 				{
 					if (nmlp->idFrom != IDC_FILES_LV)
@@ -5929,6 +5890,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_app_listviewsort_appsrules (hwnd, IDC_FILES_LV);
 
+					break;
+				}
+
+				case IDC_WIKI:
+				{
+					ShellExecute (hwnd, nullptr, WIKI_URL, nullptr, nullptr, SW_SHOWDEFAULT);
 					break;
 				}
 
@@ -6058,6 +6025,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 				case IDD_SETTINGS_GENERAL:
 				{
 					CheckDlgButton (hwnd, IDC_ALWAYSONTOP_CHK, app.ConfigGet (L"AlwaysOnTop", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_STARTMINIMIZED_CHK, app.ConfigGet (L"IsStartMinimized", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
 #ifdef _APP_HAVE_AUTORUN
 					CheckDlgButton (hwnd, IDC_LOADONSTARTUP_CHK, app.AutorunIsEnabled () ? BST_CHECKED : BST_UNCHECKED);
@@ -6165,7 +6133,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					_r_listview_addgroup (hwnd, IDC_EDITOR, 1, nullptr, 0, LVGS_COLLAPSIBLE);
 					_r_listview_addgroup (hwnd, IDC_EDITOR, 2, nullptr, 0, LVGS_COLLAPSIBLE);
 
-					_app_listviewsetfont (hwnd, IDC_EDITOR);
+					_app_listviewsetfont (hwnd, IDC_EDITOR, false);
 
 					std::vector<PITEM_RULE> const* ptr_rules = nullptr;
 
@@ -6287,6 +6255,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 				case IDD_SETTINGS_GENERAL:
 				{
 					SetDlgItemText (hwnd, IDC_ALWAYSONTOP_CHK, app.LocaleString (IDS_ALWAYSONTOP_CHK, nullptr));
+					SetDlgItemText (hwnd, IDC_STARTMINIMIZED_CHK, app.LocaleString (IDS_STARTMINIMIZED_CHK, nullptr));
 					SetDlgItemText (hwnd, IDC_LOADONSTARTUP_CHK, app.LocaleString (IDS_LOADONSTARTUP_CHK, nullptr));
 					SetDlgItemText (hwnd, IDC_SKIPUACWARNING_CHK, app.LocaleString (IDS_SKIPUACWARNING_CHK, nullptr));
 					SetDlgItemText (hwnd, IDC_CHECKUPDATES_CHK, app.LocaleString (IDS_CHECKUPDATES_CHK, nullptr));
@@ -6310,7 +6279,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 							_r_listview_setitem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr));
 					}
 
-					_app_listviewsetfont (hwnd, IDC_COLORS);
+					_app_listviewsetfont (hwnd, IDC_COLORS, false);
 
 					break;
 				}
@@ -6324,7 +6293,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					SetDlgItemText (hwnd, IDC_USEFULLBLOCKLIST_CHK, app.LocaleString (IDS_USEFULLBLOCKLIST_CHK, L"*"));
 					SetDlgItemText (hwnd, IDC_USESTEALTHMODE_CHK, app.LocaleString (IDS_USESTEALTHMODE_CHK, L"*"));
 					SetDlgItemText (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, app.LocaleString (IDS_INSTALLBOOTTIMEFILTERS_CHK, L"*"));
-					SetDlgItemText (hwnd, IDC_PROXYSUPPORT_CHK, app.LocaleString (IDS_PROXYSUPPORT_CHK, L"* (win8+) [BETA]"));
+					SetDlgItemText (hwnd, IDC_PROXYSUPPORT_CHK, app.LocaleString (IDS_PROXYSUPPORT_CHK, L"* (win8+) [beta]"));
 
 					SetDlgItemText (hwnd, IDC_USEHOSTS_CHK, app.LocaleString (IDS_USEHOSTS_CHK, nullptr));
 					SetDlgItemText (hwnd, IDC_USECERTIFICATES_CHK, app.LocaleString (IDS_USECERTIFICATES_CHK, 0));
@@ -6421,7 +6390,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 					SetDlgItemText (hwnd, IDC_RULES_BLOCKLIST_HINT, app.LocaleString (IDS_RULES_BLOCKLIST_HINT, nullptr));
 					SetDlgItemText (hwnd, IDC_RULES_SYSTEM_HINT, app.LocaleString (IDS_RULES_SYSTEM_HINT, nullptr));
-					_r_ctrl_settext (hwnd, IDC_RULES_CUSTOM_HINT, app.LocaleString (IDS_RULES_CUSTOM_HINT, nullptr), WIKI_URL);
+					_r_ctrl_settext (hwnd, IDC_RULES_CUSTOM_HINT, app.LocaleString (IDS_RULES_USER_HINT, nullptr), WIKI_URL);
 
 					SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_RESETEMPTYTEXT, 0, 0);
 
@@ -6766,6 +6735,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					const HMENU submenu = GetSubMenu (menu, 0);
 
 					// localize
+					app.LocaleMenu (submenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, nullptr);
 					app.LocaleMenu (submenu, IDS_CHECK, IDM_CHECK, false, nullptr);
 					app.LocaleMenu (submenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
 
@@ -6806,6 +6776,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					switch (LOWORD (pmsg->wParam))
 					{
 						case IDC_ALWAYSONTOP_CHK:
+						case IDC_STARTMINIMIZED_CHK:
 						case IDC_LOADONSTARTUP_CHK:
 						case IDC_SKIPUACWARNING_CHK:
 						case IDC_CHECKUPDATES_CHK:
@@ -6838,6 +6809,10 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 							{
 								app.ConfigSet (L"AlwaysOnTop", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 								CheckMenuItem (GetMenu (app.GetHWND ()), IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | ((IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? MF_CHECKED : MF_UNCHECKED));
+							}
+							else if (ctrl_id == IDC_STARTMINIMIZED_CHK)
+							{
+								app.ConfigSet (L"IsStartMinimized", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 							}
 							else if (ctrl_id == IDC_LOADONSTARTUP_CHK)
 							{
@@ -7182,6 +7157,12 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 							_r_listview_redraw (hwnd, IDC_EDITOR);
 
+							break;
+						}
+
+						case IDM_SELECT_ALL:
+						{
+							ListView_SetItemState (GetDlgItem (hwnd, IDC_EDITOR), -1, LVIS_SELECTED, LVIS_SELECTED);
 							break;
 						}
 
@@ -8052,7 +8033,7 @@ void _app_generate_addmenu (HMENU submenu)
 	app.LocaleMenu (submenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
 	app.LocaleMenu (submenu, IDS_ADD_PROCESS, uproc_id, true, nullptr);
 	app.LocaleMenu (submenu, IDS_ADD_PACKAGE, upckg_id, true, nullptr);
-	app.LocaleMenu (submenu, IDS_ADD_SERVICE, usvc_id, true, nullptr);
+	app.LocaleMenu (submenu, IDS_ADD_SERVICE, usvc_id, true, L" [beta]");
 	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PROCESSES, false, _r_fmt (L" (%d)", processes.size ()));
 	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PACKAGES, false, _r_fmt (L" (%d)", packages.size ()));
 	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_SERVICES, false, _r_fmt (L" (%d)", services.size ()));
@@ -8316,7 +8297,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_listview_addgroup (hwnd, IDC_LISTVIEW, 1, app.LocaleString (IDS_GROUP_BLOCKED, nullptr), 0, LVGS_COLLAPSIBLE | (app.ConfigGet (L"Group2IsCollaped", false).AsBool () ? LVGS_COLLAPSED : LVGS_NORMAL));
 
 			_app_listviewsetimagelist (hwnd, IDC_LISTVIEW);
-			_app_listviewsetfont (hwnd, IDC_LISTVIEW);
+			_app_listviewsetfont (hwnd, IDC_LISTVIEW, true);
+
+			SendDlgItemMessage (hwnd, IDC_START_BTN, BCM_SETSHIELD, 0, TRUE);
+
+			{
+				RECT rc2 = {0};
+				rc2.left = rc2.right = app.GetDPI (4);
+
+				SendDlgItemMessage (hwnd, IDC_START_BTN, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
+			}
 
 			// load settings imagelist
 			{
@@ -8375,7 +8365,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				app.AddSettingsPage (IDD_SETTINGS_RULES_BLOCKLIST, IDS_TRAY_BLOCKLIST_RULES, &settings_callback, page_id);
 				app.AddSettingsPage (IDD_SETTINGS_RULES_SYSTEM, IDS_TRAY_SYSTEM_RULES, &settings_callback, page_id);
-				app.AddSettingsPage (IDD_SETTINGS_RULES_CUSTOM, IDS_TRAY_CUSTOM_RULES, &settings_callback, page_id);
+				app.AddSettingsPage (IDD_SETTINGS_RULES_CUSTOM, IDS_TRAY_USER_RULES, &settings_callback, page_id);
 			}
 
 			// dropped packets logging (win7+)
@@ -8733,11 +8723,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				app.LocaleMenu (submenu, IDS_TRAY_RULES, usettings_id, true, nullptr);
 				app.LocaleMenu (submenu, IDS_DISABLENOTIFICATIONS, IDM_DISABLENOTIFICATIONS, false, nullptr);
 				app.LocaleMenu (submenu, IDS_TIMER, utimer_id, true, nullptr);
-				app.LocaleMenu (submenu, IDS_NOTIMER, IDM_DISABLETIMER, false, nullptr);
+				app.LocaleMenu (submenu, IDS_DISABLETIMER, IDM_DISABLETIMER, false, nullptr);
 				app.LocaleMenu (submenu, IDS_REFRESH, IDM_REFRESH2, false, L"\tF5");
 				app.LocaleMenu (submenu, IDS_EXPLORE, IDM_EXPLORE, false, nullptr);
 				app.LocaleMenu (submenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
 				app.LocaleMenu (submenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
+				app.LocaleMenu (submenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, L"\tCtrl+A");
 				app.LocaleMenu (submenu, IDS_CHECK, IDM_CHECK, false, nullptr);
 				app.LocaleMenu (submenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
 
@@ -9372,22 +9363,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (ChooseFont (&cf))
 					{
-						if (config.hfont)
-						{
-							DeleteObject (config.hfont);
-							config.hfont = nullptr;
-						}
+						app.ConfigSet (L"Font", lf.lfFaceName[0] ? _r_fmt (L"%s;%d;%d", lf.lfFaceName, _r_dc_fontheighttosize (lf.lfHeight), lf.lfWeight) : UI_FONT_DEFAULT);
 
-						if (lf.lfFaceName[0])
-						{
-							app.ConfigSet (L"Font", _r_fmt (L"%s;%d;%d", lf.lfFaceName, _r_dc_fontheighttosize (lf.lfHeight), lf.lfWeight));
-						}
-						else
-						{
-							app.ConfigSet (L"Font", UI_FONT_DEFAULT);
-						}
-
-						_app_listviewsetfont (hwnd, IDC_LISTVIEW);
+						_app_listviewsetfont (hwnd, IDC_LISTVIEW, true);
 					}
 
 					break;
@@ -9636,11 +9614,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else if (LOWORD (wparam) == IDM_ALL_PACKAGES)
 					{
+						_app_generate_packages ();
+
 						for (size_t i = 0; i < packages.size (); i++)
 							_app_addapplication (hwnd, packages.at (i).sid, 0, false, false, true);
 					}
 					else if (LOWORD (wparam) == IDM_ALL_SERVICES)
 					{
+						_app_generate_services ();
+
 						for (size_t i = 0; i < services.size (); i++)
 							_app_addapplication (hwnd, services.at (i).service_name, 0, false, false, true);
 					}
