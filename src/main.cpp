@@ -1059,7 +1059,7 @@ void _app_generate_services ()
 					// now traverse each service to get information
 					for (DWORD i = 0; i < dwServicesReturned; i++)
 					{
-						//LPCWSTR display_name = (pServices + i)->lpDisplayName;
+						LPCWSTR display_name = (pServices + i)->lpDisplayName;
 						LPCWSTR service_name = (pServices + i)->lpServiceName;
 
 						WCHAR buffer[MAX_PATH] = {0};
@@ -1130,8 +1130,8 @@ void _app_generate_services ()
 						{
 							ITEM_ADD item = {0};
 
-							StringCchCopy (item.display_name, _countof (item.display_name), service_name);
 							StringCchCopy (item.service_name, _countof (item.service_name), service_name);
+							StringCchCopy (item.display_name, _countof (item.display_name), display_name);
 							StringCchCopy (item.real_path, _countof (item.real_path), real_path);
 							StringCchCopy (item.sid, _countof (item.sid), sidstring);
 							item.hash = _r_str_hash (item.service_name);
@@ -1152,7 +1152,7 @@ void _app_generate_services ()
 
 					std::sort (services.begin (), services.end (),
 						[](const ITEM_ADD& a, const ITEM_ADD& b)->bool {
-						return StrCmpLogicalW (a.display_name, b.display_name) == -1;
+						return StrCmpLogicalW (a.service_name, b.service_name) == -1;
 					});
 
 					delete[] pServices;
@@ -1552,11 +1552,11 @@ DWORD_PTR _app_getcolor (size_t hash, bool is_brush, HDC hdc)
 		if (hdc && hash == config.myhash && config.hfont_bold)
 			SelectObject (hdc, config.hfont_bold);
 
-		if (app.ConfigGet (L"IsHighlightInvalid", true).AsBool () && !_app_isexists (ptr_app))
-			color_value = L"ColorInvalid";
-
-		else if (app.ConfigGet (L"IsHighlightTimer", true).AsBool () && _app_istimeractive (hash))
+		if (app.ConfigGet (L"IsHighlightTimer", true).AsBool () && _app_istimeractive (hash))
 			color_value = L"ColorTimer";
+
+		else if (app.ConfigGet (L"IsHighlightInvalid", true).AsBool () && !_app_isexists (ptr_app))
+			color_value = L"ColorInvalid";
 
 		else if (app.ConfigGet (L"IsHighlightSpecial", true).AsBool () && _app_apphaverule (hash))
 			color_value = L"ColorSpecial";
@@ -3153,7 +3153,7 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 	_app_refreshstatus (hwnd, true, true);
 }
 
-void _app_profilesave (HWND, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
+void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
 {
 	// apps list
 	{
@@ -3166,27 +3166,62 @@ void _app_profilesave (HWND, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = n
 
 			const time_t current_time = _r_unixtime_now ();
 
-			for (auto &p : apps)
+			const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
+
+			if (count)
 			{
-				const size_t hash = p.first;
-
-				if (hash)
+				for (size_t i = 0; i < count; i++)
 				{
-					pugi::xml_node item = root.append_child (L"item");
+					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, i);
 
-					if (item)
+					if (hash)
 					{
-						PITEM_APP const ptr_app = &p.second;
+						pugi::xml_node item = root.append_child (L"item");
 
-						item.append_attribute (L"path").set_value (ptr_app->original_path);
-						item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
+						if (item)
+						{
+							PITEM_APP const ptr_app = _app_getapplication (hash);
 
-						// set timer (if presented)
-						if (_app_istimeractive (hash))
-							item.append_attribute (L"timer").set_value (apps_timer[hash]);
+							if (ptr_app)
+							{
+								item.append_attribute (L"path").set_value (ptr_app->original_path);
+								item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
 
-						item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
-						item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
+								// set timer (if presented)
+								if (_app_istimeractive (hash))
+									item.append_attribute (L"timer").set_value (apps_timer[hash]);
+
+								item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
+								item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				for (auto &p : apps)
+				{
+					const size_t hash = p.first;
+
+					if (hash)
+					{
+						pugi::xml_node item = root.append_child (L"item");
+
+						if (item)
+						{
+							PITEM_APP const ptr_app = &p.second;
+
+							item.append_attribute (L"path").set_value (ptr_app->original_path);
+							item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
+
+							// set timer (if presented)
+							if (_app_istimeractive (hash))
+								item.append_attribute (L"timer").set_value (apps_timer[hash]);
+
+							item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
+							item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
+						}
 					}
 				}
 			}
@@ -3196,7 +3231,7 @@ void _app_profilesave (HWND, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = n
 			doc.save_file (path_apps ? path_apps : config.apps_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (!path_apps && !apps.empty ())
+			if (!path_apps && !apps.empty () && app.ConfigGet (L"IsBackupProfile", true).AsBool ())
 				doc.save_file (_r_fmt (L"%s.bak", config.apps_path), L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 		}
 	}
@@ -3226,7 +3261,7 @@ void _app_profilesave (HWND, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = n
 			doc.save_file (config.rules_config_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (!rules_config.empty ())
+			if (!rules_config.empty () && app.ConfigGet (L"IsBackupProfile", true).AsBool ())
 				doc.save_file (_r_fmt (L"%s.bak", config.rules_config_path), L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 		}
 	}
@@ -3295,7 +3330,7 @@ void _app_profilesave (HWND, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = n
 			doc.save_file (path_rules ? path_rules : config.rules_custom_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (!path_rules && !rules_custom.empty ())
+			if (!path_rules && !rules_custom.empty () && app.ConfigGet (L"IsBackupProfile", true).AsBool ())
 				doc.save_file (_r_fmt (L"%s.bak", config.rules_custom_path), L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 		}
 	}
@@ -3725,14 +3760,13 @@ bool _app_logchecklimit ()
 
 	if (_r_fs_size (config.hlog) >= (limit * _R_BYTESIZE_KB))
 	{
-		//// make backup before log truncate
-		//if (app.ConfigGet (L"IsLogBackup", true).AsBool ())
-		//{
-		//	const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", PATH_LOG));
+		// make backup before log truncate
+		if (app.ConfigGet (L"IsBackupLog", true).AsBool ())
+		{
+			const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", PATH_LOG));
 
-		//	_r_fs_delete (path + L".bak");
-		//	_r_fs_copy (path, path + L".bak");
-		//}
+			_r_fs_copy (path, path + L".bak");
+		}
 
 		SetFilePointer (config.hlog, 2, nullptr, FILE_BEGIN);
 		SetEndOfFile (config.hlog);
@@ -3836,7 +3870,7 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 	if (port)
 		StringCchCat (dest, cchDest, _r_fmt (L":%d", port));
 
-	if (result && is_appenddns && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && _app_canihaveaccess ())
+	if (is_appenddns && result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && _app_canihaveaccess ())
 	{
 		WCHAR hostBuff[NI_MAXHOST] = {0};
 
@@ -3943,7 +3977,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN /*TimerOrWaitFired*/)
 
 	if (_app_timer_apply (hwnd, false))
 	{
-		_app_profilesave (nullptr);
+		_app_profilesave (hwnd);
 		_app_installfilters (false);
 	}
 }
@@ -3958,9 +3992,11 @@ bool _app_timer_apply (HWND hwnd, bool is_forceremove)
 
 	if (config.timer_low || config.htimer)
 	{
-		DeleteTimerQueueTimer (nullptr, config.htimer, nullptr);
-		config.htimer = nullptr;
-		config.timer_low = 0;
+		if (DeleteTimerQueueTimer (nullptr, config.htimer, nullptr))
+		{
+			config.htimer = nullptr;
+			config.timer_low = 0;
+		}
 	}
 
 	for (auto const &p : apps_timer)
@@ -4004,8 +4040,8 @@ bool _app_timer_apply (HWND hwnd, bool is_forceremove)
 
 	if (config.htimer)
 	{
-		DeleteTimerQueueTimer (nullptr, config.htimer, nullptr);
-		config.htimer = nullptr;
+		if (DeleteTimerQueueTimer (nullptr, config.htimer, nullptr))
+			config.htimer = nullptr;
 	}
 
 	if (is_forceremove)
@@ -4354,10 +4390,6 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 				{
 					ptr_app->is_silent = true;
 				}
-				//else if (command == CmdIgnore)
-				//{
-				//	no changes ;)
-				//}
 
 				_r_fastlock_releaseexclusive (&lock_access);
 
@@ -4519,8 +4551,6 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 
 			SendMessage (config.hnotification, WM_COMMAND, MAKEWPARAM (IDC_CREATERULE_ADDR_ID, 0), 0);
 			SendMessage (config.hnotification, WM_COMMAND, MAKEWPARAM (IDC_CREATERULE_PORT_ID, 0), 0);
-
-			//SetTimer (config.hnotification, NOTIFY_TIMER_FOREGROUND_ID, 250, nullptr);
 
 			ShowWindow (config.hnotification, is_forced ? SW_SHOW : SW_SHOWNA);
 
@@ -7951,12 +7981,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							_app_notifyhide (hwnd);
 						}
-						else if (nmlp->idFrom == IDC_ADDRESS_REMOTE_ID)
-						{
-						}
-						else if (nmlp->idFrom == IDC_ADDRESS_LOCAL_ID)
-						{
-						}
 					}
 
 					break;
@@ -8143,7 +8167,7 @@ void _app_generate_addmenu (HMENU submenu)
 				mii.cbSize = sizeof (mii);
 				mii.fMask = MIIM_ID | MIIM_CHECKMARKS | MIIM_STRING;
 				mii.fType = MFT_STRING;
-				mii.dwTypeData = services.at (i).display_name;
+				mii.dwTypeData = services.at (i).service_name;
 				mii.wID = IDX_SERVICE + UINT (i);
 				mii.hbmpChecked = config.hbitmap_service_small;
 				mii.hbmpUnchecked = config.hbitmap_service_small;
@@ -8502,7 +8526,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			else
 			{
 				if (!app.ConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION_EXIT, nullptr), L"ConfirmExit2"))
+				{
+					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 					return true;
+				}
 			}
 
 			DestroyWindow (hwnd);
@@ -9259,7 +9286,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					ofn.hwndOwner = hwnd;
 					ofn.lpstrFile = path;
 					ofn.nMaxFile = _countof (path);
-					ofn.lpstrFilter = L"*.xml\0*.xml\0\0";
+					ofn.lpstrFilter = L"*.xml\0*.xml\0*.*\0*.*\0\0";
 					ofn.lpstrDefExt = L"xml";
 					ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_PATHMUSTEXIST | OFN_FORCESHOWHIDDEN;
 
@@ -9438,7 +9465,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					//_app_profilesave (hwnd);
 					_app_profileload (hwnd);
-
 					_app_installfilters (false);
 
 					break;

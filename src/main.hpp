@@ -145,8 +145,8 @@ enum EnumRuleType
 {
 	TypeUnknown = 0,
 	TypeIp = 2,
-	TypePort = 4,
 	TypeHost = 1,
+	TypePort = 4,
 };
 
 enum EnumMode
