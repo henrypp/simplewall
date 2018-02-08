@@ -37,9 +37,14 @@
 
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;; CCRC;;;%s)"
 
-#define NA_TEXT L"<empty>"
-#define TAB_SPACE L"   "
-#define ERR_FORMAT L"%s() failed with error code 0x%.8lx (%s)"
+#define SZ_TAB L"   "
+#define SZ_EMPTY L"<empty>"
+#define SZ_REMOTE L"Remote"
+#define SZ_LOCAL L"Local"
+#define SZ_DIRECTION_IN L"IN"
+#define SZ_DIRECTION_OUT L"OUT"
+#define SZ_DIRECTION_LOOPBACK L"-Loopback"
+
 #define RULE_DELIMETER L";"
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
@@ -48,7 +53,7 @@
 #define LEN_HOST_MAX 512
 
 #define TIMER_DEFAULT 2
-#define TIMER_LOG_CALLBACK 2000
+#define TIMER_LOG_CALLBACK 4000
 
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"

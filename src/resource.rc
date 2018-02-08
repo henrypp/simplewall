@@ -197,10 +197,9 @@ IDM_LISTVIEW MENU
 		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_EXPLORE
 		MENUITEM " ", IDM_COPY
+		MENUITEM " ", IDM_SELECT_ALL
 		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_DELETE
-		MENUITEM SEPARATOR
-		MENUITEM " ", IDM_SELECT_ALL
 		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_CHECK
 		MENUITEM " ", IDM_UNCHECK
@@ -292,8 +291,8 @@ FONT 8, "Ms Shell Dlg"
 	GROUPBOX		"", IDC_TITLE_GENERAL, 4, 4, 262, 78
 
 	AUTOCHECKBOX	"", IDC_ALWAYSONTOP_CHK, 12, 16, 246, 10
-	AUTOCHECKBOX	"", IDC_STARTMINIMIZED_CHK, 12, 28, 246, 10
-	AUTOCHECKBOX	"", IDC_LOADONSTARTUP_CHK, 12, 40, 246, 10
+	AUTOCHECKBOX	"", IDC_LOADONSTARTUP_CHK, 12, 28, 246, 10
+	AUTOCHECKBOX	"", IDC_STARTMINIMIZED_CHK, 12, 40, 246, 10
 	AUTOCHECKBOX	"", IDC_SKIPUACWARNING_CHK, 12, 52, 246, 10
 	AUTOCHECKBOX	"", IDC_CHECKUPDATES_CHK, 12, 64, 246, 10
 
@@ -395,16 +394,6 @@ FONT 8, "Ms Shell Dlg"
 	CONTROL			"", IDC_NOTIFICATIONTIMEOUT, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK | UDS_SETBUDDYINT | UDS_WRAP, 0, 0, 0, 0
 }
 
-IDD_SETTINGS_SYSTEM DIALOGEX 107, 0, 272, 186
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU | WS_TABSTOP
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "Ms Shell Dlg"
-{
-	GROUPBOX		"", IDC_TITLE_GENERAL, 4, 4, 262, 74
-	AUTOCHECKBOX	"", IDC_SYSTEMDISABLENCSI_CHK, 12, 16, 246, 10
-	//AUTOCHECKBOX	"Disable Windows Firewall (recommended)", IDC_SYSTEMDISABLEFIREWALL_CHK, 12, 28, 246, 10
-}
-
 //
 // String resources
 //
@@ -420,7 +409,7 @@ STRINGTABLE
 	IDS_PURGE_UNUSED "Purge unused apps"
 	IDS_PURGE_ERRORS "Purge invalid apps"
 	IDS_PURGE_TIMERS "Purge timers"
-	IDS_FIND "Find..."
+	IDS_FIND "Find"
 	IDS_FINDNEXT "Find next"
 	IDS_REFRESH "Refresh"
 	IDS_VIEW "View"
@@ -429,7 +418,7 @@ STRINGTABLE
 	IDS_ICONSLARGE "Large"
 	IDS_ICONSISHIDDEN "Hide icons"
 	IDS_LANGUAGE "Language"
-	IDS_FONT "Font..."
+	IDS_FONT "Font"
 	IDS_HELP "Help"
 	IDS_WEBSITE "Website"
 	IDS_CHECKUPDATES "Check for updates"
@@ -469,9 +458,6 @@ STRINGTABLE
 	IDS_DELETE "Delete"
 	IDS_EXPORT "Export"
 	IDS_IMPORT "Import"
-
-	IDS_EXPORT_XML "Export"
-	IDS_IMPORT_XML "Import"
 
 	IDS_MODE_WHITELIST "Whitelist (allow selected)"
 	IDS_MODE_BLACKLIST "Blacklist (block selected)"
@@ -547,8 +533,8 @@ STRINGTABLE
 	IDS_TITLE_ADVANCED "Advanced"
 
 	IDS_ALWAYSONTOP_CHK "Always on top"
-	IDS_STARTMINIMIZED_CHK "Start minimized"
 	IDS_LOADONSTARTUP_CHK "Load on system startup"
+	IDS_STARTMINIMIZED_CHK "Start minimized"
 	IDS_SHOWFILENAMESONLY_CHK "Show filenames only"
 	IDS_AUTOSIZECOLUMNS_CHK "Autosize columns"
 	IDS_SKIPUACWARNING_CHK "Skip ""User Account Control"" prompt warning"
@@ -596,22 +582,18 @@ STRINGTABLE
 
 	IDS_NOTIFY_CREATERULE_ADDRESS "Create a rule for ""%s"" address"
 	IDS_NOTIFY_CREATERULE_PORT "Create a rule for ""%d"" port"
-	IDS_NOTIFY_CREATERULE_TEMP "Create temporary rule"
 	IDS_NOTIFY_DISABLENOTIFICATIONS "Disable notifications for this app"
 	IDS_NOTIFY_TOOLTIP "Create a special rule to allow access to address and/or port for this application."
 
-	IDS_SYSTEMDISABLENCSI_CHK "Disable Microsoft NCSI (recommended)"
-	IDS_SYSTEMDISABLENCSI_HINT_CHK "Windows check a Microsoft site for connectivity, using the NCSI (Network Connectivity Status Indicator) feature. NCSI performs a DNS lookup on ""www.msftncsi.com"" and sends a DNS lookup request for ""dns.msftncsi.com""."
-
 	IDS_QUESTION "Are you sure?"
 	IDS_QUESTION_DELETE "Delete %d item(s)?"
-	IDS_QUESTION_START "This will forbid network access for apps accordingly selected configuration! Do you want to continue?"
-	IDS_QUESTION_STOP "This will restore network access for all blocked apps! Do you want to continue?"
+	IDS_QUESTION_START "This will forbid network access for apps accordingly selected configuration, continue?"
+	IDS_QUESTION_STOP "This will restore network access for all blocked apps, continue?"
 	IDS_QUESTION_MODE "Change mode to a ""%s""?"
-	IDS_QUESTION_EXIT "Do you want to exit? All current installed filters are still works, even if you exit."
-	IDS_QUESTION_LISTEN "Disabling listen connections <a href=""%s"">can cause software freezes</a>, disable option?"
-	IDS_QUESTION_EXPERT "This option definitely for advanced users only! Do you want to continue?"
-	IDS_QUESTION_TIMER "One or more timers are active, exit?"
+	IDS_QUESTION_EXIT "Installed filters will work even if you exit, continue?"
+	IDS_QUESTION_LISTEN "Disabling listen connections <a href=""%s"">can cause software freezes</a>, continue?"
+	IDS_QUESTION_EXPERT "This option definitely for advanced users only, continue?"
+	IDS_QUESTION_TIMER "Timer activated. Timer are working only when application is running, exit?"
 	IDS_QUESTION_TIMERS "Delete all timer(s)?"
 	IDS_QUESTION_FLAG_CHK "Do not ask again"
 
