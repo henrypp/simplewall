@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <!-- Block spying and tracking on Windows -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
-<!-- Date: Thu, 25 Jan 2018 15:53:36 +0000 -->
-<root timestamp="1516895616">
+<!-- Date: Sun, 11 Feb 2018 05:18:59 +0000 -->
+<root timestamp="1518326339">
 	<item name="extra_13.78.235.247" rule="13.78.235.247" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
+	<item name="extra_13.79.239.69" rule="13.79.239.69" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="extra_13.80.12.54" rule="13.80.12.54" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="extra_13.107.3.128" rule="13.107.3.128" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="extra_13.107.13.88" rule="13.107.13.88" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
@@ -315,6 +316,7 @@
 	<item name="update_13.68.87.175" rule="13.68.87.175" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_13.74.179.117" rule="13.74.179.117" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_13.78.184.44" rule="13.78.184.44" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
+	<item name="update_13.78.230.134" rule="13.78.230.134" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_13.107.4.50" rule="13.107.4.50" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_13.107.4.52" rule="13.107.4.52" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
 	<item name="update_23.103.189.125" rule="23.103.189.125" dir="0" type="2" protocol="0" version="0" is_block="true" is_extra="true" is_enabled="false" />
