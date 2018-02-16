@@ -1,4 +1,4 @@
-v2.2 Beta (x February 2018)
+v2.2 Beta (x March 2018)
 + new notification ui
 + now simplewall added to the apps list automatically (issue #106)
 + added windows services support [beta] (issue #88)
@@ -6,6 +6,7 @@ v2.2 Beta (x February 2018)
 + more sensitive notifications (issue #107)
 + lock-free dropped events callback (win7+)
 + added group total items count indication
++ added block action for notifications (issue #123)
 + automatic profile backup (issue #110)
 + added network address resolution
 + make internal apps undeletable
@@ -27,6 +28,7 @@ v2.2 Beta (x February 2018)
 - stability improvements
 - updated default colors
 - updated localization
+- fixed dropped events callback failure (win10 rs3 and above) (issue #121)
 - fixed steal focus at startup and when notification displaying
 - fixed working under blacklist mode
 - fixed multi-monitor support

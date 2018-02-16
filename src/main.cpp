@@ -4218,6 +4218,10 @@ void _app_notifycreatewindow ()
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, BM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_ALLOW), cxsmIcon));
 
+			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | /*WS_VISIBLE | */BS_PUSHBUTTON, wnd_width - btn_width - app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width, app.GetDPI (24), config.hnotification, (HMENU)IDC_BLOCK_BTN, nullptr, nullptr);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
+			SendMessage (hwnd, BM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_BLOCK), cxsmIcon));
+
 			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, wnd_width - btn_width - app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width, app.GetDPI (24), config.hnotification, (HMENU)IDC_IGNORE_BTN, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			//SendMessage (hwnd, BM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_BLOCK), cxsmIcon));
@@ -4227,7 +4231,7 @@ void _app_notifycreatewindow ()
 				rc2.left = rc2.right = app.GetDPI (4);
 
 				SendDlgItemMessage (config.hnotification, IDC_ALLOW_BTN, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
-				//SendDlgItemMessage (config.hnotification, IDC_IGNORE_BTN, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
+				SendDlgItemMessage (config.hnotification, IDC_BLOCK_BTN, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
 			}
 
 			_r_ctrl_settip (config.hnotification, IDC_MUTE_BTN, LPSTR_TEXTCALLBACK);
@@ -4294,10 +4298,10 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 
 			if (ptr_app)
 			{
-				if (command == CmdAllow)
+				if (command == CmdAllow || command == CmdBlock)
 				{
-					const bool is_createaddrrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_ADDR_ID) == BST_CHECKED);
-					const bool is_createportrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED) && ptr_log->remote_port;
+					const bool is_createaddrrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_ADDR_ID) == BST_CHECKED) && IsWindowEnabled (GetDlgItem (hwnd, IDC_CREATERULE_ADDR_ID));
+					const bool is_createportrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED) && IsWindowEnabled (GetDlgItem (hwnd, IDC_CREATERULE_PORT_ID));
 
 					// just create rule
 					if (is_createaddrrule || is_createportrule)
@@ -4325,7 +4329,7 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 
 							if (rule_ptr)
 							{
-								if (!rule_ptr->is_block && rule_ptr->prule && _wcsnicmp (rule_ptr->prule, rule, rule_length) == 0)
+								if (rule_ptr->prule && _wcsnicmp (rule_ptr->prule, rule, rule_length) == 0)
 								{
 									rule_id = i;
 									break;
@@ -4353,7 +4357,7 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 									StringCchCopy (ptr_rule->prule, rule_length, rule);
 
 								ptr_rule->dir = ptr_log->direction;
-								ptr_rule->is_block = false;
+								ptr_rule->is_block = (command == CmdBlock);
 								ptr_rule->is_enabled = true;
 
 								rules_custom.push_back (ptr_rule);
@@ -4363,6 +4367,7 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 						else
 						{
 							// modify rule
+							rules_custom.at (rule_id)->is_block = (command == CmdBlock);
 							rules_custom.at (rule_id)->is_enabled = true;
 						}
 
@@ -4415,7 +4420,7 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 				{
 					_app_profilesave (app.GetHWND ());
 
-					if (command == CmdAllow)
+					if (command == CmdAllow || command == CmdBlock)
 						_app_installfilters (false);
 
 					else
@@ -4527,8 +4532,9 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 			_r_ctrl_enable (config.hnotification, IDC_CREATERULE_ADDR_ID, is_addressset);
 			_r_ctrl_enable (config.hnotification, IDC_CREATERULE_PORT_ID, ptr_log->remote_port != 0);
 
-			_r_ctrl_settext (config.hnotification, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_1, nullptr));
-			_r_ctrl_settext (config.hnotification, IDC_IGNORE_BTN, app.LocaleString (IDS_ACTION_3, nullptr));
+			_r_ctrl_settext (config.hnotification, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
+			_r_ctrl_settext (config.hnotification, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
+			_r_ctrl_settext (config.hnotification, IDC_IGNORE_BTN, app.LocaleString (IDS_ACTION_IGNORE, nullptr));
 
 			// timers
 			SendDlgItemMessage (config.hnotification, IDC_TIMER_CB, CB_RESETCONTENT, 0, 0);
@@ -5558,7 +5564,7 @@ BOOL initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
 			_r_wnd_addstyle (hwnd, IDC_EXIT_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 			_r_wnd_addstyle (config.hnotification, IDC_ALLOW_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-			//_r_wnd_addstyle (config.hnotification, IDC_BLOCK_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
+			_r_wnd_addstyle (config.hnotification, IDC_BLOCK_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (config.hnotification, IDC_IGNORE_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 			_app_refreshstatus (hwnd, true, true);
@@ -5790,8 +5796,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 
 			// action
-			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_ACTION_1, nullptr).GetString ());
-			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_INSERTSTRING, 1, (LPARAM)app.LocaleString (IDS_ACTION_2, nullptr).GetString ());
+			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_ACTION_ALLOW, nullptr).GetString ());
+			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_INSERTSTRING, 1, (LPARAM)app.LocaleString (IDS_ACTION_BLOCK, nullptr).GetString ());
 
 			if (ptr_rule)
 				SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->is_block, 0);
@@ -7176,8 +7182,10 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 							if (ptr_rules)
 							{
 								const bool new_val = (LOWORD (pmsg->wParam) == IDM_CHECK) ? true : false;
+								bool is_changed = false;
 
 								size_t item = LAST_VALUE;
+
 
 								_r_fastlock_acquireexclusive (&lock_access);
 
@@ -7190,6 +7198,9 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 									if (ptr_rule)
 									{
 										ptr_rule->is_enabled = new_val;
+
+										if (!is_changed && _r_listview_isitemchecked (hwnd, IDC_EDITOR, item) != new_val)
+											is_changed = true;
 
 										config.is_nocheckboxnotify = true;
 
@@ -7204,8 +7215,11 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 								_r_fastlock_releaseexclusive (&lock_access);
 
-								_app_profilesave (app.GetHWND ());
-								_app_installfilters (false);
+								if (is_changed)
+								{
+									_app_profilesave (app.GetHWND ());
+									_app_installfilters (false);
+								}
 
 								settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
 							}
@@ -7304,7 +7318,7 @@ bool _wfp_logsubscribe ()
 			FWPMNES1 _FwpmNetEventSubscribe1 = nullptr;
 			FWPMNES0 _FwpmNetEventSubscribe0 = nullptr;
 
-			// win10 redstone 4 temporary bug solution
+			// win10 redstone 3 FwpmNetEventSubscribe2 callback does not worked as well, temporary bug solution (issue #122)
 			if (!_r_sys_validversion (10, 0, 16251))
 				_FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hlib, "FwpmNetEventSubscribe2"); // win10+
 
@@ -7964,14 +7978,16 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				{
 					const bool is_enabled = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_ADDR_ID) == BST_CHECKED) || (IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED);
 
-					SetDlgItemText (hwnd, IDC_ALLOW_BTN, app.LocaleString (is_enabled ? IDS_ACTION_4 : IDS_ACTION_1, nullptr));
+					ShowWindow (GetDlgItem (hwnd, IDC_BLOCK_BTN), is_enabled ? SW_SHOWNA : SW_HIDE);
+					ShowWindow (GetDlgItem (hwnd, IDC_IGNORE_BTN), !is_enabled ? SW_SHOWNA : SW_HIDE);
 
 					break;
 				}
 
 				case IDC_ALLOW_BTN:
+				case IDC_BLOCK_BTN:
 				{
-					_app_notifycommand (hwnd, CmdAllow);
+					_app_notifycommand (hwnd, LOWORD (wparam) == IDC_ALLOW_BTN ? CmdAllow : CmdBlock);
 					break;
 				}
 
@@ -8015,7 +8031,7 @@ void _app_generate_addmenu (HMENU submenu)
 
 	app.LocaleMenu (submenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
 	app.LocaleMenu (submenu, IDS_ADD_PROCESS, uproc_id, true, nullptr);
-	app.LocaleMenu (submenu, IDS_ADD_PACKAGE, upckg_id, true, nullptr);
+	app.LocaleMenu (submenu, IDS_ADD_PACKAGE, upckg_id, true, _r_sys_validversion (6, 2) ? nullptr : L" [win8+]");
 	app.LocaleMenu (submenu, IDS_ADD_SERVICE, usvc_id, true, L" [beta]");
 	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PROCESSES, false, _r_fmt (L" (%d)", processes.size ()));
 	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PACKAGES, false, _r_fmt (L" (%d)", packages.size ()));
@@ -8031,7 +8047,8 @@ void _app_generate_addmenu (HMENU submenu)
 			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
 
 			mii.cbSize = sizeof (mii);
-			mii.fMask = MIIM_STATE | MIIM_STRING;
+			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
+			mii.fType = MFT_STRING;
 			mii.dwTypeData = buffer;
 			mii.fState = MF_DISABLED | MF_GRAYED;
 
@@ -8046,12 +8063,11 @@ void _app_generate_addmenu (HMENU submenu)
 				MENUITEMINFO mii = {0};
 
 				mii.cbSize = sizeof (mii);
-				mii.fMask = MIIM_ID | MIIM_CHECKMARKS | MIIM_STRING;
+				mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
 				mii.fType = MFT_STRING;
 				mii.dwTypeData = processes.at (i).display_name;
 				mii.wID = IDX_PROCESS + UINT (i);
-				mii.hbmpChecked = processes.at (i).hbmp;
-				mii.hbmpUnchecked = processes.at (i).hbmp;
+				mii.hbmpItem = processes.at (i).hbmp;
 
 				InsertMenuItem (submenu_process, IDX_PROCESS + UINT (i), FALSE, &mii);
 			}
@@ -8076,12 +8092,11 @@ void _app_generate_addmenu (HMENU submenu)
 				MENUITEMINFO mii = {0};
 
 				mii.cbSize = sizeof (mii);
-				mii.fMask = MIIM_ID | MIIM_CHECKMARKS | MIIM_STRING;
+				mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
 				mii.fType = MFT_STRING;
 				mii.dwTypeData = packages.at (i).display_name;
 				mii.wID = IDX_PACKAGE + UINT (i);
-				mii.hbmpChecked = config.hbitmap_package_small;
-				mii.hbmpUnchecked = config.hbitmap_package_small;
+				mii.hbmpItem = config.hbitmap_package_small;
 
 				InsertMenuItem (submenu_package, IDX_PACKAGE + UINT (i), FALSE, &mii);
 				total_added += 1;
@@ -8096,7 +8111,8 @@ void _app_generate_addmenu (HMENU submenu)
 			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
 
 			mii.cbSize = sizeof (mii);
-			mii.fMask = MIIM_STATE | MIIM_STRING;
+			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
+			mii.fType = MFT_STRING;
 			mii.dwTypeData = buffer;
 			mii.fState = MF_DISABLED | MF_GRAYED;
 
@@ -8124,12 +8140,11 @@ void _app_generate_addmenu (HMENU submenu)
 				MENUITEMINFO mii = {0};
 
 				mii.cbSize = sizeof (mii);
-				mii.fMask = MIIM_ID | MIIM_CHECKMARKS | MIIM_STRING;
+				mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
 				mii.fType = MFT_STRING;
 				mii.dwTypeData = services.at (i).service_name;
 				mii.wID = IDX_SERVICE + UINT (i);
-				mii.hbmpChecked = config.hbitmap_service_small;
-				mii.hbmpUnchecked = config.hbitmap_service_small;
+				mii.hbmpItem = config.hbitmap_service_small;
 
 				InsertMenuItem (submenu_service, IDX_SERVICE + UINT (i), FALSE, &mii);
 				total_added += 1;
@@ -8144,7 +8159,8 @@ void _app_generate_addmenu (HMENU submenu)
 			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
 
 			mii.cbSize = sizeof (mii);
-			mii.fMask = MIIM_STATE | MIIM_STRING;
+			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
+			mii.fType = MFT_STRING;
 			mii.dwTypeData = buffer;
 			mii.fState = MF_DISABLED | MF_GRAYED;
 
@@ -8780,13 +8796,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									bool is_checked = (ptr_rule->is_enabled && !ptr_rule->apps.empty () && (ptr_rule->apps.find (hash) != ptr_rule->apps.end ()));
 
 									WCHAR buffer[128] = {0};
-									StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY, nullptr), app.LocaleString (ptr_rule->is_block ? IDS_ACTION_2 : IDS_ACTION_1, nullptr).GetString (), ptr_rule->pname);
+									StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY, nullptr), app.LocaleString (ptr_rule->is_block ? IDS_ACTION_BLOCK : IDS_ACTION_ALLOW, nullptr).GetString (), ptr_rule->pname);
 
 									if (selected_count > 1)
 										StringCchCat (buffer, _countof (buffer), _r_fmt (L" (%d)", selected_count));
 
 									mii.cbSize = sizeof (mii);
-									mii.fMask = MIIM_ID | MIIM_STATE | MIIM_STRING;
+									mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
 									mii.fType = MFT_STRING;
 									mii.dwTypeData = buffer;
 									mii.fState = (is_checked ? MF_CHECKED : MF_UNCHECKED);
@@ -8815,7 +8831,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							StringCchCopy (buffer, _countof (buffer), _r_fmt_interval (timers.at (i)));
 
 							mii.cbSize = sizeof (mii);
-							mii.fMask = MIIM_ID | MIIM_STRING;
+							mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STRING;
 							mii.fType = MFT_STRING;
 							mii.dwTypeData = buffer;
 							mii.wID = IDX_TIMER + UINT (i);

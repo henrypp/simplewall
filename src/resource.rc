@@ -509,10 +509,9 @@ STRINGTABLE
 	IDS_DIRECTION_2 "Inbound"
 	IDS_DIRECTION_3 "Both"
 
-	IDS_ACTION_1 "Allow"
-	IDS_ACTION_2 "Block"
-	IDS_ACTION_3 "Ignore"
-	IDS_ACTION_4 "Apply"
+	IDS_ACTION_ALLOW "Allow"
+	IDS_ACTION_BLOCK "Block"
+	IDS_ACTION_IGNORE "Ignore"
 
 	IDS_RULE_APPLY "[%s] ""%s"" for selected apps"
 
