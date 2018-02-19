@@ -462,52 +462,12 @@ LPCWSTR _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app)
 	}
 	else if (ptr_app->type == AppService)
 	{
-		//rstring display_name;
-		//_app_item_get (&services, hash, &display_name, nullptr, nullptr, nullptr, nullptr);
-
-		//return display_name;
 		return ptr_app->original_path;
 	}
 	else
 	{
-		if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
-			return _r_path_extractfile (ptr_app->real_path);
-
-		else
-			return ptr_app->real_path;
+		return app.ConfigGet (L"ShowFilenames", true).AsBool () ? _r_path_extractfile (ptr_app->real_path) : ptr_app->real_path;
 	}
-
-	//const UINT display_mode = app.ConfigGet (L"DisplayMode", 0).AsUint ();
-
-	//if (ptr_app->type == AppService || ptr_app->type == AppStore)
-	//{
-	//	rstring display_name;
-	//	_app_item_get (&services, hash, &display_name, nullptr, nullptr, nullptr, nullptr);
-
-	//	return display_name;
-	//}
-
-	//if (display_mode == 2) // description
-	//{
-	//	if (cache_description.find (hash) != cache_description.end ())
-	//	{
-	//		if (cache_description[hash])
-	//			return cache_description[hash];
-	//	}
-
-	//	cache_description[hash] = nullptr;
-	//}
-
-	//if (display_mode == 1) // fullpath
-	//{
-	//	return ptr_app->real_path;
-	//}
-	//else /*(display_mode == 0) // filename*/
-	//{
-	//	return _r_path_extractfile (ptr_app->real_path);
-	//}
-
-	//return L"n/a";
 }
 
 bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
@@ -4720,7 +4680,7 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 	}
 }
 
-void CALLBACK _app_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_loopback)
+void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_loopback)
 {
 	const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
 	const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
@@ -4744,181 +4704,186 @@ void CALLBACK _app_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 	PITEM_LIST_ENTRY ptr_entry = (PITEM_LIST_ENTRY)_aligned_malloc (sizeof (ITEM_LIST_ENTRY), MEMORY_ALLOCATION_ALIGNMENT);
 
-	if (!ptr_entry)
-		return;
-
-	PITEM_LOG ptr_log = new ITEM_LOG;
-
-	if (!ptr_log)
-		return;
-
-	// get package id (win8+)
-	LPWSTR sidstring = nullptr;
-
-	if (package_id)
+	if (ptr_entry)
 	{
-		if (ConvertSidToStringSid (package_id, &sidstring))
+		PITEM_LOG ptr_log = new ITEM_LOG;
+
+		if (!ptr_log)
 		{
-			if (!_app_item_get (&packages, _r_str_hash (sidstring), nullptr, nullptr, nullptr, nullptr, nullptr))
-			{
-				LocalFree (sidstring);
-				sidstring = nullptr;
-			}
-		}
-	}
-
-	// copy converted nt device path into win32
-	if (sidstring)
-	{
-		StringCchCopy (ptr_log->path, _countof (ptr_log->path), sidstring);
-		ptr_log->hash = _r_str_hash (ptr_log->path);
-
-		LocalFree (sidstring);
-		sidstring = nullptr;
-	}
-	else if (app_id)
-	{
-		StringCchCopy (ptr_log->path, _countof (ptr_log->path), _r_path_dospathfromnt (LPCWSTR (app_id)));
-		ptr_log->hash = _r_str_hash (ptr_log->path);
-	}
-	else
-	{
-		StringCchCopy (ptr_log->path, _countof (ptr_log->path), SZ_EMPTY);
-		ptr_log->hash = 0;
-	}
-
-	if (is_logenabled || is_notificationenabled)
-	{
-		// copy date and time
-		if (pft)
-			ptr_log->date = _r_unixtime_from_filetime (pft);
-
-		// get username (only if log enabled)
-		if (is_logenabled)
-		{
-			if ((flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) != 0 && user_id)
-			{
-				SID_NAME_USE sid_type = SidTypeInvalid;
-
-				WCHAR username[MAX_PATH] = {0};
-				WCHAR domain[MAX_PATH] = {0};
-
-				DWORD length1 = _countof (username);
-				DWORD length2 = _countof (domain);
-
-				if (LookupAccountSid (nullptr, user_id, username, &length1, domain, &length2, &sid_type) && length1 && length2)
-					StringCchPrintf (ptr_log->username, _countof (ptr_log->username), L"%s\\%s", domain, username);
-
-				else
-					StringCchCopy (ptr_log->username, _countof (ptr_log->username), SZ_EMPTY);
-			}
-			else
-			{
-				StringCchCopy (ptr_log->username, _countof (ptr_log->username), SZ_EMPTY);
-			}
+			_aligned_free (ptr_entry);
+			return;
 		}
 
-		// read filter information
-		if (filter_id)
+		// get package id (win8+)
+		LPWSTR sidstring = nullptr;
+
+		if (package_id)
 		{
-			bool is_filternameset = false;
-
-			FWPM_FILTER* filter = nullptr;
-			FWPM_PROVIDER* provider = nullptr;
-
-			if (FwpmFilterGetById (config.hengine, filter_id, &filter) == ERROR_SUCCESS)
+			if (ConvertSidToStringSid (package_id, &sidstring))
 			{
-				StringCchCopy (ptr_log->filter_name, _countof (ptr_log->filter_name), (filter->displayData.description ? filter->displayData.description : filter->displayData.name));
-
-				if (filter->providerKey)
+				if (!_app_item_get (&packages, _r_str_hash (sidstring), nullptr, nullptr, nullptr, nullptr, nullptr))
 				{
-					if (memcmp (filter->providerKey, &GUID_WfpProvider, sizeof (GUID)) == 0)
-						ptr_log->is_myprovider = true;
+					LocalFree (sidstring);
+					sidstring = nullptr;
+				}
+			}
+		}
 
-					if (filter->weight.type == FWP_UINT8 && filter->weight.uint8 == FILTER_WEIGHT_BLOCKLIST)
-						ptr_log->is_blocklist = true;
+		// copy converted nt device path into win32
+		if (sidstring)
+		{
+			StringCchCopy (ptr_log->path, _countof (ptr_log->path), sidstring);
+			ptr_log->hash = _r_str_hash (ptr_log->path);
 
-					if (FwpmProviderGetByKey (config.hengine, filter->providerKey, &provider) == ERROR_SUCCESS)
-					{
-						StringCchCopy (ptr_log->provider_name, _countof (ptr_log->provider_name), (provider->displayData.description ? provider->displayData.description : provider->displayData.name));
-						is_filternameset = true;
-					}
+			LocalFree (sidstring);
+			sidstring = nullptr;
+		}
+		else if (app_id)
+		{
+			StringCchCopy (ptr_log->path, _countof (ptr_log->path), _r_path_dospathfromnt (LPCWSTR (app_id)));
+			ptr_log->hash = _r_str_hash (ptr_log->path);
+
+			_app_applycasestyle (ptr_log->path, wcslen (ptr_log->path)); // apply case-style
+		}
+		else
+		{
+			StringCchCopy (ptr_log->path, _countof (ptr_log->path), SZ_EMPTY);
+			ptr_log->hash = 0;
+		}
+
+		if (is_logenabled || is_notificationenabled)
+		{
+			// copy date and time
+			if (pft)
+				ptr_log->date = _r_unixtime_from_filetime (pft);
+
+			// get username (only if log enabled)
+			if (is_logenabled)
+			{
+				if ((flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) != 0 && user_id)
+				{
+					SID_NAME_USE sid_type = SidTypeInvalid;
+
+					WCHAR username[MAX_PATH] = {0};
+					WCHAR domain[MAX_PATH] = {0};
+
+					DWORD length1 = _countof (username);
+					DWORD length2 = _countof (domain);
+
+					if (LookupAccountSid (nullptr, user_id, username, &length1, domain, &length2, &sid_type) && length1 && length2)
+						StringCchPrintf (ptr_log->username, _countof (ptr_log->username), L"%s\\%s", domain, username);
+
+					else
+						StringCchCopy (ptr_log->username, _countof (ptr_log->username), SZ_EMPTY);
+				}
+				else
+				{
+					StringCchCopy (ptr_log->username, _countof (ptr_log->username), SZ_EMPTY);
 				}
 			}
 
-			if (filter)
-				FwpmFreeMemory ((LPVOID*)&filter);
+			// read filter information
+			if (filter_id)
+			{
+				bool is_filternameset = false;
 
-			if (provider)
-				FwpmFreeMemory ((LPVOID*)&provider);
+				FWPM_FILTER* filter = nullptr;
+				FWPM_PROVIDER* provider = nullptr;
 
-			if (!is_filternameset)
-				StringCchPrintf (ptr_log->filter_name, _countof (ptr_log->filter_name), L"#%llu", filter_id);
+				if (FwpmFilterGetById (config.hengine, filter_id, &filter) == ERROR_SUCCESS)
+				{
+					StringCchCopy (ptr_log->filter_name, _countof (ptr_log->filter_name), (filter->displayData.description ? filter->displayData.description : filter->displayData.name));
+
+					if (filter->providerKey)
+					{
+						if (memcmp (filter->providerKey, &GUID_WfpProvider, sizeof (GUID)) == 0)
+							ptr_log->is_myprovider = true;
+
+						if (filter->weight.type == FWP_UINT8 && filter->weight.uint8 == FILTER_WEIGHT_BLOCKLIST)
+							ptr_log->is_blocklist = true;
+
+						if (FwpmProviderGetByKey (config.hengine, filter->providerKey, &provider) == ERROR_SUCCESS)
+						{
+							StringCchCopy (ptr_log->provider_name, _countof (ptr_log->provider_name), (provider->displayData.description ? provider->displayData.description : provider->displayData.name));
+							is_filternameset = true;
+						}
+					}
+				}
+
+				if (filter)
+					FwpmFreeMemory ((LPVOID*)&filter);
+
+				if (provider)
+					FwpmFreeMemory ((LPVOID*)&provider);
+
+				if (!is_filternameset)
+					StringCchPrintf (ptr_log->filter_name, _countof (ptr_log->filter_name), L"#%llu", filter_id);
+			}
+
+			// destination
+			{
+				// ipv4 address
+				if (ipver == FWP_IP_VERSION_V4)
+				{
+					ptr_log->af = AF_INET;
+
+					// remote address
+					ptr_log->remote_addr.S_un.S_addr = ntohl (remote_addr);
+
+					if (remoteport)
+						ptr_log->remote_port = remoteport;
+
+					// local address
+					ptr_log->local_addr.S_un.S_addr = ntohl (local_addr);
+
+					if (localport)
+						ptr_log->local_port = localport;
+				}
+				else if (ipver == FWP_IP_VERSION_V6)
+				{
+					ptr_log->af = AF_INET6;
+
+					// remote address
+					memcpy (ptr_log->remote_addr6.u.Byte, remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
+
+					if (remoteport)
+						ptr_log->remote_port = remoteport;
+
+					// local address
+					memcpy (&ptr_log->local_addr6.u.Byte, local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
+
+					if (localport)
+						ptr_log->local_port = localport;
+				}
+			}
+
+			// protocol
+			ptr_log->protocol = proto;
+
+			// indicates whether the packet originated from (or was heading to) the loopback adapter
+			ptr_log->is_loopback = is_loopback;
+
+			// indicates the direction of the packet transmission
+			if (direction == FWP_DIRECTION_OUTBOUND || direction == FWP_DIRECTION_OUT)
+				ptr_log->direction = FWP_DIRECTION_OUTBOUND;
+
+			else if (direction == FWP_DIRECTION_INBOUND || direction == FWP_DIRECTION_IN)
+				ptr_log->direction = FWP_DIRECTION_INBOUND;
 		}
 
-		// destination
+		// push to lock-free stack
 		{
-			// ipv4 address
-			if (ipver == FWP_IP_VERSION_V4)
-			{
-				ptr_log->af = AF_INET;
+			ptr_entry->Body = (LONG_PTR)ptr_log;
 
-				// remote address
-				ptr_log->remote_addr.S_un.S_addr = ntohl (remote_addr);
+			InterlockedPushEntrySList (log_stack, &ptr_entry->ListEntry);
 
-				if (remoteport)
-					ptr_log->remote_port = remoteport;
-
-				// local address
-				ptr_log->local_addr.S_un.S_addr = ntohl (local_addr);
-
-				if (localport)
-					ptr_log->local_port = localport;
-			}
-			else if (ipver == FWP_IP_VERSION_V6)
-			{
-				ptr_log->af = AF_INET6;
-
-				// remote address
-				memcpy (ptr_log->remote_addr6.u.Byte, remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-
-				if (remoteport)
-					ptr_log->remote_port = remoteport;
-
-				// local address
-				memcpy (&ptr_log->local_addr6.u.Byte, local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-
-				if (localport)
-					ptr_log->local_port = localport;
-			}
+			SetEvent (config.log_evt);
 		}
-
-		// protocol
-		ptr_log->protocol = proto;
-
-		// indicates whether the packet originated from (or was heading to) the loopback adapter
-		ptr_log->is_loopback = is_loopback;
-
-		// indicates the direction of the packet transmission
-		if (direction == FWP_DIRECTION_OUTBOUND || direction == FWP_DIRECTION_OUT)
-			ptr_log->direction = FWP_DIRECTION_OUTBOUND;
-
-		else if (direction == FWP_DIRECTION_INBOUND || direction == FWP_DIRECTION_IN)
-			ptr_log->direction = FWP_DIRECTION_INBOUND;
-	}
-
-	// push to lock-free stack
-	{
-		ptr_entry->Body = (LONG_PTR)ptr_log;
-
-		InterlockedPushEntrySList (log_stack, &ptr_entry->ListEntry);
-
-		SetEvent (config.log_evt);
 	}
 }
 
 // win7 callback
-void CALLBACK _app_logcallback0 (LPVOID, const FWPM_NET_EVENT1 *pEvent)
+void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 *pEvent)
 {
 	if (pEvent)
 	{
@@ -4945,12 +4910,12 @@ void CALLBACK _app_logcallback0 (LPVOID, const FWPM_NET_EVENT1 *pEvent)
 			return;
 		}
 
-		_app_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_loopback);
 	}
 }
 
 // win8 callback
-void CALLBACK _app_logcallback1 (LPVOID, const FWPM_NET_EVENT2 *pEvent)
+void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 *pEvent)
 {
 	if (pEvent)
 	{
@@ -4984,12 +4949,12 @@ void CALLBACK _app_logcallback1 (LPVOID, const FWPM_NET_EVENT2 *pEvent)
 			return;
 		}
 
-		_app_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_loopback);
 	}
 }
 
 // win10 callback
-void CALLBACK _app_logcallback2 (LPVOID, const FWPM_NET_EVENT3 *pEvent)
+void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 *pEvent)
 {
 	if (pEvent)
 	{
@@ -5023,7 +4988,7 @@ void CALLBACK _app_logcallback2 (LPVOID, const FWPM_NET_EVENT3 *pEvent)
 			return;
 		}
 
-		_app_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_loopback);
 	}
 }
 
@@ -5094,8 +5059,6 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 				PITEM_LOG ptr_log = (PITEM_LOG)pnode->Body;
 
-				_aligned_free (pnode);
-
 				if (ptr_log)
 				{
 					// apps collector
@@ -5145,6 +5108,8 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 					delete ptr_log;
 				}
+
+				_aligned_free (pnode);
 			}
 		}
 		else
@@ -6123,6 +6088,16 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					break;
 				}
 
+				case IDD_SETTINGS_INTERFACE:
+				{
+					CheckDlgButton (hwnd, IDC_CONFIRMEXIT_CHK, app.ConfigGet (L"ConfirmExit2", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_CONFIRMEXITTIMER_CHK, app.ConfigGet (L"ConfirmExitTimer", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_CONFIRMDELETE_CHK, app.ConfigGet (L"ConfirmDelete", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_CONFIRMLOGCLEAR_CHK, app.ConfigGet (L"ConfirmLogClear", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+
+					break;
+				}
+
 				case IDD_SETTINGS_HIGHLIGHTING:
 				{
 					// configure listview
@@ -6285,6 +6260,16 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					SetDlgItemText (hwnd, IDC_CHECKUPDATES_CHK, app.LocaleString (IDS_CHECKUPDATES_CHK, nullptr));
 
 					SetDlgItemText (hwnd, IDC_LANGUAGE_HINT, app.LocaleString (IDS_LANGUAGE_HINT, nullptr));
+
+					break;
+				}
+
+				case IDD_SETTINGS_INTERFACE:
+				{
+					SetDlgItemText (hwnd, IDC_CONFIRMEXIT_CHK, app.LocaleString (IDS_CONFIRMEXIT_CHK, nullptr));
+					SetDlgItemText (hwnd, IDC_CONFIRMEXITTIMER_CHK, app.LocaleString (IDS_CONFIRMEXITTIMER_CHK, nullptr));
+					SetDlgItemText (hwnd, IDC_CONFIRMDELETE_CHK, app.LocaleString (IDS_CONFIRMDELETE_CHK, nullptr));
+					SetDlgItemText (hwnd, IDC_CONFIRMLOGCLEAR_CHK, app.LocaleString (IDS_CONFIRMLOGCLEAR_CHK, nullptr));
 
 					break;
 				}
@@ -6742,7 +6727,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 				{
 					const UINT ctrl_id = GetDlgCtrlID ((HWND)pmsg->wParam);
 
-					if (ctrl_id != IDC_EDITOR)
+					if (ctrl_id != IDC_EDITOR && ctrl_id != IDC_COLORS)
 						break;
 
 					const HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_EDITOR));
@@ -6761,7 +6746,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 						EnableMenuItem (submenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 					}
 
-					if (page->dlg_id == IDD_SETTINGS_RULES_CUSTOM)
+					if (ctrl_id == IDC_EDITOR && page->dlg_id == IDD_SETTINGS_RULES_CUSTOM)
 					{
 						app.LocaleMenu (submenu, IDS_ADD, IDM_ADD, false, L"...");
 						app.LocaleMenu (submenu, IDS_EDIT2, IDM_EDIT, false, L"...");
@@ -6795,6 +6780,10 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 						case IDC_SKIPUACWARNING_CHK:
 						case IDC_CHECKUPDATES_CHK:
 						case IDC_LANGUAGE:
+						case IDC_CONFIRMEXIT_CHK:
+						case IDC_CONFIRMEXITTIMER_CHK:
+						case IDC_CONFIRMDELETE_CHK:
+						case IDC_CONFIRMLOGCLEAR_CHK:
 						case IDC_USEFULLBLOCKLIST_CHK:
 						case IDC_USESTEALTHMODE_CHK:
 						case IDC_INSTALLBOOTTIMEFILTERS_CHK:
@@ -6842,6 +6831,22 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 							else if (ctrl_id == IDC_LANGUAGE && notify_code == CBN_SELCHANGE)
 							{
 								app.LocaleApplyFromControl (hwnd, ctrl_id);
+							}
+							else if (ctrl_id == IDC_CONFIRMEXIT_CHK)
+							{
+								app.ConfigSet (L"ConfirmExit2", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_CONFIRMEXITTIMER_CHK)
+							{
+								app.ConfigSet (L"ConfirmExitTimer", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_CONFIRMDELETE_CHK)
+							{
+								app.ConfigSet (L"ConfirmDelete", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+							}
+							else if (ctrl_id == IDC_CONFIRMLOGCLEAR_CHK)
+							{
+								app.ConfigSet (L"ConfirmLogClear", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 							}
 							else if (ctrl_id == IDC_USEFULLBLOCKLIST_CHK)
 							{
@@ -7161,67 +7166,79 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 						case IDM_SELECT_ALL:
 						{
-							ListView_SetItemState (GetDlgItem (hwnd, IDC_EDITOR), -1, LVIS_SELECTED, LVIS_SELECTED);
+							ListView_SetItemState (GetDlgItem (hwnd, page->dlg_id == IDD_SETTINGS_HIGHLIGHTING ? IDC_COLORS : IDC_EDITOR), -1, LVIS_SELECTED, LVIS_SELECTED);
 							break;
 						}
 
 						case IDM_CHECK:
 						case IDM_UNCHECK:
 						{
-							std::vector<PITEM_RULE> const* ptr_rules = nullptr;
-
-							if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
-								ptr_rules = &rules_blocklist;
-
-							else if (page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
-								ptr_rules = &rules_system;
-
-							else if (page->dlg_id == IDD_SETTINGS_RULES_CUSTOM)
-								ptr_rules = &rules_custom;
-
-							if (ptr_rules)
+							if (page->dlg_id == IDD_SETTINGS_HIGHLIGHTING)
 							{
-								const bool new_val = (LOWORD (pmsg->wParam) == IDM_CHECK) ? true : false;
-								bool is_changed = false;
-
 								size_t item = LAST_VALUE;
+								const bool new_val = (LOWORD (pmsg->wParam) == IDM_CHECK) ? true : false;
 
-
-								_r_fastlock_acquireexclusive (&lock_access);
-
-								while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != -1)
+								while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_COLORS, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != -1)
 								{
-									const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
+									_r_listview_setitemcheck (hwnd, IDC_COLORS, item, new_val);
+								}
+							}
+							else
+							{
+								std::vector<PITEM_RULE> const* ptr_rules = nullptr;
 
-									PITEM_RULE ptr_rule = ptr_rules->at (idx);
+								if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST)
+									ptr_rules = &rules_blocklist;
 
-									if (ptr_rule)
+								else if (page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
+									ptr_rules = &rules_system;
+
+								else if (page->dlg_id == IDD_SETTINGS_RULES_CUSTOM)
+									ptr_rules = &rules_custom;
+
+								if (ptr_rules)
+								{
+									const bool new_val = (LOWORD (pmsg->wParam) == IDM_CHECK) ? true : false;
+									bool is_changed = false;
+
+									size_t item = LAST_VALUE;
+
+									_r_fastlock_acquireexclusive (&lock_access);
+
+									while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != -1)
 									{
-										ptr_rule->is_enabled = new_val;
+										const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
 
-										if (!is_changed && _r_listview_isitemchecked (hwnd, IDC_EDITOR, item) != new_val)
-											is_changed = true;
+										PITEM_RULE ptr_rule = ptr_rules->at (idx);
 
-										config.is_nocheckboxnotify = true;
+										if (ptr_rule)
+										{
+											ptr_rule->is_enabled = new_val;
 
-										_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, new_val);
+											if (!is_changed && _r_listview_isitemchecked (hwnd, IDC_EDITOR, item) != new_val)
+												is_changed = true;
 
-										if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST || page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
-											rules_config[ptr_rule->pname] = new_val;
+											config.is_nocheckboxnotify = true;
 
-										config.is_nocheckboxnotify = false;
+											_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, new_val);
+
+											if (page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST || page->dlg_id == IDD_SETTINGS_RULES_SYSTEM)
+												rules_config[ptr_rule->pname] = new_val;
+
+											config.is_nocheckboxnotify = false;
+										}
 									}
+
+									_r_fastlock_releaseexclusive (&lock_access);
+
+									if (is_changed)
+									{
+										_app_profilesave (app.GetHWND ());
+										_app_installfilters (false);
+									}
+
+									settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
 								}
-
-								_r_fastlock_releaseexclusive (&lock_access);
-
-								if (is_changed)
-								{
-									_app_profilesave (app.GetHWND ());
-									_app_installfilters (false);
-								}
-
-								settings_callback (hwnd, _RM_LOCALIZE, nullptr, page); // re-inititalize page
 							}
 
 							break;
@@ -7350,13 +7367,13 @@ bool _wfp_logsubscribe ()
 				DWORD rc = 0;
 
 				if (_FwpmNetEventSubscribe2)
-					rc = _FwpmNetEventSubscribe2 (config.hengine, &subscription, &_app_logcallback2, nullptr, &config.hevent); // win10+
+					rc = _FwpmNetEventSubscribe2 (config.hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hevent); // win10+
 
 				else if (_FwpmNetEventSubscribe1)
-					rc = _FwpmNetEventSubscribe1 (config.hengine, &subscription, &_app_logcallback1, nullptr, &config.hevent); // win8+
+					rc = _FwpmNetEventSubscribe1 (config.hengine, &subscription, &_wfp_logcallback1, nullptr, &config.hevent); // win8+
 
 				else if (_FwpmNetEventSubscribe0)
-					rc = _FwpmNetEventSubscribe0 (config.hengine, &subscription, &_app_logcallback0, nullptr, &config.hevent); // win7+
+					rc = _FwpmNetEventSubscribe0 (config.hengine, &subscription, &_wfp_logcallback0, nullptr, &config.hevent); // win7+
 
 				if (rc != ERROR_SUCCESS)
 				{
@@ -8357,6 +8374,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// initialize settings
 			app.AddSettingsPage (IDD_SETTINGS_GENERAL, IDS_SETTINGS_1, &settings_callback);
+			app.AddSettingsPage (IDD_SETTINGS_INTERFACE, IDS_TITLE_INTERFACE, &settings_callback);
 			app.AddSettingsPage (IDD_SETTINGS_HIGHLIGHTING, IDS_TITLE_HIGHLIGHTING, &settings_callback);
 
 			{
@@ -8699,7 +8717,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					PITEM_ADD const ptr_app = &vc_ptr->at (idx);
 
 					if (ptr_app)
-						_r_status_settext (hwnd, IDC_STATUSBAR, 0, ptr_app->real_path[0] ? ptr_app->real_path : ptr_app->display_name);
+					{
+						LPCWSTR text = nullptr;
+
+						if ((LOWORD (wparam) >= IDX_SERVICE) && LOWORD (wparam) <= (IDX_SERVICE + services.size ()))
+							text = ptr_app->display_name;
+
+						else
+							text = ptr_app->real_path[0] ? ptr_app->real_path : ptr_app->display_name;
+
+						_r_status_settext (hwnd, IDC_STATUSBAR, 0, text);
+					}
 				}
 			}
 			else
@@ -8866,7 +8894,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		case WM_SIZE:
 		{
 			ResizeWindow (hwnd, LOWORD (lparam), HIWORD (lparam));
-			RedrawWindow (hwnd, nullptr, nullptr, RDW_ALLCHILDREN | RDW_ERASE | RDW_INVALIDATE);
+			RedrawWindow (hwnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE);
 
 			_app_listviewresize (hwnd, IDC_LISTVIEW);
 
