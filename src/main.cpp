@@ -1790,8 +1790,8 @@ INT CALLBACK _app_listviewcmp_appsrules (LPARAM item1, LPARAM item2, LPARAM lpar
 {
 	HWND hwnd = (HWND)lparam;
 
-	const bool is_checked1 = _r_listview_isitemchecked (hwnd, IDC_FILES_LV, (size_t)item1);
-	const bool is_checked2 = _r_listview_isitemchecked (hwnd, IDC_FILES_LV, (size_t)item2);
+	const bool is_checked1 = _r_listview_isitemchecked (hwnd, IDC_APPS_LV, (size_t)item1);
+	const bool is_checked2 = _r_listview_isitemchecked (hwnd, IDC_APPS_LV, (size_t)item2);
 
 	if (is_checked1 < is_checked2)
 	{
@@ -1802,7 +1802,7 @@ INT CALLBACK _app_listviewcmp_appsrules (LPARAM item1, LPARAM item2, LPARAM lpar
 		return -1;
 	}
 
-	return _r_listview_getitemtext (hwnd, IDC_FILES_LV, (size_t)item1, 0).CompareNoCase (_r_listview_getitemtext (hwnd, IDC_FILES_LV, (size_t)item2, 0));
+	return _r_listview_getitemtext (hwnd, IDC_APPS_LV, (size_t)item1, 0).CompareNoCase (_r_listview_getitemtext (hwnd, IDC_APPS_LV, (size_t)item2, 0));
 }
 
 INT CALLBACK _app_listviewcmp_rules (LPARAM lp1, LPARAM lp2, LPARAM)
@@ -5573,7 +5573,7 @@ LONG _app_wmcustdraw (LPNMLVCUSTOMDRAW lpnmlv, LPARAM lparam)
 		{
 			if (
 				lpnmlv->nmcd.hdr.idFrom == IDC_LISTVIEW ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_FILES_LV
+				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_LV
 				)
 			{
 				const size_t hash = lpnmlv->nmcd.lItemlParam;
@@ -5649,24 +5649,27 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			SetDlgItemText (hwnd, IDC_NAME, app.LocaleString (IDS_NAME, L":"));
 			SetDlgItemText (hwnd, IDC_RULES, app.LocaleString (IDS_RULE, L":"));
-			SetDlgItemText (hwnd, IDC_FILES, app.LocaleString (IDS_APPLYTO, L":"));
+			SetDlgItemText (hwnd, IDC_REGION, app.LocaleString (IDS_REGION, L":"));
 			SetDlgItemText (hwnd, IDC_DIRECTION, app.LocaleString (IDS_DIRECTION, L":"));
 			SetDlgItemText (hwnd, IDC_PROTOCOL, app.LocaleString (IDS_PROTOCOL, L":"));
 			SetDlgItemText (hwnd, IDC_PORTVERSION, app.LocaleString (IDS_PORTVERSION, L":"));
 			SetDlgItemText (hwnd, IDC_ACTION, app.LocaleString (IDS_ACTION, L":"));
 
-			SetDlgItemText (hwnd, IDC_ENABLED_CHK, app.LocaleString (IDS_ENABLERULE_CHK, nullptr));
+			SetDlgItemText (hwnd, IDC_DISABLE_CHK, app.LocaleString (IDS_DISABLE_CHK, nullptr));
+			SetDlgItemText (hwnd, IDC_ENABLE_CHK, app.LocaleString (IDS_ENABLE_CHK, nullptr));
+			SetDlgItemText (hwnd, IDC_ENABLEFORAPPS_CHK, app.LocaleString (IDS_ENABLEFORAPPS_CHK, nullptr));
 
+			SetDlgItemText (hwnd, IDC_WIKI, app.LocaleString (IDS_WIKI, nullptr));
 			SetDlgItemText (hwnd, IDC_SAVE, app.LocaleString (IDS_SAVE, nullptr));
 			SetDlgItemText (hwnd, IDC_CLOSE, app.LocaleString (IDS_CLOSE, nullptr));
 
 			// configure listview
-			_r_listview_setstyle (hwnd, IDC_FILES_LV, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES);
+			_r_listview_setstyle (hwnd, IDC_APPS_LV, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES);
 
-			_r_listview_addcolumn (hwnd, IDC_FILES_LV, 0, nullptr, 95, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, IDC_APPS_LV, 0, nullptr, 95, LVCFMT_LEFT);
 
-			_app_listviewsetimagelist (hwnd, IDC_FILES_LV);
-			_app_listviewsetfont (hwnd, IDC_FILES_LV, false);
+			_app_listviewsetimagelist (hwnd, IDC_APPS_LV);
+			_app_listviewsetfont (hwnd, IDC_APPS_LV, false);
 
 			// name
 			if (ptr_rule && ptr_rule->pname)
@@ -5694,8 +5697,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						config.is_nocheckboxnotify = true;
 
-						_r_listview_additem (hwnd, IDC_FILES_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, LAST_VALUE, p.first);
-						_r_listview_setitemcheck (hwnd, IDC_FILES_LV, item, ptr_rule && !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ()));
+						_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, LAST_VALUE, p.first);
+						_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, ptr_rule && !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ()));
 
 						config.is_nocheckboxnotify = false;
 
@@ -5706,13 +5709,13 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				_r_fastlock_releaseshared (&lock_access);
 
 				// sort column
-				_app_listviewsort_appsrules (hwnd, IDC_FILES_LV);
+				_app_listviewsort_appsrules (hwnd, IDC_APPS_LV);
 
 				// resize column
 				RECT rc = {0};
-				GetClientRect (GetDlgItem (hwnd, IDC_FILES_LV), &rc);
+				GetClientRect (GetDlgItem (hwnd, IDC_APPS_LV), &rc);
 
-				_r_listview_setcolumn (hwnd, IDC_FILES_LV, 0, nullptr, (rc.right - rc.left));
+				_r_listview_setcolumn (hwnd, IDC_APPS_LV, 0, nullptr, (rc.right - rc.left));
 			}
 
 			// direction
@@ -5768,7 +5771,20 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->is_block, 0);
 
 			// state
-			CheckDlgButton (hwnd, IDC_ENABLED_CHK, ptr_rule && ptr_rule->is_enabled ? BST_CHECKED : BST_UNCHECKED);
+			{
+				UINT ctrl_id = IDC_DISABLE_CHK;
+
+				if (ptr_rule && ptr_rule->is_enabled)
+				{
+					ctrl_id = ptr_rule->apps.empty () ? IDC_ENABLE_CHK : IDC_ENABLEFORAPPS_CHK;
+
+					if (ptr_rule && !ptr_rule->apps.empty ())
+						ctrl_id = IDC_ENABLEFORAPPS_CHK;
+				}
+
+				CheckRadioButton (hwnd, IDC_DISABLE_CHK, IDC_ENABLEFORAPPS_CHK, ctrl_id);
+				SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (ctrl_id, 0), 0);
+			}
 
 			// set limitation
 			SendDlgItemMessage (hwnd, IDC_NAME_EDIT, EM_LIMITTEXT, RULE_NAME_CCH_MAX - 1, 0);
@@ -5785,7 +5801,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_CONTEXTMENU:
 		{
-			if (GetDlgCtrlID ((HWND)wparam) == IDC_FILES_LV)
+			if (GetDlgCtrlID ((HWND)wparam) == IDC_APPS_LV)
 			{
 				const HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_EDITOR));
 				const HMENU submenu = GetSubMenu (menu, 0);
@@ -5793,7 +5809,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				app.LocaleMenu (submenu, IDS_CHECK, IDM_CHECK, false, nullptr);
 				app.LocaleMenu (submenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
 
-				if (!SendDlgItemMessage (hwnd, IDC_FILES_LV, LVM_GETSELECTEDCOUNT, 0, 0))
+				if (!SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETSELECTEDCOUNT, 0, 0))
 				{
 					EnableMenuItem (submenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 					EnableMenuItem (submenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
@@ -5825,7 +5841,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case NM_CUSTOMDRAW:
 				{
-					if (nmlp->idFrom != IDC_FILES_LV)
+					if (nmlp->idFrom != IDC_APPS_LV)
 						break;
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, _app_wmcustdraw ((LPNMLVCUSTOMDRAW)lparam, 0));
@@ -5841,7 +5857,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (config.is_nocheckboxnotify)
 							return FALSE;
 
-						_app_listviewsort_appsrules (hwnd, IDC_FILES_LV);
+						_app_listviewsort_appsrules (hwnd, IDC_APPS_LV);
 					}
 
 					break;
@@ -5884,22 +5900,30 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			switch (LOWORD (wparam))
 			{
+				case IDC_DISABLE_CHK:
+				case IDC_ENABLE_CHK:
+				case IDC_ENABLEFORAPPS_CHK:
+				{
+					_r_ctrl_enable (hwnd, IDC_APPS_LV, IsDlgButtonChecked (hwnd, IDC_ENABLEFORAPPS_CHK) == BST_CHECKED);
+					break;
+				}
+
 				case IDM_CHECK:
 				case IDM_UNCHECK:
 				{
 					const bool new_val = (LOWORD (wparam) == IDM_CHECK) ? true : false;
 					size_t item = LAST_VALUE;
 
-					while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_FILES_LV, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != -1)
+					while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != -1)
 					{
 						config.is_nocheckboxnotify = true;
 
-						_r_listview_setitemcheck (hwnd, IDC_FILES_LV, item, new_val);
+						_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, new_val);
 
 						config.is_nocheckboxnotify = false;
 					}
 
-					_app_listviewsort_appsrules (hwnd, IDC_FILES_LV);
+					_app_listviewsort_appsrules (hwnd, IDC_APPS_LV);
 
 					break;
 				}
@@ -5979,18 +6003,22 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 
 					// save rule apps
-					ptr_rule->apps.clear ();
+					if (IsDlgButtonChecked (hwnd, IDC_DISABLE_CHK) == BST_UNCHECKED)
+						ptr_rule->apps.clear ();
 
-					for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_FILES_LV); i++)
+					if (IsDlgButtonChecked (hwnd, IDC_ENABLEFORAPPS_CHK) == BST_CHECKED)
 					{
-						const size_t hash = _r_listview_getitemlparam (hwnd, IDC_FILES_LV, i);
-
-						if (hash)
+						for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_APPS_LV); i++)
 						{
-							const bool is_apply = _r_listview_isitemchecked (hwnd, IDC_FILES_LV, i);
+							const size_t hash = _r_listview_getitemlparam (hwnd, IDC_APPS_LV, i);
 
-							if (is_apply)
-								ptr_rule->apps[hash] = true;
+							if (hash)
+							{
+								const bool is_apply = _r_listview_isitemchecked (hwnd, IDC_APPS_LV, i);
+
+								if (is_apply)
+									ptr_rule->apps[hash] = true;
+							}
 						}
 					}
 
@@ -5999,7 +6027,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					ptr_rule->dir = (FWP_DIRECTION)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
 					ptr_rule->is_block = SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0) ? true : false;
-					ptr_rule->is_enabled = (IsDlgButtonChecked (hwnd, IDC_ENABLED_CHK) == BST_CHECKED) ? true : false;
+					ptr_rule->is_enabled = (IsDlgButtonChecked (hwnd, IDC_DISABLE_CHK) == BST_UNCHECKED) ? true : false;
 
 					_r_fastlock_releaseexclusive (&lock_access);
 
@@ -8373,7 +8401,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			DragAcceptFiles (hwnd, TRUE);
 
 			// initialize settings
-			app.AddSettingsPage (IDD_SETTINGS_GENERAL, IDS_SETTINGS_1, &settings_callback);
+			app.AddSettingsPage (IDD_SETTINGS_GENERAL, IDS_SETTINGS_GENERAL, &settings_callback);
 			app.AddSettingsPage (IDD_SETTINGS_INTERFACE, IDS_TITLE_INTERFACE, &settings_callback);
 			app.AddSettingsPage (IDD_SETTINGS_HIGHLIGHTING, IDS_TITLE_HIGHLIGHTING, &settings_callback);
 
