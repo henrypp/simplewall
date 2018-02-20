@@ -885,8 +885,10 @@ HBITMAP _app_ico2bmp (HICON hicon)
 
 void _app_applycasestyle (LPWSTR buffer, size_t length)
 {
-	if (length > 1)
+	if (length && wcschr (buffer, L'\\'))
 	{
+		buffer[0] = _r_str_upper (buffer[0]);
+
 		for (size_t i = 1; i < length; i++)
 			buffer[i] = _r_str_lower (buffer[i]);
 	}
@@ -1205,6 +1207,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, bool is_s
 	}
 
 	_app_applycasestyle (real_path.GetBuffer (), real_path.GetLength ()); // apply case-style
+	_app_applycasestyle (path.GetBuffer (), path.GetLength ()); // apply case-style
 
 	StringCchCopy (ptr_app->original_path, _countof (ptr_app->original_path), path);
 	StringCchCopy (ptr_app->real_path, _countof (ptr_app->real_path), real_path);
