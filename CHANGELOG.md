@@ -2,6 +2,7 @@ v2.2 Beta (x March 2018)
 + new notification ui
 + now simplewall added to the apps list automatically (issue #106)
 + added windows services support [beta] (issue #88)
++ added profile timestamping
 + new localization engine (single .lng file)
 + more sensitive notifications (issue #107)
 + lock-free dropped events callback (win7+)

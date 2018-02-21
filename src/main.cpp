@@ -2866,10 +2866,14 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 
 	_r_fastlock_releaseexclusive (&lock_access);
 
-	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_file (path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+	pugi::xml_document doc_original;
+	pugi::xml_document doc_backup;
 
-	if (!result)
+	pugi::xml_node root;
+
+	pugi::xml_parse_result result_original = doc_original.load_file (path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+
+	//if (!result)
 	{
 		// if file not found or parsing error, load from backup
 		if (path_backup)
@@ -2877,26 +2881,35 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 			if (is_internal)
 			{
 				DWORD size = 0;
-				LPVOID buffer = _app_loadresource (path_backup, &size);
+				const LPVOID buffer = _app_loadresource (path_backup, &size);
+
+				pugi::xml_parse_result result_backup;
 
 				if (buffer)
-					result = doc.load_buffer (buffer, size, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+					result_backup = doc_backup.load_buffer (buffer, size, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+
+				if (result_backup && (!result_original || doc_backup.child (L"root").attribute (L"timestamp").as_ullong () > doc_original.child (L"root").attribute (L"timestamp").as_ullong ()))
+				{
+					root = doc_backup.child (L"root");
+					result_original = result_backup;
+				}
 			}
 			else
 			{
-				if (_r_fs_exists (path_backup))
-					result = doc.load_file (path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+				if (!result_original && _r_fs_exists (path_backup))
+					result_original = doc_original.load_file (path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 			}
 		}
 
 		// show only syntax, memory and i/o errors...
-		if (!result && result.status != pugi::status_file_not_found)
-			_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d, offset: %d, text: %s, file: %s", result.status, result.offset, rstring (result.description ()).GetString (), path));
+		if (!result_original && result_original.status != pugi::status_file_not_found)
+			_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d, offset: %d, text: %s, file: %s", result_original.status, result_original.offset, rstring (result_original.description ()).GetString (), path));
 	}
 
-	if (result)
+	if (result_original)
 	{
-		pugi::xml_node root = doc.child (L"root");
+		if (!root)
+			root = doc_original.child (L"root");
 
 		if (root)
 		{
@@ -3119,6 +3132,8 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
 {
+	const time_t current_time = _r_unixtime_now ();
+
 	// apps list
 	{
 		pugi::xml_document doc;
@@ -3128,9 +3143,9 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 		{
 			_r_fastlock_acquireshared (&lock_access);
 
-			const time_t current_time = _r_unixtime_now ();
-
 			const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
+
+			root.append_attribute (L"timestamp").set_value (current_time);
 
 			if (count)
 			{
@@ -3209,6 +3224,8 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 		{
 			_r_fastlock_acquireshared (&lock_access);
 
+			root.append_attribute (L"timestamp").set_value (current_time);
+
 			for (auto const &p : rules_config)
 			{
 				pugi::xml_node item = root.append_child (L"item");
@@ -3238,6 +3255,8 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 		if (root)
 		{
 			_r_fastlock_acquireshared (&lock_access);
+
+			root.append_attribute (L"timestamp").set_value (current_time);
 
 			for (size_t i = 0; i < rules_custom.size (); i++)
 			{
@@ -5665,6 +5684,15 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SetDlgItemText (hwnd, IDC_WIKI, app.LocaleString (IDS_WIKI, nullptr));
 			SetDlgItemText (hwnd, IDC_SAVE, app.LocaleString (IDS_SAVE, nullptr));
 			SetDlgItemText (hwnd, IDC_CLOSE, app.LocaleString (IDS_CLOSE, nullptr));
+
+			SendDlgItemMessage (hwnd, IDC_WIKI, BM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (0, IDI_QUESTION, GetSystemMetrics (SM_CXSMICON)));
+
+			{
+				RECT rc2 = {0};
+				rc2.left = rc2.right = app.GetDPI (4);
+
+				SendDlgItemMessage (hwnd, IDC_WIKI, BCM_SETTEXTMARGIN, 0, (LPARAM)&rc2);
+			}
 
 			// configure listview
 			_r_listview_setstyle (hwnd, IDC_APPS_LV, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES);
