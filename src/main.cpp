@@ -6034,11 +6034,14 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 
 					// save rule apps
-					if (IsDlgButtonChecked (hwnd, IDC_DISABLE_CHK) == BST_UNCHECKED)
+					if (IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED)
+					{
+						ptr_rule->apps.clear ();
+					}
+					else
+					{
 						ptr_rule->apps.clear ();
 
-					if (IsDlgButtonChecked (hwnd, IDC_ENABLEFORAPPS_CHK) == BST_CHECKED)
-					{
 						for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_APPS_LV); i++)
 						{
 							const size_t hash = _r_listview_getitemlparam (hwnd, IDC_APPS_LV, i);
