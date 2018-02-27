@@ -4311,7 +4311,7 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 
 							if (rule_ptr)
 							{
-								if (rule_ptr->prule && _wcsnicmp (rule_ptr->prule, rule, rule_length) == 0)
+								if (rule_ptr->prule && _wcsnicmp (rule_ptr->prule, rule, rule_length) == 0 && ((!rule_ptr->is_block && command == CmdAllow) || (rule_ptr->is_block && command == CmdBlock)))
 								{
 									rule_id = i;
 									break;
