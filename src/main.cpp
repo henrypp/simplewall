@@ -4006,7 +4006,7 @@ bool _app_timer_apply (HWND hwnd, bool is_forceremove)
 
 				const size_t item = _app_getposition (hwnd, hash);
 
-				// remove non-existent apps and.or temporary apps
+				// remove non-existent and temporary apps
 				if (!is_enable && is_forceremove && (!_app_isexists (ptr_app) || ptr_app->is_temp))
 				{
 					SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_DELETEITEM, item, 0);
@@ -4525,7 +4525,7 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 			for (size_t i = 0; i < timers.size (); i++)
 				SendDlgItemMessage (config.hnotification, IDC_TIMER_CB, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt_interval (timers.at (i)).GetString ());
 
-			SendDlgItemMessage (config.hnotification, IDC_TIMER_CB, CB_SETCURSEL, ptr_app->is_temp ? min (TIMER_DEFAULT + 1, timers.size ()) : 0, 0);
+			SendDlgItemMessage (config.hnotification, IDC_TIMER_CB, CB_SETCURSEL, ptr_app->is_temp ? min (TIMER_DEFAULT, timers.size ()) : 0, 0);
 
 			CheckDlgButton (config.hnotification, IDC_CREATERULE_ADDR_ID, BST_UNCHECKED);
 			CheckDlgButton (config.hnotification, IDC_CREATERULE_PORT_ID, BST_UNCHECKED);
@@ -7397,7 +7397,7 @@ bool _wfp_logsubscribe ()
 			FWPMNES1 _FwpmNetEventSubscribe1 = nullptr;
 			FWPMNES0 _FwpmNetEventSubscribe0 = nullptr;
 
-			// win10 redstone 3 FwpmNetEventSubscribe2 callback does not worked as well, temporary bug solution (issue #122)
+			// win10 redstone 3 FwpmNetEventSubscribe2 callback does not worked as well, temporary bug solution
 			if (!_r_sys_validversion (10, 0, 16251))
 				_FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hlib, "FwpmNetEventSubscribe2"); // win10+
 
@@ -8453,7 +8453,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// initialize timers
 			{
-				timers.push_back (15);
 				timers.push_back (_R_SECONDSCLOCK_MIN (10));
 				timers.push_back (_R_SECONDSCLOCK_MIN (20));
 				timers.push_back (_R_SECONDSCLOCK_MIN (30));

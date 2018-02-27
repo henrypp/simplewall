@@ -52,7 +52,7 @@
 #define LEN_IP_MAX 68
 #define LEN_HOST_MAX 512
 
-#define TIMER_DEFAULT 2
+#define TIMER_DEFAULT 1
 #define TIMER_LOG_CALLBACK 4000
 
 // notifications

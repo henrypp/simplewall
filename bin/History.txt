@@ -29,7 +29,7 @@ v2.2 Beta (x March 2018)
 - stability improvements
 - updated default colors
 - updated localization
-- fixed dropped events callback failure (win10 rs3 and above) (issue #121)
+- fixed dropped events callback failure (win10 rs3 and above)
 - fixed steal focus at startup and when notification displaying
 - fixed working under blacklist mode
 - fixed multi-monitor support
