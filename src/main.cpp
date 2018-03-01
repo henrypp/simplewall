@@ -38,6 +38,7 @@ std::unordered_map<size_t, time_t> apps_timer;
 std::unordered_map<size_t, bool> apps_undelete;
 std::unordered_map<size_t, time_t> notifications_last;
 
+std::unordered_map<size_t, LPWSTR> cache_hosts;
 std::unordered_map<size_t, LPWSTR> cache_signatures;
 std::unordered_map<size_t, LPWSTR> cache_versions;
 
@@ -1995,14 +1996,19 @@ bool _app_ruleishost (LPCWSTR rule)
 	return false;
 }
 
-rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
+rstring _app_parsehostaddress (LPCWSTR host, USHORT port, bool is_recursion)
 {
 	rstring result;
+
+	const size_t hash = _r_str_hash (host);
+
+	if (!is_recursion && cache_hosts.find (hash) != cache_hosts.end () && cache_hosts[hash])
+		return cache_hosts[hash];
 
 	PDNS_RECORD ppQueryResultsSet = nullptr;
 	PIP4_ARRAY pSrvList = nullptr;
 
-	DWORD options = DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_NO_NETBT | DNS_QUERY_NO_MULTICAST | DNS_QUERY_NO_LOCAL_NAME | DNS_QUERY_DONT_RESET_TTL_VALUES | DNS_QUERY_TREAT_AS_FQDN;
+	DWORD options = DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_NO_NETBT | DNS_QUERY_NO_MULTICAST | DNS_QUERY_NO_LOCAL_NAME;
 
 	// use custom dns-server (if present)
 	WCHAR dnsServer[INET_ADDRSTRLEN] = {0};
@@ -2017,10 +2023,12 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 			if (InetPton (AF_INET, dnsServer, &(pSrvList->AddrArray[0])))
 			{
 				pSrvList->AddrCount = 1;
-				options = DNS_QUERY_WIRE_ONLY | DNS_QUERY_DONT_RESET_TTL_VALUES | DNS_QUERY_TREAT_AS_FQDN;
+				options = DNS_QUERY_WIRE_ONLY;
 			}
 			else
 			{
+				_app_logerror (L"InetPton", WSAGetLastError (), dnsServer, true);
+
 				delete pSrvList;
 				pSrvList = nullptr;
 			}
@@ -2067,7 +2075,7 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 			{
 				// canonical name
 				if (current->Data.CNAME.pNameHost)
-					result.Append (_app_parsehostaddress (current->Data.CNAME.pNameHost, port));
+					result.Append (_app_parsehostaddress (current->Data.CNAME.pNameHost, port, true));
 			}
 		}
 
@@ -2080,7 +2088,17 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 		DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
 	}
 
-	return result.Trim (RULE_DELIMETER);
+	result.Trim (RULE_DELIMETER);
+
+	if (!is_recursion && !result.IsEmpty () && cache_hosts.find (hash) == cache_hosts.end ())
+	{
+		LPWSTR ptr = new WCHAR[result.GetLength () + 1];
+
+		if (ptr)
+			cache_hosts[hash] = ptr;
+	}
+
+	return result;
 }
 
 bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format_ptr, USHORT* port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns)
@@ -2091,7 +2109,7 @@ bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format
 	USHORT port = 0;
 	BYTE prefix_length = 0;
 
-	const DWORD types = (app.ConfigGet (L"IsHostsEnabled", true).AsBool () && _app_canihaveaccess () ? (NET_STRING_ANY_ADDRESS | NET_STRING_ANY_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_ANY_ADDRESS_NO_SCOPE | NET_STRING_ANY_SERVICE_NO_SCOPE) : (NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE));
+	const static DWORD types = NET_STRING_ANY_ADDRESS | NET_STRING_ANY_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_ANY_ADDRESS_NO_SCOPE | NET_STRING_ANY_SERVICE_NO_SCOPE;
 	const DWORD errcode = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
 
 	if (errcode != ERROR_SUCCESS)
@@ -2132,12 +2150,14 @@ bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format
 		}
 		else if (ni.Format == NET_ADDRESS_DNS_NAME)
 		{
-			if (paddr_dns)
+			if (paddr_dns && app.ConfigGet (L"IsHostsEnabled", true).AsBool ())
 			{
-				const rstring host = _app_parsehostaddress (ni.NamedAddress.Address, port);
+				const rstring host = _app_parsehostaddress (ni.NamedAddress.Address, port, false);
 
-				if (!host.IsEmpty ())
-					StringCchCopy (paddr_dns, LEN_HOST_MAX, host);
+				if (host.IsEmpty ())
+					return false;
+
+				StringCchCopy (paddr_dns, LEN_HOST_MAX, host);
 			}
 
 			return true;
@@ -6593,6 +6613,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 										if (ptr_rule)
 										{
 											ptr_rule->is_enabled = new_val;
+											ptr_rule->is_haveerrors = false;
 
 											if (
 												page->dlg_id == IDD_SETTINGS_RULES_BLOCKLIST ||
@@ -7276,6 +7297,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 										if (ptr_rule)
 										{
 											ptr_rule->is_enabled = new_val;
+											ptr_rule->is_haveerrors = false;
 
 											if (!is_changed && _r_listview_isitemchecked (hwnd, IDC_EDITOR, item) != new_val)
 												is_changed = true;
