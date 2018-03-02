@@ -9172,12 +9172,20 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_DEVICECHANGE:
 		{
-			if (wparam == DBT_DEVICEARRIVAL)
+			if (wparam == DBT_DEVICEARRIVAL || wparam == DBT_DEVICEREMOVECOMPLETE)
 			{
 				const PDEV_BROADCAST_HDR lbhdr = (PDEV_BROADCAST_HDR)lparam;
 
-				if (lbhdr->dbch_devicetype == DBT_DEVTYP_VOLUME)
-					_app_installfilters (false);
+				if (lbhdr->dbch_devicetype == DBT_DEVTYP_VOLUME || lbhdr->dbch_devicetype == DBT_DEVTYP_NET)
+				{
+					if (wparam == DBT_DEVICEARRIVAL)
+						_app_installfilters (false);
+
+					else if (wparam == DBT_DEVICEREMOVECOMPLETE && IsWindowVisible (hwnd))
+						_r_listview_redraw (hwnd, IDC_LISTVIEW);
+
+					return TRUE;
+				}
 			}
 
 			break;
