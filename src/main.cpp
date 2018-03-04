@@ -3150,8 +3150,7 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
 {
 	const time_t current_time = _r_unixtime_now ();
-	const bool is_backupenabled = app.ConfigGet (L"IsBackupProfile", true).AsBool ();
-	const bool is_backuprequired = is_backupenabled && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsUlonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsUlonglong ()) || !_r_fs_exists (config.apps_path_backup) || !_r_fs_exists (config.rules_custom_path_backup) || !_r_fs_exists (config.rules_config_path_backup));
+	const bool is_backuprequired = app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsUlonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsUlonglong ()) || !_r_fs_exists (config.apps_path_backup) || !_r_fs_exists (config.rules_custom_path_backup) || !_r_fs_exists (config.rules_config_path_backup));
 	bool is_backupcreated = false;
 
 	// apps list
@@ -3230,7 +3229,7 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			doc.save_file (path_apps ? path_apps : config.apps_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (!path_apps && !apps.empty () && is_backupenabled && is_backuprequired)
+			if (!path_apps && !apps.empty () && is_backuprequired)
 			{
 				doc.save_file (config.apps_path_backup, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 				is_backupcreated = true;
@@ -3265,7 +3264,7 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			doc.save_file (config.rules_config_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (!rules_config.empty () && is_backupenabled && is_backuprequired)
+			if (!rules_config.empty () && is_backuprequired)
 			{
 				doc.save_file (config.rules_config_path_backup, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 				is_backupcreated = true;
@@ -3339,7 +3338,7 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			doc.save_file (path_rules ? path_rules : config.rules_custom_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (is_backupcreated || !path_rules && !rules_custom.empty () && is_backupenabled && is_backuprequired)
+			if (is_backupcreated || !path_rules && !rules_custom.empty () && is_backuprequired)
 			{
 				doc.save_file (config.rules_custom_path_backup, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 				is_backupcreated = true;
@@ -4370,9 +4369,9 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command)
 								if (ptr_rule->prule)
 									StringCchCopy (ptr_rule->prule, rule_length, rule);
 
-								ptr_rule->dir = ptr_log->direction;
-								ptr_rule->is_block = (command == CmdBlock);
 								ptr_rule->is_enabled = true;
+								ptr_rule->is_block = (command == CmdBlock);
+								ptr_rule->dir = ptr_log->direction;
 
 								rules_custom.push_back (ptr_rule);
 								rule_id = rules_custom.size () - 1;
@@ -7147,8 +7146,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 							if (ptr_rule)
 							{
-								//ptr_rule->is_block = true; // block by default
 								ptr_rule->is_enabled = true;
+								ptr_rule->is_block = app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist ? false : true;
 
 								SetWindowLongPtr (app.GetHWND (), GWLP_USERDATA, LAST_VALUE);
 								if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
@@ -9902,8 +9901,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (ptr_rule)
 					{
-						//ptr_rule->is_block = true; // block by default
 						ptr_rule->is_enabled = true;
+						ptr_rule->is_block = app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist ? false : true;
 
 						INT item = -1;
 
@@ -10066,34 +10065,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_ZOOM:
 				{
 					ShowWindow (hwnd, IsZoomed (hwnd) ? SW_RESTORE : SW_MAXIMIZE);
-					break;
-				}
-
-				case 999:
-				{
-					notifications_last.erase (config.myhash);
-
-					ITEM_LOG log = {0};
-
-					log.hash = config.myhash;
-					log.date = _r_unixtime_now ();
-
-					log.af = AF_INET;
-					log.protocol = IPPROTO_TCP;
-
-					InetPton (log.af, L"195.210.46.14", &log.remote_addr);
-					log.remote_port = 443;
-
-					InetPton (log.af, L"192.168.2.2", &log.local_addr);
-					log.local_port = 80;
-
-					_app_formataddress (log.remote_fmt, _countof (log.remote_fmt), &log, FWP_DIRECTION_OUTBOUND, log.remote_port, true);
-					_app_formataddress (log.local_fmt, _countof (log.local_fmt), &log, FWP_DIRECTION_INBOUND, log.local_port, true);
-
-					StringCchCopy (log.filter_name, _countof (log.filter_name), L"<test filter>");
-
-					_app_notifyadd (&log);
-
 					break;
 				}
 			}
