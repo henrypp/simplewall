@@ -1,4 +1,4 @@
-v2.2 Beta (4  March 2018)
+v2.2 Beta (4 March 2018)
 + new notification ui
 + now simplewall added to the apps list automatically (issue #106)
 + added windows services support [beta] (issue #88)
