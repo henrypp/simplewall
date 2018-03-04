@@ -48,6 +48,7 @@
 #define RULE_DELIMETER L";"
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
+#define BACKUP_HOURS_PERIOD 1 // make backup every 1 hour (default)
 
 #define LEN_IP_MAX 68
 #define LEN_HOST_MAX 512
@@ -219,10 +220,15 @@ struct STATIC_DATA
 	time_t timer_low = 0;
 
 	WCHAR title[128] = {0};
+	WCHAR notify_snd_path[MAX_PATH] = {0};
+
 	WCHAR apps_path[MAX_PATH] = {0};
 	WCHAR rules_custom_path[MAX_PATH] = {0};
 	WCHAR rules_config_path[MAX_PATH] = {0};
-	WCHAR notify_snd_path[MAX_PATH] = {0};
+
+	WCHAR apps_path_backup[MAX_PATH] = {0};
+	WCHAR rules_custom_path_backup[MAX_PATH] = {0};
+	WCHAR rules_config_path_backup[MAX_PATH] = {0};
 
 	HWND hnotification = nullptr;
 

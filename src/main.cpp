@@ -3047,11 +3047,8 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			// load backup
 			if (!result)
 			{
-				rstring path_apps_backup;
-				path_apps_backup.Format (L"%s.bak", config.apps_path);
-
-				if (_r_fs_exists (path_apps_backup))
-					result = doc.load_file (path_apps_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+				if (_r_fs_exists (config.apps_path_backup))
+					result = doc.load_file (config.apps_path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 			}
 
 			if (!result)
@@ -3113,8 +3110,8 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file (config.rules_config_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
-		if (!result)
-			result = doc.load_file (_r_fmt (L"%s.bak", config.rules_config_path), PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+		if (!result && _r_fs_exists (config.rules_config_path_backup))
+			result = doc.load_file (config.rules_config_path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
 		if (!result)
 		{
@@ -3145,7 +3142,7 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 		_app_loadrules (hwnd, _r_fmt (L"%s\\" XML_RULES_SYSTEM, app.GetProfileDirectory ()), MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, &rules_system);
 
 	// load custom rules
-	_app_loadrules (hwnd, path_rules ? path_rules : config.rules_custom_path, _r_fmt (L"%s.bak", config.rules_custom_path), false, &rules_custom);
+	_app_loadrules (hwnd, path_rules ? path_rules : config.rules_custom_path, config.rules_custom_path_backup, false, &rules_custom);
 
 	_app_refreshstatus (hwnd, true, true);
 }
@@ -3153,6 +3150,9 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
 {
 	const time_t current_time = _r_unixtime_now ();
+	const bool is_backupenabled = app.ConfigGet (L"IsBackupProfile", true).AsBool ();
+	const bool is_backuprequired = is_backupenabled && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsUlonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsUlonglong ()) || !_r_fs_exists (config.apps_path_backup) || !_r_fs_exists (config.rules_custom_path_backup) || !_r_fs_exists (config.rules_config_path_backup));
+	bool is_backupcreated = false;
 
 	// apps list
 	{
@@ -3230,8 +3230,11 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			doc.save_file (path_apps ? path_apps : config.apps_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (!path_apps && !apps.empty () && app.ConfigGet (L"IsBackupProfile", true).AsBool ())
-				doc.save_file (_r_fmt (L"%s.bak", config.apps_path), L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+			if (!path_apps && !apps.empty () && is_backupenabled && is_backuprequired)
+			{
+				doc.save_file (config.apps_path_backup, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+				is_backupcreated = true;
+			}
 		}
 	}
 
@@ -3262,8 +3265,11 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			doc.save_file (config.rules_config_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (!rules_config.empty () && app.ConfigGet (L"IsBackupProfile", true).AsBool ())
-				doc.save_file (_r_fmt (L"%s.bak", config.rules_config_path), L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+			if (!rules_config.empty () && is_backupenabled && is_backuprequired)
+			{
+				doc.save_file (config.rules_config_path_backup, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+				is_backupcreated = true;
+			}
 		}
 	}
 
@@ -3333,10 +3339,16 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			doc.save_file (path_rules ? path_rules : config.rules_custom_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
-			if (!path_rules && !rules_custom.empty () && app.ConfigGet (L"IsBackupProfile", true).AsBool ())
-				doc.save_file (_r_fmt (L"%s.bak", config.rules_custom_path), L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+			if (is_backupcreated || !path_rules && !rules_custom.empty () && is_backupenabled && is_backuprequired)
+			{
+				doc.save_file (config.rules_custom_path_backup, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+				is_backupcreated = true;
+			}
 		}
 	}
+
+	if (is_backupcreated)
+		app.ConfigSet (L"BackupTimestamp", current_time);
 }
 
 bool _wfp_isfiltersinstalled ()
@@ -4476,9 +4488,9 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 {
 	if (!is_forced)
 	{
-		QUERY_USER_NOTIFICATION_STATE state = QUNS_NOT_PRESENT;
+		QUERY_USER_NOTIFICATION_STATE state;
 
-		if (SUCCEEDED (SHQueryUserNotificationState (&state)) && state != QUNS_ACCEPTS_NOTIFICATIONS)
+		if (SUCCEEDED (SHQueryUserNotificationState (&state)) && state == QUNS_RUNNING_D3D_FULL_SCREEN)
 			return false;
 	}
 
@@ -7135,7 +7147,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 							if (ptr_rule)
 							{
-								ptr_rule->is_block = true; // block by default
+								//ptr_rule->is_block = true; // block by default
+								ptr_rule->is_enabled = true;
 
 								SetWindowLongPtr (app.GetHWND (), GWLP_USERDATA, LAST_VALUE);
 								if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
@@ -8314,6 +8327,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			StringCchPrintf (config.rules_config_path, _countof (config.rules_config_path), L"%s\\" XML_RULES_CONFIG, app.GetProfileDirectory ());
 			StringCchPrintf (config.rules_custom_path, _countof (config.rules_custom_path), L"%s\\" XML_RULES_CUSTOM, app.GetProfileDirectory ());
 
+			StringCchPrintf (config.apps_path_backup, _countof (config.apps_path_backup), L"%s\\" XML_APPS L".bak", app.GetProfileDirectory ());
+			StringCchPrintf (config.rules_config_path_backup, _countof (config.rules_config_path_backup), L"%s\\" XML_RULES_CONFIG L".bak", app.GetProfileDirectory ());
+			StringCchPrintf (config.rules_custom_path_backup, _countof (config.rules_custom_path_backup), L"%s\\" XML_RULES_CUSTOM L".bak", app.GetProfileDirectory ());
+
 			config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME);
 			config.myhash = _r_str_hash (app.GetBinaryPath ());
 			apps_undelete[config.myhash] = true; // disable deletion for me ;)
@@ -9405,10 +9422,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						// make backup
 						if (LOWORD (wparam) == IDM_IMPORT_APPS)
-							_r_fs_copy (config.apps_path, _r_fmt (L"%s.bak", config.apps_path));
+							_r_fs_copy (config.apps_path, config.apps_path_backup);
 
 						else if (LOWORD (wparam) == IDM_IMPORT_RULES)
-							_r_fs_copy (config.rules_custom_path, _r_fmt (L"%s.bak", config.rules_custom_path));
+							_r_fs_copy (config.rules_custom_path, config.rules_custom_path_backup);
 
 						_app_profileload (hwnd, ((LOWORD (wparam) == IDM_IMPORT_APPS) ? path : nullptr), ((LOWORD (wparam) == IDM_IMPORT_RULES) ? path : nullptr));
 						_app_profilesave (hwnd);
@@ -9885,7 +9902,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (ptr_rule)
 					{
-						ptr_rule->is_block = true; // block by default
+						//ptr_rule->is_block = true; // block by default
+						ptr_rule->is_enabled = true;
 
 						INT item = -1;
 

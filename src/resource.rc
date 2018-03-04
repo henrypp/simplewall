@@ -438,7 +438,7 @@ STRINGTABLE
 	IDS_HELP "Help"
 	IDS_WEBSITE "Website"
 	IDS_CHECKUPDATES "Check for updates"
-	IDS_DONATE "Donate"
+	IDS_DONATE "Give thanks!"
 	IDS_ABOUT "About"
 
 	IDS_TRAY_SHOW "Show/Hide"
@@ -451,7 +451,6 @@ STRINGTABLE
 	IDS_TRAY_USER_RULES "User rules"
 	IDS_TRAY_LOG "Dropped packets log"
 	IDS_TRAY_LOGERR "Errors log"
-	IDS_TRAY_SYSTEM "System"
 
 	IDS_ADD_FILE "Add file"
 	IDS_ADD_PROCESS "Add process"
