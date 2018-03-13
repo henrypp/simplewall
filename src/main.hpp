@@ -175,8 +175,7 @@ enum EnumNotifyCommand
 {
 	CmdAllow = 0,
 	CmdBlock = 1,
-	CmdIgnore = 2,
-	CmdMute = 3,
+	CmdMute = 2,
 };
 
 struct STATIC_DATA
