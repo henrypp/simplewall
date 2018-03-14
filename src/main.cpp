@@ -309,22 +309,8 @@ void _app_listviewsetfont (HWND hwnd, UINT ctrl_id, bool is_redraw)
 			config.hfont = nullptr;
 		}
 
-		if (config.hfont_bold)
-		{
-			DeleteObject (config.hfont_bold);
-			config.hfont_bold = nullptr;
-		}
-
 		if (_app_listviewinitfont (&lf))
-		{
-			const LONG prev_weight = lf.lfWeight;
-
-			lf.lfWeight = FW_BOLD;
-			config.hfont_bold = CreateFontIndirect (&lf);
-
-			lf.lfWeight = prev_weight;
 			config.hfont = CreateFontIndirect (&lf);
-		}
 	}
 
 	if (config.hfont)
@@ -731,7 +717,7 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 
 bool _app_verifysignature (size_t hash, LPCWSTR path, LPCWSTR* psigner)
 {
-	if (!app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
+	if (!app.ConfigGet (L"IsCerificatesEnabled", false).AsBool () || !config.is_ihaveinternetaccess)
 		return false;
 
 	if (!psigner)
@@ -1387,6 +1373,9 @@ bool _app_freeapplication (size_t hash)
 			cache_versions.erase (hash);
 		}
 
+		if (notifications_last.find (hash) != notifications_last.end ())
+			notifications_last.erase (hash);
+
 		for (size_t i = 0; i < rules_custom.size (); i++)
 		{
 			PITEM_RULE ptr_rule = rules_custom.at (i);
@@ -1504,7 +1493,7 @@ bool _app_istimersactive ()
 	return false;
 }
 
-DWORD_PTR _app_getcolor (size_t hash, bool is_brush, HDC hdc)
+DWORD_PTR _app_getcolor (size_t hash, bool is_brush)
 {
 	_r_fastlock_acquireshared (&lock_access);
 
@@ -1513,9 +1502,6 @@ DWORD_PTR _app_getcolor (size_t hash, bool is_brush, HDC hdc)
 
 	if (ptr_app)
 	{
-		if (hdc && hash == config.myhash && config.hfont_bold)
-			SelectObject (hdc, config.hfont_bold);
-
 		if (app.ConfigGet (L"IsHighlightTimer", true).AsBool () && _app_istimeractive (hash))
 			color_value = L"ColorTimer";
 
@@ -1589,7 +1575,7 @@ rstring _app_gettooltip (size_t hash)
 		// timer information
 		if (_app_istimeractive (hash))
 		{
-			result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s", app.LocaleString (IDS_TIMELEFT, nullptr).GetString (), _r_fmt_interval (apps_timer[hash] - _r_unixtime_now ()).GetString ());
+			result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s", app.LocaleString (IDS_TIMELEFT, nullptr).GetString (), _r_fmt_interval (apps_timer[hash] - _r_unixtime_now (), 3).GetString ());
 		}
 
 		// notes
@@ -3719,6 +3705,10 @@ void _wfp_installfilters ()
 
 bool _app_installfilters (bool is_forced)
 {
+	config.is_ihaveinternetaccess = _app_canihaveaccess ();
+
+	_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
+
 	if (is_forced || _wfp_isfiltersinstalled ())
 	{
 		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
@@ -3742,7 +3732,6 @@ bool _app_installfilters (bool is_forced)
 	}
 	else
 	{
-		_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 		_app_profilesave (app.GetHWND ());
 
 		_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
@@ -3886,7 +3875,7 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 	if (port)
 		StringCchCat (dest, cchDest, _r_fmt (L":%d", port));
 
-	if (is_appenddns && result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && _app_canihaveaccess ())
+	if (is_appenddns && result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && config.is_ihaveinternetaccess)
 	{
 		WCHAR hostBuff[NI_MAXHOST] = {0};
 
@@ -4149,6 +4138,7 @@ void _app_notifycreatewindow ()
 		const INT cxsmIcon = GetSystemMetrics (SM_CXSMICON);
 		const INT cysmIcon = GetSystemMetrics (SM_CYSMICON);
 		const INT IconSize = cxsmIcon + (cxsmIcon / 2);
+		const INT IconXXXX = app.GetDPI (20);
 
 		config.hnotification = CreateWindowEx (WS_EX_TOOLWINDOW | WS_EX_TOPMOST, NOTIFY_CLASS_DLG, nullptr, WS_POPUP, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
 
@@ -4166,10 +4156,10 @@ void _app_notifycreatewindow ()
 					PLOGFONT lf_title = &ncm.lfCaptionFont;
 					PLOGFONT lf_text = &ncm.lfMessageFont;
 
-					lf_title->lfHeight = _r_dc_fontsizetoheight (10);
+					lf_title->lfHeight = _r_dc_fontsizetoheight (14);
 					lf_text->lfHeight = _r_dc_fontsizetoheight (9);
 
-					lf_title->lfWeight = FW_SEMIBOLD;
+					lf_title->lfWeight = FW_LIGHT;
 					lf_text->lfWeight = FW_NORMAL;
 
 					// set default values
@@ -4187,41 +4177,42 @@ void _app_notifycreatewindow ()
 			HWND hwnd = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (12), app.GetDPI (8), wnd_width - app.GetDPI (64 + 12 + 10 + 24), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_title, true);
 
-			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, app.GetDPI (8), app.GetDPI (8), IconSize, IconSize, config.hnotification, (HMENU)IDC_ICON_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON, app.GetDPI (8), app.GetDPI (8), IconSize, IconSize, config.hnotification, (HMENU)IDC_ICON_ID, nullptr, nullptr);
+			SendMessage (hwnd, STM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_MAIN), IconXXXX));
 
-			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - app.GetDPI (48) - app.GetDPI (12), app.GetDPI (8), IconSize, IconSize, config.hnotification, (HMENU)IDC_MUTE_BTN, nullptr, nullptr);
-			SendMessage (hwnd, STM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_MUTE), cxsmIcon));
+			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - app.GetDPI (48) - app.GetDPI (18), app.GetDPI (8), IconSize, IconSize, config.hnotification, (HMENU)IDC_MUTE_BTN, nullptr, nullptr);
+			SendMessage (hwnd, STM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_MUTE), IconXXXX));
 
 			hwnd = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - app.GetDPI (20) - app.GetDPI (12), app.GetDPI (8), IconSize, IconSize, config.hnotification, (HMENU)IDC_CLOSE_BTN, nullptr, nullptr);
-			SendMessage (hwnd, STM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_CLOSE), cxsmIcon));
+			SendMessage (hwnd, STM_SETIMAGE, IMAGE_ICON, (WPARAM)_r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_CLOSE), IconXXXX));
 
-			hwnd = CreateWindow (WC_LINK, nullptr, WS_CHILD | WS_VISIBLE, app.GetDPI (12), app.GetDPI (38), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_LINK, nullptr, WS_CHILD | WS_VISIBLE, app.GetDPI (12), app.GetDPI (38 + 4), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 
-			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (56), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
-			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
-			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
-			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
-
-			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (74), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (56 + 4), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (92), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (74 + 4), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (110), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (92 + 4), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | BS_CHECKBOX | BS_NOTIFY, app.GetDPI (12), app.GetDPI (138), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_CREATERULE_ADDR_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (110 + 4), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
+			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
+			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+			SendMessage (hwnd, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
+
+			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | BS_CHECKBOX | BS_NOTIFY, app.GetDPI (12), app.GetDPI (138 + 4), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_CREATERULE_ADDR_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 
-			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | BS_CHECKBOX | BS_NOTIFY, app.GetDPI (12), app.GetDPI (156), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_CREATERULE_PORT_ID, nullptr, nullptr);
+			hwnd = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | BS_CHECKBOX | BS_NOTIFY, app.GetDPI (12), app.GetDPI (156 + 4), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_CREATERULE_PORT_ID, nullptr, nullptr);
 			SendMessage (hwnd, WM_SETFONT, (WPARAM)hfont_text, true);
 
 			hwnd = CreateWindow (WC_COMBOBOX, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | CBS_HASSTRINGS, app.GetDPI (10), wnd_height - app.GetDPI (36), btn_width - app.GetDPI (12), app.GetDPI (24), config.hnotification, (HMENU)IDC_TIMER_CB, nullptr, nullptr);
@@ -4508,12 +4499,12 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 		{
 			SetWindowLongPtr (config.hnotification, GWLP_USERDATA, idx);
 
-			SendDlgItemMessage (config.hnotification, IDC_ICON_ID, STM_SETIMAGE, IMAGE_ICON, (WPARAM)(app.GetHICON (false)));
-
 			rstring is_signed;
 
 			if (app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
 				is_signed.Format (L" [%s]", app.LocaleString (ptr_app->is_signed ? IDS_SIGN_SIGNED : IDS_SIGN_UNSIGNED, nullptr).GetString ());
+
+			_r_ctrl_settext (config.hnotification, IDC_TITLE_ID, APP_NAME);
 
 			_r_ctrl_settext (config.hnotification, IDC_FILE_ID, L"%s: <a href=\"#\">%s</a>%s", app.LocaleString (IDS_FILE, nullptr).GetString (), _r_path_extractfile (ptr_app->display_name).GetString (), is_signed.GetString ());
 
@@ -4540,7 +4531,7 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 			SendDlgItemMessage (config.hnotification, IDC_TIMER_CB, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_NOTIMER, nullptr).GetString ());
 
 			for (size_t i = 0; i < timers.size (); i++)
-				SendDlgItemMessage (config.hnotification, IDC_TIMER_CB, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt_interval (timers.at (i)).GetString ());
+				SendDlgItemMessage (config.hnotification, IDC_TIMER_CB, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt_interval (timers.at (i) + 1, 1).GetString ());
 
 			SendDlgItemMessage (config.hnotification, IDC_TIMER_CB, CB_SETCURSEL, ptr_app->is_temp ? min (TIMER_DEFAULT, timers.size ()) : 0, 0);
 
@@ -4709,7 +4700,7 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 		if (app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
 			_app_notifyplaysound ();
 
-		if (_app_notifyshow (idx, false))
+		if (!_r_wnd_undercursor (config.hnotification) && _app_notifyshow (idx, false))
 		{
 			const UINT display_timeout = app.ConfigGet (L"NotificationsDisplayTimeout", NOTIFY_TIMER_DEFAULT).AsUint ();
 
@@ -5052,7 +5043,6 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 		if (_wfp_initialize (true))
 			_wfp_installfilters ();
 
-		_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 		_app_profilesave (app.GetHWND ());
 
 		_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
@@ -5107,8 +5097,8 @@ UINT WINAPI LogThread (LPVOID lparam)
 						_app_addapplication (hwnd, ptr_log->path, 0, false, false, true);
 						_r_fastlock_releaseexclusive (&lock_access);
 
-						_app_profilesave (hwnd);
 						_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+						_app_profilesave (hwnd);
 					}
 
 					if (is_logenabled || is_notificationenabled)
@@ -5618,7 +5608,7 @@ LONG _app_wmcustdraw (LPNMLVCUSTOMDRAW lpnmlv, LPARAM lparam)
 
 				if (hash)
 				{
-					const COLORREF new_clr = (COLORREF)_app_getcolor (hash, false, lpnmlv->nmcd.hdc);
+					const COLORREF new_clr = (COLORREF)_app_getcolor (hash, false);
 
 					if (new_clr)
 					{
@@ -6126,7 +6116,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 
 					CheckDlgButton (hwnd, IDC_CHECKUPDATES_CHK, app.ConfigGet (L"CheckUpdates", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
-					if (!_app_canihaveaccess ())
+					if (!config.is_ihaveinternetaccess)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATES_CHK, false);
 
 					app.LocaleEnum (hwnd, IDC_LANGUAGE, false, 0);
@@ -6154,9 +6144,10 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					_r_ctrl_settip (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, LPSTR_TEXTCALLBACK);
 					_r_ctrl_settip (hwnd, IDC_PROXYSUPPORT_CHK, LPSTR_TEXTCALLBACK);
 
-					if (!_app_canihaveaccess ())
+					if (!config.is_ihaveinternetaccess)
 					{
 						_r_ctrl_enable (hwnd, IDC_USEHOSTS_CHK, false);
+						_r_ctrl_enable (hwnd, IDC_USECERTIFICATES_CHK, false);
 						_r_ctrl_enable (hwnd, IDC_USENETWORKRESOLUTION_CHK, false);
 					}
 
@@ -6323,8 +6314,8 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 			SetDlgItemText (hwnd, IDC_TITLE_CONFIRMATIONS, app.LocaleString (IDS_TITLE_CONFIRMATIONS, L":"));
 			SetDlgItemText (hwnd, IDC_TITLE_HIGHLIGHTING, app.LocaleString (IDS_TITLE_HIGHLIGHTING, L":"));
 			SetDlgItemText (hwnd, IDC_TITLE_EXPERTS, app.LocaleString (IDS_TITLE_EXPERTS, L":"));
-			SetDlgItemText (hwnd, IDC_TITLE_LOGGING, app.LocaleString (IDS_TITLE_LOGGING, L": (win7+)"));
-			SetDlgItemText (hwnd, IDC_TITLE_NOTIFICATIONS, app.LocaleString (IDS_TITLE_NOTIFICATIONS, L": (win7+)"));
+			SetDlgItemText (hwnd, IDC_TITLE_LOGGING, app.LocaleString (IDS_TITLE_LOGGING, _r_sys_validversion (6, 1) ? nullptr : L": (win7+)"));
+			SetDlgItemText (hwnd, IDC_TITLE_NOTIFICATIONS, app.LocaleString (IDS_TITLE_NOTIFICATIONS, _r_sys_validversion (6, 1) ? nullptr : L": (win7+)"));
 			SetDlgItemText (hwnd, IDC_TITLE_ADVANCED, app.LocaleString (IDS_TITLE_ADVANCED, L":"));
 
 			switch (page->dlg_id)
@@ -6380,7 +6371,7 @@ BOOL settings_callback (HWND hwnd, DWORD msg, LPVOID lpdata1, LPVOID lpdata2)
 					SetDlgItemText (hwnd, IDC_USEFULLBLOCKLIST_CHK, app.LocaleString (IDS_USEFULLBLOCKLIST_CHK, L"*"));
 					SetDlgItemText (hwnd, IDC_USESTEALTHMODE_CHK, app.LocaleString (IDS_USESTEALTHMODE_CHK, L"*"));
 					SetDlgItemText (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, app.LocaleString (IDS_INSTALLBOOTTIMEFILTERS_CHK, L"*"));
-					SetDlgItemText (hwnd, IDC_PROXYSUPPORT_CHK, app.LocaleString (IDS_PROXYSUPPORT_CHK, L"* (win8+) [beta]"));
+					SetDlgItemText (hwnd, IDC_PROXYSUPPORT_CHK, app.LocaleString (IDS_PROXYSUPPORT_CHK, _r_sys_validversion (6, 2) ? L"* [beta]" : L"* (win8+) [beta]"));
 
 					SetDlgItemText (hwnd, IDC_USEHOSTS_CHK, app.LocaleString (IDS_USEHOSTS_CHK, nullptr));
 					SetDlgItemText (hwnd, IDC_USECERTIFICATES_CHK, app.LocaleString (IDS_USECERTIFICATES_CHK, 0));
@@ -8928,7 +8919,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							MENUITEMINFO mii = {0};
 
 							WCHAR buffer[128] = {0};
-							StringCchCopy (buffer, _countof (buffer), _r_fmt_interval (timers.at (i)));
+							StringCchCopy (buffer, _countof (buffer), _r_fmt_interval (timers.at (i) + 1, 1));
 
 							mii.cbSize = sizeof (mii);
 							mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STRING;
@@ -9432,6 +9423,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 
+					_app_profilesave (hwnd);
+
 					_r_listview_redraw (hwnd, IDC_LISTVIEW);
 
 					break;
@@ -9733,21 +9726,24 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					if (LOWORD (wparam) == IDM_ALL_PROCESSES)
 					{
-						_app_generate_processes ();
+						// already generated!
+						//_app_generate_processes ();
 
 						for (size_t i = 0; i < processes.size (); i++)
 							_app_addapplication (hwnd, processes.at (i).real_path, 0, false, false, true);
 					}
 					else if (LOWORD (wparam) == IDM_ALL_PACKAGES)
 					{
-						_app_generate_packages ();
+						// already generated!
+						//_app_generate_packages ();
 
 						for (size_t i = 0; i < packages.size (); i++)
 							_app_addapplication (hwnd, packages.at (i).sid, 0, false, false, true);
 					}
 					else if (LOWORD (wparam) == IDM_ALL_SERVICES)
 					{
-						_app_generate_services ();
+						// already generated!
+						//_app_generate_services ();
 
 						for (size_t i = 0; i < services.size (); i++)
 							_app_addapplication (hwnd, services.at (i).service_name, 0, false, false, true);

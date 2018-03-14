@@ -60,7 +60,7 @@
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 
 #define NOTIFY_WIDTH 368
-#define NOTIFY_HEIGHT 234
+#define NOTIFY_HEIGHT 238
 #define NOTIFY_BTN_WIDTH 106
 
 #define NOTIFY_TIMER_POPUP_ID 1001
@@ -69,9 +69,9 @@
 #define NOTIFY_TIMER_POPUP 350
 
 #define NOTIFY_TIMER_DEFAULT 6 // sec.
-#define NOTIFY_TIMEOUT 120 // sec.
+#define NOTIFY_TIMEOUT 60 // sec.
 #define NOTIFY_TIMEOUT_MINIMUM 8 // sec.
-#define NOTIFY_LIMIT_SIZE 10 //limit vector size
+#define NOTIFY_LIMIT_SIZE 10 //limit notifications pool size
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 #define NOTIFY_BORDER_COLOR RGB(255,98,98)
@@ -189,6 +189,7 @@ struct STATIC_DATA
 	bool is_notifymouse = false;
 	bool is_nocheckboxnotify = false;
 	bool is_wsainit = false;
+	bool is_ihaveinternetaccess = false;
 
 	HIMAGELIST himg = nullptr;
 
@@ -203,7 +204,6 @@ struct STATIC_DATA
 	HBITMAP hbitmap_service_small = nullptr;
 
 	HFONT hfont = nullptr;
-	HFONT hfont_bold = nullptr;
 
 	HANDLE hthread = nullptr;
 	HANDLE hengine = nullptr;

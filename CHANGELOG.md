@@ -1,3 +1,18 @@
+v2.2.1 Beta (14 March 2018)
++ instant apps list sorting
++ notifications: added information about blocked protocol
+- notifications: replaced "disable notifications for this app" icon
+- notifications: changed default timeout between same notifications
+- notifications: tray popup sometimes won't shown on some systems
+- notifications: ignore button combined with block button
+- notifications: changed texts for remote/local addresses
+- timer does not removed when user manually uncheck apps
+- removed font boldening for itself (issue #135)
+- changed minimal width of main window
+- fixed timers formatting
+- fixed ui bugs
+- fixed bugs
+
 v2.2 Beta (4 March 2018)
 + new notification ui
 + now simplewall added to the apps list automatically (issue #106)
