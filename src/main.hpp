@@ -60,8 +60,8 @@
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 
 #define NOTIFY_WIDTH 368
-#define NOTIFY_HEIGHT 238
-#define NOTIFY_BTN_WIDTH 106
+#define NOTIFY_HEIGHT 248
+#define NOTIFY_BTN_WIDTH 110
 
 #define NOTIFY_TIMER_POPUP_ID 1001
 #define NOTIFY_TIMER_TIMEOUT_ID 2002
@@ -175,7 +175,6 @@ enum EnumNotifyCommand
 {
 	CmdAllow = 0,
 	CmdBlock = 1,
-	CmdMute = 2,
 };
 
 struct STATIC_DATA
@@ -217,6 +216,8 @@ struct STATIC_DATA
 
 	HANDLE htimer = nullptr;
 	time_t timer_low = 0;
+
+	time_t blocklist_timestamp = 0;
 
 	WCHAR title[128] = {0};
 	WCHAR notify_snd_path[MAX_PATH] = {0};
@@ -309,6 +310,8 @@ typedef struct _ITEM_LOG
 	UINT16 remote_port = 0;
 	UINT16 local_port = 0;
 
+	UINT64 filter_id = 0;
+
 	union
 	{
 		IN_ADDR remote_addr;
@@ -368,8 +371,6 @@ typedef struct _ITEM_COLOR
 
 	COLORREF default_clr = 0;
 	COLORREF clr = 0;
-
-	HBRUSH hbrush = nullptr;
 
 	LPWSTR config_name = nullptr;
 	LPWSTR config_value = nullptr;

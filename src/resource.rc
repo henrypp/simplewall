@@ -15,12 +15,14 @@ IDA_MAIN ACCELERATORS
 {
 	"A", IDM_SELECT_ALL, CONTROL, VIRTKEY
 	"C", IDM_COPY, CONTROL, VIRTKEY
+	"E", IDM_EXPLORE, CONTROL, VIRTKEY
 	"E", IDM_PURGE_ERRORS, CONTROL, SHIFT, VIRTKEY
 	"F", IDM_FIND, CONTROL, VIRTKEY
 	"I", IDM_LOGSHOW, CONTROL, VIRTKEY
 	"T", IDM_PURGE_TIMERS, CONTROL, SHIFT, VIRTKEY
 	"X", IDM_LOGCLEAR, CONTROL, VIRTKEY
 	"X", IDM_PURGE_UNUSED, CONTROL, SHIFT, VIRTKEY
+	VK_RETURN, IDM_PROPERTIES, VIRTKEY
 	VK_DELETE, IDM_DELETE, VIRTKEY
 	VK_F1, IDM_ABOUT, VIRTKEY
 	VK_F2, IDM_SETTINGS, VIRTKEY
@@ -104,6 +106,8 @@ IDM_MAIN MENU
 	{
 		MENUITEM " ", IDM_WEBSITE
 		MENUITEM " ", IDM_CHECKUPDATES
+		MENUITEM " ", IDM_CHECKUPDATES_LANGUAGE
+		MENUITEM " ", IDM_CHECKUPDATES_BLOCKLIST
 		MENUITEM " ", IDM_ABOUT
 	}
 }
@@ -195,14 +199,14 @@ IDM_LISTVIEW MENU
 		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_REFRESH2
 		MENUITEM SEPARATOR
-		MENUITEM " ", IDM_EXPLORE
-		MENUITEM " ", IDM_COPY
-		MENUITEM " ", IDM_SELECT_ALL
-		MENUITEM SEPARATOR
-		MENUITEM " ", IDM_DELETE
-		MENUITEM SEPARATOR
 		MENUITEM " ", IDM_CHECK
 		MENUITEM " ", IDM_UNCHECK
+		MENUITEM SEPARATOR
+		MENUITEM " ", IDM_EXPLORE
+		MENUITEM " ", IDM_COPY
+		MENUITEM " ", IDM_DELETE
+		MENUITEM SEPARATOR
+		MENUITEM " ", IDM_PROPERTIES
 	}
 }
 
@@ -221,6 +225,14 @@ IDM_EDITOR MENU
 	}
 }
 
+IDM_TIMER MENU
+{
+	POPUP ""
+	{
+		MENUITEM " ", IDM_NOTIMER
+		MENUITEM SEPARATOR
+	}
+}
 //
 // Dialog resources
 //
@@ -270,7 +282,7 @@ FONT 8, "Ms Shell Dlg"
 
 	CONTROL			"", IDC_APPS_LV, WC_LISTVIEW, LVS_REPORT | LVS_SHOWSELALWAYS | LVS_NOCOLUMNHEADER | WS_BORDER | WS_TABSTOP | WS_VSCROLL | LVS_SHAREIMAGELISTS, 148, 58, 132, 124
 
-	PUSHBUTTON		"", IDC_WIKI, 8, 192, 64, 14
+	PUSHBUTTON		"", IDC_WIKI, 8, 192, 20, 14, BS_ICON
 	PUSHBUTTON		"", IDC_SAVE, 148, 192, 64, 14
 	PUSHBUTTON		"", IDC_CLOSE, 216, 192, 64, 14
 }
@@ -291,18 +303,19 @@ STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU | WS_TABSTOP
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Ms Shell Dlg"
 {
-	GROUPBOX		"", IDC_TITLE_GENERAL, 4, 4, 262, 78
+	GROUPBOX		"", IDC_TITLE_GENERAL, 4, 4, 262, 90
 
 	AUTOCHECKBOX	"", IDC_ALWAYSONTOP_CHK, 12, 16, 246, 10
 	AUTOCHECKBOX	"", IDC_LOADONSTARTUP_CHK, 12, 28, 246, 10
 	AUTOCHECKBOX	"", IDC_STARTMINIMIZED_CHK, 12, 40, 246, 10
 	AUTOCHECKBOX	"", IDC_SKIPUACWARNING_CHK, 12, 52, 246, 10
 	AUTOCHECKBOX	"", IDC_CHECKUPDATES_CHK, 12, 64, 246, 10
+	AUTOCHECKBOX	"", IDC_CHECKUPDATESBETA_CHK, 12, 76, 246, 10
 
-	GROUPBOX		"", IDC_TITLE_LANGUAGE, 4, 84, 262, 34
+	GROUPBOX		"", IDC_TITLE_LANGUAGE, 4, 96, 262, 34
 
-	LTEXT			"", IDC_LANGUAGE_HINT, 12, 98, 114, 12, SS_CENTERIMAGE
-	COMBOBOX		IDC_LANGUAGE, 134, 98, 124, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+	LTEXT			"", IDC_LANGUAGE_HINT, 12, 110, 114, 12, SS_CENTERIMAGE
+	COMBOBOX		IDC_LANGUAGE, 134, 110, 124, 30, CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
 }
 
 IDD_SETTINGS_INTERFACE DIALOGEX 107, 0, 272, 186
@@ -332,24 +345,22 @@ STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU | WS_TABSTOP
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Ms Shell Dlg"
 {
-	GROUPBOX		"", IDC_TITLE_GENERAL, 4, 4, 262, 52
+	GROUPBOX		"", IDC_TITLE_GENERAL, 4, 4, 262, 40
 
-	AUTOCHECKBOX	"", IDC_RULE_ALLOWINBOUND, 12, 16, 246, 10
-	AUTOCHECKBOX	"", IDC_RULE_ALLOWLISTEN, 12, 28, 246, 10
-	AUTOCHECKBOX	"", IDC_RULE_ALLOWLOOPBACK, 12, 40, 246, 10
+	AUTOCHECKBOX	"", IDC_USECERTIFICATES_CHK, 12, 16, 246, 10
+	AUTOCHECKBOX	"", IDC_USENETWORKRESOLUTION_CHK, 12, 28, 246, 10
 
-	GROUPBOX		"", IDC_TITLE_EXPERTS, 4, 58, 262, 64
+	GROUPBOX		"", IDC_TITLE_EXPERTS1, 4, 46, 262, 52
 
-	AUTOCHECKBOX	"", IDC_USEFULLBLOCKLIST_CHK, 12, 70, 246, 10
-	AUTOCHECKBOX	"", IDC_USESTEALTHMODE_CHK, 12, 82, 246, 10
-	AUTOCHECKBOX	"", IDC_INSTALLBOOTTIMEFILTERS_CHK, 12, 94, 246, 10
-	AUTOCHECKBOX	"", IDC_PROXYSUPPORT_CHK, 12, 106, 246, 10
+	AUTOCHECKBOX	"", IDC_RULE_ALLOWINBOUND, 12, 58, 246, 10
+	AUTOCHECKBOX	"", IDC_RULE_ALLOWLISTEN, 12, 70, 246, 10
+	AUTOCHECKBOX	"", IDC_RULE_ALLOWLOOPBACK, 12, 82, 246, 10
 
-	GROUPBOX		"", IDC_TITLE_ADVANCED, 4, 124, 262, 52
+	GROUPBOX		"", IDC_TITLE_EXPERTS2, 4, 100, 262, 52
 
-	AUTOCHECKBOX	"", IDC_USEHOSTS_CHK, 12, 136, 246, 10
-	AUTOCHECKBOX	"", IDC_USECERTIFICATES_CHK, 12, 148, 246, 10
-	AUTOCHECKBOX	"", IDC_USENETWORKRESOLUTION_CHK, 12, 160, 246, 10
+	AUTOCHECKBOX	"", IDC_USESTEALTHMODE_CHK, 12, 112, 246, 10
+	AUTOCHECKBOX	"", IDC_INSTALLBOOTTIMEFILTERS_CHK, 12, 124, 246, 10
+	AUTOCHECKBOX	"", IDC_PROXYSUPPORT_CHK, 12, 136, 246, 10
 }
 
 IDD_SETTINGS_RULES_BLOCKLIST DIALOGEX 107, 0, 272, 186
@@ -416,7 +427,10 @@ FONT 8, "Ms Shell Dlg"
 STRINGTABLE
 {
 	IDS_UPDATE_NO "No updates available."
-	IDS_UPDATE_YES "New version (%s) available. Open download page?"
+	IDS_UPDATE_YES "Update available (%s), download and install them?"
+	IDS_UPDATE_DOWNLOAD "Downloading update... %d%%"
+	IDS_UPDATE_DONE "Downloading update finished."
+	IDS_UPDATE_ERROR "Update server connection error."
 
 	IDS_FILE "File"
 	IDS_SETTINGS "Settings"
@@ -438,6 +452,8 @@ STRINGTABLE
 	IDS_HELP "Help"
 	IDS_WEBSITE "Website"
 	IDS_CHECKUPDATES "Check for updates"
+	IDS_CHECKUPDATES_LANGUAGE "Download latest language pack"
+	IDS_CHECKUPDATES_BLOCKLIST "Download latest blocklist"
 	IDS_DONATE "Give thanks!"
 	IDS_ABOUT "About"
 
@@ -467,6 +483,7 @@ STRINGTABLE
 	IDS_SELECT_ALL "Select all"
 	IDS_CHECK "Enable selected"
 	IDS_UNCHECK "Disable selected"
+	IDS_PROPERTIES "Properties"
 
 	IDS_ADD "Add"
 	IDS_EDIT2 "Edit"
@@ -477,9 +494,12 @@ STRINGTABLE
 	IDS_MODE_WHITELIST "Whitelist (allow selected)"
 	IDS_MODE_BLACKLIST "Blacklist (block selected)"
 
-	IDS_RULE_ALLOWINBOUND "Allow inbound connections for all (dangerous)"
-	IDS_RULE_ALLOWLISTEN "Allow listen connections for all (recommended)"
+	IDS_RULE_ALLOWINBOUND "Allow inbound connections for all"
+	IDS_RULE_ALLOWINBOUND_HINT "This filtering layer allows for authorizing accept requests for incoming TCP connections, as well as authorizing incoming non-TCP traffic based on the first packet received."
+	IDS_RULE_ALLOWLISTEN "Allow listen connections for all"
+	IDS_RULE_ALLOWLISTEN_HINT "This filtering layer allows for authorizing TCP listen requests.\r\nWarning: Disabling this option may cause 3-rd party applications freeze."
 	IDS_RULE_ALLOWLOOPBACK "Allow loopback connections for all"
+	IDS_RULE_ALLOWLOOPBACK_HINT "This allows all loopback traffic."
 
 	IDS_HIGHLIGHT_INVALID "File not found"
 	IDS_HIGHLIGHT_NETWORK "Shared network app"
@@ -488,7 +508,6 @@ STRINGTABLE
 	IDS_HIGHLIGHT_SERVICE "Windows service"
 	IDS_HIGHLIGHT_SIGNED "Signed app"
 	IDS_HIGHLIGHT_SILENT "Disabled notifications"
-	IDS_HIGHLIGHT_SPECIAL "Special rules"
 	IDS_HIGHLIGHT_SYSTEM "System app"
 	IDS_HIGHLIGHT_TIMER "Timer app"
 
@@ -514,6 +533,7 @@ STRINGTABLE
 	IDS_SIGN_UNSIGNED "Not signed"
 
 	IDS_GROUP_ALLOWED "Allowed apps"
+	IDS_GROUP_SPECIAL_APPS "Special rules apps"
 	IDS_GROUP_BLOCKED "Blocked apps"
 
 	IDS_GROUP_ENABLED "Enabled rules (for all)"
@@ -548,7 +568,6 @@ STRINGTABLE
 	IDS_TITLE_EXPERTS "Experts-only"
 	IDS_TITLE_LOGGING "Logging to a file"
 	IDS_TITLE_NOTIFICATIONS "Notifications (whitelist only)"
-	IDS_TITLE_ADVANCED "Advanced"
 
 	IDS_ALWAYSONTOP_CHK "Always on top"
 	IDS_LOADONSTARTUP_CHK "Load on system startup"
@@ -557,11 +576,10 @@ STRINGTABLE
 	IDS_AUTOSIZECOLUMNS_CHK "Autosize columns"
 	IDS_SKIPUACWARNING_CHK "Skip ""User Account Control"" prompt warning"
 	IDS_CHECKUPDATES_CHK "Periodically check for updates (recommended)"
+	IDS_CHECKUPDATESBETA_CHK "Update to beta versions"
 
 	IDS_LANGUAGE_HINT "Select language:"
 
-	IDS_USEFULLBLOCKLIST_CHK "Enable blocklist extra rules"
-	IDS_USEFULLBLOCKLIST_HINT "Extra rules are extend blocklist features."
 	IDS_USESTEALTHMODE_CHK "Enable stealth-mode"
 	IDS_USESTEALTHMODE_HINT "Prevent port scanning using silent drop inbound TCP RST and outbound ICMP ""Destination Unreachable"" to prevent UDP port scanning."
 	IDS_INSTALLBOOTTIMEFILTERS_CHK "Enable boot-time filters"
@@ -569,7 +587,6 @@ STRINGTABLE
 	IDS_PROXYSUPPORT_CHK "Enable proxy support"
 	IDS_PROXYSUPPORT_HINT "Blocks all proxy connections. It may incompatible with thirdparty software."
 
-	IDS_USEHOSTS_CHK "Allow hosts support for rules"
 	IDS_USECERTIFICATES_CHK "Check apps for digital signatures"
 	IDS_USENETWORKRESOLUTION_CHK "Resolve network addresses"
 
@@ -610,7 +627,6 @@ STRINGTABLE
 	IDS_QUESTION_STOP "This will restore network access for all blocked apps, continue?"
 	IDS_QUESTION_MODE "Change mode to a ""%s""?"
 	IDS_QUESTION_EXIT "Installed filters will work even if you exit, continue?"
-	IDS_QUESTION_LISTEN "Disabling listen connections <a href=""%s"">can cause software freezes</a>, continue?"
 	IDS_QUESTION_EXPERT "This option definitely for advanced users only, continue?"
 	IDS_QUESTION_TIMER "Timer activated. Timer are working only when application is running, exit?"
 	IDS_QUESTION_TIMERS "Delete all timer(s)?"
@@ -641,7 +657,6 @@ IDI_MAIN		ICON		"res\\100.ico"
 IDI_INACTIVE	ICON		"res\\101.ico"
 IDI_ALLOW		ICON		"res\\allow_btn.ico"
 IDI_BLOCK		ICON		"res\\block_btn.ico"
-IDI_MUTE		ICON		"res\\mute_btn.ico"
 IDI_CLOSE		ICON		"res\\close_btn.ico"
 
 //

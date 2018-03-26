@@ -326,8 +326,8 @@
     <ClInclude Include="..\routine\routine.hpp" />
     <ClInclude Include="..\routine\rstring.hpp" />
     <ClInclude Include="src\app.hpp" />
-    <ClInclude Include="src\include\pugixml\pugiconfig.hpp" />
     <ClInclude Include="src\main.hpp" />
+    <ClInclude Include="src\pugiconfig.hpp" />
     <ClInclude Include="src\resource.hpp" />
   </ItemGroup>
   <ItemGroup>

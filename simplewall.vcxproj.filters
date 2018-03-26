@@ -47,13 +47,13 @@
     <ClInclude Include="..\routine\rapp.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\include\pugixml\pugiconfig.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\app.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\pugixml\src\pugixml.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pugiconfig.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

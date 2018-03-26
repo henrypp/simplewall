@@ -1,3 +1,17 @@
+v2.2.2 Beta (26 March 2018)
++ new update engine
++ show full app paths in notifications when "show filenames only" is unchecked
++ added grouping for apps with user rules
++ added opening file properties feature
+- cosmetics for the notification ui (issue #146)
+- cosmetics for the apps menu
+- fixed installer who does not removing profile backups
+- fixed signature of apps cannot be checked at startup
+- fixed dns resolution in some cases (issue #127)
+- fixed various memory leaks because of icons resources
+- fixed ui bugs
+- fixed bugs
+
 v2.2.1 Beta (14 March 2018)
 + instant apps list sorting
 + notifications: added information about blocked protocol
