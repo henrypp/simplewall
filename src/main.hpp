@@ -15,35 +15,36 @@
 #define LANG_MENU 5
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
-#define PROC_SYSTEM_PID 4
-#define PROC_SYSTEM_NAME L"System"
-
-#define PATH_LOG L"%userprofile%\\" APP_NAME_SHORT L".log"
-
-#define PATH_NTOSKRNL L"%systemroot%\\system32\\ntoskrnl.exe"
-#define PATH_SVCHOST L"%systemroot%\\system32\\svchost.exe"
-#define PATH_STORE L"%systemroot%\\system32\\wsreset.exe"
-#define PATH_SERVICES L"%systemroot%\\system32\\services.msc"
-
 #define XML_APPS L"apps.xml"
 #define XML_BLOCKLIST L"blocklist.xml"
 #define XML_RULES_CONFIG L"rules_config.xml"
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 #define XML_RULES_SYSTEM L"rules_system.xml"
 
+#define LOG_DIV L","
+#define LOG_PATH_EXT L"log"
+#define LOG_PATH_DEFAULT L"%userprofile%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
+
+#define PROC_SYSTEM_PID 4
+#define PROC_SYSTEM_NAME L"System"
+
+#define PATH_NTOSKRNL L"%systemroot%\\system32\\ntoskrnl.exe"
+#define PATH_SVCHOST L"%systemroot%\\system32\\svchost.exe"
+#define PATH_WINSTORE L"%systemroot%\\system32\\wsreset.exe"
+#define PATH_SERVICES L"%systemroot%\\system32\\services.msc"
+
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
-#define BLOCKLIST_URL L"https://github.com/henrypp/simplewall/blob/master/bin/blocklist.xml"
-#define LISTENS_ISSUE_URL L"https://github.com/henrypp/simplewall/issues/9"
 
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;; CCRC;;;%s)"
 
 #define SZ_TAB L"   "
 #define SZ_EMPTY L"<empty>"
-#define SZ_REMOTE L"Remote"
-#define SZ_LOCAL L"Local"
-#define SZ_DIRECTION_IN L"IN"
-#define SZ_DIRECTION_OUT L"OUT"
-#define SZ_DIRECTION_LOOPBACK L"-Loopback"
+
+#define SZ_LOG_REMOTE_ADDRESS L"Remote"
+#define SZ_LOG_LOCAL_ADDRESS L"Local"
+#define SZ_LOG_DIRECTION_IN L"IN"
+#define SZ_LOG_DIRECTION_OUT L"OUT"
+#define SZ_LOG_DIRECTION_LOOPBACK L"-Loopback"
 
 #define RULE_DELIMETER L";"
 #define UI_FONT L"Segoe UI"
@@ -55,6 +56,8 @@
 
 #define TIMER_DEFAULT 1
 #define TIMER_LOG_CALLBACK 4000
+
+#define FILTERS_TIMEOUT 6000
 
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
@@ -68,9 +71,8 @@
 
 #define NOTIFY_TIMER_POPUP 350
 
-#define NOTIFY_TIMER_DEFAULT 6 // sec.
-#define NOTIFY_TIMEOUT 60 // sec.
-#define NOTIFY_TIMEOUT_MINIMUM 8 // sec.
+#define NOTIFY_TIMER_DEFAULT 30 // sec.
+#define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 #define NOTIFY_LIMIT_SIZE 10 //limit notifications pool size
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
@@ -126,7 +128,7 @@ extern "C" {
 	static const GUID GUID_WfpSublayer =
 	{0x9fee6f59, 0xb951, 0x4f9a, {0xb5, 0x2f, 0x13, 0x3d, 0xcf, 0x7a, 0x42, 0x79}};
 
-	// deprecated and not used, but need for remove
+	// deprecated and not used, but need for compatibility
 	static const GUID GUID_WfpOutboundCallout4_DEPRECATED =
 	{0xf1251f1a, 0xab09, 0x4ce7, {0xba, 0xe3, 0x6c, 0xcc, 0xce, 0xf2, 0xc8, 0xca}};
 
@@ -175,6 +177,7 @@ enum EnumNotifyCommand
 {
 	CmdAllow = 0,
 	CmdBlock = 1,
+	CmdMute = 2,
 };
 
 struct STATIC_DATA
@@ -223,6 +226,8 @@ struct STATIC_DATA
 	WCHAR notify_snd_path[MAX_PATH] = {0};
 
 	WCHAR apps_path[MAX_PATH] = {0};
+	WCHAR rules_blocklist_path[MAX_PATH] = {0};
+	WCHAR rules_system_path[MAX_PATH] = {0};
 	WCHAR rules_custom_path[MAX_PATH] = {0};
 	WCHAR rules_config_path[MAX_PATH] = {0};
 
@@ -297,6 +302,7 @@ typedef struct _ITEM_LOG
 {
 	bool is_loopback = false;
 	bool is_blocklist = false;
+	bool is_system = false;
 	bool is_myprovider = false;
 
 	size_t hash = 0;
