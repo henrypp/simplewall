@@ -1,3 +1,13 @@
+v2.2.4 Beta (3 May 2018)
+- now simplewall install filters fastest than Manco pulls out his revolver
+- reworked update engine, now it check all components updates automatically
+- sort rules alphabeticaly
+- fixed threads priority race condition
+- fixed applying filters without pause
+- fixed dns caching (issue #153)
+- fixed ui bugs
+- fixed bugs
+
 v2.2.3 Beta (16 April 2018)
 - added drop settings to default feature
 - changed log format to csv (comma-separated values) table

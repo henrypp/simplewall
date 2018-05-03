@@ -106,8 +106,6 @@ IDM_MAIN MENU
 	{
 		MENUITEM " ", IDM_WEBSITE
 		MENUITEM " ", IDM_CHECKUPDATES
-		MENUITEM " ", IDM_CHECKUPDATES_LANGUAGE
-		MENUITEM " ", IDM_CHECKUPDATES_BLOCKLIST
 		MENUITEM " ", IDM_ABOUT
 	}
 }
@@ -424,11 +422,12 @@ FONT 8, "Ms Shell Dlg"
 STRINGTABLE
 {
 	IDS_UPDATE_NO "No updates available."
-	IDS_UPDATE_YES "Update available (%s), download and install them?"
+	IDS_UPDATE_YES "Update available, download and install them?"
 	IDS_UPDATE_DOWNLOAD "Downloading update..."
 	IDS_UPDATE_DONE "Downloading update finished."
 	IDS_UPDATE_ERROR "Update server connection error."
 	IDS_UPDATE_INIT "Checking for new releases..."
+	IDS_UPDATE_INSTALL "Update available, do you want to install them?"
 
 	IDS_FILE "File"
 	IDS_SETTINGS "Settings"
@@ -450,8 +449,6 @@ STRINGTABLE
 	IDS_HELP "Help"
 	IDS_WEBSITE "Website"
 	IDS_CHECKUPDATES "Check for updates"
-	IDS_CHECKUPDATES_LANGUAGE "Download latest language pack"
-	IDS_CHECKUPDATES_BLOCKLIST "Download latest blocklist"
 	IDS_DONATE "Give thanks!"
 	IDS_ABOUT "About"
 

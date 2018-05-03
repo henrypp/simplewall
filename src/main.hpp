@@ -180,6 +180,8 @@ enum EnumNotifyCommand
 	CmdMute = 2,
 };
 
+typedef std::vector<UINT64> MARRAY;
+
 struct STATIC_DATA
 {
 	PSID psid = nullptr;
@@ -207,10 +209,9 @@ struct STATIC_DATA
 
 	HFONT hfont = nullptr;
 
-	HANDLE hthread = nullptr;
 	HANDLE hengine = nullptr;
-	HANDLE hevent = nullptr;
-	HANDLE hlog = nullptr;
+	HANDLE hnetevent = nullptr;
+	HANDLE hlogfile = nullptr;
 	HANDLE hpackages = nullptr;
 
 	HANDLE stop_evt = nullptr;
@@ -273,6 +274,8 @@ typedef struct _ITEM_APP
 	WCHAR original_path[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
 
+	MARRAY mfarr;
+
 	union
 	{
 		PSECURITY_DESCRIPTOR psd = nullptr; // service app
@@ -295,6 +298,7 @@ typedef struct _ITEM_RULE
 	LPWSTR pname = nullptr;
 	LPWSTR prule = nullptr;
 
+	MARRAY mfarr;
 	std::unordered_map<size_t, bool> apps;
 } ITEM_RULE, *PITEM_RULE;
 
