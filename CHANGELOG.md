@@ -1,3 +1,11 @@
+v2.2.5 Beta (4 May 2018)
+- fixed saving profile on manual apps state changing
+- fixed some untranslated strings
+- fixed installer/uninstaller
+- fixed rules checkboxes
+- fixed ui bugs
+- fixed bugs
+
 v2.2.4 Beta (3 May 2018)
 - now simplewall install filters fastest than Manco pulls out his revolver
 - reworked update engine, now it check all components updates automatically

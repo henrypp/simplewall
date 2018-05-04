@@ -193,7 +193,6 @@ struct STATIC_DATA
 	bool is_notifymouse = false;
 	bool is_nocheckboxnotify = false;
 	bool is_wsainit = false;
-	bool is_ihaveinternetaccess = false;
 
 	HIMAGELIST himg = nullptr;
 
@@ -212,9 +211,7 @@ struct STATIC_DATA
 	HANDLE hengine = nullptr;
 	HANDLE hnetevent = nullptr;
 	HANDLE hlogfile = nullptr;
-	HANDLE hpackages = nullptr;
 
-	HANDLE stop_evt = nullptr;
 	HANDLE finish_evt = nullptr;
 	HANDLE log_evt = nullptr;
 

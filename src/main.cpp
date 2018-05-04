@@ -1400,7 +1400,7 @@ bool _app_freeapplication (size_t hash)
 {
 	bool is_enabled = false;
 
-	ITEM_APP* ptr_app = _app_getapplication (hash);
+	PITEM_APP ptr_app = _app_getapplication (hash);
 
 	if (ptr_app)
 		is_enabled = ptr_app->is_enabled;
@@ -3827,8 +3827,6 @@ bool _app_installfilters (HWND hwnd, bool is_forced)
 	if (_r_fastlock_islocked (&lock_apply))
 		return false;
 
-	config.is_ihaveinternetaccess = _app_canihaveaccess ();
-
 	_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 
 	if (is_forced || _wfp_isfiltersinstalled ())
@@ -4002,7 +4000,7 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 	if (port)
 		StringCchCat (dest, cchDest, _r_fmt (L":%d", port));
 
-	if (is_appenddns && result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && config.is_ihaveinternetaccess)
+	if (is_appenddns && result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && _app_canihaveaccess ())
 	{
 		WCHAR hostBuff[NI_MAXHOST] = {0};
 
@@ -5225,7 +5223,6 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 	_r_fastlock_releaseexclusive (&lock_apply);
 
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
-
 	SetEvent (config.finish_evt);
 
 	return ERROR_SUCCESS;
@@ -5585,39 +5582,6 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 
 	return false;
 }
-
-//bool initializer_callback (HWND hwnd, DWORD msg, LPVOID, LPVOID)
-//{
-//	switch (msg)
-//	{
-//		case _RM_ARGUMENTS:
-//		{
-//			if (wcsstr (GetCommandLine (), L"/uninstall"))
-//			{
-//				const bool is_enabled = _wfp_isfiltersinstalled ();
-//
-//				if (is_enabled)
-//				{
-//					if (_app_installmessage (hwnd, false))
-//					{
-//						if (_wfp_initialize (false))
-//							_wfp_destroyfilters (true);
-//
-//						_wfp_uninitialize (true);
-//					}
-//				}
-//
-//				return true;
-//			}
-//
-//			break;
-//		}
-//
-//
-//	}
-//
-//	return false;
-//}
 
 LONG _app_wmcustdraw (LPNMLVCUSTOMDRAW lpnmlv, LPARAM lparam)
 {
@@ -6472,16 +6436,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								}
 							}
 
-							size_t group_id = 2;
-
 							if (ptr_rule->is_enabled && ptr_rule->apps.empty ())
 							{
-								group_id = 0;
 								group1_count += 1;
 							}
 							else if (ptr_rule->is_enabled && !ptr_rule->apps.empty ())
 							{
-								group_id = 1;
 								group2_count += 1;
 							}
 							else
@@ -6491,7 +6451,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							config.is_nocheckboxnotify = true;
 
-							_r_listview_setitem (hwnd, IDC_EDITOR, i, 0, ptr_rule->pname, ptr_rule->is_block ? 1 : 0, group_id);
+							_r_listview_setitem (hwnd, IDC_EDITOR, i, 0, ptr_rule->pname, ptr_rule->is_block ? 1 : 0, _app_getrulegroup (ptr_rule));
 							_r_listview_setitem (hwnd, IDC_EDITOR, i, 1, app.LocaleString (IDS_DIRECTION_1 + ptr_rule->dir, nullptr));
 							_r_listview_setitem (hwnd, IDC_EDITOR, i, 2, protocol);
 
@@ -6684,9 +6644,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 										config.is_nocheckboxnotify = false;
 									}
 
+									SendMessage (hwnd, RM_LOCALIZE, dialog_id, (LPARAM)ptr_page);
+
 									_wfp_create4filters (ptr_rule, weight, false);
 
 									_app_profilesave (app.GetHWND ());
+									_app_refreshstatus (app.GetHWND (), false, true);
+
+									_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
 
 									_app_listviewsort_ab (hwnd, IDC_EDITOR);
 								}
@@ -7193,31 +7158,29 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
 						{
-							{
-								_r_fastlock_acquireexclusive (&lock_access);
-
-								rules_custom.push_back (ptr_rule);
-
-								_r_fastlock_releaseexclusive (&lock_access);
-							}
+							_r_fastlock_acquireexclusive (&lock_access);
+							rules_custom.push_back (ptr_rule);
+							_r_fastlock_releaseexclusive (&lock_access);
 
 							const size_t item = _r_listview_getitemcount (hwnd, IDC_EDITOR);
 
 							config.is_nocheckboxnotify = true;
 
-							_r_listview_additem (hwnd, IDC_EDITOR, item, 0, ptr_rule->pname, ptr_rule->is_block ? 1 : 0, 0, rules_custom.size () - 1);
+							_r_listview_additem (hwnd, IDC_EDITOR, item, 0, ptr_rule->pname, ptr_rule->is_block ? 1 : 0, _app_getrulegroup (ptr_rule), rules_custom.size () - 1);
 							_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, ptr_rule->is_enabled);
 
 							config.is_nocheckboxnotify = false;
 
 							SendMessage (hwnd, RM_LOCALIZE, dialog_id, (LPARAM)ptr_page);
 
+							_wfp_create4filters (ptr_rule, FILTER_WEIGHT_CUSTOM, false);
+
 							_app_profilesave (app.GetHWND ());
 							_app_refreshstatus (app.GetHWND (), false, true);
 
-							_wfp_create4filters (ptr_rule, FILTER_WEIGHT_CUSTOM, false);
-
 							_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
+
+							_app_listviewsort_ab (hwnd, IDC_EDITOR);
 						}
 						else
 						{
@@ -7250,12 +7213,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						{
 							SendMessage (hwnd, RM_LOCALIZE, dialog_id, (LPARAM)ptr_page);
 
+							_wfp_create4filters (ptr_rule, FILTER_WEIGHT_CUSTOM, false);
+
 							_app_profilesave (app.GetHWND ());
 							_app_refreshstatus (app.GetHWND (), false, true);
 
-							_wfp_create4filters (ptr_rule, FILTER_WEIGHT_CUSTOM, false);
-
 							_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
+
+							_app_listviewsort_ab (hwnd, IDC_EDITOR);
 						}
 					}
 
@@ -7302,10 +7267,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					_r_fastlock_releaseexclusive (&lock_access);
 
 					_app_profilesave (app.GetHWND ());
+					_app_refreshstatus (app.GetHWND (), false, true);
+
+					_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
 
 					SendMessage (hwnd, RM_LOCALIZE, dialog_id, (LPARAM)ptr_page);
-
-					_r_listview_redraw (hwnd, IDC_EDITOR);
 
 					break;
 				}
@@ -7396,7 +7362,16 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							_r_fastlock_releaseexclusive (&lock_access);
 
 							if (is_changed)
+							{
+								SendMessage (hwnd, RM_LOCALIZE, dialog_id, (LPARAM)ptr_page);
+
 								_app_profilesave (app.GetHWND ());
+								_app_refreshstatus (app.GetHWND (), false, true);
+
+								_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
+
+								_app_listviewsort_ab (hwnd, IDC_EDITOR);
+							}
 						}
 					}
 
@@ -8618,7 +8593,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 
 			// initialize thread objects
-			config.stop_evt = CreateEvent (nullptr, FALSE, FALSE, nullptr);
 			config.finish_evt = CreateEvent (nullptr, FALSE, FALSE, nullptr);
 
 			// initialize dropped packets log callback thread (win7+)
@@ -9007,6 +8981,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							_wfp_create3filters (ptr_app, false);
+
+							_app_profilesave (hwnd);
 
 							_app_notifyrefresh ();
 							_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
@@ -9616,22 +9592,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-				//case IDM_CHECKUPDATES_LANGUAGE:
-				//{
-				//	if (config.is_ihaveinternetaccess)
-				//		app.UpdateCheck (L"language", L"Language pack", _r_fmt (L"%d", app.LocaleGetVersion ()), app.GetLocalePath (), LOWORD (wparam), true);
-
-				//	break;
-				//}
-
-				//case IDM_CHECKUPDATES_BLOCKLIST:
-				//{
-				//	if (config.is_ihaveinternetaccess)
-				//		app.UpdateCheck (L"blocklist", L"Blocklist", _r_fmt (L"%d", config.blocklist_timestamp), config.rules_blocklist_path, LOWORD (wparam), true);
-
-				//	break;
-				//}
-
 				case IDM_ABOUT:
 				case IDM_TRAY_ABOUT:
 				{
@@ -10178,9 +10138,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_timer_apply (hwnd, false);
 
 						_app_notifyrefresh ();
-
 						_app_profilesave (hwnd);
-
 						_app_refreshstatus (hwnd, false, true);
 						_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 
@@ -10338,7 +10296,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								{
 									ptr_app->is_enabled = false;
-
 									_wfp_create3filters (ptr_app, false);
 								}
 
@@ -10429,9 +10386,27 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return FALSE;
 }
 
-INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
+INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR args, INT)
 {
 	MSG msg = {0};
+
+	if (wcsstr (args, L"/uninstall"))
+	{
+		const bool is_enabled = _wfp_isfiltersinstalled ();
+
+		if (is_enabled)
+		{
+			if (_app_installmessage (nullptr, false))
+			{
+				if (_wfp_initialize (false))
+					_wfp_destroyfilters (true);
+
+				_wfp_uninitialize (true);
+			}
+		}
+
+		return ERROR_SUCCESS;
+	}
 
 	if (app.CreateMainWindow (IDD_MAIN, IDI_MAIN, &DlgProc))
 	{
