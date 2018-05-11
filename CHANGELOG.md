@@ -1,3 +1,11 @@
+v2.2.6 RC (11 May 2018)
+- fixed special rules does not change apps group
+- fixed notifications indexing
+- fixed notifications icon redraw
+- fixed another dns caching
+- fixed ui bugs
+- fixed bugs
+
 v2.2.5 Beta (4 May 2018)
 - fixed saving profile on manual apps state changing
 - fixed some untranslated strings

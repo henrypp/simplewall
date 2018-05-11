@@ -135,7 +135,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA_RC;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -181,7 +181,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA_RC;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -229,7 +229,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <MinimalRebuild>false</MinimalRebuild>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA_RC;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
@@ -280,7 +280,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <MinimalRebuild>false</MinimalRebuild>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA_RC;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>

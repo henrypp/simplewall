@@ -38,7 +38,6 @@ std::unordered_map<size_t, time_t> apps_timer;
 std::unordered_map<size_t, bool> apps_undelete;
 std::unordered_map<size_t, time_t> notifications_last;
 
-std::unordered_map<size_t, LPWSTR> cache_hosts;
 std::unordered_map<size_t, LPWSTR> cache_signatures;
 std::unordered_map<size_t, LPWSTR> cache_versions;
 
@@ -1739,7 +1738,7 @@ void _wfp_destroyfilters (bool is_full)
 
 		SendDlgItemMessage (app.GetHWND (), IDC_START_BTN, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)));
 
-		app.TraySetInfo (UID, _r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_INACTIVE), GetSystemMetrics (SM_CXSMICON)), nullptr);
+		app.TraySetInfo (UID, app.GetSharedIcon (app.GetHINSTANCE (), IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)), nullptr);
 
 		SetDlgItemText (app.GetHWND (), IDC_START_BTN, app.LocaleString (IDS_TRAY_START, nullptr));
 	}
@@ -1991,14 +1990,9 @@ bool _app_ruleishost (LPCWSTR rule)
 	return false;
 }
 
-rstring _app_parsehostaddress (LPCWSTR host, USHORT port, bool is_recursion)
+rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 {
 	rstring result;
-
-	const size_t hash = _r_str_hash (host);
-
-	if (!is_recursion && cache_hosts.find (hash) != cache_hosts.end () && cache_hosts[hash])
-		return cache_hosts[hash];
 
 	PDNS_RECORD ppQueryResultsSet = nullptr;
 	PIP4_ARRAY pSrvList = nullptr;
@@ -2027,7 +2021,7 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port, bool is_recursion)
 		}
 	}
 
-	const DNS_STATUS dnsStatus = DnsQuery (host, DNS_TYPE_ALL, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DONT_RESET_TTL_VALUES, pSrvList, &ppQueryResultsSet, nullptr);
+	const DNS_STATUS dnsStatus = DnsQuery (host, DNS_TYPE_ALL, DNS_QUERY_BYPASS_CACHE | DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, pSrvList, &ppQueryResultsSet, nullptr);
 
 	if (dnsStatus != ERROR_SUCCESS)
 	{
@@ -2067,7 +2061,7 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port, bool is_recursion)
 			{
 				// canonical name
 				if (current->Data.CNAME.pNameHost)
-					result.Append (_app_parsehostaddress (current->Data.CNAME.pNameHost, port, true));
+					result.Append (_app_parsehostaddress (current->Data.CNAME.pNameHost, port));
 			}
 		}
 
@@ -2078,17 +2072,6 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port, bool is_recursion)
 		}
 
 		result.Trim (RULE_DELIMETER);
-
-		if (!is_recursion && !result.IsEmpty () && cache_hosts.find (hash) == cache_hosts.end ())
-		{
-			LPWSTR ppointer = new WCHAR[result.GetLength () + 1];
-
-			if (ppointer)
-			{
-				StringCchCopy (ppointer, result.GetLength (), result);
-				cache_hosts[hash] = ppointer;
-			}
-		}
 
 		DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
 	}
@@ -2147,7 +2130,7 @@ bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format
 		{
 			if (paddr_dns)
 			{
-				const rstring host = _app_parsehostaddress (ni.NamedAddress.Address, port, false);
+				const rstring host = _app_parsehostaddress (ni.NamedAddress.Address, port);
 
 				if (host.IsEmpty ())
 					return false;
@@ -3812,7 +3795,7 @@ void _wfp_installfilters ()
 
 		SendDlgItemMessage (app.GetHWND (), IDC_START_BTN, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)));
 
-		app.TraySetInfo (UID, _r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (IDI_ACTIVE), GetSystemMetrics (SM_CXSMICON)), nullptr);
+		app.TraySetInfo (UID, app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)), nullptr);
 
 		SetDlgItemText (app.GetHWND (), IDC_START_BTN, app.LocaleString (IDS_TRAY_STOP, nullptr));
 
@@ -4799,25 +4782,11 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 			return;
 	}
 
-	_r_fastlock_acquireshared (&lock_notification);
-
-	// check limit
-	const bool is_limitexceed = (notifications.size () >= NOTIFY_LIMIT_SIZE);
-
-	_r_fastlock_releaseshared (&lock_notification);
-
-	// check limit
-	if (is_limitexceed)
-	{
-		_r_fastlock_acquireexclusive (&lock_notification);
-		_app_freenotify (0, 0);
-		_r_fastlock_releaseexclusive (&lock_notification);
-	}
-
-	//_app_notifyrefresh ();
-
-	// push or replace log item
 	_r_fastlock_acquireexclusive (&lock_notification);
+
+	// check limit
+	if ((notifications.size () >= NOTIFY_LIMIT_SIZE))
+		_app_freenotify (0, 0);
 
 	// get existing pool id (if exists)
 	size_t chk_idx = LAST_VALUE;
@@ -4836,6 +4805,7 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 	notifications_last[ptr_log->hash] = _r_unixtime_now ();
 
 	PITEM_LOG ptr_log2 = new ITEM_LOG;
+	size_t idx = LAST_VALUE;
 
 	if (ptr_log2)
 	{
@@ -4843,21 +4813,22 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 
 		if (chk_idx != LAST_VALUE)
 		{
-			//_app_freenotify (chk_idx, 0);
+			idx = chk_idx;
+
 			delete notifications.at (chk_idx);
 			notifications.at (chk_idx) = ptr_log2;
-
-			_app_notifyrefresh ();
 		}
 		else
 		{
 			notifications.push_back (ptr_log2);
+			idx = notifications.size () - 1;
 		}
 
-		const size_t total_size = notifications.size ();
-		const size_t idx = total_size - 1;
+		SetWindowLongPtr (config.hnotification, GWLP_USERDATA, chk_idx);
 
 		_r_fastlock_releaseexclusive (&lock_notification);
+
+		_app_notifyrefresh ();
 
 		if (app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
 			_app_notifyplaysound ();
@@ -7994,8 +7965,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					AppendMenu (menu, MF_POPUP, (UINT_PTR)submenu, L" ");
 
-					//const HMENU submenu = GetSubMenu (menu, 0);
-
 					for (size_t i = 0; i < timers.size (); i++)
 						AppendMenu (submenu, MF_BYPOSITION, IDX_TIMER_NOTIFY + UINT (i), _r_fmt_interval (timers.at (i) + 1, 1));
 
@@ -8656,7 +8625,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			SendDlgItemMessage (hwnd, IDC_START_BTN, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), state ? IDI_INACTIVE : IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)));
 
-			app.TrayCreate (hwnd, UID, WM_TRAYICON, _r_loadicon (app.GetHINSTANCE (), MAKEINTRESOURCE (state ? IDI_ACTIVE : IDI_INACTIVE), GetSystemMetrics (SM_CXSMICON)), false);
+			app.TrayCreate (hwnd, UID, WM_TRAYICON, app.GetSharedIcon (app.GetHINSTANCE (), state ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)), false);
 			SetDlgItemText (hwnd, IDC_START_BTN, app.LocaleString (state ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr));
 
 			CheckMenuItem (GetMenu (hwnd), IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AlwaysOnTop", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
@@ -9509,6 +9478,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						ptr_rule->apps[hash] = true;
 						ptr_rule->is_enabled = true;
 					}
+
+					_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 0, nullptr, LAST_VALUE, _app_getappgroup (hash, ptr_app));
 				}
 
 				_r_fastlock_releaseexclusive (&lock_access);
