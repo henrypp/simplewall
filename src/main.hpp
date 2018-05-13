@@ -55,7 +55,7 @@
 #define LEN_HOST_MAX 512
 
 #define TIMER_DEFAULT 1
-#define TIMER_LOG_CALLBACK 4000
+#define TIMER_LOG_CALLBACK 6000
 
 #define FILTERS_TIMEOUT 6000
 
@@ -215,6 +215,8 @@ struct STATIC_DATA
 	HANDLE finish_evt = nullptr;
 	HANDLE log_evt = nullptr;
 
+	HDEVNOTIFY hdevnotify = nullptr;
+
 	HANDLE htimer = nullptr;
 	time_t timer_low = 0;
 
@@ -347,8 +349,16 @@ typedef struct _ITEM_LOG
 typedef struct _ITEM_LIST_ENTRY
 {
 	SLIST_ENTRY ListEntry;
+#ifdef _WIN64
 	ULONG_PTR Body;
+#else
+	ULONG Reserved;
+	ULONG Body;
+#endif // _WIN64
 } ITEM_LIST_ENTRY, *PITEM_LIST_ENTRY;
+
+C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
+C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
 
 typedef struct _ITEM_ADD
 {
@@ -379,14 +389,14 @@ typedef struct _ITEM_COLOR
 	COLORREF default_clr = 0;
 	COLORREF clr = 0;
 
-	LPWSTR config_name = nullptr;
-	LPWSTR config_value = nullptr;
+	LPWSTR pcfg_name = nullptr;
+	LPWSTR pcfg_value = nullptr;
 } ITEM_COLOR, *PITEM_COLOR;
 
 typedef struct _ITEM_PROTOCOL
 {
 	UINT8 id = 0;
-	LPWSTR name = nullptr;
+	LPWSTR pname = nullptr;
 } ITEM_PROTOCOL, *PITEM_PROTOCOL;
 
 typedef struct _ITEM_ADDRESS
