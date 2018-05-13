@@ -1,3 +1,13 @@
+v2.2.7 RC (13 May 2018)
+- removed search feature (do not used by anyone)
+- stability improvements
+- fixed loopback blocking (adobe software now working well when you enable loopback connections)
+- fixed singly linked list structure alignment for 32-bit
+- fixed apps does not change sorting sometimes
+- fixed apps does not change group sometimes
+- fixed device changes notifications
+- fixed bugs
+
 v2.2.6 RC (11 May 2018)
 - fixed special rules does not change apps group
 - fixed notifications indexing

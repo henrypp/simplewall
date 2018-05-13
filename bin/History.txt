@@ -1,4 +1,4 @@
-v2.2.7 RC (x May 2018)
+v2.2.7 RC (13 May 2018)
 - removed search feature (do not used by anyone)
 - stability improvements
 - fixed loopback blocking (adobe software now working well when you enable loopback connections)
