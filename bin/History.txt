@@ -1,11 +1,18 @@
+v2.2.8 RC (21 May 2018)
+- fixed device changes notifications (issue #128)
+- fixed fullscreen apps loses focus (issue #178)
+- fixed saving new rules (issue #179)
+- fixed loopback condition flag
+- code cleanup
+
 v2.2.7 RC (13 May 2018)
 - removed search feature (do not used by anyone)
 - stability improvements
 - fixed loopback blocking (adobe software now working well when you enable loopback connections)
 - fixed singly linked list structure alignment for 32-bit
+- fixed timers does not applied from notification window (issue #172)
 - fixed apps does not change sorting sometimes
 - fixed apps does not change group sometimes
-- fixed device changes notifications
 - fixed bugs
 
 v2.2.6 RC (11 May 2018)
