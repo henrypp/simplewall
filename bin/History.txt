@@ -1,3 +1,13 @@
+v2.2.9 (1 Juny 2018)
+- added exclude custom rules from notifications feature (issue #177)
+- fixed app does not change group when special rule was removed
+- fixed sometimes netevents cannot be unsubcribed
+- fixed ipv6 addresses loopbacks
+- fixed thread event synchronization
+- fixed special rules group sorting
+- cosmetics fixes
+- fixed bugs
+
 v2.2.8 RC (21 May 2018)
 - fixed device changes notifications (issue #128)
 - fixed fullscreen apps loses focus (issue #178)
