@@ -55,7 +55,7 @@
 #define LEN_HOST_MAX 512
 
 #define TIMER_DEFAULT 1
-#define TIMER_LOG_CALLBACK 6000
+#define TIMER_LOG_CALLBACK 9000
 
 #define FILTERS_TIMEOUT 6000
 
@@ -212,7 +212,7 @@ struct STATIC_DATA
 	HANDLE hnetevent = nullptr;
 	HANDLE hlogfile = nullptr;
 
-	HANDLE finish_evt = nullptr;
+	HANDLE done_evt = nullptr;
 	HANDLE log_evt = nullptr;
 
 	HDEVNOTIFY hdevnotify = nullptr;
@@ -305,6 +305,7 @@ typedef struct _ITEM_LOG
 {
 	bool is_loopback = false;
 	bool is_blocklist = false;
+	bool is_custom = false;
 	bool is_system = false;
 	bool is_myprovider = false;
 
