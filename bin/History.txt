@@ -1,4 +1,4 @@
-v2.2.9 (TBA)
+v2.2.9 (x Juny 2018)
 - added exclude custom rules from notifications feature (issue #177)
 - fixed app does not change group when special rule was removed
 - fixed sometimes netevents cannot be unsubcribed
