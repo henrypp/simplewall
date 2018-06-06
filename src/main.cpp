@@ -3423,8 +3423,8 @@ void _wfp_create3filters (PITEM_APP ptr_app, bool is_transact)
 
 	if (!is_transact)
 	{
-		_r_fastlock_acquireexclusive (&lock_apply);
-		_r_fastlock_acquireexclusive (&lock_access);
+		_r_fastlock_releaseexclusive (&lock_apply);
+		_r_fastlock_releaseexclusive (&lock_access);
 
 		const DWORD result = FwpmTransactionCommit (config.hengine);
 
@@ -3695,7 +3695,7 @@ void _wfp_installfilters ()
 	}
 	else
 	{
-		_r_fastlock_acquireshared (&lock_access);
+		_r_fastlock_acquireexclusive (&lock_access);
 
 		// apply apps rules
 		{
@@ -3748,7 +3748,7 @@ void _wfp_installfilters ()
 		// apply internal rules
 		_wfp_create2filters (true);
 
-		_r_fastlock_releaseshared (&lock_access);
+		_r_fastlock_releaseexclusive (&lock_access);
 
 		FwpmTransactionCommit (config.hengine);
 
@@ -4472,8 +4472,8 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 						else
 						{
 							// modify rule
-							rules_custom.at (rule_id)->is_block = (command == CmdBlock);
 							rules_custom.at (rule_id)->is_enabled = true;
+							rules_custom.at (rule_id)->is_block = (command == CmdBlock);
 						}
 
 						// add rule for app
