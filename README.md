@@ -1,6 +1,6 @@
 # simplewall
 
-![simplewall](https://www.henrypp.org/images/simplewall.png?cache)
+![simplewall](https://www.henrypp.org/images/simplewall.png?cachefix)
 
 ### Description:
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
