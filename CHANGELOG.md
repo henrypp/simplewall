@@ -1,7 +1,7 @@
 v2.2.10 (6 Juny 2018)
 - added feature to disable special rules group (issue #181)
 - revert special rules highlighting
-- fixed listview focusing (maybe?)
+- fixed listview focusing (maybe?) (issue #164)
 - fixed switching modes
 - fixed reported bugs
 - code cleanup
