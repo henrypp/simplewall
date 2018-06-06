@@ -1,3 +1,12 @@
+v2.2.10 (6 Juny 2018)
+- added feature to disable special rules group (issue #181)
+- revert special rules highlighting
+- fixed listview focusing (maybe?)
+- fixed switching modes
+- fixed reported bugs
+- code cleanup
+- fixed bugs
+
 v2.2.9 (5 Juny 2018)
 - added exclude custom rules from notifications feature (issue #177)
 - fixed app does not change group when special rule was removed
