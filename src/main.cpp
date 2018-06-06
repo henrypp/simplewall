@@ -5024,7 +5024,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 	}
 }
 
-// win7 callback
+// win7+ callback
 void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 *pEvent)
 {
 	if (pEvent)
@@ -5056,7 +5056,7 @@ void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 *pEvent)
 	}
 }
 
-// win8 callback
+// win8+ callback
 void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 *pEvent)
 {
 	if (pEvent)
@@ -5095,8 +5095,47 @@ void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 *pEvent)
 	}
 }
 
-// win10 callback
+// win10+ callback
 void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 *pEvent)
+{
+	if (pEvent)
+	{
+		UINT16 layer_id = 0;
+		UINT64 filter_id = 0;
+		UINT32 direction = 0;
+		bool is_loopback = false;
+
+		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
+		{
+			layer_id = pEvent->classifyDrop->layerId;
+			filter_id = pEvent->classifyDrop->filterId;
+			direction = pEvent->classifyDrop->msFwpDirection;
+			is_loopback = pEvent->classifyDrop->isLoopback;
+		}
+		else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
+		{
+			layer_id = pEvent->ipsecDrop->layerId;
+			filter_id = pEvent->ipsecDrop->filterId;
+			direction = pEvent->ipsecDrop->direction;
+		}
+		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
+		{
+			layer_id = pEvent->classifyDropMac->layerId;
+			filter_id = pEvent->classifyDropMac->filterId;
+			direction = pEvent->classifyDropMac->msFwpDirection;
+			is_loopback = pEvent->classifyDropMac->isLoopback;
+		}
+		else
+		{
+			return;
+		}
+
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_loopback);
+	}
+}
+
+// win10rs4+ callback
+void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 *pEvent)
 {
 	if (pEvent)
 	{
@@ -7324,6 +7363,8 @@ bool _wfp_logunsubscribe ()
 
 		if (hlib)
 		{
+			typedef DWORD (WINAPI *FWPMNEU) (HANDLE, HANDLE); // unsubcribe (all)
+
 			const FWPMNEU _FwpmNetEventUnsubscribe = (FWPMNEU)GetProcAddress (hlib, "FwpmNetEventUnsubscribe0");
 
 			if (_FwpmNetEventUnsubscribe)
@@ -7365,11 +7406,17 @@ bool _wfp_logsubscribe ()
 		}
 		else
 		{
+			typedef DWORD (WINAPI *FWPMNES3) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK3, LPVOID, LPHANDLE); // win10rs4+
+			typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, LPHANDLE); // win10+
+			typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, LPHANDLE); // win8+
+			typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, LPHANDLE); // win7+
+
+			const FWPMNES3 _FwpmNetEventSubscribe3 = (FWPMNES3)GetProcAddress (hlib, "FwpmNetEventSubscribe3"); // win10rs4+
 			const FWPMNES2 _FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hlib, "FwpmNetEventSubscribe2"); // win10+
 			const FWPMNES1 _FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hlib, "FwpmNetEventSubscribe1"); // win8+
 			const FWPMNES0 _FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hlib, "FwpmNetEventSubscribe0"); // win7+
 
-			if (!_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
+			if (!_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
 			{
 				_app_logerror (L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
 			}
@@ -7388,7 +7435,10 @@ bool _wfp_logsubscribe ()
 
 				DWORD rc = 0;
 
-				if (_FwpmNetEventSubscribe2)
+				if (_FwpmNetEventSubscribe3)
+					rc = _FwpmNetEventSubscribe3 (config.hengine, &subscription, &_wfp_logcallback3, nullptr, &config.hnetevent); // win10rs4+
+
+				else if (_FwpmNetEventSubscribe2)
 					rc = _FwpmNetEventSubscribe2 (config.hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hnetevent); // win10+
 
 				else if (_FwpmNetEventSubscribe1)

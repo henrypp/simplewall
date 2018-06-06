@@ -1,4 +1,5 @@
-v2.2.11 (6 Juny 2018)
+v2.2.12 (6 Juny 2018)
+- fixed win10rs4 netevents subscription (win10rs4+)
 - fixed double race condition lock (critical)
 
 v2.2.10 (6 Juny 2018)
