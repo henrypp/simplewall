@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<root timestamp="1502832016">
+<root timestamp="1516682056" type="1">
 	<item name="DHCP" rule="67-68;546-547" dir="2" type="4" protocol="17" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="false" is_enabled="true" />
 	<item name="DNS" rule="53;5355" dir="2" type="4" protocol="0" version="0" apps="System;%systemroot%\system32\svchost.exe" is_block="false" is_enabled="true" />
 	<item name="FTP" rule="20-21;49152-65534" dir="0" type="4" protocol="6" version="0" is_block="false" is_enabled="false" />
