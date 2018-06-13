@@ -1023,11 +1023,14 @@ void _app_generate_services ()
 	{
 		if (services.at (i).psd)
 			LocalFree (services.at (i).psd);
+
+		if(services.at (i).hbmp)
+			DeleteObject (processes.at (i).hbmp); // free memory
 	}
 
 	services.clear ();
 
-	SC_HANDLE hsvcmgr = OpenSCManager (nullptr, nullptr, SC_MANAGER_ALL_ACCESS);
+	const SC_HANDLE hsvcmgr = OpenSCManager (nullptr, nullptr, SC_MANAGER_ALL_ACCESS);
 
 	if (hsvcmgr)
 	{
@@ -1039,7 +1042,7 @@ void _app_generate_services ()
 		DWORD dwServiceType = SERVICE_WIN32;
 		const DWORD dwServiceState = SERVICE_STATE_ALL;
 
-		// win10 services
+		// win10+
 		if (_r_sys_validversion (10, 0))
 			dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
 
@@ -1048,7 +1051,7 @@ void _app_generate_services ()
 			if (GetLastError () == ERROR_MORE_DATA)
 			{
 				// Set the buffer
-				DWORD dwBytes = sizeof (ENUM_SERVICE_STATUS) + dwBytesNeeded;
+				const DWORD dwBytes = sizeof (ENUM_SERVICE_STATUS) + dwBytesNeeded;
 				LPENUM_SERVICE_STATUS pServices = new ENUM_SERVICE_STATUS[dwBytes];
 
 				// Now query again for services
@@ -1065,7 +1068,7 @@ void _app_generate_services ()
 						LPWSTR sidstring = nullptr;
 
 						// get binary path
-						SC_HANDLE hsvc = OpenService (hsvcmgr, service_name, SERVICE_QUERY_CONFIG);
+						const SC_HANDLE hsvc = OpenService (hsvcmgr, service_name, SERVICE_QUERY_CONFIG);
 
 						if (hsvc)
 						{
@@ -1079,7 +1082,10 @@ void _app_generate_services ()
 								if (QueryServiceConfig (hsvc, lpqsc, bytes_needed, &bytes_needed))
 								{
 									if (lpqsc->dwStartType == SERVICE_DISABLED)
+									{
+										delete[] lpqsc;
 										continue;
+									}
 
 									// query path
 									StringCchCopy (real_path, _countof (real_path), lpqsc->lpBinaryPathName);
@@ -1090,8 +1096,11 @@ void _app_generate_services ()
 								}
 								else
 								{
+									delete[] lpqsc;
 									continue;
 								}
+
+								delete[] lpqsc;
 							}
 
 							CloseServiceHandle (hsvc);
@@ -1157,7 +1166,6 @@ void _app_generate_services ()
 					});
 
 					delete[] pServices;
-					pServices = nullptr;
 				}
 			}
 		}
@@ -2793,16 +2801,21 @@ LPVOID _app_loadresource (LPCWSTR res, PDWORD size)
 
 void str_set (LPWSTR* pwstr, size_t length, LPCWSTR text)
 {
-	if (pwstr && *pwstr)
-		delete[] * pwstr;
-
-	LPWSTR new_ptr = new WCHAR[length];
-
-	if (new_ptr)
+	if (pwstr)
 	{
-		StringCchCopy (new_ptr, length, text);
+		if (*pwstr)
+		{
+			delete[] (*pwstr);
+			(*pwstr) = nullptr;
+		}
 
-		*pwstr = new_ptr;
+		LPWSTR new_ptr = new WCHAR[length];
+
+		if (new_ptr)
+		{
+			StringCchCopy (new_ptr, length, text);
+			*pwstr = new_ptr;
+		}
 	}
 }
 
@@ -2815,7 +2828,6 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 	pugi::xml_document doc_backup;
 
 	pugi::xml_node root;
-
 	pugi::xml_parse_result result_original = doc_original.load_file (path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
 	//if (!result)
@@ -2866,8 +2878,10 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 				{
 					for (size_t i = 0; i < ptr_rules->size (); i++)
 					{
-						if (ptr_rules->at (i))
-							_app_freerule (&ptr_rules->at (i));
+						PITEM_RULE ptr_rule = ptr_rules->at (i);
+
+						if (ptr_rule)
+							_app_freerule (&ptr_rule);
 					}
 
 					ptr_rules->clear ();
@@ -5975,19 +5989,20 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					// rule destination
 					{
-						const rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (L"\r\n " RULE_DELIMETER);
-						const size_t rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX) + 1;
+						rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (L"\r\n " RULE_DELIMETER);
+						size_t rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX) + 1;
 
-						const rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (L"\r\n " RULE_DELIMETER);
-						const size_t rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX) + 1;
+						rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (L"\r\n " RULE_DELIMETER);
+						size_t rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX) + 1;
 
 						// here we parse and check rule syntax
 						{
 							rstring::rvector arr = rule_remote.AsVector (RULE_DELIMETER);
+							rstring rule_remote_fixed;
 
 							for (size_t i = 0; i < arr.size (); i++)
 							{
-								LPCWSTR rule_single = arr.at (i);
+								LPCWSTR rule_single = arr.at (i).Trim (L" " RULE_DELIMETER);
 
 								if (!_app_parserulestring (rule_single, nullptr, nullptr))
 								{
@@ -5996,16 +6011,22 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 									return FALSE;
 								}
+
+								rule_remote_fixed.AppendFormat (L"%s" RULE_DELIMETER, rule_single);
 							}
+
+							rule_remote = rule_remote_fixed.Trim (L" " RULE_DELIMETER);
+							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX) + 1;
 						}
 
 						// here we parse and check rule syntax
 						{
 							rstring::rvector arr = rule_local.AsVector (RULE_DELIMETER);
+							rstring rule_local_fixed;
 
 							for (size_t i = 0; i < arr.size (); i++)
 							{
-								LPCWSTR rule_single = arr.at (i);
+								LPCWSTR rule_single = arr.at (i).Trim (L" " RULE_DELIMETER);
 
 								if (!_app_parserulestring (rule_single, nullptr, nullptr))
 								{
@@ -6014,7 +6035,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 									return FALSE;
 								}
+
+								rule_local_fixed.AppendFormat (L"%s" RULE_DELIMETER, rule_single);
 							}
+
+							rule_local = rule_local_fixed.Trim (L" " RULE_DELIMETER);
+							rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX) + 1;
 						}
 
 						_r_fastlock_acquireexclusive (&lock_access);
@@ -6909,7 +6935,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-					}
+				}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
@@ -7111,7 +7137,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-				}
+			}
 
 				case IDM_ADD:
 				{
@@ -7359,11 +7385,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-			}
+		}
 
 			break;
-		}
 	}
+}
 
 	return FALSE;
 }
