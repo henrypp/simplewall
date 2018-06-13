@@ -1,5 +1,32 @@
+v2.3 Beta (x Juny 2018)
+- added inbound multicast and broadcast connections logging (win8+)
+- added separation for remote/local address/port in rules editor
+- added hotkeys for import/export profile
+- added win10 rs5 support
+- prevent memory overflow for singly linked lists (win7+) (issue #193)
+- do not load icons for processes if icons displaying are disabled
+- improved multiple rules applying speed in settings window
+- increased time limit for displaying same notification (win7+)
+- search loading dlls in system directories only (safety)
+- check for correct xml data type before loading
+- store last notification timestamp for apps
+- use guid for tray icon (win7+)
+- removed proxy support (win8+)
+- fixed applying services filters
+- fixed alphanumeric sorting
+- improved port scanning defense
+- improved boot-time filters
+- stability improvements
+- cleanup xml atributes
+- updated system rules
+- cosmetics fixes
+- fixed ui bugs
+- fixed bugs
+
 v2.2.12 (6 Juny 2018)
-- fixed win10rs4 netevents subscription (win10rs4+)
+- added win10 rs4 support
+
+v2.2.11 (6 Juny 2018)
 - fixed double race condition lock (critical)
 
 v2.2.10 (6 Juny 2018)

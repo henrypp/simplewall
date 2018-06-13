@@ -35,6 +35,8 @@
 
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 
+#define BOOTTIME_FILTER_NAME L"Boot-time filter"
+
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;; CCRC;;;%s)"
 
 #define SZ_TAB L"   "
@@ -74,6 +76,7 @@
 #define NOTIFY_TIMER_DEFAULT 30 // sec.
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 #define NOTIFY_LIMIT_SIZE 10 //limit notifications pool size
+#define NOTIFY_LIMIT_POOL_SIZE 64
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 #define NOTIFY_BORDER_COLOR RGB(255,98,98)
@@ -105,9 +108,9 @@
 #define FILTER_WEIGHT_APPLICATION 0xA
 #define FILTER_WEIGHT_LOWEST 0x9
 
-// memory limitation
-#define RULE_NAME_CCH_MAX 64
-#define RULE_RULE_CCH_MAX 256
+// memory limitation for 1 rule
+#define RULE_NAME_CCH_MAX 48
+#define RULE_RULE_CCH_MAX 128
 
 // libs
 #pragma comment(lib, "crypt32.lib")
@@ -194,45 +197,6 @@ typedef std::vector<UINT64> MARRAY;
 
 struct STATIC_DATA
 {
-	PSID psid = nullptr;
-	LPGUID psession = nullptr;
-
-	bool is_securityinfoset = false;
-	bool is_popuperrors = false;
-	bool is_notifytimeout = false;
-	bool is_notifymouse = false;
-	bool is_nocheckboxnotify = false;
-	bool is_wsainit = false;
-
-	HIMAGELIST himg = nullptr;
-
-	size_t icon_id = 0;
-	size_t icon_package_id = 0;
-	size_t icon_service_id = 0;
-	HICON hicon_large = nullptr;
-	HICON hicon_small = nullptr;
-	HICON hicon_package = nullptr;
-	HICON hicon_service_small = nullptr;
-	HBITMAP hbitmap_package_small = nullptr;
-	HBITMAP hbitmap_service_small = nullptr;
-
-	HFONT hfont = nullptr;
-
-	HANDLE hengine = nullptr;
-	HANDLE hnetevent = nullptr;
-	HANDLE hlogfile = nullptr;
-
-	HANDLE done_evt = nullptr;
-	HANDLE log_evt = nullptr;
-
-	HDEVNOTIFY hdevnotify = nullptr;
-
-	HANDLE htimer = nullptr;
-	time_t timer_low = 0;
-
-	time_t blocklist_timestamp = 0;
-
-	WCHAR title[128] = {0};
 	WCHAR notify_snd_path[MAX_PATH] = {0};
 
 	WCHAR apps_path[MAX_PATH] = {0};
@@ -245,40 +209,52 @@ struct STATIC_DATA
 	WCHAR rules_custom_path_backup[MAX_PATH] = {0};
 	WCHAR rules_config_path_backup[MAX_PATH] = {0};
 
-	HWND hnotification = nullptr;
-
-	HWND hfind = nullptr;
-	WCHAR search_string[128] = {0};
-
 	WCHAR windows_dir[MAX_PATH] = {0};
-	size_t wd_length = 0;
-
 	WCHAR tmp1_dir[MAX_PATH] = {0};
-	size_t tmp1_length = 0;
 
+	WCHAR title[128] = {0};
+
+	PSID psid = nullptr;
+	LPGUID psession = nullptr;
+
+	HIMAGELIST himg = nullptr;
+	HBITMAP hbitmap_package_small = nullptr;
+	HBITMAP hbitmap_service_small = nullptr;
+	HANDLE hengine = nullptr;
+	HANDLE hnetevent = nullptr;
+	HANDLE hlogfile = nullptr;
+	HANDLE done_evt = nullptr;
+	HANDLE log_evt = nullptr;
+	HANDLE htimer = nullptr;
+	HFONT hfont = nullptr;
+	HICON hicon_large = nullptr;
+	HICON hicon_small = nullptr;
+	HICON hicon_package = nullptr;
+	HICON hicon_service_small = nullptr;
+	HWND hnotification = nullptr;
+	HDEVNOTIFY hdevnotify = nullptr;
+
+	time_t timer_low = 0;
+	time_t blocklist_timestamp = 0;
+
+	size_t tmp1_length = 0;
+	size_t wd_length = 0;
 	size_t ntoskrnl_hash = 0;
 	size_t myhash = 0;
+	size_t icon_id = 0;
+	size_t icon_package_id = 0;
+	size_t icon_service_id = 0;
+
+	bool is_securityinfoset = false;
+	bool is_popuperrors = false;
+	bool is_notifytimeout = false;
+	bool is_notifymouse = false;
+	bool is_nocheckboxnotify = false;
+	bool is_wsainit = false;
 };
 
 typedef struct _ITEM_APP
 {
-	__time64_t timestamp = 0;
-
-	size_t icon_id = 0;
-
-	bool is_haveerrors = false;
-
-	bool is_enabled = false;
-	bool is_system = false;
-	bool is_silent = false;
-	bool is_signed = false;
-	bool is_temp = false;
-
-	EnumAppType type = AppRegular;
-
-	LPCWSTR description = nullptr;
-	LPCWSTR signer = nullptr;
-
 	WCHAR display_name[MAX_PATH] = {0};
 	WCHAR original_path[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
@@ -290,47 +266,68 @@ typedef struct _ITEM_APP
 		PSECURITY_DESCRIPTOR psd = nullptr; // service app
 		PSID psid; // store app (win8+)
 	};
+
+	LPCWSTR description = nullptr;
+	LPCWSTR signer = nullptr;
+
+	time_t timestamp = 0;
+
+	size_t icon_id = 0;
+
+	EnumAppType type = AppRegular;
+
+	bool is_haveerrors = false;
+
+	bool is_enabled = false;
+	bool is_system = false;
+	bool is_silent = false;
+	bool is_signed = false;
+	bool is_temp = false;
 } ITEM_APP, *PITEM_APP;
 
 typedef struct _ITEM_RULE
 {
-	bool is_enabled = false;
-	bool is_block = false;
-	bool is_haveerrors = false;
+	std::unordered_map<size_t, bool> apps;
+
+	MARRAY mfarr;
+
+	LPWSTR pname = nullptr;
+	LPWSTR prule_remote = nullptr;
+	LPWSTR prule_local = nullptr;
+
+	ADDRESS_FAMILY af = AF_UNSPEC;
 
 	FWP_DIRECTION dir = FWP_DIRECTION_OUTBOUND;
 	EnumRuleType type = TypeUnknown;
 
 	UINT8 protocol = 0;
-	ADDRESS_FAMILY version = AF_UNSPEC;
 
-	LPWSTR pname = nullptr;
-	LPWSTR prule = nullptr;
-
-	MARRAY mfarr;
-	std::unordered_map<size_t, bool> apps;
+	bool is_enabled = false;
+	bool is_block = false;
+	bool is_haveerrors = false;
 } ITEM_RULE, *PITEM_RULE;
 
 typedef struct _ITEM_LOG
 {
-	bool is_loopback = false;
-	bool is_blocklist = false;
-	bool is_custom = false;
-	bool is_system = false;
-	bool is_myprovider = false;
+	WCHAR provider_name[MAX_PATH] = {0};
+	WCHAR filter_name[MAX_PATH] = {0};
 
-	size_t hash = 0;
+	WCHAR path[MAX_PATH] = {0};
+
+	WCHAR remote_fmt[192] = {0};
+	WCHAR local_fmt[192] = {0};
+
+	WCHAR username[192] = {0};
 
 	time_t date = 0;
 
+	size_t hash = 0;
+
 	ADDRESS_FAMILY af = 0;
 
-	UINT8 protocol = 0;
-
-	UINT16 remote_port = 0;
-	UINT16 local_port = 0;
-
 	UINT64 filter_id = 0;
+
+	FWP_DIRECTION direction = FWP_DIRECTION_OUTBOUND;
 
 	union
 	{
@@ -344,28 +341,34 @@ typedef struct _ITEM_LOG
 		IN6_ADDR local_addr6;
 	};
 
-	FWP_DIRECTION direction = FWP_DIRECTION_OUTBOUND;
+	UINT16 remote_port = 0;
+	UINT16 local_port = 0;
 
-	WCHAR remote_fmt[192] = {0};
-	WCHAR local_fmt[192] = {0};
+	UINT8 protocol = 0;
 
-	WCHAR username[192] = {0};
-
-	WCHAR provider_name[MAX_PATH] = {0};
-	WCHAR filter_name[MAX_PATH] = {0};
-
-	WCHAR path[MAX_PATH] = {0};
+	bool is_loopback = false;
+	bool is_blocklist = false;
+	bool is_custom = false;
+	bool is_system = false;
+	bool is_myprovider = false;
 } ITEM_LOG, *PITEM_LOG;
+
+typedef struct _ITEM_LIST_HEAD
+{
+	SLIST_HEADER ListHead;
+
+	ULONG Count;
+} ITEM_LIST_HEAD, *PITEM_LIST_HEAD;
 
 typedef struct _ITEM_LIST_ENTRY
 {
 	SLIST_ENTRY ListEntry;
-#ifdef _WIN64
-	ULONG_PTR Body;
-#else
-	ULONG Reserved;
-	ULONG Body;
+
+#ifndef _WIN64
+	ULONG_PTR Reserved;
 #endif // _WIN64
+
+	ULONG_PTR Body;
 } ITEM_LIST_ENTRY, *PITEM_LIST_ENTRY;
 
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
@@ -373,25 +376,27 @@ C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
 
 typedef struct _ITEM_ADD
 {
-	size_t hash = 0;
-
-	HBITMAP hbmp = nullptr;
-
 	WCHAR sid[MAX_PATH] = {0};
 	WCHAR display_name[MAX_PATH] = {0};
 	WCHAR service_name[MAX_PATH] = {0};
 	WCHAR real_path[MAX_PATH] = {0};
+
+	size_t hash = 0;
 
 	union
 	{
 		PSID psid = nullptr;
 		PSECURITY_DESCRIPTOR psd;
 	};
+
+	HBITMAP hbmp = nullptr;
+
 } ITEM_ADD, *PITEM_ADD;
 
 typedef struct _ITEM_COLOR
 {
-	bool is_enabled = false;
+	LPWSTR pcfg_name = nullptr;
+	LPWSTR pcfg_value = nullptr;
 
 	size_t hash = 0;
 
@@ -400,32 +405,31 @@ typedef struct _ITEM_COLOR
 	COLORREF default_clr = 0;
 	COLORREF clr = 0;
 
-	LPWSTR pcfg_name = nullptr;
-	LPWSTR pcfg_value = nullptr;
+	bool is_enabled = false;
 } ITEM_COLOR, *PITEM_COLOR;
 
 typedef struct _ITEM_PROTOCOL
 {
-	UINT8 id = 0;
 	LPWSTR pname = nullptr;
+	UINT8 id = 0;
 } ITEM_PROTOCOL, *PITEM_PROTOCOL;
 
 typedef struct _ITEM_ADDRESS
 {
-	bool is_range = false;
-
-	EnumRuleType type = TypeUnknown;
-
-	NET_ADDRESS_FORMAT format;
-
-	UINT16 port = 0;
+	WCHAR host[LEN_HOST_MAX] = {0};
 
 	FWP_V4_ADDR_AND_MASK* paddr4 = nullptr;
 	FWP_V6_ADDR_AND_MASK* paddr6 = nullptr;
 
 	FWP_RANGE* prange = nullptr;
 
-	WCHAR host[LEN_HOST_MAX] = {0};
+	EnumRuleType type = TypeUnknown;
+
+	NET_ADDRESS_FORMAT format = NET_ADDRESS_FORMAT_UNSPECIFIED;
+
+	UINT16 port = 0;
+
+	bool is_range = false;
 } ITEM_ADDRESS, *PITEM_ADDRESS;
 
 // dropped events callback subscription (win7+)
