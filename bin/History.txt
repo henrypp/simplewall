@@ -1,5 +1,6 @@
 v2.3 Beta (x Juny 2018)
 - added inbound multicast and broadcast connections logging (win8+)
+- added connection redirection application layer
 - added separation for remote/local address/port in rules editor
 - added hotkeys for import/export profile
 - added win10 rs5 support
@@ -10,7 +11,6 @@ v2.3 Beta (x Juny 2018)
 - search loading dlls in system directories only (safety)
 - check for correct xml data type before loading
 - store last notification timestamp for apps
-- use guid for tray icon (win7+)
 - removed proxy support (win8+)
 - fixed applying services filters
 - fixed alphanumeric sorting
