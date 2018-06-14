@@ -36,6 +36,7 @@
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 
 #define BOOTTIME_FILTER_NAME L"Boot-time filter"
+#define SUBLAYER_WEIGHT_DEFAULT 666
 
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;; CCRC;;;%s)"
 
@@ -149,9 +150,6 @@ extern "C" {
 
 	static const GUID GUID_WfpListenCallout6_DEPRECATED =
 	{0xa02187ca, 0xe655, 0x4adb, {0xa1, 0xf2, 0x47, 0xa2, 0xc9, 0x78, 0xf9, 0xce}};
-
-	static const GUID GUID_TrayIcon =
-	{0x3a70a2be, 0xc225, 0x40fd, {0x84, 0xfe, 0xcd, 0xb3, 0x17, 0x3b, 0x50, 0xc4}};
 };
 
 // enums
@@ -331,13 +329,13 @@ typedef struct _ITEM_LOG
 
 	union
 	{
-		IN_ADDR remote_addr;
+		IN_ADDR remote_addr = {0};
 		IN6_ADDR remote_addr6;
 	};
 
 	union
 	{
-		IN_ADDR local_addr;
+		IN_ADDR local_addr = {0};
 		IN6_ADDR local_addr6;
 	};
 
