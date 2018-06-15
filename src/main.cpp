@@ -1158,7 +1158,7 @@ void _app_generate_services ()
 						if (sidstring)
 							LocalFree (sidstring);
 
-							delete[] serviceSid;
+						delete[] serviceSid;
 					}
 
 					std::sort (services.begin (), services.end (),
@@ -2726,13 +2726,23 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 		if (af == AF_INET || af == AF_UNSPEC)
 		{
 			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, action, flag, pmfarr);
-			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, action, flag, pmfarr);
+
+			// win7+
+			if (_r_sys_validversion (6, 1))
+				_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, action, flag, pmfarr);
+
+			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, nullptr, action, flag, pmfarr);
 		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
 		{
 			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, action, flag, pmfarr);
-			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, action, flag, pmfarr);
+
+			// win7+
+			if (_r_sys_validversion (6, 1))
+				_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, action, flag, pmfarr);
+
+			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, nullptr, action, flag, pmfarr);
 		}
 	}
 
@@ -2760,10 +2770,14 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 	if (!app.ConfigGet (L"AllowListenConnections2", true).AsBool () && !protocol && (!is_remoteaddr_set && !is_remoteport_set) && (dir == FWP_DIRECTION_INBOUND || dir == FWP_DIRECTION_MAX))
 	{
 		if (af == AF_INET || af == AF_UNSPEC)
+		{
 			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, flag, pmfarr);
+		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
+		{
 			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, flag, pmfarr);
+		}
 	}
 
 	ByteBlobFree (&bSid);
@@ -3527,11 +3541,21 @@ void _wfp_create2filters (bool is_transact)
 		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 
-		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
-		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+		// win7+
+		if (_r_sys_validversion (6, 1))
+		{
+			_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+			_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+		}
 
 		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+
+		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+
+		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 
 		// ipv4/ipv6 loopback
 		static LPCWSTR ip_list[] = {L"127.0.0.0/8", L"10.0.0.0/8", L"172.16.0.0/12", L"169.254.0.0/16", L"192.168.0.0/16", L"224.0.0.0/24", L"fd00::/8", L"fe80::/10", L"2001:0db8::/32", L"ff00::/8"};
@@ -3561,11 +3585,19 @@ void _wfp_create2filters (bool is_transact)
 
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
 					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
-					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+
+					// win7+
+					if (_r_sys_validversion (6, 1))
+						_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
 					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
-					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+
+					// win7+
+					if (_r_sys_validversion (6, 1))
+						_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
 					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
@@ -3580,11 +3612,19 @@ void _wfp_create2filters (bool is_transact)
 
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
 					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
-					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+
+					// win7+
+					if (_r_sys_validversion (6, 1))
+						_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
 					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
-					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+
+					// win7+
+					if (_r_sys_validversion (6, 1))
+						_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
 					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
@@ -3638,14 +3678,14 @@ void _wfp_create2filters (bool is_transact)
 		fwfc[0].conditionValue.type = FWP_UINT32;
 		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
 
+		// tests if the network traffic is (non-)app container loopback traffic (win8+)
+		if (_r_sys_validversion (6, 2))
+			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
+
 		fwfc[1].fieldKey = FWPM_CONDITION_ICMP_TYPE;
 		fwfc[1].matchType = FWP_MATCH_EQUAL;
 		fwfc[1].conditionValue.type = FWP_UINT16;
 		fwfc[1].conditionValue.uint16 = 0x03; // destination unreachable
-
-		// tests if the network traffic is (non-)app container loopback traffic (win8+)
-		if (_r_sys_validversion (6, 2))
-			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 
 		_wfp_createfilter (L"BlockIcmpErrorV4", fwfc, 2, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
 		_wfp_createfilter (L"BlockIcmpErrorV6", fwfc, 2, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
@@ -3663,16 +3703,30 @@ void _wfp_create2filters (bool is_transact)
 		_wfp_createfilter (L"BlockOutboundConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
 		_wfp_createfilter (L"BlockOutboundConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
 
-		_wfp_createfilter (L"BlockOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
-		_wfp_createfilter (L"BlockOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
+		// win7+
+		if (_r_sys_validversion (6, 1))
+		{
+			_wfp_createfilter (L"BlockOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
+			_wfp_createfilter (L"BlockOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
+		}
+
+		_wfp_createfilter (L"BlockEstablishedConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
+		_wfp_createfilter (L"BlockEstablishedConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, nullptr, FWP_ACTION_BLOCK, 0, &filters2);
 	}
 	else
 	{
 		_wfp_createfilter (L"AllowOutboundConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 		_wfp_createfilter (L"AllowOutboundConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 
-		_wfp_createfilter (L"AllowOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
-		_wfp_createfilter (L"AllowOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+		// win7+
+		if (_r_sys_validversion (6, 1))
+		{
+			_wfp_createfilter (L"AllowOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+			_wfp_createfilter (L"AllowOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+		}
+
+		_wfp_createfilter (L"AllowOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
+		_wfp_createfilter (L"AllowOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 	}
 
 	// block all inbound traffic (only on "stealth" mode)
@@ -3896,7 +3950,7 @@ void _app_logclearstack ()
 		delete ptr_log;
 
 		_aligned_free (ptr_entry);
-		_InterlockedDecrement (&log_stack.Count);
+		InterlockedDecrement (&log_stack.Count);
 	}
 
 	InterlockedFlushSList (&log_stack.ListHead);
@@ -4047,10 +4101,10 @@ rstring _app_proto2name (UINT8 proto)
 {
 	for (size_t i = 0; i < protocols.size (); i++)
 	{
-		if (proto == protocols.at (i).id)
-		{
-			return protocols.at (i).pname;
-		}
+		PITEM_PROTOCOL const ptr_proto = &protocols.at (i);
+
+		if (proto == ptr_proto->id)
+			return ptr_proto->pname;
 	}
 
 	return SZ_EMPTY;
@@ -4089,12 +4143,11 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 					path = ptr_app->original_path;
 				}
 			}
-			else
-			{
-				path = SZ_EMPTY;
-			}
 
 			_r_fastlock_releaseshared (&lock_access);
+
+			if (path.IsEmpty ())
+				path = SZ_EMPTY;
 		}
 
 		// parse filter name
@@ -4104,7 +4157,7 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 				filter.Format (L"%s\\%s", ptr_log->provider_name, ptr_log->filter_name);
 
 			else
-				filter = ptr_log->filter_name;
+				filter = ptr_log->filter_name[0] ? ptr_log->filter_name : SZ_EMPTY;
 		}
 
 		// parse direction
@@ -4124,7 +4177,17 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 		}
 
 		rstring buffer;
-		buffer.Format (L"%s" LOG_DIV L"%s" LOG_DIV L"%s" LOG_DIV L"%s (" SZ_LOG_REMOTE_ADDRESS L")" LOG_DIV L"%s (" SZ_LOG_LOCAL_ADDRESS L")" LOG_DIV L"%s" LOG_DIV L"%s" LOG_DIV L"#%llu" LOG_DIV L"%s\r\n", _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (), ptr_log->username, path.GetString (), ptr_log->remote_fmt, ptr_log->local_fmt, _app_proto2name (ptr_log->protocol).GetString (), filter.GetString (), ptr_log->filter_id, direction.GetString ());
+		buffer.Format (L"%s" LOG_DIV L"%s" LOG_DIV L"%s" LOG_DIV L"%s (" SZ_LOG_REMOTE_ADDRESS L")" LOG_DIV L"%s (" SZ_LOG_LOCAL_ADDRESS L")" LOG_DIV L"%s" LOG_DIV L"%s" LOG_DIV L"#%" PRIu64 LOG_DIV L"%s\r\n",
+			_r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
+			ptr_log->username,
+			path.GetString (),
+			ptr_log->remote_fmt,
+			ptr_log->local_fmt,
+			_app_proto2name (ptr_log->protocol).GetString (),
+			filter.GetString (),
+			ptr_log->filter_id,
+			direction.GetString ()
+		);
 
 		DWORD written = 0;
 		WriteFile (config.hlogfile, buffer.GetString (), DWORD (buffer.GetLength () * sizeof (WCHAR)), &written, nullptr);
@@ -4869,30 +4932,13 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 	}
 }
 
-void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_loopback)
+void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 localport, UINT16, UINT64 filter_id, UINT32 direction, bool is_loopback)
 {
 	if (_r_fastlock_islocked (&lock_apply))
 		return;
 
 	const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
 	const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
-
-	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
-	if (layer_id)
-	{
-		FWPM_LAYER* layer = nullptr;
-
-		if (FwpmLayerGetById (config.hengine, layer_id, &layer) == ERROR_SUCCESS)
-		{
-			if (layer && (memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) == 0 || memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)) == 0))
-			{
-				FwpmFreeMemory ((LPVOID*)&layer);
-				return;
-			}
-
-			FwpmFreeMemory ((LPVOID*)&layer);
-		}
-	}
 
 	PITEM_LIST_ENTRY ptr_entry = (PITEM_LIST_ENTRY)_aligned_malloc (sizeof (ITEM_LIST_ENTRY), MEMORY_ALLOCATION_ALIGNMENT);
 
@@ -5071,12 +5117,13 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 		// push into a singly linked list
 		{
+			// prevent pool overflow
 			if (QueryDepthSList (&log_stack.ListHead) >= NOTIFY_LIMIT_POOL_SIZE)
 				_app_logclearstack ();
 
 			ptr_entry->Body = (ULONG_PTR)ptr_log;
 			RtlInterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
-			_InterlockedIncrement (&log_stack.Count);
+			InterlockedIncrement (&log_stack.Count);
 
 			SetEvent (config.log_evt);
 		}
@@ -5340,7 +5387,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 				}
 
 				_aligned_free (ptr_entry);
-				_InterlockedDecrement (&log_stack.Count);
+				InterlockedDecrement (&log_stack.Count);
 			}
 
 			{
@@ -6951,7 +6998,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-				}
+					}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
@@ -6959,7 +7006,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_LANGUAGE && notify_code == CBN_SELCHANGE)
 					{
 						app.LocaleApplyFromControl (hwnd, ctrl_id);
-					}
+				}
 					else if (ctrl_id == IDC_CONFIRMEXIT_CHK)
 					{
 						app.ConfigSet (L"ConfirmExit2", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
@@ -7073,6 +7120,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0), is_enabled);
 
+						_r_ctrl_enable (hwnd, IDC_EXCLUDESTEALTH_CHK, is_enabled);
+
 						_app_loginit (is_enabled);
 					}
 					else if (ctrl_id == IDC_LOGPATH && notify_code == EN_KILLFOCUS)
@@ -7124,6 +7173,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0), is_enabled);
 						EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONDISPLAYTIMEOUT, UDM_GETBUDDY, 0, 0), is_enabled);
+
+						_r_ctrl_enable (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, is_enabled);
+						_r_ctrl_enable (hwnd, IDC_EXCLUDECUSTOM_CHK, is_enabled);
 
 						_app_notifyrefresh ();
 					}

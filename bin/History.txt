@@ -1,6 +1,6 @@
 v2.3 Beta (x Juny 2018)
 - added inbound multicast and broadcast connections logging (win8+)
-- added connection redirection application layer
+- added outbound redirection filter layer (win7+)
 - added separation for remote/local address/port in rules editor
 - added hotkeys for import/export profile
 - added win10 rs5 support
@@ -12,9 +12,11 @@ v2.3 Beta (x Juny 2018)
 - check for correct xml data type before loading
 - store last notification timestamp for apps
 - removed proxy support (win8+)
+- fixed dropped events callback crash (win7+)
 - fixed applying services filters
 - fixed alphanumeric sorting
 - improved port scanning defense
+- improved loopback connections
 - improved boot-time filters
 - stability improvements
 - cleanup xml atributes
