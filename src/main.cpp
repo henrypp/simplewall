@@ -1313,7 +1313,7 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR buffer, DWORD 
 		return false;
 	}
 
-	if (GetNameInfoW (psock, size, buffer, length, nullptr, 0, NI_NAMEREQD) != ERROR_SUCCESS)
+	if (GetNameInfo (psock, size, buffer, length, nullptr, 0, NI_NAMEREQD) != ERROR_SUCCESS)
 		return false;
 
 	return true;
@@ -1887,7 +1887,7 @@ void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode
 
 	for (size_t i = 0; i < _r_listview_getitemcount (hwnd, ctrl_id); i++)
 	{
-		const size_t hash = _r_listview_getitemlparam (hwnd, ctrl_id, i);
+		const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, ctrl_id, i);
 		PITEM_APP ptr_app = _app_getapplication (hash);
 
 		if (ptr_app)
@@ -2477,7 +2477,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumAppT
 bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, EnumRuleType* ptype, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, MARRAY* pmfarr)
 {
 	UINT32 count = 0;
-	FWPM_FILTER_CONDITION fwfc[16] = {0};
+	FWPM_FILTER_CONDITION fwfc[8] = {0};
 
 	FWP_BYTE_BLOB* bPath = nullptr;
 	FWP_BYTE_BLOB* bSid = nullptr;
@@ -2895,12 +2895,7 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 				// clear old entries
 				{
 					for (size_t i = 0; i < ptr_rules->size (); i++)
-					{
-						PITEM_RULE ptr_rule = ptr_rules->at (i);
-
-						if (ptr_rule)
-							_app_freerule (&ptr_rule);
-					}
+						_app_freerule (&ptr_rules->at (i));
 
 					ptr_rules->clear ();
 				}
@@ -3131,7 +3126,7 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
 {
 	const time_t current_time = _r_unixtime_now ();
-	const UINT notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsUint ();
+	const time_t notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsUlonglong ();
 	const bool is_backuprequired = app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsUlonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsUlonglong ()) || !_r_fs_exists (config.apps_path_backup) || !_r_fs_exists (config.rules_custom_path_backup) || !_r_fs_exists (config.rules_config_path_backup));
 	bool is_backupcreated = false;
 
@@ -3984,7 +3979,7 @@ void _app_logclear ()
 
 bool _app_logchecklimit ()
 {
-	const size_t limit = app.ConfigGet (L"LogSizeLimitKb", 256).AsUint ();
+	const DWORD limit = app.ConfigGet (L"LogSizeLimitKb", 256).AsUlong ();
 
 	if (!limit || !config.hlogfile || config.hlogfile == INVALID_HANDLE_VALUE)
 		return false;
@@ -4878,7 +4873,7 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 {
 	// check for last display time
 	{
-		const UINT notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsUint ();
+		const time_t notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsUlonglong ();
 
 		if (notification_timeout && ((_r_unixtime_now () - notifications_last[ptr_log->hash]) <= notification_timeout))
 			return;
@@ -6218,7 +6213,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_APPS_LV); i++)
 						{
-							const size_t hash = _r_listview_getitemlparam (hwnd, IDC_APPS_LV, i);
+							const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_APPS_LV, i);
 
 							if (hash)
 							{
@@ -6534,7 +6529,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_COLORS); i++)
 					{
-						const size_t idx = _r_listview_getitemlparam (hwnd, IDC_COLORS, i);
+						const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, IDC_COLORS, i);
 
 						PITEM_COLOR const ptr_clr = &colors.at (idx);
 						_r_listview_setitem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr));
@@ -6590,7 +6585,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						for (size_t i = 0; i < total_count; i++)
 						{
-							const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, i);
+							const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, IDC_EDITOR, i);
 							PITEM_RULE const ptr_rule = ptr_rules->at (idx);
 
 							if (!ptr_rule)
@@ -6833,7 +6828,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					_r_fastlock_acquireshared (&lock_access);
 
-					const size_t idx = _r_listview_getitemlparam (hwnd, ctrl_id, lpnmlv->iItem);
+					const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, ctrl_id, lpnmlv->iItem);
 					PITEM_RULE ptr_rule = nullptr;
 
 					if (dialog_id == IDD_SETTINGS_RULES_BLOCKLIST)
@@ -6918,7 +6913,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					if (nmlp->idFrom == IDC_COLORS)
 					{
-						const size_t idx = _r_listview_getitemlparam (hwnd, IDC_COLORS, lpnmlv->iItem);
+						const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, IDC_COLORS, lpnmlv->iItem);
 
 						CHOOSECOLOR cc = {0};
 						COLORREF cust[16] = {0};
@@ -7306,7 +7301,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-					}
+				}
 
 				case IDM_ADD:
 				{
@@ -7370,7 +7365,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					if (item == LAST_VALUE)
 						break;
 
-					const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
+					const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
 
 					PITEM_RULE ptr_rule = rules_custom.at (idx);
 
@@ -7429,7 +7424,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						if (ListView_GetItemState (GetDlgItem (hwnd, IDC_EDITOR), i, LVNI_SELECTED))
 						{
-							const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, i);
+							const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, IDC_EDITOR, i);
 
 							PITEM_RULE ptr_rule = rules_custom.at (idx);
 
@@ -7536,7 +7531,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 							{
-								const size_t idx = _r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
+								const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, IDC_EDITOR, item);
 
 								PITEM_RULE ptr_rule = ptr_rules->at (idx);
 
@@ -7593,14 +7588,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-				}
+			}
 
 			break;
-			}
 		}
+	}
 
 	return FALSE;
-	}
+}
 
 void ResizeWindow (HWND hwnd, INT width, INT height)
 {
@@ -9154,7 +9149,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
 
-					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, (UINT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
+					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
 					if (hash)
 					{
@@ -9506,10 +9501,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					SetForegroundWindow (hwnd); // don't touch
 
-					const UINT mode_id = 3;
-					const UINT add_id = 4;
-					const UINT notifications_id = 6;
-					const UINT errlog_id = 7;
+#define mode_id 3
+#define add_id 4
+#define notifications_id 6
+#define errlog_id 7
 
 					const HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_TRAY));
 					const HMENU submenu = GetSubMenu (menu, 0);
@@ -9919,7 +9914,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_LISTVIEW); i++)
 					{
-						const size_t hash = _r_listview_getitemlparam (hwnd, IDC_LISTVIEW, i);
+						const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, i);
 						PITEM_APP ptr_app = _app_getapplication (hash);
 
 						if (ptr_app)
@@ -9986,7 +9981,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_LISTVIEW); i++)
 					{
-						const size_t hash = _r_listview_getitemlparam (hwnd, IDC_LISTVIEW, i);
+						const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, i);
 						PITEM_APP ptr_app = _app_getapplication (hash);
 
 						if (ptr_app)
