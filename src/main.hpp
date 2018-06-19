@@ -45,6 +45,8 @@
 
 #define SZ_LOG_REMOTE_ADDRESS L"Remote"
 #define SZ_LOG_LOCAL_ADDRESS L"Local"
+#define SZ_LOG_BLOCK L"BLOCK"
+#define SZ_LOG_ALLOW L"ALLOW"
 #define SZ_LOG_DIRECTION_IN L"IN"
 #define SZ_LOG_DIRECTION_OUT L"OUT"
 #define SZ_LOG_DIRECTION_LOOPBACK L"-Loopback"
@@ -77,7 +79,7 @@
 #define NOTIFY_TIMER_DEFAULT 30 // sec.
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 #define NOTIFY_LIMIT_SIZE 10 //limit notifications pool size
-#define NOTIFY_LIMIT_POOL_SIZE 64
+#define NOTIFY_LIMIT_POOL_SIZE 48
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 #define NOTIFY_BORDER_COLOR RGB(255,98,98)
@@ -224,6 +226,7 @@ struct STATIC_DATA
 	HANDLE done_evt = nullptr;
 	HANDLE log_evt = nullptr;
 	HANDLE htimer = nullptr;
+	HANDLE hlogthread = nullptr;
 	HFONT hfont = nullptr;
 	HICON hicon_large = nullptr;
 	HICON hicon_small = nullptr;
@@ -344,6 +347,7 @@ typedef struct _ITEM_LOG
 
 	UINT8 protocol = 0;
 
+	bool is_allow = false;
 	bool is_loopback = false;
 	bool is_blocklist = false;
 	bool is_custom = false;
