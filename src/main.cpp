@@ -74,7 +74,6 @@ void _wfp_uninitialize (bool is_force);
 bool _app_timer_apply (HWND hwnd, bool is_forceremove);
 
 UINT WINAPI ApplyThread (LPVOID lparam);
-UINT WINAPI LogThread (LPVOID lparam);
 LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 bool _app_notifysettimeout (HWND hwnd, UINT_PTR id, bool is_create, UINT timeout);
@@ -2140,6 +2139,9 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 	if (rule.IsEmpty ())
 		return true;
 
+	if (rule.At (0) == L'*')
+		return true;
+
 	EnumRuleType type = TypeUnknown;
 	size_t range_pos = rstring::npos;
 
@@ -2580,7 +2582,7 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 
 		for (size_t i = 0; i < _countof (rules); i++)
 		{
-			if (rules[i] && rules[i][0])
+			if (rules[i] && rules[i][0] && rules[i][0] != L'*')
 			{
 				if (_app_parserulestring (rules[i], &addr, ptype))
 				{
@@ -4943,6 +4945,111 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 	}
 }
 
+UINT WINAPI LogThread (LPVOID lparam)
+{
+	HWND hwnd = (HWND)lparam;
+	bool is_threaddstateset = false;
+
+	const DWORD result = WaitForSingleObjectEx (config.log_evt, TIMER_LOG_CALLBACK, FALSE);
+
+	if (result == WAIT_OBJECT_0 || result == WAIT_TIMEOUT)
+	{
+		const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
+		const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
+
+		while (true)
+		{
+			PSLIST_ENTRY ptr_list = RtlInterlockedPopEntrySList (&log_stack.ListHead);
+
+			if (!ptr_list)
+				break;
+
+			if (!is_threaddstateset)
+			{
+				SetThreadExecutionState (ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+				is_threaddstateset = true;
+			}
+
+			PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
+			PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
+
+			if (ptr_log)
+			{
+				// apps collector
+				if (ptr_log->hash && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ())
+				{
+					_r_fastlock_acquireexclusive (&lock_access);
+					_app_addapplication (hwnd, ptr_log->path, 0, false, false, true);
+					_r_fastlock_releaseexclusive (&lock_access);
+
+					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+					_app_profilesave (hwnd);
+				}
+
+				if ((is_logenabled || is_notificationenabled) && (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ())))
+				{
+					_app_formataddress (ptr_log->remote_fmt, _countof (ptr_log->remote_fmt), ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, true);
+					_app_formataddress (ptr_log->local_fmt, _countof (ptr_log->local_fmt), ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, true);
+
+					// write log to a file
+					if (is_logenabled)
+						_app_logwrite (ptr_log);
+
+					// show notification (only for my own provider and file is present)
+					if (is_notificationenabled && !ptr_log->is_allow && ptr_log->is_myprovider && ptr_log->hash)
+					{
+						if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
+						{
+							bool is_silent = true;
+
+							// read app config
+							{
+								_r_fastlock_acquireshared (&lock_access);
+
+								PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
+
+								if (ptr_app)
+									is_silent = ptr_app->is_silent;
+
+								_r_fastlock_releaseshared (&lock_access);
+							}
+
+							if (!is_silent)
+								_app_notifyadd (ptr_log);
+						}
+					}
+				}
+
+				delete ptr_log;
+			}
+
+			_aligned_free (ptr_entry);
+			InterlockedDecrement (&log_stack.Count);
+		}
+
+		// check slist is empty
+		{
+			InterlockedFlushSList (&log_stack.ListHead);
+
+			PSLIST_ENTRY ptr_list = RtlInterlockedPopEntrySList (&log_stack.ListHead);
+
+			if (ptr_list)
+				_app_logclearstack ();
+		}
+
+		if (is_threaddstateset)
+		{
+			SetThreadExecutionState (ES_CONTINUOUS);
+			is_threaddstateset = false;
+		}
+
+		if (result == WAIT_OBJECT_0)
+			ResetEvent (config.log_evt);
+	}
+
+	return ERROR_SUCCESS;
+}
+
 void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
 {
 	if (_r_fastlock_islocked (&lock_apply))
@@ -5384,118 +5491,6 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
 
 	SetEvent (config.done_evt);
-
-	return ERROR_SUCCESS;
-}
-
-UINT WINAPI LogThread (LPVOID lparam)
-{
-	HWND hwnd = (HWND)lparam;
-	bool is_threaddstateset = false;
-
-	while (true)
-	{
-		const DWORD result = WaitForSingleObjectEx (config.log_evt, TIMER_LOG_CALLBACK, FALSE);
-
-		if (result == WAIT_OBJECT_0 || result == WAIT_TIMEOUT)
-		{
-			const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
-			const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
-
-			while (true)
-			{
-				PSLIST_ENTRY ptr_list = RtlInterlockedPopEntrySList (&log_stack.ListHead);
-
-				if (!ptr_list)
-					break;
-
-				if (!is_threaddstateset)
-				{
-					SetThreadExecutionState (ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
-					is_threaddstateset = true;
-				}
-
-				PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
-				PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
-
-				if (ptr_log)
-				{
-					// apps collector
-					if (ptr_log->hash && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ())
-					{
-						_r_fastlock_acquireexclusive (&lock_access);
-						_app_addapplication (hwnd, ptr_log->path, 0, false, false, true);
-						_r_fastlock_releaseexclusive (&lock_access);
-
-						_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
-						_app_profilesave (hwnd);
-					}
-
-					if ((is_logenabled || is_notificationenabled) && (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ())))
-					{
-						_app_formataddress (ptr_log->remote_fmt, _countof (ptr_log->remote_fmt), ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, true);
-						_app_formataddress (ptr_log->local_fmt, _countof (ptr_log->local_fmt), ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, true);
-
-						// write log to a file
-						if (is_logenabled)
-							_app_logwrite (ptr_log);
-
-						// show notification (only for my own provider and file is present)
-						if (is_notificationenabled && !ptr_log->is_allow && ptr_log->is_myprovider && ptr_log->hash)
-						{
-							if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
-							{
-								bool is_silent = true;
-
-								// read app config
-								{
-									_r_fastlock_acquireshared (&lock_access);
-
-									PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
-
-									if (ptr_app)
-										is_silent = ptr_app->is_silent;
-
-									_r_fastlock_releaseshared (&lock_access);
-								}
-
-								if (!is_silent)
-									_app_notifyadd (ptr_log);
-							}
-						}
-					}
-
-					delete ptr_log;
-				}
-
-				_aligned_free (ptr_entry);
-				InterlockedDecrement (&log_stack.Count);
-			}
-
-			// check slist is empty
-			{
-				InterlockedFlushSList (&log_stack.ListHead);
-
-				PSLIST_ENTRY ptr_list = RtlInterlockedPopEntrySList (&log_stack.ListHead);
-
-				if (ptr_list)
-					_app_logclearstack ();
-			}
-
-			if (is_threaddstateset)
-			{
-				SetThreadExecutionState (ES_CONTINUOUS);
-				is_threaddstateset = false;
-			}
-
-			if (result == WAIT_OBJECT_0)
-				ResetEvent (config.log_evt);
-		}
-		else
-		{
-			break;
-		}
-	}
 
 	return ERROR_SUCCESS;
 }
@@ -7446,7 +7441,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_DELETEITEM, i, 0);
 
-							_app_freerule (&ptr_rule);
+							_app_freerule (&rules_custom.at (idx));
 						}
 					}
 
@@ -7462,7 +7457,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					_r_fastlock_releaseexclusive (&lock_access);
 
 					_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
-
 					_app_profilesave (app.GetHWND ());
 
 					_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
