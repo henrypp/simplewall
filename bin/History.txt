@@ -1,4 +1,4 @@
-v2.3 Beta (19 Juny 2018)
+v2.3 (19 Juny 2018)
 - added allowed connections monitoring in dropped packets log (win8+)
 - added inbound multicast and broadcast connections logging (win8+)
 - added outbound redirection filter layer (win7+)
