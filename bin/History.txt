@@ -1,3 +1,11 @@
+v2.3.1 (24 Juny 2018)
+- fixed loopback rules (added more reserved ip addresses)
+- fixed sometimes system cannot be going to sleep
+- fixed applying rules for services (appcrash)
+- fixed update sometimes cannot be installed
+- fixed services enumeration
+- fixed system rules
+
 v2.3 (19 Juny 2018)
 - added allowed connections monitoring in dropped packets log (win8+)
 - added inbound multicast and broadcast connections logging (win8+)

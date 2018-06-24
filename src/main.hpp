@@ -112,8 +112,8 @@
 #define FILTER_WEIGHT_LOWEST 0x9
 
 // memory limitation for 1 rule
-#define RULE_NAME_CCH_MAX 48
-#define RULE_RULE_CCH_MAX 128
+#define RULE_NAME_CCH_MAX 64
+#define RULE_RULE_CCH_MAX 256
 
 // libs
 #pragma comment(lib, "crypt32.lib")
@@ -233,7 +233,6 @@ struct STATIC_DATA
 	HICON hicon_package = nullptr;
 	HICON hicon_service_small = nullptr;
 	HWND hnotification = nullptr;
-	HDEVNOTIFY hdevnotify = nullptr;
 
 	time_t timer_low = 0;
 	time_t blocklist_timestamp = 0;

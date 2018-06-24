@@ -1038,7 +1038,7 @@ void _app_generate_services ()
 		DWORD dwBytesNeeded = 0;
 		DWORD dwServicesReturned = 0;
 		DWORD dwResumedHandle = 0;
-		DWORD dwServiceType = SERVICE_WIN32;
+		DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
 		const DWORD dwServiceState = SERVICE_STATE_ALL;
 
 		// win10+
@@ -1082,12 +1082,6 @@ void _app_generate_services ()
 
 								if (QueryServiceConfig (hsvc, lpqsc, bytes_needed, &bytes_needed))
 								{
-									if (lpqsc->dwStartType == SERVICE_DISABLED)
-									{
-										delete[] lpqsc;
-										continue;
-									}
-
 									// query path
 									StringCchCopy (real_path, _countof (real_path), lpqsc->lpBinaryPathName);
 									PathRemoveArgs (real_path);
@@ -2520,17 +2514,21 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 		}
 		else if (ptr_app->type == AppService) // windows service
 		{
-			LPCWSTR path = ptr_app->original_path;
-			const DWORD rc = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
+			LPCWSTR path = ptr_app->real_path;
 
-			if (rc == ERROR_SUCCESS)
+			if (path)
 			{
-				fwfc[count].fieldKey = FWPM_CONDITION_ALE_APP_ID;
-				fwfc[count].matchType = FWP_MATCH_EQUAL;
-				fwfc[count].conditionValue.type = FWP_BYTE_BLOB_TYPE;
-				fwfc[count].conditionValue.byteBlob = bPath;
+				const DWORD rc = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
 
-				count += 1;
+				if (rc == ERROR_SUCCESS)
+				{
+					fwfc[count].fieldKey = FWPM_CONDITION_ALE_APP_ID;
+					fwfc[count].matchType = FWP_MATCH_EQUAL;
+					fwfc[count].conditionValue.type = FWP_BYTE_BLOB_TYPE;
+					fwfc[count].conditionValue.byteBlob = bPath;
+
+					count += 1;
+				}
 			}
 
 			if (ptr_app->psd && ByteBlobAlloc (ptr_app->psd, GetSecurityDescriptorLength (ptr_app->psd), &bSid))
@@ -2605,6 +2603,7 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 							{
 								ByteBlobFree (&bSid);
 								ByteBlobFree (&bPath);
+
 								return false;
 							}
 						}
@@ -3561,7 +3560,38 @@ bool _wfp_create2filters (bool is_transact)
 		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, FWP_ACTION_PERMIT, 0, &filters2);
 
 		// ipv4/ipv6 loopback
-		static LPCWSTR ip_list[] = {L"127.0.0.0/8", L"10.0.0.0/8", L"172.16.0.0/12", L"169.254.0.0/16", L"192.168.0.0/16", L"224.0.0.0/24", L"fd00::/8", L"fe80::/10", L"2001:0db8::/32", L"ff00::/8"};
+		static LPCWSTR ip_list[] = {
+			L"0.0.0.0/8",
+			L"10.0.0.0/8",
+			L"100.64.0.0/10",
+			L"127.0.0.0/8",
+			L"169.254.0.0/16",
+			L"172.16.0.0/12",
+			L"192.0.0.0/24",
+			L"192.0.2.0/24",
+			L"192.88.99.0/24",
+			L"192.168.0.0/16",
+			L"198.18.0.0/15",
+			L"198.51.100.0/24",
+			L"203.0.113.0/24",
+			L"224.0.0.0/4",
+			L"240.0.0.0/4",
+			L"255.255.255.255/32",
+			L"::/0",
+			L"::/128",
+			L"::1/128",
+			L"::ffff:0:0/96",
+			L"::ffff:0:0:0/96",
+			L"64:ff9b::/96",
+			L"100::/64",
+			L"2001::/32",
+			L"2001:20::/28",
+			L"2001:db8::/32",
+			L"2002::/16",
+			L"fc00::/7",
+			L"fe80::/10",
+			L"ff00::/8"
+		};
 
 		for (size_t i = 0; i < _countof (ip_list); i++)
 		{
@@ -4943,7 +4973,6 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 UINT WINAPI LogThread (LPVOID lparam)
 {
 	HWND hwnd = (HWND)lparam;
-	bool is_threaddstateset = false;
 
 	const DWORD result = WaitForSingleObjectEx (config.log_evt, TIMER_LOG_CALLBACK, FALSE);
 
@@ -4958,12 +4987,6 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 			if (!ptr_list)
 				break;
-
-			if (!is_threaddstateset)
-			{
-				SetThreadExecutionState (ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
-				is_threaddstateset = true;
-			}
 
 			PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
 			PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
@@ -5031,15 +5054,6 @@ UINT WINAPI LogThread (LPVOID lparam)
 			if (ptr_list)
 				_app_logclearstack ();
 		}
-
-		if (is_threaddstateset)
-		{
-			SetThreadExecutionState (ES_CONTINUOUS);
-			is_threaddstateset = false;
-		}
-
-		if (result == WAIT_OBJECT_0)
-			ResetEvent (config.log_evt);
 	}
 
 	return ERROR_SUCCESS;
@@ -5456,8 +5470,6 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 {
 	_r_fastlock_acquireexclusive (&lock_apply);
 
-	SetThreadExecutionState (ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
-
 	const bool is_install = lparam ? true : false;
 
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
@@ -5478,8 +5490,6 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 	_app_profilesave (app.GetHWND ());
 
 	_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
-
-	SetThreadExecutionState (ES_CONTINUOUS);
 
 	_r_fastlock_releaseexclusive (&lock_apply);
 
@@ -8806,7 +8816,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				// create notification window
 				_app_notifycreatewindow ();
 
-				config.log_evt = CreateEventEx (nullptr, _r_fmt (L"Local\\%.10zu", _r_rand (0xFF000000, 0xFFFFFFFF)), CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
+				config.log_evt = CreateEventEx (nullptr, _r_fmt (L"Local\\%.10zu", _r_rand (0xFF000000, 0xFFFFFFFF)), 0, EVENT_ALL_ACCESS);
 
 				{
 					RtlInitializeSListHead (&log_stack.ListHead);
@@ -8828,14 +8838,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// add blocklist to update
 			app.UpdateAddComponent (L"Blocklist", L"blocklist", _r_fmt (L"%d", config.blocklist_timestamp), config.rules_blocklist_path, false);
-
-			DEV_BROADCAST_DEVICEINTERFACE NotificationFilter = {0};
-
-			NotificationFilter.dbcc_size = sizeof (NotificationFilter);
-			NotificationFilter.dbcc_devicetype = DBT_DEVTYP_VOLUME;
-			NotificationFilter.dbcc_classguid = GUID_DEVINTERFACE_VOLUME;
-
-			config.hdevnotify = RegisterDeviceNotification (hwnd, &NotificationFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
 
 			// install filters
 			if (_wfp_isfiltersinstalled ())
@@ -9057,9 +9059,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_DESTROY:
 		{
-			if (config.hdevnotify)
-				UnregisterDeviceNotification (config.hdevnotify);
-
 			app.TrayDestroy (hwnd, UID, nullptr);
 
 			app.ConfigSet (L"Group1IsCollaped", ((SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETGROUPSTATE, 0, LVGS_COLLAPSED) & LVGS_COLLAPSED) != 0) ? true : false);
@@ -9076,8 +9075,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				CloseHandle (config.done_evt);
 			}
 
-			_wfp_uninitialize (false);
-
 			if (config.htimer)
 				DeleteTimerQueueTimer (nullptr, config.htimer, nullptr);
 
@@ -9088,6 +9085,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				_app_logclearstack ();
 			}
+
+			_wfp_uninitialize (false);
 
 			DestroyWindow (config.hnotification);
 			UnregisterClass (NOTIFY_CLASS_DLG, app.GetHINSTANCE ());
@@ -9577,9 +9576,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case PBT_APMSUSPEND:
 				{
-					_app_logclearstack ();
 					_wfp_uninitialize (false);
 					_app_profilesave (hwnd);
+					_app_logclearstack ();
+
+					if (config.hlogthread)
+					{
+						TerminateThread (config.hlogthread, ERROR_SUCCESS);
+						CloseHandle (config.hlogthread);
+
+						config.hlogthread = nullptr;
+					}
 
 					break;
 				}
@@ -9612,26 +9619,31 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_DEVICECHANGE:
 		{
-			if (wparam == DBT_DEVICEARRIVAL || wparam == DBT_DEVICEREMOVECOMPLETE)
+			switch (wparam)
 			{
-				const PDEV_BROADCAST_HDR lbhdr = (PDEV_BROADCAST_HDR)lparam;
-
-				if (lbhdr->dbch_devicetype == DBT_DEVTYP_VOLUME)
+				case DBT_DEVICEARRIVAL:
+				case DBT_DEVICEREMOVECOMPLETE:
 				{
-					if (wparam == DBT_DEVICEARRIVAL)
+					const PDEV_BROADCAST_HDR lbhdr = (PDEV_BROADCAST_HDR)lparam;
+
+					if (lbhdr->dbch_devicetype == DBT_DEVTYP_VOLUME)
 					{
-						_app_profileload (hwnd);
-						_app_installfilters (hwnd, false);
+						if (wparam == DBT_DEVICEARRIVAL)
+						{
+							_app_profileload (hwnd);
+							_app_installfilters (hwnd, false);
+						}
+						else if (wparam == DBT_DEVICEREMOVECOMPLETE && IsWindowVisible (hwnd))
+						{
+							_r_listview_redraw (hwnd, IDC_LISTVIEW);
+						}
 					}
-					else if (wparam == DBT_DEVICEREMOVECOMPLETE && IsWindowVisible (hwnd))
-					{
-						_r_listview_redraw (hwnd, IDC_LISTVIEW);
-					}
+
+					break;
 				}
 			}
 
-			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-			return TRUE;
+			break;
 		}
 
 		case WM_COMMAND:
