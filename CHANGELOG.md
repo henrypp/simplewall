@@ -1,4 +1,4 @@
-v2.3.1 (24 Juny 2018)
+v2.3.1 (25 Juny 2018)
 - fixed loopback rules (added more reserved ip addresses)
 - fixed sometimes system cannot be going to sleep
 - fixed applying rules for services (appcrash)
