@@ -38,7 +38,7 @@
 #define BOOTTIME_FILTER_NAME L"Boot-time filter"
 #define SUBLAYER_WEIGHT_DEFAULT 666
 
-#define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;; CCRC;;;%s)"
+#define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;;CCRC;;;%s)"
 
 #define SZ_TAB L"   "
 #define SZ_EMPTY L"<empty>"
@@ -106,10 +106,11 @@
 #define FILTER_WEIGHT_HIGHEST_IMPORTANT 0xF
 #define FILTER_WEIGHT_HIGHEST 0xE
 #define FILTER_WEIGHT_BLOCKLIST 0xD
-#define FILTER_WEIGHT_CUSTOM 0xC
-#define FILTER_WEIGHT_SYSTEM 0xB
-#define FILTER_WEIGHT_APPLICATION 0xA
-#define FILTER_WEIGHT_LOWEST 0x9
+#define FILTER_WEIGHT_CUSTOM_BLOCK 0xC
+#define FILTER_WEIGHT_CUSTOM 0xB
+#define FILTER_WEIGHT_SYSTEM 0xA
+#define FILTER_WEIGHT_APPLICATION 0x9
+#define FILTER_WEIGHT_LOWEST 0x8
 
 // memory limitation for 1 rule
 #define RULE_NAME_CCH_MAX 64
@@ -300,6 +301,7 @@ typedef struct _ITEM_RULE
 	FWP_DIRECTION dir = FWP_DIRECTION_OUTBOUND;
 	EnumRuleType type = TypeUnknown;
 
+	UINT8 weight = 0;
 	UINT8 protocol = 0;
 
 	bool is_enabled = false;
