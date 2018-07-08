@@ -4992,11 +4992,13 @@ void _app_notifyplaysound ()
 
 void _app_notifyadd (PITEM_LOG const ptr_log)
 {
+	const time_t current_time = _r_unixtime_now ();
+
 	// check for last display time
 	{
 		const time_t notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsUlonglong ();
 
-		if (notification_timeout && ((_r_unixtime_now () - notifications_last[ptr_log->hash]) <= notification_timeout))
+		if (notification_timeout && ((current_time - notifications_last[ptr_log->hash]) < notification_timeout))
 			return;
 	}
 
@@ -5020,7 +5022,7 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 		}
 	}
 
-	notifications_last[ptr_log->hash] = _r_unixtime_now ();
+	notifications_last[ptr_log->hash] = current_time;
 
 	PITEM_LOG ptr_log2 = new ITEM_LOG;
 	size_t idx = LAST_VALUE;
