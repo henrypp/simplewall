@@ -1,5 +1,6 @@
 v2.3.3 (8 July 2018)
 - added system rules update feature
+- fixed fullscreen apps showstopper (issue #209)
 - fixed possible crash for device path resolution
 - fixed skipuac warnings for some machines
 - fixed some services path resolution

@@ -4921,8 +4921,6 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 			SendMessage (config.hnotification, WM_COMMAND, MAKEWPARAM (IDC_CREATERULE_ADDR_ID, 0), 0);
 			SendMessage (config.hnotification, WM_COMMAND, MAKEWPARAM (IDC_CREATERULE_PORT_ID, 0), 0);
 
-			_r_wnd_top (config.hnotification, is_forced);
-
 			ShowWindow (config.hnotification, is_forced ? SW_SHOW : SW_SHOWNA);
 
 			return true;
