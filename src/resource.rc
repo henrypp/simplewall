@@ -644,6 +644,7 @@ STRINGTABLE
 
 	IDS_STATUS_ERROR "Error occured, click here to see details or open log file in application directory!"
 	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule ""%s""!"
+	IDS_STATUS_TIMER "Timer are deactivated"
 
 	IDS_ADDRESS_LOCAL "Source"
 	IDS_ADDRESS_REMOTE "Destination"

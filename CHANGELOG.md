@@ -1,10 +1,18 @@
+v2.3.3 (8 July 2018)
+- added system rules update feature
+- fixed possible crash for device path resolution
+- fixed skipuac warnings for some machines
+- fixed some services path resolution
+- fixed saving empty rules config
+- fixed update engine (issue #182)
+- updated system rules
+
 v2.3.2 (27 Juny 2018)
 - added sorting by state for user rules in app context menu
 - increased priority for blocking user rules
 - fixed loading on startup (issue #75)
 - fixed editor apps list sorting
 - fixed service names displaying
-- fixed skipuac
 
 v2.3.1 (25 Juny 2018)
 - fixed loopback rules (added more reserved ip addresses)

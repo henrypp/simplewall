@@ -237,6 +237,7 @@ struct STATIC_DATA
 
 	time_t timer_low = 0;
 	time_t blocklist_timestamp = 0;
+	time_t rule_system_timestamp = 0;
 
 	size_t tmp1_length = 0;
 	size_t wd_length = 0;
