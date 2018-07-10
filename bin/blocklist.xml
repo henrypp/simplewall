@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!-- Block spying and tracking on Windows -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
-<!-- Date: Tue, 19 Jun 2018 11:55:08 +0000 -->
-<root timestamp="1529409308" type="1">
+<!-- Date: Tue, 10 Jul 2018 12:14:32 +0000 -->
+<root timestamp="1531224872" type="1">
 	<item name="extra_13.78.235.126" rule="13.78.235.126" type="2" is_block="true" />
 	<item name="extra_13.78.235.247" rule="13.78.235.247" type="2" is_block="true" />
 	<item name="extra_13.79.239.69" rule="13.79.239.69" type="2" is_block="true" />
@@ -281,6 +281,7 @@
 	<item name="spy_65.55.252.202" rule="65.55.252.202" type="2" is_block="true" is_enabled="true" />
 	<item name="spy_66.119.147.131" rule="66.119.147.131" type="2" is_block="true" is_enabled="true" />
 	<item name="spy_104.41.207.73" rule="104.41.207.73" type="2" is_block="true" is_enabled="true" />
+	<item name="spy_104.41.219.140" rule="104.41.219.140" type="2" is_block="true" is_enabled="true" />
 	<item name="spy_104.43.137.66" rule="104.43.137.66" type="2" is_block="true" is_enabled="true" />
 	<item name="spy_104.43.139.21" rule="104.43.139.21" type="2" is_block="true" is_enabled="true" />
 	<item name="spy_104.43.140.223" rule="104.43.140.223" type="2" is_block="true" is_enabled="true" />
