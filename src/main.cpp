@@ -369,7 +369,7 @@ ITEM_APP* _app_getapplication (size_t hash)
 
 void _app_applycasestyle (LPWSTR buffer, size_t length)
 {
-	if (length && wcschr (buffer, L'\\'))
+	if (length && wcschr (buffer, OBJ_NAME_PATH_SEPARATOR))
 	{
 		buffer[0] = _r_str_upper (buffer[0]);
 
@@ -1270,7 +1270,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, bool is_s
 	{
 		real_path = path;
 
-		if (!is_ntoskrnl && real_path.Find (L'\\') == rstring::npos)
+		if (!is_ntoskrnl && real_path.Find (OBJ_NAME_PATH_SEPARATOR) == rstring::npos)
 		{
 			if (_app_item_get (&services, hash, nullptr, &real_path, nullptr, &ptr_app->psd, nullptr))
 			{
