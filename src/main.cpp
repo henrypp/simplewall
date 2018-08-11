@@ -519,26 +519,29 @@ bool _app_item_get (std::vector<ITEM_ADD>* pvec, size_t hash, rstring* display_n
 	return false;
 }
 
-LPCWSTR _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app)
+void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, rstring& extracted_name)
 {
-	if (hash == config.ntoskrnl_hash)
-		return ptr_app->original_path;
+	if (
+		hash == config.ntoskrnl_hash ||
+		ptr_app->type == AppService
+		)
+	{
+		extracted_name = ptr_app->original_path;
+		return;
+	}
+	else if (ptr_app->type == AppStore)
+	{
+		_app_item_get (&packages, hash, &extracted_name, nullptr, nullptr, nullptr, nullptr);
+		return;
+	}
 
-	if (ptr_app->type == AppStore)
+	if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
 	{
-		rstring display_name;
-		_app_item_get (&packages, hash, &display_name, nullptr, nullptr, nullptr, nullptr);
+		extracted_name = _r_path_extractfile (ptr_app->real_path);
+		return;
+	}
 
-		return display_name;
-	}
-	else if (ptr_app->type == AppService)
-	{
-		return ptr_app->original_path;
-	}
-	else
-	{
-		return app.ConfigGet (L"ShowFilenames", true).AsBool () ? _r_path_extractfile (ptr_app->real_path) : ptr_app->real_path;
-	}
+	extracted_name = ptr_app->real_path;
 }
 
 bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
@@ -1306,7 +1309,11 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, bool is_s
 
 	StringCchCopy (ptr_app->original_path, _countof (ptr_app->original_path), path);
 	StringCchCopy (ptr_app->real_path, _countof (ptr_app->real_path), real_path);
-	StringCchCopy (ptr_app->display_name, _countof (ptr_app->display_name), _app_getdisplayname (hash, ptr_app));
+
+	rstring name;
+	_app_getdisplayname (hash, ptr_app, name);
+
+	StringCchCopy (ptr_app->display_name, _countof (ptr_app->display_name), name);
 
 	ptr_app->is_enabled = is_enabled;
 	ptr_app->is_silent = is_silent;
@@ -9974,7 +9981,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_app)
 						{
-							StringCchCopy (ptr_app->display_name, _countof (ptr_app->display_name), _app_getdisplayname (hash, ptr_app));
+							rstring name;
+							_app_getdisplayname (hash, ptr_app, name);
+
+							StringCchCopy (ptr_app->display_name, _countof (ptr_app->display_name), name);
 
 							_r_listview_setitem (hwnd, IDC_LISTVIEW, i, 0, ptr_app->display_name);
 						}
