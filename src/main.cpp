@@ -211,7 +211,7 @@ void _app_listviewsetimagelist (HWND hwnd, UINT ctrl_id)
 	const bool is_large = app.ConfigGet (L"IsLargeIcons", false).AsBool () && ctrl_id == IDC_LISTVIEW;
 	const bool is_iconshidden = app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
-	if (SUCCEEDED (SHGetImageList (is_large ? SHIL_LARGE : SHIL_SMALL, IID_IImageList, (LPVOID*)&himg)))
+	if (SUCCEEDED (SHGetImageList (is_large ? SHIL_LARGE : SHIL_SMALL, IID_IImageList, (void**)&himg)))
 	{
 		SendDlgItemMessage (hwnd, ctrl_id, LVM_SETIMAGELIST, LVSIL_SMALL, (LPARAM)himg);
 		SendDlgItemMessage (hwnd, ctrl_id, LVM_SETIMAGELIST, LVSIL_NORMAL, (LPARAM)himg);
@@ -561,19 +561,19 @@ bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
 
 	cache_versions[hash] = nullptr;
 
-	HINSTANCE hlib = LoadLibraryEx (path, nullptr, DONT_RESOLVE_DLL_REFERENCES | LOAD_LIBRARY_AS_DATAFILE);
+	const HINSTANCE hlib = LoadLibraryEx (path, nullptr, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
 
 	if (hlib)
 	{
-		HRSRC hres = FindResource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION);
+		const HRSRC hres = FindResource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION);
 
 		if (hres)
 		{
-			HGLOBAL hg = LoadResource (hlib, hres);
+			const HGLOBAL hglob = LoadResource (hlib, hres);
 
-			if (hg)
+			if (hglob)
 			{
-				LPVOID versionInfo = LockResource (hg);
+				const LPVOID versionInfo = LockResource (hglob);
 
 				if (versionInfo)
 				{
@@ -617,7 +617,7 @@ bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
 						UINT length = 0;
 						VS_FIXEDFILEINFO* verInfo = nullptr;
 
-						if (VerQueryValue (versionInfo, L"\\", (LPVOID*)(&verInfo), &length))
+						if (VerQueryValue (versionInfo, L"\\", (void**)(&verInfo), &length))
 						{
 							buffer.Append (_r_fmt (L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS)));
 
@@ -656,10 +656,9 @@ bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
 
 					result = true;
 				}
-			}
 
-			UnlockResource (hg);
-			FreeResource (hg);
+				FreeResource (hglob);
+			}
 		}
 
 		FreeLibrary (hlib);
@@ -771,11 +770,11 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 	{
 		if (SUCCEEDED (CoInitializeSecurity (nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_PKT_PRIVACY, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, 0, nullptr)))
 		{
-			if (SUCCEEDED (CoCreateInstance (CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl)))
+			if (SUCCEEDED (CoCreateInstance (CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)&psl)))
 			{
 				IPersistFile* ppf = nullptr;
 
-				if (SUCCEEDED (psl->QueryInterface (IID_IPersistFile, (LPVOID*)&ppf)))
+				if (SUCCEEDED (psl->QueryInterface (IID_IPersistFile, (void**)&ppf)))
 				{
 					if (SUCCEEDED (ppf->Load (path, STGM_READ)))
 					{
@@ -1769,7 +1768,7 @@ void _wfp_destroyfilters (bool is_full)
 						}
 					}
 
-					FwpmFreeMemory ((LPVOID*)&matchingFwpFilter);
+					FwpmFreeMemory ((void**)&matchingFwpFilter);
 				}
 			}
 		}
@@ -5179,11 +5178,11 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		{
 			if (layer && (memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) == 0 || memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)) == 0))
 			{
-				FwpmFreeMemory ((LPVOID*)&layer);
+				FwpmFreeMemory ((void**)&layer);
 				return;
 			}
 
-			FwpmFreeMemory ((LPVOID*)&layer);
+			FwpmFreeMemory ((void**)&layer);
 		}
 	}
 
@@ -5297,10 +5296,10 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 				}
 
 				if (filter)
-					FwpmFreeMemory ((LPVOID*)&filter);
+					FwpmFreeMemory ((void**)&filter);
 
 				if (provider)
-					FwpmFreeMemory ((LPVOID*)&provider);
+					FwpmFreeMemory ((void**)&provider);
 
 				if (!ptr_log->filter_name[0])
 					StringCchCopy (ptr_log->filter_name, _countof (ptr_log->filter_name), SZ_EMPTY);
@@ -7856,7 +7855,7 @@ bool _wfp_initialize (bool is_full)
 					ACCESS_ALLOWED_ACE* pAce = nullptr;
 
 					// Get ACE info
-					if (!GetAce (pDacl, cAce, (LPVOID*)&pAce))
+					if (!GetAce (pDacl, cAce, (void**)&pAce))
 					{
 						_app_logerror (L"GetAce", GetLastError (), nullptr, false);
 						continue;
