@@ -4004,18 +4004,18 @@ void _wfp_installfilters ()
 	}
 }
 
-bool _app_installfilters (HWND hwnd, bool is_forced)
+bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 {
 	if (_r_fastlock_islocked (&lock_apply))
 		return false;
 
 	_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 
-	if (is_forced || _wfp_isfiltersinstalled ())
+	if (!is_install || (is_install && is_forced || _wfp_isfiltersinstalled ()))
 	{
 		_r_ctrl_enable (hwnd, IDC_START_BTN, false);
 
-		const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &ApplyThread, (LPVOID)true, CREATE_SUSPENDED, nullptr);
+		const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &ApplyThread, (LPVOID)is_install, CREATE_SUSPENDED, nullptr);
 
 		if (hthread)
 		{
@@ -4033,23 +4033,25 @@ bool _app_installfilters (HWND hwnd, bool is_forced)
 	return false;
 }
 
-bool _app_uninstallfilters ()
-{
-	if (_r_fastlock_islocked (&lock_apply))
-		return false;
-
-	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
-
-	const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &ApplyThread, (LPVOID)false, CREATE_SUSPENDED, nullptr);
-
-	if (hthread)
-	{
-		SetThreadPriority (hthread, THREAD_PRIORITY_ABOVE_NORMAL);
-		ResumeThread (hthread);
-	}
-
-	return true;
-}
+//bool _app_uninstallfilters ()
+//{
+//	if (_r_fastlock_islocked (&lock_apply))
+//		return false;
+//
+//	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
+//
+//	const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &ApplyThread, (LPVOID)false, CREATE_SUSPENDED, nullptr);
+//
+//	if (hthread)
+//	{
+//		SetThreadPriority (hthread, THREAD_PRIORITY_ABOVE_NORMAL);
+//		ResumeThread (hthread);
+//
+//		CloseHandle (hthread);
+//	}
+//
+//	return true;
+//}
 
 void _app_logclearstack ()
 {
@@ -5155,6 +5157,8 @@ UINT WINAPI LogThread (LPVOID lparam)
 		}
 	}
 
+	_endthreadex (0);
+
 	return ERROR_SUCCESS;
 }
 
@@ -5372,6 +5376,12 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 			// check if thread has been terminated
 			if (!config.hlogthread || WaitForSingleObject (config.hlogthread, 0) == WAIT_OBJECT_0)
 			{
+				if (config.hlogthread)
+				{
+					CloseHandle (config.hlogthread);
+					config.hlogthread = nullptr;
+				}
+
 				config.hlogthread = (HANDLE)_beginthreadex (nullptr, 0, &LogThread, app.GetHWND (), CREATE_SUSPENDED, nullptr);
 
 				if (config.hlogthread)
@@ -5546,6 +5556,8 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
 
 	SetEvent (config.done_evt);
+
+	_endthreadex (0);
 
 	return ERROR_SUCCESS;
 }
@@ -8884,7 +8896,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// install filters
 			if (_wfp_isfiltersinstalled ())
-				_app_installfilters (hwnd, true);
+				_app_changefilters (hwnd, true, true);
 
 			break;
 		}
@@ -9044,7 +9056,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_app_profilesave (hwnd);
 
-			_app_installfilters (hwnd, false);
+			_app_changefilters (hwnd, true, false);
 
 			break;
 		}
@@ -9651,7 +9663,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (_wfp_isfiltersinstalled ())
 					{
 						if (_wfp_initialize (true))
-							_app_installfilters (hwnd, true);
+							_app_changefilters (hwnd, true, true);
 					}
 					else
 					{
@@ -9680,7 +9692,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (wparam == DBT_DEVICEARRIVAL)
 						{
 							_app_profileload (hwnd);
-							_app_installfilters (hwnd, false);
+							_app_changefilters (hwnd, true, false);
 						}
 						else if (wparam == DBT_DEVICEREMOVECOMPLETE && IsWindowVisible (hwnd))
 						{
@@ -9946,7 +9958,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_app_profilesave (hwnd);
 						_app_notifyrefresh ();
 
-						_app_installfilters (hwnd, false);
+						_app_changefilters (hwnd, true, false);
 					}
 
 					break;
@@ -10105,7 +10117,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					CheckMenuRadioItem (GetMenu (hwnd), IDM_TRAY_MODEWHITELIST, IDM_TRAY_MODEBLACKLIST, IDM_TRAY_MODEWHITELIST + current_mode, MF_BYCOMMAND);
 
 					_app_refreshstatus (hwnd);
-					_app_installfilters (hwnd, false);
+					_app_changefilters (hwnd, true, false);
 
 					break;
 				}
@@ -10114,7 +10126,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_REFRESH2:
 				{
 					_app_profileload (hwnd);
-					_app_installfilters (hwnd, false);
+					_app_changefilters (hwnd, true, false);
 
 					break;
 				}
@@ -10205,11 +10217,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (_app_installmessage (hwnd, state))
 					{
-						if (state)
-							_app_installfilters (hwnd, true);
-
-						else
-							_app_uninstallfilters ();
+						_app_changefilters (hwnd, state, true);
 					}
 
 					break;
