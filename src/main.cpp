@@ -39,6 +39,8 @@ std::unordered_map<size_t, time_t> notifications_last;
 std::unordered_map<size_t, LPWSTR> cache_signatures;
 std::unordered_map<size_t, LPWSTR> cache_versions;
 
+std::vector<HANDLE> thread_pool;
+
 std::unordered_map<rstring, bool, rstring::hash, rstring::is_equal> rules_config;
 
 std::vector<ITEM_COLOR> colors;
@@ -65,6 +67,8 @@ _R_FASTLOCK lock_apply;
 _R_FASTLOCK lock_access;
 _R_FASTLOCK lock_writelog;
 _R_FASTLOCK lock_notification;
+_R_FASTLOCK lock_threadpool;
+_R_FASTLOCK lock_eventcallback;
 
 ITEM_LIST_HEAD log_stack = {0};
 
@@ -4004,6 +4008,33 @@ void _wfp_installfilters ()
 	}
 }
 
+void _app_clear_threadpool ()
+{
+	if (thread_pool.empty ())
+		return;
+
+	std::vector<size_t> remove_idx;
+
+	for (size_t i = 0; i < thread_pool.size (); i++)
+	{
+		const HANDLE hthread = thread_pool.at (i);
+
+		if (WaitForSingleObjectEx (hthread, 0, FALSE) == WAIT_OBJECT_0)
+		{
+			CloseHandle (hthread);
+			remove_idx.push_back (i);
+		}
+	}
+
+	if (remove_idx.empty ())
+		return;
+
+	for (size_t i = remove_idx.size (); i != 0; i--)
+	{
+		thread_pool.erase (thread_pool.begin () + remove_idx.at (i - 1));
+	}
+}
+
 bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 {
 	if (_r_fastlock_islocked (&lock_apply))
@@ -4015,13 +4046,21 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 	{
 		_r_ctrl_enable (hwnd, IDC_START_BTN, false);
 
+		_r_fastlock_acquireexclusive (&lock_threadpool);
+
+		_app_clear_threadpool ();
+
 		const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &ApplyThread, (LPVOID)is_install, CREATE_SUSPENDED, nullptr);
 
 		if (hthread)
 		{
+			thread_pool.push_back (hthread);
+
 			SetThreadPriority (hthread, THREAD_PRIORITY_ABOVE_NORMAL);
 			ResumeThread (hthread);
 		}
+
+		_r_fastlock_releaseexclusive (&lock_threadpool);
 
 		return true;
 	}
@@ -4032,26 +4071,6 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 	return false;
 }
-
-//bool _app_uninstallfilters ()
-//{
-//	if (_r_fastlock_islocked (&lock_apply))
-//		return false;
-//
-//	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
-//
-//	const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &ApplyThread, (LPVOID)false, CREATE_SUSPENDED, nullptr);
-//
-//	if (hthread)
-//	{
-//		SetThreadPriority (hthread, THREAD_PRIORITY_ABOVE_NORMAL);
-//		ResumeThread (hthread);
-//
-//		CloseHandle (hthread);
-//	}
-//
-//	return true;
-//}
 
 void _app_logclearstack ()
 {
@@ -5073,11 +5092,10 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 
 UINT WINAPI LogThread (LPVOID lparam)
 {
-	HWND hwnd = (HWND)lparam;
+	_r_fastlock_acquireshared (&lock_eventcallback);
 
-	const DWORD result = WaitForSingleObjectEx (config.log_evt, TIMER_LOG_CALLBACK, FALSE);
+	const HWND hwnd = (HWND)lparam;
 
-	if (result == WAIT_OBJECT_0 || result == WAIT_TIMEOUT)
 	{
 		const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
 		const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
@@ -5147,15 +5165,15 @@ UINT WINAPI LogThread (LPVOID lparam)
 		}
 
 		// check slist is empty
-		{
-			InterlockedFlushSList (&log_stack.ListHead);
+		InterlockedFlushSList (&log_stack.ListHead);
 
-			PSLIST_ENTRY ptr_list = InterlockedPopEntrySList (&log_stack.ListHead);
+		PSLIST_ENTRY ptr_list = InterlockedPopEntrySList (&log_stack.ListHead);
 
-			if (ptr_list)
-				_app_logclearstack ();
-		}
+		if (ptr_list)
+			_app_logclearstack ();
 	}
+
+	_r_fastlock_releaseshared (&lock_eventcallback);
 
 	_endthreadex (0);
 
@@ -5374,24 +5392,24 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 			InterlockedIncrement (&log_stack.Count);
 
 			// check if thread has been terminated
-			if (!config.hlogthread || WaitForSingleObject (config.hlogthread, 0) == WAIT_OBJECT_0)
+			if (!_r_fastlock_islocked (&lock_eventcallback))
 			{
-				if (config.hlogthread)
+				_r_fastlock_acquireexclusive (&lock_threadpool);
+
+				_app_clear_threadpool ();
+
+				const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &LogThread, app.GetHWND (), CREATE_SUSPENDED, nullptr);
+
+				if (hthread)
 				{
-					CloseHandle (config.hlogthread);
-					config.hlogthread = nullptr;
+					thread_pool.push_back (hthread);
+
+					SetThreadPriority (hthread, THREAD_PRIORITY_ABOVE_NORMAL);
+					ResumeThread (hthread);
 				}
 
-				config.hlogthread = (HANDLE)_beginthreadex (nullptr, 0, &LogThread, app.GetHWND (), CREATE_SUSPENDED, nullptr);
-
-				if (config.hlogthread)
-				{
-					SetThreadPriority (config.hlogthread, THREAD_PRIORITY_ABOVE_NORMAL);
-					ResumeThread (config.hlogthread);
-				}
+				_r_fastlock_releaseexclusive (&lock_threadpool);
 			}
-
-			SetEvent (config.log_evt);
 		}
 	}
 }
@@ -8698,6 +8716,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_fastlock_initialize (&lock_access);
 			_r_fastlock_initialize (&lock_writelog);
 			_r_fastlock_initialize (&lock_notification);
+			_r_fastlock_initialize (&lock_threadpool);
+			_r_fastlock_initialize (&lock_eventcallback);
 
 			// get current user security identifier
 			if (!config.psid)
@@ -8870,11 +8890,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				// create notification window
 				_app_notifycreatewindow ();
 
-				config.log_evt = CreateEventEx (nullptr, _r_fmt (L"Local\\%.10zu", _r_rand (0xFF000000, 0xFFFFFFFF)), 0, EVENT_ALL_ACCESS);
-
+				// initialize slist
 				{
-					InitializeSListHead (&log_stack.ListHead);
 					log_stack.Count = 0;
+					InitializeSListHead (&log_stack.ListHead);
 				}
 			}
 
@@ -9136,12 +9155,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				DeleteTimerQueueTimer (nullptr, config.htimer, nullptr);
 
 			if (_r_sys_validversion (6, 1))
-			{
-				if (config.log_evt)
-					CloseHandle (config.log_evt);
-
 				_app_logclearstack ();
-			}
 
 			_wfp_uninitialize (false);
 
@@ -9637,17 +9651,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case PBT_APMSUSPEND:
 				{
+					_r_fastlock_acquireexclusive (&lock_threadpool);
+					_app_clear_threadpool ();
+					_r_fastlock_releaseexclusive (&lock_threadpool);
+
 					_wfp_uninitialize (false);
 					_app_profilesave (hwnd);
 					_app_logclearstack ();
-
-					if (config.hlogthread)
-					{
-						TerminateThread (config.hlogthread, ERROR_SUCCESS);
-						CloseHandle (config.hlogthread);
-
-						config.hlogthread = nullptr;
-					}
 
 					break;
 				}

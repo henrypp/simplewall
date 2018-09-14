@@ -225,9 +225,7 @@ struct STATIC_DATA
 	HANDLE hnetevent = nullptr;
 	HANDLE hlogfile = nullptr;
 	HANDLE done_evt = nullptr;
-	HANDLE log_evt = nullptr;
 	HANDLE htimer = nullptr;
-	HANDLE hlogthread = nullptr;
 	HFONT hfont = nullptr;
 	HICON hicon_large = nullptr;
 	HICON hicon_small = nullptr;
