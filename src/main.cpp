@@ -906,56 +906,61 @@ HBITMAP _app_ico2bmp (HICON hicon)
 	iconRectangle.bottom = icon_size;
 
 	HBITMAP hbitmap = nullptr;
-	HDC screenHdc = GetDC (nullptr);
-	HDC hdc = CreateCompatibleDC (screenHdc);
+	const HDC screenHdc = GetDC (nullptr);
 
-	if (hdc)
+	if (screenHdc)
 	{
-		BITMAPINFO bitmapInfo = {0};
-		bitmapInfo.bmiHeader.biSize = sizeof (bitmapInfo);
-		bitmapInfo.bmiHeader.biPlanes = 1;
-		bitmapInfo.bmiHeader.biCompression = BI_RGB;
+		const HDC hdc = CreateCompatibleDC (screenHdc);
 
-		bitmapInfo.bmiHeader.biWidth = icon_size;
-		bitmapInfo.bmiHeader.biHeight = icon_size;
-		bitmapInfo.bmiHeader.biBitCount = 32;
-
-		hbitmap = CreateDIBSection (hdc, &bitmapInfo, DIB_RGB_COLORS, nullptr, nullptr, 0);
-
-		if (hbitmap)
+		if (hdc)
 		{
-			ReleaseDC (nullptr, screenHdc);
-			HBITMAP oldBitmap = (HBITMAP)SelectObject (hdc, hbitmap);
+			BITMAPINFO bitmapInfo = {0};
+			bitmapInfo.bmiHeader.biSize = sizeof (bitmapInfo);
+			bitmapInfo.bmiHeader.biPlanes = 1;
+			bitmapInfo.bmiHeader.biCompression = BI_RGB;
 
-			BLENDFUNCTION blendFunction = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
-			blendFunction.BlendOp = AC_SRC_OVER;
-			blendFunction.AlphaFormat = AC_SRC_ALPHA;
-			blendFunction.SourceConstantAlpha = 255;
+			bitmapInfo.bmiHeader.biWidth = icon_size;
+			bitmapInfo.bmiHeader.biHeight = icon_size;
+			bitmapInfo.bmiHeader.biBitCount = 32;
 
-			BP_PAINTPARAMS paintParams = {0};
-			paintParams.cbSize = sizeof (paintParams);
-			paintParams.dwFlags = BPPF_ERASE;
-			paintParams.pBlendFunction = &blendFunction;
+			hbitmap = CreateDIBSection (hdc, &bitmapInfo, DIB_RGB_COLORS, nullptr, nullptr, 0);
 
-			HDC bufferHdc = nullptr;
-			HPAINTBUFFER paintBuffer = BeginBufferedPaint (hdc, &iconRectangle, BPBF_DIB, &paintParams, &bufferHdc);
-
-			if (paintBuffer)
+			if (hbitmap)
 			{
-				DrawIconEx (bufferHdc, 0, 0, hicon, icon_size, icon_size, 0, nullptr, DI_NORMAL);
-				EndBufferedPaint (paintBuffer, TRUE);
-			}
-			else
-			{
-				_r_dc_fillrect (hdc, &iconRectangle, GetSysColor (COLOR_MENU));
-				DrawIconEx (hdc, 0, 0, hicon, icon_size, icon_size, 0, nullptr, DI_NORMAL);
+				const HBITMAP oldBitmap = (HBITMAP)SelectObject (hdc, hbitmap);
+
+				BLENDFUNCTION blendFunction = {0};
+				blendFunction.BlendOp = AC_SRC_OVER;
+				blendFunction.AlphaFormat = AC_SRC_ALPHA;
+				blendFunction.SourceConstantAlpha = 255;
+
+				BP_PAINTPARAMS paintParams = {0};
+				paintParams.cbSize = sizeof (paintParams);
+				paintParams.dwFlags = BPPF_ERASE;
+				paintParams.pBlendFunction = &blendFunction;
+
+				HDC bufferHdc = nullptr;
+
+				const HPAINTBUFFER paintBuffer = BeginBufferedPaint (hdc, &iconRectangle, BPBF_DIB, &paintParams, &bufferHdc);
+
+				if (paintBuffer)
+				{
+					DrawIconEx (bufferHdc, 0, 0, hicon, icon_size, icon_size, 0, nullptr, DI_NORMAL);
+					EndBufferedPaint (paintBuffer, TRUE);
+				}
+				else
+				{
+					_r_dc_fillrect (hdc, &iconRectangle, GetSysColor (COLOR_MENU));
+					DrawIconEx (hdc, 0, 0, hicon, icon_size, icon_size, 0, nullptr, DI_NORMAL);
+				}
+
 				SelectObject (hdc, oldBitmap);
 			}
 
-			SelectObject (hdc, oldBitmap);
+			DeleteDC (hdc);
 		}
 
-		DeleteDC (hdc);
+		ReleaseDC (nullptr, screenHdc);
 	}
 
 	return hbitmap;
@@ -8767,6 +8772,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					StringCchCopy (config.title, _countof (config.title), APP_NAME); // fallback
 			}
 
+			// init buffered paint
+			BufferedPaintInit ();
+
 			// allow drag&drop support
 			DragAcceptFiles (hwnd, TRUE);
 
@@ -9161,6 +9169,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			DestroyWindow (config.hnotification);
 			UnregisterClass (NOTIFY_CLASS_DLG, app.GetHINSTANCE ());
+
+			BufferedPaintUnInit ();
 
 			ImageList_Destroy (config.himg);
 
