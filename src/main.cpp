@@ -4370,8 +4370,11 @@ bool _app_timer_apply (HWND hwnd, bool is_forceremove)
 
 	if (config.timer_low || config.htimer)
 	{
-		if (config.htimer && DeleteTimerQueueTimer (nullptr, config.htimer, nullptr))
+		if (config.htimer)
+		{
+			DeleteTimerQueueTimer (nullptr, config.htimer, nullptr);
 			config.htimer = nullptr;
+		}
 
 		config.timer_low = 0;
 	}
@@ -4439,8 +4442,11 @@ bool _app_timer_apply (HWND hwnd, bool is_forceremove)
 	_r_fastlock_releaseexclusive (&lock_apply);
 	_r_fastlock_releaseexclusive (&lock_access);
 
-	if (config.htimer && DeleteTimerQueueTimer (nullptr, config.htimer, nullptr))
+	if (config.htimer)
+	{
+		DeleteTimerQueueTimer (nullptr, config.htimer, nullptr);
 		config.htimer = nullptr;
+	}
 
 	if (is_forceremove)
 	{
@@ -8145,10 +8151,10 @@ void DrawFrameBorder (HDC dc, HWND hwnd, COLORREF clr)
 	RECT rc = {0};
 	GetWindowRect (hwnd, &rc);
 
-	HPEN hpen = CreatePen (PS_INSIDEFRAME, GetSystemMetrics (SM_CXBORDER), clr);
+	const HPEN hpen = CreatePen (PS_INSIDEFRAME, GetSystemMetrics (SM_CXBORDER), clr);
 
-	HPEN old_pen = (HPEN)SelectObject (dc, hpen);
-	HBRUSH old_brush = (HBRUSH)SelectObject (dc, GetStockObject (NULL_BRUSH));
+	const HPEN old_pen = (HPEN)SelectObject (dc, hpen);
+	const HBRUSH old_brush = (HBRUSH)SelectObject (dc, GetStockObject (NULL_BRUSH));
 
 	Rectangle (dc, 0, 0, (rc.right - rc.left), (rc.bottom - rc.top));
 
