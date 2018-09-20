@@ -1305,8 +1305,8 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, bool is_s
 			}
 
 			const DWORD dwAttr = GetFileAttributes (real_path);
-			ptr_app->is_system = is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_wcsnicmp (real_path, config.windows_dir, config.wd_length) == 0);
 			ptr_app->is_temp = ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_TEMPORARY) != 0)) || (_wcsnicmp (real_path, config.tmp1_dir, config.tmp1_length) == 0);
+			ptr_app->is_system = !ptr_app->is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_wcsnicmp (real_path, config.windows_dir, config.wd_length) == 0));
 
 			ptr_app->is_signed = _app_verifysignature (hash, real_path, &ptr_app->signer);
 		}
