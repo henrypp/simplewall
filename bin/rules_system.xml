@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
-<root timestamp="1531032282" type="1">
-	<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" type="4" protocol="17" apps="dhcp" is_enabled="true" />
-	<item name="DNS" rule="53" type="4" protocol="17" apps="dnscache" is_enabled="true" />
+<root timestamp="1537510459" type="1">
+	<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
+	<item name="DNS" rule="53" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
 	<item name="FTP" rule="20-21;49152-65534" type="4" protocol="6" />
 	<item name="ICMPv4" dir="2" protocol="1" />
 	<item name="ICMPv6" dir="2" protocol="58" />
 	<item name="IMAP/POP3/SMTP" rule="25;110;143;465;993;995;2525" type="4" protocol="6" />
 	<item name="IGMP" rule="224.0.0.0/4" type="2" protocol="2" apps="System" is_enabled="true" />
 	<item name="IKEv2/IPsec/L2TP" rule="500;1701;4500" type="4" protocol="17" apps="System" />
-	<item name="LLNMR" rule="224.0.0.252:5355;ff02::1:3:5355" type="2" protocol="17" apps="dnscache" is_enabled="true" />
-	<item name="mDNS" rule="224.0.0.251:5353;ff02::fb:5353" type="2" protocol="17" apps="dnscache" is_enabled="true" />
+	<item name="LLNMR" rule="224.0.0.252:5355;ff02::1:3:5355" type="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
+	<item name="mDNS" rule="224.0.0.251:5353;ff02::fb:5353" type="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
 	<item name="NetBIOS [Inbound]" rule_local="137-139" dir="2" type="4" apps="System" is_enabled="true" />
 	<item name="NetBIOS [Outbound]" rule="137-139" type="4" apps="System" is_enabled="true" />
 	<item name="NTP" rule="123" type="4" protocol="17" apps="w32time" />
