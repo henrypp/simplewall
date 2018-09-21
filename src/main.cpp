@@ -1848,6 +1848,11 @@ DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 con
 	UINT64 filter_id = 0;
 	const DWORD result = FwpmFilterAdd (config.hengine, &filter, nullptr, &filter_id);
 
+	// issue #229
+	//if (result == FWP_E_PROVIDER_NOT_FOUND)
+	//{
+	//}
+
 	if (result == ERROR_SUCCESS)
 	{
 		if (pmar)
@@ -2844,7 +2849,7 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 	}
 
 	// create listen layer filter
-	if (!app.ConfigGet (L"AllowListenConnections2", true).AsBool () && (!is_remoteaddr_set && !is_remoteport_set) && (dir == FWP_DIRECTION_INBOUND || dir == FWP_DIRECTION_MAX))
+	if (!app.ConfigGet (L"AllowListenConnections2", true).AsBool () && !protocol && dir != FWP_DIRECTION_OUTBOUND && (!is_remoteaddr_set && !is_remoteport_set))
 	{
 		if (af == AF_INET || af == AF_UNSPEC)
 			_wfp_createfilter (name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, flag, pmfarr);
