@@ -2666,13 +2666,19 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 			{
 				if (_app_parserulestring (rules[i], &addr, ptype))
 				{
+					if (i == 0)
+					{
+						if (addr.type == TypeIp || addr.type == TypeHost)
+							is_remoteaddr_set = true;
+
+						else if (addr.type == TypePort)
+							is_remoteport_set = true;
+					}
+
 					if (addr.is_range && (addr.type == TypeIp || addr.type == TypePort))
 					{
 						if (addr.type == TypeIp)
 						{
-							if (i == 0)
-								is_remoteaddr_set = true;
-
 							if (addr.format == NET_ADDRESS_IPV4)
 							{
 								af = AF_INET;
@@ -2699,9 +2705,6 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 					}
 					else if (addr.type == TypePort)
 					{
-						if (i == 0)
-							is_remoteport_set = true;
-
 						fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT);
 						fwfc[count].matchType = FWP_MATCH_EQUAL;
 						fwfc[count].conditionValue.type = FWP_UINT16;
@@ -2711,9 +2714,6 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 					}
 					else if (addr.type == TypeHost || addr.type == TypeIp)
 					{
-						if (i == 0)
-							is_remoteaddr_set = true;
-
 						fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
 						fwfc[count].matchType = FWP_MATCH_EQUAL;
 
@@ -2740,7 +2740,7 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 							ByteBlobFree (&bSid);
 							ByteBlobFree (&bPath);
 
-							rstring::rvector arr2 = rstring (addr.host).AsVector (RULE_DELIMETER);
+							const rstring::rvector arr2 = rstring (addr.host).AsVector (RULE_DELIMETER);
 
 							if (arr2.empty ())
 							{
@@ -2770,9 +2770,6 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 						// set port if available
 						if (addr.port)
 						{
-							if (i == 0)
-								is_remoteport_set = true;
-
 							fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT);
 							fwfc[count].matchType = FWP_MATCH_EQUAL;
 							fwfc[count].conditionValue.type = FWP_UINT16;
