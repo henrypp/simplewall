@@ -1,3 +1,11 @@
+v2.3.4 (21 September 2018)
+- fixed dns system rules when dns service is stopped
+- fixed listen filter conditions (issue #213, #222)
+- fixed memory referencing bug (issue #221)
+- fixed massive handles leak (issue #230)
+- fixed thread termination
+- various ui fixes
+
 v2.3.3 (8 July 2018)
 - added system rules update feature
 - fixed inaccurate timeout between notifications  (issue #194)
