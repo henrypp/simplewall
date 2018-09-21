@@ -1834,7 +1834,6 @@ DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 con
 		filter.filterCondition = lpcond;
 	}
 
-
 	if (layer)
 		CopyMemory (&filter.layerKey, layer, sizeof (GUID));
 
@@ -3477,15 +3476,10 @@ bool _wfp_isfiltersinstalled ()
 
 	if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\services\\BFE\\Parameters\\Policy\\Persistent\\Provider", 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 	{
-		OLECHAR* guidString = nullptr;
+		static const rstring guidString = _r_str_fromguid (GUID_WfpProvider);
 
-		if (SUCCEEDED (StringFromCLSID (GUID_WfpProvider, &guidString)))
-		{
-			if (RegQueryValueEx (hkey, guidString, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS)
-				result = true;
-
-			CoTaskMemFree (guidString);
-		}
+		if (RegQueryValueEx (hkey, guidString, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS)
+			result = true;
 
 		RegCloseKey (hkey);
 	}
