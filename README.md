@@ -1,10 +1,8 @@
+simplewall [![Github All Releases](https://img.shields.io/github/downloads/henrypp/simplewall/total.svg)](https://github.com/henrypp/simplewall/releases) [![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
-[![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0.en.html)
-[![Github All Releases](https://img.shields.io/github/downloads/henrypp/simplewall/total.svg?style=for-the-badge)](https://github.com/henrypp/simplewall/releases)
+=======
 
-![simplewall](https://www.henrypp.org/images/simplewall.png?fiximg)
-
-## simplewall
+![simplewall](https://www.henrypp.org/images/simplewall.png)
 
 ### Description:
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
