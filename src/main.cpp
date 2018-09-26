@@ -256,13 +256,9 @@ void _app_setbuttonmargins (HWND hwnd, UINT ctrl_id)
 
 bool _app_listviewinitfont (PLOGFONT plf)
 {
-	rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
+	const rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
 
-	if (buffer.IsEmpty ())
-	{
-		return false;
-	}
-	else
+	if (!buffer.IsEmpty ())
 	{
 		rstring::rvector vc = buffer.AsVector (L";");
 
@@ -306,7 +302,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 				plf->lfWeight = pdeflf->lfWeight;
 
 			// set default values
-			plf->lfCharSet = DEFAULT_CHARSET;
+			plf->lfCharSet = pdeflf->lfCharSet;
 			plf->lfQuality = pdeflf->lfQuality;
 		}
 	}
@@ -348,8 +344,8 @@ void _app_listviewsetfont (HWND hwnd, UINT ctrl_id, bool is_redraw)
 			config.hfont = nullptr;
 		}
 
-		if (_app_listviewinitfont (&lf))
-			config.hfont = CreateFontIndirect (&lf);
+		_app_listviewinitfont (&lf);
+		config.hfont = CreateFontIndirect (&lf);
 	}
 
 	if (config.hfont)
@@ -4543,11 +4539,13 @@ void _app_notifycreatewindow ()
 					lf_text->lfHeight = _r_dc_fontsizetoheight (9);
 
 					lf_title->lfWeight = FW_SEMIBOLD;
-					lf_text->lfWeight = FW_NORMAL;
+					lf_text->lfWeight = ncm.lfMessageFont.lfWeight;
 
-					// set default values
-					lf_title->lfQuality = DEFAULT_QUALITY;
-					lf_text->lfQuality = DEFAULT_QUALITY;
+					lf_title->lfQuality = ncm.lfCaptionFont.lfQuality;
+					lf_text->lfQuality = ncm.lfMessageFont.lfQuality;
+
+					lf_title->lfCharSet = ncm.lfCaptionFont.lfCharSet;
+					lf_text->lfCharSet = ncm.lfMessageFont.lfCharSet;
 
 					StringCchCopy (lf_title->lfFaceName, LF_FACESIZE, UI_FONT);
 					StringCchCopy (lf_text->lfFaceName, LF_FACESIZE, UI_FONT);
