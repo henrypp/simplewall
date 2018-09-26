@@ -274,21 +274,16 @@ bool _app_listviewinitfont (PLOGFONT plf)
 				continue;
 
 			if (i == 0)
-			{
 				StringCchCopy (plf->lfFaceName, LF_FACESIZE, vc.at (i));
-			}
+
 			else if (i == 1)
-			{
 				plf->lfHeight = _r_dc_fontsizetoheight (vc.at (i).AsInt ());
-			}
+
 			else if (i == 2)
-			{
 				plf->lfWeight = vc.at (i).AsInt ();
-			}
+
 			else
-			{
 				break;
-			}
 		}
 	}
 
@@ -312,7 +307,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 
 			// set default values
 			plf->lfCharSet = DEFAULT_CHARSET;
-			plf->lfQuality = CLEARTYPE_QUALITY;
+			plf->lfQuality = pdeflf->lfQuality;
 		}
 	}
 
@@ -4551,8 +4546,8 @@ void _app_notifycreatewindow ()
 					lf_text->lfWeight = FW_NORMAL;
 
 					// set default values
-					lf_title->lfQuality = CLEARTYPE_QUALITY;
-					lf_text->lfQuality = CLEARTYPE_QUALITY;
+					lf_title->lfQuality = DEFAULT_QUALITY;
+					lf_text->lfQuality = DEFAULT_QUALITY;
 
 					StringCchCopy (lf_title->lfFaceName, LF_FACESIZE, UI_FONT);
 					StringCchCopy (lf_text->lfFaceName, LF_FACESIZE, UI_FONT);
