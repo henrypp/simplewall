@@ -9708,6 +9708,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					app.LocaleMenu (submenu, IDS_MODE_BLACKLIST, IDM_TRAY_MODEBLACKLIST, false, nullptr);
 
 					app.LocaleMenu (submenu, IDS_ADD, add_id, true, nullptr);
+
 					_app_generate_addmenu (GetSubMenu (submenu, add_id));
 
 					app.LocaleMenu (submenu, IDS_TRAY_LOG, notifications_id, true, nullptr);
