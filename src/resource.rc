@@ -74,6 +74,7 @@ IDM_MAIN MENU
 		{
 			MENUITEM " ", IDM_ICONSSMALL
 			MENUITEM " ", IDM_ICONSLARGE
+			MENUITEM " ", IDM_ICONSEXTRALARGE
 			MENUITEM SEPARATOR
 			MENUITEM " ", IDM_ICONSISHIDDEN
 		}
@@ -644,10 +645,12 @@ STRINGTABLE
 
 	IDS_STATUS_ERROR "Error occured, click here to see details or open log file in application directory!"
 	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule ""%s""!"
-	IDS_STATUS_TIMER "Timer are deactivated"
+	IDS_STATUS_TIMER_DONE "Timer for ""%s"" are completed!"
 
 	IDS_ADDRESS_LOCAL "Source"
 	IDS_ADDRESS_REMOTE "Destination"
+
+	IDS_ICONSEXTRALARGE "Extra large"
 }
 
 //

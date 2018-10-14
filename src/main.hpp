@@ -79,7 +79,7 @@
 #define NOTIFY_TIMER_DEFAULT 30 // sec.
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 #define NOTIFY_LIMIT_SIZE 10 //limit notifications pool size
-#define NOTIFY_LIMIT_POOL_SIZE 48
+#define NOTIFY_LIMIT_POOL_SIZE 32
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 #define NOTIFY_BORDER_COLOR RGB(255,98,98)
@@ -233,7 +233,6 @@ struct STATIC_DATA
 	HICON hicon_service_small = nullptr;
 	HWND hnotification = nullptr;
 
-	time_t timer_low = 0;
 	time_t blocklist_timestamp = 0;
 	time_t rule_system_timestamp = 0;
 
@@ -270,7 +269,11 @@ typedef struct _ITEM_APP
 	LPCWSTR description = nullptr;
 	LPCWSTR signer = nullptr;
 
+	HANDLE htimer = nullptr;
+
 	time_t timestamp = 0;
+	time_t timer = 0;
+	time_t last_notify = 0;
 
 	size_t icon_id = 0;
 
@@ -283,6 +286,7 @@ typedef struct _ITEM_APP
 	bool is_silent = false;
 	bool is_signed = false;
 	bool is_temp = false;
+	bool is_undeletable = false;
 } ITEM_APP, *PITEM_APP;
 
 typedef struct _ITEM_RULE
