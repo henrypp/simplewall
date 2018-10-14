@@ -1,3 +1,11 @@
+v2.3.5 (14 October 2018)
+- added extra large icons view
+- use correct function for netevents subscription (win10rs4+)
+- fixed forced cleartype font style (issue #233)
+- fixed possible buffer overflow
+- rerwritten timer engine
+- cosmetic fixes
+
 v2.3.4 (21 September 2018)
 - fixed dns system rules when dns service is stopped
 - fixed listen filter conditions (issue #213, #222)
