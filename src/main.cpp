@@ -434,7 +434,7 @@ void ShowItem (HWND hwnd, UINT ctrl_id, size_t item, INT scroll_pos)
 		SendDlgItemMessage (hwnd, ctrl_id, LVM_SCROLL, 0, scroll_pos); // restore vscroll position
 }
 
-void _app_getappscount (PITEM_STATUS ptr_status)
+void _app_getcount (PITEM_STATUS ptr_status)
 {
 	if (!ptr_status)
 		return;
@@ -471,66 +471,66 @@ void _app_refreshstatus (HWND hwnd)
 	const HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
 	const HDC hdc = GetDC (hstatus);
 
-	if (!hdc)
-		return;
-
-	SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
-
-	const UINT parts_count = 4;
-
-	rstring text[parts_count];
-	INT parts[parts_count] = {0};
-	LONG size[parts_count] = {0};
-	LONG lay = 0;
-	//UINT count = 0;
-
-	ITEM_STATUS itemStat = {0};
-	_app_getappscount (&itemStat);
-
-
-	for (UINT i = 0; i < parts_count; i++)
+	// item count
+	if (hdc)
 	{
-		switch (i)
+		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
+
+		const UINT parts_count = 4;
+
+		rstring text[parts_count];
+		INT parts[parts_count] = {0};
+		LONG size[parts_count] = {0};
+		LONG lay = 0;
+
+		_r_fastlock_acquireshared (&lock_access);
+
+		ITEM_STATUS itemStat = {0};
+		_app_getcount (&itemStat);
+
+		_r_fastlock_releaseshared (&lock_access);
+
+		for (UINT i = 0; i < parts_count; i++)
 		{
-			case 0:
+			switch (i)
 			{
-				text[i].Format (app.LocaleString (IDS_STATUS_TOTAL, nullptr), itemStat.total_count);
+				case 0:
+				{
+					text[i].Format (app.LocaleString (IDS_STATUS_TOTAL, nullptr), itemStat.total_count);
 
-				const size_t selection_count = SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETSELECTEDCOUNT, 0, 0);
+					const size_t selection_count = SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETSELECTEDCOUNT, 0, 0);
 
-				if (selection_count)
-					text[i].AppendFormat (L" / %s", _r_fmt (app.LocaleString (IDS_STATUS_SELECTED, nullptr), selection_count).GetString ());
+					if (selection_count)
+						text[i].AppendFormat (L" / %s", _r_fmt (app.LocaleString (IDS_STATUS_SELECTED, nullptr), selection_count).GetString ());
 
-				break;
+					break;
+				}
+
+				case 1:
+				{
+					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), itemStat.unused_count);
+					break;
+				}
+
+				case 2:
+				{
+					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_INVALID_APPS, nullptr).GetString (), itemStat.invalid_count);
+					break;
+				}
+
+				case 3:
+				{
+					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), itemStat.timers_count);
+					break;
+				}
 			}
 
-			case 1:
-			{
-				text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), itemStat.unused_count);
-				break;
-			}
+			size[i] = gettextwidth (hdc, text[i], text[i].GetLength ()) + 10;
 
-			case 2:
-			{
-				text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_INVALID_APPS, nullptr).GetString (), itemStat.invalid_count);
-				break;
-			}
-
-			case 3:
-			{
-				text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), itemStat.timers_count);
-				break;
-			}
+			if (i)
+				lay += size[i];
 		}
 
-		size[i] = gettextwidth (hdc, text[i], text[i].GetLength ()) + 10;
-
-		if (i)
-			lay += size[i];
-	}
-
-	// item count
-	{
 		RECT rc = {0};
 		GetClientRect (hstatus, &rc);
 
@@ -539,11 +539,11 @@ void _app_refreshstatus (HWND hwnd)
 		parts[2] = parts[1] + size[2];
 		parts[3] = parts[2] + size[3];
 
-		SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETPARTS, parts_count, (LPARAM)parts);
+		SendMessage (hstatus, SB_SETPARTS, parts_count, (LPARAM)parts);
 
 		for (UINT i = 0; i < parts_count; i++)
 		{
-			SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETTEXT, MAKEWPARAM (i, 0), (LPARAM)text[i].GetString ());
+			SendMessage (hstatus, SB_SETTEXT, MAKEWPARAM (i, 0), (LPARAM)text[i].GetString ());
 		}
 
 		ReleaseDC (hstatus, hdc);
@@ -1823,6 +1823,36 @@ rstring _app_gettooltip (size_t hash)
 	return result;
 }
 
+bool _wfp_transact_start (UINT line)
+{
+	if (config.hengine)
+	{
+		const DWORD result = FwpmTransactionBegin (config.hengine, 0);
+
+		if (result == ERROR_SUCCESS)
+			return true;
+
+		_app_logerror (L"FwpmTransactionBegin", result, _r_fmt (L"#%d", line), false);
+	}
+
+	return false;
+}
+
+bool _wfp_transact_commit (UINT line)
+{
+	if (config.hengine)
+	{
+		const DWORD result = FwpmTransactionCommit (config.hengine);
+
+		if (result == ERROR_SUCCESS)
+			return true;
+
+		_app_logerror (L"FwpmTransactionCommit", result, _r_fmt (L"#%d", line), false);
+	}
+
+	return false;
+}
+
 void _wfp_destroyfilters (bool is_full)
 {
 	// dropped packets logging (win7+)
@@ -1857,17 +1887,11 @@ void _wfp_destroyfilters (bool is_full)
 
 	_r_fastlock_releaseexclusive (&lock_access);
 
-	DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-	if (result != ERROR_SUCCESS)
-	{
-		_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-	}
-	else
+	if (_wfp_transact_start (__LINE__))
 	{
 		HANDLE henum = nullptr;
 
-		result = FwpmFilterCreateEnumHandle (config.hengine, nullptr, &henum);
+		DWORD result = FwpmFilterCreateEnumHandle (config.hengine, nullptr, &henum);
 
 		if (result != ERROR_SUCCESS)
 		{
@@ -1907,7 +1931,7 @@ void _wfp_destroyfilters (bool is_full)
 		if (henum)
 			FwpmFilterDestroyEnumHandle (config.hengine, henum);
 
-		FwpmTransactionCommit (config.hengine);
+		_wfp_transact_commit (__LINE__);
 	}
 
 	if (is_full)
@@ -3089,8 +3113,6 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 
 		if (root)
 		{
-			_r_fastlock_acquireexclusive (&lock_access);
-
 			if (root.attribute (L"type").empty () || root.attribute (L"type").as_uint () == XmlRules)
 			{
 				// clear old entries
@@ -3187,8 +3209,6 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 				[](const PITEM_RULE& a, const PITEM_RULE& b)->bool {
 				return StrCmpLogicalW (a->pname, b->pname) == -1;
 			});
-
-			_r_fastlock_releaseexclusive (&lock_access);
 		}
 	}
 }
@@ -3208,10 +3228,10 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 		// generate services list
 		_app_generate_services ();
 
+		_r_fastlock_acquireexclusive (&lock_access);
+
 		// load apps list
 		{
-			_r_fastlock_acquireexclusive (&lock_access);
-
 			pugi::xml_document doc;
 			pugi::xml_parse_result result = doc.load_file (path_apps ? path_apps : config.apps_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
@@ -3252,18 +3272,12 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 				}
 			}
 
-			_r_fastlock_releaseexclusive (&lock_access);
-
 			_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 			_r_listview_redraw (hwnd, IDC_LISTVIEW);
 		}
 
 		if (!is_meadded)
-		{
-			_r_fastlock_acquireexclusive (&lock_access);
 			_app_addapplication (hwnd, app.GetBinaryPath (), 0, 0, 0, false, (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) ? true : false, true);
-			_r_fastlock_releaseexclusive (&lock_access);
-		}
 
 		apps[config.myhash].is_undeletable = true; // disable deletion for me ;)
 
@@ -3272,8 +3286,6 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 	// load rules config
 	{
-		_r_fastlock_acquireexclusive (&lock_access);
-
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file (config.rules_config_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
@@ -3301,8 +3313,6 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 				}
 			}
 		}
-
-		_r_fastlock_releaseexclusive (&lock_access);
 	}
 
 	// load blocklist rules (internal)
@@ -3313,6 +3323,8 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 	// load custom rules
 	_app_loadrules (hwnd, path_rules ? path_rules : config.rules_custom_path, config.rules_custom_path_backup, false, &rules_custom, FILTER_WEIGHT_CUSTOM, nullptr);
+
+	_r_fastlock_releaseexclusive (&lock_access);
 
 	_app_refreshstatus (hwnd);
 }
@@ -3348,6 +3360,8 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 	const bool is_backuprequired = app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsLonglong ()) || !_r_fs_exists (config.apps_path_backup) || !_r_fs_exists (config.rules_custom_path_backup) || !_r_fs_exists (config.rules_config_path_backup));
 	bool is_backupcreated = false;
 
+	_r_fastlock_acquireshared (&lock_access);
+
 	// save apps
 	{
 		pugi::xml_document doc;
@@ -3355,8 +3369,6 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 		if (root)
 		{
-			_r_fastlock_acquireshared (&lock_access);
-
 			const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
 
 			root.append_attribute (L"timestamp").set_value (current_time);
@@ -3430,8 +3442,6 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 				}
 			}
 
-			_r_fastlock_releaseshared (&lock_access);
-
 			doc.save_file (path_apps ? path_apps : config.apps_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
@@ -3450,8 +3460,6 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 		if (root)
 		{
-			_r_fastlock_acquireshared (&lock_access);
-
 			root.append_attribute (L"timestamp").set_value (current_time);
 			root.append_attribute (L"type").set_value (XmlRulesConfig);
 
@@ -3468,8 +3476,6 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 					}
 				}
 			}
-
-			_r_fastlock_releaseshared (&lock_access);
 
 			doc.save_file (config.rules_config_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
@@ -3489,8 +3495,6 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 		if (root)
 		{
-			_r_fastlock_acquireshared (&lock_access);
-
 			root.append_attribute (L"timestamp").set_value (current_time);
 			root.append_attribute (L"type").set_value (XmlRules);
 
@@ -3554,8 +3558,6 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 				}
 			}
 
-			_r_fastlock_releaseshared (&lock_access);
-
 			doc.save_file (path_rules ? path_rules : config.rules_custom_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
@@ -3566,6 +3568,8 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 			}
 		}
 	}
+
+	_r_fastlock_releaseshared (&lock_access);
 
 	if (is_backupcreated)
 		app.ConfigSet (L"BackupTimestamp", current_time);
@@ -3596,13 +3600,11 @@ bool _wfp_destroy2filters (MARRAY* pmar, bool is_transact)
 
 	if (!is_transact)
 	{
-		const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-		if (result != ERROR_SUCCESS)
-		{
-			_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
+		if (!_wfp_transact_start (__LINE__))
 			return false;
-		}
+
+		_r_fastlock_acquireexclusive (&lock_apply);
+		_r_fastlock_acquireexclusive (&lock_access);
 	}
 
 	for (size_t i = 0; i < pmar->size (); i++)
@@ -3615,15 +3617,13 @@ bool _wfp_destroy2filters (MARRAY* pmar, bool is_transact)
 
 	if (!is_transact)
 	{
-		const DWORD result = FwpmTransactionCommit (config.hengine);
+		_r_fastlock_releaseexclusive (&lock_access);
+		_r_fastlock_releaseexclusive (&lock_apply);
 
 		SetEvent (config.done_evt);
 
-		if (result != ERROR_SUCCESS)
-		{
-			_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
+		if (!_wfp_transact_commit (__LINE__))
 			return false;
-		}
 	}
 
 	pmar->clear ();
@@ -3638,13 +3638,8 @@ bool _wfp_create4filters (PITEM_RULE ptr_rule, bool is_transact)
 
 	if (!is_transact)
 	{
-		const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-		if (result != ERROR_SUCCESS)
-		{
-			_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
+		if (!_wfp_transact_start (__LINE__))
 			return false;
-		}
 
 		_r_fastlock_acquireexclusive (&lock_apply);
 		_r_fastlock_acquireexclusive (&lock_access);
@@ -3688,18 +3683,13 @@ bool _wfp_create4filters (PITEM_RULE ptr_rule, bool is_transact)
 
 	if (!is_transact)
 	{
-		_r_fastlock_releaseexclusive (&lock_apply);
 		_r_fastlock_releaseexclusive (&lock_access);
-
-		const DWORD result = FwpmTransactionCommit (config.hengine);
+		_r_fastlock_releaseexclusive (&lock_apply);
 
 		SetEvent (config.done_evt);
 
-		if (result != ERROR_SUCCESS)
-		{
-			_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
+		if (!_wfp_transact_commit (__LINE__))
 			return false;
-		}
 	}
 
 	return true;
@@ -3715,13 +3705,8 @@ bool _wfp_create3filters (PITEM_APP ptr_app, bool is_transact)
 
 	if (!is_transact)
 	{
-		const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-		if (result != ERROR_SUCCESS)
-		{
-			_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
+		if (!_wfp_transact_start (__LINE__))
 			return false;
-		}
 
 		_r_fastlock_acquireexclusive (&lock_apply);
 		_r_fastlock_acquireexclusive (&lock_access);
@@ -3734,18 +3719,13 @@ bool _wfp_create3filters (PITEM_APP ptr_app, bool is_transact)
 
 	if (!is_transact)
 	{
-		_r_fastlock_releaseexclusive (&lock_apply);
 		_r_fastlock_releaseexclusive (&lock_access);
-
-		const DWORD result = FwpmTransactionCommit (config.hengine);
+		_r_fastlock_releaseexclusive (&lock_apply);
 
 		SetEvent (config.done_evt);
 
-		if (result != ERROR_SUCCESS)
-		{
-			_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
+		if (!_wfp_transact_commit (__LINE__))
 			return false;
-		}
 	}
 
 	return true;
@@ -3760,13 +3740,8 @@ bool _wfp_create2filters (bool is_transact)
 
 	if (!is_transact)
 	{
-		const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-		if (result != ERROR_SUCCESS)
-		{
-			_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
+		if (!_wfp_transact_start (__LINE__))
 			return false;
-		}
 
 		_r_fastlock_acquireexclusive (&lock_apply);
 		_r_fastlock_acquireexclusive (&lock_access);
@@ -4050,18 +4025,13 @@ bool _wfp_create2filters (bool is_transact)
 
 	if (!is_transact)
 	{
-		_r_fastlock_releaseexclusive (&lock_apply);
 		_r_fastlock_releaseexclusive (&lock_access);
-
-		const DWORD result = FwpmTransactionCommit (config.hengine);
+		_r_fastlock_releaseexclusive (&lock_apply);
 
 		SetEvent (config.done_evt);
 
-		if (result != ERROR_SUCCESS)
-		{
-			_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
+		if (!_wfp_transact_commit (__LINE__))
 			return false;
-		}
 	}
 
 	return true;
@@ -4071,13 +4041,7 @@ void _wfp_installfilters ()
 {
 	_wfp_destroyfilters (false); // destroy all installed filters first
 
-	const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-	if (result != ERROR_SUCCESS)
-	{
-		_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-	}
-	else
+	if (_wfp_transact_start (__LINE__))
 	{
 		_r_fastlock_acquireexclusive (&lock_access);
 
@@ -4120,7 +4084,7 @@ void _wfp_installfilters ()
 
 		_r_fastlock_releaseexclusive (&lock_access);
 
-		FwpmTransactionCommit (config.hengine);
+		_wfp_transact_commit (__LINE__);
 
 		// set icons
 		SendMessage (app.GetHWND (), WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)));
@@ -7730,19 +7694,13 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					if (_r_msg (hwnd, MB_YESNO | MB_ICONEXCLAMATION | MB_TOPMOST, APP_NAME, nullptr, app.LocaleString (IDS_QUESTION_DELETE, nullptr), total_count) != IDYES)
 						break;
 
-					const bool is_filtersinstalled = (config.hengine != nullptr);
 					const size_t count = _r_listview_getitemcount (hwnd, IDC_EDITOR) - 1;
+					const bool is_filtersinstalled = (config.hengine != nullptr);
 
 					_r_fastlock_acquireexclusive (&lock_apply);
 					_r_fastlock_acquireexclusive (&lock_access);
 
-					if (is_filtersinstalled)
-					{
-						const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-						if (result != ERROR_SUCCESS)
-							_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-					}
+					_wfp_transact_start (__LINE__);
 
 					for (size_t i = count; i != LAST_VALUE; i--)
 					{
@@ -7764,13 +7722,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						}
 					}
 
-					if (is_filtersinstalled)
-					{
-						const DWORD result = FwpmTransactionCommit (config.hengine);
-
-						if (result != ERROR_SUCCESS)
-							_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
-					}
+					_wfp_transact_commit (__LINE__);
 
 					_r_fastlock_releaseexclusive (&lock_apply);
 					_r_fastlock_releaseexclusive (&lock_access);
@@ -7816,8 +7768,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						std::vector<PITEM_RULE> const* ptr_rules = nullptr;
 
-						const bool is_filtersinstalled = (config.hengine != nullptr);
-
 						if (dialog_id == IDD_SETTINGS_RULES_BLOCKLIST)
 							ptr_rules = &rules_blocklist;
 
@@ -7833,17 +7783,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							bool is_changed = false;
 
 							size_t item = LAST_VALUE;
+							const bool is_filtersinstalled = (config.hengine != nullptr);
 
 							_r_fastlock_acquireexclusive (&lock_apply);
 							_r_fastlock_acquireexclusive (&lock_access);
 
-							if (is_filtersinstalled)
-							{
-								const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-								if (result != ERROR_SUCCESS)
-									_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-							}
+							_wfp_transact_start (__LINE__);
 
 							while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 							{
@@ -7877,13 +7822,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								}
 							}
 
-							if (is_filtersinstalled)
-							{
-								const DWORD result = FwpmTransactionCommit (config.hengine);
-
-								if (result != ERROR_SUCCESS)
-									_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
-							}
+							_wfp_transact_commit (__LINE__);
 
 							_r_fastlock_releaseexclusive (&lock_apply);
 							_r_fastlock_releaseexclusive (&lock_access);
@@ -8226,11 +8165,8 @@ bool _wfp_initialize (bool is_full)
 
 	if (is_full && config.hengine && !_wfp_isfiltersinstalled ())
 	{
-		rc = FwpmTransactionBegin (config.hengine, 0);
-
-		if (rc != ERROR_SUCCESS)
+		if (!_wfp_transact_start (__LINE__))
 		{
-			_app_logerror (L"FwpmTransactionBegin", rc, nullptr, false);
 			result = false;
 		}
 		else
@@ -8274,8 +8210,8 @@ bool _wfp_initialize (bool is_full)
 				}
 				else
 				{
-					FwpmTransactionCommit (config.hengine);
-					result = true;
+					if (_wfp_transact_commit (__LINE__))
+						result = true;
 				}
 			}
 		}
@@ -8292,13 +8228,7 @@ void _wfp_uninitialize (bool is_force)
 
 		if (is_force)
 		{
-			result = FwpmTransactionBegin (config.hengine, 0);
-
-			if (result != ERROR_SUCCESS)
-			{
-				_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-			}
-			else
+			if (_wfp_transact_start (__LINE__))
 			{
 				// destroy callouts (deprecated)
 				{
@@ -8327,7 +8257,7 @@ void _wfp_uninitialize (bool is_force)
 				if (result != ERROR_SUCCESS && result != FWP_E_PROVIDER_NOT_FOUND)
 					_app_logerror (L"FwpmProviderDeleteByKey", result, nullptr, false);
 
-				FwpmTransactionCommit (config.hengine);
+				_wfp_transact_commit (__LINE__);
 			}
 		}
 
@@ -9271,14 +9201,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_addstyle (config.hnotification, IDC_ALLOW_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (config.hnotification, IDC_BLOCK_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
-			_app_refreshstatus (hwnd);
-
 			_r_listview_setcolumn (hwnd, IDC_LISTVIEW, 0, app.LocaleString (IDS_FILEPATH, nullptr), 0);
 			_r_listview_setcolumn (hwnd, IDC_LISTVIEW, 1, app.LocaleString (IDS_ADDED, nullptr), 0);
 
 			SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_RESETEMPTYTEXT, 0, 0);
 
 			_app_notifyrefresh ();
+			_app_refreshstatus (hwnd);
 
 			break;
 		}
@@ -9531,57 +9460,57 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			break;
 		}
 
-		case WM_MENUSELECT:
-		{
-			if (!IsWindowVisible (hwnd) || IsIconic (hwnd))
-				break;
+		//case WM_MENUSELECT:
+		//{
+		//	if (!IsWindowVisible (hwnd) || IsIconic (hwnd))
+		//		break;
 
-			std::vector<ITEM_ADD>* vc_ptr = nullptr;
-			size_t idx = LAST_VALUE;
+		//	std::vector<ITEM_ADD>* vc_ptr = nullptr;
+		//	size_t idx = LAST_VALUE;
 
-			// show process information in statusbar
-			if (GetMenuState ((HMENU)lparam, LOWORD (wparam), MF_BYCOMMAND) != UINT32_MAX)
-			{
-				if ((LOWORD (wparam) >= IDX_PROCESS) && LOWORD (wparam) <= (IDX_PROCESS + processes.size ()))
-				{
-					vc_ptr = &processes;
-					idx = LOWORD (wparam) - IDX_PROCESS;
-				}
-				else if ((LOWORD (wparam) >= IDX_PACKAGE) && LOWORD (wparam) <= (IDX_PACKAGE + packages.size ()))
-				{
-					vc_ptr = &packages;
-					idx = LOWORD (wparam) - IDX_PACKAGE;
-				}
-				else if ((LOWORD (wparam) >= IDX_SERVICE) && LOWORD (wparam) <= (IDX_SERVICE + services.size ()))
-				{
-					vc_ptr = &services;
-					idx = LOWORD (wparam) - IDX_SERVICE;
-				}
-			}
+		//	// show process information in statusbar
+		//	if (GetMenuState ((HMENU)lparam, LOWORD (wparam), MF_BYCOMMAND) != UINT32_MAX)
+		//	{
+		//		if ((LOWORD (wparam) >= IDX_PROCESS) && LOWORD (wparam) <= (IDX_PROCESS + processes.size ()))
+		//		{
+		//			vc_ptr = &processes;
+		//			idx = LOWORD (wparam) - IDX_PROCESS;
+		//		}
+		//		else if ((LOWORD (wparam) >= IDX_PACKAGE) && LOWORD (wparam) <= (IDX_PACKAGE + packages.size ()))
+		//		{
+		//			vc_ptr = &packages;
+		//			idx = LOWORD (wparam) - IDX_PACKAGE;
+		//		}
+		//		else if ((LOWORD (wparam) >= IDX_SERVICE) && LOWORD (wparam) <= (IDX_SERVICE + services.size ()))
+		//		{
+		//			vc_ptr = &services;
+		//			idx = LOWORD (wparam) - IDX_SERVICE;
+		//		}
+		//	}
 
-			if (vc_ptr && idx != LAST_VALUE)
-			{
-				if (((HIWORD (wparam) & MF_HILITE) != 0) || ((HIWORD (wparam) & MF_MOUSESELECT) != 0))
-				{
-					PITEM_ADD const ptr_app = &vc_ptr->at (idx);
-					LPCWSTR text = nullptr;
+		//	if (vc_ptr && idx != LAST_VALUE)
+		//	{
+		//		if (((HIWORD (wparam) & MF_HILITE) != 0) || ((HIWORD (wparam) & MF_MOUSESELECT) != 0))
+		//		{
+		//			PITEM_ADD const ptr_app = &vc_ptr->at (idx);
+		//			LPCWSTR text = nullptr;
 
-					if ((LOWORD (wparam) >= IDX_SERVICE) && LOWORD (wparam) <= (IDX_SERVICE + services.size ()))
-						text = ptr_app->display_name;
+		//			if ((LOWORD (wparam) >= IDX_SERVICE) && LOWORD (wparam) <= (IDX_SERVICE + services.size ()))
+		//				text = ptr_app->display_name;
 
-					else
-						text = ptr_app->real_path[0] ? ptr_app->real_path : ptr_app->display_name;
+		//			else
+		//				text = ptr_app->real_path[0] ? ptr_app->real_path : ptr_app->display_name;
 
-					_r_status_settext (hwnd, IDC_STATUSBAR, 0, text);
-				}
-			}
-			else
-			{
-				_app_refreshstatus (hwnd);
-			}
+		//			_r_status_settext (hwnd, IDC_STATUSBAR, 0, text);
+		//		}
+		//	}
+		//	else
+		//	{
+		//		_app_refreshstatus (hwnd);
+		//	}
 
-			break;
-		}
+		//	break;
+		//}
 
 		case WM_CONTEXTMENU:
 		{
@@ -9829,8 +9758,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_app_generate_addmenu (GetSubMenu (submenu, add_id));
 
 					{
+						_r_fastlock_acquireshared (&lock_access);
+
 						ITEM_STATUS itemStat = {0};
-						_app_getappscount (&itemStat);
+						_app_getcount (&itemStat);
+
+						_r_fastlock_releaseshared (&lock_access);
 
 						app.LocaleMenu (submenu, IDS_DELETE, delete_id, true, nullptr);
 						app.LocaleMenu (submenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, itemStat.unused_count ? _r_fmt (L" (%d)", itemStat.unused_count).GetString () : nullptr);
@@ -10376,8 +10309,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					CheckMenuRadioItem (GetMenu (hwnd), IDM_TRAY_MODEWHITELIST, IDM_TRAY_MODEBLACKLIST, IDM_TRAY_MODEWHITELIST + current_mode, MF_BYCOMMAND);
 
-					_app_refreshstatus (hwnd);
 					_app_changefilters (hwnd, true, false);
+					_app_refreshstatus (hwnd);
 
 					break;
 				}
@@ -10581,13 +10514,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						ctrl_id == IDM_UNCHECK
 						)
 					{
-						if (is_filtersinstalled)
-						{
-							const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-							if (result != ERROR_SUCCESS)
-								_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-						}
+						_wfp_transact_start (__LINE__);
 					}
 
 					while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
@@ -10677,13 +10604,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (ctrl_id == IDM_CHECK || ctrl_id == IDM_UNCHECK)
 					{
-						if (is_filtersinstalled)
-						{
-							const DWORD result = FwpmTransactionCommit (config.hengine);
-
-							if (result != ERROR_SUCCESS)
-								_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
-						}
+						_wfp_transact_commit (__LINE__);
 
 						_app_notifyrefresh ();
 
@@ -10701,13 +10622,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else if (ctrl_id == IDM_DISABLETIMER)
 					{
-						if (is_filtersinstalled)
-						{
-							const DWORD result = FwpmTransactionCommit (config.hengine);
-
-							if (result != ERROR_SUCCESS)
-								_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
-						}
+						_wfp_transact_commit (__LINE__);
 
 						_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 						_app_profilesave (hwnd);
@@ -10777,16 +10692,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					size_t item = LAST_VALUE;
 
-					_r_fastlock_acquireexclusive (&lock_access);
 					_r_fastlock_acquireexclusive (&lock_apply);
+					_r_fastlock_acquireexclusive (&lock_access);
 
-					if (is_filtersinstalled)
-					{
-						const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-						if (result != ERROR_SUCCESS)
-							_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-					}
+					_wfp_transact_start (__LINE__);
 
 					for (size_t i = count; i != LAST_VALUE; i--)
 					{
@@ -10808,13 +10717,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					if (is_filtersinstalled)
-					{
-						const DWORD result = FwpmTransactionCommit (config.hengine);
-
-						if (result != ERROR_SUCCESS)
-							_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
-					}
+					_wfp_transact_commit (__LINE__);
 
 					_r_fastlock_releaseexclusive (&lock_access);
 					_r_fastlock_releaseexclusive (&lock_apply);
@@ -10840,23 +10743,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const bool is_filtersinstalled = (config.hengine != nullptr);
 					const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW) - 1;
 
-					_r_fastlock_acquireexclusive (&lock_access);
 					_r_fastlock_acquireexclusive (&lock_apply);
+					_r_fastlock_acquireexclusive (&lock_access);
 
-					if (is_filtersinstalled)
-					{
-						const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-						if (result != ERROR_SUCCESS)
-							_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-					}
+					_wfp_transact_start (__LINE__);
 
 					for (size_t i = count; i != LAST_VALUE; i--)
 					{
 						const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, i);
 						PITEM_APP ptr_app = _app_getapplication (hash);
 
-						if (ptr_app && !ptr_app->is_undeletable) // skip "undeletable" apps
+						if (ptr_app)
 						{
 							if (!_app_isexists (ptr_app) || (LOWORD (wparam) == IDM_PURGE_UNUSED && _app_isunused (ptr_app, hash)))
 							{
@@ -10871,16 +10768,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					if (is_filtersinstalled)
-					{
-						const DWORD result = FwpmTransactionCommit (config.hengine);
+					_wfp_transact_commit (__LINE__);
 
-						if (result != ERROR_SUCCESS)
-							_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
-					}
-
-					_r_fastlock_releaseexclusive (&lock_apply);
 					_r_fastlock_releaseexclusive (&lock_access);
+					_r_fastlock_releaseexclusive (&lock_apply);
 
 					if (is_deleted)
 					{
@@ -10902,15 +10793,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					const bool is_filtersinstalled = (config.hengine != nullptr);
 
-					if (is_filtersinstalled)
-					{
-						const DWORD result = FwpmTransactionBegin (config.hengine, 0);
-
-						if (result != ERROR_SUCCESS)
-							_app_logerror (L"FwpmTransactionBegin", result, nullptr, false);
-					}
-
+					_r_fastlock_acquireexclusive (&lock_apply);
 					_r_fastlock_acquireexclusive (&lock_access);
+
+					_wfp_transact_start (__LINE__);
 
 					for (auto &p : apps)
 					{
@@ -10918,15 +10804,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_timer_remove (hwnd, p.first, true);
 					}
 
+					_wfp_transact_commit (__LINE__);
+
+					_r_fastlock_releaseexclusive (&lock_apply);
 					_r_fastlock_releaseexclusive (&lock_access);
-
-					if (is_filtersinstalled)
-					{
-						const DWORD result = FwpmTransactionCommit (config.hengine);
-
-						if (result != ERROR_SUCCESS)
-							_app_logerror (L"FwpmTransactionCommit", result, nullptr, false);
-					}
 
 					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 					_app_profilesave (hwnd);
