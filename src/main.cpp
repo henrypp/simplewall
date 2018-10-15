@@ -1311,14 +1311,19 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	ptr_app->last_notify = last_notify;
 
 	// install timer
+	if (timer)
 	{
-		if (timer && timer > current_time && !ptr_app->htimer)
+		if (timer > current_time)
 		{
-			if (CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)hash, DWORD ((timer - current_time) * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD))
+			if (!ptr_app->htimer && CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)hash, DWORD ((timer - current_time) * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD))
 			{
 				ptr_app->is_enabled = true;
 				ptr_app->timer = timer;
 			}
+		}
+		else
+		{
+			ptr_app->is_enabled = false;
 		}
 	}
 
