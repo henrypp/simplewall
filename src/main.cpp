@@ -9220,8 +9220,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case RM_UPDATE_DONE:
 		{
+			_r_fastlock_acquireexclusive (&lock_access);
+
 			_app_loadrules (hwnd, config.rules_system_path, MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, &rules_system, FILTER_WEIGHT_SYSTEM, &config.rule_system_timestamp); // reload system rules
 			_app_loadrules (hwnd, config.rules_blocklist_path, MAKEINTRESOURCE (IDR_RULES_BLOCKLIST), true, &rules_blocklist, FILTER_WEIGHT_BLOCKLIST, &config.blocklist_timestamp); // reload blocklist
+
+			_r_fastlock_releaseexclusive (&lock_access);
 
 			break;
 		}
@@ -9233,8 +9237,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_fs_delete (config.rules_config_path, false);
 			_r_fs_delete (config.rules_config_path_backup, false);
 
+			_r_fastlock_acquireexclusive (&lock_access);
+
 			_app_loadrules (hwnd, config.rules_system_path, MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, &rules_system, FILTER_WEIGHT_SYSTEM, &config.rule_system_timestamp); // reload system rules
 			_app_loadrules (hwnd, config.rules_blocklist_path, MAKEINTRESOURCE (IDR_RULES_BLOCKLIST), true, &rules_blocklist, FILTER_WEIGHT_BLOCKLIST, &config.blocklist_timestamp); // reload blocklist
+
+			_r_fastlock_releaseexclusive (&lock_access);
 
 			_app_profilesave (hwnd);
 
@@ -9336,7 +9344,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		case WM_PAINT:
 		{
 			PAINTSTRUCT ps = {0};
-			HDC hdc = BeginPaint (hwnd, &ps);
+			const HDC hdc = BeginPaint (hwnd, &ps);
 
 			RECT rc = {0};
 			GetWindowRect (GetDlgItem (hwnd, IDC_LISTVIEW), &rc);
