@@ -446,7 +446,7 @@ void _app_getcount (PITEM_STATUS ptr_status)
 		if (!is_exists)
 			ptr_status->invalid_count += 1;
 
-		if (!is_exists || _app_isunused (&p.second, p.first))
+		if (_app_isunused (&p.second, p.first))
 			ptr_status->unused_count += 1;
 
 		if (_app_istimeractive (&p.second))
