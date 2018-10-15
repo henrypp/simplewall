@@ -10517,9 +10517,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_fastlock_acquireexclusive (&lock_access);
 
 					if (
-						ctrl_id == IDM_DISABLETIMER ||
 						ctrl_id == IDM_CHECK ||
-						ctrl_id == IDM_UNCHECK
+						ctrl_id == IDM_UNCHECK ||
+						ctrl_id == IDM_DISABLETIMER
 						)
 					{
 						_wfp_transact_start (__LINE__);
@@ -10610,7 +10610,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_releaseexclusive (&lock_access);
 
-					if (ctrl_id == IDM_CHECK || ctrl_id == IDM_UNCHECK)
+					if (ctrl_id == IDM_CHECK ||
+						ctrl_id == IDM_UNCHECK ||
+						ctrl_id == IDM_DISABLETIMER)
 					{
 						_wfp_transact_commit (__LINE__);
 
@@ -10624,15 +10626,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					else if (ctrl_id == IDM_DISABLENOTIFICATIONS)
 					{
 						_app_notifyrefresh ();
-						_app_profilesave (hwnd);
+						_app_refreshstatus (hwnd);
 
-						_r_listview_redraw (hwnd, IDC_LISTVIEW);
-					}
-					else if (ctrl_id == IDM_DISABLETIMER)
-					{
-						_wfp_transact_commit (__LINE__);
-
-						_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 						_app_profilesave (hwnd);
 
 						_r_listview_redraw (hwnd, IDC_LISTVIEW);
