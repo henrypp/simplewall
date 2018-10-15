@@ -76,6 +76,10 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN);
 bool _app_timer_create (HWND hwnd, size_t hash, time_t seconds, bool is_transact);
 bool _app_timer_remove (HWND hwnd, size_t hash, bool is_transact);
 
+bool _app_istimeractive (ITEM_APP const *ptr_app);
+bool _app_isunused (ITEM_APP const *ptr_app, size_t hash);
+bool _app_isexists (ITEM_APP const *ptr_app);
+
 UINT WINAPI ApplyThread (LPVOID lparam);
 LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -212,7 +216,7 @@ void _app_listviewsetimagelist (HWND hwnd, UINT ctrl_id)
 	HIMAGELIST himg = nullptr;
 
 	const bool is_large = app.ConfigGet (L"IsLargeIcons", false).AsBool () && ctrl_id == IDC_LISTVIEW;
-	const bool is_bigview = app.ConfigGet (L"IsBigView", false).AsBool () && ctrl_id == IDC_LISTVIEW;
+	const bool is_bigview = app.ConfigGet (L"IsBigView", true).AsBool () && ctrl_id == IDC_LISTVIEW;
 	const bool is_iconshidden = app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
 	if (SUCCEEDED (SHGetImageList ((is_bigview ? SHIL_EXTRALARGE : (is_large ? SHIL_LARGE : SHIL_SMALL)), IID_IImageList, (void**)&himg)))
@@ -430,22 +434,119 @@ void ShowItem (HWND hwnd, UINT ctrl_id, size_t item, INT scroll_pos)
 		SendDlgItemMessage (hwnd, ctrl_id, LVM_SCROLL, 0, scroll_pos); // restore vscroll position
 }
 
+void _app_getappscount (PITEM_STATUS ptr_status)
+{
+	if (!ptr_status)
+		return;
+
+	for (auto const &p : apps)
+	{
+		const bool is_exists = _app_isexists (&p.second);
+
+		if (!is_exists)
+			ptr_status->invalid_count += 1;
+
+		if (!is_exists || _app_isunused (&p.second, p.first))
+			ptr_status->unused_count += 1;
+
+		if (_app_istimeractive (&p.second))
+			ptr_status->timers_count += 1;
+
+		ptr_status->total_count += 1;
+	}
+}
+
+LONG gettextwidth (HDC hdc, LPCWSTR text, size_t length)
+{
+	SIZE size = {0};
+
+	if (!GetTextExtentPoint32 (hdc, text, (INT)length, &size))
+		size.cx = 200;
+
+	return size.cx;
+}
+
 void _app_refreshstatus (HWND hwnd)
 {
-	// item count
+	const HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
+	const HDC hdc = GetDC (hstatus);
+
+	if (!hdc)
+		return;
+
+	SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
+
+	const UINT parts_count = 4;
+
+	rstring text[parts_count];
+	INT parts[parts_count] = {0};
+	LONG size[parts_count] = {0};
+	LONG lay = 0;
+	//UINT count = 0;
+
+	ITEM_STATUS itemStat = {0};
+	_app_getappscount (&itemStat);
+
+
+	for (UINT i = 0; i < parts_count; i++)
 	{
-		WCHAR buffer[128] = {0};
-		StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_TOTAL, nullptr), apps.size ());
-
-		const size_t selection_count = SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETSELECTEDCOUNT, 0, 0);
-
-		if (selection_count)
+		switch (i)
 		{
-			StringCchCat (buffer, _countof (buffer), L" / ");
-			StringCchCat (buffer, _countof (buffer), _r_fmt (app.LocaleString (IDS_STATUS_SELECTED, nullptr), selection_count));
+			case 0:
+			{
+				text[i].Format (app.LocaleString (IDS_STATUS_TOTAL, nullptr), itemStat.total_count);
+
+				const size_t selection_count = SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETSELECTEDCOUNT, 0, 0);
+
+				if (selection_count)
+					text[i].AppendFormat (L" / %s", _r_fmt (app.LocaleString (IDS_STATUS_SELECTED, nullptr), selection_count).GetString ());
+
+				break;
+			}
+
+			case 1:
+			{
+				text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), itemStat.unused_count);
+				break;
+			}
+
+			case 2:
+			{
+				text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_INVALID_APPS, nullptr).GetString (), itemStat.invalid_count);
+				break;
+			}
+
+			case 3:
+			{
+				text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), itemStat.timers_count);
+				break;
+			}
 		}
 
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, buffer);
+		size[i] = gettextwidth (hdc, text[i], text[i].GetLength ()) + 10;
+
+		if (i)
+			lay += size[i];
+	}
+
+	// item count
+	{
+		RECT rc = {0};
+		GetClientRect (hstatus, &rc);
+
+		parts[0] = _R_RECT_WIDTH (&rc) - lay - GetSystemMetrics (SM_CXSMICON);
+		parts[1] = parts[0] + size[1];
+		parts[2] = parts[1] + size[2];
+		parts[3] = parts[2] + size[3];
+
+		SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETPARTS, parts_count, (LPARAM)parts);
+
+		for (UINT i = 0; i < parts_count; i++)
+		{
+			SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETTEXT, MAKEWPARAM (i, 0), (LPARAM)text[i].GetString ());
+		}
+
+		ReleaseDC (hstatus, hdc);
 	}
 
 	// group information
@@ -1546,10 +1647,21 @@ COLORREF _app_getcolorvalue (size_t hash)
 	return 0;
 }
 
-bool _app_isexists (PITEM_APP ptr_app)
+bool _app_isunused (ITEM_APP const *ptr_app, size_t hash)
+{
+	if (ptr_app->is_undeletable || ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (hash))
+		return false;
+
+	return true;
+}
+
+bool _app_isexists (ITEM_APP const *ptr_app)
 {
 	if (ptr_app->is_enabled && ptr_app->is_haveerrors)
 		return false;
+
+	if (ptr_app->is_undeletable)
+		return true;
 
 	if (ptr_app->type == AppRegular)
 		return _r_fs_exists (ptr_app->real_path);
@@ -1563,7 +1675,7 @@ bool _app_isexists (PITEM_APP ptr_app)
 	return true;
 }
 
-bool _app_istimeractive (PITEM_APP ptr_app)
+bool _app_istimeractive (ITEM_APP const *ptr_app)
 {
 	return ptr_app->timer && (ptr_app->timer > _r_unixtime_now ());
 }
@@ -3028,12 +3140,12 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 							for (size_t i = 0; i < arr.size (); i++)
 							{
 								const rstring path_app = _r_path_expand (arr.at (i).Trim (L"\r\n "));
-								const size_t hash = path_app.Hash ();
+								size_t hash = path_app.Hash ();
 
 								if (hash)
 								{
 									if (!_app_getapplication (hash))
-										_app_addapplication (hwnd, path_app, 0, 0, 0, false, false, true);
+										hash = _app_addapplication (hwnd, path_app, 0, 0, 0, false, false, true);
 
 									if (is_internal)
 										apps[hash].is_undeletable = true; // prevent deletion for internal rules apps
@@ -3194,12 +3306,10 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 	}
 
 	// load blocklist rules (internal)
-	if (rules_blocklist.empty ())
-		_app_loadrules (hwnd, config.rules_blocklist_path, MAKEINTRESOURCE (IDR_RULES_BLOCKLIST), true, &rules_blocklist, FILTER_WEIGHT_BLOCKLIST, &config.blocklist_timestamp);
+	_app_loadrules (hwnd, config.rules_blocklist_path, MAKEINTRESOURCE (IDR_RULES_BLOCKLIST), true, &rules_blocklist, FILTER_WEIGHT_BLOCKLIST, &config.blocklist_timestamp);
 
 	// load system rules (internal)
-	if (rules_system.empty ())
-		_app_loadrules (hwnd, config.rules_system_path, MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, &rules_system, FILTER_WEIGHT_SYSTEM, &config.rule_system_timestamp);
+	_app_loadrules (hwnd, config.rules_system_path, MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, &rules_system, FILTER_WEIGHT_SYSTEM, &config.rule_system_timestamp);
 
 	// load custom rules
 	_app_loadrules (hwnd, path_rules ? path_rules : config.rules_custom_path, config.rules_custom_path_backup, false, &rules_custom, FILTER_WEIGHT_CUSTOM, nullptr);
@@ -5982,7 +6092,7 @@ LONG _app_wmcustdraw (LPNMLVCUSTOMDRAW lpnmlv, LPARAM lparam)
 
 					if (new_clr)
 					{
-						if (app.ConfigGet (L"IsBigView", false).AsBool () && lpnmlv->nmcd.hdr.idFrom == IDC_LISTVIEW)
+						if (app.ConfigGet (L"IsBigView", true).AsBool () && lpnmlv->nmcd.hdr.idFrom == IDC_LISTVIEW)
 						{
 							lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
 							lpnmlv->clrTextBk = new_clr;
@@ -9635,6 +9745,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			RedrawWindow (hwnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE);
 
 			_app_listviewresize (hwnd, IDC_LISTVIEW);
+			_app_refreshstatus (hwnd);
 
 			break;
 		}
@@ -9698,9 +9809,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					SetForegroundWindow (hwnd); // don't touch
 
 					constexpr auto mode_id = 3;
-					constexpr auto add_id = 4;
-					constexpr auto notifications_id = 6;
-					constexpr auto errlog_id = 7;
+					constexpr auto add_id = 5;
+					constexpr auto delete_id = 6;
+					constexpr auto notifications_id = 8;
+					constexpr auto errlog_id = 9;
 
 					const HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_TRAY));
 					const HMENU submenu = GetSubMenu (menu, 0);
@@ -9715,6 +9827,25 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					app.LocaleMenu (submenu, IDS_ADD, add_id, true, nullptr);
 
 					_app_generate_addmenu (GetSubMenu (submenu, add_id));
+
+					{
+						ITEM_STATUS itemStat = {0};
+						_app_getappscount (&itemStat);
+
+						app.LocaleMenu (submenu, IDS_DELETE, delete_id, true, nullptr);
+						app.LocaleMenu (submenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, itemStat.unused_count ? _r_fmt (L" (%d)", itemStat.unused_count).GetString () : nullptr);
+						app.LocaleMenu (submenu, IDS_PURGE_ERRORS, IDM_PURGE_ERRORS, false, itemStat.invalid_count ? _r_fmt (L" (%d)", itemStat.invalid_count).GetString () : nullptr);
+						app.LocaleMenu (submenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, itemStat.timers_count ? _r_fmt (L" (%d)", itemStat.timers_count).GetString () : nullptr);
+
+						if (!itemStat.unused_count)
+							EnableMenuItem (submenu, IDM_PURGE_UNUSED, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+
+						if (!itemStat.invalid_count)
+							EnableMenuItem (submenu, IDM_PURGE_ERRORS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+
+						if (!itemStat.timers_count)
+							EnableMenuItem (submenu, IDM_PURGE_TIMERS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					}
 
 					app.LocaleMenu (submenu, IDS_TRAY_LOG, notifications_id, true, nullptr);
 					app.LocaleMenu (submenu, IDS_ENABLELOG_CHK, IDM_TRAY_ENABLELOG_CHK, false, nullptr);
@@ -10368,11 +10499,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						_r_fastlock_acquireexclusive (&lock_access);
 
-						size_t item = 0;
+						size_t hash = 0;
 
 						if (files[ofn.nFileOffset - 1] != 0)
 						{
-							item = _app_addapplication (hwnd, files, 0, 0, 0, false, false, false);
+							hash = _app_addapplication (hwnd, files, 0, 0, 0, false, false, false);
 						}
 						else
 						{
@@ -10385,7 +10516,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								p += wcslen (p) + 1;
 
 								if (*p)
-									item = _app_addapplication (hwnd, _r_fmt (L"%s\\%s", dir, p), 0, 0, 0, false, false, false);
+									hash = _app_addapplication (hwnd, _r_fmt (L"%s\\%s", dir, p), 0, 0, 0, false, false, false);
 							}
 						}
 
@@ -10394,7 +10525,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 						_app_profilesave (hwnd);
 
-						ShowItem (hwnd, IDC_LISTVIEW, _app_getposition (hwnd, item), -1);
+						ShowItem (hwnd, IDC_LISTVIEW, _app_getposition (hwnd, hash), -1);
 					}
 
 					break;
@@ -10727,7 +10858,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_app && !ptr_app->is_undeletable) // skip "undeletable" apps
 						{
-							if (!_app_isexists (ptr_app) || (LOWORD (wparam) == IDM_PURGE_UNUSED && !ptr_app->is_enabled && !ptr_app->is_silent && !_app_isapphaverule (hash)))
+							if (!_app_isexists (ptr_app) || (LOWORD (wparam) == IDM_PURGE_UNUSED && _app_isunused (ptr_app, hash)))
 							{
 								if (is_filtersinstalled)
 									_wfp_destroy2filters (&ptr_app->mfarr, true);

@@ -252,6 +252,15 @@ struct STATIC_DATA
 	bool is_wsainit = false;
 };
 
+typedef struct _ITEM_STATUS
+{
+	size_t total_count = 0;
+
+	size_t unused_count = 0;
+	size_t timers_count = 0;
+	size_t invalid_count = 0;
+} ITEM_STATUS, *PITEM_STATUS;
+
 typedef struct _ITEM_APP
 {
 	WCHAR display_name[MAX_PATH] = {0};
