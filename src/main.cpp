@@ -4430,11 +4430,16 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 
 void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 {
+	_r_fastlock_acquireexclusive (&lock_apply);
+
 	const size_t hash = (size_t)lparam;
 	const PITEM_APP ptr_app = _app_getapplication (hash);
 	const HWND hwnd = app.GetHWND ();
+	const bool is_succcess = _app_timer_remove (hwnd, hash, false);
 
-	if (_app_timer_remove (hwnd, hash, false))
+	_r_fastlock_releaseexclusive (&lock_apply);
+
+	if (is_succcess)
 	{
 		_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 		_app_profilesave (hwnd);
@@ -9408,6 +9413,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (config.is_nocheckboxnotify)
 							return FALSE;
 
+						_r_fastlock_acquireexclusive (&lock_access);
+						_r_fastlock_acquireexclusive (&lock_apply);
+
 						const size_t hash = lpnmlv->lParam;
 						PITEM_APP ptr_app = _app_getapplication (hash);
 
@@ -9420,9 +9428,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_fastlock_releaseexclusive (&lock_notification);
 
 							if ((lpnmlv->uNewState == 4096) && ptr_app->htimer)
-							{
 								_app_timer_remove (hwnd, hash, false);
-							}
 
 							_app_notifyrefresh ();
 							_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
@@ -9431,9 +9437,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (config.hengine != nullptr)
 								_wfp_create3filters (ptr_app, false);
-
-							_r_listview_redraw (hwnd, IDC_LISTVIEW);
 						}
+
+						_r_fastlock_releaseexclusive (&lock_access);
+						_r_fastlock_releaseexclusive (&lock_apply);
+
+						_r_listview_redraw (hwnd, IDC_LISTVIEW);
 					}
 					else if (((lpnmlv->uNewState ^ lpnmlv->uOldState) & LVIS_SELECTED) != 0)
 					{
@@ -10809,8 +10818,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_wfp_transact_commit (__LINE__);
 
-					_r_fastlock_releaseexclusive (&lock_apply);
 					_r_fastlock_releaseexclusive (&lock_access);
+					_r_fastlock_releaseexclusive (&lock_apply);
 
 					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 					_app_profilesave (hwnd);
