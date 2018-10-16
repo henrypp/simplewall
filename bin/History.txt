@@ -1,3 +1,15 @@
+v2.3.6 (16 October 2018)
+- added purgen submenu into tray menu
+- added more statusbar information
+- set extra large icons view by default
+- tray menu services counting bug
+- fixed app with overdue timer still enabled on profile load
+- fixed resetting some data on profile load
+- fixed timer resetting on profie load
+- fixed listview checkboxes
+- cosmetic fixes
+- fixed bugs
+
 v2.3.5 (14 October 2018)
 - added extra large icons view
 - use correct function for netevents subscription (win10rs4+)
