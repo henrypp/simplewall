@@ -1,3 +1,10 @@
+v2.3.7 (5 November 2018)
+- fixed dropped events callbak subscription on latest win10
+- fixed notifications sound cannot be played in some cases
+- fixed fastlock race condition (critical)
+- cosmetic fixes
+- fixed bugs
+
 v2.3.6 (16 October 2018)
 - added purgen submenu into tray menu
 - added more statusbar information
