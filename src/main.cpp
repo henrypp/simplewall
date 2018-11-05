@@ -1860,6 +1860,7 @@ void _wfp_destroyfilters (bool is_full)
 		_wfp_logunsubscribe ();
 
 	_r_fastlock_acquireexclusive (&lock_access);
+	_r_fastlock_acquireexclusive (&lock_apply);
 
 	for (auto &p : apps)
 	{
@@ -1867,7 +1868,11 @@ void _wfp_destroyfilters (bool is_full)
 		p.second.mfarr.clear ();
 	}
 
-	std::vector<PITEM_RULE>* mrules[] = {&rules_blocklist, &rules_system, &rules_custom};
+	std::vector<PITEM_RULE>* mrules[] = {
+		&rules_blocklist,
+		&rules_system,
+		&rules_custom
+	};
 
 	for (size_t i = 0; i < _countof (mrules); i++)
 	{
@@ -1884,8 +1889,6 @@ void _wfp_destroyfilters (bool is_full)
 			}
 		}
 	}
-
-	_r_fastlock_releaseexclusive (&lock_access);
 
 	if (_wfp_transact_start (__LINE__))
 	{
@@ -1933,6 +1936,9 @@ void _wfp_destroyfilters (bool is_full)
 
 		_wfp_transact_commit (__LINE__);
 	}
+
+	_r_fastlock_releaseexclusive (&lock_access);
+	_r_fastlock_releaseexclusive (&lock_apply);
 
 	if (is_full)
 	{
@@ -3595,7 +3601,7 @@ bool _wfp_isfiltersinstalled ()
 
 bool _wfp_destroy2filters (MARRAY* pmar, bool is_transact)
 {
-	if (!pmar)
+	if (!pmar || !config.hengine)
 		return false;
 
 	if (!is_transact)
@@ -4044,6 +4050,7 @@ void _wfp_installfilters ()
 	if (_wfp_transact_start (__LINE__))
 	{
 		_r_fastlock_acquireexclusive (&lock_access);
+		_r_fastlock_acquireexclusive (&lock_apply);
 
 		// apply apps rules
 		{
@@ -4083,6 +4090,7 @@ void _wfp_installfilters ()
 		_wfp_create2filters (true);
 
 		_r_fastlock_releaseexclusive (&lock_access);
+		_r_fastlock_releaseexclusive (&lock_apply);
 
 		_wfp_transact_commit (__LINE__);
 
@@ -4346,98 +4354,100 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 	if (!ptr_log)
 		return;
 
-	if (config.hlogfile != nullptr && config.hlogfile != INVALID_HANDLE_VALUE)
+	if (config.hlogfile == nullptr || config.hlogfile == INVALID_HANDLE_VALUE)
+		return;
+
+	_r_fastlock_acquireexclusive (&lock_writelog);
+
+	_app_logchecklimit ();
+
+	// parse path
+	rstring path;
 	{
-		_r_fastlock_acquireexclusive (&lock_writelog);
+		_r_fastlock_acquireshared (&lock_access);
 
-		_app_logchecklimit ();
+		PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
 
-		// parse path
-		rstring path;
+		if (ptr_app)
 		{
-			_r_fastlock_acquireshared (&lock_access);
-
-			PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
-
-			if (ptr_app)
+			if (ptr_app->type == AppStore || ptr_app->type == AppService)
 			{
-				if (ptr_app->type == AppStore || ptr_app->type == AppService)
-				{
-					if (ptr_app->real_path[0])
-						path = ptr_app->real_path;
+				if (ptr_app->real_path[0])
+					path = ptr_app->real_path;
 
-					else
-						path = ptr_app->display_name;
-				}
 				else
-				{
-					path = ptr_app->original_path;
-				}
+					path = ptr_app->display_name;
 			}
-
-			_r_fastlock_releaseshared (&lock_access);
-
-			if (path.IsEmpty ())
-				path = SZ_EMPTY;
-		}
-
-		// parse filter name
-		rstring filter;
-		{
-			if (ptr_log->provider_name[0])
-				filter.Format (L"%s\\%s", ptr_log->provider_name, ptr_log->filter_name);
-
 			else
-				filter = ptr_log->filter_name[0] ? ptr_log->filter_name : SZ_EMPTY;
+			{
+				path = ptr_app->original_path;
+			}
 		}
 
-		// parse direction
-		rstring direction;
-		{
-			if (ptr_log->direction == FWP_DIRECTION_INBOUND)
-				direction = SZ_LOG_DIRECTION_IN;
+		_r_fastlock_releaseshared (&lock_access);
 
-			else if (ptr_log->direction == FWP_DIRECTION_OUTBOUND)
-				direction = SZ_LOG_DIRECTION_OUT;
-
-			else
-				direction = SZ_EMPTY;
-
-			if (ptr_log->is_loopback)
-				direction.Append (SZ_LOG_DIRECTION_LOOPBACK);
-		}
-
-		rstring buffer;
-		buffer.Format (L"%s" LOG_DIV L"%s" LOG_DIV L"%s" LOG_DIV L"%s (" SZ_LOG_REMOTE_ADDRESS L")" LOG_DIV L"%s (" SZ_LOG_LOCAL_ADDRESS L")" LOG_DIV L"%s" LOG_DIV L"%s" LOG_DIV L"#%" PRIu64 LOG_DIV L"%s" LOG_DIV L"%s\r\n",
-			_r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
-			ptr_log->username,
-			path.GetString (),
-			ptr_log->remote_fmt,
-			ptr_log->local_fmt,
-			_app_getprotoname (ptr_log->protocol).GetString (),
-			filter.GetString (),
-			ptr_log->filter_id,
-			direction.GetString (),
-			(ptr_log->is_allow ? SZ_LOG_ALLOW : SZ_LOG_BLOCK)
-		);
-
-		DWORD written = 0;
-		WriteFile (config.hlogfile, buffer.GetString (), DWORD (buffer.GetLength () * sizeof (WCHAR)), &written, nullptr);
-
-		_r_fastlock_releaseexclusive (&lock_writelog);
+		if (path.IsEmpty ())
+			path = SZ_EMPTY;
 	}
+
+	// parse filter name
+	rstring filter;
+	{
+		if (ptr_log->provider_name[0])
+			filter.Format (L"%s\\%s", ptr_log->provider_name, ptr_log->filter_name);
+
+		else
+			filter = ptr_log->filter_name[0] ? ptr_log->filter_name : SZ_EMPTY;
+	}
+
+	// parse direction
+	rstring direction;
+	{
+		if (ptr_log->direction == FWP_DIRECTION_INBOUND)
+			direction = SZ_LOG_DIRECTION_IN;
+
+		else if (ptr_log->direction == FWP_DIRECTION_OUTBOUND)
+			direction = SZ_LOG_DIRECTION_OUT;
+
+		else
+			direction = SZ_EMPTY;
+
+		if (ptr_log->is_loopback)
+			direction.Append (SZ_LOG_DIRECTION_LOOPBACK);
+	}
+
+	rstring buffer;
+	buffer.Format (L"%s" LOG_DIV L"%s" LOG_DIV L"%s" LOG_DIV L"%s (" SZ_LOG_REMOTE_ADDRESS L")" LOG_DIV L"%s (" SZ_LOG_LOCAL_ADDRESS L")" LOG_DIV L"%s" LOG_DIV L"%s" LOG_DIV L"#%" PRIu64 LOG_DIV L"%s" LOG_DIV L"%s\r\n",
+		_r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
+		ptr_log->username,
+		path.GetString (),
+		ptr_log->remote_fmt,
+		ptr_log->local_fmt,
+		_app_getprotoname (ptr_log->protocol).GetString (),
+		filter.GetString (),
+		ptr_log->filter_id,
+		direction.GetString (),
+		(ptr_log->is_allow ? SZ_LOG_ALLOW : SZ_LOG_BLOCK)
+	);
+
+	DWORD written = 0;
+	WriteFile (config.hlogfile, buffer.GetString (), DWORD (buffer.GetLength () * sizeof (WCHAR)), &written, nullptr);
+
+	_r_fastlock_releaseexclusive (&lock_writelog);
 }
 
 void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 {
 	_r_fastlock_acquireexclusive (&lock_apply);
+	_r_fastlock_acquireexclusive (&lock_access);
 
 	const size_t hash = (size_t)lparam;
 	const PITEM_APP ptr_app = _app_getapplication (hash);
 	const HWND hwnd = app.GetHWND ();
-	const bool is_succcess = _app_timer_remove (hwnd, hash, false);
+	const bool is_succcess = _app_timer_remove (hwnd, hash, true);
 
 	_r_fastlock_releaseexclusive (&lock_apply);
+	_r_fastlock_releaseexclusive (&lock_access);
 
 	if (is_succcess)
 	{
@@ -4472,6 +4482,7 @@ bool _app_timer_create (HWND hwnd, size_t hash, time_t seconds, bool is_transact
 		{
 			ptr_app->is_enabled = true;
 			ptr_app->timer = current_time + seconds;
+
 			_wfp_create3filters (ptr_app, is_transact);
 
 			const size_t item = _app_getposition (hwnd, hash);
@@ -4767,11 +4778,13 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 		if (ptr_log)
 		{
 			_r_fastlock_acquireexclusive (&lock_access);
+			_r_fastlock_acquireexclusive (&lock_apply);
+
+			_wfp_transact_start (__LINE__);
 
 			const size_t hash = ptr_log->hash;
 			const size_t item = _app_getposition (app.GetHWND (), hash);
 
-			const bool is_filtersinstalled = (config.hengine != nullptr);
 			const bool is_createaddrrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_ADDR_ID) == BST_CHECKED) && IsWindowEnabled (GetDlgItem (hwnd, IDC_CREATERULE_ADDR_ID));
 			const bool is_createportrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED) && IsWindowEnabled (GetDlgItem (hwnd, IDC_CREATERULE_PORT_ID));
 			const bool is_disablenotification = (IsDlgButtonChecked (hwnd, IDC_DISABLENOTIFICATION_ID) == BST_CHECKED) && IsWindowEnabled (GetDlgItem (hwnd, IDC_DISABLENOTIFICATION_ID));
@@ -4856,8 +4869,7 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 						{
 							rules_custom.at (rule_id)->apps[hash] = true;
 
-							if (is_filtersinstalled)
-								_wfp_create4filters (rules_custom.at (rule_id), false);
+							_wfp_create4filters (rules_custom.at (rule_id), true);
 						}
 					}
 					else
@@ -4875,12 +4887,11 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 					// create rule timer
 					if (timer_idx != LAST_VALUE)
 					{
-						_app_timer_create (app.GetHWND (), hash, timers.at (timer_idx), false);
+						_app_timer_create (app.GetHWND (), hash, timers.at (timer_idx), true);
 					}
 					else
 					{
-						if (is_filtersinstalled)
-							_wfp_create3filters (ptr_app, false);
+						_wfp_create3filters (ptr_app, true);
 					}
 
 					ptr_app->is_silent = is_disablenotification;
@@ -4891,6 +4902,9 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 				}
 
 				_r_fastlock_releaseexclusive (&lock_access);
+				_r_fastlock_releaseexclusive (&lock_apply);
+
+				_wfp_transact_commit (__LINE__);
 
 				ptr_app->last_notify = _r_unixtime_now ();
 				_app_freenotify (hash, false);
@@ -4909,6 +4923,7 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 			}
 
 			_r_fastlock_releaseexclusive (&lock_access);
+			_r_fastlock_releaseexclusive (&lock_apply);
 		}
 	}
 
@@ -5084,9 +5099,10 @@ void _app_notifyplaysound ()
 {
 	bool result = false;
 
-	if (!config.notify_snd_path[0])
+	if (!config.notify_snd_path[0] || !_r_fs_exists (config.notify_snd_path))
 	{
 		HKEY hkey = nullptr;
+		config.notify_snd_path[0] = 0;
 
 		if (RegOpenKeyEx (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_DEFAULT L"\\.Default", 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 		{
@@ -5094,8 +5110,13 @@ void _app_notifyplaysound ()
 
 			if (RegQueryValueEx (hkey, nullptr, nullptr, nullptr, (LPBYTE)config.notify_snd_path, &size) == ERROR_SUCCESS)
 			{
-				StringCchCopy (config.notify_snd_path, _countof (config.notify_snd_path), _r_path_expand (config.notify_snd_path));
-				result = true;
+				const rstring path = _r_path_expand (config.notify_snd_path);
+
+				if (_r_fs_exists (path))
+				{
+					StringCchCopy (config.notify_snd_path, _countof (config.notify_snd_path), path);
+					result = true;
+				}
 			}
 
 			RegCloseKey (hkey);
@@ -5746,8 +5767,6 @@ void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5 *pEvent)
 
 UINT WINAPI ApplyThread (LPVOID lparam)
 {
-	_r_fastlock_acquireexclusive (&lock_apply);
-
 	const bool is_install = lparam ? true : false;
 
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
@@ -5768,8 +5787,6 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 	_app_profilesave (app.GetHWND ());
 
 	_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
-
-	_r_fastlock_releaseexclusive (&lock_apply);
 
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
 
@@ -7097,8 +7114,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 									_app_profilesave (app.GetHWND ());
 
-									if (config.hengine != nullptr)
-										_wfp_create4filters (ptr_rule, false);
+									_wfp_create4filters (ptr_rule, false);
 
 									_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
 								}
@@ -7634,8 +7650,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
 
-							if (config.hengine != nullptr)
-								_wfp_create4filters (ptr_rule, false);
+							_wfp_create4filters (ptr_rule, false);
 						}
 						else
 						{
@@ -7675,8 +7690,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
 
-							if (config.hengine != nullptr)
-								_wfp_create4filters (ptr_rule, false);
+							_wfp_create4filters (ptr_rule, false);
 
 						}
 					}
@@ -7700,7 +7714,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						break;
 
 					const size_t count = _r_listview_getitemcount (hwnd, IDC_EDITOR) - 1;
-					const bool is_filtersinstalled = (config.hengine != nullptr);
 
 					_r_fastlock_acquireexclusive (&lock_apply);
 					_r_fastlock_acquireexclusive (&lock_access);
@@ -7715,11 +7728,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							PITEM_RULE ptr_rule = rules_custom.at (idx);
 
-							if (is_filtersinstalled)
-							{
-								if (ptr_rule)
-									_wfp_destroy2filters (&ptr_rule->mfarr, true);
-							}
+							if (ptr_rule)
+								_wfp_destroy2filters (&ptr_rule->mfarr, true);
 
 							SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_DELETEITEM, i, 0);
 
@@ -7727,10 +7737,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						}
 					}
 
-					_wfp_transact_commit (__LINE__);
-
 					_r_fastlock_releaseexclusive (&lock_apply);
 					_r_fastlock_releaseexclusive (&lock_access);
+
+					_wfp_transact_commit (__LINE__);
 
 					_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 					_app_profilesave (app.GetHWND ());
@@ -7788,7 +7798,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							bool is_changed = false;
 
 							size_t item = LAST_VALUE;
-							const bool is_filtersinstalled = (config.hengine != nullptr);
 
 							_r_fastlock_acquireexclusive (&lock_apply);
 							_r_fastlock_acquireexclusive (&lock_access);
@@ -7818,8 +7827,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 										if (dialog_id == IDD_SETTINGS_RULES_BLOCKLIST || dialog_id == IDD_SETTINGS_RULES_SYSTEM)
 											rules_config[ptr_rule->pname] = new_val;
 
-										if (is_filtersinstalled)
-											_wfp_create4filters (ptr_rule, true);
+										_wfp_create4filters (ptr_rule, true);
 
 										if (!is_changed)
 											is_changed = true;
@@ -7827,10 +7835,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								}
 							}
 
-							_wfp_transact_commit (__LINE__);
-
 							_r_fastlock_releaseexclusive (&lock_apply);
 							_r_fastlock_releaseexclusive (&lock_access);
+
+							_wfp_transact_commit (__LINE__);
 
 							if (is_changed)
 							{
@@ -7934,19 +7942,21 @@ bool _wfp_logsubscribe ()
 		}
 		else
 		{
+			typedef DWORD (WINAPI *FWPMNES5) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK4, LPVOID, LPHANDLE); // win10new+
 			typedef DWORD (WINAPI *FWPMNES4) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK4, LPVOID, LPHANDLE); // win10rs5+
 			typedef DWORD (WINAPI *FWPMNES3) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK3, LPVOID, LPHANDLE); // win10rs4+
 			typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, LPHANDLE); // win10+
 			typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, LPHANDLE); // win8+
 			typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, LPHANDLE); // win7+
 
+			const FWPMNES5 _FwpmNetEventSubscribe5 = (FWPMNES5)GetProcAddress (hlib, "FwpmNetEventSubscribe5"); // win10new+
 			const FWPMNES4 _FwpmNetEventSubscribe4 = (FWPMNES4)GetProcAddress (hlib, "FwpmNetEventSubscribe4"); // win10rs5+
 			const FWPMNES3 _FwpmNetEventSubscribe3 = (FWPMNES3)GetProcAddress (hlib, "FwpmNetEventSubscribe3"); // win10rs4+
 			const FWPMNES2 _FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hlib, "FwpmNetEventSubscribe2"); // win10+
 			const FWPMNES1 _FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hlib, "FwpmNetEventSubscribe1"); // win8+
 			const FWPMNES0 _FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hlib, "FwpmNetEventSubscribe0"); // win7+
 
-			if (!_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
+			if (!_FwpmNetEventSubscribe5 && !_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
 			{
 				_app_logerror (L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe", false);
 			}
@@ -7965,7 +7975,10 @@ bool _wfp_logsubscribe ()
 
 				DWORD rc = 0;
 
-				if (_FwpmNetEventSubscribe4)
+				if (_FwpmNetEventSubscribe5)
+					rc = _FwpmNetEventSubscribe5 (config.hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10new+
+
+				else if (_FwpmNetEventSubscribe4)
 					rc = _FwpmNetEventSubscribe4 (config.hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10rs5+
 
 				else if (_FwpmNetEventSubscribe3)
@@ -9232,6 +9245,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_r_fastlock_releaseexclusive (&lock_access);
 
+			_app_changefilters (hwnd, true, false);
+
 			break;
 		}
 
@@ -9413,6 +9428,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (config.is_nocheckboxnotify)
 							return FALSE;
 
+						_wfp_transact_start (__LINE__);
+
 						_r_fastlock_acquireexclusive (&lock_access);
 						_r_fastlock_acquireexclusive (&lock_apply);
 
@@ -9435,12 +9452,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							_app_profilesave (hwnd);
 
-							if (config.hengine != nullptr)
-								_wfp_create3filters (ptr_app, false);
+							_wfp_create3filters (ptr_app, true);
 						}
 
 						_r_fastlock_releaseexclusive (&lock_access);
 						_r_fastlock_releaseexclusive (&lock_apply);
+
+						_wfp_transact_commit (__LINE__);
 
 						_r_listview_redraw (hwnd, IDC_LISTVIEW);
 					}
@@ -9476,58 +9494,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			break;
 		}
-
-		//case WM_MENUSELECT:
-		//{
-		//	if (!IsWindowVisible (hwnd) || IsIconic (hwnd))
-		//		break;
-
-		//	std::vector<ITEM_ADD>* vc_ptr = nullptr;
-		//	size_t idx = LAST_VALUE;
-
-		//	// show process information in statusbar
-		//	if (GetMenuState ((HMENU)lparam, LOWORD (wparam), MF_BYCOMMAND) != UINT32_MAX)
-		//	{
-		//		if ((LOWORD (wparam) >= IDX_PROCESS) && LOWORD (wparam) <= (IDX_PROCESS + processes.size ()))
-		//		{
-		//			vc_ptr = &processes;
-		//			idx = LOWORD (wparam) - IDX_PROCESS;
-		//		}
-		//		else if ((LOWORD (wparam) >= IDX_PACKAGE) && LOWORD (wparam) <= (IDX_PACKAGE + packages.size ()))
-		//		{
-		//			vc_ptr = &packages;
-		//			idx = LOWORD (wparam) - IDX_PACKAGE;
-		//		}
-		//		else if ((LOWORD (wparam) >= IDX_SERVICE) && LOWORD (wparam) <= (IDX_SERVICE + services.size ()))
-		//		{
-		//			vc_ptr = &services;
-		//			idx = LOWORD (wparam) - IDX_SERVICE;
-		//		}
-		//	}
-
-		//	if (vc_ptr && idx != LAST_VALUE)
-		//	{
-		//		if (((HIWORD (wparam) & MF_HILITE) != 0) || ((HIWORD (wparam) & MF_MOUSESELECT) != 0))
-		//		{
-		//			PITEM_ADD const ptr_app = &vc_ptr->at (idx);
-		//			LPCWSTR text = nullptr;
-
-		//			if ((LOWORD (wparam) >= IDX_SERVICE) && LOWORD (wparam) <= (IDX_SERVICE + services.size ()))
-		//				text = ptr_app->display_name;
-
-		//			else
-		//				text = ptr_app->real_path[0] ? ptr_app->real_path : ptr_app->display_name;
-
-		//			_r_status_settext (hwnd, IDC_STATUSBAR, 0, text);
-		//		}
-		//	}
-		//	else
-		//	{
-		//		_app_refreshstatus (hwnd);
-		//	}
-
-		//	break;
-		//}
 
 		case WM_CONTEXTMENU:
 		{
@@ -9782,19 +9748,29 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						_r_fastlock_releaseshared (&lock_access);
 
-						app.LocaleMenu (submenu, IDS_DELETE, delete_id, true, nullptr);
-						app.LocaleMenu (submenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, itemStat.unused_count ? _r_fmt (L" (%d)", itemStat.unused_count).GetString () : nullptr);
-						app.LocaleMenu (submenu, IDS_PURGE_ERRORS, IDM_PURGE_ERRORS, false, itemStat.invalid_count ? _r_fmt (L" (%d)", itemStat.invalid_count).GetString () : nullptr);
-						app.LocaleMenu (submenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, itemStat.timers_count ? _r_fmt (L" (%d)", itemStat.timers_count).GetString () : nullptr);
+						const size_t total_count = itemStat.unused_count + itemStat.invalid_count + itemStat.timers_count;
 
-						if (!itemStat.unused_count)
-							EnableMenuItem (submenu, IDM_PURGE_UNUSED, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						app.LocaleMenu (submenu, IDS_DELETE, delete_id, true, total_count ? _r_fmt (L" (%d)", total_count).GetString () : nullptr);
 
-						if (!itemStat.invalid_count)
-							EnableMenuItem (submenu, IDM_PURGE_ERRORS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						if (!total_count)
+						{
+							EnableMenuItem (submenu, delete_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+						}
+						else
+						{
+							app.LocaleMenu (submenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, itemStat.unused_count ? _r_fmt (L" (%d)", itemStat.unused_count).GetString () : nullptr);
+							app.LocaleMenu (submenu, IDS_PURGE_ERRORS, IDM_PURGE_ERRORS, false, itemStat.invalid_count ? _r_fmt (L" (%d)", itemStat.invalid_count).GetString () : nullptr);
+							app.LocaleMenu (submenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, itemStat.timers_count ? _r_fmt (L" (%d)", itemStat.timers_count).GetString () : nullptr);
 
-						if (!itemStat.timers_count)
-							EnableMenuItem (submenu, IDM_PURGE_TIMERS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+							if (!itemStat.unused_count)
+								EnableMenuItem (submenu, IDM_PURGE_UNUSED, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+
+							if (!itemStat.invalid_count)
+								EnableMenuItem (submenu, IDM_PURGE_ERRORS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+
+							if (!itemStat.timers_count)
+								EnableMenuItem (submenu, IDM_PURGE_TIMERS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						}
 					}
 
 					app.LocaleMenu (submenu, IDS_TRAY_LOG, notifications_id, true, nullptr);
@@ -9856,8 +9832,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case PBT_APMSUSPEND:
 				{
 					_r_fastlock_acquireexclusive (&lock_threadpool);
+
 					_app_clear_logstack ();
 					_app_clear_threadpool (&threads_pool);
+
 					_r_fastlock_releaseexclusive (&lock_threadpool);
 
 					_wfp_uninitialize (false);
@@ -9937,7 +9915,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				PITEM_ADD const ptr_proc = &processes.at (LOWORD (wparam) - IDX_PROCESS);
 
+				_r_fastlock_acquireexclusive (&lock_access);
+
 				const size_t hash = _app_addapplication (hwnd, ptr_proc->real_path, 0, 0, 0, false, false, true);
+
+				_r_fastlock_releaseexclusive (&lock_access);
 
 				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 				_app_profilesave (hwnd);
@@ -9950,7 +9932,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				PITEM_ADD const ptr_package = &packages.at (LOWORD (wparam) - IDX_PACKAGE);
 
+				_r_fastlock_acquireexclusive (&lock_access);
+
 				const size_t hash = _app_addapplication (hwnd, ptr_package->sid, 0, 0, 0, false, false, true);
+
+				_r_fastlock_releaseexclusive (&lock_access);
 
 				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 				_app_profilesave (hwnd);
@@ -9963,7 +9949,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				PITEM_ADD const ptr_svc = &services.at (LOWORD (wparam) - IDX_SERVICE);
 
+				_r_fastlock_acquireexclusive (&lock_access);
+
 				const size_t hash = _app_addapplication (hwnd, ptr_svc->service_name, 0, 0, 0, false, false, true);
+
+				_r_fastlock_releaseexclusive (&lock_access);
 
 				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 				_app_profilesave (hwnd);
@@ -10019,8 +10009,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				_r_listview_redraw (hwnd, IDC_LISTVIEW);
 
-				if (config.hengine != nullptr)
-					_wfp_create4filters (ptr_rule, false);
+				_wfp_create4filters (ptr_rule, false);
 
 				return FALSE;
 			}
@@ -10034,15 +10023,21 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				size_t item = LAST_VALUE;
 				const time_t current_time = _r_unixtime_now ();
 
+				_wfp_transact_start (__LINE__);
+
 				_r_fastlock_acquireexclusive (&lock_access);
+				_r_fastlock_acquireexclusive (&lock_apply);
 
 				while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 				{
 					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
-					_app_timer_create (hwnd, hash, timers.at (idx), false);
+					_app_timer_create (hwnd, hash, timers.at (idx), true);
 				}
 
+				_r_fastlock_releaseexclusive (&lock_apply);
 				_r_fastlock_releaseexclusive (&lock_access);
+
+				_wfp_transact_commit (__LINE__);
 
 				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 				_app_profilesave (hwnd);
@@ -10336,6 +10331,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_REFRESH2:
 				{
 					_app_profileload (hwnd);
+					_app_profilesave (hwnd);
+
 					_app_changefilters (hwnd, true, false);
 
 					break;
@@ -10383,7 +10380,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_LOGCLEAR:
 				case IDM_TRAY_LOGCLEAR:
 				{
-					rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
+					const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
 
 					if ((config.hlogfile != nullptr && config.hlogfile != INVALID_HANDLE_VALUE) || _r_fs_exists (path))
 					{
@@ -10398,7 +10395,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_TRAY_LOGSHOW_ERR:
 				{
-					rstring path = _r_dbg_getpath (APP_NAME_SHORT);
+					const rstring path = _r_dbg_getpath (APP_NAME_SHORT);
 
 					if (!_r_fs_exists (path))
 						return FALSE;
@@ -10410,7 +10407,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_TRAY_LOGCLEAR_ERR:
 				{
-					rstring path = _r_dbg_getpath (APP_NAME_SHORT);
+					const rstring path = _r_dbg_getpath (APP_NAME_SHORT);
 
 					if (!_r_fs_exists (path) || !app.ConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION, nullptr), L"ConfirmLogClear"))
 						break;
@@ -10426,9 +10423,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const bool state = !_wfp_isfiltersinstalled ();
 
 					if (_app_installmessage (hwnd, state))
-					{
 						_app_changefilters (hwnd, state, true);
-					}
 
 					break;
 				}
@@ -10485,6 +10480,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_ALL_PACKAGES:
 				case IDM_ALL_SERVICES:
 				{
+					_r_fastlock_acquireexclusive (&lock_access);
+
 					if (LOWORD (wparam) == IDM_ALL_PROCESSES)
 					{
 						for (size_t i = 0; i < processes.size (); i++)
@@ -10501,6 +10498,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_addapplication (hwnd, services.at (i).service_name, 0, 0, 0, false, false, true);
 					}
 
+					_r_fastlock_releaseexclusive (&lock_access);
+
 					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 					_app_profilesave (hwnd);
 
@@ -10516,7 +10515,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_PROPERTIES:
 				{
 					const UINT ctrl_id = LOWORD (wparam);
-					const bool is_filtersinstalled = (config.hengine != nullptr);
 
 					size_t item = LAST_VALUE;
 					BOOL new_val = BOOL (-1);
@@ -10524,6 +10522,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					rstring buffer;
 
 					_r_fastlock_acquireexclusive (&lock_access);
+					_r_fastlock_acquireexclusive (&lock_apply);
 
 					if (
 						ctrl_id == IDM_CHECK ||
@@ -10612,12 +10611,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_freenotify (hash, false);
 							_r_fastlock_releaseexclusive (&lock_notification);
 
-							if (is_filtersinstalled)
-								_wfp_create3filters (ptr_app, true);
+							_wfp_create3filters (ptr_app, true);
 						}
 					}
 
 					_r_fastlock_releaseexclusive (&lock_access);
+					_r_fastlock_releaseexclusive (&lock_apply);
 
 					if (ctrl_id == IDM_CHECK ||
 						ctrl_id == IDM_UNCHECK ||
@@ -10680,8 +10679,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							_r_listview_redraw (hwnd, IDC_LISTVIEW);
 
-							if (config.hengine != nullptr)
-								_wfp_create4filters (ptr_rule, false);
+							_wfp_create4filters (ptr_rule, false);
 						}
 						else
 						{
@@ -10699,7 +10697,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (!selected || !app.ConfirmMessage (hwnd, nullptr, _r_fmt (app.LocaleString (IDS_QUESTION_DELETE, nullptr), selected), L"ConfirmDelete"))
 						break;
 
-					const bool is_filtersinstalled = (config.hengine != nullptr);
 					const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW) - 1;
 
 					size_t item = LAST_VALUE;
@@ -10718,8 +10715,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (ptr_app && !ptr_app->is_undeletable) // skip "undeletable" apps
 							{
-								if (is_filtersinstalled)
-									_wfp_destroy2filters (&ptr_app->mfarr, true);
+								_wfp_destroy2filters (&ptr_app->mfarr, true);
 
 								SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_DELETEITEM, i, 0);
 								_app_freeapplication (hash);
@@ -10729,10 +10725,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					_wfp_transact_commit (__LINE__);
-
 					_r_fastlock_releaseexclusive (&lock_access);
 					_r_fastlock_releaseexclusive (&lock_apply);
+
+					_wfp_transact_commit (__LINE__);
 
 					if (item != LAST_VALUE)
 						ShowItem (hwnd, IDC_LISTVIEW, min (item, _r_listview_getitemcount (hwnd, IDC_LISTVIEW) - 1), -1);
@@ -10752,7 +10748,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					bool is_deleted = false;
 
-					const bool is_filtersinstalled = (config.hengine != nullptr);
 					const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW) - 1;
 
 					_r_fastlock_acquireexclusive (&lock_apply);
@@ -10769,8 +10764,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							if (!_app_isexists (ptr_app) || (LOWORD (wparam) == IDM_PURGE_UNUSED && _app_isunused (ptr_app, hash)))
 							{
-								if (is_filtersinstalled)
-									_wfp_destroy2filters (&ptr_app->mfarr, true);
+								_wfp_destroy2filters (&ptr_app->mfarr, true);
 
 								SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_DELETEITEM, i, 0);
 								_app_freeapplication (hash);
@@ -10780,10 +10774,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					_wfp_transact_commit (__LINE__);
-
 					_r_fastlock_releaseexclusive (&lock_access);
 					_r_fastlock_releaseexclusive (&lock_apply);
+
+					_wfp_transact_commit (__LINE__);
 
 					if (is_deleted)
 					{
@@ -10803,8 +10797,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (!_app_istimersactive () || !app.ConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION_TIMERS, nullptr), L"ConfirmTimers"))
 						break;
 
-					const bool is_filtersinstalled = (config.hengine != nullptr);
-
 					_r_fastlock_acquireexclusive (&lock_apply);
 					_r_fastlock_acquireexclusive (&lock_access);
 
@@ -10816,10 +10808,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_timer_remove (hwnd, p.first, true);
 					}
 
-					_wfp_transact_commit (__LINE__);
-
 					_r_fastlock_releaseexclusive (&lock_access);
 					_r_fastlock_releaseexclusive (&lock_apply);
+
+					_wfp_transact_commit (__LINE__);
 
 					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 					_app_profilesave (hwnd);
