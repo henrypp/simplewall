@@ -1847,6 +1847,8 @@ bool _wfp_transact_commit (UINT line)
 		if (result == ERROR_SUCCESS)
 			return true;
 
+		FwpmTransactionAbort (config.hengine);
+
 		_app_logerror (L"FwpmTransactionCommit", result, _r_fmt (L"#%d", line), false);
 	}
 
@@ -1855,12 +1857,12 @@ bool _wfp_transact_commit (UINT line)
 
 void _wfp_destroyfilters (bool is_full)
 {
+	if (!config.hengine)
+		return;
+
 	// dropped packets logging (win7+)
 	if (_r_sys_validversion (6, 1))
 		_wfp_logunsubscribe ();
-
-	_r_fastlock_acquireexclusive (&lock_access);
-	_r_fastlock_acquireexclusive (&lock_apply);
 
 	for (auto &p : apps)
 	{
@@ -1890,55 +1892,50 @@ void _wfp_destroyfilters (bool is_full)
 		}
 	}
 
-	if (_wfp_transact_start (__LINE__))
-	{
-		HANDLE henum = nullptr;
+	_wfp_transact_start (__LINE__);
 
-		DWORD result = FwpmFilterCreateEnumHandle (config.hengine, nullptr, &henum);
+	HANDLE henum = nullptr;
+	DWORD result = FwpmFilterCreateEnumHandle (config.hengine, nullptr, &henum);
+
+	if (result != ERROR_SUCCESS)
+	{
+		_app_logerror (L"FwpmFilterCreateEnumHandle", result, nullptr, false);
+	}
+	else
+	{
+		UINT32 count = 0;
+		FWPM_FILTER** matchingFwpFilter = nullptr;
+
+		result = FwpmFilterEnum (config.hengine, henum, UINT32_MAX, &matchingFwpFilter, &count);
 
 		if (result != ERROR_SUCCESS)
 		{
-			_app_logerror (L"FwpmFilterCreateEnumHandle", result, nullptr, false);
+			_app_logerror (L"FwpmFilterEnum", result, nullptr, false);
 		}
 		else
 		{
-			UINT32 count = 0;
-			FWPM_FILTER** matchingFwpFilter = nullptr;
-
-			result = FwpmFilterEnum (config.hengine, henum, UINT32_MAX, &matchingFwpFilter, &count);
-
-			if (result != ERROR_SUCCESS)
+			if (matchingFwpFilter)
 			{
-				_app_logerror (L"FwpmFilterEnum", result, nullptr, false);
-			}
-			else
-			{
-				if (matchingFwpFilter)
+				for (UINT32 i = 0; i < count; i++)
 				{
-					for (UINT32 i = 0; i < count; i++)
+					if (matchingFwpFilter[i]->providerKey && memcmp (matchingFwpFilter[i]->providerKey, &GUID_WfpProvider, sizeof (GUID)) == 0)
 					{
-						if (matchingFwpFilter[i]->providerKey && memcmp (matchingFwpFilter[i]->providerKey, &GUID_WfpProvider, sizeof (GUID)) == 0)
-						{
-							result = FwpmFilterDeleteById (config.hengine, matchingFwpFilter[i]->filterId);
+						result = FwpmFilterDeleteById (config.hengine, matchingFwpFilter[i]->filterId);
 
-							if (result != ERROR_SUCCESS)
-								_app_logerror (L"FwpmFilterDeleteById", result, nullptr, false);
-						}
+						if (result != ERROR_SUCCESS)
+							_app_logerror (L"FwpmFilterDeleteById", result, nullptr, false);
 					}
-
-					FwpmFreeMemory ((void**)&matchingFwpFilter);
 				}
+
+				FwpmFreeMemory ((void**)&matchingFwpFilter);
 			}
 		}
-
-		if (henum)
-			FwpmFilterDestroyEnumHandle (config.hengine, henum);
-
-		_wfp_transact_commit (__LINE__);
 	}
 
-	_r_fastlock_releaseexclusive (&lock_access);
-	_r_fastlock_releaseexclusive (&lock_apply);
+	if (henum)
+		FwpmFilterDestroyEnumHandle (config.hengine, henum);
+
+	_wfp_transact_commit (__LINE__);
 
 	if (is_full)
 	{
@@ -3606,10 +3603,17 @@ bool _wfp_destroy2filters (MARRAY* pmar, bool is_transact)
 
 	if (!is_transact)
 	{
-		if (!_wfp_transact_start (__LINE__))
-			return false;
-
 		_r_fastlock_acquireexclusive (&lock_apply);
+
+		if (!_wfp_transact_start (__LINE__))
+		{
+			_r_fastlock_releaseexclusive (&lock_apply);
+
+			SetEvent (config.done_evt);
+
+			return false;
+		}
+
 		_r_fastlock_acquireexclusive (&lock_access);
 	}
 
@@ -3623,13 +3627,18 @@ bool _wfp_destroy2filters (MARRAY* pmar, bool is_transact)
 
 	if (!is_transact)
 	{
+		bool result = false;
+
 		_r_fastlock_releaseexclusive (&lock_access);
+
+		if (_wfp_transact_commit (__LINE__))
+			result = true;
+
 		_r_fastlock_releaseexclusive (&lock_apply);
 
 		SetEvent (config.done_evt);
 
-		if (!_wfp_transact_commit (__LINE__))
-			return false;
+		return result;
 	}
 
 	pmar->clear ();
@@ -3644,10 +3653,17 @@ bool _wfp_create4filters (PITEM_RULE ptr_rule, bool is_transact)
 
 	if (!is_transact)
 	{
-		if (!_wfp_transact_start (__LINE__))
-			return false;
-
 		_r_fastlock_acquireexclusive (&lock_apply);
+
+		if (!_wfp_transact_start (__LINE__))
+		{
+			_r_fastlock_releaseexclusive (&lock_apply);
+
+			SetEvent (config.done_evt);
+
+			return false;
+		}
+
 		_r_fastlock_acquireexclusive (&lock_access);
 	}
 
@@ -3689,13 +3705,18 @@ bool _wfp_create4filters (PITEM_RULE ptr_rule, bool is_transact)
 
 	if (!is_transact)
 	{
+		bool result = false;
+
 		_r_fastlock_releaseexclusive (&lock_access);
+
+		if (_wfp_transact_commit (__LINE__))
+			result = true;
+
 		_r_fastlock_releaseexclusive (&lock_apply);
 
 		SetEvent (config.done_evt);
 
-		if (!_wfp_transact_commit (__LINE__))
-			return false;
+		return result;
 	}
 
 	return true;
@@ -3711,10 +3732,17 @@ bool _wfp_create3filters (PITEM_APP ptr_app, bool is_transact)
 
 	if (!is_transact)
 	{
-		if (!_wfp_transact_start (__LINE__))
-			return false;
-
 		_r_fastlock_acquireexclusive (&lock_apply);
+
+		if (!_wfp_transact_start (__LINE__))
+		{
+			_r_fastlock_releaseexclusive (&lock_apply);
+
+			SetEvent (config.done_evt);
+
+			return false;
+		}
+
 		_r_fastlock_acquireexclusive (&lock_access);
 	}
 
@@ -3725,13 +3753,18 @@ bool _wfp_create3filters (PITEM_APP ptr_app, bool is_transact)
 
 	if (!is_transact)
 	{
+		bool result = false;
+
 		_r_fastlock_releaseexclusive (&lock_access);
+
+		if (_wfp_transact_commit (__LINE__))
+			result = true;
+
 		_r_fastlock_releaseexclusive (&lock_apply);
 
 		SetEvent (config.done_evt);
 
-		if (!_wfp_transact_commit (__LINE__))
-			return false;
+		return result;
 	}
 
 	return true;
@@ -3746,10 +3779,17 @@ bool _wfp_create2filters (bool is_transact)
 
 	if (!is_transact)
 	{
-		if (!_wfp_transact_start (__LINE__))
-			return false;
-
 		_r_fastlock_acquireexclusive (&lock_apply);
+
+		if (!_wfp_transact_start (__LINE__))
+		{
+			_r_fastlock_releaseexclusive (&lock_apply);
+
+			SetEvent (config.done_evt);
+
+			return false;
+		}
+
 		_r_fastlock_acquireexclusive (&lock_access);
 	}
 
@@ -4031,13 +4071,18 @@ bool _wfp_create2filters (bool is_transact)
 
 	if (!is_transact)
 	{
+		bool result = false;
+
 		_r_fastlock_releaseexclusive (&lock_access);
+
+		if (_wfp_transact_commit (__LINE__))
+			result = true;
+
 		_r_fastlock_releaseexclusive (&lock_apply);
 
 		SetEvent (config.done_evt);
 
-		if (!_wfp_transact_commit (__LINE__))
-			return false;
+		return result;
 	}
 
 	return true;
@@ -4047,67 +4092,60 @@ void _wfp_installfilters ()
 {
 	_wfp_destroyfilters (false); // destroy all installed filters first
 
-	if (_wfp_transact_start (__LINE__))
+	_wfp_transact_start (__LINE__);
+
+	// apply apps rules
 	{
-		_r_fastlock_acquireexclusive (&lock_access);
-		_r_fastlock_acquireexclusive (&lock_apply);
-
-		// apply apps rules
+		for (auto& p : apps)
 		{
-			for (auto& p : apps)
-			{
-				PITEM_APP ptr_app = &p.second;
+			PITEM_APP ptr_app = &p.second;
 
-				if (ptr_app->is_enabled)
-					_wfp_create3filters (ptr_app, true);
-			}
+			if (ptr_app->is_enabled)
+				_wfp_create3filters (ptr_app, true);
 		}
-
-		// apply system/custom/blocklist rules
-		{
-			std::vector<PITEM_RULE> const* ptr_rules[] = {
-				&rules_system,
-				&rules_custom,
-				&rules_blocklist,
-			};
-
-			for (size_t i = 0; i < _countof (ptr_rules); i++)
-			{
-				if (!ptr_rules[i])
-					continue;
-
-				for (size_t j = 0; j < ptr_rules[i]->size (); j++)
-				{
-					PITEM_RULE ptr_rule = ptr_rules[i]->at (j);
-
-					if (ptr_rule && ptr_rule->is_enabled)
-						_wfp_create4filters (ptr_rule, true);
-				}
-			}
-		}
-
-		// apply internal rules
-		_wfp_create2filters (true);
-
-		_r_fastlock_releaseexclusive (&lock_access);
-		_r_fastlock_releaseexclusive (&lock_apply);
-
-		_wfp_transact_commit (__LINE__);
-
-		// set icons
-		SendMessage (app.GetHWND (), WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)));
-		SendMessage (app.GetHWND (), WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXICON)));
-
-		SendDlgItemMessage (app.GetHWND (), IDC_START_BTN, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)));
-
-		app.TraySetInfo (app.GetHWND (), UID, nullptr, app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)), nullptr);
-
-		SetDlgItemText (app.GetHWND (), IDC_START_BTN, app.LocaleString (IDS_TRAY_STOP, nullptr));
-
-		// dropped packets logging (win7+)
-		if (_r_sys_validversion (6, 1))
-			_wfp_logsubscribe ();
 	}
+
+	// apply system/custom/blocklist rules
+	{
+		std::vector<PITEM_RULE> const* ptr_rules[] = {
+			&rules_system,
+			&rules_custom,
+			&rules_blocklist,
+		};
+
+		for (size_t i = 0; i < _countof (ptr_rules); i++)
+		{
+			if (!ptr_rules[i])
+				continue;
+
+			for (size_t j = 0; j < ptr_rules[i]->size (); j++)
+			{
+				PITEM_RULE ptr_rule = ptr_rules[i]->at (j);
+
+				if (ptr_rule && ptr_rule->is_enabled)
+					_wfp_create4filters (ptr_rule, true);
+			}
+		}
+	}
+
+	// apply internal rules
+	_wfp_create2filters (true);
+
+	_wfp_transact_commit (__LINE__);
+
+	// set icons
+	SendMessage (app.GetHWND (), WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)));
+	SendMessage (app.GetHWND (), WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXICON)));
+
+	SendDlgItemMessage (app.GetHWND (), IDC_START_BTN, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)));
+
+	app.TraySetInfo (app.GetHWND (), UID, nullptr, app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)), nullptr);
+
+	SetDlgItemText (app.GetHWND (), IDC_START_BTN, app.LocaleString (IDS_TRAY_STOP, nullptr));
+
+	// dropped packets logging (win7+)
+	if (_r_sys_validversion (6, 1))
+		_wfp_logsubscribe ();
 }
 
 void _app_clear_threadpool (std::vector<HANDLE>* ptr_pool)
@@ -4777,11 +4815,6 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 
 		if (ptr_log)
 		{
-			_r_fastlock_acquireexclusive (&lock_access);
-			_r_fastlock_acquireexclusive (&lock_apply);
-
-			_wfp_transact_start (__LINE__);
-
 			const size_t hash = ptr_log->hash;
 			const size_t item = _app_getposition (app.GetHWND (), hash);
 
@@ -4789,10 +4822,16 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 			const bool is_createportrule = (IsDlgButtonChecked (hwnd, IDC_CREATERULE_PORT_ID) == BST_CHECKED) && IsWindowEnabled (GetDlgItem (hwnd, IDC_CREATERULE_PORT_ID));
 			const bool is_disablenotification = (IsDlgButtonChecked (hwnd, IDC_DISABLENOTIFICATION_ID) == BST_CHECKED) && IsWindowEnabled (GetDlgItem (hwnd, IDC_DISABLENOTIFICATION_ID));
 
+			_r_fastlock_acquireexclusive (&lock_access);
+
 			PITEM_APP ptr_app = _app_getapplication (hash);
 
 			if (ptr_app)
 			{
+				_r_fastlock_acquireexclusive (&lock_apply);
+
+				_wfp_transact_start (__LINE__);
+
 				if (command == CmdAllow || command == CmdBlock)
 				{
 					// just create rule
@@ -4901,12 +4940,13 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 					ptr_app->is_silent = true;
 				}
 
-				_r_fastlock_releaseexclusive (&lock_access);
-				_r_fastlock_releaseexclusive (&lock_apply);
-
 				_wfp_transact_commit (__LINE__);
 
 				ptr_app->last_notify = _r_unixtime_now ();
+
+				_r_fastlock_releaseexclusive (&lock_apply);
+				_r_fastlock_releaseexclusive (&lock_access);
+
 				_app_freenotify (hash, false);
 
 				_r_fastlock_releaseexclusive (&lock_notification);
@@ -4923,7 +4963,6 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 			}
 
 			_r_fastlock_releaseexclusive (&lock_access);
-			_r_fastlock_releaseexclusive (&lock_apply);
 		}
 	}
 
@@ -5771,6 +5810,9 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 	_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
 
+	_r_fastlock_acquireexclusive (&lock_access);
+	_r_fastlock_acquireexclusive (&lock_apply);
+
 	if (is_install)
 	{
 		if (_wfp_initialize (true))
@@ -5783,6 +5825,9 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 		_wfp_uninitialize (true);
 	}
+
+	_r_fastlock_releaseexclusive (&lock_access);
+	_r_fastlock_releaseexclusive (&lock_apply);
 
 	_app_profilesave (app.GetHWND ());
 
@@ -7737,10 +7782,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						}
 					}
 
-					_r_fastlock_releaseexclusive (&lock_apply);
-					_r_fastlock_releaseexclusive (&lock_access);
 
 					_wfp_transact_commit (__LINE__);
+
+					_r_fastlock_releaseexclusive (&lock_apply);
+					_r_fastlock_releaseexclusive (&lock_access);
 
 					_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 					_app_profilesave (app.GetHWND ());
@@ -7835,10 +7881,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								}
 							}
 
+							_wfp_transact_commit (__LINE__);
+
 							_r_fastlock_releaseexclusive (&lock_apply);
 							_r_fastlock_releaseexclusive (&lock_access);
-
-							_wfp_transact_commit (__LINE__);
 
 							if (is_changed)
 							{
@@ -8250,7 +8296,7 @@ void _wfp_uninitialize (bool is_force)
 			{
 				// destroy callouts (deprecated)
 				{
-					const GUID callouts[] = {
+					static const GUID callouts[] = {
 						GUID_WfpOutboundCallout4_DEPRECATED,
 						GUID_WfpOutboundCallout6_DEPRECATED,
 						GUID_WfpInboundCallout4_DEPRECATED,
@@ -8282,8 +8328,6 @@ void _wfp_uninitialize (bool is_force)
 		// dropped packets logging (win7+)
 		if (_r_sys_validversion (6, 1))
 		{
-			_wfp_logunsubscribe ();
-
 			FWP_VALUE val;
 
 			// collect ipsec connection (win8+)
@@ -8303,6 +8347,8 @@ void _wfp_uninitialize (bool is_force)
 			if (result != ERROR_SUCCESS)
 				_app_logerror (L"FwpmEngineSetOption", result, L"FWPM_ENGINE_COLLECT_NET_EVENTS", false);
 		}
+
+		_wfp_logunsubscribe ();
 
 		FwpmEngineClose (config.hengine);
 		config.hengine = nullptr;
@@ -9428,10 +9474,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (config.is_nocheckboxnotify)
 							return FALSE;
 
-						_wfp_transact_start (__LINE__);
-
 						_r_fastlock_acquireexclusive (&lock_access);
 						_r_fastlock_acquireexclusive (&lock_apply);
+
+						_wfp_transact_start (__LINE__);
 
 						const size_t hash = lpnmlv->lParam;
 						PITEM_APP ptr_app = _app_getapplication (hash);
@@ -9455,10 +9501,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_wfp_create3filters (ptr_app, true);
 						}
 
+						_wfp_transact_commit (__LINE__);
+
 						_r_fastlock_releaseexclusive (&lock_access);
 						_r_fastlock_releaseexclusive (&lock_apply);
-
-						_wfp_transact_commit (__LINE__);
 
 						_r_listview_redraw (hwnd, IDC_LISTVIEW);
 					}
@@ -9845,8 +9891,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 
 				case PBT_APMRESUMECRITICAL:
-				case PBT_APMRESUMESUSPEND:
-				case PBT_APMRESUMEAUTOMATIC:
+				case  PBT_APMRESUMESUSPEND:
 				{
 					app.ConfigInit ();
 
@@ -10023,10 +10068,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				size_t item = LAST_VALUE;
 				const time_t current_time = _r_unixtime_now ();
 
-				_wfp_transact_start (__LINE__);
-
 				_r_fastlock_acquireexclusive (&lock_access);
 				_r_fastlock_acquireexclusive (&lock_apply);
+
+				_wfp_transact_start (__LINE__);
 
 				while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 				{
@@ -10034,10 +10079,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_app_timer_create (hwnd, hash, timers.at (idx), true);
 				}
 
+				_wfp_transact_commit (__LINE__);
+
 				_r_fastlock_releaseexclusive (&lock_apply);
 				_r_fastlock_releaseexclusive (&lock_access);
-
-				_wfp_transact_commit (__LINE__);
 
 				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 				_app_profilesave (hwnd);
@@ -10522,7 +10567,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					rstring buffer;
 
 					_r_fastlock_acquireexclusive (&lock_access);
-					_r_fastlock_acquireexclusive (&lock_apply);
 
 					if (
 						ctrl_id == IDM_CHECK ||
@@ -10530,6 +10574,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						ctrl_id == IDM_DISABLETIMER
 						)
 					{
+						_r_fastlock_acquireexclusive (&lock_apply);
+
 						_wfp_transact_start (__LINE__);
 					}
 
@@ -10616,13 +10662,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 
 					_r_fastlock_releaseexclusive (&lock_access);
-					_r_fastlock_releaseexclusive (&lock_apply);
 
 					if (ctrl_id == IDM_CHECK ||
 						ctrl_id == IDM_UNCHECK ||
 						ctrl_id == IDM_DISABLETIMER)
 					{
 						_wfp_transact_commit (__LINE__);
+
+						_r_fastlock_releaseexclusive (&lock_apply);
 
 						_app_notifyrefresh ();
 
@@ -10725,10 +10772,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
+					_wfp_transact_commit (__LINE__);
+
 					_r_fastlock_releaseexclusive (&lock_access);
 					_r_fastlock_releaseexclusive (&lock_apply);
-
-					_wfp_transact_commit (__LINE__);
 
 					if (item != LAST_VALUE)
 						ShowItem (hwnd, IDC_LISTVIEW, min (item, _r_listview_getitemcount (hwnd, IDC_LISTVIEW) - 1), -1);
@@ -10774,10 +10821,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
+					_wfp_transact_commit (__LINE__);
+
 					_r_fastlock_releaseexclusive (&lock_access);
 					_r_fastlock_releaseexclusive (&lock_apply);
-
-					_wfp_transact_commit (__LINE__);
 
 					if (is_deleted)
 					{
@@ -10808,10 +10855,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_timer_remove (hwnd, p.first, true);
 					}
 
+					_wfp_transact_commit (__LINE__);
+
 					_r_fastlock_releaseexclusive (&lock_access);
 					_r_fastlock_releaseexclusive (&lock_apply);
-
-					_wfp_transact_commit (__LINE__);
 
 					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 					_app_profilesave (hwnd);
@@ -10875,9 +10922,7 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR args, INT)
 
 	if (wcsstr (args, L"/uninstall"))
 	{
-		const bool is_enabled = _wfp_isfiltersinstalled ();
-
-		if (is_enabled)
+		if (_wfp_isfiltersinstalled ())
 		{
 			if (_app_installmessage (nullptr, false))
 			{
