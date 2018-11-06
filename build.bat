@@ -1,4 +1,4 @@
 @echo off
 
 cd ..\builder
-build simplewall simplewall 2.3.7
+build simplewall simplewall 2.3.8
