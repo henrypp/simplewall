@@ -1,5 +1,9 @@
+v2.3.8 (7 November 2018)
+- fixed #251
+- fixed #253
+
 v2.3.7 (5 November 2018)
-- fixed dropped events callbak subscription on latest win10
+- fixed dropped events callback subscription on latest win10
 - fixed notifications sound cannot be played in some cases
 - fixed fastlock race condition (critical)
 - cosmetic fixes
