@@ -35,6 +35,7 @@ std::unordered_map<size_t, ITEM_APP> apps;
 
 std::unordered_map<size_t, LPWSTR> cache_signatures;
 std::unordered_map<size_t, LPWSTR> cache_versions;
+std::unordered_map<size_t, LPWSTR> cache_hosts;
 
 std::vector<HANDLE> threads_pool;
 
@@ -4190,15 +4191,10 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 		_app_clear_threadpool (&threads_pool);
 
-		const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &ApplyThread, (LPVOID)is_install, CREATE_SUSPENDED, nullptr);
+		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install);
 
 		if (hthread)
-		{
 			threads_pool.push_back (hthread);
-
-			SetThreadPriority (hthread, THREAD_PRIORITY_ABOVE_NORMAL);
-			ResumeThread (hthread);
-		}
 
 		_r_fastlock_releaseexclusive (&lock_threadpool);
 
@@ -4221,13 +4217,15 @@ void _app_clear_logstack ()
 		if (!ptr_list)
 			break;
 
+		InterlockedDecrement (&log_stack.Count);
+
 		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
 		PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
 
-		delete ptr_log;
+		if (ptr_log)
+			delete ptr_log;
 
 		_aligned_free (ptr_entry);
-		InterlockedDecrement (&log_stack.Count);
 	}
 
 	InterlockedFlushSList (&log_stack.ListHead);
@@ -4363,12 +4361,33 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 	if (port)
 		StringCchCat (dest, cchDest, _r_fmt (L":%d", port));
 
-	if (is_appenddns && result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit && _app_canihaveaccess ())
+
+	if (is_appenddns && result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit)
 	{
+		const size_t hash = _r_str_hash (dest);
+
 		WCHAR hostBuff[NI_MAXHOST] = {0};
 
-		if (_app_resolveaddress (ptr_log->af, (ptr_log->af == AF_INET) ? (LPVOID)addrv4 : (LPVOID)addrv6, hostBuff, _countof (hostBuff)))
-			StringCchCat (dest, cchDest, _r_fmt (L" (%s)", hostBuff));
+		if (cache_hosts.find (hash) != cache_hosts.end ())
+		{
+			if (cache_hosts[hash])
+				StringCchCat (dest, cchDest, _r_fmt (L" (%s)", cache_hosts[hash]));
+		}
+		else
+		{
+			LPWSTR cache_ptr = nullptr;
+
+			if (_app_resolveaddress (ptr_log->af, (ptr_log->af == AF_INET) ? (LPVOID)addrv4 : (LPVOID)addrv6, hostBuff, _countof (hostBuff)))
+			{
+				StringCchCat (dest, cchDest, _r_fmt (L" (%s)", hostBuff));
+
+				cache_ptr = new WCHAR[wcslen (hostBuff) + 1];
+
+				StringCchCopy (cache_ptr, wcslen (hostBuff) + 1, hostBuff);
+			}
+
+			cache_hosts[hash] = cache_ptr;
+		}
 	}
 
 	return result;
@@ -4394,10 +4413,6 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 
 	if (config.hlogfile == nullptr || config.hlogfile == INVALID_HANDLE_VALUE)
 		return;
-
-	_r_fastlock_acquireexclusive (&lock_writelog);
-
-	_app_logchecklimit ();
 
 	// parse path
 	rstring path;
@@ -4467,6 +4482,10 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 		direction.GetString (),
 		(ptr_log->is_allow ? SZ_LOG_ALLOW : SZ_LOG_BLOCK)
 	);
+
+	_r_fastlock_acquireexclusive (&lock_writelog);
+
+	_app_logchecklimit ();
 
 	DWORD written = 0;
 	WriteFile (config.hlogfile, buffer.GetString (), DWORD (buffer.GetLength () * sizeof (WCHAR)), &written, nullptr);
@@ -4662,7 +4681,7 @@ void _app_notifycreatewindow ()
 		const INT IconSize = cxsmIcon + (cxsmIcon / 2);
 		const INT IconXXXX = app.GetDPI (20);
 
-		config.hnotification = CreateWindowEx (WS_EX_TOOLWINDOW | WS_EX_TOPMOST, NOTIFY_CLASS_DLG, nullptr, WS_POPUP, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
+		config.hnotification = CreateWindowEx (WS_EX_TOPMOST, NOTIFY_CLASS_DLG, nullptr, WS_POPUP, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
 
 		if (config.hnotification)
 		{
@@ -5249,86 +5268,79 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 
 UINT WINAPI LogThread (LPVOID lparam)
 {
-	_r_fastlock_acquireshared (&lock_eventcallback);
-
 	const HWND hwnd = (HWND)lparam;
 
+	const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
+	const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
+
+	_r_fastlock_acquireshared (&lock_eventcallback);
+
+	while (true)
 	{
-		const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
-		const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
-
-		while (true)
-		{
-			PSLIST_ENTRY ptr_list = InterlockedPopEntrySList (&log_stack.ListHead);
-
-			if (!ptr_list)
-				break;
-
-			PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
-			PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
-
-			if (ptr_log)
-			{
-				// apps collector
-				if (ptr_log->hash && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ())
-				{
-					_r_fastlock_acquireexclusive (&lock_access);
-					_app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
-					_r_fastlock_releaseexclusive (&lock_access);
-
-					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
-					_app_profilesave (hwnd);
-				}
-
-				if ((is_logenabled || is_notificationenabled) && (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ())))
-				{
-					_app_formataddress (ptr_log->remote_fmt, _countof (ptr_log->remote_fmt), ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, true);
-					_app_formataddress (ptr_log->local_fmt, _countof (ptr_log->local_fmt), ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, true);
-
-					// write log to a file
-					if (is_logenabled)
-						_app_logwrite (ptr_log);
-
-					// show notification (only for my own provider and file is present)
-					if (is_notificationenabled && !ptr_log->is_allow && ptr_log->is_myprovider && ptr_log->hash)
-					{
-						if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
-						{
-							bool is_silent = true;
-
-							// read app config
-							{
-								_r_fastlock_acquireshared (&lock_access);
-
-								PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
-
-								if (ptr_app)
-									is_silent = ptr_app->is_silent;
-
-								_r_fastlock_releaseshared (&lock_access);
-							}
-
-							if (!is_silent)
-								_app_notifyadd (ptr_log);
-						}
-					}
-				}
-
-				delete ptr_log;
-			}
-
-			_aligned_free (ptr_entry);
-			InterlockedDecrement (&log_stack.Count);
-		}
-
-		// check slist is empty
-		InterlockedFlushSList (&log_stack.ListHead);
-
 		PSLIST_ENTRY ptr_list = InterlockedPopEntrySList (&log_stack.ListHead);
 
-		if (ptr_list)
-			_app_clear_logstack ();
+		if (!ptr_list)
+			break;
+
+		InterlockedDecrement (&log_stack.Count);
+
+		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
+		PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
+
+		if (ptr_log)
+		{
+			// apps collector
+			if (ptr_log->hash && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ())
+			{
+				_r_fastlock_acquireexclusive (&lock_access);
+				_app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
+				_r_fastlock_releaseexclusive (&lock_access);
+
+				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+				_app_profilesave (hwnd);
+			}
+
+			if ((is_logenabled || is_notificationenabled) && (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ())))
+			{
+				_app_formataddress (ptr_log->remote_fmt, _countof (ptr_log->remote_fmt), ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, true);
+				_app_formataddress (ptr_log->local_fmt, _countof (ptr_log->local_fmt), ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, true);
+
+				// write log to a file
+				if (is_logenabled)
+					_app_logwrite (ptr_log);
+
+				// show notification (only for my own provider and file is present)
+				if (is_notificationenabled && !ptr_log->is_allow && ptr_log->is_myprovider && ptr_log->hash)
+				{
+					if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
+					{
+						bool is_silent = true;
+
+						// read app config
+						{
+							_r_fastlock_acquireshared (&lock_access);
+
+							PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
+
+							if (ptr_app)
+								is_silent = ptr_app->is_silent;
+
+							_r_fastlock_releaseshared (&lock_access);
+						}
+
+						if (!is_silent)
+							_app_notifyadd (ptr_log);
+					}
+				}
+			}
+
+			delete ptr_log;
+		}
+
+		_aligned_free (ptr_entry);
 	}
+
+	InterlockedFlushSList (&log_stack.ListHead);
 
 	_r_fastlock_releaseshared (&lock_eventcallback);
 
@@ -5538,13 +5550,14 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 				ptr_log->direction = FWP_DIRECTION_INBOUND;
 		}
 
-		// push into a singly linked list
+		// push into a slist
 		{
 			// prevent pool overflow
-			if (log_stack.Count >= NOTIFY_LIMIT_POOL_SIZE)
+			if (InterlockedCompareExchange (&log_stack.Count, 0, 0) >= NOTIFY_LIMIT_POOL_SIZE)
 				_app_clear_logstack ();
 
 			ptr_entry->Body = (ULONG_PTR)ptr_log;
+
 			InterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
 			InterlockedIncrement (&log_stack.Count);
 
@@ -5555,18 +5568,14 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 				_app_clear_threadpool (&threads_pool);
 
-				const HANDLE hthread = (HANDLE)_beginthreadex (nullptr, 0, &LogThread, app.GetHWND (), CREATE_SUSPENDED, nullptr);
+				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND ());
 
 				if (hthread)
 				{
 					threads_pool.push_back (hthread);
-
-					SetThreadPriority (hthread, THREAD_PRIORITY_ABOVE_NORMAL);
-					ResumeThread (hthread);
 				}
 				else
 				{
-					_app_clear_logstack ();
 					_app_clear_threadpool (&threads_pool);
 				}
 
@@ -6281,7 +6290,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				PITEM_PROTOCOL ptr_protocol = &protocols.at (i);
 
-				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"%s [#%d]", ptr_protocol->pname, ptr_protocol->id).GetString ());
+				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"#%03d - %s", ptr_protocol->id, ptr_protocol->pname).GetString ());
 				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETITEMDATA, i + 1, (LPARAM)ptr_protocol->id);
 
 				if (ptr_rule && ptr_rule->protocol == ptr_protocol->id)
@@ -6956,15 +6965,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							// protocol
 							if (ptr_rule->protocol)
-							{
-								for (size_t j = 0; j < protocols.size (); j++)
-								{
-									PITEM_PROTOCOL ptr_protocol = &protocols.at (j);
-
-									if (ptr_rule->protocol == ptr_protocol->id)
-										protocol = ptr_protocol->pname;
-								}
-							}
+								protocol = _app_getprotoname (ptr_rule->protocol);
 
 							const size_t group_id = _app_getrulegroup (ptr_rule);
 
@@ -9095,17 +9096,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// initialize protocols
 			{
-				addprotocol (L"TCP", IPPROTO_TCP);
-				addprotocol (L"UDP", IPPROTO_UDP);
-				addprotocol (L"ICMPv4", IPPROTO_ICMP);
-				addprotocol (L"ICMPv6", IPPROTO_ICMPV6);
-				addprotocol (L"IPv4", IPPROTO_IPV4);
-				addprotocol (L"IPv6", IPPROTO_IPV6);
-				addprotocol (L"IGMP", IPPROTO_IGMP);
-				addprotocol (L"L2TP", IPPROTO_L2TP);
-				addprotocol (L"SCTP", IPPROTO_SCTP);
-				addprotocol (L"RDP", IPPROTO_RDP);
-				addprotocol (L"RAW", IPPROTO_RAW);
+				addprotocol (L"tcp", IPPROTO_TCP);
+				addprotocol (L"udp", IPPROTO_UDP);
+				addprotocol (L"icmp", IPPROTO_ICMP);
+				addprotocol (L"ipv6-icmp", IPPROTO_ICMPV6);
+				addprotocol (L"ipv4", IPPROTO_IPV4);
+				addprotocol (L"ipv6", IPPROTO_IPV6);
+				addprotocol (L"igmp", IPPROTO_IGMP);
+				addprotocol (L"l2tp", IPPROTO_L2TP);
+				addprotocol (L"sctp", IPPROTO_SCTP);
+				addprotocol (L"rdp", IPPROTO_RDP);
+				addprotocol (L"raw", IPPROTO_RAW);
 			}
 
 			// initialize thread objects
@@ -9826,6 +9827,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					app.LocaleMenu (submenu, IDS_LOGCLEAR, IDM_TRAY_LOGCLEAR, false, nullptr);
 
 					app.LocaleMenu (submenu, IDS_TRAY_LOGERR, errlog_id, true, nullptr);
+
+					{
+						const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
+
+						if (!_r_fs_exists (path))
+						{
+							EnableMenuItem (submenu, IDM_TRAY_LOGSHOW, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+							EnableMenuItem (submenu, IDM_TRAY_LOGCLEAR, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						}
+					}
 
 					if (_r_fs_exists (_r_dbg_getpath (APP_NAME_SHORT)))
 					{
