@@ -372,7 +372,7 @@ typedef struct _ITEM_LIST_HEAD
 {
 	SLIST_HEADER ListHead;
 
-	ULONG Count;
+	volatile ULONG Count;
 } ITEM_LIST_HEAD, *PITEM_LIST_HEAD;
 
 typedef struct _ITEM_LIST_ENTRY
