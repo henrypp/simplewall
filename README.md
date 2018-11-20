@@ -26,6 +26,13 @@ You can download either the installer or portable version. For correct working, 
 To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
 ```
 
+#### FAQ:
+- [Is it safe to use simplewall with Windows Firewall? (discussion)](https://github.com/henrypp/simplewall/issues/254)
+- [Are internet connections blocked when simplewall is not running?](https://github.com/henrypp/simplewall/issues/119#issuecomment-364003679)
+- [How can i disable blocklist entirely?](https://github.com/henrypp/simplewall/issues/243)
+- [How to fix Windows Update and Windows Store internet access (temporary solution)](https://github.com/henrypp/simplewall/issues/206#issuecomment-439830634)
+- [How to fix IDM Browser Integration](https://github.com/henrypp/simplewall/issues/111)
+
 Website: [www.henrypp.org](https://www.henrypp.org)<br />
 Support: support@henrypp.org<br />
 <br />
