@@ -1,3 +1,9 @@
+v2.3.9 (20 November 2018)
+- fixed resolving ip addresses may hang out net events thread (issue #256)
+- fixed net events subscription when option is not set
+- fixed protocol names
+- fixed bugs
+
 v2.3.8 (7 November 2018)
 - fixed #251
 - fixed #253
