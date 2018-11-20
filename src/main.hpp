@@ -60,7 +60,6 @@
 #define LEN_HOST_MAX 512
 
 #define TIMER_DEFAULT 1
-#define TIMER_LOG_CALLBACK 2000
 
 #define FILTERS_TIMEOUT 9000
 
@@ -251,7 +250,7 @@ struct STATIC_DATA
 	bool is_nocheckboxnotify = false;
 	bool is_wsainit = false;
 	bool is_neteventset = false;
-	bool is_providerinstalled = false;
+	bool is_providerset = false;
 };
 
 typedef struct _ITEM_STATUS
