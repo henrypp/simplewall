@@ -70,8 +70,8 @@ _R_FASTLOCK lock_eventcallback;
 
 ITEM_LIST_HEAD log_stack = {0};
 
-bool _wfp_initialize (bool is_force);
-void _wfp_uninitialize (bool is_force);
+bool _wfp_initialize (bool is_full);
+void _wfp_uninitialize (bool is_full);
 
 void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN);
 bool _app_timer_create (HWND hwnd, size_t hash, time_t seconds, bool is_transact);
@@ -1862,7 +1862,7 @@ void _wfp_destroyfilters (bool is_full)
 		return;
 
 	// dropped packets logging (win7+)
-	if (_r_sys_validversion (6, 1))
+	if (config.is_neteventset && _r_sys_validversion (6, 1))
 		_wfp_logunsubscribe ();
 
 	for (auto &p : apps)
@@ -3581,6 +3581,9 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 bool _wfp_isfiltersinstalled ()
 {
+	if (config.is_providerset)
+		return true;
+
 	HKEY hkey = nullptr;
 	bool result = false;
 
@@ -4145,7 +4148,7 @@ void _wfp_installfilters ()
 	SetDlgItemText (app.GetHWND (), IDC_START_BTN, app.LocaleString (IDS_TRAY_STOP, nullptr));
 
 	// dropped packets logging (win7+)
-	if (_r_sys_validversion (6, 1))
+	if (config.is_neteventset && _r_sys_validversion (6, 1))
 		_wfp_logsubscribe ();
 }
 
@@ -4274,7 +4277,7 @@ bool _app_logchecklimit ()
 bool _app_loginit (bool is_install)
 {
 	// dropped packets logging (win7+)
-	if (!_r_sys_validversion (6, 1))
+	if (!config.hnetevent || !_r_sys_validversion (6, 1))
 		return false;
 
 	// reset all handles
@@ -4292,7 +4295,7 @@ bool _app_loginit (bool is_install)
 		return true; // already closed
 
 	// check if log enabled
-	if (!app.ConfigGet (L"IsLogEnabled", false).AsBool () || !_wfp_isfiltersinstalled ())
+	if (!app.ConfigGet (L"IsLogEnabled", false).AsBool ())
 		return false;
 
 	bool result = false;
@@ -7942,7 +7945,7 @@ bool _wfp_logunsubscribe ()
 
 	if (config.hnetevent)
 	{
-		HMODULE hlib = LoadLibrary (L"fwpuclnt.dll");
+		const HMODULE hlib = LoadLibrary (L"fwpuclnt.dll");
 
 		if (hlib)
 		{
@@ -8167,7 +8170,7 @@ bool _wfp_initialize (bool is_full)
 
 						if (rc != ERROR_SUCCESS)
 						{
-							_app_logerror (L"FwpmEngineSetSecurityInfo", rc, nullptr, false);
+							_app_logerror (L"FwpmEngineSetSecurityInfo", rc, nullptr, true);
 						}
 						else
 						{
@@ -8177,7 +8180,7 @@ bool _wfp_initialize (bool is_full)
 							rc = FwpmNetEventsSetSecurityInfo (config.hengine, DACL_SECURITY_INFORMATION, nullptr, nullptr, pNewDacl, nullptr);
 
 							if (rc != ERROR_SUCCESS)
-								_app_logerror (L"FwpmNetEventsSetSecurityInfo", rc, nullptr, false);
+								_app_logerror (L"FwpmNetEventsSetSecurityInfo", rc, nullptr, true);
 						}
 					}
 
@@ -8188,8 +8191,70 @@ bool _wfp_initialize (bool is_full)
 		}
 	}
 
+	if (config.hengine  && is_full && !config.is_providerset)
+	{
+		const bool is_intransact = _wfp_transact_start (__LINE__);
+
+		// create provider
+		FWPM_PROVIDER provider = {0};
+
+		provider.displayData.name = APP_NAME;
+		provider.displayData.description = APP_NAME;
+
+		provider.providerKey = GUID_WfpProvider;
+		provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
+
+		rc = FwpmProviderAdd (config.hengine, &provider, nullptr);
+
+		if (rc != ERROR_SUCCESS && rc != FWP_E_ALREADY_EXISTS)
+		{
+			if (is_intransact)
+				FwpmTransactionAbort (config.hengine);
+
+			_app_logerror (L"FwpmProviderAdd", rc, nullptr, false);
+			result = false;
+		}
+		else
+		{
+			FWPM_SUBLAYER sublayer = {0};
+
+			sublayer.displayData.name = APP_NAME;
+			sublayer.displayData.description = APP_NAME;
+
+			sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
+			sublayer.subLayerKey = GUID_WfpSublayer;
+			sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
+			sublayer.weight = (UINT16)app.ConfigGet (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT).AsUint (); // highest weight for UINT16
+
+			rc = FwpmSubLayerAdd (config.hengine, &sublayer, nullptr);
+
+			if (rc != ERROR_SUCCESS && rc != FWP_E_ALREADY_EXISTS)
+			{
+				if (is_intransact)
+					FwpmTransactionAbort (config.hengine);
+
+				_app_logerror (L"FwpmSubLayerAdd", rc, nullptr, false);
+				result = false;
+			}
+			else
+			{
+				if (is_intransact)
+				{
+					if (_wfp_transact_commit (__LINE__))
+						result = true;
+				}
+				else
+				{
+					result = true;
+				}
+
+				config.is_providerset = true;
+			}
+		}
+	}
+
 	// dropped packets logging (win7+)
-	if (is_full && result && config.hengine && !config.hnetevent && _r_sys_validversion (6, 1))
+	if (config.hengine && is_full && !config.is_neteventset && _r_sys_validversion (6, 1))
 	{
 		FWP_VALUE val;
 
@@ -8225,109 +8290,33 @@ bool _wfp_initialize (bool is_full)
 				if (rc != ERROR_SUCCESS)
 					_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS", false);
 			}
-		}
-	}
 
-	if (is_full && config.hengine && !_wfp_isfiltersinstalled ())
-	{
-		if (!_wfp_transact_start (__LINE__))
-		{
-			result = false;
-		}
-		else
-		{
-			// create provider
-			FWPM_PROVIDER provider = {0};
-
-			provider.displayData.name = APP_NAME;
-			provider.displayData.description = APP_NAME;
-
-			provider.providerKey = GUID_WfpProvider;
-			provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
-
-			rc = FwpmProviderAdd (config.hengine, &provider, nullptr);
-
-			if (rc != ERROR_SUCCESS && rc != FWP_E_ALREADY_EXISTS)
-			{
-				_app_logerror (L"FwpmProviderAdd", rc, nullptr, false);
-				FwpmTransactionAbort (config.hengine);
-				result = false;
-			}
-			else
-			{
-				FWPM_SUBLAYER sublayer = {0};
-
-				sublayer.displayData.name = APP_NAME;
-				sublayer.displayData.description = APP_NAME;
-
-				sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
-				sublayer.subLayerKey = GUID_WfpSublayer;
-				sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
-				sublayer.weight = (UINT16)app.ConfigGet (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT).AsUint (); // highest weight for UINT16
-
-				rc = FwpmSubLayerAdd (config.hengine, &sublayer, nullptr);
-
-				if (rc != ERROR_SUCCESS && rc != FWP_E_ALREADY_EXISTS)
-				{
-					_app_logerror (L"FwpmSubLayerAdd", rc, nullptr, false);
-					FwpmTransactionAbort (config.hengine);
-					result = false;
-				}
-				else
-				{
-					if (_wfp_transact_commit (__LINE__))
-						result = true;
-				}
-			}
+			config.is_neteventset = true;
 		}
 	}
 
 	return result;
 }
 
-void _wfp_uninitialize (bool is_force)
+void _wfp_uninitialize (bool is_full)
 {
-	if (config.hengine)
+	if (config.psession)
 	{
-		DWORD result;
+		delete config.psession;
+		config.psession = nullptr;
+	}
 
-		if (is_force)
-		{
-			if (_wfp_transact_start (__LINE__))
-			{
-				// destroy callouts (deprecated)
-				{
-					static const GUID callouts[] = {
-						GUID_WfpOutboundCallout4_DEPRECATED,
-						GUID_WfpOutboundCallout6_DEPRECATED,
-						GUID_WfpInboundCallout4_DEPRECATED,
-						GUID_WfpInboundCallout6_DEPRECATED,
-						GUID_WfpListenCallout4_DEPRECATED,
-						GUID_WfpListenCallout6_DEPRECATED
-					};
+	config.is_securityinfoset = false;
 
-					for (UINT i = 0; i < _countof (callouts); i++)
-						FwpmCalloutDeleteByKey (config.hengine, &callouts[i]);
-				}
+	if (!config.hengine)
+		return;
 
-				// destroy sublayer
-				result = FwpmSubLayerDeleteByKey (config.hengine, &GUID_WfpSublayer);
+	DWORD result;
 
-				if (result != ERROR_SUCCESS && result != FWP_E_SUBLAYER_NOT_FOUND)
-					_app_logerror (L"FwpmSubLayerDeleteByKey", result, nullptr, false);
-
-				// destroy provider
-				result = FwpmProviderDeleteByKey (config.hengine, &GUID_WfpProvider);
-
-				if (result != ERROR_SUCCESS && result != FWP_E_PROVIDER_NOT_FOUND)
-					_app_logerror (L"FwpmProviderDeleteByKey", result, nullptr, false);
-
-				_wfp_transact_commit (__LINE__);
-			}
-		}
-
+	if (is_full)
+	{
 		// dropped packets logging (win7+)
-		if (_r_sys_validversion (6, 1))
+		if (config.is_neteventset && _r_sys_validversion (6, 1))
 		{
 			FWP_VALUE val;
 
@@ -8347,21 +8336,49 @@ void _wfp_uninitialize (bool is_force)
 
 			if (result != ERROR_SUCCESS)
 				_app_logerror (L"FwpmEngineSetOption", result, L"FWPM_ENGINE_COLLECT_NET_EVENTS", false);
+
+			_wfp_logunsubscribe ();
+
+			config.is_neteventset = false;
 		}
 
-		_wfp_logunsubscribe ();
+		const bool is_intransact = _wfp_transact_start (__LINE__);
 
-		FwpmEngineClose (config.hengine);
-		config.hengine = nullptr;
+		// destroy callouts (deprecated)
+		{
+			static const GUID callouts[] = {
+				GUID_WfpOutboundCallout4_DEPRECATED,
+				GUID_WfpOutboundCallout6_DEPRECATED,
+				GUID_WfpInboundCallout4_DEPRECATED,
+				GUID_WfpInboundCallout6_DEPRECATED,
+				GUID_WfpListenCallout4_DEPRECATED,
+				GUID_WfpListenCallout6_DEPRECATED
+			};
+
+			for (UINT i = 0; i < _countof (callouts); i++)
+				FwpmCalloutDeleteByKey (config.hengine, &callouts[i]);
+		}
+
+		// destroy sublayer
+		result = FwpmSubLayerDeleteByKey (config.hengine, &GUID_WfpSublayer);
+
+		if (result != ERROR_SUCCESS && result != FWP_E_SUBLAYER_NOT_FOUND)
+			_app_logerror (L"FwpmSubLayerDeleteByKey", result, nullptr, false);
+
+		// destroy provider
+		result = FwpmProviderDeleteByKey (config.hengine, &GUID_WfpProvider);
+
+		if (result != ERROR_SUCCESS && result != FWP_E_PROVIDER_NOT_FOUND)
+			_app_logerror (L"FwpmProviderDeleteByKey", result, nullptr, false);
+
+		if (is_intransact)
+			_wfp_transact_commit (__LINE__);
+
+		config.is_providerset = false;
 	}
 
-	if (config.psession)
-	{
-		delete config.psession;
-		config.psession = nullptr;
-	}
-
-	config.is_securityinfoset = false;
+	FwpmEngineClose (config.hengine);
+	config.hengine = nullptr;
 }
 
 void DrawFrameBorder (HDC hdc, HWND hwnd, COLORREF clr)
@@ -9110,7 +9127,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 
 			// initialize thread objects
-			config.done_evt = CreateEventEx (nullptr, _r_fmt (L"Local\\%.10zu", _r_rand (0xFF000000, 0xFFFFFFFF)), 0, EVENT_ALL_ACCESS);
+			config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
 
 			// initialize dropped packets log callback thread (win7+)
 			if (_r_sys_validversion (6, 1))

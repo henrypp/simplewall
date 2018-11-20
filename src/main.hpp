@@ -62,7 +62,7 @@
 #define TIMER_DEFAULT 1
 #define TIMER_LOG_CALLBACK 2000
 
-#define FILTERS_TIMEOUT 6000
+#define FILTERS_TIMEOUT 9000
 
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
@@ -250,6 +250,8 @@ struct STATIC_DATA
 	bool is_notifymouse = false;
 	bool is_nocheckboxnotify = false;
 	bool is_wsainit = false;
+	bool is_neteventset = false;
+	bool is_providerinstalled = false;
 };
 
 typedef struct _ITEM_STATUS
