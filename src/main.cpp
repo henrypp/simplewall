@@ -8102,7 +8102,7 @@ bool _wfp_initialize (bool is_full)
 	}
 
 	// set security info
-	if (is_full && result && config.hengine && !config.is_securityinfoset)
+	if (is_full && config.hengine && !config.is_securityinfoset)
 	{
 		if (config.psid)
 		{
@@ -8191,7 +8191,7 @@ bool _wfp_initialize (bool is_full)
 		}
 	}
 
-	if (config.hengine  && is_full && !config.is_providerset)
+	if (is_full && config.hengine && !config.is_providerset)
 	{
 		const bool is_intransact = _wfp_transact_start (__LINE__);
 
@@ -8254,7 +8254,7 @@ bool _wfp_initialize (bool is_full)
 	}
 
 	// dropped packets logging (win7+)
-	if (config.hengine && is_full && !config.is_neteventset && _r_sys_validversion (6, 1))
+	if (is_full && config.hengine && !config.is_neteventset && _r_sys_validversion (6, 1))
 	{
 		FWP_VALUE val;
 
@@ -8313,35 +8313,35 @@ void _wfp_uninitialize (bool is_full)
 
 	DWORD result;
 
-	if (is_full)
+	// dropped packets logging (win7+)
+	if (config.is_neteventset && _r_sys_validversion (6, 1))
 	{
-		// dropped packets logging (win7+)
-		if (config.is_neteventset && _r_sys_validversion (6, 1))
+		_wfp_logunsubscribe ();
+
+		FWP_VALUE val;
+
+		// collect ipsec connection (win8+)
+		if (_r_sys_validversion (6, 2))
 		{
-			FWP_VALUE val;
-
-			// collect ipsec connection (win8+)
-			if (_r_sys_validversion (6, 2))
-			{
-				val.type = FWP_UINT32;
-				val.uint32 = 0;
-
-				FwpmEngineSetOption (config.hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
-			}
-
 			val.type = FWP_UINT32;
 			val.uint32 = 0;
 
-			result = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
-
-			if (result != ERROR_SUCCESS)
-				_app_logerror (L"FwpmEngineSetOption", result, L"FWPM_ENGINE_COLLECT_NET_EVENTS", false);
-
-			_wfp_logunsubscribe ();
-
-			config.is_neteventset = false;
+			FwpmEngineSetOption (config.hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 		}
 
+		val.type = FWP_UINT32;
+		val.uint32 = 0;
+
+		result = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+
+		if (result != ERROR_SUCCESS)
+			_app_logerror (L"FwpmEngineSetOption", result, L"FWPM_ENGINE_COLLECT_NET_EVENTS", false);
+
+		config.is_neteventset = false;
+	}
+
+	if (is_full)
+	{
 		const bool is_intransact = _wfp_transact_start (__LINE__);
 
 		// destroy callouts (deprecated)
@@ -9919,7 +9919,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 
 				case PBT_APMRESUMECRITICAL:
-				case  PBT_APMRESUMESUSPEND:
+				case PBT_APMRESUMESUSPEND:
 				{
 					app.ConfigInit ();
 
