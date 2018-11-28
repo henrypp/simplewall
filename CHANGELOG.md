@@ -1,3 +1,7 @@
+v2.3.10 (28 November 2018)
+- fixed old bug where incorrect rules are may accepted as filters
+- fixed bugs
+
 v2.3.9 (20 November 2018)
 - fixed resolving ip addresses may hang out net events thread (issue #256)
 - fixed net events subscription when option is not set
