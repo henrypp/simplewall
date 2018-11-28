@@ -57,7 +57,6 @@
 #define BACKUP_HOURS_PERIOD 1 // make backup every 1 hour (default)
 
 #define LEN_IP_MAX 68
-#define LEN_HOST_MAX 512
 
 #define TIMER_DEFAULT 1
 
@@ -432,7 +431,7 @@ typedef struct _ITEM_PROTOCOL
 
 typedef struct _ITEM_ADDRESS
 {
-	WCHAR host[LEN_HOST_MAX] = {0};
+	WCHAR host[NI_MAXHOST] = {0};
 
 	FWP_V4_ADDR_AND_MASK* paddr4 = nullptr;
 	FWP_V6_ADDR_AND_MASK* paddr6 = nullptr;
