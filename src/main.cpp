@@ -2126,29 +2126,29 @@ void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode
 	_app_refreshstatus (hwnd);
 }
 
-bool _app_canihaveaccess ()
-{
-	bool result = false;
-
-	_r_fastlock_acquireshared (&lock_access);
-
-	PITEM_APP const ptr_app = _app_getapplication (config.myhash);
-
-	if (ptr_app)
-	{
-		const EnumMode mode = (EnumMode)app.ConfigGet (L"Mode", ModeWhitelist).AsUint ();
-
-		result = (mode == ModeWhitelist && ptr_app->is_enabled || mode == ModeBlacklist && !ptr_app->is_enabled);
-	}
-
-	_r_fastlock_releaseshared (&lock_access);
-
-	return result;
-}
+//bool _app_canihaveaccess ()
+//{
+//	bool result = false;
+//
+//	_r_fastlock_acquireshared (&lock_access);
+//
+//	PITEM_APP const ptr_app = _app_getapplication (config.myhash);
+//
+//	if (ptr_app)
+//	{
+//		const EnumMode mode = (EnumMode)app.ConfigGet (L"Mode", ModeWhitelist).AsUint ();
+//
+//		result = (mode == ModeWhitelist && ptr_app->is_enabled || mode == ModeBlacklist && !ptr_app->is_enabled);
+//	}
+//
+//	_r_fastlock_releaseshared (&lock_access);
+//
+//	return result;
+//}
 
 bool _app_ruleisport (LPCWSTR rule)
 {
-	if (!rule)
+	if (!rule || !rule[0])
 		return false;
 
 	const size_t length = wcslen (rule);
@@ -2164,37 +2164,36 @@ bool _app_ruleisport (LPCWSTR rule)
 
 bool _app_ruleishost (LPCWSTR rule)
 {
-	if (!rule)
+	if (!rule || !rule[0])
 		return false;
 
-	size_t dotcounter = 0;
-	size_t semicoloncounter = 0;
-	bool have_nonhex = false;
+	NET_ADDRESS_INFO ni;
+	SecureZeroMemory (&ni, sizeof (ni));
 
-	for (size_t i = (wcslen (rule) - 1); i != LAST_VALUE; i--)
-	{
-		const WCHAR ch = _r_str_lower (rule[i]);
+	USHORT port = 0;
+	BYTE prefix_length = 0;
 
-		if (ch == L'-')
-			continue;
+	static const DWORD types = NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE;
+	const DWORD errcode = ParseNetworkString (rule, types, &ni, &port, &prefix_length);
 
-		else if (ch == L'/') // prefix length set
-			return false;
+	return (errcode == ERROR_SUCCESS);
+}
 
-		else if (ch == L':' && (++semicoloncounter > 1)) // ipv6
-			return false;
+bool _app_ruleisip (LPCWSTR rule)
+{
+	if (!rule || !rule[0])
+		return false;
 
-		else if (ch == L'.' && (++dotcounter >= 4))
-			return false;
+	NET_ADDRESS_INFO ni;
+	SecureZeroMemory (&ni, sizeof (ni));
 
-		else if ((ch >= L'g' && ch <= L'z'))
-			return true;
-	}
+	USHORT port = 0;
+	BYTE prefix_length = 0;
 
-	if (have_nonhex && dotcounter <= 3)
-		return true;
+	static const DWORD types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
+	const DWORD errcode = ParseNetworkString (rule, types, &ni, &port, &prefix_length);
 
-	return false;
+	return (errcode == ERROR_SUCCESS);
 }
 
 rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
@@ -2228,11 +2227,11 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 		}
 	}
 
-	const DNS_STATUS dnsStatus = DnsQuery (host, DNS_TYPE_ALL, DNS_QUERY_BYPASS_CACHE | DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, pSrvList, &ppQueryResultsSet, nullptr);
+	const DNS_STATUS dnsStatus = DnsQuery (host, DNS_TYPE_ALL, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, pSrvList, &ppQueryResultsSet, nullptr);
 
 	if (dnsStatus != ERROR_SUCCESS)
 	{
-		_app_logerror (L"DnsQuery", dnsStatus, host, false);
+		_app_logerror (L"DnsQuery", dnsStatus, host, true);
 	}
 	else
 	{
@@ -2342,7 +2341,7 @@ bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format
 				if (host.IsEmpty ())
 					return false;
 
-				StringCchCopy (paddr_dns, LEN_HOST_MAX, host);
+				StringCchCopy (paddr_dns, NI_MAXHOST, host);
 			}
 
 			return true;
@@ -2363,7 +2362,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		return true;
 
 	EnumRuleType type = TypeUnknown;
-	size_t range_pos = rstring::npos;
+	size_t range_pos = range_pos = rule.Find (L'-');
 
 	if (ptype)
 		type = *ptype;
@@ -2374,17 +2373,24 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		if (_app_ruleisport (rule))
 			type = TypePort;
 
+		else if ((range_pos == rstring::npos) ? _app_ruleisip (rule) : (_app_ruleisip (rule.Midded (0, range_pos)) && _app_ruleisip (rule.Midded (range_pos + 1))))
+			type = TypeIp;
+
+		else if (_app_ruleishost (rule))
+			type = TypeHost;
+
 		else
-			type = _app_ruleishost (rule) ? TypeHost : TypeIp;
+			return false;
 	}
 
 	if (type == TypeUnknown)
 		return false;
 
+	if (!ptr_addr)
+		return true;
+
 	if (type == TypePort || type == TypeIp)
 	{
-		range_pos = rule.Find (L'-');
-
 		if (ptr_addr && range_pos != rstring::npos)
 			ptr_addr->is_range = true;
 	}
@@ -2392,7 +2398,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 	WCHAR range_start[LEN_IP_MAX] = {0};
 	WCHAR range_end[LEN_IP_MAX] = {0};
 
-	if (range_pos != rstring::npos)
+	if (type == TypePort || type == TypeIp)
 	{
 		StringCchCopy (range_start, _countof (range_start), rule.Midded (0, range_pos));
 		StringCchCopy (range_end, _countof (range_end), rule.Midded (range_pos + 1));
@@ -2440,57 +2446,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 
 		USHORT port2 = 0;
 
-		if (range_pos == rstring::npos)
-		{
-			// ...ip/host
-			if (_app_parsenetworkstring (rule, &format, &port2, &addr4, &addr6, ptr_addr ? ptr_addr->host : nullptr))
-			{
-				if (format == NET_ADDRESS_IPV4)
-				{
-					if (ptr_addr && ptr_addr->paddr4)
-					{
-						ptr_addr->paddr4->mask = addr4.mask;
-						ptr_addr->paddr4->addr = addr4.addr;
-					}
-				}
-				else if (format == NET_ADDRESS_IPV6)
-				{
-					if (ptr_addr && ptr_addr->paddr6)
-					{
-						ptr_addr->paddr6->prefixLength = addr6.prefixLength;
-						CopyMemory (ptr_addr->paddr6->addr, addr6.addr, FWP_V6_ADDR_SIZE);
-					}
-				}
-				else if (format == NET_ADDRESS_DNS_NAME)
-				{
-					if (ptr_addr)
-					{
-						ptr_addr->type = TypeHost;
-						//ptr_addr->host = <hosts>;
-					}
-				}
-				else
-				{
-					return false;
-				}
-
-				if (ptr_addr)
-				{
-					ptr_addr->format = format;
-					ptr_addr->type = TypeIp;
-
-					if (port2)
-						ptr_addr->port = port2;
-				}
-
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else
+		if (type == TypeIp && range_pos != rstring::npos)
 		{
 			// ...ip range (start)
 			if (_app_parsenetworkstring (range_start, &format, &port2, &addr4, &addr6, nullptr))
@@ -2559,6 +2515,56 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 				ptr_addr->type = TypeIp;
 			}
 		}
+		else
+		{
+			// ...ip/host
+			if (_app_parsenetworkstring (rule, &format, &port2, &addr4, &addr6, ptr_addr ? ptr_addr->host : nullptr))
+			{
+				if (format == NET_ADDRESS_IPV4)
+				{
+					if (ptr_addr && ptr_addr->paddr4)
+					{
+						ptr_addr->paddr4->mask = addr4.mask;
+						ptr_addr->paddr4->addr = addr4.addr;
+					}
+				}
+				else if (format == NET_ADDRESS_IPV6)
+				{
+					if (ptr_addr && ptr_addr->paddr6)
+					{
+						ptr_addr->paddr6->prefixLength = addr6.prefixLength;
+						CopyMemory (ptr_addr->paddr6->addr, addr6.addr, FWP_V6_ADDR_SIZE);
+					}
+				}
+				else if (format == NET_ADDRESS_DNS_NAME)
+				{
+					//if (ptr_addr)
+					//{
+					//	ptr_addr->type = TypeHost;
+					//	ptr_addr->host = <hosts>;
+					//}
+				}
+				else
+				{
+					return false;
+				}
+
+				if (ptr_addr)
+				{
+					ptr_addr->format = format;
+					ptr_addr->type = TypeIp;
+
+					if (port2)
+						ptr_addr->port = port2;
+				}
+
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
 	}
 
 	return true;
@@ -2619,7 +2625,7 @@ void ByteBlobFree (FWP_BYTE_BLOB** lpblob)
 
 DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumAppType type)
 {
-	if (!path || !lpblob)
+	if (!path || !path[0] || !lpblob)
 		return ERROR_BAD_ARGUMENTS;
 
 	rstring path_buff;
@@ -2803,7 +2809,9 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 			}
 			else
 			{
+				ByteBlobFree (&bSid);
 				ByteBlobFree (&bPath);
+
 				_app_logerror (L"FwpmGetAppIdFromFileName", rc, path, true);
 
 				return false;
@@ -2819,7 +2827,16 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 		{
 			if (rules[i] && rules[i][0] && rules[i][0] != L'*')
 			{
-				if (_app_parserulestring (rules[i], &addr, ptype))
+				if (!_app_parserulestring (rules[i], &addr, ptype))
+				{
+					ByteBlobFree (&bSid);
+					ByteBlobFree (&bPath);
+
+					_app_logerror (L"_app_parserulestring", ERROR_INVALID_NETNAME, _r_fmt (L"[%s: %s]", name, rules[i]), false);
+
+					return false;
+				}
+				else
 				{
 					if (i == 0)
 					{
