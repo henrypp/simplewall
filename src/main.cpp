@@ -2362,7 +2362,17 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		return true;
 
 	EnumRuleType type = TypeUnknown;
-	size_t range_pos = range_pos = rule.Find (L'-');
+	const size_t range_pos = rule.Find (L'-');
+	const bool is_range = (range_pos != rstring::npos);
+
+	WCHAR range_start[LEN_IP_MAX] = {0};
+	WCHAR range_end[LEN_IP_MAX] = {0};
+
+	if (is_range)
+	{
+		StringCchCopy (range_start, _countof (range_start), rule.Midded (0, range_pos));
+		StringCchCopy (range_end, _countof (range_end), rule.Midded (range_pos + 1));
+	}
 
 	if (ptype)
 		type = *ptype;
@@ -2373,7 +2383,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		if (_app_ruleisport (rule))
 			type = TypePort;
 
-		else if ((range_pos == rstring::npos) ? _app_ruleisip (rule) : (_app_ruleisip (rule.Midded (0, range_pos)) && _app_ruleisip (rule.Midded (range_pos + 1))))
+		else if (is_range ? (_app_ruleisip (range_start) && _app_ruleisip (range_end)) : _app_ruleisip (rule))
 			type = TypeIp;
 
 		else if (_app_ruleishost (rule))
@@ -2391,47 +2401,31 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 
 	if (type == TypePort || type == TypeIp)
 	{
-		if (ptr_addr && range_pos != rstring::npos)
-			ptr_addr->is_range = true;
-	}
-
-	WCHAR range_start[LEN_IP_MAX] = {0};
-	WCHAR range_end[LEN_IP_MAX] = {0};
-
-	if (type == TypePort || type == TypeIp)
-	{
-		StringCchCopy (range_start, _countof (range_start), rule.Midded (0, range_pos));
-		StringCchCopy (range_end, _countof (range_end), rule.Midded (range_pos + 1));
+		ptr_addr->is_range = is_range;
 	}
 
 	if (type == TypePort)
 	{
-		if (range_pos == rstring::npos)
+		if (!is_range)
 		{
 			// ...port
-			if (ptr_addr)
-			{
-				ptr_addr->type = TypePort;
-				ptr_addr->port = (UINT16)rule.AsUlong ();
-			}
+			ptr_addr->type = TypePort;
+			ptr_addr->port = (UINT16)rule.AsUlong ();
 
 			return true;
 		}
 		else
 		{
 			// ...port range
-			if (ptr_addr)
+			ptr_addr->type = TypePort;
+
+			if (ptr_addr->prange)
 			{
-				ptr_addr->type = TypePort;
+				ptr_addr->prange->valueLow.type = FWP_UINT16;
+				ptr_addr->prange->valueLow.uint16 = (UINT16)wcstoul (range_start, nullptr, 10);
 
-				if (ptr_addr->prange)
-				{
-					ptr_addr->prange->valueLow.type = FWP_UINT16;
-					ptr_addr->prange->valueLow.uint16 = (UINT16)wcstoul (range_start, nullptr, 10);
-
-					ptr_addr->prange->valueHigh.type = FWP_UINT16;
-					ptr_addr->prange->valueHigh.uint16 = (UINT16)wcstoul (range_end, nullptr, 10);
-				}
+				ptr_addr->prange->valueHigh.type = FWP_UINT16;
+				ptr_addr->prange->valueHigh.uint16 = (UINT16)wcstoul (range_end, nullptr, 10);
 			}
 
 			return true;
@@ -2446,14 +2440,14 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 
 		USHORT port2 = 0;
 
-		if (type == TypeIp && range_pos != rstring::npos)
+		if (type == TypeIp && is_range)
 		{
 			// ...ip range (start)
 			if (_app_parsenetworkstring (range_start, &format, &port2, &addr4, &addr6, nullptr))
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
-					if (ptr_addr && ptr_addr->prange)
+					if (ptr_addr->prange)
 					{
 						ptr_addr->prange->valueLow.type = FWP_UINT32;
 						ptr_addr->prange->valueLow.uint32 = addr4.addr;
@@ -2461,7 +2455,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 				}
 				else if (format == NET_ADDRESS_IPV6)
 				{
-					if (ptr_addr && ptr_addr->prange)
+					if (ptr_addr->prange)
 					{
 						ptr_addr->prange->valueLow.type = FWP_BYTE_ARRAY16_TYPE;
 						CopyMemory (ptr_addr->prange->valueLow.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
@@ -2472,7 +2466,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 					return false;
 				}
 
-				if (port2 && ptr_addr && !ptr_addr->port)
+				if (port2 && !ptr_addr->port)
 					ptr_addr->port = port2;
 			}
 			else
@@ -2485,7 +2479,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
-					if (ptr_addr && ptr_addr->prange)
+					if (ptr_addr->prange)
 					{
 						ptr_addr->prange->valueHigh.type = FWP_UINT32;
 						ptr_addr->prange->valueHigh.uint32 = addr4.addr;
@@ -2493,7 +2487,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 				}
 				else if (format == NET_ADDRESS_IPV6)
 				{
-					if (ptr_addr && ptr_addr->prange)
+					if (ptr_addr->prange)
 					{
 						ptr_addr->prange->valueHigh.type = FWP_BYTE_ARRAY16_TYPE;
 						CopyMemory (ptr_addr->prange->valueHigh.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
@@ -2509,20 +2503,17 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 				return false;
 			}
 
-			if (ptr_addr)
-			{
-				ptr_addr->format = format;
-				ptr_addr->type = TypeIp;
-			}
+			ptr_addr->format = format;
+			ptr_addr->type = TypeIp;
 		}
 		else
 		{
 			// ...ip/host
-			if (_app_parsenetworkstring (rule, &format, &port2, &addr4, &addr6, ptr_addr ? ptr_addr->host : nullptr))
+			if (_app_parsenetworkstring (rule, &format, &port2, &addr4, &addr6, ptr_addr->host))
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
-					if (ptr_addr && ptr_addr->paddr4)
+					if (ptr_addr->paddr4)
 					{
 						ptr_addr->paddr4->mask = addr4.mask;
 						ptr_addr->paddr4->addr = addr4.addr;
@@ -2530,7 +2521,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 				}
 				else if (format == NET_ADDRESS_IPV6)
 				{
-					if (ptr_addr && ptr_addr->paddr6)
+					if (ptr_addr->paddr6)
 					{
 						ptr_addr->paddr6->prefixLength = addr6.prefixLength;
 						CopyMemory (ptr_addr->paddr6->addr, addr6.addr, FWP_V6_ADDR_SIZE);
@@ -2549,14 +2540,11 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 					return false;
 				}
 
-				if (ptr_addr)
-				{
-					ptr_addr->format = format;
-					ptr_addr->type = TypeIp;
+				ptr_addr->format = format;
+				ptr_addr->type = TypeIp;
 
-					if (port2)
-						ptr_addr->port = port2;
-				}
+				if (port2)
+					ptr_addr->port = port2;
 
 				return true;
 			}
@@ -2832,7 +2820,7 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 					ByteBlobFree (&bSid);
 					ByteBlobFree (&bPath);
 
-					_app_logerror (L"_app_parserulestring", ERROR_INVALID_NETNAME, _r_fmt (L"[%s: %s]", name, rules[i]), false);
+					_app_logerror (L"_app_parserulestring", ERROR_INVALID_NETNAME, _r_fmt (L"[%s (%s)]", rules[i], name), false);
 
 					return false;
 				}
