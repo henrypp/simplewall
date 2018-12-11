@@ -318,11 +318,27 @@ bool _app_listviewinitfont (PLOGFONT plf)
 	return true;
 }
 
+void _app_cleanup_cache (std::unordered_map<size_t, LPWSTR>* ptr_map)
+{
+	if (ptr_map->size () < UMAP_CACHE_LIMIT)
+		return;
+
+	for (auto &p : *ptr_map)
+	{
+		LPWSTR ptr_buffer = p.second;
+
+		if (ptr_buffer)
+			delete[] ptr_buffer;
+	}
+
+	ptr_map->clear ();
+}
+
 rstring _app_getlogviewer ()
 {
 	rstring result;
 
-	LPCWSTR csvviewer[] = {
+	static LPCWSTR csvviewer[] = {
 		L"CSVFileView.exe",
 		L"CSVFileView\\CSVFileView.exe",
 		L"..\\CSVFileView\\CSVFileView.exe"
@@ -737,6 +753,8 @@ bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
 						if (ppointer)
 							StringCchCopy (ppointer, length, buffer);
 
+						_app_cleanup_cache (&cache_versions);
+
 						*pinfo = ppointer;
 						cache_versions[hash] = ppointer;
 					}
@@ -960,6 +978,8 @@ bool _app_verifysignature (size_t hash, LPCWSTR path, LPCWSTR* psigner)
 							{
 								*psigner = nullptr;
 							}
+
+							_app_cleanup_cache (&cache_signatures);
 
 							cache_signatures[hash] = ppointer;
 						}
@@ -4402,7 +4422,6 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 	{
 		const size_t hash = _r_str_hash (dest);
 
-
 		if (cache_hosts.find (hash) != cache_hosts.end ())
 		{
 			if (cache_hosts[hash])
@@ -4423,6 +4442,8 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 
 				StringCchCopy (cache_ptr, len, hostBuff);
 			}
+
+			_app_cleanup_cache (&cache_hosts);
 
 			cache_hosts[hash] = cache_ptr;
 		}
