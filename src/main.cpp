@@ -1432,16 +1432,19 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 	_app_getappicon (ptr_app, false, &ptr_app->icon_id, nullptr);
 
-	const size_t item = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
+	if (hwnd)
+	{
+		const size_t item = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
 
-	config.is_nocheckboxnotify = true;
+		config.is_nocheckboxnotify = true;
 
-	_r_listview_additem (hwnd, IDC_LISTVIEW, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (hash, ptr_app), hash);
-	_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 1, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
+		_r_listview_additem (hwnd, IDC_LISTVIEW, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (hash, ptr_app), hash);
+		_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 1, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
 
-	_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, is_enabled);
+		_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, is_enabled);
 
-	config.is_nocheckboxnotify = false;
+		config.is_nocheckboxnotify = false;
+	}
 
 	return hash;
 }
@@ -3280,7 +3283,9 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 					if (root.attribute (L"type").empty () || root.attribute (L"type").as_uint () == XmlApps)
 					{
 						apps.clear ();
-						_r_listview_deleteallitems (hwnd, IDC_LISTVIEW);
+
+						if (hwnd)
+							_r_listview_deleteallitems (hwnd, IDC_LISTVIEW);
 
 						for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
 						{
@@ -3295,8 +3300,11 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 				}
 			}
 
-			_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
-			_r_listview_redraw (hwnd, IDC_LISTVIEW);
+			if (hwnd)
+			{
+				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+				_r_listview_redraw (hwnd, IDC_LISTVIEW);
+			}
 		}
 
 		if (!is_meadded)
@@ -3304,7 +3312,8 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 		apps[config.myhash].is_undeletable = true; // disable deletion for me ;)
 
-		ShowItem (hwnd, IDC_LISTVIEW, item_id, scroll_pos);
+		if (hwnd)
+			ShowItem (hwnd, IDC_LISTVIEW, item_id, scroll_pos);
 	}
 
 	// load rules config
@@ -3349,7 +3358,8 @@ void _app_profileload (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 
 	_r_fastlock_releaseexclusive (&lock_access);
 
-	_app_refreshstatus (hwnd);
+	if (hwnd)
+		_app_refreshstatus (hwnd);
 }
 
 bool _app_isrulepresent (size_t hash)
@@ -6091,7 +6101,7 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 	}
 	else
 	{
-		tdc.cButtons = 2;
+		tdc.cButtons = _countof (td_buttons) - 1;
 
 		StringCchCopy (button_text_1, _countof (button_text_1), app.LocaleString (IDS_TRAY_STOP, nullptr));
 		StringCchCopy (button_text_2, _countof (button_text_2), app.LocaleString (IDS_CLOSE, nullptr));
@@ -8142,7 +8152,7 @@ bool _wfp_initialize (bool is_full)
 	}
 
 	// set security info
-	if (is_full && config.hengine && !config.is_securityinfoset)
+	if (config.hengine && !config.is_securityinfoset)
 	{
 		if (config.psid)
 		{
@@ -8231,7 +8241,7 @@ bool _wfp_initialize (bool is_full)
 		}
 	}
 
-	if (is_full && config.hengine && !config.is_providerset)
+	if (config.hengine && !config.is_providerset)
 	{
 		const bool is_intransact = _wfp_transact_start (__LINE__);
 
@@ -8952,100 +8962,121 @@ void _app_generate_addmenu (HMENU submenu)
 	}
 }
 
+void _app_initialize ()
+{
+	// initialize spinlocks
+	_r_fastlock_initialize (&lock_apply);
+	_r_fastlock_initialize (&lock_access);
+	_r_fastlock_initialize (&lock_writelog);
+	_r_fastlock_initialize (&lock_notification);
+	_r_fastlock_initialize (&lock_threadpool);
+	_r_fastlock_initialize (&lock_eventcallback);
+
+	// set privileges
+	{
+		LPCWSTR privileges[] = {
+			SE_BACKUP_NAME,
+			SE_DEBUG_NAME,
+			SE_SECURITY_NAME,
+			SE_TAKE_OWNERSHIP_NAME,
+		};
+
+		_r_sys_setprivilege (privileges, _countof (privileges), true);
+	}
+
+	// set process priority
+	SetPriorityClass (GetCurrentProcess (), ABOVE_NORMAL_PRIORITY_CLASS);
+
+	// static initializer
+	config.wd_length = GetWindowsDirectory (config.windows_dir, _countof (config.windows_dir));
+	config.tmp1_length = GetTempPath (_countof (config.tmp1_dir), config.tmp1_dir);
+	GetLongPathName (rstring (config.tmp1_dir), config.tmp1_dir, _countof (config.tmp1_dir));
+
+	StringCchPrintf (config.apps_path, _countof (config.apps_path), L"%s\\" XML_APPS, app.GetProfileDirectory ());
+	StringCchPrintf (config.rules_blocklist_path, _countof (config.rules_blocklist_path), L"%s\\" XML_BLOCKLIST, app.GetProfileDirectory ());
+	StringCchPrintf (config.rules_system_path, _countof (config.rules_system_path), L"%s\\" XML_RULES_SYSTEM, app.GetProfileDirectory ());
+	StringCchPrintf (config.rules_custom_path, _countof (config.rules_custom_path), L"%s\\" XML_RULES_CUSTOM, app.GetProfileDirectory ());
+	StringCchPrintf (config.rules_config_path, _countof (config.rules_config_path), L"%s\\" XML_RULES_CONFIG, app.GetProfileDirectory ());
+
+	StringCchPrintf (config.apps_path_backup, _countof (config.apps_path_backup), L"%s\\" XML_APPS L".bak", app.GetProfileDirectory ());
+	StringCchPrintf (config.rules_config_path_backup, _countof (config.rules_config_path_backup), L"%s\\" XML_RULES_CONFIG L".bak", app.GetProfileDirectory ());
+	StringCchPrintf (config.rules_custom_path_backup, _countof (config.rules_custom_path_backup), L"%s\\" XML_RULES_CUSTOM L".bak", app.GetProfileDirectory ());
+
+	config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME);
+	config.myhash = _r_str_hash (app.GetBinaryPath ());
+
+	// get current user security identifier
+	if (!config.psid)
+	{
+		// get user sid
+		HANDLE token = nullptr;
+		DWORD token_length = 0;
+		PTOKEN_USER token_user = nullptr;
+
+		if (OpenProcessToken (GetCurrentProcess (), TOKEN_QUERY, &token))
+		{
+			GetTokenInformation (token, TokenUser, nullptr, token_length, &token_length);
+
+			if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
+			{
+				token_user = new TOKEN_USER[token_length];
+
+				if (token_user)
+				{
+					if (GetTokenInformation (token, TokenUser, token_user, token_length, &token_length))
+					{
+						SID_NAME_USE sid_type;
+
+						WCHAR username[MAX_PATH] = {0};
+						WCHAR domain[MAX_PATH] = {0};
+
+						DWORD length1 = _countof (username);
+						DWORD length2 = _countof (domain);
+
+						if (LookupAccountSid (nullptr, token_user->User.Sid, username, &length1, domain, &length2, &sid_type))
+							StringCchPrintf (config.title, _countof (config.title), L"%s [%s\\%s]", APP_NAME, domain, username);
+
+						config.psid = new BYTE[SECURITY_MAX_SID_SIZE];
+
+						if (config.psid)
+							CopyMemory (config.psid, token_user->User.Sid, SECURITY_MAX_SID_SIZE);
+					}
+
+					delete[] token_user;
+				}
+			}
+
+			CloseHandle (token);
+		}
+
+		if (!config.title[0])
+			StringCchCopy (config.title, _countof (config.title), APP_NAME); // fallback
+	}
+
+	// initialize timers
+	{
+		config.htimer = CreateTimerQueue ();
+
+		timers.push_back (_R_SECONDSCLOCK_MIN (10));
+		timers.push_back (_R_SECONDSCLOCK_MIN (20));
+		timers.push_back (_R_SECONDSCLOCK_MIN (30));
+		timers.push_back (_R_SECONDSCLOCK_HOUR (1));
+		timers.push_back (_R_SECONDSCLOCK_HOUR (2));
+		timers.push_back (_R_SECONDSCLOCK_HOUR (4));
+		timers.push_back (_R_SECONDSCLOCK_HOUR (6));
+	}
+
+	// initialize thread objects
+	config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
+}
+
 INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	switch (msg)
 	{
 		case WM_INITDIALOG:
 		{
-			// static initializer
-			config.wd_length = GetWindowsDirectory (config.windows_dir, _countof (config.windows_dir));
-			config.tmp1_length = GetTempPath (_countof (config.tmp1_dir), config.tmp1_dir);
-			GetLongPathName (rstring (config.tmp1_dir), config.tmp1_dir, _countof (config.tmp1_dir));
-
-			StringCchPrintf (config.apps_path, _countof (config.apps_path), L"%s\\" XML_APPS, app.GetProfileDirectory ());
-			StringCchPrintf (config.rules_blocklist_path, _countof (config.rules_blocklist_path), L"%s\\" XML_BLOCKLIST, app.GetProfileDirectory ());
-			StringCchPrintf (config.rules_system_path, _countof (config.rules_system_path), L"%s\\" XML_RULES_SYSTEM, app.GetProfileDirectory ());
-			StringCchPrintf (config.rules_custom_path, _countof (config.rules_custom_path), L"%s\\" XML_RULES_CUSTOM, app.GetProfileDirectory ());
-			StringCchPrintf (config.rules_config_path, _countof (config.rules_config_path), L"%s\\" XML_RULES_CONFIG, app.GetProfileDirectory ());
-
-			StringCchPrintf (config.apps_path_backup, _countof (config.apps_path_backup), L"%s\\" XML_APPS L".bak", app.GetProfileDirectory ());
-			StringCchPrintf (config.rules_config_path_backup, _countof (config.rules_config_path_backup), L"%s\\" XML_RULES_CONFIG L".bak", app.GetProfileDirectory ());
-			StringCchPrintf (config.rules_custom_path_backup, _countof (config.rules_custom_path_backup), L"%s\\" XML_RULES_CUSTOM L".bak", app.GetProfileDirectory ());
-
-			config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME);
-			config.myhash = _r_str_hash (app.GetBinaryPath ());
-
-			// set privileges
-			{
-				LPCWSTR privileges[] = {
-					SE_BACKUP_NAME,
-					SE_DEBUG_NAME,
-					SE_SECURITY_NAME,
-					SE_TAKE_OWNERSHIP_NAME,
-				};
-
-				_r_sys_setprivilege (privileges, _countof (privileges), true);
-			}
-
-			// set process priority
-			SetPriorityClass (GetCurrentProcess (), ABOVE_NORMAL_PRIORITY_CLASS);
-
-			// initialize spinlocks
-			_r_fastlock_initialize (&lock_apply);
-			_r_fastlock_initialize (&lock_access);
-			_r_fastlock_initialize (&lock_writelog);
-			_r_fastlock_initialize (&lock_notification);
-			_r_fastlock_initialize (&lock_threadpool);
-			_r_fastlock_initialize (&lock_eventcallback);
-
-			// get current user security identifier
-			if (!config.psid)
-			{
-				// get user sid
-				HANDLE token = nullptr;
-				DWORD token_length = 0;
-				PTOKEN_USER token_user = nullptr;
-
-				if (OpenProcessToken (GetCurrentProcess (), TOKEN_QUERY, &token))
-				{
-					GetTokenInformation (token, TokenUser, nullptr, token_length, &token_length);
-
-					if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
-					{
-						token_user = new TOKEN_USER[token_length];
-
-						if (token_user)
-						{
-							if (GetTokenInformation (token, TokenUser, token_user, token_length, &token_length))
-							{
-								SID_NAME_USE sid_type;
-
-								WCHAR username[MAX_PATH] = {0};
-								WCHAR domain[MAX_PATH] = {0};
-
-								DWORD length1 = _countof (username);
-								DWORD length2 = _countof (domain);
-
-								if (LookupAccountSid (nullptr, token_user->User.Sid, username, &length1, domain, &length2, &sid_type))
-									StringCchPrintf (config.title, _countof (config.title), L"%s [%s\\%s]", APP_NAME, domain, username);
-
-								config.psid = new BYTE[SECURITY_MAX_SID_SIZE];
-
-								if (config.psid)
-									CopyMemory (config.psid, token_user->User.Sid, SECURITY_MAX_SID_SIZE);
-							}
-
-							delete[] token_user;
-						}
-					}
-
-					CloseHandle (token);
-				}
-
-				if (!config.title[0])
-					StringCchCopy (config.title, _countof (config.title), APP_NAME); // fallback
-			}
+			_app_initialize ();
 
 			// init buffered paint
 			BufferedPaintInit ();
@@ -9125,19 +9156,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			if (_r_sys_validversion (6, 1))
 				app.SettingsAddPage (IDD_SETTINGS_LOG, IDS_TRAY_LOG);
 
-			// initialize timers
-			{
-				config.htimer = CreateTimerQueue ();
-
-				timers.push_back (_R_SECONDSCLOCK_MIN (10));
-				timers.push_back (_R_SECONDSCLOCK_MIN (20));
-				timers.push_back (_R_SECONDSCLOCK_MIN (30));
-				timers.push_back (_R_SECONDSCLOCK_HOUR (1));
-				timers.push_back (_R_SECONDSCLOCK_HOUR (2));
-				timers.push_back (_R_SECONDSCLOCK_HOUR (4));
-				timers.push_back (_R_SECONDSCLOCK_HOUR (6));
-			}
-
 			// initialize colors
 			{
 				addcolor (IDS_HIGHLIGHT_TIMER, L"IsHighlightTimer", true, L"ColorTimer", LISTVIEW_COLOR_TIMER);
@@ -9165,9 +9183,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				addprotocol (L"rdp", IPPROTO_RDP);
 				addprotocol (L"raw", IPPROTO_RAW);
 			}
-
-			// initialize thread objects
-			config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
 
 			// initialize dropped packets log callback thread (win7+)
 			if (_r_sys_validversion (6, 1))
@@ -9450,7 +9465,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_wfp_uninitialize (false);
 
-			DestroyWindow (config.hnotification);
+			if (config.hnotification)
+				DestroyWindow (config.hnotification);
+
 			UnregisterClass (NOTIFY_CLASS_DLG, app.GetHINSTANCE ());
 
 			BufferedPaintUnInit ();
@@ -10981,24 +10998,63 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return FALSE;
 }
 
-INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR args, INT)
+INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 {
 	MSG msg = {0};
 
-	if (wcsstr (args, L"/uninstall"))
+	// parse arguments
 	{
-		if (_wfp_isfiltersinstalled ())
-		{
-			if (_app_installmessage (nullptr, false))
-			{
-				if (_wfp_initialize (false))
-					_wfp_destroyfilters (true);
+		INT numargs = 0;
+		LPWSTR* arga = CommandLineToArgvW (GetCommandLine (), &numargs);
 
-				_wfp_uninitialize (true);
-			}
+		bool is_install = false;
+		bool is_uninstall = false;
+		bool is_silent = false;
+
+		for (INT i = 0; i < numargs; i++)
+		{
+			if (_wcsicmp (arga[i], L"/install") == 0)
+				is_install = true;
+
+			else if (_wcsicmp (arga[i], L"/uninstall") == 0)
+				is_uninstall = true;
+
+			else if (_wcsicmp (arga[i], L"/silent") == 0)
+				is_silent = true;
 		}
 
-		return ERROR_SUCCESS;
+		LocalFree (arga);
+
+		if (is_install || is_uninstall)
+		{
+			if (is_install)
+			{
+				if (app.IsAdmin () && (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true))))
+				{
+					_app_initialize ();
+					_app_profileload (nullptr);
+
+					if (_wfp_initialize (true))
+						_wfp_installfilters ();
+
+					_wfp_uninitialize (false);
+				}
+
+				return ERROR_SUCCESS;
+			}
+			else if (is_uninstall)
+			{
+				if (app.IsAdmin () && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
+				{
+					if (_wfp_initialize (false))
+						_wfp_destroyfilters (true);
+
+					_wfp_uninitialize (true);
+				}
+
+				return ERROR_SUCCESS;
+			}
+		}
 	}
 
 	if (app.CreateMainWindow (IDD_MAIN, IDI_MAIN, &DlgProc))
