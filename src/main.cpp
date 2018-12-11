@@ -3678,6 +3678,8 @@ bool _wfp_create4filters (PITEM_RULE ptr_rule, bool is_transact)
 
 	_wfp_destroy2filters (&ptr_rule->mfarr, true);
 
+	ptr_rule->is_haveerrors = false;
+
 	if (ptr_rule->is_enabled)
 	{
 		rstring::rvector rule_remote_arr = rstring (ptr_rule->prule_remote).AsVector (RULE_DELIMETER);
@@ -3756,6 +3758,8 @@ bool _wfp_create3filters (PITEM_APP ptr_app, bool is_transact)
 	}
 
 	_wfp_destroy2filters (&ptr_app->mfarr, true);
+
+	ptr_app->is_haveerrors = false;
 
 	if (ptr_app->is_enabled)
 		ptr_app->is_haveerrors = !_wfp_createrulefilter (ptr_app->display_name, ptr_app, nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, nullptr, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr);
@@ -4689,7 +4693,7 @@ void _app_notifycreatewindow ()
 		const INT IconSize = cxsmIcon + (cxsmIcon / 2);
 		const INT IconXXXX = app.GetDPI (20);
 
-		config.hnotification = CreateWindowEx (WS_EX_TOPMOST, NOTIFY_CLASS_DLG, nullptr, WS_POPUP, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
+		config.hnotification = CreateWindowEx (WS_EX_TOPMOST | WS_EX_TOOLWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
 
 		if (config.hnotification)
 		{
@@ -5486,7 +5490,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 						{
 							ptr_log->is_system = (filter->weight.uint8 == FILTER_WEIGHT_HIGHEST);
 							ptr_log->is_blocklist = (filter->weight.uint8 == FILTER_WEIGHT_BLOCKLIST);
-							ptr_log->is_custom = (filter->weight.uint8 == FILTER_WEIGHT_CUSTOM);
+							ptr_log->is_custom = (filter->weight.uint8 == FILTER_WEIGHT_CUSTOM) || (filter->weight.uint8 == FILTER_WEIGHT_CUSTOM_BLOCK);
 						}
 
 						if (FwpmProviderGetByKey (config.hengine, filter->providerKey, &provider) == ERROR_SUCCESS)
@@ -6023,51 +6027,70 @@ void _app_generate_processes ()
 
 bool _app_installmessage (HWND hwnd, bool is_install)
 {
-	WCHAR main[256] = {0};
-
-	WCHAR mode[128] = {0};
-	WCHAR mode1[128] = {0};
-	WCHAR mode2[128] = {0};
-
 	WCHAR flag[64] = {0};
+
+	WCHAR button_text_1[128] = {0};
+	WCHAR button_text_2[128] = {0};
+	WCHAR button_text_3[128] = {0};
+
+	WCHAR main[256] = {0};
 
 	INT result = 0;
 	BOOL is_flagchecked = FALSE;
-	INT radio_checked = 0;
 
 	TASKDIALOGCONFIG tdc = {0};
-	TASKDIALOG_BUTTON tdr[2] = {0};
+	TASKDIALOG_BUTTON td_buttons[3] = {0};
 
 	tdc.cbSize = sizeof (tdc);
-	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_SIZE_TO_CONTENT;
+	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_SIZE_TO_CONTENT | TDF_USE_COMMAND_LINKS;
 	tdc.hwndParent = hwnd;
 	tdc.pszWindowTitle = APP_NAME;
 	tdc.pszMainIcon = TD_WARNING_ICON;
-	tdc.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
-	tdc.pszMainInstruction = main;
+	//tdc.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
+	tdc.pszContent = main;
 	tdc.pszVerificationText = flag;
 	tdc.pfCallback = &_r_msg_callback;
 	tdc.lpCallbackData = MAKELONG (0, 1);
+
+	tdc.pButtons = td_buttons;
+
+	if (is_install)
+	{
+		tdc.cButtons = _countof (td_buttons);
+
+		td_buttons[0].nButtonID = IDM_TRAY_MODEWHITELIST;
+		td_buttons[0].pszButtonText = button_text_1;
+
+		td_buttons[1].nButtonID = IDM_TRAY_MODEBLACKLIST;
+		td_buttons[1].pszButtonText = button_text_2;
+
+		td_buttons[2].nButtonID = IDNO;
+		td_buttons[2].pszButtonText = button_text_3;
+
+		StringCchCopy (button_text_1, _countof (button_text_1), app.LocaleString (IDS_MODE_WHITELIST, nullptr));
+		StringCchCopy (button_text_2, _countof (button_text_2), app.LocaleString (IDS_MODE_BLACKLIST, nullptr));
+		StringCchCopy (button_text_3, _countof (button_text_3), app.LocaleString (IDS_CLOSE, nullptr));
+
+		tdc.nDefaultButton = IDM_TRAY_MODEWHITELIST + app.ConfigGet (L"Mode", ModeWhitelist).AsUint ();
+	}
+	else
+	{
+		tdc.cButtons = 2;
+
+		StringCchCopy (button_text_1, _countof (button_text_1), app.LocaleString (IDS_TRAY_STOP, nullptr));
+		StringCchCopy (button_text_2, _countof (button_text_2), app.LocaleString (IDS_CLOSE, nullptr));
+
+		td_buttons[0].nButtonID = IDYES;
+		td_buttons[0].pszButtonText = button_text_1;
+
+		td_buttons[1].nButtonID = IDNO;
+		td_buttons[1].pszButtonText = button_text_2;
+	}
 
 	if (is_install)
 	{
 		StringCchCopy (main, _countof (main), app.LocaleString (IDS_QUESTION_START, nullptr));
 		StringCchCopy (flag, _countof (flag), app.LocaleString (IDS_DISABLEWINDOWSFIREWALL_CHK, nullptr));
-
-		tdc.pszContent = mode;
-		tdc.pRadioButtons = tdr;
-		tdc.cRadioButtons = _countof (tdr);
-		tdc.nDefaultRadioButton = IDM_TRAY_MODEWHITELIST + app.ConfigGet (L"Mode", ModeWhitelist).AsUint ();
-
-		tdr[0].nButtonID = IDM_TRAY_MODEWHITELIST;
-		tdr[0].pszButtonText = mode1;
-
-		tdr[1].nButtonID = IDM_TRAY_MODEBLACKLIST;
-		tdr[1].pszButtonText = mode2;
-
-		StringCchCopy (mode, _countof (mode), app.LocaleString (IDS_TRAY_MODE, L":"));
-		StringCchCopy (mode1, _countof (mode1), app.LocaleString (IDS_MODE_WHITELIST, nullptr));
-		StringCchCopy (mode2, _countof (mode2), app.LocaleString (IDS_MODE_BLACKLIST, nullptr));
 
 		if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
 			tdc.dwFlags |= TDF_VERIFICATION_FLAG_CHECKED;
@@ -6081,15 +6104,15 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 			tdc.dwFlags |= TDF_VERIFICATION_FLAG_CHECKED;
 	}
 
-	if (_r_msg_taskdialog (&tdc, &result, &radio_checked, &is_flagchecked))
+	if (_r_msg_taskdialog (&tdc, &result, nullptr, &is_flagchecked))
 	{
-		if (result == IDYES)
+		if ((result == IDYES) || (result == IDM_TRAY_MODEWHITELIST) || (result == IDM_TRAY_MODEBLACKLIST))
 		{
 			if (is_install)
 			{
 				app.ConfigSet (L"IsDisableWindowsFirewallChecked", is_flagchecked ? true : false);
 
-				app.ConfigSet (L"Mode", DWORD ((radio_checked == IDM_TRAY_MODEWHITELIST) ? ModeWhitelist : ModeBlacklist));
+				app.ConfigSet (L"Mode", DWORD ((result == IDM_TRAY_MODEWHITELIST) ? ModeWhitelist : ModeBlacklist));
 				CheckMenuRadioItem (GetMenu (hwnd), IDM_TRAY_MODEWHITELIST, IDM_TRAY_MODEBLACKLIST, IDM_TRAY_MODEWHITELIST + app.ConfigGet (L"Mode", ModeWhitelist).AsUint (), MF_BYCOMMAND);
 
 				if (is_flagchecked)
@@ -7143,7 +7166,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								if (ptr_rule)
 								{
 									ptr_rule->is_enabled = new_val;
-									ptr_rule->is_haveerrors = false;
 
 									if (
 										dialog_id == IDD_SETTINGS_RULES_BLOCKLIST ||
@@ -7870,7 +7892,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 									if (ptr_rule->is_enabled != new_val)
 									{
 										ptr_rule->is_enabled = new_val;
-										ptr_rule->is_haveerrors = false;
 
 										config.is_nocheckboxnotify = true;
 
