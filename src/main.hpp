@@ -57,6 +57,7 @@
 #define BACKUP_HOURS_PERIOD 1 // make backup every 1 hour (default)
 
 #define LEN_IP_MAX 68
+#define UMAP_CACHE_LIMIT 512
 
 #define TIMER_DEFAULT 1
 

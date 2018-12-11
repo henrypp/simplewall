@@ -36,6 +36,7 @@ std::unordered_map<size_t, ITEM_APP> apps;
 std::unordered_map<size_t, LPWSTR> cache_signatures;
 std::unordered_map<size_t, LPWSTR> cache_versions;
 std::unordered_map<size_t, LPWSTR> cache_hosts;
+std::unordered_map<size_t, EnumRuleType> cache_types;
 
 std::vector<HANDLE> threads_pool;
 
@@ -2380,17 +2381,30 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 	// auto-parse rule type
 	if (type == TypeUnknown)
 	{
-		if (_app_ruleisport (rule))
-			type = TypePort;
+		const size_t hash = rule.Hash ();
 
-		else if (is_range ? (_app_ruleisip (range_start) && _app_ruleisip (range_end)) : _app_ruleisip (rule))
-			type = TypeIp;
+		if (cache_types.find (hash) != cache_types.end ())
+			type = cache_types[hash];
 
-		else if (_app_ruleishost (rule))
-			type = TypeHost;
+		if (type == TypeUnknown)
+		{
+			if (_app_ruleisport (rule))
+				type = TypePort;
 
-		else
-			return false;
+			else if (is_range ? (_app_ruleisip (range_start) && _app_ruleisip (range_end)) : _app_ruleisip (rule))
+				type = TypeIp;
+
+			else if (_app_ruleishost (rule))
+				type = TypeHost;
+
+			else
+				return false;
+
+			if (cache_types.size () >= UMAP_CACHE_LIMIT)
+				cache_types.clear ();
+
+			cache_types[hash] = type;
+		}
 	}
 
 	if (type == TypeUnknown)
@@ -9291,10 +9305,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			app.LocaleEnum ((HWND)GetSubMenu (menu, 2), LANG_MENU, true, IDX_LANGUAGE); // enum localizations
 
-			{
-				const bool state = _wfp_isfiltersinstalled ();
-				SetDlgItemText (hwnd, IDC_START_BTN, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr));
-			}
+			SetDlgItemText (hwnd, IDC_START_BTN, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr));
 
 			SetDlgItemText (hwnd, IDC_SETTINGS_BTN, app.LocaleString (IDS_SETTINGS, nullptr));
 			SetDlgItemText (hwnd, IDC_EXIT_BTN, app.LocaleString (IDS_EXIT, nullptr));
