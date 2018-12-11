@@ -22,6 +22,11 @@ You can download either the installer or portable version. For correct working, 
 - Localization support
 - IPv6 support
 
+#### Command line:
+There is list of arguments
+- `/install` - enable filtering (you can set `/silent` argument too, for install filters without prompt)
+- `/uninstall` - disable filtering with prompt
+
 ```
 To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
 ```
