@@ -1,3 +1,12 @@
+v2.3.11 (x December 2018)
+- added "/install" argument for install filtering
+- added cache auto clean up (to prevent overflow)
+- changed minimum size of main window (issue #269)
+- changed installation message
+- fixed notification window appears on taskbar (regression)
+- fixed exclude user rules option was not working
+- cosmetic fixes
+
 v2.3.10 (28 November 2018)
 - fixed old bug where incorrect rules are may accepted as filters
 - fixed bugs
