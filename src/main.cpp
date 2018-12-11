@@ -4392,7 +4392,6 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 	{
 		const size_t hash = _r_str_hash (dest);
 
-		WCHAR hostBuff[NI_MAXHOST] = {0};
 
 		if (cache_hosts.find (hash) != cache_hosts.end ())
 		{
@@ -4401,15 +4400,18 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 		}
 		else
 		{
+			WCHAR hostBuff[NI_MAXHOST] = {0};
 			LPWSTR cache_ptr = nullptr;
 
 			if (_app_resolveaddress (ptr_log->af, (ptr_log->af == AF_INET) ? (LPVOID)addrv4 : (LPVOID)addrv6, hostBuff, _countof (hostBuff)))
 			{
 				StringCchCat (dest, cchDest, _r_fmt (L" (%s)", hostBuff));
 
-				cache_ptr = new WCHAR[wcslen (hostBuff) + 1];
+				const size_t len = wcslen (hostBuff) + 1;
 
-				StringCchCopy (cache_ptr, wcslen (hostBuff) + 1, hostBuff);
+				cache_ptr = new WCHAR[len];
+
+				StringCchCopy (cache_ptr, len, hostBuff);
 			}
 
 			cache_hosts[hash] = cache_ptr;
@@ -4419,7 +4421,7 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 	return result;
 }
 
-rstring _app_getprotoname (UINT8 proto)
+static rstring _app_getprotoname (UINT8 proto)
 {
 	for (size_t i = 0; i < protocols.size (); i++)
 	{
@@ -6328,8 +6330,6 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// protocol
 			SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_ALL, nullptr).GetString ());
 			SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETCURSEL, 0, 0);
-
-			SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETEXTENDEDUI, 1, 0);
 
 			for (size_t i = 0; i < protocols.size (); i++)
 			{
