@@ -9,6 +9,11 @@ Simple tool to configure Windows Filtering Platform (WFP) which can configure ne
 The lightweight application is less than a megabyte, and it is compatible with Windows Vista and higher operating systems.
 You can download either the installer or portable version. For correct working, need administrator rights.
 
+#### Command line:
+There is list of arguments
+- `/install` - enable filtering (you can set `/silent` argument to skip prompt)
+- `/uninstall` - disable filtering
+
 ### Features:
 - Simple interface without annoying pop ups
 - [Rules editor](https://github.com/henrypp/simplewall/wiki/Rules-editor) (create your own rules)
@@ -21,11 +26,6 @@ You can download either the installer or portable version. For correct working, 
 - Free and open source
 - Localization support
 - IPv6 support
-
-#### Command line:
-There is list of arguments
-- `/install` - enable filtering (you can set `/silent` argument to skip prompt)
-- `/uninstall` - disable filtering
 
 ```
 To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
