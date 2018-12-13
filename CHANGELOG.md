@@ -3,7 +3,7 @@ v2.3.11 (x December 2018)
 - added cache auto clean up (to prevent overflow)
 - changed minimum size of main window (issue #269)
 - changed installation message
-- increased rule parsing speed
+- increased rule parsing speed (issue #276)
 - memory optimization
 - fixed notification window appears on taskbar (regression)
 - fixed exclude user rules option was not working
