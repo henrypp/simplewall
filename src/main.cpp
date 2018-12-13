@@ -42,8 +42,8 @@ std::vector<HANDLE> threads_pool;
 
 std::unordered_map<rstring, bool, rstring::hash, rstring::is_equal> rules_config;
 
-std::vector<ITEM_COLOR> colors;
-std::vector<ITEM_PROTOCOL> protocols;
+std::vector<PITEM_COLOR> colors;
+std::vector<PITEM_PROTOCOL> protocols;
 std::vector<PITEM_ADD> processes;
 std::vector<PITEM_ADD> packages;
 std::vector<PITEM_ADD> services;
@@ -339,21 +339,6 @@ bool _app_listviewinitfont (PLOGFONT plf)
 	return true;
 }
 
-void _app_cleanup_cache (std::unordered_map<size_t, LPWSTR>* ptr_map)
-{
-	if (ptr_map->size () < UMAP_CACHE_LIMIT)
-		return;
-
-	for (auto &p : *ptr_map)
-	{
-		LPWSTR ptr_buffer = p.second;
-
-		SAFE_DELETE_ARRAY (ptr_buffer);
-	}
-
-	ptr_map->clear ();
-}
-
 rstring _app_getlogviewer ()
 {
 	rstring result;
@@ -616,6 +601,150 @@ void _app_refreshstatus (HWND hwnd)
 	}
 }
 
+void _app_freenotify (size_t idx_orhash, bool is_idx)
+{
+	const size_t count = notifications.size ();
+
+	if (!count)
+		return;
+
+	if (is_idx)
+	{
+		PITEM_LOG ptr_log = notifications.at (idx_orhash);
+
+		SAFE_DELETE (ptr_log);
+
+		notifications.erase (notifications.begin () + idx_orhash);
+	}
+	else
+	{
+		for (size_t i = (count - 1); i != LAST_VALUE; i--)
+		{
+			PITEM_LOG ptr_log = notifications.at (i);
+
+			if (!ptr_log || ptr_log->hash == idx_orhash)
+			{
+				SAFE_DELETE (ptr_log);
+
+				notifications.erase (notifications.begin () + i);
+			}
+		}
+	}
+}
+
+bool _app_freeapplication (size_t hash)
+{
+	bool is_enabled = false;
+
+	PITEM_APP ptr_app = _app_getapplication (hash);
+
+	if (ptr_app)
+		is_enabled = ptr_app->is_enabled;
+
+	if (hash)
+	{
+		if (cache_signatures.find (hash) != cache_signatures.end ())
+		{
+			SAFE_DELETE_ARRAY (cache_signatures[hash]);
+
+			cache_signatures.erase (hash);
+		}
+
+		if (cache_versions.find (hash) != cache_versions.end ())
+		{
+			SAFE_DELETE_ARRAY (cache_versions[hash]);
+
+			cache_versions.erase (hash);
+		}
+
+		for (size_t i = 0; i < rules_custom.size (); i++)
+		{
+			PITEM_RULE ptr_rule = rules_custom.at (i);
+
+			if (ptr_rule)
+			{
+				if (ptr_rule->apps.find (hash) != ptr_rule->apps.end ())
+				{
+					ptr_rule->apps.erase (hash);
+
+					if (ptr_rule->is_enabled && !is_enabled)
+						is_enabled = true;
+
+					if (ptr_rule->is_enabled && ptr_rule->apps.empty ())
+						ptr_rule->is_enabled = false;
+				}
+			}
+		}
+
+		_r_fastlock_acquireexclusive (&lock_notification);
+		_app_freenotify (hash, false);
+		_r_fastlock_releaseexclusive (&lock_notification);
+
+		if (ptr_app->htimer)
+			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
+
+		_app_notifyrefresh ();
+
+		apps.erase (hash);
+	}
+
+	return is_enabled;
+}
+
+void _app_freecache (std::unordered_map<size_t, LPWSTR>* ptr_map)
+{
+	if (ptr_map->size () < UMAP_CACHE_LIMIT)
+		return;
+
+	for (auto &p : *ptr_map)
+	{
+		LPWSTR ptr_buffer = p.second;
+
+		SAFE_DELETE_ARRAY (ptr_buffer);
+	}
+
+	ptr_map->clear ();
+}
+
+void _app_freerule (PITEM_RULE* ptr)
+{
+	if (ptr)
+	{
+		PITEM_RULE ptr_rule = *ptr;
+
+		SAFE_DELETE (ptr_rule);
+
+		*ptr = nullptr;
+	}
+}
+
+void _app_freethreadpool (std::vector<HANDLE>* ptr_pool)
+{
+	if (!ptr_pool || ptr_pool->empty ())
+		return;
+
+	std::vector<size_t> remove_idx;
+
+	for (size_t i = 0; i < ptr_pool->size (); i++)
+	{
+		const HANDLE hndl = ptr_pool->at (i);
+
+		if (WaitForSingleObjectEx (hndl, 0, FALSE) == WAIT_OBJECT_0)
+		{
+			CloseHandle (hndl);
+			remove_idx.push_back (i);
+		}
+	}
+
+	if (remove_idx.empty ())
+		return;
+
+	for (size_t i = remove_idx.size (); i != 0; i--)
+	{
+		ptr_pool->erase (ptr_pool->begin () + remove_idx.at (i - 1));
+	}
+}
+
 bool _app_item_get (std::vector<PITEM_ADD>* pvec, size_t hash, rstring* display_name, rstring* real_path, PSID* lpsid, PSECURITY_DESCRIPTOR* lpsd, rstring* /*description*/)
 {
 	for (size_t i = 0; i < pvec->size (); i++)
@@ -778,7 +907,7 @@ bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
 						if (ppointer)
 							StringCchCopy (ppointer, length, buffer);
 
-						_app_cleanup_cache (&cache_versions);
+						_app_freecache (&cache_versions);
 
 						*pinfo = ppointer;
 						cache_versions[hash] = ppointer;
@@ -1004,7 +1133,7 @@ bool _app_verifysignature (size_t hash, LPCWSTR path, LPCWSTR* psigner)
 								*psigner = nullptr;
 							}
 
-							_app_cleanup_cache (&cache_signatures);
+							_app_freecache (&cache_signatures);
 
 							cache_signatures[hash] = ppointer;
 						}
@@ -1689,122 +1818,15 @@ rstring _app_rulesexpand (PITEM_RULE const ptr_rule)
 	return result;
 }
 
-void _app_freenotify (size_t idx_orhash, bool is_idx)
-{
-	const size_t count = notifications.size ();
-
-	if (!count)
-		return;
-
-	if (is_idx)
-	{
-		PITEM_LOG ptr_log = notifications.at (idx_orhash);
-
-		SAFE_DELETE (ptr_log);
-
-		notifications.erase (notifications.begin () + idx_orhash);
-	}
-	else
-	{
-		for (size_t i = (count - 1); i != LAST_VALUE; i--)
-		{
-			PITEM_LOG ptr_log = notifications.at (i);
-
-			if (!ptr_log || ptr_log->hash == idx_orhash)
-			{
-				SAFE_DELETE (ptr_log);
-
-				notifications.erase (notifications.begin () + i);
-			}
-		}
-	}
-}
-
-bool _app_freeapplication (size_t hash)
-{
-	bool is_enabled = false;
-
-	PITEM_APP ptr_app = _app_getapplication (hash);
-
-	if (ptr_app)
-		is_enabled = ptr_app->is_enabled;
-
-	if (hash)
-	{
-		if (cache_signatures.find (hash) != cache_signatures.end ())
-		{
-			SAFE_DELETE_ARRAY (cache_signatures[hash]);
-
-			cache_signatures.erase (hash);
-		}
-
-		if (cache_versions.find (hash) != cache_versions.end ())
-		{
-			SAFE_DELETE_ARRAY (cache_versions[hash]);
-
-			cache_versions.erase (hash);
-		}
-
-		for (size_t i = 0; i < rules_custom.size (); i++)
-		{
-			PITEM_RULE ptr_rule = rules_custom.at (i);
-
-			if (ptr_rule)
-			{
-				if (ptr_rule->apps.find (hash) != ptr_rule->apps.end ())
-				{
-					ptr_rule->apps.erase (hash);
-
-					if (ptr_rule->is_enabled && !is_enabled)
-						is_enabled = true;
-
-					if (ptr_rule->is_enabled && ptr_rule->apps.empty ())
-						ptr_rule->is_enabled = false;
-				}
-			}
-		}
-
-		_r_fastlock_acquireexclusive (&lock_notification);
-		_app_freenotify (hash, false);
-		_r_fastlock_releaseexclusive (&lock_notification);
-
-		if (ptr_app->htimer)
-			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
-
-		_app_notifyrefresh ();
-
-		apps.erase (hash);
-	}
-
-	return is_enabled;
-}
-
-void _app_freerule (PITEM_RULE* ptr)
-{
-	if (ptr)
-	{
-		PITEM_RULE ptr_rule = *ptr;
-
-		if (ptr_rule)
-		{
-			SAFE_DELETE_ARRAY (ptr_rule->pname);
-			SAFE_DELETE_ARRAY (ptr_rule->prule_remote);
-			SAFE_DELETE_ARRAY (ptr_rule->prule_local);
-
-			SAFE_DELETE (ptr_rule);
-
-			*ptr = nullptr;
-		}
-	}
-}
-
 COLORREF _app_getcolorvalue (size_t hash)
 {
 	size_t idx = LAST_VALUE;
 
 	for (size_t i = 0; i < colors.size (); i++)
 	{
-		if (colors.at (i).hash == hash)
+		PITEM_COLOR ptr_clr = colors.at (i);
+
+		if (ptr_clr && ptr_clr->hash == hash)
 		{
 			idx = i;
 			break;
@@ -1812,7 +1834,7 @@ COLORREF _app_getcolorvalue (size_t hash)
 	}
 
 	if (idx != LAST_VALUE)
-		return colors.at (idx).clr;
+		return colors.at (idx)->clr;
 
 	return 0;
 }
@@ -4319,33 +4341,6 @@ void _wfp_installfilters ()
 		_wfp_logsubscribe ();
 }
 
-void _app_clear_threadpool (std::vector<HANDLE>* ptr_pool)
-{
-	if (!ptr_pool || ptr_pool->empty ())
-		return;
-
-	std::vector<size_t> remove_idx;
-
-	for (size_t i = 0; i < ptr_pool->size (); i++)
-	{
-		const HANDLE hndl = ptr_pool->at (i);
-
-		if (WaitForSingleObjectEx (hndl, 0, FALSE) == WAIT_OBJECT_0)
-		{
-			CloseHandle (hndl);
-			remove_idx.push_back (i);
-		}
-	}
-
-	if (remove_idx.empty ())
-		return;
-
-	for (size_t i = remove_idx.size (); i != 0; i--)
-	{
-		ptr_pool->erase (ptr_pool->begin () + remove_idx.at (i - 1));
-	}
-}
-
 bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 {
 	if (_r_fastlock_islocked (&lock_apply))
@@ -4359,7 +4354,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 		_r_fastlock_acquireexclusive (&lock_threadpool);
 
-		_app_clear_threadpool (&threads_pool);
+		_app_freethreadpool (&threads_pool);
 
 		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install);
 
@@ -4500,45 +4495,48 @@ bool _app_loginit (bool is_install)
 	return result;
 }
 
-bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, FWP_DIRECTION dir, UINT16 port, bool is_appenddns)
+bool _app_formataddress (PITEM_LOG const ptr_log, FWP_DIRECTION dir, UINT16 port, LPWSTR* ptr_dest, bool is_appenddns)
 {
-	if (!dest || !cchDest || !ptr_log)
+	if (!ptr_log || !ptr_dest)
 		return false;
 
 	bool result = false;
+
+	rstring formatted_address;
 
 	PIN_ADDR addrv4 = nullptr;
 	PIN6_ADDR addrv6 = nullptr;
 
 	if (ptr_log->af == AF_INET)
 	{
-		addrv4 = (dir == FWP_DIRECTION_OUTBOUND) ? &ptr_log->remote_addr : &ptr_log->local_addr;
+		addrv4 = (dir == FWP_DIRECTION_OUTBOUND || dir == FWP_DIRECTION_OUT) ? &ptr_log->remote_addr : &ptr_log->local_addr;
 
-		InetNtop (ptr_log->af, addrv4, dest, cchDest);
+		InetNtop (ptr_log->af, addrv4, formatted_address.GetBuffer (LEN_IP_MAX), LEN_IP_MAX);
+		formatted_address.ReleaseBuffer ();
 
 		result = !IN4_IS_ADDR_UNSPECIFIED (addrv4);
 	}
 	else if (ptr_log->af == AF_INET6)
 	{
-		addrv6 = (dir == FWP_DIRECTION_OUTBOUND) ? &ptr_log->remote_addr6 : &ptr_log->local_addr6;
+		addrv6 = (dir == FWP_DIRECTION_OUTBOUND || dir == FWP_DIRECTION_OUT) ? &ptr_log->remote_addr6 : &ptr_log->local_addr6;
 
-		InetNtop (ptr_log->af, addrv6, dest, cchDest);
+		InetNtop (ptr_log->af, addrv6, formatted_address.GetBuffer (LEN_IP_MAX), LEN_IP_MAX);
+		formatted_address.ReleaseBuffer ();
 
 		result = !IN6_IS_ADDR_UNSPECIFIED (addrv6);
 	}
 
 	if (port)
-		StringCchCat (dest, cchDest, _r_fmt (L":%d", port));
+		formatted_address.AppendFormat (L":%d", port);
 
-
-	if (is_appenddns && result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit)
+	if (result && is_appenddns && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit)
 	{
-		const size_t hash = _r_str_hash (dest);
+		const size_t hash = formatted_address.Hash ();
 
 		if (cache_hosts.find (hash) != cache_hosts.end ())
 		{
 			if (cache_hosts[hash])
-				StringCchCat (dest, cchDest, _r_fmt (L" (%s)", cache_hosts[hash]));
+				formatted_address.AppendFormat (L" (%s)", cache_hosts[hash]);
 		}
 		else
 		{
@@ -4547,20 +4545,19 @@ bool _app_formataddress (LPWSTR dest, size_t cchDest, PITEM_LOG const ptr_log, F
 
 			if (_app_resolveaddress (ptr_log->af, (ptr_log->af == AF_INET) ? (LPVOID)addrv4 : (LPVOID)addrv6, hostBuff, _countof (hostBuff)))
 			{
-				StringCchCat (dest, cchDest, _r_fmt (L" (%s)", hostBuff));
+				formatted_address.AppendFormat (L" (%s)", hostBuff);
 
-				const size_t len = wcslen (hostBuff) + 1;
-
-				cache_ptr = new WCHAR[len];
-
-				StringCchCopy (cache_ptr, len, hostBuff);
+				str_alloc (&cache_ptr, wcslen (hostBuff), hostBuff);
 			}
 
-			_app_cleanup_cache (&cache_hosts);
+			_app_freecache (&cache_hosts);
 
 			cache_hosts[hash] = cache_ptr;
 		}
 	}
+
+	if (result)
+		str_alloc (ptr_dest, formatted_address.GetLength (), formatted_address);
 
 	return result;
 }
@@ -4569,9 +4566,9 @@ static rstring _app_getprotoname (UINT8 proto)
 {
 	for (size_t i = 0; i < protocols.size (); i++)
 	{
-		PITEM_PROTOCOL const ptr_proto = &protocols.at (i);
+		PITEM_PROTOCOL const ptr_proto = protocols.at (i);
 
-		if (proto == ptr_proto->id)
+		if (ptr_proto && proto == ptr_proto->id)
 			return ptr_proto->pname;
 	}
 
@@ -5028,78 +5025,83 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 					// just create rule
 					if (is_createaddrrule || is_createportrule)
 					{
-						WCHAR rule[128] = {0};
+						LPWSTR prule = nullptr;
 
 						if (is_createaddrrule)
-							_app_formataddress (rule, _countof (rule), ptr_log, FWP_DIRECTION_OUTBOUND, 0, false);
-
-						if (is_createportrule)
 						{
-							if (is_createaddrrule)
-								StringCchCat (rule, _countof (rule), L":");
+							_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, is_createportrule ? ptr_log->remote_port : 0, &prule, false);
+						}
+						else if (is_createportrule)
+						{
+							prule = new WCHAR[16];
 
-							StringCchCat (rule, _countof (rule), _r_fmt (L"%d", ptr_log->remote_port));
+							StringCchPrintf (prule, 15, L"%d", ptr_log->remote_port);
 						}
 
-						size_t rule_id = LAST_VALUE;
-
-						const size_t length = wcslen (rule);
-						const size_t rule_length = min (length, RULE_RULE_CCH_MAX) + 1;
-
-						for (size_t i = 0; i < rules_custom.size (); i++)
+						if (prule)
 						{
-							PITEM_RULE rule_ptr = rules_custom.at (i);
+							size_t rule_id = LAST_VALUE;
 
-							if (rule_ptr)
+							const size_t length = wcslen (prule);
+							const size_t rule_length = min (length, RULE_RULE_CCH_MAX);
+
+							for (size_t i = 0; i < rules_custom.size (); i++)
 							{
-								if (rule_ptr->prule_remote && _wcsnicmp (rule_ptr->prule_remote, rule, rule_length) == 0 && ((!rule_ptr->is_block && command == CmdAllow) || (rule_ptr->is_block && command == CmdBlock)))
+								PITEM_RULE rule_ptr = rules_custom.at (i);
+
+								if (rule_ptr)
 								{
-									rule_id = i;
-									break;
+									if (rule_ptr->prule_remote && _wcsnicmp (rule_ptr->prule_remote, prule, rule_length) == 0 && ((!rule_ptr->is_block && command == CmdAllow) || (rule_ptr->is_block && command == CmdBlock)))
+									{
+										rule_id = i;
+										break;
+									}
 								}
 							}
-						}
 
-						if (rule_id == LAST_VALUE)
-						{
-							// create rule
-							PITEM_RULE ptr_rule = new ITEM_RULE;
-
-							if (ptr_rule)
+							if (rule_id == LAST_VALUE)
 							{
-								const size_t name_length = min (length, (size_t)RULE_NAME_CCH_MAX);
+								// create rule
+								PITEM_RULE ptr_rule = new ITEM_RULE;
 
-								str_alloc (&ptr_rule->pname, name_length, rule);
-								str_alloc (&ptr_rule->prule_remote, name_length, rule);
+								if (ptr_rule)
+								{
+									const size_t name_length = min (length, (size_t)RULE_NAME_CCH_MAX);
 
-								ptr_rule->is_enabled = true;
-								ptr_rule->is_block = ((command == CmdBlock) ? true : false);
-								ptr_rule->dir = ptr_log->direction;
-								ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
+									str_alloc (&ptr_rule->pname, name_length, prule);
+									str_alloc (&ptr_rule->prule_remote, rule_length, prule);
 
-								rules_custom.push_back (ptr_rule);
-								rule_id = rules_custom.size () - 1;
+									ptr_rule->is_enabled = true;
+									ptr_rule->is_block = ((command == CmdBlock) ? true : false);
+									ptr_rule->dir = ptr_log->direction;
+									ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
+
+									rules_custom.push_back (ptr_rule);
+									rule_id = rules_custom.size () - 1;
+								}
 							}
-						}
-						else
-						{
-							// modify rule
-							PITEM_RULE ptr_rule = rules_custom.at (rule_id);
-
-							if (ptr_rule)
+							else
 							{
-								ptr_rule->is_enabled = true;
-								ptr_rule->is_block = ((command == CmdBlock) ? true : false);
-								ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
+								// modify rule
+								PITEM_RULE ptr_rule = rules_custom.at (rule_id);
+
+								if (ptr_rule)
+								{
+									ptr_rule->is_enabled = true;
+									ptr_rule->is_block = ((command == CmdBlock) ? true : false);
+									ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
+								}
 							}
-						}
 
-						// add rule for app
-						if (rule_id != LAST_VALUE)
-						{
-							rules_custom.at (rule_id)->apps[hash] = true;
+							// add rule for app
+							if (rule_id != LAST_VALUE)
+							{
+								rules_custom.at (rule_id)->apps[hash] = true;
 
-							_wfp_create4filters (rules_custom.at (rule_id), true);
+								_wfp_create4filters (rules_custom.at (rule_id), true);
+							}
+
+							SAFE_DELETE_ARRAY (prule);
 						}
 					}
 					else
@@ -5248,10 +5250,17 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 			_r_ctrl_settext (config.hnotification, IDC_FILTER_ID, L"%s: %s (#%llu)", app.LocaleString (IDS_FILTER, nullptr).GetString (), ptr_log->filter_name, ptr_log->filter_id);
 			_r_ctrl_settext (config.hnotification, IDC_DATE_ID, L"%s: %s", app.LocaleString (IDS_DATE, nullptr).GetString (), _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString ());
 
-			WCHAR addr_format[LEN_IP_MAX] = {0};
-			const bool is_addressset = _app_formataddress (addr_format, _countof (addr_format), ptr_log, FWP_DIRECTION_OUTBOUND, 0, false);
+			LPWSTR paddr_format = nullptr;
 
-			_r_ctrl_settext (config.hnotification, IDC_CREATERULE_ADDR_ID, app.LocaleString (IDS_NOTIFY_CREATERULE_ADDRESS, nullptr), addr_format);
+			const bool is_addressset = _app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, 0, &paddr_format, false);
+
+			if (paddr_format)
+			{
+				_r_ctrl_settext (config.hnotification, IDC_CREATERULE_ADDR_ID, app.LocaleString (IDS_NOTIFY_CREATERULE_ADDRESS, nullptr), paddr_format);
+
+				SAFE_DELETE_ARRAY (paddr_format);
+			}
+
 			_r_ctrl_settext (config.hnotification, IDC_CREATERULE_PORT_ID, app.LocaleString (IDS_NOTIFY_CREATERULE_PORT, nullptr), ptr_log->remote_port);
 			_r_ctrl_settext (config.hnotification, IDC_DISABLENOTIFICATION_ID, app.LocaleString (IDS_NOTIFY_DISABLENOTIFICATIONS, nullptr));
 
@@ -5361,20 +5370,23 @@ void _app_notifyplaysound ()
 		PlaySound (NOTIFY_SOUND_DEFAULT, nullptr, SND_ASYNC);
 }
 
-void _app_notifyadd (PITEM_LOG const ptr_log)
+bool _app_notifyadd (PITEM_LOG const ptr_log)
 {
+	if (!ptr_log)
+		return false;
+
 	const time_t current_time = _r_unixtime_now ();
 	const PITEM_APP ptr_app = _app_getapplication (ptr_log->hash);
 
 	if (!ptr_app)
-		return;
+		return false;
 
 	// check for last display time
 	{
 		const time_t notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsLonglong ();
 
 		if (notification_timeout && ((current_time - ptr_app->last_notify) < notification_timeout))
-			return;
+			return false;
 	}
 
 	_r_fastlock_acquireexclusive (&lock_notification);
@@ -5399,44 +5411,40 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 
 	ptr_app->last_notify = current_time;
 
-	PITEM_LOG ptr_log2 = new ITEM_LOG;
 	size_t idx = LAST_VALUE;
 
-	if (ptr_log2)
+	if (chk_idx != LAST_VALUE)
 	{
-		CopyMemory (ptr_log2, ptr_log, sizeof (ITEM_LOG));
+		idx = chk_idx;
 
-		if (chk_idx != LAST_VALUE)
-		{
-			idx = chk_idx;
+		SAFE_DELETE (notifications.at (chk_idx));
 
-			SAFE_DELETE (notifications.at (chk_idx));
-
-			notifications.at (chk_idx) = ptr_log2;
-		}
-		else
-		{
-			notifications.push_back (ptr_log2);
-			idx = notifications.size () - 1;
-		}
-
-		SetWindowLongPtr (config.hnotification, GWLP_USERDATA, chk_idx);
-
-		_r_fastlock_releaseexclusive (&lock_notification);
-
-		_app_notifyrefresh ();
-
-		if (app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
-			_app_notifyplaysound ();
-
-		if (!_r_wnd_undercursor (config.hnotification) && _app_notifyshow (idx, true))
-		{
-			const UINT display_timeout = app.ConfigGet (L"NotificationsDisplayTimeout", NOTIFY_TIMER_DEFAULT).AsUint ();
-
-			if (display_timeout)
-				_app_notifysettimeout (config.hnotification, NOTIFY_TIMER_TIMEOUT_ID, true, (display_timeout * _R_SECONDSCLOCK_MSEC));
-		}
+		notifications.at (chk_idx) = ptr_log;
 	}
+	else
+	{
+		notifications.push_back (ptr_log);
+		idx = notifications.size () - 1;
+	}
+
+	SetWindowLongPtr (config.hnotification, GWLP_USERDATA, chk_idx);
+
+	_r_fastlock_releaseexclusive (&lock_notification);
+
+	_app_notifyrefresh ();
+
+	if (app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
+		_app_notifyplaysound ();
+
+	if (!_r_wnd_undercursor (config.hnotification) && _app_notifyshow (idx, true))
+	{
+		const UINT display_timeout = app.ConfigGet (L"NotificationsDisplayTimeout", NOTIFY_TIMER_DEFAULT).AsUint ();
+
+		if (display_timeout)
+			_app_notifysettimeout (config.hnotification, NOTIFY_TIMER_TIMEOUT_ID, true, (display_timeout * _R_SECONDSCLOCK_MSEC));
+	}
+
+	return true;
 }
 
 UINT WINAPI LogThread (LPVOID lparam)
@@ -5459,6 +5467,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
 		PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
+		bool is_added = false;
 
 		if (ptr_log)
 		{
@@ -5475,8 +5484,8 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 			if ((is_logenabled || is_notificationenabled) && (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ())))
 			{
-				_app_formataddress (ptr_log->remote_fmt, _countof (ptr_log->remote_fmt), ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, true);
-				_app_formataddress (ptr_log->local_fmt, _countof (ptr_log->local_fmt), ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, true);
+				_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
+				_app_formataddress (ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, &ptr_log->local_fmt, true);
 
 				// write log to a file
 				if (is_logenabled)
@@ -5502,12 +5511,13 @@ UINT WINAPI LogThread (LPVOID lparam)
 						}
 
 						if (!is_silent)
-							_app_notifyadd (ptr_log);
+							is_added = _app_notifyadd (ptr_log);
 					}
 				}
 			}
 
-			SAFE_DELETE (ptr_log);
+			if (!is_added)
+				SAFE_DELETE (ptr_log);
 		}
 
 		_aligned_free (ptr_entry);
@@ -5580,7 +5590,8 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		// copy converted nt device path into win32
 		if (sidstring)
 		{
-			StringCchCopy (ptr_log->path, _countof (ptr_log->path), sidstring);
+			str_alloc (&ptr_log->path, wcslen (sidstring), sidstring);
+
 			ptr_log->hash = _r_str_hash (ptr_log->path);
 
 			LocalFree (sidstring);
@@ -5588,14 +5599,20 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		}
 		else if (app_id)
 		{
-			StringCchCopy (ptr_log->path, _countof (ptr_log->path), _r_path_dospathfromnt (LPCWSTR (app_id)));
-			ptr_log->hash = _r_str_hash (ptr_log->path);
+			LPCWSTR path = _r_path_dospathfromnt (LPCWSTR (app_id));
 
-			_app_applycasestyle (ptr_log->path, wcslen (ptr_log->path)); // apply case-style
+			if (path)
+			{
+				str_alloc (&ptr_log->path, wcslen (path), path);
+
+				ptr_log->hash = _r_str_hash (ptr_log->path);
+
+				_app_applycasestyle (ptr_log->path, wcslen (ptr_log->path)); // apply case-style
+			}
 		}
 		else
 		{
-			StringCchCopy (ptr_log->path, _countof (ptr_log->path), SZ_EMPTY);
+			str_alloc (&ptr_log->path, wcslen (SZ_EMPTY), SZ_EMPTY);
 			ptr_log->hash = 0;
 		}
 
@@ -5619,14 +5636,19 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 					DWORD length2 = _countof (domain);
 
 					if (LookupAccountSid (nullptr, user_id, username, &length1, domain, &length2, &sid_type))
-						StringCchPrintf (ptr_log->username, _countof (ptr_log->username), L"%s\\%s", domain, username);
+					{
+						LPCWSTR userstring = _r_fmt (L"%s\\%s", domain, username);
 
+						str_alloc (&ptr_log->username, wcslen (userstring), userstring);
+					}
 					else
-						StringCchCopy (ptr_log->username, _countof (ptr_log->username), SZ_EMPTY);
+					{
+						str_alloc (&ptr_log->username, wcslen (SZ_EMPTY), SZ_EMPTY);
+					}
 				}
 				else
 				{
-					StringCchCopy (ptr_log->username, _countof (ptr_log->username), SZ_EMPTY);
+					str_alloc (&ptr_log->username, wcslen (SZ_EMPTY), SZ_EMPTY);
 				}
 			}
 
@@ -5640,7 +5662,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 				if (FwpmFilterGetById (config.hengine, filter_id, &filter) == ERROR_SUCCESS)
 				{
-					StringCchCopy (ptr_log->filter_name, _countof (ptr_log->filter_name), (filter->displayData.description ? filter->displayData.description : filter->displayData.name));
+					str_alloc (&ptr_log->filter_name, wcslen ((filter->displayData.description ? filter->displayData.description : filter->displayData.name)), (filter->displayData.description ? filter->displayData.description : filter->displayData.name));
 
 					if (filter->providerKey)
 					{
@@ -5655,7 +5677,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 						}
 
 						if (FwpmProviderGetByKey (config.hengine, filter->providerKey, &provider) == ERROR_SUCCESS)
-							StringCchCopy (ptr_log->provider_name, _countof (ptr_log->provider_name), (provider->displayData.description ? provider->displayData.description : provider->displayData.name));
+							str_alloc (&ptr_log->provider_name, wcslen ((provider->displayData.description ? provider->displayData.description : provider->displayData.name)), (provider->displayData.description ? provider->displayData.description : provider->displayData.name));
 					}
 				}
 
@@ -5665,8 +5687,8 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 				if (provider)
 					FwpmFreeMemory ((void**)&provider);
 
-				if (!ptr_log->filter_name[0])
-					StringCchCopy (ptr_log->filter_name, _countof (ptr_log->filter_name), SZ_EMPTY);
+				if (!ptr_log->filter_name || !ptr_log->filter_name[0])
+					str_alloc (&ptr_log->filter_name, wcslen (SZ_EMPTY), SZ_EMPTY);
 			}
 
 			// destination
@@ -5739,7 +5761,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 			{
 				_r_fastlock_acquireexclusive (&lock_threadpool);
 
-				_app_clear_threadpool (&threads_pool);
+				_app_freethreadpool (&threads_pool);
 
 				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND ());
 
@@ -5749,7 +5771,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 				}
 				else
 				{
-					_app_clear_threadpool (&threads_pool);
+					_app_freethreadpool (&threads_pool);
 				}
 
 				_r_fastlock_releaseexclusive (&lock_threadpool);
@@ -6026,35 +6048,39 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR config_value, COLORREF default_clr)
 {
-	ITEM_COLOR color = {0};
-	SecureZeroMemory (&color, sizeof (color));
+	PITEM_COLOR ptr_clr = new ITEM_COLOR;
 
-	if (config_name)
-		str_alloc (&color.pcfg_name, wcslen (config_name), config_name);
+	if (ptr_clr)
+	{
+		if (config_name)
+			str_alloc (&ptr_clr->pcfg_name, wcslen (config_name), config_name);
 
-	if (config_value)
-		str_alloc (&color.pcfg_value, wcslen (config_value), config_value);
+		if (config_value)
+			str_alloc (&ptr_clr->pcfg_value, wcslen (config_value), config_value);
 
-	color.hash = _r_str_hash (config_value);
-	color.is_enabled = is_enabled;
-	color.locale_id = locale_id;
-	color.default_clr = default_clr;
-	color.clr = app.ConfigGet (config_value, default_clr).AsUlong ();
+		ptr_clr->hash = _r_str_hash (config_value);
+		ptr_clr->is_enabled = is_enabled;
+		ptr_clr->locale_id = locale_id;
+		ptr_clr->default_clr = default_clr;
+		ptr_clr->clr = app.ConfigGet (config_value, default_clr).AsUlong ();
 
-	colors.push_back (color);
+		colors.push_back (ptr_clr);
+	}
 }
 
 void addprotocol (LPCWSTR name, UINT8 id)
 {
-	ITEM_PROTOCOL protocol = {0};
-	SecureZeroMemory (&protocol, sizeof (protocol));
+	PITEM_PROTOCOL ptr_proto = new ITEM_PROTOCOL;
 
-	if (name)
-		str_alloc (&protocol.pname, wcslen (name), name);
+	if (ptr_proto)
+	{
+		if (name)
+			str_alloc (&ptr_proto->pname, wcslen (name), name);
 
-	protocol.id = id;
+		ptr_proto->id = id;
 
-	protocols.push_back (protocol);
+		protocols.push_back (ptr_proto);
+	}
 }
 
 bool _app_installmessage (HWND hwnd, bool is_install)
@@ -6214,12 +6240,15 @@ LONG _app_wmcustdraw (LPNMLVCUSTOMDRAW lpnmlv, LPARAM lparam)
 			}
 			else if (lpnmlv->nmcd.hdr.idFrom == IDC_COLORS)
 			{
-				PITEM_COLOR const ptr_clr = &colors.at (lpnmlv->nmcd.lItemlParam);
+				PITEM_COLOR const ptr_clr = colors.at (lpnmlv->nmcd.lItemlParam);
 
-				lpnmlv->clrTextBk = ptr_clr->clr;
-				lpnmlv->clrText = _r_dc_getcolorbrightness (ptr_clr->clr);
+				if (ptr_clr)
+				{
+					lpnmlv->clrTextBk = ptr_clr->clr;
+					lpnmlv->clrText = _r_dc_getcolorbrightness (ptr_clr->clr);
 
-				_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
+					_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
+				}
 
 				result = CDRF_NEWFONT;
 			}
@@ -6349,13 +6378,16 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			for (size_t i = 0; i < protocols.size (); i++)
 			{
-				PITEM_PROTOCOL ptr_protocol = &protocols.at (i);
+				PITEM_PROTOCOL ptr_protocol = protocols.at (i);
 
-				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"#%03d - %s", ptr_protocol->id, ptr_protocol->pname).GetString ());
-				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETITEMDATA, i + 1, (LPARAM)ptr_protocol->id);
+				if (ptr_protocol)
+				{
+					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"#%03d - %s", ptr_protocol->id, ptr_protocol->pname).GetString ());
+					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETITEMDATA, i + 1, (LPARAM)ptr_protocol->id);
 
-				if (ptr_rule && ptr_rule->protocol == ptr_protocol->id)
-					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETCURSEL, (WPARAM)i + 1, 0);
+					if (ptr_rule && ptr_rule->protocol == ptr_protocol->id)
+						SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETCURSEL, (WPARAM)i + 1, 0);
+				}
 			}
 
 			// family (ports-only)
@@ -6786,16 +6818,19 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						for (size_t i = 0; i < colors.size (); i++)
 						{
-							PITEM_COLOR ptr_clr = &colors.at (i);
+							PITEM_COLOR ptr_clr = colors.at (i);
 
-							ptr_clr->clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr).AsUlong ();
+							if (ptr_clr)
+							{
+								ptr_clr->clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr).AsUlong ();
 
-							config.is_nocheckboxnotify = true;
+								config.is_nocheckboxnotify = true;
 
-							_r_listview_additem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, LAST_VALUE, i);
-							_r_listview_setitemcheck (hwnd, IDC_COLORS, i, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled).AsBool ());
+								_r_listview_additem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, LAST_VALUE, i);
+								_r_listview_setitemcheck (hwnd, IDC_COLORS, i, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled).AsBool ());
 
-							config.is_nocheckboxnotify = false;
+								config.is_nocheckboxnotify = false;
+							}
 						}
 					}
 
@@ -6962,8 +6997,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, IDC_COLORS, i);
 
-						PITEM_COLOR const ptr_clr = &colors.at (idx);
-						_r_listview_setitem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr));
+						PITEM_COLOR const ptr_clr = colors.at (idx);
+
+						if (ptr_clr)
+							_r_listview_setitem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr));
 					}
 
 					_app_listviewsetfont (hwnd, IDC_COLORS, false);
@@ -7169,9 +7206,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						if (nmlp->idFrom == IDC_COLORS)
 						{
-							PITEM_COLOR ptr_clr = &colors.at (idx);
+							PITEM_COLOR ptr_clr = colors.at (idx);
 
-							app.ConfigSet (ptr_clr->pcfg_name, new_val);
+							if (ptr_clr)
+								app.ConfigSet (ptr_clr->pcfg_name, new_val);
 
 							_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
 						}
@@ -7334,21 +7372,23 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						COLORREF cust[16] = {0};
 
 						for (size_t i = 0; i < min (_countof (cust), colors.size ()); i++)
-							cust[i] = colors.at (i).default_clr;
+							cust[i] = colors.at (i)->default_clr;
 
 						cc.lStructSize = sizeof (cc);
 						cc.Flags = CC_RGBINIT | CC_FULLOPEN;
 						cc.hwndOwner = hwnd;
 						cc.lpCustColors = cust;
-						cc.rgbResult = colors.at (idx).clr;
+						cc.rgbResult = colors.at (idx)->clr;
 
 						if (ChooseColor (&cc))
 						{
-							PITEM_COLOR ptr_clr = &colors.at (idx);
+							PITEM_COLOR ptr_clr = colors.at (idx);
 
-							ptr_clr->clr = cc.rgbResult;
-
-							app.ConfigSet (ptr_clr->pcfg_value, cc.rgbResult);
+							if (ptr_clr)
+							{
+								ptr_clr->clr = cc.rgbResult;
+								app.ConfigSet (ptr_clr->pcfg_value, cc.rgbResult);
+							}
 
 							_r_listview_redraw (hwnd, IDC_COLORS);
 							_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
@@ -9977,7 +10017,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_fastlock_acquireexclusive (&lock_threadpool);
 
 					_app_clear_logstack ();
-					_app_clear_threadpool (&threads_pool);
+					_app_freethreadpool (&threads_pool);
 
 					_r_fastlock_releaseexclusive (&lock_threadpool);
 
@@ -10997,28 +11037,38 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case 999:
 				{
+#define ID_AD 17
+#define FN_AD L"<test filter>"
+#define RM_AD L"195.210.46.14"
+#define LM_AD L"192.168.2.2"
+
 					apps[config.myhash].last_notify = 0;
 
-					ITEM_LOG log = {0};
+					PITEM_LOG ptr_log = new ITEM_LOG;
 
-					log.hash = config.myhash;
-					log.date = _r_unixtime_now ();
+					if (ptr_log)
+					{
+						ptr_log->hash = config.myhash;
+						ptr_log->date = _r_unixtime_now ();
 
-					log.af = AF_INET;
-					log.protocol = IPPROTO_TCP;
+						ptr_log->af = AF_INET;
+						ptr_log->protocol = IPPROTO_TCP;
 
-					InetPton (log.af, L"195.210.46.14", &log.remote_addr);
-					log.remote_port = 443;
+						ptr_log->filter_id = ID_AD;
 
-					InetPton (log.af, L"192.168.2.2", &log.local_addr);
-					log.local_port = 80;
+						InetPton (ptr_log->af, RM_AD, &ptr_log->remote_addr);
+						ptr_log->remote_port = 443;
 
-					_app_formataddress (log.remote_fmt, _countof (log.remote_fmt), &log, FWP_DIRECTION_OUTBOUND, log.remote_port, true);
-					_app_formataddress (log.local_fmt, _countof (log.local_fmt), &log, FWP_DIRECTION_INBOUND, log.local_port, true);
+						InetPton (ptr_log->af, LM_AD, &ptr_log->local_addr);
+						ptr_log->local_port = 80;
 
-					StringCchCopy (log.filter_name, _countof (log.filter_name), L"<test filter>");
+						str_alloc (&ptr_log->filter_name, wcslen (FN_AD), FN_AD);
 
-					_app_notifyadd (&log);
+						_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
+						_app_formataddress (ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, &ptr_log->local_fmt, true);
+
+						_app_notifyadd (ptr_log);
+					}
 
 					break;
 				}

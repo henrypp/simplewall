@@ -7,6 +7,8 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <unordered_map>
+
+#include "routine.hpp"
 #include "resource.hpp"
 #include "app.hpp"
 
@@ -301,6 +303,20 @@ typedef struct _ITEM_APP
 
 typedef struct _ITEM_RULE
 {
+	_ITEM_RULE ()
+	{
+		pname = nullptr;
+		prule_remote = nullptr;
+		prule_local = nullptr;
+	}
+
+	~_ITEM_RULE ()
+	{
+		SAFE_DELETE_ARRAY (pname);
+		SAFE_DELETE_ARRAY (prule_remote);
+		SAFE_DELETE_ARRAY (prule_local);
+	}
+
 	std::unordered_map<size_t, bool> apps;
 
 	MARRAY mfarr;
@@ -324,15 +340,32 @@ typedef struct _ITEM_RULE
 
 typedef struct _ITEM_LOG
 {
-	WCHAR provider_name[MAX_PATH] = {0};
-	WCHAR filter_name[MAX_PATH] = {0};
+	_ITEM_LOG ()
+	{
+		path = nullptr;
+		provider_name = nullptr;
+		filter_name = nullptr;
+		username = nullptr;
+		remote_fmt = nullptr;
+		local_fmt = nullptr;
+	}
 
-	WCHAR path[MAX_PATH] = {0};
+	~_ITEM_LOG ()
+	{
+		SAFE_DELETE_ARRAY (path);
+		SAFE_DELETE_ARRAY (provider_name);
+		SAFE_DELETE_ARRAY (filter_name);
+		SAFE_DELETE_ARRAY (username);
+		SAFE_DELETE_ARRAY (remote_fmt);
+		SAFE_DELETE_ARRAY (local_fmt);
+	}
 
-	WCHAR remote_fmt[192] = {0};
-	WCHAR local_fmt[192] = {0};
-
-	WCHAR username[192] = {0};
+	LPWSTR path = nullptr;
+	LPWSTR provider_name = nullptr;
+	LPWSTR filter_name = nullptr;
+	LPWSTR remote_fmt = nullptr;
+	LPWSTR local_fmt = nullptr;
+	LPWSTR username = nullptr;
 
 	time_t date = 0;
 
@@ -390,14 +423,6 @@ typedef struct _ITEM_LIST_ENTRY
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
 
-#ifndef SAFE_DELETE
-#define SAFE_DELETE(p) {if(p) { delete (p); (p)=nullptr;}}
-#endif
-
-#ifndef SAFE_DELETE_ARRAY
-#define SAFE_DELETE_ARRAY(p) {if(p) { delete[] (p); (p)=nullptr;}}
-#endif
-
 typedef struct _ITEM_ADD
 {
 	_ITEM_ADD ()
@@ -446,6 +471,18 @@ typedef struct _ITEM_ADD
 
 typedef struct _ITEM_COLOR
 {
+	_ITEM_COLOR ()
+	{
+		pcfg_name = nullptr;
+		pcfg_value = nullptr;
+	}
+
+	~_ITEM_COLOR ()
+	{
+		SAFE_DELETE_ARRAY (pcfg_name);
+		SAFE_DELETE_ARRAY (pcfg_value);
+	}
+
 	LPWSTR pcfg_name = nullptr;
 	LPWSTR pcfg_value = nullptr;
 
@@ -461,6 +498,16 @@ typedef struct _ITEM_COLOR
 
 typedef struct _ITEM_PROTOCOL
 {
+	_ITEM_PROTOCOL ()
+	{
+		pname = nullptr;
+	}
+
+	~_ITEM_PROTOCOL ()
+	{
+		SAFE_DELETE_ARRAY (pname);
+	}
+
 	LPWSTR pname = nullptr;
 	UINT8 id = 0;
 } ITEM_PROTOCOL, *PITEM_PROTOCOL;
