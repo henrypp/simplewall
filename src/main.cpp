@@ -9169,8 +9169,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 
 			// dropped packets logging (win7+)
-			if (_r_sys_validversion (6, 1))
-				app.SettingsAddPage (IDD_SETTINGS_LOG, IDS_TRAY_LOG);
+			app.SettingsAddPage (IDD_SETTINGS_LOG, IDS_TRAY_LOG);
 
 			// initialize colors
 			{
