@@ -196,27 +196,6 @@ void _mps_changeconfig (bool is_stop)
 	}
 }
 
-void str_alloc (LPWSTR* pwstr, size_t length, LPCWSTR text)
-{
-	if (pwstr)
-	{
-		SAFE_DELETE_ARRAY (*pwstr);
-
-		if (!length)
-			return;
-
-		length += 1;
-
-		LPWSTR new_ptr = new WCHAR[length];
-
-		if (new_ptr)
-		{
-			StringCchCopy (new_ptr, length, text);
-			*pwstr = new_ptr;
-		}
-	}
-}
-
 void _app_listviewresize (HWND hwnd, UINT ctrl_id)
 {
 	if (!app.ConfigGet (L"AutoSizeColumns", true).AsBool ())
@@ -1305,8 +1284,8 @@ void _app_generate_packages ()
 				if (!display_name[0])
 					StringCchCopy (display_name, _countof (display_name), package_sid);
 
-				str_alloc (&item->sid, wcslen (package_sid), package_sid);
-				str_alloc (&item->display_name, wcslen (display_name), display_name);
+				_r_str_alloc (&item->sid, wcslen (package_sid), package_sid);
+				_r_str_alloc (&item->display_name, wcslen (display_name), display_name);
 
 				ConvertStringSidToSid (package_sid, &item->psid);
 
@@ -1412,8 +1391,8 @@ void _app_generate_processes ()
 
 					ptr_item->hash = hash;
 
-					str_alloc (&ptr_item->display_name, wcslen (display_name), display_name);
-					str_alloc (&ptr_item->real_path, wcslen (((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path)), ((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path));
+					_r_str_alloc (&ptr_item->display_name, wcslen (display_name), display_name);
+					_r_str_alloc (&ptr_item->real_path, wcslen (((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path)), ((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path));
 
 					// get file icon
 					{
@@ -1558,10 +1537,10 @@ void _app_generate_services ()
 
 							ptr_item->hash = _r_str_hash (service_name);
 
-							str_alloc (&ptr_item->service_name, wcslen (service_name), service_name);
-							str_alloc (&ptr_item->display_name, wcslen (display_name), display_name);
-							str_alloc (&ptr_item->real_path, wcslen (real_path), real_path);
-							str_alloc (&ptr_item->sid, wcslen (sidstring), sidstring);
+							_r_str_alloc (&ptr_item->service_name, wcslen (service_name), service_name);
+							_r_str_alloc (&ptr_item->display_name, wcslen (display_name), display_name);
+							_r_str_alloc (&ptr_item->real_path, wcslen (real_path), real_path);
+							_r_str_alloc (&ptr_item->sid, wcslen (sidstring), sidstring);
 
 							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring).ToUpper (), SDDL_REVISION_1, (PSECURITY_DESCRIPTOR*)&ptr_item->psid, nullptr))
 							{
@@ -1712,13 +1691,13 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	_app_applycasestyle (real_path.GetBuffer (), real_path.GetLength ()); // apply case-style
 	_app_applycasestyle (path.GetBuffer (), path.GetLength ()); // apply case-style
 
-	str_alloc (&ptr_app->original_path, path.GetLength (), path);
-	str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path);
+	_r_str_alloc (&ptr_app->original_path, path.GetLength (), path);
+	_r_str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path);
 
 	rstring name;
 	_app_getdisplayname (hash, ptr_app, name);
 
-	str_alloc (&ptr_app->display_name, name.GetLength (), name);
+	_r_str_alloc (&ptr_app->display_name, name.GetLength (), name);
 
 	ptr_app->is_enabled = is_enabled;
 	ptr_app->is_silent = is_silent;
@@ -3338,9 +3317,9 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 							const size_t rule_remote_length = min (attr_rule_remote.GetLength (), RULE_RULE_CCH_MAX);
 							const size_t rule_local_length = min (attr_rule_local.GetLength (), RULE_RULE_CCH_MAX);
 
-							str_alloc (&rule_ptr->pname, name_length, attr_name);
-							str_alloc (&rule_ptr->prule_remote, rule_remote_length, attr_rule_remote);
-							str_alloc (&rule_ptr->prule_local, rule_local_length, attr_rule_local);
+							_r_str_alloc (&rule_ptr->pname, name_length, attr_name);
+							_r_str_alloc (&rule_ptr->prule_remote, rule_remote_length, attr_rule_remote);
+							_r_str_alloc (&rule_ptr->prule_local, rule_local_length, attr_rule_local);
 						}
 
 						rule_ptr->dir = (FWP_DIRECTION)item.attribute (L"dir").as_uint ();
@@ -4560,7 +4539,7 @@ bool _app_formataddress (PITEM_LOG const ptr_log, FWP_DIRECTION dir, UINT16 port
 			{
 				formatted_address.AppendFormat (L" (%s)", hostBuff);
 
-				str_alloc (&cache_ptr, wcslen (hostBuff), hostBuff);
+				_r_str_alloc (&cache_ptr, wcslen (hostBuff), hostBuff);
 			}
 
 			_app_freecache (&cache_hosts);
@@ -4570,7 +4549,7 @@ bool _app_formataddress (PITEM_LOG const ptr_log, FWP_DIRECTION dir, UINT16 port
 	}
 
 	if (result)
-		str_alloc (ptr_dest, formatted_address.GetLength (), formatted_address);
+		_r_str_alloc (ptr_dest, formatted_address.GetLength (), formatted_address);
 
 	return result;
 }
@@ -5078,8 +5057,8 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 								{
 									const size_t name_length = min (length, (size_t)RULE_NAME_CCH_MAX);
 
-									str_alloc (&ptr_rule->pname, name_length, prule);
-									str_alloc (&ptr_rule->prule_remote, rule_length, prule);
+									_r_str_alloc (&ptr_rule->pname, name_length, prule);
+									_r_str_alloc (&ptr_rule->prule_remote, rule_length, prule);
 
 									ptr_rule->is_enabled = true;
 									ptr_rule->is_block = ((command == CmdBlock) ? true : false);
@@ -5596,7 +5575,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		// copy converted nt device path into win32
 		if (sidstring)
 		{
-			str_alloc (&ptr_log->path, wcslen (sidstring), sidstring);
+			_r_str_alloc (&ptr_log->path, wcslen (sidstring), sidstring);
 
 			ptr_log->hash = _r_str_hash (ptr_log->path);
 
@@ -5609,7 +5588,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 			if (path)
 			{
-				str_alloc (&ptr_log->path, wcslen (path), path);
+				_r_str_alloc (&ptr_log->path, wcslen (path), path);
 
 				ptr_log->hash = _r_str_hash (ptr_log->path);
 
@@ -5618,7 +5597,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		}
 		else
 		{
-			str_alloc (&ptr_log->path, wcslen (SZ_EMPTY), SZ_EMPTY);
+			_r_str_alloc (&ptr_log->path, wcslen (SZ_EMPTY), SZ_EMPTY);
 			ptr_log->hash = 0;
 		}
 
@@ -5645,16 +5624,16 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 					{
 						LPCWSTR userstring = _r_fmt (L"%s\\%s", domain, username);
 
-						str_alloc (&ptr_log->username, wcslen (userstring), userstring);
+						_r_str_alloc (&ptr_log->username, wcslen (userstring), userstring);
 					}
 					else
 					{
-						str_alloc (&ptr_log->username, wcslen (SZ_EMPTY), SZ_EMPTY);
+						_r_str_alloc (&ptr_log->username, wcslen (SZ_EMPTY), SZ_EMPTY);
 					}
 				}
 				else
 				{
-					str_alloc (&ptr_log->username, wcslen (SZ_EMPTY), SZ_EMPTY);
+					_r_str_alloc (&ptr_log->username, wcslen (SZ_EMPTY), SZ_EMPTY);
 				}
 			}
 
@@ -5668,7 +5647,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 				if (FwpmFilterGetById (config.hengine, filter_id, &filter) == ERROR_SUCCESS)
 				{
-					str_alloc (&ptr_log->filter_name, wcslen ((filter->displayData.description ? filter->displayData.description : filter->displayData.name)), (filter->displayData.description ? filter->displayData.description : filter->displayData.name));
+					_r_str_alloc (&ptr_log->filter_name, wcslen ((filter->displayData.description ? filter->displayData.description : filter->displayData.name)), (filter->displayData.description ? filter->displayData.description : filter->displayData.name));
 
 					if (filter->providerKey)
 					{
@@ -5683,7 +5662,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 						}
 
 						if (FwpmProviderGetByKey (config.hengine, filter->providerKey, &provider) == ERROR_SUCCESS)
-							str_alloc (&ptr_log->provider_name, wcslen ((provider->displayData.description ? provider->displayData.description : provider->displayData.name)), (provider->displayData.description ? provider->displayData.description : provider->displayData.name));
+							_r_str_alloc (&ptr_log->provider_name, wcslen ((provider->displayData.description ? provider->displayData.description : provider->displayData.name)), (provider->displayData.description ? provider->displayData.description : provider->displayData.name));
 					}
 				}
 
@@ -5694,7 +5673,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 					FwpmFreeMemory ((void**)&provider);
 
 				if (!ptr_log->filter_name || !ptr_log->filter_name[0])
-					str_alloc (&ptr_log->filter_name, wcslen (SZ_EMPTY), SZ_EMPTY);
+					_r_str_alloc (&ptr_log->filter_name, wcslen (SZ_EMPTY), SZ_EMPTY);
 			}
 
 			// destination
@@ -6059,10 +6038,10 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 	if (ptr_clr)
 	{
 		if (config_name)
-			str_alloc (&ptr_clr->pcfg_name, wcslen (config_name), config_name);
+			_r_str_alloc (&ptr_clr->pcfg_name, wcslen (config_name), config_name);
 
 		if (config_value)
-			str_alloc (&ptr_clr->pcfg_value, wcslen (config_value), config_value);
+			_r_str_alloc (&ptr_clr->pcfg_value, wcslen (config_value), config_value);
 
 		ptr_clr->hash = _r_str_hash (config_value);
 		ptr_clr->is_enabled = is_enabled;
@@ -6081,7 +6060,7 @@ void addprotocol (LPCWSTR name, UINT8 id)
 	if (ptr_proto)
 	{
 		if (name)
-			str_alloc (&ptr_proto->pname, wcslen (name), name);
+			_r_str_alloc (&ptr_proto->pname, wcslen (name), name);
 
 		ptr_proto->id = id;
 
@@ -6657,8 +6636,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_r_fastlock_acquireexclusive (&lock_access);
 
 						// save rule (remote)
-						str_alloc (&ptr_rule->prule_remote, rule_remote_length, rule_remote);
-						str_alloc (&ptr_rule->prule_local, rule_local_length, rule_local);
+						_r_str_alloc (&ptr_rule->prule_remote, rule_remote_length, rule_remote);
+						_r_str_alloc (&ptr_rule->prule_local, rule_local_length, rule_local);
 					}
 
 					// save rule name
@@ -6669,7 +6648,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							const size_t name_length = min (name.GetLength (), RULE_NAME_CCH_MAX);
 
-							str_alloc (&ptr_rule->pname, name_length, name);
+							_r_str_alloc (&ptr_rule->pname, name_length, name);
 						}
 					}
 
@@ -10393,7 +10372,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							rstring name;
 							_app_getdisplayname (hash, ptr_app, name);
 
-							str_alloc (&ptr_app->display_name, name.GetLength (), name);
+							_r_str_alloc (&ptr_app->display_name, name.GetLength (), name);
 
 							_r_listview_setitem (hwnd, IDC_LISTVIEW, i, 0, ptr_app->display_name);
 						}
@@ -11068,7 +11047,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						InetPton (ptr_log->af, LM_AD, &ptr_log->local_addr);
 						ptr_log->local_port = 80;
 
-						str_alloc (&ptr_log->filter_name, wcslen (FN_AD), FN_AD);
+						_r_str_alloc (&ptr_log->filter_name, wcslen (FN_AD), FN_AD);
 
 						_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
 						_app_formataddress (ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, &ptr_log->local_fmt, true);
