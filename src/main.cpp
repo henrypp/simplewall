@@ -639,7 +639,13 @@ bool _app_freeapplication (size_t hash)
 	PITEM_APP ptr_app = _app_getapplication (hash);
 
 	if (ptr_app)
+	{
 		is_enabled = ptr_app->is_enabled;
+
+		SAFE_DELETE_ARRAY (ptr_app->display_name);
+		SAFE_DELETE_ARRAY (ptr_app->real_path);
+		SAFE_DELETE_ARRAY (ptr_app->original_path);
+	}
 
 	if (hash)
 	{
@@ -817,7 +823,7 @@ void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, rstring& extract
 
 bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
 {
-	if (!pinfo)
+	if (!pinfo || !path)
 		return false;
 
 	if (cache_versions.find (hash) != cache_versions.end ())
@@ -1706,13 +1712,13 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	_app_applycasestyle (real_path.GetBuffer (), real_path.GetLength ()); // apply case-style
 	_app_applycasestyle (path.GetBuffer (), path.GetLength ()); // apply case-style
 
-	StringCchCopy (ptr_app->original_path, _countof (ptr_app->original_path), path);
-	StringCchCopy (ptr_app->real_path, _countof (ptr_app->real_path), real_path);
+	str_alloc (&ptr_app->original_path, path.GetLength (), path);
+	str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path);
 
 	rstring name;
 	_app_getdisplayname (hash, ptr_app, name);
 
-	StringCchCopy (ptr_app->display_name, _countof (ptr_app->display_name), name);
+	str_alloc (&ptr_app->display_name, name.GetLength (), name);
 
 	ptr_app->is_enabled = is_enabled;
 	ptr_app->is_silent = is_silent;
@@ -1803,10 +1809,15 @@ rstring _app_rulesexpand (PITEM_RULE const ptr_rule)
 			if (ptr_app)
 			{
 				if (ptr_app->type == AppStore || ptr_app->type == AppService)
-					result.Append (ptr_app->display_name);
-
+				{
+					if (ptr_app->display_name)
+						result.Append (ptr_app->display_name);
+				}
 				else
-					result.Append (ptr_app->original_path);
+				{
+					if (ptr_app->original_path)
+						result.Append (ptr_app->original_path);
+				}
 
 				result.Append (L"\r\n" SZ_TAB);
 			}
@@ -1944,26 +1955,29 @@ rstring _app_gettooltip (size_t hash)
 
 	if (ptr_app)
 	{
-		result = ptr_app->real_path[0] ? ptr_app->real_path : ptr_app->display_name;
+		result = (ptr_app->real_path && ptr_app->real_path[0]) ? ptr_app->real_path : ptr_app->display_name;
 
 		// file information
 		if (ptr_app->type == AppRegular)
 		{
 			rstring display_name;
 
-			_app_getinformation (hash, ptr_app->real_path, &ptr_app->description);
-			display_name = ptr_app->description;
+			if (_app_getinformation (hash, ptr_app->real_path, &ptr_app->description))
+			{
+				display_name = ptr_app->description;
 
-			if (!display_name.IsEmpty ())
-				result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), display_name.GetString ());
+				if (!display_name.IsEmpty ())
+					result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), display_name.GetString ());
+			}
 		}
 		else if (ptr_app->type == AppService)
 		{
 			rstring display_name;
-			_app_item_get (&services, hash, &display_name, nullptr, nullptr, nullptr, nullptr);
 
-			if (!display_name.IsEmpty ())
+			if (_app_item_get (&services, hash, &display_name, nullptr, nullptr, nullptr, nullptr))
+			{
 				result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), ptr_app->original_path, display_name.GetString ());
+			}
 		}
 
 		// signature information
@@ -3545,7 +3559,6 @@ bool _app_isrulepresent (size_t hash)
 void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
 {
 	const time_t current_time = _r_unixtime_now ();
-	const time_t notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsLonglong ();
 	const bool is_backuprequired = app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsLonglong ()) || !_r_fs_exists (config.apps_path_backup) || !_r_fs_exists (config.rules_custom_path_backup) || !_r_fs_exists (config.rules_config_path_backup));
 	bool is_backupcreated = false;
 
@@ -3587,7 +3600,7 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 									item.append_attribute (L"timer").set_value (ptr_app->timer);
 
 								// set last notification timestamp (if presented)
-								if (notification_timeout && ptr_app->last_notify && ((current_time - ptr_app->last_notify) < notification_timeout))
+								if (ptr_app->last_notify)
 									item.append_attribute (L"last_notify").set_value (ptr_app->last_notify);
 
 								if (ptr_app->is_silent)
@@ -4577,10 +4590,7 @@ static rstring _app_getprotoname (UINT8 proto)
 
 void _app_logwrite (PITEM_LOG const ptr_log)
 {
-	if (!ptr_log)
-		return;
-
-	if (config.hlogfile == nullptr || config.hlogfile == INVALID_HANDLE_VALUE)
+	if (!ptr_log || !config.hlogfile || config.hlogfile == INVALID_HANDLE_VALUE)
 		return;
 
 	// parse path
@@ -4594,13 +4604,13 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 		{
 			if (ptr_app->type == AppStore || ptr_app->type == AppService)
 			{
-				if (ptr_app->real_path[0])
+				if (ptr_app->real_path && ptr_app->real_path[0])
 					path = ptr_app->real_path;
 
-				else
+				else if (ptr_app->display_name && ptr_app->display_name[0])
 					path = ptr_app->display_name;
 			}
-			else
+			else  if (ptr_app->original_path && ptr_app->original_path[0])
 			{
 				path = ptr_app->original_path;
 			}
@@ -4615,11 +4625,11 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 	// parse filter name
 	rstring filter;
 	{
-		if (ptr_log->provider_name[0])
+		if (ptr_log->provider_name && ptr_log->provider_name[0])
 			filter.Format (L"%s\\%s", ptr_log->provider_name, ptr_log->filter_name);
 
 		else
-			filter = ptr_log->filter_name[0] ? ptr_log->filter_name : SZ_EMPTY;
+			filter = (ptr_log->filter_name && ptr_log->filter_name[0]) ? ptr_log->filter_name : SZ_EMPTY;
 	}
 
 	// parse direction
@@ -5370,16 +5380,12 @@ void _app_notifyplaysound ()
 		PlaySound (NOTIFY_SOUND_DEFAULT, nullptr, SND_ASYNC);
 }
 
-bool _app_notifyadd (PITEM_LOG const ptr_log)
+bool _app_notifyadd (PITEM_LOG const ptr_log, PITEM_APP const ptr_app)
 {
-	if (!ptr_log)
+	if (!ptr_app || !ptr_log)
 		return false;
 
 	const time_t current_time = _r_unixtime_now ();
-	const PITEM_APP ptr_app = _app_getapplication (ptr_log->hash);
-
-	if (!ptr_app)
-		return false;
 
 	// check for last display time
 	{
@@ -5472,7 +5478,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 		if (ptr_log)
 		{
 			// apps collector
-			if (ptr_log->hash && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ())
+			if (ptr_log->hash && ptr_log->path && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ())
 			{
 				_r_fastlock_acquireexclusive (&lock_access);
 				_app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
@@ -5492,7 +5498,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 					_app_logwrite (ptr_log);
 
 				// show notification (only for my own provider and file is present)
-				if (is_notificationenabled && !ptr_log->is_allow && ptr_log->is_myprovider && ptr_log->hash)
+				if (is_notificationenabled && ptr_log->hash && !ptr_log->is_allow && ptr_log->is_myprovider)
 				{
 					if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
 					{
@@ -5507,11 +5513,11 @@ UINT WINAPI LogThread (LPVOID lparam)
 							if (ptr_app)
 								is_silent = ptr_app->is_silent;
 
+							if (!is_silent)
+								is_added = _app_notifyadd (ptr_log, ptr_app);
+
 							_r_fastlock_releaseshared (&lock_access);
 						}
-
-						if (!is_silent)
-							is_added = _app_notifyadd (ptr_log);
 					}
 				}
 			}
@@ -10387,7 +10393,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							rstring name;
 							_app_getdisplayname (hash, ptr_app, name);
 
-							StringCchCopy (ptr_app->display_name, _countof (ptr_app->display_name), name);
+							str_alloc (&ptr_app->display_name, name.GetLength (), name);
 
 							_r_listview_setitem (hwnd, IDC_LISTVIEW, i, 0, ptr_app->display_name);
 						}
@@ -11067,7 +11073,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
 						_app_formataddress (ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, &ptr_log->local_fmt, true);
 
-						_app_notifyadd (ptr_log);
+						_app_notifyadd (ptr_log, &apps[config.myhash]);
 					}
 
 					break;

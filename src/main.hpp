@@ -266,11 +266,11 @@ typedef struct _ITEM_STATUS
 
 typedef struct _ITEM_APP
 {
-	WCHAR display_name[MAX_PATH] = {0};
-	WCHAR original_path[MAX_PATH] = {0};
-	WCHAR real_path[MAX_PATH] = {0};
-
 	MARRAY mfarr;
+
+	LPWSTR display_name = nullptr;
+	LPWSTR original_path = nullptr;
+	LPWSTR real_path = nullptr;
 
 	union
 	{
