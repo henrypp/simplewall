@@ -8,6 +8,7 @@ v2.3.11 (x December 2018)
 - fixed notification window appears on taskbar (regression)
 - fixed exclude user rules option was not working
 - cosmetic fixes
+- fixed bugs
 
 v2.3.10 (28 November 2018)
 - fixed old bug where incorrect rules are may accepted as filters
