@@ -44,9 +44,9 @@ std::unordered_map<rstring, bool, rstring::hash, rstring::is_equal> rules_config
 
 std::vector<ITEM_COLOR> colors;
 std::vector<ITEM_PROTOCOL> protocols;
-std::vector<ITEM_ADD> processes;
-std::vector<ITEM_ADD> packages;
-std::vector<ITEM_ADD> services;
+std::vector<PITEM_ADD> processes;
+std::vector<PITEM_ADD> packages;
+std::vector<PITEM_ADD> services;
 std::vector<time_t> timers;
 
 std::vector<PITEM_RULE> rules_blocklist;
@@ -196,6 +196,27 @@ void _mps_changeconfig (bool is_stop)
 	}
 }
 
+void str_alloc (LPWSTR* pwstr, size_t length, LPCWSTR text)
+{
+	if (pwstr)
+	{
+		SAFE_DELETE_ARRAY (*pwstr);
+
+		if (!length)
+			return;
+
+		length += 1;
+
+		LPWSTR new_ptr = new WCHAR[length];
+
+		if (new_ptr)
+		{
+			StringCchCopy (new_ptr, length, text);
+			*pwstr = new_ptr;
+		}
+	}
+}
+
 void _app_listviewresize (HWND hwnd, UINT ctrl_id)
 {
 	if (!app.ConfigGet (L"AutoSizeColumns", true).AsBool ())
@@ -327,8 +348,7 @@ void _app_cleanup_cache (std::unordered_map<size_t, LPWSTR>* ptr_map)
 	{
 		LPWSTR ptr_buffer = p.second;
 
-		if (ptr_buffer)
-			delete[] ptr_buffer;
+		SAFE_DELETE_ARRAY (ptr_buffer);
 	}
 
 	ptr_map->clear ();
@@ -494,7 +514,7 @@ void _app_refreshstatus (HWND hwnd)
 	{
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
-		const UINT parts_count = 4;
+		static const UINT parts_count = 4;
 
 		rstring text[parts_count];
 		INT parts[parts_count] = {0};
@@ -596,35 +616,40 @@ void _app_refreshstatus (HWND hwnd)
 	}
 }
 
-bool _app_item_get (std::vector<ITEM_ADD>* pvec, size_t hash, rstring* display_name, rstring* real_path, PSID* lpsid, PSECURITY_DESCRIPTOR* lpsd, rstring* /*description*/)
+bool _app_item_get (std::vector<PITEM_ADD>* pvec, size_t hash, rstring* display_name, rstring* real_path, PSID* lpsid, PSECURITY_DESCRIPTOR* lpsd, rstring* /*description*/)
 {
 	for (size_t i = 0; i < pvec->size (); i++)
 	{
-		if (pvec->at (i).hash == hash)
+		PITEM_ADD ptr_item = pvec->at (i);
+
+		if (!ptr_item)
+			continue;
+
+		if (ptr_item->hash == hash)
 		{
 			if (display_name)
 			{
-				if (pvec->at (i).display_name[0])
-					*display_name = pvec->at (i).display_name;
+				if (ptr_item->display_name)
+					*display_name = ptr_item->display_name;
 
-				else if (pvec->at (i).real_path[0])
-					*display_name = pvec->at (i).real_path;
+				else if (ptr_item->real_path)
+					*display_name = ptr_item->real_path;
 
-				else if (pvec->at (i).sid[0])
-					*display_name = pvec->at (i).sid;
+				else if (ptr_item->sid)
+					*display_name = ptr_item->sid;
 			}
 
 			if (real_path)
 			{
-				if (pvec->at (i).real_path[0])
-					*real_path = pvec->at (i).real_path;
+				if (ptr_item->real_path)
+					*real_path = ptr_item->real_path;
 			}
 
 			if (lpsid)
-				*lpsid = pvec->at (i).psid;
+				*lpsid = (PSID)ptr_item->psid;
 
 			if (lpsd)
-				*lpsd = pvec->at (i).psd;
+				*lpsd = (PSECURITY_DESCRIPTOR)ptr_item->psd;
 
 			//if (description)
 			//	*description = pvec->at (i).pdesc;
@@ -1069,15 +1094,24 @@ HBITMAP _app_ico2bmp (HICON hicon)
 	return hbitmap;
 }
 
-void _app_generate_packages ()
+void _app_clear_array (std::vector<PITEM_ADD>* ptr)
 {
-	for (size_t i = 0; i < packages.size (); i++)
+	if (!ptr)
+		return;
+
+	for (size_t i = 0; i < ptr->size (); i++)
 	{
-		if (packages.at (i).psid)
-			LocalFree (packages.at (i).psid);
+		PITEM_ADD ptr_item = ptr->at (i);
+
+		SAFE_DELETE (ptr_item);
 	}
 
-	packages.clear ();
+	ptr->clear ();
+}
+
+void _app_generate_packages ()
+{
+	_app_clear_array (&packages);
 
 	HKEY hkey = nullptr;
 	HKEY hsubkey = nullptr;
@@ -1094,6 +1128,7 @@ void _app_generate_packages ()
 		while (true)
 		{
 			WCHAR package_sid[MAX_PATH] = {0};
+			WCHAR display_name[MAX_PATH] = {0};
 			DWORD size = _countof (package_sid);
 
 			if (RegEnumKeyEx (hkey, index++, package_sid, &size, 0, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
@@ -1110,33 +1145,35 @@ void _app_generate_packages ()
 			{
 				const size_t hash = _r_str_hash (package_sid);
 
-				ITEM_ADD item = {0};
+				PITEM_ADD item = new ITEM_ADD;
 
-				item.hash = hash;
-				StringCchCopy (item.sid, _countof (item.sid), package_sid);
+				item->hash = hash;
 
-				size = _countof (item.display_name) * sizeof (WCHAR);
-				result = RegQueryValueEx (hsubkey, L"DisplayName", nullptr, nullptr, (LPBYTE)item.display_name, &size);
+				size = _countof (display_name) * sizeof (WCHAR);
+				result = RegQueryValueEx (hsubkey, L"DisplayName", nullptr, nullptr, (LPBYTE)display_name, &size);
 
 				if (result == ERROR_SUCCESS)
 				{
-					if (item.display_name[0] == L'@')
+					if (display_name[0] == L'@')
 					{
-						if (!SUCCEEDED (SHLoadIndirectString (rstring (item.display_name), item.display_name, _countof (item.display_name), nullptr)))
-							item.display_name[0] = 0;
+						if (!SUCCEEDED (SHLoadIndirectString (rstring (display_name), display_name, _countof (display_name), nullptr)))
+							display_name[0] = 0;
 					}
 				}
 
-				if (!item.display_name[0])
+				if (!display_name[0])
 				{
-					size = _countof (item.display_name) * sizeof (WCHAR);
-					RegQueryValueEx (hsubkey, L"Moniker", nullptr, nullptr, (LPBYTE)item.display_name, &size);
+					size = _countof (display_name) * sizeof (WCHAR);
+					RegQueryValueEx (hsubkey, L"Moniker", nullptr, nullptr, (LPBYTE)display_name, &size);
 				}
 
-				if (!item.display_name[0])
-					StringCchCopy (item.display_name, _countof (item.display_name), package_sid);
+				if (!display_name[0])
+					StringCchCopy (display_name, _countof (display_name), package_sid);
 
-				ConvertStringSidToSid (package_sid, &item.psid);
+				str_alloc (&item->sid, wcslen (package_sid), package_sid);
+				str_alloc (&item->display_name, wcslen (display_name), display_name);
+
+				ConvertStringSidToSid (package_sid, &item->psid);
 
 				packages.push_back (item);
 
@@ -1145,23 +1182,139 @@ void _app_generate_packages ()
 		}
 
 		std::sort (packages.begin (), packages.end (),
-			[](const ITEM_ADD& a, const ITEM_ADD& b)->bool {
-			return StrCmpLogicalW (a.display_name, b.display_name) == -1;
+			[](const PITEM_ADD& a, const PITEM_ADD& b)->bool {
+			return StrCmpLogicalW (a->display_name, b->display_name) == -1;
 		});
 
 		RegCloseKey (hkey);
 	}
 }
 
-void _app_generate_services ()
+void _app_generate_processes ()
 {
-	for (size_t i = 0; i < services.size (); i++)
+	_app_clear_array (&processes);
+
+	NTSTATUS status = 0;
+
+	ULONG length = 0x4000;
+	PBYTE buffer = new BYTE[length];
+
+	while (true)
 	{
-		if (services.at (i).psd)
-			LocalFree (services.at (i).psd);
+		status = NtQuerySystemInformation (SystemProcessInformation, buffer, length, &length);
+
+		if (status == 0xC0000023L /*STATUS_BUFFER_TOO_SMALL*/ || status == 0xc0000004 /*STATUS_INFO_LENGTH_MISMATCH*/)
+		{
+			SAFE_DELETE_ARRAY (buffer);
+
+			buffer = new BYTE[length];
+		}
+		else
+		{
+			break;
+		}
 	}
 
-	services.clear ();
+	if (NT_SUCCESS (status))
+	{
+		PSYSTEM_PROCESS_INFORMATION spi = (PSYSTEM_PROCESS_INFORMATION)buffer;
+
+		std::unordered_map<size_t, bool> checker;
+
+		do
+		{
+			const DWORD pid = (DWORD)(DWORD_PTR)spi->UniqueProcessId;
+
+			if (!pid) // skip "system idle process"
+				continue;
+
+			const HANDLE hprocess = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+
+			if (hprocess)
+			{
+				WCHAR display_name[MAX_PATH] = {0};
+				WCHAR real_path[MAX_PATH] = {0};
+
+				size_t hash = 0;
+
+				StringCchPrintf (display_name, _countof (display_name), L"%s (%lu)", spi->ImageName.Buffer, pid);
+
+				if (pid == PROC_SYSTEM_PID)
+				{
+					StringCchCopy (real_path, _countof (real_path), _r_path_expand (PATH_NTOSKRNL));
+					hash = _r_str_hash (spi->ImageName.Buffer);
+				}
+				else
+				{
+					DWORD size = _countof (real_path) - 1;
+
+					if (QueryFullProcessImageName (hprocess, 0, real_path, &size))
+					{
+						_app_applycasestyle (real_path, wcslen (real_path)); // apply case-style
+						hash = _r_str_hash (real_path);
+					}
+					else
+					{
+						// cannot get file path because it's not filesystem process (Pico maybe?)
+						if (GetLastError () == ERROR_GEN_FAILURE)
+						{
+							StringCchCopy (real_path, _countof (real_path), spi->ImageName.Buffer);
+							hash = _r_str_hash (spi->ImageName.Buffer);
+						}
+						else
+						{
+							CloseHandle (hprocess);
+							continue;
+						}
+					}
+				}
+
+				if (hash && apps.find (hash) == apps.end () && checker.find (hash) == checker.end ())
+				{
+					checker[hash] = true;
+
+					PITEM_ADD ptr_item = new ITEM_ADD;
+
+					ptr_item->hash = hash;
+
+					str_alloc (&ptr_item->display_name, wcslen (display_name), display_name);
+					str_alloc (&ptr_item->real_path, wcslen (((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path)), ((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path));
+
+					// get file icon
+					{
+						HICON hicon = nullptr;
+
+						if (!app.ConfigGet (L"IsIconsHidden", false).AsBool () && _app_getfileicon (real_path, true, nullptr, &hicon))
+						{
+							ptr_item->hbmp = _app_ico2bmp (hicon);
+							DestroyIcon (hicon);
+						}
+						else
+						{
+							ptr_item->hbmp = _app_ico2bmp (config.hicon_small);
+						}
+					}
+
+					processes.push_back (ptr_item);
+				}
+
+				CloseHandle (hprocess);
+			}
+		}
+		while ((spi = ((spi->NextEntryOffset ? (PSYSTEM_PROCESS_INFORMATION)((PCHAR)(spi)+(spi)->NextEntryOffset) : nullptr))) != nullptr);
+
+		std::sort (processes.begin (), processes.end (),
+			[](const PITEM_ADD& a, const PITEM_ADD& b)->bool {
+			return StrCmpLogicalW (a->display_name, b->display_name) == -1;
+		});
+	}
+
+	SAFE_DELETE_ARRAY (buffer); // free the allocated buffer
+}
+
+void _app_generate_services ()
+{
+	_app_clear_array (&services);
 
 	const SC_HANDLE hsvcmgr = OpenSCManager (nullptr, nullptr, SC_MANAGER_ALL_ACCESS);
 
@@ -1225,11 +1378,11 @@ void _app_generate_services ()
 								}
 								else
 								{
-									delete[] lpqsc;
+									SAFE_DELETE_ARRAY (lpqsc);
 									continue;
 								}
 
-								delete[] lpqsc;
+								SAFE_DELETE_ARRAY (lpqsc);
 							}
 
 							CloseServiceHandle (hsvc);
@@ -1259,41 +1412,46 @@ void _app_generate_services ()
 								}
 								else
 								{
-									delete[] serviceSid;
-									serviceSid = nullptr;
+									SAFE_DELETE_ARRAY (serviceSid);
 								}
 							}
 						}
 
 						if (serviceSid && sidstring)
 						{
-							ITEM_ADD item = {0};
+							PITEM_ADD ptr_item = new ITEM_ADD;
 
-							StringCchCopy (item.service_name, _countof (item.service_name), service_name);
-							StringCchCopy (item.display_name, _countof (item.display_name), display_name);
-							StringCchCopy (item.real_path, _countof (item.real_path), real_path);
-							StringCchCopy (item.sid, _countof (item.sid), sidstring);
-							item.hash = _r_str_hash (item.service_name);
+							ptr_item->hash = _r_str_hash (service_name);
 
-							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring).ToUpper (), SDDL_REVISION_1, &item.psd, nullptr))
+							str_alloc (&ptr_item->service_name, wcslen (service_name), service_name);
+							str_alloc (&ptr_item->display_name, wcslen (display_name), display_name);
+							str_alloc (&ptr_item->real_path, wcslen (real_path), real_path);
+							str_alloc (&ptr_item->sid, wcslen (sidstring), sidstring);
+
+							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring).ToUpper (), SDDL_REVISION_1, (PSECURITY_DESCRIPTOR*)&ptr_item->psid, nullptr))
+							{
 								_app_logerror (L"ConvertStringSecurityDescriptorToSecurityDescriptor", GetLastError (), service_name, false);
 
+								SAFE_DELETE_ARRAY (ptr_item);
+							}
 							else
-								services.push_back (item);
+							{
+								services.push_back (ptr_item);
+							}
 						}
 
 						if (sidstring)
 							LocalFree (sidstring);
 
-						delete[] serviceSid;
+						SAFE_DELETE_ARRAY (serviceSid);
 					}
 
 					std::sort (services.begin (), services.end (),
-						[](const ITEM_ADD& a, const ITEM_ADD& b)->bool {
-						return StrCmpLogicalW (a.service_name, b.service_name) == -1;
+						[](const PITEM_ADD& a, const PITEM_ADD& b)->bool {
+						return StrCmpLogicalW (a->service_name, b->service_name) == -1;
 					});
 
-					delete[] pServices;
+					SAFE_DELETE_ARRAY (pServices);
 				}
 			}
 		}
@@ -1542,7 +1700,7 @@ void _app_freenotify (size_t idx_orhash, bool is_idx)
 	{
 		PITEM_LOG ptr_log = notifications.at (idx_orhash);
 
-		delete ptr_log;
+		SAFE_DELETE (ptr_log);
 
 		notifications.erase (notifications.begin () + idx_orhash);
 	}
@@ -1550,11 +1708,11 @@ void _app_freenotify (size_t idx_orhash, bool is_idx)
 	{
 		for (size_t i = (count - 1); i != LAST_VALUE; i--)
 		{
-			PITEM_LOG const ptr_log = notifications.at (i);
+			PITEM_LOG ptr_log = notifications.at (i);
 
 			if (!ptr_log || ptr_log->hash == idx_orhash)
 			{
-				delete ptr_log;
+				SAFE_DELETE (ptr_log);
 
 				notifications.erase (notifications.begin () + i);
 			}
@@ -1575,13 +1733,15 @@ bool _app_freeapplication (size_t hash)
 	{
 		if (cache_signatures.find (hash) != cache_signatures.end ())
 		{
-			delete[] cache_signatures[hash];
+			SAFE_DELETE_ARRAY (cache_signatures[hash]);
+
 			cache_signatures.erase (hash);
 		}
 
 		if (cache_versions.find (hash) != cache_versions.end ())
 		{
-			delete[] cache_versions[hash];
+			SAFE_DELETE_ARRAY (cache_versions[hash]);
+
 			cache_versions.erase (hash);
 		}
 
@@ -1627,27 +1787,12 @@ void _app_freerule (PITEM_RULE* ptr)
 
 		if (ptr_rule)
 		{
-			if (ptr_rule->pname)
-			{
-				delete[] (ptr_rule->pname);
-				ptr_rule->pname = nullptr;
-			}
+			SAFE_DELETE_ARRAY (ptr_rule->pname);
+			SAFE_DELETE_ARRAY (ptr_rule->prule_remote);
+			SAFE_DELETE_ARRAY (ptr_rule->prule_local);
 
-			if (ptr_rule->prule_remote)
-			{
-				delete[] (ptr_rule->prule_remote);
-				ptr_rule->prule_remote = nullptr;
-			}
+			SAFE_DELETE (ptr_rule);
 
-			if (ptr_rule->prule_local)
-			{
-				delete[] (ptr_rule->prule_local);
-				ptr_rule->prule_local = nullptr;
-			}
-
-			delete ptr_rule;
-
-			ptr_rule = nullptr;
 			*ptr = nullptr;
 		}
 	}
@@ -2245,8 +2390,7 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 			{
 				_app_logerror (L"InetPton", WSAGetLastError (), dnsServer, true);
 
-				delete pSrvList;
-				pSrvList = nullptr;
+				SAFE_DELETE (pSrvList);
 			}
 		}
 	}
@@ -2295,11 +2439,7 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 			}
 		}
 
-		if (pSrvList)
-		{
-			delete pSrvList;
-			pSrvList = nullptr;
-		}
+		SAFE_DELETE (pSrvList);
 
 		result.Trim (RULE_DELIMETER);
 
@@ -2608,8 +2748,7 @@ bool ByteBlobAlloc (PVOID data, size_t length, FWP_BYTE_BLOB** lpblob)
 
 		if (!tmp_ptr)
 		{
-			delete *lpblob;
-			*lpblob = nullptr;
+			SAFE_DELETE (*lpblob);
 
 			return false;
 		}
@@ -2635,14 +2774,9 @@ void ByteBlobFree (FWP_BYTE_BLOB** lpblob)
 
 		if (blob)
 		{
-			if (blob->data)
-			{
-				delete[] blob->data;
-				blob->data = nullptr;
-			}
+			SAFE_DELETE_ARRAY (blob->data);
+			SAFE_DELETE (blob);
 
-			delete blob;
-			blob = nullptr;
 			*lpblob = nullptr;
 		}
 	}
@@ -3088,26 +3222,6 @@ LPVOID _app_loadresource (LPCWSTR res, PDWORD size)
 	return nullptr;
 }
 
-void str_set (LPWSTR* pwstr, size_t length, LPCWSTR text)
-{
-	if (pwstr)
-	{
-		if (*pwstr)
-		{
-			delete[] (*pwstr);
-			(*pwstr) = nullptr;
-		}
-
-		LPWSTR new_ptr = new WCHAR[length];
-
-		if (new_ptr)
-		{
-			StringCchCopy (new_ptr, length, text);
-			*pwstr = new_ptr;
-		}
-	}
-}
-
 void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_internal, std::vector<PITEM_RULE> *ptr_rules, UINT8 weight, time_t *ptimestamp)
 {
 	if (!ptr_rules)
@@ -3184,13 +3298,13 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 							const rstring attr_rule_remote = item.attribute (L"rule").as_string ();
 							const rstring attr_rule_local = item.attribute (L"rule_local").as_string ();
 
-							const size_t name_length = min (attr_name.GetLength (), RULE_NAME_CCH_MAX) + 1;
-							const size_t rule_remote_length = min (attr_rule_remote.GetLength (), RULE_RULE_CCH_MAX) + 1;
-							const size_t rule_local_length = min (attr_rule_local.GetLength (), RULE_RULE_CCH_MAX) + 1;
+							const size_t name_length = min (attr_name.GetLength (), RULE_NAME_CCH_MAX);
+							const size_t rule_remote_length = min (attr_rule_remote.GetLength (), RULE_RULE_CCH_MAX);
+							const size_t rule_local_length = min (attr_rule_local.GetLength (), RULE_RULE_CCH_MAX);
 
-							str_set (&rule_ptr->pname, name_length, attr_name);
-							str_set (&rule_ptr->prule_remote, rule_remote_length, attr_rule_remote);
-							str_set (&rule_ptr->prule_local, rule_local_length, attr_rule_local);
+							str_alloc (&rule_ptr->pname, name_length, attr_name);
+							str_alloc (&rule_ptr->prule_remote, rule_remote_length, attr_rule_remote);
+							str_alloc (&rule_ptr->prule_local, rule_local_length, attr_rule_local);
 						}
 
 						rule_ptr->dir = (FWP_DIRECTION)item.attribute (L"dir").as_uint ();
@@ -4278,8 +4392,7 @@ void _app_clear_logstack ()
 		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
 		PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
 
-		if (ptr_log)
-			delete ptr_log;
+		SAFE_DELETE (ptr_log);
 
 		_aligned_free (ptr_entry);
 	}
@@ -4954,10 +5067,10 @@ bool _app_notifycommand (HWND hwnd, EnumNotifyCommand command, size_t timer_idx)
 
 							if (ptr_rule)
 							{
-								const size_t name_length = min (length, (size_t)RULE_NAME_CCH_MAX) + 1;
+								const size_t name_length = min (length, (size_t)RULE_NAME_CCH_MAX);
 
-								str_set (&ptr_rule->pname, name_length, rule);
-								str_set (&ptr_rule->prule_remote, name_length, rule);
+								str_alloc (&ptr_rule->pname, name_length, rule);
+								str_alloc (&ptr_rule->prule_remote, name_length, rule);
 
 								ptr_rule->is_enabled = true;
 								ptr_rule->is_block = ((command == CmdBlock) ? true : false);
@@ -5297,7 +5410,8 @@ void _app_notifyadd (PITEM_LOG const ptr_log)
 		{
 			idx = chk_idx;
 
-			delete notifications.at (chk_idx);
+			SAFE_DELETE (notifications.at (chk_idx));
+
 			notifications.at (chk_idx) = ptr_log2;
 		}
 		else
@@ -5393,7 +5507,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 				}
 			}
 
-			delete ptr_log;
+			SAFE_DELETE (ptr_log);
 		}
 
 		_aligned_free (ptr_entry);
@@ -5916,10 +6030,10 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 	SecureZeroMemory (&color, sizeof (color));
 
 	if (config_name)
-		str_set (&color.pcfg_name, wcslen (config_name) + 1, config_name);
+		str_alloc (&color.pcfg_name, wcslen (config_name), config_name);
 
 	if (config_value)
-		str_set (&color.pcfg_value, wcslen (config_value) + 1, config_value);
+		str_alloc (&color.pcfg_value, wcslen (config_value), config_value);
 
 	color.hash = _r_str_hash (config_value);
 	color.is_enabled = is_enabled;
@@ -5936,140 +6050,11 @@ void addprotocol (LPCWSTR name, UINT8 id)
 	SecureZeroMemory (&protocol, sizeof (protocol));
 
 	if (name)
-		str_set (&protocol.pname, wcslen (name) + 1, name);
+		str_alloc (&protocol.pname, wcslen (name), name);
 
 	protocol.id = id;
 
 	protocols.push_back (protocol);
-}
-
-void _app_generate_processes ()
-{
-	// clear previous result
-	{
-		for (size_t i = 0; i < processes.size (); i++)
-		{
-			if (processes.at (i).hbmp)
-				DeleteObject (processes.at (i).hbmp); // free memory
-		}
-	}
-
-	processes.clear (); // clear previous result
-
-	NTSTATUS status = 0;
-
-	ULONG length = 0x4000;
-	PBYTE buffer = new BYTE[length];
-
-	while (true)
-	{
-		status = NtQuerySystemInformation (SystemProcessInformation, buffer, length, &length);
-
-		if (status == 0xC0000023L /*STATUS_BUFFER_TOO_SMALL*/ || status == 0xc0000004 /*STATUS_INFO_LENGTH_MISMATCH*/)
-		{
-			delete[] buffer;
-			buffer = new BYTE[length];
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	if (NT_SUCCESS (status))
-	{
-		PSYSTEM_PROCESS_INFORMATION spi = (PSYSTEM_PROCESS_INFORMATION)buffer;
-
-		std::unordered_map<size_t, bool> checker;
-
-		do
-		{
-			const DWORD pid = (DWORD)(DWORD_PTR)spi->UniqueProcessId;
-
-			if (!pid) // skip "system idle process"
-				continue;
-
-			const HANDLE hprocess = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-
-			if (hprocess)
-			{
-				WCHAR display_name[128] = {0};
-				WCHAR real_path[MAX_PATH] = {0};
-
-				size_t hash = 0;
-
-				StringCchPrintf (display_name, _countof (display_name), L"%s (%lu)", spi->ImageName.Buffer, pid);
-
-				if (pid == PROC_SYSTEM_PID)
-				{
-					StringCchCopy (real_path, _countof (real_path), _r_path_expand (PATH_NTOSKRNL));
-					hash = _r_str_hash (spi->ImageName.Buffer);
-				}
-				else
-				{
-					DWORD size = _countof (real_path) - 1;
-
-					if (QueryFullProcessImageName (hprocess, 0, real_path, &size))
-					{
-						_app_applycasestyle (real_path, wcslen (real_path)); // apply case-style
-						hash = _r_str_hash (real_path);
-					}
-					else
-					{
-						// cannot get file path because it's not filesystem process (Pico maybe?)
-						if (GetLastError () == ERROR_GEN_FAILURE)
-						{
-							StringCchCopy (real_path, _countof (real_path), spi->ImageName.Buffer);
-							hash = _r_str_hash (spi->ImageName.Buffer);
-						}
-						else
-						{
-							CloseHandle (hprocess);
-							continue;
-						}
-					}
-				}
-
-				if (hash && apps.find (hash) == apps.end () && checker.find (hash) == checker.end ())
-				{
-					checker[hash] = true;
-
-					ITEM_ADD item;
-					SecureZeroMemory (&item, sizeof (item));
-
-					StringCchCopy (item.display_name, _countof (item.display_name), display_name);
-					StringCchCopy (item.real_path, _countof (item.real_path), ((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path));
-
-					// get file icon
-					{
-						HICON hicon = nullptr;
-
-						if (!app.ConfigGet (L"IsIconsHidden", false).AsBool () && _app_getfileicon (real_path, true, nullptr, &hicon))
-						{
-							item.hbmp = _app_ico2bmp (hicon);
-							DestroyIcon (hicon);
-						}
-						else
-						{
-							item.hbmp = _app_ico2bmp (config.hicon_small);
-						}
-					}
-
-					processes.push_back (item);
-				}
-
-				CloseHandle (hprocess);
-			}
-		}
-		while ((spi = ((spi->NextEntryOffset ? (PSYSTEM_PROCESS_INFORMATION)((PCHAR)(spi)+(spi)->NextEntryOffset) : nullptr))) != nullptr);
-
-		std::sort (processes.begin (), processes.end (),
-			[](const ITEM_ADD& a, const ITEM_ADD& b)->bool {
-			return StrCmpLogicalW (a.display_name, b.display_name) == -1;
-		});
-	}
-
-	delete[] buffer; // free the allocated buffer
 }
 
 bool _app_installmessage (HWND hwnd, bool is_install)
@@ -6578,10 +6563,10 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					// rule destination
 					{
 						rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (L"\r\n " RULE_DELIMETER);
-						size_t rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX) + 1;
+						size_t rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
 
 						rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (L"\r\n " RULE_DELIMETER);
-						size_t rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX) + 1;
+						size_t rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
 
 						// here we parse and check rule syntax
 						{
@@ -6604,7 +6589,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							rule_remote = rule_remote_fixed.Trim (L" " RULE_DELIMETER);
-							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX) + 1;
+							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
 						}
 
 						// here we parse and check rule syntax
@@ -6628,14 +6613,14 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							rule_local = rule_local_fixed.Trim (L" " RULE_DELIMETER);
-							rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX) + 1;
+							rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
 						}
 
 						_r_fastlock_acquireexclusive (&lock_access);
 
 						// save rule (remote)
-						str_set (&ptr_rule->prule_remote, rule_remote_length, rule_remote);
-						str_set (&ptr_rule->prule_local, rule_local_length, rule_local);
+						str_alloc (&ptr_rule->prule_remote, rule_remote_length, rule_remote);
+						str_alloc (&ptr_rule->prule_local, rule_local_length, rule_local);
 					}
 
 					// save rule name
@@ -6644,9 +6629,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (!name.IsEmpty ())
 						{
-							const size_t name_length = min (name.GetLength (), RULE_NAME_CCH_MAX) + 1;
+							const size_t name_length = min (name.GetLength (), RULE_NAME_CCH_MAX);
 
-							str_set (&ptr_rule->pname, name_length, name);
+							str_alloc (&ptr_rule->pname, name_length, name);
 						}
 					}
 
@@ -8148,8 +8133,7 @@ bool _wfp_initialize (bool is_full)
 			{
 				if (CoCreateGuid (config.psession) != S_OK)
 				{
-					delete config.psession;
-					config.psession = nullptr;
+					SAFE_DELETE (config.psession);
 				}
 			}
 		}
@@ -8371,11 +8355,7 @@ bool _wfp_initialize (bool is_full)
 
 void _wfp_uninitialize (bool is_full)
 {
-	if (config.psession)
-	{
-		delete config.psession;
-		config.psession = nullptr;
-	}
+	SAFE_DELETE (config.psession);
 
 	config.is_securityinfoset = false;
 
@@ -8834,8 +8814,8 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 void _app_generate_addmenu (HMENU submenu)
 {
 	constexpr auto uproc_id = 2;
-	constexpr auto  upckg_id = 3;
-	constexpr auto  usvc_id = 4;
+	constexpr auto upckg_id = 3;
+	constexpr auto usvc_id = 4;
 
 	const HMENU submenu_process = GetSubMenu (submenu, uproc_id);
 	const HMENU submenu_package = GetSubMenu (submenu, upckg_id);
@@ -8874,16 +8854,21 @@ void _app_generate_addmenu (HMENU submenu)
 
 			for (size_t i = 0; i < processes.size (); i++)
 			{
-				MENUITEMINFO mii = {0};
+				const PITEM_ADD ptr_item = processes.at (i);
 
-				mii.cbSize = sizeof (mii);
-				mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
-				mii.fType = MFT_STRING;
-				mii.dwTypeData = processes.at (i).display_name;
-				mii.hbmpItem = processes.at (i).hbmp;
-				mii.wID = IDX_PROCESS + UINT (i);
+				if (ptr_item && ptr_item->display_name)
+				{
+					MENUITEMINFO mii = {0};
 
-				InsertMenuItem (submenu_process, mii.wID, FALSE, &mii);
+					mii.cbSize = sizeof (mii);
+					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
+					mii.fType = MFT_STRING;
+					mii.dwTypeData = ptr_item->display_name;
+					mii.hbmpItem = ptr_item->hbmp;
+					mii.wID = IDX_PROCESS + UINT (i);
+
+					InsertMenuItem (submenu_process, mii.wID, FALSE, &mii);
+				}
 			}
 		}
 	}
@@ -8897,23 +8882,28 @@ void _app_generate_addmenu (HMENU submenu)
 		{
 			for (size_t i = 0; i < packages.size (); i++)
 			{
-				if (apps.find (packages.at (i).hash) != apps.end ())
-					continue;
+				const PITEM_ADD ptr_item = packages.at (i);
 
-				if (!total_added)
-					AppendMenu (submenu_package, MF_SEPARATOR, 1, nullptr);
+				if (ptr_item && ptr_item->display_name)
+				{
+					if (apps.find (ptr_item->hash) != apps.end ())
+						continue;
 
-				MENUITEMINFO mii = {0};
+					if (!total_added)
+						AppendMenu (submenu_package, MF_SEPARATOR, 1, nullptr);
 
-				mii.cbSize = sizeof (mii);
-				mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
-				mii.fType = MFT_STRING;
-				mii.dwTypeData = packages.at (i).display_name;
-				mii.hbmpItem = config.hbitmap_package_small;
-				mii.wID = IDX_PACKAGE + UINT (i);
+					MENUITEMINFO mii = {0};
 
-				InsertMenuItem (submenu_package, mii.wID, FALSE, &mii);
-				total_added += 1;
+					mii.cbSize = sizeof (mii);
+					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
+					mii.fType = MFT_STRING;
+					mii.dwTypeData = ptr_item->display_name;
+					mii.hbmpItem = config.hbitmap_package_small;
+					mii.wID = IDX_PACKAGE + UINT (i);
+
+					InsertMenuItem (submenu_package, mii.wID, FALSE, &mii);
+					total_added += 1;
+				}
 			}
 		}
 
@@ -8945,23 +8935,28 @@ void _app_generate_addmenu (HMENU submenu)
 		{
 			for (size_t i = 0; i < services.size (); i++)
 			{
-				if (apps.find (services.at (i).hash) != apps.end ())
-					continue;
+				const PITEM_ADD ptr_item = services.at (i);
 
-				if (!total_added)
-					AppendMenu (submenu_service, MF_SEPARATOR, 1, nullptr);
+				if (ptr_item && ptr_item->service_name)
+				{
+					if (apps.find (ptr_item->hash) != apps.end ())
+						continue;
 
-				MENUITEMINFO mii = {0};
+					if (!total_added)
+						AppendMenu (submenu_service, MF_SEPARATOR, 1, nullptr);
 
-				mii.cbSize = sizeof (mii);
-				mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
-				mii.fType = MFT_STRING;
-				mii.dwTypeData = services.at (i).service_name;
-				mii.hbmpItem = config.hbitmap_service_small;
-				mii.wID = IDX_SERVICE + UINT (i);
+					MENUITEMINFO mii = {0};
 
-				InsertMenuItem (submenu_service, mii.wID, FALSE, &mii);
-				total_added += 1;
+					mii.cbSize = sizeof (mii);
+					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
+					mii.fType = MFT_STRING;
+					mii.dwTypeData = ptr_item->service_name;
+					mii.hbmpItem = config.hbitmap_service_small;
+					mii.wID = IDX_SERVICE + UINT (i);
+
+					InsertMenuItem (submenu_service, mii.wID, FALSE, &mii);
+					total_added += 1;
+				}
 			}
 		}
 
@@ -9063,7 +9058,7 @@ void _app_initialize ()
 							CopyMemory (config.psid, token_user->User.Sid, SECURITY_MAX_SID_SIZE);
 					}
 
-					delete[] token_user;
+					SAFE_DELETE_ARRAY (token_user);
 				}
 			}
 
@@ -9427,7 +9422,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					item = _app_addapplication (hwnd, file, 0, 0, 0, false, false, false);
 
-					delete[] file;
+					SAFE_DELETE_ARRAY (file);
 				}
 			}
 
@@ -10061,52 +10056,61 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else if ((LOWORD (wparam) >= IDX_PROCESS && LOWORD (wparam) <= IDX_PROCESS + processes.size ()))
 			{
-				PITEM_ADD const ptr_proc = &processes.at (LOWORD (wparam) - IDX_PROCESS);
+				PITEM_ADD const ptr_proc = processes.at (LOWORD (wparam) - IDX_PROCESS);
 
-				_r_fastlock_acquireexclusive (&lock_access);
+				if (ptr_proc && ptr_proc->real_path)
+				{
+					_r_fastlock_acquireexclusive (&lock_access);
 
-				const size_t hash = _app_addapplication (hwnd, ptr_proc->real_path, 0, 0, 0, false, false, true);
+					const size_t hash = _app_addapplication (hwnd, ptr_proc->real_path, 0, 0, 0, false, false, true);
 
-				_r_fastlock_releaseexclusive (&lock_access);
+					_r_fastlock_releaseexclusive (&lock_access);
 
-				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
-				_app_profilesave (hwnd);
+					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+					_app_profilesave (hwnd);
 
-				ShowItem (hwnd, IDC_LISTVIEW, _app_getposition (hwnd, hash), -1);
+					ShowItem (hwnd, IDC_LISTVIEW, _app_getposition (hwnd, hash), -1);
+				}
 
 				return FALSE;
 			}
 			else if ((LOWORD (wparam) >= IDX_PACKAGE && LOWORD (wparam) <= IDX_PACKAGE + packages.size ()))
 			{
-				PITEM_ADD const ptr_package = &packages.at (LOWORD (wparam) - IDX_PACKAGE);
+				PITEM_ADD const ptr_package = packages.at (LOWORD (wparam) - IDX_PACKAGE);
 
-				_r_fastlock_acquireexclusive (&lock_access);
+				if (ptr_package && ptr_package->sid)
+				{
+					_r_fastlock_acquireexclusive (&lock_access);
 
-				const size_t hash = _app_addapplication (hwnd, ptr_package->sid, 0, 0, 0, false, false, true);
+					const size_t hash = _app_addapplication (hwnd, ptr_package->sid, 0, 0, 0, false, false, true);
 
-				_r_fastlock_releaseexclusive (&lock_access);
+					_r_fastlock_releaseexclusive (&lock_access);
 
-				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
-				_app_profilesave (hwnd);
+					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+					_app_profilesave (hwnd);
 
-				ShowItem (hwnd, IDC_LISTVIEW, _app_getposition (hwnd, hash), -1);
+					ShowItem (hwnd, IDC_LISTVIEW, _app_getposition (hwnd, hash), -1);
+				}
 
 				return FALSE;
 			}
 			else if ((LOWORD (wparam) >= IDX_SERVICE && LOWORD (wparam) <= IDX_SERVICE + services.size ()))
 			{
-				PITEM_ADD const ptr_svc = &services.at (LOWORD (wparam) - IDX_SERVICE);
+				PITEM_ADD const ptr_svc = services.at (LOWORD (wparam) - IDX_SERVICE);
 
-				_r_fastlock_acquireexclusive (&lock_access);
+				if (ptr_svc && ptr_svc->service_name)
+				{
+					_r_fastlock_acquireexclusive (&lock_access);
 
-				const size_t hash = _app_addapplication (hwnd, ptr_svc->service_name, 0, 0, 0, false, false, true);
+					const size_t hash = _app_addapplication (hwnd, ptr_svc->service_name, 0, 0, 0, false, false, true);
 
-				_r_fastlock_releaseexclusive (&lock_access);
+					_r_fastlock_releaseexclusive (&lock_access);
 
-				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
-				_app_profilesave (hwnd);
+					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+					_app_profilesave (hwnd);
 
-				ShowItem (hwnd, IDC_LISTVIEW, _app_getposition (hwnd, hash), -1);
+					ShowItem (hwnd, IDC_LISTVIEW, _app_getposition (hwnd, hash), -1);
+				}
 
 				return FALSE;
 			}
@@ -10633,17 +10637,26 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (LOWORD (wparam) == IDM_ALL_PROCESSES)
 					{
 						for (size_t i = 0; i < processes.size (); i++)
-							_app_addapplication (hwnd, processes.at (i).real_path, 0, 0, 0, false, false, true);
+						{
+							if (processes.at (i)->real_path)
+								_app_addapplication (hwnd, processes.at (i)->real_path, 0, 0, 0, false, false, true);
+						}
 					}
 					else if (LOWORD (wparam) == IDM_ALL_PACKAGES)
 					{
 						for (size_t i = 0; i < packages.size (); i++)
-							_app_addapplication (hwnd, packages.at (i).sid, 0, 0, 0, false, false, true);
+						{
+							if (packages.at (i)->sid)
+								_app_addapplication (hwnd, packages.at (i)->sid, 0, 0, 0, false, false, true);
+						}
 					}
 					else if (LOWORD (wparam) == IDM_ALL_SERVICES)
 					{
 						for (size_t i = 0; i < services.size (); i++)
-							_app_addapplication (hwnd, services.at (i).service_name, 0, 0, 0, false, false, true);
+						{
+							if (services.at (i)->service_name)
+								_app_addapplication (hwnd, services.at (i)->service_name, 0, 0, 0, false, false, true);
+						}
 					}
 
 					_r_fastlock_releaseexclusive (&lock_access);

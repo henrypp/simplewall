@@ -390,14 +390,49 @@ typedef struct _ITEM_LIST_ENTRY
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
 
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p) {if(p) { delete (p); (p)=nullptr;}}
+#endif
+
+#ifndef SAFE_DELETE_ARRAY
+#define SAFE_DELETE_ARRAY(p) {if(p) { delete[] (p); (p)=nullptr;}}
+#endif
+
 typedef struct _ITEM_ADD
 {
-	WCHAR sid[MAX_PATH] = {0};
-	WCHAR display_name[MAX_PATH] = {0};
-	WCHAR service_name[MAX_PATH] = {0};
-	WCHAR real_path[MAX_PATH] = {0};
+	_ITEM_ADD ()
+	{
+		hash = 0;
+
+		sid = nullptr;
+		display_name = nullptr;
+		service_name = nullptr;
+		real_path = nullptr;
+
+		psid = nullptr;
+		hbmp = nullptr;
+	}
+
+	~_ITEM_ADD ()
+	{
+		SAFE_DELETE_ARRAY (sid);
+		SAFE_DELETE_ARRAY (display_name);
+		SAFE_DELETE_ARRAY (service_name);
+		SAFE_DELETE_ARRAY (real_path);
+
+		if (hbmp)
+		{
+			DeleteObject (hbmp);
+			hbmp = nullptr;
+		}
+	}
 
 	size_t hash = 0;
+
+	LPWSTR sid = nullptr;
+	LPWSTR display_name = nullptr;
+	LPWSTR service_name = nullptr;
+	LPWSTR real_path = nullptr;
 
 	union
 	{
