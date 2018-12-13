@@ -113,7 +113,7 @@ void _mps_changeconfig (bool is_stop)
 	}
 	else
 	{
-		LPCWSTR arr[] = {
+		static LPCWSTR arr[] = {
 			L"mpssvc",
 			L"mpsdrv",
 		};
