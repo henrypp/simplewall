@@ -1,4 +1,4 @@
-v2.3.11 (x December 2018)
+v2.3.11 (14 December 2018)
 - added "/install" argument for install filtering
 - added cache auto clean up (to prevent overflow)
 - changed minimum size of main window (issue #269)
