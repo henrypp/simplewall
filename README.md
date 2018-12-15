@@ -32,7 +32,7 @@ To activate portable mode, create "simplewall.ini" in application folder, or mov
 ```
 
 #### FAQ:
-- [Is it safe to use simplewall with Windows Firewall? (discussion)](https://github.com/henrypp/simplewall/issues/254)
+- [Is it safe to use simplewall with Windows Firewall?](https://github.com/henrypp/simplewall/issues/254#issuecomment-447436527)
 - [Are internet connections blocked when simplewall is not running?](https://github.com/henrypp/simplewall/issues/119#issuecomment-364003679)
 - [How can i disable blocklist entirely?](https://github.com/henrypp/simplewall/issues/243)
 - [How to fix Windows Update and Windows Store internet access (temporary solution)](https://github.com/henrypp/simplewall/issues/206#issuecomment-439830634)
