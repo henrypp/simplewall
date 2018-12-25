@@ -624,6 +624,9 @@ bool _app_freeapplication (size_t hash)
 		SAFE_DELETE_ARRAY (ptr_app->display_name);
 		SAFE_DELETE_ARRAY (ptr_app->real_path);
 		SAFE_DELETE_ARRAY (ptr_app->original_path);
+
+		SAFE_DELETE_ARRAY (ptr_app->description);
+		SAFE_DELETE_ARRAY (ptr_app->signer);
 	}
 
 	if (hash)
@@ -678,7 +681,7 @@ bool _app_freeapplication (size_t hash)
 
 void _app_freecache (std::unordered_map<size_t, LPWSTR>* ptr_map)
 {
-	if (ptr_map->size () < UMAP_CACHE_LIMIT)
+	if (ptr_map->size () <= UMAP_CACHE_LIMIT)
 		return;
 
 	for (auto &p : *ptr_map)
@@ -725,9 +728,7 @@ void _app_freethreadpool (std::vector<HANDLE>* ptr_pool)
 		return;
 
 	for (size_t i = remove_idx.size (); i != 0; i--)
-	{
 		ptr_pool->erase (ptr_pool->begin () + remove_idx.at (i - 1));
-	}
 }
 
 bool _app_item_get (std::vector<PITEM_ADD>* pvec, size_t hash, rstring* display_name, rstring* real_path, PSID* lpsid, PSECURITY_DESCRIPTOR* lpsd, rstring* /*description*/)
@@ -743,19 +744,19 @@ bool _app_item_get (std::vector<PITEM_ADD>* pvec, size_t hash, rstring* display_
 		{
 			if (display_name)
 			{
-				if (ptr_item->display_name)
+				if (ptr_item->display_name && ptr_item->display_name[0])
 					*display_name = ptr_item->display_name;
 
-				else if (ptr_item->real_path)
+				else if (ptr_item->real_path && ptr_item->real_path[0])
 					*display_name = ptr_item->real_path;
 
-				else if (ptr_item->sid)
+				else if (ptr_item->sid && ptr_item->sid[0])
 					*display_name = ptr_item->sid;
 			}
 
 			if (real_path)
 			{
-				if (ptr_item->real_path)
+				if (ptr_item->real_path && ptr_item->real_path[0])
 					*real_path = ptr_item->real_path;
 			}
 
@@ -775,41 +776,52 @@ bool _app_item_get (std::vector<PITEM_ADD>* pvec, size_t hash, rstring* display_
 	return false;
 }
 
-void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, rstring& extracted_name)
+void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, LPWSTR* extracted_name)
 {
+	if (!extracted_name)
+		return;
+
 	if (
 		hash == config.ntoskrnl_hash ||
 		ptr_app->type == AppService
 		)
 	{
-		extracted_name = ptr_app->original_path;
-		return;
+		_r_str_alloc (extracted_name, ptr_app->original_path ? wcslen (ptr_app->original_path) : 0, ptr_app->original_path);
 	}
 	else if (ptr_app->type == AppStore)
 	{
-		_app_item_get (&packages, hash, &extracted_name, nullptr, nullptr, nullptr, nullptr);
-		return;
-	}
+		rstring name;
+		_app_item_get (&packages, hash, &name, nullptr, nullptr, nullptr, nullptr);
 
-	if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
+		_r_str_alloc (extracted_name, name.GetLength (), name);
+	}
+	else
 	{
-		extracted_name = _r_path_extractfile (ptr_app->real_path);
-		return;
-	}
+		if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
+		{
+			LPCWSTR path = _r_path_extractfile (ptr_app->real_path);
 
-	extracted_name = ptr_app->real_path;
+			_r_str_alloc (extracted_name, wcslen (path), path);
+		}
+		else
+		{
+			_r_str_alloc (extracted_name, wcslen (ptr_app->real_path), ptr_app->real_path);
+		}
+	}
 }
 
-bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
+bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR* pinfo)
 {
 	if (!pinfo || !path)
 		return false;
 
 	if (cache_versions.find (hash) != cache_versions.end ())
 	{
-		*pinfo = cache_versions[hash];
+		LPCWSTR ptr_text = cache_versions[hash];
 
-		return (cache_versions[hash] != nullptr);
+		_r_str_alloc (pinfo, ptr_text ? wcslen (ptr_text) : 0, ptr_text);
+
+		return (ptr_text != nullptr);
 	}
 
 	bool result = false;
@@ -886,16 +898,14 @@ bool _app_getinformation (size_t hash, LPCWSTR path, LPCWSTR* pinfo)
 
 					// get signature information
 					{
-						const size_t length = buffer.GetLength () + 1;
-						LPWSTR ppointer = new WCHAR[length];
+						LPWSTR ptr_text = nullptr;
 
-						if (ppointer)
-							StringCchCopy (ppointer, length, buffer);
+						_r_str_alloc (&ptr_text, buffer.GetLength (), buffer);
+						_r_str_alloc (pinfo, buffer.GetLength (), buffer);
 
 						_app_freecache (&cache_versions);
 
-						*pinfo = ppointer;
-						cache_versions[hash] = ppointer;
+						cache_versions[hash] = ptr_text;
 					}
 
 					result = true;
@@ -1045,19 +1055,21 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 	return result;
 }
 
-bool _app_verifysignature (size_t hash, LPCWSTR path, LPCWSTR* psigner)
+bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR* psigner)
 {
 	if (!app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
 		return false;
 
-	if (!psigner)
+	if (!psigner || !path)
 		return false;
 
 	if (cache_signatures.find (hash) != cache_signatures.end ())
 	{
-		*psigner = cache_signatures[hash];
+		LPCWSTR ptr_text = cache_signatures[hash];
 
-		return (cache_signatures[hash] != nullptr);
+		_r_str_alloc (psigner, ptr_text ? wcslen (ptr_text) : 0, ptr_text);
+
+		return (ptr_text != nullptr);
 	}
 
 	bool result = false;
@@ -1106,21 +1118,18 @@ bool _app_verifysignature (size_t hash, LPCWSTR path, LPCWSTR* psigner)
 
 						if (num_chars > 1)
 						{
-							LPWSTR ppointer = new WCHAR[num_chars];
+							LPWSTR ptr_text = new WCHAR[num_chars];
 
-							if (ppointer)
+							if (ptr_text)
 							{
-								CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, ppointer, num_chars);
-								*psigner = ppointer;
-							}
-							else
-							{
-								*psigner = nullptr;
+								if (!CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, ptr_text, num_chars))
+									SAFE_DELETE_ARRAY (ptr_text);
 							}
 
 							_app_freecache (&cache_signatures);
 
-							cache_signatures[hash] = ppointer;
+							_r_str_alloc (psigner, ptr_text ? wcslen (ptr_text) : 0, ptr_text);
+							cache_signatures[hash] = ptr_text;
 						}
 					}
 				}
@@ -1623,7 +1632,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	const size_t hash = path.Hash ();
 
 	if (apps.find (hash) != apps.end ())
-		return 0; // already exists
+		return hash; // already exists
 
 	ITEM_APP *ptr_app = &apps[hash]; // application pointer
 
@@ -1676,7 +1685,9 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 			if (is_ntoskrnl) // "system" process
 			{
-				//display_name = path;
+				const WCHAR wc = path.At (0);
+				path.At (0) = _r_str_upper (wc); // fix "System" lowercase
+
 				real_path = _r_path_expand (PATH_NTOSKRNL);
 			}
 
@@ -1684,7 +1695,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 			ptr_app->is_temp = ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_TEMPORARY) != 0)) || (_wcsnicmp (real_path, config.tmp1_dir, config.tmp1_length) == 0);
 			ptr_app->is_system = !ptr_app->is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_wcsnicmp (real_path, config.windows_dir, config.wd_length) == 0));
 
-			ptr_app->is_signed = _app_verifysignature (hash, real_path, &ptr_app->signer);
+			ptr_app->is_signed = _app_getsignatureinfo (hash, real_path, &ptr_app->signer);
 		}
 	}
 
@@ -1694,10 +1705,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	_r_str_alloc (&ptr_app->original_path, path.GetLength (), path);
 	_r_str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path);
 
-	rstring name;
-	_app_getdisplayname (hash, ptr_app, name);
-
-	_r_str_alloc (&ptr_app->display_name, name.GetLength (), name);
+	_app_getdisplayname (hash, ptr_app, &ptr_app->display_name);
 
 	ptr_app->is_enabled = is_enabled;
 	ptr_app->is_silent = is_silent;
@@ -1846,13 +1854,18 @@ bool _app_isexists (ITEM_APP const *ptr_app)
 		return true;
 
 	if (ptr_app->type == AppRegular)
-		return _r_fs_exists (ptr_app->real_path);
+		return ptr_app->real_path && _r_fs_exists (ptr_app->real_path);
 
 	else if (ptr_app->type == AppStore)
-		return _app_item_get (&packages, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr, nullptr);
-
+	{
+		if (ptr_app->original_path)
+			return _app_item_get (&packages, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr, nullptr);
+	}
 	else if (ptr_app->type == AppService)
-		return _app_item_get (&services, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr, nullptr);
+	{
+		if (ptr_app->original_path)
+			return _app_item_get (&services, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr, nullptr);
+	}
 
 	return true;
 }
@@ -1941,7 +1954,7 @@ rstring _app_gettooltip (size_t hash)
 		{
 			rstring display_name;
 
-			if (_app_getinformation (hash, ptr_app->real_path, &ptr_app->description))
+			if (_app_getversioninfo (hash, ptr_app->real_path, &ptr_app->description))
 			{
 				display_name = ptr_app->description;
 
@@ -2969,6 +2982,16 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 		}
 		else
 		{
+			if (!ptr_app->original_path)
+			{
+				ByteBlobFree (&bPath);
+				ByteBlobFree (&bSid);
+
+				_app_logerror (TEXT (__FUNCTION__), 0, ptr_app->display_name, true);
+
+				return false;
+			}
+
 			LPCWSTR path = ptr_app->original_path;
 			const DWORD rc = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
 
@@ -3733,8 +3756,11 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 								item.append_attribute (L"apps").set_value (arr.Trim (RULE_DELIMETER));
 						}
 
-						item.append_attribute (L"is_block").set_value (ptr_rule->is_block);
-						item.append_attribute (L"is_enabled").set_value (ptr_rule->is_enabled);
+						if (ptr_rule->is_block)
+							item.append_attribute (L"is_block").set_value (ptr_rule->is_block);
+
+						if (ptr_rule->is_enabled)
+							item.append_attribute (L"is_enabled").set_value (ptr_rule->is_enabled);
 					}
 				}
 			}
@@ -3983,7 +4009,7 @@ bool _wfp_create2filters (bool is_transact)
 	FWPM_FILTER_CONDITION fwfc[3] = {0};
 
 	// add loopback connections permission
-	if (app.ConfigGet (L"AllowLoopbackConnections", false).AsBool ())
+	if (app.ConfigGet (L"AllowLoopbackConnections", true).AsBool ())
 	{
 		// match all loopback (localhost) data
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
@@ -4953,6 +4979,10 @@ void _app_notifycreatewindow ()
 			_r_ctrl_settip (config.hnotification, IDC_DISABLENOTIFICATION_ID, LPSTR_TEXTCALLBACK);
 
 			_app_notifyhide (config.hnotification);
+
+#ifdef _APP_HAVE_DARKTHEME
+			_r_wnd_setdarktheme (config.hnotification);
+#endif // _APP_HAVE_DARKTHEME
 		}
 	}
 }
@@ -5224,7 +5254,7 @@ bool _app_notifyshow (size_t idx, bool is_forced)
 				name = _r_path_extractfile (ptr_app->display_name);
 
 			else
-				name = _r_path_compact (ptr_app->display_name, 48);
+				name = _r_path_compact (ptr_app->display_name, 36);
 
 			if (app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
 				is_signed.Format (L" [%s]", app.LocaleString (ptr_app->is_signed ? IDS_SIGN_SIGNED : IDS_SIGN_UNSIGNED, nullptr).GetString ());
@@ -5645,7 +5675,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 				ptr_log->filter_id = filter_id;
 
-				if (FwpmFilterGetById (config.hengine, filter_id, &filter) == ERROR_SUCCESS)
+				if (FwpmFilterGetById (config.hengine, filter_id, &filter) == ERROR_SUCCESS && (filter->displayData.name || filter->displayData.description))
 				{
 					_r_str_alloc (&ptr_log->filter_name, wcslen ((filter->displayData.description ? filter->displayData.description : filter->displayData.name)), (filter->displayData.description ? filter->displayData.description : filter->displayData.name));
 
@@ -5661,7 +5691,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 							ptr_log->is_custom = (filter->weight.uint8 == FILTER_WEIGHT_CUSTOM) || (filter->weight.uint8 == FILTER_WEIGHT_CUSTOM_BLOCK);
 						}
 
-						if (FwpmProviderGetByKey (config.hengine, filter->providerKey, &provider) == ERROR_SUCCESS)
+						if (FwpmProviderGetByKey (config.hengine, filter->providerKey, &provider) == ERROR_SUCCESS && (provider->displayData.name || provider->displayData.description))
 							_r_str_alloc (&ptr_log->provider_name, wcslen ((provider->displayData.description ? provider->displayData.description : provider->displayData.name)), (provider->displayData.description ? provider->displayData.description : provider->displayData.name));
 					}
 				}
@@ -6431,8 +6461,21 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_r_ctrl_enable (hwnd, IDC_SAVE, (SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) && ((SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) || (SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0))); // enable apply button
 
+#ifdef _APP_HAVE_DARKTHEME
+			_r_wnd_setdarktheme (hwnd);
+#endif // _APP_HAVE_DARKTHEME
+
 			break;
 		}
+
+#ifdef _APP_HAVE_DARKTHEME
+		case WM_SETTINGCHANGE:
+		case WM_SYSCOLORCHANGE:
+		{
+			_r_wnd_setdarktheme (hwnd);
+			break;
+		}
+#endif // _APP_HAVE_DARKTHEME
 
 		case WM_CONTEXTMENU:
 		{
@@ -6759,7 +6802,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					CheckDlgButton (hwnd, IDC_RULE_ALLOWINBOUND, app.ConfigGet (L"AllowInboundConnections", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_RULE_ALLOWLISTEN, app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
-					CheckDlgButton (hwnd, IDC_RULE_ALLOWLOOPBACK, app.ConfigGet (L"AllowLoopbackConnections", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_RULE_ALLOWLOOPBACK, app.ConfigGet (L"AllowLoopbackConnections", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
 					CheckDlgButton (hwnd, IDC_USESTEALTHMODE_CHK, app.ConfigGet (L"UseStealthMode", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, app.ConfigGet (L"InstallBoottimeFilters", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
@@ -7565,7 +7608,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								PITEM_APP ptr_app = &p.second;
 
 								if (ptr_app->type == AppRegular)
-									ptr_app->is_signed = _app_verifysignature (p.first, ptr_app->real_path, &ptr_app->signer);
+									ptr_app->is_signed = _app_getsignatureinfo (p.first, ptr_app->real_path, &ptr_app->signer);
 							}
 
 							_r_fastlock_releaseexclusive (&lock_access);
@@ -8602,6 +8645,15 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
+#ifdef _APP_HAVE_DARKTHEME
+		case WM_SETTINGCHANGE:
+		case WM_SYSCOLORCHANGE:
+		{
+			_r_wnd_setdarktheme (hwnd);
+			break;
+		}
+#endif // _APP_HAVE_DARKTHEME
+
 		case WM_SETCURSOR:
 		{
 			const UINT ctrl_id = GetDlgCtrlID ((HWND)wparam);
@@ -9109,6 +9161,15 @@ void _app_initialize ()
 
 	// initialize thread objects
 	config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
+
+	// initialize winsock (required by getnameinfo)
+	if (!config.is_wsainit)
+	{
+		WSADATA wsaData = {0};
+
+		if (WSAStartup (WINSOCK_VERSION, &wsaData) == ERROR_SUCCESS)
+			config.is_wsainit = true;
+	}
 }
 
 INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -9118,6 +9179,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		case WM_INITDIALOG:
 		{
 			_app_initialize ();
+
+#ifdef _APP_HAVE_DARKTHEME
+			_r_wnd_setdarktheme (hwnd);
+#endif // _APP_HAVE_DARKTHEME
 
 			// init buffered paint
 			BufferedPaintInit ();
@@ -9235,14 +9300,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					log_stack.Count = 0;
 					InitializeSListHead (&log_stack.ListHead);
 				}
-			}
-
-			// initialize winsock (required by getnameinfo)
-			{
-				WSADATA wsaData = {0};
-
-				if (WSAStartup (WINSOCK_VERSION, &wsaData) == ERROR_SUCCESS)
-					config.is_wsainit = true;
 			}
 
 			// load profile
@@ -10369,10 +10426,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_app)
 						{
-							rstring name;
-							_app_getdisplayname (hash, ptr_app, name);
-
-							_r_str_alloc (&ptr_app->display_name, name.GetLength (), name);
+							_app_getdisplayname (hash, ptr_app, &ptr_app->display_name);
 
 							_r_listview_setitem (hwnd, IDC_LISTVIEW, i, 0, ptr_app->display_name);
 						}
@@ -10730,7 +10784,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ctrl_id == IDM_EXPLORE)
 						{
-							if (ptr_app->type != AppPico && ptr_app->type != AppDevice)
+							if (ptr_app->type != AppPico && ptr_app->type != AppDevice && ptr_app->real_path)
 							{
 								if (_r_fs_exists (ptr_app->real_path))
 									_r_run (nullptr, _r_fmt (L"\"explorer.exe\" /select,\"%s\"", ptr_app->real_path));

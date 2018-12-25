@@ -272,14 +272,14 @@ typedef struct _ITEM_APP
 	LPWSTR original_path = nullptr;
 	LPWSTR real_path = nullptr;
 
+	LPWSTR description = nullptr;
+	LPWSTR signer = nullptr;
+
 	union
 	{
 		PSECURITY_DESCRIPTOR psd = nullptr; // service app
 		PSID psid; // store app (win8+)
 	};
-
-	LPCWSTR description = nullptr;
-	LPCWSTR signer = nullptr;
 
 	HANDLE htimer = nullptr;
 
