@@ -1,7 +1,7 @@
 v2.3.12 (25 December 2018)
 - added (partialy) win10rs5+ dark theme (issue #248)
 - allow loopback connecions by default for new users
-- fixed allocated strings dereferencing
+- fixed allocated strings dereferencing (issue #283)
 - cosmetic fixes
 - fixed bugs
 
