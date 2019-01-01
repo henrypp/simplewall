@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2018 Henry++
+// Copyright (c) 2016-2019 Henry++
 
 #ifndef __MAIN_H__
 #define __MAIN_H__

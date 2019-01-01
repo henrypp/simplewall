@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2018 Henry++
+// Copyright (c) 2016-2019 Henry++
 
 #include <winsock2.h>
 #include <ws2ipdef.h>
