@@ -2548,7 +2548,6 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format
 
 				if (host.IsEmpty ())
 				{
-					_app_logerror (L"_app_parsehostaddress", ERROR_EMPTY, ni.NamedAddress.Address, true);
 					return false;
 				}
 				else
