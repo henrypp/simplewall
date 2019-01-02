@@ -1,3 +1,11 @@
+v2.3.13 (x January 2019)
+- added dns resolver caching
+- fixed access rights for wfp provider and sublayer
+- fixed allocated strings dereferencing (issue #285)
+- fixed parsing hosnames with dashes (issue #271)
+- fixed localization (issue #288)
+- fixed bugs
+
 v2.3.12 (25 December 2018)
 - added (partialy) win10rs5+ dark theme (issue #248)
 - allow loopback connections by default for new users
