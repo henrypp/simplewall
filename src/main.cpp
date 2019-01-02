@@ -9337,7 +9337,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// install filters
 			if (_wfp_isfiltersinstalled ())
+			{
+				if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
+					_mps_changeconfig (true);
+
 				_app_changefilters (hwnd, true, true);
+			}
 
 			break;
 		}
