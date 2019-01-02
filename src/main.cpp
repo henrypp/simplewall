@@ -35,6 +35,7 @@ std::unordered_map<size_t, ITEM_APP> apps;
 
 std::unordered_map<size_t, LPWSTR> cache_signatures;
 std::unordered_map<size_t, LPWSTR> cache_versions;
+std::unordered_map<size_t, LPWSTR> cache_dns;
 std::unordered_map<size_t, LPWSTR> cache_hosts;
 std::unordered_map<size_t, EnumRuleType> cache_types;
 
@@ -799,9 +800,9 @@ void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, LPWSTR* extracte
 	{
 		if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
 		{
-			LPCWSTR path = _r_path_extractfile (ptr_app->real_path);
+			const rstring path = _r_path_extractfile (ptr_app->real_path);
 
-			_r_str_alloc (extracted_name, _r_str_length (path), path);
+			_r_str_alloc (extracted_name, path.GetLength (), path);
 		}
 		else
 		{
@@ -2352,7 +2353,7 @@ bool _app_ruleisport (LPCWSTR rule)
 
 	for (size_t i = 0; i < length; i++)
 	{
-		if (iswdigit (rule[i]) == 0 && rule[i] != L'-')
+		if (iswdigit (rule[i]) == 0 && rule[i] != RULE_RANGE_CHAR)
 			return false;
 	}
 
@@ -2417,7 +2418,6 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 			else
 			{
 				_app_logerror (L"InetPton", WSAGetLastError (), dnsServer, true);
-
 				SAFE_DELETE (pSrvList);
 			}
 		}
@@ -2463,7 +2463,10 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 			{
 				// canonical name
 				if (current->Data.CNAME.pNameHost)
-					result.Append (_app_parsehostaddress (current->Data.CNAME.pNameHost, port));
+				{
+					result = _app_parsehostaddress (current->Data.CNAME.pNameHost, port);
+					break;
+				}
 			}
 		}
 
@@ -2477,7 +2480,7 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 	return result;
 }
 
-bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format_ptr, USHORT* port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns)
+bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, USHORT* port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns, size_t dns_length)
 {
 	NET_ADDRESS_INFO ni;
 	SecureZeroMemory (&ni, sizeof (ni));
@@ -2508,8 +2511,8 @@ bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format
 				ULONG mask = 0;
 				ConvertLengthToIpv4Mask (prefix_length, &mask);
 
-				paddr4->mask = ntohl (mask);
 				paddr4->addr = ntohl (ni.Ipv4Address.sin_addr.S_un.S_addr);
+				paddr4->mask = ntohl (mask);
 			}
 
 			return true;
@@ -2518,8 +2521,8 @@ bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format
 		{
 			if (paddr6)
 			{
-				paddr6->prefixLength = min ((INT)prefix_length, 128);
 				CopyMemory (paddr6->addr, ni.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
+				paddr6->prefixLength = min (prefix_length, 128);
 			}
 
 			return true;
@@ -2528,12 +2531,35 @@ bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format
 		{
 			if (paddr_dns)
 			{
+				const size_t hash = _r_str_hash (ni.NamedAddress.Address);
+
+				if (cache_dns.find (hash) != cache_dns.end ())
+				{
+					LPCWSTR cache_ptr = cache_dns[hash];
+
+					if (cache_ptr)
+					{
+						StringCchCopy (paddr_dns, dns_length, cache_ptr);
+						return true;
+					}
+				}
+
 				const rstring host = _app_parsehostaddress (ni.NamedAddress.Address, port);
 
 				if (host.IsEmpty ())
+				{
+					_app_logerror (L"_app_parsehostaddress", ERROR_EMPTY, ni.NamedAddress.Address, true);
 					return false;
+				}
+				else
+				{
+					_app_freecache (&cache_dns);
+					_r_str_alloc (&cache_dns[hash], host.GetLength (), host);
 
-				StringCchCopy (paddr_dns, NI_MAXHOST, host);
+					StringCchCopy (paddr_dns, dns_length, host);
+
+					return true;
+				}
 			}
 
 			return true;
@@ -2543,7 +2569,7 @@ bool _app_parsenetworkstring (rstring network_string, NET_ADDRESS_FORMAT* format
 	return false;
 }
 
-bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *ptype)
+bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 {
 	rule.Trim (L"\r\n "); // trim whitespace
 
@@ -2554,8 +2580,8 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		return true;
 
 	EnumRuleType type = TypeUnknown;
-	const size_t range_pos = rule.Find (L'-');
-	const bool is_range = (range_pos != rstring::npos);
+	const size_t range_pos = rule.Find (RULE_RANGE_CHAR);
+	bool is_range = (range_pos != rstring::npos);
 
 	WCHAR range_start[LEN_IP_MAX] = {0};
 	WCHAR range_end[LEN_IP_MAX] = {0};
@@ -2565,9 +2591,6 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		StringCchCopy (range_start, _countof (range_start), rule.Midded (0, range_pos));
 		StringCchCopy (range_end, _countof (range_end), rule.Midded (range_pos + 1));
 	}
-
-	if (ptype)
-		type = *ptype;
 
 	// auto-parse rule type
 	if (type == TypeUnknown)
@@ -2580,21 +2603,25 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		if (type == TypeUnknown)
 		{
 			if (_app_ruleisport (rule))
+			{
 				type = TypePort;
-
+			}
 			else if (is_range ? (_app_ruleisip (range_start) && _app_ruleisip (range_end)) : _app_ruleisip (rule))
+			{
 				type = TypeIp;
-
+			}
 			else if (_app_ruleishost (rule))
+			{
 				type = TypeHost;
+			}
 
-			else
-				return false;
+			if (type != TypeUnknown)
+			{
+				if (cache_types.size () >= UMAP_CACHE_LIMIT)
+					cache_types.clear ();
 
-			if (cache_types.size () >= UMAP_CACHE_LIMIT)
-				cache_types.clear ();
-
-			cache_types[hash] = type;
+				cache_types[hash] = type;
+			}
 		}
 	}
 
@@ -2604,10 +2631,10 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 	if (!ptr_addr)
 		return true;
 
-	if (type == TypePort || type == TypeIp)
-	{
-		ptr_addr->is_range = is_range;
-	}
+	if (type == TypeHost)
+		is_range = false;
+
+	ptr_addr->is_range = is_range;
 
 	if (type == TypePort)
 	{
@@ -2615,7 +2642,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		{
 			// ...port
 			ptr_addr->type = TypePort;
-			ptr_addr->port = (UINT16)rule.AsUlong ();
+			ptr_addr->port = (UINT16)rule.AsUint ();
 
 			return true;
 		}
@@ -2648,7 +2675,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		if (type == TypeIp && is_range)
 		{
 			// ...ip range (start)
-			if (_app_parsenetworkstring (range_start, &format, &port2, &addr4, &addr6, nullptr))
+			if (_app_parsenetworkstring (range_start, &format, &port2, &addr4, &addr6, nullptr, 0))
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
@@ -2680,7 +2707,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 			}
 
 			// ...ip range (end)
-			if (_app_parsenetworkstring (range_end, &format, &port2, &addr4, &addr6, nullptr))
+			if (_app_parsenetworkstring (range_end, &format, &port2, &addr4, &addr6, nullptr, 0))
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
@@ -2714,7 +2741,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 		else
 		{
 			// ...ip/host
-			if (_app_parsenetworkstring (rule, &format, &port2, &addr4, &addr6, ptr_addr->host))
+			if (_app_parsenetworkstring (rule, &format, &port2, &addr4, &addr6, ptr_addr->host, _countof (ptr_addr->host)))
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
@@ -2734,19 +2761,15 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr, EnumRuleType *p
 				}
 				else if (format == NET_ADDRESS_DNS_NAME)
 				{
-					//if (ptr_addr)
-					//{
-					//	ptr_addr->type = TypeHost;
-					//	ptr_addr->host = <hosts>;
-					//}
+					// ptr_addr->host = <hosts>;
 				}
 				else
 				{
 					return false;
 				}
 
-				ptr_addr->format = format;
 				ptr_addr->type = TypeIp;
+				ptr_addr->format = format;
 
 				if (port2)
 					ptr_addr->port = port2;
@@ -2898,7 +2921,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumAppT
 	return ERROR_SUCCESS;
 }
 
-bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, EnumRuleType* ptype, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, MARRAY* pmfarr)
+bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, MARRAY* pmfarr)
 {
 	UINT32 count = 0;
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
@@ -2944,21 +2967,17 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 		}
 		else if (ptr_app->type == AppService) // windows service
 		{
-			LPCWSTR path = _r_path_expand (PATH_SVCHOST);
+			const rstring path = _r_path_expand (PATH_SVCHOST);
+			const DWORD rc = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
 
-			if (path)
+			if (rc == ERROR_SUCCESS)
 			{
-				const DWORD rc = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
+				fwfc[count].fieldKey = FWPM_CONDITION_ALE_APP_ID;
+				fwfc[count].matchType = FWP_MATCH_EQUAL;
+				fwfc[count].conditionValue.type = FWP_BYTE_BLOB_TYPE;
+				fwfc[count].conditionValue.byteBlob = bPath;
 
-				if (rc == ERROR_SUCCESS)
-				{
-					fwfc[count].fieldKey = FWPM_CONDITION_ALE_APP_ID;
-					fwfc[count].matchType = FWP_MATCH_EQUAL;
-					fwfc[count].conditionValue.type = FWP_BYTE_BLOB_TYPE;
-					fwfc[count].conditionValue.byteBlob = bPath;
-
-					count += 1;
-				}
+				count += 1;
 			}
 
 			if (ptr_app->psd && ByteBlobAlloc (ptr_app->psd, GetSecurityDescriptorLength (ptr_app->psd), &bSid))
@@ -3024,7 +3043,7 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 		{
 			if (rules[i] && rules[i][0] && rules[i][0] != L'*')
 			{
-				if (!_app_parserulestring (rules[i], &addr, ptype))
+				if (!_app_parserulestring (rules[i], &addr))
 				{
 					ByteBlobFree (&bSid);
 					ByteBlobFree (&bPath);
@@ -3119,9 +3138,7 @@ bool _wfp_createrulefilter (LPCWSTR name, PITEM_APP const ptr_app, LPCWSTR rule_
 							{
 								for (size_t j = 0; j < arr2.size (); j++)
 								{
-									EnumRuleType type = TypeIp;
-
-									if (!_wfp_createrulefilter (name, ptr_app, arr2[j], nullptr, protocol, af, dir, &type, weight, action, flag, pmfarr))
+									if (!_wfp_createrulefilter (name, ptr_app, arr2[j], nullptr, protocol, af, dir, weight, action, flag, pmfarr))
 										return false;
 								}
 							}
@@ -3346,9 +3363,6 @@ void _app_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_inter
 						}
 
 						rule_ptr->dir = (FWP_DIRECTION)item.attribute (L"dir").as_uint ();
-
-						if (!item.attribute (L"type").empty ())
-							rule_ptr->type = (EnumRuleType)item.attribute (L"type").as_uint ();
 
 						rule_ptr->protocol = (UINT8)item.attribute (L"protocol").as_uint ();
 						rule_ptr->af = (ADDRESS_FAMILY)item.attribute (L"version").as_uint ();
@@ -3723,9 +3737,6 @@ void _app_profilesave (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rule
 						if (ptr_rule->dir != FWP_DIRECTION_OUTBOUND)
 							item.append_attribute (L"dir").set_value (ptr_rule->dir);
 
-						if (ptr_rule->type != TypeUnknown)
-							item.append_attribute (L"type").set_value (ptr_rule->type);
-
 						if (ptr_rule->protocol != 0)
 							item.append_attribute (L"protocol").set_value (ptr_rule->protocol);
 
@@ -3903,11 +3914,11 @@ bool _wfp_create4filters (PITEM_RULE ptr_rule, bool is_transact)
 			if (!ptr_rule->apps.empty ())
 			{
 				for (auto const& p : ptr_rule->apps)
-					ptr_rule->is_haveerrors = !_wfp_createrulefilter (ptr_rule->pname, _app_getapplication (p.first), rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, &ptr_rule->type, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &ptr_rule->mfarr);
+					ptr_rule->is_haveerrors = !_wfp_createrulefilter (ptr_rule->pname, _app_getapplication (p.first), rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &ptr_rule->mfarr);
 			}
 			else
 			{
-				ptr_rule->is_haveerrors = !_wfp_createrulefilter (ptr_rule->pname, nullptr, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, &ptr_rule->type, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &ptr_rule->mfarr);
+				ptr_rule->is_haveerrors = !_wfp_createrulefilter (ptr_rule->pname, nullptr, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &ptr_rule->mfarr);
 			}
 		}
 	}
@@ -3960,7 +3971,7 @@ bool _wfp_create3filters (PITEM_APP ptr_app, bool is_transact)
 	ptr_app->is_haveerrors = false;
 
 	if (ptr_app->is_enabled)
-		ptr_app->is_haveerrors = !_wfp_createrulefilter (ptr_app->display_name, ptr_app, nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, nullptr, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr);
+		ptr_app->is_haveerrors = !_wfp_createrulefilter (ptr_app->display_name, ptr_app, nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr);
 
 	if (!is_transact)
 	{
@@ -4085,9 +4096,7 @@ bool _wfp_create2filters (bool is_transact)
 			addr.paddr4 = &addr4;
 			addr.paddr6 = &addr6;
 
-			EnumRuleType rule_type = TypeIp;
-
-			if (_app_parserulestring (ip_list[i], &addr, &rule_type))
+			if (_app_parserulestring (ip_list[i], &addr))
 			{
 				//fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
 				fwfc[1].matchType = FWP_MATCH_EQUAL;
@@ -5614,9 +5623,9 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		}
 		else if (app_id)
 		{
-			LPCWSTR path = _r_path_dospathfromnt (LPCWSTR (app_id));
+			const rstring path = _r_path_dospathfromnt (LPCWSTR (app_id));
 
-			if (path)
+			if (!path.IsEmpty ())
 			{
 				_r_str_alloc (&ptr_log->path, _r_str_length (path), path);
 
@@ -5652,9 +5661,10 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 					if (LookupAccountSid (nullptr, user_id, username, &length1, domain, &length2, &sid_type))
 					{
-						LPCWSTR userstring = _r_fmt (L"%s\\%s", domain, username);
+						rstring userstring;
+						userstring.Format (L"%s\\%s", domain, username);
 
-						_r_str_alloc (&ptr_log->username, _r_str_length (userstring), userstring);
+						_r_str_alloc (&ptr_log->username, userstring.GetLength (), userstring);
 					}
 					else
 					{
@@ -6637,7 +6647,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								LPCWSTR rule_single = arr.at (i).Trim (L" " RULE_DELIMETER);
 
-								if (!_app_parserulestring (rule_single, nullptr, nullptr))
+								if (!_app_parserulestring (rule_single, nullptr))
 								{
 									_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
 									_r_ctrl_enable (hwnd, IDC_SAVE, false);
@@ -6661,7 +6671,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								LPCWSTR rule_single = arr.at (i).Trim (L" " RULE_DELIMETER);
 
-								if (!_app_parserulestring (rule_single, nullptr, nullptr))
+								if (!_app_parserulestring (rule_single, nullptr))
 								{
 									_r_ctrl_showtip (hwnd, IDC_RULE_LOCAL_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
 									_r_ctrl_enable (hwnd, IDC_SAVE, false);
@@ -8276,7 +8286,6 @@ bool _wfp_initialize (bool is_full)
 					ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
 					ea.Trustee.TrusteeType = TRUSTEE_IS_USER;
 					ea.Trustee.ptstrName = (LPTSTR)config.psid;
-					//ea.Trustee.ptstrName = user;
 
 					// Create a new ACL that merges the new ACE
 					// into the existing DACL.
@@ -8299,6 +8308,18 @@ bool _wfp_initialize (bool is_full)
 						{
 							config.is_securityinfoset = true;
 
+							// set provider security information
+							rc = FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, pNewDacl, nullptr);
+
+							if (rc != ERROR_SUCCESS)
+								_app_logerror (L"FwpmProviderSetSecurityInfoByKey", rc, nullptr, true);
+
+							// set sublayer security information
+							rc = FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, pNewDacl, nullptr);
+
+							if (rc != ERROR_SUCCESS)
+								_app_logerror (L"FwpmSubLayerSetSecurityInfoByKey", rc, nullptr, true);
+
 							// set net events security information
 							rc = FwpmNetEventsSetSecurityInfo (config.hengine, DACL_SECURITY_INFORMATION, nullptr, nullptr, pNewDacl, nullptr);
 
@@ -8310,6 +8331,8 @@ bool _wfp_initialize (bool is_full)
 					if (pNewDacl)
 						LocalFree (pNewDacl);
 				}
+
+				FwpmFreeMemory ((LPVOID*)&securityDescriptor);
 			}
 		}
 	}
@@ -9149,6 +9172,8 @@ void _app_initialize ()
 	// initialize timers
 	{
 		config.htimer = CreateTimerQueue ();
+
+		timers.clear ();
 
 		timers.push_back (_R_SECONDSCLOCK_MIN (10));
 		timers.push_back (_R_SECONDSCLOCK_MIN (20));
