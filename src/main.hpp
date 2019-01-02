@@ -54,12 +54,13 @@
 #define SZ_LOG_DIRECTION_LOOPBACK L"-Loopback"
 
 #define RULE_DELIMETER L";"
+#define RULE_RANGE_CHAR L'-'
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
 #define BACKUP_HOURS_PERIOD 1 // make backup every 1 hour (default)
 
 #define LEN_IP_MAX 68
-#define UMAP_CACHE_LIMIT 256
+#define UMAP_CACHE_LIMIT 1024
 
 #define TIMER_DEFAULT 1
 
@@ -167,8 +168,8 @@ enum EnumXmlType
 enum EnumRuleType
 {
 	TypeUnknown = 0,
-	TypeIp = 2,
 	TypeHost = 1,
+	TypeIp = 2,
 	TypePort = 4,
 };
 
@@ -328,7 +329,6 @@ typedef struct _ITEM_RULE
 	ADDRESS_FAMILY af = AF_UNSPEC;
 
 	FWP_DIRECTION dir = FWP_DIRECTION_OUTBOUND;
-	EnumRuleType type = TypeUnknown;
 
 	UINT8 weight = 0;
 	UINT8 protocol = 0;
