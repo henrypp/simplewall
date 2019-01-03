@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<root timestamp="1537510459" type="1">
+<root timestamp="1546512009" type="1">
 	<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
 	<item name="DNS" rule="53" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
 	<item name="FTP" rule="20-21;49152-65534" type="4" protocol="6" />
@@ -17,9 +17,9 @@
 	<item name="RDP [Outbound]" rule="3389" type="4" apps="termservice" />
 	<item name="SMB [Inbound]" rule_local="445" dir="1" type="4" protocol="6" apps="System" />
 	<item name="SMB [Outbound]" rule="445" type="4" protocol="6" apps="System" />
-	<item name="SNMP" rule="161-162" dir="2" type="4" protocol="17" apps="snmptrap" is_enabled="true" />
-	<item name="SSDP [Inbound]" rule_local="1900" dir="1" type="4" protocol="17" apps="ssdpsrv" is_enabled="true" />
-	<item name="SSDP [Outbound]" rule="1900" type="4" protocol="17" apps="ssdpsrv" is_enabled="true" />
+	<item name="SNMP" rule="161-162" dir="2" type="4" protocol="17" apps="snmptrap" />
+	<item name="SSDP [Inbound]" rule_local="1900" dir="1" type="4" protocol="17" apps="ssdpsrv" />
+	<item name="SSDP [Outbound]" rule="1900" type="4" protocol="17" apps="ssdpsrv" />
 	<item name="SSH (SFTP)" rule="22" type="4" protocol="6" />
 	<item name="Telnet" rule="23" type="4" protocol="6" />
 	<item name="UPnP" rule="2869" type="4" protocol="6" apps="fdphost;upnphost" is_enabled="true" />
