@@ -2395,7 +2395,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 {
 	rstring result;
 
-	if (!config.is_wsainit || !hostname | !hostname[0])
+	if (!config.is_wsainit || !hostname | !hostname[0]|| !app.ConfigGet (L"IsEnableWsaResolver", true).AsBool ())
 		return L"";
 
 	ADDRINFOEXW hints = {0};
@@ -9974,7 +9974,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_listviewresize (hwnd, IDC_LISTVIEW);
 			_app_refreshstatus (hwnd);
 
-			RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+			RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
 
 			break;
 		}
