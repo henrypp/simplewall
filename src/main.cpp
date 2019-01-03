@@ -9974,7 +9974,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_listviewresize (hwnd, IDC_LISTVIEW);
 			_app_refreshstatus (hwnd);
 
-			InvalidateRect (hwnd, nullptr, TRUE);
+			RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
 
 			break;
 		}
