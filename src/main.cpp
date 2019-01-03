@@ -3,6 +3,7 @@
 
 #include <winsock2.h>
 #include <ws2ipdef.h>
+#include <ws2tcpip.h>
 #include <windns.h>
 #include <mstcpip.h>
 #include <windows.h>
@@ -13,12 +14,8 @@
 #include <aclapi.h>
 #include <shobjidl.h>
 #include <shlguid.h>
-#include <sddl.h>
-#include <ws2tcpip.h>
-#include <wintrust.h>
 #include <softpub.h>
 #include <algorithm>
-#include <userenv.h>
 
 #include "main.hpp"
 #include "rapp.hpp"
@@ -2394,7 +2391,76 @@ bool _app_ruleisip (LPCWSTR rule)
 	return (errcode == ERROR_SUCCESS);
 }
 
-rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
+rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
+{
+	rstring result;
+
+	if (!config.is_wsainit || !hostname | !hostname[0])
+		return L"";
+
+	ADDRINFOEXW hints = {0};
+	ADDRINFOEXW* ppQueryResultsSet = nullptr;
+
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_protocol = IPPROTO_UDP;
+
+	LPGUID lpNspid = nullptr;
+	const INT code = GetAddrInfoEx (hostname, L"domain", NS_DNS, lpNspid, &hints, &ppQueryResultsSet, nullptr, nullptr, nullptr, nullptr);
+
+	if (code != ERROR_SUCCESS || !ppQueryResultsSet)
+	{
+		_app_logerror (L"GetAddrInfoEx", code, hostname, false);
+	}
+	else
+	{
+		for (auto current = ppQueryResultsSet; current != nullptr; current = current->ai_next)
+		{
+			WCHAR printableIP[INET6_ADDRSTRLEN] = {0};
+
+			if (current->ai_family == AF_INET)
+			{
+				struct sockaddr_in *sock_in4 = (struct sockaddr_in *)current->ai_addr;
+				PIN_ADDR addr4 = &(sock_in4->sin_addr);
+
+				if (IN4_IS_ADDR_UNSPECIFIED (addr4) || IN4_IS_ADDR_LOOPBACK (addr4))
+					continue;
+
+				InetNtop (current->ai_family, addr4, printableIP, _countof (printableIP));
+			}
+			else if (current->ai_family == AF_INET6)
+			{
+				struct sockaddr_in6 *sock_in6 = (struct sockaddr_in6 *)current->ai_addr;
+				PIN6_ADDR addr6 = &(sock_in6->sin6_addr);
+
+				if (IN6_IS_ADDR_UNSPECIFIED (addr6) || IN6_IS_ADDR_LOOPBACK (addr6))
+					continue;
+
+				InetNtop (current->ai_family, addr6, printableIP, _countof (printableIP));
+			}
+
+			if (!printableIP[0])
+				continue;
+
+			result.Append (printableIP);
+
+			if (port)
+				result.AppendFormat (L":%d", port);
+
+			result.Append (RULE_DELIMETER);
+		}
+
+		result.Trim (RULE_DELIMETER);
+	}
+
+	if (ppQueryResultsSet)
+		FreeAddrInfoExW (ppQueryResultsSet);
+
+	return result;
+}
+
+rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 {
 	rstring result;
 
@@ -2464,18 +2530,18 @@ rstring _app_parsehostaddress (LPCWSTR host, USHORT port)
 				// canonical name
 				if (current->Data.CNAME.pNameHost)
 				{
-					result = _app_parsehostaddress (current->Data.CNAME.pNameHost, port);
+					result = _app_parsehostaddress_dns (current->Data.CNAME.pNameHost, port);
 					break;
 				}
 			}
 		}
 
-		SAFE_DELETE (pSrvList);
-
 		result.Trim (RULE_DELIMETER);
 
 		DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
 	}
+
+	SAFE_DELETE (pSrvList);
 
 	return result;
 }
@@ -2544,7 +2610,10 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format
 					}
 				}
 
-				const rstring host = _app_parsehostaddress (ni.NamedAddress.Address, port);
+				rstring host = _app_parsehostaddress_dns (ni.NamedAddress.Address, port);
+
+				if (host.IsEmpty ())
+					host = _app_parsehostaddress_wsa (ni.NamedAddress.Address, port);
 
 				if (host.IsEmpty ())
 				{
@@ -8053,18 +8122,21 @@ void ResizeWindow (HWND hwnd, INT width, INT height)
 	RECT rc = {0};
 
 	GetClientRect (GetDlgItem (hwnd, IDC_EXIT_BTN), &rc);
-	const INT button_width = rc.right;
+	const INT button_width = _R_RECT_WIDTH (&rc);
 
 	GetClientRect (GetDlgItem (hwnd, IDC_STATUSBAR), &rc);
-	const INT statusbar_height = rc.bottom;
+	const INT statusbar_height = _R_RECT_HEIGHT (&rc);
 
 	const INT button_top = height - statusbar_height - app.GetDPI (1 + 34);
 
-	SetWindowPos (GetDlgItem (hwnd, IDC_LISTVIEW), nullptr, 0, 0, width, height - statusbar_height - app.GetDPI (1 + 46), SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSENDCHANGING | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
+	HDWP hdefer = BeginDeferWindowPos (4);
 
-	SetWindowPos (GetDlgItem (hwnd, IDC_START_BTN), nullptr, app.GetDPI (10), button_top, 0, 0, SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSENDCHANGING | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
-	SetWindowPos (GetDlgItem (hwnd, IDC_SETTINGS_BTN), nullptr, width - app.GetDPI (10) - button_width - button_width - app.GetDPI (6), button_top, 0, 0, SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSENDCHANGING | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
-	SetWindowPos (GetDlgItem (hwnd, IDC_EXIT_BTN), nullptr, width - app.GetDPI (10) - button_width, button_top, 0, 0, SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSENDCHANGING | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
+	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_LISTVIEW), nullptr, 0, 0, width, height - statusbar_height - app.GetDPI (1 + 46), 0);
+	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_START_BTN), nullptr, app.GetDPI (10), button_top, 0, 0, 0);
+	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_SETTINGS_BTN), nullptr, width - app.GetDPI (10) - button_width - button_width - app.GetDPI (6), button_top, 0, 0, 0);
+	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_EXIT_BTN), nullptr, width - app.GetDPI (10) - button_width, button_top, 0, 0, 0);
+
+	EndDeferWindowPos (hdefer);
 
 	// resize statusbar
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
@@ -9898,10 +9970,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		case WM_SIZE:
 		{
 			ResizeWindow (hwnd, LOWORD (lparam), HIWORD (lparam));
-			RedrawWindow (hwnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE);
 
 			_app_listviewresize (hwnd, IDC_LISTVIEW);
 			_app_refreshstatus (hwnd);
+
+			InvalidateRect (hwnd, nullptr, TRUE);
 
 			break;
 		}
@@ -10125,7 +10198,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_DEVICECHANGE:
 		{
-			if (!app.ConfigGet (L"IsRefreshDevices", false).AsBool ())
+			if (!app.ConfigGet (L"IsRefreshDevices", true).AsBool ())
 				return TRUE;
 
 			switch (wparam)
