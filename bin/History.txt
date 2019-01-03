@@ -1,5 +1,7 @@
 v2.3.13 (x January 2019)
 - added dns resolver caching
+- added dns resolver winsock fallback (issue #290)
+- avoid window flickering on window sizing
 - fixed access rights for wfp provider and sublayer
 - fixed allocated strings dereferencing (issue #285)
 - fixed parsing hosnames with dashes (issue #271)
