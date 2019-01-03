@@ -10212,7 +10212,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						if (wparam == DBT_DEVICEARRIVAL)
 						{
-							_app_profileload (hwnd);
 							_app_changefilters (hwnd, true, false);
 						}
 						else if (wparam == DBT_DEVICEREMOVECOMPLETE)
