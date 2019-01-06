@@ -1553,7 +1553,7 @@ void _app_generate_services ()
 							{
 								_app_logerror (L"ConvertStringSecurityDescriptorToSecurityDescriptor", GetLastError (), service_name, false);
 
-								SAFE_DELETE_ARRAY (ptr_item);
+								SAFE_DELETE (ptr_item);
 							}
 							else
 							{
@@ -1598,7 +1598,7 @@ void _app_resolvefilename (rstring& path)
 		path.Insert (0, systemRoot);
 	}
 	// "system32\" means "C:\Windows\system32\".
-	else if (_wcsnicmp (path, L"system32\\", 8) == 0)
+	else if (_wcsnicmp (path, L"system32\\", 9) == 0)
 	{
 		WCHAR systemRoot[MAX_PATH] = {0};
 		GetSystemDirectory (systemRoot, _countof (systemRoot));
@@ -2395,7 +2395,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 {
 	rstring result;
 
-	if (!config.is_wsainit || !hostname | !hostname[0]|| !app.ConfigGet (L"IsEnableWsaResolver", true).AsBool ())
+	if (!config.is_wsainit || !hostname || !hostname[0] || !app.ConfigGet (L"IsEnableWsaResolver", true).AsBool ())
 		return L"";
 
 	ADDRINFOEXW hints = {0};
@@ -2661,14 +2661,14 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 	}
 
 	// auto-parse rule type
-	if (type == TypeUnknown)
 	{
 		const size_t hash = rule.Hash ();
 
 		if (cache_types.find (hash) != cache_types.end ())
+		{
 			type = cache_types[hash];
-
-		if (type == TypeUnknown)
+		}
+		else
 		{
 			if (_app_ruleisport (rule))
 			{
@@ -4500,7 +4500,10 @@ void _app_logclear ()
 
 	if (config.hlogfile != nullptr && config.hlogfile != INVALID_HANDLE_VALUE)
 	{
-		SetFilePointer (config.hlogfile, 2, nullptr, FILE_BEGIN);
+		LARGE_INTEGER pos;
+		pos.QuadPart = 2;
+
+		SetFilePointerEx (config.hlogfile, pos, nullptr, FILE_BEGIN);
 		SetEndOfFile (config.hlogfile);
 	}
 	else
@@ -4579,7 +4582,10 @@ bool _app_loginit (bool is_install)
 		{
 			_app_logchecklimit ();
 
-			SetFilePointer (config.hlogfile, 0, nullptr, FILE_END);
+			LARGE_INTEGER pos;
+			pos.QuadPart = 0;
+
+			SetFilePointerEx (config.hlogfile, pos, nullptr, FILE_END);
 		}
 
 		result = true;
@@ -4828,8 +4834,6 @@ bool _app_timer_remove (HWND hwnd, size_t hash, bool is_transact)
 		return false;
 
 	const time_t current_time = _r_unixtime_now ();
-
-	std::vector<size_t> remove_idx;
 
 	PITEM_APP ptr_app = _app_getapplication (hash);
 
