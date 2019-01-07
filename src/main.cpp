@@ -657,7 +657,10 @@ bool _app_freeapplication (size_t hash)
 						is_enabled = true;
 
 					if (ptr_rule->is_enabled && ptr_rule->apps.empty ())
+					{
 						ptr_rule->is_enabled = false;
+						ptr_rule->is_haveerrors = false;
+					}
 				}
 			}
 		}
