@@ -446,7 +446,7 @@ void _app_getcount (PITEM_STATUS ptr_status)
 		if (!is_exists)
 			ptr_status->invalid_count += 1;
 
-		if (_app_isunused (&p.second, p.first))
+		if (is_exists && _app_isunused (&p.second, p.first))
 			ptr_status->unused_count += 1;
 
 		if (_app_istimeractive (&p.second))
@@ -6291,7 +6291,7 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 	return false;
 }
 
-LONG _app_wmcustdraw (LPNMLVCUSTOMDRAW lpnmlv, LPARAM lparam)
+LONG _app_nmcustdraw (HWND hwnd, LPNMLVCUSTOMDRAW lpnmlv)
 {
 	LONG result = CDRF_DODEFAULT;
 
@@ -6354,14 +6354,38 @@ LONG _app_wmcustdraw (LPNMLVCUSTOMDRAW lpnmlv, LPARAM lparam)
 			}
 			else if (lpnmlv->nmcd.hdr.idFrom == IDC_EDITOR)
 			{
-				COLORREF const custclr = (COLORREF)lparam;
+				const LONG_PTR dialog_id = GetWindowLongPtr (hwnd, GWLP_USERDATA);
+				const size_t idx = lpnmlv->nmcd.lItemlParam;
+				PITEM_RULE ptr_rule = nullptr;
 
-				if (custclr)
+				if (dialog_id == IDD_SETTINGS_RULES_BLOCKLIST)
+					ptr_rule = rules_blocklist.at (idx);
+
+				else if (dialog_id == IDD_SETTINGS_RULES_SYSTEM)
+					ptr_rule = rules_system.at (idx);
+
+				else if (dialog_id == IDD_SETTINGS_RULES_CUSTOM)
+					ptr_rule = rules_custom.at (idx);
+
+				if (ptr_rule)
 				{
-					lpnmlv->clrTextBk = custclr;
-					lpnmlv->clrText = _r_dc_getcolorbrightness (custclr);
+					COLORREF clr = 0;
 
-					_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, custclr);
+					if (ptr_rule->is_enabled && ptr_rule->is_haveerrors)
+						clr = _app_getcolorvalue (_r_str_hash (L"ColorInvalid"));
+
+					else if (!ptr_rule->apps.empty ())
+						clr = _app_getcolorvalue (_r_str_hash (L"ColorSpecial"));
+
+					if (clr)
+					{
+						lpnmlv->clrTextBk = clr;
+						lpnmlv->clrText = _r_dc_getcolorbrightness (clr);
+
+						_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, clr);
+
+						result = CDRF_NEWFONT;
+					}
 				}
 			}
 
@@ -6607,7 +6631,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (nmlp->idFrom != IDC_APPS_LV)
 						break;
 
-					const LONG result = _app_wmcustdraw ((LPNMLVCUSTOMDRAW)lparam, 0);
+					_r_fastlock_acquireshared (&lock_access);
+					const LONG result = _app_nmcustdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
+					_r_fastlock_releaseshared (&lock_access);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
@@ -6994,14 +7020,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							if (!ptr_rule)
 								continue;
 
-							size_t group_id = 2;
-
-							if (ptr_rule->is_enabled)
-								group_id = ptr_rule->apps.empty () ? 0 : 1;
-
 							config.is_nocheckboxnotify = true;
 
-							_r_listview_additem (hwnd, IDC_EDITOR, item, 0, ptr_rule->pname, ptr_rule->is_block ? 1 : 0, group_id, i);
+							_r_listview_additem (hwnd, IDC_EDITOR, item, 0, ptr_rule->pname, ptr_rule->is_block ? 1 : 0, _app_getrulegroup (ptr_rule), i);
 							_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, ptr_rule->is_enabled);
 
 							item += 1;
@@ -7430,41 +7451,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					if (nmlp->idFrom != IDC_COLORS && nmlp->idFrom != IDC_EDITOR)
 						break;
 
-					LPNMLVCUSTOMDRAW lpnmlv = (LPNMLVCUSTOMDRAW)lparam;
-					LPARAM code = 0;
-
-					if (lpnmlv->nmcd.hdr.idFrom == IDC_EDITOR && lpnmlv->nmcd.dwDrawStage == CDDS_ITEMPREPAINT)
-					{
-						const LONG_PTR dialog_id = GetWindowLongPtr (hwnd, GWLP_USERDATA);
-						const size_t idx = lpnmlv->nmcd.lItemlParam;
-						PITEM_RULE ptr_rule = nullptr;
-
-						_r_fastlock_acquireshared (&lock_access);
-
-						{
-							if (dialog_id == IDD_SETTINGS_RULES_BLOCKLIST)
-								ptr_rule = rules_blocklist.at (idx);
-
-							else if (dialog_id == IDD_SETTINGS_RULES_SYSTEM)
-								ptr_rule = rules_system.at (idx);
-
-							else if (dialog_id == IDD_SETTINGS_RULES_CUSTOM)
-								ptr_rule = rules_custom.at (idx);
-						}
-
-						if (ptr_rule)
-						{
-							if (ptr_rule->is_haveerrors)
-								code = (LPARAM)_app_getcolorvalue (_r_str_hash (L"ColorInvalid"));
-
-							else if (!ptr_rule->apps.empty ())
-								code = (LPARAM)_app_getcolorvalue (_r_str_hash (L"ColorSpecial"));
-						}
-
-						_r_fastlock_releaseshared (&lock_access);
-					}
-
-					const LONG result = _app_wmcustdraw (lpnmlv, code);
+					_r_fastlock_acquireshared (&lock_access);
+					const LONG result = _app_nmcustdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
+					_r_fastlock_releaseshared (&lock_access);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
@@ -9717,8 +9706,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (nmlp->idFrom != IDC_LISTVIEW)
 						break;
 
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, _app_wmcustdraw ((LPNMLVCUSTOMDRAW)lparam, 0));
-					return TRUE;
+					_r_fastlock_acquireshared (&lock_access);
+					const LONG result = _app_nmcustdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
+					_r_fastlock_releaseshared (&lock_access);
+
+					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
+					return result;
 				}
 
 				case LVN_COLUMNCLICK:
