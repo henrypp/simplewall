@@ -204,7 +204,7 @@ void _app_listviewresize (HWND hwnd, UINT ctrl_id)
 
 	const INT width = (rect.right - rect.left) - GetSystemMetrics (SM_CXVSCROLL);
 
-	const INT cx2 = max (app.GetDPI (110), min (app.GetDPI (190), _R_PERCENT_VAL (28, width)));
+	const INT cx2 = max (app.GetDPI (90), min (app.GetDPI (110), _R_PERCENT_VAL (28, width)));
 	const INT cx1 = width - cx2;
 
 	_r_listview_setcolumn (hwnd, ctrl_id, 0, nullptr, cx1);
@@ -9352,7 +9352,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_listview_setstyle (hwnd, IDC_LISTVIEW, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES | LVS_EX_HEADERINALLVIEWS);
 
 			_r_listview_addcolumn (hwnd, IDC_LISTVIEW, 0, app.LocaleString (IDS_FILEPATH, nullptr), 70, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, IDC_LISTVIEW, 1, app.LocaleString (IDS_ADDED, nullptr), 26, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, IDC_LISTVIEW, 1, app.LocaleString (IDS_ADDED, nullptr), 26, LVCFMT_RIGHT);
 
 			_r_listview_addgroup (hwnd, IDC_LISTVIEW, 0, app.LocaleString (IDS_GROUP_ALLOWED, nullptr), 0, LVGS_COLLAPSIBLE | (app.ConfigGet (L"Group1IsCollaped", false).AsBool () ? LVGS_COLLAPSED : LVGS_NORMAL));
 			_r_listview_addgroup (hwnd, IDC_LISTVIEW, 1, app.LocaleString (IDS_GROUP_SPECIAL_APPS, nullptr), 0, LVGS_COLLAPSIBLE | (app.ConfigGet (L"Group2IsCollaped", false).AsBool () ? LVGS_COLLAPSED : LVGS_NORMAL));
