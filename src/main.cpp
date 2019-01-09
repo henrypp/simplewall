@@ -2411,9 +2411,9 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 	ADDRINFOEXW* ppQueryResultsSet = nullptr;
 
 	hints.ai_family = AF_UNSPEC;
-	hints.ai_flags = AI_PASSIVE;
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_protocol = IPPROTO_UDP;
+	//hints.ai_flags = AI_PASSIVE;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
 
 	LPGUID lpNspid = nullptr;
 	const INT code = GetAddrInfoEx (hostname, L"domain", NS_DNS, lpNspid, &hints, &ppQueryResultsSet, nullptr, nullptr, nullptr, nullptr);
@@ -4520,10 +4520,13 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 		_app_freethreadpool (&threads_pool);
 
-		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install);
+		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install, true);
 
 		if (hthread)
+		{
 			threads_pool.push_back (hthread);
+			ResumeThread (hthread);
+		}
 
 		_r_fastlock_releaseexclusive (&lock_threadpool);
 
@@ -4539,24 +4542,21 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 void _app_clear_logstack ()
 {
-	while (true)
+	PSLIST_ENTRY listEntry = InterlockedFlushSList (&log_stack.ListHead);
+
+	while (listEntry)
 	{
-		PSLIST_ENTRY ptr_list = InterlockedPopEntrySList (&log_stack.ListHead);
-
-		if (!ptr_list)
-			break;
-
 		InterlockedDecrement (&log_stack.Count);
 
-		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
+		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (listEntry, ITEM_LIST_ENTRY, ListEntry);
 		PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
 
 		SAFE_DELETE (ptr_log);
 
 		_aligned_free (ptr_entry);
-	}
 
-	InterlockedFlushSList (&log_stack.ListHead);
+		listEntry = listEntry->Next;
+	}
 }
 
 void _app_logclear ()
@@ -5621,18 +5621,17 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 	_r_fastlock_acquireshared (&lock_eventcallback);
 
-	while (true)
+	PSLIST_ENTRY listEntry = InterlockedFlushSList (&log_stack.ListHead);
+
+	while (listEntry)
 	{
-		PSLIST_ENTRY ptr_list = InterlockedPopEntrySList (&log_stack.ListHead);
-
-		if (!ptr_list)
-			break;
-
 		InterlockedDecrement (&log_stack.Count);
 
-		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (ptr_list, ITEM_LIST_ENTRY, ListEntry);
+		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (listEntry, ITEM_LIST_ENTRY, ListEntry);
 		PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
 		bool is_added = false;
+
+		_aligned_free (ptr_entry);
 
 		if (ptr_log)
 		{
@@ -5685,10 +5684,8 @@ UINT WINAPI LogThread (LPVOID lparam)
 				SAFE_DELETE (ptr_log);
 		}
 
-		_aligned_free (ptr_entry);
+		listEntry = listEntry->Next;
 	}
-
-	InterlockedFlushSList (&log_stack.ListHead);
 
 	_r_fastlock_releaseshared (&lock_eventcallback);
 
@@ -5929,11 +5926,12 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 				_app_freethreadpool (&threads_pool);
 
-				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND ());
+				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true);
 
 				if (hthread)
 				{
 					threads_pool.push_back (hthread);
+					ResumeThread (hthread);
 				}
 				else
 				{
