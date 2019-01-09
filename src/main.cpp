@@ -4553,9 +4553,9 @@ void _app_clear_logstack ()
 
 		SAFE_DELETE (ptr_log);
 
-		_aligned_free (ptr_entry);
-
 		listEntry = listEntry->Next;
+
+		_aligned_free (ptr_entry);
 	}
 }
 
@@ -5631,12 +5631,14 @@ UINT WINAPI LogThread (LPVOID lparam)
 		PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
 		bool is_added = false;
 
+		listEntry = listEntry->Next;
+
 		_aligned_free (ptr_entry);
 
 		if (ptr_log)
 		{
 			// apps collector
-			if (ptr_log->hash && ptr_log->path && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ())
+			if (ptr_log->hash && ptr_log->path && /*!ptr_log->is_allow && */apps.find (ptr_log->hash) == apps.end ())
 			{
 				_r_fastlock_acquireexclusive (&lock_access);
 				_app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
@@ -5683,8 +5685,6 @@ UINT WINAPI LogThread (LPVOID lparam)
 			if (!is_added)
 				SAFE_DELETE (ptr_log);
 		}
-
-		listEntry = listEntry->Next;
 	}
 
 	_r_fastlock_releaseshared (&lock_eventcallback);
