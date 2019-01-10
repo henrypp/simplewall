@@ -1902,7 +1902,7 @@ bool _app_istimersactive ()
 	return result;
 }
 
-COLORREF _app_getcolor (size_t hash)
+COLORREF _app_getcolor (size_t hash, bool is_excludesilent)
 {
 	_r_fastlock_acquireshared (&lock_access);
 
@@ -1920,7 +1920,7 @@ COLORREF _app_getcolor (size_t hash)
 		else if (app.ConfigGet (L"IsHighlightSpecial", true).AsBool () && _app_isapphaverule (hash))
 			color_value = L"ColorSpecial";
 
-		else if (ptr_app->is_silent && app.ConfigGet (L"IsHighlightSilent", true).AsBool ())
+		else if (!is_excludesilent && ptr_app->is_silent && app.ConfigGet (L"IsHighlightSilent", true).AsBool ())
 			color_value = L"ColorSilent";
 
 		else if (ptr_app->is_signed && app.ConfigGet (L"IsHighlightSigned", true).AsBool () && app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
@@ -4542,7 +4542,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 void _app_clear_logstack ()
 {
-	PSLIST_ENTRY listEntry = InterlockedFlushSList (&log_stack.ListHead);
+	PSLIST_ENTRY listEntry = RtlInterlockedFlushSList (&log_stack.ListHead);
 
 	while (listEntry)
 	{
@@ -5621,7 +5621,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 	_r_fastlock_acquireshared (&lock_eventcallback);
 
-	PSLIST_ENTRY listEntry = InterlockedFlushSList (&log_stack.ListHead);
+	PSLIST_ENTRY listEntry = RtlInterlockedFlushSList (&log_stack.ListHead);
 
 	while (listEntry)
 	{
@@ -5916,7 +5916,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 			ptr_entry->Body = (ULONG_PTR)ptr_log;
 
-			InterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
+			RtlInterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
 			InterlockedIncrement (&log_stack.Count);
 
 			// check if thread has been terminated
@@ -6381,22 +6381,15 @@ LONG _app_nmcustdraw (HWND hwnd, LPNMLVCUSTOMDRAW lpnmlv)
 
 				if (hash)
 				{
-					const COLORREF new_clr = (COLORREF)_app_getcolor (hash);
+					const COLORREF new_clr = (COLORREF)_app_getcolor (hash, lpnmlv->nmcd.hdr.idFrom == IDC_APPS_LV);
 
 					if (new_clr)
 					{
-						if (app.ConfigGet (L"IsBigView", true).AsBool () && lpnmlv->nmcd.hdr.idFrom == IDC_LISTVIEW)
-						{
-							lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-							lpnmlv->clrTextBk = new_clr;
-						}
-						else
-						{
-							lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-							lpnmlv->clrTextBk = new_clr;
+						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
+						lpnmlv->clrTextBk = new_clr;
 
+						if (lpnmlv->nmcd.hdr.idFrom != IDC_LISTVIEW || !app.ConfigGet (L"IsBigView", true).AsBool ())
 							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
-						}
 
 						result = CDRF_NEWFONT;
 					}
@@ -6408,8 +6401,8 @@ LONG _app_nmcustdraw (HWND hwnd, LPNMLVCUSTOMDRAW lpnmlv)
 
 				if (ptr_clr)
 				{
-					lpnmlv->clrTextBk = ptr_clr->clr;
 					lpnmlv->clrText = _r_dc_getcolorbrightness (ptr_clr->clr);
+					lpnmlv->clrTextBk = ptr_clr->clr;
 
 					_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
 				}
@@ -6443,8 +6436,8 @@ LONG _app_nmcustdraw (HWND hwnd, LPNMLVCUSTOMDRAW lpnmlv)
 
 					if (clr)
 					{
-						lpnmlv->clrTextBk = clr;
 						lpnmlv->clrText = _r_dc_getcolorbrightness (clr);
+						lpnmlv->clrTextBk = clr;
 
 						_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, clr);
 
@@ -9454,7 +9447,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				// initialize slist
 				{
 					log_stack.Count = 0;
-					InitializeSListHead (&log_stack.ListHead);
+					RtlInitializeSListHead (&log_stack.ListHead);
 				}
 			}
 
