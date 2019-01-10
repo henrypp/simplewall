@@ -196,7 +196,7 @@ enum EnumNotifyCommand
 	CmdMute = 2,
 };
 
-typedef std::vector<UINT64> MARRAY;
+typedef std::vector<GUID> MARRAY;
 
 struct STATIC_DATA
 {
@@ -217,7 +217,9 @@ struct STATIC_DATA
 
 	WCHAR title[128] = {0};
 
-	PSID psid = nullptr;
+	PACL psecurityacl_allow = nullptr;
+	PACL psecurityacl_block = nullptr;
+	PSID psecuritysid = nullptr;
 	LPGUID psession = nullptr;
 
 	HIMAGELIST himg = nullptr;
@@ -246,14 +248,12 @@ struct STATIC_DATA
 	size_t icon_package_id = 0;
 	size_t icon_service_id = 0;
 
-	bool is_securityinfoset = false;
 	bool is_popuperrors = false;
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
 	bool is_nocheckboxnotify = false;
 	bool is_wsainit = false;
 	bool is_neteventset = false;
-	bool is_providerset = false;
 };
 
 typedef struct _ITEM_STATUS
