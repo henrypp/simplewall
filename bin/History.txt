@@ -1,3 +1,18 @@
+v2.4 (x February 2019)
+- new notification ui
+- added predefined rules (ftp, http etc)
+- added option to configure 6to4 redirections (it's allowed, but undocumented earlier)
+- added option to secure installed filters
+- added more list view modes
+- fixed notifications stay visible when special rules applied for the app
+- fixed possible duplicate of special rules from notifications
+- fixed multithreading and possible race conditions
+- fixed duplicate filters callback on device arrival
+- fixed dropped packets csv log delimeter
+- replaced netsh commands by com interface
+- cosmetic fixes
+- fixed bugs
+
 v2.3.13 (3 January 2019)
 - added dns resolver caching
 - added dns resolver winsock fallback (issue #290)
