@@ -23,7 +23,7 @@
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 #define XML_RULES_SYSTEM L"rules_system.xml"
 
-#define LOG_DIV L","
+#define LOG_DIV L','
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%userprofile%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
 
@@ -38,7 +38,7 @@
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 
 #define BOOTTIME_FILTER_NAME L"Boot-time filter"
-#define SUBLAYER_WEIGHT_DEFAULT 666
+#define SUBLAYER_WEIGHT_DEFAULT 65534
 
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;;CCRC;;;%s)"
 
@@ -58,6 +58,7 @@
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
 #define BACKUP_HOURS_PERIOD 1 // make backup every 1 hour (default)
+#define LOG_SIZE_LIMIT 2048
 
 #define LEN_IP_MAX 68
 #define UMAP_CACHE_LIMIT 1024
@@ -69,9 +70,15 @@
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 
-#define NOTIFY_WIDTH 368
-#define NOTIFY_HEIGHT 248
+#define NOTIFY_WIDTH 358
+#define NOTIFY_HEIGHT 372
 #define NOTIFY_BTN_WIDTH 110
+
+#define NOTIFY_PATH_COMPACT 36
+
+#define NOTIFY_CLR_BG GetSysColor(COLOR_WINDOW)
+#define NOTIFY_CLR_TEXT GetSysColor(COLOR_BTNTEXT)
+#define NOTIFY_CLR_BORDER GetSysColor(COLOR_HIGHLIGHT)
 
 #define NOTIFY_TIMER_POPUP_ID 1001
 #define NOTIFY_TIMER_TIMEOUT_ID 2002
@@ -84,7 +91,6 @@
 #define NOTIFY_LIMIT_POOL_SIZE 32
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
-#define NOTIFY_BORDER_COLOR RGB(255,98,98)
 
 // pugixml document configuration
 #define PUGIXML_LOAD_FLAGS (pugi::parse_escapes)
@@ -165,14 +171,6 @@ enum EnumXmlType
 	XmlRulesConfig = 2,
 };
 
-enum EnumRuleType
-{
-	TypeUnknown = 0,
-	TypeHost = 1,
-	TypeIp = 2,
-	TypePort = 4,
-};
-
 enum EnumMode
 {
 	ModeWhitelist = 0,
@@ -189,11 +187,20 @@ enum EnumAppType
 	AppPico = 5 // win10+
 };
 
-enum EnumNotifyCommand
+enum EnumRuleType
 {
-	CmdAllow = 0,
-	CmdBlock = 1,
-	CmdMute = 2,
+	TypeRuleUnknown = 0,
+	TypeBlocklist = 1,
+	TypeSystem = 2,
+	TypeCustom = 3,
+};
+
+enum EnumRuleItemType
+{
+	TypeRuleItemUnknown = 0,
+	TypeHost = 1,
+	TypeIp = 2,
+	TypePort = 4,
 };
 
 typedef std::vector<GUID> MARRAY;
@@ -231,6 +238,7 @@ struct STATIC_DATA
 	HANDLE done_evt = nullptr;
 	HANDLE htimer = nullptr;
 	HFONT hfont = nullptr;
+	//HFONT hfont_bold = nullptr;
 	HICON hicon_large = nullptr;
 	HICON hicon_small = nullptr;
 	HICON hicon_package = nullptr;
@@ -240,10 +248,13 @@ struct STATIC_DATA
 	time_t blocklist_timestamp = 0;
 	time_t rule_system_timestamp = 0;
 
+	size_t ntoskrnl_hash = 0;
+	size_t svchost_hash = 0;
+	size_t myhash = 0;
+
 	size_t tmp1_length = 0;
 	size_t wd_length = 0;
-	size_t ntoskrnl_hash = 0;
-	size_t myhash = 0;
+
 	size_t icon_id = 0;
 	size_t icon_package_id = 0;
 	size_t icon_service_id = 0;
@@ -333,10 +344,34 @@ typedef struct _ITEM_RULE
 	UINT8 weight = 0;
 	UINT8 protocol = 0;
 
+	EnumRuleType type;
+
+	bool is_haveerrors = false;
+	bool is_forservices = false;
+	bool is_readonly = false;
 	bool is_enabled = false;
 	bool is_block = false;
-	bool is_haveerrors = false;
 } ITEM_RULE, *PITEM_RULE;
+
+typedef struct _ITEM_RULE_CONFIG
+{
+	_ITEM_RULE_CONFIG ()
+	{
+		pname = nullptr;
+		papps = nullptr;
+	}
+
+	~_ITEM_RULE_CONFIG ()
+	{
+		SAFE_DELETE_ARRAY (pname);
+		SAFE_DELETE_ARRAY (papps);
+	}
+
+	LPWSTR pname = nullptr;
+	LPWSTR papps = nullptr;
+
+	bool is_enabled = false;
+} ITEM_RULE_CONFIG, *PITEM_RULE_CONFIG;
 
 typedef struct _ITEM_LOG
 {
@@ -521,7 +556,7 @@ typedef struct _ITEM_ADDRESS
 
 	FWP_RANGE* prange = nullptr;
 
-	EnumRuleType type = TypeUnknown;
+	EnumRuleItemType type = TypeRuleItemUnknown;
 
 	NET_ADDRESS_FORMAT format = NET_ADDRESS_FORMAT_UNSPECIFIED;
 
@@ -529,6 +564,13 @@ typedef struct _ITEM_ADDRESS
 
 	bool is_range = false;
 } ITEM_ADDRESS, *PITEM_ADDRESS;
+
+typedef std::vector<PITEM_APP> MFILTER_APPS;
+typedef std::vector<PITEM_RULE> MFILTER_RULES;
+typedef std::vector<HANDLE> MTHREADPOOL;
+typedef std::unordered_map<size_t, ITEM_APP> MAPPS_MAP;
+typedef std::unordered_map<size_t, LPWSTR> MCACHE_MAP;
+typedef std::unordered_map<size_t, EnumRuleItemType> MCACHETYPES_MAP;
 
 // dropped events callback subscription (win7+)
 #ifndef FWP_DIRECTION_IN
