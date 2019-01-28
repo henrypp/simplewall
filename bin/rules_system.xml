@@ -1,29 +1,30 @@
 <?xml version="1.0"?>
-<root timestamp="1546512009" type="1">
-	<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
-	<item name="DNS" rule="53" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
-	<item name="FTP" rule="20-21;49152-65534" type="4" protocol="6" />
-	<item name="ICMPv4" dir="2" protocol="1" />
-	<item name="ICMPv6" dir="2" protocol="58" />
-	<item name="IMAP/POP3/SMTP" rule="25;110;143;465;993;995;2525" type="4" protocol="6" />
-	<item name="IGMP" rule="224.0.0.0/4" type="2" protocol="2" apps="System" is_enabled="true" />
-	<item name="IKEv2/IPsec/L2TP" rule="500;1701;4500" type="4" protocol="17" apps="System" />
-	<item name="LLNMR" rule="224.0.0.252:5355;ff02::1:3:5355" type="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
-	<item name="mDNS" rule="224.0.0.251:5353;ff02::fb:5353" type="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_enabled="true" />
-	<item name="NetBIOS [Inbound]" rule_local="137-139" dir="2" type="4" apps="System" is_enabled="true" />
-	<item name="NetBIOS [Outbound]" rule="137-139" type="4" apps="System" is_enabled="true" />
-	<item name="NTP" rule="123" type="4" protocol="17" apps="w32time" />
-	<item name="RDP [Inbound]" rule_local="3389" dir="1" type="4" apps="termservice" />
-	<item name="RDP [Outbound]" rule="3389" type="4" apps="termservice" />
-	<item name="SMB [Inbound]" rule_local="445" dir="1" type="4" protocol="6" apps="System" />
-	<item name="SMB [Outbound]" rule="445" type="4" protocol="6" apps="System" />
-	<item name="SNMP" rule="161-162" dir="2" type="4" protocol="17" apps="snmptrap" />
-	<item name="SSDP [Inbound]" rule_local="1900" dir="1" type="4" protocol="17" apps="ssdpsrv" />
-	<item name="SSDP [Outbound]" rule="1900" type="4" protocol="17" apps="ssdpsrv" />
-	<item name="SSH (SFTP)" rule="22" type="4" protocol="6" />
-	<item name="Telnet" rule="23" type="4" protocol="6" />
-	<item name="UPnP" rule="2869" type="4" protocol="6" apps="fdphost;upnphost" is_enabled="true" />
-	<item name="WS-Discovery" rule="3702" type="4" protocol="17" apps="fdphost;fdrespub" is_enabled="true" />
-	<item name="WS-Discovery [Events]" rule="5357-5358" type="4" protocol="6" apps="fdphost" is_enabled="true" />
-	<item name="Windows Update" rule="80;443" dir="2" type="4" protocol="6" apps="wuauserv" />
+<root timestamp="1548421262" type="1">
+	<item name="dhcp" rule="67;547" rule_local="68;546" dir="2" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_custom="true" is_services="true" is_enabled="true" />
+	<item name="dns" rule="53" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_custom="true" is_services="true" is_enabled="true" />
+	<item name="ftp" rule="20-21;49152-65534" type="4" protocol="6" is_custom="true" />
+	<item name="http" rule="80;443" protocol="6" is_custom="true" />
+	<item name="icmpv4" dir="2" protocol="1" />
+	<item name="icmpv6" dir="2" protocol="58" />
+	<item name="imap/pop3/smtp" rule="25;110;143;465;993;995;2525" type="4" protocol="6" is_custom="true" />
+	<item name="igmp" rule="224.0.0.0/4" type="2" protocol="2" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+	<item name="ikev2/ipsec/l2tp" rule="500;1701;4500" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="llnmr" rule="224.0.0.252:5355;ff02::1:3:5355" type="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_custom="true" is_services="true" is_enabled="true" />
+	<item name="mdns" rule="224.0.0.251:5353;ff02::fb:5353" type="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_custom="true" is_services="true" is_enabled="true" />
+	<item name="netbios [inbound]" rule_local="137-139" dir="2" type="4" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+	<item name="netbios [outbound]" rule="137-139" type="4" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+	<item name="ntp" rule="123" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="rdp [inbound]" rule_local="3389" dir="1" type="4" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="rdp [outbound]" rule="3389" type="4" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="smb [inbound]" rule_local="445" dir="1" type="4" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="smb [outbound]" rule="445" type="4" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="snmp" rule="161-162" dir="2" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="ssdp [inbound]" rule_local="1900" dir="1" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="ssdp [outbound]" rule="1900" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+	<item name="ssh (sftp)" rule="22" type="4" protocol="6" is_custom="true" />
+	<item name="telnet" rule="23" type="4" protocol="6" is_custom="true" />
+	<item name="upnp" rule="2869" type="4" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+	<item name="ws-discovery" rule="3702" type="4" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+	<item name="ws-discovery [events]" rule="5357-5358" type="4" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+	<item name="windows update" rule="80;443" dir="2" type="4" protocol="6" apps="wuauserv" />
 </root>
