@@ -1364,11 +1364,13 @@ void _app_generate_packages ()
 
 	HKEY hkey = nullptr;
 	HKEY hsubkey = nullptr;
-	LONG result = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings", 0, KEY_READ, &hkey);
+
+	LONG result = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages", 0, KEY_READ, &hkey);
 
 	if (result != ERROR_SUCCESS)
 	{
-		_app_logerror (L"RegOpenKeyEx", result, nullptr, true);
+		if (result != ERROR_FILE_NOT_FOUND)
+			_app_logerror (L"RegOpenKeyEx", result, nullptr, true);
 	}
 	else
 	{
@@ -1376,53 +1378,67 @@ void _app_generate_packages ()
 
 		while (true)
 		{
-			WCHAR package_sid[MAX_PATH] = {0};
-			WCHAR display_name[MAX_PATH] = {0};
-			DWORD size = _countof (package_sid);
+			rstring package_sid_string;
 
-			if (RegEnumKeyEx (hkey, index++, package_sid, &size, 0, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
+			WCHAR key_name[MAX_PATH] = {0};
+			WCHAR display_name[MAX_PATH] = {0};
+			WCHAR path[MAX_PATH] = {0};
+
+			PSID package_sid[SECURITY_MAX_SID_SIZE] = {0};
+
+			DWORD size = _countof (key_name) * sizeof (key_name[0]);
+
+			if (RegEnumKeyEx (hkey, index++, key_name, &size, 0, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
 				break;
 
-			result = RegOpenKeyEx (hkey, package_sid, 0, KEY_READ, &hsubkey);
+			result = RegOpenKeyEx (hkey, key_name, 0, KEY_READ, &hsubkey);
 
 			if (result != ERROR_SUCCESS)
 			{
 				if (result != ERROR_FILE_NOT_FOUND)
-					_app_logerror (L"RegOpenKeyEx", result, package_sid, true);
+					_app_logerror (L"RegOpenKeyEx", result, key_name, true);
 			}
 			else
 			{
-				const size_t hash = _r_str_hash (package_sid);
+				size = _countof (package_sid) * sizeof (package_sid[0]);
+				result = RegQueryValueEx (hsubkey, L"PackageSid", nullptr, nullptr, (LPBYTE)package_sid, &size);
+
+				if (result != ERROR_SUCCESS)
+				{
+					if (result != ERROR_FILE_NOT_FOUND)
+						_app_logerror (L"RegQueryValueEx", result, key_name, true);
+
+					continue;
+				}
+
+				package_sid_string = _r_str_fromsid (package_sid);
+
+				const size_t hash = _r_str_hash (package_sid_string);
 
 				PITEM_ADD item = new ITEM_ADD;
 
 				item->hash = hash;
 
-				size = _countof (display_name) * sizeof (WCHAR);
+				size = _countof (display_name) * sizeof (display_name[0]);
 				result = RegQueryValueEx (hsubkey, L"DisplayName", nullptr, nullptr, (LPBYTE)display_name, &size);
 
 				if (result == ERROR_SUCCESS)
 				{
 					if (display_name[0] == L'@')
 					{
-						if (!SUCCEEDED (SHLoadIndirectString (rstring (display_name), display_name, _countof (display_name), nullptr)))
-							display_name[0] = 0;
+						if (!SUCCEEDED (SHLoadIndirectString (rstring (display_name), display_name, _countof (display_name), nullptr)) || !display_name[0])
+							StringCchCopy (display_name, _countof (display_name), key_name[0] ? key_name : package_sid_string);
 					}
 				}
 
-				if (!display_name[0])
-				{
-					size = _countof (display_name) * sizeof (WCHAR);
-					RegQueryValueEx (hsubkey, L"Moniker", nullptr, nullptr, (LPBYTE)display_name, &size);
-				}
+				size = _countof (path) * sizeof (path[0]);
+				result = RegQueryValueEx (hsubkey, L"PackageRootFolder", nullptr, nullptr, (LPBYTE)path, &size);
 
-				if (!display_name[0])
-					StringCchCopy (display_name, _countof (display_name), package_sid);
-
-				_r_str_alloc (&item->sid, _r_str_length (package_sid), package_sid);
+				_r_str_alloc (&item->sid, package_sid_string.GetLength (), package_sid_string);
 				_r_str_alloc (&item->display_name, _r_str_length (display_name), display_name);
+				_r_str_alloc (&item->real_path, _r_str_length (path), path);
 
-				ConvertStringSidToSid (package_sid, &item->psid);
+				ConvertStringSidToSid (package_sid_string, &item->psid);
 
 				packages.push_back (item);
 
@@ -1602,7 +1618,6 @@ void _app_generate_services ()
 
 						WCHAR buffer[MAX_PATH] = {0};
 						WCHAR real_path[MAX_PATH] = {0};
-						LPWSTR sidstring = nullptr;
 
 						// get binary path
 						const SC_HANDLE hsvc = OpenService (hsvcmgr, service_name, SERVICE_QUERY_CONFIG);
@@ -1648,6 +1663,8 @@ void _app_generate_services ()
 						SID* serviceSid = nullptr;
 						ULONG serviceSidLength = 0;
 
+						rstring sidstring;
+
 						// get service security identifier
 						if (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength) == 0xC0000023 /*STATUS_BUFFER_TOO_SMALL*/)
 						{
@@ -1657,7 +1674,7 @@ void _app_generate_services ()
 							{
 								if (NT_SUCCESS (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength)))
 								{
-									ConvertSidToStringSid (serviceSid, &sidstring);
+									sidstring = _r_str_fromsid (serviceSid);
 								}
 								else
 								{
@@ -1666,7 +1683,7 @@ void _app_generate_services ()
 							}
 						}
 
-						if (serviceSid && sidstring)
+						if (serviceSid && !sidstring.IsEmpty ())
 						{
 							PITEM_ADD ptr_item = new ITEM_ADD;
 
@@ -1675,9 +1692,9 @@ void _app_generate_services ()
 							_r_str_alloc (&ptr_item->service_name, _r_str_length (service_name), service_name);
 							_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
 							_r_str_alloc (&ptr_item->real_path, _r_str_length (real_path), real_path);
-							_r_str_alloc (&ptr_item->sid, _r_str_length (sidstring), sidstring);
+							_r_str_alloc (&ptr_item->sid, sidstring.GetLength (), sidstring);
 
-							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring).ToUpper (), SDDL_REVISION_1, (PSECURITY_DESCRIPTOR*)&ptr_item->psid, nullptr))
+							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, (PSECURITY_DESCRIPTOR*)&ptr_item->psid, nullptr))
 							{
 								_app_logerror (L"ConvertStringSecurityDescriptorToSecurityDescriptor", GetLastError (), service_name, false);
 
@@ -1689,7 +1706,6 @@ void _app_generate_services ()
 							}
 						}
 
-						SAFE_LOCAL_FREE (sidstring);
 						SAFE_DELETE_ARRAY (serviceSid);
 					}
 
@@ -4274,6 +4290,9 @@ bool _wfp_create4filters (const MFILTER_RULES* ptr_rules, UINT line, bool is_int
 	if (is_enabled)
 		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
 
+	if (!is_intransact && _wfp_isfiltersapplying ())
+		is_intransact = true;
+
 	if (!is_intransact)
 	{
 		MARRAY ids;
@@ -4393,6 +4412,9 @@ bool _wfp_create3filters (const MFILTER_APPS* ptr_apps, UINT line, bool is_intra
 	if (is_enabled)
 		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
 
+	if (!is_intransact && _wfp_isfiltersapplying ())
+		is_intransact = true;
+
 	if (!is_intransact)
 	{
 		MARRAY ids;
@@ -4463,6 +4485,9 @@ bool _wfp_create2filters (UINT line, bool is_intransact = false)
 
 	if (is_enabled)
 		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
+
+	if (!is_intransact && _wfp_isfiltersapplying ())
+		is_intransact = true;
 
 	if (!is_intransact)
 	{
@@ -4826,7 +4851,7 @@ void _wfp_installfilters (bool is_full)
 
 bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 {
-	if (_r_fastlock_islocked (&lock_apply))
+	if (_wfp_isfiltersapplying ())
 		return false;
 
 	_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
@@ -6119,25 +6144,25 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		}
 
 		// get package id (win8+)
-		LPWSTR sidstring = nullptr;
+		rstring sidstring;
 
 		if (package_id)
 		{
-			if (ConvertSidToStringSid (package_id, &sidstring))
+			sidstring = _r_str_fromsid (package_id);
+
+			if (!sidstring.IsEmpty ())
 			{
 				if (!_app_item_get (&packages, _r_str_hash (sidstring), nullptr, nullptr, nullptr, nullptr, nullptr))
-					SAFE_LOCAL_FREE (sidstring);
+					sidstring.Clear ();
 			}
 		}
 
 		// copy converted nt device path into win32
-		if (sidstring)
+		if (!sidstring.IsEmpty ())
 		{
-			_r_str_alloc (&ptr_log->path, _r_str_length (sidstring), sidstring);
+			_r_str_alloc (&ptr_log->path, sidstring.GetLength (), sidstring);
 
 			ptr_log->hash = _r_str_hash (ptr_log->path);
-
-			SAFE_LOCAL_FREE (sidstring);
 		}
 		else if (app_id)
 		{
@@ -8296,7 +8321,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-				}
+					}
 
 				case IDM_ADD:
 				{
@@ -8533,14 +8558,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-			}
+				}
 
 			break;
+			}
 		}
-	}
 
 	return FALSE;
-}
+	}
 
 void _app_resizewindow (HWND hwnd, INT width, INT height)
 {
