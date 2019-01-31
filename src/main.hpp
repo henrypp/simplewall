@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2018 Henry++
+// Copyright (c) 2016-2019 Henry++
 
 #ifndef __MAIN_H__
 #define __MAIN_H__
@@ -7,12 +7,14 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <unordered_map>
+
+#include "routine.hpp"
 #include "resource.hpp"
 #include "app.hpp"
 
 // config
 #define WM_TRAYICON WM_APP + 1
-#define LANG_MENU 5
+#define LANG_MENU 6
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
 #define XML_APPS L"apps.xml"
@@ -21,7 +23,7 @@
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 #define XML_RULES_SYSTEM L"rules_system.xml"
 
-#define LOG_DIV L","
+#define LOG_DIV L','
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%userprofile%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
 
@@ -35,36 +37,48 @@
 
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 
-#define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;; CCRC;;;%s)"
+#define BOOTTIME_FILTER_NAME L"Boot-time filter"
+#define SUBLAYER_WEIGHT_DEFAULT 65534
+
+#define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;;CCRC;;;%s)"
 
 #define SZ_TAB L"   "
 #define SZ_EMPTY L"<empty>"
 
 #define SZ_LOG_REMOTE_ADDRESS L"Remote"
 #define SZ_LOG_LOCAL_ADDRESS L"Local"
+#define SZ_LOG_BLOCK L"BLOCK"
+#define SZ_LOG_ALLOW L"ALLOW"
 #define SZ_LOG_DIRECTION_IN L"IN"
 #define SZ_LOG_DIRECTION_OUT L"OUT"
 #define SZ_LOG_DIRECTION_LOOPBACK L"-Loopback"
 
 #define RULE_DELIMETER L";"
+#define RULE_RANGE_CHAR L'-'
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
 #define BACKUP_HOURS_PERIOD 1 // make backup every 1 hour (default)
+#define LOG_SIZE_LIMIT 2048
 
 #define LEN_IP_MAX 68
-#define LEN_HOST_MAX 512
+#define UMAP_CACHE_LIMIT 1024
 
 #define TIMER_DEFAULT 1
-#define TIMER_LOG_CALLBACK 4000
 
-#define FILTERS_TIMEOUT 6000
+#define FILTERS_TIMEOUT 9000
 
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 
-#define NOTIFY_WIDTH 368
-#define NOTIFY_HEIGHT 248
+#define NOTIFY_WIDTH 358
+#define NOTIFY_HEIGHT 372
 #define NOTIFY_BTN_WIDTH 110
+
+#define NOTIFY_PATH_COMPACT 36
+
+#define NOTIFY_CLR_BG GetSysColor(COLOR_WINDOW)
+#define NOTIFY_CLR_TEXT GetSysColor(COLOR_BTNTEXT)
+#define NOTIFY_CLR_BORDER GetSysColor(COLOR_HIGHLIGHT)
 
 #define NOTIFY_TIMER_POPUP_ID 1001
 #define NOTIFY_TIMER_TIMEOUT_ID 2002
@@ -74,9 +88,9 @@
 #define NOTIFY_TIMER_DEFAULT 30 // sec.
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 #define NOTIFY_LIMIT_SIZE 10 //limit notifications pool size
+#define NOTIFY_LIMIT_POOL_SIZE 32
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
-#define NOTIFY_BORDER_COLOR RGB(255,98,98)
 
 // pugixml document configuration
 #define PUGIXML_LOAD_FLAGS (pugi::parse_escapes)
@@ -100,12 +114,13 @@
 #define FILTER_WEIGHT_HIGHEST_IMPORTANT 0xF
 #define FILTER_WEIGHT_HIGHEST 0xE
 #define FILTER_WEIGHT_BLOCKLIST 0xD
-#define FILTER_WEIGHT_CUSTOM 0xC
-#define FILTER_WEIGHT_SYSTEM 0xB
-#define FILTER_WEIGHT_APPLICATION 0xA
-#define FILTER_WEIGHT_LOWEST 0x9
+#define FILTER_WEIGHT_CUSTOM_BLOCK 0xC
+#define FILTER_WEIGHT_CUSTOM 0xB
+#define FILTER_WEIGHT_SYSTEM 0xA
+#define FILTER_WEIGHT_APPLICATION 0x9
+#define FILTER_WEIGHT_LOWEST 0x8
 
-// memory limitation
+// memory limitation for 1 rule
 #define RULE_NAME_CCH_MAX 64
 #define RULE_RULE_CCH_MAX 256
 
@@ -149,12 +164,11 @@ extern "C" {
 };
 
 // enums
-enum EnumRuleType
+enum EnumXmlType
 {
-	TypeUnknown = 0,
-	TypeIp = 2,
-	TypeHost = 1,
-	TypePort = 4,
+	XmlApps = 0,
+	XmlRules = 1,
+	XmlRulesConfig = 2,
 };
 
 enum EnumMode
@@ -173,56 +187,26 @@ enum EnumAppType
 	AppPico = 5 // win10+
 };
 
-enum EnumNotifyCommand
+enum EnumRuleType
 {
-	CmdAllow = 0,
-	CmdBlock = 1,
-	CmdMute = 2,
+	TypeRuleUnknown = 0,
+	TypeBlocklist = 1,
+	TypeSystem = 2,
+	TypeCustom = 3,
 };
+
+enum EnumRuleItemType
+{
+	TypeRuleItemUnknown = 0,
+	TypeHost = 1,
+	TypeIp = 2,
+	TypePort = 4,
+};
+
+typedef std::vector<GUID> MARRAY;
 
 struct STATIC_DATA
 {
-	PSID psid = nullptr;
-	LPGUID psession = nullptr;
-
-	bool is_securityinfoset = false;
-	bool is_popuperrors = false;
-	bool is_notifytimeout = false;
-	bool is_notifymouse = false;
-	bool is_nocheckboxnotify = false;
-	bool is_wsainit = false;
-	bool is_ihaveinternetaccess = false;
-
-	HIMAGELIST himg = nullptr;
-
-	size_t icon_id = 0;
-	size_t icon_package_id = 0;
-	size_t icon_service_id = 0;
-	HICON hicon_large = nullptr;
-	HICON hicon_small = nullptr;
-	HICON hicon_package = nullptr;
-	HICON hicon_service_small = nullptr;
-	HBITMAP hbitmap_package_small = nullptr;
-	HBITMAP hbitmap_service_small = nullptr;
-
-	HFONT hfont = nullptr;
-
-	HANDLE hthread = nullptr;
-	HANDLE hengine = nullptr;
-	HANDLE hevent = nullptr;
-	HANDLE hlog = nullptr;
-	HANDLE hpackages = nullptr;
-
-	HANDLE stop_evt = nullptr;
-	HANDLE finish_evt = nullptr;
-	HANDLE log_evt = nullptr;
-
-	HANDLE htimer = nullptr;
-	time_t timer_low = 0;
-
-	time_t blocklist_timestamp = 0;
-
-	WCHAR title[128] = {0};
 	WCHAR notify_snd_path[MAX_PATH] = {0};
 
 	WCHAR apps_path[MAX_PATH] = {0};
@@ -235,26 +219,89 @@ struct STATIC_DATA
 	WCHAR rules_custom_path_backup[MAX_PATH] = {0};
 	WCHAR rules_config_path_backup[MAX_PATH] = {0};
 
+	WCHAR windows_dir[MAX_PATH] = {0};
+	WCHAR tmp1_dir[MAX_PATH] = {0};
+
+	WCHAR title[128] = {0};
+
+	PACL psecurityacl_allow = nullptr;
+	PACL psecurityacl_block = nullptr;
+	PSID psecuritysid = nullptr;
+	LPGUID psession = nullptr;
+
+	HIMAGELIST himg = nullptr;
+	HBITMAP hbitmap_package_small = nullptr;
+	HBITMAP hbitmap_service_small = nullptr;
+	HANDLE hengine = nullptr;
+	HANDLE hnetevent = nullptr;
+	HANDLE hlogfile = nullptr;
+	HANDLE done_evt = nullptr;
+	HANDLE htimer = nullptr;
+	HFONT hfont = nullptr;
+	//HFONT hfont_bold = nullptr;
+	HICON hicon_large = nullptr;
+	HICON hicon_small = nullptr;
+	HICON hicon_package = nullptr;
+	HICON hicon_service_small = nullptr;
 	HWND hnotification = nullptr;
 
-	HWND hfind = nullptr;
-	WCHAR search_string[128] = {0};
-
-	WCHAR windows_dir[MAX_PATH] = {0};
-	size_t wd_length = 0;
-
-	WCHAR tmp1_dir[MAX_PATH] = {0};
-	size_t tmp1_length = 0;
+	time_t blocklist_timestamp = 0;
+	time_t rule_system_timestamp = 0;
 
 	size_t ntoskrnl_hash = 0;
+	size_t svchost_hash = 0;
 	size_t myhash = 0;
+
+	size_t tmp1_length = 0;
+	size_t wd_length = 0;
+
+	size_t icon_id = 0;
+	size_t icon_package_id = 0;
+	size_t icon_service_id = 0;
+
+	bool is_popuperrors = false;
+	bool is_notifytimeout = false;
+	bool is_notifymouse = false;
+	bool is_nocheckboxnotify = false;
+	bool is_wsainit = false;
+	bool is_neteventset = false;
 };
+
+typedef struct _ITEM_STATUS
+{
+	size_t total_count = 0;
+
+	size_t unused_count = 0;
+	size_t timers_count = 0;
+	size_t invalid_count = 0;
+} ITEM_STATUS, *PITEM_STATUS;
 
 typedef struct _ITEM_APP
 {
-	__time64_t timestamp = 0;
+	MARRAY mfarr;
+
+	LPWSTR display_name = nullptr;
+	LPWSTR original_path = nullptr;
+	LPWSTR real_path = nullptr;
+
+	LPWSTR description = nullptr;
+	LPWSTR signer = nullptr;
+
+	union
+	{
+		PSECURITY_DESCRIPTOR psd = nullptr; // service app
+		PSID psid; // store app (win8+)
+	};
+
+	HANDLE htimer = nullptr;
+
+	time_t timestamp = 0;
+	time_t timer = 0;
+	time_t last_notify = 0;
 
 	size_t icon_id = 0;
+
+	EnumAppType type = AppRegular;
 
 	bool is_haveerrors = false;
 
@@ -263,113 +310,216 @@ typedef struct _ITEM_APP
 	bool is_silent = false;
 	bool is_signed = false;
 	bool is_temp = false;
-
-	EnumAppType type = AppRegular;
-
-	LPCWSTR description = nullptr;
-	LPCWSTR signer = nullptr;
-
-	WCHAR display_name[MAX_PATH] = {0};
-	WCHAR original_path[MAX_PATH] = {0};
-	WCHAR real_path[MAX_PATH] = {0};
-
-	union
-	{
-		PSECURITY_DESCRIPTOR psd = nullptr; // service app
-		PSID psid; // store app (win8+)
-	};
+	bool is_undeletable = false;
 } ITEM_APP, *PITEM_APP;
 
 typedef struct _ITEM_RULE
 {
-	bool is_enabled = false;
-	bool is_block = false;
-	bool is_haveerrors = false;
+	_ITEM_RULE ()
+	{
+		pname = nullptr;
+		prule_remote = nullptr;
+		prule_local = nullptr;
+	}
 
-	FWP_DIRECTION dir = FWP_DIRECTION_OUTBOUND;
-	EnumRuleType type = TypeUnknown;
-
-	UINT8 protocol = 0;
-	ADDRESS_FAMILY version = AF_UNSPEC;
-
-	LPWSTR pname = nullptr;
-	LPWSTR prule = nullptr;
+	~_ITEM_RULE ()
+	{
+		SAFE_DELETE_ARRAY (pname);
+		SAFE_DELETE_ARRAY (prule_remote);
+		SAFE_DELETE_ARRAY (prule_local);
+	}
 
 	std::unordered_map<size_t, bool> apps;
+
+	MARRAY mfarr;
+
+	LPWSTR pname = nullptr;
+	LPWSTR prule_remote = nullptr;
+	LPWSTR prule_local = nullptr;
+
+	ADDRESS_FAMILY af = AF_UNSPEC;
+
+	FWP_DIRECTION dir = FWP_DIRECTION_OUTBOUND;
+
+	UINT8 weight = 0;
+	UINT8 protocol = 0;
+
+	EnumRuleType type;
+
+	bool is_haveerrors = false;
+	bool is_forservices = false;
+	bool is_readonly = false;
+	bool is_enabled = false;
+	bool is_block = false;
 } ITEM_RULE, *PITEM_RULE;
+
+typedef struct _ITEM_RULE_CONFIG
+{
+	_ITEM_RULE_CONFIG ()
+	{
+		pname = nullptr;
+		papps = nullptr;
+	}
+
+	~_ITEM_RULE_CONFIG ()
+	{
+		SAFE_DELETE_ARRAY (pname);
+		SAFE_DELETE_ARRAY (papps);
+	}
+
+	LPWSTR pname = nullptr;
+	LPWSTR papps = nullptr;
+
+	bool is_enabled = false;
+} ITEM_RULE_CONFIG, *PITEM_RULE_CONFIG;
 
 typedef struct _ITEM_LOG
 {
-	bool is_loopback = false;
-	bool is_blocklist = false;
-	bool is_system = false;
-	bool is_myprovider = false;
+	_ITEM_LOG ()
+	{
+		path = nullptr;
+		provider_name = nullptr;
+		filter_name = nullptr;
+		username = nullptr;
+		remote_fmt = nullptr;
+		local_fmt = nullptr;
+	}
 
-	size_t hash = 0;
+	~_ITEM_LOG ()
+	{
+		SAFE_DELETE_ARRAY (path);
+		SAFE_DELETE_ARRAY (provider_name);
+		SAFE_DELETE_ARRAY (filter_name);
+		SAFE_DELETE_ARRAY (username);
+		SAFE_DELETE_ARRAY (remote_fmt);
+		SAFE_DELETE_ARRAY (local_fmt);
+	}
+
+	LPWSTR path = nullptr;
+	LPWSTR provider_name = nullptr;
+	LPWSTR filter_name = nullptr;
+	LPWSTR remote_fmt = nullptr;
+	LPWSTR local_fmt = nullptr;
+	LPWSTR username = nullptr;
 
 	time_t date = 0;
 
+	size_t hash = 0;
+
 	ADDRESS_FAMILY af = 0;
-
-	UINT8 protocol = 0;
-
-	UINT16 remote_port = 0;
-	UINT16 local_port = 0;
 
 	UINT64 filter_id = 0;
 
+	FWP_DIRECTION direction = FWP_DIRECTION_OUTBOUND;
+
 	union
 	{
-		IN_ADDR remote_addr;
+		IN_ADDR remote_addr = {0};
 		IN6_ADDR remote_addr6;
 	};
 
 	union
 	{
-		IN_ADDR local_addr;
+		IN_ADDR local_addr = {0};
 		IN6_ADDR local_addr6;
 	};
 
-	FWP_DIRECTION direction = FWP_DIRECTION_OUTBOUND;
+	UINT16 remote_port = 0;
+	UINT16 local_port = 0;
 
-	WCHAR remote_fmt[192] = {0};
-	WCHAR local_fmt[192] = {0};
+	UINT8 protocol = 0;
 
-	WCHAR username[192] = {0};
-
-	WCHAR provider_name[MAX_PATH] = {0};
-	WCHAR filter_name[MAX_PATH] = {0};
-
-	WCHAR path[MAX_PATH] = {0};
+	bool is_allow = false;
+	bool is_loopback = false;
+	bool is_blocklist = false;
+	bool is_custom = false;
+	bool is_system = false;
+	bool is_myprovider = false;
 } ITEM_LOG, *PITEM_LOG;
+
+typedef struct _ITEM_LIST_HEAD
+{
+	SLIST_HEADER ListHead;
+
+	volatile ULONG Count;
+} ITEM_LIST_HEAD, *PITEM_LIST_HEAD;
 
 typedef struct _ITEM_LIST_ENTRY
 {
 	SLIST_ENTRY ListEntry;
+
+#ifndef _WIN64
+	ULONG_PTR Reserved;
+#endif // _WIN64
+
 	ULONG_PTR Body;
 } ITEM_LIST_ENTRY, *PITEM_LIST_ENTRY;
 
+C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
+C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
+
 typedef struct _ITEM_ADD
 {
+	_ITEM_ADD ()
+	{
+		hash = 0;
+
+		sid = nullptr;
+		display_name = nullptr;
+		service_name = nullptr;
+		real_path = nullptr;
+
+		psid = nullptr;
+		hbmp = nullptr;
+	}
+
+	~_ITEM_ADD ()
+	{
+		SAFE_DELETE_ARRAY (sid);
+		SAFE_DELETE_ARRAY (display_name);
+		SAFE_DELETE_ARRAY (service_name);
+		SAFE_DELETE_ARRAY (real_path);
+
+		if (hbmp)
+		{
+			DeleteObject (hbmp);
+			hbmp = nullptr;
+		}
+	}
+
 	size_t hash = 0;
 
-	HBITMAP hbmp = nullptr;
-
-	WCHAR sid[MAX_PATH] = {0};
-	WCHAR display_name[MAX_PATH] = {0};
-	WCHAR service_name[MAX_PATH] = {0};
-	WCHAR real_path[MAX_PATH] = {0};
+	LPWSTR sid = nullptr;
+	LPWSTR display_name = nullptr;
+	LPWSTR service_name = nullptr;
+	LPWSTR real_path = nullptr;
 
 	union
 	{
 		PSID psid = nullptr;
 		PSECURITY_DESCRIPTOR psd;
 	};
+
+	HBITMAP hbmp = nullptr;
+
 } ITEM_ADD, *PITEM_ADD;
 
 typedef struct _ITEM_COLOR
 {
-	bool is_enabled = false;
+	_ITEM_COLOR ()
+	{
+		pcfg_name = nullptr;
+		pcfg_value = nullptr;
+	}
+
+	~_ITEM_COLOR ()
+	{
+		SAFE_DELETE_ARRAY (pcfg_name);
+		SAFE_DELETE_ARRAY (pcfg_value);
+	}
+
+	LPWSTR pcfg_name = nullptr;
+	LPWSTR pcfg_value = nullptr;
 
 	size_t hash = 0;
 
@@ -378,33 +528,49 @@ typedef struct _ITEM_COLOR
 	COLORREF default_clr = 0;
 	COLORREF clr = 0;
 
-	LPWSTR config_name = nullptr;
-	LPWSTR config_value = nullptr;
+	bool is_enabled = false;
 } ITEM_COLOR, *PITEM_COLOR;
 
 typedef struct _ITEM_PROTOCOL
 {
+	_ITEM_PROTOCOL ()
+	{
+		pname = nullptr;
+	}
+
+	~_ITEM_PROTOCOL ()
+	{
+		SAFE_DELETE_ARRAY (pname);
+	}
+
+	LPWSTR pname = nullptr;
 	UINT8 id = 0;
-	LPWSTR name = nullptr;
 } ITEM_PROTOCOL, *PITEM_PROTOCOL;
 
 typedef struct _ITEM_ADDRESS
 {
-	bool is_range = false;
-
-	EnumRuleType type = TypeUnknown;
-
-	NET_ADDRESS_FORMAT format;
-
-	UINT16 port = 0;
+	WCHAR host[NI_MAXHOST] = {0};
 
 	FWP_V4_ADDR_AND_MASK* paddr4 = nullptr;
 	FWP_V6_ADDR_AND_MASK* paddr6 = nullptr;
 
 	FWP_RANGE* prange = nullptr;
 
-	WCHAR host[LEN_HOST_MAX] = {0};
+	EnumRuleItemType type = TypeRuleItemUnknown;
+
+	NET_ADDRESS_FORMAT format = NET_ADDRESS_FORMAT_UNSPECIFIED;
+
+	UINT16 port = 0;
+
+	bool is_range = false;
 } ITEM_ADDRESS, *PITEM_ADDRESS;
+
+typedef std::vector<PITEM_APP> MFILTER_APPS;
+typedef std::vector<PITEM_RULE> MFILTER_RULES;
+typedef std::vector<HANDLE> MTHREADPOOL;
+typedef std::unordered_map<size_t, ITEM_APP> MAPPS_MAP;
+typedef std::unordered_map<size_t, LPWSTR> MCACHE_MAP;
+typedef std::unordered_map<size_t, EnumRuleItemType> MCACHETYPES_MAP;
 
 // dropped events callback subscription (win7+)
 #ifndef FWP_DIRECTION_IN
@@ -414,11 +580,5 @@ typedef struct _ITEM_ADDRESS
 #ifndef FWP_DIRECTION_OUT
 #define FWP_DIRECTION_OUT 0x00003901L
 #endif
-
-typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, LPHANDLE); // subscribe (win10+)
-typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, LPHANDLE); // subscribe (win8+)
-typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, LPHANDLE); // subscribe (win7+)
-
-typedef DWORD (WINAPI *FWPMNEU) (HANDLE, HANDLE); // unsubcribe (all)
 
 #endif // __MAIN_H__

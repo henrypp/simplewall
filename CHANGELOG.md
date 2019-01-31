@@ -1,3 +1,219 @@
+v2.4 (x February 2019)
+- new notification ui
+- added predefined rules (ftp, http etc)
+- added option to configure 6to4 redirections (it's allowed, but undocumented earlier)
+- added option to secure installed filters
+- added more list view modes
+- fixed notifications stay visible when special rules applied for the app
+- fixed possible duplicate of special rules from notifications
+- fixed multithreading and possible race conditions
+- fixed duplicate filters callback on device arrival
+- fixed dropped packets csv log delimeter
+- replaced netsh commands by com interface
+- cosmetic fixes
+- fixed bugs
+
+v2.3.13 (3 January 2019)
+- added dns resolver caching
+- added dns resolver winsock fallback (issue #290)
+- avoid window flickering on window sizing
+- revert refresh filters on device arrival
+- fixed access rights for wfp provider and sublayer
+- fixed allocated strings dereferencing (issue #285)
+- fixed parsing hosnames with dashes (issue #271)
+- fixed localization (issue #288)
+- fixed bugs
+
+v2.3.12 (25 December 2018)
+- added (partialy) win10rs5+ dark theme (issue #248)
+- allow loopback connections by default for new users
+- fixed allocated strings dereferencing (issue #283)
+- cosmetic fixes
+- fixed bugs
+
+v2.3.11 (14 December 2018)
+- added "/install" argument for install filtering
+- added cache auto clean up (to prevent overflow)
+- changed minimum size of main window (issue #269)
+- changed installation message
+- increased rule parsing speed (issue #276)
+- memory optimization
+- fixed notification window appears on taskbar (regression)
+- fixed exclude user rules option was not working
+- cosmetic fixes
+- fixed bugs
+
+v2.3.10 (28 November 2018)
+- fixed old bug where incorrect rules are may accepted as filters
+- fixed bugs
+
+v2.3.9 (20 November 2018)
+- fixed resolving ip addresses may hang out net events thread (issue #256)
+- fixed net events subscription when option is not set
+- fixed protocol names
+- fixed bugs
+
+v2.3.8 (7 November 2018)
+- fixed #251
+- fixed #253
+
+v2.3.7 (5 November 2018)
+- fixed dropped events callback subscription on latest win10
+- fixed notifications sound cannot be played in some cases
+- fixed fastlock race condition (critical)
+- cosmetic fixes
+- fixed bugs
+
+v2.3.6 (16 October 2018)
+- added purgen submenu into tray menu
+- added more statusbar information
+- set extra large icons view by default
+- tray menu services counting bug
+- fixed app with overdue timer still enabled on profile load
+- fixed resetting some data on profile load
+- fixed timer resetting on profie load
+- fixed listview checkboxes
+- cosmetic fixes
+- fixed bugs
+
+v2.3.5 (14 October 2018)
+- added extra large icons view
+- use correct function for netevents subscription (win10rs4+)
+- fixed forced cleartype font style (issue #233)
+- fixed possible buffer overflow
+- rerwritten timer engine
+- cosmetic fixes
+
+v2.3.4 (21 September 2018)
+- fixed dns system rules when dns service is stopped
+- fixed listen filter conditions (issue #213, #222)
+- fixed memory referencing bug (issue #221)
+- fixed massive handles leak (issue #230)
+- fixed thread termination
+- various ui fixes
+
+v2.3.3 (8 July 2018)
+- added system rules update feature
+- fixed inaccurate timeout between notifications  (issue #194)
+- fixed fullscreen apps showstopper (issue #209)
+- fixed possible crash for device path resolution
+- fixed skipuac warnings for some machines
+- fixed some services path resolution
+- fixed saving empty rules config
+- fixed update engine (issue #182)
+- updated system rules
+
+v2.3.2 (27 Juny 2018)
+- added sorting by state for user rules in app context menu
+- increased priority for blocking user rules
+- fixed loading on startup (issue #75)
+- fixed editor apps list sorting
+- fixed service names displaying
+
+v2.3.1 (25 Juny 2018)
+- fixed loopback rules (added more reserved ip addresses)
+- fixed sometimes system cannot be going to sleep
+- fixed applying rules for services (appcrash)
+- fixed update sometimes cannot be installed
+- fixed services enumeration
+- fixed system rules
+
+v2.3 (19 Juny 2018)
+- added allowed connections monitoring in dropped packets log (win8+)
+- added inbound multicast and broadcast connections logging (win8+)
+- added outbound redirection filter layer (win7+)
+- added separation for remote/local address/port in rules editor
+- added hotkeys for import/export profile
+- added win10 rs5 support
+- prevent memory overflow for singly linked lists (win7+) (issue #193)
+- do not load icons for processes if icons displaying are disabled
+- improved multiple rules applying speed in settings window
+- increased time limit for displaying same notification (win7+)
+- search loading dlls in system directories only (safety)
+- check for correct xml data type before loading
+- store last notification timestamp for apps
+- removed proxy support (win8+)
+- fixed dropped events callback crash (win7+)
+- fixed applying services filters
+- fixed alphanumeric sorting
+- improved port scanning defense
+- improved loopback connections
+- improved boot-time filters
+- stability improvements
+- cleanup xml atributes
+- updated system rules
+- cosmetics fixes
+- fixed ui bugs
+- fixed bugs
+
+v2.2.12 (6 Juny 2018)
+- added win10 rs4 support
+
+v2.2.11 (6 Juny 2018)
+- fixed double race condition lock (critical)
+
+v2.2.10 (6 Juny 2018)
+- added feature to disable special rules group (issue #181)
+- revert special rules highlighting
+- fixed listview focusing (issue #164)
+- fixed switching modes
+- fixed reported bugs
+- code cleanup
+- fixed bugs
+
+v2.2.9 (5 Juny 2018)
+- added exclude custom rules from notifications feature (issue #177)
+- fixed app does not change group when special rule was removed
+- fixed sometimes netevents cannot be unsubcribed
+- fixed ipv6 addresses loopbacks
+- fixed thread event synchronization
+- fixed special rules group sorting
+- cosmetics fixes
+- fixed bugs
+
+v2.2.8 RC (21 May 2018)
+- fixed device changes notifications (issue #128)
+- fixed fullscreen apps loses focus (issue #178)
+- fixed saving new rules (issue #179)
+- fixed loopback condition flag
+- code cleanup
+
+v2.2.7 RC (13 May 2018)
+- removed search feature (do not used by anyone)
+- stability improvements
+- fixed loopback blocking (adobe software now working well when you enable loopback connections)
+- fixed singly linked list structure alignment for 32-bit
+- fixed timers does not applied from notification window (issue #172)
+- fixed apps does not change sorting sometimes
+- fixed apps does not change group sometimes
+- fixed bugs
+
+v2.2.6 RC (11 May 2018)
+- fixed special rules does not change apps group
+- fixed notifications indexing
+- fixed notifications icon redraw
+- fixed another dns caching
+- fixed ui bugs
+- fixed bugs
+
+v2.2.5 Beta (4 May 2018)
+- fixed saving profile on manual apps state changing
+- fixed some untranslated strings
+- fixed installer/uninstaller
+- fixed rules checkboxes
+- fixed ui bugs
+- fixed bugs
+
+v2.2.4 Beta (3 May 2018)
+- now simplewall install filters fastest than Manco pulls out his revolver
+- reworked update engine, now it check all components updates automatically
+- sort rules alphabeticaly
+- fixed threads priority race condition
+- fixed applying filters without pause
+- fixed dns caching (issue #153)
+- fixed ui bugs
+- fixed bugs
+
 v2.2.3 Beta (16 April 2018)
 - added drop settings to default feature
 - changed log format to csv (comma-separated values) table
