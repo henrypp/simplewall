@@ -230,6 +230,7 @@ struct STATIC_DATA
 	LPGUID psession = nullptr;
 
 	HIMAGELIST himg = nullptr;
+	HBITMAP hbitmap_process_small = nullptr;
 	HBITMAP hbitmap_package_small = nullptr;
 	HBITMAP hbitmap_service_small = nullptr;
 	HANDLE hengine = nullptr;

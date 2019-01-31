@@ -573,16 +573,6 @@ void _app_getcount (PITEM_STATUS ptr_status)
 	}
 }
 
-LONG gettextwidth (HDC hdc, LPCWSTR text, size_t length)
-{
-	SIZE size = {0};
-
-	if (!GetTextExtentPoint32 (hdc, text, (INT)length, &size))
-		size.cx = 200;
-
-	return size.cx;
-}
-
 void _app_refreshstatus (HWND hwnd)
 {
 	const HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
@@ -642,7 +632,7 @@ void _app_refreshstatus (HWND hwnd)
 				}
 			}
 
-			size[i] = gettextwidth (hdc, text[i], text[i].GetLength ()) + 10;
+			size[i] = _r_dc_fontwidth (hdc, text[i], text[i].GetLength ()) + 10;
 
 			if (i)
 				lay += size[i];
@@ -1043,7 +1033,7 @@ bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR* pinfo)
 
 bool _app_getfileicon (LPCWSTR path, bool is_small, size_t* picon_id, HICON* picon)
 {
-	if (!picon_id && !picon)
+	if (!path || !_r_fs_exists (path) || (!picon_id && !picon))
 		return false;
 
 	bool result = false;
@@ -1275,6 +1265,9 @@ bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR* psigner)
 
 HBITMAP _app_ico2bmp (HICON hicon)
 {
+	if (!hicon)
+		return nullptr;
+
 	const INT icon_size = GetSystemMetrics (SM_CXSMICON);
 
 	RECT iconRectangle = {0};
@@ -1358,6 +1351,58 @@ void _app_clear_array (std::vector<PITEM_ADD>* ptr)
 	ptr->clear ();
 }
 
+void _app_load_appxmanifest (PITEM_ADD ptr_item)
+{
+	if (!ptr_item || !ptr_item->real_path)
+		return;
+
+	rstring result;
+	rstring path;
+
+	static LPCWSTR appx_names[] = {
+		L"AppxManifest.xml",
+		L"VSAppxManifest.xml",
+	};
+
+	for (size_t i = 0; i < _countof (appx_names); i++)
+	{
+		path.Format (L"%s\\%s", ptr_item->real_path, appx_names[i]);
+
+		if (_r_fs_exists (path))
+			goto doopen;
+	}
+
+	return;
+
+doopen:
+
+	pugi::xml_document doc;
+	pugi::xml_parse_result xml_result = doc.load_file (path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+
+	if (xml_result)
+	{
+		pugi::xml_node root = doc.child (L"Package");
+
+		if (root)
+		{
+			pugi::xml_node xml_applications = root.child (L"Applications");
+
+			for (pugi::xml_node item = xml_applications.child (L"Application"); item; item = item.next_sibling (L"Application"))
+			{
+				if (!item.attribute (L"Executable").empty ())
+				{
+					result.Format (L"%s\\%s", ptr_item->real_path, item.attribute (L"Executable").as_string ());
+
+					if (_r_fs_exists (result))
+						break;
+				}
+			}
+		}
+	}
+
+	_r_str_alloc (&ptr_item->real_path, result.GetLength (), result.GetString ());
+}
+
 void _app_generate_packages ()
 {
 	_app_clear_array (&packages);
@@ -1415,9 +1460,9 @@ void _app_generate_packages ()
 
 				const size_t hash = _r_str_hash (package_sid_string);
 
-				PITEM_ADD item = new ITEM_ADD;
+				PITEM_ADD ptr_item = new ITEM_ADD;
 
-				item->hash = hash;
+				ptr_item->hash = hash;
 
 				size = _countof (display_name) * sizeof (display_name[0]);
 				result = RegQueryValueEx (hsubkey, L"DisplayName", nullptr, nullptr, (LPBYTE)display_name, &size);
@@ -1434,13 +1479,15 @@ void _app_generate_packages ()
 				size = _countof (path) * sizeof (path[0]);
 				result = RegQueryValueEx (hsubkey, L"PackageRootFolder", nullptr, nullptr, (LPBYTE)path, &size);
 
-				_r_str_alloc (&item->sid, package_sid_string.GetLength (), package_sid_string);
-				_r_str_alloc (&item->display_name, _r_str_length (display_name), display_name);
-				_r_str_alloc (&item->real_path, _r_str_length (path), path);
+				_r_str_alloc (&ptr_item->sid, package_sid_string.GetLength (), package_sid_string);
+				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
+				_r_str_alloc (&ptr_item->real_path, _r_str_length (path), path);
 
-				ConvertStringSidToSid (package_sid_string, &item->psid);
+				ConvertStringSidToSid (package_sid_string, &ptr_item->psid);
 
-				packages.push_back (item);
+				_app_load_appxmanifest (ptr_item);
+
+				packages.push_back (ptr_item);
 
 				RegCloseKey (hsubkey);
 			}
@@ -1553,10 +1600,6 @@ void _app_generate_processes ()
 						{
 							ptr_item->hbmp = _app_ico2bmp (hicon);
 							DestroyIcon (hicon);
-						}
-						else
-						{
-							ptr_item->hbmp = _app_ico2bmp (config.hicon_small);
 						}
 					}
 
@@ -2117,6 +2160,13 @@ rstring _app_gettooltip (size_t hash)
 
 			if (_app_item_get (&services, hash, &display_name, nullptr, nullptr, nullptr, nullptr))
 				result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), ptr_app->original_path, display_name.GetString ());
+		}
+		else if (ptr_app->type == AppStore)
+		{
+			rstring display_name;
+
+			if (_app_item_get (&packages, hash, &display_name, nullptr, nullptr, nullptr, nullptr))
+				result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), display_name.GetString ());
 		}
 
 		// signature information
@@ -5427,58 +5477,58 @@ void _app_notifycreatewindow (HWND hparent)
 		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - app.GetDPI (20) - app.GetDPI (12), app.GetDPI (8), IconSize, IconSize, config.hnotification, (HMENU)IDC_CLOSE_BTN, nullptr, nullptr);
 		SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_CLOSE, IconXXXX));
 
-		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_NOTIFY, app.GetDPI (12), app.GetDPI (46), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
+		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (46), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
 		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
 
-		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (46), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_TEXT, nullptr, nullptr);
-		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
-		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
-		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
-
-		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS | SS_NOTIFY, app.GetDPI (12), app.GetDPI (66), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_SIGNATURE_ID, nullptr, nullptr);
-		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
-
-		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (66), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_SIGNATURE_TEXT, nullptr, nullptr);
+		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (46), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_TEXT, nullptr, nullptr);
 		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
 		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS | SS_NOTIFY, app.GetDPI (12), app.GetDPI (86), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
+		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (66), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_SIGNATURE_ID, nullptr, nullptr);
 		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
 
-		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (86), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_TEXT, nullptr, nullptr);
-		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
-		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
-		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
-
-		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS | SS_NOTIFY, app.GetDPI (12), app.GetDPI (106), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
-		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
-
-		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (106), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_TEXT, nullptr, nullptr);
+		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (66), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_SIGNATURE_TEXT, nullptr, nullptr);
 		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
 		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS | SS_NOTIFY, app.GetDPI (12), app.GetDPI (126), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_ID, nullptr, nullptr);
+		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (86), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
 		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
 
-		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (126), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_TEXT, nullptr, nullptr);
-		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
-		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
-		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
-
-		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS | SS_NOTIFY, app.GetDPI (12), app.GetDPI (146), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
-		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
-
-		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (146), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_TEXT, nullptr, nullptr);
+		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (86), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_TEXT, nullptr, nullptr);
 		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
 		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS | SS_NOTIFY, app.GetDPI (12), app.GetDPI (166), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
+		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (106), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
 		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
 
-		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_MULTILINE, app.GetDPI (12), app.GetDPI (166), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_TEXT, nullptr, nullptr);
+		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (106), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_TEXT, nullptr, nullptr);
+		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
+		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
+
+		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (126), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_ID, nullptr, nullptr);
+		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
+
+		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (126), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_TEXT, nullptr, nullptr);
+		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
+		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
+
+		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (146), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
+		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
+
+		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (146), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_TEXT, nullptr, nullptr);
+		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
+		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
+
+		hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_WORDELLIPSIS, app.GetDPI (12), app.GetDPI (166), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
+		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
+
+		hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (166), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_TEXT, nullptr, nullptr);
 		SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, true);
 		SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 		SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
@@ -5515,8 +5565,6 @@ void _app_notifycreatewindow (HWND hparent)
 		//_r_ctrl_settip (config.hnotification, IDC_CREATERULE_ADDR_ID, LPSTR_TEXTCALLBACK);
 		//_r_ctrl_settip (config.hnotification, IDC_CREATERULE_PORT_ID, LPSTR_TEXTCALLBACK);
 		//_r_ctrl_settip (config.hnotification, IDC_DISABLENOTIFICATION_ID, LPSTR_TEXTCALLBACK);
-
-		//SetWindowBlur (config.hnotification);
 
 		_app_notifyhide (config.hnotification);
 	}
@@ -5763,36 +5811,33 @@ bool _app_notifysettimeout (HWND hwnd, UINT_PTR timer_id, bool is_create, UINT t
 	return true;
 }
 
-void settext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT ctrl_id2, LPCWSTR text2)
+void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT ctrl_id2, LPCWSTR text2)
 {
+	RECT rc_wnd = {0};
+	RECT rc_ctrl = {0};
+
+	const HWND hctrl1 = GetDlgItem (hwnd, ctrl_id1);
+	const HWND hctrl2 = GetDlgItem (hwnd, ctrl_id2);
+
+	static const INT padding = app.GetDPI (12);
+	static const INT border = padding / 2;
+
 	SelectObject (hdc, (HFONT)SendDlgItemMessage (hwnd, ctrl_id1, WM_GETFONT, 0, 0)); // fix
 	SelectObject (hdc, (HFONT)SendDlgItemMessage (hwnd, ctrl_id2, WM_GETFONT, 0, 0)); // fix
 
-	LONG width1 = gettextwidth (hdc, text1, _r_str_length (text1));
-	LONG width2 = gettextwidth (hdc, text2, _r_str_length (text2));
+	GetWindowRect (hwnd, &rc_wnd);
+	GetWindowRect (hctrl1, &rc_ctrl);
 
-	if (!width1)
-		width1 = 100;
+	MapWindowPoints (HWND_DESKTOP, hwnd, (LPPOINT)&rc_ctrl, 2);
 
-	if (!width2)
-		width2 = 100;
+	const INT wnd_width = _R_RECT_WIDTH (&rc_wnd) - (padding);
+	const INT ctrl_width = _r_dc_fontwidth (hdc, text1, _r_str_length (text1));
 
-	RECT wnd;
-	RECT rc1;
-	RECT rc2;
+	SetWindowPos (hctrl1, nullptr, padding, rc_ctrl.top, ctrl_width + border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+	SetWindowPos (hctrl2, nullptr, padding + ctrl_width + border, rc_ctrl.top, wnd_width - ctrl_width - padding - border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
-	GetWindowRect (hwnd, &wnd);
-	GetWindowRect (GetDlgItem (hwnd, ctrl_id1), &rc1);
-	GetWindowRect (GetDlgItem (hwnd, ctrl_id2), &rc2);
-
-	MapWindowPoints (HWND_DESKTOP, hwnd, (LPPOINT)&rc1, 2);
-	MapWindowPoints (HWND_DESKTOP, hwnd, (LPPOINT)&rc2, 2);
-
-	SetWindowPos (GetDlgItem (hwnd, ctrl_id1), nullptr, app.GetDPI (12), rc1.top, width1 + app.GetDPI (2), _R_RECT_HEIGHT (&rc1), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-	SetWindowPos (GetDlgItem (hwnd, ctrl_id2), nullptr, _R_RECT_WIDTH (&wnd) - app.GetDPI (12) - width2 - app.GetDPI (2), rc2.top, width2, _R_RECT_HEIGHT (&rc2), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-
-	_r_ctrl_settext (hwnd, ctrl_id1, L"%s", text1);
-	_r_ctrl_settext (hwnd, ctrl_id2, L"%s", text2);
+	SetWindowText (hctrl1, text1);
+	SetWindowText (hctrl2, text2);
 }
 
 bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced)
@@ -5832,23 +5877,30 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced)
 			rstring is_signed;
 
 			if (app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
-				is_signed = app.LocaleString (ptr_app->is_signed ? IDS_SIGN_SIGNED : IDS_SIGN_UNSIGNED, nullptr);
+			{
+				if (ptr_app->is_signed)
+					is_signed = ptr_app->signer ? ptr_app->signer : app.LocaleString (IDS_SIGN_SIGNED, nullptr);
 
+				else
+					is_signed = app.LocaleString (IDS_SIGN_UNSIGNED, nullptr);
+			}
 			else
-				is_signed = SZ_EMPTY;
+			{
+				is_signed = app.LocaleString (IDS_STATUS_EMPTY, nullptr);
+			}
 
 			_r_ctrl_settext (hwnd, IDC_TITLE_ID, APP_NAME);
 
 			{
 				const HDC hdc = GetDC (hwnd);
 
-				settext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_FILE, L":"), IDC_FILE_TEXT, ptr_app->display_name ? _r_path_compact (ptr_app->display_name, NOTIFY_PATH_COMPACT) : SZ_EMPTY);
-				settext (hdc, hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":"), IDC_SIGNATURE_TEXT, is_signed);
-				settext (hdc, hwnd, IDC_ADDRESS_REMOTE_ID, app.LocaleString (IDS_ADDRESS_REMOTE, L":"), IDC_ADDRESS_REMOTE_TEXT, ptr_log->remote_fmt ? ptr_log->remote_fmt : SZ_EMPTY);
-				settext (hdc, hwnd, IDC_ADDRESS_LOCAL_ID, app.LocaleString (IDS_ADDRESS_LOCAL, L":"), IDC_ADDRESS_LOCAL_TEXT, ptr_log->local_fmt ? ptr_log->local_fmt : SZ_EMPTY);
-				settext (hdc, hwnd, IDC_PROTOCOL_ID, app.LocaleString (IDS_PROTOCOL, L":"), IDC_PROTOCOL_TEXT, _r_fmt (L"%s [#%d]", _app_getprotoname (ptr_log->protocol).GetString (), ptr_log->protocol));
-				settext (hdc, hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, _r_fmt (L"%s [#%llu]", ptr_log->filter_name, ptr_log->filter_id));
-				settext (hdc, hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME));
+				_app_notifysettext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_FILE, L":"), IDC_FILE_TEXT, ptr_app->display_name ? _r_path_compact (ptr_app->display_name, NOTIFY_PATH_COMPACT) : SZ_EMPTY);
+				_app_notifysettext (hdc, hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":"), IDC_SIGNATURE_TEXT, is_signed);
+				_app_notifysettext (hdc, hwnd, IDC_ADDRESS_REMOTE_ID, app.LocaleString (IDS_ADDRESS_REMOTE, L":"), IDC_ADDRESS_REMOTE_TEXT, ptr_log->remote_fmt ? ptr_log->remote_fmt : SZ_EMPTY);
+				_app_notifysettext (hdc, hwnd, IDC_ADDRESS_LOCAL_ID, app.LocaleString (IDS_ADDRESS_LOCAL, L":"), IDC_ADDRESS_LOCAL_TEXT, ptr_log->local_fmt ? ptr_log->local_fmt : SZ_EMPTY);
+				_app_notifysettext (hdc, hwnd, IDC_PROTOCOL_ID, app.LocaleString (IDS_PROTOCOL, L":"), IDC_PROTOCOL_TEXT, _app_getprotoname (ptr_log->protocol) /*_r_fmt (L"%s [#%d]", _app_getprotoname (ptr_log->protocol).GetString (), ptr_log->protocol)*/);
+				_app_notifysettext (hdc, hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, ptr_log->filter_name /*_r_fmt (L"%s [#%llu]", ptr_log->filter_name, ptr_log->filter_id)*/);
+				_app_notifysettext (hdc, hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME));
 
 				ReleaseDC (hwnd, hdc);
 			}
@@ -6928,10 +6980,15 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (ptr_app->type == AppStore && !_r_sys_validversion (6, 2))
 						continue;
 
+					if (ptr_rule && ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
+						continue;
+
 					config.is_nocheckboxnotify = true;
 
+					const bool is_enabled = ptr_rule && !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ());
+
 					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, LAST_VALUE, p.first);
-					_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, ptr_rule && !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ()));
+					_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, is_enabled);
 
 					config.is_nocheckboxnotify = false;
 
@@ -6947,7 +7004,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				RECT rc = {0};
 				GetClientRect (GetDlgItem (hwnd, IDC_APPS_LV), &rc);
 
-				_r_listview_setcolumn (hwnd, IDC_APPS_LV, 0, nullptr, (rc.right - rc.left));
+				_r_listview_setcolumn (hwnd, IDC_APPS_LV, 0, nullptr, _R_RECT_WIDTH (&rc));
 			}
 
 			// direction
@@ -7109,7 +7166,17 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (config.is_nocheckboxnotify)
 							return FALSE;
 
-						CheckRadioButton (hwnd, IDC_DISABLE_CHK, IDC_ENABLEFORAPPS_CHK, _r_listview_getitemcount (hwnd, IDC_APPS_LV, true) ? IDC_ENABLEFORAPPS_CHK : IDC_ENABLE_CHK);
+						const bool is_havechecks = _r_listview_getitemcount (hwnd, IDC_APPS_LV, true);
+
+						UINT ctrl_id = IDC_DISABLE_CHK;
+
+						if (!is_havechecks && (!ptr_rule->is_readonly || ptr_rule->is_forservices))
+							ctrl_id = IDC_ENABLE_CHK;
+
+						else if (is_havechecks)
+							ctrl_id = IDC_ENABLEFORAPPS_CHK;
+
+						CheckRadioButton (hwnd, IDC_DISABLE_CHK, IDC_ENABLEFORAPPS_CHK, ctrl_id);
 
 						_app_listviewsort (hwnd, IDC_APPS_LV, 0, false);
 					}
@@ -7273,7 +7340,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (hash)
 							{
-								const bool is_apply = is_enable && _r_listview_isitemchecked (hwnd, IDC_APPS_LV, i);
+								bool is_apply = is_enable && _r_listview_isitemchecked (hwnd, IDC_APPS_LV, i);
 
 								if (is_apply)
 									ptr_rule->apps[hash] = true;
@@ -8998,7 +9065,7 @@ void _wfp_uninitialize (bool is_full)
 			result = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 			if (result != ERROR_SUCCESS)
-				_app_logerror (L"FwpmEngineSetOption", result, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS", false);
+				_app_logerror (L"FwpmEngineSetOption", result, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS", true);
 		}
 
 		val.type = FWP_UINT32;
@@ -9486,7 +9553,7 @@ void _app_generate_addmenu (HMENU submenu)
 					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
 					mii.fType = MFT_STRING;
 					mii.dwTypeData = ptr_item->display_name;
-					mii.hbmpItem = ptr_item->hbmp;
+					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_process_small;
 					mii.wID = IDX_PROCESS + UINT (i);
 
 					InsertMenuItem (submenu_process, mii.wID, FALSE, &mii);
@@ -9520,7 +9587,7 @@ void _app_generate_addmenu (HMENU submenu)
 					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
 					mii.fType = MFT_STRING;
 					mii.dwTypeData = ptr_item->display_name;
-					mii.hbmpItem = config.hbitmap_package_small;
+					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_package_small;
 					mii.wID = IDX_PACKAGE + UINT (i);
 
 					InsertMenuItem (submenu_package, mii.wID, FALSE, &mii);
@@ -9573,7 +9640,7 @@ void _app_generate_addmenu (HMENU submenu)
 					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
 					mii.fType = MFT_STRING;
 					mii.dwTypeData = ptr_item->service_name;
-					mii.hbmpItem = config.hbitmap_service_small;
+					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_service_small;
 					mii.wID = IDX_SERVICE + UINT (i);
 
 					InsertMenuItem (submenu_service, mii.wID, FALSE, &mii);
@@ -9756,17 +9823,22 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// load settings imagelist
 			{
-				const INT cx_width = GetSystemMetrics (SM_CXSMICON);
+				static const INT cx_width = GetSystemMetrics (SM_CXSMICON);
 
 				config.himg = ImageList_Create (cx_width, cx_width, ILC_COLOR32 | ILC_MASK, 0, 5);
 
-				ImageList_ReplaceIcon (config.himg, -1, app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, cx_width));
-				ImageList_ReplaceIcon (config.himg, -1, app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cx_width));
+				if (config.himg)
+				{
+					ImageList_AddIcon (config.himg, app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, cx_width));
+					ImageList_AddIcon (config.himg, app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cx_width));
+				}
 			}
 
 			// get default icon for executable
 			_app_getfileicon (_r_path_expand (PATH_NTOSKRNL), false, &config.icon_id, &config.hicon_large);
-			_app_getfileicon (_r_path_expand (PATH_NTOSKRNL), true, &config.icon_id, &config.hicon_small);
+			_app_getfileicon (_r_path_expand (PATH_NTOSKRNL), true, nullptr, &config.hicon_small);
+
+			config.hbitmap_process_small = _app_ico2bmp (config.hicon_small);
 
 			// get default icon for services
 			if (_app_getfileicon (_r_path_expand (PATH_SERVICES), true, &config.icon_service_id, &config.hicon_service_small))
@@ -9775,6 +9847,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else
 			{
+				config.icon_service_id = config.icon_id;
 				config.hicon_service_small = config.hicon_small;
 				config.hbitmap_service_small = _app_ico2bmp (config.hicon_small);
 			}
@@ -10791,6 +10864,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
 
+					if (ptr_rule->is_forservices && (hash == config.ntoskrnl_hash || hash == config.svchost_hash))
+						continue;
+
 					PITEM_APP ptr_app = _app_getapplication (hash);
 
 					if (ptr_app)
@@ -11169,10 +11245,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_REFRESH:
 				case IDM_REFRESH2:
 				{
-					_app_profile_load (hwnd);
-					_app_profile_save (hwnd);
+					if (!_wfp_isfiltersapplying ())
+					{
+						app.ConfigInit ();
 
-					_app_changefilters (hwnd, true, false);
+						_app_profile_load (hwnd);
+						_app_profile_save (hwnd);
+
+						_app_changefilters (hwnd, true, false);
+					}
 
 					break;
 				}
