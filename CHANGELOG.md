@@ -1,4 +1,4 @@
-v2.4 (x February 2019)
+v2.4 Beta (x February 2019)
 - new notification ui
 - added predefined rules (ftp, http etc)
 - added option to configure 6to4 redirections (it's allowed, but undocumented earlier)
@@ -9,6 +9,7 @@ v2.4 (x February 2019)
 - fixed multithreading and possible race conditions
 - fixed duplicate filters callback on device arrival
 - fixed dropped packets csv log delimeter
+- fixed packages path retrieving (win8+)
 - replaced netsh commands by com interface
 - cosmetic fixes
 - fixed bugs
