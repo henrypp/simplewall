@@ -224,9 +224,10 @@ struct STATIC_DATA
 
 	WCHAR title[128] = {0};
 
-	PACL psecurityacl_allow = nullptr;
-	PACL psecurityacl_block = nullptr;
-	PSID psecuritysid = nullptr;
+	PACL pacl_default = nullptr;
+	PACL pacl_engine = nullptr;
+	PACL pacl_secure = nullptr;
+	PSID pusersid = nullptr;
 	LPGUID psession = nullptr;
 
 	HIMAGELIST himg = nullptr;
