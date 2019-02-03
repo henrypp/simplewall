@@ -4380,7 +4380,7 @@ bool _wfp_create4filters (const MFILTER_RULES* ptr_rules, UINT line, bool is_int
 		_wfp_destroy2filters (&ids, line);
 
 		_r_fastlock_acquireexclusive (&lock_transaction);
-		is_intransact = _wfp_transact_start (line);
+		is_intransact = !_wfp_transact_start (line);
 	}
 
 	for (size_t i = 0; i < ptr_rules->size (); i++)
@@ -4502,7 +4502,7 @@ bool _wfp_create3filters (const MFILTER_APPS* ptr_apps, UINT line, bool is_intra
 		_wfp_destroy2filters (&ids, line);
 
 		_r_fastlock_acquireexclusive (&lock_transaction);
-		is_intransact = _wfp_transact_start (line);
+		is_intransact = !_wfp_transact_start (line);
 	}
 
 	for (size_t i = 0; i < ptr_apps->size (); i++)
@@ -4561,7 +4561,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact = false)
 		filter_ids.clear ();
 
 		_r_fastlock_acquireexclusive (&lock_transaction);
-		is_intransact = _wfp_transact_start (line);
+		is_intransact = !_wfp_transact_start (line);
 	}
 
 	FWPM_FILTER_CONDITION fwfc[3] = {0};
@@ -8832,6 +8832,8 @@ bool _wfp_initialize (bool is_full)
 	bool result = true;
 	DWORD rc = 0;
 
+	_r_fastlock_acquireexclusive (&lock_transaction);
+
 	if (!config.hengine)
 	{
 		// generate unique session key
@@ -9066,6 +9068,8 @@ bool _wfp_initialize (bool is_full)
 			_app_logerror (L"FwpmEngineSetOption", result, L"FWPM_ENGINE_PACKET_QUEUING", true);
 	}
 
+	_r_fastlock_releaseexclusive (&lock_transaction);
+
 	return result;
 }
 
@@ -9075,6 +9079,8 @@ void _wfp_uninitialize (bool is_full)
 
 	if (!config.hengine)
 		return;
+
+	_r_fastlock_acquireexclusive (&lock_transaction);
 
 	DWORD result;
 
@@ -9169,6 +9175,8 @@ void _wfp_uninitialize (bool is_full)
 
 	FwpmEngineClose (config.hengine);
 	config.hengine = nullptr;
+
+	_r_fastlock_releaseexclusive (&lock_transaction);
 }
 
 void DrawFrameBorder (HDC hdc, HWND hwnd, COLORREF clr)
