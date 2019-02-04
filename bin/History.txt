@@ -7,7 +7,7 @@ v2.4 Beta (x February 2019)
 - fixed notifications stay visible when special rules applied for the app
 - fixed possible duplicate of special rules from notifications
 - fixed multithreading and possible race conditions
-- fixed duplicate filters callback on device arrival
+- fixed duplicate filters callback on device arrival (issue #291)
 - fixed dropped packets csv log delimeter
 - fixed packages path retrieving (win8+)
 - replaced netsh commands by com interface
