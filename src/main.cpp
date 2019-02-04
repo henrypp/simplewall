@@ -60,6 +60,7 @@ EXTERN_C const IID IID_IImageList2;
 
 _R_FASTLOCK lock_access;
 _R_FASTLOCK lock_apply;
+_R_FASTLOCK lock_checkbox;
 _R_FASTLOCK lock_eventcallback;
 _R_FASTLOCK lock_notification;
 _R_FASTLOCK lock_threadpool;
@@ -312,7 +313,7 @@ void _app_listviewsetimagelist (HWND hwnd, UINT ctrl_id)
 	if (ctrl_id != IDC_LISTVIEW)
 		return;
 
-	SendDlgItemMessage (hwnd, ctrl_id, LVM_SCROLL, 0, GetScrollPos (GetDlgItem (hwnd, ctrl_id), SB_VERT)); // scrollbar-hack!!!
+	SendDlgItemMessage (hwnd, ctrl_id, LVM_SCROLL, 0, GetScrollPos (GetDlgItem (hwnd, ctrl_id), SB_VERT)); // HACK!!!
 
 	SendDlgItemMessage (hwnd, ctrl_id, LVM_SETVIEW, is_tableview ? LV_VIEW_DETAILS : LV_VIEW_ICON, NULL);
 
@@ -1923,14 +1924,14 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	{
 		const size_t item = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
 
-		config.is_nocheckboxnotify = true;
+		 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 		_r_listview_additem (hwnd, IDC_LISTVIEW, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (hash, ptr_app), hash);
 		_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 1, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
 
 		_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, is_enabled);
 
-		config.is_nocheckboxnotify = false;
+		 _r_fastlock_releaseexclusive (&lock_checkbox);
 	}
 
 	return hash;
@@ -2587,7 +2588,7 @@ void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode
 
 		_r_listview_setcolumnsortindex (hwnd, ctrl_id, subitem, is_descend ? -1 : 1);
 
-		config.is_nocheckboxnotify = true;
+		 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 		for (size_t i = 0; i < _r_listview_getitemcount (hwnd, ctrl_id); i++)
 		{
@@ -2601,7 +2602,7 @@ void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode
 			}
 		}
 
-		config.is_nocheckboxnotify = false;
+		 _r_fastlock_releaseexclusive (&lock_checkbox);
 
 		SendDlgItemMessage (hwnd, ctrl_id, LVM_SORTITEMS, wparam, (LPARAM)&_app_listviewcompare_apps);
 
@@ -4645,7 +4646,6 @@ bool _wfp_create2filters (UINT line, bool is_intransact = false)
 
 			if (_app_parserulestring (ip_list[i], &addr))
 			{
-				//fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
 				fwfc[1].matchType = FWP_MATCH_EQUAL;
 
 				if (addr.format == NET_ADDRESS_IPV4)
@@ -5332,12 +5332,12 @@ void _app_timer_create (HWND hwnd, const MFILTER_APPS* ptr_apps, time_t seconds)
 
 			if (item != LAST_VALUE)
 			{
-				config.is_nocheckboxnotify = true;
+				 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 				_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 0, nullptr, LAST_VALUE, _app_getappgroup (hash, ptr_app));
 				_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-				config.is_nocheckboxnotify = false;
+				 _r_fastlock_releaseexclusive (&lock_checkbox);
 			}
 		}
 	}
@@ -5383,12 +5383,12 @@ size_t _app_timer_remove (HWND hwnd, const MFILTER_APPS* ptr_apps)
 				}
 				else
 				{
-					config.is_nocheckboxnotify = true;
+					 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 					_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 0, nullptr, LAST_VALUE, _app_getappgroup (hash, ptr_app));
 					_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-					config.is_nocheckboxnotify = false;
+					 _r_fastlock_releaseexclusive (&lock_checkbox);
 				}
 			}
 
@@ -5770,11 +5770,11 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 						if (ctrl_id == IDC_BLOCK_BTN)
 							ptr_app->is_silent = true;
 
-						config.is_nocheckboxnotify = true;
+						 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 						_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-						config.is_nocheckboxnotify = false;
+						 _r_fastlock_releaseexclusive (&lock_checkbox);
 					}
 
 					MFILTER_APPS rules;
@@ -7026,14 +7026,14 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (ptr_rule && ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
 						continue;
 
-					config.is_nocheckboxnotify = true;
+					 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 					const bool is_enabled = ptr_rule && !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ());
 
 					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, LAST_VALUE, p.first);
 					_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, is_enabled);
 
-					config.is_nocheckboxnotify = false;
+					 _r_fastlock_releaseexclusive (&lock_checkbox);
 
 					item += 1;
 				}
@@ -7202,13 +7202,13 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case LVN_ITEMCHANGED:
 				{
+					if (_r_fastlock_islocked (&lock_checkbox))
+						break;
+
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
 
 					if (lpnmlv->uNewState == 8192 || lpnmlv->uNewState == 4096)
 					{
-						if (config.is_nocheckboxnotify)
-							return FALSE;
-
 						const bool is_havechecks = _r_listview_getitemcount (hwnd, IDC_APPS_LV, true);
 
 						UINT ctrl_id = IDC_DISABLE_CHK;
@@ -7272,11 +7272,11 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 					{
-						config.is_nocheckboxnotify = true;
+						 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 						_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, new_val);
 
-						config.is_nocheckboxnotify = false;
+						 _r_fastlock_releaseexclusive (&lock_checkbox);
 					}
 
 					_app_listviewsort (hwnd, IDC_APPS_LV, 0, false);
@@ -7535,12 +7535,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							{
 								ptr_clr->clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr).AsUlong ();
 
-								config.is_nocheckboxnotify = true;
+								 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 								_r_listview_additem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, LAST_VALUE, i);
 								_r_listview_setitemcheck (hwnd, IDC_COLORS, i, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled).AsBool ());
 
-								config.is_nocheckboxnotify = false;
+								 _r_fastlock_releaseexclusive (&lock_checkbox);
 							}
 						}
 					}
@@ -7588,14 +7588,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						else if (dialog_id == IDD_SETTINGS_RULES_CUSTOM && (ptr_rule->type != TypeCustom || ptr_rule->is_readonly))
 							continue;
 
-						config.is_nocheckboxnotify = true;
+						 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 						_r_listview_additem (hwnd, IDC_EDITOR, item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
 						_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, ptr_rule->is_enabled);
 
 						item += 1;
 
-						config.is_nocheckboxnotify = false;
+						 _r_fastlock_releaseexclusive (&lock_checkbox);
 					}
 
 					break;
@@ -7767,7 +7767,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						else
 							group3_count += 1;
 
-						config.is_nocheckboxnotify = true;
+						 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 						_r_listview_setitem (hwnd, IDC_EDITOR, i, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 						_r_listview_setitem (hwnd, IDC_EDITOR, i, 1, app.LocaleString (IDS_DIRECTION_1 + ptr_rule->dir, nullptr));
@@ -7775,7 +7775,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						_r_listview_setitemcheck (hwnd, IDC_EDITOR, i, ptr_rule->is_enabled);
 
-						config.is_nocheckboxnotify = false;
+						 _r_fastlock_releaseexclusive (&lock_checkbox);
 					}
 
 					_r_listview_setgroup (hwnd, IDC_EDITOR, 0, app.LocaleString (IDS_GROUP_ENABLED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
@@ -7884,7 +7884,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case LVN_ITEMCHANGED:
 				{
-					if (config.is_nocheckboxnotify)
+					if (_r_fastlock_islocked (&lock_checkbox))
 						break;
 
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
@@ -7916,11 +7916,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								_app_ruleenable (ptr_rule, new_val);
 
 								{
-									config.is_nocheckboxnotify = true;
+									 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 									_r_listview_setitem (hwnd, IDC_EDITOR, lpnmlv->iItem, 0, nullptr, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 
-									config.is_nocheckboxnotify = false;
+									 _r_fastlock_releaseexclusive (&lock_checkbox);
 								}
 
 								MFILTER_RULES rules;
@@ -8465,12 +8465,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							const size_t item = _r_listview_getitemcount (hwnd, IDC_EDITOR);
 
-							config.is_nocheckboxnotify = true;
+							 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 							_r_listview_additem (hwnd, IDC_EDITOR, item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), idx);
 							_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, ptr_rule->is_enabled);
 
-							config.is_nocheckboxnotify = false;
+							 _r_fastlock_releaseexclusive (&lock_checkbox);
 
 							SendMessage (hwnd, RM_LOCALIZE, dialog_id, (LPARAM)ptr_page);
 
@@ -8493,6 +8493,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDM_EDIT:
 				{
 					const LONG_PTR dialog_id = GetWindowLongPtr (hwnd, GWLP_USERDATA);
+
+					if (dialog_id != IDD_SETTINGS_RULES_CUSTOM)
+						break;
 
 					const size_t item = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 
@@ -8532,6 +8535,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDM_DELETE:
 				{
 					const LONG_PTR dialog_id = GetWindowLongPtr (hwnd, GWLP_USERDATA);
+
+					if (dialog_id != IDD_SETTINGS_RULES_CUSTOM)
+						break;
 
 					const size_t total_count = (size_t)SendDlgItemMessage (hwnd, IDC_EDITOR, LVM_GETSELECTEDCOUNT, 0, 0);
 
@@ -8633,12 +8639,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								{
 									_app_ruleenable (ptr_rule, new_val);
 
-									config.is_nocheckboxnotify = true;
+									 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 									_r_listview_setitem (hwnd, IDC_EDITOR, item, 0, nullptr, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 									_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, new_val);
 
-									config.is_nocheckboxnotify = false;
+									 _r_fastlock_releaseexclusive (&lock_checkbox);
 
 									rules.push_back (ptr_rule);
 
@@ -8692,6 +8698,7 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 
 	HDWP hdefer = BeginDeferWindowPos (4);
 
+	//_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_TAB), nullptr, wnd_rc.left, wnd_rc.top, _R_RECT_WIDTH (&wnd_rc), _R_RECT_HEIGHT (&wnd_rc) - statusbar_height - app.GetDPI (1 + 46), 0);
 	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_LISTVIEW), nullptr, 0, 0, width, height - statusbar_height - app.GetDPI (1 + 46), 0);
 	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_START_BTN), nullptr, padding_size, button_top, 0, 0, 0);
 	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_SETTINGS_BTN), nullptr, width - padding_size - button_width - button_width - app.GetDPI (6), button_top, 0, 0, 0);
@@ -8853,7 +8860,7 @@ bool _wfp_initialize (bool is_full)
 		session.displayData.name = APP_NAME;
 		session.displayData.description = APP_NAME;
 
-		session.txnWaitTimeoutInMSec = 9000;
+		session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
 
 		if (config.psession)
 			CopyMemory (&session.sessionKey, config.psession, sizeof (GUID));
@@ -9292,7 +9299,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 		case WM_CTLCOLOREDIT:
 		case WM_CTLCOLORSTATIC:
 		{
-			SetBkMode ((HDC)wparam, TRANSPARENT); // background-hack
+			SetBkMode ((HDC)wparam, TRANSPARENT); // HACK!!!
 			SetTextColor ((HDC)wparam, NOTIFY_CLR_TEXT);
 
 			return (INT_PTR)GetSysColorBrush (COLOR_WINDOW);
@@ -9724,6 +9731,7 @@ void _app_initialize ()
 	// initialize spinlocks
 	_r_fastlock_initialize (&lock_access);
 	_r_fastlock_initialize (&lock_apply);
+	_r_fastlock_initialize (&lock_checkbox);
 	_r_fastlock_initialize (&lock_eventcallback);
 	_r_fastlock_initialize (&lock_notification);
 	_r_fastlock_initialize (&lock_threadpool);
@@ -10315,13 +10323,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case LVN_ITEMCHANGED:
 				{
+					if (_r_fastlock_islocked (&lock_checkbox))
+						break;
+
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
 
 					if (lpnmlv->uNewState == 8192 || lpnmlv->uNewState == 4096)
 					{
-						if (config.is_nocheckboxnotify)
-							return FALSE;
-
 						_r_fastlock_acquireexclusive (&lock_access);
 
 						const size_t hash = lpnmlv->lParam;
@@ -11578,11 +11586,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (ctrl_id == IDM_UNCHECK)
 								timer_apps.push_back (ptr_app);
 
-							config.is_nocheckboxnotify = true;
+							 _r_fastlock_acquireexclusive (&lock_checkbox);
 
 							_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-							config.is_nocheckboxnotify = false;
+							 _r_fastlock_releaseexclusive (&lock_checkbox);
 
 							_r_fastlock_acquireexclusive (&lock_notification);
 							_app_freenotify (hash, false);

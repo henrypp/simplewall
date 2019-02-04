@@ -66,6 +66,7 @@
 #define TIMER_DEFAULT 1
 
 #define FILTERS_TIMEOUT 9000
+#define TRANSACTION_TIMEOUT 9000
 
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
@@ -264,7 +265,6 @@ struct STATIC_DATA
 	bool is_popuperrors = false;
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
-	bool is_nocheckboxnotify = false;
 	bool is_wsainit = false;
 	bool is_neteventset = false;
 };
