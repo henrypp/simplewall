@@ -3816,6 +3816,9 @@ void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool 
 										if (!_app_getapplication (app_hash))
 											app_hash = _app_addapplication (hwnd, app_path, 0, 0, 0, false, false, true);
 
+										if (type == TypeBlocklist || type == TypeSystem)
+											apps[app_hash].is_undeletable = true;
+
 										ptr_rule->apps[app_hash] = true;
 									}
 								}
@@ -3905,7 +3908,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rul
 		apps[config.myhash].is_undeletable = true;
 		apps[config.ntoskrnl_hash].is_undeletable = true;
 		apps[config.svchost_hash].is_undeletable = true;
-		apps[_r_str_hash (L"wuauserv")].is_undeletable = true;
 
 		if (hwnd)
 			ShowItem (hwnd, IDC_LISTVIEW, item_id, scroll_pos);
@@ -7539,10 +7541,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						if (dialog_id == IDD_SETTINGS_RULES_BLOCKLIST && ptr_rule->type != TypeBlocklist)
 							continue;
 
-						else if (dialog_id == IDD_SETTINGS_RULES_SYSTEM && ptr_rule->type != TypeSystem && (ptr_rule->type != TypeCustom || !ptr_rule->is_readonly))
+						else if (dialog_id == IDD_SETTINGS_RULES_SYSTEM && ptr_rule->type != TypeSystem)
 							continue;
 
-						else if (dialog_id == IDD_SETTINGS_RULES_CUSTOM && (ptr_rule->type != TypeCustom || ptr_rule->is_readonly))
+						else if (dialog_id == IDD_SETTINGS_RULES_CUSTOM && ptr_rule->type != TypeCustom)
 							continue;
 
 						_r_fastlock_acquireexclusive (&lock_checkbox);
@@ -7728,7 +7730,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						_r_fastlock_acquireexclusive (&lock_checkbox);
 
-						_r_listview_setitem (hwnd, IDC_EDITOR, i, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
+						_r_listview_setitem (hwnd, IDC_EDITOR, i, 0, ptr_rule->type == TypeCustom && ptr_rule->is_readonly ? _r_fmt (L"%s*", ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), group_id);
 						_r_listview_setitem (hwnd, IDC_EDITOR, i, 1, app.LocaleString (IDS_DIRECTION_1 + ptr_rule->dir, nullptr));
 						_r_listview_setitem (hwnd, IDC_EDITOR, i, 2, protocol);
 
