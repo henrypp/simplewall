@@ -2238,7 +2238,7 @@ void _app_setinterfacestate ()
 	SetDlgItemText (app.GetHWND (), IDC_START_BTN, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr));
 }
 
-void  _wfp_setfiltersecurity (HANDLE engineHandle, const GUID* pfilter_id, const PSID psid, PACL pacl)
+void _wfp_setfiltersecurity (HANDLE engineHandle, const GUID* pfilter_id, const PSID psid, PACL pacl)
 {
 	if (!engineHandle || !pfilter_id || *pfilter_id == GUID_NULL || (!psid && !pacl))
 		return;
@@ -2260,7 +2260,7 @@ void  _wfp_setfiltersecurity (HANDLE engineHandle, const GUID* pfilter_id, const
 	}
 }
 
-bool  _wfp_deletefilter (HANDLE engineHandle, const GUID* pfilter_id)
+bool _wfp_deletefilter (HANDLE engineHandle, const GUID* pfilter_id)
 {
 	if (!engineHandle || !pfilter_id || *pfilter_id == GUID_NULL)
 		return false;
@@ -5155,7 +5155,7 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 				else if (ptr_app->display_name && ptr_app->display_name[0])
 					path = ptr_app->display_name;
 			}
-			else  if (ptr_app->original_path && ptr_app->original_path[0])
+			else if (ptr_app->original_path && ptr_app->original_path[0])
 			{
 				path = ptr_app->original_path;
 			}
@@ -7668,10 +7668,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDD_SETTINGS_RULES:
 				{
+					const rstring recommended = app.LocaleString (IDS_RECOMMENDED, nullptr);
+
 					SetDlgItemText (hwnd, IDC_RULE_ALLOWINBOUND, app.LocaleString (IDS_RULE_ALLOWINBOUND, nullptr));
-					SetDlgItemText (hwnd, IDC_RULE_ALLOWLISTEN, app.LocaleString (IDS_RULE_ALLOWLISTEN, _r_fmt (L" (%s)", app.LocaleString (IDS_RECOMMENDED, nullptr).GetString ())));
-					SetDlgItemText (hwnd, IDC_RULE_ALLOWLOOPBACK, app.LocaleString (IDS_RULE_ALLOWLOOPBACK, _r_fmt (L" (%s)", app.LocaleString (IDS_RECOMMENDED, nullptr).GetString ())));
-					SetDlgItemText (hwnd, IDC_RULE_ALLOW6TO4, app.LocaleString (IDS_RULE_ALLOW6TO4, _r_fmt (L" (%s)", app.LocaleString (IDS_RECOMMENDED, nullptr).GetString ())));
+					SetDlgItemText (hwnd, IDC_RULE_ALLOWLISTEN, app.LocaleString (IDS_RULE_ALLOWLISTEN, _r_fmt (L" (%s)", recommended.GetString ())));
+					SetDlgItemText (hwnd, IDC_RULE_ALLOWLOOPBACK, app.LocaleString (IDS_RULE_ALLOWLOOPBACK, _r_fmt (L" (%s)", recommended.GetString ())));
+					SetDlgItemText (hwnd, IDC_RULE_ALLOW6TO4, app.LocaleString (IDS_RULE_ALLOW6TO4, _r_fmt (L" (%s)", recommended.GetString ())));
 
 					SetDlgItemText (hwnd, IDC_USECERTIFICATES_CHK, app.LocaleString (IDS_USECERTIFICATES_CHK, nullptr));
 					SetDlgItemText (hwnd, IDC_USENETWORKRESOLUTION_CHK, app.LocaleString (IDS_USENETWORKRESOLUTION_CHK, nullptr));
