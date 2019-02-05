@@ -57,7 +57,7 @@
 #define RULE_RANGE_CHAR L'-'
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
-#define BACKUP_HOURS_PERIOD 1 // make backup every 1 hour (default)
+#define BACKUP_HOURS_PERIOD 4 // make backup every 4 hour(s) (default)
 #define LOG_SIZE_LIMIT 2048
 
 #define LEN_IP_MAX 68

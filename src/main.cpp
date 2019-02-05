@@ -1924,14 +1924,14 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	{
 		const size_t item = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
 
-		 _r_fastlock_acquireexclusive (&lock_checkbox);
+		_r_fastlock_acquireexclusive (&lock_checkbox);
 
 		_r_listview_additem (hwnd, IDC_LISTVIEW, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (hash, ptr_app), hash);
 		_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 1, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
 
 		_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, is_enabled);
 
-		 _r_fastlock_releaseexclusive (&lock_checkbox);
+		_r_fastlock_releaseexclusive (&lock_checkbox);
 	}
 
 	return hash;
@@ -2240,7 +2240,7 @@ void _app_setinterfacestate ()
 
 void  _wfp_setfiltersecurity (HANDLE engineHandle, const GUID* pfilter_id, const PSID psid, PACL pacl)
 {
-	if (!engineHandle || !pfilter_id || *pfilter_id == GUID_NULL || !pacl)
+	if (!engineHandle || !pfilter_id || *pfilter_id == GUID_NULL || (!psid && !pacl))
 		return;
 
 	if (psid)
@@ -2588,7 +2588,7 @@ void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode
 
 		_r_listview_setcolumnsortindex (hwnd, ctrl_id, subitem, is_descend ? -1 : 1);
 
-		 _r_fastlock_acquireexclusive (&lock_checkbox);
+		_r_fastlock_acquireexclusive (&lock_checkbox);
 
 		for (size_t i = 0; i < _r_listview_getitemcount (hwnd, ctrl_id); i++)
 		{
@@ -2602,7 +2602,7 @@ void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode
 			}
 		}
 
-		 _r_fastlock_releaseexclusive (&lock_checkbox);
+		_r_fastlock_releaseexclusive (&lock_checkbox);
 
 		SendDlgItemMessage (hwnd, ctrl_id, LVM_SORTITEMS, wparam, (LPARAM)&_app_listviewcompare_apps);
 
@@ -3994,7 +3994,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rul
 PITEM_RULE _app_findrule (size_t hash, EnumRuleType type, BOOL is_readonly)
 {
 	if (!hash)
-		return false;
+		return nullptr;
 
 	for (size_t i = 0; i < rules_arr.size (); i++)
 	{
@@ -4047,7 +4047,7 @@ bool _app_isrulesexists (EnumRuleType type, BOOL is_readonly)
 	return false;
 }
 
-void _app_profile_save (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
+void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr)
 {
 	const time_t current_time = _r_unixtime_now ();
 	const bool is_backuprequired = app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsLonglong ()) || !_r_fs_exists (config.apps_path_backup) || !_r_fs_exists (config.rules_custom_path_backup) || !_r_fs_exists (config.rules_config_path_backup));
@@ -4063,79 +4063,37 @@ void _app_profile_save (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rul
 
 		if (root)
 		{
-			const size_t count = _r_listview_getitemcount (hwnd, IDC_LISTVIEW);
-
 			root.append_attribute (L"timestamp").set_value (current_time);
 			root.append_attribute (L"type").set_value (XmlApps);
 
-			if (count)
+			for (auto &p : apps)
 			{
-				for (size_t i = 0; i < count; i++)
+				const size_t hash = p.first;
+
+				if (hash)
 				{
-					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, i);
+					pugi::xml_node item = root.append_child (L"item");
 
-					if (hash)
+					if (item)
 					{
-						pugi::xml_node item = root.append_child (L"item");
+						PITEM_APP const ptr_app = &p.second;
 
-						if (item)
-						{
-							PITEM_APP const ptr_app = _app_getapplication (hash);
+						item.append_attribute (L"path").set_value (ptr_app->original_path);
+						item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
 
-							if (ptr_app)
-							{
-								item.append_attribute (L"path").set_value (ptr_app->original_path);
-								item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
+						// set timer (if presented)
+						if (_app_istimeractive (ptr_app))
+							item.append_attribute (L"timer").set_value (ptr_app->timer);
 
-								// set timer (if presented)
-								if (_app_istimeractive (ptr_app))
-									item.append_attribute (L"timer").set_value (ptr_app->timer);
+						// set last notification timestamp (if presented)
+						if (ptr_app->last_notify)
+							item.append_attribute (L"last_notify").set_value (ptr_app->last_notify);
 
-								// set last notification timestamp (if presented)
-								if (ptr_app->last_notify)
-									item.append_attribute (L"last_notify").set_value (ptr_app->last_notify);
+						if (ptr_app->is_silent)
+							item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
 
-								if (ptr_app->is_silent)
-									item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
-
-								if (ptr_app->is_enabled)
-									item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
-							}
-						}
-					}
-				}
-			}
-			else
-			{
-				for (auto &p : apps)
-				{
-					const size_t hash = p.first;
-
-					if (hash)
-					{
-						pugi::xml_node item = root.append_child (L"item");
-
-						if (item)
-						{
-							PITEM_APP const ptr_app = &p.second;
-
-							item.append_attribute (L"path").set_value (ptr_app->original_path);
-							item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
-
-							// set timer (if presented)
-							if (_app_istimeractive (ptr_app))
-								item.append_attribute (L"timer").set_value (ptr_app->timer);
-
-							// set last notification timestamp (if presented)
-							if (ptr_app->last_notify)
-								item.append_attribute (L"last_notify").set_value (ptr_app->last_notify);
-
-							if (ptr_app->is_silent)
-								item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
-
-							if (ptr_app->is_enabled)
-								item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
-						}
+						if (ptr_app->is_enabled)
+							item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
 					}
 				}
 			}
@@ -4906,12 +4864,8 @@ void _wfp_installfilters (bool is_full)
 	}
 
 	if (is_intransact)
-	{
 		_wfp_transact_commit (__LINE__);
-		is_intransact = false;
-	}
 
-	if (!is_intransact)
 	{
 		const bool is_secure = app.ConfigGet (L"IsSecureFilters", false).AsBool ();
 
@@ -5332,12 +5286,12 @@ void _app_timer_create (HWND hwnd, const MFILTER_APPS* ptr_apps, time_t seconds)
 
 			if (item != LAST_VALUE)
 			{
-				 _r_fastlock_acquireexclusive (&lock_checkbox);
+				_r_fastlock_acquireexclusive (&lock_checkbox);
 
 				_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 0, nullptr, LAST_VALUE, _app_getappgroup (hash, ptr_app));
 				_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-				 _r_fastlock_releaseexclusive (&lock_checkbox);
+				_r_fastlock_releaseexclusive (&lock_checkbox);
 			}
 		}
 	}
@@ -5383,12 +5337,12 @@ size_t _app_timer_remove (HWND hwnd, const MFILTER_APPS* ptr_apps)
 				}
 				else
 				{
-					 _r_fastlock_acquireexclusive (&lock_checkbox);
+					_r_fastlock_acquireexclusive (&lock_checkbox);
 
 					_r_listview_setitem (hwnd, IDC_LISTVIEW, item, 0, nullptr, LAST_VALUE, _app_getappgroup (hash, ptr_app));
 					_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-					 _r_fastlock_releaseexclusive (&lock_checkbox);
+					_r_fastlock_releaseexclusive (&lock_checkbox);
 				}
 			}
 
@@ -5770,11 +5724,11 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 						if (ctrl_id == IDC_BLOCK_BTN)
 							ptr_app->is_silent = true;
 
-						 _r_fastlock_acquireexclusive (&lock_checkbox);
+						_r_fastlock_acquireexclusive (&lock_checkbox);
 
 						_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-						 _r_fastlock_releaseexclusive (&lock_checkbox);
+						_r_fastlock_releaseexclusive (&lock_checkbox);
 					}
 
 					MFILTER_APPS rules;
@@ -7026,14 +6980,14 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (ptr_rule && ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
 						continue;
 
-					 _r_fastlock_acquireexclusive (&lock_checkbox);
+					_r_fastlock_acquireexclusive (&lock_checkbox);
 
 					const bool is_enabled = ptr_rule && !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ());
 
 					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, LAST_VALUE, p.first);
 					_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, is_enabled);
 
-					 _r_fastlock_releaseexclusive (&lock_checkbox);
+					_r_fastlock_releaseexclusive (&lock_checkbox);
 
 					item += 1;
 				}
@@ -7121,14 +7075,17 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, EM_LIMITTEXT, RULE_RULE_CCH_MAX - 1, 0);
 
 			// set read-only
-			SendDlgItemMessage (hwnd, IDC_NAME_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
-			SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
-			SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
+			if (ptr_rule)
+			{
+				SendDlgItemMessage (hwnd, IDC_NAME_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
+				SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
+				SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
 
-			_r_ctrl_enable (hwnd, IDC_PORTVERSION_EDIT, !ptr_rule->is_readonly);
-			_r_ctrl_enable (hwnd, IDC_PROTOCOL_EDIT, !ptr_rule->is_readonly);
-			_r_ctrl_enable (hwnd, IDC_DIRECTION_EDIT, !ptr_rule->is_readonly);
-			_r_ctrl_enable (hwnd, IDC_ACTION_EDIT, !ptr_rule->is_readonly);
+				_r_ctrl_enable (hwnd, IDC_PORTVERSION_EDIT, !ptr_rule->is_readonly);
+				_r_ctrl_enable (hwnd, IDC_PROTOCOL_EDIT, !ptr_rule->is_readonly);
+				_r_ctrl_enable (hwnd, IDC_DIRECTION_EDIT, !ptr_rule->is_readonly);
+				_r_ctrl_enable (hwnd, IDC_ACTION_EDIT, !ptr_rule->is_readonly);
+			}
 
 			_r_wnd_addstyle (hwnd, IDC_WIKI, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_SAVE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
@@ -7272,11 +7229,11 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 					{
-						 _r_fastlock_acquireexclusive (&lock_checkbox);
+						_r_fastlock_acquireexclusive (&lock_checkbox);
 
 						_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, new_val);
 
-						 _r_fastlock_releaseexclusive (&lock_checkbox);
+						_r_fastlock_releaseexclusive (&lock_checkbox);
 					}
 
 					_app_listviewsort (hwnd, IDC_APPS_LV, 0, false);
@@ -7535,12 +7492,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							{
 								ptr_clr->clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr).AsUlong ();
 
-								 _r_fastlock_acquireexclusive (&lock_checkbox);
+								_r_fastlock_acquireexclusive (&lock_checkbox);
 
 								_r_listview_additem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, LAST_VALUE, i);
 								_r_listview_setitemcheck (hwnd, IDC_COLORS, i, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled).AsBool ());
 
-								 _r_fastlock_releaseexclusive (&lock_checkbox);
+								_r_fastlock_releaseexclusive (&lock_checkbox);
 							}
 						}
 					}
@@ -7588,14 +7545,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						else if (dialog_id == IDD_SETTINGS_RULES_CUSTOM && (ptr_rule->type != TypeCustom || ptr_rule->is_readonly))
 							continue;
 
-						 _r_fastlock_acquireexclusive (&lock_checkbox);
+						_r_fastlock_acquireexclusive (&lock_checkbox);
 
 						_r_listview_additem (hwnd, IDC_EDITOR, item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
 						_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, ptr_rule->is_enabled);
 
 						item += 1;
 
-						 _r_fastlock_releaseexclusive (&lock_checkbox);
+						_r_fastlock_releaseexclusive (&lock_checkbox);
 					}
 
 					break;
@@ -7767,7 +7724,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						else
 							group3_count += 1;
 
-						 _r_fastlock_acquireexclusive (&lock_checkbox);
+						_r_fastlock_acquireexclusive (&lock_checkbox);
 
 						_r_listview_setitem (hwnd, IDC_EDITOR, i, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 						_r_listview_setitem (hwnd, IDC_EDITOR, i, 1, app.LocaleString (IDS_DIRECTION_1 + ptr_rule->dir, nullptr));
@@ -7775,7 +7732,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						_r_listview_setitemcheck (hwnd, IDC_EDITOR, i, ptr_rule->is_enabled);
 
-						 _r_fastlock_releaseexclusive (&lock_checkbox);
+						_r_fastlock_releaseexclusive (&lock_checkbox);
 					}
 
 					_r_listview_setgroup (hwnd, IDC_EDITOR, 0, app.LocaleString (IDS_GROUP_ENABLED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
@@ -7916,11 +7873,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								_app_ruleenable (ptr_rule, new_val);
 
 								{
-									 _r_fastlock_acquireexclusive (&lock_checkbox);
+									_r_fastlock_acquireexclusive (&lock_checkbox);
 
 									_r_listview_setitem (hwnd, IDC_EDITOR, lpnmlv->iItem, 0, nullptr, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 
-									 _r_fastlock_releaseexclusive (&lock_checkbox);
+									_r_fastlock_releaseexclusive (&lock_checkbox);
 								}
 
 								MFILTER_RULES rules;
@@ -8052,7 +8009,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						PNMLINK nmlink = (PNMLINK)lparam;
 
-						if (nmlink->item.szUrl && nmlink->item.szUrl[0])
+						if (nmlink->item.szUrl[0])
 							ShellExecute (hwnd, nullptr, nmlink->item.szUrl, nullptr, nullptr, SW_SHOWDEFAULT);
 					}
 
@@ -8191,7 +8148,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-				}
+					}
 					else if (ctrl_id == IDC_LANGUAGE && notify_code == CBN_SELCHANGE)
 					{
 						app.LocaleApplyFromControl (hwnd, ctrl_id);
@@ -8431,7 +8388,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-			}
+				}
 
 				case IDM_ADD:
 				{
@@ -8465,12 +8422,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							const size_t item = _r_listview_getitemcount (hwnd, IDC_EDITOR);
 
-							 _r_fastlock_acquireexclusive (&lock_checkbox);
+							_r_fastlock_acquireexclusive (&lock_checkbox);
 
 							_r_listview_additem (hwnd, IDC_EDITOR, item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), idx);
 							_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, ptr_rule->is_enabled);
 
-							 _r_fastlock_releaseexclusive (&lock_checkbox);
+							_r_fastlock_releaseexclusive (&lock_checkbox);
 
 							SendMessage (hwnd, RM_LOCALIZE, dialog_id, (LPARAM)ptr_page);
 
@@ -8639,12 +8596,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								{
 									_app_ruleenable (ptr_rule, new_val);
 
-									 _r_fastlock_acquireexclusive (&lock_checkbox);
+									_r_fastlock_acquireexclusive (&lock_checkbox);
 
 									_r_listview_setitem (hwnd, IDC_EDITOR, item, 0, nullptr, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 									_r_listview_setitemcheck (hwnd, IDC_EDITOR, item, new_val);
 
-									 _r_fastlock_releaseexclusive (&lock_checkbox);
+									_r_fastlock_releaseexclusive (&lock_checkbox);
 
 									rules.push_back (ptr_rule);
 
@@ -8674,11 +8631,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-		}
+			}
 
 			break;
+		}
 	}
-}
 
 	return FALSE;
 }
@@ -11586,11 +11543,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (ctrl_id == IDM_UNCHECK)
 								timer_apps.push_back (ptr_app);
 
-							 _r_fastlock_acquireexclusive (&lock_checkbox);
+							_r_fastlock_acquireexclusive (&lock_checkbox);
 
 							_r_listview_setitemcheck (hwnd, IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-							 _r_fastlock_releaseexclusive (&lock_checkbox);
+							_r_fastlock_releaseexclusive (&lock_checkbox);
 
 							_r_fastlock_acquireexclusive (&lock_notification);
 							_app_freenotify (hash, false);
