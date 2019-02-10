@@ -1,7 +1,9 @@
 v2.4 Beta (x February 2019)
 - new notification ui
+- improved transactions processing
 - added predefined rules (ftp, http etc)
 - added option to configure 6to4 redirections (it's allowed, but undocumented earlier)
+- added double-click for statusbar parts to make purgen faster
 - added option to secure installed filters
 - added more list view modes
 - fixed notifications stay visible when special rules applied for the app
