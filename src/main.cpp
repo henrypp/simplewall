@@ -5525,13 +5525,16 @@ void _app_notifycreatewindow ()
 	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (8), app.GetDPI (4), wnd_width - app.GetDPI (64 + 12 + 10 + 24), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_title, MAKELPARAM (TRUE, 0));
 
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 2 - app.GetDPI (8), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 3 - app.GetDPI (12), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MENU, IconXXXX));
+
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 2 - app.GetDPI (8), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_TIMER_BTN, nullptr, nullptr);
+	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_TIMER, IconXXXX));
 
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize - app.GetDPI (4), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_CLOSE_BTN, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_CLOSE, IconXXXX));
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, app.GetDPI (12), app.GetDPI (44), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (44), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (44), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_TEXT, nullptr, nullptr);
@@ -5539,7 +5542,7 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, app.GetDPI (12), app.GetDPI (64), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_SIGNATURE_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (64), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_SIGNATURE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (64), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_SIGNATURE_TEXT, nullptr, nullptr);
@@ -5547,7 +5550,7 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, app.GetDPI (12), app.GetDPI (84), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (84), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (84), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_TEXT, nullptr, nullptr);
@@ -5555,7 +5558,7 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, app.GetDPI (12), app.GetDPI (104), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (104), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (104), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_TEXT, nullptr, nullptr);
@@ -5563,7 +5566,7 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, app.GetDPI (12), app.GetDPI (124), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (124), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (124), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_TEXT, nullptr, nullptr);
@@ -5571,7 +5574,7 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, app.GetDPI (12), app.GetDPI (144), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (144), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (144), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILTER_TEXT, nullptr, nullptr);
@@ -5579,7 +5582,7 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, app.GetDPI (12), app.GetDPI (164), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (164), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (164), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DATE_TEXT, nullptr, nullptr);
@@ -5604,6 +5607,10 @@ void _app_notifycreatewindow ()
 	_app_setbuttonmargins (config.hnotification, IDC_ALLOW_BTN);
 	_app_setbuttonmargins (config.hnotification, IDC_BLOCK_BTN);
 	_app_setbuttonmargins (config.hnotification, IDC_LATER_BTN);
+
+	_r_ctrl_settip (config.hnotification, IDC_MENU_BTN, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (config.hnotification, IDC_TIMER_BTN, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (config.hnotification, IDC_CLOSE_BTN, LPSTR_TEXTCALLBACK);
 
 	_r_ctrl_settip (config.hnotification, IDC_FILE_TEXT, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_SIGNATURE_TEXT, LPSTR_TEXTCALLBACK);
@@ -5659,10 +5666,6 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 			const size_t hash = ptr_log->hash;
 			const size_t item = _app_getposition (app.GetHWND (), hash);
 
-			const bool is_createaddrrule = (IsDlgButtonChecked (hwnd, IDC_ADDRESS_REMOTE_ID) == BST_CHECKED) && _r_ctrl_isenabled (hwnd, IDC_ADDRESS_REMOTE_ID);
-			const bool is_createportrule = is_createaddrrule && ptr_log->remote_port;
-			const bool is_createprotocolrule = (IsDlgButtonChecked (hwnd, IDC_PROTOCOL_ID) == BST_CHECKED) && _r_ctrl_isenabled (hwnd, IDC_PROTOCOL_ID);
-
 			PITEM_APP ptr_app = _app_getapplication (hash);
 
 			if (ptr_app)
@@ -5670,107 +5673,107 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 				if (ctrl_id == IDC_ALLOW_BTN || ctrl_id == IDC_BLOCK_BTN)
 				{
 					// just create rule
-					if (is_createaddrrule || is_createportrule)
-					{
-						LPWSTR prule = nullptr;
+					//if (is_createaddrrule || is_createportrule)
+					//{
+					//	LPWSTR prule = nullptr;
 
-						if (is_createaddrrule)
-						{
-							_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, is_createportrule ? ptr_log->remote_port : 0, &prule, false);
-						}
-						else if (is_createportrule)
-						{
-							prule = new WCHAR[16];
+					//	if (is_createaddrrule)
+					//	{
+					//		_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, is_createportrule ? ptr_log->remote_port : 0, &prule, false);
+					//	}
+					//	else if (is_createportrule)
+					//	{
+					//		prule = new WCHAR[16];
 
-							if (prule)
-								StringCchPrintf (prule, 15, L"%d", ptr_log->remote_port);
-						}
+					//		if (prule)
+					//			StringCchPrintf (prule, 15, L"%d", ptr_log->remote_port);
+					//	}
 
-						if (prule)
-						{
-							size_t rule_id = LAST_VALUE;
+					//	if (prule)
+					//	{
+					//		size_t rule_id = LAST_VALUE;
 
-							const size_t length = _r_str_length (prule);
-							const size_t rule_length = min (length, RULE_RULE_CCH_MAX);
+					//		const size_t length = _r_str_length (prule);
+					//		const size_t rule_length = min (length, RULE_RULE_CCH_MAX);
 
-							for (size_t i = 0; i < rules_arr.size (); i++)
-							{
-								PITEM_RULE ptr_rule = rules_arr.at (i);
+					//		for (size_t i = 0; i < rules_arr.size (); i++)
+					//		{
+					//			PITEM_RULE ptr_rule = rules_arr.at (i);
 
-								if (ptr_rule && ptr_rule->type == TypeCustom && ptr_rule->prule_remote && (!ptr_rule->protocol || ptr_rule->protocol == ptr_log->protocol))
-								{
-									if ((!ptr_rule->is_block && ctrl_id == IDC_ALLOW_BTN) || (ptr_rule->is_block && ctrl_id == IDC_BLOCK_BTN))
-									{
-										rstring::rvector rule_remote_arr = rstring (ptr_rule->prule_remote).AsVector (RULE_DELIMETER);
+					//			if (ptr_rule && ptr_rule->type == TypeCustom && ptr_rule->prule_remote && (!ptr_rule->protocol || ptr_rule->protocol == ptr_log->protocol))
+					//			{
+					//				if ((!ptr_rule->is_block && ctrl_id == IDC_ALLOW_BTN) || (ptr_rule->is_block && ctrl_id == IDC_BLOCK_BTN))
+					//				{
+					//					rstring::rvector rule_remote_arr = rstring (ptr_rule->prule_remote).AsVector (RULE_DELIMETER);
 
-										for (size_t j = 0; j < rule_remote_arr.size (); j++)
-										{
-											if (_wcsnicmp (rule_remote_arr.at (j), prule, rule_length) == 0)
-											{
-												rule_id = i;
-												break;
-											}
-										}
-									}
+					//					for (size_t j = 0; j < rule_remote_arr.size (); j++)
+					//					{
+					//						if (_wcsnicmp (rule_remote_arr.at (j), prule, rule_length) == 0)
+					//						{
+					//							rule_id = i;
+					//							break;
+					//						}
+					//					}
+					//				}
 
-									if (rule_id != LAST_VALUE)
-										break;
-								}
-							}
+					//				if (rule_id != LAST_VALUE)
+					//					break;
+					//			}
+					//		}
 
-							if (rule_id != LAST_VALUE)
-							{
-								// modify rule
-								PITEM_RULE ptr_rule = rules_arr.at (rule_id);
+					//		if (rule_id != LAST_VALUE)
+					//		{
+					//			// modify rule
+					//			PITEM_RULE ptr_rule = rules_arr.at (rule_id);
 
-								if (ptr_rule)
-								{
-									ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
-									ptr_rule->is_block = ((ctrl_id == IDC_BLOCK_BTN) ? true : false);
+					//			if (ptr_rule)
+					//			{
+					//				ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
+					//				ptr_rule->is_block = ((ctrl_id == IDC_BLOCK_BTN) ? true : false);
 
-									_app_ruleenable (ptr_rule, true);
-								}
-							}
-							else
-							{
-								// create rule
-								PITEM_RULE ptr_rule = new ITEM_RULE;
+					//				_app_ruleenable (ptr_rule, true);
+					//			}
+					//		}
+					//		else
+					//		{
+					//			// create rule
+					//			PITEM_RULE ptr_rule = new ITEM_RULE;
 
-								if (ptr_rule)
-								{
-									const size_t name_length = min (length, (size_t)RULE_NAME_CCH_MAX);
+					//			if (ptr_rule)
+					//			{
+					//				const size_t name_length = min (length, (size_t)RULE_NAME_CCH_MAX);
 
-									_r_str_alloc (&ptr_rule->pname, name_length, prule);
-									_r_str_alloc (&ptr_rule->prule_remote, rule_length, prule);
+					//				_r_str_alloc (&ptr_rule->pname, name_length, prule);
+					//				_r_str_alloc (&ptr_rule->prule_remote, rule_length, prule);
 
-									ptr_rule->protocol = ptr_log->protocol;
-									ptr_rule->dir = ptr_log->direction;
-									ptr_rule->type = TypeCustom;
-									ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
-									ptr_rule->is_block = ((ctrl_id == IDC_BLOCK_BTN) ? true : false);
+					//				ptr_rule->protocol = ptr_log->protocol;
+					//				ptr_rule->dir = ptr_log->direction;
+					//				ptr_rule->type = TypeCustom;
+					//				ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
+					//				ptr_rule->is_block = ((ctrl_id == IDC_BLOCK_BTN) ? true : false);
 
-									_app_ruleenable (ptr_rule, true);
+					//				_app_ruleenable (ptr_rule, true);
 
-									rules_arr.push_back (ptr_rule);
-									rule_id = rules_arr.size () - 1;
-								}
-							}
+					//				rules_arr.push_back (ptr_rule);
+					//				rule_id = rules_arr.size () - 1;
+					//			}
+					//		}
 
-							// add rule for app
-							if (rule_id != LAST_VALUE)
-							{
-								rules_arr.at (rule_id)->apps[hash] = true;
+					//		// add rule for app
+					//		if (rule_id != LAST_VALUE)
+					//		{
+					//			rules_arr.at (rule_id)->apps[hash] = true;
 
-								MFILTER_RULES rules;
-								rules.push_back (rules_arr.at (rule_id));
+					//			MFILTER_RULES rules;
+					//			rules.push_back (rules_arr.at (rule_id));
 
-								_wfp_create4filters (&rules, __LINE__);
-							}
+					//			_wfp_create4filters (&rules, __LINE__);
+					//		}
 
-							SAFE_DELETE_ARRAY (prule);
-						}
-					}
-					else
+					//		SAFE_DELETE_ARRAY (prule);
+					//	}
+					//}
+					//else
 					{
 						ptr_app->is_enabled = (ctrl_id == IDC_ALLOW_BTN);
 
@@ -5796,6 +5799,10 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 					{
 						_wfp_create3filters (&rules, __LINE__);
 					}
+				}
+				else  if (IDM_DISABLENOTIFICATIONS)
+				{
+					ptr_app->is_silent = true;
 				}
 				else if (ctrl_id == IDC_LATER_BTN)
 				{
@@ -5948,15 +5955,6 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced)
 			_r_ctrl_settext (hwnd, IDC_TITLE_ID, APP_NAME);
 
 			{
-
-				_r_ctrl_enable (hwnd, IDC_FILE_ID, false);
-				_r_ctrl_enable (hwnd, IDC_SIGNATURE_ID, false);
-				_r_ctrl_enable (hwnd, IDC_FILTER_ID, false);
-				_r_ctrl_enable (hwnd, IDC_DATE_ID, false);
-
-				//if (!ptr_log->protocol)
-				_r_ctrl_enable (hwnd, IDC_PROTOCOL_ID, false);
-
 				const HDC hdc = GetDC (hwnd);
 
 				_app_notifysettext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_FILE, L":"), IDC_FILE_TEXT, ptr_app->display_name ? _r_path_compact (ptr_app->display_name, NOTIFY_PATH_COMPACT) : SZ_EMPTY);
@@ -5978,17 +5976,10 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced)
 			SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (IDS_ACTION_BLOCK_HINT, nullptr).GetString ());
 			SendDlgItemMessage (hwnd, IDC_LATER_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (IDS_ACTION_LATER_HINT, nullptr).GetString ());
 
-			CheckDlgButton (hwnd, IDC_FILE_ID, BST_CHECKED);
-			CheckDlgButton (hwnd, IDC_ADDRESS_REMOTE_ID, BST_UNCHECKED);
-			CheckDlgButton (hwnd, IDC_ADDRESS_LOCAL_ID, BST_UNCHECKED);
-			CheckDlgButton (hwnd, IDC_PROTOCOL_ID, BST_UNCHECKED);
-
 			_app_notifysetpos (hwnd);
 
 			_r_fastlock_releaseshared (&lock_notification);
 			_r_fastlock_releaseshared (&lock_access);
-
-			SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ADDRESS_REMOTE_ID, 0), 0);
 
 			ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
@@ -9213,6 +9204,252 @@ void _wfp_uninitialize (bool is_full)
 	_r_fastlock_releaseexclusive (&lock_transaction);
 }
 
+void _app_generate_addmenu (HMENU submenu)
+{
+	constexpr auto uproc_id = 2;
+	constexpr auto upckg_id = 3;
+	constexpr auto usvc_id = 4;
+
+	const HMENU submenu_process = GetSubMenu (submenu, uproc_id);
+	const HMENU submenu_package = GetSubMenu (submenu, upckg_id);
+	const HMENU submenu_service = GetSubMenu (submenu, usvc_id);
+
+	_app_generate_processes ();
+
+	app.LocaleMenu (submenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
+	app.LocaleMenu (submenu, IDS_ADD_PROCESS, uproc_id, true, nullptr);
+	app.LocaleMenu (submenu, IDS_ADD_PACKAGE, upckg_id, true, _r_sys_validversion (6, 2) ? nullptr : L" [win8+]");
+	app.LocaleMenu (submenu, IDS_ADD_SERVICE, usvc_id, true, nullptr);
+	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PROCESSES, false, _r_fmt (L" (%d)", processes.size ()));
+	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PACKAGES, false, _r_fmt (L" (%d)", packages.size ()));
+	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_SERVICES, false, _r_fmt (L" (%d)", services.size ()));
+
+	// generate processes popup menu
+	{
+		if (processes.empty ())
+		{
+			MENUITEMINFO mii = {0};
+
+			WCHAR buffer[128] = {0};
+			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
+
+			mii.cbSize = sizeof (mii);
+			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
+			mii.fType = MFT_STRING;
+			mii.dwTypeData = buffer;
+			mii.fState = MF_DISABLED | MF_GRAYED;
+
+			SetMenuItemInfo (submenu_process, IDM_ALL_PROCESSES, FALSE, &mii);
+		}
+		else
+		{
+			AppendMenu (submenu_process, MF_SEPARATOR, 0, nullptr);
+
+			for (size_t i = 0; i < processes.size (); i++)
+			{
+				const PITEM_ADD ptr_item = processes.at (i);
+
+				if (ptr_item && ptr_item->display_name)
+				{
+					MENUITEMINFO mii = {0};
+
+					mii.cbSize = sizeof (mii);
+					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
+					mii.fType = MFT_STRING;
+					mii.dwTypeData = ptr_item->display_name;
+					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_process_small;
+					mii.wID = IDX_PROCESS + UINT (i);
+
+					InsertMenuItem (submenu_process, mii.wID, FALSE, &mii);
+				}
+			}
+		}
+	}
+
+	// generate packages popup menu (win8+)
+	if (_r_sys_validversion (6, 2))
+	{
+		size_t total_added = 0;
+
+		if (!packages.empty ())
+		{
+			for (size_t i = 0; i < packages.size (); i++)
+			{
+				const PITEM_ADD ptr_item = packages.at (i);
+
+				if (ptr_item && ptr_item->display_name)
+				{
+					if (apps.find (ptr_item->hash) != apps.end ())
+						continue;
+
+					if (!total_added)
+						AppendMenu (submenu_package, MF_SEPARATOR, 1, nullptr);
+
+					MENUITEMINFO mii = {0};
+
+					mii.cbSize = sizeof (mii);
+					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
+					mii.fType = MFT_STRING;
+					mii.dwTypeData = ptr_item->display_name;
+					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_package_small;
+					mii.wID = IDX_PACKAGE + UINT (i);
+
+					InsertMenuItem (submenu_package, mii.wID, FALSE, &mii);
+					total_added += 1;
+				}
+			}
+		}
+
+		if (!total_added)
+		{
+			MENUITEMINFO mii = {0};
+
+			WCHAR buffer[128] = {0};
+			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
+
+			mii.cbSize = sizeof (mii);
+			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
+			mii.fType = MFT_STRING;
+			mii.dwTypeData = buffer;
+			mii.fState = MF_DISABLED | MF_GRAYED;
+
+			SetMenuItemInfo (submenu_package, IDM_ALL_PACKAGES, FALSE, &mii);
+		}
+	}
+	else
+	{
+		EnableMenuItem (submenu, upckg_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+	}
+
+	{
+		size_t total_added = 0;
+
+		if (!services.empty ())
+		{
+			for (size_t i = 0; i < services.size (); i++)
+			{
+				const PITEM_ADD ptr_item = services.at (i);
+
+				if (ptr_item && ptr_item->service_name)
+				{
+					if (apps.find (ptr_item->hash) != apps.end ())
+						continue;
+
+					if (!total_added)
+						AppendMenu (submenu_service, MF_SEPARATOR, 1, nullptr);
+
+					MENUITEMINFO mii = {0};
+
+					mii.cbSize = sizeof (mii);
+					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
+					mii.fType = MFT_STRING;
+					mii.dwTypeData = ptr_item->service_name;
+					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_service_small;
+					mii.wID = IDX_SERVICE + UINT (i);
+
+					InsertMenuItem (submenu_service, mii.wID, FALSE, &mii);
+					total_added += 1;
+				}
+			}
+		}
+
+		if (!total_added)
+		{
+			MENUITEMINFO mii = {0};
+
+			WCHAR buffer[128] = {0};
+			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
+
+			mii.cbSize = sizeof (mii);
+			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
+			mii.fType = MFT_STRING;
+			mii.dwTypeData = buffer;
+			mii.fState = MF_DISABLED | MF_GRAYED;
+
+			SetMenuItemInfo (submenu_service, IDM_ALL_SERVICES, FALSE, &mii);
+		}
+	}
+}
+
+void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
+{
+	static HBITMAP hbmp_allow = nullptr;
+	static HBITMAP hbmp_block = nullptr;
+
+	if (!hbmp_allow)
+		hbmp_allow = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, GetSystemMetrics (SM_CXSMICON)));
+
+	if (!hbmp_block)
+		hbmp_block = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, GetSystemMetrics (SM_CXSMICON)));
+
+	if (!_app_isrulesexists (TypeCustom, -1))
+	{
+		AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
+		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, nullptr));
+
+		EnableMenuItem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	}
+	else
+	{
+		for (UINT8 type = 0; type < 2; type++)
+		{
+			if (type == 0)
+			{
+				if (!_app_isrulesexists (TypeCustom, true))
+					continue;
+			}
+			else if (type == 1)
+			{
+				if (!_app_isrulesexists (TypeCustom, false))
+					continue;
+			}
+
+			AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
+
+			for (UINT8 loop = 0; loop < 2; loop++)
+			{
+				for (size_t i = 0; i < rules_arr.size (); i++)
+				{
+					PITEM_RULE const ptr_rule = rules_arr.at (i);
+
+					if (ptr_rule)
+					{
+						if (ptr_rule->type != TypeCustom || (type == 0 && !ptr_rule->is_readonly) || (type == 1 && ptr_rule->is_readonly))
+							continue;
+
+						const bool is_checked = (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
+
+						if ((loop == 0 && !is_checked) || (loop == 1 && is_checked))
+							continue;
+
+						WCHAR buffer[128] = {0};
+						StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, nullptr), ptr_rule->pname);
+
+						MENUITEMINFO mii = {0};
+
+						mii.cbSize = sizeof (mii);
+						mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_BITMAP | MIIM_STRING;
+						mii.fType = MFT_STRING;
+						mii.hbmpItem = ptr_rule->is_block ? hbmp_block : hbmp_allow;
+						mii.dwTypeData = buffer;
+						mii.fState = (is_checked ? MF_CHECKED : MF_UNCHECKED);
+						mii.wID = IDX_RULES_SPECIAL + UINT (i);
+
+						if (ptr_rule->is_enabled && ptr_rule->apps.empty ())
+							mii.fState |= MF_DISABLED | MF_GRAYED;
+
+						InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
+					}
+				}
+			}
+		}
+	}
+
+	AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
+	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
+}
+
+
 void DrawFrameBorder (HDC hdc, HWND hwnd, COLORREF clr)
 {
 	RECT rc = {0};
@@ -9379,14 +9616,18 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				ctrl_id == IDC_ICON_ID ||
 				ctrl_id == IDC_TITLE_ID ||
 				ctrl_id == IDC_MENU_BTN ||
+				ctrl_id == IDC_TIMER_BTN ||
 				ctrl_id == IDC_CLOSE_BTN
 				)
 			{
 				SetTextColor ((HDC)wparam, NOTIFY_CLR_TITLE_TEXT);
 
-				static HBRUSH g = CreateSolidBrush (NOTIFY_CLR_TITLE_BG);
+				static HBRUSH hbrush = nullptr;
 
-				return (INT_PTR)g;
+				if (!hbrush)
+					hbrush = CreateSolidBrush (NOTIFY_CLR_TITLE_BG);
+
+				return (INT_PTR)hbrush;
 			}
 
 			const bool is_themeactive = _app_notifyisacrylicblurenabled ();
@@ -9408,7 +9649,11 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 		{
 			const UINT ctrl_id = GetDlgCtrlID ((HWND)wparam);
 
-			if (ctrl_id == IDC_MENU_BTN || ctrl_id == IDC_CLOSE_BTN)
+			if (
+				ctrl_id == IDC_TIMER_BTN ||
+				ctrl_id == IDC_MENU_BTN ||
+				ctrl_id == IDC_CLOSE_BTN
+				)
 			{
 				SetCursor (LoadCursor (nullptr, IDC_HAND));
 
@@ -9435,6 +9680,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						const UINT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
 						if (
+							ctrl_id == IDC_CLOSE_BTN ||
 							ctrl_id == IDC_FILE_TEXT ||
 							ctrl_id == IDC_SIGNATURE_TEXT ||
 							ctrl_id == IDC_ADDRESS_LOCAL_TEXT ||
@@ -9454,7 +9700,10 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 								if (ptr_log)
 								{
-									if (ctrl_id == IDC_FILE_TEXT)
+									if (ctrl_id == IDC_CLOSE_BTN)
+										StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_CLOSE, nullptr));
+
+									else if (ctrl_id == IDC_FILE_TEXT)
 										StringCchCopy (buffer, _countof (buffer), _app_gettooltip (ptr_log->hash));
 
 									else if (ctrl_id == IDC_SIGNATURE_TEXT)
@@ -9477,18 +9726,13 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 									else
 										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, ctrl_id));
-
-									lpnmdi->lpszText = buffer;
 								}
+
+								if (buffer[0])
+									lpnmdi->lpszText = buffer;
 							}
 
 							_r_fastlock_releaseshared (&lock_notification);
-						}
-						else if (ctrl_id == IDC_ADDRESS_REMOTE_ID)
-						{
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_NOTIFY_TOOLTIP, nullptr));
-
-							lpnmdi->lpszText = buffer;
 						}
 					}
 
@@ -9512,17 +9756,46 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 			switch (LOWORD (wparam))
 			{
+				case IDC_TIMER_BTN:
 				case IDC_MENU_BTN:
 				{
-					const HMENU menu = CreateMenu ();
-					const HMENU submenu = CreateMenu ();
+					const HMENU hmenu = CreateMenu ();
+					const HMENU hsubmenu = CreateMenu ();
 
 					const HWND hctrl = (HWND)lparam;
 
-					AppendMenu (menu, MF_POPUP, (UINT_PTR)submenu, L" ");
+					AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu, L" ");
 
-					for (UINT i = 0; i < timers.size (); i++)
-						AppendMenu (submenu, MF_BYPOSITION, IDX_TIMER_NOTIFY + i, app.LocaleString (IDS_ACTION_ALLOW, _r_fmt_interval (timers.at (i) + 1, 1)));
+					if (LOWORD (wparam) == IDC_TIMER_BTN)
+					{
+						for (UINT i = 0; i < timers.size (); i++)
+							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER_NOTIFY + i, _r_fmt_interval (timers.at (i) + 1, 1));
+					}
+					else if (LOWORD (wparam) == IDC_MENU_BTN)
+					{
+						_r_fastlock_acquireshared (&lock_notification);
+
+						const size_t idx = _app_notifygetcurrent (hwnd);
+						size_t hash = 0;
+
+						if (idx != LAST_VALUE)
+						{
+							PITEM_LOG const ptr_log = notifications.at (idx);
+
+							if (ptr_log)
+								hash = ptr_log->hash;
+						}
+
+						_r_fastlock_releaseshared (&lock_notification);
+
+						_r_fastlock_acquireshared (&lock_access);
+
+						AppendMenu (hsubmenu, MF_STRING, IDM_DISABLENOTIFICATIONS, app.LocaleString (IDS_DISABLENOTIFICATIONS, nullptr));
+
+						_app_generate_rulesmenu (hsubmenu, hash);
+
+						_r_fastlock_releaseshared (&lock_access);
+					}
 
 					RECT buttonRect = {0};
 
@@ -9534,22 +9807,10 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					_r_wnd_adjustwindowrect (hctrl, &buttonRect);
 
-					TrackPopupMenuEx (submenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, buttonRect.left, buttonRect.top, hwnd, nullptr);
+					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, buttonRect.left, buttonRect.top, hwnd, nullptr);
 
-					DestroyMenu (submenu);
-					DestroyMenu (menu);
-
-					break;
-				}
-
-				case IDC_ADDRESS_REMOTE_ID:
-				case IDC_ADDRESS_LOCAL_ID:
-				case IDC_PROTOCOL_ID:
-				{
-					const bool is_checked = (IsDlgButtonChecked (hwnd, LOWORD (wparam)) == BST_CHECKED);
-
-					SendDlgItemMessage (hwnd, IDC_ALLOW_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (is_checked ? IDS_NOTIFY_CREATERULE_ADDRESS : IDS_ACTION_ALLOW_HINT, nullptr).GetString ());
-					SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (is_checked ? IDS_NOTIFY_CREATERULE_ADDRESS : IDS_ACTION_BLOCK_HINT, nullptr).GetString ());
+					DestroyMenu (hsubmenu);
+					DestroyMenu (hmenu);
 
 					break;
 				}
@@ -9557,8 +9818,74 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				case IDC_ALLOW_BTN:
 				case IDC_BLOCK_BTN:
 				case IDC_LATER_BTN:
+				case IDM_DISABLENOTIFICATIONS:
 				{
 					_app_notifycommand (hwnd, LOWORD (wparam), LAST_VALUE);
+					break;
+				}
+
+				case IDM_OPENRULESEDITOR:
+				{
+					PITEM_RULE ptr_rule = new ITEM_RULE;
+
+					if (ptr_rule)
+					{
+						_r_fastlock_acquireshared (&lock_notification);
+
+						const size_t idx = _app_notifygetcurrent (hwnd);
+
+						if (idx != LAST_VALUE)
+						{
+							PITEM_LOG const ptr_log = notifications.at (idx);
+
+							if (ptr_log)
+							{
+								ptr_rule->apps[ptr_log->hash] = true;
+								ptr_rule->protocol = ptr_log->protocol;
+
+								LPWSTR rule = nullptr;
+								_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &rule, false);
+
+								_r_str_alloc (&ptr_rule->pname, _r_str_length (rule), rule);
+								_r_str_alloc (&ptr_rule->prule_remote, _r_str_length (rule), rule);
+
+								SAFE_DELETE_ARRAY (rule);
+							}
+						}
+
+						_r_fastlock_releaseshared (&lock_notification);
+
+						_app_ruleenable (ptr_rule, true);
+
+						ptr_rule->type = TypeCustom;
+						ptr_rule->is_block = ((app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) ? false : true);
+
+						if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), app.GetHWND (), &EditorProc, (LPARAM)ptr_rule))
+						{
+							_r_fastlock_acquireexclusive (&lock_access);
+
+							rules_arr.push_back (ptr_rule);
+
+							MFILTER_RULES rules;
+							rules.push_back (ptr_rule);
+
+							_wfp_create4filters (&rules, __LINE__);
+
+							_r_fastlock_releaseexclusive (&lock_access);
+
+							_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+							_app_profile_save (hwnd);
+
+							_r_listview_redraw (hwnd, IDC_LISTVIEW);
+
+							_app_notifyhide (hwnd);
+						}
+						else
+						{
+							_app_freerule (&ptr_rule);
+						}
+					}
+
 					break;
 				}
 
@@ -9574,173 +9901,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 	}
 
 	return DefWindowProc (hwnd, msg, wparam, lparam);
-}
-
-void _app_generate_addmenu (HMENU submenu)
-{
-	constexpr auto uproc_id = 2;
-	constexpr auto upckg_id = 3;
-	constexpr auto usvc_id = 4;
-
-	const HMENU submenu_process = GetSubMenu (submenu, uproc_id);
-	const HMENU submenu_package = GetSubMenu (submenu, upckg_id);
-	const HMENU submenu_service = GetSubMenu (submenu, usvc_id);
-
-	_app_generate_processes ();
-
-	app.LocaleMenu (submenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
-	app.LocaleMenu (submenu, IDS_ADD_PROCESS, uproc_id, true, nullptr);
-	app.LocaleMenu (submenu, IDS_ADD_PACKAGE, upckg_id, true, _r_sys_validversion (6, 2) ? nullptr : L" [win8+]");
-	app.LocaleMenu (submenu, IDS_ADD_SERVICE, usvc_id, true, nullptr);
-	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PROCESSES, false, _r_fmt (L" (%d)", processes.size ()));
-	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PACKAGES, false, _r_fmt (L" (%d)", packages.size ()));
-	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_SERVICES, false, _r_fmt (L" (%d)", services.size ()));
-
-	// generate processes popup menu
-	{
-		if (processes.empty ())
-		{
-			MENUITEMINFO mii = {0};
-
-			WCHAR buffer[128] = {0};
-			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
-
-			mii.cbSize = sizeof (mii);
-			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
-			mii.fType = MFT_STRING;
-			mii.dwTypeData = buffer;
-			mii.fState = MF_DISABLED | MF_GRAYED;
-
-			SetMenuItemInfo (submenu_process, IDM_ALL_PROCESSES, FALSE, &mii);
-		}
-		else
-		{
-			AppendMenu (submenu_process, MF_SEPARATOR, 0, nullptr);
-
-			for (size_t i = 0; i < processes.size (); i++)
-			{
-				const PITEM_ADD ptr_item = processes.at (i);
-
-				if (ptr_item && ptr_item->display_name)
-				{
-					MENUITEMINFO mii = {0};
-
-					mii.cbSize = sizeof (mii);
-					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
-					mii.fType = MFT_STRING;
-					mii.dwTypeData = ptr_item->display_name;
-					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_process_small;
-					mii.wID = IDX_PROCESS + UINT (i);
-
-					InsertMenuItem (submenu_process, mii.wID, FALSE, &mii);
-				}
-			}
-		}
-	}
-
-	// generate packages popup menu (win8+)
-	if (_r_sys_validversion (6, 2))
-	{
-		size_t total_added = 0;
-
-		if (!packages.empty ())
-		{
-			for (size_t i = 0; i < packages.size (); i++)
-			{
-				const PITEM_ADD ptr_item = packages.at (i);
-
-				if (ptr_item && ptr_item->display_name)
-				{
-					if (apps.find (ptr_item->hash) != apps.end ())
-						continue;
-
-					if (!total_added)
-						AppendMenu (submenu_package, MF_SEPARATOR, 1, nullptr);
-
-					MENUITEMINFO mii = {0};
-
-					mii.cbSize = sizeof (mii);
-					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
-					mii.fType = MFT_STRING;
-					mii.dwTypeData = ptr_item->display_name;
-					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_package_small;
-					mii.wID = IDX_PACKAGE + UINT (i);
-
-					InsertMenuItem (submenu_package, mii.wID, FALSE, &mii);
-					total_added += 1;
-				}
-			}
-		}
-
-		if (!total_added)
-		{
-			MENUITEMINFO mii = {0};
-
-			WCHAR buffer[128] = {0};
-			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
-
-			mii.cbSize = sizeof (mii);
-			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
-			mii.fType = MFT_STRING;
-			mii.dwTypeData = buffer;
-			mii.fState = MF_DISABLED | MF_GRAYED;
-
-			SetMenuItemInfo (submenu_package, IDM_ALL_PACKAGES, FALSE, &mii);
-		}
-	}
-	else
-	{
-		EnableMenuItem (submenu, upckg_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
-	}
-
-	{
-		size_t total_added = 0;
-
-		if (!services.empty ())
-		{
-			for (size_t i = 0; i < services.size (); i++)
-			{
-				const PITEM_ADD ptr_item = services.at (i);
-
-				if (ptr_item && ptr_item->service_name)
-				{
-					if (apps.find (ptr_item->hash) != apps.end ())
-						continue;
-
-					if (!total_added)
-						AppendMenu (submenu_service, MF_SEPARATOR, 1, nullptr);
-
-					MENUITEMINFO mii = {0};
-
-					mii.cbSize = sizeof (mii);
-					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_BITMAP | MIIM_STRING;
-					mii.fType = MFT_STRING;
-					mii.dwTypeData = ptr_item->service_name;
-					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_service_small;
-					mii.wID = IDX_SERVICE + UINT (i);
-
-					InsertMenuItem (submenu_service, mii.wID, FALSE, &mii);
-					total_added += 1;
-				}
-			}
-		}
-
-		if (!total_added)
-		{
-			MENUITEMINFO mii = {0};
-
-			WCHAR buffer[128] = {0};
-			StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
-
-			mii.cbSize = sizeof (mii);
-			mii.fMask = MIIM_STATE | MIIM_FTYPE | MIIM_STRING;
-			mii.fType = MFT_STRING;
-			mii.dwTypeData = buffer;
-			mii.fState = MF_DISABLED | MF_GRAYED;
-
-			SetMenuItemInfo (submenu_service, IDM_ALL_SERVICES, FALSE, &mii);
-		}
-	}
 }
 
 void _app_initialize ()
@@ -10450,42 +10610,42 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				const UINT utimer_id = 3;
 				const UINT selected_count = (UINT)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETSELECTEDCOUNT, 0, 0);
 
-				const HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_LISTVIEW));
-				const HMENU submenu = GetSubMenu (menu, 0);
-				const HMENU submenu_add = GetSubMenu (submenu, uaddmenu_id);
-				const HMENU submenu_settings = GetSubMenu (submenu, usettings_id);
-				const HMENU submenu_timer = GetSubMenu (submenu, utimer_id);
+				const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_LISTVIEW));
+				const HMENU hsubmenu = GetSubMenu (hmenu, 0);
+				const HMENU hsubmenu_add = GetSubMenu (hsubmenu, uaddmenu_id);
+				const HMENU hsubmenu_settings = GetSubMenu (hsubmenu, usettings_id);
+				const HMENU submenu_timer = GetSubMenu (hsubmenu, utimer_id);
 
 				// localize
-				app.LocaleMenu (submenu, IDS_ADD, uaddmenu_id, true, nullptr);
-				app.LocaleMenu (submenu, IDS_TRAY_RULES, usettings_id, true, nullptr);
-				app.LocaleMenu (submenu, IDS_DISABLENOTIFICATIONS, IDM_DISABLENOTIFICATIONS, false, nullptr);
-				app.LocaleMenu (submenu, IDS_TIMER, utimer_id, true, nullptr);
-				app.LocaleMenu (submenu, IDS_DISABLETIMER, IDM_DISABLETIMER, false, nullptr);
-				app.LocaleMenu (submenu, IDS_REFRESH, IDM_REFRESH2, false, L"\tF5");
-				app.LocaleMenu (submenu, IDS_EXPLORE, IDM_EXPLORE, false, L"\tCtrl+E");
-				app.LocaleMenu (submenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
-				app.LocaleMenu (submenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
-				app.LocaleMenu (submenu, IDS_CHECK, IDM_CHECK, false, nullptr);
-				app.LocaleMenu (submenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
-				app.LocaleMenu (submenu, IDS_PROPERTIES, IDM_PROPERTIES, false, L"\tEnter");
+				app.LocaleMenu (hsubmenu, IDS_ADD, uaddmenu_id, true, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_TRAY_RULES, usettings_id, true, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_DISABLENOTIFICATIONS, IDM_DISABLENOTIFICATIONS, false, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_TIMER, utimer_id, true, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_DISABLETIMER, IDM_DISABLETIMER, false, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_REFRESH, IDM_REFRESH2, false, L"\tF5");
+				app.LocaleMenu (hsubmenu, IDS_EXPLORE, IDM_EXPLORE, false, L"\tCtrl+E");
+				app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
+				app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
+				app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_PROPERTIES, IDM_PROPERTIES, false, L"\tEnter");
 
 				if (!selected_count)
 				{
-					EnableMenuItem (submenu, usettings_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (submenu, utimer_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (submenu, IDM_EXPLORE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (submenu, IDM_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (submenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (submenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (submenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (submenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, usettings_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, utimer_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_EXPLORE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 				}
 
 				if (_wfp_isfiltersapplying ())
-					EnableMenuItem (submenu, IDM_REFRESH2, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_REFRESH2, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
-				_app_generate_addmenu (submenu_add);
+				_app_generate_addmenu (hsubmenu_add);
 
 				// show configuration
 				if (selected_count)
@@ -10493,78 +10653,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const size_t item = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED); // get first item
 					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
 
+					AppendMenu (hsubmenu_settings, MF_SEPARATOR, 0, nullptr);
+
 					_r_fastlock_acquireshared (&lock_access);
 
 					PITEM_APP const ptr_app = _app_getapplication (hash);
 
 					if (ptr_app)
 					{
-						CheckMenuItem (submenu, IDM_DISABLENOTIFICATIONS, MF_BYCOMMAND | (ptr_app->is_silent ? MF_CHECKED : MF_UNCHECKED));
+						CheckMenuItem (hsubmenu, IDM_DISABLENOTIFICATIONS, MF_BYCOMMAND | (ptr_app->is_silent ? MF_CHECKED : MF_UNCHECKED));
 
-						if (!_app_isrulesexists (TypeCustom, -1))
-						{
-							AppendMenu (submenu_settings, MF_SEPARATOR, 0, nullptr);
-							AppendMenu (submenu_settings, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, nullptr));
-
-							EnableMenuItem (submenu_settings, IDX_RULES_SPECIAL, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-						}
-						else
-						{
-							for (UINT8 type = 0; type < 2; type++)
-							{
-								if (type == 0)
-								{
-									if (!_app_isrulesexists (TypeCustom, true))
-										continue;
-								}
-								else if (type == 1)
-								{
-									if (!_app_isrulesexists (TypeCustom, false))
-										continue;
-								}
-
-								AppendMenu (submenu_settings, MF_SEPARATOR, 0, nullptr);
-
-								for (UINT8 loop = 0; loop < 2; loop++)
-								{
-									for (size_t i = 0; i < rules_arr.size (); i++)
-									{
-										PITEM_RULE const ptr_rule = rules_arr.at (i);
-
-										if (ptr_rule)
-										{
-											if (ptr_rule->type != TypeCustom || (type == 0 && !ptr_rule->is_readonly) || (type == 1 && ptr_rule->is_readonly))
-												continue;
-
-											const bool is_checked = (ptr_rule->is_enabled && (ptr_rule->apps.find (hash) != ptr_rule->apps.end ()));
-
-											if ((loop == 0 && !is_checked) || (loop == 1 && is_checked))
-												continue;
-
-											WCHAR buffer[128] = {0};
-											StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY, nullptr), app.LocaleString (ptr_rule->is_block ? IDS_ACTION_BLOCK : IDS_ACTION_ALLOW, nullptr).GetString (), ptr_rule->pname);
-
-											MENUITEMINFO mii = {0};
-
-											mii.cbSize = sizeof (mii);
-											mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
-											mii.fType = MFT_STRING;
-											mii.dwTypeData = buffer;
-											mii.fState = (is_checked ? MF_CHECKED : MF_UNCHECKED);
-											mii.wID = IDX_RULES_SPECIAL + UINT (i);
-
-											if (!is_filtersinstalled)
-												mii.fState |= MF_DISABLED | MF_GRAYED;
-
-											InsertMenuItem (submenu_settings, mii.wID, FALSE, &mii);
-										}
-									}
-								}
-							}
-						}
-
-						AppendMenu (submenu_settings, MF_SEPARATOR, 0, nullptr);
-						AppendMenu (submenu_settings, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
+						_app_generate_rulesmenu (hsubmenu_settings, hash);
 					}
 
 					// show timers
@@ -10606,9 +10705,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				POINT pt = {0};
 				GetCursorPos (&pt);
 
-				TrackPopupMenuEx (submenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
+				TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
 
-				DestroyMenu (menu);
+				DestroyMenu (hmenu);
 			}
 
 			break;
