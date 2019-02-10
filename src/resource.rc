@@ -683,6 +683,8 @@ BEGIN
 	IDS_ACTION_ALLOW_HINT "Always allow this program to access the internet"
 	IDS_ACTION_BLOCK_HINT "Always blocks this program to access the internet"
 	IDS_ACTION_LATER_HINT "Do nothing and ask me later"
+
+	IDS_RULE_APPLY_2 "Apply ""%s"" for app"
 END
 
 //
@@ -698,6 +700,7 @@ IDI_MAIN		ICON		"res\\100.ico"
 IDI_INACTIVE	ICON		"res\\101.ico"
 IDI_ALLOW		ICON		"res\\allow_btn.ico"
 IDI_BLOCK		ICON		"res\\block_btn.ico"
+IDI_TIMER		ICON		"res\\timer_btn.ico"
 IDI_MENU		ICON		"res\\menu_btn.ico"
 IDI_CLOSE		ICON		"res\\close_btn.ico"
 
