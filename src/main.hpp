@@ -56,9 +56,10 @@
 #define RULE_DELIMETER L";"
 #define RULE_RANGE_CHAR L'-'
 #define UI_FONT L"Segoe UI"
+#define UI_FONT_NOTIFICATION L"Calibri"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
-#define BACKUP_HOURS_PERIOD 4 // make backup every 4 hour(s) (default)
-#define LOG_SIZE_LIMIT 2048
+#define BACKUP_HOURS_PERIOD 4 // make backup every X hour(s) (default)
+#define LOG_SIZE_LIMIT 1024
 
 #define LEN_IP_MAX 68
 #define UMAP_CACHE_LIMIT 1024
@@ -66,12 +67,12 @@
 #define TIMER_DEFAULT 1
 
 #define FILTERS_TIMEOUT 9000
-#define TRANSACTION_TIMEOUT 9000
+#define TRANSACTION_TIMEOUT 4000
 
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 
-#define NOTIFY_WIDTH 358
+#define NOTIFY_WIDTH 334
 #define NOTIFY_HEIGHT 372
 #define NOTIFY_BTN_WIDTH 110
 
@@ -79,7 +80,14 @@
 
 #define NOTIFY_CLR_BG GetSysColor(COLOR_WINDOW)
 #define NOTIFY_CLR_TEXT GetSysColor(COLOR_BTNTEXT)
+#define NOTIFY_CLR_TEXT_BRUSH GetSysColorBrush (COLOR_WINDOW)
+#define NOTIFY_CLR_BG_RS4 GetSysColor (COLOR_BTNTEXT)
+#define NOTIFY_CLR_TEXT_RS4 GetSysColor(COLOR_WINDOW)
+#define NOTIFY_CLR_TEXT_BRUSH_RS4 GetSysColorBrush (COLOR_BTNTEXT)
+#define NOTIFY_CLR_OPACITY_RS4 200
 #define NOTIFY_CLR_BORDER GetSysColor(COLOR_HIGHLIGHT)
+#define NOTIFY_CLR_TITLE_BG RGB (240, 240, 240)
+#define NOTIFY_CLR_TITLE_TEXT RGB (102, 102, 102)
 
 #define NOTIFY_TIMER_POPUP_ID 1001
 #define NOTIFY_TIMER_TIMEOUT_ID 2002
@@ -566,6 +574,36 @@ typedef struct _ITEM_ADDRESS
 
 	bool is_range = false;
 } ITEM_ADDRESS, *PITEM_ADDRESS;
+
+enum WINDOWCOMPOSITIONATTRIBUTE
+{
+	WCA_ACCENT_POLICY = 19
+};
+
+enum ACCENTSTATE
+{
+	ACCENT_DISABLED = 0,
+	ACCENT_ENABLE_GRADIENT = 1,
+	ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+	ACCENT_ENABLE_BLURBEHIND = 3,
+	ACCENT_ENABLE_ACRYLICBLURBEHIND = 4,
+	ACCENT_INVALID_STATE = 5
+};
+
+struct ACCENTPOLICY
+{
+	INT nAccentState;
+	INT nFlags;
+	INT nColor;
+	INT nAnimationId;
+};
+
+struct WINCOMPATTRDATA
+{
+	INT nAttribute;
+	PVOID pData;
+	ULONG ulDataSize;
+};
 
 typedef std::vector<PITEM_APP> MFILTER_APPS;
 typedef std::vector<PITEM_RULE> MFILTER_RULES;
