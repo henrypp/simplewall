@@ -7164,31 +7164,31 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			if (GetDlgCtrlID ((HWND)wparam) == IDC_APPS_LV)
 			{
-				const HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_EDITOR));
-				const HMENU submenu = GetSubMenu (menu, 0);
+				const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_EDITOR));
+				const HMENU hsubmenu = GetSubMenu (hmenu, 0);
 
-				app.LocaleMenu (submenu, IDS_CHECK, IDM_CHECK, false, nullptr);
-				app.LocaleMenu (submenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
 
 				if (!SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETSELECTEDCOUNT, 0, 0))
 				{
-					EnableMenuItem (submenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (submenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 				}
 
-				DeleteMenu (submenu, IDM_ADD, MF_BYCOMMAND);
-				DeleteMenu (submenu, IDM_EDIT, MF_BYCOMMAND);
-				DeleteMenu (submenu, IDM_DELETE, MF_BYCOMMAND);
-				DeleteMenu (submenu, 0, MF_BYPOSITION);
-				DeleteMenu (submenu, IDM_SELECT_ALL, MF_BYCOMMAND);
-				DeleteMenu (submenu, 0, MF_BYPOSITION);
+				DeleteMenu (hsubmenu, IDM_ADD, MF_BYCOMMAND);
+				DeleteMenu (hsubmenu, IDM_EDIT, MF_BYCOMMAND);
+				DeleteMenu (hsubmenu, IDM_DELETE, MF_BYCOMMAND);
+				DeleteMenu (hsubmenu, 0, MF_BYPOSITION);
+				DeleteMenu (hsubmenu, IDM_SELECT_ALL, MF_BYCOMMAND);
+				DeleteMenu (hsubmenu, 0, MF_BYPOSITION);
 
 				POINT pt = {0};
 				GetCursorPos (&pt);
 
-				TrackPopupMenuEx (submenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
+				TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
 
-				DestroyMenu (menu);
+				DestroyMenu (hmenu);
 			}
 
 			break;
@@ -8097,42 +8097,42 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			if (ctrl_id != IDC_EDITOR && ctrl_id != IDC_COLORS)
 				break;
 
-			const HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_EDITOR));
-			const HMENU submenu = GetSubMenu (menu, 0);
+			const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_EDITOR));
+			const HMENU hsubmenu = GetSubMenu (hmenu, 0);
 
 			// localize
-			app.LocaleMenu (submenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, nullptr);
-			app.LocaleMenu (submenu, IDS_CHECK, IDM_CHECK, false, nullptr);
-			app.LocaleMenu (submenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
+			app.LocaleMenu (hsubmenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, nullptr);
+			app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
+			app.LocaleMenu (hsubmenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
 
 			if (!SendDlgItemMessage (hwnd, ctrl_id, LVM_GETSELECTEDCOUNT, 0, 0))
 			{
-				EnableMenuItem (submenu, IDM_EDIT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (submenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (submenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (submenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				EnableMenuItem (hsubmenu, IDM_EDIT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				EnableMenuItem (hsubmenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				EnableMenuItem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 			}
 
 			if (ctrl_id == IDC_EDITOR && dialog_id == IDD_SETTINGS_RULES_CUSTOM)
 			{
-				app.LocaleMenu (submenu, IDS_ADD, IDM_ADD, false, L"...");
-				app.LocaleMenu (submenu, IDS_EDIT2, IDM_EDIT, false, L"...");
-				app.LocaleMenu (submenu, IDS_DELETE, IDM_DELETE, false, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_ADD, IDM_ADD, false, L"...");
+				app.LocaleMenu (hsubmenu, IDS_EDIT2, IDM_EDIT, false, L"...");
+				app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, nullptr);
 			}
 			else
 			{
-				DeleteMenu (submenu, IDM_ADD, MF_BYCOMMAND);
-				DeleteMenu (submenu, IDM_EDIT, MF_BYCOMMAND);
-				DeleteMenu (submenu, IDM_DELETE, MF_BYCOMMAND);
-				DeleteMenu (submenu, 0, MF_BYPOSITION);
+				DeleteMenu (hsubmenu, IDM_ADD, MF_BYCOMMAND);
+				DeleteMenu (hsubmenu, IDM_EDIT, MF_BYCOMMAND);
+				DeleteMenu (hsubmenu, IDM_DELETE, MF_BYCOMMAND);
+				DeleteMenu (hsubmenu, 0, MF_BYPOSITION);
 			}
 
 			POINT pt = {0};
 			GetCursorPos (&pt);
 
-			TrackPopupMenuEx (submenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
+			TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
 
-			DestroyMenu (menu);
+			DestroyMenu (hmenu);
 
 			break;
 		}
@@ -8194,7 +8194,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_SKIPUACWARNING_CHK)
 					{
 						app.SkipUacEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
-				}
+					}
 					else if (ctrl_id == IDC_CHECKUPDATES_CHK)
 					{
 						app.ConfigSet (L"CheckUpdates", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
@@ -8446,7 +8446,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-			}
+				}
 
 				case IDM_ADD:
 				{
@@ -8689,11 +8689,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-		}
+			}
 
 			break;
+		}
 	}
-}
 
 	return FALSE;
 }
@@ -9204,25 +9204,25 @@ void _wfp_uninitialize (bool is_full)
 	_r_fastlock_releaseexclusive (&lock_transaction);
 }
 
-void _app_generate_addmenu (HMENU submenu)
+void _app_generate_addmenu (HMENU hsubmenu)
 {
 	constexpr auto uproc_id = 2;
 	constexpr auto upckg_id = 3;
 	constexpr auto usvc_id = 4;
 
-	const HMENU submenu_process = GetSubMenu (submenu, uproc_id);
-	const HMENU submenu_package = GetSubMenu (submenu, upckg_id);
-	const HMENU submenu_service = GetSubMenu (submenu, usvc_id);
+	const HMENU hsubmenu_process = GetSubMenu (hsubmenu, uproc_id);
+	const HMENU hsubmenu_package = GetSubMenu (hsubmenu, upckg_id);
+	const HMENU hsubmenu_service = GetSubMenu (hsubmenu, usvc_id);
 
 	_app_generate_processes ();
 
-	app.LocaleMenu (submenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
-	app.LocaleMenu (submenu, IDS_ADD_PROCESS, uproc_id, true, nullptr);
-	app.LocaleMenu (submenu, IDS_ADD_PACKAGE, upckg_id, true, _r_sys_validversion (6, 2) ? nullptr : L" [win8+]");
-	app.LocaleMenu (submenu, IDS_ADD_SERVICE, usvc_id, true, nullptr);
-	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PROCESSES, false, _r_fmt (L" (%d)", processes.size ()));
-	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_PACKAGES, false, _r_fmt (L" (%d)", packages.size ()));
-	app.LocaleMenu (submenu, IDS_ALL, IDM_ALL_SERVICES, false, _r_fmt (L" (%d)", services.size ()));
+	app.LocaleMenu (hsubmenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
+	app.LocaleMenu (hsubmenu, IDS_ADD_PROCESS, uproc_id, true, nullptr);
+	app.LocaleMenu (hsubmenu, IDS_ADD_PACKAGE, upckg_id, true, _r_sys_validversion (6, 2) ? nullptr : L" [win8+]");
+	app.LocaleMenu (hsubmenu, IDS_ADD_SERVICE, usvc_id, true, nullptr);
+	app.LocaleMenu (hsubmenu, IDS_ALL, IDM_ALL_PROCESSES, false, _r_fmt (L" (%d)", processes.size ()));
+	app.LocaleMenu (hsubmenu, IDS_ALL, IDM_ALL_PACKAGES, false, _r_fmt (L" (%d)", packages.size ()));
+	app.LocaleMenu (hsubmenu, IDS_ALL, IDM_ALL_SERVICES, false, _r_fmt (L" (%d)", services.size ()));
 
 	// generate processes popup menu
 	{
@@ -9239,11 +9239,11 @@ void _app_generate_addmenu (HMENU submenu)
 			mii.dwTypeData = buffer;
 			mii.fState = MF_DISABLED | MF_GRAYED;
 
-			SetMenuItemInfo (submenu_process, IDM_ALL_PROCESSES, FALSE, &mii);
+			SetMenuItemInfo (hsubmenu_process, IDM_ALL_PROCESSES, FALSE, &mii);
 		}
 		else
 		{
-			AppendMenu (submenu_process, MF_SEPARATOR, 0, nullptr);
+			AppendMenu (hsubmenu_process, MF_SEPARATOR, 0, nullptr);
 
 			for (size_t i = 0; i < processes.size (); i++)
 			{
@@ -9260,7 +9260,7 @@ void _app_generate_addmenu (HMENU submenu)
 					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_process_small;
 					mii.wID = IDX_PROCESS + UINT (i);
 
-					InsertMenuItem (submenu_process, mii.wID, FALSE, &mii);
+					InsertMenuItem (hsubmenu_process, mii.wID, FALSE, &mii);
 				}
 			}
 		}
@@ -9283,7 +9283,7 @@ void _app_generate_addmenu (HMENU submenu)
 						continue;
 
 					if (!total_added)
-						AppendMenu (submenu_package, MF_SEPARATOR, 1, nullptr);
+						AppendMenu (hsubmenu_package, MF_SEPARATOR, 1, nullptr);
 
 					MENUITEMINFO mii = {0};
 
@@ -9294,7 +9294,7 @@ void _app_generate_addmenu (HMENU submenu)
 					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_package_small;
 					mii.wID = IDX_PACKAGE + UINT (i);
 
-					InsertMenuItem (submenu_package, mii.wID, FALSE, &mii);
+					InsertMenuItem (hsubmenu_package, mii.wID, FALSE, &mii);
 					total_added += 1;
 				}
 			}
@@ -9313,12 +9313,12 @@ void _app_generate_addmenu (HMENU submenu)
 			mii.dwTypeData = buffer;
 			mii.fState = MF_DISABLED | MF_GRAYED;
 
-			SetMenuItemInfo (submenu_package, IDM_ALL_PACKAGES, FALSE, &mii);
+			SetMenuItemInfo (hsubmenu_package, IDM_ALL_PACKAGES, FALSE, &mii);
 		}
 	}
 	else
 	{
-		EnableMenuItem (submenu, upckg_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+		EnableMenuItem (hsubmenu, upckg_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
 	}
 
 	{
@@ -9336,7 +9336,7 @@ void _app_generate_addmenu (HMENU submenu)
 						continue;
 
 					if (!total_added)
-						AppendMenu (submenu_service, MF_SEPARATOR, 1, nullptr);
+						AppendMenu (hsubmenu_service, MF_SEPARATOR, 1, nullptr);
 
 					MENUITEMINFO mii = {0};
 
@@ -9347,7 +9347,7 @@ void _app_generate_addmenu (HMENU submenu)
 					mii.hbmpItem = ptr_item->hbmp ? ptr_item->hbmp : config.hbitmap_service_small;
 					mii.wID = IDX_SERVICE + UINT (i);
 
-					InsertMenuItem (submenu_service, mii.wID, FALSE, &mii);
+					InsertMenuItem (hsubmenu_service, mii.wID, FALSE, &mii);
 					total_added += 1;
 				}
 			}
@@ -9366,7 +9366,7 @@ void _app_generate_addmenu (HMENU submenu)
 			mii.dwTypeData = buffer;
 			mii.fState = MF_DISABLED | MF_GRAYED;
 
-			SetMenuItemInfo (submenu_service, IDM_ALL_SERVICES, FALSE, &mii);
+			SetMenuItemInfo (hsubmenu_service, IDM_ALL_SERVICES, FALSE, &mii);
 		}
 	}
 }
@@ -10221,65 +10221,65 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case RM_LOCALIZE:
 		{
-			const HMENU menu = GetMenu (hwnd);
+			const HMENU hmenu = GetMenu (hwnd);
 
-			app.LocaleMenu (menu, IDS_FILE, 0, true, nullptr);
-			app.LocaleMenu (GetSubMenu (menu, 0), IDS_EXPORT, 0, true, nullptr);
-			app.LocaleMenu (GetSubMenu (menu, 0), IDS_IMPORT, 1, true, nullptr);
-			app.LocaleMenu (menu, IDS_EXPORT, IDM_EXPORT_APPS, false, L" " XML_APPS L"\tCtrl+S");
-			app.LocaleMenu (menu, IDS_EXPORT, IDM_EXPORT_RULES, false, L" " XML_RULES_CUSTOM L"\tCtrl+Shift+S");
-			app.LocaleMenu (menu, IDS_IMPORT, IDM_IMPORT_APPS, false, L" " XML_APPS L"\tCtrl+O");
-			app.LocaleMenu (menu, IDS_IMPORT, IDM_IMPORT_RULES, false, L" " XML_RULES_CUSTOM L"\tCtrl+Shift+O");
-			app.LocaleMenu (menu, IDS_EXIT, IDM_EXIT, false, L"\tAlt+F4");
+			app.LocaleMenu (hmenu, IDS_FILE, 0, true, nullptr);
+			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_EXPORT, 0, true, nullptr);
+			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_IMPORT, 1, true, nullptr);
+			app.LocaleMenu (hmenu, IDS_EXPORT, IDM_EXPORT_APPS, false, L" " XML_APPS L"\tCtrl+S");
+			app.LocaleMenu (hmenu, IDS_EXPORT, IDM_EXPORT_RULES, false, L" " XML_RULES_CUSTOM L"\tCtrl+Shift+S");
+			app.LocaleMenu (hmenu, IDS_IMPORT, IDM_IMPORT_APPS, false, L" " XML_APPS L"\tCtrl+O");
+			app.LocaleMenu (hmenu, IDS_IMPORT, IDM_IMPORT_RULES, false, L" " XML_RULES_CUSTOM L"\tCtrl+Shift+O");
+			app.LocaleMenu (hmenu, IDS_EXIT, IDM_EXIT, false, L"\tAlt+F4");
 
-			app.LocaleMenu (menu, IDS_EDIT, 1, true, nullptr);
+			app.LocaleMenu (hmenu, IDS_EDIT, 1, true, nullptr);
 
-			app.LocaleMenu (menu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, L"\tCtrl+Shift+X");
-			app.LocaleMenu (menu, IDS_PURGE_ERRORS, IDM_PURGE_ERRORS, false, L"\tCtrl+Shift+E");
-			app.LocaleMenu (menu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, L"\tCtrl+Shift+T");
+			app.LocaleMenu (hmenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, L"\tCtrl+Shift+X");
+			app.LocaleMenu (hmenu, IDS_PURGE_ERRORS, IDM_PURGE_ERRORS, false, L"\tCtrl+Shift+E");
+			app.LocaleMenu (hmenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, L"\tCtrl+Shift+T");
 
-			app.LocaleMenu (menu, IDS_REFRESH, IDM_REFRESH, false, L"\tF5");
+			app.LocaleMenu (hmenu, IDS_REFRESH, IDM_REFRESH, false, L"\tF5");
 
-			app.LocaleMenu (menu, IDS_VIEW, 2, true, nullptr);
+			app.LocaleMenu (hmenu, IDS_VIEW, 2, true, nullptr);
 
-			app.LocaleMenu (menu, IDS_ALWAYSONTOP_CHK, IDM_ALWAYSONTOP_CHK, false, nullptr);
-			app.LocaleMenu (menu, IDS_SHOWFILENAMESONLY_CHK, IDM_SHOWFILENAMESONLY_CHK, false, nullptr);
-			app.LocaleMenu (menu, IDS_AUTOSIZECOLUMNS_CHK, IDM_AUTOSIZECOLUMNS_CHK, false, nullptr);
-			app.LocaleMenu (menu, IDS_ENABLESPECIALGROUP_CHK, IDM_ENABLESPECIALGROUP_CHK, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ALWAYSONTOP_CHK, IDM_ALWAYSONTOP_CHK, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_SHOWFILENAMESONLY_CHK, IDM_SHOWFILENAMESONLY_CHK, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_AUTOSIZECOLUMNS_CHK, IDM_AUTOSIZECOLUMNS_CHK, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ENABLESPECIALGROUP_CHK, IDM_ENABLESPECIALGROUP_CHK, false, nullptr);
 
-			app.LocaleMenu (GetSubMenu (menu, 2), IDS_ICONS, 5, true, nullptr);
-			app.LocaleMenu (menu, IDS_ICONSSMALL, IDM_ICONSSMALL, false, nullptr);
-			app.LocaleMenu (menu, IDS_ICONSLARGE, IDM_ICONSLARGE, false, nullptr);
-			app.LocaleMenu (menu, IDS_ICONSEXTRALARGE, IDM_ICONSEXTRALARGE, false, nullptr);
-			app.LocaleMenu (menu, IDS_ICONSISTABLEVIEW, IDM_ICONSISTABLEVIEW, false, nullptr);
-			app.LocaleMenu (menu, IDS_ICONSISHIDDEN, IDM_ICONSISHIDDEN, false, nullptr);
+			app.LocaleMenu (GetSubMenu (hmenu, 2), IDS_ICONS, 5, true, nullptr);
+			app.LocaleMenu (hmenu, IDS_ICONSSMALL, IDM_ICONSSMALL, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ICONSLARGE, IDM_ICONSLARGE, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ICONSEXTRALARGE, IDM_ICONSEXTRALARGE, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ICONSISTABLEVIEW, IDM_ICONSISTABLEVIEW, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ICONSISHIDDEN, IDM_ICONSISHIDDEN, false, nullptr);
 
-			app.LocaleMenu (GetSubMenu (menu, 2), IDS_LANGUAGE, LANG_MENU, true, L" (Language)");
+			app.LocaleMenu (GetSubMenu (hmenu, 2), IDS_LANGUAGE, LANG_MENU, true, L" (Language)");
 
-			app.LocaleMenu (menu, IDS_FONT, IDM_FONT, false, L"...");
+			app.LocaleMenu (hmenu, IDS_FONT, IDM_FONT, false, L"...");
 
-			app.LocaleMenu (menu, IDS_SETTINGS, 3, true, nullptr);
+			app.LocaleMenu (hmenu, IDS_SETTINGS, 3, true, nullptr);
 
-			app.LocaleMenu (GetSubMenu (menu, 3), IDS_TRAY_MODE, 0, true, nullptr);
+			app.LocaleMenu (GetSubMenu (hmenu, 3), IDS_TRAY_MODE, 0, true, nullptr);
 
-			app.LocaleMenu (menu, IDS_MODE_WHITELIST, IDM_TRAY_MODEWHITELIST, false, nullptr);
-			app.LocaleMenu (menu, IDS_MODE_BLACKLIST, IDM_TRAY_MODEBLACKLIST, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_MODE_WHITELIST, IDM_TRAY_MODEWHITELIST, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_MODE_BLACKLIST, IDM_TRAY_MODEBLACKLIST, false, nullptr);
 
-			app.LocaleMenu (GetSubMenu (menu, 3), IDS_TRAY_LOG, 1, true, nullptr);
+			app.LocaleMenu (GetSubMenu (hmenu, 3), IDS_TRAY_LOG, 1, true, nullptr);
 
-			app.LocaleMenu (menu, IDS_ENABLELOG_CHK, IDM_ENABLELOG_CHK, false, nullptr);
-			app.LocaleMenu (menu, IDS_ENABLENOTIFICATIONS_CHK, IDM_ENABLENOTIFICATIONS_CHK, false, nullptr);
-			app.LocaleMenu (menu, IDS_LOGSHOW, IDM_LOGSHOW, false, L"\tCtrl+I");
-			app.LocaleMenu (menu, IDS_LOGCLEAR, IDM_LOGCLEAR, false, L"\tCtrl+X");
+			app.LocaleMenu (hmenu, IDS_ENABLELOG_CHK, IDM_ENABLELOG_CHK, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ENABLENOTIFICATIONS_CHK, IDM_ENABLENOTIFICATIONS_CHK, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_LOGSHOW, IDM_LOGSHOW, false, L"\tCtrl+I");
+			app.LocaleMenu (hmenu, IDS_LOGCLEAR, IDM_LOGCLEAR, false, L"\tCtrl+X");
 
-			app.LocaleMenu (menu, IDS_SETTINGS, IDM_SETTINGS, false, L"...\tF2");
+			app.LocaleMenu (hmenu, IDS_SETTINGS, IDM_SETTINGS, false, L"...\tF2");
 
-			app.LocaleMenu (menu, IDS_HELP, 4, true, nullptr);
-			app.LocaleMenu (menu, IDS_WEBSITE, IDM_WEBSITE, false, nullptr);
-			app.LocaleMenu (menu, IDS_CHECKUPDATES, IDM_CHECKUPDATES, false, nullptr);
-			app.LocaleMenu (menu, IDS_ABOUT, IDM_ABOUT, false, L"\tF1");
+			app.LocaleMenu (hmenu, IDS_HELP, 4, true, nullptr);
+			app.LocaleMenu (hmenu, IDS_WEBSITE, IDM_WEBSITE, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_CHECKUPDATES, IDM_CHECKUPDATES, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ABOUT, IDM_ABOUT, false, L"\tF1");
 
-			app.LocaleEnum ((HWND)GetSubMenu (menu, 2), LANG_MENU, true, IDX_LANGUAGE); // enum localizations
+			app.LocaleEnum ((HWND)GetSubMenu (hmenu, 2), LANG_MENU, true, IDX_LANGUAGE); // enum localizations
 
 			SetDlgItemText (hwnd, IDC_START_BTN, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr));
 
@@ -10613,7 +10613,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				const HMENU hsubmenu = GetSubMenu (hmenu, 0);
 				const HMENU hsubmenu_add = GetSubMenu (hsubmenu, uaddmenu_id);
 				const HMENU hsubmenu_settings = GetSubMenu (hsubmenu, usettings_id);
-				const HMENU submenu_timer = GetSubMenu (hsubmenu, utimer_id);
+				const HMENU hsubmenu_timer = GetSubMenu (hsubmenu, utimer_id);
 
 				// localize
 				app.LocaleMenu (hsubmenu, IDS_ADD, uaddmenu_id, true, nullptr);
@@ -10686,17 +10686,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (!is_filtersinstalled)
 							mii.fState = MF_DISABLED | MF_GRAYED;
 
-						InsertMenuItem (submenu_timer, mii.wID, FALSE, &mii);
+						InsertMenuItem (hsubmenu_timer, mii.wID, FALSE, &mii);
 
 						if (!is_checked && ptr_app->timer > current_time && ptr_app->timer <= (current_time + timers.at (i)))
 						{
-							CheckMenuRadioItem (submenu_timer, IDX_TIMER, IDX_TIMER + UINT (timers.size ()), mii.wID, MF_BYCOMMAND);
+							CheckMenuRadioItem (hsubmenu_timer, IDX_TIMER, IDX_TIMER + UINT (timers.size ()), mii.wID, MF_BYCOMMAND);
 							is_checked = true;
 						}
 					}
 
 					if (!is_checked)
-						CheckMenuRadioItem (submenu_timer, IDM_DISABLETIMER, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND);
+						CheckMenuRadioItem (hsubmenu_timer, IDM_DISABLETIMER, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND);
 
 					_r_fastlock_releaseshared (&lock_access);
 				}
@@ -10788,19 +10788,40 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					constexpr auto notifications_id = 8;
 					constexpr auto errlog_id = 9;
 
-					const HMENU menu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_TRAY));
-					const HMENU submenu = GetSubMenu (menu, 0);
+					const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
+
+					const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_TRAY));
+					const HMENU hsubmenu = GetSubMenu (hmenu, 0);
+
+					{
+						static HBITMAP henabled = nullptr;
+						static HBITMAP hdisabled = nullptr;
+
+						if (!henabled)
+							henabled = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)));
+
+						if (!hdisabled)
+							hdisabled = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)));
+
+						MENUITEMINFO mii = {0};
+
+						mii.cbSize = sizeof (mii);
+						mii.fMask = MIIM_BITMAP;
+						mii.hbmpItem = is_filtersinstalled ? hdisabled : henabled;
+
+						SetMenuItemInfo (hsubmenu, IDM_TRAY_START, FALSE, &mii);
+					}
 
 					// localize
-					app.LocaleMenu (submenu, IDS_TRAY_SHOW, IDM_TRAY_SHOW, false, nullptr);
-					app.LocaleMenu (submenu, _wfp_isfiltersinstalled () ? IDS_TRAY_STOP : IDS_TRAY_START, IDM_TRAY_START, false, L"...");
-					app.LocaleMenu (submenu, IDS_TRAY_MODE, mode_id, true, nullptr);
-					app.LocaleMenu (submenu, IDS_MODE_WHITELIST, IDM_TRAY_MODEWHITELIST, false, nullptr);
-					app.LocaleMenu (submenu, IDS_MODE_BLACKLIST, IDM_TRAY_MODEBLACKLIST, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_TRAY_SHOW, IDM_TRAY_SHOW, false, nullptr);
+					app.LocaleMenu (hsubmenu, is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, IDM_TRAY_START, false, L"...");
+					app.LocaleMenu (hsubmenu, IDS_TRAY_MODE, mode_id, true, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_MODE_WHITELIST, IDM_TRAY_MODEWHITELIST, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_MODE_BLACKLIST, IDM_TRAY_MODEBLACKLIST, false, nullptr);
 
-					app.LocaleMenu (submenu, IDS_ADD, add_id, true, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_ADD, add_id, true, nullptr);
 
-					_app_generate_addmenu (GetSubMenu (submenu, add_id));
+					_app_generate_addmenu (GetSubMenu (hsubmenu, add_id));
 
 					{
 						_r_fastlock_acquireshared (&lock_access);
@@ -10812,83 +10833,83 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						const size_t total_count = itemStat.unused_count + itemStat.invalid_count + itemStat.timers_count;
 
-						app.LocaleMenu (submenu, IDS_DELETE, delete_id, true, total_count ? _r_fmt (L" (%d)", total_count).GetString () : nullptr);
+						app.LocaleMenu (hsubmenu, IDS_DELETE, delete_id, true, total_count ? _r_fmt (L" (%d)", total_count).GetString () : nullptr);
 
 						if (!total_count)
 						{
-							EnableMenuItem (submenu, delete_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+							EnableMenuItem (hsubmenu, delete_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
 						}
 						else
 						{
-							app.LocaleMenu (submenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, itemStat.unused_count ? _r_fmt (L" (%d)", itemStat.unused_count).GetString () : nullptr);
-							app.LocaleMenu (submenu, IDS_PURGE_ERRORS, IDM_PURGE_ERRORS, false, itemStat.invalid_count ? _r_fmt (L" (%d)", itemStat.invalid_count).GetString () : nullptr);
-							app.LocaleMenu (submenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, itemStat.timers_count ? _r_fmt (L" (%d)", itemStat.timers_count).GetString () : nullptr);
+							app.LocaleMenu (hsubmenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, itemStat.unused_count ? _r_fmt (L" (%d)", itemStat.unused_count).GetString () : nullptr);
+							app.LocaleMenu (hsubmenu, IDS_PURGE_ERRORS, IDM_PURGE_ERRORS, false, itemStat.invalid_count ? _r_fmt (L" (%d)", itemStat.invalid_count).GetString () : nullptr);
+							app.LocaleMenu (hsubmenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, itemStat.timers_count ? _r_fmt (L" (%d)", itemStat.timers_count).GetString () : nullptr);
 
 							if (!itemStat.unused_count)
-								EnableMenuItem (submenu, IDM_PURGE_UNUSED, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+								EnableMenuItem (hsubmenu, IDM_PURGE_UNUSED, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
 							if (!itemStat.invalid_count)
-								EnableMenuItem (submenu, IDM_PURGE_ERRORS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+								EnableMenuItem (hsubmenu, IDM_PURGE_ERRORS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
 							if (!itemStat.timers_count)
-								EnableMenuItem (submenu, IDM_PURGE_TIMERS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+								EnableMenuItem (hsubmenu, IDM_PURGE_TIMERS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 						}
 					}
 
-					app.LocaleMenu (submenu, IDS_TRAY_LOG, notifications_id, true, nullptr);
-					app.LocaleMenu (submenu, IDS_ENABLELOG_CHK, IDM_TRAY_ENABLELOG_CHK, false, nullptr);
-					app.LocaleMenu (submenu, IDS_ENABLENOTIFICATIONS_CHK, IDM_TRAY_ENABLENOTIFICATIONS_CHK, false, nullptr);
-					app.LocaleMenu (submenu, IDS_LOGSHOW, IDM_TRAY_LOGSHOW, false, nullptr);
-					app.LocaleMenu (submenu, IDS_LOGCLEAR, IDM_TRAY_LOGCLEAR, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_TRAY_LOG, notifications_id, true, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_ENABLELOG_CHK, IDM_TRAY_ENABLELOG_CHK, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_ENABLENOTIFICATIONS_CHK, IDM_TRAY_ENABLENOTIFICATIONS_CHK, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_LOGSHOW, IDM_TRAY_LOGSHOW, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_LOGCLEAR, IDM_TRAY_LOGCLEAR, false, nullptr);
 
-					app.LocaleMenu (submenu, IDS_TRAY_LOGERR, errlog_id, true, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_TRAY_LOGERR, errlog_id, true, nullptr);
 
 					{
 						const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
 
 						if (!_r_fs_exists (path))
 						{
-							EnableMenuItem (submenu, IDM_TRAY_LOGSHOW, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-							EnableMenuItem (submenu, IDM_TRAY_LOGCLEAR, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+							EnableMenuItem (hsubmenu, IDM_TRAY_LOGSHOW, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+							EnableMenuItem (hsubmenu, IDM_TRAY_LOGCLEAR, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 						}
 					}
 
 					if (_r_fs_exists (_r_dbg_getpath (APP_NAME_SHORT)))
 					{
-						app.LocaleMenu (submenu, IDS_LOGSHOW, IDM_TRAY_LOGSHOW_ERR, false, nullptr);
-						app.LocaleMenu (submenu, IDS_LOGCLEAR, IDM_TRAY_LOGCLEAR_ERR, false, nullptr);
+						app.LocaleMenu (hsubmenu, IDS_LOGSHOW, IDM_TRAY_LOGSHOW_ERR, false, nullptr);
+						app.LocaleMenu (hsubmenu, IDS_LOGCLEAR, IDM_TRAY_LOGCLEAR_ERR, false, nullptr);
 					}
 					else
 					{
-						EnableMenuItem (submenu, errlog_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+						EnableMenuItem (hsubmenu, errlog_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
 					}
 
-					app.LocaleMenu (submenu, IDS_SETTINGS, IDM_TRAY_SETTINGS, false, L"...");
-					app.LocaleMenu (submenu, IDS_WEBSITE, IDM_TRAY_WEBSITE, false, nullptr);
-					app.LocaleMenu (submenu, IDS_ABOUT, IDM_TRAY_ABOUT, false, nullptr);
-					app.LocaleMenu (submenu, IDS_EXIT, IDM_TRAY_EXIT, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_SETTINGS, IDM_TRAY_SETTINGS, false, L"...");
+					app.LocaleMenu (hsubmenu, IDS_WEBSITE, IDM_TRAY_WEBSITE, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_ABOUT, IDM_TRAY_ABOUT, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_EXIT, IDM_TRAY_EXIT, false, nullptr);
 
-					CheckMenuItem (submenu, IDM_TRAY_ENABLELOG_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsLogEnabled", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-					CheckMenuItem (submenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (hsubmenu, IDM_TRAY_ENABLELOG_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsLogEnabled", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 
 					if (_wfp_isfiltersapplying ())
-						EnableMenuItem (submenu, IDM_TRAY_START, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						EnableMenuItem (hsubmenu, IDM_TRAY_START, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
 					// dropped packets logging (win7+)
 					if (!_r_sys_validversion (6, 1))
 					{
-						EnableMenuItem (submenu, IDM_TRAY_ENABLELOG_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-						EnableMenuItem (submenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						EnableMenuItem (hsubmenu, IDM_TRAY_ENABLELOG_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						EnableMenuItem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 					}
 
-					CheckMenuRadioItem (submenu, IDM_TRAY_MODEWHITELIST, IDM_TRAY_MODEBLACKLIST, IDM_TRAY_MODEWHITELIST + app.ConfigGet (L"Mode", ModeWhitelist).AsUint (), MF_BYCOMMAND);
+					CheckMenuRadioItem (hsubmenu, IDM_TRAY_MODEWHITELIST, IDM_TRAY_MODEBLACKLIST, IDM_TRAY_MODEWHITELIST + app.ConfigGet (L"Mode", ModeWhitelist).AsUint (), MF_BYCOMMAND);
 
 					POINT pt = {0};
 					GetCursorPos (&pt);
 
-					TrackPopupMenuEx (submenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
+					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
 
-					DestroyMenu (menu);
+					DestroyMenu (hmenu);
 
 					break;
 				}
@@ -11545,10 +11566,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_TRAY_START:
 				case IDC_START_BTN:
 				{
-					const bool state = !_wfp_isfiltersinstalled ();
+					const bool is_filtersinstalled = !_wfp_isfiltersinstalled ();
 
-					if (_app_installmessage (hwnd, state))
-						_app_changefilters (hwnd, state, true);
+					if (_app_installmessage (hwnd, is_filtersinstalled))
+						_app_changefilters (hwnd, is_filtersinstalled, true);
 
 					break;
 				}
