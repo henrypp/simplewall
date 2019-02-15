@@ -354,7 +354,7 @@ typedef struct _ITEM_RULE
 	UINT8 weight = 0;
 	UINT8 protocol = 0;
 
-	EnumRuleType type;
+	EnumRuleType type = TypeRuleUnknown;
 
 	bool is_haveerrors = false;
 	bool is_forservices = false;
