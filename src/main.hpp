@@ -139,6 +139,7 @@
 #pragma comment(lib, "fwpuclnt.lib")
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "ntdll.lib")
+#pragma comment(lib, "rpcrt4.lib")
 #pragma comment(lib, "version.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "winmm.lib")

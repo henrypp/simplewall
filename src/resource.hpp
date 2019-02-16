@@ -239,8 +239,7 @@
 #define IDX_SERVICE 3000
 #define IDX_LANGUAGE 4000
 #define IDX_TIMER 5000
-#define IDX_TIMER_NOTIFY 6000
-#define IDX_RULES_SPECIAL 7000
+#define IDX_RULES_SPECIAL 6000
 
 // Strings
 #define IDS_UPDATE_NO 2
@@ -469,5 +468,6 @@
 #define IDI_MENU 104
 #define IDI_TIMER 105
 #define IDI_CLOSE 106
+#define IDI_MENU2 107
 
 #endif // __RESOURCE_H__

@@ -2067,7 +2067,7 @@ bool _app_isexists (ITEM_APP const *ptr_app)
 
 bool _app_istimeractive (ITEM_APP const *ptr_app)
 {
-	return ptr_app->timer && (ptr_app->timer > _r_unixtime_now ());
+	return ptr_app->timer || (ptr_app->timer > _r_unixtime_now ());
 }
 
 bool _app_istimersactive ()
@@ -5324,7 +5324,7 @@ size_t _app_timer_remove (HWND hwnd, const MFILTER_APPS* ptr_apps)
 	{
 		PITEM_APP ptr_app = ptr_apps->at (i);
 
-		if (!ptr_app)
+		if (!ptr_app || !_app_istimeractive (ptr_app))
 			continue;
 
 		ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
@@ -5517,9 +5517,9 @@ void _app_notifycreatewindow ()
 	}
 
 	HWND hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON, app.GetDPI (6), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_ICON_ID, nullptr, nullptr);
-	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MAIN, cxsmIcon));
+	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MAIN /*IDI_MENU2*/, cxsmIcon));
 
-	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (8), app.GetDPI (4), wnd_width - app.GetDPI (64 + 12 + 10 + 24), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (10), app.GetDPI (4), wnd_width - app.GetDPI (64 + 12 + 10 + 24), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_title, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 3 - app.GetDPI (12), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
@@ -9418,6 +9418,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 							continue;
 
 						const bool is_checked = (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
+						const bool is_global = (ptr_rule->is_enabled && ptr_rule->apps.empty ());
 
 						if ((loop == 0 && !is_checked) || (loop == 1 && is_checked))
 							continue;
@@ -9435,8 +9436,8 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						mii.fState = (is_checked ? MF_CHECKED : MF_UNCHECKED);
 						mii.wID = IDX_RULES_SPECIAL + UINT (i);
 
-						if (ptr_rule->is_enabled && ptr_rule->apps.empty ())
-							mii.fState |= MF_DISABLED | MF_GRAYED;
+						if (is_global)
+							mii.fState |= MF_CHECKED | MF_DISABLED | MF_GRAYED;
 
 						InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
 					}
@@ -9745,9 +9746,73 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 		case WM_COMMAND:
 		{
-			if ((LOWORD (wparam) >= IDX_TIMER_NOTIFY && LOWORD (wparam) <= IDX_TIMER_NOTIFY + timers.size ()))
+			if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
-				const size_t idx = (LOWORD (wparam) - IDX_TIMER_NOTIFY);
+				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
+
+				BOOL is_remove = (BOOL)-1;
+
+				_r_fastlock_acquireexclusive (&lock_access);
+
+				PITEM_RULE ptr_rule = rules_arr.at (rule_idx);
+
+				if (ptr_rule)
+				{
+					_r_fastlock_acquireshared (&lock_notification);
+
+					const size_t notify_idx = _app_notifygetcurrent (hwnd);
+
+					if (notify_idx != LAST_VALUE)
+					{
+						const size_t hash = notifications.at (notify_idx)->hash;
+
+						//if (ptr_rule->is_forservices && (hash == config.ntoskrnl_hash || hash == config.svchost_hash))
+						//	continue;
+
+						PITEM_APP ptr_app = _app_getapplication (hash);
+
+						if (ptr_app)
+						{
+							if (is_remove == (BOOL)-1)
+								is_remove = (ptr_rule->is_enabled && !ptr_rule->apps.empty () && (ptr_rule->apps.find (hash) != ptr_rule->apps.end ()));
+
+							if (is_remove)
+							{
+								ptr_rule->apps.erase (hash);
+
+								if (ptr_rule->apps.empty ())
+									_app_ruleenable (ptr_rule, false);
+							}
+							else
+							{
+								ptr_rule->apps[hash] = true;
+								_app_ruleenable (ptr_rule, true);
+							}
+						}
+					}
+
+					_r_fastlock_releaseshared (&lock_notification);
+
+					MFILTER_RULES rules;
+					rules.push_back (ptr_rule);
+
+					_wfp_create4filters (&rules, __LINE__);
+				}
+
+				_r_fastlock_releaseexclusive (&lock_access);
+
+				//_app_notifyrefresh (config.hnotification);
+
+				_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
+				_app_profile_save (app.GetHWND ());
+
+				_r_listview_redraw (app.GetHWND (), IDC_LISTVIEW);
+
+				return FALSE;
+			}
+			else if ((LOWORD (wparam) >= IDX_TIMER && LOWORD (wparam) <= IDX_TIMER + timers.size ()))
+			{
+				const size_t idx = (LOWORD (wparam) - IDX_TIMER);
 
 				_app_notifycommand (hwnd, IDC_ALLOW_BTN, idx);
 
@@ -9769,7 +9834,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					if (LOWORD (wparam) == IDC_TIMER_BTN)
 					{
 						for (UINT i = 0; i < timers.size (); i++)
-							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER_NOTIFY + i, _r_fmt_interval (timers.at (i) + 1, 1));
+							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + i, _r_fmt_interval (timers.at (i) + 1, 1));
 					}
 					else if (LOWORD (wparam) == IDC_MENU_BTN)
 					{
@@ -10519,7 +10584,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_freenotify (hash, false);
 							_r_fastlock_releaseexclusive (&lock_notification);
 
-							if ((lpnmlv->uNewState == 4096) && ptr_app->htimer)
+							if ((lpnmlv->uNewState == 4096) && _app_istimeractive (ptr_app))
 							{
 								MFILTER_APPS rules;
 								rules.push_back (ptr_app);
@@ -10651,8 +10716,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const size_t item = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED); // get first item
 					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
-
-					AppendMenu (hsubmenu_settings, MF_SEPARATOR, 0, nullptr);
 
 					_r_fastlock_acquireshared (&lock_access);
 
@@ -11083,46 +11146,46 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				PITEM_RULE ptr_rule = rules_arr.at (idx);
 
-				if (!ptr_rule)
-					return FALSE;
-
-				while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+				if (ptr_rule)
 				{
-					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
-
-					if (ptr_rule->is_forservices && (hash == config.ntoskrnl_hash || hash == config.svchost_hash))
-						continue;
-
-					PITEM_APP ptr_app = _app_getapplication (hash);
-
-					if (ptr_app)
+					while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 					{
-						if (is_remove == (BOOL)-1)
-							is_remove = (ptr_rule->is_enabled && !ptr_rule->apps.empty () && (ptr_rule->apps.find (hash) != ptr_rule->apps.end ()));
+						const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_LISTVIEW, item);
 
-						if (is_remove)
+						if (ptr_rule->is_forservices && (hash == config.ntoskrnl_hash || hash == config.svchost_hash))
+							continue;
+
+						PITEM_APP ptr_app = _app_getapplication (hash);
+
+						if (ptr_app)
 						{
-							ptr_rule->apps.erase (hash);
+							if (is_remove == (BOOL)-1)
+								is_remove = (ptr_rule->is_enabled && !ptr_rule->apps.empty () && (ptr_rule->apps.find (hash) != ptr_rule->apps.end ()));
 
-							if (ptr_rule->apps.empty ())
-								_app_ruleenable (ptr_rule, false);
-						}
-						else
-						{
-							ptr_rule->apps[hash] = true;
-							_app_ruleenable (ptr_rule, true);
-						}
+							if (is_remove)
+							{
+								ptr_rule->apps.erase (hash);
 
-						_r_fastlock_acquireexclusive (&lock_notification);
-						_app_freenotify (hash, false);
-						_r_fastlock_releaseexclusive (&lock_notification);
+								if (ptr_rule->apps.empty ())
+									_app_ruleenable (ptr_rule, false);
+							}
+							else
+							{
+								ptr_rule->apps[hash] = true;
+								_app_ruleenable (ptr_rule, true);
+							}
+
+							_r_fastlock_acquireexclusive (&lock_notification);
+							_app_freenotify (hash, false);
+							_r_fastlock_releaseexclusive (&lock_notification);
+						}
 					}
+
+					MFILTER_RULES rules;
+					rules.push_back (ptr_rule);
+
+					_wfp_create4filters (&rules, __LINE__);
 				}
-
-				MFILTER_RULES rules;
-				rules.push_back (ptr_rule);
-
-				_wfp_create4filters (&rules, __LINE__);
 
 				_r_fastlock_releaseexclusive (&lock_access);
 
@@ -11959,7 +12022,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					MFILTER_APPS rules;
 
 					for (auto &p : apps)
-						rules.push_back (&p.second);
+					{
+						if (_app_istimeractive (&p.second))
+							rules.push_back (&p.second);
+					}
 
 					_app_timer_remove (hwnd, &rules);
 
