@@ -2067,27 +2067,26 @@ bool _app_isexists (ITEM_APP const *ptr_app)
 
 bool _app_istimeractive (ITEM_APP const *ptr_app)
 {
-	return ptr_app->timer || (ptr_app->timer > _r_unixtime_now ());
+	return ptr_app->htimer || (ptr_app->timer && (ptr_app->timer > _r_unixtime_now ()));
 }
 
 bool _app_istimersactive ()
 {
-	bool result = false;
-
 	_r_fastlock_acquireshared (&lock_access);
 
 	for (auto &p : apps)
 	{
-		if (p.second.htimer)
+		if (_app_istimeractive (&p.second))
 		{
-			result = true;
-			break;
+			_r_fastlock_releaseshared (&lock_access);
+
+			return true;
 		}
 	}
 
 	_r_fastlock_releaseshared (&lock_access);
 
-	return result;
+	return false;
 }
 
 COLORREF _app_getcolor (size_t hash, bool is_excludesilent)
@@ -10064,6 +10063,9 @@ void _app_initialize ()
 
 	// initialize timers
 	{
+		if (config.htimer)
+			DeleteTimerQueue (config.htimer);
+
 		config.htimer = CreateTimerQueue ();
 
 		timers.clear ();
