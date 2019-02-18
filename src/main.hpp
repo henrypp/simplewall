@@ -271,7 +271,6 @@ struct STATIC_DATA
 	size_t icon_package_id = 0;
 	size_t icon_service_id = 0;
 
-	bool is_popuperrors = false;
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
 	bool is_wsainit = false;

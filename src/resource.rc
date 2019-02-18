@@ -32,6 +32,7 @@ BEGIN
 	VK_F4, IDM_EXIT, ALT, VIRTKEY
 	VK_F5, IDM_REFRESH, VIRTKEY
 	VK_F11, IDM_ZOOM, VIRTKEY
+	VK_F6, 998, CONTROL, VIRTKEY
 	VK_F6, 999, VIRTKEY
 END
 
@@ -703,6 +704,8 @@ IDI_BLOCK		ICON		"res\\block_btn.ico"
 IDI_MENU		ICON		"res\\menu_btn.ico"
 IDI_TIMER		ICON		"res\\timer_btn.ico"
 IDI_CLOSE		ICON		"res\\close_btn.ico"
+IDI_CHECKED		ICON		"res\\checked.ico"
+IDI_UNCHECKED	ICON		"res\\unchecked.ico"
 //IDI_MENU2		ICON		"res\\menu_btn2.ico"
 
 //

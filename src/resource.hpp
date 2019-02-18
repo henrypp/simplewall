@@ -468,6 +468,8 @@
 #define IDI_MENU 104
 #define IDI_TIMER 105
 #define IDI_CLOSE 106
-#define IDI_MENU2 107
+#define IDI_CHECKED 107
+#define IDI_UNCHECKED 108
+#define IDI_MENU2 109
 
 #endif // __RESOURCE_H__

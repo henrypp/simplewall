@@ -76,7 +76,6 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN);
 void _app_timer_create (HWND hwnd, const MFILTER_APPS* ptr_apps, time_t seconds);
 size_t _app_timer_remove (HWND hwnd, const MFILTER_APPS* ptr_apps);
 
-bool _app_istimeractive (ITEM_APP const *ptr_app);
 bool _app_isunused (ITEM_APP const *ptr_app, size_t hash);
 bool _app_isexists (ITEM_APP const *ptr_app);
 
@@ -92,15 +91,14 @@ bool _wfp_logunsubscribe ();
 bool _wfp_isfiltersinstalled ();
 bool _wfp_destroy2filters (const MARRAY* pmar, UINT line);
 
-void _app_logerror (LPCWSTR fn, DWORD code, LPCWSTR desc, bool is_nopopups)
+void _app_logerror (LPCWSTR fn, DWORD errcode, LPCWSTR desc, bool is_nopopups)
 {
-	_r_dbg_write (APP_NAME_SHORT, APP_VERSION, fn, code, desc);
+	_r_dbg (fn, errcode, desc);
 
 	if (!is_nopopups && app.ConfigGet (L"IsErrorNotificationsEnabled", true).AsBool ()) // check for timeout (sec.)
 	{
-		config.is_popuperrors = true;
-
-		app.TrayPopup (app.GetHWND (), UID, nullptr, NIIF_USER | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? 0 : NIIF_NOSOUND), APP_NAME, app.LocaleString (IDS_STATUS_ERROR, nullptr));
+		//	static time_t last_popup;
+		app.TrayPopup (app.GetHWND (), UID, nullptr, NIIF_ERROR | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? 0 : NIIF_NOSOUND), APP_NAME, app.LocaleString (IDS_STATUS_ERROR, nullptr));
 	}
 }
 
@@ -156,13 +154,10 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 					hr = pNetFwPolicy2->put_FirewallEnabled (profileTypes[i], *pis_enable ? VARIANT_TRUE : VARIANT_FALSE);
 
 					if (SUCCEEDED (hr))
-					{
 						result = true;
-					}
+
 					else
-					{
 						_app_logerror (L"put_FirewallEnabled", hr, _r_fmt (L"%d", profileTypes[i]), true);
-					}
 				}
 			}
 		}
@@ -258,9 +253,7 @@ void _mps_changeconfig2 (bool is_enable)
 						if (ssp.dwCurrentState != SERVICE_RUNNING)
 						{
 							if (!StartService (sc, 0, nullptr))
-							{
 								_app_logerror (L"StartService", GetLastError (), arr[i], false);
-							}
 						}
 
 						CloseServiceHandle (sc);
@@ -539,6 +532,30 @@ size_t _app_getruleicon (PITEM_RULE const ptr_rule)
 		return 0;
 
 	return ptr_rule->is_block ? 1 : 0;
+}
+
+bool _app_istimeractive (ITEM_APP const *ptr_app)
+{
+	return ptr_app->htimer || (ptr_app->timer && (ptr_app->timer > _r_unixtime_now ()));
+}
+
+bool _app_istimersactive ()
+{
+	_r_fastlock_acquireshared (&lock_access);
+
+	for (auto &p : apps)
+	{
+		if (_app_istimeractive (&p.second))
+		{
+			_r_fastlock_releaseshared (&lock_access);
+
+			return true;
+		}
+	}
+
+	_r_fastlock_releaseshared (&lock_access);
+
+	return false;
 }
 
 void ShowItem (HWND hwnd, UINT ctrl_id, size_t item, INT scroll_pos)
@@ -2063,30 +2080,6 @@ bool _app_isexists (ITEM_APP const *ptr_app)
 	}
 
 	return true;
-}
-
-bool _app_istimeractive (ITEM_APP const *ptr_app)
-{
-	return ptr_app->htimer || (ptr_app->timer && (ptr_app->timer > _r_unixtime_now ()));
-}
-
-bool _app_istimersactive ()
-{
-	_r_fastlock_acquireshared (&lock_access);
-
-	for (auto &p : apps)
-	{
-		if (_app_istimeractive (&p.second))
-		{
-			_r_fastlock_releaseshared (&lock_access);
-
-			return true;
-		}
-	}
-
-	_r_fastlock_releaseshared (&lock_access);
-
-	return false;
 }
 
 COLORREF _app_getcolor (size_t hash, bool is_excludesilent)
@@ -3664,38 +3657,35 @@ void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool 
 	pugi::xml_node root;
 	pugi::xml_parse_result result_original = doc_original.load_file (path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
-	//if (!result)
+	// if file not found or parsing error, load from backup
+	if (path_backup)
 	{
-		// if file not found or parsing error, load from backup
-		if (path_backup)
+		if (is_internal)
 		{
-			if (is_internal)
+			DWORD size = 0;
+			const LPVOID buffer = _app_loadresource (path_backup, &size);
+
+			pugi::xml_parse_result result_backup;
+
+			if (buffer)
+				result_backup = doc_backup.load_buffer (buffer, size, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+
+			if (result_backup && (!result_original || doc_backup.child (L"root").attribute (L"timestamp").as_ullong () > doc_original.child (L"root").attribute (L"timestamp").as_ullong ()))
 			{
-				DWORD size = 0;
-				const LPVOID buffer = _app_loadresource (path_backup, &size);
-
-				pugi::xml_parse_result result_backup;
-
-				if (buffer)
-					result_backup = doc_backup.load_buffer (buffer, size, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
-
-				if (result_backup && (!result_original || doc_backup.child (L"root").attribute (L"timestamp").as_ullong () > doc_original.child (L"root").attribute (L"timestamp").as_ullong ()))
-				{
-					root = doc_backup.child (L"root");
-					result_original = result_backup;
-				}
-			}
-			else
-			{
-				if (!result_original && _r_fs_exists (path_backup))
-					result_original = doc_original.load_file (path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+				root = doc_backup.child (L"root");
+				result_original = result_backup;
 			}
 		}
-
-		// show only syntax, memory and i/o errors...
-		if (!result_original && result_original.status != pugi::status_file_not_found)
-			_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %d,text: %s,file: %s", result_original.status, result_original.offset, rstring (result_original.description ()).GetString (), path), false);
+		else
+		{
+			if (!result_original && _r_fs_exists (path_backup))
+				result_original = doc_original.load_file (path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+		}
 	}
+
+	// show only syntax, memory and i/o errors...
+	if (!result_original && result_original.status != pugi::status_file_not_found)
+		_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %d,text: %s,file: %s", result_original.status, result_original.offset, rstring (result_original.description ()).GetString (), path), false);
 
 	if (result_original)
 	{
@@ -4080,7 +4070,7 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps = nullptr, LPCWSTR path
 				{
 					PITEM_APP const ptr_app = &p.second;
 
-					if (ptr_app && ptr_app->original_path)
+					if (ptr_app->original_path)
 					{
 						item.append_attribute (L"path").set_value (ptr_app->original_path);
 
@@ -5272,8 +5262,6 @@ void _app_timer_create (HWND hwnd, const MFILTER_APPS* ptr_apps, time_t seconds)
 
 	const time_t current_time = _r_unixtime_now ();
 
-	_wfp_create3filters (ptr_apps, __LINE__);
-
 	for (size_t i = 0; i < ptr_apps->size (); i++)
 	{
 		PITEM_APP ptr_app = ptr_apps->at (i);
@@ -5286,6 +5274,9 @@ void _app_timer_create (HWND hwnd, const MFILTER_APPS* ptr_apps, time_t seconds)
 			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 			ptr_app->htimer = nullptr;
 		}
+
+		if (ptr_app->timer)
+			ptr_app->timer = 0;
 
 		const size_t hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
 
@@ -5307,6 +5298,8 @@ void _app_timer_create (HWND hwnd, const MFILTER_APPS* ptr_apps, time_t seconds)
 			}
 		}
 	}
+
+	_wfp_create3filters (ptr_apps, __LINE__);
 }
 
 size_t _app_timer_remove (HWND hwnd, const MFILTER_APPS* ptr_apps)
@@ -5668,120 +5661,16 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 			{
 				if (ctrl_id == IDC_ALLOW_BTN || ctrl_id == IDC_BLOCK_BTN)
 				{
-					// just create rule
-					//if (is_createaddrrule || is_createportrule)
-					//{
-					//	LPWSTR prule = nullptr;
+					ptr_app->is_enabled = (ctrl_id == IDC_ALLOW_BTN);
 
-					//	if (is_createaddrrule)
-					//	{
-					//		_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, is_createportrule ? ptr_log->remote_port : 0, &prule, false);
-					//	}
-					//	else if (is_createportrule)
-					//	{
-					//		prule = new WCHAR[16];
+					if (ctrl_id == IDC_BLOCK_BTN)
+						ptr_app->is_silent = true;
 
-					//		if (prule)
-					//			StringCchPrintf (prule, 15, L"%d", ptr_log->remote_port);
-					//	}
+					_r_fastlock_acquireexclusive (&lock_checkbox);
 
-					//	if (prule)
-					//	{
-					//		size_t rule_id = LAST_VALUE;
+					_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, item, ptr_app->is_enabled);
 
-					//		const size_t length = _r_str_length (prule);
-					//		const size_t rule_length = min (length, RULE_RULE_CCH_MAX);
-
-					//		for (size_t i = 0; i < rules_arr.size (); i++)
-					//		{
-					//			PITEM_RULE ptr_rule = rules_arr.at (i);
-
-					//			if (ptr_rule && ptr_rule->type == TypeCustom && ptr_rule->prule_remote && (!ptr_rule->protocol || ptr_rule->protocol == ptr_log->protocol))
-					//			{
-					//				if ((!ptr_rule->is_block && ctrl_id == IDC_ALLOW_BTN) || (ptr_rule->is_block && ctrl_id == IDC_BLOCK_BTN))
-					//				{
-					//					rstring::rvector rule_remote_arr = rstring (ptr_rule->prule_remote).AsVector (RULE_DELIMETER);
-
-					//					for (size_t j = 0; j < rule_remote_arr.size (); j++)
-					//					{
-					//						if (_wcsnicmp (rule_remote_arr.at (j), prule, rule_length) == 0)
-					//						{
-					//							rule_id = i;
-					//							break;
-					//						}
-					//					}
-					//				}
-
-					//				if (rule_id != LAST_VALUE)
-					//					break;
-					//			}
-					//		}
-
-					//		if (rule_id != LAST_VALUE)
-					//		{
-					//			// modify rule
-					//			PITEM_RULE ptr_rule = rules_arr.at (rule_id);
-
-					//			if (ptr_rule)
-					//			{
-					//				ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
-					//				ptr_rule->is_block = ((ctrl_id == IDC_BLOCK_BTN) ? true : false);
-
-					//				_app_ruleenable (ptr_rule, true);
-					//			}
-					//		}
-					//		else
-					//		{
-					//			// create rule
-					//			PITEM_RULE ptr_rule = new ITEM_RULE;
-
-					//			if (ptr_rule)
-					//			{
-					//				const size_t name_length = min (length, (size_t)RULE_NAME_CCH_MAX);
-
-					//				_r_str_alloc (&ptr_rule->pname, name_length, prule);
-					//				_r_str_alloc (&ptr_rule->prule_remote, rule_length, prule);
-
-					//				ptr_rule->protocol = ptr_log->protocol;
-					//				ptr_rule->dir = ptr_log->direction;
-					//				ptr_rule->type = TypeCustom;
-					//				ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
-					//				ptr_rule->is_block = ((ctrl_id == IDC_BLOCK_BTN) ? true : false);
-
-					//				_app_ruleenable (ptr_rule, true);
-
-					//				rules_arr.push_back (ptr_rule);
-					//				rule_id = rules_arr.size () - 1;
-					//			}
-					//		}
-
-					//		// add rule for app
-					//		if (rule_id != LAST_VALUE)
-					//		{
-					//			rules_arr.at (rule_id)->apps[hash] = true;
-
-					//			MFILTER_RULES rules;
-					//			rules.push_back (rules_arr.at (rule_id));
-
-					//			_wfp_create4filters (&rules, __LINE__);
-					//		}
-
-					//		SAFE_DELETE_ARRAY (prule);
-					//	}
-					//}
-					//else
-					{
-						ptr_app->is_enabled = (ctrl_id == IDC_ALLOW_BTN);
-
-						if (ctrl_id == IDC_BLOCK_BTN)
-							ptr_app->is_silent = true;
-
-						_r_fastlock_acquireexclusive (&lock_checkbox);
-
-						_r_listview_setitemcheck (app.GetHWND (), IDC_LISTVIEW, item, ptr_app->is_enabled);
-
-						_r_fastlock_releaseexclusive (&lock_checkbox);
-					}
+					_r_fastlock_releaseexclusive (&lock_checkbox);
 
 					MFILTER_APPS rules;
 					rules.push_back (ptr_app);
@@ -5802,7 +5691,7 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 				}
 				else if (ctrl_id == IDC_LATER_BTN)
 				{
-					// todo
+					// TODO
 				}
 
 				ptr_app->last_notify = _r_unixtime_now ();
@@ -9375,11 +9264,20 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	static HBITMAP hbmp_allow = nullptr;
 	static HBITMAP hbmp_block = nullptr;
 
+	static HBITMAP hbmp_checked = nullptr;
+	static HBITMAP hbmp_unchecked = nullptr;
+
 	if (!hbmp_allow)
 		hbmp_allow = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, GetSystemMetrics (SM_CXSMICON)));
 
 	if (!hbmp_block)
 		hbmp_block = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, GetSystemMetrics (SM_CXSMICON)));
+
+	if (!hbmp_checked)
+		hbmp_checked = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_CHECKED, GetSystemMetrics (SM_CXSMICON)));
+
+	if (!hbmp_unchecked)
+		hbmp_unchecked = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_UNCHECKED, GetSystemMetrics (SM_CXSMICON)));
 
 	if (!_app_isrulesexists (TypeCustom, -1))
 	{
@@ -9428,10 +9326,12 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						MENUITEMINFO mii = {0};
 
 						mii.cbSize = sizeof (mii);
-						mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_BITMAP | MIIM_STRING;
+						mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING | MIIM_BITMAP | MIIM_CHECKMARKS;
 						mii.fType = MFT_STRING;
-						mii.hbmpItem = ptr_rule->is_block ? hbmp_block : hbmp_allow;
 						mii.dwTypeData = buffer;
+						mii.hbmpItem = ptr_rule->is_block ? hbmp_block : hbmp_allow;
+						mii.hbmpChecked = hbmp_checked;
+						mii.hbmpUnchecked = hbmp_unchecked;
 						mii.fState = (is_checked ? MF_CHECKED : MF_UNCHECKED);
 						mii.wID = IDX_RULES_SPECIAL + UINT (i);
 
@@ -9595,7 +9495,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			_r_dc_fillrect (hdc, &rc, NOTIFY_CLR_TITLE_BG);
 
 			for (INT i = 0; i < _R_RECT_WIDTH (&rc); i++)
-				SetPixel (hdc, i, rc.bottom, _R_COLOR_SHADE (NOTIFY_CLR_TITLE_BG, 90));
+				SetPixel (hdc, i, rc.bottom, _r_dc_getcolorshade (NOTIFY_CLR_TITLE_BG, 90));
 
 			DrawFrameBorder (hdc, hwnd, NOTIFY_CLR_BORDER);
 
@@ -10807,24 +10707,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-				case NIN_BALLOONUSERCLICK:
-				{
-					if (config.is_popuperrors)
-					{
-						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_TRAY_LOGSHOW_ERR, 0), 0);
-						config.is_popuperrors = false;
-					}
-
-					break;
-				}
-
-				case NIN_BALLOONHIDE:
-				case NIN_BALLOONTIMEOUT:
-				{
-					config.is_popuperrors = false;
-					break;
-				}
-
 				case WM_MBUTTONUP:
 				{
 					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_LOGSHOW, 0), 0);
@@ -10939,7 +10821,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					if (_r_fs_exists (_r_dbg_getpath (APP_NAME_SHORT)))
+					if (_r_fs_exists (_r_dbg_getpath ()))
 					{
 						app.LocaleMenu (hsubmenu, IDS_LOGSHOW, IDM_TRAY_LOGSHOW_ERR, false, nullptr);
 						app.LocaleMenu (hsubmenu, IDS_LOGCLEAR, IDM_TRAY_LOGCLEAR_ERR, false, nullptr);
@@ -11606,19 +11488,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_TRAY_LOGSHOW_ERR:
 				{
-					const rstring path = _r_dbg_getpath (APP_NAME_SHORT);
+					static const rstring path = _r_dbg_getpath ();
 
-					if (!_r_fs_exists (path))
-						return FALSE;
-
-					_r_run (nullptr, _r_fmt (L"%s \"%s\"", _app_getlogviewer ().GetString (), path.GetString ()));
+					if (_r_fs_exists (path))
+						_r_run (nullptr, _r_fmt (L"%s \"%s\"", _app_getlogviewer ().GetString (), path.GetString ()));
 
 					break;
 				}
 
 				case IDM_TRAY_LOGCLEAR_ERR:
 				{
-					const rstring path = _r_dbg_getpath (APP_NAME_SHORT);
+					static const rstring path = _r_dbg_getpath ();
 
 					if (!_r_fs_exists (path) || !app.ConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION, nullptr), L"ConfirmLogClear"))
 						break;
@@ -12053,6 +11933,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
+#if defined(_APP_BETA) || defined(_APP_BETA_RC)
+				case 998:
+				{
+					_app_logerror (L"FwpmEngineOpen", 2, nullptr, false);
+					break;
+				}
+
 				case 999:
 				{
 #define ID_AD 17
@@ -12090,6 +11977,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					break;
 				}
+#endif // _APP_BETA || _APP_BETA_RC
 			}
 
 			break;
