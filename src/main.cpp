@@ -4025,7 +4025,7 @@ bool _app_isrulepresent (size_t hash)
 	return false;
 }
 
-bool _app_isrulesexists (EnumRuleType type, BOOL is_readonly)
+bool _app_isrulesexists (EnumRuleType type, BOOL is_readonly, BOOL is_global)
 {
 	for (size_t i = 0; i < rules_arr.size (); i++)
 	{
@@ -4033,7 +4033,10 @@ bool _app_isrulesexists (EnumRuleType type, BOOL is_readonly)
 
 		if (ptr_rule && ptr_rule->type == type)
 		{
-			if (is_readonly != -1 && ((BOOL)ptr_rule->is_readonly != (is_readonly)))
+			if (is_readonly != -1 && ((BOOL)ptr_rule->is_readonly != is_readonly))
+				continue;
+
+			if (is_global != -1 && ((ptr_rule->is_enabled && !ptr_rule->apps.empty ()) != is_global))
 				continue;
 
 			return true;
@@ -9279,7 +9282,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	if (!hbmp_unchecked)
 		hbmp_unchecked = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_UNCHECKED, GetSystemMetrics (SM_CXSMICON)));
 
-	if (!_app_isrulesexists (TypeCustom, -1))
+	if (!_app_isrulesexists (TypeCustom, -1, -1))
 	{
 		AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, nullptr));
@@ -9288,16 +9291,21 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	}
 	else
 	{
-		for (UINT8 type = 0; type < 2; type++)
+		for (UINT8 type = 0; type < 3; type++)
 		{
 			if (type == 0)
 			{
-				if (!_app_isrulesexists (TypeCustom, true))
+				if (!_app_isrulesexists (TypeCustom, true, false))
 					continue;
 			}
 			else if (type == 1)
 			{
-				if (!_app_isrulesexists (TypeCustom, false))
+				if (!_app_isrulesexists (TypeCustom, false, false))
+					continue;
+			}
+			else if (type == 2)
+			{
+				if (!_app_isrulesexists (TypeCustom, false, true))
 					continue;
 			}
 
@@ -9311,17 +9319,17 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 
 					if (ptr_rule)
 					{
-						if (ptr_rule->type != TypeCustom || (type == 0 && !ptr_rule->is_readonly) || (type == 1 && ptr_rule->is_readonly))
-							continue;
-
-						const bool is_checked = (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
 						const bool is_global = (ptr_rule->is_enabled && ptr_rule->apps.empty ());
+						const bool is_checked = is_global || (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
+
+						if (ptr_rule->type != TypeCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)) || (type == 2 && !is_global))
+							continue;
 
 						if ((loop == 0 && !is_checked) || (loop == 1 && is_checked))
 							continue;
 
 						WCHAR buffer[128] = {0};
-						StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, nullptr), ptr_rule->pname);
+						StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? L" [*]" : nullptr), ptr_rule->pname);
 
 						MENUITEMINFO mii = {0};
 
@@ -9336,7 +9344,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						mii.wID = IDX_RULES_SPECIAL + UINT (i);
 
 						if (is_global)
-							mii.fState |= MF_CHECKED | MF_DISABLED | MF_GRAYED;
+							mii.fState |= MF_DISABLED | MF_GRAYED;
 
 						InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
 					}
@@ -9580,6 +9588,8 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						const UINT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
 						if (
+							ctrl_id == IDC_MENU_BTN ||
+							ctrl_id == IDC_TIMER_BTN ||
 							ctrl_id == IDC_CLOSE_BTN ||
 							ctrl_id == IDC_FILE_TEXT ||
 							ctrl_id == IDC_SIGNATURE_TEXT ||
@@ -9600,29 +9610,17 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 								if (ptr_log)
 								{
-									if (ctrl_id == IDC_CLOSE_BTN)
+									if (ctrl_id == IDC_MENU_BTN)
+										StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_TRAY_RULES, nullptr));
+
+									else if (ctrl_id == IDC_TIMER_BTN)
+										StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_TIMER, nullptr));
+
+									else if (ctrl_id == IDC_CLOSE_BTN)
 										StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_CLOSE, nullptr));
 
 									else if (ctrl_id == IDC_FILE_TEXT)
 										StringCchCopy (buffer, _countof (buffer), _app_gettooltip (ptr_log->hash));
-
-									else if (ctrl_id == IDC_SIGNATURE_TEXT)
-										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, IDC_SIGNATURE_TEXT));
-
-									else if (ctrl_id == IDC_ADDRESS_LOCAL_TEXT)
-										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, IDC_ADDRESS_LOCAL_TEXT));
-
-									else if (ctrl_id == IDC_ADDRESS_REMOTE_TEXT)
-										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, IDC_ADDRESS_REMOTE_TEXT));
-
-									else if (ctrl_id == IDC_PROTOCOL_TEXT)
-										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, IDC_PROTOCOL_TEXT));
-
-									else if (ctrl_id == IDC_FILTER_TEXT)
-										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, IDC_FILTER_TEXT));
-
-									else if (ctrl_id == IDC_DATE_TEXT)
-										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, IDC_DATE_TEXT));
 
 									else
 										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, ctrl_id));
