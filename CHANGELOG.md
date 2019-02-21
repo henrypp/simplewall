@@ -1,4 +1,4 @@
-v2.4 Beta (x February 2019)
+v2.4 Beta (21 February 2019)
 - new notification ui
 - improved transactions processing
 - added predefined rules (ftp, http etc)
