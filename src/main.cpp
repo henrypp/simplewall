@@ -5738,12 +5738,6 @@ void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT 
 	const INT wnd_width = _R_RECT_WIDTH (&rc_wnd) - (padding);
 	const INT ctrl_width = _r_dc_fontwidth (hdc, text1, _r_str_length (text1)) + GetSystemMetrics (SM_CYSMCAPTION);
 
-	//WCHAR clss[100] = {0};
-	//if (GetClassName (hctrl1, clss, 100) && _wcsicmp (clss, WC_STATIC) != 0)
-	//{
-	//	ctrl_width += GetSystemMetrics (SM_CYSMCAPTION);
-	//}
-
 	SetWindowPos (hctrl1, nullptr, padding, rc_ctrl.top, ctrl_width + border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 	SetWindowPos (hctrl2, nullptr, padding + ctrl_width + border, rc_ctrl.top, wnd_width - ctrl_width - padding - border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
@@ -7509,10 +7503,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-			}
+				}
 
 			break;
-		}
+			}
 
 		case RM_LOCALIZE:
 		{
@@ -7616,11 +7610,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						if (!ptr_rule)
 							continue;
 
-						rstring protocol = app.LocaleString (IDS_ALL, nullptr);
-
 						// protocol
-						if (ptr_rule->protocol)
-							protocol = _app_getprotoname (ptr_rule->protocol);
+						const rstring protocol = ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol) : app.LocaleString (IDS_ALL, nullptr);
 
 						const size_t group_id = _app_getrulegroup (ptr_rule);
 
@@ -8061,7 +8052,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_LANGUAGE && notify_code == CBN_SELCHANGE)
 					{
 						app.LocaleApplyFromControl (hwnd, ctrl_id);
-					}
+				}
 					else if (ctrl_id == IDC_CONFIRMEXIT_CHK)
 					{
 						app.ConfigSet (L"ConfirmExit2", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
@@ -8297,7 +8288,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-				}
+			}
 
 				case IDM_ADD:
 				{
@@ -8540,7 +8531,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-			}
+		}
 
 			break;
 		}
