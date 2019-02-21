@@ -8773,16 +8773,24 @@ bool _wfp_initialize (bool is_full)
 
 		rc = FwpmEngineOpen (nullptr, RPC_C_AUTHN_WINNT, nullptr, &session, &config.hengine);
 
-		if (rc != ERROR_SUCCESS)
+		if (rc != ERROR_SUCCESS || !config.hengine)
 		{
 			_app_logerror (L"FwpmEngineOpen", rc, nullptr, false);
-			config.hengine = nullptr;
-			result = false;
+
+			if (config.hengine)
+				config.hengine = nullptr;
 		}
 	}
 
+	if (!config.hengine)
+	{
+		_r_fastlock_releaseexclusive (&lock_transaction);
+
+		return false;
+	}
+
 	// set security info
-	if (config.hengine && config.pusersid && (!config.pacl_engine || !config.pacl_default || !config.pacl_secure))
+	if (config.pusersid && (!config.pacl_engine || !config.pacl_default || !config.pacl_secure))
 	{
 		SAFE_LOCAL_FREE (config.pacl_engine);
 		SAFE_LOCAL_FREE (config.pacl_default);
@@ -8855,7 +8863,7 @@ bool _wfp_initialize (bool is_full)
 		}
 	}
 
-	if (config.hengine && is_full)
+	if (is_full)
 	{
 		const bool is_intransact = _wfp_transact_start (__LINE__);
 
@@ -8932,7 +8940,7 @@ bool _wfp_initialize (bool is_full)
 	FWP_VALUE val;
 
 	// dropped packets logging (win7+)
-	if (is_full && config.hengine && !config.is_neteventset && _r_sys_validversion (6, 1))
+	if (is_full && !config.is_neteventset && _r_sys_validversion (6, 1))
 	{
 		val.type = FWP_UINT32;
 		val.uint32 = 1;
@@ -8978,10 +8986,10 @@ bool _wfp_initialize (bool is_full)
 		val.type = FWP_UINT32;
 		val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
 
-		result = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
+		rc = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
 
-		if (result != ERROR_SUCCESS)
-			_app_logerror (L"FwpmEngineSetOption", result, L"FWPM_ENGINE_PACKET_QUEUING", true);
+		if (rc != ERROR_SUCCESS)
+			_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_PACKET_QUEUING", true);
 	}
 
 	_r_fastlock_releaseexclusive (&lock_transaction);
@@ -10914,7 +10922,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		case WM_DEVICECHANGE:
 		{
 			if (!app.ConfigGet (L"IsRefreshDevices", true).AsBool ())
+			{
+				SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 				return TRUE;
+			}
 
 			switch (wparam)
 			{
