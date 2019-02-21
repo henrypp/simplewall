@@ -5411,43 +5411,6 @@ void _app_notifyhide (HWND hwnd)
 	ShowWindow (hwnd, SW_HIDE);
 }
 
-bool _app_notifyisacrylicblurenabled ()
-{
-	static const bool is_win10rs4 = _r_sys_validversion (10, 0, 16353);
-
-	// win10rs4+
-	if (!is_win10rs4)
-		return false;
-
-	return app.ConfigGet (L"IsAcrylicBlurEnabled", false).AsBool ();
-}
-
-void _app_notifyenabledacrylicblur (HWND hwnd, bool is_enable)
-{
-	// acrylic blur
-	// https://github.com/riverar/sample-win32-acrylicblur
-
-	ACCENTPOLICY policy = {0};
-	policy.nAccentState = is_enable ? ACCENT_ENABLE_ACRYLICBLURBEHIND : ACCENT_DISABLED;
-	policy.nColor = (NOTIFY_CLR_OPACITY_RS4 << 24) | (NOTIFY_CLR_BG_RS4 & 0xFFFFFF);;
-
-	WINCOMPATTRDATA data = {0};
-	data.nAttribute = WCA_ACCENT_POLICY;
-	data.pData = &policy;
-	data.ulDataSize = sizeof (policy);
-
-	const HINSTANCE hlib = GetModuleHandle (L"user32.dll");
-
-	if (hlib)
-	{
-		typedef BOOL (WINAPI* SWCA)(HWND, WINCOMPATTRDATA*);
-		const SWCA _SetWindowCompositionAttribute = (SWCA)GetProcAddress (hlib, "SetWindowCompositionAttribute");
-
-		if (_SetWindowCompositionAttribute)
-			_SetWindowCompositionAttribute (hwnd, &data);
-	}
-}
-
 void _app_notifycreatewindow ()
 {
 	WNDCLASSEX wcex = {0};
@@ -5613,9 +5576,6 @@ void _app_notifycreatewindow ()
 	_r_ctrl_settip (config.hnotification, IDC_DATE_TEXT, LPSTR_TEXTCALLBACK);
 
 	_app_notifyhide (config.hnotification);
-
-	if (_app_notifyisacrylicblurenabled ())
-		_app_notifyenabledacrylicblur (config.hnotification, true);
 }
 
 size_t _app_notifygetcurrent (HWND hwnd)
@@ -9482,22 +9442,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
-		case WM_ERASEBKGND:
-		{
-			const HDC hdc = (HDC)wparam;
-
-			if (_app_notifyisacrylicblurenabled ())
-			{
-				RECT rc = {0};
-				GetClientRect (hwnd, &rc);
-
-				_r_dc_fillrect (hdc, &rc, NOTIFY_CLR_BG_RS4);
-				return TRUE;
-			}
-
-			break;
-		}
-
 		case WM_PAINT:
 		{
 			PAINTSTRUCT ps = {0};
@@ -9546,10 +9490,9 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				return (INT_PTR)hbrush;
 			}
 
-			const bool is_themeactive = _app_notifyisacrylicblurenabled ();
-			SetTextColor ((HDC)wparam, is_themeactive ? NOTIFY_CLR_TEXT_RS4 : NOTIFY_CLR_TEXT);
+			SetTextColor ((HDC)wparam, NOTIFY_CLR_TEXT);
 
-			return INT_PTR (is_themeactive ? NOTIFY_CLR_TEXT_BRUSH_RS4 : NOTIFY_CLR_TEXT_BRUSH);
+			return (INT_PTR)NOTIFY_CLR_TEXT_BRUSH;
 		}
 
 #ifndef _APP_NO_DARKTHEME
