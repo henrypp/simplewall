@@ -5480,8 +5480,8 @@ void _app_notifycreatewindow ()
 	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (10), app.GetDPI (4), wnd_width - app.GetDPI (64 + 12 + 10 + 24), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_title, MAKELPARAM (TRUE, 0));
 
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 3 - app.GetDPI (12), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
-	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MENU, IconXXXX));
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 3 - app.GetDPI (12), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_RULES_BTN, nullptr, nullptr);
+	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_RULES, IconXXXX));
 
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 2 - app.GetDPI (8), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_TIMER_BTN, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_TIMER, IconXXXX));
@@ -5563,7 +5563,7 @@ void _app_notifycreatewindow ()
 	_app_setbuttonmargins (config.hnotification, IDC_BLOCK_BTN);
 	_app_setbuttonmargins (config.hnotification, IDC_LATER_BTN);
 
-	_r_ctrl_settip (config.hnotification, IDC_MENU_BTN, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (config.hnotification, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_TIMER_BTN, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_CLOSE_BTN, LPSTR_TEXTCALLBACK);
 
@@ -9466,7 +9466,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			if (
 				ctrl_id == IDC_ICON_ID ||
 				ctrl_id == IDC_TITLE_ID ||
-				ctrl_id == IDC_MENU_BTN ||
+				ctrl_id == IDC_RULES_BTN ||
 				ctrl_id == IDC_TIMER_BTN ||
 				ctrl_id == IDC_CLOSE_BTN
 				)
@@ -9501,7 +9501,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 			if (
 				ctrl_id == IDC_TIMER_BTN ||
-				ctrl_id == IDC_MENU_BTN ||
+				ctrl_id == IDC_RULES_BTN ||
 				ctrl_id == IDC_CLOSE_BTN
 				)
 			{
@@ -9530,7 +9530,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						const UINT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
 						if (
-							ctrl_id == IDC_MENU_BTN ||
+							ctrl_id == IDC_RULES_BTN ||
 							ctrl_id == IDC_TIMER_BTN ||
 							ctrl_id == IDC_CLOSE_BTN ||
 							ctrl_id == IDC_FILE_TEXT ||
@@ -9552,7 +9552,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 								if (ptr_log)
 								{
-									if (ctrl_id == IDC_MENU_BTN)
+									if (ctrl_id == IDC_RULES_BTN)
 										StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_TRAY_RULES, nullptr));
 
 									else if (ctrl_id == IDC_TIMER_BTN)
@@ -9661,7 +9661,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			switch (LOWORD (wparam))
 			{
 				case IDC_TIMER_BTN:
-				case IDC_MENU_BTN:
+				case IDC_RULES_BTN:
 				{
 					const HMENU hmenu = CreateMenu ();
 					const HMENU hsubmenu = CreateMenu ();
@@ -9675,7 +9675,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						for (UINT i = 0; i < timers.size (); i++)
 							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + i, _r_fmt_interval (timers.at (i) + 1, 1));
 					}
-					else if (LOWORD (wparam) == IDC_MENU_BTN)
+					else if (LOWORD (wparam) == IDC_RULES_BTN)
 					{
 						_r_fastlock_acquireshared (&lock_notification);
 
@@ -10521,6 +10521,19 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				const HMENU hsubmenu_add = GetSubMenu (hsubmenu, uaddmenu_id);
 				const HMENU hsubmenu_settings = GetSubMenu (hsubmenu, usettings_id);
 				const HMENU hsubmenu_timer = GetSubMenu (hsubmenu, utimer_id);
+
+				// set icons
+				static HBITMAP hbmp_rules = nullptr;
+				static HBITMAP hbmp_timer = nullptr;
+
+				if (!hbmp_rules)
+					hbmp_rules = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_RULES, GetSystemMetrics (SM_CXSMICON)));
+
+				if (!hbmp_timer)
+					hbmp_timer = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_TIMER, GetSystemMetrics (SM_CXSMICON)));
+
+				SetMenuItemBitmaps (hsubmenu, usettings_id, MF_BYPOSITION, hbmp_rules,nullptr);
+				SetMenuItemBitmaps (hsubmenu, utimer_id, MF_BYPOSITION, hbmp_timer, hbmp_timer);
 
 				// localize
 				app.LocaleMenu (hsubmenu, IDS_ADD, uaddmenu_id, true, nullptr);

@@ -38,7 +38,7 @@
 // Notification Dlg
 #define IDC_ICON_ID 110
 #define IDC_TITLE_ID 111
-#define IDC_MENU_BTN 112
+#define IDC_RULES_BTN 112
 #define IDC_TIMER_BTN 113
 #define IDC_CLOSE_BTN 114
 #define IDC_FILE_ID 115
@@ -465,7 +465,7 @@
 #define IDI_INACTIVE 101
 #define IDI_ALLOW 102
 #define IDI_BLOCK 103
-#define IDI_MENU 104
+#define IDI_RULES 104
 #define IDI_TIMER 105
 #define IDI_CLOSE 106
 #define IDI_CHECKED 107
