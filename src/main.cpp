@@ -9640,7 +9640,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				_r_fastlock_releaseexclusive (&lock_access);
 
-				//_app_notifyrefresh (config.hnotification);
+				_app_notifyhide (hwnd);
 
 				_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 				_app_profile_save (app.GetHWND ());
