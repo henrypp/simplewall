@@ -10200,10 +10200,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_addstyle (config.hnotification, IDC_NEXT_ID, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (config.hnotification, IDC_PREV_ID, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
-			_r_wnd_addstyle (config.hnotification, IDC_ALLOW_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-			_r_wnd_addstyle (config.hnotification, IDC_BLOCK_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-			_r_wnd_addstyle (config.hnotification, IDC_LATER_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-
 			_r_listview_setcolumn (hwnd, IDC_LISTVIEW, 0, app.LocaleString (IDS_FILEPATH, nullptr), 0);
 			_r_listview_setcolumn (hwnd, IDC_LISTVIEW, 1, app.LocaleString (IDS_ADDED, nullptr), 0);
 
@@ -10523,17 +10519,27 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				const HMENU hsubmenu_timer = GetSubMenu (hsubmenu, utimer_id);
 
 				// set icons
-				static HBITMAP hbmp_rules = nullptr;
-				static HBITMAP hbmp_timer = nullptr;
+				{
+					static HBITMAP hbmp_rules = nullptr;
+					static HBITMAP hbmp_timer = nullptr;
 
-				if (!hbmp_rules)
-					hbmp_rules = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_RULES, GetSystemMetrics (SM_CXSMICON)));
+					if (!hbmp_rules)
+						hbmp_rules = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_RULES, GetSystemMetrics (SM_CXSMICON)));
 
-				if (!hbmp_timer)
-					hbmp_timer = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_TIMER, GetSystemMetrics (SM_CXSMICON)));
+					if (!hbmp_timer)
+						hbmp_timer = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_TIMER, GetSystemMetrics (SM_CXSMICON)));
 
-				SetMenuItemBitmaps (hsubmenu, usettings_id, MF_BYPOSITION, hbmp_rules,nullptr);
-				SetMenuItemBitmaps (hsubmenu, utimer_id, MF_BYPOSITION, hbmp_timer, hbmp_timer);
+					MENUITEMINFO mii = {0};
+
+					mii.cbSize = sizeof (mii);
+					mii.fMask = MIIM_BITMAP;
+
+					mii.hbmpItem = hbmp_rules;
+					SetMenuItemInfo (hsubmenu, usettings_id, TRUE, &mii);
+
+					mii.hbmpItem = hbmp_timer;
+					SetMenuItemInfo (hsubmenu, utimer_id, TRUE, &mii);
+				}
 
 				// localize
 				app.LocaleMenu (hsubmenu, IDS_ADD, uaddmenu_id, true, nullptr);
