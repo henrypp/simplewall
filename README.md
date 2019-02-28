@@ -2,6 +2,7 @@ simplewall [![Github All Releases](https://img.shields.io/github/downloads/henry
 =======
 #### Definitely for advanced users.
 =======
+
 [![simplewall](https://www.henrypp.org/images/simplewall.png?cf3)](https://github.com/henrypp/simplewall/issues/250)
 
 ### Description:
