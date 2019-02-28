@@ -92,8 +92,10 @@
 
 #define NOTIFY_TIMER_DEFAULT 30 // sec.
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
-#define NOTIFY_LIMIT_SIZE 10 //limit notifications pool size
-#define NOTIFY_LIMIT_POOL_SIZE 32
+
+#define NOTIFY_LIMIT_SIZE 16 // limit notifications pool size
+#define NOTIFY_LIMIT_POOL_SIZE 48
+#define NOTIFY_LIMIT_THREAD_COUNT 4
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 
@@ -447,7 +449,8 @@ typedef struct _ITEM_LIST_HEAD
 {
 	SLIST_HEADER ListHead;
 
-	volatile ULONG Count;
+	volatile LONG item_count;
+	volatile LONG thread_count;
 } ITEM_LIST_HEAD, *PITEM_LIST_HEAD;
 
 typedef struct _ITEM_LIST_ENTRY
