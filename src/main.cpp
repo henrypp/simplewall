@@ -61,7 +61,6 @@ EXTERN_C const IID IID_IImageList2;
 _R_FASTLOCK lock_access;
 _R_FASTLOCK lock_apply;
 _R_FASTLOCK lock_checkbox;
-_R_FASTLOCK lock_eventcallback;
 _R_FASTLOCK lock_notification;
 _R_FASTLOCK lock_threadpool;
 _R_FASTLOCK lock_transaction;
@@ -4917,7 +4916,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 		_app_freethreadpool (&threads_pool);
 
-		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install, true);
+		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install, true, THREAD_PRIORITY_ABOVE_NORMAL);
 
 		if (hthread)
 		{
@@ -5475,10 +5474,13 @@ void _app_notifycreatewindow ()
 	}
 
 	HWND hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON, app.GetDPI (6), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_ICON_ID, nullptr, nullptr);
-	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MAIN /*IDI_MENU2*/, cxsmIcon));
+	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MAIN, cxsmIcon));
 
-	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (10), app.GetDPI (4), wnd_width - app.GetDPI (64 + 12 + 10 + 24), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (10), app.GetDPI (4), wnd_width - app.GetDPI (120), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_title, MAKELPARAM (TRUE, 0));
+
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 4 - app.GetDPI (16), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
+	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MENU, IconXXXX));
 
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 3 - app.GetDPI (12), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_RULES_BTN, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_RULES, IconXXXX));
@@ -5563,6 +5565,7 @@ void _app_notifycreatewindow ()
 	_app_setbuttonmargins (config.hnotification, IDC_BLOCK_BTN);
 	_app_setbuttonmargins (config.hnotification, IDC_LATER_BTN);
 
+	_r_ctrl_settip (config.hnotification, IDC_MENU_BTN, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_TIMER_BTN, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_CLOSE_BTN, LPSTR_TEXTCALLBACK);
@@ -5974,8 +5977,6 @@ UINT WINAPI LogThread (LPVOID lparam)
 	const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
 	const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
 
-	_r_fastlock_acquireexclusive (&lock_eventcallback);
-
 	while (true)
 	{
 		PSLIST_ENTRY ptr_list = RtlInterlockedPopEntrySList (&log_stack.ListHead);
@@ -6048,8 +6049,6 @@ UINT WINAPI LogThread (LPVOID lparam)
 	}
 
 	InterlockedDecrement (&log_stack.thread_count);
-
-	_r_fastlock_releaseexclusive (&lock_eventcallback);
 
 	_endthreadex (0);
 
@@ -6275,13 +6274,13 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 			// check if thread has been terminated
 			const LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
 
-			if (!_r_fastlock_islocked (&lock_eventcallback) || (thread_count >= 0 && thread_count < NOTIFY_LIMIT_THREAD_COUNT))
+			if ((thread_count >= 0) && (thread_count < NOTIFY_LIMIT_THREAD_COUNT))
 			{
 				_r_fastlock_acquireexclusive (&lock_threadpool);
 
 				_app_freethreadpool (&threads_pool);
 
-				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true);
+				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_NORMAL);
 
 				if (hthread)
 				{
@@ -9311,9 +9310,9 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	}
 
 	AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
+	AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, app.LocaleString (IDS_EDITRULES, L"..."));
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
 }
-
 
 void DrawFrameBorder (HDC hdc, HWND hwnd, COLORREF clr)
 {
@@ -9464,6 +9463,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			if (
 				ctrl_id == IDC_ICON_ID ||
 				ctrl_id == IDC_TITLE_ID ||
+				ctrl_id == IDC_MENU_BTN ||
 				ctrl_id == IDC_RULES_BTN ||
 				ctrl_id == IDC_TIMER_BTN ||
 				ctrl_id == IDC_CLOSE_BTN
@@ -9498,8 +9498,9 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			const UINT ctrl_id = GetDlgCtrlID ((HWND)wparam);
 
 			if (
-				ctrl_id == IDC_TIMER_BTN ||
+				ctrl_id == IDC_MENU_BTN ||
 				ctrl_id == IDC_RULES_BTN ||
+				ctrl_id == IDC_TIMER_BTN ||
 				ctrl_id == IDC_CLOSE_BTN
 				)
 			{
@@ -9528,6 +9529,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						const UINT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
 						if (
+							ctrl_id == IDC_MENU_BTN ||
 							ctrl_id == IDC_RULES_BTN ||
 							ctrl_id == IDC_TIMER_BTN ||
 							ctrl_id == IDC_CLOSE_BTN ||
@@ -9655,11 +9657,20 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				return FALSE;
 			}
+			else if ((LOWORD (wparam) >= IDX_NOTIFICATIONS && LOWORD (wparam) <= IDX_NOTIFICATIONS + timers.size ()))
+			{
+				const size_t idx = (LOWORD (wparam) - IDX_NOTIFICATIONS);
+
+				_app_notifyshow (hwnd, idx, true);
+
+				return FALSE;
+			}
 
 			switch (LOWORD (wparam))
 			{
-				case IDC_TIMER_BTN:
+				case IDC_MENU_BTN:
 				case IDC_RULES_BTN:
+				case IDC_TIMER_BTN:
 				{
 					const HMENU hmenu = CreateMenu ();
 					const HMENU hsubmenu = CreateMenu ();
@@ -9668,10 +9679,27 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu, L" ");
 
-					if (LOWORD (wparam) == IDC_TIMER_BTN)
+					if (LOWORD (wparam) == IDC_MENU_BTN)
 					{
-						for (UINT i = 0; i < timers.size (); i++)
-							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + i, _r_fmt_interval (timers.at (i) + 1, 1));
+						_r_fastlock_acquireshared (&lock_notification);
+
+						const size_t current_idx = _app_notifygetcurrent (hwnd);
+						size_t idx = 0;
+
+						for (UINT i = 0; i < notifications.size (); i++)
+						{
+							PITEM_LOG ptr_log = notifications.at (i);
+
+							if (ptr_log)
+							{
+								AppendMenu (hsubmenu, MF_BYPOSITION, IDX_NOTIFICATIONS + i, _r_fmt (L"%d) %s - %s", ++idx, _r_path_extractfile (ptr_log->path).GetString (), ptr_log->remote_fmt));
+
+								if (i == current_idx)
+									CheckMenuRadioItem (hsubmenu, IDX_NOTIFICATIONS, IDX_NOTIFICATIONS + i, IDX_NOTIFICATIONS + i, MF_BYCOMMAND);
+							}
+						}
+
+						_r_fastlock_releaseshared (&lock_notification);
 					}
 					else if (LOWORD (wparam) == IDC_RULES_BTN)
 					{
@@ -9698,7 +9726,11 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
-
+					else if (LOWORD (wparam) == IDC_TIMER_BTN)
+					{
+						for (UINT i = 0; i < timers.size (); i++)
+							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + i, _r_fmt_interval (timers.at (i) + 1, 1));
+					}
 					RECT buttonRect = {0};
 
 					GetClientRect (hctrl, &buttonRect);
@@ -9723,6 +9755,12 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				case IDM_DISABLENOTIFICATIONS:
 				{
 					_app_notifycommand (hwnd, LOWORD (wparam), LAST_VALUE);
+					break;
+				}
+
+				case IDM_EDITRULES:
+				{
+					app.CreateSettingsWindow (&SettingsProc, IDD_SETTINGS_RULES_CUSTOM);
 					break;
 				}
 
@@ -9811,7 +9849,6 @@ void _app_initialize ()
 	_r_fastlock_initialize (&lock_access);
 	_r_fastlock_initialize (&lock_apply);
 	_r_fastlock_initialize (&lock_checkbox);
-	_r_fastlock_initialize (&lock_eventcallback);
 	_r_fastlock_initialize (&lock_notification);
 	_r_fastlock_initialize (&lock_threadpool);
 	_r_fastlock_initialize (&lock_transaction);
@@ -11708,6 +11745,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
+				case IDM_EDITRULES:
+				{
+					app.CreateSettingsWindow (&SettingsProc, IDD_SETTINGS_RULES_CUSTOM);
+					break;
+				}
+
 				case IDM_OPENRULESEDITOR:
 				{
 					PITEM_RULE ptr_rule = new ITEM_RULE;
@@ -11929,6 +11972,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						InetPton (ptr_log->af, LM_AD, &ptr_log->local_addr);
 						ptr_log->local_port = 80;
 
+						_r_str_alloc (&ptr_log->path, _r_str_length (app.GetBinaryPath ()), app.GetBinaryPath ());
 						_r_str_alloc (&ptr_log->filter_name, _r_str_length (FN_AD), FN_AD);
 
 						_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
