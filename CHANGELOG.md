@@ -1,3 +1,10 @@
+v2.4.1 Beta (1 March 2019)
+- improved notifications speed
+- fixed rules listview sorting
+- fixed notification ui
+- cosmetic fixes
+- fixed bugs
+
 v2.4 Beta (21 February 2019)
 - new notification ui
 - improved transactions processing
