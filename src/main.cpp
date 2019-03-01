@@ -9588,6 +9588,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
+				size_t hash = 0;
 
 				BOOL is_remove = (BOOL)-1;
 
@@ -9603,7 +9604,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					if (notify_idx != LAST_VALUE)
 					{
-						const size_t hash = notifications.at (notify_idx)->hash;
+						hash = notifications.at (notify_idx)->hash;
 
 						//if (ptr_rule->is_forservices && (hash == config.ntoskrnl_hash || hash == config.svchost_hash))
 						//	continue;
@@ -9640,7 +9641,13 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				_r_fastlock_releaseexclusive (&lock_access);
 
-				_app_notifyhide (hwnd);
+				_r_fastlock_acquireexclusive (&lock_notification);
+
+				_app_freenotify (hash, false);
+
+				_r_fastlock_releaseexclusive (&lock_notification);
+
+				_app_notifyrefresh (hwnd);
 
 				_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 				_app_profile_save (app.GetHWND ());
@@ -9773,6 +9780,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						_r_fastlock_acquireshared (&lock_notification);
 
 						const size_t idx = _app_notifygetcurrent (hwnd);
+						size_t hash = 0;
 
 						if (idx != LAST_VALUE)
 						{
@@ -9782,6 +9790,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							{
 								ptr_rule->apps[ptr_log->hash] = true;
 								ptr_rule->protocol = ptr_log->protocol;
+								hash = ptr_log->hash;
 
 								LPWSTR rule = nullptr;
 								_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &rule, false);
@@ -9818,7 +9827,13 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							_r_listview_redraw (hwnd, IDC_LISTVIEW);
 
-							_app_notifyhide (hwnd);
+							_r_fastlock_acquireexclusive (&lock_notification);
+
+							_app_freenotify (hash, false);
+
+							_r_fastlock_releaseexclusive (&lock_notification);
+
+							_app_notifyrefresh (hwnd);
 						}
 						else
 						{
