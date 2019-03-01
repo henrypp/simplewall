@@ -686,6 +686,8 @@ BEGIN
 	IDS_ACTION_LATER_HINT "Do nothing and ask me later"
 
 	IDS_RULE_APPLY_2 "Apply ""%s"" for app"
+
+	IDS_EDITRULES "Edit rules"
 END
 
 //
@@ -706,7 +708,7 @@ IDI_TIMER		ICON		"res\\timer_btn.ico"
 IDI_CLOSE		ICON		"res\\close_btn.ico"
 IDI_CHECKED		ICON		"res\\checked.ico"
 IDI_UNCHECKED	ICON		"res\\unchecked.ico"
-//IDI_MENU2		ICON		"res\\menu_btn2.ico"
+IDI_MENU		ICON		"res\\menu_btn.ico"
 
 //
 // Manifest resource
