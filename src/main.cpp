@@ -2473,15 +2473,13 @@ INT CALLBACK _app_listviewcompare_rules (LPARAM item1, LPARAM item2, LPARAM lpar
 {
 	const HWND hwnd = (HWND)lparam;
 
-	const UINT column_id = app.ConfigGet (L"SortColumnRules", 0).AsBool ();;
+	const UINT column_id = app.ConfigGet (L"SortColumnRules", 0).AsUint ();
 	const bool is_descend = app.ConfigGet (L"IsSortDescendingRules", false).AsBool ();
 
-	INT result = 0;
+	const rstring str1 = _r_listview_getitemtext (hwnd, IDC_EDITOR, (size_t)item1, column_id);
+	const rstring str2 = _r_listview_getitemtext (hwnd, IDC_EDITOR, (size_t)item2, column_id);
 
-	const rstring str1 = _r_listview_getitemtext (hwnd, IDC_EDITOR, (size_t)item1, 0);
-	const rstring str2 = _r_listview_getitemtext (hwnd, IDC_EDITOR, (size_t)item2, 0);
-
-	result = StrCmpLogicalW (str1, str2);
+	const INT result = StrCmpLogicalW (str1, str2);
 
 	return is_descend ? -result : result;
 }
@@ -2538,7 +2536,7 @@ void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode
 			is_descend = !is_descend;
 
 		if (subitem == -1)
-			subitem = app.ConfigGet (L"SortColumnRules", 0).AsBool ();
+			subitem = app.ConfigGet (L"SortColumnRules", 0).AsUint ();
 
 		if (is_notifycode)
 		{
@@ -8798,17 +8796,20 @@ bool _wfp_initialize (bool is_full)
 
 			FreeSid (pWorldSID);
 		}
+	}
 
-		if (config.pacl_engine)
-		{
-			// set engine security information
-			FwpmEngineSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmEngineSetSecurityInfo (config.hengine, DACL_SECURITY_INFORMATION, nullptr, nullptr, config.pacl_engine, nullptr);
+	// set owner security information
+	if (config.pusersid)
+	{
+		FwpmEngineSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+		FwpmNetEventsSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+	}
 
-			// set net events security information
-			FwpmNetEventsSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmNetEventsSetSecurityInfo (config.hengine, DACL_SECURITY_INFORMATION, nullptr, nullptr, config.pacl_engine, nullptr);
-		}
+	// set dacl security information
+	if (config.pacl_engine)
+	{
+		FwpmEngineSetSecurityInfo (config.hengine, DACL_SECURITY_INFORMATION, nullptr, nullptr, config.pacl_engine, nullptr);
+		FwpmNetEventsSetSecurityInfo (config.hengine, DACL_SECURITY_INFORMATION, nullptr, nullptr, config.pacl_engine, nullptr);
 	}
 
 	if (is_full)
