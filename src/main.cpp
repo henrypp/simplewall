@@ -61,6 +61,8 @@ EXTERN_C const IID IID_IImageList2;
 _R_FASTLOCK lock_access;
 _R_FASTLOCK lock_apply;
 _R_FASTLOCK lock_checkbox;
+_R_FASTLOCK lock_logbusy;
+_R_FASTLOCK lock_logthread;
 _R_FASTLOCK lock_notification;
 _R_FASTLOCK lock_threadpool;
 _R_FASTLOCK lock_transaction;
@@ -841,24 +843,18 @@ void _app_freethreadpool (MTHREADPOOL* ptr_pool)
 	if (!ptr_pool || ptr_pool->empty ())
 		return;
 
-	std::vector<size_t> remove_idx;
+	const size_t count = ptr_pool->size ();
 
-	for (size_t i = 0; i < ptr_pool->size (); i++)
+	for (size_t i = (count - 1); i != LAST_VALUE; i--)
 	{
-		const HANDLE hndl = ptr_pool->at (i);
+		const HANDLE hthread = ptr_pool->at (i);
 
-		if (WaitForSingleObjectEx (hndl, 0, FALSE) == WAIT_OBJECT_0)
+		if (WaitForSingleObjectEx (hthread, 0, FALSE) == WAIT_OBJECT_0)
 		{
-			CloseHandle (hndl);
-			remove_idx.push_back (i);
+			CloseHandle (hthread);
+			ptr_pool->erase (ptr_pool->begin () + i);
 		}
 	}
-
-	if (remove_idx.empty ())
-		return;
-
-	for (size_t i = remove_idx.size (); i != 0; i--)
-		ptr_pool->erase (ptr_pool->begin () + remove_idx.at (i - 1));
 }
 
 bool _app_item_get (std::vector<PITEM_ADD>* pvec, size_t hash, rstring* display_name, rstring* real_path, PSID* lpsid, PSECURITY_DESCRIPTOR* lpsd, rstring* /*description*/)
@@ -4914,7 +4910,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 		_app_freethreadpool (&threads_pool);
 
-		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install, true, THREAD_PRIORITY_ABOVE_NORMAL);
+		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install, true, THREAD_PRIORITY_HIGHEST);
 
 		if (hthread)
 		{
@@ -5920,6 +5916,8 @@ bool _app_notifyadd (HWND hwnd, PITEM_LOG const ptr_log, PITEM_APP const ptr_app
 	if ((notifications.size () >= NOTIFY_LIMIT_SIZE))
 		_app_freenotify (0, true);
 
+	ptr_app->last_notify = current_time;
+
 	// get existing pool id (if exists)
 	size_t idx = LAST_VALUE;
 
@@ -5933,8 +5931,6 @@ bool _app_notifyadd (HWND hwnd, PITEM_LOG const ptr_log, PITEM_APP const ptr_app
 			break;
 		}
 	}
-
-	ptr_app->last_notify = current_time;
 
 	if (idx != LAST_VALUE)
 	{
@@ -5975,6 +5971,8 @@ UINT WINAPI LogThread (LPVOID lparam)
 	const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
 	const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
 
+	_r_fastlock_acquireshared (&lock_logthread);
+
 	while (true)
 	{
 		PSLIST_ENTRY ptr_list = RtlInterlockedPopEntrySList (&log_stack.ListHead);
@@ -5991,14 +5989,24 @@ UINT WINAPI LogThread (LPVOID lparam)
 			PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
 			bool is_added = false;
 
+			_aligned_free (ptr_entry);
+
 			if (ptr_log)
 			{
 				// apps collector
-				if (ptr_log->hash && ptr_log->path && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ())
+				_r_fastlock_acquireshared (&lock_access);
+				const bool is_notexist = ptr_log->hash && ptr_log->path && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ();
+				_r_fastlock_releaseshared (&lock_access);
+
+				if (is_notexist)
 				{
+					_r_fastlock_acquireshared (&lock_logbusy);
+
 					_r_fastlock_acquireexclusive (&lock_access);
 					_app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
 					_r_fastlock_releaseexclusive (&lock_access);
+
+					_r_fastlock_releaseshared (&lock_logbusy);
 
 					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 					_app_profile_save (hwnd);
@@ -6006,8 +6014,12 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 				if ((is_logenabled || is_notificationenabled) && (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ())))
 				{
+					_r_fastlock_acquireshared (&lock_logbusy);
+
 					_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
 					_app_formataddress (ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, &ptr_log->local_fmt, true);
+
+					_r_fastlock_releaseshared (&lock_logbusy);
 
 					// write log to a file
 					if (is_logenabled)
@@ -6018,21 +6030,19 @@ UINT WINAPI LogThread (LPVOID lparam)
 					{
 						if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
 						{
-							bool is_silent = true;
-
 							// read app config
 							{
-								_r_fastlock_acquireshared (&lock_access);
+								_r_fastlock_acquireexclusive (&lock_access);
 
 								PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
 
 								if (ptr_app)
-									is_silent = ptr_app->is_silent;
+								{
+									if (!ptr_app->is_silent)
+										is_added = _app_notifyadd (config.hnotification, ptr_log, ptr_app);
+								}
 
-								if (!is_silent)
-									is_added = _app_notifyadd (config.hnotification, ptr_log, ptr_app);
-
-								_r_fastlock_releaseshared (&lock_access);
+								_r_fastlock_releaseexclusive (&lock_access);
 							}
 						}
 					}
@@ -6041,12 +6051,12 @@ UINT WINAPI LogThread (LPVOID lparam)
 				if (!is_added)
 					SAFE_DELETE (ptr_log);
 			}
-
-			_aligned_free (ptr_entry);
 		}
 	}
 
 	InterlockedDecrement (&log_stack.thread_count);
+
+	_r_fastlock_releaseshared (&lock_logthread);
 
 	_endthreadex (0);
 
@@ -6272,13 +6282,13 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 			// check if thread has been terminated
 			const LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
 
-			if ((thread_count >= 0) && (thread_count < NOTIFY_LIMIT_THREAD_COUNT))
+			if (!_r_fastlock_islocked (&lock_logthread) || (_r_fastlock_islocked (&lock_logbusy) && (thread_count >= 1 && thread_count < NOTIFY_LIMIT_THREAD_COUNT)))
 			{
 				_r_fastlock_acquireexclusive (&lock_threadpool);
 
 				_app_freethreadpool (&threads_pool);
 
-				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_NORMAL);
+				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_BELOW_NORMAL);
 
 				if (hthread)
 				{
@@ -8039,7 +8049,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-					}
+				}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
@@ -8283,7 +8293,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-				}
+			}
 
 				case IDM_ADD:
 				{
@@ -8526,11 +8536,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-			}
+		}
 
 			break;
-		}
 	}
+}
 
 	return FALSE;
 }
@@ -9692,7 +9702,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						_r_fastlock_acquireshared (&lock_notification);
 
 						const size_t current_idx = _app_notifygetcurrent (hwnd);
-						size_t idx = 0;
 
 						for (UINT i = 0; i < notifications.size (); i++)
 						{
@@ -9700,7 +9709,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							if (ptr_log)
 							{
-								AppendMenu (hsubmenu, MF_BYPOSITION, IDX_NOTIFICATIONS + i, _r_fmt (L"%d) %s - %s", ++idx, _r_path_extractfile (ptr_log->path).GetString (), ptr_log->remote_fmt));
+								AppendMenu (hsubmenu, MF_BYPOSITION, IDX_NOTIFICATIONS + i, _r_fmt (L"%s - %s", _r_path_extractfile (ptr_log->path).GetString (), ptr_log->remote_fmt));
 
 								if (i == current_idx)
 									CheckMenuRadioItem (hsubmenu, IDX_NOTIFICATIONS, IDX_NOTIFICATIONS + i, IDX_NOTIFICATIONS + i, MF_BYCOMMAND);
@@ -9865,6 +9874,8 @@ void _app_initialize ()
 	_r_fastlock_initialize (&lock_access);
 	_r_fastlock_initialize (&lock_apply);
 	_r_fastlock_initialize (&lock_checkbox);
+	_r_fastlock_initialize (&lock_logbusy);
+	_r_fastlock_initialize (&lock_logthread);
 	_r_fastlock_initialize (&lock_notification);
 	_r_fastlock_initialize (&lock_threadpool);
 	_r_fastlock_initialize (&lock_transaction);
