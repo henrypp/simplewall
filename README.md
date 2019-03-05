@@ -39,7 +39,7 @@ To activate portable mode, create "simplewall.ini" in application folder, or mov
 - [How can i disable blocklist entirely?](https://github.com/henrypp/simplewall/issues/243)
 - [How to fix Windows Update and Windows Store internet access (temporary solution)](https://github.com/henrypp/simplewall/issues/206#issuecomment-439830634)
 - [How to fix IDM Browser Integration](https://github.com/henrypp/simplewall/issues/111)
-- [How to remove Windows Security center warnings](https://www.howtogeek.com/244539/how-to-disable-the-action-center-in-windows-10/)
+- [How to remove Windows Security center warnings](https://www.howtogeek.com/244539/how-to-disable-the-action-center-in-windows-10/) [win10 1607+](https://serverfault.com/a/880672)
 - [Windows Security center integration (impossible)](https://stackoverflow.com/questions/3698285/how-can-i-tell-the-windows-security-center-that-im-an-antivirus/3698375#3698375)
 
 Website: [www.henrypp.org](https://www.henrypp.org)<br />
