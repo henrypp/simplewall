@@ -1,3 +1,9 @@
+v2.4.2 Beta (5 March 2019)
+- fixed crash (issue #337)
+- updated blocklist
+- cosmetic fixes
+- fixed bugs
+
 v2.4.1 Beta (1 March 2019)
 - improved notifications speed
 - fixed rules listview sorting
