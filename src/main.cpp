@@ -85,7 +85,7 @@ UINT WINAPI ApplyThread (LPVOID lparam);
 LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 bool _app_notifysettimeout (HWND hwnd, UINT_PTR id, bool is_create, UINT timeout);
-bool _app_notifyrefresh (HWND hwnd);
+bool _app_notifyrefresh (HWND hwnd, bool is_elapse);
 
 bool _wfp_logsubscribe ();
 bool _wfp_logunsubscribe ();
@@ -808,7 +808,7 @@ bool _app_freeapplication (size_t hash)
 		if (ptr_app->htimer)
 			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 
-		_app_notifyrefresh (config.hnotification);
+		_app_notifyrefresh (config.hnotification, false);
 
 		apps.erase (hash);
 	}
@@ -5532,16 +5532,16 @@ void _app_notifycreatewindow ()
 	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (10), app.GetDPI (4), wnd_width - app.GetDPI (120), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_title, MAKELPARAM (TRUE, 0));
 
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 4 - app.GetDPI (16), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 4 - app.GetDPI (20), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MENU, IconXXXX));
 
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 3 - app.GetDPI (12), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_RULES_BTN, nullptr, nullptr);
-	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_RULES, IconXXXX));
-
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 2 - app.GetDPI (8), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_TIMER_BTN, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 3 - app.GetDPI (14), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_TIMER_BTN, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_TIMER, IconXXXX));
 
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize - app.GetDPI (4), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_CLOSE_BTN, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 2 - app.GetDPI (10), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_RULES_BTN, nullptr, nullptr);
+	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_RULES, IconXXXX));
+
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize - app.GetDPI (6), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_CLOSE_BTN, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_CLOSE, IconXXXX));
 
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (44), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
@@ -5721,7 +5721,7 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 
 				_r_fastlock_releaseexclusive (&lock_notification);
 
-				_app_notifyrefresh (hwnd);
+				_app_notifyrefresh (hwnd, true);
 
 				_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 
@@ -5801,7 +5801,7 @@ void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT 
 	SetWindowText (hctrl2, text2);
 }
 
-bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced)
+bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 {
 	_r_fastlock_acquireshared (&lock_notification);
 
@@ -5876,6 +5876,14 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced)
 			_r_fastlock_releaseshared (&lock_notification);
 			_r_fastlock_releaseshared (&lock_access);
 
+			if (is_safety)
+			{
+				_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, false);
+				_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, false);
+
+				SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY, nullptr);
+			}
+
 			ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
 			return true;
@@ -5889,7 +5897,7 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced)
 	return false;
 }
 
-bool _app_notifyrefresh (HWND hwnd)
+bool _app_notifyrefresh (HWND hwnd, bool is_safety)
 {
 	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ())
 	{
@@ -5911,7 +5919,7 @@ bool _app_notifyrefresh (HWND hwnd)
 
 	_r_fastlock_releaseshared (&lock_notification);
 
-	return _app_notifyshow (hwnd, idx, false);
+	return _app_notifyshow (hwnd, idx, false, is_safety);
 }
 
 // Play notification sound even if system have "nosound" mode
@@ -6000,16 +6008,12 @@ bool _app_notifyadd (HWND hwnd, PITEM_LOG const ptr_log, PITEM_APP const ptr_app
 		idx = notifications.size () - 1;
 	}
 
-	SetWindowLongPtr (hwnd, GWLP_USERDATA, idx);
-
 	_r_fastlock_releaseexclusive (&lock_notification);
-
-	_app_notifyrefresh (hwnd);
 
 	if (app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
 		_app_notifyplaysound ();
 
-	if (!_r_wnd_undercursor (hwnd) && _app_notifyshow (hwnd, idx, true))
+	if (!_r_wnd_undercursor (hwnd) && _app_notifyshow (hwnd, idx, true, true))
 	{
 		const UINT display_timeout = app.ConfigGet (L"NotificationsDisplayTimeout", NOTIFY_TIMER_DEFAULT).AsUint ();
 
@@ -6248,7 +6252,8 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 						if (FwpmProviderGetByKey (config.hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
 						{
-							LPCWSTR provider_name = ptr_provider->displayData.name ? ptr_provider->displayData.name : ptr_provider->displayData.description;
+							LPCWSTR provider_name = ptr_provider->displayData.name ? ptr_provider->displayData.name : ptr_provider->displayData.description;
+
 							_r_str_alloc (&ptr_log->provider_name, _r_str_length (provider_name), provider_name);
 						}
 					}
@@ -8147,7 +8152,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						app.ConfigSet (L"IsNetworkResolutionsEnabled", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 
-						_app_notifyrefresh (config.hnotification);
+						_app_notifyrefresh (config.hnotification, false);
 					}
 					else if (ctrl_id == IDC_USEREFRESHDEVICES_CHK)
 					{
@@ -8309,7 +8314,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						_r_ctrl_enable (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, is_enabled);
 						_r_ctrl_enable (hwnd, IDC_EXCLUDECUSTOM_CHK, is_enabled);
 
-						_app_notifyrefresh (config.hnotification);
+						_app_notifyrefresh (config.hnotification, false);
 					}
 					else if (ctrl_id == IDC_NOTIFICATIONSOUND_CHK)
 					{
@@ -9449,6 +9454,14 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 		case WM_TIMER:
 		{
+			if (wparam == NOTIFY_TIMER_SAFETY_ID)
+			{
+				_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, true);
+				_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, true);
+
+				KillTimer (hwnd, wparam);
+			}
+
 			if (config.is_notifytimeout && wparam != NOTIFY_TIMER_TIMEOUT_ID)
 				return FALSE;
 
@@ -9717,7 +9730,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				_r_fastlock_releaseexclusive (&lock_notification);
 
-				_app_notifyrefresh (hwnd);
+				_app_notifyrefresh (hwnd, true);
 
 				_app_listviewsort (app.GetHWND (), IDC_LISTVIEW, -1, false);
 				_app_profile_save (app.GetHWND ());
@@ -9738,7 +9751,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			{
 				const size_t idx = (LOWORD (wparam) - IDX_NOTIFICATIONS);
 
-				_app_notifyshow (hwnd, idx, true);
+				_app_notifyshow (hwnd, idx, true, false);
 
 				return FALSE;
 			}
@@ -9902,7 +9915,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							_r_fastlock_releaseexclusive (&lock_notification);
 
-							_app_notifyrefresh (hwnd);
+							_app_notifyrefresh (hwnd, true);
 						}
 						else
 						{
@@ -10329,7 +10342,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			SendDlgItemMessage (hwnd, IDC_LISTVIEW, LVM_RESETEMPTYTEXT, 0, 0);
 
-			_app_notifyrefresh (config.hnotification);
+			_app_notifyrefresh (config.hnotification, false);
 			_app_refreshstatus (hwnd);
 
 			break;
@@ -10479,7 +10492,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_SETTINGCHANGE:
 		{
-			_app_notifyrefresh (config.hnotification);
+			_app_notifyrefresh (config.hnotification, false);
 			break;
 		}
 
@@ -10554,7 +10567,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								_app_timer_remove (hwnd, &rules);
 							}
 
-							_app_notifyrefresh (config.hnotification);
+							_app_notifyrefresh (config.hnotification, false);
 							_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 
 							_app_profile_save (hwnd);
@@ -10778,7 +10791,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case NIN_POPUPOPEN:
 				{
-					if (_app_notifyshow (config.hnotification, _app_notifygetcurrent (config.hnotification), true))
+					if (_app_notifyshow (config.hnotification, _app_notifygetcurrent (config.hnotification), true, false))
 						_app_notifysettimeout (config.hnotification, NOTIFY_TIMER_POPUP_ID, false, 0);
 
 					break;
@@ -11159,7 +11172,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				_r_fastlock_releaseexclusive (&lock_access);
 
-				_app_notifyrefresh (config.hnotification);
+				_app_notifyrefresh (config.hnotification, false);
 
 				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 				_app_profile_save (hwnd);
@@ -11313,7 +11326,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 						_app_profile_save (hwnd);
 
-						_app_notifyrefresh (config.hnotification);
+						_app_notifyrefresh (config.hnotification, false);
 
 						_app_changefilters (hwnd, true, false);
 					}
@@ -11357,7 +11370,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_releaseexclusive (&lock_access);
 
-					_app_notifyrefresh (config.hnotification);
+					_app_notifyrefresh (config.hnotification, false);
 					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 
 					_r_listview_redraw (hwnd, IDC_LISTVIEW);
@@ -11538,7 +11551,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					CheckMenuItem (GetMenu (hwnd), IDM_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"IsNotificationsEnabled", new_val);
 
-					_app_notifyrefresh (config.hnotification);
+					_app_notifyrefresh (config.hnotification, false);
 
 					break;
 				}
@@ -11807,7 +11820,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						_r_fastlock_releaseexclusive (&lock_access);
 
-						_app_notifyrefresh (config.hnotification);
+						_app_notifyrefresh (config.hnotification, false);
 
 						_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
 						_app_profile_save (hwnd);
@@ -11816,7 +11829,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else if (ctrl_id == IDM_DISABLENOTIFICATIONS)
 					{
-						_app_notifyrefresh (config.hnotification);
+						_app_notifyrefresh (config.hnotification, false);
 						_app_refreshstatus (hwnd);
 
 						_app_profile_save (hwnd);
@@ -11930,7 +11943,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_app_profile_save (hwnd);
 
-					_app_notifyrefresh (config.hnotification);
+					_app_notifyrefresh (config.hnotification, false);
 					_app_refreshstatus (hwnd);
 
 					_r_listview_redraw (hwnd, IDC_LISTVIEW);
@@ -11977,7 +11990,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						_app_profile_save (hwnd);
 
-						_app_notifyrefresh (config.hnotification);
+						_app_notifyrefresh (config.hnotification, false);
 						_app_refreshstatus (hwnd);
 
 						_r_listview_redraw (hwnd, IDC_LISTVIEW);
