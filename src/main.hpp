@@ -386,9 +386,9 @@ typedef struct _ITEM_LOG
 		path = nullptr;
 		provider_name = nullptr;
 		filter_name = nullptr;
-		username = nullptr;
 		remote_fmt = nullptr;
 		local_fmt = nullptr;
+		username = nullptr;
 	}
 
 	~_ITEM_LOG ()
@@ -456,10 +456,10 @@ typedef struct _ITEM_LIST_ENTRY
 	SLIST_ENTRY ListEntry;
 
 #ifndef _WIN64
-	ULONG_PTR Reserved;
+	ULONG_PTR Reserved = 0;
 #endif // _WIN64
 
-	ULONG_PTR Body;
+	PITEM_LOG Body = nullptr;
 } ITEM_LIST_ENTRY, *PITEM_LIST_ENTRY;
 
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
