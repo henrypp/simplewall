@@ -1,3 +1,9 @@
+v2.4.3 Beta (9 March 2019)
+- access filters access rights
+- fixed race conditions crash (issue #337)
+- fixed notifications locale
+- fixed bugs
+
 v2.4.2 Beta (5 March 2019)
 - fixed crash (issue #337)
 - updated blocklist
