@@ -1,5 +1,10 @@
+v2.4.4 Beta (x March 2019)
+- added safety timeout for notification buttons
+- cosmetic fixes
+- fixed bugs
+
 v2.4.3 Beta (9 March 2019)
-- access filters access rights
+- fixed filters access rights
 - fixed race conditions crash (issue #337)
 - fixed notifications locale
 - fixed bugs
