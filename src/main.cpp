@@ -438,7 +438,7 @@ void _app_listviewsetfont (HWND hwnd, UINT ctrl_id, bool is_redraw)
 {
 	LOGFONT lf = {0};
 
-	if (is_redraw || !config.hfont/* || !config.hfont_bold*/)
+	if (is_redraw || !config.hfont)
 	{
 		if (config.hfont)
 		{
@@ -446,18 +446,9 @@ void _app_listviewsetfont (HWND hwnd, UINT ctrl_id, bool is_redraw)
 			config.hfont = nullptr;
 		}
 
-		//if (config.hfont_bold)
-		//{
-		//	DeleteObject (config.hfont_bold);
-		//	config.hfont_bold = nullptr;
-		//}
-
 		_app_listviewinitfont (&lf);
 
 		config.hfont = CreateFontIndirect (&lf);
-
-		//lf.lfWeight = FW_SEMIBOLD;
-		//config.hfont_bold = CreateFontIndirect (&lf);
 	}
 
 	if (config.hfont)
@@ -3437,7 +3428,9 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 				ByteBlobFree (&bSid);
 				ByteBlobFree (&bPath);
 
-				_app_logerror (L"FwpmGetAppIdFromFileName", rc, path, true);
+				// do not log file not found to error log
+				if (rc != ERROR_FILE_NOT_FOUND && rc != ERROR_PATH_NOT_FOUND)
+					_app_logerror (L"FwpmGetAppIdFromFileName", rc, path, true);
 
 				return false;
 			}
@@ -5429,8 +5422,8 @@ void _app_notifysetpos (HWND hwnd)
 
 	SHAppBarMessage (ABM_GETTASKBARPOS, &appbar);
 
-	const UINT border_x = GetSystemMetrics (SM_CXBORDER) * 2;
-	const UINT border_y = GetSystemMetrics (SM_CYBORDER) * 2;
+	const UINT border_x = GetSystemMetrics (SM_CXBORDER);
+	const UINT border_y = GetSystemMetrics (SM_CYBORDER);
 
 	if (appbar.uEdge == ABE_LEFT)
 	{
@@ -5461,6 +5454,20 @@ void _app_notifyhide (HWND hwnd)
 	_app_notifysettimeout (hwnd, 0, false, 0);
 
 	ShowWindow (hwnd, SW_HIDE);
+}
+
+HFONT _app_notifyinitfont (PLOGFONT plf, LONG height, LONG weight, LPCWSTR name)
+{
+	plf->lfHeight = _r_dc_fontsizetoheight (height);
+
+	plf->lfWeight = weight;
+
+	//plf->lfCharSet = DEFAULT_CHARSET;
+	//plf->lfQuality = DEFAULT_QUALITY;
+
+	StringCchCopy (plf->lfFaceName, LF_FACESIZE, name);
+
+	return CreateFontIndirect (plf);
 }
 
 void _app_notifycreatewindow ()
@@ -5503,36 +5510,18 @@ void _app_notifycreatewindow ()
 
 		if (SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
 		{
-			PLOGFONT lf_title = &ncm.lfCaptionFont;
-			PLOGFONT lf_text = &ncm.lfMessageFont;
-
-			lf_title->lfHeight = _r_dc_fontsizetoheight (title_font_height);
-			lf_text->lfHeight = _r_dc_fontsizetoheight (text_font_height);
-
-			lf_title->lfWeight = FW_NORMAL;
-			lf_text->lfWeight = FW_NORMAL;
-
-			lf_title->lfQuality = ncm.lfCaptionFont.lfQuality;
-			lf_text->lfQuality = ncm.lfMessageFont.lfQuality;
-
-			lf_title->lfCharSet = ncm.lfCaptionFont.lfCharSet;
-			lf_text->lfCharSet = ncm.lfMessageFont.lfCharSet;
-
-			StringCchCopy (lf_title->lfFaceName, LF_FACESIZE, UI_FONT_NOTIFICATION);
-			StringCchCopy (lf_text->lfFaceName, LF_FACESIZE, UI_FONT_NOTIFICATION);
-
-			hfont_title = CreateFontIndirect (lf_title);
-			hfont_text = CreateFontIndirect (lf_text);
+			hfont_title = _app_notifyinitfont (&ncm.lfCaptionFont, title_font_height, FW_NORMAL, UI_FONT_NOTIFICATION);
+			hfont_text = _app_notifyinitfont (&ncm.lfMessageFont, text_font_height, FW_NORMAL, UI_FONT_NOTIFICATION);
 		}
 	}
 
 	HWND hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON, app.GetDPI (6), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_ICON_ID, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MAIN, cxsmIcon));
 
-	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (10), app.GetDPI (4), wnd_width - app.GetDPI (120), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, APP_NAME, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_WORDELLIPSIS, IconSize + app.GetDPI (10), app.GetDPI (4), wnd_width - app.GetDPI (150), IconSize, config.hnotification, (HMENU)IDC_TITLE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_title, MAKELPARAM (TRUE, 0));
 
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 4 - app.GetDPI (20), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 4 - app.GetDPI (18), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_MENU_BTN, nullptr, nullptr);
 	SendMessage (hctrl, STM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_MENU, IconXXXX));
 
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_CENTER | SS_ICON | SS_NOTIFY, wnd_width - IconSize * 3 - app.GetDPI (14), app.GetDPI (4), IconSize, IconSize, config.hnotification, (HMENU)IDC_TIMER_BTN, nullptr, nullptr);
@@ -5604,15 +5593,15 @@ void _app_notifycreatewindow ()
 
 	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 3 + 19), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_ALLOW_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	//SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, cxsmIcon));
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, cxsmIcon));
 
 	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 2 + 16), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_BLOCK_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	//SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cxsmIcon));
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cxsmIcon));
 
 	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height + 12), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_LATER_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	//SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cxsmIcon));
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cxsmIcon));
 
 	_app_setbuttonmargins (config.hnotification, IDC_ALLOW_BTN);
 	_app_setbuttonmargins (config.hnotification, IDC_BLOCK_BTN);
@@ -5871,8 +5860,6 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 			SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (IDS_ACTION_BLOCK_HINT, nullptr).GetString ());
 			SendDlgItemMessage (hwnd, IDC_LATER_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (IDS_ACTION_LATER_HINT, nullptr).GetString ());
 
-			_app_notifysetpos (hwnd);
-
 			_r_fastlock_releaseshared (&lock_notification);
 			_r_fastlock_releaseshared (&lock_access);
 
@@ -5880,9 +5867,12 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 			{
 				_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, false);
 				_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, false);
+				_r_ctrl_enable (hwnd, IDC_LATER_BTN, false);
 
 				SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY, nullptr);
 			}
+
+			_app_notifysetpos (hwnd);
 
 			ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
@@ -9458,6 +9448,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			{
 				_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, true);
 				_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, true);
+				_r_ctrl_enable (hwnd, IDC_LATER_BTN, true);
 
 				KillTimer (hwnd, wparam);
 			}
@@ -9564,7 +9555,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 			SetTextColor ((HDC)wparam, NOTIFY_CLR_TEXT);
 
-			return (INT_PTR)NOTIFY_CLR_TEXT_BRUSH;
+			return (INT_PTR)NOTIFY_CLR_BG_BRUSH;
 		}
 
 #ifndef _APP_NO_DARKTHEME
@@ -9787,6 +9778,9 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 									CheckMenuRadioItem (hsubmenu, IDX_NOTIFICATIONS, IDX_NOTIFICATIONS + i, IDX_NOTIFICATIONS + i, MF_BYCOMMAND);
 							}
 						}
+
+						if (notifications.size () == 1)
+							EnableMenuItem (hsubmenu, IDX_NOTIFICATIONS, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
 						_r_fastlock_releaseshared (&lock_notification);
 					}
