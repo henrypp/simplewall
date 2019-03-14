@@ -682,7 +682,7 @@ BEGIN
 	IDS_ACTION_LATER "Block for now and ask me later"
 
 	IDS_ACTION_ALLOW_HINT "Always allow this program to access the internet"
-	IDS_ACTION_BLOCK_HINT "Always blocks this program to access the internet"
+	IDS_ACTION_BLOCK_HINT "Always block this program from accessing the internet"
 	IDS_ACTION_LATER_HINT "Do nothing and ask me later"
 
 	IDS_RULE_APPLY_2 "Apply ""%s"" for app"
