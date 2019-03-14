@@ -10961,13 +10961,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case PBT_APMSUSPEND:
 				{
-					_r_fastlock_acquireexclusive (&lock_threadpool);
-
-					_app_clear_logstack ();
-					_app_freethreadpool (&threads_pool);
-
-					_r_fastlock_releaseexclusive (&lock_threadpool);
-
 					if (!_wfp_isfiltersapplying ())
 					{
 						_app_profile_save (hwnd);
