@@ -5456,11 +5456,12 @@ void _app_notifyhide (HWND hwnd)
 	ShowWindow (hwnd, SW_HIDE);
 }
 
-HFONT _app_notifyinitfont (PLOGFONT plf, LONG height, LONG weight, LPCWSTR name)
+HFONT _app_notifyinitfont (PLOGFONT plf, LONG height, LONG weight, LPCWSTR name, BOOL is_underline)
 {
 	plf->lfHeight = _r_dc_fontsizetoheight (height);
 
 	plf->lfWeight = weight;
+	plf->lfUnderline = (BYTE)is_underline;
 
 	//plf->lfCharSet = DEFAULT_CHARSET;
 	//plf->lfQuality = DEFAULT_QUALITY;
@@ -5501,6 +5502,7 @@ void _app_notifycreatewindow ()
 		return;
 
 	HFONT hfont_title = nullptr;
+	HFONT hfont_main = nullptr;
 	HFONT hfont_text = nullptr;
 
 	// load system font
@@ -5510,8 +5512,9 @@ void _app_notifycreatewindow ()
 
 		if (SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
 		{
-			hfont_title = _app_notifyinitfont (&ncm.lfCaptionFont, title_font_height, FW_NORMAL, UI_FONT_NOTIFICATION);
-			hfont_text = _app_notifyinitfont (&ncm.lfMessageFont, text_font_height, FW_NORMAL, UI_FONT_NOTIFICATION);
+			hfont_title = _app_notifyinitfont (&ncm.lfCaptionFont, title_font_height, FW_NORMAL, UI_FONT_NOTIFICATION, false);
+			hfont_main = _app_notifyinitfont (&ncm.lfMessageFont, text_font_height, FW_NORMAL, UI_FONT_NOTIFICATION, true);
+			hfont_text = _app_notifyinitfont (&ncm.lfMessageFont, text_font_height, FW_NORMAL, UI_FONT_NOTIFICATION, false);
 		}
 	}
 
@@ -5536,10 +5539,8 @@ void _app_notifycreatewindow ()
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (44), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
-	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (44), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_TEXT, nullptr, nullptr);
-	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
-	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_RIGHT | SS_NOTIFY, app.GetDPI (12), app.GetDPI (44), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_FILE_TEXT, nullptr, nullptr);
+	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_main, MAKELPARAM (TRUE, 0));
 
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (64), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_SIGNATURE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
@@ -9471,25 +9472,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
-		//case WM_LBUTTONDBLCLK:
-		case WM_MBUTTONUP:
-		{
-			_r_fastlock_acquireshared (&lock_notification);
-
-			const size_t idx = _app_notifygetcurrent (hwnd);
-
-			if (idx != LAST_VALUE)
-			{
-				ShowItem (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), notifications.at (idx)->hash), -1);
-
-				_r_wnd_toggle (app.GetHWND (), true);
-			}
-
-			_r_fastlock_releaseshared (&lock_notification);
-
-			break;
-		}
-
 		case WM_KEYDOWN:
 		{
 			switch (wparam)
@@ -9552,8 +9534,11 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				return (INT_PTR)hbrush;
 			}
+			else if (ctrl_id == IDC_FILE_TEXT)
+				SetTextColor ((HDC)wparam, GetSysColor (COLOR_HIGHLIGHT));
 
-			SetTextColor ((HDC)wparam, NOTIFY_CLR_TEXT);
+			else
+				SetTextColor ((HDC)wparam, NOTIFY_CLR_TEXT);
 
 			return (INT_PTR)NOTIFY_CLR_BG_BRUSH;
 		}
@@ -9575,7 +9560,8 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				ctrl_id == IDC_MENU_BTN ||
 				ctrl_id == IDC_RULES_BTN ||
 				ctrl_id == IDC_TIMER_BTN ||
-				ctrl_id == IDC_CLOSE_BTN
+				ctrl_id == IDC_CLOSE_BTN ||
+				ctrl_id == IDC_FILE_TEXT
 				)
 			{
 				SetCursor (LoadCursor (nullptr, IDC_HAND));
@@ -9749,6 +9735,24 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 			switch (LOWORD (wparam))
 			{
+				case IDC_FILE_TEXT:
+				{
+					_r_fastlock_acquireshared (&lock_notification);
+
+					const size_t idx = _app_notifygetcurrent (hwnd);
+
+					if (idx != LAST_VALUE)
+					{
+						ShowItem (app.GetHWND (), IDC_LISTVIEW, _app_getposition (app.GetHWND (), notifications.at (idx)->hash), -1);
+
+						_r_wnd_toggle (app.GetHWND (), true);
+					}
+
+					_r_fastlock_releaseshared (&lock_notification);
+
+					break;
+				}
+
 				case IDC_MENU_BTN:
 				case IDC_RULES_BTN:
 				case IDC_TIMER_BTN:
