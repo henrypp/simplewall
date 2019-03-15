@@ -5805,6 +5805,9 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 		return false;
 	}
 
+	// destroy safety timer to prevent race condition
+	KillTimer (hwnd, NOTIFY_TIMER_SAFETY_ID);
+
 	// prevent fullscreen apps lose focus
 	if (is_forced && _r_wnd_isfullscreenmode ())
 		is_forced = false;
