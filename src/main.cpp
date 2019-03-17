@@ -6037,74 +6037,70 @@ UINT WINAPI LogThread (LPVOID lparam)
 		InterlockedDecrement (&log_stack.item_count);
 
 		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (listEntry, ITEM_LIST_ENTRY, ListEntry);
+		PITEM_LOG ptr_log = ptr_entry->Body;
+		bool is_added = false;
 
-		if (ptr_entry)
+		_aligned_free (ptr_entry);
+
+		if (ptr_log)
 		{
-			PITEM_LOG ptr_log = ptr_entry->Body;
-			bool is_added = false;
+			// apps collector
+			_r_fastlock_acquireshared (&lock_access);
+			const bool is_notexist = ptr_log->hash && ptr_log->path && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ();
+			_r_fastlock_releaseshared (&lock_access);
 
-			_aligned_free (ptr_entry);
-
-			if (ptr_log)
+			if (is_notexist)
 			{
-				// apps collector
-				_r_fastlock_acquireshared (&lock_access);
-				const bool is_notexist = ptr_log->hash && ptr_log->path && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ();
-				_r_fastlock_releaseshared (&lock_access);
+				_r_fastlock_acquireshared (&lock_logbusy);
 
-				if (is_notexist)
+				_r_fastlock_acquireexclusive (&lock_access);
+				_app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
+				_r_fastlock_releaseexclusive (&lock_access);
+
+				_r_fastlock_releaseshared (&lock_logbusy);
+
+				_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
+				_app_profile_save (hwnd);
+			}
+
+			if ((is_logenabled || is_notificationenabled) && (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ())))
+			{
+				_r_fastlock_acquireshared (&lock_logbusy);
+
+				_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
+				_app_formataddress (ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, &ptr_log->local_fmt, true);
+
+				_r_fastlock_releaseshared (&lock_logbusy);
+
+				// write log to a file
+				if (is_logenabled)
+					_app_logwrite (ptr_log);
+
+				// show notification (only for my own provider and file is present)
+				if (is_notificationenabled && ptr_log->hash && !ptr_log->is_allow && ptr_log->is_myprovider)
 				{
-					_r_fastlock_acquireshared (&lock_logbusy);
-
-					_r_fastlock_acquireexclusive (&lock_access);
-					_app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
-					_r_fastlock_releaseexclusive (&lock_access);
-
-					_r_fastlock_releaseshared (&lock_logbusy);
-
-					_app_listviewsort (hwnd, IDC_LISTVIEW, -1, false);
-					_app_profile_save (hwnd);
-				}
-
-				if ((is_logenabled || is_notificationenabled) && (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ())))
-				{
-					_r_fastlock_acquireshared (&lock_logbusy);
-
-					_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
-					_app_formataddress (ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, &ptr_log->local_fmt, true);
-
-					_r_fastlock_releaseshared (&lock_logbusy);
-
-					// write log to a file
-					if (is_logenabled)
-						_app_logwrite (ptr_log);
-
-					// show notification (only for my own provider and file is present)
-					if (is_notificationenabled && ptr_log->hash && !ptr_log->is_allow && ptr_log->is_myprovider)
+					if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
 					{
-						if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
+						// read app config
 						{
-							// read app config
+							_r_fastlock_acquireexclusive (&lock_access);
+
+							PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
+
+							if (ptr_app)
 							{
-								_r_fastlock_acquireexclusive (&lock_access);
-
-								PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
-
-								if (ptr_app)
-								{
-									if (!ptr_app->is_silent)
-										is_added = _app_notifyadd (config.hnotification, ptr_log, ptr_app);
-								}
-
-								_r_fastlock_releaseexclusive (&lock_access);
+								if (!ptr_app->is_silent)
+									is_added = _app_notifyadd (config.hnotification, ptr_log, ptr_app);
 							}
+
+							_r_fastlock_releaseexclusive (&lock_access);
 						}
 					}
 				}
-
-				if (!is_added)
-					SAFE_DELETE (ptr_log);
 			}
+
+			if (!is_added)
+				SAFE_DELETE (ptr_log);
 		}
 	}
 
@@ -9653,8 +9649,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
 				size_t hash = 0;
 
-				BOOL is_remove = (BOOL)-1;
-
 				_r_fastlock_acquireexclusive (&lock_access);
 
 				PITEM_RULE ptr_rule = rules_arr.at (rule_idx);
@@ -9676,8 +9670,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 						if (ptr_app)
 						{
-							if (is_remove == (BOOL)-1)
-								is_remove = (ptr_rule->is_enabled && !ptr_rule->apps.empty () && (ptr_rule->apps.find (hash) != ptr_rule->apps.end ()));
+							const bool is_remove = (ptr_rule->is_enabled && !ptr_rule->apps.empty () && (ptr_rule->apps.find (hash) != ptr_rule->apps.end ()));
 
 							if (is_remove)
 							{
@@ -9773,16 +9766,16 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 						const size_t current_idx = _app_notifygetcurrent (hwnd);
 
-						for (UINT i = 0; i < notifications.size (); i++)
+						for (size_t i = 0; i < notifications.size (); i++)
 						{
 							PITEM_LOG ptr_log = notifications.at (i);
 
 							if (ptr_log)
 							{
-								AppendMenu (hsubmenu, MF_BYPOSITION, IDX_NOTIFICATIONS + i, _r_fmt (L"%s - %s", _r_path_extractfile (ptr_log->path).GetString (), ptr_log->remote_fmt));
+								AppendMenu (hsubmenu, MF_BYPOSITION, IDX_NOTIFICATIONS + UINT (i), _r_fmt (L"%s - %s", _r_path_extractfile (ptr_log->path).GetString (), ptr_log->remote_fmt));
 
 								if (i == current_idx)
-									CheckMenuRadioItem (hsubmenu, IDX_NOTIFICATIONS, IDX_NOTIFICATIONS + i, IDX_NOTIFICATIONS + i, MF_BYCOMMAND);
+									CheckMenuRadioItem (hsubmenu, IDX_NOTIFICATIONS, IDX_NOTIFICATIONS + UINT (i), IDX_NOTIFICATIONS + UINT (i), MF_BYCOMMAND);
 							}
 						}
 
@@ -9818,8 +9811,8 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					}
 					else if (LOWORD (wparam) == IDC_TIMER_BTN)
 					{
-						for (UINT i = 0; i < timers.size (); i++)
-							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + i, _r_fmt_interval (timers.at (i) + 1, 1));
+						for (size_t i = 0; i < timers.size (); i++)
+							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + UINT (i), _r_fmt_interval (timers.at (i) + 1, 1));
 					}
 					RECT buttonRect = {0};
 
@@ -10530,7 +10523,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
 
-					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
+					const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, (UINT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
 					if (hash)
 						StringCchCopy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (hash));
