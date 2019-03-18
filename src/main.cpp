@@ -281,7 +281,7 @@ void _app_listviewresize (HWND hwnd, UINT ctrl_id)
 	RECT rect = {0};
 	GetWindowRect (GetDlgItem (hwnd, ctrl_id), &rect);
 
-	const INT width = (rect.right - rect.left) - GetSystemMetrics (SM_CXVSCROLL);
+	const INT width = _R_RECT_WIDTH (&rect) - GetSystemMetrics (SM_CXVSCROLL);
 
 	const INT cx2 = max (app.GetDPI (90), min (app.GetDPI (110), _R_PERCENT_VAL (28, width)));
 	const INT cx1 = width - cx2;
@@ -5590,7 +5590,7 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	static const UINT btn_height = 54;
+	static const UINT btn_height = 44;
 
 	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 3 + 19), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_ALLOW_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
@@ -5603,10 +5603,6 @@ void _app_notifycreatewindow ()
 	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height + 12), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_LATER_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cxsmIcon));
-
-	_app_setbuttonmargins (config.hnotification, IDC_ALLOW_BTN);
-	_app_setbuttonmargins (config.hnotification, IDC_BLOCK_BTN);
-	_app_setbuttonmargins (config.hnotification, IDC_LATER_BTN);
 
 	_r_ctrl_settip (config.hnotification, IDC_MENU_BTN, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
