@@ -5590,19 +5590,19 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	static const UINT btn_height = 44;
+	static const UINT btn_height = 54;
 
 	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 3 + 19), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_ALLOW_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, cxsmIcon));
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, IconSize));
 
 	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 2 + 16), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_BLOCK_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cxsmIcon));
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, IconSize));
 
 	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height + 12), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_LATER_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, cxsmIcon));
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, IconSize));
 
 	_r_ctrl_settip (config.hnotification, IDC_MENU_BTN, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
@@ -5778,13 +5778,27 @@ void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT 
 	MapWindowPoints (HWND_DESKTOP, hwnd, (LPPOINT)&rc_ctrl, 2);
 
 	const INT wnd_width = _R_RECT_WIDTH (&rc_wnd) - (padding);
-	const INT ctrl_width = _r_dc_fontwidth (hdc, text1, _r_str_length (text1)) + GetSystemMetrics (SM_CYSMCAPTION);
+	const INT ctrl1_width = _r_dc_fontwidth (hdc, text1, _r_str_length (text1)) + GetSystemMetrics (SM_CYSMCAPTION);
+	//const INT ctrl2_width = _r_dc_fontwidth (hdc, text2, _r_str_length (text2));
 
-	SetWindowPos (hctrl1, nullptr, padding, rc_ctrl.top, ctrl_width + border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-	SetWindowPos (hctrl2, nullptr, padding + ctrl_width + border, rc_ctrl.top, wnd_width - ctrl_width - padding - border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+	SetWindowPos (hctrl1, nullptr, padding, rc_ctrl.top, ctrl1_width + border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+	SetWindowPos (hctrl2, nullptr, padding + ctrl1_width + border, rc_ctrl.top, wnd_width - ctrl1_width - padding - border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
 	SetWindowText (hctrl1, text1);
 	SetWindowText (hctrl2, text2);
+}
+
+void _app_notifysetnote (HWND hwnd, UINT ctrl_id, rstring str)
+{
+	static const size_t len = 48;
+
+	if (str.GetLength () > len)
+	{
+		str.Insert (len, L"...");
+		str.SetLength (len + 3);
+	}
+
+	SendDlgItemMessage (hwnd, ctrl_id, BCM_SETNOTE, 0, (LPARAM)str.GetString ());
 }
 
 bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
@@ -5856,9 +5870,9 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 			_r_ctrl_settext (hwnd, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
 			_r_ctrl_settext (hwnd, IDC_LATER_BTN, app.LocaleString (IDS_ACTION_LATER, nullptr));
 
-			SendDlgItemMessage (hwnd, IDC_ALLOW_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (IDS_ACTION_ALLOW_HINT, nullptr).GetString ());
-			SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (IDS_ACTION_BLOCK_HINT, nullptr).GetString ());
-			SendDlgItemMessage (hwnd, IDC_LATER_BTN, BCM_SETNOTE, 0, (LPARAM)app.LocaleString (IDS_ACTION_LATER_HINT, nullptr).GetString ());
+			_app_notifysetnote (hwnd, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW_HINT, nullptr));
+			_app_notifysetnote (hwnd, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK_HINT, nullptr));
+			_app_notifysetnote (hwnd, IDC_LATER_BTN, app.LocaleString (IDS_ACTION_LATER_HINT, nullptr));
 
 			_r_fastlock_releaseshared (&lock_notification);
 			_r_fastlock_releaseshared (&lock_access);
@@ -10323,9 +10337,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_addstyle (hwnd, IDC_START_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_SETTINGS_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_EXIT_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-
-			_r_wnd_addstyle (config.hnotification, IDC_NEXT_ID, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-			_r_wnd_addstyle (config.hnotification, IDC_PREV_ID, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 			_r_listview_setcolumn (hwnd, IDC_LISTVIEW, 0, app.LocaleString (IDS_FILEPATH, nullptr), 0);
 			_r_listview_setcolumn (hwnd, IDC_LISTVIEW, 1, app.LocaleString (IDS_ADDED, nullptr), 0);
