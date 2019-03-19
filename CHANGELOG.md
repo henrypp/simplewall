@@ -1,3 +1,6 @@
+v2.4.5 (20 March 2019)
+- fixed user reported bugs
+
 v2.4.4 Beta (15 March 2019)
 - added safety timeout for notification buttons
 - added filename highlighting into notification window (issue #344)
