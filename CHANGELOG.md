@@ -1,3 +1,13 @@
+v2.4.6 (27 March 2019)
+- enabled special rules group by default (issue #352)
+- fixed removing dropped packet items when overflow
+- fixed notifications crashing (issue #360)
+- fixed checkbox saving state (issue #355)
+- fixed possible memory dereferencing
+- fixed errors log overflow
+- cosmetic fixes
+- fixed bugs
+
 v2.4.5 (20 March 2019)
 - fixed user reported bugs
 
