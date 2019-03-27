@@ -94,7 +94,7 @@
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 
 #define NOTIFY_LIMIT_SIZE 16 // limit notifications pool size
-#define NOTIFY_LIMIT_POOL_SIZE 48
+#define NOTIFY_LIMIT_POOL_SIZE 128
 #define NOTIFY_LIMIT_THREAD_COUNT 4
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
