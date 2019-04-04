@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7FB76828-A353-4113-82D7-CD728EED81DF}</ProjectGuid>
     <RootNamespace>simplewall</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>simplewall</ProjectName>
     <TargetFrameworkVersion>
     </TargetFrameworkVersion>
@@ -30,7 +30,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <SpectreMitigation>false</SpectreMitigation>
@@ -38,7 +38,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
@@ -46,7 +46,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <SpectreMitigation>false</SpectreMitigation>
@@ -54,7 +54,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
@@ -139,7 +139,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <WholeProgramOptimization>false</WholeProgramOptimization>
@@ -181,7 +181,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <WholeProgramOptimization>false</WholeProgramOptimization>
@@ -224,7 +224,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>Sync</ExceptionHandling>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
@@ -271,7 +271,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <OmitFramePointers>true</OmitFramePointers>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_BETA;_APP_NO_GUEST;_APP_NO_WINXP;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_NTDLL;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;_APP_HAVE_SIZING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -305,7 +305,13 @@
     <ClCompile Include="..\routine\rapp.cpp" />
     <ClCompile Include="..\routine\routine.cpp" />
     <ClCompile Include="..\routine\rstring.cpp" />
+    <ClCompile Include="src\helper.cpp" />
+    <ClCompile Include="src\log.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\notifications.cpp" />
+    <ClCompile Include="src\profile.cpp" />
+    <ClCompile Include="src\timer.cpp" />
+    <ClCompile Include="src\wfp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\pugixml\src\pugixml.hpp" />
@@ -314,9 +320,16 @@
     <ClInclude Include="..\routine\routine.hpp" />
     <ClInclude Include="..\routine\rstring.hpp" />
     <ClInclude Include="src\app.hpp" />
+    <ClInclude Include="src\global.hpp" />
+    <ClInclude Include="src\helper.hpp" />
+    <ClInclude Include="src\log.hpp" />
     <ClInclude Include="src\main.hpp" />
+    <ClInclude Include="src\notifications.hpp" />
+    <ClInclude Include="src\profile.hpp" />
     <ClInclude Include="src\pugiconfig.hpp" />
     <ClInclude Include="src\resource.hpp" />
+    <ClInclude Include="src\timer.hpp" />
+    <ClInclude Include="src\wfp.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="src\resource.rc" />

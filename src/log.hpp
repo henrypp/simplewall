@@ -1,0 +1,27 @@
+// simplewall
+// Copyright (c) 2016-2019 Henry++
+
+#pragma once
+
+void _app_logerror (LPCWSTR fn, DWORD errcode, LPCWSTR desc, bool is_nopopups);
+
+rstring _app_getlogviewer ();
+
+bool _app_logchecklimit ();
+
+bool _app_loginit (bool is_install);
+void _app_logwrite (PITEM_LOG const ptr_log);
+void _app_logclear ();
+
+bool _wfp_logsubscribe ();
+bool _wfp_logunsubscribe ();
+
+void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback);
+
+void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 *pEvent);
+void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 *pEvent);
+void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 *pEvent);
+void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 *pEvent);
+void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5 *pEvent);
+
+UINT WINAPI LogThread (LPVOID lparam);
