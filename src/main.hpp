@@ -1,16 +1,17 @@
 // simplewall
 // Copyright (c) 2016-2019 Henry++
 
-#ifndef __MAIN_H__
-#define __MAIN_H__
+#pragma once
 
 #include <windows.h>
 #include <commctrl.h>
-#include <unordered_map>
 
 #include "routine.hpp"
 #include "resource.hpp"
 #include "app.hpp"
+
+INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 // config
 #define WM_TRAYICON WM_APP + 1
@@ -33,7 +34,6 @@
 #define PATH_NTOSKRNL L"%systemroot%\\system32\\ntoskrnl.exe"
 #define PATH_SVCHOST L"%systemroot%\\system32\\svchost.exe"
 #define PATH_WINSTORE L"%systemroot%\\system32\\wsreset.exe"
-#define PATH_SERVICES L"%systemroot%\\system32\\services.msc"
 
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 
@@ -88,14 +88,14 @@
 #define NOTIFY_TIMER_SAFETY_ID 3003
 
 #define NOTIFY_TIMER_POPUP 350
-#define NOTIFY_TIMER_SAFETY 900
+#define NOTIFY_TIMER_SAFETY 500
 
 #define NOTIFY_TIMER_DEFAULT 30 // sec.
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 
 #define NOTIFY_LIMIT_SIZE 16 // limit notifications pool size
 #define NOTIFY_LIMIT_POOL_SIZE 128
-#define NOTIFY_LIMIT_THREAD_COUNT 4
+#define NOTIFY_LIMIT_THREAD_COUNT 2
 
 #define NOTIFY_SOUND_DEFAULT L"MailBeep"
 
@@ -191,7 +191,7 @@ enum EnumAppType
 	AppDevice = 1,
 	AppNetwork = 2,
 	AppService = 3,
-	AppStore = 4, // win8+
+	AppPackage = 4, // win8+
 	AppPico = 5 // win10+
 };
 
@@ -215,8 +215,6 @@ typedef std::vector<GUID> MARRAY;
 
 struct STATIC_DATA
 {
-	WCHAR notify_snd_path[MAX_PATH] = {0};
-
 	WCHAR apps_path[MAX_PATH] = {0};
 	WCHAR rules_blocklist_path[MAX_PATH] = {0};
 	WCHAR rules_system_path[MAX_PATH] = {0};
@@ -239,20 +237,15 @@ struct STATIC_DATA
 	LPGUID psession = nullptr;
 
 	HIMAGELIST himg = nullptr;
-	HBITMAP hbitmap_process_small = nullptr;
-	HBITMAP hbitmap_package_small = nullptr;
-	HBITMAP hbitmap_service_small = nullptr;
 	HANDLE hengine = nullptr;
-	HANDLE hnetevent = nullptr;
 	HANDLE hlogfile = nullptr;
+	HANDLE hnetevent = nullptr;
 	HANDLE done_evt = nullptr;
 	HANDLE htimer = nullptr;
 	HFONT hfont = nullptr;
-	//HFONT hfont_bold = nullptr;
 	HICON hicon_large = nullptr;
 	HICON hicon_small = nullptr;
 	HICON hicon_package = nullptr;
-	HICON hicon_service_small = nullptr;
 	HWND hnotification = nullptr;
 
 	time_t blocklist_timestamp = 0;
@@ -267,7 +260,6 @@ struct STATIC_DATA
 
 	size_t icon_id = 0;
 	size_t icon_package_id = 0;
-	size_t icon_service_id = 0;
 
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
@@ -281,7 +273,6 @@ typedef struct _ITEM_STATUS
 
 	size_t unused_count = 0;
 	size_t timers_count = 0;
-	size_t invalid_count = 0;
 } ITEM_STATUS, *PITEM_STATUS;
 
 typedef struct _ITEM_APP
@@ -497,11 +488,14 @@ typedef struct _ITEM_ADD
 	}
 
 	size_t hash = 0;
+	time_t timestamp = 0;
 
-	LPWSTR sid = nullptr;
+	EnumAppType type = AppRegular;
+
 	LPWSTR display_name = nullptr;
-	LPWSTR service_name = nullptr;
 	LPWSTR real_path = nullptr;
+	LPWSTR sid = nullptr;
+	LPWSTR service_name = nullptr;
 
 	union
 	{
@@ -573,21 +567,3 @@ typedef struct _ITEM_ADDRESS
 
 	bool is_range = false;
 } ITEM_ADDRESS, *PITEM_ADDRESS;
-
-typedef std::vector<PITEM_APP> MFILTER_APPS;
-typedef std::vector<PITEM_RULE> MFILTER_RULES;
-typedef std::vector<HANDLE> MTHREADPOOL;
-typedef std::unordered_map<size_t, ITEM_APP> MAPPS_MAP;
-typedef std::unordered_map<size_t, LPWSTR> MCACHE_MAP;
-typedef std::unordered_map<size_t, EnumRuleItemType> MCACHETYPES_MAP;
-
-// dropped events callback subscription (win7+)
-#ifndef FWP_DIRECTION_IN
-#define FWP_DIRECTION_IN 0x00003900L
-#endif
-
-#ifndef FWP_DIRECTION_OUT
-#define FWP_DIRECTION_OUT 0x00003901L
-#endif
-
-#endif // __MAIN_H__
