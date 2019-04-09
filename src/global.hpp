@@ -54,6 +54,7 @@ extern FWPM_SESSION session;
 extern MAPPS_MAP apps;
 extern std::vector<PITEM_RULE> rules_arr;
 extern std::unordered_map<size_t, PITEM_RULE_CONFIG> rules_config;
+extern std::vector<PITEM_NETWORK> network_arr;
 
 extern MCACHE_MAP cache_signatures;
 extern MCACHE_MAP cache_versions;
@@ -80,6 +81,7 @@ extern _R_FASTLOCK lock_cache;
 extern _R_FASTLOCK lock_checkbox;
 extern _R_FASTLOCK lock_logbusy;
 extern _R_FASTLOCK lock_logthread;
+extern _R_FASTLOCK lock_network;
 extern _R_FASTLOCK lock_notification;
 extern _R_FASTLOCK lock_threadpool;
 extern _R_FASTLOCK lock_transaction;
