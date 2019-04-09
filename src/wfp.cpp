@@ -404,6 +404,94 @@ void _wfp_uninitialize (bool is_full)
 	_r_fastlock_releaseexclusive (&lock_transaction);
 }
 
+void _wfp_installfilters ()
+{
+	// set security information
+	if (config.pusersid)
+	{
+		FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+		FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+	}
+
+	if (config.pacl_default)
+	{
+		FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, config.pacl_default, nullptr);
+		FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, config.pacl_default, nullptr);
+	}
+
+	_wfp_destroyfilters (); // destroy all installed filters first
+
+	_r_fastlock_acquireexclusive (&lock_transaction);
+
+	bool is_intransact = _wfp_transact_start (__LINE__);
+
+	// apply internal rules
+	_wfp_create2filters (__LINE__, is_intransact);
+
+	// apply apps rules
+	{
+		MFILTER_APPS arr;
+
+		for (auto &p : apps)
+		{
+			PITEM_APP ptr_app = &p.second;
+
+			if (ptr_app->is_enabled)
+				arr.push_back (ptr_app);
+		}
+
+		_wfp_create3filters (&arr, __LINE__, is_intransact);
+	}
+
+	// apply system/custom/blocklist rules
+	{
+		MFILTER_RULES arr;
+
+		for (size_t i = 0; i < rules_arr.size (); i++)
+		{
+			PITEM_RULE ptr_rule = rules_arr.at (i);
+
+			if (ptr_rule && ptr_rule->is_enabled)
+				arr.push_back (ptr_rule);
+		}
+
+		_wfp_create4filters (&arr, __LINE__, is_intransact);
+	}
+
+	if (is_intransact)
+		_wfp_transact_commit (__LINE__);
+
+	{
+		const bool is_secure = app.ConfigGet (L"IsSecureFilters", false).AsBool ();
+
+		if (is_secure ? config.pacl_secure : config.pacl_default)
+		{
+			MARRAY filter_all;
+
+			if (_wfp_dumpfilters (&GUID_WfpProvider, &filter_all))
+			{
+				for (size_t i = 0; i < filter_all.size (); i++)
+					_wfp_setfiltersecurity (config.hengine, &filter_all.at (i), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, __LINE__);
+			}
+		}
+
+		// set security information
+		if (config.pusersid)
+		{
+			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+		}
+
+		if (is_secure ? config.pacl_secure : config.pacl_default)
+		{
+			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, is_secure ? config.pacl_secure : config.pacl_default, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, is_secure ? config.pacl_secure : config.pacl_default, nullptr);
+		}
+	}
+
+	_r_fastlock_releaseexclusive (&lock_transaction);
+}
+
 bool _wfp_transact_start (UINT line)
 {
 	if (config.hengine)
@@ -556,11 +644,6 @@ bool _wfp_destroy2filters (const MARRAY* pmar, UINT line)
 	if (!config.hengine || !pmar || pmar->empty ())
 		return false;
 
-	const bool is_enabled = _r_ctrl_isenabled (app.GetHWND (), IDC_START_BTN);
-
-	if (is_enabled)
-		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
-
 	_r_fastlock_acquireexclusive (&lock_transaction);
 
 	for (size_t i = 0; i < pmar->size (); i++)
@@ -575,9 +658,6 @@ bool _wfp_destroy2filters (const MARRAY* pmar, UINT line)
 		_wfp_transact_commit (line);
 
 	_r_fastlock_releaseexclusive (&lock_transaction);
-
-	if (is_enabled)
-		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
 
 	return true;
 }
@@ -918,11 +998,6 @@ bool _wfp_create4filters (const MFILTER_RULES* ptr_rules, UINT line, bool is_int
 	if (!config.hengine || !ptr_rules || ptr_rules->empty ())
 		return false;
 
-	const bool is_enabled = _r_ctrl_isenabled (app.GetHWND (), IDC_START_BTN);
-
-	if (is_enabled)
-		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
-
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
 
@@ -1033,9 +1108,6 @@ bool _wfp_create4filters (const MFILTER_RULES* ptr_rules, UINT line, bool is_int
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
 
-	if (is_enabled)
-		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
-
 	return true;
 }
 
@@ -1044,13 +1116,7 @@ bool _wfp_create3filters (const MFILTER_APPS* ptr_apps, UINT line, bool is_intra
 	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
 		return false;
 
-	const EnumMode mode = (EnumMode)app.ConfigGet (L"Mode", ModeWhitelist).AsUint ();
-	const FWP_ACTION_TYPE action = (mode == ModeBlacklist) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
-
-	const bool is_enabled = _r_ctrl_isenabled (app.GetHWND (), IDC_START_BTN);
-
-	if (is_enabled)
-		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
+	const FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1109,9 +1175,6 @@ bool _wfp_create3filters (const MFILTER_APPS* ptr_apps, UINT line, bool is_intra
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
 
-	if (is_enabled)
-		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
-
 	return true;
 }
 
@@ -1119,13 +1182,6 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 {
 	if (!config.hengine)
 		return false;
-
-	const EnumMode mode = (EnumMode)app.ConfigGet (L"Mode", ModeWhitelist).AsUint ();
-
-	const bool is_enabled = _r_ctrl_isenabled (app.GetHWND (), IDC_START_BTN);
-
-	if (is_enabled)
-		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, false);
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1322,9 +1378,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 		_wfp_createfilter (L"BlockTcpRstOnCloseV6", fwfc, 1, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_INBOUND_TRANSPORT_V6_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V6_SILENT_DROP, FWP_ACTION_CALLOUT_TERMINATING, 0, &filter_ids);
 	}
 
-	// block all outbound traffic (only on "whitelist" mode)
-	if (mode == ModeWhitelist)
-	{
+	// block all outbound traffic
 		_wfp_createfilter (L"BlockOutboundConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 		_wfp_createfilter (L"BlockOutboundConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 
@@ -1334,22 +1388,9 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 			_wfp_createfilter (L"BlockOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 			_wfp_createfilter (L"BlockOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 		}
-	}
-	else
-	{
-		_wfp_createfilter (L"AllowOutboundConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-		_wfp_createfilter (L"AllowOutboundConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-
-		// win7+
-		if (_r_sys_validversion (6, 1))
-		{
-			_wfp_createfilter (L"AllowOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-			_wfp_createfilter (L"AllowOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-		}
-	}
 
 	// block all inbound traffic (only on "stealth" mode)
-	if (mode == ModeWhitelist && (app.ConfigGet (L"UseStealthMode", false).AsBool () || !app.ConfigGet (L"AllowInboundConnections", false).AsBool ()))
+	if (app.ConfigGet (L"UseStealthMode", false).AsBool () || !app.ConfigGet (L"AllowInboundConnections", false).AsBool ())
 	{
 		_wfp_createfilter (L"BlockInboundConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 		_wfp_createfilter (L"BlockInboundConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
@@ -1357,7 +1398,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 
 	// block all listen traffic (NOT RECOMMENDED!!!!)
 	// issue: https://github.com/henrypp/simplewall/issues/9
-	if (mode == ModeWhitelist && !app.ConfigGet (L"AllowListenConnections2", true).AsBool ())
+	if (!app.ConfigGet (L"AllowListenConnections2", true).AsBool ())
 	{
 		_wfp_createfilter (L"BlockListenConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 		_wfp_createfilter (L"BlockListenConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
@@ -1425,9 +1466,6 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
-
-	if (is_enabled)
-		_r_ctrl_enable (app.GetHWND (), IDC_START_BTN, true);
 
 	return true;
 }

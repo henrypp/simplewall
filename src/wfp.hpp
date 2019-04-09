@@ -9,8 +9,7 @@ bool _wfp_isfiltersinstalled ();
 bool _wfp_initialize (bool is_full);
 void _wfp_uninitialize (bool is_full);
 
-bool _wfp_isfiltersinstalled ();
-bool _wfp_destroy2filters (const MARRAY* pmar, UINT line);
+void _wfp_installfilters ();
 
 bool _wfp_transact_start (UINT line);
 bool _wfp_transact_commit (UINT line);
@@ -19,7 +18,6 @@ bool _wfp_deletefilter (HANDLE engineHandle, const GUID* pfilter_id);
 DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 const count, UINT8 weight, const GUID* layer, const GUID* callout, FWP_ACTION_TYPE action, UINT32 flags, MARRAY* pmar = nullptr);
 
 void _wfp_destroyfilters ();
-
 bool _wfp_destroy2filters (const MARRAY* pmar, UINT line);
 
 bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, MARRAY* pmfarr);

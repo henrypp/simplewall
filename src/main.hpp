@@ -10,6 +10,80 @@
 #include "resource.hpp"
 #include "app.hpp"
 
+// libs
+#pragma comment(lib, "crypt32.lib")
+#pragma comment(lib, "dnsapi.lib")
+#pragma comment(lib, "fwpuclnt.lib")
+#pragma comment(lib, "iphlpapi.lib")
+#pragma comment(lib, "ntdll.lib")
+#pragma comment(lib, "rpcrt4.lib")
+#pragma comment(lib, "version.lib")
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "wintrust.lib")
+
+// guid
+extern "C" {
+	static const GUID GUID_WfpProvider =
+	{0xb0d553e2, 0xc6a0, 0x4a9a, {0xae, 0xb8, 0xc7, 0x52, 0x48, 0x3e, 0xd6, 0x2f}};
+
+	static const GUID GUID_WfpSublayer =
+	{0x9fee6f59, 0xb951, 0x4f9a, {0xb5, 0x2f, 0x13, 0x3d, 0xcf, 0x7a, 0x42, 0x79}};
+
+	// deprecated and not used, but need for compatibility
+	static const GUID GUID_WfpOutboundCallout4_DEPRECATED =
+	{0xf1251f1a, 0xab09, 0x4ce7, {0xba, 0xe3, 0x6c, 0xcc, 0xce, 0xf2, 0xc8, 0xca}};
+
+	static const GUID GUID_WfpOutboundCallout6_DEPRECATED =
+	{0xfd497f2e, 0x46f5, 0x486d, {0xb0, 0xc, 0x3f, 0x7f, 0xe0, 0x7a, 0x94, 0xa6}};
+
+	static const GUID GUID_WfpInboundCallout4_DEPRECATED =
+	{0xefc879ce, 0x3066, 0x45bb, {0x8a, 0x70, 0x17, 0xfe, 0x29, 0x78, 0x53, 0xc0}};
+
+	static const GUID GUID_WfpInboundCallout6_DEPRECATED =
+	{0xd0420299, 0x52d8, 0x4f18, {0xbc, 0x80, 0x47, 0x3a, 0x24, 0x93, 0xf2, 0x69}};
+
+	static const GUID GUID_WfpListenCallout4_DEPRECATED =
+	{0x51fa679d, 0x578b, 0x4835, {0xa6, 0x3e, 0xca, 0xd7, 0x68, 0x7f, 0x74, 0x95}};
+
+	static const GUID GUID_WfpListenCallout6_DEPRECATED =
+	{0xa02187ca, 0xe655, 0x4adb, {0xa1, 0xf2, 0x47, 0xa2, 0xc9, 0x78, 0xf9, 0xce}};
+};
+
+// enums
+enum EnumAppType
+{
+	AppRegular = 0,
+	AppDevice = 1,
+	AppNetwork = 2,
+	AppService = 3,
+	AppPackage = 4, // win8+
+	AppPico = 5 // win10+
+};
+
+enum EnumRuleType
+{
+	TypeRuleUnknown = 0,
+	TypeBlocklist = 1,
+	TypeSystem = 2,
+	TypeCustom = 3,
+};
+
+enum EnumRuleItemType
+{
+	TypeRuleItemUnknown = 0,
+	TypeHost = 1,
+	TypeIp = 2,
+	TypePort = 4,
+};
+
+enum EnumXmlType
+{
+	XmlApps = 0,
+	XmlRules = 1,
+	XmlRulesConfig = 2,
+};
+
 INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -130,86 +204,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 // memory limitation for 1 rule
 #define RULE_NAME_CCH_MAX 64
 #define RULE_RULE_CCH_MAX 256
-
-// libs
-#pragma comment(lib, "crypt32.lib")
-#pragma comment(lib, "dnsapi.lib")
-#pragma comment(lib, "fwpuclnt.lib")
-#pragma comment(lib, "iphlpapi.lib")
-#pragma comment(lib, "ntdll.lib")
-#pragma comment(lib, "rpcrt4.lib")
-#pragma comment(lib, "version.lib")
-#pragma comment(lib, "ws2_32.lib")
-#pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "wintrust.lib")
-
-// guid
-extern "C" {
-	static const GUID GUID_WfpProvider =
-	{0xb0d553e2, 0xc6a0, 0x4a9a, {0xae, 0xb8, 0xc7, 0x52, 0x48, 0x3e, 0xd6, 0x2f}};
-
-	static const GUID GUID_WfpSublayer =
-	{0x9fee6f59, 0xb951, 0x4f9a, {0xb5, 0x2f, 0x13, 0x3d, 0xcf, 0x7a, 0x42, 0x79}};
-
-	// deprecated and not used, but need for compatibility
-	static const GUID GUID_WfpOutboundCallout4_DEPRECATED =
-	{0xf1251f1a, 0xab09, 0x4ce7, {0xba, 0xe3, 0x6c, 0xcc, 0xce, 0xf2, 0xc8, 0xca}};
-
-	static const GUID GUID_WfpOutboundCallout6_DEPRECATED =
-	{0xfd497f2e, 0x46f5, 0x486d, {0xb0, 0xc, 0x3f, 0x7f, 0xe0, 0x7a, 0x94, 0xa6}};
-
-	static const GUID GUID_WfpInboundCallout4_DEPRECATED =
-	{0xefc879ce, 0x3066, 0x45bb, {0x8a, 0x70, 0x17, 0xfe, 0x29, 0x78, 0x53, 0xc0}};
-
-	static const GUID GUID_WfpInboundCallout6_DEPRECATED =
-	{0xd0420299, 0x52d8, 0x4f18, {0xbc, 0x80, 0x47, 0x3a, 0x24, 0x93, 0xf2, 0x69}};
-
-	static const GUID GUID_WfpListenCallout4_DEPRECATED =
-	{0x51fa679d, 0x578b, 0x4835, {0xa6, 0x3e, 0xca, 0xd7, 0x68, 0x7f, 0x74, 0x95}};
-
-	static const GUID GUID_WfpListenCallout6_DEPRECATED =
-	{0xa02187ca, 0xe655, 0x4adb, {0xa1, 0xf2, 0x47, 0xa2, 0xc9, 0x78, 0xf9, 0xce}};
-};
-
-// enums
-enum EnumXmlType
-{
-	XmlApps = 0,
-	XmlRules = 1,
-	XmlRulesConfig = 2,
-};
-
-enum EnumMode
-{
-	ModeWhitelist = 0,
-	ModeBlacklist = 1,
-};
-
-enum EnumAppType
-{
-	AppRegular = 0,
-	AppDevice = 1,
-	AppNetwork = 2,
-	AppService = 3,
-	AppPackage = 4, // win8+
-	AppPico = 5 // win10+
-};
-
-enum EnumRuleType
-{
-	TypeRuleUnknown = 0,
-	TypeBlocklist = 1,
-	TypeSystem = 2,
-	TypeCustom = 3,
-};
-
-enum EnumRuleItemType
-{
-	TypeRuleItemUnknown = 0,
-	TypeHost = 1,
-	TypeIp = 2,
-	TypePort = 4,
-};
 
 typedef std::vector<GUID> MARRAY;
 
@@ -436,27 +430,51 @@ typedef struct _ITEM_LOG
 	bool is_myprovider = false;
 } ITEM_LOG, *PITEM_LOG;
 
-typedef struct _ITEM_LIST_HEAD
+typedef struct _ITEM_NETWORK
 {
-	SLIST_HEADER ListHead;
+	_ITEM_NETWORK ()
+	{
+		path = nullptr;
+		remote_fmt = nullptr;
+		local_fmt = nullptr;
+	}
 
-	volatile LONG item_count;
-	volatile LONG thread_count;
-} ITEM_LIST_HEAD, *PITEM_LIST_HEAD;
+	~_ITEM_NETWORK ()
+	{
+		SAFE_DELETE_ARRAY (path);
+		SAFE_DELETE_ARRAY (remote_fmt);
+		SAFE_DELETE_ARRAY (local_fmt);
+	}
 
-typedef struct _ITEM_LIST_ENTRY
-{
-	SLIST_ENTRY ListEntry;
+	LPWSTR path = nullptr;
+	LPWSTR remote_fmt = nullptr;
+	LPWSTR local_fmt = nullptr;
 
-#ifndef _WIN64
-	ULONG_PTR Reserved = 0;
-#endif // _WIN64
+	size_t hash = 0;
 
-	PITEM_LOG Body = nullptr;
-} ITEM_LIST_ENTRY, *PITEM_LIST_ENTRY;
+	ADDRESS_FAMILY af = 0;
 
-C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
-C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
+	FWP_DIRECTION direction = FWP_DIRECTION_OUTBOUND;
+
+	union
+	{
+		IN_ADDR remote_addr = {0};
+		IN6_ADDR remote_addr6;
+	};
+
+	union
+	{
+		IN_ADDR local_addr = {0};
+		IN6_ADDR local_addr6;
+	};
+
+	size_t icon_id=0;
+
+	UINT16 remote_port = 0;
+	UINT16 local_port = 0;
+
+	UINT8 protocol = 0;
+} ITEM_NETWORK, *PITEM_NETWORK;
 
 typedef struct _ITEM_ADD
 {
@@ -567,3 +585,25 @@ typedef struct _ITEM_ADDRESS
 
 	bool is_range = false;
 } ITEM_ADDRESS, *PITEM_ADDRESS;
+
+typedef struct _ITEM_LIST_HEAD
+{
+	SLIST_HEADER ListHead;
+
+	volatile LONG item_count;
+	volatile LONG thread_count;
+} ITEM_LIST_HEAD, *PITEM_LIST_HEAD;
+
+typedef struct _ITEM_LIST_ENTRY
+{
+	SLIST_ENTRY ListEntry;
+
+#ifndef _WIN64
+	ULONG_PTR Reserved = 0;
+#endif // _WIN64
+
+	PITEM_LOG Body = nullptr;
+} ITEM_LIST_ENTRY, *PITEM_LIST_ENTRY;
+
+C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
+C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
