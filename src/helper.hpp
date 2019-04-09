@@ -8,7 +8,7 @@ void _app_settab_id (HWND hwnd, size_t page_id);
 
 void _app_applycasestyle (LPWSTR buffer, size_t length);
 
-bool _app_formataddress (PITEM_LOG const ptr_log, FWP_DIRECTION dir, UINT16 port, LPWSTR* ptr_dest, bool is_appenddns);
+bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, LPWSTR *ptr_dest, bool is_appenddns);
 
 void _app_freearray (std::vector<PITEM_ADD>* ptr);
 void _app_freecache (MCACHE_MAP* ptr_map);
@@ -23,6 +23,7 @@ bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR* pinfo);
 size_t _app_getposition (HWND hwnd, size_t hash);
 rstring _app_getprotoname (UINT8 proto);
 
+void _app_generate_connections ();
 void _app_generate_packages ();
 void _app_generate_services ();
 
@@ -46,7 +47,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
 bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR buffer, DWORD length);
 void _app_resolvefilename (rstring& path);
 
-void _app_showitem (HWND hwnd, UINT ctrl_id, size_t item, INT scroll_pos);
+void _app_showitem (HWND hwnd, size_t hash, INT scroll_pos);
 
 HBITMAP _app_ico2bmp (HICON hicon);
 

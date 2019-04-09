@@ -1002,7 +1002,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					if (idx != LAST_VALUE)
 					{
-						_app_showitem (app.GetHWND (), IDC_APPS_PROFILE, _app_getposition (app.GetHWND (), notifications.at (idx)->hash), -1);
+						_app_showitem (app.GetHWND (), notifications.at (idx)->hash, -1);
 
 						_r_wnd_toggle (app.GetHWND (), true);
 					}
@@ -1132,7 +1132,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 								hash = ptr_log->hash;
 
 								LPWSTR rule = nullptr;
-								_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &rule, false);
+								_app_formataddress (ptr_log->af, &ptr_log->remote_addr, ptr_log->remote_port, &rule, false);
 
 								_r_str_alloc (&ptr_rule->pname, _r_str_length (rule), rule);
 								_r_str_alloc (&ptr_rule->prule_remote, _r_str_length (rule), rule);
@@ -1146,7 +1146,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						_app_ruleenable (ptr_rule, true);
 
 						ptr_rule->type = TypeCustom;
-						ptr_rule->is_block = ((app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) ? false : true);
+						ptr_rule->is_block = false;
 
 						if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), app.GetHWND (), &EditorProc, (LPARAM)ptr_rule))
 						{

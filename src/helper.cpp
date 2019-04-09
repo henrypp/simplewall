@@ -31,9 +31,11 @@ void _app_settab_id (HWND hwnd, size_t page_id)
 
 			SendMessage (hwnd, WM_NOTIFY, 0, (LPARAM)& hdr);
 
-			break;
+			return;
 		}
 	}
+
+	_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
 void _app_applycasestyle (LPWSTR buffer, size_t length)
@@ -47,31 +49,25 @@ void _app_applycasestyle (LPWSTR buffer, size_t length)
 	}
 }
 
-bool _app_formataddress (PITEM_LOG const ptr_log, FWP_DIRECTION dir, UINT16 port, LPWSTR * ptr_dest, bool is_appenddns)
+bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, LPWSTR * ptr_dest, bool is_appenddns)
 {
-	if (!ptr_log || !ptr_dest)
+	if (!ptr_addr || !ptr_dest)
 		return false;
 
 	bool result = false;
 
 	WCHAR formatted_address[512] = {0};
 
-	PIN_ADDR addrv4 = nullptr;
-	PIN6_ADDR addrv6 = nullptr;
-
-	if (ptr_log->af == AF_INET)
+	if (af == AF_INET || af == AF_INET6)
 	{
-		addrv4 = (dir == FWP_DIRECTION_OUTBOUND || dir == FWP_DIRECTION_OUT) ? &ptr_log->remote_addr : &ptr_log->local_addr;
+		if (InetNtop (af, ptr_addr, formatted_address, _countof (formatted_address)))
+		{
+			if (af == AF_INET)
+				result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr) && !IN4_IS_ADDR_LOOPBACK ((PIN_ADDR)ptr_addr);
 
-		if (InetNtop (AF_INET, addrv4, formatted_address, _countof (formatted_address)))
-			result = !IN4_IS_ADDR_UNSPECIFIED (addrv4);
-	}
-	else if (ptr_log->af == AF_INET6)
-	{
-		addrv6 = (dir == FWP_DIRECTION_OUTBOUND || dir == FWP_DIRECTION_OUT) ? &ptr_log->remote_addr6 : &ptr_log->local_addr6;
-
-		if (InetNtop (AF_INET6, addrv6, formatted_address, _countof (formatted_address)))
-			result = !IN6_IS_ADDR_UNSPECIFIED (addrv6);
+			else if (af == AF_INET6)
+				result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr) && !IN6_IS_ADDR_LOOPBACK ((PIN6_ADDR)ptr_addr);
+		}
 	}
 
 	if (port)
@@ -101,7 +97,7 @@ bool _app_formataddress (PITEM_LOG const ptr_log, FWP_DIRECTION dir, UINT16 port
 				WCHAR hostBuff[NI_MAXHOST] = {0};
 				LPWSTR cache_ptr = nullptr;
 
-				if (_app_resolveaddress (ptr_log->af, (ptr_log->af == AF_INET) ? (LPVOID)addrv4 : (LPVOID)addrv6, hostBuff, _countof (hostBuff)))
+				if (_app_resolveaddress (af, ptr_addr, hostBuff, _countof (hostBuff)))
 				{
 					StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", hostBuff));
 
@@ -262,13 +258,13 @@ void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, LPWSTR * extract
 
 bool _app_getfileicon (LPCWSTR path, bool is_small, size_t * picon_id, HICON * picon)
 {
-	if (!path || !_r_fs_exists (path) || (!picon_id && !picon))
+	if (!path || !path[0] || (!picon_id && !picon))
 		return false;
 
 	bool result = false;
 
 	SHFILEINFO shfi = {0};
-	DWORD flags = SHGFI_USEFILEATTRIBUTES;
+	DWORD flags = 0;
 
 	if (picon_id)
 		flags |= SHGFI_SYSICONINDEX;
@@ -283,7 +279,7 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, size_t * picon_id, HICON * p
 
 	if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
 	{
-		if (SHGetFileInfo (path, FILE_ATTRIBUTE_NORMAL, &shfi, sizeof (shfi), flags))
+		if (SHGetFileInfo (path, 0, &shfi, sizeof (shfi), flags))
 		{
 			if (picon_id)
 				*picon_id = (size_t)shfi.iIcon;
@@ -299,6 +295,17 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, size_t * picon_id, HICON * p
 
 		if (SUCCEEDED (hrComInit))
 			CoUninitialize ();
+	}
+
+	if (!result)
+	{
+		if (picon_id)
+			*picon_id = config.icon_id;
+
+		if (picon)
+		{
+			*picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
+		}
 	}
 
 	return result;
@@ -599,6 +606,238 @@ rstring _app_getprotoname (UINT8 proto)
 	}
 
 	return SZ_EMPTY;
+}
+
+rstring getprocname (DWORD pid)
+{
+	WCHAR real_path[MAX_PATH] = {0};
+	const HANDLE hprocess = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+
+	StringCchPrintf (real_path, _countof (real_path), L"%d", pid);
+
+	if (hprocess)
+	{
+		if (pid == PROC_SYSTEM_PID)
+		{
+			StringCchCopy (real_path, _countof (real_path), PROC_SYSTEM_NAME);
+		}
+		else
+		{
+			DWORD size = _countof (real_path) - 1;
+
+			if (QueryFullProcessImageName (hprocess, 0, real_path, &size))
+			{
+				_app_applycasestyle (real_path, _r_str_length (real_path)); // apply case-style
+			}
+			else
+			{
+				// cannot get file path because it's not filesystem process (Pico maybe?)
+				if (GetLastError () == ERROR_GEN_FAILURE)
+				{
+					//StringCchCopy (real_path, _countof (real_path), spi->ImageName.Buffer);
+				}
+			}
+		}
+
+		CloseHandle (hprocess);
+	}
+
+	return real_path;
+}
+
+void _app_generate_connections ()
+{
+	DWORD tableSize = 0;
+	GetExtendedTcpTable (nullptr, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
+
+	if (tableSize)
+	{
+		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = new MIB_TCPTABLE_OWNER_MODULE[tableSize];
+
+		if (GetExtendedTcpTable (tcp4Table, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR && tcp4Table)
+		{
+			for (ULONG i = 0; i < tcp4Table->dwNumEntries; i++)
+			{
+				if (!tcp4Table->table[i].dwOwningPid)
+					continue;
+
+				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+
+				ptr_network->remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
+				ptr_network->local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
+
+				if (
+					(
+					IN4_IS_ADDR_UNSPECIFIED (&ptr_network->remote_addr) &&
+					IN4_IS_ADDR_UNSPECIFIED (&ptr_network->local_addr)
+					||
+					IN4_IS_ADDR_LOOPBACK (&ptr_network->remote_addr) &&
+					IN4_IS_ADDR_LOOPBACK (&ptr_network->local_addr)) &&
+					!tcp4Table->table[i].dwRemotePort &&
+					!tcp4Table->table[i].dwLocalPort
+					)
+				{
+					SAFE_DELETE (ptr_network);
+					continue;
+				}
+
+				WCHAR path_name[MAX_PATH] = {0};
+				StringCchCopy (path_name, _countof (path_name), getprocname (tcp4Table->table[i].dwOwningPid));
+
+				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
+
+				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
+
+				ptr_network->af = AF_INET;
+				ptr_network->protocol = IPPROTO_TCP;
+				ptr_network->hash = _r_str_hash (ptr_network->path);
+
+				ptr_network->remote_port = (UINT16)tcp4Table->table[i].dwRemotePort;
+				ptr_network->local_port = (UINT16)tcp4Table->table[i].dwLocalPort;
+
+				network_arr.push_back (ptr_network);
+			}
+		}
+
+		SAFE_DELETE_ARRAY (tcp4Table);
+	}
+
+	tableSize = 0;
+	GetExtendedTcpTable (nullptr, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0);
+
+	if (tableSize)
+	{
+		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = new MIB_TCP6TABLE_OWNER_MODULE[tableSize];
+
+		if (GetExtendedTcpTable (tcp6Table, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR && tcp6Table)
+		{
+			for (ULONG i = 0; i < tcp6Table->dwNumEntries; i++)
+			{
+				if (!tcp6Table->table[i].dwOwningPid)
+					continue;
+
+				if (
+					(
+					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)tcp6Table->table[i].ucRemoteAddr) &&
+					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)tcp6Table->table[i].ucLocalAddr)
+					||
+					IN6_IS_ADDR_LOOPBACK ((PIN6_ADDR)tcp6Table->table[i].ucRemoteAddr) &&
+					IN6_IS_ADDR_LOOPBACK ((PIN6_ADDR)tcp6Table->table[i].ucLocalAddr)
+					) &&
+					!tcp6Table->table[i].dwRemotePort &&
+					!tcp6Table->table[i].dwLocalPort
+					)
+					continue;
+
+				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+
+				WCHAR path_name[MAX_PATH] = {0};
+				StringCchCopy (path_name, _countof (path_name), getprocname (tcp6Table->table[i].dwOwningPid));
+
+				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
+
+				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
+
+				ptr_network->af = AF_INET6;
+				ptr_network->protocol = IPPROTO_TCP;
+				ptr_network->hash = _r_str_hash (ptr_network->path);
+
+				CopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
+				CopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
+
+				ptr_network->remote_port = (UINT16)tcp6Table->table[i].dwRemotePort;
+				ptr_network->local_port = (UINT16)tcp6Table->table[i].dwLocalPort;
+
+				network_arr.push_back (ptr_network);
+			}
+		}
+
+		SAFE_DELETE_ARRAY (tcp6Table);
+	}
+
+
+	tableSize = 0;
+	GetExtendedUdpTable (nullptr, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0);
+
+	if (tableSize)
+	{
+		PMIB_UDPTABLE_OWNER_MODULE udp4Table = new MIB_UDPTABLE_OWNER_MODULE[tableSize];
+
+		if (GetExtendedUdpTable (udp4Table, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR && udp4Table)
+		{
+			for (ULONG i = 0; i < udp4Table->dwNumEntries; i++)
+			{
+				if (!udp4Table->table[i].dwOwningPid)
+					continue;
+
+				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+
+				WCHAR path_name[MAX_PATH] = {0};
+				StringCchCopy (path_name, _countof (path_name), getprocname (udp4Table->table[i].dwOwningPid));
+
+				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
+
+				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
+
+				ptr_network->af = AF_INET;
+				ptr_network->protocol = IPPROTO_UDP;
+				ptr_network->hash = _r_str_hash (ptr_network->path);
+
+				ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
+				ptr_network->local_port = (UINT16)udp4Table->table[i].dwLocalPort;
+
+				network_arr.push_back (ptr_network);
+			}
+		}
+
+		SAFE_DELETE_ARRAY (udp4Table);
+	}
+
+	tableSize = 0;
+	GetExtendedUdpTable (nullptr, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0);
+
+	if (tableSize)
+	{
+		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = new MIB_UDP6TABLE_OWNER_MODULE[tableSize];
+
+		if (GetExtendedUdpTable (udp6Table, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR && udp6Table)
+		{
+			for (ULONG i = 0; i < udp6Table->dwNumEntries; i++)
+			{
+				if (!udp6Table->table[i].dwOwningPid)
+					continue;
+
+				if (
+					(IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)udp6Table->table[i].ucLocalAddr)
+					||
+					IN6_IS_ADDR_LOOPBACK ((PIN6_ADDR)udp6Table->table[i].ucLocalAddr)) &&
+					!udp6Table->table[i].dwLocalPort
+					)
+					continue;
+
+				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+
+				WCHAR path_name[MAX_PATH] = {0};
+				StringCchCopy (path_name, _countof (path_name), getprocname (udp6Table->table[i].dwOwningPid));
+
+				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
+
+				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
+
+				ptr_network->af = AF_INET6;
+				ptr_network->protocol = IPPROTO_UDP;
+				ptr_network->hash = _r_str_hash (ptr_network->path);
+
+				CopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
+
+				ptr_network->local_port = (UINT16)udp6Table->table[i].dwLocalPort;
+
+				network_arr.push_back (ptr_network);
+			}
+		}
+
+		SAFE_DELETE_ARRAY (udp6Table);
+	}
 }
 
 void _app_generate_packages ()
@@ -1334,6 +1573,7 @@ void _app_refreshstatus (HWND hwnd)
 	const HDC hdc = GetDC (hstatus);
 
 	const UINT listview_id = _app_gettab_id (hwnd);
+	const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
 
 	// item count
 	if (hdc)
@@ -1410,8 +1650,6 @@ void _app_refreshstatus (HWND hwnd)
 			listview_id == IDC_APPS_PACKAGE
 			)
 		{
-			const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
-
 			for (size_t i = 0; i < total_count; i++)
 			{
 				const size_t hash = _r_listview_getitemlparam (hwnd, listview_id, i);
@@ -1432,11 +1670,9 @@ void _app_refreshstatus (HWND hwnd)
 				}
 			}
 
-			const bool is_whitelist = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist);
-
-			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (is_whitelist ? IDS_GROUP_ALLOWED : IDS_GROUP_BLOCKED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (IDS_GROUP_ALLOWED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
 			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (IDS_GROUP_SPECIAL_APPS, _r_fmt (L" (%d/%d)", group2_count, total_count)), 0, 0);
-			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (is_whitelist ? IDS_GROUP_BLOCKED : IDS_GROUP_ALLOWED, _r_fmt (L" (%d/%d)", group3_count, total_count)), 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (IDS_GROUP_BLOCKED, _r_fmt (L" (%d/%d)", group3_count, total_count)), 0, 0);
 		}
 		else if (
 			listview_id == IDC_RULES_BLOCKLIST ||
@@ -1444,8 +1680,6 @@ void _app_refreshstatus (HWND hwnd)
 			listview_id == IDC_RULES_CUSTOM
 			)
 		{
-			const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
-
 			for (size_t i = 0; i < total_count; i++)
 			{
 				const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, i);
@@ -2015,19 +2249,42 @@ void _app_resolvefilename (rstring & path)
 	}
 }
 
-void _app_showitem (HWND hwnd, UINT ctrl_id, size_t item, INT scroll_pos)
+void _app_showitem (HWND hwnd, size_t hash, INT scroll_pos)
 {
-	if (item != LAST_VALUE)
+	const PITEM_APP ptr_app = _app_getapplication (hash);
+
+	if (!ptr_app)
+		return;
+
+	UINT listview_id;
+
+	if (ptr_app->type == AppService)
+		listview_id = IDC_APPS_SERVICE;
+
+	else if (ptr_app->type == AppPackage)
+		listview_id = IDC_APPS_PACKAGE;
+
+	else
+		listview_id = IDC_APPS_PROFILE;
+
+	_app_settab_id (hwnd, listview_id);
+
+	for (size_t i = 0; i < _r_listview_getitemcount (hwnd, listview_id); i++)
 	{
-		if (scroll_pos == -1)
-			SendDlgItemMessage (hwnd, ctrl_id, LVM_ENSUREVISIBLE, item, TRUE); // ensure item visible
+		if ((size_t)_r_listview_getitemlparam (hwnd, listview_id, i) == hash)
+		{
+			if (scroll_pos == -1)
+				SendDlgItemMessage (hwnd, listview_id, LVM_ENSUREVISIBLE, i, TRUE); // ensure item visible
 
-		ListView_SetItemState (GetDlgItem (hwnd, ctrl_id), -1, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
-		ListView_SetItemState (GetDlgItem (hwnd, ctrl_id), item, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
+			ListView_SetItemState (GetDlgItem (hwnd, listview_id), -1, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
+			ListView_SetItemState (GetDlgItem (hwnd, listview_id), i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
+
+			if (scroll_pos != -1)
+				SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, scroll_pos); // restore scroll position
+
+			break;
+		}
 	}
-
-	if (scroll_pos != -1)
-		SendDlgItemMessage (hwnd, ctrl_id, LVM_SCROLL, 0, scroll_pos); // restore vscroll position
 }
 
 HBITMAP _app_ico2bmp (HICON hicon)
