@@ -76,7 +76,7 @@ bool _app_loginit (bool is_install)
 	if (!is_install)
 		return true; // already closed
 
-	// check if log enabled
+	  // check if log enabled
 	if (!app.ConfigGet (L"IsLogEnabled", false).AsBool ())
 		return false;
 
@@ -172,25 +172,25 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 
 	rstring buffer;
 	buffer.Format (L"\"%s\"%c\"%s\"%c\"%s\"%c%s (" SZ_LOG_REMOTE_ADDRESS L")%c%s (" SZ_LOG_LOCAL_ADDRESS L")%c%s%c\"%s\"%c#%" PRIu64 L"%c%s%c%s\r\n",
-		_r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
-		LOG_DIV,
-		ptr_log->username ? ptr_log->username : SZ_EMPTY,
-		LOG_DIV,
-		path.IsEmpty () ? SZ_EMPTY : path.GetString (),
-		LOG_DIV,
-		ptr_log->remote_fmt ? ptr_log->remote_fmt : SZ_EMPTY,
-		LOG_DIV,
-		ptr_log->local_fmt ? ptr_log->local_fmt : SZ_EMPTY,
-		LOG_DIV,
-		_app_getprotoname (ptr_log->protocol).GetString (),
-		LOG_DIV,
-		filter_name.IsEmpty () ? SZ_EMPTY : filter_name.GetString (),
-		LOG_DIV,
-		ptr_log->filter_id,
-		LOG_DIV,
-		direction.IsEmpty () ? SZ_EMPTY : direction.GetString (),
-		LOG_DIV,
-		(ptr_log->is_allow ? SZ_LOG_ALLOW : SZ_LOG_BLOCK)
+				   _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
+				   LOG_DIV,
+				   ptr_log->username ? ptr_log->username : SZ_EMPTY,
+				   LOG_DIV,
+				   path.IsEmpty () ? SZ_EMPTY : path.GetString (),
+				   LOG_DIV,
+				   ptr_log->remote_fmt ? ptr_log->remote_fmt : SZ_EMPTY,
+				   LOG_DIV,
+				   ptr_log->local_fmt ? ptr_log->local_fmt : SZ_EMPTY,
+				   LOG_DIV,
+				   _app_getprotoname (ptr_log->protocol).GetString (),
+				   LOG_DIV,
+				   filter_name.IsEmpty () ? SZ_EMPTY : filter_name.GetString (),
+				   LOG_DIV,
+				   ptr_log->filter_id,
+				   LOG_DIV,
+				   direction.IsEmpty () ? SZ_EMPTY : direction.GetString (),
+				   LOG_DIV,
+				   (ptr_log->is_allow ? SZ_LOG_ALLOW : SZ_LOG_BLOCK)
 	);
 
 	_r_fastlock_acquireexclusive (&lock_writelog);
@@ -246,12 +246,12 @@ bool _wfp_logsubscribe ()
 		}
 		else
 		{
-			typedef DWORD (WINAPI *FWPMNES5) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK4, LPVOID, LPHANDLE); // win10new+
-			typedef DWORD (WINAPI *FWPMNES4) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK4, LPVOID, LPHANDLE); // win10rs5+
-			typedef DWORD (WINAPI *FWPMNES3) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK3, LPVOID, LPHANDLE); // win10rs4+
-			typedef DWORD (WINAPI *FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK2, LPVOID, LPHANDLE); // win10+
-			typedef DWORD (WINAPI *FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK1, LPVOID, LPHANDLE); // win8+
-			typedef DWORD (WINAPI *FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0*, FWPM_NET_EVENT_CALLBACK0, LPVOID, LPHANDLE); // win7+
+			typedef DWORD (WINAPI * FWPMNES5) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK4, LPVOID, LPHANDLE); // win10new+
+			typedef DWORD (WINAPI * FWPMNES4) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK4, LPVOID, LPHANDLE); // win10rs5+
+			typedef DWORD (WINAPI * FWPMNES3) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK3, LPVOID, LPHANDLE); // win10rs4+
+			typedef DWORD (WINAPI * FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK2, LPVOID, LPHANDLE); // win10+
+			typedef DWORD (WINAPI * FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK1, LPVOID, LPHANDLE); // win8+
+			typedef DWORD (WINAPI * FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK0, LPVOID, LPHANDLE); // win7+
 
 			const FWPMNES5 _FwpmNetEventSubscribe5 = (FWPMNES5)GetProcAddress (hlib, "FwpmNetEventSubscribe5"); // win10new+
 			const FWPMNES4 _FwpmNetEventSubscribe4 = (FWPMNES4)GetProcAddress (hlib, "FwpmNetEventSubscribe4"); // win10rs5+
@@ -327,7 +327,7 @@ bool _wfp_logunsubscribe ()
 
 		if (hlib)
 		{
-			typedef DWORD (WINAPI *FWPMNEU) (HANDLE, HANDLE); // FwpmNetEventUnsubscribe0
+			typedef DWORD (WINAPI * FWPMNEU) (HANDLE, HANDLE); // FwpmNetEventUnsubscribe0
 
 			const FWPMNEU _FwpmNetEventUnsubscribe = (FWPMNEU)GetProcAddress (hlib, "FwpmNetEventUnsubscribe0");
 
@@ -349,7 +349,7 @@ bool _wfp_logunsubscribe ()
 	return result;
 }
 
-void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
+void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const *app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const *remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const *local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
 {
 	if (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ())
 		return;
@@ -357,22 +357,22 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
 	if (layer_id)
 	{
-		FWPM_LAYER* layer = nullptr;
+		FWPM_LAYER *layer = nullptr;
 
 		if (FwpmLayerGetById (config.hengine, layer_id, &layer) == ERROR_SUCCESS && layer)
 		{
 			if (memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) == 0 || memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)) == 0)
 			{
-				FwpmFreeMemory ((void**)&layer);
+				FwpmFreeMemory ((void **)& layer);
 				return;
 			}
 
-			FwpmFreeMemory ((void**)&layer);
+			FwpmFreeMemory ((void **)& layer);
 		}
 	}
 
 	const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
-	const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
+	const bool is_notificationenabled = app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ();
 
 	PITEM_LIST_ENTRY ptr_entry = (PITEM_LIST_ENTRY)_aligned_malloc (sizeof (ITEM_LIST_ENTRY), MEMORY_ALLOCATION_ALIGNMENT);
 
@@ -451,8 +451,8 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 			// read filter information
 			if (filter_id)
 			{
-				FWPM_FILTER* ptr_filter = nullptr;
-				FWPM_PROVIDER* ptr_provider = nullptr;
+				FWPM_FILTER *ptr_filter = nullptr;
+				FWPM_PROVIDER *ptr_provider = nullptr;
 
 				ptr_log->filter_id = filter_id;
 
@@ -484,10 +484,10 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 				}
 
 				if (ptr_filter)
-					FwpmFreeMemory ((void**)&ptr_filter);
+					FwpmFreeMemory ((void **)& ptr_filter);
 
 				if (ptr_provider)
-					FwpmFreeMemory ((void**)&ptr_provider);
+					FwpmFreeMemory ((void **)& ptr_provider);
 			}
 
 			// destination
@@ -576,7 +576,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 }
 
 // win7+ callback
-void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 *pEvent)
+void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 * pEvent)
 {
 	if (pEvent)
 	{
@@ -608,7 +608,7 @@ void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 *pEvent)
 }
 
 // win8+ callback
-void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 *pEvent)
+void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 * pEvent)
 {
 	if (pEvent)
 	{
@@ -657,7 +657,7 @@ void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 *pEvent)
 }
 
 // win10+ callback
-void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 *pEvent)
+void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 * pEvent)
 {
 	if (pEvent)
 	{
@@ -706,7 +706,7 @@ void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 *pEvent)
 }
 
 // win10rs4+ callback
-void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 *pEvent)
+void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 * pEvent)
 {
 	if (pEvent)
 	{
@@ -755,7 +755,7 @@ void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 *pEvent)
 }
 
 // win10rs5+ callback
-void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5 *pEvent)
+void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5 * pEvent)
 {
 	if (pEvent)
 	{
@@ -826,7 +826,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 		if (ptr_log)
 		{
 			const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
-			const bool is_notificationenabled = (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) && app.ConfigGet (L"IsNotificationsEnabled", true).AsBool (); // only for whitelist mode
+			const bool is_notificationenabled = app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ();
 
 			// apps collector
 			_r_fastlock_acquireshared (&lock_access);
@@ -853,8 +853,8 @@ UINT WINAPI LogThread (LPVOID lparam)
 			{
 				_r_fastlock_acquireshared (&lock_logbusy);
 
-				_app_formataddress (ptr_log, FWP_DIRECTION_OUTBOUND, ptr_log->remote_port, &ptr_log->remote_fmt, true);
-				_app_formataddress (ptr_log, FWP_DIRECTION_INBOUND, ptr_log->local_port, &ptr_log->local_fmt, true);
+				_app_formataddress (ptr_log->af, &ptr_log->remote_addr, ptr_log->remote_port, &ptr_log->remote_fmt, true);
+				_app_formataddress (ptr_log->af, &ptr_log->local_addr, ptr_log->local_port, &ptr_log->local_fmt, true);
 
 				_r_fastlock_releaseshared (&lock_logbusy);
 
