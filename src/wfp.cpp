@@ -143,8 +143,8 @@ bool _wfp_initialize (bool is_full)
 	{
 		if (config.pusersid)
 		{
-			FwpmEngineSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmNetEventsSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmEngineSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmNetEventsSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
 		}
 
 		if (config.pacl_engine)
@@ -242,7 +242,7 @@ bool _wfp_initialize (bool is_full)
 			sublayer.displayData.name = APP_NAME;
 			sublayer.displayData.description = APP_NAME;
 
-			sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
+			sublayer.providerKey = (LPGUID)& GUID_WfpProvider;
 			sublayer.subLayerKey = GUID_WfpSublayer;
 			sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
 			sublayer.weight = (UINT16)app.ConfigGet (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT).AsUint (); // highest weight for UINT16
@@ -279,8 +279,8 @@ bool _wfp_initialize (bool is_full)
 
 		if (config.pusersid)
 		{
-			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
 		}
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
@@ -354,8 +354,8 @@ void _wfp_uninitialize (bool is_full)
 		// set security information
 		if (config.pusersid)
 		{
-			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
 
 		}
 
@@ -524,7 +524,7 @@ bool _wfp_transact_commit (UINT line)
 	return false;
 }
 
-bool _wfp_deletefilter (HANDLE engineHandle, const GUID* pfilter_id)
+bool _wfp_deletefilter (HANDLE engineHandle, const GUID * pfilter_id)
 {
 	if (!engineHandle || !pfilter_id || *pfilter_id == GUID_NULL)
 		return false;
@@ -540,7 +540,7 @@ bool _wfp_deletefilter (HANDLE engineHandle, const GUID* pfilter_id)
 	return true;
 }
 
-DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 const count, UINT8 weight, const GUID* layer, const GUID* callout, FWP_ACTION_TYPE action, UINT32 flags, MARRAY* pmar)
+DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION * lpcond, UINT32 const count, UINT8 weight, const GUID * layer, const GUID * callout, FWP_ACTION_TYPE action, UINT32 flags, MARRAY * pmar)
 {
 	FWPM_FILTER filter = {0};
 
@@ -563,7 +563,7 @@ DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 con
 	if (flags)
 		filter.flags |= flags;
 
-	filter.providerKey = (LPGUID)&GUID_WfpProvider;
+	filter.providerKey = (LPGUID)& GUID_WfpProvider;
 	filter.subLayerKey = GUID_WfpSublayer;
 	CoCreateGuid (&filter.filterKey); // set filter guid
 
@@ -639,7 +639,7 @@ void _wfp_destroyfilters ()
 		_wfp_destroy2filters (&filter_all, __LINE__);
 }
 
-bool _wfp_destroy2filters (const MARRAY* pmar, UINT line)
+bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
 {
 	if (!config.hengine || !pmar || pmar->empty ())
 		return false;
@@ -662,13 +662,13 @@ bool _wfp_destroy2filters (const MARRAY* pmar, UINT line)
 	return true;
 }
 
-bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, MARRAY* pmfarr)
+bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, MARRAY * pmfarr)
 {
 	UINT32 count = 0;
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
 
-	FWP_BYTE_BLOB* bPath = nullptr;
-	FWP_BYTE_BLOB* bSid = nullptr;
+	FWP_BYTE_BLOB *bPath = nullptr;
+	FWP_BYTE_BLOB *bSid = nullptr;
 
 	FWP_V4_ADDR_AND_MASK addr4 = {0};
 	FWP_V6_ADDR_AND_MASK addr6 = {0};
@@ -701,7 +701,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_PACKAGE_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_SID;
-				fwfc[count].conditionValue.sid = (SID*)ptr_app->psid;
+				fwfc[count].conditionValue.sid = (SID *)ptr_app->psid;
 
 				count += 1;
 			}
@@ -993,7 +993,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 	return true;
 }
 
-bool _wfp_create4filters (const MFILTER_RULES* ptr_rules, UINT line, bool is_intransact)
+bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_intransact)
 {
 	if (!config.hengine || !ptr_rules || ptr_rules->empty ())
 		return false;
@@ -1066,7 +1066,7 @@ bool _wfp_create4filters (const MFILTER_RULES* ptr_rules, UINT line, bool is_int
 
 					if (!ptr_rule->apps.empty ())
 					{
-						for (auto const& p : ptr_rule->apps)
+						for (auto const &p : ptr_rule->apps)
 						{
 							if (ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
 								continue;
@@ -1111,7 +1111,7 @@ bool _wfp_create4filters (const MFILTER_RULES* ptr_rules, UINT line, bool is_int
 	return true;
 }
 
-bool _wfp_create3filters (const MFILTER_APPS* ptr_apps, UINT line, bool is_intransact)
+bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intransact)
 {
 	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
 		return false;
@@ -1379,15 +1379,15 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 	}
 
 	// block all outbound traffic
-		_wfp_createfilter (L"BlockOutboundConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
-		_wfp_createfilter (L"BlockOutboundConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
+	_wfp_createfilter (L"BlockOutboundConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
+	_wfp_createfilter (L"BlockOutboundConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 
-		// win7+
-		if (_r_sys_validversion (6, 1))
-		{
-			_wfp_createfilter (L"BlockOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
-			_wfp_createfilter (L"BlockOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
-		}
+	// win7+
+	if (_r_sys_validversion (6, 1))
+	{
+		_wfp_createfilter (L"BlockOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
+		_wfp_createfilter (L"BlockOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
+	}
 
 	// block all inbound traffic (only on "stealth" mode)
 	if (app.ConfigGet (L"UseStealthMode", false).AsBool () || !app.ConfigGet (L"AllowInboundConnections", false).AsBool ())
@@ -1470,14 +1470,14 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 	return true;
 }
 
-void _wfp_setfiltersecurity (HANDLE engineHandle, const GUID* pfilter_id, const PSID psid, PACL pacl, UINT line)
+void _wfp_setfiltersecurity (HANDLE engineHandle, const GUID * pfilter_id, const PSID psid, PACL pacl, UINT line)
 {
 	if (!engineHandle || !pfilter_id || *pfilter_id == GUID_NULL || (!psid && !pacl))
 		return;
 
 	if (psid)
 	{
-		const DWORD result = FwpmFilterSetSecurityInfoByKey (engineHandle, pfilter_id, OWNER_SECURITY_INFORMATION, (const SID*)psid, nullptr, nullptr, nullptr);
+		const DWORD result = FwpmFilterSetSecurityInfoByKey (engineHandle, pfilter_id, OWNER_SECURITY_INFORMATION, (const SID *)psid, nullptr, nullptr, nullptr);
 
 		if (result != ERROR_SUCCESS)
 			_app_logerror (L"FwpmFilterSetSecurityInfoByKey", result, _r_fmt (L"#%d", line), true);
@@ -1492,7 +1492,7 @@ void _wfp_setfiltersecurity (HANDLE engineHandle, const GUID* pfilter_id, const 
 	}
 }
 
-size_t _wfp_dumpfilters (const GUID* pprovider, MARRAY* pfilters)
+size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * pfilters)
 {
 	if (!config.hengine || !pprovider || !pfilters)
 		return 0;
@@ -1509,7 +1509,7 @@ size_t _wfp_dumpfilters (const GUID* pprovider, MARRAY* pfilters)
 	}
 	else
 	{
-		FWPM_FILTER** matchingFwpFilter = nullptr;
+		FWPM_FILTER **matchingFwpFilter = nullptr;
 
 		result = FwpmFilterEnum (config.hengine, henum, UINT32_MAX, &matchingFwpFilter, &count);
 
@@ -1527,7 +1527,7 @@ size_t _wfp_dumpfilters (const GUID* pprovider, MARRAY* pfilters)
 						pfilters->push_back (matchingFwpFilter[i]->filterKey);
 				}
 
-				FwpmFreeMemory ((void**)&matchingFwpFilter);
+				FwpmFreeMemory ((void **)& matchingFwpFilter);
 			}
 			else
 			{
@@ -1542,7 +1542,7 @@ size_t _wfp_dumpfilters (const GUID* pprovider, MARRAY* pfilters)
 	return count;
 }
 
-bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
+bool _mps_firewallapi (bool *pis_enabled, const bool *pis_enable)
 {
 	if (!pis_enabled && !pis_enable)
 		return false;
@@ -1553,8 +1553,8 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 
 	if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
 	{
-		INetFwPolicy2* pNetFwPolicy2 = nullptr;
-		HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (void**)&pNetFwPolicy2);
+		INetFwPolicy2 *pNetFwPolicy2 = nullptr;
+		HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (void **)& pNetFwPolicy2);
 
 		if (SUCCEEDED (hr) && pNetFwPolicy2)
 		{
@@ -1684,7 +1684,7 @@ void _mps_changeconfig2 (bool is_enable)
 					DWORD dwBytesNeeded = 0;
 					SERVICE_STATUS_PROCESS ssp = {0};
 
-					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof (ssp), &dwBytesNeeded))
+					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)& ssp, sizeof (ssp), &dwBytesNeeded))
 					{
 						_app_logerror (L"QueryServiceStatusEx", GetLastError (), arr[i], false);
 					}
@@ -1711,7 +1711,7 @@ void _mps_changeconfig2 (bool is_enable)
 	}
 }
 
-DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumAppType type)
+DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumAppType type)
 {
 	if (!path || !path[0] || !lpblob)
 		return ERROR_BAD_ARGUMENTS;
@@ -1787,7 +1787,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumAppT
 	return ERROR_FILE_NOT_FOUND;
 }
 
-bool ByteBlobAlloc (PVOID data, size_t length, FWP_BYTE_BLOB** lpblob)
+bool ByteBlobAlloc (PVOID data, size_t length, FWP_BYTE_BLOB * *lpblob)
 {
 	if (!data || !length || !lpblob)
 		return false;
@@ -1818,11 +1818,11 @@ bool ByteBlobAlloc (PVOID data, size_t length, FWP_BYTE_BLOB** lpblob)
 	return false;
 }
 
-void ByteBlobFree (FWP_BYTE_BLOB** lpblob)
+void ByteBlobFree (FWP_BYTE_BLOB * *lpblob)
 {
 	if (lpblob && *lpblob)
 	{
-		FWP_BYTE_BLOB* blob = *lpblob;
+		FWP_BYTE_BLOB *blob = *lpblob;
 
 		if (blob)
 		{
