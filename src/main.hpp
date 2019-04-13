@@ -21,6 +21,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "wintrust.lib")
+#pragma comment(lib, "windowscodecs.lib")
 
 // guid
 extern "C" {

@@ -9,6 +9,7 @@
 #include <windns.h>
 #include <mstcpip.h>
 #include <windows.h>
+#include <wincodec.h>
 #include <netfw.h>
 #include <iphlpapi.h>
 #include <subauth.h>
