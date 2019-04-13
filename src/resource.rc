@@ -90,24 +90,6 @@ BEGIN
 	END
 	POPUP " "
 	BEGIN
-		MENUITEM " ", IDM_TRAY_START
-		POPUP " "
-		BEGIN
-			MENUITEM " ", IDM_TRAY_MODEWHITELIST
-			MENUITEM " ", IDM_TRAY_MODEBLACKLIST
-		END
-		MENUITEM SEPARATOR
-		POPUP " "
-		BEGIN
-			MENUITEM " ", IDM_ENABLELOG_CHK
-			MENUITEM " ", IDM_ENABLENOTIFICATIONS_CHK
-			MENUITEM SEPARATOR
-			MENUITEM " ", IDM_LOGSHOW
-			MENUITEM " ", IDM_LOGCLEAR
-		END
-	END
-	POPUP " "
-	BEGIN
 		MENUITEM " ", IDM_WEBSITE
 		MENUITEM " ", IDM_CHECKUPDATES
 		MENUITEM " ", IDM_ABOUT
@@ -123,8 +105,7 @@ BEGIN
 		MENUITEM " ", IDM_TRAY_START
 		POPUP " "
 		BEGIN
-			MENUITEM " ", IDM_TRAY_MODEWHITELIST
-			MENUITEM " ", IDM_TRAY_MODEBLACKLIST
+		MENUITEM SEPARATOR
 		END
 		MENUITEM SEPARATOR
 		POPUP " "
@@ -218,6 +199,8 @@ CAPTION APP_NAME
 MENU IDM_MAIN
 FONT 8, "Ms Shell Dlg"
 BEGIN
+	CONTROL			"", IDC_REBAR, REBARCLASSNAME, WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CCS_NODIVIDER | CCS_TOP | RBS_VARHEIGHT | RBS_AUTOSIZE, 0, 0, 0, 0
+
 	CONTROL			"", IDC_TAB, WC_TABCONTROL, WS_CHILD | WS_VISIBLE | TCS_MULTILINE, 0, 0, 348, 158
 
 	CONTROL			"", IDC_APPS_PROFILE, WC_LISTVIEW, NOT WS_BORDER | WS_TABSTOP | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SHAREIMAGELISTS | NOT WS_VISIBLE, 0, 0, 348, 180
@@ -638,8 +621,6 @@ BEGIN
 
 	IDS_EDITRULES "Edit rules"
 
-	IDS_CONTROL "Control"
-
 	IDS_TAB_APPS "Apps"
 	IDS_TAB_SERVICES "Services"
 	IDS_TAB_PACKAGES "Packages"
@@ -649,22 +630,29 @@ END
 //
 // RC data
 //
-IDR_RULES_BLOCKLIST			RCDATA		"..\\bin\\blocklist.xml"
-IDR_RULES_SYSTEM			RCDATA		"..\\bin\\rules_system.xml"
+IDR_RULES_BLOCKLIST	RCDATA		"..\\bin\\blocklist.xml"
+IDR_RULES_SYSTEM	RCDATA		"..\\bin\\rules_system.xml"
+
+//
+// PNG resources
+//
+IDP_ALLOW			PNG		"res\\allow.png"
+IDP_BLOCK			PNG		"res\\block.png"
+IDP_CHECKED			PNG		"res\\checked.png"
+IDP_UNCHECKED		PNG		"res\\unchecked.png"
+IDP_MENU			PNG		"res\\menu.png"
+IDP_TIMER			PNG		"res\\timer.png"
+IDP_RULES			PNG		"res\\rules.png"
+IDP_CLOSE			PNG		"res\\close.png"
+IDP_ADD				PNG		"res\\add.png"
+IDP_REFRESH			PNG		"res\\refresh.png"
+IDP_SETTINGS		PNG		"res\\settings.png"
 
 //
 // Icon resources
 //
-IDI_MAIN		ICON		"res\\100.ico"
-IDI_INACTIVE	ICON		"res\\101.ico"
-IDI_ALLOW		ICON		"res\\allow_btn.ico"
-IDI_BLOCK		ICON		"res\\block_btn.ico"
-IDI_RULES		ICON		"res\\rules_btn.ico"
-IDI_TIMER		ICON		"res\\timer_btn.ico"
-IDI_CLOSE		ICON		"res\\close_btn.ico"
-IDI_CHECKED		ICON		"res\\checked.ico"
-IDI_UNCHECKED	ICON		"res\\unchecked.ico"
-IDI_MENU		ICON		"res\\menu_btn.ico"
+IDI_MAIN			ICON		"res\\100.ico"
+IDI_INACTIVE		ICON		"res\\101.ico"
 
 //
 // Manifest resource
