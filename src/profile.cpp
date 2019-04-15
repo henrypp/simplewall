@@ -250,7 +250,7 @@ bool _app_freeapplication (size_t hash)
 		_app_freenotify (hash, false);
 		_r_fastlock_releaseexclusive (&lock_notification);
 
-		if (ptr_app->htimer)
+		if (ptr_app && ptr_app->htimer)
 			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 
 		_app_notifyrefresh (config.hnotification, false);
@@ -337,7 +337,11 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 
 	_r_fastlock_acquireshared (&lock_access);
 
-	if (
+	if (listview_id == IDC_NETWORK)
+	{
+		return _app_gettooltip (IDC_APPS_PROFILE, network_arr.at (idx)->hash);
+	}
+	else if (
 		listview_id == IDC_APPS_LV ||
 		listview_id == IDC_APPS_PROFILE ||
 		listview_id == IDC_APPS_SERVICE ||
@@ -521,6 +525,22 @@ rstring _app_rulesexpand (PITEM_RULE const ptr_rule, bool is_forservices, LPCWST
 	return result;
 }
 
+bool _app_isapphaveconnection (size_t hash)
+{
+	if (!hash)
+		return false;
+
+	for (size_t i = 0; i < network_arr.size (); i++)
+	{
+		PITEM_NETWORK const ptr_network = network_arr.at (i);
+
+		if (ptr_network && ptr_network->hash == hash)
+			return true;
+	}
+
+	return false;
+}
+
 bool _app_isapphaverule (size_t hash)
 {
 	if (!hash)
@@ -539,7 +559,7 @@ bool _app_isapphaverule (size_t hash)
 
 bool _app_isappused (ITEM_APP const *ptr_app, size_t hash)
 {
-	if (ptr_app && (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (hash)))
+	if (ptr_app && (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (hash)/* || _app_isapphaveconnection (hash)*/))
 		return true;
 
 	return false;
@@ -669,7 +689,7 @@ void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool 
 		if (is_internal)
 		{
 			DWORD size = 0;
-			const LPVOID buffer = _app_loadresource (path_backup, &size);
+			const LPVOID buffer = _app_loadresource (app.GetHINSTANCE (), path_backup, RT_RCDATA, &size);
 
 			pugi::xml_parse_result result_backup;
 
@@ -852,11 +872,12 @@ void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool 
 
 void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 {
+	const UINT listview_id = _app_gettab_id (hwnd);
+	const size_t item_id = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+	const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT);
+
 	// load applications
 	{
-		const UINT listview_id = _app_gettab_id (hwnd, LAST_VALUE);
-		const size_t item_id = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
-		const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT);
 		bool is_meadded = false;
 
 		_app_freearray (&items);
@@ -872,8 +893,9 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 
 		if (hwnd)
 		{
-			for (size_t i = 0; i < (size_t)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
-				_r_listview_deleteallitems (hwnd, _app_gettab_id (hwnd, i));
+			_r_listview_deleteallitems (hwnd, IDC_APPS_PROFILE);
+			_r_listview_deleteallitems (hwnd, IDC_APPS_SERVICE);
+			_r_listview_deleteallitems (hwnd, IDC_APPS_PACKAGE);
 		}
 
 		// load apps list
@@ -925,7 +947,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 		}
 
 		if (!is_meadded)
-			_app_addapplication (hwnd, app.GetBinaryPath (), 0, 0, 0, false, (app.ConfigGet (L"Mode", ModeWhitelist).AsUint () == ModeWhitelist) ? true : false, true);
+			_app_addapplication (hwnd, app.GetBinaryPath (), 0, 0, 0, false, true, true);
 
 		// disable deletion for this shit ;)
 		if (!_app_getapplication (config.ntoskrnl_hash))
@@ -945,9 +967,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			if (ptr_item)
 				_app_addapplication (hwnd, ptr_item->type == AppService ? ptr_item->service_name : ptr_item->sid, ptr_item->timestamp, 0, 0, false, false, true);
 		}
-
-		if (hwnd)
-			_app_showitem (hwnd, listview_id, item_id, scroll_pos);
 	}
 
 	// load rules config
@@ -1001,6 +1020,13 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 		}
 	}
 
+	if (hwnd)
+	{
+		_r_listview_deleteallitems (hwnd, IDC_RULES_BLOCKLIST);
+		_r_listview_deleteallitems (hwnd, IDC_RULES_SYSTEM);
+		_r_listview_deleteallitems (hwnd, IDC_RULES_CUSTOM);
+	}
+
 	// clear old entries
 	{
 		for (size_t i = 0; i < rules_arr.size (); i++)
@@ -1017,6 +1043,50 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 
 	// load custom rules
 	_app_profile_loadrules (hwnd, path_rules ? path_rules : config.rules_custom_path, config.rules_custom_path_backup, false, &rules_arr, TypeCustom, FILTER_WEIGHT_CUSTOM, nullptr);
+
+	_r_fastlock_acquireexclusive (&lock_network);
+
+	if (hwnd)
+		_r_listview_deleteallitems (hwnd, IDC_NETWORK);
+
+	for (size_t i = 0; i < network_arr.size (); i++)
+		SAFE_DELETE (network_arr[i]);
+
+	network_arr.clear ();
+
+	_app_generate_connections ();
+
+	if (hwnd)
+	{
+		_r_fastlock_acquireshared (&lock_checkbox);
+
+		for (size_t i = 0; i < network_arr.size (); i++)
+		{
+			const PITEM_NETWORK ptr_network = network_arr.at (i);
+
+			if (!ptr_network)
+				continue;
+
+			//if (!_app_getapplication (ptr_network->hash))
+			//	_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+
+			// TODO: add network resolver!!!
+			_app_formataddress (ptr_network->af, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, false);
+			_app_formataddress (ptr_network->af, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, false);
+
+			_r_listview_additem (hwnd, IDC_NETWORK, i, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, i);
+			_r_listview_setitem (hwnd, IDC_NETWORK, i, 1, ptr_network->local_fmt);
+			_r_listview_setitem (hwnd, IDC_NETWORK, i, 2, ptr_network->remote_fmt);
+			_r_listview_setitem (hwnd, IDC_NETWORK, i, 3, _app_getprotoname (ptr_network->protocol));
+		}
+
+		_r_fastlock_releaseshared (&lock_checkbox);
+	}
+
+	_r_fastlock_releaseexclusive (&lock_network);
+
+	if (hwnd)
+		_app_showitem (hwnd, _r_listview_getitemlparam (hwnd, listview_id, item_id), scroll_pos);
 
 	_r_fastlock_releaseexclusive (&lock_access);
 

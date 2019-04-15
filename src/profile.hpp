@@ -23,6 +23,7 @@ void _app_setruleitem (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_
 bool _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable);
 rstring _app_rulesexpand (PITEM_RULE const ptr_rule, bool is_forservices, LPCWSTR delimeter);
 
+bool _app_isapphaveconnection (size_t hash);
 bool _app_isapphaverule (size_t hash);
 bool _app_isappused (ITEM_APP const *ptr_app, size_t hash);
 bool _app_isappexists (ITEM_APP const *ptr_app);
