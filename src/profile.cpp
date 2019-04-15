@@ -641,16 +641,16 @@ bool _app_isrulesexists (EnumRuleType type, BOOL is_readonly, BOOL is_global)
 	{
 		PITEM_RULE ptr_rule = rules_arr.at (i);
 
-		if (ptr_rule && ptr_rule->type == type)
-		{
-			if (is_readonly != -1 && ((BOOL)ptr_rule->is_readonly != is_readonly))
-				continue;
+		if (!ptr_rule || ptr_rule->type != type)
+			continue;
 
-			if (is_global != -1 && ((ptr_rule->is_enabled && !ptr_rule->apps.empty ()) != is_global))
-				continue;
+		if (is_readonly != -1 && ((BOOL)ptr_rule->is_readonly != is_readonly))
+			continue;
 
-			return true;
-		}
+		if (is_global != -1 && ((BOOL)(ptr_rule->is_enabled && !ptr_rule->apps.empty ()) != is_global))
+			continue;
+
+		return true;
 	}
 
 	return false;

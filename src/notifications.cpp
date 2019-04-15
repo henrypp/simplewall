@@ -713,6 +713,8 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				_r_ctrl_enable (hwnd, IDC_LATER_BTN, true);
 
 				KillTimer (hwnd, wparam);
+
+				return FALSE;
 			}
 
 			if (config.is_notifytimeout && wparam != NOTIFY_TIMER_TIMEOUT_ID)
@@ -925,7 +927,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					{
 						hash = notifications.at (notify_idx)->hash;
 
-						//if (ptr_rule->is_forservices && (hash == config.ntoskrnl_hash || hash == config.svchost_hash))
+						//if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 						//	continue;
 
 						PITEM_APP ptr_app = _app_getapplication (hash);
@@ -1052,14 +1054,14 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						_r_fastlock_acquireshared (&lock_notification);
 
 						const size_t idx = _app_notifygetcurrent (hwnd);
-						size_t hash = 0;
+						size_t app_hash = 0;
 
 						if (idx != LAST_VALUE)
 						{
 							PITEM_LOG const ptr_log = notifications.at (idx);
 
 							if (ptr_log)
-								hash = ptr_log->hash;
+								app_hash = ptr_log->hash;
 						}
 
 						_r_fastlock_releaseshared (&lock_notification);
@@ -1068,7 +1070,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 						AppendMenu (hsubmenu, MF_STRING, IDM_DISABLENOTIFICATIONS, app.LocaleString (IDS_DISABLENOTIFICATIONS, nullptr));
 
-						_app_generate_rulesmenu (hsubmenu, hash);
+						_app_generate_rulesmenu (hsubmenu, app_hash);
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
