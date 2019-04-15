@@ -605,7 +605,7 @@ BEGIN
 	IDS_ICONSEXTRALARGE "Extra large"
 	IDS_SECUREFILTERS_CHK "Enable protection of installed filters"
 	IDS_SECUREFILTERS_HINT "Prevent unauthorized applications from accessing the installed filters."
-	IDS_USEREFRESHDEVICES_CHK "Refresh filters on device arrival"
+	IDS_USEREFRESHDEVICES_CHK "Refresh filters when devices are connected"
 
 	IDS_RULE_ALLOW6TO4 "Allow IPv6 redirections (6to4) for all"
 	IDS_RECOMMENDED "recommended"
