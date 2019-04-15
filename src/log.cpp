@@ -59,7 +59,7 @@ bool _app_logchecklimit ()
 bool _app_loginit (bool is_install)
 {
 	// dropped packets logging (win7+)
-	if (!config.hnetevent || !_r_sys_validversion (6, 1))
+	if (!config.hnetevent)
 		return false;
 
 	// reset all handles

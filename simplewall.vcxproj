@@ -156,7 +156,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <LargeAddressAware>true</LargeAddressAware>
       <SubSystem>Windows</SubSystem>
-      <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
+      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
       <TurnOffAssemblyGeneration>
       </TurnOffAssemblyGeneration>
       <ImageHasSafeExceptionHandlers>
@@ -203,7 +203,7 @@
       <ImageHasSafeExceptionHandlers>
       </ImageHasSafeExceptionHandlers>
       <AdditionalOptions>/OPT:NOLBR %(AdditionalOptions)</AdditionalOptions>
-      <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
+      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -244,7 +244,7 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <LargeAddressAware>true</LargeAddressAware>
       <SubSystem>Windows</SubSystem>
-      <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
+      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
       <TurnOffAssemblyGeneration>
       </TurnOffAssemblyGeneration>
       <ImageHasSafeExceptionHandlers>
@@ -295,7 +295,7 @@
       <ImageHasSafeExceptionHandlers>
       </ImageHasSafeExceptionHandlers>
       <AdditionalOptions>/OPT:NOLBR %(AdditionalOptions)</AdditionalOptions>
-      <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
+      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
