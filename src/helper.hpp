@@ -49,7 +49,8 @@ void _app_resolvefilename (rstring& path);
 
 void _app_showitem (HWND hwnd, size_t hash, INT scroll_pos);
 
-HBITMAP _app_ico2bmp (HICON hicon);
+HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size);
+HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size);
 
 void _app_load_appxmanifest (PITEM_ADD ptr_item);
-LPVOID _app_loadresource (LPCWSTR res, PDWORD size);
+LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD size);

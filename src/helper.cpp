@@ -864,8 +864,9 @@ void _app_generate_packages ()
 
 			PSID package_sid[SECURITY_MAX_SID_SIZE] = {0};
 
-			DWORD size = _countof (key_name) * sizeof (key_name[0]);
+			DWORD size;
 
+			size = _countof (key_name);
 			if (RegEnumKeyEx (hkey, index++, key_name, &size, 0, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
 				break;
 
@@ -1037,7 +1038,7 @@ void _app_generate_packages ()
 //
 //						if (!app.ConfigGet (L"IsIconsHidden", false).AsBool () && _app_getfileicon (real_path, true, nullptr, &hicon))
 //						{
-//							ptr_item->hbmp = _app_ico2bmp (hicon);
+//							ptr_item->hbmp = _app_bitmapfromico (hicon);
 //							DestroyIcon (hicon);
 //						}
 //					}
@@ -1242,23 +1243,13 @@ void _app_generate_services ()
 
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 {
-	static HBITMAP hbmp_allow = nullptr;
-	static HBITMAP hbmp_block = nullptr;
+	static const INT icon_size = GetSystemMetrics (SM_CXSMICON);
 
-	static HBITMAP hbmp_checked = nullptr;
-	static HBITMAP hbmp_unchecked = nullptr;
+	static const HBITMAP hbmp_allow = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), icon_size);
+	static const HBITMAP hbmp_block = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_UNCHECKED), icon_size);
 
-	if (!hbmp_allow)
-		hbmp_allow = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, GetSystemMetrics (SM_CXSMICON)));
-
-	if (!hbmp_block)
-		hbmp_block = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, GetSystemMetrics (SM_CXSMICON)));
-
-	if (!hbmp_checked)
-		hbmp_checked = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_CHECKED, GetSystemMetrics (SM_CXSMICON)));
-
-	if (!hbmp_unchecked)
-		hbmp_unchecked = _app_ico2bmp (app.GetSharedIcon (app.GetHINSTANCE (), IDI_UNCHECKED, GetSystemMetrics (SM_CXSMICON)));
+	static const HBITMAP hbmp_checked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_CHECKED), icon_size);
+	static const HBITMAP hbmp_unchecked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_UNCHECKED), icon_size);
 
 	if (!_app_isrulesexists (TypeCustom, -1, -1))
 	{
@@ -2287,12 +2278,10 @@ void _app_showitem (HWND hwnd, size_t hash, INT scroll_pos)
 	}
 }
 
-HBITMAP _app_ico2bmp (HICON hicon)
+HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)
 {
 	if (!hicon)
 		return nullptr;
-
-	const INT icon_size = GetSystemMetrics (SM_CXSMICON);
 
 	RECT iconRectangle = {0};
 
@@ -2360,9 +2349,162 @@ HBITMAP _app_ico2bmp (HICON hicon)
 	return hbitmap;
 }
 
+HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
+{
+	bool success = false;
+
+	UINT frameCount = 0;
+	ULONG resourceLength = 0;
+	HDC screenHdc = nullptr;
+	HDC hdc = nullptr;
+	BITMAPINFO bi = {0};
+	HBITMAP hbitmap = nullptr;
+	PVOID bitmapBuffer = nullptr;
+	IWICStream *wicStream = nullptr;
+	IWICBitmapSource *wicBitmapSource = nullptr;
+	IWICBitmapDecoder *wicDecoder = nullptr;
+	IWICBitmapFrameDecode *wicFrame = nullptr;
+	IWICImagingFactory *wicFactory = nullptr;
+	IWICBitmapScaler *wicScaler = nullptr;
+	WICPixelFormatGUID pixelFormat;
+	WICRect rect = {0, 0, icon_size, icon_size};
+
+	const HRESULT hrComInit = CoInitializeEx (nullptr, COINIT_MULTITHREADED);
+
+	if (FAILED (hrComInit) && (hrComInit != RPC_E_CHANGED_MODE))
+		goto DoExit;
+
+	// Create the ImagingFactory
+	if (FAILED (CoCreateInstance (CLSID_WICImagingFactory1, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID *)& wicFactory)))
+		goto DoExit;
+
+	// Load the resource
+	WICInProcPointer resourceBuffer = (WICInProcPointer)_app_loadresource (hinst, name, L"PNG", &resourceLength);
+
+	if (!resourceBuffer)
+		goto DoExit;
+
+	// Create the Stream
+	if (FAILED (wicFactory->CreateStream (&wicStream)))
+		goto DoExit;
+
+	// Initialize the Stream from Memory
+	if (FAILED (wicStream->InitializeFromMemory (resourceBuffer, resourceLength)))
+		goto DoExit;
+
+	if (FAILED (wicFactory->CreateDecoder (GUID_ContainerFormatPng, nullptr, &wicDecoder)))
+		goto DoExit;
+
+	if (FAILED (wicDecoder->Initialize ((IStream *)wicStream, WICDecodeMetadataCacheOnLoad)))
+		goto DoExit;
+
+	// Get the Frame count
+	if (FAILED (wicDecoder->GetFrameCount (&frameCount)) || frameCount < 1)
+		goto DoExit;
+
+	// Get the Frame
+	if (FAILED (wicDecoder->GetFrame (0, &wicFrame)))
+		goto DoExit;
+
+	// Get the WicFrame image format
+	if (FAILED (wicFrame->GetPixelFormat (&pixelFormat)))
+		goto DoExit;
+
+	// Check if the image format is supported:
+	if (memcmp (&pixelFormat, &GUID_WICPixelFormat32bppPRGBA, sizeof (GUID)) == 0)
+	{
+		wicBitmapSource = (IWICBitmapSource *)wicFrame;
+	}
+	else
+	{
+		IWICFormatConverter *wicFormatConverter = nullptr;
+
+		if (FAILED (wicFactory->CreateFormatConverter (&wicFormatConverter)))
+			goto DoExit;
+
+		if (FAILED (wicFormatConverter->Initialize (
+			(IWICBitmapSource *)wicFrame,
+			GUID_WICPixelFormat32bppPBGRA,
+			WICBitmapDitherTypeNone,
+			nullptr,
+			0.0,
+			WICBitmapPaletteTypeCustom
+			)))
+		{
+			wicFormatConverter->Release ();
+			goto DoExit;
+		}
+
+		// Convert the image to the correct format:
+		wicFormatConverter->QueryInterface (&wicBitmapSource);
+
+		// Cleanup the converter.
+		wicFormatConverter->Release ();
+
+		// Dispose the old frame now that the converted frame is in wicBitmapSource.
+		wicFrame->Release ();
+	}
+
+	bi.bmiHeader.biSize = sizeof (BITMAPINFOHEADER);
+	bi.bmiHeader.biWidth = rect.Width;
+	bi.bmiHeader.biHeight = -((LONG)rect.Height);
+	bi.bmiHeader.biPlanes = 1;
+	bi.bmiHeader.biBitCount = 32;
+	bi.bmiHeader.biCompression = BI_RGB;
+
+	screenHdc = GetDC (nullptr);
+	hdc = CreateCompatibleDC (screenHdc);
+	hbitmap = CreateDIBSection (screenHdc, &bi, DIB_RGB_COLORS, &bitmapBuffer, nullptr, 0);
+
+	if (FAILED (wicFactory->CreateBitmapScaler (&wicScaler)))
+		goto DoExit;
+
+	if (FAILED (wicScaler->Initialize (wicBitmapSource, rect.Width, rect.Height, WICBitmapInterpolationModeFant)))
+		goto DoExit;
+
+	if (FAILED (wicScaler->CopyPixels (&rect, rect.Width * 4, rect.Width * rect.Height * 4, (PBYTE)bitmapBuffer)))
+		goto DoExit;
+
+	success = true;
+
+DoExit:
+
+	if (wicScaler)
+		wicScaler->Release ();
+
+	if (hdc)
+		DeleteDC (hdc);
+
+	if (screenHdc)
+		ReleaseDC (nullptr, screenHdc);
+
+	if (wicBitmapSource)
+		wicBitmapSource->Release ();
+
+	if (wicStream)
+		wicStream->Release ();
+
+	if (wicDecoder)
+		wicDecoder->Release ();
+
+	if (wicFactory)
+		wicFactory->Release ();
+
+	if (SUCCEEDED (hrComInit))
+		CoUninitialize ();
+
+	if (!success)
+	{
+		DeleteObject (hbitmap);
+		return nullptr;
+	}
+
+	return hbitmap;
+}
+
 void _app_load_appxmanifest (PITEM_ADD ptr_item)
 {
-	if (!ptr_item || !ptr_item->real_path)
+	if (!ptr_item || !ptr_item->real_path || !ptr_item->real_path[0])
 		return;
 
 	rstring result;
@@ -2378,12 +2520,12 @@ void _app_load_appxmanifest (PITEM_ADD ptr_item)
 		path.Format (L"%s\\%s", ptr_item->real_path, appx_names[i]);
 
 		if (_r_fs_exists (path))
-			goto doopen;
+			goto DoOpen;
 	}
 
 	return;
 
-doopen:
+DoOpen:
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result xml_result = doc.load_file (path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
@@ -2412,11 +2554,9 @@ doopen:
 	_r_str_alloc (&ptr_item->real_path, result.GetLength (), result.GetString ());
 }
 
-LPVOID _app_loadresource (LPCWSTR res, PDWORD size)
+LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD size)
 {
-	const HINSTANCE hinst = app.GetHINSTANCE ();
-
-	HRSRC hres = FindResource (hinst, res, RT_RCDATA);
+	HRSRC hres = FindResource (hinst, res, type);
 
 	if (hres)
 	{
