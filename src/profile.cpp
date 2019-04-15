@@ -644,10 +644,10 @@ bool _app_isrulesexists (EnumRuleType type, BOOL is_readonly, BOOL is_global)
 		if (!ptr_rule || ptr_rule->type != type)
 			continue;
 
-		if (is_readonly != -1 && ((BOOL)ptr_rule->is_readonly != is_readonly))
+		if (is_readonly != -1 && (ptr_rule->is_readonly != (bool)is_readonly))
 			continue;
 
-		if (is_global != -1 && ((BOOL)(ptr_rule->is_enabled && !ptr_rule->apps.empty ()) != is_global))
+		if (is_global != -1 && ((ptr_rule->is_enabled && !ptr_rule->apps.empty ()) != (bool)is_global))
 			continue;
 
 		return true;

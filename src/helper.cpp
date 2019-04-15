@@ -1246,7 +1246,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	static const INT icon_size = GetSystemMetrics (SM_CXSMICON);
 
 	static const HBITMAP hbmp_allow = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), icon_size);
-	static const HBITMAP hbmp_block = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_UNCHECKED), icon_size);
+	static const HBITMAP hbmp_block = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), icon_size);
 
 	static const HBITMAP hbmp_checked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_CHECKED), icon_size);
 	static const HBITMAP hbmp_unchecked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_UNCHECKED), icon_size);
@@ -1274,8 +1274,12 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 			}
 			else if (type == 2)
 			{
-				if (!_app_isrulesexists (TypeCustom, false, true))
+				if (!_app_isrulesexists (TypeCustom, -1, true))
 					continue;
+			}
+			else
+			{
+				continue;
 			}
 
 			AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
@@ -1289,12 +1293,12 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 					if (ptr_rule)
 					{
 						const bool is_global = (ptr_rule->is_enabled && ptr_rule->apps.empty ());
-						const bool is_checked = is_global || (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
+						const bool is_enabled = is_global || (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
 
 						if (ptr_rule->type != TypeCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)) || (type == 2 && !is_global))
 							continue;
 
-						if ((loop == 0 && !is_checked) || (loop == 1 && is_checked))
+						if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
 							continue;
 
 						WCHAR buffer[128] = {0};
@@ -1309,7 +1313,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						mii.hbmpItem = ptr_rule->is_block ? hbmp_block : hbmp_allow;
 						mii.hbmpChecked = hbmp_checked;
 						mii.hbmpUnchecked = hbmp_unchecked;
-						mii.fState = (is_checked ? MF_CHECKED : MF_UNCHECKED);
+						mii.fState = (is_enabled ? MF_CHECKED : MF_UNCHECKED);
 						mii.wID = IDX_RULES_SPECIAL + UINT (i);
 
 						if (is_global)
