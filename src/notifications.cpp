@@ -397,7 +397,7 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 			{
 				const HDC hdc = GetDC (hwnd);
 
-				_app_notifysettext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_FILE, L":"), IDC_FILE_TEXT, (ptr_app->display_name && ptr_app->display_name[0]) ? _r_path_extractfile (ptr_app->display_name) : empty_text);
+				_app_notifysettext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_NAME, L":"), IDC_FILE_TEXT, (ptr_app->display_name && ptr_app->display_name[0]) ? _r_path_extractfile (ptr_app->display_name) : empty_text);
 				_app_notifysettext (hdc, hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":"), IDC_SIGNATURE_TEXT, is_signed.IsEmpty () ? empty_text : is_signed);
 				_app_notifysettext (hdc, hwnd, IDC_ADDRESS_REMOTE_ID, app.LocaleString (IDS_ADDRESS_REMOTE, L":"), IDC_ADDRESS_REMOTE_TEXT, (ptr_log->remote_fmt && ptr_log->remote_fmt[0]) ? ptr_log->remote_fmt : empty_text);
 				_app_notifysettext (hdc, hwnd, IDC_ADDRESS_LOCAL_ID, app.LocaleString (IDS_ADDRESS_LOCAL, L":"), IDC_ADDRESS_LOCAL_TEXT, (ptr_log->local_fmt && ptr_log->local_fmt[0]) ? ptr_log->local_fmt : empty_text);
