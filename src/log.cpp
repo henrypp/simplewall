@@ -214,6 +214,7 @@ void _app_logclear ()
 		_r_fs_setpos (config.hlogfile, 2, FILE_BEGIN);
 
 		SetEndOfFile (config.hlogfile);
+		FlushFileBuffers (config.hlogfile);
 	}
 	else
 	{
