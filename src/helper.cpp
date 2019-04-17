@@ -16,6 +16,9 @@ UINT _app_gettab_id (HWND hwnd, size_t page_id)
 
 void _app_settab_id (HWND hwnd, size_t page_id)
 {
+	if (_app_gettab_id (hwnd) == page_id && IsWindowVisible (GetDlgItem (hwnd, (UINT)page_id)))
+		return;
+
 	for (size_t i = 0; i < (size_t)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 	{
 		const UINT listview_id = _app_gettab_id (hwnd, i);
@@ -1265,17 +1268,25 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	{
 		for (UINT8 type = 0; type < 3; type++)
 		{
-			if (type == 0 && !stat.rules_predefined_count)
+			if (type == 0)
+			{
+				if (!stat.rules_predefined_count)
 					continue;
-
-			else if (type == 1 && !stat.rules_user_count)
+			}
+			else if (type == 1)
+			{
+				if (!stat.rules_user_count)
 					continue;
-
-			else if (type == 2 && !stat.rules_global_count)
+			}
+			else if (type == 2)
+			{
+				if (!stat.rules_global_count)
 					continue;
-
+			}
 			else
+			{
 				continue;
+			}
 
 			AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 
@@ -2239,29 +2250,40 @@ void _app_resolvefilename (rstring & path)
 	}
 }
 
-void _app_showitem (HWND hwnd, size_t hash, INT scroll_pos)
+UINT _app_getlistview_id (size_t hash)
 {
-	const PITEM_APP ptr_app = _app_getapplication (hash);
+	_r_fastlock_acquireshared (&lock_access);
 
-	if (!ptr_app)
+	PITEM_APP ptr_app = _app_getapplication (hash);
+	const EnumAppType type = ptr_app ? ptr_app->type : AppRegular;
+
+	_r_fastlock_releaseshared (&lock_access);
+
+	if (ptr_app)
+	{
+		if (type == AppService)
+			return IDC_APPS_SERVICE;
+
+		else if (type == AppPackage)
+			return IDC_APPS_PACKAGE;
+
+		else
+			return IDC_APPS_PROFILE;
+	}
+
+	return 0;
+}
+
+void _app_showitem (HWND hwnd, UINT listview_id, LPARAM lparam, INT scroll_pos)
+{
+	if (!listview_id)
 		return;
-
-	UINT listview_id;
-
-	if (ptr_app->type == AppService)
-		listview_id = IDC_APPS_SERVICE;
-
-	else if (ptr_app->type == AppPackage)
-		listview_id = IDC_APPS_PACKAGE;
-
-	else
-		listview_id = IDC_APPS_PROFILE;
 
 	_app_settab_id (hwnd, listview_id);
 
 	for (size_t i = 0; i < _r_listview_getitemcount (hwnd, listview_id); i++)
 	{
-		if ((size_t)_r_listview_getitemlparam (hwnd, listview_id, i) == hash)
+		if (_r_listview_getitemlparam (hwnd, listview_id, i) == lparam)
 		{
 			if (scroll_pos == -1)
 				SendDlgItemMessage (hwnd, listview_id, LVM_ENSUREVISIBLE, i, TRUE); // ensure item visible
@@ -2269,12 +2291,12 @@ void _app_showitem (HWND hwnd, size_t hash, INT scroll_pos)
 			ListView_SetItemState (GetDlgItem (hwnd, listview_id), -1, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
 			ListView_SetItemState (GetDlgItem (hwnd, listview_id), i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
 
-			if (scroll_pos != -1)
-				SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, scroll_pos); // restore scroll position
-
 			break;
 		}
 	}
+
+	if (scroll_pos != -1)
+		SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, scroll_pos); // restore scroll position
 }
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)

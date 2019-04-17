@@ -278,6 +278,8 @@ void _app_getcount (PITEM_STATUS ptr_status)
 	if (!ptr_status)
 		return;
 
+	SecureZeroMemory (ptr_status, sizeof (ITEM_STATUS));
+
 	for (auto const &p : apps)
 	{
 		const ITEM_APP *ptr_app = &p.second;
@@ -871,7 +873,7 @@ void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool 
 void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 {
 	const UINT listview_id = _app_gettab_id (hwnd);
-	const size_t item_id = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+	const LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED));
 	const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT);
 
 	// load applications
@@ -1084,7 +1086,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 	_r_fastlock_releaseexclusive (&lock_network);
 
 	if (hwnd)
-		_app_showitem (hwnd, _r_listview_getitemlparam (hwnd, listview_id, item_id), scroll_pos);
+		_app_showitem (hwnd, listview_id, lparam, scroll_pos);
 
 	_r_fastlock_releaseexclusive (&lock_access);
 
