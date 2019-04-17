@@ -847,7 +847,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 				_r_fastlock_releaseshared (&lock_logbusy);
 
-				_app_listviewsort (hwnd, IDC_APPS_PROFILE, -1, false);
+				_app_listviewsort (hwnd, IDC_APPS_PROFILE);
 				_app_profile_save (hwnd);
 			}
 

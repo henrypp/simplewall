@@ -34,7 +34,7 @@ bool _app_item_get (EnumAppType type, size_t hash, rstring* display_name, rstrin
 INT CALLBACK _app_listviewcompare_abc (LPARAM item1, LPARAM item2, LPARAM lparam);
 INT CALLBACK _app_listviewcompare_apps (LPARAM lp1, LPARAM lp2, LPARAM lparam);
 INT CALLBACK _app_listviewcompare_rules (LPARAM item1, LPARAM item2, LPARAM lparam);
-void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode);
+void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem = -1, bool is_notifycode = false);
 
 void _app_refreshstatus (HWND hwnd);
 

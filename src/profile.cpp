@@ -124,17 +124,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 	if (hwnd)
 	{
-		UINT listview_id;
-
-		if (ptr_app->type == AppService)
-			listview_id = IDC_APPS_SERVICE;
-
-		else if (ptr_app->type == AppPackage)
-			listview_id = IDC_APPS_PACKAGE;
-
-		else
-			listview_id = IDC_APPS_PROFILE;
-
+		const UINT listview_id = _app_getlistview_id (hash);
 		const size_t item = _r_listview_getitemcount (hwnd, listview_id);
 
 		_r_fastlock_acquireshared (&lock_checkbox);
@@ -854,9 +844,9 @@ void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool 
 							else
 								continue;
 
-							const size_t lv_item = _r_listview_getitemcount (hwnd, listview_id);
-
 							_r_fastlock_acquireshared (&lock_checkbox);
+
+							const size_t lv_item = _r_listview_getitemcount (hwnd, listview_id);
 
 							_r_listview_additem (hwnd, listview_id, lv_item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), ptr_rules->size () - 1);
 							_app_setruleitem (hwnd, listview_id, lv_item, ptr_rule);
@@ -941,7 +931,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 
 			if (hwnd)
 			{
-				_app_listviewsort (hwnd, listview_id, -1, false);
+				_app_listviewsort (hwnd, listview_id);
 				_r_listview_redraw (hwnd, listview_id);
 			}
 		}

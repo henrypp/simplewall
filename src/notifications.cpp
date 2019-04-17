@@ -218,7 +218,7 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 
 				_app_notifyrefresh (hwnd, true);
 
-				_app_listviewsort (app.GetHWND (), IDC_APPS_PROFILE, -1, false);
+				_app_listviewsort (app.GetHWND (), IDC_APPS_PROFILE);
 				_app_profile_save (app.GetHWND ());
 
 				_r_listview_redraw (app.GetHWND (), IDC_APPS_PROFILE);
@@ -970,7 +970,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				_app_notifyrefresh (hwnd, true);
 
-				_app_listviewsort (app.GetHWND (), IDC_APPS_PROFILE, -1, false);
+				_app_listviewsort (app.GetHWND (), IDC_APPS_PROFILE);
 				_app_profile_save (app.GetHWND ());
 
 				_r_listview_redraw (app.GetHWND (), IDC_APPS_PROFILE);
@@ -1163,7 +1163,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							_r_fastlock_releaseexclusive (&lock_access);
 
-							_app_listviewsort (hwnd, IDC_APPS_PROFILE, -1, false);
+							_app_listviewsort (hwnd, IDC_APPS_PROFILE);
 							_app_profile_save (hwnd);
 
 							_r_listview_redraw (hwnd, IDC_APPS_PROFILE);

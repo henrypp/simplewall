@@ -151,7 +151,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 
 	if (is_succcess)
 	{
-		_app_listviewsort (hwnd, IDC_APPS_PROFILE, -1, false);
+		_app_listviewsort (hwnd, IDC_APPS_PROFILE);
 		_app_profile_save (hwnd);
 
 		_r_listview_redraw (hwnd, IDC_APPS_PROFILE);
