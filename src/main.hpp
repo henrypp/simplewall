@@ -262,15 +262,19 @@ struct STATIC_DATA
 	bool is_neteventset = false;
 };
 
-typedef struct _ITEM_STATUS
+typedef struct tagITEM_STATUS
 {
-	size_t total_count = 0;
+	size_t apps_count = 0;
+	size_t apps_timer_count = 0;
+	size_t apps_unused_count = 0;
 
-	size_t unused_count = 0;
-	size_t timers_count = 0;
+	size_t rules_count = 0;
+	size_t rules_global_count = 0;
+	size_t rules_predefined_count = 0;
+	size_t rules_user_count = 0;
 } ITEM_STATUS, *PITEM_STATUS;
 
-typedef struct _ITEM_APP
+typedef struct tagITEM_APP
 {
 	MARRAY mfarr;
 
@@ -307,16 +311,16 @@ typedef struct _ITEM_APP
 	bool is_undeletable = false;
 } ITEM_APP, *PITEM_APP;
 
-typedef struct _ITEM_RULE
+typedef struct tagITEM_RULE
 {
-	_ITEM_RULE ()
+	tagITEM_RULE ()
 	{
 		pname = nullptr;
 		prule_remote = nullptr;
 		prule_local = nullptr;
 	}
 
-	~_ITEM_RULE ()
+	~tagITEM_RULE ()
 	{
 		SAFE_DELETE_ARRAY (pname);
 		SAFE_DELETE_ARRAY (prule_remote);
@@ -367,9 +371,9 @@ typedef struct _ITEM_RULE_CONFIG
 	bool is_enabled = false;
 } ITEM_RULE_CONFIG, *PITEM_RULE_CONFIG;
 
-typedef struct _ITEM_LOG
+typedef struct tagITEM_LOG
 {
-	_ITEM_LOG ()
+	tagITEM_LOG ()
 	{
 		path = nullptr;
 		provider_name = nullptr;
@@ -379,7 +383,7 @@ typedef struct _ITEM_LOG
 		username = nullptr;
 	}
 
-	~_ITEM_LOG ()
+	~tagITEM_LOG ()
 	{
 		SAFE_DELETE_ARRAY (path);
 		SAFE_DELETE_ARRAY (provider_name);
@@ -431,16 +435,16 @@ typedef struct _ITEM_LOG
 	bool is_myprovider = false;
 } ITEM_LOG, *PITEM_LOG;
 
-typedef struct _ITEM_NETWORK
+typedef struct tagITEM_NETWORK
 {
-	_ITEM_NETWORK ()
+	tagITEM_NETWORK ()
 	{
 		path = nullptr;
 		remote_fmt = nullptr;
 		local_fmt = nullptr;
 	}
 
-	~_ITEM_NETWORK ()
+	~tagITEM_NETWORK ()
 	{
 		SAFE_DELETE_ARRAY (path);
 		SAFE_DELETE_ARRAY (remote_fmt);
@@ -477,9 +481,9 @@ typedef struct _ITEM_NETWORK
 	UINT8 protocol = 0;
 } ITEM_NETWORK, *PITEM_NETWORK;
 
-typedef struct _ITEM_ADD
+typedef struct tagITEM_ADD
 {
-	_ITEM_ADD ()
+	tagITEM_ADD ()
 	{
 		hash = 0;
 
@@ -492,7 +496,7 @@ typedef struct _ITEM_ADD
 		hbmp = nullptr;
 	}
 
-	~_ITEM_ADD ()
+	~tagITEM_ADD ()
 	{
 		SAFE_DELETE_ARRAY (sid);
 		SAFE_DELETE_ARRAY (display_name);
@@ -526,15 +530,15 @@ typedef struct _ITEM_ADD
 
 } ITEM_ADD, *PITEM_ADD;
 
-typedef struct _ITEM_COLOR
+typedef struct tagITEM_COLOR
 {
-	_ITEM_COLOR ()
+	tagITEM_COLOR ()
 	{
 		pcfg_name = nullptr;
 		pcfg_value = nullptr;
 	}
 
-	~_ITEM_COLOR ()
+	~tagITEM_COLOR ()
 	{
 		SAFE_DELETE_ARRAY (pcfg_name);
 		SAFE_DELETE_ARRAY (pcfg_value);
@@ -553,14 +557,14 @@ typedef struct _ITEM_COLOR
 	bool is_enabled = false;
 } ITEM_COLOR, *PITEM_COLOR;
 
-typedef struct _ITEM_PROTOCOL
+typedef struct tagITEM_PROTOCOL
 {
-	_ITEM_PROTOCOL ()
+	tagITEM_PROTOCOL ()
 	{
 		pname = nullptr;
 	}
 
-	~_ITEM_PROTOCOL ()
+	~tagITEM_PROTOCOL ()
 	{
 		SAFE_DELETE_ARRAY (pname);
 	}
@@ -569,7 +573,7 @@ typedef struct _ITEM_PROTOCOL
 	UINT8 id = 0;
 } ITEM_PROTOCOL, *PITEM_PROTOCOL;
 
-typedef struct _ITEM_ADDRESS
+typedef struct tagITEM_ADDRESS
 {
 	WCHAR host[NI_MAXHOST] = {0};
 
@@ -587,7 +591,7 @@ typedef struct _ITEM_ADDRESS
 	bool is_range = false;
 } ITEM_ADDRESS, *PITEM_ADDRESS;
 
-typedef struct _ITEM_LIST_HEAD
+typedef struct tagITEM_LIST_HEAD
 {
 	SLIST_HEADER ListHead;
 
@@ -595,7 +599,7 @@ typedef struct _ITEM_LIST_HEAD
 	volatile LONG thread_count;
 } ITEM_LIST_HEAD, *PITEM_LIST_HEAD;
 
-typedef struct _ITEM_LIST_ENTRY
+typedef struct tagITEM_LIST_ENTRY
 {
 	SLIST_ENTRY ListEntry;
 
