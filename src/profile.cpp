@@ -150,7 +150,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	return hash;
 }
 
-ITEM_APP * _app_getapplication (size_t hash)
+PITEM_APP _app_getapplication (size_t hash)
 {
 	if (hash && apps.find (hash) != apps.end ())
 		return &apps.at (hash);
@@ -284,13 +284,32 @@ void _app_getcount (PITEM_STATUS ptr_status)
 		const bool is_used = _app_isappused (ptr_app, p.first);
 
 		if (_app_istimeractive (ptr_app))
-			ptr_status->timers_count += 1;
+			ptr_status->apps_timer_count += 1;
 
 		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == AppService || ptr_app->type == AppPackage))
-			ptr_status->unused_count += 1;
+			ptr_status->apps_unused_count += 1;
 
 		if (is_used)
-			ptr_status->total_count += 1;
+			ptr_status->apps_count += 1;
+	}
+
+	for (size_t i = 0; i < rules_arr.size (); i++)
+	{
+		const PITEM_RULE ptr_rule = rules_arr.at (i);
+
+		if (!ptr_rule || ptr_rule->type != TypeCustom)
+			continue;
+
+		if (ptr_rule->is_enabled && !ptr_rule->apps.empty ())
+			ptr_status->rules_global_count += 1;
+
+		if (ptr_rule->is_readonly)
+			ptr_status->rules_predefined_count += 1;
+
+		else if (!ptr_rule->is_readonly)
+			ptr_status->rules_user_count += 1;
+
+		ptr_status->rules_count += 1;
 	}
 }
 
@@ -633,27 +652,6 @@ bool _app_isruleport (LPCWSTR rule)
 	}
 
 	return true;
-}
-
-bool _app_isrulesexists (EnumRuleType type, BOOL is_readonly, BOOL is_global)
-{
-	for (size_t i = 0; i < rules_arr.size (); i++)
-	{
-		PITEM_RULE ptr_rule = rules_arr.at (i);
-
-		if (!ptr_rule || ptr_rule->type != type)
-			continue;
-
-		if (is_readonly != -1 && (ptr_rule->is_readonly != (bool)is_readonly))
-			continue;
-
-		if (is_global != -1 && ((ptr_rule->is_enabled && !ptr_rule->apps.empty ()) != (bool)is_global))
-			continue;
-
-		return true;
-	}
-
-	return false;
 }
 
 bool _app_isrulepresent (size_t hash)
