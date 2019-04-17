@@ -1251,7 +1251,10 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	static const HBITMAP hbmp_checked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_CHECKED), icon_size);
 	static const HBITMAP hbmp_unchecked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_UNCHECKED), icon_size);
 
-	if (!_app_isrulesexists (TypeCustom, -1, -1))
+	ITEM_STATUS stat = {0};
+	_app_getcount (&stat);
+
+	if (!stat.rules_count)
 	{
 		AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, nullptr));
@@ -1262,25 +1265,17 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	{
 		for (UINT8 type = 0; type < 3; type++)
 		{
-			if (type == 0)
-			{
-				if (!_app_isrulesexists (TypeCustom, true, false))
+			if (type == 0 && !stat.rules_predefined_count)
 					continue;
-			}
-			else if (type == 1)
-			{
-				if (!_app_isrulesexists (TypeCustom, false, false))
+
+			else if (type == 1 && !stat.rules_user_count)
 					continue;
-			}
-			else if (type == 2)
-			{
-				if (!_app_isrulesexists (TypeCustom, -1, true))
+
+			else if (type == 2 && !stat.rules_global_count)
 					continue;
-			}
+
 			else
-			{
 				continue;
-			}
 
 			AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 
@@ -1584,8 +1579,8 @@ void _app_refreshstatus (HWND hwnd)
 
 		_r_fastlock_acquireshared (&lock_access);
 
-		ITEM_STATUS itemStat = {0};
-		_app_getcount (&itemStat);
+		ITEM_STATUS stat = {0};
+		_app_getcount (&stat);
 
 		_r_fastlock_releaseshared (&lock_access);
 
@@ -1595,19 +1590,19 @@ void _app_refreshstatus (HWND hwnd)
 			{
 				case 0:
 				{
-					text[i].Format (app.LocaleString (IDS_STATUS_TOTAL, nullptr), itemStat.total_count);
+					text[i].Format (app.LocaleString (IDS_STATUS_TOTAL, nullptr), stat.apps_count);
 					break;
 				}
 
 				case 1:
 				{
-					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), itemStat.unused_count);
+					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
 					break;
 				}
 
 				case 2:
 				{
-					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), itemStat.timers_count);
+					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), stat.apps_timer_count);
 					break;
 				}
 			}
