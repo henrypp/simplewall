@@ -644,6 +644,11 @@ bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
 	if (!config.hengine || !pmar || pmar->empty ())
 		return false;
 
+	const bool is_enabled = SendMessage (config.htoolbar, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
+
+	if (is_enabled)
+		SendMessage (config.htoolbar, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+
 	_r_fastlock_acquireexclusive (&lock_transaction);
 
 	for (size_t i = 0; i < pmar->size (); i++)
@@ -658,6 +663,9 @@ bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
 		_wfp_transact_commit (line);
 
 	_r_fastlock_releaseexclusive (&lock_transaction);
+
+	if (is_enabled)
+		SendMessage (config.htoolbar, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
 
 	return true;
 }
@@ -996,6 +1004,11 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 	if (!config.hengine || !ptr_rules || ptr_rules->empty ())
 		return false;
 
+	const bool is_enabled = SendMessage (config.htoolbar, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
+
+	if (is_enabled)
+		SendMessage (config.htoolbar, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
 
@@ -1106,6 +1119,9 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
 
+	if (is_enabled)
+		SendMessage (config.htoolbar, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+
 	return true;
 }
 
@@ -1114,7 +1130,12 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
 		return false;
 
-	const FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
+	const bool is_enabled = SendMessage (config.htoolbar, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
+
+	if (is_enabled)
+		SendMessage (config.htoolbar, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+
+	static const FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1173,6 +1194,9 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
 
+	if (is_enabled)
+		SendMessage (config.htoolbar, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+
 	return true;
 }
 
@@ -1180,6 +1204,11 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 {
 	if (!config.hengine)
 		return false;
+
+	const bool is_enabled = SendMessage (config.htoolbar, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
+
+	if (is_enabled)
+		SendMessage (config.htoolbar, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1453,6 +1482,9 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
+
+	if (is_enabled)
+		SendMessage (config.htoolbar, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
 
 	return true;
 }

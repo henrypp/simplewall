@@ -242,6 +242,7 @@ struct STATIC_DATA
 	HICON hicon_small = nullptr;
 	HICON hicon_package = nullptr;
 	HWND hnotification = nullptr;
+	HWND htoolbar = nullptr;
 
 	time_t blocklist_timestamp = 0;
 	time_t rule_system_timestamp = 0;
