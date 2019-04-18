@@ -1004,7 +1004,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					if (idx != LAST_VALUE)
 					{
-						_app_showitem (app.GetHWND (), _app_getlistview_id (notifications.at (idx)->hash), notifications.at (idx)->hash);
+						_app_showitem (app.GetHWND (), _app_getapplistview_id (notifications.at (idx)->hash), notifications.at (idx)->hash);
 
 						_r_wnd_toggle (app.GetHWND (), true);
 					}

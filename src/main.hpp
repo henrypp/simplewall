@@ -352,15 +352,15 @@ typedef struct tagITEM_RULE
 	bool is_block = false;
 } ITEM_RULE, *PITEM_RULE;
 
-typedef struct _ITEM_RULE_CONFIG
+typedef struct tagITEM_RULE_CONFIG
 {
-	_ITEM_RULE_CONFIG ()
+	tagITEM_RULE_CONFIG ()
 	{
 		pname = nullptr;
 		papps = nullptr;
 	}
 
-	~_ITEM_RULE_CONFIG ()
+	~tagITEM_RULE_CONFIG ()
 	{
 		SAFE_DELETE_ARRAY (pname);
 		SAFE_DELETE_ARRAY (papps);

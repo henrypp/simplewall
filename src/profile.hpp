@@ -34,7 +34,7 @@ bool _app_isruleport (LPCWSTR rule);
 
 bool _app_isrulepresent (size_t hash);
 
-void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_internal, MFILTER_RULES *ptr_rules, EnumRuleType type, UINT8 weight, time_t *ptimestamp);
+void _app_profile_loadrules (MFILTER_RULES *ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumRuleType type, UINT8 weight, time_t *ptimestamp);
 
 void _app_profile_load (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr);
 void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr);

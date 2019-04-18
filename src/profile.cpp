@@ -13,7 +13,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	{
 		if (_wcsnicmp (PathFindExtension (path), L".lnk", 4) == 0)
 		{
-			path = _app_getshortcutpath (hwnd, path);
+			path = _app_getshortcutpath (app.GetHWND (), path);
 
 			if (path.IsEmpty ())
 				return 0;
@@ -124,7 +124,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 	if (hwnd)
 	{
-		const UINT listview_id = _app_getlistview_id (hash);
+		const UINT listview_id = _app_getapplistview_id (hash);
 		const size_t item = _r_listview_getitemcount (hwnd, listview_id);
 
 		_r_fastlock_acquireshared (&lock_checkbox);
@@ -662,7 +662,7 @@ bool _app_isrulepresent (size_t hash)
 	return false;
 }
 
-void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool is_internal, MFILTER_RULES * ptr_rules, EnumRuleType type, UINT8 weight, time_t * ptimestamp)
+void _app_profile_loadrules (MFILTER_RULES *ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumRuleType type, UINT8 weight, time_t * ptimestamp)
 {
 	if (!ptr_rules)
 		return;
@@ -815,7 +815,7 @@ void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool 
 										}
 
 										if (!_app_getapplication (app_hash))
-											app_hash = _app_addapplication (hwnd, app_path, 0, 0, 0, false, false, true);
+											app_hash = _app_addapplication (nullptr, app_path, 0, 0, 0, false, false, true);
 
 										if (ptr_rule->type == TypeBlocklist || ptr_rule->type == TypeSystem)
 											apps[app_hash].is_undeletable = true;
@@ -827,32 +827,6 @@ void _app_profile_loadrules (HWND hwnd, LPCWSTR path, LPCWSTR path_backup, bool 
 						}
 
 						ptr_rules->push_back (ptr_rule);
-
-						if (hwnd)
-						{
-							UINT listview_id;
-
-							if (ptr_rule->type == TypeBlocklist)
-								listview_id = IDC_RULES_BLOCKLIST;
-
-							else if (ptr_rule->type == TypeSystem)
-								listview_id = IDC_RULES_SYSTEM;
-
-							else if (ptr_rule->type == TypeCustom)
-								listview_id = IDC_RULES_CUSTOM;
-
-							else
-								continue;
-
-							_r_fastlock_acquireshared (&lock_checkbox);
-
-							const size_t lv_item = _r_listview_getitemcount (hwnd, listview_id);
-
-							_r_listview_additem (hwnd, listview_id, lv_item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), ptr_rules->size () - 1);
-							_app_setruleitem (hwnd, listview_id, lv_item, ptr_rule);
-
-							_r_fastlock_releaseshared (&lock_checkbox);
-						}
 					}
 				}
 			}
@@ -870,6 +844,8 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 	{
 		bool is_meadded = false;
 
+		_r_fastlock_acquireexclusive (&lock_access);
+
 		_app_freearray (&items);
 
 		// generate package list (win8+)
@@ -879,17 +855,21 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 		// generate services list
 		_app_generate_services ();
 
-		_r_fastlock_acquireexclusive (&lock_access);
-
+		// clean listview
 		if (hwnd)
 		{
 			_r_listview_deleteallitems (hwnd, IDC_APPS_PROFILE);
 			_r_listview_deleteallitems (hwnd, IDC_APPS_SERVICE);
 			_r_listview_deleteallitems (hwnd, IDC_APPS_PACKAGE);
+			_r_listview_deleteallitems (hwnd, IDC_RULES_BLOCKLIST);
+			_r_listview_deleteallitems (hwnd, IDC_RULES_SYSTEM);
+			_r_listview_deleteallitems (hwnd, IDC_RULES_CUSTOM);
 		}
 
 		// load apps list
 		{
+			apps.clear ();
+
 			pugi::xml_document doc;
 			pugi::xml_parse_result result = doc.load_file (path_apps ? path_apps : config.apps_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
@@ -914,8 +894,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 				{
 					if (root.attribute (L"type").empty () || root.attribute (L"type").as_uint () == XmlApps)
 					{
-						apps.clear ();
-
 						for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
 						{
 							const size_t hash = _r_str_hash (item.attribute (L"path").as_string ());
@@ -923,44 +901,44 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 							if (hash == config.myhash)
 								is_meadded = true;
 
-							_app_addapplication (hwnd, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), item.attribute (L"last_notify").as_llong (), item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool (), true);
+							_app_addapplication (nullptr, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), item.attribute (L"last_notify").as_llong (), item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool (), true);
 						}
 					}
 				}
 			}
-
-			if (hwnd)
-			{
-				_app_listviewsort (hwnd, listview_id);
-				_r_listview_redraw (hwnd, listview_id);
-			}
 		}
 
 		if (!is_meadded)
-			_app_addapplication (hwnd, app.GetBinaryPath (), 0, 0, 0, false, true, true);
+			_app_addapplication (nullptr, app.GetBinaryPath (), 0, 0, 0, false, true, true);
 
 		// disable deletion for this shit ;)
 		if (!_app_getapplication (config.ntoskrnl_hash))
-			_app_addapplication (hwnd, PROC_SYSTEM_NAME, 0, 0, 0, false, false, true);
+			_app_addapplication (nullptr, PROC_SYSTEM_NAME, 0, 0, 0, false, false, true);
 
 		if (!_app_getapplication (config.svchost_hash))
-			_app_addapplication (hwnd, _r_path_expand (PATH_SVCHOST), 0, 0, 0, false, false, true);
+			_app_addapplication (nullptr, _r_path_expand (PATH_SVCHOST), 0, 0, 0, false, false, true);
 
 		apps[config.myhash].is_undeletable = true;
 		apps[config.ntoskrnl_hash].is_undeletable = true;
 		apps[config.svchost_hash].is_undeletable = true;
 
+		// add services and store apps
 		for (size_t i = 0; i < items.size (); i++)
 		{
-			PITEM_ADD ptr_item = items.at (i);
+			const PITEM_ADD ptr_item = items.at (i);
 
 			if (ptr_item)
-				_app_addapplication (hwnd, ptr_item->type == AppService ? ptr_item->service_name : ptr_item->sid, ptr_item->timestamp, 0, 0, false, false, true);
+				_app_addapplication (nullptr, ptr_item->type == AppService ? ptr_item->service_name : ptr_item->sid, ptr_item->timestamp, 0, 0, false, false, true);
 		}
 	}
 
 	// load rules config
 	{
+		for (auto &p : rules_config)
+			SAFE_DELETE (p.second);
+
+		rules_config.clear ();
+
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file (config.rules_config_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
@@ -981,8 +959,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			{
 				if (root.attribute (L"type").empty () || root.attribute (L"type").as_uint () == XmlRulesConfig)
 				{
-					rules_config.clear ();
-
 					for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
 					{
 						if (!item.attribute (L"name").empty ())
@@ -1010,14 +986,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 		}
 	}
 
-	if (hwnd)
-	{
-		_r_listview_deleteallitems (hwnd, IDC_RULES_BLOCKLIST);
-		_r_listview_deleteallitems (hwnd, IDC_RULES_SYSTEM);
-		_r_listview_deleteallitems (hwnd, IDC_RULES_CUSTOM);
-	}
-
-	// clear old entries
+	// clear rules
 	{
 		for (size_t i = 0; i < rules_arr.size (); i++)
 			_app_freerule (&rules_arr.at (i));
@@ -1026,59 +995,105 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 	}
 
 	// load blocklist rules (internal)
-	_app_profile_loadrules (hwnd, config.rules_blocklist_path, MAKEINTRESOURCE (IDR_RULES_BLOCKLIST), true, &rules_arr, TypeBlocklist, FILTER_WEIGHT_BLOCKLIST, &config.blocklist_timestamp);
+	_app_profile_loadrules (&rules_arr, config.rules_blocklist_path, MAKEINTRESOURCE (IDR_RULES_BLOCKLIST), true, TypeBlocklist, FILTER_WEIGHT_BLOCKLIST, &config.blocklist_timestamp);
 
 	// load system rules (internal)
-	_app_profile_loadrules (hwnd, config.rules_system_path, MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, &rules_arr, TypeSystem, FILTER_WEIGHT_SYSTEM, &config.rule_system_timestamp);
+	_app_profile_loadrules (&rules_arr, config.rules_system_path, MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, TypeSystem, FILTER_WEIGHT_SYSTEM, &config.rule_system_timestamp);
 
-	// load custom rules
-	_app_profile_loadrules (hwnd, path_rules ? path_rules : config.rules_custom_path, config.rules_custom_path_backup, false, &rules_arr, TypeCustom, FILTER_WEIGHT_CUSTOM, nullptr);
+	// load user rules
+	_app_profile_loadrules (&rules_arr, path_rules ? path_rules : config.rules_custom_path, config.rules_custom_path_backup, false, TypeCustom, FILTER_WEIGHT_CUSTOM, nullptr);
+
+	_r_fastlock_releaseexclusive (&lock_access);
+
+	if (hwnd)
+	{
+		_r_fastlock_acquireshared (&lock_access);
+		_r_fastlock_acquireshared (&lock_checkbox);
+
+		// add apps
+		for (auto &p : apps)
+		{
+			const size_t hash = p.first;
+			const PITEM_APP ptr_app = &p.second;
+
+			const UINT ctrl_id = _app_getapplistview_id (hash);
+			const size_t item = _r_listview_getitemcount (hwnd, ctrl_id);
+
+			_r_listview_additem (hwnd, ctrl_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (hash, ptr_app), hash);
+			_r_listview_setitem (hwnd, ctrl_id, item, 1, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
+
+			_r_listview_setitemcheck (hwnd, ctrl_id, item, ptr_app->is_enabled);
+		}
+
+		// add rules
+		for (size_t i = 0; i < rules_arr.size (); i++)
+		{
+			const PITEM_RULE ptr_rule = rules_arr.at (i);
+
+			if (!ptr_rule)
+				continue;
+
+			const UINT ctrl_id = _app_getrulelistview_id (ptr_rule);
+			const size_t item = _r_listview_getitemcount (hwnd, ctrl_id);
+
+			_r_listview_additem (hwnd, ctrl_id, item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
+			_app_setruleitem (hwnd, ctrl_id, item, ptr_rule);
+		}
+
+		_r_fastlock_releaseshared (&lock_checkbox);
+		_r_fastlock_releaseshared (&lock_access);
+	}
 
 	_r_fastlock_acquireexclusive (&lock_network);
 
 	if (hwnd)
+	{
 		_r_listview_deleteallitems (hwnd, IDC_NETWORK);
 
-	for (size_t i = 0; i < network_arr.size (); i++)
-		SAFE_DELETE (network_arr[i]);
+		for (size_t i = 0; i < network_arr.size (); i++)
+			SAFE_DELETE (network_arr[i]);
 
-	network_arr.clear ();
+		network_arr.clear ();
 
-	_app_generate_connections ();
+		_app_generate_connections ();
+
+		if (hwnd)
+		{
+			_r_fastlock_acquireshared (&lock_checkbox);
+
+			for (size_t i = 0; i < network_arr.size (); i++)
+			{
+				const PITEM_NETWORK ptr_network = network_arr.at (i);
+
+				if (!ptr_network)
+					continue;
+
+				//if (!_app_getapplication (ptr_network->hash))
+				//	_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+
+				// TODO: add network resolver!!!
+				_app_formataddress (ptr_network->af, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, false);
+				_app_formataddress (ptr_network->af, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, false);
+
+				_r_listview_additem (hwnd, IDC_NETWORK, i, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, i);
+				_r_listview_setitem (hwnd, IDC_NETWORK, i, 1, ptr_network->local_fmt);
+				_r_listview_setitem (hwnd, IDC_NETWORK, i, 2, ptr_network->remote_fmt);
+				_r_listview_setitem (hwnd, IDC_NETWORK, i, 3, _app_getprotoname (ptr_network->protocol));
+			}
+
+			_r_fastlock_releaseshared (&lock_checkbox);
+		}
+
+		_r_fastlock_releaseexclusive (&lock_network);
+	}
 
 	if (hwnd)
 	{
-		_r_fastlock_acquireshared (&lock_checkbox);
+		_app_listviewsort (hwnd, listview_id);
+		_r_listview_redraw (hwnd, listview_id);
 
-		for (size_t i = 0; i < network_arr.size (); i++)
-		{
-			const PITEM_NETWORK ptr_network = network_arr.at (i);
-
-			if (!ptr_network)
-				continue;
-
-			//if (!_app_getapplication (ptr_network->hash))
-			//	_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
-
-			// TODO: add network resolver!!!
-			_app_formataddress (ptr_network->af, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, false);
-			_app_formataddress (ptr_network->af, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, false);
-
-			_r_listview_additem (hwnd, IDC_NETWORK, i, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, i);
-			_r_listview_setitem (hwnd, IDC_NETWORK, i, 1, ptr_network->local_fmt);
-			_r_listview_setitem (hwnd, IDC_NETWORK, i, 2, ptr_network->remote_fmt);
-			_r_listview_setitem (hwnd, IDC_NETWORK, i, 3, _app_getprotoname (ptr_network->protocol));
-		}
-
-		_r_fastlock_releaseshared (&lock_checkbox);
-	}
-
-	_r_fastlock_releaseexclusive (&lock_network);
-
-	if (hwnd)
 		_app_showitem (hwnd, listview_id, lparam, scroll_pos);
-
-	_r_fastlock_releaseexclusive (&lock_access);
+	}
 
 	if (hwnd)
 		_app_refreshstatus (hwnd);

@@ -47,7 +47,9 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
 bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR buffer, DWORD length);
 void _app_resolvefilename (rstring& path);
 
-UINT _app_getlistview_id (size_t hash);
+UINT _app_getapplistview_id (size_t hash);
+UINT _app_getrulelistview_id (const PITEM_RULE ptr_rule);
+
 void _app_showitem (HWND hwnd, UINT listview_id, LPARAM lparam, INT scroll_pos = -1);
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size);

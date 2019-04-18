@@ -1516,22 +1516,6 @@ void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode
 
 		_r_listview_setcolumnsortindex (hwnd, ctrl_id, subitem, is_descend ? -1 : 1);
 
-		//_r_fastlock_acquireshared (&lock_checkbox);
-
-		//for (size_t i = 0; i < _r_listview_getitemcount (hwnd, ctrl_id); i++)
-		//{
-		//	const size_t hash = (size_t)_r_listview_getitemlparam (hwnd, ctrl_id, i);
-		//	PITEM_APP ptr_app = _app_getapplication (hash);
-
-		//	if (ptr_app)
-		//	{
-		//		_r_listview_setitem (hwnd, ctrl_id, i, 0, nullptr, LAST_VALUE, _app_getappgroup (hash, ptr_app));
-		//		_r_listview_setitemcheck (hwnd, ctrl_id, i, ptr_app->is_enabled);
-		//	}
-		//}
-
-		//_r_fastlock_releaseshared (&lock_checkbox);
-
 		SendDlgItemMessage (hwnd, ctrl_id, LVM_SORTITEMS, wparam, (LPARAM)& _app_listviewcompare_apps);
 
 		_app_refreshstatus (hwnd);
@@ -2250,7 +2234,7 @@ void _app_resolvefilename (rstring & path)
 	}
 }
 
-UINT _app_getlistview_id (size_t hash)
+UINT _app_getapplistview_id (size_t hash)
 {
 	_r_fastlock_acquireshared (&lock_access);
 
@@ -2269,6 +2253,25 @@ UINT _app_getlistview_id (size_t hash)
 
 		else
 			return IDC_APPS_PROFILE;
+	}
+
+	return 0;
+}
+
+UINT _app_getrulelistview_id (const PITEM_RULE ptr_rule)
+{
+	const EnumRuleType type = ptr_rule->type;
+
+	if (ptr_rule)
+	{
+		if (type == TypeBlocklist)
+			return IDC_RULES_BLOCKLIST;
+
+		else if (type == TypeSystem)
+			return IDC_RULES_SYSTEM;
+
+		else if (ptr_rule->type == TypeCustom)
+			return IDC_RULES_CUSTOM;
 	}
 
 	return 0;
