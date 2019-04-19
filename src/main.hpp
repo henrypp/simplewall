@@ -494,7 +494,6 @@ typedef struct tagITEM_ADD
 		real_path = nullptr;
 
 		psid = nullptr;
-		hbmp = nullptr;
 	}
 
 	~tagITEM_ADD ()
@@ -503,12 +502,6 @@ typedef struct tagITEM_ADD
 		SAFE_DELETE_ARRAY (display_name);
 		SAFE_DELETE_ARRAY (service_name);
 		SAFE_DELETE_ARRAY (real_path);
-
-		if (hbmp)
-		{
-			DeleteObject (hbmp);
-			hbmp = nullptr;
-		}
 	}
 
 	size_t hash = 0;
@@ -526,9 +519,6 @@ typedef struct tagITEM_ADD
 		PSID psid = nullptr;
 		PSECURITY_DESCRIPTOR psd;
 	};
-
-	HBITMAP hbmp = nullptr;
-
 } ITEM_ADD, *PITEM_ADD;
 
 typedef struct tagITEM_COLOR
