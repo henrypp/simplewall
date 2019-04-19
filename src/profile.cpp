@@ -241,7 +241,10 @@ bool _app_freeapplication (size_t hash)
 		_r_fastlock_releaseexclusive (&lock_notification);
 
 		if (ptr_app && ptr_app->htimer)
-			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
+		{
+			if (DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr))
+				ptr_app->htimer = nullptr;
+		}
 
 		_app_notifyrefresh (config.hnotification, false);
 
@@ -662,7 +665,7 @@ bool _app_isrulepresent (size_t hash)
 	return false;
 }
 
-void _app_profile_loadrules (MFILTER_RULES *ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumRuleType type, UINT8 weight, time_t * ptimestamp)
+void _app_profile_loadrules (MFILTER_RULES * ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumRuleType type, UINT8 weight, time_t * ptimestamp)
 {
 	if (!ptr_rules)
 		return;
