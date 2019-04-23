@@ -360,7 +360,7 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 
 bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR * psigner)
 {
-	if (!app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
+	if (!app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
 		return false;
 
 	if (!psigner || !path || !path[0])

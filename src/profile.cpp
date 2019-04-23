@@ -397,7 +397,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 			}
 
 			// signature information
-			if (app.ConfigGet (L"IsCerificatesEnabled", false).AsBool () && ptr_app->is_signed && ptr_app->signer)
+			if (app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed && ptr_app->signer)
 				result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s", app.LocaleString (IDS_SIGNATURE, nullptr).GetString (), ptr_app->signer);
 
 			// timer information

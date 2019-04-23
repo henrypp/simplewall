@@ -383,7 +383,7 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 			rstring is_signed;
 			const rstring empty_text = app.LocaleString (IDS_STATUS_EMPTY, nullptr);
 
-			if (app.ConfigGet (L"IsCerificatesEnabled", false).AsBool ())
+			if (app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
 			{
 				if (ptr_app->is_signed)
 					is_signed = (ptr_app->signer && ptr_app->signer[0]) ? ptr_app->signer : app.LocaleString (IDS_SIGN_SIGNED, nullptr);
