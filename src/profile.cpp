@@ -573,7 +573,7 @@ bool _app_isapphaverule (size_t hash)
 
 bool _app_isappused (ITEM_APP const *ptr_app, size_t hash)
 {
-	if (ptr_app && (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (hash)/* || _app_isapphaveconnection (hash)*/))
+	if (ptr_app && (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (hash)))
 		return true;
 
 	return false;
@@ -1125,7 +1125,12 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 			{
 				PITEM_APP const ptr_app = &p.second;
 
-				if (!ptr_app->original_path || !_app_isappused (ptr_app, p.first))
+				if (!ptr_app->original_path)
+					continue;
+
+				const bool is_used = _app_isappused (ptr_app, p.first);
+
+				if(!is_used && (ptr_app->type == AppService || ptr_app->type == AppPackage))
 					continue;
 
 				pugi::xml_node item = root.append_child (L"item");
