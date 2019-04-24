@@ -1,3 +1,17 @@
+v3.0 Beta (x April 2019)
+- dropped windows vista support
+- improved dpi support (ui)
+- added services and store apps tab
+- added network connections monitor
+- fixed displaying notifications when it's disabled
+- fixed log file write through (issue #369)
+- fixed notification safety timeout
+- fixed services path retrieve
+- improved listview resizing
+- removed blacklist mode
+- cosmetic fixes
+- fixed bugs
+
 v2.4.6 (27 March 2019)
 - enabled special rules group by default (issue #352)
 - fixed removing dropped packet items when overflow
