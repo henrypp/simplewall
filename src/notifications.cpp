@@ -123,17 +123,17 @@ void _app_notifycreatewindow ()
 
 	static const UINT btn_height = 54;
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 3 + 19), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_ALLOW_BTN, nullptr, nullptr);
+	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_COMMANDLINK | BS_BITMAP, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 3 + 19), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_ALLOW_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	//SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_ALLOW, IconSize)); // TODO: restore icons!
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)_app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), IconSize));
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 2 + 16), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_BLOCK_BTN, nullptr, nullptr);
+	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_COMMANDLINK | BS_BITMAP, app.GetDPI (8), wnd_height - app.GetDPI (btn_height * 2 + 16), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_BLOCK_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	//SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, IconSize)); // TODO: restore icons!
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)_app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), IconSize));
 
-	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_COMMANDLINK, app.GetDPI (8), wnd_height - app.GetDPI (btn_height + 12), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_LATER_BTN, nullptr, nullptr);
+	hctrl = CreateWindow (WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_COMMANDLINK | BS_BITMAP, app.GetDPI (8), wnd_height - app.GetDPI (btn_height + 12), wnd_width - app.GetDPI (8 * 2), app.GetDPI (btn_height), config.hnotification, (HMENU)IDC_LATER_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	//SendMessage (hctrl, BM_SETIMAGE, IMAGE_ICON, (WPARAM)app.GetSharedIcon (app.GetHINSTANCE (), IDI_BLOCK, IconSize)); // TODO: restore icons!
+	SendMessage (hctrl, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)_app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), IconSize));
 
 	_r_ctrl_settip (config.hnotification, IDC_MENU_BTN, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (config.hnotification, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
@@ -613,7 +613,7 @@ void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT 
 	GetWindowRect (hwnd, &rc_wnd);
 	GetWindowRect (hctrl1, &rc_ctrl);
 
-	MapWindowPoints (HWND_DESKTOP, hwnd, (LPPOINT)&rc_ctrl, 2);
+	MapWindowPoints (HWND_DESKTOP, hwnd, (LPPOINT)& rc_ctrl, 2);
 
 	const INT wnd_width = _R_RECT_WIDTH (&rc_wnd) - (padding);
 	const INT ctrl1_width = _r_dc_fontwidth (hdc, text1, _r_str_length (text1)) + GetSystemMetrics (SM_CYSMCAPTION);
@@ -1082,7 +1082,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					RECT buttonRect = {0};
 
 					GetClientRect (hctrl, &buttonRect);
-					ClientToScreen (hctrl, (LPPOINT)&buttonRect);
+					ClientToScreen (hctrl, (LPPOINT)& buttonRect);
 
 					buttonRect.left -= app.GetDPI (2);
 					buttonRect.top += app.GetDPI (24);
