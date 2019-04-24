@@ -41,6 +41,41 @@ void _app_settab_id (HWND hwnd, size_t page_id)
 	_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
+bool _app_initinterfacestate ()
+{
+	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
+
+	if (is_enabled)
+	{
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (false, 0));
+	}
+
+	return is_enabled;
+}
+
+void _app_restoreinterfacestate (bool is_enabled)
+{
+	if (is_enabled)
+	{
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (true, 0));
+	}
+}
+
+void _app_setinterfacestate (HWND hwnd)
+{
+	const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
+
+	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)));
+	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXICON)));
+
+	_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 3 : 2);
+
+	app.TraySetInfo (hwnd, UID, nullptr, app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)), nullptr);
+	app.TrayToggle (hwnd, UID, nullptr, true);
+}
+
 void _app_applycasestyle (LPWSTR buffer, size_t length)
 {
 	if (buffer && length && wcschr (buffer, OBJ_NAME_PATH_SEPARATOR))
@@ -1557,9 +1592,6 @@ void _app_refreshstatus (HWND hwnd)
 	const HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
 	const HDC hdc = GetDC (hstatus);
 
-	const UINT listview_id = _app_gettab_id (hwnd);
-	const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
-
 	// item count
 	if (hdc)
 	{
@@ -1625,6 +1657,9 @@ void _app_refreshstatus (HWND hwnd)
 
 	// group information
 	{
+		const UINT listview_id = _app_gettab_id (hwnd);
+		const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
+
 		size_t group1_count = 0;
 		size_t group2_count = 0;
 		size_t group3_count = 0;
@@ -1637,12 +1672,12 @@ void _app_refreshstatus (HWND hwnd)
 		{
 			for (size_t i = 0; i < total_count; i++)
 			{
-				const size_t hash = _r_listview_getitemlparam (hwnd, listview_id, i);
-				const PITEM_APP ptr_app = _app_getapplication (hash);
+				const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
+				const PITEM_APP ptr_app = _app_getapplication (app_hash);
 
 				if (ptr_app)
 				{
-					const size_t group_id = _app_getappgroup (hash, ptr_app);
+					const size_t group_id = _app_getappgroup (app_hash, ptr_app);
 
 					if (group_id == 0)
 						group1_count += 1;
@@ -1667,8 +1702,8 @@ void _app_refreshstatus (HWND hwnd)
 		{
 			for (size_t i = 0; i < total_count; i++)
 			{
-				const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, i);
-				const PITEM_RULE ptr_rule = rules_arr.at (idx);
+				const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, i);
+				const PITEM_RULE ptr_rule = rules_arr.at (rule_idx);
 
 				if (ptr_rule)
 				{

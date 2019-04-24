@@ -6,6 +6,10 @@
 UINT _app_gettab_id (HWND hwnd, size_t page_id = LAST_VALUE);
 void _app_settab_id (HWND hwnd, size_t page_id);
 
+bool _app_initinterfacestate ();
+void _app_restoreinterfacestate (bool is_enabled);
+void _app_setinterfacestate (HWND hwnd);
+
 void _app_applycasestyle (LPWSTR buffer, size_t length);
 
 bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, LPWSTR *ptr_dest, bool is_appenddns);

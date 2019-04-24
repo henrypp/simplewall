@@ -644,10 +644,7 @@ bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
 	if (!config.hengine || !pmar || pmar->empty ())
 		return false;
 
-	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
-
-	if (is_enabled)
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+	const bool is_enabled = _app_initinterfacestate();
 
 	_r_fastlock_acquireexclusive (&lock_transaction);
 
@@ -664,8 +661,7 @@ bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
 
 	_r_fastlock_releaseexclusive (&lock_transaction);
 
-	if (is_enabled)
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+	_app_restoreinterfacestate (is_enabled);
 
 	return true;
 }
@@ -1004,10 +1000,7 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 	if (!config.hengine || !ptr_rules || ptr_rules->empty ())
 		return false;
 
-	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
-
-	if (is_enabled)
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+	const bool is_enabled = _app_initinterfacestate ();
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1119,8 +1112,7 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
 
-	if (is_enabled)
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+	_app_restoreinterfacestate (is_enabled);
 
 	return true;
 }
@@ -1130,10 +1122,7 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
 		return false;
 
-	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
-
-	if (is_enabled)
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+	const bool is_enabled = _app_initinterfacestate ();
 
 	static const FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
 
@@ -1194,8 +1183,7 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
 
-	if (is_enabled)
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+	_app_restoreinterfacestate (is_enabled);
 
 	return true;
 }
@@ -1205,10 +1193,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 	if (!config.hengine)
 		return false;
 
-	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
-
-	if (is_enabled)
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+	const bool is_enabled = _app_initinterfacestate ();
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1483,8 +1468,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 		_r_fastlock_releaseexclusive (&lock_transaction);
 	}
 
-	if (is_enabled)
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+	_app_restoreinterfacestate (is_enabled);
 
 	return true;
 }
