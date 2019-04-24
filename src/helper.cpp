@@ -46,10 +46,7 @@ bool _app_initinterfacestate ()
 	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
 
 	if (is_enabled)
-	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (false, 0));
-	}
 
 	return is_enabled;
 }
@@ -57,10 +54,7 @@ bool _app_initinterfacestate ()
 void _app_restoreinterfacestate (bool is_enabled)
 {
 	if (is_enabled)
-	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (true, 0));
-	}
 }
 
 void _app_setinterfacestate (HWND hwnd)
