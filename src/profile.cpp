@@ -1050,45 +1050,43 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 	_r_fastlock_acquireexclusive (&lock_network);
 
 	if (hwnd)
-	{
 		_r_listview_deleteallitems (hwnd, IDC_NETWORK);
 
+	for (size_t i = 0; i < network_arr.size (); i++)
+		SAFE_DELETE (network_arr[i]);
+
+	network_arr.clear ();
+
+	_app_generate_connections ();
+
+	if (hwnd)
+	{
+		_r_fastlock_acquireshared (&lock_checkbox);
+
 		for (size_t i = 0; i < network_arr.size (); i++)
-			SAFE_DELETE (network_arr[i]);
-
-		network_arr.clear ();
-
-		_app_generate_connections ();
-
-		if (hwnd)
 		{
-			_r_fastlock_acquireshared (&lock_checkbox);
+			const PITEM_NETWORK ptr_network = network_arr.at (i);
 
-			for (size_t i = 0; i < network_arr.size (); i++)
-			{
-				const PITEM_NETWORK ptr_network = network_arr.at (i);
+			if (!ptr_network)
+				continue;
 
-				if (!ptr_network)
-					continue;
+			//if (!_app_getapplication (ptr_network->hash))
+			//	_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
 
-				//if (!_app_getapplication (ptr_network->hash))
-				//	_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+			// TODO: add network resolver!!!
+			_app_formataddress (ptr_network->af, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, false);
+			_app_formataddress (ptr_network->af, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, false);
 
-				// TODO: add network resolver!!!
-				_app_formataddress (ptr_network->af, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, false);
-				_app_formataddress (ptr_network->af, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, false);
-
-				_r_listview_additem (hwnd, IDC_NETWORK, i, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, i);
-				_r_listview_setitem (hwnd, IDC_NETWORK, i, 1, ptr_network->local_fmt);
-				_r_listview_setitem (hwnd, IDC_NETWORK, i, 2, ptr_network->remote_fmt);
-				_r_listview_setitem (hwnd, IDC_NETWORK, i, 3, _app_getprotoname (ptr_network->protocol));
-			}
-
-			_r_fastlock_releaseshared (&lock_checkbox);
+			_r_listview_additem (hwnd, IDC_NETWORK, i, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, i);
+			_r_listview_setitem (hwnd, IDC_NETWORK, i, 1, ptr_network->local_fmt);
+			_r_listview_setitem (hwnd, IDC_NETWORK, i, 2, ptr_network->remote_fmt);
+			_r_listview_setitem (hwnd, IDC_NETWORK, i, 3, _app_getprotoname (ptr_network->protocol));
 		}
 
-		_r_fastlock_releaseexclusive (&lock_network);
+		_r_fastlock_releaseshared (&lock_checkbox);
 	}
+
+	_r_fastlock_releaseexclusive (&lock_network);
 
 	if (hwnd)
 	{
@@ -1130,7 +1128,7 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 
 				const bool is_used = _app_isappused (ptr_app, p.first);
 
-				if(!is_used && (ptr_app->type == AppService || ptr_app->type == AppPackage))
+				if (!is_used && (ptr_app->type == AppService || ptr_app->type == AppPackage))
 					continue;
 
 				pugi::xml_node item = root.append_child (L"item");
