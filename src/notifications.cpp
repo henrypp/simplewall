@@ -606,9 +606,10 @@ void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT 
 
 	static const INT padding = app.GetDPI (12);
 	static const INT border = padding / 2;
+	static const INT caption_width = GetSystemMetrics (SM_CYSMCAPTION);
 
-	SelectObject (hdc, (HFONT)SendDlgItemMessage (hwnd, ctrl_id1, WM_GETFONT, 0, 0)); // fix
-	SelectObject (hdc, (HFONT)SendDlgItemMessage (hwnd, ctrl_id2, WM_GETFONT, 0, 0)); // fix
+	SelectObject (hdc, (HFONT)SendMessage (hctrl1, WM_GETFONT, 0, 0)); // fix
+	SelectObject (hdc, (HFONT)SendMessage (hctrl2, WM_GETFONT, 0, 0)); // fix
 
 	GetWindowRect (hwnd, &rc_wnd);
 	GetWindowRect (hctrl1, &rc_ctrl);
@@ -616,8 +617,7 @@ void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT 
 	MapWindowPoints (HWND_DESKTOP, hwnd, (LPPOINT)& rc_ctrl, 2);
 
 	const INT wnd_width = _R_RECT_WIDTH (&rc_wnd) - (padding);
-	const INT ctrl1_width = _r_dc_fontwidth (hdc, text1, _r_str_length (text1)) + GetSystemMetrics (SM_CYSMCAPTION);
-	//const INT ctrl2_width = _r_dc_fontwidth (hdc, text2, _r_str_length (text2));
+	const INT ctrl1_width = _r_dc_fontwidth (hdc, text1, _r_str_length (text1)) + caption_width;
 
 	SetWindowPos (hctrl1, nullptr, padding, rc_ctrl.top, ctrl1_width + border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 	SetWindowPos (hctrl2, nullptr, padding + ctrl1_width + border, rc_ctrl.top, wnd_width - ctrl1_width - padding - border, _R_RECT_HEIGHT (&rc_ctrl), SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
