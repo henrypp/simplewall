@@ -1,13 +1,17 @@
-v3.0 Beta (x April 2019)
+v3.0 Beta (x May 2019)
 - dropped windows vista support
 - improved dpi support (ui)
+- moved rules list into main window
 - added services and store apps tab
 - added network connections monitor
 - fixed displaying notifications when it's disabled
 - fixed log file write through (issue #369)
-- fixed notification safety timeout
+- fixed notifications safety timeout
+- fixed possible race conditions
 - fixed services path retrieve
+- fixed notifications cleanup
 - improved listview resizing
+- improved listview sorting
 - removed blacklist mode
 - cosmetic fixes
 - fixed bugs
