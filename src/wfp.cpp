@@ -71,7 +71,6 @@ bool _wfp_initialize (bool is_full)
 	if (!config.hengine)
 	{
 		_r_fastlock_releaseexclusive (&lock_transaction);
-
 		return false;
 	}
 
@@ -610,6 +609,8 @@ void _wfp_destroyfilters ()
 	if (!config.hengine)
 		return;
 
+	_r_fastlock_acquireexclusive (&lock_access);
+
 	// clear common filters
 	filter_ids.clear ();
 
@@ -632,6 +633,8 @@ void _wfp_destroyfilters ()
 		}
 	}
 
+	_r_fastlock_releaseexclusive (&lock_access);
+
 	// destroy all filters
 	MARRAY filter_all;
 
@@ -644,7 +647,7 @@ bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
 	if (!config.hengine || !pmar || pmar->empty ())
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate();
+	const bool is_enabled = _app_initinterfacestate ();
 
 	_r_fastlock_acquireexclusive (&lock_transaction);
 
@@ -698,7 +701,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 		if (!ptr_app)
 			return false;
 
-		if (ptr_app->type == AppPackage) // windows store app (win8+)
+		if (ptr_app->type == DataAppPackage) // windows store app (win8+)
 		{
 			if (ptr_app->psid)
 			{
@@ -715,7 +718,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 				return false;
 			}
 		}
-		else if (ptr_app->type == AppService) // windows service
+		else if (ptr_app->type == DataAppService) // windows service
 		{
 			const rstring path = _r_path_expand (PATH_SVCHOST);
 			const DWORD rc = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
@@ -808,16 +811,16 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 				{
 					if (i == 0)
 					{
-						if (addr.type == TypeIp || addr.type == TypeHost)
+						if (addr.type == DataTypeIp || addr.type == DataTypeHost)
 							is_remoteaddr_set = true;
 
-						else if (addr.type == TypePort)
+						else if (addr.type == DataTypePort)
 							is_remoteport_set = true;
 					}
 
-					if (addr.is_range && (addr.type == TypeIp || addr.type == TypePort))
+					if (addr.is_range && (addr.type == DataTypeIp || addr.type == DataTypePort))
 					{
-						if (addr.type == TypeIp)
+						if (addr.type == DataTypeIp)
 						{
 							if (addr.format == NET_ADDRESS_IPV4)
 							{
@@ -836,14 +839,14 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 							}
 						}
 
-						fwfc[count].fieldKey = (addr.type == TypePort) ? ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT) : ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
+						fwfc[count].fieldKey = (addr.type == DataTypePort) ? ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT) : ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
 						fwfc[count].matchType = FWP_MATCH_RANGE;
 						fwfc[count].conditionValue.type = FWP_RANGE_TYPE;
 						fwfc[count].conditionValue.rangeValue = &range;
 
 						count += 1;
 					}
-					else if (addr.type == TypePort)
+					else if (addr.type == DataTypePort)
 					{
 						fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT);
 						fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -852,7 +855,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 
 						count += 1;
 					}
-					else if (addr.type == TypeHost || addr.type == TypeIp)
+					else if (addr.type == DataTypeHost || addr.type == DataTypeIp)
 					{
 						fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
 						fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -1011,15 +1014,14 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 
 		for (size_t i = 0; i < ptr_rules->size (); i++)
 		{
+			_r_fastlock_acquireshared (&lock_access);
+
 			PITEM_RULE ptr_rule = ptr_rules->at (i);
 
 			if (ptr_rule)
-			{
 				ids.insert (ids.end (), ptr_rule->mfarr.begin (), ptr_rule->mfarr.end ());
 
-				ptr_rule->is_haveerrors = false;
-				ptr_rule->mfarr.clear ();
-			}
+			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		_wfp_destroy2filters (&ids, line);
@@ -1030,10 +1032,13 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 
 	for (size_t i = 0; i < ptr_rules->size (); i++)
 	{
+		_r_fastlock_acquireexclusive (&lock_access);
+
 		PITEM_RULE ptr_rule = ptr_rules->at (i);
 
 		if (ptr_rule)
 		{
+			ptr_rule->is_haveerrors = false;
 			ptr_rule->mfarr.clear ();
 
 			if (ptr_rule->is_enabled)
@@ -1087,6 +1092,8 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 				}
 			}
 		}
+
+		_r_fastlock_releaseexclusive (&lock_access);
 	}
 
 	if (!is_intransact)
@@ -1099,6 +1106,8 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 		{
 			for (size_t i = 0; i < ptr_rules->size (); i++)
 			{
+				_r_fastlock_acquireshared (&lock_access);
+
 				PITEM_RULE ptr_rule = ptr_rules->at (i);
 
 				if (ptr_rule && ptr_rule->is_enabled)
@@ -1106,6 +1115,8 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 					for (size_t j = 0; j < ptr_rule->mfarr.size (); j++)
 						_wfp_setfiltersecurity (config.hengine, &ptr_rule->mfarr.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
 				}
+
+				_r_fastlock_releaseshared (&lock_access);
 			}
 		}
 
@@ -1139,10 +1150,9 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 
 			if (ptr_app)
 			{
+				_r_fastlock_acquireexclusive (&lock_access);
 				ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
-
-				ptr_app->is_haveerrors = false;
-				ptr_app->mfarr.clear ();
+				_r_fastlock_releaseexclusive (&lock_access);
 			}
 		}
 
@@ -1156,8 +1166,18 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 	{
 		PITEM_APP ptr_app = ptr_apps->at (i);
 
-		if (ptr_app && ptr_app->is_enabled)
-			ptr_app->is_haveerrors = !_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr);
+		if (ptr_app)
+		{
+			_r_fastlock_acquireexclusive (&lock_access);
+
+			ptr_app->is_haveerrors = false;
+			ptr_app->mfarr.clear ();
+
+			if (ptr_app->is_enabled)
+				ptr_app->is_haveerrors = !_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr);
+
+			_r_fastlock_releaseexclusive (&lock_access);
+		}
 	}
 
 	if (!is_intransact)
@@ -1174,8 +1194,12 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 
 				if (ptr_app)
 				{
+					_r_fastlock_acquireshared (&lock_access);
+
 					for (size_t j = 0; j < ptr_app->mfarr.size (); j++)
 						_wfp_setfiltersecurity (config.hengine, &ptr_app->mfarr.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
+
+					_r_fastlock_releaseshared (&lock_access);
 				}
 			}
 		}
@@ -1714,14 +1738,14 @@ void _mps_changeconfig2 (bool is_enable)
 	}
 }
 
-DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumAppType type)
+DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDataType type)
 {
 	if (!path || !path[0] || !lpblob)
 		return ERROR_BAD_ARGUMENTS;
 
 	rstring path_buff;
 
-	if (type == AppRegular || type == AppNetwork || type == AppService)
+	if (type == DataAppRegular || type == DataAppNetwork || type == DataAppService)
 	{
 		path_buff = path;
 
@@ -1776,11 +1800,11 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumApp
 				return ERROR_SUCCESS;
 		}
 	}
-	else if (type == AppPico || type == AppDevice)
+	else if (type == DataAppPico || type == DataAppDevice)
 	{
 		path_buff = path;
 
-		if (type == AppDevice)
+		if (type == DataAppDevice)
 			path_buff.ToLower (); // lower is important!
 
 		if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))

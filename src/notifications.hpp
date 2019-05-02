@@ -7,7 +7,7 @@ void _app_notifycreatewindow ();
 bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx);
 
 bool _app_notifyadd (HWND hwnd, PITEM_LOG const ptr_log, PITEM_APP const ptr_app);
-void _app_freenotify (size_t idx_orhash, bool is_idx);
+void _app_freenotify (size_t idx_orhash, bool is_idx, bool is_refresh);
 size_t _app_notifygetcurrent (HWND hwnd);
 
 bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety);

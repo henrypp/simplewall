@@ -52,30 +52,21 @@ extern "C" {
 };
 
 // enums
-enum EnumAppType
+enum EnumDataType
 {
-	AppRegular = 0,
-	AppDevice = 1,
-	AppNetwork = 2,
-	AppService = 3,
-	AppPackage = 4, // win8+
-	AppPico = 5 // win10+
-};
-
-enum EnumRuleType
-{
-	TypeRuleUnknown = 0,
-	TypeBlocklist = 1,
-	TypeSystem = 2,
-	TypeCustom = 3,
-};
-
-enum EnumRuleItemType
-{
-	TypeRuleItemUnknown = 0,
-	TypeHost = 1,
-	TypeIp = 2,
-	TypePort = 4,
+	DataUnknown,
+	DataAppRegular,
+	DataAppDevice,
+	DataAppNetwork,
+	DataAppService,
+	DataAppPackage, // win8+
+	DataAppPico, // win10+
+	DataRuleBlocklist,
+	DataRuleSystem,
+	DataRuleCustom,
+	DataTypePort,
+	DataTypeIp,
+	DataTypeHost
 };
 
 enum EnumXmlType
@@ -300,7 +291,7 @@ typedef struct tagITEM_APP
 
 	size_t icon_id = 0;
 
-	EnumAppType type = AppRegular;
+	EnumDataType type = DataUnknown;
 
 	bool is_haveerrors = false;
 
@@ -343,7 +334,7 @@ typedef struct tagITEM_RULE
 	UINT8 weight = 0;
 	UINT8 protocol = 0;
 
-	EnumRuleType type = TypeRuleUnknown;
+	EnumDataType type = DataUnknown;
 
 	bool is_haveerrors = false;
 	bool is_forservices = false;
@@ -476,6 +467,8 @@ typedef struct tagITEM_NETWORK
 
 	size_t icon_id=0;
 
+	DWORD state = 0;
+
 	UINT16 remote_port = 0;
 	UINT16 local_port = 0;
 
@@ -507,7 +500,7 @@ typedef struct tagITEM_ADD
 	size_t hash = 0;
 	time_t timestamp = 0;
 
-	EnumAppType type = AppRegular;
+	EnumDataType type = DataUnknown;
 
 	LPWSTR display_name = nullptr;
 	LPWSTR real_path = nullptr;
@@ -573,7 +566,7 @@ typedef struct tagITEM_ADDRESS
 
 	FWP_RANGE* prange = nullptr;
 
-	EnumRuleItemType type = TypeRuleItemUnknown;
+	EnumDataType type = DataUnknown;
 
 	NET_ADDRESS_FORMAT format = NET_ADDRESS_FORMAT_UNSPECIFIED;
 

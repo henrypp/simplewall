@@ -22,14 +22,14 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 	_app_resolvefilename (path);
 
-	const size_t hash = path.Hash ();
+	const size_t app_hash = path.Hash ();
 
-	if (apps.find (hash) != apps.end ())
-		return hash; // already exists
+	if (apps.find (app_hash) != apps.end ())
+		return app_hash; // already exists
 
-	ITEM_APP * ptr_app = &apps[hash]; // application pointer
+	ITEM_APP * ptr_app = &apps[app_hash]; // application pointer
 
-	const bool is_ntoskrnl = (hash == config.ntoskrnl_hash);
+	const bool is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
 	const time_t current_time = _r_unixtime_now ();
 
 	rstring real_path;
@@ -38,19 +38,19 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	{
 		real_path = path;
 
-		ptr_app->type = AppDevice;
+		ptr_app->type = DataAppDevice;
 	}
 	else if (_wcsnicmp (path, L"S-1-", 4) == 0) // windows store (win8+)
 	{
-		ptr_app->type = AppPackage;
+		ptr_app->type = DataAppPackage;
 
-		_app_item_get (AppPackage, hash, nullptr, &real_path, &ptr_app->psid, nullptr, nullptr);
+		_app_item_get (DataAppPackage, app_hash, nullptr, &real_path, &ptr_app->psid, nullptr, nullptr);
 	}
 	else if (PathIsNetworkPath (path)) // network path
 	{
 		real_path = path;
 
-		ptr_app->type = AppNetwork;
+		ptr_app->type = DataAppNetwork;
 	}
 	else
 	{
@@ -58,18 +58,15 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 		if (!is_ntoskrnl && real_path.Find (OBJ_NAME_PATH_SEPARATOR) == rstring::npos)
 		{
-			if (_app_item_get (AppService, hash, nullptr, &real_path, nullptr, &ptr_app->psd, nullptr))
-			{
-				ptr_app->type = AppService;
-			}
+			if (_app_item_get (DataAppService, app_hash, nullptr, &real_path, nullptr, &ptr_app->psd, nullptr))
+				ptr_app->type = DataAppService;
+
 			else
-			{
-				ptr_app->type = AppPico;
-			}
+				ptr_app->type = DataAppPico;
 		}
 		else
 		{
-			ptr_app->type = AppRegular;
+			ptr_app->type = DataAppRegular;
 
 			if (is_ntoskrnl) // "system" process
 			{
@@ -87,7 +84,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 		ptr_app->is_temp = ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_TEMPORARY) != 0)) || (_wcsnicmp (real_path, config.tmp1_dir, config.tmp1_length) == 0);
 		ptr_app->is_system = !ptr_app->is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_wcsnicmp (real_path, config.windows_dir, config.wd_length) == 0));
 
-		ptr_app->is_signed = _app_getsignatureinfo (hash, real_path, &ptr_app->signer);
+		ptr_app->is_signed = _app_getsignatureinfo (app_hash, real_path, &ptr_app->signer);
 	}
 
 	_app_applycasestyle (real_path.GetBuffer (), real_path.GetLength ()); // apply case-style
@@ -96,8 +93,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	_r_str_alloc (&ptr_app->original_path, path.GetLength (), path);
 	_r_str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path);
 
-	_app_getdisplayname (hash, ptr_app, &ptr_app->display_name);
-	_app_getappicon (ptr_app, true, &ptr_app->icon_id, nullptr);
+	_app_getdisplayname (app_hash, ptr_app, &ptr_app->display_name);
 
 	ptr_app->is_enabled = is_enabled;
 	ptr_app->is_silent = is_silent;
@@ -105,12 +101,15 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	ptr_app->timestamp = timestamp ? timestamp : current_time;
 	ptr_app->last_notify = last_notify;
 
+	if (ptr_app->type == DataAppService || ptr_app->type == DataAppPackage)
+		ptr_app->is_undeletable = true;
+
 	// install timer
 	if (timer)
 	{
 		if (timer > current_time)
 		{
-			if (!ptr_app->htimer && CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)hash, DWORD ((timer - current_time) * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD))
+			if (!ptr_app->htimer && CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, DWORD ((timer - current_time) * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD))
 			{
 				ptr_app->is_enabled = true;
 				ptr_app->timer = timer;
@@ -124,20 +123,22 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 	if (hwnd)
 	{
-		const UINT listview_id = _app_getapplistview_id (hash);
-		const size_t item = _r_listview_getitemcount (hwnd, listview_id);
+		const UINT listview_id = _app_getlistview_id (ptr_app->type);
 
-		_r_fastlock_acquireshared (&lock_checkbox);
+		if (listview_id)
+		{
+			const size_t item = _r_listview_getitemcount (hwnd, listview_id);
 
-		_r_listview_additem (hwnd, listview_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (hash, ptr_app), hash);
-		_r_listview_setitem (hwnd, listview_id, item, 1, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
+			_r_fastlock_acquireshared (&lock_checkbox);
 
-		_r_listview_setitemcheck (hwnd, listview_id, item, is_enabled);
+			_r_listview_additem (hwnd, listview_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+			_app_setappiteminfo (hwnd, listview_id, item, app_hash, ptr_app);
 
-		_r_fastlock_releaseshared (&lock_checkbox);
+			_r_fastlock_releaseshared (&lock_checkbox);
+		}
 	}
 
-	return hash;
+	return app_hash;
 }
 
 PITEM_APP _app_getapplication (size_t hash)
@@ -148,23 +149,23 @@ PITEM_APP _app_getapplication (size_t hash)
 	return nullptr;
 }
 
-PITEM_RULE _app_getrule (size_t hash, EnumRuleType type, BOOL is_readonly)
+PITEM_RULE _app_getrule (size_t hash, EnumDataType type, BOOL is_readonly)
 {
 	if (!hash)
 		return nullptr;
 
 	for (size_t i = 0; i < rules_arr.size (); i++)
 	{
-		PITEM_RULE ptr_rule = rules_arr.at (i);
+		const PITEM_RULE ptr_rule = rules_arr.at (i);
 
-		if (ptr_rule && ptr_rule->type == type)
-		{
-			if (is_readonly != -1 && ((BOOL)ptr_rule->is_readonly != (is_readonly)))
-				continue;
+		if (!ptr_rule || ptr_rule->type != type)
+			continue;
 
-			if (ptr_rule->pname && _r_str_hash (ptr_rule->pname) == hash)
-				return ptr_rule;
-		}
+		if (is_readonly != -1 && ((BOOL)ptr_rule->is_readonly != (is_readonly)))
+			continue;
+
+		if (ptr_rule->pname && _r_str_hash (ptr_rule->pname) == hash)
+			return ptr_rule;
 	}
 
 	return nullptr;
@@ -217,7 +218,7 @@ bool _app_freeapplication (size_t hash)
 
 			if (ptr_rule)
 			{
-				if (ptr_rule->type != TypeCustom)
+				if (ptr_rule->type != DataRuleCustom)
 					continue;
 
 				if (ptr_rule->apps.find (hash) != ptr_rule->apps.end ())
@@ -237,16 +238,11 @@ bool _app_freeapplication (size_t hash)
 		}
 
 		_r_fastlock_acquireexclusive (&lock_notification);
-		_app_freenotify (hash, false);
+		_app_freenotify (hash, false, true);
 		_r_fastlock_releaseexclusive (&lock_notification);
 
 		if (ptr_app && ptr_app->htimer)
-		{
-			if (DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr))
-				ptr_app->htimer = nullptr;
-		}
-
-		_app_notifyrefresh (config.hnotification, false);
+			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 
 		apps.erase (hash);
 	}
@@ -281,7 +277,7 @@ void _app_getcount (PITEM_STATUS ptr_status)
 		if (_app_istimeractive (ptr_app))
 			ptr_status->apps_timer_count += 1;
 
-		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == AppService || ptr_app->type == AppPackage))
+		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppPackage))
 			ptr_status->apps_unused_count += 1;
 
 		if (is_used)
@@ -292,7 +288,7 @@ void _app_getcount (PITEM_STATUS ptr_status)
 	{
 		const PITEM_RULE ptr_rule = rules_arr.at (i);
 
-		if (!ptr_rule || ptr_rule->type != TypeCustom)
+		if (!ptr_rule || ptr_rule->type != DataRuleCustom)
 			continue;
 
 		if (ptr_rule->is_enabled && !ptr_rule->apps.empty ())
@@ -349,8 +345,6 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 {
 	rstring result;
 
-	_r_fastlock_acquireshared (&lock_access);
-
 	if (listview_id == IDC_NETWORK)
 	{
 		return _app_gettooltip (IDC_APPS_PROFILE, network_arr.at (idx)->hash);
@@ -369,7 +363,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 			result = (ptr_app->real_path && ptr_app->real_path[0]) ? ptr_app->real_path : ((ptr_app->display_name && ptr_app->display_name[0]) ? ptr_app->display_name : ptr_app->original_path);
 
 			// file information
-			if (ptr_app->type == AppRegular)
+			if (ptr_app->type == DataAppRegular)
 			{
 				rstring display_name;
 
@@ -381,14 +375,14 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 						result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), display_name.GetString ());
 				}
 			}
-			else if (ptr_app->type == AppService)
+			else if (ptr_app->type == DataAppService)
 			{
 				rstring display_name;
 
 				if (_app_item_get (ptr_app->type, idx, &display_name, nullptr, nullptr, nullptr, nullptr))
 					result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), ptr_app->original_path, display_name.GetString ());
 			}
-			else if (ptr_app->type == AppPackage)
+			else if (ptr_app->type == DataAppPackage)
 			{
 				rstring display_name;
 
@@ -419,16 +413,16 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 
 				// app type
 				{
-					if (ptr_app->type == AppNetwork)
+					if (ptr_app->type == DataAppNetwork)
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_NETWORK, nullptr).GetString ());
 
-					else if (ptr_app->type == AppPico)
+					else if (ptr_app->type == DataAppPico)
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PICO, nullptr).GetString ());
 
-					else if (ptr_app->type == AppPackage)
+					else if (ptr_app->type == DataAppPackage)
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PACKAGE, nullptr).GetString ());
 
-					else if (ptr_app->type == AppService)
+					else if (ptr_app->type == DataAppService)
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SERVICE, nullptr).GetString ());
 				}
 
@@ -463,24 +457,38 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 		}
 	}
 
-	_r_fastlock_releaseshared (&lock_access);
-
 	return result;
 }
 
-void _app_setruleitem (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule)
+void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_hash, PITEM_APP ptr_app)
 {
-	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->type == TypeCustom && ptr_rule->is_readonly ? _r_fmt (L"%s*", ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
+	if (!ptr_app || !listview_id)
+		return;
+
+	_app_getappicon (ptr_app, true, &ptr_app->icon_id, nullptr);
+
+	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app));
+	_r_listview_setitem (hwnd, listview_id, item, 1, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
+
+	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
+}
+
+void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule)
+{
+	if (!ptr_rule || !listview_id)
+		return;
+
+	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->type == DataRuleCustom && ptr_rule->is_readonly ? _r_fmt (L"%s*", ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 	_r_listview_setitem (hwnd, listview_id, item, 1, app.LocaleString (IDS_DIRECTION_1 + ptr_rule->dir, nullptr));
 	_r_listview_setitem (hwnd, listview_id, item, 2, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol) : app.LocaleString (IDS_ALL, nullptr));
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_rule->is_enabled);
 }
 
-bool _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
+void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 {
 	if (!ptr_rule)
-		return false;
+		return;
 
 	ptr_rule->is_enabled = is_enable;
 
@@ -491,8 +499,6 @@ bool _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 		if (rules_config.find (hash) != rules_config.end ())
 			rules_config[hash]->is_enabled = is_enable;
 	}
-
-	return true;
 }
 
 rstring _app_rulesexpand (PITEM_RULE const ptr_rule, bool is_forservices, LPCWSTR delimeter)
@@ -518,7 +524,7 @@ rstring _app_rulesexpand (PITEM_RULE const ptr_rule, bool is_forservices, LPCWST
 
 			if (ptr_app)
 			{
-				if (ptr_app->type == AppPackage || ptr_app->type == AppService)
+				if (ptr_app->type == DataAppPackage || ptr_app->type == DataAppService)
 				{
 					if (ptr_app->display_name && ptr_app->display_name[0])
 						result.Append (ptr_app->display_name);
@@ -590,10 +596,13 @@ bool _app_isappexists (ITEM_APP const *ptr_app)
 	if (ptr_app->is_enabled && ptr_app->is_haveerrors)
 		return false;
 
-	if (ptr_app->type == AppRegular)
+	if (ptr_app->type == DataAppDevice || ptr_app->type == DataAppNetwork || ptr_app->type == DataAppPico)
+		return true;
+
+	else if (ptr_app->type == DataAppRegular)
 		return ptr_app->real_path && ptr_app->real_path[0] && _r_fs_exists (ptr_app->real_path);
 
-	else if (ptr_app->type == AppService || ptr_app->type == AppPackage)
+	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppPackage)
 		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr, nullptr);
 
 	return true;
@@ -665,7 +674,7 @@ bool _app_isrulepresent (size_t hash)
 	return false;
 }
 
-void _app_profile_loadrules (MFILTER_RULES * ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumRuleType type, UINT8 weight, time_t * ptimestamp)
+void _app_profile_loadrules (MFILTER_RULES * ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumDataType type, UINT8 weight, time_t * ptimestamp)
 {
 	if (!ptr_rules)
 		return;
@@ -746,21 +755,13 @@ void _app_profile_loadrules (MFILTER_RULES * ptr_rules, LPCWSTR path, LPCWSTR pa
 						ptr_rule->protocol = (UINT8)item.attribute (L"protocol").as_uint ();
 						ptr_rule->af = (ADDRESS_FAMILY)item.attribute (L"version").as_uint ();
 
-						ptr_rule->type = item.attribute (L"is_custom").as_bool () ? TypeCustom : type;
+						ptr_rule->type = item.attribute (L"is_custom").as_bool () ? DataRuleCustom : type;
 						ptr_rule->is_block = item.attribute (L"is_block").as_bool ();
 						ptr_rule->is_forservices = item.attribute (L"is_services").as_bool ();
-						ptr_rule->is_readonly = (type != TypeCustom);
+						ptr_rule->is_readonly = (type != DataRuleCustom);
+						ptr_rule->weight = (type == DataRuleCustom && ptr_rule->is_block) ? FILTER_WEIGHT_CUSTOM_BLOCK : weight; // calculate rule weight
 
 						ptr_rule->is_enabled = item.attribute (L"is_enabled").as_bool ();
-
-						// calculate rule weight
-						{
-							if (type == TypeCustom && item.attribute (L"is_block").as_bool ())
-								ptr_rule->weight = FILTER_WEIGHT_CUSTOM_BLOCK;
-
-							else
-								ptr_rule->weight = weight;
-						}
 
 						if (is_internal)
 						{
@@ -820,7 +821,7 @@ void _app_profile_loadrules (MFILTER_RULES * ptr_rules, LPCWSTR path, LPCWSTR pa
 										if (!_app_getapplication (app_hash))
 											app_hash = _app_addapplication (nullptr, app_path, 0, 0, 0, false, false, true);
 
-										if (ptr_rule->type == TypeBlocklist || ptr_rule->type == TypeSystem)
+										if (ptr_rule->type == DataRuleBlocklist || ptr_rule->type == DataRuleSystem)
 											apps[app_hash].is_undeletable = true;
 
 										ptr_rule->apps[app_hash] = true;
@@ -931,7 +932,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			const PITEM_ADD ptr_item = items.at (i);
 
 			if (ptr_item)
-				_app_addapplication (nullptr, ptr_item->type == AppService ? ptr_item->service_name : ptr_item->sid, ptr_item->timestamp, 0, 0, false, false, true);
+				_app_addapplication (nullptr, ptr_item->type == DataAppService ? ptr_item->service_name : ptr_item->sid, ptr_item->timestamp, 0, 0, false, false, true);
 		}
 	}
 
@@ -998,34 +999,35 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 	}
 
 	// load blocklist rules (internal)
-	_app_profile_loadrules (&rules_arr, config.rules_blocklist_path, MAKEINTRESOURCE (IDR_RULES_BLOCKLIST), true, TypeBlocklist, FILTER_WEIGHT_BLOCKLIST, &config.blocklist_timestamp);
+	_app_profile_loadrules (&rules_arr, config.rules_blocklist_path, MAKEINTRESOURCE (IDR_RULES_BLOCKLIST), true, DataRuleBlocklist, FILTER_WEIGHT_BLOCKLIST, &config.blocklist_timestamp);
 
 	// load system rules (internal)
-	_app_profile_loadrules (&rules_arr, config.rules_system_path, MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, TypeSystem, FILTER_WEIGHT_SYSTEM, &config.rule_system_timestamp);
+	_app_profile_loadrules (&rules_arr, config.rules_system_path, MAKEINTRESOURCE (IDR_RULES_SYSTEM), true, DataRuleSystem, FILTER_WEIGHT_SYSTEM, &config.rule_system_timestamp);
 
 	// load user rules
-	_app_profile_loadrules (&rules_arr, path_rules ? path_rules : config.rules_custom_path, config.rules_custom_path_backup, false, TypeCustom, FILTER_WEIGHT_CUSTOM, nullptr);
+	_app_profile_loadrules (&rules_arr, path_rules ? path_rules : config.rules_custom_path, config.rules_custom_path_backup, false, DataRuleCustom, FILTER_WEIGHT_CUSTOM, nullptr);
 
 	_r_fastlock_releaseexclusive (&lock_access);
 
 	if (hwnd)
 	{
 		_r_fastlock_acquireshared (&lock_access);
-		_r_fastlock_acquireshared (&lock_checkbox);
 
 		// add apps
 		for (auto &p : apps)
 		{
-			const size_t hash = p.first;
+			const size_t app_hash = p.first;
 			const PITEM_APP ptr_app = &p.second;
 
-			const UINT ctrl_id = _app_getapplistview_id (hash);
+			const UINT ctrl_id = _app_getlistview_id (ptr_app->type);
 			const size_t item = _r_listview_getitemcount (hwnd, ctrl_id);
 
-			_r_listview_additem (hwnd, ctrl_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (hash, ptr_app), hash);
-			_r_listview_setitem (hwnd, ctrl_id, item, 1, _r_fmt_date (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
+			_r_fastlock_acquireshared (&lock_checkbox);
 
-			_r_listview_setitemcheck (hwnd, ctrl_id, item, ptr_app->is_enabled);
+			_r_listview_additem (hwnd, ctrl_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+			_app_setappiteminfo (hwnd, ctrl_id, item, app_hash, ptr_app);
+
+			_r_fastlock_releaseshared (&lock_checkbox);
 		}
 
 		// add rules
@@ -1036,14 +1038,17 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			if (!ptr_rule)
 				continue;
 
-			const UINT ctrl_id = _app_getrulelistview_id (ptr_rule);
+			const UINT ctrl_id = _app_getlistview_id (ptr_rule->type);
 			const size_t item = _r_listview_getitemcount (hwnd, ctrl_id);
 
+			_r_fastlock_acquireshared (&lock_checkbox);
+
 			_r_listview_additem (hwnd, ctrl_id, item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
-			_app_setruleitem (hwnd, ctrl_id, item, ptr_rule);
+			_app_setruleiteminfo (hwnd, ctrl_id, item, ptr_rule);
+
+			_r_fastlock_releaseshared (&lock_checkbox);
 		}
 
-		_r_fastlock_releaseshared (&lock_checkbox);
 		_r_fastlock_releaseshared (&lock_access);
 	}
 
@@ -1061,8 +1066,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 
 	if (hwnd)
 	{
-		_r_fastlock_acquireshared (&lock_checkbox);
-
 		for (size_t i = 0; i < network_arr.size (); i++)
 		{
 			const PITEM_NETWORK ptr_network = network_arr.at (i);
@@ -1078,36 +1081,26 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			_app_formataddress (ptr_network->af, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, false);
 
 			_r_listview_additem (hwnd, IDC_NETWORK, i, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, i);
+
 			_r_listview_setitem (hwnd, IDC_NETWORK, i, 1, ptr_network->local_fmt);
 			_r_listview_setitem (hwnd, IDC_NETWORK, i, 2, ptr_network->remote_fmt);
 			_r_listview_setitem (hwnd, IDC_NETWORK, i, 3, _app_getprotoname (ptr_network->protocol));
+			_r_listview_setitem (hwnd, IDC_NETWORK, i, 4, _app_getstatename (ptr_network->state));
 		}
-
-		_r_fastlock_releaseshared (&lock_checkbox);
 	}
 
 	_r_fastlock_releaseexclusive (&lock_network);
 
 	if (hwnd)
-	{
-		_app_listviewsort (hwnd, listview_id);
-		_r_listview_redraw (hwnd, listview_id);
-
 		_app_showitem (hwnd, listview_id, lparam, scroll_pos);
-	}
-
-	if (hwnd)
-		_app_refreshstatus (hwnd);
 }
 
-void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
+void _app_profile_save (LPCWSTR path_apps, LPCWSTR path_rules)
 {
 	const time_t current_time = _r_unixtime_now ();
 	const bool is_backuprequired = app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsLonglong ()) || !_r_fs_exists (config.apps_path_backup) || !_r_fs_exists (config.rules_custom_path_backup) || !_r_fs_exists (config.rules_config_path_backup));
 
 	bool is_backupcreated = false;
-
-	_r_fastlock_acquireshared (&lock_access);
 
 	// save apps
 	{
@@ -1119,6 +1112,8 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 			root.append_attribute (L"timestamp").set_value (current_time);
 			root.append_attribute (L"type").set_value (XmlApps);
 
+			_r_fastlock_acquireshared (&lock_access);
+
 			for (auto &p : apps)
 			{
 				PITEM_APP const ptr_app = &p.second;
@@ -1128,7 +1123,7 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 
 				const bool is_used = _app_isappused (ptr_app, p.first);
 
-				if (!is_used && (ptr_app->type == AppService || ptr_app->type == AppPackage))
+				if (!is_used && (ptr_app->type == DataAppService || ptr_app->type == DataAppPackage))
 					continue;
 
 				pugi::xml_node item = root.append_child (L"item");
@@ -1156,6 +1151,8 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 				}
 			}
 
+			_r_fastlock_releaseshared (&lock_access);
+
 			doc.save_file (path_apps ? path_apps : config.apps_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
@@ -1177,9 +1174,16 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 			root.append_attribute (L"timestamp").set_value (current_time);
 			root.append_attribute (L"type").set_value (XmlRulesConfig);
 
+			_r_fastlock_acquireshared (&lock_access);
+
 			for (auto const &p : rules_config)
 			{
-				const size_t hash = _r_str_hash (p.second->pname);
+				const PITEM_RULE_CONFIG ptr_config = p.second;
+
+				if (!ptr_config || !ptr_config->pname)
+					continue;
+
+				const size_t hash = _r_str_hash (ptr_config->pname);
 
 				if (!_app_isrulepresent (hash))
 					continue;
@@ -1191,7 +1195,7 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 					item.append_attribute (L"name").set_value (p.second->pname);
 
 					// save apps
-					const PITEM_RULE ptr_rule = _app_getrule (hash, TypeCustom, true);
+					const PITEM_RULE ptr_rule = _app_getrule (hash, DataRuleCustom, true);
 
 					if (ptr_rule && !ptr_rule->apps.empty ())
 					{
@@ -1205,6 +1209,8 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 						item.append_attribute (L"is_enabled").set_value (p.second->is_enabled);
 				}
 			}
+
+			_r_fastlock_releaseshared (&lock_access);
 
 			doc.save_file (config.rules_config_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
@@ -1229,11 +1235,13 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 
 			size_t rules_count = 0;
 
+			_r_fastlock_acquireshared (&lock_access);
+
 			for (size_t i = 0; i < rules_arr.size (); i++)
 			{
-				PITEM_RULE const ptr_rule = rules_arr.at (i);
+				const PITEM_RULE ptr_rule = rules_arr.at (i);
 
-				if (!ptr_rule || ptr_rule->is_readonly)
+				if (!ptr_rule || ptr_rule->is_readonly || !ptr_rule->pname)
 					continue;
 
 				pugi::xml_node item = root.append_child (L"item");
@@ -1272,8 +1280,7 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 								arr.Append (_r_path_unexpand (ptr_app->original_path));
 								arr.Append (RULE_DELIMETER);
 
-								if (!is_haveapps)
-									is_haveapps = true;
+								is_haveapps = true;
 							}
 						}
 
@@ -1291,6 +1298,8 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 				}
 			}
 
+			_r_fastlock_releaseshared (&lock_access);
+
 			doc.save_file (path_rules ? path_rules : config.rules_custom_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 			// make backup
@@ -1301,8 +1310,6 @@ void _app_profile_save (HWND /*hwnd*/, LPCWSTR path_apps, LPCWSTR path_rules)
 			}
 		}
 	}
-
-	_r_fastlock_releaseshared (&lock_access);
 
 	if (is_backupcreated)
 		app.ConfigSet (L"BackupTimestamp", current_time);

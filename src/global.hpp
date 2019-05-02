@@ -32,7 +32,7 @@ typedef std::vector<PITEM_RULE> MFILTER_RULES;
 typedef std::vector<HANDLE> MTHREADPOOL;
 typedef std::unordered_map<size_t, ITEM_APP> MAPPS_MAP;
 typedef std::unordered_map<size_t, LPWSTR> MCACHE_MAP;
-typedef std::unordered_map<size_t, EnumRuleItemType> MCACHETYPES_MAP;
+typedef std::unordered_map<size_t, EnumDataType> MCACHETYPES_MAP;
 
 #include "helper.hpp"
 #include "log.hpp"

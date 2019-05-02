@@ -9,14 +9,22 @@ UINT _app_gettab_id (HWND hwnd, size_t page_id)
 
 	tci.mask = TCIF_PARAM;
 
-	SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEM, ((page_id == LAST_VALUE) ? SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0) : page_id), (LPARAM)& tci);
+	if (page_id == LAST_VALUE)
+	{
+		page_id = (size_t)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
+
+		if (page_id == LAST_VALUE)
+			page_id = 0;
+	}
+
+	SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEM, page_id, (LPARAM)& tci);
 
 	return (UINT)tci.lParam;
 }
 
 void _app_settab_id (HWND hwnd, size_t page_id)
 {
-	if (_app_gettab_id (hwnd) == page_id && IsWindowVisible (GetDlgItem (hwnd, (UINT)page_id)))
+	if (!page_id || (_app_gettab_id (hwnd) == page_id && IsWindowVisible (GetDlgItem (hwnd, (UINT)page_id))))
 		return;
 
 	for (size_t i = 0; i < (size_t)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
@@ -30,6 +38,7 @@ void _app_settab_id (HWND hwnd, size_t page_id)
 			NMHDR hdr = {0};
 
 			hdr.code = TCN_SELCHANGE;
+			hdr.hwndFrom = hwnd;
 			hdr.idFrom = IDC_TAB;
 
 			SendMessage (hwnd, WM_NOTIFY, 0, (LPARAM)& hdr);
@@ -46,7 +55,10 @@ bool _app_initinterfacestate ()
 	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
 
 	if (is_enabled)
+	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+		_r_status_settext (app.GetHWND (), IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
+	}
 
 	return is_enabled;
 }
@@ -54,15 +66,23 @@ bool _app_initinterfacestate ()
 void _app_restoreinterfacestate (bool is_enabled)
 {
 	if (is_enabled)
+	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+		_r_status_settext (app.GetHWND (), IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
+	}
 }
 
 void _app_setinterfacestate (HWND hwnd)
 {
 	const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
 
-	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)));
-	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXICON)));
+	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXICON));
+	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON));
+
+	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
+	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
+
+	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 3 : 2);
 
@@ -95,15 +115,18 @@ bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, L
 		if (InetNtop (af, ptr_addr, formatted_address, _countof (formatted_address)))
 		{
 			if (af == AF_INET)
-				result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr) && !IN4_IS_ADDR_LOOPBACK ((PIN_ADDR)ptr_addr);
+				result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr);
 
 			else if (af == AF_INET6)
-				result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr) && !IN6_IS_ADDR_LOOPBACK ((PIN6_ADDR)ptr_addr);
+				result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr);
+
+			if (!result)
+				formatted_address[0] = 0;
 		}
 	}
 
 	if (port)
-		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L":%d", port));
+		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (formatted_address[0] ? L":%d" : L"%d", port));
 
 	if (result && is_appenddns && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit)
 	{
@@ -139,7 +162,6 @@ bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, L
 				_r_fastlock_acquireexclusive (&lock_cache);
 
 				_app_freecache (&cache_hosts);
-
 				cache_hosts[hash] = cache_ptr;
 
 				_r_fastlock_releaseexclusive (&lock_cache);
@@ -149,7 +171,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, L
 
 	_r_str_alloc (ptr_dest, _r_str_length (formatted_address), formatted_address);
 
-	return result;
+	return formatted_address[0] != 0;
 }
 
 void _app_freearray (std::vector<PITEM_ADD> * ptr)
@@ -224,7 +246,7 @@ void _app_getappicon (ITEM_APP const *ptr_app, bool is_small, size_t * picon_id,
 {
 	const bool is_iconshidden = app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
-	if (ptr_app->type == AppRegular || ptr_app->type == AppService)
+	if (ptr_app->type == DataAppRegular || ptr_app->type == DataAppService)
 	{
 		if (is_iconshidden || !_app_getfileicon (ptr_app->real_path, is_small, picon_id, picon))
 		{
@@ -235,7 +257,7 @@ void _app_getappicon (ITEM_APP const *ptr_app, bool is_small, size_t * picon_id,
 				*picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
 		}
 	}
-	else if (ptr_app->type == AppPackage)
+	else if (ptr_app->type == DataAppPackage)
 	{
 		if (picon_id)
 			*picon_id = config.icon_package_id;
@@ -258,11 +280,11 @@ void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, LPWSTR * extract
 	if (!extracted_name)
 		return;
 
-	if (ptr_app->type == AppService)
+	if (ptr_app->type == DataAppService)
 	{
 		_r_str_alloc (extracted_name, _r_str_length (ptr_app->original_path), ptr_app->original_path);
 	}
-	else if (ptr_app->type == AppPackage)
+	else if (ptr_app->type == DataAppPackage)
 	{
 		rstring name;
 
@@ -404,7 +426,6 @@ bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR * psigner)
 		_r_fastlock_acquireshared (&lock_cache);
 
 		LPCWSTR ptr_text = cache_signatures[hash];
-
 		_r_str_alloc (psigner, _r_str_length (ptr_text), ptr_text);
 
 		_r_fastlock_releaseshared (&lock_cache);
@@ -416,7 +437,7 @@ bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR * psigner)
 
 	cache_signatures[hash] = nullptr;
 
-	const HANDLE hfile = CreateFile (path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
+	const HANDLE hfile = CreateFile (path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
 
 	if (hfile != INVALID_HANDLE_VALUE)
 	{
@@ -505,7 +526,6 @@ bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR * pinfo)
 		_r_fastlock_acquireshared (&lock_cache);
 
 		LPCWSTR ptr_text = cache_versions[hash];
-
 		_r_str_alloc (pinfo, _r_str_length (ptr_text), ptr_text);
 
 		_r_fastlock_releaseshared (&lock_cache);
@@ -640,6 +660,47 @@ rstring _app_getprotoname (UINT8 proto)
 	return SZ_EMPTY;
 }
 
+rstring _app_getstatename (DWORD state)
+{
+	if(state== MIB_TCP_STATE_CLOSED)
+			return L"Closed";
+
+	else if (state == MIB_TCP_STATE_LISTEN)
+			return L"Listen";
+
+	else if (state == MIB_TCP_STATE_SYN_SENT)
+			return L"SYN sent";
+
+	else if (state == MIB_TCP_STATE_SYN_RCVD)
+			return L"SYN received";
+
+	else if (state == MIB_TCP_STATE_ESTAB)
+			return L"Established";
+
+	else if (state == MIB_TCP_STATE_FIN_WAIT1)
+			return L"FIN wait 1";
+
+	else if (state == MIB_TCP_STATE_FIN_WAIT2)
+			return L"FIN wait 2";
+
+	else if (state == MIB_TCP_STATE_CLOSE_WAIT)
+			return L"Close wait";
+
+	else if (state == MIB_TCP_STATE_CLOSING)
+			return L"Closing";
+
+	else if (state == MIB_TCP_STATE_LAST_ACK)
+			return L"Last ACK";
+
+	else if (state == MIB_TCP_STATE_TIME_WAIT)
+			return L"Time wait";
+
+	else if (state == MIB_TCP_STATE_DELETE_TCB)
+			return L"Delete TCB";
+
+	return L"";
+}
+
 rstring getprocname (DWORD pid)
 {
 	WCHAR real_path[MAX_PATH] = {0};
@@ -702,9 +763,7 @@ void _app_generate_connections ()
 					(
 					IN4_IS_ADDR_UNSPECIFIED (&ptr_network->remote_addr) &&
 					IN4_IS_ADDR_UNSPECIFIED (&ptr_network->local_addr)
-					||
-					IN4_IS_ADDR_LOOPBACK (&ptr_network->remote_addr) &&
-					IN4_IS_ADDR_LOOPBACK (&ptr_network->local_addr)) &&
+					) &&
 					!tcp4Table->table[i].dwRemotePort &&
 					!tcp4Table->table[i].dwLocalPort
 					)
@@ -726,6 +785,8 @@ void _app_generate_connections ()
 
 				ptr_network->remote_port = (UINT16)tcp4Table->table[i].dwRemotePort;
 				ptr_network->local_port = (UINT16)tcp4Table->table[i].dwLocalPort;
+
+				ptr_network->state = tcp4Table->table[i].dwState;
 
 				network_arr.push_back (ptr_network);
 			}
@@ -751,11 +812,7 @@ void _app_generate_connections ()
 				if (
 					(
 					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)tcp6Table->table[i].ucRemoteAddr) &&
-					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)tcp6Table->table[i].ucLocalAddr)
-					||
-					IN6_IS_ADDR_LOOPBACK ((PIN6_ADDR)tcp6Table->table[i].ucRemoteAddr) &&
-					IN6_IS_ADDR_LOOPBACK ((PIN6_ADDR)tcp6Table->table[i].ucLocalAddr)
-					) &&
+					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)tcp6Table->table[i].ucLocalAddr)) &&
 					!tcp6Table->table[i].dwRemotePort &&
 					!tcp6Table->table[i].dwLocalPort
 					)
@@ -779,6 +836,8 @@ void _app_generate_connections ()
 
 				ptr_network->remote_port = (UINT16)tcp6Table->table[i].dwRemotePort;
 				ptr_network->local_port = (UINT16)tcp6Table->table[i].dwLocalPort;
+
+				ptr_network->state = tcp6Table->table[i].dwState;
 
 				network_arr.push_back (ptr_network);
 			}
@@ -804,6 +863,17 @@ void _app_generate_connections ()
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
+				ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
+
+				if (
+					IN4_IS_ADDR_UNSPECIFIED (&ptr_network->local_addr) &&
+					!udp4Table->table[i].dwLocalPort
+					)
+				{
+					SAFE_DELETE (ptr_network);
+					continue;
+				}
+
 				WCHAR path_name[MAX_PATH] = {0};
 				StringCchCopy (path_name, _countof (path_name), getprocname (udp4Table->table[i].dwOwningPid));
 
@@ -815,8 +885,9 @@ void _app_generate_connections ()
 				ptr_network->protocol = IPPROTO_UDP;
 				ptr_network->hash = _r_str_hash (ptr_network->path);
 
-				ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
 				ptr_network->local_port = (UINT16)udp4Table->table[i].dwLocalPort;
+
+				ptr_network->state = 0;
 
 				network_arr.push_back (ptr_network);
 			}
@@ -840,9 +911,7 @@ void _app_generate_connections ()
 					continue;
 
 				if (
-					(IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)udp6Table->table[i].ucLocalAddr)
-					||
-					IN6_IS_ADDR_LOOPBACK ((PIN6_ADDR)udp6Table->table[i].ucLocalAddr)) &&
+					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)udp6Table->table[i].ucLocalAddr) &&
 					!udp6Table->table[i].dwLocalPort
 					)
 					continue;
@@ -863,6 +932,8 @@ void _app_generate_connections ()
 				CopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 
 				ptr_network->local_port = (UINT16)udp6Table->table[i].dwLocalPort;
+
+				ptr_network->state = 0;
 
 				network_arr.push_back (ptr_network);
 			}
@@ -954,7 +1025,7 @@ void _app_generate_packages ()
 				if (RegQueryInfoKey (hsubkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
 					ptr_item->timestamp = _r_unixtime_from_filetime (&ft);
 
-				ptr_item->type = AppPackage;
+				ptr_item->type = DataAppPackage;
 
 				_r_str_alloc (&ptr_item->sid, package_sid_string.GetLength (), package_sid_string);
 				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
@@ -1129,7 +1200,6 @@ void _app_generate_services ()
 						LPCWSTR display_name = psvc->lpDisplayName;
 						LPCWSTR service_name = psvc->lpServiceName;
 
-						WCHAR buffer[MAX_PATH] = {0};
 						WCHAR real_path[MAX_PATH] = {0};
 
 						time_t timestamp = 0;
@@ -1206,17 +1276,12 @@ void _app_generate_services ()
 						}
 
 						UNICODE_STRING serviceNameUs = {0};
+						RtlInitUnicodeString (&serviceNameUs, (PWSTR)service_name);
 
-						serviceNameUs.Buffer = buffer;
-						serviceNameUs.Length = (USHORT)(_r_str_length (service_name) * sizeof (WCHAR));
-						serviceNameUs.MaximumLength = serviceNameUs.Length;
-
-						StringCchCopy (buffer, _countof (buffer), service_name);
+						rstring sidstring;
 
 						SID *serviceSid = nullptr;
 						ULONG serviceSidLength = 0;
-
-						rstring sidstring;
 
 						// get service security identifier
 						if (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength) == 0xC0000023 /*STATUS_BUFFER_TOO_SMALL*/)
@@ -1242,7 +1307,7 @@ void _app_generate_services ()
 
 							ptr_item->hash = _r_str_hash (service_name);
 							ptr_item->timestamp = timestamp;
-							ptr_item->type = AppService;
+							ptr_item->type = DataAppService;
 
 							_r_str_alloc (&ptr_item->service_name, _r_str_length (service_name), service_name);
 							_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
@@ -1330,7 +1395,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						const bool is_global = (ptr_rule->is_enabled && ptr_rule->apps.empty ());
 						const bool is_enabled = is_global || (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
 
-						if (ptr_rule->type != TypeCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)) || (type == 2 && !is_global))
+						if (ptr_rule->type != DataRuleCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)) || (type == 2 && !is_global))
 							continue;
 
 						if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
@@ -1366,7 +1431,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
 }
 
-bool _app_item_get (EnumAppType type, size_t hash, rstring * display_name, rstring * real_path, PSID * lpsid, PSECURITY_DESCRIPTOR * lpsd, rstring * /*description*/)
+bool _app_item_get (EnumDataType type, size_t hash, rstring * display_name, rstring * real_path, PSID * lpsid, PSECURITY_DESCRIPTOR * lpsd, rstring * /*description*/)
 {
 	for (size_t i = 0; i < items.size (); i++)
 	{
@@ -1439,150 +1504,78 @@ bool _app_item_get (EnumAppType type, size_t hash, rstring * display_name, rstri
 	return false;
 }
 
-INT CALLBACK _app_listviewcompare_abc (LPARAM item1, LPARAM item2, LPARAM lparam)
+INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM lparam)
 {
-	HWND hwnd = GetParent ((HWND)lparam);
-	const UINT ctrl_id = GetDlgCtrlID ((HWND)lparam);
+	const HWND hwnd = GetParent ((HWND)lparam);
+	const UINT listview_id = GetDlgCtrlID ((HWND)lparam);
 
-	const bool is_checked1 = _r_listview_isitemchecked (hwnd, ctrl_id, (size_t)item1);
-	const bool is_checked2 = _r_listview_isitemchecked (hwnd, ctrl_id, (size_t)item2);
+	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
 
-	if ((is_checked1 || is_checked2) && (is_checked1 != is_checked2))
-	{
-		if (is_checked1 && !is_checked2)
-			return -1;
-
-		if (!is_checked1 && is_checked2)
-			return 1;
-	}
-
-	const rstring str1 = _r_listview_getitemtext (hwnd, ctrl_id, (size_t)item1, 0);
-	const rstring str2 = _r_listview_getitemtext (hwnd, ctrl_id, (size_t)item2, 0);
-
-	return StrCmpLogicalW (str1, str2);
-}
-
-INT CALLBACK _app_listviewcompare_apps (LPARAM lp1, LPARAM lp2, LPARAM lparam)
-{
-	const UINT column_id = LOWORD (lparam);
-	const BOOL is_descend = HIWORD (lparam);
-
-	const size_t hash1 = static_cast<size_t>(lp1);
-	const size_t hash2 = static_cast<size_t>(lp2);
+	const UINT column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsUint ();
+	const bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
 
 	INT result = 0;
 
-	PITEM_APP const ptr_app1 = _app_getapplication (hash1);
-	PITEM_APP const ptr_app2 = _app_getapplication (hash2);
-
-	if (!ptr_app1 || !ptr_app2)
-		return 0;
-
-	if (column_id == 0)
+	if ((GetWindowLongPtr ((HWND)lparam, GWL_EXSTYLE) & LVS_EX_CHECKBOXES) != 0)
 	{
-		// file
-		result = StrCmpLogicalW (ptr_app1->display_name, ptr_app2->display_name);
+		const bool is_checked1 = _r_listview_isitemchecked (hwnd, listview_id, (size_t)item1);
+		const bool is_checked2 = _r_listview_isitemchecked (hwnd, listview_id, (size_t)item2);
+
+		if ((is_checked1 || is_checked2) && (is_checked1 != is_checked2))
+		{
+			if (is_checked1 && !is_checked2)
+				result = is_descend ? 1 : -1;
+
+			if (!is_checked1 && is_checked2)
+				result = is_descend ? -1 : 1;
+		}
 	}
-	else if (column_id == 1)
+
+	if (!result)
 	{
-		// timestamp
-		if (ptr_app1->timestamp == ptr_app2->timestamp)
-			result = 0;
+		const rstring str1 = _r_listview_getitemtext (hwnd, listview_id, (size_t)item1, column_id);
+		const rstring str2 = _r_listview_getitemtext (hwnd, listview_id, (size_t)item2, column_id);
 
-		else if (ptr_app1->timestamp < ptr_app2->timestamp)
-			result = -1;
-
-		else if (ptr_app1->timestamp > ptr_app2->timestamp)
-			result = 1;
+		result = StrCmpLogicalW (str1, str2);
 	}
 
 	return is_descend ? -result : result;
 }
 
-INT CALLBACK _app_listviewcompare_rules (LPARAM item1, LPARAM item2, LPARAM lparam)
+void _app_listviewsort (HWND hwnd, UINT listview_id, INT subitem, bool is_notifycode)
 {
-	const UINT listview_id = (UINT)lparam;
+	if (!listview_id)
+		return;
 
-	const UINT column_id = app.ConfigGet (L"SortColumnRules", 0).AsUint ();
-	const bool is_descend = app.ConfigGet (L"IsSortDescendingRules", false).AsBool ();
+	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
 
-	const rstring str1 = _r_listview_getitemtext (app.GetHWND (), listview_id, (size_t)item1, column_id);
-	const rstring str2 = _r_listview_getitemtext (app.GetHWND (), listview_id, (size_t)item2, column_id);
+	bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
 
-	const INT result = StrCmpLogicalW (str1, str2);
+	if (is_notifycode)
+		is_descend = !is_descend;
 
-	return is_descend ? -result : result;
-}
+	if (subitem == -1)
+		subitem = app.ConfigGet (L"SortColumn", 0, cfg_name).AsBool ();
 
-void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem, bool is_notifycode)
-{
-	_r_fastlock_acquireshared (&lock_access);
-
-	for (INT i = 0; i < _r_listview_getcolumncount (hwnd, ctrl_id); i++)
-		_r_listview_setcolumnsortindex (hwnd, ctrl_id, i, 0);
-
-	if (
-		ctrl_id == IDC_APPS_PROFILE ||
-		ctrl_id == IDC_APPS_SERVICE ||
-		ctrl_id == IDC_APPS_PACKAGE
-		)
+	if (is_notifycode)
 	{
-		bool is_descend = app.ConfigGet (L"IsSortDescending", true).AsBool ();
-
-		if (is_notifycode)
-			is_descend = !is_descend;
-
-		if (subitem == -1)
-			subitem = app.ConfigGet (L"SortColumn", 1).AsBool ();
-
-		const WPARAM wparam = MAKEWPARAM (subitem, is_descend);
-
-		if (is_notifycode)
-		{
-			app.ConfigSet (L"IsSortDescending", is_descend);
-			app.ConfigSet (L"SortColumn", (DWORD)subitem);
-		}
-
-		_r_listview_setcolumnsortindex (hwnd, ctrl_id, subitem, is_descend ? -1 : 1);
-
-		SendDlgItemMessage (hwnd, ctrl_id, LVM_SORTITEMS, wparam, (LPARAM)& _app_listviewcompare_apps);
-
-		_app_refreshstatus (hwnd);
-	}
-	else if (
-		ctrl_id == IDC_RULES_BLOCKLIST ||
-		ctrl_id == IDC_RULES_SYSTEM ||
-		ctrl_id == IDC_RULES_CUSTOM
-		)
-	{
-		bool is_descend = app.ConfigGet (L"IsSortDescendingRules", false).AsBool ();
-
-		if (is_notifycode)
-			is_descend = !is_descend;
-
-		if (subitem == -1)
-			subitem = app.ConfigGet (L"SortColumnRules", 0).AsUint ();
-
-		if (is_notifycode)
-		{
-			app.ConfigSet (L"IsSortDescendingRules", is_descend);
-			app.ConfigSet (L"SortColumnRules", (DWORD)subitem);
-		}
-
-		_r_listview_setcolumnsortindex (hwnd, ctrl_id, subitem, is_descend ? -1 : 1);
-
-		SendDlgItemMessage (hwnd, ctrl_id, LVM_SORTITEMSEX, (WPARAM)ctrl_id, (LPARAM)& _app_listviewcompare_rules);
-	}
-	else
-	{
-		SendDlgItemMessage (hwnd, ctrl_id, LVM_SORTITEMSEX, (WPARAM)GetDlgItem (hwnd, ctrl_id), (LPARAM)& _app_listviewcompare_abc);
+		app.ConfigSet (L"SortIsDescending", is_descend, cfg_name);
+		app.ConfigSet (L"SortColumn", (DWORD)subitem, cfg_name);
 	}
 
-	_r_fastlock_releaseshared (&lock_access);
+	for (INT i = 0; i < _r_listview_getcolumncount (hwnd, listview_id); i++)
+		_r_listview_setcolumnsortindex (hwnd, listview_id, i, 0);
+
+	_r_listview_setcolumnsortindex (hwnd, listview_id, subitem, is_descend ? -1 : 1);
+
+	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMSEX, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)& _app_listviewcompare_callback);
 }
 
 void _app_refreshstatus (HWND hwnd)
 {
+	ITEM_STATUS stat = {0};
+	_app_getcount (&stat);
+
 	const HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
 	const HDC hdc = GetDC (hstatus);
 
@@ -1592,18 +1585,12 @@ void _app_refreshstatus (HWND hwnd)
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
 		static const UINT parts_count = 3;
+		static const UINT padding = app.GetDPI (8);
 
 		rstring text[parts_count];
 		INT parts[parts_count] = {0};
 		LONG size[parts_count] = {0};
 		LONG lay = 0;
-
-		_r_fastlock_acquireshared (&lock_access);
-
-		ITEM_STATUS stat = {0};
-		_app_getcount (&stat);
-
-		_r_fastlock_releaseshared (&lock_access);
 
 		for (UINT i = 0; i < parts_count; i++)
 		{
@@ -1611,7 +1598,7 @@ void _app_refreshstatus (HWND hwnd)
 			{
 				case 0:
 				{
-					text[i].Format (app.LocaleString (IDS_STATUS_TOTAL, nullptr), stat.apps_count);
+					text[i] = app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr);
 					break;
 				}
 
@@ -1628,7 +1615,7 @@ void _app_refreshstatus (HWND hwnd)
 				}
 			}
 
-			size[i] = _r_dc_fontwidth (hdc, text[i], text[i].GetLength ()) + 10;
+			size[i] = _r_dc_fontwidth (hdc, text[i], text[i].GetLength ()) + padding;
 
 			if (i)
 				lay += size[i];
@@ -1637,14 +1624,17 @@ void _app_refreshstatus (HWND hwnd)
 		RECT rc = {0};
 		GetClientRect (hstatus, &rc);
 
-		parts[0] = _R_RECT_WIDTH (&rc) - lay - GetSystemMetrics (SM_CXSMICON);
+		parts[0] = _R_RECT_WIDTH (&rc) - lay - GetSystemMetrics (SM_CXVSCROLL);
 		parts[1] = parts[0] + size[1];
 		parts[2] = parts[1] + size[2];
 
 		SendMessage (hstatus, SB_SETPARTS, parts_count, (LPARAM)parts);
 
 		for (UINT i = 0; i < parts_count; i++)
+		{
 			SendMessage (hstatus, SB_SETTEXT, MAKEWPARAM (i, 0), (LPARAM)text[i].GetString ());
+			SendMessage (hstatus, SB_SETTIPTEXT, i, (LPARAM)text[i].GetString ());
+		}
 
 		ReleaseDC (hstatus, hdc);
 	}
@@ -1840,7 +1830,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 				struct sockaddr_in *sock_in4 = (struct sockaddr_in *)current->ai_addr;
 				PIN_ADDR addr4 = &(sock_in4->sin_addr);
 
-				if (IN4_IS_ADDR_UNSPECIFIED (addr4) || IN4_IS_ADDR_LOOPBACK (addr4))
+				if (IN4_IS_ADDR_UNSPECIFIED (addr4))
 					continue;
 
 				InetNtop (current->ai_family, addr4, printableIP, _countof (printableIP));
@@ -1850,7 +1840,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 				struct sockaddr_in6 *sock_in6 = (struct sockaddr_in6 *)current->ai_addr;
 				PIN6_ADDR addr6 = &(sock_in6->sin6_addr);
 
-				if (IN6_IS_ADDR_UNSPECIFIED (addr6) || IN6_IS_ADDR_LOOPBACK (addr6))
+				if (IN6_IS_ADDR_UNSPECIFIED (addr6))
 					continue;
 
 				InetNtop (current->ai_family, addr6, printableIP, _countof (printableIP));
@@ -1983,7 +1973,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 	if (rule.At (0) == L'*')
 		return true;
 
-	EnumRuleItemType type = TypeRuleItemUnknown;
+	EnumDataType type = DataUnknown;
 	const size_t range_pos = rule.Find (RULE_RANGE_CHAR);
 	bool is_range = (range_pos != rstring::npos);
 
@@ -2007,27 +1997,25 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 		if (is_exists)
 		{
 			_r_fastlock_acquireshared (&lock_cache);
-
 			type = cache_types[hash];
-
 			_r_fastlock_releaseshared (&lock_cache);
 		}
 		else
 		{
 			if (_app_isruleport (rule))
 			{
-				type = TypePort;
+				type = DataTypePort;
 			}
 			else if (is_range ? (_app_isruleip (range_start) && _app_isruleip (range_end)) : _app_isruleip (rule))
 			{
-				type = TypeIp;
+				type = DataTypeIp;
 			}
 			else if (_app_isrulehost (rule))
 			{
-				type = TypeHost;
+				type = DataTypeHost;
 			}
 
-			if (type != TypeRuleItemUnknown)
+			if (type != DataUnknown)
 			{
 				_r_fastlock_acquireexclusive (&lock_cache);
 
@@ -2041,23 +2029,23 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 		}
 	}
 
-	if (type == TypeRuleItemUnknown)
+	if (type == DataUnknown)
 		return false;
 
 	if (!ptr_addr)
 		return true;
 
-	if (type == TypeHost)
+	if (type == DataTypeHost)
 		is_range = false;
 
 	ptr_addr->is_range = is_range;
 
-	if (type == TypePort)
+	if (type == DataTypePort)
 	{
 		if (!is_range)
 		{
 			// ...port
-			ptr_addr->type = TypePort;
+			ptr_addr->type = DataTypePort;
 			ptr_addr->port = (UINT16)rule.AsUint ();
 
 			return true;
@@ -2065,7 +2053,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 		else
 		{
 			// ...port range
-			ptr_addr->type = TypePort;
+			ptr_addr->type = DataTypePort;
 
 			if (ptr_addr->prange)
 			{
@@ -2088,7 +2076,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 
 		USHORT port2 = 0;
 
-		if (type == TypeIp && is_range)
+		if (type == DataTypeIp && is_range)
 		{
 			// ...ip range (start)
 			if (_app_parsenetworkstring (range_start, &format, &port2, &addr4, &addr6, nullptr, 0))
@@ -2152,7 +2140,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 			}
 
 			ptr_addr->format = format;
-			ptr_addr->type = TypeIp;
+			ptr_addr->type = DataTypeIp;
 		}
 		else
 		{
@@ -2184,7 +2172,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 					return false;
 				}
 
-				ptr_addr->type = TypeIp;
+				ptr_addr->type = DataTypeIp;
 				ptr_addr->format = format;
 
 				if (port2)
@@ -2263,45 +2251,25 @@ void _app_resolvefilename (rstring & path)
 	}
 }
 
-UINT _app_getapplistview_id (size_t hash)
+UINT _app_getlistview_id (EnumDataType type)
 {
-	_r_fastlock_acquireshared (&lock_access);
+	if (type == DataAppService)
+		return IDC_APPS_SERVICE;
 
-	PITEM_APP ptr_app = _app_getapplication (hash);
-	const EnumAppType type = ptr_app ? ptr_app->type : AppRegular;
+	else if (type == DataAppPackage)
+		return IDC_APPS_PACKAGE;
 
-	_r_fastlock_releaseshared (&lock_access);
+	else if (type == DataAppRegular || type == DataAppDevice || type == DataAppNetwork || type == DataAppPico)
+		return IDC_APPS_PROFILE;
 
-	if (ptr_app)
-	{
-		if (type == AppService)
-			return IDC_APPS_SERVICE;
+	else if (type == DataRuleBlocklist)
+		return IDC_RULES_BLOCKLIST;
 
-		else if (type == AppPackage)
-			return IDC_APPS_PACKAGE;
+	else if (type == DataRuleSystem)
+		return IDC_RULES_SYSTEM;
 
-		else
-			return IDC_APPS_PROFILE;
-	}
-
-	return 0;
-}
-
-UINT _app_getrulelistview_id (const PITEM_RULE ptr_rule)
-{
-	const EnumRuleType type = ptr_rule->type;
-
-	if (ptr_rule)
-	{
-		if (type == TypeBlocklist)
-			return IDC_RULES_BLOCKLIST;
-
-		else if (type == TypeSystem)
-			return IDC_RULES_SYSTEM;
-
-		else if (ptr_rule->type == TypeCustom)
-			return IDC_RULES_CUSTOM;
-	}
+	else if (type == DataRuleCustom)
+		return IDC_RULES_CUSTOM;
 
 	return 0;
 }

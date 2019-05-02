@@ -26,6 +26,7 @@ bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR* psigner);
 bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR* pinfo);
 size_t _app_getposition (HWND hwnd, size_t hash);
 rstring _app_getprotoname (UINT8 proto);
+rstring _app_getstatename (DWORD state);
 
 void _app_generate_connections ();
 void _app_generate_packages ();
@@ -33,12 +34,10 @@ void _app_generate_services ();
 
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash);
 
-bool _app_item_get (EnumAppType type, size_t hash, rstring* display_name, rstring* real_path, PSID* lpsid, PSECURITY_DESCRIPTOR* lpsd, rstring* /*description*/);
+bool _app_item_get (EnumDataType type, size_t hash, rstring* display_name, rstring* real_path, PSID* lpsid, PSECURITY_DESCRIPTOR* lpsd, rstring* /*description*/);
 
-INT CALLBACK _app_listviewcompare_abc (LPARAM item1, LPARAM item2, LPARAM lparam);
-INT CALLBACK _app_listviewcompare_apps (LPARAM lp1, LPARAM lp2, LPARAM lparam);
-INT CALLBACK _app_listviewcompare_rules (LPARAM item1, LPARAM item2, LPARAM lparam);
-void _app_listviewsort (HWND hwnd, UINT ctrl_id, INT subitem = -1, bool is_notifycode = false);
+INT CALLBACK _app_listviewcompare_callback (LPARAM lp1, LPARAM lp2, LPARAM lparam);
+void _app_listviewsort (HWND hwnd, UINT listview_id, INT subitem = -1, bool is_notifycode = false);
 
 void _app_refreshstatus (HWND hwnd);
 
@@ -51,8 +50,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
 bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR buffer, DWORD length);
 void _app_resolvefilename (rstring& path);
 
-UINT _app_getapplistview_id (size_t hash);
-UINT _app_getrulelistview_id (const PITEM_RULE ptr_rule);
+UINT _app_getlistview_id (EnumDataType type);
 
 void _app_showitem (HWND hwnd, UINT listview_id, LPARAM lparam, INT scroll_pos = -1);
 

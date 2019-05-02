@@ -33,7 +33,7 @@ size_t _wfp_dumpfilters (const GUID* pprovider, MARRAY* pfilters);
 bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable);
 void _mps_changeconfig2 (bool is_enable);
 
-DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumAppType type);
+DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumDataType type);
 
 bool ByteBlobAlloc (PVOID data, size_t length, FWP_BYTE_BLOB** lpblob);
 void ByteBlobFree (FWP_BYTE_BLOB** lpblob);

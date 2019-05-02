@@ -76,7 +76,7 @@ bool _app_loginit (bool is_install)
 	if (!is_install)
 		return true; // already closed
 
-	  // check if log enabled
+	// check if log enabled
 	if (!app.ConfigGet (L"IsLogEnabled", false).AsBool ())
 		return false;
 
@@ -86,7 +86,7 @@ bool _app_loginit (bool is_install)
 
 	_r_fastlock_acquireexclusive (&lock_writelog);
 
-	config.hlogfile = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	config.hlogfile = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (config.hlogfile == INVALID_HANDLE_VALUE)
 	{
@@ -130,7 +130,7 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 
 		if (ptr_app)
 		{
-			if (ptr_app->type == AppPackage || ptr_app->type == AppService)
+			if (ptr_app->type == DataAppPackage || ptr_app->type == DataAppService)
 			{
 				if (ptr_app->real_path && ptr_app->real_path[0])
 					path = ptr_app->real_path;
@@ -207,8 +207,6 @@ void _app_logclear ()
 {
 	const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
 
-	_r_fastlock_acquireexclusive (&lock_writelog);
-
 	if (config.hlogfile != nullptr && config.hlogfile != INVALID_HANDLE_VALUE)
 	{
 		_r_fs_setpos (config.hlogfile, 2, FILE_BEGIN);
@@ -222,8 +220,6 @@ void _app_logclear ()
 	}
 
 	_r_fs_delete (_r_fmt (L"%s.bak", path.GetString ()), false);
-
-	_r_fastlock_releaseexclusive (&lock_writelog);
 }
 
 bool _wfp_logsubscribe ()
@@ -384,12 +380,6 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const *
 	{
 		PITEM_LOG ptr_log = new ITEM_LOG;
 
-		if (!ptr_log)
-		{
-			_aligned_free (ptr_entry);
-			return;
-		}
-
 		// get package id (win8+)
 		rstring sidstring;
 
@@ -397,7 +387,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const *
 		{
 			sidstring = _r_str_fromsid (package_id);
 
-			if (sidstring.IsEmpty () || !_app_item_get (AppPackage, sidstring.Hash (), nullptr, nullptr, nullptr, nullptr, nullptr))
+			if (sidstring.IsEmpty () || !_app_item_get (DataAppPackage, sidstring.Hash (), nullptr, nullptr, nullptr, nullptr, nullptr))
 				sidstring.Clear ();
 		}
 
@@ -416,7 +406,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const *
 
 			ptr_log->hash = path.Hash ();
 
-			_app_applycasestyle (ptr_log->path, _r_str_length (ptr_log->path)); // apply case-style
+			_app_applycasestyle (ptr_log->path, path.GetLength ()); // apply case-style
 		}
 		else
 		{
@@ -557,11 +547,11 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const *
 			// check if thread has been terminated
 			const LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
 
-			if (!_r_fastlock_islocked (&lock_logthread) || ((_r_fastlock_islocked (&lock_logbusy) || InterlockedCompareExchange (&log_stack.item_count, 0, 0) >= NOTIFY_LIMIT_POOL_SIZE) && (thread_count >= 1 && thread_count < NOTIFY_LIMIT_THREAD_COUNT)))
+			if (!_r_fastlock_islocked (&lock_logthread) || (_r_fastlock_islocked (&lock_logbusy) && InterlockedCompareExchange (&log_stack.item_count, 0, 0) >= NOTIFY_LIMIT_POOL_SIZE && thread_count >= 1 && thread_count < NOTIFY_LIMIT_THREAD_COUNT))
 			{
 				_r_fastlock_acquireexclusive (&lock_threadpool);
-
 				_app_freethreadpool (&threads_pool);
+				_r_fastlock_releaseexclusive (&lock_threadpool);
 
 				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_BELOW_NORMAL);
 
@@ -569,11 +559,12 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const *
 				{
 					InterlockedIncrement (&log_stack.thread_count);
 
+					_r_fastlock_acquireexclusive (&lock_threadpool);
 					threads_pool.push_back (hthread);
+					_r_fastlock_releaseexclusive (&lock_threadpool);
+
 					ResumeThread (hthread);
 				}
-
-				_r_fastlock_releaseexclusive (&lock_threadpool);
 			}
 		}
 	}
@@ -833,22 +824,29 @@ UINT WINAPI LogThread (LPVOID lparam)
 			const bool is_notificationenabled = app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ();
 
 			// apps collector
-			_r_fastlock_acquireshared (&lock_access);
-			const bool is_notexist = ptr_log->hash && ptr_log->path && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ();
-			_r_fastlock_releaseshared (&lock_access);
+			const bool is_notexist = ptr_log->hash && ptr_log->path && ptr_log->path[0] && !ptr_log->is_allow && apps.find (ptr_log->hash) == apps.end ();
 
 			if (is_notexist)
 			{
 				_r_fastlock_acquireshared (&lock_logbusy);
 
 				_r_fastlock_acquireexclusive (&lock_access);
-				_app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
+				const size_t app_hash = _app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
 				_r_fastlock_releaseexclusive (&lock_access);
 
 				_r_fastlock_releaseshared (&lock_logbusy);
 
-				_app_listviewsort (hwnd, IDC_APPS_PROFILE);
-				_app_profile_save (hwnd);
+				const PITEM_APP ptr_app = _app_getapplication (app_hash);
+
+				if (ptr_app)
+				{
+					const UINT listview_id = _app_getlistview_id (ptr_app->type);
+
+					if (_app_gettab_id (hwnd) == listview_id)
+						_app_listviewsort (hwnd, listview_id);
+				}
+
+				_app_profile_save ();
 			}
 
 			bool is_added = false;
@@ -872,7 +870,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 					if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
 					{
 						// read app config
-						_r_fastlock_acquireexclusive (&lock_access);
+						_r_fastlock_acquireshared (&lock_access);
 
 						PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
 
@@ -882,7 +880,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 								is_added = _app_notifyadd (config.hnotification, ptr_log, ptr_app);
 						}
 
-						_r_fastlock_releaseexclusive (&lock_access);
+						_r_fastlock_releaseshared (&lock_access);
 					}
 				}
 			}

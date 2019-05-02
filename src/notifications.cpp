@@ -27,7 +27,7 @@ void _app_notifycreatewindow ()
 	static const INT cxsmIcon = GetSystemMetrics (SM_CXSMICON);
 	static const INT IconSize = app.GetDPI (20);
 
-	config.hnotification = CreateWindowEx (WS_EX_TOPMOST | WS_EX_TOOLWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
+	config.hnotification = CreateWindowEx (WS_EX_TOPMOST | WS_EX_TOOLWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
 
 	if (!config.hnotification)
 		return;
@@ -155,84 +155,93 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 {
 	_r_fastlock_acquireexclusive (&lock_notification);
 
-	const size_t idx = _app_notifygetcurrent (hwnd);
+	size_t app_hash = 0;
+	const size_t notify_idx = _app_notifygetcurrent (hwnd);
 
-	if (idx != LAST_VALUE)
+	if (notify_idx != LAST_VALUE)
 	{
-		PITEM_LOG ptr_log = notifications.at (idx);
+		PITEM_LOG ptr_log = notifications.at (notify_idx);
 
 		if (ptr_log)
-		{
-			_r_fastlock_acquireexclusive (&lock_access);
+			app_hash = ptr_log->hash;
 
-			const size_t hash = ptr_log->hash;
-			const size_t item = _app_getposition (app.GetHWND (), hash);
+		_app_freenotify (notify_idx, true, false);
 
-			PITEM_APP ptr_app = _app_getapplication (hash);
+		if (app_hash)
+			_app_freenotify (app_hash, false, false);
 
-			if (ptr_app)
-			{
-				if (ctrl_id == IDC_ALLOW_BTN || ctrl_id == IDC_BLOCK_BTN)
-				{
-					ptr_app->is_enabled = (ctrl_id == IDC_ALLOW_BTN);
-
-					if (ctrl_id == IDC_BLOCK_BTN)
-						ptr_app->is_silent = true;
-
-					_r_fastlock_acquireshared (&lock_checkbox);
-
-					_r_listview_setitem (app.GetHWND (), IDC_APPS_PROFILE, item, 0, nullptr, LAST_VALUE, _app_getappgroup (hash, ptr_app));
-					_r_listview_setitemcheck (app.GetHWND (), IDC_APPS_PROFILE, item, ptr_app->is_enabled);
-
-					_r_fastlock_releaseshared (&lock_checkbox);
-
-					MFILTER_APPS rules;
-					rules.push_back (ptr_app);
-
-					// create rule timer
-					if (timer_idx != LAST_VALUE)
-					{
-						_app_timer_create (app.GetHWND (), &rules, timers.at (timer_idx));
-					}
-					else
-					{
-						_wfp_create3filters (&rules, __LINE__);
-					}
-				}
-				else  if (ctrl_id == IDM_DISABLENOTIFICATIONS)
-				{
-					ptr_app->is_silent = true;
-				}
-				else if (ctrl_id == IDC_LATER_BTN)
-				{
-					// TODO
-				}
-
-				ptr_app->last_notify = _r_unixtime_now ();
-
-				_r_fastlock_releaseexclusive (&lock_access);
-
-				_app_freenotify (hash, false);
-
-				_r_fastlock_releaseexclusive (&lock_notification);
-
-				_app_notifyrefresh (hwnd, true);
-
-				_app_listviewsort (app.GetHWND (), IDC_APPS_PROFILE);
-				_app_profile_save (app.GetHWND ());
-
-				_r_listview_redraw (app.GetHWND (), IDC_APPS_PROFILE);
-
-				return true;
-			}
-
-			_r_fastlock_releaseexclusive (&lock_access);
-		}
+		_app_notifyrefresh (hwnd, true);
 	}
 
 	_r_fastlock_releaseexclusive (&lock_notification);
 
-	return false;
+	if (!app_hash)
+		return false;
+
+	PITEM_APP ptr_app = _app_getapplication (app_hash);
+
+	if (!ptr_app)
+		return false;
+
+	MFILTER_APPS rules;
+
+	const UINT listview_id = _app_getlistview_id (ptr_app->type);
+	const size_t item = _app_getposition (app.GetHWND (), app_hash);
+
+	_r_fastlock_acquireexclusive (&lock_access);
+
+	if (ctrl_id == IDC_ALLOW_BTN || ctrl_id == IDC_BLOCK_BTN)
+	{
+		ptr_app->is_enabled = (ctrl_id == IDC_ALLOW_BTN);
+		ptr_app->is_silent = (ctrl_id == IDC_BLOCK_BTN);
+
+		if (item != LAST_VALUE)
+		{
+			_r_fastlock_acquireshared (&lock_checkbox);
+
+			_r_listview_setitem (app.GetHWND (), listview_id, item, 0, nullptr, LAST_VALUE, _app_getappgroup (app_hash, ptr_app));
+			_r_listview_setitemcheck (app.GetHWND (), listview_id, item, ptr_app->is_enabled);
+
+			_r_fastlock_releaseshared (&lock_checkbox);
+		}
+
+		rules.push_back (ptr_app);
+	}
+	else if (ctrl_id == IDM_DISABLENOTIFICATIONS)
+	{
+		ptr_app->is_silent = true;
+	}
+	else if (ctrl_id == IDC_LATER_BTN)
+	{
+		// TODO
+	}
+
+	ptr_app->last_notify = _r_unixtime_now ();
+
+	_r_fastlock_releaseexclusive (&lock_access);
+
+	// create filters
+	if (!rules.empty ())
+	{
+		if (timer_idx != LAST_VALUE)
+			_app_timer_create (app.GetHWND (), &rules, timers.at (timer_idx));
+
+		else
+			_wfp_create3filters (&rules, __LINE__);
+	}
+
+	_app_profile_save ();
+
+	if (_app_gettab_id (app.GetHWND ()) == listview_id)
+	{
+		_app_listviewsort (app.GetHWND (), listview_id);
+		_r_listview_redraw (app.GetHWND (), listview_id);
+	}
+
+	_r_fastlock_releaseexclusive (&lock_access);
+
+	return true;
+
 }
 
 bool _app_notifyadd (HWND hwnd, PITEM_LOG const ptr_log, PITEM_APP const ptr_app)
@@ -254,21 +263,11 @@ bool _app_notifyadd (HWND hwnd, PITEM_LOG const ptr_log, PITEM_APP const ptr_app
 
 	ptr_app->last_notify = current_time;
 
-	// remove existing log item (if exists)
-	for (size_t i = 0; i < notifications.size (); i++)
-	{
-		PITEM_LOG ptr_chk = notifications.at (i);
-
-		if (ptr_chk && ptr_chk->hash == ptr_log->hash)
-		{
-			_app_freenotify (i, true);
-			break;
-		}
-	}
+	_app_freenotify (ptr_log->hash, false, false); // remove existing log item (if exists)
 
 	// prevent notifications overflow
 	if ((notifications.size () >= NOTIFY_LIMIT_SIZE))
-		_app_freenotify (0, true);
+		_app_freenotify (0, true, false);
 
 	notifications.push_back (ptr_log);
 	size_t idx = notifications.size () - 1;
@@ -289,7 +288,7 @@ bool _app_notifyadd (HWND hwnd, PITEM_LOG const ptr_log, PITEM_APP const ptr_app
 	return true;
 }
 
-void _app_freenotify (size_t idx_orhash, bool is_idx)
+void _app_freenotify (size_t idx_orhash, bool is_idx, bool is_refresh)
 {
 	const size_t count = notifications.size ();
 
@@ -298,26 +297,35 @@ void _app_freenotify (size_t idx_orhash, bool is_idx)
 
 	if (is_idx)
 	{
-		PITEM_LOG ptr_log = notifications.at (idx_orhash);
+		if (idx_orhash != LAST_VALUE)
+		{
+			PITEM_LOG ptr_log = notifications.at (idx_orhash);
 
-		SAFE_DELETE (ptr_log);
+			SAFE_DELETE (ptr_log);
 
-		notifications.erase (notifications.begin () + idx_orhash);
+			notifications.erase (notifications.begin () + idx_orhash);
+		}
 	}
 	else
 	{
-		for (size_t i = (count - 1); i != LAST_VALUE; i--)
+		if (idx_orhash)
 		{
-			PITEM_LOG ptr_log = notifications.at (i);
-
-			if (!ptr_log || ptr_log->hash == idx_orhash)
+			for (size_t i = (count - 1); i != LAST_VALUE; i--)
 			{
-				SAFE_DELETE (ptr_log);
+				PITEM_LOG ptr_log = notifications.at (i);
 
-				notifications.erase (notifications.begin () + i);
+				if (!ptr_log || ptr_log->hash == idx_orhash)
+				{
+					SAFE_DELETE (ptr_log);
+
+					notifications.erase (notifications.begin () + i);
+				}
 			}
 		}
 	}
+
+	if (is_refresh)
+		_app_notifyrefresh (config.hnotification, true);
 }
 
 size_t _app_notifygetcurrent (HWND hwnd)
@@ -345,14 +353,10 @@ size_t _app_notifygetcurrent (HWND hwnd)
 
 bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 {
-	_r_fastlock_acquireshared (&lock_notification);
-
 	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () || notifications.empty () || idx == LAST_VALUE)
 	{
 		if (notifications.empty () || idx == LAST_VALUE)
 			SetWindowLongPtr (hwnd, GWLP_USERDATA, LAST_VALUE);
-
-		_r_fastlock_releaseshared (&lock_notification);
 
 		return false;
 	}
@@ -372,8 +376,6 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 
 	if (ptr_log)
 	{
-		_r_fastlock_acquireshared (&lock_access);
-
 		PITEM_APP const ptr_app = _app_getapplication (ptr_log->hash);
 
 		if (ptr_app)
@@ -416,9 +418,6 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 			_app_notifysetnote (hwnd, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK_HINT, nullptr));
 			_app_notifysetnote (hwnd, IDC_LATER_BTN, app.LocaleString (IDS_ACTION_LATER_HINT, nullptr));
 
-			_r_fastlock_releaseshared (&lock_notification);
-			_r_fastlock_releaseshared (&lock_access);
-
 			_app_notifysetpos (hwnd);
 
 			_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
@@ -432,11 +431,7 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 
 			return true;
 		}
-
-		_r_fastlock_releaseshared (&lock_access);
 	}
-
-	_r_fastlock_releaseshared (&lock_notification);
 
 	return false;
 }
@@ -494,21 +489,15 @@ bool _app_notifyrefresh (HWND hwnd, bool is_safety)
 		return true;
 	}
 
-	_r_fastlock_acquireshared (&lock_notification);
+	const size_t notify_idx = _app_notifygetcurrent (hwnd);
 
-	const size_t idx = _app_notifygetcurrent (hwnd);
-
-	if (notifications.empty () || idx == LAST_VALUE || !IsWindowVisible (hwnd))
+	if (!IsWindowVisible (hwnd) || notifications.empty () || notify_idx == LAST_VALUE)
 	{
 		_app_notifyhide (hwnd);
-		_r_fastlock_releaseshared (&lock_notification);
-
 		return false;
 	}
 
-	_r_fastlock_releaseshared (&lock_notification);
-
-	return _app_notifyshow (hwnd, idx, false, is_safety);
+	return _app_notifyshow (hwnd, notify_idx, false, is_safety);
 }
 
 void _app_notifysetpos (HWND hwnd)
@@ -636,7 +625,8 @@ HFONT _app_notifyinitfont (PLOGFONT plf, LONG height, LONG weight, LPCWSTR name,
 	//plf->lfCharSet = DEFAULT_CHARSET;
 	//plf->lfQuality = DEFAULT_QUALITY;
 
-	StringCchCopy (plf->lfFaceName, LF_FACESIZE, name);
+	if (name)
+		StringCchCopy (plf->lfFaceName, LF_FACESIZE, name);
 
 	return CreateFontIndirect (plf);
 }
@@ -865,37 +855,46 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							ctrl_id == IDC_DATE_TEXT
 							)
 						{
-							_r_fastlock_acquireshared (&lock_notification);
-
-							const size_t idx = _app_notifygetcurrent (hwnd);
-
-							if (idx != LAST_VALUE)
+							if (ctrl_id == IDC_RULES_BTN)
 							{
-								PITEM_LOG const ptr_log = notifications.at (idx);
-
-								if (ptr_log)
+								StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_TRAY_RULES, nullptr));
+							}
+							else if (ctrl_id == IDC_TIMER_BTN)
+							{
+								StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_TIMER, nullptr));
+							}
+							else if (ctrl_id == IDC_CLOSE_BTN)
+							{
+								StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_CLOSE, nullptr));
+							}
+							else if (ctrl_id == IDC_FILE_TEXT)
+							{
+								if (_r_fastlock_tryacquireshared (&lock_notification))
 								{
-									if (ctrl_id == IDC_RULES_BTN)
-										StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_TRAY_RULES, nullptr));
+									size_t app_hash = 0;
+									const size_t notify_idx = _app_notifygetcurrent (hwnd);
 
-									else if (ctrl_id == IDC_TIMER_BTN)
-										StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_TIMER, nullptr));
+									if (notify_idx != LAST_VALUE)
+									{
+										PITEM_LOG const ptr_log = notifications.at (notify_idx);
 
-									else if (ctrl_id == IDC_CLOSE_BTN)
-										StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_CLOSE, nullptr));
+										if (ptr_log)
+											app_hash = ptr_log->hash;
+									}
 
-									else if (ctrl_id == IDC_FILE_TEXT)
-										StringCchCopy (buffer, _countof (buffer), _app_gettooltip (IDC_APPS_PROFILE, ptr_log->hash));
+									_r_fastlock_releaseshared (&lock_notification);
 
-									else
-										StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, ctrl_id));
+									if (app_hash)
+										StringCchCopy (buffer, _countof (buffer), _app_gettooltip (IDC_APPS_PROFILE, app_hash));
 								}
-
-								if (buffer[0])
-									lpnmdi->lpszText = buffer;
+							}
+							else
+							{
+								StringCchCopy (buffer, _countof (buffer), _r_ctrl_gettext (hwnd, ctrl_id));
 							}
 
-							_r_fastlock_releaseshared (&lock_notification);
+							if (buffer[0])
+								lpnmdi->lpszText = buffer;
 						}
 					}
 
@@ -910,70 +909,85 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 		{
 			if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
-				size_t hash = 0;
-
-				_r_fastlock_acquireexclusive (&lock_access);
-
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
 				PITEM_RULE ptr_rule = rules_arr.at (rule_idx);
 
-				if (ptr_rule)
+				if (!ptr_rule)
+					return FALSE;
+
+				_r_fastlock_acquireexclusive (&lock_notification);
+
+				size_t app_hash = 0;
+				const size_t notify_idx = _app_notifygetcurrent (hwnd);
+
+				if (notify_idx != LAST_VALUE)
 				{
-					_r_fastlock_acquireshared (&lock_notification);
+					PITEM_LOG ptr_log = notifications.at (notify_idx);
 
-					const size_t notify_idx = _app_notifygetcurrent (hwnd);
+					if (ptr_log)
+						app_hash = ptr_log->hash;
 
-					if (notify_idx != LAST_VALUE)
-					{
-						hash = notifications.at (notify_idx)->hash;
+					_app_freenotify (notify_idx, true, false);
 
-						//if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
-						//	continue;
+					if (app_hash)
+						_app_freenotify (app_hash, false, false);
 
-						PITEM_APP ptr_app = _app_getapplication (hash);
+					_app_notifyrefresh (hwnd, true);
+				}
 
-						if (ptr_app)
-						{
-							const bool is_remove = ptr_rule->is_enabled && (ptr_rule->apps.find (hash) != ptr_rule->apps.end ());
+				_r_fastlock_releaseexclusive (&lock_notification);
 
-							if (is_remove)
-							{
-								ptr_rule->apps.erase (hash);
+				if (!app_hash)
+					return false;
 
-								if (ptr_rule->apps.empty ())
-									_app_ruleenable (ptr_rule, false);
-							}
-							else
-							{
-								ptr_rule->apps[hash] = true;
+				//if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
+				//	continue;
 
-								_app_ruleenable (ptr_rule, true);
-							}
-						}
-					}
+				const size_t item = _app_getposition (app.GetHWND (), app_hash);
+				PITEM_APP ptr_app = _app_getapplication (app_hash);
 
-					_r_fastlock_releaseshared (&lock_notification);
+				if (!ptr_app)
+					return false;
 
-					MFILTER_RULES rules;
-					rules.push_back (ptr_rule);
+				_r_fastlock_acquireexclusive (&lock_access);
 
-					_wfp_create4filters (&rules, __LINE__);
+				const UINT listview_id = _app_getlistview_id (ptr_app->type);
+				const bool is_remove = ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ());
+
+				if (is_remove)
+				{
+					ptr_rule->apps.erase (app_hash);
+
+					if (ptr_rule->apps.empty ())
+						_app_ruleenable (ptr_rule, false);
+				}
+				else
+				{
+					ptr_rule->apps[app_hash] = true;
+					_app_ruleenable (ptr_rule, true);
+				}
+
+				if (item != LAST_VALUE)
+				{
+					_r_fastlock_acquireshared (&lock_checkbox);
+					_app_setappiteminfo (app.GetHWND (), listview_id, item, app_hash, ptr_app);
+					_r_fastlock_releaseshared (&lock_checkbox);
 				}
 
 				_r_fastlock_releaseexclusive (&lock_access);
 
-				_r_fastlock_acquireexclusive (&lock_notification);
+				MFILTER_RULES rules;
+				rules.push_back (ptr_rule);
 
-				_app_freenotify (hash, false);
+				_wfp_create4filters (&rules, __LINE__);
 
-				_r_fastlock_releaseexclusive (&lock_notification);
+				if (_app_gettab_id (app.GetHWND ()) == listview_id)
+				{
+					_app_listviewsort (app.GetHWND (), listview_id);
+					_r_listview_redraw (app.GetHWND (), listview_id);
+				}
 
-				_app_notifyrefresh (hwnd, true);
-
-				_app_listviewsort (app.GetHWND (), IDC_APPS_PROFILE);
-				_app_profile_save (app.GetHWND ());
-
-				_r_listview_redraw (app.GetHWND (), IDC_APPS_PROFILE);
+				_app_profile_save ();
 
 				return FALSE;
 			}
@@ -985,7 +999,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				return FALSE;
 			}
-			else if ((LOWORD (wparam) >= IDX_NOTIFICATIONS && LOWORD (wparam) <= IDX_NOTIFICATIONS + timers.size ()))
+			else if ((LOWORD (wparam) >= IDX_NOTIFICATIONS && LOWORD (wparam) <= IDX_NOTIFICATIONS + notifications.size ()))
 			{
 				const size_t idx = (LOWORD (wparam) - IDX_NOTIFICATIONS);
 
@@ -1000,16 +1014,27 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				{
 					_r_fastlock_acquireshared (&lock_notification);
 
-					const size_t idx = _app_notifygetcurrent (hwnd);
+					size_t app_hash = 0;
+					const size_t notify_idx = _app_notifygetcurrent (hwnd);
 
-					if (idx != LAST_VALUE)
+					if (notify_idx != LAST_VALUE)
 					{
-						_app_showitem (app.GetHWND (), _app_getapplistview_id (notifications.at (idx)->hash), notifications.at (idx)->hash);
+						PITEM_LOG ptr_log = notifications.at (notify_idx);
 
-						_r_wnd_toggle (app.GetHWND (), true);
+						if (ptr_log)
+							app_hash = ptr_log->hash;
 					}
 
 					_r_fastlock_releaseshared (&lock_notification);
+
+					const PITEM_APP ptr_app = _app_getapplication (app_hash);
+
+					if (ptr_app)
+					{
+						_app_showitem (app.GetHWND (), _app_getlistview_id (ptr_app->type), app_hash);
+
+						_r_wnd_toggle (app.GetHWND (), true);
+					}
 
 					break;
 				}
@@ -1053,12 +1078,12 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					{
 						_r_fastlock_acquireshared (&lock_notification);
 
-						const size_t idx = _app_notifygetcurrent (hwnd);
+						const size_t notify_idx = _app_notifygetcurrent (hwnd);
 						size_t app_hash = 0;
 
-						if (idx != LAST_VALUE)
+						if (notify_idx != LAST_VALUE)
 						{
-							PITEM_LOG const ptr_log = notifications.at (idx);
+							PITEM_LOG const ptr_log = notifications.at (notify_idx);
 
 							if (ptr_log)
 								app_hash = ptr_log->hash;
@@ -1079,6 +1104,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						for (size_t i = 0; i < timers.size (); i++)
 							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + UINT (i), _r_fmt_interval (timers.at (i) + 1, 1));
 					}
+
 					RECT buttonRect = {0};
 
 					GetClientRect (hctrl, &buttonRect);
@@ -1108,7 +1134,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				case IDM_EDITRULES:
 				{
-					_app_settab_id (hwnd, IDC_RULES_CUSTOM);
+					_app_settab_id (app.GetHWND (), _app_getlistview_id (DataRuleCustom));
 					break;
 				}
 
@@ -1116,70 +1142,65 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				{
 					PITEM_RULE ptr_rule = new ITEM_RULE;
 
-					if (ptr_rule)
+					_r_fastlock_acquireexclusive (&lock_notification);
+
+					const size_t notify_idx = _app_notifygetcurrent (hwnd);
+					size_t app_hash = 0;
+
+					if (notify_idx != LAST_VALUE)
 					{
-						_r_fastlock_acquireshared (&lock_notification);
+						const PITEM_LOG ptr_log = notifications.at (notify_idx);
 
-						const size_t idx = _app_notifygetcurrent (hwnd);
-						size_t hash = 0;
-
-						if (idx != LAST_VALUE)
+						if (ptr_log)
 						{
-							PITEM_LOG const ptr_log = notifications.at (idx);
+							ptr_rule->apps[ptr_log->hash] = true;
+							ptr_rule->protocol = ptr_log->protocol;
+							app_hash = ptr_log->hash;
 
-							if (ptr_log)
+							LPWSTR rule = nullptr;
+
+							if (_app_formataddress (ptr_log->af, &ptr_log->remote_addr, ptr_log->remote_port, &rule, false))
 							{
-								ptr_rule->apps[ptr_log->hash] = true;
-								ptr_rule->protocol = ptr_log->protocol;
-								hash = ptr_log->hash;
-
-								LPWSTR rule = nullptr;
-								_app_formataddress (ptr_log->af, &ptr_log->remote_addr, ptr_log->remote_port, &rule, false);
-
 								_r_str_alloc (&ptr_rule->pname, _r_str_length (rule), rule);
 								_r_str_alloc (&ptr_rule->prule_remote, _r_str_length (rule), rule);
-
-								SAFE_DELETE_ARRAY (rule);
 							}
+
+							SAFE_DELETE_ARRAY (rule);
 						}
 
-						_r_fastlock_releaseshared (&lock_notification);
+						_app_freenotify (notify_idx, true, false);
 
-						_app_ruleenable (ptr_rule, true);
+						if (app_hash)
+							_app_freenotify (app_hash, false, false);
 
-						ptr_rule->type = TypeCustom;
-						ptr_rule->is_block = false;
+						_app_notifyrefresh (hwnd, true);
+					}
 
-						if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), app.GetHWND (), &EditorProc, (LPARAM)ptr_rule))
-						{
-							_r_fastlock_acquireexclusive (&lock_access);
+					_r_fastlock_releaseexclusive (&lock_notification);
 
-							rules_arr.push_back (ptr_rule);
+					ptr_rule->type = DataRuleCustom;
+					ptr_rule->is_block = false;
 
-							MFILTER_RULES rules;
-							rules.push_back (ptr_rule);
+					_app_ruleenable (ptr_rule, true);
 
-							_wfp_create4filters (&rules, __LINE__);
+					if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), app.GetHWND (), &EditorProc, (LPARAM)ptr_rule))
+					{
+						_r_fastlock_acquireexclusive (&lock_access);
+						rules_arr.push_back (ptr_rule);
+						_r_fastlock_releaseexclusive (&lock_access);
 
-							_r_fastlock_releaseexclusive (&lock_access);
+						const UINT listview_id = _app_gettab_id (app.GetHWND ());
 
-							_app_listviewsort (hwnd, IDC_APPS_PROFILE);
-							_app_profile_save (hwnd);
+						_r_listview_redraw (app.GetHWND (), listview_id);
 
-							_r_listview_redraw (hwnd, IDC_APPS_PROFILE);
+						_app_listviewsort (app.GetHWND (), listview_id);
+						_app_profile_save ();
 
-							_r_fastlock_acquireexclusive (&lock_notification);
-
-							_app_freenotify (hash, false);
-
-							_r_fastlock_releaseexclusive (&lock_notification);
-
-							_app_notifyrefresh (hwnd, true);
-						}
-						else
-						{
-							_app_freerule (&ptr_rule);
-						}
+						_app_refreshstatus (app.GetHWND ());
+					}
+					else
+					{
+						_app_freerule (&ptr_rule);
 					}
 
 					break;
