@@ -380,12 +380,12 @@ END
 STRINGTABLE
 BEGIN
 	IDS_UPDATE_NO "No updates available."
-	IDS_UPDATE_YES "Update available, download and install them?"
+	IDS_UPDATE_YES "Update available. Download and install now?"
 	IDS_UPDATE_DOWNLOAD "Downloading update..."
 	IDS_UPDATE_DONE "Downloading update finished."
 	IDS_UPDATE_ERROR "Update server connection error."
 	IDS_UPDATE_INIT "Checking for new releases..."
-	IDS_UPDATE_INSTALL "Update available, do you want to install them?"
+	IDS_UPDATE_INSTALL "Update available. Do you want to install it now?"
 
 	IDS_FILE "File"
 	IDS_SETTINGS "Settings"
@@ -450,13 +450,13 @@ BEGIN
 	IDS_RULE_ALLOWINBOUND "Allow inbound connections for all"
 	IDS_RULE_ALLOWINBOUND_HINT "This filtering layer allows for authorizing accept requests for incoming TCP connections, as well as authorizing incoming non-TCP traffic based on the first packet received."
 	IDS_RULE_ALLOWLISTEN "Allow listen connections for all"
-	IDS_RULE_ALLOWLISTEN_HINT "This filtering layer allows for authorizing TCP listen requests.\r\nWarning: Disabling this option may cause 3-rd party applications freeze."
+	IDS_RULE_ALLOWLISTEN_HINT "This filtering layer allows for authorizing TCP listen requests.\r\nWarning: Disabling this option may cause 3rd party applications to freeze."
 	IDS_RULE_ALLOWLOOPBACK "Allow loopback connections for all"
 	IDS_RULE_ALLOWLOOPBACK_HINT "This allows all loopback traffic."
 
-	IDS_HIGHLIGHT_INVALID "Invalid (no file found and/or filter problem)"
+	IDS_HIGHLIGHT_INVALID "Invalid (file not found or filter problem)"
 	IDS_HIGHLIGHT_NETWORK "Shared network app"
-	IDS_HIGHLIGHT_PACKAGE "Windows Store app"
+	IDS_HIGHLIGHT_PACKAGE "Universal Windows Platform app"
 	IDS_HIGHLIGHT_PICO "Pico app"
 	IDS_HIGHLIGHT_SERVICE "Windows service"
 	IDS_HIGHLIGHT_SIGNED "Signed app"
@@ -470,7 +470,7 @@ BEGIN
 	IDS_NAME "Name"
 	IDS_DIRECTION "Direction"
 	IDS_PROTOCOL "Protocol"
-	IDS_PORTVERSION "Family (ports-only)"
+	IDS_PORTVERSION "Family (ports only)"
 	IDS_ACTION "Action"
 	IDS_RULE "Rule"
 	IDS_DATE "Date"
@@ -487,11 +487,11 @@ BEGIN
 	IDS_SIGN_UNSIGNED "Not signed"
 
 	IDS_GROUP_ALLOWED "Enabled apps"
-	IDS_GROUP_SPECIAL_APPS "Special rules apps"
+	IDS_GROUP_SPECIAL_APPS "Apps with special rules"
 	IDS_GROUP_BLOCKED "Disabled apps"
 
-	IDS_GROUP_ENABLED "Enabled rules (for all)"
-	IDS_GROUP_SPECIAL "Enabled rules (for apps)"
+	IDS_GROUP_ENABLED "Enabled rules (all apps)"
+	IDS_GROUP_SPECIAL "Enabled rules (specific apps)"
 	IDS_GROUP_DISABLED "Disabled rules"
 
 	IDS_DIRECTION_1 "Outbound"
@@ -504,8 +504,8 @@ BEGIN
 	//IDS_RULE_APPLY "[%s] ""%s"" for selected apps"
 
 	IDS_DISABLE_CHK "Disable rule"
-	IDS_ENABLE_CHK "Enable rule (for all)"
-	IDS_ENABLEFORAPPS_CHK "Enable rule (for apps)"
+	IDS_ENABLE_CHK "Enable for all apps"
+	IDS_ENABLEFORAPPS_CHK "Enable for selected apps"
 
 	IDS_WIKI "Help"
 	IDS_SAVE "Save"
@@ -520,7 +520,7 @@ BEGIN
 	IDS_TITLE_INTERFACE "Interface"
 	IDS_TITLE_HIGHLIGHTING "Highlighting"
 	IDS_TITLE_EXPERTS "Experts-only"
-	IDS_TITLE_LOGGING "Logging to a file"
+	IDS_TITLE_LOGGING "Log to file"
 	IDS_TITLE_NOTIFICATIONS "Notifications"
 	IDS_TITLE_ADVANCED "Advanced"
 	IDS_TITLE_EXCLUDE "Exclude"
@@ -530,7 +530,7 @@ BEGIN
 	IDS_STARTMINIMIZED_CHK "Start minimized"
 	IDS_SHOWFILENAMESONLY_CHK "Show filenames only"
 	IDS_AUTOSIZECOLUMNS_CHK "Autosize columns"
-	IDS_ENABLESPECIALGROUP_CHK "Enable special rules group"
+	IDS_ENABLESPECIALGROUP_CHK "Group apps with special rules"
 	IDS_SKIPUACWARNING_CHK "Skip ""User Account Control"" prompt warning"
 	IDS_CHECKUPDATES_CHK "Periodically check for updates (recommended)"
 	IDS_CHECKUPDATESBETA_CHK "Update to beta versions"
@@ -538,9 +538,9 @@ BEGIN
 	IDS_LANGUAGE_HINT "Select language:"
 
 	IDS_USESTEALTHMODE_CHK "Prevent port scanning"
-	IDS_USESTEALTHMODE_HINT "Prevent port scanning using silent drop inbound TCP RST and outbound ICMP ""Destination Unreachable"" to prevent UDP port scanning."
+	IDS_USESTEALTHMODE_HINT "Prevent TCP port scanning by silently dropping inbound TCP RST and UDP port scanning by responding to outbound ICMP with ""Destination Unreachable""."
 	IDS_INSTALLBOOTTIMEFILTERS_CHK "Enable boot-time filters"
-	IDS_INSTALLBOOTTIMEFILTERS_HINT "Prevent data leak during system startup, even before ""Base Filtering Engine"" (BFE) service starts."
+	IDS_INSTALLBOOTTIMEFILTERS_HINT "Prevent data leaks during system startup, even before the "Base Filtering Engine" (BFE) service starts."
 
 	IDS_USECERTIFICATES_CHK "Check apps for digital signatures"
 	IDS_USENETWORKRESOLUTION_CHK "Resolve network addresses"
@@ -551,7 +551,7 @@ BEGIN
 	IDS_CONFIRMEXIT_CHK "Show confirmation dialog on exit"
 	IDS_CONFIRMEXITTIMER_CHK "Show confirmation dialog on exit when timers are active"
 	IDS_CONFIRMDELETE_CHK "Confirm when deleting applications"
-	IDS_CONFIRMLOGCLEAR_CHK "Confirm when clearing log"
+	IDS_CONFIRMLOGCLEAR_CHK "Confirm when clearing the log file"
 
 	IDS_COLORS_HINT "Double-click an item to change it."
 
@@ -561,34 +561,34 @@ BEGIN
 
 	IDS_LOGSIZELIMIT_HINT "Maximum log size: (kB)"
 
-	IDS_ENABLENOTIFICATIONS_CHK "Enable dropped packets notifications"
+	IDS_ENABLENOTIFICATIONS_CHK "Enable notifications for dropped packets"
 	IDS_NOTIFICATIONSOUND_CHK "Enable notifications sound"
 	IDS_NOTIFICATIONDISPLAYTIMEOUT_HINT "Display timeout (sec.):"
-	IDS_NOTIFICATIONTIMEOUT_HINT "Timeout between same notifications (sec.):"
+	IDS_NOTIFICATIONTIMEOUT_HINT "Timeout between similar notifications (sec.):"
 	IDS_EXCLUDESTEALTH_CHK "port scanner"
 	IDS_EXCLUDECLASSIFYALLOW_CHK "allowed packets"
 	IDS_EXCLUDEBLOCKLIST_CHK "blocklist"
 	IDS_EXCLUDECUSTOM_CHK "user rules"
 
 	IDS_RULES_BLOCKLIST_HINT "Special rules to block spying and tracking on Windows."
-	IDS_RULES_SYSTEM_HINT "Predefined rules applied for system services and protocols."
+	IDS_RULES_SYSTEM_HINT "Predefined rules for system services and protocols."
 	IDS_RULES_USER_HINT "User rules. <a href=""%s"">Rules editor documentation</a>."
 
-	IDS_NOTIFY_CREATERULE_ADDRESS "Create a rule for ""%s"" address"
-	IDS_NOTIFY_CREATERULE_PORT "Create a rule for ""%d"" port"
+	IDS_NOTIFY_CREATERULE_ADDRESS "Create a rule for address ""%s"""
+	IDS_NOTIFY_CREATERULE_PORT "Create a rule for port ""%d"""
 	IDS_NOTIFY_DISABLENOTIFICATIONS "Disable notifications for this app"
-	IDS_NOTIFY_TOOLTIP "Create a special rule to allow access to address and/or port for this application."
+	IDS_NOTIFY_TOOLTIP "Create a special rule to allow access to an address and/or port for this application."
 
 	IDS_QUESTION "Are you sure?"
 	IDS_QUESTION_DELETE "Delete %d item(s)?"
-	IDS_QUESTION_START "This will forbid network access for apps accordingly selected configuration, continue?"
-	IDS_QUESTION_STOP "This will restore network access for all blocked apps, continue?"
+	IDS_QUESTION_START "This will deny network access to apps as defined by the current configuration. Continue?"
+	IDS_QUESTION_STOP "This will restore network access for all apps that are currently blocked. Continue?"
 	IDS_QUESTION_MODE "Change mode to a ""%s""?"
-	IDS_QUESTION_EXIT "Installed filters will work even if you exit, continue?"
-	IDS_QUESTION_EXPERT "This option definitely for advanced users only, continue?"
-	IDS_QUESTION_TIMER "Timer activated. Timer are working only when application is running, exit?"
-	IDS_QUESTION_TIMERS "Delete all timer(s)?"
-	IDS_QUESTION_RESET "Are you really sure you want to reset all application settings?"
+	IDS_QUESTION_EXIT "Installed filters will continue to work even if you exit. Continue?"
+	IDS_QUESTION_EXPERT "This option is for advanced users only. Continue?"
+	IDS_QUESTION_TIMER "Timer(s) activated. Timers will only work when the application is running. Exit?"
+	IDS_QUESTION_TIMERS "Delete all timers?"
+	IDS_QUESTION_RESET "Are you sure you want to reset all application settings?"
 	IDS_QUESTION_FLAG_CHK "Do not ask again"
 
 	IDS_STATUS_TOTAL "Total apps: %d"
@@ -596,13 +596,13 @@ BEGIN
 
 	IDS_STATUS_UNUSED_APPS "Unused apps"
 	IDS_STATUS_INVALID_APPS "Invalid apps"
-	IDS_STATUS_TIMER_APPS "Timer apps"
+	IDS_STATUS_TIMER_APPS "Apps with timer"
 
 	IDS_STATUS_EMPTY "<empty>"
 
-	IDS_STATUS_ERROR "Error occured, click here to see details or open log file in application directory!"
+	IDS_STATUS_ERROR "Error occured! Click here for more details or open the log file."
 	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule ""%s""!"
-	IDS_STATUS_TIMER_DONE "Timer for ""%s"" is completed!"
+	IDS_STATUS_TIMER_DONE "Timer for ""%s"" has expired!"
 
 	IDS_ADDRESS_LOCAL "Source"
 	IDS_ADDRESS_REMOTE "Destination"
@@ -610,7 +610,7 @@ BEGIN
 	IDS_ICONSEXTRALARGE "Extra large"
 	IDS_SECUREFILTERS_CHK "Enable protection of installed filters"
 	IDS_SECUREFILTERS_HINT "Prevent unauthorized applications from accessing the installed filters."
-	IDS_USEREFRESHDEVICES_CHK "Refresh filters when devices are connected"
+	IDS_USEREFRESHDEVICES_CHK "Refresh filters when (storage) devices are connected"
 
 	IDS_RULE_ALLOW6TO4 "Allow IPv6 redirections (6to4) for all"
 	IDS_RECOMMENDED "recommended"
@@ -618,11 +618,11 @@ BEGIN
 
 	IDS_ACTION_LATER "Block for now and ask me later"
 
-	IDS_ACTION_ALLOW_HINT "Always allow this program to access the internet"
-	IDS_ACTION_BLOCK_HINT "Always block this program from accessing the internet"
+	IDS_ACTION_ALLOW_HINT "Always allow network access for this program"
+	IDS_ACTION_BLOCK_HINT "Always block network access for this program"
 	IDS_ACTION_LATER_HINT "Do nothing and ask me later"
 
-	IDS_RULE_APPLY_2 "Apply ""%s"" for app"
+	IDS_RULE_APPLY_2 "Apply ""%s"" for this app"
 
 	IDS_EDITRULES "Edit rules"
 
