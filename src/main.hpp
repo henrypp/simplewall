@@ -215,6 +215,7 @@ struct STATIC_DATA
 	WCHAR tmp1_dir[MAX_PATH] = {0};
 
 	WCHAR title[128] = {0};
+	WCHAR search_string[128] = {0};
 
 	PACL pacl_default = nullptr;
 	PACL pacl_engine = nullptr;
@@ -234,6 +235,7 @@ struct STATIC_DATA
 	HICON hicon_package = nullptr;
 	HWND hnotification = nullptr;
 	HWND hrebar = nullptr;
+	HWND hfind = nullptr;
 
 	time_t blocklist_timestamp = 0;
 	time_t rule_system_timestamp = 0;
