@@ -47,6 +47,8 @@ _R_FASTLOCK lock_writelog;
 
 EXTERN_C const IID IID_IImageList2;
 
+const UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
+
 void _app_listviewresize (HWND hwnd, UINT listview_id)
 {
 	if (!app.ConfigGet (L"AutoSizeColumns", true).AsBool () || !listview_id)
@@ -1082,17 +1084,10 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (ptr_app)
 							{
-								const UINT listview_id = _app_getlistview_id (ptr_app->type);
 								const bool is_apply = is_enable && _r_listview_isitemchecked (hwnd, IDC_APPS_LV, i);
 
 								if (is_apply)
 									ptr_rule->apps[app_hash] = true;
-
-								_r_fastlock_acquireshared (&lock_checkbox);
-
-								_app_setappiteminfo (hwnd, listview_id, _app_getposition (app.GetHWND (), app_hash), app_hash, ptr_app);
-
-								_r_fastlock_releaseshared (&lock_checkbox);
 							}
 						}
 					}
@@ -2102,6 +2097,10 @@ void _app_initialize ()
 
 		timers.clear ();
 
+#if defined(_APP_BETA) || defined(_APP_BETA_RC)
+		timers.push_back (_R_SECONDSCLOCK_MIN (1));
+#endif // _APP_BETA || _APP_BETA_RC
+
 		timers.push_back (_R_SECONDSCLOCK_MIN (10));
 		timers.push_back (_R_SECONDSCLOCK_MIN (20));
 		timers.push_back (_R_SECONDSCLOCK_MIN (30));
@@ -2126,6 +2125,42 @@ void _app_initialize ()
 
 INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
+	if (msg == WM_FINDMSGSTRING)
+	{
+		const LPFINDREPLACE lpfr = (LPFINDREPLACE)lparam;
+
+		if (!lpfr)
+			return FALSE;
+
+		if ((lpfr->Flags & FR_DIALOGTERM) != 0)
+		{
+			config.hfind = nullptr;
+		}
+		else if ((lpfr->Flags & FR_FINDNEXT) != 0)
+		{
+			const UINT listview_id = _app_gettab_id (hwnd);
+			const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
+			const INT start_pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED | LVNI_DIRECTIONMASK | LVNI_BELOW) + 1;
+
+			for (size_t i = start_pos; i < total_count; i++)
+			{
+				const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
+				PITEM_APP const ptr_app = _app_getapplication (app_hash);
+
+				if (ptr_app)
+				{
+					if (StrStrNIW (ptr_app->display_name, lpfr->lpstrFindWhat, (UINT)_r_str_length (lpfr->lpstrFindWhat)) != nullptr)
+					{
+						_app_showitem (hwnd, listview_id, i);
+						break;
+					}
+				}
+			}
+		}
+
+		return FALSE;
+	}
+
 	switch (msg)
 	{
 		case WM_INITDIALOG:
@@ -2384,6 +2419,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			app.LocaleMenu (hmenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, L"\tCtrl+Shift+X");
 			app.LocaleMenu (hmenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, L"\tCtrl+Shift+T");
+
+			app.LocaleMenu (hmenu, IDS_FIND, IDM_FIND, false, L"...\tCtrl+F");
+			app.LocaleMenu (hmenu, IDS_FINDNEXT, IDM_FINDNEXT, false, L"\tF3");
 
 			app.LocaleMenu (hmenu, IDS_REFRESH, IDM_REFRESH, false, L"\tF5");
 
@@ -2765,18 +2803,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								if (ptr_app->is_enabled != new_val)
 								{
 									ptr_app->is_enabled = new_val;
+
+									_r_fastlock_acquireshared (&lock_checkbox);
 									_app_setappiteminfo (hwnd, listview_id, lpnmlv->iItem, app_hash, ptr_app);
+									_r_fastlock_releaseshared (&lock_checkbox);
 
 									_r_fastlock_acquireexclusive (&lock_notification);
 									_app_freenotify (app_hash, false, true);
 									_r_fastlock_releaseexclusive (&lock_notification);
 
 									if (!new_val && _app_istimeractive (ptr_app))
-									{
 										rules.push_back (ptr_app);
-
-										_app_timer_remove (hwnd, &rules);
-									}
 
 									rules.push_back (ptr_app);
 
@@ -2787,7 +2824,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_fastlock_releaseexclusive (&lock_access);
 
 							if (is_changed)
+							{
+								_app_timer_remove (hwnd, &rules);
 								_wfp_create3filters (&rules, __LINE__);
+							}
 						}
 						else if (
 							listview_id == IDC_RULES_BLOCKLIST ||
@@ -2805,8 +2845,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								if (ptr_rule->is_enabled != new_val)
 								{
+									_r_fastlock_acquireshared (&lock_checkbox);
+
 									_app_ruleenable (ptr_rule, new_val);
-									_app_setruleiteminfo (hwnd, listview_id, lpnmlv->iItem, ptr_rule);
+									_app_setruleiteminfo (hwnd, listview_id, lpnmlv->iItem, ptr_rule, true);
+
+									_r_fastlock_releaseshared (&lock_checkbox);
 
 									rules.push_back (ptr_rule);
 
@@ -3360,6 +3404,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_r_fastlock_releaseexclusive (&lock_access);
 					}
 
+					const UINT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+
+					_r_fastlock_acquireshared (&lock_checkbox);
+					_app_setruleiteminfo (hwnd, rule_listview_id, _app_getposition (hwnd, rule_listview_id, rule_idx), ptr_rule, true);
+					_r_fastlock_releaseshared (&lock_checkbox);
+
 					MFILTER_RULES rules;
 					rules.push_back (ptr_rule);
 
@@ -3739,6 +3789,47 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
+				case IDM_FIND:
+				{
+					if (!config.hfind)
+					{
+						static FINDREPLACE fr = {0}; // "static" is required for WM_FINDMSGSTRING
+
+						fr.lStructSize = sizeof (fr);
+						fr.hwndOwner = hwnd;
+						fr.lpstrFindWhat = config.search_string;
+						fr.wFindWhatLen = _countof (config.search_string) - 1;
+						fr.Flags = FR_HIDEWHOLEWORD | FR_HIDEMATCHCASE | FR_HIDEUPDOWN;
+
+						config.hfind = FindText (&fr);
+					}
+					else
+					{
+						SetFocus (config.hfind);
+					}
+
+					break;
+				}
+
+				case IDM_FINDNEXT:
+				{
+					if (!config.search_string[0])
+					{
+						SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_FIND, 0), 0);
+					}
+					else
+					{
+						FINDREPLACE fr = {0};
+
+						fr.Flags = FR_FINDNEXT;
+						fr.lpstrFindWhat = config.search_string;
+
+						SendMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)& fr);
+					}
+
+					break;
+				}
+
 				case IDM_REFRESH:
 				{
 					if (_wfp_isfiltersapplying ())
@@ -4095,7 +4186,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									_app_ruleenable (ptr_rule, new_val);
 
 									_r_fastlock_acquireshared (&lock_checkbox);
-									_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule);
+									_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, true);
 									_r_fastlock_releaseshared (&lock_checkbox);
 
 									rules.push_back (ptr_rule);
@@ -4236,7 +4327,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								const size_t new_item = _r_listview_getitemcount (hwnd, listview_rules_id);
 
 								_r_listview_additem (hwnd, listview_rules_id, new_item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
-								_app_setruleiteminfo (hwnd, listview_rules_id, new_item, ptr_rule);
+								_app_setruleiteminfo (hwnd, listview_rules_id, new_item, ptr_rule, true);
 
 								_r_fastlock_releaseshared (&lock_checkbox);
 							}
@@ -4306,7 +4397,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
 							{
 								_r_fastlock_acquireshared (&lock_checkbox);
-								_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule);
+								_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, true);
 								_r_fastlock_releaseshared (&lock_checkbox);
 
 								_r_listview_redraw (hwnd, listview_id);
@@ -4380,13 +4471,32 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, i);
 								PITEM_RULE *ptr_rule = &rules_arr.at (rule_idx);
+								std::unordered_map<size_t, bool> apps_check;
 
 								if ((*ptr_rule) && !(*ptr_rule)->is_readonly) // skip "read-only" rules
 								{
 									ids.insert (ids.end (), (*ptr_rule)->mfarr.begin (), (*ptr_rule)->mfarr.end ());
 
+									for (auto &p : (*ptr_rule)->apps)
+										apps_check[p.first] = true;
+
 									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, i, 0);
 									_app_freerule (ptr_rule);
+								}
+
+								for (auto &p : apps_check)
+								{
+									const size_t app_hash = p.first;
+									const PITEM_APP ptr_app = _app_getapplication (app_hash);
+
+									if (ptr_app)
+									{
+										const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+
+										_r_fastlock_acquireshared (&lock_checkbox);
+										_app_setappiteminfo (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash), app_hash, ptr_app);
+										_r_fastlock_releaseshared (&lock_checkbox);
+									}
 								}
 							}
 
