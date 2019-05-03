@@ -20,7 +20,7 @@ size_t _app_getruleicon (PITEM_RULE const ptr_rule);
 rstring _app_gettooltip (UINT listview_id, size_t idx);
 
 void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_hash, PITEM_APP ptr_app);
-void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule);
+void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule, bool include_apps);
 
 void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable);
 rstring _app_rulesexpand (PITEM_RULE const ptr_rule, bool is_forservices, LPCWSTR delimeter);

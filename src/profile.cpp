@@ -233,6 +233,12 @@ bool _app_freeapplication (size_t hash)
 						ptr_rule->is_enabled = false;
 						ptr_rule->is_haveerrors = false;
 					}
+
+					const UINT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+
+					_r_fastlock_acquireshared (&lock_checkbox);
+					_app_setruleiteminfo (app.GetHWND (), rule_listview_id, _app_getposition (app.GetHWND (), rule_listview_id, i), ptr_rule, false);
+					_r_fastlock_releaseshared (&lock_checkbox);
 				}
 			}
 		}
@@ -462,7 +468,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 
 void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_hash, PITEM_APP ptr_app)
 {
-	if (!ptr_app || !listview_id)
+	if (!ptr_app || !listview_id || item == LAST_VALUE)
 		return;
 
 	_app_getappicon (ptr_app, true, &ptr_app->icon_id, nullptr);
@@ -473,9 +479,9 @@ void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_h
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
 }
 
-void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule)
+void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule, bool include_apps)
 {
-	if (!ptr_rule || !listview_id)
+	if (!ptr_rule || !listview_id || item == LAST_VALUE)
 		return;
 
 	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->type == DataRuleCustom && ptr_rule->is_readonly ? _r_fmt (L"%s*", ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
@@ -483,6 +489,22 @@ void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE 
 	_r_listview_setitem (hwnd, listview_id, item, 2, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol) : app.LocaleString (IDS_ALL, nullptr));
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_rule->is_enabled);
+
+	if (include_apps)
+	{
+		for (auto &p : ptr_rule->apps)
+		{
+			const size_t app_hash = p.first;
+			const PITEM_APP ptr_app = _app_getapplication (app_hash);
+
+			if (ptr_app)
+			{
+				const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+
+				_app_setappiteminfo (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash), app_hash, ptr_app);
+			}
+		}
+	}
 }
 
 void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
@@ -840,9 +862,9 @@ void _app_profile_loadrules (MFILTER_RULES * ptr_rules, LPCWSTR path, LPCWSTR pa
 
 void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 {
-	const UINT listview_id = _app_gettab_id (hwnd);
-	const size_t selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
-	const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT);
+	const UINT current_listview_id = _app_gettab_id (hwnd);
+	const size_t selected_item = (size_t)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+	const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, current_listview_id), SB_VERT);
 
 	// load applications
 	{
@@ -1019,13 +1041,13 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			const size_t app_hash = p.first;
 			const PITEM_APP ptr_app = &p.second;
 
-			const UINT ctrl_id = _app_getlistview_id (ptr_app->type);
-			const size_t item = _r_listview_getitemcount (hwnd, ctrl_id);
+			const UINT listview_id = _app_getlistview_id (ptr_app->type);
+			const size_t item = _r_listview_getitemcount (hwnd, listview_id);
 
 			_r_fastlock_acquireshared (&lock_checkbox);
 
-			_r_listview_additem (hwnd, ctrl_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
-			_app_setappiteminfo (hwnd, ctrl_id, item, app_hash, ptr_app);
+			_r_listview_additem (hwnd, listview_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+			_app_setappiteminfo (hwnd, listview_id, item, app_hash, ptr_app);
 
 			_r_fastlock_releaseshared (&lock_checkbox);
 		}
@@ -1038,13 +1060,13 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			if (!ptr_rule)
 				continue;
 
-			const UINT ctrl_id = _app_getlistview_id (ptr_rule->type);
-			const size_t item = _r_listview_getitemcount (hwnd, ctrl_id);
+			const UINT listview_id = _app_getlistview_id (ptr_rule->type);
+			const size_t item = _r_listview_getitemcount (hwnd, listview_id);
 
 			_r_fastlock_acquireshared (&lock_checkbox);
 
-			_r_listview_additem (hwnd, ctrl_id, item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
-			_app_setruleiteminfo (hwnd, ctrl_id, item, ptr_rule);
+			_r_listview_additem (hwnd, listview_id, item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
+			_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, false);
 
 			_r_fastlock_releaseshared (&lock_checkbox);
 		}
@@ -1093,8 +1115,8 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 
 	if (hwnd)
 	{
-		_app_listviewsort (hwnd, listview_id);
-		_app_showitem (hwnd, listview_id, selected_item, scroll_pos);
+		_app_listviewsort (hwnd, current_listview_id);
+		_app_showitem (hwnd, current_listview_id, selected_item, scroll_pos);
 	}
 }
 
