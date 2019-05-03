@@ -1428,7 +1428,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	}
 
 	AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
-	AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, app.LocaleString (IDS_EDITRULES, L"..."));
+	AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, app.LocaleString (IDS_EDITRULES, nullptr));
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
 }
 
@@ -2299,7 +2299,7 @@ void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos)
 		ListView_SetItemState (hlistview, (WPARAM)item, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
 	}
 
-	if (scroll_pos != 0)
+	if (scroll_pos > 0)
 		SendMessage (hlistview, LVM_SCROLL, 0, scroll_pos); // restore scroll position
 }
 
