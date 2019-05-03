@@ -186,7 +186,7 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 	MFILTER_APPS rules;
 
 	const UINT listview_id = _app_getlistview_id (ptr_app->type);
-	const size_t item = _app_getposition (app.GetHWND (), app_hash);
+	const size_t item = _app_getposition (app.GetHWND (), listview_id, app_hash);
 
 	_r_fastlock_acquireexclusive (&lock_access);
 
@@ -943,7 +943,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				//if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 				//	continue;
 
-				const size_t item = _app_getposition (app.GetHWND (), app_hash);
 				PITEM_APP ptr_app = _app_getapplication (app_hash);
 
 				if (!ptr_app)
@@ -952,6 +951,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				_r_fastlock_acquireexclusive (&lock_access);
 
 				const UINT listview_id = _app_getlistview_id (ptr_app->type);
+				const size_t item = _app_getposition (app.GetHWND (), listview_id, app_hash);
 				const bool is_remove = ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ());
 
 				if (is_remove)
@@ -1031,7 +1031,8 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					if (ptr_app)
 					{
-						_app_showitem (app.GetHWND (), _app_getlistview_id (ptr_app->type), app_hash);
+						const UINT listview_id = _app_getlistview_id (ptr_app->type);
+						_app_showitem (app.GetHWND (), listview_id, _app_getposition (app.GetHWND (), listview_id, app_hash));
 
 						_r_wnd_toggle (app.GetHWND (), true);
 					}
