@@ -97,9 +97,7 @@ size_t _app_timer_remove (HWND hwnd, const MFILTER_APPS *ptr_apps)
 		{
 			if (!_app_isappexists (ptr_app) || ptr_app->is_temp)
 			{
-				if (listview_id)
-					SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, item, 0);
-
+				SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, item, 0);
 				_app_freeapplication (app_hash);
 			}
 			else
