@@ -21,28 +21,29 @@ void _app_timer_create (HWND hwnd, const MFILTER_APPS *ptr_apps, time_t seconds)
 
 		if (ptr_app->htimer)
 		{
-			if (DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr))
-				ptr_app->htimer = nullptr;
+			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
+			ptr_app->htimer = nullptr;
 		}
 
 		if (ptr_app->timer)
 			ptr_app->timer = 0;
 
-		const size_t hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
+		const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
 
-		if (CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)hash, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD))
+		if (CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD))
 		{
 			ptr_app->is_enabled = true;
 			ptr_app->timer = current_time + seconds;
 
-			const size_t item = _app_getposition (hwnd, hash);
+			const UINT listview_id = _app_getlistview_id (ptr_app->type);
+			const size_t item = _app_getposition (hwnd, listview_id, app_hash);
 
 			if (item != LAST_VALUE)
 			{
 				_r_fastlock_acquireshared (&lock_checkbox);
 
-				_r_listview_setitem (hwnd, IDC_APPS_PROFILE, item, 0, nullptr, LAST_VALUE, _app_getappgroup (hash, ptr_app));
-				_r_listview_setitemcheck (hwnd, IDC_APPS_PROFILE, item, ptr_app->is_enabled);
+				_r_listview_setitem (hwnd, listview_id, item, 0, nullptr, LAST_VALUE, _app_getappgroup (app_hash, ptr_app));
+				_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
 
 				_r_fastlock_releaseshared (&lock_checkbox);
 			}
@@ -79,18 +80,18 @@ size_t _app_timer_remove (HWND hwnd, const MFILTER_APPS *ptr_apps)
 
 		if (ptr_app->htimer)
 		{
-			if (DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr))
-				ptr_app->htimer = nullptr;
+			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
+			ptr_app->htimer = nullptr;
 		}
 
-		if(ptr_app->timer)
+		if (ptr_app->timer)
 			ptr_app->timer = 0;
 
 		ptr_app->is_enabled = false;
 
 		const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
-		const size_t item = _app_getposition (hwnd, app_hash);
 		const UINT listview_id = _app_getlistview_id (ptr_app->type);
+		const size_t item = _app_getposition (hwnd, listview_id, app_hash);
 
 		if (item != LAST_VALUE)
 		{
