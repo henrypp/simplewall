@@ -634,13 +634,14 @@ bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR * pinfo)
 	return result;
 }
 
-size_t _app_getposition (HWND hwnd, size_t hash)
+size_t _app_getposition (HWND hwnd, UINT listview_id, size_t idx)
 {
-	const UINT listview_id = _app_gettab_id (hwnd);
+	if (!listview_id)
+		return LAST_VALUE;
 
 	for (size_t i = 0; i < _r_listview_getitemcount (hwnd, listview_id); i++)
 	{
-		if ((size_t)_r_listview_getitemlparam (hwnd, listview_id, i) == hash)
+		if ((size_t)_r_listview_getitemlparam (hwnd, listview_id, i) == idx)
 			return i;
 	}
 
@@ -662,41 +663,41 @@ rstring _app_getprotoname (UINT8 proto)
 
 rstring _app_getstatename (DWORD state)
 {
-	if(state== MIB_TCP_STATE_CLOSED)
-			return L"Closed";
+	if (state == MIB_TCP_STATE_CLOSED)
+		return L"Closed";
 
 	else if (state == MIB_TCP_STATE_LISTEN)
-			return L"Listen";
+		return L"Listen";
 
 	else if (state == MIB_TCP_STATE_SYN_SENT)
-			return L"SYN sent";
+		return L"SYN sent";
 
 	else if (state == MIB_TCP_STATE_SYN_RCVD)
-			return L"SYN received";
+		return L"SYN received";
 
 	else if (state == MIB_TCP_STATE_ESTAB)
-			return L"Established";
+		return L"Established";
 
 	else if (state == MIB_TCP_STATE_FIN_WAIT1)
-			return L"FIN wait 1";
+		return L"FIN wait 1";
 
 	else if (state == MIB_TCP_STATE_FIN_WAIT2)
-			return L"FIN wait 2";
+		return L"FIN wait 2";
 
 	else if (state == MIB_TCP_STATE_CLOSE_WAIT)
-			return L"Close wait";
+		return L"Close wait";
 
 	else if (state == MIB_TCP_STATE_CLOSING)
-			return L"Closing";
+		return L"Closing";
 
 	else if (state == MIB_TCP_STATE_LAST_ACK)
-			return L"Last ACK";
+		return L"Last ACK";
 
 	else if (state == MIB_TCP_STATE_TIME_WAIT)
-			return L"Time wait";
+		return L"Time wait";
 
 	else if (state == MIB_TCP_STATE_DELETE_TCB)
-			return L"Delete TCB";
+		return L"Delete TCB";
 
 	return L"";
 }
@@ -2274,29 +2275,32 @@ UINT _app_getlistview_id (EnumDataType type)
 	return 0;
 }
 
-void _app_showitem (HWND hwnd, UINT listview_id, LPARAM lparam, INT scroll_pos)
+void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos)
 {
 	if (!listview_id)
 		return;
 
 	_app_settab_id (hwnd, listview_id);
 
-	for (size_t i = 0; i < _r_listview_getitemcount (hwnd, listview_id); i++)
+	const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
+
+	if (!total_count)
+		return;
+
+	const HWND hlistview = GetDlgItem (hwnd, listview_id);
+
+	if (item != LAST_VALUE)
 	{
-		if (_r_listview_getitemlparam (hwnd, listview_id, i) == lparam)
-		{
-			if (scroll_pos == -1)
-				SendDlgItemMessage (hwnd, listview_id, LVM_ENSUREVISIBLE, i, TRUE); // ensure item visible
+		item = min (total_count - 1, item);
 
-			ListView_SetItemState (GetDlgItem (hwnd, listview_id), -1, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
-			ListView_SetItemState (GetDlgItem (hwnd, listview_id), i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
+		SendMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
 
-			break;
-		}
+		ListView_SetItemState (hlistview, -1, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
+		ListView_SetItemState (hlistview, (WPARAM)item, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
 	}
 
-	if (scroll_pos != -1)
-		SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, scroll_pos); // restore scroll position
+	if (scroll_pos != 0)
+		SendMessage (hlistview, LVM_SCROLL, 0, scroll_pos); // restore scroll position
 }
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)

@@ -24,7 +24,7 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, size_t* picon_id, HICON* pic
 rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path);
 bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR* psigner);
 bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR* pinfo);
-size_t _app_getposition (HWND hwnd, size_t hash);
+size_t _app_getposition (HWND hwnd, UINT listview_id, size_t idx);
 rstring _app_getprotoname (UINT8 proto);
 rstring _app_getstatename (DWORD state);
 
@@ -52,7 +52,7 @@ void _app_resolvefilename (rstring& path);
 
 UINT _app_getlistview_id (EnumDataType type);
 
-void _app_showitem (HWND hwnd, UINT listview_id, LPARAM lparam, INT scroll_pos = -1);
+void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos = -1);
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size);
 HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size);
