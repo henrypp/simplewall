@@ -841,7 +841,7 @@ void _app_profile_loadrules (MFILTER_RULES * ptr_rules, LPCWSTR path, LPCWSTR pa
 void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 {
 	const UINT listview_id = _app_gettab_id (hwnd);
-	const LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED));
+	const size_t selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 	const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT);
 
 	// load applications
@@ -1092,7 +1092,10 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 	_r_fastlock_releaseexclusive (&lock_network);
 
 	if (hwnd)
-		_app_showitem (hwnd, listview_id, lparam, scroll_pos);
+	{
+		_app_listviewsort (hwnd, listview_id);
+		_app_showitem (hwnd, listview_id, selected_item, scroll_pos);
+	}
 }
 
 void _app_profile_save (LPCWSTR path_apps, LPCWSTR path_rules)
