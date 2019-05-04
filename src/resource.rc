@@ -540,7 +540,7 @@ BEGIN
 	IDS_USESTEALTHMODE_CHK "Prevent port scanning"
 	IDS_USESTEALTHMODE_HINT "Prevent TCP port scanning by silently dropping inbound TCP RST and UDP port scanning by responding to outbound ICMP with ""Destination Unreachable""."
 	IDS_INSTALLBOOTTIMEFILTERS_CHK "Enable boot-time filters"
-	IDS_INSTALLBOOTTIMEFILTERS_HINT "Prevent data leaks during system startup, even before the "Base Filtering Engine" (BFE) service starts."
+	IDS_INSTALLBOOTTIMEFILTERS_HINT "Prevent data leaks during system startup, even before the ""Base Filtering Engine"" (BFE) service starts."
 
 	IDS_USECERTIFICATES_CHK "Check apps for digital signatures"
 	IDS_USENETWORKRESOLUTION_CHK "Resolve network addresses"
