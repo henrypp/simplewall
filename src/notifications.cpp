@@ -27,7 +27,7 @@ void _app_notifycreatewindow ()
 	static const INT cxsmIcon = GetSystemMetrics (SM_CXSMICON);
 	static const INT IconSize = app.GetDPI (20);
 
-	config.hnotification = CreateWindowEx (WS_EX_TOPMOST | WS_EX_TOOLWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
+	config.hnotification = CreateWindowEx (WS_EX_TOPMOST | WS_EX_TOOLWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP, 0, 0, wnd_width, wnd_height, nullptr, nullptr, wcex.hInstance, nullptr);
 
 	if (!config.hnotification)
 		return;
