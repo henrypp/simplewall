@@ -42,9 +42,9 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	}
 	else if (_wcsnicmp (path, L"S-1-", 4) == 0) // windows store (win8+)
 	{
-		ptr_app->type = DataAppPackage;
+		ptr_app->type = DataAppUWP;
 
-		_app_item_get (DataAppPackage, app_hash, nullptr, &real_path, &ptr_app->psid, nullptr, nullptr);
+		_app_item_get (DataAppUWP, app_hash, nullptr, &real_path, &ptr_app->psid, nullptr, nullptr);
 	}
 	else if (PathIsNetworkPath (path)) // network path
 	{
@@ -101,7 +101,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	ptr_app->timestamp = timestamp ? timestamp : current_time;
 	ptr_app->last_notify = last_notify;
 
-	if (ptr_app->type == DataAppService || ptr_app->type == DataAppPackage)
+	if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
 		ptr_app->is_undeletable = true;
 
 	// install timer
@@ -280,10 +280,14 @@ void _app_getcount (PITEM_STATUS ptr_status)
 		const ITEM_APP *ptr_app = &p.second;
 		const bool is_used = _app_isappused (ptr_app, p.first);
 
+		_r_fastlock_acquireshared (&lock_network);
+		const bool is_haveconnections = _app_isapphaveconnection (p.first);
+		_r_fastlock_releaseshared (&lock_network);
+
 		if (_app_istimeractive (ptr_app))
 			ptr_status->apps_timer_count += 1;
 
-		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppPackage))
+		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppUWP || is_haveconnections))
 			ptr_status->apps_unused_count += 1;
 
 		if (is_used)
@@ -351,17 +355,26 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 {
 	rstring result;
 
-	if (listview_id == IDC_NETWORK)
-	{
-		return _app_gettooltip (IDC_APPS_PROFILE, network_arr.at (idx)->hash);
-	}
-	else if (
+	if (
 		listview_id == IDC_APPS_LV ||
 		listview_id == IDC_APPS_PROFILE ||
 		listview_id == IDC_APPS_SERVICE ||
-		listview_id == IDC_APPS_PACKAGE
+		listview_id == IDC_APPS_PACKAGE ||
+		listview_id == IDC_NETWORK
 		)
 	{
+		if (listview_id == IDC_NETWORK)
+		{
+			_r_fastlock_acquireshared (&lock_network);
+
+			const PITEM_NETWORK ptr_network = network_arr.at (idx);
+
+			if (ptr_network)
+				idx = ptr_network->hash;
+
+			_r_fastlock_releaseshared (&lock_network);
+		}
+
 		PITEM_APP ptr_app = _app_getapplication (idx);
 
 		if (ptr_app)
@@ -388,7 +401,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 				if (_app_item_get (ptr_app->type, idx, &display_name, nullptr, nullptr, nullptr, nullptr))
 					result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), ptr_app->original_path, display_name.GetString ());
 			}
-			else if (ptr_app->type == DataAppPackage)
+			else if (ptr_app->type == DataAppUWP)
 			{
 				rstring display_name;
 
@@ -417,6 +430,9 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 				if (ptr_app->is_system)
 					buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SYSTEM, nullptr).GetString ());
 
+				if (listview_id != IDC_NETWORK && _app_isapphaveconnection (idx))
+					buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION, nullptr).GetString ());
+
 				// app type
 				{
 					if (ptr_app->type == DataAppNetwork)
@@ -425,7 +441,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 					else if (ptr_app->type == DataAppPico)
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PICO, nullptr).GetString ());
 
-					else if (ptr_app->type == DataAppPackage)
+					else if (ptr_app->type == DataAppUWP)
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PACKAGE, nullptr).GetString ());
 
 					else if (ptr_app->type == DataAppService)
@@ -546,7 +562,7 @@ rstring _app_rulesexpand (PITEM_RULE const ptr_rule, bool is_forservices, LPCWST
 
 			if (ptr_app)
 			{
-				if (ptr_app->type == DataAppPackage || ptr_app->type == DataAppService)
+				if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
 				{
 					if (ptr_app->display_name && ptr_app->display_name[0])
 						result.Append (ptr_app->display_name);
@@ -601,7 +617,7 @@ bool _app_isapphaverule (size_t hash)
 
 bool _app_isappused (ITEM_APP const *ptr_app, size_t hash)
 {
-	if (ptr_app && (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (hash)))
+	if (ptr_app && (ptr_app->is_enabled || ptr_app->is_silent) || _app_isapphaverule (hash))
 		return true;
 
 	return false;
@@ -624,7 +640,7 @@ bool _app_isappexists (ITEM_APP const *ptr_app)
 	else if (ptr_app->type == DataAppRegular)
 		return ptr_app->real_path && ptr_app->real_path[0] && _r_fs_exists (ptr_app->real_path);
 
-	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppPackage)
+	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
 		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr, nullptr);
 
 	return true;
@@ -1095,8 +1111,8 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			if (!ptr_network)
 				continue;
 
-			//if (!_app_getapplication (ptr_network->hash))
-			//	_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+			if (ptr_network->hash && !_app_getapplication (ptr_network->hash))
+				_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
 
 			// TODO: add network resolver!!!
 			_app_formataddress (ptr_network->af, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, false);
@@ -1148,7 +1164,11 @@ void _app_profile_save (LPCWSTR path_apps, LPCWSTR path_rules)
 
 				const bool is_used = _app_isappused (ptr_app, p.first);
 
-				if (!is_used && (ptr_app->type == DataAppService || ptr_app->type == DataAppPackage))
+				_r_fastlock_acquireshared (&lock_network);
+				const bool is_haveconnections = _app_isapphaveconnection (p.first);
+				_r_fastlock_releaseshared (&lock_network);
+
+				if (!is_used && (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP || is_haveconnections))
 					continue;
 
 				pugi::xml_node item = root.append_child (L"item");

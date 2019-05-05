@@ -262,31 +262,34 @@ COLORREF _app_getcolor (size_t app_hash, bool is_appslist)
 
 	if (ptr_app)
 	{
-		if (app.ConfigGet (L"IsHighlightTimer", true).AsBool () && _app_istimeractive (ptr_app))
+		if (app.ConfigGet (L"IsHighlightTimer", true, L"colors").AsBool () && _app_istimeractive (ptr_app))
 			color_value = L"ColorTimer";
 
-		else if (app.ConfigGet (L"IsHighlightInvalid", true).AsBool () && !_app_isappexists (ptr_app))
+		else if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && !_app_isappexists (ptr_app))
 			color_value = L"ColorInvalid";
 
-		else if (app.ConfigGet (L"IsHighlightSpecial", true).AsBool () && _app_isapphaverule (app_hash))
+		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && _app_isapphaverule (app_hash))
 			color_value = L"ColorSpecial";
 
-		else if (!is_appslist && ptr_app->is_silent && app.ConfigGet (L"IsHighlightSilent", true).AsBool ())
+		else if (!is_appslist && ptr_app->is_silent && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool ())
 			color_value = L"ColorSilent";
 
-		else if (ptr_app->is_signed && app.ConfigGet (L"IsHighlightSigned", true).AsBool () && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
+		else if (_app_isapphaveconnection (app_hash) && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
+			color_value = L"ColorConnection";
+
+		else if (ptr_app->is_signed && app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
 			color_value = L"ColorSigned";
 
-		else if (is_appslist && ptr_app->type == DataAppService && app.ConfigGet (L"IsHighlightService", true).AsBool ())
+		else if (is_appslist && ptr_app->type == DataAppService && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool ())
 			color_value = L"ColorService";
 
-		else if (is_appslist && ptr_app->type == DataAppPackage && app.ConfigGet (L"IsHighlightPackage", true).AsBool ())
+		else if (is_appslist && ptr_app->type == DataAppUWP && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool ())
 			color_value = L"ColorPackage";
 
-		else if ((ptr_app->type == DataAppPico) && app.ConfigGet (L"IsHighlightPico", true).AsBool ())
+		else if ((ptr_app->type == DataAppPico) && app.ConfigGet (L"IsHighlightPico", true, L"colors").AsBool ())
 			color_value = L"ColorPico";
 
-		else if (ptr_app->is_system && app.ConfigGet (L"IsHighlightSystem", true).AsBool ())
+		else if (ptr_app->is_system && app.ConfigGet (L"IsHighlightSystem", true, L"colors").AsBool ())
 			color_value = L"ColorSystem";
 	}
 
@@ -705,7 +708,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const PITEM_APP ptr_app = &p.second;
 
 					// windows store apps (win8+)
-					if (ptr_app->type == DataAppPackage && !_r_sys_validversion (6, 2))
+					if (ptr_app->type == DataAppUWP && !_r_sys_validversion (6, 2))
 						continue;
 
 					if (ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
@@ -1190,14 +1193,16 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					CheckDlgButton (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, app.ConfigGet (L"InstallBoottimeFilters", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_SECUREFILTERS_CHK, app.ConfigGet (L"IsSecureFilters", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
-					_r_ctrl_settip (hwnd, IDC_RULE_ALLOWINBOUND, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settip (hwnd, IDC_RULE_ALLOWLISTEN, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settip (hwnd, IDC_RULE_ALLOWLOOPBACK, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settip (hwnd, IDC_RULE_ALLOW6TO4, LPSTR_TEXTCALLBACK);
+					const HWND htip = _r_ctrl_createtip (hwnd);
 
-					_r_ctrl_settip (hwnd, IDC_USESTEALTHMODE_CHK, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settip (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settip (hwnd, IDC_SECUREFILTERS_CHK, LPSTR_TEXTCALLBACK);
+					_r_ctrl_settip (htip, hwnd, IDC_RULE_ALLOWINBOUND, LPSTR_TEXTCALLBACK);
+					_r_ctrl_settip (htip, hwnd, IDC_RULE_ALLOWLISTEN, LPSTR_TEXTCALLBACK);
+					_r_ctrl_settip (htip, hwnd, IDC_RULE_ALLOWLOOPBACK, LPSTR_TEXTCALLBACK);
+					_r_ctrl_settip (htip, hwnd, IDC_RULE_ALLOW6TO4, LPSTR_TEXTCALLBACK);
+
+					_r_ctrl_settip (htip, hwnd, IDC_USESTEALTHMODE_CHK, LPSTR_TEXTCALLBACK);
+					_r_ctrl_settip (htip, hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, LPSTR_TEXTCALLBACK);
+					_r_ctrl_settip (htip, hwnd, IDC_SECUREFILTERS_CHK, LPSTR_TEXTCALLBACK);
 
 					break;
 				}
@@ -1910,6 +1915,93 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 }
+void _app_tabs_init (HWND hwnd)
+{
+	const HINSTANCE hinst = app.GetHINSTANCE ();
+	static const UINT listview_style = WS_CHILD | WS_TABSTOP | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SHAREIMAGELISTS;
+	size_t count = 0;
+
+	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_PROFILE, hinst, nullptr);
+	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_APPS_PROFILE);
+
+	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_SERVICE, hinst, nullptr);
+	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_APPS_SERVICE);
+
+	// uwp apps (win8+)
+	if (_r_sys_validversion (6, 2))
+	{
+		CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_PACKAGE, hinst, nullptr);
+		_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_APPS_PACKAGE);
+	}
+
+	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_BLOCKLIST, hinst, nullptr);
+	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_RULES_BLOCKLIST);
+
+	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_SYSTEM, hinst, nullptr);
+	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_RULES_SYSTEM);
+
+	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_CUSTOM, hinst, nullptr);
+	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_RULES_CUSTOM);
+
+	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_NETWORK, hinst, nullptr);
+	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_NETWORK);
+
+	// configure listview
+	for (size_t i = 0; i < count; i++)
+	{
+		const UINT listview_id = _app_gettab_id (hwnd, i);
+
+		if (
+			listview_id == IDC_APPS_PROFILE ||
+			listview_id == IDC_APPS_SERVICE ||
+			listview_id == IDC_APPS_PACKAGE ||
+			listview_id == IDC_RULES_BLOCKLIST ||
+			listview_id == IDC_RULES_SYSTEM ||
+			listview_id == IDC_RULES_CUSTOM
+			)
+		{
+			_r_listview_setstyle (hwnd, listview_id, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES | LVS_EX_HEADERINALLVIEWS);
+
+			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE);
+
+			if (
+				listview_id == IDC_APPS_PROFILE ||
+				listview_id == IDC_APPS_SERVICE ||
+				listview_id == IDC_APPS_PACKAGE
+				)
+			{
+				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -70, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), -26, LVCFMT_RIGHT);
+			}
+			else if (
+				listview_id == IDC_RULES_BLOCKLIST ||
+				listview_id == IDC_RULES_SYSTEM ||
+				listview_id == IDC_RULES_CUSTOM
+				)
+			{
+				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -49, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_DIRECTION, nullptr), -26, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_PROTOCOL, nullptr), -20, LVCFMT_RIGHT);
+			}
+		}
+		else if (listview_id == IDC_NETWORK)
+		{
+			_r_listview_setstyle (hwnd, listview_id, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_HEADERINALLVIEWS);
+
+			_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -35, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), -25, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), -25, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), -15, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), -15, LVCFMT_RIGHT);
+		}
+
+		_app_listviewsetfont (hwnd, listview_id, false);
+
+		BringWindowToTop (GetDlgItem (hwnd, listview_id)); // HACK!!!
+	}
+}
 
 void _app_toolbar_init (HWND hwnd)
 {
@@ -2232,6 +2324,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", true, L"ColorSystem", LISTVIEW_COLOR_SYSTEM);
 				addcolor (IDS_HIGHLIGHT_SERVICE, L"IsHighlightService", true, L"ColorService", LISTVIEW_COLOR_SERVICE);
 				addcolor (IDS_HIGHLIGHT_PACKAGE, L"IsHighlightPackage", true, L"ColorPackage", LISTVIEW_COLOR_PACKAGE);
+				addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", true, L"ColorConnection", LISTVIEW_COLOR_CONNECTION);
 			}
 
 			// initialize protocols
@@ -2265,74 +2358,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 			}
 
-			// configure tabs
-			_r_tab_additem (hwnd, IDC_TAB, 0, nullptr, LAST_VALUE, IDC_APPS_PROFILE);
-			_r_tab_additem (hwnd, IDC_TAB, 1, nullptr, LAST_VALUE, IDC_APPS_SERVICE);
-
-			// windows store apps (win8+)
-			if (_r_sys_validversion (6, 2))
-				_r_tab_additem (hwnd, IDC_TAB, 2, nullptr, LAST_VALUE, IDC_APPS_PACKAGE);
-
-			_r_tab_additem (hwnd, IDC_TAB, 3, nullptr, LAST_VALUE, IDC_RULES_BLOCKLIST);
-			_r_tab_additem (hwnd, IDC_TAB, 4, nullptr, LAST_VALUE, IDC_RULES_SYSTEM);
-			_r_tab_additem (hwnd, IDC_TAB, 5, nullptr, LAST_VALUE, IDC_RULES_CUSTOM);
-			_r_tab_additem (hwnd, IDC_TAB, 6, nullptr, LAST_VALUE, IDC_NETWORK);
-
-			// configure listview
-			for (size_t i = 0; i < (size_t)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
-			{
-				const UINT listview_id = _app_gettab_id (hwnd, i);
-
-				if (
-					listview_id == IDC_APPS_PROFILE ||
-					listview_id == IDC_APPS_SERVICE ||
-					listview_id == IDC_APPS_PACKAGE ||
-					listview_id == IDC_RULES_BLOCKLIST ||
-					listview_id == IDC_RULES_SYSTEM ||
-					listview_id == IDC_RULES_CUSTOM
-					)
-				{
-					_r_listview_setstyle (hwnd, listview_id, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES | LVS_EX_HEADERINALLVIEWS);
-
-					_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE);
-					_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE);
-					_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE);
-
-					if (
-						listview_id == IDC_APPS_PROFILE ||
-						listview_id == IDC_APPS_SERVICE ||
-						listview_id == IDC_APPS_PACKAGE
-						)
-					{
-						_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -70, LVCFMT_LEFT);
-						_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), -26, LVCFMT_RIGHT);
-					}
-					else if (
-						listview_id == IDC_RULES_BLOCKLIST ||
-						listview_id == IDC_RULES_SYSTEM ||
-						listview_id == IDC_RULES_CUSTOM
-						)
-					{
-						_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -49, LVCFMT_LEFT);
-						_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_DIRECTION, nullptr), -26, LVCFMT_RIGHT);
-						_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_PROTOCOL, nullptr), -20, LVCFMT_RIGHT);
-					}
-				}
-				else if (listview_id == IDC_NETWORK)
-				{
-					_r_listview_setstyle (hwnd, listview_id, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_HEADERINALLVIEWS);
-
-					_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -35, LVCFMT_LEFT);
-					_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), -25, LVCFMT_LEFT);
-					_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), -25, LVCFMT_LEFT);
-					_r_listview_addcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), -15, LVCFMT_RIGHT);
-					_r_listview_addcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), -15, LVCFMT_RIGHT);
-				}
-
-				_app_listviewsetfont (hwnd, listview_id, false);
-
-				BringWindowToTop (GetDlgItem (hwnd, listview_id)); // HACK!!!
-			}
+			// initialize tabs
+			_app_tabs_init (hwnd);
 
 			// load profile
 			_app_profile_load (hwnd);
@@ -2929,7 +2956,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else if (lpnmlv->hdr.idFrom == IDC_NETWORK)
 					{
-						command_id = IDM_OPENRULESEDITOR;
+						//command_id = IDM_OPENRULESEDITOR;
+						command_id = IDM_PROPERTIES;
 					}
 
 					if (command_id)
@@ -2990,7 +3018,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			app.LocaleMenu (hsubmenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, L"\tCtrl+A");
 
 			app.LocaleMenu (hsubmenu, IDS_OPENRULESEDITOR, IDM_OPENRULESEDITOR, false, L"...");
-			app.LocaleMenu (hsubmenu, IDS_PROPERTIES, IDM_PROPERTIES, false, L"\tEnter");
+			app.LocaleMenu (hsubmenu, menu_id == IDM_NETWORK ? IDS_SHOWINLIST : IDS_PROPERTIES, IDM_PROPERTIES, false, L"\tEnter");
 
 			if (!selected_count)
 			{
@@ -4005,7 +4033,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (
 						listview_id != IDC_APPS_PROFILE &&
 						listview_id != IDC_APPS_SERVICE &&
-						listview_id != IDC_APPS_PACKAGE
+						listview_id != IDC_APPS_PACKAGE &&
+						listview_id != IDC_NETWORK
 						)
 					{
 						// note: these commands only for profile...
@@ -4021,7 +4050,25 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 					{
-						const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+						size_t app_hash = 0;
+
+						if (listview_id == IDC_NETWORK)
+						{
+							_r_fastlock_acquireshared (&lock_network);
+
+							const size_t network_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+							const PITEM_NETWORK ptr_network = network_arr.at (network_idx);
+
+							if (ptr_network)
+								app_hash = ptr_network->hash;
+
+							_r_fastlock_releaseshared (&lock_network);
+						}
+						else
+						{
+							app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+						}
+
 						PITEM_APP ptr_app = _app_getapplication (app_hash);
 
 						if (!ptr_app)
@@ -4409,25 +4456,30 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 						}
 					}
-					//else if (listview_id == IDC_NETWORK)
-					//{
-					//	_r_fastlock_acquireexclusive (&lock_access);
-					//	_r_fastlock_acquireshared (&lock_network);
+					else if (listview_id == IDC_NETWORK)
+					{
+						_r_fastlock_acquireshared (&lock_network);
 
-					//	const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
-					//	const PITEM_NETWORK ptr_network = network_arr.at (idx);
+						const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+						const PITEM_NETWORK ptr_network = network_arr.at (idx);
 
-					//	if (ptr_network)
-					//	{
-					//		if (!_app_getapplication (ptr_network->hash))
-					//			_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+						if (ptr_network && ptr_network->hash)
+						{
+							_r_fastlock_acquireshared (&lock_access);
 
-					//		_app_showitem (hwnd, _app_getapplistview_id (ptr_network->hash), ptr_network->hash);
-					//	}
+							const PITEM_APP ptr_app = _app_getapplication (ptr_network->hash);
 
-					//	_r_fastlock_releaseshared (&lock_network);
-					//	_r_fastlock_releaseexclusive (&lock_access);
-					//}
+							if (ptr_app)
+							{
+								const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+								_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, ptr_network->hash));
+							}
+
+							_r_fastlock_releaseshared (&lock_access);
+						}
+
+						_r_fastlock_releaseshared (&lock_network);
+					}
 
 					break;
 				}
@@ -4459,7 +4511,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, i);
 								PITEM_APP ptr_app = _app_getapplication (app_hash);
 
-								if (ptr_app && !ptr_app->is_undeletable) // skip "undeletable" apps
+								_r_fastlock_acquireshared (&lock_network);
+								const bool is_haveconnections = _app_isapphaveconnection (app_hash);
+								_r_fastlock_releaseshared (&lock_network);
+
+								if (ptr_app && !is_haveconnections && !ptr_app->is_undeletable) // skip "undeletable" apps
 								{
 									ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
 
@@ -4537,9 +4593,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_ids[i], j);
 							PITEM_APP ptr_app = _app_getapplication (app_hash);
 
+							_r_fastlock_acquireshared (&lock_network);
+							const bool is_haveconnections = _app_isapphaveconnection (app_hash);
+							_r_fastlock_releaseshared (&lock_network);
+
 							if (ptr_app)
 							{
-								if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || ((ptr_app->type != DataAppService && ptr_app->type != DataAppPackage) && !_app_isappused (ptr_app, app_hash))))
+								if (!ptr_app->is_undeletable && !is_haveconnections && (!_app_isappexists (ptr_app) || ((ptr_app->type != DataAppService && ptr_app->type != DataAppUWP) && !_app_isappused (ptr_app, app_hash))))
 								{
 									ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
 
