@@ -701,7 +701,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 		if (!ptr_app)
 			return false;
 
-		if (ptr_app->type == DataAppPackage) // windows store app (win8+)
+		if (ptr_app->type == DataAppUWP) // windows store app (win8+)
 		{
 			if (ptr_app->psid)
 			{

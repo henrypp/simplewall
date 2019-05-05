@@ -130,7 +130,7 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 
 		if (ptr_app)
 		{
-			if (ptr_app->type == DataAppPackage || ptr_app->type == DataAppService)
+			if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
 			{
 				if (ptr_app->real_path && ptr_app->real_path[0])
 					path = ptr_app->real_path;
@@ -387,7 +387,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const *
 		{
 			sidstring = _r_str_fromsid (package_id);
 
-			if (sidstring.IsEmpty () || !_app_item_get (DataAppPackage, sidstring.Hash (), nullptr, nullptr, nullptr, nullptr, nullptr))
+			if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, sidstring.Hash (), nullptr, nullptr, nullptr, nullptr, nullptr))
 				sidstring.Clear ();
 		}
 
