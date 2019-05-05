@@ -135,18 +135,20 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 	SendMessage (hctrl, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)_app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), IconSize));
 
-	_r_ctrl_settip (config.hnotification, IDC_MENU_BTN, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_TIMER_BTN, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_CLOSE_BTN, LPSTR_TEXTCALLBACK);
+	const HWND htip = _r_ctrl_createtip (config.hnotification);
 
-	_r_ctrl_settip (config.hnotification, IDC_FILE_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_SIGNATURE_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_ADDRESS_LOCAL_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_ADDRESS_REMOTE_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_PROTOCOL_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_FILTER_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (config.hnotification, IDC_DATE_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_MENU_BTN, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_TIMER_BTN, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_CLOSE_BTN, LPSTR_TEXTCALLBACK);
+
+	_r_ctrl_settip (htip, config.hnotification, IDC_FILE_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_SIGNATURE_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_ADDRESS_LOCAL_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_ADDRESS_REMOTE_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_PROTOCOL_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_FILTER_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_DATE_TEXT, LPSTR_TEXTCALLBACK);
 
 	_app_notifyhide (config.hnotification);
 }
