@@ -257,7 +257,7 @@ void _app_getappicon (ITEM_APP const *ptr_app, bool is_small, size_t * picon_id,
 				*picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
 		}
 	}
-	else if (ptr_app->type == DataAppPackage)
+	else if (ptr_app->type == DataAppUWP)
 	{
 		if (picon_id)
 			*picon_id = config.icon_package_id;
@@ -284,7 +284,7 @@ void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, LPWSTR * extract
 	{
 		_r_str_alloc (extracted_name, _r_str_length (ptr_app->original_path), ptr_app->original_path);
 	}
-	else if (ptr_app->type == DataAppPackage)
+	else if (ptr_app->type == DataAppUWP)
 	{
 		rstring name;
 
@@ -704,6 +704,9 @@ rstring _app_getstatename (DWORD state)
 
 rstring getprocname (DWORD pid)
 {
+	if (!pid)
+		return L"Waiting connections";
+
 	WCHAR real_path[MAX_PATH] = {0};
 	const HANDLE hprocess = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
 
@@ -752,9 +755,6 @@ void _app_generate_connections ()
 		{
 			for (ULONG i = 0; i < tcp4Table->dwNumEntries; i++)
 			{
-				if (!tcp4Table->table[i].dwOwningPid)
-					continue;
-
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				ptr_network->remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
@@ -777,12 +777,13 @@ void _app_generate_connections ()
 				StringCchCopy (path_name, _countof (path_name), getprocname (tcp4Table->table[i].dwOwningPid));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
-
 				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
-				ptr_network->hash = _r_str_hash (ptr_network->path);
+
+				if (tcp4Table->table[i].dwOwningPid)
+					ptr_network->hash = _r_str_hash (ptr_network->path);
 
 				ptr_network->remote_port = (UINT16)tcp4Table->table[i].dwRemotePort;
 				ptr_network->local_port = (UINT16)tcp4Table->table[i].dwLocalPort;
@@ -807,9 +808,6 @@ void _app_generate_connections ()
 		{
 			for (ULONG i = 0; i < tcp6Table->dwNumEntries; i++)
 			{
-				if (!tcp6Table->table[i].dwOwningPid)
-					continue;
-
 				if (
 					(
 					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)tcp6Table->table[i].ucRemoteAddr) &&
@@ -830,7 +828,9 @@ void _app_generate_connections ()
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
-				ptr_network->hash = _r_str_hash (ptr_network->path);
+
+				if (tcp6Table->table[i].dwOwningPid)
+					ptr_network->hash = _r_str_hash (ptr_network->path);
 
 				CopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
 				CopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
@@ -859,9 +859,6 @@ void _app_generate_connections ()
 		{
 			for (ULONG i = 0; i < udp4Table->dwNumEntries; i++)
 			{
-				if (!udp4Table->table[i].dwOwningPid)
-					continue;
-
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
@@ -884,7 +881,9 @@ void _app_generate_connections ()
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
-				ptr_network->hash = _r_str_hash (ptr_network->path);
+
+				if (udp4Table->table[i].dwOwningPid)
+					ptr_network->hash = _r_str_hash (ptr_network->path);
 
 				ptr_network->local_port = (UINT16)udp4Table->table[i].dwLocalPort;
 
@@ -908,9 +907,6 @@ void _app_generate_connections ()
 		{
 			for (ULONG i = 0; i < udp6Table->dwNumEntries; i++)
 			{
-				if (!udp6Table->table[i].dwOwningPid)
-					continue;
-
 				if (
 					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)udp6Table->table[i].ucLocalAddr) &&
 					!udp6Table->table[i].dwLocalPort
@@ -928,7 +924,9 @@ void _app_generate_connections ()
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;
-				ptr_network->hash = _r_str_hash (ptr_network->path);
+
+				if (udp6Table->table[i].dwOwningPid)
+					ptr_network->hash = _r_str_hash (ptr_network->path);
 
 				CopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 
@@ -1026,7 +1024,7 @@ void _app_generate_packages ()
 				if (RegQueryInfoKey (hsubkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
 					ptr_item->timestamp = _r_unixtime_from_filetime (&ft);
 
-				ptr_item->type = DataAppPackage;
+				ptr_item->type = DataAppUWP;
 
 				_r_str_alloc (&ptr_item->sid, package_sid_string.GetLength (), package_sid_string);
 				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
@@ -1045,124 +1043,6 @@ void _app_generate_packages ()
 		RegCloseKey (hkey);
 	}
 }
-
-//void _app_generate_processes ()
-//{
-//	_app_freearray (&processes);
-//
-//	NTSTATUS status = 0;
-//
-//	ULONG length = 0x4000;
-//	PBYTE buffer = new BYTE[length];
-//
-//	while (true)
-//	{
-//		status = NtQuerySystemInformation (SystemProcessInformation, buffer, length, &length);
-//
-//		if (status == 0xC0000023L /*STATUS_BUFFER_TOO_SMALL*/ || status == 0xc0000004 /*STATUS_INFO_LENGTH_MISMATCH*/)
-//		{
-//			SAFE_DELETE_ARRAY (buffer);
-//
-//			buffer = new BYTE[length];
-//		}
-//		else
-//		{
-//			break;
-//		}
-//	}
-//
-//	if (NT_SUCCESS (status))
-//	{
-//		PSYSTEM_PROCESS_INFORMATION spi = (PSYSTEM_PROCESS_INFORMATION)buffer;
-//
-//		std::unordered_map<size_t, bool> checker;
-//
-//		do
-//		{
-//			const DWORD pid = (DWORD)(DWORD_PTR)spi->UniqueProcessId;
-//
-//			if (!pid) // skip "system idle process"
-//				continue;
-//
-//			const HANDLE hprocess = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-//
-//			if (hprocess)
-//			{
-//				WCHAR display_name[MAX_PATH] = {0};
-//				WCHAR real_path[MAX_PATH] = {0};
-//
-//				size_t hash = 0;
-//
-//				StringCchPrintf (display_name, _countof (display_name), L"%s (%lu)", spi->ImageName.Buffer, pid);
-//
-//				if (pid == PROC_SYSTEM_PID)
-//				{
-//					StringCchCopy (real_path, _countof (real_path), _r_path_expand (PATH_NTOSKRNL));
-//					hash = _r_str_hash (spi->ImageName.Buffer);
-//				}
-//				else
-//				{
-//					DWORD size = _countof (real_path) - 1;
-//
-//					if (QueryFullProcessImageName (hprocess, 0, real_path, &size))
-//					{
-//						_app_applycasestyle (real_path, _r_str_length (real_path)); // apply case-style
-//						hash = _r_str_hash (real_path);
-//					}
-//					else
-//					{
-//						// cannot get file path because it's not filesystem process (Pico maybe?)
-//						if (GetLastError () == ERROR_GEN_FAILURE)
-//						{
-//							StringCchCopy (real_path, _countof (real_path), spi->ImageName.Buffer);
-//							hash = _r_str_hash (spi->ImageName.Buffer);
-//						}
-//						else
-//						{
-//							CloseHandle (hprocess);
-//							continue;
-//						}
-//					}
-//				}
-//
-//				if (hash && apps.find (hash) == apps.end () && checker.find (hash) == checker.end ())
-//				{
-//					checker[hash] = true;
-//
-//					PITEM_ADD ptr_item = new ITEM_ADD;
-//
-//					ptr_item->hash = hash;
-//
-//					_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
-//					_r_str_alloc (&ptr_item->real_path, _r_str_length (((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path)), ((pid == PROC_SYSTEM_PID) ? PROC_SYSTEM_NAME : real_path));
-//
-//					// get file icon
-//					{
-//						HICON hicon = nullptr;
-//
-//						if (!app.ConfigGet (L"IsIconsHidden", false).AsBool () && _app_getfileicon (real_path, true, nullptr, &hicon))
-//						{
-//							ptr_item->hbmp = _app_bitmapfromico (hicon);
-//							DestroyIcon (hicon);
-//						}
-//					}
-//
-//					processes.push_back (ptr_item);
-//				}
-//
-//				CloseHandle (hprocess);
-//			}
-//		}
-//		while ((spi = ((spi->NextEntryOffset ? (PSYSTEM_PROCESS_INFORMATION)((PCHAR)(spi)+(spi)->NextEntryOffset) : nullptr))) != nullptr);
-//
-//		std::sort (processes.begin (), processes.end (),
-//			[](const PITEM_ADD& a, const PITEM_ADD& b)->bool {
-//			return StrCmpLogicalW (a->display_name, b->display_name) == -1;
-//		});
-//	}
-//
-//	SAFE_DELETE_ARRAY (buffer); // free the allocated buffer
-//}
 
 void _app_generate_services ()
 {
@@ -2257,7 +2137,7 @@ UINT _app_getlistview_id (EnumDataType type)
 	if (type == DataAppService)
 		return IDC_APPS_SERVICE;
 
-	else if (type == DataAppPackage)
+	else if (type == DataAppUWP)
 		return IDC_APPS_PACKAGE;
 
 	else if (type == DataAppRegular || type == DataAppDevice || type == DataAppNetwork || type == DataAppPico)
