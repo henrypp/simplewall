@@ -280,14 +280,10 @@ void _app_getcount (PITEM_STATUS ptr_status)
 		const ITEM_APP *ptr_app = &p.second;
 		const bool is_used = _app_isappused (ptr_app, p.first);
 
-		_r_fastlock_acquireshared (&lock_network);
-		const bool is_haveconnections = _app_isapphaveconnection (p.first);
-		_r_fastlock_releaseshared (&lock_network);
-
 		if (_app_istimeractive (ptr_app))
 			ptr_status->apps_timer_count += 1;
 
-		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppUWP || is_haveconnections))
+		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppUWP))
 			ptr_status->apps_unused_count += 1;
 
 		if (is_used)
@@ -424,14 +420,14 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 				if (!_app_isappexists (ptr_app))
 					buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_INVALID, nullptr).GetString ());
 
+				if (listview_id != IDC_NETWORK && _app_isapphaveconnection (idx))
+					buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION, nullptr).GetString ());
+
 				if (ptr_app->is_silent)
 					buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SILENT, nullptr).GetString ());
 
 				if (ptr_app->is_system)
 					buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SYSTEM, nullptr).GetString ());
-
-				if (listview_id != IDC_NETWORK && _app_isapphaveconnection (idx))
-					buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION, nullptr).GetString ());
 
 				// app type
 				{
@@ -535,7 +531,22 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 		const size_t hash = _r_str_hash (ptr_rule->pname);
 
 		if (rules_config.find (hash) != rules_config.end ())
-			rules_config[hash]->is_enabled = is_enable;
+		{
+			PITEM_RULE_CONFIG* ptr_config = &rules_config[hash];
+
+			if (!*ptr_config)
+				*ptr_config = new ITEM_RULE_CONFIG;
+
+			(*ptr_config)->is_enabled = is_enable;
+		}
+		else
+		{
+			PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
+
+			ptr_config->is_enabled = is_enable;
+
+			rules_config[hash] = ptr_config;
+		}
 	}
 }
 
@@ -712,7 +723,7 @@ bool _app_isrulepresent (size_t hash)
 	return false;
 }
 
-void _app_profile_loadrules (MFILTER_RULES * ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumDataType type, UINT8 weight, time_t * ptimestamp)
+void _app_profile_loadrules (std::vector<PITEM_RULE> * ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumDataType type, UINT8 weight, time_t * ptimestamp)
 {
 	if (!ptr_rules)
 		return;
@@ -1111,8 +1122,8 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			if (!ptr_network)
 				continue;
 
-			if (ptr_network->hash && !_app_getapplication (ptr_network->hash))
-				_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+			//if (ptr_network->hash && !_app_getapplication (ptr_network->hash))
+			//	_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
 
 			// TODO: add network resolver!!!
 			_app_formataddress (ptr_network->af, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, false);
@@ -1164,11 +1175,7 @@ void _app_profile_save (LPCWSTR path_apps, LPCWSTR path_rules)
 
 				const bool is_used = _app_isappused (ptr_app, p.first);
 
-				_r_fastlock_acquireshared (&lock_network);
-				const bool is_haveconnections = _app_isapphaveconnection (p.first);
-				_r_fastlock_releaseshared (&lock_network);
-
-				if (!is_used && (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP || is_haveconnections))
+				if (!is_used && (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP))
 					continue;
 
 				pugi::xml_node item = root.append_child (L"item");

@@ -36,7 +36,7 @@ bool _app_isruleport (LPCWSTR rule);
 
 bool _app_isrulepresent (size_t hash);
 
-void _app_profile_loadrules (MFILTER_RULES *ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumDataType type, UINT8 weight, time_t *ptimestamp);
+void _app_profile_loadrules (std::vector<PITEM_RULE> *ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumDataType type, UINT8 weight, time_t *ptimestamp);
 
 void _app_profile_load (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr);
 void _app_profile_save (LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr);
