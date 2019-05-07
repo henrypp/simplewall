@@ -232,6 +232,7 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 			_wfp_create3filters (&rules, __LINE__);
 	}
 
+	_app_refreshstatus (app.GetHWND ());
 	_app_profile_save ();
 
 	if (_app_gettab_id (app.GetHWND ()) == listview_id)
