@@ -1914,6 +1914,7 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 }
+
 void _app_tabs_init (HWND hwnd)
 {
 	const HINSTANCE hinst = app.GetHINSTANCE ();
@@ -1921,29 +1922,29 @@ void _app_tabs_init (HWND hwnd)
 	size_t count = 0;
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_PROFILE, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_APPS_PROFILE);
+	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString(IDS_TAB_APPS, nullptr), LAST_VALUE, IDC_APPS_PROFILE);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_SERVICE, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_APPS_SERVICE);
+	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_SERVICES, nullptr), LAST_VALUE, IDC_APPS_SERVICE);
 
 	// uwp apps (win8+)
 	if (_r_sys_validversion (6, 2))
 	{
 		CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_PACKAGE, hinst, nullptr);
-		_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_APPS_PACKAGE);
+		_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_PACKAGES, nullptr), LAST_VALUE, IDC_APPS_PACKAGE);
 	}
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_BLOCKLIST, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_RULES_BLOCKLIST);
+	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TRAY_BLOCKLIST_RULES, nullptr), LAST_VALUE, IDC_RULES_BLOCKLIST);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_SYSTEM, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_RULES_SYSTEM);
+	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), LAST_VALUE, IDC_RULES_SYSTEM);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_CUSTOM, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_RULES_CUSTOM);
+	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TRAY_USER_RULES, nullptr), LAST_VALUE, IDC_RULES_CUSTOM);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_NETWORK, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, nullptr, LAST_VALUE, IDC_NETWORK);
+	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_NETWORK, nullptr), LAST_VALUE, IDC_NETWORK);
 
 	// configure listview
 	for (size_t i = 0; i < count; i++)
