@@ -2,7 +2,7 @@ v3.0 Beta (x May 2019)
 - dropped windows vista support
 - improved dpi support (ui)
 - moved rules list into main window
-- added services and store apps tab
+- added services and uwp apps tab
 - added network connections monitor
 - fixed displaying notifications when it's disabled
 - fixed log file write through (issue #369)
