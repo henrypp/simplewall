@@ -422,7 +422,7 @@ void _wfp_installfilters ()
 
 	_r_fastlock_acquireexclusive (&lock_transaction);
 
-	bool is_intransact = _wfp_transact_start (__LINE__);
+	const bool is_intransact = _wfp_transact_start (__LINE__);
 
 	// apply internal rules
 	_wfp_create2filters (__LINE__, is_intransact);
@@ -998,7 +998,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 	return true;
 }
 
-bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_intransact)
+bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransact)
 {
 	if (!config.hengine || !ptr_rules || ptr_rules->empty ())
 		return false;
@@ -1128,7 +1128,7 @@ bool _wfp_create4filters (const MFILTER_RULES * ptr_rules, UINT line, bool is_in
 	return true;
 }
 
-bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intransact)
+bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact)
 {
 	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
 		return false;
@@ -1146,14 +1146,14 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 
 		for (size_t i = 0; i < ptr_apps->size (); i++)
 		{
+			_r_fastlock_acquireshared (&lock_access);
+
 			PITEM_APP ptr_app = ptr_apps->at (i);
 
 			if (ptr_app)
-			{
-				_r_fastlock_acquireexclusive (&lock_access);
 				ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
-				_r_fastlock_releaseexclusive (&lock_access);
-			}
+
+			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		_wfp_destroy2filters (&ids, line);
@@ -1164,20 +1164,20 @@ bool _wfp_create3filters (const MFILTER_APPS * ptr_apps, UINT line, bool is_intr
 
 	for (size_t i = 0; i < ptr_apps->size (); i++)
 	{
+		_r_fastlock_acquireexclusive (&lock_access);
+
 		PITEM_APP ptr_app = ptr_apps->at (i);
 
 		if (ptr_app)
 		{
-			_r_fastlock_acquireexclusive (&lock_access);
-
 			ptr_app->is_haveerrors = false;
 			ptr_app->mfarr.clear ();
 
 			if (ptr_app->is_enabled)
 				ptr_app->is_haveerrors = !_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr);
-
-			_r_fastlock_releaseexclusive (&lock_access);
 		}
+
+		_r_fastlock_releaseexclusive (&lock_access);
 	}
 
 	if (!is_intransact)
