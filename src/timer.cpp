@@ -3,7 +3,7 @@
 
 #include "global.hpp"
 
-void _app_timer_create (HWND hwnd, const MFILTER_APPS *ptr_apps, time_t seconds)
+void _app_timer_create (HWND hwnd, MFILTER_APPS *ptr_apps, time_t seconds)
 {
 	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
 		return;
@@ -55,7 +55,7 @@ void _app_timer_create (HWND hwnd, const MFILTER_APPS *ptr_apps, time_t seconds)
 	_wfp_create3filters (ptr_apps, __LINE__);
 }
 
-size_t _app_timer_remove (HWND hwnd, const MFILTER_APPS *ptr_apps)
+size_t _app_timer_remove (HWND hwnd, MFILTER_APPS *ptr_apps)
 {
 	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
 		return false;
