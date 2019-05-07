@@ -31,7 +31,7 @@ bool _wfp_initialize (bool is_full)
 	bool result = true;
 	DWORD rc;
 
-	_r_fastlock_acquireexclusive (&lock_transaction);
+	_r_fastlock_acquireshared (&lock_transaction);
 
 	if (!config.hengine)
 	{
@@ -70,7 +70,7 @@ bool _wfp_initialize (bool is_full)
 
 	if (!config.hengine)
 	{
-		_r_fastlock_releaseexclusive (&lock_transaction);
+		_r_fastlock_releaseshared (&lock_transaction);
 		return false;
 	}
 
@@ -289,7 +289,7 @@ bool _wfp_initialize (bool is_full)
 		}
 	}
 
-	_r_fastlock_releaseexclusive (&lock_transaction);
+	_r_fastlock_releaseshared (&lock_transaction);
 
 	return result;
 }
@@ -301,7 +301,7 @@ void _wfp_uninitialize (bool is_full)
 	if (!config.hengine)
 		return;
 
-	_r_fastlock_acquireexclusive (&lock_transaction);
+	_r_fastlock_acquireshared (&lock_transaction);
 
 	DWORD result;
 
@@ -400,7 +400,7 @@ void _wfp_uninitialize (bool is_full)
 	FwpmEngineClose (config.hengine);
 	config.hengine = nullptr;
 
-	_r_fastlock_releaseexclusive (&lock_transaction);
+	_r_fastlock_releaseshared (&lock_transaction);
 }
 
 void _wfp_installfilters ()
@@ -420,7 +420,7 @@ void _wfp_installfilters ()
 
 	_wfp_destroyfilters (); // destroy all installed filters first
 
-	_r_fastlock_acquireexclusive (&lock_transaction);
+	_r_fastlock_acquireshared (&lock_transaction);
 
 	const bool is_intransact = _wfp_transact_start (__LINE__);
 
@@ -488,7 +488,7 @@ void _wfp_installfilters ()
 		}
 	}
 
-	_r_fastlock_releaseexclusive (&lock_transaction);
+	_r_fastlock_releaseshared (&lock_transaction);
 }
 
 bool _wfp_transact_start (UINT line)
@@ -649,7 +649,7 @@ bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
 
 	const bool is_enabled = _app_initinterfacestate ();
 
-	_r_fastlock_acquireexclusive (&lock_transaction);
+	_r_fastlock_acquireshared (&lock_transaction);
 
 	for (size_t i = 0; i < pmar->size (); i++)
 		_wfp_setfiltersecurity (config.hengine, &pmar->at (i), config.pusersid, config.pacl_default, line);
@@ -662,7 +662,7 @@ bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
 	if (is_intransact)
 		_wfp_transact_commit (line);
 
-	_r_fastlock_releaseexclusive (&lock_transaction);
+	_r_fastlock_releaseshared (&lock_transaction);
 
 	_app_restoreinterfacestate (is_enabled);
 
@@ -1016,7 +1016,7 @@ bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransa
 		{
 			_r_fastlock_acquireshared (&lock_access);
 
-			PITEM_RULE ptr_rule = ptr_rules->at (i);
+			const PITEM_RULE ptr_rule = ptr_rules->at (i);
 
 			if (ptr_rule)
 				ids.insert (ids.end (), ptr_rule->mfarr.begin (), ptr_rule->mfarr.end ());
@@ -1026,7 +1026,7 @@ bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransa
 
 		_wfp_destroy2filters (&ids, line);
 
-		_r_fastlock_acquireexclusive (&lock_transaction);
+		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
 	}
 
@@ -1108,7 +1108,7 @@ bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransa
 			{
 				_r_fastlock_acquireshared (&lock_access);
 
-				PITEM_RULE ptr_rule = ptr_rules->at (i);
+				const PITEM_RULE ptr_rule = ptr_rules->at (i);
 
 				if (ptr_rule && ptr_rule->is_enabled)
 				{
@@ -1120,7 +1120,7 @@ bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransa
 			}
 		}
 
-		_r_fastlock_releaseexclusive (&lock_transaction);
+		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
 	_app_restoreinterfacestate (is_enabled);
@@ -1148,7 +1148,7 @@ bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact
 		{
 			_r_fastlock_acquireshared (&lock_access);
 
-			PITEM_APP ptr_app = ptr_apps->at (i);
+			const PITEM_APP ptr_app = ptr_apps->at (i);
 
 			if (ptr_app)
 				ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
@@ -1158,7 +1158,7 @@ bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact
 
 		_wfp_destroy2filters (&ids, line);
 
-		_r_fastlock_acquireexclusive (&lock_transaction);
+		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
 	}
 
@@ -1174,7 +1174,10 @@ bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact
 			ptr_app->mfarr.clear ();
 
 			if (ptr_app->is_enabled)
-				ptr_app->is_haveerrors = !_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr);
+			{
+				if (!_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr))
+					ptr_app->is_haveerrors = true;
+			}
 		}
 
 		_r_fastlock_releaseexclusive (&lock_access);
@@ -1190,21 +1193,21 @@ bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact
 		{
 			for (size_t i = 0; i < ptr_apps->size (); i++)
 			{
+				_r_fastlock_acquireshared (&lock_access);
+
 				const PITEM_APP ptr_app = ptr_apps->at (i);
 
 				if (ptr_app)
 				{
-					_r_fastlock_acquireshared (&lock_access);
-
 					for (size_t j = 0; j < ptr_app->mfarr.size (); j++)
 						_wfp_setfiltersecurity (config.hengine, &ptr_app->mfarr.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
-
-					_r_fastlock_releaseshared (&lock_access);
 				}
+
+				_r_fastlock_releaseshared (&lock_access);
 			}
 		}
 
-		_r_fastlock_releaseexclusive (&lock_transaction);
+		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
 	_app_restoreinterfacestate (is_enabled);
@@ -1227,7 +1230,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 		_wfp_destroy2filters (&filter_ids, line);
 		filter_ids.clear ();
 
-		_r_fastlock_acquireexclusive (&lock_transaction);
+		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
 	}
 
@@ -1489,7 +1492,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 				_wfp_setfiltersecurity (config.hengine, &filter_ids.at (i), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
 		}
 
-		_r_fastlock_releaseexclusive (&lock_transaction);
+		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
 	_app_restoreinterfacestate (is_enabled);
@@ -1550,7 +1553,7 @@ size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * pfilters)
 			{
 				for (UINT32 i = 0; i < count; i++)
 				{
-					if (matchingFwpFilter[i]->providerKey && memcmp (matchingFwpFilter[i]->providerKey, pprovider, sizeof (GUID)) == 0)
+					if (matchingFwpFilter[i] && matchingFwpFilter[i]->providerKey && memcmp (matchingFwpFilter[i]->providerKey, pprovider, sizeof (GUID)) == 0)
 						pfilters->push_back (matchingFwpFilter[i]->filterKey);
 				}
 
