@@ -1,4 +1,4 @@
-v3.0 Beta (x May 2019)
+v3.0 Beta (7 May 2019)
 - dropped windows vista support
 - improved dpi support (ui)
 - moved rules list into main window
