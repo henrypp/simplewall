@@ -319,6 +319,7 @@ COLORREF _app_getcolor (size_t app_hash, bool is_appslist)
 UINT WINAPI ApplyThread (LPVOID lparam)
 {
 	const bool is_install = lparam ? true : false;
+	const HWND hwnd = app.GetHWND ();
 
 	// dropped packets logging (win7+)
 	if (config.is_neteventset)
@@ -344,11 +345,11 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 		_wfp_logsubscribe ();
 
 	_app_restoreinterfacestate (true);
-	_app_setinterfacestate (app.GetHWND ());
+	_app_setinterfacestate (hwnd);
 
 	_app_profile_save ();
 
-	_r_listview_redraw (app.GetHWND (), _app_gettab_id (app.GetHWND ()));
+	_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
 
 	SetEvent (config.done_evt);
 
@@ -1653,8 +1654,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_USENETWORKRESOLUTION_CHK)
 					{
 						app.ConfigSet (L"IsNetworkResolutionsEnabled", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-
-						//_app_notifyrefresh (config.hnotification, false);
 					}
 					else if (ctrl_id == IDC_USEREFRESHDEVICES_CHK)
 					{
@@ -2232,20 +2231,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			const UINT listview_id = _app_gettab_id (hwnd);
 			const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
-			const INT start_pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED | LVNI_DIRECTIONMASK | LVNI_BELOW) + 1;
 
-			for (size_t i = start_pos; i < total_count; i++)
+			const INT selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED) + 1;
+
+			for (size_t i = selected_item; i < total_count; i++)
 			{
-				const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
-				PITEM_APP const ptr_app = _app_getapplication (app_hash);
+				const rstring text = _r_listview_getitemtext (hwnd, listview_id, i, 0);
 
-				if (ptr_app)
+				if (StrStrNIW (text, lpfr->lpstrFindWhat, (UINT)_r_str_length (lpfr->lpstrFindWhat)) != nullptr)
 				{
-					if (StrStrNIW (ptr_app->display_name, lpfr->lpstrFindWhat, (UINT)_r_str_length (lpfr->lpstrFindWhat)) != nullptr)
-					{
-						_app_showitem (hwnd, listview_id, i);
-						break;
-					}
+					_app_showitem (hwnd, listview_id, i);
+					break;
 				}
 			}
 		}
@@ -2639,8 +2635,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			app.TrayDestroy (hwnd, UID, nullptr);
 
-			_app_profile_save ();
-
 			if (config.done_evt)
 			{
 				if (_wfp_isfiltersapplying ())
@@ -2902,11 +2896,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (is_changed)
 						{
 							_app_listviewsort (hwnd, listview_id);
+
 							_app_profile_save ();
-
 							_app_refreshstatus (hwnd);
-
-							_r_listview_redraw (hwnd, listview_id);
 						}
 					}
 
@@ -3310,7 +3302,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case PBT_APMSUSPEND:
 				{
-					_app_profile_save ();
 					_wfp_uninitialize (false);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
@@ -3320,6 +3311,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case PBT_APMRESUMECRITICAL:
 				case PBT_APMRESUMESUSPEND:
 				{
+					if (_wfp_isfiltersapplying ())
+						break;
+
 					app.ConfigInit ();
 
 					_app_profile_load (hwnd);
@@ -3359,9 +3353,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (wparam == DBT_DEVICEARRIVAL)
 							{
 								if (_wfp_isfiltersinstalled ())
-								{
 									_app_changefilters (hwnd, true, false);
-								}
 							}
 							else if (wparam == DBT_DEVICEREMOVECOMPLETE)
 							{
@@ -3453,9 +3445,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 
 				_app_listviewsort (hwnd, listview_id);
-				_app_profile_save ();
 
-				_r_listview_redraw (hwnd, listview_id);
+				_app_refreshstatus (hwnd);
+				_app_profile_save ();
 
 				return FALSE;
 			}
@@ -3486,10 +3478,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				_app_timer_create (hwnd, &rules, timers.at (timer_idx));
 
 				_app_listviewsort (hwnd, listview_id);
-				_app_profile_save ();
-				_app_refreshstatus (hwnd);
 
-				_r_listview_redraw (hwnd, listview_id);
+				_app_refreshstatus (hwnd);
+				_app_profile_save ();
 
 				return FALSE;
 			}
@@ -4022,8 +4013,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						_r_fastlock_releaseexclusive (&lock_access);
 
-						_app_profile_save ();
 						_app_refreshstatus (hwnd);
+						_app_profile_save ();
 
 						const PITEM_APP ptr_app = _app_getapplication (app_hash);
 
@@ -4141,12 +4132,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						ctrl_id == IDM_DISABLENOTIFICATIONS
 						)
 					{
-						_app_refreshstatus (hwnd);
-
 						_app_listviewsort (hwnd, listview_id);
-						_app_profile_save ();
 
-						_r_listview_redraw (hwnd, listview_id);
+						_app_refreshstatus (hwnd);
+						_app_profile_save ();
 					}
 
 					break;
@@ -4280,11 +4269,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_app_timer_remove (hwnd, &timer_apps);
 
 						_app_listviewsort (hwnd, listview_id);
-						_app_profile_save ();
 
 						_app_refreshstatus (hwnd);
-
-						_r_listview_redraw (hwnd, listview_id);
+						_app_profile_save ();
 					}
 
 					break;
@@ -4354,7 +4341,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									{
 										if (!_app_getapplication (ptr_network->hash))
 										{
+											_r_fastlock_acquireexclusive (&lock_access);
 											_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+											_r_fastlock_releaseexclusive (&lock_access);
 
 											_app_refreshstatus (hwnd);
 											_app_profile_save ();
@@ -4410,12 +4399,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								_r_fastlock_releaseshared (&lock_checkbox);
 							}
 
-							_r_listview_redraw (hwnd, listview_id);
-
 							_app_listviewsort (hwnd, listview_id);
-							_app_profile_save ();
 
 							_app_refreshstatus (hwnd);
+							_app_profile_save ();
 						}
 						else
 						{
@@ -4478,12 +4465,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, true);
 								_r_fastlock_releaseshared (&lock_checkbox);
 
-								_r_listview_redraw (hwnd, listview_id);
-
 								_app_listviewsort (hwnd, listview_id);
-								_app_profile_save ();
 
 								_app_refreshstatus (hwnd);
+								_app_profile_save ();
 							}
 						}
 					}
@@ -4515,6 +4500,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (ptr_app)
 							{
 								const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+
+								_app_listviewsort (hwnd, app_listview_id);
 								_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
 							}
 
@@ -4604,8 +4591,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_app_refreshstatus (hwnd);
 					_app_profile_save ();
 
-					_r_listview_redraw (hwnd, listview_id);
-
 					break;
 				}
 
@@ -4651,14 +4636,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						_wfp_destroy2filters (&ids, __LINE__);
 
-						const UINT listview_id = _app_gettab_id (hwnd);
-
 						_app_refreshstatus (hwnd);
-
-						_app_listviewsort (hwnd, listview_id);
 						_app_profile_save ();
-
-						_r_listview_redraw (hwnd, listview_id);
 					}
 
 					break;
@@ -4685,14 +4664,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (_app_timer_remove (hwnd, &rules))
 					{
-						const UINT listview_id = _app_gettab_id (hwnd);
+						_app_listviewsort (hwnd, _app_gettab_id (hwnd));
 
 						_app_refreshstatus (hwnd);
-
-						_app_listviewsort (hwnd, listview_id);
 						_app_profile_save ();
-
-						_r_listview_redraw (hwnd, listview_id);
 					}
 
 					break;
