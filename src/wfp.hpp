@@ -17,6 +17,7 @@ bool _wfp_transact_commit (UINT line);
 bool _wfp_deletefilter (HANDLE engineHandle, const GUID* pfilter_id);
 DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 const count, UINT8 weight, const GUID* layer, const GUID* callout, FWP_ACTION_TYPE action, UINT32 flags, MARRAY* pmar = nullptr);
 
+void _wfp_clearfilter_ids ();
 void _wfp_destroyfilters ();
 bool _wfp_destroy2filters (const MARRAY* pmar, UINT line);
 

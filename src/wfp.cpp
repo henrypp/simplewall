@@ -418,11 +418,29 @@ void _wfp_installfilters ()
 		FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, config.pacl_default, nullptr);
 	}
 
-	_wfp_destroyfilters (); // destroy all installed filters first
+	_wfp_clearfilter_ids ();
 
 	_r_fastlock_acquireshared (&lock_transaction);
 
+	// dump all filters into array
+	MARRAY filter_all;
+	const bool filters_count = _wfp_dumpfilters (&GUID_WfpProvider, &filter_all);
+
+	// restore filters security
+	if (filters_count)
+	{
+		for (size_t i = 0; i < filter_all.size (); i++)
+			_wfp_setfiltersecurity (config.hengine, &filter_all.at (i), config.pusersid, config.pacl_default, __LINE__);
+	}
+
 	const bool is_intransact = _wfp_transact_start (__LINE__);
+
+	// destroy all filters
+	if (filters_count)
+	{
+		for (size_t i = 0; i < filter_all.size (); i++)
+			_wfp_deletefilter (config.hengine, &filter_all.at (i));
+	}
 
 	// apply internal rules
 	_wfp_create2filters (__LINE__, is_intransact);
@@ -465,8 +483,6 @@ void _wfp_installfilters ()
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
 		{
-			MARRAY filter_all;
-
 			if (_wfp_dumpfilters (&GUID_WfpProvider, &filter_all))
 			{
 				for (size_t i = 0; i < filter_all.size (); i++)
@@ -604,11 +620,8 @@ DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION * lpcond, UINT32 co
 	return result;
 }
 
-void _wfp_destroyfilters ()
+void _wfp_clearfilter_ids ()
 {
-	if (!config.hengine)
-		return;
-
 	_r_fastlock_acquireexclusive (&lock_access);
 
 	// clear common filters
@@ -634,6 +647,14 @@ void _wfp_destroyfilters ()
 	}
 
 	_r_fastlock_releaseexclusive (&lock_access);
+}
+
+void _wfp_destroyfilters ()
+{
+	if (!config.hengine)
+		return;
+
+	_wfp_clearfilter_ids ();
 
 	// destroy all filters
 	MARRAY filter_all;
@@ -1526,6 +1547,8 @@ size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * pfilters)
 {
 	if (!config.hengine || !pprovider || !pfilters)
 		return 0;
+
+	pfilters->clear ();
 
 	UINT32 count = 0;
 	HANDLE henum = nullptr;
