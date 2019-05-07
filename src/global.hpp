@@ -30,7 +30,6 @@
 typedef std::vector<PITEM_APP> MFILTER_APPS;
 typedef std::vector<PITEM_RULE> MFILTER_RULES;
 typedef std::vector<HANDLE> MTHREADPOOL;
-typedef std::unordered_map<size_t, ITEM_APP> MAPPS_MAP;
 typedef std::unordered_map<size_t, LPWSTR> MCACHE_MAP;
 typedef std::unordered_map<size_t, EnumDataType> MCACHETYPES_MAP;
 
@@ -52,7 +51,7 @@ extern STATIC_DATA config;
 
 extern FWPM_SESSION session;
 
-extern MAPPS_MAP apps;
+extern std::unordered_map<size_t, ITEM_APP> apps;
 extern std::vector<PITEM_RULE> rules_arr;
 extern std::unordered_map<size_t, PITEM_RULE_CONFIG> rules_config;
 extern std::vector<PITEM_NETWORK> network_arr;
