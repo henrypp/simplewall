@@ -9,7 +9,7 @@ STATIC_DATA config;
 
 FWPM_SESSION session;
 
-MAPPS_MAP apps;
+std::unordered_map<size_t, ITEM_APP> apps;
 std::vector<PITEM_NETWORK> network_arr;
 std::unordered_map<size_t, PITEM_RULE_CONFIG> rules_config;
 std::vector<PITEM_RULE> rules_arr;
@@ -2687,11 +2687,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			DragFinish ((HDROP)wparam);
 
 			_app_profile_save ();
+			_app_refreshstatus (hwnd);
 
 			const PITEM_APP ptr_app = _app_getapplication (app_hash);
 
 			if (ptr_app)
-				_app_showitem (hwnd, _app_getlistview_id (ptr_app->type), app_hash);
+			{
+				const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+
+				_app_listviewsort (hwnd, app_listview_id);
+				_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
+			}
 
 			break;
 		}
@@ -2822,8 +2828,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_fastlock_acquireexclusive (&lock_access);
 
 							const size_t app_hash = lpnmlv->lParam;
-							PITEM_APP ptr_app = _app_getapplication (app_hash);
+							const PITEM_APP ptr_app = _app_getapplication (app_hash);
+
 							MFILTER_APPS rules;
+							MFILTER_APPS timer_apps;
 
 							if (ptr_app)
 							{
@@ -2840,7 +2848,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									_r_fastlock_releaseexclusive (&lock_notification);
 
 									if (!new_val && _app_istimeractive (ptr_app))
-										rules.push_back (ptr_app);
+										timer_apps.push_back (ptr_app);
 
 									rules.push_back (ptr_app);
 
@@ -2852,7 +2860,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (is_changed)
 							{
-								_app_timer_remove (hwnd, &rules);
+								_app_timer_remove (hwnd, &timer_apps);
 								_wfp_create3filters (&rules, __LINE__);
 							}
 						}
@@ -2956,8 +2964,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else if (lpnmlv->hdr.idFrom == IDC_NETWORK)
 					{
-						//command_id = IDM_OPENRULESEDITOR;
-						command_id = IDM_PROPERTIES;
+						command_id = IDM_OPENRULESEDITOR;
+						//command_id = IDM_PROPERTIES;
 					}
 
 					if (command_id)
@@ -3467,7 +3475,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_fastlock_acquireshared (&lock_access);
 
 					const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
-					const PITEM_APP ptr_app = _app_getapplication (app_hash);
+					PITEM_APP ptr_app = _app_getapplication (app_hash);
 
 					if (ptr_app)
 						rules.push_back (ptr_app);
@@ -4014,10 +4022,18 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						_r_fastlock_releaseexclusive (&lock_access);
 
-						_app_listviewsort (hwnd, IDC_APPS_PROFILE);
 						_app_profile_save ();
+						_app_refreshstatus (hwnd);
 
-						_app_showitem (hwnd, IDC_APPS_PROFILE, app_hash);
+						const PITEM_APP ptr_app = _app_getapplication (app_hash);
+
+						if (ptr_app)
+						{
+							const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+
+							_app_listviewsort (hwnd, app_listview_id);
+							_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
+						}
 					}
 
 					break;
@@ -4059,8 +4075,18 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							const size_t network_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
 							const PITEM_NETWORK ptr_network = network_arr.at (network_idx);
 
-							if (ptr_network)
+							if (ptr_network && ptr_network->hash && ptr_network->path)
+							{
 								app_hash = ptr_network->hash;
+
+								if (!_app_getapplication (app_hash))
+								{
+									_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+
+									_app_refreshstatus (hwnd);
+									_app_profile_save ();
+								}
+							}
 
 							_r_fastlock_releaseshared (&lock_network);
 						}
@@ -4327,7 +4353,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (ptr_network->hash && ptr_network->path)
 									{
 										if (!_app_getapplication (ptr_network->hash))
+										{
 											_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+
+											_app_refreshstatus (hwnd);
+											_app_profile_save ();
+										}
 
 										ptr_rule->apps[ptr_network->hash] = true;
 									}
@@ -4463,16 +4494,28 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
 						const PITEM_NETWORK ptr_network = network_arr.at (idx);
 
-						if (ptr_network && ptr_network->hash)
+						if (ptr_network && ptr_network->hash && ptr_network->path)
 						{
+							const size_t app_hash = ptr_network->hash;
+
+							if (!_app_getapplication (app_hash))
+							{
+								_r_fastlock_acquireexclusive (&lock_access);
+								_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+								_r_fastlock_releaseexclusive (&lock_access);
+
+								_app_refreshstatus (hwnd);
+								_app_profile_save ();
+							}
+
 							_r_fastlock_acquireshared (&lock_access);
 
-							const PITEM_APP ptr_app = _app_getapplication (ptr_network->hash);
+							const PITEM_APP ptr_app = _app_getapplication (app_hash);
 
 							if (ptr_app)
 							{
 								const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
-								_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, ptr_network->hash));
+								_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
 							}
 
 							_r_fastlock_releaseshared (&lock_access);
@@ -4511,11 +4554,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, i);
 								PITEM_APP ptr_app = _app_getapplication (app_hash);
 
-								_r_fastlock_acquireshared (&lock_network);
-								const bool is_haveconnections = _app_isapphaveconnection (app_hash);
-								_r_fastlock_releaseshared (&lock_network);
-
-								if (ptr_app && !is_haveconnections && !ptr_app->is_undeletable) // skip "undeletable" apps
+								if (ptr_app && !ptr_app->is_undeletable) // skip "undeletable" apps
 								{
 									ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
 
@@ -4574,45 +4613,39 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					bool is_deleted = false;
 
-					static const UINT listview_ids[] = {
-						IDC_APPS_PROFILE,
-						IDC_APPS_SERVICE,
-						IDC_APPS_PACKAGE,
-					};
-
 					MARRAY ids;
+					std::vector<size_t> apps_list;
 
-					for (size_t i = 0; i < _countof (listview_ids); i++)
+					_r_fastlock_acquireexclusive (&lock_access);
+
+					for (auto &p : apps)
 					{
-						const size_t count = _r_listview_getitemcount (hwnd, listview_ids[i]) - 1;
+						const size_t app_hash = p.first;
+						PITEM_APP ptr_app = &p.second;
 
-						for (size_t j = count; j != LAST_VALUE; j--)
+						if (ptr_app)
 						{
-							_r_fastlock_acquireexclusive (&lock_access);
-
-							const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_ids[i], j);
-							PITEM_APP ptr_app = _app_getapplication (app_hash);
-
-							_r_fastlock_acquireshared (&lock_network);
-							const bool is_haveconnections = _app_isapphaveconnection (app_hash);
-							_r_fastlock_releaseshared (&lock_network);
-
-							if (ptr_app)
+							if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || ((ptr_app->type != DataAppService && ptr_app->type != DataAppUWP) && !_app_isappused (ptr_app, app_hash))))
 							{
-								if (!ptr_app->is_undeletable && !is_haveconnections && (!_app_isappexists (ptr_app) || ((ptr_app->type != DataAppService && ptr_app->type != DataAppUWP) && !_app_isappused (ptr_app, app_hash))))
-								{
-									ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
+								const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+								const size_t item = _app_getposition (hwnd, app_listview_id, app_hash);
 
-									SendDlgItemMessage (hwnd, listview_ids[i], LVM_DELETEITEM, j, 0);
-									_app_freeapplication (app_hash);
+								ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
 
-									is_deleted = true;
-								}
+								if (item != LAST_VALUE)
+									SendDlgItemMessage (hwnd, app_listview_id, LVM_DELETEITEM, item, 0);
+
+								apps_list.push_back (app_hash);
+
+								is_deleted = true;
 							}
-
-							_r_fastlock_releaseexclusive (&lock_access);
 						}
 					}
+
+					for (size_t i = 0; i < apps_list.size (); i++)
+						_app_freeapplication (apps_list.at (i));
+
+					_r_fastlock_releaseexclusive (&lock_access);
 
 					if (is_deleted)
 					{
@@ -4642,8 +4675,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					for (auto &p : apps)
 					{
-						if (_app_istimeractive (&p.second))
-							rules.push_back (&p.second);
+						PITEM_APP ptr_app = &p.second;
+
+						if (_app_istimeractive (ptr_app))
+							rules.push_back (ptr_app);
 					}
 
 					_r_fastlock_releaseshared (&lock_access);
