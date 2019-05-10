@@ -1414,6 +1414,30 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM l
 
 	if (!result)
 	{
+		// timestamp sorting
+		if (column_id == 1 && (
+			listview_id == IDC_APPS_PROFILE ||
+			listview_id == IDC_APPS_SERVICE ||
+			listview_id == IDC_APPS_PACKAGE
+			))
+		{
+			const PITEM_APP ptr_app1 = _app_getapplication (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item1));
+			const PITEM_APP ptr_app2 = _app_getapplication (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item2));
+
+			if (ptr_app1 && ptr_app2)
+			{
+				if (ptr_app1->timestamp < ptr_app2->timestamp)
+					result = -1;
+
+				else if (ptr_app1->timestamp > ptr_app2->timestamp)
+					result = 1;
+			}
+		}
+	}
+
+	if (!result)
+	{
+
 		const rstring str1 = _r_listview_getitemtext (hwnd, listview_id, (size_t)item1, column_id);
 		const rstring str2 = _r_listview_getitemtext (hwnd, listview_id, (size_t)item2, column_id);
 
