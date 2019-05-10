@@ -90,6 +90,7 @@ size_t _app_timer_remove (HWND hwnd, MFILTER_APPS *ptr_apps)
 		ptr_app->is_enabled = false;
 
 		const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
+
 		const UINT listview_id = _app_getlistview_id (ptr_app->type);
 		const size_t item = _app_getposition (hwnd, listview_id, app_hash);
 
@@ -156,7 +157,9 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 	const HWND hwnd = app.GetHWND ();
 
 	MFILTER_APPS rules;
-	rules.push_back (ptr_app);
+
+	if (ptr_app)
+		rules.push_back (ptr_app);
 
 	_r_fastlock_releaseshared (&lock_access);
 
@@ -167,6 +170,8 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 		const UINT listview_id = _app_gettab_id (hwnd);
 
 		_app_listviewsort (hwnd, listview_id);
+
+		_app_refreshstatus (hwnd);
 		_app_profile_save ();
 
 		_r_listview_redraw (hwnd, listview_id);
