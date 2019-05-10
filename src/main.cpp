@@ -1922,7 +1922,7 @@ void _app_tabs_init (HWND hwnd)
 	size_t count = 0;
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_PROFILE, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString(IDS_TAB_APPS, nullptr), LAST_VALUE, IDC_APPS_PROFILE);
+	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_APPS, nullptr), LAST_VALUE, IDC_APPS_PROFILE);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_SERVICE, hinst, nullptr);
 	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_SERVICES, nullptr), LAST_VALUE, IDC_APPS_SERVICE);
@@ -3385,10 +3385,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
+				const UINT listview_id = _app_gettab_id (hwnd);
+
+				if (!SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
+					break;
+
 				size_t item = LAST_VALUE;
 				BOOL is_remove = (BOOL)-1;
-
-				const UINT listview_id = _app_gettab_id (hwnd);
 
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
 				PITEM_RULE ptr_rule = rules_arr.at (rule_idx);
