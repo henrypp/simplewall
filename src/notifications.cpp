@@ -223,14 +223,11 @@ bool _app_notifycommand (HWND hwnd, UINT ctrl_id, size_t timer_idx)
 	_r_fastlock_releaseexclusive (&lock_access);
 
 	// create filters
-	if (!rules.empty ())
-	{
-		if (timer_idx != LAST_VALUE)
-			_app_timer_create (app.GetHWND (), &rules, timers.at (timer_idx));
+	if (timer_idx != LAST_VALUE)
+		_app_timer_create (app.GetHWND (), rules, timers.at (timer_idx));
 
-		else
-			_wfp_create3filters (&rules, __LINE__);
-	}
+	else
+		_wfp_create3filters (rules, __LINE__);
 
 	_app_refreshstatus (app.GetHWND ());
 	_app_profile_save ();
@@ -983,7 +980,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				MFILTER_RULES rules;
 				rules.push_back (ptr_rule);
 
-				_wfp_create4filters (&rules, __LINE__);
+				_wfp_create4filters (rules, __LINE__);
 
 				if (_app_gettab_id (app.GetHWND ()) == listview_id)
 				{

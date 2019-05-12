@@ -3,18 +3,18 @@
 
 #include "global.hpp"
 
-void _app_timer_create (HWND hwnd, MFILTER_APPS *ptr_apps, time_t seconds)
+void _app_timer_create (HWND hwnd, MFILTER_APPS& ptr_apps, time_t seconds)
 {
-	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
+	if (!config.hengine || ptr_apps.empty ())
 		return;
 
 	const time_t current_time = _r_unixtime_now ();
 
 	_r_fastlock_acquireexclusive (&lock_access);
 
-	for (size_t i = 0; i < ptr_apps->size (); i++)
+	for (size_t i = 0; i < ptr_apps.size (); i++)
 	{
-		PITEM_APP ptr_app = ptr_apps->at (i);
+		PITEM_APP ptr_app = ptr_apps.at (i);
 
 		if (!ptr_app)
 			continue;
@@ -55,9 +55,9 @@ void _app_timer_create (HWND hwnd, MFILTER_APPS *ptr_apps, time_t seconds)
 	_wfp_create3filters (ptr_apps, __LINE__);
 }
 
-size_t _app_timer_remove (HWND hwnd, MFILTER_APPS *ptr_apps)
+size_t _app_timer_remove (HWND hwnd, MFILTER_APPS& ptr_apps)
 {
-	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
+	if (!config.hengine ||ptr_apps.empty ())
 		return false;
 
 	const time_t current_time = _r_unixtime_now ();
@@ -65,45 +65,42 @@ size_t _app_timer_remove (HWND hwnd, MFILTER_APPS *ptr_apps)
 
 	MARRAY ids;
 
-	_r_fastlock_acquireexclusive (&lock_access);
-
-	for (size_t i = 0; i < ptr_apps->size (); i++)
+	for (size_t i = 0; i < ptr_apps.size (); i++)
 	{
-		PITEM_APP ptr_app = ptr_apps->at (i);
+		_r_fastlock_acquireexclusive (&lock_access);
 
-		if (!ptr_app || !_app_istimeractive (ptr_app))
-			continue;
+		PITEM_APP ptr_app = ptr_apps.at (i);
 
-		ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
-		ptr_app->mfarr.clear ();
-		ptr_app->is_haveerrors = false;
-
-		if (ptr_app->htimer)
+		if (ptr_app && _app_istimeractive (ptr_app))
 		{
-			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
-			ptr_app->htimer = nullptr;
-		}
+			ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
+			ptr_app->mfarr.clear ();
+			ptr_app->is_haveerrors = false;
 
-		if (ptr_app->timer)
-			ptr_app->timer = 0;
-
-		ptr_app->is_enabled = false;
-
-		const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
-
-		const UINT listview_id = _app_getlistview_id (ptr_app->type);
-		const size_t item = _app_getposition (hwnd, listview_id, app_hash);
-
-		if (item != LAST_VALUE)
-		{
-			if (!_app_isappexists (ptr_app) || ptr_app->is_temp)
+			if (ptr_app->htimer)
 			{
-				SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, item, 0);
-				_app_freeapplication (app_hash);
+				DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
+				ptr_app->htimer = nullptr;
 			}
-			else
+
+			if (ptr_app->timer)
+				ptr_app->timer = 0;
+
+			ptr_app->is_enabled = false;
+
+			const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
+
+			const UINT listview_id = _app_getlistview_id (ptr_app->type);
+			const size_t item = _app_getposition (hwnd, listview_id, app_hash);
+
+			if (item != LAST_VALUE)
 			{
-				if (listview_id)
+				if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || ptr_app->is_temp))
+				{
+					SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, item, 0);
+					_app_freeapplication (app_hash);
+				}
+				else
 				{
 					_r_fastlock_acquireshared (&lock_checkbox);
 
@@ -113,14 +110,14 @@ size_t _app_timer_remove (HWND hwnd, MFILTER_APPS *ptr_apps)
 					_r_fastlock_releaseshared (&lock_checkbox);
 				}
 			}
+
+			count += 1;
 		}
 
-		count += 1;
+		_r_fastlock_releaseexclusive (&lock_access);
 	}
 
-	_r_fastlock_releaseexclusive (&lock_access);
-
-	_wfp_destroy2filters (&ids, __LINE__);
+	_wfp_destroy2filters (ids, __LINE__);
 
 	return count;
 }
@@ -163,7 +160,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 
 	_r_fastlock_releaseshared (&lock_access);
 
-	const bool is_succcess = _app_timer_remove (hwnd, &rules);
+	const bool is_succcess = _app_timer_remove (hwnd, rules);
 
 	if (is_succcess)
 	{

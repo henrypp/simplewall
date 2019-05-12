@@ -457,7 +457,7 @@ void _wfp_installfilters ()
 				arr.push_back (ptr_app);
 		}
 
-		_wfp_create3filters (&arr, __LINE__, is_intransact);
+		_wfp_create3filters (arr, __LINE__, is_intransact);
 	}
 
 	// apply system/custom/blocklist rules
@@ -472,7 +472,7 @@ void _wfp_installfilters ()
 				arr.push_back (ptr_rule);
 		}
 
-		_wfp_create4filters (&arr, __LINE__, is_intransact);
+		_wfp_create4filters (arr, __LINE__, is_intransact);
 	}
 
 	if (is_intransact)
@@ -539,23 +539,23 @@ bool _wfp_transact_commit (UINT line)
 	return false;
 }
 
-bool _wfp_deletefilter (HANDLE engineHandle, const GUID * pfilter_id)
+bool _wfp_deletefilter (HANDLE engineHandle, const GUID * ptr_filter_id)
 {
-	if (!engineHandle || !pfilter_id || *pfilter_id == GUID_NULL)
+	if (!engineHandle || !ptr_filter_id || *ptr_filter_id == GUID_NULL)
 		return false;
 
-	const DWORD result = FwpmFilterDeleteByKey (config.hengine, pfilter_id);
+	const DWORD result = FwpmFilterDeleteByKey (config.hengine, ptr_filter_id);
 
 	if (result != ERROR_SUCCESS && result != FWP_E_FILTER_NOT_FOUND)
 	{
-		_app_logerror (L"FwpmFilterDeleteByKey", result, _r_str_fromguid (*pfilter_id).GetString (), false);
+		_app_logerror (L"FwpmFilterDeleteByKey", result, _r_str_fromguid (*ptr_filter_id).GetString (), false);
 		return false;
 	}
 
 	return true;
 }
 
-DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION * lpcond, UINT32 const count, UINT8 weight, const GUID * layer, const GUID * callout, FWP_ACTION_TYPE action, UINT32 flags, MARRAY * pmar)
+DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION * lpcond, UINT32 const count, UINT8 weight, const GUID * layer, const GUID * callout, FWP_ACTION_TYPE action, UINT32 flags, MARRAY * ptr_filters)
 {
 	FWPM_FILTER filter = {0};
 
@@ -609,8 +609,8 @@ DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION * lpcond, UINT32 co
 
 	if (result == ERROR_SUCCESS)
 	{
-		if (pmar)
-			pmar->push_back (filter.filterKey);
+		if (ptr_filters)
+			ptr_filters->push_back (filter.filterKey);
 	}
 	else
 	{
@@ -660,25 +660,27 @@ void _wfp_destroyfilters ()
 	MARRAY filter_all;
 
 	if (_wfp_dumpfilters (&GUID_WfpProvider, &filter_all))
-		_wfp_destroy2filters (&filter_all, __LINE__);
+		_wfp_destroy2filters (filter_all, __LINE__);
 }
 
-bool _wfp_destroy2filters (const MARRAY * pmar, UINT line)
+bool _wfp_destroy2filters (MARRAY& ptr_filters, UINT line)
 {
-	if (!config.hengine || !pmar || pmar->empty ())
+	if (!config.hengine || ptr_filters.empty ())
 		return false;
 
 	const bool is_enabled = _app_initinterfacestate ();
 
 	_r_fastlock_acquireshared (&lock_transaction);
 
-	for (size_t i = 0; i < pmar->size (); i++)
-		_wfp_setfiltersecurity (config.hengine, &pmar->at (i), config.pusersid, config.pacl_default, line);
+	for (size_t i = 0; i < ptr_filters.size (); i++)
+		_wfp_setfiltersecurity (config.hengine, &ptr_filters.at (i), config.pusersid, config.pacl_default, line);
 
 	const bool is_intransact = _wfp_transact_start (line);
 
-	for (size_t i = 0; i < pmar->size (); i++)
-		_wfp_deletefilter (config.hengine, &pmar->at (i));
+	for (size_t i = 0; i < ptr_filters.size (); i++)
+		_wfp_deletefilter (config.hengine, &ptr_filters.at (i));
+
+	ptr_filters.clear ();
 
 	if (is_intransact)
 		_wfp_transact_commit (line);
@@ -1019,9 +1021,9 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 	return true;
 }
 
-bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransact)
+bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransact)
 {
-	if (!config.hengine || !ptr_rules || ptr_rules->empty ())
+	if (!config.hengine || ptr_rules.empty ())
 		return false;
 
 	const bool is_enabled = _app_initinterfacestate ();
@@ -1033,11 +1035,11 @@ bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransa
 	{
 		MARRAY ids;
 
-		for (size_t i = 0; i < ptr_rules->size (); i++)
+		for (size_t i = 0; i < ptr_rules.size (); i++)
 		{
 			_r_fastlock_acquireshared (&lock_access);
 
-			const PITEM_RULE ptr_rule = ptr_rules->at (i);
+			const PITEM_RULE ptr_rule = ptr_rules.at (i);
 
 			if (ptr_rule)
 				ids.insert (ids.end (), ptr_rule->mfarr.begin (), ptr_rule->mfarr.end ());
@@ -1045,17 +1047,17 @@ bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransa
 			_r_fastlock_releaseshared (&lock_access);
 		}
 
-		_wfp_destroy2filters (&ids, line);
+		_wfp_destroy2filters (ids, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
 	}
 
-	for (size_t i = 0; i < ptr_rules->size (); i++)
+	for (size_t i = 0; i < ptr_rules.size (); i++)
 	{
 		_r_fastlock_acquireexclusive (&lock_access);
 
-		PITEM_RULE ptr_rule = ptr_rules->at (i);
+		PITEM_RULE ptr_rule = ptr_rules.at (i);
 
 		if (ptr_rule)
 		{
@@ -1125,11 +1127,11 @@ bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransa
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
 		{
-			for (size_t i = 0; i < ptr_rules->size (); i++)
+			for (size_t i = 0; i < ptr_rules.size (); i++)
 			{
 				_r_fastlock_acquireshared (&lock_access);
 
-				const PITEM_RULE ptr_rule = ptr_rules->at (i);
+				const PITEM_RULE ptr_rule = ptr_rules.at (i);
 
 				if (ptr_rule && ptr_rule->is_enabled)
 				{
@@ -1149,9 +1151,9 @@ bool _wfp_create4filters (MFILTER_RULES * ptr_rules, UINT line, bool is_intransa
 	return true;
 }
 
-bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact)
+bool _wfp_create3filters (MFILTER_APPS & ptr_apps, UINT line, bool is_intransact)
 {
-	if (!config.hengine || !ptr_apps || ptr_apps->empty ())
+	if (!config.hengine || ptr_apps.empty ())
 		return false;
 
 	const bool is_enabled = _app_initinterfacestate ();
@@ -1165,11 +1167,11 @@ bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact
 	{
 		MARRAY ids;
 
-		for (size_t i = 0; i < ptr_apps->size (); i++)
+		for (size_t i = 0; i < ptr_apps.size (); i++)
 		{
 			_r_fastlock_acquireshared (&lock_access);
 
-			const PITEM_APP ptr_app = ptr_apps->at (i);
+			const PITEM_APP ptr_app = ptr_apps.at (i);
 
 			if (ptr_app)
 				ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
@@ -1177,17 +1179,17 @@ bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact
 			_r_fastlock_releaseshared (&lock_access);
 		}
 
-		_wfp_destroy2filters (&ids, line);
+		_wfp_destroy2filters (ids, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
 	}
 
-	for (size_t i = 0; i < ptr_apps->size (); i++)
+	for (size_t i = 0; i < ptr_apps.size (); i++)
 	{
 		_r_fastlock_acquireexclusive (&lock_access);
 
-		PITEM_APP ptr_app = ptr_apps->at (i);
+		PITEM_APP ptr_app = ptr_apps.at (i);
 
 		if (ptr_app)
 		{
@@ -1212,11 +1214,11 @@ bool _wfp_create3filters (MFILTER_APPS * ptr_apps, UINT line, bool is_intransact
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
 		{
-			for (size_t i = 0; i < ptr_apps->size (); i++)
+			for (size_t i = 0; i < ptr_apps.size (); i++)
 			{
 				_r_fastlock_acquireshared (&lock_access);
 
-				const PITEM_APP ptr_app = ptr_apps->at (i);
+				const PITEM_APP ptr_app = ptr_apps.at (i);
 
 				if (ptr_app)
 				{
@@ -1248,7 +1250,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 
 	if (!is_intransact)
 	{
-		_wfp_destroy2filters (&filter_ids, line);
+		_wfp_destroy2filters (filter_ids, line);
 		filter_ids.clear ();
 
 		_r_fastlock_acquireshared (&lock_transaction);
@@ -1543,12 +1545,12 @@ void _wfp_setfiltersecurity (HANDLE engineHandle, const GUID * pfilter_id, const
 	}
 }
 
-size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * pfilters)
+size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * ptr_filters)
 {
-	if (!config.hengine || !pprovider || !pfilters)
+	if (!config.hengine || !pprovider || !ptr_filters)
 		return 0;
 
-	pfilters->clear ();
+	ptr_filters->clear ();
 
 	UINT32 count = 0;
 	HANDLE henum = nullptr;
@@ -1577,7 +1579,7 @@ size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * pfilters)
 				for (UINT32 i = 0; i < count; i++)
 				{
 					if (matchingFwpFilter[i] && matchingFwpFilter[i]->providerKey && memcmp (matchingFwpFilter[i]->providerKey, pprovider, sizeof (GUID)) == 0)
-						pfilters->push_back (matchingFwpFilter[i]->filterKey);
+						ptr_filters->push_back (matchingFwpFilter[i]->filterKey);
 				}
 
 				FwpmFreeMemory ((void **)& matchingFwpFilter);

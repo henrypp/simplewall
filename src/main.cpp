@@ -1103,7 +1103,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						MFILTER_RULES rules;
 						rules.push_back (ptr_rule);
 
-						_wfp_create4filters (&rules, __LINE__);
+						_wfp_create4filters (rules, __LINE__);
 					}
 
 					EndDialog (hwnd, 1);
@@ -2873,8 +2873,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (is_changed)
 							{
-								_app_timer_remove (hwnd, &timer_apps);
-								_wfp_create3filters (&rules, __LINE__);
+								_app_timer_remove (hwnd, timer_apps);
+								_wfp_create3filters (rules, __LINE__);
 							}
 						}
 						else if (
@@ -2909,7 +2909,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_fastlock_releaseexclusive (&lock_access);
 
 							if (is_changed)
-								_wfp_create4filters (&rules, __LINE__);
+								_wfp_create4filters (rules, __LINE__);
 						}
 
 						if (is_changed)
@@ -3463,7 +3463,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					MFILTER_RULES rules;
 					rules.push_back (ptr_rule);
 
-					_wfp_create4filters (&rules, __LINE__);
+					_wfp_create4filters (rules, __LINE__);
 				}
 
 				_app_listviewsort (hwnd, listview_id);
@@ -3497,7 +3497,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_fastlock_releaseshared (&lock_access);
 				}
 
-				_app_timer_create (hwnd, &rules, timers.at (timer_idx));
+				_app_timer_create (hwnd, rules, timers.at (timer_idx));
 
 				_app_listviewsort (hwnd, listview_id);
 
@@ -4147,7 +4147,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_fastlock_releaseshared (&lock_access);
 
 					if (ctrl_id == IDM_DISABLETIMER)
-						_app_timer_remove (hwnd, &rules);
+						_app_timer_remove (hwnd, rules);
 
 					if (
 						ctrl_id == IDM_DISABLETIMER ||
@@ -4245,7 +4245,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 
 						if (is_changed)
-							_wfp_create3filters (&rules, __LINE__);
+							_wfp_create3filters (rules, __LINE__);
 					}
 					else if (
 						listview_id == IDC_RULES_BLOCKLIST ||
@@ -4283,12 +4283,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 
 						if (is_changed)
-							_wfp_create4filters (&rules, __LINE__);
+							_wfp_create4filters (rules, __LINE__);
 					}
 
 					if (is_changed)
 					{
-						_app_timer_remove (hwnd, &timer_apps);
+						_app_timer_remove (hwnd, timer_apps);
 
 						_app_listviewsort (hwnd, listview_id);
 
@@ -4608,7 +4608,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					_wfp_destroy2filters (&ids, __LINE__);
+					_wfp_destroy2filters (ids, __LINE__);
 
 					_app_refreshstatus (hwnd);
 					_app_profile_save ();
@@ -4656,7 +4656,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (is_deleted)
 					{
-						_wfp_destroy2filters (&ids, __LINE__);
+						_wfp_destroy2filters (ids, __LINE__);
 
 						_app_refreshstatus (hwnd);
 						_app_profile_save ();
@@ -4684,7 +4684,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_releaseshared (&lock_access);
 
-					if (_app_timer_remove (hwnd, &rules))
+					if (_app_timer_remove (hwnd, rules))
 					{
 						_app_listviewsort (hwnd, _app_gettab_id (hwnd));
 
