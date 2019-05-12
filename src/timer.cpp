@@ -153,7 +153,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 	_r_fastlock_acquireshared (&lock_access);
 
 	const size_t app_hash = (size_t)lparam;
-	const PITEM_APP ptr_app = _app_getapplication (app_hash);
+	PITEM_APP ptr_app = _app_getapplication (app_hash);
 	const HWND hwnd = app.GetHWND ();
 
 	MFILTER_APPS rules;
