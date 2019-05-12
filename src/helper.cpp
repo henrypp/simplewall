@@ -1415,11 +1415,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM l
 	if (!result)
 	{
 		// timestamp sorting
-		if (column_id == 1 && (
-			listview_id == IDC_APPS_PROFILE ||
-			listview_id == IDC_APPS_SERVICE ||
-			listview_id == IDC_APPS_PACKAGE
-			))
+		if (column_id == 1 && (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_UWP))
 		{
 			const PITEM_APP ptr_app1 = _app_getapplication (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item1));
 			const PITEM_APP ptr_app2 = _app_getapplication (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item2));
@@ -1556,7 +1552,7 @@ void _app_refreshstatus (HWND hwnd)
 		if (
 			listview_id == IDC_APPS_PROFILE ||
 			listview_id == IDC_APPS_SERVICE ||
-			listview_id == IDC_APPS_PACKAGE
+			listview_id == IDC_APPS_UWP
 			)
 		{
 			for (size_t i = 0; i < total_count; i++)
@@ -2162,7 +2158,7 @@ UINT _app_getlistview_id (EnumDataType type)
 		return IDC_APPS_SERVICE;
 
 	else if (type == DataAppUWP)
-		return IDC_APPS_PACKAGE;
+		return IDC_APPS_UWP;
 
 	else if (type == DataAppRegular || type == DataAppDevice || type == DataAppNetwork || type == DataAppPico)
 		return IDC_APPS_PROFILE;
