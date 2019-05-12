@@ -49,15 +49,15 @@ EXTERN_C const IID IID_IImageList2;
 
 const UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
 
-void _app_listviewresize (HWND hwnd, UINT listview_id)
+void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 {
-	if (!app.ConfigGet (L"AutoSizeColumns", true).AsBool () || !listview_id)
+	if (!listview_id || (!is_forced && !app.ConfigGet (L"AutoSizeColumns", true).AsBool ()))
 		return;
 
 	RECT rect = {0};
 	GetClientRect (GetDlgItem (hwnd, listview_id), &rect);
 
-	const INT total_width = _R_RECT_WIDTH (&rect);
+	const INT total_width = is_forced ? _R_RECT_WIDTH (&rect) - GetSystemMetrics (SM_CXVSCROLL) : _R_RECT_WIDTH (&rect);
 	static const INT caption_width = GetSystemMetrics (SM_CYSMCAPTION);
 
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
@@ -130,7 +130,7 @@ void _app_listviewresize (HWND hwnd, UINT listview_id)
 
 void _app_listviewsetview (HWND hwnd, UINT listview_id)
 {
-	const bool is_mainview = (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_PACKAGE);
+	const bool is_mainview = (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_UWP);
 	const bool is_tableview = !is_mainview || app.ConfigGet (L"IsTableView", true).AsBool ();
 
 	INT icons_size = SHIL_SYSSMALL;
@@ -551,7 +551,7 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_LV ||
 				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_PROFILE ||
 				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_SERVICE ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_PACKAGE
+				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_UWP
 				)
 			{
 				const size_t app_hash = lpnmlv->nmcd.lItemlParam;
@@ -1222,7 +1222,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					_r_listview_deleteallitems (hwnd, IDC_COLORS);
 					_r_listview_deleteallcolumns (hwnd, IDC_COLORS);
 
-					_r_listview_addcolumn (hwnd, IDC_COLORS, 0, L"", -95, LVCFMT_LEFT);
+					_r_listview_addcolumn (hwnd, IDC_COLORS, 0, app.LocaleString (IDS_NAME, nullptr), -95, LVCFMT_LEFT);
 
 					for (size_t i = 0; i < colors.size (); i++)
 					{
@@ -1880,7 +1880,7 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 
 	const INT rebar_height = (INT)SendDlgItemMessage (hwnd, IDC_REBAR, RB_GETBARHEIGHT, 0, 0);
 
-	HDWP hdefer = BeginDeferWindowPos (3);
+	HDWP hdefer = BeginDeferWindowPos (2);
 
 	_r_wnd_resize (&hdefer, config.hrebar, nullptr, 0, 0, width, rebar_height, 0);
 	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_TAB), nullptr, 0, rebar_height, width, height - rebar_height - statusbar_height, 0);
@@ -1888,24 +1888,27 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 	{
 		const UINT listview_id = _app_gettab_id (hwnd);
 
-		RECT tab_rc1 = {0};
-		RECT tab_rc2 = {0};
+		if (listview_id)
+		{
+			RECT tab_rc1 = {0};
+			RECT tab_rc2 = {0};
 
-		GetWindowRect (GetDlgItem (hwnd, IDC_TAB), &tab_rc1);
-		MapWindowPoints (nullptr, hwnd, (LPPOINT)& tab_rc1, 2);
+			GetWindowRect (GetDlgItem (hwnd, IDC_TAB), &tab_rc1);
+			MapWindowPoints (nullptr, hwnd, (LPPOINT)& tab_rc1, 2);
 
-		tab_rc2.right = width;
-		tab_rc2.bottom = height - rebar_height - statusbar_height;
+			tab_rc2.right = width;
+			tab_rc2.bottom = height - rebar_height - statusbar_height;
 
-		tab_rc2.left += tab_rc1.left;
-		tab_rc2.top += tab_rc1.top;
+			tab_rc2.left += tab_rc1.left;
+			tab_rc2.top += tab_rc1.top;
 
-		tab_rc2.right += tab_rc1.left;
-		tab_rc2.bottom += tab_rc1.top;
+			tab_rc2.right += tab_rc1.left;
+			tab_rc2.bottom += tab_rc1.top;
 
-		TabCtrl_AdjustRect (GetDlgItem (hwnd, IDC_TAB), 0, &tab_rc2);
+			TabCtrl_AdjustRect (GetDlgItem (hwnd, IDC_TAB), 0, &tab_rc2);
 
-		_r_wnd_resize (&hdefer, GetDlgItem (hwnd, listview_id), nullptr, tab_rc2.left, tab_rc2.top, _R_RECT_WIDTH (&tab_rc2), _R_RECT_HEIGHT (&tab_rc2), 0);
+			_r_wnd_resize (&hdefer, GetDlgItem (hwnd, listview_id), nullptr, tab_rc2.left, tab_rc2.top, _R_RECT_WIDTH (&tab_rc2), _R_RECT_HEIGHT (&tab_rc2), 0);
+		}
 	}
 
 	EndDeferWindowPos (hdefer);
@@ -1919,42 +1922,49 @@ void _app_tabs_init (HWND hwnd)
 {
 	const HINSTANCE hinst = app.GetHINSTANCE ();
 	static const UINT listview_style = WS_CHILD | WS_TABSTOP | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SHAREIMAGELISTS;
-	size_t count = 0;
+	size_t tabs_count = 0;
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_PROFILE, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_APPS, nullptr), LAST_VALUE, IDC_APPS_PROFILE);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_APPS, nullptr), LAST_VALUE, IDC_APPS_PROFILE);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_SERVICE, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_SERVICES, nullptr), LAST_VALUE, IDC_APPS_SERVICE);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_SERVICES, nullptr), LAST_VALUE, IDC_APPS_SERVICE);
 
 	// uwp apps (win8+)
 	if (_r_sys_validversion (6, 2))
 	{
-		CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_PACKAGE, hinst, nullptr);
-		_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_PACKAGES, nullptr), LAST_VALUE, IDC_APPS_PACKAGE);
+		CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_UWP, hinst, nullptr);
+		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_PACKAGES, nullptr), LAST_VALUE, IDC_APPS_UWP);
 	}
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_BLOCKLIST, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TRAY_BLOCKLIST_RULES, nullptr), LAST_VALUE, IDC_RULES_BLOCKLIST);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_BLOCKLIST_RULES, nullptr), LAST_VALUE, IDC_RULES_BLOCKLIST);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_SYSTEM, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), LAST_VALUE, IDC_RULES_SYSTEM);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), LAST_VALUE, IDC_RULES_SYSTEM);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_CUSTOM, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TRAY_USER_RULES, nullptr), LAST_VALUE, IDC_RULES_CUSTOM);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_USER_RULES, nullptr), LAST_VALUE, IDC_RULES_CUSTOM);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_NETWORK, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, count++, app.LocaleString (IDS_TAB_NETWORK, nullptr), LAST_VALUE, IDC_NETWORK);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_NETWORK, nullptr), LAST_VALUE, IDC_NETWORK);
 
-	// configure listview
-	for (size_t i = 0; i < count; i++)
+	RECT rect = {0};
+	GetClientRect (hwnd, &rect);
+
+	for (size_t i = 0; i < tabs_count; i++)
 	{
 		const UINT listview_id = _app_gettab_id (hwnd, i);
+
+		if (!listview_id)
+			continue;
+
+		_r_wnd_resize (nullptr, GetDlgItem (hwnd, listview_id), nullptr, 0, 0, _R_RECT_WIDTH (&rect), _R_RECT_HEIGHT (&rect), SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOSENDCHANGING | SWP_NOCOPYBITS);
 
 		if (
 			listview_id == IDC_APPS_PROFILE ||
 			listview_id == IDC_APPS_SERVICE ||
-			listview_id == IDC_APPS_PACKAGE ||
+			listview_id == IDC_APPS_UWP ||
 			listview_id == IDC_RULES_BLOCKLIST ||
 			listview_id == IDC_RULES_SYSTEM ||
 			listview_id == IDC_RULES_CUSTOM
@@ -1962,18 +1972,14 @@ void _app_tabs_init (HWND hwnd)
 		{
 			_r_listview_setstyle (hwnd, listview_id, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES | LVS_EX_HEADERINALLVIEWS);
 
-			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE);
-			_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE);
-			_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE);
-
 			if (
 				listview_id == IDC_APPS_PROFILE ||
 				listview_id == IDC_APPS_SERVICE ||
-				listview_id == IDC_APPS_PACKAGE
+				listview_id == IDC_APPS_UWP
 				)
 			{
-				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -70, LVCFMT_LEFT);
-				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), -26, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), 0, LVCFMT_RIGHT);
 			}
 			else if (
 				listview_id == IDC_RULES_BLOCKLIST ||
@@ -1981,23 +1987,28 @@ void _app_tabs_init (HWND hwnd)
 				listview_id == IDC_RULES_CUSTOM
 				)
 			{
-				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -49, LVCFMT_LEFT);
-				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_DIRECTION, nullptr), -26, LVCFMT_RIGHT);
-				_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_PROTOCOL, nullptr), -20, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_DIRECTION, nullptr), 0, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_PROTOCOL, nullptr), 0, LVCFMT_RIGHT);
 			}
+
+			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE);
 		}
 		else if (listview_id == IDC_NETWORK)
 		{
 			_r_listview_setstyle (hwnd, listview_id, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_HEADERINALLVIEWS);
 
-			_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), -35, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), -25, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), -25, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), -15, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), -15, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), 0, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), 0, LVCFMT_RIGHT);
 		}
 
 		_app_listviewsetfont (hwnd, listview_id, false);
+		_app_listviewresize (hwnd, listview_id, true);
 
 		BringWindowToTop (GetDlgItem (hwnd, listview_id)); // HACK!!!
 	}
@@ -2190,7 +2201,7 @@ void _app_initialize ()
 		timers.clear ();
 
 #if defined(_APP_BETA) || defined(_APP_BETA_RC)
-		timers.push_back (_R_SECONDSCLOCK_MIN (1));
+		timers.push_back (_R_SECONDSCLOCK_MIN (2));
 #endif // _APP_BETA || _APP_BETA_RC
 
 		timers.push_back (_R_SECONDSCLOCK_MIN (10));
@@ -2355,6 +2366,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 			}
 
+			// restore window size and position (required!)
+			app.RestoreWindowPosition (hwnd);
+
 			// initialize tabs
 			_app_tabs_init (hwnd);
 
@@ -2508,7 +2522,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				else if (listview_id == IDC_APPS_SERVICE)
 					locale_id = IDS_TAB_SERVICES;
 
-				else if (listview_id == IDC_APPS_PACKAGE)
+				else if (listview_id == IDC_APPS_UWP)
 					locale_id = IDS_TAB_PACKAGES;
 
 				else if (listview_id == IDC_RULES_BLOCKLIST)
@@ -2535,7 +2549,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				if (
 					listview_id == IDC_APPS_PROFILE ||
 					listview_id == IDC_APPS_SERVICE ||
-					listview_id == IDC_APPS_PACKAGE
+					listview_id == IDC_APPS_UWP
 					)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
@@ -2821,13 +2835,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (
 							listview_id == IDC_APPS_PROFILE ||
 							listview_id == IDC_APPS_SERVICE ||
-							listview_id == IDC_APPS_PACKAGE
+							listview_id == IDC_APPS_UWP
 							)
 						{
 							_r_fastlock_acquireexclusive (&lock_access);
 
 							const size_t app_hash = lpnmlv->lParam;
-							const PITEM_APP ptr_app = _app_getapplication (app_hash);
+							PITEM_APP ptr_app = _app_getapplication (app_hash);
 
 							MFILTER_APPS rules;
 							MFILTER_APPS timer_apps;
@@ -2946,7 +2960,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					else if (
 						lpnmlv->hdr.idFrom == IDC_APPS_PROFILE ||
 						lpnmlv->hdr.idFrom == IDC_APPS_SERVICE ||
-						lpnmlv->hdr.idFrom == IDC_APPS_PACKAGE
+						lpnmlv->hdr.idFrom == IDC_APPS_UWP
 						)
 					{
 						command_id = IDM_EXPLORE;
@@ -2994,7 +3008,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			UINT menu_id;
 
-			if (ctrl_id == IDC_APPS_PROFILE || ctrl_id == IDC_APPS_SERVICE || ctrl_id == IDC_APPS_PACKAGE)
+			if (ctrl_id == IDC_APPS_PROFILE || ctrl_id == IDC_APPS_SERVICE || ctrl_id == IDC_APPS_UWP)
 				menu_id = IDM_APPS;
 
 			else if (ctrl_id == IDC_RULES_BLOCKLIST || ctrl_id == IDC_RULES_SYSTEM || ctrl_id == IDC_RULES_CUSTOM)
@@ -4048,7 +4062,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (
 						listview_id != IDC_APPS_PROFILE &&
 						listview_id != IDC_APPS_SERVICE &&
-						listview_id != IDC_APPS_PACKAGE &&
+						listview_id != IDC_APPS_UWP &&
 						listview_id != IDC_NETWORK
 						)
 					{
@@ -4191,7 +4205,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (
 						listview_id == IDC_APPS_PROFILE ||
 						listview_id == IDC_APPS_SERVICE ||
-						listview_id == IDC_APPS_PACKAGE
+						listview_id == IDC_APPS_UWP
 						)
 					{
 						MFILTER_APPS rules;
@@ -4307,7 +4321,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (
 							listview_id == IDC_APPS_PROFILE ||
 							listview_id == IDC_APPS_SERVICE ||
-							listview_id == IDC_APPS_PACKAGE
+							listview_id == IDC_APPS_UWP
 							)
 						{
 							size_t item = LAST_VALUE;
@@ -4432,7 +4446,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (
 						listview_id == IDC_APPS_PROFILE ||
 						listview_id == IDC_APPS_SERVICE ||
-						listview_id == IDC_APPS_PACKAGE
+						listview_id == IDC_APPS_UWP
 						)
 					{
 						_r_fastlock_acquireshared (&lock_access);
