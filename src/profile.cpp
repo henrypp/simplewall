@@ -355,7 +355,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 		listview_id == IDC_APPS_LV ||
 		listview_id == IDC_APPS_PROFILE ||
 		listview_id == IDC_APPS_SERVICE ||
-		listview_id == IDC_APPS_PACKAGE ||
+		listview_id == IDC_APPS_UWP ||
 		listview_id == IDC_NETWORK
 		)
 	{
@@ -603,7 +603,7 @@ bool _app_isapphaveconnection (size_t hash)
 	{
 		PITEM_NETWORK const ptr_network = network_arr.at (i);
 
-		if (ptr_network && ptr_network->hash == hash)
+		if (ptr_network && ptr_network->hash == hash && (ptr_network->state == MIB_TCP_STATE_ESTAB))
 			return true;
 	}
 
@@ -913,7 +913,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 		{
 			_r_listview_deleteallitems (hwnd, IDC_APPS_PROFILE);
 			_r_listview_deleteallitems (hwnd, IDC_APPS_SERVICE);
-			_r_listview_deleteallitems (hwnd, IDC_APPS_PACKAGE);
+			_r_listview_deleteallitems (hwnd, IDC_APPS_UWP);
 			_r_listview_deleteallitems (hwnd, IDC_RULES_BLOCKLIST);
 			_r_listview_deleteallitems (hwnd, IDC_RULES_SYSTEM);
 			_r_listview_deleteallitems (hwnd, IDC_RULES_CUSTOM);
