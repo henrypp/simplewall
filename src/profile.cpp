@@ -1069,6 +1069,10 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 			const PITEM_APP ptr_app = &p.second;
 
 			const UINT listview_id = _app_getlistview_id (ptr_app->type);
+
+			if (!listview_id)
+				continue;
+
 			const size_t item = _r_listview_getitemcount (hwnd, listview_id);
 
 			_r_fastlock_acquireshared (&lock_checkbox);
@@ -1088,6 +1092,10 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_apps, LPCWSTR path_rules)
 				continue;
 
 			const UINT listview_id = _app_getlistview_id (ptr_rule->type);
+
+			if (!listview_id)
+				continue;
+
 			const size_t item = _r_listview_getitemcount (hwnd, listview_id);
 
 			_r_fastlock_acquireshared (&lock_checkbox);
