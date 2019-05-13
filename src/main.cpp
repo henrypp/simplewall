@@ -249,7 +249,7 @@ COLORREF _app_getcolorvalue (size_t hash)
 		PITEM_COLOR ptr_clr = colors.at (i);
 
 		if (ptr_clr && ptr_clr->hash == hash)
-			return colors.at (i)->clr;
+			return colors.at (i)->new_clr ? colors.at (i)->new_clr : colors.at (i)->default_clr;
 	}
 
 	return 0;
@@ -404,37 +404,34 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 {
 	PITEM_COLOR ptr_clr = new ITEM_COLOR;
 
-	if (ptr_clr)
-	{
-		if (config_name)
-			_r_str_alloc (&ptr_clr->pcfg_name, _r_str_length (config_name), config_name);
+	if (config_name)
+		_r_str_alloc (&ptr_clr->pcfg_name, _r_str_length (config_name), config_name);
 
-		if (config_value)
-			_r_str_alloc (&ptr_clr->pcfg_value, _r_str_length (config_value), config_value);
+	if (config_value)
+	{
+		_r_str_alloc (&ptr_clr->pcfg_value, _r_str_length (config_value), config_value);
 
 		ptr_clr->hash = _r_str_hash (config_value);
-		ptr_clr->is_enabled = is_enabled;
-		ptr_clr->locale_id = locale_id;
-		ptr_clr->default_clr = default_clr;
-		ptr_clr->clr = app.ConfigGet (config_value, default_clr, L"colors").AsUlong ();
-
-		colors.push_back (ptr_clr);
+		ptr_clr->new_clr = app.ConfigGet (config_value, default_clr, L"colors").AsUlong ();
 	}
+
+	ptr_clr->is_enabled = is_enabled;
+	ptr_clr->locale_id = locale_id;
+	ptr_clr->default_clr = default_clr;
+
+	colors.push_back (ptr_clr);
 }
 
 void addprotocol (LPCWSTR name, UINT8 id)
 {
 	PITEM_PROTOCOL ptr_proto = new ITEM_PROTOCOL;
 
-	if (ptr_proto)
-	{
-		if (name)
-			_r_str_alloc (&ptr_proto->pname, _r_str_length (name), name);
+	if (name)
+		_r_str_alloc (&ptr_proto->pname, _r_str_length (name), name);
 
-		ptr_proto->id = id;
+	ptr_proto->id = id;
 
-		protocols.push_back (ptr_proto);
-	}
+	protocols.push_back (ptr_proto);
 }
 
 bool _app_installmessage (HWND hwnd, bool is_install)
@@ -558,17 +555,15 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 
 				if (app_hash)
 				{
-					_r_fastlock_acquireshared (&lock_access);
-					const COLORREF clr = (COLORREF)_app_getcolor (app_hash, (lpnmlv->nmcd.hdr.idFrom == IDC_APPS_LV));
-					_r_fastlock_releaseshared (&lock_access);
+					const COLORREF new_clr = (COLORREF)_app_getcolor (app_hash, (lpnmlv->nmcd.hdr.idFrom == IDC_APPS_LV));
 
-					if (clr)
+					if (new_clr)
 					{
-						lpnmlv->clrText = _r_dc_getcolorbrightness (clr);
-						lpnmlv->clrTextBk = clr;
+						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
+						lpnmlv->clrTextBk = new_clr;
 
 						if (is_tableview)
-							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, clr);
+							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
 
 						return CDRF_NEWFONT;
 					}
@@ -585,25 +580,21 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 
 				if (ptr_rule)
 				{
-					COLORREF clr = 0;
-
-					_r_fastlock_acquireshared (&lock_access);
+					COLORREF new_clr = 0;
 
 					if (ptr_rule->is_enabled && ptr_rule->is_haveerrors)
-						clr = _app_getcolorvalue (_r_str_hash (L"ColorInvalid"));
+						new_clr = _app_getcolorvalue (_r_str_hash (L"ColorInvalid"));
 
 					else if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
-						clr = _app_getcolorvalue (_r_str_hash (L"ColorSpecial"));
+						new_clr = _app_getcolorvalue (_r_str_hash (L"ColorSpecial"));
 
-					_r_fastlock_releaseshared (&lock_access);
-
-					if (clr)
+					if (new_clr)
 					{
-						lpnmlv->clrText = _r_dc_getcolorbrightness (clr);
-						lpnmlv->clrTextBk = clr;
+						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
+						lpnmlv->clrTextBk = new_clr;
 
 						if (is_tableview)
-							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, clr);
+							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
 
 						return CDRF_NEWFONT;
 					}
@@ -611,18 +602,22 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 			}
 			else if (lpnmlv->nmcd.hdr.idFrom == IDC_COLORS)
 			{
-				_r_fastlock_acquireshared (&lock_access);
-				const COLORREF clr = colors.at (lpnmlv->nmcd.lItemlParam)->clr;
-				_r_fastlock_releaseshared (&lock_access);
+				const PITEM_COLOR ptr_clr = colors.at (lpnmlv->nmcd.lItemlParam);
 
-				if (clr)
+				if (ptr_clr)
 				{
-					lpnmlv->clrText = _r_dc_getcolorbrightness (clr);
-					lpnmlv->clrTextBk = clr;
+					const COLORREF new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
 
-					_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
+					if (new_clr)
+					{
+						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
+						lpnmlv->clrTextBk = new_clr;
 
-					return CDRF_NEWFONT;
+						if (is_tableview)
+							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
+
+						return CDRF_NEWFONT;
+					}
 				}
 			}
 
@@ -1230,7 +1225,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						if (ptr_clr)
 						{
-							ptr_clr->clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr).AsUlong ();
+							ptr_clr->new_clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr, L"colors").AsUlong ();
 
 							_r_fastlock_acquireshared (&lock_checkbox);
 
@@ -1514,14 +1509,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					cc.Flags = CC_RGBINIT | CC_FULLOPEN;
 					cc.hwndOwner = hwnd;
 					cc.lpCustColors = cust;
-					cc.rgbResult = ptr_clr ? ptr_clr->clr : 0;
+					cc.rgbResult = ptr_clr ? ptr_clr->new_clr : 0;
 
 					if (ChooseColor (&cc))
 					{
 						if (ptr_clr)
 						{
-							ptr_clr->clr = cc.rgbResult;
-							app.ConfigSet (ptr_clr->pcfg_value, cc.rgbResult, L"colors");
+							ptr_clr->new_clr = cc.rgbResult;
+							app.ConfigSet (ptr_clr->pcfg_value, ptr_clr->new_clr, L"colors");
 						}
 
 						_r_listview_redraw (hwnd, IDC_COLORS);

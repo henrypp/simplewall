@@ -181,7 +181,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define LISTVIEW_COLOR_SYSTEM RGB(151, 196, 251)
 #define LISTVIEW_COLOR_SERVICE RGB (207, 189, 255)
 #define LISTVIEW_COLOR_PACKAGE RGB(134, 227, 227)
-#define LISTVIEW_COLOR_CONNECTION RGB(222, 255, 0)
+#define LISTVIEW_COLOR_CONNECTION RGB(255, 168, 242)
 
 // filter weights
 #define FILTER_WEIGHT_HIGHEST_IMPORTANT 0xF
@@ -538,7 +538,7 @@ typedef struct tagITEM_COLOR
 	UINT locale_id = 0;
 
 	COLORREF default_clr = 0;
-	COLORREF clr = 0;
+	COLORREF new_clr = 0;
 
 	bool is_enabled = false;
 } ITEM_COLOR, *PITEM_COLOR;
