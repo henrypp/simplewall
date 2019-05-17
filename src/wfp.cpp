@@ -142,8 +142,8 @@ bool _wfp_initialize (bool is_full)
 	{
 		if (config.pusersid)
 		{
-			FwpmEngineSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmNetEventsSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmEngineSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmNetEventsSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
 		}
 
 		if (config.pacl_engine)
@@ -278,8 +278,8 @@ bool _wfp_initialize (bool is_full)
 
 		if (config.pusersid)
 		{
-			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
 		}
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
@@ -353,8 +353,8 @@ void _wfp_uninitialize (bool is_full)
 		// set security information
 		if (config.pusersid)
 		{
-			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
 
 		}
 
@@ -408,8 +408,8 @@ void _wfp_installfilters ()
 	// set security information
 	if (config.pusersid)
 	{
-		FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
-		FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+		FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+		FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
 	}
 
 	if (config.pacl_default)
@@ -493,8 +493,8 @@ void _wfp_installfilters ()
 		// set security information
 		if (config.pusersid)
 		{
-			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID *)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
 		}
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
@@ -663,7 +663,7 @@ void _wfp_destroyfilters ()
 		_wfp_destroy2filters (filter_all, __LINE__);
 }
 
-bool _wfp_destroy2filters (MARRAY& ptr_filters, UINT line)
+bool _wfp_destroy2filters (MARRAY & ptr_filters, UINT line)
 {
 	if (!config.hengine || ptr_filters.empty ())
 		return false;
@@ -697,8 +697,8 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 	UINT32 count = 0;
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
 
-	FWP_BYTE_BLOB *bPath = nullptr;
-	FWP_BYTE_BLOB *bSid = nullptr;
+	FWP_BYTE_BLOB* bPath = nullptr;
+	FWP_BYTE_BLOB* bSid = nullptr;
 
 	FWP_V4_ADDR_AND_MASK addr4 = {0};
 	FWP_V6_ADDR_AND_MASK addr6 = {0};
@@ -731,7 +731,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_PACKAGE_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_SID;
-				fwfc[count].conditionValue.sid = (SID *)ptr_app->psid;
+				fwfc[count].conditionValue.sid = (SID*)ptr_app->psid;
 
 				count += 1;
 			}
@@ -1055,14 +1055,14 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 
 	for (size_t i = 0; i < ptr_rules.size (); i++)
 	{
-		_r_fastlock_acquireexclusive (&lock_access);
-
 		PITEM_RULE ptr_rule = ptr_rules.at (i);
 
 		if (ptr_rule)
 		{
-			ptr_rule->is_haveerrors = false;
-			ptr_rule->mfarr.clear ();
+			MARRAY mfarr;
+			bool is_haveerrors = false;
+
+			_r_fastlock_acquireshared (&lock_access);
 
 			if (ptr_rule->is_enabled)
 			{
@@ -1089,11 +1089,11 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 					// apply rules for services hosts
 					if (ptr_rule->is_forservices)
 					{
-						if (!_wfp_createrulefilter (ptr_rule->pname, config.ntoskrnl_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &ptr_rule->mfarr))
-							ptr_rule->is_haveerrors = true;
+						if (!_wfp_createrulefilter (ptr_rule->pname, config.ntoskrnl_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &mfarr))
+							is_haveerrors = true;
 
-						if (!_wfp_createrulefilter (ptr_rule->pname, config.svchost_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &ptr_rule->mfarr))
-							ptr_rule->is_haveerrors = true;
+						if (!_wfp_createrulefilter (ptr_rule->pname, config.svchost_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &mfarr))
+							is_haveerrors = true;
 					}
 
 					if (!ptr_rule->apps.empty ())
@@ -1103,20 +1103,29 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 							if (ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
 								continue;
 
-							if (!_wfp_createrulefilter (ptr_rule->pname, p.first, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &ptr_rule->mfarr))
-								ptr_rule->is_haveerrors = true;
+							if (!_wfp_createrulefilter (ptr_rule->pname, p.first, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &mfarr))
+								is_haveerrors = true;
 						}
 					}
 					else
 					{
-						if (!_wfp_createrulefilter (ptr_rule->pname, 0, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &ptr_rule->mfarr))
-							ptr_rule->is_haveerrors = true;
+						if (!_wfp_createrulefilter (ptr_rule->pname, 0, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &mfarr))
+							is_haveerrors = true;
 					}
 				}
 			}
-		}
 
-		_r_fastlock_releaseexclusive (&lock_access);
+			_r_fastlock_releaseshared (&lock_access);
+
+			_r_fastlock_acquireexclusive (&lock_access);
+
+			ptr_rule->is_haveerrors = is_haveerrors;
+
+			ptr_rule->mfarr.clear ();
+			ptr_rule->mfarr.insert (ptr_rule->mfarr.end (), mfarr.begin (), mfarr.end ());
+
+			_r_fastlock_releaseexclusive (&lock_access);
+		}
 	}
 
 	if (!is_intransact)
@@ -1187,23 +1196,32 @@ bool _wfp_create3filters (MFILTER_APPS & ptr_apps, UINT line, bool is_intransact
 
 	for (size_t i = 0; i < ptr_apps.size (); i++)
 	{
-		_r_fastlock_acquireexclusive (&lock_access);
-
 		PITEM_APP ptr_app = ptr_apps.at (i);
 
 		if (ptr_app)
 		{
-			ptr_app->is_haveerrors = false;
-			ptr_app->mfarr.clear ();
+			MARRAY mfarr;
+			bool is_haveerrors = false;
+
+			_r_fastlock_acquireshared (&lock_access);
 
 			if (ptr_app->is_enabled)
 			{
-				if (!_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &ptr_app->mfarr))
-					ptr_app->is_haveerrors = true;
+				if (!_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &mfarr))
+					is_haveerrors = true;
 			}
-		}
 
-		_r_fastlock_releaseexclusive (&lock_access);
+			_r_fastlock_releaseshared (&lock_access);
+
+			_r_fastlock_acquireexclusive (&lock_access);
+
+			ptr_app->is_haveerrors = is_haveerrors;
+
+			ptr_app->mfarr.clear ();
+			ptr_app->mfarr.insert (ptr_app->mfarr.end (), mfarr.begin (), mfarr.end ());
+
+			_r_fastlock_releaseexclusive (&lock_access);
+		}
 	}
 
 	if (!is_intransact)
@@ -1530,7 +1548,7 @@ void _wfp_setfiltersecurity (HANDLE engineHandle, const GUID * pfilter_id, const
 
 	if (psid)
 	{
-		const DWORD result = FwpmFilterSetSecurityInfoByKey (engineHandle, pfilter_id, OWNER_SECURITY_INFORMATION, (const SID *)psid, nullptr, nullptr, nullptr);
+		const DWORD result = FwpmFilterSetSecurityInfoByKey (engineHandle, pfilter_id, OWNER_SECURITY_INFORMATION, (const SID*)psid, nullptr, nullptr, nullptr);
 
 		if (result != ERROR_SUCCESS)
 			_app_logerror (L"FwpmFilterSetSecurityInfoByKey", result, _r_fmt (L"#%d", line), true);
@@ -1564,7 +1582,7 @@ size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * ptr_filters)
 	}
 	else
 	{
-		FWPM_FILTER **matchingFwpFilter = nullptr;
+		FWPM_FILTER** matchingFwpFilter = nullptr;
 
 		result = FwpmFilterEnum (config.hengine, henum, UINT32_MAX, &matchingFwpFilter, &count);
 
@@ -1582,7 +1600,7 @@ size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * ptr_filters)
 						ptr_filters->push_back (matchingFwpFilter[i]->filterKey);
 				}
 
-				FwpmFreeMemory ((void **)& matchingFwpFilter);
+				FwpmFreeMemory ((void**)& matchingFwpFilter);
 			}
 			else
 			{
@@ -1597,7 +1615,7 @@ size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * ptr_filters)
 	return count;
 }
 
-bool _mps_firewallapi (bool *pis_enabled, const bool *pis_enable)
+bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 {
 	if (!pis_enabled && !pis_enable)
 		return false;
@@ -1608,8 +1626,8 @@ bool _mps_firewallapi (bool *pis_enabled, const bool *pis_enable)
 
 	if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
 	{
-		INetFwPolicy2 *pNetFwPolicy2 = nullptr;
-		HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (void **)& pNetFwPolicy2);
+		INetFwPolicy2* pNetFwPolicy2 = nullptr;
+		HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (void**)& pNetFwPolicy2);
 
 		if (SUCCEEDED (hr) && pNetFwPolicy2)
 		{
@@ -1877,7 +1895,7 @@ void ByteBlobFree (FWP_BYTE_BLOB * *lpblob)
 {
 	if (lpblob && *lpblob)
 	{
-		FWP_BYTE_BLOB *blob = *lpblob;
+		FWP_BYTE_BLOB* blob = *lpblob;
 
 		if (blob)
 		{
