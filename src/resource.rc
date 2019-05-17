@@ -633,9 +633,9 @@ BEGIN
 	IDS_HIGHLIGHT_CONNECTION "Have network connections"
 	IDS_SHOWINLIST "Show in list"
 
-	IDS_BLOCKLIST_BLOCKTELEMETRY "Block M$ spying/telemetry servers"
-	IDS_BLOCKLIST_ALLOWUPDATE "Allow M$ update servers"
-	IDS_BLOCKLIST_ALLOWEXTRA "Allow M$ applications"
+	IDS_BLOCKLIST_BLOCKTELEMETRY "Block Microsoft spying/telemetry servers"
+	IDS_BLOCKLIST_ALLOWUPDATE "Allow Microsoft update servers"
+	IDS_BLOCKLIST_ALLOWEXTRA "Allow Microsoft online services"
 END
 
 //
