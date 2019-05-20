@@ -22,7 +22,7 @@
 #pragma comment(lib, "wintrust.lib")
 #pragma comment(lib, "windowscodecs.lib")
 
-// guid
+// guids
 extern "C" {
 	static const GUID GUID_WfpProvider =
 	{0xb0d553e2, 0xc6a0, 0x4a9a, {0xae, 0xb8, 0xc7, 0x52, 0x48, 0x3e, 0xd6, 0x2f}};
@@ -65,7 +65,8 @@ enum EnumDataType
 	DataRuleCustom,
 	DataTypePort,
 	DataTypeIp,
-	DataTypeHost
+	DataTypeHost,
+	DataRulesConfig
 };
 
 enum EnumXmlType
@@ -73,6 +74,8 @@ enum EnumXmlType
 	XmlApps = 0,
 	XmlRules = 1,
 	XmlRulesConfig = 2,
+	XmlProfileV3 = 3,
+	XmlProfileInternalV3 = 4,
 };
 
 INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -83,11 +86,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define LANG_MENU 6
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
+#define XML_PROFILE L"profile.xml"
+#define XML_PROFILE_INTERNAL L"profile_internal.xml"
+
 #define XML_APPS L"apps.xml"
-#define XML_BLOCKLIST L"blocklist.xml"
 #define XML_RULES_CONFIG L"rules_config.xml"
 #define XML_RULES_CUSTOM L"rules_custom.xml"
-#define XML_RULES_SYSTEM L"rules_system.xml"
 
 #define LOG_DIV L','
 #define LOG_PATH_EXT L"log"
@@ -201,9 +205,11 @@ typedef std::vector<GUID> MARRAY;
 
 struct STATIC_DATA
 {
+	WCHAR profile_path[MAX_PATH] = {0};
+	WCHAR profile_path_backup[MAX_PATH] = {0};
+	WCHAR profile_internal_path[MAX_PATH] = {0};
+
 	WCHAR apps_path[MAX_PATH] = {0};
-	WCHAR rules_blocklist_path[MAX_PATH] = {0};
-	WCHAR rules_system_path[MAX_PATH] = {0};
 	WCHAR rules_custom_path[MAX_PATH] = {0};
 	WCHAR rules_config_path[MAX_PATH] = {0};
 
@@ -224,6 +230,8 @@ struct STATIC_DATA
 	LPGUID psession = nullptr;
 
 	HIMAGELIST himg = nullptr;
+	HIMAGELIST himg2 = nullptr;
+
 	HANDLE hengine = nullptr;
 	HANDLE hlogfile = nullptr;
 	HANDLE hnetevent = nullptr;
@@ -237,8 +245,7 @@ struct STATIC_DATA
 	HWND hrebar = nullptr;
 	HWND hfind = nullptr;
 
-	time_t blocklist_timestamp = 0;
-	time_t rule_system_timestamp = 0;
+	time_t profile_internal_timestamp = 0;
 
 	size_t ntoskrnl_hash = 0;
 	size_t svchost_hash = 0;
@@ -279,11 +286,7 @@ typedef struct tagITEM_APP
 	LPWSTR description = nullptr;
 	LPWSTR signer = nullptr;
 
-	union
-	{
-		PSECURITY_DESCRIPTOR psd = nullptr; // service app
-		PSID psid; // store app (win8+)
-	};
+	PBYTE pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 
 	HANDLE htimer = nullptr;
 
@@ -488,7 +491,7 @@ typedef struct tagITEM_ADD
 		service_name = nullptr;
 		real_path = nullptr;
 
-		psid = nullptr;
+		pdata = nullptr;
 	}
 
 	~tagITEM_ADD ()
@@ -509,11 +512,7 @@ typedef struct tagITEM_ADD
 	LPWSTR sid = nullptr;
 	LPWSTR service_name = nullptr;
 
-	union
-	{
-		PSID psid = nullptr;
-		PSECURITY_DESCRIPTOR psd;
-	};
+	PVOID pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 } ITEM_ADD, *PITEM_ADD;
 
 typedef struct tagITEM_COLOR

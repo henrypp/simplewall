@@ -12,14 +12,14 @@ void _app_setinterfacestate (HWND hwnd);
 
 void _app_applycasestyle (LPWSTR buffer, size_t length);
 
-bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, LPWSTR *ptr_dest, bool is_appenddns);
+bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, LPWSTR* ptr_dest, bool is_appenddns, bool is_appendarpa = false);
 
 void _app_freearray (std::vector<PITEM_ADD>* ptr);
 void _app_freecache (MCACHE_MAP* ptr_map);
 void _app_freethreadpool (MTHREADPOOL* ptr_pool);
 void _app_freelogstack ();
-void _app_getappicon (ITEM_APP const *ptr_app, bool is_small, size_t* picon_id, HICON* picon);
-void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, LPWSTR* extracted_name);
+void _app_getappicon (ITEM_APP const* ptr_app, bool is_small, size_t* picon_id, HICON* picon);
+void _app_getdisplayname (size_t hash, ITEM_APP const* ptr_app, LPWSTR* extracted_name);
 bool _app_getfileicon (LPCWSTR path, bool is_small, size_t* picon_id, HICON* picon);
 rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path);
 bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR* psigner);
@@ -28,13 +28,13 @@ size_t _app_getposition (HWND hwnd, UINT listview_id, size_t idx);
 rstring _app_getprotoname (UINT8 proto);
 rstring _app_getstatename (DWORD state);
 
-void _app_generate_connections ();
+void _app_generate_connections (std::vector<PITEM_NETWORK>& ptr_arr);
 void _app_generate_packages ();
 void _app_generate_services ();
 
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash);
 
-bool _app_item_get (EnumDataType type, size_t hash, rstring* display_name, rstring* real_path, PSID* lpsid, PSECURITY_DESCRIPTOR* lpsd, rstring* /*description*/);
+bool _app_item_get (EnumDataType type, size_t hash, rstring* display_name, rstring* real_path, PBYTE* lpdata, rstring* /*description*/);
 
 INT CALLBACK _app_listviewcompare_callback (LPARAM lp1, LPARAM lp2, LPARAM lparam);
 void _app_listviewsort (HWND hwnd, UINT listview_id, INT subitem = -1, bool is_notifycode = false);
@@ -47,7 +47,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port);
 bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, USHORT* port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns, size_t dns_length);
 bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
 
-bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR buffer, DWORD length);
+bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR* pbuffer);
 void _app_resolvefilename (rstring& path);
 
 UINT _app_getlistview_id (EnumDataType type);
