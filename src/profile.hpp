@@ -23,20 +23,24 @@ void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_h
 void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule, bool include_apps);
 
 void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable);
+void _app_ruleblocklistset ();
+
 rstring _app_rulesexpand (PITEM_RULE const ptr_rule, bool is_forservices, LPCWSTR delimeter);
 
-bool _app_isapphaveconnection (size_t hash);
-bool _app_isapphaverule (size_t hash);
-bool _app_isappused (ITEM_APP const *ptr_app, size_t hash);
+bool _app_isapphaveconnection (size_t app_hash);
+bool _app_isapphaverule (size_t app_hash);
+bool _app_isappused (ITEM_APP const *ptr_app, size_t app_hash);
 bool _app_isappexists (ITEM_APP const *ptr_app);
 
+
+bool _app_isruleblocklist (LPCWSTR name);
 bool _app_isrulehost (LPCWSTR rule);
 bool _app_isruleip (LPCWSTR rule);
 bool _app_isruleport (LPCWSTR rule);
 
-bool _app_isrulepresent (size_t hash);
+//bool _app_isrulepresent (size_t hash);
 
-void _app_profile_loadrules (std::vector<PITEM_RULE> *ptr_rules, LPCWSTR path, LPCWSTR path_backup, bool is_internal, EnumDataType type, UINT8 weight, time_t *ptimestamp);
-
-void _app_profile_load (HWND hwnd, LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr);
-void _app_profile_save (LPCWSTR path_apps = nullptr, LPCWSTR path_rules = nullptr);
+bool _app_profile_load_check (LPCWSTR path, EnumXmlType type, bool is_strict);
+void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptimestamp);
+void _app_profile_load (HWND hwnd);
+void _app_profile_save ();
