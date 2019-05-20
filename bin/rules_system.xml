@@ -26,5 +26,4 @@
 	<item name="UPnP" rule="2869" protocol="6" apps="fdphost;upnphost" is_enabled="true" />
 	<item name="WS-Discovery" rule="3702" protocol="17" apps="fdphost;fdrespub" is_enabled="true" />
 	<item name="WS-Discovery [events]" rule="5357-5358" protocol="6" apps="fdphost" is_enabled="true" />
-	<item name="Windows Update" rule="80;443" dir="2" protocol="6" apps="wuauserv" />
 </root>
