@@ -102,6 +102,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 #define PATH_NTOSKRNL L"%systemroot%\\system32\\ntoskrnl.exe"
 #define PATH_SVCHOST L"%systemroot%\\system32\\svchost.exe"
+#define PATH_SHELL32 L"%systemroot%\\system32\\shell32.dll"
 #define PATH_WINSTORE L"%systemroot%\\system32\\wsreset.exe"
 
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
@@ -255,7 +256,8 @@ struct STATIC_DATA
 	size_t wd_length = 0;
 
 	size_t icon_id = 0;
-	size_t icon_package_id = 0;
+	size_t icon_service_id = 0;
+	size_t icon_uwp_id = 0;
 
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
