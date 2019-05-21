@@ -636,6 +636,8 @@ BEGIN
 	IDS_BLOCKLIST_BLOCKTELEMETRY "Block M$ spying/telemetry servers"
 	IDS_BLOCKLIST_ALLOWUPDATE "Allow M$ update servers"
 	IDS_BLOCKLIST_ALLOWEXTRA "Allow M$ applications"
+
+	IDS_PORT "Port"
 END
 
 //
