@@ -1,5 +1,33 @@
 <?xml version="1.0"?>
 <root timestamp="1557992019" type="4">
+	<rules_system>
+		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+		<item name="DNS" rule="53" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+		<item name="FTP" rule="20-21;49152-65534" protocol="6" is_custom="true" />
+		<item name="HTTP" rule="80;443" protocol="6" is_custom="true" />
+		<item name="ICMPv4" dir="2" protocol="1" />
+		<item name="ICMPv6" dir="2" protocol="58" />
+		<item name="IMAP/POP3/SMTP" rule="25;110;143;465;993;995;2525" protocol="6" is_custom="true" />
+		<item name="IGMP" rule="224.0.0.0/4" protocol="2" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+		<item name="IKEv2/IPSEC/L2TP" rule="500;1701;4500" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+		<item name="LLNMR" rule="224.0.0.252:5355;ff02::1:3:5355" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+		<item name="mDNS" rule="224.0.0.251:5353;ff02::fb:5353" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+		<item name="NetBIOS [inbound]" rule_local="137-139" dir="2" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+		<item name="NetBIOS [outbound]" rule="137-139" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+		<item name="NTP" rule="123" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+		<item name="RDP [inbound]" rule_local="3389" dir="1" apps="termservice" />
+		<item name="RDP [outbound]" rule="3389" apps="termservice" />
+		<item name="SMB [inbound]" rule_local="445" dir="1" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+		<item name="SMB [outbound]" rule="445" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+		<item name="SNMP" rule="161-162" dir="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
+		<item name="SSDP [inbound]" rule_local="1900" dir="1" protocol="17" apps="ssdpsrv" is_enabled="true" />
+		<item name="SSDP [outbound]" rule="1900" protocol="17" apps="ssdpsrv" is_enabled="true" />
+		<item name="SSH (SFTP)" rule="22" protocol="6" is_custom="true" />
+		<item name="Telnet" rule="23" protocol="6" is_custom="true" />
+		<item name="UPnP" rule="2869" protocol="6" apps="fdphost;upnphost" is_enabled="true" />
+		<item name="WS-Discovery" rule="3702" protocol="17" apps="fdphost;fdrespub" is_enabled="true" />
+		<item name="WS-Discovery [events]" rule="5357-5358" protocol="6" apps="fdphost" is_enabled="true" />
+	</rules_system>
 	<rules_blocklist>
 		<item name="extra_13.78.235.126" rule="13.78.235.126" />
 		<item name="extra_13.78.235.247" rule="13.78.235.247" />
@@ -632,32 +660,4 @@
 		<item name="update_207.46.114.58" rule="207.46.114.58" />
 		<item name="update_207.46.114.61" rule="207.46.114.61" />
 	</rules_blocklist>
-	<rules_system>
-		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
-		<item name="DNS" rule="53" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
-		<item name="FTP" rule="20-21;49152-65534" protocol="6" is_custom="true" />
-		<item name="HTTP" rule="80;443" protocol="6" is_custom="true" />
-		<item name="ICMPv4" dir="2" protocol="1" />
-		<item name="ICMPv6" dir="2" protocol="58" />
-		<item name="IMAP/POP3/SMTP" rule="25;110;143;465;993;995;2525" protocol="6" is_custom="true" />
-		<item name="IGMP" rule="224.0.0.0/4" protocol="2" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
-		<item name="IKEv2/IPSEC/L2TP" rule="500;1701;4500" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
-		<item name="LLNMR" rule="224.0.0.252:5355;ff02::1:3:5355" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
-		<item name="mDNS" rule="224.0.0.251:5353;ff02::fb:5353" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
-		<item name="NetBIOS [inbound]" rule_local="137-139" dir="2" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
-		<item name="NetBIOS [outbound]" rule="137-139" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
-		<item name="NTP" rule="123" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
-		<item name="RDP [inbound]" rule_local="3389" dir="1" apps="termservice" />
-		<item name="RDP [outbound]" rule="3389" apps="termservice" />
-		<item name="SMB [inbound]" rule_local="445" dir="1" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
-		<item name="SMB [outbound]" rule="445" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
-		<item name="SNMP" rule="161-162" dir="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
-		<item name="SSDP [inbound]" rule_local="1900" dir="1" protocol="17" apps="ssdpsrv" is_enabled="true" />
-		<item name="SSDP [outbound]" rule="1900" protocol="17" apps="ssdpsrv" is_enabled="true" />
-		<item name="SSH (SFTP)" rule="22" protocol="6" is_custom="true" />
-		<item name="Telnet" rule="23" protocol="6" is_custom="true" />
-		<item name="UPnP" rule="2869" protocol="6" apps="fdphost;upnphost" is_enabled="true" />
-		<item name="WS-Discovery" rule="3702" protocol="17" apps="fdphost;fdrespub" is_enabled="true" />
-		<item name="WS-Discovery [events]" rule="5357-5358" protocol="6" apps="fdphost" is_enabled="true" />
-	</rules_system>
 </root>
