@@ -81,26 +81,26 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (84), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (84), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
-	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (84), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_REMOTE_TEXT, nullptr, nullptr);
-	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
-	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
-
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (104), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_ID, nullptr, nullptr);
-	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
-
-	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (104), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_LOCAL_TEXT, nullptr, nullptr);
+	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (84), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_ADDRESS_TEXT, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
 
-	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (124), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_ID, nullptr, nullptr);
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (104), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PORT_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 
-	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (124), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PROTOCOL_TEXT, nullptr, nullptr);
+	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (104), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_PORT_TEXT, nullptr, nullptr);
+	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
+	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
+
+	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE, app.GetDPI (12), app.GetDPI (124), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DIRECTION_ID, nullptr, nullptr);
+	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
+
+	hctrl = CreateWindow (WC_EDIT, nullptr, WS_CHILD | WS_VISIBLE | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT, app.GetDPI (12), app.GetDPI (124), wnd_width - app.GetDPI (24), app.GetDPI (16), config.hnotification, (HMENU)IDC_DIRECTION_TEXT, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_text, MAKELPARAM (TRUE, 0));
 	SendMessage (hctrl, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 	SendMessage (hctrl, EM_SETMARGINS, EC_RIGHTMARGIN, 0);
@@ -144,9 +144,9 @@ void _app_notifycreatewindow ()
 
 	_r_ctrl_settip (htip, config.hnotification, IDC_FILE_TEXT, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (htip, config.hnotification, IDC_SIGNATURE_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (htip, config.hnotification, IDC_ADDRESS_LOCAL_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (htip, config.hnotification, IDC_ADDRESS_REMOTE_TEXT, LPSTR_TEXTCALLBACK);
-	_r_ctrl_settip (htip, config.hnotification, IDC_PROTOCOL_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_ADDRESS_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_PORT_TEXT, LPSTR_TEXTCALLBACK);
+	_r_ctrl_settip (htip, config.hnotification, IDC_DIRECTION_TEXT, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (htip, config.hnotification, IDC_FILTER_TEXT, LPSTR_TEXTCALLBACK);
 	_r_ctrl_settip (htip, config.hnotification, IDC_DATE_TEXT, LPSTR_TEXTCALLBACK);
 
@@ -399,11 +399,15 @@ bool _app_notifyshow (HWND hwnd, size_t idx, bool is_forced, bool is_safety)
 			{
 				const HDC hdc = GetDC (hwnd);
 
+				const bool is_inbound = (ptr_log->direction == FWP_DIRECTION_INBOUND);
+
+				const DWORD port = is_inbound ? ptr_log->local_port : ptr_log->remote_port;
+
 				_app_notifysettext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_NAME, L":"), IDC_FILE_TEXT, (ptr_app->display_name && ptr_app->display_name[0]) ? _r_path_extractfile (ptr_app->display_name) : empty_text);
 				_app_notifysettext (hdc, hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":"), IDC_SIGNATURE_TEXT, is_signed.IsEmpty () ? empty_text : is_signed);
-				_app_notifysettext (hdc, hwnd, IDC_ADDRESS_REMOTE_ID, app.LocaleString (IDS_ADDRESS_REMOTE, L":"), IDC_ADDRESS_REMOTE_TEXT, (ptr_log->remote_fmt && ptr_log->remote_fmt[0]) ? ptr_log->remote_fmt : empty_text);
-				_app_notifysettext (hdc, hwnd, IDC_ADDRESS_LOCAL_ID, app.LocaleString (IDS_ADDRESS_LOCAL, L":"), IDC_ADDRESS_LOCAL_TEXT, (ptr_log->local_fmt && ptr_log->local_fmt[0]) ? ptr_log->local_fmt : empty_text);
-				_app_notifysettext (hdc, hwnd, IDC_PROTOCOL_ID, app.LocaleString (IDS_PROTOCOL, L":"), IDC_PROTOCOL_TEXT, _app_getprotoname (ptr_log->protocol));
+				_app_notifysettext (hdc, hwnd, IDC_ADDRESS_ID, app.LocaleString (IDS_ADDRESS, L":"), IDC_ADDRESS_TEXT, (ptr_log->addr_fmt && ptr_log->addr_fmt[0]) ? ptr_log->addr_fmt : empty_text);
+				_app_notifysettext (hdc, hwnd, IDC_PORT_ID, app.LocaleString (IDS_PORT, L":"), IDC_PORT_TEXT, port ? _r_fmt (L"%d", port) : empty_text);
+				_app_notifysettext (hdc, hwnd, IDC_DIRECTION_ID, app.LocaleString (IDS_DIRECTION, L":"), IDC_DIRECTION_TEXT, app.LocaleString (is_inbound ? IDS_DIRECTION_2 : IDS_DIRECTION_1, ptr_log->is_loopback ? L" (Loopback)" : nullptr));
 				_app_notifysettext (hdc, hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, (ptr_log->filter_name && ptr_log->filter_name[0]) ? ptr_log->filter_name : empty_text);
 				_app_notifysettext (hdc, hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME));
 
@@ -848,9 +852,9 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							ctrl_id == IDC_CLOSE_BTN ||
 							ctrl_id == IDC_FILE_TEXT ||
 							ctrl_id == IDC_SIGNATURE_TEXT ||
-							ctrl_id == IDC_ADDRESS_LOCAL_TEXT ||
-							ctrl_id == IDC_ADDRESS_REMOTE_TEXT ||
-							ctrl_id == IDC_PROTOCOL_TEXT ||
+							ctrl_id == IDC_ADDRESS_TEXT ||
+							ctrl_id == IDC_PORT_TEXT ||
+							ctrl_id == IDC_DIRECTION_TEXT ||
 							ctrl_id == IDC_FILTER_TEXT ||
 							ctrl_id == IDC_DATE_TEXT
 							)
@@ -1064,7 +1068,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							if (ptr_log)
 							{
-								AppendMenu (hsubmenu, MF_BYPOSITION, IDX_NOTIFICATIONS + UINT (i), _r_fmt (L"%s - %s", ptr_log->path ? _r_path_extractfile (ptr_log->path).GetString () : SZ_EMPTY, ptr_log->remote_fmt));
+								AppendMenu (hsubmenu, MF_BYPOSITION, IDX_NOTIFICATIONS + UINT (i), _r_fmt (L"%s - %s", ptr_log->path ? _r_path_extractfile (ptr_log->path).GetString () : SZ_EMPTY, ptr_log->addr_fmt));
 
 								if (i == current_idx)
 									CheckMenuRadioItem (hsubmenu, IDX_NOTIFICATIONS, IDX_NOTIFICATIONS + UINT (i), IDX_NOTIFICATIONS + UINT (i), MF_BYCOMMAND);
@@ -1161,7 +1165,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							LPWSTR rule = nullptr;
 
-							if (_app_formataddress (ptr_log->af, &ptr_log->remote_addr, ptr_log->remote_port, &rule, false))
+							if (_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, &rule, FMTADDR_AS_RULE))
 							{
 								_r_str_alloc (&ptr_rule->pname, _r_str_length (rule), rule);
 								_r_str_alloc (&ptr_rule->prule_remote, _r_str_length (rule), rule);
