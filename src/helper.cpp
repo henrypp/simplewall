@@ -101,34 +101,63 @@ void _app_applycasestyle (LPWSTR buffer, size_t length)
 	}
 }
 
-bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, LPWSTR * ptr_dest, bool is_appenddns)
+bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR * ptr_dest, DWORD flags)
 {
-	if (!ptr_addr || !ptr_dest)
+	if (!ptr_addr || !ptr_dest || (af != AF_INET && af != AF_INET6))
 		return false;
 
 	bool result = false;
 
-	WCHAR formatted_address[512] = {0};
+	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
-	if (af == AF_INET || af == AF_INET6)
+	if ((flags & FMTADDR_USE_PROTOCOL) != 0 && proto)
+		StringCchPrintf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto).ToLower ().GetString ());
+
+	if ((flags & FMTADDR_AS_ARPA) != 0)
 	{
-		if (InetNtop (af, ptr_addr, formatted_address, _countof (formatted_address)))
+		if (af == AF_INET)
 		{
-			if (af == AF_INET)
-				result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr);
+			StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhu.%hhu.%hhu.%hhu.%s", ((PIN_ADDR)ptr_addr)->s_impno, ((PIN_ADDR)ptr_addr)->s_lh, ((PIN_ADDR)ptr_addr)->s_host, ((PIN_ADDR)ptr_addr)->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W));
+		}
+		else
+		{
+			for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
+				StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhx.%hhx.", ((PIN6_ADDR)ptr_addr)->s6_addr[i] & 0xF, (((PIN6_ADDR)ptr_addr)->s6_addr[i] >> 4) & 0xF));
 
-			else if (af == AF_INET6)
-				result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr);
+			StringCchCat (formatted_address, _countof (formatted_address), DNS_IP6_REVERSE_DOMAIN_STRING_W);
+		}
 
-			if (!result)
-				formatted_address[0] = 0;
+		result = true;
+	}
+	else
+	{
+		WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
+
+		if (InetNtop (af, ptr_addr, addr_str, _countof (addr_str)))
+		{
+			if ((flags & FMTADDR_AS_RULE) != 0)
+			{
+				if (af == AF_INET)
+					result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr);
+
+				else
+					result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr);
+
+				if (result)
+					StringCchCat (formatted_address, _countof (formatted_address), addr_str);
+			}
+			else
+			{
+				result = true;
+				StringCchCat (formatted_address, _countof (formatted_address), addr_str);
+			}
 		}
 	}
 
 	if (port)
 		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (formatted_address[0] ? L":%d" : L"%d", port));
 
-	if (result && is_appenddns && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit)
+	if (result && (flags & FMTADDR_RESOLVE_HOST) != 0 && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit)
 	{
 		const size_t hash = _r_str_hash (formatted_address);
 
@@ -149,15 +178,10 @@ bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, L
 			}
 			else
 			{
-				WCHAR hostBuff[NI_MAXHOST] = {0};
 				LPWSTR cache_ptr = nullptr;
 
-				if (_app_resolveaddress (af, ptr_addr, hostBuff, _countof (hostBuff)))
-				{
-					StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", hostBuff));
-
-					_r_str_alloc (&cache_ptr, _r_str_length (hostBuff), hostBuff);
-				}
+				if (_app_resolveaddress (af, ptr_addr, &cache_ptr))
+					StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", cache_ptr));
 
 				_r_fastlock_acquireexclusive (&lock_cache);
 
@@ -242,7 +266,7 @@ void _app_freelogstack ()
 	}
 }
 
-void _app_getappicon (ITEM_APP const *ptr_app, bool is_small, size_t * picon_id, HICON * picon)
+void _app_getappicon (ITEM_APP const* ptr_app, bool is_small, size_t * picon_id, HICON * picon)
 {
 	const bool is_iconshidden = app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
@@ -275,7 +299,7 @@ void _app_getappicon (ITEM_APP const *ptr_app, bool is_small, size_t * picon_id,
 	}
 }
 
-void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, LPWSTR * extracted_name)
+void _app_getdisplayname (size_t hash, ITEM_APP const* ptr_app, LPWSTR * extracted_name)
 {
 	if (!extracted_name)
 		return;
@@ -288,7 +312,7 @@ void _app_getdisplayname (size_t hash, ITEM_APP const *ptr_app, LPWSTR * extract
 	{
 		rstring name;
 
-		if (!_app_item_get (ptr_app->type, hash, &name, nullptr, nullptr, nullptr, nullptr))
+		if (!_app_item_get (ptr_app->type, hash, &name, nullptr, nullptr, nullptr))
 			name = ptr_app->original_path;
 
 		_r_str_alloc (extracted_name, name.GetLength (), name);
@@ -369,7 +393,7 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 {
 	rstring result;
 
-	IShellLink *psl = nullptr;
+	IShellLink* psl = nullptr;
 
 	const HRESULT hrComInit = CoInitializeEx (nullptr, COINIT_MULTITHREADED);
 
@@ -377,11 +401,11 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 	{
 		if (SUCCEEDED (CoInitializeSecurity (nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_PKT_PRIVACY, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, 0, nullptr)))
 		{
-			if (SUCCEEDED (CoCreateInstance (CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLink, (void **)& psl)))
+			if (SUCCEEDED (CoCreateInstance (CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)& psl)))
 			{
-				IPersistFile *ppf = nullptr;
+				IPersistFile* ppf = nullptr;
 
-				if (SUCCEEDED (psl->QueryInterface (IID_IPersistFile, (void **)& ppf)))
+				if (SUCCEEDED (psl->QueryInterface (IID_IPersistFile, (void**)& ppf)))
 				{
 					if (SUCCEEDED (ppf->Load (path, STGM_READ)))
 					{
@@ -471,7 +495,7 @@ bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR * psigner)
 
 				if (psProvSigner)
 				{
-					CRYPT_PROVIDER_CERT *psProvCert = WTHelperGetProvCertFromChain (psProvSigner, 0);
+					CRYPT_PROVIDER_CERT* psProvCert = WTHelperGetProvCertFromChain (psProvSigner, 0);
 
 					if (psProvCert)
 					{
@@ -481,11 +505,8 @@ bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR * psigner)
 						{
 							LPWSTR ptr_text = new WCHAR[num_chars];
 
-							if (ptr_text)
-							{
-								if (!CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, ptr_text, num_chars))
-									SAFE_DELETE_ARRAY (ptr_text);
-							}
+							if (!CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, ptr_text, num_chars))
+								SAFE_DELETE_ARRAY (ptr_text);
 
 							_r_fastlock_acquireexclusive (&lock_cache);
 
@@ -578,9 +599,9 @@ bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR * pinfo)
 						buffer.Append (LPCWSTR (retbuf));
 
 						UINT length = 0;
-						VS_FIXEDFILEINFO *verInfo = nullptr;
+						VS_FIXEDFILEINFO* verInfo = nullptr;
 
-						if (VerQueryValue (versionInfo, L"\\", (void **)(&verInfo), &length))
+						if (VerQueryValue (versionInfo, L"\\", (void**)(&verInfo), &length))
 						{
 							buffer.Append (_r_fmt (L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS)));
 
@@ -652,7 +673,7 @@ rstring _app_getprotoname (UINT8 proto)
 {
 	for (size_t i = 0; i < protocols.size (); i++)
 	{
-		PITEM_PROTOCOL const ptr_proto = protocols.at (i);
+		const PITEM_PROTOCOL ptr_proto = protocols.at (i);
 
 		if (ptr_proto && proto == ptr_proto->id)
 			return ptr_proto->pname;
@@ -702,47 +723,105 @@ rstring _app_getstatename (DWORD state)
 	return L"";
 }
 
-rstring getprocname (DWORD pid)
+rstring _app_getservicenamefromtag (HANDLE pid, PVOID ptag)
+{
+	rstring result;
+	const HMODULE hlib = GetModuleHandle (L"advapi32.dll");
+
+	if (hlib)
+	{
+		typedef ULONG (NTAPI * IQTI) (PVOID, SC_SERVICE_TAG_QUERY_TYPE, PSC_SERVICE_TAG_QUERY); // I_QueryTagInformation
+		const IQTI _I_QueryTagInformation = (IQTI)GetProcAddress (hlib, "I_QueryTagInformation");
+
+		if (_I_QueryTagInformation)
+		{
+			SC_SERVICE_TAG_QUERY nameFromTag;
+			SecureZeroMemory (&nameFromTag, sizeof (nameFromTag));
+
+			nameFromTag.ProcessId = HandleToUlong (pid);
+			nameFromTag.ServiceTag = PtrToUlong (ptag);
+
+			_I_QueryTagInformation (nullptr, ServiceNameFromTagInformation, &nameFromTag);
+
+			if (nameFromTag.Buffer)
+			{
+				result = (LPCWSTR)nameFromTag.Buffer;
+				LocalFree (nameFromTag.Buffer);
+			}
+		}
+	}
+
+	return result;
+}
+
+rstring _app_getprocesspath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id, size_t * phash)
 {
 	if (!pid)
+	{
+		*phash = 0;
+		*picon_id = config.icon_id;
+
 		return L"Waiting connections";
+	}
 
-	WCHAR real_path[MAX_PATH] = {0};
-	const HANDLE hprocess = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+	rstring proc_name;
 
-	StringCchPrintf (real_path, _countof (real_path), L"%d", pid);
+	if (pmodules)
+		proc_name = _app_getservicenamefromtag (UlongToHandle (pid), UlongToPtr (*(PULONG)pmodules));
 
-	if (hprocess)
+	if (proc_name.IsEmpty ())
 	{
 		if (pid == PROC_SYSTEM_PID)
 		{
-			StringCchCopy (real_path, _countof (real_path), PROC_SYSTEM_NAME);
+			proc_name = PROC_SYSTEM_NAME;
+			*picon_id = config.icon_id;
 		}
 		else
 		{
-			DWORD size = _countof (real_path) - 1;
+			const HANDLE hprocess = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
 
-			if (QueryFullProcessImageName (hprocess, 0, real_path, &size))
+			if (hprocess)
 			{
-				_app_applycasestyle (real_path, _r_str_length (real_path)); // apply case-style
-			}
-			else
-			{
-				// cannot get file path because it's not filesystem process (Pico maybe?)
-				if (GetLastError () == ERROR_GEN_FAILURE)
+				DWORD size = 1024;
+
+				const BOOL res = QueryFullProcessImageName (hprocess, 0, proc_name.GetBuffer (size), &size);
+				proc_name.ReleaseBuffer ();
+
+				if (res)
 				{
-					//StringCchCopy (real_path, _countof (real_path), spi->ImageName.Buffer);
+					_app_applycasestyle (proc_name.GetBuffer (), proc_name.GetLength ()); // apply case-style
 				}
+				else
+				{
+					// cannot get file path because it's not filesystem process (Pico maybe?)
+					if (GetLastError () == ERROR_GEN_FAILURE)
+					{
+						//StringCchCopy (real_path, _countof (real_path), spi->ImageName.Buffer);
+					}
+				}
+
+				CloseHandle (hprocess);
 			}
 		}
-
-		CloseHandle (hprocess);
 	}
 
-	return real_path;
+	*phash = proc_name.Hash ();
+
+	if (!proc_name.IsEmpty ())
+	{
+		const PITEM_APP ptr_app = _app_getapplication (*phash);
+
+		if (ptr_app)
+			*picon_id = ptr_app->icon_id;
+
+		else
+			_app_getfileicon (proc_name, true, picon_id, nullptr);
+	}
+
+	return proc_name;
 }
 
-void _app_generate_connections ()
+void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 {
 	DWORD tableSize = 0;
 	GetExtendedTcpTable (nullptr, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
@@ -751,7 +830,7 @@ void _app_generate_connections ()
 	{
 		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = new MIB_TCPTABLE_OWNER_MODULE[tableSize];
 
-		if (GetExtendedTcpTable (tcp4Table, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR && tcp4Table)
+		if (GetExtendedTcpTable (tcp4Table, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
 			for (ULONG i = 0; i < tcp4Table->dwNumEntries; i++)
 			{
@@ -774,23 +853,22 @@ void _app_generate_connections ()
 				}
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), getprocname (tcp4Table->table[i].dwOwningPid));
+				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
-				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
-
-				if (tcp4Table->table[i].dwOwningPid)
-					ptr_network->hash = _r_str_hash (ptr_network->path);
 
 				ptr_network->remote_port = (UINT16)tcp4Table->table[i].dwRemotePort;
 				ptr_network->local_port = (UINT16)tcp4Table->table[i].dwLocalPort;
 
 				ptr_network->state = tcp4Table->table[i].dwState;
 
-				network_arr.push_back (ptr_network);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
+
+				ptr_arr.push_back (ptr_network);
 			}
 		}
 
@@ -804,7 +882,7 @@ void _app_generate_connections ()
 	{
 		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = new MIB_TCP6TABLE_OWNER_MODULE[tableSize];
 
-		if (GetExtendedTcpTable (tcp6Table, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR && tcp6Table)
+		if (GetExtendedTcpTable (tcp6Table, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
 			for (ULONG i = 0; i < tcp6Table->dwNumEntries; i++)
 			{
@@ -820,17 +898,12 @@ void _app_generate_connections ()
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), getprocname (tcp6Table->table[i].dwOwningPid));
+				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
-				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
-
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
-
-				if (tcp6Table->table[i].dwOwningPid)
-					ptr_network->hash = _r_str_hash (ptr_network->path);
 
 				CopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
 				CopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
@@ -840,7 +913,10 @@ void _app_generate_connections ()
 
 				ptr_network->state = tcp6Table->table[i].dwState;
 
-				network_arr.push_back (ptr_network);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
+
+				ptr_arr.push_back (ptr_network);
 			}
 		}
 
@@ -855,7 +931,7 @@ void _app_generate_connections ()
 	{
 		PMIB_UDPTABLE_OWNER_MODULE udp4Table = new MIB_UDPTABLE_OWNER_MODULE[tableSize];
 
-		if (GetExtendedUdpTable (udp4Table, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR && udp4Table)
+		if (GetExtendedUdpTable (udp4Table, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
 			for (ULONG i = 0; i < udp4Table->dwNumEntries; i++)
 			{
@@ -873,23 +949,20 @@ void _app_generate_connections ()
 				}
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), getprocname (udp4Table->table[i].dwOwningPid));
+				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
-				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
-
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
-
-				if (udp4Table->table[i].dwOwningPid)
-					ptr_network->hash = _r_str_hash (ptr_network->path);
 
 				ptr_network->local_port = (UINT16)udp4Table->table[i].dwLocalPort;
 
 				ptr_network->state = 0;
 
-				network_arr.push_back (ptr_network);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+
+				ptr_arr.push_back (ptr_network);
 			}
 		}
 
@@ -903,7 +976,7 @@ void _app_generate_connections ()
 	{
 		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = new MIB_UDP6TABLE_OWNER_MODULE[tableSize];
 
-		if (GetExtendedUdpTable (udp6Table, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR && udp6Table)
+		if (GetExtendedUdpTable (udp6Table, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
 			for (ULONG i = 0; i < udp6Table->dwNumEntries; i++)
 			{
@@ -916,17 +989,12 @@ void _app_generate_connections ()
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), getprocname (udp6Table->table[i].dwOwningPid));
+				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
-				_app_getfileicon (ptr_network->path, false, &ptr_network->icon_id, nullptr);
-
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;
-
-				if (udp6Table->table[i].dwOwningPid)
-					ptr_network->hash = _r_str_hash (ptr_network->path);
 
 				CopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 
@@ -934,7 +1002,9 @@ void _app_generate_connections ()
 
 				ptr_network->state = 0;
 
-				network_arr.push_back (ptr_network);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+
+				ptr_arr.push_back (ptr_network);
 			}
 		}
 
@@ -1030,7 +1100,7 @@ void _app_generate_packages ()
 				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
 				_r_str_alloc (&ptr_item->real_path, _r_str_length (path), path);
 
-				ConvertStringSidToSid (package_sid_string, &ptr_item->psid);
+				ConvertStringSidToSid (package_sid_string, &ptr_item->pdata);
 
 				_app_load_appxmanifest (ptr_item);
 
@@ -1161,7 +1231,7 @@ void _app_generate_services ()
 
 						rstring sidstring;
 
-						SID *serviceSid = nullptr;
+						SID* serviceSid = nullptr;
 						ULONG serviceSidLength = 0;
 
 						// get service security identifier
@@ -1169,16 +1239,13 @@ void _app_generate_services ()
 						{
 							serviceSid = new SID[serviceSidLength];
 
-							if (serviceSid)
+							if (NT_SUCCESS (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength)))
 							{
-								if (NT_SUCCESS (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength)))
-								{
-									sidstring = _r_str_fromsid (serviceSid);
-								}
-								else
-								{
-									SAFE_DELETE_ARRAY (serviceSid);
-								}
+								sidstring = _r_str_fromsid (serviceSid);
+							}
+							else
+							{
+								SAFE_DELETE_ARRAY (serviceSid);
 							}
 						}
 
@@ -1195,7 +1262,7 @@ void _app_generate_services ()
 							_r_str_alloc (&ptr_item->real_path, _r_str_length (real_path), real_path);
 							_r_str_alloc (&ptr_item->sid, sidstring.GetLength (), sidstring);
 
-							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, &ptr_item->psd, nullptr))
+							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, &ptr_item->pdata, nullptr))
 							{
 								_app_logerror (L"ConvertStringSecurityDescriptorToSecurityDescriptor", GetLastError (), service_name, false);
 
@@ -1312,7 +1379,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
 }
 
-bool _app_item_get (EnumDataType type, size_t hash, rstring * display_name, rstring * real_path, PSID * lpsid, PSECURITY_DESCRIPTOR * lpsd, rstring * /*description*/)
+bool _app_item_get (EnumDataType type, size_t hash, rstring * display_name, rstring * real_path, PBYTE * lpdata, rstring* /*description*/)
 {
 	for (size_t i = 0; i < items.size (); i++)
 	{
@@ -1345,33 +1412,25 @@ bool _app_item_get (EnumDataType type, size_t hash, rstring * display_name, rstr
 				*real_path = ptr_item->real_path;
 		}
 
-		if (lpsid)
+		if (lpdata)
 		{
-			SAFE_DELETE_ARRAY (*lpsid);
+			SAFE_DELETE_ARRAY (*lpdata);
 
-			if (ptr_item->psid)
+			if (ptr_item->pdata)
 			{
-				static const DWORD length = SECURITY_MAX_SID_SIZE;
+				DWORD length = 0;
 
-				*lpsid = new BYTE[length];
+				if (type == DataAppService)
+					length = GetSecurityDescriptorLength (ptr_item->pdata);
 
-				CopyMemory (*lpsid, ptr_item->psid, length);
-			}
-		}
-
-		if (lpsd)
-		{
-			SAFE_DELETE_ARRAY (*lpsd);
-
-			if (ptr_item->psd)
-			{
-				const DWORD length = GetSecurityDescriptorLength (ptr_item->psd);
+				else if (type == DataAppUWP)
+					length = SECURITY_MAX_SID_SIZE;
 
 				if (length)
 				{
-					*lpsd = new BYTE[length];
+					*lpdata = new BYTE[length];
 
-					CopyMemory (*lpsd, ptr_item->psd, length);
+					CopyMemory (*lpdata, ptr_item->pdata, length);
 				}
 			}
 		}
@@ -1617,41 +1676,19 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 	rstring result;
 
 	PDNS_RECORD ppQueryResultsSet = nullptr;
-	PIP4_ARRAY pSrvList = nullptr;
 
-	// use custom dns-server (if present)
-	WCHAR dnsServer[INET_ADDRSTRLEN] = {0};
-	StringCchCopy (dnsServer, _countof (dnsServer), app.ConfigGet (L"DnsServerV4", nullptr)); // ipv4 dns-server address
+	// ipv4 address
+	DNS_STATUS dnsStatus = DnsQuery (host, DNS_TYPE_A, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, nullptr, &ppQueryResultsSet, nullptr);
 
-	if (dnsServer[0])
+	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
 	{
-		pSrvList = new IP4_ARRAY;
-
-		if (pSrvList)
-		{
-			if (InetPton (AF_INET, dnsServer, &(pSrvList->AddrArray[0])))
-			{
-				pSrvList->AddrCount = 1;
-			}
-			else
-			{
-				_app_logerror (L"InetPton", WSAGetLastError (), dnsServer, true);
-				SAFE_DELETE (pSrvList);
-			}
-		}
-	}
-
-	const DNS_STATUS dnsStatus = DnsQuery (host, DNS_TYPE_ALL, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, pSrvList, &ppQueryResultsSet, nullptr);
-
-	if (dnsStatus != ERROR_SUCCESS)
-	{
-		_app_logerror (L"DnsQuery", dnsStatus, host, true);
+		_app_logerror (L"DnsQuery (DNS_TYPE_A)", dnsStatus, host, true);
 	}
 	else
 	{
-		for (auto current = ppQueryResultsSet; current != nullptr; current = current->pNext)
+		if (ppQueryResultsSet)
 		{
-			if (current->wType == DNS_TYPE_A)
+			for (auto current = ppQueryResultsSet; current != nullptr; current = current->pNext)
 			{
 				// ipv4 address
 				WCHAR str[INET_ADDRSTRLEN] = {0};
@@ -1663,10 +1700,26 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 					result.AppendFormat (L":%d", port);
 
 				result.Append (RULE_DELIMETER);
+
 			}
-			else if (current->wType == DNS_TYPE_AAAA)
+
+			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
+		}
+	}
+
+	// ipv6 address
+	dnsStatus = DnsQuery (host, DNS_TYPE_AAAA, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, nullptr, &ppQueryResultsSet, nullptr);
+
+	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
+	{
+		_app_logerror (L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, host, true);
+	}
+	else
+	{
+		if (ppQueryResultsSet)
+		{
+			for (auto current = ppQueryResultsSet; current != nullptr; current = current->pNext)
 			{
-				// ipv6 address
 				WCHAR str[INET6_ADDRSTRLEN] = {0};
 				InetNtop (AF_INET6, &(current->Data.AAAA.Ip6Address), str, _countof (str));
 
@@ -1676,26 +1729,14 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 					result.AppendFormat (L":%d", port);
 
 				result.Append (RULE_DELIMETER);
+
 			}
-			else if (current->wType == DNS_TYPE_CNAME)
-			{
-				// canonical name
-				if (current->Data.CNAME.pNameHost)
-				{
-					result = _app_parsehostaddress_dns (current->Data.CNAME.pNameHost, port);
-					break;
-				}
-			}
+
+			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
 		}
-
-		result.Trim (RULE_DELIMETER);
-
-		DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
 	}
 
-	SAFE_DELETE (pSrvList);
-
-	return result;
+	return result.Trim (RULE_DELIMETER);
 }
 
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
@@ -1709,7 +1750,6 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 	ADDRINFOEXW * ppQueryResultsSet = nullptr;
 
 	hints.ai_family = AF_UNSPEC;
-	//hints.ai_flags = AI_PASSIVE;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
@@ -1728,7 +1768,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 
 			if (current->ai_family == AF_INET)
 			{
-				struct sockaddr_in *sock_in4 = (struct sockaddr_in *)current->ai_addr;
+				struct sockaddr_in* sock_in4 = (struct sockaddr_in*)current->ai_addr;
 				PIN_ADDR addr4 = &(sock_in4->sin_addr);
 
 				if (IN4_IS_ADDR_UNSPECIFIED (addr4))
@@ -1738,7 +1778,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 			}
 			else if (current->ai_family == AF_INET6)
 			{
-				struct sockaddr_in6 *sock_in6 = (struct sockaddr_in6 *)current->ai_addr;
+				struct sockaddr_in6* sock_in6 = (struct sockaddr_in6*)current->ai_addr;
 				PIN6_ADDR addr6 = &(sock_in6->sin6_addr);
 
 				if (IN6_IS_ADDR_UNSPECIFIED (addr6))
@@ -1762,7 +1802,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 	}
 
 	if (ppQueryResultsSet)
-		FreeAddrInfoExW (ppQueryResultsSet);
+		FreeAddrInfoEx (ppQueryResultsSet);
 
 	return result;
 }
@@ -2091,38 +2131,33 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 	return true;
 }
 
-bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR buffer, DWORD length)
+bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 {
-	SOCKADDR_IN ipv4Address = {0};
-	SOCKADDR_IN6 ipv6Address = {0};
-	PSOCKADDR psock = {0};
-	socklen_t size = 0;
-
-	if (af == AF_INET)
-	{
-		ipv4Address.sin_family = af;
-		ipv4Address.sin_addr = *PIN_ADDR (paddr);
-
-		psock = (PSOCKADDR)& ipv4Address;
-		size = sizeof (ipv4Address);
-	}
-	else if (af == AF_INET6)
-	{
-		ipv6Address.sin6_family = af;
-		ipv6Address.sin6_addr = *PIN6_ADDR (paddr);
-
-		psock = (PSOCKADDR)& ipv6Address;
-		size = sizeof (ipv6Address);
-	}
-	else
-	{
-		return false;
-	}
-
-	if (GetNameInfo (psock, size, buffer, length, nullptr, 0, NI_NAMEREQD) != 0)
+	if (!pbuffer || (af != AF_INET && af != AF_INET6))
 		return false;
 
-	return true;
+	bool result = false;
+
+	LPWSTR pstraddr = nullptr;
+	_app_formataddress (af, 0, paddr, 0, &pstraddr, FMTADDR_AS_ARPA);
+
+	if (pstraddr)
+	{
+		PDNS_RECORD ppQueryResultsSet = nullptr;
+		const DNS_STATUS dnsStatus = DnsQuery (pstraddr, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, nullptr, &ppQueryResultsSet, nullptr);
+
+		if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR && ppQueryResultsSet)
+		{
+			_r_str_alloc (pbuffer, _r_str_length (ppQueryResultsSet->Data.PTR.pNameHost), ppQueryResultsSet->Data.PTR.pNameHost);
+			result = ppQueryResultsSet->Data.PTR.pNameHost != nullptr;
+		}
+
+		DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
+	}
+
+	SAFE_DELETE_ARRAY (pstraddr);
+
+	return result;
 }
 
 void _app_resolvefilename (rstring & path)
@@ -2285,12 +2320,12 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 	BITMAPINFO bi = {0};
 	HBITMAP hbitmap = nullptr;
 	PVOID bitmapBuffer = nullptr;
-	IWICStream *wicStream = nullptr;
-	IWICBitmapSource *wicBitmapSource = nullptr;
-	IWICBitmapDecoder *wicDecoder = nullptr;
-	IWICBitmapFrameDecode *wicFrame = nullptr;
-	IWICImagingFactory *wicFactory = nullptr;
-	IWICBitmapScaler *wicScaler = nullptr;
+	IWICStream* wicStream = nullptr;
+	IWICBitmapSource* wicBitmapSource = nullptr;
+	IWICBitmapDecoder* wicDecoder = nullptr;
+	IWICBitmapFrameDecode* wicFrame = nullptr;
+	IWICImagingFactory* wicFactory = nullptr;
+	IWICBitmapScaler* wicScaler = nullptr;
 	WICPixelFormatGUID pixelFormat;
 	WICRect rect = {0, 0, icon_size, icon_size};
 
@@ -2300,7 +2335,7 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 		goto DoExit;
 
 	// Create the ImagingFactory
-	if (FAILED (CoCreateInstance (CLSID_WICImagingFactory1, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID *)& wicFactory)))
+	if (FAILED (CoCreateInstance (CLSID_WICImagingFactory1, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID*)& wicFactory)))
 		goto DoExit;
 
 	// Load the resource
@@ -2320,7 +2355,7 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 	if (FAILED (wicFactory->CreateDecoder (GUID_ContainerFormatPng, nullptr, &wicDecoder)))
 		goto DoExit;
 
-	if (FAILED (wicDecoder->Initialize ((IStream *)wicStream, WICDecodeMetadataCacheOnLoad)))
+	if (FAILED (wicDecoder->Initialize ((IStream*)wicStream, WICDecodeMetadataCacheOnLoad)))
 		goto DoExit;
 
 	// Get the Frame count
@@ -2338,17 +2373,17 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 	// Check if the image format is supported:
 	if (memcmp (&pixelFormat, &GUID_WICPixelFormat32bppPRGBA, sizeof (GUID)) == 0)
 	{
-		wicBitmapSource = (IWICBitmapSource *)wicFrame;
+		wicBitmapSource = (IWICBitmapSource*)wicFrame;
 	}
 	else
 	{
-		IWICFormatConverter *wicFormatConverter = nullptr;
+		IWICFormatConverter* wicFormatConverter = nullptr;
 
 		if (FAILED (wicFactory->CreateFormatConverter (&wicFormatConverter)))
 			goto DoExit;
 
 		if (FAILED (wicFormatConverter->Initialize (
-			(IWICBitmapSource *)wicFrame,
+			(IWICBitmapSource*)wicFrame,
 			GUID_WICPixelFormat32bppPBGRA,
 			WICBitmapDitherTypeNone,
 			nullptr,
@@ -2479,7 +2514,7 @@ DoOpen:
 	_r_str_alloc (&ptr_item->real_path, result.GetLength (), result.GetString ());
 }
 
-LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD size)
+LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD psize)
 {
 	HRSRC hres = FindResource (hinst, res, type);
 
@@ -2497,8 +2532,8 @@ LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD siz
 
 				if (dwResourceSize != 0)
 				{
-					if (size)
-						*size = dwResourceSize;
+					if (psize)
+						*psize = dwResourceSize;
 
 					return pLockedResource;
 				}

@@ -3,6 +3,11 @@
 
 #pragma once
 
+#define FMTADDR_AS_ARPA 0x01
+#define FMTADDR_AS_RULE 0x02
+#define FMTADDR_USE_PROTOCOL 0x04
+#define FMTADDR_RESOLVE_HOST 0x08
+
 UINT _app_gettab_id (HWND hwnd, size_t page_id = LAST_VALUE);
 void _app_settab_id (HWND hwnd, size_t page_id);
 
@@ -12,7 +17,7 @@ void _app_setinterfacestate (HWND hwnd);
 
 void _app_applycasestyle (LPWSTR buffer, size_t length);
 
-bool _app_formataddress (ADDRESS_FAMILY af, PVOID const ptr_addr, UINT16 port, LPWSTR* ptr_dest, bool is_appenddns, bool is_appendarpa = false);
+bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags);
 
 void _app_freearray (std::vector<PITEM_ADD>* ptr);
 void _app_freecache (MCACHE_MAP* ptr_map);
