@@ -375,26 +375,23 @@ typedef struct tagITEM_LOG
 		path = nullptr;
 		provider_name = nullptr;
 		filter_name = nullptr;
-		remote_fmt = nullptr;
-		local_fmt = nullptr;
+		addr_fmt = nullptr;
 		username = nullptr;
 	}
 
 	~tagITEM_LOG ()
 	{
 		SAFE_DELETE_ARRAY (path);
+		SAFE_DELETE_ARRAY (addr_fmt);
 		SAFE_DELETE_ARRAY (provider_name);
 		SAFE_DELETE_ARRAY (filter_name);
 		SAFE_DELETE_ARRAY (username);
-		SAFE_DELETE_ARRAY (remote_fmt);
-		SAFE_DELETE_ARRAY (local_fmt);
 	}
 
 	LPWSTR path = nullptr;
+	LPWSTR addr_fmt = nullptr;
 	LPWSTR provider_name = nullptr;
 	LPWSTR filter_name = nullptr;
-	LPWSTR remote_fmt = nullptr;
-	LPWSTR local_fmt = nullptr;
 	LPWSTR username = nullptr;
 
 	time_t date = 0;
@@ -597,3 +594,18 @@ typedef struct tagITEM_LIST_ENTRY
 
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
+
+typedef enum _SC_SERVICE_TAG_QUERY_TYPE
+{
+	ServiceNameFromTagInformation = 1,
+	ServiceNamesReferencingModuleInformation,
+	ServiceNameTagMappingInformation
+} SC_SERVICE_TAG_QUERY_TYPE, *PSC_SERVICE_TAG_QUERY_TYPE;
+
+typedef struct _SC_SERVICE_TAG_QUERY
+{
+	ULONG ProcessId;
+	ULONG ServiceTag;
+	ULONG Unknown;
+	PVOID Buffer;
+} SC_SERVICE_TAG_QUERY, *PSC_SERVICE_TAG_QUERY;
