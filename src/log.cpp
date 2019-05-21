@@ -170,17 +170,20 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 			direction.Append (SZ_LOG_DIRECTION_LOOPBACK);
 	}
 
+	const bool is_inbound = (ptr_log->direction == FWP_DIRECTION_INBOUND);
+
+	LPWSTR addr_fmt = nullptr;
+	_app_formataddress (ptr_log->af, 0, is_inbound ? &ptr_log->local_addr : &ptr_log->remote_addr, is_inbound ? ptr_log->local_port : ptr_log->remote_port, &addr_fmt, FMTADDR_RESOLVE_HOST);
+
 	rstring buffer;
-	buffer.Format (L"\"%s\"%c\"%s\"%c\"%s\"%c%s (" SZ_LOG_REMOTE_ADDRESS L")%c%s (" SZ_LOG_LOCAL_ADDRESS L")%c%s%c\"%s\"%c#%" PRIu64 L"%c%s%c%s\r\n",
+	buffer.Format (L"\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c%s%c\"%s\"%c#%" PRIu64 L"%c%s%c%s\r\n",
 				   _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
 				   LOG_DIV,
 				   ptr_log->username ? ptr_log->username : SZ_EMPTY,
 				   LOG_DIV,
 				   path.IsEmpty () ? SZ_EMPTY : path.GetString (),
 				   LOG_DIV,
-				   ptr_log->remote_fmt ? ptr_log->remote_fmt : SZ_EMPTY,
-				   LOG_DIV,
-				   ptr_log->local_fmt ? ptr_log->local_fmt : SZ_EMPTY,
+				   addr_fmt && addr_fmt[0] ? addr_fmt : SZ_EMPTY,
 				   LOG_DIV,
 				   _app_getprotoname (ptr_log->protocol).GetString (),
 				   LOG_DIV,
@@ -192,6 +195,8 @@ void _app_logwrite (PITEM_LOG const ptr_log)
 				   LOG_DIV,
 				   (ptr_log->is_allow ? SZ_LOG_ALLOW : SZ_LOG_BLOCK)
 	);
+
+	SAFE_DELETE_ARRAY (addr_fmt);
 
 	_r_fastlock_acquireexclusive (&lock_writelog);
 
@@ -855,8 +860,8 @@ UINT WINAPI LogThread (LPVOID lparam)
 			{
 				_r_fastlock_acquireshared (&lock_logbusy);
 
-				_app_formataddress (ptr_log->af, &ptr_log->remote_addr, ptr_log->remote_port, &ptr_log->remote_fmt, true);
-				_app_formataddress (ptr_log->af, &ptr_log->local_addr, ptr_log->local_port, &ptr_log->local_fmt, true);
+				const bool is_inbound = (ptr_log->direction == FWP_DIRECTION_INBOUND);
+				_app_formataddress (ptr_log->af, ptr_log->protocol, is_inbound ? &ptr_log->local_addr : &ptr_log->remote_addr, 0, &ptr_log->addr_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
 
 				_r_fastlock_releaseshared (&lock_logbusy);
 
