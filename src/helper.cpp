@@ -275,16 +275,19 @@ void _app_getappicon (ITEM_APP const* ptr_app, bool is_small, size_t * picon_id,
 		if (is_iconshidden || !_app_getfileicon (ptr_app->real_path, is_small, picon_id, picon))
 		{
 			if (picon_id)
-				*picon_id = config.icon_id;
+				*picon_id = (ptr_app->type == DataAppService) ? config.icon_service_id : config.icon_id;
 
 			if (picon)
-				*picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
+				* picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
 		}
+
+		if (ptr_app->type == DataAppService && *picon_id == config.icon_id)
+			* picon_id = config.icon_service_id;
 	}
 	else if (ptr_app->type == DataAppUWP)
 	{
 		if (picon_id)
-			*picon_id = config.icon_package_id;
+			*picon_id = config.icon_uwp_id;
 
 		if (picon)
 			*picon = CopyIcon (is_small ? config.hicon_package : config.hicon_large); // small-only!
