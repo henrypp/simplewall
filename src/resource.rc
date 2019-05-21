@@ -407,8 +407,8 @@ BEGIN
 	IDS_ABOUT "About"
 
 	IDS_TRAY_SHOW "Show/Hide"
-	IDS_TRAY_START "Enable filtering"
-	IDS_TRAY_STOP "Disable filtering"
+	IDS_TRAY_START "Enable filters"
+	IDS_TRAY_STOP "Disable filters"
 	IDS_TRAY_MODE "Mode"
 	IDS_TRAY_RULES "Rules"
 	IDS_TRAY_BLOCKLIST_RULES "Blocklist"
@@ -626,8 +626,8 @@ BEGIN
 
 	IDS_STATE "State"
 
-	IDS_STATUS_FILTERS_ACTIVE "Filtering are activated!"
-	IDS_STATUS_FILTERS_INACTIVE "Filtering is not activated!"
+	IDS_STATUS_FILTERS_ACTIVE "Filters are enabled."
+	IDS_STATUS_FILTERS_INACTIVE "Filters are disabled!"
 	IDS_STATUS_FILTERS_PROCESSING "Applying filters"
 
 	IDS_HIGHLIGHT_CONNECTION "Have network connections"
