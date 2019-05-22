@@ -157,7 +157,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	if (port)
 		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (formatted_address[0] ? L":%d" : L"%d", port));
 
-	if (result && (flags & FMTADDR_RESOLVE_HOST) != 0 && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () && config.is_wsainit)
+	if (result && (flags & FMTADDR_RESOLVE_HOST) != 0 && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ())
 	{
 		const size_t hash = _r_str_hash (formatted_address);
 
@@ -1744,10 +1744,20 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 {
-	rstring result;
-
-	if (!config.is_wsainit || !hostname || !hostname[0] || !app.ConfigGet (L"IsEnableWsaResolver", true).AsBool ())
+	if (!hostname || !hostname[0] || !app.ConfigGet (L"IsEnableWsaResolver", true).AsBool ())
 		return L"";
+
+	// initialize winsock (required by getnameinfo)
+	WSADATA wsaData = {0};
+	INT ret_code = WSAStartup (WINSOCK_VERSION, &wsaData);
+
+	if (ret_code != ERROR_SUCCESS)
+	{
+		_app_logerror (L"WSAStartup", ret_code, nullptr, true);
+		return L"";
+	}
+
+	rstring result;
 
 	ADDRINFOEXW hints = {0};
 	ADDRINFOEXW * ppQueryResultsSet = nullptr;
@@ -1757,11 +1767,12 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	LPGUID lpNspid = nullptr;
-	const INT code = GetAddrInfoEx (hostname, L"domain", NS_DNS, lpNspid, &hints, &ppQueryResultsSet, nullptr, nullptr, nullptr, nullptr);
+	ret_code = GetAddrInfoEx (hostname, L"domain", NS_DNS, lpNspid, &hints, &ppQueryResultsSet, nullptr, nullptr, nullptr, nullptr);
 
-	if (code != ERROR_SUCCESS || !ppQueryResultsSet)
+	if (ret_code != ERROR_SUCCESS || !ppQueryResultsSet)
 	{
-		_app_logerror (L"GetAddrInfoEx", code, hostname, false);
+		_app_logerror (L"GetAddrInfoEx", ret_code, hostname, true);
+		return L"";
 	}
 	else
 	{
@@ -1806,6 +1817,8 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 
 	if (ppQueryResultsSet)
 		FreeAddrInfoEx (ppQueryResultsSet);
+
+	WSACleanup ();
 
 	return result;
 }
