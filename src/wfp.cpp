@@ -665,7 +665,7 @@ bool _wfp_destroy2filters (MARRAY & ptr_filters, UINT line)
 	if (!config.hengine || ptr_filters.empty ())
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate ();
+	const bool is_enabled = _app_initinterfacestate (app.GetHWND ());
 
 	_r_fastlock_acquireshared (&lock_transaction);
 
@@ -684,7 +684,7 @@ bool _wfp_destroy2filters (MARRAY & ptr_filters, UINT line)
 
 	_r_fastlock_releaseshared (&lock_transaction);
 
-	_app_restoreinterfacestate (is_enabled);
+	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
 
 	return true;
 }
@@ -1023,7 +1023,7 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 	if (!config.hengine || ptr_rules.empty ())
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate ();
+	const bool is_enabled = _app_initinterfacestate (app.GetHWND ());
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1152,7 +1152,7 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
-	_app_restoreinterfacestate (is_enabled);
+	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
 
 	return true;
 }
@@ -1162,7 +1162,7 @@ bool _wfp_create3filters (MFILTER_APPS & ptr_apps, UINT line, bool is_intransact
 	if (!config.hengine || ptr_apps.empty ())
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate ();
+	const bool is_enabled = _app_initinterfacestate (app.GetHWND ());
 
 	static const FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
 
@@ -1248,7 +1248,7 @@ bool _wfp_create3filters (MFILTER_APPS & ptr_apps, UINT line, bool is_intransact
 		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
-	_app_restoreinterfacestate (is_enabled);
+	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
 
 	return true;
 }
@@ -1258,7 +1258,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 	if (!config.hengine)
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate ();
+	const bool is_enabled = _app_initinterfacestate (app.GetHWND ());
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1279,13 +1279,16 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 	{
 		// match all loopback (localhost) data
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
-		fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
+		fwfc[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
 		fwfc[0].conditionValue.type = FWP_UINT32;
 		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
 
 		// tests if the network traffic is (non-)app container loopback traffic (win8+)
 		if (_r_sys_validversion (6, 2))
+		{
+			fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
 			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
+		}
 
 		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 		_wfp_createfilter (nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
@@ -1478,13 +1481,16 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 	{
 		{
 			fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
-			fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
+			fwfc[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
 			fwfc[0].conditionValue.type = FWP_UINT32;
 			fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
 
 			// tests if the network traffic is (non-)app container loopback traffic (win8+)
 			if (_r_sys_validversion (6, 2))
+			{
+				fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
 				fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
+			}
 
 			_wfp_createfilter (BOOTTIME_FILTER_NAME, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_IPFORWARD_V4, nullptr, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, &filter_ids);
 			_wfp_createfilter (BOOTTIME_FILTER_NAME, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_IPFORWARD_V6, nullptr, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, &filter_ids);
@@ -1533,7 +1539,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
-	_app_restoreinterfacestate (is_enabled);
+	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
 
 	return true;
 }
