@@ -50,25 +50,25 @@ void _app_settab_id (HWND hwnd, size_t page_id)
 	_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
-bool _app_initinterfacestate ()
+bool _app_initinterfacestate (HWND hwnd)
 {
 	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
 
 	if (is_enabled)
 	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
-		_r_status_settext (app.GetHWND (), IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
 	}
 
 	return is_enabled;
 }
 
-void _app_restoreinterfacestate (bool is_enabled)
+void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
 {
 	if (is_enabled)
 	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
-		_r_status_settext (app.GetHWND (), IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
 	}
 }
 
@@ -1695,6 +1695,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 			{
 				// ipv4 address
 				WCHAR str[INET_ADDRSTRLEN] = {0};
+
 				InetNtop (AF_INET, &(current->Data.A.IpAddress), str, _countof (str));
 
 				result.Append (str);
