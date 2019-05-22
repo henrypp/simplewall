@@ -58,7 +58,7 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 	GetClientRect (GetDlgItem (hwnd, listview_id), &rect);
 
 	const INT total_width = is_forced ? _R_RECT_WIDTH (&rect) - GetSystemMetrics (SM_CXVSCROLL) : _R_RECT_WIDTH (&rect);
-	static const INT caption_width = GetSystemMetrics (SM_CYSMCAPTION);
+	static const INT caption_spacing = GetSystemMetrics (SM_CYSMCAPTION);
 
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 	const HWND hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
@@ -78,6 +78,9 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 
 	if (column_count)
 	{
+		const INT column_max_width = _R_PERCENT_VAL (20, total_width);
+		const INT column_min_width = _R_PERCENT_VAL (2, total_width);
+
 		for (size_t i = column_count - 1; i != LAST_VALUE; i--)
 		{
 			if (i == 0)
@@ -98,7 +101,7 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 
 					if (SendMessage (hheader, HDM_GETITEM, i, (LPARAM)& hdi))
 					{
-						const int text_width = _r_dc_fontwidth (hdc_header, text, _r_str_length (text)) + caption_width;
+						const int text_width = _r_dc_fontwidth (hdc_header, text, _r_str_length (text)) + caption_spacing;
 
 						if (text_width > column_width)
 							column_width = text_width;
@@ -110,15 +113,18 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 					for (size_t j = 0; j < item_count; j++)
 					{
 						const rstring text = _r_listview_getitemtext (hwnd, listview_id, j, i);
-						const int text_width = _r_dc_fontwidth (hdc_listview, text, text.GetLength ()) + caption_width;
+						const int text_width = _r_dc_fontwidth (hdc_listview, text, text.GetLength ()) + caption_spacing;
 
 						if (text_width > column_width)
 							column_width = text_width;
 					}
 				}
 
-				if (column_width > app.GetDPI (170))
-					column_width = app.GetDPI (170);
+				if (column_width > column_max_width)
+					column_width = column_max_width;
+
+				else if (column_width < column_min_width)
+					column_width = column_min_width;
 
 				calculated_width += column_width;
 			}
@@ -329,7 +335,7 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 	if (config.is_neteventset)
 		_wfp_logunsubscribe ();
 
-	_app_initinterfacestate ();
+	_app_initinterfacestate (hwnd);
 
 	if (is_install)
 	{
@@ -348,12 +354,10 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 	if (config.is_neteventset)
 		_wfp_logsubscribe ();
 
-	_app_restoreinterfacestate (true);
+	_app_restoreinterfacestate (hwnd, true);
 	_app_setinterfacestate (hwnd);
 
 	_app_profile_save ();
-
-	_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
 
 	SetEvent (config.done_evt);
 
@@ -522,7 +526,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 	{
 		_r_fastlock_acquireshared (&lock_apply);
 
-		_app_initinterfacestate ();
+		_app_initinterfacestate (hwnd);
 
 		_r_fastlock_acquireexclusive (&lock_threadpool);
 		_app_freethreadpool (&threads_pool);
@@ -2409,15 +2413,6 @@ void _app_initialize ()
 
 	// initialize thread objects
 	config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
-
-	// initialize winsock (required by getnameinfo)
-	if (!config.is_wsainit)
-	{
-		WSADATA wsaData = {0};
-
-		if (WSAStartup (WINSOCK_VERSION, &wsaData) == ERROR_SUCCESS)
-			config.is_wsainit = true;
-	}
 }
 
 INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
