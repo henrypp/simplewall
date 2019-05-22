@@ -1,3 +1,21 @@
+v3.0.1 Beta (22 May 2019)
+- new profile structure
+- added checking for correct xml file format before import
+- added service name resolution for connections
+- added Reverse DNS Lookup for IP
+- more flexible autoresizing for listview
+- fixed column size initialization (issue #426)
+- fixed apps list sorting by date (issue #412)
+- fixed status refreshing on timer deletion
+- fixed table view for rules (issue #438)
+- fixed connections recognition condition
+- fixed highlighting (issue #408)
+- fixed timers sets (issue #424)
+- fixed services icons
+- updated locales
+- cosmetic fixes
+- fixed bugs
+
 v3.0 Beta (7 May 2019)
 - dropped windows vista support
 - improved dpi support (ui)
