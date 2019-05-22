@@ -261,7 +261,6 @@ struct STATIC_DATA
 
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
-	bool is_wsainit = false;
 	bool is_neteventset = false;
 };
 
