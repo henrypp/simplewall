@@ -565,7 +565,7 @@ void _app_ruleblocklistset ()
 	{
 		PITEM_RULE ptr_rule = rules_arr.at (i);
 
-		if (!ptr_rule || ptr_rule->type != DataRuleBlocklist || !ptr_rule->pname || !ptr_rule->pname[0])
+		if (!ptr_rule || !ptr_rule->pname || !ptr_rule->pname[0] || ptr_rule->type != DataRuleBlocklist)
 			continue;
 
 		if (_wcsnicmp (ptr_rule->pname, L"spy_", 4) == 0)
