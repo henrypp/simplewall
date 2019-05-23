@@ -799,7 +799,7 @@ bool _app_profile_load_check (LPCWSTR path, EnumXmlType type, bool is_strict)
 	{
 		pugi::xml_node root = doc.child (L"root");
 
-		_app_profile_load_check_node (root, type, is_strict);
+		return _app_profile_load_check_node (root, type, is_strict);
 	}
 
 	return false;
