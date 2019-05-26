@@ -1022,60 +1022,38 @@ void _app_generate_packages ()
 
 	LONG result = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages", 0, KEY_READ, &hkey);
 
-	if (result != ERROR_SUCCESS)
-	{
-		if (result != ERROR_FILE_NOT_FOUND)
-			_app_logerror (L"RegOpenKeyEx", result, nullptr, true);
-	}
-	else
+	if (result == ERROR_SUCCESS)
 	{
 		DWORD index = 0;
 
 		while (true)
 		{
-			rstring package_sid_string;
-
 			WCHAR key_name[MAX_PATH] = {0};
+			DWORD size = _countof (key_name);
 
-			PSID package_sid[SECURITY_MAX_SID_SIZE] = {0};
-
-			DWORD size;
-
-			size = _countof (key_name);
 			if (RegEnumKeyEx (hkey, index++, key_name, &size, 0, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
 				break;
 
 			result = RegOpenKeyEx (hkey, key_name, 0, KEY_READ, &hsubkey);
 
-			if (result != ERROR_SUCCESS)
+			if (result == ERROR_SUCCESS)
 			{
-				if (result != ERROR_FILE_NOT_FOUND)
-					_app_logerror (L"RegOpenKeyEx", result, key_name, true);
-			}
-			else
-			{
+				PSID package_sid[SECURITY_MAX_SID_SIZE] = {0};
+
 				size = _countof (package_sid) * sizeof (package_sid[0]);
 				result = RegQueryValueEx (hsubkey, L"PackageSid", nullptr, nullptr, (LPBYTE)package_sid, &size);
 
 				if (result != ERROR_SUCCESS)
-				{
-					if (result != ERROR_FILE_NOT_FOUND)
-						_app_logerror (L"RegQueryValueEx", result, key_name, true);
-
 					continue;
-				}
 
-				package_sid_string = _r_str_fromsid (package_sid);
-
-				const size_t hash = _r_str_hash (package_sid_string);
-
-				WCHAR display_name[MAX_PATH] = {0};
-				WCHAR path[MAX_PATH] = {0};
+				rstring package_sid_string = _r_str_fromsid (package_sid);
 
 				PITEM_ADD ptr_item = new ITEM_ADD;
 
-				ptr_item->hash = hash;
+				ptr_item->hash = _r_str_hash (package_sid_string);
+				ptr_item->type = DataAppUWP;
 
+				WCHAR display_name[MAX_PATH] = {0};
 				size = _countof (display_name) * sizeof (display_name[0]);
 				result = RegQueryValueEx (hsubkey, L"DisplayName", nullptr, nullptr, (LPBYTE)display_name, &size);
 
@@ -1083,11 +1061,22 @@ void _app_generate_packages ()
 				{
 					if (display_name[0] == L'@')
 					{
-						if (!SUCCEEDED (SHLoadIndirectString (rstring (display_name), display_name, _countof (display_name), nullptr)) || !display_name[0])
-							StringCchCopy (display_name, _countof (display_name), key_name[0] ? key_name : package_sid_string);
+						const HRESULT hrComInit = CoInitialize (nullptr);
+
+						if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
+						{
+							WCHAR name[MAX_PATH] = {0};
+
+							if (SUCCEEDED (SHLoadIndirectString (display_name, name, _countof (name), nullptr)))
+								StringCchCopy (display_name, _countof (display_name), name);
+
+							if (SUCCEEDED (hrComInit))
+								CoUninitialize ();
+						}
 					}
 				}
 
+				WCHAR path[MAX_PATH] = {0};
 				size = _countof (path) * sizeof (path[0]);
 				RegQueryValueEx (hsubkey, L"PackageRootFolder", nullptr, nullptr, (LPBYTE)path, &size);
 
@@ -1097,17 +1086,20 @@ void _app_generate_packages ()
 				if (RegQueryInfoKey (hsubkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
 					ptr_item->timestamp = _r_unixtime_from_filetime (&ft);
 
-				ptr_item->type = DataAppUWP;
-
 				_r_str_alloc (&ptr_item->sid, package_sid_string.GetLength (), package_sid_string);
 				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
 				_r_str_alloc (&ptr_item->real_path, _r_str_length (path), path);
 
-				ConvertStringSidToSid (package_sid_string, &ptr_item->pdata);
+				if (!ConvertStringSidToSid (package_sid_string, &ptr_item->pdata))
+				{
+					SAFE_DELETE (ptr_item);
+				}
+				else
+				{
+					_app_load_appxmanifest (ptr_item);
 
-				_app_load_appxmanifest (ptr_item);
-
-				items.push_back (ptr_item);
+					items.push_back (ptr_item);
+				}
 
 				RegCloseKey (hsubkey);
 			}
@@ -1257,8 +1249,8 @@ void _app_generate_services ()
 							PITEM_ADD ptr_item = new ITEM_ADD;
 
 							ptr_item->hash = _r_str_hash (service_name);
-							ptr_item->timestamp = timestamp;
 							ptr_item->type = DataAppService;
+							ptr_item->timestamp = timestamp;
 
 							_r_str_alloc (&ptr_item->service_name, _r_str_length (service_name), service_name);
 							_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
@@ -1267,8 +1259,6 @@ void _app_generate_services ()
 
 							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, &ptr_item->pdata, nullptr))
 							{
-								_app_logerror (L"ConvertStringSecurityDescriptorToSecurityDescriptor", GetLastError (), service_name, false);
-
 								SAFE_DELETE (ptr_item);
 							}
 							else

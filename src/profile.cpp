@@ -641,7 +641,7 @@ bool _app_isapphaveconnection (size_t app_hash)
 
 		if (ptr_network && ptr_network->hash == app_hash)
 		{
-			if ((ptr_network->protocol == IPPROTO_TCP && (ptr_network->state == MIB_TCP_STATE_ESTAB || ptr_network->state == MIB_TCP_STATE_LISTEN)) || (ptr_network->protocol == IPPROTO_UDP && !ptr_network->state))
+			if ((ptr_network->protocol == IPPROTO_TCP && (ptr_network->state == MIB_TCP_STATE_ESTAB)) || (ptr_network->protocol == IPPROTO_UDP && !ptr_network->state))
 				return true;
 		}
 	}
@@ -696,7 +696,7 @@ bool _app_isappexists (ITEM_APP const* ptr_app)
 	return true;
 }
 
-bool _app_ruleisblocklist (LPCWSTR name)
+bool _app_isruleblocklist (LPCWSTR name)
 {
 	if (!name || !name[0])
 		return false;
@@ -956,7 +956,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type)
 			const rstring rule_name = item.attribute (L"name").as_string ();
 
 			// do not load blocklist config (old versions hack)!
-			if (_app_ruleisblocklist (rule_name))
+			if (_app_isruleblocklist (rule_name))
 				continue;
 
 			const size_t rule_hash = rule_name.Hash ();
@@ -1038,7 +1038,7 @@ void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t * pti
 	}
 }
 
-void _app_profile_load (HWND hwnd)
+void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 {
 	const UINT current_listview_id = _app_gettab_id (hwnd);
 	const size_t selected_item = (size_t)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
@@ -1089,10 +1089,10 @@ void _app_profile_load (HWND hwnd)
 	_r_fastlock_releaseexclusive (&lock_access);
 
 	// load profile
-	if (_r_fs_exists (config.profile_path) || _r_fs_exists (config.profile_path_backup))
+	if (path_custom || _r_fs_exists (config.profile_path) || _r_fs_exists (config.profile_path_backup))
 	{
 		pugi::xml_document doc;
-		pugi::xml_parse_result result = doc.load_file (config.profile_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+		pugi::xml_parse_result result = doc.load_file (path_custom ? path_custom : config.profile_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
 		// load backup
 		if (!result)
@@ -1102,7 +1102,7 @@ void _app_profile_load (HWND hwnd)
 		{
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
-				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %d,text: %s,file: %s", result.status, result.offset, rstring (result.description ()).GetString (), config.profile_path), false);
+				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %d,text: %s,file: %s", result.status, result.offset, rstring (result.description ()).GetString (), path_custom ? path_custom : config.profile_path), false);
 
 			_r_fastlock_acquireexclusive (&lock_access);
 			_app_profile_load_fallback ();
@@ -1309,10 +1309,10 @@ void _app_profile_load (HWND hwnd)
 	}
 }
 
-void _app_profile_save ()
+void _app_profile_save (LPCWSTR path_custom)
 {
 	const time_t current_time = _r_unixtime_now ();
-	const bool is_backuprequired = app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsLonglong ()) || !_r_fs_exists (config.profile_path_backup));
+	const bool is_backuprequired = !path_custom && (app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsLonglong ()) || !_r_fs_exists (config.profile_path_backup)));
 
 	pugi::xml_document doc;
 	pugi::xml_node root = doc.append_child (L"root");
@@ -1453,7 +1453,7 @@ void _app_profile_save ()
 			}
 		}
 
-		doc.save_file (config.profile_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+		doc.save_file (path_custom ? path_custom : config.profile_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 		_r_fastlock_releaseshared (&lock_access);
 

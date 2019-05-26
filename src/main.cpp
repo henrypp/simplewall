@@ -1772,7 +1772,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 					else if (ctrl_id == IDC_SKIPUACWARNING_CHK)
 					{
+#ifdef _APP_HAVE_SKIPUAC
 						app.SkipUacEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+#endif // _APP_HAVE_SKIPUAC
 					}
 					else if (ctrl_id == IDC_CHECKUPDATES_CHK)
 					{
@@ -2650,8 +2652,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			app.LocaleMenu (hmenu, IDS_SETTINGS, IDM_SETTINGS, false, L"...\tF2");
 			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_EXPORT, 2, true, nullptr);
 			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_IMPORT, 3, true, nullptr);
-			app.LocaleMenu (hmenu, IDS_EXPORT, IDM_EXPORT, false, L" \"" XML_PROFILE L"\"...\tCtrl+S");
 			app.LocaleMenu (hmenu, IDS_IMPORT, IDM_IMPORT, false, L" \"" XML_PROFILE L"\"...\tCtrl+O");
+			app.LocaleMenu (hmenu, IDS_EXPORT, IDM_EXPORT, false, L" \"" XML_PROFILE L"\"...\tCtrl+S");
 			app.LocaleMenu (hmenu, IDS_EXIT, IDM_EXIT, false, nullptr);
 
 			app.LocaleMenu (hmenu, IDS_EDIT, 1, true, nullptr);
@@ -3748,31 +3750,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-				case IDM_EXPORT:
-				{
-					WCHAR path[MAX_PATH] = {0};
-					StringCchCopy (path, _countof (path), XML_PROFILE);
-
-					WCHAR title[MAX_PATH] = {0};
-					StringCchPrintf (title, _countof (title), L"%s %s...", app.LocaleString (IDS_EXPORT, nullptr).GetString (), path);
-
-					OPENFILENAME ofn = {0};
-
-					ofn.lStructSize = sizeof (ofn);
-					ofn.hwndOwner = hwnd;
-					ofn.lpstrFile = path;
-					ofn.nMaxFile = _countof (path);
-					ofn.lpstrFilter = L"*.xml\0*.xml\0\0";
-					ofn.lpstrDefExt = L"xml";
-					ofn.lpstrTitle = title;
-					ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
-
-					if (GetSaveFileName (&ofn))
-						_r_fs_copy (config.profile_path, path);
-
-					break;
-				}
-
 				case IDM_IMPORT:
 				{
 					WCHAR path[MAX_PATH] = {0};
@@ -3800,19 +3777,40 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 						else
 						{
-							// make backup
-							_r_fs_delete (config.profile_path_backup, false);
-							_r_fs_copy (config.profile_path, config.profile_path_backup);
+							_app_profile_save (config.profile_path_backup); // made backup
+							_app_profile_load (hwnd, path); // load profile
 
-							_r_fs_delete (config.profile_path, false);
-							_r_fs_copy (path, config.profile_path);
-
-							// load profile
-							_app_profile_load (hwnd);
 							_app_refreshstatus (hwnd);
 
 							_app_changefilters (hwnd, true, false);
 						}
+					}
+
+					break;
+				}
+
+				case IDM_EXPORT:
+				{
+					WCHAR path[MAX_PATH] = {0};
+					StringCchCopy (path, _countof (path), XML_PROFILE);
+
+					WCHAR title[MAX_PATH] = {0};
+					StringCchPrintf (title, _countof (title), L"%s %s...", app.LocaleString (IDS_EXPORT, nullptr).GetString (), path);
+
+					OPENFILENAME ofn = {0};
+
+					ofn.lStructSize = sizeof (ofn);
+					ofn.hwndOwner = hwnd;
+					ofn.lpstrFile = path;
+					ofn.nMaxFile = _countof (path);
+					ofn.lpstrFilter = L"*.xml\0*.xml\0\0";
+					ofn.lpstrDefExt = L"xml";
+					ofn.lpstrTitle = title;
+					ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+
+					if (GetSaveFileName (&ofn))
+					{
+						_app_profile_save (path);
 					}
 
 					break;
@@ -4525,127 +4523,124 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					PITEM_RULE ptr_rule = new ITEM_RULE;
 
-					if (ptr_rule)
+					_app_ruleenable (ptr_rule, true);
+
+					ptr_rule->type = DataRuleCustom;
+					ptr_rule->is_block = false;
+
+					const UINT listview_id = _app_gettab_id (hwnd);
+
+					if (
+						listview_id == IDC_APPS_PROFILE ||
+						listview_id == IDC_APPS_SERVICE ||
+						listview_id == IDC_APPS_UWP
+						)
 					{
-						_app_ruleenable (ptr_rule, true);
+						size_t item = LAST_VALUE;
 
-						ptr_rule->type = DataRuleCustom;
-						ptr_rule->is_block = false;
-
-						const UINT listview_id = _app_gettab_id (hwnd);
-
-						if (
-							listview_id == IDC_APPS_PROFILE ||
-							listview_id == IDC_APPS_SERVICE ||
-							listview_id == IDC_APPS_UWP
-							)
+						while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 						{
-							size_t item = LAST_VALUE;
+							const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
 
-							while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
-							{
-								const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
-
-								if (app_hash)
-									ptr_rule->apps[app_hash] = true;
-							}
+							if (app_hash)
+								ptr_rule->apps[app_hash] = true;
 						}
-						else if (listview_id == IDC_NETWORK)
+					}
+					else if (listview_id == IDC_NETWORK)
+					{
+						size_t item = LAST_VALUE;
+
+						rstring rule_remote;
+						rstring rule_local;
+
+						ptr_rule->is_block = true;
+
+						while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 						{
-							size_t item = LAST_VALUE;
+							_r_fastlock_acquireshared (&lock_network);
 
-							rstring rule_remote;
-							rstring rule_local;
+							const size_t network_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+							PITEM_NETWORK ptr_network = network_arr.at (network_idx);
 
-							ptr_rule->is_block = true;
-
-							while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+							if (ptr_network)
 							{
-								_r_fastlock_acquireshared (&lock_network);
-
-								const size_t network_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
-								PITEM_NETWORK ptr_network = network_arr.at (network_idx);
-
-								if (ptr_network)
+								if (!ptr_rule->pname)
 								{
-									if (!ptr_rule->pname)
-									{
-										const rstring name = _r_listview_getitemtext (hwnd, listview_id, item, 0);
+									const rstring name = _r_listview_getitemtext (hwnd, listview_id, item, 0);
 
-										_r_str_alloc (&ptr_rule->pname, name.GetLength (), name);
-									}
-
-									if (ptr_network->hash && ptr_network->path)
-									{
-										if (!_app_getapplication (ptr_network->hash))
-										{
-											_r_fastlock_acquireexclusive (&lock_access);
-											_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
-											_r_fastlock_releaseexclusive (&lock_access);
-
-											_app_refreshstatus (hwnd);
-											_app_profile_save ();
-										}
-
-										ptr_rule->apps[ptr_network->hash] = true;
-									}
-
-									if (!ptr_rule->protocol && ptr_network->protocol)
-										ptr_rule->protocol = ptr_network->protocol;
-
-									LPWSTR fmt = nullptr;
-
-									if (_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &fmt, FMTADDR_AS_RULE))
-										rule_remote.AppendFormat (L"%s" RULE_DELIMETER, fmt);
-
-									if (_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &fmt, FMTADDR_AS_RULE))
-										rule_local.AppendFormat (L"%s" RULE_DELIMETER, fmt);
-
-									SAFE_DELETE_ARRAY (fmt);
+									_r_str_alloc (&ptr_rule->pname, name.GetLength (), name);
 								}
 
-								_r_fastlock_releaseshared (&lock_network);
+								if (ptr_network->hash && ptr_network->path)
+								{
+									if (!_app_getapplication (ptr_network->hash))
+									{
+										_r_fastlock_acquireexclusive (&lock_access);
+										_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+										_r_fastlock_releaseexclusive (&lock_access);
+
+										_app_refreshstatus (hwnd);
+										_app_profile_save ();
+									}
+
+									ptr_rule->apps[ptr_network->hash] = true;
+								}
+
+								if (!ptr_rule->protocol && ptr_network->protocol)
+									ptr_rule->protocol = ptr_network->protocol;
+
+								LPWSTR fmt = nullptr;
+
+								if (_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &fmt, FMTADDR_AS_RULE))
+									rule_remote.AppendFormat (L"%s" RULE_DELIMETER, fmt);
+
+								if (_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &fmt, FMTADDR_AS_RULE))
+									rule_local.AppendFormat (L"%s" RULE_DELIMETER, fmt);
+
+								SAFE_DELETE_ARRAY (fmt);
 							}
 
-							rule_remote.Trim (RULE_DELIMETER);
-							rule_local.Trim (RULE_DELIMETER);
-
-							_r_str_alloc (&ptr_rule->prule_remote, rule_remote.GetLength (), rule_remote);
-							_r_str_alloc (&ptr_rule->prule_local, rule_local.GetLength (), rule_local);
+							_r_fastlock_releaseshared (&lock_network);
 						}
 
-						if (ptr_rule && DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
+						rule_remote.Trim (RULE_DELIMETER);
+						rule_local.Trim (RULE_DELIMETER);
+
+						_r_str_alloc (&ptr_rule->prule_remote, rule_remote.GetLength (), rule_remote);
+						_r_str_alloc (&ptr_rule->prule_local, rule_local.GetLength (), rule_local);
+					}
+
+					if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
+					{
+						_r_fastlock_acquireexclusive (&lock_access);
+
+						rules_arr.push_back (ptr_rule);
+						const size_t rule_idx = rules_arr.size () - 1;
+
+						_r_fastlock_releaseexclusive (&lock_access);
+
+						const UINT listview_rules_id = _app_getlistview_id (DataRuleCustom);
+
+						if (listview_rules_id)
 						{
-							_r_fastlock_acquireexclusive (&lock_access);
+							_r_fastlock_acquireshared (&lock_checkbox);
 
-							rules_arr.push_back (ptr_rule);
-							const size_t rule_idx = rules_arr.size () - 1;
+							const size_t new_item = _r_listview_getitemcount (hwnd, listview_rules_id);
 
-							_r_fastlock_releaseexclusive (&lock_access);
+							_r_listview_additem (hwnd, listview_rules_id, new_item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
+							_app_setruleiteminfo (hwnd, listview_rules_id, new_item, ptr_rule, true);
 
-							const UINT listview_rules_id = _app_getlistview_id (DataRuleCustom);
-
-							if (listview_rules_id)
-							{
-								_r_fastlock_acquireshared (&lock_checkbox);
-
-								const size_t new_item = _r_listview_getitemcount (hwnd, listview_rules_id);
-
-								_r_listview_additem (hwnd, listview_rules_id, new_item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
-								_app_setruleiteminfo (hwnd, listview_rules_id, new_item, ptr_rule, true);
-
-								_r_fastlock_releaseshared (&lock_checkbox);
-							}
-
-							_app_listviewsort (hwnd, listview_id);
-
-							_app_refreshstatus (hwnd);
-							_app_profile_save ();
+							_r_fastlock_releaseshared (&lock_checkbox);
 						}
-						else
-						{
-							_app_freerule (&ptr_rule);
-						}
+
+						_app_listviewsort (hwnd, listview_id);
+
+						_app_refreshstatus (hwnd);
+						_app_profile_save ();
+					}
+					else
+					{
+						_app_freerule (&ptr_rule);
 					}
 
 					break;
