@@ -3,10 +3,10 @@
 
 #pragma once
 
-void _app_timer_create (HWND hwnd, MFILTER_APPS& ptr_apps, time_t seconds);
-size_t _app_timer_remove (HWND hwnd, MFILTER_APPS& ptr_apps);
+bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds);
+bool _app_timer_reset (HWND hwnd, PITEM_APP ptr_app);
 
-bool _app_istimeractive (ITEM_APP const *ptr_app);
+bool _app_istimeractive (PITEM_APP ptr_app);
 bool _app_istimersactive ();
 
 void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN);
