@@ -4,8 +4,8 @@
 	<item name="DNS" rule="53" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="FTP" rule="20-21;49152-65534" protocol="6" is_custom="true" />
 	<item name="HTTP" rule="80;443" protocol="6" is_custom="true" />
-	<item name="ICMPv4" dir="2" protocol="1" />
-	<item name="ICMPv6" dir="2" protocol="58" />
+	<item name="ICMPv4" dir="2" protocol="1" is_custom="true" />
+	<item name="ICMPv6" dir="2" protocol="58" is_custom="true" />
 	<item name="IMAP/POP3/SMTP" rule="25;110;143;465;993;995;2525" protocol="6" is_custom="true" />
 	<item name="IGMP" rule="224.0.0.0/4" protocol="2" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="IKEv2/IPSEC/L2TP" rule="500;1701;4500" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
