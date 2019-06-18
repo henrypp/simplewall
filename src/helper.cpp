@@ -3,6 +3,46 @@
 
 #include "global.hpp"
 
+void _app_dereferenceapp (PVOID pdata)
+{
+	delete PITEM_APP (pdata);
+}
+
+void _app_dereferenceappshelper (PVOID pdata)
+{
+	delete PITEM_APP_HELPER (pdata);
+}
+
+void _app_dereferencecolor (PVOID pdata)
+{
+	delete PITEM_COLOR (pdata);
+}
+
+void _app_dereferencelog (PVOID pdata)
+{
+	delete PITEM_LOG (pdata);
+}
+
+void _app_dereferencenetwork (PVOID pdata)
+{
+	delete PITEM_NETWORK (pdata);
+}
+
+void _app_dereferencerule (PVOID pdata)
+{
+	delete PITEM_RULE (pdata);
+}
+
+void _app_dereferenceruleconfig (PVOID pdata)
+{
+	delete PITEM_RULE_CONFIG (pdata);
+}
+
+void _app_dereferencestring (PVOID pdata)
+{
+	delete[] LPWSTR (pdata);
+}
+
 UINT _app_gettab_id (HWND hwnd, size_t page_id)
 {
 	TCITEM tci = {0};
@@ -56,7 +96,7 @@ bool _app_initinterfacestate (HWND hwnd)
 
 	if (is_enabled)
 	{
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (false, 0));
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
 	}
 
@@ -67,7 +107,7 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
 {
 	if (is_enabled)
 	{
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (true, 0));
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (TRUE, 0));
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
 	}
 }
@@ -110,7 +150,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
-	if ((flags & FMTADDR_USE_PROTOCOL) != 0 && proto)
+	if (proto && (flags & FMTADDR_USE_PROTOCOL) != 0)
 		StringCchPrintf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto).ToLower ().GetString ());
 
 	if ((flags & FMTADDR_AS_ARPA) != 0)
@@ -159,36 +199,47 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 	if (result && (flags & FMTADDR_RESOLVE_HOST) != 0 && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ())
 	{
-		const size_t hash = _r_str_hash (formatted_address);
+		const size_t addr_hash = _r_str_hash (formatted_address);
 
-		if (hash)
+		if (addr_hash)
 		{
 			_r_fastlock_acquireshared (&lock_cache);
-			const bool is_exists = cache_hosts.find (hash) != cache_hosts.end ();
+			const bool is_exists = cache_hosts.find (addr_hash) != cache_hosts.end ();
 			_r_fastlock_releaseshared (&lock_cache);
 
 			if (is_exists)
 			{
 				_r_fastlock_acquireshared (&lock_cache);
-
-				if (cache_hosts[hash])
-					StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", cache_hosts[hash]));
-
+				PR_OBJECT ptr_cache_object = _r_obj_reference (cache_hosts[addr_hash]);
 				_r_fastlock_releaseshared (&lock_cache);
+
+				if (ptr_cache_object)
+				{
+					if (ptr_cache_object->pdata)
+						StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", (LPCWSTR)ptr_cache_object->pdata));
+
+					_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
+				}
 			}
 			else
 			{
-				LPWSTR cache_ptr = nullptr;
+				cache_hosts[addr_hash] = nullptr;
 
-				if (_app_resolveaddress (af, ptr_addr, &cache_ptr))
-					StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", cache_ptr));
+				LPWSTR ptr_cache = nullptr;
 
-				_r_fastlock_acquireexclusive (&lock_cache);
+				if (_app_resolveaddress (af, ptr_addr, &ptr_cache))
+				{
+					StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", ptr_cache));
 
-				_app_freecache (&cache_hosts);
-				cache_hosts[hash] = cache_ptr;
+					_r_fastlock_acquireexclusive (&lock_cache);
 
-				_r_fastlock_releaseexclusive (&lock_cache);
+					_app_freeobjects_map (cache_hosts, &_app_dereferencestring, false);
+					cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache);
+
+					_r_obj_reference (cache_hosts[addr_hash]);
+
+					_r_fastlock_releaseexclusive (&lock_cache);
+				}
 			}
 		}
 	}
@@ -198,37 +249,26 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	return formatted_address[0] != 0;
 }
 
-void _app_freearray (std::vector<PITEM_ADD> * ptr)
+void _app_freeobjects_map (OBJECTS_MAP& ptr_map, OBJECT_CLEANUP_CALLBACK cleanup_callback, bool is_forced)
 {
-	if (!ptr)
-		return;
-
-	for (size_t i = 0; i < ptr->size (); i++)
+	if (is_forced || ptr_map.size () >= UMAP_CACHE_LIMIT)
 	{
-		PITEM_ADD ptr_item = ptr->at (i);
+		for (auto &p : ptr_map)
+			_r_obj_dereference (p.second, cleanup_callback);
 
-		SAFE_DELETE (ptr_item);
+		ptr_map.clear ();
 	}
-
-	ptr->clear ();
 }
 
-void _app_freecache (MCACHE_MAP * ptr_map)
+void _app_freeobjects_vec (OBJECTS_VEC & ptr_vec, OBJECT_CLEANUP_CALLBACK cleanup_callback)
 {
-	if (ptr_map->size () <= UMAP_CACHE_LIMIT)
-		return;
+	for (size_t i = 0; i < ptr_vec.size (); i++)
+		_r_obj_dereference (ptr_vec.at (i), cleanup_callback);
 
-	for (auto &p : *ptr_map)
-	{
-		LPWSTR ptr_buffer = p.second;
-
-		SAFE_DELETE_ARRAY (ptr_buffer);
-	}
-
-	ptr_map->clear ();
+	ptr_vec.clear ();
 }
 
-void _app_freethreadpool (MTHREADPOOL * ptr_pool)
+void _app_freethreadpool (THREADS_VEC * ptr_pool)
 {
 	if (!ptr_pool || ptr_pool->empty ())
 		return;
@@ -251,7 +291,7 @@ void _app_freelogstack ()
 {
 	while (true)
 	{
-		const PSLIST_ENTRY listEntry = RtlInterlockedPopEntrySList (&log_stack.ListHead);
+		const PSLIST_ENTRY listEntry = InterlockedPopEntrySList (&log_stack.ListHead);
 
 		if (!listEntry)
 			break;
@@ -266,7 +306,7 @@ void _app_freelogstack ()
 	}
 }
 
-void _app_getappicon (ITEM_APP const* ptr_app, bool is_small, size_t * picon_id, HICON * picon)
+void _app_getappicon (ITEM_APP* ptr_app, bool is_small, size_t * picon_id, HICON * picon)
 {
 	const bool is_iconshidden = app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
@@ -302,7 +342,7 @@ void _app_getappicon (ITEM_APP const* ptr_app, bool is_small, size_t * picon_id,
 	}
 }
 
-void _app_getdisplayname (size_t hash, ITEM_APP const* ptr_app, LPWSTR * extracted_name)
+void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted_name)
 {
 	if (!extracted_name)
 		return;
@@ -315,14 +355,14 @@ void _app_getdisplayname (size_t hash, ITEM_APP const* ptr_app, LPWSTR * extract
 	{
 		rstring name;
 
-		if (!_app_item_get (ptr_app->type, hash, &name, nullptr, nullptr, nullptr))
+		if (!_app_item_get (ptr_app->type, app_hash, &name, nullptr, nullptr))
 			name = ptr_app->original_path;
 
 		_r_str_alloc (extracted_name, name.GetLength (), name);
 	}
 	else
 	{
-		LPCWSTR ptr_path = ((hash == config.ntoskrnl_hash) ? ptr_app->original_path : ptr_app->real_path);
+		LPCWSTR ptr_path = ((app_hash == config.ntoskrnl_hash) ? ptr_app->original_path : ptr_app->real_path);
 
 		if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
 		{
@@ -436,292 +476,856 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 	return result;
 }
 
-bool _app_getsignatureinfo (size_t hash, LPCWSTR path, LPWSTR * psigner)
+PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app)
 {
 	if (!app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
-		return false;
+		return nullptr;
 
-	if (!psigner || !path || !path[0])
-		return false;
+	if (!app_hash || !ptr_app || !ptr_app->real_path || !ptr_app->real_path[0])
+		return nullptr;
 
 	_r_fastlock_acquireshared (&lock_cache);
-	const bool is_exists = cache_signatures.find (hash) != cache_signatures.end ();
+	const bool is_exists = cache_signatures.find (app_hash) != cache_signatures.end ();
+	_r_fastlock_releaseshared (&lock_cache);
+
+	PR_OBJECT ptr_cache_object = nullptr;
+
+	if (is_exists)
+	{
+		_r_fastlock_acquireshared (&lock_cache);
+		ptr_cache_object = _r_obj_reference (cache_signatures[app_hash]);
+		_r_fastlock_releaseshared (&lock_cache);
+	}
+	else
+	{
+		cache_signatures[app_hash] = nullptr;
+
+		const HANDLE hfile = CreateFile (ptr_app->real_path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
+
+		if (hfile != INVALID_HANDLE_VALUE)
+		{
+			static GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+
+			WINTRUST_FILE_INFO fileInfo = {0};
+
+			fileInfo.cbStruct = sizeof (fileInfo);
+			fileInfo.pcwszFilePath = ptr_app->real_path;
+			fileInfo.hFile = hfile;
+
+			WINTRUST_DATA trustData = {0};
+
+			trustData.cbStruct = sizeof (trustData);
+			trustData.dwUIChoice = WTD_UI_NONE;
+			trustData.fdwRevocationChecks = WTD_REVOKE_NONE;
+			trustData.dwProvFlags = WTD_SAFER_FLAG | WTD_CACHE_ONLY_URL_RETRIEVAL;
+			trustData.dwUnionChoice = WTD_CHOICE_FILE;
+			trustData.pFile = &fileInfo;
+
+			trustData.dwStateAction = WTD_STATEACTION_VERIFY;
+			const LONG status = WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trustData);
+
+			if (status == S_OK)
+			{
+				PCRYPT_PROVIDER_DATA provData = WTHelperProvDataFromStateData (trustData.hWVTStateData);
+
+				if (provData)
+				{
+					PCRYPT_PROVIDER_SGNR psProvSigner = WTHelperGetProvSignerFromChain (provData, 0, FALSE, 0);
+
+					if (psProvSigner)
+					{
+						CRYPT_PROVIDER_CERT* psProvCert = WTHelperGetProvCertFromChain (psProvSigner, 0);
+
+						if (psProvCert)
+						{
+							const DWORD num_chars = CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, nullptr, 0) + 1;
+
+							if (num_chars > 1)
+							{
+								LPWSTR ptr_cache = new WCHAR[num_chars];
+
+								if (CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, ptr_cache, num_chars) > 1)
+								{
+									_r_fastlock_acquireexclusive (&lock_cache);
+
+									_app_freeobjects_map (cache_signatures, &_app_dereferencestring, false);
+									cache_signatures[app_hash] = _r_obj_allocate (ptr_cache);
+
+									ptr_cache_object = _r_obj_reference (cache_signatures[app_hash]);
+
+									_r_fastlock_releaseexclusive (&lock_cache);
+								}
+								else
+								{
+									SAFE_DELETE_ARRAY (ptr_cache);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			trustData.dwStateAction = WTD_STATEACTION_CLOSE;
+			WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trustData);
+
+			CloseHandle (hfile);
+		}
+	}
+
+	ptr_app->is_signed = (ptr_cache_object != nullptr && ptr_cache_object->pdata != nullptr);
+
+	return ptr_cache_object;
+}
+
+PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
+{
+	if (!app_hash || !ptr_app || !ptr_app->real_path || !ptr_app->real_path[0])
+		return nullptr;
+
+	PR_OBJECT ptr_cache_object = nullptr;
+
+	_r_fastlock_acquireshared (&lock_cache);
+	const bool is_exists = cache_versions.find (app_hash) != cache_versions.end ();
 	_r_fastlock_releaseshared (&lock_cache);
 
 	if (is_exists)
 	{
 		_r_fastlock_acquireshared (&lock_cache);
-
-		LPCWSTR ptr_text = cache_signatures[hash];
-		_r_str_alloc (psigner, _r_str_length (ptr_text), ptr_text);
-
+		ptr_cache_object = _r_obj_reference (cache_versions[app_hash]);
 		_r_fastlock_releaseshared (&lock_cache);
-
-		return (*psigner != nullptr);
 	}
-
-	bool result = false;
-
-	cache_signatures[hash] = nullptr;
-
-	const HANDLE hfile = CreateFile (path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
-
-	if (hfile != INVALID_HANDLE_VALUE)
+	else
 	{
-		static GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+		cache_versions[app_hash] = nullptr;
 
-		WINTRUST_FILE_INFO fileInfo = {0};
+		const HINSTANCE hlib = LoadLibraryEx (ptr_app->real_path, nullptr, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
 
-		fileInfo.cbStruct = sizeof (fileInfo);
-		fileInfo.pcwszFilePath = path;
-		fileInfo.hFile = hfile;
-
-		WINTRUST_DATA trustData = {0};
-
-		trustData.cbStruct = sizeof (trustData);
-		trustData.dwUIChoice = WTD_UI_NONE;
-		trustData.fdwRevocationChecks = WTD_REVOKE_NONE;
-		trustData.dwProvFlags = WTD_SAFER_FLAG | WTD_CACHE_ONLY_URL_RETRIEVAL;
-		trustData.dwUnionChoice = WTD_CHOICE_FILE;
-		trustData.pFile = &fileInfo;
-
-		trustData.dwStateAction = WTD_STATEACTION_VERIFY;
-		const LONG status = WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trustData);
-
-		if (status == S_OK)
+		if (hlib)
 		{
-			PCRYPT_PROVIDER_DATA provData = WTHelperProvDataFromStateData (trustData.hWVTStateData);
+			const HRSRC hres = FindResource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION);
 
-			if (provData)
+			if (hres)
 			{
-				PCRYPT_PROVIDER_SGNR psProvSigner = WTHelperGetProvSignerFromChain (provData, 0, FALSE, 0);
+				const HGLOBAL hglob = LoadResource (hlib, hres);
 
-				if (psProvSigner)
+				if (hglob)
 				{
-					CRYPT_PROVIDER_CERT* psProvCert = WTHelperGetProvCertFromChain (psProvSigner, 0);
+					const LPVOID versionInfo = LockResource (hglob);
 
-					if (psProvCert)
+					if (versionInfo)
 					{
-						const DWORD num_chars = CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, nullptr, 0) + 1;
+						rstring buffer;
 
-						if (num_chars > 1)
+						UINT vLen = 0, langD = 0;
+						LPVOID retbuf = nullptr;
+
+						WCHAR author_entry[128] = {0};
+						WCHAR description_entry[128] = {0};
+
+						if (VerQueryValue (versionInfo, L"\\VarFileInfo\\Translation", &retbuf, &vLen) && vLen == 4)
 						{
-							LPWSTR ptr_text = new WCHAR[num_chars];
+							CopyMemory (&langD, retbuf, vLen);
+							StringCchPrintf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
+							StringCchPrintf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
+						}
+						else
+						{
+							StringCchPrintf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%04X04B0\\CompanyName", GetUserDefaultLangID ());
+							StringCchPrintf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%04X04B0\\FileDescription", GetUserDefaultLangID ());
+						}
 
-							if (!CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, ptr_text, num_chars))
-								SAFE_DELETE_ARRAY (ptr_text);
+						if (VerQueryValue (versionInfo, description_entry, &retbuf, &vLen))
+						{
+							buffer.Append (SZ_TAB);
+							buffer.Append (LPCWSTR (retbuf));
 
+							UINT length = 0;
+							VS_FIXEDFILEINFO* verInfo = nullptr;
+
+							if (VerQueryValue (versionInfo, L"\\", (void**)(&verInfo), &length))
+							{
+								buffer.Append (_r_fmt (L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS)));
+
+								if (HIWORD (verInfo->dwFileVersionLS) || LOWORD (verInfo->dwFileVersionLS))
+								{
+									buffer.Append (_r_fmt (L".%d", HIWORD (verInfo->dwFileVersionLS)));
+
+									if (LOWORD (verInfo->dwFileVersionLS))
+										buffer.Append (_r_fmt (L".%d", LOWORD (verInfo->dwFileVersionLS)));
+								}
+							}
+
+							buffer.Append (L"\r\n");
+						}
+
+						if (VerQueryValue (versionInfo, author_entry, &retbuf, &vLen))
+						{
+							buffer.Append (SZ_TAB);
+							buffer.Append (static_cast<LPCWSTR>(retbuf));
+							buffer.Append (L"\r\n");
+						}
+
+						buffer.Trim (L"\r\n ");
+
+						// get signature information
+						LPWSTR ptr_cache = nullptr;
+
+						if (_r_str_alloc (&ptr_cache, buffer.GetLength (), buffer))
+						{
 							_r_fastlock_acquireexclusive (&lock_cache);
 
-							_app_freecache (&cache_signatures);
+							_app_freeobjects_map (cache_versions, &_app_dereferencestring, false);
+							cache_versions[app_hash] = _r_obj_allocate (ptr_cache);
 
-							_r_str_alloc (psigner, _r_str_length (ptr_text), ptr_text);
-							cache_signatures[hash] = ptr_text;
+							ptr_cache_object = _r_obj_reference (cache_versions[app_hash]);
 
 							_r_fastlock_releaseexclusive (&lock_cache);
 						}
 					}
+
+					FreeResource (hglob);
 				}
 			}
 
-			result = true;
+			FreeLibrary (hlib);
 		}
-
-		trustData.dwStateAction = WTD_STATEACTION_CLOSE;
-		WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trustData);
-
-		CloseHandle (hfile);
 	}
 
-	return result;
+	return ptr_cache_object;
 }
 
-bool _app_getversioninfo (size_t hash, LPCWSTR path, LPWSTR * pinfo)
+rstring _app_getportname (UINT16 port)
 {
-	if (!path || !pinfo)
-		return false;
-
-	_r_fastlock_acquireshared (&lock_cache);
-	const bool is_exists = cache_versions.find (hash) != cache_versions.end ();
-	_r_fastlock_releaseshared (&lock_cache);
-
-	if (is_exists)
+	switch (port)
 	{
-		_r_fastlock_acquireshared (&lock_cache);
+		case 7:
+			return L"echo";
 
-		LPCWSTR ptr_text = cache_versions[hash];
-		_r_str_alloc (pinfo, _r_str_length (ptr_text), ptr_text);
+		case 9:
+			return L"discard";
 
-		_r_fastlock_releaseshared (&lock_cache);
+		case 11:
+			return L"systat";
 
-		return (*pinfo != nullptr);
+		case 13:
+			return L"daytime";
+
+		case 20:
+			return L"ftp-data";
+
+		case 21:
+			return L"ftp";
+
+		case 22:
+			return L"ssh";
+
+		case 23:
+			return L"telnet";
+
+		case 25:
+			return L"smtp";
+
+		case 26:
+			return L"rsftp";
+
+		case 37:
+			return L"time";
+
+		case 39:
+			return L"rlp";
+
+		case 42:
+			return L"nameserver";
+
+		case 43:
+			return L"nicname";
+
+		case 48:
+			return L"auditd";
+
+		case 53:
+			return L"domain";
+
+		case 63:
+			return L"whois++";
+
+		case 67:
+		case 68:
+			return L"dhcp";
+
+		case 69:
+			return L"tftp";
+
+		case 78:
+			return L"vettcp";
+
+		case 79:
+			return L"finger";
+
+		case 80:
+		case 8008:
+			return L"http";
+
+		case 81:
+			return L"hosts2-ns";
+
+		case 84:
+			return L"ctf";
+
+		case 88:
+			return L"kerberos-sec";
+
+		case 90:
+			return L"dnsix";
+
+		case 92:
+			return L"npp";
+
+		case 93:
+			return L"dcp";
+
+		case 94:
+			return L"objcall";
+
+		case 95:
+			return L"supdup";
+
+		case 101:
+			return L"hostname";
+
+		case 105:
+			return L"cso";
+
+		case 106:
+			return L"pop3pw";
+
+		case 107:
+			return L"rtelnet";
+
+		case 109:
+			return L"pop2";
+
+		case 111:
+			return L"rpcbind";
+
+		case 112:
+			return L"mcidas";
+
+		case 113:
+			return L"auth";
+
+		case 110:
+			return L"pop3";
+
+		case 115:
+			return L"sftp";
+
+		case 118:
+			return L"sqlserv";
+
+		case 119:
+			return L"nntp";
+
+		case 123:
+			return L"ntp";
+
+		case 126:
+			return L"nxedit";
+
+		case 129:
+			return L"pwdgen";
+
+		case 135:
+			return L"msrpc";
+
+		case 137:
+			return L"netbios-ns";
+
+		case 138:
+			return L"netbios-dgm";
+
+		case 139:
+			return L"netbios-ssn";
+
+		case 143:
+			return L"imap";
+
+		case 144:
+			return L"news";
+
+		case 145:
+			return L"uaac";
+
+		case 150:
+			return L"sql-net";
+
+		case 152:
+			return L"bftp";
+
+		case 156:
+			return L"sqlsrv";
+
+		case 159:
+			return L"nss-routing";
+
+		case 160:
+			return L"sgmp-traps";
+
+		case 161:
+			return L"snmp";
+
+		case 162:
+			return L"snmptrap";
+
+		case 169:
+			return L"send";
+
+		case 174:
+			return L"mailq";
+
+		case 175:
+			return L"vmnet";
+
+		case 179:
+			return L"bgp";
+
+		case 182:
+			return L"audit";
+
+		case 185:
+			return L"remote-kis";
+
+		case 186:
+			return L"kis";
+
+		case 194:
+			return L"irc";
+
+		case 195:
+			return L"dn6-nlm-aud";
+
+		case 196:
+			return L"dn6-smm-red";
+
+		case 197:
+			return L"dls";
+
+		case 199:
+			return L"smux";
+
+		case 209:
+			return L"qmtp";
+
+		case 245:
+			return L"link";
+
+		case 280:
+			return L"http-mgmt";
+
+		case 322:
+			return L"rtsps";
+
+		case 349:
+			return L"mftp";
+
+		case 389:
+			return L"ldap";
+
+		case 427:
+			return L"svrloc";
+
+		case 443:
+			return L"https";
+
+		case 444:
+			return L"snpp";
+
+		case 445:
+			return L"microsoft-ds";
+
+		case 464:
+			return L"kerberos";
+
+		case 465:
+			return L"smtps";
+
+		case 513:
+			return L"login";
+
+		case 514:
+			return L"shell";
+
+		case 515:
+			return L"printer";
+
+		case 530:
+			return L"rpc";
+
+		case 543:
+			return L"klogin";
+
+		case 544:
+			return L"kshell";
+
+		case 546:
+			return L"dhcpv6-client";
+
+		case 547:
+			return L"dhcpv6-server";
+
+		case 548:
+			return L"afp";
+
+		case 554:
+			return L"rtsp";
+
+		case 565:
+			return L"whoami";
+
+		case 558:
+			return L"sdnskmp";
+
+		case 587:
+			return L"submission";
+
+		case 631:
+			return L"ipp";
+
+		case 646:
+			return L"ldp";
+
+		case 647:
+			return L"dhcp-failover";
+
+		case 666:
+			return L"doom"; // khe-khe-khe!
+
+		case 847:
+			return L"dhcp-failover2";
+
+		case 873:
+			return L"rsync";
+
+		case 989:
+			return L"ftps-data";
+
+		case 990:
+			return L"ftps";
+
+		case 992:
+			return L"telnets";
+
+		case 993:
+			return L"imaps";
+
+		case 995:
+			return L"pop3s";
+
+		case 1029:
+			return L"ms-lsa";
+
+		case 1110:
+			return L"nfsd-status";
+
+		case 1337:
+			return L"menandmice-dns";
+
+		case 1433:
+			return L"ms-sql-s";
+
+		case 1688:
+			return L"nsjtp-data";
+
+		case 1701:
+			return L"l2tp";
+
+		case 1720:
+			return L"h323q931";
+
+		case 1723:
+			return L"pptp";
+
+		case 1900:
+			return L"upnp";
+
+		case 2000:
+			return L"cisco-sccp";
+
+		case 2054:
+			return L"weblogin";
+
+		case 2086:
+			return L"gnunet";
+
+		case 2001:
+			return L"dc";
+
+		case 2121:
+			return L"ccproxy-ftp";
+
+		case 2164:
+			return L"ddns-v3";
+
+		case 2167:
+			return L"raw-serial";
+
+		case 2171:
+			return L"msfw-storage";
+
+		case 2172:
+			return L"msfw-s-storage";
+
+		case 2173:
+			return L"msfw-replica";
+
+		case 2174:
+			return L"msfw-array";
+
+		case 2717:
+			return L"pn-requester";
+
+		case 2869:
+			return L"icslap";
+
+		case 3000:
+			return L"ppp";
+
+		case 3128:
+			return L"squid-http";
+
+		case 3306:
+			return L"mysql";
+
+		case 3389:
+			return L"ms-wbt-server";
+
+		case 3702:
+			return L"ws-discovery";
+
+		case 4500:
+			return L"ipsec-nat-t";
+
+		case 4554:
+			return L"msfrs";
+
+		case 4899:
+			return L"radmin";
+
+		case 5004:
+			return L"rtp-data";
+
+		case 5005:
+			return L"rtp";
+
+		case 5009:
+			return L"airport-admin";
+
+		case 5051:
+			return L"ida-agent";
+
+		case 5060:
+			return L"sip";
+
+		case 5101:
+			return L"admdog";
+
+		case 5190:
+			return L"aol";
+
+		case 5353:
+			return L"mdns";
+
+		case 5354:
+			return L"mdnsresponder";
+
+		case 5355:
+			return L"llmnr";
+
+		case 5357:
+			return L"wsdapi";
+
+		case 5432:
+			return L"postgresql";
+
+		case 5631:
+			return L"pcanywheredata";
+
+		case 5666:
+			return L"nrpe";
+
+		case 5800:
+			return L"vnc-http";
+
+		case 5900:
+			return L"vnc";
+
+		case 6000:
+		case 6001:
+		case 6002:
+		case 6003:
+			return L"x11";
+
+		case 6665:
+		case 6666:
+		case 6667:
+		case 6668:
+		case 6669:
+			return L"ircu";
+
+		case 6881:
+		case 6882:
+		case 6883:
+		case 6884:
+		case 6885:
+		case 6886:
+		case 6887:
+		case 6888:
+		case 6889:
+		case 6890:
+			return L"bittorrent";
+
+		case 7070:
+			return L"realserver";
+
+		case 8000:
+			return L"http-alt";
+
+		case 8080:
+			return L"http-proxy";
+
+		case 8443:
+			return L"https-alt";
+
+		case 9800:
+			return L"webdav";
+
+		case 33434:
+			return L"traceroute";
 	}
 
-	bool result = false;
-	rstring buffer;
-
-	cache_versions[hash] = nullptr;
-
-	const HINSTANCE hlib = LoadLibraryEx (path, nullptr, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
-
-	if (hlib)
-	{
-		const HRSRC hres = FindResource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION);
-
-		if (hres)
-		{
-			const HGLOBAL hglob = LoadResource (hlib, hres);
-
-			if (hglob)
-			{
-				const LPVOID versionInfo = LockResource (hglob);
-
-				if (versionInfo)
-				{
-					UINT vLen = 0, langD = 0;
-					LPVOID retbuf = nullptr;
-
-					WCHAR author_entry[128] = {0};
-					WCHAR description_entry[128] = {0};
-
-					if (VerQueryValue (versionInfo, L"\\VarFileInfo\\Translation", &retbuf, &vLen) && vLen == 4)
-					{
-						CopyMemory (&langD, retbuf, vLen);
-						StringCchPrintf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
-						StringCchPrintf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
-					}
-					else
-					{
-						StringCchPrintf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%04X04B0\\CompanyName", GetUserDefaultLangID ());
-						StringCchPrintf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%04X04B0\\FileDescription", GetUserDefaultLangID ());
-					}
-
-					if (VerQueryValue (versionInfo, description_entry, &retbuf, &vLen))
-					{
-						buffer.Append (SZ_TAB);
-						buffer.Append (LPCWSTR (retbuf));
-
-						UINT length = 0;
-						VS_FIXEDFILEINFO* verInfo = nullptr;
-
-						if (VerQueryValue (versionInfo, L"\\", (void**)(&verInfo), &length))
-						{
-							buffer.Append (_r_fmt (L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS)));
-
-							if (HIWORD (verInfo->dwFileVersionLS) || LOWORD (verInfo->dwFileVersionLS))
-							{
-								buffer.Append (_r_fmt (L".%d", HIWORD (verInfo->dwFileVersionLS)));
-
-								if (LOWORD (verInfo->dwFileVersionLS))
-									buffer.Append (_r_fmt (L".%d", LOWORD (verInfo->dwFileVersionLS)));
-							}
-						}
-
-						buffer.Append (L"\r\n");
-					}
-
-					if (VerQueryValue (versionInfo, author_entry, &retbuf, &vLen))
-					{
-						buffer.Append (SZ_TAB);
-						buffer.Append (static_cast<LPCWSTR>(retbuf));
-						buffer.Append (L"\r\n");
-					}
-
-					buffer.Trim (L"\r\n ");
-
-					// get signature information
-					{
-						LPWSTR ptr_text = nullptr;
-
-						_r_str_alloc (&ptr_text, buffer.GetLength (), buffer);
-						_r_str_alloc (pinfo, buffer.GetLength (), buffer);
-
-						_r_fastlock_acquireexclusive (&lock_cache);
-
-						_app_freecache (&cache_versions);
-
-						cache_versions[hash] = ptr_text;
-
-						_r_fastlock_releaseexclusive (&lock_cache);
-					}
-
-					result = true;
-				}
-
-				FreeResource (hglob);
-			}
-		}
-
-		FreeLibrary (hlib);
-	}
-
-	return result;
-}
-
-size_t _app_getposition (HWND hwnd, UINT listview_id, size_t idx)
-{
-	if (!listview_id)
-		return LAST_VALUE;
-
-	for (size_t i = 0; i < _r_listview_getitemcount (hwnd, listview_id); i++)
-	{
-		if ((size_t)_r_listview_getitemlparam (hwnd, listview_id, i) == idx)
-			return i;
-	}
-
-	return LAST_VALUE;
+	return SZ_UNKNOWN;
 }
 
 rstring _app_getprotoname (UINT8 proto)
 {
-	for (size_t i = 0; i < protocols.size (); i++)
+	switch (proto)
 	{
-		const PITEM_PROTOCOL ptr_proto = protocols.at (i);
+		case IPPROTO_HOPOPTS:
+			return L"HOPOPT";
 
-		if (ptr_proto && proto == ptr_proto->id)
-			return ptr_proto->pname;
+		case IPPROTO_ICMP:
+			return L"ICMPv4";
+
+		case IPPROTO_IGMP:
+			return L"IGMP";
+
+		case IPPROTO_GGP:
+			return L"GGP";
+
+		case IPPROTO_IPV4:
+			return L"IPv4";
+
+		case IPPROTO_ST:
+			return L"ST";
+
+		case IPPROTO_TCP:
+			return L"TCP";
+
+		case IPPROTO_CBT:
+			return L"CBT";
+
+		case IPPROTO_EGP:
+			return L"EGP";
+
+		case IPPROTO_IGP:
+			return L"IGP";
+
+		case IPPROTO_PUP:
+			return L"PUP";
+
+		case IPPROTO_UDP:
+			return L"UDP";
+
+		case IPPROTO_IDP:
+			return L"XNS-IDP";
+
+		case IPPROTO_RDP:
+			return L"RDP";
+
+		case IPPROTO_IPV6:
+			return L"IPv6";
+
+		case IPPROTO_ROUTING:
+			return L"IPv6-Route";
+
+		case IPPROTO_FRAGMENT:
+			return L"IPv6-Frag";
+
+		case IPPROTO_ESP:
+			return L"ESP";
+
+		case IPPROTO_AH:
+			return L"AH";
+
+		case IPPROTO_ICMPV6:
+			return L"ICMPv6";
+
+		case IPPROTO_DSTOPTS:
+			return L"IPv6-Opts";
+
+		case IPPROTO_L2TP:
+			return L"L2TP";
+
+		case IPPROTO_SCTP:
+			return L"SCTP";
+
+		case IPPROTO_RAW:
+			return L"RAW";
 	}
 
-	return SZ_EMPTY;
+	return SZ_UNKNOWN;
 }
 
 rstring _app_getstatename (DWORD state)
 {
-	if (state == MIB_TCP_STATE_CLOSED)
-		return L"Closed";
+	switch (state)
+	{
+		case MIB_TCP_STATE_CLOSED:
+			return L"Closed";
 
-	else if (state == MIB_TCP_STATE_LISTEN)
-		return L"Listen";
+		case MIB_TCP_STATE_LISTEN:
+			return L"Listen";
 
-	else if (state == MIB_TCP_STATE_SYN_SENT)
-		return L"SYN sent";
+		case MIB_TCP_STATE_SYN_SENT:
+			return L"SYN sent";
 
-	else if (state == MIB_TCP_STATE_SYN_RCVD)
-		return L"SYN received";
+		case MIB_TCP_STATE_SYN_RCVD:
+			return L"SYN received";
 
-	else if (state == MIB_TCP_STATE_ESTAB)
-		return L"Established";
+		case MIB_TCP_STATE_ESTAB:
+			return L"Established";
 
-	else if (state == MIB_TCP_STATE_FIN_WAIT1)
-		return L"FIN wait 1";
+		case MIB_TCP_STATE_FIN_WAIT1:
+			return L"FIN wait 1";
 
-	else if (state == MIB_TCP_STATE_FIN_WAIT2)
-		return L"FIN wait 2";
+		case MIB_TCP_STATE_FIN_WAIT2:
+			return L"FIN wait 2";
 
-	else if (state == MIB_TCP_STATE_CLOSE_WAIT)
-		return L"Close wait";
+		case MIB_TCP_STATE_CLOSE_WAIT:
+			return L"Close wait";
 
-	else if (state == MIB_TCP_STATE_CLOSING)
-		return L"Closing";
+		case MIB_TCP_STATE_CLOSING:
+			return L"Closing";
 
-	else if (state == MIB_TCP_STATE_LAST_ACK)
-		return L"Last ACK";
+		case MIB_TCP_STATE_LAST_ACK:
+			return L"Last ACK";
 
-	else if (state == MIB_TCP_STATE_TIME_WAIT)
-		return L"Time wait";
+		case MIB_TCP_STATE_TIME_WAIT:
+			return L"Time wait";
 
-	else if (state == MIB_TCP_STATE_DELETE_TCB)
-		return L"Delete TCB";
+		case MIB_TCP_STATE_DELETE_TCB:
+			return L"Delete TCB";
+	}
 
 	return L"";
 }
@@ -812,20 +1416,58 @@ rstring _app_getprocesspath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id,
 
 	if (!proc_name.IsEmpty ())
 	{
-		const PITEM_APP ptr_app = _app_getapplication (*phash);
-
-		if (ptr_app)
-			*picon_id = ptr_app->icon_id;
-
-		else
+		if (!_app_getappinfo (*phash, InfoIconId, picon_id, sizeof (size_t)))
 			_app_getfileicon (proc_name, true, picon_id, nullptr);
 	}
 
 	return proc_name;
 }
 
-void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
+size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWORD remote_port, PVOID local_addr, DWORD local_port, UINT8 proto, DWORD state)
 {
+	LPCWSTR hash_format = L"%d_%d_%s_%d_%s_%d_%d_%d";
+	size_t result = 0;
+
+	LPWSTR remote_addr_str = nullptr;
+	LPWSTR local_addr_str = nullptr;
+
+	if (af == AF_INET)
+	{
+		if ((remote_addr && (IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)remote_addr)) && (local_addr && IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)local_addr))) && !remote_port && !local_port)
+			return 0;
+
+		if (remote_addr)
+			_app_formataddress (af, 0, remote_addr, 0, &remote_addr_str, FMTADDR_AS_RULE);
+
+		if (local_addr)
+			_app_formataddress (af, 0, local_addr, 0, &local_addr_str, FMTADDR_AS_RULE);
+
+		result = _r_str_hash (_r_fmt (hash_format, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
+	}
+	else if (af == AF_INET6)
+	{
+		if ((remote_addr && (IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)remote_addr)) && (local_addr && IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)local_addr))) && !remote_port && !local_port)
+			return 0;
+
+		if (remote_addr)
+			_app_formataddress (af, 0, remote_addr, 0, &remote_addr_str, FMTADDR_AS_RULE);
+
+		if (local_addr)
+			_app_formataddress (af, 0, local_addr, 0, &local_addr_str, FMTADDR_AS_RULE);
+
+		result = _r_str_hash (_r_fmt (hash_format, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
+	}
+
+	SAFE_DELETE_ARRAY (remote_addr_str);
+	SAFE_DELETE_ARRAY (local_addr_str);
+
+	return result;
+}
+
+void _app_generate_connections (OBJECTS_MAP& ptr_map, CHECKER_MAP& checker_map)
+{
+	checker_map.clear ();
+
 	DWORD tableSize = 0;
 	GetExtendedTcpTable (nullptr, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
@@ -837,23 +1479,21 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 		{
 			for (ULONG i = 0; i < tcp4Table->dwNumEntries; i++)
 			{
-				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+				IN_ADDR remote_addr = {0};
+				IN_ADDR local_addr = {0};
 
-				ptr_network->remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
-				ptr_network->local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
+				remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
+				local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
 
-				if (
-					(
-					IN4_IS_ADDR_UNSPECIFIED (&ptr_network->remote_addr) &&
-					IN4_IS_ADDR_UNSPECIFIED (&ptr_network->local_addr)
-					) &&
-					!tcp4Table->table[i].dwRemotePort &&
-					!tcp4Table->table[i].dwLocalPort
-					)
+				const size_t net_hash = _app_getnetworkhash (AF_INET, tcp4Table->table[i].dwOwningPid, &remote_addr, tcp4Table->table[i].dwRemotePort, &local_addr, tcp4Table->table[i].dwLocalPort, IPPROTO_TCP, tcp4Table->table[i].dwState);
+
+				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
 				{
-					SAFE_DELETE (ptr_network);
+					checker_map[net_hash] = false;
 					continue;
 				}
+
+				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				WCHAR path_name[MAX_PATH] = {0};
 				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
@@ -863,7 +1503,10 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
 
+				ptr_network->remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
 				ptr_network->remote_port = (UINT16)tcp4Table->table[i].dwRemotePort;
+
+				ptr_network->local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
 				ptr_network->local_port = (UINT16)tcp4Table->table[i].dwLocalPort;
 
 				ptr_network->state = tcp4Table->table[i].dwState;
@@ -871,7 +1514,8 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
 
-				ptr_arr.push_back (ptr_network);
+				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
+				checker_map[net_hash] = true;
 			}
 		}
 
@@ -889,14 +1533,13 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 		{
 			for (ULONG i = 0; i < tcp6Table->dwNumEntries; i++)
 			{
-				if (
-					(
-					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)tcp6Table->table[i].ucRemoteAddr) &&
-					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)tcp6Table->table[i].ucLocalAddr)) &&
-					!tcp6Table->table[i].dwRemotePort &&
-					!tcp6Table->table[i].dwLocalPort
-					)
+				const size_t net_hash = _app_getnetworkhash (AF_INET6, tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].ucRemoteAddr, tcp6Table->table[i].dwRemotePort, tcp6Table->table[i].ucLocalAddr, tcp6Table->table[i].dwLocalPort, IPPROTO_TCP, tcp6Table->table[i].dwState);
+
+				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+				{
+					checker_map[net_hash] = false;
 					continue;
+				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
@@ -909,9 +1552,9 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 				ptr_network->protocol = IPPROTO_TCP;
 
 				CopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
-				CopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
-
 				ptr_network->remote_port = (UINT16)tcp6Table->table[i].dwRemotePort;
+
+				CopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->local_port = (UINT16)tcp6Table->table[i].dwLocalPort;
 
 				ptr_network->state = tcp6Table->table[i].dwState;
@@ -919,13 +1562,13 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
 
-				ptr_arr.push_back (ptr_network);
+				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
+				checker_map[net_hash] = true;
 			}
 		}
 
 		SAFE_DELETE_ARRAY (tcp6Table);
 	}
-
 
 	tableSize = 0;
 	GetExtendedUdpTable (nullptr, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0);
@@ -938,18 +1581,18 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 		{
 			for (ULONG i = 0; i < udp4Table->dwNumEntries; i++)
 			{
-				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+				IN_ADDR local_addr = {0};
+				local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
 
-				ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
+				const size_t net_hash = _app_getnetworkhash (AF_INET, udp4Table->table[i].dwOwningPid, nullptr, 0, &local_addr, udp4Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (
-					IN4_IS_ADDR_UNSPECIFIED (&ptr_network->local_addr) &&
-					!udp4Table->table[i].dwLocalPort
-					)
+				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
 				{
-					SAFE_DELETE (ptr_network);
+					checker_map[net_hash] = false;
 					continue;
 				}
+
+				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				WCHAR path_name[MAX_PATH] = {0};
 				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
@@ -959,13 +1602,15 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
 
+				ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
 				ptr_network->local_port = (UINT16)udp4Table->table[i].dwLocalPort;
 
 				ptr_network->state = 0;
 
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 
-				ptr_arr.push_back (ptr_network);
+				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
+				checker_map[net_hash] = true;
 			}
 		}
 
@@ -983,11 +1628,13 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 		{
 			for (ULONG i = 0; i < udp6Table->dwNumEntries; i++)
 			{
-				if (
-					IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)udp6Table->table[i].ucLocalAddr) &&
-					!udp6Table->table[i].dwLocalPort
-					)
+				const size_t net_hash = _app_getnetworkhash (AF_INET6, udp6Table->table[i].dwOwningPid, nullptr, 0, udp6Table->table[i].ucLocalAddr, udp6Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
+
+				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+				{
+					checker_map[net_hash] = false;
 					continue;
+				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
@@ -1000,14 +1647,14 @@ void _app_generate_connections (std::vector<PITEM_NETWORK> & ptr_arr)
 				ptr_network->protocol = IPPROTO_UDP;
 
 				CopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
-
 				ptr_network->local_port = (UINT16)udp6Table->table[i].dwLocalPort;
 
 				ptr_network->state = 0;
 
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 
-				ptr_arr.push_back (ptr_network);
+				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
+				checker_map[net_hash] = true;
 			}
 		}
 
@@ -1047,10 +1694,13 @@ void _app_generate_packages ()
 					continue;
 
 				rstring package_sid_string = _r_str_fromsid (package_sid);
+				const size_t app_hash = _r_str_hash (package_sid_string);
 
-				PITEM_ADD ptr_item = new ITEM_ADD;
+				if (apps_helper.find (app_hash) != apps_helper.end ())
+					continue;
 
-				ptr_item->hash = _r_str_hash (package_sid_string);
+				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
+
 				ptr_item->type = DataAppUWP;
 
 				WCHAR display_name[MAX_PATH] = {0};
@@ -1098,7 +1748,7 @@ void _app_generate_packages ()
 				{
 					_app_load_appxmanifest (ptr_item);
 
-					items.push_back (ptr_item);
+					apps_helper[app_hash] = _r_obj_allocate (ptr_item);
 				}
 
 				RegCloseKey (hsubkey);
@@ -1246,9 +1896,13 @@ void _app_generate_services ()
 
 						if (serviceSid && !sidstring.IsEmpty ())
 						{
-							PITEM_ADD ptr_item = new ITEM_ADD;
+							const size_t app_hash = _r_str_hash (service_name);
 
-							ptr_item->hash = _r_str_hash (service_name);
+							if (apps_helper.find (app_hash) != apps_helper.end ())
+								continue;
+
+							PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
+
 							ptr_item->type = DataAppService;
 							ptr_item->timestamp = timestamp;
 
@@ -1263,7 +1917,7 @@ void _app_generate_services ()
 							}
 							else
 							{
-								items.push_back (ptr_item);
+								apps_helper[app_hash] = _r_obj_allocate (ptr_item);
 							}
 						}
 
@@ -1289,7 +1943,9 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	static const HBITMAP hbmp_checked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_CHECKED), icon_size);
 	static const HBITMAP hbmp_unchecked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_UNCHECKED), icon_size);
 
-	ITEM_STATUS stat = {0};
+	ITEM_COUNT stat = {0};
+	SecureZeroMemory (&stat, sizeof (stat));
+
 	_app_getcount (&stat);
 
 	if (!stat.rules_count)
@@ -1313,14 +1969,10 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 				if (!stat.rules_user_count)
 					continue;
 			}
-			else if (type == 2)
+			else
 			{
 				if (!stat.rules_global_count)
 					continue;
-			}
-			else
-			{
-				continue;
 			}
 
 			AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
@@ -1329,7 +1981,12 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 			{
 				for (size_t i = 0; i < rules_arr.size (); i++)
 				{
-					PITEM_RULE const ptr_rule = rules_arr.at (i);
+					PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+
+					if (!ptr_rule_object)
+						continue;
+
+					PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 					if (ptr_rule)
 					{
@@ -1337,10 +1994,16 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						const bool is_enabled = is_global || (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
 
 						if (ptr_rule->type != DataRuleCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)) || (type == 2 && !is_global))
+						{
+							_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 							continue;
+						}
 
 						if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
+						{
+							_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 							continue;
+						}
 
 						WCHAR buffer[128] = {0};
 						StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? L" [*]" : nullptr), ptr_rule->pname);
@@ -1362,6 +2025,8 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 
 						InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
 					}
+
+					_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 				}
 			}
 		}
@@ -1372,66 +2037,71 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
 }
 
-bool _app_item_get (EnumDataType type, size_t hash, rstring * display_name, rstring * real_path, PBYTE * lpdata, rstring* /*description*/)
+bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, PBYTE* lpdata)
 {
-	for (size_t i = 0; i < items.size (); i++)
+	if (apps_helper.find (app_hash) == apps_helper.end ())
+		return false;
+
+	PR_OBJECT ptr_app_object = _r_obj_reference (apps_helper[app_hash]);
+
+	if (ptr_app_object)
 	{
-		PITEM_ADD ptr_item = items.at (i);
+		PITEM_APP_HELPER ptr_app_item = (PITEM_APP_HELPER)ptr_app_object->pdata;
 
-		if (
-			!ptr_item ||
-			ptr_item->type != type ||
-			ptr_item->hash != hash
-			)
+		if (ptr_app_item)
 		{
-			continue;
-		}
-
-		if (display_name)
-		{
-			if (ptr_item->display_name && ptr_item->display_name[0])
-				*display_name = ptr_item->display_name;
-
-			else if (ptr_item->real_path && ptr_item->real_path[0])
-				*display_name = ptr_item->real_path;
-
-			else if (ptr_item->sid && ptr_item->sid[0])
-				*display_name = ptr_item->sid;
-		}
-
-		if (real_path)
-		{
-			if (ptr_item->real_path && ptr_item->real_path[0])
-				*real_path = ptr_item->real_path;
-		}
-
-		if (lpdata)
-		{
-			SAFE_DELETE_ARRAY (*lpdata);
-
-			if (ptr_item->pdata)
+			if (ptr_app_item->type != type)
 			{
-				DWORD length = 0;
+				_r_obj_dereference (ptr_app_object, &_app_dereferenceappshelper);
+				return false;
+			}
 
-				if (type == DataAppService)
-					length = GetSecurityDescriptorLength (ptr_item->pdata);
+			if (display_name)
+			{
+				if (ptr_app_item->display_name && ptr_app_item->display_name[0])
+					*display_name = ptr_app_item->display_name;
 
-				else if (type == DataAppUWP)
-					length = SECURITY_MAX_SID_SIZE;
+				else if (ptr_app_item->real_path && ptr_app_item->real_path[0])
+					*display_name = ptr_app_item->real_path;
 
-				if (length)
+				else if (ptr_app_item->sid && ptr_app_item->sid[0])
+					*display_name = ptr_app_item->sid;
+			}
+
+			if (real_path)
+			{
+				if (ptr_app_item->real_path && ptr_app_item->real_path[0])
+					*real_path = ptr_app_item->real_path;
+			}
+
+			if (lpdata)
+			{
+				SAFE_DELETE_ARRAY (*lpdata);
+
+				if (ptr_app_item->pdata)
 				{
-					*lpdata = new BYTE[length];
+					DWORD length = 0;
 
-					CopyMemory (*lpdata, ptr_item->pdata, length);
+					if (type == DataAppService)
+						length = GetSecurityDescriptorLength (ptr_app_item->pdata);
+
+					else if (type == DataAppUWP)
+						length = SECURITY_MAX_SID_SIZE;
+
+					if (length)
+					{
+						*lpdata = new BYTE[length];
+
+						CopyMemory (*lpdata, ptr_app_item->pdata, length);
+					}
 				}
 			}
+
+			_r_obj_dereference (ptr_app_object, &_app_dereferenceappshelper);
+			return true;
 		}
 
-		//if (description)
-		//	*description = pvec->at (i).pdesc;
-
-		return true;
+		_r_obj_dereference (ptr_app_object, &_app_dereferenceappshelper);
 	}
 
 	return false;
@@ -1469,23 +2139,22 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM l
 		// timestamp sorting
 		if (column_id == 1 && (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_UWP))
 		{
-			const PITEM_APP ptr_app1 = _app_getapplication (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item1));
-			const PITEM_APP ptr_app2 = _app_getapplication (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item2));
+			time_t timestamp1 = 0;
+			time_t timestamp2 = 0;
 
-			if (ptr_app1 && ptr_app2)
-			{
-				if (ptr_app1->timestamp < ptr_app2->timestamp)
-					result = -1;
+			_app_getappinfo (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item1), InfoTimestamp, &timestamp1, sizeof (timestamp1));
+			_app_getappinfo (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item2), InfoTimestamp, &timestamp2, sizeof (timestamp2));
 
-				else if (ptr_app1->timestamp > ptr_app2->timestamp)
-					result = 1;
-			}
+			if (timestamp1 < timestamp2)
+				result = -1;
+
+			else if (timestamp1 > timestamp2)
+				result = 1;
 		}
 	}
 
 	if (!result)
 	{
-
 		const rstring str1 = _r_listview_getitemtext (hwnd, listview_id, (size_t)item1, column_id);
 		const rstring str2 = _r_listview_getitemtext (hwnd, listview_id, (size_t)item2, column_id);
 
@@ -1526,7 +2195,9 @@ void _app_listviewsort (HWND hwnd, UINT listview_id, INT subitem, bool is_notify
 
 void _app_refreshstatus (HWND hwnd)
 {
-	ITEM_STATUS stat = {0};
+	ITEM_COUNT stat = {0};
+	SecureZeroMemory (&stat, sizeof (stat));
+
 	_app_getcount (&stat);
 
 	const HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
@@ -1610,7 +2281,12 @@ void _app_refreshstatus (HWND hwnd)
 			for (size_t i = 0; i < total_count; i++)
 			{
 				const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
-				const PITEM_APP ptr_app = _app_getapplication (app_hash);
+				PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+
+				if (!ptr_app_object)
+					continue;
+
+				PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
 				if (ptr_app)
 				{
@@ -1625,6 +2301,8 @@ void _app_refreshstatus (HWND hwnd)
 					else
 						group3_count += 1;
 				}
+
+				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 			}
 
 			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (IDS_GROUP_ALLOWED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
@@ -1640,7 +2318,12 @@ void _app_refreshstatus (HWND hwnd)
 			for (size_t i = 0; i < total_count; i++)
 			{
 				const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, i);
-				const PITEM_RULE ptr_rule = rules_arr.at (rule_idx);
+				PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+
+				if (!ptr_rule_object)
+					continue;
+
+				PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 				if (ptr_rule)
 				{
@@ -1655,6 +2338,8 @@ void _app_refreshstatus (HWND hwnd)
 					else
 						group3_count += 1;
 				}
+
+				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 			}
 
 			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (IDS_GROUP_ENABLED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
@@ -1671,11 +2356,12 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 	PDNS_RECORD ppQueryResultsSet = nullptr;
 
 	// ipv4 address
-	DNS_STATUS dnsStatus = DnsQuery (host, DNS_TYPE_A, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, nullptr, &ppQueryResultsSet, nullptr);
+	DNS_STATUS dnsStatus = DnsQuery (host, DNS_TYPE_A, DNS_QUERY_NO_HOSTS_FILE, nullptr, &ppQueryResultsSet, nullptr);
 
 	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
 	{
-		_app_logerror (L"DnsQuery (DNS_TYPE_A)", dnsStatus, host, true);
+		if (dnsStatus != DNS_INFO_NO_RECORDS)
+			_app_logerror (L"DnsQuery (DNS_TYPE_A)", dnsStatus, host, true);
 	}
 	else
 	{
@@ -1694,7 +2380,6 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 					result.AppendFormat (L":%d", port);
 
 				result.Append (RULE_DELIMETER);
-
 			}
 
 			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
@@ -1702,11 +2387,12 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 	}
 
 	// ipv6 address
-	dnsStatus = DnsQuery (host, DNS_TYPE_AAAA, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, nullptr, &ppQueryResultsSet, nullptr);
+	dnsStatus = DnsQuery (host, DNS_TYPE_AAAA, DNS_QUERY_NO_HOSTS_FILE, nullptr, &ppQueryResultsSet, nullptr);
 
 	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
 	{
-		_app_logerror (L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, host, true);
+		if (dnsStatus != DNS_INFO_NO_RECORDS)
+			_app_logerror (L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, host, true);
 	}
 	else
 	{
@@ -1723,7 +2409,6 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 					result.AppendFormat (L":%d", port);
 
 				result.Append (RULE_DELIMETER);
-
 			}
 
 			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
@@ -1874,8 +2559,16 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 				if (is_exists)
 				{
 					_r_fastlock_acquireshared (&lock_cache);
-					StringCchCopy (paddr_dns, dns_length, cache_dns[hash]);
+					PR_OBJECT ptr_cache_object = _r_obj_reference (cache_dns[hash]);
 					_r_fastlock_releaseshared (&lock_cache);
+
+					if (ptr_cache_object)
+					{
+						if (ptr_cache_object->pdata)
+							StringCchCopy (paddr_dns, dns_length, (LPCWSTR)ptr_cache_object->pdata);
+
+						_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
+					}
 
 					return *paddr_dns;
 				}
@@ -1891,14 +2584,21 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 				}
 				else
 				{
-					_r_fastlock_acquireexclusive (&lock_cache);
-
-					_app_freecache (&cache_dns);
-					_r_str_alloc (&cache_dns[hash], host.GetLength (), host);
-
 					StringCchCopy (paddr_dns, dns_length, host);
 
-					_r_fastlock_releaseexclusive (&lock_cache);
+					LPWSTR ptr_cache = nullptr;
+
+					if (_r_str_alloc (&ptr_cache, host.GetLength (), host))
+					{
+						_r_fastlock_acquireexclusive (&lock_cache);
+
+						_app_freeobjects_map (cache_dns, &_app_dereferencestring, false);
+						cache_dns[hash] = _r_obj_allocate (ptr_cache);
+
+						_r_obj_reference (cache_dns[hash]);
+
+						_r_fastlock_releaseexclusive (&lock_cache);
+					}
 
 					return true;
 				}
@@ -1918,7 +2618,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 	if (rule.IsEmpty ())
 		return true;
 
-	if (rule.At (0) == L'*')
+	if (rule.CompareNoCase (L"*") == 0)
 		return true;
 
 	EnumDataType type = DataUnknown;
@@ -2151,12 +2851,12 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 	if (pstraddr)
 	{
 		PDNS_RECORD ppQueryResultsSet = nullptr;
-		const DNS_STATUS dnsStatus = DnsQuery (pstraddr, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_DNSSEC_CHECKING_DISABLED, nullptr, &ppQueryResultsSet, nullptr);
+		const DNS_STATUS dnsStatus = DnsQuery (pstraddr, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, nullptr, &ppQueryResultsSet, nullptr);
 
-		if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR && ppQueryResultsSet)
+		if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR)
 		{
-			_r_str_alloc (pbuffer, _r_str_length (ppQueryResultsSet->Data.PTR.pNameHost), ppQueryResultsSet->Data.PTR.pNameHost);
-			result = ppQueryResultsSet->Data.PTR.pNameHost != nullptr;
+			if (ppQueryResultsSet)
+				result = _r_str_alloc (pbuffer, _r_str_length (ppQueryResultsSet->Data.PTR.pNameHost), ppQueryResultsSet->Data.PTR.pNameHost);
 		}
 
 		DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
@@ -2215,6 +2915,20 @@ UINT _app_getlistview_id (EnumDataType type)
 		return IDC_RULES_CUSTOM;
 
 	return 0;
+}
+
+size_t _app_getposition (HWND hwnd, UINT listview_id, size_t idx)
+{
+	if (!listview_id)
+		return LAST_VALUE;
+
+	for (size_t i = 0; i < _r_listview_getitemcount (hwnd, listview_id); i++)
+	{
+		if ((size_t)_r_listview_getitemlparam (hwnd, listview_id, i) == idx)
+			return i;
+	}
+
+	return LAST_VALUE;
 }
 
 void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos)
@@ -2469,9 +3183,9 @@ DoExit:
 	return hbitmap;
 }
 
-void _app_load_appxmanifest (PITEM_ADD ptr_item)
+void _app_load_appxmanifest (PITEM_APP_HELPER ptr_app_item)
 {
-	if (!ptr_item || !ptr_item->real_path || !ptr_item->real_path[0])
+	if (!ptr_app_item || !ptr_app_item->real_path || !ptr_app_item->real_path[0])
 		return;
 
 	rstring result;
@@ -2484,7 +3198,7 @@ void _app_load_appxmanifest (PITEM_ADD ptr_item)
 
 	for (size_t i = 0; i < _countof (appx_names); i++)
 	{
-		path.Format (L"%s\\%s", ptr_item->real_path, appx_names[i]);
+		path.Format (L"%s\\%s", ptr_app_item->real_path, appx_names[i]);
 
 		if (_r_fs_exists (path))
 			goto DoOpen;
@@ -2509,7 +3223,7 @@ DoOpen:
 			{
 				if (!item.attribute (L"Executable").empty ())
 				{
-					result.Format (L"%s\\%s", ptr_item->real_path, item.attribute (L"Executable").as_string ());
+					result.Format (L"%s\\%s", ptr_app_item->real_path, item.attribute (L"Executable").as_string ());
 
 					if (_r_fs_exists (result))
 						break;
@@ -2518,7 +3232,7 @@ DoOpen:
 		}
 	}
 
-	_r_str_alloc (&ptr_item->real_path, result.GetLength (), result.GetString ());
+	_r_str_alloc (&ptr_app_item->real_path, result.GetLength (), result.GetString ());
 }
 
 LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD psize)
