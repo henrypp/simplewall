@@ -260,10 +260,10 @@ PR_OBJECT _app_getruleitem (size_t rule_hash, EnumDataType type, BOOL is_readonl
 
 PR_OBJECT _app_getnetworkitem (size_t network_hash)
 {
-	if (!network_hash || network_arr.find (network_hash) == network_arr.end ())
+	if (!network_hash || network_map.find (network_hash) == network_map.end ())
 		return nullptr;
 
-	return _r_obj_reference (network_arr[network_hash]);
+	return _r_obj_reference (network_map[network_hash]);
 }
 
 void _app_freeapplication (size_t app_hash)
@@ -781,7 +781,7 @@ bool _app_isapphaveconnection (size_t app_hash)
 	if (!app_hash)
 		return false;
 
-	for (auto &p : network_arr)
+	for (auto &p : network_map)
 	{
 		PR_OBJECT ptr_network_object = _r_obj_reference (p.second);
 
