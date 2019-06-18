@@ -11,6 +11,7 @@
 #include "app.hpp"
 
 // libs
+#pragma comment(lib, "msimg32.lib")
 #pragma comment(lib, "crypt32.lib")
 #pragma comment(lib, "dnsapi.lib")
 #pragma comment(lib, "fwpuclnt.lib")
@@ -78,6 +79,18 @@ enum EnumXmlType
 	XmlProfileInternalV3 = 4,
 };
 
+enum EnumInfo
+{
+	InfoUnknown,
+	InfoPath,
+	InfoTimestamp,
+	InfoIconId,
+	InfoUndeletable,
+	InfoSilent,
+	InfoClearIds,
+	InfoListviewId,
+};
+
 INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -86,6 +99,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define LANG_MENU 6
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
+#define XML_PROFILE_VER_3 3
 #define XML_PROFILE L"profile.xml"
 #define XML_PROFILE_INTERNAL L"profile_internal.xml"
 
@@ -114,15 +128,18 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 #define SZ_TAB L"   "
 #define SZ_EMPTY L"<empty>"
+#define SZ_UNKNOWN L"unknown"
+#define SZ_NULLADDR L"0.0.0.0"
 
 #define SZ_LOG_REMOTE_ADDRESS L"Remote"
 #define SZ_LOG_LOCAL_ADDRESS L"Local"
-#define SZ_LOG_BLOCK L"BLOCK"
-#define SZ_LOG_ALLOW L"ALLOW"
-#define SZ_LOG_DIRECTION_IN L"IN"
-#define SZ_LOG_DIRECTION_OUT L"OUT"
+#define SZ_LOG_ALLOW L"Allowed"
+#define SZ_LOG_BLOCK L"Blocked"
+#define SZ_LOG_DIRECTION_IN L"Inbound"
+#define SZ_LOG_DIRECTION_OUT L"Outbound"
 #define SZ_LOG_DIRECTION_LOOPBACK L"-Loopback"
 
+#define APP_DELIMETER L"|"
 #define RULE_DELIMETER L";"
 #define RULE_RANGE_CHAR L'-'
 #define UI_FONT L"Segoe UI"
@@ -140,30 +157,17 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
 
-#define NOTIFY_WIDTH 334
-#define NOTIFY_HEIGHT 372
-#define NOTIFY_BTN_WIDTH 110
+#define NOTIFY_WIDTH 496
+#define NOTIFY_HEIGHT 324
+#define NOTIFY_HEADER_HEIGHT 64
+#define NOTIFY_GRADIENT_1 RGB (7, 111, 95)
+#define NOTIFY_GRADIENT_2 RGB (0, 68, 112)
 
-#define NOTIFY_PATH_COMPACT 36
+#define NOTIFY_TIMER_SAFETY_ID 666
+#define NOTIFY_TIMER_SAFETY_TIMEOUT 750
 
-#define NOTIFY_CLR_BG GetSysColor (COLOR_WINDOW)
-#define NOTIFY_CLR_BG_BRUSH GetSysColorBrush (COLOR_WINDOW)
-#define NOTIFY_CLR_TEXT GetSysColor (COLOR_WINDOWTEXT)
-#define NOTIFY_CLR_BORDER RGB (255, 112, 0)
-#define NOTIFY_CLR_TITLE_BG RGB (240, 240, 240)
-#define NOTIFY_CLR_TITLE_TEXT RGB (102, 102, 102)
-
-#define NOTIFY_TIMER_POPUP_ID 1001
-#define NOTIFY_TIMER_TIMEOUT_ID 2002
-#define NOTIFY_TIMER_SAFETY_ID 3003
-
-#define NOTIFY_TIMER_POPUP 350
-#define NOTIFY_TIMER_SAFETY 500
-
-#define NOTIFY_TIMER_DEFAULT 30 // sec.
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 
-#define NOTIFY_LIMIT_SIZE 16 // limit notifications pool size
 #define NOTIFY_LIMIT_POOL_SIZE 128
 #define NOTIFY_LIMIT_THREAD_COUNT 2
 
@@ -202,7 +206,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define RULE_NAME_CCH_MAX 64
 #define RULE_RULE_CCH_MAX 256
 
-typedef std::vector<GUID> MARRAY;
+typedef std::vector<GUID> GUIDS_VEC;
 
 struct STATIC_DATA
 {
@@ -219,7 +223,7 @@ struct STATIC_DATA
 	WCHAR rules_config_path_backup[MAX_PATH] = {0};
 
 	WCHAR windows_dir[MAX_PATH] = {0};
-	WCHAR tmp1_dir[MAX_PATH] = {0};
+	WCHAR tmp_dir[MAX_PATH] = {0};
 
 	WCHAR title[128] = {0};
 	WCHAR search_string[128] = {0};
@@ -250,9 +254,9 @@ struct STATIC_DATA
 
 	size_t ntoskrnl_hash = 0;
 	size_t svchost_hash = 0;
-	size_t myhash = 0;
+	size_t my_hash = 0;
 
-	size_t tmp1_length = 0;
+	size_t tmp_length = 0;
 	size_t wd_length = 0;
 
 	size_t icon_id = 0;
@@ -264,29 +268,26 @@ struct STATIC_DATA
 	bool is_neteventset = false;
 };
 
-typedef struct tagITEM_STATUS
-{
-	size_t apps_count = 0;
-	size_t apps_timer_count = 0;
-	size_t apps_unused_count = 0;
-
-	size_t rules_count = 0;
-	size_t rules_global_count = 0;
-	size_t rules_predefined_count = 0;
-	size_t rules_user_count = 0;
-} ITEM_STATUS, *PITEM_STATUS;
-
 typedef struct tagITEM_APP
 {
-	MARRAY mfarr;
+	~tagITEM_APP ()
+	{
+		SAFE_DELETE_ARRAY (display_name);
+		SAFE_DELETE_ARRAY (real_path);
+		SAFE_DELETE_ARRAY (original_path);
+
+		SAFE_DELETE_ARRAY (pdata);
+
+		//_r_obj_dereference (pnotification , &_app_dereferencelog);
+	}
+
+	GUIDS_VEC guids;
 
 	LPWSTR display_name = nullptr;
 	LPWSTR original_path = nullptr;
 	LPWSTR real_path = nullptr;
 
-	LPWSTR description = nullptr;
-	LPWSTR signer = nullptr;
-
+	PR_OBJECT pnotification = nullptr;
 	PBYTE pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 
 	HANDLE htimer = nullptr;
@@ -299,15 +300,45 @@ typedef struct tagITEM_APP
 
 	EnumDataType type = DataUnknown;
 
-	bool is_haveerrors = false;
-
 	bool is_enabled = false;
+	bool is_haveerrors = false;
 	bool is_system = false;
 	bool is_silent = false;
 	bool is_signed = false;
-	bool is_temp = false;
 	bool is_undeletable = false;
 } ITEM_APP, *PITEM_APP;
+
+typedef struct tagITEM_APP_HELPER
+{
+	tagITEM_APP_HELPER ()
+	{
+		sid = nullptr;
+		display_name = nullptr;
+		service_name = nullptr;
+		real_path = nullptr;
+
+		pdata = nullptr;
+	}
+
+	~tagITEM_APP_HELPER ()
+	{
+		SAFE_DELETE_ARRAY (sid);
+		SAFE_DELETE_ARRAY (display_name);
+		SAFE_DELETE_ARRAY (service_name);
+		SAFE_DELETE_ARRAY (real_path);
+	}
+
+	time_t timestamp = 0;
+
+	EnumDataType type = DataUnknown;
+
+	LPWSTR display_name = nullptr;
+	LPWSTR real_path = nullptr;
+	LPWSTR sid = nullptr;
+	LPWSTR service_name = nullptr;
+
+	PVOID pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
+} ITEM_APP_HELPER, *PITEM_APP_HELPER;
 
 typedef struct tagITEM_RULE
 {
@@ -327,7 +358,7 @@ typedef struct tagITEM_RULE
 
 	std::unordered_map<size_t, bool> apps;
 
-	MARRAY mfarr;
+	GUIDS_VEC guids;
 
 	LPWSTR pname = nullptr;
 	LPWSTR prule_remote = nullptr;
@@ -369,17 +400,20 @@ typedef struct tagITEM_RULE_CONFIG
 	bool is_enabled = false;
 } ITEM_RULE_CONFIG, *PITEM_RULE_CONFIG;
 
+typedef struct tagITEM_STATUS
+{
+	size_t apps_count = 0;
+	size_t apps_timer_count = 0;
+	size_t apps_unused_count = 0;
+
+	size_t rules_count = 0;
+	size_t rules_global_count = 0;
+	size_t rules_predefined_count = 0;
+	size_t rules_user_count = 0;
+} ITEM_COUNT, *PITEM_STATUS;
+
 typedef struct tagITEM_LOG
 {
-	tagITEM_LOG ()
-	{
-		path = nullptr;
-		provider_name = nullptr;
-		filter_name = nullptr;
-		addr_fmt = nullptr;
-		username = nullptr;
-	}
-
 	~tagITEM_LOG ()
 	{
 		SAFE_DELETE_ARRAY (path);
@@ -387,6 +421,9 @@ typedef struct tagITEM_LOG
 		SAFE_DELETE_ARRAY (provider_name);
 		SAFE_DELETE_ARRAY (filter_name);
 		SAFE_DELETE_ARRAY (username);
+
+		if (hicon)
+			DestroyIcon (hicon);
 	}
 
 	LPWSTR path = nullptr;
@@ -395,9 +432,11 @@ typedef struct tagITEM_LOG
 	LPWSTR filter_name = nullptr;
 	LPWSTR username = nullptr;
 
+	HICON hicon = nullptr;
+
 	time_t date = 0;
 
-	size_t hash = 0;
+	size_t app_hash = 0;
 
 	ADDRESS_FAMILY af = 0;
 
@@ -407,18 +446,11 @@ typedef struct tagITEM_LOG
 
 	union
 	{
-		IN_ADDR remote_addr = {0};
-		IN6_ADDR remote_addr6;
+		IN_ADDR addr = {0};
+		IN6_ADDR addr6;
 	};
 
-	union
-	{
-		IN_ADDR local_addr = {0};
-		IN6_ADDR local_addr6;
-	};
-
-	UINT16 remote_port = 0;
-	UINT16 local_port = 0;
+	UINT16 port = 0;
 
 	UINT8 protocol = 0;
 
@@ -432,13 +464,6 @@ typedef struct tagITEM_LOG
 
 typedef struct tagITEM_NETWORK
 {
-	tagITEM_NETWORK ()
-	{
-		path = nullptr;
-		remote_fmt = nullptr;
-		local_fmt = nullptr;
-	}
-
 	~tagITEM_NETWORK ()
 	{
 		SAFE_DELETE_ARRAY (path);
@@ -468,7 +493,7 @@ typedef struct tagITEM_NETWORK
 		IN6_ADDR local_addr6;
 	};
 
-	size_t icon_id=0;
+	size_t icon_id = 0;
 
 	DWORD state = 0;
 
@@ -478,49 +503,8 @@ typedef struct tagITEM_NETWORK
 	UINT8 protocol = 0;
 } ITEM_NETWORK, *PITEM_NETWORK;
 
-typedef struct tagITEM_ADD
-{
-	tagITEM_ADD ()
-	{
-		hash = 0;
-
-		sid = nullptr;
-		display_name = nullptr;
-		service_name = nullptr;
-		real_path = nullptr;
-
-		pdata = nullptr;
-	}
-
-	~tagITEM_ADD ()
-	{
-		SAFE_DELETE_ARRAY (sid);
-		SAFE_DELETE_ARRAY (display_name);
-		SAFE_DELETE_ARRAY (service_name);
-		SAFE_DELETE_ARRAY (real_path);
-	}
-
-	size_t hash = 0;
-	time_t timestamp = 0;
-
-	EnumDataType type = DataUnknown;
-
-	LPWSTR display_name = nullptr;
-	LPWSTR real_path = nullptr;
-	LPWSTR sid = nullptr;
-	LPWSTR service_name = nullptr;
-
-	PVOID pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
-} ITEM_ADD, *PITEM_ADD;
-
 typedef struct tagITEM_COLOR
 {
-	tagITEM_COLOR ()
-	{
-		pcfg_name = nullptr;
-		pcfg_value = nullptr;
-	}
-
 	~tagITEM_COLOR ()
 	{
 		SAFE_DELETE_ARRAY (pcfg_name);
@@ -539,22 +523,6 @@ typedef struct tagITEM_COLOR
 
 	bool is_enabled = false;
 } ITEM_COLOR, *PITEM_COLOR;
-
-typedef struct tagITEM_PROTOCOL
-{
-	tagITEM_PROTOCOL ()
-	{
-		pname = nullptr;
-	}
-
-	~tagITEM_PROTOCOL ()
-	{
-		SAFE_DELETE_ARRAY (pname);
-	}
-
-	LPWSTR pname = nullptr;
-	UINT8 id = 0;
-} ITEM_PROTOCOL, *PITEM_PROTOCOL;
 
 typedef struct tagITEM_ADDRESS
 {
@@ -590,7 +558,7 @@ typedef struct tagITEM_LIST_ENTRY
 	ULONG_PTR Reserved = 0;
 #endif // _WIN64
 
-	PITEM_LOG Body = nullptr;
+	PR_OBJECT Body = nullptr;
 } ITEM_LIST_ENTRY, *PITEM_LIST_ENTRY;
 
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
