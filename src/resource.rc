@@ -634,6 +634,9 @@ BEGIN
 	IDS_BLOCKLIST_ALLOWEXTRA "Allow M$ applications"
 
 	IDS_PORT "Port"
+
+	IDS_NOTIFY_TITLE "Network alert"
+	IDS_NOTIFY_HEADER "%s has blocked connection of this app"
 END
 
 //
