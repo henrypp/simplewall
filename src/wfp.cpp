@@ -420,7 +420,7 @@ void _wfp_installfilters ()
 	_r_fastlock_acquireshared (&lock_transaction);
 
 	// dump all filters into array
-	MARRAY filter_all;
+	GUIDS_VEC filter_all;
 	const bool filters_count = _wfp_dumpfilters (&GUID_WfpProvider, &filter_all);
 
 	// restore filters security
@@ -444,37 +444,62 @@ void _wfp_installfilters ()
 
 	// apply apps rules
 	{
-		MFILTER_APPS arr;
+		OBJECTS_VEC rules;
 
 		for (auto &p : apps)
 		{
-			PITEM_APP ptr_app = &p.second;
+			PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
 
-			if (ptr_app->is_enabled)
-				arr.push_back (ptr_app);
+			if (!ptr_app_object)
+				continue;
+
+			PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+
+			if (ptr_app && ptr_app->is_enabled)
+			{
+				rules.push_back (ptr_app_object);
+			}
+			else
+			{
+				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+			}
 		}
 
-		_wfp_create3filters (arr, __LINE__, is_intransact);
+		_wfp_create3filters (rules, __LINE__, is_intransact);
+		_app_freeobjects_vec (rules, &_app_dereferenceapp);
 	}
 
 	// apply system/custom/blocklist rules
 	{
-		MFILTER_RULES arr;
+		OBJECTS_VEC rules;
 
 		for (size_t i = 0; i < rules_arr.size (); i++)
 		{
-			PITEM_RULE ptr_rule = rules_arr.at (i);
+			PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+
+			if (!ptr_rule_object)
+				continue;
+
+			const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 			if (ptr_rule && ptr_rule->is_enabled)
-				arr.push_back (ptr_rule);
+			{
+				rules.push_back (ptr_rule_object);
+			}
+			else
+			{
+				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+			}
 		}
 
-		_wfp_create4filters (arr, __LINE__, is_intransact);
+		_wfp_create4filters (rules, __LINE__, is_intransact);
+		_app_freeobjects_vec (rules, &_app_dereferencerule);
 	}
 
 	if (is_intransact)
 		_wfp_transact_commit (__LINE__);
 
+	// secure filters
 	{
 		const bool is_secure = app.ConfigGet (L"IsSecureFilters", false).AsBool ();
 
@@ -552,7 +577,7 @@ bool _wfp_deletefilter (HANDLE engineHandle, const GUID * ptr_filter_id)
 	return true;
 }
 
-DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION * lpcond, UINT32 const count, UINT8 weight, const GUID * layer, const GUID * callout, FWP_ACTION_TYPE action, UINT32 flags, MARRAY * ptr_filters)
+DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION * lpcond, UINT32 const count, UINT8 weight, const GUID * layer, const GUID * callout, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC * ptr_filters)
 {
 	FWPM_FILTER filter = {0};
 
@@ -626,21 +651,25 @@ void _wfp_clearfilter_ids ()
 
 	// clear apps filters
 	for (auto &p : apps)
-	{
-		p.second.is_haveerrors = false;
-		p.second.mfarr.clear ();
-	}
+		_app_setappinfo (p.first, InfoClearIds, 0);
 
 	// clear rules filters
 	for (size_t i = 0; i < rules_arr.size (); i++)
 	{
-		PITEM_RULE ptr_rule = rules_arr.at (i);
+		PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+
+		if (!ptr_rule_object)
+			continue;
+
+		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 		if (ptr_rule)
 		{
 			ptr_rule->is_haveerrors = false;
-			ptr_rule->mfarr.clear ();
+			ptr_rule->guids.clear ();
 		}
+
+		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 	}
 
 	_r_fastlock_releaseexclusive (&lock_access);
@@ -654,13 +683,13 @@ void _wfp_destroyfilters ()
 	_wfp_clearfilter_ids ();
 
 	// destroy all filters
-	MARRAY filter_all;
+	GUIDS_VEC filter_all;
 
 	if (_wfp_dumpfilters (&GUID_WfpProvider, &filter_all))
 		_wfp_destroy2filters (filter_all, __LINE__);
 }
 
-bool _wfp_destroy2filters (MARRAY & ptr_filters, UINT line)
+bool _wfp_destroy2filters (GUIDS_VEC & ptr_filters, UINT line)
 {
 	if (!config.hengine || ptr_filters.empty ())
 		return false;
@@ -689,7 +718,7 @@ bool _wfp_destroy2filters (MARRAY & ptr_filters, UINT line)
 	return true;
 }
 
-bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, MARRAY * pmfarr)
+bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, GUIDS_VEC * pmfarr)
 {
 	UINT32 count = 0;
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
@@ -716,10 +745,18 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 	// set path condition
 	if (app_hash)
 	{
-		PITEM_APP ptr_app = _app_getapplication (app_hash);
+		PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+
+		if (!ptr_app_object)
+			return false;
+
+		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
 		if (!ptr_app)
+		{
+			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 			return false;
+		}
 
 		if (ptr_app->type == DataAppUWP) // windows store app (win8+)
 		{
@@ -735,24 +772,13 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 			else
 			{
 				_app_logerror (TEXT (__FUNCTION__), 0, ptr_app->display_name, true);
+				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+
 				return false;
 			}
 		}
 		else if (ptr_app->type == DataAppService) // windows service
 		{
-			const rstring path = _r_path_expand (PATH_SVCHOST);
-			const DWORD rc = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
-
-			if (rc == ERROR_SUCCESS)
-			{
-				fwfc[count].fieldKey = FWPM_CONDITION_ALE_APP_ID;
-				fwfc[count].matchType = FWP_MATCH_EQUAL;
-				fwfc[count].conditionValue.type = FWP_BYTE_BLOB_TYPE;
-				fwfc[count].conditionValue.byteBlob = bPath;
-
-				count += 1;
-			}
-
 			if (ptr_app->pdata && ByteBlobAlloc (ptr_app->pdata, GetSecurityDescriptorLength (ptr_app->pdata), &bSid))
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
@@ -768,22 +794,13 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 				ByteBlobFree (&bSid);
 
 				_app_logerror (TEXT (__FUNCTION__), 0, ptr_app->display_name, true);
+				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 
 				return false;
 			}
 		}
 		else
 		{
-			if (!ptr_app->original_path)
-			{
-				ByteBlobFree (&bPath);
-				ByteBlobFree (&bSid);
-
-				_app_logerror (TEXT (__FUNCTION__), 0, ptr_app->display_name, true);
-
-				return false;
-			}
-
 			LPCWSTR path = ptr_app->original_path;
 			const DWORD rc = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
 
@@ -805,25 +822,30 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 				if (rc != ERROR_FILE_NOT_FOUND && rc != ERROR_PATH_NOT_FOUND)
 					_app_logerror (L"FwpmGetAppIdFromFileName", rc, path, true);
 
+				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+
 				return false;
 			}
 		}
+
+		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 	}
 
 	// set ip/port condition
 	{
-		LPCWSTR rules[] = {rule_remote, rule_local};
+		LPCWSTR rules[] = {
+			rule_remote,
+			rule_local
+		};
 
 		for (size_t i = 0; i < _countof (rules); i++)
 		{
-			if (rules[i] && rules[i][0] && rules[i][0] != L'*')
+			if (rules[i] && rules[i][0] && _wcsicmp (rules[i], L"*") != 0)
 			{
 				if (!_app_parserulestring (rules[i], &addr))
 				{
 					ByteBlobFree (&bSid);
 					ByteBlobFree (&bPath);
-
-					_app_logerror (L"_app_parserulestring", ERROR_INVALID_NETNAME, _r_fmt (L"[%s (%s)]", rules[i], name), false);
 
 					return false;
 				}
@@ -1018,7 +1040,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 	return true;
 }
 
-bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransact)
+bool _wfp_create4filters (OBJECTS_VEC & ptr_rules, UINT line, bool is_intransact)
 {
 	if (!config.hengine || ptr_rules.empty ())
 		return false;
@@ -1030,21 +1052,24 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 
 	if (!is_intransact)
 	{
-		MARRAY ids;
+		GUIDS_VEC guids;
 
 		for (size_t i = 0; i < ptr_rules.size (); i++)
 		{
-			_r_fastlock_acquireshared (&lock_access);
+			PR_OBJECT ptr_rule_object = _r_obj_reference (ptr_rules.at (i));
 
-			const PITEM_RULE ptr_rule = ptr_rules.at (i);
+			if (!ptr_rule_object)
+				continue;
+
+			const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 			if (ptr_rule)
-				ids.insert (ids.end (), ptr_rule->mfarr.begin (), ptr_rule->mfarr.end ());
+				guids.insert (guids.end (), ptr_rule->guids.begin (), ptr_rule->guids.end ());
 
-			_r_fastlock_releaseshared (&lock_access);
+			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 		}
 
-		_wfp_destroy2filters (ids, line);
+		_wfp_destroy2filters (guids, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
@@ -1052,14 +1077,17 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 
 	for (size_t i = 0; i < ptr_rules.size (); i++)
 	{
-		PITEM_RULE ptr_rule = ptr_rules.at (i);
+		PR_OBJECT ptr_rule_object = _r_obj_reference (ptr_rules.at (i));
+
+		if (!ptr_rule_object)
+			continue;
+
+		const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 		if (ptr_rule)
 		{
-			MARRAY mfarr;
+			GUIDS_VEC guids;
 			bool is_haveerrors = false;
-
-			_r_fastlock_acquireshared (&lock_access);
 
 			if (ptr_rule->is_enabled)
 			{
@@ -1086,10 +1114,10 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 					// apply rules for services hosts
 					if (ptr_rule->is_forservices)
 					{
-						if (!_wfp_createrulefilter (ptr_rule->pname, config.ntoskrnl_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &mfarr))
+						if (!_wfp_createrulefilter (ptr_rule->pname, config.ntoskrnl_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
 							is_haveerrors = true;
 
-						if (!_wfp_createrulefilter (ptr_rule->pname, config.svchost_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &mfarr))
+						if (!_wfp_createrulefilter (ptr_rule->pname, config.svchost_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
 							is_haveerrors = true;
 					}
 
@@ -1100,29 +1128,25 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 							if (ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
 								continue;
 
-							if (!_wfp_createrulefilter (ptr_rule->pname, p.first, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &mfarr))
+							if (!_wfp_createrulefilter (ptr_rule->pname, p.first, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
 								is_haveerrors = true;
 						}
 					}
 					else
 					{
-						if (!_wfp_createrulefilter (ptr_rule->pname, 0, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &mfarr))
+						if (!_wfp_createrulefilter (ptr_rule->pname, 0, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->dir, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
 							is_haveerrors = true;
 					}
 				}
 			}
 
-			_r_fastlock_releaseshared (&lock_access);
-
-			_r_fastlock_acquireexclusive (&lock_access);
-
 			ptr_rule->is_haveerrors = is_haveerrors;
 
-			ptr_rule->mfarr.clear ();
-			ptr_rule->mfarr.insert (ptr_rule->mfarr.end (), mfarr.begin (), mfarr.end ());
-
-			_r_fastlock_releaseexclusive (&lock_access);
+			ptr_rule->guids.clear ();
+			ptr_rule->guids.insert (ptr_rule->guids.end (), guids.begin (), guids.end ());
 		}
+
+		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 	}
 
 	if (!is_intransact)
@@ -1135,17 +1159,20 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 		{
 			for (size_t i = 0; i < ptr_rules.size (); i++)
 			{
-				_r_fastlock_acquireshared (&lock_access);
+				PR_OBJECT ptr_rule_object = _r_obj_reference (ptr_rules.at (i));
 
-				const PITEM_RULE ptr_rule = ptr_rules.at (i);
+				if (!ptr_rule_object)
+					continue;
+
+				const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 				if (ptr_rule && ptr_rule->is_enabled)
 				{
-					for (size_t j = 0; j < ptr_rule->mfarr.size (); j++)
-						_wfp_setfiltersecurity (config.hengine, &ptr_rule->mfarr.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
+					for (size_t j = 0; j < ptr_rule->guids.size (); j++)
+						_wfp_setfiltersecurity (config.hengine, &ptr_rule->guids.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
 				}
 
-				_r_fastlock_releaseshared (&lock_access);
+				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 			}
 		}
 
@@ -1157,7 +1184,7 @@ bool _wfp_create4filters (MFILTER_RULES & ptr_rules, UINT line, bool is_intransa
 	return true;
 }
 
-bool _wfp_create3filters (MFILTER_APPS & ptr_apps, UINT line, bool is_intransact)
+bool _wfp_create3filters (OBJECTS_VEC & ptr_apps, UINT line, bool is_intransact)
 {
 	if (!config.hengine || ptr_apps.empty ())
 		return false;
@@ -1171,18 +1198,21 @@ bool _wfp_create3filters (MFILTER_APPS & ptr_apps, UINT line, bool is_intransact
 
 	if (!is_intransact)
 	{
-		MARRAY ids;
+		GUIDS_VEC ids;
 
 		for (size_t i = 0; i < ptr_apps.size (); i++)
 		{
-			_r_fastlock_acquireshared (&lock_access);
+			PR_OBJECT ptr_app_object = _r_obj_reference (ptr_apps.at (i));
 
-			const PITEM_APP ptr_app = ptr_apps.at (i);
+			if (!ptr_app_object)
+				continue;
+
+			PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
 			if (ptr_app)
-				ids.insert (ids.end (), ptr_app->mfarr.begin (), ptr_app->mfarr.end ());
+				ids.insert (ids.end (), ptr_app->guids.begin (), ptr_app->guids.end ());
 
-			_r_fastlock_releaseshared (&lock_access);
+			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 		}
 
 		_wfp_destroy2filters (ids, line);
@@ -1193,32 +1223,31 @@ bool _wfp_create3filters (MFILTER_APPS & ptr_apps, UINT line, bool is_intransact
 
 	for (size_t i = 0; i < ptr_apps.size (); i++)
 	{
-		PITEM_APP ptr_app = ptr_apps.at (i);
+		PR_OBJECT ptr_app_object = _r_obj_reference (ptr_apps.at (i));
+
+		if (!ptr_app_object)
+			continue;
+
+		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
 		if (ptr_app)
 		{
-			MARRAY mfarr;
+			GUIDS_VEC guids;
 			bool is_haveerrors = false;
-
-			_r_fastlock_acquireshared (&lock_access);
 
 			if (ptr_app->is_enabled)
 			{
-				if (!_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &mfarr))
+				if (!_wfp_createrulefilter (ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &guids))
 					is_haveerrors = true;
 			}
 
-			_r_fastlock_releaseshared (&lock_access);
-
-			_r_fastlock_acquireexclusive (&lock_access);
-
 			ptr_app->is_haveerrors = is_haveerrors;
 
-			ptr_app->mfarr.clear ();
-			ptr_app->mfarr.insert (ptr_app->mfarr.end (), mfarr.begin (), mfarr.end ());
-
-			_r_fastlock_releaseexclusive (&lock_access);
+			ptr_app->guids.clear ();
+			ptr_app->guids.insert (ptr_app->guids.end (), guids.begin (), guids.end ());
 		}
+
+		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 	}
 
 	if (!is_intransact)
@@ -1231,17 +1260,20 @@ bool _wfp_create3filters (MFILTER_APPS & ptr_apps, UINT line, bool is_intransact
 		{
 			for (size_t i = 0; i < ptr_apps.size (); i++)
 			{
-				_r_fastlock_acquireshared (&lock_access);
+				PR_OBJECT ptr_app_object = _r_obj_reference (ptr_apps.at (i));
 
-				const PITEM_APP ptr_app = ptr_apps.at (i);
+				if (!ptr_app_object)
+					continue;
+
+				PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
 				if (ptr_app)
 				{
-					for (size_t j = 0; j < ptr_app->mfarr.size (); j++)
-						_wfp_setfiltersecurity (config.hengine, &ptr_app->mfarr.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
+					for (size_t j = 0; j < ptr_app->guids.size (); j++)
+						_wfp_setfiltersecurity (config.hengine, &ptr_app->guids.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
 				}
 
-				_r_fastlock_releaseshared (&lock_access);
+				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 			}
 		}
 
@@ -1566,7 +1598,7 @@ void _wfp_setfiltersecurity (HANDLE engineHandle, const GUID * pfilter_id, const
 	}
 }
 
-size_t _wfp_dumpfilters (const GUID * pprovider, MARRAY * ptr_filters)
+size_t _wfp_dumpfilters (const GUID * pprovider, GUIDS_VEC * ptr_filters)
 {
 	if (!config.hengine || !pprovider || !ptr_filters)
 		return 0;

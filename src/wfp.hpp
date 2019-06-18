@@ -15,21 +15,21 @@ bool _wfp_transact_start (UINT line);
 bool _wfp_transact_commit (UINT line);
 
 bool _wfp_deletefilter (HANDLE engineHandle, const GUID* ptr_filter_id);
-DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 const count, UINT8 weight, const GUID* layer, const GUID* callout, FWP_ACTION_TYPE action, UINT32 flags, MARRAY* ptr_filters);
+DWORD _wfp_createfilter (LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 const count, UINT8 weight, const GUID* layer, const GUID* callout, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* ptr_filters);
 
 void _wfp_clearfilter_ids ();
 void _wfp_destroyfilters ();
-bool _wfp_destroy2filters (MARRAY& ptr_filters, UINT line);
+bool _wfp_destroy2filters (GUIDS_VEC& ptr_filters, UINT line);
 
-bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, MARRAY* pmfarr);
+bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, GUIDS_VEC* pmfarr);
 
-bool _wfp_create4filters (MFILTER_RULES& ptr_rules, UINT line, bool is_intransact = false);
-bool _wfp_create3filters (MFILTER_APPS& ptr_apps, UINT line, bool is_intransact = false);
+bool _wfp_create4filters (OBJECTS_VEC& ptr_rules, UINT line, bool is_intransact = false);
+bool _wfp_create3filters (OBJECTS_VEC& ptr_apps, UINT line, bool is_intransact = false);
 bool _wfp_create2filters (UINT line, bool is_intransact = false);
 
 void _wfp_setfiltersecurity (HANDLE engineHandle, const GUID* pfilter_id, const PSID psid, PACL pacl, UINT line);
 
-size_t _wfp_dumpfilters (const GUID* pprovider, MARRAY* ptr_filters);
+size_t _wfp_dumpfilters (const GUID* pprovider, GUIDS_VEC* ptr_filters);
 
 bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable);
 void _mps_changeconfig2 (bool is_enable);
