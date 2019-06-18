@@ -27,11 +27,11 @@
 #include "rapp.hpp"
 #include "main.hpp"
 
-typedef std::vector<PITEM_APP> MFILTER_APPS;
-typedef std::vector<PITEM_RULE> MFILTER_RULES;
-typedef std::vector<HANDLE> MTHREADPOOL;
-typedef std::unordered_map<size_t, LPWSTR> MCACHE_MAP;
-typedef std::unordered_map<size_t, EnumDataType> MCACHETYPES_MAP;
+typedef std::vector<PR_OBJECT> OBJECTS_VEC;
+typedef std::vector<HANDLE> THREADS_VEC;
+typedef std::unordered_map<size_t, bool> CHECKER_MAP;
+typedef std::unordered_map<size_t, PR_OBJECT> OBJECTS_MAP;
+typedef std::unordered_map<size_t, EnumDataType> TYPES_MAP;
 
 #include "helper.hpp"
 #include "log.hpp"
@@ -51,27 +51,24 @@ extern STATIC_DATA config;
 
 extern FWPM_SESSION session;
 
-extern std::unordered_map<size_t, ITEM_APP> apps;
-extern std::vector<PITEM_RULE> rules_arr;
-extern std::unordered_map<size_t, PITEM_RULE_CONFIG> rules_config;
-extern std::vector<PITEM_NETWORK> network_arr;
+extern OBJECTS_MAP apps;
+extern OBJECTS_MAP apps_helper;
+extern OBJECTS_VEC rules_arr;
+extern OBJECTS_MAP rules_config;
+extern OBJECTS_MAP network_arr;
 
-extern MCACHE_MAP cache_signatures;
-extern MCACHE_MAP cache_versions;
-extern MCACHE_MAP cache_dns;
-extern MCACHE_MAP cache_hosts;
-extern MCACHETYPES_MAP cache_types;
+extern OBJECTS_MAP cache_signatures;
+extern OBJECTS_MAP cache_versions;
+extern OBJECTS_MAP cache_dns;
+extern OBJECTS_MAP cache_hosts;
+extern TYPES_MAP cache_types;
 
-extern MTHREADPOOL threads_pool;
+extern THREADS_VEC threads_pool;
 
-extern std::vector<PITEM_COLOR> colors;
-extern std::vector<PITEM_PROTOCOL> protocols;
-extern std::vector<PITEM_ADD> items;
+extern OBJECTS_VEC colors;
 extern std::vector<time_t> timers;
 
-extern std::vector<PITEM_LOG> notifications;
-
-extern MARRAY filter_ids;
+extern GUIDS_VEC filter_ids;
 
 extern ITEM_LIST_HEAD log_stack;
 
@@ -81,8 +78,6 @@ extern _R_FASTLOCK lock_cache;
 extern _R_FASTLOCK lock_checkbox;
 extern _R_FASTLOCK lock_logbusy;
 extern _R_FASTLOCK lock_logthread;
-extern _R_FASTLOCK lock_network;
-extern _R_FASTLOCK lock_notification;
 extern _R_FASTLOCK lock_threadpool;
 extern _R_FASTLOCK lock_transaction;
 extern _R_FASTLOCK lock_writelog;
