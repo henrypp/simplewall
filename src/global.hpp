@@ -55,7 +55,7 @@ extern OBJECTS_MAP apps;
 extern OBJECTS_MAP apps_helper;
 extern OBJECTS_VEC rules_arr;
 extern OBJECTS_MAP rules_config;
-extern OBJECTS_MAP network_arr;
+extern OBJECTS_MAP network_map;
 
 extern OBJECTS_MAP cache_signatures;
 extern OBJECTS_MAP cache_versions;
