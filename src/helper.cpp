@@ -1196,6 +1196,9 @@ rstring _app_getportname (UINT16 port)
 		case 8443:
 			return L"https-alt";
 
+		case 8444:
+			return L"http-alt";
+
 		case 9800:
 			return L"webdav";
 
