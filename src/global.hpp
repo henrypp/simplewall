@@ -27,12 +27,6 @@
 #include "rapp.hpp"
 #include "main.hpp"
 
-typedef std::vector<PR_OBJECT> OBJECTS_VEC;
-typedef std::vector<HANDLE> THREADS_VEC;
-typedef std::unordered_map<size_t, bool> CHECKER_MAP;
-typedef std::unordered_map<size_t, PR_OBJECT> OBJECTS_MAP;
-typedef std::unordered_map<size_t, EnumDataType> TYPES_MAP;
-
 #include "helper.hpp"
 #include "log.hpp"
 #include "notifications.hpp"

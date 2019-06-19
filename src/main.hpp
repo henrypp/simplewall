@@ -9,6 +9,7 @@
 #include "routine.hpp"
 #include "resource.hpp"
 #include "app.hpp"
+#include "global.hpp"
 
 // libs
 #pragma comment(lib, "msimg32.lib")
@@ -206,6 +207,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define RULE_NAME_CCH_MAX 64
 #define RULE_RULE_CCH_MAX 256
 
+typedef std::vector<PR_OBJECT> OBJECTS_VEC;
+typedef std::vector<HANDLE> THREADS_VEC;
+typedef std::unordered_map<size_t, PR_OBJECT> OBJECTS_MAP;
+typedef std::unordered_map<size_t, EnumDataType> TYPES_MAP;
+typedef std::unordered_map<size_t, bool> HASHER_MAP;
 typedef std::vector<GUID> GUIDS_VEC;
 
 struct STATIC_DATA
@@ -356,7 +362,7 @@ typedef struct tagITEM_RULE
 		SAFE_DELETE_ARRAY (prule_local);
 	}
 
-	std::unordered_map<size_t, bool> apps;
+	HASHER_MAP apps;
 
 	GUIDS_VEC guids;
 

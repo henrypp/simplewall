@@ -1464,7 +1464,7 @@ size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWO
 	return result;
 }
 
-void _app_generate_connections (OBJECTS_MAP& ptr_map, CHECKER_MAP& checker_map)
+void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 {
 	checker_map.clear ();
 

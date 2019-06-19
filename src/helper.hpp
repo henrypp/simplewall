@@ -43,7 +43,7 @@ rstring _app_getportname (UINT16 port);
 rstring _app_getprotoname (UINT8 proto);
 rstring _app_getstatename (DWORD state);
 
-void _app_generate_connections (OBJECTS_MAP& ptr_map, CHECKER_MAP& checker_map);
+void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map);
 void _app_generate_packages ();
 void _app_generate_services ();
 
