@@ -2,7 +2,7 @@
 <!-- Block spying and tracking on Windows -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
 <!-- Date: Mon, 27 May 2019 10:56:08 +0000 -->
-<root timestamp="1558954568" type="1">
+<root timestamp="1558954568" type="1" version="3">
 	<item name="extra_13.78.235.126" rule="13.78.235.126" is_block="true" />
 	<item name="extra_13.78.235.247" rule="13.78.235.247" is_block="true" />
 	<item name="extra_13.79.239.69" rule="13.79.239.69" is_block="true" />
