@@ -29,7 +29,7 @@ void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE 
 void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable);
 void _app_ruleblocklistset ();
 
-rstring _app_rulesexpand (PITEM_RULE ptr_rule, bool is_forservices, LPCWSTR delimeter);
+rstring _app_rulesexpand (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delimeter);
 
 bool _app_isappfound (size_t app_hash);
 bool _app_isapphaveconnection (size_t app_hash);

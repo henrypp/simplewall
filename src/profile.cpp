@@ -720,13 +720,13 @@ void _app_ruleblocklistset ()
 	}
 }
 
-rstring _app_rulesexpand (PITEM_RULE ptr_rule, bool is_forservices, LPCWSTR delimeter)
+rstring _app_rulesexpand (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delimeter)
 {
 	rstring result;
 
 	if (ptr_rule)
 	{
-		if (is_forservices && ptr_rule->is_forservices)
+		if (is_fordisplay && ptr_rule->is_forservices)
 		{
 			rstring svchost_path = _r_path_expand (PATH_SVCHOST);
 
@@ -748,10 +748,18 @@ rstring _app_rulesexpand (PITEM_RULE ptr_rule, bool is_forservices, LPCWSTR deli
 
 			if (ptr_app)
 			{
-				if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
+				if (is_fordisplay)
 				{
-					if (ptr_app->display_name && ptr_app->display_name[0])
-						result.Append (ptr_app->display_name);
+					if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
+					{
+						if (ptr_app->display_name && ptr_app->display_name[0])
+							result.Append (ptr_app->display_name);
+					}
+					else
+					{
+						if (ptr_app->original_path && ptr_app->original_path[0])
+							result.Append (ptr_app->original_path);
+					}
 				}
 				else
 				{
@@ -988,7 +996,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 		if (type == DataAppRegular)
 		{
 			_r_fastlock_acquireexclusive (&lock_access);
-			_app_addapplication (nullptr, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), item.attribute (L"last_notify").as_llong (), item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool (), true);
+			_app_addapplication (nullptr, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), 0, item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool (), true);
 			_r_fastlock_releaseexclusive (&lock_access);
 		}
 		else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleCustom)
@@ -1017,9 +1025,9 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 				_r_str_alloc (&ptr_rule->prule_local, rule_local_length, attr_rule_local);
 			}
 
-			ptr_rule->dir = (FWP_DIRECTION)item.attribute (L"dir").as_uint ();
-			ptr_rule->protocol = (UINT8)item.attribute (L"protocol").as_uint ();
-			ptr_rule->af = (ADDRESS_FAMILY)item.attribute (L"version").as_uint ();
+			ptr_rule->dir = (FWP_DIRECTION)item.attribute (L"dir").as_int ();
+			ptr_rule->protocol = (UINT8)item.attribute (L"protocol").as_int ();
+			ptr_rule->af = (ADDRESS_FAMILY)item.attribute (L"version").as_int ();
 
 			ptr_rule->type = ((is_internal && item.attribute (L"is_custom").as_bool ()) ? DataRuleCustom : type);
 			ptr_rule->is_block = item.attribute (L"is_block").as_bool ();
@@ -1065,14 +1073,24 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 						apps_rule = ptr_config->papps;
 
 					else
-						apps_rule.AppendFormat (L"%s%s", ((version >= XML_PROFILE_VER_3) ? APP_DELIMETER : RULE_DELIMETER), ptr_config->papps);
+						apps_rule.AppendFormat (L"%s%s", APP_DELIMETER, ptr_config->papps);
 				}
 
 				_r_obj_dereference (ptr_config_object, &_app_dereferenceruleconfig);
 
 				if (!apps_rule.IsEmpty ())
 				{
-					rstring::rvector arr = apps_rule.AsVector (((version >= XML_PROFILE_VER_3) ? APP_DELIMETER : RULE_DELIMETER));
+					// for compat with old profiles
+					if (version < XML_PROFILE_VER_3)
+					{
+						for (size_t i = 0; i < apps_rule.GetLength (); i++)
+						{
+							if (apps_rule[i] == L';')
+								apps_rule[i] = L'|';
+						}
+					}
+
+					rstring::rvector arr = apps_rule.AsVector (APP_DELIMETER);
 
 					for (size_t i = 0; i < arr.size (); i++)
 					{
@@ -1143,9 +1161,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 				_r_str_alloc (&ptr_config->pname, attr_name.GetLength (), attr_name);
 				_r_str_alloc (&ptr_config->papps, attr_apps.GetLength (), attr_apps);
 
-				_r_fastlock_acquireexclusive (&lock_access);
 				rules_config[rule_hash] = _r_obj_allocate (ptr_config);
-				_r_fastlock_releaseexclusive (&lock_access);
 			}
 		}
 	}
@@ -1452,10 +1468,10 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			if (!ptr_item_object)
 				continue;
 
-			PITEM_APP_HELPER ptr_item = (PITEM_APP_HELPER)ptr_item_object->pdata;
+			PITEM_APP_HELPER ptr_app_item = (PITEM_APP_HELPER)ptr_item_object->pdata;
 
-			if (ptr_item)
-				_app_addapplication (hwnd, ((ptr_item->type == DataAppService) ? ptr_item->service_name : ptr_item->sid), ptr_item->timestamp, 0, 0, false, false, true);
+			if (ptr_app_item)
+				_app_addapplication (hwnd, ((ptr_app_item->type == DataAppService) ? ptr_app_item->service_name : ptr_app_item->sid), ptr_app_item->timestamp, 0, 0, false, false, true);
 
 			_r_obj_dereference (ptr_item_object, &_app_dereferenceappshelper);
 		}
@@ -1564,10 +1580,6 @@ void _app_profile_save (LPCWSTR path_custom)
 						// set timer (if presented)
 						if (_app_istimeractive (ptr_app))
 							item.append_attribute (L"timer").set_value (ptr_app->timer);
-
-						// set last notification timestamp (if presented)
-						if (ptr_app->last_notify)
-							item.append_attribute (L"last_notify").set_value (ptr_app->last_notify);
 
 						if (ptr_app->is_silent)
 							item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
