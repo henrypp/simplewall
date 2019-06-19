@@ -4,7 +4,7 @@
 #pragma once
 
 void _app_notifycreatewindow ();
-bool _app_notifycommand (HWND hwnd, UINT button_id, size_t seconds);
+bool _app_notifycommand (HWND hwnd, UINT button_id, time_t seconds);
 
 bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app);
 void _app_freenotify (PITEM_APP ptr_app, bool is_refresh);
