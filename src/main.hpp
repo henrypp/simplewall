@@ -163,8 +163,8 @@ void _app_dereferencelog (PVOID pdata);
 #define NOTIFY_WIDTH 496
 #define NOTIFY_HEIGHT 324
 #define NOTIFY_HEADER_HEIGHT 64
-#define NOTIFY_GRADIENT_1 RGB (7, 111, 95)
-#define NOTIFY_GRADIENT_2 RGB (0, 68, 112)
+#define NOTIFY_GRADIENT_1 RGB (0, 68, 112)
+#define NOTIFY_GRADIENT_2 RGB (7, 111, 95)
 
 #define NOTIFY_TIMER_SAFETY_ID 666
 #define NOTIFY_TIMER_SAFETY_TIMEOUT 750
@@ -173,8 +173,6 @@ void _app_dereferencelog (PVOID pdata);
 
 #define NOTIFY_LIMIT_POOL_SIZE 128
 #define NOTIFY_LIMIT_THREAD_COUNT 2
-
-#define NOTIFY_SOUND_DEFAULT L"MailBeep"
 
 // pugixml document configuration
 #define PUGIXML_LOAD_FLAGS (pugi::parse_escapes)
