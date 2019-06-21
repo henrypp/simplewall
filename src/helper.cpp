@@ -424,9 +424,9 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, size_t * picon_id, HICON * p
 			*picon_id = config.icon_id;
 
 		if (picon)
-		{
 			*picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
-		}
+
+		result = true;
 	}
 
 	return result;
