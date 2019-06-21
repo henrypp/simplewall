@@ -681,9 +681,9 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 
 void _app_ruleblocklistset ()
 {
-	const bool is_blockspy = app.ConfigGet (L"BlocklistBlockSpy", true).AsBool ();
-	const bool is_allowupdate = app.ConfigGet (L"BlocklistAllowUpdate", true).AsBool ();
-	const bool is_allowextra = app.ConfigGet (L"BlocklistAllowExtra", true).AsBool ();
+	const INT bloclist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
+	const INT bloclist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2);
+	const INT bloclist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2);
 
 	for (size_t i = 0; i < rules_arr.size (); i++)
 	{
@@ -694,26 +694,29 @@ void _app_ruleblocklistset ()
 
 		const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
-		if (!ptr_rule || !ptr_rule->pname || !ptr_rule->pname[0] || ptr_rule->type != DataRuleBlocklist)
+		if (!ptr_rule || !ptr_rule->pname || !ptr_rule->pname[0])
 		{
 			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 			continue;
 		}
 
-		if (_wcsnicmp (ptr_rule->pname, L"spy_", 4) == 0)
+		if (ptr_rule->type == DataRuleBlocklist)
 		{
-			ptr_rule->is_block = true;
-			ptr_rule->is_enabled = is_blockspy;
-		}
-		else if (_wcsnicmp (ptr_rule->pname, L"update_", 7) == 0)
-		{
-			ptr_rule->is_block = !is_allowupdate;
-			ptr_rule->is_enabled = true;
-		}
-		else if (_wcsnicmp (ptr_rule->pname, L"extra_", 6) == 0)
-		{
-			ptr_rule->is_block = !is_allowextra;
-			ptr_rule->is_enabled = true;
+			if (_wcsnicmp (ptr_rule->pname, L"spy_", 4) == 0)
+			{
+				ptr_rule->is_block = bloclist_spy_state != 1;
+				ptr_rule->is_enabled = bloclist_spy_state != 0;
+			}
+			else if (_wcsnicmp (ptr_rule->pname, L"update_", 7) == 0)
+			{
+				ptr_rule->is_block = bloclist_update_state != 1;
+				ptr_rule->is_enabled = bloclist_update_state != 0;
+			}
+			else if (_wcsnicmp (ptr_rule->pname, L"extra_", 6) == 0)
+			{
+				ptr_rule->is_block = bloclist_extra_state != 1;
+				ptr_rule->is_enabled = bloclist_extra_state != 0;
+			}
 		}
 
 		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
