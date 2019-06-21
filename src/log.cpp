@@ -358,6 +358,10 @@ bool _wfp_logunsubscribe ()
 
 void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const *remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const *local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
 {
+	UNREFERENCED_PARAMETER (local_addr);
+	UNREFERENCED_PARAMETER (local_addr6);
+	UNREFERENCED_PARAMETER (localport);
+
 	if (!filter_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
 		return;
 
@@ -421,7 +425,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 		if (pft)
 			ptr_log->date = _r_unixtime_from_filetime (pft);
 
-		// get username (only if log enabled)
+		// get username information
 		if ((flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) != 0 && user_id)
 		{
 			SID_NAME_USE sid_type = SidTypeInvalid;
@@ -441,8 +445,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 			}
 		}
 
-		// read filter information
-		if (filter_id)
+		// get filter information
 		{
 			FWPM_FILTER *ptr_filter = nullptr;
 			FWPM_PROVIDER *ptr_provider = nullptr;
@@ -498,50 +501,25 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 				ptr_log->af = AF_INET;
 
 				// remote address
-				if (ptr_log->direction == FWP_DIRECTION_OUTBOUND)
-				{
-					if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr)
-						ptr_log->addr.S_un.S_addr = ntohl (remote_addr);
-				}
-				else if (ptr_log->direction == FWP_DIRECTION_INBOUND)
-				{
-					// local address
-					if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr)
-						ptr_log->addr.S_un.S_addr = ntohl (local_addr);
-				}
+				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr)
+					ptr_log->addr.S_un.S_addr = ntohl (remote_addr);
+
 			}
 			else if (ipver == FWP_IP_VERSION_V6)
 			{
 				ptr_log->af = AF_INET6;
 
 				// remote address
-				if (ptr_log->direction == FWP_DIRECTION_OUTBOUND)
-				{
-					if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr6)
-						CopyMemory (ptr_log->addr6.u.Byte, remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-				}
-				else if (ptr_log->direction == FWP_DIRECTION_INBOUND)
-				{
-					// local address
-					if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr6)
-						CopyMemory (&ptr_log->addr6.u.Byte, local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-				}
+				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr6)
+					CopyMemory (ptr_log->addr6.u.Byte, remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 			}
 
-			if (ptr_log->direction == FWP_DIRECTION_OUTBOUND)
-			{
-				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) != 0 && remoteport)
-					ptr_log->port = remoteport;
-			}
-			else if (ptr_log->direction == FWP_DIRECTION_INBOUND)
-			{
-				if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET) != 0 && localport)
-					ptr_log->port = localport;
-			}
+			if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) != 0)
+				ptr_log->port = remoteport;
 		}
 
 		// protocol
-		if ((flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET) != 0 && proto)
+		if ((flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET) != 0)
 			ptr_log->protocol = proto;
 
 		// indicates FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW state
