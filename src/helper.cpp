@@ -197,48 +197,51 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	if (port)
 		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (formatted_address[0] ? L":%d" : L"%d", port));
 
-	if (result && (flags & FMTADDR_RESOLVE_HOST) != 0 && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ())
+	if ((flags & FMTADDR_RESOLVE_HOST) != 0)
 	{
-		const size_t addr_hash = _r_str_hash (formatted_address);
-
-		if (addr_hash)
+		if (result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ())
 		{
-			_r_fastlock_acquireshared (&lock_cache);
-			const bool is_exists = cache_hosts.find (addr_hash) != cache_hosts.end ();
-			_r_fastlock_releaseshared (&lock_cache);
+			const size_t addr_hash = _r_str_hash (formatted_address);
 
-			if (is_exists)
+			if (addr_hash)
 			{
 				_r_fastlock_acquireshared (&lock_cache);
-				PR_OBJECT ptr_cache_object = _r_obj_reference (cache_hosts[addr_hash]);
+				const bool is_exists = cache_hosts.find (addr_hash) != cache_hosts.end ();
 				_r_fastlock_releaseshared (&lock_cache);
 
-				if (ptr_cache_object)
+				if (is_exists)
 				{
-					if (ptr_cache_object->pdata)
-						StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", (LPCWSTR)ptr_cache_object->pdata));
+					_r_fastlock_acquireshared (&lock_cache);
+					PR_OBJECT ptr_cache_object = _r_obj_reference (cache_hosts[addr_hash]);
+					_r_fastlock_releaseshared (&lock_cache);
 
-					_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
+					if (ptr_cache_object)
+					{
+						if (ptr_cache_object->pdata)
+							StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", (LPCWSTR)ptr_cache_object->pdata));
+
+						_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
+					}
 				}
-			}
-			else
-			{
-				cache_hosts[addr_hash] = nullptr;
-
-				LPWSTR ptr_cache = nullptr;
-
-				if (_app_resolveaddress (af, ptr_addr, &ptr_cache))
+				else
 				{
-					StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", ptr_cache));
+					cache_hosts[addr_hash] = nullptr;
 
-					_r_fastlock_acquireexclusive (&lock_cache);
+					LPWSTR ptr_cache = nullptr;
 
-					_app_freeobjects_map (cache_hosts, &_app_dereferencestring, false);
-					cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache);
+					if (_app_resolveaddress (af, ptr_addr, &ptr_cache))
+					{
+						StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", ptr_cache));
 
-					_r_obj_reference (cache_hosts[addr_hash]);
+						_r_fastlock_acquireexclusive (&lock_cache);
 
-					_r_fastlock_releaseexclusive (&lock_cache);
+						_app_freeobjects_map (cache_hosts, &_app_dereferencestring, false);
+						cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache);
+
+						_r_obj_reference (cache_hosts[addr_hash]);
+
+						_r_fastlock_releaseexclusive (&lock_cache);
+					}
 				}
 			}
 		}
@@ -1188,13 +1191,11 @@ rstring _app_getportname (UINT16 port)
 			return L"realserver";
 
 		case 8000:
-			return L"http-alt";
+		case 8443:
+			return L"https-alt";
 
 		case 8080:
 			return L"http-proxy";
-
-		case 8443:
-			return L"https-alt";
 
 		case 8444:
 			return L"http-alt";

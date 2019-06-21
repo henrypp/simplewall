@@ -364,11 +364,13 @@ void _app_getcount (PITEM_STATUS ptr_status)
 				if (ptr_rule->is_enabled && !ptr_rule->apps.empty ())
 					ptr_status->rules_global_count += 1;
 
-				if (ptr_rule->is_readonly)
-					ptr_status->rules_predefined_count += 1;
+				{
+					if (ptr_rule->is_readonly)
+						ptr_status->rules_predefined_count += 1;
 
-				else if (!ptr_rule->is_readonly)
-					ptr_status->rules_user_count += 1;
+					else
+						ptr_status->rules_user_count += 1;
+				}
 
 				ptr_status->rules_count += 1;
 			}
@@ -1131,10 +1133,10 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 		}
 		else if (type == DataRulesConfig)
 		{
-			if (item.attribute (L"name").empty ())
-				continue;
-
 			const rstring rule_name = item.attribute (L"name").as_string ();
+
+			if (rule_name.IsEmpty ())
+				continue;
 
 			// do not load blocklist config (old versions hack)!
 			if (_app_isruleblocklist (rule_name))
@@ -1148,7 +1150,6 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 
 				ptr_config->is_enabled = item.attribute (L"is_enabled").as_bool ();
 
-				const rstring attr_name = item.attribute (L"name").as_string ();
 				rstring attr_apps = item.attribute (L"apps").as_string ();
 
 				// for compat with old profiles
@@ -1161,7 +1162,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 					}
 				}
 
-				_r_str_alloc (&ptr_config->pname, attr_name.GetLength (), attr_name);
+				_r_str_alloc (&ptr_config->pname, rule_name.GetLength (), rule_name);
 				_r_str_alloc (&ptr_config->papps, attr_apps.GetLength (), attr_apps);
 
 				rules_config[rule_hash] = _r_obj_allocate (ptr_config);
