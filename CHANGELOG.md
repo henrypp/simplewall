@@ -1,3 +1,21 @@
+v3.0.2 Beta (x Juny 2019)
+- new notification ui
+- allow microsoft update & microsoft apps servers by default
+- added information about ports into the log
+- moved icmp4 and icmp6 rules into custom rules
+- improved dropped packets log markup cosmetics
+- improved network monitoring speed
+- improved blocklist configuration
+- fixed saving special rules for uwp apps and services
+- fixed tray icon dissapear sometimes (issue #450)
+- fixed profile import does not work (issue #445)
+- fixed semicolons in app paths (issue #462)
+- fixed windows 20h1 uwp apps loading crash
+- fixed parsing rules with "*"
+- updated locales
+- cosmetic fixes
+- fixed bugs
+
 v3.0.1 Beta (22 May 2019)
 - new profile structure
 - added checking for correct xml file format before import
