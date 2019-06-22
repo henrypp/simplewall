@@ -3,7 +3,7 @@ simplewall [![Github All Releases](https://img.shields.io/github/downloads/henry
 #### Definitely for advanced users.
 -------
 
-[![simplewall](https://www.henrypp.org/images/simplewall.png?cf4)](https://github.com/henrypp/simplewall/issues/250)
+[![simplewall](https://www.henrypp.org/images/simplewall.png?cf5)](https://github.com/henrypp/simplewall/issues/250)
 
 ### Description:
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
