@@ -1,4 +1,4 @@
-v3.0.2 Beta (x Juny 2019)
+v3.0.2 Beta (22 Juny 2019)
 - new notification ui
 - allow microsoft update & microsoft apps servers by default
 - added information about ports into the log
