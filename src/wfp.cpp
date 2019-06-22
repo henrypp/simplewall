@@ -1486,12 +1486,12 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 	}
 
 	// block all outbound traffic
-	_wfp_createfilter (L"BlockOutboundConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
-	_wfp_createfilter (L"BlockOutboundConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
+	_wfp_createfilter (L"BlockConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
+	_wfp_createfilter (L"BlockConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 
 	// win7+
-	_wfp_createfilter (L"BlockOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
-	_wfp_createfilter (L"BlockOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
+	_wfp_createfilter (L"BlockConnectionOutboundRedirectionV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
+	_wfp_createfilter (L"BlockConnectionOutboundRedirectionV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, nullptr, FWP_ACTION_BLOCK, 0, &filter_ids);
 
 	// block all inbound traffic (only on "stealth" mode)
 	if (app.ConfigGet (L"UseStealthMode", false).AsBool () || !app.ConfigGet (L"AllowInboundConnections", false).AsBool ())
