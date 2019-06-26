@@ -1915,7 +1915,10 @@ void _app_generate_services ()
 							_r_str_alloc (&ptr_item->real_path, _r_str_length (real_path), real_path);
 							_r_str_alloc (&ptr_item->sid, sidstring.GetLength (), sidstring);
 
-							if (!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, &ptr_item->pdata, nullptr))
+							if (
+								!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, &ptr_item->pdata, nullptr) ||
+								!IsValidSecurityDescriptor (ptr_item->pdata)
+								)
 							{
 								SAFE_DELETE (ptr_item);
 							}
