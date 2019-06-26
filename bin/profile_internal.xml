@@ -12,8 +12,8 @@
 		<item name="IMAP/POP3/SMTP" rule="25;110;143;465;993;995;2525" protocol="6" is_custom="true" />
 		<item name="IGMP" rule="224.0.0.0/4" protocol="2" is_services="true" is_enabled="true" />
 		<item name="IKEv2/IPSEC/L2TP" rule="500;1701;4500" protocol="17" is_services="true" />
-		<item name="LLNMR" rule="224.0.0.252:5355;ff02::1:3:5355" protocol="17" is_services="true" is_enabled="true" />
-		<item name="mDNS" rule="224.0.0.251:5353;ff02::fb:5353" protocol="17" is_services="true" is_enabled="true" />
+		<item name="LLNMR" rule="224.0.0.252:5355;[ff02::1:3]:5355" protocol="17" is_services="true" is_enabled="true" />
+		<item name="mDNS" rule="224.0.0.251:5353;[ff02::fb]:5353" protocol="17" is_services="true" is_enabled="true" />
 		<item name="NetBIOS [inbound]" rule_local="137-139" dir="2" is_services="true" is_enabled="true" />
 		<item name="NetBIOS [outbound]" rule="137-139" is_services="true" is_enabled="true" />
 		<item name="NTP" rule="123" protocol="17" is_services="true" />
