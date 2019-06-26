@@ -2858,13 +2858,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case RM_RESET_DONE:
 		{
-			for (auto &p : rules_config)
-				SAFE_DELETE (p.second);
+			_app_freeobjects_map (rules_config, &_app_dereferenceruleconfig, true);
 
-			rules_config.clear ();
-
-			_r_fs_delete (config.rules_config_path, false);
-			_r_fs_delete (config.rules_config_path_backup, false);
+			_r_fs_delete (config.profile_path, false);
+			_r_fs_delete (config.profile_path_backup, false);
 
 			_app_profile_load (hwnd);
 
@@ -4164,6 +4161,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_listviewsetfont (hwnd, _app_gettab_id (hwnd, i), false);
 
 						_app_listviewsetfont (hwnd, IDC_TOOLBAR, false);
+
+						RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
 					}
 
 					break;
