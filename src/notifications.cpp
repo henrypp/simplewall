@@ -48,7 +48,7 @@ void _app_notifycreatewindow ()
 	const INT title_font_height = 12;
 	const INT text_font_height = 9;
 
-	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW | WS_EX_TOPMOST, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN, 0, 0, app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
+	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN, 0, 0, app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
 
 	if (!config.hnotification)
 		return;
@@ -203,14 +203,18 @@ bool _app_notifycommand (HWND hwnd, UINT button_id, time_t seconds)
 		ptr_app->is_enabled = (button_id == IDC_ALLOW_BTN);
 		ptr_app->is_silent = (button_id == IDC_BLOCK_BTN);
 
-		if (seconds)
-			_app_timer_set (app.GetHWND (), ptr_app, seconds);
-
-		if (item != LAST_VALUE)
+		if (ptr_app->is_enabled && seconds)
 		{
-			_r_fastlock_acquireshared (&lock_checkbox);
-			_app_setappiteminfo (app.GetHWND (), listview_id, item, app_hash, ptr_app);
-			_r_fastlock_releaseshared (&lock_checkbox);
+			_app_timer_set (app.GetHWND (), ptr_app, seconds);
+		}
+		else
+		{
+			if (item != LAST_VALUE)
+			{
+				_r_fastlock_acquireshared (&lock_checkbox);
+				_app_setappiteminfo (app.GetHWND (), listview_id, item, app_hash, ptr_app);
+				_r_fastlock_releaseshared (&lock_checkbox);
+			}
 		}
 
 		rules.push_back (ptr_app_object);
@@ -1009,7 +1013,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				case IDC_BLOCK_BTN:
 				case IDM_DISABLENOTIFICATIONS:
 				{
-					_app_notifycommand (hwnd, LOWORD (wparam), LAST_VALUE);
+					_app_notifycommand (hwnd, LOWORD (wparam), 0);
 					break;
 				}
 
@@ -1089,6 +1093,9 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 								_app_setruleiteminfo (app.GetHWND (), listview_rules_id, new_item, ptr_rule, true);
 
 								_r_fastlock_releaseshared (&lock_checkbox);
+
+								if (listview_rules_id == _app_gettab_id (app.GetHWND ()))
+									_app_listviewsort (app.GetHWND (), listview_rules_id);
 							}
 						}
 
