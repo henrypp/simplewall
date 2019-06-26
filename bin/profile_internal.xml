@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--Internal rules for simplewall-->
 <!--Minimum required version is 3.0.2-->
-<root timestamp="1560968500" type="4" version="3">
+<root timestamp="1561545160" type="4" version="3">
 	<rules_system>
 		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" is_services="true" is_enabled="true" />
 		<item name="DNS" rule="53" protocol="17" is_services="true" is_enabled="true" />
