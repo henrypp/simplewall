@@ -53,6 +53,8 @@ void _app_notifycreatewindow ()
 	if (!config.hnotification)
 		return;
 
+	_r_wnd_center (config.hnotification, nullptr);
+
 	RECT rc = {0};
 	GetClientRect (config.hnotification, &rc);
 
@@ -470,7 +472,7 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 				KillTimer (hwnd, NOTIFY_TIMER_SAFETY_ID);
 
 			if (!IsWindowVisible (hwnd))
-				_r_wnd_center (hwnd, nullptr);
+				_app_notifysetpos (hwnd);
 
 			ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
@@ -483,6 +485,18 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 
 void _app_notifyhide (HWND hwnd)
 {
+	RECT rc = {0};
+	GetWindowRect (hwnd, &rc);
+
+	app.ConfigSet (L"WindowPosX", rc.left, L"notify_window");
+	app.ConfigSet (L"WindowPosY", rc.top, L"notify_window");
+
+	if ((GetWindowLongPtr (hwnd, GWL_STYLE) & WS_SIZEBOX) != 0)
+	{
+		app.ConfigSet (L"WindowPosWidth", _R_RECT_WIDTH (&rc), L"notify_window");
+		app.ConfigSet (L"WindowPosHeight", _R_RECT_HEIGHT (&rc), L"notify_window");
+	}
+
 	ShowWindow (hwnd, SW_HIDE);
 }
 
@@ -544,6 +558,11 @@ void _app_notifyrefresh (HWND hwnd, bool is_safety)
 	_r_obj_dereference (ptr_log_object, &_app_dereferencelog);
 }
 
+void _app_notifysetpos (HWND hwnd)
+{
+	app.RestoreWindowPosition (hwnd, L"notify_window");
+}
+
 void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT ctrl_id2, LPCWSTR text2)
 {
 	RECT rc_wnd = {0};
@@ -589,8 +608,8 @@ HFONT _app_notifyinitfont (PLOGFONT plf, LONG height, LONG weight, LPCWSTR name,
 	plf->lfWeight = weight;
 	plf->lfUnderline = (BYTE)is_underline;
 
-	//plf->lfCharSet = DEFAULT_CHARSET;
-	//plf->lfQuality = DEFAULT_QUALITY;
+	plf->lfCharSet = DEFAULT_CHARSET;
+	plf->lfQuality = DEFAULT_QUALITY;
 
 	if (name)
 		StringCchCopy (plf->lfFaceName, LF_FACESIZE, name);

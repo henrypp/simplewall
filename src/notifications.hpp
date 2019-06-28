@@ -20,6 +20,7 @@ void _app_notifyplaysound ();
 
 void _app_notifyrefresh (HWND hwnd, bool is_safety);
 
+void _app_notifysetpos (HWND hwnd);
 void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT ctrl_id2, LPCWSTR text2);
 
 HFONT _app_notifyinitfont (PLOGFONT plf, LONG height, LONG weight, LPCWSTR name, BOOL is_underline);
