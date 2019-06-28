@@ -2597,7 +2597,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 
 			// restore window size and position (required!)
-			app.RestoreWindowPosition (hwnd);
+			app.RestoreWindowPosition (hwnd, L"window");
 
 			// initialize tabs
 			_app_tabs_init (hwnd);
