@@ -63,12 +63,12 @@ bool _wfp_initialize (bool is_full)
 			if (config.hengine)
 				config.hengine = nullptr;
 		}
-	}
 
-	if (!config.hengine)
-	{
-		_r_fastlock_releaseshared (&lock_transaction);
-		return false;
+		if (!config.hengine)
+		{
+			_r_fastlock_releaseshared (&lock_transaction);
+			return false;
+		}
 	}
 
 	// set security info
