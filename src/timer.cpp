@@ -66,8 +66,6 @@ bool _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 	if (!config.hengine || !ptr_app)
 		return false;
 
-	const time_t current_time = _r_unixtime_now ();
-
 	if (!_app_istimeractive (ptr_app))
 		return false;
 
