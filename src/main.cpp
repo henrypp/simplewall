@@ -62,9 +62,6 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 	const size_t item_count = _r_listview_getitemcount (hwnd, listview_id);
 	const bool is_tableview = (SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
 
-	INT column_width;
-	INT calculated_width = 0;
-
 	const HDC hdc_listview = GetDC (hlistview);
 	const HDC hdc_header = GetDC (hheader);
 
@@ -75,6 +72,9 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 	{
 		const INT column_max_width = _R_PERCENT_VAL (20, total_width);
 		const INT column_min_width = _R_PERCENT_VAL (2, total_width);
+
+		INT column_width;
+		INT calculated_width = 0;
 
 		for (size_t i = column_count - 1; i != LAST_VALUE; i--)
 		{
@@ -2791,7 +2791,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 #if defined(_APP_BETA) || defined(_APP_BETA_RC)
 				_r_tab_setitem (hwnd, IDC_TAB, i, app.LocaleString (locale_id, (listview_id == IDC_NETWORK) ? L" (Beta)" : nullptr));
 #else
-				_r_tab_setitem (hwnd, IDC_TAB, i, app.LocaleString (locale_id, nullptr);
+				_r_tab_setitem (hwnd, IDC_TAB, i, app.LocaleString (locale_id, nullptr));
 #endif // _APP_BETA || _APP_BETA_RC
 
 				if (
