@@ -12,6 +12,7 @@ PR_OBJECT _app_getappitem (size_t app_hash);
 PR_OBJECT _app_getruleitem (size_t idx);
 PR_OBJECT _app_getruleitem (size_t rule_hash, EnumDataType type, BOOL is_readonly);
 PR_OBJECT _app_getnetworkitem (size_t network_hash);
+size_t _app_getnetworkapp (size_t network_hash);
 
 void _app_freeapplication (size_t hash);
 
