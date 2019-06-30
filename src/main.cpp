@@ -1337,13 +1337,13 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDD_SETTINGS_BLOCKLIST:
 				{
-					const INT bloclist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
-					const INT bloclist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2);
-					const INT bloclist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2);
+					const INT blocklist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
+					const INT blocklist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2);
+					const INT blocklist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2);
 
-					CheckDlgButton (hwnd, min (IDC_BLOCKLIST_SPY_DISABLE + bloclist_spy_state, IDC_BLOCKLIST_SPY_BLOCK), BST_CHECKED);
-					CheckDlgButton (hwnd, min (IDC_BLOCKLIST_UPDATE_DISABLE + bloclist_update_state, IDC_BLOCKLIST_UPDATE_BLOCK), BST_CHECKED);
-					CheckDlgButton (hwnd, min (IDC_BLOCKLIST_EXTRA_DISABLE + bloclist_extra_state, IDC_BLOCKLIST_EXTRA_BLOCK), BST_CHECKED);
+					CheckDlgButton (hwnd, std::clamp (IDC_BLOCKLIST_SPY_DISABLE + blocklist_spy_state, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK), BST_CHECKED);
+					CheckDlgButton (hwnd, std::clamp (IDC_BLOCKLIST_UPDATE_DISABLE + blocklist_update_state, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK), BST_CHECKED);
+					CheckDlgButton (hwnd, std::clamp (IDC_BLOCKLIST_EXTRA_DISABLE + blocklist_extra_state, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK), BST_CHECKED);
 
 					break;
 				}
