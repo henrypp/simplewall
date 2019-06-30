@@ -699,6 +699,9 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 
 rstring _app_getportname (UINT16 port)
 {
+	if (!port)
+		return L"";
+
 	switch (port)
 	{
 		case 1:
@@ -1009,6 +1012,12 @@ rstring _app_getportname (UINT16 port)
 		case 847:
 			return L"dhcp-failover2";
 
+		case 861:
+			return L"owamp-control";
+
+		case 862:
+			return L"twamp-control";
+
 		case 873:
 			return L"rsync";
 
@@ -1032,6 +1041,12 @@ rstring _app_getportname (UINT16 port)
 
 		case 1110:
 			return L"nfsd-status";
+
+		case 1119:
+			return L"bnetgame";
+
+		case 1120:
+			return L"bnetfile";
 
 		case 1337:
 			return L"menandmice-dns";
@@ -1088,6 +1103,9 @@ rstring _app_getportname (UINT16 port)
 		case 2174:
 			return L"msfw-array";
 
+		case 2371:
+			return L"worldwire";
+
 		case 2717:
 			return L"pn-requester";
 
@@ -1096,6 +1114,9 @@ rstring _app_getportname (UINT16 port)
 
 		case 3000:
 			return L"ppp";
+
+		case 3074:
+			return L"xbox";
 
 		case 3128:
 			return L"squid-http";
@@ -1111,6 +1132,9 @@ rstring _app_getportname (UINT16 port)
 
 		case 3713:
 			return L"tftps";
+
+		case 3724:
+			return L"blizwow";
 
 		case 4500:
 			return L"ipsec-nat-t";
@@ -1166,6 +1190,9 @@ rstring _app_getportname (UINT16 port)
 		case 5666:
 			return L"nrpe";
 
+		case 5687:
+			return L"gog-multiplayer";
+
 		case 5800:
 			return L"vnc-http";
 
@@ -1215,8 +1242,35 @@ rstring _app_getportname (UINT16 port)
 		case 8444:
 			return L"http-alt";
 
+		case 8999:
+			return L"bctp";
+
 		case 9800:
 			return L"webdav";
+
+		case 25565:
+			return L"minecraft";
+
+		case 26000:
+			return L"quake";
+
+		case 27015:
+			return L"halflife";
+
+		case 27017:
+			return L"mongod";
+
+		case 27500:
+			return L"quakeworld";
+
+		case 27910:
+			return L"quake2";
+
+		case 27960:
+			return L"quake3";
+
+		case 28240:
+			return L"siemensgsm";
 
 		case 33434:
 			return L"traceroute";
