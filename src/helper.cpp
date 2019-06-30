@@ -701,6 +701,9 @@ rstring _app_getportname (UINT16 port)
 {
 	switch (port)
 	{
+		case 1:
+			return L"tcpmux";
+
 		case 7:
 			return L"echo";
 
@@ -808,6 +811,9 @@ rstring _app_getportname (UINT16 port)
 		case 109:
 			return L"pop2";
 
+		case 110:
+			return L"pop3";
+
 		case 111:
 			return L"rpcbind";
 
@@ -816,9 +822,6 @@ rstring _app_getportname (UINT16 port)
 
 		case 113:
 			return L"auth";
-
-		case 110:
-			return L"pop3";
 
 		case 115:
 			return L"sftp";
@@ -1049,6 +1052,7 @@ rstring _app_getportname (UINT16 port)
 			return L"pptp";
 
 		case 1900:
+		case 5000:
 			return L"upnp";
 
 		case 2000:
@@ -1105,11 +1109,17 @@ rstring _app_getportname (UINT16 port)
 		case 3702:
 			return L"ws-discovery";
 
+		case 3713:
+			return L"tftps";
+
 		case 4500:
 			return L"ipsec-nat-t";
 
 		case 4554:
 			return L"msfrs";
+
+		case 4687:
+			return L"nst";
 
 		case 4899:
 			return L"radmin";
@@ -1168,6 +1178,13 @@ rstring _app_getportname (UINT16 port)
 		case 6003:
 			return L"x11";
 
+		case 6222:
+		case 6662: // deprecated!
+			return L"radmind";
+
+		case 6622:
+			return L"mcftp";
+
 		case 6665:
 		case 6666:
 		case 6667:
@@ -1176,16 +1193,7 @@ rstring _app_getportname (UINT16 port)
 			return L"ircu";
 
 		case 6881:
-		case 6882:
-		case 6883:
-		case 6884:
-		case 6885:
-		case 6886:
-		case 6887:
-		case 6888:
-		case 6889:
-		case 6890:
-			return L"bittorrent";
+			return L"bittorrent-tracker";
 
 		case 7070:
 			return L"realserver";
@@ -1194,8 +1202,15 @@ rstring _app_getportname (UINT16 port)
 		case 8443:
 			return L"https-alt";
 
+		case 8021:
+			return L"ftp-proxy";
+
 		case 8080:
 			return L"http-proxy";
+
+		case 8333:
+		case 18333:
+			return L"bitcoin";
 
 		case 8444:
 			return L"http-alt";
