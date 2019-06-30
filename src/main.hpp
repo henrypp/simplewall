@@ -520,7 +520,7 @@ typedef struct tagITEM_COLOR
 	LPWSTR pcfg_name = nullptr;
 	LPWSTR pcfg_value = nullptr;
 
-	size_t hash = 0;
+	size_t clr_hash = 0;
 
 	UINT locale_id = 0;
 

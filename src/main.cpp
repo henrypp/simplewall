@@ -259,7 +259,7 @@ COLORREF _app_getcolorvalue (size_t color_hash)
 
 		const PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
 
-		if (ptr_clr && ptr_clr->hash == color_hash)
+		if (ptr_clr && ptr_clr->clr_hash == color_hash)
 		{
 			const COLORREF result = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
 			_r_obj_dereference (ptr_clr_object, &_app_dereferencecolor);
@@ -510,7 +510,7 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 	{
 		_r_str_alloc (&ptr_clr->pcfg_value, _r_str_length (config_value), config_value);
 
-		ptr_clr->hash = _r_str_hash (config_value);
+		ptr_clr->clr_hash = _r_str_hash (config_value);
 		ptr_clr->new_clr = app.ConfigGet (config_value, default_clr, L"colors").AsUlong ();
 	}
 
