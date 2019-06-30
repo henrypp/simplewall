@@ -566,10 +566,10 @@ void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 * pEvent)
 {
 	if (pEvent)
 	{
-		UINT16 layer_id = 0;
-		UINT64 filter_id = 0;
-		UINT32 direction = 0;
-		bool is_loopback = false;
+		UINT16 layer_id;
+		UINT64 filter_id;
+		UINT32 direction ;
+		bool is_loopback;
 
 		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 		{
@@ -583,6 +583,7 @@ void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 * pEvent)
 			layer_id = pEvent->ipsecDrop->layerId;
 			filter_id = pEvent->ipsecDrop->filterId;
 			direction = pEvent->ipsecDrop->direction;
+			is_loopback = false;
 		}
 		else
 		{
@@ -598,10 +599,10 @@ void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 * pEvent)
 {
 	if (pEvent)
 	{
-		UINT16 layer_id = 0;
-		UINT64 filter_id = 0;
-		UINT32 direction = 0;
-		bool is_loopback = false;
+		UINT16 layer_id;
+		UINT64 filter_id;
+		UINT32 direction;
+		bool is_loopback;
 		bool is_allow = false;
 
 		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
@@ -616,6 +617,7 @@ void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 * pEvent)
 			layer_id = pEvent->ipsecDrop->layerId;
 			filter_id = pEvent->ipsecDrop->filterId;
 			direction = pEvent->ipsecDrop->direction;
+			is_loopback = false;
 		}
 		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
 		{
@@ -647,10 +649,10 @@ void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 * pEvent)
 {
 	if (pEvent)
 	{
-		UINT16 layer_id = 0;
-		UINT64 filter_id = 0;
-		UINT32 direction = 0;
-		bool is_loopback = false;
+		UINT16 layer_id;
+		UINT64 filter_id;
+		UINT32 direction;
+		bool is_loopback;
 		bool is_allow = false;
 
 		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
@@ -665,6 +667,7 @@ void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 * pEvent)
 			layer_id = pEvent->ipsecDrop->layerId;
 			filter_id = pEvent->ipsecDrop->filterId;
 			direction = pEvent->ipsecDrop->direction;
+			is_loopback = false;
 		}
 		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
 		{
@@ -696,10 +699,10 @@ void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 * pEvent)
 {
 	if (pEvent)
 	{
-		UINT16 layer_id = 0;
-		UINT64 filter_id = 0;
-		UINT32 direction = 0;
-		bool is_loopback = false;
+		UINT16 layer_id;
+		UINT64 filter_id;
+		UINT32 direction;
+		bool is_loopback;
 		bool is_allow = false;
 
 		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
@@ -714,6 +717,7 @@ void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 * pEvent)
 			layer_id = pEvent->ipsecDrop->layerId;
 			filter_id = pEvent->ipsecDrop->filterId;
 			direction = pEvent->ipsecDrop->direction;
+			is_loopback = false;
 		}
 		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
 		{
@@ -745,10 +749,10 @@ void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5 * pEvent)
 {
 	if (pEvent)
 	{
-		UINT16 layer_id = 0;
-		UINT64 filter_id = 0;
-		UINT32 direction = 0;
-		bool is_loopback = false;
+		UINT16 layer_id;
+		UINT64 filter_id;
+		UINT32 direction;
+		bool is_loopback;
 		bool is_allow = false;
 
 		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
@@ -763,6 +767,7 @@ void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5 * pEvent)
 			layer_id = pEvent->ipsecDrop->layerId;
 			filter_id = pEvent->ipsecDrop->filterId;
 			direction = pEvent->ipsecDrop->direction;
+			is_loopback = false;
 		}
 		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
 		{
