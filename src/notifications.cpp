@@ -48,12 +48,12 @@ void _app_notifycreatewindow ()
 	const INT title_font_height = 12;
 	const INT text_font_height = 9;
 
-	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN, 0, 0, app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
+	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN | WS_OVERLAPPED, (GetSystemMetrics (SM_CXSCREEN) / 2) - (app.GetDPI (NOTIFY_WIDTH) / 2), (GetSystemMetrics (SM_CYSCREEN) / 2) - (app.GetDPI (NOTIFY_HEIGHT) / 2), app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
 
 	if (!config.hnotification)
 		return;
 
-	_r_wnd_center (config.hnotification, nullptr);
+	app.RestoreWindowPosition (config.hnotification, L"notify_window");
 
 	RECT rc = {0};
 	GetClientRect (config.hnotification, &rc);
@@ -66,7 +66,7 @@ void _app_notifycreatewindow ()
 	const INT header_size = app.GetDPI (NOTIFY_HEADER_HEIGHT);
 
 	const INT btn_width = app.GetDPI (122);
-	const INT btn_width_small = app.GetDPI (48);
+	const INT btn_width_small = app.GetDPI (38);
 	const INT btn_height = app.GetDPI (24);
 	const INT btn_icon_size = GetSystemMetrics (SM_CXSMICON);
 
@@ -85,8 +85,8 @@ void _app_notifycreatewindow ()
 		if (SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
 		{
 			hfont_title = _app_notifyinitfont (&ncm.lfCaptionFont, title_font_height, FW_NORMAL, UI_FONT, false);
-			hfont_link = _app_notifyinitfont (&ncm.lfMessageFont, 0, FW_NORMAL, UI_FONT, true);
-			hfont_normal = _app_notifyinitfont (&ncm.lfMessageFont, 0, FW_NORMAL, UI_FONT, false);
+			hfont_link = _app_notifyinitfont (&ncm.lfMessageFont, text_font_height, FW_NORMAL, UI_FONT, true);
+			hfont_normal = _app_notifyinitfont (&ncm.lfMessageFont, text_font_height, FW_NORMAL, UI_FONT, false);
 		}
 	}
 
@@ -150,7 +150,7 @@ void _app_notifycreatewindow ()
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_normal, 0);
 	SendMessage (hctrl, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)_app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_RULES), btn_icon_size));
 
-	hctrl = CreateWindowEx (app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_BITMAP, wnd_spacing + btn_width + wnd_spacing / 2, wnd_height - app.GetDPI (36), app.GetDPI (34), btn_height, config.hnotification, (HMENU)IDC_NEXT_BTN, nullptr, nullptr);
+	hctrl = CreateWindowEx (app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WC_BUTTON, nullptr, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_BITMAP, wnd_spacing + btn_width + wnd_spacing / 2, wnd_height - app.GetDPI (36), btn_width_small, btn_height, config.hnotification, (HMENU)IDC_NEXT_BTN, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_normal, 0);
 	SendMessage (hctrl, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)_app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_NEXT), btn_icon_size));
 
