@@ -2840,11 +2840,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				else
 					continue;
 
-#if defined(_APP_BETA) || defined(_APP_BETA_RC)
-				_r_tab_setitem (hwnd, IDC_TAB, i, app.LocaleString (locale_id, (listview_id == IDC_NETWORK) ? L" (Beta)" : nullptr));
-#else
 				_r_tab_setitem (hwnd, IDC_TAB, i, app.LocaleString (locale_id, nullptr));
-#endif // _APP_BETA || _APP_BETA_RC
 
 				if (
 					listview_id == IDC_APPS_PROFILE ||
