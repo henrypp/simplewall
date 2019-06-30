@@ -1569,7 +1569,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
+				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
@@ -1617,7 +1617,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
+				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
@@ -1668,7 +1668,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
+				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
@@ -1712,7 +1712,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->hash));
+				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
