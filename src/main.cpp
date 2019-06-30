@@ -388,7 +388,7 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 {
 	const HWND hwnd = (HWND)lparam;
-	const UINT listview_id = IDC_NETWORK;
+	const UINT network_listview_id = IDC_NETWORK;
 	bool is_refresh = true;
 
 	HASHER_MAP checker_map;
@@ -411,14 +411,14 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 			if (ptr_network)
 			{
-				const size_t item = _r_listview_getitemcount (hwnd, listview_id);
+				const size_t item = _r_listview_getitemcount (hwnd, network_listview_id);
 
-				_r_listview_additem (hwnd, listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, p.first);
+				_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, p.first);
 
-				_r_listview_setitem (hwnd, listview_id, item, 1, ptr_network->local_fmt);
-				_r_listview_setitem (hwnd, listview_id, item, 2, ptr_network->remote_fmt);
-				_r_listview_setitem (hwnd, listview_id, item, 3, _app_getprotoname (ptr_network->protocol));
-				_r_listview_setitem (hwnd, listview_id, item, 4, _app_getstatename (ptr_network->state));
+				_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
+				_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
+				_r_listview_setitem (hwnd, network_listview_id, item, 3, _app_getprotoname (ptr_network->protocol));
+				_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_getstatename (ptr_network->state));
 			}
 
 			_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
@@ -426,13 +426,13 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 			is_refresh = true;
 		}
 
-		for (size_t i = _r_listview_getitemcount (hwnd, listview_id) - 1; i != LAST_VALUE; i--)
+		for (size_t i = _r_listview_getitemcount (hwnd, network_listview_id) - 1; i != LAST_VALUE; i--)
 		{
-			const size_t net_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
+			const size_t net_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
 
 			if (checker_map.find (net_hash) == checker_map.end ())
 			{
-				SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, i, 0);
+				SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, i, 0);
 
 				_r_obj_dereference (network_map[net_hash], &_app_dereferencenetwork);
 				network_map.erase (net_hash);
@@ -441,16 +441,16 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 		if (is_refresh)
 		{
-			const UINT tab_id = _app_gettab_id (hwnd);
+			const UINT current_listview_id = _app_gettab_id (hwnd);
 
-			if (tab_id != listview_id)
+			if (current_listview_id != network_listview_id)
 			{
-				_r_listview_redraw (hwnd, tab_id);
+				_r_listview_redraw (hwnd, current_listview_id);
 			}
 			else
 			{
-				_app_listviewresize (hwnd, listview_id);
-				_app_listviewsort (hwnd, listview_id);
+				_app_listviewresize (hwnd, network_listview_id);
+				_app_listviewsort (hwnd, network_listview_id);
 			}
 
 			is_refresh = false;
