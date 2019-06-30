@@ -1343,7 +1343,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					CheckDlgButton (hwnd, min (IDC_BLOCKLIST_SPY_DISABLE + bloclist_spy_state, IDC_BLOCKLIST_SPY_BLOCK), BST_CHECKED);
 					CheckDlgButton (hwnd, min (IDC_BLOCKLIST_UPDATE_DISABLE + bloclist_update_state, IDC_BLOCKLIST_UPDATE_BLOCK), BST_CHECKED);
-					CheckDlgButton (hwnd, min (IDC_BLOCKLIST_EXTRA_DISABLE + bloclist_update_state, IDC_BLOCKLIST_EXTRA_BLOCK), BST_CHECKED);
+					CheckDlgButton (hwnd, min (IDC_BLOCKLIST_EXTRA_DISABLE + bloclist_extra_state, IDC_BLOCKLIST_EXTRA_BLOCK), BST_CHECKED);
 
 					break;
 				}
