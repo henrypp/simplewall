@@ -273,7 +273,7 @@ COLORREF _app_getcolorvalue (size_t color_hash)
 	return 0;
 }
 
-COLORREF _app_getcolor (size_t app_hash, bool is_appslist)
+COLORREF _app_getcolor (UINT listview_id, size_t app_hash)
 {
 	rstring color_value;
 
@@ -281,6 +281,9 @@ COLORREF _app_getcolor (size_t app_hash, bool is_appslist)
 
 	if (!ptr_app_object)
 		return 0;
+
+	const bool is_appslist = (listview_id == IDC_APPS_LV);
+	const bool is_networkslist = (listview_id == IDC_NETWORK);
 
 	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
@@ -295,19 +298,19 @@ COLORREF _app_getcolor (size_t app_hash, bool is_appslist)
 		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && _app_isapphaverule (app_hash))
 			color_value = L"ColorSpecial";
 
-		else if (!is_appslist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
+		else if (!is_networkslist && !is_appslist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
 			color_value = L"ColorSilent";
 
-		else if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool () && _app_isapphaveconnection (app_hash))
+		else if (!is_networkslist && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool () && _app_isapphaveconnection (app_hash))
 			color_value = L"ColorConnection";
 
 		else if (app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
 			color_value = L"ColorSigned";
 
-		else if (is_appslist && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
+		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
 			color_value = L"ColorService";
 
-		else if (is_appslist && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool () && ptr_app->type == DataAppUWP)
+		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool () && ptr_app->type == DataAppUWP)
 			color_value = L"ColorPackage";
 
 		else if (app.ConfigGet (L"IsHighlightPico", true, L"colors").AsBool () && ptr_app->type == DataAppPico)
@@ -441,10 +444,14 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 			const UINT tab_id = _app_gettab_id (hwnd);
 
 			if (tab_id != listview_id)
+			{
 				_r_listview_redraw (hwnd, tab_id);
-
-			_app_listviewresize (hwnd, listview_id);
-			_app_listviewsort (hwnd, listview_id);
+			}
+			else
+			{
+				_app_listviewresize (hwnd, listview_id);
+				_app_listviewsort (hwnd, listview_id);
+			}
 
 			is_refresh = false;
 		}
@@ -624,14 +631,24 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_LV ||
 				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_PROFILE ||
 				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_SERVICE ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_UWP
+				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_UWP ||
+				lpnmlv->nmcd.hdr.idFrom == IDC_NETWORK
 				)
 			{
-				const size_t app_hash = lpnmlv->nmcd.lItemlParam;
+				size_t app_hash;
+
+				if (lpnmlv->nmcd.hdr.idFrom == IDC_NETWORK)
+				{
+					app_hash = _app_getnetworkapp (lpnmlv->nmcd.lItemlParam); // initialize
+				}
+				else
+				{
+					app_hash = lpnmlv->nmcd.lItemlParam;
+				}
 
 				if (app_hash)
 				{
-					const COLORREF new_clr = (COLORREF)_app_getcolor (app_hash, (lpnmlv->nmcd.hdr.idFrom == IDC_APPS_LV));
+					const COLORREF new_clr = (COLORREF)_app_getcolor ((UINT)lpnmlv->nmcd.hdr.idFrom, app_hash);
 
 					if (new_clr)
 					{
@@ -2099,15 +2116,15 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
+					}
 				}
-			}
 
 			break;
+			}
 		}
-	}
 
 	return FALSE;
-}
+	}
 
 LONG gettoolbarwidth ()
 {
