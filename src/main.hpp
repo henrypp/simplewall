@@ -481,7 +481,7 @@ typedef struct tagITEM_NETWORK
 	LPWSTR remote_fmt = nullptr;
 	LPWSTR local_fmt = nullptr;
 
-	size_t hash = 0;
+	size_t app_hash = 0;
 
 	ADDRESS_FAMILY af = 0;
 

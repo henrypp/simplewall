@@ -277,7 +277,7 @@ size_t _app_getnetworkapp (size_t network_hash)
 		PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
 		if (ptr_network)
-			app_hash = ptr_network->hash;
+			app_hash = ptr_network->app_hash;
 
 		_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 	}
@@ -457,7 +457,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 				PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
 				if (ptr_network)
-					idx = ptr_network->hash;
+					idx = ptr_network->app_hash;
 
 				_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 			}
@@ -822,7 +822,7 @@ bool _app_isapphaveconnection (size_t app_hash)
 
 		PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
-		if (ptr_network && ptr_network->hash == app_hash)
+		if (ptr_network && ptr_network->app_hash == app_hash)
 		{
 			if ((ptr_network->protocol == IPPROTO_TCP && (ptr_network->state == MIB_TCP_STATE_ESTAB)) || (ptr_network->protocol == IPPROTO_UDP && !ptr_network->state))
 			{

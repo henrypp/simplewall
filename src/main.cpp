@@ -419,6 +419,23 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 				_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
 				_r_listview_setitem (hwnd, network_listview_id, item, 3, _app_getprotoname (ptr_network->protocol));
 				_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_getstatename (ptr_network->state));
+
+				// redraw listview item
+				if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
+				{
+					UINT app_listview_id = 0;
+
+					if (_app_getappinfo (ptr_network->app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
+					{
+						if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
+						{
+							const size_t app_item = _app_getposition (hwnd, app_listview_id, ptr_network->app_hash);
+
+							if (app_item != LAST_VALUE)
+								_r_listview_redraw (hwnd, app_listview_id, app_item, app_item);
+						}
+					}
+				}
 			}
 
 			_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
@@ -428,14 +445,32 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 		for (size_t i = _r_listview_getitemcount (hwnd, network_listview_id) - 1; i != LAST_VALUE; i--)
 		{
-			const size_t net_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
+			const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
 
-			if (checker_map.find (net_hash) == checker_map.end ())
+			if (checker_map.find (network_hash) == checker_map.end ())
 			{
 				SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, i, 0);
 
-				_r_obj_dereference (network_map[net_hash], &_app_dereferencenetwork);
-				network_map.erase (net_hash);
+				// redraw listview item
+				if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
+				{
+					size_t app_hash = _app_getnetworkapp (network_hash);
+					UINT app_listview_id = 0;
+
+					if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
+					{
+						if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
+						{
+							const size_t app_item = _app_getposition (hwnd, app_listview_id, app_hash);
+
+							if (app_item != LAST_VALUE)
+								_r_listview_redraw (hwnd, app_listview_id, app_item, app_item);
+						}
+					}
+				}
+
+				_r_obj_dereference (network_map[network_hash], &_app_dereferencenetwork);
+				network_map.erase (network_hash);
 			}
 		}
 
@@ -2116,15 +2151,15 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-					}
 				}
+			}
 
 			break;
-			}
 		}
+	}
 
 	return FALSE;
-	}
+}
 
 LONG gettoolbarwidth ()
 {
@@ -4434,9 +4469,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
-							if (ptr_network && ptr_network->hash && ptr_network->path)
+							if (ptr_network && ptr_network->app_hash && ptr_network->path)
 							{
-								app_hash = ptr_network->hash;
+								app_hash = ptr_network->app_hash;
 
 								if (!_app_isappfound (app_hash))
 								{
@@ -4720,9 +4755,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									_r_str_alloc (&ptr_rule->pname, name.GetLength (), name);
 								}
 
-								if (ptr_network->hash && ptr_network->path)
+								if (ptr_network->app_hash && ptr_network->path)
 								{
-									if (!_app_isappfound (ptr_network->hash))
+									if (!_app_isappfound (ptr_network->app_hash))
 									{
 										_r_fastlock_acquireexclusive (&lock_access);
 										_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
@@ -4732,7 +4767,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 										_app_profile_save ();
 									}
 
-									ptr_rule->apps[ptr_network->hash] = true;
+									ptr_rule->apps[ptr_network->app_hash] = true;
 								}
 
 								if (!ptr_rule->protocol && ptr_network->protocol)
@@ -4877,9 +4912,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
-						if (ptr_network && ptr_network->hash && ptr_network->path)
+						if (ptr_network && ptr_network->app_hash && ptr_network->path)
 						{
-							const size_t app_hash = ptr_network->hash;
+							const size_t app_hash = ptr_network->app_hash;
 
 							if (!_app_isappfound (app_hash))
 							{
