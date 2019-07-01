@@ -697,10 +697,10 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 	return ptr_cache_object;
 }
 
-rstring _app_getportname (UINT16 port)
+rstring _app_getservicename (UINT16 port)
 {
 	if (!port)
-		return L"";
+		return SZ_EMPTY;
 
 	switch (port)
 	{

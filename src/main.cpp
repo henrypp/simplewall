@@ -2684,7 +2684,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					log_stack.item_count = 0;
 					log_stack.thread_count = 0;
 
-					RtlInitializeSListHead (&log_stack.ListHead);
+					InitializeSListHead (&log_stack.ListHead);
 				}
 
 				// create notification window

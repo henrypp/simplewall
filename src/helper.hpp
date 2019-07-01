@@ -39,7 +39,7 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, size_t* picon_id, HICON* pic
 rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path);
 PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app);
 PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app);
-rstring _app_getportname (UINT16 port);
+rstring _app_getservicename (UINT16 port);
 rstring _app_getprotoname (UINT8 proto);
 rstring _app_getstatename (DWORD state);
 

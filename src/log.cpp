@@ -165,13 +165,13 @@ void _app_logwrite (PITEM_LOG ptr_log)
 	buffer.Format (L"\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"#%" PRIu64 L"\"%c\"%s\"%c\"%s\"\r\n",
 				   _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
 				   LOG_DIV,
-				   ptr_log->username ? ptr_log->username : SZ_EMPTY,
+				   ptr_log->username && ptr_log->username[0] ? ptr_log->username : SZ_EMPTY,
 				   LOG_DIV,
 				   path.IsEmpty () ? SZ_EMPTY : path.GetString (),
 				   LOG_DIV,
 				   addr_fmt && addr_fmt[0] ? addr_fmt : SZ_EMPTY,
 				   LOG_DIV,
-				   _app_getportname (ptr_log->port).GetString (),
+				   _app_getservicename (ptr_log->port).GetString (),
 				   LOG_DIV,
 				   _app_getprotoname (ptr_log->protocol).GetString (),
 				   LOG_DIV,
@@ -568,7 +568,7 @@ void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 * pEvent)
 	{
 		UINT16 layer_id;
 		UINT64 filter_id;
-		UINT32 direction ;
+		UINT32 direction;
 		bool is_loopback;
 
 		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
