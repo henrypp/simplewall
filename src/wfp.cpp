@@ -1050,10 +1050,10 @@ bool _wfp_create4filters (OBJECTS_VEC & ptr_rules, UINT line, bool is_intransact
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
 
+	GUIDS_VEC ids;
+
 	if (!is_intransact)
 	{
-		GUIDS_VEC guids;
-
 		for (size_t i = 0; i < ptr_rules.size (); i++)
 		{
 			PR_OBJECT ptr_rule_object = _r_obj_reference (ptr_rules.at (i));
@@ -1064,16 +1064,23 @@ bool _wfp_create4filters (OBJECTS_VEC & ptr_rules, UINT line, bool is_intransact
 			const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 			if (ptr_rule)
-				guids.insert (guids.end (), ptr_rule->guids.begin (), ptr_rule->guids.end ());
+			{
+				ids.insert (ids.end (), ptr_rule->guids.begin (), ptr_rule->guids.end ());
+				ptr_rule->guids.clear ();
+			}
 
 			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 		}
 
-		_wfp_destroy2filters (guids, line);
+		for (size_t i = 0; i < ids.size (); i++)
+			_wfp_setfiltersecurity (config.hengine, &ids.at (i), config.pusersid, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
 	}
+
+	for (size_t i = 0; i < ids.size (); i++)
+		_wfp_deletefilter (config.hengine, &ids.at (i));
 
 	for (size_t i = 0; i < ptr_rules.size (); i++)
 	{
@@ -1082,7 +1089,7 @@ bool _wfp_create4filters (OBJECTS_VEC & ptr_rules, UINT line, bool is_intransact
 		if (!ptr_rule_object)
 			continue;
 
-		const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 		if (ptr_rule)
 		{
@@ -1196,10 +1203,10 @@ bool _wfp_create3filters (OBJECTS_VEC & ptr_apps, UINT line, bool is_intransact)
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
 
+	GUIDS_VEC ids;
+
 	if (!is_intransact)
 	{
-		GUIDS_VEC ids;
-
 		for (size_t i = 0; i < ptr_apps.size (); i++)
 		{
 			PR_OBJECT ptr_app_object = _r_obj_reference (ptr_apps.at (i));
@@ -1210,16 +1217,23 @@ bool _wfp_create3filters (OBJECTS_VEC & ptr_apps, UINT line, bool is_intransact)
 			PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
 			if (ptr_app)
+			{
 				ids.insert (ids.end (), ptr_app->guids.begin (), ptr_app->guids.end ());
+				ptr_app->guids.clear ();
+			}
 
 			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 		}
 
-		_wfp_destroy2filters (ids, line);
+		for (size_t i = 0; i < ids.size (); i++)
+			_wfp_setfiltersecurity (config.hengine, &ids.at (i), config.pusersid, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
 	}
+
+	for (size_t i = 0; i < ids.size (); i++)
+		_wfp_deletefilter (config.hengine, &ids.at (i));
 
 	for (size_t i = 0; i < ptr_apps.size (); i++)
 	{
@@ -1297,11 +1311,19 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 
 	if (!is_intransact)
 	{
-		_wfp_destroy2filters (filter_ids, line);
-		filter_ids.clear ();
+		for (size_t i = 0; i < filter_ids.size (); i++)
+			_wfp_setfiltersecurity (config.hengine, &filter_ids.at (i), config.pusersid, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
+	}
+
+	if (!filter_ids.empty ())
+	{
+		for (size_t i = 0; i < filter_ids.size (); i++)
+			_wfp_deletefilter (config.hengine, &filter_ids.at (i));
+
+		filter_ids.clear ();
 	}
 
 	FWPM_FILTER_CONDITION fwfc[3] = {0};
