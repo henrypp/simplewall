@@ -167,7 +167,7 @@ void _app_dereferencelog (PVOID pdata);
 #define NOTIFY_GRADIENT_2 RGB (7, 111, 95)
 
 #define NOTIFY_TIMER_SAFETY_ID 666
-#define NOTIFY_TIMER_SAFETY_TIMEOUT 750
+#define NOTIFY_TIMER_SAFETY_TIMEOUT 600
 
 #define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
 
