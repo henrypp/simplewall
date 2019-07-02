@@ -3808,6 +3808,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (ptr_app)
 					{
 						_app_timer_set (hwnd, ptr_app, seconds);
+						rules.push_back (ptr_app_object);
 					}
 					else
 					{
