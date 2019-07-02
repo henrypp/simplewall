@@ -2031,9 +2031,20 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 					else if (ctrl_id == IDC_SECUREFILTERS_CHK)
 					{
-						app.ConfigSet (L"IsSecureFilters", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
+					const bool is_secure = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false;
 
-						_app_changefilters (app.GetHWND (), true, false);
+						app.ConfigSet (L"IsSecureFilters", is_secure);
+
+						if (is_secure ? config.pacl_secure : config.pacl_default)
+						{
+							GUIDS_VEC filter_all;
+
+							if (_wfp_dumpfilters (&GUID_WfpProvider, &filter_all))
+							{
+								for (size_t i = 0; i < filter_all.size (); i++)
+									_wfp_setfiltersecurity (config.hengine, &filter_all.at (i), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, __LINE__);
+							}
+						}
 					}
 					else if (ctrl_id == IDC_ENABLELOG_CHK)
 					{
@@ -4957,6 +4968,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, i, 0);
 
 									_app_timer_reset (hwnd, ptr_app);
+									_app_freenotify (ptr_app, true);
 
 									_r_fastlock_acquireexclusive (&lock_access);
 									_app_freeapplication (app_hash);
@@ -5069,6 +5081,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							_app_timer_reset (hwnd, ptr_app);
+							_app_freenotify (ptr_app, true);
 
 							guids.insert (guids.end (), ptr_app->guids.begin (), ptr_app->guids.end ());
 
@@ -5117,6 +5130,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (ptr_app && _app_istimeractive (ptr_app))
 						{
 							_app_timer_reset (hwnd, ptr_app);
+
 							rules.push_back (ptr_app_object);
 						}
 						else
