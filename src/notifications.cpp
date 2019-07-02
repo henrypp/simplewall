@@ -379,105 +379,107 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ())
 		return false;
 
-	if (ptr_log_object)
+	if (!ptr_log_object)
+		return false;
+
+	PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
+
+	if (ptr_log)
 	{
-		PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
+		PR_OBJECT ptr_app_object = _app_getappitem (ptr_log->app_hash);
 
-		if (ptr_log)
+		if (!ptr_app_object)
+			return false;
+
+		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+
+		if (!ptr_app)
 		{
-			PR_OBJECT ptr_app_object = _app_getappitem (ptr_log->app_hash);
+			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+			return false;
+		}
 
-			if (!ptr_app_object)
-				return false;
+		rstring is_signed;
+		const rstring empty_text = app.LocaleString (IDS_STATUS_EMPTY, nullptr);
 
-			PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
-
-			if (!ptr_app)
+		if (app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
+		{
+			if (ptr_app->is_signed)
 			{
-				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
-				return false;
-			}
+				PR_OBJECT ptr_signature_object = _app_getsignatureinfo (ptr_log->app_hash, ptr_app);
 
-			rstring is_signed;
-			const rstring empty_text = app.LocaleString (IDS_STATUS_EMPTY, nullptr);
-
-			if (app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
-			{
-				if (ptr_app->is_signed)
+				if (ptr_signature_object)
 				{
-					PR_OBJECT ptr_signature_object = _app_getsignatureinfo (ptr_log->app_hash, ptr_app);
+					if (ptr_signature_object->pdata)
+						is_signed = (LPCWSTR)ptr_signature_object->pdata;
 
-					if (ptr_signature_object)
-					{
-						if (ptr_signature_object->pdata)
-							is_signed = (LPCWSTR)ptr_signature_object->pdata;
-
-						else
-							is_signed = app.LocaleString (IDS_SIGN_SIGNED, nullptr);
-
-						_r_obj_dereference (ptr_signature_object, &_app_dereferencestring);
-					}
 					else
-					{
 						is_signed = app.LocaleString (IDS_SIGN_SIGNED, nullptr);
-					}
+
+					_r_obj_dereference (ptr_signature_object, &_app_dereferencestring);
 				}
 				else
 				{
-					is_signed = app.LocaleString (IDS_SIGN_UNSIGNED, nullptr);
+					is_signed = app.LocaleString (IDS_SIGN_SIGNED, nullptr);
 				}
 			}
-
-			SetWindowText (hwnd, _r_fmt (L"%s - " APP_NAME, app.LocaleString (IDS_NOTIFY_TITLE, nullptr).GetString ()));
-
-			// print table text
-			{
-				const HDC hdc = GetDC (hwnd);
-
-				const bool is_inbound = (ptr_log->direction == FWP_DIRECTION_INBOUND);
-
-				_app_notifysettext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_NAME, L":"), IDC_FILE_TEXT, (ptr_app->display_name && ptr_app->display_name[0]) ? _r_path_extractfile (ptr_app->display_name) : empty_text);
-				_app_notifysettext (hdc, hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":"), IDC_SIGNATURE_TEXT, is_signed.IsEmpty () ? empty_text : is_signed);
-				_app_notifysettext (hdc, hwnd, IDC_ADDRESS_ID, app.LocaleString (IDS_ADDRESS, L":"), IDC_ADDRESS_TEXT, (ptr_log->addr_fmt && ptr_log->addr_fmt[0]) ? ptr_log->addr_fmt : empty_text);
-				_app_notifysettext (hdc, hwnd, IDC_PORT_ID, app.LocaleString (IDS_PORT, L":"), IDC_PORT_TEXT, ptr_log->port ? _r_fmt (L"%d (%s)", ptr_log->port, _app_getservicename (ptr_log->port).GetString ()) : empty_text);
-				_app_notifysettext (hdc, hwnd, IDC_DIRECTION_ID, app.LocaleString (IDS_DIRECTION, L":"), IDC_DIRECTION_TEXT, app.LocaleString (is_inbound ? IDS_DIRECTION_2 : IDS_DIRECTION_1, ptr_log->is_loopback ? L" (Loopback)" : nullptr));
-				_app_notifysettext (hdc, hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, (ptr_log->filter_name && ptr_log->filter_name[0]) ? ptr_log->filter_name : empty_text);
-				_app_notifysettext (hdc, hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME));
-
-				ReleaseDC (hwnd, hdc);
-			}
-
-			// prevent fullscreen apps lose focus
-			if (is_forced && _r_wnd_isfullscreenmode ())
-				is_forced = false;
-
-			SetWindowLongPtr (GetDlgItem (hwnd, IDC_ICON_ID), GWLP_USERDATA, (LONG_PTR)ptr_log->hicon);
-			SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
-
-			_r_ctrl_enable (hwnd, IDC_RULES_BTN, !is_safety);
-			_r_ctrl_enable (hwnd, IDC_NEXT_BTN, !is_safety);
-			_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
-			_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, !is_safety);
-
-			ShowWindow (GetDlgItem (hwnd, IDC_NEXT_BTN), _app_notifyget_id (hwnd, LAST_VALUE) ? SW_SHOW : SW_HIDE);
-
-			_r_ctrl_settext (hwnd, IDC_RULES_BTN, app.LocaleString (IDS_TRAY_RULES, nullptr));
-			_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
-			_r_ctrl_settext (hwnd, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
-
-			if (is_safety)
-				SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY_TIMEOUT, nullptr);
-
 			else
-				KillTimer (hwnd, NOTIFY_TIMER_SAFETY_ID);
-
-			if (!IsWindowVisible (hwnd))
-				_app_notifysetpos (hwnd);
-
-			ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
-
-			return true;
+			{
+				is_signed = app.LocaleString (IDS_SIGN_UNSIGNED, nullptr);
+			}
 		}
+
+		SetWindowText (hwnd, _r_fmt (L"%s - " APP_NAME, app.LocaleString (IDS_NOTIFY_TITLE, nullptr).GetString ()));
+
+		// print table text
+		{
+			const HDC hdc = GetDC (hwnd);
+
+			const bool is_inbound = (ptr_log->direction == FWP_DIRECTION_INBOUND);
+
+			_app_notifysettext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_NAME, L":"), IDC_FILE_TEXT, (ptr_app->display_name && ptr_app->display_name[0]) ? _r_path_extractfile (ptr_app->display_name) : empty_text);
+			_app_notifysettext (hdc, hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":"), IDC_SIGNATURE_TEXT, is_signed.IsEmpty () ? empty_text : is_signed);
+			_app_notifysettext (hdc, hwnd, IDC_ADDRESS_ID, app.LocaleString (IDS_ADDRESS, L":"), IDC_ADDRESS_TEXT, (ptr_log->addr_fmt && ptr_log->addr_fmt[0]) ? ptr_log->addr_fmt : empty_text);
+			_app_notifysettext (hdc, hwnd, IDC_PORT_ID, app.LocaleString (IDS_PORT, L":"), IDC_PORT_TEXT, ptr_log->port ? _r_fmt (L"%d (%s)", ptr_log->port, _app_getservicename (ptr_log->port).GetString ()) : empty_text);
+			_app_notifysettext (hdc, hwnd, IDC_DIRECTION_ID, app.LocaleString (IDS_DIRECTION, L":"), IDC_DIRECTION_TEXT, app.LocaleString (is_inbound ? IDS_DIRECTION_2 : IDS_DIRECTION_1, ptr_log->is_loopback ? L" (Loopback)" : nullptr));
+			_app_notifysettext (hdc, hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, (ptr_log->filter_name && ptr_log->filter_name[0]) ? ptr_log->filter_name : empty_text);
+			_app_notifysettext (hdc, hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME));
+
+			ReleaseDC (hwnd, hdc);
+		}
+
+		SetWindowLongPtr (GetDlgItem (hwnd, IDC_ICON_ID), GWLP_USERDATA, (LONG_PTR)ptr_log->hicon);
+		SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
+
+		_r_ctrl_enable (hwnd, IDC_RULES_BTN, !is_safety);
+		_r_ctrl_enable (hwnd, IDC_NEXT_BTN, !is_safety);
+		_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
+		_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, !is_safety);
+
+		ShowWindow (GetDlgItem (hwnd, IDC_NEXT_BTN), _app_notifyget_id (hwnd, LAST_VALUE) ? SW_SHOW : SW_HIDE);
+
+		_r_ctrl_settext (hwnd, IDC_RULES_BTN, app.LocaleString (IDS_TRAY_RULES, nullptr));
+		_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
+		_r_ctrl_settext (hwnd, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
+
+		if (is_safety)
+			SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY_TIMEOUT, nullptr);
+
+		else
+			KillTimer (hwnd, NOTIFY_TIMER_SAFETY_ID);
+
+		if (!IsWindowVisible (hwnd))
+			_app_notifysetpos (hwnd);
+
+		ShowWindow (hwnd, SW_SHOWNA);
+
+		RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+
+		// prevent fullscreen apps lose focus
+		if (is_forced && !_r_wnd_isfullscreenmode ())
+			SetForegroundWindow (hwnd);
+
+		return true;
 	}
 
 	return false;
