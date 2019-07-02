@@ -362,11 +362,27 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 	UNREFERENCED_PARAMETER (local_addr6);
 	UNREFERENCED_PARAMETER (localport);
 
-	if (!filter_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
+	if (!filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
 		return;
 
+	// set allowed directions directions
+	switch (direction)
+	{
+		case FWP_DIRECTION_IN:
+		case FWP_DIRECTION_INBOUND:
+		case FWP_DIRECTION_OUT:
+		case FWP_DIRECTION_OUTBOUND:
+		{
+			break;
+		}
+
+		default:
+		{
+			return;
+		}
+	}
+
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
-	if (layer_id)
 	{
 		FWPM_LAYER *layer = nullptr;
 
@@ -380,6 +396,46 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 
 			FwpmFreeMemory ((void **)& layer);
 		}
+	}
+
+	// get filter information
+	bool is_myprovider = false;
+
+	rstring filter_name;
+	rstring provider_name;
+
+	UINT8 filter_weight = 0;
+
+	{
+		FWPM_FILTER *ptr_filter = nullptr;
+		FWPM_PROVIDER *ptr_provider = nullptr;
+
+		if (FwpmFilterGetById (config.hengine, filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
+		{
+			filter_name = ptr_filter->displayData.name ? ptr_filter->displayData.name : ptr_filter->displayData.description;
+
+			if (ptr_filter->weight.type == FWP_UINT8)
+				filter_weight = ptr_filter->weight.uint8;
+
+			if (ptr_filter->providerKey)
+			{
+				if (memcmp (ptr_filter->providerKey, &GUID_WfpProvider, sizeof (GUID)) == 0)
+					is_myprovider = true;
+
+				if (FwpmProviderGetByKey (config.hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
+					provider_name = ptr_provider->displayData.name ? ptr_provider->displayData.name : ptr_provider->displayData.description;
+			}
+		}
+
+		if (ptr_filter)
+			FwpmFreeMemory ((void **)& ptr_filter);
+
+		if (ptr_provider)
+			FwpmFreeMemory ((void **)& ptr_provider);
+
+		// prevent filter "not found" items
+		if (filter_name.IsEmpty () && provider_name.IsEmpty ())
+			return;
 	}
 
 	PITEM_LIST_ENTRY ptr_entry = (PITEM_LIST_ENTRY)_aligned_malloc (sizeof (ITEM_LIST_ENTRY), MEMORY_ALLOCATION_ALIGNMENT);
@@ -445,53 +501,23 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 			}
 		}
 
-		// get filter information
+		// indicates the direction of the packet transmission
+		switch (direction)
 		{
-			FWPM_FILTER *ptr_filter = nullptr;
-			FWPM_PROVIDER *ptr_provider = nullptr;
-
-			ptr_log->filter_id = filter_id;
-
-			if (FwpmFilterGetById (config.hengine, filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
+			case FWP_DIRECTION_IN:
+			case FWP_DIRECTION_INBOUND:
 			{
-				LPCWSTR filter_name = ptr_filter->displayData.name ? ptr_filter->displayData.name : ptr_filter->displayData.description;
-
-				_r_str_alloc (&ptr_log->filter_name, _r_str_length (filter_name), filter_name);
-
-				if (ptr_filter->providerKey)
-				{
-					if (memcmp (ptr_filter->providerKey, &GUID_WfpProvider, sizeof (GUID)) == 0)
-						ptr_log->is_myprovider = true;
-
-					if (FwpmProviderGetByKey (config.hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
-					{
-						LPCWSTR provider_name = ptr_provider->displayData.name ? ptr_provider->displayData.name : ptr_provider->displayData.description;
-
-						_r_str_alloc (&ptr_log->provider_name, _r_str_length (provider_name), provider_name);
-					}
-				}
-
-				if (ptr_filter->weight.type == FWP_UINT8)
-				{
-					ptr_log->is_blocklist = (ptr_filter->weight.uint8 == FILTER_WEIGHT_BLOCKLIST);
-					ptr_log->is_system = (ptr_filter->weight.uint8 == FILTER_WEIGHT_HIGHEST) || (ptr_filter->weight.uint8 == FILTER_WEIGHT_HIGHEST_IMPORTANT);
-					ptr_log->is_custom = (ptr_filter->weight.uint8 == FILTER_WEIGHT_CUSTOM) || (ptr_filter->weight.uint8 == FILTER_WEIGHT_CUSTOM_BLOCK);
-				}
+				ptr_log->direction = FWP_DIRECTION_INBOUND;
+				break;
 			}
 
-			if (ptr_filter)
-				FwpmFreeMemory ((void **)& ptr_filter);
-
-			if (ptr_provider)
-				FwpmFreeMemory ((void **)& ptr_provider);
+			case FWP_DIRECTION_OUT:
+			case FWP_DIRECTION_OUTBOUND:
+			{
+				ptr_log->direction = FWP_DIRECTION_OUTBOUND;
+				break;
+			}
 		}
-
-		// indicates the direction of the packet transmission
-		if (direction == FWP_DIRECTION_OUTBOUND || direction == FWP_DIRECTION_OUT)
-			ptr_log->direction = FWP_DIRECTION_OUTBOUND;
-
-		else if (direction == FWP_DIRECTION_INBOUND || direction == FWP_DIRECTION_IN)
-			ptr_log->direction = FWP_DIRECTION_INBOUND;
 
 		// destination
 		if ((flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET) != 0)
@@ -527,6 +553,18 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 
 		// indicates whether the packet originated from (or was heading to) the loopback adapter
 		ptr_log->is_loopback = is_loopback;
+
+		// set filter information
+		ptr_log->filter_id = filter_id;
+
+		ptr_log->is_myprovider = is_myprovider;
+
+		_r_str_alloc (&ptr_log->filter_name, filter_name.GetLength (), filter_name);
+		_r_str_alloc (&ptr_log->provider_name, provider_name.GetLength (), provider_name);
+
+		ptr_log->is_blocklist = (filter_weight == FILTER_WEIGHT_BLOCKLIST);
+		ptr_log->is_system = (filter_weight == FILTER_WEIGHT_HIGHEST) || (filter_weight == FILTER_WEIGHT_HIGHEST_IMPORTANT);
+		ptr_log->is_custom = (filter_weight == FILTER_WEIGHT_CUSTOM) || (filter_weight == FILTER_WEIGHT_CUSTOM_BLOCK);
 
 		// push into a slist
 		{
