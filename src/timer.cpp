@@ -10,7 +10,15 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 	if (seconds <= 0)
 	{
-		ptr_app->timer = 0;
+		if (ptr_app->timer)
+			ptr_app->timer = 0;
+
+		if (ptr_app->htimer)
+		{
+			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
+			ptr_app->htimer = nullptr;
+		}
+
 		return false;
 	}
 
