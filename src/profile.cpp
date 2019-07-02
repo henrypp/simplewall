@@ -327,13 +327,6 @@ void _app_freeapplication (size_t app_hash)
 			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 		}
 
-		//_r_fastlock_acquireexclusive (&lock_notification);
-		//_app_freenotify (app_hash, false, true);
-		//_r_fastlock_releaseexclusive (&lock_notification);
-
-		////if (ptr_app && ptr_app->htimer)
-		////	DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
-
 		apps.erase (app_hash);
 	}
 }
