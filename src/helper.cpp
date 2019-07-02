@@ -2567,8 +2567,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 		result.Trim (RULE_DELIMETER);
 	}
 
-	if (ppQueryResultsSet)
-		FreeAddrInfoEx (ppQueryResultsSet);
+	FreeAddrInfoEx (ppQueryResultsSet);
 
 	WSACleanup ();
 
