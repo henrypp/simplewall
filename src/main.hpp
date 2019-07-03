@@ -113,6 +113,8 @@ void _app_dereferencelog (PVOID pdata);
 #define LOG_DIV L','
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%userprofile%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
+#define LOG_VIEWER_DEFAULT L"%systemroot%\\notepad.exe"
+#define LOG_SIZE_LIMIT_DEFAULT 1024
 
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
@@ -149,7 +151,6 @@ void _app_dereferencelog (PVOID pdata);
 #define UI_FONT_NOTIFICATION L"Calibri"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
 #define BACKUP_HOURS_PERIOD 4 // make backup every X hour(s) (default)
-#define LOG_SIZE_LIMIT 1024
 
 #define LEN_IP_MAX 68
 #define UMAP_CACHE_LIMIT 1024
