@@ -1,3 +1,21 @@
+v3.0.3 Beta (3 July 2019)
+- added option to show notification window on tray
+- added highlighting for network tab
+- redraw app item on connection change
+- remove "beta" mark from network tab
+- improved wfp transactions
+- fixed ipv6 rules port parsing for system rules (issue #475)
+- fixed direction case for log and notification (issue #474)
+- fixed notification action adds timer (issue #472)
+- fixed timer set does not work (issue #484)
+- fixed notification refresh when app remove
+- fixed configuration reset does not work
+- fixed menu graphics (issue #473)
+- fixed log stack cleanup
+- updated port service names
+- cosmetics fixes
+- fixed bugs
+
 v3.0.2 Beta (22 Juny 2019)
 - new notification ui
 - allow microsoft update & microsoft apps servers by default
@@ -6,7 +24,7 @@ v3.0.2 Beta (22 Juny 2019)
 - improved dropped packets log markup cosmetics
 - improved network monitoring speed
 - improved blocklist configuration
-- fixed saving special rules for uwp apps and services
+- fixed saving special rules for uwp apps and services (issue #454)
 - fixed tray icon dissapear sometimes (issue #450)
 - fixed profile import does not work (issue #445)
 - fixed semicolons in app paths (issue #462)
