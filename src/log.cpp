@@ -18,23 +18,10 @@ void _app_logerror (LPCWSTR fn, DWORD errcode, LPCWSTR desc, bool is_nopopups)
 
 rstring _app_getlogviewer ()
 {
-	rstring result;
+	rstring result = app.ConfigGet (L"LogViewer", LOG_VIEWER_DEFAULT);
 
-	static LPCWSTR csvviewer[] = {
-		L".\\CSVFileView.exe",
-		L".\\CSVFileView\\CSVFileView.exe",
-		L"..\\CSVFileView\\CSVFileView.exe"
-	};
-
-	for (size_t i = 0; i < _countof (csvviewer); i++)
-	{
-		result = _r_path_expand (csvviewer[i]);
-
-		if (_r_fs_exists (result))
-			return result;
-	}
-
-	result = app.ConfigGet (L"LogViewer", L"notepad.exe");
+	if (result.IsEmpty ())
+		return _r_path_expand (LOG_VIEWER_DEFAULT);
 
 	return _r_path_expand (result);
 }
@@ -198,7 +185,7 @@ void _app_logwrite (PITEM_LOG ptr_log)
 
 bool _app_logchecklimit ()
 {
-	const DWORD limit = app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT).AsUlong ();
+	const DWORD limit = app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT).AsUlong ();
 
 	if (!limit || !config.hlogfile || config.hlogfile == INVALID_HANDLE_VALUE)
 		return false;
