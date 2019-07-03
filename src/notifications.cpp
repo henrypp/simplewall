@@ -48,12 +48,10 @@ void _app_notifycreatewindow ()
 	const INT title_font_height = 12;
 	const INT text_font_height = 9;
 
-	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN | WS_OVERLAPPED, (GetSystemMetrics (SM_CXSCREEN) / 2) - (app.GetDPI (NOTIFY_WIDTH) / 2), (GetSystemMetrics (SM_CYSCREEN) / 2) - (app.GetDPI (NOTIFY_HEIGHT) / 2), app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
+	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN | WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
 
 	if (!config.hnotification)
 		return;
-
-	app.RestoreWindowPosition (config.hnotification, L"notify_window");
 
 	RECT rc = {0};
 	GetClientRect (config.hnotification, &rc);
@@ -468,8 +466,7 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 		else
 			KillTimer (hwnd, NOTIFY_TIMER_SAFETY_ID);
 
-		if (!IsWindowVisible (hwnd))
-			_app_notifysetpos (hwnd);
+		_app_notifysetpos (hwnd);
 
 		ShowWindow (hwnd, SW_SHOWNA);
 
@@ -487,18 +484,6 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 
 void _app_notifyhide (HWND hwnd)
 {
-	RECT rc = {0};
-	GetWindowRect (hwnd, &rc);
-
-	app.ConfigSet (L"WindowPosX", rc.left, L"notify_window");
-	app.ConfigSet (L"WindowPosY", rc.top, L"notify_window");
-
-	if ((GetWindowLongPtr (hwnd, GWL_STYLE) & WS_SIZEBOX) != 0)
-	{
-		app.ConfigSet (L"WindowPosWidth", _R_RECT_WIDTH (&rc), L"notify_window");
-		app.ConfigSet (L"WindowPosHeight", _R_RECT_HEIGHT (&rc), L"notify_window");
-	}
-
 	ShowWindow (hwnd, SW_HIDE);
 }
 
@@ -562,7 +547,65 @@ void _app_notifyrefresh (HWND hwnd, bool is_safety)
 
 void _app_notifysetpos (HWND hwnd)
 {
-	app.RestoreWindowPosition (hwnd, L"notify_window");
+	if (IsWindowVisible (hwnd))
+	{
+		RECT windowRect = {0};
+		GetWindowRect (hwnd, &windowRect);
+
+		_r_wnd_adjustwindowrect (hwnd, &windowRect);
+
+		SetWindowPos (hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW);
+
+		return;
+	}
+
+	const bool is_intray = app.ConfigGet (L"IsNotificationsOnTray", false).AsBool ();
+
+	if (is_intray)
+	{
+		RECT windowRect = {0};
+		GetWindowRect (hwnd, &windowRect);
+
+		RECT desktopRect = {0};
+		SystemParametersInfo (SPI_GETWORKAREA, 0, &desktopRect, 0);
+
+		APPBARDATA appbar = {0};
+
+		appbar.cbSize = sizeof (appbar);
+		appbar.hWnd = FindWindow (L"Shell_TrayWnd", nullptr);
+
+		SHAppBarMessage (ABM_GETTASKBARPOS, &appbar);
+
+		const INT border_x = GetSystemMetrics (SM_CXBORDER);
+		const INT border_y = GetSystemMetrics (SM_CYBORDER);
+
+		if (appbar.uEdge == ABE_LEFT)
+		{
+			windowRect.left = appbar.rc.right + border_x;
+			windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_y;
+		}
+		else if (appbar.uEdge == ABE_TOP)
+		{
+			windowRect.left = (desktopRect.right - _R_RECT_WIDTH (&windowRect)) - border_x;
+			windowRect.top = appbar.rc.bottom + border_y;
+		}
+		else if (appbar.uEdge == ABE_RIGHT)
+		{
+			windowRect.left = (desktopRect.right - _R_RECT_WIDTH (&windowRect)) - border_x;
+			windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_y;
+		}
+		else/* if (appbar.uEdge == ABE_BOTTOM)*/
+		{
+			windowRect.left = (desktopRect.right - (windowRect.right - windowRect.left)) - border_x;
+			windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_y;
+		}
+
+		SetWindowPos (hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW);
+	}
+	else
+	{
+		_r_wnd_center (hwnd, nullptr);
+	}
 }
 
 void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT ctrl_id2, LPCWSTR text2)
