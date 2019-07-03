@@ -303,7 +303,7 @@ void _app_freelogstack ()
 
 		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (listEntry, ITEM_LIST_ENTRY, ListEntry);
 
-		SAFE_DELETE (ptr_entry->Body);
+		_r_obj_dereference (ptr_entry->Body, &_app_dereferencelog);
 
 		_aligned_free (ptr_entry);
 	}
