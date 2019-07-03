@@ -1452,6 +1452,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					CheckDlgButton (hwnd, IDC_ENABLENOTIFICATIONS_CHK, app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_NOTIFICATIONSOUND_CHK, app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_NOTIFICATIONONTRAY_CHK, app.ConfigGet (L"IsNotificationsOnTray", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
 					SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_SETRANGE32, 0, _R_SECONDSCLOCK_DAY (7));
 					SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_SETPOS32, 0, app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsUint ());
@@ -1469,13 +1470,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					CheckDlgButton (hwnd, IDC_ENABLELOG_CHK, app.ConfigGet (L"IsLogEnabled", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
 					SetDlgItemText (hwnd, IDC_LOGPATH, app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
+					SetDlgItemText (hwnd, IDC_LOGVIEWER, app.ConfigGet (L"LogViewer", LOG_VIEWER_DEFAULT));
 
 					UDACCEL ud = {0};
 					ud.nInc = 64; // set step to 64kb
 
 					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETACCEL, 1, (LPARAM)& ud);
 					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETRANGE32, 64, 8192);
-					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETPOS32, 0, app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT).AsUint ());
+					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETPOS32, 0, app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT).AsUint ());
 
 					CheckDlgButton (hwnd, IDC_EXCLUDESTEALTH_CHK, app.ConfigGet (L"IsExcludeStealth", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
@@ -1600,10 +1602,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					SetDlgItemText (hwnd, IDC_ENABLELOG_CHK, app.LocaleString (IDS_ENABLELOG_CHK, nullptr));
 
+					SetDlgItemText (hwnd, IDC_LOGVIEWER_HINT, app.LocaleString (IDS_LOGVIEWER_HINT, L":"));
 					SetDlgItemText (hwnd, IDC_LOGSIZELIMIT_HINT, app.LocaleString (IDS_LOGSIZELIMIT_HINT, nullptr));
 
 					SetDlgItemText (hwnd, IDC_ENABLENOTIFICATIONS_CHK, app.LocaleString (IDS_ENABLENOTIFICATIONS_CHK, nullptr));
 					SetDlgItemText (hwnd, IDC_NOTIFICATIONSOUND_CHK, app.LocaleString (IDS_NOTIFICATIONSOUND_CHK, nullptr));
+					SetDlgItemText (hwnd, IDC_NOTIFICATIONONTRAY_CHK, app.LocaleString (IDS_NOTIFICATIONONTRAY_CHK, nullptr));
 
 					SetDlgItemText (hwnd, IDC_NOTIFICATIONTIMEOUT_HINT, app.LocaleString (IDS_NOTIFICATIONTIMEOUT_HINT, nullptr));
 
@@ -1616,6 +1620,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					SetDlgItemText (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, _r_fmt (L"%s %s", exclude.GetString (), app.LocaleString (IDS_EXCLUDECLASSIFYALLOW_CHK, (_r_sys_validversion (6, 2) ? nullptr : L" [win8+]")).GetString ()));
 
 					_r_wnd_addstyle (hwnd, IDC_LOGPATH_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
+					_r_wnd_addstyle (hwnd, IDC_LOGVIEWER_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 					break;
 				}
@@ -1833,9 +1838,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDC_ENABLELOG_CHK:
 				case IDC_LOGPATH:
 				case IDC_LOGPATH_BTN:
+				case IDC_LOGVIEWER:
+				case IDC_LOGVIEWER_BTN:
 				case IDC_LOGSIZELIMIT_CTRL:
 				case IDC_ENABLENOTIFICATIONS_CHK:
 				case IDC_NOTIFICATIONSOUND_CHK:
+				case IDC_NOTIFICATIONONTRAY_CHK:
 				case IDC_NOTIFICATIONTIMEOUT_CTRL:
 				case IDC_EXCLUDESTEALTH_CHK:
 				case IDC_EXCLUDECLASSIFYALLOW_CHK:
@@ -2031,7 +2039,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 					else if (ctrl_id == IDC_SECUREFILTERS_CHK)
 					{
-					const bool is_secure = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false;
+						const bool is_secure = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false;
 
 						app.ConfigSet (L"IsSecureFilters", is_secure);
 
@@ -2056,6 +2064,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
 						_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
 
+						_r_ctrl_enable (hwnd, IDC_LOGVIEWER, is_enabled); // input
+						_r_ctrl_enable (hwnd, IDC_LOGVIEWER_BTN, is_enabled); // button
+
 						EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0), is_enabled);
 
 						_r_ctrl_enable (hwnd, IDC_EXCLUDESTEALTH_CHK, is_enabled);
@@ -2067,9 +2078,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 					else if (ctrl_id == IDC_LOGPATH && notify_code == EN_KILLFOCUS)
 					{
-						app.ConfigSet (L"LogPath", _r_ctrl_gettext (hwnd, ctrl_id));
+						rstring logpath = _r_ctrl_gettext (hwnd, ctrl_id);
 
-						_app_loginit (app.ConfigGet (L"IsLogEnabled", false));
+						if (!logpath.IsEmpty ())
+						{
+							app.ConfigSet (L"LogPath", _r_path_unexpand (logpath));
+
+							_app_loginit (app.ConfigGet (L"IsLogEnabled", false));
+						}
 					}
 					else if (ctrl_id == IDC_LOGPATH_BTN)
 					{
@@ -2098,6 +2114,38 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							_app_loginit (app.ConfigGet (L"IsLogEnabled", false));
 						}
 					}
+					else if (ctrl_id == IDC_LOGVIEWER && notify_code == EN_KILLFOCUS)
+					{
+						rstring logviewer = _r_ctrl_gettext (hwnd, ctrl_id);
+
+						if (!logviewer.IsEmpty ())
+							app.ConfigSet (L"LogViewer", _r_path_unexpand (logviewer));
+					}
+					else if (ctrl_id == IDC_LOGVIEWER_BTN)
+					{
+						OPENFILENAME ofn = {0};
+
+						WCHAR path[MAX_PATH] = {0};
+						GetDlgItemText (hwnd, IDC_LOGVIEWER, path, _countof (path));
+						StringCchCopy (path, _countof (path), _r_path_expand (path));
+
+						ofn.lStructSize = sizeof (ofn);
+						ofn.hwndOwner = hwnd;
+						ofn.lpstrFile = path;
+						ofn.nMaxFile = _countof (path);
+						ofn.lpstrFileTitle = APP_NAME_SHORT;
+						ofn.lpstrFilter = L"*.exe\0*.exe\0\0";
+						ofn.lpstrDefExt = L"exe";
+						ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+						if (GetOpenFileName (&ofn))
+						{
+							StringCchCopy (path, _countof (path), _r_path_unexpand (path));
+
+							app.ConfigSet (L"LogViewer", path);
+							SetDlgItemText (hwnd, IDC_LOGVIEWER, path);
+						}
+					}
 					else if (ctrl_id == IDC_LOGSIZELIMIT_CTRL && notify_code == EN_KILLFOCUS)
 					{
 						app.ConfigSet (L"LogSizeLimitKb", (DWORD)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0));
@@ -2110,6 +2158,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MAKELPARAM (is_enabled, 0));
 
 						_r_ctrl_enable (hwnd, IDC_NOTIFICATIONSOUND_CHK, is_enabled);
+						_r_ctrl_enable (hwnd, IDC_NOTIFICATIONONTRAY_CHK, is_enabled);
 
 						EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0), is_enabled);
 
@@ -2121,6 +2170,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_NOTIFICATIONSOUND_CHK)
 					{
 						app.ConfigSet (L"IsNotificationsSound", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					}
+					else if (ctrl_id == IDC_NOTIFICATIONONTRAY_CHK)
+					{
+						app.ConfigSet (L"IsNotificationsOnTray", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 					}
 					else if (ctrl_id == IDC_NOTIFICATIONTIMEOUT_CTRL && notify_code == EN_KILLFOCUS)
 					{
@@ -4336,7 +4389,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_TRAY_LOGSHOW_ERR:
 				{
-					static const rstring path = _r_dbg_getpath ();
+					const rstring path = _r_dbg_getpath ();
 
 					if (_r_fs_exists (path))
 						_r_run (nullptr, _r_fmt (L"%s \"%s\"", _app_getlogviewer ().GetString (), path.GetString ()));
