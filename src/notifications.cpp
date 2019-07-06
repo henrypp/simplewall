@@ -48,7 +48,7 @@ void _app_notifycreatewindow ()
 	const INT title_font_height = 12;
 	const INT text_font_height = 9;
 
-	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW, NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN | WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
+	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW | (app.ConfigGet (L"IsNotificationsOnTop", true).AsBool () ? WS_EX_TOPMOST : 0), NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN | WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
 
 	if (!config.hnotification)
 		return;
