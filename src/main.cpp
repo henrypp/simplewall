@@ -1882,7 +1882,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-				}
+					}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
@@ -2177,6 +2177,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_NOTIFICATIONONTRAY_CHK)
 					{
 						app.ConfigSet (L"IsNotificationsOnTray", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+
+						if (IsWindowVisible (config.hnotification))
+							_app_notifysetpos (config.hnotification, true);
 					}
 					else if (ctrl_id == IDC_NOTIFICATIONONTOP_CHK)
 					{
@@ -2208,12 +2211,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
+				}
 			}
-		}
 
 			break;
+		}
 	}
-}
 
 	return FALSE;
 }
@@ -2458,7 +2461,7 @@ void _app_toolbar_init (HWND hwnd)
 	SendMessage (config.hrebar, RB_INSERTBAND, 0, (LPARAM)& rbi);
 
 	BringWindowToTop (config.hrebar); // HACK!!!
-	}
+}
 
 void _app_initialize ()
 {
@@ -3616,6 +3619,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					app.LocaleMenu (hsubmenu, IDS_ENABLENOTIFICATIONS_CHK, IDM_TRAY_ENABLENOTIFICATIONS_CHK, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_NOTIFICATIONSOUND_CHK, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_NOTIFICATIONONTRAY_CHK, IDM_TRAY_NOTIFICATIONONTRAY_CHK, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_ALWAYSONTOP_CHK, IDM_TRAY_NOTIFICATIONONTOP_CHK, false, nullptr);
 
 					app.LocaleMenu (hsubmenu, IDS_ENABLELOG_CHK, IDM_TRAY_ENABLELOG_CHK, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_LOGSHOW, IDM_TRAY_LOGSHOW, false, nullptr);
@@ -3650,10 +3655,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					CheckMenuItem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 					CheckMenuItem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsOnTray", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (hsubmenu, IDM_TRAY_NOTIFICATIONONTOP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsOnTop", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+
 					CheckMenuItem (hsubmenu, IDM_TRAY_ENABLELOG_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsLogEnabled", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 
 					if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ())
+					{
 						EnableMenuItem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						EnableMenuItem (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						EnableMenuItem (hsubmenu, IDM_TRAY_NOTIFICATIONONTOP_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					}
 
 					if (_wfp_isfiltersapplying ())
 						EnableMenuItem (hsubmenu, IDM_TRAY_START, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
@@ -4360,6 +4372,29 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const bool new_val = !app.ConfigGet (L"IsNotificationsSound", true).AsBool ();
 
 					app.ConfigSet (L"IsNotificationsSound", new_val);
+
+					break;
+				}
+
+				case IDM_TRAY_NOTIFICATIONONTRAY_CHK:
+				{
+					const bool new_val = !app.ConfigGet (L"IsNotificationsOnTray", false).AsBool ();
+
+					app.ConfigSet (L"IsNotificationsOnTray", new_val);
+
+					if (IsWindowVisible (config.hnotification))
+						_app_notifysetpos (config.hnotification, true);
+
+					break;
+				}
+
+				case IDM_TRAY_NOTIFICATIONONTOP_CHK:
+				{
+					const bool new_val = !app.ConfigGet (L"IsNotificationsOnTop", true).AsBool ();
+
+					_r_wnd_top (config.hnotification, new_val);
+
+					app.ConfigSet (L"IsNotificationsOnTop", new_val);
 
 					break;
 				}
