@@ -466,7 +466,7 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 		else
 			KillTimer (hwnd, NOTIFY_TIMER_SAFETY_ID);
 
-		_app_notifysetpos (hwnd);
+		_app_notifysetpos (hwnd, false);
 
 		ShowWindow (hwnd, SW_SHOWNA);
 
@@ -545,9 +545,9 @@ void _app_notifyrefresh (HWND hwnd, bool is_safety)
 	_r_obj_dereference (ptr_log_object, &_app_dereferencelog);
 }
 
-void _app_notifysetpos (HWND hwnd)
+void _app_notifysetpos (HWND hwnd, bool is_forced)
 {
-	if (IsWindowVisible (hwnd))
+	if (!is_forced && IsWindowVisible (hwnd))
 	{
 		RECT windowRect = {0};
 		GetWindowRect (hwnd, &windowRect);
