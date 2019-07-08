@@ -1248,6 +1248,9 @@ rstring _app_getservicename (UINT16 port)
 		case 9800:
 			return L"webdav";
 
+		case 10107:
+			return L"bctp-server";
+
 		case 25565:
 			return L"minecraft";
 
