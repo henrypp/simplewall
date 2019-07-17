@@ -28,7 +28,7 @@ void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_h
 void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule, bool include_apps);
 
 void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable);
-void _app_ruleblocklistset ();
+void _app_ruleblocklistset (bool is_instantapply);
 
 rstring _app_rulesexpand (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delimeter);
 

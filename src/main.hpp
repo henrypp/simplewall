@@ -114,7 +114,7 @@ void _app_dereferencelog (PVOID pdata);
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%userprofile%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
 #define LOG_VIEWER_DEFAULT L"%systemroot%\\notepad.exe"
-#define LOG_SIZE_LIMIT_DEFAULT 1024
+#define LOG_SIZE_LIMIT_DEFAULT DWORD (1024)
 
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
@@ -127,7 +127,7 @@ void _app_dereferencelog (PVOID pdata);
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 
 #define BOOTTIME_FILTER_NAME L"Boot-time filter"
-#define SUBLAYER_WEIGHT_DEFAULT 65534
+#define SUBLAYER_WEIGHT_DEFAULT UINT (65534)
 
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;;CCRC;;;%s)"
 
@@ -170,7 +170,7 @@ void _app_dereferencelog (PVOID pdata);
 #define NOTIFY_TIMER_SAFETY_ID 666
 #define NOTIFY_TIMER_SAFETY_TIMEOUT 600
 
-#define NOTIFY_TIMEOUT_DEFAULT 30 // sec.
+#define NOTIFY_TIMEOUT_DEFAULT time_t (30) // sec.
 
 #define NOTIFY_LIMIT_POOL_SIZE 128
 #define NOTIFY_LIMIT_THREAD_COUNT 2
