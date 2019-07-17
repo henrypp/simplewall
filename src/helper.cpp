@@ -2374,9 +2374,9 @@ void _app_refreshstatus (HWND hwnd)
 				}
 			}
 
-			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (IDS_GROUP_ALLOWED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
-			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (IDS_GROUP_SPECIAL_APPS, _r_fmt (L" (%d/%d)", group2_count, total_count)), 0, 0);
-			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (IDS_GROUP_BLOCKED, _r_fmt (L" (%d/%d)", group3_count, total_count)), 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (IDS_GROUP_ALLOWED, total_count ? _r_fmt (L" (%d/%d)", group1_count, total_count).GetString () : nullptr), 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (IDS_GROUP_SPECIAL_APPS, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : nullptr), 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (IDS_GROUP_BLOCKED, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : nullptr), 0, 0);
 		}
 	}
 }
