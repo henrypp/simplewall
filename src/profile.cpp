@@ -693,11 +693,13 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 	}
 }
 
-void _app_ruleblocklistset ()
+void _app_ruleblocklistset (bool is_instantapply)
 {
-	const INT bloclist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
-	const INT bloclist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2);
-	const INT bloclist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2);
+	const INT blocklist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
+	const INT blocklist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2);
+	const INT blocklist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2);
+
+	OBJECTS_VEC rules;
 
 	for (size_t i = 0; i < rules_arr.size (); i++)
 	{
@@ -708,32 +710,47 @@ void _app_ruleblocklistset ()
 
 		const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
-		if (!ptr_rule || !ptr_rule->pname || !ptr_rule->pname[0])
+		if (!ptr_rule || ptr_rule->type != DataRuleBlocklist || !ptr_rule->pname || !ptr_rule->pname[0])
 		{
 			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 			continue;
 		}
 
-		if (ptr_rule->type == DataRuleBlocklist)
+		if (_wcsnicmp (ptr_rule->pname, L"spy_", 4) == 0)
 		{
-			if (_wcsnicmp (ptr_rule->pname, L"spy_", 4) == 0)
-			{
-				ptr_rule->is_block = bloclist_spy_state != 1;
-				ptr_rule->is_enabled = bloclist_spy_state != 0;
-			}
-			else if (_wcsnicmp (ptr_rule->pname, L"update_", 7) == 0)
-			{
-				ptr_rule->is_block = bloclist_update_state != 1;
-				ptr_rule->is_enabled = bloclist_update_state != 0;
-			}
-			else if (_wcsnicmp (ptr_rule->pname, L"extra_", 6) == 0)
-			{
-				ptr_rule->is_block = bloclist_extra_state != 1;
-				ptr_rule->is_enabled = bloclist_extra_state != 0;
-			}
+			ptr_rule->is_block = blocklist_spy_state != 1;
+			ptr_rule->is_enabled = blocklist_spy_state != 0;
+		}
+		else if (_wcsnicmp (ptr_rule->pname, L"update_", 7) == 0)
+		{
+			ptr_rule->is_block = blocklist_update_state != 1;
+			ptr_rule->is_enabled = blocklist_update_state != 0;
+		}
+		else if (_wcsnicmp (ptr_rule->pname, L"extra_", 6) == 0)
+		{
+			ptr_rule->is_block = blocklist_extra_state != 1;
+			ptr_rule->is_enabled = blocklist_extra_state != 0;
+		}
+		else
+		{
+			// fallback: block rules with other names by default!
+			ptr_rule->is_block = true;
+			ptr_rule->is_enabled = true;
+		}
+
+		if (is_instantapply)
+		{
+			rules.push_back (ptr_rule_object); // be freed later!
+			continue;
 		}
 
 		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+	}
+
+	if (is_instantapply)
+	{
+		_wfp_create4filters (rules, __LINE__);
+		_app_freeobjects_vec (rules, &_app_dereferencerule);
 	}
 }
 
@@ -1431,7 +1448,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	}
 
 	_r_fastlock_acquireshared (&lock_access);
-	_app_ruleblocklistset ();
+	_app_ruleblocklistset (false);
 	_r_fastlock_releaseshared (&lock_access);
 
 	if (hwnd)
@@ -1539,7 +1556,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 void _app_profile_save (LPCWSTR path_custom)
 {
 	const time_t current_time = _r_unixtime_now ();
-	const bool is_backuprequired = !path_custom && (app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", 0).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD)).AsLonglong ()) || !_r_fs_exists (config.profile_path_backup)));
+	const bool is_backuprequired = !path_custom && (app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", time_t (0)).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", time_t (_R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD))).AsLonglong ()) || !_r_fs_exists (config.profile_path_backup)));
 
 	pugi::xml_document doc;
 	pugi::xml_node root = doc.append_child (L"root");
