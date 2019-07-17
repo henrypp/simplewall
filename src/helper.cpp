@@ -2193,7 +2193,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM l
 
 	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
 
-	const UINT column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsUint ();
+	const INT column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
 	const bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
 
 	INT result = 0;
@@ -2256,12 +2256,12 @@ void _app_listviewsort (HWND hwnd, UINT listview_id, INT subitem, bool is_notify
 		is_descend = !is_descend;
 
 	if (subitem == -1)
-		subitem = app.ConfigGet (L"SortColumn", 0, cfg_name).AsBool ();
+		subitem = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
 
 	if (is_notifycode)
 	{
 		app.ConfigSet (L"SortIsDescending", is_descend, cfg_name);
-		app.ConfigSet (L"SortColumn", (DWORD)subitem, cfg_name);
+		app.ConfigSet (L"SortColumn", subitem, cfg_name);
 	}
 
 	for (INT i = 0; i < _r_listview_getcolumncount (hwnd, listview_id); i++)
@@ -2345,85 +2345,38 @@ void _app_refreshstatus (HWND hwnd)
 	// group information
 	{
 		const UINT listview_id = _app_gettab_id (hwnd);
-		const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
 
-		size_t group1_count = 0;
-		size_t group2_count = 0;
-		size_t group3_count = 0;
-
-		if (
-			listview_id == IDC_APPS_PROFILE ||
-			listview_id == IDC_APPS_SERVICE ||
-			listview_id == IDC_APPS_UWP
-			)
+		if (listview_id)
 		{
+			const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
+
+			size_t group1_count = 0;
+			size_t group2_count = 0;
+			size_t group3_count = 0;
+
 			for (size_t i = 0; i < total_count; i++)
 			{
-				const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
-				PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+				LVITEM lvi = {0};
 
-				if (!ptr_app_object)
-					continue;
+				lvi.mask = LVIF_GROUPID;
+				lvi.iItem = (INT)i;
 
-				PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
-
-				if (ptr_app)
+				if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)& lvi))
 				{
-					const size_t group_id = _app_getappgroup (app_hash, ptr_app);
-
-					if (group_id == 0)
+					if (lvi.iGroupId == 0)
 						group1_count += 1;
 
-					else if (group_id == 1)
+					else if (lvi.iGroupId == 1)
 						group2_count += 1;
 
 					else
 						group3_count += 1;
 				}
-
-				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 			}
 
 			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (IDS_GROUP_ALLOWED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
 			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (IDS_GROUP_SPECIAL_APPS, _r_fmt (L" (%d/%d)", group2_count, total_count)), 0, 0);
 			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (IDS_GROUP_BLOCKED, _r_fmt (L" (%d/%d)", group3_count, total_count)), 0, 0);
-		}
-		else if (
-			listview_id == IDC_RULES_BLOCKLIST ||
-			listview_id == IDC_RULES_SYSTEM ||
-			listview_id == IDC_RULES_CUSTOM
-			)
-		{
-			for (size_t i = 0; i < total_count; i++)
-			{
-				const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, i);
-				PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
-
-				if (!ptr_rule_object)
-					continue;
-
-				PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-				if (ptr_rule)
-				{
-					const size_t group_id = _app_getrulegroup (ptr_rule);
-
-					if (group_id == 0)
-						group1_count += 1;
-
-					else if (group_id == 1)
-						group2_count += 1;
-
-					else
-						group3_count += 1;
-				}
-
-				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
-			}
-
-			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (IDS_GROUP_ENABLED, _r_fmt (L" (%d/%d)", group1_count, total_count)), 0, 0);
-			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (IDS_GROUP_SPECIAL, _r_fmt (L" (%d/%d)", group2_count, total_count)), 0, 0);
-			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (IDS_GROUP_DISABLED, _r_fmt (L" (%d/%d)", group3_count, total_count)), 0, 0);
 		}
 	}
 }
