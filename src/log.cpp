@@ -9,7 +9,7 @@ void _app_logerror (LPCWSTR fn, DWORD errcode, LPCWSTR desc, bool is_nopopups)
 
 	_r_dbg (fn, errcode, desc);
 
-	if ((current_time - app.ConfigGet (L"ErrorNotificationsTimestamp", 0).AsLonglong ()) >= app.ConfigGet (L"ErrorNotificationsPeriod", 4).AsLonglong () && !is_nopopups && app.ConfigGet (L"IsErrorNotificationsEnabled", true).AsBool ()) // check for timeout (sec.)
+	if ((current_time - app.ConfigGet (L"ErrorNotificationsTimestamp", time_t (0)).AsLonglong ()) >= app.ConfigGet (L"ErrorNotificationsPeriod", time_t (4)).AsLonglong () && !is_nopopups && app.ConfigGet (L"IsErrorNotificationsEnabled", true).AsBool ()) // check for timeout (sec.)
 	{
 		app.TrayPopup (app.GetHWND (), UID, nullptr, NIIF_ERROR | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? 0 : NIIF_NOSOUND), APP_NAME, app.LocaleString (IDS_STATUS_ERROR, nullptr));
 		app.ConfigSet (L"ErrorNotificationsTimestamp", current_time);
