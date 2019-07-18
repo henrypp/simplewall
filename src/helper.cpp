@@ -43,15 +43,15 @@ void _app_dereferencestring (PVOID pdata)
 	delete[] LPWSTR (pdata);
 }
 
-UINT _app_gettab_id (HWND hwnd, size_t page_id)
+UINT _app_gettab_id (HWND hwnd, UINT page_id)
 {
 	TCITEM tci = {0};
 
 	tci.mask = TCIF_PARAM;
 
-	if (page_id == LAST_VALUE)
+	if (page_id == UINT (-1))
 	{
-		page_id = (size_t)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
+		page_id = (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
 
 		if (page_id == LAST_VALUE)
 			page_id = 0;
@@ -62,12 +62,12 @@ UINT _app_gettab_id (HWND hwnd, size_t page_id)
 	return (UINT)tci.lParam;
 }
 
-void _app_settab_id (HWND hwnd, size_t page_id)
+void _app_settab_id (HWND hwnd, UINT page_id)
 {
-	if (!page_id || (_app_gettab_id (hwnd) == page_id && IsWindowVisible (GetDlgItem (hwnd, (UINT)page_id))))
+	if (!page_id || (_app_gettab_id (hwnd) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
 		return;
 
-	for (size_t i = 0; i < (size_t)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
+	for (UINT i = 0; i < (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 	{
 		const UINT listview_id = _app_gettab_id (hwnd, i);
 
@@ -2348,6 +2348,8 @@ void _app_refreshstatus (HWND hwnd)
 
 		if (listview_id)
 		{
+			const UINT special_rules_group_title = (listview_id == IDC_RULES_BLOCKLIST || listview_id == IDC_RULES_SYSTEM || listview_id == IDC_RULES_CUSTOM) ? IDS_GROUP_SPECIAL : IDS_GROUP_SPECIAL_APPS;
+
 			const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
 
 			size_t group1_count = 0;
@@ -2375,7 +2377,7 @@ void _app_refreshstatus (HWND hwnd)
 			}
 
 			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (IDS_GROUP_ALLOWED, total_count ? _r_fmt (L" (%d/%d)", group1_count, total_count).GetString () : nullptr), 0, 0);
-			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (IDS_GROUP_SPECIAL_APPS, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : nullptr), 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (special_rules_group_title, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : nullptr), 0, 0);
 			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (IDS_GROUP_BLOCKED, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : nullptr), 0, 0);
 		}
 	}

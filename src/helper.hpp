@@ -17,8 +17,8 @@ void _app_dereferencerule (PVOID pdata);
 void _app_dereferenceruleconfig (PVOID pdata);
 void _app_dereferencestring (PVOID pdata);
 
-UINT _app_gettab_id (HWND hwnd, size_t page_id = LAST_VALUE);
-void _app_settab_id (HWND hwnd, size_t page_id);
+UINT _app_gettab_id (HWND hwnd, UINT page_id = UINT (-1));
+void _app_settab_id (HWND hwnd, UINT page_id);
 
 bool _app_initinterfacestate (HWND hwnd);
 void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
