@@ -2186,10 +2186,17 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 	return false;
 }
 
-INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM lparam)
+INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPARAM lparam)
 {
-	const HWND hwnd = GetParent ((HWND)lparam);
-	const UINT listview_id = GetDlgCtrlID ((HWND)lparam);
+	const HWND hlistview = (HWND)lparam;
+	const HWND hparent = GetParent (hlistview);
+	const UINT listview_id = GetDlgCtrlID (hlistview);
+
+	const size_t item1 = _app_getposition (hparent, listview_id, lparam1);
+	const size_t item2 = _app_getposition (hparent, listview_id, lparam2);
+
+	if (item1 == LAST_VALUE || item2 == LAST_VALUE)
+		return 0;
 
 	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
 
@@ -2198,17 +2205,17 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM l
 
 	INT result = 0;
 
-	if ((GetWindowLongPtr ((HWND)lparam, GWL_EXSTYLE) & LVS_EX_CHECKBOXES) != 0)
+	if (listview_id != IDC_NETWORK)
 	{
-		const bool is_checked1 = _r_listview_isitemchecked (hwnd, listview_id, (size_t)item1);
-		const bool is_checked2 = _r_listview_isitemchecked (hwnd, listview_id, (size_t)item2);
+		const bool is_checked1 = _r_listview_isitemchecked (hparent, listview_id, item1);
+		const bool is_checked2 = _r_listview_isitemchecked (hparent, listview_id, item2);
 
-		if ((is_checked1 || is_checked2) && (is_checked1 != is_checked2))
+		if (is_checked1 != is_checked2)
 		{
 			if (is_checked1 && !is_checked2)
 				result = is_descend ? 1 : -1;
 
-			if (!is_checked1 && is_checked2)
+			else if (!is_checked1 && is_checked2)
 				result = is_descend ? -1 : 1;
 		}
 	}
@@ -2221,8 +2228,8 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM l
 			time_t timestamp1 = 0;
 			time_t timestamp2 = 0;
 
-			_app_getappinfo (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item1), InfoTimestamp, &timestamp1, sizeof (timestamp1));
-			_app_getappinfo (_r_listview_getitemlparam (hwnd, listview_id, (size_t)item2), InfoTimestamp, &timestamp2, sizeof (timestamp2));
+			_app_getappinfo (lparam1, InfoTimestamp, &timestamp1, sizeof (timestamp1));
+			_app_getappinfo (lparam2, InfoTimestamp, &timestamp2, sizeof (timestamp2));
 
 			if (timestamp1 < timestamp2)
 				result = -1;
@@ -2234,10 +2241,10 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM item1, LPARAM item2, LPARAM l
 
 	if (!result)
 	{
-		const rstring str1 = _r_listview_getitemtext (hwnd, listview_id, (size_t)item1, column_id);
-		const rstring str2 = _r_listview_getitemtext (hwnd, listview_id, (size_t)item2, column_id);
-
-		result = StrCmpLogicalW (str1, str2);
+		result = StrCmpLogicalW (
+			_r_listview_getitemtext (hparent, listview_id, item1, column_id),
+			_r_listview_getitemtext (hparent, listview_id, item2, column_id)
+		);
 	}
 
 	return is_descend ? -result : result;
@@ -2269,7 +2276,7 @@ void _app_listviewsort (HWND hwnd, UINT listview_id, INT subitem, bool is_notify
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, subitem, is_descend ? -1 : 1);
 
-	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMSEX, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)& _app_listviewcompare_callback);
+	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)& _app_listviewcompare_callback);
 }
 
 void _app_refreshstatus (HWND hwnd)
@@ -2586,16 +2593,16 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 		{
 			if (paddr_dns)
 			{
-				const size_t hash = _r_str_hash (ni.NamedAddress.Address);
+				const size_t dns_hash = _r_str_hash (ni.NamedAddress.Address);
 
 				_r_fastlock_acquireshared (&lock_cache);
-				const bool is_exists = cache_dns.find (hash) != cache_dns.end ();
+				const bool is_exists = cache_dns.find (dns_hash) != cache_dns.end ();
 				_r_fastlock_releaseshared (&lock_cache);
 
 				if (is_exists)
 				{
 					_r_fastlock_acquireshared (&lock_cache);
-					PR_OBJECT ptr_cache_object = _r_obj_reference (cache_dns[hash]);
+					PR_OBJECT ptr_cache_object = _r_obj_reference (cache_dns[dns_hash]);
 					_r_fastlock_releaseshared (&lock_cache);
 
 					if (ptr_cache_object)
@@ -2629,9 +2636,9 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 						_r_fastlock_acquireexclusive (&lock_cache);
 
 						_app_freeobjects_map (cache_dns, &_app_dereferencestring, false);
-						cache_dns[hash] = _r_obj_allocate (ptr_cache);
+						cache_dns[dns_hash] = _r_obj_allocate (ptr_cache);
 
-						_r_obj_reference (cache_dns[hash]);
+						_r_obj_reference (cache_dns[dns_hash]);
 
 						_r_fastlock_releaseexclusive (&lock_cache);
 					}
@@ -2953,18 +2960,14 @@ UINT _app_getlistview_id (EnumDataType type)
 	return 0;
 }
 
-size_t _app_getposition (HWND hwnd, UINT listview_id, size_t idx)
+size_t _app_getposition (HWND hwnd, UINT listview_id, size_t lparam)
 {
-	if (!listview_id)
-		return LAST_VALUE;
+	LVFINDINFO lvfi = {0};
 
-	for (size_t i = 0; i < _r_listview_getitemcount (hwnd, listview_id); i++)
-	{
-		if ((size_t)_r_listview_getitemlparam (hwnd, listview_id, i) == idx)
-			return i;
-	}
+	lvfi.flags = LVFI_PARAM;
+	lvfi.lParam = lparam;
 
-	return LAST_VALUE;
+	return (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)-1, (LPARAM)& lvfi);
 }
 
 void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos)

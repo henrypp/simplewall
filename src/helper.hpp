@@ -67,7 +67,7 @@ void _app_resolvefilename (rstring& path);
 
 UINT _app_getlistview_id (EnumDataType type);
 
-size_t _app_getposition (HWND hwnd, UINT listview_id, size_t idx);
+size_t _app_getposition (HWND hwnd, UINT listview_id, size_t lparam);
 void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos = -1);
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size);
