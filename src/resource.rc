@@ -521,7 +521,7 @@ BEGIN
 	IDS_SIGN_UNSIGNED "Not signed"
 
 	IDS_GROUP_ALLOWED "Enabled apps"
-	IDS_GROUP_SPECIAL_APPS "Apps with special rules"
+	IDS_GROUP_SPECIAL_APPS "Apps with user rules"
 	IDS_GROUP_BLOCKED "Disabled apps"
 
 	IDS_GROUP_ENABLED "Enabled rules (all apps)"
@@ -562,7 +562,7 @@ BEGIN
 	IDS_STARTMINIMIZED_CHK "Start minimized"
 	IDS_SHOWFILENAMESONLY_CHK "Show filenames only"
 	IDS_AUTOSIZECOLUMNS_CHK "Autosize columns"
-	IDS_ENABLESPECIALGROUP_CHK "Group apps with special rules"
+	IDS_ENABLESPECIALGROUP_CHK "Group apps with user rules"
 	IDS_SKIPUACWARNING_CHK "Skip ""User Account Control"" prompt warning"
 	IDS_CHECKUPDATES_CHK "Periodically check for updates (recommended)"
 	IDS_CHECKUPDATESBETA_CHK "Update to beta versions"
