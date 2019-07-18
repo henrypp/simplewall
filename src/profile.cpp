@@ -1565,7 +1565,7 @@ void _app_profile_save (LPCWSTR path_custom)
 	{
 		root.append_attribute (L"timestamp").set_value (current_time);
 		root.append_attribute (L"type").set_value (XmlProfileV3);
-		root.append_attribute (L"version").set_value (XML_PROFILE_VER_3);
+		root.append_attribute (L"version").set_value (XML_PROFILE_VER_CURRENT);
 
 		pugi::xml_node root_apps = root.append_child (L"apps");
 		pugi::xml_node root_rules_custom = root.append_child (L"rules_custom");
@@ -1614,6 +1614,10 @@ void _app_profile_save (LPCWSTR path_custom)
 						if (_app_istimeractive (ptr_app))
 							item.append_attribute (L"timer").set_value (ptr_app->timer);
 
+						// ffu!
+						if (ptr_app->profile)
+							item.append_attribute (L"profile").set_value (ptr_app->profile);
+
 						if (ptr_app->is_silent)
 							item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
 
@@ -1655,6 +1659,10 @@ void _app_profile_save (LPCWSTR path_custom)
 
 					if (ptr_rule->prule_local && ptr_rule->prule_local[0])
 						item.append_attribute (L"rule_local").set_value (ptr_rule->prule_local);
+
+					// ffu!
+					if (ptr_rule->profile)
+						item.append_attribute (L"profile").set_value (ptr_rule->profile);
 
 					if (ptr_rule->dir != FWP_DIRECTION_OUTBOUND)
 						item.append_attribute (L"dir").set_value (ptr_rule->dir);

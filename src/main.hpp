@@ -103,6 +103,8 @@ void _app_dereferencelog (PVOID pdata);
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
 #define XML_PROFILE_VER_3 3
+#define XML_PROFILE_VER_CURRENT XML_PROFILE_VER_3
+
 #define XML_PROFILE L"profile.xml"
 #define XML_PROFILE_INTERNAL L"profile_internal.xml"
 
@@ -114,7 +116,7 @@ void _app_dereferencelog (PVOID pdata);
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%userprofile%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
 #define LOG_VIEWER_DEFAULT L"%systemroot%\\notepad.exe"
-#define LOG_SIZE_LIMIT_DEFAULT DWORD (1024)
+#define LOG_SIZE_LIMIT_DEFAULT 1024ul
 
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
@@ -127,7 +129,7 @@ void _app_dereferencelog (PVOID pdata);
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 
 #define BOOTTIME_FILTER_NAME L"Boot-time filter"
-#define SUBLAYER_WEIGHT_DEFAULT UINT (65534)
+#define SUBLAYER_WEIGHT_DEFAULT 65534u
 
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;;CCRC;;;%s)"
 
@@ -307,6 +309,8 @@ typedef struct tagITEM_APP
 
 	EnumDataType type = DataUnknown;
 
+	UINT8 profile = 0; // ffu!
+
 	bool is_enabled = false;
 	bool is_haveerrors = false;
 	bool is_system = false;
@@ -374,6 +378,8 @@ typedef struct tagITEM_RULE
 	ADDRESS_FAMILY af = AF_UNSPEC;
 
 	FWP_DIRECTION dir = FWP_DIRECTION_OUTBOUND;
+
+	UINT8 profile = 0; // ffu!
 
 	UINT8 weight = 0;
 	UINT8 protocol = 0;
