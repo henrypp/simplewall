@@ -2967,7 +2967,7 @@ size_t _app_getposition (HWND hwnd, UINT listview_id, size_t lparam)
 	lvfi.flags = LVFI_PARAM;
 	lvfi.lParam = lparam;
 
-	INT pos = SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)-1, (LPARAM)& lvfi);
+	INT pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)-1, (LPARAM)& lvfi);
 
 	if (pos == -1)
 		return LAST_VALUE;
