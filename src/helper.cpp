@@ -2355,40 +2355,43 @@ void _app_refreshstatus (HWND hwnd)
 
 		if (listview_id)
 		{
-			const bool is_rules_lv = (listview_id == IDC_RULES_BLOCKLIST || listview_id == IDC_RULES_SYSTEM || listview_id == IDC_RULES_CUSTOM);
-			const UINT enabled_group_title = is_rules_lv ? IDS_GROUP_ENABLED : IDS_GROUP_ALLOWED;
-			const UINT special_group_title = is_rules_lv ? IDS_GROUP_SPECIAL : IDS_GROUP_SPECIAL_APPS;
-			const UINT disabled_group_title = is_rules_lv ? IDS_GROUP_DISABLED : IDS_GROUP_BLOCKED;
-
-			const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
-
-			size_t group1_count = 0;
-			size_t group2_count = 0;
-			size_t group3_count = 0;
-
-			for (size_t i = 0; i < total_count; i++)
+			if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
 			{
-				LVITEM lvi = {0};
+				const bool is_rules_lv = (listview_id == IDC_RULES_BLOCKLIST || listview_id == IDC_RULES_SYSTEM || listview_id == IDC_RULES_CUSTOM);
+				const UINT enabled_group_title = is_rules_lv ? IDS_GROUP_ENABLED : IDS_GROUP_ALLOWED;
+				const UINT special_group_title = is_rules_lv ? IDS_GROUP_SPECIAL : IDS_GROUP_SPECIAL_APPS;
+				const UINT disabled_group_title = is_rules_lv ? IDS_GROUP_DISABLED : IDS_GROUP_BLOCKED;
 
-				lvi.mask = LVIF_GROUPID;
-				lvi.iItem = (INT)i;
+				const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
 
-				if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)& lvi))
+				size_t group1_count = 0;
+				size_t group2_count = 0;
+				size_t group3_count = 0;
+
+				for (size_t i = 0; i < total_count; i++)
 				{
-					if (lvi.iGroupId == 0)
-						group1_count += 1;
+					LVITEM lvi = {0};
 
-					else if (lvi.iGroupId == 1)
-						group2_count += 1;
+					lvi.mask = LVIF_GROUPID;
+					lvi.iItem = (INT)i;
 
-					else
-						group3_count += 1;
+					if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)& lvi))
+					{
+						if (lvi.iGroupId == 0)
+							group1_count += 1;
+
+						else if (lvi.iGroupId == 1)
+							group2_count += 1;
+
+						else
+							group3_count += 1;
+					}
 				}
-			}
 
-			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (enabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group1_count, total_count).GetString () : nullptr), 0, 0);
-			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (special_group_title, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : nullptr), 0, 0);
-			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (disabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : nullptr), 0, 0);
+				_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (enabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group1_count, total_count).GetString () : nullptr), 0, 0);
+				_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (special_group_title, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : nullptr), 0, 0);
+				_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (disabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : nullptr), 0, 0);
+			}
 		}
 	}
 }
