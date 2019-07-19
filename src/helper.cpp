@@ -151,7 +151,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
 	if (proto && (flags & FMTADDR_USE_PROTOCOL) != 0)
-		StringCchPrintf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto).ToLower ().GetString ());
+		StringCchPrintf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto).GetString ());
 
 	if ((flags & FMTADDR_AS_ARPA) != 0)
 	{
@@ -1287,76 +1287,73 @@ rstring _app_getprotoname (UINT8 proto)
 	switch (proto)
 	{
 		case IPPROTO_HOPOPTS:
-			return L"HOPOPT";
+			return L"hopopt";
 
 		case IPPROTO_ICMP:
-			return L"ICMPv4";
+			return L"icmp";
 
 		case IPPROTO_IGMP:
-			return L"IGMP";
+			return L"igmp";
 
 		case IPPROTO_GGP:
-			return L"GGP";
+			return L"ggp";
 
 		case IPPROTO_IPV4:
-			return L"IPv4";
+			return L"ipv4";
 
 		case IPPROTO_ST:
-			return L"ST";
+			return L"st";
 
 		case IPPROTO_TCP:
-			return L"TCP";
+			return L"tcp";
 
 		case IPPROTO_CBT:
-			return L"CBT";
+			return L"cbt";
 
 		case IPPROTO_EGP:
-			return L"EGP";
+			return L"egp";
 
 		case IPPROTO_IGP:
-			return L"IGP";
+			return L"igp";
 
 		case IPPROTO_PUP:
-			return L"PUP";
+			return L"pup";
 
 		case IPPROTO_UDP:
-			return L"UDP";
+			return L"udp";
 
 		case IPPROTO_IDP:
-			return L"XNS-IDP";
+			return L"xns-idp";
 
 		case IPPROTO_RDP:
-			return L"RDP";
+			return L"rdp";
 
 		case IPPROTO_IPV6:
-			return L"IPv6";
+			return L"ipv6";
 
 		case IPPROTO_ROUTING:
-			return L"IPv6-Route";
+			return L"ipv6-route";
 
 		case IPPROTO_FRAGMENT:
-			return L"IPv6-Frag";
+			return L"ipv6-frag";
 
 		case IPPROTO_ESP:
-			return L"ESP";
+			return L"esp";
 
 		case IPPROTO_AH:
-			return L"AH";
+			return L"ah";
 
 		case IPPROTO_ICMPV6:
-			return L"ICMPv6";
+			return L"ipv6-icmp";
 
 		case IPPROTO_DSTOPTS:
-			return L"IPv6-Opts";
+			return L"ipv6-opts";
 
 		case IPPROTO_L2TP:
-			return L"L2TP";
+			return L"l2tp";
 
 		case IPPROTO_SCTP:
-			return L"SCTP";
-
-		case IPPROTO_RAW:
-			return L"RAW";
+			return L"sctp";
 	}
 
 	return SZ_UNKNOWN;
@@ -2970,7 +2967,12 @@ size_t _app_getposition (HWND hwnd, UINT listview_id, size_t lparam)
 	lvfi.flags = LVFI_PARAM;
 	lvfi.lParam = lparam;
 
-	return (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)-1, (LPARAM)& lvfi);
+	INT pos = SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)-1, (LPARAM)& lvfi);
+
+	if (pos == -1)
+		return LAST_VALUE;
+
+	return (size_t)pos;
 }
 
 void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos)
@@ -2989,7 +2991,7 @@ void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos)
 
 	if (item != LAST_VALUE)
 	{
-		item = min (total_count - 1, item);
+		item = std::clamp (item, size_t (0), total_count - 1);
 
 		SendMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
 
