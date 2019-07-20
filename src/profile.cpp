@@ -834,7 +834,7 @@ bool _app_isapphaveconnection (size_t app_hash)
 
 		if (ptr_network && ptr_network->app_hash == app_hash)
 		{
-			if ((ptr_network->protocol == IPPROTO_TCP && (ptr_network->state == MIB_TCP_STATE_ESTAB)) || (ptr_network->protocol == IPPROTO_UDP && !ptr_network->state))
+			if (ptr_network->is_connection)
 			{
 				_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 				return true;
