@@ -97,6 +97,8 @@ bool _app_initinterfacestate (HWND hwnd)
 	if (is_enabled)
 	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
+
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
 	}
 
@@ -108,6 +110,8 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
 	if (is_enabled)
 	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (TRUE, 0));
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (TRUE, 0));
+
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
 	}
 }
@@ -1498,43 +1502,47 @@ rstring _app_getprocesspath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id,
 
 size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWORD remote_port, PVOID local_addr, DWORD local_port, UINT8 proto, DWORD state)
 {
-	LPCWSTR hash_format = L"%d_%d_%s_%d_%s_%d_%d_%d";
-	size_t result = 0;
-
 	LPWSTR remote_addr_str = nullptr;
 	LPWSTR local_addr_str = nullptr;
 
 	if (af == AF_INET)
 	{
-		if ((remote_addr && (IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)remote_addr)) && (local_addr && IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)local_addr))) && !remote_port && !local_port)
-			return 0;
-
 		if (remote_addr)
 			_app_formataddress (af, 0, remote_addr, 0, &remote_addr_str, FMTADDR_AS_RULE);
 
 		if (local_addr)
 			_app_formataddress (af, 0, local_addr, 0, &local_addr_str, FMTADDR_AS_RULE);
-
-		result = _r_str_hash (_r_fmt (hash_format, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
 	}
 	else if (af == AF_INET6)
 	{
-		if ((remote_addr && (IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)remote_addr)) && (local_addr && IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)local_addr))) && !remote_port && !local_port)
-			return 0;
-
 		if (remote_addr)
 			_app_formataddress (af, 0, remote_addr, 0, &remote_addr_str, FMTADDR_AS_RULE);
 
 		if (local_addr)
 			_app_formataddress (af, 0, local_addr, 0, &local_addr_str, FMTADDR_AS_RULE);
-
-		result = _r_str_hash (_r_fmt (hash_format, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
+	}
+	else
+	{
+		return 0;
 	}
 
 	SAFE_DELETE_ARRAY (remote_addr_str);
 	SAFE_DELETE_ARRAY (local_addr_str);
 
-	return result;
+	LPCWSTR hash_format = L"%d_%d_%s_%d_%s_%d_%d_%d";
+
+	return _r_str_hash (_r_fmt (hash_format, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
+}
+
+bool _app_isvalidconnection (ADDRESS_FAMILY af, PVOID paddr)
+{
+	if (af == AF_INET)
+		return (!IN4_IS_ADDR_UNSPECIFIED (PIN_ADDR (paddr)) && !IN4_IS_ADDR_LOOPBACK (PIN_ADDR (paddr)) && !IN4_IS_ADDR_LINKLOCAL (PIN_ADDR (paddr)));
+
+	else if (af == AF_INET6)
+		return (!IN6_IS_ADDR_UNSPECIFIED (PIN6_ADDR (paddr)) && !IN6_IS_ADDR_LOOPBACK (PIN6_ADDR (paddr)) && !IN6_IS_ADDR_LINKLOCAL (PIN6_ADDR (paddr)));
+
+	return false;
 }
 
 void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
@@ -1567,6 +1575,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				WCHAR path_name[MAX_PATH] = {0};
 				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
@@ -1583,6 +1592,12 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->local_port = (UINT16)tcp4Table->table[i].dwLocalPort;
 
 				ptr_network->state = tcp4Table->table[i].dwState;
+
+				if (tcp4Table->table[i].dwState == MIB_TCP_STATE_ESTAB)
+				{
+					if (_app_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) || _app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
+						ptr_network->is_connection = true;
+				}
 
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
@@ -1615,6 +1630,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				WCHAR path_name[MAX_PATH] = {0};
 				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
@@ -1632,8 +1648,14 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 				ptr_network->state = tcp6Table->table[i].dwState;
 
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
-				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
+				if (tcp6Table->table[i].dwState == MIB_TCP_STATE_ESTAB)
+				{
+					if (_app_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) || _app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
+						ptr_network->is_connection = true;
+				}
+
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr6, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
 
 				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
 				checker_map[net_hash] = true;
@@ -1666,6 +1688,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				WCHAR path_name[MAX_PATH] = {0};
 				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
@@ -1679,6 +1702,9 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->local_port = (UINT16)udp4Table->table[i].dwLocalPort;
 
 				ptr_network->state = 0;
+
+				if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
+					ptr_network->is_connection = true;
 
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 
@@ -1710,6 +1736,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				WCHAR path_name[MAX_PATH] = {0};
 				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
@@ -1724,7 +1751,10 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 				ptr_network->state = 0;
 
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+				if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
+					ptr_network->is_connection = true;
+
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 
 				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
 				checker_map[net_hash] = true;
