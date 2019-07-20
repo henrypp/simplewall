@@ -159,6 +159,7 @@ void _app_dereferencelog (PVOID pdata);
 
 #define FILTERS_TIMEOUT 9000
 #define TRANSACTION_TIMEOUT 4000
+#define NETWORK_TIMEOUT 3500
 
 // notifications
 #define NOTIFY_CLASS_DLG L"NotificationDlg"
@@ -514,6 +515,8 @@ typedef struct tagITEM_NETWORK
 	UINT16 local_port = 0;
 
 	UINT8 protocol = 0;
+
+	bool is_connection = false;
 } ITEM_NETWORK, *PITEM_NETWORK;
 
 typedef struct tagITEM_COLOR
