@@ -1,3 +1,21 @@
+v3.0.4 RC (23 July 2019)
+- added rules and blocklist options into main menu
+- set security settings enabled by default
+- set protocol names based on IEEE
+- made correct backups for profile on reset
+- bring notification window to top
+- correct determine connections for apps
+- fixed error message on new device insertion (issue #215)
+- fixed missing connections (issue #423)
+- fixed listview sorting does not save state sometimes
+- fixed listview sorting compare checked items
+- fixed uninstaller does not remove new profile
+- fixed tray menu notifications cosmetics
+- optimized group items counting
+- optimized listview sorting
+- cosmetics fixes
+- fixed bugs
+
 v3.0.3 Beta (3 July 2019)
 - added option to show notification window on tray
 - added highlighting for network tab
