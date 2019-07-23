@@ -48,7 +48,7 @@ void _app_notifycreatewindow ()
 	const INT title_font_height = 12;
 	const INT text_font_height = 9;
 
-	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW | (app.ConfigGet (L"IsNotificationsOnTop", true).AsBool () ? WS_EX_TOPMOST : 0), NOTIFY_CLASS_DLG, nullptr, WS_POPUP | WS_SYSMENU | WS_CAPTION | WS_CLIPCHILDREN | WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), 0, nullptr, wcex.hInstance, nullptr);
+	config.hnotification = CreateWindowEx (WS_EX_APPWINDOW | WS_EX_TOPMOST, NOTIFY_CLASS_DLG, nullptr, WS_POPUPWINDOW | WS_CAPTION, CW_USEDEFAULT, CW_USEDEFAULT, app.GetDPI (NOTIFY_WIDTH), app.GetDPI (NOTIFY_HEIGHT), nullptr, nullptr, wcex.hInstance, nullptr);
 
 	if (!config.hnotification)
 		return;
@@ -90,7 +90,7 @@ void _app_notifycreatewindow ()
 
 	CreateWindow (WC_STATIC, nullptr, WS_CHILD | SS_CENTERIMAGE | SS_CENTER | SS_ICON, wnd_width - wnd_icon_size - wnd_spacing, (wnd_icon_size / 2) - (wnd_icon_size / 2), wnd_icon_size, header_size, config.hnotification, (HMENU)IDC_ICON_ID, nullptr, nullptr);
 
-	HWND hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | SS_ENDELLIPSIS | SS_CENTERIMAGE, wnd_spacing, text_top + text_spacing, wnd_width - app.GetDPI (24), text_height, config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
+	HWND hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_ENDELLIPSIS | SS_CENTERIMAGE, wnd_spacing, text_top + text_spacing, wnd_width - app.GetDPI (24), text_height, config.hnotification, (HMENU)IDC_FILE_ID, nullptr, nullptr);
 	SendMessage (hctrl, WM_SETFONT, (WPARAM)hfont_normal, 0);
 
 	hctrl = CreateWindow (WC_STATIC, nullptr, WS_CHILD | WS_VISIBLE | SS_CENTERIMAGE | SS_NOTIFY | SS_ENDELLIPSIS | SS_RIGHT, wnd_spacing, text_top + text_spacing, wnd_width - app.GetDPI (24), text_height, config.hnotification, (HMENU)IDC_FILE_TEXT, nullptr, nullptr);
@@ -164,15 +164,15 @@ void _app_notifycreatewindow ()
 	_app_setbuttonmargins (config.hnotification, IDC_ALLOW_BTN);
 	_app_setbuttonmargins (config.hnotification, IDC_BLOCK_BTN);
 
-#ifndef _APP_NO_DARKTHEME
-	_r_wnd_setdarktheme (config.hnotification);
-#endif // _APP_NO_DARKTHEME
-
 	const HWND htip = _r_ctrl_createtip (config.hnotification);
 
 	_r_ctrl_settip (htip, config.hnotification, IDC_FILE_TEXT, LPSTR_TEXTCALLBACK);
 
 	_app_notifyhide (config.hnotification);
+
+#ifndef _APP_NO_DARKTHEME
+	_r_wnd_setdarktheme (config.hnotification);
+#endif // _APP_NO_DARKTHEME
 }
 
 bool _app_notifycommand (HWND hwnd, UINT button_id, time_t seconds)
@@ -468,13 +468,13 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 
 		_app_notifysetpos (hwnd, false);
 
-		ShowWindow (hwnd, SW_SHOWNA);
-
-		RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
-
 		// prevent fullscreen apps lose focus
-		if (is_forced && !_r_wnd_isfullscreenmode ())
-			SetForegroundWindow (hwnd);
+		if (is_forced && _r_wnd_isfullscreenmode ())
+			is_forced = false;
+
+		InvalidateRect (hwnd, nullptr, TRUE);
+
+		ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
 		return true;
 	}
@@ -554,7 +554,7 @@ void _app_notifysetpos (HWND hwnd, bool is_forced)
 
 		_r_wnd_adjustwindowrect (hwnd, &windowRect);
 
-		SetWindowPos (hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW);
+		SetWindowPos (hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 
 		return;
 	}
@@ -600,7 +600,7 @@ void _app_notifysetpos (HWND hwnd, bool is_forced)
 			windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_y;
 		}
 
-		SetWindowPos (hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOREDRAW);
+		SetWindowPos (hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 	}
 	else
 	{
@@ -707,7 +707,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				KillTimer (hwnd, wparam);
 
-				return FALSE;
+				break;
 			}
 
 			break;
@@ -838,7 +838,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			{
 				case BCN_DROPDOWN:
 				{
-					if (nmlp->idFrom != IDC_RULES_BTN && nmlp->idFrom != IDC_ALLOW_BTN)
+					if (nmlp->idFrom != IDC_RULES_BTN && nmlp->idFrom != IDC_ALLOW_BTN && !_r_ctrl_isenabled (hwnd, (UINT)nmlp->idFrom))
 						break;
 
 					const HMENU hmenu = CreateMenu ();
@@ -922,7 +922,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
 
 				if (!ptr_rule_object)
-					return FALSE;
+					break;
 
 				const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
@@ -997,15 +997,18 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 
-				return FALSE;
+				break;
 			}
 			else if ((LOWORD (wparam) >= IDX_TIMER && LOWORD (wparam) <= IDX_TIMER + timers.size ()))
 			{
+				if (!_r_ctrl_isenabled (hwnd, IDC_ALLOW_BTN))
+					break;
+
 				const size_t timer_idx = (LOWORD (wparam) - IDX_TIMER);
 
 				_app_notifycommand (hwnd, IDC_ALLOW_BTN, timers.at (timer_idx));
 
-				return FALSE;
+				break;
 			}
 
 			switch (LOWORD (wparam))
@@ -1048,14 +1051,19 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				case IDC_RULES_BTN:
 				{
-					// HACK!!!
-					NMHDR hdr = {0};
+					const UINT ctrl_id = LOWORD (wparam);
 
-					hdr.code = BCN_DROPDOWN;
-					hdr.idFrom = IDC_RULES_BTN;
-					hdr.hwndFrom = GetDlgItem (hwnd, IDC_RULES_BTN);
+					if (_r_ctrl_isenabled (hwnd, ctrl_id))
+					{
+						// HACK!!!
+						NMHDR hdr = {0};
 
-					SendMessage (hwnd, WM_NOTIFY, TRUE, (LPARAM)& hdr);
+						hdr.code = BCN_DROPDOWN;
+						hdr.idFrom = ctrl_id;
+						hdr.hwndFrom = GetDlgItem (hwnd, ctrl_id);
+
+						SendMessage (hwnd, WM_NOTIFY, TRUE, (LPARAM)& hdr);
+					}
 
 					break;
 				}
@@ -1077,7 +1085,11 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				case IDC_BLOCK_BTN:
 				case IDM_DISABLENOTIFICATIONS:
 				{
-					_app_notifycommand (hwnd, LOWORD (wparam), 0);
+					const UINT ctrl_id = LOWORD (wparam);
+
+					if (_r_ctrl_isenabled (hwnd, ctrl_id))
+						_app_notifycommand (hwnd, ctrl_id, 0);
+
 					break;
 				}
 
@@ -1126,7 +1138,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					else
 					{
 						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
-						return FALSE;
+						break;
 					}
 
 					ptr_rule->type = DataRuleCustom;
