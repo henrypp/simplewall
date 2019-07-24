@@ -391,105 +391,110 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 	HASHER_MAP checker_map;
 
-	while (true)
+	const DWORD network_timeout = app.ConfigGet (L"NetworkTimeout", NETWORK_TIMEOUT).AsUlong ();
+
+	if (network_timeout)
 	{
-		_app_generate_connections (network_map, checker_map);
-
-		for (auto &p : network_map)
+		while (true)
 		{
-			if (checker_map.find (p.first) == checker_map.end () || !checker_map[p.first])
-				continue;
+			_app_generate_connections (network_map, checker_map);
 
-			PR_OBJECT ptr_network_object = _r_obj_reference (p.second);
-
-			if (!ptr_network_object)
-				continue;
-
-			PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
-
-			if (ptr_network)
+			for (auto &p : network_map)
 			{
-				const size_t item = _r_listview_getitemcount (hwnd, network_listview_id);
+				if (checker_map.find (p.first) == checker_map.end () || !checker_map[p.first])
+					continue;
 
-				_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, p.first);
+				PR_OBJECT ptr_network_object = _r_obj_reference (p.second);
 
-				_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
-				_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
-				_r_listview_setitem (hwnd, network_listview_id, item, 3, _app_getprotoname (ptr_network->protocol));
-				_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_getstatename (ptr_network->state));
+				if (!ptr_network_object)
+					continue;
 
-				// redraw listview item
-				if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
+				PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
+
+				if (ptr_network)
 				{
-					UINT app_listview_id = 0;
+					const size_t item = _r_listview_getitemcount (hwnd, network_listview_id);
 
-					if (_app_getappinfo (ptr_network->app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
+					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, p.first);
+
+					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item, 3, _app_getprotoname (ptr_network->protocol, ptr_network->af));
+					_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_getstatename (ptr_network->state));
+
+					// redraw listview item
+					if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
 					{
-						if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
+						UINT app_listview_id = 0;
+
+						if (_app_getappinfo (ptr_network->app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 						{
-							const size_t app_item = _app_getposition (hwnd, app_listview_id, ptr_network->app_hash);
+							if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
+							{
+								const size_t app_item = _app_getposition (hwnd, app_listview_id, ptr_network->app_hash);
 
-							if (app_item != LAST_VALUE)
-								_r_listview_redraw (hwnd, app_listview_id, app_item, app_item);
-						}
-					}
-				}
-			}
-
-			_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
-
-			is_refresh = true;
-		}
-
-		for (size_t i = _r_listview_getitemcount (hwnd, network_listview_id) - 1; i != LAST_VALUE; i--)
-		{
-			const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
-
-			if (checker_map.find (network_hash) == checker_map.end ())
-			{
-				SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, i, 0);
-
-				// redraw listview item
-				if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
-				{
-					size_t app_hash = _app_getnetworkapp (network_hash);
-					UINT app_listview_id = 0;
-
-					if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
-					{
-						if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
-						{
-							const size_t app_item = _app_getposition (hwnd, app_listview_id, app_hash);
-
-							if (app_item != LAST_VALUE)
-								_r_listview_redraw (hwnd, app_listview_id, app_item, app_item);
+								if (app_item != LAST_VALUE)
+									_r_listview_redraw (hwnd, app_listview_id, app_item, app_item);
+							}
 						}
 					}
 				}
 
-				_r_obj_dereference (network_map[network_hash], &_app_dereferencenetwork);
-				network_map.erase (network_hash);
+				_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+
+				is_refresh = true;
 			}
-		}
 
-		if (is_refresh)
-		{
-			const UINT current_listview_id = _app_gettab_id (hwnd);
-
-			if (current_listview_id != network_listview_id)
+			for (size_t i = _r_listview_getitemcount (hwnd, network_listview_id) - 1; i != LAST_VALUE; i--)
 			{
-				_r_listview_redraw (hwnd, current_listview_id);
+				const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
+
+				if (checker_map.find (network_hash) == checker_map.end ())
+				{
+					SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, i, 0);
+
+					// redraw listview item
+					if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
+					{
+						size_t app_hash = _app_getnetworkapp (network_hash);
+						UINT app_listview_id = 0;
+
+						if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
+						{
+							if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
+							{
+								const size_t app_item = _app_getposition (hwnd, app_listview_id, app_hash);
+
+								if (app_item != LAST_VALUE)
+									_r_listview_redraw (hwnd, app_listview_id, app_item, app_item);
+							}
+						}
+					}
+
+					_r_obj_dereference (network_map[network_hash], &_app_dereferencenetwork);
+					network_map.erase (network_hash);
+				}
 			}
-			else
+
+			if (is_refresh)
 			{
-				_app_listviewresize (hwnd, network_listview_id);
-				_app_listviewsort (hwnd, network_listview_id);
+				const UINT current_listview_id = _app_gettab_id (hwnd);
+
+				if (current_listview_id != network_listview_id)
+				{
+					_r_listview_redraw (hwnd, current_listview_id);
+				}
+				else
+				{
+					_app_listviewresize (hwnd, network_listview_id);
+					_app_listviewsort (hwnd, network_listview_id);
+				}
+
+				is_refresh = false;
 			}
 
-			is_refresh = false;
+			WaitForSingleObjectEx (GetCurrentThread (), network_timeout, FALSE);
 		}
-
-		WaitForSingleObjectEx (GetCurrentThread (), NETWORK_TIMEOUT, FALSE);
 	}
 
 	_endthreadex (0);
@@ -936,7 +941,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const UINT8 proto = protos[i];
 
-					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"%s (%d)", _app_getprotoname (proto).GetString (), proto).GetString ());
+					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"%s (%d)", _app_getprotoname (proto, AF_UNSPEC).GetString (), proto).GetString ());
 					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETITEMDATA, i + 1, (LPARAM)proto);
 
 					if (ptr_rule->protocol == proto)
