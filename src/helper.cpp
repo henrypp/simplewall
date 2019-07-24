@@ -1566,7 +1566,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
 				local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
 
-				const size_t net_hash = _app_getnetworkhash (AF_INET, tcp4Table->table[i].dwOwningPid, &remote_addr, tcp4Table->table[i].dwRemotePort, &local_addr, tcp4Table->table[i].dwLocalPort, IPPROTO_TCP, tcp4Table->table[i].dwState);
+				const size_t net_hash = _app_getnetworkhash (AF_INET, tcp4Table->table[i].dwOwningPid, &remote_addr, ntohs((UINT16)tcp4Table->table[i].dwRemotePort), &local_addr, ntohs((UINT16)tcp4Table->table[i].dwLocalPort), IPPROTO_TCP, tcp4Table->table[i].dwState);
 
 				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
 				{
@@ -1586,10 +1586,10 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->protocol = IPPROTO_TCP;
 
 				ptr_network->remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
-				ptr_network->remote_port = (UINT16)tcp4Table->table[i].dwRemotePort;
+				ptr_network->remote_port = ntohs((UINT16)tcp4Table->table[i].dwRemotePort);
 
 				ptr_network->local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
-				ptr_network->local_port = (UINT16)tcp4Table->table[i].dwLocalPort;
+				ptr_network->local_port = ntohs((UINT16)tcp4Table->table[i].dwLocalPort);
 
 				ptr_network->state = tcp4Table->table[i].dwState;
 
