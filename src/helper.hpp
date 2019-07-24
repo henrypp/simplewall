@@ -40,7 +40,7 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path);
 PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app);
 PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app);
 rstring _app_getservicename (UINT16 port);
-rstring _app_getprotoname (UINT8 proto);
+rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af);
 rstring _app_getstatename (DWORD state);
 
 void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map);

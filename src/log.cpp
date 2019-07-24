@@ -160,7 +160,7 @@ void _app_logwrite (PITEM_LOG ptr_log)
 				   LOG_DIV,
 				   _app_getservicename (ptr_log->port).GetString (),
 				   LOG_DIV,
-				   _app_getprotoname (ptr_log->protocol).GetString (),
+				   _app_getprotoname (ptr_log->protocol, ptr_log->af).GetString (),
 				   LOG_DIV,
 				   filter_name.IsEmpty () ? SZ_EMPTY : filter_name.GetString (),
 				   LOG_DIV,

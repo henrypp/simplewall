@@ -155,7 +155,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
 	if (proto && (flags & FMTADDR_USE_PROTOCOL) != 0)
-		StringCchPrintf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto).GetString ());
+		StringCchPrintf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto, AF_UNSPEC).GetString ());
 
 	if ((flags & FMTADDR_AS_ARPA) != 0)
 	{
@@ -965,6 +965,9 @@ rstring _app_getservicename (UINT16 port)
 		case 513:
 			return L"login";
 
+		case 500:
+			return L"isakmp";
+
 		case 514:
 			return L"shell";
 
@@ -1131,6 +1134,12 @@ rstring _app_getservicename (UINT16 port)
 		case 3389:
 			return L"ms-wbt-server";
 
+		case 3540:
+			return L"pnrp-port";
+
+		case 3587:
+			return L"p2pgroup";
+
 		case 3702:
 			return L"ws-discovery";
 
@@ -1184,6 +1193,12 @@ rstring _app_getservicename (UINT16 port)
 
 		case 5357:
 			return L"wsdapi";
+
+		case 5358:
+			return L"wsdapi-s";
+
+		case 5362:
+			return L"serverwsd2";
 
 		case 5432:
 			return L"postgresql";
@@ -1286,7 +1301,7 @@ rstring _app_getservicename (UINT16 port)
 	return SZ_UNKNOWN;
 }
 
-rstring _app_getprotoname (UINT8 proto)
+rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af)
 {
 	switch (proto)
 	{
@@ -1309,7 +1324,7 @@ rstring _app_getprotoname (UINT8 proto)
 			return L"st";
 
 		case IPPROTO_TCP:
-			return L"tcp";
+			return ((af == AF_INET6) ? L"tcp6" : L"tcp");
 
 		case IPPROTO_CBT:
 			return L"cbt";
@@ -1324,7 +1339,7 @@ rstring _app_getprotoname (UINT8 proto)
 			return L"pup";
 
 		case IPPROTO_UDP:
-			return L"udp";
+			return ((af == AF_INET6) ? L"udp6" : L"udp");
 
 		case IPPROTO_IDP:
 			return L"xns-idp";
@@ -1501,32 +1516,29 @@ rstring _app_getnetworkpath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id,
 
 size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWORD remote_port, PVOID local_addr, DWORD local_port, UINT8 proto, DWORD state)
 {
-	LPWSTR remote_addr_str = nullptr;
-	LPWSTR local_addr_str = nullptr;
+	WCHAR remote_addr_str[LEN_IP_MAX] = {0};
+	WCHAR local_addr_str[LEN_IP_MAX] = {0};
 
 	if (af == AF_INET)
 	{
 		if (remote_addr)
-			_app_formataddress (af, 0, remote_addr, 0, &remote_addr_str, FMTADDR_AS_RULE);
+			RtlIpv4AddressToString ((PIN_ADDR)remote_addr, remote_addr_str);
 
 		if (local_addr)
-			_app_formataddress (af, 0, local_addr, 0, &local_addr_str, FMTADDR_AS_RULE);
+			RtlIpv4AddressToString ((PIN_ADDR)local_addr, local_addr_str);
 	}
 	else if (af == AF_INET6)
 	{
 		if (remote_addr)
-			_app_formataddress (af, 0, remote_addr, 0, &remote_addr_str, FMTADDR_AS_RULE);
+			RtlIpv6AddressToString ((PIN6_ADDR)remote_addr, remote_addr_str);
 
 		if (local_addr)
-			_app_formataddress (af, 0, local_addr, 0, &local_addr_str, FMTADDR_AS_RULE);
+			RtlIpv6AddressToString ((PIN6_ADDR)local_addr, local_addr_str);
 	}
 	else
 	{
 		return 0;
 	}
-
-	SAFE_DELETE_ARRAY (remote_addr_str);
-	SAFE_DELETE_ARRAY (local_addr_str);
 
 	LPCWSTR hash_format = L"%d_%d_%s_%d_%s_%d_%d_%d";
 
