@@ -1438,7 +1438,7 @@ rstring _app_getservicenamefromtag (HANDLE pid, PVOID ptag)
 	return result;
 }
 
-rstring _app_getprocesspath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id, size_t * phash)
+rstring _app_getnetworkpath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id, size_t * phash)
 {
 	if (!pid)
 	{
@@ -1477,11 +1477,10 @@ rstring _app_getprocesspath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id,
 				}
 				else
 				{
-					// cannot get file path because it's not filesystem process (Pico maybe?)
-					if (GetLastError () == ERROR_GEN_FAILURE)
-					{
-						//StringCchCopy (real_path, _countof (real_path), spi->ImageName.Buffer);
-					}
+					*phash = 0;
+					*picon_id = config.icon_id;
+
+					proc_name.Clear ();
 				}
 
 				CloseHandle (hprocess);
@@ -1537,10 +1536,26 @@ size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWO
 bool _app_isvalidconnection (ADDRESS_FAMILY af, PVOID paddr)
 {
 	if (af == AF_INET)
-		return (!IN4_IS_ADDR_UNSPECIFIED (PIN_ADDR (paddr)) && !IN4_IS_ADDR_LOOPBACK (PIN_ADDR (paddr)) && !IN4_IS_ADDR_LINKLOCAL (PIN_ADDR (paddr)));
-
+	{
+		return (!IN4_IS_ADDR_UNSPECIFIED (PIN_ADDR (paddr)) &&
+				!IN4_IS_ADDR_LOOPBACK (PIN_ADDR (paddr)) &&
+				!IN4_IS_ADDR_LINKLOCAL (PIN_ADDR (paddr)) &&
+				!IN4_IS_ADDR_MC_ADMINLOCAL (PIN_ADDR (paddr)) &&
+				!IN4_IS_ADDR_MC_ADMINLOCAL (PIN_ADDR (paddr)) &&
+				!IN4_IS_ADDR_MC_SITELOCAL (PIN_ADDR (paddr))
+				);
+	}
 	else if (af == AF_INET6)
-		return (!IN6_IS_ADDR_UNSPECIFIED (PIN6_ADDR (paddr)) && !IN6_IS_ADDR_LOOPBACK (PIN6_ADDR (paddr)) && !IN6_IS_ADDR_LINKLOCAL (PIN6_ADDR (paddr)));
+	{
+		return (!IN6_IS_ADDR_UNSPECIFIED (PIN6_ADDR (paddr)) &&
+				!IN6_IS_ADDR_LOOPBACK (PIN6_ADDR (paddr)) &&
+				!IN6_IS_ADDR_LINKLOCAL (PIN6_ADDR (paddr)) &&
+				!IN6_IS_ADDR_SITELOCAL (PIN6_ADDR (paddr)) &&
+				!IN6_IS_ADDR_MC_NODELOCAL (PIN6_ADDR (paddr)) &&
+				!IN6_IS_ADDR_MC_LINKLOCAL (PIN6_ADDR (paddr)) &&
+				!IN6_IS_ADDR_MC_SITELOCAL (PIN6_ADDR (paddr))
+				);
+	}
 
 	return false;
 }
@@ -1578,7 +1593,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
+				StringCchCopy (path_name, _countof (path_name), _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
@@ -1586,10 +1601,10 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->protocol = IPPROTO_TCP;
 
 				ptr_network->remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
-				ptr_network->remote_port = (UINT16)tcp4Table->table[i].dwRemotePort;
+				ptr_network->remote_port = _byteswap_ushort ((USHORT)tcp4Table->table[i].dwRemotePort);
 
 				ptr_network->local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
-				ptr_network->local_port = (UINT16)tcp4Table->table[i].dwLocalPort;
+				ptr_network->local_port = _byteswap_ushort ((USHORT)tcp4Table->table[i].dwLocalPort);
 
 				ptr_network->state = tcp4Table->table[i].dwState;
 
@@ -1633,7 +1648,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
+				StringCchCopy (path_name, _countof (path_name), _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
@@ -1641,10 +1656,10 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->protocol = IPPROTO_TCP;
 
 				CopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
-				ptr_network->remote_port = (UINT16)tcp6Table->table[i].dwRemotePort;
+				ptr_network->remote_port = _byteswap_ushort ((USHORT)tcp6Table->table[i].dwRemotePort);
 
 				CopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
-				ptr_network->local_port = (UINT16)tcp6Table->table[i].dwLocalPort;
+				ptr_network->local_port = _byteswap_ushort ((USHORT)tcp6Table->table[i].dwLocalPort);
 
 				ptr_network->state = tcp6Table->table[i].dwState;
 
@@ -1691,7 +1706,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
+				StringCchCopy (path_name, _countof (path_name), _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
@@ -1699,7 +1714,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->protocol = IPPROTO_UDP;
 
 				ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
-				ptr_network->local_port = (UINT16)udp4Table->table[i].dwLocalPort;
+				ptr_network->local_port = _byteswap_ushort ((USHORT)udp4Table->table[i].dwLocalPort);
 
 				ptr_network->state = 0;
 
@@ -1739,7 +1754,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getprocesspath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
+				StringCchCopy (path_name, _countof (path_name), _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
 
 				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
 
@@ -1747,7 +1762,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->protocol = IPPROTO_UDP;
 
 				CopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
-				ptr_network->local_port = (UINT16)udp6Table->table[i].dwLocalPort;
+				ptr_network->local_port = _byteswap_ushort ((USHORT)udp6Table->table[i].dwLocalPort);
 
 				ptr_network->state = 0;
 
