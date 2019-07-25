@@ -184,11 +184,11 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 				if (af == AF_INET)
 					result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr);
 
-				else
+				else if (af == AF_INET6)
 					result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr);
 
 				if (result)
-					StringCchCat (formatted_address, _countof (formatted_address), addr_str);
+					StringCchCat (formatted_address, _countof (formatted_address), (af == AF_INET6 && port) ? _r_fmt (L"[%s]", addr_str) : addr_str);
 			}
 			else
 			{
