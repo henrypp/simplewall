@@ -2908,7 +2908,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			{
 				UINT menu_id;
-				const INT icon_size = app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt ();
+				const INT icon_size = std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST);
 
 				if (icon_size == SHIL_EXTRALARGE)
 					menu_id = IDM_ICONSEXTRALARGE;
@@ -2963,6 +2963,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			app.LocaleMenu (hmenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, L"\tCtrl+Shift+X");
 			app.LocaleMenu (hmenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, L"\tCtrl+Shift+T");
+
+			app.LocaleMenu (hmenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, L"\tCtrl+A");
 
 			app.LocaleMenu (hmenu, IDS_FIND, IDM_FIND, false, L"...\tCtrl+F");
 			app.LocaleMenu (hmenu, IDS_FINDNEXT, IDM_FINDNEXT, false, L"\tF3");
@@ -3577,7 +3579,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
 			app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
 			app.LocaleMenu (hsubmenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
-			app.LocaleMenu (hsubmenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, L"\tCtrl+A");
+			app.LocaleMenu (hsubmenu, IDS_NETWORK_CLOSE, IDM_NETWORK_CLOSE, false, nullptr);
 
 			app.LocaleMenu (hsubmenu, menu_id == IDM_RULES ? IDS_ADD : IDS_OPENRULESEDITOR, IDM_OPENRULESEDITOR, false, L"...");
 			app.LocaleMenu (hsubmenu, menu_id == IDM_NETWORK ? IDS_SHOWINLIST : IDS_PROPERTIES, IDM_PROPERTIES, false, L"\tEnter");
@@ -3589,19 +3591,22 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 				EnableMenuItem (hsubmenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 				EnableMenuItem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				EnableMenuItem (hsubmenu, IDM_NETWORK_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 				EnableMenuItem (hsubmenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 			}
 
 			if (menu_id == IDM_APPS)
 			{
+				SetMenuDefaultItem (hsubmenu, IDM_EXPLORE, FALSE);
+
 				const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
 				const time_t current_time = _r_unixtime_now ();
 
-				static const UINT usettings_id = 2;
-				static const UINT utimer_id = 3;
+#define SETTINGS_ID 2
+#define TIMER_ID 3
 
-				const HMENU hsubmenu_settings = GetSubMenu (hsubmenu, usettings_id);
-				const HMENU hsubmenu_timer = GetSubMenu (hsubmenu, utimer_id);
+				const HMENU hsubmenu_settings = GetSubMenu (hsubmenu, SETTINGS_ID);
+				const HMENU hsubmenu_timer = GetSubMenu (hsubmenu, TIMER_ID);
 
 				// set icons
 				{
@@ -3616,15 +3621,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					mii.fMask = MIIM_BITMAP;
 
 					mii.hbmpItem = hbmp_rules;
-					SetMenuItemInfo (hsubmenu, usettings_id, TRUE, &mii);
+					SetMenuItemInfo (hsubmenu, SETTINGS_ID, TRUE, &mii);
 
 					mii.hbmpItem = hbmp_timer;
-					SetMenuItemInfo (hsubmenu, utimer_id, TRUE, &mii);
+					SetMenuItemInfo (hsubmenu, TIMER_ID, TRUE, &mii);
 				}
 
 				// localize
-				app.LocaleMenu (hsubmenu, IDS_TRAY_RULES, usettings_id, true, nullptr);
-				app.LocaleMenu (hsubmenu, IDS_TIMER, utimer_id, true, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_TRAY_RULES, SETTINGS_ID, true, nullptr);
+				app.LocaleMenu (hsubmenu, IDS_TIMER, TIMER_ID, true, nullptr);
 
 				// show configuration
 				if (selected_count)
@@ -3686,8 +3691,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 				else
 				{
-					EnableMenuItem (hsubmenu, usettings_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (hsubmenu, utimer_id, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, SETTINGS_ID, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+					EnableMenuItem (hsubmenu, TIMER_ID, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
 				}
 
 				if (ctrl_id != IDC_APPS_PROFILE)
@@ -3698,6 +3703,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else if (menu_id == IDM_RULES)
 			{
+				SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
+
 				if (ctrl_id == IDC_RULES_CUSTOM)
 				{
 					const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, ctrl_id, item);
@@ -3722,6 +3729,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else if (menu_id == IDM_NETWORK)
 			{
+				SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
+
 				if (!selected_count)
 					EnableMenuItem (hsubmenu, IDM_OPENRULESEDITOR, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 			}
@@ -4892,16 +4901,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
-							if (ptr_network && ptr_network->app_hash && ptr_network->path)
+							if (ptr_network)
 							{
 								app_hash = ptr_network->app_hash;
 
 								if (!_app_isappfound (app_hash))
 								{
-									_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+									_app_explorefile (ptr_network->path);
+									_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 
-									_app_refreshstatus (hwnd);
-									_app_profile_save ();
+									continue;
 								}
 							}
 
@@ -4929,14 +4938,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ctrl_id == IDM_EXPLORE)
 						{
-							if (ptr_app->type != DataAppPico && ptr_app->type != DataAppDevice && (ptr_app->real_path && ptr_app->real_path[0]))
-							{
-								if (_r_fs_exists (ptr_app->real_path))
-									_r_run (nullptr, _r_fmt (L"\"explorer.exe\" /select,\"%s\"", ptr_app->real_path));
-
-								else if (_r_fs_exists (_r_path_extractdir (ptr_app->real_path)))
-									ShellExecute (hwnd, nullptr, _r_path_extractdir (ptr_app->real_path), nullptr, nullptr, SW_SHOWDEFAULT);
-							}
+							if (ptr_app->type != DataAppPico && ptr_app->type != DataAppDevice)
+								_app_explorefile (ptr_app->real_path);
 						}
 						else if (ctrl_id == IDM_DISABLENOTIFICATIONS)
 						{
@@ -4983,10 +4986,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 					{
 						for (size_t column_id = 0; column_id < column_count; column_id++)
-						{
 							buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_id)).Append (L" ");
-
-						}
 
 						buffer.Trim (L" ").Append (L"\r\n");
 					}
@@ -5355,6 +5355,61 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								_app_listviewsort (hwnd, app_listview_id);
 								_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
+							}
+						}
+
+						_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+					}
+
+					break;
+				}
+
+				case IDM_NETWORK_CLOSE:
+				{
+					const UINT listview_id = _app_gettab_id (hwnd);
+
+					if (listview_id != IDC_NETWORK)
+						break;
+
+					const UINT selected = (UINT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
+
+					if (!selected)
+						break;
+
+					size_t item = LAST_VALUE;
+					MIB_TCPROW tcprow;
+
+					while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+					{
+						const size_t network_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[network_hash]);
+
+						if (!ptr_network_object)
+							continue;
+
+						PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
+
+						if (ptr_network)
+						{
+							if (ptr_network->af == AF_INET && ptr_network->state == MIB_TCP_STATE_ESTAB)
+							{
+								SecureZeroMemory (&tcprow, sizeof (tcprow));
+
+								tcprow.dwState = MIB_TCP_STATE_DELETE_TCB;
+								tcprow.dwLocalAddr = ptr_network->local_addr.S_un.S_addr;
+								tcprow.dwLocalPort = _byteswap_ushort ((USHORT)ptr_network->local_port);
+								tcprow.dwRemoteAddr = ptr_network->remote_addr.S_un.S_addr;
+								tcprow.dwRemotePort = _byteswap_ushort ((USHORT)ptr_network->remote_port);
+
+								if (SetTcpEntry (&tcprow) == NO_ERROR)
+								{
+									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, item, 0);
+
+									network_map.erase (network_hash);
+									_r_obj_dereferenceex (ptr_network_object, 2, &_app_dereferencenetwork);
+
+									continue;
+								}
 							}
 						}
 
