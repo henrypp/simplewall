@@ -3548,24 +3548,25 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_CONTEXTMENU:
 		{
-			const UINT ctrl_id = GetDlgCtrlID ((HWND)wparam);
-			const UINT selected_count = (UINT)SendDlgItemMessage (hwnd, ctrl_id, LVM_GETSELECTEDCOUNT, 0, 0);
+			const UINT listview_id = GetDlgCtrlID ((HWND)wparam);
+			const UINT selected_count = (UINT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
 
 			UINT menu_id;
 
-			if (ctrl_id == IDC_APPS_PROFILE || ctrl_id == IDC_APPS_SERVICE || ctrl_id == IDC_APPS_UWP)
+			if (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_UWP)
 				menu_id = IDM_APPS;
 
-			else if (ctrl_id == IDC_RULES_BLOCKLIST || ctrl_id == IDC_RULES_SYSTEM || ctrl_id == IDC_RULES_CUSTOM)
+			else if (listview_id == IDC_RULES_BLOCKLIST || listview_id == IDC_RULES_SYSTEM || listview_id == IDC_RULES_CUSTOM)
 				menu_id = IDM_RULES;
 
-			else if (ctrl_id == IDC_NETWORK)
+			else if (listview_id == IDC_NETWORK)
 				menu_id = IDM_NETWORK;
 
 			else
 				break;
 
-			const size_t item = (size_t)SendDlgItemMessage (hwnd, ctrl_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED); // get first item
+			const size_t item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED); // get first item
+			const size_t hash_item = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
 
 			const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (menu_id));
 			const HMENU hsubmenu = GetSubMenu (hmenu, 0);
@@ -3634,10 +3635,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				// show configuration
 				if (selected_count)
 				{
-					const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, ctrl_id, item);
 					PITEM_APP ptr_app = nullptr;
-
-					PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+					PR_OBJECT ptr_app_object = _app_getappitem (hash_item);
 
 					if (ptr_app_object)
 						ptr_app = (PITEM_APP)ptr_app_object->pdata;
@@ -3647,7 +3646,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						CheckMenuItem (hsubmenu, IDM_DISABLENOTIFICATIONS, MF_BYCOMMAND | (ptr_app->is_silent ? MF_CHECKED : MF_UNCHECKED));
 
-						_app_generate_rulesmenu (hsubmenu_settings, app_hash);
+						_app_generate_rulesmenu (hsubmenu_settings, hash_item);
 					}
 
 					// show timers
@@ -3695,7 +3694,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					EnableMenuItem (hsubmenu, TIMER_ID, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
 				}
 
-				if (ctrl_id != IDC_APPS_PROFILE)
+				if (listview_id != IDC_APPS_PROFILE)
 				{
 					EnableMenuItem (hsubmenu, IDM_ADD_FILE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 					EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
@@ -3705,10 +3704,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
 
-				if (ctrl_id == IDC_RULES_CUSTOM)
+				if (listview_id == IDC_RULES_CUSTOM)
 				{
-					const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, ctrl_id, item);
-					PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+					PR_OBJECT ptr_rule_object = _app_getruleitem (hash_item);
 
 					if (!ptr_rule_object)
 						break;
@@ -3730,6 +3728,21 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			else if (menu_id == IDM_NETWORK)
 			{
 				SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
+
+				PR_OBJECT ptr_network_object = _r_obj_reference (network_map[hash_item]);
+
+				if (ptr_network_object)
+				{
+					PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
+
+					if (ptr_network)
+					{
+						if (ptr_network->af != AF_INET || ptr_network->state != MIB_TCP_STATE_ESTAB)
+							EnableMenuItem (hsubmenu, IDM_NETWORK_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					}
+
+					_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+				}
 
 				if (!selected_count)
 					EnableMenuItem (hsubmenu, IDM_OPENRULESEDITOR, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
