@@ -145,6 +145,24 @@ void _app_applycasestyle (LPWSTR buffer, size_t length)
 	}
 }
 
+void _app_explorefile (LPCWSTR path)
+{
+	if (!path || !path[0])
+		return;
+
+	if (_r_fs_exists (path))
+	{
+		_r_run (nullptr, _r_fmt (L"\"explorer.exe\" /select,\"%s\"", path));
+	}
+	else
+	{
+		LPCWSTR dir = _r_path_extractdir (path);
+
+		if (_r_fs_exists (dir))
+			ShellExecute (nullptr, nullptr, dir, nullptr, nullptr, SW_SHOWDEFAULT);
+	}
+}
+
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR * ptr_dest, DWORD flags)
 {
 	if (!ptr_addr || !ptr_dest || (af != AF_INET && af != AF_INET6))

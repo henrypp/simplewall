@@ -25,6 +25,7 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
 void _app_setinterfacestate (HWND hwnd);
 
 void _app_applycasestyle (LPWSTR buffer, size_t length);
+void _app_explorefile (LPCWSTR path);
 
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags);
 
