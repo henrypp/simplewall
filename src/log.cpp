@@ -146,28 +146,28 @@ void _app_logwrite (PITEM_LOG ptr_log)
 	}
 
 	LPWSTR addr_fmt = nullptr;
-	_app_formataddress (ptr_log->af, 0, &ptr_log->addr, ptr_log->port, &addr_fmt, FMTADDR_RESOLVE_HOST);
+	_app_formataddress (ptr_log->af, 0, &ptr_log->addr, 0, &addr_fmt, FMTADDR_RESOLVE_HOST);
 
 	rstring buffer;
 	buffer.Format (L"\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"#%" PRIu64 L"\"%c\"%s\"%c\"%s\"\r\n",
 				   _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
-				   LOG_DIV,
+				   DIVIDER_CSV,
 				   ptr_log->username && ptr_log->username[0] ? ptr_log->username : SZ_EMPTY,
-				   LOG_DIV,
+				   DIVIDER_CSV,
 				   path.IsEmpty () ? SZ_EMPTY : path.GetString (),
-				   LOG_DIV,
+				   DIVIDER_CSV,
 				   addr_fmt && addr_fmt[0] ? addr_fmt : SZ_EMPTY,
-				   LOG_DIV,
-				   _app_getservicename (ptr_log->port).GetString (),
-				   LOG_DIV,
+				   DIVIDER_CSV,
+				   ptr_log->port ? _r_fmt (L"%" PRIu16 L" (%s)", ptr_log->port, _app_getservicename (ptr_log->port).GetString ()).GetString () : SZ_EMPTY,
+				   DIVIDER_CSV,
 				   _app_getprotoname (ptr_log->protocol, ptr_log->af).GetString (),
-				   LOG_DIV,
+				   DIVIDER_CSV,
 				   filter_name.IsEmpty () ? SZ_EMPTY : filter_name.GetString (),
-				   LOG_DIV,
+				   DIVIDER_CSV,
 				   ptr_log->filter_id,
-				   LOG_DIV,
+				   DIVIDER_CSV,
 				   direction.IsEmpty () ? SZ_EMPTY : direction.GetString (),
-				   LOG_DIV,
+				   DIVIDER_CSV,
 				   (ptr_log->is_allow ? SZ_LOG_ALLOW : SZ_LOG_BLOCK)
 	);
 
@@ -343,12 +343,8 @@ bool _wfp_logunsubscribe ()
 	return result;
 }
 
-void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr, FWP_BYTE_ARRAY16 const *remote_addr6, UINT16 remoteport, UINT32 local_addr, FWP_BYTE_ARRAY16 const *local_addr6, UINT16 localport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
+void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr4, FWP_BYTE_ARRAY16 const *remote_addr6, UINT16 remoteport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
 {
-	UNREFERENCED_PARAMETER (local_addr);
-	UNREFERENCED_PARAMETER (local_addr6);
-	UNREFERENCED_PARAMETER (localport);
-
 	if (!filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
 		return;
 
@@ -514,8 +510,8 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 				ptr_log->af = AF_INET;
 
 				// remote address
-				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr)
-					ptr_log->addr.S_un.S_addr = ntohl (remote_addr);
+				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr4)
+					ptr_log->addr.S_un.S_addr = ntohl (remote_addr4);
 
 			}
 			else if (ipver == FWP_IP_VERSION_V6)
@@ -563,7 +559,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 			// check if thread has been terminated
 			const LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
 
-			if (!_r_fastlock_islocked (&lock_logthread) || (_r_fastlock_islocked (&lock_logbusy) && new_item_count >= NOTIFY_LIMIT_POOL_SIZE && thread_count >= 1 && thread_count < NOTIFY_LIMIT_THREAD_COUNT))
+			if (!_r_fastlock_islocked (&lock_logthread) || (_r_fastlock_islocked (&lock_logbusy) && new_item_count >= NOTIFY_LIMIT_POOL_SIZE && thread_count >= 1 && thread_count < std::clamp (app.ConfigGet (L"LogThreadsLimit", NOTIFY_LIMIT_THREAD_COUNT).AsInt (), 1, 8)))
 			{
 				_r_fastlock_acquireexclusive (&lock_threadpool);
 				_app_freethreadpool (&threads_pool);
@@ -615,7 +611,7 @@ void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, false, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, layer_id, filter_id, direction, false, is_loopback);
 	}
 }
 
@@ -665,7 +661,7 @@ void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, layer_id, filter_id, direction, is_allow, is_loopback);
 	}
 }
 
@@ -715,7 +711,7 @@ void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, layer_id, filter_id, direction, is_allow, is_loopback);
 	}
 }
 
@@ -765,7 +761,7 @@ void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, layer_id, filter_id, direction, is_allow, is_loopback);
 	}
 }
 
@@ -815,7 +811,7 @@ void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, layer_id, filter_id, direction, is_allow, is_loopback);
 	}
 }
 
