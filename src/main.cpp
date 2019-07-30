@@ -1170,22 +1170,22 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (!SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) || (!SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) && !SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0)))
 						return FALSE;
 
-					rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (L"\r\n " RULE_DELIMETER);
+					rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (L"\r\n " DIVIDER_RULE);
 					size_t rule_remote_length;
 
-					rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (L"\r\n " RULE_DELIMETER);
+					rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (L"\r\n " DIVIDER_RULE);
 					size_t rule_local_length;
 
 					// check rule destination
 					{
 						// here we parse and check rule syntax
 						{
-							rstring::rvector arr = rule_remote.AsVector (RULE_DELIMETER);
+							rstring::rvector arr = rule_remote.AsVector (DIVIDER_RULE);
 							rstring rule_remote_fixed;
 
 							for (size_t i = 0; i < arr.size (); i++)
 							{
-								LPCWSTR rule_single = arr.at (i).Trim (L" " RULE_DELIMETER);
+								LPCWSTR rule_single = arr.at (i).Trim (L" " DIVIDER_RULE);
 
 								if (!_app_parserulestring (rule_single, nullptr))
 								{
@@ -1195,22 +1195,22 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									return FALSE;
 								}
 
-								rule_remote_fixed.AppendFormat (L"%s" RULE_DELIMETER, rule_single);
+								rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
 							}
 
-							rule_remote = rule_remote_fixed.Trim (L" " RULE_DELIMETER);
+							rule_remote = rule_remote_fixed.Trim (L" " DIVIDER_RULE);
 							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
 						}
 					}
 
 					// set rule local address
 					{
-						rstring::rvector arr = rule_local.AsVector (RULE_DELIMETER);
+						rstring::rvector arr = rule_local.AsVector (DIVIDER_RULE);
 						rstring rule_local_fixed;
 
 						for (size_t i = 0; i < arr.size (); i++)
 						{
-							LPCWSTR rule_single = arr.at (i).Trim (L" " RULE_DELIMETER);
+							LPCWSTR rule_single = arr.at (i).Trim (L" " DIVIDER_RULE);
 
 							if (!_app_parserulestring (rule_single, nullptr))
 							{
@@ -1220,10 +1220,10 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								return FALSE;
 							}
 
-							rule_local_fixed.AppendFormat (L"%s" RULE_DELIMETER, rule_single);
+							rule_local_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
 						}
 
-						rule_local = rule_local_fixed.Trim (L" " RULE_DELIMETER);
+						rule_local = rule_local_fixed.Trim (L" " DIVIDER_RULE);
 						rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
 					}
 
@@ -1233,7 +1233,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					// set rule name
 					{
-						const rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT).Trim (L"\r\n " RULE_DELIMETER);
+						const rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT).Trim (L"\r\n " DIVIDER_RULE);
 
 						if (!name.IsEmpty ())
 						{
@@ -5212,10 +5212,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								LPWSTR fmt = nullptr;
 
 								if (_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &fmt, FMTADDR_AS_RULE))
-									rule_remote.AppendFormat (L"%s" RULE_DELIMETER, fmt);
+									rule_remote.AppendFormat (L"%s" DIVIDER_RULE, fmt);
 
 								if (_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &fmt, FMTADDR_AS_RULE))
-									rule_local.AppendFormat (L"%s" RULE_DELIMETER, fmt);
+									rule_local.AppendFormat (L"%s" DIVIDER_RULE, fmt);
 
 								SAFE_DELETE_ARRAY (fmt);
 							}
@@ -5223,8 +5223,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 						}
 
-						rule_remote.Trim (RULE_DELIMETER);
-						rule_local.Trim (RULE_DELIMETER);
+						rule_remote.Trim (DIVIDER_RULE);
+						rule_local.Trim (DIVIDER_RULE);
 
 						_r_str_alloc (&ptr_rule->prule_remote, rule_remote.GetLength (), rule_remote);
 						_r_str_alloc (&ptr_rule->prule_local, rule_local.GetLength (), rule_local);
@@ -5667,12 +5667,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 #if defined(_APP_BETA) || defined(_APP_BETA_RC)
 
-#define ID_AD 9246740
+#define ID_START 1000
 #define FN_AD L"<test filter>"
 #define RM_AD L"195.210.46.95"
 #define RP_AD 443
-#define LM_AD L"192.168.2.1"
-#define LP_AD 0
 
 				case 997:
 				{
@@ -5710,7 +5708,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					ptr_log->af = AF_INET;
 					ptr_log->protocol = IPPROTO_TCP;
 
-					ptr_log->filter_id = ID_AD;
+					ptr_log->filter_id = ID_START;
 					ptr_log->direction = FWP_DIRECTION_OUTBOUND;
 
 					InetPton (ptr_log->af, RM_AD, &ptr_log->addr);
@@ -5744,8 +5742,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					static const UINT32 flags = FWPM_NET_EVENT_FLAG_APP_ID_SET |
 						FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET |
-						FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET |
-						FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET |
 						FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET |
 						FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET |
 						FWPM_NET_EVENT_FLAG_USER_ID_SET |
@@ -5755,19 +5751,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					GetSystemTimeAsFileTime (&ft);
 
 					sockaddr_in ipv4_remote = {0};
-					sockaddr_in ipv4_local = {0};
 					INT len1 = sizeof (ipv4_remote);
-					INT len2 = sizeof (ipv4_local);
 
-					rstring path = app.GetBinaryPath ();;
+					rstring path = app.GetBinaryPath ();
 					_r_path_ntpathfromdos (path);
 
-					for (int i = 0; i < 255; i++)
+					for (UINT i = 0; i < 255; i++)
 					{
 						WSAStringToAddress (_r_fmt (RM_AD, i + 1).GetBuffer (), AF_INET, nullptr, (sockaddr*)& ipv4_remote, &len1);
-						WSAStringToAddress (_r_fmt (LM_AD, i + 1).GetBuffer (), AF_INET, nullptr, (sockaddr*)& ipv4_local, &len2);
 
-						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, nullptr, IPPROTO_TCP, FWP_IP_VERSION_V4, ntohl (ipv4_remote.sin_addr.S_un.S_addr), nullptr, RP_AD, 0, nullptr, LP_AD, 0, 9240001 + i, FWP_DIRECTION_INBOUND, false, false);
+						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.pusersid, IPPROTO_TCP, FWP_IP_VERSION_V4, ntohl (ipv4_remote.sin_addr.S_un.S_addr), nullptr, RP_AD, UINT16 (i) + 1, ID_START + i, FWP_DIRECTION_OUTBOUND, false, false);
 					}
 
 					break;

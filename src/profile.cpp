@@ -576,8 +576,8 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 				rstring rule_remote = ptr_rule->prule_remote;
 				rstring rule_local = ptr_rule->prule_local;
 
-				rule_remote = rule_remote.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_remote.Replace (RULE_DELIMETER, L"\r\n" SZ_TAB);
-				rule_local = rule_local.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_local.Replace (RULE_DELIMETER, L"\r\n" SZ_TAB);
+				rule_remote = rule_remote.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_remote.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
+				rule_local = rule_local.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_local.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
 
 				result.Format (L"%s (#%d)\r\n%s:\r\n%s%s\r\n%s:\r\n%s%s", ptr_rule->pname, idx, app.LocaleString (IDS_RULE, L" (" SZ_LOG_REMOTE_ADDRESS L")").GetString (), SZ_TAB, rule_remote.GetString (), app.LocaleString (IDS_RULE, L" (" SZ_LOG_LOCAL_ADDRESS L")").GetString (), SZ_TAB, rule_local.GetString ());
 
@@ -971,7 +971,7 @@ bool _app_isruleport (LPCWSTR rule)
 
 	for (size_t i = 0; i < length; i++)
 	{
-		if (iswdigit (rule[i]) == 0 && rule[i] != RULE_RANGE_CHAR)
+		if (iswdigit (rule[i]) == 0 && rule[i] != DIVIDER_RULE_RANGE)
 			return false;
 	}
 
@@ -1107,7 +1107,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 						apps_rule = ptr_config->papps;
 
 					else
-						apps_rule.AppendFormat (L"%s%s", APP_DELIMETER, ptr_config->papps);
+						apps_rule.AppendFormat (L"%s%s", DIVIDER_APP, ptr_config->papps);
 				}
 
 				_r_obj_dereference (ptr_config_object, &_app_dereferenceruleconfig);
@@ -1124,7 +1124,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 						}
 					}
 
-					rstring::rvector arr = apps_rule.AsVector (APP_DELIMETER);
+					rstring::rvector arr = apps_rule.AsVector (DIVIDER_APP);
 
 					for (size_t i = 0; i < arr.size (); i++)
 					{
@@ -1676,7 +1676,7 @@ void _app_profile_save (LPCWSTR path_custom)
 					// add apps attribute
 					if (!ptr_rule->apps.empty ())
 					{
-						const rstring rule_apps = _app_rulesexpand (ptr_rule, false, APP_DELIMETER);
+						const rstring rule_apps = _app_rulesexpand (ptr_rule, false, DIVIDER_APP);
 
 						if (!rule_apps.IsEmpty ())
 							item.append_attribute (L"apps").set_value (rule_apps);
@@ -1727,7 +1727,7 @@ void _app_profile_save (LPCWSTR path_custom)
 
 						if (ptr_rule && !ptr_rule->apps.empty ())
 						{
-							const rstring rule_apps = _app_rulesexpand (ptr_rule, false, APP_DELIMETER);
+							const rstring rule_apps = _app_rulesexpand (ptr_rule, false, DIVIDER_APP);
 
 							if (!rule_apps.IsEmpty ())
 								item.append_attribute (L"apps").set_value (rule_apps);

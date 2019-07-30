@@ -2498,7 +2498,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 				if (port)
 					result.AppendFormat (L":%d", port);
 
-				result.Append (RULE_DELIMETER);
+				result.Append (DIVIDER_RULE);
 			}
 
 			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
@@ -2527,14 +2527,14 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 				if (port)
 					result.AppendFormat (L":%d", port);
 
-				result.Append (RULE_DELIMETER);
+				result.Append (DIVIDER_RULE);
 			}
 
 			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
 		}
 	}
 
-	return result.Trim (RULE_DELIMETER);
+	return result.Trim (DIVIDER_RULE);
 }
 
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
@@ -2604,10 +2604,10 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 			if (port)
 				result.AppendFormat (L":%d", port);
 
-			result.Append (RULE_DELIMETER);
+			result.Append (DIVIDER_RULE);
 		}
 
-		result.Trim (RULE_DELIMETER);
+		result.Trim (DIVIDER_RULE);
 	}
 
 	FreeAddrInfoEx (ppQueryResultsSet);
@@ -2740,7 +2740,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 		return true;
 
 	EnumDataType type = DataUnknown;
-	const size_t range_pos = rule.Find (RULE_RANGE_CHAR);
+	const size_t range_pos = rule.Find (DIVIDER_RULE_RANGE);
 	bool is_range = (range_pos != rstring::npos);
 
 	WCHAR range_start[LEN_IP_MAX] = {0};

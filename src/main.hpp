@@ -112,7 +112,6 @@ void _app_dereferencelog (PVOID pdata);
 #define XML_RULES_CONFIG L"rules_config.xml"
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 
-#define LOG_DIV L','
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%userprofile%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
 #define LOG_VIEWER_DEFAULT L"%systemroot%\\notepad.exe"
@@ -136,7 +135,6 @@ void _app_dereferencelog (PVOID pdata);
 #define SZ_TAB L"   "
 #define SZ_EMPTY L"<empty>"
 #define SZ_UNKNOWN L"unknown"
-#define SZ_NULLADDR L"0.0.0.0"
 
 #define SZ_LOG_REMOTE_ADDRESS L"Remote"
 #define SZ_LOG_LOCAL_ADDRESS L"Local"
@@ -146,9 +144,11 @@ void _app_dereferencelog (PVOID pdata);
 #define SZ_LOG_DIRECTION_OUT L"Outbound"
 #define SZ_LOG_DIRECTION_LOOPBACK L"-Loopback"
 
-#define APP_DELIMETER L"|"
-#define RULE_DELIMETER L";"
-#define RULE_RANGE_CHAR L'-'
+#define DIVIDER_CSV L','
+#define DIVIDER_APP L"|"
+#define DIVIDER_RULE L";"
+#define DIVIDER_RULE_RANGE L'-'
+
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_NOTIFICATION L"Calibri"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"

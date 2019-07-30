@@ -925,7 +925,7 @@ bool _wfp_createrulefilter (LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, 
 							ByteBlobFree (&bSid);
 							ByteBlobFree (&bPath);
 
-							const rstring::rvector arr2 = rstring (addr.host).AsVector (RULE_DELIMETER);
+							const rstring::rvector arr2 = rstring (addr.host).AsVector (DIVIDER_RULE);
 
 							if (arr2.empty ())
 							{
@@ -1098,8 +1098,8 @@ bool _wfp_create4filters (OBJECTS_VEC & ptr_rules, UINT line, bool is_intransact
 
 			if (ptr_rule->is_enabled)
 			{
-				rstring::rvector rule_remote_arr = rstring (ptr_rule->prule_remote).AsVector (RULE_DELIMETER);
-				rstring::rvector rule_local_arr = rstring (ptr_rule->prule_local).AsVector (RULE_DELIMETER);
+				rstring::rvector rule_remote_arr = rstring (ptr_rule->prule_remote).AsVector (DIVIDER_RULE);
+				rstring::rvector rule_local_arr = rstring (ptr_rule->prule_local).AsVector (DIVIDER_RULE);
 
 				const size_t rules_remote_length = rule_remote_arr.size ();
 				const size_t rules_local_length = rule_local_arr.size ();
