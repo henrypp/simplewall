@@ -2322,7 +2322,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	return is_descend ? -result : result;
 }
 
-void _app_listviewsort (HWND hwnd, UINT listview_id, INT subitem, bool is_notifycode)
+void _app_listviewsort (HWND hwnd, UINT listview_id, INT column, bool is_notifycode)
 {
 	if (!listview_id)
 		return;
@@ -2334,19 +2334,19 @@ void _app_listviewsort (HWND hwnd, UINT listview_id, INT subitem, bool is_notify
 	if (is_notifycode)
 		is_descend = !is_descend;
 
-	if (subitem == -1)
-		subitem = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
+	if (column == -1)
+		column = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
 
 	if (is_notifycode)
 	{
 		app.ConfigSet (L"SortIsDescending", is_descend, cfg_name);
-		app.ConfigSet (L"SortColumn", subitem, cfg_name);
+		app.ConfigSet (L"SortColumn", column, cfg_name);
 	}
 
-	for (INT i = 0; i < _r_listview_getcolumncount (hwnd, listview_id); i++)
+	for (UINT i = 0; i < _r_listview_getcolumncount (hwnd, listview_id); i++)
 		_r_listview_setcolumnsortindex (hwnd, listview_id, i, 0);
 
-	_r_listview_setcolumnsortindex (hwnd, listview_id, subitem, is_descend ? -1 : 1);
+	_r_listview_setcolumnsortindex (hwnd, listview_id, column, is_descend ? -1 : 1);
 
 	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)& _app_listviewcompare_callback);
 }

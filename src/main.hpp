@@ -144,6 +144,7 @@ void _app_dereferencelog (PVOID pdata);
 #define SZ_LOG_DIRECTION_OUT L"Outbound"
 #define SZ_LOG_DIRECTION_LOOPBACK L"-Loopback"
 
+#define DIVIDER_COPY L','
 #define DIVIDER_CSV L','
 #define DIVIDER_APP L"|"
 #define DIVIDER_RULE L";"
