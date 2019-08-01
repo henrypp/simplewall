@@ -58,7 +58,7 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 	const HWND hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
 
-	const size_t column_count = _r_listview_getcolumncount (hwnd, listview_id);
+	const UINT column_count = _r_listview_getcolumncount (hwnd, listview_id);
 	const size_t item_count = _r_listview_getitemcount (hwnd, listview_id);
 	const bool is_tableview = (SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
 
@@ -76,51 +76,37 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 		INT column_width;
 		INT calculated_width = 0;
 
-		for (size_t i = column_count - 1; i != LAST_VALUE; i--)
+		for (UINT i = column_count - 1; i != UINT (-1); i--)
 		{
 			if (i == 0)
 			{
-				column_width = total_width - calculated_width;
+				column_width = (total_width - calculated_width);
 			}
 			else
 			{
 				column_width = 0;
 
 				{
-					HDITEM hdi = {0};
-					WCHAR text[MAX_PATH] = {0};
+					const rstring column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
+					const INT text_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + caption_spacing;
 
-					hdi.mask = HDI_TEXT;
-					hdi.pszText = text;
-					hdi.cchTextMax = _countof (text);
-
-					if (SendMessage (hheader, HDM_GETITEM, i, (LPARAM)& hdi))
-					{
-						const int text_width = _r_dc_fontwidth (hdc_header, text, _r_str_length (text)) + caption_spacing;
-
-						if (text_width > column_width)
-							column_width = text_width;
-					}
+					if (text_width > column_width)
+						column_width = text_width;
 				}
 
 				if (is_tableview)
 				{
 					for (size_t j = 0; j < item_count; j++)
 					{
-						const rstring text = _r_listview_getitemtext (hwnd, listview_id, j, i);
-						const int text_width = _r_dc_fontwidth (hdc_listview, text, text.GetLength ()) + caption_spacing;
+						const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
+						const INT text_width = _r_dc_fontwidth (hdc_listview, item_text, item_text.GetLength ()) + caption_spacing;
 
 						if (text_width > column_width)
 							column_width = text_width;
 					}
 				}
 
-				if (column_width > column_max_width)
-					column_width = column_max_width;
-
-				else if (column_width < column_min_width)
-					column_width = column_min_width;
-
+				column_width = std::clamp (column_width, column_min_width, column_max_width);
 				calculated_width += column_width;
 			}
 
@@ -1054,10 +1040,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (listview_id != IDC_APPS_LV)
 						break;
 
-					const HMENU hmenu = CreateMenu ();
-					const HMENU hsubmenu = CreateMenu ();
-
-					AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu, L" ");
+					const HMENU hsubmenu = CreatePopupMenu ();
 
 					AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_CHECK, app.LocaleString (IDS_CHECK, nullptr));
 					AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, nullptr));
@@ -1068,7 +1051,6 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
 
 					DestroyMenu (hsubmenu);
-					DestroyMenu (hmenu);
 
 					break;
 				}
@@ -2118,7 +2100,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
+				}
 					else if (ctrl_id == IDC_LANGUAGE && notify_code == CBN_SELCHANGE)
 					{
 						app.LocaleApplyFromControl (hwnd, ctrl_id);
@@ -2329,12 +2311,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-				}
 			}
+		}
 
 			break;
-		}
 	}
+}
 
 	return FALSE;
 }
@@ -3779,10 +3761,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					SetForegroundWindow (hwnd); // don't touch
 
-					constexpr auto notifications_id = 4;
-					constexpr auto logging_id = 5;
-					constexpr auto errlog_id = 6;
-					constexpr auto pages_start_id = 7;
+#define NOTIFICATIONS_ID 4
+#define LOGGING_ID 5
+#define ERRLOG_ID 6
 
 					const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
 
@@ -3808,8 +3789,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					app.LocaleMenu (hsubmenu, IDS_TRAY_SHOW, IDM_TRAY_SHOW, false, nullptr);
 					app.LocaleMenu (hsubmenu, is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, IDM_TRAY_START, false, nullptr);
 
-					app.LocaleMenu (hsubmenu, IDS_TITLE_NOTIFICATIONS, notifications_id, true, nullptr);
-					app.LocaleMenu (hsubmenu, IDS_TITLE_LOGGING, logging_id, true, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_TITLE_NOTIFICATIONS, NOTIFICATIONS_ID, true, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_TITLE_LOGGING, LOGGING_ID, true, nullptr);
 
 					app.LocaleMenu (hsubmenu, IDS_ENABLENOTIFICATIONS_CHK, IDM_TRAY_ENABLENOTIFICATIONS_CHK, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_NOTIFICATIONSOUND_CHK, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, false, nullptr);
@@ -3831,14 +3812,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (_r_fs_exists (_r_dbg_getpath ()))
 					{
-						app.LocaleMenu (hsubmenu, IDS_TRAY_LOGERR, errlog_id, true, nullptr);
+						app.LocaleMenu (hsubmenu, IDS_TRAY_LOGERR, ERRLOG_ID, true, nullptr);
 
 						app.LocaleMenu (hsubmenu, IDS_LOGSHOW, IDM_TRAY_LOGSHOW_ERR, false, nullptr);
 						app.LocaleMenu (hsubmenu, IDS_LOGCLEAR, IDM_TRAY_LOGCLEAR_ERR, false, nullptr);
 					}
 					else
 					{
-						DeleteMenu (hsubmenu, errlog_id, MF_BYPOSITION);
+						DeleteMenu (hsubmenu, ERRLOG_ID, MF_BYPOSITION);
 					}
 
 					app.LocaleMenu (hsubmenu, IDS_SETTINGS, IDM_TRAY_SETTINGS, false, L"...");
