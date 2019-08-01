@@ -2100,7 +2100,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-				}
+					}
 					else if (ctrl_id == IDC_LANGUAGE && notify_code == CBN_SELCHANGE)
 					{
 						app.LocaleApplyFromControl (hwnd, ctrl_id);
@@ -2311,12 +2311,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
+				}
 			}
-		}
 
 			break;
+		}
 	}
-}
 
 	return FALSE;
 }
@@ -2933,7 +2933,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			const HMENU hmenu = GetMenu (hwnd);
 
 			app.LocaleMenu (hmenu, IDS_FILE, 0, true, nullptr);
-			app.LocaleMenu (hmenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
 			app.LocaleMenu (hmenu, IDS_SETTINGS, IDM_SETTINGS, false, L"...\tF2");
 			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_EXPORT, 2, true, nullptr);
 			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_IMPORT, 3, true, nullptr);
@@ -3485,23 +3484,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						else if (nmouse->dwItemSpec == 2)
 							command_id = IDM_PURGE_TIMERS;
 					}
-					else if (
-						lpnmlv->hdr.idFrom == IDC_APPS_PROFILE ||
-						lpnmlv->hdr.idFrom == IDC_APPS_SERVICE ||
-						lpnmlv->hdr.idFrom == IDC_APPS_UWP
-						)
+					else if (lpnmlv->hdr.idFrom >= IDC_APPS_PROFILE && lpnmlv->hdr.idFrom <= IDC_APPS_UWP)
 					{
 						command_id = IDM_EXPLORE;
 					}
-					else if (
-						lpnmlv->hdr.idFrom == IDC_RULES_BLOCKLIST ||
-						lpnmlv->hdr.idFrom == IDC_RULES_SYSTEM ||
-						lpnmlv->hdr.idFrom == IDC_RULES_CUSTOM
-						)
-					{
-						command_id = IDM_PROPERTIES;
-					}
-					else if (lpnmlv->hdr.idFrom == IDC_NETWORK)
+					else if (lpnmlv->hdr.idFrom >= IDC_RULES_BLOCKLIST && lpnmlv->hdr.idFrom <= IDC_NETWORK)
 					{
 						command_id = IDM_PROPERTIES;
 					}
@@ -3542,9 +3529,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const HMENU hsubmenu = GetSubMenu (hmenu, 0);
 
 					// localize
+					app.LocaleMenu (hsubmenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
 					app.LocaleMenu (hsubmenu, IDS_DISABLENOTIFICATIONS, IDM_DISABLENOTIFICATIONS, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_DISABLETIMER, IDM_DISABLETIMER, false, nullptr);
-					app.LocaleMenu (hsubmenu, IDS_EXPLORE, IDM_EXPLORE, false, L"\tCtrl+E");
 					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
 					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY2, false, _r_fmt (L" \"%s\"\tCtrl+Shift+C", _r_listview_getcolumntext (hwnd, listview_id, lv_subitem).GetString ()));
 					app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
@@ -3555,11 +3542,18 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					app.LocaleMenu (hsubmenu, menu_id == IDM_RULES ? IDS_ADD : IDS_OPENRULESEDITOR, IDM_OPENRULESEDITOR, false, L"...");
 
 					if (menu_id == IDM_NETWORK)
+					{
 						app.LocaleMenu (hsubmenu, IDS_SHOWINLIST, IDM_PROPERTIES, false, L"\tEnter");
+						app.LocaleMenu (hsubmenu, IDS_EXPLORE, IDM_EXPLORE, false, L"\tCtrl+E");
+					}
 					else if (menu_id == IDM_RULES)
+					{
 						app.LocaleMenu (hsubmenu, IDS_EDIT2, IDM_PROPERTIES, false, L"...\tEnter");
-					else
-						app.LocaleMenu (hsubmenu, IDS_PROPERTIES, IDM_PROPERTIES, false, L"\tEnter");
+					}
+					else if (menu_id == IDM_APPS)
+					{
+						app.LocaleMenu (hsubmenu, IDS_EXPLORE, IDM_EXPLORE, false, L"\tEnter");
+					}
 
 					if (menu_id == IDM_APPS)
 					{
@@ -3568,8 +3562,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
 						const time_t current_time = _r_unixtime_now ();
 
-#define RULES_ID 0
-#define TIMER_ID 1
+#define RULES_ID 2
+#define TIMER_ID 3
 
 						const HMENU hsubmenu_rules = GetSubMenu (hsubmenu, RULES_ID);
 						const HMENU hsubmenu_timer = GetSubMenu (hsubmenu, TIMER_ID);
@@ -5253,32 +5247,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						listview_id == IDC_APPS_UWP
 						)
 					{
-						const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
-
-						_r_fastlock_acquireshared (&lock_access);
-						PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
-						_r_fastlock_releaseshared (&lock_access);
-
-						if (!ptr_app_object)
-							break;
-
-						PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
-
-						if (ptr_app && ptr_app->type != DataAppPico && ptr_app->type != DataAppDevice && _r_fs_exists (ptr_app->real_path))
-						{
-							SHELLEXECUTEINFO shex = {0};
-
-							shex.cbSize = sizeof (shex);
-							shex.fMask = SEE_MASK_UNICODE | SEE_MASK_NOZONECHECKS | SEE_MASK_INVOKEIDLIST;
-							shex.hwnd = hwnd;
-							shex.lpVerb = L"properties";
-							shex.nShow = SW_NORMAL;
-							shex.lpFile = ptr_app->real_path;
-
-							ShellExecuteEx (&shex);
-						}
-
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_EXPLORE, 0), 0);
 					}
 					else if (
 						listview_id == IDC_RULES_BLOCKLIST ||
