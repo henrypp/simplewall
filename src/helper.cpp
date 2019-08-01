@@ -1571,7 +1571,6 @@ bool _app_isvalidconnection (ADDRESS_FAMILY af, PVOID paddr)
 				!IN4_IS_ADDR_LOOPBACK (PIN_ADDR (paddr)) &&
 				!IN4_IS_ADDR_LINKLOCAL (PIN_ADDR (paddr)) &&
 				!IN4_IS_ADDR_MC_ADMINLOCAL (PIN_ADDR (paddr)) &&
-				!IN4_IS_ADDR_MC_ADMINLOCAL (PIN_ADDR (paddr)) &&
 				!IN4_IS_ADDR_MC_SITELOCAL (PIN_ADDR (paddr))
 				);
 	}
