@@ -134,6 +134,7 @@ void _app_dereferencelog (PVOID pdata);
 
 #define SZ_TAB L"   "
 #define SZ_EMPTY L"<empty>"
+#define SZ_READONLY_RULE L"*"
 #define SZ_UNKNOWN L"unknown"
 
 #define SZ_LOG_REMOTE_ADDRESS L"Remote"

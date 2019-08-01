@@ -2099,7 +2099,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 
 	_app_getcount (&stat);
 
-	if (!stat.rules_count)
+	if (!app_hash || !stat.rules_count)
 	{
 		AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, nullptr));
@@ -2157,7 +2157,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						}
 
 						WCHAR buffer[128] = {0};
-						StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? L" [*]" : nullptr), ptr_rule->pname);
+						StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? SZ_READONLY_RULE : nullptr), ptr_rule->pname);
 
 						MENUITEMINFO mii = {0};
 
