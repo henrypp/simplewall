@@ -1022,38 +1022,6 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 #endif // _APP_NO_DARKTHEME
 
-		case WM_CONTEXTMENU:
-		{
-			const UINT ctrl_id = GetDlgCtrlID ((HWND)wparam);
-
-			if (ctrl_id != IDC_APPS_LV)
-				break;
-
-			const HMENU hmenu = CreateMenu ();
-			const HMENU hsubmenu = CreateMenu ();
-
-			AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu, L" ");
-
-			AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_CHECK, app.LocaleString (IDS_CHECK, nullptr));
-			AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, nullptr));
-
-			if (!SendDlgItemMessage (hwnd, ctrl_id, LVM_GETSELECTEDCOUNT, 0, 0))
-			{
-				EnableMenuItem (hsubmenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			}
-
-			POINT pt = {0};
-			GetCursorPos (&pt);
-
-			TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
-
-			DestroyMenu (hsubmenu);
-			DestroyMenu (hmenu);
-
-			break;
-		}
-
 		case WM_NOTIFY:
 		{
 			LPNMHDR nmlp = (LPNMHDR)lparam;
@@ -1072,6 +1040,37 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
+				}
+
+				case NM_RCLICK:
+				{
+					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
+
+					if (lpnmlv->iItem == -1)
+						break;
+
+					const UINT listview_id = (UINT)lpnmlv->hdr.idFrom;
+
+					if (listview_id != IDC_APPS_LV)
+						break;
+
+					const HMENU hmenu = CreateMenu ();
+					const HMENU hsubmenu = CreateMenu ();
+
+					AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu, L" ");
+
+					AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_CHECK, app.LocaleString (IDS_CHECK, nullptr));
+					AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, nullptr));
+
+					POINT pt = {0};
+					GetCursorPos (&pt);
+
+					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
+
+					DestroyMenu (hsubmenu);
+					DestroyMenu (hmenu);
+
+					break;
 				}
 
 				case LVN_COLUMNCLICK:
@@ -2952,6 +2951,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			const HMENU hmenu = GetMenu (hwnd);
 
 			app.LocaleMenu (hmenu, IDS_FILE, 0, true, nullptr);
+			app.LocaleMenu (hmenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
 			app.LocaleMenu (hmenu, IDS_SETTINGS, IDM_SETTINGS, false, L"...\tF2");
 			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_EXPORT, 2, true, nullptr);
 			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_IMPORT, 3, true, nullptr);
@@ -3529,6 +3529,200 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					break;
 				}
+
+				case NM_RCLICK:
+				{
+					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
+
+					if (lpnmlv->iItem == -1)
+						break;
+
+					const UINT listview_id = (UINT)lpnmlv->hdr.idFrom;
+
+					UINT menu_id;
+
+					if (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_UWP)
+						menu_id = IDM_APPS;
+
+					else if (listview_id == IDC_RULES_BLOCKLIST || listview_id == IDC_RULES_SYSTEM || listview_id == IDC_RULES_CUSTOM)
+						menu_id = IDM_RULES;
+
+					else if (listview_id == IDC_NETWORK)
+						menu_id = IDM_NETWORK;
+
+					else
+						break;
+
+					const UINT lv_subitem = std::clamp (lpnmlv->iSubItem, 0, (INT)_r_listview_getcolumncount (hwnd, listview_id) - 1);
+					const size_t hash_item = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+
+					const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (menu_id));
+					const HMENU hsubmenu = GetSubMenu (hmenu, 0);
+
+					// localize
+					app.LocaleMenu (hsubmenu, IDS_DISABLENOTIFICATIONS, IDM_DISABLENOTIFICATIONS, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_DISABLETIMER, IDM_DISABLETIMER, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_EXPLORE, IDM_EXPLORE, false, L"\tCtrl+E");
+					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
+					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY2, false, _r_fmt (L" \"%s\"\tCtrl+Shift+C", _r_listview_getcolumntext (hwnd, listview_id, lv_subitem).GetString ()));
+					app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
+					app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
+					app.LocaleMenu (hsubmenu, IDS_NETWORK_CLOSE, IDM_NETWORK_CLOSE, false, nullptr);
+
+					app.LocaleMenu (hsubmenu, menu_id == IDM_RULES ? IDS_ADD : IDS_OPENRULESEDITOR, IDM_OPENRULESEDITOR, false, L"...");
+
+					if (menu_id == IDM_NETWORK)
+						app.LocaleMenu (hsubmenu, IDS_SHOWINLIST, IDM_PROPERTIES, false, L"\tEnter");
+					else if (menu_id == IDM_RULES)
+						app.LocaleMenu (hsubmenu, IDS_EDIT2, IDM_PROPERTIES, false, L"...\tEnter");
+					else
+						app.LocaleMenu (hsubmenu, IDS_PROPERTIES, IDM_PROPERTIES, false, L"\tEnter");
+
+					if (menu_id == IDM_APPS)
+					{
+						SetMenuDefaultItem (hsubmenu, IDM_EXPLORE, FALSE);
+
+						const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
+						const time_t current_time = _r_unixtime_now ();
+
+#define RULES_ID 0
+#define TIMER_ID 1
+
+						const HMENU hsubmenu_rules = GetSubMenu (hsubmenu, RULES_ID);
+						const HMENU hsubmenu_timer = GetSubMenu (hsubmenu, TIMER_ID);
+
+						// set icons
+						{
+							static const INT icon_size = GetSystemMetrics (SM_CXSMICON);
+
+							static const HBITMAP hbmp_rules = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_RULES), icon_size);
+							static const HBITMAP hbmp_timer = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_TIMER), icon_size);
+
+							MENUITEMINFO mii = {0};
+
+							mii.cbSize = sizeof (mii);
+							mii.fMask = MIIM_BITMAP;
+
+							mii.hbmpItem = hbmp_rules;
+							SetMenuItemInfo (hsubmenu, RULES_ID, TRUE, &mii);
+
+							mii.hbmpItem = hbmp_timer;
+							SetMenuItemInfo (hsubmenu, TIMER_ID, TRUE, &mii);
+						}
+
+						// localize
+						app.LocaleMenu (hsubmenu, IDS_TRAY_RULES, RULES_ID, true, nullptr);
+						app.LocaleMenu (hsubmenu, IDS_TIMER, TIMER_ID, true, nullptr);
+
+						// show configuration
+						PITEM_APP ptr_app = nullptr;
+						PR_OBJECT ptr_app_object = _app_getappitem (hash_item);
+
+						if (ptr_app_object)
+						{
+							ptr_app = (PITEM_APP)ptr_app_object->pdata;
+
+							if (ptr_app)
+								CheckMenuItem (hsubmenu, IDM_DISABLENOTIFICATIONS, MF_BYCOMMAND | (ptr_app->is_silent ? MF_CHECKED : MF_UNCHECKED));
+						}
+
+						// show rules
+						_app_generate_rulesmenu (hsubmenu_rules, hash_item);
+
+						// show timers
+						{
+							bool is_checked = false;
+
+							for (size_t i = 0; i < timers.size (); i++)
+							{
+								MENUITEMINFO mii = {0};
+
+								WCHAR buffer[128] = {0};
+								StringCchCopy (buffer, _countof (buffer), _r_fmt_interval (timers.at (i) + 1, 1));
+
+								mii.cbSize = sizeof (mii);
+								mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
+								mii.fType = MFT_STRING;
+								mii.dwTypeData = buffer;
+								mii.fState = MF_ENABLED;
+								mii.wID = IDX_TIMER + UINT (i);
+
+								InsertMenuItem (hsubmenu_timer, mii.wID, FALSE, &mii);
+
+								if (ptr_app)
+								{
+									if (!is_checked && ptr_app->timer > current_time && ptr_app->timer <= (current_time + timers.at (i)))
+									{
+										CheckMenuRadioItem (hsubmenu_timer, IDX_TIMER, IDX_TIMER + UINT (timers.size ()), mii.wID, MF_BYCOMMAND);
+										is_checked = true;
+									}
+								}
+							}
+
+							if (!is_checked)
+								CheckMenuRadioItem (hsubmenu_timer, IDM_DISABLETIMER, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND);
+						}
+
+						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+
+						if (listview_id != IDC_APPS_PROFILE)
+							EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+					}
+					else if (menu_id == IDM_RULES)
+					{
+						SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
+
+						if (listview_id == IDC_RULES_CUSTOM)
+						{
+							PR_OBJECT ptr_rule_object = _app_getruleitem (hash_item);
+
+							if (!ptr_rule_object)
+								break;
+
+							PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+
+							if (ptr_rule && ptr_rule->is_readonly)
+								EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+
+							_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+						}
+						else
+						{
+							DeleteMenu (hsubmenu, IDM_OPENRULESEDITOR, MF_BYCOMMAND);
+							DeleteMenu (hsubmenu, IDM_DELETE, MF_BYCOMMAND);
+							DeleteMenu (hsubmenu, 5, MF_BYPOSITION);
+						}
+					}
+					else if (menu_id == IDM_NETWORK)
+					{
+						SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
+
+						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[hash_item]);
+
+						if (ptr_network_object)
+						{
+							PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
+
+							if (ptr_network)
+							{
+								if (ptr_network->af != AF_INET || ptr_network->state != MIB_TCP_STATE_ESTAB)
+									EnableMenuItem (hsubmenu, IDM_NETWORK_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+							}
+
+							_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+						}
+					}
+
+					POINT pt = {0};
+					GetCursorPos (&pt);
+
+					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
+
+					DestroyMenu (hmenu);
+
+					break;
+				}
 			}
 
 			break;
@@ -3542,218 +3736,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_refreshstatus (hwnd);
 
 			RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
-
-			break;
-		}
-
-		case WM_CONTEXTMENU:
-		{
-			const UINT listview_id = GetDlgCtrlID ((HWND)wparam);
-			const UINT selected_count = (UINT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
-
-			UINT menu_id;
-
-			if (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_UWP)
-				menu_id = IDM_APPS;
-
-			else if (listview_id == IDC_RULES_BLOCKLIST || listview_id == IDC_RULES_SYSTEM || listview_id == IDC_RULES_CUSTOM)
-				menu_id = IDM_RULES;
-
-			else if (listview_id == IDC_NETWORK)
-				menu_id = IDM_NETWORK;
-
-			else
-				break;
-
-			const size_t item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED); // get first item
-			const size_t hash_item = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
-
-			const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (menu_id));
-			const HMENU hsubmenu = GetSubMenu (hmenu, 0);
-
-			// localize
-			app.LocaleMenu (hsubmenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
-			app.LocaleMenu (hsubmenu, IDS_DISABLENOTIFICATIONS, IDM_DISABLENOTIFICATIONS, false, nullptr);
-			app.LocaleMenu (hsubmenu, IDS_DISABLETIMER, IDM_DISABLETIMER, false, nullptr);
-			app.LocaleMenu (hsubmenu, IDS_EXPLORE, IDM_EXPLORE, false, L"\tCtrl+E");
-			app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
-			app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
-			app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
-			app.LocaleMenu (hsubmenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
-			app.LocaleMenu (hsubmenu, IDS_NETWORK_CLOSE, IDM_NETWORK_CLOSE, false, nullptr);
-
-			app.LocaleMenu (hsubmenu, menu_id == IDM_RULES ? IDS_ADD : IDS_OPENRULESEDITOR, IDM_OPENRULESEDITOR, false, L"...");
-			app.LocaleMenu (hsubmenu, menu_id == IDM_NETWORK ? IDS_SHOWINLIST : IDS_PROPERTIES, IDM_PROPERTIES, false, L"\tEnter");
-
-			if (!selected_count)
-			{
-				EnableMenuItem (hsubmenu, IDM_EXPLORE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (hsubmenu, IDM_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (hsubmenu, IDM_CHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (hsubmenu, IDM_NETWORK_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				EnableMenuItem (hsubmenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			}
-
-			if (menu_id == IDM_APPS)
-			{
-				SetMenuDefaultItem (hsubmenu, IDM_EXPLORE, FALSE);
-
-				const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
-				const time_t current_time = _r_unixtime_now ();
-
-#define SETTINGS_ID 2
-#define TIMER_ID 3
-
-				const HMENU hsubmenu_settings = GetSubMenu (hsubmenu, SETTINGS_ID);
-				const HMENU hsubmenu_timer = GetSubMenu (hsubmenu, TIMER_ID);
-
-				// set icons
-				{
-					static const INT icon_size = GetSystemMetrics (SM_CXSMICON);
-
-					static const HBITMAP hbmp_rules = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_RULES), icon_size);
-					static const HBITMAP hbmp_timer = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_TIMER), icon_size);
-
-					MENUITEMINFO mii = {0};
-
-					mii.cbSize = sizeof (mii);
-					mii.fMask = MIIM_BITMAP;
-
-					mii.hbmpItem = hbmp_rules;
-					SetMenuItemInfo (hsubmenu, SETTINGS_ID, TRUE, &mii);
-
-					mii.hbmpItem = hbmp_timer;
-					SetMenuItemInfo (hsubmenu, TIMER_ID, TRUE, &mii);
-				}
-
-				// localize
-				app.LocaleMenu (hsubmenu, IDS_TRAY_RULES, SETTINGS_ID, true, nullptr);
-				app.LocaleMenu (hsubmenu, IDS_TIMER, TIMER_ID, true, nullptr);
-
-				// show configuration
-				if (selected_count)
-				{
-					PITEM_APP ptr_app = nullptr;
-					PR_OBJECT ptr_app_object = _app_getappitem (hash_item);
-
-					if (ptr_app_object)
-						ptr_app = (PITEM_APP)ptr_app_object->pdata;
-
-					// show rules
-					if (ptr_app)
-					{
-						CheckMenuItem (hsubmenu, IDM_DISABLENOTIFICATIONS, MF_BYCOMMAND | (ptr_app->is_silent ? MF_CHECKED : MF_UNCHECKED));
-
-						_app_generate_rulesmenu (hsubmenu_settings, hash_item);
-					}
-
-					// show timers
-					{
-						bool is_checked = false;
-
-						for (size_t i = 0; i < timers.size (); i++)
-						{
-							MENUITEMINFO mii = {0};
-
-							WCHAR buffer[128] = {0};
-							StringCchCopy (buffer, _countof (buffer), _r_fmt_interval (timers.at (i) + 1, 1));
-
-							mii.cbSize = sizeof (mii);
-							mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
-							mii.fType = MFT_STRING;
-							mii.dwTypeData = buffer;
-							mii.fState = MF_ENABLED;
-							mii.wID = IDX_TIMER + UINT (i);
-
-							if (!is_filtersinstalled)
-								mii.fState = MF_DISABLED | MF_GRAYED;
-
-							InsertMenuItem (hsubmenu_timer, mii.wID, FALSE, &mii);
-
-							if (ptr_app)
-							{
-								if (!is_checked && ptr_app->timer > current_time && ptr_app->timer <= (current_time + timers.at (i)))
-								{
-									CheckMenuRadioItem (hsubmenu_timer, IDX_TIMER, IDX_TIMER + UINT (timers.size ()), mii.wID, MF_BYCOMMAND);
-									is_checked = true;
-								}
-							}
-						}
-
-						if (!is_checked)
-							CheckMenuRadioItem (hsubmenu_timer, IDM_DISABLETIMER, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND);
-					}
-
-					_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
-				}
-				else
-				{
-					EnableMenuItem (hsubmenu, SETTINGS_ID, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (hsubmenu, TIMER_ID, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
-				}
-
-				if (listview_id != IDC_APPS_PROFILE)
-				{
-					EnableMenuItem (hsubmenu, IDM_ADD_FILE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-					EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				}
-			}
-			else if (menu_id == IDM_RULES)
-			{
-				SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
-
-				if (listview_id == IDC_RULES_CUSTOM)
-				{
-					PR_OBJECT ptr_rule_object = _app_getruleitem (hash_item);
-
-					if (!ptr_rule_object)
-						break;
-
-					PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-					if (ptr_rule && ptr_rule->is_readonly)
-						EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-
-					_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
-				}
-				else
-				{
-					DeleteMenu (hsubmenu, IDM_OPENRULESEDITOR, MF_BYCOMMAND);
-					DeleteMenu (hsubmenu, IDM_DELETE, MF_BYCOMMAND);
-					DeleteMenu (hsubmenu, 0, MF_BYPOSITION);
-				}
-			}
-			else if (menu_id == IDM_NETWORK)
-			{
-				SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
-
-				PR_OBJECT ptr_network_object = _r_obj_reference (network_map[hash_item]);
-
-				if (ptr_network_object)
-				{
-					PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
-
-					if (ptr_network)
-					{
-						if (ptr_network->af != AF_INET || ptr_network->state != MIB_TCP_STATE_ESTAB)
-							EnableMenuItem (hsubmenu, IDM_NETWORK_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-					}
-
-					_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
-				}
-
-				if (!selected_count)
-					EnableMenuItem (hsubmenu, IDM_OPENRULESEDITOR, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			}
-
-			POINT pt = {0};
-			GetCursorPos (&pt);
-
-			TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
-
-			DestroyMenu (hmenu);
 
 			break;
 		}
@@ -4988,20 +4970,30 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 
 				case IDM_COPY:
+				case IDM_COPY2:
 				{
 					const UINT listview_id = _app_gettab_id (hwnd);
 					size_t item = LAST_VALUE;
 
-					const size_t column_count = _r_listview_getcolumncount (hwnd, listview_id);
+					const size_t lv_column_count = _r_listview_getcolumncount (hwnd, listview_id);
+					const size_t lv_column_current = _r_listview_getcolumncurrent (hwnd, listview_id);
+					const rstring divider = _r_fmt (L"%c ", DIVIDER_COPY);
 
 					rstring buffer;
 
 					while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 					{
-						for (size_t column_id = 0; column_id < column_count; column_id++)
-							buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_id)).Append (L" ");
+						if (LOWORD (wparam) == IDM_COPY)
+						{
+							for (size_t column_id = 0; column_id < lv_column_count; column_id++)
+								buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_id)).Append (divider);
+						}
+						else
+						{
+							buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, lv_column_current)).Append (divider);
+						}
 
-						buffer.Trim (L" ").Append (L"\r\n");
+						buffer.Trim (divider).Append (L"\r\n");
 					}
 
 					buffer.Trim (L"\r\n");
