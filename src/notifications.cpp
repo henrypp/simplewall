@@ -841,10 +841,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					if (nmlp->idFrom != IDC_RULES_BTN && nmlp->idFrom != IDC_ALLOW_BTN && !_r_ctrl_isenabled (hwnd, (UINT)nmlp->idFrom))
 						break;
 
-					const HMENU hmenu = CreateMenu ();
-					const HMENU hsubmenu = CreateMenu ();
-
-					AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu, L" ");
+					const HMENU hsubmenu = CreatePopupMenu ();
 
 					if (nmlp->idFrom == IDC_RULES_BTN)
 					{
@@ -868,7 +865,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, buttonRect.left, buttonRect.top, hwnd, nullptr);
 
 					DestroyMenu (hsubmenu);
-					DestroyMenu (hmenu);
 
 					break;
 				}
