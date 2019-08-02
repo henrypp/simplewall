@@ -403,8 +403,8 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, p.first);
 
-					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
-					_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->remote_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->local_fmt);
 					_r_listview_setitem (hwnd, network_listview_id, item, 3, _app_getprotoname (ptr_network->protocol, ptr_network->af));
 					_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_getstatename (ptr_network->state));
 
@@ -1293,17 +1293,17 @@ void _app_config_apply (HWND hwnd, UINT ctrl_id)
 
 	switch (ctrl_id)
 	{
-		case IDC_RULE_ALLOWINBOUND:
-		case IDM_RULE_ALLOWINBOUND:
+		case IDC_RULE_BLOCKOUTBOUND:
+		case IDM_RULE_BLOCKOUTBOUND:
 		{
-			new_val = !app.ConfigGet (L"AllowInboundConnections", false).AsBool ();
+			new_val = !app.ConfigGet (L"BlockOutboundConnections", true).AsBool ();
 			break;
 		}
 
-		case IDC_RULE_ALLOWLISTEN:
-		case IDM_RULE_ALLOWLISTEN:
+		case IDC_RULE_BLOCKINBOUND:
+		case IDM_RULE_BLOCKINBOUND:
 		{
-			new_val = !app.ConfigGet (L"AllowListenConnections2", true).AsBool ();
+			new_val = !app.ConfigGet (L"BlockInboundConnections", true).AsBool ();
 			break;
 		}
 
@@ -1373,20 +1373,20 @@ void _app_config_apply (HWND hwnd, UINT ctrl_id)
 
 	switch (ctrl_id)
 	{
-		case IDC_RULE_ALLOWINBOUND:
-		case IDM_RULE_ALLOWINBOUND:
+		case IDC_RULE_BLOCKOUTBOUND:
+		case IDM_RULE_BLOCKOUTBOUND:
 		{
-			app.ConfigSet (L"AllowInboundConnections", new_val);
-			CheckMenuItem (hmenu, IDM_RULE_ALLOWINBOUND, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			app.ConfigSet (L"BlockOutboundConnections", new_val);
+			CheckMenuItem (hmenu, IDM_RULE_BLOCKOUTBOUND, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 
 			break;
 		}
 
-		case IDC_RULE_ALLOWLISTEN:
-		case IDM_RULE_ALLOWLISTEN:
+		case IDC_RULE_BLOCKINBOUND:
+		case IDM_RULE_BLOCKINBOUND:
 		{
-			app.ConfigSet (L"AllowListenConnections2", new_val);
-			CheckMenuItem (hmenu, IDM_RULE_ALLOWLISTEN, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			app.ConfigSet (L"BlockInboundConnections", new_val);
+			CheckMenuItem (hmenu, IDM_RULE_BLOCKINBOUND, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 
 			break;
 		}
@@ -1578,8 +1578,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDD_SETTINGS_RULES:
 				{
-					CheckDlgButton (hwnd, IDC_RULE_ALLOWINBOUND, app.ConfigGet (L"AllowInboundConnections", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
-					CheckDlgButton (hwnd, IDC_RULE_ALLOWLISTEN, app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_RULE_BLOCKOUTBOUND, app.ConfigGet (L"BlockOutboundConnections", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_RULE_BLOCKINBOUND, app.ConfigGet (L"BlockInboundConnections", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+
 					CheckDlgButton (hwnd, IDC_RULE_ALLOWLOOPBACK, app.ConfigGet (L"AllowLoopbackConnections", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_RULE_ALLOW6TO4, app.ConfigGet (L"AllowIPv6", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
@@ -1593,8 +1594,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					const HWND htip = _r_ctrl_createtip (hwnd);
 
-					_r_ctrl_settip (htip, hwnd, IDC_RULE_ALLOWINBOUND, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settip (htip, hwnd, IDC_RULE_ALLOWLISTEN, LPSTR_TEXTCALLBACK);
+					_r_ctrl_settip (htip, hwnd, IDC_RULE_BLOCKOUTBOUND, LPSTR_TEXTCALLBACK);
+					_r_ctrl_settip (htip, hwnd, IDC_RULE_BLOCKINBOUND, LPSTR_TEXTCALLBACK);
 					_r_ctrl_settip (htip, hwnd, IDC_RULE_ALLOWLOOPBACK, LPSTR_TEXTCALLBACK);
 					_r_ctrl_settip (htip, hwnd, IDC_RULE_ALLOW6TO4, LPSTR_TEXTCALLBACK);
 
@@ -1724,6 +1725,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			SetDlgItemText (hwnd, IDC_TITLE_BLOCKLIST_SPY, app.LocaleString (IDS_BLOCKLIST_SPY, L":"));
 			SetDlgItemText (hwnd, IDC_TITLE_BLOCKLIST_UPDATE, app.LocaleString (IDS_BLOCKLIST_UPDATE, L":"));
 			SetDlgItemText (hwnd, IDC_TITLE_BLOCKLIST_EXTRA, app.LocaleString (IDS_BLOCKLIST_EXTRA, L": (Skype, Bing, Live, Outlook, etc.)"));
+			SetDlgItemText (hwnd, IDC_TITLE_CONNECTIONS, app.LocaleString (IDS_TAB_NETWORK, L":"));
 			SetDlgItemText (hwnd, IDC_TITLE_SECURITY, app.LocaleString (IDS_TITLE_SECURITY, L":"));
 			SetDlgItemText (hwnd, IDC_TITLE_CONFIRMATIONS, app.LocaleString (IDS_TITLE_CONFIRMATIONS, L":"));
 			SetDlgItemText (hwnd, IDC_TITLE_HIGHLIGHTING, app.LocaleString (IDS_TITLE_HIGHLIGHTING, L":"));
@@ -1750,8 +1752,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDD_SETTINGS_RULES:
 				{
-					SetDlgItemText (hwnd, IDC_RULE_ALLOWINBOUND, app.LocaleString (IDS_RULE_ALLOWINBOUND, nullptr));
-					SetDlgItemText (hwnd, IDC_RULE_ALLOWLISTEN, app.LocaleString (IDS_RULE_ALLOWLISTEN, _r_fmt (L" (%s)", recommended.GetString ())));
+					SetDlgItemText (hwnd, IDC_RULE_BLOCKOUTBOUND, app.LocaleString (IDS_RULE_BLOCKOUTBOUND, _r_fmt (L" (%s)", recommended.GetString ())));
+					SetDlgItemText (hwnd, IDC_RULE_BLOCKINBOUND, app.LocaleString (IDS_RULE_BLOCKINBOUND, _r_fmt (L" (%s)", recommended.GetString ())));
+
 					SetDlgItemText (hwnd, IDC_RULE_ALLOWLOOPBACK, app.LocaleString (IDS_RULE_ALLOWLOOPBACK, _r_fmt (L" (%s)", recommended.GetString ())));
 					SetDlgItemText (hwnd, IDC_RULE_ALLOW6TO4, app.LocaleString (IDS_RULE_ALLOW6TO4, _r_fmt (L" (%s)", recommended.GetString ())));
 
@@ -1875,11 +1878,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						WCHAR buffer[1024] = {0};
 						const UINT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
-						if (ctrl_id == IDC_RULE_ALLOWINBOUND)
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_ALLOWINBOUND_HINT, nullptr));
+						if (ctrl_id == IDC_RULE_BLOCKOUTBOUND)
+							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_BLOCKOUTBOUND, nullptr));
 
-						else if (ctrl_id == IDC_RULE_ALLOWLISTEN)
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_ALLOWLISTEN_HINT, nullptr));
+						else if (ctrl_id == IDC_RULE_BLOCKINBOUND)
+							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_BLOCKINBOUND, nullptr));
 
 						else if (ctrl_id == IDC_RULE_ALLOWLOOPBACK)
 							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_ALLOWLOOPBACK_HINT, nullptr));
@@ -2039,8 +2042,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDC_USECERTIFICATES_CHK:
 				case IDC_USENETWORKRESOLUTION_CHK:
 				case IDC_USEREFRESHDEVICES_CHK:
-				case IDC_RULE_ALLOWINBOUND:
-				case IDC_RULE_ALLOWLISTEN:
+				case IDC_RULE_BLOCKOUTBOUND:
+				case IDC_RULE_BLOCKINBOUND:
 				case IDC_RULE_ALLOWLOOPBACK:
 				case IDC_RULE_ALLOW6TO4:
 				case IDC_BLOCKLIST_SPY_DISABLE:
@@ -2118,8 +2121,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						app.ConfigSet (L"ConfirmLogClear", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 					}
 					else if (
-						ctrl_id == IDC_RULE_ALLOWINBOUND ||
-						ctrl_id == IDC_RULE_ALLOWLISTEN ||
+						ctrl_id == IDC_RULE_BLOCKOUTBOUND ||
+						ctrl_id == IDC_RULE_BLOCKINBOUND ||
 						ctrl_id == IDC_RULE_ALLOWLOOPBACK ||
 						ctrl_id == IDC_RULE_ALLOW6TO4 ||
 						ctrl_id == IDC_SECUREFILTERS_CHK ||
@@ -2460,11 +2463,11 @@ void _app_tabs_init (HWND hwnd)
 		}
 		else if (listview_id == IDC_NETWORK)
 		{
-			_r_listview_setstyle (hwnd, listview_id, listview_ex_style & ~LVS_EX_CHECKBOXES); // no checks for network tab
+			_r_listview_setstyle (hwnd, listview_id, listview_ex_style & ~LVS_EX_CHECKBOXES); // no checkboxes for network tab
 
 			_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0, LVCFMT_LEFT);
 			_r_listview_addcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), 0, LVCFMT_RIGHT);
 			_r_listview_addcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), 0, LVCFMT_RIGHT);
 		}
@@ -2903,8 +2906,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				CheckMenuRadioItem (hmenu, IDM_ICONSSMALL, IDM_ICONSEXTRALARGE, menu_id, MF_BYCOMMAND);
 			}
 
-			CheckMenuItem (hmenu, IDM_RULE_ALLOWINBOUND, MF_BYCOMMAND | (app.ConfigGet (L"AllowInboundConnections", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_RULE_ALLOWLISTEN, MF_BYCOMMAND | (app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+			CheckMenuItem (hmenu, IDM_RULE_BLOCKOUTBOUND, MF_BYCOMMAND | (app.ConfigGet (L"BlockOutboundConnections", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+			CheckMenuItem (hmenu, IDM_RULE_BLOCKINBOUND, MF_BYCOMMAND | (app.ConfigGet (L"BlockInboundConnections", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (hmenu, IDM_RULE_ALLOWLOOPBACK, MF_BYCOMMAND | (app.ConfigGet (L"AllowLoopbackConnections", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (hmenu, IDM_RULE_ALLOW6TO4, MF_BYCOMMAND | (app.ConfigGet (L"AllowIPv6", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 
@@ -2974,8 +2977,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			app.LocaleMenu (hmenu, IDS_TRAY_RULES, 3, true, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_RULE_ALLOWINBOUND, IDM_RULE_ALLOWINBOUND, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_RULE_ALLOWLISTEN, IDM_RULE_ALLOWLISTEN, false, _r_fmt (L" (%s)", recommended.GetString ()));
+			app.LocaleMenu (hmenu, IDS_TAB_NETWORK, IDM_CONNECTIONS_TITLE, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_TITLE_SECURITY, IDM_SECURITY_TITLE, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_TITLE_ADVANCED, IDM_ADVANCED_TITLE, false, nullptr);
+
+			EnableMenuItem (hmenu, IDM_CONNECTIONS_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			EnableMenuItem (hmenu, IDM_SECURITY_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			EnableMenuItem (hmenu, IDM_ADVANCED_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+
+			app.LocaleMenu (hmenu, IDS_RULE_BLOCKOUTBOUND, IDM_RULE_BLOCKOUTBOUND, false, _r_fmt (L" (%s)", recommended.GetString ()));
+			app.LocaleMenu (hmenu, IDS_RULE_BLOCKINBOUND, IDM_RULE_BLOCKINBOUND, false, _r_fmt (L" (%s)", recommended.GetString ()));
 			app.LocaleMenu (hmenu, IDS_RULE_ALLOWLOOPBACK, IDM_RULE_ALLOWLOOPBACK, false, _r_fmt (L" (%s)", recommended.GetString ()));
 			app.LocaleMenu (hmenu, IDS_RULE_ALLOW6TO4, IDM_RULE_ALLOW6TO4, false, _r_fmt (L" (%s)", recommended.GetString ()));
 
@@ -3094,8 +3105,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				else if (listview_id == IDC_NETWORK)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
-					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0);
-					_r_listview_setcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), 0);
 				}
@@ -4612,8 +4623,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-				case IDM_RULE_ALLOWINBOUND:
-				case IDM_RULE_ALLOWLISTEN:
+				case IDM_RULE_BLOCKOUTBOUND:
+				case IDM_RULE_BLOCKINBOUND:
 				case IDM_RULE_ALLOWLOOPBACK:
 				case IDM_RULE_ALLOW6TO4:
 				case IDM_SECUREFILTERS_CHK:
