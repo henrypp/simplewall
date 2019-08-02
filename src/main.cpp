@@ -126,11 +126,7 @@ void _app_listviewsetview (HWND hwnd, UINT listview_id)
 	const INT icons_size = (listview_id != IDC_APPS_LV) ? std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
 	HIMAGELIST himg = nullptr;
 
-	if (
-		listview_id == IDC_RULES_BLOCKLIST ||
-		listview_id == IDC_RULES_SYSTEM ||
-		listview_id == IDC_RULES_CUSTOM
-		)
+	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
 		if (icons_size == SHIL_SYSSMALL)
 			himg = config.himg_toolbar;
@@ -650,18 +646,13 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 		case CDDS_ITEMPREPAINT:
 		{
 			const bool is_tableview = (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
+			const UINT listview_id = (UINT)lpnmlv->nmcd.hdr.idFrom;
 
-			if (
-				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_LV ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_PROFILE ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_SERVICE ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_APPS_UWP ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_NETWORK
-				)
+			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_APPS_LV || listview_id == IDC_NETWORK)
 			{
 				size_t app_hash;
 
-				if (lpnmlv->nmcd.hdr.idFrom == IDC_NETWORK)
+				if (listview_id == IDC_NETWORK)
 				{
 					app_hash = _app_getnetworkapp (lpnmlv->nmcd.lItemlParam); // initialize
 				}
@@ -672,7 +663,7 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 
 				if (app_hash)
 				{
-					const COLORREF new_clr = (COLORREF)_app_getcolor ((UINT)lpnmlv->nmcd.hdr.idFrom, app_hash);
+					const COLORREF new_clr = (COLORREF)_app_getcolor (listview_id, app_hash);
 
 					if (new_clr)
 					{
@@ -686,11 +677,7 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 					}
 				}
 			}
-			else if (
-				lpnmlv->nmcd.hdr.idFrom == IDC_RULES_BLOCKLIST ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_RULES_SYSTEM ||
-				lpnmlv->nmcd.hdr.idFrom == IDC_RULES_CUSTOM
-				)
+			else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 			{
 				const size_t rule_idx = lpnmlv->nmcd.lItemlParam;
 				PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
@@ -725,7 +712,7 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 
 				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 			}
-			else if (lpnmlv->nmcd.hdr.idFrom == IDC_COLORS)
+			else if (listview_id == IDC_COLORS)
 			{
 				PR_OBJECT ptr_object = _r_obj_reference (colors.at (lpnmlv->nmcd.lItemlParam));
 
@@ -2426,31 +2413,16 @@ void _app_tabs_init (HWND hwnd)
 
 		_r_wnd_resize (nullptr, GetDlgItem (hwnd, listview_id), nullptr, 0, 0, _R_RECT_WIDTH (&rect), _R_RECT_HEIGHT (&rect), SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOSENDCHANGING | SWP_NOCOPYBITS);
 
-		if (
-			listview_id == IDC_APPS_PROFILE ||
-			listview_id == IDC_APPS_SERVICE ||
-			listview_id == IDC_APPS_UWP ||
-			listview_id == IDC_RULES_BLOCKLIST ||
-			listview_id == IDC_RULES_SYSTEM ||
-			listview_id == IDC_RULES_CUSTOM
-			)
+		if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM)
 		{
 			_r_listview_setstyle (hwnd, listview_id, listview_ex_style);
 
-			if (
-				listview_id == IDC_APPS_PROFILE ||
-				listview_id == IDC_APPS_SERVICE ||
-				listview_id == IDC_APPS_UWP
-				)
+			if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 			{
 				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
 				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), 0, LVCFMT_RIGHT);
 			}
-			else if (
-				listview_id == IDC_RULES_BLOCKLIST ||
-				listview_id == IDC_RULES_SYSTEM ||
-				listview_id == IDC_RULES_CUSTOM
-				)
+			else
 			{
 				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
 				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_PROTOCOL, nullptr), 0, LVCFMT_RIGHT);
@@ -3083,20 +3055,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				_r_tab_setitem (hwnd, IDC_TAB, i, app.LocaleString (locale_id, nullptr));
 
-				if (
-					listview_id == IDC_APPS_PROFILE ||
-					listview_id == IDC_APPS_SERVICE ||
-					listview_id == IDC_APPS_UWP
-					)
+				if (listview_id >= IDC_APPS_PROFILE && listview_id >= IDC_APPS_UWP)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), 0);
 				}
-				else if (
-					listview_id == IDC_RULES_BLOCKLIST ||
-					listview_id == IDC_RULES_SYSTEM ||
-					listview_id == IDC_RULES_CUSTOM
-					)
+				else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id >= IDC_RULES_CUSTOM)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_PROTOCOL, nullptr), 0);
@@ -3372,11 +3336,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						const bool new_val = (lpnmlv->uNewState == 8192) ? true : false;
 
-						if (
-							listview_id == IDC_APPS_PROFILE ||
-							listview_id == IDC_APPS_SERVICE ||
-							listview_id == IDC_APPS_UWP
-							)
+						if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 						{
 							const size_t app_hash = lpnmlv->lParam;
 							PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
@@ -3413,11 +3373,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 						}
-						else if (
-							listview_id == IDC_RULES_BLOCKLIST ||
-							listview_id == IDC_RULES_SYSTEM ||
-							listview_id == IDC_RULES_CUSTOM
-							)
+						else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 						{
 							const size_t rule_idx = lpnmlv->lParam;
 							OBJECTS_VEC rules;
@@ -3521,10 +3477,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					UINT menu_id;
 
-					if (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_UWP)
+					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 						menu_id = IDM_APPS;
 
-					else if (listview_id == IDC_RULES_BLOCKLIST || listview_id == IDC_RULES_SYSTEM || listview_id == IDC_RULES_CUSTOM)
+					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 						menu_id = IDM_RULES;
 
 					else if (listview_id == IDC_NETWORK)
@@ -3544,7 +3500,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					app.LocaleMenu (hsubmenu, IDS_DISABLENOTIFICATIONS, IDM_DISABLENOTIFICATIONS, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_DISABLETIMER, IDM_DISABLETIMER, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
-					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY2, false, _r_fmt (L" \"%s\"\tCtrl+Shift+C", _r_listview_getcolumntext (hwnd, listview_id, lv_subitem).GetString ()));
+					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY2, false, _r_fmt (L" \"%s\"", _r_listview_getcolumntext (hwnd, listview_id, lv_subitem).GetString ()));
 					app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
 					app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
@@ -3695,6 +3651,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								if (ptr_network->af != AF_INET || ptr_network->state != MIB_TCP_STATE_ESTAB)
 									EnableMenuItem (hsubmenu, IDM_NETWORK_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+
+								if (!ptr_network->app_hash || !ptr_network->path)
+									EnableMenuItem (hsubmenu, IDM_EXPLORE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 							}
 
 							_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
@@ -3704,7 +3663,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					POINT pt = {0};
 					GetCursorPos (&pt);
 
-					INT cmd = TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd, nullptr);
+					const INT cmd = TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd, nullptr);
 
 					if (cmd)
 						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (cmd, 0), lv_subitem);
@@ -5002,11 +4961,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					bool is_changed = false;
 
-					if (
-						listview_id == IDC_APPS_PROFILE ||
-						listview_id == IDC_APPS_SERVICE ||
-						listview_id == IDC_APPS_UWP
-						)
+					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
 						OBJECTS_VEC rules;
 						size_t item = LAST_VALUE;
@@ -5053,11 +5008,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_freeobjects_vec (rules, &_app_dereferenceapp);
 						}
 					}
-					else if (
-						listview_id == IDC_RULES_BLOCKLIST ||
-						listview_id == IDC_RULES_SYSTEM ||
-						listview_id == IDC_RULES_CUSTOM
-						)
+					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 					{
 						OBJECTS_VEC rules;
 						size_t item = LAST_VALUE;
@@ -5128,11 +5079,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					const UINT listview_id = _app_gettab_id (hwnd);
 
-					if (
-						listview_id == IDC_APPS_PROFILE ||
-						listview_id == IDC_APPS_SERVICE ||
-						listview_id == IDC_APPS_UWP
-						)
+					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
 						size_t item = LAST_VALUE;
 
@@ -5255,19 +5202,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (item == LAST_VALUE)
 						break;
 
-					if (
-						listview_id == IDC_APPS_PROFILE ||
-						listview_id == IDC_APPS_SERVICE ||
-						listview_id == IDC_APPS_UWP
-						)
+					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
 						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_EXPLORE, 0), 0);
 					}
-					else if (
-						listview_id == IDC_RULES_BLOCKLIST ||
-						listview_id == IDC_RULES_SYSTEM ||
-						listview_id == IDC_RULES_CUSTOM
-						)
+					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 					{
 						const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
 						PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
