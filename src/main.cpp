@@ -3055,12 +3055,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				_r_tab_setitem (hwnd, IDC_TAB, i, app.LocaleString (locale_id, nullptr));
 
-				if (listview_id >= IDC_APPS_PROFILE && listview_id >= IDC_APPS_UWP)
+				if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), 0);
 				}
-				else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id >= IDC_RULES_CUSTOM)
+				else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_PROTOCOL, nullptr), 0);
