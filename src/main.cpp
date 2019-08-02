@@ -403,8 +403,8 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, p.first);
 
-					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->remote_fmt);
-					_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->local_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
 					_r_listview_setitem (hwnd, network_listview_id, item, 3, _app_getprotoname (ptr_network->protocol, ptr_network->af));
 					_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_getstatename (ptr_network->state));
 
@@ -2466,8 +2466,8 @@ void _app_tabs_init (HWND hwnd)
 			_r_listview_setstyle (hwnd, listview_id, listview_ex_style & ~LVS_EX_CHECKBOXES); // no checkboxes for network tab
 
 			_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0, LVCFMT_LEFT);
 			_r_listview_addcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), 0, LVCFMT_RIGHT);
 			_r_listview_addcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), 0, LVCFMT_RIGHT);
 		}
@@ -3105,8 +3105,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				else if (listview_id == IDC_NETWORK)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
-					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0);
-					_r_listview_setcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), 0);
 				}
