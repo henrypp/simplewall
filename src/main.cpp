@@ -3742,14 +3742,30 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						static const HBITMAP hbmp_enable = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_size);
 						static const HBITMAP hbmp_disable = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_size);
+						static const HBITMAP hbmp_notification = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_NOTIFICATIONS), icon_size);
+						static const HBITMAP hbmp_log = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOG), icon_size);
+						static const HBITMAP hbmp_log_open = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOGOPEN), icon_size);
+						static const HBITMAP hbmp_log_clear = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOGCLEAR), icon_size);
 
 						MENUITEMINFO mii = {0};
 
 						mii.cbSize = sizeof (mii);
 						mii.fMask = MIIM_BITMAP;
-						mii.hbmpItem = is_filtersinstalled ? hbmp_disable : hbmp_enable;
 
+						mii.hbmpItem = is_filtersinstalled ? hbmp_disable : hbmp_enable;
 						SetMenuItemInfo (hsubmenu, IDM_TRAY_START, FALSE, &mii);
+
+						mii.hbmpItem = hbmp_notification;
+						SetMenuItemInfo (hsubmenu, NOTIFICATIONS_ID, TRUE, &mii);
+
+						mii.hbmpItem = hbmp_log;
+						SetMenuItemInfo (hsubmenu, LOGGING_ID, TRUE, &mii);
+
+						mii.hbmpItem = hbmp_log_open;
+						SetMenuItemInfo (hsubmenu, IDM_TRAY_LOGSHOW, FALSE, &mii);
+
+						mii.hbmpItem = hbmp_log_clear;
+						SetMenuItemInfo (hsubmenu, IDM_TRAY_LOGCLEAR, FALSE, &mii);
 					}
 
 					// localize
