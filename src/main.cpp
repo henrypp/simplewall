@@ -3704,7 +3704,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					POINT pt = {0};
 					GetCursorPos (&pt);
 
-					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
+					INT cmd = TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd, nullptr);
+
+					if (cmd)
+						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (cmd, 0), lv_subitem);
 
 					DestroyMenu (hmenu);
 
@@ -4962,7 +4965,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					size_t item = LAST_VALUE;
 
 					const size_t lv_column_count = _r_listview_getcolumncount (hwnd, listview_id);
-					const size_t lv_column_current = _r_listview_getcolumncurrent (hwnd, listview_id);
+					const size_t lv_column_current = lparam;
 					const rstring divider = _r_fmt (L"%c ", DIVIDER_COPY);
 
 					rstring buffer;
