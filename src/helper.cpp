@@ -53,7 +53,7 @@ UINT _app_gettab_id (HWND hwnd, UINT page_id)
 	{
 		page_id = (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
 
-		if (page_id == LAST_VALUE)
+		if (page_id == UINT (-1))
 			page_id = 0;
 	}
 
@@ -202,7 +202,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 				if (af == AF_INET)
 					result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr);
 
-				else if (af == AF_INET6)
+				else
 					result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr);
 
 				if (result)

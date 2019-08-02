@@ -2799,7 +2799,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_profile_load (hwnd);
 
 			// add blocklist to update
-			app.UpdateAddComponent (L"Internal rules", L"profile_internal", _r_fmt (L"%I64u", config.profile_internal_timestamp), config.profile_internal_path, false);
+			app.UpdateAddComponent (L"Internal rules", L"profile_internal", _r_fmt (L"%" PRId64, config.profile_internal_timestamp), config.profile_internal_path, false);
 
 			// install filters
 			if (_wfp_isfiltersinstalled ())
@@ -4923,7 +4923,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const UINT listview_id = _app_gettab_id (hwnd);
 					size_t item = LAST_VALUE;
 
-					const size_t lv_column_count = _r_listview_getcolumncount (hwnd, listview_id);
+					const UINT lv_column_count = _r_listview_getcolumncount (hwnd, listview_id);
 					const size_t lv_column_current = lparam;
 					const rstring divider = _r_fmt (L"%c ", DIVIDER_COPY);
 
@@ -4933,7 +4933,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						if (LOWORD (wparam) == IDM_COPY)
 						{
-							for (size_t column_id = 0; column_id < lv_column_count; column_id++)
+							for (UINT column_id = 0; column_id < lv_column_count; column_id++)
 								buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_id)).Append (divider);
 						}
 						else
