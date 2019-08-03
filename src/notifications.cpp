@@ -254,7 +254,7 @@ bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app)
 	const time_t current_time = _r_unixtime_now ();
 	const time_t notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsLonglong ();
 
-	if (notification_timeout && ((current_time - ptr_app->last_notify) < notification_timeout))
+	if (notification_timeout && ((current_time - ptr_app->last_notify) <= notification_timeout))
 	{
 		_r_obj_dereference (ptr_log_object, &_app_dereferencelog);
 		return false;
@@ -1167,23 +1167,25 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 						_r_fastlock_releaseexclusive (&lock_access);
 
+						const UINT listview_id = _app_gettab_id (app.GetHWND ());
+
 						// set rule information
 						{
-							const UINT listview_rules_id = _app_getlistview_id (ptr_rule->type);
+							const UINT rules_listview_id = _app_getlistview_id (ptr_rule->type);
 
-							if (listview_rules_id)
+							if (rules_listview_id)
 							{
-								const size_t new_item = _r_listview_getitemcount (hwnd, listview_rules_id);
+								const size_t new_item = _r_listview_getitemcount (hwnd, rules_listview_id);
 
 								_r_fastlock_acquireshared (&lock_checkbox);
 
-								_r_listview_additem (app.GetHWND (), listview_rules_id, new_item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
-								_app_setruleiteminfo (app.GetHWND (), listview_rules_id, new_item, ptr_rule, true);
+								_r_listview_additem (app.GetHWND (), rules_listview_id, new_item, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
+								_app_setruleiteminfo (app.GetHWND (), rules_listview_id, new_item, ptr_rule, true);
 
 								_r_fastlock_releaseshared (&lock_checkbox);
 
-								if (listview_rules_id == _app_gettab_id (app.GetHWND ()))
-									_app_listviewsort (app.GetHWND (), listview_rules_id);
+								if (rules_listview_id == listview_id)
+									_app_listviewsort (app.GetHWND (), listview_id);
 							}
 						}
 
@@ -1197,16 +1199,16 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 								if (ptr_app)
 								{
-									const UINT listview_app_id = _app_getlistview_id (ptr_app->type);
+									const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
 
-									if (listview_app_id)
+									if (app_listview_id)
 									{
 										_r_fastlock_acquireshared (&lock_checkbox);
-										_app_setappiteminfo (app.GetHWND (), listview_app_id, _app_getposition (app.GetHWND (), listview_app_id, app_hash), app_hash, ptr_app);
+										_app_setappiteminfo (app.GetHWND (), app_listview_id, _app_getposition (app.GetHWND (), app_listview_id, app_hash), app_hash, ptr_app);
 										_r_fastlock_releaseshared (&lock_checkbox);
 
-										if (listview_app_id == _app_gettab_id (app.GetHWND ()))
-											_app_listviewsort (app.GetHWND (), listview_app_id);
+										if (app_listview_id == listview_id)
+											_app_listviewsort (app.GetHWND (), listview_id);
 									}
 								}
 

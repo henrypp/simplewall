@@ -346,8 +346,11 @@ void _app_getappicon (ITEM_APP* ptr_app, bool is_small, size_t * picon_id, HICON
 				* picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
 		}
 
-		if (ptr_app->type == DataAppService && *picon_id == config.icon_id)
-			* picon_id = config.icon_service_id;
+		if (ptr_app->type == DataAppService)
+		{
+			if (picon_id && *picon_id == config.icon_id)
+				*picon_id = config.icon_service_id;
+		}
 	}
 	else if (ptr_app->type == DataAppUWP)
 	{
@@ -2501,6 +2504,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 			}
 
 			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
+			ppQueryResultsSet = nullptr;
 		}
 	}
 
@@ -2530,6 +2534,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 			}
 
 			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
+			ppQueryResultsSet = nullptr;
 		}
 	}
 

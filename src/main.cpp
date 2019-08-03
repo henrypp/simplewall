@@ -2464,7 +2464,7 @@ void _app_toolbar_init (HWND hwnd)
 
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_BUTTONSTRUCTSIZE, sizeof (TBBUTTON), 0);
 
-	TBBUTTON buttonArray[12] = {0};
+	TBBUTTON buttonArray[14] = {0};
 
 	buttonArray[0].idCommand = IDM_TRAY_START;
 	buttonArray[0].fsState = TBSTATE_ENABLED;
@@ -2512,6 +2512,13 @@ void _app_toolbar_init (HWND hwnd)
 	buttonArray[11].fsState = TBSTATE_ENABLED;
 	buttonArray[11].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
 	buttonArray[11].iBitmap = 9;
+
+	buttonArray[12].fsStyle = BTNS_SEP;
+
+	buttonArray[13].idCommand = IDM_DONATE;
+	buttonArray[13].fsState = TBSTATE_ENABLED;
+	buttonArray[13].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
+	buttonArray[13].iBitmap = 11;
 
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_ADDBUTTONS, _countof (buttonArray), (LPARAM)buttonArray);
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
@@ -2754,6 +2761,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOGOPEN), icon_size_sm), nullptr);
 					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOGCLEAR), icon_size_sm), nullptr);
 					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ADD), icon_size_sm), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_HEARTH), icon_size_sm), nullptr);
 				}
 
 				config.himg_rules = ImageList_Create (icon_size_md, icon_size_md, ILC_COLOR32 | ILC_MASK, 0, 5);
@@ -3003,13 +3011,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, app.LocaleString (IDS_REFRESH, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT);
 			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, app.LocaleString (IDS_SETTINGS, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT);
 
-			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT);
+			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."), BTNS_BUTTON | BTNS_AUTOSIZE);
 
 			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, app.LocaleString (IDS_ENABLENOTIFICATIONS_CHK, nullptr), BTNS_CHECK | BTNS_AUTOSIZE);
 			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, app.LocaleString (IDS_ENABLELOG_CHK, nullptr), BTNS_CHECK | BTNS_AUTOSIZE);
 
 			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, app.LocaleString (IDS_LOGSHOW, L" (Ctrl+I)"), BTNS_BUTTON | BTNS_AUTOSIZE);
 			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, app.LocaleString (IDS_LOGCLEAR, L" (Ctrl+X)"), BTNS_BUTTON | BTNS_AUTOSIZE);
+
+			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_DONATE, app.LocaleString (IDS_DONATE, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE);
 
 			// set rebar size
 			{
