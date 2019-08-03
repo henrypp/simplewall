@@ -888,9 +888,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
 
 							if (ptr_log && ptr_log->app_hash)
-							{
 								StringCchCopy (buffer, _countof (buffer), _app_gettooltip (IDC_APPS_PROFILE, ptr_log->app_hash));
-							}
 
 							_r_obj_dereference (ptr_log_object, &_app_dereferencelog);
 						}
@@ -944,8 +942,6 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 									if (ptr_app)
 									{
-										const UINT listview_id = _app_getlistview_id (ptr_app->type);
-										const size_t item = _app_getposition (app.GetHWND (), listview_id, ptr_log->app_hash);
 										const bool is_remove = ptr_rule->is_enabled && (ptr_rule->apps.find (ptr_log->app_hash) != ptr_rule->apps.end ());
 
 										if (is_remove)
@@ -961,11 +957,30 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 											_app_ruleenable (ptr_rule, true);
 										}
 
-										if (item != LAST_VALUE)
+										const UINT listview_id = _app_gettab_id (app.GetHWND ());
+										const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+										const UINT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+
 										{
-											_r_fastlock_acquireshared (&lock_checkbox);
-											_app_setappiteminfo (app.GetHWND (), listview_id, item, ptr_log->app_hash, ptr_app);
-											_r_fastlock_releaseshared (&lock_checkbox);
+											const size_t app_item = _app_getposition (app.GetHWND (), app_listview_id, ptr_log->app_hash);
+
+											if (app_item != LAST_VALUE)
+											{
+												_r_fastlock_acquireshared (&lock_checkbox);
+												_app_setappiteminfo (app.GetHWND (), app_listview_id, app_item, ptr_log->app_hash, ptr_app);
+												_r_fastlock_releaseshared (&lock_checkbox);
+											}
+										}
+
+										{
+											const size_t rule_item = _app_getposition (app.GetHWND (), rule_listview_id, rule_idx);
+
+											if (rule_item != LAST_VALUE)
+											{
+												_r_fastlock_acquireshared (&lock_checkbox);
+												_app_setruleiteminfo (app.GetHWND (), rule_listview_id, rule_item, ptr_rule, false);
+												_r_fastlock_releaseshared (&lock_checkbox);
+											}
 										}
 
 										OBJECTS_VEC rules;
@@ -973,12 +988,13 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 										_wfp_create4filters (rules, __LINE__);
 
-										if (_app_gettab_id (app.GetHWND ()) == listview_id)
+										if (listview_id == app_listview_id || listview_id == rule_listview_id)
 										{
 											_app_listviewsort (app.GetHWND (), listview_id);
 											_r_listview_redraw (app.GetHWND (), listview_id);
 										}
 
+										_app_refreshstatus (app.GetHWND ());
 										_app_profile_save ();
 									}
 

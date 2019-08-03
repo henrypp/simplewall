@@ -3207,11 +3207,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			{
 				UINT app_listview_id = 0;
-				_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id));
 
-				if (app_listview_id)
+				if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 				{
-					_app_listviewsort (hwnd, app_listview_id);
+					if (app_listview_id == _app_gettab_id (hwnd))
+						_app_listviewsort (hwnd, app_listview_id);
+
 					_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
 				}
 			}
@@ -3897,110 +3898,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 			}
 
-			//switch (wparam)
-			//{
-			//	case DBT_DEVICEARRIVAL:
-			//	{
-			//		RDBG (L"DBT_DEVICEARRIVAL");
-			//		break;
-			//	}
-			//	case DBT_DEVICEQUERYREMOVEFAILED:
-			//	{
-			//		RDBG (L"DBT_DEVICEQUERYREMOVEFAILED");
-			//		break;
-			//	}
-			//	case DBT_DEVICEREMOVEPENDING:
-			//	{
-			//		RDBG (L"DBT_DEVICEREMOVEPENDING");
-			//		break;
-			//	}
-			//	case DBT_DEVICETYPESPECIFIC:
-			//	{
-			//		RDBG (L"DBT_DEVICETYPESPECIFIC");
-			//		break;
-			//	}
-			//	case DBT_CUSTOMEVENT:
-			//	{
-			//		RDBG (L"DBT_CUSTOMEVENT");
-			//		break;
-			//	}
-			//	case DBT_DEVTYP_OEM:
-			//	{
-			//		RDBG (L"DBT_DEVTYP_OEM");
-			//		break;
-			//	}
-			//	case DBT_USERDEFINED:
-			//	{
-			//		RDBG (L"DBT_USERDEFINED");
-			//		break;
-			//	}
-			//	case DBT_DEVNODES_CHANGED:
-			//	{
-			//		RDBG (L"DBT_DEVNODES_CHANGED");
-			//		break;
-			//	}
-			//	case DBT_QUERYCHANGECONFIG:
-			//	{
-			//		RDBG (L"DBT_QUERYCHANGECONFIG");
-			//		break;
-			//	}
-			//	case DBT_CONFIGCHANGED:
-			//	{
-			//		RDBG (L"DBT_CONFIGCHANGED");
-			//		break;
-			//	}
-			//	case DBT_CONFIGCHANGECANCELED:
-			//	{
-			//		RDBG (L"DBT_CONFIGCHANGECANCELED");
-			//		break;
-			//	}
-			//	case DBT_MONITORCHANGE:
-			//	{
-			//		RDBG (L"DBT_MONITORCHANGE");
-			//		break;
-			//	}
-			//	case DBT_SHELLLOGGEDON:
-			//	{
-			//		RDBG (L"DBT_SHELLLOGGEDON");
-			//		break;
-			//	}
-			//	case DBT_CONFIGMGAPI32:
-			//	{
-			//		RDBG (L"DBT_CONFIGMGAPI32");
-			//		break;
-			//	}
-			//	case DBT_VXDINITCOMPLETE:
-			//	{
-			//		RDBG (L"DBT_VXDINITCOMPLETE");
-			//		break;
-			//	}
-			//	case DBT_NO_DISK_SPACE:
-			//	{
-			//		RDBG (L"DBT_NO_DISK_SPACE");
-			//		break;
-			//	}
-			//	case DBT_LOW_DISK_SPACE:
-			//	{
-			//		RDBG (L"DBT_LOW_DISK_SPACE");
-			//		break;
-			//	}
-			//	case DBT_CONFIGMGPRIVATE:
-			//	{
-			//		RDBG (L"DBT_CONFIGMGPRIVATE");
-			//		break;
-			//	}
-			//	case DBT_DEVICEREMOVECOMPLETE:
-			//	{
-			//		RDBG (L"DBT_DEVICEREMOVECOMPLETE");
-			//		break;
-			//	}
-			//	case DBT_DEVICEQUERYREMOVE:
-			//	{
-			//		RDBG (L"DBT_DEVICEQUERYREMOVE");
-			//		break;
-			//	}
-			//}
-
 			break;
 		}
 
@@ -4013,9 +3910,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
-				const UINT listview_id = _app_gettab_id (hwnd);
+				const UINT app_listview_id = _app_gettab_id (hwnd);
 
-				if (!SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
+				if (!SendDlgItemMessage (hwnd, app_listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
 					return FALSE;
 
 				size_t item = LAST_VALUE;
@@ -4031,9 +3928,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				if (ptr_rule)
 				{
-					while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+					while ((item = (size_t)SendDlgItemMessage (hwnd, app_listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 					{
-						const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+						const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, app_listview_id, item);
 
 						if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 							continue;
@@ -4067,7 +3964,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							_r_fastlock_acquireshared (&lock_checkbox);
-							_app_setappiteminfo (hwnd, listview_id, item, app_hash, ptr_app);
+							_app_setappiteminfo (hwnd, app_listview_id, item, app_hash, ptr_app);
 							_r_fastlock_releaseshared (&lock_checkbox);
 						}
 
@@ -4091,7 +3988,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 
-				_app_listviewsort (hwnd, listview_id);
+				_app_listviewsort (hwnd, app_listview_id);
 
 				_app_refreshstatus (hwnd);
 				_app_profile_save ();
@@ -4794,16 +4691,20 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 						}
 
-						_app_refreshstatus (hwnd);
-						_app_profile_save ();
-
 						{
 							UINT app_listview_id = 0;
-							_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id));
 
-							_app_listviewsort (hwnd, app_listview_id);
-							_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
+							if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
+							{
+								if (app_listview_id == _app_gettab_id (hwnd))
+									_app_listviewsort (hwnd, app_listview_id);
+
+								_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
+							}
 						}
+
+						_app_refreshstatus (hwnd);
+						_app_profile_save ();
 					}
 
 					break;
