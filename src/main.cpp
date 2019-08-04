@@ -4428,7 +4428,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						for (UINT i = 0; i < (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 							_app_listviewsetfont (hwnd, _app_gettab_id (hwnd, i), false);
 
-						_app_listviewsetfont (hwnd, IDC_TOOLBAR, false);
+						_app_listviewsetfont (config.hrebar, IDC_TOOLBAR, false);
 
 						RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
 					}
