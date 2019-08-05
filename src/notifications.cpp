@@ -913,7 +913,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
-				PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+				PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 				if (!ptr_rule_object)
 					break;

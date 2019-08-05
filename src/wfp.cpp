@@ -1114,11 +1114,11 @@ bool _wfp_create4filters (OBJECTS_VEC & ptr_rules, UINT line, bool is_intransact
 
 					// sync remote rules and local rules
 					if (!rule_remote_arr.empty () && rules_remote_length > j)
-						rule_remote = rule_remote_arr.at (j).Trim (L"\r\n ");
+						rule_remote = rule_remote_arr.at (j).Trim (DIVIDER_TRIM);
 
 					// sync local rules and remote rules
 					if (!rule_local_arr.empty () && rules_local_length > j)
-						rule_local = rule_local_arr.at (j).Trim (L"\r\n ");
+						rule_local = rule_local_arr.at (j).Trim (DIVIDER_TRIM);
 
 					// apply rules for services hosts
 					if (ptr_rule->is_forservices)

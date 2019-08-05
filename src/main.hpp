@@ -65,10 +65,10 @@ enum EnumDataType
 	DataRuleBlocklist,
 	DataRuleSystem,
 	DataRuleCustom,
+	DataRulesConfig,
 	DataTypePort,
 	DataTypeIp,
 	DataTypeHost,
-	DataRulesConfig
 };
 
 enum EnumXmlType
@@ -150,6 +150,7 @@ void _app_dereferencelog (PVOID pdata);
 #define DIVIDER_APP L"|"
 #define DIVIDER_RULE L";"
 #define DIVIDER_RULE_RANGE L'-'
+#define DIVIDER_TRIM L"\r\n "
 
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_NOTIFICATION L"Calibri"
@@ -393,6 +394,7 @@ typedef struct tagITEM_RULE
 	bool is_forservices = false;
 	bool is_readonly = false;
 	bool is_enabled = false;
+	bool is_enabled_default = false;
 	bool is_block = false;
 } ITEM_RULE, *PITEM_RULE;
 

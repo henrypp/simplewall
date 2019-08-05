@@ -693,7 +693,7 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 							buffer.Append (L"\r\n");
 						}
 
-						buffer.Trim (L"\r\n ");
+						buffer.Trim (DIVIDER_TRIM);
 
 						// get signature information
 						LPWSTR ptr_cache = nullptr;
@@ -2735,7 +2735,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 
 bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 {
-	rule.Trim (L"\r\n "); // trim whitespace
+	rule.Trim (DIVIDER_TRIM); // trim whitespace
 
 	if (rule.IsEmpty ())
 		return true;
