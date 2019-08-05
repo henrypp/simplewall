@@ -488,7 +488,7 @@ BEGIN
 	IDS_ADD_PROCESS "Add process"
 	IDS_ADD_PACKAGE "Add package"
 	IDS_ADD_SERVICE "Add service"
-	IDS_ALL "All"
+	IDS_ANY "Any"
 	IDS_DISABLENOTIFICATIONS "Disable notifications"
 	IDS_OPENRULESEDITOR "Create rule"
 	IDS_TIMER "Timer"

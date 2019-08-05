@@ -885,10 +885,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				_r_ctrl_enable (hwnd, IDC_APPS_LV, false);
 			}
 
+			rstring text_any = app.LocaleString (IDS_ANY, nullptr);
+
 			// direction
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_DIRECTION_1, nullptr).GetString ());
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 1, (LPARAM)app.LocaleString (IDS_DIRECTION_2, nullptr).GetString ());
-			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 2, (LPARAM)app.LocaleString (IDS_DIRECTION_3, nullptr).GetString ());
+			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 2, (LPARAM)text_any.GetString ());
 
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->dir, 0);
 
@@ -907,7 +909,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					IPPROTO_SCTP,
 				};
 
-				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_ALL, nullptr).GetString ());
+				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, 0, (LPARAM)text_any.GetString ());
 				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETCURSEL, 0, 0);
 
 				for (size_t i = 0; i < _countof (protos); i++)
@@ -923,7 +925,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 
 			// family (ports-only)
-			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_ALL, nullptr).GetString ());
+			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_INSERTSTRING, 0, (LPARAM)text_any.GetString ());
 			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_SETITEMDATA, 0, (LPARAM)AF_UNSPEC);
 
 			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_INSERTSTRING, 1, (LPARAM)L"IPv4");
@@ -3080,12 +3082,52 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), 0);
+
+					for (size_t j = 0; j < _r_listview_getitemcount (hwnd, listview_id); j++)
+					{
+						const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, j);
+						PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+
+						if (!ptr_app_object)
+							continue;
+
+						PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+
+						if (ptr_app)
+						{
+							_r_fastlock_acquireshared (&lock_checkbox);
+							_app_setappiteminfo (hwnd, listview_id, j, app_hash, ptr_app);
+							_r_fastlock_releaseshared (&lock_checkbox);
+						}
+
+						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+					}
 				}
 				else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_PROTOCOL, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_DIRECTION, nullptr), 0);
+
+					for (size_t j = 0; j < _r_listview_getitemcount (hwnd, listview_id); j++)
+					{
+						const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, j);
+						PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
+
+						if (!ptr_rule_object)
+							continue;
+
+						PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+
+						if (ptr_rule)
+						{
+							_r_fastlock_acquireshared (&lock_checkbox);
+							_app_setruleiteminfo (hwnd, listview_id, j, ptr_rule, false);
+							_r_fastlock_releaseshared (&lock_checkbox);
+						}
+
+						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+					}
 				}
 				else if (listview_id == IDC_NETWORK)
 				{
@@ -3107,6 +3149,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_addstyle (config.hnotification, IDC_BLOCK_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 			_app_notifyrefresh (config.hnotification, false);
+
+			_app_listviewresize (hwnd, _app_gettab_id (hwnd));
 			_app_refreshstatus (hwnd);
 
 			break;
@@ -3657,7 +3701,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							DeleteMenu (hsubmenu, IDM_OPENRULESEDITOR, MF_BYCOMMAND);
 							DeleteMenu (hsubmenu, IDM_DELETE, MF_BYCOMMAND);
-							DeleteMenu (hsubmenu, 6, MF_BYPOSITION);
 						}
 					}
 					else if (menu_id == IDM_NETWORK)

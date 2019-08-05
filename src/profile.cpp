@@ -599,8 +599,8 @@ void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE 
 		return;
 
 	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->type == DataRuleCustom && ptr_rule->is_readonly ? _r_fmt (L"%s" SZ_READONLY_RULE, ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
-	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC) : app.LocaleString (IDS_ALL, nullptr));
-	_r_listview_setitem (hwnd, listview_id, item, 2, app.LocaleString (IDS_DIRECTION_1 + ptr_rule->dir, nullptr));
+	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC) : app.LocaleString (IDS_ANY, nullptr));
+	_r_listview_setitem (hwnd, listview_id, item, 2, app.LocaleString (ptr_rule->dir == FWP_DIRECTION_MAX ? IDS_ANY : IDS_DIRECTION_1 + ptr_rule->dir, nullptr));
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_rule->is_enabled);
 
