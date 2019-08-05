@@ -215,7 +215,7 @@ PR_OBJECT _app_getappitem (size_t app_hash)
 	return _r_obj_reference (apps[app_hash]);
 }
 
-PR_OBJECT _app_getruleitem (size_t idx)
+PR_OBJECT _app_getrulebyid (size_t idx)
 {
 	if (idx == LAST_VALUE || idx >= rules_arr.size ())
 		return nullptr;
@@ -223,7 +223,7 @@ PR_OBJECT _app_getruleitem (size_t idx)
 	return _r_obj_reference (rules_arr.at (idx));
 }
 
-PR_OBJECT _app_getruleitem (size_t rule_hash, EnumDataType type, BOOL is_readonly)
+PR_OBJECT _app_getrulebyhash (size_t rule_hash)
 {
 	if (!rule_hash)
 		return nullptr;
@@ -235,22 +235,16 @@ PR_OBJECT _app_getruleitem (size_t rule_hash, EnumDataType type, BOOL is_readonl
 		if (!ptr_rule_object)
 			continue;
 
-		const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
-		if (!ptr_rule || ptr_rule->type != type)
+		if (ptr_rule)
 		{
-			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
-			continue;
+			if (ptr_rule->is_readonly)
+			{
+				if (ptr_rule->pname && _r_str_hash (ptr_rule->pname) == rule_hash)
+					return ptr_rule_object;
+			}
 		}
-
-		if (is_readonly != -1 && ((BOOL)ptr_rule->is_readonly != (is_readonly)))
-		{
-			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
-			continue;
-		}
-
-		if (ptr_rule->pname && _r_str_hash (ptr_rule->pname) == rule_hash)
-			return ptr_rule_object;
 
 		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 	}
@@ -392,7 +386,7 @@ void _app_getcount (PITEM_STATUS ptr_status)
 	}
 }
 
-size_t _app_getappgroup (size_t app_hash, PITEM_APP const ptr_app)
+size_t _app_getappgroup (size_t app_hash, PITEM_APP ptr_app)
 {
 	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
 	//		return LAST_VALUE;
@@ -433,13 +427,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 {
 	rstring result;
 
-	if (
-		listview_id == IDC_APPS_LV ||
-		listview_id == IDC_APPS_PROFILE ||
-		listview_id == IDC_APPS_SERVICE ||
-		listview_id == IDC_APPS_UWP ||
-		listview_id == IDC_NETWORK
-		)
+	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_APPS_LV || listview_id == IDC_NETWORK)
 	{
 		if (listview_id == IDC_NETWORK)
 		{
@@ -565,7 +553,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 		listview_id == IDC_RULES_CUSTOM
 		)
 	{
-		PR_OBJECT ptr_rule_object = _app_getruleitem (idx);
+		PR_OBJECT ptr_rule_object = _app_getrulebyid (idx);
 
 		if (ptr_rule_object)
 		{
@@ -647,22 +635,19 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 
 	ptr_rule->is_enabled = is_enable;
 
-	if (ptr_rule->is_readonly && ptr_rule->pname)
+	if (ptr_rule->is_readonly && ptr_rule->pname && ptr_rule->pname[0])
 	{
 		const size_t rule_hash = _r_str_hash (ptr_rule->pname);
 
 		if (rule_hash)
 		{
-			PR_OBJECT ptr_config_object = nullptr;
-			PITEM_RULE_CONFIG ptr_config = nullptr;
-
 			if (rules_config.find (rule_hash) != rules_config.end ())
 			{
-				ptr_config_object = _r_obj_reference (rules_config[rule_hash]);
+				PR_OBJECT ptr_config_object = _r_obj_reference (rules_config[rule_hash]);
 
 				if (ptr_config_object)
 				{
-					ptr_config = (PITEM_RULE_CONFIG)ptr_config_object->pdata;
+					PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)ptr_config_object->pdata;
 
 					if (ptr_config)
 						ptr_config->is_enabled = is_enable;
@@ -671,7 +656,7 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 				}
 				else
 				{
-					ptr_config = new ITEM_RULE_CONFIG;
+					PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
 
 					ptr_config->is_enabled = is_enable;
 					_r_str_alloc (&ptr_config->pname, _r_str_length (ptr_rule->pname), ptr_rule->pname);
@@ -681,25 +666,95 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 			}
 			else
 			{
-				ptr_config = new ITEM_RULE_CONFIG;
-				ptr_config_object = _r_obj_allocate (ptr_config);
+				PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
 
 				ptr_config->is_enabled = is_enable;
 				_r_str_alloc (&ptr_config->pname, _r_str_length (ptr_rule->pname), ptr_rule->pname);
 
-				rules_config[rule_hash] = ptr_config_object;
+				rules_config[rule_hash] = _r_obj_allocate (ptr_config);
 			}
 		}
 	}
 }
 
-void _app_ruleblocklistset (bool is_instantapply)
+void _app_ruleenable2 (PITEM_RULE ptr_rule, bool is_enable)
 {
-	const INT blocklist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
-	const INT blocklist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2);
-	const INT blocklist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2);
+	if (!ptr_rule)
+		return;
 
+	ptr_rule->is_enabled = is_enable;
+
+	if (ptr_rule->is_readonly && ptr_rule->pname && ptr_rule->pname[0])
+	{
+		const size_t rule_hash = _r_str_hash (ptr_rule->pname);
+
+		if (rule_hash)
+		{
+			if (rules_config.find (rule_hash) != rules_config.end ())
+			{
+				PR_OBJECT ptr_config_object = _r_obj_reference (rules_config[rule_hash]);
+
+				if (ptr_config_object)
+				{
+					PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)ptr_config_object->pdata;
+
+					if (ptr_config)
+						ptr_config->is_enabled = is_enable;
+
+					_r_obj_dereference (ptr_config_object, &_app_dereferenceruleconfig);
+				}
+			}
+		}
+	}
+}
+
+bool _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state)
+{
+	if (new_state == -1)
+		return false; // don't change
+
+	if (new_state == 0 && !ptr_rule->is_enabled)
+		return false; // not changed
+
+	if (new_state == 1 && ptr_rule->is_enabled && !ptr_rule->is_block)
+		return false; // not changed
+
+	if (new_state == 2 && ptr_rule->is_enabled && ptr_rule->is_block)
+		return false; // not changed
+
+	ptr_rule->is_enabled = (new_state != 0);
+	ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
+
+	if (new_state)
+		ptr_rule->is_block = (new_state != 1);
+
+	return true;
+}
+
+bool _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT update_state, INT extra_state)
+{
+	if (!ptr_rule || ptr_rule->type != DataRuleBlocklist || !ptr_rule->pname || !ptr_rule->pname[0])
+		return false;
+
+	if (_wcsnicmp (ptr_rule->pname, L"spy_", 4) == 0)
+		return _app_ruleblocklistsetchange (ptr_rule, spy_state);
+
+	else if (_wcsnicmp (ptr_rule->pname, L"update_", 7) == 0)
+		return _app_ruleblocklistsetchange (ptr_rule, update_state);
+
+	else if (_wcsnicmp (ptr_rule->pname, L"extra_", 6) == 0)
+		return _app_ruleblocklistsetchange (ptr_rule, extra_state);
+
+	// fallback: block rules with other names by default!
+	return _app_ruleblocklistsetchange (ptr_rule, 2);
+}
+
+void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extra_state, bool is_instantapply)
+{
 	OBJECTS_VEC rules;
+
+	const UINT listview_id = _app_getlistview_id (DataRuleBlocklist);
+	size_t changes_count = 0;
 
 	for (size_t i = 0; i < rules_arr.size (); i++)
 	{
@@ -708,34 +763,33 @@ void _app_ruleblocklistset (bool is_instantapply)
 		if (!ptr_rule_object)
 			continue;
 
-		const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
-		if (!ptr_rule || ptr_rule->type != DataRuleBlocklist || !ptr_rule->pname || !ptr_rule->pname[0])
+		if (!ptr_rule || ptr_rule->type != DataRuleBlocklist)
 		{
 			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 			continue;
 		}
 
-		if (_wcsnicmp (ptr_rule->pname, L"spy_", 4) == 0)
+		if (!_app_ruleblocklistsetstate (ptr_rule, spy_state, update_state, extra_state))
 		{
-			ptr_rule->is_block = blocklist_spy_state != 1;
-			ptr_rule->is_enabled = blocklist_spy_state != 0;
+			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+			continue;
 		}
-		else if (_wcsnicmp (ptr_rule->pname, L"update_", 7) == 0)
+
+		changes_count += 1;
+		_app_ruleenable2 (ptr_rule, ptr_rule->is_enabled);
+
+		if (hwnd)
 		{
-			ptr_rule->is_block = blocklist_update_state != 1;
-			ptr_rule->is_enabled = blocklist_update_state != 0;
-		}
-		else if (_wcsnicmp (ptr_rule->pname, L"extra_", 6) == 0)
-		{
-			ptr_rule->is_block = blocklist_extra_state != 1;
-			ptr_rule->is_enabled = blocklist_extra_state != 0;
-		}
-		else
-		{
-			// fallback: block rules with other names by default!
-			ptr_rule->is_block = true;
-			ptr_rule->is_enabled = true;
+			const size_t pos = _app_getposition (hwnd, listview_id, i);
+
+			if (pos != LAST_VALUE)
+			{
+				_r_fastlock_acquireshared (&lock_checkbox);
+				_app_setruleiteminfo (hwnd, listview_id, pos, ptr_rule, false);
+				_r_fastlock_releaseshared (&lock_checkbox);
+			}
 		}
 
 		if (is_instantapply)
@@ -747,10 +801,23 @@ void _app_ruleblocklistset (bool is_instantapply)
 		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 	}
 
-	if (is_instantapply)
+	if (changes_count)
 	{
-		_wfp_create4filters (rules, __LINE__);
-		_app_freeobjects_vec (rules, &_app_dereferencerule);
+		if (hwnd)
+		{
+			if (_app_gettab_id (hwnd) == listview_id)
+				_app_listviewsort (hwnd, listview_id);
+
+			_app_refreshstatus (hwnd);
+		}
+
+		if (is_instantapply)
+		{
+			_wfp_create4filters (rules, __LINE__);
+			_app_freeobjects_vec (rules, &_app_dereferencerule);
+		}
+
+		_app_profile_save (); // required!
 	}
 }
 
@@ -904,20 +971,17 @@ bool _app_isappexists (ITEM_APP* ptr_app)
 	return true;
 }
 
-bool _app_isruleblocklist (LPCWSTR name)
-{
-	if (!name || !name[0])
-		return false;
-
-	if (
-		_wcsnicmp (name, L"extra_", 6) == 0 ||
-		_wcsnicmp (name, L"spy_", 4) == 0 ||
-		_wcsnicmp (name, L"update_", 7) == 0
-		)
-		return true;
-
-	return false;
-}
+//bool _app_isruleblocklist (LPCWSTR name)
+//{
+//	if (
+//		_wcsnicmp (name, L"extra_", 6) == 0 ||
+//		_wcsnicmp (name, L"spy_", 4) == 0 ||
+//		_wcsnicmp (name, L"update_", 7) == 0
+//		)
+//		return true;
+//
+//	return false;
+//}
 
 bool _app_isrulehost (LPCWSTR rule)
 {
@@ -1025,18 +1089,20 @@ void _app_profile_load_fallback ()
 
 void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT version)
 {
+	const INT blocklist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
+	const INT blocklist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2);
+	const INT blocklist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2);
+
 	for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
 	{
 		if (type == DataAppRegular)
 		{
-			_r_fastlock_acquireexclusive (&lock_access);
+			_r_fastlock_acquireshared (&lock_access);
 			_app_addapplication (nullptr, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), 0, item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool (), true);
-			_r_fastlock_releaseexclusive (&lock_access);
+			_r_fastlock_releaseshared (&lock_access);
 		}
 		else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleCustom)
 		{
-			const bool is_internal = (type == DataRuleSystem);
-
 			PITEM_RULE ptr_rule = new ITEM_RULE;
 
 			const size_t rule_hash = _r_str_hash (item.attribute (L"name").as_string ());
@@ -1063,7 +1129,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 			ptr_rule->protocol = (UINT8)item.attribute (L"protocol").as_int ();
 			ptr_rule->af = (ADDRESS_FAMILY)item.attribute (L"version").as_int ();
 
-			ptr_rule->type = ((is_internal && item.attribute (L"is_custom").as_bool ()) ? DataRuleCustom : type);
+			ptr_rule->type = ((type == DataRuleSystem && item.attribute (L"is_custom").as_bool ()) ? DataRuleCustom : type);
 			ptr_rule->is_block = item.attribute (L"is_block").as_bool ();
 			ptr_rule->is_forservices = item.attribute (L"is_services").as_bool ();
 			ptr_rule->is_readonly = (type != DataRuleCustom);
@@ -1079,6 +1145,14 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 				ptr_rule->weight = ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM;
 
 			ptr_rule->is_enabled = item.attribute (L"is_enabled").as_bool ();
+
+			if (type == DataRuleBlocklist)
+				_app_ruleblocklistsetstate (ptr_rule, blocklist_spy_state, blocklist_update_state, blocklist_extra_state);
+			else
+				ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
+
+			// load rules config
+			const bool is_internal = (type == DataRuleBlocklist || type == DataRuleSystem);
 
 			if (is_internal)
 			{
@@ -1128,7 +1202,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 
 					for (size_t i = 0; i < arr.size (); i++)
 					{
-						const rstring app_path = _r_path_expand (arr.at (i).Trim (L"\r\n "));
+						const rstring app_path = _r_path_expand (arr.at (i).Trim (DIVIDER_TRIM));
 						size_t app_hash = app_path.Hash ();
 
 						if (app_hash)
@@ -1138,9 +1212,9 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 
 							if (!_app_isappfound (app_hash))
 							{
-								_r_fastlock_acquireexclusive (&lock_access);
+								_r_fastlock_acquireshared (&lock_access);
 								app_hash = _app_addapplication (nullptr, app_path, 0, 0, 0, false, false, true);
-								_r_fastlock_releaseexclusive (&lock_access);
+								_r_fastlock_releaseshared (&lock_access);
 							}
 
 							if (ptr_rule->type == DataRuleSystem)
@@ -1156,9 +1230,9 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 				}
 			}
 
-			_r_fastlock_acquireexclusive (&lock_access);
+			_r_fastlock_acquireshared (&lock_access);
 			rules_arr.push_back (_r_obj_allocate (ptr_rule));
-			_r_fastlock_releaseexclusive (&lock_access);
+			_r_fastlock_releaseshared (&lock_access);
 		}
 		else if (type == DataRulesConfig)
 		{
@@ -1168,8 +1242,8 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 				continue;
 
 			// do not load blocklist config (old versions hack)!
-			if (_app_isruleblocklist (rule_name))
-				continue;
+			//if (_app_isruleblocklist (rule_name))
+			//	continue;
 
 			const size_t rule_hash = rule_name.Hash ();
 
@@ -1187,7 +1261,7 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 					for (size_t i = 0; i < attr_apps.GetLength (); i++)
 					{
 						if (attr_apps[i] == L';')
-							attr_apps[i] = L'|';
+							attr_apps[i] = DIVIDER_APP[0];
 					}
 				}
 
@@ -1268,12 +1342,8 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	// clean listview
 	if (hwnd)
 	{
-		_r_listview_deleteallitems (hwnd, IDC_APPS_PROFILE);
-		_r_listview_deleteallitems (hwnd, IDC_APPS_SERVICE);
-		_r_listview_deleteallitems (hwnd, IDC_APPS_UWP);
-		_r_listview_deleteallitems (hwnd, IDC_RULES_BLOCKLIST);
-		_r_listview_deleteallitems (hwnd, IDC_RULES_SYSTEM);
-		_r_listview_deleteallitems (hwnd, IDC_RULES_CUSTOM);
+		for (UINT i = IDC_APPS_PROFILE; i <= IDC_RULES_CUSTOM; i++)
+			_r_listview_deleteallitems (hwnd, i);
 	}
 
 	_r_fastlock_acquireexclusive (&lock_access);
@@ -1447,10 +1517,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		_app_profile_save (); // required!
 	}
 
-	_r_fastlock_acquireshared (&lock_access);
-	_app_ruleblocklistset (false);
-	_r_fastlock_releaseshared (&lock_access);
-
 	if (hwnd)
 	{
 		_r_fastlock_acquireshared (&lock_access);
@@ -1517,7 +1583,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			if (!ptr_rule_object)
 				continue;
 
-			const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+			PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 			if (ptr_rule)
 			{
@@ -1571,11 +1637,11 @@ void _app_profile_save (LPCWSTR path_custom)
 		pugi::xml_node root_rules_custom = root.append_child (L"rules_custom");
 		pugi::xml_node root_rule_config = root.append_child (L"rules_config");
 
-		_r_fastlock_acquireshared (&lock_access);
-
 		// save apps
 		if (root_apps)
 		{
+			_r_fastlock_acquireshared (&lock_access);
+
 			for (auto &p : apps)
 			{
 				PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
@@ -1628,11 +1694,15 @@ void _app_profile_save (LPCWSTR path_custom)
 
 				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 			}
+
+			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		// save user rules
 		if (root_rules_custom)
 		{
+			_r_fastlock_acquireshared (&lock_access);
+
 			for (size_t i = 0; i < rules_arr.size (); i++)
 			{
 				PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
@@ -1640,7 +1710,7 @@ void _app_profile_save (LPCWSTR path_custom)
 				if (!ptr_rule_object)
 					continue;
 
-				const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+				PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 				if (!ptr_rule || ptr_rule->is_readonly || !ptr_rule->pname || !ptr_rule->pname[0])
 				{
@@ -1691,14 +1761,18 @@ void _app_profile_save (LPCWSTR path_custom)
 
 				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 			}
+
+			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		// save rules config
 		if (root_rule_config)
 		{
+			_r_fastlock_acquireshared (&lock_access);
+
 			for (auto &p : rules_config)
 			{
-				const PR_OBJECT ptr_config_object = _r_obj_reference (p.second);
+				PR_OBJECT ptr_config_object = _r_obj_reference (p.second);
 
 				if (!ptr_config_object)
 					continue;
@@ -1711,42 +1785,58 @@ void _app_profile_save (LPCWSTR path_custom)
 					continue;
 				}
 
+				rstring rule_apps;
+				bool is_enabled_default = ptr_config->is_enabled;
+
+				{
+					const size_t rule_hash = _r_str_hash (ptr_config->pname);
+					PR_OBJECT ptr_rule_object = _app_getrulebyhash (rule_hash);
+
+					if (ptr_rule_object)
+					{
+						PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+
+						if (ptr_rule)
+						{
+							is_enabled_default = ptr_rule->is_enabled_default;
+
+							if (ptr_rule->type == DataRuleCustom && !ptr_rule->apps.empty ())
+								rule_apps = _app_rulesexpand (ptr_rule, false, DIVIDER_APP);
+						}
+
+						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+					}
+				}
+
+				// skip saving untouched configuration
+				if (ptr_config->is_enabled == is_enabled_default)
+				{
+					if (rule_apps.IsEmpty ())
+					{
+						_r_obj_dereference (ptr_config_object, &_app_dereferenceruleconfig);
+						continue;
+					}
+				}
+
 				pugi::xml_node item = root_rule_config.append_child (L"item");
 
 				if (item)
 				{
 					item.append_attribute (L"name").set_value (ptr_config->pname);
 
-					// save apps
-					const size_t rule_hash = _r_str_hash (ptr_config->pname);
-					const PR_OBJECT ptr_rule_object = _app_getruleitem (rule_hash, DataRuleCustom, true);
+					if (!rule_apps.IsEmpty ())
+						item.append_attribute (L"apps").set_value (rule_apps);
 
-					if (ptr_rule_object)
-					{
-						const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-						if (ptr_rule && !ptr_rule->apps.empty ())
-						{
-							const rstring rule_apps = _app_rulesexpand (ptr_rule, false, DIVIDER_APP);
-
-							if (!rule_apps.IsEmpty ())
-								item.append_attribute (L"apps").set_value (rule_apps);
-						}
-
-						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
-					}
-
-					if (ptr_config->is_enabled)
-						item.append_attribute (L"is_enabled").set_value (ptr_config->is_enabled);
+					item.append_attribute (L"is_enabled").set_value (ptr_config->is_enabled);
 				}
 
 				_r_obj_dereference (ptr_config_object, &_app_dereferenceruleconfig);
 			}
+
+			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		doc.save_file (path_custom ? path_custom : config.profile_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
-
-		_r_fastlock_releaseshared (&lock_access);
 
 		// make backup
 		if (is_backuprequired)

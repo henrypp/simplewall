@@ -680,7 +680,7 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 			else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 			{
 				const size_t rule_idx = lpnmlv->nmcd.lItemlParam;
-				PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+				PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 				if (!ptr_rule_object)
 					return CDRF_DODEFAULT;
@@ -2128,32 +2128,40 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						if (ctrl_id >= IDC_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDC_BLOCKLIST_SPY_BLOCK)
 						{
-							const INT state = (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE);
+							const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
 
-							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, IDM_BLOCKLIST_SPY_DISABLE + state, MF_BYCOMMAND);
+							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, IDM_BLOCKLIST_SPY_DISABLE + new_state, MF_BYCOMMAND);
 
-							app.ConfigSet (L"BlocklistSpyState", state);
+							app.ConfigSet (L"BlocklistSpyState", new_state);
+
+							_r_fastlock_acquireshared (&lock_access);
+							_app_ruleblocklistset (app.GetHWND (), new_state, -1, -1, true);
+							_r_fastlock_releaseshared (&lock_access);
 						}
 						else if (ctrl_id >= IDC_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDC_BLOCKLIST_UPDATE_BLOCK)
 						{
-							const INT state = (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE);
+							const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
 
-							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, IDM_BLOCKLIST_UPDATE_DISABLE + state, MF_BYCOMMAND);
+							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, IDM_BLOCKLIST_UPDATE_DISABLE + new_state, MF_BYCOMMAND);
 
-							app.ConfigSet (L"BlocklistUpdateState", state);
+							app.ConfigSet (L"BlocklistUpdateState", new_state);
+
+							_r_fastlock_acquireshared (&lock_access);
+							_app_ruleblocklistset (app.GetHWND (), -1, new_state, -1, true);
+							_r_fastlock_releaseshared (&lock_access);
 						}
 						else if (ctrl_id >= IDC_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
 						{
-							const INT state = (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE);
+							const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 
-							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, IDM_BLOCKLIST_EXTRA_DISABLE + state, MF_BYCOMMAND);
+							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, IDM_BLOCKLIST_EXTRA_DISABLE + new_state, MF_BYCOMMAND);
 
-							app.ConfigSet (L"BlocklistExtraState", state);
+							app.ConfigSet (L"BlocklistExtraState", new_state);
+
+							_r_fastlock_acquireshared (&lock_access);
+							_app_ruleblocklistset (app.GetHWND (), -1, -1, new_state, true);
+							_r_fastlock_releaseshared (&lock_access);
 						}
-
-						_r_fastlock_acquireshared (&lock_access);
-						_app_ruleblocklistset (true);
-						_r_fastlock_releaseshared (&lock_access);
 					}
 					else if (ctrl_id == IDC_ENABLELOG_CHK)
 					{
@@ -2391,6 +2399,9 @@ void _app_tabs_init (HWND hwnd)
 		CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_UWP, hinst, nullptr);
 		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_PACKAGES, nullptr), LAST_VALUE, IDC_APPS_UWP);
 	}
+
+	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_BLOCKLIST, hinst, nullptr);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), LAST_VALUE, IDC_RULES_BLOCKLIST);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_SYSTEM, hinst, nullptr);
 	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), LAST_VALUE, IDC_RULES_SYSTEM);
@@ -3389,7 +3400,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							const size_t rule_idx = lpnmlv->lParam;
 							OBJECTS_VEC rules;
 
-							PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+							PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 							if (!ptr_rule_object)
 								break;
@@ -3513,6 +3524,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
 					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY2, false, _r_fmt (L" \"%s\"", _r_listview_getcolumntext (hwnd, listview_id, lv_subitem).GetString ()));
 					app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
+					app.LocaleMenu (hsubmenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, L"\tCtrl+A");
 					app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_UNCHECK, IDM_UNCHECK, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_NETWORK_CLOSE, IDM_NETWORK_CLOSE, false, nullptr);
@@ -3629,7 +3641,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (listview_id == IDC_RULES_CUSTOM)
 						{
-							PR_OBJECT ptr_rule_object = _app_getruleitem (hash_item);
+							PR_OBJECT ptr_rule_object = _app_getrulebyid (hash_item);
 
 							if (!ptr_rule_object)
 								break;
@@ -3645,7 +3657,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							DeleteMenu (hsubmenu, IDM_OPENRULESEDITOR, MF_BYCOMMAND);
 							DeleteMenu (hsubmenu, IDM_DELETE, MF_BYCOMMAND);
-							DeleteMenu (hsubmenu, 5, MF_BYPOSITION);
+							DeleteMenu (hsubmenu, 6, MF_BYPOSITION);
 						}
 					}
 					else if (menu_id == IDM_NETWORK)
@@ -3929,7 +3941,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				BOOL is_remove = (BOOL)-1;
 
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
-				PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+				PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 				if (!ptr_rule_object)
 					return FALSE;
@@ -4429,6 +4441,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_listviewsetfont (hwnd, _app_gettab_id (hwnd, i), false);
 
 						_app_listviewsetfont (config.hrebar, IDC_TOOLBAR, false);
+						_app_listviewresize (hwnd, _app_gettab_id (hwnd), true);
 
 						RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
 					}
@@ -4524,24 +4537,38 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, ctrl_id, MF_BYCOMMAND);
 
-						app.ConfigSet (L"BlocklistSpyState", std::clamp (ctrl_id - IDM_BLOCKLIST_SPY_DISABLE, 0, 2));
+						const INT new_state = std::clamp (ctrl_id - IDM_BLOCKLIST_SPY_DISABLE, 0, 2);
+
+						app.ConfigSet (L"BlocklistSpyState", new_state);
+
+						_r_fastlock_acquireshared (&lock_access);
+						_app_ruleblocklistset (hwnd, new_state, -1, -1, true);
+						_r_fastlock_releaseshared (&lock_access);
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDM_BLOCKLIST_UPDATE_BLOCK)
 					{
 						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, ctrl_id, MF_BYCOMMAND);
 
-						app.ConfigSet (L"BlocklistUpdateState", std::clamp (ctrl_id - IDM_BLOCKLIST_UPDATE_DISABLE, 0, 2));
+						const INT new_state = std::clamp (ctrl_id - IDM_BLOCKLIST_UPDATE_DISABLE, 0, 2);
+
+						app.ConfigSet (L"BlocklistUpdateState", new_state);
+
+						_r_fastlock_acquireshared (&lock_access);
+						_app_ruleblocklistset (hwnd, -1, new_state, -1, true);
+						_r_fastlock_releaseshared (&lock_access);
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDM_BLOCKLIST_EXTRA_BLOCK)
 					{
 						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, ctrl_id, MF_BYCOMMAND);
 
-						app.ConfigSet (L"BlocklistExtraState", std::clamp (ctrl_id - IDM_BLOCKLIST_EXTRA_DISABLE, 0, 2));
-					}
+						const INT new_state = std::clamp (ctrl_id - IDM_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 
-					_r_fastlock_acquireshared (&lock_access);
-					_app_ruleblocklistset (true);
-					_r_fastlock_releaseshared (&lock_access);
+						app.ConfigSet (L"BlocklistExtraState", new_state);
+
+						_r_fastlock_acquireshared (&lock_access);
+						_app_ruleblocklistset (hwnd, -1, -1, new_state, true);
+						_r_fastlock_releaseshared (&lock_access);
+					}
 
 					break;
 				}
@@ -4927,7 +4954,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
 						{
 							const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
-							PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+							PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 							if (!ptr_rule_object)
 								continue;
@@ -5120,7 +5147,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 					{
 						const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
-						PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+						PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 						if (!ptr_rule_object)
 							break;
@@ -5291,7 +5318,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							else if (listview_id == IDC_RULES_CUSTOM)
 							{
 								const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, i);
-								PR_OBJECT ptr_rule_object = _app_getruleitem (rule_idx);
+								PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 								if (!ptr_rule_object)
 									continue;
@@ -5309,9 +5336,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, i, 0);
 
-									_r_fastlock_acquireexclusive (&lock_access);
+									_r_fastlock_acquireshared (&lock_access);
 									rules_arr.at (rule_idx) = nullptr;
-									_r_fastlock_releaseexclusive (&lock_access);
+									_r_fastlock_releaseshared (&lock_access);
 
 									_r_obj_dereferenceex (ptr_rule_object, 2, &_app_dereferencerule);
 								}
