@@ -2473,8 +2473,6 @@ void _app_toolbar_init (HWND hwnd)
 
 	SendMessage (config.hrebar, RB_SETBARINFO, 0, (LPARAM)& ri);
 
-	_app_listviewsetfont (hwnd, IDC_TOOLBAR, false);
-
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_BUTTONSTRUCTSIZE, sizeof (TBBUTTON), 0);
 
 	TBBUTTON buttonArray[14] = {0};
@@ -4483,8 +4481,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						for (UINT i = 0; i < (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 							_app_listviewsetfont (hwnd, _app_gettab_id (hwnd, i), false);
 
-						_app_listviewsetfont (config.hrebar, IDC_TOOLBAR, false);
-						_app_listviewresize (hwnd, _app_gettab_id (hwnd), true);
+						_app_listviewresize (hwnd, _app_gettab_id (hwnd));
 
 						RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
 					}
