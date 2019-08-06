@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--Internal rules for simplewall-->
 <!--Minimum required version is 3.0.2-->
-<root timestamp="1564393272" type="4" version="3">
+<root timestamp="1565084884" type="4" version="3">
 	<rules_system>
 		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" is_services="true" is_enabled="true" />
 		<item name="DNS" rule="53" protocol="17" is_services="true" is_enabled="true" />
@@ -58,6 +58,7 @@
 		<item name="extra_13.107.42.12" rule="13.107.42.12" />
 		<item name="extra_13.107.42.13" rule="13.107.42.13" />
 		<item name="extra_13.107.42.254" rule="13.107.42.254" />
+		<item name="extra_13.107.43.12" rule="13.107.43.12" />
 		<item name="extra_13.107.46.88" rule="13.107.46.88" />
 		<item name="extra_13.107.47.88" rule="13.107.47.88" />
 		<item name="extra_13.107.49.254" rule="13.107.49.254" />
@@ -98,6 +99,7 @@
 		<item name="extra_40.90.136.180" rule="40.90.136.180" />
 		<item name="extra_40.90.190.179" rule="40.90.190.179" />
 		<item name="extra_40.91.76.238" rule="40.91.76.238" />
+		<item name="extra_40.91.78.9" rule="40.91.78.9" />
 		<item name="extra_40.97.161.50" rule="40.97.161.50" />
 		<item name="extra_40.101.12.130" rule="40.101.12.130" />
 		<item name="extra_40.101.18.242" rule="40.101.18.242" />
@@ -105,6 +107,7 @@
 		<item name="extra_40.101.46.178" rule="40.101.46.178" />
 		<item name="extra_40.101.80.178" rule="40.101.80.178" />
 		<item name="extra_40.101.83.18" rule="40.101.83.18" />
+		<item name="extra_40.101.124.34" rule="40.101.124.34" />
 		<item name="extra_40.101.124.194" rule="40.101.124.194" />
 		<item name="extra_40.101.137.18" rule="40.101.137.18" />
 		<item name="extra_40.102.34.194" rule="40.102.34.194" />
@@ -142,6 +145,7 @@
 		<item name="extra_52.97.146.34" rule="52.97.146.34" />
 		<item name="extra_52.97.151.50" rule="52.97.151.50" />
 		<item name="extra_52.97.151.82" rule="52.97.151.82" />
+		<item name="extra_52.97.171.194" rule="52.97.171.194" />
 		<item name="extra_52.98.66.98" rule="52.98.66.98" />
 		<item name="extra_52.109.8.19" rule="52.109.8.19" />
 		<item name="extra_52.109.8.20" rule="52.109.8.20" />
@@ -223,9 +227,11 @@
 		<item name="extra_52.232.19.76" rule="52.232.19.76" />
 		<item name="extra_52.232.69.150" rule="52.232.69.150" />
 		<item name="extra_52.233.199.249" rule="52.233.199.249" />
+		<item name="extra_52.239.137.4" rule="52.239.137.4" />
 		<item name="extra_52.239.150.170" rule="52.239.150.170" />
 		<item name="extra_52.239.151.138" rule="52.239.151.138" />
 		<item name="extra_52.239.151.170" rule="52.239.151.170" />
+		<item name="extra_52.239.156.138" rule="52.239.156.138" />
 		<item name="extra_52.239.157.138" rule="52.239.157.138" />
 		<item name="extra_52.239.157.202" rule="52.239.157.202" />
 		<item name="extra_52.239.177.36" rule="52.239.177.36" />
@@ -244,6 +250,7 @@
 		<item name="extra_64.4.54.253" rule="64.4.54.253" />
 		<item name="extra_64.4.54.254" rule="64.4.54.254" />
 		<item name="extra_65.52.98.231" rule="65.52.98.231" />
+		<item name="extra_65.52.226.14" rule="65.52.226.14" />
 		<item name="extra_65.54.187.128" rule="65.54.187.128" />
 		<item name="extra_65.54.187.130" rule="65.54.187.130" />
 		<item name="extra_65.54.187.131" rule="65.54.187.131" />
@@ -265,6 +272,8 @@
 		<item name="extra_104.45.18.177" rule="104.45.18.177" />
 		<item name="extra_104.46.91.34" rule="104.46.91.34" />
 		<item name="extra_104.208.248.16" rule="104.208.248.16" />
+		<item name="extra_104.209.172.133" rule="104.209.172.133" />
+		<item name="extra_104.211.96.15" rule="104.211.96.15" />
 		<item name="extra_104.214.77.221" rule="104.214.77.221" />
 		<item name="extra_104.214.220.181" rule="104.214.220.181" />
 		<item name="extra_104.215.146.200" rule="104.215.146.200" />
@@ -281,6 +290,8 @@
 		<item name="extra_137.117.142.136" rule="137.117.142.136" />
 		<item name="extra_137.117.144.39" rule="137.117.144.39" />
 		<item name="extra_137.117.235.16" rule="137.117.235.16" />
+		<item name="extra_137.117.243.30" rule="137.117.243.30" />
+		<item name="extra_137.135.251.63" rule="137.135.251.63" />
 		<item name="extra_138.91.122.49" rule="138.91.122.49" />
 		<item name="extra_157.55.56.0-157.55.56.255" rule="157.55.56.0-157.55.56.255" />
 		<item name="extra_157.55.109.7" rule="157.55.109.7" />
@@ -331,6 +342,7 @@
 		<item name="spy_23.103.182.126" rule="23.103.182.126" />
 		<item name="spy_40.68.222.212" rule="40.68.222.212" />
 		<item name="spy_40.69.153.67" rule="40.69.153.67" />
+		<item name="spy_40.70.184.83" rule="40.70.184.83" />
 		<item name="spy_40.70.220.248" rule="40.70.220.248" />
 		<item name="spy_40.70.221.249" rule="40.70.221.249" />
 		<item name="spy_40.77.228.47" rule="40.77.228.47" />
@@ -631,6 +643,7 @@
 		<item name="update_52.230.216.157" rule="52.230.216.157" />
 		<item name="update_52.230.223.92" rule="52.230.223.92" />
 		<item name="update_52.230.223.167" rule="52.230.223.167" />
+		<item name="update_52.232.225.93" rule="52.232.225.93" />
 		<item name="update_52.248.96.36" rule="52.248.96.36" />
 		<item name="update_52.249.24.101" rule="52.249.24.101" />
 		<item name="update_64.4.27.50" rule="64.4.27.50" />
