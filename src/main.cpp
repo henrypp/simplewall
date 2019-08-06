@@ -885,7 +885,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				_r_ctrl_enable (hwnd, IDC_APPS_LV, false);
 			}
 
-			rstring text_any = app.LocaleString (IDS_ANY, nullptr);
+			const rstring text_any = app.LocaleString (IDS_ANY, nullptr);
 
 			// direction
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_DIRECTION_1, nullptr).GetString ());
@@ -978,7 +978,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_addstyle (hwnd, IDC_SAVE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
-			_r_ctrl_enable (hwnd, IDC_SAVE, (SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) && ((SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) || (SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0))); // enable apply button
+			if (!ptr_rule->is_readonly)
+				_r_ctrl_enable (hwnd, IDC_SAVE, (SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) && ((SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) || (SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0))); // enable apply button
 
 			ptr_rule->is_haveerrors = false;
 
@@ -1104,7 +1105,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			if (HIWORD (wparam) == EN_CHANGE)
 			{
-				_r_ctrl_enable (hwnd, IDC_SAVE, (SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) && ((SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) || (SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0))); // enable apply button
+				if (!ptr_rule->is_readonly)
+					_r_ctrl_enable (hwnd, IDC_SAVE, (SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) && ((SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) || (SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0))); // enable apply button
+
 				return FALSE;
 			}
 
@@ -1137,21 +1140,49 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDOK: // process Enter key
 				case IDC_SAVE:
 				{
-					if (!SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) || (!SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) && !SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0)))
-						return FALSE;
-
-					rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (L"\r\n " DIVIDER_RULE);
-					size_t rule_remote_length;
-
-					rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (L"\r\n " DIVIDER_RULE);
-					size_t rule_local_length;
-
-					// check rule destination
+					// do not change read-only rules
+					if (!ptr_rule->is_readonly)
 					{
-						// here we parse and check rule syntax
+						if (!SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) || (!SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) && !SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0)))
+							return FALSE;
+
+						rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (L"\r\n " DIVIDER_RULE);
+						size_t rule_remote_length;
+
+						rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (L"\r\n " DIVIDER_RULE);
+						size_t rule_local_length;
+
+						// check rule destination
 						{
-							rstring::rvector arr = rule_remote.AsVector (DIVIDER_RULE);
-							rstring rule_remote_fixed;
+							// here we parse and check rule syntax
+							{
+								rstring::rvector arr = rule_remote.AsVector (DIVIDER_RULE);
+								rstring rule_remote_fixed;
+
+								for (size_t i = 0; i < arr.size (); i++)
+								{
+									LPCWSTR rule_single = arr.at (i).Trim (L" " DIVIDER_RULE);
+
+									if (!_app_parserulestring (rule_single, nullptr))
+									{
+										_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
+										_r_ctrl_enable (hwnd, IDC_SAVE, false);
+
+										return FALSE;
+									}
+
+									rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
+								}
+
+								rule_remote = rule_remote_fixed.Trim (L" " DIVIDER_RULE);
+								rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
+							}
+						}
+
+						// set rule local address
+						{
+							rstring::rvector arr = rule_local.AsVector (DIVIDER_RULE);
+							rstring rule_local_fixed;
 
 							for (size_t i = 0; i < arr.size (); i++)
 							{
@@ -1159,68 +1190,44 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 								if (!_app_parserulestring (rule_single, nullptr))
 								{
-									_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
+									_r_ctrl_showtip (hwnd, IDC_RULE_LOCAL_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
 									_r_ctrl_enable (hwnd, IDC_SAVE, false);
 
 									return FALSE;
 								}
 
-								rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
+								rule_local_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
 							}
 
-							rule_remote = rule_remote_fixed.Trim (L" " DIVIDER_RULE);
-							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
+							rule_local = rule_local_fixed.Trim (L" " DIVIDER_RULE);
+							rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
 						}
-					}
 
-					// set rule local address
-					{
-						rstring::rvector arr = rule_local.AsVector (DIVIDER_RULE);
-						rstring rule_local_fixed;
+						// set rule remote address
+						_r_str_alloc (&ptr_rule->prule_remote, rule_remote_length, rule_remote);
+						_r_str_alloc (&ptr_rule->prule_local, rule_local_length, rule_local);
 
-						for (size_t i = 0; i < arr.size (); i++)
+						// set rule name
 						{
-							LPCWSTR rule_single = arr.at (i).Trim (L" " DIVIDER_RULE);
+							const rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT).Trim (L"\r\n " DIVIDER_RULE);
 
-							if (!_app_parserulestring (rule_single, nullptr))
+							if (!name.IsEmpty ())
 							{
-								_r_ctrl_showtip (hwnd, IDC_RULE_LOCAL_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
-								_r_ctrl_enable (hwnd, IDC_SAVE, false);
+								const size_t name_length = min (name.GetLength (), RULE_NAME_CCH_MAX);
 
-								return FALSE;
+								_r_str_alloc (&ptr_rule->pname, name_length, name);
 							}
-
-							rule_local_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
 						}
 
-						rule_local = rule_local_fixed.Trim (L" " DIVIDER_RULE);
-						rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
+						ptr_rule->protocol = (UINT8)SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETCURSEL, 0, 0), 0);
+						ptr_rule->af = (ADDRESS_FAMILY)SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETCURSEL, 0, 0), 0);
+
+						ptr_rule->dir = (FWP_DIRECTION)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
+						ptr_rule->is_block = SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0) ? true : false;
+
+						if (ptr_rule->type == DataRuleCustom)
+							ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
 					}
-
-					// set rule remote address
-					_r_str_alloc (&ptr_rule->prule_remote, rule_remote_length, rule_remote);
-					_r_str_alloc (&ptr_rule->prule_local, rule_local_length, rule_local);
-
-					// set rule name
-					{
-						const rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT).Trim (L"\r\n " DIVIDER_RULE);
-
-						if (!name.IsEmpty ())
-						{
-							const size_t name_length = min (name.GetLength (), RULE_NAME_CCH_MAX);
-
-							_r_str_alloc (&ptr_rule->pname, name_length, name);
-						}
-					}
-
-					ptr_rule->protocol = (UINT8)SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETCURSEL, 0, 0), 0);
-					ptr_rule->af = (ADDRESS_FAMILY)SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETCURSEL, 0, 0), 0);
-
-					ptr_rule->dir = (FWP_DIRECTION)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
-					ptr_rule->is_block = SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0) ? true : false;
-
-					if (ptr_rule->type == DataRuleCustom)
-						ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
 
 					_app_ruleenable (ptr_rule, !!(IsDlgButtonChecked (hwnd, IDC_DISABLE_CHK) == BST_UNCHECKED));
 
@@ -2088,7 +2095,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-					}
+				}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
@@ -2311,12 +2318,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-				}
 			}
+		}
 
 			break;
-		}
 	}
+}
 
 	return FALSE;
 }
