@@ -110,7 +110,7 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 				calculated_width += column_width;
 			}
 
-			_r_listview_setcolumn (hwnd, listview_id, (UINT)i, nullptr, column_width);
+			_r_listview_setcolumn (hwnd, listview_id, i, nullptr, column_width);
 		}
 	}
 
@@ -4138,6 +4138,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_CHECKUPDATES:
 				{
 					app.UpdateCheck (true);
+					break;
+				}
+
+				case IDM_DONATE:
+				{
+					ShellExecute (hwnd, nullptr, _r_fmt (_APP_DONATE_URL, APP_NAME_SHORT), nullptr, nullptr, SW_SHOWDEFAULT);
 					break;
 				}
 
