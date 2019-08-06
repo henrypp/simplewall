@@ -1,5 +1,5 @@
 v3.0.5 RC (6 August 2019)
-- added option to block outbound traffic globally
+- added option to block outbound connections globally
 - added close connection feature (issue #506)
 - added powerful blocklist configuration
 - removed listen layer
