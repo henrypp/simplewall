@@ -1,3 +1,19 @@
+v3.0.5 RC (6 August 2019)
+- added option to block outbound traffic globally
+- added close connection feature (issue #506)
+- added powerful blocklist configuration
+- removed listen layer
+- skip saving default rules configuration
+- fixed connections port byte order (issue #504)
+- fixed user rules ui bug (issue #500)
+- fixed dropped packets log layout
+- fixed internal rules editor
+- fixed ipv6 rule formatting
+- fixed connections hashing
+- listview menu cosmetics
+- cosmetics fixes
+- fixed bugs
+
 v3.0.4 RC (23 July 2019)
 - added rules and blocklist options into main menu
 - set security settings enabled by default
