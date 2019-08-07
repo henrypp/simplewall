@@ -2737,10 +2737,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 {
 	rule.Trim (DIVIDER_TRIM); // trim whitespace
 
-	if (rule.IsEmpty ())
-		return true;
-
-	if (rule.CompareNoCase (L"*") == 0)
+	if (rule.IsEmpty () || rule.CompareNoCase (L"*") == 0)
 		return true;
 
 	EnumDataType type = DataUnknown;
@@ -2758,16 +2755,16 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 
 	// auto-parse rule type
 	{
-		const size_t hash = rule.Hash ();
+		const size_t rule_hash = rule.Hash ();
 
 		_r_fastlock_acquireshared (&lock_cache);
-		const bool is_exists = cache_types.find (hash) != cache_types.end ();
+		const bool is_exists = cache_types.find (rule_hash) != cache_types.end ();
 		_r_fastlock_releaseshared (&lock_cache);
 
 		if (is_exists)
 		{
 			_r_fastlock_acquireshared (&lock_cache);
-			type = cache_types[hash];
+			type = cache_types[rule_hash];
 			_r_fastlock_releaseshared (&lock_cache);
 		}
 		else
@@ -2792,7 +2789,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 				if (cache_types.size () >= UMAP_CACHE_LIMIT)
 					cache_types.clear ();
 
-				cache_types[hash] = type;
+				cache_types[rule_hash] = type;
 
 				_r_fastlock_releaseexclusive (&lock_cache);
 			}
