@@ -1001,12 +1001,22 @@ bool _app_isrulehost (LPCWSTR rule)
 	{
 		for (size_t i = 0; i < _r_str_length (rule); i++)
 		{
-			if (rule[i] == L'*')
+			if (
+				rule[i] == L'#'||
+				rule[i] == L'%'||
+				rule[i] == L'&'||
+				rule[i] == L'*'||
+				rule[i] == L'@'||
+				rule[i] == L')'||
+				rule[i] == L'('
+				)
 				return false;
 		}
+
+		return true;
 	}
 
-	return (errcode == ERROR_SUCCESS);
+	return false;
 }
 
 bool _app_isruleip (LPCWSTR rule)
@@ -1031,9 +1041,7 @@ bool _app_isruleport (LPCWSTR rule)
 	if (!rule || !rule[0])
 		return false;
 
-	const size_t length = _r_str_length (rule);
-
-	for (size_t i = 0; i < length; i++)
+	for (size_t i = 0; i < _r_str_length (rule); i++)
 	{
 		if (iswdigit (rule[i]) == 0 && rule[i] != DIVIDER_RULE_RANGE)
 			return false;
