@@ -1146,40 +1146,37 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (!SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) || (!SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) && !SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0)))
 							return FALSE;
 
-						rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (L"\r\n " DIVIDER_RULE);
+						rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (DIVIDER_TRIM DIVIDER_RULE);
 						size_t rule_remote_length;
 
-						rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (L"\r\n " DIVIDER_RULE);
+						rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (DIVIDER_TRIM DIVIDER_RULE);
 						size_t rule_local_length;
 
-						// check rule destination
+						// set correct remote rule
 						{
-							// here we parse and check rule syntax
+							rstring::rvector arr = rule_remote.AsVector (DIVIDER_RULE);
+							rstring rule_remote_fixed;
+
+							for (size_t i = 0; i < arr.size (); i++)
 							{
-								rstring::rvector arr = rule_remote.AsVector (DIVIDER_RULE);
-								rstring rule_remote_fixed;
+								LPCWSTR rule_single = arr.at (i).Trim (L" " DIVIDER_RULE);
 
-								for (size_t i = 0; i < arr.size (); i++)
+								if (!_app_parserulestring (rule_single, nullptr))
 								{
-									LPCWSTR rule_single = arr.at (i).Trim (L" " DIVIDER_RULE);
+									_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
+									_r_ctrl_enable (hwnd, IDC_SAVE, false);
 
-									if (!_app_parserulestring (rule_single, nullptr))
-									{
-										_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
-										_r_ctrl_enable (hwnd, IDC_SAVE, false);
-
-										return FALSE;
-									}
-
-									rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
+									return FALSE;
 								}
 
-								rule_remote = rule_remote_fixed.Trim (L" " DIVIDER_RULE);
-								rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
+								rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
 							}
+
+							rule_remote = rule_remote_fixed.Trim (L" " DIVIDER_RULE);
+							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
 						}
 
-						// set rule local address
+						// set correct local rule
 						{
 							rstring::rvector arr = rule_local.AsVector (DIVIDER_RULE);
 							rstring rule_local_fixed;
@@ -1209,7 +1206,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						// set rule name
 						{
-							const rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT).Trim (L"\r\n " DIVIDER_RULE);
+							const rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT).Trim (DIVIDER_TRIM);
 
 							if (!name.IsEmpty ())
 							{
@@ -1223,7 +1220,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						ptr_rule->af = (ADDRESS_FAMILY)SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETCURSEL, 0, 0), 0);
 
 						ptr_rule->dir = (FWP_DIRECTION)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
-						ptr_rule->is_block = SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0) ? true : false;
+						ptr_rule->is_block = !!SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0);
 
 						if (ptr_rule->type == DataRuleCustom)
 							ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
@@ -2095,7 +2092,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-				}
+					}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
@@ -2318,12 +2315,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
+				}
 			}
-		}
 
 			break;
+		}
 	}
-}
 
 	return FALSE;
 }
