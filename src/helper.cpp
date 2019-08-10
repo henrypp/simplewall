@@ -2969,16 +2969,60 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 
 	if (pstraddr)
 	{
-		PDNS_RECORD ppQueryResultsSet = nullptr;
-		const DNS_STATUS dnsStatus = DnsQuery (pstraddr, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, nullptr, &ppQueryResultsSet, nullptr);
+		const size_t arpa_hash = _r_str_hash (pstraddr);
 
-		if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR)
+		_r_fastlock_acquireshared (&lock_cache);
+		const bool is_exists = cache_arpa.find (arpa_hash) != cache_arpa.end ();
+		_r_fastlock_releaseshared (&lock_cache);
+
+		if (is_exists)
 		{
-			if (ppQueryResultsSet)
-				result = _r_str_alloc (pbuffer, _r_str_length (ppQueryResultsSet->Data.PTR.pNameHost), ppQueryResultsSet->Data.PTR.pNameHost);
-		}
+			_r_fastlock_acquireshared (&lock_cache);
+			PR_OBJECT ptr_cache_object = _r_obj_reference (cache_arpa[arpa_hash]);
+			_r_fastlock_releaseshared (&lock_cache);
 
-		DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
+			if (ptr_cache_object)
+			{
+				if (ptr_cache_object->pdata)
+					result = _r_str_alloc (pbuffer, _r_str_length ((LPCWSTR)ptr_cache_object->pdata), (LPCWSTR)ptr_cache_object->pdata);
+
+				_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
+			}
+		}
+		else
+		{
+			cache_arpa[arpa_hash] = nullptr;
+
+			PDNS_RECORD ppQueryResultsSet = nullptr;
+			const DNS_STATUS dnsStatus = DnsQuery (pstraddr, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, nullptr, &ppQueryResultsSet, nullptr);
+
+			if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR)
+			{
+				const size_t len = _r_str_length (ppQueryResultsSet->Data.PTR.pNameHost);
+
+				if (ppQueryResultsSet)
+					result = _r_str_alloc (pbuffer, len, ppQueryResultsSet->Data.PTR.pNameHost);
+
+				if (result)
+				{
+					LPWSTR ptr_cache = nullptr;
+
+					if (_r_str_alloc (&ptr_cache, len, ppQueryResultsSet->Data.PTR.pNameHost))
+					{
+						_r_fastlock_acquireexclusive (&lock_cache);
+
+						_app_freeobjects_map (cache_arpa, &_app_dereferencestring, false);
+						cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache);
+
+						_r_obj_reference (cache_arpa[arpa_hash]);
+
+						_r_fastlock_releaseexclusive (&lock_cache);
+					}
+				}
+			}
+
+			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
+		}
 	}
 
 	SAFE_DELETE_ARRAY (pstraddr);

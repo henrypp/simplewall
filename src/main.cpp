@@ -15,6 +15,7 @@ OBJECTS_VEC rules_arr;
 OBJECTS_MAP rules_config;
 OBJECTS_MAP network_map;
 
+OBJECTS_MAP cache_arpa;
 OBJECTS_MAP cache_signatures;
 OBJECTS_MAP cache_versions;
 OBJECTS_MAP cache_dns;

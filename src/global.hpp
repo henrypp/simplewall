@@ -51,6 +51,7 @@ extern OBJECTS_VEC rules_arr;
 extern OBJECTS_MAP rules_config;
 extern OBJECTS_MAP network_map;
 
+extern OBJECTS_MAP cache_arpa;
 extern OBJECTS_MAP cache_signatures;
 extern OBJECTS_MAP cache_versions;
 extern OBJECTS_MAP cache_dns;
