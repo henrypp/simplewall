@@ -2279,7 +2279,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 
 	INT result = 0;
 
-	if (listview_id != IDC_NETWORK)
+	if ((SendMessage (hlistview, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
 	{
 		const bool is_checked1 = _r_listview_isitemchecked (hparent, listview_id, item1);
 		const bool is_checked2 = _r_listview_isitemchecked (hparent, listview_id, item2);
@@ -2297,7 +2297,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	if (!result)
 	{
 		// timestamp sorting
-		if (column_id == 1 && (listview_id == IDC_APPS_PROFILE || listview_id == IDC_APPS_SERVICE || listview_id == IDC_APPS_UWP))
+		if (column_id == 1 && (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
 		{
 			time_t timestamp1 = 0;
 			time_t timestamp2 = 0;
@@ -2369,7 +2369,7 @@ void _app_refreshstatus (HWND hwnd)
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
 		static const UINT parts_count = 3;
-		static const UINT padding = app.GetDPI (8);
+		static const INT spacing = GetSystemMetrics (SM_CYSMCAPTION);
 
 		rstring text[parts_count];
 		INT parts[parts_count] = {0};
@@ -2399,7 +2399,7 @@ void _app_refreshstatus (HWND hwnd)
 				}
 			}
 
-			size[i] = _r_dc_fontwidth (hdc, text[i], text[i].GetLength ()) + padding;
+			size[i] = _r_dc_fontwidth (hdc, text[i], text[i].GetLength ()) + spacing;
 
 			if (i)
 				lay += size[i];
@@ -2408,7 +2408,7 @@ void _app_refreshstatus (HWND hwnd)
 		RECT rc = {0};
 		GetClientRect (hstatus, &rc);
 
-		parts[0] = _R_RECT_WIDTH (&rc) - lay - GetSystemMetrics (SM_CXVSCROLL);
+		parts[0] = _R_RECT_WIDTH (&rc) - lay - GetSystemMetrics (SM_CXVSCROLL) - (GetSystemMetrics (SM_CXBORDER) * 2);
 		parts[1] = parts[0] + size[1];
 		parts[2] = parts[1] + size[2];
 
@@ -2431,7 +2431,7 @@ void _app_refreshstatus (HWND hwnd)
 		{
 			if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
 			{
-				const bool is_rules_lv = (listview_id == IDC_RULES_BLOCKLIST || listview_id == IDC_RULES_SYSTEM || listview_id == IDC_RULES_CUSTOM);
+				const bool is_rules_lv = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
 				const UINT enabled_group_title = is_rules_lv ? IDS_GROUP_ENABLED : IDS_GROUP_ALLOWED;
 				const UINT special_group_title = is_rules_lv ? IDS_GROUP_SPECIAL : IDS_GROUP_SPECIAL_APPS;
 				const UINT disabled_group_title = is_rules_lv ? IDS_GROUP_DISABLED : IDS_GROUP_BLOCKED;
@@ -2543,7 +2543,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 {
-	if (!hostname || !hostname[0] || !app.ConfigGet (L"IsEnableWsaResolver", true).AsBool ())
+	if (!hostname || !hostname[0] || !app.ConfigGet (L"IsEnableWsaResolver", false).AsBool ())
 		return L"";
 
 	// initialize winsock (required by getnameinfo)
