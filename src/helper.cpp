@@ -2998,25 +2998,27 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 
 			if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR)
 			{
-				const size_t len = _r_str_length (ppQueryResultsSet->Data.PTR.pNameHost);
-
 				if (ppQueryResultsSet)
+				{
+					const size_t len = _r_str_length (ppQueryResultsSet->Data.PTR.pNameHost);
+
 					result = _r_str_alloc (pbuffer, len, ppQueryResultsSet->Data.PTR.pNameHost);
 
-				if (result)
-				{
-					LPWSTR ptr_cache = nullptr;
-
-					if (_r_str_alloc (&ptr_cache, len, ppQueryResultsSet->Data.PTR.pNameHost))
+					if (result)
 					{
-						_r_fastlock_acquireexclusive (&lock_cache);
+						LPWSTR ptr_cache = nullptr;
 
-						_app_freeobjects_map (cache_arpa, &_app_dereferencestring, false);
-						cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache);
+						if (_r_str_alloc (&ptr_cache, len, ppQueryResultsSet->Data.PTR.pNameHost))
+						{
+							_r_fastlock_acquireexclusive (&lock_cache);
 
-						_r_obj_reference (cache_arpa[arpa_hash]);
+							_app_freeobjects_map (cache_arpa, &_app_dereferencestring, false);
+							cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache);
 
-						_r_fastlock_releaseexclusive (&lock_cache);
+							_r_obj_reference (cache_arpa[arpa_hash]);
+
+							_r_fastlock_releaseexclusive (&lock_cache);
+						}
 					}
 				}
 			}
