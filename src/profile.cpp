@@ -516,18 +516,6 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 				{
 					rstring buffer;
 
-					if (!_app_isappexists (ptr_app))
-						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_INVALID, nullptr).GetString ());
-
-					if (listview_id != IDC_NETWORK && _app_isapphaveconnection (lparam))
-						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION, nullptr).GetString ());
-
-					if (ptr_app->is_silent)
-						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SILENT, nullptr).GetString ());
-
-					if (ptr_app->is_system)
-						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SYSTEM, nullptr).GetString ());
-
 					// app type
 					{
 						if (ptr_app->type == DataAppNetwork)
@@ -543,6 +531,18 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 							buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SERVICE, nullptr).GetString ());
 					}
 
+					if (ptr_app->is_system)
+						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SYSTEM, nullptr).GetString ());
+
+					if (listview_id != IDC_NETWORK && _app_isapphaveconnection (lparam))
+						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION, nullptr).GetString ());
+
+					if (ptr_app->is_silent)
+						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SILENT, nullptr).GetString ());
+
+					if (!_app_isappexists (ptr_app))
+						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_INVALID, nullptr).GetString ());
+
 					if (!buffer.IsEmpty ())
 					{
 						buffer.InsertFormat (0, L"\r\n%s:\r\n", app.LocaleString (IDS_NOTES, nullptr).GetString ());
@@ -554,11 +554,7 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 		}
 	}
-	else if (
-		listview_id == IDC_RULES_BLOCKLIST ||
-		listview_id == IDC_RULES_SYSTEM ||
-		listview_id == IDC_RULES_CUSTOM
-		)
+	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
 		PR_OBJECT ptr_rule_object = _app_getrulebyid (lparam);
 
@@ -1596,7 +1592,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			PITEM_APP_HELPER ptr_app_item = (PITEM_APP_HELPER)ptr_item_object->pdata;
 
 			if (ptr_app_item)
-				_app_addapplication (hwnd, ((ptr_app_item->type == DataAppService) ? ptr_app_item->service_name : ptr_app_item->sid), ptr_app_item->timestamp, 0, 0, false, false, true);
+				_app_addapplication (hwnd, ptr_app_item->internal_name, ptr_app_item->timestamp, 0, 0, false, false, true);
 
 			_r_obj_dereference (ptr_item_object, &_app_dereferenceappshelper);
 		}
