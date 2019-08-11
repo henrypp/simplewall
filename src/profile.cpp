@@ -97,6 +97,8 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 	PITEM_APP ptr_app = new ITEM_APP;
 
+	SecureZeroMemory (ptr_app, sizeof (ITEM_APP));
+
 	const bool is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
 
 	rstring real_path;
@@ -126,10 +128,8 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 		if (!is_ntoskrnl && real_path.Find (OBJ_NAME_PATH_SEPARATOR) == rstring::npos)
 		{
 			if (_app_item_get (DataAppService, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, &ptr_app->pdata))
-			{
-
 				ptr_app->type = DataAppService;
-			}
+
 			else
 				ptr_app->type = DataAppPico;
 		}
@@ -671,6 +671,8 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 				{
 					PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
 
+					SecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
+
 					ptr_config->is_enabled = is_enable;
 					_r_str_alloc (&ptr_config->pname, _r_str_length (ptr_rule->pname), ptr_rule->pname);
 
@@ -680,6 +682,8 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 			else
 			{
 				PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
+
+				SecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
 
 				ptr_config->is_enabled = is_enable;
 				_r_str_alloc (&ptr_config->pname, _r_str_length (ptr_rule->pname), ptr_rule->pname);
@@ -1271,6 +1275,8 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 			if (rule_hash && rules_config.find (rule_hash) == rules_config.end ())
 			{
 				PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
+
+				SecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
 
 				ptr_config->is_enabled = item.attribute (L"is_enabled").as_bool ();
 
