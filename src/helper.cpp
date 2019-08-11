@@ -43,33 +43,33 @@ void _app_dereferencestring (PVOID pdata)
 	delete[] LPWSTR (pdata);
 }
 
-UINT _app_gettab_id (HWND hwnd, UINT page_id)
+INT _app_gettab_id (HWND hwnd, INT page_id)
 {
 	TCITEM tci = {0};
 
 	tci.mask = TCIF_PARAM;
 
-	if (page_id == UINT (-1))
+	if (page_id == INVALID_INT)
 	{
-		page_id = (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
+		page_id = (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
 
-		if (page_id == UINT (-1))
+		if (page_id == INVALID_INT)
 			page_id = 0;
 	}
 
 	SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEM, page_id, (LPARAM)& tci);
 
-	return (UINT)tci.lParam;
+	return (INT)tci.lParam;
 }
 
-void _app_settab_id (HWND hwnd, UINT page_id)
+void _app_settab_id (HWND hwnd, INT page_id)
 {
 	if (!page_id || (_app_gettab_id (hwnd) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
 		return;
 
-	for (UINT i = 0; i < (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
+	for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 	{
-		const UINT listview_id = _app_gettab_id (hwnd, i);
+		const INT listview_id = _app_gettab_id (hwnd, i);
 
 		if (listview_id == page_id)
 		{
@@ -136,6 +136,9 @@ void _app_setinterfacestate (HWND hwnd)
 
 void _app_applycasestyle (LPWSTR buffer, size_t length)
 {
+	if (!app.ConfigGet (L"IsApplyCaseStyle", false).AsBool ())
+		return;
+
 	if (buffer && length && wcschr (buffer, OBJ_NAME_PATH_SEPARATOR))
 	{
 		buffer[0] = _r_str_upper (buffer[0]);
@@ -300,7 +303,7 @@ void _app_freethreadpool (THREADS_VEC * ptr_pool)
 
 	const size_t count = ptr_pool->size ();
 
-	for (size_t i = (count - 1); i != LAST_VALUE; i--)
+	for (size_t i = (count - 1); i != INVALID_SIZE_T; i--)
 	{
 		const HANDLE hthread = ptr_pool->at (i);
 
@@ -331,7 +334,7 @@ void _app_freelogstack ()
 	}
 }
 
-void _app_getappicon (ITEM_APP* ptr_app, bool is_small, size_t * picon_id, HICON * picon)
+void _app_getappicon (ITEM_APP* ptr_app, bool is_small, PINT picon_id, HICON * picon)
 {
 	const bool is_iconshidden = app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
@@ -383,7 +386,7 @@ void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted
 	{
 		rstring name;
 
-		if (!_app_item_get (ptr_app->type, app_hash, &name, nullptr, nullptr))
+		if (!_app_item_get (ptr_app->type, app_hash, &name, nullptr, nullptr, nullptr))
 			name = ptr_app->original_path;
 
 		_r_str_alloc (extracted_name, name.GetLength (), name);
@@ -405,7 +408,7 @@ void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted
 	}
 }
 
-bool _app_getfileicon (LPCWSTR path, bool is_small, size_t * picon_id, HICON * picon)
+bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON * picon)
 {
 	if (!path || !path[0] || (!picon_id && !picon))
 		return false;
@@ -431,7 +434,7 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, size_t * picon_id, HICON * p
 		if (SHGetFileInfo (path, 0, &shfi, sizeof (shfi), flags))
 		{
 			if (picon_id)
-				*picon_id = (size_t)shfi.iIcon;
+				*picon_id = shfi.iIcon;
 
 			if (picon && shfi.hIcon)
 			{
@@ -1474,7 +1477,7 @@ rstring _app_getservicenamefromtag (HANDLE pid, PVOID ptag)
 	return result;
 }
 
-rstring _app_getnetworkpath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id, size_t * phash)
+rstring _app_getnetworkpath (DWORD pid, ULONGLONG * pmodules, PINT picon_id, size_t * phash)
 {
 	if (!pid)
 	{
@@ -1528,8 +1531,12 @@ rstring _app_getnetworkpath (DWORD pid, ULONGLONG * pmodules, size_t * picon_id,
 
 	if (!proc_name.IsEmpty ())
 	{
-		if (!_app_getappinfo (*phash, InfoIconId, picon_id, sizeof (size_t)))
-			_app_getfileicon (proc_name, true, picon_id, nullptr);
+		INT icon_id = 0;
+
+		if (!_app_getappinfo (*phash, InfoIconId, &icon_id, sizeof (icon_id)))
+			_app_getfileicon (proc_name, true, &icon_id, nullptr);
+
+		*picon_id = icon_id;
 	}
 
 	return proc_name;
@@ -1851,6 +1858,8 @@ void _app_generate_packages ()
 
 				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
 
+				SecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
+
 				ptr_item->type = DataAppUWP;
 
 				WCHAR display_name[MAX_PATH] = {0};
@@ -1886,9 +1895,9 @@ void _app_generate_packages ()
 				if (RegQueryInfoKey (hsubkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
 					ptr_item->timestamp = _r_unixtime_from_filetime (&ft);
 
-				_r_str_alloc (&ptr_item->sid, package_sid_string.GetLength (), package_sid_string);
 				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
 				_r_str_alloc (&ptr_item->real_path, _r_str_length (path), path);
+				_r_str_alloc (&ptr_item->internal_name, package_sid_string.GetLength (), package_sid_string);
 
 				if (!ConvertStringSidToSid (package_sid_string, &ptr_item->pdata))
 				{
@@ -1911,179 +1920,183 @@ void _app_generate_packages ()
 
 void _app_generate_services ()
 {
-	const SC_HANDLE hsvcmgr = OpenSCManager (nullptr, nullptr, SC_MANAGER_ALL_ACCESS);
+	const SC_HANDLE hsvcmgr = OpenSCManager (nullptr, nullptr, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
 
-	if (hsvcmgr)
+	if (!hsvcmgr)
+		return;
+
+	static const DWORD initialBufferSize = 0x8000;
+
+	DWORD returnLength = 0;
+	DWORD servicesReturned = 0;
+	DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
+	const DWORD dwServiceState = SERVICE_STATE_ALL;
+
+	// win10+
+	if (_r_sys_validversion (10, 0))
+		dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
+
+	DWORD bufferSize = initialBufferSize;
+	LPBYTE pBuffer = new BYTE[bufferSize];
+
+	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, pBuffer, bufferSize, &returnLength, &servicesReturned, nullptr, nullptr))
 	{
-		ENUM_SERVICE_STATUS service;
+		SAFE_DELETE_ARRAY (pBuffer);
 
-		DWORD dwBytesNeeded = 0;
-		DWORD dwServicesReturned = 0;
-		DWORD dwResumedHandle = 0;
-		DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
-		const DWORD dwServiceState = SERVICE_STATE_ALL;
-
-		// win10+
-		if (_r_sys_validversion (10, 0))
-			dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
-
-		if (!EnumServicesStatus (hsvcmgr, dwServiceType, dwServiceState, &service, sizeof (ENUM_SERVICE_STATUS), &dwBytesNeeded, &dwServicesReturned, &dwResumedHandle))
+		if (GetLastError () == ERROR_MORE_DATA)
 		{
-			if (GetLastError () == ERROR_MORE_DATA)
-			{
-				// Set the buffer
-				const DWORD dwBytes = sizeof (ENUM_SERVICE_STATUS) + dwBytesNeeded;
-				LPENUM_SERVICE_STATUS pServices = new ENUM_SERVICE_STATUS[dwBytes];
+			// Set the buffer
+			bufferSize += returnLength;
+			pBuffer = new BYTE[bufferSize];
 
-				// Now query again for services
-				if (EnumServicesStatus (hsvcmgr, dwServiceType, dwServiceState, (LPENUM_SERVICE_STATUS)pServices, dwBytes, &dwBytesNeeded, &dwServicesReturned, &dwResumedHandle))
+			// Now query again for services
+			if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, pBuffer, bufferSize, &returnLength, &servicesReturned, nullptr, nullptr))
+				SAFE_DELETE_ARRAY (pBuffer);
+		}
+	}
+
+	// now traverse each service to get information
+	if (pBuffer)
+	{
+		LPENUM_SERVICE_STATUS_PROCESS pServices = (LPENUM_SERVICE_STATUS_PROCESS)pBuffer;
+
+		for (DWORD i = 0; i < servicesReturned; i++)
+		{
+			LPENUM_SERVICE_STATUS_PROCESS psvc = (pServices + i);
+
+			if (!psvc)
+				continue;
+
+			time_t timestamp = 0;
+
+			LPCWSTR display_name = psvc->lpDisplayName;
+			LPCWSTR service_name = psvc->lpServiceName;
+
+			WCHAR real_path[MAX_PATH] = {0};
+
+				FILETIME ft = {0};
+
+				// query "ServiceDll" path
 				{
-					// now traverse each service to get information
-					for (DWORD i = 0; i < dwServicesReturned; i++)
+					HKEY hkey = nullptr;
+
+					if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s\\Parameters", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 					{
-						LPENUM_SERVICE_STATUS psvc = (pServices + i);
+						DWORD size = _countof (real_path) * sizeof (real_path[0]);
 
-						LPCWSTR display_name = psvc->lpDisplayName;
-						LPCWSTR service_name = psvc->lpServiceName;
+						if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
+							timestamp = _r_unixtime_from_filetime (&ft);
 
-						WCHAR real_path[MAX_PATH] = {0};
+						RegQueryValueEx (hkey, L"ServiceDll", nullptr, nullptr, (LPBYTE)real_path, &size);
 
-						time_t timestamp = 0;
+						RegCloseKey (hkey);
+					}
+				}
 
-						// get binary path
-						const SC_HANDLE hsvc = OpenService (hsvcmgr, service_name, SERVICE_QUERY_CONFIG);
+				// query service path
+				if (!real_path[0] || !timestamp)
+				{
+					HKEY hkey = nullptr;
 
-						if (hsvc)
+					if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
+					{
+						if (!real_path[0])
 						{
-							LPQUERY_SERVICE_CONFIG lpqsc = {0};
-							DWORD bytes_needed = 0;
+							DWORD size = _countof (real_path) * sizeof (real_path[0]);
 
-							if (!QueryServiceConfig (hsvc, nullptr, 0, &bytes_needed))
-							{
-								lpqsc = new QUERY_SERVICE_CONFIG[bytes_needed];
-
-								if (QueryServiceConfig (hsvc, lpqsc, bytes_needed, &bytes_needed))
-								{
-									FILETIME ft = {0};
-
-									// query "ServiceDll" path
-									{
-										HKEY hkey = nullptr;
-
-										if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s\\Parameters", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
-										{
-											DWORD size = _countof (real_path) * sizeof (real_path[0]);
-
-											if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
-												timestamp = _r_unixtime_from_filetime (&ft);
-
-											if (RegQueryValueEx (hkey, L"ServiceDll", nullptr, nullptr, (LPBYTE)real_path, &size) == ERROR_SUCCESS)
-												StringCchCopy (real_path, _countof (real_path), _r_path_expand (real_path));
-
-											RegCloseKey (hkey);
-										}
-									}
-
-									// query "lpftLastWriteTime"
-									if (!timestamp)
-									{
-										HKEY hkey = nullptr;
-
-										if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
-										{
-											if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
-												timestamp = _r_unixtime_from_filetime (&ft);
-
-											RegCloseKey (hkey);
-										}
-									}
-
-									// set path
-									if (!real_path[0])
-									{
-										StringCchCopy (real_path, _countof (real_path), lpqsc->lpBinaryPathName);
-
-										PathRemoveArgs (real_path);
-										PathUnquoteSpaces (real_path);
-									}
-
-									_app_applycasestyle (real_path, _r_str_length (real_path)); // apply case-style
-								}
-								else
-								{
-									SAFE_DELETE_ARRAY (lpqsc);
-									continue;
-								}
-
-								SAFE_DELETE_ARRAY (lpqsc);
-							}
-
-							CloseServiceHandle (hsvc);
+							RegQueryValueEx (hkey, L"ImagePath", nullptr, nullptr, (LPBYTE)real_path, &size);
 						}
 
-						UNICODE_STRING serviceNameUs = {0};
-						RtlInitUnicodeString (&serviceNameUs, (PWSTR)service_name);
-
-						rstring sidstring;
-
-						SID* serviceSid = nullptr;
-						ULONG serviceSidLength = 0;
-
-						// get service security identifier
-						if (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength) == 0xC0000023 /*STATUS_BUFFER_TOO_SMALL*/)
+						// query "lpftLastWriteTime"
+						if (!timestamp)
 						{
-							serviceSid = new SID[serviceSidLength];
-
-							if (NT_SUCCESS (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength)))
-							{
-								sidstring = _r_str_fromsid (serviceSid);
-							}
-							else
-							{
-								SAFE_DELETE_ARRAY (serviceSid);
-							}
+							if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
+								timestamp = _r_unixtime_from_filetime (&ft);
 						}
 
-						if (serviceSid && !sidstring.IsEmpty ())
-						{
-							const size_t app_hash = _r_str_hash (service_name);
 
-							if (apps_helper.find (app_hash) != apps_helper.end ())
-								continue;
-
-							PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
-
-							ptr_item->type = DataAppService;
-							ptr_item->timestamp = timestamp;
-
-							_r_str_alloc (&ptr_item->service_name, _r_str_length (service_name), service_name);
-							_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
-							_r_str_alloc (&ptr_item->real_path, _r_str_length (real_path), real_path);
-							_r_str_alloc (&ptr_item->sid, sidstring.GetLength (), sidstring);
-
-							if (
-								!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, &ptr_item->pdata, nullptr) ||
-								!IsValidSecurityDescriptor (ptr_item->pdata)
-								)
-							{
-								SAFE_DELETE (ptr_item);
-							}
-							else
-							{
-								apps_helper[app_hash] = _r_obj_allocate (ptr_item);
-							}
-						}
-
-						SAFE_DELETE_ARRAY (serviceSid);
+						RegCloseKey (hkey);
 					}
 
-					SAFE_DELETE_ARRAY (pServices);
+				if (real_path[0])
+				{
+					PathRemoveArgs (real_path);
+					PathUnquoteSpaces (real_path);
+
+					for (size_t j = 0; j < _r_str_length (real_path); j++)
+					{
+						if (real_path[j] == L'%')
+						{
+							StringCchCopy (real_path, _countof (real_path), _r_path_expand (real_path));
+							break;
+						}
+					}
+				}
+
+				_app_applycasestyle (real_path, _r_str_length (real_path)); // apply case-style
+			}
+
+			UNICODE_STRING serviceNameUs = {0};
+			RtlInitUnicodeString (&serviceNameUs, (PWSTR)service_name);
+
+			rstring sidstring;
+
+			PBYTE serviceSid = nullptr;
+			ULONG serviceSidLength = 0;
+
+			// get service security identifier
+			if (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength) == STATUS_BUFFER_TOO_SMALL)
+			{
+				serviceSid = new BYTE[serviceSidLength];
+
+				if (NT_SUCCESS (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength)))
+				{
+					sidstring = _r_str_fromsid (serviceSid);
+				}
+				else
+				{
+					SAFE_DELETE_ARRAY (serviceSid);
 				}
 			}
+
+			if (serviceSid && !sidstring.IsEmpty ())
+			{
+				const size_t app_hash = _r_str_hash (service_name);
+
+				if (apps_helper.find (app_hash) != apps_helper.end ())
+					continue;
+
+				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
+
+				SecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
+
+				ptr_item->type = DataAppService;
+				ptr_item->timestamp = timestamp;
+
+				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
+				_r_str_alloc (&ptr_item->real_path, _r_str_length (real_path), real_path);
+				_r_str_alloc (&ptr_item->internal_name, _r_str_length (service_name), service_name);
+
+				if (
+					!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, &ptr_item->pdata, nullptr) ||
+					!IsValidSecurityDescriptor (ptr_item->pdata)
+					)
+				{
+					SAFE_DELETE (ptr_item);
+				}
+				else
+				{
+					apps_helper[app_hash] = _r_obj_allocate (ptr_item);
+				}
+			}
+
+			SAFE_DELETE_ARRAY (serviceSid);
 		}
 
-		CloseServiceHandle (hsvcmgr);
+		SAFE_DELETE_ARRAY (pBuffer);
 	}
+
+	CloseServiceHandle (hsvcmgr);
 }
 
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
@@ -2190,7 +2203,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
 }
 
-bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, PBYTE* lpdata)
+bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, PBYTE* lpdata)
 {
 	if (apps_helper.find (app_hash) == apps_helper.end ())
 		return false;
@@ -2217,8 +2230,8 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 				else if (ptr_app_item->real_path && ptr_app_item->real_path[0])
 					*display_name = ptr_app_item->real_path;
 
-				else if (ptr_app_item->sid && ptr_app_item->sid[0])
-					*display_name = ptr_app_item->sid;
+				else if (ptr_app_item->internal_name && ptr_app_item->internal_name[0])
+					*display_name = ptr_app_item->internal_name;
 			}
 
 			if (real_path)
@@ -2250,6 +2263,9 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 				}
 			}
 
+			if (ptime)
+				*ptime = ptr_app_item->timestamp;
+
 			_r_obj_dereference (ptr_app_object, &_app_dereferenceappshelper);
 			return true;
 		}
@@ -2264,12 +2280,12 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 {
 	const HWND hlistview = (HWND)lparam;
 	const HWND hparent = GetParent (hlistview);
-	const UINT listview_id = GetDlgCtrlID (hlistview);
+	const INT listview_id = GetDlgCtrlID (hlistview);
 
-	const size_t item1 = _app_getposition (hparent, listview_id, lparam1);
-	const size_t item2 = _app_getposition (hparent, listview_id, lparam2);
+	const INT item1 = _app_getposition (hparent, listview_id, lparam1);
+	const INT item2 = _app_getposition (hparent, listview_id, lparam2);
 
-	if (item1 == LAST_VALUE || item2 == LAST_VALUE)
+	if (item1 == INVALID_INT || item2 == INVALID_INT)
 		return 0;
 
 	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
@@ -2324,7 +2340,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	return is_descend ? -result : result;
 }
 
-void _app_listviewsort (HWND hwnd, UINT listview_id, INT column, bool is_notifycode)
+void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notifycode)
 {
 	if (!listview_id)
 		return;
@@ -2336,19 +2352,19 @@ void _app_listviewsort (HWND hwnd, UINT listview_id, INT column, bool is_notifyc
 	if (is_notifycode)
 		is_descend = !is_descend;
 
-	if (column == -1)
-		column = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
+	if (column_id == -1)
+		column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
 
 	if (is_notifycode)
 	{
 		app.ConfigSet (L"SortIsDescending", is_descend, cfg_name);
-		app.ConfigSet (L"SortColumn", column, cfg_name);
+		app.ConfigSet (L"SortColumn", column_id, cfg_name);
 	}
 
-	for (UINT i = 0; i < _r_listview_getcolumncount (hwnd, listview_id); i++)
+	for (INT i = 0; i < _r_listview_getcolumncount (hwnd, listview_id); i++)
 		_r_listview_setcolumnsortindex (hwnd, listview_id, i, 0);
 
-	_r_listview_setcolumnsortindex (hwnd, listview_id, column, is_descend ? -1 : 1);
+	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
 	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)& _app_listviewcompare_callback);
 }
@@ -2425,7 +2441,7 @@ void _app_refreshstatus (HWND hwnd)
 
 	// group information
 	{
-		const UINT listview_id = _app_gettab_id (hwnd);
+		const INT listview_id = _app_gettab_id (hwnd);
 
 		if (listview_id)
 		{
@@ -2436,18 +2452,18 @@ void _app_refreshstatus (HWND hwnd)
 				const UINT special_group_title = is_rules_lv ? IDS_GROUP_SPECIAL : IDS_GROUP_SPECIAL_APPS;
 				const UINT disabled_group_title = is_rules_lv ? IDS_GROUP_DISABLED : IDS_GROUP_BLOCKED;
 
-				const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
+				const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
 
-				size_t group1_count = 0;
-				size_t group2_count = 0;
-				size_t group3_count = 0;
+				INT group1_count = 0;
+				INT group2_count = 0;
+				INT group3_count = 0;
 
-				for (size_t i = 0; i < total_count; i++)
+				for (INT i = 0; i < total_count; i++)
 				{
 					LVITEM lvi = {0};
 
 					lvi.mask = LVIF_GROUPID;
-					lvi.iItem = (INT)i;
+					lvi.iItem = i;
 
 					if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)& lvi))
 					{
@@ -3059,7 +3075,7 @@ void _app_resolvefilename (rstring & path)
 	}
 }
 
-UINT _app_getlistview_id (EnumDataType type)
+INT _app_getlistview_id (EnumDataType type)
 {
 	if (type == DataAppService)
 		return IDC_APPS_SERVICE;
@@ -3082,42 +3098,39 @@ UINT _app_getlistview_id (EnumDataType type)
 	return 0;
 }
 
-size_t _app_getposition (HWND hwnd, UINT listview_id, size_t lparam)
+INT _app_getposition (HWND hwnd, INT listview_id, size_t lparam)
 {
 	LVFINDINFO lvfi = {0};
 
 	lvfi.flags = LVFI_PARAM;
 	lvfi.lParam = lparam;
 
-	INT pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)-1, (LPARAM)& lvfi);
+	INT pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)INVALID_INT, (LPARAM)& lvfi);
 
-	if (pos == -1)
-		return LAST_VALUE;
-
-	return (size_t)pos;
+	return pos;
 }
 
-void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos)
+void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 {
 	if (!listview_id)
 		return;
 
 	_app_settab_id (hwnd, listview_id);
 
-	const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
+	const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
 
 	if (!total_count)
 		return;
 
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 
-	if (item != LAST_VALUE)
+	if (item != INVALID_INT)
 	{
-		item = std::clamp (item, size_t (0), total_count - 1);
+		item = std::clamp (item, 0, total_count - 1);
 
 		SendMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
 
-		ListView_SetItemState (hlistview, -1, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
+		ListView_SetItemState (hlistview, INVALID_INT, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
 		ListView_SetItemState (hlistview, (WPARAM)item, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
 	}
 
