@@ -1212,8 +1212,8 @@ void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT ve
 					{
 						for (size_t i = 0; i < apps_rule.GetLength (); i++)
 						{
-							if (apps_rule[i] == L';')
-								apps_rule[i] = L'|';
+							if (apps_rule[i] == DIVIDER_RULE[0])
+								apps_rule[i] = DIVIDER_APP[0];
 						}
 					}
 
@@ -1538,6 +1538,8 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 	if (hwnd)
 	{
+		const time_t current_time = _r_unixtime_now ();
+
 		_r_fastlock_acquireshared (&lock_access);
 
 		// add apps
@@ -1569,7 +1571,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 				// install timer
 				if (ptr_app->timer)
-					_app_timer_set (hwnd, ptr_app, (ptr_app->timer - _r_unixtime_now ()));
+					_app_timer_set (hwnd, ptr_app, (ptr_app->timer - current_time));
 			}
 
 			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
