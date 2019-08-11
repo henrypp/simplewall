@@ -184,13 +184,16 @@ bool _wfp_initialize (bool is_full)
 						_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS", true);
 
 					// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
-					val.type = FWP_UINT32;
-					val.uint32 = 1;
+					if (app.ConfigGet (L"IsMonitorIPSecConnections", true).AsBool ())
+					{
+						val.type = FWP_UINT32;
+						val.uint32 = 1;
 
-					rc = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+						rc = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
-					if (rc != ERROR_SUCCESS)
-						_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS", true);
+						if (rc != ERROR_SUCCESS)
+							_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS", true);
+					}
 				}
 
 				config.is_neteventset = true;
@@ -1547,7 +1550,7 @@ bool _wfp_create2filters (UINT line, bool is_intransact)
 	// issue: https://github.com/henrypp/simplewall/issues/9
 #ifdef SW_USE_LISTEN_LAYER
 	{
-		FWP_ACTION_TYPE action = app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? FWP_ACTION_PERMIT: FWP_ACTION_BLOCK;
+		FWP_ACTION_TYPE action = app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? FWP_ACTION_PERMIT : FWP_ACTION_BLOCK;
 
 		_wfp_createfilter (L"BlockListenConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, 0, &filter_ids);
 		_wfp_createfilter (L"BlockListenConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, 0, &filter_ids);
