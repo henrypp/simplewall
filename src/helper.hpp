@@ -50,7 +50,7 @@ void _app_generate_services ();
 
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash);
 
-bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, PBYTE* lpdata);
+bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, PBYTE* lpdata);
 
 INT CALLBACK _app_listviewcompare_callback (LPARAM lp1, LPARAM lp2, LPARAM lparam);
 void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id = INVALID_INT, bool is_notifycode = false);

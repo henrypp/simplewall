@@ -111,7 +111,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	{
 		ptr_app->type = DataAppUWP;
 
-		_app_item_get (DataAppUWP, app_hash, nullptr, &real_path, &ptr_app->pdata);
+		_app_item_get (DataAppUWP, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, &ptr_app->pdata);
 	}
 	else if (PathIsNetworkPath (path)) // network path
 	{
@@ -125,9 +125,11 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 		if (!is_ntoskrnl && real_path.Find (OBJ_NAME_PATH_SEPARATOR) == rstring::npos)
 		{
-			if (_app_item_get (DataAppService, app_hash, nullptr, &real_path, &ptr_app->pdata))
-				ptr_app->type = DataAppService;
+			if (_app_item_get (DataAppService, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, &ptr_app->pdata))
+			{
 
+				ptr_app->type = DataAppService;
+			}
 			else
 				ptr_app->type = DataAppPico;
 		}
@@ -481,14 +483,14 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 				{
 					rstring display_name;
 
-					if (_app_item_get (ptr_app->type, lparam, &display_name, nullptr, nullptr))
+					if (_app_item_get (ptr_app->type, lparam, &display_name, nullptr, nullptr, nullptr))
 						result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), ptr_app->original_path, display_name.GetString ());
 				}
 				else if (ptr_app->type == DataAppUWP)
 				{
 					rstring display_name;
 
-					if (_app_item_get (ptr_app->type, lparam, &display_name, nullptr, nullptr))
+					if (_app_item_get (ptr_app->type, lparam, &display_name, nullptr, nullptr, nullptr))
 						result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), display_name.GetString ());
 				}
 
@@ -977,7 +979,7 @@ bool _app_isappexists (ITEM_APP* ptr_app)
 		return ptr_app->real_path && ptr_app->real_path[0] && _r_fs_exists (ptr_app->real_path);
 
 	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
-		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr);
+		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr);
 
 	return true;
 }

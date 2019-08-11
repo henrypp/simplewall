@@ -434,7 +434,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 		{
 			sidstring = _r_str_fromsid (package_id);
 
-			if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, sidstring.Hash (), nullptr, nullptr, nullptr))
+			if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, sidstring.Hash (), nullptr, nullptr, nullptr, nullptr))
 				sidstring.Clear ();
 		}
 
