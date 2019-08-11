@@ -327,20 +327,18 @@ typedef struct tagITEM_APP_HELPER
 {
 	tagITEM_APP_HELPER ()
 	{
-		sid = nullptr;
 		display_name = nullptr;
-		service_name = nullptr;
 		real_path = nullptr;
+		internal_name = nullptr;
 
 		pdata = nullptr;
 	}
 
 	~tagITEM_APP_HELPER ()
 	{
-		SAFE_DELETE_ARRAY (sid);
 		SAFE_DELETE_ARRAY (display_name);
-		SAFE_DELETE_ARRAY (service_name);
 		SAFE_DELETE_ARRAY (real_path);
+		SAFE_DELETE_ARRAY (internal_name);
 
 		SAFE_LOCAL_FREE (pdata);
 	}
@@ -351,8 +349,7 @@ typedef struct tagITEM_APP_HELPER
 
 	LPWSTR display_name = nullptr;
 	LPWSTR real_path = nullptr;
-	LPWSTR sid = nullptr;
-	LPWSTR service_name = nullptr;
+	LPWSTR internal_name = nullptr;
 
 	PVOID pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 } ITEM_APP_HELPER, *PITEM_APP_HELPER;
