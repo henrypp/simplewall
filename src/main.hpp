@@ -342,14 +342,7 @@ typedef struct tagITEM_APP_HELPER
 		SAFE_DELETE_ARRAY (service_name);
 		SAFE_DELETE_ARRAY (real_path);
 
-		if (type == DataAppService)
-		{
-			SAFE_DELETE_ARRAY (PSECURITY_DESCRIPTOR (pdata));
-		}
-		else if (type == DataAppUWP)
-		{
-			SAFE_DELETE_ARRAY (PSID (pdata));
-		}
+		SAFE_LOCAL_FREE (pdata);
 	}
 
 	time_t timestamp = 0;
