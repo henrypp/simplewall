@@ -195,8 +195,8 @@ bool _app_notifycommand (HWND hwnd, UINT button_id, time_t seconds)
 
 	OBJECTS_VEC rules;
 
-	const UINT listview_id = _app_getlistview_id (ptr_app->type);
-	const size_t item = _app_getposition (app.GetHWND (), listview_id, app_hash);
+	const INT listview_id = _app_getlistview_id (ptr_app->type);
+	const INT item_pos = _app_getposition (app.GetHWND (), listview_id, app_hash);
 
 	if (button_id == IDC_ALLOW_BTN || button_id == IDC_BLOCK_BTN)
 	{
@@ -209,10 +209,10 @@ bool _app_notifycommand (HWND hwnd, UINT button_id, time_t seconds)
 		}
 		else
 		{
-			if (item != LAST_VALUE)
+			if (item_pos != INVALID_INT)
 			{
 				_r_fastlock_acquireshared (&lock_checkbox);
-				_app_setappiteminfo (app.GetHWND (), listview_id, item, app_hash, ptr_app);
+				_app_setappiteminfo (app.GetHWND (), listview_id, item_pos, app_hash, ptr_app);
 				_r_fastlock_releaseshared (&lock_checkbox);
 			}
 		}
@@ -321,7 +321,7 @@ size_t _app_notifyget_id (HWND hwnd, size_t current_id)
 {
 	size_t app_hash_current = (size_t)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
-	if (current_id == LAST_VALUE)
+	if (current_id == INVALID_SIZE_T)
 	{
 		for (auto &p : apps)
 		{
@@ -454,7 +454,7 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 		_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
 		_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, !is_safety);
 
-		ShowWindow (GetDlgItem (hwnd, IDC_NEXT_BTN), _app_notifyget_id (hwnd, LAST_VALUE) ? SW_SHOW : SW_HIDE);
+		ShowWindow (GetDlgItem (hwnd, IDC_NEXT_BTN), _app_notifyget_id (hwnd, INVALID_SIZE_T) ? SW_SHOW : SW_HIDE);
 
 		_r_ctrl_settext (hwnd, IDC_RULES_BTN, app.LocaleString (IDS_TRAY_RULES, nullptr));
 		_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
@@ -532,7 +532,7 @@ void _app_notifyrefresh (HWND hwnd, bool is_safety)
 	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () || !IsWindowVisible (hwnd))
 		_app_notifyhide (config.hnotification);
 
-	PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, LAST_VALUE));
+	PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, INVALID_SIZE_T));
 
 	if (!ptr_log_object)
 	{
@@ -957,28 +957,28 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 											_app_ruleenable (ptr_rule, true);
 										}
 
-										const UINT listview_id = _app_gettab_id (app.GetHWND ());
-										const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
-										const UINT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+										const INT listview_id = _app_gettab_id (app.GetHWND ());
+										const INT app_listview_id = _app_getlistview_id (ptr_app->type);
+										const INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
 
 										{
-											const size_t app_item = _app_getposition (app.GetHWND (), app_listview_id, ptr_log->app_hash);
+											const INT item_pos = _app_getposition (app.GetHWND (), app_listview_id, ptr_log->app_hash);
 
-											if (app_item != LAST_VALUE)
+											if (item_pos != INVALID_INT)
 											{
 												_r_fastlock_acquireshared (&lock_checkbox);
-												_app_setappiteminfo (app.GetHWND (), app_listview_id, app_item, ptr_log->app_hash, ptr_app);
+												_app_setappiteminfo (app.GetHWND (), app_listview_id, item_pos, ptr_log->app_hash, ptr_app);
 												_r_fastlock_releaseshared (&lock_checkbox);
 											}
 										}
 
 										{
-											const size_t rule_item = _app_getposition (app.GetHWND (), rule_listview_id, rule_idx);
+											const INT item_pos = _app_getposition (app.GetHWND (), rule_listview_id, rule_idx);
 
-											if (rule_item != LAST_VALUE)
+											if (item_pos != INVALID_INT)
 											{
 												_r_fastlock_acquireshared (&lock_checkbox);
-												_app_setruleiteminfo (app.GetHWND (), rule_listview_id, rule_item, ptr_rule, false);
+												_app_setruleiteminfo (app.GetHWND (), rule_listview_id, item_pos, ptr_rule, false);
 												_r_fastlock_releaseshared (&lock_checkbox);
 											}
 										}
@@ -1043,7 +1043,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 								if (ptr_app)
 								{
-									const UINT listview_id = _app_getlistview_id (ptr_app->type);
+									const INT listview_id = _app_getlistview_id (ptr_app->type);
 
 									if (listview_id)
 										_app_showitem (app.GetHWND (), listview_id, _app_getposition (app.GetHWND (), listview_id, ptr_log->app_hash));
@@ -1082,7 +1082,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				case IDC_NEXT_BTN:
 				{
-					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, LAST_VALUE));
+					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, INVALID_SIZE_T));
 
 					if (ptr_log_object)
 					{
@@ -1167,15 +1167,15 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 						_r_fastlock_releaseexclusive (&lock_access);
 
-						const UINT listview_id = _app_gettab_id (app.GetHWND ());
+						const INT listview_id = _app_gettab_id (app.GetHWND ());
 
 						// set rule information
 						{
-							const UINT rules_listview_id = _app_getlistview_id (ptr_rule->type);
+							const INT rules_listview_id = _app_getlistview_id (ptr_rule->type);
 
 							if (rules_listview_id)
 							{
-								const size_t new_item = _r_listview_getitemcount (hwnd, rules_listview_id);
+								const INT new_item = _r_listview_getitemcount (hwnd, rules_listview_id);
 
 								_r_fastlock_acquireshared (&lock_checkbox);
 
@@ -1199,13 +1199,18 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 								if (ptr_app)
 								{
-									const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+									const INT app_listview_id = _app_getlistview_id (ptr_app->type);
 
 									if (app_listview_id)
 									{
-										_r_fastlock_acquireshared (&lock_checkbox);
-										_app_setappiteminfo (app.GetHWND (), app_listview_id, _app_getposition (app.GetHWND (), app_listview_id, app_hash), app_hash, ptr_app);
-										_r_fastlock_releaseshared (&lock_checkbox);
+										const INT item_pos = _app_getposition (app.GetHWND (), app_listview_id, app_hash);
+
+										if (item_pos != INVALID_INT)
+										{
+											_r_fastlock_acquireshared (&lock_checkbox);
+											_app_setappiteminfo (app.GetHWND (), app_listview_id, item_pos, app_hash, ptr_app);
+											_r_fastlock_releaseshared (&lock_checkbox);
+										}
 
 										if (app_listview_id == listview_id)
 											_app_listviewsort (app.GetHWND (), listview_id);

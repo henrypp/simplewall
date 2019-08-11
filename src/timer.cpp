@@ -53,15 +53,15 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 		}
 	}
 
-	const UINT listview_id = _app_getlistview_id (ptr_app->type);
-	const size_t item = _app_getposition (hwnd, listview_id, app_hash);
+	const INT listview_id = _app_getlistview_id (ptr_app->type);
+	const INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
 
-	if (item != LAST_VALUE)
+	if (item_pos != INVALID_INT)
 	{
 		_r_fastlock_acquireshared (&lock_checkbox);
 
-		_r_listview_setitem (hwnd, listview_id, item, 0, nullptr, LAST_VALUE, _app_getappgroup (app_hash, ptr_app));
-		_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
+		_r_listview_setitem (hwnd, listview_id, item_pos, 0, nullptr, INVALID_INT, _app_getappgroup (app_hash, ptr_app));
+		_r_listview_setitemcheck (hwnd, listview_id, item_pos, ptr_app->is_enabled);
 
 		_r_fastlock_releaseshared (&lock_checkbox);
 	}
@@ -89,16 +89,16 @@ bool _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 	ptr_app->timer = 0;
 
 	const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
-	const UINT listview_id = _app_getlistview_id (ptr_app->type);
+	const INT listview_id = _app_getlistview_id (ptr_app->type);
 
 	if (listview_id)
 	{
-		const size_t item = _app_getposition (hwnd, listview_id, app_hash);
+		const INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
 
-		if (item != LAST_VALUE)
+		if (item_pos != INVALID_INT)
 		{
 			_r_fastlock_acquireshared (&lock_checkbox);
-			_app_setappiteminfo (hwnd, listview_id, item, app_hash, ptr_app);
+			_app_setappiteminfo (hwnd, listview_id, item_pos, app_hash, ptr_app);
 			_r_fastlock_releaseshared (&lock_checkbox);
 		}
 	}
@@ -166,7 +166,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 	_app_timer_reset (hwnd, ptr_app);
 	_wfp_create3filters (rules, __LINE__);
 
-	const UINT listview_id = _app_gettab_id (hwnd);
+	const INT listview_id = _app_gettab_id (hwnd);
 
 	_app_listviewsort (hwnd, listview_id);
 

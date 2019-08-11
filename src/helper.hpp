@@ -17,8 +17,8 @@ void _app_dereferencerule (PVOID pdata);
 void _app_dereferenceruleconfig (PVOID pdata);
 void _app_dereferencestring (PVOID pdata);
 
-UINT _app_gettab_id (HWND hwnd, UINT page_id = UINT (-1));
-void _app_settab_id (HWND hwnd, UINT page_id);
+INT _app_gettab_id (HWND hwnd, INT page_id = INVALID_INT);
+void _app_settab_id (HWND hwnd, INT page_id);
 
 bool _app_initinterfacestate (HWND hwnd);
 void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
@@ -34,9 +34,9 @@ void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec, OBJECT_CLEANUP_CALLBACK cleanup
 void _app_freethreadpool (THREADS_VEC* ptr_pool);
 void _app_freelogstack ();
 
-void _app_getappicon (ITEM_APP* ptr_app, bool is_small, size_t* picon_id, HICON* picon);
+void _app_getappicon (ITEM_APP* ptr_app, bool is_small, PINT picon_id, HICON* picon);
 void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR* extracted_name);
-bool _app_getfileicon (LPCWSTR path, bool is_small, size_t* picon_id, HICON* picon);
+bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON* picon);
 rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path);
 PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app);
 PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app);
@@ -53,7 +53,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash);
 bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, PBYTE* lpdata);
 
 INT CALLBACK _app_listviewcompare_callback (LPARAM lp1, LPARAM lp2, LPARAM lparam);
-void _app_listviewsort (HWND hwnd, UINT listview_id, INT column = -1, bool is_notifycode = false);
+void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id = INVALID_INT, bool is_notifycode = false);
 
 void _app_refreshstatus (HWND hwnd);
 
@@ -66,10 +66,10 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
 bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR* pbuffer);
 void _app_resolvefilename (rstring& path);
 
-UINT _app_getlistview_id (EnumDataType type);
+INT _app_getlistview_id (EnumDataType type);
 
-size_t _app_getposition (HWND hwnd, UINT listview_id, size_t lparam);
-void _app_showitem (HWND hwnd, UINT listview_id, size_t item, INT scroll_pos = -1);
+INT _app_getposition (HWND hwnd, INT listview_id, size_t lparam);
+void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos = -1);
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size);
 HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size);

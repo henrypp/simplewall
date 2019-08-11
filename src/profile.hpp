@@ -18,14 +18,14 @@ void _app_freeapplication (size_t hash);
 
 void _app_getcount (PITEM_STATUS ptr_status);
 
-size_t _app_getappgroup (size_t app_hash, PITEM_APP ptr_app);
-size_t _app_getrulegroup (PITEM_RULE ptr_rule);
-size_t _app_getruleicon (PITEM_RULE ptr_rule);
+INT _app_getappgroup (size_t app_hash, PITEM_APP ptr_app);
+INT _app_getrulegroup (PITEM_RULE ptr_rule);
+INT _app_getruleicon (PITEM_RULE ptr_rule);
 
-rstring _app_gettooltip (UINT listview_id, size_t idx);
+rstring _app_gettooltip (INT listview_id, size_t lparam);
 
-void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_hash, PITEM_APP ptr_app);
-void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule, bool include_apps);
+void _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, size_t app_hash, PITEM_APP ptr_app);
+void _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_rule, bool include_apps);
 
 void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable);
 void _app_ruleenable2 (PITEM_RULE ptr_rule, bool is_enable);

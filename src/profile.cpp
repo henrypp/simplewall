@@ -31,7 +31,7 @@ bool _app_getappinfo (size_t app_hash, EnumInfo info_key, LPVOID presult, size_t
 		}
 		else if (info_key == InfoListviewId)
 		{
-			UINT v = _app_getlistview_id (ptr_app->type);
+			INT v = _app_getlistview_id (ptr_app->type);
 			CopyMemory (presult, &v, size);
 		}
 	}
@@ -189,11 +189,11 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	// insert item
 	if (hwnd)
 	{
-		const UINT listview_id = _app_getlistview_id (ptr_app->type);
+		const INT listview_id = _app_getlistview_id (ptr_app->type);
 
 		if (listview_id)
 		{
-			const size_t item = _r_listview_getitemcount (hwnd, listview_id);
+			const INT item = _r_listview_getitemcount (hwnd, listview_id);
 
 			_r_fastlock_acquireshared (&lock_checkbox);
 
@@ -217,7 +217,7 @@ PR_OBJECT _app_getappitem (size_t app_hash)
 
 PR_OBJECT _app_getrulebyid (size_t idx)
 {
-	if (idx == LAST_VALUE || idx >= rules_arr.size ())
+	if (idx == INVALID_SIZE_T || idx >= rules_arr.size ())
 		return nullptr;
 
 	return _r_obj_reference (rules_arr.at (idx));
@@ -306,13 +306,18 @@ void _app_freeapplication (size_t app_hash)
 							ptr_rule->is_haveerrors = false;
 						}
 
-						const UINT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+						const INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
 
 						if (rule_listview_id)
 						{
-							_r_fastlock_acquireshared (&lock_checkbox);
-							_app_setruleiteminfo (app.GetHWND (), rule_listview_id, _app_getposition (app.GetHWND (), rule_listview_id, i), ptr_rule, false);
-							_r_fastlock_releaseshared (&lock_checkbox);
+							const INT item_pos = _app_getposition (app.GetHWND (), rule_listview_id, i);
+
+							if (item_pos != INVALID_INT)
+							{
+								_r_fastlock_acquireshared (&lock_checkbox);
+								_app_setruleiteminfo (app.GetHWND (), rule_listview_id, item_pos, ptr_rule, false);
+								_r_fastlock_releaseshared (&lock_checkbox);
+							}
 						}
 					}
 				}
@@ -386,10 +391,10 @@ void _app_getcount (PITEM_STATUS ptr_status)
 	}
 }
 
-size_t _app_getappgroup (size_t app_hash, PITEM_APP ptr_app)
+INT _app_getappgroup (size_t app_hash, PITEM_APP ptr_app)
 {
 	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
-	//		return LAST_VALUE;
+	//		return INVALID_INT;
 
 	if (!ptr_app)
 		return 2;
@@ -401,10 +406,10 @@ size_t _app_getappgroup (size_t app_hash, PITEM_APP ptr_app)
 	return ptr_app->is_enabled ? 0 : 2;
 }
 
-size_t _app_getrulegroup (PITEM_RULE ptr_rule)
+INT _app_getrulegroup (PITEM_RULE ptr_rule)
 {
 	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
-	//		return LAST_VALUE;
+	//		return INVALID_INT;
 
 	if (!ptr_rule || !ptr_rule->is_enabled)
 		return 2;
@@ -415,7 +420,7 @@ size_t _app_getrulegroup (PITEM_RULE ptr_rule)
 	return 0;
 }
 
-size_t _app_getruleicon (PITEM_RULE ptr_rule)
+INT _app_getruleicon (PITEM_RULE ptr_rule)
 {
 	if (!ptr_rule)
 		return 0;
@@ -423,7 +428,7 @@ size_t _app_getruleicon (PITEM_RULE ptr_rule)
 	return ptr_rule->is_block ? 1 : 0;
 }
 
-rstring _app_gettooltip (UINT listview_id, size_t idx)
+rstring _app_gettooltip (INT listview_id, size_t lparam)
 {
 	rstring result;
 
@@ -431,20 +436,20 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 	{
 		if (listview_id == IDC_NETWORK)
 		{
-			PR_OBJECT ptr_network_object = _app_getnetworkitem (idx);
+			PR_OBJECT ptr_network_object = _app_getnetworkitem (lparam);
 
 			if (ptr_network_object)
 			{
 				PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
 				if (ptr_network)
-					idx = ptr_network->app_hash;
+					lparam = ptr_network->app_hash;
 
 				_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 			}
 		}
 
-		PR_OBJECT ptr_app_object = _app_getappitem (idx);
+		PR_OBJECT ptr_app_object = _app_getappitem (lparam);
 
 		if (ptr_app_object)
 		{
@@ -458,7 +463,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 				if (ptr_app->type == DataAppRegular)
 				{
 					rstring display_name;
-					PR_OBJECT ptr_version_object = _app_getversioninfo (idx, ptr_app);
+					PR_OBJECT ptr_version_object = _app_getversioninfo (lparam, ptr_app);
 
 					if (ptr_version_object)
 					{
@@ -476,21 +481,21 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 				{
 					rstring display_name;
 
-					if (_app_item_get (ptr_app->type, idx, &display_name, nullptr, nullptr))
+					if (_app_item_get (ptr_app->type, lparam, &display_name, nullptr, nullptr))
 						result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), ptr_app->original_path, display_name.GetString ());
 				}
 				else if (ptr_app->type == DataAppUWP)
 				{
 					rstring display_name;
 
-					if (_app_item_get (ptr_app->type, idx, &display_name, nullptr, nullptr))
+					if (_app_item_get (ptr_app->type, lparam, &display_name, nullptr, nullptr))
 						result.AppendFormat (L"\r\n%s:\r\n" SZ_TAB L"%s" SZ_TAB, app.LocaleString (IDS_FILE, nullptr).GetString (), display_name.GetString ());
 				}
 
 				// signature information
 				if (app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
 				{
-					PR_OBJECT ptr_signature_object = _app_getsignatureinfo (idx, ptr_app);
+					PR_OBJECT ptr_signature_object = _app_getsignatureinfo (lparam, ptr_app);
 
 					if (ptr_signature_object)
 					{
@@ -512,7 +517,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 					if (!_app_isappexists (ptr_app))
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_INVALID, nullptr).GetString ());
 
-					if (listview_id != IDC_NETWORK && _app_isapphaveconnection (idx))
+					if (listview_id != IDC_NETWORK && _app_isapphaveconnection (lparam))
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION, nullptr).GetString ());
 
 					if (ptr_app->is_silent)
@@ -553,7 +558,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 		listview_id == IDC_RULES_CUSTOM
 		)
 	{
-		PR_OBJECT ptr_rule_object = _app_getrulebyid (idx);
+		PR_OBJECT ptr_rule_object = _app_getrulebyid (lparam);
 
 		if (ptr_rule_object)
 		{
@@ -567,7 +572,7 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 				rule_remote = rule_remote.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_remote.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
 				rule_local = rule_local.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_local.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
 
-				result.Format (L"%s (#%d)\r\n%s:\r\n%s%s\r\n%s:\r\n%s%s", ptr_rule->pname, idx, app.LocaleString (IDS_RULE, L" (" SZ_LOG_REMOTE_ADDRESS L")").GetString (), SZ_TAB, rule_remote.GetString (), app.LocaleString (IDS_RULE, L" (" SZ_LOG_LOCAL_ADDRESS L")").GetString (), SZ_TAB, rule_local.GetString ());
+				result.Format (L"%s (#%d)\r\n%s:\r\n%s%s\r\n%s:\r\n%s%s", ptr_rule->pname, lparam, app.LocaleString (IDS_RULE, L" (" SZ_LOG_REMOTE_ADDRESS L")").GetString (), SZ_TAB, rule_remote.GetString (), app.LocaleString (IDS_RULE, L" (" SZ_LOG_LOCAL_ADDRESS L")").GetString (), SZ_TAB, rule_local.GetString ());
 
 				if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
 					result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_FILEPATH, nullptr).GetString (), SZ_TAB, _app_rulesexpand (ptr_rule, true, L"\r\n" SZ_TAB).GetString ());
@@ -580,9 +585,9 @@ rstring _app_gettooltip (UINT listview_id, size_t idx)
 	return result;
 }
 
-void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_hash, PITEM_APP ptr_app)
+void _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, size_t app_hash, PITEM_APP ptr_app)
 {
-	if (!ptr_app || !listview_id || item == LAST_VALUE)
+	if (!ptr_app || !listview_id || item == INVALID_INT)
 		return;
 
 	_app_getappicon (ptr_app, true, &ptr_app->icon_id, nullptr);
@@ -593,9 +598,9 @@ void _app_setappiteminfo (HWND hwnd, UINT listview_id, size_t item, size_t app_h
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
 }
 
-void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE ptr_rule, bool include_apps)
+void _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_rule, bool include_apps)
 {
-	if (!ptr_rule || !listview_id || item == LAST_VALUE)
+	if (!ptr_rule || !listview_id || item == INVALID_INT)
 		return;
 
 	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->type == DataRuleCustom && ptr_rule->is_readonly ? _r_fmt (L"%s" SZ_READONLY_RULE, ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
@@ -618,9 +623,15 @@ void _app_setruleiteminfo (HWND hwnd, UINT listview_id, size_t item, PITEM_RULE 
 
 			if (ptr_app)
 			{
-				const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+				const INT app_listview_id = _app_getlistview_id (ptr_app->type);
 
-				_app_setappiteminfo (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash), app_hash, ptr_app);
+				if (app_listview_id)
+				{
+					const INT item_pos = _app_getposition (app.GetHWND (), app_listview_id, app_hash);
+
+					if (item_pos != INVALID_INT)
+						_app_setappiteminfo (hwnd, app_listview_id, item_pos, app_hash, ptr_app);
+				}
 			}
 
 			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
@@ -753,7 +764,7 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 {
 	OBJECTS_VEC rules;
 
-	const UINT listview_id = _app_getlistview_id (DataRuleBlocklist);
+	const INT listview_id = _app_getlistview_id (DataRuleBlocklist);
 	size_t changes_count = 0;
 
 	for (size_t i = 0; i < rules_arr.size (); i++)
@@ -782,12 +793,12 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 		if (hwnd)
 		{
-			const size_t pos = _app_getposition (hwnd, listview_id, i);
+			const INT item_pos = _app_getposition (hwnd, listview_id, i);
 
-			if (pos != LAST_VALUE)
+			if (item_pos != INVALID_INT)
 			{
 				_r_fastlock_acquireshared (&lock_checkbox);
-				_app_setruleiteminfo (hwnd, listview_id, pos, ptr_rule, false);
+				_app_setruleiteminfo (hwnd, listview_id, item_pos, ptr_rule, false);
 				_r_fastlock_releaseshared (&lock_checkbox);
 			}
 		}
@@ -1002,12 +1013,12 @@ bool _app_isrulehost (LPCWSTR rule)
 		for (size_t i = 0; i < _r_str_length (rule); i++)
 		{
 			if (
-				rule[i] == L'#'||
-				rule[i] == L'%'||
-				rule[i] == L'&'||
-				rule[i] == L'*'||
-				rule[i] == L'@'||
-				rule[i] == L')'||
+				rule[i] == L'#' ||
+				rule[i] == L'%' ||
+				rule[i] == L'&' ||
+				rule[i] == L'*' ||
+				rule[i] == L'@' ||
+				rule[i] == L')' ||
 				rule[i] == L'('
 				)
 				return false;
@@ -1343,14 +1354,14 @@ void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t * pti
 
 void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 {
-	const UINT current_listview_id = _app_gettab_id (hwnd);
-	const size_t selected_item = (size_t)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+	const INT current_listview_id = _app_gettab_id (hwnd);
+	const INT selected_item = (INT)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 	const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, current_listview_id), SB_VERT);
 
 	// clean listview
 	if (hwnd)
 	{
-		for (UINT i = IDC_APPS_PROFILE; i <= IDC_RULES_CUSTOM; i++)
+		for (INT i = IDC_APPS_PROFILE; i <= IDC_RULES_CUSTOM; i++)
 			_r_listview_deleteallitems (hwnd, i);
 	}
 
@@ -1542,21 +1553,18 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 			if (ptr_app)
 			{
-				const UINT listview_id = _app_getlistview_id (ptr_app->type);
+				const INT listview_id = _app_getlistview_id (ptr_app->type);
 
 				if (listview_id)
 				{
-					const size_t item = _r_listview_getitemcount (hwnd, listview_id);
+					const INT item = _r_listview_getitemcount (hwnd, listview_id);
 
-					if (item != LAST_VALUE)
-					{
-						_r_fastlock_acquireshared (&lock_checkbox);
+					_r_fastlock_acquireshared (&lock_checkbox);
 
-						_r_listview_additem (hwnd, listview_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
-						_app_setappiteminfo (hwnd, listview_id, item, app_hash, ptr_app);
+					_r_listview_additem (hwnd, listview_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+					_app_setappiteminfo (hwnd, listview_id, item, app_hash, ptr_app);
 
-						_r_fastlock_releaseshared (&lock_checkbox);
-					}
+					_r_fastlock_releaseshared (&lock_checkbox);
 				}
 
 				// install timer
@@ -1595,11 +1603,11 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 			if (ptr_rule)
 			{
-				const UINT listview_id = _app_getlistview_id (ptr_rule->type);
+				const INT listview_id = _app_getlistview_id (ptr_rule->type);
 
 				if (listview_id)
 				{
-					const size_t item = _r_listview_getitemcount (hwnd, listview_id);
+					const INT item = _r_listview_getitemcount (hwnd, listview_id);
 
 					_r_fastlock_acquireshared (&lock_checkbox);
 
@@ -1618,7 +1626,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 	if (hwnd && current_listview_id)
 	{
-		const UINT new_listview_id = _app_gettab_id (hwnd);
+		const INT new_listview_id = _app_gettab_id (hwnd);
 
 		_app_listviewsort (hwnd, new_listview_id);
 

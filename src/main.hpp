@@ -272,9 +272,9 @@ struct STATIC_DATA
 	size_t tmp_length = 0;
 	size_t wd_length = 0;
 
-	size_t icon_id = 0;
-	size_t icon_service_id = 0;
-	size_t icon_uwp_id = 0;
+	INT icon_id = 0;
+	INT icon_service_id = 0;
+	INT icon_uwp_id = 0;
 
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
@@ -291,7 +291,7 @@ typedef struct tagITEM_APP
 
 		SAFE_DELETE_ARRAY (pdata);
 
-		_r_obj_dereference (pnotification , &_app_dereferencelog);
+		_r_obj_dereference (pnotification, &_app_dereferencelog);
 	}
 
 	GUIDS_VEC guids;
@@ -309,7 +309,7 @@ typedef struct tagITEM_APP
 	time_t timer = 0;
 	time_t last_notify = 0;
 
-	size_t icon_id = 0;
+	INT icon_id = 0;
 
 	EnumDataType type = DataUnknown;
 
@@ -341,6 +341,15 @@ typedef struct tagITEM_APP_HELPER
 		SAFE_DELETE_ARRAY (display_name);
 		SAFE_DELETE_ARRAY (service_name);
 		SAFE_DELETE_ARRAY (real_path);
+
+		if (type == DataAppService)
+		{
+			SAFE_DELETE_ARRAY (PSECURITY_DESCRIPTOR (pdata));
+		}
+		else if (type == DataAppUWP)
+		{
+			SAFE_DELETE_ARRAY (PSID (pdata));
+		}
 	}
 
 	time_t timestamp = 0;
@@ -511,7 +520,7 @@ typedef struct tagITEM_NETWORK
 		IN6_ADDR local_addr6;
 	};
 
-	size_t icon_id = 0;
+	INT icon_id = 0;
 
 	DWORD state = 0;
 

@@ -864,7 +864,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 			_r_fastlock_releaseshared (&lock_logbusy);
 
-			UINT app_listview_id = 0;
+			INT app_listview_id = 0;
 
 			if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)) && app_listview_id == _app_gettab_id (hwnd))
 				_app_listviewsort (hwnd, app_listview_id);

@@ -45,7 +45,7 @@ EXTERN_C const IID IID_IImageList2;
 
 const UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
 
-void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
+void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 {
 	if (!listview_id || (!is_forced && !app.ConfigGet (L"AutoSizeColumns", true).AsBool ()))
 		return;
@@ -59,8 +59,8 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 	const HWND hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
 
-	const UINT column_count = _r_listview_getcolumncount (hwnd, listview_id);
-	const size_t item_count = _r_listview_getitemcount (hwnd, listview_id);
+	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
+	const INT item_count = _r_listview_getitemcount (hwnd, listview_id);
 	const bool is_tableview = (SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
 
 	const HDC hdc_listview = GetDC (hlistview);
@@ -77,7 +77,7 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 		INT column_width;
 		INT calculated_width = 0;
 
-		for (UINT i = column_count - 1; i != UINT (-1); i--)
+		for (INT i = column_count - 1; i != -1; i--)
 		{
 			if (i == 0)
 			{
@@ -97,7 +97,7 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 
 				if (is_tableview)
 				{
-					for (size_t j = 0; j < item_count; j++)
+					for (INT j = 0; j < item_count; j++)
 					{
 						const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
 						const INT text_width = _r_dc_fontwidth (hdc_listview, item_text, item_text.GetLength ()) + caption_spacing;
@@ -119,7 +119,7 @@ void _app_listviewresize (HWND hwnd, UINT listview_id, bool is_forced = false)
 	ReleaseDC (hheader, hdc_header);
 }
 
-void _app_listviewsetview (HWND hwnd, UINT listview_id)
+void _app_listviewsetview (HWND hwnd, INT listview_id)
 {
 	const bool is_mainview = (listview_id != IDC_APPS_LV) && (listview_id != IDC_NETWORK);
 	const bool is_tableview = !is_mainview || app.ConfigGet (L"IsTableView", true).AsBool ();
@@ -207,7 +207,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 	return true;
 }
 
-void _app_listviewsetfont (HWND hwnd, UINT ctrl_id, bool is_redraw)
+void _app_listviewsetfont (HWND hwnd, INT listview_id, bool is_redraw)
 {
 	LOGFONT lf = {0};
 
@@ -225,7 +225,7 @@ void _app_listviewsetfont (HWND hwnd, UINT ctrl_id, bool is_redraw)
 	}
 
 	if (config.hfont)
-		SendDlgItemMessage (hwnd, ctrl_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
+		SendDlgItemMessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
 }
 
 COLORREF _app_getcolorvalue (size_t color_hash)
@@ -256,7 +256,7 @@ COLORREF _app_getcolorvalue (size_t color_hash)
 	return 0;
 }
 
-COLORREF _app_getcolor (UINT listview_id, size_t app_hash)
+COLORREF _app_getcolor (INT listview_id, size_t app_hash)
 {
 	rstring color_value;
 
@@ -396,9 +396,9 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 				if (ptr_network)
 				{
-					const size_t item = _r_listview_getitemcount (hwnd, network_listview_id);
+					const INT item = _r_listview_getitemcount (hwnd, network_listview_id);
 
-					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, LAST_VALUE, p.first);
+					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, INVALID_INT, p.first);
 
 					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
 					_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
@@ -408,16 +408,16 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					// redraw listview item
 					if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
 					{
-						UINT app_listview_id = 0;
+						INT app_listview_id = 0;
 
 						if (_app_getappinfo (ptr_network->app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 						{
 							if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
 							{
-								const size_t app_item = _app_getposition (hwnd, app_listview_id, ptr_network->app_hash);
+								const INT item_pos = _app_getposition (hwnd, app_listview_id, ptr_network->app_hash);
 
-								if (app_item != LAST_VALUE)
-									_r_listview_redraw (hwnd, app_listview_id, app_item, app_item);
+								if (item_pos != INVALID_INT)
+									_r_listview_redraw (hwnd, app_listview_id, item_pos, item_pos);
 							}
 						}
 					}
@@ -428,7 +428,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 				is_refresh = true;
 			}
 
-			for (size_t i = _r_listview_getitemcount (hwnd, network_listview_id) - 1; i != LAST_VALUE; i--)
+			for (INT i = _r_listview_getitemcount (hwnd, network_listview_id) - 1; i != INVALID_INT; i--)
 			{
 				const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
 
@@ -440,16 +440,16 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
 					{
 						size_t app_hash = _app_getnetworkapp (network_hash);
-						UINT app_listview_id = 0;
+						INT app_listview_id = 0;
 
 						if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 						{
 							if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
 							{
-								const size_t app_item = _app_getposition (hwnd, app_listview_id, app_hash);
+								const INT item_pos = _app_getposition (hwnd, app_listview_id, app_hash);
 
-								if (app_item != LAST_VALUE)
-									_r_listview_redraw (hwnd, app_listview_id, app_item, app_item);
+								if (item_pos != INVALID_INT)
+									_r_listview_redraw (hwnd, app_listview_id, item_pos, item_pos);
 							}
 						}
 					}
@@ -461,7 +461,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 			if (is_refresh)
 			{
-				const UINT current_listview_id = _app_gettab_id (hwnd);
+				const INT current_listview_id = _app_gettab_id (hwnd);
 
 				if (current_listview_id != network_listview_id)
 				{
@@ -490,7 +490,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 	if (_wfp_isfiltersapplying ())
 		return false;
 
-	const UINT listview_id = _app_gettab_id (hwnd);
+	const INT listview_id = _app_gettab_id (hwnd);
 
 	_app_listviewsort (hwnd, listview_id);
 
@@ -822,7 +822,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// apps (apply to)
 			{
-				size_t item = 0;
+				INT item = 0;
 
 				_r_fastlock_acquireshared (&lock_access);
 
@@ -858,7 +858,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_acquireshared (&lock_checkbox);
 
-					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, LAST_VALUE, p.first);
+					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, INVALID_INT, p.first);
 					_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, is_enabled);
 
 					_r_fastlock_releaseshared (&lock_checkbox);
@@ -1063,7 +1063,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (_r_fastlock_islocked (&lock_checkbox))
 							break;
 
-						const bool is_havechecks = _r_listview_getitemcount (hwnd, IDC_APPS_LV, true);
+						const bool is_havechecks = !!_r_listview_getitemcount (hwnd, IDC_APPS_LV, true);
 						CheckRadioButton (hwnd, IDC_DISABLE_CHK, IDC_ENABLEFORAPPS_CHK, is_havechecks ? IDC_ENABLEFORAPPS_CHK : IDC_DISABLE_CHK);
 
 						_app_listviewsort (hwnd, IDC_APPS_LV);
@@ -1077,9 +1077,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (_r_fastlock_tryacquireshared (&lock_access))
 					{
 						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
-						const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, (UINT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
+						const size_t idx = _r_listview_getitemlparam (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
-						StringCchCopy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((UINT)lpnmlv->hdr.idFrom, idx));
+						StringCchCopy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((INT)lpnmlv->hdr.idFrom, idx));
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
@@ -1118,11 +1118,11 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_UNCHECK:
 				{
 					const bool new_val = (LOWORD (wparam) == IDM_CHECK) ? true : false;
-					size_t item = LAST_VALUE;
+					INT item = INVALID_INT;
 
 					_r_fastlock_acquireshared (&lock_checkbox);
 
-					while ((item = (size_t)SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+					while ((item = (INT)SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 						_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, new_val);
 
 					_r_fastlock_releaseshared (&lock_checkbox);
@@ -1236,9 +1236,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						const bool is_enable = (IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) != BST_CHECKED);
 
-						for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_APPS_LV); i++)
+						for (INT i = 0; i < _r_listview_getitemcount (hwnd, IDC_APPS_LV); i++)
 						{
-							const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, IDC_APPS_LV, i);
+							const size_t app_hash = _r_listview_getitemlparam (hwnd, IDC_APPS_LV, i);
 
 							if (_app_isappfound (app_hash))
 							{
@@ -1281,7 +1281,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return FALSE;
 }
 
-void _app_config_apply (HWND hwnd, UINT ctrl_id)
+void _app_config_apply (HWND hwnd, INT ctrl_id)
 {
 	bool new_val;
 
@@ -1628,6 +1628,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					_r_listview_addcolumn (hwnd, IDC_COLORS, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
 
+					INT item = 0;
+
 					for (size_t i = 0; i < colors.size (); i++)
 					{
 						PR_OBJECT ptr_color_object = _r_obj_reference (colors.at (i));
@@ -1642,10 +1644,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 								_r_fastlock_acquireshared (&lock_checkbox);
 
-								_r_listview_additem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, LAST_VALUE, i);
-								_r_listview_setitemcheck (hwnd, IDC_COLORS, i, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled, L"colors").AsBool ());
+								_r_listview_additem (hwnd, IDC_COLORS, item, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, INVALID_INT, i);
+								_r_listview_setitemcheck (hwnd, IDC_COLORS, item, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled, L"colors").AsBool ());
 
 								_r_fastlock_releaseshared (&lock_checkbox);
+
+								item += 1;
 							}
 
 							_r_obj_dereference (ptr_color_object, &_app_dereferencecolor);
@@ -1790,9 +1794,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					SetDlgItemText (hwnd, IDC_COLORS_HINT, app.LocaleString (IDS_COLORS_HINT, nullptr));
 
-					for (size_t i = 0; i < _r_listview_getitemcount (hwnd, IDC_COLORS); i++)
+					for (INT i = 0; i < _r_listview_getitemcount (hwnd, IDC_COLORS); i++)
 					{
-						const size_t clr_idx = (size_t)_r_listview_getitemlparam (hwnd, IDC_COLORS, i);
+						const size_t clr_idx = _r_listview_getitemlparam (hwnd, IDC_COLORS, i);
 						PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (clr_idx));
 
 						if (ptr_clr_object)
@@ -1800,7 +1804,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
 
 							if (ptr_clr)
+							{
+								_r_fastlock_acquireshared (&lock_checkbox);
 								_r_listview_setitem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr));
+								_r_fastlock_releaseshared (&lock_checkbox);
+							}
 
 							_r_obj_dereference (ptr_clr_object, &_app_dereferencecolor);
 						}
@@ -1945,7 +1953,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					if (lpnmlv->iItem == -1 || nmlp->idFrom != IDC_COLORS)
 						break;
 
-					const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, (UINT)nmlp->idFrom, lpnmlv->iItem);
+					const size_t idx = _r_listview_getitemlparam (hwnd, (INT)nmlp->idFrom, lpnmlv->iItem);
 					PR_OBJECT ptr_clr_object_current = _r_obj_reference (colors.at (idx));
 
 					PITEM_COLOR ptr_clr_current = nullptr;
@@ -2355,7 +2363,7 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_TAB), nullptr, 0, rebar_height, width, height - rebar_height - statusbar_height, 0);
 
 	{
-		const UINT listview_id = _app_gettab_id (hwnd);
+		const INT listview_id = _app_gettab_id (hwnd);
 
 		if (listview_id)
 		{
@@ -2392,39 +2400,39 @@ void _app_tabs_init (HWND hwnd)
 	const HINSTANCE hinst = app.GetHINSTANCE ();
 	const DWORD listview_ex_style = LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES | LVS_EX_HEADERINALLVIEWS;
 	const DWORD listview_style = WS_CHILD | WS_TABSTOP | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SHAREIMAGELISTS | LVS_AUTOARRANGE;
-	UINT tabs_count = 0;
+	INT tabs_count = 0;
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_PROFILE, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_APPS, nullptr), LAST_VALUE, IDC_APPS_PROFILE);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_APPS, nullptr), INVALID_INT, IDC_APPS_PROFILE);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_SERVICE, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_SERVICES, nullptr), LAST_VALUE, IDC_APPS_SERVICE);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_SERVICES, nullptr), INVALID_INT, IDC_APPS_SERVICE);
 
 	// uwp apps (win8+)
 	if (_r_sys_validversion (6, 2))
 	{
 		CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_APPS_UWP, hinst, nullptr);
-		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_PACKAGES, nullptr), LAST_VALUE, IDC_APPS_UWP);
+		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_PACKAGES, nullptr), INVALID_INT, IDC_APPS_UWP);
 	}
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_BLOCKLIST, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), LAST_VALUE, IDC_RULES_BLOCKLIST);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), INVALID_INT, IDC_RULES_BLOCKLIST);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_SYSTEM, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), LAST_VALUE, IDC_RULES_SYSTEM);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_SYSTEM_RULES, nullptr), INVALID_INT, IDC_RULES_SYSTEM);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_RULES_CUSTOM, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_USER_RULES, nullptr), LAST_VALUE, IDC_RULES_CUSTOM);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TRAY_USER_RULES, nullptr), INVALID_INT, IDC_RULES_CUSTOM);
 
 	CreateWindow (WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_NETWORK, hinst, nullptr);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_NETWORK, nullptr), LAST_VALUE, IDC_NETWORK);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_NETWORK, nullptr), INVALID_INT, IDC_NETWORK);
 
 	RECT rect = {0};
 	GetClientRect (hwnd, &rect);
 
-	for (UINT i = 0; i < tabs_count; i++)
+	for (INT i = 0; i < tabs_count; i++)
 	{
-		const UINT listview_id = _app_gettab_id (hwnd, i);
+		const INT listview_id = _app_gettab_id (hwnd, i);
 
 		if (!listview_id)
 			continue;
@@ -2710,12 +2718,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 		else if ((lpfr->Flags & FR_FINDNEXT) != 0)
 		{
-			const UINT listview_id = _app_gettab_id (hwnd);
-			const size_t total_count = _r_listview_getitemcount (hwnd, listview_id);
+			const INT listview_id = _app_gettab_id (hwnd);
+			const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
 
 			const INT selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED) + 1;
 
-			for (size_t i = selected_item; i < total_count; i++)
+			for (INT i = selected_item; i < total_count; i++)
 			{
 				const rstring text = _r_listview_getitemtext (hwnd, listview_id, i, 0);
 
@@ -3049,9 +3057,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 
 			// localize tabs
-			for (UINT i = 0; i < (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
+			for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 			{
-				const UINT listview_id = _app_gettab_id (hwnd, i);
+				const INT listview_id = _app_gettab_id (hwnd, i);
 
 				UINT locale_id;
 
@@ -3086,7 +3094,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), 0);
 
-					for (size_t j = 0; j < _r_listview_getitemcount (hwnd, listview_id); j++)
+					for (INT j = 0; j < _r_listview_getitemcount (hwnd, listview_id); j++)
 					{
 						const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, j);
 						PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
@@ -3112,7 +3120,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_PROTOCOL, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_DIRECTION, nullptr), 0);
 
-					for (size_t j = 0; j < _r_listview_getitemcount (hwnd, listview_id); j++)
+					for (INT j = 0; j < _r_listview_getitemcount (hwnd, listview_id); j++)
 					{
 						const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, j);
 						PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
@@ -3274,7 +3282,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_refreshstatus (hwnd);
 
 			{
-				UINT app_listview_id = 0;
+				INT app_listview_id = 0;
 
 				if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 				{
@@ -3307,7 +3315,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					for (UINT i = 0; i < tab_count; i++)
 					{
-						const UINT current_id = _app_gettab_id (hwnd, i);
+						const INT current_id = _app_gettab_id (hwnd, i);
 
 						if (current_id)
 							_r_wnd_resize (&hdefer, GetDlgItem (hwnd, current_id), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
@@ -3315,7 +3323,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					EndDeferWindowPos (hdefer);
 
-					const UINT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = _app_gettab_id (hwnd);
 
 					if (IsWindowVisible (GetDlgItem (hwnd, listview_id)))
 						break;
@@ -3381,9 +3389,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (_r_fastlock_tryacquireshared (&lock_access))
 					{
 						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
-						const size_t idx = (size_t)_r_listview_getitemlparam (hwnd, (UINT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
+						const size_t idx = _r_listview_getitemlparam (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
-						StringCchCopy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((UINT)lpnmlv->hdr.idFrom, idx));
+						StringCchCopy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((INT)lpnmlv->hdr.idFrom, idx));
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
@@ -3397,11 +3405,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (IsWindowVisible (lpnmlv->hdr.hwndFrom) && (lpnmlv->uChanged & LVIF_STATE) && (lpnmlv->uNewState == 8192 || lpnmlv->uNewState == 4096) && lpnmlv->uNewState != lpnmlv->uOldState)
 					{
-						const UINT listview_id = _app_gettab_id (hwnd);
-						bool is_changed = false;
-
 						if (_r_fastlock_islocked (&lock_checkbox))
 							break;
+
+						const INT listview_id = (INT)lpnmlv->hdr.idFrom;
+						bool is_changed = false;
 
 						const bool new_val = (lpnmlv->uNewState == 8192) ? true : false;
 
@@ -3444,9 +3452,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 						else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 						{
-							const size_t rule_idx = lpnmlv->lParam;
 							OBJECTS_VEC rules;
 
+							const size_t rule_idx = lpnmlv->lParam;
 							PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 							if (!ptr_rule_object)
@@ -3978,12 +3986,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
-				const UINT app_listview_id = _app_gettab_id (hwnd);
+				const INT app_listview_id = _app_gettab_id (hwnd);
 
 				if (!SendDlgItemMessage (hwnd, app_listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
 					return FALSE;
 
-				size_t item = LAST_VALUE;
+				INT item = INVALID_INT;
 				BOOL is_remove = (BOOL)-1;
 
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
@@ -3996,9 +4004,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				if (ptr_rule)
 				{
-					while ((item = (size_t)SendDlgItemMessage (hwnd, app_listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+					while ((item = (INT)SendDlgItemMessage (hwnd, app_listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 					{
-						const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, app_listview_id, item);
+						const size_t app_hash = _r_listview_getitemlparam (hwnd, app_listview_id, item);
 
 						if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 							continue;
@@ -4039,13 +4047,18 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 					}
 
-					const UINT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+					const INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
 
 					if (rule_listview_id)
 					{
-						_r_fastlock_acquireshared (&lock_checkbox);
-						_app_setruleiteminfo (hwnd, rule_listview_id, _app_getposition (hwnd, rule_listview_id, rule_idx), ptr_rule, true);
-						_r_fastlock_releaseshared (&lock_checkbox);
+						const INT item_pos = _app_getposition (hwnd, rule_listview_id, rule_idx);
+
+						if (item_pos != INVALID_INT)
+						{
+							_r_fastlock_acquireshared (&lock_checkbox);
+							_app_setruleiteminfo (hwnd, rule_listview_id, item_pos, ptr_rule, true);
+							_r_fastlock_releaseshared (&lock_checkbox);
+						}
 					}
 
 					OBJECTS_VEC rules;
@@ -4065,19 +4078,19 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else if ((LOWORD (wparam) >= IDX_TIMER && LOWORD (wparam) <= IDX_TIMER + timers.size ()))
 			{
-				const UINT listview_id = _app_gettab_id (hwnd);
+				const INT listview_id = _app_gettab_id (hwnd);
 
 				if (!SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
 					return FALSE;
 
 				const size_t timer_idx = (LOWORD (wparam) - IDX_TIMER);
 				const time_t seconds = timers.at (timer_idx);
-				size_t item = LAST_VALUE;
+				INT item = INVALID_INT;
 				OBJECTS_VEC rules;
 
-				while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+				while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 				{
-					const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+					const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 
 					_r_fastlock_acquireshared (&lock_access);
 					PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
@@ -4273,13 +4286,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							_app_getdisplayname (app_hash, ptr_app, &ptr_app->display_name);
 
-							const UINT listview_id = _app_getlistview_id (ptr_app->type);
+							const INT listview_id = _app_getlistview_id (ptr_app->type);
 
 							if (listview_id)
 							{
-								const size_t item_pos = _app_getposition (hwnd, listview_id, app_hash);
+								const INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
 
-								if (item_pos != LAST_VALUE)
+								if (item_pos != INVALID_INT)
 								{
 									_r_fastlock_acquireshared (&lock_checkbox);
 									_app_setappiteminfo (hwnd, listview_id, item_pos, app_hash, ptr_app);
@@ -4320,13 +4333,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_app)
 						{
-							const UINT listview_id = _app_getlistview_id (ptr_app->type);
+							const INT listview_id = _app_getlistview_id (ptr_app->type);
 
 							if (listview_id)
 							{
-								const size_t item_pos = _app_getposition (hwnd, listview_id, app_hash);
+								const INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
 
-								if (item_pos != LAST_VALUE)
+								if (item_pos != INVALID_INT)
 								{
 									_r_fastlock_acquireshared (&lock_checkbox);
 									_app_setappiteminfo (hwnd, listview_id, item_pos, app_hash, ptr_app);
@@ -4350,13 +4363,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_rule)
 						{
-							const UINT listview_id = _app_getlistview_id (ptr_rule->type);
+							const INT listview_id = _app_getlistview_id (ptr_rule->type);
 
 							if (listview_id)
 							{
-								const size_t item_pos = _app_getposition (hwnd, listview_id, i);
+								const INT item_pos = _app_getposition (hwnd, listview_id, i);
 
-								if (item_pos != LAST_VALUE)
+								if (item_pos != INVALID_INT)
 								{
 									_r_fastlock_acquireshared (&lock_checkbox);
 									_app_setruleiteminfo (hwnd, listview_id, item_pos, ptr_rule, false);
@@ -4371,6 +4384,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_fastlock_releaseshared (&lock_access);
 
 					_app_listviewsort (hwnd, _app_gettab_id (hwnd));
+					_app_refreshstatus (hwnd);
 
 					break;
 				}
@@ -4379,7 +4393,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_ICONSLARGE:
 				case IDM_ICONSEXTRALARGE:
 				{
-					const UINT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = _app_gettab_id (hwnd);
 
 					INT icon_size;
 
@@ -4410,7 +4424,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					CheckMenuItem (GetMenu (hwnd), LOWORD (wparam), MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"IsTableView", new_val);
 
-					const UINT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = _app_gettab_id (hwnd);
 
 					_app_listviewsetview (hwnd, listview_id);
 					_app_listviewresize (hwnd, listview_id);
@@ -4441,13 +4455,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_app)
 						{
-							const UINT listview_id = _app_getlistview_id (ptr_app->type);
+							const INT listview_id = _app_getlistview_id (ptr_app->type);
 
 							if (listview_id)
 							{
-								const size_t item_pos = _app_getposition (hwnd, listview_id, app_hash);
+								const INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
 
-								if (item_pos != LAST_VALUE)
+								if (item_pos != INVALID_INT)
 								{
 									_r_fastlock_acquireshared (&lock_checkbox);
 									_app_setappiteminfo (hwnd, listview_id, item_pos, app_hash, ptr_app);
@@ -4489,7 +4503,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							config.hfont = nullptr;
 						}
 
-						for (UINT i = 0; i < (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
+						for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 							_app_listviewsetfont (hwnd, _app_gettab_id (hwnd, i), false);
 
 						_app_listviewresize (hwnd, _app_gettab_id (hwnd));
@@ -4780,7 +4794,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 
 						{
-							UINT app_listview_id = 0;
+							INT app_listview_id = 0;
 
 							if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 							{
@@ -4802,8 +4816,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_DISABLETIMER:
 				case IDM_EXPLORE:
 				{
-					const UINT listview_id = _app_gettab_id (hwnd);
-					const UINT ctrl_id = LOWORD (wparam);
+					const INT listview_id = _app_gettab_id (hwnd);
+					const INT ctrl_id = LOWORD (wparam);
 
 					if (
 						listview_id != IDC_APPS_PROFILE &&
@@ -4816,16 +4830,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						break;
 					}
 
-					size_t item = LAST_VALUE;
+					INT item = INVALID_INT;
 					BOOL new_val = BOOL (-1);
 
-					while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 					{
 						size_t app_hash = 0;
 
 						if (listview_id == IDC_NETWORK)
 						{
-							const size_t network_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+							const size_t network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 							PR_OBJECT ptr_network_object = _app_getnetworkitem (network_hash);
 
 							if (!ptr_network_object)
@@ -4850,7 +4864,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 						else
 						{
-							app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+							app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 						}
 
 						_r_fastlock_acquireshared (&lock_access);
@@ -4909,20 +4923,20 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_COPY:
 				case IDM_COPY2:
 				{
-					const UINT listview_id = _app_gettab_id (hwnd);
-					size_t item = LAST_VALUE;
+					const INT listview_id = _app_gettab_id (hwnd);
+					INT item = INVALID_INT;
 
-					const UINT lv_column_count = _r_listview_getcolumncount (hwnd, listview_id);
-					const size_t lv_column_current = lparam;
+					const INT lv_column_count = _r_listview_getcolumncount (hwnd, listview_id);
+					const INT lv_column_current = (INT)lparam;
 					const rstring divider = _r_fmt (L"%c ", DIVIDER_COPY);
 
 					rstring buffer;
 
-					while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 					{
 						if (LOWORD (wparam) == IDM_COPY)
 						{
-							for (UINT column_id = 0; column_id < lv_column_count; column_id++)
+							for (INT column_id = 0; column_id < lv_column_count; column_id++)
 								buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_id)).Append (divider);
 						}
 						else
@@ -4943,8 +4957,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_CHECK:
 				case IDM_UNCHECK:
 				{
-					const UINT listview_id = _app_gettab_id (hwnd);
-					const UINT ctrl_id = LOWORD (wparam);
+					const INT listview_id = _app_gettab_id (hwnd);
+					const INT ctrl_id = LOWORD (wparam);
 
 					const bool new_val = (LOWORD (wparam) == IDM_CHECK) ? true : false;
 
@@ -4953,11 +4967,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
 						OBJECTS_VEC rules;
-						size_t item = LAST_VALUE;
+						INT item = INVALID_INT;
 
-						while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 						{
-							const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+							const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 							PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
 
 							if (!ptr_app_object)
@@ -5000,11 +5014,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 					{
 						OBJECTS_VEC rules;
-						size_t item = LAST_VALUE;
+						INT item = INVALID_INT;
 
-						while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 						{
-							const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+							const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, item);
 							PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 							if (!ptr_rule_object)
@@ -5066,15 +5080,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					ptr_rule->type = DataRuleCustom;
 					ptr_rule->is_block = false;
 
-					const UINT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = _app_gettab_id (hwnd);
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
-						size_t item = LAST_VALUE;
+						INT item = INVALID_INT;
 
-						while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 						{
-							const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+							const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 
 							if (app_hash)
 								ptr_rule->apps[app_hash] = true;
@@ -5082,16 +5096,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else if (listview_id == IDC_NETWORK)
 					{
-						size_t item = LAST_VALUE;
+						INT item = INVALID_INT;
 
 						rstring rule_remote;
 						rstring rule_local;
 
 						ptr_rule->is_block = true;
 
-						while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 						{
-							const size_t network_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+							const size_t network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 							PR_OBJECT ptr_network_object = _app_getnetworkitem (network_hash);
 
 							if (!ptr_network_object)
@@ -5156,11 +5170,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						_r_fastlock_releaseexclusive (&lock_access);
 
-						const UINT listview_rules_id = _app_getlistview_id (DataRuleCustom);
+						const INT listview_rules_id = _app_getlistview_id (DataRuleCustom);
 
 						if (listview_rules_id)
 						{
-							const size_t new_item = _r_listview_getitemcount (hwnd, listview_rules_id);
+							const INT new_item = _r_listview_getitemcount (hwnd, listview_rules_id);
 
 							_r_fastlock_acquireshared (&lock_checkbox);
 
@@ -5185,10 +5199,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_PROPERTIES:
 				{
-					const UINT listview_id = _app_gettab_id (hwnd);
-					const size_t item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+					const INT listview_id = _app_gettab_id (hwnd);
+					const INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 
-					if (item == LAST_VALUE)
+					if (item == INVALID_INT)
 						break;
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
@@ -5197,7 +5211,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 					{
-						const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+						const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, item);
 						PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 						if (!ptr_rule_object)
@@ -5224,7 +5238,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else if (listview_id == IDC_NETWORK)
 					{
-						const size_t network_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+						const size_t network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 						PR_OBJECT ptr_network_object = _app_getnetworkitem (network_hash);
 
 						if (!ptr_network_object)
@@ -5238,15 +5252,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (!_app_isappfound (app_hash))
 							{
-								_r_fastlock_acquireexclusive (&lock_access);
+								_r_fastlock_acquireshared (&lock_access);
 								_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
-								_r_fastlock_releaseexclusive (&lock_access);
+								_r_fastlock_releaseshared (&lock_access);
 
 								_app_refreshstatus (hwnd);
 								_app_profile_save ();
 							}
 
-							UINT app_listview_id = 0;
+							INT app_listview_id = 0;
 
 							if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 							{
@@ -5263,22 +5277,22 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_NETWORK_CLOSE:
 				{
-					const UINT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = _app_gettab_id (hwnd);
 
 					if (listview_id != IDC_NETWORK)
 						break;
 
-					const UINT selected = (UINT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
+					const INT selected = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
 
 					if (!selected)
 						break;
 
-					size_t item = LAST_VALUE;
+					INT item = INVALID_INT;
 					MIB_TCPROW tcprow;
 
-					while ((item = (size_t)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != LAST_VALUE)
+					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
 					{
-						const size_t network_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, item);
+						const size_t network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[network_hash]);
 
 						if (!ptr_network_object)
@@ -5318,27 +5332,27 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_DELETE:
 				{
-					const UINT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = _app_gettab_id (hwnd);
 
 					if (listview_id != IDC_APPS_PROFILE && listview_id != IDC_RULES_CUSTOM)
 						break;
 
-					const UINT selected = (UINT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
+					const INT selected = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
 
 					if (!selected || _r_msg (hwnd, MB_YESNO | MB_ICONEXCLAMATION, APP_NAME, nullptr, app.LocaleString (IDS_QUESTION_DELETE, nullptr), selected) != IDYES)
 						break;
 
-					const size_t count = _r_listview_getitemcount (hwnd, listview_id) - 1;
+					const INT count = _r_listview_getitemcount (hwnd, listview_id) - 1;
 
 					GUIDS_VEC guids;
 
-					for (size_t i = count; i != LAST_VALUE; i--)
+					for (INT i = count; i != INVALID_INT; i--)
 					{
 						if (ListView_GetItemState (GetDlgItem (hwnd, listview_id), i, LVNI_SELECTED))
 						{
 							if (listview_id == IDC_APPS_PROFILE)
 							{
-								const size_t app_hash = (size_t)_r_listview_getitemlparam (hwnd, listview_id, i);
+								const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
 								PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
 
 								if (!ptr_app_object)
@@ -5368,7 +5382,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 							else if (listview_id == IDC_RULES_CUSTOM)
 							{
-								const size_t rule_idx = (size_t)_r_listview_getitemlparam (hwnd, listview_id, i);
+								const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, i);
 								PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 								if (!ptr_rule_object)
@@ -5410,13 +5424,18 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 									if (ptr_app)
 									{
-										const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+										const INT app_listview_id = _app_getlistview_id (ptr_app->type);
 
 										if (app_listview_id)
 										{
-											_r_fastlock_acquireshared (&lock_checkbox);
-											_app_setappiteminfo (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash), app_hash, ptr_app);
-											_r_fastlock_releaseshared (&lock_checkbox);
+											const INT item_pos = _app_getposition (hwnd, app_listview_id, app_hash);
+
+											if (item_pos != INVALID_INT)
+											{
+												_r_fastlock_acquireshared (&lock_checkbox);
+												_app_setappiteminfo (hwnd, app_listview_id, item_pos, app_hash, ptr_app);
+												_r_fastlock_releaseshared (&lock_checkbox);
+											}
 										}
 									}
 
@@ -5455,14 +5474,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_app && !ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || ((ptr_app->type != DataAppService && ptr_app->type != DataAppUWP) && !_app_isappused (ptr_app, app_hash))))
 						{
-							const UINT app_listview_id = _app_getlistview_id (ptr_app->type);
+							const INT app_listview_id = _app_getlistview_id (ptr_app->type);
 
 							if (app_listview_id)
 							{
-								const size_t item = _app_getposition (hwnd, app_listview_id, app_hash);
+								const INT item_pos = _app_getposition (hwnd, app_listview_id, app_hash);
 
-								if (item != LAST_VALUE)
-									SendDlgItemMessage (hwnd, app_listview_id, LVM_DELETEITEM, item, 0);
+								if (item_pos != INVALID_INT)
+									SendDlgItemMessage (hwnd, app_listview_id, LVM_DELETEITEM, item_pos, 0);
 							}
 
 							_app_timer_reset (hwnd, ptr_app);
