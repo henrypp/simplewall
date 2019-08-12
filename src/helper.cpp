@@ -57,7 +57,7 @@ INT _app_gettab_id (HWND hwnd, INT page_id)
 			page_id = 0;
 	}
 
-	SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEM, page_id, (LPARAM)& tci);
+	SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEM, (WPARAM)page_id, (LPARAM)& tci);
 
 	return (INT)tci.lParam;
 }
@@ -73,7 +73,7 @@ void _app_settab_id (HWND hwnd, INT page_id)
 
 		if (listview_id == page_id)
 		{
-			SendDlgItemMessage (hwnd, IDC_TAB, TCM_SETCURSEL, i, 0);
+			SendDlgItemMessage (hwnd, IDC_TAB, TCM_SETCURSEL, (WPARAM)i, 0);
 
 			NMHDR hdr = {0};
 
@@ -1964,9 +1964,6 @@ void _app_generate_services ()
 		{
 			LPENUM_SERVICE_STATUS_PROCESS psvc = (pServices + i);
 
-			if (!psvc)
-				continue;
-
 			time_t timestamp = 0;
 
 			LPCWSTR display_name = psvc->lpDisplayName;
@@ -2407,13 +2404,13 @@ void _app_refreshstatus (HWND hwnd)
 
 				case 1:
 				{
-					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
+					text[i].Format (L"%s: %Iu", app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
 					break;
 				}
 
 				case 2:
 				{
-					text[i].Format (L"%s: %d", app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), stat.apps_timer_count);
+					text[i].Format (L"%s: %Iu", app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), stat.apps_timer_count);
 					break;
 				}
 			}
@@ -3138,7 +3135,7 @@ void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 	}
 
 	if (scroll_pos > 0)
-		SendMessage (hlistview, LVM_SCROLL, 0, scroll_pos); // restore scroll position
+		SendMessage (hlistview, LVM_SCROLL, 0, (LPARAM)scroll_pos); // restore scroll position
 }
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)

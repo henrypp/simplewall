@@ -434,7 +434,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 				if (checker_map.find (network_hash) == checker_map.end ())
 				{
-					SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, i, 0);
+					SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
 					// redraw listview item
 					if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
@@ -1122,7 +1122,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_acquireshared (&lock_checkbox);
 
-					while ((item = (INT)SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+					while ((item = (INT)SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 						_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, new_val);
 
 					_r_fastlock_releaseshared (&lock_checkbox);
@@ -1693,7 +1693,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETACCEL, 1, (LPARAM)& ud);
 					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETRANGE32, 64, 8192);
-					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETPOS32, 0, app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT).AsUlong ());
+					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETPOS32, 0, (LPARAM)app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT).AsUlong ());
 
 					CheckDlgButton (hwnd, IDC_EXCLUDESTEALTH_CHK, app.ConfigGet (L"IsExcludeStealth", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
@@ -2341,7 +2341,7 @@ LONG gettoolbarwidth ()
 
 	for (INT i = 0; i < (INT)SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_BUTTONCOUNT, 0, 0); i++)
 	{
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETITEMRECT, i, (LPARAM)& btnRect);
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETITEMRECT, (WPARAM)i, (LPARAM)& btnRect);
 		totalWidth += _R_RECT_WIDTH (&btnRect);
 	}
 
@@ -3743,7 +3743,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const INT cmd = TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd, nullptr);
 
 					if (cmd)
-						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (cmd, 0), lv_column_current);
+						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (cmd, 0), (LPARAM)lv_column_current);
 
 					DestroyMenu (hmenu);
 
@@ -4004,7 +4004,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				if (ptr_rule)
 				{
-					while ((item = (INT)SendDlgItemMessage (hwnd, app_listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+					while ((item = (INT)SendDlgItemMessage (hwnd, app_listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
 						const size_t app_hash = _r_listview_getitemlparam (hwnd, app_listview_id, item);
 
@@ -4088,7 +4088,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				INT item = INVALID_INT;
 				OBJECTS_VEC rules;
 
-				while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+				while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 				{
 					const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 
@@ -4833,7 +4833,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					INT item = INVALID_INT;
 					BOOL new_val = BOOL (-1);
 
-					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
 						size_t app_hash = 0;
 
@@ -4932,7 +4932,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					rstring buffer;
 
-					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
 						if (LOWORD (wparam) == IDM_COPY)
 						{
@@ -4969,7 +4969,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						OBJECTS_VEC rules;
 						INT item = INVALID_INT;
 
-						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 						{
 							const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 							PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
@@ -5016,7 +5016,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						OBJECTS_VEC rules;
 						INT item = INVALID_INT;
 
-						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 						{
 							const size_t rule_idx = _r_listview_getitemlparam (hwnd, listview_id, item);
 							PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
@@ -5086,7 +5086,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						INT item = INVALID_INT;
 
-						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 						{
 							const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 
@@ -5103,7 +5103,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						ptr_rule->is_block = true;
 
-						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 						{
 							const size_t network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 							PR_OBJECT ptr_network_object = _app_getnetworkitem (network_hash);
@@ -5290,7 +5290,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					INT item = INVALID_INT;
 					MIB_TCPROW tcprow;
 
-					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, item, LVNI_SELECTED)) != INVALID_INT)
+					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
 						const size_t network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[network_hash]);
@@ -5314,7 +5314,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 								if (SetTcpEntry (&tcprow) == NO_ERROR)
 								{
-									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, item, 0);
+									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)item, 0);
 
 									network_map.erase (network_hash);
 									_r_obj_dereferenceex (ptr_network_object, 2, &_app_dereferencenetwork);
@@ -5364,7 +5364,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								{
 									guids.insert (guids.end (), ptr_app->guids.begin (), ptr_app->guids.end ());
 
-									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, i, 0);
+									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
 									_app_timer_reset (hwnd, ptr_app);
 									_app_freenotify (ptr_app, true);
@@ -5399,7 +5399,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									for (auto &p : ptr_rule->apps)
 										apps_checker[p.first] = true;
 
-									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, i, 0);
+									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
 									_r_fastlock_acquireshared (&lock_access);
 									rules_arr.at (rule_idx) = nullptr;
@@ -5481,7 +5481,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								const INT item_pos = _app_getposition (hwnd, app_listview_id, app_hash);
 
 								if (item_pos != INVALID_INT)
-									SendDlgItemMessage (hwnd, app_listview_id, LVM_DELETEITEM, item_pos, 0);
+									SendDlgItemMessage (hwnd, app_listview_id, LVM_DELETEITEM, (WPARAM)item_pos, 0);
 							}
 
 							_app_timer_reset (hwnd, ptr_app);

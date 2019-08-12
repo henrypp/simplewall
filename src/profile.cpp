@@ -570,7 +570,7 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 				rule_remote = rule_remote.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_remote.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
 				rule_local = rule_local.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_local.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
 
-				result.Format (L"%s (#%d)\r\n%s:\r\n%s%s\r\n%s:\r\n%s%s", ptr_rule->pname, lparam, app.LocaleString (IDS_RULE, L" (" SZ_LOG_REMOTE_ADDRESS L")").GetString (), SZ_TAB, rule_remote.GetString (), app.LocaleString (IDS_RULE, L" (" SZ_LOG_LOCAL_ADDRESS L")").GetString (), SZ_TAB, rule_local.GetString ());
+				result.Format (L"%s (#%Iu)\r\n%s:\r\n%s%s\r\n%s:\r\n%s%s", ptr_rule->pname, lparam, app.LocaleString (IDS_RULE, L" (" SZ_LOG_REMOTE_ADDRESS L")").GetString (), SZ_TAB, rule_remote.GetString (), app.LocaleString (IDS_RULE, L" (" SZ_LOG_LOCAL_ADDRESS L")").GetString (), SZ_TAB, rule_local.GetString ());
 
 				if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
 					result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_FILEPATH, nullptr).GetString (), SZ_TAB, _app_rulesexpand (ptr_rule, true, L"\r\n" SZ_TAB).GetString ());
@@ -1332,7 +1332,7 @@ void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t * pti
 
 	// show only syntax, memory and i/o errors...
 	if (!load_original && load_original.status != pugi::status_file_not_found && load_original.status != pugi::status_no_document_element)
-		_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %d,text: %s,file: %s", load_original.status, load_original.offset, rstring (load_original.description ()).GetString (), path), false);
+		_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %Id,text: %s,file: %s", load_original.status, load_original.offset, rstring (load_original.description ()).GetString (), path), false);
 
 	if (load_original && root)
 	{
@@ -1406,7 +1406,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		{
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
-				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %d,text: %s,file: %s", result.status, result.offset, rstring (result.description ()).GetString (), path_custom ? path_custom : config.profile_path), false);
+				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %Id,text: %s,file: %s", result.status, result.offset, rstring (result.description ()).GetString (), path_custom ? path_custom : config.profile_path), false);
 
 			_r_fastlock_acquireexclusive (&lock_access);
 			_app_profile_load_fallback ();

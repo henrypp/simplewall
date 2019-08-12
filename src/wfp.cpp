@@ -1655,22 +1655,22 @@ size_t _wfp_dumpfilters (const GUID * pprovider, GUIDS_VEC * ptr_filters)
 	UINT32 count = 0;
 	HANDLE henum = nullptr;
 
-	DWORD result = FwpmFilterCreateEnumHandle (config.hengine, nullptr, &henum);
+	DWORD rc = FwpmFilterCreateEnumHandle (config.hengine, nullptr, &henum);
 
-	if (result != ERROR_SUCCESS)
+	if (rc != ERROR_SUCCESS)
 	{
-		_app_logerror (L"FwpmFilterCreateEnumHandle", result, nullptr, false);
+		_app_logerror (L"FwpmFilterCreateEnumHandle", rc, nullptr, false);
 		return 0;
 	}
 	else
 	{
 		FWPM_FILTER** matchingFwpFilter = nullptr;
 
-		result = FwpmFilterEnum (config.hengine, henum, UINT32_MAX, &matchingFwpFilter, &count);
+		rc = FwpmFilterEnum (config.hengine, henum, UINT32_MAX, &matchingFwpFilter, &count);
 
-		if (result != ERROR_SUCCESS)
+		if (rc != ERROR_SUCCESS)
 		{
-			_app_logerror (L"FwpmFilterEnum", result, nullptr, false);
+			_app_logerror (L"FwpmFilterEnum", rc, nullptr, false);
 		}
 		else
 		{

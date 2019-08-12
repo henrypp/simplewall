@@ -852,7 +852,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					else if (nmlp->idFrom == IDC_ALLOW_BTN)
 					{
 						for (size_t i = 0; i < timers.size (); i++)
-							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + UINT (i), _r_fmt_interval (timers.at (i) + 1, 1));
+							AppendMenu (hsubmenu, MF_BYPOSITION, UINT_PTR (IDX_TIMER + i), _r_fmt_interval (timers.at (i) + 1, 1));
 					}
 
 					RECT buttonRect = {0};
