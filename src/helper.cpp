@@ -1974,49 +1974,49 @@ void _app_generate_services ()
 
 			WCHAR real_path[MAX_PATH] = {0};
 
-				FILETIME ft = {0};
+			FILETIME ft = {0};
 
-				// query "ServiceDll" path
+			// query "ServiceDll" path
+			{
+				HKEY hkey = nullptr;
+
+				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s\\Parameters", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 				{
-					HKEY hkey = nullptr;
+					DWORD size = _countof (real_path) * sizeof (real_path[0]);
 
-					if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s\\Parameters", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
+					if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
+						timestamp = _r_unixtime_from_filetime (&ft);
+
+					RegQueryValueEx (hkey, L"ServiceDll", nullptr, nullptr, (LPBYTE)real_path, &size);
+
+					RegCloseKey (hkey);
+				}
+			}
+
+			// query service path
+			if (!real_path[0] || !timestamp)
+			{
+				HKEY hkey = nullptr;
+
+				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
+				{
+					if (!real_path[0])
 					{
 						DWORD size = _countof (real_path) * sizeof (real_path[0]);
 
+						RegQueryValueEx (hkey, L"ImagePath", nullptr, nullptr, (LPBYTE)real_path, &size);
+					}
+
+					// query "lpftLastWriteTime"
+					if (!timestamp)
+					{
 						if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
 							timestamp = _r_unixtime_from_filetime (&ft);
-
-						RegQueryValueEx (hkey, L"ServiceDll", nullptr, nullptr, (LPBYTE)real_path, &size);
-
-						RegCloseKey (hkey);
 					}
+
+
+					RegCloseKey (hkey);
 				}
-
-				// query service path
-				if (!real_path[0] || !timestamp)
-				{
-					HKEY hkey = nullptr;
-
-					if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
-					{
-						if (!real_path[0])
-						{
-							DWORD size = _countof (real_path) * sizeof (real_path[0]);
-
-							RegQueryValueEx (hkey, L"ImagePath", nullptr, nullptr, (LPBYTE)real_path, &size);
-						}
-
-						// query "lpftLastWriteTime"
-						if (!timestamp)
-						{
-							if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
-								timestamp = _r_unixtime_from_filetime (&ft);
-						}
-
-
-						RegCloseKey (hkey);
-					}
 
 				if (real_path[0])
 				{
@@ -2313,7 +2313,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	if (!result)
 	{
 		// timestamp sorting
-		if (column_id == 1 && (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
+		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
 		{
 			time_t timestamp1 = 0;
 			time_t timestamp2 = 0;
@@ -2346,14 +2346,17 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 		return;
 
 	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
+	const INT colummn_count = _r_listview_getcolumncount (hwnd, listview_id);
 
 	bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
 
 	if (is_notifycode)
 		is_descend = !is_descend;
 
-	if (column_id == -1)
+	if (column_id == INVALID_INT)
 		column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
+
+	column_id = std::clamp (column_id, 0, colummn_count - 1); // set range
 
 	if (is_notifycode)
 	{
@@ -2361,7 +2364,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 		app.ConfigSet (L"SortColumn", column_id, cfg_name);
 	}
 
-	for (INT i = 0; i < _r_listview_getcolumncount (hwnd, listview_id); i++)
+	for (INT i = 0; i < colummn_count; i++)
 		_r_listview_setcolumnsortindex (hwnd, listview_id, i, 0);
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);

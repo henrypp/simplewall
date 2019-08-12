@@ -77,7 +77,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 		INT column_width;
 		INT calculated_width = 0;
 
-		for (INT i = column_count - 1; i != -1; i--)
+		for (INT i = column_count - 1; i != INVALID_INT; i--)
 		{
 			if (i == 0)
 			{
@@ -1023,10 +1023,10 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					if (lpnmlv->iItem == -1)
+					if (lpnmlv->iItem == INVALID_INT)
 						break;
 
-					const UINT listview_id = (UINT)lpnmlv->hdr.idFrom;
+					const INT listview_id = (INT)lpnmlv->hdr.idFrom;
 
 					if (listview_id != IDC_APPS_LV)
 						break;
@@ -1049,7 +1049,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case LVN_COLUMNCLICK:
 				{
 					LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lparam;
-					_app_listviewsort (hwnd, (UINT)pnmv->hdr.idFrom, pnmv->iSubItem, true);
+					_app_listviewsort (hwnd, (INT)pnmv->hdr.idFrom, pnmv->iSubItem, true);
 
 					break;
 				}
@@ -1950,7 +1950,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					if (lpnmlv->iItem == -1 || nmlp->idFrom != IDC_COLORS)
+					if (lpnmlv->iItem == INVALID_INT || nmlp->idFrom != IDC_COLORS)
 						break;
 
 					const size_t idx = _r_listview_getitemlparam (hwnd, (INT)nmlp->idFrom, lpnmlv->iItem);
@@ -2150,7 +2150,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							app.ConfigSet (L"BlocklistSpyState", new_state);
 
 							_r_fastlock_acquireshared (&lock_access);
-							_app_ruleblocklistset (app.GetHWND (), new_state, -1, -1, true);
+							_app_ruleblocklistset (app.GetHWND (), new_state, INVALID_INT, INVALID_INT, true);
 							_r_fastlock_releaseshared (&lock_access);
 						}
 						else if (ctrl_id >= IDC_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDC_BLOCKLIST_UPDATE_BLOCK)
@@ -2162,7 +2162,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							app.ConfigSet (L"BlocklistUpdateState", new_state);
 
 							_r_fastlock_acquireshared (&lock_access);
-							_app_ruleblocklistset (app.GetHWND (), -1, new_state, -1, true);
+							_app_ruleblocklistset (app.GetHWND (), INVALID_INT, new_state, INVALID_INT, true);
 							_r_fastlock_releaseshared (&lock_access);
 						}
 						else if (ctrl_id >= IDC_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
@@ -2174,7 +2174,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							app.ConfigSet (L"BlocklistExtraState", new_state);
 
 							_r_fastlock_acquireshared (&lock_access);
-							_app_ruleblocklistset (app.GetHWND (), -1, -1, new_state, true);
+							_app_ruleblocklistset (app.GetHWND (), INVALID_INT, INVALID_INT, new_state, true);
 							_r_fastlock_releaseshared (&lock_access);
 						}
 					}
@@ -2721,7 +2721,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			const INT listview_id = _app_gettab_id (hwnd);
 			const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
 
-			const INT selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED) + 1;
+			const INT selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED) + 1;
 
 			for (INT i = selected_item; i < total_count; i++)
 			{
@@ -3379,7 +3379,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case LVN_COLUMNCLICK:
 				{
 					LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lparam;
-					_app_listviewsort (hwnd, (UINT)pnmv->hdr.idFrom, pnmv->iSubItem, true);
+					_app_listviewsort (hwnd, (INT)pnmv->hdr.idFrom, pnmv->iSubItem, true);
 
 					break;
 				}
@@ -3510,10 +3510,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					if (lpnmlv->iItem == -1)
+					if (lpnmlv->iItem == INVALID_INT)
 						break;
 
-					UINT command_id = 0;
+					INT command_id = 0;
 
 					if (lpnmlv->hdr.idFrom == IDC_STATUSBAR)
 					{
@@ -3547,10 +3547,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					if (lpnmlv->iItem == -1)
+					if (lpnmlv->iItem == INVALID_INT)
 						break;
 
-					const UINT listview_id = (UINT)lpnmlv->hdr.idFrom;
+					const INT listview_id = (INT)lpnmlv->hdr.idFrom;
 
 					UINT menu_id;
 
@@ -3566,8 +3566,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					else
 						break;
 
-					const UINT lv_subitem = std::clamp (lpnmlv->iSubItem, 0, (INT)_r_listview_getcolumncount (hwnd, listview_id) - 1);
 					const size_t hash_item = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+					const INT lv_column_current = std::clamp (lpnmlv->iSubItem, 0, _r_listview_getcolumncount (hwnd, listview_id) - 1);
 
 					const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (menu_id));
 					const HMENU hsubmenu = GetSubMenu (hmenu, 0);
@@ -3577,7 +3577,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					app.LocaleMenu (hsubmenu, IDS_DISABLENOTIFICATIONS, IDM_DISABLENOTIFICATIONS, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_DISABLETIMER, IDM_DISABLETIMER, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY, false, L"\tCtrl+C");
-					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY2, false, _r_fmt (L" \"%s\"", _r_listview_getcolumntext (hwnd, listview_id, lv_subitem).GetString ()));
+					app.LocaleMenu (hsubmenu, IDS_COPY, IDM_COPY2, false, _r_fmt (L" \"%s\"", _r_listview_getcolumntext (hwnd, listview_id, lv_column_current).GetString ()));
 					app.LocaleMenu (hsubmenu, IDS_DELETE, IDM_DELETE, false, L"\tDel");
 					app.LocaleMenu (hsubmenu, IDS_SELECT_ALL, IDM_SELECT_ALL, false, L"\tCtrl+A");
 					app.LocaleMenu (hsubmenu, IDS_CHECK, IDM_CHECK, false, nullptr);
@@ -3743,7 +3743,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const INT cmd = TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd, nullptr);
 
 					if (cmd)
-						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (cmd, 0), lv_subitem);
+						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (cmd, 0), lv_column_current);
 
 					DestroyMenu (hmenu);
 
@@ -4607,7 +4607,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						app.ConfigSet (L"BlocklistSpyState", new_state);
 
 						_r_fastlock_acquireshared (&lock_access);
-						_app_ruleblocklistset (hwnd, new_state, -1, -1, true);
+						_app_ruleblocklistset (hwnd, new_state, INVALID_INT, INVALID_INT, true);
 						_r_fastlock_releaseshared (&lock_access);
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDM_BLOCKLIST_UPDATE_BLOCK)
@@ -4619,7 +4619,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						app.ConfigSet (L"BlocklistUpdateState", new_state);
 
 						_r_fastlock_acquireshared (&lock_access);
-						_app_ruleblocklistset (hwnd, -1, new_state, -1, true);
+						_app_ruleblocklistset (hwnd, INVALID_INT, new_state, INVALID_INT, true);
 						_r_fastlock_releaseshared (&lock_access);
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDM_BLOCKLIST_EXTRA_BLOCK)
@@ -4631,7 +4631,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						app.ConfigSet (L"BlocklistExtraState", new_state);
 
 						_r_fastlock_acquireshared (&lock_access);
-						_app_ruleblocklistset (hwnd, -1, -1, new_state, true);
+						_app_ruleblocklistset (hwnd, INVALID_INT, INVALID_INT, new_state, true);
 						_r_fastlock_releaseshared (&lock_access);
 					}
 
@@ -5200,7 +5200,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_PROPERTIES:
 				{
 					const INT listview_id = _app_gettab_id (hwnd);
-					const INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+					const INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED);
 
 					if (item == INVALID_INT)
 						break;
@@ -5558,7 +5558,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_SELECT_ALL:
 				{
-					ListView_SetItemState (GetDlgItem (hwnd, _app_gettab_id (hwnd)), -1, LVIS_SELECTED, LVIS_SELECTED);
+					ListView_SetItemState (GetDlgItem (hwnd, _app_gettab_id (hwnd)), INVALID_INT, LVIS_SELECTED, LVIS_SELECTED);
 					break;
 				}
 

@@ -723,7 +723,7 @@ void _app_ruleenable2 (PITEM_RULE ptr_rule, bool is_enable)
 
 bool _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state)
 {
-	if (new_state == -1)
+	if (new_state == INVALID_INT)
 		return false; // don't change
 
 	if (new_state == 0 && !ptr_rule->is_enabled)
@@ -1359,7 +1359,7 @@ void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t * pti
 void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 {
 	const INT current_listview_id = _app_gettab_id (hwnd);
-	const INT selected_item = (INT)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+	const INT selected_item = (INT)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED);
 	const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, current_listview_id), SB_VERT);
 
 	// clean listview
