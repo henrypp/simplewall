@@ -530,7 +530,10 @@ void _app_notifyplaysound ()
 void _app_notifyrefresh (HWND hwnd, bool is_safety)
 {
 	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () || !IsWindowVisible (hwnd))
-		_app_notifyhide (config.hnotification);
+	{
+		_app_notifyhide (hwnd);
+		return;
+	}
 
 	PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, INVALID_SIZE_T));
 
