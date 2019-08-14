@@ -3077,14 +3077,14 @@ void _app_resolvefilename (rstring & path)
 
 INT _app_getlistview_id (EnumDataType type)
 {
-	if (type == DataAppService)
+	if (type == DataAppRegular || type == DataAppDevice || type == DataAppNetwork || type == DataAppPico)
+		return IDC_APPS_PROFILE;
+
+	else if (type == DataAppService)
 		return IDC_APPS_SERVICE;
 
 	else if (type == DataAppUWP)
 		return IDC_APPS_UWP;
-
-	else if (type == DataAppRegular || type == DataAppDevice || type == DataAppNetwork || type == DataAppPico)
-		return IDC_APPS_PROFILE;
 
 	else if (type == DataRuleBlocklist)
 		return IDC_RULES_BLOCKLIST;
@@ -3355,7 +3355,9 @@ DoExit:
 
 	if (!success)
 	{
-		DeleteObject (hbitmap);
+		if (hbitmap)
+			DeleteObject (hbitmap);
+
 		return nullptr;
 	}
 

@@ -59,9 +59,9 @@ enum EnumDataType
 	DataAppRegular,
 	DataAppDevice,
 	DataAppNetwork,
+	DataAppPico, // win10+
 	DataAppService,
 	DataAppUWP, // win8+
-	DataAppPico, // win10+
 	DataRuleBlocklist,
 	DataRuleSystem,
 	DataRuleCustom,

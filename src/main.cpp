@@ -61,6 +61,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 
 	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
 	const INT item_count = _r_listview_getitemcount (hwnd, listview_id);
+
 	const bool is_tableview = (SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
 
 	const HDC hdc_listview = GetDC (hlistview);
@@ -427,8 +428,9 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 				is_refresh = true;
 			}
+			const INT item_count = _r_listview_getitemcount (hwnd, network_listview_id);
 
-			for (INT i = _r_listview_getitemcount (hwnd, network_listview_id) - 1; i != INVALID_INT; i--)
+			for (INT i = item_count - 1; i != INVALID_INT; i--)
 			{
 				const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
 
@@ -439,7 +441,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					// redraw listview item
 					if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
 					{
-						size_t app_hash = _app_getnetworkapp (network_hash);
+						const size_t app_hash = _app_getnetworkapp (network_hash);
 						INT app_listview_id = 0;
 
 						if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
@@ -2725,9 +2727,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			for (INT i = selected_item; i < total_count; i++)
 			{
-				const rstring text = _r_listview_getitemtext (hwnd, listview_id, i, 0);
+				const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, i, 0);
 
-				if (StrStrNIW (text, lpfr->lpstrFindWhat, (UINT)_r_str_length (lpfr->lpstrFindWhat)) != nullptr)
+				if (StrStrNIW (item_text, lpfr->lpstrFindWhat, (UINT)_r_str_length (lpfr->lpstrFindWhat)) != nullptr)
 				{
 					_app_showitem (hwnd, listview_id, i);
 					break;
@@ -4924,8 +4926,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					const INT listview_id = _app_gettab_id (hwnd);
 					INT item = INVALID_INT;
 
-					const INT lv_column_count = _r_listview_getcolumncount (hwnd, listview_id);
-					const INT lv_column_current = (INT)lparam;
+					const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
+					const INT column_current = (INT)lparam;
 					const rstring divider = _r_fmt (L"%c ", DIVIDER_COPY);
 
 					rstring buffer;
@@ -4934,12 +4936,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						if (LOWORD (wparam) == IDM_COPY)
 						{
-							for (INT column_id = 0; column_id < lv_column_count; column_id++)
+							for (INT column_id = 0; column_id < column_count; column_id++)
 								buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_id)).Append (divider);
 						}
 						else
 						{
-							buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, lv_column_current)).Append (divider);
+							buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_current)).Append (divider);
 						}
 
 						buffer.Trim (divider).Append (L"\r\n");
@@ -5115,9 +5117,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								if (!ptr_rule->pname)
 								{
-									const rstring name = _r_listview_getitemtext (hwnd, listview_id, item, 0);
+									const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, item, 0);
 
-									_r_str_alloc (&ptr_rule->pname, name.GetLength (), name);
+									_r_str_alloc (&ptr_rule->pname, item_text.GetLength (), item_text);
 								}
 
 								if (ptr_network->app_hash && ptr_network->path)
