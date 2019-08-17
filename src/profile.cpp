@@ -559,16 +559,27 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 
 			if (ptr_rule)
 			{
+				const rstring empty = app.LocaleString (IDS_STATUS_EMPTY, nullptr);
+
 				rstring rule_remote = ptr_rule->prule_remote;
 				rstring rule_local = ptr_rule->prule_local;
 
-				rule_remote = rule_remote.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_remote.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
-				rule_local = rule_local.IsEmpty () ? app.LocaleString (IDS_STATUS_EMPTY, nullptr) : rule_local.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
+				if (!rule_remote.IsEmpty ())
+					rule_remote.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
+
+				else
+					rule_remote = empty;
+
+				if (!rule_local.IsEmpty ())
+					rule_local.Replace (DIVIDER_RULE, L"\r\n" SZ_TAB);
+
+				else
+					rule_local = empty;
 
 				result.Format (L"%s (#%Iu)\r\n%s:\r\n%s%s\r\n%s:\r\n%s%s", ptr_rule->pname, lparam, app.LocaleString (IDS_RULE, L" (" SZ_LOG_REMOTE_ADDRESS L")").GetString (), SZ_TAB, rule_remote.GetString (), app.LocaleString (IDS_RULE, L" (" SZ_LOG_LOCAL_ADDRESS L")").GetString (), SZ_TAB, rule_local.GetString ());
 
 				if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
-					result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_FILEPATH, nullptr).GetString (), SZ_TAB, _app_rulesexpand (ptr_rule, true, L"\r\n" SZ_TAB).GetString ());
+					result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_FILEPATH, nullptr).GetString (), SZ_TAB, _app_rulesexpandapps (ptr_rule, true, L"\r\n" SZ_TAB).GetString ());
 			}
 
 			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
@@ -829,7 +840,7 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 	}
 }
 
-rstring _app_rulesexpand (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delimeter)
+rstring _app_rulesexpandapps (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delimeter)
 {
 	rstring result;
 
@@ -1760,7 +1771,7 @@ void _app_profile_save (LPCWSTR path_custom)
 					// add apps attribute
 					if (!ptr_rule->apps.empty ())
 					{
-						const rstring rule_apps = _app_rulesexpand (ptr_rule, false, DIVIDER_APP);
+						const rstring rule_apps = _app_rulesexpandapps (ptr_rule, false, DIVIDER_APP);
 
 						if (!rule_apps.IsEmpty ())
 							item.append_attribute (L"apps").set_value (rule_apps);
@@ -1815,7 +1826,7 @@ void _app_profile_save (LPCWSTR path_custom)
 							is_enabled_default = ptr_rule->is_enabled_default;
 
 							if (ptr_rule->type == DataRuleCustom && !ptr_rule->apps.empty ())
-								rule_apps = _app_rulesexpand (ptr_rule, false, DIVIDER_APP);
+								rule_apps = _app_rulesexpandapps (ptr_rule, false, DIVIDER_APP);
 						}
 
 						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
