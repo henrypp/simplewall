@@ -24,7 +24,6 @@ bool _app_initinterfacestate (HWND hwnd);
 void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
 void _app_setinterfacestate (HWND hwnd);
 
-void _app_applycasestyle (LPWSTR buffer, size_t length);
 void _app_explorefile (LPCWSTR path);
 
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags);
@@ -64,7 +63,6 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format
 bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
 
 bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR* pbuffer);
-void _app_resolvefilename (rstring& path);
 
 INT _app_getlistview_id (EnumDataType type);
 

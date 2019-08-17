@@ -311,41 +311,25 @@ bool _wfp_logsubscribe ()
 
 bool _wfp_logunsubscribe ()
 {
-	bool result = false;
-
 	_app_loginit (false); // destroy log file handle if present
 
 	if (config.hnetevent)
 	{
-		const HMODULE hlib = LoadLibrary (L"fwpuclnt.dll");
+		const DWORD rc = FwpmNetEventUnsubscribe (config.hengine, config.hnetevent);
 
-		if (hlib)
+		if (rc == ERROR_SUCCESS)
 		{
-			typedef DWORD (WINAPI * FWPMNEU) (HANDLE, HANDLE); // FwpmNetEventUnsubscribe0
-
-			const FWPMNEU _FwpmNetEventUnsubscribe = (FWPMNEU)GetProcAddress (hlib, "FwpmNetEventUnsubscribe0");
-
-			if (_FwpmNetEventUnsubscribe)
-			{
-				const DWORD rc = _FwpmNetEventUnsubscribe (config.hengine, config.hnetevent);
-
-				if (rc == ERROR_SUCCESS)
-				{
-					config.hnetevent = nullptr;
-					result = true;
-				}
-			}
-
-			FreeLibrary (hlib);
+			config.hnetevent = nullptr;
+			return true;
 		}
 	}
 
-	return result;
+	return false;
 }
 
 void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr4, FWP_BYTE_ARRAY16 const *remote_addr6, UINT16 remoteport, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
 {
-	if (!filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
+	if (!config.hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
 		return;
 
 	// set allowed directions directions
@@ -395,7 +379,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 
 		if (FwpmFilterGetById (config.hengine, filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
 		{
-			filter_name = ptr_filter->displayData.name ? ptr_filter->displayData.name : ptr_filter->displayData.description;
+			filter_name = ptr_filter->displayData.description ? ptr_filter->displayData.description : ptr_filter->displayData.name;
 
 			if (ptr_filter->weight.type == FWP_UINT8)
 				filter_weight = ptr_filter->weight.uint8;
@@ -452,8 +436,6 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 			_r_str_alloc (&ptr_log->path, path.GetLength (), path);
 
 			ptr_log->app_hash = path.Hash ();
-
-			_app_applycasestyle (ptr_log->path, path.GetLength ()); // apply case-style
 		}
 		else
 		{
@@ -511,7 +493,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 
 				// remote address
 				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr4)
-					ptr_log->addr.S_un.S_addr = ntohl (remote_addr4);
+					ptr_log->addr.S_un.S_addr = _byteswap_ulong (remote_addr4);
 
 			}
 			else if (ipver == FWP_IP_VERSION_V6)

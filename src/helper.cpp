@@ -134,20 +134,6 @@ void _app_setinterfacestate (HWND hwnd)
 	app.TrayToggle (hwnd, UID, nullptr, true);
 }
 
-void _app_applycasestyle (LPWSTR buffer, size_t length)
-{
-	if (!app.ConfigGet (L"IsApplyCaseStyle", false).AsBool ())
-		return;
-
-	if (buffer && length && wcschr (buffer, OBJ_NAME_PATH_SEPARATOR))
-	{
-		buffer[0] = _r_str_upper (buffer[0]);
-
-		for (size_t i = 1; i < length; i++)
-			buffer[i] = _r_str_lower (buffer[i]);
-	}
-}
-
 void _app_explorefile (LPCWSTR path)
 {
 	if (!path || !path[0])
@@ -1242,6 +1228,9 @@ rstring _app_getservicename (UINT16 port)
 		case 5900:
 			return L"vnc";
 
+		case 5938:
+			return L"teamviewer";
+
 		case 6000:
 		case 6001:
 		case 6002:
@@ -1267,6 +1256,9 @@ rstring _app_getservicename (UINT16 port)
 
 		case 7070:
 			return L"realserver";
+
+		case 7235:
+			return L"aspcoordination";
 
 		case 8000:
 		case 8443:
@@ -1510,11 +1502,7 @@ rstring _app_getnetworkpath (DWORD pid, ULONGLONG * pmodules, PINT picon_id, siz
 				const BOOL res = QueryFullProcessImageName (hprocess, 0, proc_name.GetBuffer (size), &size);
 				proc_name.ReleaseBuffer ();
 
-				if (res)
-				{
-					_app_applycasestyle (proc_name.GetBuffer (), proc_name.GetLength ()); // apply case-style
-				}
-				else
+				if (!res)
 				{
 					*phash = 0;
 					*picon_id = config.icon_id;
@@ -1824,9 +1812,9 @@ void _app_generate_packages ()
 	HKEY hkey = nullptr;
 	HKEY hsubkey = nullptr;
 
-	LONG result = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages", 0, KEY_READ, &hkey);
+	LONG rc = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages", 0, KEY_READ, &hkey);
 
-	if (result == ERROR_SUCCESS)
+	if (rc == ERROR_SUCCESS)
 	{
 		DWORD index = 0;
 
@@ -1838,23 +1826,35 @@ void _app_generate_packages ()
 			if (RegEnumKeyEx (hkey, index++, key_name, &size, 0, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
 				break;
 
-			result = RegOpenKeyEx (hkey, key_name, 0, KEY_READ, &hsubkey);
+			rc = RegOpenKeyEx (hkey, key_name, 0, KEY_READ, &hsubkey);
 
-			if (result == ERROR_SUCCESS)
+			if (rc == ERROR_SUCCESS)
 			{
-				PSID package_sid[SECURITY_MAX_SID_SIZE] = {0};
+				PBYTE package_sid = _r_reg_querybinary (hsubkey, L"PackageSid");
 
-				size = _countof (package_sid) * sizeof (package_sid[0]);
-				result = RegQueryValueEx (hsubkey, L"PackageSid", nullptr, nullptr, (LPBYTE)package_sid, &size);
-
-				if (result != ERROR_SUCCESS)
+				if (!package_sid)
+				{
+					RegCloseKey (hsubkey);
 					continue;
+				}
 
 				rstring package_sid_string = _r_str_fromsid (package_sid);
+
+				SAFE_DELETE_ARRAY (package_sid);
+
+				if (package_sid_string.IsEmpty ())
+				{
+					RegCloseKey (hsubkey);
+					continue;
+				}
+
 				const size_t app_hash = _r_str_hash (package_sid_string);
 
 				if (apps_helper.find (app_hash) != apps_helper.end ())
+				{
+					RegCloseKey (hsubkey);
 					continue;
+				}
 
 				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
 
@@ -1862,11 +1862,9 @@ void _app_generate_packages ()
 
 				ptr_item->type = DataAppUWP;
 
-				WCHAR display_name[MAX_PATH] = {0};
-				size = _countof (display_name) * sizeof (display_name[0]);
-				result = RegQueryValueEx (hsubkey, L"DisplayName", nullptr, nullptr, (LPBYTE)display_name, &size);
+				rstring display_name = _r_reg_querystring (hsubkey, L"DisplayName");
 
-				if (result == ERROR_SUCCESS)
+				if (!display_name.IsEmpty ())
 				{
 					if (display_name[0] == L'@')
 					{
@@ -1877,7 +1875,7 @@ void _app_generate_packages ()
 							WCHAR name[MAX_PATH] = {0};
 
 							if (SUCCEEDED (SHLoadIndirectString (display_name, name, _countof (name), nullptr)))
-								StringCchCopy (display_name, _countof (display_name), name);
+								display_name = name;
 
 							if (SUCCEEDED (hrComInit))
 								CoUninitialize ();
@@ -1885,18 +1883,17 @@ void _app_generate_packages ()
 					}
 				}
 
-				WCHAR path[MAX_PATH] = {0};
-				size = _countof (path) * sizeof (path[0]);
-				RegQueryValueEx (hsubkey, L"PackageRootFolder", nullptr, nullptr, (LPBYTE)path, &size);
+				rstring path = _r_reg_querystring (hsubkey, L"PackageRootFolder");
 
 				// query timestamp
-				FILETIME ft = {0};
+				ptr_item->timestamp = _r_reg_querytimestamp (hsubkey);
 
-				if (RegQueryInfoKey (hsubkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
-					ptr_item->timestamp = _r_unixtime_from_filetime (&ft);
+				if (!display_name.IsEmpty ())
+					_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
 
-				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
-				_r_str_alloc (&ptr_item->real_path, _r_str_length (path), path);
+				if (!path.IsEmpty ())
+					_r_str_alloc (&ptr_item->real_path, _r_str_length (path), path);
+
 				_r_str_alloc (&ptr_item->internal_name, package_sid_string.GetLength (), package_sid_string);
 
 				if (!ConvertStringSidToSid (package_sid_string, &ptr_item->pdata))
@@ -1958,20 +1955,16 @@ void _app_generate_services ()
 	// now traverse each service to get information
 	if (pBuffer)
 	{
-		LPENUM_SERVICE_STATUS_PROCESS pServices = (LPENUM_SERVICE_STATUS_PROCESS)pBuffer;
-
 		for (DWORD i = 0; i < servicesReturned; i++)
 		{
-			LPENUM_SERVICE_STATUS_PROCESS psvc = (pServices + i);
+			LPENUM_SERVICE_STATUS_PROCESS psvc = ((LPENUM_SERVICE_STATUS_PROCESS)pBuffer + i);
 
 			time_t timestamp = 0;
 
 			LPCWSTR display_name = psvc->lpDisplayName;
 			LPCWSTR service_name = psvc->lpServiceName;
 
-			WCHAR real_path[MAX_PATH] = {0};
-
-			FILETIME ft = {0};
+			rstring real_path;
 
 			// query "ServiceDll" path
 			{
@@ -1979,58 +1972,43 @@ void _app_generate_services ()
 
 				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s\\Parameters", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 				{
-					DWORD size = _countof (real_path) * sizeof (real_path[0]);
+					// query path
+					real_path = _r_reg_querystring (hkey, L"ServiceDll");
 
-					if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
-						timestamp = _r_unixtime_from_filetime (&ft);
-
-					RegQueryValueEx (hkey, L"ServiceDll", nullptr, nullptr, (LPBYTE)real_path, &size);
+					// query timestamp
+					timestamp = _r_reg_querytimestamp (hkey);
 
 					RegCloseKey (hkey);
 				}
 			}
 
-			// query service path
-			if (!real_path[0] || !timestamp)
+			// fallback
+			if (real_path.IsEmpty () || !timestamp)
 			{
 				HKEY hkey = nullptr;
 
 				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 				{
-					if (!real_path[0])
-					{
-						DWORD size = _countof (real_path) * sizeof (real_path[0]);
+					// query path
+					if (real_path.IsEmpty ())
+						real_path = _r_reg_querystring (hkey, L"ImagePath");
 
-						RegQueryValueEx (hkey, L"ImagePath", nullptr, nullptr, (LPBYTE)real_path, &size);
-					}
-
-					// query "lpftLastWriteTime"
+					// query timestamp
 					if (!timestamp)
-					{
-						if (RegQueryInfoKey (hkey, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &ft) == ERROR_SUCCESS)
-							timestamp = _r_unixtime_from_filetime (&ft);
-					}
-
+						timestamp = _r_reg_querytimestamp (hkey);
 
 					RegCloseKey (hkey);
 				}
+			}
 
-				if (real_path[0])
-				{
-					PathRemoveArgs (real_path);
-					PathUnquoteSpaces (real_path);
+			if (!real_path.IsEmpty ())
+			{
+				PathRemoveArgs (real_path.GetBuffer ());
+				PathUnquoteSpaces (real_path.GetBuffer ());
 
-					for (size_t j = 0; j < _r_str_length (real_path); j++)
-					{
-						if (real_path[j] == L'%')
-						{
-							StringCchCopy (real_path, _countof (real_path), _r_path_expand (real_path));
-							break;
-						}
-					}
-				}
+				real_path.ReleaseBuffer ();
 
-				_app_applycasestyle (real_path, _r_str_length (real_path)); // apply case-style
+				real_path = _r_path_dospathfromnt (real_path);
 			}
 
 			UNICODE_STRING serviceNameUs = {0};
@@ -3046,33 +3024,6 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 	SAFE_DELETE_ARRAY (pstraddr);
 
 	return result;
-}
-
-void _app_resolvefilename (rstring & path)
-{
-	// "\??\" refers to \GLOBAL??\. Just remove it.
-	if (_wcsnicmp (path, L"\\??\\", 4) == 0)
-	{
-		path.Mid (4);
-	}
-	// "\SystemRoot" means "C:\Windows".
-	else if (_wcsnicmp (path, L"\\SystemRoot", 11) == 0)
-	{
-		WCHAR systemRoot[MAX_PATH] = {0};
-		GetSystemDirectory (systemRoot, _countof (systemRoot));
-
-		path.Mid (11 + 9);
-		path.Insert (0, systemRoot);
-	}
-	// "system32\" means "C:\Windows\system32\".
-	else if (_wcsnicmp (path, L"system32\\", 9) == 0)
-	{
-		WCHAR systemRoot[MAX_PATH] = {0};
-		GetSystemDirectory (systemRoot, _countof (systemRoot));
-
-		path.Mid (8);
-		path.Insert (0, systemRoot);
-	}
 }
 
 INT _app_getlistview_id (EnumDataType type)

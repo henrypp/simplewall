@@ -346,7 +346,7 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 	else
 	{
 		if (_wfp_initialize (false))
-			_wfp_destroyfilters ();
+			_wfp_destroyfilters (_wfp_getenginehandle ());
 
 		_wfp_uninitialize (true);
 	}
@@ -1257,7 +1257,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						OBJECTS_VEC rules;
 						rules.push_back (ptr_rule_object);
 
-						_wfp_create4filters (rules, __LINE__);
+						_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
 
 						// note: do not needed!
 						//_app_dereferenceobjects (rules, &_app_dereferencerule);
@@ -1422,12 +1422,14 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 
 			if (new_val ? config.pacl_secure : config.pacl_default)
 			{
+				const HANDLE hengine = _wfp_getenginehandle ();
+
 				GUIDS_VEC filter_all;
 
-				if (_wfp_dumpfilters (&GUID_WfpProvider, &filter_all))
+				if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 				{
 					for (size_t i = 0; i < filter_all.size (); i++)
-						_wfp_setfiltersecurity (config.hengine, &filter_all.at (i), config.pusersid, new_val ? config.pacl_secure : config.pacl_default, __LINE__);
+						_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.pusersid, new_val ? config.pacl_secure : config.pacl_default, __LINE__);
 				}
 			}
 
@@ -1515,7 +1517,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		}
 	}
 
-	_wfp_create2filters (__LINE__);
+	_wfp_create2filters (_wfp_getenginehandle (), __LINE__);
 }
 
 INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -2326,15 +2328,15 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
+					}
 				}
-			}
 
 			break;
+			}
 		}
-	}
 
 	return FALSE;
-}
+	}
 
 LONG gettoolbarwidth ()
 {
@@ -3442,7 +3444,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 										_app_timer_reset (hwnd, ptr_app);
 
 									rules.push_back (ptr_app_object);
-									_wfp_create3filters (rules, __LINE__);
+									_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 
 									is_changed = true;
 								}
@@ -3474,7 +3476,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									_r_fastlock_releaseshared (&lock_checkbox);
 
 									rules.push_back (ptr_rule_object);
-									_wfp_create4filters (rules, __LINE__);
+									_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
 
 									is_changed = true;
 								}
@@ -4064,7 +4066,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					OBJECTS_VEC rules;
 					rules.push_back (ptr_rule_object);
 
-					_wfp_create4filters (rules, __LINE__);
+					_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
 				}
 
 				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
@@ -4112,7 +4114,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 				}
 
-				_wfp_create3filters (rules, __LINE__);
+				_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 				_app_freeobjects_vec (rules, &_app_dereferenceapp);
 
 				_app_listviewsort (hwnd, listview_id);
@@ -5007,7 +5009,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (is_changed)
 						{
-							_wfp_create3filters (rules, __LINE__);
+							_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 							_app_freeobjects_vec (rules, &_app_dereferenceapp);
 						}
 					}
@@ -5048,7 +5050,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (is_changed)
 						{
-							_wfp_create4filters (rules, __LINE__);
+							_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
 							_app_freeobjects_vec (rules, &_app_dereferencerule);
 						}
 					}
@@ -5445,7 +5447,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					_wfp_destroy2filters (guids, __LINE__);
+					_wfp_destroyfilters_array (_wfp_getenginehandle (), guids, __LINE__);
 
 					_app_refreshstatus (hwnd);
 					_app_profile_save ();
@@ -5504,7 +5506,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (is_deleted)
 					{
-						_wfp_destroy2filters (guids, __LINE__);
+						_wfp_destroyfilters_array (_wfp_getenginehandle (), guids, __LINE__);
 
 						_app_refreshstatus (hwnd);
 						_app_profile_save ();
@@ -5545,7 +5547,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_releaseshared (&lock_access);
 
-					_wfp_create3filters (rules, __LINE__);
+					_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 					_app_freeobjects_vec (rules, &_app_dereferenceapp);
 
 					_app_listviewsort (hwnd, _app_gettab_id (hwnd));
@@ -5725,7 +5727,7 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 				if (app.IsAdmin () && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
 				{
 					if (_wfp_initialize (false))
-						_wfp_destroyfilters ();
+						_wfp_destroyfilters (_wfp_getenginehandle ());
 
 					_wfp_uninitialize (true);
 				}

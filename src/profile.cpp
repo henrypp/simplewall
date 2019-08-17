@@ -88,8 +88,6 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 		}
 	}
 
-	_app_resolvefilename (path);
-
 	const size_t app_hash = path.Hash ();
 
 	if (_app_isappfound (app_hash))
@@ -157,9 +155,6 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 			ptr_app->is_system = !is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_wcsnicmp (real_path, config.windows_dir, config.wd_length) == 0));
 		}
 	}
-
-	_app_applycasestyle (real_path.GetBuffer (), real_path.GetLength ()); // apply case-style
-	_app_applycasestyle (path.GetBuffer (), path.GetLength ()); // apply case-style
 
 	_r_str_alloc (&ptr_app->original_path, path.GetLength (), path);
 	_r_str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path);
@@ -826,7 +821,7 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 		if (is_instantapply)
 		{
-			_wfp_create4filters (rules, __LINE__);
+			_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
 			_app_freeobjects_vec (rules, &_app_dereferencerule);
 		}
 
@@ -842,10 +837,7 @@ rstring _app_rulesexpand (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delim
 	{
 		if (is_fordisplay && ptr_rule->is_forservices)
 		{
-			rstring svchost_path = _r_path_expand (PATH_SVCHOST);
-
-			_app_applycasestyle (svchost_path.GetBuffer (), svchost_path.GetLength ());
-			svchost_path.ReleaseBuffer ();
+			static const rstring svchost_path = _r_path_expand (PATH_SVCHOST);
 
 			result.AppendFormat (L"%s%s", PROC_SYSTEM_NAME, delimeter);
 			result.AppendFormat (L"%s%s", svchost_path.GetString (), delimeter);

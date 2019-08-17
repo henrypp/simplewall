@@ -226,7 +226,7 @@ bool _app_notifycommand (HWND hwnd, UINT button_id, time_t seconds)
 
 	ptr_app->last_notify = _r_unixtime_now ();
 
-	_wfp_create3filters (rules, __LINE__);
+	_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 
 	_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 
@@ -502,11 +502,11 @@ void _app_notifyplaysound ()
 
 		if (RegOpenKeyEx (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 		{
-			DWORD size = _countof (notify_snd_path) * sizeof (WCHAR);
+			rstring path = _r_reg_querystring (hkey, nullptr);
 
-			if (RegQueryValueEx (hkey, nullptr, nullptr, nullptr, (LPBYTE)notify_snd_path, &size) == ERROR_SUCCESS)
+			if (!path.IsEmpty ())
 			{
-				const rstring path = _r_path_expand (notify_snd_path);
+				path = _r_path_expand (path);
 
 				if (_r_fs_exists (path))
 				{
@@ -989,7 +989,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 										OBJECTS_VEC rules;
 										rules.push_back (ptr_rule_object);
 
-										_wfp_create4filters (rules, __LINE__);
+										_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
 
 										if (listview_id == app_listview_id || listview_id == rule_listview_id)
 										{

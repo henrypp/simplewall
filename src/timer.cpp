@@ -5,7 +5,7 @@
 
 bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 {
-	if (!config.hengine || !ptr_app)
+	if (!ptr_app)
 		return false;
 
 	if (seconds <= 0)
@@ -71,10 +71,7 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 bool _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 {
-	if (!config.hengine || !ptr_app)
-		return false;
-
-	if (!_app_istimeractive (ptr_app))
+	if (!ptr_app || !_app_istimeractive (ptr_app))
 		return false;
 
 	ptr_app->is_haveerrors = false;
@@ -164,7 +161,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 	rules.push_back (ptr_app_object);
 
 	_app_timer_reset (hwnd, ptr_app);
-	_wfp_create3filters (rules, __LINE__);
+	_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 
 	const INT listview_id = _app_gettab_id (hwnd);
 
