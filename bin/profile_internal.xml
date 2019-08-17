@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--Internal rules for simplewall-->
 <!--Minimum required version is 3.0.2-->
-<root timestamp="1565084884" type="4" version="3">
+<root timestamp="1566015630" type="4" version="3">
 	<rules_system>
 		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" is_services="true" is_enabled="true" />
 		<item name="DNS" rule="53" protocol="17" is_services="true" is_enabled="true" />
@@ -17,18 +17,18 @@
 		<item name="NetBIOS [inbound]" rule_local="137-139" dir="2" is_services="true" is_enabled="true" />
 		<item name="NetBIOS [outbound]" rule="137-139" is_services="true" is_enabled="true" />
 		<item name="NTP" rule="123" protocol="17" is_services="true" />
-		<item name="RDP [inbound]" rule_local="3389" dir="1" apps="termservice" />
-		<item name="RDP [outbound]" rule="3389" apps="termservice" />
+		<item name="RDP [inbound]" rule_local="3389" dir="1" is_services="true" />
+		<item name="RDP [outbound]" rule="3389" is_services="true" />
 		<item name="SMB [inbound]" rule_local="445" dir="1" protocol="6" is_services="true" />
 		<item name="SMB [outbound]" rule="445" protocol="6"  is_services="true" />
 		<item name="SNMP" rule="161-162" dir="2" protocol="17" is_services="true" />
-		<item name="SSDP [inbound]" rule_local="1900" dir="1" protocol="17" apps="ssdpsrv" is_enabled="true" />
-		<item name="SSDP [outbound]" rule="1900" protocol="17" apps="ssdpsrv" is_enabled="true" />
+		<item name="SSDP [inbound]" rule_local="1900" dir="1" protocol="17" is_services="true" is_enabled="true" />
+		<item name="SSDP [outbound]" rule="1900" protocol="17" is_services="true" is_enabled="true" />
 		<item name="SSH" rule="22" protocol="6" is_custom="true" />
 		<item name="Telnet" rule="23" protocol="6" is_custom="true" />
-		<item name="UPnP" rule="2869" protocol="6" apps="fdphost|upnphost" is_enabled="true" />
-		<item name="WS-Discovery" rule="3702" protocol="17" apps="fdphost|fdrespub" is_enabled="true" />
-		<item name="WS-Discovery [events]" rule="5357-5358" protocol="6" apps="fdphost" is_enabled="true" />
+		<item name="UPnP" rule="2869" protocol="6" is_services="true" is_enabled="true" />
+		<item name="WS-Discovery" rule="3702" protocol="17" is_services="true" is_enabled="true" />
+		<item name="WS-Discovery [events]" rule="5357-5358" protocol="6" is_services="true" is_enabled="true" />
 	</rules_system>
 	<rules_blocklist>
 		<item name="extra_13.76.218.117" rule="13.76.218.117" />
