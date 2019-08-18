@@ -1785,7 +1785,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, _r_fmt (L" (%s)", recommended.GetString ())));
 					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_BLOCK, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
 
-					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_INFO, L"(c) <a href=\"%s\">WindowsSpyBlocker</a> project (%s)", L"https://github.com/crazy-max/WindowsSpyBlocker", _r_fmt_date (config.profile_internal_timestamp, FDTF_LONGDATE).GetString ());
+					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_INFO, L"(c) <a href=\"%s\">%s</a>", WINDOWSSPYBLOCKER_URL, WINDOWSSPYBLOCKER_URL);
 
 					break;
 				}

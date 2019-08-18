@@ -126,6 +126,7 @@ void _app_dereferencelog (PVOID pdata);
 #define PATH_WINSTORE L"%systemroot%\\system32\\wsreset.exe"
 
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
+#define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
 
 #define BOOTTIME_FILTER_NAME L"Boot-time filter"
 #define SUBLAYER_WEIGHT_DEFAULT 65534u
