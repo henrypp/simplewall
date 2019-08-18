@@ -1017,6 +1017,9 @@ rstring _app_getservicename (UINT16 port)
 		case 631:
 			return L"ipp";
 
+		case 636:
+			return L"ldapssl";
+
 		case 646:
 			return L"ldp";
 
@@ -2542,11 +2545,11 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 
 	// initialize winsock (required by getnameinfo)
 	WSADATA wsaData = {0};
-	INT ret_code = WSAStartup (WINSOCK_VERSION, &wsaData);
+	INT rc = WSAStartup (WINSOCK_VERSION, &wsaData);
 
-	if (ret_code != ERROR_SUCCESS)
+	if (rc != ERROR_SUCCESS)
 	{
-		_app_logerror (L"WSAStartup", ret_code, nullptr, true);
+		_app_logerror (L"WSAStartup", rc, nullptr, true);
 		return L"";
 	}
 
@@ -2560,11 +2563,11 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	LPGUID lpNspid = nullptr;
-	ret_code = GetAddrInfoEx (hostname, L"domain", NS_DNS, lpNspid, &hints, &ppQueryResultsSet, nullptr, nullptr, nullptr, nullptr);
+	rc = GetAddrInfoEx (hostname, L"domain", NS_DNS, lpNspid, &hints, &ppQueryResultsSet, nullptr, nullptr, nullptr, nullptr);
 
-	if (ret_code != ERROR_SUCCESS || !ppQueryResultsSet)
+	if (rc != ERROR_SUCCESS || !ppQueryResultsSet)
 	{
-		_app_logerror (L"GetAddrInfoEx", ret_code, hostname, true);
+		_app_logerror (L"GetAddrInfoEx", rc, hostname, true);
 		return L"";
 	}
 	else
@@ -2624,11 +2627,11 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 	BYTE prefix_length = 0;
 
 	static const DWORD types = NET_STRING_ANY_ADDRESS | NET_STRING_ANY_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_ANY_ADDRESS_NO_SCOPE | NET_STRING_ANY_SERVICE_NO_SCOPE;
-	const DWORD errcode = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
+	const DWORD rc = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
 
-	if (errcode != ERROR_SUCCESS)
+	if (rc != ERROR_SUCCESS)
 	{
-		_app_logerror (L"ParseNetworkString", errcode, network_string, true);
+		_app_logerror (L"ParseNetworkString", rc, network_string, true);
 		return false;
 	}
 	else

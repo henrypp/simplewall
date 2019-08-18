@@ -534,12 +534,12 @@ bool _wfp_transact_start (UINT line)
 {
 	if (config.hengine)
 	{
-		const DWORD result = FwpmTransactionBegin (config.hengine, 0);
+		const DWORD rc = FwpmTransactionBegin (config.hengine, 0);
 
-		if (result == ERROR_SUCCESS)
+		if (rc == ERROR_SUCCESS)
 			return true;
 
-		_app_logerror (L"FwpmTransactionBegin", result, _r_fmt (L"#%d", line), false);
+		_app_logerror (L"FwpmTransactionBegin", rc, _r_fmt (L"#%d", line), false);
 	}
 
 	return false;
@@ -549,14 +549,14 @@ bool _wfp_transact_commit (UINT line)
 {
 	if (config.hengine)
 	{
-		const DWORD result = FwpmTransactionCommit (config.hengine);
+		const DWORD rc = FwpmTransactionCommit (config.hengine);
 
-		if (result == ERROR_SUCCESS)
+		if (rc == ERROR_SUCCESS)
 			return true;
 
 		FwpmTransactionAbort (config.hengine);
 
-		_app_logerror (L"FwpmTransactionCommit", result, _r_fmt (L"#%d", line), false);
+		_app_logerror (L"FwpmTransactionCommit", rc, _r_fmt (L"#%d", line), false);
 	}
 
 	return false;
@@ -632,7 +632,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * l
 	const DWORD rc = FwpmFilterAdd (hengine, &filter, nullptr, &filter_id);
 
 	// issue #229
-	//if (result == FWP_E_PROVIDER_NOT_FOUND)
+	//if (rc == FWP_E_PROVIDER_NOT_FOUND)
 	//{
 	//}
 
@@ -1530,7 +1530,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 	// configure outbound layer
 	{
-		FWP_ACTION_TYPE action = app.ConfigGet (L"BlockOutboundConnections", true).AsBool () ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+		const FWP_ACTION_TYPE action = app.ConfigGet (L"BlockOutboundConnections", true).AsBool () ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
 		_wfp_createfilter (hengine, L"BlockConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, action, 0, &filter_ids);
 		_wfp_createfilter (hengine, L"BlockConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, action, 0, &filter_ids);
@@ -1542,7 +1542,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 	// configure inbound layer
 	{
-		FWP_ACTION_TYPE action = (app.ConfigGet (L"UseStealthMode", true).AsBool () || app.ConfigGet (L"BlockInboundConnections", true).AsBool ()) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+		const FWP_ACTION_TYPE action = (app.ConfigGet (L"UseStealthMode", true).AsBool () || app.ConfigGet (L"BlockInboundConnections", true).AsBool ()) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
 		_wfp_createfilter (hengine, L"BlockRecvAcceptConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, action, 0, &filter_ids);
 		_wfp_createfilter (hengine, L"BlockRecvAcceptConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, action, 0, &filter_ids);
@@ -1555,7 +1555,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	// issue: https://github.com/henrypp/simplewall/issues/9
 #ifdef SW_USE_LISTEN_LAYER
 	{
-		FWP_ACTION_TYPE action = app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? FWP_ACTION_PERMIT : FWP_ACTION_BLOCK;
+		const FWP_ACTION_TYPE action = app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? FWP_ACTION_PERMIT : FWP_ACTION_BLOCK;
 
 		_wfp_createfilter (L"BlockListenConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, 0, &filter_ids);
 		_wfp_createfilter (L"BlockListenConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, 0, &filter_ids);
@@ -1806,10 +1806,10 @@ void _mps_changeconfig2 (bool is_enable)
 
 			if (!sc)
 			{
-				const DWORD result = GetLastError ();
+				const DWORD rc = GetLastError ();
 
-				if (result != ERROR_ACCESS_DENIED)
-					_app_logerror (L"OpenService", GetLastError (), arr[i], false);
+				if (rc != ERROR_ACCESS_DENIED)
+					_app_logerror (L"OpenService", rc, arr[i], true);
 			}
 			else
 			{
@@ -1889,19 +1889,19 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 		}
 		else
 		{
-			DWORD result = _r_path_ntpathfromdos (path_buff);
+			DWORD rc = _r_path_ntpathfromdos (path_buff);
 
 			// file is inaccessible or not found, maybe low-level driver preventing file access?
 			// try another way!
 			if (
-				result == ERROR_ACCESS_DENIED ||
-				result == ERROR_FILE_NOT_FOUND ||
-				result == ERROR_PATH_NOT_FOUND
+				rc == ERROR_ACCESS_DENIED ||
+				rc == ERROR_FILE_NOT_FOUND ||
+				rc == ERROR_PATH_NOT_FOUND
 				)
 			{
 				if (PathIsRelative (path))
 				{
-					return result;
+					return rc;
 				}
 				else
 				{
@@ -1915,18 +1915,18 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 					StringCchCopy (path_noroot, _countof (path_noroot), PathSkipRoot (path));
 
 					path_buff = path_root;
-					result = _r_path_ntpathfromdos (path_buff);
+					rc = _r_path_ntpathfromdos (path_buff);
 
-					if (result != ERROR_SUCCESS)
-						return result;
+					if (rc != ERROR_SUCCESS)
+						return rc;
 
 					path_buff.Append (path_noroot);
 					path_buff.ToLower (); // lower is important!
 				}
 			}
-			else if (result != ERROR_SUCCESS)
+			else if (rc != ERROR_SUCCESS)
 			{
-				return result;
+				return rc;
 			}
 
 			if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
