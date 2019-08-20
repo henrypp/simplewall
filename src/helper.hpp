@@ -51,7 +51,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash);
 
 bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, PBYTE* lpdata);
 
-INT CALLBACK _app_listviewcompare_callback (LPARAM lp1, LPARAM lp2, LPARAM lparam);
+INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPARAM lparam);
 void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id = INVALID_INT, bool is_notifycode = false);
 
 void _app_refreshstatus (HWND hwnd);
@@ -73,4 +73,4 @@ HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size);
 HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size);
 
 void _app_load_appxmanifest (PITEM_APP_HELPER ptr_app_item);
-LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD size);
+LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD psize);

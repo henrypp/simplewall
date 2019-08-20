@@ -14,7 +14,7 @@ PR_OBJECT _app_getrulebyhash (size_t rule_hash);
 PR_OBJECT _app_getnetworkitem (size_t network_hash);
 size_t _app_getnetworkapp (size_t network_hash);
 
-void _app_freeapplication (size_t hash);
+void _app_freeapplication (size_t app_hash);
 
 void _app_getcount (PITEM_STATUS ptr_status);
 
