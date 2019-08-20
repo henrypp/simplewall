@@ -1994,7 +1994,17 @@ void _app_generate_services ()
 				{
 					// query path
 					if (real_path.IsEmpty ())
+					{
 						real_path = _r_reg_querystring (hkey, L"ImagePath");
+
+						if (!real_path.IsEmpty ())
+						{
+							PathRemoveArgs (real_path.GetBuffer ());
+							PathUnquoteSpaces (real_path.GetBuffer ());
+
+							real_path.ReleaseBuffer ();
+						}
+					}
 
 					// query timestamp
 					if (!timestamp)
@@ -2005,14 +2015,7 @@ void _app_generate_services ()
 			}
 
 			if (!real_path.IsEmpty ())
-			{
-				PathRemoveArgs (real_path.GetBuffer ());
-				PathUnquoteSpaces (real_path.GetBuffer ());
-
-				real_path.ReleaseBuffer ();
-
 				real_path = _r_path_dospathfromnt (real_path);
-			}
 
 			UNICODE_STRING serviceNameUs = {0};
 			RtlInitUnicodeString (&serviceNameUs, (PWSTR)service_name);

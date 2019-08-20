@@ -437,8 +437,8 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 
 			_app_notifysettext (hdc, hwnd, IDC_FILE_ID, app.LocaleString (IDS_NAME, L":"), IDC_FILE_TEXT, (ptr_app->display_name && ptr_app->display_name[0]) ? _r_path_extractfile (ptr_app->display_name) : empty_text);
 			_app_notifysettext (hdc, hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":"), IDC_SIGNATURE_TEXT, is_signed.IsEmpty () ? empty_text : is_signed);
-			_app_notifysettext (hdc, hwnd, IDC_ADDRESS_ID, app.LocaleString (IDS_ADDRESS, L":"), IDC_ADDRESS_TEXT, (ptr_log->addr_fmt && ptr_log->addr_fmt[0]) ? ptr_log->addr_fmt : empty_text);
-			_app_notifysettext (hdc, hwnd, IDC_PORT_ID, app.LocaleString (IDS_PORT, L":"), IDC_PORT_TEXT, ptr_log->port ? _r_fmt (L"%" PRIu16 " (%s)", ptr_log->port, _app_getservicename (ptr_log->port).GetString ()) : empty_text);
+			_app_notifysettext (hdc, hwnd, IDC_ADDRESS_ID, app.LocaleString (IDS_ADDRESS, L":"), IDC_ADDRESS_TEXT, (ptr_log->remote_fmt && ptr_log->remote_fmt[0]) ? ptr_log->remote_fmt : empty_text);
+			_app_notifysettext (hdc, hwnd, IDC_PORT_ID, app.LocaleString (IDS_PORT, L":"), IDC_PORT_TEXT, ptr_log->remote_port ? _r_fmt (L"%" PRIu16 " (%s)", ptr_log->remote_port, _app_getservicename (ptr_log->remote_port).GetString ()) : empty_text);
 			_app_notifysettext (hdc, hwnd, IDC_DIRECTION_ID, app.LocaleString (IDS_DIRECTION, L":"), IDC_DIRECTION_TEXT, app.LocaleString (is_inbound ? IDS_DIRECTION_2 : IDS_DIRECTION_1, ptr_log->is_loopback ? L" (Loopback)" : nullptr));
 			_app_notifysettext (hdc, hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, (ptr_log->filter_name && ptr_log->filter_name[0]) ? ptr_log->filter_name : empty_text);
 			_app_notifysettext (hdc, hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME));
@@ -1139,7 +1139,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							LPWSTR prule = nullptr;
 
-							if (_app_formataddress (ptr_log->af, 0, &ptr_log->addr, ptr_log->port, &prule, FMTADDR_AS_RULE))
+							if (_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, &prule, FMTADDR_AS_RULE))
 							{
 								_r_str_alloc (&ptr_rule->pname, _r_str_length (prule), prule);
 								_r_str_alloc (&ptr_rule->prule_remote, _r_str_length (prule), prule);

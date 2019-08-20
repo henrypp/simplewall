@@ -86,14 +86,9 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 			}
 			else
 			{
-				column_width = 0;
-
 				{
 					const rstring column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
-					const INT text_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + caption_spacing;
-
-					if (text_width > column_width)
-						column_width = text_width;
+					column_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + caption_spacing;
 				}
 
 				if (is_tableview)
@@ -147,8 +142,8 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 		SendDlgItemMessage (hwnd, listview_id, LVM_SETIMAGELIST, LVSIL_SMALL, (LPARAM)himg);
 	}
 
-	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
 	SendDlgItemMessage (hwnd, listview_id, LVM_SETVIEW, is_tableview ? LV_VIEW_DETAILS : LV_VIEW_ICON, 0);
+	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, GetScrollPos (GetDlgItem (hwnd, listview_id), SB_HORZ), GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
 }
 
 bool _app_listviewinitfont (PLOGFONT plf)
@@ -787,8 +782,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SetWindowText (hwnd, app.LocaleString (IDS_EDITOR, ((ptr_rule->pname && ptr_rule->pname[0]) ? _r_fmt (L" - \"%s\"", ptr_rule->pname).GetString () : nullptr)));
 
 			SetDlgItemText (hwnd, IDC_NAME, app.LocaleString (IDS_NAME, L":"));
-			SetDlgItemText (hwnd, IDC_RULE_REMOTE, app.LocaleString (IDS_RULE, L" (" SZ_LOG_REMOTE_ADDRESS L"):"));
-			SetDlgItemText (hwnd, IDC_RULE_LOCAL, app.LocaleString (IDS_RULE, L" (" SZ_LOG_LOCAL_ADDRESS L"):"));
+			SetDlgItemText (hwnd, IDC_RULE_REMOTE, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L"):"));
+			SetDlgItemText (hwnd, IDC_RULE_LOCAL, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_LOCAL L"):"));
 			SetDlgItemText (hwnd, IDC_DIRECTION, app.LocaleString (IDS_DIRECTION, L":"));
 			SetDlgItemText (hwnd, IDC_PROTOCOL, app.LocaleString (IDS_PROTOCOL, L":"));
 			SetDlgItemText (hwnd, IDC_PORTVERSION, app.LocaleString (IDS_PORTVERSION, L":"));
@@ -2328,15 +2323,15 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-					}
 				}
+			}
 
 			break;
-			}
 		}
+	}
 
 	return FALSE;
-	}
+}
 
 LONG gettoolbarwidth ()
 {
@@ -4428,10 +4423,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					const INT listview_id = _app_gettab_id (hwnd);
 
-					_app_listviewsetview (hwnd, listview_id);
-					_app_listviewresize (hwnd, listview_id);
+					if (listview_id)
+					{
+						_app_listviewsetview (hwnd, listview_id);
+						_app_listviewresize (hwnd, listview_id);
 
-					_r_listview_redraw (hwnd, listview_id);
+						_r_listview_redraw (hwnd, listview_id);
+					}
 
 					break;
 				}
@@ -5575,7 +5573,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 #define ID_START 1000
 #define FN_AD L"<test filter>"
 #define RM_AD L"195.210.46.95"
+#define LM_AD L"192.168.1.1"
 #define RP_AD 443
+#define LP_AD 65535
+
+				// Here is debugging content
 
 				case 997:
 				{
@@ -5616,13 +5618,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					ptr_log->filter_id = ID_START;
 					ptr_log->direction = FWP_DIRECTION_OUTBOUND;
 
-					InetPton (ptr_log->af, RM_AD, &ptr_log->addr);
-					ptr_log->port = 443;
+					InetPton (ptr_log->af, RM_AD, &ptr_log->remote_addr);
+					ptr_log->remote_port = RP_AD;
 
 					_r_str_alloc (&ptr_log->path, _r_str_length (app.GetBinaryPath ()), app.GetBinaryPath ());
 					_r_str_alloc (&ptr_log->filter_name, _r_str_length (FN_AD), FN_AD);
 
-					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->addr, 0, &ptr_log->addr_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
+					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &ptr_log->remote_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
+					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, &ptr_log->local_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
 
 					PR_OBJECT ptr_app_object = _app_getappitem (config.my_hash);
 
@@ -5649,6 +5652,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET |
 						FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET |
 						FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET |
+						FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET |
+						FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET |
 						FWPM_NET_EVENT_FLAG_USER_ID_SET |
 						FWPM_NET_EVENT_FLAG_IP_VERSION_SET;
 
@@ -5658,14 +5663,21 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					sockaddr_in ipv4_remote = {0};
 					INT len1 = sizeof (ipv4_remote);
 
+					sockaddr_in ipv4_local = {0};
+					INT len2 = sizeof (ipv4_local);
+
 					rstring path = app.GetBinaryPath ();
 					_r_path_ntpathfromdos (path);
 
 					for (UINT i = 0; i < 255; i++)
 					{
 						WSAStringToAddress (_r_fmt (RM_AD, i + 1).GetBuffer (), AF_INET, nullptr, (sockaddr*)& ipv4_remote, &len1);
+						WSAStringToAddress (_r_fmt (LM_AD, i + 1).GetBuffer (), AF_INET, nullptr, (sockaddr*)& ipv4_local, &len2);
 
-						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.pusersid, IPPROTO_TCP, FWP_IP_VERSION_V4, ntohl (ipv4_remote.sin_addr.S_un.S_addr), nullptr, RP_AD, UINT16 (i) + 1, ID_START + i, FWP_DIRECTION_OUTBOUND, false, false);
+						UINT32 remote_addr = _byteswap_ulong (ipv4_remote.sin_addr.S_un.S_addr);
+						UINT32 local_addr = _byteswap_ulong (ipv4_local.sin_addr.S_un.S_addr);
+
+						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.pusersid, IPPROTO_TCP, FWP_IP_VERSION_V4, &remote_addr, RP_AD, &local_addr, LP_AD, UINT16 (i) + 1, ID_START + i, FWP_DIRECTION_OUTBOUND, false, false);
 					}
 
 					break;

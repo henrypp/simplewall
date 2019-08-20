@@ -133,25 +133,28 @@ void _app_dereferencelog (PVOID pdata);
 
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;;CCRC;;;%s)"
 
+#define DIVIDER_COPY L','
+#define DIVIDER_CSV L","
+#define DIVIDER_APP L"|"
+#define DIVIDER_RULE L";"
+#define DIVIDER_RULE_RANGE L'-'
+#define DIVIDER_TRIM L"\r\n "
+
 #define SZ_TAB L"   "
 #define SZ_EMPTY L"<empty>"
 #define SZ_READONLY_RULE L"*"
 #define SZ_UNKNOWN L"unknown"
 
-#define SZ_LOG_REMOTE_ADDRESS L"Remote"
-#define SZ_LOG_LOCAL_ADDRESS L"Local"
-#define SZ_LOG_ALLOW L"Allowed"
-#define SZ_LOG_BLOCK L"Blocked"
-#define SZ_LOG_DIRECTION_IN L"Inbound"
-#define SZ_LOG_DIRECTION_OUT L"Outbound"
-#define SZ_LOG_DIRECTION_LOOPBACK L"-Loopback"
+#define SZ_DIRECTION_REMOTE L"Remote"
+#define SZ_DIRECTION_LOCAL L"Local"
+#define SZ_STATE_ALLOW L"Allowed"
+#define SZ_STATE_BLOCK L"Blocked"
+#define SZ_DIRECTION_IN L"Inbound"
+#define SZ_DIRECTION_OUT L"Outbound"
+#define SZ_DIRECTION_LOOPBACK L"-Loopback"
 
-#define DIVIDER_COPY L','
-#define DIVIDER_CSV L','
-#define DIVIDER_APP L"|"
-#define DIVIDER_RULE L";"
-#define DIVIDER_RULE_RANGE L'-'
-#define DIVIDER_TRIM L"\r\n "
+#define SZ_LOG_TITLE L"Date" DIVIDER_CSV L"User" DIVIDER_CSV L"Path" DIVIDER_CSV L"Address (" SZ_DIRECTION_REMOTE L")" DIVIDER_CSV L"Port (" SZ_DIRECTION_REMOTE L")" DIVIDER_CSV L"Address (" SZ_DIRECTION_LOCAL L")" DIVIDER_CSV L"Port (" SZ_DIRECTION_LOCAL L")" DIVIDER_CSV L"Protocol" DIVIDER_CSV L"Filter name" DIVIDER_CSV L"Filter ID" DIVIDER_CSV L"Direction" DIVIDER_CSV L"Status\r\n"
+#define SZ_LOG_BODY L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"#%" PRIu64 L"\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"\r\n"
 
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_NOTIFICATION L"Calibri"
@@ -162,7 +165,7 @@ void _app_dereferencelog (PVOID pdata);
 #define UMAP_CACHE_LIMIT 1024
 
 #define FILTERS_TIMEOUT 9000
-#define TRANSACTION_TIMEOUT 4000
+#define TRANSACTION_TIMEOUT 6000
 #define NETWORK_TIMEOUT 3500
 
 // notifications
@@ -435,20 +438,24 @@ typedef struct tagITEM_LOG
 	~tagITEM_LOG ()
 	{
 		SAFE_DELETE_ARRAY (path);
-		SAFE_DELETE_ARRAY (addr_fmt);
 		SAFE_DELETE_ARRAY (provider_name);
 		SAFE_DELETE_ARRAY (filter_name);
 		SAFE_DELETE_ARRAY (username);
+
+		SAFE_DELETE_ARRAY (remote_fmt);
+		SAFE_DELETE_ARRAY (local_fmt);
 
 		if (hicon)
 			DestroyIcon (hicon);
 	}
 
 	LPWSTR path = nullptr;
-	LPWSTR addr_fmt = nullptr;
 	LPWSTR provider_name = nullptr;
 	LPWSTR filter_name = nullptr;
 	LPWSTR username = nullptr;
+
+	LPWSTR remote_fmt = nullptr;
+	LPWSTR local_fmt = nullptr;
 
 	HICON hicon = nullptr;
 
@@ -464,11 +471,18 @@ typedef struct tagITEM_LOG
 
 	union
 	{
-		IN_ADDR addr = {0};
-		IN6_ADDR addr6;
+		IN_ADDR remote_addr = {0};
+		IN6_ADDR remote_addr6;
 	};
 
-	UINT16 port = 0;
+	union
+	{
+		IN_ADDR local_addr = {0};
+		IN6_ADDR local_addr6;
+	};
+
+	UINT16 remote_port = 0;
+	UINT16 local_port = 0;
 
 	UINT8 protocol = 0;
 
