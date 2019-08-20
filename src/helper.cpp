@@ -1869,7 +1869,7 @@ void _app_generate_packages ()
 
 				if (!display_name.IsEmpty ())
 				{
-					if (display_name[0] == L'@')
+					if (display_name.At (0) == L'@')
 					{
 						const HRESULT hrComInit = CoInitialize (nullptr);
 
