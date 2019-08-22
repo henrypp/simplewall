@@ -508,8 +508,10 @@ void _wfp_installfilters ()
 		{
 			if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 			{
+				PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
+
 				for (size_t i = 0; i < filter_all.size (); i++)
-					_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, __LINE__);
+					_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.pusersid, pacl, __LINE__);
 			}
 		}
 
@@ -1188,8 +1190,10 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 
 				if (ptr_rule && ptr_rule->is_enabled)
 				{
+					PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
+
 					for (size_t j = 0; j < ptr_rule->guids.size (); j++)
-						_wfp_setfiltersecurity (hengine, &ptr_rule->guids.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
+						_wfp_setfiltersecurity (hengine, &ptr_rule->guids.at (j), config.pusersid, pacl, line);
 				}
 
 				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
@@ -1296,8 +1300,10 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 
 				if (ptr_app)
 				{
+					PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
+
 					for (size_t j = 0; j < ptr_app->guids.size (); j++)
-						_wfp_setfiltersecurity (hengine, &ptr_app->guids.at (j), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
+						_wfp_setfiltersecurity (hengine, &ptr_app->guids.at (j), config.pusersid, pacl, line);
 				}
 
 				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
@@ -1357,7 +1363,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 		}
 
-		_wfp_createfilter (hengine,nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
+		_wfp_createfilter (hengine, nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 		_wfp_createfilter (hengine, nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 
 		// win7+
@@ -1616,8 +1622,10 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
 		{
+			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
+
 			for (size_t i = 0; i < filter_ids.size (); i++)
-				_wfp_setfiltersecurity (hengine, &filter_ids.at (i), config.pusersid, is_secure ? config.pacl_secure : config.pacl_default, line);
+				_wfp_setfiltersecurity (hengine, &filter_ids.at (i), config.pusersid, pacl, line);
 		}
 
 		_r_fastlock_releaseshared (&lock_transaction);

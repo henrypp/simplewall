@@ -1423,8 +1423,10 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 
 				if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 				{
+					PACL& pacl = new_val ? config.pacl_secure : config.pacl_default;
+
 					for (size_t i = 0; i < filter_all.size (); i++)
-						_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.pusersid, new_val ? config.pacl_secure : config.pacl_default, __LINE__);
+						_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.pusersid, pacl, __LINE__);
 				}
 			}
 
