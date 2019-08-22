@@ -2543,9 +2543,9 @@ void _app_toolbar_init (HWND hwnd)
 	buttonArray[13].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
 	buttonArray[13].iBitmap = 11;
 
-	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_ADDBUTTONS, _countof (buttonArray), (LPARAM)buttonArray);
-	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
+	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_ADDBUTTONS, _countof (buttonArray), (LPARAM)buttonArray);
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
 
 	REBARBANDINFO rbi = {0};
@@ -2555,7 +2555,7 @@ void _app_toolbar_init (HWND hwnd)
 	rbi.fStyle = RBBS_CHILDEDGE | RBBS_USECHEVRON | RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER;
 	rbi.hwndChild = GetDlgItem (hwnd, IDC_TOOLBAR);
 
-	const ULONG button_size = (ULONG)SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_GETBUTTONSIZE, 0, 0);
+	const DWORD button_size = (DWORD)SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_GETBUTTONSIZE, 0, 0);
 
 	if (button_size)
 	{
