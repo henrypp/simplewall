@@ -1423,16 +1423,29 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 
 			if (new_val ? config.pacl_secure : config.pacl_default)
 			{
+				PACL& pacl = new_val ? config.pacl_secure : config.pacl_default;
+
 				const HANDLE hengine = _wfp_getenginehandle ();
 
 				GUIDS_VEC filter_all;
 
 				if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 				{
-					PACL& pacl = new_val ? config.pacl_secure : config.pacl_default;
-
 					for (size_t i = 0; i < filter_all.size (); i++)
 						_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.padminsid, pacl, __LINE__);
+				}
+
+				// set security information
+				if (config.padminsid)
+				{
+					FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
+					FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
+				}
+
+				if (pacl)
+				{
+					FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
+					FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
 				}
 			}
 
