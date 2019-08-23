@@ -75,7 +75,7 @@ bool _wfp_initialize (bool is_full)
 	}
 
 	// set security info
-	if (config.pusersid && (!config.pacl_engine || !config.pacl_default || !config.pacl_secure))
+	if (config.padminsid && (!config.pacl_engine || !config.pacl_default || !config.pacl_secure))
 	{
 		SAFE_LOCAL_FREE (config.pacl_engine);
 		SAFE_LOCAL_FREE (config.pacl_default);
@@ -99,7 +99,7 @@ bool _wfp_initialize (bool is_full)
 			access[0].grfAccessPermissions = FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER;
 			access[0].grfAccessMode = GRANT_ACCESS;
 			access[0].grfInheritance = NO_INHERITANCE;
-			BuildTrusteeWithSid (&(access[0].Trustee), config.pusersid);
+			BuildTrusteeWithSid (&(access[0].Trustee), config.padminsid);
 
 			access[1].grfAccessPermissions = FWPM_GENERIC_ALL;
 			access[1].grfAccessMode = GRANT_ACCESS;
@@ -112,7 +112,7 @@ bool _wfp_initialize (bool is_full)
 			access[0].grfAccessPermissions = FWPM_GENERIC_EXECUTE | FWPM_GENERIC_WRITE | DELETE | WRITE_DAC | WRITE_OWNER;
 			access[0].grfAccessMode = GRANT_ACCESS;
 			access[0].grfInheritance = NO_INHERITANCE;
-			BuildTrusteeWithSid (&(access[0].Trustee), config.pusersid);
+			BuildTrusteeWithSid (&(access[0].Trustee), config.padminsid);
 
 			access[1].grfAccessPermissions = FWPM_GENERIC_EXECUTE | FWPM_GENERIC_READ;
 			access[1].grfAccessMode = GRANT_ACCESS;
@@ -125,7 +125,7 @@ bool _wfp_initialize (bool is_full)
 			access[0].grfAccessPermissions = FWPM_GENERIC_EXECUTE | FWPM_GENERIC_READ;
 			access[0].grfAccessMode = GRANT_ACCESS;
 			access[0].grfInheritance = NO_INHERITANCE;
-			BuildTrusteeWithSid (&(access[0].Trustee), config.pusersid);
+			BuildTrusteeWithSid (&(access[0].Trustee), config.padminsid);
 
 			access[1].grfAccessPermissions = FWPM_ACTRL_WRITE | DELETE | WRITE_DAC | WRITE_OWNER;
 			access[1].grfAccessMode = DENY_ACCESS;
@@ -140,10 +140,10 @@ bool _wfp_initialize (bool is_full)
 
 	// set security information
 	{
-		if (config.pusersid)
+		if (config.padminsid)
 		{
-			FwpmEngineSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmNetEventsSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmEngineSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
+			FwpmNetEventsSetSecurityInfo (config.hengine, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
 		}
 
 		if (config.pacl_engine)
@@ -282,10 +282,10 @@ bool _wfp_initialize (bool is_full)
 	{
 		const bool is_secure = app.ConfigGet (L"IsSecureFilters", true).AsBool ();
 
-		if (config.pusersid)
+		if (config.padminsid)
 		{
-			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmProviderSetSecurityInfoByKey (config.hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (config.hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
 		}
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
@@ -347,10 +347,10 @@ void _wfp_uninitialize (bool is_full)
 	if (is_full)
 	{
 		// set security information
-		if (config.pusersid)
+		if (config.padminsid)
 		{
-			FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+			FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
 
 		}
 
@@ -404,10 +404,10 @@ void _wfp_installfilters ()
 	const HANDLE& hengine = _wfp_getenginehandle ();
 
 	// set security information
-	if (config.pusersid)
+	if (config.padminsid)
 	{
-		FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-		FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
+		FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
+		FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
 	}
 
 	if (config.pacl_default)
@@ -428,7 +428,7 @@ void _wfp_installfilters ()
 	if (filters_count)
 	{
 		for (size_t i = 0; i < filter_all.size (); i++)
-			_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.pusersid, config.pacl_default, __LINE__);
+			_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.padminsid, config.pacl_default, __LINE__);
 	}
 
 	const bool is_intransact = _wfp_transact_start (__LINE__);
@@ -506,26 +506,26 @@ void _wfp_installfilters ()
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
 		{
+			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
+
 			if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 			{
-				PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
-
 				for (size_t i = 0; i < filter_all.size (); i++)
-					_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.pusersid, pacl, __LINE__);
+					_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.padminsid, pacl, __LINE__);
 			}
-		}
 
-		// set security information
-		if (config.pusersid)
-		{
-			FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.pusersid, nullptr, nullptr, nullptr);
-		}
+			// set security information
+			if (config.padminsid)
+			{
+				FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
+				FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
+			}
 
-		if (is_secure ? config.pacl_secure : config.pacl_default)
-		{
-			FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, is_secure ? config.pacl_secure : config.pacl_default, nullptr);
-			FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, is_secure ? config.pacl_secure : config.pacl_default, nullptr);
+			if (pacl)
+			{
+				FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
+				FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
+			}
 		}
 	}
 
@@ -712,7 +712,7 @@ bool _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC & ptr_filters, UINT li
 	_r_fastlock_acquireshared (&lock_transaction);
 
 	for (size_t i = 0; i < ptr_filters.size (); i++)
-		_wfp_setfiltersecurity (hengine, &ptr_filters.at (i), config.pusersid, config.pacl_default, line);
+		_wfp_setfiltersecurity (hengine, &ptr_filters.at (i), config.padminsid, config.pacl_default, line);
 
 	const bool is_intransact = _wfp_transact_start (line);
 
@@ -1088,7 +1088,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 		}
 
 		for (size_t i = 0; i < ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, &ids.at (i), config.pusersid, config.pacl_default, line);
+			_wfp_setfiltersecurity (hengine, &ids.at (i), config.padminsid, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
@@ -1179,6 +1179,8 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
 		{
+			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
+
 			for (size_t i = 0; i < ptr_rules.size (); i++)
 			{
 				PR_OBJECT ptr_rule_object = _r_obj_reference (ptr_rules.at (i));
@@ -1190,10 +1192,8 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 
 				if (ptr_rule && ptr_rule->is_enabled)
 				{
-					PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
-
 					for (size_t j = 0; j < ptr_rule->guids.size (); j++)
-						_wfp_setfiltersecurity (hengine, &ptr_rule->guids.at (j), config.pusersid, pacl, line);
+						_wfp_setfiltersecurity (hengine, &ptr_rule->guids.at (j), config.padminsid, pacl, line);
 				}
 
 				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
@@ -1243,7 +1243,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 		}
 
 		for (size_t i = 0; i < ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, &ids.at (i), config.pusersid, config.pacl_default, line);
+			_wfp_setfiltersecurity (hengine, &ids.at (i), config.padminsid, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
@@ -1289,6 +1289,8 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 
 		if (is_secure ? config.pacl_secure : config.pacl_default)
 		{
+			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
+
 			for (size_t i = 0; i < ptr_apps.size (); i++)
 			{
 				PR_OBJECT ptr_app_object = _r_obj_reference (ptr_apps.at (i));
@@ -1300,10 +1302,8 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 
 				if (ptr_app)
 				{
-					PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
-
 					for (size_t j = 0; j < ptr_app->guids.size (); j++)
-						_wfp_setfiltersecurity (hengine, &ptr_app->guids.at (j), config.pusersid, pacl, line);
+						_wfp_setfiltersecurity (hengine, &ptr_app->guids.at (j), config.padminsid, pacl, line);
 				}
 
 				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
@@ -1331,7 +1331,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	if (!is_intransact)
 	{
 		for (size_t i = 0; i < filter_ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, &filter_ids.at (i), config.pusersid, config.pacl_default, line);
+			_wfp_setfiltersecurity (hengine, &filter_ids.at (i), config.padminsid, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
@@ -1625,7 +1625,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
 
 			for (size_t i = 0; i < filter_ids.size (); i++)
-				_wfp_setfiltersecurity (hengine, &filter_ids.at (i), config.pusersid, pacl, line);
+				_wfp_setfiltersecurity (hengine, &filter_ids.at (i), config.padminsid, pacl, line);
 		}
 
 		_r_fastlock_releaseshared (&lock_transaction);

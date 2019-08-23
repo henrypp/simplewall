@@ -245,10 +245,10 @@ struct STATIC_DATA
 	WCHAR title[128] = {0};
 	WCHAR search_string[128] = {0};
 
+	PSID padminsid = nullptr;
 	PACL pacl_default = nullptr;
 	PACL pacl_engine = nullptr;
 	PACL pacl_secure = nullptr;
-	PSID pusersid = nullptr;
 	LPGUID psession = nullptr;
 
 	HIMAGELIST himg_toolbar = nullptr;

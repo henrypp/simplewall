@@ -378,6 +378,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 		{
 			_app_generate_connections (network_map, checker_map);
 
+			// add new connections into list
 			for (auto &p : network_map)
 			{
 				if (checker_map.find (p.first) == checker_map.end () || !checker_map[p.first])
@@ -424,6 +425,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 				is_refresh = true;
 			}
 
+			// remove closed connections from list
 			const INT item_count = _r_listview_getitemcount (hwnd, network_listview_id);
 
 			if (item_count)
@@ -1430,7 +1432,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 					PACL& pacl = new_val ? config.pacl_secure : config.pacl_default;
 
 					for (size_t i = 0; i < filter_all.size (); i++)
-						_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.pusersid, pacl, __LINE__);
+						_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.padminsid, pacl, __LINE__);
 				}
 			}
 
@@ -2638,8 +2640,19 @@ void _app_initialize ()
 	config.svchost_hash = _r_str_hash (_r_path_expand (PATH_SVCHOST));
 	config.my_hash = _r_str_hash (app.GetBinaryPath ());
 
+	// get the Administrators group security identifier
+	if (!config.padminsid)
+	{
+		DWORD size = SECURITY_MAX_SID_SIZE;
+
+		config.padminsid = new BYTE[size];
+
+		if (!CreateWellKnownSid (WinBuiltinAdministratorsSid, nullptr, config.padminsid, &size))
+			SAFE_DELETE_ARRAY (config.padminsid);
+	}
+
 	// get current user security identifier
-	if (!config.pusersid)
+	if (!config.title[0])
 	{
 		// get user sid
 		HANDLE token = nullptr;
@@ -2666,10 +2679,6 @@ void _app_initialize ()
 
 					if (LookupAccountSid (nullptr, token_user->User.Sid, username, &length1, domain, &length2, &sid_type))
 						StringCchPrintf (config.title, _countof (config.title), L"%s [%s\\%s]", APP_NAME, domain, username);
-
-					config.pusersid = new BYTE[SECURITY_MAX_SID_SIZE];
-
-					CopyMemory (config.pusersid, token_user->User.Sid, SECURITY_MAX_SID_SIZE);
 				}
 
 				SAFE_DELETE_ARRAY (token_user);
@@ -5294,6 +5303,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						break;
 
 					INT item = INVALID_INT;
+
 					MIB_TCPROW tcprow;
 
 					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
@@ -5576,10 +5586,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 #if defined(_APP_BETA) || defined(_APP_BETA_RC)
 
-#define ID_START 1000
 #define FN_AD L"<test filter>"
 #define RM_AD L"195.210.46.95"
-#define LM_AD L"192.168.1.1"
+#define RM_AD2 L"195.210.46.%d"
+#define LM_AD2 L"192.168.1.%d"
 #define RP_AD 443
 #define LP_AD 65535
 
@@ -5621,7 +5631,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					ptr_log->af = AF_INET;
 					ptr_log->protocol = IPPROTO_TCP;
 
-					ptr_log->filter_id = ID_START;
+					ptr_log->filter_id = 777;
 					ptr_log->direction = FWP_DIRECTION_OUTBOUND;
 
 					InetPton (ptr_log->af, RM_AD, &ptr_log->remote_addr);
@@ -5666,24 +5676,44 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					FILETIME ft = {0};
 					GetSystemTimeAsFileTime (&ft);
 
-					sockaddr_in ipv4_remote = {0};
-					INT len1 = sizeof (ipv4_remote);
-
-					sockaddr_in ipv4_local = {0};
-					INT len2 = sizeof (ipv4_local);
+					IN_ADDR ipv4_remote = {0};
+					IN_ADDR ipv4_local = {0};
 
 					rstring path = app.GetBinaryPath ();
 					_r_path_ntpathfromdos (path);
 
+					UINT16 layer_id = 0;
+					UINT64 filter_id = 0;
+
+					FWPM_LAYER *layer = nullptr;
+					FWPM_FILTER *filter = nullptr;
+
+					if (FwpmLayerGetByKey (config.hengine, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, &layer) == ERROR_SUCCESS && layer)
+						layer_id = layer->layerId;
+
+					if (!filter_ids.empty ())
+					{
+						if (FwpmFilterGetByKey (config.hengine, &filter_ids.at (filter_ids.size () - 1), &filter) == ERROR_SUCCESS && filter)
+							filter_id = filter->filterId;
+					}
+
+					if (layer)
+						FwpmFreeMemory ((void **)& layer);
+
+					if (filter)
+						FwpmFreeMemory ((void **)& filter);
+
+					LPCWSTR terminator = nullptr;
+
 					for (UINT i = 0; i < 255; i++)
 					{
-						WSAStringToAddress (_r_fmt (RM_AD, i + 1).GetBuffer (), AF_INET, nullptr, (sockaddr*)& ipv4_remote, &len1);
-						WSAStringToAddress (_r_fmt (LM_AD, i + 1).GetBuffer (), AF_INET, nullptr, (sockaddr*)& ipv4_local, &len2);
+						RtlIpv4StringToAddress (_r_fmt (RM_AD2, i + 1), TRUE, &terminator, &ipv4_remote);
+						RtlIpv4StringToAddress (_r_fmt (LM_AD2, i + 1), TRUE, &terminator, &ipv4_local);
 
-						UINT32 remote_addr = _byteswap_ulong (ipv4_remote.sin_addr.S_un.S_addr);
-						UINT32 local_addr = _byteswap_ulong (ipv4_local.sin_addr.S_un.S_addr);
+						UINT32 remote_addr = _byteswap_ulong (ipv4_remote.S_un.S_addr);
+						UINT32 local_addr = _byteswap_ulong (ipv4_local.S_un.S_addr);
 
-						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.pusersid, IPPROTO_TCP, FWP_IP_VERSION_V4, &remote_addr, RP_AD, &local_addr, LP_AD, UINT16 (i) + 1, ID_START + i, FWP_DIRECTION_OUTBOUND, false, false);
+						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.padminsid, IPPROTO_TCP, FWP_IP_VERSION_V4, &remote_addr, RP_AD, &local_addr, LP_AD, layer_id, filter_id, FWP_DIRECTION_OUTBOUND, false, false);
 					}
 
 					break;
