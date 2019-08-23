@@ -365,7 +365,7 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 {
 	const HWND hwnd = (HWND)lparam;
-	const UINT network_listview_id = IDC_NETWORK;
+	const INT network_listview_id = IDC_NETWORK;
 	bool is_refresh = true;
 
 	HASHER_MAP checker_map;
@@ -423,36 +423,40 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 				is_refresh = true;
 			}
+
 			const INT item_count = _r_listview_getitemcount (hwnd, network_listview_id);
 
-			for (INT i = item_count - 1; i != INVALID_INT; i--)
+			if (item_count)
 			{
-				const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
-
-				if (checker_map.find (network_hash) == checker_map.end ())
+				for (INT i = item_count - 1; i != INVALID_INT; i--)
 				{
-					SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
+					const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
 
-					// redraw listview item
-					if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
+					if (checker_map.find (network_hash) == checker_map.end ())
 					{
-						const size_t app_hash = _app_getnetworkapp (network_hash);
-						INT app_listview_id = 0;
+						SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
-						if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
+						// redraw listview item
+						if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
 						{
-							if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
-							{
-								const INT item_pos = _app_getposition (hwnd, app_listview_id, app_hash);
+							const size_t app_hash = _app_getnetworkapp (network_hash);
+							INT app_listview_id = 0;
 
-								if (item_pos != INVALID_INT)
-									_r_listview_redraw (hwnd, app_listview_id, item_pos, item_pos);
+							if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
+							{
+								if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
+								{
+									const INT item_pos = _app_getposition (hwnd, app_listview_id, app_hash);
+
+									if (item_pos != INVALID_INT)
+										_r_listview_redraw (hwnd, app_listview_id, item_pos, item_pos);
+								}
 							}
 						}
-					}
 
-					_r_obj_dereference (network_map[network_hash], &_app_dereferencenetwork);
-					network_map.erase (network_hash);
+						network_map.erase (network_hash);
+						_r_obj_dereference (network_map[network_hash], &_app_dereferencenetwork);
+					}
 				}
 			}
 
@@ -644,7 +648,7 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 		case CDDS_ITEMPREPAINT:
 		{
 			const bool is_tableview = (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
-			const UINT listview_id = (UINT)lpnmlv->nmcd.hdr.idFrom;
+			const INT listview_id = (INT)lpnmlv->nmcd.hdr.idFrom;
 
 			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_APPS_LV || listview_id == IDC_NETWORK)
 			{
@@ -949,7 +953,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// state
 			{
-				UINT ctrl_id = IDC_DISABLE_CHK;
+				INT ctrl_id = IDC_DISABLE_CHK;
 
 				if (ptr_rule->is_enabled)
 					ctrl_id = ptr_rule->apps.empty () ? IDC_ENABLE_CHK : IDC_ENABLEFORAPPS_CHK;
@@ -1536,7 +1540,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 		case RM_INITIALIZE:
 		{
-			const UINT dialog_id = (UINT)wparam;
+			const INT dialog_id = (INT)wparam;
 
 			switch (dialog_id)
 			{
@@ -1715,7 +1719,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 		case RM_LOCALIZE:
 		{
-			const UINT dialog_id = (UINT)wparam;
+			const INT dialog_id = (INT)wparam;
 			const rstring recommended = app.LocaleString (IDS_RECOMMENDED, nullptr);
 
 			// localize titles
@@ -1855,7 +1859,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 		case WM_VSCROLL:
 		case WM_HSCROLL:
 		{
-			const UINT ctrl_id = GetDlgCtrlID ((HWND)lparam);
+			const INT ctrl_id = GetDlgCtrlID ((HWND)lparam);
 
 			if (ctrl_id == IDC_LOGSIZELIMIT)
 				app.ConfigSet (L"LogSizeLimitKb", (DWORD)SendDlgItemMessage (hwnd, ctrl_id, UDM_GETPOS32, 0, 0));
@@ -1879,7 +1883,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					if ((lpnmdi->uFlags & TTF_IDISHWND) != 0)
 					{
 						WCHAR buffer[1024] = {0};
-						const UINT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
+						const INT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
 						if (ctrl_id == IDC_RULE_BLOCKOUTBOUND)
 							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_BLOCKOUTBOUND, nullptr));
@@ -2073,8 +2077,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDC_EXCLUDEBLOCKLIST_CHK:
 				case IDC_EXCLUDECUSTOM_CHK:
 				{
-					const UINT ctrl_id = LOWORD (wparam);
-					const UINT notify_code = HIWORD (wparam);
+					const INT ctrl_id = LOWORD (wparam);
+					const INT notify_code = HIWORD (wparam);
 
 					if (ctrl_id == IDC_ALWAYSONTOP_CHK)
 					{
@@ -2847,7 +2851,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_toolbar_init (hwnd);
 
 			// initialize tab
-			_app_settab_id (hwnd, app.ConfigGet (L"CurrentTab", IDC_APPS_PROFILE).AsUint ());
+			_app_settab_id (hwnd, app.ConfigGet (L"CurrentTab", IDC_APPS_PROFILE).AsInt ());
 
 			// initialize dropped packets log callback thread (win7+)
 			{
@@ -3309,10 +3313,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				case TCN_SELCHANGE:
 				{
-					const UINT tab_count = (UINT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0);
-					HDWP hdefer = BeginDeferWindowPos ((INT)tab_count);
+					const INT tab_count = (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0);
+					HDWP hdefer = BeginDeferWindowPos (tab_count);
 
-					for (UINT i = 0; i < tab_count; i++)
+					for (INT i = 0; i < tab_count; i++)
 					{
 						const INT current_id = _app_gettab_id (hwnd, i);
 

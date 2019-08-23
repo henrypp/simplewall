@@ -5,7 +5,7 @@
 
 HFONT hfont_title = nullptr;
 
-void _app_setbuttonmargins (HWND hwnd, UINT ctrl_id)
+void _app_setbuttonmargins (HWND hwnd, INT ctrl_id)
 {
 	// set icons margin
 	{
@@ -68,9 +68,9 @@ void _app_notifycreatewindow ()
 	const INT btn_height = app.GetDPI (24);
 	const INT btn_icon_size = GetSystemMetrics (SM_CXSMICON);
 
-	const UINT text_height = app.GetDPI (16);
-	const UINT text_spacing = app.GetDPI (22);
-	const UINT text_top = header_size - app.GetDPI (10);
+	const INT text_height = app.GetDPI (16);
+	const INT text_spacing = app.GetDPI (22);
+	const INT text_top = header_size - app.GetDPI (10);
 
 	HFONT hfont_link = nullptr;
 	HFONT hfont_normal = nullptr;
@@ -175,7 +175,7 @@ void _app_notifycreatewindow ()
 #endif // _APP_NO_DARKTHEME
 }
 
-bool _app_notifycommand (HWND hwnd, UINT button_id, time_t seconds)
+bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 {
 	size_t app_hash = _app_notifyget_id (hwnd, 0);
 	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
@@ -611,7 +611,7 @@ void _app_notifysetpos (HWND hwnd, bool is_forced)
 	}
 }
 
-void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT ctrl_id2, LPCWSTR text2)
+void _app_notifysettext (HDC hdc, HWND hwnd, INT ctrl_id1, LPCWSTR text1, INT ctrl_id2, LPCWSTR text2)
 {
 	RECT rc_wnd = {0};
 	RECT rc_ctrl = {0};
@@ -648,13 +648,13 @@ void _app_notifysettext (HDC hdc, HWND hwnd, UINT ctrl_id1, LPCWSTR text1, UINT 
 	SetWindowText (hctrl2, text2);
 }
 
-HFONT _app_notifyinitfont (PLOGFONT plf, LONG height, LONG weight, LPCWSTR name, BOOL is_underline)
+HFONT _app_notifyinitfont (PLOGFONT plf, LONG height, LONG weight, LPCWSTR name, BYTE is_underline)
 {
 	if (height)
 		plf->lfHeight = _r_dc_fontsizetoheight (height);
 
 	plf->lfWeight = weight;
-	plf->lfUnderline = (BYTE)is_underline;
+	plf->lfUnderline = is_underline;
 
 	plf->lfCharSet = DEFAULT_CHARSET;
 	plf->lfQuality = DEFAULT_QUALITY;
@@ -796,7 +796,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 		case WM_CTLCOLORSTATIC:
 		{
 			HDC hdc = (HDC)wparam;
-			UINT ctrl_id = GetDlgCtrlID ((HWND)lparam);
+			INT ctrl_id = GetDlgCtrlID ((HWND)lparam);
 
 			SetBkMode (hdc, TRANSPARENT); // HACK!!!
 
@@ -820,7 +820,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 		case WM_SETCURSOR:
 		{
-			const UINT ctrl_id = GetDlgCtrlID ((HWND)wparam);
+			const INT ctrl_id = GetDlgCtrlID ((HWND)wparam);
 
 			if (ctrl_id == IDC_FILE_TEXT)
 			{
@@ -880,7 +880,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						break;
 
 					WCHAR buffer[1024] = {0};
-					const UINT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
+					const INT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
 					if (ctrl_id == IDC_FILE_TEXT)
 					{
@@ -1066,7 +1066,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				case IDC_RULES_BTN:
 				{
-					const UINT ctrl_id = LOWORD (wparam);
+					const INT ctrl_id = LOWORD (wparam);
 
 					if (_r_ctrl_isenabled (hwnd, ctrl_id))
 					{
@@ -1100,7 +1100,7 @@ LRESULT CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				case IDC_BLOCK_BTN:
 				case IDM_DISABLENOTIFICATIONS:
 				{
-					const UINT ctrl_id = LOWORD (wparam);
+					const INT ctrl_id = LOWORD (wparam);
 
 					if (_r_ctrl_isenabled (hwnd, ctrl_id))
 						_app_notifycommand (hwnd, ctrl_id, 0);

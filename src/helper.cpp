@@ -2368,7 +2368,7 @@ void _app_refreshstatus (HWND hwnd)
 	{
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
-		static const UINT parts_count = 3;
+		static const INT parts_count = 3;
 		static const INT spacing = GetSystemMetrics (SM_CYSMCAPTION);
 
 		rstring text[parts_count];
@@ -2376,7 +2376,7 @@ void _app_refreshstatus (HWND hwnd)
 		LONG size[parts_count] = {0};
 		LONG lay = 0;
 
-		for (UINT i = 0; i < parts_count; i++)
+		for (INT i = 0; i < parts_count; i++)
 		{
 			switch (i)
 			{
@@ -2414,7 +2414,7 @@ void _app_refreshstatus (HWND hwnd)
 
 		SendMessage (hstatus, SB_SETPARTS, parts_count, (LPARAM)parts);
 
-		for (UINT i = 0; i < parts_count; i++)
+		for (INT i = 0; i < parts_count; i++)
 		{
 			SendMessage (hstatus, SB_SETTEXT, MAKEWPARAM (i, 0), (LPARAM)text[i].GetString ());
 			SendMessage (hstatus, SB_SETTIPTEXT, i, (LPARAM)text[i].GetString ());
