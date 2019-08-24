@@ -518,8 +518,7 @@
 #define IDP_LOGCLEAR 112
 #define IDP_TIMER 113
 #define IDP_RULES IDP_SETTINGS
-#define IDP_NEXT 114
-#define IDP_HEARTH 115
+#define IDP_HEARTH 114
 
 // Icons
 #define IDI_MAIN 100

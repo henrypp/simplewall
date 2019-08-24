@@ -740,7 +740,6 @@ IDP_NOTIFICATIONS	PNG		"res\\error.png"
 IDP_LOG				PNG		"res\\note.png"
 IDP_LOGOPEN			PNG		"res\\page_white_magnify.png"
 IDP_LOGCLEAR		PNG		"res\\page_white_delete.png"
-IDP_NEXT			PNG		"res\\resultset_next.png"
 IDP_HEARTH			PNG		"res\\heart.png"
 
 //
