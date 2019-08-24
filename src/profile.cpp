@@ -1114,8 +1114,8 @@ void _app_profile_load_fallback ()
 void _app_profile_load_helper (pugi::xml_node & root, EnumDataType type, UINT version)
 {
 	const INT blocklist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
-	const INT blocklist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2);
-	const INT blocklist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2);
+	const INT blocklist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 0).AsInt (), 0, 2);
+	const INT blocklist_extra_state = std::clamp (app.ConfigGet (L"BlocklistExtraState", 0).AsInt (), 0, 2);
 
 	for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
 	{
