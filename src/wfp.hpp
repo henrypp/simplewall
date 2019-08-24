@@ -29,7 +29,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC& ptr_rules, UINT line, boo
 bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC& ptr_apps, UINT line, bool is_intransact = false);
 bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact = false);
 
-void _wfp_setfiltersecurity (HANDLE hengine, const GUID* pfilter_id, const PSID psid, PACL pacl, UINT line);
+void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, UINT line);
 
 size_t _wfp_dumpfilters (HANDLE hengine, const GUID* pprovider, GUIDS_VEC* ptr_filters);
 

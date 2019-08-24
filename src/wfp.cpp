@@ -428,7 +428,7 @@ void _wfp_installfilters ()
 	if (filters_count)
 	{
 		for (size_t i = 0; i < filter_all.size (); i++)
-			_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.padminsid, config.pacl_default, __LINE__);
+			_wfp_setfiltersecurity (hengine, filter_all.at (i), config.pacl_default, __LINE__);
 	}
 
 	const bool is_intransact = _wfp_transact_start (__LINE__);
@@ -466,8 +466,11 @@ void _wfp_installfilters ()
 			}
 		}
 
-		_wfp_create3filters (hengine, rules, __LINE__, is_intransact);
-		_app_freeobjects_vec (rules, &_app_dereferenceapp);
+		if (!rules.empty ())
+		{
+			_wfp_create3filters (hengine, rules, __LINE__, is_intransact);
+			_app_freeobjects_vec (rules, &_app_dereferenceapp);
+		}
 	}
 
 	// apply system/custom/blocklist rules
@@ -493,8 +496,11 @@ void _wfp_installfilters ()
 			}
 		}
 
-		_wfp_create4filters (hengine, rules, __LINE__, is_intransact);
-		_app_freeobjects_vec (rules, &_app_dereferencerule);
+		if (!rules.empty ())
+		{
+			_wfp_create4filters (hengine, rules, __LINE__, is_intransact);
+			_app_freeobjects_vec (rules, &_app_dereferencerule);
+		}
 	}
 
 	if (is_intransact)
@@ -511,7 +517,7 @@ void _wfp_installfilters ()
 			if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 			{
 				for (size_t i = 0; i < filter_all.size (); i++)
-					_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.padminsid, pacl, __LINE__);
+					_wfp_setfiltersecurity (hengine, filter_all.at (i), pacl, __LINE__);
 			}
 
 			// set security information
@@ -707,12 +713,12 @@ bool _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC & ptr_filters, UINT li
 	if (!hengine || ptr_filters.empty ())
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate (app.GetHWND ());
+	const bool is_enabled = _app_initinterfacestate (app.GetHWND (), false);
 
 	_r_fastlock_acquireshared (&lock_transaction);
 
 	for (size_t i = 0; i < ptr_filters.size (); i++)
-		_wfp_setfiltersecurity (hengine, &ptr_filters.at (i), config.padminsid, config.pacl_default, line);
+		_wfp_setfiltersecurity (hengine, ptr_filters.at (i), config.pacl_default, line);
 
 	const bool is_intransact = _wfp_transact_start (line);
 
@@ -1060,7 +1066,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 	if (!hengine || ptr_rules.empty ())
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate (app.GetHWND ());
+	const bool is_enabled = _app_initinterfacestate (app.GetHWND (), false);
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1088,7 +1094,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 		}
 
 		for (size_t i = 0; i < ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, &ids.at (i), config.padminsid, config.pacl_default, line);
+			_wfp_setfiltersecurity (hengine, ids.at (i), config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
@@ -1193,7 +1199,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 				if (ptr_rule && ptr_rule->is_enabled)
 				{
 					for (size_t j = 0; j < ptr_rule->guids.size (); j++)
-						_wfp_setfiltersecurity (hengine, &ptr_rule->guids.at (j), config.padminsid, pacl, line);
+						_wfp_setfiltersecurity (hengine, ptr_rule->guids.at (j), pacl, line);
 				}
 
 				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
@@ -1213,7 +1219,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 	if (!hengine || ptr_apps.empty ())
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate (app.GetHWND ());
+	const bool is_enabled = _app_initinterfacestate (app.GetHWND (), false);
 
 	static const FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
 
@@ -1243,7 +1249,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 		}
 
 		for (size_t i = 0; i < ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, &ids.at (i), config.padminsid, config.pacl_default, line);
+			_wfp_setfiltersecurity (hengine, ids.at (i), config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
@@ -1303,7 +1309,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 				if (ptr_app)
 				{
 					for (size_t j = 0; j < ptr_app->guids.size (); j++)
-						_wfp_setfiltersecurity (hengine, &ptr_app->guids.at (j), config.padminsid, pacl, line);
+						_wfp_setfiltersecurity (hengine, ptr_app->guids.at (j), pacl, line);
 				}
 
 				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
@@ -1323,7 +1329,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	if (!hengine)
 		return false;
 
-	const bool is_enabled = _app_initinterfacestate (app.GetHWND ());
+	const bool is_enabled = _app_initinterfacestate (app.GetHWND (), false);
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1331,7 +1337,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	if (!is_intransact)
 	{
 		for (size_t i = 0; i < filter_ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, &filter_ids.at (i), config.padminsid, config.pacl_default, line);
+			_wfp_setfiltersecurity (hengine, filter_ids.at (i), config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (line);
@@ -1625,7 +1631,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
 
 			for (size_t i = 0; i < filter_ids.size (); i++)
-				_wfp_setfiltersecurity (hengine, &filter_ids.at (i), config.padminsid, pacl, line);
+				_wfp_setfiltersecurity (hengine, filter_ids.at (i), pacl, line);
 		}
 
 		_r_fastlock_releaseshared (&lock_transaction);
@@ -1636,26 +1642,25 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	return true;
 }
 
-void _wfp_setfiltersecurity (HANDLE hengine, const GUID * pfilter_id, const PSID psid, PACL pacl, UINT line)
+void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, UINT line)
 {
-	if (!hengine || !pfilter_id || *pfilter_id == GUID_NULL || (!psid && !pacl))
+	if (!hengine || filter_id == GUID_NULL || !pacl)
 		return;
 
-	if (psid)
+	DWORD rc;
+
+	if (config.padminsid)
 	{
-		const DWORD rc = FwpmFilterSetSecurityInfoByKey (hengine, pfilter_id, OWNER_SECURITY_INFORMATION, (const SID*)psid, nullptr, nullptr, nullptr);
+		rc = FwpmFilterSetSecurityInfoByKey (hengine, &filter_id, OWNER_SECURITY_INFORMATION, config.padminsid, nullptr, nullptr, nullptr);
 
 		if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
 			_app_logerror (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), true);
 	}
 
-	if (pacl)
-	{
-		const DWORD rc = FwpmFilterSetSecurityInfoByKey (hengine, pfilter_id, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
+	rc = FwpmFilterSetSecurityInfoByKey (hengine, &filter_id, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
 
-		if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
-			_app_logerror (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), true);
-	}
+	if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
+		_app_logerror (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), true);
 }
 
 size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr_filters)
