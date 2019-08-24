@@ -274,17 +274,17 @@ COLORREF _app_getcolor (INT listview_id, size_t app_hash)
 		else if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && !_app_isappexists (ptr_app))
 			color_value = L"ColorInvalid";
 
+		else if (!is_networkslist && !ptr_app->is_silent && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool () && _app_isapphaveconnection (app_hash))
+			color_value = L"ColorConnection";
+
+		else if (app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && !ptr_app->is_silent && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
+			color_value = L"ColorSigned";
+
 		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && _app_isapphaverule (app_hash))
 			color_value = L"ColorSpecial";
 
 		else if (!is_networkslist && !is_appslist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
 			color_value = L"ColorSilent";
-
-		else if (!is_networkslist && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool () && _app_isapphaveconnection (app_hash))
-			color_value = L"ColorConnection";
-
-		else if (app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
-			color_value = L"ColorSigned";
 
 		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
 			color_value = L"ColorService";
@@ -326,36 +326,40 @@ COLORREF _app_getcolor (INT listview_id, size_t app_hash)
 
 UINT WINAPI ApplyThread (LPVOID lparam)
 {
-	const bool is_install = lparam ? true : false;
-	const HWND hwnd = app.GetHWND ();
+	PINSTALL_CONTEXT pcontext = (PINSTALL_CONTEXT)lparam;
 
-	// dropped packets logging (win7+)
-	if (config.is_neteventset)
-		_wfp_logunsubscribe ();
-
-	if (is_install)
+	if (pcontext)
 	{
-		if (_wfp_initialize (true))
-			_wfp_installfilters ();
+		// dropped packets logging (win7+)
+		if (config.is_neteventset)
+			_wfp_logunsubscribe ();
+
+		if (pcontext->is_install)
+		{
+			if (_wfp_initialize (true))
+				_wfp_installfilters ();
+		}
+		else
+		{
+			if (_wfp_initialize (false))
+				_wfp_destroyfilters (_wfp_getenginehandle ());
+
+			_wfp_uninitialize (true);
+		}
+
+		// dropped packets logging (win7+)
+		if (config.is_neteventset)
+			_wfp_logsubscribe ();
+
+		_app_restoreinterfacestate (pcontext->hwnd, true);
+		_app_setinterfacestate (pcontext->hwnd);
+
+		_app_profile_save ();
+
+		SetEvent (config.done_evt);
+
+		SAFE_DELETE (pcontext);
 	}
-	else
-	{
-		if (_wfp_initialize (false))
-			_wfp_destroyfilters (_wfp_getenginehandle ());
-
-		_wfp_uninitialize (true);
-	}
-
-	// dropped packets logging (win7+)
-	if (config.is_neteventset)
-		_wfp_logsubscribe ();
-
-	_app_restoreinterfacestate (hwnd, true);
-	_app_setinterfacestate (hwnd);
-
-	_app_profile_save ();
-
-	SetEvent (config.done_evt);
 
 	_endthreadex (0);
 
@@ -364,19 +368,23 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 {
-	const HWND hwnd = (HWND)lparam;
-	const INT network_listview_id = IDC_NETWORK;
-	bool is_refresh = true;
+	DWORD network_timeout = app.ConfigGet (L"NetworkTimeout", NETWORK_TIMEOUT).AsUlong ();
 
-	HASHER_MAP checker_map;
-
-	const DWORD network_timeout = app.ConfigGet (L"NetworkTimeout", NETWORK_TIMEOUT).AsUlong ();
-
-	if (network_timeout)
+	if (network_timeout && network_timeout != INFINITE)
 	{
+		const HWND hwnd = (HWND)lparam;
+		const INT network_listview_id = IDC_NETWORK;
+
+		HASHER_MAP checker_map;
+
+		network_timeout = std::clamp (network_timeout, 500ul, 60ul * 1000); // set allowed range
+
 		while (true)
 		{
 			_app_generate_connections (network_map, checker_map);
+
+			const bool is_highlighting_enabled = app.ConfigGet (L"IsEnableHighlighting", true).AsBool () && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ();
+			bool is_refresh = false;
 
 			// add new connections into list
 			for (auto &p : network_map)
@@ -403,7 +411,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_getstatename (ptr_network->state));
 
 					// redraw listview item
-					if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
+					if (is_highlighting_enabled)
 					{
 						INT app_listview_id = 0;
 
@@ -438,8 +446,14 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					{
 						SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
+						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[network_hash]);
+
+						network_map.erase (network_hash);
+
+						_r_obj_dereferenceex (ptr_network_object, 2, &_app_dereferencenetwork);
+
 						// redraw listview item
-						if (app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ())
+						if (is_highlighting_enabled)
 						{
 							const size_t app_hash = _app_getnetworkapp (network_hash);
 							INT app_listview_id = 0;
@@ -455,9 +469,6 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 								}
 							}
 						}
-
-						network_map.erase (network_hash);
-						_r_obj_dereference (network_map[network_hash], &_app_dereferencenetwork);
 					}
 				}
 			}
@@ -475,8 +486,6 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					_app_listviewresize (hwnd, network_listview_id);
 					_app_listviewsort (hwnd, network_listview_id);
 				}
-
-				is_refresh = false;
 			}
 
 			WaitForSingleObjectEx (GetCurrentThread (), network_timeout, FALSE);
@@ -501,13 +510,18 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 	{
 		_r_fastlock_acquireshared (&lock_apply);
 
-		_app_initinterfacestate (hwnd);
+		_app_initinterfacestate (hwnd, true);
 
 		_r_fastlock_acquireexclusive (&lock_threadpool);
 		_app_freethreadpool (&threads_pool);
 		_r_fastlock_releaseexclusive (&lock_threadpool);
 
-		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)is_install, true, THREAD_PRIORITY_HIGHEST);
+		PINSTALL_CONTEXT pcontext = new INSTALL_CONTEXT;
+
+		pcontext->hwnd = hwnd;
+		pcontext->is_install = is_install;
+
+		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)pcontext, true, THREAD_PRIORITY_HIGHEST);
 
 		if (hthread)
 		{
@@ -517,10 +531,14 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 			ResumeThread (hthread);
 		}
+		else
+		{
+			SAFE_DELETE (pcontext);
+		}
 
 		_r_fastlock_releaseshared (&lock_apply);
 
-		return true;
+		return hthread != nullptr;
 	}
 
 	_app_profile_save ();
@@ -667,7 +685,7 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 
 				if (app_hash)
 				{
-					const COLORREF new_clr = (COLORREF)_app_getcolor (listview_id, app_hash);
+					const COLORREF new_clr = _app_getcolor (listview_id, app_hash);
 
 					if (new_clr)
 					{
@@ -1432,7 +1450,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 				if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 				{
 					for (size_t i = 0; i < filter_all.size (); i++)
-						_wfp_setfiltersecurity (hengine, &filter_all.at (i), config.padminsid, pacl, __LINE__);
+						_wfp_setfiltersecurity (hengine, filter_all.at (i), pacl, __LINE__);
 				}
 
 				// set security information
@@ -1626,8 +1644,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						CheckDlgButton (hwnd, i, BST_UNCHECKED); // HACK!!! reset button checkboxes!
 
 					CheckDlgButton (hwnd, (IDC_BLOCKLIST_SPY_DISABLE + std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2)), BST_CHECKED);
-					CheckDlgButton (hwnd, (IDC_BLOCKLIST_UPDATE_DISABLE + std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2)), BST_CHECKED);
-					CheckDlgButton (hwnd, (IDC_BLOCKLIST_EXTRA_DISABLE + std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2)), BST_CHECKED);
+					CheckDlgButton (hwnd, (IDC_BLOCKLIST_UPDATE_DISABLE + std::clamp (app.ConfigGet (L"BlocklistUpdateState", 0).AsInt (), 0, 2)), BST_CHECKED);
+					CheckDlgButton (hwnd, (IDC_BLOCKLIST_EXTRA_DISABLE + std::clamp (app.ConfigGet (L"BlocklistExtraState", 0).AsInt (), 0, 2)), BST_CHECKED);
 
 					break;
 				}
@@ -1793,12 +1811,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					SetDlgItemText (hwnd, IDC_BLOCKLIST_SPY_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
 					SetDlgItemText (hwnd, IDC_BLOCKLIST_SPY_BLOCK, app.LocaleString (IDS_ACTION_BLOCK, _r_fmt (L" (%s)", recommended.GetString ())));
 
-					SetDlgItemText (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, app.LocaleString (IDS_DISABLE, nullptr));
-					SetDlgItemText (hwnd, IDC_BLOCKLIST_UPDATE_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, _r_fmt (L" (%s)", recommended.GetString ())));
+					SetDlgItemText (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, app.LocaleString (IDS_DISABLE, _r_fmt (L" (%s)", recommended.GetString ())));
+					SetDlgItemText (hwnd, IDC_BLOCKLIST_UPDATE_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
 					SetDlgItemText (hwnd, IDC_BLOCKLIST_UPDATE_BLOCK, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
 
-					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, app.LocaleString (IDS_DISABLE, nullptr));
-					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, _r_fmt (L" (%s)", recommended.GetString ())));
+					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, app.LocaleString (IDS_DISABLE, _r_fmt (L" (%s)", recommended.GetString ())));
+					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
 					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_BLOCK, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
 
 					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_INFO, L"(c) <a href=\"%s\">%s</a>", WINDOWSSPYBLOCKER_URL, WINDOWSSPYBLOCKER_URL);
@@ -2658,7 +2676,7 @@ void _app_initialize ()
 	{
 		DWORD size = SECURITY_MAX_SID_SIZE;
 
-		config.padminsid = new BYTE[size];
+		config.padminsid = (PISID)new BYTE[size];
 
 		if (!CreateWellKnownSid (WinBuiltinAdministratorsSid, nullptr, config.padminsid, &size))
 			SAFE_DELETE_ARRAY (config.padminsid);
@@ -2860,15 +2878,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// add blocklist to update
 			app.UpdateAddComponent (L"Internal rules", L"profile_internal", _r_fmt (L"%" PRId64, config.profile_internal_timestamp), config.profile_internal_path, false);
 
-			// install filters
-			if (_wfp_isfiltersinstalled ())
-			{
-				if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
-					_mps_changeconfig2 (false);
-
-				_app_changefilters (hwnd, true, true);
-			}
-
 			// initialize toolbar
 			_app_toolbar_init (hwnd);
 
@@ -2893,6 +2902,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// create network monitor thread
 			_r_createthread (&NetworkMonitorThread, (LPVOID)hwnd, false, THREAD_PRIORITY_LOWEST);
+
+			// install filters
+			if (_wfp_isfiltersinstalled ())
+			{
+				if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
+					_mps_changeconfig2 (false);
+
+				_app_changefilters (hwnd, true, true);
+			}
 
 #ifndef _APP_NO_DARKTHEME
 			_r_wnd_setdarktheme (hwnd);
@@ -2951,8 +2969,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			CheckMenuItem (hmenu, IDM_USEREFRESHDEVICES_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsRefreshDevices", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 
 			CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, IDM_BLOCKLIST_SPY_DISABLE + std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2), MF_BYCOMMAND);
-			CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, IDM_BLOCKLIST_UPDATE_DISABLE + std::clamp (app.ConfigGet (L"BlocklistUpdateState", 1).AsInt (), 0, 2), MF_BYCOMMAND);
-			CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, IDM_BLOCKLIST_EXTRA_DISABLE + std::clamp (app.ConfigGet (L"BlocklistExtraState", 1).AsInt (), 0, 2), MF_BYCOMMAND);
+			CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, IDM_BLOCKLIST_UPDATE_DISABLE + std::clamp (app.ConfigGet (L"BlocklistUpdateState", 0).AsInt (), 0, 2), MF_BYCOMMAND);
+			CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, IDM_BLOCKLIST_EXTRA_DISABLE + std::clamp (app.ConfigGet (L"BlocklistExtraState", 0).AsInt (), 0, 2), MF_BYCOMMAND);
 
 			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, nullptr, 0, app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
 			_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, nullptr, 0, app.ConfigGet (L"IsLogEnabled", false).AsBool () ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
@@ -3041,12 +3059,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_SPY_ALLOW, false, nullptr);
 			app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_SPY_BLOCK, false, _r_fmt (L" (%s)", recommended.GetString ()));
 
-			app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_UPDATE_DISABLE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_UPDATE_ALLOW, false, _r_fmt (L" (%s)", recommended.GetString ()));
+			app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_UPDATE_DISABLE, false, _r_fmt (L" (%s)", recommended.GetString ()));
+			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_UPDATE_ALLOW, false, nullptr);
 			app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_UPDATE_BLOCK, false, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_EXTRA_DISABLE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_EXTRA_ALLOW, false, _r_fmt (L" (%s)", recommended.GetString ()));
+			app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_EXTRA_DISABLE, false, _r_fmt (L" (%s)", recommended.GetString ()));
+			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_EXTRA_ALLOW, false, nullptr);
 			app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_EXTRA_BLOCK, false, nullptr);
 
 			app.LocaleMenu (hmenu, IDS_HELP, 5, true, nullptr);

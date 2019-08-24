@@ -20,7 +20,7 @@ void _app_dereferencestring (PVOID pdata);
 INT _app_gettab_id (HWND hwnd, INT page_id = INVALID_INT);
 void _app_settab_id (HWND hwnd, INT page_id);
 
-bool _app_initinterfacestate (HWND hwnd);
+bool _app_initinterfacestate (HWND hwnd, bool is_forced);
 void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
 void _app_setinterfacestate (HWND hwnd);
 

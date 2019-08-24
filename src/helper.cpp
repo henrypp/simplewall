@@ -90,19 +90,22 @@ void _app_settab_id (HWND hwnd, INT page_id)
 	_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
-bool _app_initinterfacestate (HWND hwnd)
+bool _app_initinterfacestate (HWND hwnd, bool is_forced)
 {
-	const bool is_enabled = SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0);
+	if (!hwnd)
+		return false;
 
-	if (is_enabled)
+	if (is_forced || !!SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0))
 	{
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
 
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
+
+		return true;
 	}
 
-	return is_enabled;
+	return false;
 }
 
 void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
@@ -119,9 +122,10 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
 void _app_setinterfacestate (HWND hwnd)
 {
 	const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
+	const INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 
-	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXICON));
-	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON));
+	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, GetSystemMetrics (SM_CXICON));
+	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, GetSystemMetrics (SM_CXSMICON));
 
 	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
 	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
@@ -130,7 +134,7 @@ void _app_setinterfacestate (HWND hwnd)
 
 	_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 3 : 2);
 
-	app.TraySetInfo (hwnd, UID, nullptr, app.GetSharedImage (app.GetHINSTANCE (), is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE, GetSystemMetrics (SM_CXSMICON)), nullptr);
+	app.TraySetInfo (hwnd, UID, nullptr, app.GetSharedImage (app.GetHINSTANCE (), icon_id, GetSystemMetrics (SM_CXSMICON)), nullptr);
 	app.TrayToggle (hwnd, UID, nullptr, true);
 }
 
@@ -195,7 +199,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 					result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr);
 
 				if (result)
-					StringCchCat (formatted_address, _countof (formatted_address), (af == AF_INET6 && port) ? _r_fmt (L"[%s]", addr_str) : addr_str);
+					StringCchCat (formatted_address, _countof (formatted_address), (af == AF_INET6) ? _r_fmt (L"[%s]", addr_str) : addr_str);
 			}
 			else
 			{
@@ -1603,7 +1607,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 		if (GetExtendedTcpTable (tcp4Table, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
-			for (ULONG i = 0; i < tcp4Table->dwNumEntries; i++)
+			for (DWORD i = 0; i < tcp4Table->dwNumEntries; i++)
 			{
 				IN_ADDR remote_addr = {0};
 				IN_ADDR local_addr = {0};
@@ -1622,10 +1626,9 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
-				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
+				const rstring path = _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
-				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
+				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
@@ -1664,7 +1667,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 		if (GetExtendedTcpTable (tcp6Table, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
-			for (ULONG i = 0; i < tcp6Table->dwNumEntries; i++)
+			for (DWORD i = 0; i < tcp6Table->dwNumEntries; i++)
 			{
 				const size_t net_hash = _app_getnetworkhash (AF_INET6, tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].ucRemoteAddr, tcp6Table->table[i].dwRemotePort, tcp6Table->table[i].ucLocalAddr, tcp6Table->table[i].dwLocalPort, IPPROTO_TCP, tcp6Table->table[i].dwState);
 
@@ -1677,10 +1680,9 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
-				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
+				const rstring path = _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
-				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
+				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
@@ -1719,7 +1721,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 		if (GetExtendedUdpTable (udp4Table, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
-			for (ULONG i = 0; i < udp4Table->dwNumEntries; i++)
+			for (DWORD i = 0; i < udp4Table->dwNumEntries; i++)
 			{
 				IN_ADDR local_addr = {0};
 				local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
@@ -1735,10 +1737,9 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
-				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
+				const rstring path = _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
-				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
+				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
@@ -1770,7 +1771,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 		if (GetExtendedUdpTable (udp6Table, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
-			for (ULONG i = 0; i < udp6Table->dwNumEntries; i++)
+			for (DWORD i = 0; i < udp6Table->dwNumEntries; i++)
 			{
 				const size_t net_hash = _app_getnetworkhash (AF_INET6, udp6Table->table[i].dwOwningPid, nullptr, 0, udp6Table->table[i].ucLocalAddr, udp6Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
@@ -1783,10 +1784,9 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
 				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
-				WCHAR path_name[MAX_PATH] = {0};
-				StringCchCopy (path_name, _countof (path_name), _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash));
+				const rstring path = _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
-				_r_str_alloc (&ptr_network->path, _r_str_length (path_name), path_name);
+				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;

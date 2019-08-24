@@ -245,7 +245,7 @@ struct STATIC_DATA
 	WCHAR title[128] = {0};
 	WCHAR search_string[128] = {0};
 
-	PSID padminsid = nullptr;
+	PISID padminsid = nullptr;
 	PACL pacl_default = nullptr;
 	PACL pacl_engine = nullptr;
 	PACL pacl_secure = nullptr;
@@ -284,6 +284,12 @@ struct STATIC_DATA
 	bool is_notifymouse = false;
 	bool is_neteventset = false;
 };
+
+typedef struct tagINSTALL_CONTEXT
+{
+	HWND hwnd = nullptr;
+	bool is_install = false;
+} INSTALL_CONTEXT, *PINSTALL_CONTEXT;
 
 typedef struct tagITEM_APP
 {
@@ -525,9 +531,9 @@ typedef struct tagITEM_NETWORK
 		IN6_ADDR local_addr6;
 	};
 
-	INT icon_id = 0;
-
 	DWORD state = 0;
+
+	INT icon_id = 0;
 
 	UINT16 remote_port = 0;
 	UINT16 local_port = 0;
