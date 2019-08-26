@@ -113,17 +113,17 @@ void _app_dereferencelog (PVOID pdata);
 #define XML_RULES_CUSTOM L"rules_custom.xml"
 
 #define LOG_PATH_EXT L"log"
-#define LOG_PATH_DEFAULT L"%userprofile%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
-#define LOG_VIEWER_DEFAULT L"%systemroot%\\notepad.exe"
+#define LOG_PATH_DEFAULT L"%USERPROFILE%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
+#define LOG_VIEWER_DEFAULT L"%SystemRoot%\\notepad.exe"
 #define LOG_SIZE_LIMIT_DEFAULT 1024ul
 
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
 
-#define PATH_NTOSKRNL L"%systemroot%\\system32\\ntoskrnl.exe"
-#define PATH_SVCHOST L"%systemroot%\\system32\\svchost.exe"
-#define PATH_SHELL32 L"%systemroot%\\system32\\shell32.dll"
-#define PATH_WINSTORE L"%systemroot%\\system32\\wsreset.exe"
+#define PATH_NTOSKRNL L"%SystemRoot%\\system32\\ntoskrnl.exe"
+#define PATH_SVCHOST L"%SystemRoot%\\system32\\svchost.exe"
+#define PATH_SHELL32 L"%SystemRoot%\\system32\\shell32.dll"
+#define PATH_WINSTORE L"%SystemRoot%\\system32\\wsreset.exe"
 
 #define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 #define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
