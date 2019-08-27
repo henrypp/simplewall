@@ -1,4 +1,4 @@
-simplewall [![Github All Releases](https://img.shields.io/github/downloads/henrypp/simplewall/total.svg?cache)](https://github.com/henrypp/simplewall/releases) [![GitHub issues](https://img.shields.io/github/issues-raw/henrypp/simplewall.svg?cache)](https://github.com/henrypp/simplewall/issues) [![Donate via PayPal](https://img.shields.io/badge/donate-paypal-red.svg)](https://www.paypal.me/henrypp/15) [![Donate via Bitcoin](https://img.shields.io/badge/donate-bitcoin-red.svg)](https://blockchain.info/address/1LrRTXPsvHcQWCNZotA9RcwjsGcRghG96c) [![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+simplewall [![Github All Releases](https://img.shields.io/github/downloads/henrypp/simplewall/total.svg)](https://github.com/henrypp/simplewall/releases) [![GitHub issues](https://img.shields.io/github/issues-raw/henrypp/simplewall.svg)](https://github.com/henrypp/simplewall/issues) [![Donate via PayPal](https://img.shields.io/badge/donate-paypal-red.svg)](https://www.paypal.me/henrypp/15) [![Donate via Bitcoin](https://img.shields.io/badge/donate-bitcoin-red.svg)](https://blockchain.info/address/1LrRTXPsvHcQWCNZotA9RcwjsGcRghG96c) [![Licence](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 =======
 #### Definitely for advanced users.
 -------
@@ -12,7 +12,7 @@ The lightweight application is less than a megabyte, and it is compatible with W
 You can download either the installer or portable version. For correct working, need administrator rights.
 
 #### Command line:
-There is list of arguments
+List of arguments for `simplewall.exe`:
 - `/install` - enable filtering (you can set `/silent` argument to skip prompt)
 - `/uninstall` - disable filtering
 
