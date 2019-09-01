@@ -1962,12 +1962,17 @@ void _app_generate_services ()
 		{
 			LPENUM_SERVICE_STATUS_PROCESS psvc = ((LPENUM_SERVICE_STATUS_PROCESS)pBuffer + i);
 
-			time_t timestamp = 0;
-
 			LPCWSTR display_name = psvc->lpDisplayName;
 			LPCWSTR service_name = psvc->lpServiceName;
 
 			rstring real_path;
+
+			time_t timestamp = 0;
+
+			const size_t app_hash = _r_str_hash (service_name);
+
+			if (apps_helper.find (app_hash) != apps_helper.end ())
+				continue;
 
 			// query "ServiceDll" path
 			{
@@ -2000,8 +2005,9 @@ void _app_generate_services ()
 						if (!real_path.IsEmpty ())
 						{
 							PathRemoveArgs (real_path.GetBuffer ());
-							PathUnquoteSpaces (real_path.GetBuffer ());
+							real_path.ReleaseBuffer ();
 
+							PathUnquoteSpaces (real_path.GetBuffer ());
 							real_path.ReleaseBuffer ();
 						}
 					}
@@ -2017,6 +2023,7 @@ void _app_generate_services ()
 			if (!real_path.IsEmpty ())
 				real_path = _r_path_dospathfromnt (real_path);
 
+			// query service security identifier
 			UNICODE_STRING serviceNameUs = {0};
 			RtlInitUnicodeString (&serviceNameUs, (PWSTR)service_name);
 
@@ -2025,7 +2032,6 @@ void _app_generate_services ()
 			PBYTE serviceSid = nullptr;
 			ULONG serviceSidLength = 0;
 
-			// get service security identifier
 			if (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength) == STATUS_BUFFER_TOO_SMALL)
 			{
 				serviceSid = new BYTE[serviceSidLength];
@@ -2042,11 +2048,6 @@ void _app_generate_services ()
 
 			if (serviceSid && !sidstring.IsEmpty ())
 			{
-				const size_t app_hash = _r_str_hash (service_name);
-
-				if (apps_helper.find (app_hash) != apps_helper.end ())
-					continue;
-
 				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
 
 				SecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
