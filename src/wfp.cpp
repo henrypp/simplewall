@@ -11,19 +11,21 @@ bool _wfp_isfiltersapplying ()
 bool _wfp_isfiltersinstalled ()
 {
 	HKEY hkey = nullptr;
-	bool result = false;
 
 	if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\services\\BFE\\Parameters\\Policy\\Persistent\\Provider", 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 	{
 		static const rstring guidString = _r_str_fromguid (GUID_WfpProvider);
 
-		if (RegQueryValueEx (hkey, guidString, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS)
-			result = true;
+		if (RegQueryValueEx (hkey, guidString.GetString (), nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS)
+		{
+			RegCloseKey (hkey);
+			return true;
+		}
 
 		RegCloseKey (hkey);
 	}
 
-	return result;
+	return false;
 }
 
 HANDLE _wfp_getenginehandle ()
@@ -1644,7 +1646,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, UINT line)
 {
-	if (!hengine || filter_id == GUID_NULL || !pacl)
+	if (!hengine || filter_id == GUID_NULL)
 		return;
 
 	DWORD rc;
@@ -1657,10 +1659,13 @@ void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, U
 			_app_logerror (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), true);
 	}
 
-	rc = FwpmFilterSetSecurityInfoByKey (hengine, &filter_id, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
+	if (pacl)
+	{
+		rc = FwpmFilterSetSecurityInfoByKey (hengine, &filter_id, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
 
-	if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
-		_app_logerror (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), true);
+		if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
+			_app_logerror (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), true);
+	}
 }
 
 size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr_filters)
