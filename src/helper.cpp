@@ -1820,7 +1820,7 @@ void _app_generate_packages ()
 	if (rc == ERROR_SUCCESS)
 	{
 		DWORD index = 0;
-		const DWORD max_length = _r_reg_querysubkeylength (hkey) + 1;
+		const DWORD max_length = _r_reg_querysubkeylength (hkey);
 
 		LPWSTR key_name = new WCHAR[max_length + 1];
 
