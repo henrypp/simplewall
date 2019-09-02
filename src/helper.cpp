@@ -1822,6 +1822,12 @@ void _app_generate_packages ()
 		DWORD index = 0;
 		const DWORD max_length = _r_reg_querysubkeylength (hkey);
 
+		if (!max_length)
+		{
+			RegCloseKey (hkey);
+			return;
+		}
+
 		LPWSTR key_name = new WCHAR[max_length + 1];
 
 		while (true)
