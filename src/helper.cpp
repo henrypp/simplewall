@@ -1820,13 +1820,15 @@ void _app_generate_packages ()
 	if (rc == ERROR_SUCCESS)
 	{
 		DWORD index = 0;
+		const DWORD max_length = _r_reg_querysubkeylength (hkey) + 1;
+
+		LPWSTR key_name = new WCHAR[max_length + 1];
 
 		while (true)
 		{
-			WCHAR key_name[MAX_PATH] = {0};
-			DWORD size = _countof (key_name);
+			DWORD size = max_length;
 
-			if (RegEnumKeyEx (hkey, index++, key_name, &size, 0, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
+			if (RegEnumKeyEx (hkey, index++, key_name, &size, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
 				break;
 
 			rc = RegOpenKeyEx (hkey, key_name, 0, KEY_READ, &hsubkey);
@@ -1859,12 +1861,6 @@ void _app_generate_packages ()
 					continue;
 				}
 
-				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
-
-				SecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
-
-				ptr_item->type = DataAppUWP;
-
 				rstring display_name = _r_reg_querystring (hsubkey, L"DisplayName");
 
 				if (!display_name.IsEmpty ())
@@ -1880,11 +1876,26 @@ void _app_generate_packages ()
 							if (SUCCEEDED (SHLoadIndirectString (display_name, name, _countof (name), nullptr)))
 								display_name = name;
 
+							else
+								display_name.Clear ();
+
 							if (SUCCEEDED (hrComInit))
 								CoUninitialize ();
 						}
 					}
 				}
+
+				if (display_name.IsEmpty ())
+				{
+					RegCloseKey (hsubkey);
+					continue;
+				}
+
+				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
+
+				SecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
+
+				ptr_item->type = DataAppUWP;
 
 				rstring path = _r_reg_querystring (hsubkey, L"PackageRootFolder");
 
@@ -1895,7 +1906,7 @@ void _app_generate_packages ()
 					_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
 
 				if (!path.IsEmpty ())
-					_r_str_alloc (&ptr_item->real_path, _r_str_length (path), path);
+					_r_str_alloc (&ptr_item->real_path, path.GetLength (), path);
 
 				_r_str_alloc (&ptr_item->internal_name, package_sid_string.GetLength (), package_sid_string);
 
@@ -1913,6 +1924,8 @@ void _app_generate_packages ()
 				RegCloseKey (hsubkey);
 			}
 		}
+
+		SAFE_DELETE_ARRAY (key_name);
 
 		RegCloseKey (hkey);
 	}
