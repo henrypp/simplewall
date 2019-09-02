@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <!-- Block spying and tracking on Windows -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
-<!-- Date: Tue, 06 Aug 2019 09:48:04 +0000 -->
-<root timestamp="1565084884" type="1">
+<!-- Date: Mon, 02 Sep 2019 08:36:16 +0000 -->
+<root timestamp="1567413376" type="1">
+	<item name="extra_13.64.186.225" rule="13.64.186.225" is_block="true" />
 	<item name="extra_13.76.218.117" rule="13.76.218.117" is_block="true" />
 	<item name="extra_13.76.219.191" rule="13.76.219.191" is_block="true" />
 	<item name="extra_13.76.219.210" rule="13.76.219.210" is_block="true" />
@@ -69,7 +70,10 @@
 	<item name="extra_40.90.136.163" rule="40.90.136.163" is_block="true" />
 	<item name="extra_40.90.136.166" rule="40.90.136.166" is_block="true" />
 	<item name="extra_40.90.136.180" rule="40.90.136.180" is_block="true" />
+	<item name="extra_40.90.137.120" rule="40.90.137.120" is_block="true" />
+	<item name="extra_40.90.137.126" rule="40.90.137.126" is_block="true" />
 	<item name="extra_40.90.190.179" rule="40.90.190.179" is_block="true" />
+	<item name="extra_40.90.218.0" rule="40.90.218.0" is_block="true" />
 	<item name="extra_40.91.76.238" rule="40.91.76.238" is_block="true" />
 	<item name="extra_40.91.78.9" rule="40.91.78.9" is_block="true" />
 	<item name="extra_40.97.161.50" rule="40.97.161.50" is_block="true" />
@@ -370,6 +374,7 @@
 	<item name="spy_52.138.204.217" rule="52.138.204.217" is_block="true" is_enabled="true" />
 	<item name="spy_52.138.216.83" rule="52.138.216.83" is_block="true" is_enabled="true" />
 	<item name="spy_52.155.172.105" rule="52.155.172.105" is_block="true" is_enabled="true" />
+	<item name="spy_52.157.234.37" rule="52.157.234.37" is_block="true" is_enabled="true" />
 	<item name="spy_52.158.208.111" rule="52.158.208.111" is_block="true" is_enabled="true" />
 	<item name="spy_52.164.240.33" rule="52.164.240.33" is_block="true" is_enabled="true" />
 	<item name="spy_52.164.240.59" rule="52.164.240.59" is_block="true" is_enabled="true" />
@@ -482,6 +487,7 @@
 	<item name="update_13.83.148.218" rule="13.83.148.218" is_block="true" />
 	<item name="update_13.83.148.235" rule="13.83.148.235" is_block="true" />
 	<item name="update_13.83.149.5" rule="13.83.149.5" is_block="true" />
+	<item name="update_13.83.149.67" rule="13.83.149.67" is_block="true" />
 	<item name="update_13.85.88.16" rule="13.85.88.16" is_block="true" />
 	<item name="update_13.86.124.174" rule="13.86.124.174" is_block="true" />
 	<item name="update_13.86.124.184" rule="13.86.124.184" is_block="true" />
@@ -494,6 +500,7 @@
 	<item name="update_13.107.246.254" rule="13.107.246.254" is_block="true" />
 	<item name="update_20.36.218.70" rule="20.36.218.70" is_block="true" />
 	<item name="update_20.36.222.39" rule="20.36.222.39" is_block="true" />
+	<item name="update_20.36.252.130" rule="20.36.252.130" is_block="true" />
 	<item name="update_20.41.41.23" rule="20.41.41.23" is_block="true" />
 	<item name="update_20.42.24.29" rule="20.42.24.29" is_block="true" />
 	<item name="update_20.42.24.50" rule="20.42.24.50" is_block="true" />
@@ -584,6 +591,7 @@
 	<item name="update_40.91.73.219" rule="40.91.73.219" is_block="true" />
 	<item name="update_40.91.75.5" rule="40.91.75.5" is_block="true" />
 	<item name="update_40.91.91.94" rule="40.91.91.94" is_block="true" />
+	<item name="update_40.91.120.196" rule="40.91.120.196" is_block="true" />
 	<item name="update_40.91.122.44" rule="40.91.122.44" is_block="true" />
 	<item name="update_52.161.15.246" rule="52.161.15.246" is_block="true" />
 	<item name="update_52.167.222.82" rule="52.167.222.82" is_block="true" />
@@ -613,6 +621,7 @@
 	<item name="update_52.229.175.79" rule="52.229.175.79" is_block="true" />
 	<item name="update_52.230.216.17" rule="52.230.216.17" is_block="true" />
 	<item name="update_52.230.216.157" rule="52.230.216.157" is_block="true" />
+	<item name="update_52.230.220.159" rule="52.230.220.159" is_block="true" />
 	<item name="update_52.230.223.92" rule="52.230.223.92" is_block="true" />
 	<item name="update_52.230.223.167" rule="52.230.223.167" is_block="true" />
 	<item name="update_52.232.225.93" rule="52.232.225.93" is_block="true" />
