@@ -653,7 +653,7 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 	return false;
 }
 
-LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
+LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 {
 	if (!app.ConfigGet (L"IsEnableHighlighting", true).AsBool ())
 		return CDRF_DODEFAULT;
@@ -762,6 +762,74 @@ LONG _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv)
 
 					_r_obj_dereference (ptr_object, &_app_dereferencecolor);
 				}
+			}
+
+			break;
+		}
+	}
+
+	return CDRF_DODEFAULT;
+}
+
+LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
+{
+	switch (lpnmlv->nmcd.dwDrawStage)
+	{
+		case CDDS_PREPAINT:
+		{
+			return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
+		}
+
+		case CDDS_ITEMPREPAINT:
+		{
+			TBBUTTONINFO tbi = {0};
+
+			tbi.cbSize = sizeof (tbi);
+			tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
+
+			if (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)& tbi) == -1)
+				break;
+
+			if ((tbi.fsState & TBSTATE_ENABLED) == 0)
+			{
+				SelectObject (lpnmlv->nmcd.hdc, (HFONT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, WM_GETFONT, 0, 0)); // fix
+
+				SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
+				SetTextColor (lpnmlv->nmcd.hdc, GetSysColor (COLOR_GRAYTEXT));
+
+				if (tbi.iImage != INVALID_INT)
+				{
+					const HIMAGELIST himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
+
+					if (himglist)
+					{
+						IMAGELISTDRAWPARAMS ildp = {0};
+
+						ildp.cbSize = sizeof (ildp);
+						ildp.himl = himglist;
+						ildp.hdcDst = lpnmlv->nmcd.hdc;
+						ildp.i = tbi.iImage;
+						ildp.x = lpnmlv->nmcd.rc.left + app.GetDPI (3);
+						ildp.y = lpnmlv->nmcd.rc.top + app.GetDPI (3);
+						ildp.fState = ILS_SATURATE; // grayscale
+						ildp.fStyle = ILD_NORMAL;
+
+						ImageList_DrawIndirect (&ildp);
+					}
+				}
+
+				if ((tbi.fsStyle & BTNS_SHOWTEXT) != 0)
+				{
+					WCHAR text[MAX_PATH] = {0};
+					SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
+
+					if (tbi.iImage != INVALID_INT)
+						lpnmlv->nmcd.rc.left += GetSystemMetrics (SM_CXSMICON);
+
+					DrawTextEx (lpnmlv->nmcd.hdc, text, (INT)_r_str_length (text), &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, nullptr);
+				}
+
+				return CDRF_SKIPDEFAULT;
 			}
 
 			break;
@@ -1032,7 +1100,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (_r_fastlock_tryacquireshared (&lock_access))
 					{
-						result = _app_nmcustdraw ((LPNMLVCUSTOMDRAW)lparam);
+						result = _app_nmcustdraw_listview ((LPNMLVCUSTOMDRAW)lparam);
 						_r_fastlock_releaseshared (&lock_access);
 					}
 
@@ -1978,7 +2046,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case NM_CUSTOMDRAW:
 				{
-					const LONG result = _app_nmcustdraw ((LPNMLVCUSTOMDRAW)lparam);
+					const LONG result = _app_nmcustdraw_listview ((LPNMLVCUSTOMDRAW)lparam);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
@@ -3412,11 +3480,19 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case NM_CUSTOMDRAW:
 				{
 					LONG result = CDRF_DODEFAULT;
+					LPNMLVCUSTOMDRAW lpnmcd = (LPNMLVCUSTOMDRAW)lparam;
 
-					if (_r_fastlock_tryacquireshared (&lock_access))
+					if (lpnmcd->nmcd.hdr.idFrom == IDC_TOOLBAR)
 					{
-						result = _app_nmcustdraw ((LPNMLVCUSTOMDRAW)lparam);
-						_r_fastlock_releaseshared (&lock_access);
+						result = _app_nmcustdraw_toolbar (lpnmcd);
+					}
+					else
+					{
+						if (_r_fastlock_tryacquireshared (&lock_access))
+						{
+							result = _app_nmcustdraw_listview (lpnmcd);
+							_r_fastlock_releaseshared (&lock_access);
+						}
 					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
