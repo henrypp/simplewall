@@ -252,7 +252,8 @@ struct STATIC_DATA
 	LPGUID psession = nullptr;
 
 	HIMAGELIST himg_toolbar = nullptr;
-	HIMAGELIST himg_rules = nullptr;
+	HIMAGELIST himg_rules_small = nullptr;
+	HIMAGELIST himg_rules_large = nullptr;
 
 	HANDLE hengine = nullptr;
 	HANDLE hlogfile = nullptr;

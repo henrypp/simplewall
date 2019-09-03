@@ -126,10 +126,10 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
 		if (icons_size == SHIL_SYSSMALL)
-			himg = config.himg_toolbar;
+			himg = config.himg_rules_small;
 
 		else
-			himg = config.himg_rules;
+			himg = config.himg_rules_large;
 	}
 	else
 	{
@@ -787,11 +787,13 @@ LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
 			tbi.cbSize = sizeof (tbi);
 			tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
 
-			if (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)& tbi) == -1)
+			if (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)& tbi) == INVALID_INT)
 				break;
 
 			if ((tbi.fsState & TBSTATE_ENABLED) == 0)
 			{
+				INT icon_size = 0;
+
 				SelectObject (lpnmlv->nmcd.hdc, (HFONT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, WM_GETFONT, 0, 0)); // fix
 
 				SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
@@ -815,6 +817,9 @@ LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
 						ildp.fStyle = ILD_NORMAL;
 
 						ImageList_DrawIndirect (&ildp);
+
+						INT dummy;
+						ImageList_GetIconSize (himglist, &icon_size, &dummy);
 					}
 				}
 
@@ -824,7 +829,7 @@ LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
 					SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
 
 					if (tbi.iImage != INVALID_INT)
-						lpnmlv->nmcd.rc.left += GetSystemMetrics (SM_CXSMICON);
+						lpnmlv->nmcd.rc.left += icon_size;
 
 					DrawTextEx (lpnmlv->nmcd.hdc, text, (INT)_r_str_length (text), &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, nullptr);
 				}
@@ -2609,50 +2614,50 @@ void _app_toolbar_init (HWND hwnd)
 	buttonArray[2].idCommand = IDM_OPENRULESEDITOR;
 	buttonArray[2].fsState = TBSTATE_ENABLED;
 	buttonArray[2].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-	buttonArray[2].iBitmap = 10;
+	buttonArray[2].iBitmap = 8;
 
 	buttonArray[3].fsStyle = BTNS_SEP;
 
 	buttonArray[4].idCommand = IDM_TRAY_ENABLENOTIFICATIONS_CHK;
 	buttonArray[4].fsState = TBSTATE_ENABLED;
 	buttonArray[4].fsStyle = BTNS_CHECK | BTNS_AUTOSIZE;
-	buttonArray[4].iBitmap = 6;
+	buttonArray[4].iBitmap = 4;
 
 	buttonArray[5].idCommand = IDM_TRAY_ENABLELOG_CHK;
 	buttonArray[5].fsState = TBSTATE_ENABLED;
 	buttonArray[5].fsStyle = BTNS_CHECK | BTNS_AUTOSIZE;
-	buttonArray[5].iBitmap = 7;
+	buttonArray[5].iBitmap = 5;
 
 	buttonArray[6].fsStyle = BTNS_SEP;
 
 	buttonArray[7].idCommand = IDM_REFRESH;
 	buttonArray[7].fsState = TBSTATE_ENABLED;
 	buttonArray[7].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-	buttonArray[7].iBitmap = 4;
+	buttonArray[7].iBitmap = 2;
 
 	buttonArray[8].idCommand = IDM_SETTINGS;
 	buttonArray[8].fsState = TBSTATE_ENABLED;
 	buttonArray[8].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-	buttonArray[8].iBitmap = 5;
+	buttonArray[8].iBitmap = 3;
 
 	buttonArray[9].fsStyle = BTNS_SEP;
 
 	buttonArray[10].idCommand = IDM_TRAY_LOGSHOW;
 	buttonArray[10].fsState = TBSTATE_ENABLED;
 	buttonArray[10].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-	buttonArray[10].iBitmap = 8;
+	buttonArray[10].iBitmap = 6;
 
 	buttonArray[11].idCommand = IDM_TRAY_LOGCLEAR;
 	buttonArray[11].fsState = TBSTATE_ENABLED;
 	buttonArray[11].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-	buttonArray[11].iBitmap = 9;
+	buttonArray[11].iBitmap = 7;
 
 	buttonArray[12].fsStyle = BTNS_SEP;
 
 	buttonArray[13].idCommand = IDM_DONATE;
 	buttonArray[13].fsState = TBSTATE_ENABLED;
 	buttonArray[13].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-	buttonArray[13].iBitmap = 11;
+	buttonArray[13].iBitmap = 9;
 
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
@@ -2884,33 +2889,40 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// load settings imagelist
 			{
-				const INT icon_size_sm = GetSystemMetrics (SM_CXSMICON);
-				const INT icon_size_md = GetSystemMetrics (SM_CXICON);
+				const INT icon_size_toolbar = app.GetDPI (20);
+				const INT icon_size_small = GetSystemMetrics (SM_CXSMICON);
+				const INT icon_size_large = GetSystemMetrics (SM_CXICON);
 
-				config.himg_toolbar = ImageList_Create (icon_size_sm, icon_size_sm, ILC_COLOR32 | ILC_MASK, 0, 5);
+				config.himg_toolbar = ImageList_Create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_MASK, 0, 5);
 
 				if (config.himg_toolbar)
 				{
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_REFRESH), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SETTINGS), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_NOTIFICATIONS), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOG), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOGOPEN), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOGCLEAR), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ADD), icon_size_sm), nullptr);
-					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_HEARTH), icon_size_sm), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_REFRESH), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SETTINGS), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_NOTIFICATIONS), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOG), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOGOPEN), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_LOGCLEAR), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ADD), icon_size_toolbar), nullptr);
+					ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_HEARTH), icon_size_toolbar), nullptr);
 				}
 
-				config.himg_rules = ImageList_Create (icon_size_md, icon_size_md, ILC_COLOR32 | ILC_MASK, 0, 5);
+				config.himg_rules_small = ImageList_Create (icon_size_small, icon_size_small, ILC_COLOR32 | ILC_MASK, 0, 5);
 
-				if (config.himg_rules)
+				if (config.himg_rules_small)
 				{
-					ImageList_Add (config.himg_rules, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), icon_size_md), nullptr);
-					ImageList_Add (config.himg_rules, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), icon_size_md), nullptr);
+					ImageList_Add (config.himg_rules_small, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), icon_size_small), nullptr);
+					ImageList_Add (config.himg_rules_small, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), icon_size_small), nullptr);
+				}
+
+				config.himg_rules_large = ImageList_Create (icon_size_large, icon_size_large, ILC_COLOR32 | ILC_MASK, 0, 5);
+
+				if (config.himg_rules_large)
+				{
+					ImageList_Add (config.himg_rules_large, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), icon_size_large), nullptr);
+					ImageList_Add (config.himg_rules_large, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), icon_size_large), nullptr);
 				}
 			}
 
@@ -3364,6 +3376,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_wfp_uninitialize (false);
 
 			ImageList_Destroy (config.himg_toolbar);
+			ImageList_Destroy (config.himg_rules_small);
+			ImageList_Destroy (config.himg_rules_large);
+
 			BufferedPaintUnInit ();
 
 			PostQuitMessage (0);
