@@ -2889,9 +2889,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// load settings imagelist
 			{
-				const INT icon_size_toolbar = app.GetDPI (20);
 				const INT icon_size_small = GetSystemMetrics (SM_CXSMICON);
 				const INT icon_size_large = GetSystemMetrics (SM_CXICON);
+				const INT icon_size_toolbar = std::clamp (app.GetDPI (app.ConfigGet (L"ToolbarSize", 20).AsInt ()), icon_size_small, icon_size_large);
 
 				config.himg_toolbar = ImageList_Create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_MASK, 0, 5);
 
