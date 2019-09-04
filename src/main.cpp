@@ -786,7 +786,7 @@ LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
 			tbi.cbSize = sizeof (tbi);
 			tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
 
-			if (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)& tbi) == INVALID_INT)
+			if ((INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)& tbi) == INVALID_INT)
 				break;
 
 			if ((tbi.fsState & TBSTATE_ENABLED) == 0)
