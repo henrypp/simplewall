@@ -1563,9 +1563,7 @@ size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWO
 		return 0;
 	}
 
-	LPCWSTR hash_format = L"%d_%d_%s_%d_%s_%d_%d_%d";
-
-	return _r_str_hash (_r_fmt (hash_format, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
+	return _r_str_hash (_r_fmt (L"%" PRIu8 L"_%" PRId32 L"_%s_%" PRId32 L"_%s_%" PRId32 L"_%" PRIu8 "_%" PRId32, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
 }
 
 bool _app_isvalidconnection (ADDRESS_FAMILY af, PVOID paddr)
@@ -2408,13 +2406,13 @@ void _app_refreshstatus (HWND hwnd)
 
 				case 1:
 				{
-					text[i].Format (L"%s: %Iu", app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
+					text[i].Format (L"%s: %" PR_SIZET, app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
 					break;
 				}
 
 				case 2:
 				{
-					text[i].Format (L"%s: %Iu", app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), stat.apps_timer_count);
+					text[i].Format (L"%s: %" PR_SIZET, app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), stat.apps_timer_count);
 					break;
 				}
 			}
