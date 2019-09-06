@@ -79,7 +79,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	// if file is shortcut - get location
 	if (!is_fromdb)
 	{
-		if (_wcsnicmp (PathFindExtension (path), L".lnk", 4) == 0)
+		if (_r_str_compare (PathFindExtension (path), L".lnk", 4) == 0)
 		{
 			path = _app_getshortcutpath (app.GetHWND (), path);
 
@@ -101,13 +101,13 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 	rstring real_path;
 
-	if (_wcsnicmp (path, L"\\device\\", 8) == 0) // device path
+	if (_r_str_compare (path, L"\\device\\", 8) == 0) // device path
 	{
 		real_path = path;
 
 		ptr_app->type = DataAppDevice;
 	}
-	else if (_wcsnicmp (path, L"S-1-", 4) == 0) // windows store (win8+)
+	else if (_r_str_compare (path, L"S-1-", 4) == 0) // windows store (win8+)
 	{
 		ptr_app->type = DataAppUWP;
 
@@ -150,9 +150,9 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 
 		if (ptr_app->type == DataAppRegular)
 		{
-			const bool is_temp = ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_TEMPORARY) != 0)) || (_wcsnicmp (real_path, config.tmp_dir, config.tmp_length) == 0);
+			const bool is_temp = ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_TEMPORARY) != 0)) || (_r_str_compare (real_path, config.tmp_dir, config.tmp_length) == 0);
 
-			ptr_app->is_system = !is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_wcsnicmp (real_path, config.windows_dir, config.wd_length) == 0));
+			ptr_app->is_system = !is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_r_str_compare (real_path, config.windows_dir, config.wd_length) == 0));
 		}
 	}
 
@@ -755,13 +755,13 @@ bool _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT update_
 	if (!ptr_rule || ptr_rule->type != DataRuleBlocklist || !ptr_rule->pname || !ptr_rule->pname[0])
 		return false;
 
-	if (_wcsnicmp (ptr_rule->pname, L"spy_", 4) == 0)
+	if (_r_str_compare (ptr_rule->pname, L"spy_", 4) == 0)
 		return _app_ruleblocklistsetchange (ptr_rule, spy_state);
 
-	else if (_wcsnicmp (ptr_rule->pname, L"update_", 7) == 0)
+	else if (_r_str_compare (ptr_rule->pname, L"update_", 7) == 0)
 		return _app_ruleblocklistsetchange (ptr_rule, update_state);
 
-	else if (_wcsnicmp (ptr_rule->pname, L"extra_", 6) == 0)
+	else if (_r_str_compare (ptr_rule->pname, L"extra_", 6) == 0)
 		return _app_ruleblocklistsetchange (ptr_rule, extra_state);
 
 	// fallback: block rules with other names by default!
@@ -990,9 +990,9 @@ bool _app_isappexists (ITEM_APP* ptr_app)
 //bool _app_isruleblocklist (LPCWSTR name)
 //{
 //	if (
-//		_wcsnicmp (name, L"extra_", 6) == 0 ||
-//		_wcsnicmp (name, L"spy_", 4) == 0 ||
-//		_wcsnicmp (name, L"update_", 7) == 0
+//		_r_str_compare (name, L"extra_", 6) == 0 ||
+//		_r_str_compare (name, L"spy_", 4) == 0 ||
+//		_r_str_compare (name, L"update_", 7) == 0
 //		)
 //		return true;
 //
@@ -1226,7 +1226,9 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 
 					for (size_t i = 0; i < arr.size (); i++)
 					{
-						const rstring app_path = _r_path_expand (_r_str_trim (arr.at (i), DIVIDER_TRIM));
+						_r_str_trim (arr.at (i), DIVIDER_TRIM);
+
+						const rstring app_path = _r_path_expand (arr.at (i));
 						size_t app_hash = app_path.Hash ();
 
 						if (app_hash)

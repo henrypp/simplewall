@@ -1257,17 +1257,19 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							for (size_t i = 0; i < arr.size (); i++)
 							{
-								LPCWSTR rule_single = _r_str_trim (arr.at (i), L" " DIVIDER_RULE);
+								rstring& rule_single = arr.at (i);
+
+								_r_str_trim (rule_single, L" " DIVIDER_RULE);
 
 								if (!_app_parserulestring (rule_single, nullptr))
 								{
-									_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
+									_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single.GetString ()));
 									_r_ctrl_enable (hwnd, IDC_SAVE, false);
 
 									return FALSE;
 								}
 
-								rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
+								rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single.GetString ());
 							}
 
 							rule_remote = std::move (rule_remote_fixed);
@@ -1283,17 +1285,19 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							for (size_t i = 0; i < arr.size (); i++)
 							{
-								LPCWSTR rule_single = _r_str_trim (arr.at (i), L" " DIVIDER_RULE);
+								rstring& rule_single = arr.at (i);
+
+								_r_str_trim (rule_single, L" " DIVIDER_RULE);
 
 								if (!_app_parserulestring (rule_single, nullptr))
 								{
-									_r_ctrl_showtip (hwnd, IDC_RULE_LOCAL_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single));
+									_r_ctrl_showtip (hwnd, IDC_RULE_LOCAL_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single.GetString ()));
 									_r_ctrl_enable (hwnd, IDC_SAVE, false);
 
 									return FALSE;
 								}
 
-								rule_local_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
+								rule_local_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single.GetString ());
 							}
 
 							rule_local = std::move (rule_local_fixed);
@@ -5878,13 +5882,13 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 
 		for (INT i = 0; i < numargs; i++)
 		{
-			if (_wcsicmp (arga[i], L"/install") == 0)
+			if (_r_str_compare (arga[i], L"/install") == 0)
 				is_install = true;
 
-			else if (_wcsicmp (arga[i], L"/uninstall") == 0)
+			else if (_r_str_compare (arga[i], L"/uninstall") == 0)
 				is_uninstall = true;
 
-			else if (_wcsicmp (arga[i], L"/silent") == 0)
+			else if (_r_str_compare (arga[i], L"/silent") == 0)
 				is_silent = true;
 		}
 

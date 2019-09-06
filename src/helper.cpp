@@ -2330,7 +2330,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 
 	if (!result)
 	{
-		result = StrCmpLogicalW (
+		result = _r_str_compare_logical (
 			_r_listview_getitemtext (hparent, listview_id, item1, column_id),
 			_r_listview_getitemtext (hparent, listview_id, item2, column_id)
 		);
@@ -2757,7 +2757,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 {
 	_r_str_trim (rule, DIVIDER_TRIM); // trim whitespace
 
-	if (rule.IsEmpty () || _wcsicmp (rule, L"*") == 0)
+	if (rule.IsEmpty () || _r_str_compare (rule, L"*") == 0)
 		return true;
 
 	EnumDataType type = DataUnknown;

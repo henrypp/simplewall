@@ -861,7 +861,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 
 		for (size_t i = 0; i < _countof (rules); i++)
 		{
-			if (rules[i] && rules[i][0] && _wcsicmp (rules[i], L"*") != 0)
+			if (rules[i] && rules[i][0] && _r_str_compare (rules[i], L"*") != 0)
 			{
 				if (!_app_parserulestring (rules[i], &addr))
 				{
