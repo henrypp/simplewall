@@ -1135,11 +1135,17 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 
 					// sync remote rules and local rules
 					if (!rule_remote_arr.empty () && rules_remote_length > j)
-						rule_remote = rule_remote_arr.at (j).Trim (DIVIDER_TRIM);
+					{
+						rule_remote = std::move (rule_remote_arr.at (j));
+						_r_str_trim (rule_remote, DIVIDER_TRIM);
+					}
 
 					// sync local rules and remote rules
 					if (!rule_local_arr.empty () && rules_local_length > j)
-						rule_local = rule_local_arr.at (j).Trim (DIVIDER_TRIM);
+					{
+						rule_local = std::move (rule_local_arr.at (j));
+						_r_str_trim (rule_local, DIVIDER_TRIM);
+					}
 
 					// apply rules for services hosts
 					if (ptr_rule->is_forservices)
@@ -1642,7 +1648,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
 
 	return true;
-}
+	}
 
 void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, UINT line)
 {
@@ -1939,7 +1945,8 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 						return rc;
 
 					path_buff.Append (path_noroot);
-					path_buff.ToLower (); // lower is important!
+
+					_r_str_tolower (path_buff.GetBuffer (), path_buff.GetLength ()); // lower is important!
 				}
 			}
 			else if (rc != ERROR_SUCCESS)
@@ -1956,7 +1963,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 		path_buff = path;
 
 		if (type == DataAppDevice)
-			path_buff.ToLower (); // lower is important!
+			_r_str_tolower (path_buff.GetBuffer (), path_buff.GetLength ()); // lower is important!
 
 		if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
 			return ERROR_SUCCESS;

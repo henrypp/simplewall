@@ -123,7 +123,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	{
 		real_path = path;
 
-		if (!is_ntoskrnl && real_path.Find (OBJ_NAME_PATH_SEPARATOR) == rstring::npos)
+		if (!is_ntoskrnl && _r_str_find (real_path, real_path.GetLength (), OBJ_NAME_PATH_SEPARATOR) == rstring::npos)
 		{
 			if (_app_item_get (DataAppService, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, &ptr_app->pdata))
 				ptr_app->type = DataAppService;
@@ -890,7 +890,7 @@ rstring _app_rulesexpandapps (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR d
 			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 		}
 
-		result.Trim (delimeter);
+		_r_str_trim (result, delimeter);
 	}
 
 	return result;
@@ -1226,7 +1226,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 
 					for (size_t i = 0; i < arr.size (); i++)
 					{
-						const rstring app_path = _r_path_expand (arr.at (i).Trim (DIVIDER_TRIM));
+						const rstring app_path = _r_path_expand (_r_str_trim (arr.at (i), DIVIDER_TRIM));
 						size_t app_hash = app_path.Hash ();
 
 						if (app_hash)

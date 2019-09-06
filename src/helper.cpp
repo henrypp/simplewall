@@ -686,7 +686,7 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 							buffer.Append (L"\r\n");
 						}
 
-						buffer.Trim (DIVIDER_TRIM);
+						_r_str_trim (buffer, DIVIDER_TRIM);
 
 						// get signature information
 						LPWSTR ptr_cache = nullptr;
@@ -2077,7 +2077,7 @@ void _app_generate_services ()
 				_r_str_alloc (&ptr_item->internal_name, _r_str_length (service_name), service_name);
 
 				if (
-					!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()).ToUpper (), SDDL_REVISION_1, &ptr_item->pdata, nullptr) ||
+					!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, _r_str_toupper (sidstring.GetBuffer (), sidstring.GetLength ())), SDDL_REVISION_1, &ptr_item->pdata, nullptr) ||
 					!IsValidSecurityDescriptor (ptr_item->pdata)
 					)
 				{
@@ -2556,7 +2556,9 @@ rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port)
 		}
 	}
 
-	return result.Trim (DIVIDER_RULE);
+	_r_str_trim (result, DIVIDER_RULE);
+
+	return result;
 }
 
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
@@ -2629,7 +2631,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 			result.Append (DIVIDER_RULE);
 		}
 
-		result.Trim (DIVIDER_RULE);
+		_r_str_trim (result, DIVIDER_RULE);
 	}
 
 	FreeAddrInfoEx (ppQueryResultsSet);
@@ -2753,13 +2755,13 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 
 bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 {
-	rule.Trim (DIVIDER_TRIM); // trim whitespace
+	_r_str_trim (rule, DIVIDER_TRIM); // trim whitespace
 
-	if (rule.IsEmpty () || rule.CompareNoCase (L"*") == 0)
+	if (rule.IsEmpty () || _wcsicmp (rule, L"*") == 0)
 		return true;
 
 	EnumDataType type = DataUnknown;
-	const size_t range_pos = rule.Find (DIVIDER_RULE_RANGE);
+	const size_t range_pos = _r_str_find (rule, rule.GetLength (), DIVIDER_RULE_RANGE);
 	bool is_range = (range_pos != rstring::npos);
 
 	WCHAR range_start[LEN_IP_MAX] = {0};

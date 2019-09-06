@@ -157,7 +157,8 @@ bool _app_listviewinitfont (PLOGFONT plf)
 		for (size_t i = 0; i < vc.size (); i++)
 		{
 			rstring& str = vc.at (i);
-			str.Trim (L" \r\n");
+
+			_r_str_trim (str, DIVIDER_TRIM);
 
 			if (str.IsEmpty ())
 				continue;
@@ -1240,10 +1241,13 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (!SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) || (!SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) && !SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0)))
 							return FALSE;
 
-						rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT).Trim (DIVIDER_TRIM DIVIDER_RULE);
-						size_t rule_remote_length;
+						rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT);
+						_r_str_trim (rule_remote, DIVIDER_TRIM DIVIDER_RULE);
 
-						rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT).Trim (DIVIDER_TRIM DIVIDER_RULE);
+						rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT);
+						_r_str_trim (rule_local, DIVIDER_TRIM DIVIDER_RULE);
+
+						size_t rule_remote_length;
 						size_t rule_local_length;
 
 						// set correct remote rule
@@ -1253,7 +1257,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							for (size_t i = 0; i < arr.size (); i++)
 							{
-								LPCWSTR rule_single = arr.at (i).Trim (L" " DIVIDER_RULE);
+								LPCWSTR rule_single = _r_str_trim (arr.at (i), L" " DIVIDER_RULE);
 
 								if (!_app_parserulestring (rule_single, nullptr))
 								{
@@ -1266,7 +1270,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
 							}
 
-							rule_remote = rule_remote_fixed.Trim (L" " DIVIDER_RULE);
+							rule_remote = std::move (rule_remote_fixed);
+							_r_str_trim (rule_remote, L" " DIVIDER_RULE);
+
 							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
 						}
 
@@ -1277,7 +1283,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							for (size_t i = 0; i < arr.size (); i++)
 							{
-								LPCWSTR rule_single = arr.at (i).Trim (L" " DIVIDER_RULE);
+								LPCWSTR rule_single = _r_str_trim (arr.at (i), L" " DIVIDER_RULE);
 
 								if (!_app_parserulestring (rule_single, nullptr))
 								{
@@ -1290,7 +1296,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								rule_local_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single);
 							}
 
-							rule_local = rule_local_fixed.Trim (L" " DIVIDER_RULE);
+							rule_local = std::move (rule_local_fixed);
+							_r_str_trim (rule_local, L" " DIVIDER_RULE);
+
 							rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
 						}
 
@@ -1300,7 +1308,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						// set rule name
 						{
-							const rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT).Trim (DIVIDER_TRIM);
+							rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT);
+							_r_str_trim (name, DIVIDER_TRIM);
 
 							if (!name.IsEmpty ())
 							{
@@ -2215,7 +2224,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-					}
+				}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
@@ -2438,12 +2447,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-				}
 			}
+		}
 
 			break;
-		}
 	}
+}
 
 	return FALSE;
 }
@@ -5084,10 +5093,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_current)).Append (divider);
 						}
 
-						buffer.Trim (divider).Append (L"\r\n");
+						_r_str_trim (buffer, divider);
+						buffer.Append (L"\r\n");
 					}
 
-					buffer.Trim (L"\r\n");
+					_r_str_trim (buffer, DIVIDER_TRIM);
 
 					_r_clipboard_set (hwnd, buffer, buffer.GetLength ());
 
@@ -5294,8 +5304,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 						}
 
-						rule_remote.Trim (DIVIDER_RULE);
-						rule_local.Trim (DIVIDER_RULE);
+						_r_str_trim (rule_remote, DIVIDER_RULE);
+						_r_str_trim (rule_local, DIVIDER_RULE);
 
 						_r_str_alloc (&ptr_rule->prule_remote, rule_remote.GetLength (), rule_remote);
 						_r_str_alloc (&ptr_rule->prule_local, rule_local.GetLength (), rule_local);
