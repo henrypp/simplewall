@@ -56,7 +56,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id = INVALID_INT,
 
 void _app_refreshstatus (HWND hwnd);
 
-rstring _app_parsehostaddress_dns (LPCWSTR host, USHORT port);
+rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port);
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port);
 
 bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, USHORT* port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns, size_t dns_length);

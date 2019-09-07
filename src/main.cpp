@@ -186,7 +186,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 		{
 			PLOGFONT pdeflf = &ncm.lfMessageFont;
 
-			if (!plf->lfFaceName[0])
+			if (_r_str_empty (plf->lfFaceName))
 				StringCchCopy (plf->lfFaceName, LF_FACESIZE, pdeflf->lfFaceName);
 
 			if (!plf->lfHeight)
@@ -876,7 +876,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, GetSystemMetrics (SM_CXICON)));
 
 			// localize window
-			SetWindowText (hwnd, app.LocaleString (IDS_EDITOR, ((ptr_rule->pname && ptr_rule->pname[0]) ? _r_fmt (L" - \"%s\"", ptr_rule->pname).GetString () : nullptr)));
+			SetWindowText (hwnd, app.LocaleString (IDS_EDITOR, (!_r_str_empty (ptr_rule->pname) ? _r_fmt (L" - \"%s\"", ptr_rule->pname).GetString () : nullptr)));
 
 			SetDlgItemText (hwnd, IDC_NAME, app.LocaleString (IDS_NAME, L":"));
 			SetDlgItemText (hwnd, IDC_RULE_REMOTE, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L"):"));
@@ -903,15 +903,15 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_listviewsetfont (hwnd, IDC_APPS_LV, false);
 
 			// name
-			if (ptr_rule->pname && ptr_rule->pname[0])
+			if (!_r_str_empty (ptr_rule->pname))
 				SetDlgItemText (hwnd, IDC_NAME_EDIT, ptr_rule->pname);
 
 			// rule_remote (remote)
-			if (ptr_rule->prule_remote && ptr_rule->prule_remote[0])
+			if (!_r_str_empty (ptr_rule->prule_remote))
 				SetDlgItemText (hwnd, IDC_RULE_REMOTE_EDIT, ptr_rule->prule_remote);
 
 			// rule_remote (local)
-			if (ptr_rule->prule_local && ptr_rule->prule_local[0])
+			if (!_r_str_empty (ptr_rule->prule_local))
 				SetDlgItemText (hwnd, IDC_RULE_LOCAL_EDIT, ptr_rule->prule_local);
 
 			// apps (apply to)
@@ -2021,7 +2021,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						else if (ctrl_id == IDC_SECUREFILTERS_CHK)
 							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_SECUREFILTERS_HINT, nullptr));
 
-						if (buffer[0])
+						if (!_r_str_empty (buffer))
 							lpnmdi->lpszText = buffer;
 					}
 
@@ -2130,7 +2130,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					PNMLINK pnmlink = (PNMLINK)lparam;
 
-					if (pnmlink->item.szUrl[0])
+					if (!_r_str_empty (pnmlink->item.szUrl))
 						ShellExecute (nullptr, nullptr, pnmlink->item.szUrl, nullptr, nullptr, SW_SHOWNORMAL);
 
 					break;
@@ -2228,7 +2228,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-				}
+					}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
@@ -2451,12 +2451,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
+				}
 			}
-		}
 
 			break;
+		}
 	}
-}
 
 	return FALSE;
 }
@@ -2772,7 +2772,7 @@ void _app_initialize ()
 	}
 
 	// get current user security identifier
-	if (!config.title[0])
+	if (_r_str_empty (config.title))
 	{
 		// get user sid
 		HANDLE token = nullptr;
@@ -2807,7 +2807,7 @@ void _app_initialize ()
 			CloseHandle (token);
 		}
 
-		if (!config.title[0])
+		if (_r_str_empty (config.title))
 			StringCchCopy (config.title, _countof (config.title), APP_NAME); // fallback
 	}
 
@@ -4648,7 +4648,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (ChooseFont (&cf))
 					{
-						app.ConfigSet (L"Font", lf.lfFaceName[0] ? _r_fmt (L"%s;%d;%d", lf.lfFaceName, _r_dc_fontheighttosize (lf.lfHeight), lf.lfWeight) : UI_FONT_DEFAULT);
+						app.ConfigSet (L"Font", !_r_str_empty (lf.lfFaceName) ? _r_fmt (L"%s;%d;%d", lf.lfFaceName, _r_dc_fontheighttosize (lf.lfHeight), lf.lfWeight) : UI_FONT_DEFAULT);
 
 						if (config.hfont)
 						{
@@ -4691,7 +4691,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_FINDNEXT:
 				{
-					if (!config.search_string[0])
+					if (_r_str_empty (config.search_string))
 					{
 						SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_FIND, 0), 0);
 					}
