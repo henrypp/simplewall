@@ -454,7 +454,7 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 
 			if (ptr_app)
 			{
-				result = (!_r_str_empty (ptr_app->real_path) ? ptr_app->real_path : (!_r_str_empty (ptr_app->display_name) ? ptr_app->display_name : ptr_app->original_path));
+				result = (!_r_str_isempty (ptr_app->real_path) ? ptr_app->real_path : (!_r_str_isempty (ptr_app->display_name) ? ptr_app->display_name : ptr_app->original_path));
 
 				// file information
 				if (ptr_app->type == DataAppRegular)
@@ -650,7 +650,7 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 
 	ptr_rule->is_enabled = is_enable;
 
-	if (ptr_rule->is_readonly && !_r_str_empty (ptr_rule->pname))
+	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->pname))
 	{
 		const size_t rule_hash = _r_str_hash (ptr_rule->pname, INVALID_SIZE_T);
 
@@ -703,7 +703,7 @@ void _app_ruleenable2 (PITEM_RULE ptr_rule, bool is_enable)
 
 	ptr_rule->is_enabled = is_enable;
 
-	if (ptr_rule->is_readonly && !_r_str_empty (ptr_rule->pname))
+	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->pname))
 	{
 		const size_t rule_hash = _r_str_hash (ptr_rule->pname, INVALID_SIZE_T);
 
@@ -752,7 +752,7 @@ bool _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state)
 
 bool _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT update_state, INT extra_state)
 {
-	if (!ptr_rule || ptr_rule->type != DataRuleBlocklist || _r_str_empty (ptr_rule->pname))
+	if (!ptr_rule || ptr_rule->type != DataRuleBlocklist || _r_str_isempty (ptr_rule->pname))
 		return false;
 
 	if (_r_str_compare (ptr_rule->pname, L"spy_", 4) == 0)
@@ -869,18 +869,18 @@ rstring _app_rulesexpandapps (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR d
 				{
 					if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
 					{
-						if (!_r_str_empty (ptr_app->display_name))
+						if (!_r_str_isempty (ptr_app->display_name))
 							result.Append (ptr_app->display_name);
 					}
 					else
 					{
-						if (!_r_str_empty (ptr_app->original_path))
+						if (!_r_str_isempty (ptr_app->original_path))
 							result.Append (ptr_app->original_path);
 					}
 				}
 				else
 				{
-					if (!_r_str_empty (ptr_app->original_path))
+					if (!_r_str_isempty (ptr_app->original_path))
 						result.Append (ptr_app->original_path);
 				}
 
@@ -979,7 +979,7 @@ bool _app_isappexists (ITEM_APP* ptr_app)
 		return true;
 
 	else if (ptr_app->type == DataAppRegular)
-		return !_r_str_empty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path);
+		return !_r_str_isempty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path);
 
 	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
 		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path, INVALID_SIZE_T), nullptr, nullptr, nullptr, nullptr);
@@ -1001,7 +1001,7 @@ bool _app_isappexists (ITEM_APP* ptr_app)
 
 bool _app_isrulehost (LPCWSTR rule)
 {
-	if (_r_str_empty (rule))
+	if (_r_str_isempty (rule))
 		return false;
 
 	NET_ADDRESS_INFO ni;
@@ -1037,7 +1037,7 @@ bool _app_isrulehost (LPCWSTR rule)
 
 bool _app_isruleip (LPCWSTR rule)
 {
-	if (_r_str_empty (rule))
+	if (_r_str_isempty (rule))
 		return false;
 
 	NET_ADDRESS_INFO ni;
@@ -1054,7 +1054,7 @@ bool _app_isruleip (LPCWSTR rule)
 
 bool _app_isruleport (LPCWSTR rule)
 {
-	if (_r_str_empty (rule))
+	if (_r_str_isempty (rule))
 		return false;
 
 	for (size_t i = 0; i < _r_str_length (rule); i++)
@@ -1199,7 +1199,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 			{
 				rstring apps_rule = item.attribute (L"apps").as_string ();
 
-				if (is_internal && ptr_config && !_r_str_empty (ptr_config->papps))
+				if (is_internal && ptr_config && !_r_str_isempty (ptr_config->papps))
 				{
 					if (apps_rule.IsEmpty ())
 						apps_rule = ptr_config->papps;
@@ -1725,7 +1725,7 @@ void _app_profile_save (LPCWSTR path_custom)
 
 				PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
-				if (!ptr_rule || ptr_rule->is_readonly || _r_str_empty (ptr_rule->pname))
+				if (!ptr_rule || ptr_rule->is_readonly || _r_str_isempty (ptr_rule->pname))
 				{
 					_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
 					continue;
@@ -1737,10 +1737,10 @@ void _app_profile_save (LPCWSTR path_custom)
 				{
 					item.append_attribute (L"name").set_value (ptr_rule->pname);
 
-					if (!_r_str_empty (ptr_rule->prule_remote))
+					if (!_r_str_isempty (ptr_rule->prule_remote))
 						item.append_attribute (L"rule").set_value (ptr_rule->prule_remote);
 
-					if (!_r_str_empty (ptr_rule->prule_local))
+					if (!_r_str_isempty (ptr_rule->prule_local))
 						item.append_attribute (L"rule_local").set_value (ptr_rule->prule_local);
 
 					// ffu!
@@ -1792,7 +1792,7 @@ void _app_profile_save (LPCWSTR path_custom)
 
 				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)ptr_config_object->pdata;
 
-				if (!ptr_config || _r_str_empty (ptr_config->pname))
+				if (!ptr_config || _r_str_isempty (ptr_config->pname))
 				{
 					_r_obj_dereference (ptr_config_object, &_app_dereferenceruleconfig);
 					continue;

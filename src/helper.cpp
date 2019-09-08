@@ -140,7 +140,7 @@ void _app_setinterfacestate (HWND hwnd)
 
 void _app_explorefile (LPCWSTR path)
 {
-	if (_r_str_empty (path))
+	if (_r_str_isempty (path))
 		return;
 
 	if (_r_fs_exists (path))
@@ -210,7 +210,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	}
 
 	if (port)
-		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_empty (formatted_address) ? L":%d" : L"%d", port));
+		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%d" : L"%d", port));
 
 	if ((flags & FMTADDR_RESOLVE_HOST) != 0)
 	{
@@ -264,7 +264,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 	_r_str_alloc (ptr_dest, _r_str_length (formatted_address), formatted_address);
 
-	return !_r_str_empty (formatted_address);
+	return !_r_str_isempty (formatted_address);
 }
 
 void _app_freeobjects_map (OBJECTS_MAP& ptr_map, OBJECT_CLEANUP_CALLBACK cleanup_callback, bool is_forced)
@@ -400,7 +400,7 @@ void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted
 
 bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON * picon)
 {
-	if (_r_str_empty (path) || (!picon_id && !picon))
+	if (_r_str_isempty (path) || (!picon_id && !picon))
 		return false;
 
 	bool result = false;
@@ -502,7 +502,7 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app)
 	if (!app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
 		return nullptr;
 
-	if (!app_hash || !ptr_app || _r_str_empty (ptr_app->real_path))
+	if (!app_hash || !ptr_app || _r_str_isempty (ptr_app->real_path))
 		return nullptr;
 
 	_r_fastlock_acquireshared (&lock_cache);
@@ -600,7 +600,7 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app)
 
 PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 {
-	if (!app_hash || !ptr_app || _r_str_empty (ptr_app->real_path))
+	if (!app_hash || !ptr_app || _r_str_isempty (ptr_app->real_path))
 		return nullptr;
 
 	PR_OBJECT ptr_cache_object = nullptr;
@@ -2225,19 +2225,19 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 
 			if (display_name)
 			{
-				if (!_r_str_empty (ptr_app_item->display_name))
+				if (!_r_str_isempty (ptr_app_item->display_name))
 					*display_name = ptr_app_item->display_name;
 
-				else if (!_r_str_empty (ptr_app_item->real_path))
+				else if (!_r_str_isempty (ptr_app_item->real_path))
 					*display_name = ptr_app_item->real_path;
 
-				else if (!_r_str_empty (ptr_app_item->internal_name))
+				else if (!_r_str_isempty (ptr_app_item->internal_name))
 					*display_name = ptr_app_item->internal_name;
 			}
 
 			if (real_path)
 			{
-				if (!_r_str_empty (ptr_app_item->real_path))
+				if (!_r_str_isempty (ptr_app_item->real_path))
 					*real_path = ptr_app_item->real_path;
 			}
 
@@ -2492,7 +2492,7 @@ void _app_refreshstatus (HWND hwnd)
 
 rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 {
-	if (_r_str_empty (hostname))
+	if (_r_str_isempty (hostname))
 		return L"";
 
 	rstring result;
@@ -2568,7 +2568,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 {
-	if (_r_str_empty (hostname) || !app.ConfigGet (L"IsEnableWsaResolver", false).AsBool ())
+	if (_r_str_isempty (hostname) || !app.ConfigGet (L"IsEnableWsaResolver", false).AsBool ())
 		return L"";
 
 	// initialize winsock (required by getnameinfo)
@@ -2625,7 +2625,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 				InetNtop (current->ai_family, addr6, printableIP, _countof (printableIP));
 			}
 
-			if (_r_str_empty (printableIP))
+			if (_r_str_isempty (printableIP))
 				continue;
 
 			result.Append (printableIP);
@@ -3348,7 +3348,7 @@ DoExit:
 
 void _app_load_appxmanifest (PITEM_APP_HELPER ptr_app_item)
 {
-	if (!ptr_app_item || _r_str_empty (ptr_app_item->real_path))
+	if (!ptr_app_item || _r_str_isempty (ptr_app_item->real_path))
 		return;
 
 	rstring result;

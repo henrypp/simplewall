@@ -108,13 +108,13 @@ void _app_logwrite (PITEM_LOG ptr_log)
 			{
 				if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
 				{
-					if (!_r_str_empty (ptr_app->real_path))
+					if (!_r_str_isempty (ptr_app->real_path))
 						path = ptr_app->real_path;
 
-					else if (!_r_str_empty (ptr_app->display_name))
+					else if (!_r_str_isempty (ptr_app->display_name))
 						path = ptr_app->display_name;
 				}
-				else if (!_r_str_empty (ptr_app->original_path))
+				else if (!_r_str_isempty (ptr_app->original_path))
 				{
 					path = ptr_app->original_path;
 				}
@@ -127,10 +127,10 @@ void _app_logwrite (PITEM_LOG ptr_log)
 	// parse filter name
 	rstring filter_name;
 	{
-		if (!_r_str_empty (ptr_log->provider_name) && !_r_str_empty (ptr_log->filter_name))
+		if (!_r_str_isempty (ptr_log->provider_name) && !_r_str_isempty (ptr_log->filter_name))
 			filter_name.Format (L"%s\\%s", ptr_log->provider_name, ptr_log->filter_name);
 
-		else if (!_r_str_empty (ptr_log->filter_name))
+		else if (!_r_str_isempty (ptr_log->filter_name))
 			filter_name = ptr_log->filter_name;
 	}
 
@@ -156,11 +156,11 @@ void _app_logwrite (PITEM_LOG ptr_log)
 	rstring buffer;
 	buffer.Format (SZ_LOG_BODY,
 				   _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
-				   !_r_str_empty (ptr_log->username) ? ptr_log->username : SZ_EMPTY,
+				   !_r_str_isempty (ptr_log->username) ? ptr_log->username : SZ_EMPTY,
 				   !path.IsEmpty () ? path.GetString () : SZ_EMPTY,
-				   !_r_str_empty (remote_fmt) ? remote_fmt : SZ_EMPTY,
+				   !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY,
 				   ptr_log->remote_port ? _r_fmt (L"%" PRIu16 L" (%s)", ptr_log->remote_port, _app_getservicename (ptr_log->remote_port).GetString ()).GetString () : SZ_EMPTY,
-				   !_r_str_empty (local_fmt) ? local_fmt : SZ_EMPTY,
+				   !_r_str_isempty (local_fmt) ? local_fmt : SZ_EMPTY,
 				   ptr_log->local_port ? _r_fmt (L"%" PRIu16 L" (%s)", ptr_log->local_port, _app_getservicename (ptr_log->local_port).GetString ()).GetString () : SZ_EMPTY,
 				   _app_getprotoname (ptr_log->protocol, ptr_log->af).GetString (),
 				   !filter_name.IsEmpty () ? filter_name.GetString () : SZ_EMPTY,
@@ -854,7 +854,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 		// apps collector
 		_r_fastlock_acquireshared (&lock_access);
-		const bool is_notexist = ptr_log->app_hash && !_r_str_empty (ptr_log->path) && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);
+		const bool is_notexist = ptr_log->app_hash && !_r_str_isempty (ptr_log->path) && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);
 		_r_fastlock_releaseshared (&lock_access);
 
 		if (is_notexist)

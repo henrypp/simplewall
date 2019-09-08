@@ -186,7 +186,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 		{
 			PLOGFONT pdeflf = &ncm.lfMessageFont;
 
-			if (_r_str_empty (plf->lfFaceName))
+			if (_r_str_isempty (plf->lfFaceName))
 				StringCchCopy (plf->lfFaceName, LF_FACESIZE, pdeflf->lfFaceName);
 
 			if (!plf->lfHeight)
@@ -876,7 +876,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, GetSystemMetrics (SM_CXICON)));
 
 			// localize window
-			SetWindowText (hwnd, app.LocaleString (IDS_EDITOR, (!_r_str_empty (ptr_rule->pname) ? _r_fmt (L" - \"%s\"", ptr_rule->pname).GetString () : nullptr)));
+			SetWindowText (hwnd, app.LocaleString (IDS_EDITOR, (!_r_str_isempty (ptr_rule->pname) ? _r_fmt (L" - \"%s\"", ptr_rule->pname).GetString () : nullptr)));
 
 			SetDlgItemText (hwnd, IDC_NAME, app.LocaleString (IDS_NAME, L":"));
 			SetDlgItemText (hwnd, IDC_RULE_REMOTE, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L"):"));
@@ -903,15 +903,15 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_listviewsetfont (hwnd, IDC_APPS_LV, false);
 
 			// name
-			if (!_r_str_empty (ptr_rule->pname))
+			if (!_r_str_isempty (ptr_rule->pname))
 				SetDlgItemText (hwnd, IDC_NAME_EDIT, ptr_rule->pname);
 
 			// rule_remote (remote)
-			if (!_r_str_empty (ptr_rule->prule_remote))
+			if (!_r_str_isempty (ptr_rule->prule_remote))
 				SetDlgItemText (hwnd, IDC_RULE_REMOTE_EDIT, ptr_rule->prule_remote);
 
 			// rule_remote (local)
-			if (!_r_str_empty (ptr_rule->prule_local))
+			if (!_r_str_isempty (ptr_rule->prule_local))
 				SetDlgItemText (hwnd, IDC_RULE_LOCAL_EDIT, ptr_rule->prule_local);
 
 			// apps (apply to)
@@ -2021,7 +2021,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						else if (ctrl_id == IDC_SECUREFILTERS_CHK)
 							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_SECUREFILTERS_HINT, nullptr));
 
-						if (!_r_str_empty (buffer))
+						if (!_r_str_isempty (buffer))
 							lpnmdi->lpszText = buffer;
 					}
 
@@ -2130,7 +2130,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					PNMLINK pnmlink = (PNMLINK)lparam;
 
-					if (!_r_str_empty (pnmlink->item.szUrl))
+					if (!_r_str_isempty (pnmlink->item.szUrl))
 						ShellExecute (nullptr, nullptr, pnmlink->item.szUrl, nullptr, nullptr, SW_SHOWNORMAL);
 
 					break;
@@ -2772,7 +2772,7 @@ void _app_initialize ()
 	}
 
 	// get current user security identifier
-	if (_r_str_empty (config.title))
+	if (_r_str_isempty (config.title))
 	{
 		// get user sid
 		HANDLE token = nullptr;
@@ -2807,7 +2807,7 @@ void _app_initialize ()
 			CloseHandle (token);
 		}
 
-		if (_r_str_empty (config.title))
+		if (_r_str_isempty (config.title))
 			StringCchCopy (config.title, _countof (config.title), APP_NAME); // fallback
 	}
 
@@ -4648,7 +4648,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (ChooseFont (&cf))
 					{
-						app.ConfigSet (L"Font", !_r_str_empty (lf.lfFaceName) ? _r_fmt (L"%s;%d;%d", lf.lfFaceName, _r_dc_fontheighttosize (lf.lfHeight), lf.lfWeight) : UI_FONT_DEFAULT);
+						app.ConfigSet (L"Font", !_r_str_isempty (lf.lfFaceName) ? _r_fmt (L"%s;%d;%d", lf.lfFaceName, _r_dc_fontheighttosize (lf.lfHeight), lf.lfWeight) : UI_FONT_DEFAULT);
 
 						if (config.hfont)
 						{
@@ -4691,7 +4691,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_FINDNEXT:
 				{
-					if (_r_str_empty (config.search_string))
+					if (_r_str_isempty (config.search_string))
 					{
 						SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_FIND, 0), 0);
 					}

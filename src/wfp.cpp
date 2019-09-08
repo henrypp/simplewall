@@ -861,7 +861,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 
 		for (size_t i = 0; i < _countof (rules); i++)
 		{
-			if (!_r_str_empty (rules[i]) && _r_str_compare (rules[i], L"*") != 0)
+			if (!_r_str_isempty (rules[i]) && _r_str_compare (rules[i], L"*") != 0)
 			{
 				if (!_app_parserulestring (rules[i], &addr))
 				{
@@ -1897,7 +1897,7 @@ void _mps_changeconfig2 (bool is_enable)
 
 DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDataType type)
 {
-	if (_r_str_empty (path) || !lpblob)
+	if (_r_str_isempty (path) || !lpblob)
 		return ERROR_BAD_ARGUMENTS;
 
 	rstring path_buff;
