@@ -216,7 +216,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	{
 		if (result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ())
 		{
-			const size_t addr_hash = _r_str_hash (formatted_address);
+			const size_t addr_hash = _r_str_hash (formatted_address, INVALID_SIZE_T);
 
 			if (addr_hash)
 			{
@@ -1563,7 +1563,7 @@ size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWO
 		return 0;
 	}
 
-	return _r_str_hash (_r_fmt (L"%" PRIu8 L"_%" PRId32 L"_%s_%" PRId32 L"_%s_%" PRId32 L"_%" PRIu8 "_%" PRId32, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
+	return _r_str_hash (_r_fmt (L"%" PRIu8 L"_%" PRId32 L"_%s_%" PRId32 L"_%s_%" PRId32 L"_%" PRIu8 "_%" PRId32, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state), INVALID_SIZE_T);
 }
 
 bool _app_isvalidconnection (ADDRESS_FAMILY af, PVOID paddr)
@@ -1857,7 +1857,7 @@ void _app_generate_packages ()
 					continue;
 				}
 
-				const size_t app_hash = _r_str_hash (package_sid_string);
+				const size_t app_hash = _r_str_hash (package_sid_string, package_sid_string.GetLength ());
 
 				if (apps_helper.find (app_hash) != apps_helper.end ())
 				{
@@ -1986,7 +1986,7 @@ void _app_generate_services ()
 
 			time_t timestamp = 0;
 
-			const size_t app_hash = _r_str_hash (service_name);
+			const size_t app_hash = _r_str_hash (service_name, INVALID_SIZE_T);
 
 			if (apps_helper.find (app_hash) != apps_helper.end ())
 				continue;
@@ -2697,7 +2697,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 		{
 			if (paddr_dns)
 			{
-				const size_t dns_hash = _r_str_hash (ni.NamedAddress.Address);
+				const size_t dns_hash = _r_str_hash (ni.NamedAddress.Address, INVALID_SIZE_T);
 
 				_r_fastlock_acquireshared (&lock_cache);
 				const bool is_exists = cache_dns.find (dns_hash) != cache_dns.end ();
@@ -2994,7 +2994,7 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 
 	if (pstraddr)
 	{
-		const size_t arpa_hash = _r_str_hash (pstraddr);
+		const size_t arpa_hash = _r_str_hash (pstraddr, INVALID_SIZE_T);
 
 		_r_fastlock_acquireshared (&lock_cache);
 		const bool is_exists = cache_arpa.find (arpa_hash) != cache_arpa.end ();

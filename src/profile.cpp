@@ -238,7 +238,7 @@ PR_OBJECT _app_getrulebyhash (size_t rule_hash)
 		{
 			if (ptr_rule->is_readonly)
 			{
-				if (ptr_rule->pname && _r_str_hash (ptr_rule->pname) == rule_hash)
+				if (ptr_rule->pname && _r_str_hash (ptr_rule->pname, INVALID_SIZE_T) == rule_hash)
 					return ptr_rule_object;
 			}
 		}
@@ -652,7 +652,7 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 
 	if (ptr_rule->is_readonly && !_r_str_empty (ptr_rule->pname))
 	{
-		const size_t rule_hash = _r_str_hash (ptr_rule->pname);
+		const size_t rule_hash = _r_str_hash (ptr_rule->pname, INVALID_SIZE_T);
 
 		if (rule_hash)
 		{
@@ -705,7 +705,7 @@ void _app_ruleenable2 (PITEM_RULE ptr_rule, bool is_enable)
 
 	if (ptr_rule->is_readonly && !_r_str_empty (ptr_rule->pname))
 	{
-		const size_t rule_hash = _r_str_hash (ptr_rule->pname);
+		const size_t rule_hash = _r_str_hash (ptr_rule->pname, INVALID_SIZE_T);
 
 		if (rule_hash)
 		{
@@ -982,7 +982,7 @@ bool _app_isappexists (ITEM_APP* ptr_app)
 		return !_r_str_empty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path);
 
 	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
-		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr);
+		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path, INVALID_SIZE_T), nullptr, nullptr, nullptr, nullptr);
 
 	return true;
 }
@@ -1129,7 +1129,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 		{
 			PITEM_RULE ptr_rule = new ITEM_RULE;
 
-			const size_t rule_hash = _r_str_hash (item.attribute (L"name").as_string ());
+			const size_t rule_hash = _r_str_hash (item.attribute (L"name").as_string (), INVALID_SIZE_T);
 
 			PR_OBJECT ptr_config_object = nullptr;
 			PITEM_RULE_CONFIG ptr_config = nullptr;
@@ -1802,7 +1802,7 @@ void _app_profile_save (LPCWSTR path_custom)
 				bool is_enabled_default = ptr_config->is_enabled;
 
 				{
-					const size_t rule_hash = _r_str_hash (ptr_config->pname);
+					const size_t rule_hash = _r_str_hash (ptr_config->pname, INVALID_SIZE_T);
 					PR_OBJECT ptr_rule_object = _app_getrulebyhash (rule_hash);
 
 					if (ptr_rule_object)

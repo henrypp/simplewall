@@ -24,7 +24,7 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 	const time_t current_time = _r_unixtime_now ();
 
-	const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
+	const size_t app_hash = _r_str_hash (ptr_app->original_path, INVALID_SIZE_T); // note: be carefull (!)
 	BOOL is_created = FALSE;
 
 	if (ptr_app->htimer)
@@ -85,7 +85,7 @@ bool _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 	ptr_app->is_enabled = false;
 	ptr_app->timer = 0;
 
-	const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
+	const size_t app_hash = _r_str_hash (ptr_app->original_path, INVALID_SIZE_T); // note: be carefull (!)
 	const INT listview_id = _app_getlistview_id (ptr_app->type);
 
 	if (listview_id)
