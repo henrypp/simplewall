@@ -946,17 +946,18 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 							ByteBlobFree (&bSid);
 							ByteBlobFree (&bPath);
 
-							const rstring::rvector arr2 = rstring (addr.host).AsVector (DIVIDER_RULE);
+							rstringvec rvc;
+							_r_str_split (addr.host, INVALID_SIZE_T, DIVIDER_RULE[0], rvc);
 
-							if (arr2.empty ())
+							if (rvc.empty ())
 							{
 								return false;
 							}
 							else
 							{
-								for (size_t j = 0; j < arr2.size (); j++)
+								for (size_t j = 0; j < rvc.size (); j++)
 								{
-									if (!_wfp_createrulefilter (hengine, name, app_hash, arr2[j], nullptr, protocol, af, dir, weight, action, flag, pmfarr))
+									if (!_wfp_createrulefilter (hengine, name, app_hash, rvc.at (j), nullptr, protocol, af, dir, weight, action, flag, pmfarr))
 										return false;
 								}
 							}
@@ -1121,11 +1122,15 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 
 			if (ptr_rule->is_enabled)
 			{
-				rstring::rvector rule_remote_arr = rstring (ptr_rule->prule_remote).AsVector (DIVIDER_RULE);
-				rstring::rvector rule_local_arr = rstring (ptr_rule->prule_local).AsVector (DIVIDER_RULE);
+				rstringvec rule_remote_arr;
+				_r_str_split (ptr_rule->prule_remote, INVALID_SIZE_T, DIVIDER_RULE[0], rule_remote_arr);
+
+				rstringvec rule_local_arr;
+				_r_str_split (ptr_rule->prule_local, INVALID_SIZE_T, DIVIDER_RULE[0], rule_local_arr);
 
 				const size_t rules_remote_length = rule_remote_arr.size ();
 				const size_t rules_local_length = rule_local_arr.size ();
+
 				const size_t count = max (1, max (rules_remote_length, rules_local_length));
 
 				for (size_t j = 0; j < count; j++)
@@ -1179,7 +1184,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 			ptr_rule->is_haveerrors = is_haveerrors;
 
 			ptr_rule->guids.clear ();
-			ptr_rule->guids.insert (ptr_rule->guids.end (), guids.begin (), guids.end ());
+			ptr_rule->guids = std::move (guids);
 		}
 
 		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
@@ -1579,7 +1584,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 		_wfp_createfilter (L"BlockListenConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, 0, &filter_ids);
 		_wfp_createfilter (L"BlockListenConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, 0, &filter_ids);
-	}
+}
 #endif // SW_USE_LISTEN_LAYER
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
@@ -1648,7 +1653,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
 
 	return true;
-}
+	}
 
 void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, UINT line)
 {
@@ -1886,7 +1891,6 @@ void _mps_changeconfig2 (bool is_enable)
 			}
 
 			_r_sleep (250);
-
 		}
 
 		_mps_firewallapi (nullptr, &is_enable);
@@ -1977,21 +1981,18 @@ bool ByteBlobAlloc (PVOID data, size_t length, FWP_BYTE_BLOB * *lpblob)
 	if (!data || !length || !lpblob)
 		return false;
 
-	*lpblob = new FWP_BYTE_BLOB;
+	FWP_BYTE_BLOB* blob = new FWP_BYTE_BLOB;
 
-	if (*lpblob)
-	{
-		const PUINT8 tmp_ptr = new UINT8[length];
+	SecureZeroMemory (blob, sizeof (FWP_BYTE_BLOB));
 
-		(*lpblob)->data = tmp_ptr;
-		(*lpblob)->size = (UINT32)length;
+	blob->data = new UINT8[length];
+	blob->size = (UINT32)length;
 
-		CopyMemory ((*lpblob)->data, data, length);
+	CopyMemory (blob->data, data, length);
 
-		return true;
-	}
+	*lpblob = blob;
 
-	return false;
+	return true;
 }
 
 void ByteBlobFree (FWP_BYTE_BLOB * *lpblob)

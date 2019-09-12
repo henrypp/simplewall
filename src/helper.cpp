@@ -134,8 +134,8 @@ void _app_setinterfacestate (HWND hwnd)
 
 	_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
-	app.TraySetInfo (hwnd, UID, nullptr, app.GetSharedImage (app.GetHINSTANCE (), icon_id, GetSystemMetrics (SM_CXSMICON)), nullptr);
-	app.TrayToggle (hwnd, UID, nullptr, true);
+	_r_tray_setinfo (hwnd, UID, app.GetSharedImage (app.GetHINSTANCE (), icon_id, GetSystemMetrics (SM_CXSMICON)), nullptr);
+	_r_tray_toggle (hwnd, UID, true);
 }
 
 void _app_explorefile (LPCWSTR path)
@@ -165,10 +165,10 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
-	if (proto && (flags & FMTADDR_USE_PROTOCOL) != 0)
+	if (proto && (flags & FMTADDR_USE_PROTOCOL) == FMTADDR_USE_PROTOCOL)
 		StringCchPrintf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto, AF_UNSPEC).GetString ());
 
-	if ((flags & FMTADDR_AS_ARPA) != 0)
+	if ((flags & FMTADDR_AS_ARPA) == FMTADDR_AS_ARPA)
 	{
 		if (af == AF_INET)
 		{
@@ -190,7 +190,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 		if (InetNtop (af, ptr_addr, addr_str, _countof (addr_str)))
 		{
-			if ((flags & FMTADDR_AS_RULE) != 0)
+			if ((flags & FMTADDR_AS_RULE) == FMTADDR_AS_RULE)
 			{
 				if (af == AF_INET)
 					result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr);
@@ -212,7 +212,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	if (port)
 		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%d" : L"%d", port));
 
-	if ((flags & FMTADDR_RESOLVE_HOST) != 0)
+	if ((flags & FMTADDR_RESOLVE_HOST) == FMTADDR_RESOLVE_HOST)
 	{
 		if (result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ())
 		{
@@ -1476,7 +1476,7 @@ rstring _app_getservicenamefromtag (HANDLE pid, PVOID ptag)
 	return result;
 }
 
-rstring _app_getnetworkpath (DWORD pid, ULONGLONG * pmodules, PINT picon_id, size_t * phash)
+rstring _app_getnetworkpath (DWORD pid, ULONG64 * pmodules, PINT picon_id, size_t * phash)
 {
 	if (!pid)
 	{
@@ -2296,7 +2296,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 
 	INT result = 0;
 
-	if ((SendMessage (hlistview, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
+	if ((SendMessage (hlistview, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) == LVS_EX_CHECKBOXES)
 	{
 		const bool is_checked1 = _r_listview_isitemchecked (hparent, listview_id, item1);
 		const bool is_checked2 = _r_listview_isitemchecked (hparent, listview_id, item2);
@@ -2449,7 +2449,7 @@ void _app_refreshstatus (HWND hwnd)
 
 		if (listview_id)
 		{
-			if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
+			if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) == LVS_EX_CHECKBOXES)
 			{
 				const bool is_rules_lv = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
 				const UINT enabled_group_title = is_rules_lv ? IDS_GROUP_ENABLED : IDS_GROUP_ALLOWED;
@@ -2767,7 +2767,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 
 	EnumDataType type = DataUnknown;
 	const size_t range_pos = _r_str_find (rule, rule.GetLength (), DIVIDER_RULE_RANGE);
-	bool is_range = (range_pos != rstring::npos);
+	bool is_range = (range_pos != INVALID_SIZE_T);
 
 	WCHAR range_start[LEN_IP_MAX] = {0};
 	WCHAR range_end[LEN_IP_MAX] = {0};

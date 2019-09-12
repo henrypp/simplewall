@@ -173,5 +173,5 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 	_r_listview_redraw (hwnd, listview_id);
 
 	if (app.ConfigGet (L"IsNotificationsTimer", true).AsBool ())
-		app.TrayPopup (hwnd, UID, nullptr, NIIF_USER | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? 0 : NIIF_NOSOUND), APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_TIMER_DONE, nullptr), ptr_app->display_name));
+		_r_tray_popup (hwnd, UID, NIIF_INFO | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? 0 : NIIF_NOSOUND), APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_TIMER_DONE, nullptr), ptr_app->display_name));
 }

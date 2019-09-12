@@ -240,7 +240,6 @@ struct STATIC_DATA
 	WCHAR rules_config_path_backup[MAX_PATH] = {0};
 
 	WCHAR windows_dir[MAX_PATH] = {0};
-	WCHAR tmp_dir[MAX_PATH] = {0};
 
 	WCHAR title[128] = {0};
 	WCHAR search_string[128] = {0};
@@ -274,7 +273,6 @@ struct STATIC_DATA
 	size_t svchost_hash = 0;
 	size_t my_hash = 0;
 
-	size_t tmp_length = 0;
 	size_t wd_length = 0;
 
 	INT icon_id = 0;

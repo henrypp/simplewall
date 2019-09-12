@@ -123,7 +123,7 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	{
 		real_path = path;
 
-		if (!is_ntoskrnl && _r_str_find (real_path, real_path.GetLength (), OBJ_NAME_PATH_SEPARATOR) == rstring::npos)
+		if (!is_ntoskrnl && _r_str_find (real_path, real_path.GetLength (), OBJ_NAME_PATH_SEPARATOR) == INVALID_SIZE_T)
 		{
 			if (_app_item_get (DataAppService, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, &ptr_app->pdata))
 				ptr_app->type = DataAppService;
@@ -144,16 +144,13 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 		}
 	}
 
-	if (!real_path.IsEmpty ())
+	if (!real_path.IsEmpty () && ptr_app->type == DataAppRegular)
 	{
 		const DWORD dwAttr = GetFileAttributes (real_path);
 
-		if (ptr_app->type == DataAppRegular)
-		{
-			const bool is_temp = ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_TEMPORARY) != 0)) || (_r_str_compare (real_path, config.tmp_dir, config.tmp_length) == 0);
+		const bool is_temp = (dwAttr != INVALID_FILE_ATTRIBUTES && ((dwAttr & FILE_ATTRIBUTE_TEMPORARY) == FILE_ATTRIBUTE_TEMPORARY));
 
-			ptr_app->is_system = !is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0)) || (_r_str_compare (real_path, config.windows_dir, config.wd_length) == 0));
-		}
+		ptr_app->is_system = !is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) == FILE_ATTRIBUTE_SYSTEM)) || (_r_str_compare (real_path, config.windows_dir, config.wd_length) == 0));
 	}
 
 	_r_str_alloc (&ptr_app->original_path, path.GetLength (), path);
@@ -1215,13 +1212,16 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 					if (version < XML_PROFILE_VER_3)
 						_r_str_replace (apps_rule.GetBuffer (), apps_rule.GetLength (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
-					rstring::rvector arr = apps_rule.AsVector (DIVIDER_APP);
+					rstringvec rvc;
+					_r_str_split (apps_rule, apps_rule.GetLength (), DIVIDER_APP[0], rvc);
 
-					for (size_t i = 0; i < arr.size (); i++)
+					for (size_t i = 0; i < rvc.size (); i++)
 					{
-						_r_str_trim (arr.at (i), DIVIDER_TRIM);
+						rstring& rlink = rvc.at (i);
 
-						const rstring app_path = _r_path_expand (arr.at (i));
+						_r_str_trim (rlink, DIVIDER_TRIM);
+
+						const rstring app_path = _r_path_expand (rlink);
 						size_t app_hash = app_path.Hash ();
 
 						if (app_hash)
@@ -1323,7 +1323,7 @@ void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t * pti
 
 	// show only syntax, memory and i/o errors...
 	if (!load_original && load_original.status != pugi::status_file_not_found && load_original.status != pugi::status_no_document_element)
-		_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %s,file: %s", load_original.status, load_original.offset, rstring (load_original.description ()).GetString (), path), false);
+		_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path), false);
 
 	if (load_original && root)
 	{
@@ -1397,7 +1397,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		{
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
-				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %s,file: %s", result.status, result.offset, rstring (result.description ()).GetString (), path_custom ? path_custom : config.profile_path), false);
+				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %hs,file: %s", result.status, result.offset, result.description (), path_custom ? path_custom : config.profile_path), false);
 
 			_r_fastlock_acquireexclusive (&lock_access);
 			_app_profile_load_fallback ();

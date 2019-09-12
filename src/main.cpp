@@ -148,29 +148,30 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 
 bool _app_listviewinitfont (PLOGFONT plf)
 {
-	const rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
+	rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
 
 	if (!buffer.IsEmpty ())
 	{
-		rstring::rvector vc = buffer.AsVector (L";");
+		rstringvec rvc;
+		_r_str_split (buffer, buffer.GetLength (), L';', rvc);
 
-		for (size_t i = 0; i < vc.size (); i++)
+		for (size_t i = 0; i < rvc.size (); i++)
 		{
-			rstring& str = vc.at (i);
+			rstring& rlink = rvc.at (i);
 
-			_r_str_trim (str, DIVIDER_TRIM);
+			_r_str_trim (rlink, DIVIDER_TRIM);
 
-			if (str.IsEmpty ())
+			if (rlink.IsEmpty ())
 				continue;
 
 			if (i == 0)
-				StringCchCopy (plf->lfFaceName, LF_FACESIZE, str);
+				StringCchCopy (plf->lfFaceName, LF_FACESIZE, rlink);
 
 			else if (i == 1)
-				plf->lfHeight = _r_dc_fontsizetoheight (str.AsInt ());
+				plf->lfHeight = _r_dc_fontsizetoheight (rlink.AsInt ());
 
 			else if (i == 2)
-				plf->lfWeight = str.AsInt ();
+				plf->lfWeight = rlink.AsInt ();
 
 			else
 				break;
@@ -823,7 +824,7 @@ LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
 					}
 				}
 
-				if ((tbi.fsStyle & BTNS_SHOWTEXT) != 0)
+				if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
 				{
 					WCHAR text[MAX_PATH] = {0};
 					SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
@@ -1252,16 +1253,18 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						// set correct remote rule
 						{
-							rstring::rvector arr = rule_remote.AsVector (DIVIDER_RULE);
 							rstring rule_remote_fixed;
 
-							for (size_t i = 0; i < arr.size (); i++)
+							rstringvec rvc;
+							_r_str_split (rule_remote, rule_remote.GetLength (), DIVIDER_RULE[0], rvc);
+
+							for (size_t i = 0; i < rvc.size (); i++)
 							{
-								rstring& rule_single = arr.at (i);
+								rstring& rule_single = rvc.at (i);
 
 								_r_str_trim (rule_single, L" " DIVIDER_RULE);
 
-								if (!_app_parserulestring (rule_single, nullptr))
+								if (rule_single.IsEmpty () || !_app_parserulestring (rule_single, nullptr))
 								{
 									_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single.GetString ()));
 									_r_ctrl_enable (hwnd, IDC_SAVE, false);
@@ -1273,23 +1276,23 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							rule_remote = std::move (rule_remote_fixed);
-							_r_str_trim (rule_remote, L" " DIVIDER_RULE);
-
 							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
 						}
 
 						// set correct local rule
 						{
-							rstring::rvector arr = rule_local.AsVector (DIVIDER_RULE);
 							rstring rule_local_fixed;
 
-							for (size_t i = 0; i < arr.size (); i++)
+							rstringvec rvc;
+							_r_str_split (rule_local, rule_local.GetLength (), DIVIDER_RULE[0], rvc);
+
+							for (size_t i = 0; i < rvc.size (); i++)
 							{
-								rstring& rule_single = arr.at (i);
+								rstring& rule_single = rvc.at (i);
 
 								_r_str_trim (rule_single, L" " DIVIDER_RULE);
 
-								if (!_app_parserulestring (rule_single, nullptr))
+								if (rule_single.IsEmpty () || !_app_parserulestring (rule_single, nullptr))
 								{
 									_r_ctrl_showtip (hwnd, IDC_RULE_LOCAL_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single.GetString ()));
 									_r_ctrl_enable (hwnd, IDC_SAVE, false);
@@ -1301,8 +1304,6 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							rule_local = std::move (rule_local_fixed);
-							_r_str_trim (rule_local, L" " DIVIDER_RULE);
-
 							rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
 						}
 
@@ -1998,7 +1999,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					LPNMTTDISPINFO lpnmdi = (LPNMTTDISPINFO)lparam;
 
-					if ((lpnmdi->uFlags & TTF_IDISHWND) != 0)
+					if ((lpnmdi->uFlags & TTF_IDISHWND) == TTF_IDISHWND)
 					{
 						WCHAR buffer[1024] = {0};
 						const INT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
@@ -2740,8 +2741,6 @@ void _app_initialize ()
 
 	// static initializer
 	config.wd_length = GetWindowsDirectory (config.windows_dir, _countof (config.windows_dir));
-	config.tmp_length = GetTempPath (_countof (config.tmp_dir), config.tmp_dir);
-	GetLongPathName (rstring (config.tmp_dir), config.tmp_dir, _countof (config.tmp_dir));
 
 	StringCchPrintf (config.profile_path, _countof (config.profile_path), L"%s\\" XML_PROFILE, app.GetProfileDirectory ());
 	StringCchPrintf (config.profile_internal_path, _countof (config.profile_internal_path), L"%s\\" XML_PROFILE_INTERNAL, app.GetProfileDirectory ());
@@ -2846,11 +2845,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		if (!lpfr)
 			return FALSE;
 
-		if ((lpfr->Flags & FR_DIALOGTERM) != 0)
+		if ((lpfr->Flags & FR_DIALOGTERM) == FR_DIALOGTERM)
 		{
 			config.hfind = nullptr;
 		}
-		else if ((lpfr->Flags & FR_FINDNEXT) != 0)
+		else if ((lpfr->Flags & FR_FINDNEXT) == FR_FINDNEXT)
 		{
 			const INT listview_id = _app_gettab_id (hwnd);
 			const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
@@ -3023,7 +3022,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			else
 				SetWindowText (hwnd, APP_NAME);
 
-			app.TrayCreate (hwnd, UID, nullptr, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)), true);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), IDI_ACTIVE, GetSystemMetrics (SM_CXSMICON)), APP_NAME, true);
 
 			const HMENU hmenu = GetMenu (hwnd);
 
@@ -3308,7 +3307,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case RM_UNINITIALIZE:
 		{
-			app.TrayDestroy (hwnd, UID, nullptr);
+			_r_tray_destroy (hwnd, UID);
 			break;
 		}
 
@@ -3372,7 +3371,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			if (config.htimer)
 				DeleteTimerQueue (config.htimer);
 
-			app.TrayDestroy (hwnd, UID, nullptr);
+			_r_tray_destroy (hwnd, UID);
 
 			_app_loginit (false);
 			_app_freelogstack ();
@@ -5882,13 +5881,13 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 
 		for (INT i = 0; i < numargs; i++)
 		{
-			if (_r_str_compare (arga[i], L"/install") == 0)
+			if (_r_str_compare (arga[i], L"/install", 8) == 0)
 				is_install = true;
 
-			else if (_r_str_compare (arga[i], L"/uninstall") == 0)
+			else if (_r_str_compare (arga[i], L"/uninstall", 10) == 0)
 				is_uninstall = true;
 
-			else if (_r_str_compare (arga[i], L"/silent") == 0)
+			else if (_r_str_compare (arga[i], L"/silent", 7) == 0)
 				is_silent = true;
 		}
 
