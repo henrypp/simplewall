@@ -143,12 +143,12 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 	}
 
 	SendDlgItemMessage (hwnd, listview_id, LVM_SETVIEW, is_tableview ? LV_VIEW_DETAILS : LV_VIEW_ICON, 0);
-	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, GetScrollPos (GetDlgItem (hwnd, listview_id), SB_HORZ), GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
+	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
 }
 
 bool _app_listviewinitfont (PLOGFONT plf)
 {
-	rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
+	const rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
 
 	if (!buffer.IsEmpty ())
 	{
@@ -812,8 +812,8 @@ LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
 						ildp.himl = himglist;
 						ildp.hdcDst = lpnmlv->nmcd.hdc;
 						ildp.i = tbi.iImage;
-						ildp.x = lpnmlv->nmcd.rc.left + app.GetDPI (3);
-						ildp.y = lpnmlv->nmcd.rc.top + app.GetDPI (3);
+						ildp.x = lpnmlv->nmcd.rc.left + _r_dc_getdpi (3);
+						ildp.y = lpnmlv->nmcd.rc.top + _r_dc_getdpi (3);
 						ildp.fState = ILS_SATURATE; // grayscale
 						ildp.fStyle = ILD_NORMAL;
 
@@ -2902,7 +2902,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			{
 				const INT icon_size_small = GetSystemMetrics (SM_CXSMICON);
 				const INT icon_size_large = GetSystemMetrics (SM_CXICON);
-				const INT icon_size_toolbar = std::clamp (app.GetDPI (app.ConfigGet (L"ToolbarSize", 20).AsInt ()), icon_size_small, icon_size_large);
+				const INT icon_size_toolbar = std::clamp (_r_dc_getdpi (app.ConfigGet (L"ToolbarSize", 20).AsInt ()), icon_size_small, icon_size_large);
 
 				config.himg_toolbar = ImageList_Create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, 0, 0);
 

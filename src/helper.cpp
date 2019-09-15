@@ -868,6 +868,9 @@ rstring _app_getservicename (UINT16 port)
 		case 137:
 			return L"netbios-ns";
 
+		case 136:
+			return L"profile";
+
 		case 138:
 			return L"netbios-dgm";
 
@@ -2408,13 +2411,13 @@ void _app_refreshstatus (HWND hwnd)
 
 				case 1:
 				{
-					text[i].Format (L"%s: %" PR_SIZET, app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
+					text[i].Format (L"%s: %" PR_SIZE_T, app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
 					break;
 				}
 
 				case 2:
 				{
-					text[i].Format (L"%s: %" PR_SIZET, app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), stat.apps_timer_count);
+					text[i].Format (L"%s: %" PR_SIZE_T, app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), stat.apps_timer_count);
 					break;
 				}
 			}

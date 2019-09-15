@@ -180,7 +180,7 @@ void _app_dereferencelog (PVOID pdata);
 #define NOTIFY_TIMER_SAFETY_ID 666
 #define NOTIFY_TIMER_SAFETY_TIMEOUT 600
 
-#define NOTIFY_TIMEOUT_DEFAULT time_t (30) // sec.
+#define NOTIFY_TIMEOUT_DEFAULT 30LL // sec.
 
 #define NOTIFY_LIMIT_POOL_SIZE 128
 #define NOTIFY_LIMIT_THREAD_COUNT 2
