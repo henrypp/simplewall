@@ -2262,7 +2262,7 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 					{
 						*lpdata = new BYTE[length];
 
-						CopyMemory (*lpdata, ptr_app_item->pdata, length);
+						memcpy (*lpdata, ptr_app_item->pdata, length);
 					}
 				}
 			}
