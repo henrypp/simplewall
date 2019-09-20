@@ -166,20 +166,20 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
 	if (proto && (flags & FMTADDR_USE_PROTOCOL) == FMTADDR_USE_PROTOCOL)
-		StringCchPrintf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto, AF_UNSPEC).GetString ());
+		_r_str_printf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto, AF_UNSPEC).GetString ());
 
 	if ((flags & FMTADDR_AS_ARPA) == FMTADDR_AS_ARPA)
 	{
 		if (af == AF_INET)
 		{
-			StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhu.%hhu.%hhu.%hhu.%s", ((PIN_ADDR)ptr_addr)->s_impno, ((PIN_ADDR)ptr_addr)->s_lh, ((PIN_ADDR)ptr_addr)->s_host, ((PIN_ADDR)ptr_addr)->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W));
+			_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhu.%hhu.%hhu.%hhu.%s", ((PIN_ADDR)ptr_addr)->s_impno, ((PIN_ADDR)ptr_addr)->s_lh, ((PIN_ADDR)ptr_addr)->s_host, ((PIN_ADDR)ptr_addr)->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W));
 		}
 		else
 		{
 			for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
-				StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhx.%hhx.", ((PIN6_ADDR)ptr_addr)->s6_addr[i] & 0xF, (((PIN6_ADDR)ptr_addr)->s6_addr[i] >> 4) & 0xF));
+				_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhx.%hhx.", ((PIN6_ADDR)ptr_addr)->s6_addr[i] & 0xF, (((PIN6_ADDR)ptr_addr)->s6_addr[i] >> 4) & 0xF));
 
-			StringCchCat (formatted_address, _countof (formatted_address), DNS_IP6_REVERSE_DOMAIN_STRING_W);
+			_r_str_cat (formatted_address, _countof (formatted_address), DNS_IP6_REVERSE_DOMAIN_STRING_W);
 		}
 
 		result = true;
@@ -199,18 +199,18 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 					result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr);
 
 				if (result)
-					StringCchCat (formatted_address, _countof (formatted_address), (af == AF_INET6) ? _r_fmt (L"[%s]", addr_str) : addr_str);
+					_r_str_cat (formatted_address, _countof (formatted_address), (af == AF_INET6) ? _r_fmt (L"[%s]", addr_str) : addr_str);
 			}
 			else
 			{
 				result = true;
-				StringCchCat (formatted_address, _countof (formatted_address), addr_str);
+				_r_str_cat (formatted_address, _countof (formatted_address), addr_str);
 			}
 		}
 	}
 
 	if (port)
-		StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%d" : L"%d", port));
+		_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%d" : L"%d", port));
 
 	if ((flags & FMTADDR_RESOLVE_HOST) == FMTADDR_RESOLVE_HOST)
 	{
@@ -233,7 +233,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 					if (ptr_cache_object)
 					{
 						if (ptr_cache_object->pdata)
-							StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", (LPCWSTR)ptr_cache_object->pdata));
+							_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", (LPCWSTR)ptr_cache_object->pdata));
 
 						_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
 					}
@@ -246,7 +246,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 					if (_app_resolveaddress (af, ptr_addr, &ptr_cache))
 					{
-						StringCchCat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", ptr_cache));
+						_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", ptr_cache));
 
 						_r_fastlock_acquireexclusive (&lock_cache);
 
@@ -646,13 +646,13 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 						if (VerQueryValue (versionInfo, L"\\VarFileInfo\\Translation", &retbuf, &vLen) && vLen == 4)
 						{
 							CopyMemory (&langD, retbuf, vLen);
-							StringCchPrintf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
-							StringCchPrintf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
+							_r_str_printf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
+							_r_str_printf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
 						}
 						else
 						{
-							StringCchPrintf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%04X04B0\\CompanyName", GetUserDefaultLangID ());
-							StringCchPrintf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%04X04B0\\FileDescription", GetUserDefaultLangID ());
+							_r_str_printf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%04X04B0\\CompanyName", GetUserDefaultLangID ());
+							_r_str_printf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%04X04B0\\FileDescription", GetUserDefaultLangID ());
 						}
 
 						if (VerQueryValue (versionInfo, description_entry, &retbuf, &vLen))
@@ -2176,7 +2176,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						}
 
 						WCHAR buffer[128] = {0};
-						StringCchPrintf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? SZ_READONLY_RULE : nullptr), ptr_rule->pname);
+						_r_str_printf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? SZ_READONLY_RULE : nullptr), ptr_rule->pname);
 
 						MENUITEMINFO mii = {0};
 
@@ -2715,7 +2715,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 					if (ptr_cache_object)
 					{
 						if (ptr_cache_object->pdata)
-							StringCchCopy (paddr_dns, dns_length, (LPCWSTR)ptr_cache_object->pdata);
+							_r_str_copy (paddr_dns, dns_length, (LPCWSTR)ptr_cache_object->pdata);
 
 						_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
 					}
@@ -2734,7 +2734,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 				}
 				else
 				{
-					StringCchCopy (paddr_dns, dns_length, host);
+					_r_str_copy (paddr_dns, dns_length, host);
 
 					LPWSTR ptr_cache = nullptr;
 
@@ -2777,8 +2777,8 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 
 	if (is_range)
 	{
-		StringCchCopy (range_start, _countof (range_start), _r_str_extract (rule, rule.GetLength (), 0, range_pos));
-		StringCchCopy (range_end, _countof (range_end), _r_str_extract (rule, rule.GetLength (), range_pos + 1));
+		_r_str_copy (range_start, _countof (range_start), _r_str_extract (rule, rule.GetLength (), 0, range_pos));
+		_r_str_copy (range_end, _countof (range_end), _r_str_extract (rule, rule.GetLength (), range_pos + 1));
 	}
 
 	// auto-parse rule type

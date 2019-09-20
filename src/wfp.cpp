@@ -596,10 +596,10 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * l
 	FWPM_FILTER filter = {0};
 
 	WCHAR fltr_name[128] = {0};
-	StringCchCopy (fltr_name, _countof (fltr_name), APP_NAME);
+	_r_str_copy (fltr_name, _countof (fltr_name), APP_NAME);
 
 	WCHAR fltr_desc[128] = {0};
-	StringCchCopy (fltr_desc, _countof (fltr_desc), name ? name : APP_NAME);
+	_r_str_copy (fltr_desc, _countof (fltr_desc), name ? name : APP_NAME);
 
 	filter.displayData.name = fltr_name;
 	filter.displayData.description = fltr_desc;
@@ -1935,12 +1935,12 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 				{
 					// file path (root)
 					WCHAR path_root[MAX_PATH] = {0};
-					StringCchCopy (path_root, _countof (path_root), path);
+					_r_str_copy (path_root, _countof (path_root), path);
 					PathStripToRoot (path_root);
 
 					// file path (without root)
 					WCHAR path_noroot[MAX_PATH] = {0};
-					StringCchCopy (path_noroot, _countof (path_noroot), PathSkipRoot (path));
+					_r_str_copy (path_noroot, _countof (path_noroot), PathSkipRoot (path));
 
 					path_buff = path_root;
 					rc = _r_path_ntpathfromdos (path_buff);

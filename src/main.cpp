@@ -165,7 +165,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 				continue;
 
 			if (i == 0)
-				StringCchCopy (plf->lfFaceName, LF_FACESIZE, rlink);
+				_r_str_copy (plf->lfFaceName, LF_FACESIZE, rlink);
 
 			else if (i == 1)
 				plf->lfHeight = _r_dc_fontsizetoheight (rlink.AsInt ());
@@ -188,7 +188,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 			PLOGFONT pdeflf = &ncm.lfMessageFont;
 
 			if (_r_str_isempty (plf->lfFaceName))
-				StringCchCopy (plf->lfFaceName, LF_FACESIZE, pdeflf->lfFaceName);
+				_r_str_copy (plf->lfFaceName, LF_FACESIZE, pdeflf->lfFaceName);
 
 			if (!plf->lfHeight)
 				plf->lfHeight = pdeflf->lfHeight;
@@ -601,8 +601,8 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 
 	tdc.pButtons = td_buttons;
 
-	StringCchCopy (button_text_1, _countof (button_text_1), app.LocaleString (is_install ? IDS_TRAY_START : IDS_TRAY_STOP, nullptr));
-	StringCchCopy (button_text_2, _countof (button_text_2), app.LocaleString (IDS_CLOSE, nullptr));
+	_r_str_copy (button_text_1, _countof (button_text_1), app.LocaleString (is_install ? IDS_TRAY_START : IDS_TRAY_STOP, nullptr));
+	_r_str_copy (button_text_2, _countof (button_text_2), app.LocaleString (IDS_CLOSE, nullptr));
 
 	td_buttons[0].nButtonID = IDYES;
 	td_buttons[0].pszButtonText = button_text_1;
@@ -614,16 +614,16 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 
 	if (is_install)
 	{
-		StringCchCopy (main, _countof (main), app.LocaleString (IDS_QUESTION_START, nullptr));
-		StringCchCopy (flag, _countof (flag), app.LocaleString (IDS_DISABLEWINDOWSFIREWALL_CHK, nullptr));
+		_r_str_copy (main, _countof (main), app.LocaleString (IDS_QUESTION_START, nullptr));
+		_r_str_copy (flag, _countof (flag), app.LocaleString (IDS_DISABLEWINDOWSFIREWALL_CHK, nullptr));
 
 		if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
 			tdc.dwFlags |= TDF_VERIFICATION_FLAG_CHECKED;
 	}
 	else
 	{
-		StringCchCopy (main, _countof (main), app.LocaleString (IDS_QUESTION_STOP, nullptr));
-		StringCchCopy (flag, _countof (flag), app.LocaleString (IDS_ENABLEWINDOWSFIREWALL_CHK, nullptr));
+		_r_str_copy (main, _countof (main), app.LocaleString (IDS_QUESTION_STOP, nullptr));
+		_r_str_copy (flag, _countof (flag), app.LocaleString (IDS_ENABLEWINDOWSFIREWALL_CHK, nullptr));
 
 		if (app.ConfigGet (L"IsEnableWindowsFirewallChecked", true).AsBool ())
 			tdc.dwFlags |= TDF_VERIFICATION_FLAG_CHECKED;
@@ -1174,7 +1174,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
 						const size_t idx = _r_listview_getitemlparam (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
-						StringCchCopy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((INT)lpnmlv->hdr.idFrom, idx));
+						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((INT)lpnmlv->hdr.idFrom, idx));
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
@@ -1187,7 +1187,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
 
 					lpnmlv->dwFlags = EMF_CENTERED;
-					StringCchCopy (lpnmlv->szMarkup, _countof (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
+					_r_str_copy (lpnmlv->szMarkup, _countof (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 					return TRUE;
@@ -2009,22 +2009,22 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						const INT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
 						if (ctrl_id == IDC_RULE_BLOCKOUTBOUND)
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_BLOCKOUTBOUND, nullptr));
+							_r_str_copy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_BLOCKOUTBOUND, nullptr));
 
 						else if (ctrl_id == IDC_RULE_BLOCKINBOUND)
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_BLOCKINBOUND, nullptr));
+							_r_str_copy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_BLOCKINBOUND, nullptr));
 
 						else if (ctrl_id == IDC_RULE_ALLOWLOOPBACK)
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_ALLOWLOOPBACK_HINT, nullptr));
+							_r_str_copy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_ALLOWLOOPBACK_HINT, nullptr));
 
 						else if (ctrl_id == IDC_USESTEALTHMODE_CHK)
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_USESTEALTHMODE_HINT, nullptr));
+							_r_str_copy (buffer, _countof (buffer), app.LocaleString (IDS_USESTEALTHMODE_HINT, nullptr));
 
 						else if (ctrl_id == IDC_INSTALLBOOTTIMEFILTERS_CHK)
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_INSTALLBOOTTIMEFILTERS_HINT, nullptr));
+							_r_str_copy (buffer, _countof (buffer), app.LocaleString (IDS_INSTALLBOOTTIMEFILTERS_HINT, nullptr));
 
 						else if (ctrl_id == IDC_SECUREFILTERS_CHK)
-							StringCchCopy (buffer, _countof (buffer), app.LocaleString (IDS_SECUREFILTERS_HINT, nullptr));
+							_r_str_copy (buffer, _countof (buffer), app.LocaleString (IDS_SECUREFILTERS_HINT, nullptr));
 
 						if (!_r_str_isempty (buffer))
 							lpnmdi->lpszText = buffer;
@@ -2146,7 +2146,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
 
 					lpnmlv->dwFlags = EMF_CENTERED;
-					StringCchCopy (lpnmlv->szMarkup, _countof (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
+					_r_str_copy (lpnmlv->szMarkup, _countof (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 					return TRUE;
@@ -2349,7 +2349,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						WCHAR path[MAX_PATH] = {0};
 						GetDlgItemText (hwnd, IDC_LOGPATH, path, _countof (path));
-						StringCchCopy (path, _countof (path), _r_path_expand (path));
+						_r_str_copy (path, _countof (path), _r_path_expand (path));
 
 						ofn.lStructSize = sizeof (ofn);
 						ofn.hwndOwner = hwnd;
@@ -2362,7 +2362,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						if (GetSaveFileName (&ofn))
 						{
-							StringCchCopy (path, _countof (path), _r_path_unexpand (path));
+							_r_str_copy (path, _countof (path), _r_path_unexpand (path));
 
 							app.ConfigSet (L"LogPath", path);
 							SetDlgItemText (hwnd, IDC_LOGPATH, path);
@@ -2383,7 +2383,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						WCHAR path[MAX_PATH] = {0};
 						GetDlgItemText (hwnd, IDC_LOGVIEWER, path, _countof (path));
-						StringCchCopy (path, _countof (path), _r_path_expand (path));
+						_r_str_copy (path, _countof (path), _r_path_expand (path));
 
 						ofn.lStructSize = sizeof (ofn);
 						ofn.hwndOwner = hwnd;
@@ -2396,7 +2396,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						if (GetOpenFileName (&ofn))
 						{
-							StringCchCopy (path, _countof (path), _r_path_unexpand (path));
+							_r_str_copy (path, _countof (path), _r_path_unexpand (path));
 
 							app.ConfigSet (L"LogViewer", path);
 							SetDlgItemText (hwnd, IDC_LOGVIEWER, path);
@@ -2746,18 +2746,18 @@ void _app_initialize ()
 	// static initializer
 	config.wd_length = GetWindowsDirectory (config.windows_dir, _countof (config.windows_dir));
 
-	StringCchPrintf (config.profile_path, _countof (config.profile_path), L"%s\\" XML_PROFILE, app.GetProfileDirectory ());
-	StringCchPrintf (config.profile_internal_path, _countof (config.profile_internal_path), L"%s\\" XML_PROFILE_INTERNAL, app.GetProfileDirectory ());
+	_r_str_printf (config.profile_path, _countof (config.profile_path), L"%s\\" XML_PROFILE, app.GetProfileDirectory ());
+	_r_str_printf (config.profile_internal_path, _countof (config.profile_internal_path), L"%s\\" XML_PROFILE_INTERNAL, app.GetProfileDirectory ());
 
-	StringCchCopy (config.profile_path_backup, _countof (config.profile_path_backup), _r_fmt (L"%s.bak", config.profile_path));
+	_r_str_copy (config.profile_path_backup, _countof (config.profile_path_backup), _r_fmt (L"%s.bak", config.profile_path));
 
-	StringCchPrintf (config.apps_path, _countof (config.apps_path), L"%s\\" XML_APPS, app.GetProfileDirectory ());
-	StringCchPrintf (config.rules_custom_path, _countof (config.rules_custom_path), L"%s\\" XML_RULES_CUSTOM, app.GetProfileDirectory ());
-	StringCchPrintf (config.rules_config_path, _countof (config.rules_config_path), L"%s\\" XML_RULES_CONFIG, app.GetProfileDirectory ());
+	_r_str_printf (config.apps_path, _countof (config.apps_path), L"%s\\" XML_APPS, app.GetProfileDirectory ());
+	_r_str_printf (config.rules_custom_path, _countof (config.rules_custom_path), L"%s\\" XML_RULES_CUSTOM, app.GetProfileDirectory ());
+	_r_str_printf (config.rules_config_path, _countof (config.rules_config_path), L"%s\\" XML_RULES_CONFIG, app.GetProfileDirectory ());
 
-	StringCchPrintf (config.apps_path_backup, _countof (config.apps_path_backup), L"%s\\" XML_APPS L".bak", app.GetProfileDirectory ());
-	StringCchPrintf (config.rules_config_path_backup, _countof (config.rules_config_path_backup), L"%s\\" XML_RULES_CONFIG L".bak", app.GetProfileDirectory ());
-	StringCchPrintf (config.rules_custom_path_backup, _countof (config.rules_custom_path_backup), L"%s\\" XML_RULES_CUSTOM L".bak", app.GetProfileDirectory ());
+	_r_str_printf (config.apps_path_backup, _countof (config.apps_path_backup), L"%s\\" XML_APPS L".bak", app.GetProfileDirectory ());
+	_r_str_printf (config.rules_config_path_backup, _countof (config.rules_config_path_backup), L"%s\\" XML_RULES_CONFIG L".bak", app.GetProfileDirectory ());
+	_r_str_printf (config.rules_custom_path_backup, _countof (config.rules_custom_path_backup), L"%s\\" XML_RULES_CUSTOM L".bak", app.GetProfileDirectory ());
 
 	config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME, INVALID_SIZE_T);
 	config.svchost_hash = _r_str_hash (_r_path_expand (PATH_SVCHOST), INVALID_SIZE_T);
@@ -2801,7 +2801,7 @@ void _app_initialize ()
 					DWORD length2 = _countof (domain);
 
 					if (LookupAccountSid (nullptr, token_user->User.Sid, username, &length1, domain, &length2, &sid_type))
-						StringCchPrintf (config.title, _countof (config.title), L"%s [%s\\%s]", APP_NAME, domain, username);
+						_r_str_printf (config.title, _countof (config.title), L"%s [%s\\%s]", APP_NAME, domain, username);
 				}
 
 				SAFE_DELETE_ARRAY (token_user);
@@ -2811,7 +2811,7 @@ void _app_initialize ()
 		}
 
 		if (_r_str_isempty (config.title))
-			StringCchCopy (config.title, _countof (config.title), APP_NAME); // fallback
+			_r_str_copy (config.title, _countof (config.title), APP_NAME); // fallback
 	}
 
 	// initialize timers
@@ -3544,7 +3544,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
 						const size_t idx = _r_listview_getitemlparam (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
-						StringCchCopy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((INT)lpnmlv->hdr.idFrom, idx));
+						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((INT)lpnmlv->hdr.idFrom, idx));
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
@@ -3653,7 +3653,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
 
 					lpnmlv->dwFlags = EMF_CENTERED;
-					StringCchCopy (lpnmlv->szMarkup, _countof (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
+					_r_str_copy (lpnmlv->szMarkup, _countof (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 					return TRUE;
@@ -3813,7 +3813,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								MENUITEMINFO mii = {0};
 
 								WCHAR buffer[128] = {0};
-								StringCchCopy (buffer, _countof (buffer), _r_fmt_interval (timers.at (i) + 1, 1));
+								_r_str_copy (buffer, _countof (buffer), _r_fmt_interval (timers.at (i) + 1, 1));
 
 								mii.cbSize = sizeof (mii);
 								mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
@@ -4328,10 +4328,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_IMPORT:
 				{
 					WCHAR path[MAX_PATH] = {0};
-					StringCchCopy (path, _countof (path), XML_PROFILE);
+					_r_str_copy (path, _countof (path), XML_PROFILE);
 
 					WCHAR title[MAX_PATH] = {0};
-					StringCchPrintf (title, _countof (title), L"%s %s...", app.LocaleString (IDS_IMPORT, nullptr).GetString (), path);
+					_r_str_printf (title, _countof (title), L"%s %s...", app.LocaleString (IDS_IMPORT, nullptr).GetString (), path);
 
 					OPENFILENAME ofn = {0};
 
@@ -4367,10 +4367,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_EXPORT:
 				{
 					WCHAR path[MAX_PATH] = {0};
-					StringCchCopy (path, _countof (path), XML_PROFILE);
+					_r_str_copy (path, _countof (path), XML_PROFILE);
 
 					WCHAR title[MAX_PATH] = {0};
-					StringCchPrintf (title, _countof (title), L"%s %s...", app.LocaleString (IDS_EXPORT, nullptr).GetString (), path);
+					_r_str_printf (title, _countof (title), L"%s %s...", app.LocaleString (IDS_EXPORT, nullptr).GetString (), path);
 
 					OPENFILENAME ofn = {0};
 
