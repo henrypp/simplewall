@@ -2777,8 +2777,8 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 
 	if (is_range)
 	{
-		StringCchCopy (range_start, _countof (range_start), rule.Midded (0, range_pos));
-		StringCchCopy (range_end, _countof (range_end), rule.Midded (range_pos + 1));
+		StringCchCopy (range_start, _countof (range_start), _r_str_extract (rule, rule.GetLength (), 0, range_pos));
+		StringCchCopy (range_end, _countof (range_end), _r_str_extract (rule, rule.GetLength (), range_pos + 1));
 	}
 
 	// auto-parse rule type
