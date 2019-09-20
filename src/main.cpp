@@ -1262,7 +1262,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								rstring& rule_single = rvc.at (i);
 
-								_r_str_trim (rule_single, L" " DIVIDER_RULE);
+								_r_str_trim (rule_single, DIVIDER_TRIM DIVIDER_RULE);
 
 								if (rule_single.IsEmpty () || !_app_parserulestring (rule_single, nullptr))
 								{
@@ -1274,6 +1274,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 								rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single.GetString ());
 							}
+
+							_r_str_trim (rule_remote_fixed, L" " DIVIDER_TRIM DIVIDER_RULE);
 
 							rule_remote = std::move (rule_remote_fixed);
 							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
@@ -1290,7 +1292,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							{
 								rstring& rule_single = rvc.at (i);
 
-								_r_str_trim (rule_single, L" " DIVIDER_RULE);
+								_r_str_trim (rule_single, L" " DIVIDER_TRIM DIVIDER_RULE);
 
 								if (rule_single.IsEmpty () || !_app_parserulestring (rule_single, nullptr))
 								{
@@ -1303,6 +1305,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								rule_local_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single.GetString ());
 							}
 
+							_r_str_trim (rule_local_fixed, L" " DIVIDER_TRIM DIVIDER_RULE);
+
 							rule_local = std::move (rule_local_fixed);
 							rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
 						}
@@ -1314,7 +1318,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						// set rule name
 						{
 							rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT);
-							_r_str_trim (name, DIVIDER_TRIM);
+							_r_str_trim (name, DIVIDER_TRIM DIVIDER_RULE);
 
 							if (!name.IsEmpty ())
 							{
