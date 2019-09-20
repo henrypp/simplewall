@@ -522,7 +522,7 @@ BEGIN
 	IDS_HIGHLIGHT_SERVICE "Windows service"
 	IDS_HIGHLIGHT_SIGNED "Signed app"
 	IDS_HIGHLIGHT_SILENT "Disabled notifications"
-	IDS_HIGHLIGHT_SPECIAL "Special rules"
+	IDS_HIGHLIGHT_SPECIAL "User rules"
 	IDS_HIGHLIGHT_SYSTEM "System app"
 	IDS_HIGHLIGHT_TIMER "Timer app"
 
@@ -560,6 +560,7 @@ BEGIN
 
 	IDS_ACTION_ALLOW "Allow"
 	IDS_ACTION_BLOCK "Block"
+	IDS_ACTION_IGNORE "Ignore"
 
 	IDS_DISABLE_CHK "Disable rule"
 	IDS_ENABLE_CHK "Enable for all apps"
@@ -588,7 +589,7 @@ BEGIN
 	IDS_STARTMINIMIZED_CHK "Start minimized"
 	IDS_SHOWFILENAMESONLY_CHK "Show filenames only"
 	IDS_AUTOSIZECOLUMNS_CHK "Autosize columns"
-	IDS_ENABLESPECIALGROUP_CHK "Group apps with user rules"
+	IDS_ENABLESPECIALGROUP_CHK "Enable group of user rules"
 	IDS_SKIPUACWARNING_CHK "Skip ""User Account Control"" prompt warning"
 	IDS_CHECKUPDATES_CHK "Periodically check for updates (recommended)"
 	IDS_CHECKUPDATESBETA_CHK "Update to beta versions"
@@ -635,7 +636,7 @@ BEGIN
 	IDS_NOTIFY_CREATERULE_ADDRESS "Create a rule for address ""%s"""
 	IDS_NOTIFY_CREATERULE_PORT "Create a rule for port ""%d"""
 	IDS_NOTIFY_DISABLENOTIFICATIONS "Disable notifications for this app"
-	IDS_NOTIFY_TOOLTIP "Create a special rule to allow access to an address and/or port for this application."
+	IDS_NOTIFY_TOOLTIP "Set user rule to allow access to an address and/or port for this application."
 
 	IDS_QUESTION "Are you sure?"
 	IDS_QUESTION_DELETE "Delete %d item(s)?"
@@ -674,11 +675,9 @@ BEGIN
 	IDS_RECOMMENDED "recommended"
 	IDS_ICONSISTABLEVIEW "Show as table"
 
-	IDS_ACTION_LATER "Block for now and ask me later"
-
-	IDS_ACTION_ALLOW_HINT "Always allow network access for this program"
-	IDS_ACTION_BLOCK_HINT "Always block network access for this program"
-	IDS_ACTION_LATER_HINT "Do nothing and ask me later"
+	IDS_ACTION_ALLOW_HINT "Allow access forever"
+	IDS_ACTION_BLOCK_HINT "Block access forever (till kingdom come!)"
+	IDS_ACTION_LATER_HINT "Ignore and ask me later"
 
 	IDS_RULE_APPLY_2 "Apply ""%s"" for this app"
 
@@ -731,7 +730,7 @@ IDP_ALLOW			PNG		"res\\accept_button.png"
 IDP_BLOCK			PNG		"res\\delete.png"
 IDP_CHECKED			PNG		"res\\check_box.png"
 IDP_UNCHECKED		PNG		"res\\check_box_uncheck.png"
-IDP_TIMER			PNG		"res\\clock.png"
+IDP_TIMER			PNG		"res\\clock_history_frame.png"
 IDP_SHIELD_ENABLE	PNG		"res\\tick_shield.png"
 IDP_SHIELD_DISABLE	PNG		"res\\cross_shield.png"
 IDP_REFRESH			PNG		"res\\arrow_refresh.png"
