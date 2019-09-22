@@ -24,8 +24,6 @@ bool _app_initinterfacestate (HWND hwnd, bool is_forced);
 void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
 void _app_setinterfacestate (HWND hwnd);
 
-void _app_explorefile (LPCWSTR path);
-
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags);
 
 void _app_freeobjects_map (OBJECTS_MAP& ptr_map, OBJECT_CLEANUP_CALLBACK cleanup_callback, bool is_forced);

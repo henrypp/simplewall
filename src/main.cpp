@@ -405,7 +405,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 				{
 					const INT item = _r_listview_getitemcount (hwnd, network_listview_id);
 
-					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_extractfile (ptr_network->path), ptr_network->icon_id, INVALID_INT, p.first);
+					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_getfilename (ptr_network->path), ptr_network->icon_id, INVALID_INT, p.first);
 
 					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
 					_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
@@ -953,7 +953,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_acquireshared (&lock_checkbox);
 
-					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_extractfile (ptr_app->display_name), ptr_app->icon_id, INVALID_INT, p.first);
+					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_getfilename (ptr_app->display_name), ptr_app->icon_id, INVALID_INT, p.first);
 					_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, is_enabled);
 
 					_r_fastlock_releaseshared (&lock_checkbox);
@@ -5009,7 +5009,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 								if (!_app_isappfound (app_hash))
 								{
-									_app_explorefile (ptr_network->path);
+									_r_path_explore (ptr_network->path);
 									_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 
 									continue;
@@ -5041,7 +5041,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (ctrl_id == IDM_EXPLORE)
 						{
 							if (ptr_app->type != DataAppPico && ptr_app->type != DataAppDevice)
-								_app_explorefile (ptr_app->real_path);
+								_r_path_explore (ptr_app->real_path);
 						}
 						else if (ctrl_id == IDM_DISABLENOTIFICATIONS)
 						{

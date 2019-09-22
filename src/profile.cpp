@@ -71,9 +71,9 @@ bool _app_setappinfo (size_t app_hash, EnumInfo info_key, LONG_PTR info_value)
 	return true;
 }
 
-size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t timer, time_t last_notify, bool is_silent, bool is_enabled, bool is_fromdb)
+size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t timer, time_t last_notify, bool is_silent, bool is_enabled, bool is_fromdb)
 {
-	if (path.IsEmpty () || path.At (0) == 0 || PathIsDirectory (path))
+	if (_r_str_isempty (path) || PathIsDirectory (path))
 		return 0;
 
 	// if file is shortcut - get location
@@ -83,12 +83,13 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 		{
 			path = _app_getshortcutpath (app.GetHWND (), path);
 
-			if (path.IsEmpty ())
+			if (_r_str_isempty (path))
 				return 0;
 		}
 	}
 
-	const size_t app_hash = path.Hash ();
+	const size_t app_length = _r_str_length (path);
+	const size_t app_hash = _r_str_hash (path, app_length);
 
 	if (_app_isappfound (app_hash))
 		return app_hash; // already exists
@@ -135,12 +136,8 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 		{
 			ptr_app->type = DataAppRegular;
 
-			if (is_ntoskrnl) // "system" process
-			{
-				path.At (0) = _r_str_upper (path.At (0)); // fix "System" lowercase
-
+			if (is_ntoskrnl) // "System" process
 				real_path = _r_path_expand (PATH_NTOSKRNL);
-			}
 		}
 	}
 
@@ -148,13 +145,17 @@ size_t _app_addapplication (HWND hwnd, rstring path, time_t timestamp, time_t ti
 	{
 		const DWORD dwAttr = GetFileAttributes (real_path);
 
-		const bool is_temp = (dwAttr != INVALID_FILE_ATTRIBUTES && ((dwAttr & FILE_ATTRIBUTE_TEMPORARY) == FILE_ATTRIBUTE_TEMPORARY));
-
-		ptr_app->is_system = !is_temp && (is_ntoskrnl || ((dwAttr != INVALID_FILE_ATTRIBUTES && (dwAttr & FILE_ATTRIBUTE_SYSTEM) == FILE_ATTRIBUTE_SYSTEM)) || (_r_str_compare (real_path, config.windows_dir, config.wd_length) == 0));
+		ptr_app->is_system = is_ntoskrnl || (dwAttr & FILE_ATTRIBUTE_SYSTEM) == FILE_ATTRIBUTE_SYSTEM || (_r_str_compare (real_path, config.windows_dir, config.wd_length) == 0);
 	}
 
-	_r_str_alloc (&ptr_app->original_path, path.GetLength (), path);
+	_r_str_alloc (&ptr_app->original_path, app_length, path);
 	_r_str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path);
+
+	if (is_ntoskrnl && !_r_str_isempty (ptr_app->original_path))
+	{
+		_r_str_tolower (ptr_app->original_path, INVALID_SIZE_T);
+		ptr_app->original_path[0] = _r_str_upper (ptr_app->original_path[0]); // fix "System" lowercase
+	}
 
 	// get display name
 	_app_getdisplayname (app_hash, ptr_app, &ptr_app->display_name);

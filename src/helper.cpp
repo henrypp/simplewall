@@ -138,24 +138,6 @@ void _app_setinterfacestate (HWND hwnd)
 	_r_tray_toggle (hwnd, UID, true);
 }
 
-void _app_explorefile (LPCWSTR path)
-{
-	if (_r_str_isempty (path))
-		return;
-
-	if (_r_fs_exists (path))
-	{
-		_r_run (nullptr, _r_fmt (L"\"explorer.exe\" /select,\"%s\"", path));
-	}
-	else
-	{
-		LPCWSTR dir = _r_path_extractdir (path);
-
-		if (_r_fs_exists (dir))
-			ShellExecute (nullptr, nullptr, dir, nullptr, nullptr, SW_SHOWDEFAULT);
-	}
-}
-
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR * ptr_dest, DWORD flags)
 {
 	if (!ptr_addr || !ptr_dest || (af != AF_INET && af != AF_INET6))
@@ -370,7 +352,7 @@ void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted
 
 	if (ptr_app->type == DataAppService)
 	{
-		_r_str_alloc (extracted_name, _r_str_length (ptr_app->original_path), ptr_app->original_path);
+		_r_str_alloc (extracted_name, INVALID_SIZE_T, ptr_app->original_path);
 	}
 	else if (ptr_app->type == DataAppUWP)
 	{
@@ -387,13 +369,13 @@ void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted
 
 		if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
 		{
-			const rstring path = _r_path_extractfile (ptr_path);
+			const rstring path = _r_path_getfilename (ptr_path);
 
 			_r_str_alloc (extracted_name, path.GetLength (), path);
 		}
 		else
 		{
-			_r_str_alloc (extracted_name, _r_str_length (ptr_path), ptr_path);
+			_r_str_alloc (extracted_name, INVALID_SIZE_T, ptr_path);
 		}
 	}
 }
