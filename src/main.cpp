@@ -399,6 +399,8 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 				if (!ptr_network_object)
 					continue;
 
+				SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, FALSE, 0);
+
 				PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
 				if (ptr_network)
@@ -432,6 +434,8 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 				_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
 
+				SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, TRUE, 0);
+
 				is_refresh = true;
 			}
 
@@ -446,6 +450,8 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 					if (checker_map.find (network_hash) == checker_map.end ())
 					{
+						SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, FALSE, 0);
+
 						SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
 						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[network_hash]);
@@ -471,6 +477,8 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 								}
 							}
 						}
+
+						SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, TRUE, 0);
 					}
 				}
 			}
