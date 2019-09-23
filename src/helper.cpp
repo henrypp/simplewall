@@ -369,9 +369,7 @@ void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted
 
 		if (app.ConfigGet (L"ShowFilenames", true).AsBool ())
 		{
-			const rstring path = _r_path_getfilename (ptr_path);
-
-			_r_str_alloc (extracted_name, path.GetLength (), path);
+			_r_str_alloc (extracted_name, INVALID_SIZE_T, _r_path_getfilename (ptr_path));
 		}
 		else
 		{
