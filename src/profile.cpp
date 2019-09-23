@@ -930,8 +930,6 @@ bool _app_isapphaveconnection (size_t app_hash)
 
 bool _app_isapphavedrive (INT letter)
 {
-	_r_fastlock_acquireshared (&lock_access);
-
 	for (auto &p : apps)
 	{
 		PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
@@ -954,16 +952,12 @@ bool _app_isapphavedrive (INT letter)
 			if (ptr_app->is_enabled || _app_isapphaverule (p.first))
 			{
 				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
-				_r_fastlock_releaseshared (&lock_access);
-
 				return true;
 			}
 		}
 
 		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
 	}
-
-	_r_fastlock_releaseshared (&lock_access);
 
 	return false;
 }

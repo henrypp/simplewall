@@ -4140,7 +4140,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							if (_wfp_isfiltersinstalled () && !_wfp_isfiltersapplying ())
 							{
-								if (_app_isapphavedrive (FirstDriveFromMask (lpdbv->dbcv_unitmask)))
+								_r_fastlock_acquireshared (&lock_access);
+								bool is_appexist = _app_isapphavedrive (FirstDriveFromMask (lpdbv->dbcv_unitmask));
+								_r_fastlock_releaseshared (&lock_access);
+
+								if (is_appexist)
 									_app_changefilters (hwnd, true, false);
 							}
 							else
