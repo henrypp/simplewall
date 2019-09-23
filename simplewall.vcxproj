@@ -319,6 +319,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\pugixml\src\pugixml.hpp" />
+    <ClInclude Include="..\routine\ntapi.hpp" />
     <ClInclude Include="..\routine\rapp.hpp" />
     <ClInclude Include="..\routine\rconfig.hpp" />
     <ClInclude Include="..\routine\routine.hpp" />
