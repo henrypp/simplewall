@@ -4142,6 +4142,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (_app_isapphavedrive (FirstDriveFromMask (lpdbv->dbcv_unitmask)))
 										_app_changefilters (hwnd, true, false);
 								}
+								else
+								{
+									if (IsWindowVisible (hwnd))
+										_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
+								}
 							}
 							else if (wparam == DBT_DEVICEREMOVECOMPLETE)
 							{
