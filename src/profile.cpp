@@ -928,6 +928,41 @@ bool _app_isapphaveconnection (size_t app_hash)
 	return false;
 }
 
+bool _app_isapphavedrive (INT letter)
+{
+	_r_fastlock_acquireshared (&lock_access);
+
+	for (auto &p : apps)
+	{
+		PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
+
+		if (!ptr_app_object)
+			continue;
+
+		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+
+		if (!ptr_app)
+		{
+			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+			continue;
+		}
+
+		INT drive_id = PathGetDriveNumber (ptr_app->original_path);
+
+		if (drive_id != INVALID_INT && drive_id == letter)
+		{
+			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+			return true;
+		}
+
+		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+	}
+
+	_r_fastlock_releaseshared (&lock_access);
+
+	return false;
+}
+
 bool _app_isapphaverule (size_t app_hash)
 {
 	if (!app_hash)

@@ -38,6 +38,7 @@ rstring _app_rulesexpandapps (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR d
 
 bool _app_isappfound (size_t app_hash);
 bool _app_isapphaveconnection (size_t app_hash);
+bool _app_isapphavedrive (INT letter);
 bool _app_isapphaverule (size_t app_hash);
 bool _app_isappused (ITEM_APP *ptr_app, size_t app_hash);
 bool _app_isappexists (ITEM_APP *ptr_app);
