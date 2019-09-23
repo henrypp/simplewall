@@ -4127,32 +4127,32 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case DBT_DEVICEARRIVAL:
 				case DBT_DEVICEREMOVECOMPLETE:
 				{
-					if (app.ConfigGet (L"IsRefreshDevices", true).AsBool ())
+					if (!app.ConfigGet (L"IsRefreshDevices", true).AsBool ())
+						break;
+
+					const PDEV_BROADCAST_HDR lbhdr = (PDEV_BROADCAST_HDR)lparam;
+
+					if (lbhdr && lbhdr->dbch_devicetype == DBT_DEVTYP_VOLUME)
 					{
-						const PDEV_BROADCAST_HDR lbhdr = (PDEV_BROADCAST_HDR)lparam;
+						PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lparam;
 
-						if (lbhdr && lbhdr->dbch_devicetype == DBT_DEVTYP_VOLUME)
+						if (wparam == DBT_DEVICEARRIVAL)
 						{
-							PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lparam;
-
-							if (wparam == DBT_DEVICEARRIVAL)
+							if (_wfp_isfiltersinstalled () && !_wfp_isfiltersapplying ())
 							{
-								if (_wfp_isfiltersinstalled () && !_wfp_isfiltersapplying ())
-								{
-									if (_app_isapphavedrive (FirstDriveFromMask (lpdbv->dbcv_unitmask)))
-										_app_changefilters (hwnd, true, false);
-								}
-								else
-								{
-									if (IsWindowVisible (hwnd))
-										_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
-								}
+								if (_app_isapphavedrive (FirstDriveFromMask (lpdbv->dbcv_unitmask)))
+									_app_changefilters (hwnd, true, false);
 							}
-							else if (wparam == DBT_DEVICEREMOVECOMPLETE)
+							else
 							{
 								if (IsWindowVisible (hwnd))
 									_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
 							}
+						}
+						else if (wparam == DBT_DEVICEREMOVECOMPLETE)
+						{
+							if (IsWindowVisible (hwnd))
+								_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
 						}
 					}
 
