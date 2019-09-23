@@ -2848,6 +2848,21 @@ void _app_initialize ()
 	config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
 }
 
+INT FirstDriveFromMask (DWORD unitmask)
+{
+	INT i;
+
+	for (i = 0; i < 26; ++i)
+	{
+		if (unitmask & 0x1)
+			break;
+
+		unitmask = unitmask >> 1;
+	}
+
+	return i;
+}
+
 INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	if (msg == WM_FINDMSGSTRING)
@@ -4112,16 +4127,21 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case DBT_DEVICEARRIVAL:
 				case DBT_DEVICEREMOVECOMPLETE:
 				{
-					if (app.ConfigGet (L"IsRefreshDevices", true).AsBool () && !_wfp_isfiltersapplying ())
+					if (app.ConfigGet (L"IsRefreshDevices", true).AsBool ())
 					{
 						const PDEV_BROADCAST_HDR lbhdr = (PDEV_BROADCAST_HDR)lparam;
 
 						if (lbhdr && lbhdr->dbch_devicetype == DBT_DEVTYP_VOLUME)
 						{
+							PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lparam;
+
 							if (wparam == DBT_DEVICEARRIVAL)
 							{
 								if (_wfp_isfiltersinstalled ())
-									_app_changefilters (hwnd, true, false);
+								{
+									if (_app_isapphavedrive (FirstDriveFromMask (lpdbv->dbcv_unitmask)))
+										_app_changefilters (hwnd, true, false);
+								}
 							}
 							else if (wparam == DBT_DEVICEREMOVECOMPLETE)
 							{
