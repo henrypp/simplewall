@@ -951,8 +951,13 @@ bool _app_isapphavedrive (INT letter)
 
 		if (drive_id != INVALID_INT && drive_id == letter)
 		{
-			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
-			return true;
+			if (ptr_app->is_enabled || _app_isapphaverule (p.first))
+			{
+				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+				_r_fastlock_releaseshared (&lock_access);
+
+				return true;
+			}
 		}
 
 		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);

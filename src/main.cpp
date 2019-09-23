@@ -4137,7 +4137,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (wparam == DBT_DEVICEARRIVAL)
 							{
-								if (_wfp_isfiltersinstalled ())
+								if (_wfp_isfiltersinstalled () && !_wfp_isfiltersapplying ())
 								{
 									if (_app_isapphavedrive (FirstDriveFromMask (lpdbv->dbcv_unitmask)))
 										_app_changefilters (hwnd, true, false);
