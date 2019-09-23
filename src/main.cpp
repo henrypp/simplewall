@@ -4182,7 +4182,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					return FALSE;
 
 				INT item = INVALID_INT;
-				BOOL is_remove = (BOOL)-1;
+				BOOL is_remove = INVALID_INT;
 
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
 				PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
@@ -4212,7 +4212,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							_app_freenotify (ptr_app, true);
 
-							if (is_remove == (BOOL)-1)
+							if (is_remove == INVALID_INT)
 								is_remove = ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ());
 
 							if (is_remove)
