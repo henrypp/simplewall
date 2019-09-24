@@ -1497,7 +1497,7 @@ rstring _app_getnetworkpath (DWORD pid, ULONG64 * pmodules, PINT picon_id, size_
 					*phash = 0;
 					*picon_id = config.icon_id;
 
-					proc_name.Clear ();
+					proc_name.Release ();
 				}
 
 				CloseHandle (hprocess);
@@ -1864,7 +1864,7 @@ void _app_generate_packages ()
 								display_name = name;
 
 							else
-								display_name.Clear ();
+								display_name.Release ();
 
 							if (SUCCEEDED (hrComInit))
 								CoUninitialize ();
