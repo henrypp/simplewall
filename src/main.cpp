@@ -379,7 +379,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 		HASHER_MAP checker_map;
 
-		network_timeout = std::clamp (network_timeout, 500ul, 60ul * 1000); // set allowed range
+		network_timeout = std::clamp (network_timeout, 500UL, 60UL * 1000); // set allowed range
 
 		while (true)
 		{
