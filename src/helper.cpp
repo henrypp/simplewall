@@ -249,7 +249,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	return !_r_str_isempty (formatted_address);
 }
 
-void _app_freeobjects_map (OBJECTS_MAP& ptr_map, OBJECT_CLEANUP_CALLBACK cleanup_callback, bool is_forced)
+void _app_freeobjects_map (OBJECTS_MAP& ptr_map, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback, bool is_forced)
 {
 	if (is_forced || ptr_map.size () >= UMAP_CACHE_LIMIT)
 	{
@@ -260,7 +260,7 @@ void _app_freeobjects_map (OBJECTS_MAP& ptr_map, OBJECT_CLEANUP_CALLBACK cleanup
 	}
 }
 
-void _app_freeobjects_vec (OBJECTS_VEC & ptr_vec, OBJECT_CLEANUP_CALLBACK cleanup_callback)
+void _app_freeobjects_vec (OBJECTS_VEC & ptr_vec, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback)
 {
 	for (size_t i = 0; i < ptr_vec.size (); i++)
 		_r_obj_dereference (ptr_vec.at (i), cleanup_callback);
