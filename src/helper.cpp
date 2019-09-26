@@ -57,7 +57,7 @@ INT _app_gettab_id (HWND hwnd, INT page_id)
 			page_id = 0;
 	}
 
-	SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEM, (WPARAM)page_id, (LPARAM)& tci);
+	SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEM, (WPARAM)page_id, (LPARAM)&tci);
 
 	return (INT)tci.lParam;
 }
@@ -81,7 +81,7 @@ void _app_settab_id (HWND hwnd, INT page_id)
 			hdr.hwndFrom = hwnd;
 			hdr.idFrom = IDC_TAB;
 
-			SendMessage (hwnd, WM_NOTIFY, 0, (LPARAM)& hdr);
+			SendMessage (hwnd, WM_NOTIFY, 0, (LPARAM)&hdr);
 
 			return;
 		}
@@ -318,7 +318,7 @@ void _app_getappicon (ITEM_APP* ptr_app, bool is_small, PINT picon_id, HICON * p
 				*picon_id = (ptr_app->type == DataAppService) ? config.icon_service_id : config.icon_id;
 
 			if (picon)
-				* picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
+				*picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
 		}
 
 		if (ptr_app->type == DataAppService)
@@ -445,11 +445,11 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 	{
 		if (SUCCEEDED (CoInitializeSecurity (nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_PKT_PRIVACY, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, 0, nullptr)))
 		{
-			if (SUCCEEDED (CoCreateInstance (CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)& psl)))
+			if (SUCCEEDED (CoCreateInstance (CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)&psl)))
 			{
 				IPersistFile* ppf = nullptr;
 
-				if (SUCCEEDED (psl->QueryInterface (IID_IPersistFile, (void**)& ppf)))
+				if (SUCCEEDED (psl->QueryInterface (IID_IPersistFile, (void**)&ppf)))
 				{
 					if (SUCCEEDED (ppf->Load (path, STGM_READ)))
 					{
@@ -458,7 +458,7 @@ rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
 							WIN32_FIND_DATA wfd = {0};
 							WCHAR buffer[MAX_PATH] = {0};
 
-							if (SUCCEEDED (psl->GetPath (buffer, _countof (buffer), (LPWIN32_FIND_DATA)& wfd, SLGP_RAWPATH)))
+							if (SUCCEEDED (psl->GetPath (buffer, _countof (buffer), (LPWIN32_FIND_DATA)&wfd, SLGP_RAWPATH)))
 								result = buffer;
 						}
 					}
@@ -2353,7 +2353,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
-	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)& _app_listviewcompare_callback);
+	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)&_app_listviewcompare_callback);
 }
 
 void _app_refreshstatus (HWND hwnd)
@@ -2452,7 +2452,7 @@ void _app_refreshstatus (HWND hwnd)
 					lvi.mask = LVIF_GROUPID;
 					lvi.iItem = i;
 
-					if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)& lvi))
+					if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)&lvi))
 					{
 						if (lvi.iGroupId == 0)
 							group1_count += 1;
@@ -3070,7 +3070,7 @@ INT _app_getposition (HWND hwnd, INT listview_id, size_t lparam)
 	lvfi.flags = LVFI_PARAM;
 	lvfi.lParam = lparam;
 
-	INT pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)INVALID_INT, (LPARAM)& lvfi);
+	INT pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)INVALID_INT, (LPARAM)&lvfi);
 
 	return pos;
 }
@@ -3200,7 +3200,7 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 		goto DoExit;
 
 	// Create the ImagingFactory
-	if (FAILED (CoCreateInstance (CLSID_WICImagingFactory1, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID*)& wicFactory)))
+	if (FAILED (CoCreateInstance (CLSID_WICImagingFactory1, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID*)&wicFactory)))
 		goto DoExit;
 
 	// Load the resource

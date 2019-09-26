@@ -133,7 +133,7 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 	}
 	else
 	{
-		SHGetImageList (icons_size, IID_IImageList2, (void**)& himg);
+		SHGetImageList (icons_size, IID_IImageList2, (void**)&himg);
 	}
 
 	if (himg)
@@ -796,7 +796,7 @@ LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
 			tbi.cbSize = sizeof (tbi);
 			tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
 
-			if ((INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)& tbi) == INVALID_INT)
+			if ((INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi) == INVALID_INT)
 				break;
 
 			if ((tbi.fsState & TBSTATE_ENABLED) == 0)
@@ -1827,7 +1827,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					UDACCEL ud = {0};
 					ud.nInc = 64; // set step to 64kb
 
-					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETACCEL, 1, (LPARAM)& ud);
+					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETACCEL, 1, (LPARAM)&ud);
 					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETRANGE32, 64, 8192);
 					SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_SETPOS32, 0, (LPARAM)app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT).AsUlong ());
 
@@ -2481,7 +2481,7 @@ LONG gettoolbarwidth ()
 
 	for (INT i = 0; i < (INT)SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_BUTTONCOUNT, 0, 0); i++)
 	{
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETITEMRECT, (WPARAM)i, (LPARAM)& btnRect);
+		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETITEMRECT, (WPARAM)i, (LPARAM)&btnRect);
 		totalWidth += _R_RECT_WIDTH (&btnRect);
 	}
 
@@ -2511,7 +2511,7 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 			RECT tab_rc2 = {0};
 
 			GetWindowRect (GetDlgItem (hwnd, IDC_TAB), &tab_rc1);
-			MapWindowPoints (nullptr, hwnd, (LPPOINT)& tab_rc1, 2);
+			MapWindowPoints (nullptr, hwnd, (LPPOINT)&tab_rc1, 2);
 
 			tab_rc2.right = width;
 			tab_rc2.bottom = height - rebar_height - statusbar_height;
@@ -2624,7 +2624,7 @@ void _app_toolbar_init (HWND hwnd)
 	REBARINFO ri = {0};
 	ri.cbSize = sizeof (ri);
 
-	SendMessage (config.hrebar, RB_SETBARINFO, 0, (LPARAM)& ri);
+	SendMessage (config.hrebar, RB_SETBARINFO, 0, (LPARAM)&ri);
 
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_BUTTONSTRUCTSIZE, sizeof (TBBUTTON), 0);
 
@@ -2707,13 +2707,13 @@ void _app_toolbar_init (HWND hwnd)
 
 	SIZE idealWidth = {0};
 
-	if (SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_GETIDEALSIZE, FALSE, (LPARAM)& idealWidth))
+	if (SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_GETIDEALSIZE, FALSE, (LPARAM)&idealWidth))
 	{
 		rbi.fMask |= RBBIM_IDEALSIZE;
 		rbi.cxIdeal = (UINT)idealWidth.cx;
 	}
 
-	SendMessage (config.hrebar, RB_INSERTBAND, 0, (LPARAM)& rbi);
+	SendMessage (config.hrebar, RB_INSERTBAND, 0, (LPARAM)&rbi);
 
 	BringWindowToTop (config.hrebar); // HACK!!!
 }
@@ -3218,7 +3218,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				rbi.fMask = RBBIM_IDEALSIZE;
 				rbi.cxIdeal = gettoolbarwidth ();
 
-				SendDlgItemMessage (hwnd, IDC_REBAR, RB_SETBANDINFO, 0, (LPARAM)& rbi);
+				SendDlgItemMessage (hwnd, IDC_REBAR, RB_SETBANDINFO, 0, (LPARAM)&rbi);
 			}
 
 			// localize tabs
@@ -3504,7 +3504,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						RECT tab_rc2 = {0};
 
 						GetWindowRect (GetDlgItem (hwnd, IDC_TAB), &tab_rc1);
-						MapWindowPoints (nullptr, hwnd, (LPPOINT)& tab_rc1, 2);
+						MapWindowPoints (nullptr, hwnd, (LPPOINT)&tab_rc1, 2);
 
 						GetClientRect (GetDlgItem (hwnd, IDC_TAB), &tab_rc2);
 
@@ -4742,7 +4742,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						fr.Flags = FR_FINDNEXT;
 						fr.lpstrFindWhat = config.search_string;
 
-						SendMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)& fr);
+						SendMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)&fr);
 					}
 
 					break;
@@ -5851,10 +5851,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 
 					if (layer)
-						FwpmFreeMemory ((void **)& layer);
+						FwpmFreeMemory ((void **)&layer);
 
 					if (filter)
-						FwpmFreeMemory ((void **)& filter);
+						FwpmFreeMemory ((void **)&filter);
 
 					LPCWSTR terminator = nullptr;
 

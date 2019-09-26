@@ -362,7 +362,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 		{
 			if (memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) == 0 || memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)) == 0)
 			{
-				FwpmFreeMemory ((void **)& layer);
+				FwpmFreeMemory ((void **)&layer);
 				return;
 			}
 			//else if (memcmp (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) == 0 || memcmp (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)) == 0)
@@ -370,7 +370,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 			//	direction = FWP_DIRECTION_INBOUND;
 			//}
 
-			FwpmFreeMemory ((void **)& layer);
+			FwpmFreeMemory ((void **)&layer);
 		}
 	}
 
@@ -404,10 +404,10 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id
 		}
 
 		if (ptr_filter)
-			FwpmFreeMemory ((void **)& ptr_filter);
+			FwpmFreeMemory ((void **)&ptr_filter);
 
 		if (ptr_provider)
-			FwpmFreeMemory ((void **)& ptr_provider);
+			FwpmFreeMemory ((void **)&ptr_provider);
 
 		// prevent filter "not found" items
 		if (filter_name.IsEmpty () && provider_name.IsEmpty ())

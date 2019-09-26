@@ -249,7 +249,7 @@ bool _wfp_initialize (bool is_full)
 			sublayer.displayData.name = APP_NAME;
 			sublayer.displayData.description = APP_NAME;
 
-			sublayer.providerKey = (LPGUID)& GUID_WfpProvider;
+			sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
 			sublayer.subLayerKey = GUID_WfpSublayer;
 			sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
 			sublayer.weight = (UINT16)app.ConfigGet (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT).AsUint (); // highest weight for UINT16
@@ -617,7 +617,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * l
 	if (flags)
 		filter.flags |= flags;
 
-	filter.providerKey = (LPGUID)& GUID_WfpProvider;
+	filter.providerKey = (LPGUID)&GUID_WfpProvider;
 	filter.subLayerKey = GUID_WfpSublayer;
 	CoCreateGuid (&filter.filterKey); // set filter guid
 
@@ -1584,7 +1584,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 		_wfp_createfilter (L"BlockListenConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, 0, &filter_ids);
 		_wfp_createfilter (L"BlockListenConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, 0, &filter_ids);
-}
+	}
 #endif // SW_USE_LISTEN_LAYER
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
@@ -1653,7 +1653,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
 
 	return true;
-	}
+}
 
 void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, UINT line)
 {
@@ -1716,7 +1716,7 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 						ptr_filters->push_back (matchingFwpFilter[i]->filterKey);
 				}
 
-				FwpmFreeMemory ((void**)& matchingFwpFilter);
+				FwpmFreeMemory ((void**)&matchingFwpFilter);
 			}
 			else
 			{
@@ -1743,7 +1743,7 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 	if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
 	{
 		INetFwPolicy2* pNetFwPolicy2 = nullptr;
-		HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (void**)& pNetFwPolicy2);
+		HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (void**)&pNetFwPolicy2);
 
 		if (SUCCEEDED (hr) && pNetFwPolicy2)
 		{
@@ -1873,7 +1873,7 @@ void _mps_changeconfig2 (bool is_enable)
 					DWORD dwBytesNeeded = 0;
 					SERVICE_STATUS_PROCESS ssp = {0};
 
-					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)& ssp, sizeof (ssp), &dwBytesNeeded))
+					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof (ssp), &dwBytesNeeded))
 					{
 						_app_logerror (L"QueryServiceStatusEx", GetLastError (), arr[i], false);
 					}
