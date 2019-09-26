@@ -5774,32 +5774,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				// Here is debugging content
 
-				case 997:
-				{
-					_r_msg (hwnd, MB_OK | MB_ICONINFORMATION, APP_NAME, L"fastlock information:", L"%s: %d\r\n%s: %d\r\n%s: %d\r\n%s: %d\r\n%s: %d\r\n%s: %d\r\n%s: %d\r\n%s: %d\r\n%s: %d",
-							L"lock_access",
-							_r_fastlock_islocked (&lock_access),
-							L"lock_apply",
-							_r_fastlock_islocked (&lock_apply),
-							L"lock_cache",
-							_r_fastlock_islocked (&lock_cache),
-							L"lock_checkbox",
-							_r_fastlock_islocked (&lock_checkbox),
-							L"lock_logbusy",
-							_r_fastlock_islocked (&lock_logbusy),
-							L"lock_logthread",
-							_r_fastlock_islocked (&lock_logthread),
-							L"lock_threadpool",
-							_r_fastlock_islocked (&lock_threadpool),
-							L"lock_transaction",
-							_r_fastlock_islocked (&lock_transaction),
-							L"lock_writelog",
-							_r_fastlock_islocked (&lock_writelog)
-					);
-
-					break;
-				}
-
 				case 998:
 				{
 					PITEM_LOG ptr_log = new ITEM_LOG;
