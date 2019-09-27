@@ -678,7 +678,7 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 		case CDDS_ITEMPREPAINT:
 		{
 			const bool is_tableview = (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
-			const INT listview_id = (INT)lpnmlv->nmcd.hdr.idFrom;
+			const INT listview_id = PtrToInt ((void*)lpnmlv->nmcd.hdr.idFrom);
 
 			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_APPS_LV || listview_id == IDC_NETWORK)
 			{
@@ -1129,7 +1129,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (lpnmlv->iItem == INVALID_INT)
 						break;
 
-					const INT listview_id = (INT)lpnmlv->hdr.idFrom;
+					const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
 
 					if (listview_id != IDC_APPS_LV)
 						break;
@@ -1151,8 +1151,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case LVN_COLUMNCLICK:
 				{
-					LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lparam;
-					_app_listviewsort (hwnd, (INT)pnmv->hdr.idFrom, pnmv->iSubItem, true);
+					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
+					_app_listviewsort (hwnd, PtrToInt ((void*)lpnmlv->hdr.idFrom), lpnmlv->iSubItem, true);
 
 					break;
 				}
@@ -1166,10 +1166,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (_r_fastlock_islocked (&lock_checkbox))
 							break;
 
-						const bool is_havechecks = !!_r_listview_getitemcount (hwnd, IDC_APPS_LV, true);
+						const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+
+						const bool is_havechecks = !!_r_listview_getitemcount (hwnd, listview_id, true);
 						CheckRadioButton (hwnd, IDC_DISABLE_CHK, IDC_ENABLEFORAPPS_CHK, is_havechecks ? IDC_ENABLEFORAPPS_CHK : IDC_DISABLE_CHK);
 
-						_app_listviewsort (hwnd, IDC_APPS_LV);
+						_app_listviewsort (hwnd, listview_id);
 					}
 
 					break;
@@ -1180,9 +1182,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (_r_fastlock_tryacquireshared (&lock_access))
 					{
 						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
-						const size_t idx = _r_listview_getitemlparam (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
-						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((INT)lpnmlv->hdr.idFrom, idx));
+						const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+
+						const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+
+						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (listview_id, idx));
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
@@ -2045,7 +2050,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
 
-					if (lpnmlv->hdr.idFrom != IDC_COLORS)
+					const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+
+					if (listview_id != IDC_COLORS)
 						break;
 
 					if (IsWindowVisible (lpnmlv->hdr.hwndFrom) && (lpnmlv->uChanged & LVIF_STATE) && (lpnmlv->uNewState == 8192 || lpnmlv->uNewState == 4096) && lpnmlv->uNewState != lpnmlv->uOldState)
@@ -2086,10 +2093,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					if (lpnmlv->iItem == INVALID_INT || nmlp->idFrom != IDC_COLORS)
+					const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+
+					if (lpnmlv->iItem == INVALID_INT || listview_id != IDC_COLORS)
 						break;
 
-					const size_t idx = _r_listview_getitemlparam (hwnd, (INT)nmlp->idFrom, lpnmlv->iItem);
+					const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
 					PR_OBJECT ptr_clr_object_current = _r_obj_reference (colors.at (idx));
 
 					PITEM_COLOR ptr_clr_current = nullptr;
@@ -2241,7 +2250,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-					}
+				}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
@@ -2464,12 +2473,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
-				}
 			}
+		}
 
 			break;
-		}
 	}
+}
 
 	return FALSE;
 }
@@ -3535,7 +3544,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					LONG result = CDRF_DODEFAULT;
 					LPNMLVCUSTOMDRAW lpnmcd = (LPNMLVCUSTOMDRAW)lparam;
 
-					if (lpnmcd->nmcd.hdr.idFrom == IDC_TOOLBAR)
+					const INT ctrl_id = PtrToInt ((void*)lpnmcd->nmcd.hdr.idFrom);
+
+					if (ctrl_id == IDC_TOOLBAR)
 					{
 						result = _app_nmcustdraw_toolbar (lpnmcd);
 					}
@@ -3554,8 +3565,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case LVN_COLUMNCLICK:
 				{
-					LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lparam;
-					_app_listviewsort (hwnd, (INT)pnmv->hdr.idFrom, pnmv->iSubItem, true);
+					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
+					_app_listviewsort (hwnd, PtrToInt ((void*)lpnmlv->hdr.idFrom), lpnmlv->iSubItem, true);
 
 					break;
 				}
@@ -3565,9 +3576,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (_r_fastlock_tryacquireshared (&lock_access))
 					{
 						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
-						const size_t idx = _r_listview_getitemlparam (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
-						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip ((INT)lpnmlv->hdr.idFrom, idx));
+						const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+						const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+
+						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (listview_id, idx));
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
@@ -3584,7 +3597,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (_r_fastlock_islocked (&lock_checkbox))
 							break;
 
-						const INT listview_id = (INT)lpnmlv->hdr.idFrom;
+						const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
 						bool is_changed = false;
 
 						const bool new_val = (lpnmlv->uNewState == 8192) ? true : false;
@@ -3690,8 +3703,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						break;
 
 					INT command_id = 0;
+					const INT ctrl_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
 
-					if (lpnmlv->hdr.idFrom == IDC_STATUSBAR)
+					if (ctrl_id == IDC_STATUSBAR)
 					{
 						LPNMMOUSE nmouse = (LPNMMOUSE)lparam;
 
@@ -3704,11 +3718,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						else if (nmouse->dwItemSpec == 2)
 							command_id = IDM_PURGE_TIMERS;
 					}
-					else if (lpnmlv->hdr.idFrom >= IDC_APPS_PROFILE && lpnmlv->hdr.idFrom <= IDC_APPS_UWP)
+					else if (ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP)
 					{
 						command_id = IDM_EXPLORE;
 					}
-					else if (lpnmlv->hdr.idFrom >= IDC_RULES_BLOCKLIST && lpnmlv->hdr.idFrom <= IDC_NETWORK)
+					else if (ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_NETWORK)
 					{
 						command_id = IDM_PROPERTIES;
 					}
@@ -3726,7 +3740,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (lpnmlv->iItem == INVALID_INT)
 						break;
 
-					const INT listview_id = (INT)lpnmlv->hdr.idFrom;
+					const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
 
 					UINT menu_id;
 
