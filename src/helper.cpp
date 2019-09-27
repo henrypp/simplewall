@@ -482,7 +482,7 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app)
 	if (!app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
 		return nullptr;
 
-	if (!app_hash || !ptr_app || _r_str_isempty (ptr_app->real_path))
+	if (!app_hash || !ptr_app || _r_str_isempty (ptr_app->real_path) || (ptr_app->type != DataAppRegular && ptr_app->type != DataAppService && ptr_app->type != DataAppUWP))
 		return nullptr;
 
 	_r_fastlock_acquireshared (&lock_cache);
