@@ -2393,7 +2393,7 @@ void _app_refreshstatus (HWND hwnd)
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
 		static const INT parts_count = 3;
-		static const INT spacing = GetSystemMetrics (SM_CYSMCAPTION);
+		static const INT spacing = _r_dc_getdpi (12);
 
 		rstring text[parts_count];
 		INT parts[parts_count] = {0};
