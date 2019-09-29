@@ -25,6 +25,7 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
 void _app_setinterfacestate (HWND hwnd);
 
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags);
+rstring _app_formatport (UINT16 port, LPCWSTR empty_text);
 
 void _app_freeobjects_map (OBJECTS_MAP& ptr_map, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback, bool is_forced);
 void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback);
@@ -37,7 +38,7 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON* picon)
 rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path);
 PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app);
 PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app);
-rstring _app_getservicename (UINT16 port);
+rstring _app_getservicename (UINT16 port, LPCWSTR empty_text);
 rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af);
 rstring _app_getstatename (DWORD state);
 

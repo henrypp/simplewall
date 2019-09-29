@@ -192,7 +192,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	}
 
 	if (port)
-		_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%d" : L"%d", port));
+		_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%" PRIu16 : L"%" PRIu16, port));
 
 	if ((flags & FMTADDR_RESOLVE_HOST) == FMTADDR_RESOLVE_HOST)
 	{
@@ -247,6 +247,30 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	_r_str_alloc (ptr_dest, _r_str_length (formatted_address), formatted_address);
 
 	return !_r_str_isempty (formatted_address);
+}
+
+rstring _app_formatport (UINT16 port, LPCWSTR empty_text)
+{
+	if (!port)
+		return empty_text;
+
+	rstring result;
+
+	if (_r_str_isempty (empty_text))
+	{
+		result.Format (L"%" PRIu16, port);
+
+		rstring service_name = _app_getservicename (port, nullptr);
+
+		if (!service_name.IsEmpty ())
+			result.AppendFormat (L" (%s)", service_name.GetString ());
+	}
+	else
+	{
+		result.Format (L"%" PRIu16 " (%s)", port, _app_getservicename (port, SZ_UNKNOWN).GetString ());
+	}
+
+	return result;
 }
 
 void _app_freeobjects_map (OBJECTS_MAP& ptr_map, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback, bool is_forced)
@@ -695,11 +719,8 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 	return ptr_cache_object;
 }
 
-rstring _app_getservicename (UINT16 port)
+rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 {
-	if (!port)
-		return SZ_EMPTY;
-
 	switch (port)
 	{
 		case 1:
@@ -1304,7 +1325,7 @@ rstring _app_getservicename (UINT16 port)
 			return L"traceroute";
 	}
 
-	return SZ_UNKNOWN;
+	return empty_text;
 }
 
 rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af)
@@ -1628,8 +1649,8 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 						ptr_network->is_connection = true;
 				}
 
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
-				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, 0, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
 
 				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
 				checker_map[net_hash] = true;
@@ -1682,8 +1703,8 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 						ptr_network->is_connection = true;
 				}
 
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
-				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr6, ptr_network->remote_port, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr6, 0, &ptr_network->remote_fmt, FMTADDR_RESOLVE_HOST);
 
 				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
 				checker_map[net_hash] = true;
@@ -1733,7 +1754,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
 					ptr_network->is_connection = true;
 
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 
 				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
 				checker_map[net_hash] = true;
@@ -1780,7 +1801,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
 					ptr_network->is_connection = true;
 
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, ptr_network->local_port, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
+				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, FMTADDR_RESOLVE_HOST);
 
 				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
 				checker_map[net_hash] = true;
