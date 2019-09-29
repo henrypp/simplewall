@@ -332,7 +332,7 @@ bool _wfp_logunsubscribe ()
 	return false;
 }
 
-void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 *app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 const* remote_addr, UINT16 remote_port, UINT32 const* local_addr, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
+void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 const* remote_addr, UINT16 remote_port, UINT32 const* local_addr, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
 {
 	if (!config.hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
 		return;
