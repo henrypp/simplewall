@@ -72,7 +72,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 
 	if (column_count)
 	{
-		const INT column_max_width = _r_dc_getdpi (85);
+		static const INT column_max_width = _r_dc_getdpi (120);
 		INT column_min_width;
 
 		INT column_width;
