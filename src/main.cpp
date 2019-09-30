@@ -577,7 +577,7 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 	{
 		_r_str_alloc (&ptr_clr->pcfg_value, _r_str_length (config_value), config_value);
 
-		ptr_clr->clr_hash = _r_str_hash (config_value, INVALID_SIZE_T);
+		ptr_clr->clr_hash = _r_str_hash (config_value);
 		ptr_clr->new_clr = app.ConfigGet (config_value, default_clr, L"colors").AsUlong ();
 	}
 
@@ -732,10 +732,10 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 					COLORREF new_clr = 0;
 
 					if (ptr_rule->is_enabled && ptr_rule->is_haveerrors)
-						new_clr = _app_getcolorvalue (_r_str_hash (L"ColorInvalid", INVALID_SIZE_T));
+						new_clr = _app_getcolorvalue (_r_str_hash (L"ColorInvalid"));
 
 					else if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
-						new_clr = _app_getcolorvalue (_r_str_hash (L"ColorSpecial", INVALID_SIZE_T));
+						new_clr = _app_getcolorvalue (_r_str_hash (L"ColorSpecial"));
 
 					if (new_clr)
 					{
@@ -2780,9 +2780,9 @@ void _app_initialize ()
 	_r_str_printf (config.rules_config_path_backup, _countof (config.rules_config_path_backup), L"%s\\" XML_RULES_CONFIG L".bak", app.GetProfileDirectory ());
 	_r_str_printf (config.rules_custom_path_backup, _countof (config.rules_custom_path_backup), L"%s\\" XML_RULES_CUSTOM L".bak", app.GetProfileDirectory ());
 
-	config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME, INVALID_SIZE_T);
-	config.svchost_hash = _r_str_hash (_r_path_expand (PATH_SVCHOST), INVALID_SIZE_T);
-	config.my_hash = _r_str_hash (app.GetBinaryPath (), INVALID_SIZE_T);
+	config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME);
+	config.svchost_hash = _r_str_hash (_r_path_expand (PATH_SVCHOST));
+	config.my_hash = _r_str_hash (app.GetBinaryPath ());
 
 	// get the Administrators group security identifier
 	if (!config.padminsid)

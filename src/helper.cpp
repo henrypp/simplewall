@@ -198,7 +198,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	{
 		if (result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ())
 		{
-			const size_t addr_hash = _r_str_hash (formatted_address, INVALID_SIZE_T);
+			const size_t addr_hash = _r_str_hash (formatted_address);
 
 			if (addr_hash)
 			{
@@ -1567,7 +1567,7 @@ size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWO
 		return 0;
 	}
 
-	return _r_str_hash (_r_fmt (L"%" PRIu8 L"_%" PRId32 L"_%s_%" PRId32 L"_%s_%" PRId32 L"_%" PRIu8 "_%" PRId32, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state), INVALID_SIZE_T);
+	return _r_str_hash (_r_fmt (L"%" PRIu8 L"_%" PRId32 L"_%s_%" PRId32 L"_%s_%" PRId32 L"_%" PRIu8 "_%" PRId32, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
 }
 
 bool _app_isvalidconnection (ADDRESS_FAMILY af, PVOID paddr)
@@ -1863,7 +1863,7 @@ void _app_generate_packages ()
 					continue;
 				}
 
-				const size_t app_hash = _r_str_hash (package_sid_string, package_sid_string.GetLength ());
+				const size_t app_hash = _r_str_hash (package_sid_string);
 
 				if (apps_helper.find (app_hash) != apps_helper.end ())
 				{
@@ -1992,7 +1992,7 @@ void _app_generate_services ()
 
 			time_t timestamp = 0;
 
-			const size_t app_hash = _r_str_hash (service_name, INVALID_SIZE_T);
+			const size_t app_hash = _r_str_hash (service_name);
 
 			if (apps_helper.find (app_hash) != apps_helper.end ())
 				continue;
@@ -2082,7 +2082,7 @@ void _app_generate_services ()
 				_r_str_alloc (&ptr_item->real_path, _r_str_length (real_path), real_path);
 				_r_str_alloc (&ptr_item->internal_name, _r_str_length (service_name), service_name);
 
-				_r_str_toupper (sidstring.GetBuffer (), sidstring.GetLength ());
+				_r_str_toupper (sidstring.GetBuffer ());
 
 				if (
 					!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()), SDDL_REVISION_1, &ptr_item->pdata, nullptr) ||
@@ -2703,7 +2703,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 		{
 			if (paddr_dns)
 			{
-				const size_t dns_hash = _r_str_hash (ni.NamedAddress.Address, INVALID_SIZE_T);
+				const size_t dns_hash = _r_str_hash (ni.NamedAddress.Address);
 
 				_r_fastlock_acquireshared (&lock_cache);
 				const bool is_exists = cache_dns.find (dns_hash) != cache_dns.end ();
@@ -3000,7 +3000,7 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 
 	if (pstraddr)
 	{
-		const size_t arpa_hash = _r_str_hash (pstraddr, INVALID_SIZE_T);
+		const size_t arpa_hash = _r_str_hash (pstraddr);
 
 		_r_fastlock_acquireshared (&lock_cache);
 		const bool is_exists = cache_arpa.find (arpa_hash) != cache_arpa.end ();

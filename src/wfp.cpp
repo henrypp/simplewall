@@ -1287,7 +1287,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 
 			if (ptr_app->is_enabled)
 			{
-				if (!_wfp_createrulefilter (hengine, ptr_app->display_name, _r_str_hash (ptr_app->original_path, INVALID_SIZE_T), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &guids))
+				if (!_wfp_createrulefilter (hengine, ptr_app->display_name, _r_str_hash (ptr_app->original_path), nullptr, nullptr, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, &guids))
 					is_haveerrors = true;
 			}
 
@@ -1910,7 +1910,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 	{
 		path_buff = path;
 
-		if (_r_str_hash (path, INVALID_SIZE_T) == config.ntoskrnl_hash)
+		if (_r_str_hash (path) == config.ntoskrnl_hash)
 		{
 			if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
 				return ERROR_SUCCESS;
@@ -1950,7 +1950,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 
 					path_buff.Append (path_noroot);
 
-					_r_str_tolower (path_buff.GetBuffer (), path_buff.GetLength ()); // lower is important!
+					_r_str_tolower (path_buff.GetBuffer ()); // lower is important!
 				}
 			}
 			else if (rc != ERROR_SUCCESS)
@@ -1967,7 +1967,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 		path_buff = path;
 
 		if (type == DataAppDevice)
-			_r_str_tolower (path_buff.GetBuffer (), path_buff.GetLength ()); // lower is important!
+			_r_str_tolower (path_buff.GetBuffer ()); // lower is important!
 
 		if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
 			return ERROR_SUCCESS;

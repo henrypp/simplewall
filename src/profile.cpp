@@ -89,7 +89,7 @@ size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	}
 
 	const size_t app_length = _r_str_length (path);
-	const size_t app_hash = _r_str_hash (path, app_length);
+	const size_t app_hash = _r_str_hash (path);
 
 	if (_app_isappfound (app_hash))
 		return app_hash; // already exists
@@ -153,7 +153,7 @@ size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 
 	if (is_ntoskrnl && !_r_str_isempty (ptr_app->original_path))
 	{
-		_r_str_tolower (ptr_app->original_path, INVALID_SIZE_T);
+		_r_str_tolower (ptr_app->original_path);
 		ptr_app->original_path[0] = _r_str_upper (ptr_app->original_path[0]); // fix "System" lowercase
 	}
 
@@ -236,7 +236,7 @@ PR_OBJECT _app_getrulebyhash (size_t rule_hash)
 		{
 			if (ptr_rule->is_readonly)
 			{
-				if (ptr_rule->pname && _r_str_hash (ptr_rule->pname, INVALID_SIZE_T) == rule_hash)
+				if (ptr_rule->pname && _r_str_hash (ptr_rule->pname) == rule_hash)
 					return ptr_rule_object;
 			}
 		}
@@ -650,7 +650,7 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 
 	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->pname))
 	{
-		const size_t rule_hash = _r_str_hash (ptr_rule->pname, INVALID_SIZE_T);
+		const size_t rule_hash = _r_str_hash (ptr_rule->pname);
 
 		if (rule_hash)
 		{
@@ -703,7 +703,7 @@ void _app_ruleenable2 (PITEM_RULE ptr_rule, bool is_enable)
 
 	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->pname))
 	{
-		const size_t rule_hash = _r_str_hash (ptr_rule->pname, INVALID_SIZE_T);
+		const size_t rule_hash = _r_str_hash (ptr_rule->pname);
 
 		if (rule_hash)
 		{
@@ -1014,7 +1014,7 @@ bool _app_isappexists (ITEM_APP* ptr_app)
 		return !_r_str_isempty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path);
 
 	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
-		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path, INVALID_SIZE_T), nullptr, nullptr, nullptr, nullptr);
+		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path), nullptr, nullptr, nullptr, nullptr);
 
 	return true;
 }
@@ -1161,7 +1161,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 		{
 			PITEM_RULE ptr_rule = new ITEM_RULE;
 
-			const size_t rule_hash = _r_str_hash (item.attribute (L"name").as_string (), INVALID_SIZE_T);
+			const size_t rule_hash = _r_str_hash (item.attribute (L"name").as_string ());
 
 			PR_OBJECT ptr_config_object = nullptr;
 			PITEM_RULE_CONFIG ptr_config = nullptr;
@@ -1245,7 +1245,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 				if (!apps_rule.IsEmpty ())
 				{
 					if (version < XML_PROFILE_VER_3)
-						_r_str_replace (apps_rule.GetBuffer (), apps_rule.GetLength (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
+						_r_str_replace (apps_rule.GetBuffer (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
 					rstringvec rvc;
 					_r_str_split (apps_rule, apps_rule.GetLength (), DIVIDER_APP[0], rvc);
@@ -1312,7 +1312,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 				rstring attr_apps = item.attribute (L"apps").as_string ();
 
 				if (version < XML_PROFILE_VER_3)
-					_r_str_replace (attr_apps.GetBuffer (), attr_apps.GetLength (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
+					_r_str_replace (attr_apps.GetBuffer (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
 				_r_str_alloc (&ptr_config->pname, rule_name.GetLength (), rule_name);
 				_r_str_alloc (&ptr_config->papps, attr_apps.GetLength (), attr_apps);
@@ -1837,7 +1837,7 @@ void _app_profile_save (LPCWSTR path_custom)
 				bool is_enabled_default = ptr_config->is_enabled;
 
 				{
-					const size_t rule_hash = _r_str_hash (ptr_config->pname, INVALID_SIZE_T);
+					const size_t rule_hash = _r_str_hash (ptr_config->pname);
 					PR_OBJECT ptr_rule_object = _app_getrulebyhash (rule_hash);
 
 					if (ptr_rule_object)
