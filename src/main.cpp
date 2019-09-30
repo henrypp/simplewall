@@ -985,10 +985,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				_app_listviewsort (hwnd, IDC_APPS_LV);
 
 				// resize column
-				RECT rc = {0};
-				GetClientRect (GetDlgItem (hwnd, IDC_APPS_LV), &rc);
-
-				_r_listview_setcolumn (hwnd, IDC_APPS_LV, 0, nullptr, _R_RECT_WIDTH (&rc));
+				_r_listview_setcolumn (hwnd, IDC_APPS_LV, 0, nullptr, -100);
 			}
 
 			if (ptr_rule->type != DataRuleCustom)
@@ -1775,7 +1772,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					_r_listview_deleteallitems (hwnd, IDC_COLORS);
 					_r_listview_deleteallcolumns (hwnd, IDC_COLORS);
 
-					_r_listview_addcolumn (hwnd, IDC_COLORS, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
+					_r_listview_addcolumn (hwnd, IDC_COLORS, 0, nullptr, 0, LVCFMT_LEFT);
 
 					INT item = 0;
 
@@ -1805,10 +1802,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						}
 					}
 
-					RECT rc = {0};
-					GetClientRect (GetDlgItem (hwnd, IDC_COLORS), &rc);
-
-					_r_listview_setcolumn (hwnd, IDC_COLORS, 0, nullptr, _R_RECT_WIDTH (&rc));
+					_r_listview_setcolumn (hwnd, IDC_COLORS, 0, nullptr, -100);
 
 					break;
 				}
