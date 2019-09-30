@@ -54,7 +54,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 	GetClientRect (GetDlgItem (hwnd, listview_id), &rect);
 
 	const INT total_width = is_forced ? _R_RECT_WIDTH (&rect) - GetSystemMetrics (SM_CXVSCROLL) : _R_RECT_WIDTH (&rect);
-	static const INT caption_spacing = GetSystemMetrics (SM_CYSMCAPTION);
+	static const INT spacing = _r_dc_getdpi (16);
 
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 	const HWND hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
@@ -72,31 +72,33 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 
 	if (column_count)
 	{
-		const INT column_max_width = _R_PERCENT_VAL (20, total_width);
-		const INT column_min_width = _R_PERCENT_VAL (2, total_width);
+		const INT column_max_width = _r_dc_getdpi (85);
+		INT column_min_width;
 
 		INT column_width;
 		INT calculated_width = 0;
 
 		for (INT i = column_count - 1; i != INVALID_INT; i--)
 		{
+			// get column text width
+			{
+				const rstring column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
+				column_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + spacing;
+				column_min_width = column_width;
+			}
+
 			if (i == 0)
 			{
-				column_width = (total_width - calculated_width);
+				column_width = std::clamp (total_width - calculated_width, column_min_width, total_width);
 			}
 			else
 			{
-				{
-					const rstring column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
-					column_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + caption_spacing;
-				}
-
 				if (is_tableview)
 				{
 					for (INT j = 0; j < item_count; j++)
 					{
 						const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
-						const INT text_width = _r_dc_fontwidth (hdc_listview, item_text, item_text.GetLength ()) + caption_spacing;
+						const INT text_width = _r_dc_fontwidth (hdc_listview, item_text, item_text.GetLength ()) + spacing;
 
 						if (text_width > column_width)
 							column_width = text_width;
@@ -410,9 +412,15 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_getfilename (ptr_network->path), ptr_network->icon_id, INVALID_INT, p.first);
 
 					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
-					_r_listview_setitem (hwnd, network_listview_id, item, 2, ptr_network->remote_fmt);
-					_r_listview_setitem (hwnd, network_listview_id, item, 3, _app_getprotoname (ptr_network->protocol, ptr_network->af));
-					_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_getstatename (ptr_network->state));
+					_r_listview_setitem (hwnd, network_listview_id, item, 3, ptr_network->remote_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item, 5, _app_getprotoname (ptr_network->protocol, ptr_network->af));
+					_r_listview_setitem (hwnd, network_listview_id, item, 6, _app_getstatename (ptr_network->state));
+
+					if (ptr_network->local_port)
+						_r_listview_setitem (hwnd, network_listview_id, item, 2, _app_formatport (ptr_network->local_port, nullptr));
+
+					if (ptr_network->remote_port)
+						_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_formatport (ptr_network->remote_port, nullptr));
 
 					// redraw listview item
 					if (is_highlighting_enabled)
@@ -2250,7 +2258,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
 #endif
-				}
+					}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
 						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
@@ -2473,12 +2481,12 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					}
 
 					break;
+				}
 			}
-		}
 
 			break;
+		}
 	}
-}
 
 	return FALSE;
 }
@@ -2594,14 +2602,14 @@ void _app_tabs_init (HWND hwnd)
 
 			if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 			{
-				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
-				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDED, nullptr), 0, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 0, L"", 0, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, listview_id, 1, L"", 0, LVCFMT_RIGHT);
 			}
 			else
 			{
-				_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
-				_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_PROTOCOL, nullptr), 0, LVCFMT_RIGHT);
-				_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_DIRECTION, nullptr), 0, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 0, L"", 0, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, listview_id, 1, L"", 0, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 2, L"", 0, LVCFMT_RIGHT);
 			}
 
 			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE);
@@ -2612,11 +2620,13 @@ void _app_tabs_init (HWND hwnd)
 		{
 			_r_listview_setstyle (hwnd, listview_id, listview_ex_style & ~LVS_EX_CHECKBOXES); // no checkboxes for network tab
 
-			_r_listview_addcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), 0, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), 0, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 0, L"", 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 1, L"", 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 2, L"", 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 3, L"", 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 4, L"", 0, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 5, L"", 0, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 6, L"", 0, LVCFMT_RIGHT);
 		}
 
 		_app_listviewsetfont (hwnd, listview_id, false);
@@ -3318,9 +3328,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					_r_listview_setcolumn (hwnd, listview_id, 0, app.LocaleString (IDS_NAME, nullptr), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 1, app.LocaleString (IDS_ADDRESS_LOCAL, nullptr), 0);
-					_r_listview_setcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0);
-					_r_listview_setcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_PROTOCOL, nullptr), 0);
-					_r_listview_setcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_STATE, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 2, app.LocaleString (IDS_PORT, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 3, app.LocaleString (IDS_ADDRESS_REMOTE, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 4, app.LocaleString (IDS_PORT, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 5, app.LocaleString (IDS_PROTOCOL, nullptr), 0);
+					_r_listview_setcolumn (hwnd, listview_id, 6, app.LocaleString (IDS_STATE, nullptr), 0);
 				}
 
 				SendDlgItemMessage (hwnd, listview_id, LVM_RESETEMPTYTEXT, 0, 0);
@@ -3365,8 +3377,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_app_freeobjects_map (rules_config, &_app_dereferenceruleconfig, true);
 
-			_r_fs_move_backup (config.profile_path, current_timestamp);
-			_r_fs_move_backup (config.profile_path_backup, current_timestamp);
+			_r_fs_makebackup (config.profile_path, current_timestamp);
+			_r_fs_makebackup (config.profile_path_backup, current_timestamp);
 
 			_app_profile_load (hwnd);
 
