@@ -120,7 +120,7 @@ void _app_logwrite (PITEM_LOG ptr_log)
 				}
 			}
 
-			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+			_r_obj_dereference (ptr_app_object);
 		}
 	}
 
@@ -554,7 +554,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 
 		// push into a slist
 		{
-			ptr_entry->Body = _r_obj_allocate (ptr_log);
+			ptr_entry->Body = _r_obj_allocate (ptr_log, &_app_dereferencelog);
 
 			InterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
 			const LONG new_item_count = InterlockedIncrement (&log_stack.item_count);
@@ -845,7 +845,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 		if (!ptr_log)
 		{
-			_r_obj_dereference (ptr_log_object, &_app_dereferencelog);
+			_r_obj_dereference (ptr_log_object);
 			continue;
 		}
 
@@ -908,13 +908,13 @@ UINT WINAPI LogThread (LPVOID lparam)
 								_app_notifyadd (config.hnotification, _r_obj_reference (ptr_log_object), ptr_app);
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 				}
 			}
 		}
 
-		_r_obj_dereference (ptr_log_object, &_app_dereferencelog);
+		_r_obj_dereference (ptr_log_object);
 	}
 
 	_r_fastlock_releaseshared (&lock_logthread);

@@ -217,7 +217,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 						if (ptr_cache_object->pdata)
 							_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", (LPCWSTR)ptr_cache_object->pdata));
 
-						_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
+						_r_obj_dereference (ptr_cache_object);
 					}
 				}
 				else
@@ -232,8 +232,8 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 						_r_fastlock_acquireexclusive (&lock_cache);
 
-						_app_freeobjects_map (cache_hosts, &_app_dereferencestring, false);
-						cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache);
+						_app_freeobjects_map (cache_hosts, false);
+						cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
 						_r_obj_reference (cache_hosts[addr_hash]);
 
@@ -273,21 +273,21 @@ rstring _app_formatport (UINT16 port, LPCWSTR empty_text)
 	return result;
 }
 
-void _app_freeobjects_map (OBJECTS_MAP& ptr_map, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback, bool is_forced)
+void _app_freeobjects_map (OBJECTS_MAP& ptr_map, bool is_forced)
 {
 	if (is_forced || ptr_map.size () >= UMAP_CACHE_LIMIT)
 	{
 		for (auto &p : ptr_map)
-			_r_obj_dereference (p.second, cleanup_callback);
+			_r_obj_dereference (p.second);
 
 		ptr_map.clear ();
 	}
 }
 
-void _app_freeobjects_vec (OBJECTS_VEC & ptr_vec, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback)
+void _app_freeobjects_vec (OBJECTS_VEC & ptr_vec)
 {
 	for (size_t i = 0; i < ptr_vec.size (); i++)
-		_r_obj_dereference (ptr_vec.at (i), cleanup_callback);
+		_r_obj_dereference (ptr_vec.at (i));
 
 	ptr_vec.clear ();
 }
@@ -324,7 +324,7 @@ void _app_freelogstack ()
 
 		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (listEntry, ITEM_LIST_ENTRY, ListEntry);
 
-		_r_obj_dereference (ptr_entry->Body, &_app_dereferencelog);
+		_r_obj_dereference (ptr_entry->Body);
 
 		_aligned_free (ptr_entry);
 	}
@@ -573,8 +573,8 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app)
 								{
 									_r_fastlock_acquireexclusive (&lock_cache);
 
-									_app_freeobjects_map (cache_signatures, &_app_dereferencestring, false);
-									cache_signatures[app_hash] = _r_obj_allocate (ptr_cache);
+									_app_freeobjects_map (cache_signatures, false);
+									cache_signatures[app_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
 									ptr_cache_object = _r_obj_reference (cache_signatures[app_hash]);
 
@@ -699,8 +699,8 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 						{
 							_r_fastlock_acquireexclusive (&lock_cache);
 
-							_app_freeobjects_map (cache_versions, &_app_dereferencestring, false);
-							cache_versions[app_hash] = _r_obj_allocate (ptr_cache);
+							_app_freeobjects_map (cache_versions, false);
+							cache_versions[app_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
 							ptr_cache_object = _r_obj_reference (cache_versions[app_hash]);
 
@@ -1654,7 +1654,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, format_flags);
 				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, 0, &ptr_network->remote_fmt, format_flags);
 
-				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
+				ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
 				checker_map[net_hash] = true;
 			}
 		}
@@ -1708,7 +1708,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, format_flags);
 				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr6, 0, &ptr_network->remote_fmt, format_flags);
 
-				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
+				ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
 				checker_map[net_hash] = true;
 			}
 		}
@@ -1758,7 +1758,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, format_flags);
 
-				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
+				ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
 				checker_map[net_hash] = true;
 			}
 		}
@@ -1805,7 +1805,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, format_flags);
 
-				ptr_map[net_hash] = _r_obj_allocate (ptr_network);
+				ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
 				checker_map[net_hash] = true;
 			}
 		}
@@ -1928,7 +1928,7 @@ void _app_generate_packages ()
 				{
 					_app_load_appxmanifest (ptr_item);
 
-					apps_helper[app_hash] = _r_obj_allocate (ptr_item);
+					apps_helper[app_hash] = _r_obj_allocate (ptr_item, &_app_dereferenceappshelper);
 				}
 
 				RegCloseKey (hsubkey);
@@ -2093,7 +2093,7 @@ void _app_generate_services ()
 				}
 				else
 				{
-					apps_helper[app_hash] = _r_obj_allocate (ptr_item);
+					apps_helper[app_hash] = _r_obj_allocate (ptr_item, &_app_dereferenceappshelper);
 				}
 			}
 
@@ -2168,13 +2168,13 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 
 						if (ptr_rule->type != DataRuleCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)) || (type == 2 && !is_global))
 						{
-							_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+							_r_obj_dereference (ptr_rule_object);
 							continue;
 						}
 
 						if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
 						{
-							_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+							_r_obj_dereference (ptr_rule_object);
 							continue;
 						}
 
@@ -2199,7 +2199,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
 					}
 
-					_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+					_r_obj_dereference (ptr_rule_object);
 				}
 			}
 		}
@@ -2225,7 +2225,7 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 		{
 			if (ptr_app_item->type != type)
 			{
-				_r_obj_dereference (ptr_app_object, &_app_dereferenceappshelper);
+				_r_obj_dereference (ptr_app_object);
 				return false;
 			}
 
@@ -2273,11 +2273,11 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 			if (ptime)
 				*ptime = ptr_app_item->timestamp;
 
-			_r_obj_dereference (ptr_app_object, &_app_dereferenceappshelper);
+			_r_obj_dereference (ptr_app_object);
 			return true;
 		}
 
-		_r_obj_dereference (ptr_app_object, &_app_dereferenceappshelper);
+		_r_obj_dereference (ptr_app_object);
 	}
 
 	return false;
@@ -2720,7 +2720,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 						if (ptr_cache_object->pdata)
 							_r_str_copy (paddr_dns, dns_length, (LPCWSTR)ptr_cache_object->pdata);
 
-						_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
+						_r_obj_dereference (ptr_cache_object);
 					}
 
 					return *paddr_dns;
@@ -2745,8 +2745,8 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 					{
 						_r_fastlock_acquireexclusive (&lock_cache);
 
-						_app_freeobjects_map (cache_dns, &_app_dereferencestring, false);
-						cache_dns[dns_hash] = _r_obj_allocate (ptr_cache);
+						_app_freeobjects_map (cache_dns, false);
+						cache_dns[dns_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
 						_r_obj_reference (cache_dns[dns_hash]);
 
@@ -3017,7 +3017,7 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 				if (ptr_cache_object->pdata)
 					result = _r_str_alloc (pbuffer, _r_str_length ((LPCWSTR)ptr_cache_object->pdata), (LPCWSTR)ptr_cache_object->pdata);
 
-				_r_obj_dereference (ptr_cache_object, &_app_dereferencestring);
+				_r_obj_dereference (ptr_cache_object);
 			}
 		}
 		else
@@ -3043,8 +3043,8 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 						{
 							_r_fastlock_acquireexclusive (&lock_cache);
 
-							_app_freeobjects_map (cache_arpa, &_app_dereferencestring, false);
-							cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache);
+							_app_freeobjects_map (cache_arpa, false);
+							cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
 							_r_obj_reference (cache_arpa[arpa_hash]);
 

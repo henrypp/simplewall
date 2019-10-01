@@ -27,8 +27,8 @@ void _app_setinterfacestate (HWND hwnd);
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags);
 rstring _app_formatport (UINT16 port, LPCWSTR empty_text);
 
-void _app_freeobjects_map (OBJECTS_MAP& ptr_map, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback, bool is_forced);
-void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec, _R_CALLBACK_OBJECT_CLEANUP cleanup_callback);
+void _app_freeobjects_map (OBJECTS_MAP& ptr_map, bool is_forced);
+void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec);
 void _app_freethreadpool (THREADS_VEC* ptr_pool);
 void _app_freelogstack ();
 

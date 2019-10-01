@@ -123,13 +123,13 @@ bool _app_istimersactive ()
 
 		if (ptr_app && _app_istimeractive (ptr_app))
 		{
-			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+			_r_obj_dereference (ptr_app_object);
 			_r_fastlock_releaseshared (&lock_access);
 
 			return true;
 		}
 
-		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+		_r_obj_dereference (ptr_app_object);
 	}
 
 	_r_fastlock_releaseshared (&lock_access);
@@ -153,7 +153,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 
 	if (!ptr_app)
 	{
-		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+		_r_obj_dereference (ptr_app_object);
 		return;
 	}
 

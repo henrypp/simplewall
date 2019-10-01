@@ -464,14 +464,14 @@ void _wfp_installfilters ()
 			}
 			else
 			{
-				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+				_r_obj_dereference (ptr_app_object);
 			}
 		}
 
 		if (!rules.empty ())
 		{
 			_wfp_create3filters (hengine, rules, __LINE__, is_intransact);
-			_app_freeobjects_vec (rules, &_app_dereferenceapp);
+			_app_freeobjects_vec (rules);
 		}
 	}
 
@@ -494,14 +494,14 @@ void _wfp_installfilters ()
 			}
 			else
 			{
-				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+				_r_obj_dereference (ptr_rule_object);
 			}
 		}
 
 		if (!rules.empty ())
 		{
 			_wfp_create4filters (hengine, rules, __LINE__, is_intransact);
-			_app_freeobjects_vec (rules, &_app_dereferencerule);
+			_app_freeobjects_vec (rules);
 		}
 	}
 
@@ -686,7 +686,7 @@ void _wfp_clearfilter_ids ()
 			ptr_rule->guids.clear ();
 		}
 
-		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+		_r_obj_dereference (ptr_rule_object);
 	}
 
 	_r_fastlock_releaseexclusive (&lock_access);
@@ -775,7 +775,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 
 		if (!ptr_app)
 		{
-			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+			_r_obj_dereference (ptr_app_object);
 			return false;
 		}
 
@@ -793,7 +793,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 			else
 			{
 				_app_logerror (TEXT (__FUNCTION__), 0, ptr_app->display_name, true);
-				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+				_r_obj_dereference (ptr_app_object);
 
 				return false;
 			}
@@ -815,7 +815,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 				ByteBlobFree (&bSid);
 
 				_app_logerror (TEXT (__FUNCTION__), 0, ptr_app->display_name, true);
-				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+				_r_obj_dereference (ptr_app_object);
 
 				return false;
 			}
@@ -843,13 +843,13 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 				if (rc != ERROR_FILE_NOT_FOUND && rc != ERROR_PATH_NOT_FOUND)
 					_app_logerror (L"FwpmGetAppIdFromFileName", rc, path, true);
 
-				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+				_r_obj_dereference (ptr_app_object);
 
 				return false;
 			}
 		}
 
-		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+		_r_obj_dereference (ptr_app_object);
 	}
 
 	// set ip/port condition
@@ -1093,7 +1093,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 				ptr_rule->guids.clear ();
 			}
 
-			_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+			_r_obj_dereference (ptr_rule_object);
 		}
 
 		for (size_t i = 0; i < ids.size (); i++)
@@ -1187,7 +1187,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 			ptr_rule->guids = std::move (guids);
 		}
 
-		_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+		_r_obj_dereference (ptr_rule_object);
 	}
 
 	if (!is_intransact)
@@ -1215,7 +1215,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 						_wfp_setfiltersecurity (hengine, ptr_rule->guids.at (j), pacl, line);
 				}
 
-				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+				_r_obj_dereference (ptr_rule_object);
 			}
 		}
 
@@ -1258,7 +1258,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 				ptr_app->guids.clear ();
 			}
 
-			_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+			_r_obj_dereference (ptr_app_object);
 		}
 
 		for (size_t i = 0; i < ids.size (); i++)
@@ -1297,7 +1297,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 			ptr_app->guids.insert (ptr_app->guids.end (), guids.begin (), guids.end ());
 		}
 
-		_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+		_r_obj_dereference (ptr_app_object);
 	}
 
 	if (!is_intransact)
@@ -1325,7 +1325,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 						_wfp_setfiltersecurity (hengine, ptr_app->guids.at (j), pacl, line);
 				}
 
-				_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+				_r_obj_dereference (ptr_app_object);
 			}
 		}
 

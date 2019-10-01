@@ -95,8 +95,6 @@ enum EnumInfo
 INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-void _app_dereferencelog (PVOID pdata);
-
 // config
 #define WM_TRAYICON WM_APP + 1
 #define LANG_MENU 6
@@ -115,7 +113,7 @@ void _app_dereferencelog (PVOID pdata);
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%USERPROFILE%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
 #define LOG_VIEWER_DEFAULT L"%SystemRoot%\\notepad.exe"
-#define LOG_SIZE_LIMIT_DEFAULT 1024ul
+#define LOG_SIZE_LIMIT_DEFAULT 1024UL
 
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
@@ -300,7 +298,7 @@ typedef struct tagITEM_APP
 
 		SAFE_DELETE_ARRAY (pdata);
 
-		_r_obj_dereference (pnotification, &_app_dereferencelog);
+		_r_obj_dereference (pnotification);
 	}
 
 	GUIDS_VEC guids;

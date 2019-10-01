@@ -245,12 +245,12 @@ COLORREF _app_getcolorvalue (size_t color_hash)
 		if (ptr_clr && ptr_clr->clr_hash == color_hash)
 		{
 			const COLORREF result = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
-			_r_obj_dereference (ptr_clr_object, &_app_dereferencecolor);
+			_r_obj_dereference (ptr_clr_object);
 
 			return result;
 		}
 
-		_r_obj_dereference (ptr_clr_object, &_app_dereferencecolor);
+		_r_obj_dereference (ptr_clr_object);
 	}
 
 	return 0;
@@ -303,7 +303,7 @@ COLORREF _app_getcolor (INT listview_id, size_t app_hash)
 			color_value = L"ColorSystem";
 	}
 
-	_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+	_r_obj_dereference (ptr_app_object);
 
 	return _app_getcolorvalue (color_value.Hash ());
 }
@@ -440,7 +440,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					}
 				}
 
-				_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+				_r_obj_dereference (ptr_network_object);
 
 				SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, TRUE, 0);
 
@@ -466,7 +466,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 						network_map.erase (network_hash);
 
-						_r_obj_dereferenceex (ptr_network_object, 2, &_app_dereferencenetwork);
+						_r_obj_dereferenceex (ptr_network_object, 2);
 
 						// redraw listview item
 						if (is_highlighting_enabled)
@@ -585,7 +585,7 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 	ptr_clr->locale_id = locale_id;
 	ptr_clr->default_clr = default_clr;
 
-	colors.push_back (_r_obj_allocate (ptr_clr));
+	colors.push_back (_r_obj_allocate (ptr_clr, &_app_dereferencecolor));
 }
 
 bool _app_installmessage (HWND hwnd, bool is_install)
@@ -745,12 +745,12 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 						if (is_tableview)
 							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
 
-						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+						_r_obj_dereference (ptr_rule_object);
 						return CDRF_NEWFONT;
 					}
 				}
 
-				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+				_r_obj_dereference (ptr_rule_object);
 			}
 			else if (listview_id == IDC_COLORS)
 			{
@@ -772,12 +772,12 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 							if (is_tableview)
 								_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
 
-							_r_obj_dereference (ptr_object, &_app_dereferencecolor);
+							_r_obj_dereference (ptr_object);
 							return CDRF_NEWFONT;
 						}
 					}
 
-					_r_obj_dereference (ptr_object, &_app_dereferencecolor);
+					_r_obj_dereference (ptr_object);
 				}
 			}
 
@@ -948,20 +948,20 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (!ptr_app)
 					{
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 						continue;
 					}
 
 					// windows store apps (win8+)
 					if (ptr_app->type == DataAppUWP && !_r_sys_validversion (6, 2))
 					{
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 						continue;
 					}
 
 					if (ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
 					{
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 						continue;
 					}
 
@@ -976,7 +976,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					item += 1;
 
-					_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+					_r_obj_dereference (ptr_app_object);
 				}
 
 				_r_fastlock_releaseshared (&lock_access);
@@ -1620,10 +1620,10 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 						PR_OBJECT ptr_signature_object = _app_getsignatureinfo (p.first, ptr_app);
 
 						if (ptr_signature_object)
-							_r_obj_dereference (ptr_signature_object, &_app_dereferencestring);
+							_r_obj_dereference (ptr_signature_object);
 					}
 
-					_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+					_r_obj_dereference (ptr_app_object);
 				}
 
 				_r_fastlock_releaseshared (&lock_access);
@@ -1798,7 +1798,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								item += 1;
 							}
 
-							_r_obj_dereference (ptr_color_object, &_app_dereferencecolor);
+							_r_obj_dereference (ptr_color_object);
 						}
 					}
 
@@ -1953,7 +1953,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								_r_fastlock_releaseshared (&lock_checkbox);
 							}
 
-							_r_obj_dereference (ptr_clr_object, &_app_dereferencecolor);
+							_r_obj_dereference (ptr_clr_object);
 						}
 					}
 
@@ -2074,7 +2074,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							if (ptr_clr)
 								app.ConfigSet (ptr_clr->pcfg_name, new_val, L"colors");
 
-							_r_obj_dereference (ptr_clr_object, &_app_dereferencecolor);
+							_r_obj_dereference (ptr_clr_object);
 
 							_r_listview_redraw (app.GetHWND (), _app_gettab_id (app.GetHWND ()));
 						}
@@ -2122,7 +2122,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							if (ptr_clr)
 								cust[i] = ptr_clr->default_clr;
 
-							_r_obj_dereference (ptr_clr_object, &_app_dereferencecolor);
+							_r_obj_dereference (ptr_clr_object);
 						}
 					}
 
@@ -2144,7 +2144,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						_r_listview_redraw (app.GetHWND (), _app_gettab_id (app.GetHWND ()));
 					}
 
-					_r_obj_dereference (ptr_clr_object_current, &_app_dereferencecolor);
+					_r_obj_dereference (ptr_clr_object_current);
 
 					break;
 				}
@@ -3289,7 +3289,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_fastlock_releaseshared (&lock_checkbox);
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 				}
 				else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
@@ -3315,7 +3315,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_fastlock_releaseshared (&lock_checkbox);
 						}
 
-						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+						_r_obj_dereference (ptr_rule_object);
 					}
 				}
 				else if (listview_id == IDC_NETWORK)
@@ -3369,7 +3369,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			const time_t current_timestamp = (time_t)lparam;
 
-			_app_freeobjects_map (rules_config, &_app_dereferenceruleconfig, true);
+			_app_freeobjects_map (rules_config, true);
 
 			_r_fs_makebackup (config.profile_path, current_timestamp);
 			_r_fs_makebackup (config.profile_path_backup, current_timestamp);
@@ -3643,7 +3643,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								}
 							}
 
-							_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+							_r_obj_dereference (ptr_app_object);
 						}
 						else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 						{
@@ -3675,7 +3675,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								}
 							}
 
-							_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+							_r_obj_dereference (ptr_rule_object);
 						}
 
 						if (is_changed)
@@ -3881,7 +3881,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								CheckMenuRadioItem (hsubmenu_timer, IDM_DISABLETIMER, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND);
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 
 						if (listview_id != IDC_APPS_PROFILE)
 							EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
@@ -3902,7 +3902,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (ptr_rule && ptr_rule->is_readonly)
 								EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
-							_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+							_r_obj_dereference (ptr_rule_object);
 						}
 						else
 						{
@@ -3929,7 +3929,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									EnableMenuItem (hsubmenu, IDM_EXPLORE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 							}
 
-							_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+							_r_obj_dereference (ptr_network_object);
 						}
 					}
 
@@ -3973,7 +3973,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (ptr_log_object)
 					{
 						_app_notifyshow (config.hnotification, ptr_log_object, true, false);
-						_r_obj_dereference (ptr_log_object, &_app_dereferencelog);
+						_r_obj_dereference (ptr_log_object);
 					}
 
 					break;
@@ -4254,7 +4254,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_r_fastlock_releaseshared (&lock_checkbox);
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 
 					const INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
@@ -4277,7 +4277,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
 				}
 
-				_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+				_r_obj_dereference (ptr_rule_object);
 
 				_app_listviewsort (hwnd, app_listview_id);
 
@@ -4318,12 +4318,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else
 					{
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 				}
 
 				_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
-				_app_freeobjects_vec (rules, &_app_dereferenceapp);
+				_app_freeobjects_vec (rules);
 
 				_app_listviewsort (hwnd, listview_id);
 
@@ -4511,7 +4511,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 
 					_r_fastlock_releaseshared (&lock_access);
@@ -4558,7 +4558,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 
 					// regroup rules
@@ -4588,7 +4588,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 						}
 
-						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+						_r_obj_dereference (ptr_rule_object);
 					}
 
 					_r_fastlock_releaseshared (&lock_access);
@@ -4683,7 +4683,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 
 					_r_fastlock_releaseshared (&lock_access);
@@ -5067,13 +5067,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								if (!_app_isappfound (app_hash))
 								{
 									_r_path_explore (ptr_network->path);
-									_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+									_r_obj_dereference (ptr_network_object);
 
 									continue;
 								}
 							}
 
-							_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+							_r_obj_dereference (ptr_network_object);
 						}
 						else
 						{
@@ -5091,7 +5091,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (!ptr_app)
 						{
-							_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+							_r_obj_dereference (ptr_app_object);
 							continue;
 						}
 
@@ -5116,7 +5116,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_timer_reset (hwnd, ptr_app);
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 
 					if (
@@ -5215,14 +5215,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 							else
 							{
-								_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+								_r_obj_dereference (ptr_app_object);
 							}
 						}
 
 						if (is_changed)
 						{
 							_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
-							_app_freeobjects_vec (rules, &_app_dereferenceapp);
+							_app_freeobjects_vec (rules);
 						}
 					}
 					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
@@ -5256,14 +5256,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 							else
 							{
-								_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+								_r_obj_dereference (ptr_rule_object);
 							}
 						}
 
 						if (is_changed)
 						{
 							_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
-							_app_freeobjects_vec (rules, &_app_dereferencerule);
+							_app_freeobjects_vec (rules);
 						}
 					}
 
@@ -5287,7 +5287,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_OPENRULESEDITOR:
 				{
 					PITEM_RULE ptr_rule = new ITEM_RULE;
-					PR_OBJECT ptr_rule_object = _r_obj_allocate (ptr_rule);
+					PR_OBJECT ptr_rule_object = _r_obj_allocate (ptr_rule, &_app_dereferencerule);
 
 					_app_ruleenable (ptr_rule, true);
 
@@ -5365,7 +5365,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								SAFE_DELETE_ARRAY (fmt);
 							}
 
-							_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+							_r_obj_dereference (ptr_network_object);
 						}
 
 						_r_str_trim (rule_remote, DIVIDER_RULE);
@@ -5405,7 +5405,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else
 					{
-						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+						_r_obj_dereference (ptr_rule_object);
 					}
 
 					break;
@@ -5448,7 +5448,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							_app_profile_save ();
 						}
 
-						_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+						_r_obj_dereference (ptr_rule_object);
 					}
 					else if (listview_id == IDC_NETWORK)
 					{
@@ -5483,7 +5483,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 						}
 
-						_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+						_r_obj_dereference (ptr_network_object);
 					}
 
 					break;
@@ -5532,14 +5532,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)item, 0);
 
 									network_map.erase (network_hash);
-									_r_obj_dereferenceex (ptr_network_object, 2, &_app_dereferencenetwork);
+									_r_obj_dereferenceex (ptr_network_object, 2);
 
 									continue;
 								}
 							}
 						}
 
-						_r_obj_dereference (ptr_network_object, &_app_dereferencenetwork);
+						_r_obj_dereference (ptr_network_object);
 					}
 
 					break;
@@ -5588,11 +5588,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									_app_freeapplication (app_hash);
 									_r_fastlock_releaseexclusive (&lock_access);
 
-									_r_obj_dereferenceex (ptr_app_object, 2, &_app_dereferenceapp);
+									_r_obj_dereferenceex (ptr_app_object, 2);
 								}
 								else
 								{
-									_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+									_r_obj_dereference (ptr_app_object);
 								}
 							}
 							else if (listview_id == IDC_RULES_CUSTOM)
@@ -5620,11 +5620,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									rules_arr.at (rule_idx) = nullptr;
 									_r_fastlock_releaseshared (&lock_access);
 
-									_r_obj_dereferenceex (ptr_rule_object, 2, &_app_dereferencerule);
+									_r_obj_dereferenceex (ptr_rule_object, 2);
 								}
 								else
 								{
-									_r_obj_dereference (ptr_rule_object, &_app_dereferencerule);
+									_r_obj_dereference (ptr_rule_object);
 								}
 
 								for (auto &p : apps_checker)
@@ -5654,7 +5654,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 										}
 									}
 
-									_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+									_r_obj_dereference (ptr_app_object);
 								}
 							}
 						}
@@ -5709,7 +5709,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							is_deleted = true;
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 
 					for (size_t i = 0; i < apps_list.size (); i++)
@@ -5754,14 +5754,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 						else
 						{
-							_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+							_r_obj_dereference (ptr_app_object);
 						}
 					}
 
 					_r_fastlock_releaseshared (&lock_access);
 
 					_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
-					_app_freeobjects_vec (rules, &_app_dereferenceapp);
+					_app_freeobjects_vec (rules);
 
 					_app_listviewsort (hwnd, _app_gettab_id (hwnd));
 
@@ -5826,10 +5826,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							ptr_app->last_notify = 0;
 
-							_app_notifyadd (config.hnotification, _r_obj_allocate (ptr_log), ptr_app);
+							_app_notifyadd (config.hnotification, _r_obj_allocate (ptr_log, &_app_dereferencelog), ptr_app);
 						}
 
-						_r_obj_dereference (ptr_app_object, &_app_dereferenceapp);
+						_r_obj_dereference (ptr_app_object);
 					}
 
 					break;
