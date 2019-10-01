@@ -2733,11 +2733,6 @@ void _app_toolbar_init (HWND hwnd)
 
 void _app_initialize ()
 {
-#ifdef _APP_HAVE_QUEUEDLOCK
-	if (!_r_queuedlock_initialization ())
-		ExitProcess (ERROR_UNHANDLED_EXCEPTION);
-#endif
-
 	// initialize spinlocks
 	_r_fastlock_initialize (&lock_access);
 	_r_fastlock_initialize (&lock_apply);
