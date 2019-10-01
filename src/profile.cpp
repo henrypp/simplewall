@@ -79,7 +79,7 @@ size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	// if file is shortcut - get location
 	if (!is_fromdb)
 	{
-		if (_r_str_compare (PathFindExtension (path), L".lnk", 4) == 0)
+		if (_r_str_compare (_r_path_getextension (path), L".lnk", 4) == 0)
 		{
 			path = _app_getshortcutpath (app.GetHWND (), path);
 
