@@ -3950,14 +3950,18 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			break;
 		}
 
+		case WM_EXITSIZEMOVE:
+		{
+			_app_listviewresize (hwnd, _app_gettab_id (hwnd));
+
+			break;
+		}
+
 		case WM_SIZE:
 		{
 			_app_resizewindow (hwnd, LOWORD (lparam), HIWORD (lparam));
-			_app_listviewresize (hwnd, _app_gettab_id (hwnd));
 
-			_app_refreshstatus (hwnd);
-
-			RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+			_app_refreshstatus (hwnd, false);
 
 			break;
 		}

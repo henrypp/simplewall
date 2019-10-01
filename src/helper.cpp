@@ -2379,7 +2379,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)&_app_listviewcompare_callback);
 }
 
-void _app_refreshstatus (HWND hwnd)
+void _app_refreshstatus (HWND hwnd, bool is_groups)
 {
 	ITEM_COUNT stat = {0};
 	SecureZeroMemory (&stat, sizeof (stat));
@@ -2450,6 +2450,7 @@ void _app_refreshstatus (HWND hwnd)
 	}
 
 	// group information
+	if (is_groups)
 	{
 		const INT listview_id = _app_gettab_id (hwnd);
 
