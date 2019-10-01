@@ -3950,18 +3950,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			break;
 		}
 
-		case WM_EXITSIZEMOVE:
-		{
-			_app_listviewresize (hwnd, _app_gettab_id (hwnd));
-
-			break;
-		}
-
 		case WM_SIZE:
 		{
 			_app_resizewindow (hwnd, LOWORD (lparam), HIWORD (lparam));
 
 			_app_refreshstatus (hwnd, false);
+
+			if (wparam == SIZE_RESTORED || wparam == SIZE_MAXIMIZED)
+				_app_listviewresize (hwnd, _app_gettab_id (hwnd));
 
 			break;
 		}
