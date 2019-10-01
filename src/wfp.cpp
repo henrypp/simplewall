@@ -1089,8 +1089,11 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 
 			if (ptr_rule)
 			{
-				ids.insert (ids.end (), ptr_rule->guids.begin (), ptr_rule->guids.end ());
-				ptr_rule->guids.clear ();
+				if (!ptr_rule->guids.empty ())
+				{
+					ids.insert (ids.end (), ptr_rule->guids.begin (), ptr_rule->guids.end ());
+					ptr_rule->guids.clear ();
+				}
 			}
 
 			_r_obj_dereference (ptr_rule_object);
@@ -1254,8 +1257,11 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 
 			if (ptr_app)
 			{
-				ids.insert (ids.end (), ptr_app->guids.begin (), ptr_app->guids.end ());
-				ptr_app->guids.clear ();
+				if (!ptr_app->guids.empty ())
+				{
+					ids.insert (ids.end (), ptr_app->guids.begin (), ptr_app->guids.end ());
+					ptr_app->guids.clear ();
+				}
 			}
 
 			_r_obj_dereference (ptr_app_object);
@@ -1294,7 +1300,9 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 			ptr_app->is_haveerrors = is_haveerrors;
 
 			ptr_app->guids.clear ();
-			ptr_app->guids.insert (ptr_app->guids.end (), guids.begin (), guids.end ());
+
+			if (!guids.empty ())
+				ptr_app->guids = std::move (guids);
 		}
 
 		_r_obj_dereference (ptr_app_object);
@@ -1584,7 +1592,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 		_wfp_createfilter (L"BlockListenConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, 0, &filter_ids);
 		_wfp_createfilter (L"BlockListenConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, 0, &filter_ids);
-	}
+}
 #endif // SW_USE_LISTEN_LAYER
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
