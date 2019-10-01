@@ -1712,8 +1712,10 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 			{
 				for (UINT32 i = 0; i < count; i++)
 				{
-					if (matchingFwpFilter[i] && matchingFwpFilter[i]->providerKey && memcmp (matchingFwpFilter[i]->providerKey, pprovider, sizeof (GUID)) == 0)
-						ptr_filters->push_back (matchingFwpFilter[i]->filterKey);
+					FWPM_FILTER* pf = matchingFwpFilter[i];
+
+					if (pf && pf->providerKey && memcmp (pf->providerKey, pprovider, sizeof (GUID)) == 0)
+						ptr_filters->push_back (pf->filterKey);
 				}
 
 				FwpmFreeMemory ((void**)&matchingFwpFilter);
