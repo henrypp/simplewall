@@ -571,11 +571,11 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 	PITEM_COLOR ptr_clr = new ITEM_COLOR;
 
 	if (config_name)
-		_r_str_alloc (&ptr_clr->pcfg_name, _r_str_length (config_name), config_name);
+		_r_str_alloc (&ptr_clr->pcfg_name, INVALID_SIZE_T, config_name);
 
 	if (config_value)
 	{
-		_r_str_alloc (&ptr_clr->pcfg_value, _r_str_length (config_value), config_value);
+		_r_str_alloc (&ptr_clr->pcfg_value, INVALID_SIZE_T, config_value);
 
 		ptr_clr->clr_hash = _r_str_hash (config_value);
 		ptr_clr->new_clr = app.ConfigGet (config_value, default_clr, L"colors").AsUlong ();
@@ -3631,7 +3631,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									_r_fastlock_releaseshared (&lock_checkbox);
 
 									if (new_val)
-										_app_freenotify (ptr_app, true);
+										_app_freenotify (app_hash, ptr_app);
 
 									if (!new_val && _app_istimeractive (ptr_app))
 										_app_timer_reset (hwnd, ptr_app);
@@ -4230,7 +4230,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (ptr_app)
 						{
-							_app_freenotify (ptr_app, true);
+							_app_freenotify (app_hash, ptr_app);
 
 							if (is_remove == INVALID_INT)
 								is_remove = ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ());
@@ -5109,7 +5109,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								ptr_app->is_silent = new_val;
 
 							if (new_val)
-								_app_freenotify (ptr_app, true);
+								_app_freenotify (app_hash, ptr_app);
 						}
 						else if (ctrl_id == IDM_DISABLETIMER)
 						{
@@ -5199,7 +5199,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									_app_timer_reset (hwnd, ptr_app);
 
 								else
-									_app_freenotify (ptr_app, true);
+									_app_freenotify (app_hash, ptr_app);
 
 								ptr_app->is_enabled = new_val;
 
@@ -5582,7 +5582,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
 									_app_timer_reset (hwnd, ptr_app);
-									_app_freenotify (ptr_app, true);
+									_app_freenotify (app_hash, ptr_app);
 
 									_r_fastlock_acquireexclusive (&lock_access);
 									_app_freeapplication (app_hash);
@@ -5700,7 +5700,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							_app_timer_reset (hwnd, ptr_app);
-							_app_freenotify (ptr_app, true);
+							_app_freenotify (app_hash, ptr_app);
 
 							guids.insert (guids.end (), ptr_app->guids.begin (), ptr_app->guids.end ());
 
@@ -5810,8 +5810,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					InetPton (ptr_log->af, RM_AD, &ptr_log->remote_addr);
 					ptr_log->remote_port = RP_AD;
 
-					_r_str_alloc (&ptr_log->path, _r_str_length (app.GetBinaryPath ()), app.GetBinaryPath ());
-					_r_str_alloc (&ptr_log->filter_name, _r_str_length (FN_AD), FN_AD);
+					_r_str_alloc (&ptr_log->path, INVALID_SIZE_T, app.GetBinaryPath ());
+					_r_str_alloc (&ptr_log->filter_name, INVALID_SIZE_T, FN_AD);
 
 					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &ptr_log->remote_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
 					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, &ptr_log->local_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);

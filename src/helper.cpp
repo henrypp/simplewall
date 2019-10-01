@@ -244,7 +244,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 		}
 	}
 
-	_r_str_alloc (ptr_dest, _r_str_length (formatted_address), formatted_address);
+	_r_str_alloc (ptr_dest, INVALID_SIZE_T, formatted_address);
 
 	return !_r_str_isempty (formatted_address);
 }
@@ -3022,7 +3022,7 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 			if (ptr_cache_object)
 			{
 				if (ptr_cache_object->pdata)
-					result = _r_str_alloc (pbuffer, _r_str_length ((LPCWSTR)ptr_cache_object->pdata), (LPCWSTR)ptr_cache_object->pdata);
+					result = _r_str_alloc (pbuffer, INVALID_SIZE_T, (LPCWSTR)ptr_cache_object->pdata);
 
 				_r_obj_dereference (ptr_cache_object);
 			}
