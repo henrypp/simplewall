@@ -866,11 +866,11 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 135:
 			return L"msrpc";
 
-		case 137:
-			return L"netbios-ns";
-
 		case 136:
 			return L"profile";
+
+		case 137:
+			return L"netbios-ns";
 
 		case 138:
 			return L"netbios-dgm";
@@ -992,6 +992,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 515:
 			return L"printer";
 
+		case 524:
+			return L"ncp";
+
 		case 530:
 			return L"rpc";
 
@@ -1093,6 +1096,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 
 		case 1723:
 			return L"pptp";
+
+		case 1863:
+			return L"msnp";
 
 		case 1900:
 		case 5000:
