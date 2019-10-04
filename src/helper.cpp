@@ -1455,7 +1455,7 @@ rstring _app_getstatename (DWORD state)
 			return L"Delete TCB";
 	}
 
-	return L"";
+	return nullptr;
 }
 
 rstring _app_getservicenamefromtag (HANDLE pid, PVOID ptag)
@@ -2139,21 +2139,16 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	}
 	else
 	{
-		for (UINT8 type = 0; type < 3; type++)
+		for (UINT8 type = 0; type < 2; type++)
 		{
 			if (type == 0)
 			{
 				if (!stat.rules_predefined_count)
 					continue;
 			}
-			else if (type == 1)
-			{
-				if (!stat.rules_user_count)
-					continue;
-			}
 			else
 			{
-				if (!stat.rules_global_count)
+				if (!stat.rules_user_count)
 					continue;
 			}
 
@@ -2175,7 +2170,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						const bool is_global = (ptr_rule->is_enabled && ptr_rule->apps.empty ());
 						const bool is_enabled = is_global || (ptr_rule->is_enabled && (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ()));
 
-						if (ptr_rule->type != DataRuleCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)) || (type == 2 && !is_global))
+						if (ptr_rule->type != DataRuleCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)))
 						{
 							_r_obj_dereference (ptr_rule_object);
 							continue;
@@ -2201,9 +2196,6 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						mii.hbmpUnchecked = hbmp_unchecked;
 						mii.fState = (is_enabled ? MF_CHECKED : MF_UNCHECKED);
 						mii.wID = IDX_RULES_SPECIAL + UINT (i);
-
-						if (is_global)
-							mii.fState |= MF_DISABLED | MF_GRAYED;
 
 						InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
 					}
@@ -2509,7 +2501,7 @@ void _app_refreshstatus (HWND hwnd, bool is_groups)
 rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 {
 	if (_r_str_isempty (hostname))
-		return L"";
+		return nullptr;
 
 	rstring result;
 
@@ -2585,7 +2577,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 {
 	if (_r_str_isempty (hostname) || !app.ConfigGet (L"IsEnableWsaResolver", false).AsBool ())
-		return L"";
+		return nullptr;
 
 	// initialize winsock (required by getnameinfo)
 	WSADATA wsaData = {0};
@@ -2594,7 +2586,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 	if (rc != ERROR_SUCCESS)
 	{
 		_app_logerror (L"WSAStartup", rc, nullptr, true);
-		return L"";
+		return nullptr;
 	}
 
 	rstring result;
@@ -2612,7 +2604,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 	if (rc != ERROR_SUCCESS || !ppQueryResultsSet)
 	{
 		_app_logerror (L"GetAddrInfoEx", rc, hostname, true);
-		return L"";
+		return nullptr;
 	}
 	else
 	{

@@ -1138,8 +1138,8 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 
 				for (size_t j = 0; j < count; j++)
 				{
-					rstring rule_remote = L"";
-					rstring rule_local = L"";
+					rstring rule_remote;
+					rstring rule_local;
 
 					// sync remote rules and local rules
 					if (!rule_remote_arr.empty () && rules_remote_length > j)
