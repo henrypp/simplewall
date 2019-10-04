@@ -517,9 +517,8 @@
 #define IDP_LOG 110
 #define IDP_LOGOPEN 111
 #define IDP_LOGCLEAR 112
-#define IDP_TIMER 113
 #define IDP_RULES IDP_SETTINGS
-#define IDP_HEARTH 114
+#define IDP_HEARTH 113
 
 // Icons
 #define IDI_MAIN 100
