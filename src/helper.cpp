@@ -134,7 +134,7 @@ void _app_setinterfacestate (HWND hwnd)
 
 	_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
-	_r_tray_setinfo (hwnd, UID, app.GetSharedImage (app.GetHINSTANCE (), icon_id, GetSystemMetrics (SM_CXSMICON)), nullptr);
+	_r_tray_setinfo (hwnd, UID, hico_sm, nullptr);
 	_r_tray_toggle (hwnd, UID, true);
 }
 
