@@ -1297,6 +1297,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 8999:
 			return L"bctp";
 
+		case 9418:
+			return L"git";
+
 		case 9800:
 			return L"webdav";
 
