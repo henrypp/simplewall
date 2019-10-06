@@ -67,7 +67,7 @@ bool _app_loginit (bool is_install)
 		if (GetLastError () != ERROR_ALREADY_EXISTS)
 		{
 			DWORD written = 0;
-			static const BYTE bom[] = {0xFF, 0xFE};
+			const BYTE bom[] = {0xFF, 0xFE};
 
 			WriteFile (config.hlogfile, bom, sizeof (bom), &written, nullptr); // write utf-16 le byte order mask
 
@@ -159,9 +159,9 @@ void _app_logwrite (PITEM_LOG ptr_log)
 				   !_r_str_isempty (ptr_log->username) ? ptr_log->username : SZ_EMPTY,
 				   !path.IsEmpty () ? path.GetString () : SZ_EMPTY,
 				   !_r_str_isempty (local_fmt) ? local_fmt : SZ_EMPTY,
-				   _app_formatport (ptr_log->local_port, SZ_EMPTY).GetString (),
+				   _app_formatport (ptr_log->local_port, nullptr).GetString (),
 				   !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY,
-				   _app_formatport (ptr_log->remote_port, SZ_EMPTY).GetString (),
+				   _app_formatport (ptr_log->remote_port, nullptr).GetString (),
 				   _app_getprotoname (ptr_log->protocol, ptr_log->af).GetString (),
 				   !filter_name.IsEmpty () ? filter_name.GetString () : SZ_EMPTY,
 				   ptr_log->filter_id,
