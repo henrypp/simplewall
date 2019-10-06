@@ -252,6 +252,14 @@ struct STATIC_DATA
 	HIMAGELIST himg_rules_small = nullptr;
 	HIMAGELIST himg_rules_large = nullptr;
 
+	HBITMAP hbmp_enable = nullptr;
+	HBITMAP hbmp_disable = nullptr;
+	HBITMAP hbmp_allow = nullptr;
+	HBITMAP hbmp_block = nullptr;
+	HBITMAP hbmp_rules = nullptr;
+	HBITMAP hbmp_checked = nullptr;
+	HBITMAP hbmp_unchecked = nullptr;
+
 	HANDLE hengine = nullptr;
 	HANDLE hlogfile = nullptr;
 	HANDLE hnetevent = nullptr;

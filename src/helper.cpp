@@ -100,7 +100,7 @@ bool _app_initinterfacestate (HWND hwnd, bool is_forced)
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
 
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."), nullptr);
 
 		return true;
 	}
@@ -115,7 +115,7 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (TRUE, 0));
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (TRUE, 0));
 
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr), nullptr);
 	}
 }
 
@@ -124,15 +124,15 @@ void _app_setinterfacestate (HWND hwnd)
 	const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
 	const INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 
-	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, GetSystemMetrics (SM_CXICON));
-	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, GetSystemMetrics (SM_CXSMICON));
+	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getdpi (_R_SIZE_ICON16));
+	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getdpi (_R_SIZE_ICON32));
 
-	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
 	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
+	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
 
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
-	_r_toolbar_setbuttoninfo (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
+	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
 	_r_tray_setinfo (hwnd, UID, hico_sm, nullptr);
 	_r_tray_toggle (hwnd, UID, true);
@@ -529,7 +529,7 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app)
 
 		if (hfile != INVALID_HANDLE_VALUE)
 		{
-			static GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+			GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
 			WINTRUST_FILE_INFO fileInfo = {0};
 
@@ -1316,6 +1316,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 			return L"halflife";
 
 		case 27017:
+		case 27018:
+		case 27019:
+		case 28017:
 			return L"mongod";
 
 		case 27500:
@@ -2117,14 +2120,6 @@ void _app_generate_services ()
 
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 {
-	static const INT icon_size = GetSystemMetrics (SM_CXSMICON);
-
-	static const HBITMAP hbmp_allow = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), icon_size);
-	static const HBITMAP hbmp_block = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), icon_size);
-
-	static const HBITMAP hbmp_checked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_CHECKED), icon_size);
-	static const HBITMAP hbmp_unchecked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_UNCHECKED), icon_size);
-
 	ITEM_COUNT stat = {0};
 	SecureZeroMemory (&stat, sizeof (stat));
 
@@ -2191,9 +2186,9 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING | MIIM_BITMAP | MIIM_CHECKMARKS;
 						mii.fType = MFT_STRING;
 						mii.dwTypeData = buffer;
-						mii.hbmpItem = ptr_rule->is_block ? hbmp_block : hbmp_allow;
-						mii.hbmpChecked = hbmp_checked;
-						mii.hbmpUnchecked = hbmp_unchecked;
+						mii.hbmpItem = ptr_rule->is_block ? config.hbmp_block : config.hbmp_allow;
+						mii.hbmpChecked = config.hbmp_checked;
+						mii.hbmpUnchecked = config.hbmp_unchecked;
 						mii.fState = (is_enabled ? MF_CHECKED : MF_UNCHECKED);
 						mii.wID = IDX_RULES_SPECIAL + UINT (i);
 
@@ -2395,8 +2390,8 @@ void _app_refreshstatus (HWND hwnd, bool is_groups)
 	{
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
-		static const INT parts_count = 3;
-		static const INT spacing = _r_dc_getdpi (12);
+		const INT parts_count = 3;
+		const INT spacing = _r_dc_getdpi (12);
 
 		rstring text[parts_count];
 		INT parts[parts_count] = {0};
@@ -2442,10 +2437,7 @@ void _app_refreshstatus (HWND hwnd, bool is_groups)
 		SendMessage (hstatus, SB_SETPARTS, parts_count, (LPARAM)parts);
 
 		for (INT i = 0; i < parts_count; i++)
-		{
-			SendMessage (hstatus, SB_SETTEXT, MAKEWPARAM (i, 0), (LPARAM)text[i].GetString ());
-			SendMessage (hstatus, SB_SETTIPTEXT, i, (LPARAM)text[i].GetString ());
-		}
+			_r_status_settext (hwnd, IDC_STATUSBAR, i, text[i], text[i]);
 
 		ReleaseDC (hstatus, hdc);
 	}
@@ -2460,6 +2452,7 @@ void _app_refreshstatus (HWND hwnd, bool is_groups)
 			if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) == LVS_EX_CHECKBOXES)
 			{
 				const bool is_rules_lv = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
+
 				const UINT enabled_group_title = is_rules_lv ? IDS_GROUP_ENABLED : IDS_GROUP_ALLOWED;
 				const UINT special_group_title = is_rules_lv ? IDS_GROUP_SPECIAL : IDS_GROUP_SPECIAL_APPS;
 				const UINT disabled_group_title = is_rules_lv ? IDS_GROUP_DISABLED : IDS_GROUP_BLOCKED;
@@ -2662,7 +2655,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 	USHORT port = 0;
 	BYTE prefix_length = 0;
 
-	static const DWORD types = NET_STRING_ANY_ADDRESS | NET_STRING_ANY_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_ANY_ADDRESS_NO_SCOPE | NET_STRING_ANY_SERVICE_NO_SCOPE;
+	const DWORD types = NET_STRING_ANY_ADDRESS | NET_STRING_ANY_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_ANY_ADDRESS_NO_SCOPE | NET_STRING_ANY_SERVICE_NO_SCOPE;
 	const DWORD rc = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
 
 	if (rc != ERROR_SUCCESS)
@@ -3160,7 +3153,7 @@ HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)
 
 			if (hbitmap)
 			{
-				const HBITMAP oldBitmap = (HBITMAP)SelectObject (hdc, hbitmap);
+				const HGDIOBJ oldBitmap = SelectObject (hdc, hbitmap);
 
 				BLENDFUNCTION blendFunction = {0};
 				blendFunction.BlendOp = AC_SRC_OVER;
@@ -3362,7 +3355,7 @@ void _app_load_appxmanifest (PITEM_APP_HELPER ptr_app_item)
 	rstring result;
 	rstring path;
 
-	static LPCWSTR appx_names[] = {
+	LPCWSTR appx_names[] = {
 		L"AppxManifest.xml",
 		L"VSAppxManifest.xml",
 	};
