@@ -92,7 +92,7 @@ bool _wfp_initialize (bool is_full)
 		}
 		else
 		{
-			static const size_t count = 2;
+			const size_t count = 2;
 			EXPLICIT_ACCESS access[count] = {0};
 
 			SecureZeroMemory (access, count * sizeof (EXPLICIT_ACCESS));
@@ -366,7 +366,7 @@ void _wfp_uninitialize (bool is_full)
 
 		// destroy callouts (deprecated)
 		{
-			static const GUID callouts[] = {
+			const GUID callouts[] = {
 				GUID_WfpOutboundCallout4_DEPRECATED,
 				GUID_WfpOutboundCallout6_DEPRECATED,
 				GUID_WfpInboundCallout4_DEPRECATED,
@@ -1236,8 +1236,7 @@ bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, boo
 		return false;
 
 	const bool is_enabled = _app_initinterfacestate (app.GetHWND (), false);
-
-	static const FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
+	const FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = true;
@@ -1409,7 +1408,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 #endif // SW_USE_LISTEN_LAYER
 
 		// ipv4/ipv6 loopback
-		static LPCWSTR ip_list[] = {
+		LPCWSTR ip_list[] = {
 			L"0.0.0.0/8",
 			L"10.0.0.0/8",
 			L"100.64.0.0/10",
@@ -1757,7 +1756,7 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 
 		if (SUCCEEDED (hr) && pNetFwPolicy2)
 		{
-			static const NET_FW_PROFILE_TYPE2 profileTypes[] = {
+			const NET_FW_PROFILE_TYPE2 profileTypes[] = {
 				NET_FW_PROFILE2_DOMAIN,
 				NET_FW_PROFILE2_PRIVATE,
 				NET_FW_PROFILE2_PUBLIC
@@ -1832,7 +1831,7 @@ void _mps_changeconfig2 (bool is_enable)
 	}
 	else
 	{
-		static LPCWSTR arr[] = {
+		LPCWSTR arr[] = {
 			L"mpssvc",
 			L"mpsdrv",
 		};

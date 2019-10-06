@@ -1042,7 +1042,7 @@ bool _app_isrulehost (LPCWSTR rule)
 	USHORT port = 0;
 	BYTE prefix_length = 0;
 
-	static const DWORD types = NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE;
+	const DWORD types = NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE;
 	const DWORD rc = ParseNetworkString (rule, types, &ni, &port, &prefix_length);
 
 	if (rc == ERROR_SUCCESS)
@@ -1078,7 +1078,7 @@ bool _app_isruleip (LPCWSTR rule)
 	USHORT port = 0;
 	BYTE prefix_length = 0;
 
-	static const DWORD types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
+	const DWORD types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
 	const DWORD rc = ParseNetworkString (rule, types, &ni, &port, &prefix_length);
 
 	return (rc == ERROR_SUCCESS);
