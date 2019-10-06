@@ -3338,8 +3338,7 @@ DoExit:
 
 	if (!success)
 	{
-		if (hbitmap)
-			DeleteObject (hbitmap);
+		SAFE_DELETE_OBJECT (hbitmap);
 
 		return nullptr;
 	}
