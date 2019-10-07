@@ -2948,9 +2948,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 			}
 
-			// load settings imagelist
-
-
 			// initialize settings
 			app.SettingsAddPage (IDD_SETTINGS_GENERAL, IDS_SETTINGS_GENERAL);
 			app.SettingsAddPage (IDD_SETTINGS_RULES, IDS_TRAY_RULES);
@@ -2978,6 +2975,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// restore window size and position (required!)
 			app.RestoreWindowPosition (hwnd, L"window");
 
+			// add blocklist to update
+			app.UpdateAddComponent (L"Internal rules", L"profile_internal", _r_fmt (L"%" PRId64, config.profile_internal_timestamp), config.profile_internal_path, false);
+
 			// initialize imagelist
 			_app_imagelist_init ();
 
@@ -2991,23 +2991,17 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// load profile
 			_app_profile_load (hwnd);
 
-			// add blocklist to update
-			app.UpdateAddComponent (L"Internal rules", L"profile_internal", _r_fmt (L"%" PRId64, config.profile_internal_timestamp), config.profile_internal_path, false);
-
 			// initialize tab
 			_app_settab_id (hwnd, app.ConfigGet (L"CurrentTab", IDC_APPS_PROFILE).AsInt ());
 
 			// initialize dropped packets log callback thread (win7+)
 			{
-				// initialize slist
-				{
-					SecureZeroMemory (&log_stack, sizeof (log_stack));
+				SecureZeroMemory (&log_stack, sizeof (log_stack));
 
-					log_stack.item_count = 0;
-					log_stack.thread_count = 0;
+				log_stack.item_count = 0;
+				log_stack.thread_count = 0;
 
-					InitializeSListHead (&log_stack.ListHead);
-				}
+				InitializeSListHead (&log_stack.ListHead);
 
 				// create notification window
 				_app_notifycreatewindow ();
@@ -3025,6 +3019,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				_app_changefilters (hwnd, true, true);
 			}
 
+			// set column size when "auto-size" option are disabled
 			if (!app.ConfigGet (L"AutoSizeColumns", true).AsBool ())
 			{
 				for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
