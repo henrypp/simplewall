@@ -180,8 +180,11 @@ bool _wfp_initialize (bool is_full)
 					val.type = FWP_UINT32;
 					val.uint32 = FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW |
 						FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST |
-						FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST |
-						FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
+						FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
+
+					// win10rs6+
+					if (_r_sys_validversion (10, 0, 18334))
+						val.uint32 |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
 
 					rc = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
