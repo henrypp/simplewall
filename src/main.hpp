@@ -167,11 +167,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define NETWORK_TIMEOUT 3500
 
 // notifications
-#define NOTIFY_CLASS_DLG L"NotificationDlg"
-
-#define NOTIFY_WIDTH 496
-#define NOTIFY_HEIGHT 324
-#define NOTIFY_HEADER_HEIGHT 64
 #define NOTIFY_GRADIENT_1 RGB (0, 68, 112)
 #define NOTIFY_GRADIENT_2 RGB (7, 111, 95)
 

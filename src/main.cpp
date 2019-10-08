@@ -885,6 +885,10 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				return FALSE;
 			}
 
+#ifndef _APP_NO_DARKTHEME
+			_r_wnd_setdarktheme (hwnd);
+#endif // _APP_NO_DARKTHEME
+
 			// configure window
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
@@ -1091,20 +1095,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			ptr_rule->is_haveerrors = false;
 
-#ifndef _APP_NO_DARKTHEME
-			_r_wnd_setdarktheme (hwnd);
-#endif // _APP_NO_DARKTHEME
-
 			break;
 		}
-
-#ifndef _APP_NO_DARKTHEME
-		case WM_SYSCOLORCHANGE:
-		{
-			_r_wnd_setdarktheme (hwnd);
-			break;
-		}
-#endif // _APP_NO_DARKTHEME
 
 		case WM_NOTIFY:
 		{
@@ -2484,7 +2476,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 	return FALSE;
 }
 
-void _app_listviewsetpos (HWND hwnd, INT tab_id, INT listview_id, bool is_setfocus)
+void _app_listviewsetpos (HWND hwnd, INT tab_id, INT listview_id)
 {
 	HWND htab = GetDlgItem (hwnd, tab_id);
 	HWND hlistview = GetDlgItem (hwnd, listview_id);
@@ -2509,12 +2501,6 @@ void _app_listviewsetpos (HWND hwnd, INT tab_id, INT listview_id, bool is_setfoc
 	SendMessage (htab, TCM_ADJUSTRECT, FALSE, (LPARAM)&rc_listview);
 
 	_r_wnd_resize (nullptr, hlistview, nullptr, rc_listview.left, rc_listview.top, _R_RECT_WIDTH (&rc_listview), _R_RECT_HEIGHT (&rc_listview), 0);
-
-	if (is_setfocus)
-	{
-		if (IsWindowVisible (hwnd) && !IsIconic (hwnd)) // HACK!!!
-			SetFocus (hlistview);
-	}
 }
 
 void _app_resizewindow (HWND hwnd, INT width, INT height)
@@ -2532,7 +2518,7 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 
 	EndDeferWindowPos (hdefer);
 
-	_app_listviewsetpos (hwnd, IDC_TAB, _app_gettab_id (hwnd), false);
+	_app_listviewsetpos (hwnd, IDC_TAB, _app_gettab_id (hwnd));
 
 	// resize statusbar
 	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
@@ -2740,7 +2726,7 @@ void _app_tabs_init (HWND hwnd)
 			_r_listview_addcolumn (hwnd, listview_id, 6, app.LocaleString (IDS_STATE, nullptr), 0, LVCFMT_RIGHT);
 		}
 
-		_app_listviewsetpos (hwnd, IDC_TAB, listview_id, false);
+		_app_listviewsetpos (hwnd, IDC_TAB, listview_id);
 
 		BringWindowToTop (GetDlgItem (hwnd, listview_id)); // HACK!!!
 	}
@@ -2988,6 +2974,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// initialize tabs
 			_app_tabs_init (hwnd);
 
+#ifndef _APP_NO_DARKTHEME
+			_r_wnd_setdarktheme (hwnd);
+#endif // _APP_NO_DARKTHEME
+
 			// load profile
 			_app_profile_load (hwnd);
 
@@ -3004,7 +2994,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				InitializeSListHead (&log_stack.ListHead);
 
 				// create notification window
-				_app_notifycreatewindow ();
+				_app_notifycreatewindow (hwnd);
 			}
 
 			// create network monitor thread
@@ -3030,10 +3020,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						_app_listviewresize (hwnd, listview_id, true);
 				}
 			}
-
-#ifndef _APP_NO_DARKTHEME
-			_r_wnd_setdarktheme (hwnd);
-#endif // _APP_NO_DARKTHEME
 
 			break;
 		}
@@ -3329,6 +3315,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_app_imagelist_init ();
 
+			_app_notifyfontset (hwnd);
+
 			SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
 			// reset toolbar information
@@ -3418,8 +3406,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			if (config.hnotification)
 				DestroyWindow (config.hnotification);
-
-			UnregisterClass (NOTIFY_CLASS_DLG, app.GetHINSTANCE ());
 
 			if (config.htimer)
 				DeleteTimerQueue (config.htimer);
@@ -3526,7 +3512,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					_app_listviewsetpos (hwnd, IDC_TAB, listview_id, true);
+					_app_listviewsetpos (hwnd, IDC_TAB, listview_id);
 
 					_app_listviewsort (hwnd, listview_id);
 					_app_listviewsetview (hwnd, listview_id);
@@ -3537,7 +3523,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_listview_redraw (hwnd, listview_id);
 
-					ShowWindow (hlistview, SW_SHOW);
+					ShowWindow (hlistview, SW_SHOWNA);
+
+					if (IsWindowVisible (hwnd) && !IsIconic (hwnd)) // HACK!!!
+						SetFocus (hlistview);
 
 					break;
 				}
