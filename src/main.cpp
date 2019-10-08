@@ -1692,7 +1692,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					CheckDlgButton (hwnd, IDC_CHECKUPDATES_CHK, app.ConfigGet (L"CheckUpdates", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
-#if defined(_APP_BETA) || defined(_APP_BETA_RC)
+#ifdef _APP_BETA
 					CheckDlgButton (hwnd, IDC_CHECKUPDATESBETA_CHK, BST_CHECKED);
 					_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, false);
 #else
@@ -1700,7 +1700,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					if (!app.ConfigGet (L"CheckUpdates", true).AsBool ())
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, false);
-#endif
+#endif // _APP_BETA
 
 					app.LocaleEnum (hwnd, IDC_LANGUAGE, false, 0);
 
@@ -2240,9 +2240,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						app.ConfigSet (L"CheckUpdates", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 
-#if !defined(_APP_BETA) && !defined(_APP_BETA_RC)
+#ifndef _APP_BETA
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-#endif
+#endif // _APP_BETA
 					}
 					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
 					{
@@ -2840,9 +2840,9 @@ void _app_initialize ()
 
 		timers.clear ();
 
-#if defined(_APP_BETA) || defined(_APP_BETA_RC)
+#ifdef _APP_BETA
 		timers.push_back (_R_SECONDSCLOCK_MIN (1));
-#endif // _APP_BETA || _APP_BETA_RC
+#endif // _APP_BETA
 
 		timers.push_back (_R_SECONDSCLOCK_MIN (10));
 		timers.push_back (_R_SECONDSCLOCK_MIN (20));
@@ -5753,7 +5753,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-#if defined(_APP_BETA) || defined(_APP_BETA_RC)
+#ifdef _APP_BETA
 
 #define FN_AD L"<test filter>"
 #define RM_AD L"195.210.46.95"
@@ -5861,7 +5861,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					break;
 				}
-#endif // _APP_BETA || _APP_BETA_RC
+#endif // _APP_BETA
 			}
 
 			break;
