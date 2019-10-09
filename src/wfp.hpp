@@ -29,7 +29,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC& ptr_rules, UINT line, boo
 bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC& ptr_apps, UINT line, bool is_intransact = false);
 bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact = false);
 
-void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, UINT line);
+void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL const pacl, UINT line);
 
 size_t _wfp_dumpfilters (HANDLE hengine, const GUID* pprovider, GUIDS_VEC* ptr_filters);
 
@@ -38,5 +38,5 @@ void _mps_changeconfig2 (bool is_enable);
 
 DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumDataType type);
 
-bool ByteBlobAlloc (PVOID data, size_t length, FWP_BYTE_BLOB** lpblob);
+bool ByteBlobAlloc (PVOID const data, size_t length, FWP_BYTE_BLOB** lpblob);
 void ByteBlobFree (FWP_BYTE_BLOB** lpblob);

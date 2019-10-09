@@ -18,9 +18,9 @@ void _app_freeapplication (size_t app_hash);
 
 void _app_getcount (PITEM_STATUS ptr_status);
 
-INT _app_getappgroup (size_t app_hash, PITEM_APP ptr_app);
-INT _app_getrulegroup (PITEM_RULE ptr_rule);
-INT _app_getruleicon (PITEM_RULE ptr_rule);
+INT _app_getappgroup (size_t app_hash, PITEM_APP const ptr_app);
+INT _app_getrulegroup (PITEM_RULE const ptr_rule);
+INT _app_getruleicon (PITEM_RULE const ptr_rule);
 
 rstring _app_gettooltip (INT listview_id, size_t lparam);
 
@@ -34,14 +34,14 @@ bool _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state);
 bool _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT update_state, INT extra_state);
 void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extra_state, bool is_instantapply);
 
-rstring _app_rulesexpandapps (PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delimeter);
+rstring _app_rulesexpandapps (PITEM_RULE const ptr_rule, bool is_fordisplay, LPCWSTR delimeter);
 
 bool _app_isappfound (size_t app_hash);
 bool _app_isapphaveconnection (size_t app_hash);
 bool _app_isapphavedrive (INT letter);
 bool _app_isapphaverule (size_t app_hash);
-bool _app_isappused (ITEM_APP *ptr_app, size_t app_hash);
-bool _app_isappexists (ITEM_APP *ptr_app);
+bool _app_isappused (PITEM_APP const ptr_app, size_t app_hash);
+bool _app_isappexists (PITEM_APP const ptr_app);
 
 //bool _app_isruleblocklist (LPCWSTR name);
 bool _app_isrulehost (LPCWSTR rule);

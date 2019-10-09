@@ -1665,7 +1665,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	return true;
 }
 
-void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL pacl, UINT line)
+void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL const pacl, UINT line)
 {
 	if (!hengine || filter_id == GUID_NULL)
 		return;
@@ -1988,7 +1988,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 	return ERROR_FILE_NOT_FOUND;
 }
 
-bool ByteBlobAlloc (PVOID data, size_t length, FWP_BYTE_BLOB * *lpblob)
+bool ByteBlobAlloc (PVOID const data, size_t length, FWP_BYTE_BLOB * *lpblob)
 {
 	if (!data || !length || !lpblob)
 		return false;
