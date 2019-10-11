@@ -947,7 +947,7 @@ bool _app_isapphavedrive (INT letter)
 
 		INT drive_id = PathGetDriveNumber (ptr_app->original_path);
 
-		if (drive_id != INVALID_INT && drive_id == letter)
+		if ((drive_id != INVALID_INT && drive_id == letter) || ptr_app->type == DataAppDevice)
 		{
 			if (ptr_app->is_enabled || _app_isapphaverule (p.first))
 			{
