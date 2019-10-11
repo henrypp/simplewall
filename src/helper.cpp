@@ -2349,7 +2349,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 		return;
 
 	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
-	const INT colummn_count = _r_listview_getcolumncount (hwnd, listview_id);
+	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
 
 	bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
 
@@ -2359,7 +2359,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 	if (column_id == INVALID_INT)
 		column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
 
-	column_id = std::clamp (column_id, 0, colummn_count - 1); // set range
+	column_id = std::clamp (column_id, 0, column_count - 1); // set range
 
 	if (is_notifycode)
 	{
@@ -2367,7 +2367,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 		app.ConfigSet (L"SortColumn", column_id, cfg_name);
 	}
 
-	for (INT i = 0; i < colummn_count; i++)
+	for (INT i = 0; i < column_count; i++)
 		_r_listview_setcolumnsortindex (hwnd, listview_id, i, 0);
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
