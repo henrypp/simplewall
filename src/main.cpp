@@ -54,7 +54,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 	GetClientRect (GetDlgItem (hwnd, listview_id), &rect);
 
 	const INT total_width = _R_RECT_WIDTH (&rect);
-	const INT spacing = _r_dc_getdpi (_R_SIZE_ICON16);
+	const INT spacing = _r_dc_getdpi (hwnd, _R_SIZE_ICON16);
 
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 	const HWND hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
@@ -72,7 +72,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 
 	if (column_count)
 	{
-		const INT column_max_width = _r_dc_getdpi (120);
+		const INT column_max_width = _r_dc_getdpi (hwnd, 120);
 		INT column_min_width;
 
 		INT column_width;
@@ -148,7 +148,7 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
 }
 
-bool _app_listviewinitfont (PLOGFONT plf)
+bool _app_listviewinitfont (HWND hwnd, PLOGFONT plf)
 {
 	const rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
 
@@ -170,7 +170,7 @@ bool _app_listviewinitfont (PLOGFONT plf)
 				_r_str_copy (plf->lfFaceName, LF_FACESIZE, rlink);
 
 			else if (i == 1)
-				plf->lfHeight = _r_dc_fontsizetoheight (rlink.AsInt ());
+				plf->lfHeight = _r_dc_fontsizetoheight (hwnd, rlink.AsInt ());
 
 			else if (i == 2)
 				plf->lfWeight = rlink.AsInt ();
@@ -215,7 +215,7 @@ void _app_listviewsetfont (HWND hwnd, INT listview_id, bool is_redraw)
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		_app_listviewinitfont (&lf);
+		_app_listviewinitfont (hwnd, &lf);
 
 		config.hfont = CreateFontIndirect (&lf);
 	}
@@ -892,8 +892,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// configure window
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
-			SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getdpi (_R_SIZE_ICON16)));
-			SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getdpi (_R_SIZE_ICON32)));
+			SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getdpi (hwnd, _R_SIZE_ICON16)));
+			SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getdpi (hwnd, _R_SIZE_ICON32)));
 
 			// localize window
 			SetWindowText (hwnd, app.LocaleString (IDS_EDITOR, (!_r_str_isempty (ptr_rule->pname) ? _r_fmt (L" - \"%s\"", ptr_rule->pname).GetString () : nullptr)));
@@ -2528,11 +2528,11 @@ void _app_resizewindow (HWND hwnd, INT width, INT height)
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 }
 
-void _app_imagelist_init ()
+void _app_imagelist_init (HWND hwnd)
 {
-	const INT icon_size_small = _r_dc_getdpi (_R_SIZE_ICON16);
-	const INT icon_size_large = _r_dc_getdpi (_R_SIZE_ICON32);
-	const INT icon_size_toolbar = _r_dc_getdpi (std::clamp (_r_dc_getdpi (app.ConfigGet (L"ToolbarSize", _R_SIZE_ITEMHEIGHT).AsInt ()), _R_SIZE_ICON16, _R_SIZE_ICON32));
+	const INT icon_size_small = _r_dc_getdpi (hwnd, _R_SIZE_ICON16);
+	const INT icon_size_large = _r_dc_getdpi (hwnd, _R_SIZE_ICON32);
+	const INT icon_size_toolbar = _r_dc_getdpi (hwnd, std::clamp (app.ConfigGet (L"ToolbarSize", _R_SIZE_ITEMHEIGHT).AsInt (), _R_SIZE_ICON16, _R_SIZE_ICON32));
 
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
@@ -2968,7 +2968,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			app.UpdateAddComponent (L"Internal rules", L"profile_internal", _r_fmt (L"%" PRId64, config.profile_internal_timestamp), config.profile_internal_path, false);
 
 			// initialize imagelist
-			_app_imagelist_init ();
+			_app_imagelist_init (hwnd);
 
 			// initialize toolbar
 			_app_toolbar_init (hwnd);
@@ -2997,7 +2997,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				InitializeSListHead (&log_stack.ListHead);
 
 				// create notification window
-				_app_notifycreatewindow (hwnd);
+				config.hnotification = CreateDialog (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_NOTIFICATION), hwnd, &NotificationProc);
 			}
 
 			// create network monitor thread
@@ -3035,7 +3035,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			else
 				SetWindowText (hwnd, APP_NAME);
 
-			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), IDI_ACTIVE, _r_dc_getdpi (_R_SIZE_ICON16)), APP_NAME, true);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), IDI_ACTIVE, _r_dc_getdpi (hwnd, _R_SIZE_ICON16)), APP_NAME, true);
 
 			const HMENU hmenu = GetMenu (hwnd);
 
@@ -3306,6 +3306,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_addstyle (config.hnotification, IDC_RULES_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (config.hnotification, IDC_ALLOW_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (config.hnotification, IDC_BLOCK_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
+			_r_wnd_addstyle (config.hnotification, IDC_LATER_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 			_app_notifyrefresh (config.hnotification, false);
 
@@ -3316,7 +3317,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			const INT listview_id = _app_gettab_id (hwnd);
 
-			_app_imagelist_init ();
+			_app_imagelist_init (hwnd);
 
 			_app_notifyfontset (config.hnotification);
 			_app_notifyrefresh (config.hnotification, false);
@@ -4682,11 +4683,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					cf.nSizeMin = 8;
 					cf.lpLogFont = &lf;
 
-					_app_listviewinitfont (&lf);
+					_app_listviewinitfont (hwnd, &lf);
 
 					if (ChooseFont (&cf))
 					{
-						app.ConfigSet (L"Font", !_r_str_isempty (lf.lfFaceName) ? _r_fmt (L"%s;%d;%d", lf.lfFaceName, _r_dc_fontheighttosize (lf.lfHeight), lf.lfWeight) : UI_FONT_DEFAULT);
+						app.ConfigSet (L"Font", !_r_str_isempty (lf.lfFaceName) ? _r_fmt (L"%s;%d;%d", lf.lfFaceName, _r_dc_fontheighttosize (hwnd, lf.lfHeight), lf.lfWeight) : UI_FONT_DEFAULT);
 
 						SAFE_DELETE_OBJECT (config.hfont);
 

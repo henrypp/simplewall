@@ -124,8 +124,8 @@ void _app_setinterfacestate (HWND hwnd)
 	const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
 	const INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 
-	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getdpi (_R_SIZE_ICON16));
-	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getdpi (_R_SIZE_ICON32));
+	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getdpi (hwnd, _R_SIZE_ICON16));
+	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getdpi (hwnd, _R_SIZE_ICON32));
 
 	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
 	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
@@ -2391,7 +2391,7 @@ void _app_refreshstatus (HWND hwnd, bool is_groups)
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
 		const INT parts_count = 3;
-		const INT spacing = _r_dc_getdpi (12);
+		const INT spacing = _r_dc_getdpi (hwnd, 12);
 
 		rstring text[parts_count];
 		INT parts[parts_count] = {0};
