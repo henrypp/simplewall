@@ -113,7 +113,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%USERPROFILE%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
 #define LOG_VIEWER_DEFAULT L"%SystemRoot%\\notepad.exe"
-#define LOG_SIZE_LIMIT_DEFAULT 1024UL
+#define LOG_SIZE_LIMIT_DEFAULT _R_BYTESIZE_KB
 
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
