@@ -3318,7 +3318,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_app_imagelist_init ();
 
-			_app_notifyfontset (hwnd);
+			_app_notifyfontset (config.hnotification);
+			_app_notifyrefresh (config.hnotification, false);
 
 			SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
