@@ -682,7 +682,7 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 		case CDDS_ITEMPREPAINT:
 		{
 			const bool is_tableview = (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
-			const INT listview_id = PtrToInt ((void*)lpnmlv->nmcd.hdr.idFrom);
+			const INT listview_id = static_cast<INT>(lpnmlv->nmcd.hdr.idFrom);
 
 			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_APPS_LV || listview_id == IDC_NETWORK)
 			{
@@ -1125,7 +1125,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (lpnmlv->iItem == INVALID_INT)
 						break;
 
-					const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+					const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
 					if (listview_id != IDC_APPS_LV)
 						break;
@@ -1148,7 +1148,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case LVN_COLUMNCLICK:
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-					_app_listviewsort (hwnd, PtrToInt ((void*)lpnmlv->hdr.idFrom), lpnmlv->iSubItem, true);
+					_app_listviewsort (hwnd, static_cast<INT>(lpnmlv->hdr.idFrom), lpnmlv->iSubItem, true);
 
 					break;
 				}
@@ -1162,7 +1162,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (_r_fastlock_islocked (&lock_checkbox))
 							break;
 
-						const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
 						const bool is_havechecks = !!_r_listview_getitemcount (hwnd, listview_id, true);
 						CheckRadioButton (hwnd, IDC_DISABLE_CHK, IDC_ENABLEFORAPPS_CHK, is_havechecks ? IDC_ENABLEFORAPPS_CHK : IDC_DISABLE_CHK);
@@ -1179,7 +1179,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
 
-						const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
 						const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
 
@@ -2043,7 +2043,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
 
-					const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+					const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
 					if (listview_id != IDC_COLORS)
 						break;
@@ -2086,7 +2086,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+					const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
 					if (lpnmlv->iItem == INVALID_INT || listview_id != IDC_COLORS)
 						break;
@@ -3536,7 +3536,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					LONG result = CDRF_DODEFAULT;
 					LPNMLVCUSTOMDRAW lpnmcd = (LPNMLVCUSTOMDRAW)lparam;
 
-					const INT ctrl_id = PtrToInt ((void*)lpnmcd->nmcd.hdr.idFrom);
+					const INT ctrl_id = static_cast<INT>(lpnmcd->nmcd.hdr.idFrom);
 
 					if (ctrl_id == IDC_TOOLBAR)
 					{
@@ -3558,7 +3558,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case LVN_COLUMNCLICK:
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-					_app_listviewsort (hwnd, PtrToInt ((void*)lpnmlv->hdr.idFrom), lpnmlv->iSubItem, true);
+					_app_listviewsort (hwnd, static_cast<INT>(lpnmlv->hdr.idFrom), lpnmlv->iSubItem, true);
 
 					break;
 				}
@@ -3569,7 +3569,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
 
-						const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 						const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
 
 						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (listview_id, idx));
@@ -3589,7 +3589,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (_r_fastlock_islocked (&lock_checkbox))
 							break;
 
-						const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 						bool is_changed = false;
 
 						const bool new_val = (lpnmlv->uNewState == 8192) ? true : false;
@@ -3695,7 +3695,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						break;
 
 					INT command_id = 0;
-					const INT ctrl_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+					const INT ctrl_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
 					if (ctrl_id == IDC_STATUSBAR)
 					{
@@ -3732,7 +3732,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (lpnmlv->iItem == INVALID_INT)
 						break;
 
-					const INT listview_id = PtrToInt ((void*)lpnmlv->hdr.idFrom);
+					const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
 					UINT menu_id;
 
