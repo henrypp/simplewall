@@ -1,3 +1,25 @@
+v3.0.6 RC (12 October 2019)
+- added windows 10 rs6 support
+- added csv file title (clear the log to see changes)
+- disable network address resolution in network tab by default (issue #515)
+- improved refreshing filters on device connecting
+- improved network monitoring speed and ui
+- improved notification ui
+- improved dpi support
+- fixed collecting services & uwp information
+- fixed device names resolution (issue #529)
+- fixed toolbar gray text draw (issue #437)
+- fixed network items blinking on refresh
+- fixed flickering on window resizing
+- fixed notification windows refresh
+- fixed hostname restricted symbols
+- fixed wfp security attributes
+- fixed highlighting priority
+- fixed memory leak
+- updated system rules
+- cosmetics fixes
+- fixed bugs
+
 v3.0.5 RC (6 August 2019)
 - added option to block outbound connections globally
 - added close connection feature (issue #506)
@@ -8,7 +30,7 @@ v3.0.5 RC (6 August 2019)
 - fixed user rules ui bug (issue #500)
 - fixed dropped packets log layout
 - fixed internal rules editor
-- fixed ipv6 rule formatting
+- fixed ipv6 rule formatting (issue #475)
 - fixed connections hashing
 - listview menu cosmetics
 - cosmetics fixes
