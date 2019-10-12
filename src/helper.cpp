@@ -1079,6 +1079,12 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 1120:
 			return L"bnetfile";
 
+		case 1123:
+			return L"murray";
+
+		case 1194:
+			return L"openvpn";
+
 		case 1337:
 			return L"menandmice-dns";
 
@@ -1106,6 +1112,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 
 		case 2000:
 			return L"cisco-sccp";
+
+		case 2003:
+			return L"finger";
 
 		case 2054:
 			return L"weblogin";
@@ -1164,6 +1173,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 3540:
 			return L"pnrp-port";
 
+		case 3558:
+			return L"mcp-port";
+
 		case 3587:
 			return L"p2pgroup";
 
@@ -1184,6 +1196,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 
 		case 4687:
 			return L"nst";
+
+		case 4876:
+			return L"tritium-can";
 
 		case 4899:
 			return L"radmin";
@@ -1208,6 +1223,15 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 
 		case 5190:
 			return L"aol";
+
+		case 5350:
+			return L"nat-pmp-status";
+
+		case 5351:
+			return L"nat-pmp";
+
+		case 5352:
+			return L"dns-llq";
 
 		case 5353:
 			return L"mdns";
@@ -1257,6 +1281,13 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 6222:
 		case 6662: // deprecated!
 			return L"radmind";
+
+		case 6346:
+			return L"gnutella";
+
+		case 6347:
+			return L"gnutella2";
+
 
 		case 6622:
 			return L"mcftp";
