@@ -25,7 +25,7 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
 void _app_setinterfacestate (HWND hwnd);
 
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags);
-rstring _app_formatport (UINT16 port, LPCWSTR empty_text);
+rstring _app_formatport (UINT16 port, bool is_noempty);
 
 void _app_freeobjects_map (OBJECTS_MAP& ptr_map, bool is_forced);
 void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec);

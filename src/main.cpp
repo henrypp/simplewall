@@ -413,10 +413,10 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 					_r_listview_setitem (hwnd, network_listview_id, item, 6, _app_getstatename (ptr_network->state));
 
 					if (ptr_network->local_port)
-						_r_listview_setitem (hwnd, network_listview_id, item, 2, _app_formatport (ptr_network->local_port, nullptr));
+						_r_listview_setitem (hwnd, network_listview_id, item, 2, _app_formatport (ptr_network->local_port, true));
 
 					if (ptr_network->remote_port)
-						_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_formatport (ptr_network->remote_port, nullptr));
+						_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_formatport (ptr_network->remote_port, true));
 
 					// redraw listview item
 					if (is_highlighting_enabled)
