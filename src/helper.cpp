@@ -100,7 +100,7 @@ bool _app_initinterfacestate (HWND hwnd, bool is_forced)
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
 
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."), nullptr);
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
 
 		return true;
 	}
@@ -115,7 +115,7 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (TRUE, 0));
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (TRUE, 0));
 
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr), nullptr);
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
 	}
 }
 
@@ -249,14 +249,11 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	return !_r_str_isempty (formatted_address);
 }
 
-rstring _app_formatport (UINT16 port, LPCWSTR empty_text)
+rstring _app_formatport (UINT16 port, bool is_noempty)
 {
-	if (!port)
-		return empty_text;
-
 	rstring result;
 
-	if (_r_str_isempty (empty_text))
+	if (is_noempty)
 	{
 		result.Format (L"%" PRIu16, port);
 
@@ -2468,7 +2465,7 @@ void _app_refreshstatus (HWND hwnd, bool is_groups)
 		SendMessage (hstatus, SB_SETPARTS, parts_count, (LPARAM)parts);
 
 		for (INT i = 0; i < parts_count; i++)
-			_r_status_settext (hwnd, IDC_STATUSBAR, i, text[i], text[i]);
+			_r_status_settext (hwnd, IDC_STATUSBAR, i, text[i]);
 
 		ReleaseDC (hstatus, hdc);
 	}
