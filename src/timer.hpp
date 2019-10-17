@@ -3,8 +3,8 @@
 
 #pragma once
 
-bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds);
-bool _app_timer_reset (HWND hwnd, PITEM_APP ptr_app);
+void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds);
+void _app_timer_reset (HWND hwnd, PITEM_APP ptr_app);
 
 bool _app_istimeractive (PITEM_APP const ptr_app);
 bool _app_istimersactive ();

@@ -3,10 +3,10 @@
 
 #include "global.hpp"
 
-bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
+void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 {
 	if (!ptr_app)
-		return false;
+		return;
 
 	const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
 
@@ -25,47 +25,37 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 			ptr_app->htimer = nullptr;
 		}
-
-		if (item_pos != INVALID_INT)
-		{
-			_r_fastlock_acquireshared (&lock_checkbox);
-
-			_r_listview_setitem (hwnd, listview_id, item_pos, 0, nullptr, INVALID_INT, _app_getappgroup (app_hash, ptr_app));
-			_r_listview_setitemcheck (hwnd, listview_id, item_pos, ptr_app->is_enabled);
-
-			_r_fastlock_releaseshared (&lock_checkbox);
-		}
-
-		return false;
-	}
-
-	const time_t current_time = _r_unixtime_now ();
-
-	BOOL is_created = FALSE;
-
-	if (ptr_app->htimer)
-	{
-		is_created = ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0);
 	}
 	else
 	{
-		is_created = CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
-	}
+		const time_t current_time = _r_unixtime_now ();
 
-	if (is_created)
-	{
-		ptr_app->is_enabled = true;
-		ptr_app->timer = current_time + seconds;
-	}
-	else
-	{
-		ptr_app->is_enabled = false;
-		ptr_app->timer = 0;
+		BOOL is_created = FALSE;
 
 		if (ptr_app->htimer)
 		{
-			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
-			ptr_app->htimer = nullptr;
+			is_created = ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0);
+		}
+		else
+		{
+			is_created = CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
+		}
+
+		if (is_created)
+		{
+			ptr_app->is_enabled = true;
+			ptr_app->timer = current_time + seconds;
+		}
+		else
+		{
+			ptr_app->is_enabled = false;
+			ptr_app->timer = 0;
+
+			if (ptr_app->htimer)
+			{
+				DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
+				ptr_app->htimer = nullptr;
+			}
 		}
 	}
 
@@ -78,14 +68,12 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 		_r_fastlock_releaseshared (&lock_checkbox);
 	}
-
-	return true;
 }
 
-bool _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
+void _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 {
 	if (!ptr_app || !_app_istimeractive (ptr_app))
-		return false;
+		return;
 
 	ptr_app->is_haveerrors = false;
 
@@ -112,8 +100,6 @@ bool _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 			_r_fastlock_releaseshared (&lock_checkbox);
 		}
 	}
-
-	return true;
 }
 
 bool _app_istimeractive (PITEM_APP const ptr_app)
