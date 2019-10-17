@@ -1725,7 +1725,7 @@ void _app_profile_save (LPCWSTR path_custom)
 							item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
 
 						// set timer (if presented)
-						if (_app_istimeractive (ptr_app))
+						if (ptr_app->timer && _app_istimeractive (ptr_app))
 							item.append_attribute (L"timer").set_value (ptr_app->timer);
 
 						// ffu!
