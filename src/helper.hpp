@@ -32,7 +32,7 @@ void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec);
 void _app_freethreadpool (THREADS_VEC* ptr_pool);
 void _app_freelogstack ();
 
-void _app_getappicon (ITEM_APP* ptr_app, bool is_small, PINT picon_id, HICON* picon);
+void _app_getappicon (PITEM_APP ptr_app, bool is_small, PINT picon_id, HICON* picon);
 void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR* extracted_name);
 bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON* picon);
 rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path);

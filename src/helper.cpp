@@ -327,7 +327,7 @@ void _app_freelogstack ()
 	}
 }
 
-void _app_getappicon (ITEM_APP* ptr_app, bool is_small, PINT picon_id, HICON * picon)
+void _app_getappicon (PITEM_APP ptr_app, bool is_small, PINT picon_id, HICON * picon)
 {
 	const bool is_iconshidden = app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
@@ -560,7 +560,7 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app)
 
 						if (psProvCert)
 						{
-							const DWORD num_chars = CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, nullptr, 0) + 1;
+							const DWORD num_chars = CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, nullptr, 0);
 
 							if (num_chars > 1)
 							{
@@ -785,6 +785,7 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 			return L"vettcp";
 
 		case 79:
+		case 2003:
 			return L"finger";
 
 		case 80:
@@ -1109,9 +1110,6 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 
 		case 2000:
 			return L"cisco-sccp";
-
-		case 2003:
-			return L"finger";
 
 		case 2054:
 			return L"weblogin";
@@ -1610,7 +1608,7 @@ size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWO
 	return _r_str_hash (_r_fmt (L"%" PRIu8 L"_%" PRId32 L"_%s_%" PRId32 L"_%s_%" PRId32 L"_%" PRIu8 "_%" PRId32, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
 }
 
-bool _app_isvalidconnection (ADDRESS_FAMILY af, PVOID paddr)
+bool _app_isvalidconnection (ADDRESS_FAMILY af, const PVOID paddr)
 {
 	if (af == AF_INET)
 	{
