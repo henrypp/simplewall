@@ -8,8 +8,15 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 	if (!ptr_app)
 		return false;
 
+	const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
+
+	const INT listview_id = _app_getlistview_id (ptr_app->type);
+	const INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
+
 	if (seconds <= 0)
 	{
+		ptr_app->is_enabled = false;
+
 		if (ptr_app->timer)
 			ptr_app->timer = 0;
 
@@ -19,12 +26,21 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 			ptr_app->htimer = nullptr;
 		}
 
+		if (item_pos != INVALID_INT)
+		{
+			_r_fastlock_acquireshared (&lock_checkbox);
+
+			_r_listview_setitem (hwnd, listview_id, item_pos, 0, nullptr, INVALID_INT, _app_getappgroup (app_hash, ptr_app));
+			_r_listview_setitemcheck (hwnd, listview_id, item_pos, ptr_app->is_enabled);
+
+			_r_fastlock_releaseshared (&lock_checkbox);
+		}
+
 		return false;
 	}
 
 	const time_t current_time = _r_unixtime_now ();
 
-	const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
 	BOOL is_created = FALSE;
 
 	if (ptr_app->htimer)
@@ -52,9 +68,6 @@ bool _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 			ptr_app->htimer = nullptr;
 		}
 	}
-
-	const INT listview_id = _app_getlistview_id (ptr_app->type);
-	const INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
 
 	if (item_pos != INVALID_INT)
 	{
