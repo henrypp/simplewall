@@ -279,7 +279,6 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 	_r_ctrl_settext (hwnd, IDC_RULES_BTN, app.LocaleString (IDS_TRAY_RULES, nullptr));
 	_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
 	_r_ctrl_settext (hwnd, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
-	_r_ctrl_settext (hwnd, IDC_LATER_BTN, L">");
 
 	_r_ctrl_enable (hwnd, IDC_RULES_BTN, !is_safety);
 	_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
@@ -485,9 +484,10 @@ void _app_notifyfontset (HWND hwnd)
 			SendDlgItemMessage (hwnd, i, WM_SETFONT, (WPARAM)hfont_text, TRUE);
 
 		// set button images
-		SendDlgItemMessage (hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)config.hbmp_rules);
-		SendDlgItemMessage (hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)config.hbmp_allow);
-		SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (WPARAM)config.hbmp_block);
+		SendDlgItemMessage (hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)config.hbmp_rules);
+		SendDlgItemMessage (hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)config.hbmp_allow);
+		SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)config.hbmp_block);
+		SendDlgItemMessage (hwnd, IDC_LATER_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)config.hbmp_cross);
 	}
 
 	_r_wnd_addstyle (hwnd, IDC_RULES_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
@@ -548,6 +548,12 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				_r_ctrl_settip (htip, hwnd, IDC_LATER_BTN, LPSTR_TEXTCALLBACK);
 			}
 
+			break;
+		}
+
+		case WM_NCCREATE:
+		{
+			_r_dc_enablenonclientscaling (hwnd);
 			break;
 		}
 

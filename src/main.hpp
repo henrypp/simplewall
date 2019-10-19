@@ -251,6 +251,7 @@ struct STATIC_DATA
 	HBITMAP hbmp_disable = nullptr;
 	HBITMAP hbmp_allow = nullptr;
 	HBITMAP hbmp_block = nullptr;
+	HBITMAP hbmp_cross = nullptr;
 	HBITMAP hbmp_rules = nullptr;
 	HBITMAP hbmp_checked = nullptr;
 	HBITMAP hbmp_unchecked = nullptr;

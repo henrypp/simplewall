@@ -2538,6 +2538,7 @@ void _app_imagelist_init (HWND hwnd)
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
 	SAFE_DELETE_OBJECT (config.hbmp_allow);
 	SAFE_DELETE_OBJECT (config.hbmp_block);
+	SAFE_DELETE_OBJECT (config.hbmp_cross);
 	SAFE_DELETE_OBJECT (config.hbmp_rules);
 	SAFE_DELETE_OBJECT (config.hbmp_checked);
 	SAFE_DELETE_OBJECT (config.hbmp_unchecked);
@@ -2547,6 +2548,7 @@ void _app_imagelist_init (HWND hwnd)
 
 	config.hbmp_allow = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_ALLOW), icon_size_small);
 	config.hbmp_block = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), icon_size_small);
+	config.hbmp_cross = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_CROSS), icon_size_small);
 	config.hbmp_rules = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_RULES), icon_size_small);
 
 	config.hbmp_checked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_CHECKED), icon_size_small);
@@ -3310,6 +3312,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_app_notifyrefresh (config.hnotification, false);
 
+			break;
+		}
+
+		case WM_NCCREATE:
+		{
+			_r_dc_enablenonclientscaling (hwnd);
 			break;
 		}
 
