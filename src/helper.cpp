@@ -406,32 +406,30 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON * picon
 
 	bool result = false;
 
-	SHFILEINFO shfi = {0};
-	DWORD flags = 0;
-
-	if (picon_id)
-		flags |= SHGFI_SYSICONINDEX;
-
-	if (picon)
-		flags |= SHGFI_ICON;
-
-	if (is_small)
-		flags |= SHGFI_SMALLICON;
-
 	const HRESULT hrComInit = CoInitialize (nullptr);
 
 	if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
 	{
+		SHFILEINFO shfi = {0};
+
+		DWORD flags = 0;
+
+		if (picon_id)
+			flags |= SHGFI_SYSICONINDEX;
+
+		if (picon)
+			flags |= SHGFI_ICON;
+
+		if (is_small)
+			flags |= SHGFI_SMALLICON;
+
 		if (SHGetFileInfo (path, 0, &shfi, sizeof (shfi), flags))
 		{
 			if (picon_id)
 				*picon_id = shfi.iIcon;
 
 			if (picon && shfi.hIcon)
-			{
-				*picon = CopyIcon (shfi.hIcon);
-				DestroyIcon (shfi.hIcon);
-			}
+				*picon = shfi.hIcon;
 
 			result = true;
 		}

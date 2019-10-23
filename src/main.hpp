@@ -452,8 +452,7 @@ typedef struct tagITEM_LOG
 		SAFE_DELETE_ARRAY (remote_fmt);
 		SAFE_DELETE_ARRAY (local_fmt);
 
-		if (hicon)
-			DestroyIcon (hicon);
+		SAFE_DELETE_ICON (hicon);
 	}
 
 	LPWSTR path = nullptr;

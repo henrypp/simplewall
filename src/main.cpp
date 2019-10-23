@@ -2543,6 +2543,25 @@ void _app_imagelist_init (HWND hwnd)
 	SAFE_DELETE_OBJECT (config.hbmp_checked);
 	SAFE_DELETE_OBJECT (config.hbmp_unchecked);
 
+	SAFE_DELETE_ICON (config.hicon_large);
+	SAFE_DELETE_ICON (config.hicon_small);
+	SAFE_DELETE_ICON (config.hicon_package);
+
+	// get default icon for executable
+	_app_getfileicon (_r_path_expand (PATH_NTOSKRNL), false, &config.icon_id, &config.hicon_large);
+	_app_getfileicon (_r_path_expand (PATH_NTOSKRNL), true, nullptr, &config.hicon_small);
+	_app_getfileicon (_r_path_expand (PATH_SHELL32), false, &config.icon_service_id, nullptr);
+
+	// get default icon for windows store package (win8+)
+	if (_r_sys_validversion (6, 2))
+	{
+		if (!_app_getfileicon (_r_path_expand (PATH_WINSTORE), true, &config.icon_uwp_id, &config.hicon_package))
+		{
+			config.icon_uwp_id = config.icon_id;
+			config.hicon_package = CopyIcon (config.hicon_small);
+		}
+	}
+
 	config.hbmp_enable = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_size_small);
 	config.hbmp_disable = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_size_small);
 
@@ -2924,21 +2943,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// allow drag&drop support
 			DragAcceptFiles (hwnd, TRUE);
 
-			// get default icon for executable
-			_app_getfileicon (_r_path_expand (PATH_NTOSKRNL), false, &config.icon_id, &config.hicon_large);
-			_app_getfileicon (_r_path_expand (PATH_NTOSKRNL), true, nullptr, &config.hicon_small);
-			_app_getfileicon (_r_path_expand (PATH_SHELL32), false, &config.icon_service_id, nullptr);
-
-			// get default icon for windows store package (win8+)
-			if (_r_sys_validversion (6, 2))
-			{
-				if (!_app_getfileicon (_r_path_expand (PATH_WINSTORE), true, &config.icon_uwp_id, &config.hicon_package))
-				{
-					config.icon_uwp_id = config.icon_id;
-					config.hicon_package = config.hicon_small;
-				}
-			}
-
 			// initialize settings
 			app.SettingsAddPage (IDD_SETTINGS_GENERAL, IDS_SETTINGS_GENERAL);
 			app.SettingsAddPage (IDD_SETTINGS_RULES, IDS_TRAY_RULES);
@@ -2999,7 +3003,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				InitializeSListHead (&log_stack.ListHead);
 
 				// create notification window
-				config.hnotification = CreateDialog (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_NOTIFICATION), hwnd, &NotificationProc);
+				_app_notifycreatewindow (hwnd);
 			}
 
 			// create network monitor thread
