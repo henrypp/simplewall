@@ -3133,7 +3133,11 @@ void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 
 	if (item != INVALID_INT)
 	{
-		item = std::clamp (item, 0, total_count - 1);
+		if (total_count == 1)
+			item = 0;
+
+		else
+			item = std::clamp (item, 0, total_count - 1);
 
 		SendMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
 

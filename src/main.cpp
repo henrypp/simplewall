@@ -105,7 +105,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 					}
 				}
 
-				column_width = std::clamp (column_width, column_min_width, column_max_width);
+				column_width = std::clamp (column_width, column_min_width, (std::max) (column_min_width, column_max_width));
 				calculated_width += column_width;
 			}
 
@@ -377,7 +377,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 		HASHER_MAP checker_map;
 
-		network_timeout = std::clamp (network_timeout, 500UL, 60UL * 1000); // set allowed range
+		network_timeout = std::clamp (network_timeout, 500UL, 60UL * 1000UL); // set allowed range
 
 		while (true)
 		{
@@ -2573,6 +2573,7 @@ void _app_imagelist_init (HWND hwnd)
 	config.hbmp_checked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_CHECKED), icon_size_small);
 	config.hbmp_unchecked = _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_UNCHECKED), icon_size_small);
 
+	// toolbar imagelist
 	if (config.himg_toolbar)
 		ImageList_SetIconSize (config.himg_toolbar, icon_size_toolbar, icon_size_toolbar);
 	else
@@ -2592,6 +2593,7 @@ void _app_imagelist_init (HWND hwnd)
 		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_HEARTH), icon_size_toolbar), nullptr);
 	}
 
+	// rules imagelist (small)
 	if (config.himg_rules_small)
 		ImageList_SetIconSize (config.himg_rules_small, icon_size_small, icon_size_small);
 	else
@@ -2603,6 +2605,7 @@ void _app_imagelist_init (HWND hwnd)
 		ImageList_Add (config.himg_rules_small, _app_bitmapfrompng (app.GetHINSTANCE (), MAKEINTRESOURCE (IDP_BLOCK), icon_size_small), nullptr);
 	}
 
+	// rules imagelist (large)
 	if (config.himg_rules_large)
 		ImageList_SetIconSize (config.himg_rules_large, icon_size_large, icon_size_large);
 	else
@@ -2655,6 +2658,7 @@ void _app_toolbar_resize ()
 	rbi.cbSize = sizeof (rbi);
 
 	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+
 	const DWORD button_size = (DWORD)SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETBUTTONSIZE, 0, 0);
 
 	if (button_size)
@@ -3033,6 +3037,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			break;
 		}
 
+		case WM_NCCREATE:
+		{
+			_r_dc_enablenonclientscaling (hwnd);
+			break;
+		}
+
 		case RM_INITIALIZE:
 		{
 			if (app.ConfigGet (L"IsShowTitleID", true).AsBool ())
@@ -3091,6 +3101,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			_app_setinterfacestate (hwnd);
 
+			break;
+		}
+
+		case RM_UNINITIALIZE:
+		{
+			_r_tray_destroy (hwnd, UID);
 			break;
 		}
 
@@ -3319,9 +3335,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			break;
 		}
 
-		case WM_NCCREATE:
+		case RM_TASKBARCREATED:
 		{
-			_r_dc_enablenonclientscaling (hwnd);
+			// refresh tray icon
+			_r_tray_destroy (hwnd, UID);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getdpi (hwnd, _R_SIZE_ICON16)), APP_NAME, false);
+			_r_tray_setinfo (hwnd, UID, nullptr, nullptr);
+
 			break;
 		}
 
@@ -3363,13 +3383,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			break;
 		}
 
-		case RM_UNINITIALIZE:
-		{
-			_r_tray_destroy (hwnd, UID);
-			break;
-		}
-
-		case RM_UPDATE_DONE:
+		case RM_CONFIG_UPDATE:
 		{
 			_app_profile_save ();
 			_app_profile_load (hwnd);
@@ -3381,7 +3395,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			break;
 		}
 
-		case RM_RESET_DONE:
+		case RM_CONFIG_RESET:
 		{
 			const time_t current_timestamp = (time_t)lparam;
 
