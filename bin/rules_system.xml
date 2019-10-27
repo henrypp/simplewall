@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<root timestamp="1566015630" type="1">
+<root timestamp="1572173042" type="1">
 	<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="DNS" rule="53" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="FTP" rule="20-21;49152-65534" protocol="6" is_custom="true" />
-	<item name="HTTP" rule="80;443;8080;8443;8444" protocol="6" is_custom="true" />
+	<item name="HTTP" rule="80;443;8000;8008;8080;8443-8444" protocol="6" is_custom="true" />
 	<item name="ICMPv4" dir="2" protocol="1" is_custom="true" />
 	<item name="ICMPv6" dir="2" protocol="58" is_custom="true" />
 	<item name="IMAP/POP3/SMTP" rule="25;110;143;465;993;995;2525" protocol="6" is_custom="true" />
