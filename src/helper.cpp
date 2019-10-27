@@ -657,7 +657,7 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 						if (VerQueryValue (versionInfo, description_entry, &retbuf, &vLen))
 						{
 							buffer.Append (SZ_TAB);
-							buffer.Append (LPCWSTR (retbuf));
+							buffer.Append (static_cast<LPCWSTR>(retbuf));
 
 							UINT length = 0;
 							VS_FIXEDFILEINFO* verInfo = nullptr;
@@ -787,7 +787,6 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 			return L"finger";
 
 		case 80:
-		case 8008:
 			return L"http";
 
 		case 81:
@@ -1301,20 +1300,20 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 7235:
 			return L"aspcoordination";
 
-		case 8000:
 		case 8443:
 			return L"https-alt";
 
 		case 8021:
 			return L"ftp-proxy";
 
-		case 8080:
-			return L"http-proxy";
-
 		case 8333:
 		case 18333:
 			return L"bitcoin";
 
+		case 591:
+		case 8000:
+		case 8008:
+		case 8080:
 		case 8444:
 			return L"http-alt";
 
@@ -1329,6 +1328,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 
 		case 10107:
 			return L"bctp-server";
+
+		case 11371:
+			return L"hkp";
 
 		case 25565:
 			return L"minecraft";
@@ -1507,7 +1509,7 @@ rstring _app_getservicenamefromtag (HANDLE pid, PVOID ptag)
 
 			if (nameFromTag.Buffer)
 			{
-				result = (LPCWSTR)nameFromTag.Buffer;
+				result = static_cast<LPCWSTR>(nameFromTag.Buffer);
 				LocalFree (nameFromTag.Buffer);
 			}
 		}
@@ -2399,7 +2401,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)&_app_listviewcompare_callback);
 }
 
-void _app_refreshstatus (HWND hwnd, bool is_groups)
+void _app_refreshstatus (HWND hwnd, INT listview_id)
 {
 	ITEM_COUNT stat = {0};
 	SecureZeroMemory (&stat, sizeof (stat));
@@ -2467,50 +2469,48 @@ void _app_refreshstatus (HWND hwnd, bool is_groups)
 	}
 
 	// group information
-	if (is_groups)
+	if (listview_id)
 	{
-		const INT listview_id = _app_gettab_id (hwnd);
+		if (listview_id == INVALID_INT)
+			listview_id = _app_gettab_id (hwnd);
 
-		if (listview_id)
+		if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) == LVS_EX_CHECKBOXES)
 		{
-			if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) == LVS_EX_CHECKBOXES)
+			const bool is_rules_lv = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
+
+			const UINT enabled_group_title = is_rules_lv ? IDS_GROUP_ENABLED : IDS_GROUP_ALLOWED;
+			const UINT special_group_title = is_rules_lv ? IDS_GROUP_SPECIAL : IDS_GROUP_SPECIAL_APPS;
+			const UINT disabled_group_title = is_rules_lv ? IDS_GROUP_DISABLED : IDS_GROUP_BLOCKED;
+
+			const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
+
+			INT group1_count = 0;
+			INT group2_count = 0;
+			INT group3_count = 0;
+
+			for (INT i = 0; i < total_count; i++)
 			{
-				const bool is_rules_lv = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
+				LVITEM lvi = {0};
 
-				const UINT enabled_group_title = is_rules_lv ? IDS_GROUP_ENABLED : IDS_GROUP_ALLOWED;
-				const UINT special_group_title = is_rules_lv ? IDS_GROUP_SPECIAL : IDS_GROUP_SPECIAL_APPS;
-				const UINT disabled_group_title = is_rules_lv ? IDS_GROUP_DISABLED : IDS_GROUP_BLOCKED;
+				lvi.mask = LVIF_GROUPID;
+				lvi.iItem = i;
 
-				const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
-
-				INT group1_count = 0;
-				INT group2_count = 0;
-				INT group3_count = 0;
-
-				for (INT i = 0; i < total_count; i++)
+				if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)&lvi))
 				{
-					LVITEM lvi = {0};
+					if (lvi.iGroupId == 0)
+						group1_count += 1;
 
-					lvi.mask = LVIF_GROUPID;
-					lvi.iItem = i;
+					else if (lvi.iGroupId == 1)
+						group2_count += 1;
 
-					if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)&lvi))
-					{
-						if (lvi.iGroupId == 0)
-							group1_count += 1;
-
-						else if (lvi.iGroupId == 1)
-							group2_count += 1;
-
-						else
-							group3_count += 1;
-					}
+					else
+						group3_count += 1;
 				}
-
-				_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (enabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group1_count, total_count).GetString () : nullptr), 0, 0);
-				_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (special_group_title, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : nullptr), 0, 0);
-				_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (disabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : nullptr), 0, 0);
 			}
+
+			_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (enabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group1_count, total_count).GetString () : nullptr), 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (special_group_title, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : nullptr), 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (disabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : nullptr), 0, 0);
 		}
 	}
 }
