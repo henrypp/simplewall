@@ -166,7 +166,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 
 	_app_listviewsort (hwnd, listview_id);
 
-	_app_refreshstatus (hwnd);
+	_app_refreshstatus (hwnd, listview_id);
 	_app_profile_save ();
 
 	_r_listview_redraw (hwnd, listview_id);

@@ -2506,26 +2506,29 @@ void _app_listviewsetpos (HWND hwnd, INT tab_id, INT listview_id)
 	_r_wnd_resize (nullptr, hlistview, nullptr, rc_listview.left, rc_listview.top, _R_RECT_WIDTH (&rc_listview), _R_RECT_HEIGHT (&rc_listview), 0);
 }
 
-void _app_resizewindow (HWND hwnd, INT width, INT height)
+void _app_resizewindow (HWND hwnd, LPARAM lparam)
 {
+	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
+
 	RECT rc = {0};
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_GETRECT, 0, (LPARAM)&rc);
 
-	const UINT statusbar_height = _R_RECT_HEIGHT (&rc);
-	const UINT rebar_height = (UINT)SendDlgItemMessage (hwnd, IDC_REBAR, RB_GETBARHEIGHT, 0, 0);
+	const INT listview_id = _app_gettab_id (hwnd);
+	const INT statusbar_height = _R_RECT_HEIGHT (&rc);
+	const INT rebar_height = (INT)SendDlgItemMessage (hwnd, IDC_REBAR, RB_GETBARHEIGHT, 0, 0);
 
 	HDWP hdefer = BeginDeferWindowPos (2);
 
-	_r_wnd_resize (&hdefer, config.hrebar, nullptr, 0, 0, width, rebar_height, 0);
-	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_TAB), nullptr, 0, rebar_height, width, height - rebar_height - statusbar_height, 0);
+	_r_wnd_resize (&hdefer, config.hrebar, nullptr, 0, 0, LOWORD (lparam), rebar_height, 0);
+	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_TAB), nullptr, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, 0);
 
 	EndDeferWindowPos (hdefer);
 
-	_app_listviewsetpos (hwnd, IDC_TAB, _app_gettab_id (hwnd));
+	_app_listviewsetpos (hwnd, IDC_TAB, listview_id);
+	_app_listviewresize (hwnd, listview_id);
 
-	// resize statusbar
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
-	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
+	_app_refreshstatus (hwnd, 0);
 }
 
 void _app_imagelist_init (HWND hwnd)
@@ -3321,8 +3324,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			app.LocaleEnum ((HWND)GetSubMenu (hmenu, 2), LANG_MENU, true, IDX_LANGUAGE); // enum localizations
 
-			_app_listviewresize (hwnd, _app_gettab_id (hwnd));
-			_app_refreshstatus (hwnd);
+			const INT listview_id = _app_gettab_id (hwnd);
+
+			_app_listviewresize (hwnd, listview_id);
+			_app_refreshstatus (hwnd, listview_id);
 
 			// refresh notification
 			_r_wnd_addstyle (config.hnotification, IDC_RULES_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
@@ -3378,7 +3383,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_listviewsetfont (hwnd, listview_id, true);
 			_app_listviewresize (hwnd, listview_id);
 
-			_app_refreshstatus (hwnd, false);
+			_app_refreshstatus (hwnd, 0);
 
 			break;
 		}
@@ -3550,7 +3555,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_app_listviewsetfont (hwnd, listview_id, false);
 
 					_app_listviewresize (hwnd, listview_id);
-					_app_refreshstatus (hwnd);
+					_app_refreshstatus (hwnd, listview_id);
 
 					_r_listview_redraw (hwnd, listview_id);
 
@@ -3698,9 +3703,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (is_changed)
 						{
 							_app_listviewsort (hwnd, listview_id);
+							_app_refreshstatus (hwnd, listview_id);
 
 							_app_profile_save ();
-							_app_refreshstatus (hwnd);
 						}
 					}
 
@@ -3961,13 +3966,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_SIZE:
 		{
-			_app_resizewindow (hwnd, LOWORD (lparam), HIWORD (lparam));
-
-			_app_refreshstatus (hwnd, false);
-
-			if (wparam == SIZE_RESTORED || wparam == SIZE_MAXIMIZED)
-				_app_listviewresize (hwnd, _app_gettab_id (hwnd));
-
+			_app_resizewindow (hwnd, lparam);
 			break;
 		}
 
@@ -4121,10 +4120,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (_wfp_isfiltersapplying ())
 						break;
 
+					const INT listview_id = _app_gettab_id (hwnd);
+
 					app.ConfigInit ();
 
 					_app_profile_load (hwnd);
-					_app_refreshstatus (hwnd);
+					_app_refreshstatus (hwnd, listview_id);
 
 					if (_wfp_isfiltersinstalled ())
 					{
@@ -4133,7 +4134,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 					else
 					{
-						_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
+						_r_listview_redraw (hwnd, listview_id);
 					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
@@ -4200,9 +4201,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			}
 			else if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
-				const INT app_listview_id = _app_gettab_id (hwnd);
+				const INT listview_id = _app_gettab_id (hwnd);
 
-				if (!SendDlgItemMessage (hwnd, app_listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
+				if (!SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
 					return FALSE;
 
 				INT item = INVALID_INT;
@@ -4218,9 +4219,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				if (ptr_rule)
 				{
-					while ((item = (INT)SendDlgItemMessage (hwnd, app_listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
+					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
-						const size_t app_hash = _r_listview_getitemlparam (hwnd, app_listview_id, item);
+						const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 
 						if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 							continue;
@@ -4254,7 +4255,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							_r_fastlock_acquireshared (&lock_checkbox);
-							_app_setappiteminfo (hwnd, app_listview_id, item, app_hash, ptr_app);
+							_app_setappiteminfo (hwnd, listview_id, item, app_hash, ptr_app);
 							_r_fastlock_releaseshared (&lock_checkbox);
 						}
 
@@ -4283,9 +4284,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				_r_obj_dereference (ptr_rule_object);
 
-				_app_listviewsort (hwnd, app_listview_id);
+				_app_listviewsort (hwnd, listview_id);
+				_app_refreshstatus (hwnd, listview_id);
 
-				_app_refreshstatus (hwnd);
 				_app_profile_save ();
 
 				return FALSE;
@@ -4330,8 +4331,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				_app_freeobjects_vec (rules);
 
 				_app_listviewsort (hwnd, listview_id);
+				_app_refreshstatus (hwnd, listview_id);
 
-				_app_refreshstatus (hwnd);
 				_app_profile_save ();
 
 				return FALSE;
@@ -4598,8 +4599,10 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_releaseshared (&lock_access);
 
-					_app_listviewsort (hwnd, _app_gettab_id (hwnd));
-					_app_refreshstatus (hwnd);
+					const INT listview_id = _app_gettab_id (hwnd);
+
+					_app_listviewsort (hwnd, listview_id);
+					_app_refreshstatus (hwnd, listview_id);
 
 					break;
 				}
@@ -5126,8 +5129,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						)
 					{
 						_app_listviewsort (hwnd, listview_id);
+						_app_refreshstatus (hwnd, listview_id);
 
-						_app_refreshstatus (hwnd);
 						_app_profile_save ();
 					}
 
@@ -5271,8 +5274,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (is_changed)
 					{
 						_app_listviewsort (hwnd, listview_id);
+						_app_refreshstatus (hwnd, listview_id);
 
-						_app_refreshstatus (hwnd);
 						_app_profile_save ();
 					}
 
@@ -5345,7 +5348,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 										_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
 										_r_fastlock_releaseexclusive (&lock_access);
 
-										_app_refreshstatus (hwnd);
+										_app_refreshstatus (hwnd, listview_id);
 										_app_profile_save ();
 									}
 
@@ -5400,8 +5403,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 
 						_app_listviewsort (hwnd, listview_id);
+						_app_refreshstatus (hwnd, listview_id);
 
-						_app_refreshstatus (hwnd);
 						_app_profile_save ();
 					}
 					else
@@ -5444,8 +5447,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							_app_listviewsort (hwnd, listview_id);
+							_app_refreshstatus (hwnd, listview_id);
 
-							_app_refreshstatus (hwnd);
 							_app_profile_save ();
 						}
 
@@ -5471,7 +5474,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
 								_r_fastlock_releaseshared (&lock_access);
 
-								_app_refreshstatus (hwnd);
+								_app_refreshstatus (hwnd, listview_id);
 								_app_profile_save ();
 							}
 
@@ -5764,10 +5767,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 					_app_freeobjects_vec (rules);
 
-					_app_listviewsort (hwnd, _app_gettab_id (hwnd));
-
-					_app_refreshstatus (hwnd);
 					_app_profile_save ();
+
+					const INT listview_id = _app_gettab_id (hwnd);
+
+					_app_listviewsort (hwnd, listview_id);
+					_app_refreshstatus (hwnd, listview_id);
 
 					break;
 				}

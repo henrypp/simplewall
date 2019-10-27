@@ -861,18 +861,20 @@ UINT WINAPI LogThread (LPVOID lparam)
 		{
 			_r_fastlock_acquireshared (&lock_logbusy);
 
-			_r_fastlock_acquireexclusive (&lock_access);
+			_r_fastlock_acquireshared (&lock_access);
 			const size_t app_hash = _app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
-			_r_fastlock_releaseexclusive (&lock_access);
+			_r_fastlock_releaseshared (&lock_access);
 
 			_r_fastlock_releaseshared (&lock_logbusy);
 
 			INT app_listview_id = 0;
 
 			if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)) && app_listview_id == _app_gettab_id (hwnd))
+			{
 				_app_listviewsort (hwnd, app_listview_id);
+				_app_refreshstatus (hwnd, app_listview_id);
+			}
 
-			_app_refreshstatus (hwnd);
 			_app_profile_save ();
 		}
 

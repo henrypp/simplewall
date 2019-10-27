@@ -825,7 +825,7 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 			if (_app_gettab_id (hwnd) == listview_id)
 				_app_listviewsort (hwnd, listview_id);
 
-			_app_refreshstatus (hwnd);
+			_app_refreshstatus (hwnd, listview_id);
 		}
 
 		if (is_instantapply)

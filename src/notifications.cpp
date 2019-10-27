@@ -7,6 +7,11 @@ HFONT hfont_title = nullptr;
 HFONT hfont_link = nullptr;
 HFONT hfont_text = nullptr;
 
+void _app_notifycreatewindow (HWND hwnd)
+{
+	config.hnotification = CreateDialog (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_NOTIFICATION), hwnd, &NotificationProc);
+}
+
 bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 {
 	size_t app_hash = _app_notifyget_id (hwnd, 0);
@@ -66,7 +71,7 @@ bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 
 	_r_obj_dereference (ptr_app_object);
 
-	_app_refreshstatus (app.GetHWND ());
+	_app_refreshstatus (app.GetHWND (), listview_id);
 	_app_profile_save ();
 
 	if (listview_id && _app_gettab_id (app.GetHWND ()) == listview_id)
@@ -903,7 +908,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 											_r_listview_redraw (app.GetHWND (), listview_id);
 										}
 
-										_app_refreshstatus (app.GetHWND ());
+										_app_refreshstatus (app.GetHWND (), listview_id);
 										_app_profile_save ();
 									}
 
@@ -1134,7 +1139,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							}
 						}
 
-						_app_refreshstatus (app.GetHWND ());
+						_app_refreshstatus (app.GetHWND (), listview_id);
 						_app_profile_save ();
 					}
 					else
