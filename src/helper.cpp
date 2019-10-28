@@ -2374,9 +2374,12 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 	if (!listview_id)
 		return;
 
-	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
 	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
 
+	if (!column_count)
+		return;
+
+	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
 	bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
 
 	if (is_notifycode)
@@ -3133,11 +3136,7 @@ void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 
 	if (item != INVALID_INT)
 	{
-		if (total_count == 1)
-			item = 0;
-
-		else
-			item = std::clamp (item, 0, total_count - 1);
+		item = std::clamp (item, 0, total_count - 1);
 
 		SendMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
 

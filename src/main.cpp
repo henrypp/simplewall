@@ -50,71 +50,79 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 	if (!listview_id || (!is_forced && !app.ConfigGet (L"AutoSizeColumns", true).AsBool ()))
 		return;
 
-	RECT rect = {0};
-	GetClientRect (GetDlgItem (hwnd, listview_id), &rect);
+	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
+	const INT item_count = _r_listview_getitemcount (hwnd, listview_id);
 
-	const INT total_width = _R_RECT_WIDTH (&rect);
-	const INT spacing = _r_dc_getdpi (hwnd, _R_SIZE_ICON16);
+	if (!column_count)
+		return;
 
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 	const HWND hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
 
-	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
-	const INT item_count = _r_listview_getitemcount (hwnd, listview_id);
+	RECT rc_client = {0};
+	GetClientRect (hlistview, &rc_client);
+
+	const INT total_width = _R_RECT_WIDTH (&rc_client);
+	const INT spacing = _r_dc_getdpi (hwnd, _R_SIZE_ICON16);
 
 	const bool is_tableview = (SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
 
+	// get device context and fix font set
 	const HDC hdc_listview = GetDC (hlistview);
 	const HDC hdc_header = GetDC (hheader);
 
-	SelectObject (hdc_listview, (HFONT)SendMessage (hlistview, WM_GETFONT, 0, 0)); // fix
-	SelectObject (hdc_header, (HFONT)SendMessage (hheader, WM_GETFONT, 0, 0)); // fix
+	if (hdc_listview)
+		SelectObject (hdc_listview, (HFONT)SendMessage (hlistview, WM_GETFONT, 0, 0)); // fix
 
-	if (column_count)
+	if (hdc_header)
+		SelectObject (hdc_header, (HFONT)SendMessage (hheader, WM_GETFONT, 0, 0)); // fix
+
+	const INT column_max_width = _r_dc_getdpi (hwnd, 120);
+	INT column_min_width;
+
+	INT column_width;
+	INT calculated_width = 0;
+
+	for (INT i = column_count - 1; i != INVALID_INT; i--)
 	{
-		const INT column_max_width = _r_dc_getdpi (hwnd, 120);
-		INT column_min_width;
-
-		INT column_width;
-		INT calculated_width = 0;
-
-		for (INT i = column_count - 1; i != INVALID_INT; i--)
+		// get column text width
 		{
-			// get column text width
-			{
-				const rstring column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
-				column_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + spacing;
-				column_min_width = column_width;
-			}
-
-			if (i == 0)
-			{
-				column_width = std::clamp (total_width - calculated_width, column_min_width, total_width);
-			}
-			else
-			{
-				if (is_tableview)
-				{
-					for (INT j = 0; j < item_count; j++)
-					{
-						const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
-						const INT text_width = _r_dc_fontwidth (hdc_listview, item_text, item_text.GetLength ()) + spacing;
-
-						if (text_width > column_width)
-							column_width = text_width;
-					}
-				}
-
-				column_width = std::clamp (column_width, column_min_width, (std::max) (column_min_width, column_max_width));
-				calculated_width += column_width;
-			}
-
-			_r_listview_setcolumn (hwnd, listview_id, i, nullptr, column_width);
+			const rstring column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
+			column_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + spacing;
+			column_min_width = column_width;
 		}
+
+		if (i == 0)
+		{
+			column_width = std::clamp (total_width - calculated_width, (std::min) (column_min_width, total_width), total_width);
+		}
+		else
+		{
+			// calculate max width of listview subitems (only for details view)
+			if (is_tableview)
+			{
+				for (INT j = 0; j < item_count; j++)
+				{
+					const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
+					const INT text_width = _r_dc_fontwidth (hdc_listview, item_text, item_text.GetLength ()) + spacing;
+
+					if (text_width > column_width)
+						column_width = text_width;
+				}
+			}
+
+			column_width = std::clamp (column_width, column_min_width, (std::max) (column_min_width, column_max_width));
+			calculated_width += column_width;
+		}
+
+		_r_listview_setcolumn (hwnd, listview_id, i, nullptr, column_width);
 	}
 
-	ReleaseDC (hlistview, hdc_listview);
-	ReleaseDC (hheader, hdc_header);
+	if (hdc_listview)
+		ReleaseDC (hlistview, hdc_listview);
+
+	if (hdc_header)
+		ReleaseDC (hheader, hdc_header);
 }
 
 void _app_listviewsetview (HWND hwnd, INT listview_id)
@@ -3785,7 +3793,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						break;
 
 					const size_t hash_item = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
-					const INT lv_column_current = std::clamp (lpnmlv->iSubItem, 0, _r_listview_getcolumncount (hwnd, listview_id) - 1);
+					const INT lv_column_current = lpnmlv->iSubItem;
 
 					const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (menu_id));
 					const HMENU hsubmenu = GetSubMenu (hmenu, 0);
@@ -5894,6 +5902,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.padminsid, IPPROTO_TCP, FWP_IP_VERSION_V4, &remote_addr, RP_AD, &local_addr, LP_AD, layer_id, filter_id, FWP_DIRECTION_OUTBOUND, false, false);
 					}
+
+					break;
+				}
+
+				case 1000:
+				{
+					RDBG (L"%d", std::clamp (10, 19, 15)); // seh
 
 					break;
 				}
