@@ -3050,7 +3050,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_NCCREATE:
 		{
-			_r_dc_enablenonclientscaling (hwnd);
+			_r_wnd_enablenonclientscaling (hwnd);
 			break;
 		}
 
@@ -5909,7 +5909,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case 1000:
 				{
 					RDBG (L"%d", std::clamp (10, 19, 15)); // seh
-
 					break;
 				}
 #endif // _APP_BETA

@@ -2456,10 +2456,10 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 				lay += size[i];
 		}
 
-		RECT rc = {0};
-		GetClientRect (hstatus, &rc);
+		RECT rc_client = {0};
+		GetClientRect (hstatus, &rc_client);
 
-		parts[0] = _R_RECT_WIDTH (&rc) - lay - GetSystemMetrics (SM_CXVSCROLL) - (GetSystemMetrics (SM_CXBORDER) * 2);
+		parts[0] = _R_RECT_WIDTH (&rc_client) - lay - _r_dc_getsystemmetrics (hwnd, SM_CXVSCROLL) - (_r_dc_getsystemmetrics (hwnd, SM_CXBORDER) * 2);
 		parts[1] = parts[0] + size[1];
 		parts[2] = parts[1] + size[2];
 
@@ -3163,7 +3163,7 @@ HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)
 
 	if (screenHdc)
 	{
-		const HDC hdc = CreateCompatibleDC (screenHdc);
+		HDC hdc = CreateCompatibleDC (screenHdc);
 
 		if (hdc)
 		{
@@ -3210,7 +3210,7 @@ HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)
 				SelectObject (hdc, oldBitmap);
 			}
 
-			DeleteDC (hdc);
+			SAFE_DELETE_DC (hdc);
 		}
 
 		ReleaseDC (nullptr, screenHdc);
@@ -3342,8 +3342,7 @@ DoExit:
 	if (wicScaler)
 		wicScaler->Release ();
 
-	if (hdc)
-		DeleteDC (hdc);
+	SAFE_DELETE_DC (hdc);
 
 	if (screenHdc)
 		ReleaseDC (nullptr, screenHdc);

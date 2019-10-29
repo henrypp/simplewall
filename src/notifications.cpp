@@ -383,8 +383,7 @@ void _app_notifysetpos (HWND hwnd, bool is_forced)
 		GetWindowRect (hwnd, &windowRect);
 
 		_r_wnd_adjustwindowrect (hwnd, &windowRect);
-
-		SetWindowPos (hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
+		_r_wnd_resize (nullptr, hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, 0);
 
 		return;
 	}
@@ -399,43 +398,42 @@ void _app_notifysetpos (HWND hwnd, bool is_forced)
 		RECT desktopRect = {0};
 		SystemParametersInfo (SPI_GETWORKAREA, 0, &desktopRect, 0);
 
-		APPBARDATA appbar = {0};
+		APPBARDATA abd = {0};
 
-		appbar.cbSize = sizeof (appbar);
-		appbar.hWnd = FindWindow (L"Shell_TrayWnd", nullptr);
+		abd.cbSize = sizeof (abd);
+		//appbar.hWnd = FindWindow (L"Shell_TrayWnd", nullptr);
 
-		SHAppBarMessage (ABM_GETTASKBARPOS, &appbar);
-
-		const INT border_x = GetSystemMetrics (SM_CXBORDER);
-		const INT border_y = GetSystemMetrics (SM_CYBORDER);
-
-		if (appbar.uEdge == ABE_LEFT)
+		if (SHAppBarMessage (ABM_GETTASKBARPOS, &abd))
 		{
-			windowRect.left = appbar.rc.right + border_x;
-			windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_y;
-		}
-		else if (appbar.uEdge == ABE_TOP)
-		{
-			windowRect.left = (desktopRect.right - _R_RECT_WIDTH (&windowRect)) - border_x;
-			windowRect.top = appbar.rc.bottom + border_y;
-		}
-		else if (appbar.uEdge == ABE_RIGHT)
-		{
-			windowRect.left = (desktopRect.right - _R_RECT_WIDTH (&windowRect)) - border_x;
-			windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_y;
-		}
-		else/* if (appbar.uEdge == ABE_BOTTOM)*/
-		{
-			windowRect.left = (desktopRect.right - (windowRect.right - windowRect.left)) - border_x;
-			windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_y;
-		}
+			const INT border_x = _r_dc_getsystemmetrics (hwnd, SM_CXBORDER);
 
-		SetWindowPos (hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
+			if (abd.uEdge == ABE_LEFT)
+			{
+				windowRect.left = abd.rc.right + border_x;
+				windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_x;
+			}
+			else if (abd.uEdge == ABE_TOP)
+			{
+				windowRect.left = (desktopRect.right - _R_RECT_WIDTH (&windowRect)) - border_x;
+				windowRect.top = abd.rc.bottom + border_x;
+			}
+			else if (abd.uEdge == ABE_RIGHT)
+			{
+				windowRect.left = (desktopRect.right - _R_RECT_WIDTH (&windowRect)) - border_x;
+				windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_x;
+			}
+			else/* if (appbar.uEdge == ABE_BOTTOM)*/
+			{
+				windowRect.left = (desktopRect.right - (windowRect.right - windowRect.left)) - border_x;
+				windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_x;
+			}
+
+			_r_wnd_resize (nullptr, hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, 0);
+			return;
+		}
 	}
-	else
-	{
-		_r_wnd_center (hwnd, nullptr);
-	}
+
+	_r_wnd_center (hwnd, nullptr); // display window on center (depends on error, config etc...)
 }
 
 HFONT _app_notifyfontinit (HWND hwnd, PLOGFONT plf, LONG height, LONG weight, LPCWSTR name, BYTE is_underline)
@@ -472,7 +470,7 @@ void _app_notifyfontset (HWND hwnd)
 		SAFE_DELETE_OBJECT (hfont_link);
 		SAFE_DELETE_OBJECT (hfont_text);
 
-		hfont_title = _app_notifyfontinit (hwnd , &ncm.lfCaptionFont, title_font_height, FW_NORMAL, UI_FONT, FALSE);
+		hfont_title = _app_notifyfontinit (hwnd, &ncm.lfCaptionFont, title_font_height, FW_NORMAL, UI_FONT, FALSE);
 		hfont_link = _app_notifyfontinit (hwnd, &ncm.lfMessageFont, text_font_height, FW_NORMAL, UI_FONT, TRUE);
 		hfont_text = _app_notifyfontinit (hwnd, &ncm.lfMessageFont, text_font_height, FW_NORMAL, UI_FONT, FALSE);
 
@@ -558,7 +556,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 		case WM_NCCREATE:
 		{
-			_r_dc_enablenonclientscaling (hwnd);
+			_r_wnd_enablenonclientscaling (hwnd);
 			break;
 		}
 
