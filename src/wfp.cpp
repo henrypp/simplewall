@@ -545,9 +545,11 @@ void _wfp_installfilters ()
 
 bool _wfp_transact_start (UINT line)
 {
-	if (config.hengine)
+	const HANDLE& hengine = _wfp_getenginehandle ();
+
+	if (hengine)
 	{
-		const DWORD rc = FwpmTransactionBegin (config.hengine, 0);
+		const DWORD rc = FwpmTransactionBegin (hengine, 0);
 
 		if (rc == ERROR_SUCCESS)
 			return true;
@@ -560,14 +562,16 @@ bool _wfp_transact_start (UINT line)
 
 bool _wfp_transact_commit (UINT line)
 {
-	if (config.hengine)
+	const HANDLE& hengine = _wfp_getenginehandle ();
+
+	if (hengine)
 	{
-		const DWORD rc = FwpmTransactionCommit (config.hengine);
+		const DWORD rc = FwpmTransactionCommit (hengine);
 
 		if (rc == ERROR_SUCCESS)
 			return true;
 
-		FwpmTransactionAbort (config.hengine);
+		FwpmTransactionAbort (hengine);
 
 		_app_logerror (L"FwpmTransactionCommit", rc, _r_fmt (L"#%d", line), false);
 	}
@@ -664,7 +668,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * l
 
 void _wfp_clearfilter_ids ()
 {
-	_r_fastlock_acquireexclusive (&lock_access);
+	_r_fastlock_acquireshared (&lock_access);
 
 	// clear common filters
 	filter_ids.clear ();
@@ -692,7 +696,7 @@ void _wfp_clearfilter_ids ()
 		_r_obj_dereference (ptr_rule_object);
 	}
 
-	_r_fastlock_releaseexclusive (&lock_access);
+	_r_fastlock_releaseshared (&lock_access);
 }
 
 void _wfp_destroyfilters (HANDLE hengine)

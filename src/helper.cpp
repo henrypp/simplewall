@@ -296,11 +296,11 @@ void _app_freethreadpool (THREADS_VEC * ptr_pool)
 
 	for (size_t i = (count - 1); i != INVALID_SIZE_T; i--)
 	{
-		const HANDLE hthread = ptr_pool->at (i);
+		HANDLE& hthread = ptr_pool->at (i);
 
 		if (WaitForSingleObjectEx (hthread, 0, FALSE) == WAIT_OBJECT_0)
 		{
-			CloseHandle (hthread);
+			SAFE_DELETE_HANDLE (hthread);
 			ptr_pool->erase (ptr_pool->begin () + i);
 		}
 	}

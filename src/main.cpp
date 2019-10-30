@@ -5930,51 +5930,54 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 		INT numargs = 0;
 		LPWSTR* arga = CommandLineToArgvW (GetCommandLine (), &numargs);
 
-		bool is_install = false;
-		bool is_uninstall = false;
-		bool is_silent = false;
-
-		for (INT i = 0; i < numargs; i++)
+		if (arga)
 		{
-			if (_r_str_compare (arga[i], L"/install", 8) == 0)
-				is_install = true;
+			bool is_install = false;
+			bool is_uninstall = false;
+			bool is_silent = false;
 
-			else if (_r_str_compare (arga[i], L"/uninstall", 10) == 0)
-				is_uninstall = true;
-
-			else if (_r_str_compare (arga[i], L"/silent", 7) == 0)
-				is_silent = true;
-		}
-
-		SAFE_LOCAL_FREE (arga);
-
-		if (is_install || is_uninstall)
-		{
-			if (is_install)
+			for (INT i = 0; i < numargs; i++)
 			{
-				if (app.IsAdmin () && (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true))))
-				{
-					_app_initialize ();
-					_app_profile_load (nullptr);
+				if (_r_str_compare (arga[i], L"/install", 8) == 0)
+					is_install = true;
 
-					if (_wfp_initialize (true))
-						_wfp_installfilters ();
+				else if (_r_str_compare (arga[i], L"/uninstall", 10) == 0)
+					is_uninstall = true;
 
-					_wfp_uninitialize (false);
-				}
-			}
-			else if (is_uninstall)
-			{
-				if (app.IsAdmin () && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
-				{
-					if (_wfp_initialize (false))
-						_wfp_destroyfilters (_wfp_getenginehandle ());
-
-					_wfp_uninitialize (true);
-				}
+				else if (_r_str_compare (arga[i], L"/silent", 7) == 0)
+					is_silent = true;
 			}
 
-			return ERROR_SUCCESS;
+			SAFE_LOCAL_FREE (arga);
+
+			if (is_install || is_uninstall)
+			{
+				if (is_install)
+				{
+					if (app.IsAdmin () && (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true))))
+					{
+						_app_initialize ();
+						_app_profile_load (nullptr);
+
+						if (_wfp_initialize (true))
+							_wfp_installfilters ();
+
+						_wfp_uninitialize (false);
+					}
+				}
+				else if (is_uninstall)
+				{
+					if (app.IsAdmin () && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
+					{
+						if (_wfp_initialize (false))
+							_wfp_destroyfilters (_wfp_getenginehandle ());
+
+						_wfp_uninitialize (true);
+					}
+				}
+
+				return ERROR_SUCCESS;
+			}
 		}
 	}
 

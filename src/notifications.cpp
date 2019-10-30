@@ -604,16 +604,17 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			PAINTSTRUCT ps = {0};
 			HDC hdc = BeginPaint (hwnd, &ps);
 
-			RECT rc = {0};
-			GetClientRect (hwnd, &rc);
+			RECT rc_client = {0};
+			GetClientRect (hwnd, &rc_client);
 
-			const INT wnd_height = _R_RECT_HEIGHT (&rc);
+			const INT wnd_width = _R_RECT_WIDTH (&rc_client);
+			const INT wnd_height = _R_RECT_HEIGHT (&rc_client);
 
-			SetRect (&rc, 0, wnd_height - _r_dc_getdpi (hwnd, _R_SIZE_FOOTERHEIGHT), _R_RECT_WIDTH (&rc), wnd_height);
-			_r_dc_fillrect (hdc, &rc, GetSysColor (COLOR_3DFACE));
+			SetRect (&rc_client, 0, wnd_height - _r_dc_getdpi (hwnd, _R_SIZE_FOOTERHEIGHT), wnd_width, wnd_height);
+			_r_dc_fillrect (hdc, &rc_client, GetSysColor (COLOR_3DFACE));
 
-			for (INT i = 0; i < _R_RECT_WIDTH (&rc); i++)
-				SetPixel (hdc, i, rc.top, GetSysColor (COLOR_APPWORKSPACE));
+			for (INT i = 0; i < wnd_width; i++)
+				SetPixel (hdc, i, rc_client.top, GetSysColor (COLOR_APPWORKSPACE));
 
 			EndPaint (hwnd, &ps);
 
