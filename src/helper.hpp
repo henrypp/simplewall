@@ -35,7 +35,6 @@ void _app_freelogstack ();
 void _app_getappicon (PITEM_APP ptr_app, bool is_small, PINT picon_id, HICON* picon);
 void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR* extracted_name);
 bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON* picon);
-rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path);
 PR_OBJECT _app_getsignatureinfo (size_t app_hash, PITEM_APP ptr_app);
 PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app);
 rstring _app_getservicename (UINT16 port, LPCWSTR empty_text);

@@ -3494,7 +3494,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				DragQueryFile ((HDROP)wparam, i, file, length);
 
 				_r_fastlock_acquireshared (&lock_access);
-				app_hash = _app_addapplication (hwnd, file, 0, 0, 0, false, false, false);
+				app_hash = _app_addapplication (hwnd, file, 0, 0, 0, false, false);
 				_r_fastlock_releaseshared (&lock_access);
 
 				SAFE_DELETE_ARRAY (file);
@@ -4996,7 +4996,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (files[ofn.nFileOffset - 1] != 0)
 						{
 							_r_fastlock_acquireshared (&lock_access);
-							app_hash = _app_addapplication (hwnd, files, 0, 0, 0, false, false, false);
+							app_hash = _app_addapplication (hwnd, files, 0, 0, 0, false, false);
 							_r_fastlock_releaseshared (&lock_access);
 						}
 						else
@@ -5012,7 +5012,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								if (*p)
 								{
 									_r_fastlock_acquireshared (&lock_access);
-									app_hash = _app_addapplication (hwnd, _r_fmt (L"%s\\%s", dir, p), 0, 0, 0, false, false, false);
+									app_hash = _app_addapplication (hwnd, _r_fmt (L"%s\\%s", dir, p), 0, 0, 0, false, false);
 									_r_fastlock_releaseshared (&lock_access);
 								}
 							}
@@ -5353,7 +5353,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (!_app_isappfound (ptr_network->app_hash))
 									{
 										_r_fastlock_acquireexclusive (&lock_access);
-										_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+										_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false);
 										_r_fastlock_releaseexclusive (&lock_access);
 
 										_app_refreshstatus (hwnd, listview_id);
@@ -5479,7 +5479,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (!_app_isappfound (app_hash))
 							{
 								_r_fastlock_acquireshared (&lock_access);
-								_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false, true);
+								_app_addapplication (hwnd, ptr_network->path, 0, 0, 0, false, false);
 								_r_fastlock_releaseshared (&lock_access);
 
 								_app_refreshstatus (hwnd, listview_id);

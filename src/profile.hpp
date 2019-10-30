@@ -6,7 +6,7 @@
 bool _app_getappinfo (size_t app_hash, EnumInfo info_key, LPVOID presult, size_t size);
 bool _app_setappinfo (size_t app_hash, EnumInfo info_key, LONG_PTR info_value);
 
-size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t timer, time_t last_notify, bool is_silent, bool is_enabled, bool is_fromdb);
+size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t timer, time_t last_notify, bool is_silent, bool is_enabled);
 
 PR_OBJECT _app_getappitem (size_t app_hash);
 PR_OBJECT _app_getrulebyid (size_t idx);

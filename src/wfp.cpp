@@ -1594,7 +1594,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 		_wfp_createfilter (L"BlockListenConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, 0, &filter_ids);
 		_wfp_createfilter (L"BlockListenConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, 0, &filter_ids);
-}
+	}
 #endif // SW_USE_LISTEN_LAYER
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
@@ -1750,69 +1750,62 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 
 	bool result = false;
 
-	const HRESULT hrComInit = CoInitializeEx (nullptr, COINIT_APARTMENTTHREADED);
+	INetFwPolicy2* pNetFwPolicy2 = nullptr;
+	HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (void**)&pNetFwPolicy2);
 
-	if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
+	if (SUCCEEDED (hr) && pNetFwPolicy2)
 	{
-		INetFwPolicy2* pNetFwPolicy2 = nullptr;
-		HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (void**)&pNetFwPolicy2);
+		const NET_FW_PROFILE_TYPE2 profileTypes[] = {
+			NET_FW_PROFILE2_DOMAIN,
+			NET_FW_PROFILE2_PRIVATE,
+			NET_FW_PROFILE2_PUBLIC
+		};
 
-		if (SUCCEEDED (hr) && pNetFwPolicy2)
+		if (pis_enabled)
 		{
-			const NET_FW_PROFILE_TYPE2 profileTypes[] = {
-				NET_FW_PROFILE2_DOMAIN,
-				NET_FW_PROFILE2_PRIVATE,
-				NET_FW_PROFILE2_PUBLIC
-			};
+			*pis_enabled = false;
 
-			if (pis_enabled)
+			for (size_t i = 0; i < _countof (profileTypes); i++)
 			{
-				*pis_enabled = false;
+				VARIANT_BOOL bIsEnabled = FALSE;
 
-				for (size_t i = 0; i < _countof (profileTypes); i++)
+				hr = pNetFwPolicy2->get_FirewallEnabled (profileTypes[i], &bIsEnabled);
+
+				if (SUCCEEDED (hr))
 				{
-					VARIANT_BOOL bIsEnabled = FALSE;
+					result = true;
 
-					hr = pNetFwPolicy2->get_FirewallEnabled (profileTypes[i], &bIsEnabled);
-
-					if (SUCCEEDED (hr))
+					if (bIsEnabled == VARIANT_TRUE)
 					{
-						result = true;
-
-						if (bIsEnabled == VARIANT_TRUE)
-						{
-							*pis_enabled = true;
-							break;
-						}
+						*pis_enabled = true;
+						break;
 					}
 				}
 			}
+		}
 
-			if (pis_enable)
+		if (pis_enable)
+		{
+			for (size_t i = 0; i < _countof (profileTypes); i++)
 			{
-				for (size_t i = 0; i < _countof (profileTypes); i++)
-				{
-					hr = pNetFwPolicy2->put_FirewallEnabled (profileTypes[i], *pis_enable ? VARIANT_TRUE : VARIANT_FALSE);
+				hr = pNetFwPolicy2->put_FirewallEnabled (profileTypes[i], *pis_enable ? VARIANT_TRUE : VARIANT_FALSE);
 
-					if (SUCCEEDED (hr))
-						result = true;
+				if (SUCCEEDED (hr))
+					result = true;
 
-					else
-						_app_logerror (L"put_FirewallEnabled", hr, _r_fmt (L"%d", profileTypes[i]), true);
-				}
+				else
+					_app_logerror (L"put_FirewallEnabled", hr, _r_fmt (L"%d", profileTypes[i]), true);
 			}
 		}
-		else
-		{
-			_app_logerror (L"CoCreateInstance", hr, L"INetFwPolicy2", true);
-		}
-
-		if (pNetFwPolicy2)
-			pNetFwPolicy2->Release ();
-
-		if (SUCCEEDED (hrComInit))
-			CoUninitialize ();
 	}
+	else
+	{
+		_app_logerror (L"CoCreateInstance", hr, L"INetFwPolicy2", true);
+	}
+
+	if (pNetFwPolicy2)
+		pNetFwPolicy2->Release ();
+
 
 	return result;
 }

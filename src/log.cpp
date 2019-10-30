@@ -862,7 +862,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 			_r_fastlock_acquireshared (&lock_logbusy);
 
 			_r_fastlock_acquireshared (&lock_access);
-			const size_t app_hash = _app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false, true);
+			const size_t app_hash = _app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false);
 			_r_fastlock_releaseshared (&lock_access);
 
 			_r_fastlock_releaseshared (&lock_logbusy);

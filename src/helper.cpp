@@ -404,36 +404,28 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON * picon
 
 	bool result = false;
 
-	const HRESULT hrComInit = CoInitialize (nullptr);
+	SHFILEINFO shfi = {0};
 
-	if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
+	DWORD flags = 0;
+
+	if (picon_id)
+		flags |= SHGFI_SYSICONINDEX;
+
+	if (picon)
+		flags |= SHGFI_ICON;
+
+	if (is_small)
+		flags |= SHGFI_SMALLICON;
+
+	if (SHGetFileInfo (path, 0, &shfi, sizeof (shfi), flags))
 	{
-		SHFILEINFO shfi = {0};
-
-		DWORD flags = 0;
-
 		if (picon_id)
-			flags |= SHGFI_SYSICONINDEX;
+			*picon_id = shfi.iIcon;
 
-		if (picon)
-			flags |= SHGFI_ICON;
+		if (picon && shfi.hIcon)
+			*picon = shfi.hIcon;
 
-		if (is_small)
-			flags |= SHGFI_SMALLICON;
-
-		if (SHGetFileInfo (path, 0, &shfi, sizeof (shfi), flags))
-		{
-			if (picon_id)
-				*picon_id = shfi.iIcon;
-
-			if (picon && shfi.hIcon)
-				*picon = shfi.hIcon;
-
-			result = true;
-		}
-
-		if (SUCCEEDED (hrComInit))
-			CoUninitialize ();
+		result = true;
 	}
 
 	if (!result)
@@ -445,50 +437,6 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON * picon
 			*picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
 
 		result = true;
-	}
-
-	return result;
-}
-
-rstring _app_getshortcutpath (HWND hwnd, LPCWSTR path)
-{
-	rstring result;
-
-	IShellLink* psl = nullptr;
-
-	const HRESULT hrComInit = CoInitializeEx (nullptr, COINIT_MULTITHREADED);
-
-	if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
-	{
-		if (SUCCEEDED (CoInitializeSecurity (nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_PKT_PRIVACY, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, 0, nullptr)))
-		{
-			if (SUCCEEDED (CoCreateInstance (CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)&psl)))
-			{
-				IPersistFile* ppf = nullptr;
-
-				if (SUCCEEDED (psl->QueryInterface (IID_IPersistFile, (void**)&ppf)))
-				{
-					if (SUCCEEDED (ppf->Load (path, STGM_READ)))
-					{
-						if (SUCCEEDED (psl->Resolve (hwnd, 0)))
-						{
-							WIN32_FIND_DATA wfd = {0};
-							WCHAR buffer[MAX_PATH] = {0};
-
-							if (SUCCEEDED (psl->GetPath (buffer, _countof (buffer), (LPWIN32_FIND_DATA)&wfd, SLGP_RAWPATH)))
-								result = buffer;
-						}
-					}
-
-					ppf->Release ();
-				}
-
-				psl->Release ();
-			}
-		}
-
-		if (SUCCEEDED (hrComInit))
-			CoUninitialize ();
 	}
 
 	return result;
@@ -1913,21 +1861,13 @@ void _app_generate_packages ()
 				{
 					if (display_name.At (0) == L'@')
 					{
-						const HRESULT hrComInit = CoInitialize (nullptr);
+						WCHAR name[MAX_PATH] = {0};
 
-						if ((hrComInit == RPC_E_CHANGED_MODE) || SUCCEEDED (hrComInit))
-						{
-							WCHAR name[MAX_PATH] = {0};
+						if (SUCCEEDED (SHLoadIndirectString (display_name, name, _countof (name), nullptr)))
+							display_name = name;
 
-							if (SUCCEEDED (SHLoadIndirectString (display_name, name, _countof (name), nullptr)))
-								display_name = name;
-
-							else
-								display_name.Release ();
-
-							if (SUCCEEDED (hrComInit))
-								CoUninitialize ();
-						}
+						else
+							display_name.Release ();
 					}
 				}
 
@@ -3233,11 +3173,6 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 	WICPixelFormatGUID pixelFormat;
 	WICRect rect = {0, 0, icon_size, icon_size};
 
-	const HRESULT hrComInit = CoInitializeEx (nullptr, COINIT_MULTITHREADED);
-
-	if (FAILED (hrComInit) && (hrComInit != RPC_E_CHANGED_MODE))
-		goto DoExit;
-
 	// Create the ImagingFactory
 	if (FAILED (CoCreateInstance (CLSID_WICImagingFactory1, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID*)&wicFactory)))
 		goto DoExit;
@@ -3352,9 +3287,6 @@ DoExit:
 
 	if (wicFactory)
 		wicFactory->Release ();
-
-	if (SUCCEEDED (hrComInit))
-		CoUninitialize ();
 
 	if (!success)
 	{

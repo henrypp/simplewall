@@ -71,22 +71,10 @@ bool _app_setappinfo (size_t app_hash, EnumInfo info_key, LONG_PTR info_value)
 	return true;
 }
 
-size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t timer, time_t last_notify, bool is_silent, bool is_enabled, bool is_fromdb)
+size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t timer, time_t last_notify, bool is_silent, bool is_enabled)
 {
 	if (_r_str_isempty (path) || PathIsDirectory (path))
 		return 0;
-
-	// if file is shortcut - get location
-	if (!is_fromdb)
-	{
-		if (_r_str_compare (_r_path_getextension (path), L".lnk", 4) == 0)
-		{
-			path = _app_getshortcutpath (app.GetHWND (), path);
-
-			if (_r_str_isempty (path))
-				return 0;
-		}
-	}
 
 	const size_t app_length = _r_str_length (path);
 	const size_t app_hash = _r_str_hash (path);
@@ -1129,14 +1117,14 @@ bool _app_profile_load_check (LPCWSTR path, EnumXmlType type, bool is_strict)
 void _app_profile_load_fallback ()
 {
 	if (!_app_isappfound (config.my_hash))
-		_app_addapplication (nullptr, app.GetBinaryPath (), 0, 0, 0, false, true, true);
+		_app_addapplication (nullptr, app.GetBinaryPath (), 0, 0, 0, false, true);
 
 	// disable deletion for this shit ;)
 	if (!_app_isappfound (config.ntoskrnl_hash))
-		_app_addapplication (nullptr, PROC_SYSTEM_NAME, 0, 0, 0, false, false, true);
+		_app_addapplication (nullptr, PROC_SYSTEM_NAME, 0, 0, 0, false, false);
 
 	if (!_app_isappfound (config.svchost_hash))
-		_app_addapplication (nullptr, _r_path_expand (PATH_SVCHOST), 0, 0, 0, false, false, true);
+		_app_addapplication (nullptr, _r_path_expand (PATH_SVCHOST), 0, 0, 0, false, false);
 
 	_app_setappinfo (config.my_hash, InfoUndeletable, TRUE);
 	_app_setappinfo (config.ntoskrnl_hash, InfoUndeletable, TRUE);
@@ -1154,7 +1142,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 		if (type == DataAppRegular)
 		{
 			_r_fastlock_acquireshared (&lock_access);
-			_app_addapplication (nullptr, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), 0, item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool (), true);
+			_app_addapplication (nullptr, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), 0, item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool ());
 			_r_fastlock_releaseshared (&lock_access);
 		}
 		else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleCustom)
@@ -1267,7 +1255,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 							if (!_app_isappfound (app_hash))
 							{
 								_r_fastlock_acquireshared (&lock_access);
-								app_hash = _app_addapplication (nullptr, app_path, 0, 0, 0, false, false, true);
+								app_hash = _app_addapplication (nullptr, app_path, 0, 0, 0, false, false);
 								_r_fastlock_releaseshared (&lock_access);
 							}
 
@@ -1618,7 +1606,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			PITEM_APP_HELPER ptr_app_item = (PITEM_APP_HELPER)ptr_item_object->pdata;
 
 			if (ptr_app_item)
-				_app_addapplication (hwnd, ptr_app_item->internal_name, ptr_app_item->timestamp, 0, 0, false, false, true);
+				_app_addapplication (hwnd, ptr_app_item->internal_name, ptr_app_item->timestamp, 0, 0, false, false);
 
 			_r_obj_dereference (ptr_item_object);
 		}
