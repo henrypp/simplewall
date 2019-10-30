@@ -993,6 +993,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 873:
 			return L"rsync";
 
+		case 853:
+			return L"domain-s";
+
 		case 989:
 			return L"ftps-data";
 
