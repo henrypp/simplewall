@@ -235,8 +235,6 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 						_app_freeobjects_map (cache_hosts, false);
 						cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
-						_r_obj_reference (cache_hosts[addr_hash]);
-
 						_r_fastlock_releaseexclusive (&lock_cache);
 					}
 				}
@@ -2745,7 +2743,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 						_r_obj_dereference (ptr_cache_object);
 					}
 
-					return *paddr_dns;
+					return !_r_str_isempty (paddr_dns);
 				}
 
 				rstring host = _app_parsehostaddress_dns (ni.NamedAddress.Address, port);
@@ -2769,8 +2767,6 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 
 						_app_freeobjects_map (cache_dns, false);
 						cache_dns[dns_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
-
-						_r_obj_reference (cache_dns[dns_hash]);
 
 						_r_fastlock_releaseexclusive (&lock_cache);
 					}
@@ -3020,7 +3016,7 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 	LPWSTR pstraddr = nullptr;
 	_app_formataddress (af, 0, paddr, 0, &pstraddr, FMTADDR_AS_ARPA);
 
-	if (pstraddr)
+	if (!_r_str_isempty (pstraddr))
 	{
 		const size_t arpa_hash = _r_str_hash (pstraddr);
 
@@ -3067,8 +3063,6 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 
 							_app_freeobjects_map (cache_arpa, false);
 							cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
-
-							_r_obj_reference (cache_arpa[arpa_hash]);
 
 							_r_fastlock_releaseexclusive (&lock_cache);
 						}

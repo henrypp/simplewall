@@ -1395,7 +1395,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			_r_listview_deleteallitems (hwnd, i);
 	}
 
-	_r_fastlock_acquireexclusive (&lock_access);
+	_r_fastlock_acquireshared (&lock_access);
 
 	// clear apps
 	_app_freeobjects_map (apps, true);
@@ -1416,7 +1416,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	// generate services list
 	_app_generate_services ();
 
-	_r_fastlock_releaseexclusive (&lock_access);
+	_r_fastlock_releaseshared (&lock_access);
 
 	// load profile
 	if (path_custom || _r_fs_exists (config.profile_path) || _r_fs_exists (config.profile_path_backup))
@@ -1434,9 +1434,9 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
 				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %hs,file: %s", result.status, result.offset, result.description (), path_custom ? path_custom : config.profile_path), false);
 
-			_r_fastlock_acquireexclusive (&lock_access);
+			_r_fastlock_acquireshared (&lock_access);
 			_app_profile_load_fallback ();
-			_r_fastlock_releaseexclusive (&lock_access);
+			_r_fastlock_releaseshared (&lock_access);
 		}
 		else
 		{
@@ -1454,9 +1454,9 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 					if (root_apps)
 						_app_profile_load_helper (root_apps, DataAppRegular, version);
 
-					_r_fastlock_acquireexclusive (&lock_access);
+					_r_fastlock_acquireshared (&lock_access);
 					_app_profile_load_fallback ();
-					_r_fastlock_releaseexclusive (&lock_access);
+					_r_fastlock_releaseshared (&lock_access);
 
 					// load rules config (new!)
 					pugi::xml_node root_rules_config = root.child (L"rules_config");
@@ -1502,9 +1502,9 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 					_r_fs_move (config.apps_path, config.apps_path_backup, MOVEFILE_REPLACE_EXISTING);
 			}
 
-			_r_fastlock_acquireexclusive (&lock_access);
+			_r_fastlock_acquireshared (&lock_access);
 			_app_profile_load_fallback ();
-			_r_fastlock_releaseexclusive (&lock_access);
+			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		// load rules config (old!)

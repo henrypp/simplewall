@@ -3493,9 +3493,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				DragQueryFile ((HDROP)wparam, i, file, length);
 
-				_r_fastlock_acquireexclusive (&lock_access);
+				_r_fastlock_acquireshared (&lock_access);
 				app_hash = _app_addapplication (hwnd, file, 0, 0, 0, false, false, false);
-				_r_fastlock_releaseexclusive (&lock_access);
+				_r_fastlock_releaseshared (&lock_access);
 
 				SAFE_DELETE_ARRAY (file);
 			}
@@ -4995,9 +4995,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (files[ofn.nFileOffset - 1] != 0)
 						{
-							_r_fastlock_acquireexclusive (&lock_access);
+							_r_fastlock_acquireshared (&lock_access);
 							app_hash = _app_addapplication (hwnd, files, 0, 0, 0, false, false, false);
-							_r_fastlock_releaseexclusive (&lock_access);
+							_r_fastlock_releaseshared (&lock_access);
 						}
 						else
 						{
@@ -5011,9 +5011,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 								if (*p)
 								{
-									_r_fastlock_acquireexclusive (&lock_access);
+									_r_fastlock_acquireshared (&lock_access);
 									app_hash = _app_addapplication (hwnd, _r_fmt (L"%s\\%s", dir, p), 0, 0, 0, false, false, false);
-									_r_fastlock_releaseexclusive (&lock_access);
+									_r_fastlock_releaseshared (&lock_access);
 								}
 							}
 						}
@@ -5389,12 +5389,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule_object))
 					{
-						_r_fastlock_acquireexclusive (&lock_access);
+						_r_fastlock_acquireshared (&lock_access);
 
 						const size_t rule_idx = rules_arr.size ();
 						rules_arr.push_back (ptr_rule_object);
 
-						_r_fastlock_releaseexclusive (&lock_access);
+						_r_fastlock_releaseshared (&lock_access);
 
 						const INT listview_rules_id = _app_getlistview_id (DataRuleCustom);
 
@@ -5596,9 +5596,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									_app_timer_reset (hwnd, ptr_app);
 									_app_freenotify (app_hash, ptr_app);
 
-									_r_fastlock_acquireexclusive (&lock_access);
+									_r_fastlock_acquireshared (&lock_access);
 									_app_freeapplication (app_hash);
-									_r_fastlock_releaseexclusive (&lock_access);
+									_r_fastlock_releaseshared (&lock_access);
 
 									_r_obj_dereferenceex (ptr_app_object, 2);
 								}

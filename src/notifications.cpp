@@ -1076,12 +1076,12 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					if (DialogBoxParam (nullptr, MAKEINTRESOURCE (IDD_EDITOR), app.GetHWND (), &EditorProc, (LPARAM)ptr_rule_object))
 					{
-						_r_fastlock_acquireexclusive (&lock_access);
+						_r_fastlock_acquireshared (&lock_access);
 
 						const size_t rule_idx = rules_arr.size ();
 						rules_arr.push_back (ptr_rule_object);
 
-						_r_fastlock_releaseexclusive (&lock_access);
+						_r_fastlock_releaseshared (&lock_access);
 
 						const INT listview_id = _app_gettab_id (app.GetHWND ());
 
