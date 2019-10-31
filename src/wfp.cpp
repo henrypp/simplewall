@@ -212,7 +212,7 @@ bool _wfp_initialize (bool is_full)
 					if (is_intransact)
 						FwpmTransactionAbort (config.hengine);
 
-					_app_logerror (L"FwpmProviderAdd", rc, nullptr, true);
+					_app_logerror (L"FwpmProviderAdd", rc, nullptr, false);
 					result = false;
 
 					goto DoExit;
@@ -242,7 +242,7 @@ bool _wfp_initialize (bool is_full)
 					if (is_intransact)
 						FwpmTransactionAbort (config.hengine);
 
-					_app_logerror (L"FwpmSubLayerAdd", rc, nullptr, true);
+					_app_logerror (L"FwpmSubLayerAdd", rc, nullptr, false);
 					result = false;
 
 					goto DoExit;
