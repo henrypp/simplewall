@@ -4125,25 +4125,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case PBT_APMRESUMECRITICAL:
 				case PBT_APMRESUMESUSPEND:
 				{
-					if (_wfp_isfiltersapplying ())
-						break;
-
-					const INT listview_id = _app_gettab_id (hwnd);
-
-					app.ConfigInit ();
-
-					_app_profile_load (hwnd);
-					_app_refreshstatus (hwnd, listview_id);
-
-					if (_wfp_isfiltersinstalled ())
-					{
-						if (_wfp_initialize (true))
-							_app_changefilters (hwnd, true, true);
-					}
-					else
-					{
-						_r_listview_redraw (hwnd, listview_id);
-					}
+					if (_wfp_isfiltersinstalled () && !_wfp_getenginehandle ())
+						_wfp_initialize (true);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 					return TRUE;
