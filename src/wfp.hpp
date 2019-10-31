@@ -3,6 +3,9 @@
 
 #pragma once
 
+bool _wfp_isproviderinstalled ();
+bool _wfp_issublayerinstalled ();
+
 bool _wfp_isfiltersapplying ();
 bool _wfp_isfiltersinstalled ();
 
@@ -13,11 +16,11 @@ void _wfp_uninitialize (bool is_full);
 
 void _wfp_installfilters ();
 
-bool _wfp_transact_start (UINT line);
-bool _wfp_transact_commit (UINT line);
+bool _wfp_transact_start (HANDLE hengine, UINT line);
+bool _wfp_transact_commit (HANDLE hengine, UINT line);
 
 bool _wfp_deletefilter (HANDLE hengine, const GUID* ptr_filter_id);
-DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 const count, UINT8 weight, const GUID* layer, const GUID* callout, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* ptr_filters);
+DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, const GUID* layer, const GUID* callout, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* ptr_filters);
 
 void _wfp_clearfilter_ids ();
 void _wfp_destroyfilters (HANDLE hengine);
