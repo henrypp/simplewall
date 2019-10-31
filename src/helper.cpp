@@ -2471,10 +2471,9 @@ rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	// ipv4 address
 	DNS_STATUS dnsStatus = DnsQuery (hostname, DNS_TYPE_A, DNS_QUERY_NO_HOSTS_FILE, nullptr, &ppQueryResultsSet, nullptr);
 
-	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
+	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR && dnsStatus != DNS_INFO_NO_RECORDS)
 	{
-		if (dnsStatus != DNS_INFO_NO_RECORDS)
-			_app_logerror (L"DnsQuery (DNS_TYPE_A)", dnsStatus, hostname, true);
+		_app_logerror (L"DnsQuery (DNS_TYPE_A)", dnsStatus, hostname, true);
 	}
 	else
 	{
@@ -2503,10 +2502,9 @@ rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	// ipv6 address
 	dnsStatus = DnsQuery (hostname, DNS_TYPE_AAAA, DNS_QUERY_NO_HOSTS_FILE, nullptr, &ppQueryResultsSet, nullptr);
 
-	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
+	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR && dnsStatus != DNS_INFO_NO_RECORDS)
 	{
-		if (dnsStatus != DNS_INFO_NO_RECORDS)
-			_app_logerror (L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, hostname, true);
+		_app_logerror (L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, hostname, true);
 	}
 	else
 	{
