@@ -1,3 +1,14 @@
+v3.0.7 (1 November 2019)
+- improved dpi support (win81+)
+- fixed ended timer handling on restart
+- fixed regular update message (issue #543)
+- fixed components update installation
+- fixed window and listview sizing
+- updated project sdk
+- updated blocklist
+- cosmetics fixes
+- fixed bugs
+
 v3.0.6 RC (12 October 2019)
 - added windows 10 rs6 support
 - added csv file title (clear the log to see changes)
@@ -5,7 +16,7 @@ v3.0.6 RC (12 October 2019)
 - improved refreshing filters on device connecting
 - improved network monitoring speed and ui
 - improved notification ui
-- improved dpi support
+- improved dpi support (win81+)
 - fixed collecting services & uwp information
 - fixed device names resolution (issue #529)
 - fixed toolbar gray text draw (issue #437)
