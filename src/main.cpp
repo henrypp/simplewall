@@ -5782,7 +5782,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-#ifdef _APP_BETA
+#ifdef _DEBUG
 
 #define FN_AD L"<test filter>"
 #define RM_AD L"195.210.46.95"
@@ -5896,7 +5896,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					RDBG (L"%d", std::clamp (10, 19, 15)); // seh
 					break;
 				}
-#endif // _APP_BETA
+#endif // _DEBUG
 			}
 
 			break;
