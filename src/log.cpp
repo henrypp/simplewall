@@ -222,9 +222,9 @@ void _app_logclear ()
 	_r_fs_delete (_r_fmt (L"%s.bak", path.GetString ()), false);
 }
 
-bool _wfp_logsubscribe ()
+bool _wfp_logsubscribe (HANDLE hengine)
 {
-	if (!config.hengine)
+	if (!hengine)
 		return false;
 
 	bool result = false;
@@ -239,7 +239,7 @@ bool _wfp_logsubscribe ()
 
 		if (!hlib)
 		{
-			_app_logerror (L"LoadLibrary", GetLastError (), L"fwpuclnt.dll", false);
+			_app_logerror (L"LoadLibrary", GetLastError (), L"fwpuclnt.dll", true);
 		}
 		else
 		{
@@ -276,25 +276,28 @@ bool _wfp_logsubscribe ()
 
 				subscription.enumTemplate = &enum_template;
 
-				DWORD rc = ERROR_INVALID_FUNCTION;
+				DWORD rc;
 
 				if (_FwpmNetEventSubscribe5)
-					rc = _FwpmNetEventSubscribe5 (config.hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10new+
+					rc = _FwpmNetEventSubscribe5 (hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10new+
 
 				else if (_FwpmNetEventSubscribe4)
-					rc = _FwpmNetEventSubscribe4 (config.hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10rs5+
+					rc = _FwpmNetEventSubscribe4 (hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10rs5+
 
 				else if (_FwpmNetEventSubscribe3)
-					rc = _FwpmNetEventSubscribe3 (config.hengine, &subscription, &_wfp_logcallback3, nullptr, &config.hnetevent); // win10rs4+
+					rc = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, nullptr, &config.hnetevent); // win10rs4+
 
 				else if (_FwpmNetEventSubscribe2)
-					rc = _FwpmNetEventSubscribe2 (config.hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hnetevent); // win10+
+					rc = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hnetevent); // win10+
 
 				else if (_FwpmNetEventSubscribe1)
-					rc = _FwpmNetEventSubscribe1 (config.hengine, &subscription, &_wfp_logcallback1, nullptr, &config.hnetevent); // win8+
+					rc = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, nullptr, &config.hnetevent); // win8+
 
 				else if (_FwpmNetEventSubscribe0)
-					rc = _FwpmNetEventSubscribe0 (config.hengine, &subscription, &_wfp_logcallback0, nullptr, &config.hnetevent); // win7+
+					rc = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, nullptr, &config.hnetevent); // win7+
+
+				else
+					rc = ERROR_INVALID_FUNCTION;
 
 				if (rc != ERROR_SUCCESS)
 				{
@@ -314,13 +317,16 @@ bool _wfp_logsubscribe ()
 	return result;
 }
 
-bool _wfp_logunsubscribe ()
+bool _wfp_logunsubscribe (HANDLE hengine)
 {
+	if (!hengine)
+		return false;
+
 	_app_loginit (false); // destroy log file handle if present
 
 	if (config.hnetevent)
 	{
-		const DWORD rc = FwpmNetEventUnsubscribe (config.hengine, config.hnetevent);
+		const DWORD rc = FwpmNetEventUnsubscribe (hengine, config.hnetevent);
 
 		if (rc == ERROR_SUCCESS)
 		{
@@ -334,7 +340,9 @@ bool _wfp_logunsubscribe ()
 
 void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 const* remote_addr, UINT16 remote_port, UINT32 const* local_addr, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
 {
-	if (!config.hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
+	HANDLE& hengine = _wfp_getenginehandle ();
+
+	if (!hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
 		return;
 
 	// set allowed directions directions
@@ -358,7 +366,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 	{
 		FWPM_LAYER *layer = nullptr;
 
-		if (FwpmLayerGetById (config.hengine, layer_id, &layer) == ERROR_SUCCESS && layer)
+		if (FwpmLayerGetById (hengine, layer_id, &layer) == ERROR_SUCCESS && layer)
 		{
 			if (memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) == 0 || memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)) == 0)
 			{
@@ -386,7 +394,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 		FWPM_FILTER *ptr_filter = nullptr;
 		FWPM_PROVIDER *ptr_provider = nullptr;
 
-		if (FwpmFilterGetById (config.hengine, filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
+		if (FwpmFilterGetById (hengine, filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
 		{
 			filter_name = ptr_filter->displayData.description ? ptr_filter->displayData.description : ptr_filter->displayData.name;
 
@@ -398,7 +406,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 				if (memcmp (ptr_filter->providerKey, &GUID_WfpProvider, sizeof (GUID)) == 0)
 					is_myprovider = true;
 
-				if (FwpmProviderGetByKey (config.hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
+				if (FwpmProviderGetByKey (hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
 					provider_name = ptr_provider->displayData.name ? ptr_provider->displayData.name : ptr_provider->displayData.description;
 			}
 		}

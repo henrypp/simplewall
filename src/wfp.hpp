@@ -9,7 +9,7 @@ bool _wfp_issublayerinstalled ();
 bool _wfp_isfiltersapplying ();
 bool _wfp_isfiltersinstalled ();
 
-HANDLE _wfp_getenginehandle ();
+HANDLE& _wfp_getenginehandle ();
 
 bool _wfp_initialize (bool is_full);
 void _wfp_uninitialize (bool is_full);

@@ -338,9 +338,11 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 	if (pcontext)
 	{
+		const HANDLE& hengine = _wfp_getenginehandle ();
+
 		// dropped packets logging (win7+)
 		if (config.is_neteventset)
-			_wfp_logunsubscribe ();
+			_wfp_logunsubscribe (hengine);
 
 		if (pcontext->is_install)
 		{
@@ -350,14 +352,14 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 		else
 		{
 			if (_wfp_initialize (false))
-				_wfp_destroyfilters (_wfp_getenginehandle ());
+				_wfp_destroyfilters (hengine);
 
 			_wfp_uninitialize (true);
 		}
 
 		// dropped packets logging (win7+)
 		if (config.is_neteventset)
-			_wfp_logsubscribe ();
+			_wfp_logsubscribe (hengine);
 
 		_app_restoreinterfacestate (pcontext->hwnd, true);
 		_app_setinterfacestate (pcontext->hwnd);

@@ -53,7 +53,7 @@ bool _wfp_isfiltersinstalled ()
 	return _wfp_isproviderinstalled () && _wfp_issublayerinstalled ();
 }
 
-HANDLE _wfp_getenginehandle ()
+HANDLE& _wfp_getenginehandle ()
 {
 	return config.hengine;
 }
@@ -292,14 +292,14 @@ bool _wfp_initialize (bool is_full)
 	}
 
 	// set engine options
-	if(is_full)
+	if (is_full)
 	{
-		FWP_VALUE val;
-
 		static const bool is_win8 = _r_sys_validversion (6, 2);
 
+		FWP_VALUE val;
+
 		// dropped packets logging (win7+)
-		if (is_full && !config.is_neteventset)
+		if (!config.is_neteventset)
 		{
 			val.type = FWP_UINT32;
 			val.uint32 = 1;
@@ -309,7 +309,6 @@ bool _wfp_initialize (bool is_full)
 			if (rc != ERROR_SUCCESS)
 			{
 				_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_COLLECT_NET_EVENTS", false);
-				config.is_neteventset = false;
 			}
 			else
 			{
@@ -345,6 +344,8 @@ bool _wfp_initialize (bool is_full)
 				}
 
 				config.is_neteventset = true;
+
+				_wfp_logsubscribe (config.hengine);
 			}
 		}
 
@@ -371,7 +372,7 @@ DoExit:
 
 void _wfp_uninitialize (bool is_full)
 {
-	const HANDLE& hengine = _wfp_getenginehandle ();
+	HANDLE& hengine = _wfp_getenginehandle ();
 
 	SAFE_DELETE (config.psession);
 
@@ -387,7 +388,7 @@ void _wfp_uninitialize (bool is_full)
 	// dropped packets logging (win7+)
 	if (config.is_neteventset)
 	{
-		_wfp_logunsubscribe ();
+		_wfp_logunsubscribe (hengine);
 
 		if (_r_sys_validversion (6, 2))
 		{
@@ -463,7 +464,7 @@ void _wfp_uninitialize (bool is_full)
 	}
 
 	FwpmEngineClose (hengine);
-	config.hengine = nullptr;
+	hengine = nullptr;
 
 	_r_fastlock_releaseshared (&lock_transaction);
 }
@@ -616,6 +617,9 @@ bool _wfp_transact_start (HANDLE hengine, UINT line)
 		return false;
 
 	DWORD rc = FwpmTransactionBegin (hengine, 0);
+
+	//if (rc == FWP_E_TXN_IN_PROGRESS)
+	//	return false;
 
 	if (rc != ERROR_SUCCESS)
 	{
@@ -1542,7 +1546,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 #ifdef SW_USE_LISTEN_LAYER
 					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 #endif // SW_USE_LISTEN_LAYER
-			}
+				}
 				else if (addr.format == NET_ADDRESS_IPV6)
 				{
 					fwfc[1].conditionValue.type = FWP_V6_ADDR_MASK;
@@ -1561,9 +1565,9 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 #ifdef SW_USE_LISTEN_LAYER
 					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 #endif // SW_USE_LISTEN_LAYER
+				}
+			}
 		}
-	}
-}
 	}
 
 	// firewall service rules

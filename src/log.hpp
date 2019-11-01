@@ -12,8 +12,8 @@ void _app_logwrite (PITEM_LOG ptr_log);
 bool _app_logchecklimit ();
 void _app_logclear ();
 
-bool _wfp_logsubscribe ();
-bool _wfp_logunsubscribe ();
+bool _wfp_logsubscribe (HANDLE hengine);
+bool _wfp_logunsubscribe (HANDLE hengine);
 
 void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 const* remote_addr, UINT16 remote_port, UINT32 const* local_addr, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback);
 
