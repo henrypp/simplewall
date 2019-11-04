@@ -451,8 +451,8 @@ HFONT _app_notifyfontinit (HWND hwnd, PLOGFONT plf, LONG height, LONG weight, LP
 
 void _app_notifyfontset (HWND hwnd)
 {
-	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (nullptr, SIH_EXCLAMATION, _r_dc_getdpi (hwnd, _R_SIZE_ICON16)));
-	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (nullptr, SIH_EXCLAMATION, _r_dc_getdpi (hwnd, _R_SIZE_ICON32)));
+	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (nullptr, SIH_EXCLAMATION, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)));
+	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (nullptr, SIH_EXCLAMATION, _r_dc_getsystemmetrics (hwnd, SM_CXICON)));
 
 	const INT title_font_height = 12;
 	const INT text_font_height = 9;
@@ -670,7 +670,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			if (drawInfo->CtlID != IDC_HEADER_ID)
 				break;
 
-			const INT wnd_icon_size = _r_dc_getdpi (hwnd, _R_SIZE_ICON32);
+			const INT wnd_icon_size = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
 			const INT wnd_spacing = _r_dc_getdpi (hwnd, 12);
 
 			RECT rcText = {0};

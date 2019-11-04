@@ -63,7 +63,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 	GetClientRect (hlistview, &rc_client);
 
 	const INT total_width = _R_RECT_WIDTH (&rc_client);
-	const INT spacing = _r_dc_getdpi (hwnd, _R_SIZE_ICON16);
+	const INT spacing = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
 
 	const bool is_tableview = (SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
 
@@ -902,8 +902,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// configure window
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
-			SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getdpi (hwnd, _R_SIZE_ICON16)));
-			SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getdpi (hwnd, _R_SIZE_ICON32)));
+			SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)));
+			SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getsystemmetrics (hwnd, SM_CXICON)));
 
 			// localize window
 			SetWindowText (hwnd, app.LocaleString (IDS_EDITOR, (!_r_str_isempty (ptr_rule->pname) ? _r_fmt (L" - \"%s\"", ptr_rule->pname).GetString () : nullptr)));
@@ -2543,9 +2543,9 @@ void _app_resizewindow (HWND hwnd, LPARAM lparam)
 
 void _app_imagelist_init (HWND hwnd)
 {
-	const INT icon_size_small = _r_dc_getdpi (hwnd, _R_SIZE_ICON16);
-	const INT icon_size_large = _r_dc_getdpi (hwnd, _R_SIZE_ICON32);
-	const INT icon_size_toolbar = _r_dc_getdpi (hwnd, std::clamp (app.ConfigGet (L"ToolbarSize", _R_SIZE_ITEMHEIGHT).AsInt (), _R_SIZE_ICON16, _R_SIZE_ICON32));
+	const INT icon_size_small = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
+	const INT icon_size_large = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
+	const INT icon_size_toolbar = std::clamp (_r_dc_getdpi (hwnd, app.ConfigGet (L"ToolbarSize", _R_SIZE_ITEMHEIGHT).AsInt ()), icon_size_small, icon_size_large);
 
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
@@ -3062,7 +3062,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			else
 				SetWindowText (hwnd, APP_NAME);
 
-			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), IDI_ACTIVE, _r_dc_getdpi (hwnd, _R_SIZE_ICON16)), APP_NAME, true);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), IDI_ACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, true);
 
 			const HMENU hmenu = GetMenu (hwnd);
 
@@ -3352,7 +3352,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			// refresh tray icon
 			_r_tray_destroy (hwnd, UID);
-			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getdpi (hwnd, _R_SIZE_ICON16)), APP_NAME, false);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, false);
 			_r_tray_setinfo (hwnd, UID, nullptr, nullptr);
 
 			break;

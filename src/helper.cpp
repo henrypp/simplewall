@@ -124,8 +124,8 @@ void _app_setinterfacestate (HWND hwnd)
 	const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
 	const INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 
-	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getdpi (hwnd, _R_SIZE_ICON16));
-	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getdpi (hwnd, _R_SIZE_ICON32));
+	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
+	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
 
 	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
 	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
@@ -1554,7 +1554,7 @@ size_t _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWO
 		return 0;
 	}
 
-	return _r_str_hash (_r_fmt (L"%" PRIu8 L"_%" PRId32 L"_%s_%" PRId32 L"_%s_%" PRId32 L"_%" PRIu8 "_%" PRId32, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
+	return _r_str_hash (_r_fmt (L"%" PRIu8 L"_%" PRIu32 L"_%s_%" PRId32 L"_%s_%" PRIu32 L"_%" PRIu8 "_%" PRIu32, af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
 }
 
 bool _app_isvalidconnection (ADDRESS_FAMILY af, const PVOID paddr)
@@ -1594,7 +1594,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = new MIB_TCPTABLE_OWNER_MODULE[tableSize];
+		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = (PMIB_TCPTABLE_OWNER_MODULE)new BYTE[tableSize];
 
 		if (GetExtendedTcpTable (tcp4Table, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
@@ -1654,7 +1654,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = new MIB_TCP6TABLE_OWNER_MODULE[tableSize];
+		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = (PMIB_TCP6TABLE_OWNER_MODULE)new BYTE[tableSize];
 
 		if (GetExtendedTcpTable (tcp6Table, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
@@ -1708,7 +1708,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_UDPTABLE_OWNER_MODULE udp4Table = new MIB_UDPTABLE_OWNER_MODULE[tableSize];
+		PMIB_UDPTABLE_OWNER_MODULE udp4Table = (PMIB_UDPTABLE_OWNER_MODULE)new BYTE[tableSize];
 
 		if (GetExtendedUdpTable (udp4Table, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
@@ -1758,7 +1758,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = new MIB_UDP6TABLE_OWNER_MODULE[tableSize];
+		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = (PMIB_UDP6TABLE_OWNER_MODULE)new BYTE[tableSize];
 
 		if (GetExtendedUdpTable (udp6Table, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
