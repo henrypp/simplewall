@@ -345,7 +345,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 	if (!hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
 		return;
 
-	// set allowed directions directions
+	// set allowed directions
 	switch (direction)
 	{
 		case FWP_DIRECTION_IN:
