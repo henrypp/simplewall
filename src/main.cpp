@@ -1218,6 +1218,8 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_COMMAND:
 		{
+			const INT ctrl_id = LOWORD (wparam);
+
 			if (HIWORD (wparam) == EN_CHANGE)
 			{
 				if (!ptr_rule->is_readonly)
@@ -1226,12 +1228,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				return FALSE;
 			}
 
-			switch (LOWORD (wparam))
+			switch (ctrl_id)
 			{
 				case IDM_CHECK:
 				case IDM_UNCHECK:
 				{
-					const bool new_val = (LOWORD (wparam) == IDM_CHECK) ? true : false;
+					const bool new_val = (ctrl_id == IDM_CHECK) ? true : false;
 					INT item = INVALID_INT;
 
 					_r_fastlock_acquireshared (&lock_checkbox);
@@ -2025,7 +2027,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					if ((lpnmdi->uFlags & TTF_IDISHWND) == TTF_IDISHWND)
 					{
 						WCHAR buffer[1024] = {0};
-						const INT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
+						const INT ctrl_id = GetDlgCtrlID (reinterpret_cast<HWND>(lpnmdi->hdr.idFrom));
 
 						if (ctrl_id == IDC_RULE_BLOCKOUTBOUND)
 							_r_str_copy (buffer, _countof (buffer), app.LocaleString (IDS_RULE_BLOCKOUTBOUND, nullptr));
@@ -2181,7 +2183,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 		case WM_COMMAND:
 		{
-			switch (LOWORD (wparam))
+			const INT ctrl_id = LOWORD (wparam);
+			const INT notify_code = HIWORD (wparam);
+
+			switch (ctrl_id)
 			{
 				case IDC_ALWAYSONTOP_CHK:
 				case IDC_STARTMINIMIZED_CHK:
@@ -2227,9 +2232,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDC_EXCLUDEBLOCKLIST_CHK:
 				case IDC_EXCLUDECUSTOM_CHK:
 				{
-					const INT ctrl_id = LOWORD (wparam);
-					const INT notify_code = HIWORD (wparam);
-
 					if (ctrl_id == IDC_ALWAYSONTOP_CHK)
 					{
 						app.ConfigSet (L"AlwaysOnTop", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
@@ -4185,12 +4187,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_COMMAND:
 		{
-			if (HIWORD (wparam) == 0 && LOWORD (wparam) >= IDX_LANGUAGE && LOWORD (wparam) <= IDX_LANGUAGE + app.LocaleGetCount ())
+			const INT ctrl_id = LOWORD (wparam);
+
+			if (HIWORD (wparam) == 0 && ctrl_id >= IDX_LANGUAGE && ctrl_id <= IDX_LANGUAGE + app.LocaleGetCount ())
 			{
-				app.LocaleApplyFromMenu (GetSubMenu (GetSubMenu (GetMenu (hwnd), 2), LANG_MENU), LOWORD (wparam), IDX_LANGUAGE);
+				app.LocaleApplyFromMenu (GetSubMenu (GetSubMenu (GetMenu (hwnd), 2), LANG_MENU), ctrl_id, IDX_LANGUAGE);
 				return FALSE;
 			}
-			else if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
+			else if ((ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= IDX_RULES_SPECIAL + rules_arr.size ()))
 			{
 				const INT listview_id = _app_gettab_id (hwnd);
 
@@ -4200,7 +4204,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				INT item = INVALID_INT;
 				BOOL is_remove = INVALID_INT;
 
-				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
+				const size_t rule_idx = (ctrl_id - IDX_RULES_SPECIAL);
 				PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 				if (!ptr_rule_object)
@@ -4282,14 +4286,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				return FALSE;
 			}
-			else if ((LOWORD (wparam) >= IDX_TIMER && LOWORD (wparam) <= IDX_TIMER + timers.size ()))
+			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= IDX_TIMER + timers.size ()))
 			{
 				const INT listview_id = _app_gettab_id (hwnd);
 
 				if (!SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
 					return FALSE;
 
-				const size_t timer_idx = (LOWORD (wparam) - IDX_TIMER);
+				const size_t timer_idx = (ctrl_id - IDX_TIMER);
 				const time_t seconds = timers.at (timer_idx);
 				INT item = INVALID_INT;
 				OBJECTS_VEC rules;
@@ -4329,7 +4333,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				return FALSE;
 			}
 
-			switch (LOWORD (wparam))
+			switch (ctrl_id)
 			{
 				case IDCANCEL: // process Esc key
 				case IDM_TRAY_SHOW:
@@ -4448,7 +4452,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const bool new_val = !app.ConfigGet (L"AlwaysOnTop", false).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), LOWORD (wparam), MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"AlwaysOnTop", new_val);
 
 					_r_wnd_top (hwnd, new_val);
@@ -4460,7 +4464,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const bool new_val = !app.ConfigGet (L"AutoSizeColumns", true).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), LOWORD (wparam), MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"AutoSizeColumns", new_val);
 
 					if (new_val)
@@ -4473,7 +4477,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const bool new_val = !app.ConfigGet (L"ShowFilenames", true).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), LOWORD (wparam), MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"ShowFilenames", new_val);
 
 					_r_fastlock_acquireshared (&lock_access);
@@ -4522,7 +4526,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const bool new_val = !app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), LOWORD (wparam), MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"IsEnableSpecialGroup", new_val);
 
 					_r_fastlock_acquireshared (&lock_access);
@@ -4606,16 +4610,16 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					INT icon_size;
 
-					if (LOWORD (wparam) == IDM_ICONSLARGE)
+					if (ctrl_id == IDM_ICONSLARGE)
 						icon_size = SHIL_LARGE;
 
-					else if (LOWORD (wparam) == IDM_ICONSEXTRALARGE)
+					else if (ctrl_id == IDM_ICONSEXTRALARGE)
 						icon_size = SHIL_EXTRALARGE;
 
 					else
 						icon_size = SHIL_SYSSMALL;
 
-					CheckMenuRadioItem (GetMenu (hwnd), IDM_ICONSSMALL, IDM_ICONSEXTRALARGE, LOWORD (wparam), MF_BYCOMMAND);
+					CheckMenuRadioItem (GetMenu (hwnd), IDM_ICONSSMALL, IDM_ICONSEXTRALARGE, ctrl_id, MF_BYCOMMAND);
 					app.ConfigSet (L"IconSize", std::clamp (icon_size, SHIL_LARGE, SHIL_LAST));
 
 					_app_listviewsetview (hwnd, listview_id);
@@ -4630,7 +4634,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const bool new_val = !app.ConfigGet (L"IsTableView", true).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), LOWORD (wparam), MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"IsTableView", new_val);
 
 					const INT listview_id = _app_gettab_id (hwnd);
@@ -4650,7 +4654,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const bool new_val = !app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), LOWORD (wparam), MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"IsIconsHidden", new_val);
 
 					_r_fastlock_acquireshared (&lock_access);
@@ -4789,7 +4793,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_USECERTIFICATES_CHK:
 				case IDM_USEREFRESHDEVICES_CHK:
 				{
-					_app_config_apply (hwnd, LOWORD (wparam));
+					_app_config_apply (hwnd, ctrl_id);
 					break;
 				}
 
@@ -4803,7 +4807,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_BLOCKLIST_EXTRA_ALLOW:
 				case IDM_BLOCKLIST_EXTRA_BLOCK:
 				{
-					const INT ctrl_id = LOWORD (wparam);
 					const HMENU hmenu = GetMenu (hwnd);
 
 					if (ctrl_id >= IDM_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDM_BLOCKLIST_SPY_BLOCK)
@@ -4850,7 +4853,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const bool new_val = !app.ConfigGet (L"IsLogEnabled", false).AsBool ();
 
-					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, LOWORD (wparam), nullptr, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
+					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, nullptr, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
 					app.ConfigSet (L"IsLogEnabled", new_val);
 
 					_app_loginit (new_val);
@@ -4862,7 +4865,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const bool new_val = !app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ();
 
-					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, LOWORD (wparam), nullptr, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
+					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, nullptr, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
 					app.ConfigSet (L"IsNotificationsEnabled", new_val);
 
 					_app_notifyrefresh (config.hnotification, true);
@@ -5025,7 +5028,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_EXPLORE:
 				{
 					const INT listview_id = _app_gettab_id (hwnd);
-					const INT ctrl_id = LOWORD (wparam);
 
 					if (
 						listview_id != IDC_APPS_PROFILE &&
@@ -5142,7 +5144,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
-						if (LOWORD (wparam) == IDM_COPY)
+						if (ctrl_id == IDM_COPY)
 						{
 							for (INT column_id = 0; column_id < column_count; column_id++)
 								buffer.Append (_r_listview_getitemtext (hwnd, listview_id, item, column_id)).Append (divider);
@@ -5167,9 +5169,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_UNCHECK:
 				{
 					const INT listview_id = _app_gettab_id (hwnd);
-					const INT ctrl_id = LOWORD (wparam);
 
-					const bool new_val = (LOWORD (wparam) == IDM_CHECK) ? true : false;
+					const bool new_val = (ctrl_id == IDM_CHECK) ? true : false;
 
 					bool is_changed = false;
 
