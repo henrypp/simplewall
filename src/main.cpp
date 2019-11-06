@@ -5936,9 +5936,11 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 
 			if (is_install || is_uninstall)
 			{
+				const bool is_elevated = _r_sys_iselevated ();
+
 				if (is_install)
 				{
-					if (app.IsAdmin () && (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true))))
+					if (is_elevated && (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true))))
 					{
 						_app_initialize ();
 						_app_profile_load (nullptr);
@@ -5951,7 +5953,7 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 				}
 				else if (is_uninstall)
 				{
-					if (app.IsAdmin () && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
+					if (is_elevated && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
 					{
 						if (_wfp_initialize (false))
 							_wfp_destroyfilters (_wfp_getenginehandle ());
