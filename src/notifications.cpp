@@ -68,8 +68,7 @@ bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 	ptr_app->last_notify = _r_unixtime_now ();
 
 	_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
-
-	_r_obj_dereference (ptr_app_object);
+	_app_freeobjects_vec (rules);
 
 	_app_refreshstatus (app.GetHWND (), listview_id);
 	_app_profile_save ();
