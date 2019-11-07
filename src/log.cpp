@@ -338,7 +338,7 @@ bool _wfp_logunsubscribe (HANDLE hengine)
 	return false;
 }
 
-void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 const* remote_addr, UINT16 remote_port, UINT32 const* local_addr, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
+void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr4, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remote_port, UINT32 local_addr4, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
 {
 	HANDLE& hengine = _wfp_getenginehandle ();
 
@@ -396,7 +396,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 
 		if (FwpmFilterGetById (hengine, filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
 		{
-			filter_name = ptr_filter->displayData.description ? ptr_filter->displayData.description : ptr_filter->displayData.name;
+			filter_name = !_r_str_isempty (ptr_filter->displayData.description) ? ptr_filter->displayData.description : ptr_filter->displayData.name;
 
 			if (ptr_filter->weight.type == FWP_UINT8)
 				filter_weight = ptr_filter->weight.uint8;
@@ -407,7 +407,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 					is_myprovider = true;
 
 				if (FwpmProviderGetByKey (hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
-					provider_name = ptr_provider->displayData.name ? ptr_provider->displayData.name : ptr_provider->displayData.description;
+					provider_name = !_r_str_isempty (ptr_provider->displayData.name) ? ptr_provider->displayData.name : ptr_provider->displayData.description;
 			}
 		}
 
@@ -444,16 +444,17 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 		if ((flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) != 0 && !sidstring.IsEmpty ())
 		{
 			_r_str_alloc (&ptr_log->path, sidstring.GetLength (), sidstring);
-
 			ptr_log->app_hash = sidstring.Hash ();
 		}
 		else if ((flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) != 0 && app_id)
 		{
 			const rstring path = _r_path_dospathfromnt (LPCWSTR (app_id));
 
-			_r_str_alloc (&ptr_log->path, path.GetLength (), path);
-
-			ptr_log->app_hash = path.Hash ();
+			if (!path.IsEmpty ())
+			{
+				_r_str_alloc (&ptr_log->path, path.GetLength (), path);
+				ptr_log->app_hash = path.Hash ();
+			}
 		}
 		else
 		{
@@ -467,7 +468,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 		// get username information
 		if ((flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) != 0 && user_id)
 		{
-			SID_NAME_USE sid_type = SidTypeInvalid;
+			SID_NAME_USE sid_type;
 
 			WCHAR username[MAX_PATH] = {0};
 			WCHAR domain[MAX_PATH] = {0};
@@ -510,24 +511,24 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 				ptr_log->af = AF_INET;
 
 				// remote address
-				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && (remote_addr))
-					ptr_log->remote_addr.S_un.S_addr = _byteswap_ulong (*remote_addr);
+				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr4)
+					ptr_log->remote_addr.S_un.S_addr = _byteswap_ulong (remote_addr4);
 
 				// local address
-				if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && (local_addr))
-					ptr_log->local_addr.S_un.S_addr = _byteswap_ulong (*local_addr);
+				if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr4)
+					ptr_log->local_addr.S_un.S_addr = _byteswap_ulong (local_addr4);
 			}
 			else if (ipver == FWP_IP_VERSION_V6)
 			{
 				ptr_log->af = AF_INET6;
 
 				// remote address
-				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr)
-					RtlCopyMemory (ptr_log->remote_addr6.u.Byte, ((FWP_BYTE_ARRAY16*)remote_addr)->byteArray16, FWP_V6_ADDR_SIZE);
+				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr6)
+					RtlCopyMemory (ptr_log->remote_addr6.u.Byte, remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 
 				// local address
-				if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr)
-					RtlCopyMemory (ptr_log->local_addr6.u.Byte, ((FWP_BYTE_ARRAY16*)local_addr)->byteArray16, FWP_V6_ADDR_SIZE);
+				if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr6)
+					RtlCopyMemory (ptr_log->local_addr6.u.Byte, local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 			}
 
 			if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) != 0 && remote_port)
@@ -563,19 +564,19 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 		{
 			ptr_entry->Body = _r_obj_allocate (ptr_log, &_app_dereferencelog);
 
-			InterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
+			RtlInterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
 			const LONG new_item_count = InterlockedIncrement (&log_stack.item_count);
 
 			// check if thread has been terminated
 			const LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
 
-			if (!_r_fastlock_islocked (&lock_logthread) || (_r_fastlock_islocked (&lock_logbusy) && new_item_count >= NOTIFY_LIMIT_POOL_SIZE && thread_count >= 1 && thread_count < std::clamp (app.ConfigGet (L"LogThreadsLimit", NOTIFY_LIMIT_THREAD_COUNT).AsInt (), 1, 8)))
+			if (!_r_fastlock_islocked (&lock_logthread) || (_r_fastlock_islocked (&lock_logbusy) && new_item_count >= NOTIFY_LIMIT_POOL_SIZE && thread_count >= 1 && thread_count < std::clamp (app.ConfigGet (L"LogThreadsLimit", NOTIFY_LIMIT_THREAD_COUNT).AsInt (), 1, NOTIFY_LIMIT_THREAD_MAX)))
 			{
 				_r_fastlock_acquireexclusive (&lock_threadpool);
 				_app_freethreadpool (&threads_pool);
 				_r_fastlock_releaseexclusive (&lock_threadpool);
 
-				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_BELOW_NORMAL);
+				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_ABOVE_NORMAL);
 
 				if (hthread)
 				{
@@ -621,7 +622,7 @@ void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, &pEvent->header.remoteAddrV4, pEvent->header.remotePort, &pEvent->header.localAddrV4, pEvent->header.localPort, layer_id, filter_id, direction, false, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, false, is_loopback);
 	}
 }
 
@@ -671,7 +672,7 @@ void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, &pEvent->header.remoteAddrV4, pEvent->header.remotePort, &pEvent->header.localAddrV4, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 	}
 }
 
@@ -721,7 +722,7 @@ void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, &pEvent->header.remoteAddrV4, pEvent->header.remotePort, &pEvent->header.localAddrV4, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 	}
 }
 
@@ -771,7 +772,7 @@ void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, &pEvent->header.remoteAddrV4, pEvent->header.remotePort, &pEvent->header.localAddrV4, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 	}
 }
 
@@ -821,7 +822,7 @@ void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5 * pEvent)
 			return;
 		}
 
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, &pEvent->header.remoteAddrV4, pEvent->header.remotePort, &pEvent->header.localAddrV4, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 	}
 }
 
@@ -833,7 +834,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 	while (true)
 	{
-		const PSLIST_ENTRY listEntry = InterlockedPopEntrySList (&log_stack.ListHead);
+		const PSLIST_ENTRY listEntry = RtlInterlockedPopEntrySList (&log_stack.ListHead);
 
 		if (!listEntry)
 			break;
