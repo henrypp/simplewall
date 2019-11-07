@@ -1,3 +1,12 @@
+v3.0.8 (8 November 2019)
+- removed disable windows firewall on startup (issue #554)
+- updated default timer values (issue #340)
+- fixed non-default system dpi (issue #544)
+- fixed overwrite notifications
+- fixed crash (issue #552)
+- cosmetics fixes
+- fixed bugs
+
 v3.0.7 (1 November 2019)
 - improved dpi support (win81+)
 - fixed ended timer handling on restart
