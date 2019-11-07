@@ -590,7 +590,8 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, PITEM_APP ptr_app)
 
 						if (VerQueryValue (versionInfo, L"\\VarFileInfo\\Translation", &retbuf, &vLen) && vLen == 4)
 						{
-							CopyMemory (&langD, retbuf, vLen);
+							RtlCopyMemory (&langD, retbuf, vLen);
+
 							_r_str_printf (author_entry, _countof (author_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
 							_r_str_printf (description_entry, _countof (description_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
 						}
@@ -1449,7 +1450,7 @@ rstring _app_getservicenamefromtag (HANDLE pid, PVOID ptag)
 		if (_I_QueryTagInformation)
 		{
 			SC_SERVICE_TAG_QUERY nameFromTag;
-			SecureZeroMemory (&nameFromTag, sizeof (nameFromTag));
+			RtlSecureZeroMemory (&nameFromTag, sizeof (nameFromTag));
 
 			nameFromTag.ProcessId = HandleToUlong (pid);
 			nameFromTag.ServiceTag = PtrToUlong (ptag);
@@ -1615,7 +1616,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
+				RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				const rstring path = _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
@@ -1669,7 +1670,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
+				RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				const rstring path = _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
@@ -1678,10 +1679,10 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
 
-				CopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
+				RtlCopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->remote_port = _byteswap_ushort ((USHORT)tcp6Table->table[i].dwRemotePort);
 
-				CopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
+				RtlCopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->local_port = _byteswap_ushort ((USHORT)tcp6Table->table[i].dwLocalPort);
 
 				ptr_network->state = tcp6Table->table[i].dwState;
@@ -1726,7 +1727,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
+				RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				const rstring path = _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
@@ -1773,7 +1774,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				}
 
 				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-				SecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
+				RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 				const rstring path = _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
@@ -1782,7 +1783,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;
 
-				CopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
+				RtlCopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->local_port = _byteswap_ushort ((USHORT)udp6Table->table[i].dwLocalPort);
 
 				ptr_network->state = 0;
@@ -1881,8 +1882,7 @@ void _app_generate_packages ()
 				}
 
 				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
-
-				SecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
+				RtlSecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
 
 				ptr_item->type = DataAppUWP;
 
@@ -2051,8 +2051,7 @@ void _app_generate_services ()
 			if (serviceSid && !sidstring.IsEmpty ())
 			{
 				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
-
-				SecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
+				RtlSecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
 
 				ptr_item->type = DataAppService;
 				ptr_item->timestamp = timestamp;
@@ -2088,7 +2087,7 @@ void _app_generate_services ()
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 {
 	ITEM_COUNT stat = {0};
-	SecureZeroMemory (&stat, sizeof (stat));
+	RtlSecureZeroMemory (&stat, sizeof (stat));
 
 	_app_getcount (&stat);
 
@@ -2348,7 +2347,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 void _app_refreshstatus (HWND hwnd, INT listview_id)
 {
 	ITEM_COUNT stat = {0};
-	SecureZeroMemory (&stat, sizeof (stat));
+	RtlSecureZeroMemory (&stat, sizeof (stat));
 
 	_app_getcount (&stat);
 
@@ -2616,7 +2615,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * format_ptr, USHORT * port_ptr, FWP_V4_ADDR_AND_MASK * paddr4, FWP_V6_ADDR_AND_MASK * paddr6, LPWSTR paddr_dns, size_t dns_length)
 {
 	NET_ADDRESS_INFO ni;
-	SecureZeroMemory (&ni, sizeof (ni));
+	RtlSecureZeroMemory (&ni, sizeof (ni));
 
 	USHORT port = 0;
 	BYTE prefix_length = 0;
@@ -2654,7 +2653,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 		{
 			if (paddr6)
 			{
-				CopyMemory (paddr6->addr, ni.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
+				RtlCopyMemory (paddr6->addr, ni.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
 				paddr6->prefixLength = min (prefix_length, 128);
 			}
 
@@ -2851,7 +2850,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 					if (ptr_addr->prange)
 					{
 						ptr_addr->prange->valueLow.type = FWP_BYTE_ARRAY16_TYPE;
-						CopyMemory (ptr_addr->prange->valueLow.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
+						RtlCopyMemory (ptr_addr->prange->valueLow.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
 					}
 				}
 				else
@@ -2883,7 +2882,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 					if (ptr_addr->prange)
 					{
 						ptr_addr->prange->valueHigh.type = FWP_BYTE_ARRAY16_TYPE;
-						CopyMemory (ptr_addr->prange->valueHigh.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
+						RtlCopyMemory (ptr_addr->prange->valueHigh.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
 					}
 				}
 				else
@@ -2917,7 +2916,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 					if (ptr_addr->paddr6)
 					{
 						ptr_addr->paddr6->prefixLength = addr6.prefixLength;
-						CopyMemory (ptr_addr->paddr6->addr, addr6.addr, FWP_V6_ADDR_SIZE);
+						RtlCopyMemory (ptr_addr->paddr6->addr, addr6.addr, FWP_V6_ADDR_SIZE);
 					}
 				}
 				else if (format == NET_ADDRESS_DNS_NAME)
@@ -3211,7 +3210,7 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 		goto DoExit;
 
 	// Check if the image format is supported:
-	if (memcmp (&pixelFormat, &GUID_WICPixelFormat32bppPRGBA, sizeof (GUID)) == 0)
+	if (RtlEqualMemory (&pixelFormat, &GUID_WICPixelFormat32bppPRGBA, sizeof (GUID)))
 	{
 		wicBitmapSource = (IWICBitmapSource*)wicFrame;
 	}

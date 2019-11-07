@@ -276,11 +276,11 @@ COLORREF _app_getcolor (INT listview_id, size_t app_hash)
 
 	if (ptr_app)
 	{
-		if (app.ConfigGet (L"IsHighlightTimer", true, L"colors").AsBool () && _app_istimeractive (ptr_app))
-			color_value = L"ColorTimer";
-
-		else if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && !_app_isappexists (ptr_app))
+		if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && !_app_isappexists (ptr_app))
 			color_value = L"ColorInvalid";
+
+		else if (app.ConfigGet (L"IsHighlightTimer", true, L"colors").AsBool () && _app_istimeractive (ptr_app))
+			color_value = L"ColorTimer";
 
 		else if (!is_networkslist && !ptr_app->is_silent && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool () && _app_isapphaveconnection (app_hash))
 			color_value = L"ColorConnection";
@@ -288,7 +288,7 @@ COLORREF _app_getcolor (INT listview_id, size_t app_hash)
 		else if (app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && !ptr_app->is_silent && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
 			color_value = L"ColorSigned";
 
-		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && _app_isapphaverule (app_hash))
+		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && !ptr_app->is_silent && _app_isapphaverule (app_hash))
 			color_value = L"ColorSpecial";
 
 		else if (!is_networkslist && !is_appslist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
@@ -2842,13 +2842,13 @@ void _app_initialize ()
 		DWORD token_length = 0;
 		PTOKEN_USER token_user = nullptr;
 
-		if (OpenProcessToken (GetCurrentProcess (), TOKEN_QUERY, &token))
+		if (OpenProcessToken (NtCurrentProcess (), TOKEN_QUERY, &token))
 		{
 			GetTokenInformation (token, TokenUser, nullptr, 0, &token_length);
 
 			if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
 			{
-				token_user = new TOKEN_USER[token_length];
+				token_user = (PTOKEN_USER)new BYTE[token_length];
 
 				if (GetTokenInformation (token, TokenUser, token_user, token_length, &token_length))
 				{
@@ -3011,17 +3011,11 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_settab_id (hwnd, app.ConfigGet (L"CurrentTab", IDC_APPS_PROFILE).AsInt ());
 
 			// initialize dropped packets log callback thread (win7+)
-			{
-				SecureZeroMemory (&log_stack, sizeof (log_stack));
+			RtlSecureZeroMemory (&log_stack, sizeof (log_stack));
+			RtlInitializeSListHead (&log_stack.ListHead);
 
-				log_stack.item_count = 0;
-				log_stack.thread_count = 0;
-
-				InitializeSListHead (&log_stack.ListHead);
-
-				// create notification window
-				_app_notifycreatewindow (hwnd);
-			}
+			// create notification window
+			_app_notifycreatewindow (hwnd);
 
 			// create network monitor thread
 			_r_createthread (&NetworkMonitorThread, (LPVOID)hwnd, false, THREAD_PRIORITY_LOWEST);
@@ -3582,9 +3576,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					LONG result = CDRF_DODEFAULT;
 					LPNMLVCUSTOMDRAW lpnmcd = (LPNMLVCUSTOMDRAW)lparam;
 
-					const INT ctrl_id = static_cast<INT>(lpnmcd->nmcd.hdr.idFrom);
-
-					if (ctrl_id == IDC_TOOLBAR)
+					if (static_cast<INT>(lpnmcd->nmcd.hdr.idFrom) == IDC_TOOLBAR)
 					{
 						result = _app_nmcustdraw_toolbar (lpnmcd);
 					}
@@ -3743,7 +3735,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					INT command_id = 0;
 					const INT ctrl_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
-					if (ctrl_id == IDC_STATUSBAR)
+					if (ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP)
+					{
+						command_id = IDM_EXPLORE;
+					}
+					else if (ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_NETWORK)
+					{
+						command_id = IDM_PROPERTIES;
+					}
+					else if (ctrl_id == IDC_STATUSBAR)
 					{
 						LPNMMOUSE nmouse = (LPNMMOUSE)lparam;
 
@@ -3755,14 +3755,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						else if (nmouse->dwItemSpec == 2)
 							command_id = IDM_PURGE_TIMERS;
-					}
-					else if (ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP)
-					{
-						command_id = IDM_EXPLORE;
-					}
-					else if (ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_NETWORK)
-					{
-						command_id = IDM_PROPERTIES;
 					}
 
 					if (command_id)
@@ -5515,7 +5507,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							if (ptr_network->af == AF_INET && ptr_network->state == MIB_TCP_STATE_ESTAB)
 							{
-								SecureZeroMemory (&tcprow, sizeof (tcprow));
+								RtlSecureZeroMemory (&tcprow, sizeof (tcprow));
 
 								tcprow.dwState = MIB_TCP_STATE_DELETE_TCB;
 								tcprow.dwLocalAddr = ptr_network->local_addr.S_un.S_addr;
@@ -5884,7 +5876,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						UINT32 remote_addr = _byteswap_ulong (ipv4_remote.S_un.S_addr);
 						UINT32 local_addr = _byteswap_ulong (ipv4_local.S_un.S_addr);
 
-						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.padminsid, IPPROTO_TCP, FWP_IP_VERSION_V4, &remote_addr, RP_AD, &local_addr, LP_AD, layer_id, filter_id, FWP_DIRECTION_OUTBOUND, false, false);
+						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.padminsid, IPPROTO_TCP, FWP_IP_VERSION_V4, remote_addr, nullptr, RP_AD, local_addr, nullptr, LP_AD, layer_id, filter_id, FWP_DIRECTION_OUTBOUND, false, false);
 					}
 
 					break;

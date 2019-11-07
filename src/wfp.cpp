@@ -80,7 +80,7 @@ bool _wfp_initialize (bool is_full)
 				SAFE_DELETE (config.psession);
 		}
 
-		SecureZeroMemory (&session, sizeof (session));
+		RtlSecureZeroMemory (&session, sizeof (session));
 
 		session.displayData.name = APP_NAME;
 		session.displayData.description = APP_NAME;
@@ -88,7 +88,7 @@ bool _wfp_initialize (bool is_full)
 		session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
 
 		if (config.psession)
-			CopyMemory (&session.sessionKey, config.psession, sizeof (GUID));
+			RtlCopyMemory (&session.sessionKey, config.psession, sizeof (GUID));
 
 		rc = FwpmEngineOpen (nullptr, RPC_C_AUTHN_WINNT, nullptr, &session, &config.hengine);
 
@@ -124,9 +124,9 @@ bool _wfp_initialize (bool is_full)
 		else
 		{
 			const size_t count = 2;
-			EXPLICIT_ACCESS access[count] = {0};
+			EXPLICIT_ACCESS access[count] = {{0}};
 
-			SecureZeroMemory (access, count * sizeof (EXPLICIT_ACCESS));
+			RtlSecureZeroMemory (access, count * sizeof (EXPLICIT_ACCESS));
 
 			// create default (engine) acl
 			access[0].grfAccessPermissions = FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER;
@@ -705,10 +705,10 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * l
 	}
 
 	if (layer)
-		CopyMemory (&filter.layerKey, layer, sizeof (GUID));
+		RtlCopyMemory (&filter.layerKey, layer, sizeof (GUID));
 
 	if (callout)
-		CopyMemory (&filter.action.calloutKey, callout, sizeof (GUID));
+		RtlCopyMemory (&filter.action.calloutKey, callout, sizeof (GUID));
 
 	filter.weight.type = FWP_UINT8;
 	filter.weight.uint8 = weight;
@@ -823,10 +823,10 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 	FWP_V6_ADDR_AND_MASK addr6 = {0};
 
 	FWP_RANGE range;
-	SecureZeroMemory (&range, sizeof (range));
+	RtlSecureZeroMemory (&range, sizeof (range));
 
 	ITEM_ADDRESS addr;
-	SecureZeroMemory (&addr, sizeof (addr));
+	RtlSecureZeroMemory (&addr, sizeof (addr));
 
 	addr.paddr4 = &addr4;
 	addr.paddr6 = &addr6;
@@ -1519,7 +1519,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 			FWP_V6_ADDR_AND_MASK addr6 = {0};
 
 			ITEM_ADDRESS addr;
-			SecureZeroMemory (&addr, sizeof (addr));
+			RtlSecureZeroMemory (&addr, sizeof (addr));
 
 			addr.paddr4 = &addr4;
 			addr.paddr6 = &addr6;
@@ -1793,7 +1793,7 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 				{
 					FWPM_FILTER* pf = matchingFwpFilter[i];
 
-					if (pf && pf->providerKey && memcmp (pf->providerKey, pprovider, sizeof (GUID)) == 0)
+					if (pf && pf->providerKey && RtlEqualMemory (pf->providerKey, pprovider, sizeof (GUID)))
 						ptr_filters->push_back (pf->filterKey);
 				}
 
@@ -2055,16 +2055,16 @@ bool ByteBlobAlloc (PVOID const data, size_t length, FWP_BYTE_BLOB * *lpblob)
 	if (!data || !length || !lpblob)
 		return false;
 
-	FWP_BYTE_BLOB* blob = new FWP_BYTE_BLOB;
+	FWP_BYTE_BLOB* pblob = new FWP_BYTE_BLOB;
 
-	SecureZeroMemory (blob, sizeof (FWP_BYTE_BLOB));
+	RtlSecureZeroMemory (pblob, sizeof (FWP_BYTE_BLOB));
 
-	blob->data = new UINT8[length];
-	blob->size = (UINT32)length;
+	pblob->data = new UINT8[length];
+	pblob->size = (UINT32)length;
 
-	CopyMemory (blob->data, data, length);
+	RtlCopyMemory (pblob->data, data, length);
 
-	*lpblob = blob;
+	*lpblob = pblob;
 
 	return true;
 }

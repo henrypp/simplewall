@@ -19,20 +19,20 @@ bool _app_getappinfo (size_t app_hash, EnumInfo info_key, LPVOID presult, size_t
 	{
 		if (info_key == InfoTimestamp)
 		{
-			CopyMemory (presult, &ptr_app->timestamp, size);
+			RtlCopyMemory (presult, &ptr_app->timestamp, size);
 		}
 		else if (info_key == InfoIconId)
 		{
-			CopyMemory (presult, &ptr_app->icon_id, size);
+			RtlCopyMemory (presult, &ptr_app->icon_id, size);
 		}
 		else if (info_key == InfoSilent)
 		{
-			CopyMemory (presult, &ptr_app->is_silent, size);
+			RtlCopyMemory (presult, &ptr_app->is_silent, size);
 		}
 		else if (info_key == InfoListviewId)
 		{
 			INT v = _app_getlistview_id (ptr_app->type);
-			CopyMemory (presult, &v, size);
+			RtlCopyMemory (presult, &v, size);
 		}
 	}
 
@@ -83,8 +83,7 @@ size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 		return app_hash; // already exists
 
 	PITEM_APP ptr_app = new ITEM_APP;
-
-	SecureZeroMemory (ptr_app, sizeof (ITEM_APP));
+	RtlSecureZeroMemory (ptr_app, sizeof (ITEM_APP));
 
 	const bool is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
 
@@ -658,8 +657,7 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 				else
 				{
 					PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
-
-					SecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
+					RtlSecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
 
 					ptr_config->is_enabled = is_enable;
 					_r_str_alloc (&ptr_config->pname, INVALID_SIZE_T, ptr_rule->pname);
@@ -670,8 +668,7 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 			else
 			{
 				PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
-
-				SecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
+				RtlSecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
 
 				ptr_config->is_enabled = is_enable;
 				_r_str_alloc (&ptr_config->pname, INVALID_SIZE_T, ptr_rule->pname);
@@ -1025,7 +1022,7 @@ bool _app_isrulehost (LPCWSTR rule)
 		return false;
 
 	NET_ADDRESS_INFO ni;
-	SecureZeroMemory (&ni, sizeof (ni));
+	RtlSecureZeroMemory (&ni, sizeof (ni));
 
 	USHORT port = 0;
 	BYTE prefix_length = 0;
@@ -1061,7 +1058,7 @@ bool _app_isruleip (LPCWSTR rule)
 		return false;
 
 	NET_ADDRESS_INFO ni;
-	SecureZeroMemory (&ni, sizeof (ni));
+	RtlSecureZeroMemory (&ni, sizeof (ni));
 
 	USHORT port = 0;
 	BYTE prefix_length = 0;
@@ -1292,8 +1289,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 			if (rule_hash && rules_config.find (rule_hash) == rules_config.end ())
 			{
 				PITEM_RULE_CONFIG ptr_config = new ITEM_RULE_CONFIG;
-
-				SecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
+				RtlSecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
 
 				ptr_config->is_enabled = item.attribute (L"is_enabled").as_bool ();
 

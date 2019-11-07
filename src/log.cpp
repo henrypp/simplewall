@@ -266,11 +266,11 @@ bool _wfp_logsubscribe (HANDLE hengine)
 				FWPM_NET_EVENT_SUBSCRIPTION subscription;
 				FWPM_NET_EVENT_ENUM_TEMPLATE enum_template;
 
-				SecureZeroMemory (&subscription, sizeof (subscription));
-				SecureZeroMemory (&enum_template, sizeof (enum_template));
+				RtlSecureZeroMemory (&subscription, sizeof (subscription));
+				RtlSecureZeroMemory (&enum_template, sizeof (enum_template));
 
 				if (config.psession)
-					CopyMemory (&subscription.sessionKey, config.psession, sizeof (GUID));
+					RtlCopyMemory (&subscription.sessionKey, config.psession, sizeof (GUID));
 
 				enum_template.numFilterConditions = 0; // get events for all conditions
 
@@ -368,12 +368,12 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 
 		if (FwpmLayerGetById (hengine, layer_id, &layer) == ERROR_SUCCESS && layer)
 		{
-			if (memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) == 0 || memcmp (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)) == 0)
+			if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)))
 			{
 				FwpmFreeMemory ((void **)&layer);
 				return;
 			}
-			//else if (memcmp (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) == 0 || memcmp (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)) == 0)
+			//else if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)))
 			//{
 			//	direction = FWP_DIRECTION_INBOUND;
 			//}
@@ -403,7 +403,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 
 			if (ptr_filter->providerKey)
 			{
-				if (memcmp (ptr_filter->providerKey, &GUID_WfpProvider, sizeof (GUID)) == 0)
+				if (RtlEqualMemory (ptr_filter->providerKey, &GUID_WfpProvider, sizeof (GUID)))
 					is_myprovider = true;
 
 				if (FwpmProviderGetByKey (hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
@@ -427,8 +427,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 	if (ptr_entry)
 	{
 		PITEM_LOG ptr_log = new ITEM_LOG;
-
-		SecureZeroMemory (ptr_log, sizeof (ITEM_LOG));
+		RtlSecureZeroMemory (ptr_log, sizeof (ITEM_LOG));
 
 		// get package id (win8+)
 		rstring sidstring;
@@ -524,11 +523,11 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 
 				// remote address
 				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr)
-					CopyMemory (ptr_log->remote_addr6.u.Byte, ((FWP_BYTE_ARRAY16*)remote_addr)->byteArray16, FWP_V6_ADDR_SIZE);
+					RtlCopyMemory (ptr_log->remote_addr6.u.Byte, ((FWP_BYTE_ARRAY16*)remote_addr)->byteArray16, FWP_V6_ADDR_SIZE);
 
 				// local address
 				if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr)
-					CopyMemory (ptr_log->local_addr6.u.Byte, ((FWP_BYTE_ARRAY16*)local_addr)->byteArray16, FWP_V6_ADDR_SIZE);
+					RtlCopyMemory (ptr_log->local_addr6.u.Byte, ((FWP_BYTE_ARRAY16*)local_addr)->byteArray16, FWP_V6_ADDR_SIZE);
 			}
 
 			if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) != 0 && remote_port)
