@@ -3022,12 +3022,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			// install filters
 			if (_wfp_isfiltersinstalled ())
-			{
-				if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
-					_mps_changeconfig2 (false);
-
 				_app_changefilters (hwnd, true, true);
-			}
 
 			// set column size when "auto-size" option are disabled
 			if (!app.ConfigGet (L"AutoSizeColumns", true).AsBool ())
