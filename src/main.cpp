@@ -2883,10 +2883,7 @@ void _app_initialize ()
 
 		timers.clear ();
 
-#if defined(_DEBUG) || defined (_APP_BETA)
-		timers.push_back (_R_SECONDSCLOCK_MIN (1));
-#endif // _DEBUG || _APP_BETA
-
+		timers.push_back (_R_SECONDSCLOCK_MIN (2));
 		timers.push_back (_R_SECONDSCLOCK_MIN (10));
 		timers.push_back (_R_SECONDSCLOCK_MIN (20));
 		timers.push_back (_R_SECONDSCLOCK_MIN (30));
