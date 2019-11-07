@@ -2884,8 +2884,8 @@ void _app_initialize ()
 		timers.clear ();
 
 		timers.push_back (_R_SECONDSCLOCK_MIN (2));
+		timers.push_back (_R_SECONDSCLOCK_MIN (5));
 		timers.push_back (_R_SECONDSCLOCK_MIN (10));
-		timers.push_back (_R_SECONDSCLOCK_MIN (20));
 		timers.push_back (_R_SECONDSCLOCK_MIN (30));
 		timers.push_back (_R_SECONDSCLOCK_HOUR (1));
 		timers.push_back (_R_SECONDSCLOCK_HOUR (2));
