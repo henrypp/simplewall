@@ -1118,18 +1118,6 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 		}
 	}
 
-	// create listen layer filter
-#ifdef SW_USE_LISTEN_LAYER
-	if (!app.ConfigGet (L"AllowListenConnections2", true).AsBool () && !protocol && dir != FWP_DIRECTION_OUTBOUND && (!is_remoteaddr_set && !is_remoteport_set))
-	{
-		if (af == AF_INET || af == AF_UNSPEC)
-			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, flag, pmfarr);
-
-		if (af == AF_INET6 || af == AF_UNSPEC)
-			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, flag, pmfarr);
-	}
-#endif // SW_USE_LISTEN_LAYER
-
 	ByteBlobFree (&bSid);
 	ByteBlobFree (&bPath);
 
@@ -1474,11 +1462,6 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 		_wfp_createfilter (hengine, nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 		_wfp_createfilter (hengine, nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 
-#ifdef SW_USE_LISTEN_LAYER
-		_wfp_createfilter (hengine, nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-		_wfp_createfilter (hengine, nullptr, fwfc, 1, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-#endif // SW_USE_LISTEN_LAYER
-
 		// ipv4/ipv6 loopback
 		LPCWSTR ip_list[] = {
 			L"0.0.0.0/8",
@@ -1542,10 +1525,6 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
 					_wfp_createfilter (hengine, nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 					_wfp_createfilter (hengine, nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-
-#ifdef SW_USE_LISTEN_LAYER
-					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-#endif // SW_USE_LISTEN_LAYER
 				}
 				else if (addr.format == NET_ADDRESS_IPV6)
 				{
@@ -1561,10 +1540,6 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
 					_wfp_createfilter (hengine, nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
 					_wfp_createfilter (hengine, nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-
-#ifdef SW_USE_LISTEN_LAYER
-					_wfp_createfilter (nullptr, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, FWP_ACTION_PERMIT, 0, &filter_ids);
-#endif // SW_USE_LISTEN_LAYER
 				}
 			}
 		}
@@ -1654,17 +1629,6 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 		//_wfp_createfilter (L"BlockResourceAssignmentV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, nullptr, action, 0, &filter_ids);
 		//_wfp_createfilter (L"BlockResourceAssignmentV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, nullptr, action, 0, &filter_ids);
 	}
-
-	// configure listen layer (NOT RECOMMENDED!!!!)
-	// issue: https://github.com/henrypp/simplewall/issues/9
-#ifdef SW_USE_LISTEN_LAYER
-	{
-		const FWP_ACTION_TYPE action = app.ConfigGet (L"AllowListenConnections2", true).AsBool () ? FWP_ACTION_PERMIT : FWP_ACTION_BLOCK;
-
-		_wfp_createfilter (L"BlockListenConnectionsV4", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V4, nullptr, action, 0, &filter_ids);
-		_wfp_createfilter (L"BlockListenConnectionsV6", nullptr, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_LISTEN_V6, nullptr, action, 0, &filter_ids);
-	}
-#endif // SW_USE_LISTEN_LAYER
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
 	if (app.ConfigGet (L"InstallBoottimeFilters", true).AsBool ())
