@@ -16,9 +16,9 @@ void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 	if (seconds <= 0)
 	{
 		ptr_app->is_enabled = false;
+		ptr_app->is_haveerrors = false;
 
-		if (ptr_app->timer)
-			ptr_app->timer = 0;
+		ptr_app->timer = 0;
 
 		if (ptr_app->htimer)
 		{
@@ -29,16 +29,15 @@ void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 	else
 	{
 		const time_t current_time = _r_unixtime_now ();
-
-		BOOL is_created = FALSE;
+		bool is_created = false;
 
 		if (ptr_app->htimer)
 		{
-			is_created = ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0);
+			is_created = !!ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0);
 		}
 		else
 		{
-			is_created = CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
+			is_created = !!CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
 		}
 
 		if (is_created)
@@ -49,6 +48,8 @@ void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 		else
 		{
 			ptr_app->is_enabled = false;
+			ptr_app->is_haveerrors = false;
+
 			ptr_app->timer = 0;
 
 			if (ptr_app->htimer)
@@ -75,16 +76,16 @@ void _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 	if (!ptr_app || !_app_istimeractive (ptr_app))
 		return;
 
+	ptr_app->is_enabled = false;
 	ptr_app->is_haveerrors = false;
+
+	ptr_app->timer = 0;
 
 	if (ptr_app->htimer)
 	{
 		DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 		ptr_app->htimer = nullptr;
 	}
-
-	ptr_app->is_enabled = false;
-	ptr_app->timer = 0;
 
 	const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
 	const INT listview_id = _app_getlistview_id (ptr_app->type);
@@ -162,11 +163,13 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 	_app_timer_reset (hwnd, ptr_app);
 	_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 
+	_r_obj_dereference (ptr_app_object);
+
 	const INT listview_id = _app_gettab_id (hwnd);
 
 	_app_listviewsort (hwnd, listview_id);
-
 	_app_refreshstatus (hwnd, listview_id);
+
 	_app_profile_save ();
 
 	_r_listview_redraw (hwnd, listview_id);
