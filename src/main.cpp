@@ -407,8 +407,6 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 				if (!ptr_network_object)
 					continue;
 
-				SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, FALSE, 0);
-
 				PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
 				if (ptr_network)
@@ -444,13 +442,27 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 							}
 						}
 					}
+
+					is_refresh = true;
 				}
 
 				_r_obj_dereference (ptr_network_object);
+			}
 
-				SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, TRUE, 0);
+			// refresh network tab as well
+			if (is_refresh)
+			{
+				const INT current_listview_id = _app_gettab_id (hwnd);
 
-				is_refresh = true;
+				if (current_listview_id == network_listview_id)
+				{
+					SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, FALSE, 0);
+
+					_app_listviewresize (hwnd, network_listview_id);
+					_app_listviewsort (hwnd, network_listview_id);
+
+					SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, TRUE, 0);
+				}
 			}
 
 			// remove closed connections from list
@@ -464,8 +476,6 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 					if (checker_map.find (network_hash) == checker_map.end ())
 					{
-						SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, FALSE, 0);
-
 						SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
 						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[network_hash]);
@@ -491,28 +501,11 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 								}
 							}
 						}
-
-						SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, TRUE, 0);
 					}
 				}
 			}
 
-			if (is_refresh)
-			{
-				const INT current_listview_id = _app_gettab_id (hwnd);
-
-				if (current_listview_id != network_listview_id)
-				{
-					_r_listview_redraw (hwnd, current_listview_id);
-				}
-				else
-				{
-					_app_listviewresize (hwnd, network_listview_id);
-					_app_listviewsort (hwnd, network_listview_id);
-				}
-			}
-
-			WaitForSingleObjectEx (GetCurrentThread (), network_timeout, FALSE);
+			WaitForSingleObjectEx (NtCurrentThread (), network_timeout, FALSE);
 		}
 	}
 
@@ -4173,12 +4166,12 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			const INT ctrl_id = LOWORD (wparam);
 
-			if (HIWORD (wparam) == 0 && ctrl_id >= IDX_LANGUAGE && ctrl_id <= IDX_LANGUAGE + app.LocaleGetCount ())
+			if (HIWORD (wparam) == 0 && ctrl_id >= IDX_LANGUAGE && ctrl_id <= INT (IDX_LANGUAGE + app.LocaleGetCount ()))
 			{
 				app.LocaleApplyFromMenu (GetSubMenu (GetSubMenu (GetMenu (hwnd), 2), LANG_MENU), ctrl_id, IDX_LANGUAGE);
 				return FALSE;
 			}
-			else if ((ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= IDX_RULES_SPECIAL + rules_arr.size ()))
+			else if ((ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= INT (IDX_RULES_SPECIAL + rules_arr.size ())))
 			{
 				const INT listview_id = _app_gettab_id (hwnd);
 
@@ -4270,7 +4263,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				return FALSE;
 			}
-			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= IDX_TIMER + timers.size ()))
+			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= INT(IDX_TIMER + timers.size ())))
 			{
 				const INT listview_id = _app_gettab_id (hwnd);
 
