@@ -84,7 +84,7 @@ bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 
 bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app)
 {
-	if (!ptr_app || ptr_app->pnotification || !ptr_log_object)
+	if (!ptr_app || !ptr_log_object)
 	{
 		_r_obj_dereference (ptr_log_object);
 		return false;
@@ -115,7 +115,10 @@ bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app)
 
 	// remove existing log item (if exists)
 	if (ptr_app->pnotification)
+	{
 		_r_obj_dereference (ptr_app->pnotification);
+		ptr_app->pnotification = nullptr;
+	}
 
 	ptr_app->pnotification = ptr_log_object;
 
