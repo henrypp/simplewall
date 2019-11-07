@@ -1791,10 +1791,10 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 			{
 				for (UINT32 i = 0; i < count; i++)
 				{
-					FWPM_FILTER* pf = matchingFwpFilter[i];
+					FWPM_FILTER* pfilter = matchingFwpFilter[i];
 
-					if (pf && pf->providerKey && RtlEqualMemory (pf->providerKey, pprovider, sizeof (GUID)))
-						ptr_filters->push_back (pf->filterKey);
+					if (pfilter && pfilter->providerKey && RtlEqualMemory (pfilter->providerKey, pprovider, sizeof (GUID)))
+						ptr_filters->push_back (pfilter->filterKey);
 				}
 
 				FwpmFreeMemory ((void**)&matchingFwpFilter);
@@ -1875,7 +1875,6 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 	if (pNetFwPolicy2)
 		pNetFwPolicy2->Release ();
 
-
 	return result;
 }
 
@@ -1940,7 +1939,7 @@ void _mps_changeconfig2 (bool is_enable)
 
 				if (!sc)
 				{
-					_app_logerror (L"OpenService", GetLastError (), arr[i], false);
+					_app_logerror (L"OpenService", GetLastError (), arr[i], true);
 				}
 				else
 				{
@@ -1949,14 +1948,14 @@ void _mps_changeconfig2 (bool is_enable)
 
 					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof (ssp), &dwBytesNeeded))
 					{
-						_app_logerror (L"QueryServiceStatusEx", GetLastError (), arr[i], false);
+						_app_logerror (L"QueryServiceStatusEx", GetLastError (), arr[i], true);
 					}
 					else
 					{
 						if (ssp.dwCurrentState != SERVICE_RUNNING)
 						{
 							if (!StartService (sc, 0, nullptr))
-								_app_logerror (L"StartService", GetLastError (), arr[i], false);
+								_app_logerror (L"StartService", GetLastError (), arr[i], true);
 						}
 
 						CloseServiceHandle (sc);
@@ -1973,7 +1972,7 @@ void _mps_changeconfig2 (bool is_enable)
 	}
 }
 
-DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDataType type)
+DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumDataType type)
 {
 	if (_r_str_isempty (path) || !lpblob)
 		return ERROR_BAD_ARGUMENTS;
@@ -1984,7 +1983,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 	{
 		path_buff = path;
 
-		if (_r_str_hash (path) == config.ntoskrnl_hash)
+		if (_r_str_hash (path_buff) == config.ntoskrnl_hash)
 		{
 			if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
 				return ERROR_SUCCESS;
@@ -2050,7 +2049,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB * *lpblob, EnumDat
 	return ERROR_FILE_NOT_FOUND;
 }
 
-bool ByteBlobAlloc (PVOID const data, size_t length, FWP_BYTE_BLOB * *lpblob)
+bool ByteBlobAlloc (PVOID const data, size_t length, FWP_BYTE_BLOB** lpblob)
 {
 	if (!data || !length || !lpblob)
 		return false;
