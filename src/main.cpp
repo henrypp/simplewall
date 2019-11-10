@@ -336,6 +336,8 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 {
 	PINSTALL_CONTEXT pcontext = (PINSTALL_CONTEXT)lparam;
 
+	_r_fastlock_acquireshared (&lock_apply);
+
 	if (pcontext)
 	{
 		const HANDLE& hengine = _wfp_getenginehandle ();
@@ -370,6 +372,8 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 		SAFE_DELETE (pcontext);
 	}
+
+	_r_fastlock_releaseshared (&lock_apply);
 
 	_endthreadex (0);
 
@@ -525,8 +529,6 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 	if (is_forced || _wfp_isfiltersinstalled ())
 	{
-		_r_fastlock_acquireshared (&lock_apply);
-
 		_app_initinterfacestate (hwnd, true);
 
 		_r_fastlock_acquireexclusive (&lock_threadpool);
@@ -553,8 +555,6 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 			SAFE_DELETE (pcontext);
 		}
 
-		_r_fastlock_releaseshared (&lock_apply);
-
 		return hthread != nullptr;
 	}
 
@@ -568,11 +568,12 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR config_value, COLORREF default_clr)
 {
 	PITEM_COLOR ptr_clr = new ITEM_COLOR;
+	RtlSecureZeroMemory (ptr_clr, sizeof (ITEM_COLOR));
 
-	if (config_name)
+	if (!_r_str_isempty (config_name))
 		_r_str_alloc (&ptr_clr->pcfg_name, INVALID_SIZE_T, config_name);
 
-	if (config_value)
+	if (!_r_str_isempty (config_value))
 	{
 		_r_str_alloc (&ptr_clr->pcfg_value, INVALID_SIZE_T, config_value);
 
@@ -3043,7 +3044,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			else
 				SetWindowText (hwnd, APP_NAME);
 
-			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), IDI_ACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, true);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, false);
 
 			const HMENU hmenu = GetMenu (hwnd);
 
@@ -3334,7 +3335,6 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// refresh tray icon
 			_r_tray_destroy (hwnd, UID);
 			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, false);
-			_r_tray_setinfo (hwnd, UID, nullptr, nullptr);
 
 			break;
 		}
@@ -3992,7 +3992,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-				case WM_RBUTTONUP:
+				case WM_CONTEXTMENU:
 				{
 					SetForegroundWindow (hwnd); // don't touch
 
@@ -4263,7 +4263,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				return FALSE;
 			}
-			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= INT(IDX_TIMER + timers.size ())))
+			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= INT (IDX_TIMER + timers.size ())))
 			{
 				const INT listview_id = _app_gettab_id (hwnd);
 
@@ -5871,13 +5871,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					RDBG (L"%d", std::clamp (10, 19, 15)); // seh
 					break;
-				}
-#endif // _DEBUG || _APP_BETA
 			}
+#endif // _DEBUG || _APP_BETA
+		}
 
 			break;
-		}
 	}
+}
 
 	return FALSE;
 }

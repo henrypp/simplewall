@@ -615,7 +615,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 		case WM_SETTINGCHANGE:
 		{
-			if (_r_wnd_isdarkmessage (lparam))
+			if (_r_wnd_isdarkmessage (reinterpret_cast<LPCWSTR>(lparam)))
 				SendMessage (hwnd, WM_THEMECHANGED, 0, 0);
 
 			break;
@@ -1078,8 +1078,10 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							if (_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, &prule, FMTADDR_AS_RULE))
 							{
-								_r_str_alloc (&ptr_rule->pname, INVALID_SIZE_T, prule);
-								_r_str_alloc (&ptr_rule->prule_remote, INVALID_SIZE_T, prule);
+								size_t len = _r_str_length (prule);
+
+								_r_str_alloc (&ptr_rule->pname, len, prule);
+								_r_str_alloc (&ptr_rule->prule_remote, len, prule);
 							}
 
 							SAFE_DELETE_ARRAY (prule);
