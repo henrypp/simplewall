@@ -96,7 +96,6 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 // config
-#define WM_TRAYICON WM_APP + 1
 #define LANG_MENU 6
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
