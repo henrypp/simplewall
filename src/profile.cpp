@@ -1242,7 +1242,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 						_r_str_trim (rlink, DIVIDER_TRIM);
 
 						const rstring app_path = _r_path_expand (rlink);
-						size_t app_hash = app_path.Hash ();
+						size_t app_hash = _r_str_hash (app_path);
 
 						if (app_hash)
 						{
@@ -1284,7 +1284,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 			//if (_app_isruleblocklist (rule_name))
 			//	continue;
 
-			const size_t rule_hash = rule_name.Hash ();
+			const size_t rule_hash = _r_str_hash (rule_name);
 
 			if (rule_hash && rules_config.find (rule_hash) == rules_config.end ())
 			{

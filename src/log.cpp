@@ -436,7 +436,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 		{
 			sidstring = _r_str_fromsid (package_id);
 
-			if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, sidstring.Hash (), nullptr, nullptr, nullptr, nullptr))
+			if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, _r_str_hash (sidstring), nullptr, nullptr, nullptr, nullptr))
 				sidstring.Release ();
 		}
 
@@ -444,7 +444,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 		if ((flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) != 0 && !sidstring.IsEmpty ())
 		{
 			_r_str_alloc (&ptr_log->path, sidstring.GetLength (), sidstring);
-			ptr_log->app_hash = sidstring.Hash ();
+			ptr_log->app_hash = _r_str_hash (sidstring);
 		}
 		else if ((flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) != 0 && app_id)
 		{
@@ -453,7 +453,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 			if (!path.IsEmpty ())
 			{
 				_r_str_alloc (&ptr_log->path, path.GetLength (), path);
-				ptr_log->app_hash = path.Hash ();
+				ptr_log->app_hash = _r_str_hash (path);
 			}
 		}
 		else

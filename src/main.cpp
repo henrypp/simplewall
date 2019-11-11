@@ -309,7 +309,7 @@ COLORREF _app_getcolor (INT listview_id, size_t app_hash)
 
 	_r_obj_dereference (ptr_app_object);
 
-	return _app_getcolorvalue (color_value.Hash ());
+	return _app_getcolorvalue (_r_str_hash (color_value));
 }
 
 //bool _app_canihaveaccess ()
@@ -5871,13 +5871,13 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					RDBG (L"%d", std::clamp (10, 19, 15)); // seh
 					break;
-			}
+				}
 #endif // _DEBUG || _APP_BETA
-		}
+			}
 
 			break;
+		}
 	}
-}
 
 	return FALSE;
 }
