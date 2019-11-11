@@ -134,8 +134,7 @@ void _app_setinterfacestate (HWND hwnd)
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
-	_r_tray_setinfo (hwnd, UID, hico_sm, nullptr);
-	_r_tray_toggle (hwnd, UID, true);
+	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
 }
 
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR * ptr_dest, DWORD flags)
@@ -1514,7 +1513,7 @@ rstring _app_getnetworkpath (DWORD pid, ULONG64 * pmodules, PINT picon_id, size_
 		}
 	}
 
-	*phash = proc_name.Hash ();
+	*phash = _r_str_hash (proc_name);
 
 	if (!proc_name.IsEmpty ())
 	{
@@ -1892,7 +1891,7 @@ void _app_generate_packages ()
 				ptr_item->timestamp = _r_reg_querytimestamp (hsubkey);
 
 				if (!display_name.IsEmpty ())
-					_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
+					_r_str_alloc (&ptr_item->display_name, display_name.GetLength (), display_name);
 
 				if (!path.IsEmpty ())
 					_r_str_alloc (&ptr_item->real_path, path.GetLength (), path);
@@ -2057,7 +2056,7 @@ void _app_generate_services ()
 				ptr_item->timestamp = timestamp;
 
 				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
-				_r_str_alloc (&ptr_item->real_path, _r_str_length (real_path), real_path);
+				_r_str_alloc (&ptr_item->real_path, real_path.GetLength (), real_path);
 				_r_str_alloc (&ptr_item->internal_name, _r_str_length (service_name), service_name);
 
 				_r_str_toupper (sidstring.GetBuffer ());
@@ -2371,12 +2370,6 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 		{
 			switch (i)
 			{
-				case 0:
-				{
-					text[i] = app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr);
-					break;
-				}
-
 				case 1:
 				{
 					text[i].Format (L"%s: %" PR_SIZE_T, app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
@@ -2390,10 +2383,11 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 				}
 			}
 
-			size[i] = _r_dc_fontwidth (hdc, text[i], text[i].GetLength ()) + spacing;
-
 			if (i)
+			{
+				size[i] = _r_dc_fontwidth (hdc, text[i], text[i].GetLength ()) + spacing;
 				lay += size[i];
+			}
 		}
 
 		RECT rc_client = {0};
@@ -2405,7 +2399,7 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 
 		SendMessage (hstatus, SB_SETPARTS, parts_count, (LPARAM)parts);
 
-		for (INT i = 0; i < parts_count; i++)
+		for (INT i = 1; i < parts_count; i++)
 			_r_status_settext (hwnd, IDC_STATUSBAR, i, text[i]);
 
 		ReleaseDC (hstatus, hdc);
@@ -2744,7 +2738,7 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 
 	// auto-parse rule type
 	{
-		const size_t rule_hash = rule.Hash ();
+		const size_t rule_hash = _r_str_hash (rule);
 
 		_r_fastlock_acquireshared (&lock_cache);
 		const bool is_exists = cache_types.find (rule_hash) != cache_types.end ();

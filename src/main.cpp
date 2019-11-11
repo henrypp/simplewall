@@ -536,6 +536,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 		_r_fastlock_releaseexclusive (&lock_threadpool);
 
 		PINSTALL_CONTEXT pcontext = new INSTALL_CONTEXT;
+		RtlSecureZeroMemory (pcontext, sizeof (INSTALL_CONTEXT));
 
 		pcontext->hwnd = hwnd;
 		pcontext->is_install = is_install;
@@ -3014,6 +3015,8 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// install filters
 			if (_wfp_isfiltersinstalled ())
 				_app_changefilters (hwnd, true, true);
+			else
+				_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_INACTIVE, nullptr));
 
 			// set column size when "auto-size" option are disabled
 			if (!app.ConfigGet (L"AutoSizeColumns", true).AsBool ())
