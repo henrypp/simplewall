@@ -846,7 +846,9 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 		case WM_COMMAND:
 		{
-			if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= IDX_RULES_SPECIAL + rules_arr.size ()))
+			const INT ctrl_id = LOWORD (wparam);
+
+			if ((LOWORD (wparam) >= IDX_RULES_SPECIAL && LOWORD (wparam) <= INT (IDX_RULES_SPECIAL + rules_arr.size ())))
 			{
 				const size_t rule_idx = (LOWORD (wparam) - IDX_RULES_SPECIAL);
 				PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
@@ -947,19 +949,19 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				return FALSE;
 			}
-			else if ((LOWORD (wparam) >= IDX_TIMER && LOWORD (wparam) <= IDX_TIMER + timers.size ()))
+			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= INT (IDX_TIMER + timers.size ())))
 			{
 				if (!_r_ctrl_isenabled (hwnd, IDC_ALLOW_BTN))
 					return FALSE;
 
-				const size_t timer_idx = (LOWORD (wparam) - IDX_TIMER);
+				const size_t timer_idx = (ctrl_id - IDX_TIMER);
 
 				_app_notifycommand (hwnd, IDC_ALLOW_BTN, timers.at (timer_idx));
 
 				return FALSE;
 			}
 
-			switch (LOWORD (wparam))
+			switch (ctrl_id)
 			{
 				case IDCANCEL: // process Esc key
 				{
@@ -1005,8 +1007,6 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				case IDC_RULES_BTN:
 				{
-					const INT ctrl_id = LOWORD (wparam);
-
 					if (_r_ctrl_isenabled (hwnd, ctrl_id))
 					{
 						// HACK!!!
@@ -1025,13 +1025,16 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				case IDC_ALLOW_BTN:
 				case IDC_BLOCK_BTN:
 				case IDC_LATER_BTN:
-				case IDM_DISABLENOTIFICATIONS:
 				{
-					const INT ctrl_id = LOWORD (wparam);
-
 					if (_r_ctrl_isenabled (hwnd, ctrl_id))
 						_app_notifycommand (hwnd, ctrl_id, 0);
 
+					break;
+				}
+
+				case IDM_DISABLENOTIFICATIONS:
+				{
+					_app_notifycommand (hwnd, ctrl_id, 0);
 					break;
 				}
 
