@@ -103,7 +103,7 @@ void _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 	}
 }
 
-bool _app_istimeractive (PITEM_APP const ptr_app)
+bool _app_istimeractive (const PITEM_APP ptr_app)
 {
 	return ptr_app->htimer || (ptr_app->timer && (ptr_app->timer > _r_unixtime_now ()));
 }

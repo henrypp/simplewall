@@ -373,7 +373,7 @@ void _app_getcount (PITEM_STATUS ptr_status)
 	}
 }
 
-INT _app_getappgroup (size_t app_hash, PITEM_APP const ptr_app)
+INT _app_getappgroup (size_t app_hash, const PITEM_APP ptr_app)
 {
 	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
 	//		return INVALID_INT;
@@ -388,7 +388,7 @@ INT _app_getappgroup (size_t app_hash, PITEM_APP const ptr_app)
 	return ptr_app->is_enabled ? 0 : 2;
 }
 
-INT _app_getrulegroup (PITEM_RULE const ptr_rule)
+INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 {
 	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
 	//		return INVALID_INT;
@@ -402,7 +402,7 @@ INT _app_getrulegroup (PITEM_RULE const ptr_rule)
 	return 0;
 }
 
-INT _app_getruleicon (PITEM_RULE const ptr_rule)
+INT _app_getruleicon (const PITEM_RULE ptr_rule)
 {
 	if (!ptr_rule)
 		return 0;
@@ -823,7 +823,7 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 	}
 }
 
-rstring _app_rulesexpandapps (PITEM_RULE const ptr_rule, bool is_fordisplay, LPCWSTR delimeter)
+rstring _app_rulesexpandapps (const PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delimeter)
 {
 	rstring result;
 
@@ -973,7 +973,7 @@ bool _app_isapphaverule (size_t app_hash)
 	return false;
 }
 
-bool _app_isappused (PITEM_APP const ptr_app, size_t app_hash)
+bool _app_isappused (const PITEM_APP ptr_app, size_t app_hash)
 {
 	if (ptr_app && (ptr_app->is_enabled || ptr_app->is_silent) || _app_isapphaverule (app_hash))
 		return true;
@@ -981,7 +981,7 @@ bool _app_isappused (PITEM_APP const ptr_app, size_t app_hash)
 	return false;
 }
 
-bool _app_isappexists (PITEM_APP const ptr_app)
+bool _app_isappexists (const PITEM_APP ptr_app)
 {
 	if (!ptr_app)
 		return false;

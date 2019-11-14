@@ -1124,7 +1124,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 	return true;
 }
 
-bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bool is_intransact)
+bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT line, bool is_intransact)
 {
 	if (!hengine || ptr_rules.empty ())
 		return false;
@@ -1290,7 +1290,7 @@ bool _wfp_create4filters (HANDLE hengine, OBJECTS_VEC & ptr_rules, UINT line, bo
 	return true;
 }
 
-bool _wfp_create3filters (HANDLE hengine, OBJECTS_VEC & ptr_apps, UINT line, bool is_intransact)
+bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line, bool is_intransact)
 {
 	if (!hengine || ptr_apps.empty ())
 		return false;
@@ -1698,7 +1698,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	return true;
 }
 
-void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, PACL const pacl, UINT line)
+void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, const PACL pacl, UINT line)
 {
 	if (!hengine || filter_id == GUID_NULL)
 		return;
@@ -2013,7 +2013,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, EnumData
 	return ERROR_FILE_NOT_FOUND;
 }
 
-bool ByteBlobAlloc (PVOID const data, size_t length, FWP_BYTE_BLOB** lpblob)
+bool ByteBlobAlloc (const PVOID data, size_t length, FWP_BYTE_BLOB** lpblob)
 {
 	if (!data || !length || !lpblob)
 		return false;
