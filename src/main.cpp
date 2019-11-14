@@ -2519,7 +2519,7 @@ void _app_resizewindow (HWND hwnd, LPARAM lparam)
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
 	RECT rc = {0};
-	SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_GETRECT, 0, (LPARAM)&rc);
+	GetClientRect (GetDlgItem (hwnd, IDC_STATUSBAR), &rc);
 
 	const INT listview_id = _app_gettab_id (hwnd);
 	const INT statusbar_height = _R_RECT_HEIGHT (&rc);
