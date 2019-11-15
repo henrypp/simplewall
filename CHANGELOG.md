@@ -1,3 +1,12 @@
+v3.0.9 (15 November 2019)
+- do not set notification to top when fullscreen apps working
+- fixed motifications disable notifications (issue #563)
+- fixed crash on system settings changing (issue #552)
+- fixed winhttp encoding conversion (issue #568)
+- fixed statusbar glitch (issue #569)
+- updated blocklist
+- fixed bugs
+
 v3.0.8 (8 November 2019)
 - removed disable windows firewall on startup (issue #554)
 - updated default timer values (issue #340)
