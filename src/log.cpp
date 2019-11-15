@@ -565,7 +565,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 			ptr_entry->Body = _r_obj_allocate (ptr_log, &_app_dereferencelog);
 
 			RtlInterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
-			const LONG new_item_count = InterlockedIncrement (&log_stack.item_count);
+			InterlockedIncrement (&log_stack.item_count);
 
 			// check if thread has been terminated
 			const LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
@@ -592,234 +592,234 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 // win7+ callback
 void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1* pEvent)
 {
-	if (pEvent)
+	if (!pEvent)
+		return;
+
+	UINT16 layer_id;
+	UINT64 filter_id;
+	UINT32 direction;
+	bool is_loopback;
+
+	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
-		UINT16 layer_id;
-		UINT64 filter_id;
-		UINT32 direction;
-		bool is_loopback;
-
-		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
-		{
-			layer_id = pEvent->classifyDrop->layerId;
-			filter_id = pEvent->classifyDrop->filterId;
-			direction = pEvent->classifyDrop->msFwpDirection;
-			is_loopback = pEvent->classifyDrop->isLoopback;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
-		{
-			layer_id = pEvent->ipsecDrop->layerId;
-			filter_id = pEvent->ipsecDrop->filterId;
-			direction = pEvent->ipsecDrop->direction;
-			is_loopback = false;
-		}
-		else
-		{
-			return;
-		}
-
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, false, is_loopback);
+		layer_id = pEvent->classifyDrop->layerId;
+		filter_id = pEvent->classifyDrop->filterId;
+		direction = pEvent->classifyDrop->msFwpDirection;
+		is_loopback = pEvent->classifyDrop->isLoopback;
 	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
+	{
+		layer_id = pEvent->ipsecDrop->layerId;
+		filter_id = pEvent->ipsecDrop->filterId;
+		direction = pEvent->ipsecDrop->direction;
+		is_loopback = false;
+	}
+	else
+	{
+		return;
+	}
+
+	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, false, is_loopback);
 }
 
 // win8+ callback
 void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2* pEvent)
 {
-	if (pEvent)
+	if (!pEvent)
+		return;
+
+	UINT16 layer_id;
+	UINT64 filter_id;
+	UINT32 direction;
+	bool is_loopback;
+	bool is_allow = false;
+
+	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
-		UINT16 layer_id;
-		UINT64 filter_id;
-		UINT32 direction;
-		bool is_loopback;
-		bool is_allow = false;
-
-		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
-		{
-			layer_id = pEvent->classifyDrop->layerId;
-			filter_id = pEvent->classifyDrop->filterId;
-			direction = pEvent->classifyDrop->msFwpDirection;
-			is_loopback = pEvent->classifyDrop->isLoopback;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
-		{
-			layer_id = pEvent->ipsecDrop->layerId;
-			filter_id = pEvent->ipsecDrop->filterId;
-			direction = pEvent->ipsecDrop->direction;
-			is_loopback = false;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
-		{
-			layer_id = pEvent->classifyAllow->layerId;
-			filter_id = pEvent->classifyAllow->filterId;
-			direction = pEvent->classifyAllow->msFwpDirection;
-			is_loopback = pEvent->classifyAllow->isLoopback;
-
-			is_allow = true;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
-		{
-			layer_id = pEvent->classifyDropMac->layerId;
-			filter_id = pEvent->classifyDropMac->filterId;
-			direction = pEvent->classifyDropMac->msFwpDirection;
-			is_loopback = pEvent->classifyDropMac->isLoopback;
-		}
-		else
-		{
-			return;
-		}
-
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		layer_id = pEvent->classifyDrop->layerId;
+		filter_id = pEvent->classifyDrop->filterId;
+		direction = pEvent->classifyDrop->msFwpDirection;
+		is_loopback = pEvent->classifyDrop->isLoopback;
 	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
+	{
+		layer_id = pEvent->ipsecDrop->layerId;
+		filter_id = pEvent->ipsecDrop->filterId;
+		direction = pEvent->ipsecDrop->direction;
+		is_loopback = false;
+	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
+	{
+		layer_id = pEvent->classifyAllow->layerId;
+		filter_id = pEvent->classifyAllow->filterId;
+		direction = pEvent->classifyAllow->msFwpDirection;
+		is_loopback = pEvent->classifyAllow->isLoopback;
+
+		is_allow = true;
+	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
+	{
+		layer_id = pEvent->classifyDropMac->layerId;
+		filter_id = pEvent->classifyDropMac->filterId;
+		direction = pEvent->classifyDropMac->msFwpDirection;
+		is_loopback = pEvent->classifyDropMac->isLoopback;
+	}
+	else
+	{
+		return;
+	}
+
+	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
 // win10+ callback
 void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3* pEvent)
 {
-	if (pEvent)
+	if (!pEvent)
+		return;
+
+	UINT16 layer_id;
+	UINT64 filter_id;
+	UINT32 direction;
+	bool is_loopback;
+	bool is_allow = false;
+
+	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
-		UINT16 layer_id;
-		UINT64 filter_id;
-		UINT32 direction;
-		bool is_loopback;
-		bool is_allow = false;
-
-		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
-		{
-			layer_id = pEvent->classifyDrop->layerId;
-			filter_id = pEvent->classifyDrop->filterId;
-			direction = pEvent->classifyDrop->msFwpDirection;
-			is_loopback = pEvent->classifyDrop->isLoopback;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
-		{
-			layer_id = pEvent->ipsecDrop->layerId;
-			filter_id = pEvent->ipsecDrop->filterId;
-			direction = pEvent->ipsecDrop->direction;
-			is_loopback = false;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
-		{
-			layer_id = pEvent->classifyAllow->layerId;
-			filter_id = pEvent->classifyAllow->filterId;
-			direction = pEvent->classifyAllow->msFwpDirection;
-			is_loopback = pEvent->classifyAllow->isLoopback;
-
-			is_allow = true;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
-		{
-			layer_id = pEvent->classifyDropMac->layerId;
-			filter_id = pEvent->classifyDropMac->filterId;
-			direction = pEvent->classifyDropMac->msFwpDirection;
-			is_loopback = pEvent->classifyDropMac->isLoopback;
-		}
-		else
-		{
-			return;
-		}
-
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		layer_id = pEvent->classifyDrop->layerId;
+		filter_id = pEvent->classifyDrop->filterId;
+		direction = pEvent->classifyDrop->msFwpDirection;
+		is_loopback = pEvent->classifyDrop->isLoopback;
 	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
+	{
+		layer_id = pEvent->ipsecDrop->layerId;
+		filter_id = pEvent->ipsecDrop->filterId;
+		direction = pEvent->ipsecDrop->direction;
+		is_loopback = false;
+	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
+	{
+		layer_id = pEvent->classifyAllow->layerId;
+		filter_id = pEvent->classifyAllow->filterId;
+		direction = pEvent->classifyAllow->msFwpDirection;
+		is_loopback = pEvent->classifyAllow->isLoopback;
+
+		is_allow = true;
+	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
+	{
+		layer_id = pEvent->classifyDropMac->layerId;
+		filter_id = pEvent->classifyDropMac->filterId;
+		direction = pEvent->classifyDropMac->msFwpDirection;
+		is_loopback = pEvent->classifyDropMac->isLoopback;
+	}
+	else
+	{
+		return;
+	}
+
+	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
 // win10rs4+ callback
 void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4* pEvent)
 {
-	if (pEvent)
+	if (!pEvent)
+		return;
+
+	UINT16 layer_id;
+	UINT64 filter_id;
+	UINT32 direction;
+	bool is_loopback;
+	bool is_allow = false;
+
+	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
-		UINT16 layer_id;
-		UINT64 filter_id;
-		UINT32 direction;
-		bool is_loopback;
-		bool is_allow = false;
-
-		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
-		{
-			layer_id = pEvent->classifyDrop->layerId;
-			filter_id = pEvent->classifyDrop->filterId;
-			direction = pEvent->classifyDrop->msFwpDirection;
-			is_loopback = pEvent->classifyDrop->isLoopback;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
-		{
-			layer_id = pEvent->ipsecDrop->layerId;
-			filter_id = pEvent->ipsecDrop->filterId;
-			direction = pEvent->ipsecDrop->direction;
-			is_loopback = false;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
-		{
-			layer_id = pEvent->classifyAllow->layerId;
-			filter_id = pEvent->classifyAllow->filterId;
-			direction = pEvent->classifyAllow->msFwpDirection;
-			is_loopback = pEvent->classifyAllow->isLoopback;
-
-			is_allow = true;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
-		{
-			layer_id = pEvent->classifyDropMac->layerId;
-			filter_id = pEvent->classifyDropMac->filterId;
-			direction = pEvent->classifyDropMac->msFwpDirection;
-			is_loopback = pEvent->classifyDropMac->isLoopback;
-		}
-		else
-		{
-			return;
-		}
-
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		layer_id = pEvent->classifyDrop->layerId;
+		filter_id = pEvent->classifyDrop->filterId;
+		direction = pEvent->classifyDrop->msFwpDirection;
+		is_loopback = pEvent->classifyDrop->isLoopback;
 	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
+	{
+		layer_id = pEvent->ipsecDrop->layerId;
+		filter_id = pEvent->ipsecDrop->filterId;
+		direction = pEvent->ipsecDrop->direction;
+		is_loopback = false;
+	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
+	{
+		layer_id = pEvent->classifyAllow->layerId;
+		filter_id = pEvent->classifyAllow->filterId;
+		direction = pEvent->classifyAllow->msFwpDirection;
+		is_loopback = pEvent->classifyAllow->isLoopback;
+
+		is_allow = true;
+	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
+	{
+		layer_id = pEvent->classifyDropMac->layerId;
+		filter_id = pEvent->classifyDropMac->filterId;
+		direction = pEvent->classifyDropMac->msFwpDirection;
+		is_loopback = pEvent->classifyDropMac->isLoopback;
+	}
+	else
+	{
+		return;
+	}
+
+	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
 // win10rs5+ callback
 void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5* pEvent)
 {
-	if (pEvent)
+	if (!pEvent)
+		return;
+
+	UINT16 layer_id;
+	UINT64 filter_id;
+	UINT32 direction;
+	bool is_loopback;
+	bool is_allow = false;
+
+	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
-		UINT16 layer_id;
-		UINT64 filter_id;
-		UINT32 direction;
-		bool is_loopback;
-		bool is_allow = false;
-
-		if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
-		{
-			layer_id = pEvent->classifyDrop->layerId;
-			filter_id = pEvent->classifyDrop->filterId;
-			direction = pEvent->classifyDrop->msFwpDirection;
-			is_loopback = pEvent->classifyDrop->isLoopback;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
-		{
-			layer_id = pEvent->ipsecDrop->layerId;
-			filter_id = pEvent->ipsecDrop->filterId;
-			direction = pEvent->ipsecDrop->direction;
-			is_loopback = false;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
-		{
-			layer_id = pEvent->classifyAllow->layerId;
-			filter_id = pEvent->classifyAllow->filterId;
-			direction = pEvent->classifyAllow->msFwpDirection;
-			is_loopback = pEvent->classifyAllow->isLoopback;
-
-			is_allow = true;
-		}
-		else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
-		{
-			layer_id = pEvent->classifyDropMac->layerId;
-			filter_id = pEvent->classifyDropMac->filterId;
-			direction = pEvent->classifyDropMac->msFwpDirection;
-			is_loopback = pEvent->classifyDropMac->isLoopback;
-		}
-		else
-		{
-			return;
-		}
-
-		_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
+		layer_id = pEvent->classifyDrop->layerId;
+		filter_id = pEvent->classifyDrop->filterId;
+		direction = pEvent->classifyDrop->msFwpDirection;
+		is_loopback = pEvent->classifyDrop->isLoopback;
 	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
+	{
+		layer_id = pEvent->ipsecDrop->layerId;
+		filter_id = pEvent->ipsecDrop->filterId;
+		direction = pEvent->ipsecDrop->direction;
+		is_loopback = false;
+	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
+	{
+		layer_id = pEvent->classifyAllow->layerId;
+		filter_id = pEvent->classifyAllow->filterId;
+		direction = pEvent->classifyAllow->msFwpDirection;
+		is_loopback = pEvent->classifyAllow->isLoopback;
+
+		is_allow = true;
+	}
+	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
+	{
+		layer_id = pEvent->classifyDropMac->layerId;
+		filter_id = pEvent->classifyDropMac->filterId;
+		direction = pEvent->classifyDropMac->msFwpDirection;
+		is_loopback = pEvent->classifyDropMac->isLoopback;
+	}
+	else
+	{
+		return;
+	}
+
+	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
 UINT WINAPI LogThread (LPVOID lparam)
