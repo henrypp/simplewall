@@ -73,7 +73,6 @@ extern _R_FASTLOCK lock_cache;
 extern _R_FASTLOCK lock_checkbox;
 extern _R_FASTLOCK lock_logbusy;
 extern _R_FASTLOCK lock_logthread;
-extern _R_FASTLOCK lock_threadpool;
 extern _R_FASTLOCK lock_transaction;
 extern _R_FASTLOCK lock_writelog;
 

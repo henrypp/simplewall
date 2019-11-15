@@ -286,7 +286,7 @@ void _app_freeobjects_vec (OBJECTS_VEC & ptr_vec)
 	ptr_vec.clear ();
 }
 
-void _app_freethreadpool (THREADS_VEC * ptr_pool)
+void _app_freethreadpool (THREADS_VEC* ptr_pool)
 {
 	if (!ptr_pool || ptr_pool->empty ())
 		return;

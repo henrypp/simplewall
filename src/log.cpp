@@ -570,21 +570,17 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 			// check if thread has been terminated
 			const LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
 
-			if (!thread_count || !_r_fastlock_islocked (&lock_logthread) || (_r_fastlock_islocked (&lock_logbusy) && new_item_count < NOTIFY_LIMIT_POOL_SIZE && thread_count >= 1 && thread_count < NOTIFY_LIMIT_THREAD_MAX))
+			if (!thread_count || !_r_fastlock_islocked (&lock_logthread))
 			{
-				_r_fastlock_acquireexclusive (&lock_threadpool);
 				_app_freethreadpool (&threads_pool);
-				_r_fastlock_releaseexclusive (&lock_threadpool);
 
-				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_ABOVE_NORMAL);
+				const HANDLE hthread = _r_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_HIGHEST);
 
 				if (hthread)
 				{
 					InterlockedIncrement (&log_stack.thread_count);
 
-					_r_fastlock_acquireexclusive (&lock_threadpool);
 					threads_pool.push_back (hthread);
-					_r_fastlock_releaseexclusive (&lock_threadpool);
 
 					ResumeThread (hthread);
 				}

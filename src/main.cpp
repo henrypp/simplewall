@@ -37,7 +37,6 @@ _R_FASTLOCK lock_cache;
 _R_FASTLOCK lock_checkbox;
 _R_FASTLOCK lock_logbusy;
 _R_FASTLOCK lock_logthread;
-_R_FASTLOCK lock_threadpool;
 _R_FASTLOCK lock_transaction;
 _R_FASTLOCK lock_writelog;
 
@@ -531,9 +530,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 	{
 		_app_initinterfacestate (hwnd, true);
 
-		_r_fastlock_acquireexclusive (&lock_threadpool);
 		_app_freethreadpool (&threads_pool);
-		_r_fastlock_releaseexclusive (&lock_threadpool);
 
 		PINSTALL_CONTEXT pcontext = new INSTALL_CONTEXT;
 		RtlSecureZeroMemory (pcontext, sizeof (INSTALL_CONTEXT));
@@ -545,10 +542,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 		if (hthread)
 		{
-			_r_fastlock_acquireexclusive (&lock_threadpool);
 			threads_pool.push_back (hthread);
-			_r_fastlock_releaseexclusive (&lock_threadpool);
-
 			ResumeThread (hthread);
 		}
 		else
@@ -2779,7 +2773,6 @@ void _app_initialize ()
 	_r_fastlock_initialize (&lock_checkbox);
 	_r_fastlock_initialize (&lock_logbusy);
 	_r_fastlock_initialize (&lock_logthread);
-	_r_fastlock_initialize (&lock_threadpool);
 	_r_fastlock_initialize (&lock_transaction);
 	_r_fastlock_initialize (&lock_writelog);
 
