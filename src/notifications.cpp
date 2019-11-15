@@ -297,12 +297,14 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 	_app_notifysetpos (hwnd, false);
 
 	// prevent fullscreen apps lose focus
-	if (is_forced && _r_wnd_isfullscreenmode ())
+	const bool is_fullscreenmode = _r_wnd_isfullscreenmode ();
+
+	if (is_forced && is_fullscreenmode)
 		is_forced = false;
 
 	RedrawWindow (GetDlgItem (hwnd, IDC_HEADER_ID), nullptr, nullptr, RDW_NOFRAME | RDW_ERASE | RDW_INVALIDATE);
 
-	_r_wnd_top (hwnd, is_forced);
+	_r_wnd_top (hwnd, !is_fullscreenmode);
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
