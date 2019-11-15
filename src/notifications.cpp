@@ -300,7 +300,9 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 	if (is_forced && _r_wnd_isfullscreenmode ())
 		is_forced = false;
 
-	RedrawWindow (GetDlgItem (hwnd, IDC_HEADER_ID), nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE);
+	RedrawWindow (GetDlgItem (hwnd, IDC_HEADER_ID), nullptr, nullptr, RDW_NOFRAME | RDW_ERASE | RDW_INVALIDATE);
+
+	_r_wnd_top (hwnd, is_forced);
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
@@ -399,7 +401,6 @@ void _app_notifysetpos (HWND hwnd, bool is_forced)
 		APPBARDATA abd = {0};
 
 		abd.cbSize = sizeof (abd);
-		//appbar.hWnd = FindWindow (L"Shell_TrayWnd", nullptr);
 
 		if (SHAppBarMessage (ABM_GETTASKBARPOS, &abd))
 		{
@@ -445,7 +446,7 @@ HFONT _app_notifyfontinit (HWND hwnd, PLOGFONT plf, LONG height, LONG weight, LP
 	plf->lfCharSet = DEFAULT_CHARSET;
 	plf->lfQuality = DEFAULT_QUALITY;
 
-	if (name)
+	if (!_r_str_isempty (name))
 		_r_str_copy (plf->lfFaceName, LF_FACESIZE, name);
 
 	return CreateFontIndirect (plf);
