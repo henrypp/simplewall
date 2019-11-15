@@ -566,33 +566,20 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			return TRUE;
 		}
 
-		//case WM_ACTIVATE:
-		//{
-		//	switch (wparam)
-		//	{
-		//		case WA_ACTIVE:
-		//		case WA_CLICKACTIVE:
-		//		{
-		//			KillTimer (hwnd, NOTIFY_TIMER_SAFETY_ID);
-		//			SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY_TIMEOUT, nullptr);
+		case WM_ACTIVATE:
+		{
+			switch (wparam)
+			{
+				case WA_ACTIVE:
+				case WA_CLICKACTIVE:
+				{
+					_r_wnd_top (hwnd, true);
+					break;
+				}
+			}
 
-		//			break;
-		//		}
-
-		//		case WA_INACTIVE:
-		//		{
-		//			_r_ctrl_enable (hwnd, IDC_RULES_BTN, false);
-		//			_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, false);
-		//			_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, false);
-		//			_r_ctrl_enable (hwnd, IDC_LATER_BTN, false);
-
-		//			break;
-		//		}
-
-		//	}
-
-		//	break;
-		//}
+			break;
+		}
 
 		case WM_TIMER:
 		{
