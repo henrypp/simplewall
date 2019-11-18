@@ -871,6 +871,7 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 			return L"kis";
 
 		case 194:
+		case 529:
 			return L"irc";
 
 		case 195:
@@ -1007,6 +1008,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 
 		case 993:
 			return L"imaps";
+
+		case 994:
+			return L"ircs";
 
 		case 995:
 			return L"pop3s";
