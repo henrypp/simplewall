@@ -1307,7 +1307,7 @@ void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, U
 	}
 }
 
-void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t * ptimestamp)
+void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptimestamp)
 {
 	pugi::xml_document doc_original;
 	pugi::xml_document doc_backup;
@@ -1321,10 +1321,10 @@ void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t * pti
 	if (path_backup)
 	{
 		DWORD size = 0;
-		const LPVOID buffer = _app_loadresource (app.GetHINSTANCE (), path_backup, RT_RCDATA, &size);
+		const LPVOID pbuffer = _r_loadresource (app.GetHINSTANCE (), path_backup, RT_RCDATA, &size);
 
-		if (buffer)
-			load_backup = doc_backup.load_buffer (buffer, size, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+		if (pbuffer)
+			load_backup = doc_backup.load_buffer (pbuffer, size, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
 		if (load_backup)
 		{

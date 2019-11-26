@@ -73,16 +73,7 @@ void _app_settab_id (HWND hwnd, INT page_id)
 
 		if (listview_id == page_id)
 		{
-			SendDlgItemMessage (hwnd, IDC_TAB, TCM_SETCURSEL, (WPARAM)i, 0);
-
-			NMHDR hdr = {0};
-
-			hdr.code = TCN_SELCHANGE;
-			hdr.hwndFrom = hwnd;
-			hdr.idFrom = IDC_TAB;
-
-			SendMessage (hwnd, WM_NOTIFY, 0, (LPARAM)&hdr);
-
+			_r_tab_selectitem (hwnd, IDC_TAB, i);
 			return;
 		}
 	}
@@ -3176,7 +3167,7 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 		goto DoExit;
 
 	// Load the resource
-	WICInProcPointer resourceBuffer = (WICInProcPointer)_app_loadresource (hinst, name, L"PNG", &resourceLength);
+	WICInProcPointer resourceBuffer = (WICInProcPointer)_r_loadresource (hinst, name, L"PNG", &resourceLength);
 
 	if (!resourceBuffer)
 		goto DoExit;
@@ -3348,32 +3339,3 @@ DoOpen:
 	_r_str_alloc (&ptr_app_item->real_path, result.GetLength (), result.GetString ());
 }
 
-LPVOID _app_loadresource (HINSTANCE hinst, LPCWSTR res, LPCWSTR type, PDWORD psize)
-{
-	HRSRC hres = FindResource (hinst, res, type);
-
-	if (hres)
-	{
-		HGLOBAL hloaded = LoadResource (hinst, hres);
-
-		if (hloaded)
-		{
-			LPVOID pLockedResource = LockResource (hloaded);
-
-			if (pLockedResource)
-			{
-				DWORD dwResourceSize = SizeofResource (hinst, hres);
-
-				if (dwResourceSize != 0)
-				{
-					if (psize)
-						*psize = dwResourceSize;
-
-					return pLockedResource;
-				}
-			}
-		}
-	}
-
-	return nullptr;
-}
