@@ -300,8 +300,6 @@ typedef struct tagITEM_APP
 		SAFE_DELETE_ARRAY (real_path);
 		SAFE_DELETE_ARRAY (original_path);
 
-		SAFE_DELETE_ARRAY (pdata);
-
 		_r_obj_dereference (pnotification);
 	}
 
@@ -351,7 +349,7 @@ typedef struct tagITEM_APP_HELPER
 		SAFE_DELETE_ARRAY (real_path);
 		SAFE_DELETE_ARRAY (internal_name);
 
-		SAFE_LOCAL_FREE (pdata);
+		SAFE_DELETE_ARRAY (pdata);
 	}
 
 	time_t timestamp = 0;
@@ -362,7 +360,7 @@ typedef struct tagITEM_APP_HELPER
 	LPWSTR real_path = nullptr;
 	LPWSTR internal_name = nullptr;
 
-	PVOID pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
+	PBYTE pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 } ITEM_APP_HELPER, *PITEM_APP_HELPER;
 
 typedef struct tagITEM_RULE

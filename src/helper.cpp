@@ -1829,7 +1829,7 @@ void _app_generate_packages ()
 			{
 				PBYTE package_sid = _r_reg_querybinary (hsubkey, L"PackageSid");
 
-				if (!package_sid)
+				if (!package_sid || !IsValidSid (package_sid))
 				{
 					RegCloseKey (hsubkey);
 					continue;
@@ -1837,11 +1837,11 @@ void _app_generate_packages ()
 
 				rstring package_sid_string = _r_str_fromsid (package_sid);
 
-				SAFE_DELETE_ARRAY (package_sid);
-
 				if (package_sid_string.IsEmpty ())
 				{
+					SAFE_DELETE_ARRAY (package_sid);
 					RegCloseKey (hsubkey);
+
 					continue;
 				}
 
@@ -1849,7 +1849,9 @@ void _app_generate_packages ()
 
 				if (apps_helper.find (app_hash) != apps_helper.end ())
 				{
+					SAFE_DELETE_ARRAY (package_sid);
 					RegCloseKey (hsubkey);
+
 					continue;
 				}
 
@@ -1869,9 +1871,11 @@ void _app_generate_packages ()
 					}
 				}
 
+				RegCloseKey (hsubkey);
+
 				if (display_name.IsEmpty ())
 				{
-					RegCloseKey (hsubkey);
+					SAFE_DELETE_ARRAY (package_sid);
 					continue;
 				}
 
@@ -1879,32 +1883,23 @@ void _app_generate_packages ()
 				RtlSecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
 
 				ptr_item->type = DataAppUWP;
+				ptr_item->pdata = package_sid;
 
 				rstring path = _r_reg_querystring (hsubkey, L"PackageRootFolder");
 
 				// query timestamp
 				ptr_item->timestamp = _r_reg_querytimestamp (hsubkey);
 
-				if (!display_name.IsEmpty ())
-					_r_str_alloc (&ptr_item->display_name, display_name.GetLength (), display_name);
-
 				if (!path.IsEmpty ())
 					_r_str_alloc (&ptr_item->real_path, path.GetLength (), path);
 
+				_r_str_alloc (&ptr_item->display_name, display_name.GetLength (), display_name);
 				_r_str_alloc (&ptr_item->internal_name, package_sid_string.GetLength (), package_sid_string);
 
-				if (!ConvertStringSidToSid (package_sid_string, &ptr_item->pdata))
-				{
-					SAFE_DELETE (ptr_item);
-				}
-				else
-				{
-					_app_load_appxmanifest (ptr_item);
+				// load additional info from appx manifest
+				_app_load_appxmanifest (ptr_item);
 
-					apps_helper[app_hash] = _r_obj_allocate (ptr_item, &_app_dereferenceappshelper);
-				}
-
-				RegCloseKey (hsubkey);
+				apps_helper[app_hash] = _r_obj_allocate (ptr_item, &_app_dereferenceappshelper);
 			}
 		}
 
@@ -2044,6 +2039,21 @@ void _app_generate_services ()
 
 			if (serviceSid && !sidstring.IsEmpty ())
 			{
+				PVOID pservice_sd = nullptr;
+				size_t sd_length = 0;
+
+				if (ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()), SDDL_REVISION_1, &pservice_sd, nullptr))
+				{
+					if (IsValidSecurityDescriptor (pservice_sd))
+						sd_length = GetSecurityDescriptorLength (pservice_sd);
+
+					else
+						SAFE_LOCAL_FREE (pservice_sd);
+				}
+
+				if (!pservice_sd)
+					continue;
+
 				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
 				RtlSecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
 
@@ -2056,17 +2066,12 @@ void _app_generate_services ()
 
 				_r_str_toupper (sidstring.GetBuffer ());
 
-				if (
-					!ConvertStringSecurityDescriptorToSecurityDescriptor (_r_fmt (SERVICE_SECURITY_DESCRIPTOR, sidstring.GetString ()), SDDL_REVISION_1, &ptr_item->pdata, nullptr) ||
-					!IsValidSecurityDescriptor (ptr_item->pdata)
-					)
-				{
-					SAFE_DELETE (ptr_item);
-				}
-				else
-				{
-					apps_helper[app_hash] = _r_obj_allocate (ptr_item, &_app_dereferenceappshelper);
-				}
+				ptr_item->pdata = new BYTE[sd_length];
+				memcpy (ptr_item->pdata, pservice_sd, sd_length);
+
+				SAFE_LOCAL_FREE (pservice_sd);
+
+				apps_helper[app_hash] = _r_obj_allocate (ptr_item, &_app_dereferenceappshelper);
 			}
 
 			SAFE_DELETE_ARRAY (serviceSid);
@@ -2205,25 +2210,11 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 
 			if (lpdata)
 			{
-				SAFE_DELETE_ARRAY (*lpdata);
-
 				if (ptr_app_item->pdata)
-				{
-					DWORD length = 0;
+					*lpdata = ptr_app_item->pdata;
 
-					if (type == DataAppService)
-						length = GetSecurityDescriptorLength (ptr_app_item->pdata);
-
-					else if (type == DataAppUWP)
-						length = SECURITY_MAX_SID_SIZE;
-
-					if (length)
-					{
-						*lpdata = new BYTE[length];
-
-						memcpy (*lpdata, ptr_app_item->pdata, length);
-					}
-				}
+				else
+					*lpdata = nullptr;
 			}
 
 			if (ptime)
