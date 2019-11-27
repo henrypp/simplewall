@@ -3,43 +3,6 @@
 
 #include "global.hpp"
 
-rapp app (APP_NAME, APP_NAME_SHORT, APP_VERSION, APP_COPYRIGHT);
-
-STATIC_DATA config;
-
-FWPM_SESSION session;
-
-OBJECTS_MAP apps;
-OBJECTS_MAP apps_helper;
-OBJECTS_VEC rules_arr;
-OBJECTS_MAP rules_config;
-OBJECTS_MAP network_map;
-
-OBJECTS_MAP cache_arpa;
-OBJECTS_MAP cache_signatures;
-OBJECTS_MAP cache_versions;
-OBJECTS_MAP cache_dns;
-OBJECTS_MAP cache_hosts;
-TYPES_MAP cache_types;
-
-THREADS_VEC threads_pool;
-
-OBJECTS_VEC colors;
-std::vector<time_t> timers;
-
-GUIDS_VEC filter_ids;
-
-ITEM_LIST_HEAD log_stack;
-
-_R_FASTLOCK lock_access;
-_R_FASTLOCK lock_apply;
-_R_FASTLOCK lock_cache;
-_R_FASTLOCK lock_checkbox;
-_R_FASTLOCK lock_logbusy;
-_R_FASTLOCK lock_logthread;
-_R_FASTLOCK lock_transaction;
-_R_FASTLOCK lock_writelog;
-
 EXTERN_C const IID IID_IImageList2;
 
 const UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);

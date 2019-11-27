@@ -39,42 +39,42 @@
 
 #include "resource.hpp"
 
-extern rapp app;
+inline rapp app (APP_NAME, APP_NAME_SHORT, APP_VERSION, APP_COPYRIGHT);
 
-extern STATIC_DATA config;
+inline STATIC_DATA config;
 
-extern FWPM_SESSION session;
+inline FWPM_SESSION session;
 
-extern OBJECTS_MAP apps;
-extern OBJECTS_MAP apps_helper;
-extern OBJECTS_VEC rules_arr;
-extern OBJECTS_MAP rules_config;
-extern OBJECTS_MAP network_map;
+inline OBJECTS_MAP apps;
+inline OBJECTS_MAP apps_helper;
+inline OBJECTS_VEC rules_arr;
+inline OBJECTS_MAP rules_config;
+inline OBJECTS_MAP network_map;
 
-extern OBJECTS_MAP cache_arpa;
-extern OBJECTS_MAP cache_signatures;
-extern OBJECTS_MAP cache_versions;
-extern OBJECTS_MAP cache_dns;
-extern OBJECTS_MAP cache_hosts;
-extern TYPES_MAP cache_types;
+inline OBJECTS_MAP cache_arpa;
+inline OBJECTS_MAP cache_signatures;
+inline OBJECTS_MAP cache_versions;
+inline OBJECTS_MAP cache_dns;
+inline OBJECTS_MAP cache_hosts;
+inline TYPES_MAP cache_types;
 
-extern THREADS_VEC threads_pool;
+inline THREADS_VEC threads_pool;
 
-extern OBJECTS_VEC colors;
-extern std::vector<time_t> timers;
+inline OBJECTS_VEC colors;
+inline std::vector<time_t> timers;
 
-extern GUIDS_VEC filter_ids;
+inline GUIDS_VEC filter_ids;
 
-extern ITEM_LIST_HEAD log_stack;
+inline ITEM_LIST_HEAD log_stack;
 
-extern _R_FASTLOCK lock_access;
-extern _R_FASTLOCK lock_apply;
-extern _R_FASTLOCK lock_cache;
-extern _R_FASTLOCK lock_checkbox;
-extern _R_FASTLOCK lock_logbusy;
-extern _R_FASTLOCK lock_logthread;
-extern _R_FASTLOCK lock_transaction;
-extern _R_FASTLOCK lock_writelog;
+inline _R_FASTLOCK lock_access;
+inline _R_FASTLOCK lock_apply;
+inline _R_FASTLOCK lock_cache;
+inline _R_FASTLOCK lock_checkbox;
+inline _R_FASTLOCK lock_logbusy;
+inline _R_FASTLOCK lock_logthread;
+inline _R_FASTLOCK lock_transaction;
+inline _R_FASTLOCK lock_writelog;
 
 // dropped events callback subscription (win7+)
 #ifndef FWP_DIRECTION_IN
