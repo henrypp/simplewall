@@ -841,13 +841,18 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 		PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
 
 		if (!ptr_app_object)
+		{
+			_app_logerror (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" PR_SIZE_T L"\" not found!", app_hash), true);
 			return false;
+		}
 
 		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
 		if (!ptr_app)
 		{
+			_app_logerror (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" PR_SIZE_T L"\" not found!", app_hash), true);
 			_r_obj_dereference (ptr_app_object);
+
 			return false;
 		}
 
