@@ -39,7 +39,7 @@
 
 #include "resource.hpp"
 
-inline rapp app (APP_NAME, APP_NAME_SHORT, APP_VERSION, APP_COPYRIGHT);
+inline rapp app;
 
 inline STATIC_DATA config;
 

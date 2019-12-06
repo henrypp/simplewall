@@ -5845,80 +5845,83 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 {
 	MSG msg = {0};
 
-	// parse arguments
+	if (app.Initialize (APP_NAME, APP_NAME_SHORT, APP_VERSION, APP_COPYRIGHT))
 	{
-		INT numargs = 0;
-		LPWSTR* arga = CommandLineToArgvW (GetCommandLine (), &numargs);
-
-		if (arga)
+		// parse arguments
 		{
-			bool is_install = false;
-			bool is_uninstall = false;
-			bool is_silent = false;
+			INT numargs = 0;
+			LPWSTR* arga = CommandLineToArgvW (GetCommandLine (), &numargs);
 
-			for (INT i = 0; i < numargs; i++)
+			if (arga)
 			{
-				if (_r_str_compare (arga[i], L"/install", 8) == 0)
-					is_install = true;
+				bool is_install = false;
+				bool is_uninstall = false;
+				bool is_silent = false;
 
-				else if (_r_str_compare (arga[i], L"/uninstall", 10) == 0)
-					is_uninstall = true;
-
-				else if (_r_str_compare (arga[i], L"/silent", 7) == 0)
-					is_silent = true;
-			}
-
-			SAFE_LOCAL_FREE (arga);
-
-			if (is_install || is_uninstall)
-			{
-				const bool is_elevated = _r_sys_iselevated ();
-
-				if (is_install)
+				for (INT i = 0; i < numargs; i++)
 				{
-					if (is_elevated && (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true))))
-					{
-						_app_initialize ();
-						_app_profile_load (nullptr);
+					if (_r_str_compare (arga[i], L"/install", 8) == 0)
+						is_install = true;
 
-						if (_wfp_initialize (true))
-							_wfp_installfilters ();
+					else if (_r_str_compare (arga[i], L"/uninstall", 10) == 0)
+						is_uninstall = true;
 
-						_wfp_uninitialize (false);
-					}
-				}
-				else if (is_uninstall)
-				{
-					if (is_elevated && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
-					{
-						if (_wfp_initialize (false))
-							_wfp_destroyfilters (_wfp_getenginehandle ());
-
-						_wfp_uninitialize (true);
-					}
+					else if (_r_str_compare (arga[i], L"/silent", 7) == 0)
+						is_silent = true;
 				}
 
-				return ERROR_SUCCESS;
+				SAFE_LOCAL_FREE (arga);
+
+				if (is_install || is_uninstall)
+				{
+					const bool is_elevated = _r_sys_iselevated ();
+
+					if (is_install)
+					{
+						if (is_elevated && (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true))))
+						{
+							_app_initialize ();
+							_app_profile_load (nullptr);
+
+							if (_wfp_initialize (true))
+								_wfp_installfilters ();
+
+							_wfp_uninitialize (false);
+						}
+					}
+					else if (is_uninstall)
+					{
+						if (is_elevated && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
+						{
+							if (_wfp_initialize (false))
+								_wfp_destroyfilters (_wfp_getenginehandle ());
+
+							_wfp_uninitialize (true);
+						}
+					}
+
+					return ERROR_SUCCESS;
+				}
 			}
 		}
-	}
 
-	if (app.CreateMainWindow (IDD_MAIN, IDI_MAIN, &DlgProc))
-	{
-		const HACCEL haccel = LoadAccelerators (app.GetHINSTANCE (), MAKEINTRESOURCE (IDA_MAIN));
-
-		if (haccel)
+		if (app.CreateMainWindow (IDD_MAIN, IDI_MAIN, &DlgProc))
 		{
-			while (GetMessage (&msg, nullptr, 0, 0) > 0)
-			{
-				if (!TranslateAccelerator (app.GetHWND (), haccel, &msg) && !IsDialogMessage (app.GetHWND (), &msg))
-				{
-					TranslateMessage (&msg);
-					DispatchMessage (&msg);
-				}
-			}
+			const HACCEL haccel = LoadAccelerators (app.GetHINSTANCE (), MAKEINTRESOURCE (IDA_MAIN));
 
-			DestroyAcceleratorTable (haccel);
+			if (haccel)
+			{
+				while (GetMessage (&msg, nullptr, 0, 0) > 0)
+				{
+					if (!TranslateAccelerator (app.GetHWND (), haccel, &msg) && !IsDialogMessage (app.GetHWND (), &msg))
+					{
+						TranslateMessage (&msg);
+						DispatchMessage (&msg);
+					}
+				}
+
+				DestroyAcceleratorTable (haccel);
+			}
 		}
 	}
 
