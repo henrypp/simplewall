@@ -321,7 +321,7 @@ bool _wfp_initialize (bool is_full)
 						FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST |
 						FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
 
-					// win10 19h1+
+					// 1903+
 					if (_r_sys_validversion (10, 0, 18362))
 						val.uint32 |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
 
