@@ -310,7 +310,6 @@ typedef struct tagITEM_APP
 	LPWSTR real_path = nullptr;
 
 	PR_OBJECT pnotification = nullptr;
-	PBYTE pdata = nullptr; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 
 	HANDLE htimer = nullptr;
 

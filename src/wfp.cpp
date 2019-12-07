@@ -858,12 +858,14 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 
 		if (ptr_app->type == DataAppUWP) // windows store app (win8+)
 		{
-			if (ptr_app->pdata)
+			PBYTE pdata = nullptr;
+
+			if (_app_item_get (ptr_app->type, app_hash, nullptr, nullptr, nullptr, &pdata))
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_PACKAGE_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_SID;
-				fwfc[count].conditionValue.sid = (SID*)ptr_app->pdata;
+				fwfc[count].conditionValue.sid = (SID*)pdata;
 
 				count += 1;
 			}
@@ -877,7 +879,9 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 		}
 		else if (ptr_app->type == DataAppService) // windows service
 		{
-			if (ptr_app->pdata && ByteBlobAlloc (ptr_app->pdata, GetSecurityDescriptorLength (ptr_app->pdata), &bSid))
+			PBYTE pdata = nullptr;
+
+			if (_app_item_get (ptr_app->type, app_hash, nullptr, nullptr, nullptr, &pdata) && ByteBlobAlloc (pdata, GetSecurityDescriptorLength (pdata), &bSid))
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;

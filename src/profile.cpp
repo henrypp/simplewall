@@ -99,7 +99,7 @@ size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	{
 		ptr_app->type = DataAppUWP;
 
-		_app_item_get (DataAppUWP, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, &ptr_app->pdata);
+		_app_item_get (DataAppUWP, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, nullptr);
 	}
 	else if (PathIsNetworkPath (path)) // network path
 	{
@@ -113,7 +113,7 @@ size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 
 		if (!is_ntoskrnl && _r_str_find (real_path, real_path.GetLength (), OBJ_NAME_PATH_SEPARATOR) == INVALID_SIZE_T)
 		{
-			if (_app_item_get (DataAppService, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, &ptr_app->pdata))
+			if (_app_item_get (DataAppService, app_hash, nullptr, &real_path, timestamp ? nullptr : &timestamp, nullptr))
 				ptr_app->type = DataAppService;
 
 			else
