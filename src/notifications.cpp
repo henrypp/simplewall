@@ -308,7 +308,6 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 	if (is_forced) {
 		SetForegroundWindow(hwnd);
 		SetFocus(hwnd);
-		SetActiveWindow(hwnd);
 	}
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
