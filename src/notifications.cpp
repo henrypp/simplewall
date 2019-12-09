@@ -308,6 +308,12 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
+	if (is_forced && !is_fullscreenmode)
+	{
+		SetForegroundWindow (hwnd);
+		SetFocus (hwnd);
+	}
+
 	return true;
 }
 
@@ -574,6 +580,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				case WA_CLICKACTIVE:
 				{
 					_r_wnd_top (hwnd, true);
+					SetActiveWindow (hwnd);
 					break;
 				}
 			}
