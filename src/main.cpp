@@ -2465,7 +2465,7 @@ void _app_listviewsetpos (HWND hwnd, INT tab_id, INT listview_id)
 
 	SendMessage (htab, TCM_ADJUSTRECT, FALSE, (LPARAM)&rc_listview);
 
-	_r_wnd_resize (nullptr, hlistview, nullptr, rc_listview.left, rc_listview.top, _R_RECT_WIDTH (&rc_listview), _R_RECT_HEIGHT (&rc_listview), 0);
+	_r_wnd_resize (nullptr, hlistview, nullptr, rc_listview.left, rc_listview.top, _R_RECT_WIDTH (&rc_listview), _R_RECT_HEIGHT (&rc_listview), SWP_NOOWNERZORDER);
 }
 
 void _app_resizewindow (HWND hwnd, LPARAM lparam)
@@ -2482,8 +2482,8 @@ void _app_resizewindow (HWND hwnd, LPARAM lparam)
 
 	HDWP hdefer = BeginDeferWindowPos (2);
 
-	_r_wnd_resize (&hdefer, config.hrebar, nullptr, 0, 0, LOWORD (lparam), rebar_height, 0);
-	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_TAB), nullptr, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, 0);
+	_r_wnd_resize (&hdefer, config.hrebar, nullptr, 0, 0, LOWORD (lparam), rebar_height, SWP_NOOWNERZORDER);
+	_r_wnd_resize (&hdefer, GetDlgItem (hwnd, IDC_TAB), nullptr, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, SWP_NOOWNERZORDER);
 
 	EndDeferWindowPos (hdefer);
 
