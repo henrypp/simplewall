@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2019 Henry++
+// Copyright (c) 2016-2020 Henry++
 
 #include "global.hpp"
 
@@ -1619,14 +1619,10 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 
 INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	static PAPP_SETTINGS_PAGE ptr_page = nullptr;
-
 	switch (msg)
 	{
 		case WM_INITDIALOG:
 		{
-			ptr_page = reinterpret_cast<PAPP_SETTINGS_PAGE>(lparam);
-
 #ifndef _APP_NO_DARKTHEME
 			_r_wnd_setdarktheme (hwnd);
 #endif // _APP_NO_DARKTHEME
@@ -1642,21 +1638,21 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			{
 				case IDD_SETTINGS_GENERAL:
 				{
-					CheckDlgButton (hwnd, IDC_ALWAYSONTOP_CHK, app.ConfigGet (L"AlwaysOnTop", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_ALWAYSONTOP_CHK, app.ConfigGet (L"AlwaysOnTop", _APP_ALWAYSONTOP).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
-#ifdef _APP_HAVE_AUTORUN
+#if defined(_APP_HAVE_AUTORUN)
 					CheckDlgButton (hwnd, IDC_LOADONSTARTUP_CHK, app.AutorunIsEnabled () ? BST_CHECKED : BST_UNCHECKED);
 #endif // _APP_HAVE_AUTORUN
 
 					CheckDlgButton (hwnd, IDC_STARTMINIMIZED_CHK, app.ConfigGet (L"IsStartMinimized", false).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
-#ifdef _APP_HAVE_SKIPUAC
+#if defined(_APP_HAVE_SKIPUAC)
 					CheckDlgButton (hwnd, IDC_SKIPUACWARNING_CHK, app.SkipUacIsEnabled () ? BST_CHECKED : BST_UNCHECKED);
 #endif // _APP_HAVE_SKIPUAC
 
 					CheckDlgButton (hwnd, IDC_CHECKUPDATES_CHK, app.ConfigGet (L"CheckUpdates", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
-#ifdef _APP_BETA
+#if defined(_DEBUG) || defined(_APP_BETA)
 					CheckDlgButton (hwnd, IDC_CHECKUPDATESBETA_CHK, BST_CHECKED);
 					_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, false);
 #else
@@ -1664,7 +1660,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					if (!app.ConfigGet (L"CheckUpdates", true).AsBool ())
 						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, false);
-#endif // _APP_BETA
+#endif // _DEBUG || _APP_BETA
 
 					app.LocaleEnum (hwnd, IDC_LANGUAGE, false, 0);
 
@@ -1799,6 +1795,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					CheckDlgButton (hwnd, IDC_EXCLUDESTEALTH_CHK, app.ConfigGet (L"IsExcludeStealth", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool () ? BST_CHECKED : BST_UNCHECKED);
 
+					// win8+
 					if (!_r_sys_validversion (6, 2))
 						_r_ctrl_enable (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, false);
 
@@ -2139,25 +2136,99 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			switch (ctrl_id)
 			{
 				case IDC_ALWAYSONTOP_CHK:
-				case IDC_STARTMINIMIZED_CHK:
+				{
+					const bool is_enabled = !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+
+					app.ConfigSet (L"AlwaysOnTop", is_enabled);
+					CheckMenuItem (GetMenu (app.GetHWND ()), IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | (is_enabled ? MF_CHECKED : MF_UNCHECKED));
+
+					break;
+				}
+
+#if defined(_APP_HAVE_AUTORUN)
 				case IDC_LOADONSTARTUP_CHK:
+				{
+					app.AutorunEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					break;
+				}
+#endif // _APP_HAVE_AUTORUN
+
+				case IDC_STARTMINIMIZED_CHK:
+				{
+					app.ConfigSet (L"IsStartMinimized", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
+#if defined(_APP_HAVE_SKIPUAC)
 				case IDC_SKIPUACWARNING_CHK:
+				{
+					app.SkipUacEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					break;
+				}
+#endif // _APP_HAVE_SKIPUAC
+
 				case IDC_CHECKUPDATES_CHK:
+				{
+					const bool is_enabled = !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+
+					app.ConfigSet (L"CheckUpdates", is_enabled);
+
+#if !defined(_DEBUG) && !defined(_APP_BETA)
+					_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, is_enabled ? true : false);
+#endif // !_DEBUG && !_APP_BETA
+
+					break;
+				}
+
+#if !defined(_DEBUG) && !defined(_APP_BETA)
 				case IDC_CHECKUPDATESBETA_CHK:
+				{
+					app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+#endif // !_DEBUG && !_APP_BETA
+
 				case IDC_LANGUAGE:
+				{
+					if (notify_code == CBN_SELCHANGE)
+						app.LocaleApplyFromControl (hwnd, ctrl_id);
+
+					break;
+				}
+
 				case IDC_CONFIRMEXIT_CHK:
+				{
+					app.ConfigSet (L"ConfirmExit2", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
 				case IDC_CONFIRMEXITTIMER_CHK:
+				{
+					app.ConfigSet (L"ConfirmExitTimer", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
 				case IDC_CONFIRMLOGCLEAR_CHK:
+				{
+					app.ConfigSet (L"ConfirmLogClear", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
+				case IDC_RULE_BLOCKOUTBOUND:
+				case IDC_RULE_BLOCKINBOUND:
+				case IDC_RULE_ALLOWLOOPBACK:
+				case IDC_RULE_ALLOW6TO4:
 				case IDC_USESTEALTHMODE_CHK:
 				case IDC_INSTALLBOOTTIMEFILTERS_CHK:
 				case IDC_SECUREFILTERS_CHK:
 				case IDC_USECERTIFICATES_CHK:
 				case IDC_USENETWORKRESOLUTION_CHK:
 				case IDC_USEREFRESHDEVICES_CHK:
-				case IDC_RULE_BLOCKOUTBOUND:
-				case IDC_RULE_BLOCKINBOUND:
-				case IDC_RULE_ALLOWLOOPBACK:
-				case IDC_RULE_ALLOW6TO4:
+				{
+					_app_config_apply (app.GetHWND (), ctrl_id);
+					break;
+				}
+
 				case IDC_BLOCKLIST_SPY_DISABLE:
 				case IDC_BLOCKLIST_SPY_ALLOW:
 				case IDC_BLOCKLIST_SPY_BLOCK:
@@ -2167,147 +2238,78 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				case IDC_BLOCKLIST_EXTRA_DISABLE:
 				case IDC_BLOCKLIST_EXTRA_ALLOW:
 				case IDC_BLOCKLIST_EXTRA_BLOCK:
-				case IDC_ENABLELOG_CHK:
-				case IDC_LOGPATH:
-				case IDC_LOGPATH_BTN:
-				case IDC_LOGVIEWER:
-				case IDC_LOGVIEWER_BTN:
-				case IDC_LOGSIZELIMIT_CTRL:
-				case IDC_ENABLENOTIFICATIONS_CHK:
-				case IDC_NOTIFICATIONSOUND_CHK:
-				case IDC_NOTIFICATIONONTRAY_CHK:
-				case IDC_NOTIFICATIONTIMEOUT_CTRL:
-				case IDC_EXCLUDESTEALTH_CHK:
-				case IDC_EXCLUDECLASSIFYALLOW_CHK:
-				case IDC_EXCLUDEBLOCKLIST_CHK:
-				case IDC_EXCLUDECUSTOM_CHK:
 				{
-					if (ctrl_id == IDC_ALWAYSONTOP_CHK)
+					const HMENU hmenu = GetMenu (app.GetHWND ());
+
+					if (ctrl_id >= IDC_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDC_BLOCKLIST_SPY_BLOCK)
 					{
-						app.ConfigSet (L"AlwaysOnTop", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-						CheckMenuItem (GetMenu (app.GetHWND ()), IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | ((IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? MF_CHECKED : MF_UNCHECKED));
+						const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
+
+						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, IDM_BLOCKLIST_SPY_DISABLE + new_state, MF_BYCOMMAND);
+
+						app.ConfigSet (L"BlocklistSpyState", new_state);
+
+						_r_fastlock_acquireshared (&lock_access);
+						_app_ruleblocklistset (app.GetHWND (), new_state, INVALID_INT, INVALID_INT, true);
+						_r_fastlock_releaseshared (&lock_access);
 					}
-					else if (ctrl_id == IDC_STARTMINIMIZED_CHK)
+					else if (ctrl_id >= IDC_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDC_BLOCKLIST_UPDATE_BLOCK)
 					{
-						app.ConfigSet (L"IsStartMinimized", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+						const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
+
+						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, IDM_BLOCKLIST_UPDATE_DISABLE + new_state, MF_BYCOMMAND);
+
+						app.ConfigSet (L"BlocklistUpdateState", new_state);
+
+						_r_fastlock_acquireshared (&lock_access);
+						_app_ruleblocklistset (app.GetHWND (), INVALID_INT, new_state, INVALID_INT, true);
+						_r_fastlock_releaseshared (&lock_access);
 					}
-					else if (ctrl_id == IDC_LOADONSTARTUP_CHK)
+					else if (ctrl_id >= IDC_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
 					{
-						app.AutorunEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+						const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
+
+						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, IDM_BLOCKLIST_EXTRA_DISABLE + new_state, MF_BYCOMMAND);
+
+						app.ConfigSet (L"BlocklistExtraState", new_state);
+
+						_r_fastlock_acquireshared (&lock_access);
+						_app_ruleblocklistset (app.GetHWND (), INVALID_INT, INVALID_INT, new_state, true);
+						_r_fastlock_releaseshared (&lock_access);
 					}
-					else if (ctrl_id == IDC_SKIPUACWARNING_CHK)
-					{
-#ifdef _APP_HAVE_SKIPUAC
-						app.SkipUacEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
-#endif // _APP_HAVE_SKIPUAC
-					}
-					else if (ctrl_id == IDC_CHECKUPDATES_CHK)
-					{
-						app.ConfigSet (L"CheckUpdates", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 
-#ifndef _APP_BETA
-						_r_ctrl_enable (hwnd, IDC_CHECKUPDATESBETA_CHK, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED) ? true : false);
-#endif // _APP_BETA
-					}
-					else if (ctrl_id == IDC_CHECKUPDATESBETA_CHK)
-					{
-						app.ConfigSet (L"CheckUpdatesBeta", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
-					else if (ctrl_id == IDC_LANGUAGE && notify_code == CBN_SELCHANGE)
-					{
-						app.LocaleApplyFromControl (hwnd, ctrl_id);
-					}
-					else if (ctrl_id == IDC_CONFIRMEXIT_CHK)
-					{
-						app.ConfigSet (L"ConfirmExit2", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
-					else if (ctrl_id == IDC_CONFIRMEXITTIMER_CHK)
-					{
-						app.ConfigSet (L"ConfirmExitTimer", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
-					else if (ctrl_id == IDC_CONFIRMLOGCLEAR_CHK)
-					{
-						app.ConfigSet (L"ConfirmLogClear", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
-					else if (
-						ctrl_id == IDC_RULE_BLOCKOUTBOUND ||
-						ctrl_id == IDC_RULE_BLOCKINBOUND ||
-						ctrl_id == IDC_RULE_ALLOWLOOPBACK ||
-						ctrl_id == IDC_RULE_ALLOW6TO4 ||
-						ctrl_id == IDC_SECUREFILTERS_CHK ||
-						ctrl_id == IDC_USESTEALTHMODE_CHK ||
-						ctrl_id == IDC_INSTALLBOOTTIMEFILTERS_CHK ||
-						ctrl_id == IDC_USENETWORKRESOLUTION_CHK ||
-						ctrl_id == IDC_USECERTIFICATES_CHK ||
-						ctrl_id == IDC_USEREFRESHDEVICES_CHK
-						)
-					{
-						_app_config_apply (app.GetHWND (), ctrl_id);
-					}
-					else if (ctrl_id >= IDC_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
-					{
-						const HMENU hmenu = GetMenu (app.GetHWND ());
+					break;
+				}
 
-						if (ctrl_id >= IDC_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDC_BLOCKLIST_SPY_BLOCK)
-						{
-							const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
+				case IDC_ENABLELOG_CHK:
+				{
+					const bool is_enabled = !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 
-							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, IDM_BLOCKLIST_SPY_DISABLE + new_state, MF_BYCOMMAND);
+					app.ConfigSet (L"IsLogEnabled", is_enabled);
+					SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLELOG_CHK, MAKELPARAM (is_enabled, 0));
 
-							app.ConfigSet (L"BlocklistSpyState", new_state);
+					_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
+					_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
 
-							_r_fastlock_acquireshared (&lock_access);
-							_app_ruleblocklistset (app.GetHWND (), new_state, INVALID_INT, INVALID_INT, true);
-							_r_fastlock_releaseshared (&lock_access);
-						}
-						else if (ctrl_id >= IDC_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDC_BLOCKLIST_UPDATE_BLOCK)
-						{
-							const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
+					_r_ctrl_enable (hwnd, IDC_LOGVIEWER, is_enabled); // input
+					_r_ctrl_enable (hwnd, IDC_LOGVIEWER_BTN, is_enabled); // button
 
-							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, IDM_BLOCKLIST_UPDATE_DISABLE + new_state, MF_BYCOMMAND);
+					EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0), is_enabled);
 
-							app.ConfigSet (L"BlocklistUpdateState", new_state);
+					_r_ctrl_enable (hwnd, IDC_EXCLUDESTEALTH_CHK, is_enabled);
 
-							_r_fastlock_acquireshared (&lock_access);
-							_app_ruleblocklistset (app.GetHWND (), INVALID_INT, new_state, INVALID_INT, true);
-							_r_fastlock_releaseshared (&lock_access);
-						}
-						else if (ctrl_id >= IDC_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
-						{
-							const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
+					// win8+
+					if (_r_sys_validversion (6, 2))
+						_r_ctrl_enable (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, is_enabled);
 
-							CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, IDM_BLOCKLIST_EXTRA_DISABLE + new_state, MF_BYCOMMAND);
+					_app_loginit (is_enabled);
 
-							app.ConfigSet (L"BlocklistExtraState", new_state);
+					break;
+				}
 
-							_r_fastlock_acquireshared (&lock_access);
-							_app_ruleblocklistset (app.GetHWND (), INVALID_INT, INVALID_INT, new_state, true);
-							_r_fastlock_releaseshared (&lock_access);
-						}
-					}
-					else if (ctrl_id == IDC_ENABLELOG_CHK)
-					{
-						const bool is_enabled = !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
-
-						app.ConfigSet (L"IsLogEnabled", is_enabled);
-						SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLELOG_CHK, MAKELPARAM (is_enabled, 0));
-
-						_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
-						_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
-
-						_r_ctrl_enable (hwnd, IDC_LOGVIEWER, is_enabled); // input
-						_r_ctrl_enable (hwnd, IDC_LOGVIEWER_BTN, is_enabled); // button
-
-						EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0), is_enabled);
-
-						_r_ctrl_enable (hwnd, IDC_EXCLUDESTEALTH_CHK, is_enabled);
-
-						if (_r_sys_validversion (6, 2))
-							_r_ctrl_enable (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, is_enabled);
-
-						_app_loginit (is_enabled);
-					}
-					else if (ctrl_id == IDC_LOGPATH && notify_code == EN_KILLFOCUS)
+				case IDC_LOGPATH:
+				{
+					if (notify_code == EN_KILLFOCUS)
 					{
 						rstring logpath = _r_ctrl_gettext (hwnd, ctrl_id);
 
@@ -2318,118 +2320,157 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							_app_loginit (app.ConfigGet (L"IsLogEnabled", false));
 						}
 					}
-					else if (ctrl_id == IDC_LOGPATH_BTN)
+
+					break;
+				}
+
+				case IDC_LOGPATH_BTN:
+				{
+					OPENFILENAME ofn = {0};
+
+					WCHAR path[MAX_PATH] = {0};
+					GetDlgItemText (hwnd, IDC_LOGPATH, path, _countof (path));
+					_r_str_copy (path, _countof (path), _r_path_expand (path));
+
+					ofn.lStructSize = sizeof (ofn);
+					ofn.hwndOwner = hwnd;
+					ofn.lpstrFile = path;
+					ofn.nMaxFile = _countof (path);
+					ofn.lpstrFileTitle = APP_NAME_SHORT;
+					ofn.lpstrFilter = L"*." LOG_PATH_EXT L"\0*." LOG_PATH_EXT L"\0\0";
+					ofn.lpstrDefExt = LOG_PATH_EXT;
+					ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+
+					if (GetSaveFileName (&ofn))
 					{
-						OPENFILENAME ofn = {0};
+						_r_str_copy (path, _countof (path), _r_path_unexpand (path));
 
-						WCHAR path[MAX_PATH] = {0};
-						GetDlgItemText (hwnd, IDC_LOGPATH, path, _countof (path));
-						_r_str_copy (path, _countof (path), _r_path_expand (path));
+						app.ConfigSet (L"LogPath", path);
+						SetDlgItemText (hwnd, IDC_LOGPATH, path);
 
-						ofn.lStructSize = sizeof (ofn);
-						ofn.hwndOwner = hwnd;
-						ofn.lpstrFile = path;
-						ofn.nMaxFile = _countof (path);
-						ofn.lpstrFileTitle = APP_NAME_SHORT;
-						ofn.lpstrFilter = L"*." LOG_PATH_EXT L"\0*." LOG_PATH_EXT L"\0\0";
-						ofn.lpstrDefExt = LOG_PATH_EXT;
-						ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
-
-						if (GetSaveFileName (&ofn))
-						{
-							_r_str_copy (path, _countof (path), _r_path_unexpand (path));
-
-							app.ConfigSet (L"LogPath", path);
-							SetDlgItemText (hwnd, IDC_LOGPATH, path);
-
-							_app_loginit (app.ConfigGet (L"IsLogEnabled", false));
-						}
+						_app_loginit (app.ConfigGet (L"IsLogEnabled", false));
 					}
-					else if (ctrl_id == IDC_LOGVIEWER && notify_code == EN_KILLFOCUS)
+
+					break;
+				}
+
+				case IDC_LOGVIEWER:
+				{
+					if (notify_code == EN_KILLFOCUS)
 					{
 						rstring logviewer = _r_ctrl_gettext (hwnd, ctrl_id);
 
 						if (!logviewer.IsEmpty ())
 							app.ConfigSet (L"LogViewer", _r_path_unexpand (logviewer));
 					}
-					else if (ctrl_id == IDC_LOGVIEWER_BTN)
+
+					break;
+				}
+
+				case IDC_LOGVIEWER_BTN:
+				{
+					OPENFILENAME ofn = {0};
+
+					WCHAR path[MAX_PATH] = {0};
+					GetDlgItemText (hwnd, IDC_LOGVIEWER, path, _countof (path));
+					_r_str_copy (path, _countof (path), _r_path_expand (path));
+
+					ofn.lStructSize = sizeof (ofn);
+					ofn.hwndOwner = hwnd;
+					ofn.lpstrFile = path;
+					ofn.nMaxFile = _countof (path);
+					ofn.lpstrFileTitle = APP_NAME_SHORT;
+					ofn.lpstrFilter = L"*.exe\0*.exe\0\0";
+					ofn.lpstrDefExt = L"exe";
+					ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+					if (GetOpenFileName (&ofn))
 					{
-						OPENFILENAME ofn = {0};
+						_r_str_copy (path, _countof (path), _r_path_unexpand (path));
 
-						WCHAR path[MAX_PATH] = {0};
-						GetDlgItemText (hwnd, IDC_LOGVIEWER, path, _countof (path));
-						_r_str_copy (path, _countof (path), _r_path_expand (path));
-
-						ofn.lStructSize = sizeof (ofn);
-						ofn.hwndOwner = hwnd;
-						ofn.lpstrFile = path;
-						ofn.nMaxFile = _countof (path);
-						ofn.lpstrFileTitle = APP_NAME_SHORT;
-						ofn.lpstrFilter = L"*.exe\0*.exe\0\0";
-						ofn.lpstrDefExt = L"exe";
-						ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-						if (GetOpenFileName (&ofn))
-						{
-							_r_str_copy (path, _countof (path), _r_path_unexpand (path));
-
-							app.ConfigSet (L"LogViewer", path);
-							SetDlgItemText (hwnd, IDC_LOGVIEWER, path);
-						}
+						app.ConfigSet (L"LogViewer", path);
+						SetDlgItemText (hwnd, IDC_LOGVIEWER, path);
 					}
-					else if (ctrl_id == IDC_LOGSIZELIMIT_CTRL && notify_code == EN_KILLFOCUS)
-					{
+
+					break;
+				}
+
+				case IDC_LOGSIZELIMIT_CTRL:
+				{
+					if (notify_code == EN_KILLFOCUS)
 						app.ConfigSet (L"LogSizeLimitKb", (DWORD)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0));
-					}
-					else if (ctrl_id == IDC_ENABLENOTIFICATIONS_CHK)
-					{
-						const bool is_enabled = !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 
-						app.ConfigSet (L"IsNotificationsEnabled", is_enabled);
-						SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MAKELPARAM (is_enabled, 0));
+					break;
+				}
 
-						_r_ctrl_enable (hwnd, IDC_NOTIFICATIONSOUND_CHK, is_enabled);
-						_r_ctrl_enable (hwnd, IDC_NOTIFICATIONONTRAY_CHK, is_enabled);
+				case IDC_ENABLENOTIFICATIONS_CHK:
+				{
+					const bool is_enabled = !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 
-						EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0), is_enabled);
+					app.ConfigSet (L"IsNotificationsEnabled", is_enabled);
+					SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MAKELPARAM (is_enabled, 0));
 
-						_r_ctrl_enable (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, is_enabled);
-						_r_ctrl_enable (hwnd, IDC_EXCLUDECUSTOM_CHK, is_enabled);
+					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONSOUND_CHK, is_enabled);
+					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONONTRAY_CHK, is_enabled);
 
-						_app_notifyrefresh (config.hnotification, false);
-					}
-					else if (ctrl_id == IDC_NOTIFICATIONSOUND_CHK)
-					{
-						app.ConfigSet (L"IsNotificationsSound", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
-					else if (ctrl_id == IDC_NOTIFICATIONONTRAY_CHK)
-					{
-						app.ConfigSet (L"IsNotificationsOnTray", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					HWND hbuddy = (HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0);
 
-						if (IsWindowVisible (config.hnotification))
-							_app_notifysetpos (config.hnotification, true);
-					}
-					else if (ctrl_id == IDC_NOTIFICATIONTIMEOUT_CTRL && notify_code == EN_KILLFOCUS)
-					{
+					if (hbuddy)
+						EnableWindow (hbuddy, is_enabled);
+
+					_r_ctrl_enable (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, is_enabled);
+					_r_ctrl_enable (hwnd, IDC_EXCLUDECUSTOM_CHK, is_enabled);
+
+					_app_notifyrefresh (config.hnotification, false);
+
+					break;
+				}
+
+				case IDC_NOTIFICATIONSOUND_CHK:
+				{
+					app.ConfigSet (L"IsNotificationsSound", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
+				case IDC_NOTIFICATIONONTRAY_CHK:
+				{
+					app.ConfigSet (L"IsNotificationsOnTray", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+
+					if (IsWindowVisible (config.hnotification))
+						_app_notifysetpos (config.hnotification, true);
+
+					break;
+				}
+
+				case IDC_NOTIFICATIONTIMEOUT_CTRL:
+				{
+					if (notify_code == EN_KILLFOCUS)
 						app.ConfigSet (L"NotificationsTimeout", (time_t)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETPOS32, 0, 0));
-					}
-					else if (ctrl_id == IDC_EXCLUDESTEALTH_CHK)
-					{
-						app.ConfigSet (L"IsExcludeStealth", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
-					else if (ctrl_id == IDC_EXCLUDECLASSIFYALLOW_CHK)
-					{
-						app.ConfigSet (L"IsExcludeClassifyAllow", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
-					else if (ctrl_id == IDC_EXCLUDEBLOCKLIST_CHK)
-					{
-						app.ConfigSet (L"IsExcludeBlocklist", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
-					else if (ctrl_id == IDC_EXCLUDECUSTOM_CHK)
-					{
-						app.ConfigSet (L"IsExcludeCustomRules", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					}
 
+					break;
+				}
+
+				case IDC_EXCLUDESTEALTH_CHK:
+				{
+					app.ConfigSet (L"IsExcludeStealth", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
+				case IDC_EXCLUDECLASSIFYALLOW_CHK:
+				{
+					app.ConfigSet (L"IsExcludeClassifyAllow", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
+				case IDC_EXCLUDEBLOCKLIST_CHK:
+				{
+					app.ConfigSet (L"IsExcludeBlocklist", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
+				case IDC_EXCLUDECUSTOM_CHK:
+				{
+					app.ConfigSet (L"IsExcludeCustomRules", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 					break;
 				}
 			}
@@ -3005,7 +3046,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			const HMENU hmenu = GetMenu (hwnd);
 
-			CheckMenuItem (hmenu, IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AlwaysOnTop", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+			CheckMenuItem (hmenu, IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AlwaysOnTop", _APP_ALWAYSONTOP).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (hmenu, IDM_SHOWFILENAMESONLY_CHK, MF_BYCOMMAND | (app.ConfigGet (L"ShowFilenames", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (hmenu, IDM_AUTOSIZECOLUMNS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AutoSizeColumns", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (hmenu, IDM_ENABLESPECIALGROUP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
@@ -4384,7 +4425,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_ALWAYSONTOP_CHK:
 				{
-					const bool new_val = !app.ConfigGet (L"AlwaysOnTop", false).AsBool ();
+					const bool new_val = !app.ConfigGet (L"AlwaysOnTop", _APP_ALWAYSONTOP).AsBool ();
 
 					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 					app.ConfigSet (L"AlwaysOnTop", new_val);
