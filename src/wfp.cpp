@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2019 Henry++
+// Copyright (c) 2016-2020 Henry++
 
 #include "global.hpp"
 
@@ -255,12 +255,8 @@ bool _wfp_initialize (bool is_full)
 
 			if (is_intransact)
 			{
-				if (_wfp_transact_commit (config.hengine, __LINE__))
-					result = true;
-			}
-			else
-			{
-				result = true;
+				if (!_wfp_transact_commit (config.hengine, __LINE__))
+					result = false;
 			}
 		}
 	}
