@@ -391,7 +391,7 @@ void _app_notifysetpos (HWND hwnd, bool is_forced)
 		GetWindowRect (hwnd, &windowRect);
 
 		_r_wnd_adjustwindowrect (hwnd, &windowRect);
-		_r_wnd_resize (nullptr, hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOOWNERZORDER);
+		_r_wnd_resize (nullptr, hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER);
 
 		return;
 	}
@@ -435,7 +435,7 @@ void _app_notifysetpos (HWND hwnd, bool is_forced)
 				windowRect.top = (desktopRect.bottom - _R_RECT_HEIGHT (&windowRect)) - border_x;
 			}
 
-			_r_wnd_resize (nullptr, hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOOWNERZORDER);
+			_r_wnd_resize (nullptr, hwnd, nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER);
 			return;
 		}
 	}
