@@ -1726,7 +1726,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					_r_listview_deleteallitems (hwnd, IDC_COLORS);
 					_r_listview_deleteallcolumns (hwnd, IDC_COLORS);
 
-					_r_listview_addcolumn (hwnd, IDC_COLORS, 0, nullptr, 0, LVCFMT_LEFT);
+					_r_listview_addcolumn (hwnd, IDC_COLORS, 0, nullptr, -95, LVCFMT_LEFT);
 
 					INT item = 0;
 
@@ -1755,8 +1755,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							_r_obj_dereference (ptr_color_object);
 						}
 					}
-
-					_r_listview_setcolumn (hwnd, IDC_COLORS, 0, nullptr, -100);
 
 					break;
 				}
@@ -1891,6 +1889,8 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					SetDlgItemText (hwnd, IDC_CONFIRMLOGCLEAR_CHK, app.LocaleString (IDS_CONFIRMLOGCLEAR_CHK, nullptr));
 
 					_app_listviewsetfont (hwnd, IDC_COLORS, false);
+
+					_r_listview_setcolumn (hwnd, IDC_COLORS, 0, nullptr, -100);
 
 					for (INT i = 0; i < _r_listview_getitemcount (hwnd, IDC_COLORS); i++)
 					{
@@ -4327,7 +4327,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDM_EXIT:
 				case IDM_TRAY_EXIT:
 				{
-					SendMessage (hwnd, WM_CLOSE, 0, 0);
+					PostMessage (hwnd, WM_CLOSE, 0, 0);
 					break;
 				}
 
@@ -4727,7 +4727,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					if (_r_str_isempty (config.search_string))
 					{
-						SendMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_FIND, 0), 0);
+						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_FIND, 0), 0);
 					}
 					else
 					{
@@ -4736,7 +4736,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						fr.Flags = FR_FINDNEXT;
 						fr.lpstrFindWhat = config.search_string;
 
-						SendMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)&fr);
+						PostMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)&fr);
 					}
 
 					break;

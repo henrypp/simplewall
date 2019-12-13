@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2019 Henry++
+// Copyright (c) 2016-2020 Henry++
 
 #include "global.hpp"
 
@@ -2242,14 +2242,14 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	if (item1 == INVALID_INT || item2 == INVALID_INT)
 		return 0;
 
-	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
+	const rstring cfg_name = _r_fmt (L"listview\\%04" PRIX32, listview_id);
 
 	const INT column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
 	const bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
 
 	INT result = 0;
 
-	if ((SendMessage (hlistview, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) == LVS_EX_CHECKBOXES)
+	if ((SendMessage (hlistview, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
 	{
 		const bool is_checked1 = _r_listview_isitemchecked (hparent, listview_id, item1);
 		const bool is_checked2 = _r_listview_isitemchecked (hparent, listview_id, item2);
@@ -2304,7 +2304,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 	if (!column_count)
 		return;
 
-	const rstring cfg_name = _r_fmt (L"listview\\%04x", listview_id);
+	const rstring cfg_name = _r_fmt (L"listview\\%04" PRIX32, listview_id);
 	bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
 
 	if (is_notifycode)
@@ -3052,14 +3052,14 @@ void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 	{
 		item = std::clamp (item, 0, total_count - 1);
 
-		SendMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
+		PostMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
 
 		ListView_SetItemState (hlistview, INVALID_INT, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
 		ListView_SetItemState (hlistview, (WPARAM)item, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
 	}
 
 	if (scroll_pos > 0)
-		SendMessage (hlistview, LVM_SCROLL, 0, (LPARAM)scroll_pos); // restore scroll position
+		PostMessage (hlistview, LVM_SCROLL, 0, (LPARAM)scroll_pos); // restore scroll position
 }
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)

@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2019 Henry++
+// Copyright (c) 2016-2020 Henry++
 
 #include "global.hpp"
 
@@ -613,7 +613,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 		case WM_SETTINGCHANGE:
 		{
 			if (_r_wnd_isdarkmessage (reinterpret_cast<LPCWSTR>(lparam)))
-				SendMessage (hwnd, WM_THEMECHANGED, 0, 0);
+				PostMessage (hwnd, WM_THEMECHANGED, 0, 0);
 
 			break;
 		}
