@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2019 Henry++
+// Copyright (c) 2016-2020 Henry++
 
 #include "global.hpp"
 
@@ -391,7 +391,7 @@ INT _app_getappgroup (size_t app_hash, const PITEM_APP ptr_app)
 INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 {
 	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
-	//		return INVALID_INT;
+	//		return I_GROUPIDNONE;
 
 	if (!ptr_rule || !ptr_rule->is_enabled)
 		return 2;
@@ -405,7 +405,7 @@ INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 INT _app_getruleicon (const PITEM_RULE ptr_rule)
 {
 	if (!ptr_rule)
-		return 0;
+		return I_IMAGENONE;
 
 	return ptr_rule->is_block ? 1 : 0;
 }
@@ -1083,7 +1083,7 @@ bool _app_isruleport (LPCWSTR rule)
 	return true;
 }
 
-bool _app_profile_load_check_node (const pugi::xml_node & root, EnumXmlType type, bool is_strict)
+bool _app_profile_load_check_node (const pugi::xml_node& root, EnumXmlType type, bool is_strict)
 {
 	if (root)
 	{

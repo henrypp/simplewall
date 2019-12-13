@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2019 Henry++
+// Copyright (c) 2016-2020 Henry++
 
 #include "global.hpp"
 
@@ -64,7 +64,7 @@ void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 	{
 		_r_fastlock_acquireshared (&lock_checkbox);
 
-		_r_listview_setitem (hwnd, listview_id, item_pos, 0, nullptr, INVALID_INT, _app_getappgroup (app_hash, ptr_app));
+		_r_listview_setitem (hwnd, listview_id, item_pos, 0, nullptr, I_IMAGENONE, _app_getappgroup (app_hash, ptr_app));
 		_r_listview_setitemcheck (hwnd, listview_id, item_pos, ptr_app->is_enabled);
 
 		_r_fastlock_releaseshared (&lock_checkbox);

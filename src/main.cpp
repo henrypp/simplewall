@@ -379,7 +379,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 				{
 					const INT item = _r_listview_getitemcount (hwnd, network_listview_id);
 
-					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_getfilename (ptr_network->path), ptr_network->icon_id, INVALID_INT, p.first);
+					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_getfilename (ptr_network->path), ptr_network->icon_id, I_GROUPIDNONE, p.first);
 
 					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
 					_r_listview_setitem (hwnd, network_listview_id, item, 3, ptr_network->remote_fmt);
@@ -934,7 +934,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					_r_fastlock_acquireshared (&lock_checkbox);
 
-					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_getfilename (ptr_app->display_name), ptr_app->icon_id, INVALID_INT, p.first);
+					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_getfilename (ptr_app->display_name), ptr_app->icon_id, I_GROUPIDNONE, p.first);
 					_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, is_enabled);
 
 					_r_fastlock_releaseshared (&lock_checkbox);
@@ -1744,7 +1744,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 								_r_fastlock_acquireshared (&lock_checkbox);
 
-								_r_listview_additem (hwnd, IDC_COLORS, item, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, INVALID_INT, i);
+								_r_listview_additem (hwnd, IDC_COLORS, item, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, I_GROUPIDNONE, i);
 								_r_listview_setitemcheck (hwnd, IDC_COLORS, item, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled, L"colors").AsBool ());
 
 								_r_fastlock_releaseshared (&lock_checkbox);
