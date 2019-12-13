@@ -192,7 +192,7 @@ bool _wfp_initialize (bool is_full)
 	{
 		if (!is_providerexist || !is_sublayerexist)
 		{
-			const bool is_intransact = _wfp_transact_start (config.hengine, __LINE__);
+			bool is_intransact = _wfp_transact_start (config.hengine, __LINE__);
 
 			if (!is_providerexist)
 			{
@@ -210,7 +210,10 @@ bool _wfp_initialize (bool is_full)
 				if (rc != ERROR_SUCCESS && rc != FWP_E_ALREADY_EXISTS)
 				{
 					if (is_intransact)
+					{
 						FwpmTransactionAbort (config.hengine);
+						is_intransact = false;
+					}
 
 					_app_logerror (L"FwpmProviderAdd", rc, nullptr, false);
 					result = false;
@@ -240,7 +243,10 @@ bool _wfp_initialize (bool is_full)
 				if (rc != ERROR_SUCCESS && rc != FWP_E_ALREADY_EXISTS)
 				{
 					if (is_intransact)
+					{
 						FwpmTransactionAbort (config.hengine);
+						is_intransact = false;
+					}
 
 					_app_logerror (L"FwpmSubLayerAdd", rc, nullptr, false);
 					result = false;
