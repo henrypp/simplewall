@@ -634,7 +634,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			_r_dc_fillrect (hdc, &rc_client, GetSysColor (COLOR_3DFACE));
 
 			for (INT i = 0; i < wnd_width; i++)
-				SetPixel (hdc, i, rc_client.top, GetSysColor (COLOR_APPWORKSPACE));
+				SetPixelV (hdc, i, rc_client.top, GetSysColor (COLOR_APPWORKSPACE));
 
 			EndPaint (hwnd, &ps);
 
