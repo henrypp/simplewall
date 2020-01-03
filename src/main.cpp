@@ -2148,7 +2148,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if defined(_APP_HAVE_AUTORUN)
 				case IDC_LOADONSTARTUP_CHK:
 				{
-					app.AutorunEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					app.AutorunEnable (hwnd, IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 					CheckDlgButton (hwnd, ctrl_id, app.AutorunIsEnabled () ? BST_CHECKED : BST_UNCHECKED);
 
 					break;
@@ -2164,7 +2164,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #if defined(_APP_HAVE_SKIPUAC)
 				case IDC_SKIPUACWARNING_CHK:
 				{
-					app.SkipUacEnable (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					app.SkipUacEnable (hwnd, IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 					CheckDlgButton (hwnd, ctrl_id, app.SkipUacIsEnabled () ? BST_CHECKED : BST_UNCHECKED);
 
 					break;
