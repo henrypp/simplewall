@@ -564,6 +564,14 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
+		case WM_DPICHANGED:
+		{
+			_app_notifyfontset (hwnd);
+			_app_notifyrefresh (hwnd, false);
+
+			break;
+		}
+
 		case WM_CLOSE:
 		{
 			_app_notifyhide (hwnd);
