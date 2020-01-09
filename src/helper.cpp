@@ -955,6 +955,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 558:
 			return L"sdnskmp";
 
+		case 585:
+			return L"imap4-ssl";
+
 		case 587:
 			return L"submission";
 
@@ -962,7 +965,7 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 			return L"ipp";
 
 		case 636:
-			return L"ldapssl";
+			return L"ldaps";
 
 		case 646:
 			return L"ldp";
@@ -1010,7 +1013,15 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 			return L"ms-lsa";
 
 		case 1110:
-			return L"nfsd-status";
+			return L"nfsd";
+
+		case 1111:
+			return L"lmsocialserver";
+
+		case 1112:
+		case 1114:
+		case 4333:
+			return L"mini-sql";
 
 		case 1119:
 			return L"bnetgame";
@@ -1105,6 +1116,9 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 
 		case 3389:
 			return L"ms-wbt-server";
+
+		case 3407:
+			return L"ldap-admin";
 
 		case 3540:
 			return L"pnrp-port";
