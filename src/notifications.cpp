@@ -358,8 +358,8 @@ void _app_notifyplaysound ()
 		result = true;
 	}
 
-	if (!result || !_r_fs_exists (notify_snd_path) || !PlaySound (notify_snd_path, nullptr, SND_FILENAME | SND_ASYNC))
-		PlaySound (NOTIFY_SOUND_NAME, nullptr, SND_ASYNC);
+	if (!result || !_r_fs_exists (notify_snd_path) || !PlaySound (notify_snd_path, nullptr, SND_ASYNC | SND_NODEFAULT | SND_FILENAME | SND_SENTRY))
+		PlaySound (NOTIFY_SOUND_NAME, nullptr, SND_ASYNC | SND_NODEFAULT | SND_SENTRY);
 }
 
 void _app_notifyrefresh (HWND hwnd, bool is_safety)
