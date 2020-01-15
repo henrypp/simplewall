@@ -990,7 +990,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const UINT8 proto = protos[i];
 
-					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"%s (%d)", _app_getprotoname (proto, AF_UNSPEC).GetString (), proto).GetString ());
+					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"%s (%" PRIu8 L")", _app_getprotoname (proto, AF_UNSPEC).GetString (), proto).GetString ());
 					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETITEMDATA, i + 1, (LPARAM)proto);
 
 					if (ptr_rule->protocol == proto)
