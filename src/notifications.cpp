@@ -538,9 +538,9 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 	{
 		case WM_INITDIALOG:
 		{
-#ifndef _APP_NO_DARKTHEME
+#if !defined(_APP_NO_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
-#endif // _APP_NO_DARKTHEME
+#endif // !_APP_NO_DARKTHEME
 
 			_app_notifyfontset (hwnd);
 
@@ -611,21 +611,11 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
-#ifndef _APP_NO_DARKTHEME
-		case WM_THEMECHANGED:
-		{
-			_r_wnd_setdarktheme (hwnd);
-			break;
-		}
-
 		case WM_SETTINGCHANGE:
 		{
-			if (_r_wnd_isdarkmessage (reinterpret_cast<LPCWSTR>(lparam)))
-				PostMessage (hwnd, WM_THEMECHANGED, 0, 0);
-
+			_r_wnd_settingschange (hwnd, wparam, lparam);
 			break;
 		}
-#endif // _APP_NO_DARKTHEME
 
 		case WM_PAINT:
 		{

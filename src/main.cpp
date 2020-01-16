@@ -847,9 +847,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				return FALSE;
 			}
 
-#ifndef _APP_NO_DARKTHEME
+#if !defined(_APP_NO_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
-#endif // _APP_NO_DARKTHEME
+#endif // !_APP_NO_DARKTHEME
 
 			// configure window
 			_r_wnd_center (hwnd, GetParent (hwnd));
@@ -1057,6 +1057,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			ptr_rule->is_haveerrors = false;
 
+			break;
+		}
+
+		case WM_SETTINGCHANGE:
+		{
+			_r_wnd_settingschange (hwnd, wparam, lparam);
 			break;
 		}
 
