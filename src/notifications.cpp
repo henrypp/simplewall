@@ -125,7 +125,7 @@ bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app)
 	if (app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
 		_app_notifyplaysound ();
 
-	if (!_r_wnd_undercursor (hwnd))
+	if (!_r_wnd_isundercursor (hwnd))
 		_app_notifyshow (hwnd, ptr_log_object, true, true);
 
 	return true;
@@ -613,7 +613,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 		case WM_SETTINGCHANGE:
 		{
-			_r_wnd_settingschange (hwnd, wparam, lparam);
+			_r_wnd_changesettings (hwnd, wparam, lparam);
 			break;
 		}
 

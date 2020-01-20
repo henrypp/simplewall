@@ -1062,7 +1062,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_SETTINGCHANGE:
 		{
-			_r_wnd_settingschange (hwnd, wparam, lparam);
+			_r_wnd_changesettings (hwnd, wparam, lparam);
 			break;
 		}
 
