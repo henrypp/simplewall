@@ -5763,7 +5763,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) || defined(_APP_BETA)
 
 #define FN_AD L"<test filter>"
 #define RM_AD L"195.210.46.95"
@@ -5877,15 +5877,15 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					RDBG (L"%d", std::clamp (10, 19, 15)); // seh
 					break;
 				}
-#endif // _DEBUG
-				}
+#endif // _DEBUG || _APP_BETA
+			}
 
 			break;
-			}
 		}
+	}
 
 	return FALSE;
-	}
+}
 
 INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 {
