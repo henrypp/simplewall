@@ -1171,6 +1171,33 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					break;
 				}
+
+				case IDM_COPY: // ctrl+c
+				case IDM_SELECT_ALL: // ctrl+a
+				{
+					const HWND hedit = GetFocus ();
+
+					if (hedit)
+					{
+						WCHAR class_name[64] = {0};
+
+						if (GetClassName (hedit, class_name, _countof (class_name)) > 0)
+						{
+							if (_r_str_compare (class_name, WC_EDIT) == 0)
+							{
+								// edit control hotkey for "ctrl+c" (issue #597)
+								if (ctrl_id == IDM_COPY)
+									SendMessage (hedit, WM_COPY, 0, 0);
+
+								// edit control hotkey for "ctrl+a"
+								else if (ctrl_id == IDM_SELECT_ALL)
+									SendMessage (hedit, EM_SETSEL, 0, (LPARAM)-1);
+							}
+						}
+					}
+
+					break;
+				}
 			}
 
 			break;
