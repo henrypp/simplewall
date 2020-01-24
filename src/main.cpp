@@ -2809,18 +2809,19 @@ void _app_initialize ()
 
 	// set privileges
 	{
-		LPCWSTR privileges[] = {
-			SE_BACKUP_NAME,
-			SE_DEBUG_NAME,
-			SE_SECURITY_NAME,
-			SE_TAKE_OWNERSHIP_NAME,
+		DWORD privileges[] = {
+			SE_SECURITY_PRIVILEGE,
+			SE_TAKE_OWNERSHIP_PRIVILEGE,
+			SE_BACKUP_PRIVILEGE,
+			SE_RESTORE_PRIVILEGE,
+			SE_DEBUG_PRIVILEGE,
 		};
 
 		_r_sys_setprivilege (privileges, _countof (privileges), true);
 	}
 
 	// set process priority
-	SetPriorityClass (GetCurrentProcess (), ABOVE_NORMAL_PRIORITY_CLASS);
+	SetPriorityClass (NtCurrentProcess (), ABOVE_NORMAL_PRIORITY_CLASS);
 
 	// static initializer
 	config.wd_length = GetWindowsDirectory (config.windows_dir, _countof (config.windows_dir));
