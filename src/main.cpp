@@ -570,7 +570,7 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 	tdc.pszContent = main;
 	tdc.pszVerificationText = flag;
 	tdc.pfCallback = &_r_msg_callback;
-	tdc.lpCallbackData = MAKELONG (0, 1);
+	tdc.lpCallbackData = MAKELONG (0, TRUE); // on top
 	tdc.cButtons = _countof (td_buttons);
 
 	tdc.pButtons = td_buttons;
@@ -4407,7 +4407,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					{
 						if (!_app_profile_load_check (path, XmlProfileV3, true))
 						{
-							_r_msg (hwnd, MB_OK | MB_ICONERROR, APP_NAME, L"Profile loading error!", L"File \"%s\" is incorrect!", path);
+							app.ShowErrorMessage (hwnd, L"Profile loading error!", ERROR_INVALID_DATA, nullptr);
 						}
 						else
 						{
@@ -4947,7 +4947,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (!_r_fs_exists (path) || !app.ShowConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION, nullptr), L"ConfirmLogClear"))
 						break;
 
-					_r_fs_delete (path, false);
+					_r_fs_remove (path, RFS_FORCEREMOVE);
 
 					break;
 				}
@@ -5552,7 +5552,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					const INT selected = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
 
-					if (!selected || _r_msg (hwnd, MB_YESNO | MB_ICONEXCLAMATION, APP_NAME, nullptr, app.LocaleString (IDS_QUESTION_DELETE, nullptr), selected) != IDYES)
+					if (!selected || app.ShowMessage (hwnd, MB_YESNO | MB_ICONEXCLAMATION, nullptr, nullptr, _r_fmt (app.LocaleString (IDS_QUESTION_DELETE, nullptr), selected)) != IDYES)
 						break;
 
 					const INT count = _r_listview_getitemcount (hwnd, listview_id) - 1;
@@ -5728,7 +5728,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_PURGE_TIMERS:
 				{
-					if (!_app_istimersactive () || _r_msg (hwnd, MB_YESNO | MB_ICONEXCLAMATION, APP_NAME, nullptr, app.LocaleString (IDS_QUESTION_TIMERS, nullptr)) != IDYES)
+					if (!_app_istimersactive () || app.ShowMessage (hwnd, MB_YESNO | MB_ICONEXCLAMATION, nullptr, nullptr, app.LocaleString (IDS_QUESTION_TIMERS, nullptr)) != IDYES)
 						break;
 
 					OBJECTS_VEC rules;
