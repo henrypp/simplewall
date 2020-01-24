@@ -1403,10 +1403,10 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	_r_fastlock_releaseshared (&lock_access);
 
 	// load profile
-	if (path_custom || _r_fs_exists (config.profile_path) || _r_fs_exists (config.profile_path_backup))
+	if (!_r_str_isempty (path_custom) || _r_fs_exists (config.profile_path) || _r_fs_exists (config.profile_path_backup))
 	{
 		pugi::xml_document doc;
-		pugi::xml_parse_result result = doc.load_file (path_custom ? path_custom : config.profile_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+		pugi::xml_parse_result result = doc.load_file (!_r_str_isempty (path_custom) ? path_custom : config.profile_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
 		// load backup
 		if (!result)
@@ -1416,7 +1416,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		{
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
-				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %hs,file: %s", result.status, result.offset, result.description (), path_custom ? path_custom : config.profile_path), false);
+				_app_logerror (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path), false);
 
 			_r_fastlock_acquireshared (&lock_access);
 			_app_profile_load_fallback ();
@@ -1654,7 +1654,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 void _app_profile_save (LPCWSTR path_custom)
 {
 	const time_t current_time = _r_unixtime_now ();
-	const bool is_backuprequired = !path_custom && (app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", time_t (0)).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", time_t (_R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD))).AsLonglong ()) || !_r_fs_exists (config.profile_path_backup)));
+	const bool is_backuprequired = _r_str_isempty (path_custom) && (app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", time_t (0)).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", time_t (_R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD))).AsLonglong ()) || !_r_fs_exists (config.profile_path_backup)));
 
 	pugi::xml_document doc;
 	pugi::xml_node root = doc.append_child (L"root");
