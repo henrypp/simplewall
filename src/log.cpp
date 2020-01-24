@@ -216,10 +216,10 @@ void _app_logclear ()
 	}
 	else
 	{
-		_r_fs_delete (path, false);
+		_r_fs_remove (path, RFS_FORCEREMOVE);
 	}
 
-	_r_fs_delete (_r_fmt (L"%s.bak", path.GetString ()), false);
+	_r_fs_remove (_r_fmt (L"%s.bak", path.GetString ()), RFS_FORCEREMOVE);
 }
 
 bool _wfp_logsubscribe (HANDLE hengine)
