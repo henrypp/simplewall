@@ -4904,7 +4904,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (!_r_fs_exists (path))
 						return FALSE;
 
-					if (config.hlogfile != nullptr && config.hlogfile != INVALID_HANDLE_VALUE)
+					if (_r_fs_isvalidhandle (config.hlogfile))
 						FlushFileBuffers (config.hlogfile);
 
 					_r_run (nullptr, _r_fmt (L"%s \"%s\"", _app_getlogviewer ().GetString (), path.GetString ()));
@@ -4916,7 +4916,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				{
 					const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
 
-					if ((config.hlogfile != nullptr && config.hlogfile != INVALID_HANDLE_VALUE) || _r_fs_exists (path) || InterlockedCompareExchange (&log_stack.item_count, 0, 0))
+					const bool is_validhandle = _r_fs_isvalidhandle (config.hlogfile);
+
+					if ((is_validhandle && _r_fs_size (config.hlogfile) > ((LONG64)_r_str_length (SZ_LOG_TITLE) + 1) * 2) || (!is_validhandle && _r_fs_exists (path)))
 					{
 						if (!app.ShowConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION, nullptr), L"ConfirmLogClear"))
 							break;
