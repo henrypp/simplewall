@@ -458,7 +458,7 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, const PITEM_APP ptr_app)
 
 		const HANDLE hfile = CreateFile (ptr_app->real_path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
 
-		if (hfile != INVALID_HANDLE_VALUE)
+		if (_r_fs_isvalidhandle (hfile))
 		{
 			GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 

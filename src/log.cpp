@@ -35,7 +35,7 @@ bool _app_loginit (bool is_install)
 	// reset all handles
 	_r_fastlock_acquireexclusive (&lock_writelog);
 
-	if (config.hlogfile != nullptr && config.hlogfile != INVALID_HANDLE_VALUE)
+	if (_r_fs_isvalidhandle (config.hlogfile))
 	{
 		CloseHandle (config.hlogfile);
 		config.hlogfile = nullptr;
@@ -58,7 +58,7 @@ bool _app_loginit (bool is_install)
 
 	config.hlogfile = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 
-	if (config.hlogfile == INVALID_HANDLE_VALUE)
+	if (!_r_fs_isvalidhandle (config.hlogfile))
 	{
 		_app_logerror (L"CreateFile", GetLastError (), path, true);
 	}
@@ -90,7 +90,7 @@ bool _app_loginit (bool is_install)
 
 void _app_logwrite (PITEM_LOG ptr_log)
 {
-	if (!ptr_log || !config.hlogfile || config.hlogfile == INVALID_HANDLE_VALUE)
+	if (!ptr_log || !_r_fs_isvalidhandle (config.hlogfile))
 		return;
 
 	// parse path
@@ -186,7 +186,7 @@ bool _app_logchecklimit ()
 {
 	const DWORD limit = app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT).AsUlong ();
 
-	if (!limit || !config.hlogfile || config.hlogfile == INVALID_HANDLE_VALUE)
+	if (!limit || !_r_fs_isvalidhandle (config.hlogfile))
 		return false;
 
 	if (_r_fs_size (config.hlogfile) >= (limit * _R_BYTESIZE_KB))
@@ -203,7 +203,7 @@ void _app_logclear ()
 {
 	const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
 
-	if (config.hlogfile != nullptr && config.hlogfile != INVALID_HANDLE_VALUE)
+	if (_r_fs_isvalidhandle (config.hlogfile))
 	{
 		_r_fs_setpos (config.hlogfile, 2, FILE_BEGIN);
 
