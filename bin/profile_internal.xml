@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--Internal rules for simplewall-->
 <!--Minimum required version is 3.0.2-->
-<root timestamp="1579836570" type="4" version="3">
+<root timestamp="1580033413" type="4" version="3">
 	<rules_system>
 		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" is_services="true" is_enabled="true" />
 		<item name="DNS" rule="53" protocol="17" is_services="true" is_enabled="true" />
@@ -72,7 +72,6 @@
 		<item name="extra_13.107.255.73" rule="13.107.255.73" />
 		<item name="extra_13.107.255.74" rule="13.107.255.74" />
 		<item name="extra_13.107.255.76" rule="13.107.255.76" />
-		<item name="extra_20.36.252.129" rule="20.36.252.129" />
 		<item name="extra_20.43.92.14" rule="20.43.92.14" />
 		<item name="extra_20.150.29.228" rule="20.150.29.228" />
 		<item name="extra_20.188.76.57" rule="20.188.76.57" />
@@ -609,6 +608,7 @@
 		<item name="update_20.36.218.63" rule="20.36.218.63" />
 		<item name="update_20.36.218.70" rule="20.36.218.70" />
 		<item name="update_20.36.222.39" rule="20.36.222.39" />
+		<item name="update_20.36.252.129" rule="20.36.252.129" />
 		<item name="update_20.36.252.130" rule="20.36.252.130" />
 		<item name="update_20.41.41.23" rule="20.41.41.23" />
 		<item name="update_20.42.24.29" rule="20.42.24.29" />

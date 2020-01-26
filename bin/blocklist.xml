@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!-- Block spying and tracking on Windows -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
-<!-- Date: Fri, 24 Jan 2020 03:29:30 +0000 -->
-<root timestamp="1579836570" type="1">
+<!-- Date: Sun, 26 Jan 2020 10:10:13 +0000 -->
+<root timestamp="1580033413" type="1">
 	<item name="extra_13.64.186.225" rule="13.64.186.225" is_block="true" />
 	<item name="extra_13.76.218.117" rule="13.76.218.117" is_block="true" />
 	<item name="extra_13.76.219.191" rule="13.76.219.191" is_block="true" />
@@ -44,7 +44,6 @@
 	<item name="extra_13.107.255.73" rule="13.107.255.73" is_block="true" />
 	<item name="extra_13.107.255.74" rule="13.107.255.74" is_block="true" />
 	<item name="extra_13.107.255.76" rule="13.107.255.76" is_block="true" />
-	<item name="extra_20.36.252.129" rule="20.36.252.129" is_block="true" />
 	<item name="extra_20.43.92.14" rule="20.43.92.14" is_block="true" />
 	<item name="extra_20.150.29.228" rule="20.150.29.228" is_block="true" />
 	<item name="extra_20.188.76.57" rule="20.188.76.57" is_block="true" />
@@ -581,6 +580,7 @@
 	<item name="update_20.36.218.63" rule="20.36.218.63" is_block="true" />
 	<item name="update_20.36.218.70" rule="20.36.218.70" is_block="true" />
 	<item name="update_20.36.222.39" rule="20.36.222.39" is_block="true" />
+	<item name="update_20.36.252.129" rule="20.36.252.129" is_block="true" />
 	<item name="update_20.36.252.130" rule="20.36.252.130" is_block="true" />
 	<item name="update_20.41.41.23" rule="20.41.41.23" is_block="true" />
 	<item name="update_20.42.24.29" rule="20.42.24.29" is_block="true" />
