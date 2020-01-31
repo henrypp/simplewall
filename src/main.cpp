@@ -3422,7 +3422,9 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_app_freeobjects_map (rules_config, true);
 
 			_r_fs_makebackup (config.profile_path, current_timestamp);
-			_r_fs_makebackup (config.profile_path_backup, current_timestamp);
+
+			_r_fs_remove (config.profile_path, RFS_FORCEREMOVE);
+			_r_fs_remove (config.profile_path_backup, RFS_FORCEREMOVE);
 
 			_app_profile_load (hwnd);
 
