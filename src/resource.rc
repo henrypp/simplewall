@@ -482,7 +482,7 @@ BEGIN
 	IDS_FIND "Find"
 	IDS_FINDNEXT "Find next"
 	IDS_PURGE_UNUSED "Purge unused apps"
-	IDS_PURGE_ERRORS "Purge invalid apps"
+	//IDS_PURGE_ERRORS "Purge invalid apps"
 	IDS_PURGE_TIMERS "Purge timers"
 	IDS_REFRESH "Refresh"
 	IDS_VIEW "View"
@@ -501,7 +501,7 @@ BEGIN
 	IDS_TRAY_SHOW "Show/Hide"
 	IDS_TRAY_START "Enable filters"
 	IDS_TRAY_STOP "Disable filters"
-	IDS_TRAY_MODE "Mode"
+	//IDS_TRAY_MODE "Mode"
 	IDS_TRAY_RULES "Rules"
 	IDS_TRAY_BLOCKLIST_RULES "Blocklist"
 	IDS_TRAY_SYSTEM_RULES "System rules"
@@ -524,7 +524,7 @@ BEGIN
 	IDS_SELECT_ALL "Select all"
 	IDS_CHECK "Enable selected"
 	IDS_UNCHECK "Disable selected"
-	IDS_PROPERTIES "Properties"
+	//IDS_PROPERTIES "Properties"
 
 	IDS_ADD "Add"
 	IDS_EDIT2 "Edit"
@@ -686,7 +686,7 @@ BEGIN
 
 	IDS_STATUS_EMPTY "<empty>"
 
-	IDS_STATUS_ERROR "Error occured! Click here for more details or open the log file."
+	//IDS_STATUS_ERROR "Error occured! Click here for more details or open the log file."
 	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule ""%s""!"
 	IDS_STATUS_TIMER_DONE "Timer for ""%s"" has expired!"
 
