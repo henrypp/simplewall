@@ -2466,7 +2466,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 
 	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR && dnsStatus != DNS_INFO_NO_RECORDS)
 	{
-		_app_logerror (L"DnsQuery (DNS_TYPE_A)", dnsStatus, hostname, true);
+		app.LogError (L"DnsQuery (DNS_TYPE_A)", dnsStatus, hostname, 0);
 	}
 	else
 	{
@@ -2497,7 +2497,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 
 	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR && dnsStatus != DNS_INFO_NO_RECORDS)
 	{
-		_app_logerror (L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, hostname, true);
+		app.LogError (L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, hostname, 0);
 	}
 	else
 	{
@@ -2537,7 +2537,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 
 	if (rc != ERROR_SUCCESS)
 	{
-		_app_logerror (L"WSAStartup", rc, nullptr, true);
+		app.LogError (L"WSAStartup", rc, nullptr, 0);
 		return nullptr;
 	}
 
@@ -2555,7 +2555,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 
 	if (rc != ERROR_SUCCESS || !ppQueryResultsSet)
 	{
-		_app_logerror (L"GetAddrInfoEx", rc, hostname, true);
+		app.LogError (L"GetAddrInfoEx", rc, hostname, 0);
 		return nullptr;
 	}
 	else
@@ -2619,7 +2619,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 
 	if (rc != ERROR_SUCCESS)
 	{
-		_app_logerror (L"ParseNetworkString", rc, network_string, true);
+		app.LogError (L"ParseNetworkString", rc, network_string, 0);
 		return false;
 	}
 	else

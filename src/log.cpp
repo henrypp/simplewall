@@ -3,19 +3,6 @@
 
 #include "global.hpp"
 
-void _app_logerror (LPCWSTR fn, DWORD errcode, LPCWSTR desc, bool is_nopopups)
-{
-	const time_t current_time = _r_unixtime_now ();
-
-	_r_dbg (fn, errcode, desc);
-
-	if ((current_time - app.ConfigGet (L"ErrorNotificationsTimestamp", 0LL).AsLonglong ()) >= app.ConfigGet (L"ErrorNotificationsPeriod", 4LL).AsLonglong () && !is_nopopups && app.ConfigGet (L"IsErrorNotificationsEnabled", true).AsBool ()) // check for timeout (sec.)
-	{
-		_r_tray_popup (app.GetHWND (), UID, NIIF_ERROR | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? 0 : NIIF_NOSOUND), APP_NAME, app.LocaleString (IDS_STATUS_ERROR, nullptr));
-		app.ConfigSet (L"ErrorNotificationsTimestamp", current_time);
-	}
-}
-
 rstring _app_getlogviewer ()
 {
 	rstring result = app.ConfigGet (L"LogViewer", LOG_VIEWER_DEFAULT);
@@ -60,7 +47,7 @@ bool _app_loginit (bool is_install)
 
 	if (!_r_fs_isvalidhandle (config.hlogfile))
 	{
-		_app_logerror (L"CreateFile", GetLastError (), path, true);
+		app.LogError (L"CreateFile", GetLastError (), path, 0);
 	}
 	else
 	{
@@ -239,7 +226,7 @@ bool _wfp_logsubscribe (HANDLE hengine)
 
 		if (!hlib)
 		{
-			_app_logerror (L"LoadLibrary", GetLastError (), L"fwpuclnt.dll", true);
+			app.LogError (L"LoadLibrary", GetLastError (), L"fwpuclnt.dll", 0);
 		}
 		else
 		{
@@ -259,7 +246,7 @@ bool _wfp_logsubscribe (HANDLE hengine)
 
 			if (!_FwpmNetEventSubscribe5 && !_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
 			{
-				_app_logerror (L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe", true);
+				app.LogError (L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe", 0);
 			}
 			else
 			{
@@ -301,7 +288,7 @@ bool _wfp_logsubscribe (HANDLE hengine)
 
 				if (rc != ERROR_SUCCESS)
 				{
-					_app_logerror (L"FwpmNetEventSubscribe", rc, nullptr, false);
+					app.LogError (L"FwpmNetEventSubscribe", rc, nullptr, UID);
 				}
 				else
 				{

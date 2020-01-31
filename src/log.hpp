@@ -3,8 +3,6 @@
 
 #pragma once
 
-void _app_logerror (LPCWSTR fn, DWORD errcode, LPCWSTR desc, bool is_nopopups);
-
 rstring _app_getlogviewer ();
 
 bool _app_loginit (bool is_install);

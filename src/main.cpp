@@ -4066,7 +4066,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 					}
 
-					if (_r_fs_exists (_r_dbg_getpath ()))
+					if (_r_fs_exists (app.GetLogPath ()))
 					{
 						app.LocaleMenu (hsubmenu, IDS_TRAY_LOGERR, ERRLOG_ID, true, nullptr);
 
@@ -4935,19 +4935,22 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case IDM_TRAY_LOGSHOW_ERR:
 				{
-					const rstring path = _r_dbg_getpath ();
+					LPCWSTR path = app.GetLogPath ();
 
 					if (_r_fs_exists (path))
-						_r_run (nullptr, _r_fmt (L"%s \"%s\"", _app_getlogviewer ().GetString (), path.GetString ()));
+						_r_run (nullptr, _r_fmt (L"%s \"%s\"", _app_getlogviewer ().GetString (), path));
 
 					break;
 				}
 
 				case IDM_TRAY_LOGCLEAR_ERR:
 				{
-					static const rstring path = _r_dbg_getpath ();
+					if (!app.ShowConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION, nullptr), L"ConfirmLogClear"))
+						break;
 
-					if (!_r_fs_exists (path) || !app.ShowConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION, nullptr), L"ConfirmLogClear"))
+					LPCWSTR path = app.GetLogPath ();
+
+					if (!_r_fs_exists (path))
 						break;
 
 					_r_fs_remove (path, RFS_FORCEREMOVE);
@@ -5897,7 +5900,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 				case 1000:
 				{
-					RDBG (L"%d", std::clamp (10, 19, 15)); // seh
+					app.LogError (L"Test func", 5, L"asdasd", UID);
 					break;
 				}
 #endif // _DEBUG || _APP_BETA

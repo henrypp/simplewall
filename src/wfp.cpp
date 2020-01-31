@@ -94,7 +94,7 @@ bool _wfp_initialize (bool is_full)
 
 		if (rc != ERROR_SUCCESS)
 		{
-			_app_logerror (L"FwpmEngineOpen", rc, nullptr, false);
+			app.LogError (L"FwpmEngineOpen", rc, nullptr, UID);
 			config.hengine = nullptr;
 
 			result = false;
@@ -119,7 +119,7 @@ bool _wfp_initialize (bool is_full)
 
 		if (!AllocateAndInitializeSid (&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pWorldSID))
 		{
-			_app_logerror (L"AllocateAndInitializeSid", GetLastError (), nullptr, true);
+			app.LogError (L"AllocateAndInitializeSid", GetLastError (), nullptr, 0);
 		}
 		else
 		{
@@ -215,7 +215,7 @@ bool _wfp_initialize (bool is_full)
 						is_intransact = false;
 					}
 
-					_app_logerror (L"FwpmProviderAdd", rc, nullptr, false);
+					app.LogError (L"FwpmProviderAdd", rc, nullptr, UID);
 					result = false;
 
 					goto DoExit;
@@ -248,7 +248,7 @@ bool _wfp_initialize (bool is_full)
 						is_intransact = false;
 					}
 
-					_app_logerror (L"FwpmSubLayerAdd", rc, nullptr, false);
+					app.LogError (L"FwpmSubLayerAdd", rc, nullptr, UID);
 					result = false;
 
 					goto DoExit;
@@ -310,7 +310,7 @@ bool _wfp_initialize (bool is_full)
 
 			if (rc != ERROR_SUCCESS)
 			{
-				_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_COLLECT_NET_EVENTS", false);
+				app.LogError (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_COLLECT_NET_EVENTS", UID);
 			}
 			else
 			{
@@ -330,7 +330,7 @@ bool _wfp_initialize (bool is_full)
 					rc = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
 					if (rc != ERROR_SUCCESS)
-						_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS", true);
+						app.LogError (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS", 0);
 
 					// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
 					if (app.ConfigGet (L"IsMonitorIPSecConnections", true).AsBool ())
@@ -341,7 +341,7 @@ bool _wfp_initialize (bool is_full)
 						rc = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 						if (rc != ERROR_SUCCESS)
-							_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS", true);
+							app.LogError (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS", 0);
 					}
 				}
 
@@ -361,7 +361,7 @@ bool _wfp_initialize (bool is_full)
 			rc = FwpmEngineSetOption (config.hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
 
 			if (rc != ERROR_SUCCESS)
-				_app_logerror (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_PACKET_QUEUING", true);
+				app.LogError (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_PACKET_QUEUING", 0);
 		}
 	}
 
@@ -453,13 +453,13 @@ void _wfp_uninitialize (bool is_full)
 		rc = FwpmSubLayerDeleteByKey (hengine, &GUID_WfpSublayer);
 
 		if (rc != ERROR_SUCCESS && rc != FWP_E_SUBLAYER_NOT_FOUND)
-			_app_logerror (L"FwpmSubLayerDeleteByKey", rc, nullptr, false);
+			app.LogError (L"FwpmSubLayerDeleteByKey", rc, nullptr, UID);
 
 		// destroy provider
 		rc = FwpmProviderDeleteByKey (hengine, &GUID_WfpProvider);
 
 		if (rc != ERROR_SUCCESS && rc != FWP_E_PROVIDER_NOT_FOUND)
-			_app_logerror (L"FwpmProviderDeleteByKey", rc, nullptr, false);
+			app.LogError (L"FwpmProviderDeleteByKey", rc, nullptr, UID);
 
 		if (is_intransact)
 			_wfp_transact_commit (hengine, __LINE__);
@@ -625,7 +625,7 @@ bool _wfp_transact_start (HANDLE hengine, UINT line)
 
 	if (rc != ERROR_SUCCESS)
 	{
-		_app_logerror (L"FwpmTransactionBegin", rc, _r_fmt (L"#%d", line), false);
+		app.LogError (L"FwpmTransactionBegin", rc, _r_fmt (L"#%d", line), UID);
 		return false;
 	}
 
@@ -643,7 +643,7 @@ bool _wfp_transact_commit (HANDLE hengine, UINT line)
 	{
 		FwpmTransactionAbort (hengine);
 
-		_app_logerror (L"FwpmTransactionCommit", rc, _r_fmt (L"#%d", line), false);
+		app.LogError (L"FwpmTransactionCommit", rc, _r_fmt (L"#%d", line), UID);
 		return false;
 
 	}
@@ -660,7 +660,7 @@ bool _wfp_deletefilter (HANDLE hengine, const GUID * ptr_filter_id)
 
 	if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
 	{
-		_app_logerror (L"FwpmFilterDeleteByKey", rc, _r_str_fromguid (*ptr_filter_id).GetString (), false);
+		app.LogError (L"FwpmFilterDeleteByKey", rc, _r_str_fromguid (*ptr_filter_id).GetString (), UID);
 		return false;
 	}
 
@@ -727,7 +727,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * l
 	}
 	else
 	{
-		_app_logerror (L"FwpmFilterAdd", rc, name, false);
+		app.LogError (L"FwpmFilterAdd", rc, name, UID);
 	}
 
 	return rc;
@@ -844,7 +844,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 
 		if (!ptr_app_object)
 		{
-			_app_logerror (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" PR_SIZE_T L"\" not found!", app_hash), true);
+			app.LogError (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" PR_SIZE_T L"\" not found!", app_hash), 0);
 			return false;
 		}
 
@@ -852,7 +852,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 
 		if (!ptr_app)
 		{
-			_app_logerror (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" PR_SIZE_T L"\" not found!", app_hash), true);
+			app.LogError (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" PR_SIZE_T L"\" not found!", app_hash), 0);
 			_r_obj_dereference (ptr_app_object);
 
 			return false;
@@ -873,7 +873,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 			}
 			else
 			{
-				_app_logerror (TEXT (__FUNCTION__), 0, ptr_app->display_name, true);
+				app.LogError (TEXT (__FUNCTION__), 0, ptr_app->display_name, 0);
 				_r_obj_dereference (ptr_app_object);
 
 				return false;
@@ -897,7 +897,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 				ByteBlobFree (&bPath);
 				ByteBlobFree (&bSid);
 
-				_app_logerror (TEXT (__FUNCTION__), 0, ptr_app->display_name, true);
+				app.LogError (TEXT (__FUNCTION__), 0, ptr_app->display_name, 0);
 				_r_obj_dereference (ptr_app_object);
 
 				return false;
@@ -924,7 +924,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 
 				// do not log file not found to error log
 				if (rc != ERROR_FILE_NOT_FOUND && rc != ERROR_PATH_NOT_FOUND)
-					_app_logerror (L"FwpmGetAppIdFromFileName", rc, path, true);
+					app.LogError (L"FwpmGetAppIdFromFileName", rc, path, 0);
 
 				_r_obj_dereference (ptr_app_object);
 
@@ -1721,7 +1721,7 @@ void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, const PACL p
 		rc = FwpmFilterSetSecurityInfoByKey (hengine, &filter_id, OWNER_SECURITY_INFORMATION, config.padminsid, nullptr, nullptr, nullptr);
 
 		if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
-			_app_logerror (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), true);
+			app.LogError (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), 0);
 	}
 
 	if (pacl)
@@ -1729,7 +1729,7 @@ void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, const PACL p
 		rc = FwpmFilterSetSecurityInfoByKey (hengine, &filter_id, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
 
 		if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
-			_app_logerror (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), true);
+			app.LogError (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), 0);
 	}
 }
 
@@ -1747,7 +1747,7 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 
 	if (rc != ERROR_SUCCESS)
 	{
-		_app_logerror (L"FwpmFilterCreateEnumHandle", rc, nullptr, false);
+		app.LogError (L"FwpmFilterCreateEnumHandle", rc, nullptr, UID);
 		return 0;
 	}
 	else
@@ -1758,7 +1758,7 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 
 		if (rc != ERROR_SUCCESS)
 		{
-			_app_logerror (L"FwpmFilterEnum", rc, nullptr, false);
+			app.LogError (L"FwpmFilterEnum", rc, nullptr, UID);
 		}
 		else
 		{
@@ -1838,13 +1838,13 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 					result = true;
 
 				else
-					_app_logerror (L"put_FirewallEnabled", hr, _r_fmt (L"%d", profileTypes[i]), true);
+					app.LogError (L"put_FirewallEnabled", hr, _r_fmt (L"%d", profileTypes[i]), 0);
 			}
 		}
 	}
 	else
 	{
-		_app_logerror (L"CoCreateInstance", hr, L"INetFwPolicy2", true);
+		app.LogError (L"CoCreateInstance", hr, L"INetFwPolicy2", 0);
 	}
 
 	if (pNetFwPolicy2)
@@ -1866,7 +1866,7 @@ void _mps_changeconfig2 (bool is_enable)
 
 	if (!scm)
 	{
-		_app_logerror (L"OpenSCManager", GetLastError (), nullptr, true);
+		app.LogError (L"OpenSCManager", GetLastError (), nullptr, 0);
 	}
 	else
 	{
@@ -1886,7 +1886,7 @@ void _mps_changeconfig2 (bool is_enable)
 				const DWORD rc = GetLastError ();
 
 				if (rc != ERROR_ACCESS_DENIED)
-					_app_logerror (L"OpenService", rc, arr[i], true);
+					app.LogError (L"OpenService", rc, arr[i], 0);
 			}
 			else
 			{
@@ -1899,7 +1899,7 @@ void _mps_changeconfig2 (bool is_enable)
 				}
 
 				if (!ChangeServiceConfig (sc, SERVICE_NO_CHANGE, is_enable ? SERVICE_AUTO_START : SERVICE_DISABLED, SERVICE_NO_CHANGE, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr))
-					_app_logerror (L"ChangeServiceConfig", GetLastError (), arr[i], true);
+					app.LogError (L"ChangeServiceConfig", GetLastError (), arr[i], 0);
 
 				CloseServiceHandle (sc);
 			}
@@ -1914,7 +1914,7 @@ void _mps_changeconfig2 (bool is_enable)
 
 				if (!sc)
 				{
-					_app_logerror (L"OpenService", GetLastError (), arr[i], true);
+					app.LogError (L"OpenService", GetLastError (), arr[i], 0);
 				}
 				else
 				{
@@ -1923,14 +1923,14 @@ void _mps_changeconfig2 (bool is_enable)
 
 					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof (ssp), &dwBytesNeeded))
 					{
-						_app_logerror (L"QueryServiceStatusEx", GetLastError (), arr[i], true);
+						app.LogError (L"QueryServiceStatusEx", GetLastError (), arr[i], 0);
 					}
 					else
 					{
 						if (ssp.dwCurrentState != SERVICE_RUNNING)
 						{
 							if (!StartService (sc, 0, nullptr))
-								_app_logerror (L"StartService", GetLastError (), arr[i], true);
+								app.LogError (L"StartService", GetLastError (), arr[i], 0);
 						}
 
 						CloseServiceHandle (sc);
