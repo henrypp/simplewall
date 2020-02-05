@@ -123,6 +123,9 @@ void _app_setinterfacestate (HWND hwnd)
 
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
+	if (!_wfp_isfiltersapplying ())
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (is_filtersinstalled ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
+
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
 	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
