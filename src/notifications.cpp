@@ -303,6 +303,7 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 		is_forced = false;
 
 	RedrawWindow (GetDlgItem (hwnd, IDC_HEADER_ID), nullptr, nullptr, RDW_NOFRAME | RDW_ERASE | RDW_INVALIDATE);
+	InvalidateRect (hwnd, nullptr, TRUE);
 
 	_r_wnd_top (hwnd, !is_fullscreenmode);
 
@@ -617,24 +618,38 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
+		case WM_ERASEBKGND:
+		{
+			RECT rc = {0};
+			GetClientRect (hwnd, &rc);
+
+			_r_dc_fillrect ((HDC)wparam, &rc, GetSysColor (COLOR_WINDOW));
+
+			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+			return TRUE;
+		}
+
 		case WM_PAINT:
 		{
 			PAINTSTRUCT ps = {0};
 			HDC hdc = BeginPaint (hwnd, &ps);
 
-			RECT rc_client = {0};
-			GetClientRect (hwnd, &rc_client);
+			if (hdc)
+			{
+				RECT rc = {0};
+				GetClientRect (hwnd, &rc);
 
-			const INT wnd_width = _R_RECT_WIDTH (&rc_client);
-			const INT wnd_height = _R_RECT_HEIGHT (&rc_client);
+				const INT wnd_width = _R_RECT_WIDTH (&rc);
+				const INT wnd_height = _R_RECT_HEIGHT (&rc);
 
-			SetRect (&rc_client, 0, wnd_height - _r_dc_getdpi (hwnd, _R_SIZE_FOOTERHEIGHT), wnd_width, wnd_height);
-			_r_dc_fillrect (hdc, &rc_client, GetSysColor (COLOR_3DFACE));
+				SetRect (&rc, 0, wnd_height - _r_dc_getdpi (hwnd, _R_SIZE_FOOTERHEIGHT), wnd_width, wnd_height);
+				_r_dc_fillrect (hdc, &rc, GetSysColor (COLOR_3DFACE));
 
-			for (INT i = 0; i < wnd_width; i++)
-				SetPixelV (hdc, i, rc_client.top, GetSysColor (COLOR_APPWORKSPACE));
+				for (INT i = 0; i < wnd_width; i++)
+					SetPixelV (hdc, i, rc.top, GetSysColor (COLOR_APPWORKSPACE));
 
-			EndPaint (hwnd, &ps);
+				EndPaint (hwnd, &ps);
+			}
 
 			break;
 		}
