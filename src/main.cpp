@@ -2941,26 +2941,53 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		if (!lpfr)
 			return FALSE;
 
-		if ((lpfr->Flags & FR_DIALOGTERM) == FR_DIALOGTERM)
+		if ((lpfr->Flags & FR_DIALOGTERM) != 0)
 		{
 			config.hfind = nullptr;
 		}
-		else if ((lpfr->Flags & FR_FINDNEXT) == FR_FINDNEXT)
+		else if ((lpfr->Flags & FR_FINDNEXT) != 0)
 		{
 			const INT listview_id = _app_gettab_id (hwnd);
+
+			if (!listview_id)
+				return FALSE;
+
 			const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
 
-			const INT selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED) + 1;
+			if (!total_count)
+				return FALSE;
 
-			for (INT i = selected_item; i < total_count; i++)
+			bool is_wrap = true;
+
+			const INT selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED);
+
+			INT current_item = selected_item + 1;
+			INT last_item = total_count;
+
+find_wrap:
+
+			for (; current_item < last_item; current_item++)
 			{
-				const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, i, 0);
+				const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, current_item, 0);
 
-				if (StrStrNIW (item_text, lpfr->lpstrFindWhat, (UINT)_r_str_length (lpfr->lpstrFindWhat)) != nullptr)
+				if (item_text.IsEmpty ())
+					continue;
+
+				if (StrStrNIW (item_text, lpfr->lpstrFindWhat, (UINT)item_text.GetLength ()) != nullptr)
 				{
-					_app_showitem (hwnd, listview_id, i);
-					break;
+					_app_showitem (hwnd, listview_id, current_item);
+					return FALSE;
 				}
+			}
+
+			if (is_wrap)
+			{
+				is_wrap = false;
+
+				current_item = 0;
+				last_item = (std::min) (selected_item + 1, total_count);
+
+				goto find_wrap;
 			}
 		}
 
@@ -4766,7 +4793,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						fr.Flags = FR_FINDNEXT;
 						fr.lpstrFindWhat = config.search_string;
 
-						PostMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)&fr);
+						SendMessage (hwnd, WM_FINDMSGSTRING, 0, (LPARAM)&fr);
 					}
 
 					break;
