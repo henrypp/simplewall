@@ -1128,7 +1128,7 @@ void _app_profile_load_fallback ()
 	_app_setappinfo (config.svchost_hash, InfoUndeletable, TRUE);
 }
 
-void _app_profile_load_helper (const pugi::xml_node & root, EnumDataType type, UINT version)
+void _app_profile_load_helper (const pugi::xml_node& root, EnumDataType type, UINT version)
 {
 	const INT blocklist_spy_state = std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2);
 	const INT blocklist_update_state = std::clamp (app.ConfigGet (L"BlocklistUpdateState", 0).AsInt (), 0, 2);
