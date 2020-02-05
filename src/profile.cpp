@@ -1654,7 +1654,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 void _app_profile_save (LPCWSTR path_custom)
 {
 	const time_t current_time = _r_unixtime_now ();
-	const bool is_backuprequired = _r_str_isempty (path_custom) && (app.ConfigGet (L"IsBackupProfile", true).AsBool () && (((current_time - app.ConfigGet (L"BackupTimestamp", time_t (0)).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", time_t (_R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD))).AsLonglong ()) || !_r_fs_exists (config.profile_path_backup)));
+	const bool is_backuprequired = _r_str_isempty (path_custom) && app.ConfigGet (L"IsBackupProfile", true).AsBool () && (!_r_fs_exists (config.profile_path_backup) || ((current_time - app.ConfigGet (L"BackupTimestamp", time_t (0)).AsLonglong ()) >= app.ConfigGet (L"BackupPeriod", time_t (_R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD))).AsLonglong ()));
 
 	pugi::xml_document doc;
 	pugi::xml_node root = doc.append_child (L"root");
@@ -1868,7 +1868,7 @@ void _app_profile_save (LPCWSTR path_custom)
 			_r_fastlock_releaseshared (&lock_access);
 		}
 
-		doc.save_file (path_custom ? path_custom : config.profile_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+		doc.save_file (_r_str_isempty (path_custom) ? config.profile_path : path_custom, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 		// make backup
 		if (is_backuprequired)
