@@ -1059,6 +1059,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							ptr_rule->apps[app_hash] = true;
 							ptr_rule->protocol = ptr_log->protocol;
+							ptr_rule->dir = ptr_log->direction;
 
 							PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
 

@@ -360,10 +360,10 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 				FwpmFreeMemory ((void **)&layer);
 				return;
 			}
-			//else if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)))
-			//{
-			//	direction = FWP_DIRECTION_INBOUND;
-			//}
+			else if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)))
+			{
+				direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
+			}
 
 			FwpmFreeMemory ((void **)&layer);
 		}

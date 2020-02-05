@@ -5335,14 +5335,14 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							if (ptr_network)
 							{
-								if (!ptr_rule->pname)
+								if (_r_str_isempty (ptr_rule->pname))
 								{
 									const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, item, 0);
 
 									_r_str_alloc (&ptr_rule->pname, item_text.GetLength (), item_text);
 								}
 
-								if (ptr_network->app_hash && ptr_network->path)
+								if (ptr_network->app_hash && !_r_str_isempty (ptr_network->path))
 								{
 									if (!_app_isappfound (ptr_network->app_hash))
 									{
@@ -5822,7 +5822,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_r_str_alloc (&ptr_log->filter_name, INVALID_SIZE_T, FN_AD);
 
 					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &ptr_log->remote_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
-					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, &ptr_log->local_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
+					//_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, &ptr_log->local_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
 
 					PR_OBJECT ptr_app_object = _app_getappitem (config.my_hash);
 

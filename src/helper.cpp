@@ -128,7 +128,7 @@ void _app_setinterfacestate (HWND hwnd)
 	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
 }
 
-bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR * ptr_dest, DWORD flags)
+bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags)
 {
 	if (!ptr_addr || !ptr_dest || (af != AF_INET && af != AF_INET6))
 		return false;
@@ -137,10 +137,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
-	if (proto && (flags & FMTADDR_USE_PROTOCOL) == FMTADDR_USE_PROTOCOL)
-		_r_str_printf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto, AF_UNSPEC).GetString ());
-
-	if ((flags & FMTADDR_AS_ARPA) == FMTADDR_AS_ARPA)
+	if ((flags & FMTADDR_AS_ARPA) != 0)
 	{
 		if (af == AF_INET)
 		{
@@ -158,11 +155,14 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 	}
 	else
 	{
+		if ((flags & FMTADDR_USE_PROTOCOL) != 0)
+			_r_str_printf (formatted_address, _countof (formatted_address), L"%s://", _app_getprotoname (proto, AF_UNSPEC).GetString ());
+
 		WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
 		if (InetNtop (af, ptr_addr, addr_str, _countof (addr_str)))
 		{
-			if ((flags & FMTADDR_AS_RULE) == FMTADDR_AS_RULE)
+			if ((flags & FMTADDR_AS_RULE) != 0)
 			{
 				if (af == AF_INET)
 					result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr);
@@ -179,12 +179,12 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 				_r_str_cat (formatted_address, _countof (formatted_address), addr_str);
 			}
 		}
+
+		if (port && (flags & FMTADDR_USE_PROTOCOL) == 0)
+			_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%" PRIu16 : L"%" PRIu16, port));
 	}
 
-	if (port)
-		_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%" PRIu16 : L"%" PRIu16, port));
-
-	if ((flags & FMTADDR_RESOLVE_HOST) == FMTADDR_RESOLVE_HOST)
+	if ((flags & FMTADDR_RESOLVE_HOST) != 0)
 	{
 		if (result && app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ())
 		{
