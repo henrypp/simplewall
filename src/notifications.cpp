@@ -695,7 +695,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			SetBkMode (drawInfo->hDC, TRANSPARENT);
 
 			// draw background
-			DrawGradient (drawInfo->hDC, &drawInfo->rcItem, NOTIFY_GRADIENT_1, NOTIFY_GRADIENT_2, GRADIENT_FILL_RECT_H);
+			DrawGradient (drawInfo->hDC, &drawInfo->rcItem, app.ConfigGet (L"NotificationBackground1", NOTIFY_GRADIENT_1).AsUlong (), app.ConfigGet (L"NotificationBackground2", NOTIFY_GRADIENT_2).AsUlong (), GRADIENT_FILL_RECT_H);
 
 			// draw title text
 			WCHAR text[128] = {0};
