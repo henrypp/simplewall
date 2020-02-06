@@ -5926,13 +5926,6 @@ find_wrap:
 
 					break;
 				}
-
-				case 1000:
-				{
-					app.LogError (L"Test func", 5, L"asdasd", UID);
-
-					break;
-				}
 #endif // _DEBUG || _APP_BETA
 			}
 
