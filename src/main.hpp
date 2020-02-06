@@ -388,7 +388,7 @@ typedef struct tagITEM_RULE
 
 	ADDRESS_FAMILY af = AF_UNSPEC;
 
-	FWP_DIRECTION dir = FWP_DIRECTION_OUTBOUND;
+	FWP_DIRECTION direction = FWP_DIRECTION_OUTBOUND;
 
 	UINT8 profile = 0; // ffu!
 

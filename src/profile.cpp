@@ -594,7 +594,7 @@ void _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 
 	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->type == DataRuleCustom && ptr_rule->is_readonly ? _r_fmt (L"%s" SZ_READONLY_RULE, ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC) : app.LocaleString (IDS_ANY, nullptr));
-	_r_listview_setitem (hwnd, listview_id, item, 2, app.LocaleString (ptr_rule->dir == FWP_DIRECTION_MAX ? IDS_ANY : IDS_DIRECTION_1 + ptr_rule->dir, nullptr));
+	_r_listview_setitem (hwnd, listview_id, item, 2, app.LocaleString (ptr_rule->direction == FWP_DIRECTION_MAX ? IDS_ANY : IDS_DIRECTION_1 + ptr_rule->direction, nullptr));
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_rule->is_enabled);
 
@@ -1166,7 +1166,7 @@ void _app_profile_load_helper (const pugi::xml_node& root, EnumDataType type, UI
 				_r_str_alloc (&ptr_rule->prule_local, rule_local_length, attr_rule_local);
 			}
 
-			ptr_rule->dir = (FWP_DIRECTION)item.attribute (L"dir").as_int ();
+			ptr_rule->direction = (FWP_DIRECTION)item.attribute (L"dir").as_int ();
 			ptr_rule->protocol = (UINT8)item.attribute (L"protocol").as_int ();
 			ptr_rule->af = (ADDRESS_FAMILY)item.attribute (L"version").as_int ();
 
@@ -1766,8 +1766,8 @@ void _app_profile_save (LPCWSTR path_custom)
 					if (ptr_rule->profile)
 						item.append_attribute (L"profile").set_value (ptr_rule->profile);
 
-					if (ptr_rule->dir != FWP_DIRECTION_OUTBOUND)
-						item.append_attribute (L"dir").set_value (ptr_rule->dir);
+					if (ptr_rule->direction != FWP_DIRECTION_OUTBOUND)
+						item.append_attribute (L"dir").set_value (ptr_rule->direction);
 
 					if (ptr_rule->protocol != 0)
 						item.append_attribute (L"protocol").set_value (ptr_rule->protocol);

@@ -966,7 +966,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 1, (LPARAM)app.LocaleString (IDS_DIRECTION_2, nullptr).GetString ());
 			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 2, (LPARAM)text_any.GetString ());
 
-			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->dir, 0);
+			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->direction, 0);
 
 			// protocols
 			{
@@ -1310,7 +1310,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						ptr_rule->protocol = (UINT8)SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETCURSEL, 0, 0), 0);
 						ptr_rule->af = (ADDRESS_FAMILY)SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETCURSEL, 0, 0), 0);
 
-						ptr_rule->dir = (FWP_DIRECTION)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
+						ptr_rule->direction = (FWP_DIRECTION)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
 						ptr_rule->is_block = !!SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0);
 
 						if (ptr_rule->type == DataRuleCustom)
@@ -4018,7 +4018,7 @@ find_wrap:
 			{
 				case NIN_POPUPOPEN:
 				{
-					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (config.hnotification, 0));
+					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (config.hnotification, false));
 
 					if (ptr_log_object)
 					{
@@ -5930,6 +5930,7 @@ find_wrap:
 				case 1000:
 				{
 					app.LogError (L"Test func", 5, L"asdasd", UID);
+
 					break;
 				}
 #endif // _DEBUG || _APP_BETA
