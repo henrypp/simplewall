@@ -2414,7 +2414,7 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 		if (listview_id == INVALID_INT)
 			listview_id = _app_gettab_id (hwnd);
 
-		if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) == LVS_EX_CHECKBOXES)
+		if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
 		{
 			const bool is_rules_lv = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
 
