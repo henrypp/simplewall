@@ -14,7 +14,7 @@ void _app_notifycreatewindow (HWND hwnd)
 
 bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 {
-	size_t app_hash = _app_notifyget_id (hwnd, 0);
+	const size_t app_hash = _app_notifyget_id (hwnd, false);
 	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
 
 	if (!ptr_app_object)
@@ -131,15 +131,9 @@ bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app)
 	return true;
 }
 
-void _app_freenotify (size_t app_hash, PITEM_APP ptr_app, bool is_refresh)
+void _app_freenotify (size_t app_hash, PITEM_APP ptr_app)
 {
 	const HWND hwnd = config.hnotification;
-
-	if (app_hash == _app_notifyget_id (hwnd, 0))
-	{
-		SetWindowLongPtr (hwnd, GWLP_USERDATA, 0); // required temp
-		SetWindowLongPtr (hwnd, GWLP_USERDATA, _app_notifyget_id (hwnd, INVALID_SIZE_T));
-	}
 
 	if (ptr_app)
 	{
@@ -147,18 +141,20 @@ void _app_freenotify (size_t app_hash, PITEM_APP ptr_app, bool is_refresh)
 		{
 			_r_obj_dereference (ptr_app->pnotification);
 			ptr_app->pnotification = nullptr;
-
-			if (is_refresh)
-				_app_notifyrefresh (hwnd, true);
 		}
 	}
+
+	if (_app_notifyget_id (hwnd, false) == app_hash)
+		_app_notifyget_id (hwnd, true);
+
+	_app_notifyrefresh (hwnd, true);
 }
 
-size_t _app_notifyget_id (HWND hwnd, size_t current_id)
+size_t _app_notifyget_id (HWND hwnd, bool is_nearest)
 {
 	const size_t app_hash_current = (size_t)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
-	if (current_id == INVALID_SIZE_T)
+	if (is_nearest)
 	{
 		for (auto &p : apps)
 		{
@@ -175,12 +171,15 @@ size_t _app_notifyget_id (HWND hwnd, size_t current_id)
 			if (ptr_app && ptr_app->pnotification)
 			{
 				_r_obj_dereference (ptr_app_object);
+
+				SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)p.first);
 				return p.first;
 			}
 
 			_r_obj_dereference (ptr_app_object);
 		}
 
+		SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
 		return 0;
 	}
 
@@ -203,6 +202,8 @@ PR_OBJECT _app_notifyget_obj (size_t app_hash)
 
 			return ptr_log_object;
 		}
+
+		_r_obj_dereference (ptr_app_object);
 	}
 
 	return nullptr;
@@ -263,6 +264,9 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 
 	SetWindowText (hwnd, _r_fmt (L"%s - " APP_NAME, app.LocaleString (IDS_NOTIFY_TITLE, nullptr).GetString ()));
 
+	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
+	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, (LONG_PTR)ptr_log->hicon);
+
 	// print table text
 	{
 		const bool is_inbound = (ptr_log->direction == FWP_DIRECTION_INBOUND);
@@ -275,9 +279,6 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 		_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, !_r_str_isempty (ptr_log->filter_name) ? ptr_log->filter_name : empty_text);
 		_r_ctrl_settabletext (hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME));
 	}
-
-	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
-	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, (LONG_PTR)ptr_log->hicon);
 
 	_r_ctrl_settext (hwnd, IDC_RULES_BTN, app.LocaleString (IDS_TRAY_RULES, nullptr));
 	_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
@@ -371,7 +372,7 @@ void _app_notifyrefresh (HWND hwnd, bool is_safety)
 		return;
 	}
 
-	PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, 0));
+	PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, false));
 
 	if (!ptr_log_object)
 	{
@@ -772,7 +773,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					{
 						AppendMenu (hsubmenu, MF_STRING, IDM_DISABLENOTIFICATIONS, app.LocaleString (IDS_DISABLENOTIFICATIONS, nullptr));
 
-						_app_generate_rulesmenu (hsubmenu, _app_notifyget_id (hwnd, 0));
+						_app_generate_rulesmenu (hsubmenu, _app_notifyget_id (hwnd, false));
 					}
 					else if (nmlp->idFrom == IDC_ALLOW_BTN)
 					{
@@ -811,7 +812,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					if (ctrl_id == IDC_FILE_TEXT)
 					{
-						PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, 0));
+						PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, false));
 
 						if (ptr_log_object)
 						{
@@ -870,7 +871,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				if (ptr_rule)
 				{
-					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, 0));
+					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, false));
 
 					if (ptr_log_object)
 					{
@@ -981,7 +982,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				case IDC_FILE_TEXT:
 				{
-					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, 0));
+					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, false));
 
 					if (ptr_log_object)
 					{
@@ -1044,7 +1045,9 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 				case IDM_DISABLENOTIFICATIONS:
 				{
-					_app_notifycommand (hwnd, ctrl_id, 0);
+					if (_r_ctrl_isenabled (hwnd, IDC_RULES_BTN))
+						_app_notifycommand (hwnd, ctrl_id, 0);
+
 					break;
 				}
 
@@ -1062,7 +1065,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					PR_OBJECT ptr_rule_object = _r_obj_allocate (ptr_rule, &_app_dereferencerule);
 
 					size_t app_hash = 0;
-					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, 0));
+					PR_OBJECT ptr_log_object = _app_notifyget_obj (_app_notifyget_id (hwnd, false));
 
 					if (ptr_log_object)
 					{
@@ -1074,7 +1077,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							ptr_rule->apps[app_hash] = true;
 							ptr_rule->protocol = ptr_log->protocol;
-							ptr_rule->dir = ptr_log->direction;
+							ptr_rule->direction = ptr_log->direction;
 
 							PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
 
