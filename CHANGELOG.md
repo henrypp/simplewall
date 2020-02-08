@@ -1,6 +1,25 @@
+v3.1 (8 February 2020)
+- changed compiler build settings
+- changed settings interface
+- improved windows 10 1903+ suppport
+- show log cleanup confirmation only when it has entries
+- fixed notification tabstop processing (issue #497) by @flipkick
+- fixed downloading updates progress gets stuck (issue #568)
+- fixed find dialog does not worked correctly (issue #511)
+- fixed drawing filename in notification (issue #595)
+- fixed adjust privileges (theoretically fixes #596)
+- fixed inbound direction recognition (issue #581)
+- fixed search for next/active notification
+- fixed notification hotkeys (issue #597)
+- fixed memory duplicate allocation
+- updated project sdk (routine++)
+- updated ports definitions
+- updated blocklist
+- fixed bugs
+
 v3.0.9 (15 November 2019)
 - do not set notification to top when fullscreen apps working
-- fixed motifications disable notifications (issue #563)
+- fixed disable notifications for app from notification (issue #563)
 - fixed crash on system settings changing (issue #552)
 - fixed winhttp encoding conversion (issue #568)
 - fixed statusbar glitch (issue #569)
@@ -28,7 +47,7 @@ v3.0.7 (1 November 2019)
 - fixed bugs
 
 v3.0.6 RC (12 October 2019)
-- added windows 10 rs6 support
+- added windows 10 1903+ support
 - added csv file title (clear the log to see changes)
 - disable network address resolution in network tab by default (issue #515)
 - improved refreshing filters on device connecting
