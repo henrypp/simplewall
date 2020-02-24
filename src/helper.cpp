@@ -1479,7 +1479,7 @@ rstring _app_getservicenamefromtag (HANDLE pid, const PVOID ptag)
 	return result;
 }
 
-rstring _app_getnetworkpath (DWORD pid, ULONG64 * pmodules, PINT picon_id, size_t * phash)
+rstring _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, size_t* phash)
 {
 	if (!pid)
 	{

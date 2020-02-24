@@ -13,37 +13,27 @@ rstring _app_getlogviewer ()
 	return _r_path_expand (result);
 }
 
-bool _app_loginit (bool is_install)
+void _app_loginit (bool is_install)
 {
 	// dropped packets logging (win7+)
 	if (!config.hnetevent)
-		return false;
+		return;
 
 	// reset all handles
 	_r_fastlock_acquireexclusive (&lock_writelog);
 
-	if (_r_fs_isvalidhandle (config.hlogfile))
-	{
-		CloseHandle (config.hlogfile);
-		config.hlogfile = nullptr;
-	}
+	SAFE_DELETE_HANDLE (config.hlogfile);
 
 	_r_fastlock_releaseexclusive (&lock_writelog);
 
-	if (!is_install)
-		return true; // already closed
-
-	// check if log enabled
-	if (!app.ConfigGet (L"IsLogEnabled", false).AsBool ())
-		return false;
-
-	bool result = false;
+	if (!is_install || !app.ConfigGet (L"IsLogEnabled", false).AsBool ())
+		return; // already closed or not enabled
 
 	const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
 
 	_r_fastlock_acquireexclusive (&lock_writelog);
 
-	config.hlogfile = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	config.hlogfile = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 
 	if (!_r_fs_isvalidhandle (config.hlogfile))
 	{
@@ -62,17 +52,14 @@ bool _app_loginit (bool is_install)
 		}
 		else
 		{
-			_app_logchecklimit ();
+			if (_app_logchecklimit ())
+				_app_logclear ();
 
 			_r_fs_setpos (config.hlogfile, 0, FILE_END);
 		}
-
-		result = true;
 	}
 
 	_r_fastlock_releaseexclusive (&lock_writelog);
-
-	return result;
 }
 
 void _app_logwrite (PITEM_LOG ptr_log)
@@ -161,7 +148,8 @@ void _app_logwrite (PITEM_LOG ptr_log)
 
 	_r_fastlock_acquireexclusive (&lock_writelog);
 
-	_app_logchecklimit ();
+	if (_app_logchecklimit ())
+		_app_logclear ();
 
 	DWORD written = 0;
 	WriteFile (config.hlogfile, buffer.GetString (), DWORD (buffer.GetLength () * sizeof (WCHAR)), &written, nullptr);
@@ -176,14 +164,7 @@ bool _app_logchecklimit ()
 	if (!limit || !_r_fs_isvalidhandle (config.hlogfile))
 		return false;
 
-	if (_r_fs_size (config.hlogfile) >= (limit * _R_BYTESIZE_KB))
-	{
-		_app_logclear ();
-
-		return true;
-	}
-
-	return false;
+	return (_r_fs_size (config.hlogfile) >= (limit * _R_BYTESIZE_KB));
 }
 
 void _app_logclear ()
@@ -204,125 +185,97 @@ void _app_logclear ()
 	else
 	{
 		_r_fs_remove (path, RFS_FORCEREMOVE);
+		_r_fs_remove (_r_fmt (L"%s.bak", path.GetString ()), RFS_FORCEREMOVE);
 	}
-
-	_r_fs_remove (_r_fmt (L"%s.bak", path.GetString ()), RFS_FORCEREMOVE);
 }
 
-bool _wfp_logsubscribe (HANDLE hengine)
+void _wfp_logsubscribe (HANDLE hengine)
 {
 	if (!hengine)
-		return false;
-
-	bool result = false;
+		return;
 
 	if (config.hnetevent)
+		return; // already subscribed
+
+	HMODULE hlib = LoadLibraryEx (L"fwpuclnt.dll", nullptr, LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
+
+	if (hlib)
 	{
-		result = true;
-	}
-	else
-	{
-		const HMODULE hlib = LoadLibrary (L"fwpuclnt.dll");
+		using FWPMNES4 = decltype (&FwpmNetEventSubscribe4); // win10rs5+
+		using FWPMNES3 = decltype (&FwpmNetEventSubscribe3); // win10rs4+
+		using FWPMNES2 = decltype (&FwpmNetEventSubscribe2); // win10rs1+
+		using FWPMNES1 = decltype (&FwpmNetEventSubscribe1); // win8+
+		using FWPMNES0 = decltype (&FwpmNetEventSubscribe0); // win7+
 
-		if (!hlib)
+		const FWPMNES4 _FwpmNetEventSubscribe4 = (FWPMNES4)GetProcAddress (hlib, "FwpmNetEventSubscribe4");
+		const FWPMNES3 _FwpmNetEventSubscribe3 = (FWPMNES3)GetProcAddress (hlib, "FwpmNetEventSubscribe3");
+		const FWPMNES2 _FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hlib, "FwpmNetEventSubscribe2");
+		const FWPMNES1 _FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hlib, "FwpmNetEventSubscribe1");
+		const FWPMNES0 _FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hlib, "FwpmNetEventSubscribe0");
+
+		if (_FwpmNetEventSubscribe4 || _FwpmNetEventSubscribe3 || _FwpmNetEventSubscribe2 || _FwpmNetEventSubscribe1 || _FwpmNetEventSubscribe0)
 		{
-			app.LogError (L"LoadLibrary", GetLastError (), L"fwpuclnt.dll", 0);
-		}
-		else
-		{
-			typedef DWORD (WINAPI * FWPMNES5) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK4, LPVOID, LPHANDLE); // win10new+
-			typedef DWORD (WINAPI * FWPMNES4) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK4, LPVOID, LPHANDLE); // win10rs5+
-			typedef DWORD (WINAPI * FWPMNES3) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK3, LPVOID, LPHANDLE); // win10rs4+
-			typedef DWORD (WINAPI * FWPMNES2) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK2, LPVOID, LPHANDLE); // win10+
-			typedef DWORD (WINAPI * FWPMNES1) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK1, LPVOID, LPHANDLE); // win8+
-			typedef DWORD (WINAPI * FWPMNES0) (HANDLE, const FWPM_NET_EVENT_SUBSCRIPTION0 *, FWPM_NET_EVENT_CALLBACK0, LPVOID, LPHANDLE); // win7+
+			FWPM_NET_EVENT_SUBSCRIPTION subscription;
+			FWPM_NET_EVENT_ENUM_TEMPLATE enum_template;
 
-			const FWPMNES5 _FwpmNetEventSubscribe5 = (FWPMNES5)GetProcAddress (hlib, "FwpmNetEventSubscribe5"); // win10new+
-			const FWPMNES4 _FwpmNetEventSubscribe4 = (FWPMNES4)GetProcAddress (hlib, "FwpmNetEventSubscribe4"); // win10rs5+
-			const FWPMNES3 _FwpmNetEventSubscribe3 = (FWPMNES3)GetProcAddress (hlib, "FwpmNetEventSubscribe3"); // win10rs4+
-			const FWPMNES2 _FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hlib, "FwpmNetEventSubscribe2"); // win10+
-			const FWPMNES1 _FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hlib, "FwpmNetEventSubscribe1"); // win8+
-			const FWPMNES0 _FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hlib, "FwpmNetEventSubscribe0"); // win7+
+			RtlSecureZeroMemory (&subscription, sizeof (subscription));
+			RtlSecureZeroMemory (&enum_template, sizeof (enum_template));
 
-			if (!_FwpmNetEventSubscribe5 && !_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
+			if (config.psession)
+				RtlCopyMemory (&subscription.sessionKey, config.psession, sizeof (GUID));
+
+			enum_template.numFilterConditions = 0; // get events for all conditions
+
+			subscription.enumTemplate = &enum_template;
+
+			DWORD rc;
+
+			if (_FwpmNetEventSubscribe4)
+				rc = _FwpmNetEventSubscribe4 (hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10rs5+
+
+			else if (_FwpmNetEventSubscribe3)
+				rc = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, nullptr, &config.hnetevent); // win10rs4+
+
+			else if (_FwpmNetEventSubscribe2)
+				rc = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hnetevent); // win10rs1+
+
+			else if (_FwpmNetEventSubscribe1)
+				rc = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, nullptr, &config.hnetevent); // win8+
+
+			else if (_FwpmNetEventSubscribe0)
+				rc = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, nullptr, &config.hnetevent); // win7+
+
+			else
+				rc = ERROR_INVALID_FUNCTION;
+
+			if (rc != ERROR_SUCCESS)
 			{
-				app.LogError (L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe", 0);
+				app.LogError (L"FwpmNetEventSubscribe", rc, nullptr, 0);
 			}
 			else
 			{
-				FWPM_NET_EVENT_SUBSCRIPTION subscription;
-				FWPM_NET_EVENT_ENUM_TEMPLATE enum_template;
-
-				RtlSecureZeroMemory (&subscription, sizeof (subscription));
-				RtlSecureZeroMemory (&enum_template, sizeof (enum_template));
-
-				if (config.psession)
-					RtlCopyMemory (&subscription.sessionKey, config.psession, sizeof (GUID));
-
-				enum_template.numFilterConditions = 0; // get events for all conditions
-
-				subscription.enumTemplate = &enum_template;
-
-				DWORD rc;
-
-				if (_FwpmNetEventSubscribe5)
-					rc = _FwpmNetEventSubscribe5 (hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10new+
-
-				else if (_FwpmNetEventSubscribe4)
-					rc = _FwpmNetEventSubscribe4 (hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10rs5+
-
-				else if (_FwpmNetEventSubscribe3)
-					rc = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, nullptr, &config.hnetevent); // win10rs4+
-
-				else if (_FwpmNetEventSubscribe2)
-					rc = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hnetevent); // win10+
-
-				else if (_FwpmNetEventSubscribe1)
-					rc = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, nullptr, &config.hnetevent); // win8+
-
-				else if (_FwpmNetEventSubscribe0)
-					rc = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, nullptr, &config.hnetevent); // win7+
-
-				else
-					rc = ERROR_INVALID_FUNCTION;
-
-				if (rc != ERROR_SUCCESS)
-				{
-					app.LogError (L"FwpmNetEventSubscribe", rc, nullptr, UID);
-				}
-				else
-				{
-					_app_loginit (true); // create log file
-					result = true;
-				}
+				_app_loginit (true); // create log file
 			}
-
-			FreeLibrary (hlib);
 		}
-	}
 
-	return result;
+		FreeLibrary (hlib);
+	}
 }
 
-bool _wfp_logunsubscribe (HANDLE hengine)
+void _wfp_logunsubscribe (HANDLE hengine)
 {
 	if (!hengine)
-		return false;
-
-	_app_loginit (false); // destroy log file handle if present
+		return;
 
 	if (config.hnetevent)
 	{
+		_app_loginit (false); // destroy log file handle if present
+
 		const DWORD rc = FwpmNetEventUnsubscribe (hengine, config.hnetevent);
 
 		if (rc == ERROR_SUCCESS)
-		{
 			config.hnetevent = nullptr;
-			return true;
-		}
 	}
-
-	return false;
 }
 
 void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*app_id, SID * package_id, SID * user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr4, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remote_port, UINT32 local_addr4, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
@@ -659,7 +612,7 @@ void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2* pEvent)
 	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
-// win10+ callback
+// win10rs1+ callback
 void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3* pEvent)
 {
 	if (!pEvent)

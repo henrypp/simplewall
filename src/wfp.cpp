@@ -310,7 +310,7 @@ bool _wfp_initialize (bool is_full)
 
 			if (rc != ERROR_SUCCESS)
 			{
-				app.LogError (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_COLLECT_NET_EVENTS", UID);
+				app.LogError (L"FwpmEngineSetOption", rc, L"FWPM_ENGINE_COLLECT_NET_EVENTS", 0);
 			}
 			else
 			{
@@ -548,7 +548,7 @@ void _wfp_installfilters ()
 		}
 	}
 
-	// apply system/custom/blocklist rules
+	// apply blocklist/system/user rules
 	{
 		OBJECTS_VEC rules;
 
@@ -584,11 +584,10 @@ void _wfp_installfilters ()
 	// secure filters
 	{
 		const bool is_secure = app.ConfigGet (L"IsSecureFilters", true).AsBool ();
+		PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
 
-		if (is_secure ? config.pacl_secure : config.pacl_default)
+		if (pacl)
 		{
-			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
-
 			if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 			{
 				for (size_t i = 0; i < filter_all.size (); i++)
@@ -602,11 +601,8 @@ void _wfp_installfilters ()
 				FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
 			}
 
-			if (pacl)
-			{
-				FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
-				FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
-			}
+			FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
+			FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
 		}
 	}
 
