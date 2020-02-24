@@ -4947,7 +4947,7 @@ find_wrap:
 
 					const bool is_validhandle = _r_fs_isvalidhandle (config.hlogfile);
 
-					if ((is_validhandle && _r_fs_size (config.hlogfile) > ((LONG64)_r_str_length (SZ_LOG_TITLE) + 1) * 2) || (!is_validhandle && _r_fs_exists (path)))
+					if ((is_validhandle && _r_fs_size (config.hlogfile) != (LONG64)((_r_str_length (SZ_LOG_TITLE) + 1) * sizeof (WCHAR))) || (!is_validhandle && _r_fs_exists (path)))
 					{
 						if (!app.ShowConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION, nullptr), L"ConfirmLogClear"))
 							break;
