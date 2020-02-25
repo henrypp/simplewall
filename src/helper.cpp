@@ -274,8 +274,8 @@ void _app_freeobjects_map (OBJECTS_MAP& ptr_map, bool is_forced)
 
 void _app_freeobjects_vec (OBJECTS_VEC & ptr_vec)
 {
-	for (size_t i = 0; i < ptr_vec.size (); i++)
-		_r_obj_dereference (ptr_vec.at (i));
+	for (auto &p : ptr_vec)
+		_r_obj_dereference (p);
 
 	ptr_vec.clear ();
 }

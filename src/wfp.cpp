@@ -502,8 +502,8 @@ void _wfp_installfilters ()
 	// restore filters security
 	if (filters_count)
 	{
-		for (size_t i = 0; i < filter_all.size (); i++)
-			_wfp_setfiltersecurity (hengine, filter_all.at (i), config.pacl_default, __LINE__);
+		for (auto &p : filter_all)
+			_wfp_setfiltersecurity (hengine, p, config.pacl_default, __LINE__);
 	}
 
 	const bool is_intransact = _wfp_transact_start (hengine, __LINE__);
@@ -511,8 +511,8 @@ void _wfp_installfilters ()
 	// destroy all filters
 	if (filters_count)
 	{
-		for (size_t i = 0; i < filter_all.size (); i++)
-			_wfp_deletefilter (hengine, &filter_all.at (i));
+		for (auto &p : filter_all)
+			_wfp_deletefilter (hengine, &p);
 	}
 
 	// apply internal rules
@@ -552,9 +552,9 @@ void _wfp_installfilters ()
 	{
 		OBJECTS_VEC rules;
 
-		for (size_t i = 0; i < rules_arr.size (); i++)
+		for (auto &p : rules_arr)
 		{
-			PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+			PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 			if (!ptr_rule_object)
 				continue;
@@ -590,8 +590,8 @@ void _wfp_installfilters ()
 		{
 			if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 			{
-				for (size_t i = 0; i < filter_all.size (); i++)
-					_wfp_setfiltersecurity (hengine, filter_all.at (i), pacl, __LINE__);
+				for (auto &p : filter_all)
+					_wfp_setfiltersecurity (hengine, p, pacl, __LINE__);
 			}
 
 			// set security information
@@ -741,9 +741,9 @@ void _wfp_clearfilter_ids ()
 		_app_setappinfo (p.first, InfoClearIds, 0);
 
 	// clear rules filters
-	for (size_t i = 0; i < rules_arr.size (); i++)
+	for (auto &p : rules_arr)
 	{
-		PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+		PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 		if (!ptr_rule_object)
 			continue;
@@ -780,7 +780,7 @@ void _wfp_destroyfilters (HANDLE hengine)
 	_r_fastlock_releaseshared (&lock_transaction);
 }
 
-bool _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC & ptr_filters, UINT line)
+bool _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC& ptr_filters, UINT line)
 {
 	if (!hengine || ptr_filters.empty ())
 		return false;
@@ -789,13 +789,13 @@ bool _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC & ptr_filters, UINT li
 
 	_r_fastlock_acquireshared (&lock_transaction);
 
-	for (size_t i = 0; i < ptr_filters.size (); i++)
-		_wfp_setfiltersecurity (hengine, ptr_filters.at (i), config.pacl_default, line);
+	for (auto &p : ptr_filters)
+		_wfp_setfiltersecurity (hengine, p, config.pacl_default, line);
 
 	const bool is_intransact = _wfp_transact_start (hengine, line);
 
-	for (size_t i = 0; i < ptr_filters.size (); i++)
-		_wfp_deletefilter (hengine, &ptr_filters.at (i));
+	for (auto &p : ptr_filters)
+		_wfp_deletefilter (hengine, &p);
 
 	ptr_filters.clear ();
 
@@ -1034,9 +1034,9 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 							}
 							else
 							{
-								for (size_t j = 0; j < rvc.size (); j++)
+								for (auto &p : rvc)
 								{
-									if (!_wfp_createrulefilter (hengine, name, app_hash, rvc.at (j), nullptr, protocol, af, dir, weight, action, flag, pmfarr))
+									if (!_wfp_createrulefilter (hengine, name, app_hash, p, nullptr, protocol, af, dir, weight, action, flag, pmfarr))
 										return false;
 								}
 							}
@@ -1145,9 +1145,9 @@ bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT lin
 
 	if (!is_intransact)
 	{
-		for (size_t i = 0; i < ptr_rules.size (); i++)
+		for (auto &p : ptr_rules)
 		{
-			PR_OBJECT ptr_rule_object = _r_obj_reference (ptr_rules.at (i));
+			PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 			if (!ptr_rule_object)
 				continue;
@@ -1166,19 +1166,19 @@ bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT lin
 			_r_obj_dereference (ptr_rule_object);
 		}
 
-		for (size_t i = 0; i < ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, ids.at (i), config.pacl_default, line);
+		for (auto &p : ids)
+			_wfp_setfiltersecurity (hengine, p, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
 	}
 
-	for (size_t i = 0; i < ids.size (); i++)
-		_wfp_deletefilter (hengine, &ids.at (i));
+	for (auto &p : ids)
+		_wfp_deletefilter (hengine, &p);
 
-	for (size_t i = 0; i < ptr_rules.size (); i++)
+	for (auto &p : ptr_rules)
 	{
-		PR_OBJECT ptr_rule_object = _r_obj_reference (ptr_rules.at (i));
+		PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 		if (!ptr_rule_object)
 			continue;
@@ -1201,7 +1201,7 @@ bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT lin
 				const size_t rules_remote_length = rule_remote_arr.size ();
 				const size_t rules_local_length = rule_local_arr.size ();
 
-				const size_t count = max (1, max (rules_remote_length, rules_local_length));
+				const size_t count = (std::max) (size_t (1), (std::max) (rules_remote_length, rules_local_length));
 
 				for (size_t j = 0; j < count; j++)
 				{
@@ -1270,9 +1270,9 @@ bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT lin
 		{
 			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
 
-			for (size_t i = 0; i < ptr_rules.size (); i++)
+			for (auto &p : ptr_rules)
 			{
-				PR_OBJECT ptr_rule_object = _r_obj_reference (ptr_rules.at (i));
+				PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 				if (!ptr_rule_object)
 					continue;
@@ -1281,8 +1281,8 @@ bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT lin
 
 				if (ptr_rule && ptr_rule->is_enabled)
 				{
-					for (size_t j = 0; j < ptr_rule->guids.size (); j++)
-						_wfp_setfiltersecurity (hengine, ptr_rule->guids.at (j), pacl, line);
+					for (auto &guid : ptr_rule->guids)
+						_wfp_setfiltersecurity (hengine, guid, pacl, line);
 				}
 
 				_r_obj_dereference (ptr_rule_object);
@@ -1312,9 +1312,9 @@ bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line
 
 	if (!is_intransact)
 	{
-		for (size_t i = 0; i < ptr_apps.size (); i++)
+		for (auto &p : ptr_apps)
 		{
-			PR_OBJECT ptr_app_object = _r_obj_reference (ptr_apps.at (i));
+			PR_OBJECT ptr_app_object = _r_obj_reference (p);
 
 			if (!ptr_app_object)
 				continue;
@@ -1333,19 +1333,19 @@ bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line
 			_r_obj_dereference (ptr_app_object);
 		}
 
-		for (size_t i = 0; i < ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, ids.at (i), config.pacl_default, line);
+		for (auto &p : ids)
+			_wfp_setfiltersecurity (hengine, p, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
 	}
 
-	for (size_t i = 0; i < ids.size (); i++)
-		_wfp_deletefilter (hengine, &ids.at (i));
+	for (auto &p : ids)
+		_wfp_deletefilter (hengine, &p);
 
-	for (size_t i = 0; i < ptr_apps.size (); i++)
+	for (auto &p : ptr_apps)
 	{
-		PR_OBJECT ptr_app_object = _r_obj_reference (ptr_apps.at (i));
+		PR_OBJECT ptr_app_object = _r_obj_reference (p);
 
 		if (!ptr_app_object)
 			continue;
@@ -1384,9 +1384,9 @@ bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line
 		{
 			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
 
-			for (size_t i = 0; i < ptr_apps.size (); i++)
+			for (auto &p : ptr_apps)
 			{
-				PR_OBJECT ptr_app_object = _r_obj_reference (ptr_apps.at (i));
+				PR_OBJECT ptr_app_object = _r_obj_reference (p);
 
 				if (!ptr_app_object)
 					continue;
@@ -1395,8 +1395,8 @@ bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line
 
 				if (ptr_app)
 				{
-					for (size_t j = 0; j < ptr_app->guids.size (); j++)
-						_wfp_setfiltersecurity (hengine, ptr_app->guids.at (j), pacl, line);
+					for (auto &guid : ptr_app->guids)
+						_wfp_setfiltersecurity (hengine, guid, pacl, line);
 				}
 
 				_r_obj_dereference (ptr_app_object);
@@ -1423,8 +1423,8 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 	if (!is_intransact)
 	{
-		for (size_t i = 0; i < filter_ids.size (); i++)
-			_wfp_setfiltersecurity (hengine, filter_ids.at (i), config.pacl_default, line);
+		for (auto &p : filter_ids)
+			_wfp_setfiltersecurity (hengine, p, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
@@ -1432,8 +1432,8 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 	if (!filter_ids.empty ())
 	{
-		for (size_t i = 0; i < filter_ids.size (); i++)
-			_wfp_deletefilter (hengine, &filter_ids.at (i));
+		for (auto &p : filter_ids)
+			_wfp_deletefilter (hengine, &p);
 
 		filter_ids.clear ();
 	}
@@ -1693,8 +1693,8 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 		{
 			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
 
-			for (size_t i = 0; i < filter_ids.size (); i++)
-				_wfp_setfiltersecurity (hengine, filter_ids.at (i), pacl, line);
+			for (auto &p : filter_ids)
+				_wfp_setfiltersecurity (hengine, p, pacl, line);
 		}
 
 		_r_fastlock_releaseshared (&lock_transaction);

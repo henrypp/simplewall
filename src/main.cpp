@@ -2921,7 +2921,7 @@ INT FirstDriveFromMask (DWORD unitmask)
 {
 	INT i;
 
-	for (i = 0; i < 26; ++i)
+	for (i = 0; i < _R_DEVICE_COUNT; ++i)
 	{
 		if (unitmask & 0x1)
 			break;
@@ -5745,8 +5745,8 @@ find_wrap:
 						_r_obj_dereference (ptr_app_object);
 					}
 
-					for (size_t i = 0; i < apps_list.size (); i++)
-						_app_freeapplication (apps_list.at (i));
+					for (auto &p : apps_list)
+						_app_freeapplication (p);
 
 					_r_fastlock_releaseshared (&lock_access);
 

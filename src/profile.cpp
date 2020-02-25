@@ -210,9 +210,9 @@ PR_OBJECT _app_getrulebyhash (size_t rule_hash)
 	if (!rule_hash)
 		return nullptr;
 
-	for (size_t i = 0; i < rules_arr.size (); i++)
+	for (auto& p : rules_arr)
 	{
-		PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+		PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 		if (!ptr_rule_object)
 			continue;
@@ -223,7 +223,7 @@ PR_OBJECT _app_getrulebyhash (size_t rule_hash)
 		{
 			if (ptr_rule->is_readonly)
 			{
-				if (ptr_rule->pname && _r_str_hash (ptr_rule->pname) == rule_hash)
+				if (_r_str_hash (ptr_rule->pname) == rule_hash)
 					return ptr_rule_object;
 			}
 		}
@@ -341,9 +341,9 @@ void _app_getcount (PITEM_STATUS ptr_status)
 		_r_obj_dereference (ptr_app_object);
 	}
 
-	for (size_t i = 0; i < rules_arr.size (); i++)
+	for (auto& p : rules_arr)
 	{
-		PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+		PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 		if (!ptr_rule_object)
 			continue;
@@ -952,9 +952,9 @@ bool _app_isapphaverule (size_t app_hash)
 	if (!app_hash)
 		return false;
 
-	for (size_t i = 0; i < rules_arr.size (); i++)
+	for (auto& p : rules_arr)
 	{
-		PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+		PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 		if (!ptr_rule_object)
 			continue;
@@ -1235,13 +1235,11 @@ void _app_profile_load_helper (const pugi::xml_node& root, EnumDataType type, UI
 					rstringvec rvc;
 					_r_str_split (apps_rule, apps_rule.GetLength (), DIVIDER_APP[0], rvc);
 
-					for (size_t i = 0; i < rvc.size (); i++)
+					for (auto& p : rvc)
 					{
-						rstring& rlink = rvc.at (i);
+						_r_str_trim (p, DIVIDER_TRIM);
 
-						_r_str_trim (rlink, DIVIDER_TRIM);
-
-						const rstring app_path = _r_path_expand (rlink);
+						const rstring app_path = _r_path_expand (p);
 						size_t app_hash = _r_str_hash (app_path);
 
 						if (app_hash)
@@ -1735,9 +1733,9 @@ void _app_profile_save (LPCWSTR path_custom)
 		{
 			_r_fastlock_acquireshared (&lock_access);
 
-			for (size_t i = 0; i < rules_arr.size (); i++)
+			for (auto& p : rules_arr)
 			{
-				PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+				PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 				if (!ptr_rule_object)
 					continue;
