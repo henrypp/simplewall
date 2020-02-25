@@ -1508,18 +1508,18 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 			app.ConfigSet (L"IsSecureFilters", new_val);
 			CheckMenuItem (hmenu, IDM_SECUREFILTERS_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
 
-			if (new_val ? config.pacl_secure : config.pacl_default)
-			{
-				PACL& pacl = new_val ? config.pacl_secure : config.pacl_default;
+			PACL& pacl = new_val ? config.pacl_secure : config.pacl_default;
 
+			if (pacl)
+			{
 				const HANDLE hengine = _wfp_getenginehandle ();
 
 				GUIDS_VEC filter_all;
 
 				if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 				{
-					for (size_t i = 0; i < filter_all.size (); i++)
-						_wfp_setfiltersecurity (hengine, filter_all.at (i), pacl, __LINE__);
+					for (auto &id : filter_all)
+						_wfp_setfiltersecurity (hengine, &id, pacl, __LINE__);
 				}
 
 				// set security information
@@ -1529,11 +1529,8 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 					FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
 				}
 
-				if (pacl)
-				{
-					FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
-					FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
-				}
+				FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
+				FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
 			}
 
 			break;

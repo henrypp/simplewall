@@ -19,8 +19,8 @@ void _wfp_installfilters ();
 bool _wfp_transact_start (HANDLE hengine, UINT line);
 bool _wfp_transact_commit (HANDLE hengine, UINT line);
 
-bool _wfp_deletefilter (HANDLE hengine, const GUID* ptr_filter_id);
-DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, const GUID* layer, const GUID* callout, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* ptr_filters);
+bool _wfp_deletefilter (HANDLE hengine, const LPGUID pfilter_id);
+DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, const GUID* layer_id, const GUID* callout_id, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* ptr_filters);
 
 void _wfp_clearfilter_ids ();
 void _wfp_destroyfilters (HANDLE hengine);
@@ -32,9 +32,9 @@ bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT lin
 bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line, bool is_intransact = false);
 bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact = false);
 
-void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, const PACL pacl, UINT line);
+void _wfp_setfiltersecurity (HANDLE hengine, const LPGUID pfilter_id, const PACL pacl, UINT line);
 
-size_t _wfp_dumpfilters (HANDLE hengine, const GUID* pprovider, GUIDS_VEC* ptr_filters);
+size_t _wfp_dumpfilters (HANDLE hengine, const GUID* pprovider_id, GUIDS_VEC* ptr_filters);
 
 bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable);
 void _mps_changeconfig2 (bool is_enable);

@@ -502,8 +502,8 @@ void _wfp_installfilters ()
 	// restore filters security
 	if (filters_count)
 	{
-		for (auto &p : filter_all)
-			_wfp_setfiltersecurity (hengine, p, config.pacl_default, __LINE__);
+		for (auto &id : filter_all)
+			_wfp_setfiltersecurity (hengine, &id, config.pacl_default, __LINE__);
 	}
 
 	const bool is_intransact = _wfp_transact_start (hengine, __LINE__);
@@ -590,8 +590,8 @@ void _wfp_installfilters ()
 		{
 			if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 			{
-				for (auto &p : filter_all)
-					_wfp_setfiltersecurity (hengine, p, pacl, __LINE__);
+				for (auto &id : filter_all)
+					_wfp_setfiltersecurity (hengine, &id, pacl, __LINE__);
 			}
 
 			// set security information
@@ -647,23 +647,23 @@ bool _wfp_transact_commit (HANDLE hengine, UINT line)
 	return true;
 }
 
-bool _wfp_deletefilter (HANDLE hengine, const GUID * ptr_filter_id)
+bool _wfp_deletefilter (HANDLE hengine, const LPGUID pfilter_id)
 {
-	if (!hengine || !ptr_filter_id || *ptr_filter_id == GUID_NULL)
+	if (!hengine || !pfilter_id)
 		return false;
 
-	const DWORD rc = FwpmFilterDeleteByKey (hengine, ptr_filter_id);
+	const DWORD rc = FwpmFilterDeleteByKey (hengine, pfilter_id);
 
 	if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
 	{
-		app.LogError (L"FwpmFilterDeleteByKey", rc, _r_str_fromguid (*ptr_filter_id).GetString (), UID);
+		app.LogError (L"FwpmFilterDeleteByKey", rc, _r_str_fromguid (*pfilter_id).GetString (), UID);
 		return false;
 	}
 
 	return true;
 }
 
-DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * lpcond, UINT32 count, UINT8 weight, const GUID * layer, const GUID * callout, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC * ptr_filters)
+DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, const GUID* layer_id, const GUID* callout_id, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* ptr_filters)
 {
 	if (!hengine)
 		return ERROR_INVALID_HANDLE;
@@ -674,7 +674,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * l
 	_r_str_copy (fltr_name, _countof (fltr_name), APP_NAME);
 
 	WCHAR fltr_desc[128] = {0};
-	_r_str_copy (fltr_desc, _countof (fltr_desc), name ? name : APP_NAME);
+	_r_str_copy (fltr_desc, _countof (fltr_desc), _r_str_isempty (name) ? APP_NAME : name);
 
 	filter.displayData.name = fltr_name;
 	filter.displayData.description = fltr_desc;
@@ -702,11 +702,11 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION * l
 		filter.filterCondition = lpcond;
 	}
 
-	if (layer)
-		RtlCopyMemory (&filter.layerKey, layer, sizeof (GUID));
+	if (layer_id)
+		RtlCopyMemory (&filter.layerKey, layer_id, sizeof (GUID));
 
-	if (callout)
-		RtlCopyMemory (&filter.action.calloutKey, callout, sizeof (GUID));
+	if (callout_id)
+		RtlCopyMemory (&filter.action.calloutKey, callout_id, sizeof (GUID));
 
 	filter.weight.type = FWP_UINT8;
 	filter.weight.uint8 = weight;
@@ -789,8 +789,8 @@ bool _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC& ptr_filters, UINT lin
 
 	_r_fastlock_acquireshared (&lock_transaction);
 
-	for (auto &p : ptr_filters)
-		_wfp_setfiltersecurity (hengine, p, config.pacl_default, line);
+	for (auto &id : ptr_filters)
+		_wfp_setfiltersecurity (hengine, &id, config.pacl_default, line);
 
 	const bool is_intransact = _wfp_transact_start (hengine, line);
 
@@ -1166,8 +1166,8 @@ bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT lin
 			_r_obj_dereference (ptr_rule_object);
 		}
 
-		for (auto &p : ids)
-			_wfp_setfiltersecurity (hengine, p, config.pacl_default, line);
+		for (auto &id : ids)
+			_wfp_setfiltersecurity (hengine, &id, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
@@ -1281,8 +1281,8 @@ bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT lin
 
 				if (ptr_rule && ptr_rule->is_enabled)
 				{
-					for (auto &guid : ptr_rule->guids)
-						_wfp_setfiltersecurity (hengine, guid, pacl, line);
+					for (auto &id : ptr_rule->guids)
+						_wfp_setfiltersecurity (hengine, &id, pacl, line);
 				}
 
 				_r_obj_dereference (ptr_rule_object);
@@ -1333,8 +1333,8 @@ bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line
 			_r_obj_dereference (ptr_app_object);
 		}
 
-		for (auto &p : ids)
-			_wfp_setfiltersecurity (hengine, p, config.pacl_default, line);
+		for (auto &id : ids)
+			_wfp_setfiltersecurity (hengine, &id, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
@@ -1395,8 +1395,8 @@ bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line
 
 				if (ptr_app)
 				{
-					for (auto &guid : ptr_app->guids)
-						_wfp_setfiltersecurity (hengine, guid, pacl, line);
+					for (auto &id : ptr_app->guids)
+						_wfp_setfiltersecurity (hengine, &id, pacl, line);
 				}
 
 				_r_obj_dereference (ptr_app_object);
@@ -1423,8 +1423,8 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 
 	if (!is_intransact)
 	{
-		for (auto &p : filter_ids)
-			_wfp_setfiltersecurity (hengine, p, config.pacl_default, line);
+		for (auto &id : filter_ids)
+			_wfp_setfiltersecurity (hengine, &id, config.pacl_default, line);
 
 		_r_fastlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
@@ -1693,8 +1693,8 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 		{
 			PACL& pacl = is_secure ? config.pacl_secure : config.pacl_default;
 
-			for (auto &p : filter_ids)
-				_wfp_setfiltersecurity (hengine, p, pacl, line);
+			for (auto &id : filter_ids)
+				_wfp_setfiltersecurity (hengine, &id, pacl, line);
 		}
 
 		_r_fastlock_releaseshared (&lock_transaction);
@@ -1705,16 +1705,16 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	return true;
 }
 
-void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, const PACL pacl, UINT line)
+void _wfp_setfiltersecurity (HANDLE hengine, const LPGUID pfilter_id, const PACL pacl, UINT line)
 {
-	if (!hengine || filter_id == GUID_NULL)
+	if (!hengine || !pfilter_id)
 		return;
 
 	DWORD rc;
 
 	if (config.padminsid)
 	{
-		rc = FwpmFilterSetSecurityInfoByKey (hengine, &filter_id, OWNER_SECURITY_INFORMATION, config.padminsid, nullptr, nullptr, nullptr);
+		rc = FwpmFilterSetSecurityInfoByKey (hengine, pfilter_id, OWNER_SECURITY_INFORMATION, config.padminsid, nullptr, nullptr, nullptr);
 
 		if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
 			app.LogError (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), 0);
@@ -1722,16 +1722,16 @@ void _wfp_setfiltersecurity (HANDLE hengine, const GUID& filter_id, const PACL p
 
 	if (pacl)
 	{
-		rc = FwpmFilterSetSecurityInfoByKey (hengine, &filter_id, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
+		rc = FwpmFilterSetSecurityInfoByKey (hengine, pfilter_id, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
 
 		if (rc != ERROR_SUCCESS && rc != FWP_E_FILTER_NOT_FOUND)
 			app.LogError (L"FwpmFilterSetSecurityInfoByKey", rc, _r_fmt (L"#%d", line), 0);
 	}
 }
 
-size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr_filters)
+size_t _wfp_dumpfilters (HANDLE hengine, const GUID* pprovider_id, GUIDS_VEC* ptr_filters)
 {
-	if (!hengine || !pprovider || !ptr_filters)
+	if (!hengine || !pprovider_id || !ptr_filters)
 		return 0;
 
 	ptr_filters->clear ();
@@ -1743,7 +1743,7 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 
 	if (rc != ERROR_SUCCESS)
 	{
-		app.LogError (L"FwpmFilterCreateEnumHandle", rc, nullptr, UID);
+		app.LogError (L"FwpmFilterCreateEnumHandle", rc, nullptr, 0);
 		return 0;
 	}
 	else
@@ -1754,7 +1754,7 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 
 		if (rc != ERROR_SUCCESS)
 		{
-			app.LogError (L"FwpmFilterEnum", rc, nullptr, UID);
+			app.LogError (L"FwpmFilterEnum", rc, nullptr, 0);
 		}
 		else
 		{
@@ -1764,7 +1764,7 @@ size_t _wfp_dumpfilters (HANDLE hengine, const GUID * pprovider, GUIDS_VEC * ptr
 				{
 					FWPM_FILTER* pfilter = matchingFwpFilter[i];
 
-					if (pfilter && pfilter->providerKey && RtlEqualMemory (pfilter->providerKey, pprovider, sizeof (GUID)))
+					if (pfilter && pfilter->providerKey && RtlEqualMemory (pfilter->providerKey, pprovider_id, sizeof (GUID)))
 						ptr_filters->push_back (pfilter->filterKey);
 				}
 
