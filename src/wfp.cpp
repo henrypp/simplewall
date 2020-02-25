@@ -445,8 +445,8 @@ void _wfp_uninitialize (bool is_full)
 				GUID_WfpListenCallout6_DEPRECATED
 			};
 
-			for (size_t i = 0; i < _countof (callouts); i++)
-				FwpmCalloutDeleteByKey (hengine, &callouts[i]);
+			for (auto &id : callouts)
+				FwpmCalloutDeleteByKey (hengine, &id);
 		}
 
 		// destroy sublayer
@@ -1805,11 +1805,11 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 		{
 			*pis_enabled = false;
 
-			for (size_t i = 0; i < _countof (profileTypes); i++)
+			for (auto &type : profileTypes)
 			{
 				VARIANT_BOOL bIsEnabled = FALSE;
 
-				hr = pNetFwPolicy2->get_FirewallEnabled (profileTypes[i], &bIsEnabled);
+				hr = pNetFwPolicy2->get_FirewallEnabled (type, &bIsEnabled);
 
 				if (SUCCEEDED (hr))
 				{
@@ -1826,15 +1826,15 @@ bool _mps_firewallapi (bool* pis_enabled, const bool* pis_enable)
 
 		if (pis_enable)
 		{
-			for (size_t i = 0; i < _countof (profileTypes); i++)
+			for (auto &type : profileTypes)
 			{
-				hr = pNetFwPolicy2->put_FirewallEnabled (profileTypes[i], *pis_enable ? VARIANT_TRUE : VARIANT_FALSE);
+				hr = pNetFwPolicy2->put_FirewallEnabled (type, *pis_enable ? VARIANT_TRUE : VARIANT_FALSE);
 
 				if (SUCCEEDED (hr))
 					result = true;
 
 				else
-					app.LogError (L"put_FirewallEnabled", hr, _r_fmt (L"%d", profileTypes[i]), 0);
+					app.LogError (L"put_FirewallEnabled", hr, _r_fmt (L"%d", type), 0);
 			}
 		}
 	}
@@ -1866,23 +1866,23 @@ void _mps_changeconfig2 (bool is_enable)
 	}
 	else
 	{
-		LPCWSTR arr[] = {
+		LPCWSTR ServiceNames[] = {
 			L"mpssvc",
 			L"mpsdrv",
 		};
 
 		bool is_started = false;
 
-		for (INT i = 0; i < _countof (arr); i++)
+		for (auto &name : ServiceNames)
 		{
-			const SC_HANDLE sc = OpenService (scm, arr[i], SERVICE_CHANGE_CONFIG | SERVICE_QUERY_STATUS | SERVICE_STOP);
+			const SC_HANDLE sc = OpenService (scm, name, SERVICE_CHANGE_CONFIG | SERVICE_QUERY_STATUS | SERVICE_STOP);
 
 			if (!sc)
 			{
 				const DWORD rc = GetLastError ();
 
 				if (rc != ERROR_ACCESS_DENIED)
-					app.LogError (L"OpenService", rc, arr[i], 0);
+					app.LogError (L"OpenService", rc, name, 0);
 			}
 			else
 			{
@@ -1895,7 +1895,7 @@ void _mps_changeconfig2 (bool is_enable)
 				}
 
 				if (!ChangeServiceConfig (sc, SERVICE_NO_CHANGE, is_enable ? SERVICE_AUTO_START : SERVICE_DISABLED, SERVICE_NO_CHANGE, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr))
-					app.LogError (L"ChangeServiceConfig", GetLastError (), arr[i], 0);
+					app.LogError (L"ChangeServiceConfig", GetLastError (), name, 0);
 
 				CloseServiceHandle (sc);
 			}
@@ -1904,13 +1904,13 @@ void _mps_changeconfig2 (bool is_enable)
 		// start services
 		if (is_enable)
 		{
-			for (INT i = 0; i < _countof (arr); i++)
+			for (auto &name : ServiceNames)
 			{
-				SC_HANDLE sc = OpenService (scm, arr[i], SERVICE_QUERY_STATUS | SERVICE_START);
+				SC_HANDLE sc = OpenService (scm, name, SERVICE_QUERY_STATUS | SERVICE_START);
 
 				if (!sc)
 				{
-					app.LogError (L"OpenService", GetLastError (), arr[i], 0);
+					app.LogError (L"OpenService", GetLastError (), name, 0);
 				}
 				else
 				{
@@ -1919,14 +1919,14 @@ void _mps_changeconfig2 (bool is_enable)
 
 					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof (ssp), &dwBytesNeeded))
 					{
-						app.LogError (L"QueryServiceStatusEx", GetLastError (), arr[i], 0);
+						app.LogError (L"QueryServiceStatusEx", GetLastError (), name, 0);
 					}
 					else
 					{
 						if (ssp.dwCurrentState != SERVICE_RUNNING)
 						{
 							if (!StartService (sc, 0, nullptr))
-								app.LogError (L"StartService", GetLastError (), arr[i], 0);
+								app.LogError (L"StartService", GetLastError (), name, 0);
 						}
 
 						CloseServiceHandle (sc);

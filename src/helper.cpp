@@ -272,7 +272,7 @@ void _app_freeobjects_map (OBJECTS_MAP& ptr_map, bool is_forced)
 	}
 }
 
-void _app_freeobjects_vec (OBJECTS_VEC & ptr_vec)
+void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec)
 {
 	for (auto &p : ptr_vec)
 		_r_obj_dereference (p);
@@ -291,10 +291,13 @@ void _app_freethreadpool (THREADS_VEC* ptr_pool)
 	{
 		HANDLE& hthread = ptr_pool->at (i);
 
-		if (WaitForSingleObjectEx (hthread, 0, FALSE) == WAIT_OBJECT_0)
+		if (_r_fs_isvalidhandle (hthread))
 		{
-			SAFE_DELETE_HANDLE (hthread);
-			ptr_pool->erase (ptr_pool->begin () + i);
+			if (WaitForSingleObjectEx (hthread, 0, FALSE) == WAIT_OBJECT_0)
+			{
+				CloseHandle (hthread);
+				ptr_pool->erase (ptr_pool->begin () + i);
+			}
 		}
 	}
 }
@@ -3039,7 +3042,7 @@ INT _app_getlistview_id (EnumDataType type)
 	return 0;
 }
 
-INT _app_getposition (HWND hwnd, INT listview_id, size_t lparam)
+INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam)
 {
 	LVFINDINFO lvfi = {0};
 
@@ -3308,9 +3311,9 @@ void _app_load_appxmanifest (PITEM_APP_HELPER ptr_app_item)
 		L"VSAppxManifest.xml",
 	};
 
-	for (size_t i = 0; i < _countof (appx_names); i++)
+	for (auto &name : appx_names)
 	{
-		path.Format (L"%s\\%s", ptr_app_item->real_path, appx_names[i]);
+		path.Format (L"%s\\%s", ptr_app_item->real_path, name);
 
 		if (_r_fs_exists (path))
 			goto DoOpen;

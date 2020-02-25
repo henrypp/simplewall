@@ -780,8 +780,13 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						AppendMenu (hsubmenu, MF_BYPOSITION, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 
-						for (size_t i = 0; i < timers.size (); i++)
-							AppendMenu (hsubmenu, MF_BYPOSITION, UINT_PTR (IDX_TIMER + i), _r_fmt_interval (timers.at (i) + 1, 1));
+						UINT index = 0;
+
+						for (auto &timer : timers)
+						{
+							AppendMenu (hsubmenu, MF_BYPOSITION, IDX_TIMER + index, _r_fmt_interval (timer + 1, 1));
+							index += 1;
+						}
 
 						CheckMenuRadioItem (hsubmenu, IDC_ALLOW_BTN, IDC_ALLOW_BTN, IDC_ALLOW_BTN, MF_BYCOMMAND);
 					}

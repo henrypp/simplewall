@@ -2086,19 +2086,23 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					CHOOSECOLOR cc = {0};
 					COLORREF cust[16] = {0};
 
-					for (size_t i = 0; i < min (_countof (cust), colors.size ()); i++)
+					size_t index = 0;
+
+					for (auto &p : colors)
 					{
-						PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (i));
+						PR_OBJECT ptr_clr_object = _r_obj_reference (p);
 
 						if (ptr_clr_object)
 						{
 							PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
 
 							if (ptr_clr)
-								cust[i] = ptr_clr->default_clr;
+								cust[index] = ptr_clr->default_clr;
 
 							_r_obj_dereference (ptr_clr_object);
 						}
+
+						index += 1;
 					}
 
 					cc.lStructSize = sizeof (cc);
@@ -3904,30 +3908,34 @@ find_wrap:
 						{
 							bool is_checked = false;
 
-							for (size_t i = 0; i < timers.size (); i++)
+							UINT index = 0;
+
+							for (auto &timer : timers)
 							{
 								MENUITEMINFO mii = {0};
 
 								WCHAR buffer[128] = {0};
-								_r_str_copy (buffer, _countof (buffer), _r_fmt_interval (timers.at (i) + 1, 1));
+								_r_str_copy (buffer, _countof (buffer), _r_fmt_interval (timer + 1, 1));
 
 								mii.cbSize = sizeof (mii);
 								mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
 								mii.fType = MFT_STRING;
 								mii.dwTypeData = buffer;
 								mii.fState = MF_ENABLED;
-								mii.wID = IDX_TIMER + UINT (i);
+								mii.wID = IDX_TIMER + index;
 
 								InsertMenuItem (hsubmenu_timer, mii.wID, FALSE, &mii);
 
 								if (ptr_app)
 								{
-									if (!is_checked && ptr_app->timer > current_time && ptr_app->timer <= (current_time + timers.at (i)))
+									if (!is_checked && ptr_app->timer > current_time && ptr_app->timer <= (current_time + timer))
 									{
 										CheckMenuRadioItem (hsubmenu_timer, IDX_TIMER, IDX_TIMER + UINT (timers.size ()), mii.wID, MF_BYCOMMAND);
 										is_checked = true;
 									}
 								}
+
+								index += 1;
 							}
 
 							if (!is_checked)
