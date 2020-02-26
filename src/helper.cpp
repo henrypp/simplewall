@@ -1484,12 +1484,12 @@ rstring _app_getservicenamefromtag (HANDLE pid, const PVOID ptag)
 
 rstring _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, size_t* phash)
 {
-	if (!pid)
+	if (pid == PROC_WAITING_PID)
 	{
 		*phash = 0;
 		*picon_id = config.icon_id;
 
-		return L"Waiting connections";
+		return PROC_WAITING_NAME;
 	}
 
 	rstring proc_name;
@@ -1502,7 +1502,6 @@ rstring _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, size_t
 		if (pid == PROC_SYSTEM_PID)
 		{
 			proc_name = PROC_SYSTEM_NAME;
-			*picon_id = config.icon_id;
 		}
 		else
 		{
@@ -1511,16 +1510,22 @@ rstring _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, size_t
 			if (hprocess)
 			{
 				DWORD size = 1024;
+				BOOL rc = QueryFullProcessImageName (hprocess, 0, proc_name.GetBuffer (size), &size);
 
-				const BOOL res = QueryFullProcessImageName (hprocess, 0, proc_name.GetBuffer (size), &size);
-				proc_name.ReleaseBuffer ();
-
-				if (!res)
+				// fix for WSL processes (issue #606)
+				if (!rc && GetLastError () == ERROR_GEN_FAILURE)
 				{
-					*phash = 0;
-					*picon_id = config.icon_id;
+					size = 1024;
+					rc = QueryFullProcessImageName (hprocess, PROCESS_NAME_NATIVE, proc_name.GetBuffer (size), &size);
+				}
 
+				if (!rc)
+				{
 					proc_name.Release ();
+				}
+				else
+				{
+					proc_name.ReleaseBuffer ();
 				}
 
 				CloseHandle (hprocess);
@@ -1532,12 +1537,12 @@ rstring _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, size_t
 
 	if (!proc_name.IsEmpty ())
 	{
-		INT icon_id = 0;
-
-		if (!_app_getappinfo (*phash, InfoIconId, &icon_id, sizeof (icon_id)))
-			_app_getfileicon (proc_name, true, &icon_id, nullptr);
-
-		*picon_id = icon_id;
+		if (!_app_getappinfo (*phash, InfoIconId, picon_id, sizeof (INT)))
+			_app_getfileicon (proc_name, true, picon_id, nullptr);
+	}
+	else
+	{
+		*picon_id = config.icon_id;
 	}
 
 	return proc_name;
