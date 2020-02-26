@@ -197,7 +197,7 @@ void _wfp_logsubscribe (HANDLE hengine)
 	if (config.hnetevent)
 		return; // already subscribed
 
-	HMODULE hlib = LoadLibraryEx (L"fwpuclnt.dll", nullptr, LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
+	HMODULE hlib = LoadLibraryEx (L"fwpuclnt.dll", nullptr, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32);
 
 	if (hlib)
 	{
