@@ -117,6 +117,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
 
+#define PROC_WAITING_PID 0
+#define PROC_WAITING_NAME L"Waiting connections"
+
 #define PATH_NTOSKRNL L"%SystemRoot%\\system32\\ntoskrnl.exe"
 #define PATH_SVCHOST L"%SystemRoot%\\system32\\svchost.exe"
 #define PATH_SHELL32 L"%SystemRoot%\\system32\\shell32.dll"
