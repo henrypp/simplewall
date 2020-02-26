@@ -425,7 +425,19 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 				PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
 				if (ptr_network)
+				{
+					// display tooltips for non-existing apps in network tab (issue #422)
+					if (!_app_isappfound (ptr_network->app_hash))
+					{
+						result = ptr_network->path;
+
+						_r_obj_dereference (ptr_network_object);
+
+						return result;
+					}
+
 					lparam = ptr_network->app_hash;
+				}
 
 				_r_obj_dereference (ptr_network_object);
 			}
