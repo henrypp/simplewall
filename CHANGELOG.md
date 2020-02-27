@@ -1,3 +1,14 @@
+v3.1.1 (27 February 2020)
+- fixed displaying tooltips for non-existing apps in network tab (issue #422)
+- fixed wsl apps do not display names in the network tab (issue #606)
+- fixed incorrect default locale name on some systems (issue #621)
+- fixed process mitigation policy (win10rs2+) (issue #611)
+- fixed persistent dark theme (win10rs5+) (issue #609)
+- fixed update window does not close (issue #616)
+- fixed log cleanup (issue #613)
+- updated blocklist
+- fixed bugs
+
 v3.1 (8 February 2020)
 - changed compiler build settings
 - changed settings interface
