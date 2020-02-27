@@ -11,10 +11,14 @@ Simple tool to configure Windows Filtering Platform (WFP) which can configure ne
 The lightweight application is less than a megabyte, and it is compatible with Windows Vista and higher operating systems.
 You can download either the installer or portable version. For correct working, need administrator rights.
 
-#### Command line:
+### Command line:
 List of arguments for `simplewall.exe`:
 - `/install` - enable filtering (you can set `/silent` argument to skip prompt)
-- `/uninstall` - disable filtering
+- `/uninstall` - remove all installed filters
+
+### Uninstall:
+When you uninstall simplewall, all previously installed filters are stay alive in system.
+To remove all filters created by simplewall, start simplewall and press "Disable filters" button.
 
 ### Features:
 - Simple interface without annoying pop ups
@@ -33,7 +37,7 @@ List of arguments for `simplewall.exe`:
 To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
 ```
 
-#### FAQ:
+### FAQ:
 - [Is it safe to use simplewall with Windows Firewall?](https://github.com/henrypp/simplewall/issues/254#issuecomment-447436527)
 - [Are internet connections blocked when simplewall is not running?](https://github.com/henrypp/simplewall/issues/119#issuecomment-364003679)
 - [How can i disable blocklist entirely?](https://github.com/henrypp/simplewall/issues/243)
