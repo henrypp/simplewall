@@ -169,8 +169,6 @@ bool _app_logchecklimit ()
 
 void _app_logclear ()
 {
-	const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
-
 	if (_r_fs_isvalidhandle (config.hlogfile))
 	{
 		_r_fs_setpos (config.hlogfile, 2, FILE_BEGIN);
@@ -184,6 +182,8 @@ void _app_logclear ()
 	}
 	else
 	{
+		const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
+
 		_r_fs_remove (path, RFS_FORCEREMOVE);
 		_r_fs_remove (_r_fmt (L"%s.bak", path.GetString ()), RFS_FORCEREMOVE);
 	}
