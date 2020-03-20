@@ -856,7 +856,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 
 		if (ptr_app->type == DataAppUWP) // windows store app (win8+)
 		{
-			PBYTE pdata = nullptr;
+			PVOID pdata = nullptr;
 
 			if (_app_item_get (ptr_app->type, app_hash, nullptr, nullptr, nullptr, &pdata))
 			{
@@ -877,7 +877,7 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 		}
 		else if (ptr_app->type == DataAppService) // windows service
 		{
-			PBYTE pdata = nullptr;
+			PVOID pdata = nullptr;
 
 			if (_app_item_get (ptr_app->type, app_hash, nullptr, nullptr, nullptr, &pdata) && ByteBlobAlloc (pdata, GetSecurityDescriptorLength (pdata), &bSid))
 			{
@@ -2029,7 +2029,7 @@ bool ByteBlobAlloc (const PVOID data, size_t length, FWP_BYTE_BLOB** lpblob)
 
 	RtlSecureZeroMemory (pblob, sizeof (FWP_BYTE_BLOB));
 
-	pblob->data = new UINT8[length];
+	pblob->data = (UINT8*)_r_mem_alloc (length);
 	pblob->size = (UINT32)length;
 
 	RtlCopyMemory (pblob->data, data, length);
@@ -2047,7 +2047,7 @@ void ByteBlobFree (FWP_BYTE_BLOB * *lpblob)
 
 		if (blob)
 		{
-			SAFE_DELETE_ARRAY (blob->data);
+			_r_mem_free (blob->data);
 			SAFE_DELETE (blob);
 
 			*lpblob = nullptr;

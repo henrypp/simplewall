@@ -1614,59 +1614,62 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = (PMIB_TCPTABLE_OWNER_MODULE)new BYTE[tableSize];
+		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = (PMIB_TCPTABLE_OWNER_MODULE)_r_mem_allocex (tableSize, 0);
 
-		if (GetExtendedTcpTable (tcp4Table, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
+		if (tcp4Table)
 		{
-			for (DWORD i = 0; i < tcp4Table->dwNumEntries; i++)
+			if (GetExtendedTcpTable (tcp4Table, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 			{
-				IN_ADDR remote_addr = {0};
-				IN_ADDR local_addr = {0};
-
-				remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
-				local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
-
-				const size_t net_hash = _app_getnetworkhash (AF_INET, tcp4Table->table[i].dwOwningPid, &remote_addr, tcp4Table->table[i].dwRemotePort, &local_addr, tcp4Table->table[i].dwLocalPort, IPPROTO_TCP, tcp4Table->table[i].dwState);
-
-				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+				for (DWORD i = 0; i < tcp4Table->dwNumEntries; i++)
 				{
-					checker_map[net_hash] = false;
-					continue;
+					IN_ADDR remote_addr = {0};
+					IN_ADDR local_addr = {0};
+
+					remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
+					local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
+
+					const size_t net_hash = _app_getnetworkhash (AF_INET, tcp4Table->table[i].dwOwningPid, &remote_addr, tcp4Table->table[i].dwRemotePort, &local_addr, tcp4Table->table[i].dwLocalPort, IPPROTO_TCP, tcp4Table->table[i].dwState);
+
+					if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+					{
+						checker_map[net_hash] = false;
+						continue;
+					}
+
+					PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+					RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
+
+					const rstring path = _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
+
+					_r_str_alloc (&ptr_network->path, path.GetLength (), path);
+
+					ptr_network->af = AF_INET;
+					ptr_network->protocol = IPPROTO_TCP;
+
+					ptr_network->remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
+					ptr_network->remote_port = _byteswap_ushort ((USHORT)tcp4Table->table[i].dwRemotePort);
+
+					ptr_network->local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
+					ptr_network->local_port = _byteswap_ushort ((USHORT)tcp4Table->table[i].dwLocalPort);
+
+					ptr_network->state = tcp4Table->table[i].dwState;
+
+					if (tcp4Table->table[i].dwState == MIB_TCP_STATE_ESTAB)
+					{
+						if (_app_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) || _app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
+							ptr_network->is_connection = true;
+					}
+
+					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, format_flags);
+					_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, 0, &ptr_network->remote_fmt, format_flags);
+
+					ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
+					checker_map[net_hash] = true;
 				}
-
-				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-				RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
-
-				const rstring path = _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
-
-				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
-
-				ptr_network->af = AF_INET;
-				ptr_network->protocol = IPPROTO_TCP;
-
-				ptr_network->remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
-				ptr_network->remote_port = _byteswap_ushort ((USHORT)tcp4Table->table[i].dwRemotePort);
-
-				ptr_network->local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
-				ptr_network->local_port = _byteswap_ushort ((USHORT)tcp4Table->table[i].dwLocalPort);
-
-				ptr_network->state = tcp4Table->table[i].dwState;
-
-				if (tcp4Table->table[i].dwState == MIB_TCP_STATE_ESTAB)
-				{
-					if (_app_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) || _app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
-						ptr_network->is_connection = true;
-				}
-
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, format_flags);
-				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, 0, &ptr_network->remote_fmt, format_flags);
-
-				ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
-				checker_map[net_hash] = true;
 			}
-		}
 
-		SAFE_DELETE_ARRAY (tcp4Table);
+			_r_mem_free (tcp4Table);
+		}
 	}
 
 	tableSize = 0;
@@ -1674,53 +1677,56 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = (PMIB_TCP6TABLE_OWNER_MODULE)new BYTE[tableSize];
+		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = (PMIB_TCP6TABLE_OWNER_MODULE)_r_mem_allocex (tableSize, 0);
 
-		if (GetExtendedTcpTable (tcp6Table, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
+		if (tcp6Table)
 		{
-			for (DWORD i = 0; i < tcp6Table->dwNumEntries; i++)
+			if (GetExtendedTcpTable (tcp6Table, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 			{
-				const size_t net_hash = _app_getnetworkhash (AF_INET6, tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].ucRemoteAddr, tcp6Table->table[i].dwRemotePort, tcp6Table->table[i].ucLocalAddr, tcp6Table->table[i].dwLocalPort, IPPROTO_TCP, tcp6Table->table[i].dwState);
-
-				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+				for (DWORD i = 0; i < tcp6Table->dwNumEntries; i++)
 				{
-					checker_map[net_hash] = false;
-					continue;
+					const size_t net_hash = _app_getnetworkhash (AF_INET6, tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].ucRemoteAddr, tcp6Table->table[i].dwRemotePort, tcp6Table->table[i].ucLocalAddr, tcp6Table->table[i].dwLocalPort, IPPROTO_TCP, tcp6Table->table[i].dwState);
+
+					if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+					{
+						checker_map[net_hash] = false;
+						continue;
+					}
+
+					PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+					RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
+
+					const rstring path = _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
+
+					_r_str_alloc (&ptr_network->path, path.GetLength (), path);
+
+					ptr_network->af = AF_INET6;
+					ptr_network->protocol = IPPROTO_TCP;
+
+					RtlCopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
+					ptr_network->remote_port = _byteswap_ushort ((USHORT)tcp6Table->table[i].dwRemotePort);
+
+					RtlCopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
+					ptr_network->local_port = _byteswap_ushort ((USHORT)tcp6Table->table[i].dwLocalPort);
+
+					ptr_network->state = tcp6Table->table[i].dwState;
+
+					if (tcp6Table->table[i].dwState == MIB_TCP_STATE_ESTAB)
+					{
+						if (_app_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) || _app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
+							ptr_network->is_connection = true;
+					}
+
+					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, format_flags);
+					_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr6, 0, &ptr_network->remote_fmt, format_flags);
+
+					ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
+					checker_map[net_hash] = true;
 				}
-
-				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-				RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
-
-				const rstring path = _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
-
-				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
-
-				ptr_network->af = AF_INET6;
-				ptr_network->protocol = IPPROTO_TCP;
-
-				RtlCopyMemory (ptr_network->remote_addr6.u.Byte, tcp6Table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
-				ptr_network->remote_port = _byteswap_ushort ((USHORT)tcp6Table->table[i].dwRemotePort);
-
-				RtlCopyMemory (ptr_network->local_addr6.u.Byte, tcp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
-				ptr_network->local_port = _byteswap_ushort ((USHORT)tcp6Table->table[i].dwLocalPort);
-
-				ptr_network->state = tcp6Table->table[i].dwState;
-
-				if (tcp6Table->table[i].dwState == MIB_TCP_STATE_ESTAB)
-				{
-					if (_app_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) || _app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
-						ptr_network->is_connection = true;
-				}
-
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, format_flags);
-				_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr6, 0, &ptr_network->remote_fmt, format_flags);
-
-				ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
-				checker_map[net_hash] = true;
 			}
-		}
 
-		SAFE_DELETE_ARRAY (tcp6Table);
+			_r_mem_free (tcp6Table);
+		}
 	}
 
 	tableSize = 0;
@@ -1728,49 +1734,52 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_UDPTABLE_OWNER_MODULE udp4Table = (PMIB_UDPTABLE_OWNER_MODULE)new BYTE[tableSize];
+		PMIB_UDPTABLE_OWNER_MODULE udp4Table = (PMIB_UDPTABLE_OWNER_MODULE)_r_mem_allocex (tableSize, 0);
 
-		if (GetExtendedUdpTable (udp4Table, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
+		if (udp4Table)
 		{
-			for (DWORD i = 0; i < udp4Table->dwNumEntries; i++)
+			if (GetExtendedUdpTable (udp4Table, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 			{
-				IN_ADDR local_addr = {0};
-				local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
-
-				const size_t net_hash = _app_getnetworkhash (AF_INET, udp4Table->table[i].dwOwningPid, nullptr, 0, &local_addr, udp4Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
-
-				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+				for (DWORD i = 0; i < udp4Table->dwNumEntries; i++)
 				{
-					checker_map[net_hash] = false;
-					continue;
+					IN_ADDR local_addr = {0};
+					local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
+
+					const size_t net_hash = _app_getnetworkhash (AF_INET, udp4Table->table[i].dwOwningPid, nullptr, 0, &local_addr, udp4Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
+
+					if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+					{
+						checker_map[net_hash] = false;
+						continue;
+					}
+
+					PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+					RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
+
+					const rstring path = _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
+
+					_r_str_alloc (&ptr_network->path, path.GetLength (), path);
+
+					ptr_network->af = AF_INET;
+					ptr_network->protocol = IPPROTO_UDP;
+
+					ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
+					ptr_network->local_port = _byteswap_ushort ((USHORT)udp4Table->table[i].dwLocalPort);
+
+					ptr_network->state = 0;
+
+					if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
+						ptr_network->is_connection = true;
+
+					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, format_flags);
+
+					ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
+					checker_map[net_hash] = true;
 				}
-
-				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-				RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
-
-				const rstring path = _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
-
-				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
-
-				ptr_network->af = AF_INET;
-				ptr_network->protocol = IPPROTO_UDP;
-
-				ptr_network->local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
-				ptr_network->local_port = _byteswap_ushort ((USHORT)udp4Table->table[i].dwLocalPort);
-
-				ptr_network->state = 0;
-
-				if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
-					ptr_network->is_connection = true;
-
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, format_flags);
-
-				ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
-				checker_map[net_hash] = true;
 			}
-		}
 
-		SAFE_DELETE_ARRAY (udp4Table);
+			_r_mem_free (udp4Table);
+		}
 	}
 
 	tableSize = 0;
@@ -1778,46 +1787,49 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = (PMIB_UDP6TABLE_OWNER_MODULE)new BYTE[tableSize];
+		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = (PMIB_UDP6TABLE_OWNER_MODULE)_r_mem_allocex (tableSize, 0);
 
-		if (GetExtendedUdpTable (udp6Table, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
+		if (udp6Table)
 		{
-			for (DWORD i = 0; i < udp6Table->dwNumEntries; i++)
+			if (GetExtendedUdpTable (udp6Table, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 			{
-				const size_t net_hash = _app_getnetworkhash (AF_INET6, udp6Table->table[i].dwOwningPid, nullptr, 0, udp6Table->table[i].ucLocalAddr, udp6Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
-
-				if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+				for (DWORD i = 0; i < udp6Table->dwNumEntries; i++)
 				{
-					checker_map[net_hash] = false;
-					continue;
+					const size_t net_hash = _app_getnetworkhash (AF_INET6, udp6Table->table[i].dwOwningPid, nullptr, 0, udp6Table->table[i].ucLocalAddr, udp6Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
+
+					if (!net_hash || ptr_map.find (net_hash) != ptr_map.end ())
+					{
+						checker_map[net_hash] = false;
+						continue;
+					}
+
+					PITEM_NETWORK ptr_network = new ITEM_NETWORK;
+					RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
+
+					const rstring path = _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
+
+					_r_str_alloc (&ptr_network->path, path.GetLength (), path);
+
+					ptr_network->af = AF_INET6;
+					ptr_network->protocol = IPPROTO_UDP;
+
+					RtlCopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
+					ptr_network->local_port = _byteswap_ushort ((USHORT)udp6Table->table[i].dwLocalPort);
+
+					ptr_network->state = 0;
+
+					if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
+						ptr_network->is_connection = true;
+
+					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, format_flags);
+
+					ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
+					checker_map[net_hash] = true;
 				}
-
-				PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-				RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
-
-				const rstring path = _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
-
-				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
-
-				ptr_network->af = AF_INET6;
-				ptr_network->protocol = IPPROTO_UDP;
-
-				RtlCopyMemory (ptr_network->local_addr6.u.Byte, udp6Table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
-				ptr_network->local_port = _byteswap_ushort ((USHORT)udp6Table->table[i].dwLocalPort);
-
-				ptr_network->state = 0;
-
-				if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
-					ptr_network->is_connection = true;
-
-				_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, format_flags);
-
-				ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
-				checker_map[net_hash] = true;
 			}
-		}
 
-		SAFE_DELETE_ARRAY (udp6Table);
+			_r_mem_free (udp6Table);
+		}
 	}
 }
 
@@ -1852,7 +1864,7 @@ void _app_generate_packages ()
 
 			if (rc == ERROR_SUCCESS)
 			{
-				PBYTE package_sid = _r_reg_querybinary (hsubkey, L"PackageSid");
+				LPBYTE package_sid = _r_reg_querybinary (hsubkey, L"PackageSid");
 
 				if (!package_sid || !IsValidSid (package_sid))
 				{
@@ -1864,7 +1876,7 @@ void _app_generate_packages ()
 
 				if (package_sid_string.IsEmpty ())
 				{
-					SAFE_DELETE_ARRAY (package_sid);
+					_r_mem_free (package_sid);
 					RegCloseKey (hsubkey);
 
 					continue;
@@ -1874,7 +1886,7 @@ void _app_generate_packages ()
 
 				if (apps_helper.find (app_hash) != apps_helper.end ())
 				{
-					SAFE_DELETE_ARRAY (package_sid);
+					_r_mem_free (package_sid);
 					RegCloseKey (hsubkey);
 
 					continue;
@@ -1900,7 +1912,7 @@ void _app_generate_packages ()
 
 				if (display_name.IsEmpty ())
 				{
-					SAFE_DELETE_ARRAY (package_sid);
+					_r_mem_free (package_sid);
 					continue;
 				}
 
@@ -1953,21 +1965,33 @@ void _app_generate_services ()
 		dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
 
 	DWORD bufferSize = initialBufferSize;
-	LPBYTE pBuffer = new BYTE[bufferSize];
+	LPVOID pBuffer = _r_mem_allocex (bufferSize, 0);
 
-	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, pBuffer, bufferSize, &returnLength, &servicesReturned, nullptr, nullptr))
+	if (!pBuffer)
+		return;
+
+	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, (LPBYTE)pBuffer, bufferSize, &returnLength, &servicesReturned, nullptr, nullptr))
 	{
-		SAFE_DELETE_ARRAY (pBuffer);
-
 		if (GetLastError () == ERROR_MORE_DATA)
 		{
 			// Set the buffer
 			bufferSize += returnLength;
-			pBuffer = new BYTE[bufferSize];
+			pBuffer = _r_mem_realloc (pBuffer, bufferSize);
 
-			// Now query again for services
-			if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, pBuffer, bufferSize, &returnLength, &servicesReturned, nullptr, nullptr))
-				SAFE_DELETE_ARRAY (pBuffer);
+			if (pBuffer)
+			{
+				// Now query again for services
+				if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, (LPBYTE)pBuffer, bufferSize, &returnLength, &servicesReturned, nullptr, nullptr))
+				{
+					_r_mem_free (pBuffer);
+					pBuffer = nullptr;
+				}
+			}
+		}
+		else
+		{
+			_r_mem_free (pBuffer);
+			pBuffer = nullptr;
 		}
 	}
 
@@ -2045,20 +2069,24 @@ void _app_generate_services ()
 
 			rstring sidstring;
 
-			PBYTE serviceSid = nullptr;
+			LPBYTE serviceSid = nullptr;
 			ULONG serviceSidLength = 0;
 
 			if (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength) == STATUS_BUFFER_TOO_SMALL)
 			{
-				serviceSid = new BYTE[serviceSidLength];
+				serviceSid = (LPBYTE)_r_mem_allocex (serviceSidLength, 0);
 
-				if (NT_SUCCESS (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength)))
+				if (serviceSid)
 				{
-					sidstring = _r_str_fromsid (serviceSid);
-				}
-				else
-				{
-					SAFE_DELETE_ARRAY (serviceSid);
+					if (NT_SUCCESS (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength)))
+					{
+						sidstring = _r_str_fromsid (serviceSid);
+					}
+					else
+					{
+						_r_mem_free (serviceSid);
+						serviceSid = nullptr;
+					}
 				}
 			}
 
@@ -2091,18 +2119,18 @@ void _app_generate_services ()
 
 				_r_str_toupper (sidstring.GetBuffer ());
 
-				ptr_item->pdata = new BYTE[sd_length];
-				memcpy (ptr_item->pdata, pservice_sd, sd_length);
+				ptr_item->pdata = _r_mem_alloc (sd_length);
+				RtlCopyMemory (ptr_item->pdata, pservice_sd, sd_length);
 
 				SAFE_LOCAL_FREE (pservice_sd);
 
 				apps_helper[app_hash] = _r_obj_allocate (ptr_item, &_app_dereferenceappshelper);
 			}
 
-			SAFE_DELETE_ARRAY (serviceSid);
+			_r_mem_free (serviceSid);
 		}
 
-		SAFE_DELETE_ARRAY (pBuffer);
+		_r_mem_free (pBuffer);
 	}
 
 	CloseServiceHandle (hsvcmgr);
@@ -2196,7 +2224,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
 }
 
-bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, PBYTE* lpdata)
+bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, void** lpdata)
 {
 	if (apps_helper.find (app_hash) == apps_helper.end ())
 		return false;
@@ -2234,13 +2262,7 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 			}
 
 			if (lpdata)
-			{
-				if (ptr_app_item->pdata)
-					*lpdata = ptr_app_item->pdata;
-
-				else
-					*lpdata = nullptr;
-			}
+				*lpdata = ptr_app_item->pdata;
 
 			if (ptime)
 				*ptime = ptr_app_item->timestamp;
@@ -2313,7 +2335,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 		result = _r_str_compare_logical (
 			_r_listview_getitemtext (hparent, listview_id, item1, column_id),
 			_r_listview_getitemtext (hparent, listview_id, item2, column_id)
-		);
+			);
 	}
 
 	return is_descend ? -result : result;
