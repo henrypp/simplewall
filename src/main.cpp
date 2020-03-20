@@ -2798,6 +2798,8 @@ void _app_tabs_init (HWND hwnd)
 
 void _app_initialize ()
 {
+	pugi::set_memory_management_functions (&_r_mem_alloc, &_r_mem_free); // set allocation routine
+
 	// initialize spinlocks
 	_r_fastlock_initialize (&lock_access);
 	_r_fastlock_initialize (&lock_apply);
@@ -2849,46 +2851,52 @@ void _app_initialize ()
 	{
 		DWORD size = SECURITY_MAX_SID_SIZE;
 
-		config.padminsid = (PISID)new BYTE[size];
+		config.padminsid = (PISID)_r_mem_alloc (size);
 
 		if (!CreateWellKnownSid (WinBuiltinAdministratorsSid, nullptr, config.padminsid, &size))
-			SAFE_DELETE_ARRAY (config.padminsid);
+		{
+			_r_mem_free (config.padminsid);
+			config.padminsid = nullptr;
+		}
 	}
 
 	// get current user security identifier
 	if (_r_str_isempty (config.title))
 	{
 		// get user sid
-		HANDLE token = nullptr;
+		HANDLE htoken = nullptr;
 		DWORD token_length = 0;
 		PTOKEN_USER token_user = nullptr;
 
-		if (OpenProcessToken (NtCurrentProcess (), TOKEN_QUERY, &token))
+		if (OpenProcessToken (NtCurrentProcess (), TOKEN_QUERY, &htoken))
 		{
-			GetTokenInformation (token, TokenUser, nullptr, 0, &token_length);
+			GetTokenInformation (htoken, TokenUser, nullptr, 0, &token_length);
 
 			if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
 			{
-				token_user = (PTOKEN_USER)new BYTE[token_length];
+				token_user = (PTOKEN_USER)_r_mem_alloc (token_length);
 
-				if (GetTokenInformation (token, TokenUser, token_user, token_length, &token_length))
+				if (token_user)
 				{
-					SID_NAME_USE sid_type;
+					if (GetTokenInformation (htoken, TokenUser, token_user, token_length, &token_length))
+					{
+						SID_NAME_USE sid_type;
 
-					WCHAR username[MAX_PATH] = {0};
-					WCHAR domain[MAX_PATH] = {0};
+						WCHAR username[MAX_PATH] = {0};
+						WCHAR domain[MAX_PATH] = {0};
 
-					DWORD length1 = _countof (username);
-					DWORD length2 = _countof (domain);
+						DWORD length1 = _countof (username);
+						DWORD length2 = _countof (domain);
 
-					if (LookupAccountSid (nullptr, token_user->User.Sid, username, &length1, domain, &length2, &sid_type))
-						_r_str_printf (config.title, _countof (config.title), L"%s [%s\\%s]", APP_NAME, domain, username);
+						if (LookupAccountSid (nullptr, token_user->User.Sid, username, &length1, domain, &length2, &sid_type))
+							_r_str_printf (config.title, _countof (config.title), L"%s [%s\\%s]", APP_NAME, domain, username);
+					}
+
+					_r_mem_free (token_user);
 				}
-
-				SAFE_DELETE_ARRAY (token_user);
 			}
 
-			CloseHandle (token);
+			CloseHandle (htoken);
 		}
 
 		if (_r_str_isempty (config.title))
