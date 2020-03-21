@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<root timestamp="1572173042" type="1">
+<root timestamp="1584771350" type="1">
 	<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="DNS" rule="53" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="FTP" rule="20-21;49152-65534" protocol="6" is_custom="true" />
@@ -11,7 +11,7 @@
 	<item name="IKEv2/IPSEC/L2TP" rule="500;1701;4500" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
 	<item name="LLMNR" rule="224.0.0.252:5355;[ff02::1:3]:5355" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="mDNS" rule="224.0.0.251:5353;[ff02::fb]:5353" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
-	<item name="NetBIOS [inbound]" rule_local="137-139" dir="2" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+	<item name="NetBIOS [inbound]" rule_local="137-139" dir="1" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="NetBIOS [outbound]" rule="137-139" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="NTP" rule="123" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
 	<item name="RDP [inbound]" rule_local="3389" dir="1" apps="System;%systemroot%\system32\svchost.exe" is_services="true" />
