@@ -318,7 +318,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const *pft, UINT8 const*a
 				direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 			}
 
-			FwpmFreeMemory ((void **)&layer);
+			FwpmFreeMemory ((void**)&layer);
 		}
 	}
 
