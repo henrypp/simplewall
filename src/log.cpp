@@ -221,9 +221,6 @@ void _wfp_logsubscribe (HANDLE hengine)
 			RtlSecureZeroMemory (&subscription, sizeof (subscription));
 			RtlSecureZeroMemory (&enum_template, sizeof (enum_template));
 
-			if (config.psession)
-				RtlCopyMemory (&subscription.sessionKey, config.psession, sizeof (GUID));
-
 			enum_template.numFilterConditions = 0; // get events for all conditions
 
 			subscription.enumTemplate = &enum_template;

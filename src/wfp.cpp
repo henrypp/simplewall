@@ -71,24 +71,12 @@ bool _wfp_initialize (bool is_full)
 	}
 	else
 	{
-		// generate unique session key
-		if (!config.psession)
-		{
-			config.psession = new GUID;
-
-			if (FAILED (CoCreateGuid (config.psession)))
-				SAFE_DELETE (config.psession);
-		}
-
 		RtlSecureZeroMemory (&session, sizeof (session));
 
 		session.displayData.name = APP_NAME;
 		session.displayData.description = APP_NAME;
 
 		session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
-
-		if (config.psession)
-			RtlCopyMemory (&session.sessionKey, config.psession, sizeof (GUID));
 
 		rc = FwpmEngineOpen (nullptr, RPC_C_AUTHN_WINNT, nullptr, &session, &config.hengine);
 
@@ -375,8 +363,6 @@ DoExit:
 void _wfp_uninitialize (bool is_full)
 {
 	HANDLE& hengine = _wfp_getenginehandle ();
-
-	SAFE_DELETE (config.psession);
 
 	if (!hengine)
 		return;

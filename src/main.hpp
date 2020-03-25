@@ -244,7 +244,6 @@ struct STATIC_DATA
 	PACL pacl_default = nullptr;
 	PACL pacl_engine = nullptr;
 	PACL pacl_secure = nullptr;
-	LPGUID psession = nullptr;
 
 	HIMAGELIST himg_toolbar = nullptr;
 	HIMAGELIST himg_rules_small = nullptr;
