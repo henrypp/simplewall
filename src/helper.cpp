@@ -1976,7 +1976,7 @@ void _app_generate_services ()
 		{
 			// Set the buffer
 			bufferSize += returnLength;
-			pBuffer = _r_mem_realloc (pBuffer, bufferSize);
+			pBuffer = _r_mem_reallocex (pBuffer, bufferSize, 0);
 
 			if (pBuffer)
 			{
