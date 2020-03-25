@@ -2025,9 +2025,10 @@ bool ByteBlobAlloc (const PVOID data, size_t length, FWP_BYTE_BLOB** lpblob)
 	if (!data || !length || !lpblob)
 		return false;
 
-	FWP_BYTE_BLOB* pblob = new FWP_BYTE_BLOB;
+	FWP_BYTE_BLOB* pblob = (FWP_BYTE_BLOB*)_r_mem_allocex (sizeof (FWP_BYTE_BLOB), HEAP_ZERO_MEMORY);
 
-	RtlSecureZeroMemory (pblob, sizeof (FWP_BYTE_BLOB));
+	if (!pblob)
+		return false;
 
 	pblob->data = (UINT8*)_r_mem_alloc (length);
 	pblob->size = (UINT32)length;
@@ -2039,7 +2040,7 @@ bool ByteBlobAlloc (const PVOID data, size_t length, FWP_BYTE_BLOB** lpblob)
 	return true;
 }
 
-void ByteBlobFree (FWP_BYTE_BLOB * *lpblob)
+void ByteBlobFree (FWP_BYTE_BLOB** lpblob)
 {
 	if (lpblob && *lpblob)
 	{
@@ -2048,7 +2049,7 @@ void ByteBlobFree (FWP_BYTE_BLOB * *lpblob)
 		if (blob)
 		{
 			_r_mem_free (blob->data);
-			SAFE_DELETE (blob);
+			_r_mem_free (blob);
 
 			*lpblob = nullptr;
 		}
