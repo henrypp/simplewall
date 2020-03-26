@@ -76,6 +76,15 @@ size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	if (_r_str_isempty (path) || PathIsDirectory (path))
 		return 0;
 
+	// prevent possible duplicate apps entries with short path (issue #640)
+	WCHAR path_full[1024] = {0};
+
+	if (_r_str_find (path, INVALID_SIZE_T, L'~') != INVALID_SIZE_T)
+	{
+		if (GetLongPathName (path, path_full, _countof (path_full)))
+			path = path_full;
+	}
+
 	const size_t app_length = _r_str_length (path);
 	const size_t app_hash = _r_str_hash (path);
 
