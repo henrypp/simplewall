@@ -303,18 +303,12 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 	if (is_forced && is_fullscreenmode)
 		is_forced = false;
 
-	RedrawWindow (GetDlgItem (hwnd, IDC_HEADER_ID), nullptr, nullptr, RDW_NOFRAME | RDW_ERASE | RDW_INVALIDATE);
+	InvalidateRect (GetDlgItem (hwnd, IDC_HEADER_ID), nullptr, TRUE);
 	InvalidateRect (hwnd, nullptr, TRUE);
 
 	_r_wnd_top (hwnd, !is_fullscreenmode);
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
-
-	if (is_forced && !is_fullscreenmode)
-	{
-		SetForegroundWindow (hwnd);
-		SetFocus (hwnd);
-	}
 
 	return true;
 }
