@@ -489,7 +489,7 @@ BEGIN
 	IDS_ICONS "Icons"
 	IDS_ICONSSMALL "Small"
 	IDS_ICONSLARGE "Large"
-	IDS_ICONSISHIDDEN "Hide icons"
+	IDS_ICONSISHIDDEN "Do not load icons"
 	IDS_LANGUAGE "Language"
 	IDS_FONT "Font"
 	IDS_HELP "Help"
