@@ -3076,9 +3076,16 @@ find_wrap:
 
 			// install filters
 			if (_wfp_isfiltersinstalled ())
+			{
+				if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
+					_mps_changeconfig2 (false);
+
 				_app_changefilters (hwnd, true, true);
+			}
 			else
+			{
 				_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_INACTIVE, nullptr));
+			}
 
 			// set column size when "auto-size" option are disabled
 			if (!app.ConfigGet (L"AutoSizeColumns", true).AsBool ())
