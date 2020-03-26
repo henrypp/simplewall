@@ -1,3 +1,13 @@
+v3.1.2 (26 March 2020)
+- reverted disable windows firewall on startup (issue #559 and #562)
+- fixed application cannot be started because of continuously restart
+- fixed possible duplicate apps entries with short path (issue #640)
+- fixed network alert steals the focus (issue #637)
+- fixed network paths parsing (issue #629)
+- fixed netbios direction (issue #636)
+- fixed localization (issue #607)
+- fixed bugs
+
 v3.1.1 (27 February 2020)
 - fixed displaying tooltips for non-existing apps in network tab (issue #422)
 - fixed wsl apps do not display names in the network tab (issue #606)
