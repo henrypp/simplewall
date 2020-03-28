@@ -90,7 +90,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 void _app_listviewsetview (HWND hwnd, INT listview_id)
 {
 	const bool is_mainview = (listview_id != IDC_APPS_LV) && (listview_id != IDC_NETWORK);
-	const bool is_tableview = !is_mainview || app.ConfigGet (L"IsTableView", true).AsBool ();
+	const INT view_type = is_mainview ? std::clamp (app.ConfigGet (L"ViewType", LV_VIEW_DETAILS).AsInt (), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
 
 	const INT icons_size = (listview_id != IDC_APPS_LV) ? std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
 	HIMAGELIST himg = nullptr;
@@ -114,8 +114,8 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 		SendDlgItemMessage (hwnd, listview_id, LVM_SETIMAGELIST, LVSIL_SMALL, (LPARAM)himg);
 	}
 
-	SendDlgItemMessage (hwnd, listview_id, LVM_SETVIEW, is_tableview ? LV_VIEW_DETAILS : LV_VIEW_ICON, 0);
-	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
+	SendDlgItemMessage (hwnd, listview_id, LVM_SETVIEW, (WPARAM)view_type, 0);
+	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
 }
 
 bool _app_listviewinitfont (HWND hwnd, PLOGFONT plf)
@@ -643,7 +643,9 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 
 		case CDDS_ITEMPREPAINT:
 		{
-			const bool is_tableview = (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
+			const INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
+			const bool is_tableview = view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE;
+
 			const INT listview_id = static_cast<INT>(lpnmlv->nmcd.hdr.idFrom);
 
 			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_APPS_LV || listview_id == IDC_NETWORK)
@@ -3126,24 +3128,39 @@ find_wrap:
 			CheckMenuItem (hmenu, IDM_AUTOSIZECOLUMNS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AutoSizeColumns", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (hmenu, IDM_ENABLESPECIALGROUP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 
-			CheckMenuItem (hmenu, IDM_ICONSISTABLEVIEW, MF_BYCOMMAND | (app.ConfigGet (L"IsTableView", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_ICONSISHIDDEN, MF_BYCOMMAND | (app.ConfigGet (L"IsIconsHidden", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+			{
+				UINT menu_id;
+				const INT view_type = std::clamp (app.ConfigGet (L"ViewType", LV_VIEW_DETAILS).AsInt (), LV_VIEW_ICON, LV_VIEW_MAX);
+
+				if (view_type == LV_VIEW_ICON)
+					menu_id = IDM_VIEW_ICON;
+
+				else if (view_type == LV_VIEW_TILE)
+					menu_id = IDM_VIEW_TILE;
+
+				else
+					menu_id = IDM_VIEW_DETAILS;
+
+				CheckMenuRadioItem (hmenu, IDM_VIEW_ICON, IDM_VIEW_TILE, menu_id, MF_BYCOMMAND);
+			}
 
 			{
 				UINT menu_id;
 				const INT icon_size = std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST);
 
 				if (icon_size == SHIL_EXTRALARGE)
-					menu_id = IDM_ICONSEXTRALARGE;
+					menu_id = IDM_SIZE_EXTRALARGE;
 
 				else if (icon_size == SHIL_LARGE)
-					menu_id = IDM_ICONSLARGE;
+					menu_id = IDM_SIZE_LARGE;
 
 				else
-					menu_id = IDM_ICONSSMALL;
+					menu_id = IDM_SIZE_SMALL;
 
-				CheckMenuRadioItem (hmenu, IDM_ICONSSMALL, IDM_ICONSEXTRALARGE, menu_id, MF_BYCOMMAND);
+				CheckMenuRadioItem (hmenu, IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, menu_id, MF_BYCOMMAND);
 			}
+
+			CheckMenuItem (hmenu, IDM_ICONSISHIDDEN, MF_BYCOMMAND | (app.ConfigGet (L"IsIconsHidden", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 
 			CheckMenuItem (hmenu, IDM_RULE_BLOCKOUTBOUND, MF_BYCOMMAND | (app.ConfigGet (L"BlockOutboundConnections", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem (hmenu, IDM_RULE_BLOCKINBOUND, MF_BYCOMMAND | (app.ConfigGet (L"BlockInboundConnections", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
@@ -3206,10 +3223,14 @@ find_wrap:
 			app.LocaleMenu (hmenu, IDS_ENABLESPECIALGROUP_CHK, IDM_ENABLESPECIALGROUP_CHK, false, nullptr);
 
 			app.LocaleMenu (GetSubMenu (hmenu, 2), IDS_ICONS, 5, true, nullptr);
-			app.LocaleMenu (hmenu, IDS_ICONSSMALL, IDM_ICONSSMALL, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ICONSLARGE, IDM_ICONSLARGE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ICONSEXTRALARGE, IDM_ICONSEXTRALARGE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ICONSISTABLEVIEW, IDM_ICONSISTABLEVIEW, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ICONSSMALL, IDM_SIZE_SMALL, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ICONSLARGE, IDM_SIZE_LARGE, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_ICONSEXTRALARGE, IDM_SIZE_EXTRALARGE, false, nullptr);
+
+			app.LocaleMenu (hmenu, IDS_VIEW_ICON, IDM_VIEW_ICON, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_VIEW_DETAILS, IDM_VIEW_DETAILS, false, nullptr);
+			app.LocaleMenu (hmenu, IDS_VIEW_TILE, IDM_VIEW_TILE, false, nullptr);
+
 			app.LocaleMenu (hmenu, IDS_ICONSISHIDDEN, IDM_ICONSISHIDDEN, false, nullptr);
 
 			app.LocaleMenu (GetSubMenu (hmenu, 2), IDS_LANGUAGE, LANG_MENU, true, L" (Language)");
@@ -4655,40 +4676,54 @@ find_wrap:
 					break;
 				}
 
-				case IDM_ICONSSMALL:
-				case IDM_ICONSLARGE:
-				case IDM_ICONSEXTRALARGE:
+				case IDM_VIEW_ICON:
+				case IDM_VIEW_DETAILS:
+				case IDM_VIEW_TILE:
 				{
+					INT view_type;
+
+					if (ctrl_id == IDM_VIEW_ICON)
+						view_type = LV_VIEW_ICON;
+
+					else if (ctrl_id == IDM_VIEW_TILE)
+						view_type = LV_VIEW_TILE;
+
+					else
+						view_type = LV_VIEW_DETAILS;
+
+					CheckMenuRadioItem (GetMenu (hwnd), IDM_VIEW_ICON, IDM_VIEW_TILE, ctrl_id, MF_BYCOMMAND);
+					app.ConfigSet (L"ViewType", view_type);
+
 					const INT listview_id = _app_gettab_id (hwnd);
 
+					if (listview_id)
+					{
+						_app_listviewsetview (hwnd, listview_id);
+						_app_listviewresize (hwnd, listview_id);
+
+						_r_listview_redraw (hwnd, listview_id);
+					}
+
+					break;
+				}
+
+				case IDM_SIZE_SMALL:
+				case IDM_SIZE_LARGE:
+				case IDM_SIZE_EXTRALARGE:
+				{
 					INT icon_size;
 
-					if (ctrl_id == IDM_ICONSLARGE)
+					if (ctrl_id == IDM_SIZE_LARGE)
 						icon_size = SHIL_LARGE;
 
-					else if (ctrl_id == IDM_ICONSEXTRALARGE)
+					else if (ctrl_id == IDM_SIZE_EXTRALARGE)
 						icon_size = SHIL_EXTRALARGE;
 
 					else
 						icon_size = SHIL_SYSSMALL;
 
-					CheckMenuRadioItem (GetMenu (hwnd), IDM_ICONSSMALL, IDM_ICONSEXTRALARGE, ctrl_id, MF_BYCOMMAND);
-					app.ConfigSet (L"IconSize", std::clamp (icon_size, SHIL_LARGE, SHIL_LAST));
-
-					_app_listviewsetview (hwnd, listview_id);
-					_app_listviewresize (hwnd, listview_id);
-
-					_r_listview_redraw (hwnd, listview_id);
-
-					break;
-				}
-
-				case IDM_ICONSISTABLEVIEW:
-				{
-					const bool new_val = !app.ConfigGet (L"IsTableView", true).AsBool ();
-
-					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
-					app.ConfigSet (L"IsTableView", new_val);
+					CheckMenuRadioItem (GetMenu (hwnd), IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, ctrl_id, MF_BYCOMMAND);
+					app.ConfigSet (L"IconSize", icon_size);
 
 					const INT listview_id = _app_gettab_id (hwnd);
 
