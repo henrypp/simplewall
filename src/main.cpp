@@ -2923,7 +2923,8 @@ void _app_initialize ()
 	}
 
 	// initialize thread objects
-	config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
+	if (!config.done_evt)
+		config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
 }
 
 INT FirstDriveFromMask (DWORD unitmask)
@@ -5987,15 +5988,14 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 
 				SAFE_LOCAL_FREE (arga);
 
-				if (is_install || is_uninstall)
+				if ((is_install || is_uninstall) && _r_sys_iselevated ())
 				{
-					const bool is_elevated = _r_sys_iselevated ();
+					_app_initialize ();
 
 					if (is_install)
 					{
-						if (is_elevated && (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true))))
+						if (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true)))
 						{
-							_app_initialize ();
 							_app_profile_load (nullptr);
 
 							if (_wfp_initialize (true))
@@ -6006,7 +6006,7 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 					}
 					else if (is_uninstall)
 					{
-						if (is_elevated && _wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
+						if (_wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
 						{
 							if (_wfp_initialize (false))
 								_wfp_destroyfilters (_wfp_getenginehandle ());
