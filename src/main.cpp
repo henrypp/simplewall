@@ -6006,7 +6006,7 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 					}
 					else if (is_uninstall)
 					{
-						if (_wfp_isfiltersinstalled () && _app_installmessage (nullptr, false))
+						if (is_silent || (_wfp_isfiltersinstalled () && _app_installmessage (nullptr, false)))
 						{
 							if (_wfp_initialize (false))
 								_wfp_destroyfilters (_wfp_getenginehandle ());
