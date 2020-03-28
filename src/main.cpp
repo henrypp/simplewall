@@ -89,10 +89,10 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
 
 void _app_listviewsetview (HWND hwnd, INT listview_id)
 {
-	const bool is_mainview = (listview_id != IDC_APPS_LV) && (listview_id != IDC_NETWORK);
+	const bool is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
 	const INT view_type = is_mainview ? std::clamp (app.ConfigGet (L"ViewType", LV_VIEW_DETAILS).AsInt (), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
 
-	const INT icons_size = (listview_id != IDC_APPS_LV) ? std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
+	const INT icons_size = (is_mainview || listview_id == IDC_NETWORK) ? std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
 	HIMAGELIST himg = nullptr;
 
 	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
@@ -5986,11 +5986,11 @@ find_wrap:
 			}
 
 			break;
+			}
 		}
-	}
 
 	return FALSE;
-}
+	}
 
 INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 {
