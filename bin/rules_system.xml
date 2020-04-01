@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<root timestamp="1584771350" type="1">
+<root timestamp="1585720477" type="1">
 	<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="DNS" rule="53" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="FTP" rule="20-21;49152-65534" protocol="6" is_custom="true" />
@@ -23,7 +23,7 @@
 	<item name="SSDP [outbound]" rule="1900" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="SSH" rule="22" protocol="6" is_custom="true" />
 	<item name="Telnet" rule="23" protocol="6" is_custom="true" />
-	<item name="UPnP" rule="2869" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
+	<item name="UPnP" rule="2869;5000" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="WS-Discovery" rule="3702" protocol="17" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 	<item name="WS-Discovery [events]" rule="5357-5358" protocol="6" apps="System;%systemroot%\system32\svchost.exe" is_services="true" is_enabled="true" />
 </root>

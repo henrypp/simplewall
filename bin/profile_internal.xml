@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--Internal rules for simplewall-->
 <!--Minimum required version is 3.0.2-->
-<root timestamp="1584771350" type="4" version="3">
+<root timestamp="1585720477" type="4" version="3">
 	<rules_system>
 		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" is_services="true" is_enabled="true" />
 		<item name="DNS" rule="53" protocol="17" is_services="true" is_enabled="true" />
@@ -26,7 +26,7 @@
 		<item name="SSDP [outbound]" rule="1900" protocol="17" is_services="true" is_enabled="true" />
 		<item name="SSH" rule="22" protocol="6" is_custom="true" />
 		<item name="Telnet" rule="23" protocol="6" is_custom="true" />
-		<item name="UPnP" rule="2869" protocol="6" is_services="true" is_enabled="true" />
+		<item name="UPnP" rule="2869;5000" protocol="6" is_services="true" is_enabled="true" />
 		<item name="WS-Discovery" rule="3702" protocol="17" is_services="true" is_enabled="true" />
 		<item name="WS-Discovery [events]" rule="5357-5358" protocol="6" is_services="true" is_enabled="true" />
 	</rules_system>
