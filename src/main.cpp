@@ -222,7 +222,7 @@ COLORREF _app_getcolorvalue (size_t color_hash)
 	return 0;
 }
 
-COLORREF _app_getcolor (INT listview_id, size_t app_hash)
+COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
 {
 	rstring color_value;
 
@@ -270,6 +270,37 @@ COLORREF _app_getcolor (INT listview_id, size_t app_hash)
 	}
 
 	_r_obj_dereference (ptr_app_object);
+
+	if (color_value.IsEmpty ())
+		return 0;
+
+	return _app_getcolorvalue (_r_str_hash (color_value));
+}
+
+COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx)
+{
+	rstring color_value;
+
+	PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
+
+	if (!ptr_rule_object)
+		return 0;
+
+	PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+
+	if (ptr_rule)
+	{
+		if (ptr_rule->is_enabled && (ptr_rule->is_haveerrors || ptr_rule->guids.empty ()))
+			color_value = L"ColorInvalid";
+
+		else if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
+			color_value = L"ColorSpecial";
+	}
+
+	_r_obj_dereference (ptr_rule_object);
+
+	if (color_value.IsEmpty ())
+		return 0;
 
 	return _app_getcolorvalue (_r_str_hash (color_value));
 }
@@ -663,7 +694,7 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 
 				if (app_hash)
 				{
-					const COLORREF new_clr = _app_getcolor (listview_id, app_hash);
+					const COLORREF new_clr = _app_getappcolor (listview_id, app_hash);
 
 					if (new_clr)
 					{
@@ -680,37 +711,20 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 			else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 			{
 				const size_t rule_idx = lpnmlv->nmcd.lItemlParam;
-				PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
-				if (!ptr_rule_object)
-					return CDRF_DODEFAULT;
+				COLORREF new_clr = _app_getrulecolor (listview_id, rule_idx);
 
-				PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-				if (ptr_rule)
+				if (new_clr)
 				{
-					COLORREF new_clr = 0;
+					lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
+					lpnmlv->clrTextBk = new_clr;
 
-					if (ptr_rule->is_enabled && ptr_rule->is_haveerrors)
-						new_clr = _app_getcolorvalue (_r_str_hash (L"ColorInvalid"));
+					if (is_tableview)
+						_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
 
-					else if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
-						new_clr = _app_getcolorvalue (_r_str_hash (L"ColorSpecial"));
-
-					if (new_clr)
-					{
-						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-						lpnmlv->clrTextBk = new_clr;
-
-						if (is_tableview)
-							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
-
-						_r_obj_dereference (ptr_rule_object);
-						return CDRF_NEWFONT;
-					}
+					return CDRF_NEWFONT;
 				}
 
-				_r_obj_dereference (ptr_rule_object);
 			}
 			else if (listview_id == IDC_COLORS)
 			{
@@ -5986,11 +6000,11 @@ find_wrap:
 			}
 
 			break;
-			}
 		}
+	}
 
 	return FALSE;
-	}
+}
 
 INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 {
@@ -6052,8 +6066,8 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 
 					return ERROR_SUCCESS;
 				}
+				}
 			}
-		}
 
 		if (app.CreateMainWindow (IDD_MAIN, IDI_MAIN, &DlgProc))
 		{
@@ -6075,7 +6089,7 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 				DestroyAcceleratorTable (haccel);
 			}
 		}
-	}
+		}
 
 	return (INT)msg.wParam;
-}
+	}
