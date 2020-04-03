@@ -575,7 +575,7 @@ BEGIN
 	IDS_SIGN_SIGNED "Signed"
 	IDS_SIGN_UNSIGNED "Not signed"
 
-	IDS_GROUP_ALLOWED "Enabled apps"
+	IDS_GROUP_ALLOWED "Apps with internet access"
 	IDS_GROUP_SPECIAL_APPS "Apps with user rules"
 	IDS_GROUP_BLOCKED "Disabled apps"
 
