@@ -250,7 +250,7 @@ COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
 		else if (app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && !ptr_app->is_silent && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
 			color_value = L"ColorSigned";
 
-		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && !ptr_app->is_silent && _app_isapphaverule (app_hash))
+		else if (!app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () && (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && !ptr_app->is_silent && _app_isapphaverule (app_hash)))
 			color_value = L"ColorSpecial";
 
 		else if (!is_networkslist && !is_appslist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
@@ -290,10 +290,10 @@ COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx)
 
 	if (ptr_rule)
 	{
-		if (ptr_rule->is_enabled && (ptr_rule->is_haveerrors || ptr_rule->guids.empty ()))
+		if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
 			color_value = L"ColorInvalid";
 
-		else if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
+		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && !ptr_rule->apps.empty ())
 			color_value = L"ColorSpecial";
 	}
 
@@ -6066,8 +6066,8 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 
 					return ERROR_SUCCESS;
 				}
-				}
 			}
+		}
 
 		if (app.CreateMainWindow (IDD_MAIN, IDI_MAIN, &DlgProc))
 		{
@@ -6089,7 +6089,7 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 				DestroyAcceleratorTable (haccel);
 			}
 		}
-		}
+	}
 
 	return (INT)msg.wParam;
-	}
+}
