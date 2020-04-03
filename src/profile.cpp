@@ -385,7 +385,7 @@ void _app_getcount (PITEM_STATUS ptr_status)
 INT _app_getappgroup (size_t app_hash, const PITEM_APP ptr_app)
 {
 	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
-	//		return INVALID_INT;
+	//		return I_GROUPIDNONE;
 
 	if (!ptr_app)
 		return 2;
@@ -405,8 +405,8 @@ INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 	if (!ptr_rule || !ptr_rule->is_enabled)
 		return 2;
 
-	if (app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () && (ptr_rule->is_forservices || !ptr_rule->apps.empty ()))
-		return 1;
+	//if (app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () && (ptr_rule->is_forservices || !ptr_rule->apps.empty ()))
+	//	return 1;
 
 	return 0;
 }

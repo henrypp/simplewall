@@ -579,8 +579,8 @@ BEGIN
 	IDS_GROUP_SPECIAL_APPS "Apps with user rules"
 	IDS_GROUP_BLOCKED "Disabled apps"
 
-	IDS_GROUP_ENABLED "Enabled rules (all apps)"
-	IDS_GROUP_SPECIAL "Enabled rules (specific apps)"
+	IDS_GROUP_ENABLED "Enabled rules"
+	//IDS_GROUP_SPECIAL "Enabled rules (specific apps)"
 	IDS_GROUP_DISABLED "Disabled rules"
 
 	IDS_DIRECTION_1 "Outbound"
