@@ -4650,36 +4650,6 @@ find_wrap:
 						_r_obj_dereference (ptr_app_object);
 					}
 
-					// regroup rules
-					for (size_t i = 0; i < rules_arr.size (); i++)
-					{
-						PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
-
-						if (!ptr_rule_object)
-							continue;
-
-						const PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-						if (ptr_rule)
-						{
-							const INT listview_id = _app_getlistview_id (ptr_rule->type);
-
-							if (listview_id)
-							{
-								const INT item_pos = _app_getposition (hwnd, listview_id, i);
-
-								if (item_pos != INVALID_INT)
-								{
-									_r_fastlock_acquireshared (&lock_checkbox);
-									_app_setruleiteminfo (hwnd, listview_id, item_pos, ptr_rule, false);
-									_r_fastlock_releaseshared (&lock_checkbox);
-								}
-							}
-						}
-
-						_r_obj_dereference (ptr_rule_object);
-					}
-
 					_r_fastlock_releaseshared (&lock_access);
 
 					const INT listview_id = _app_gettab_id (hwnd);
