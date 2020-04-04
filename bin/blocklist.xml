@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!-- Block spying and tracking on Windows -->
 <!-- https://github.com/crazy-max/WindowsSpyBlocker -->
-<!-- Date: Wed, 26 Feb 2020 04:09:50 +0000 -->
-<root timestamp="1582690190" type="1">
+<!-- Date: Sat, 04 Apr 2020 02:49:35 +0000 -->
+<root timestamp="1585968575" type="1">
 	<item name="extra_13.64.186.225" rule="13.64.186.225" is_block="true" />
 	<item name="extra_13.76.218.117" rule="13.76.218.117" is_block="true" />
 	<item name="extra_13.76.219.191" rule="13.76.219.191" is_block="true" />
@@ -47,6 +47,7 @@
 	<item name="extra_13.107.255.74" rule="13.107.255.74" is_block="true" />
 	<item name="extra_13.107.255.76" rule="13.107.255.76" is_block="true" />
 	<item name="extra_20.43.92.14" rule="20.43.92.14" is_block="true" />
+	<item name="extra_20.46.146.84" rule="20.46.146.84" is_block="true" />
 	<item name="extra_20.150.29.228" rule="20.150.29.228" is_block="true" />
 	<item name="extra_20.188.76.57" rule="20.188.76.57" is_block="true" />
 	<item name="extra_20.190.137.98" rule="20.190.137.98" is_block="true" />
@@ -62,9 +63,12 @@
 	<item name="extra_23.100.122.175" rule="23.100.122.175" is_block="true" />
 	<item name="extra_23.101.156.198" rule="23.101.156.198" is_block="true" />
 	<item name="extra_23.101.158.111" rule="23.101.158.111" is_block="true" />
+	<item name="extra_23.102.47.40" rule="23.102.47.40" is_block="true" />
+	<item name="extra_40.67.249.61" rule="40.67.249.61" is_block="true" />
 	<item name="extra_40.69.176.16" rule="40.69.176.16" is_block="true" />
 	<item name="extra_40.70.0.108" rule="40.70.0.108" is_block="true" />
 	<item name="extra_40.70.158.26" rule="40.70.158.26" is_block="true" />
+	<item name="extra_40.74.35.71" rule="40.74.35.71" is_block="true" />
 	<item name="extra_40.74.70.63" rule="40.74.70.63" is_block="true" />
 	<item name="extra_40.77.225.248" rule="40.77.225.248" is_block="true" />
 	<item name="extra_40.77.230.45" rule="40.77.230.45" is_block="true" />
@@ -172,6 +176,7 @@
 	<item name="extra_52.97.171.194" rule="52.97.171.194" is_block="true" />
 	<item name="extra_52.97.186.114" rule="52.97.186.114" is_block="true" />
 	<item name="extra_52.97.189.98" rule="52.97.189.98" is_block="true" />
+	<item name="extra_52.97.232.194" rule="52.97.232.194" is_block="true" />
 	<item name="extra_52.98.66.98" rule="52.98.66.98" is_block="true" />
 	<item name="extra_52.109.8.19" rule="52.109.8.19" is_block="true" />
 	<item name="extra_52.109.8.20" rule="52.109.8.20" is_block="true" />

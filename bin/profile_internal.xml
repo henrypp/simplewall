@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--Internal rules for simplewall-->
 <!--Minimum required version is 3.0.2-->
-<root timestamp="1585720477" type="4" version="3">
+<root timestamp="1585968575" type="4" version="3">
 	<rules_system>
 		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" is_services="true" is_enabled="true" />
 		<item name="DNS" rule="53" protocol="17" is_services="true" is_enabled="true" />
@@ -75,6 +75,7 @@
 		<item name="extra_13.107.255.74" rule="13.107.255.74" />
 		<item name="extra_13.107.255.76" rule="13.107.255.76" />
 		<item name="extra_20.43.92.14" rule="20.43.92.14" />
+		<item name="extra_20.46.146.84" rule="20.46.146.84" />
 		<item name="extra_20.150.29.228" rule="20.150.29.228" />
 		<item name="extra_20.188.76.57" rule="20.188.76.57" />
 		<item name="extra_20.190.137.98" rule="20.190.137.98" />
@@ -90,9 +91,12 @@
 		<item name="extra_23.100.122.175" rule="23.100.122.175" />
 		<item name="extra_23.101.156.198" rule="23.101.156.198" />
 		<item name="extra_23.101.158.111" rule="23.101.158.111" />
+		<item name="extra_23.102.47.40" rule="23.102.47.40" />
+		<item name="extra_40.67.249.61" rule="40.67.249.61" />
 		<item name="extra_40.69.176.16" rule="40.69.176.16" />
 		<item name="extra_40.70.0.108" rule="40.70.0.108" />
 		<item name="extra_40.70.158.26" rule="40.70.158.26" />
+		<item name="extra_40.74.35.71" rule="40.74.35.71" />
 		<item name="extra_40.74.70.63" rule="40.74.70.63" />
 		<item name="extra_40.77.225.248" rule="40.77.225.248" />
 		<item name="extra_40.77.230.45" rule="40.77.230.45" />
@@ -200,6 +204,7 @@
 		<item name="extra_52.97.171.194" rule="52.97.171.194" />
 		<item name="extra_52.97.186.114" rule="52.97.186.114" />
 		<item name="extra_52.97.189.98" rule="52.97.189.98" />
+		<item name="extra_52.97.232.194" rule="52.97.232.194" />
 		<item name="extra_52.98.66.98" rule="52.98.66.98" />
 		<item name="extra_52.109.8.19" rule="52.109.8.19" />
 		<item name="extra_52.109.8.20" rule="52.109.8.20" />
