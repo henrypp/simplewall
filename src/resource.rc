@@ -592,7 +592,7 @@ BEGIN
 	//IDS_ACTION_LATER "Ignore"
 
 	IDS_DISABLE_CHK "Disable rule"
-	IDS_ENABLE_CHK "Enable for all apps"
+	IDS_ENABLE_CHK "Enable rule"
 	IDS_ENABLEFORAPPS_CHK "Enable for selected apps"
 
 	IDS_WIKI "Help"
