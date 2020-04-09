@@ -165,7 +165,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 
 	_r_obj_dereference (ptr_app_object);
 
-	const INT listview_id = _app_gettab_id (hwnd);
+	const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 	_app_listviewsort (hwnd, listview_id);
 	_app_refreshstatus (hwnd, listview_id);

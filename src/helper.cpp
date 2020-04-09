@@ -43,33 +43,14 @@ void _app_dereferencestring (PVOID pdata)
 	delete[] LPWSTR (pdata);
 }
 
-INT _app_gettab_id (HWND hwnd, INT page_id)
-{
-	TCITEM tci = {0};
-
-	tci.mask = TCIF_PARAM;
-
-	if (page_id == INVALID_INT)
-	{
-		page_id = (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
-
-		if (page_id == INVALID_INT)
-			page_id = 0;
-	}
-
-	SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEM, (WPARAM)page_id, (LPARAM)&tci);
-
-	return (INT)tci.lParam;
-}
-
 void _app_settab_id (HWND hwnd, INT page_id)
 {
-	if (!page_id || (_app_gettab_id (hwnd) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
+	if (!page_id || ((INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
 		return;
 
 	for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 	{
-		const INT listview_id = _app_gettab_id (hwnd, i);
+		const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
 
 		if (listview_id == page_id)
 		{
@@ -2335,7 +2316,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 		result = _r_str_compare_logical (
 			_r_listview_getitemtext (hparent, listview_id, item1, column_id),
 			_r_listview_getitemtext (hparent, listview_id, item2, column_id)
-			);
+		);
 	}
 
 	return is_descend ? -result : result;
@@ -2442,7 +2423,7 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 	if (listview_id)
 	{
 		if (listview_id == INVALID_INT)
-			listview_id = _app_gettab_id (hwnd);
+			listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 		if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
 		{

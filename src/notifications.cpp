@@ -73,7 +73,7 @@ bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 	_app_refreshstatus (app.GetHWND (), listview_id);
 	_app_profile_save ();
 
-	if (listview_id && _app_gettab_id (app.GetHWND ()) == listview_id)
+	if (listview_id && _r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT) == listview_id)
 	{
 		_app_listviewsort (app.GetHWND (), listview_id);
 		_r_listview_redraw (app.GetHWND (), listview_id);
@@ -763,6 +763,9 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					const HMENU hsubmenu = CreatePopupMenu ();
 
+					if (!hsubmenu)
+						break;
+
 					if (nmlp->idFrom == IDC_RULES_BTN)
 					{
 						AppendMenu (hsubmenu, MF_STRING, IDM_DISABLENOTIFICATIONS, app.LocaleString (IDS_DISABLENOTIFICATIONS, nullptr));
@@ -905,7 +908,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 											_app_ruleenable (ptr_rule, true);
 										}
 
-										const INT listview_id = _app_gettab_id (app.GetHWND ());
+										const INT listview_id = (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT);
 										const INT app_listview_id = _app_getlistview_id (ptr_app->type);
 										const INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
 
@@ -1125,7 +1128,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 						_r_fastlock_releaseshared (&lock_access);
 
-						const INT listview_id = _app_gettab_id (app.GetHWND ());
+						const INT listview_id = (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT);
 
 						// set rule information
 						{

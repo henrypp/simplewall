@@ -423,7 +423,7 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 {
 	rstring result;
 
-	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_APPS_LV || listview_id == IDC_NETWORK)
+	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS || listview_id == IDC_NETWORK)
 	{
 		if (listview_id == IDC_NETWORK)
 		{
@@ -828,7 +828,7 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 	{
 		if (hwnd)
 		{
-			if (_app_gettab_id (hwnd) == listview_id)
+			if ((INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT) == listview_id)
 				_app_listviewsort (hwnd, listview_id);
 
 			_app_refreshstatus (hwnd, listview_id);
@@ -1387,7 +1387,7 @@ void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 
 void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 {
-	const INT current_listview_id = _app_gettab_id (hwnd);
+	const INT current_listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 	const INT selected_item = (INT)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED);
 	const INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, current_listview_id), SB_VERT);
 
@@ -1661,12 +1661,15 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 	if (hwnd && current_listview_id)
 	{
-		const INT new_listview_id = _app_gettab_id (hwnd);
+		const INT new_listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
-		_app_listviewsort (hwnd, new_listview_id);
+		if (new_listview_id)
+		{
+			_app_listviewsort (hwnd, new_listview_id);
 
-		if (current_listview_id == new_listview_id)
-			_app_showitem (hwnd, current_listview_id, selected_item, scroll_pos);
+			if (current_listview_id == new_listview_id)
+				_app_showitem (hwnd, current_listview_id, selected_item, scroll_pos);
+		}
 	}
 }
 

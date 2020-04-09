@@ -810,7 +810,7 @@ UINT WINAPI LogThread (LPVOID lparam)
 
 			INT app_listview_id = 0;
 
-			if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)) && app_listview_id == _app_gettab_id (hwnd))
+			if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)) && app_listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT))
 			{
 				_app_listviewsort (hwnd, app_listview_id);
 				_app_refreshstatus (hwnd, app_listview_id);
