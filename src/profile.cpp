@@ -253,21 +253,25 @@ PR_OBJECT _app_getnetworkitem (size_t network_hash)
 
 size_t _app_getnetworkapp (size_t network_hash)
 {
-	size_t app_hash = 0;
-
 	PR_OBJECT ptr_network_object = _app_getnetworkitem (network_hash);
 
-	if (ptr_network_object)
-	{
-		PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
+	if (!ptr_network_object)
+		return 0;
 
-		if (ptr_network)
-			app_hash = ptr_network->app_hash;
+	PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
+
+	if (ptr_network)
+	{
+		size_t app_hash = ptr_network->app_hash;
 
 		_r_obj_dereference (ptr_network_object);
+
+		return app_hash;
 	}
 
-	return app_hash;
+	_r_obj_dereference (ptr_network_object);
+
+	return 0;
 }
 
 void _app_freeapplication (size_t app_hash)
