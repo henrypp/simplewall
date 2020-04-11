@@ -785,7 +785,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							index += 1;
 						}
 
-						CheckMenuRadioItem (hsubmenu, IDC_ALLOW_BTN, IDC_ALLOW_BTN, IDC_ALLOW_BTN, MF_BYCOMMAND);
+						_r_menu_checkitem (hsubmenu, IDC_ALLOW_BTN, IDC_ALLOW_BTN, MF_BYCOMMAND, IDC_ALLOW_BTN);
 					}
 
 					RECT buttonRect = {0};
@@ -795,7 +795,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					_r_wnd_adjustwindowrect (nmlp->hwndFrom, &buttonRect);
 
-					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, buttonRect.left, buttonRect.top, hwnd, nullptr);
+					_r_menu_popup (hsubmenu, hwnd, (LPPOINT)&buttonRect, true);
 
 					DestroyMenu (hsubmenu);
 

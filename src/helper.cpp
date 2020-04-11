@@ -2129,7 +2129,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 		AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, nullptr));
 
-		EnableMenuItem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		_r_menu_enableitem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND, false);
 	}
 	else
 	{
