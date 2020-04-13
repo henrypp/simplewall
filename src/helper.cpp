@@ -900,11 +900,11 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 		case 465:
 			return L"smtps";
 
-		case 513:
-			return L"login";
-
 		case 500:
 			return L"isakmp";
+
+		case 513:
+			return L"login";
 
 		case 514:
 			return L"shell";
