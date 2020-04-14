@@ -2119,12 +2119,14 @@ void _app_generate_services ()
 
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 {
-	ITEM_COUNT stat = {0};
-	RtlSecureZeroMemory (&stat, sizeof (stat));
+	PITEM_STATUS pstatus = (PITEM_STATUS)_r_mem_allocex (sizeof (ITEM_STATUS), HEAP_ZERO_MEMORY);
 
-	_app_getcount (&stat);
+	if (!pstatus)
+		return;
 
-	if (!app_hash || !stat.rules_count)
+	_app_getcount (pstatus);
+
+	if (!app_hash || !pstatus->rules_count)
 	{
 		AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, nullptr));
@@ -2137,12 +2139,12 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 		{
 			if (type == 0)
 			{
-				if (!stat.rules_predefined_count)
+				if (!pstatus->rules_predefined_count)
 					continue;
 			}
 			else
 			{
-				if (!stat.rules_user_count)
+				if (!pstatus->rules_user_count)
 					continue;
 			}
 
@@ -2203,6 +2205,8 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
 	AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, app.LocaleString (IDS_EDITRULES, nullptr));
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
+
+	_r_mem_free (pstatus);
 }
 
 bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, void** lpdata)
@@ -2359,10 +2363,10 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 
 void _app_refreshstatus (HWND hwnd, INT listview_id)
 {
-	ITEM_COUNT stat = {0};
-	RtlSecureZeroMemory (&stat, sizeof (stat));
+	PITEM_STATUS pstatus = (PITEM_STATUS)_r_mem_allocex (sizeof (ITEM_STATUS), HEAP_ZERO_MEMORY);
 
-	_app_getcount (&stat);
+	if (pstatus)
+		_app_getcount (pstatus);
 
 	const HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
 	const HDC hdc = GetDC (hstatus);
@@ -2386,13 +2390,17 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 			{
 				case 1:
 				{
-					text[i].Format (L"%s: %" PR_SIZE_T, app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), stat.apps_unused_count);
+					if (pstatus)
+						text[i].Format (L"%s: %" PR_SIZE_T, app.LocaleString (IDS_STATUS_UNUSED_APPS, nullptr).GetString (), pstatus->apps_unused_count);
+
 					break;
 				}
 
 				case 2:
 				{
-					text[i].Format (L"%s: %" PR_SIZE_T, app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), stat.apps_timer_count);
+					if (pstatus)
+						text[i].Format (L"%s: %" PR_SIZE_T, app.LocaleString (IDS_STATUS_TIMER_APPS, nullptr).GetString (), pstatus->apps_timer_count);
+
 					break;
 				}
 			}
@@ -2464,6 +2472,9 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 			_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (disabled_group_title, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : nullptr), 0, 0);
 		}
 	}
+
+	if (pstatus)
+		_r_mem_free (pstatus);
 }
 
 rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)

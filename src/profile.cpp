@@ -370,13 +370,11 @@ void _app_getcount (PITEM_STATUS ptr_status)
 				if (ptr_rule->is_enabled && !ptr_rule->apps.empty ())
 					ptr_status->rules_global_count += 1;
 
-				{
-					if (ptr_rule->is_readonly)
-						ptr_status->rules_predefined_count += 1;
+				if (ptr_rule->is_readonly)
+					ptr_status->rules_predefined_count += 1;
 
-					else
-						ptr_status->rules_user_count += 1;
-				}
+				else
+					ptr_status->rules_user_count += 1;
 
 				ptr_status->rules_count += 1;
 			}
