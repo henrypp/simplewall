@@ -545,6 +545,9 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 					if (ptr_app->is_silent)
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SILENT, nullptr).GetString ());
 
+					if (_app_isapphaverule (lparam))
+						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SPECIAL, nullptr).GetString ());
+
 					if (!_app_isappexists (ptr_app))
 						buffer.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_INVALID, nullptr).GetString ());
 
