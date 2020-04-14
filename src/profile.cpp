@@ -685,7 +685,7 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 					RtlSecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
 
 					ptr_config->is_enabled = is_enable;
-					_r_str_alloc (&ptr_config->pname, INVALID_SIZE_T, ptr_rule->pname);
+					_r_str_alloc (&ptr_config->pname, _r_str_length (ptr_rule->pname), ptr_rule->pname);
 
 					rules_config[rule_hash] = _r_obj_allocate (ptr_config, &_app_dereferenceruleconfig);
 				}
@@ -696,7 +696,7 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 				RtlSecureZeroMemory (ptr_config, sizeof (ITEM_RULE_CONFIG));
 
 				ptr_config->is_enabled = is_enable;
-				_r_str_alloc (&ptr_config->pname, INVALID_SIZE_T, ptr_rule->pname);
+				_r_str_alloc (&ptr_config->pname, _r_str_length (ptr_rule->pname), ptr_rule->pname);
 
 				rules_config[rule_hash] = _r_obj_allocate (ptr_config, &_app_dereferenceruleconfig);
 			}
