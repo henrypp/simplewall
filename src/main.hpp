@@ -294,6 +294,13 @@ typedef struct tagINSTALL_CONTEXT
 	bool is_install = false;
 } INSTALL_CONTEXT, *PINSTALL_CONTEXT;
 
+typedef struct tagEDITOR_CONTEXT
+{
+	HWND hwnd;
+	INT listview_id;
+	INT item_id;
+} EDITOR_CONTEXT, *PEDITOR_CONTEXT;
+
 typedef struct tagITEM_APP
 {
 	~tagITEM_APP ()
@@ -437,7 +444,7 @@ typedef struct tagITEM_STATUS
 	size_t rules_global_count = 0;
 	size_t rules_predefined_count = 0;
 	size_t rules_user_count = 0;
-} ITEM_COUNT, *PITEM_STATUS;
+} ITEM_STATUS, *PITEM_STATUS;
 
 typedef struct tagITEM_LOG
 {
