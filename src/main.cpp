@@ -3,327 +3,7 @@
 
 #include "global.hpp"
 
-EXTERN_C const IID IID_IImageList2;
-
 const UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
-
-void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced = false)
-{
-	if (!listview_id || (!is_forced && !app.ConfigGet (L"AutoSizeColumns", true).AsBool ()))
-		return;
-
-	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
-	const INT item_count = _r_listview_getitemcount (hwnd, listview_id);
-
-	if (!column_count)
-		return;
-
-	const HWND hlistview = GetDlgItem (hwnd, listview_id);
-	const HWND hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
-
-	RECT rc_client = {0};
-	GetClientRect (hlistview, &rc_client);
-
-	const INT total_width = _R_RECT_WIDTH (&rc_client);
-	const INT spacing = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
-
-	const bool is_tableview = (SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
-
-	// get device context and fix font set
-	const HDC hdc_listview = GetDC (hlistview);
-	const HDC hdc_header = GetDC (hheader);
-
-	if (hdc_listview)
-		SelectObject (hdc_listview, (HFONT)SendMessage (hlistview, WM_GETFONT, 0, 0)); // fix
-
-	if (hdc_header)
-		SelectObject (hdc_header, (HFONT)SendMessage (hheader, WM_GETFONT, 0, 0)); // fix
-
-	const INT column_max_width = _r_dc_getdpi (hwnd, 120);
-	INT column_min_width;
-
-	INT column_width;
-	INT calculated_width = 0;
-
-	for (INT i = column_count - 1; i != INVALID_INT; i--)
-	{
-		// get column text width
-		{
-			const rstring column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
-			column_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + spacing;
-			column_min_width = column_width;
-		}
-
-		if (i == 0)
-		{
-			column_width = std::clamp (total_width - calculated_width, (std::min) (column_min_width, total_width), total_width);
-		}
-		else
-		{
-			// calculate max width of listview subitems (only for details view)
-			if (is_tableview)
-			{
-				for (INT j = 0; j < item_count; j++)
-				{
-					const rstring item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
-					const INT text_width = _r_dc_fontwidth (hdc_listview, item_text, item_text.GetLength ()) + spacing;
-
-					if (text_width > column_width)
-						column_width = text_width;
-				}
-			}
-
-			column_width = std::clamp (column_width, column_min_width, (std::max) (column_min_width, column_max_width));
-			calculated_width += column_width;
-		}
-
-		_r_listview_setcolumn (hwnd, listview_id, i, nullptr, column_width);
-	}
-
-	if (hdc_listview)
-		ReleaseDC (hlistview, hdc_listview);
-
-	if (hdc_header)
-		ReleaseDC (hheader, hdc_header);
-}
-
-void _app_listviewsetview (HWND hwnd, INT listview_id)
-{
-	const bool is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
-	const INT view_type = is_mainview ? std::clamp (app.ConfigGet (L"ViewType", LV_VIEW_DETAILS).AsInt (), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
-
-	const INT icons_size = (is_mainview || listview_id == IDC_NETWORK) ? std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
-	HIMAGELIST himg = nullptr;
-
-	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
-	{
-		if (icons_size == SHIL_SYSSMALL)
-			himg = config.himg_rules_small;
-
-		else
-			himg = config.himg_rules_large;
-	}
-	else
-	{
-		SHGetImageList (icons_size, IID_IImageList2, (void**)&himg);
-	}
-
-	if (himg)
-	{
-		SendDlgItemMessage (hwnd, listview_id, LVM_SETIMAGELIST, LVSIL_NORMAL, (LPARAM)himg);
-		SendDlgItemMessage (hwnd, listview_id, LVM_SETIMAGELIST, LVSIL_SMALL, (LPARAM)himg);
-	}
-
-	SendDlgItemMessage (hwnd, listview_id, LVM_SETVIEW, (WPARAM)view_type, 0);
-	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
-}
-
-bool _app_listviewinitfont (HWND hwnd, PLOGFONT plf)
-{
-	const rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
-
-	if (!buffer.IsEmpty ())
-	{
-		rstringvec rvc;
-		_r_str_split (buffer, buffer.GetLength (), L';', rvc);
-
-		for (size_t i = 0; i < rvc.size (); i++)
-		{
-			rstring& rlink = rvc.at (i);
-
-			_r_str_trim (rlink, DIVIDER_TRIM);
-
-			if (rlink.IsEmpty ())
-				continue;
-
-			if (i == 0)
-				_r_str_copy (plf->lfFaceName, LF_FACESIZE, rlink);
-
-			else if (i == 1)
-				plf->lfHeight = _r_dc_fontsizetoheight (hwnd, rlink.AsInt ());
-
-			else if (i == 2)
-				plf->lfWeight = rlink.AsInt ();
-
-			else
-				break;
-		}
-	}
-
-	// fill missed font values
-	{
-		NONCLIENTMETRICS ncm = {0};
-		ncm.cbSize = sizeof (ncm);
-
-		if (SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
-		{
-			PLOGFONT pdeflf = &ncm.lfMessageFont;
-
-			if (_r_str_isempty (plf->lfFaceName))
-				_r_str_copy (plf->lfFaceName, LF_FACESIZE, pdeflf->lfFaceName);
-
-			if (!plf->lfHeight)
-				plf->lfHeight = pdeflf->lfHeight;
-
-			if (!plf->lfWeight)
-				plf->lfWeight = pdeflf->lfWeight;
-
-			// set default values
-			plf->lfCharSet = pdeflf->lfCharSet;
-			plf->lfQuality = pdeflf->lfQuality;
-		}
-	}
-
-	return true;
-}
-
-void _app_listviewsetfont (HWND hwnd, INT listview_id, bool is_redraw)
-{
-	LOGFONT lf = {0};
-
-	if (is_redraw || !config.hfont)
-	{
-		SAFE_DELETE_OBJECT (config.hfont);
-
-		_app_listviewinitfont (hwnd, &lf);
-
-		config.hfont = CreateFontIndirect (&lf);
-	}
-
-	if (config.hfont)
-		SendDlgItemMessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
-}
-
-COLORREF _app_getcolorvalue (size_t color_hash)
-{
-	if (!color_hash)
-		return 0;
-
-	for (size_t i = 0; i < colors.size (); i++)
-	{
-		PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (i));
-
-		if (!ptr_clr_object)
-			continue;
-
-		const PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
-
-		if (ptr_clr && ptr_clr->clr_hash == color_hash)
-		{
-			const COLORREF result = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
-			_r_obj_dereference (ptr_clr_object);
-
-			return result;
-		}
-
-		_r_obj_dereference (ptr_clr_object);
-	}
-
-	return 0;
-}
-
-COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
-{
-	rstring color_value;
-
-	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
-
-	if (!ptr_app_object)
-		return 0;
-
-	const bool is_appslist = (listview_id == IDC_APPS_LV);
-	const bool is_networkslist = (listview_id == IDC_NETWORK);
-
-	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
-
-	if (ptr_app)
-	{
-		if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && !_app_isappexists (ptr_app))
-			color_value = L"ColorInvalid";
-
-		else if (app.ConfigGet (L"IsHighlightTimer", true, L"colors").AsBool () && _app_istimeractive (ptr_app))
-			color_value = L"ColorTimer";
-
-		else if (!is_networkslist && !ptr_app->is_silent && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool () && _app_isapphaveconnection (app_hash))
-			color_value = L"ColorConnection";
-
-		else if (app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && !ptr_app->is_silent && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
-			color_value = L"ColorSigned";
-
-		else if (!app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () && (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && !ptr_app->is_silent && _app_isapphaverule (app_hash)))
-			color_value = L"ColorSpecial";
-
-		else if (!is_networkslist && !is_appslist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
-			color_value = L"ColorSilent";
-
-		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
-			color_value = L"ColorService";
-
-		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool () && ptr_app->type == DataAppUWP)
-			color_value = L"ColorPackage";
-
-		else if (app.ConfigGet (L"IsHighlightPico", true, L"colors").AsBool () && ptr_app->type == DataAppPico)
-			color_value = L"ColorPico";
-
-		else if (app.ConfigGet (L"IsHighlightSystem", true, L"colors").AsBool () && ptr_app->is_system)
-			color_value = L"ColorSystem";
-	}
-
-	_r_obj_dereference (ptr_app_object);
-
-	if (color_value.IsEmpty ())
-		return 0;
-
-	return _app_getcolorvalue (_r_str_hash (color_value));
-}
-
-COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx)
-{
-	rstring color_value;
-
-	PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
-
-	if (!ptr_rule_object)
-		return 0;
-
-	PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-	if (ptr_rule)
-	{
-		if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
-			color_value = L"ColorInvalid";
-
-		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && !ptr_rule->apps.empty ())
-			color_value = L"ColorSpecial";
-	}
-
-	_r_obj_dereference (ptr_rule_object);
-
-	if (color_value.IsEmpty ())
-		return 0;
-
-	return _app_getcolorvalue (_r_str_hash (color_value));
-}
-
-//bool _app_canihaveaccess ()
-//{
-//	bool result = false;
-//
-//	_r_fastlock_acquireshared (&lock_access);
-//
-//	PITEM_APP const ptr_app = _app_getappitem (config.my_hash);
-//
-//	if (ptr_app)
-//	{
-//		const EnumMode mode = (EnumMode)app.ConfigGet (L"Mode", ModeWhitelist).AsUint ();
-//
-//		result = (mode == ModeWhitelist && ptr_app->is_enabled || mode == ModeBlacklist && !ptr_app->is_enabled);
-//	}
-//
-//	_r_fastlock_releaseshared (&lock_access);
-//
-//	return result;
-//}
 
 UINT WINAPI ApplyThread (LPVOID lparam)
 {
@@ -449,13 +129,13 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 			// refresh network tab as well
 			if (is_refresh)
 			{
-				const INT current_listview_id = _app_gettab_id (hwnd);
+				const INT current_listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 				if (current_listview_id == network_listview_id)
 				{
 					SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, FALSE, 0);
 
-					_app_listviewresize (hwnd, network_listview_id);
+					_app_listviewresize (hwnd, network_listview_id, false);
 					_app_listviewsort (hwnd, network_listview_id);
 
 					SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, TRUE, 0);
@@ -516,7 +196,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 	if (_wfp_isfiltersapplying ())
 		return false;
 
-	const INT listview_id = _app_gettab_id (hwnd);
+	const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 	_app_listviewsort (hwnd, listview_id);
 
@@ -560,11 +240,11 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 	RtlSecureZeroMemory (ptr_clr, sizeof (ITEM_COLOR));
 
 	if (!_r_str_isempty (config_name))
-		_r_str_alloc (&ptr_clr->pcfg_name, INVALID_SIZE_T, config_name);
+		_r_str_alloc (&ptr_clr->pcfg_name, _r_str_length (config_name), config_name);
 
 	if (!_r_str_isempty (config_value))
 	{
-		_r_str_alloc (&ptr_clr->pcfg_value, INVALID_SIZE_T, config_value);
+		_r_str_alloc (&ptr_clr->pcfg_value, _r_str_length (config_value), config_value);
 
 		ptr_clr->clr_hash = _r_str_hash (config_value);
 		ptr_clr->new_clr = app.ConfigGet (config_value, default_clr, L"colors").AsUlong ();
@@ -660,733 +340,6 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 	return false;
 }
 
-LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
-{
-	if (!app.ConfigGet (L"IsEnableHighlighting", true).AsBool ())
-		return CDRF_DODEFAULT;
-
-	switch (lpnmlv->nmcd.dwDrawStage)
-	{
-		case CDDS_PREPAINT:
-		{
-			return CDRF_NOTIFYITEMDRAW;
-		}
-
-		case CDDS_ITEMPREPAINT:
-		{
-			const INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
-			const bool is_tableview = view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE;
-
-			const INT listview_id = static_cast<INT>(lpnmlv->nmcd.hdr.idFrom);
-
-			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_APPS_LV || listview_id == IDC_NETWORK)
-			{
-				size_t app_hash;
-
-				if (listview_id == IDC_NETWORK)
-				{
-					app_hash = _app_getnetworkapp (lpnmlv->nmcd.lItemlParam); // initialize
-				}
-				else
-				{
-					app_hash = lpnmlv->nmcd.lItemlParam;
-				}
-
-				if (app_hash)
-				{
-					const COLORREF new_clr = _app_getappcolor (listview_id, app_hash);
-
-					if (new_clr)
-					{
-						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-						lpnmlv->clrTextBk = new_clr;
-
-						if (is_tableview)
-							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
-
-						return CDRF_NEWFONT;
-					}
-				}
-			}
-			else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
-			{
-				const size_t rule_idx = lpnmlv->nmcd.lItemlParam;
-
-				COLORREF new_clr = _app_getrulecolor (listview_id, rule_idx);
-
-				if (new_clr)
-				{
-					lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-					lpnmlv->clrTextBk = new_clr;
-
-					if (is_tableview)
-						_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
-
-					return CDRF_NEWFONT;
-				}
-
-			}
-			else if (listview_id == IDC_COLORS)
-			{
-				PR_OBJECT ptr_object = _r_obj_reference (colors.at (lpnmlv->nmcd.lItemlParam));
-
-				if (ptr_object)
-				{
-					const PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_object->pdata;
-
-					if (ptr_clr)
-					{
-						const COLORREF new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
-
-						if (new_clr)
-						{
-							lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-							lpnmlv->clrTextBk = new_clr;
-
-							if (is_tableview)
-								_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
-
-							_r_obj_dereference (ptr_object);
-							return CDRF_NEWFONT;
-						}
-					}
-
-					_r_obj_dereference (ptr_object);
-				}
-			}
-
-			break;
-		}
-	}
-
-	return CDRF_DODEFAULT;
-}
-
-LONG _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
-{
-	switch (lpnmlv->nmcd.dwDrawStage)
-	{
-		case CDDS_PREPAINT:
-		{
-			return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
-		}
-
-		case CDDS_ITEMPREPAINT:
-		{
-			TBBUTTONINFO tbi = {0};
-
-			tbi.cbSize = sizeof (tbi);
-			tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
-
-			if ((INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi) == INVALID_INT)
-				break;
-
-			if ((tbi.fsState & TBSTATE_ENABLED) == 0)
-			{
-				INT icon_size_x = 0;
-				INT icon_size_y = 0;
-
-				SelectObject (lpnmlv->nmcd.hdc, (HFONT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, WM_GETFONT, 0, 0)); // fix
-
-				SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
-				SetTextColor (lpnmlv->nmcd.hdc, GetSysColor (COLOR_GRAYTEXT));
-
-				if (tbi.iImage != I_IMAGENONE)
-				{
-					const HIMAGELIST himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
-
-					if (himglist)
-					{
-						const DWORD padding = (DWORD)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
-						const UINT rebar_height = (UINT)SendMessage (GetParent (lpnmlv->nmcd.hdr.hwndFrom), RB_GETBARHEIGHT, 0, 0);
-
-						ImageList_GetIconSize (himglist, &icon_size_x, &icon_size_y);
-
-						IMAGELISTDRAWPARAMS ildp = {0};
-
-						ildp.cbSize = sizeof (ildp);
-						ildp.himl = himglist;
-						ildp.hdcDst = lpnmlv->nmcd.hdc;
-						ildp.i = tbi.iImage;
-						ildp.x = lpnmlv->nmcd.rc.left + (LOWORD (padding) / 2);
-						ildp.y = (rebar_height / 2) - (icon_size_y / 2);
-						ildp.fState = ILS_SATURATE; // grayscale
-						ildp.fStyle = ILD_NORMAL | ILD_ASYNC;
-
-						ImageList_DrawIndirect (&ildp);
-					}
-				}
-
-				if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
-				{
-					WCHAR text[MAX_PATH] = {0};
-					SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
-
-					if (tbi.iImage != I_IMAGENONE)
-						lpnmlv->nmcd.rc.left += icon_size_x;
-
-					DrawTextEx (lpnmlv->nmcd.hdc, text, (INT)_r_str_length (text), &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, nullptr);
-				}
-
-				return CDRF_SKIPDEFAULT;
-			}
-
-			break;
-		}
-	}
-
-	return CDRF_DODEFAULT;
-}
-
-INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-	static PR_OBJECT ptr_rule_object = nullptr;
-	static PITEM_RULE ptr_rule = nullptr;
-
-	switch (msg)
-	{
-		case WM_INITDIALOG:
-		{
-			ptr_rule_object = (PR_OBJECT)lparam;
-
-			if (!ptr_rule_object)
-			{
-				EndDialog (hwnd, 0);
-				return FALSE;
-			}
-
-			ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-			if (!ptr_rule)
-			{
-				EndDialog (hwnd, 0);
-				return FALSE;
-			}
-
-#if !defined(_APP_NO_DARKTHEME)
-			_r_wnd_setdarktheme (hwnd);
-#endif // !_APP_NO_DARKTHEME
-
-			// configure window
-			_r_wnd_center (hwnd, GetParent (hwnd));
-
-			SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)));
-			SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)app.GetSharedImage (app.GetHINSTANCE (), IDI_MAIN, _r_dc_getsystemmetrics (hwnd, SM_CXICON)));
-
-			// localize window
-			SetWindowText (hwnd, app.LocaleString (IDS_EDITOR, (!_r_str_isempty (ptr_rule->pname) ? _r_fmt (L" - \"%s\"", ptr_rule->pname).GetString () : nullptr)));
-
-			SetDlgItemText (hwnd, IDC_NAME, app.LocaleString (IDS_NAME, L":"));
-			SetDlgItemText (hwnd, IDC_RULE_REMOTE, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L"):"));
-			SetDlgItemText (hwnd, IDC_RULE_LOCAL, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_LOCAL L"):"));
-			SetDlgItemText (hwnd, IDC_DIRECTION, app.LocaleString (IDS_DIRECTION, L":"));
-			SetDlgItemText (hwnd, IDC_PROTOCOL, app.LocaleString (IDS_PROTOCOL, L":"));
-			SetDlgItemText (hwnd, IDC_PORTVERSION, app.LocaleString (IDS_PORTVERSION, L":"));
-			SetDlgItemText (hwnd, IDC_ACTION, app.LocaleString (IDS_ACTION, L":"));
-
-			SetDlgItemText (hwnd, IDC_DISABLE_CHK, app.LocaleString (IDS_DISABLE_CHK, nullptr));
-			SetDlgItemText (hwnd, IDC_ENABLE_CHK, app.LocaleString (IDS_ENABLE_CHK, nullptr));
-			SetDlgItemText (hwnd, IDC_ENABLEFORAPPS_CHK, app.LocaleString (IDS_ENABLEFORAPPS_CHK, nullptr));
-
-			SetDlgItemText (hwnd, IDC_WIKI, app.LocaleString (IDS_WIKI, nullptr));
-			SetDlgItemText (hwnd, IDC_SAVE, app.LocaleString (IDS_SAVE, nullptr));
-			SetDlgItemText (hwnd, IDC_CLOSE, app.LocaleString (IDS_CLOSE, nullptr));
-
-			// configure listview
-			_app_listviewsetfont (hwnd, IDC_APPS_LV, false);
-			_app_listviewsetview (hwnd, IDC_APPS_LV);
-
-			_r_listview_setstyle (hwnd, IDC_APPS_LV, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES);
-
-			_r_listview_addcolumn (hwnd, IDC_APPS_LV, 0, app.LocaleString (IDS_NAME, nullptr), -95, LVCFMT_LEFT);
-
-			// name
-			if (!_r_str_isempty (ptr_rule->pname))
-				SetDlgItemText (hwnd, IDC_NAME_EDIT, ptr_rule->pname);
-
-			// rule_remote (remote)
-			if (!_r_str_isempty (ptr_rule->prule_remote))
-				SetDlgItemText (hwnd, IDC_RULE_REMOTE_EDIT, ptr_rule->prule_remote);
-
-			// rule_remote (local)
-			if (!_r_str_isempty (ptr_rule->prule_local))
-				SetDlgItemText (hwnd, IDC_RULE_LOCAL_EDIT, ptr_rule->prule_local);
-
-			// apps (apply to)
-			{
-				INT item = 0;
-
-				_r_fastlock_acquireshared (&lock_access);
-
-				for (auto &p : apps)
-				{
-					PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
-
-					if (!ptr_app_object)
-						continue;
-
-					PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
-
-					if (!ptr_app)
-					{
-						_r_obj_dereference (ptr_app_object);
-						continue;
-					}
-
-					// windows store apps (win8+)
-					if (ptr_app->type == DataAppUWP && !_r_sys_validversion (6, 2))
-					{
-						_r_obj_dereference (ptr_app_object);
-						continue;
-					}
-
-					if (ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash))
-					{
-						_r_obj_dereference (ptr_app_object);
-						continue;
-					}
-
-					const bool is_enabled = !ptr_rule->apps.empty () && (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ());
-
-					_r_fastlock_acquireshared (&lock_checkbox);
-
-					_r_listview_additem (hwnd, IDC_APPS_LV, item, 0, _r_path_getfilename (ptr_app->display_name), ptr_app->icon_id, I_GROUPIDNONE, p.first);
-					_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, is_enabled);
-
-					_r_fastlock_releaseshared (&lock_checkbox);
-
-					item += 1;
-
-					_r_obj_dereference (ptr_app_object);
-				}
-
-				_r_fastlock_releaseshared (&lock_access);
-
-				// resize column
-				_r_listview_setcolumn (hwnd, IDC_APPS_LV, 0, nullptr, -100);
-
-				// sort column
-				_app_listviewsort (hwnd, IDC_APPS_LV);
-			}
-
-			if (ptr_rule->type != DataRuleCustom)
-			{
-				_r_ctrl_enable (hwnd, IDC_ENABLEFORAPPS_CHK, false);
-				_r_ctrl_enable (hwnd, IDC_APPS_LV, false);
-			}
-
-			const rstring text_any = app.LocaleString (IDS_ANY, nullptr);
-
-			// direction
-			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_DIRECTION_1, nullptr).GetString ());
-			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 1, (LPARAM)app.LocaleString (IDS_DIRECTION_2, nullptr).GetString ());
-			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_INSERTSTRING, 2, (LPARAM)text_any.GetString ());
-
-			SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->direction, 0);
-
-			// protocols
-			{
-				const UINT8 protos[] = {
-					IPPROTO_ICMP,
-					IPPROTO_IGMP,
-					IPPROTO_IPV4,
-					IPPROTO_TCP,
-					IPPROTO_UDP,
-					IPPROTO_RDP,
-					IPPROTO_IPV6,
-					IPPROTO_ICMPV6,
-					IPPROTO_L2TP,
-					IPPROTO_SCTP,
-				};
-
-				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, 0, (LPARAM)text_any.GetString ());
-				SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETCURSEL, 0, 0);
-
-				for (size_t i = 0; i < _countof (protos); i++)
-				{
-					const UINT8 proto = protos[i];
-
-					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_INSERTSTRING, i + 1, (LPARAM)_r_fmt (L"%s (%" PRIu8 L")", _app_getprotoname (proto, AF_UNSPEC).GetString (), proto).GetString ());
-					SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETITEMDATA, i + 1, (LPARAM)proto);
-
-					if (ptr_rule->protocol == proto)
-						SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_SETCURSEL, (WPARAM)i + 1, 0);
-				}
-			}
-
-			// family (ports-only)
-			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_INSERTSTRING, 0, (LPARAM)text_any.GetString ());
-			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_SETITEMDATA, 0, (LPARAM)AF_UNSPEC);
-
-			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_INSERTSTRING, 1, (LPARAM)L"IPv4");
-			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_SETITEMDATA, 1, (LPARAM)AF_INET);
-
-			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_INSERTSTRING, 2, (LPARAM)L"IPv6");
-			SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_SETITEMDATA, 2, (LPARAM)AF_INET6);
-
-			if (ptr_rule->af == AF_UNSPEC)
-				SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_SETCURSEL, (WPARAM)0, 0);
-
-			else if (ptr_rule->af == AF_INET)
-				SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_SETCURSEL, (WPARAM)1, 0);
-
-			else if (ptr_rule->af == AF_INET6)
-				SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_SETCURSEL, (WPARAM)2, 0);
-
-			// action
-			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_INSERTSTRING, 0, (LPARAM)app.LocaleString (IDS_ACTION_ALLOW, nullptr).GetString ());
-			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_INSERTSTRING, 1, (LPARAM)app.LocaleString (IDS_ACTION_BLOCK, nullptr).GetString ());
-
-			SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_SETCURSEL, (WPARAM)ptr_rule->is_block, 0);
-
-			// state
-			{
-				INT ctrl_id = IDC_DISABLE_CHK;
-
-				if (ptr_rule->is_enabled)
-					ctrl_id = ptr_rule->apps.empty () ? IDC_ENABLE_CHK : IDC_ENABLEFORAPPS_CHK;
-
-				CheckRadioButton (hwnd, IDC_DISABLE_CHK, IDC_ENABLEFORAPPS_CHK, ctrl_id);
-			}
-
-			// set limitation
-			SendDlgItemMessage (hwnd, IDC_NAME_EDIT, EM_LIMITTEXT, RULE_NAME_CCH_MAX - 1, 0);
-			SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, EM_LIMITTEXT, RULE_RULE_CCH_MAX - 1, 0);
-			SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, EM_LIMITTEXT, RULE_RULE_CCH_MAX - 1, 0);
-
-			// set read-only
-			SendDlgItemMessage (hwnd, IDC_NAME_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
-			SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
-			SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, EM_SETREADONLY, ptr_rule->is_readonly, 0);
-
-			_r_ctrl_enable (hwnd, IDC_PORTVERSION_EDIT, !ptr_rule->is_readonly);
-			_r_ctrl_enable (hwnd, IDC_PROTOCOL_EDIT, !ptr_rule->is_readonly);
-			_r_ctrl_enable (hwnd, IDC_DIRECTION_EDIT, !ptr_rule->is_readonly);
-			_r_ctrl_enable (hwnd, IDC_ACTION_EDIT, !ptr_rule->is_readonly);
-
-			_r_wnd_addstyle (hwnd, IDC_WIKI, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-			_r_wnd_addstyle (hwnd, IDC_SAVE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-
-			if (!ptr_rule->is_readonly)
-				_r_ctrl_enable (hwnd, IDC_SAVE, (SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) && ((SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) || (SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0))); // enable apply button
-
-			ptr_rule->is_haveerrors = false;
-
-			break;
-		}
-
-		case WM_SETTINGCHANGE:
-		{
-			_r_wnd_changesettings (hwnd, wparam, lparam);
-			break;
-		}
-
-		case WM_NOTIFY:
-		{
-			LPNMHDR nmlp = (LPNMHDR)lparam;
-
-			switch (nmlp->code)
-			{
-				case NM_CUSTOMDRAW:
-				{
-					LONG result = CDRF_DODEFAULT;
-
-					if (_r_fastlock_tryacquireshared (&lock_access))
-					{
-						result = _app_nmcustdraw_listview ((LPNMLVCUSTOMDRAW)lparam);
-						_r_fastlock_releaseshared (&lock_access);
-					}
-
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
-					return result;
-				}
-
-				case NM_RCLICK:
-				{
-					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
-
-					if (lpnmlv->iItem == INVALID_INT)
-						break;
-
-					const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
-
-					if (listview_id != IDC_APPS_LV)
-						break;
-
-					const HMENU hsubmenu = CreatePopupMenu ();
-
-					AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_CHECK, app.LocaleString (IDS_CHECK, nullptr));
-					AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, nullptr));
-
-					POINT pt = {0};
-					GetCursorPos (&pt);
-
-					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
-
-					DestroyMenu (hsubmenu);
-
-					break;
-				}
-
-				case LVN_COLUMNCLICK:
-				{
-					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-					_app_listviewsort (hwnd, static_cast<INT>(lpnmlv->hdr.idFrom), lpnmlv->iSubItem, true);
-
-					break;
-				}
-
-				case LVN_ITEMCHANGED:
-				{
-					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-
-					if (IsWindowVisible (lpnmlv->hdr.hwndFrom) && (lpnmlv->uChanged & LVIF_STATE) && (lpnmlv->uNewState == 8192 || lpnmlv->uNewState == 4096) && lpnmlv->uNewState != lpnmlv->uOldState)
-					{
-						if (_r_fastlock_islocked (&lock_checkbox))
-							break;
-
-						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
-
-						const bool is_havechecks = !!_r_listview_getitemcount (hwnd, listview_id, true);
-						CheckRadioButton (hwnd, IDC_DISABLE_CHK, IDC_ENABLEFORAPPS_CHK, is_havechecks ? IDC_ENABLEFORAPPS_CHK : IDC_DISABLE_CHK);
-
-						_app_listviewsort (hwnd, listview_id);
-					}
-
-					break;
-				}
-
-				case LVN_GETINFOTIP:
-				{
-					if (_r_fastlock_tryacquireshared (&lock_access))
-					{
-						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
-
-						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
-
-						const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
-
-						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (listview_id, idx));
-
-						_r_fastlock_releaseshared (&lock_access);
-					}
-
-					break;
-				}
-
-				case LVN_GETEMPTYMARKUP:
-				{
-					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
-
-					lpnmlv->dwFlags = EMF_CENTERED;
-					_r_str_copy (lpnmlv->szMarkup, _countof (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, nullptr));
-
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-					return TRUE;
-				}
-			}
-
-			break;
-		}
-
-		case WM_COMMAND:
-		{
-			const INT ctrl_id = LOWORD (wparam);
-
-			if (HIWORD (wparam) == EN_CHANGE)
-			{
-				if (!ptr_rule->is_readonly)
-					_r_ctrl_enable (hwnd, IDC_SAVE, (SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) && ((SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0) || (SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0) > 0))); // enable apply button
-
-				return FALSE;
-			}
-
-			switch (ctrl_id)
-			{
-				case IDM_CHECK:
-				case IDM_UNCHECK:
-				{
-					const bool new_val = (ctrl_id == IDM_CHECK) ? true : false;
-					INT item = INVALID_INT;
-
-					_r_fastlock_acquireshared (&lock_checkbox);
-
-					while ((item = (INT)SendDlgItemMessage (hwnd, IDC_APPS_LV, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
-						_r_listview_setitemcheck (hwnd, IDC_APPS_LV, item, new_val);
-
-					_r_fastlock_releaseshared (&lock_checkbox);
-
-					_app_listviewsort (hwnd, IDC_APPS_LV, 0);
-
-					break;
-				}
-
-				case IDC_WIKI:
-				{
-					ShellExecute (hwnd, nullptr, WIKI_URL, nullptr, nullptr, SW_SHOWDEFAULT);
-					break;
-				}
-
-				case IDOK: // process Enter key
-				case IDC_SAVE:
-				{
-					// do not change read-only rules
-					if (!ptr_rule->is_readonly)
-					{
-						if (!SendDlgItemMessage (hwnd, IDC_NAME_EDIT, WM_GETTEXTLENGTH, 0, 0) || (!SendDlgItemMessage (hwnd, IDC_RULE_REMOTE_EDIT, WM_GETTEXTLENGTH, 0, 0) && !SendDlgItemMessage (hwnd, IDC_RULE_LOCAL_EDIT, WM_GETTEXTLENGTH, 0, 0)))
-							return FALSE;
-
-						rstring rule_remote = _r_ctrl_gettext (hwnd, IDC_RULE_REMOTE_EDIT);
-						_r_str_trim (rule_remote, DIVIDER_TRIM DIVIDER_RULE);
-
-						rstring rule_local = _r_ctrl_gettext (hwnd, IDC_RULE_LOCAL_EDIT);
-						_r_str_trim (rule_local, DIVIDER_TRIM DIVIDER_RULE);
-
-						size_t rule_remote_length;
-						size_t rule_local_length;
-
-						// set correct remote rule
-						{
-							rstring rule_remote_fixed;
-
-							rstringvec rvc;
-							_r_str_split (rule_remote, rule_remote.GetLength (), DIVIDER_RULE[0], rvc);
-
-							for (size_t i = 0; i < rvc.size (); i++)
-							{
-								rstring& rule_single = rvc.at (i);
-
-								_r_str_trim (rule_single, DIVIDER_TRIM DIVIDER_RULE);
-
-								if (rule_single.IsEmpty () || !_app_parserulestring (rule_single, nullptr))
-								{
-									_r_ctrl_showtip (hwnd, IDC_RULE_REMOTE_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single.GetString ()));
-									_r_ctrl_enable (hwnd, IDC_SAVE, false);
-
-									return FALSE;
-								}
-
-								rule_remote_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single.GetString ());
-							}
-
-							_r_str_trim (rule_remote_fixed, L" " DIVIDER_TRIM DIVIDER_RULE);
-
-							rule_remote = std::move (rule_remote_fixed);
-							rule_remote_length = min (rule_remote.GetLength (), RULE_RULE_CCH_MAX);
-						}
-
-						// set correct local rule
-						{
-							rstring rule_local_fixed;
-
-							rstringvec rvc;
-							_r_str_split (rule_local, rule_local.GetLength (), DIVIDER_RULE[0], rvc);
-
-							for (size_t i = 0; i < rvc.size (); i++)
-							{
-								rstring& rule_single = rvc.at (i);
-
-								_r_str_trim (rule_single, L" " DIVIDER_TRIM DIVIDER_RULE);
-
-								if (rule_single.IsEmpty () || !_app_parserulestring (rule_single, nullptr))
-								{
-									_r_ctrl_showtip (hwnd, IDC_RULE_LOCAL_EDIT, TTI_ERROR, APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_SYNTAX_ERROR, nullptr), rule_single.GetString ()));
-									_r_ctrl_enable (hwnd, IDC_SAVE, false);
-
-									return FALSE;
-								}
-
-								rule_local_fixed.AppendFormat (L"%s" DIVIDER_RULE, rule_single.GetString ());
-							}
-
-							_r_str_trim (rule_local_fixed, L" " DIVIDER_TRIM DIVIDER_RULE);
-
-							rule_local = std::move (rule_local_fixed);
-							rule_local_length = min (rule_local.GetLength (), RULE_RULE_CCH_MAX);
-						}
-
-						// set rule remote address
-						_r_str_alloc (&ptr_rule->prule_remote, rule_remote_length, rule_remote);
-						_r_str_alloc (&ptr_rule->prule_local, rule_local_length, rule_local);
-
-						// set rule name
-						{
-							rstring name = _r_ctrl_gettext (hwnd, IDC_NAME_EDIT);
-							_r_str_trim (name, DIVIDER_TRIM DIVIDER_RULE);
-
-							if (!name.IsEmpty ())
-							{
-								const size_t name_length = min (name.GetLength (), RULE_NAME_CCH_MAX);
-
-								_r_str_alloc (&ptr_rule->pname, name_length, name);
-							}
-						}
-
-						ptr_rule->protocol = (UINT8)SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PROTOCOL_EDIT, CB_GETCURSEL, 0, 0), 0);
-						ptr_rule->af = (ADDRESS_FAMILY)SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETITEMDATA, SendDlgItemMessage (hwnd, IDC_PORTVERSION_EDIT, CB_GETCURSEL, 0, 0), 0);
-
-						ptr_rule->direction = (FWP_DIRECTION)SendDlgItemMessage (hwnd, IDC_DIRECTION_EDIT, CB_GETCURSEL, 0, 0);
-						ptr_rule->is_block = !!SendDlgItemMessage (hwnd, IDC_ACTION_EDIT, CB_GETCURSEL, 0, 0);
-
-						if (ptr_rule->type == DataRuleCustom)
-							ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
-					}
-
-					_app_ruleenable (ptr_rule, !!(IsDlgButtonChecked (hwnd, IDC_DISABLE_CHK) == BST_UNCHECKED));
-
-					// save rule apps
-					if (ptr_rule->type == DataRuleCustom)
-					{
-						ptr_rule->apps.clear ();
-
-						const bool is_enable = (IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) != BST_CHECKED);
-
-						for (INT i = 0; i < _r_listview_getitemcount (hwnd, IDC_APPS_LV); i++)
-						{
-							const size_t app_hash = _r_listview_getitemlparam (hwnd, IDC_APPS_LV, i);
-
-							if (_app_isappfound (app_hash))
-							{
-								const bool is_apply = is_enable && _r_listview_isitemchecked (hwnd, IDC_APPS_LV, i);
-
-								if (is_apply)
-									ptr_rule->apps[app_hash] = true;
-							}
-						}
-					}
-
-					// apply filter
-					{
-						OBJECTS_VEC rules;
-						rules.push_back (ptr_rule_object);
-
-						_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
-
-						// note: do not needed!
-						//_app_dereferenceobjects (rules, &_app_dereferencerule);
-					}
-
-					EndDialog (hwnd, 1);
-
-					break;
-				}
-
-				case IDCANCEL: // process Esc key
-				case IDC_CLOSE:
-				{
-					EndDialog (hwnd, 0);
-					break;
-				}
-			}
-
-			break;
-		}
-	}
-
-	return FALSE;
-}
-
 void _app_config_apply (HWND hwnd, INT ctrl_id)
 {
 	bool new_val;
@@ -1477,7 +430,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_RULE_BLOCKOUTBOUND:
 		{
 			app.ConfigSet (L"BlockOutboundConnections", new_val);
-			CheckMenuItem (hmenu, IDM_RULE_BLOCKOUTBOUND, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_RULE_BLOCKOUTBOUND, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -1486,7 +439,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_RULE_BLOCKINBOUND:
 		{
 			app.ConfigSet (L"BlockInboundConnections", new_val);
-			CheckMenuItem (hmenu, IDM_RULE_BLOCKINBOUND, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_RULE_BLOCKINBOUND, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -1495,7 +448,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_RULE_ALLOWLOOPBACK:
 		{
 			app.ConfigSet (L"AllowLoopbackConnections", new_val);
-			CheckMenuItem (hmenu, IDM_RULE_ALLOWLOOPBACK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_RULE_ALLOWLOOPBACK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -1504,7 +457,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_RULE_ALLOW6TO4:
 		{
 			app.ConfigSet (L"AllowIPv6", new_val);
-			CheckMenuItem (hmenu, IDM_RULE_ALLOW6TO4, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_RULE_ALLOW6TO4, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -1513,7 +466,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_USESTEALTHMODE_CHK:
 		{
 			app.ConfigSet (L"UseStealthMode", new_val);
-			CheckMenuItem (hmenu, IDM_USESTEALTHMODE_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_USESTEALTHMODE_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -1522,7 +475,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_SECUREFILTERS_CHK:
 		{
 			app.ConfigSet (L"IsSecureFilters", new_val);
-			CheckMenuItem (hmenu, IDM_SECUREFILTERS_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_SECUREFILTERS_CHK, 0, MF_BYCOMMAND, new_val);
 
 			PACL& pacl = new_val ? config.pacl_secure : config.pacl_default;
 
@@ -1556,7 +509,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_INSTALLBOOTTIMEFILTERS_CHK:
 		{
 			app.ConfigSet (L"InstallBoottimeFilters", new_val);
-			CheckMenuItem (hmenu, IDM_INSTALLBOOTTIMEFILTERS_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_INSTALLBOOTTIMEFILTERS_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -1565,7 +518,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_USENETWORKRESOLUTION_CHK:
 		{
 			app.ConfigSet (L"IsNetworkResolutionsEnabled", new_val);
-			CheckMenuItem (hmenu, IDM_USENETWORKRESOLUTION_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -1574,7 +527,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_USECERTIFICATES_CHK:
 		{
 			app.ConfigSet (L"IsCertificatesEnabled", new_val);
-			CheckMenuItem (hmenu, IDM_USECERTIFICATES_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, new_val);
 
 			if (new_val)
 			{
@@ -1603,7 +556,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 				_r_fastlock_releaseshared (&lock_access);
 			}
 
-			_r_listview_redraw (app.GetHWND (), _app_gettab_id (app.GetHWND ()));
+			_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
 
 			break;
 		}
@@ -1612,7 +565,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 		case IDM_USEREFRESHDEVICES_CHK:
 		{
 			app.ConfigSet (L"IsRefreshDevices", new_val);
-			CheckMenuItem (hmenu, IDM_USEREFRESHDEVICES_CHK, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+			_r_menu_checkitem (hmenu, IDM_USEREFRESHDEVICES_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -1645,6 +598,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #ifndef _APP_NO_DARKTHEME
 			_r_wnd_setdarktheme (hwnd);
 #endif // _APP_NO_DARKTHEME
+
+			if (GetDlgItem (hwnd, IDC_INFORMATION_ICON))
+				SendDlgItemMessage (hwnd, IDC_INFORMATION_ICON, STM_SETICON, (WPARAM)_r_loadicon (nullptr, IDI_INFORMATION, GetSystemMetrics (SM_CXSMICON)), 0);
 
 			break;
 		}
@@ -1901,7 +857,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, nullptr));
 					SetDlgItemText (hwnd, IDC_BLOCKLIST_EXTRA_BLOCK, app.LocaleString (IDS_ACTION_BLOCK, nullptr));
 
-					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_INFO, L"(c) <a href=\"%s\">%s</a>", WINDOWSSPYBLOCKER_URL, WINDOWSSPYBLOCKER_URL);
+					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_INFO, L"Author: <a href=\"%s\">WindowsSpyBlocker</a> - block spying and tracking on Windows systems.", WINDOWSSPYBLOCKER_URL, WINDOWSSPYBLOCKER_URL);
 
 					break;
 				}
@@ -2067,7 +1023,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							_r_obj_dereference (ptr_clr_object);
 
-							_r_listview_redraw (app.GetHWND (), _app_gettab_id (app.GetHWND ()));
+							_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
 						}
 					}
 
@@ -2136,7 +1092,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						}
 
 						_r_listview_redraw (hwnd, IDC_COLORS);
-						_r_listview_redraw (app.GetHWND (), _app_gettab_id (app.GetHWND ()));
+						_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
 					}
 
 					_r_obj_dereference (ptr_clr_object_current);
@@ -2182,7 +1138,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					const bool is_enabled = !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 
 					app.ConfigSet (L"AlwaysOnTop", is_enabled);
-					CheckMenuItem (GetMenu (app.GetHWND ()), IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | (is_enabled ? MF_CHECKED : MF_UNCHECKED));
+					_r_menu_checkitem (GetMenu (app.GetHWND ()), IDM_ALWAYSONTOP_CHK, 0, MF_BYCOMMAND, is_enabled);
 
 					break;
 				}
@@ -2291,7 +1247,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
 
-						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, IDM_BLOCKLIST_SPY_DISABLE + new_state, MF_BYCOMMAND);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_SPY_DISABLE + new_state);
 
 						app.ConfigSet (L"BlocklistSpyState", new_state);
 
@@ -2303,7 +1259,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
 
-						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, IDM_BLOCKLIST_UPDATE_DISABLE + new_state, MF_BYCOMMAND);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_UPDATE_DISABLE + new_state);
 
 						app.ConfigSet (L"BlocklistUpdateState", new_state);
 
@@ -2315,7 +1271,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					{
 						const INT new_state = std::clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 
-						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, IDM_BLOCKLIST_EXTRA_DISABLE + new_state, MF_BYCOMMAND);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_EXTRA_DISABLE + new_state);
 
 						app.ConfigSet (L"BlocklistExtraState", new_state);
 
@@ -2528,33 +1484,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 	return FALSE;
 }
 
-void _app_listviewsetpos (HWND hwnd, INT tab_id, INT listview_id)
-{
-	HWND htab = GetDlgItem (hwnd, tab_id);
-	HWND hlistview = GetDlgItem (hwnd, listview_id);
-
-	if (!htab || !hlistview)
-		return;
-
-	RECT rc_tab = {0};
-	RECT rc_listview = {0};
-
-	GetWindowRect (htab, &rc_tab);
-	MapWindowPoints (nullptr, hwnd, (LPPOINT)&rc_tab, 2);
-
-	GetClientRect (htab, &rc_listview);
-
-	rc_listview.left += rc_tab.left;
-	rc_listview.top += rc_tab.top;
-
-	rc_listview.right += rc_tab.left;
-	rc_listview.bottom += rc_tab.top;
-
-	SendMessage (htab, TCM_ADJUSTRECT, FALSE, (LPARAM)&rc_listview);
-
-	SetWindowPos (hlistview, nullptr, rc_listview.left, rc_listview.top, _R_RECT_WIDTH (&rc_listview), _R_RECT_HEIGHT (&rc_listview), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-}
-
 void _app_resizewindow (HWND hwnd, LPARAM lparam)
 {
 	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
@@ -2563,7 +1492,7 @@ void _app_resizewindow (HWND hwnd, LPARAM lparam)
 	RECT rc = {0};
 	GetClientRect (GetDlgItem (hwnd, IDC_STATUSBAR), &rc);
 
-	const INT listview_id = _app_gettab_id (hwnd);
+	const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 	const INT statusbar_height = _R_RECT_HEIGHT (&rc);
 	const INT rebar_height = (INT)SendDlgItemMessage (hwnd, IDC_REBAR, RB_GETBARHEIGHT, 0, 0);
 
@@ -2574,8 +1503,8 @@ void _app_resizewindow (HWND hwnd, LPARAM lparam)
 
 	EndDeferWindowPos (hdefer);
 
-	_app_listviewsetpos (hwnd, IDC_TAB, listview_id);
-	_app_listviewresize (hwnd, listview_id);
+	_r_tab_adjustchild (hwnd, IDC_TAB, GetDlgItem (hwnd, listview_id));
+	_app_listviewresize (hwnd, listview_id, false);
 
 	_app_refreshstatus (hwnd, 0);
 }
@@ -2766,7 +1695,7 @@ void _app_tabs_init (HWND hwnd)
 
 	for (INT i = 0; i < tabs_count; i++)
 	{
-		const INT listview_id = _app_gettab_id (hwnd, i);
+		const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
 
 		if (!listview_id)
 			continue;
@@ -2806,9 +1735,14 @@ void _app_tabs_init (HWND hwnd)
 			_r_listview_addcolumn (hwnd, listview_id, 6, app.LocaleString (IDS_STATE, nullptr), 0, LVCFMT_RIGHT);
 		}
 
-		_app_listviewsetpos (hwnd, IDC_TAB, listview_id);
+		HWND hlistview = GetDlgItem (hwnd, listview_id);
 
-		BringWindowToTop (GetDlgItem (hwnd, listview_id)); // HACK!!!
+		if (hlistview)
+		{
+			_r_tab_adjustchild (hwnd, IDC_TAB, hlistview);
+
+			BringWindowToTop (hlistview); // HACK!!!
+		}
 	}
 }
 
@@ -2973,7 +1907,7 @@ INT_PTR CALLBACK DlgProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 		else if ((lpfr->Flags & FR_FINDNEXT) != 0)
 		{
-			const INT listview_id = _app_gettab_id (hwnd);
+			const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 			if (!listview_id)
 				return FALSE;
@@ -3094,8 +2028,8 @@ find_wrap:
 			// install filters
 			if (_wfp_isfiltersinstalled ())
 			{
-				if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
-					_mps_changeconfig2 (false);
+				//if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
+				//	_mps_changeconfig2 (false);
 
 				_app_changefilters (hwnd, true, true);
 			}
@@ -3109,7 +2043,7 @@ find_wrap:
 			{
 				for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 				{
-					const INT listview_id = _app_gettab_id (hwnd, i);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
 
 					if (listview_id)
 						_app_listviewresize (hwnd, listview_id, true);
@@ -3137,61 +2071,64 @@ find_wrap:
 
 			const HMENU hmenu = GetMenu (hwnd);
 
-			CheckMenuItem (hmenu, IDM_ALWAYSONTOP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AlwaysOnTop", _APP_ALWAYSONTOP).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_SHOWFILENAMESONLY_CHK, MF_BYCOMMAND | (app.ConfigGet (L"ShowFilenames", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_AUTOSIZECOLUMNS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"AutoSizeColumns", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_ENABLESPECIALGROUP_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-
+			if (hmenu)
 			{
-				UINT menu_id;
-				const INT view_type = std::clamp (app.ConfigGet (L"ViewType", LV_VIEW_DETAILS).AsInt (), LV_VIEW_ICON, LV_VIEW_MAX);
+				_r_menu_checkitem (hmenu, IDM_ALWAYSONTOP_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"AlwaysOnTop", _APP_ALWAYSONTOP).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_SHOWFILENAMESONLY_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"ShowFilenames", true).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_AUTOSIZECOLUMNS_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"AutoSizeColumns", true).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_ENABLESPECIALGROUP_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool ());
 
-				if (view_type == LV_VIEW_ICON)
-					menu_id = IDM_VIEW_ICON;
+				{
+					UINT menu_id;
+					const INT view_type = std::clamp (app.ConfigGet (L"ViewType", LV_VIEW_DETAILS).AsInt (), LV_VIEW_ICON, LV_VIEW_MAX);
 
-				else if (view_type == LV_VIEW_TILE)
-					menu_id = IDM_VIEW_TILE;
+					if (view_type == LV_VIEW_ICON)
+						menu_id = IDM_VIEW_ICON;
 
-				else
-					menu_id = IDM_VIEW_DETAILS;
+					else if (view_type == LV_VIEW_TILE)
+						menu_id = IDM_VIEW_TILE;
 
-				CheckMenuRadioItem (hmenu, IDM_VIEW_ICON, IDM_VIEW_TILE, menu_id, MF_BYCOMMAND);
+					else
+						menu_id = IDM_VIEW_DETAILS;
+
+					_r_menu_checkitem (hmenu, IDM_VIEW_ICON, IDM_VIEW_TILE, MF_BYCOMMAND, menu_id);
+				}
+
+				{
+					UINT menu_id;
+					const INT icon_size = std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST);
+
+					if (icon_size == SHIL_EXTRALARGE)
+						menu_id = IDM_SIZE_EXTRALARGE;
+
+					else if (icon_size == SHIL_LARGE)
+						menu_id = IDM_SIZE_LARGE;
+
+					else
+						menu_id = IDM_SIZE_SMALL;
+
+					_r_menu_checkitem (hmenu, IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, MF_BYCOMMAND, menu_id);
+				}
+
+				_r_menu_checkitem (hmenu, IDM_ICONSISHIDDEN, 0, MF_BYCOMMAND, app.ConfigGet (L"IsIconsHidden", false).AsBool ());
+
+				_r_menu_checkitem (hmenu, IDM_RULE_BLOCKOUTBOUND, 0, MF_BYCOMMAND, app.ConfigGet (L"BlockOutboundConnections", true).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_RULE_BLOCKINBOUND, 0, MF_BYCOMMAND, app.ConfigGet (L"BlockInboundConnections", true).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_RULE_ALLOWLOOPBACK, 0, MF_BYCOMMAND, app.ConfigGet (L"AllowLoopbackConnections", true).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_RULE_ALLOW6TO4, 0, MF_BYCOMMAND, app.ConfigGet (L"AllowIPv6", true).AsBool ());
+
+				_r_menu_checkitem (hmenu, IDM_SECUREFILTERS_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsSecureFilters", true).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_USESTEALTHMODE_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"UseStealthMode", true).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_INSTALLBOOTTIMEFILTERS_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"InstallBoottimeFilters", true).AsBool ());
+
+				_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool ());
+				_r_menu_checkitem (hmenu, IDM_USEREFRESHDEVICES_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsRefreshDevices", true).AsBool ());
+
+				_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_SPY_DISABLE + std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2));
+				_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_UPDATE_DISABLE + std::clamp (app.ConfigGet (L"BlocklistUpdateState", 0).AsInt (), 0, 2));
+				_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_EXTRA_DISABLE + std::clamp (app.ConfigGet (L"BlocklistExtraState", 0).AsInt (), 0, 2));
 			}
-
-			{
-				UINT menu_id;
-				const INT icon_size = std::clamp (app.ConfigGet (L"IconSize", SHIL_SYSSMALL).AsInt (), SHIL_LARGE, SHIL_LAST);
-
-				if (icon_size == SHIL_EXTRALARGE)
-					menu_id = IDM_SIZE_EXTRALARGE;
-
-				else if (icon_size == SHIL_LARGE)
-					menu_id = IDM_SIZE_LARGE;
-
-				else
-					menu_id = IDM_SIZE_SMALL;
-
-				CheckMenuRadioItem (hmenu, IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, menu_id, MF_BYCOMMAND);
-			}
-
-			CheckMenuItem (hmenu, IDM_ICONSISHIDDEN, MF_BYCOMMAND | (app.ConfigGet (L"IsIconsHidden", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-
-			CheckMenuItem (hmenu, IDM_RULE_BLOCKOUTBOUND, MF_BYCOMMAND | (app.ConfigGet (L"BlockOutboundConnections", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_RULE_BLOCKINBOUND, MF_BYCOMMAND | (app.ConfigGet (L"BlockInboundConnections", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_RULE_ALLOWLOOPBACK, MF_BYCOMMAND | (app.ConfigGet (L"AllowLoopbackConnections", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_RULE_ALLOW6TO4, MF_BYCOMMAND | (app.ConfigGet (L"AllowIPv6", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-
-			CheckMenuItem (hmenu, IDM_SECUREFILTERS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsSecureFilters", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_USESTEALTHMODE_CHK, MF_BYCOMMAND | (app.ConfigGet (L"UseStealthMode", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_INSTALLBOOTTIMEFILTERS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"InstallBoottimeFilters", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-
-			CheckMenuItem (hmenu, IDM_USECERTIFICATES_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_USENETWORKRESOLUTION_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNetworkResolutionsEnabled", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem (hmenu, IDM_USEREFRESHDEVICES_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsRefreshDevices", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-
-			CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, IDM_BLOCKLIST_SPY_DISABLE + std::clamp (app.ConfigGet (L"BlocklistSpyState", 2).AsInt (), 0, 2), MF_BYCOMMAND);
-			CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, IDM_BLOCKLIST_UPDATE_DISABLE + std::clamp (app.ConfigGet (L"BlocklistUpdateState", 0).AsInt (), 0, 2), MF_BYCOMMAND);
-			CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, IDM_BLOCKLIST_EXTRA_DISABLE + std::clamp (app.ConfigGet (L"BlocklistExtraState", 0).AsInt (), 0, 2), MF_BYCOMMAND);
 
 			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, nullptr, 0, app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
 			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, nullptr, 0, app.ConfigGet (L"IsLogEnabled", false).AsBool () ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
@@ -3259,9 +2196,9 @@ find_wrap:
 			app.LocaleMenu (hmenu, IDS_TITLE_SECURITY, IDM_SECURITY_TITLE, false, nullptr);
 			app.LocaleMenu (hmenu, IDS_TITLE_ADVANCED, IDM_ADVANCED_TITLE, false, nullptr);
 
-			EnableMenuItem (hmenu, IDM_CONNECTIONS_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			EnableMenuItem (hmenu, IDM_SECURITY_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			EnableMenuItem (hmenu, IDM_ADVANCED_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			_r_menu_enableitem (hmenu, IDM_CONNECTIONS_TITLE, MF_BYCOMMAND, false);
+			_r_menu_enableitem (hmenu, IDM_SECURITY_TITLE, MF_BYCOMMAND, false);
+			_r_menu_enableitem (hmenu, IDM_ADVANCED_TITLE, MF_BYCOMMAND, false);
 
 			app.LocaleMenu (hmenu, IDS_RULE_BLOCKOUTBOUND, IDM_RULE_BLOCKOUTBOUND, false, _r_fmt (L" (%s)", recommended.GetString ()));
 			app.LocaleMenu (hmenu, IDS_RULE_BLOCKINBOUND, IDM_RULE_BLOCKINBOUND, false, _r_fmt (L" (%s)", recommended.GetString ()));
@@ -3282,9 +2219,9 @@ find_wrap:
 			app.LocaleMenu (hmenu, IDS_BLOCKLIST_UPDATE, IDM_BLOCKLIST_UPDATE_TITLE, false, nullptr);
 			app.LocaleMenu (hmenu, IDS_BLOCKLIST_EXTRA, IDM_BLOCKLIST_EXTRA_TITLE, false, nullptr);
 
-			EnableMenuItem (hmenu, IDM_BLOCKLIST_SPY_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			EnableMenuItem (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			EnableMenuItem (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			_r_menu_enableitem (hmenu, IDM_BLOCKLIST_SPY_TITLE, MF_BYCOMMAND, false);
+			_r_menu_enableitem (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, MF_BYCOMMAND, false);
+			_r_menu_enableitem (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, MF_BYCOMMAND, false);
 
 			app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_SPY_DISABLE, false, nullptr);
 			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_SPY_ALLOW, false, nullptr);
@@ -3325,7 +2262,7 @@ find_wrap:
 			// localize tabs
 			for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
 			{
-				const INT listview_id = _app_gettab_id (hwnd, i);
+				const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
 
 				UINT locale_id;
 
@@ -3422,10 +2359,13 @@ find_wrap:
 
 			app.LocaleEnum ((HWND)GetSubMenu (hmenu, 2), LANG_MENU, true, IDX_LANGUAGE); // enum localizations
 
-			const INT listview_id = _app_gettab_id (hwnd);
+			const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
-			_app_listviewresize (hwnd, listview_id);
-			_app_refreshstatus (hwnd, listview_id);
+			if (listview_id)
+			{
+				_app_listviewresize (hwnd, listview_id, false);
+				_app_refreshstatus (hwnd, listview_id);
+			}
 
 			// refresh notification
 			_r_wnd_addstyle (config.hnotification, IDC_RULES_BTN, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
@@ -3449,8 +2389,6 @@ find_wrap:
 
 		case RM_DPICHANGED:
 		{
-			const INT listview_id = _app_gettab_id (hwnd);
-
 			_app_imagelist_init (hwnd);
 
 			SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
@@ -3473,9 +2411,14 @@ find_wrap:
 
 			_app_toolbar_resize ();
 
-			_app_listviewsetview (hwnd, listview_id);
-			_app_listviewsetfont (hwnd, listview_id, true);
-			_app_listviewresize (hwnd, listview_id);
+			const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
+
+			if (listview_id)
+			{
+				_app_listviewsetview (hwnd, listview_id);
+				_app_listviewsetfont (hwnd, listview_id, true);
+				_app_listviewresize (hwnd, listview_id, false);
+			}
 
 			_app_refreshstatus (hwnd, 0);
 
@@ -3534,7 +2477,7 @@ find_wrap:
 
 		case WM_DESTROY:
 		{
-			app.ConfigSet (L"CurrentTab", _app_gettab_id (hwnd));
+			app.ConfigSet (L"CurrentTab", (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT));
 
 			if (config.hnotification)
 				DestroyWindow (config.hnotification);
@@ -3598,7 +2541,7 @@ find_wrap:
 
 				if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 				{
-					if (app_listview_id == _app_gettab_id (hwnd))
+					if (app_listview_id == _r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT))
 						_app_listviewsort (hwnd, app_listview_id);
 
 					_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
@@ -3620,37 +2563,42 @@ find_wrap:
 
 			switch (nmlp->code)
 			{
-				case TCN_SELCHANGE:
+				case TCN_SELCHANGING:
 				{
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
+
+					if (!listview_id)
+						break;
+
 					const HWND hlistview = GetDlgItem (hwnd, listview_id);
 
-					if (IsWindowVisible (hlistview))
-					{
-						SetFocus (hlistview);
+					if (!hlistview)
 						break;
-					}
 
-					// hide tabs
-					{
-						const INT tab_count = (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0);
+					ShowWindow (hlistview, SW_HIDE);
 
-						for (INT i = 0; i < tab_count; i++)
-						{
-							const INT current_id = _app_gettab_id (hwnd, i);
+					break;
+				}
 
-							if (current_id)
-								ShowWindow (GetDlgItem (hwnd, current_id), SW_HIDE);
-						}
-					}
+				case TCN_SELCHANGE:
+				{
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
-					_app_listviewsetpos (hwnd, IDC_TAB, listview_id);
+					if (!listview_id)
+						break;
+
+					const HWND hlistview = GetDlgItem (hwnd, listview_id);
+
+					if (!hlistview)
+						break;
+
+					_r_tab_adjustchild (hwnd, IDC_TAB, hlistview);
 
 					_app_listviewsort (hwnd, listview_id);
 					_app_listviewsetview (hwnd, listview_id);
 					_app_listviewsetfont (hwnd, listview_id, false);
 
-					_app_listviewresize (hwnd, listview_id);
+					_app_listviewresize (hwnd, listview_id, false);
 					_app_refreshstatus (hwnd, listview_id);
 
 					_r_listview_redraw (hwnd, listview_id);
@@ -3949,7 +2897,7 @@ find_wrap:
 							ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
 							if (ptr_app)
-								CheckMenuItem (hsubmenu, IDM_DISABLENOTIFICATIONS, MF_BYCOMMAND | (ptr_app->is_silent ? MF_CHECKED : MF_UNCHECKED));
+								_r_menu_checkitem (hsubmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, ptr_app->is_silent);
 						}
 
 						// show rules
@@ -3981,7 +2929,7 @@ find_wrap:
 								{
 									if (!is_checked && ptr_app->timer > current_time && ptr_app->timer <= (current_time + timer))
 									{
-										CheckMenuRadioItem (hsubmenu_timer, IDX_TIMER, IDX_TIMER + UINT (timers.size ()), mii.wID, MF_BYCOMMAND);
+										_r_menu_checkitem (hsubmenu_timer, IDX_TIMER, IDX_TIMER + UINT (timers.size ()), MF_BYCOMMAND, mii.wID);
 										is_checked = true;
 									}
 								}
@@ -3990,13 +2938,13 @@ find_wrap:
 							}
 
 							if (!is_checked)
-								CheckMenuRadioItem (hsubmenu_timer, IDM_DISABLETIMER, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND);
+								_r_menu_checkitem (hsubmenu_timer, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND, IDM_DISABLETIMER);
 						}
 
 						_r_obj_dereference (ptr_app_object);
 
 						if (listview_id != IDC_APPS_PROFILE)
-							EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+							_r_menu_enableitem (hsubmenu, IDM_DELETE, MF_BYCOMMAND, false);
 					}
 					else if (menu_id == IDM_RULES)
 					{
@@ -4012,7 +2960,7 @@ find_wrap:
 							PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
 							if (ptr_rule && ptr_rule->is_readonly)
-								EnableMenuItem (hsubmenu, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+								_r_menu_enableitem (hsubmenu, IDM_DELETE, MF_BYCOMMAND, false);
 
 							_r_obj_dereference (ptr_rule_object);
 						}
@@ -4035,25 +2983,22 @@ find_wrap:
 							if (ptr_network)
 							{
 								if (ptr_network->af != AF_INET || ptr_network->state != MIB_TCP_STATE_ESTAB)
-									EnableMenuItem (hsubmenu, IDM_NETWORK_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+									_r_menu_enableitem (hsubmenu, IDM_NETWORK_CLOSE, MF_BYCOMMAND, false);
 
 								if (!ptr_network->app_hash || !ptr_network->path)
-									EnableMenuItem (hsubmenu, IDM_EXPLORE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+									_r_menu_enableitem (hsubmenu, IDM_EXPLORE, MF_BYCOMMAND, false);
 							}
 
 							_r_obj_dereference (ptr_network_object);
 						}
 					}
 
-					POINT pt = {0};
-					GetCursorPos (&pt);
-
-					const INT cmd = TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd, nullptr);
+					const INT command_id = _r_menu_popup (hsubmenu, hwnd, nullptr, false);
 
 					DestroyMenu (hmenu);
 
-					if (cmd)
-						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (cmd, 0), (LPARAM)lv_column_current);
+					if (command_id)
+						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), (LPARAM)lv_column_current);
 
 					break;
 				}
@@ -4146,8 +3091,8 @@ find_wrap:
 
 						if (!_r_fs_exists (path))
 						{
-							EnableMenuItem (hsubmenu, IDM_TRAY_LOGSHOW, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-							EnableMenuItem (hsubmenu, IDM_TRAY_LOGCLEAR, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+							_r_menu_enableitem (hsubmenu, IDM_TRAY_LOGSHOW, MF_BYCOMMAND, false);
+							_r_menu_enableitem (hsubmenu, IDM_TRAY_LOGCLEAR, MF_BYCOMMAND, false);
 						}
 					}
 
@@ -4168,25 +3113,22 @@ find_wrap:
 					app.LocaleMenu (hsubmenu, IDS_ABOUT, IDM_TRAY_ABOUT, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_EXIT, IDM_TRAY_EXIT, false, nullptr);
 
-					CheckMenuItem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-					CheckMenuItem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsSound", true).AsBool () ? MF_CHECKED : MF_UNCHECKED));
-					CheckMenuItem (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsNotificationsOnTray", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+					_r_menu_checkitem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ());
+					_r_menu_checkitem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsNotificationsSound", true).AsBool ());
+					_r_menu_checkitem (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsNotificationsOnTray", false).AsBool ());
 
-					CheckMenuItem (hsubmenu, IDM_TRAY_ENABLELOG_CHK, MF_BYCOMMAND | (app.ConfigGet (L"IsLogEnabled", false).AsBool () ? MF_CHECKED : MF_UNCHECKED));
+					_r_menu_checkitem (hsubmenu, IDM_TRAY_ENABLELOG_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"IsLogEnabled", false).AsBool ());
 
 					if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ())
 					{
-						EnableMenuItem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-						EnableMenuItem (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						_r_menu_enableitem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, MF_BYCOMMAND, false);
+						_r_menu_enableitem (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, MF_BYCOMMAND, false);
 					}
 
 					if (_wfp_isfiltersapplying ())
-						EnableMenuItem (hsubmenu, IDM_TRAY_START, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+						_r_menu_enableitem (hsubmenu, IDM_TRAY_START, MF_BYCOMMAND, false);
 
-					POINT pt = {0};
-					GetCursorPos (&pt);
-
-					TrackPopupMenuEx (hsubmenu, TPM_RIGHTBUTTON | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, nullptr);
+					_r_menu_popup (hsubmenu, hwnd, nullptr, true);
 
 					DestroyMenu (hmenu);
 
@@ -4256,13 +3198,13 @@ find_wrap:
 							else
 							{
 								if (IsWindowVisible (hwnd))
-									_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
+									_r_listview_redraw (hwnd, (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT));
 							}
 						}
 						else if (wparam == DBT_DEVICEREMOVECOMPLETE)
 						{
 							if (IsWindowVisible (hwnd))
-								_r_listview_redraw (hwnd, _app_gettab_id (hwnd));
+								_r_listview_redraw (hwnd, (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT));
 						}
 					}
 
@@ -4284,7 +3226,7 @@ find_wrap:
 			}
 			else if ((ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= INT (IDX_RULES_SPECIAL + rules_arr.size ())))
 			{
-				const INT listview_id = _app_gettab_id (hwnd);
+				const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 				if (!SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
 					return FALSE;
@@ -4376,9 +3318,9 @@ find_wrap:
 			}
 			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= INT (IDX_TIMER + timers.size ())))
 			{
-				const INT listview_id = _app_gettab_id (hwnd);
+				const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
-				if (!SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
+				if (!listview_id || !SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
 					return FALSE;
 
 				const size_t timer_idx = (ctrl_id - IDX_TIMER);
@@ -4540,7 +3482,7 @@ find_wrap:
 				{
 					const bool new_val = !app.ConfigGet (L"AlwaysOnTop", _APP_ALWAYSONTOP).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					app.ConfigSet (L"AlwaysOnTop", new_val);
 
 					_r_wnd_top (hwnd, new_val);
@@ -4552,11 +3494,11 @@ find_wrap:
 				{
 					const bool new_val = !app.ConfigGet (L"AutoSizeColumns", true).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					app.ConfigSet (L"AutoSizeColumns", new_val);
 
 					if (new_val)
-						_app_listviewresize (hwnd, _app_gettab_id (hwnd));
+						_app_listviewresize (hwnd, (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT), false);
 
 					break;
 				}
@@ -4565,7 +3507,7 @@ find_wrap:
 				{
 					const bool new_val = !app.ConfigGet (L"ShowFilenames", true).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					app.ConfigSet (L"ShowFilenames", new_val);
 
 					_r_fastlock_acquireshared (&lock_access);
@@ -4605,7 +3547,7 @@ find_wrap:
 
 					_r_fastlock_releaseshared (&lock_access);
 
-					_app_listviewsort (hwnd, _app_gettab_id (hwnd));
+					_app_listviewsort (hwnd, (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT));
 
 					break;
 				}
@@ -4614,7 +3556,7 @@ find_wrap:
 				{
 					const bool new_val = !app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					app.ConfigSet (L"IsEnableSpecialGroup", new_val);
 
 					_r_fastlock_acquireshared (&lock_access);
@@ -4652,10 +3594,13 @@ find_wrap:
 
 					_r_fastlock_releaseshared (&lock_access);
 
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
-					_app_listviewsort (hwnd, listview_id);
-					_app_refreshstatus (hwnd, listview_id);
+					if (listview_id)
+					{
+						_app_listviewsort (hwnd, listview_id);
+						_app_refreshstatus (hwnd, listview_id);
+					}
 
 					break;
 				}
@@ -4675,15 +3620,15 @@ find_wrap:
 					else
 						view_type = LV_VIEW_DETAILS;
 
-					CheckMenuRadioItem (GetMenu (hwnd), IDM_VIEW_ICON, IDM_VIEW_TILE, ctrl_id, MF_BYCOMMAND);
+					_r_menu_checkitem (GetMenu (hwnd), IDM_VIEW_ICON, IDM_VIEW_TILE, MF_BYCOMMAND, ctrl_id);
 					app.ConfigSet (L"ViewType", view_type);
 
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 					if (listview_id)
 					{
 						_app_listviewsetview (hwnd, listview_id);
-						_app_listviewresize (hwnd, listview_id);
+						_app_listviewresize (hwnd, listview_id, false);
 
 						_r_listview_redraw (hwnd, listview_id);
 					}
@@ -4706,15 +3651,15 @@ find_wrap:
 					else
 						icon_size = SHIL_SYSSMALL;
 
-					CheckMenuRadioItem (GetMenu (hwnd), IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, ctrl_id, MF_BYCOMMAND);
+					_r_menu_checkitem (GetMenu (hwnd), IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, MF_BYCOMMAND, ctrl_id);
 					app.ConfigSet (L"IconSize", icon_size);
 
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 					if (listview_id)
 					{
 						_app_listviewsetview (hwnd, listview_id);
-						_app_listviewresize (hwnd, listview_id);
+						_app_listviewresize (hwnd, listview_id, false);
 
 						_r_listview_redraw (hwnd, listview_id);
 					}
@@ -4726,7 +3671,7 @@ find_wrap:
 				{
 					const bool new_val = !app.ConfigGet (L"IsIconsHidden", false).AsBool ();
 
-					CheckMenuItem (GetMenu (hwnd), ctrl_id, MF_BYCOMMAND | (new_val ? MF_CHECKED : MF_UNCHECKED));
+					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					app.ConfigSet (L"IsIconsHidden", new_val);
 
 					_r_fastlock_acquireshared (&lock_access);
@@ -4787,10 +3732,21 @@ find_wrap:
 
 						SAFE_DELETE_OBJECT (config.hfont);
 
-						for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
-							_app_listviewsetfont (hwnd, _app_gettab_id (hwnd, i), false);
+						INT current_page = (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
 
-						_app_listviewresize (hwnd, _app_gettab_id (hwnd));
+						for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
+						{
+							const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
+
+							if (listview_id)
+							{
+								_app_listviewsetfont (hwnd, listview_id, false);
+
+								if (i == current_page)
+									_app_listviewresize (hwnd, listview_id, false);
+							}
+						}
+
 
 						RedrawWindow (hwnd, nullptr, nullptr, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
 					}
@@ -4883,7 +3839,7 @@ find_wrap:
 
 					if (ctrl_id >= IDM_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDM_BLOCKLIST_SPY_BLOCK)
 					{
-						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, ctrl_id, MF_BYCOMMAND);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, ctrl_id);
 
 						const INT new_state = std::clamp (ctrl_id - IDM_BLOCKLIST_SPY_DISABLE, 0, 2);
 
@@ -4895,7 +3851,7 @@ find_wrap:
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDM_BLOCKLIST_UPDATE_BLOCK)
 					{
-						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, ctrl_id, MF_BYCOMMAND);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, ctrl_id);
 
 						const INT new_state = std::clamp (ctrl_id - IDM_BLOCKLIST_UPDATE_DISABLE, 0, 2);
 
@@ -4907,7 +3863,7 @@ find_wrap:
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDM_BLOCKLIST_EXTRA_BLOCK)
 					{
-						CheckMenuRadioItem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, ctrl_id, MF_BYCOMMAND);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, ctrl_id);
 
 						const INT new_state = std::clamp (ctrl_id - IDM_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 
@@ -5086,7 +4042,7 @@ find_wrap:
 
 							if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
 							{
-								if (app_listview_id == _app_gettab_id (hwnd))
+								if (app_listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT))
 									_app_listviewsort (hwnd, app_listview_id);
 
 								_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash));
@@ -5104,7 +4060,7 @@ find_wrap:
 				case IDM_DISABLETIMER:
 				case IDM_EXPLORE:
 				{
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 					if (
 						listview_id != IDC_APPS_PROFILE &&
@@ -5210,7 +4166,7 @@ find_wrap:
 				case IDM_COPY:
 				case IDM_COPY2:
 				{
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 					INT item = INVALID_INT;
 
 					const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
@@ -5245,7 +4201,7 @@ find_wrap:
 				case IDM_CHECK:
 				case IDM_UNCHECK:
 				{
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 					const bool new_val = (ctrl_id == IDM_CHECK) ? true : false;
 
@@ -5367,7 +4323,7 @@ find_wrap:
 					ptr_rule->type = DataRuleCustom;
 					ptr_rule->is_block = false;
 
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
@@ -5486,7 +4442,7 @@ find_wrap:
 
 				case IDM_PROPERTIES:
 				{
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 					const INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED);
 
 					if (item == INVALID_INT)
@@ -5564,7 +4520,7 @@ find_wrap:
 
 				case IDM_NETWORK_CLOSE:
 				{
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 					if (listview_id != IDC_NETWORK)
 						break;
@@ -5620,7 +4576,7 @@ find_wrap:
 
 				case IDM_DELETE:
 				{
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
 					if (listview_id != IDC_APPS_PROFILE && listview_id != IDC_RULES_CUSTOM)
 						break;
@@ -5636,7 +4592,7 @@ find_wrap:
 
 					for (INT i = count; i != INVALID_INT; i--)
 					{
-						if (ListView_GetItemState (GetDlgItem (hwnd, listview_id), i, LVNI_SELECTED))
+						if ((UINT)SendDlgItemMessage (hwnd, listview_id, LVM_GETITEMSTATE, i, LVNI_SELECTED) == LVNI_SELECTED)
 						{
 							if (listview_id == IDC_APPS_PROFILE)
 							{
@@ -5838,17 +4794,20 @@ find_wrap:
 
 					_app_profile_save ();
 
-					const INT listview_id = _app_gettab_id (hwnd);
+					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
-					_app_listviewsort (hwnd, listview_id);
-					_app_refreshstatus (hwnd, listview_id);
+					if (listview_id)
+					{
+						_app_listviewsort (hwnd, listview_id);
+						_app_refreshstatus (hwnd, listview_id);
+					}
 
 					break;
 				}
 
 				case IDM_SELECT_ALL:
 				{
-					ListView_SetItemState (GetDlgItem (hwnd, _app_gettab_id (hwnd)), INVALID_INT, LVIS_SELECTED, LVIS_SELECTED);
+					ListView_SetItemState (GetDlgItem (hwnd, (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT)), INVALID_INT, LVIS_SELECTED, LVIS_SELECTED);
 					break;
 				}
 
@@ -5885,8 +4844,8 @@ find_wrap:
 					InetPton (ptr_log->af, RM_AD, &ptr_log->remote_addr);
 					ptr_log->remote_port = RP_AD;
 
-					_r_str_alloc (&ptr_log->path, INVALID_SIZE_T, app.GetBinaryPath ());
-					_r_str_alloc (&ptr_log->filter_name, INVALID_SIZE_T, FN_AD);
+					_r_str_alloc (&ptr_log->path, _r_str_length (app.GetBinaryPath ()), app.GetBinaryPath ());
+					_r_str_alloc (&ptr_log->filter_name, _r_str_length (FN_AD), FN_AD);
 
 					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &ptr_log->remote_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
 					//_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, &ptr_log->local_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
