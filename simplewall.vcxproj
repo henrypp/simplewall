@@ -237,6 +237,8 @@
     <ClCompile Include="..\routine\rapp.cpp" />
     <ClCompile Include="..\routine\routine.cpp" />
     <ClCompile Include="..\routine\rstring.cpp" />
+    <ClCompile Include="src\controls.cpp" />
+    <ClCompile Include="src\editor.cpp" />
     <ClCompile Include="src\helper.cpp" />
     <ClCompile Include="src\log.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -253,6 +255,8 @@
     <ClInclude Include="..\routine\routine.hpp" />
     <ClInclude Include="..\routine\rstring.hpp" />
     <ClInclude Include="src\app.hpp" />
+    <ClInclude Include="src\controls.hpp" />
+    <ClInclude Include="src\editor.hpp" />
     <ClInclude Include="src\global.hpp" />
     <ClInclude Include="src\helper.hpp" />
     <ClInclude Include="src\log.hpp" />
