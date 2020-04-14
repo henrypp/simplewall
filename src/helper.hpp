@@ -17,12 +17,6 @@ void _app_dereferencerule (PVOID pdata);
 void _app_dereferenceruleconfig (PVOID pdata);
 void _app_dereferencestring (PVOID pdata);
 
-void _app_settab_id (HWND hwnd, INT page_id);
-
-bool _app_initinterfacestate (HWND hwnd, bool is_forced);
-void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
-void _app_setinterfacestate (HWND hwnd);
-
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags);
 rstring _app_formatport (UINT16 port, bool is_noempty);
 
@@ -39,6 +33,7 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, const PITEM_APP ptr_app);
 rstring _app_getservicename (UINT16 port, LPCWSTR empty_text);
 rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af);
 rstring _app_getstatename (DWORD state);
+COLORREF _app_getcolorvalue (size_t color_hash);
 
 void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map);
 void _app_generate_packages ();
@@ -48,23 +43,17 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash);
 
 bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, void** lpdata);
 
-INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPARAM lparam);
-void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id = INVALID_INT, bool is_notifycode = false);
-
 void _app_refreshstatus (HWND hwnd, INT listview_id = INVALID_INT);
 
 rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port);
 rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port);
 
-bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, USHORT* port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns, size_t dns_length);
+bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, PUSHORT port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns, size_t dns_length);
 bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
 
 bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR* pbuffer);
 
 INT _app_getlistview_id (EnumDataType type);
-
-INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam);
-void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos = INVALID_INT);
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size);
 HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size);

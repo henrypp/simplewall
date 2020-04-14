@@ -43,75 +43,6 @@ void _app_dereferencestring (PVOID pdata)
 	delete[] LPWSTR (pdata);
 }
 
-void _app_settab_id (HWND hwnd, INT page_id)
-{
-	if (!page_id || ((INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
-		return;
-
-	for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
-	{
-		const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
-
-		if (listview_id == page_id)
-		{
-			_r_tab_selectitem (hwnd, IDC_TAB, i);
-			return;
-		}
-	}
-
-	_app_settab_id (hwnd, IDC_APPS_PROFILE);
-}
-
-bool _app_initinterfacestate (HWND hwnd, bool is_forced)
-{
-	if (!hwnd)
-		return false;
-
-	if (is_forced || !!SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0))
-	{
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
-
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
-
-		return true;
-	}
-
-	return false;
-}
-
-void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
-{
-	if (!is_enabled)
-		return;
-
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (TRUE, 0));
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (TRUE, 0));
-
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
-}
-
-void _app_setinterfacestate (HWND hwnd)
-{
-	const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
-	const INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
-
-	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
-	const HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
-
-	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
-	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
-
-	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
-
-	if (!_wfp_isfiltersapplying ())
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (is_filtersinstalled ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
-
-	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
-
-	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
-}
-
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags)
 {
 	if (!ptr_addr || !ptr_dest || (af != AF_INET && af != AF_INET6))
@@ -1432,6 +1363,34 @@ rstring _app_getstatename (DWORD state)
 	return nullptr;
 }
 
+COLORREF _app_getcolorvalue (size_t color_hash)
+{
+	if (!color_hash)
+		return 0;
+
+	for (size_t i = 0; i < colors.size (); i++)
+	{
+		PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (i));
+
+		if (!ptr_clr_object)
+			continue;
+
+		const PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
+
+		if (ptr_clr && ptr_clr->clr_hash == color_hash)
+		{
+			const COLORREF result = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
+			_r_obj_dereference (ptr_clr_object);
+
+			return result;
+		}
+
+		_r_obj_dereference (ptr_clr_object);
+	}
+
+	return 0;
+}
+
 rstring _app_getservicenamefromtag (HANDLE pid, const PVOID ptag)
 {
 	rstring result;
@@ -2262,105 +2221,6 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 	return false;
 }
 
-INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPARAM lparam)
-{
-	const HWND hlistview = (HWND)lparam;
-	const HWND hparent = GetParent (hlistview);
-	const INT listview_id = GetDlgCtrlID (hlistview);
-
-	const INT item1 = _app_getposition (hparent, listview_id, lparam1);
-	const INT item2 = _app_getposition (hparent, listview_id, lparam2);
-
-	if (item1 == INVALID_INT || item2 == INVALID_INT)
-		return 0;
-
-	const rstring cfg_name = _r_fmt (L"listview\\%04" PRIX32, listview_id);
-
-	const INT column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
-	const bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
-
-	INT result = 0;
-
-	if ((SendMessage (hlistview, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
-	{
-		const bool is_checked1 = _r_listview_isitemchecked (hparent, listview_id, item1);
-		const bool is_checked2 = _r_listview_isitemchecked (hparent, listview_id, item2);
-
-		if (is_checked1 != is_checked2)
-		{
-			if (is_checked1 && !is_checked2)
-				result = is_descend ? 1 : -1;
-
-			else if (!is_checked1 && is_checked2)
-				result = is_descend ? -1 : 1;
-		}
-	}
-
-	if (!result)
-	{
-		// timestamp sorting
-		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
-		{
-			time_t timestamp1 = 0;
-			time_t timestamp2 = 0;
-
-			_app_getappinfo (lparam1, InfoTimestamp, &timestamp1, sizeof (timestamp1));
-			_app_getappinfo (lparam2, InfoTimestamp, &timestamp2, sizeof (timestamp2));
-
-			if (timestamp1 < timestamp2)
-				result = -1;
-
-			else if (timestamp1 > timestamp2)
-				result = 1;
-		}
-	}
-
-	if (!result)
-	{
-		result = _r_str_compare_logical (
-			_r_listview_getitemtext (hparent, listview_id, item1, column_id),
-			_r_listview_getitemtext (hparent, listview_id, item2, column_id)
-		);
-	}
-
-	return is_descend ? -result : result;
-}
-
-void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notifycode)
-{
-	if (!listview_id)
-		return;
-
-	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
-
-	if (!column_count)
-		return;
-
-	const rstring cfg_name = _r_fmt (L"listview\\%04" PRIX32, listview_id);
-	bool is_descend = app.ConfigGet (L"SortIsDescending", false, cfg_name).AsBool ();
-
-	if (is_notifycode)
-		is_descend = !is_descend;
-
-	if (column_id == INVALID_INT)
-		column_id = app.ConfigGet (L"SortColumn", 0, cfg_name).AsInt ();
-
-	column_id = std::clamp (column_id, 0, column_count - 1); // set range
-
-	if (is_notifycode)
-	{
-		app.ConfigSet (L"SortIsDescending", is_descend, cfg_name);
-		app.ConfigSet (L"SortColumn", column_id, cfg_name);
-	}
-
-	for (INT i = 0; i < column_count; i++)
-		_r_listview_setcolumnsortindex (hwnd, listview_id, i, 0);
-
-	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
-
-	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)&_app_listviewcompare_callback);
-}
-
 void _app_refreshstatus (HWND hwnd, INT listview_id)
 {
 	PITEM_STATUS pstatus = (PITEM_STATUS)_r_mem_allocex (sizeof (ITEM_STATUS), HEAP_ZERO_MEMORY);
@@ -2631,7 +2491,7 @@ rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port)
 	return result;
 }
 
-bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * format_ptr, USHORT * port_ptr, FWP_V4_ADDR_AND_MASK * paddr4, FWP_V6_ADDR_AND_MASK * paddr6, LPWSTR paddr_dns, size_t dns_length)
+bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * format_ptr, PUSHORT port_ptr, FWP_V4_ADDR_AND_MASK * paddr4, FWP_V6_ADDR_AND_MASK * paddr6, LPWSTR paddr_dns, size_t dns_length)
 {
 	NET_ADDRESS_INFO ni;
 	RtlSecureZeroMemory (&ni, sizeof (ni));
@@ -3059,46 +2919,6 @@ INT _app_getlistview_id (EnumDataType type)
 		return IDC_RULES_CUSTOM;
 
 	return 0;
-}
-
-INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam)
-{
-	LVFINDINFO lvfi = {0};
-
-	lvfi.flags = LVFI_PARAM;
-	lvfi.lParam = lparam;
-
-	INT pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)INVALID_INT, (LPARAM)&lvfi);
-
-	return pos;
-}
-
-void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
-{
-	if (!listview_id)
-		return;
-
-	_app_settab_id (hwnd, listview_id);
-
-	const INT total_count = _r_listview_getitemcount (hwnd, listview_id);
-
-	if (!total_count)
-		return;
-
-	const HWND hlistview = GetDlgItem (hwnd, listview_id);
-
-	if (item != INVALID_INT)
-	{
-		item = std::clamp (item, 0, total_count - 1);
-
-		PostMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
-
-		ListView_SetItemState (hlistview, INVALID_INT, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
-		ListView_SetItemState (hlistview, (WPARAM)item, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
-	}
-
-	if (scroll_pos > 0)
-		PostMessage (hlistview, LVM_SCROLL, 0, (LPARAM)scroll_pos); // restore scroll position
 }
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)

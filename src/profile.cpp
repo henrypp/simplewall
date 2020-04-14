@@ -274,6 +274,61 @@ size_t _app_getnetworkapp (size_t network_hash)
 	return 0;
 }
 
+COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
+{
+	rstring color_value;
+
+	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+
+	if (!ptr_app_object)
+		return 0;
+
+	const bool is_appslist = (listview_id == IDC_RULE_APPS);
+	const bool is_networkslist = (listview_id == IDC_NETWORK);
+
+	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+
+	if (ptr_app)
+	{
+		if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && !_app_isappexists (ptr_app))
+			color_value = L"ColorInvalid";
+
+		else if (app.ConfigGet (L"IsHighlightTimer", true, L"colors").AsBool () && _app_istimeractive (ptr_app))
+			color_value = L"ColorTimer";
+
+		else if (!is_networkslist && !ptr_app->is_silent && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool () && _app_isapphaveconnection (app_hash))
+			color_value = L"ColorConnection";
+
+		else if (app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && !ptr_app->is_silent && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
+			color_value = L"ColorSigned";
+
+		else if ((is_appslist || is_networkslist || !app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool ()) && (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && _app_isapphaverule (app_hash)))
+			color_value = L"ColorSpecial";
+
+		else if (!is_appslist && !is_networkslist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
+			color_value = L"ColorSilent";
+
+		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
+			color_value = L"ColorService";
+
+		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool () && ptr_app->type == DataAppUWP)
+			color_value = L"ColorPackage";
+
+		else if (app.ConfigGet (L"IsHighlightPico", true, L"colors").AsBool () && ptr_app->type == DataAppPico)
+			color_value = L"ColorPico";
+
+		else if (app.ConfigGet (L"IsHighlightSystem", true, L"colors").AsBool () && ptr_app->is_system)
+			color_value = L"ColorSystem";
+	}
+
+	_r_obj_dereference (ptr_app_object);
+
+	if (color_value.IsEmpty ())
+		return 0;
+
+	return _app_getcolorvalue (_r_str_hash (color_value));
+}
+
 void _app_freeapplication (size_t app_hash)
 {
 	if (!app_hash)
@@ -419,6 +474,34 @@ INT _app_getruleicon (const PITEM_RULE ptr_rule)
 		return I_IMAGENONE;
 
 	return ptr_rule->is_block ? 1 : 0;
+}
+
+COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx)
+{
+	rstring color_value;
+
+	PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
+
+	if (!ptr_rule_object)
+		return 0;
+
+	PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+
+	if (ptr_rule)
+	{
+		if (app.ConfigGet (L"IsHighlightInvalid", true, L"colors").AsBool () && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
+			color_value = L"ColorInvalid";
+
+		else if (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && !ptr_rule->apps.empty ())
+			color_value = L"ColorSpecial";
+	}
+
+	_r_obj_dereference (ptr_rule_object);
+
+	if (color_value.IsEmpty ())
+		return 0;
+
+	return _app_getcolorvalue (_r_str_hash (color_value));
 }
 
 rstring _app_gettooltip (INT listview_id, size_t lparam)
@@ -1030,31 +1113,23 @@ bool _app_isappexists (const PITEM_APP ptr_app)
 	return true;
 }
 
-//bool _app_isruleblocklist (LPCWSTR name)
-//{
-//	if (
-//		_r_str_compare (name, L"extra_", 6) == 0 ||
-//		_r_str_compare (name, L"spy_", 4) == 0 ||
-//		_r_str_compare (name, L"update_", 7) == 0
-//		)
-//		return true;
-//
-//	return false;
-//}
-
 bool _app_isrulehost (LPCWSTR rule)
 {
 	if (_r_str_isempty (rule))
 		return false;
 
-	NET_ADDRESS_INFO ni;
-	RtlSecureZeroMemory (&ni, sizeof (ni));
+	PNET_ADDRESS_INFO pni = (PNET_ADDRESS_INFO)_r_mem_allocex (sizeof (NET_ADDRESS_INFO), HEAP_ZERO_MEMORY);
+
+	if (!pni)
+		return false;
 
 	USHORT port = 0;
 	BYTE prefix_length = 0;
 
 	const DWORD types = NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE;
-	const DWORD rc = ParseNetworkString (rule, types, &ni, &port, &prefix_length);
+	const DWORD rc = ParseNetworkString (rule, types, pni, &port, &prefix_length);
+
+	_r_mem_free (pni);
 
 	if (rc == ERROR_SUCCESS)
 	{

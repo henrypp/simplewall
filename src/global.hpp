@@ -27,6 +27,8 @@
 #include "rapp.hpp"
 #include "main.hpp"
 
+#include "controls.hpp"
+#include "editor.hpp"
 #include "helper.hpp"
 #include "log.hpp"
 #include "notifications.hpp"
