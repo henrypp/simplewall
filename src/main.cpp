@@ -11,40 +11,37 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 	_r_fastlock_acquireshared (&lock_apply);
 
-	if (pcontext)
+	const HANDLE& hengine = _wfp_getenginehandle ();
+
+	// dropped packets logging (win7+)
+	if (config.is_neteventset)
+		_wfp_logunsubscribe (hengine);
+
+	if (pcontext->is_install)
 	{
-		const HANDLE& hengine = _wfp_getenginehandle ();
-
-		// dropped packets logging (win7+)
-		if (config.is_neteventset)
-			_wfp_logunsubscribe (hengine);
-
-		if (pcontext->is_install)
-		{
-			if (_wfp_initialize (true))
-				_wfp_installfilters ();
-		}
-		else
-		{
-			if (_wfp_initialize (false))
-				_wfp_destroyfilters (hengine);
-
-			_wfp_uninitialize (true);
-		}
-
-		// dropped packets logging (win7+)
-		if (config.is_neteventset)
-			_wfp_logsubscribe (hengine);
-
-		_app_restoreinterfacestate (pcontext->hwnd, true);
-		_app_setinterfacestate (pcontext->hwnd);
-
-		_app_profile_save ();
-
-		SetEvent (config.done_evt);
-
-		SAFE_DELETE (pcontext);
+		if (_wfp_initialize (true))
+			_wfp_installfilters ();
 	}
+	else
+	{
+		if (_wfp_initialize (false))
+			_wfp_destroyfilters (hengine);
+
+		_wfp_uninitialize (true);
+	}
+
+	// dropped packets logging (win7+)
+	if (config.is_neteventset)
+		_wfp_logsubscribe (hengine);
+
+	_app_restoreinterfacestate (pcontext->hwnd, true);
+	_app_setinterfacestate (pcontext->hwnd);
+
+	_app_profile_save ();
+
+	SetEvent (config.done_evt);
+
+	_r_mem_free (pcontext);
 
 	_r_fastlock_releaseshared (&lock_apply);
 
@@ -206,25 +203,27 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 		_app_freethreadpool (&threads_pool);
 
-		PINSTALL_CONTEXT pcontext = new INSTALL_CONTEXT;
-		RtlSecureZeroMemory (pcontext, sizeof (INSTALL_CONTEXT));
+		PINSTALL_CONTEXT pcontext = (PINSTALL_CONTEXT)_r_mem_allocex (sizeof (INSTALL_CONTEXT), HEAP_ZERO_MEMORY);
 
-		pcontext->hwnd = hwnd;
-		pcontext->is_install = is_install;
-
-		const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)pcontext, true, THREAD_PRIORITY_HIGHEST);
-
-		if (hthread)
+		if (pcontext)
 		{
-			threads_pool.push_back (hthread);
-			ResumeThread (hthread);
-		}
-		else
-		{
-			SAFE_DELETE (pcontext);
-		}
+			pcontext->hwnd = hwnd;
+			pcontext->is_install = is_install;
 
-		return hthread != nullptr;
+			const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)pcontext, true, THREAD_PRIORITY_HIGHEST);
+
+			if (hthread)
+			{
+				threads_pool.push_back (hthread);
+				ResumeThread (hthread);
+			}
+			else
+			{
+				_r_mem_free (pcontext);
+			}
+
+			return hthread != nullptr;
+		}
 	}
 
 	_app_profile_save ();

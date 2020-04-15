@@ -290,8 +290,8 @@ struct STATIC_DATA
 
 typedef struct tagINSTALL_CONTEXT
 {
-	HWND hwnd = nullptr;
-	bool is_install = false;
+	HWND hwnd;
+	bool is_install;
 } INSTALL_CONTEXT, *PINSTALL_CONTEXT;
 
 typedef struct tagEDITOR_CONTEXT
