@@ -598,9 +598,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			_r_wnd_setdarktheme (hwnd);
 #endif // _APP_NO_DARKTHEME
 
-			if (GetDlgItem (hwnd, IDC_INFORMATION_ICON))
-				SendDlgItemMessage (hwnd, IDC_INFORMATION_ICON, STM_SETICON, (WPARAM)_r_loadicon (nullptr, IDI_INFORMATION, GetSystemMetrics (SM_CXSMICON)), 0);
-
 			break;
 		}
 
