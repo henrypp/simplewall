@@ -352,9 +352,6 @@ bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON * picon
 
 PR_OBJECT _app_getsignatureinfo (size_t app_hash, const PITEM_APP ptr_app)
 {
-	if (!app.ConfigGet (L"IsCertificatesEnabled", false).AsBool ())
-		return nullptr;
-
 	if (!app_hash || !ptr_app || _r_str_isempty (ptr_app->real_path) || (ptr_app->type != DataAppRegular && ptr_app->type != DataAppService && ptr_app->type != DataAppUWP))
 		return nullptr;
 
