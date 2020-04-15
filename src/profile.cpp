@@ -673,7 +673,7 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 				result.Format (L"%s (#%" PR_SIZE_T L")\r\n%s:\r\n%s%s\r\n%s:\r\n%s%s", ptr_rule->pname, lparam, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L")").GetString (), SZ_TAB, rule_remote.GetString (), app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_LOCAL L")").GetString (), SZ_TAB, rule_local.GetString ());
 
 				if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
-					result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_FILEPATH, nullptr).GetString (), SZ_TAB, _app_rulesexpandapps (ptr_rule, true, L"\r\n" SZ_TAB).GetString ());
+					result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_TAB_APPS, nullptr).GetString (), SZ_TAB, _app_rulesexpandapps (ptr_rule, true, L"\r\n" SZ_TAB).GetString ());
 			}
 
 			_r_obj_dereference (ptr_rule_object);
