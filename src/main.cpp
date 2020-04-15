@@ -1970,11 +1970,15 @@ find_wrap:
 			app.SettingsAddPage (IDD_SETTINGS_INTERFACE, IDS_TITLE_INTERFACE);
 			app.SettingsAddPage (IDD_SETTINGS_HIGHLIGHTING, IDS_TITLE_HIGHLIGHTING);
 			app.SettingsAddPage (IDD_SETTINGS_RULES, IDS_TRAY_RULES);
-			app.SettingsAddPage (IDD_SETTINGS_BLOCKLIST, IDS_TRAY_BLOCKLIST_RULES);
+
+			if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
+				app.SettingsAddPage (IDD_SETTINGS_BLOCKLIST, IDS_TRAY_BLOCKLIST_RULES);
 
 			// dropped packets logging (win7+)
 			app.SettingsAddPage (IDD_SETTINGS_NOTIFICATIONS, IDS_TITLE_NOTIFICATIONS);
 			app.SettingsAddPage (IDD_SETTINGS_LOGGING, IDS_TITLE_LOGGING);
+
+
 
 			// initialize colors
 			addcolor (IDS_HIGHLIGHT_TIMER, L"IsHighlightTimer", true, L"ColorTimer", LISTVIEW_COLOR_TIMER);
@@ -2011,6 +2015,8 @@ find_wrap:
 			// add blocklist to update
 			if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
 				app.UpdateAddComponent (L"Internal rules", L"profile_internal", _r_fmt (L"%" PRIi64, config.profile_internal_timestamp), config.profile_internal_path, false);
+			else
+				_r_menu_enableitem (GetMenu (hwnd), 4, MF_BYPOSITION, false);
 
 			// initialize tab
 			_app_settab_id (hwnd, app.ConfigGet (L"CurrentTab", IDC_APPS_PROFILE).AsInt ());
