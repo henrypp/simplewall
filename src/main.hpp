@@ -129,7 +129,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 #define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
 
 #define BOOTTIME_FILTER_NAME L"Boot-time filter"
-#define SUBLAYER_WEIGHT_DEFAULT 65534u
+#define SUBLAYER_WEIGHT_DEFAULT 65534U
 
 #define SERVICE_SECURITY_DESCRIPTOR L"O:SYG:SYD:(A;;CCRC;;;%s)"
 
@@ -142,7 +142,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 #define SZ_TAB L"   "
 #define SZ_EMPTY L"<empty>"
-#define SZ_READONLY_RULE L"*"
+#define SZ_RULE_INTERNAL_MENU L"*"
+#define SZ_RULE_INTERNAL_TITLE L"Internal rule"
+#define SZ_RULE_USER_TITLE L"User rule"
 #define SZ_UNKNOWN L"unknown"
 
 #define SZ_DIRECTION_REMOTE L"Remote"

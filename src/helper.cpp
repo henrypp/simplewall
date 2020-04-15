@@ -2138,7 +2138,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						}
 
 						WCHAR buffer[128] = {0};
-						_r_str_printf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? SZ_READONLY_RULE : nullptr), ptr_rule->pname);
+						_r_str_printf (buffer, _countof (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? SZ_RULE_INTERNAL_MENU : nullptr), ptr_rule->pname);
 
 						MENUITEMINFO mii = {0};
 

@@ -674,6 +674,8 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 
 				if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
 					result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_TAB_APPS, nullptr).GetString (), SZ_TAB, _app_rulesexpandapps (ptr_rule, true, L"\r\n" SZ_TAB).GetString ());
+
+				result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_NOTES, nullptr).GetString (), SZ_TAB, ptr_rule->is_readonly ? SZ_RULE_INTERNAL_TITLE : SZ_RULE_USER_TITLE);
 			}
 
 			_r_obj_dereference (ptr_rule_object);
@@ -701,7 +703,7 @@ void _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 	if (!ptr_rule || !listview_id || item == INVALID_INT)
 		return;
 
-	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->type == DataRuleCustom && ptr_rule->is_readonly ? _r_fmt (L"%s" SZ_READONLY_RULE, ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
+	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->type == DataRuleCustom && ptr_rule->is_readonly ? _r_fmt (L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
 	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC) : app.LocaleString (IDS_ANY, nullptr));
 	_r_listview_setitem (hwnd, listview_id, item, 2, app.LocaleString (ptr_rule->direction == FWP_DIRECTION_MAX ? IDS_ANY : IDS_DIRECTION_1 + ptr_rule->direction, nullptr));
 
