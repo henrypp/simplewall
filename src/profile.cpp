@@ -1282,16 +1282,21 @@ void _app_profile_load_fallback ()
 	if (!_app_isappfound (config.my_hash))
 		_app_addapplication (nullptr, app.GetBinaryPath (), 0, 0, 0, false, true);
 
-	// disable deletion for this shit ;)
-	if (!_app_isappfound (config.ntoskrnl_hash))
-		_app_addapplication (nullptr, PROC_SYSTEM_NAME, 0, 0, 0, false, false);
-
-	if (!_app_isappfound (config.svchost_hash))
-		_app_addapplication (nullptr, _r_path_expand (PATH_SVCHOST), 0, 0, 0, false, false);
-
 	_app_setappinfo (config.my_hash, InfoUndeletable, TRUE);
-	_app_setappinfo (config.ntoskrnl_hash, InfoUndeletable, TRUE);
-	_app_setappinfo (config.svchost_hash, InfoUndeletable, TRUE);
+
+	// disable deletion for this shit ;)
+	if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
+	{
+		if (!_app_isappfound (config.ntoskrnl_hash))
+			_app_addapplication (nullptr, PROC_SYSTEM_NAME, 0, 0, 0, false, false);
+
+		if (!_app_isappfound (config.svchost_hash))
+			_app_addapplication (nullptr, _r_path_expand (PATH_SVCHOST), 0, 0, 0, false, false);
+
+		_app_setappinfo (config.ntoskrnl_hash, InfoUndeletable, TRUE);
+		_app_setappinfo (config.svchost_hash, InfoUndeletable, TRUE);
+	}
+
 }
 
 void _app_profile_load_helper (const pugi::xml_node& root, EnumDataType type, UINT version)
@@ -1619,7 +1624,8 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 						_app_profile_load_helper (root_rules_custom, DataRuleCustom, version);
 
 					// load internal rules (new!)
-					_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
+					if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
+						_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
 				}
 			}
 		}
@@ -1681,7 +1687,8 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		}
 
 		// load internal rules (new!)
-		_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
+		if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
+			_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
 
 		// load rules custom (old!)
 		{
