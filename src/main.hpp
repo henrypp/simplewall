@@ -612,17 +612,3 @@ typedef struct tagITEM_LIST_ENTRY
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, ListEntry) == 0);
 C_ASSERT (FIELD_OFFSET (ITEM_LIST_ENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
 
-typedef enum _SC_SERVICE_TAG_QUERY_TYPE
-{
-	ServiceNameFromTagInformation = 1,
-	ServiceNamesReferencingModuleInformation,
-	ServiceNameTagMappingInformation
-} SC_SERVICE_TAG_QUERY_TYPE, *PSC_SERVICE_TAG_QUERY_TYPE;
-
-typedef struct _SC_SERVICE_TAG_QUERY
-{
-	ULONG ProcessId;
-	ULONG ServiceTag;
-	ULONG Unknown;
-	PVOID Buffer;
-} SC_SERVICE_TAG_QUERY, *PSC_SERVICE_TAG_QUERY;
