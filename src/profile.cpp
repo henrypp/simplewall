@@ -1180,9 +1180,6 @@ bool _app_isappexists (const PITEM_APP ptr_app)
 
 bool _app_isrulehost (LPCWSTR rule)
 {
-	if (_r_str_isempty (rule))
-		return false;
-
 	PNET_ADDRESS_INFO pni = (PNET_ADDRESS_INFO)_r_mem_allocex (sizeof (NET_ADDRESS_INFO), HEAP_ZERO_MEMORY);
 
 	if (!pni)
@@ -1196,54 +1193,70 @@ bool _app_isrulehost (LPCWSTR rule)
 
 	_r_mem_free (pni);
 
-	if (rc == ERROR_SUCCESS)
-	{
-		for (size_t i = 0; i < _r_str_length (rule); i++)
-		{
-			if (
-				rule[i] == L'#' ||
-				rule[i] == L'%' ||
-				rule[i] == L'&' ||
-				rule[i] == L'*' ||
-				rule[i] == L'@' ||
-				rule[i] == L')' ||
-				rule[i] == L'('
-				)
-				return false;
-		}
-
-		return true;
-	}
-
-	return false;
+	return (rc == ERROR_SUCCESS);
 }
 
 bool _app_isruleip (LPCWSTR rule)
 {
-	if (_r_str_isempty (rule))
-		return false;
+	PNET_ADDRESS_INFO pni = (PNET_ADDRESS_INFO)_r_mem_allocex (sizeof (NET_ADDRESS_INFO), HEAP_ZERO_MEMORY);
 
-	NET_ADDRESS_INFO ni;
-	RtlSecureZeroMemory (&ni, sizeof (ni));
+	if (!pni)
+		return false;
 
 	USHORT port = 0;
 	BYTE prefix_length = 0;
 
 	const DWORD types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
-	const DWORD rc = ParseNetworkString (rule, types, &ni, &port, &prefix_length);
+	const DWORD rc = ParseNetworkString (rule, types, pni, &port, &prefix_length);
+
+	_r_mem_free (pni);
 
 	return (rc == ERROR_SUCCESS);
 }
 
 bool _app_isruleport (LPCWSTR rule)
 {
-	if (_r_str_isempty (rule))
-		return false;
-
 	for (size_t i = 0; i < _r_str_length (rule); i++)
 	{
 		if (iswdigit (rule[i]) == 0 && rule[i] != DIVIDER_RULE_RANGE)
 			return false;
+	}
+
+	return true;
+}
+
+bool _app_isrulevalidchars (LPCWSTR rule)
+{
+	const WCHAR valid_chars[] = {
+		L'.',
+		L':',
+		L'[',
+		L']',
+		L'/',
+		L'-',
+		L'_',
+	};
+
+	for (size_t i = 0; i < _r_str_length (rule); i++)
+	{
+		if (iswalnum (rule[i]) == 0)
+		{
+			bool is_valid = false;
+
+			for (auto &chr : valid_chars)
+			{
+				if (rule[i] == chr)
+				{
+					is_valid = true;
+					break;
+				}
+			}
+
+			if (is_valid)
+				continue;
+
+			return false;
+		}
 	}
 
 	return true;

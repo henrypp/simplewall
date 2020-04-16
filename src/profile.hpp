@@ -46,10 +46,10 @@ bool _app_isapphaverule (size_t app_hash);
 bool _app_isappused (const PITEM_APP ptr_app, size_t app_hash);
 bool _app_isappexists (const PITEM_APP ptr_app);
 
-//bool _app_isruleblocklist (LPCWSTR name);
 bool _app_isrulehost (LPCWSTR rule);
 bool _app_isruleip (LPCWSTR rule);
 bool _app_isruleport (LPCWSTR rule);
+bool _app_isrulevalidchars (LPCWSTR rule);
 
 bool _app_profile_load_check (LPCWSTR path, EnumXmlType type, bool is_strict);
 void _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptimestamp);
