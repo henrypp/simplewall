@@ -235,8 +235,10 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 
 void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR config_value, COLORREF default_clr)
 {
-	PITEM_COLOR ptr_clr = new ITEM_COLOR;
-	RtlSecureZeroMemory (ptr_clr, sizeof (ITEM_COLOR));
+	PITEM_COLOR ptr_clr = (PITEM_COLOR)_r_mem_allocex (sizeof (ITEM_COLOR), HEAP_ZERO_MEMORY);
+
+	if (!ptr_clr)
+		return;
 
 	if (!_r_str_isempty (config_name))
 		_r_str_alloc (&ptr_clr->pcfg_name, _r_str_length (config_name), config_name);
@@ -249,9 +251,9 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 		ptr_clr->new_clr = app.ConfigGet (config_value, default_clr, L"colors").AsUlong ();
 	}
 
-	ptr_clr->is_enabled = is_enabled;
-	ptr_clr->locale_id = locale_id;
 	ptr_clr->default_clr = default_clr;
+	ptr_clr->locale_id = locale_id;
+	ptr_clr->is_enabled = is_enabled;
 
 	colors.push_back (_r_obj_allocate (ptr_clr, &_app_dereferencecolor));
 }

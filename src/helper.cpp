@@ -1365,21 +1365,24 @@ COLORREF _app_getcolorvalue (size_t color_hash)
 	if (!color_hash)
 		return 0;
 
-	for (size_t i = 0; i < colors.size (); i++)
+	for (auto &p : colors)
 	{
-		PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (i));
+		PR_OBJECT ptr_clr_object = _r_obj_reference (p);
 
 		if (!ptr_clr_object)
 			continue;
 
 		const PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
 
-		if (ptr_clr && ptr_clr->clr_hash == color_hash)
+		if (ptr_clr)
 		{
-			const COLORREF result = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
-			_r_obj_dereference (ptr_clr_object);
+			if (ptr_clr->clr_hash == color_hash)
+			{
+				const COLORREF result = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
+				_r_obj_dereference (ptr_clr_object);
 
-			return result;
+				return result;
+			}
 		}
 
 		_r_obj_dereference (ptr_clr_object);
@@ -1395,23 +1398,27 @@ rstring _app_getservicenamefromtag (HANDLE pid, const PVOID ptag)
 
 	if (hlib)
 	{
-		typedef ULONG (NTAPI * IQTI) (PVOID, SC_SERVICE_TAG_QUERY_TYPE, PSC_SERVICE_TAG_QUERY); // I_QueryTagInformation
+		typedef ULONG (NTAPI* IQTI) (PVOID, SC_SERVICE_TAG_QUERY_TYPE, PSC_SERVICE_TAG_QUERY); // I_QueryTagInformation
 		const IQTI _I_QueryTagInformation = (IQTI)GetProcAddress (hlib, "I_QueryTagInformation");
 
 		if (_I_QueryTagInformation)
 		{
-			SC_SERVICE_TAG_QUERY nameFromTag;
-			RtlSecureZeroMemory (&nameFromTag, sizeof (nameFromTag));
+			PSC_SERVICE_TAG_QUERY pnameFromTag = (PSC_SERVICE_TAG_QUERY)_r_mem_allocex (sizeof (SC_SERVICE_TAG_QUERY), HEAP_ZERO_MEMORY);
 
-			nameFromTag.ProcessId = HandleToUlong (pid);
-			nameFromTag.ServiceTag = PtrToUlong (ptag);
-
-			_I_QueryTagInformation (nullptr, ServiceNameFromTagInformation, &nameFromTag);
-
-			if (nameFromTag.Buffer)
+			if (pnameFromTag)
 			{
-				result = static_cast<LPCWSTR>(nameFromTag.Buffer);
-				LocalFree (nameFromTag.Buffer);
+				pnameFromTag->ProcessId = HandleToUlong (pid);
+				pnameFromTag->ServiceTag = PtrToUlong (ptag);
+
+				_I_QueryTagInformation (nullptr, ServiceNameFromTagInformation, pnameFromTag);
+
+				if (pnameFromTag->Buffer)
+				{
+					result = static_cast<LPCWSTR>(pnameFromTag->Buffer);
+					LocalFree (pnameFromTag->Buffer);
+				}
+
+				_r_mem_free (pnameFromTag);
 			}
 		}
 	}
@@ -1574,7 +1581,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 					}
 
 					PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-					RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 					const rstring path = _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
@@ -1631,7 +1637,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 					}
 
 					PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-					RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 					const rstring path = _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
@@ -1691,7 +1696,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 					}
 
 					PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-					RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 					const rstring path = _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
@@ -1741,7 +1745,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 					}
 
 					PITEM_NETWORK ptr_network = new ITEM_NETWORK;
-					RtlSecureZeroMemory (ptr_network, sizeof (ITEM_NETWORK));
 
 					const rstring path = _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
@@ -1854,7 +1857,6 @@ void _app_generate_packages ()
 				}
 
 				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
-				RtlSecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
 
 				ptr_item->type = DataAppUWP;
 				ptr_item->pdata = package_sid;
@@ -2045,7 +2047,6 @@ void _app_generate_services ()
 					continue;
 
 				PITEM_APP_HELPER ptr_item = new ITEM_APP_HELPER;
-				RtlSecureZeroMemory (ptr_item, sizeof (ITEM_APP_HELPER));
 
 				ptr_item->type = DataAppService;
 				ptr_item->timestamp = timestamp;
