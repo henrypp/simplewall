@@ -4545,7 +4545,8 @@ find_wrap:
 					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
 						const size_t network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
-						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[network_hash]);
+
+						PR_OBJECT ptr_network_object = _app_getnetworkitem (network_hash);
 
 						if (!ptr_network_object)
 							continue;
