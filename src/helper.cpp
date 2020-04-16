@@ -107,15 +107,11 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 			if (addr_hash)
 			{
-				_r_fastlock_acquireshared (&lock_cache);
 				const bool is_exists = cache_hosts.find (addr_hash) != cache_hosts.end ();
-				_r_fastlock_releaseshared (&lock_cache);
 
 				if (is_exists)
 				{
-					_r_fastlock_acquireshared (&lock_cache);
 					PR_OBJECT ptr_cache_object = _r_obj_reference (cache_hosts[addr_hash]);
-					_r_fastlock_releaseshared (&lock_cache);
 
 					if (ptr_cache_object)
 					{
@@ -136,11 +132,10 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 						_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", ptr_cache));
 
 						_r_fastlock_acquireexclusive (&lock_cache);
-
 						_app_freeobjects_map (cache_hosts, false);
-						cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
-
 						_r_fastlock_releaseexclusive (&lock_cache);
+
+						cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 					}
 				}
 			}
@@ -355,17 +350,13 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, const PITEM_APP ptr_app)
 	if (!app_hash || !ptr_app || _r_str_isempty (ptr_app->real_path) || (ptr_app->type != DataAppRegular && ptr_app->type != DataAppService && ptr_app->type != DataAppUWP))
 		return nullptr;
 
-	_r_fastlock_acquireshared (&lock_cache);
 	const bool is_exists = cache_signatures.find (app_hash) != cache_signatures.end ();
-	_r_fastlock_releaseshared (&lock_cache);
 
 	PR_OBJECT ptr_cache_object = nullptr;
 
 	if (is_exists)
 	{
-		_r_fastlock_acquireshared (&lock_cache);
 		ptr_cache_object = _r_obj_reference (cache_signatures[app_hash]);
-		_r_fastlock_releaseshared (&lock_cache);
 	}
 	else
 	{
@@ -418,13 +409,12 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, const PITEM_APP ptr_app)
 								if (CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, ptr_cache, num_chars) > 1)
 								{
 									_r_fastlock_acquireexclusive (&lock_cache);
-
 									_app_freeobjects_map (cache_signatures, false);
+									_r_fastlock_releaseexclusive (&lock_cache);
+
 									cache_signatures[app_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
 									ptr_cache_object = _r_obj_reference (cache_signatures[app_hash]);
-
-									_r_fastlock_releaseexclusive (&lock_cache);
 								}
 								else
 								{
@@ -455,15 +445,11 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, const PITEM_APP ptr_app)
 
 	PR_OBJECT ptr_cache_object = nullptr;
 
-	_r_fastlock_acquireshared (&lock_cache);
 	const bool is_exists = cache_versions.find (app_hash) != cache_versions.end ();
-	_r_fastlock_releaseshared (&lock_cache);
 
 	if (is_exists)
 	{
-		_r_fastlock_acquireshared (&lock_cache);
 		ptr_cache_object = _r_obj_reference (cache_versions[app_hash]);
-		_r_fastlock_releaseshared (&lock_cache);
 	}
 	else
 	{
@@ -545,13 +531,12 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, const PITEM_APP ptr_app)
 						if (_r_str_alloc (&ptr_cache, buffer.GetLength (), buffer))
 						{
 							_r_fastlock_acquireexclusive (&lock_cache);
-
 							_app_freeobjects_map (cache_versions, false);
+							_r_fastlock_releaseexclusive (&lock_cache);
+
 							cache_versions[app_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
 							ptr_cache_object = _r_obj_reference (cache_versions[app_hash]);
-
-							_r_fastlock_releaseexclusive (&lock_cache);
 						}
 					}
 
@@ -2542,15 +2527,11 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 			{
 				const size_t dns_hash = _r_str_hash (ni.NamedAddress.Address);
 
-				_r_fastlock_acquireshared (&lock_cache);
 				const bool is_exists = cache_dns.find (dns_hash) != cache_dns.end ();
-				_r_fastlock_releaseshared (&lock_cache);
 
 				if (is_exists)
 				{
-					_r_fastlock_acquireshared (&lock_cache);
 					PR_OBJECT ptr_cache_object = _r_obj_reference (cache_dns[dns_hash]);
-					_r_fastlock_releaseshared (&lock_cache);
 
 					if (ptr_cache_object)
 					{
@@ -2581,11 +2562,10 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 					if (_r_str_alloc (&ptr_cache, host.GetLength (), host))
 					{
 						_r_fastlock_acquireexclusive (&lock_cache);
-
 						_app_freeobjects_map (cache_dns, false);
-						cache_dns[dns_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
-
 						_r_fastlock_releaseexclusive (&lock_cache);
+
+						cache_dns[dns_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 					}
 
 					return true;
@@ -2626,15 +2606,11 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 	{
 		const size_t rule_hash = _r_str_hash (rule);
 
-		_r_fastlock_acquireshared (&lock_cache);
 		const bool is_exists = cache_types.find (rule_hash) != cache_types.end ();
-		_r_fastlock_releaseshared (&lock_cache);
 
 		if (is_exists)
 		{
-			_r_fastlock_acquireshared (&lock_cache);
 			type = cache_types[rule_hash];
-			_r_fastlock_releaseshared (&lock_cache);
 		}
 		else
 		{
@@ -2653,14 +2629,10 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 
 			if (type != DataUnknown)
 			{
-				_r_fastlock_acquireexclusive (&lock_cache);
-
 				if (cache_types.size () >= UMAP_CACHE_LIMIT)
 					cache_types.clear ();
 
 				cache_types[rule_hash] = type;
-
-				_r_fastlock_releaseexclusive (&lock_cache);
 			}
 		}
 	}
@@ -2840,15 +2812,11 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 	{
 		const size_t arpa_hash = _r_str_hash (pstraddr);
 
-		_r_fastlock_acquireshared (&lock_cache);
 		const bool is_exists = cache_arpa.find (arpa_hash) != cache_arpa.end ();
-		_r_fastlock_releaseshared (&lock_cache);
 
 		if (is_exists)
 		{
-			_r_fastlock_acquireshared (&lock_cache);
 			PR_OBJECT ptr_cache_object = _r_obj_reference (cache_arpa[arpa_hash]);
-			_r_fastlock_releaseshared (&lock_cache);
 
 			if (ptr_cache_object)
 			{
@@ -2880,11 +2848,10 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 						if (_r_str_alloc (&ptr_cache, len, ppQueryResultsSet->Data.PTR.pNameHost))
 						{
 							_r_fastlock_acquireexclusive (&lock_cache);
-
 							_app_freeobjects_map (cache_arpa, false);
-							cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
-
 							_r_fastlock_releaseexclusive (&lock_cache);
+
+							cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 						}
 					}
 				}
