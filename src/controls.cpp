@@ -183,7 +183,7 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
 }
 
-bool _app_listviewinitfont (HWND hwnd, PLOGFONT plf)
+void _app_listviewinitfont (HWND hwnd, PLOGFONT plf)
 {
 	const rstring buffer = app.ConfigGet (L"Font", UI_FONT_DEFAULT);
 
@@ -192,26 +192,17 @@ bool _app_listviewinitfont (HWND hwnd, PLOGFONT plf)
 		rstringvec rvc;
 		_r_str_split (buffer, buffer.GetLength (), L';', rvc);
 
-		for (size_t i = 0; i < rvc.size (); i++)
+		if (!rvc.empty ())
 		{
-			rstring& rlink = rvc.at (i);
+			_r_str_copy (plf->lfFaceName, LF_FACESIZE, rvc.at (0)); // face name
 
-			_r_str_trim (rlink, DIVIDER_TRIM);
+			if (rvc.size () >= 2)
+			{
+				plf->lfHeight = _r_dc_fontsizetoheight (hwnd, rvc.at (1).AsInt ()); // size
 
-			if (rlink.IsEmpty ())
-				continue;
-
-			if (i == 0)
-				_r_str_copy (plf->lfFaceName, LF_FACESIZE, rlink);
-
-			else if (i == 1)
-				plf->lfHeight = _r_dc_fontsizetoheight (hwnd, rlink.AsInt ());
-
-			else if (i == 2)
-				plf->lfWeight = rlink.AsInt ();
-
-			else
-				break;
+				if (rvc.size () >= 3)
+					plf->lfWeight = rvc.at (2).AsInt (); // weight
+			}
 		}
 	}
 
@@ -238,8 +229,6 @@ bool _app_listviewinitfont (HWND hwnd, PLOGFONT plf)
 			plf->lfQuality = pdeflf->lfQuality;
 		}
 	}
-
-	return true;
 }
 
 void _app_listviewsetfont (HWND hwnd, INT listview_id, bool is_redraw)
