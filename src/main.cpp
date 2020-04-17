@@ -1704,6 +1704,11 @@ void _app_tabs_init (HWND hwnd)
 		if (!listview_id)
 			continue;
 
+		HWND hlistview = GetDlgItem (hwnd, listview_id);
+
+		if (!hlistview)
+			continue;
+
 		_app_listviewsetfont (hwnd, listview_id, false);
 
 		if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM)
@@ -1739,14 +1744,9 @@ void _app_tabs_init (HWND hwnd)
 			_r_listview_addcolumn (hwnd, listview_id, 6, app.LocaleString (IDS_STATE, nullptr), 0, LVCFMT_RIGHT);
 		}
 
-		HWND hlistview = GetDlgItem (hwnd, listview_id);
+		_r_tab_adjustchild (hwnd, IDC_TAB, hlistview);
 
-		if (hlistview)
-		{
-			_r_tab_adjustchild (hwnd, IDC_TAB, hlistview);
-
-			BringWindowToTop (hlistview); // HACK!!!
-		}
+		BringWindowToTop (hlistview); // HACK!!!
 	}
 }
 
