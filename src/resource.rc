@@ -732,7 +732,7 @@ BEGIN
 	IDS_STATUS_EMPTY "<empty>"
 
 	//IDS_STATUS_ERROR "Error occured! Click here for more details or open the log file."
-	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule ""%s""!"
+	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule!"
 	IDS_STATUS_TIMER_DONE "Timer for ""%s"" has expired!"
 
 	IDS_ADDRESS_LOCAL "Source"
