@@ -999,29 +999,32 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
-					if (listview_id != IDC_COLORS)
-						break;
-
-					if (IsWindowVisible (lpnmlv->hdr.hwndFrom) && (lpnmlv->uChanged & LVIF_STATE) && (lpnmlv->uNewState == 8192 || lpnmlv->uNewState == 4096) && lpnmlv->uNewState != lpnmlv->uOldState)
+					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
 					{
-						if (_r_fastlock_islocked (&lock_checkbox))
-							break;
-
-						const bool new_val = (lpnmlv->uNewState == 8192) ? true : false;
-
-						const size_t idx = lpnmlv->lParam;
-						PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (idx));
-
-						if (ptr_clr_object)
+						if (listview_id == IDC_COLORS)
 						{
-							PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
+							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
+							{
+								if (_r_fastlock_islocked (&lock_checkbox))
+									break;
 
-							if (ptr_clr)
-								app.ConfigSet (ptr_clr->pcfg_name, new_val, L"colors");
+								const bool is_enabled = (lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2);
 
-							_r_obj_dereference (ptr_clr_object);
+								const size_t idx = lpnmlv->lParam;
+								PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (idx));
 
-							_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
+								if (ptr_clr_object)
+								{
+									PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
+
+									if (ptr_clr)
+										app.ConfigSet (ptr_clr->pcfg_name, is_enabled, L"colors");
+
+									_r_obj_dereference (ptr_clr_object);
+
+									_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
+								}
+							}
 						}
 					}
 
@@ -2670,92 +2673,95 @@ find_wrap:
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
 
-					if (IsWindowVisible (lpnmlv->hdr.hwndFrom) && (lpnmlv->uChanged & LVIF_STATE) && (lpnmlv->uNewState == 8192 || lpnmlv->uNewState == 4096) && lpnmlv->uNewState != lpnmlv->uOldState)
+					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
 					{
-						if (_r_fastlock_islocked (&lock_checkbox))
-							break;
-
-						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
-						bool is_changed = false;
-
-						const bool new_val = (lpnmlv->uNewState == 8192) ? true : false;
-
-						if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
+						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 						{
-							const size_t app_hash = lpnmlv->lParam;
-							PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
-
-							if (!ptr_app_object)
+							if (_r_fastlock_islocked (&lock_checkbox))
 								break;
 
-							PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+							const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
+							bool is_changed = false;
 
-							OBJECTS_VEC rules;
+							const bool is_enabled = (lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2);
 
-							if (ptr_app)
+							if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 							{
-								if (ptr_app->is_enabled != new_val)
+								const size_t app_hash = lpnmlv->lParam;
+								PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+
+								if (!ptr_app_object)
+									break;
+
+								PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+
+								OBJECTS_VEC rules;
+
+								if (ptr_app)
 								{
-									ptr_app->is_enabled = new_val;
+									if (ptr_app->is_enabled != is_enabled)
+									{
+										ptr_app->is_enabled = is_enabled;
 
-									_r_fastlock_acquireshared (&lock_checkbox);
-									_app_setappiteminfo (hwnd, listview_id, lpnmlv->iItem, app_hash, ptr_app);
-									_r_fastlock_releaseshared (&lock_checkbox);
+										_r_fastlock_acquireshared (&lock_checkbox);
+										_app_setappiteminfo (hwnd, listview_id, lpnmlv->iItem, app_hash, ptr_app);
+										_r_fastlock_releaseshared (&lock_checkbox);
 
-									if (new_val)
-										_app_freenotify (app_hash, ptr_app);
+										if (is_enabled)
+											_app_freenotify (app_hash, ptr_app);
 
-									if (!new_val && _app_istimeractive (ptr_app))
-										_app_timer_reset (hwnd, ptr_app);
+										if (!is_enabled && _app_istimeractive (ptr_app))
+											_app_timer_reset (hwnd, ptr_app);
 
-									rules.push_back (ptr_app_object);
-									_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
+										rules.push_back (ptr_app_object);
+										_wfp_create3filters (_wfp_getenginehandle (), rules, __LINE__);
 
-									is_changed = true;
+										is_changed = true;
+									}
 								}
+
+								_r_obj_dereference (ptr_app_object);
+							}
+							else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
+							{
+								OBJECTS_VEC rules;
+
+								const size_t rule_idx = lpnmlv->lParam;
+								PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
+
+								if (!ptr_rule_object)
+									break;
+
+								PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+
+								if (ptr_rule)
+								{
+									if (ptr_rule->is_enabled != is_enabled)
+									{
+										_r_fastlock_acquireshared (&lock_checkbox);
+
+										_app_ruleenable (ptr_rule, is_enabled);
+										_app_setruleiteminfo (hwnd, listview_id, lpnmlv->iItem, ptr_rule, true);
+
+										_r_fastlock_releaseshared (&lock_checkbox);
+
+										rules.push_back (ptr_rule_object);
+										_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
+
+										is_changed = true;
+									}
+								}
+
+								_r_obj_dereference (ptr_rule_object);
 							}
 
-							_r_obj_dereference (ptr_app_object);
-						}
-						else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
-						{
-							OBJECTS_VEC rules;
-
-							const size_t rule_idx = lpnmlv->lParam;
-							PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
-
-							if (!ptr_rule_object)
-								break;
-
-							PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-							if (ptr_rule)
+							if (is_changed)
 							{
-								if (ptr_rule->is_enabled != new_val)
-								{
-									_r_fastlock_acquireshared (&lock_checkbox);
+								_app_listviewsort (hwnd, listview_id);
+								_app_refreshstatus (hwnd, listview_id);
 
-									_app_ruleenable (ptr_rule, new_val);
-									_app_setruleiteminfo (hwnd, listview_id, lpnmlv->iItem, ptr_rule, true);
-
-									_r_fastlock_releaseshared (&lock_checkbox);
-
-									rules.push_back (ptr_rule_object);
-									_wfp_create4filters (_wfp_getenginehandle (), rules, __LINE__);
-
-									is_changed = true;
-								}
+								_app_profile_save ();
 							}
-
-							_r_obj_dereference (ptr_rule_object);
-						}
-
-						if (is_changed)
-						{
-							_app_listviewsort (hwnd, listview_id);
-							_app_refreshstatus (hwnd, listview_id);
-
-							_app_profile_save ();
 						}
 					}
 
