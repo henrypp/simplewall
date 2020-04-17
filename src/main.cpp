@@ -871,8 +871,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDD_SETTINGS_HIGHLIGHTING:
 				{
-					_app_listviewsetfont (hwnd, IDC_COLORS, false);
-
 					_r_listview_setcolumn (hwnd, IDC_COLORS, 0, nullptr, -100);
 
 					for (INT i = 0; i < _r_listview_getitemcount (hwnd, IDC_COLORS); i++)
