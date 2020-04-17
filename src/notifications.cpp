@@ -821,7 +821,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
 
 							if (ptr_log && ptr_log->app_hash)
-								_r_str_copy (buffer, _countof (buffer), _app_gettooltip (IDC_APPS_PROFILE, ptr_log->app_hash));
+								_r_str_copy (buffer, _countof (buffer), _app_gettooltip (nullptr, IDC_APPS_PROFILE, ptr_log->app_hash));
 
 							_r_obj_dereference (ptr_log_object);
 						}

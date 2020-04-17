@@ -24,7 +24,7 @@ INT _app_getrulegroup (const PITEM_RULE ptr_rule);
 INT _app_getruleicon (const PITEM_RULE ptr_rule);
 COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx);
 
-rstring _app_gettooltip (INT listview_id, size_t lparam);
+rstring _app_gettooltip (HWND hwnd, INT listview_id, size_t lparam);
 
 void _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, size_t app_hash, PITEM_APP ptr_app);
 void _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_rule, bool include_apps);

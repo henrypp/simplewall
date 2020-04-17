@@ -505,7 +505,7 @@ COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx)
 	return _app_getcolorvalue (_r_str_hash (color_value));
 }
 
-rstring _app_gettooltip (INT listview_id, size_t lparam)
+rstring _app_gettooltip (HWND hwnd, INT listview_id, size_t lparam)
 {
 	rstring result;
 
@@ -711,6 +711,10 @@ rstring _app_gettooltip (INT listview_id, size_t lparam)
 
 			_r_obj_dereference (ptr_rule_object);
 		}
+	}
+	else if (listview_id == IDC_RULE_REMOTE_EDIT || listview_id == IDC_RULE_LOCAL_EDIT)
+	{
+		result = _r_listview_getitemtext (hwnd, listview_id, (INT)lparam, 0);
 	}
 
 	return result;

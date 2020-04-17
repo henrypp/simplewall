@@ -2661,7 +2661,7 @@ find_wrap:
 						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 						const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
 
-						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (listview_id, idx));
+						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (hwnd, listview_id, idx));
 
 						_r_fastlock_releaseshared (&lock_access);
 					}
