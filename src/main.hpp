@@ -142,6 +142,7 @@ enum EnumInfo
 #define SZ_EMPTY L"<empty>"
 #define SZ_RULE_INTERNAL_MENU L"*"
 #define SZ_RULE_INTERNAL_TITLE L"Internal rule"
+#define SZ_RULE_NEW_TITLE L"<new rule>"
 #define SZ_UNKNOWN L"unknown"
 
 #define SZ_DIRECTION_REMOTE L"Remote"
