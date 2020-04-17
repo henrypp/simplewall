@@ -1805,12 +1805,15 @@ void _app_initialize ()
 	{
 		DWORD size = SECURITY_MAX_SID_SIZE;
 
-		config.padminsid = (PISID)_r_mem_alloc (size);
+		config.padminsid = (PISID)_r_mem_allocex (size,0);
 
-		if (!CreateWellKnownSid (WinBuiltinAdministratorsSid, nullptr, config.padminsid, &size))
+		if (config.padminsid)
 		{
-			_r_mem_free (config.padminsid);
-			config.padminsid = nullptr;
+			if (!CreateWellKnownSid (WinBuiltinAdministratorsSid, nullptr, config.padminsid, &size))
+			{
+				_r_mem_free (config.padminsid);
+				config.padminsid = nullptr;
+			}
 		}
 	}
 
@@ -1820,7 +1823,6 @@ void _app_initialize ()
 		// get user sid
 		HANDLE htoken = nullptr;
 		DWORD token_length = 0;
-		PTOKEN_USER token_user = nullptr;
 
 		if (OpenProcessToken (NtCurrentProcess (), TOKEN_QUERY, &htoken))
 		{
@@ -1828,7 +1830,7 @@ void _app_initialize ()
 
 			if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
 			{
-				token_user = (PTOKEN_USER)_r_mem_alloc (token_length);
+				PTOKEN_USER token_user = (PTOKEN_USER)_r_mem_allocex (token_length,0);
 
 				if (token_user)
 				{
