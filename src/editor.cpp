@@ -322,7 +322,6 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			// apps
 			if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
 			{
-				_app_listviewsetfont (hwnd, IDC_RULE_APPS_ID, false);
 				_app_listviewsetview (hwnd, IDC_RULE_APPS_ID);
 
 				_r_listview_setstyle (hwnd, IDC_RULE_APPS_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES);
