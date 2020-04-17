@@ -417,7 +417,7 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 
 			const INT listview_id = static_cast<INT>(lpnmlv->nmcd.hdr.idFrom);
 
-			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS || listview_id == IDC_NETWORK)
+			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK)
 			{
 				size_t app_hash;
 

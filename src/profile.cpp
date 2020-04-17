@@ -284,7 +284,7 @@ COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
 	if (!ptr_app_object)
 		return 0;
 
-	const bool is_appslist = (listview_id == IDC_RULE_APPS);
+	const bool is_appslist = (listview_id == IDC_RULE_APPS_ID);
 	const bool is_networkslist = (listview_id == IDC_NETWORK);
 
 	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
@@ -509,7 +509,7 @@ rstring _app_gettooltip (HWND hwnd, INT listview_id, size_t lparam)
 {
 	rstring result;
 
-	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS || listview_id == IDC_NETWORK)
+	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK)
 	{
 		if (listview_id == IDC_NETWORK)
 		{
@@ -712,7 +712,7 @@ rstring _app_gettooltip (HWND hwnd, INT listview_id, size_t lparam)
 			_r_obj_dereference (ptr_rule_object);
 		}
 	}
-	else if (listview_id == IDC_RULE_REMOTE_EDIT || listview_id == IDC_RULE_LOCAL_EDIT)
+	else if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
 	{
 		result = _r_listview_getitemtext (hwnd, listview_id, (INT)lparam, 0);
 	}
