@@ -162,7 +162,7 @@ void _app_listviewsetview (HWND hwnd, INT listview_id)
 
 	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
-		if (icons_size == SHIL_SYSSMALL)
+		if (icons_size == SHIL_SMALL || icons_size == SHIL_SYSSMALL)
 			himg = config.himg_rules_small;
 
 		else
