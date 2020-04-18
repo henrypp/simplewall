@@ -157,24 +157,6 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 						network_map.erase (network_hash);
 
 						_r_obj_dereferenceex (ptr_network_object, 2);
-
-						// redraw listview item
-						if (is_highlighting_enabled)
-						{
-							const size_t app_hash = _app_getnetworkapp (network_hash);
-							INT app_listview_id = 0;
-
-							if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
-							{
-								if (IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
-								{
-									const INT item_pos = _app_getposition (hwnd, app_listview_id, app_hash);
-
-									if (item_pos != INVALID_INT)
-										_r_listview_redraw (hwnd, app_listview_id, item_pos, item_pos);
-								}
-							}
-						}
 					}
 				}
 			}
