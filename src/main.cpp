@@ -1043,58 +1043,59 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
-					if (lpnmlv->iItem == INVALID_INT || listview_id != IDC_COLORS)
+					if (lpnmlv->iItem == INVALID_INT)
 						break;
 
-					const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
-					PR_OBJECT ptr_clr_object_current = _r_obj_reference (colors.at (idx));
-
-					PITEM_COLOR ptr_clr_current = nullptr;
-
-					if (ptr_clr_object_current)
-						ptr_clr_current = (PITEM_COLOR)ptr_clr_object_current->pdata;
-
-					CHOOSECOLOR cc = {0};
-					COLORREF cust[16] = {0};
-
-					size_t index = 0;
-
-					for (auto &p : colors)
+					if (listview_id == IDC_COLORS)
 					{
-						PR_OBJECT ptr_clr_object = _r_obj_reference (p);
+						const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+						PR_OBJECT ptr_clr_object_current = _r_obj_reference (colors.at (idx));
 
-						if (ptr_clr_object)
-						{
-							PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
+						if (!ptr_clr_object_current)
+							break;
 
-							if (ptr_clr)
-								cust[index] = ptr_clr->default_clr;
+						PITEM_COLOR ptr_clr_current = (PITEM_COLOR)ptr_clr_object_current->pdata;
 
-							_r_obj_dereference (ptr_clr_object);
-						}
-
-						index += 1;
-					}
-
-					cc.lStructSize = sizeof (cc);
-					cc.Flags = CC_RGBINIT | CC_FULLOPEN;
-					cc.hwndOwner = hwnd;
-					cc.lpCustColors = cust;
-					cc.rgbResult = ptr_clr_current ? ptr_clr_current->new_clr : 0;
-
-					if (ChooseColor (&cc))
-					{
 						if (ptr_clr_current)
 						{
-							ptr_clr_current->new_clr = cc.rgbResult;
-							app.ConfigSet (ptr_clr_current->pcfg_value, cc.rgbResult, L"colors");
+							CHOOSECOLOR cc = {0};
+							COLORREF cust[16] = {0};
+
+							size_t index = 0;
+
+							for (auto &p : colors)
+							{
+								PR_OBJECT ptr_clr_object = _r_obj_reference (p);
+
+								if (ptr_clr_object)
+								{
+									PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
+
+									if (ptr_clr)
+										cust[index++] = ptr_clr->default_clr;
+
+									_r_obj_dereference (ptr_clr_object);
+								}
+							}
+
+							cc.lStructSize = sizeof (cc);
+							cc.Flags = CC_RGBINIT | CC_FULLOPEN;
+							cc.hwndOwner = hwnd;
+							cc.lpCustColors = cust;
+							cc.rgbResult = ptr_clr_current->new_clr;
+
+							if (ChooseColor (&cc))
+							{
+								ptr_clr_current->new_clr = cc.rgbResult;
+								app.ConfigSet (ptr_clr_current->pcfg_value, cc.rgbResult, L"colors");
+
+								_r_listview_redraw (hwnd, IDC_COLORS);
+								_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
+							}
 						}
 
-						_r_listview_redraw (hwnd, IDC_COLORS);
-						_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
+						_r_obj_dereference (ptr_clr_object_current);
 					}
-
-					_r_obj_dereference (ptr_clr_object_current);
 
 					break;
 				}
@@ -1474,14 +1475,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					app.ConfigSet (L"IsExcludeCustomRules", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 					break;
 				}
-			}
+				}
 
 			break;
+			}
 		}
-	}
 
 	return FALSE;
-}
+	}
 
 void _app_resizewindow (HWND hwnd, LPARAM lparam)
 {
@@ -1803,7 +1804,7 @@ void _app_initialize ()
 	{
 		DWORD size = SECURITY_MAX_SID_SIZE;
 
-		config.padminsid = (PISID)_r_mem_allocex (size,0);
+		config.padminsid = (PISID)_r_mem_allocex (size, 0);
 
 		if (config.padminsid)
 		{
@@ -1828,7 +1829,7 @@ void _app_initialize ()
 
 			if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
 			{
-				PTOKEN_USER token_user = (PTOKEN_USER)_r_mem_allocex (token_length,0);
+				PTOKEN_USER token_user = (PTOKEN_USER)_r_mem_allocex (token_length, 0);
 
 				if (token_user)
 				{
