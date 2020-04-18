@@ -2989,7 +2989,7 @@ find_wrap:
 					{
 						SetMenuDefaultItem (hsubmenu, IDM_PROPERTIES, FALSE);
 
-						PR_OBJECT ptr_network_object = _r_obj_reference (network_map[hash_item]);
+						PR_OBJECT ptr_network_object = _app_getnetworkitem (hash_item);
 
 						if (ptr_network_object)
 						{
