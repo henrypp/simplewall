@@ -43,9 +43,6 @@ bool _app_getappinfo (size_t app_hash, EnumInfo info_key, LPVOID presult, size_t
 
 bool _app_setappinfo (size_t app_hash, EnumInfo info_key, LONG_PTR info_value)
 {
-	if (!app_hash)
-		return false;
-
 	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
 
 	if (!ptr_app_object)
@@ -58,11 +55,6 @@ bool _app_setappinfo (size_t app_hash, EnumInfo info_key, LONG_PTR info_value)
 		if (info_key == InfoUndeletable)
 		{
 			ptr_app->is_undeletable = info_value ? true : false;
-		}
-		else if (info_key == InfoClearIds)
-		{
-			ptr_app->is_haveerrors = false;
-			ptr_app->guids.clear ();
 		}
 	}
 
