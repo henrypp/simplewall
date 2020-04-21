@@ -9,7 +9,7 @@ HFONT hfont_text = nullptr;
 
 void _app_notifycreatewindow (HWND hwnd)
 {
-	config.hnotification = CreateDialog (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_NOTIFICATION), hwnd, &NotificationProc);
+	config.hnotification = CreateDialog (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_NOTIFICATION), nullptr, &NotificationProc);
 }
 
 bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
