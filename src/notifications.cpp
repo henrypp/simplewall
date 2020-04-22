@@ -327,7 +327,7 @@ void _app_notifyplaysound ()
 	if (_r_str_isempty (notify_snd_path) || !_r_fs_exists (notify_snd_path))
 	{
 		HKEY hkey = nullptr;
-		notify_snd_path[0] = 0;
+		notify_snd_path[0] = UNICODE_NULL;
 
 #define NOTIFY_SOUND_NAME L"MailBeep"
 
@@ -354,8 +354,8 @@ void _app_notifyplaysound ()
 		result = true;
 	}
 
-	if (!result || !_r_fs_exists (notify_snd_path) || !PlaySound (notify_snd_path, nullptr, SND_ASYNC | SND_NODEFAULT | SND_FILENAME | SND_SENTRY))
-		PlaySound (NOTIFY_SOUND_NAME, nullptr, SND_ASYNC | SND_NODEFAULT | SND_SENTRY);
+	if (!result || !_r_fs_exists (notify_snd_path) || !PlaySound (notify_snd_path, nullptr, SND_ASYNC | SND_NODEFAULT | SND_NOWAIT | SND_FILENAME | SND_SENTRY))
+		PlaySound (NOTIFY_SOUND_NAME, nullptr, SND_ASYNC | SND_NODEFAULT | SND_NOWAIT | SND_SENTRY);
 }
 
 void _app_notifyrefresh (HWND hwnd, bool is_safety)
