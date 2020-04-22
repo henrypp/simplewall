@@ -676,8 +676,8 @@ BEGIN
 	IDS_USECERTIFICATES_CHK "Check apps for digital signatures"
 	IDS_USENETWORKRESOLUTION_CHK "Resolve network addresses"
 
-	IDS_DISABLEWINDOWSFIREWALL_CHK "Disable Windows Firewall (recommended)"
-	IDS_ENABLEWINDOWSFIREWALL_CHK "Enable Windows Firewall (recommended)"
+	IDS_DISABLEWINDOWSFIREWALL_CHK "Disable Windows Firewall"
+	IDS_ENABLEWINDOWSFIREWALL_CHK "Enable Windows Firewall"
 
 	IDS_CONFIRMEXIT_CHK "Show confirmation dialog on exit"
 	IDS_CONFIRMEXITTIMER_CHK "Show confirmation dialog on exit when timers are active"
