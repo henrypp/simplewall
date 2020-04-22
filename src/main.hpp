@@ -559,23 +559,17 @@ typedef struct tagEDITOR_CONTEXT
 
 typedef struct tagITEM_COLOR
 {
-	~tagITEM_COLOR ()
-	{
-		SAFE_DELETE_ARRAY (pcfg_name);
-		SAFE_DELETE_ARRAY (pcfg_value);
-	}
+	LPWSTR pcfg_name;
+	LPWSTR pcfg_value;
 
-	LPWSTR pcfg_name = nullptr;
-	LPWSTR pcfg_value = nullptr;
+	size_t clr_hash;
 
-	size_t clr_hash = 0;
+	UINT locale_id;
 
-	UINT locale_id = 0;
+	COLORREF default_clr;
+	COLORREF new_clr;
 
-	COLORREF default_clr = 0;
-	COLORREF new_clr = 0;
-
-	bool is_enabled = false;
+	bool is_enabled;
 } ITEM_COLOR, *PITEM_COLOR;
 
 typedef struct tagITEM_ADDRESS

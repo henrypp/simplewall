@@ -62,7 +62,7 @@ inline TYPES_MAP cache_types;
 
 inline THREADS_VEC threads_pool;
 
-inline OBJECTS_VEC colors;
+inline std::vector<PITEM_COLOR> colors;
 inline std::vector<time_t> timers;
 
 inline GUIDS_VEC filter_ids;

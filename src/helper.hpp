@@ -10,7 +10,6 @@
 
 void _app_dereferenceapp (PVOID pdata);
 void _app_dereferenceappshelper (PVOID pdata);
-void _app_dereferencecolor (PVOID pdata);
 void _app_dereferencelog (PVOID pdata);
 void _app_dereferencenetwork (PVOID pdata);
 void _app_dereferencerule (PVOID pdata);

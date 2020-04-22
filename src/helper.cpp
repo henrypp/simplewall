@@ -13,11 +13,6 @@ void _app_dereferenceappshelper (PVOID pdata)
 	delete PITEM_APP_HELPER (pdata);
 }
 
-void _app_dereferencecolor (PVOID pdata)
-{
-	delete PITEM_COLOR (pdata);
-}
-
 void _app_dereferencelog (PVOID pdata)
 {
 	delete PITEM_LOG (pdata);
@@ -1350,27 +1345,10 @@ COLORREF _app_getcolorvalue (size_t color_hash)
 	if (!color_hash)
 		return 0;
 
-	for (auto &p : colors)
+	for (auto &ptr_clr : colors)
 	{
-		PR_OBJECT ptr_clr_object = _r_obj_reference (p);
-
-		if (!ptr_clr_object)
-			continue;
-
-		const PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
-
-		if (ptr_clr)
-		{
-			if (ptr_clr->clr_hash == color_hash)
-			{
-				const COLORREF result = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
-				_r_obj_dereference (ptr_clr_object);
-
-				return result;
-			}
-		}
-
-		_r_obj_dereference (ptr_clr_object);
+		if (ptr_clr->clr_hash == color_hash)
+			return ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
 	}
 
 	return 0;
