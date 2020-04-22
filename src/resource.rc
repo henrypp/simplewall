@@ -794,6 +794,11 @@ BEGIN
 
 	IDS_RULE_HINT "If you leave fields blank, then rule will be applied for any address and port."
 	IDS_RULE_APPS_HINT "If there is no apps selected, then rule will be applied for all apps."
+
+	IDS_STATUS_FILTERS_ACTIVE_TEMP "Filters are enabled until reboot."
+
+	IDS_INSTALL_PERMANENT "Permanent rules. Rules are working until you disable it manually."
+	IDS_INSTALL_TEMPORARY "Temporary rules. Rules are reset after the next reboot."
 END
 
 //
