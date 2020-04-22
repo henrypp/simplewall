@@ -1811,11 +1811,11 @@ void _app_generate_packages ()
 					}
 				}
 
-				RegCloseKey (hsubkey);
-
 				if (display_name.IsEmpty ())
 				{
 					_r_mem_free (package_sid);
+					RegCloseKey (hsubkey);
+
 					continue;
 				}
 
@@ -1824,13 +1824,15 @@ void _app_generate_packages ()
 				ptr_item->type = DataAppUWP;
 				ptr_item->pdata = package_sid;
 
-				rstring path = _r_reg_querystring (hsubkey, L"PackageRootFolder");
-
 				// query timestamp
 				ptr_item->timestamp = _r_reg_querytimestamp (hsubkey);
 
+				rstring path = _r_reg_querystring (hsubkey, L"PackageRootFolder");
+
 				if (!path.IsEmpty ())
 					_r_str_alloc (&ptr_item->real_path, path.GetLength (), path);
+
+				RegCloseKey (hsubkey);
 
 				_r_str_alloc (&ptr_item->display_name, display_name.GetLength (), display_name);
 				_r_str_alloc (&ptr_item->internal_name, package_sid_string.GetLength (), package_sid_string);
