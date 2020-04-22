@@ -7,6 +7,7 @@ EXTERN_C const IID IID_IImageList2;
 
 void _app_settab_id (HWND hwnd, INT page_id);
 
+UINT _app_getinterfacestatelocale (EnumInstall install_type);
 bool _app_initinterfacestate (HWND hwnd, bool is_forced);
 void _app_restoreinterfacestate (HWND hwnd, bool is_enabled);
 void _app_setinterfacestate (HWND hwnd);

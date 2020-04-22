@@ -22,6 +22,20 @@ void _app_settab_id (HWND hwnd, INT page_id)
 	_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
+UINT _app_getinterfacestatelocale (EnumInstall install_type)
+{
+	if (install_type == InstallDisabled)
+		return IDS_STATUS_FILTERS_INACTIVE;
+
+	else if (install_type == InstallEnabled)
+		return IDS_STATUS_FILTERS_ACTIVE;
+
+	else if (install_type == InstallEnabledTemporary)
+		return IDS_STATUS_FILTERS_ACTIVE_TEMP;
+
+	return 0;
+}
+
 bool _app_initinterfacestate (HWND hwnd, bool is_forced)
 {
 	if (!hwnd)
@@ -48,12 +62,16 @@ void _app_restoreinterfacestate (HWND hwnd, bool is_enabled)
 	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (TRUE, 0));
 	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (TRUE, 0));
 
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_wfp_isfiltersinstalled () ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
+	const EnumInstall install_type = _wfp_isfiltersinstalled ();
+
+	_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), nullptr));
 }
 
 void _app_setinterfacestate (HWND hwnd)
 {
-	const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
+	const EnumInstall install_type = _wfp_isfiltersinstalled ();
+
+	const bool is_filtersinstalled = (install_type != InstallDisabled);
 	const INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 
 	const HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
@@ -65,7 +83,7 @@ void _app_setinterfacestate (HWND hwnd)
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (is_filtersinstalled ? IDS_STATUS_FILTERS_ACTIVE : IDS_STATUS_FILTERS_INACTIVE, nullptr));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), nullptr));
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START, nullptr), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
@@ -455,11 +473,7 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 			}
 			else if (listview_id == IDC_COLORS)
 			{
-				PR_OBJECT ptr_object = _r_obj_reference (colors.at (lpnmlv->nmcd.lItemlParam));
-
-				if (ptr_object)
-				{
-					const PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_object->pdata;
+					const PITEM_COLOR ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
 
 					if (ptr_clr)
 					{
@@ -473,13 +487,9 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 							if (is_tableview)
 								_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
 
-							_r_obj_dereference (ptr_object);
 							return CDRF_NEWFONT;
 						}
 					}
-
-					_r_obj_dereference (ptr_object);
-				}
 			}
 
 			break;
