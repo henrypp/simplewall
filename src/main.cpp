@@ -237,23 +237,24 @@ void addcolor (UINT locale_id, LPCWSTR config_name, bool is_enabled, LPCWSTR con
 	ptr_clr->locale_id = locale_id;
 	ptr_clr->is_enabled = is_enabled;
 
-	colors.push_back (_r_obj_allocate (ptr_clr, &_app_dereferencecolor));
+	colors.push_back (ptr_clr);
 }
 
 bool _app_installmessage (HWND hwnd, bool is_install)
 {
 	WCHAR flag[64] = {0};
 
-	WCHAR button_text_1[128] = {0};
-	WCHAR button_text_2[128] = {0};
+	WCHAR button_text_1[64] = {0};
+	WCHAR button_text_2[64] = {0};
+
+	WCHAR radio_text_1[128] = {0};
+	WCHAR radio_text_2[128] = {0};
 
 	WCHAR main[256] = {0};
 
-	INT result = 0;
-	BOOL is_flagchecked = FALSE;
-
 	TASKDIALOGCONFIG tdc = {0};
-	TASKDIALOG_BUTTON td_buttons[2] = {0};
+	TASKDIALOG_BUTTON td_buttons[2];
+	TASKDIALOG_BUTTON td_radios[2];
 
 	tdc.cbSize = sizeof (tdc);
 	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_NO_SET_FOREGROUND;
@@ -265,12 +266,11 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 	tdc.pszVerificationText = flag;
 	tdc.pfCallback = &_r_msg_callback;
 	tdc.lpCallbackData = MAKELONG (0, TRUE); // on top
-	tdc.cButtons = _countof (td_buttons);
 
 	tdc.pButtons = td_buttons;
+	tdc.cButtons = _countof (td_buttons);
 
-	_r_str_copy (button_text_1, _countof (button_text_1), app.LocaleString (is_install ? IDS_TRAY_START : IDS_TRAY_STOP, nullptr));
-	_r_str_copy (button_text_2, _countof (button_text_2), app.LocaleString (IDS_CLOSE, nullptr));
+	tdc.nDefaultButton = IDYES;
 
 	td_buttons[0].nButtonID = IDYES;
 	td_buttons[0].pszButtonText = button_text_1;
@@ -278,12 +278,27 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 	td_buttons[1].nButtonID = IDNO;
 	td_buttons[1].pszButtonText = button_text_2;
 
-	tdc.nDefaultButton = is_install ? IDYES : IDNO;
+	_r_str_copy (button_text_1, _countof (button_text_1), app.LocaleString (is_install ? IDS_TRAY_START : IDS_TRAY_STOP, nullptr));
+	_r_str_copy (button_text_2, _countof (button_text_2), app.LocaleString (IDS_CLOSE, nullptr));
 
 	if (is_install)
 	{
 		_r_str_copy (main, _countof (main), app.LocaleString (IDS_QUESTION_START, nullptr));
 		_r_str_copy (flag, _countof (flag), app.LocaleString (IDS_DISABLEWINDOWSFIREWALL_CHK, nullptr));
+
+		tdc.pRadioButtons = td_radios;
+		tdc.cRadioButtons = _countof (td_radios);
+
+		tdc.nDefaultRadioButton = IDYES;
+
+		td_radios[0].nButtonID = IDYES;
+		td_radios[0].pszButtonText = radio_text_1;
+
+		td_radios[1].nButtonID = IDNO;
+		td_radios[1].pszButtonText = radio_text_2;
+
+		_r_str_copy (radio_text_1, _countof (radio_text_1), app.LocaleString (IDS_INSTALL_PERMANENT, nullptr));
+		_r_str_copy (radio_text_2, _countof (radio_text_2), app.LocaleString (IDS_INSTALL_TEMPORARY, nullptr));
 
 		if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
 			tdc.dwFlags |= TDF_VERIFICATION_FLAG_CHECKED;
@@ -297,12 +312,18 @@ bool _app_installmessage (HWND hwnd, bool is_install)
 			tdc.dwFlags |= TDF_VERIFICATION_FLAG_CHECKED;
 	}
 
-	if (_r_msg_taskdialog (&tdc, &result, nullptr, &is_flagchecked))
+	INT message_code;
+	INT radio_code;
+	BOOL is_flagchecked;
+
+	if (_r_msg_taskdialog (&tdc, &message_code, &radio_code, &is_flagchecked))
 	{
-		if (result == IDYES)
+		if (message_code == IDYES)
 		{
 			if (is_install)
 			{
+				config.is_filterstemporary = (radio_code == IDNO);
+
 				app.ConfigSet (L"IsDisableWindowsFirewallChecked", is_flagchecked ? true : false);
 
 				if (is_flagchecked)
@@ -690,30 +711,18 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					INT item = 0;
 
-					for (size_t i = 0; i < colors.size (); i++)
+					for (auto &ptr_clr : colors)
 					{
-						PR_OBJECT ptr_color_object = _r_obj_reference (colors.at (i));
+						ptr_clr->new_clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr, L"colors").AsUlong ();
 
-						if (ptr_color_object)
-						{
-							PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_color_object->pdata;
+						_r_fastlock_acquireshared (&lock_checkbox);
 
-							if (ptr_clr)
-							{
-								ptr_clr->new_clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr, L"colors").AsUlong ();
+						_r_listview_additem (hwnd, IDC_COLORS, item, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, I_GROUPIDNONE, (LPARAM)ptr_clr);
+						_r_listview_setitemcheck (hwnd, IDC_COLORS, item, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled, L"colors").AsBool ());
 
-								_r_fastlock_acquireshared (&lock_checkbox);
+						_r_fastlock_releaseshared (&lock_checkbox);
 
-								_r_listview_additem (hwnd, IDC_COLORS, item, 0, app.LocaleString (ptr_clr->locale_id, nullptr), config.icon_id, I_GROUPIDNONE, i);
-								_r_listview_setitemcheck (hwnd, IDC_COLORS, item, app.ConfigGet (ptr_clr->pcfg_name, ptr_clr->is_enabled, L"colors").AsBool ());
-
-								_r_fastlock_releaseshared (&lock_checkbox);
-
-								item += 1;
-							}
-
-							_r_obj_dereference (ptr_color_object);
-						}
+						item += 1;
 					}
 
 					break;
@@ -857,21 +866,13 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					for (INT i = 0; i < _r_listview_getitemcount (hwnd, IDC_COLORS); i++)
 					{
-						const size_t clr_idx = _r_listview_getitemlparam (hwnd, IDC_COLORS, i);
-						PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (clr_idx));
+						PITEM_COLOR ptr_clr = (PITEM_COLOR)_r_listview_getitemlparam (hwnd, IDC_COLORS, i);
 
-						if (ptr_clr_object)
+						if (ptr_clr)
 						{
-							PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
-
-							if (ptr_clr)
-							{
-								_r_fastlock_acquireshared (&lock_checkbox);
-								_r_listview_setitem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr));
-								_r_fastlock_releaseshared (&lock_checkbox);
-							}
-
-							_r_obj_dereference (ptr_clr_object);
+							_r_fastlock_acquireshared (&lock_checkbox);
+							_r_listview_setitem (hwnd, IDC_COLORS, i, 0, app.LocaleString (ptr_clr->locale_id, nullptr));
+							_r_fastlock_releaseshared (&lock_checkbox);
 						}
 					}
 
@@ -990,17 +991,11 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 								const bool is_enabled = (lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2);
 
-								const size_t idx = lpnmlv->lParam;
-								PR_OBJECT ptr_clr_object = _r_obj_reference (colors.at (idx));
+								PITEM_COLOR ptr_clr = (PITEM_COLOR)lpnmlv->lParam;
 
-								if (ptr_clr_object)
+								if (ptr_clr)
 								{
-									PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
-
-									if (ptr_clr)
-										app.ConfigSet (ptr_clr->pcfg_name, is_enabled, L"colors");
-
-									_r_obj_dereference (ptr_clr_object);
+									app.ConfigSet (ptr_clr->pcfg_name, is_enabled, L"colors");
 
 									_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
 								}
@@ -1030,13 +1025,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					if (listview_id == IDC_COLORS)
 					{
-						const size_t idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
-						PR_OBJECT ptr_clr_object_current = _r_obj_reference (colors.at (idx));
-
-						if (!ptr_clr_object_current)
-							break;
-
-						PITEM_COLOR ptr_clr_current = (PITEM_COLOR)ptr_clr_object_current->pdata;
+						PITEM_COLOR ptr_clr_current = (PITEM_COLOR)_r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
 
 						if (ptr_clr_current)
 						{
@@ -1045,19 +1034,10 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							size_t index = 0;
 
-							for (auto &p : colors)
+							for (auto &ptr_clr : colors)
 							{
-								PR_OBJECT ptr_clr_object = _r_obj_reference (p);
-
-								if (ptr_clr_object)
-								{
-									PITEM_COLOR ptr_clr = (PITEM_COLOR)ptr_clr_object->pdata;
-
-									if (ptr_clr)
-										cust[index++] = ptr_clr->default_clr;
-
-									_r_obj_dereference (ptr_clr_object);
-								}
+								if (ptr_clr)
+									cust[index++] = ptr_clr->default_clr;
 							}
 
 							cc.lStructSize = sizeof (cc);
@@ -1075,8 +1055,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								_r_listview_redraw (app.GetHWND (), (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT));
 							}
 						}
-
-						_r_obj_dereference (ptr_clr_object_current);
 					}
 
 					break;
@@ -1457,14 +1435,14 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					app.ConfigSet (L"IsExcludeCustomRules", !!(IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 					break;
 				}
-				}
+			}
 
 			break;
-			}
 		}
+	}
 
 	return FALSE;
-	}
+}
 
 void _app_resizewindow (HWND hwnd, LPARAM lparam)
 {
@@ -2020,16 +1998,23 @@ find_wrap:
 			_r_createthread (&NetworkMonitorThread, (LPVOID)hwnd, false, THREAD_PRIORITY_LOWEST);
 
 			// install filters
-			if (_wfp_isfiltersinstalled ())
 			{
-				//if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
-				//	_mps_changeconfig2 (false);
+				EnumInstall install_type = _wfp_isfiltersinstalled ();
 
-				_app_changefilters (hwnd, true, true);
-			}
-			else
-			{
-				_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_INACTIVE, nullptr));
+				if (install_type != InstallDisabled)
+				{
+					if (install_type == InstallEnabledTemporary)
+						config.is_filterstemporary = true;
+
+					//if (app.ConfigGet (L"IsDisableWindowsFirewallChecked", true).AsBool ())
+					//	_mps_changeconfig2 (false);
+
+					_app_changefilters (hwnd, true, true);
+				}
+				else
+				{
+					_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), nullptr));
+				}
 			}
 
 			// set column size when "auto-size" option are disabled
@@ -2861,7 +2846,6 @@ find_wrap:
 					{
 						SetMenuDefaultItem (hsubmenu, IDM_EXPLORE, FALSE);
 
-						const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
 						const time_t current_time = _r_unixtime_now ();
 
 #define RULES_ID 2
@@ -3053,7 +3037,7 @@ find_wrap:
 #define LOGGING_ID 5
 #define ERRLOG_ID 6
 
-					const bool is_filtersinstalled = _wfp_isfiltersinstalled ();
+					const bool is_filtersinstalled = (_wfp_isfiltersinstalled () != InstallDisabled);
 
 					const HMENU hmenu = LoadMenu (nullptr, MAKEINTRESOURCE (IDM_TRAY));
 					const HMENU hsubmenu = GetSubMenu (hmenu, 0);
@@ -3985,7 +3969,7 @@ find_wrap:
 					if (_wfp_isfiltersapplying ())
 						break;
 
-					const bool is_filtersinstalled = !_wfp_isfiltersinstalled ();
+					const bool is_filtersinstalled = !(_wfp_isfiltersinstalled () != InstallDisabled);
 
 					if (_app_installmessage (hwnd, is_filtersinstalled))
 						_app_changefilters (hwnd, is_filtersinstalled, true);
@@ -4949,6 +4933,7 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 				bool is_install = false;
 				bool is_uninstall = false;
 				bool is_silent = false;
+				bool is_temporary = false;
 
 				for (INT i = 0; i < numargs; i++)
 				{
@@ -4960,35 +4945,48 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 
 					else if (_r_str_compare (arga[i], L"/silent", 7) == 0)
 						is_silent = true;
+
+					else if (_r_str_compare (arga[i], L"/temp", 5) == 0)
+						is_temporary = true;
 				}
 
 				SAFE_LOCAL_FREE (arga);
 
-				if ((is_install || is_uninstall) && _r_sys_iselevated ())
+				if (is_install || is_uninstall)
 				{
-					_app_initialize ();
-
-					if (is_install)
+					if (_r_sys_iselevated ())
 					{
-						if (is_silent || (!_wfp_isfiltersinstalled () && _app_installmessage (nullptr, true)))
+						_app_initialize ();
+
+						if (is_install)
 						{
-							_app_profile_load (nullptr);
+							if (is_silent || ((_wfp_isfiltersinstalled () == InstallDisabled) && _app_installmessage (nullptr, true)))
+							{
+								if (is_temporary)
+									config.is_filterstemporary = true;
 
-							if (_wfp_initialize (true))
-								_wfp_installfilters ();
+								_app_profile_load (nullptr);
 
-							_wfp_uninitialize (false);
+								if (_wfp_initialize (true))
+									_wfp_installfilters ();
+
+								_wfp_uninitialize (false);
+							}
+						}
+						else if (is_uninstall)
+						{
+							if (is_silent || ((_wfp_isfiltersinstalled () != InstallDisabled) && _app_installmessage (nullptr, false)))
+							{
+								if (_wfp_initialize (false))
+									_wfp_destroyfilters (_wfp_getenginehandle ());
+
+								_wfp_uninitialize (true);
+							}
 						}
 					}
-					else if (is_uninstall)
+					else
 					{
-						if (is_silent || (_wfp_isfiltersinstalled () && _app_installmessage (nullptr, false)))
-						{
-							if (_wfp_initialize (false))
-								_wfp_destroyfilters (_wfp_getenginehandle ());
-
-							_wfp_uninitialize (true);
-						}
+						return ERROR_ACCESS_DENIED;
 					}
 
 					return ERROR_SUCCESS;

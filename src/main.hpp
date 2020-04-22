@@ -88,8 +88,15 @@ enum EnumInfo
 	InfoIconId,
 	InfoUndeletable,
 	InfoSilent,
-	InfoClearIds,
+	//InfoClearIds,
 	InfoListviewId,
+};
+
+enum EnumInstall
+{
+	InstallDisabled = 0,
+	InstallEnabled = 1,
+	InstallEnabledTemporary = 2,
 };
 
 // config
@@ -286,6 +293,7 @@ struct STATIC_DATA
 	bool is_notifytimeout = false;
 	bool is_notifymouse = false;
 	bool is_neteventset = false;
+	bool is_filterstemporary = false;
 };
 
 typedef struct tagITEM_APP

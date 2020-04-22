@@ -3,11 +3,11 @@
 
 #pragma once
 
-bool _wfp_isproviderinstalled ();
-bool _wfp_issublayerinstalled ();
+EnumInstall _wfp_isproviderinstalled (HANDLE hengine);
+EnumInstall _wfp_issublayerinstalled (HANDLE hengine);
 
 bool _wfp_isfiltersapplying ();
-bool _wfp_isfiltersinstalled ();
+EnumInstall _wfp_isfiltersinstalled ();
 
 HANDLE& _wfp_getenginehandle ();
 

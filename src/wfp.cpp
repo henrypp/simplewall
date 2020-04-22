@@ -8,49 +8,58 @@ bool _wfp_isfiltersapplying ()
 	return _r_fastlock_islocked (&lock_apply) || _r_fastlock_islocked (&lock_transaction);
 }
 
-bool _wfp_isproviderinstalled ()
+EnumInstall _wfp_isproviderinstalled (HANDLE hengine)
 {
-	HKEY hkey = nullptr;
+	FWPM_PROVIDER *ptr_provider;
+	DWORD code = FwpmProviderGetByKey (hengine, &GUID_WfpProvider, &ptr_provider);
 
-	if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\services\\BFE\\Parameters\\Policy\\Persistent\\Provider", 0, KEY_READ, &hkey) == ERROR_SUCCESS)
+	//if (code == ERROR_ACCESS_DENIED) // possible restriction
+	//	return InstallEnabled;
+
+	if (code == ERROR_SUCCESS)
 	{
-		static const rstring guidString = _r_str_fromguid (GUID_WfpProvider);
+		EnumInstall result = ((ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT) != 0) ? InstallEnabled : InstallEnabledTemporary;
 
-		if (RegQueryValueEx (hkey, guidString.GetString (), nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS)
-		{
-			RegCloseKey (hkey);
-			return true;
-		}
-
-		RegCloseKey (hkey);
+		FwpmFreeMemory ((void**)&ptr_provider);
+		return result;
 	}
 
-	return false;
+	return InstallDisabled;
 }
 
-bool _wfp_issublayerinstalled ()
+EnumInstall _wfp_issublayerinstalled (HANDLE hengine)
 {
-	HKEY hkey = nullptr;
+	FWPM_SUBLAYER *ptr_sublayer;
+	DWORD code = FwpmSubLayerGetByKey (hengine, &GUID_WfpSublayer, &ptr_sublayer);
 
-	if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\services\\BFE\\Parameters\\Policy\\Persistent\\SubLayer", 0, KEY_READ, &hkey) == ERROR_SUCCESS)
+	//if (code == ERROR_ACCESS_DENIED) // possible restriction
+	//	return InstallEnabled;
+
+	if (code == ERROR_SUCCESS)
 	{
-		static const rstring guidString = _r_str_fromguid (GUID_WfpSublayer);
+		EnumInstall result = ((ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT) != 0) ? InstallEnabled : InstallEnabledTemporary;
 
-		if (RegQueryValueEx (hkey, guidString.GetString (), nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS)
-		{
-			RegCloseKey (hkey);
-			return true;
-		}
-
-		RegCloseKey (hkey);
+		FwpmFreeMemory ((void**)&ptr_sublayer);
+		return result;
 	}
 
-	return false;
+	return InstallDisabled;
 }
 
-bool _wfp_isfiltersinstalled ()
+EnumInstall _wfp_isfiltersinstalled ()
 {
-	return _wfp_isproviderinstalled () && _wfp_issublayerinstalled ();
+	HANDLE hengine_temp;
+	DWORD code = FwpmEngineOpen (nullptr, RPC_C_AUTHN_WINNT, nullptr, nullptr, &hengine_temp);
+
+	if (code == ERROR_SUCCESS)
+	{
+		EnumInstall result = _wfp_issublayerinstalled (hengine_temp);
+
+		FwpmEngineClose (hengine_temp);
+		return result;
+	}
+
+	return InstallDisabled;
 }
 
 HANDLE& _wfp_getenginehandle ()
@@ -114,7 +123,7 @@ bool _wfp_initialize (bool is_full)
 			const size_t count = 2;
 			EXPLICIT_ACCESS access[count] = {{0}};
 
-			RtlSecureZeroMemory (access, count * sizeof (EXPLICIT_ACCESS));
+			RtlSecureZeroMemory (access, sizeof (access));
 
 			// create default (engine) acl
 			access[0].grfAccessPermissions = FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER;
@@ -173,8 +182,8 @@ bool _wfp_initialize (bool is_full)
 	}
 
 	// install engine provider and it's sublayer
-	bool is_providerexist = _wfp_isproviderinstalled ();
-	bool is_sublayerexist = _wfp_issublayerinstalled ();
+	bool is_providerexist = (_wfp_isproviderinstalled (config.hengine) != InstallDisabled);
+	bool is_sublayerexist = (_wfp_issublayerinstalled (config.hengine) != InstallDisabled);
 
 	if (is_full)
 	{
@@ -191,7 +200,9 @@ bool _wfp_initialize (bool is_full)
 				provider.displayData.description = APP_NAME;
 
 				provider.providerKey = GUID_WfpProvider;
-				provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
+
+				if (!config.is_filterstemporary)
+					provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
 
 				rc = FwpmProviderAdd (config.hengine, &provider, nullptr);
 
@@ -223,8 +234,10 @@ bool _wfp_initialize (bool is_full)
 
 				sublayer.providerKey = const_cast<LPGUID>(&GUID_WfpProvider);
 				sublayer.subLayerKey = GUID_WfpSublayer;
-				sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
 				sublayer.weight = (UINT16)app.ConfigGet (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT).AsUint (); // highest weight for UINT16
+
+				if (!config.is_filterstemporary)
+					sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
 
 				rc = FwpmSubLayerAdd (config.hengine, &sublayer, nullptr);
 
@@ -660,7 +673,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 	_r_str_copy (fltr_name, _countof (fltr_name), APP_NAME);
 
 	WCHAR fltr_desc[128] = {0};
-	_r_str_copy (fltr_desc, _countof (fltr_desc), _r_str_isempty (name) ? APP_NAME : name);
+	_r_str_copy (fltr_desc, _countof (fltr_desc), _r_str_isempty (name) ? SZ_EMPTY : name);
 
 	filter.displayData.name = fltr_name;
 	filter.displayData.description = fltr_desc;
@@ -668,7 +681,8 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 	// set filter flags
 	if ((flags & FWPM_FILTER_FLAG_BOOTTIME) == 0)
 	{
-		filter.flags = FWPM_FILTER_FLAG_PERSISTENT;
+		if (!config.is_filterstemporary)
+			filter.flags = FWPM_FILTER_FLAG_PERSISTENT;
 
 		// filter is indexed to help enable faster lookup during classification (win8+)
 		if (_r_sys_validversion (6, 2))
@@ -699,7 +713,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 
 	filter.action.type = action;
 
-	UINT64 filter_id = 0;
+	UINT64 filter_id;
 	const DWORD rc = FwpmFilterAdd (hengine, &filter, nullptr, &filter_id);
 
 	if (rc == ERROR_SUCCESS)
@@ -709,7 +723,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 	}
 	else
 	{
-		app.LogError (L"FwpmFilterAdd", rc, name, UID);
+		app.LogError (L"FwpmFilterAdd", rc, fltr_desc, UID);
 	}
 
 	return rc;
@@ -724,7 +738,22 @@ void _wfp_clearfilter_ids ()
 
 	// clear apps filters
 	for (auto &p : apps)
-		_app_setappinfo (p.first, InfoClearIds, 0);
+	{
+		PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
+
+		if (!ptr_app_object)
+			continue;
+
+		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+
+		if (ptr_app)
+		{
+			ptr_app->is_haveerrors = false;
+			ptr_app->guids.clear ();
+		}
+
+		_r_obj_dereference (ptr_app_object);
+	}
 
 	// clear rules filters
 	for (auto &p : rules_arr)
@@ -1624,7 +1653,7 @@ bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact)
 	}
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
-	if (app.ConfigGet (L"InstallBoottimeFilters", true).AsBool ())
+	if (app.ConfigGet (L"InstallBoottimeFilters", true).AsBool () && !config.is_filterstemporary)
 	{
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
 		fwfc[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
