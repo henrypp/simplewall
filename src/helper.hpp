@@ -45,7 +45,7 @@ bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, r
 void _app_refreshstatus (HWND hwnd, INT listview_id = INVALID_INT);
 
 rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port);
-rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port);
+//rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port);
 
 bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, PUSHORT port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns, size_t dns_length);
 bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
