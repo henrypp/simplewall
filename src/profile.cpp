@@ -434,12 +434,6 @@ void _app_getcount (PITEM_STATUS ptr_status)
 
 INT _app_getappgroup (size_t app_hash, const PITEM_APP ptr_app)
 {
-	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
-	//		return I_GROUPIDNONE;
-
-	if (!ptr_app)
-		return 2;
-
 	// apps with special rule
 	if (app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () && _app_isapphaverule (app_hash))
 		return 1;
@@ -449,9 +443,6 @@ INT _app_getappgroup (size_t app_hash, const PITEM_APP ptr_app)
 
 INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 {
-	//	if(!app.ConfigGet (L"IsEnableGroups", false).AsBool ())
-	//		return I_GROUPIDNONE;
-
 	if (!ptr_rule || !ptr_rule->is_enabled)
 		return 2;
 
@@ -463,20 +454,17 @@ INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 
 INT _app_getruleicon (const PITEM_RULE ptr_rule)
 {
-	if (!ptr_rule)
-		return I_IMAGENONE;
-
 	return ptr_rule->is_block ? 1 : 0;
 }
 
 COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx)
 {
-	rstring color_value;
-
 	PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
 
 	if (!ptr_rule_object)
 		return 0;
+
+	rstring color_value;
 
 	PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
 
@@ -768,9 +756,6 @@ void _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 
 void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 {
-	if (!ptr_rule)
-		return;
-
 	ptr_rule->is_enabled = is_enable;
 
 	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->pname))
@@ -819,9 +804,6 @@ void _app_ruleenable (PITEM_RULE ptr_rule, bool is_enable)
 
 void _app_ruleenable2 (PITEM_RULE ptr_rule, bool is_enable)
 {
-	if (!ptr_rule)
-		return;
-
 	ptr_rule->is_enabled = is_enable;
 
 	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->pname))
@@ -894,11 +876,15 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 	OBJECTS_VEC rules;
 
 	const INT listview_id = _app_getlistview_id (DataRuleBlocklist);
-	size_t changes_count = 0;
 
-	for (size_t i = 0; i < rules_arr.size (); i++)
+	size_t changes_count = 0;
+	INT index = -1; // negative initial value is required for correct array indexing
+
+	for (auto &p : rules_arr)
 	{
-		PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+		index += 1;
+
+		PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 		if (!ptr_rule_object)
 			continue;
@@ -922,7 +908,7 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 		if (hwnd)
 		{
-			const INT item_pos = _app_getposition (hwnd, listview_id, i);
+			const INT item_pos = _app_getposition (hwnd, listview_id, index);
 
 			if (item_pos != INVALID_INT)
 			{
@@ -1458,10 +1444,6 @@ void _app_profile_load_helper (const pugi::xml_node& root, EnumDataType type, UI
 			if (rule_name.IsEmpty ())
 				continue;
 
-			// do not load blocklist config (old versions hack)!
-			//if (_app_isruleblocklist (rule_name))
-			//	continue;
-
 			const size_t rule_hash = _r_str_hash (rule_name);
 
 			if (rule_hash && rules_config.find (rule_hash) == rules_config.end ())
@@ -1638,96 +1620,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 				}
 			}
 		}
-	}
-	else
-	{
-		// load apps (old!)
-		{
-			pugi::xml_document doc_apps;
-			pugi::xml_parse_result result_apps = doc_apps.load_file (config.apps_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
-
-			// load backup
-			if (!result_apps)
-				result_apps = doc_apps.load_file (config.apps_path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
-
-			if (result_apps)
-			{
-				pugi::xml_node root = doc_apps.child (L"root");
-
-				if (root)
-				{
-					if (_app_profile_load_check_node (root, XmlApps, false))
-						_app_profile_load_helper (root, DataAppRegular, 0);
-				}
-
-				// made old config backup!
-				if (_r_fs_exists (config.apps_path))
-					_r_fs_move (config.apps_path, config.apps_path_backup, MOVEFILE_REPLACE_EXISTING);
-			}
-
-			_r_fastlock_acquireshared (&lock_access);
-			_app_profile_load_fallback ();
-			_r_fastlock_releaseshared (&lock_access);
-		}
-
-		// load rules config (old!)
-		{
-			pugi::xml_document doc_rules_config;
-			pugi::xml_parse_result result_rules_config = doc_rules_config.load_file (config.rules_config_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
-
-			// load backup
-			if (!result_rules_config)
-				result_rules_config = doc_rules_config.load_file (config.rules_config_path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
-
-			if (result_rules_config)
-			{
-				pugi::xml_node root = doc_rules_config.child (L"root");
-
-				if (root)
-				{
-					if (_app_profile_load_check_node (root, XmlRulesConfig, false))
-						_app_profile_load_helper (root, DataRulesConfig, 0);
-				}
-
-				// made old config backup!
-				if (_r_fs_exists (config.rules_config_path))
-					_r_fs_move (config.rules_config_path, config.rules_config_path_backup, MOVEFILE_REPLACE_EXISTING);
-			}
-		}
-
-		// load internal rules (new!)
-		if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
-			_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
-
-		// load rules custom (old!)
-		{
-			pugi::xml_document doc_rules_custom;
-			pugi::xml_parse_result result_rules_custom = doc_rules_custom.load_file (config.rules_custom_path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
-
-			// load backup
-			if (!result_rules_custom)
-			{
-				if (_r_fs_exists (config.rules_custom_path_backup))
-					result_rules_custom = doc_rules_custom.load_file (config.rules_custom_path_backup, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
-			}
-
-			if (result_rules_custom)
-			{
-				pugi::xml_node root = doc_rules_custom.child (L"root");
-
-				if (root)
-				{
-					if (_app_profile_load_check_node (root, XmlRules, false))
-						_app_profile_load_helper (root, DataRuleCustom, 0);
-				}
-
-				// made old config backup!
-				if (_r_fs_exists (config.rules_custom_path))
-					_r_fs_move (config.rules_custom_path, config.rules_custom_path_backup, MOVEFILE_REPLACE_EXISTING);
-			}
-		}
-
-		_app_profile_save (); // required!
 	}
 
 	if (hwnd)
