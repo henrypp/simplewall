@@ -262,7 +262,7 @@ void _app_getappicon (const PITEM_APP ptr_app, bool is_small, PINT picon_id, HIC
 	}
 }
 
-void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted_name)
+void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR* extracted_name)
 {
 	if (!extracted_name)
 		return;
@@ -295,7 +295,7 @@ void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR * extracted
 	}
 }
 
-bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON * picon)
+bool _app_getfileicon (LPCWSTR path, bool is_small, PINT picon_id, HICON* picon)
 {
 	if (_r_str_isempty (path) || (!picon_id && !picon))
 		return false;
