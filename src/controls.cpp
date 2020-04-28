@@ -420,17 +420,21 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 		case CDDS_ITEMPREPAINT:
 		{
 			const INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
-			const bool is_tableview = view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE;
+			const bool is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
 
 			const INT listview_id = static_cast<INT>(lpnmlv->nmcd.hdr.idFrom);
 
-			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK)
+			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK || listview_id == IDC_LOG)
 			{
 				size_t app_hash;
 
 				if (listview_id == IDC_NETWORK)
 				{
 					app_hash = _app_getnetworkapp (lpnmlv->nmcd.lItemlParam); // initialize
+				}
+				else if (listview_id == IDC_LOG)
+				{
+					app_hash = _app_getlogapp (lpnmlv->nmcd.lItemlParam); // initialize
 				}
 				else
 				{
@@ -473,23 +477,23 @@ LONG _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 			}
 			else if (listview_id == IDC_COLORS)
 			{
-					const PITEM_COLOR ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
+				const PITEM_COLOR ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
 
-					if (ptr_clr)
+				if (ptr_clr)
+				{
+					const COLORREF new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
+
+					if (new_clr)
 					{
-						const COLORREF new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
+						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
+						lpnmlv->clrTextBk = new_clr;
 
-						if (new_clr)
-						{
-							lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-							lpnmlv->clrTextBk = new_clr;
+						if (is_tableview)
+							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
 
-							if (is_tableview)
-								_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
-
-							return CDRF_NEWFONT;
-						}
+						return CDRF_NEWFONT;
 					}
+				}
 			}
 
 			break;
