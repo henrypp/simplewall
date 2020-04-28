@@ -464,7 +464,6 @@ BEGIN
 	IDS_FIND "Find"
 	IDS_FINDNEXT "Find next"
 	IDS_PURGE_UNUSED "Purge unused apps"
-	//IDS_PURGE_ERRORS "Purge invalid apps"
 	IDS_PURGE_TIMERS "Purge timers"
 	IDS_REFRESH "Refresh"
 	IDS_VIEW "View"
@@ -483,7 +482,6 @@ BEGIN
 	IDS_TRAY_SHOW "Show/Hide"
 	IDS_TRAY_START "Enable filters"
 	IDS_TRAY_STOP "Disable filters"
-	//IDS_TRAY_MODE "Mode"
 	IDS_TRAY_RULES "Rules"
 	IDS_TRAY_BLOCKLIST_RULES "Blocklist"
 	IDS_TRAY_SYSTEM_RULES "System rules"
@@ -492,21 +490,16 @@ BEGIN
 	IDS_TRAY_LOGERR "Errors log"
 
 	IDS_ADD_FILE "Add file"
-	//IDS_ADD_PROCESS "Add process"
-	//IDS_ADD_PACKAGE "Add package"
-	//IDS_ADD_SERVICE "Add service"
 	IDS_ANY "Any"
 	IDS_DISABLENOTIFICATIONS "Disable notifications"
 	IDS_OPENRULESEDITOR "Create rule"
 	IDS_TIMER "Timer"
-	//IDS_NOTIMER "No timer"
 	IDS_DISABLETIMER "Disable timer"
 	IDS_EXPLORE "Open containing folder"
 	IDS_COPY "Copy"
 	IDS_SELECT_ALL "Select all"
 	IDS_CHECK "Enable selected"
 	IDS_UNCHECK "Disable selected"
-	//IDS_PROPERTIES "Properties"
 
 	IDS_ADD "Add"
 	IDS_EDIT2 "Edit"
@@ -514,13 +507,6 @@ BEGIN
 	IDS_EXPORT "Export"
 	IDS_IMPORT "Import"
 
-	//IDS_MODE_WHITELIST "Whitelist (allow selected)"
-	//IDS_MODE_BLACKLIST "Blacklist (block selected)"
-
-	//IDS_RULE_ALLOWINBOUND "Allow inbound connections for all"
-	//IDS_RULE_ALLOWINBOUND_HINT "This filtering layer allows for authorizing accept requests for incoming TCP connections, as well as authorizing incoming non-TCP traffic based on the first packet received."
-	//IDS_RULE_ALLOWLISTEN "Allow listen connections for all"
-	//IDS_RULE_ALLOWLISTEN_HINT "This filtering layer allows for authorizing TCP listen requests.\r\nWarning: Disabling this option may cause 3rd party applications to freeze."
 	IDS_RULE_ALLOWLOOPBACK "Allow loopback connections for all"
 	IDS_RULE_ALLOWLOOPBACK_HINT "This allows all loopback traffic."
 
@@ -569,7 +555,6 @@ BEGIN
 
 	IDS_ACTION_ALLOW "Allow"
 	IDS_ACTION_BLOCK "Block"
-	//IDS_ACTION_LATER "Ignore"
 
 	IDS_DISABLE_CHK "Disable rule"
 	IDS_ENABLE_CHK "Enable rule"
@@ -587,7 +572,6 @@ BEGIN
 	IDS_TITLE_CONFIRMATIONS "Confirmations"
 	IDS_TITLE_INTERFACE "Interface"
 	IDS_TITLE_HIGHLIGHTING "Highlighting"
-	//IDS_TITLE_EXPERTS "Experts-only"
 	IDS_TITLE_LOGGING "Logging"
 	IDS_TITLE_NOTIFICATIONS "Notifications"
 	IDS_TITLE_ADVANCED "Advanced"
@@ -638,37 +622,25 @@ BEGIN
 	IDS_EXCLUDEBLOCKLIST_CHK "blocklist"
 	IDS_EXCLUDECUSTOM_CHK "user rules"
 
-	//IDS_RULES_BLOCKLIST_HINT "Special rules to block spying and tracking on Windows."
-	//IDS_RULES_SYSTEM_HINT "Predefined rules for system services and protocols."
-	//IDS_RULES_USER_HINT "User rules. <a href=""%s"">Rules editor documentation</a>."
-
-	//IDS_NOTIFY_CREATERULE_ADDRESS "Create a rule for address ""%s"""
-	//IDS_NOTIFY_CREATERULE_PORT "Create a rule for port ""%d"""
-	//IDS_NOTIFY_DISABLENOTIFICATIONS "Disable notifications for this app"
 	IDS_NOTIFY_TOOLTIP "Set user rule to allow access to an address and/or port for this application."
 
 	IDS_QUESTION "Are you sure?"
 	IDS_QUESTION_DELETE "Delete %d item(s)?"
 	IDS_QUESTION_START "This will deny network access to apps as defined by the current configuration. Continue?"
 	IDS_QUESTION_STOP "This will restore network access for all apps that are currently blocked. Continue?"
-	//IDS_QUESTION_MODE "Change mode to a ""%s""?"
 	IDS_QUESTION_EXIT "Installed filters will continue to work even if you exit. Continue?"
-	//IDS_QUESTION_EXPERT "This option is for advanced users only. Continue?"
 	IDS_QUESTION_TIMER "Timer(s) activated. Timers will only work when the application is running. Exit?"
 	IDS_QUESTION_TIMERS "Delete all timers?"
 	IDS_QUESTION_RESET "Are you sure you want to reset all application settings?"
 	IDS_QUESTION_FLAG_CHK "Do not ask again"
 
 	IDS_STATUS_TOTAL "Total apps: %d"
-	//IDS_STATUS_SELECTED "%d selected"
 
 	IDS_STATUS_UNUSED_APPS "Unused apps"
-	//IDS_STATUS_INVALID_APPS "Invalid apps"
 	IDS_STATUS_TIMER_APPS "Apps with timer"
 
 	IDS_STATUS_EMPTY "<empty>"
 
-	//IDS_STATUS_ERROR "Error occured! Click here for more details or open the log file."
 	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule!"
 	IDS_STATUS_TIMER_DONE "Timer for ""%s"" has expired!"
 
