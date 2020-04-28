@@ -39,6 +39,7 @@ void _app_generate_packages ();
 void _app_generate_services ();
 
 void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash);
+void _app_generate_timermenu (HMENU hsubmenu, size_t app_hash);
 
 bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, void** lpdata);
 

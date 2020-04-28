@@ -2131,6 +2131,35 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 	_r_mem_free (pstatus);
 }
 
+void _app_generate_timermenu (HMENU hsubmenu, size_t app_hash)
+{
+	bool is_checked = (app_hash == 0);
+
+	const time_t current_time = _r_unixtime_now ();
+	time_t app_timer;
+
+	if (!app_hash || !_app_getappinfo (app_hash, InfoTimer, &app_timer, sizeof (app_timer)))
+		app_timer = 0;
+
+	UINT index = 0;
+
+	for (auto &timer : timers)
+	{
+		AppendMenu (hsubmenu, MF_STRING, IDX_TIMER + index, _r_fmt_interval (timer + 1, 1));
+
+		if (!is_checked && (app_timer > current_time) && (app_timer <= (current_time + timer)))
+		{
+			_r_menu_checkitem (hsubmenu, IDX_TIMER, IDX_TIMER + index, MF_BYCOMMAND, IDX_TIMER + index);
+			is_checked = true;
+		}
+
+		index += 1;
+	}
+
+	if (!is_checked)
+		_r_menu_checkitem (hsubmenu, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND, IDM_DISABLETIMER);
+}
+
 bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, void** lpdata)
 {
 	if (apps_helper.find (app_hash) == apps_helper.end ())
