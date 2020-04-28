@@ -272,7 +272,6 @@ bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool 
 		const bool is_inbound = (ptr_log->direction == FWP_DIRECTION_INBOUND);
 
 		LPWSTR remote_fmt = nullptr;
-
 		_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, &remote_fmt, FMTADDR_RESOLVE_HOST);
 
 		_r_ctrl_settabletext (hwnd, IDC_FILE_ID, app.LocaleString (IDS_NAME, L":"), IDC_FILE_TEXT, !_r_str_isempty (ptr_app->display_name) ? _r_path_getfilename (ptr_app->display_name) : empty_text);
@@ -1093,17 +1092,17 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 								_r_obj_dereference (ptr_app_object);
 							}
 
-							LPWSTR prule = nullptr;
+							LPWSTR rule = nullptr;
 
-							if (_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, &prule, FMTADDR_AS_RULE))
+							if (_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, &rule, FMTADDR_AS_RULE))
 							{
-								size_t len = _r_str_length (prule);
+								size_t len = _r_str_length (rule);
 
-								_r_str_alloc (&ptr_rule->pname, len, prule);
-								_r_str_alloc (&ptr_rule->prule_remote, len, prule);
+								_r_str_alloc (&ptr_rule->pname, len, rule);
+								_r_str_alloc (&ptr_rule->prule_remote, len, rule);
 							}
 
-							SAFE_DELETE_ARRAY (prule);
+							SAFE_DELETE_ARRAY (rule);
 						}
 
 						_r_obj_dereference (ptr_log_object);
