@@ -191,7 +191,7 @@ void _app_freethreadpool (THREADS_VEC* ptr_pool)
 
 	for (size_t i = (count - 1); i != INVALID_SIZE_T; i--)
 	{
-		HANDLE& hthread = ptr_pool->at (i);
+		HANDLE hthread = ptr_pool->at (i);
 
 		if (_r_fs_isvalidhandle (hthread))
 		{
@@ -2806,9 +2806,9 @@ bool _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 	return true;
 }
 
-bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
+bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR* pbuffer)
 {
-	if (!pbuffer || (af != AF_INET && af != AF_INET6))
+	if (af != AF_INET && af != AF_INET6)
 		return false;
 
 	bool result = false;
@@ -2818,7 +2818,6 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 	if (_app_formataddress (af, 0, paddr, 0, &pstraddr, FMTADDR_AS_ARPA))
 	{
 		const size_t arpa_hash = _r_str_hash (pstraddr);
-
 		const bool is_exists = cache_arpa.find (arpa_hash) != cache_arpa.end ();
 
 		if (is_exists)
@@ -2845,7 +2844,6 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 				if (ppQueryResultsSet)
 				{
 					const size_t len = _r_str_length (ppQueryResultsSet->Data.PTR.pNameHost);
-
 					result = _r_str_alloc (pbuffer, len, ppQueryResultsSet->Data.PTR.pNameHost);
 
 					if (result)

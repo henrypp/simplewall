@@ -363,9 +363,12 @@ void _app_freeapplication (size_t app_hash)
 	if (!app_hash)
 		return;
 
-	for (size_t i = 0; i < rules_arr.size (); i++)
+	INT index = INVALID_INT;
+
+	for (auto &p : rules_arr)
 	{
-		PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+		index += 1;
+		PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 		if (!ptr_rule_object)
 			continue;
@@ -390,7 +393,7 @@ void _app_freeapplication (size_t app_hash)
 
 					if (rule_listview_id)
 					{
-						const INT item_pos = _app_getposition (app.GetHWND (), rule_listview_id, i);
+						const INT item_pos = _app_getposition (app.GetHWND (), rule_listview_id, index);
 
 						if (item_pos != INVALID_INT)
 						{

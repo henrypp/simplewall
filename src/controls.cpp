@@ -305,8 +305,8 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 		// timestamp sorting
 		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
 		{
-			time_t timestamp1 = (time_t)_app_getappinfo (lparam1, InfoTimestamp);
-			time_t timestamp2 = (time_t)_app_getappinfo (lparam2, InfoTimestamp);
+			const time_t timestamp1 = (time_t)_app_getappinfo (lparam1, InfoTimestamp);
+			const time_t timestamp2 = (time_t)_app_getappinfo (lparam2, InfoTimestamp);
 
 			if (timestamp1 < timestamp2)
 				result = -1;
