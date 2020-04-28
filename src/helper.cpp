@@ -40,7 +40,7 @@ void _app_dereferencestring (PVOID pdata)
 
 bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags)
 {
-	if (!ptr_addr || !ptr_dest || (af != AF_INET && af != AF_INET6))
+	if (af != AF_INET && af != AF_INET6)
 		return false;
 
 	bool result = false;
@@ -2786,9 +2786,8 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR * pbuffer)
 	bool result = false;
 
 	LPWSTR pstraddr = nullptr;
-	_app_formataddress (af, 0, paddr, 0, &pstraddr, FMTADDR_AS_ARPA);
 
-	if (!_r_str_isempty (pstraddr))
+	if (_app_formataddress (af, 0, paddr, 0, &pstraddr, FMTADDR_AS_ARPA))
 	{
 		const size_t arpa_hash = _r_str_hash (pstraddr);
 
