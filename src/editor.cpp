@@ -461,11 +461,11 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						const UINT id_edit = is_remote ? IDC_RULE_REMOTE_EDIT : IDC_RULE_LOCAL_EDIT;
 						const UINT id_delete = is_remote ? IDC_RULE_REMOTE_DELETE : IDC_RULE_LOCAL_DELETE;
 
-						AppendMenu (hsubmenu, MF_BYCOMMAND, id_add, app.LocaleString (IDS_ADD, L"..."));
-						AppendMenu (hsubmenu, MF_BYCOMMAND, id_edit, app.LocaleString (IDS_EDIT2, L"..."));
-						AppendMenu (hsubmenu, MF_BYCOMMAND, id_delete, app.LocaleString (IDS_DELETE, nullptr));
+						AppendMenu (hsubmenu, MF_STRING, id_add, app.LocaleString (IDS_ADD, L"..."));
+						AppendMenu (hsubmenu, MF_STRING, id_edit, app.LocaleString (IDS_EDIT2, L"..."));
+						AppendMenu (hsubmenu, MF_STRING, id_delete, app.LocaleString (IDS_DELETE, nullptr));
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
-						AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_COPY, app.LocaleString (IDS_COPY, nullptr));
+						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, app.LocaleString (IDS_COPY, nullptr));
 
 						if (ptr_rule->is_readonly)
 						{
@@ -483,12 +483,12 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					}
 					else if (listview_id == IDC_RULE_APPS_ID)
 					{
-						AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_CHECK, app.LocaleString (IDS_CHECK, nullptr));
-						AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, nullptr));
+						AppendMenu (hsubmenu, MF_STRING, IDM_CHECK, app.LocaleString (IDS_CHECK, nullptr));
+						AppendMenu (hsubmenu, MF_STRING, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, nullptr));
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
-						AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_PROPERTIES, app.LocaleString (IDS_SHOWINLIST, nullptr));
+						AppendMenu (hsubmenu, MF_STRING, IDM_PROPERTIES, app.LocaleString (IDS_SHOWINLIST, nullptr));
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, nullptr);
-						AppendMenu (hsubmenu, MF_BYCOMMAND, IDM_COPY, app.LocaleString (IDS_COPY, nullptr));
+						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, app.LocaleString (IDS_COPY, nullptr));
 
 						if (ptr_rule->type != DataRuleCustom)
 						{
