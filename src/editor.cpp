@@ -704,13 +704,11 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 					while ((item = (INT)SendDlgItemMessage (hwnd, IDC_RULE_APPS_ID, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
-						size_t app_hash = _r_listview_getitemlparam (hwnd, IDC_RULE_APPS_ID, item);
-						INT app_listview_id = 0;
+						const size_t app_hash = _r_listview_getitemlparam (hwnd, IDC_RULE_APPS_ID, item);
+						const INT app_listview_id = (INT)_app_getappinfo (app_hash, InfoListviewId);
 
-						if (_app_getappinfo (app_hash, InfoListviewId, &app_listview_id, sizeof (app_listview_id)))
-						{
+						if (app_listview_id)
 							_app_showitem (app.GetHWND (), app_listview_id, _app_getposition (app.GetHWND (), app_listview_id, app_hash));
-						}
 					}
 
 					break;

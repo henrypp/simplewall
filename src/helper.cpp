@@ -1444,7 +1444,9 @@ rstring _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, size_t
 
 	if (!proc_name.IsEmpty ())
 	{
-		if (!_app_getappinfo (*phash, InfoIconId, picon_id, sizeof (INT)))
+		*picon_id = (INT)_app_getappinfo (*phash, InfoIconId);
+
+		if (!*picon_id)
 			_app_getfileicon (proc_name, true, picon_id, nullptr);
 	}
 	else
@@ -2136,10 +2138,7 @@ void _app_generate_timermenu (HMENU hsubmenu, size_t app_hash)
 	bool is_checked = (app_hash == 0);
 
 	const time_t current_time = _r_unixtime_now ();
-	time_t app_timer;
-
-	if (!app_hash || !_app_getappinfo (app_hash, InfoTimer, &app_timer, sizeof (app_timer)))
-		app_timer = 0;
+	const time_t app_time = (time_t)_app_getappinfo (app_hash, InfoTimer);
 
 	UINT index = 0;
 
@@ -2147,7 +2146,7 @@ void _app_generate_timermenu (HMENU hsubmenu, size_t app_hash)
 	{
 		AppendMenu (hsubmenu, MF_STRING, IDX_TIMER + index, _r_fmt_interval (timer + 1, 1));
 
-		if (!is_checked && (app_timer > current_time) && (app_timer <= (current_time + timer)))
+		if (!is_checked && (app_time > current_time) && (app_time <= (current_time + timer)))
 		{
 			_r_menu_checkitem (hsubmenu, IDX_TIMER, IDX_TIMER + index, MF_BYCOMMAND, IDX_TIMER + index);
 			is_checked = true;

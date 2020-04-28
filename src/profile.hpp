@@ -3,7 +3,7 @@
 
 #pragma once
 
-bool _app_getappinfo (size_t app_hash, EnumInfo info_key, LPVOID presult, size_t size);
+LONG_PTR _app_getappinfo (size_t app_hash, EnumInfo info_key);
 bool _app_setappinfo (size_t app_hash, EnumInfo info_key, LONG_PTR info_value);
 
 size_t _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t timer, time_t last_notify, bool is_silent, bool is_enabled);
@@ -13,6 +13,8 @@ PR_OBJECT _app_getrulebyid (size_t idx);
 PR_OBJECT _app_getrulebyhash (size_t rule_hash);
 PR_OBJECT _app_getnetworkitem (size_t network_hash);
 size_t _app_getnetworkapp (size_t network_hash);
+PR_OBJECT _app_getlogitem (size_t idx);
+size_t _app_getlogapp (size_t idx);
 COLORREF _app_getappcolor (INT listview_id, size_t app_hash);
 
 void _app_freeapplication (size_t app_hash);
@@ -24,7 +26,7 @@ INT _app_getrulegroup (const PITEM_RULE ptr_rule);
 INT _app_getruleicon (const PITEM_RULE ptr_rule);
 COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx);
 
-rstring _app_gettooltip (HWND hwnd, INT listview_id, size_t lparam);
+rstring _app_gettooltip (HWND hwnd, INT listview_id, LPARAM lparam);
 
 void _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, size_t app_hash, PITEM_APP ptr_app);
 void _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_rule, bool include_apps);
