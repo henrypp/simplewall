@@ -312,8 +312,8 @@ COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
 	if (!ptr_app_object)
 		return 0;
 
-	const bool is_appslist = (listview_id == IDC_RULE_APPS_ID);
-	const bool is_networkslist = (listview_id == IDC_NETWORK);
+	const bool is_networkslist = (listview_id == IDC_NETWORK) || (listview_id == IDC_LOG);
+	const bool is_notprofileslist = (listview_id == IDC_NETWORK) || (listview_id == IDC_LOG) || (listview_id == IDC_RULE_APPS_ID);
 
 	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
@@ -331,16 +331,16 @@ COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
 		else if (app.ConfigGet (L"IsHighlightSigned", true, L"colors").AsBool () && !ptr_app->is_silent && app.ConfigGet (L"IsCertificatesEnabled", false).AsBool () && ptr_app->is_signed)
 			color_value = L"ColorSigned";
 
-		else if ((is_appslist || is_networkslist || !app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool ()) && (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && _app_isapphaverule (app_hash)))
+		else if ((is_notprofileslist || !app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool ()) && (app.ConfigGet (L"IsHighlightSpecial", true, L"colors").AsBool () && _app_isapphaverule (app_hash)))
 			color_value = L"ColorSpecial";
 
 		else if (!is_networkslist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
 			color_value = L"ColorSilent";
 
-		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
+		else if (is_notprofileslist && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
 			color_value = L"ColorService";
 
-		else if ((is_appslist || is_networkslist) && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool () && ptr_app->type == DataAppUWP)
+		else if (is_notprofileslist && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool () && ptr_app->type == DataAppUWP)
 			color_value = L"ColorPackage";
 
 		else if (app.ConfigGet (L"IsHighlightPico", true, L"colors").AsBool () && ptr_app->type == DataAppPico)
