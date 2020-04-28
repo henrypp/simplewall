@@ -20,9 +20,7 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
 			// localize window
-			SetWindowText (hwnd, app.LocaleString (IDS_OPENRULESEDITOR, nullptr));
-
-			SetDlgItemText (hwnd, IDC_RULE, app.LocaleString (IDS_RULE, L":"));
+			SetWindowText (hwnd, app.LocaleString (IDS_RULE, L"..."));
 
 			if (pcontext->item_id != INVALID_INT)
 				SetDlgItemText (hwnd, IDC_RULE_ID, _r_listview_getitemtext (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0));
