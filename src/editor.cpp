@@ -20,7 +20,7 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
 			// localize window
-			SetWindowText (hwnd, app.LocaleString (IDS_RULE, L"..."));
+			SetWindowText (hwnd, app.LocaleString (IDS_RULE, nullptr));
 
 			if (pcontext->item_id != INVALID_INT)
 				SetDlgItemText (hwnd, IDC_RULE_ID, _r_listview_getitemtext (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0));
@@ -46,7 +46,7 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_CLOSE:
 		{
-			EndDialog (hwnd, 0);
+			EndDialog (hwnd, FALSE);
 			break;
 		}
 
@@ -105,7 +105,7 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDCANCEL: // process Esc key
 				case IDC_CLOSE:
 				{
-					EndDialog (hwnd, 0);
+					EndDialog (hwnd, FALSE);
 					break;
 				}
 			}
@@ -763,7 +763,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			if (!ptr_rule_object)
 			{
-				EndDialog (hwnd, 0);
+				EndDialog (hwnd, FALSE);
 				return FALSE;
 			}
 
@@ -771,7 +771,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			if (!ptr_rule)
 			{
-				EndDialog (hwnd, 0);
+				EndDialog (hwnd, FALSE);
 				return FALSE;
 			}
 
@@ -824,7 +824,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_CLOSE:
 		{
-			EndDialog (hwnd, 0);
+			EndDialog (hwnd, FALSE);
 			break;
 		}
 
@@ -991,7 +991,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				case IDCANCEL: // process Esc key
 				case IDC_CLOSE:
 				{
-					EndDialog (hwnd, 0);
+					EndDialog (hwnd, FALSE);
 					break;
 				}
 			}
