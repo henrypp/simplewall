@@ -633,8 +633,8 @@ BEGIN
 	IDS_NOTIFICATIONSOUND_CHK "Enable notifications sound"
 	IDS_NOTIFICATIONDISPLAYTIMEOUT_HINT "Display timeout (sec.):"
 	IDS_NOTIFICATIONTIMEOUT_HINT "Timeout between similar notifications (sec.):"
-	IDS_EXCLUDESTEALTH_CHK "port scanner"
-	IDS_EXCLUDECLASSIFYALLOW_CHK "allowed packets"
+	IDS_EXCLUDESTEALTH_CHK "port scanner connections"
+	IDS_EXCLUDECLASSIFYALLOW_CHK "allowed connections"
 	IDS_EXCLUDEBLOCKLIST_CHK "blocklist"
 	IDS_EXCLUDECUSTOM_CHK "user rules"
 
