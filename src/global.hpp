@@ -52,6 +52,7 @@ inline OBJECTS_MAP apps_helper;
 inline OBJECTS_VEC rules_arr;
 inline OBJECTS_MAP rules_config;
 inline OBJECTS_MAP network_map;
+inline OBJECTS_VEC log_arr;
 
 inline OBJECTS_MAP cache_arpa;
 inline OBJECTS_MAP cache_signatures;
