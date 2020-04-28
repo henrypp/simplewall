@@ -82,14 +82,14 @@ enum EnumXmlType
 
 enum EnumInfo
 {
-	InfoUnknown,
-	InfoPath,
-	InfoTimestamp,
-	InfoIconId,
-	InfoUndeletable,
-	InfoSilent,
-	//InfoClearIds,
-	InfoListviewId,
+	InfoPath = 0,
+	InfoName = 1,
+	InfoTimestamp = 2,
+	InfoTimer = 3,
+	InfoIconId = 4,
+	InfoListviewId = 5,
+	InfoIsSilent = 6,
+	InfoIsUndeletable = 7,
 };
 
 enum EnumInstall
@@ -234,17 +234,8 @@ struct STATIC_DATA
 	WCHAR profile_path_backup[MAX_PATH] = {0};
 	WCHAR profile_internal_path[MAX_PATH] = {0};
 
-	WCHAR apps_path[MAX_PATH] = {0};
-	WCHAR rules_custom_path[MAX_PATH] = {0};
-	WCHAR rules_config_path[MAX_PATH] = {0};
-
-	WCHAR apps_path_backup[MAX_PATH] = {0};
-	WCHAR rules_custom_path_backup[MAX_PATH] = {0};
-	WCHAR rules_config_path_backup[MAX_PATH] = {0};
-
 	WCHAR windows_dir[MAX_PATH] = {0};
 
-	WCHAR title[128] = {0};
 	WCHAR search_string[128] = {0};
 
 	PISID padminsid = nullptr;
@@ -438,9 +429,6 @@ typedef struct tagITEM_LOG
 		SAFE_DELETE_ARRAY (filter_name);
 		SAFE_DELETE_ARRAY (username);
 
-		SAFE_DELETE_ARRAY (remote_fmt);
-		SAFE_DELETE_ARRAY (local_fmt);
-
 		SAFE_DELETE_ICON (hicon);
 	}
 
@@ -448,9 +436,6 @@ typedef struct tagITEM_LOG
 	LPWSTR provider_name = nullptr;
 	LPWSTR filter_name = nullptr;
 	LPWSTR username = nullptr;
-
-	LPWSTR remote_fmt = nullptr;
-	LPWSTR local_fmt = nullptr;
 
 	HICON hicon = nullptr;
 
@@ -475,6 +460,8 @@ typedef struct tagITEM_LOG
 		IN_ADDR local_addr = {0};
 		IN6_ADDR local_addr6;
 	};
+
+	volatile LONG count = 1;
 
 	UINT16 remote_port = 0;
 	UINT16 local_port = 0;
