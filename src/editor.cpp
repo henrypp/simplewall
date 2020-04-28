@@ -93,7 +93,7 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (pcontext->item_id == INVALID_INT)
 					{
-						INT new_item_id = _r_listview_getitemcount (pcontext->hwnd, pcontext->listview_id);
+						const INT new_item_id = _r_listview_getitemcount (pcontext->hwnd, pcontext->listview_id);
 						_r_listview_additem (pcontext->hwnd, pcontext->listview_id, new_item_id, 0, rule_single, I_IMAGENONE, I_GROUPIDNONE, new_item_id);
 					}
 					else
@@ -244,7 +244,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			{
 				SetDlgItemText (hwnd, IDC_RULE_REMOTE, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L"):"));
 
-				_r_listview_setstyle (hwnd, IDC_RULE_REMOTE_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP);
+				_r_listview_setstyle (hwnd, IDC_RULE_REMOTE_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP, FALSE);
 				_r_listview_addcolumn (hwnd, IDC_RULE_REMOTE_ID, 0, nullptr, -100, 0);
 
 				if (!_r_str_isempty (ptr_rule->prule_remote))
@@ -284,7 +284,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			{
 				SetDlgItemText (hwnd, IDC_RULE_LOCAL, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_LOCAL L"):"));
 
-				_r_listview_setstyle (hwnd, IDC_RULE_LOCAL_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP);
+				_r_listview_setstyle (hwnd, IDC_RULE_LOCAL_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP, FALSE);
 				_r_listview_addcolumn (hwnd, IDC_RULE_LOCAL_ID, 0, nullptr, -100, 0);
 
 				if (!_r_str_isempty (ptr_rule->prule_local))
@@ -324,13 +324,11 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			{
 				_app_listviewsetview (hwnd, IDC_RULE_APPS_ID);
 
-				_r_listview_setstyle (hwnd, IDC_RULE_APPS_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES);
+				_r_listview_setstyle (hwnd, IDC_RULE_APPS_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, FALSE);
 				_r_listview_addcolumn (hwnd, IDC_RULE_APPS_ID, 0, app.LocaleString (IDS_NAME, nullptr), -100, LVCFMT_LEFT);
 
 				// apps (apply to)
 				{
-					INT item = 0;
-
 					_r_fastlock_acquireshared (&lock_access);
 
 					for (auto &p : apps)
@@ -360,12 +358,10 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 						_r_fastlock_acquireshared (&lock_checkbox);
 
-						_r_listview_additem (hwnd, IDC_RULE_APPS_ID, item, 0, _r_path_getfilename (ptr_app->display_name), ptr_app->icon_id, I_GROUPIDNONE, p.first);
-						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, item, is_enabled);
+						_r_listview_additem (hwnd, IDC_RULE_APPS_ID, 0, 0, _r_path_getfilename (ptr_app->display_name), ptr_app->icon_id, I_GROUPIDNONE, p.first);
+						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
 						_r_fastlock_releaseshared (&lock_checkbox);
-
-						item += 1;
 
 						_r_obj_dereference (ptr_app_object);
 					}
