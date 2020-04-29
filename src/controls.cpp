@@ -329,7 +329,9 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 
 void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notifycode)
 {
-	if (!listview_id)
+	const HWND hlistview = GetDlgItem (hwnd, listview_id);
+
+	if (!hlistview)
 		return;
 
 	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
@@ -359,7 +361,7 @@ void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notif
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
-	SendDlgItemMessage (hwnd, listview_id, LVM_SORTITEMS, (WPARAM)GetDlgItem (hwnd, listview_id), (LPARAM)&_app_listviewcompare_callback);
+	SendMessage (hlistview, LVM_SORTITEMS, (WPARAM)hlistview, (LPARAM)&_app_listviewcompare_callback);
 }
 
 INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam)
@@ -369,14 +371,14 @@ INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam)
 	lvfi.flags = LVFI_PARAM;
 	lvfi.lParam = lparam;
 
-	INT pos = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)INVALID_INT, (LPARAM)&lvfi);
-
-	return pos;
+	return (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)INVALID_INT, (LPARAM)&lvfi);
 }
 
 void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 {
-	if (!listview_id)
+	const HWND hlistview = GetDlgItem (hwnd, listview_id);
+
+	if (!hlistview)
 		return;
 
 	_app_settab_id (hwnd, listview_id);
@@ -385,8 +387,6 @@ void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 
 	if (!total_count)
 		return;
-
-	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 
 	if (item != INVALID_INT)
 	{
