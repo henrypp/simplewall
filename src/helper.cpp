@@ -262,7 +262,7 @@ void _app_getappicon (const PITEM_APP ptr_app, bool is_small, PINT picon_id, HIC
 	}
 }
 
-void _app_getdisplayname (size_t app_hash, ITEM_APP* ptr_app, LPWSTR* extracted_name)
+void _app_getdisplayname (size_t app_hash, PITEM_APP ptr_app, LPWSTR* extracted_name)
 {
 	if (!extracted_name)
 		return;
@@ -1523,7 +1523,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = (PMIB_TCPTABLE_OWNER_MODULE)_r_mem_allocex (tableSize, 0);
+		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = (PMIB_TCPTABLE_OWNER_MODULE)_r_mem_allocex (tableSize, HEAP_ZERO_MEMORY);
 
 		if (tcp4Table)
 		{
@@ -1585,7 +1585,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = (PMIB_TCP6TABLE_OWNER_MODULE)_r_mem_allocex (tableSize, 0);
+		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = (PMIB_TCP6TABLE_OWNER_MODULE)_r_mem_allocex (tableSize, HEAP_ZERO_MEMORY);
 
 		if (tcp6Table)
 		{
@@ -1641,7 +1641,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_UDPTABLE_OWNER_MODULE udp4Table = (PMIB_UDPTABLE_OWNER_MODULE)_r_mem_allocex (tableSize, 0);
+		PMIB_UDPTABLE_OWNER_MODULE udp4Table = (PMIB_UDPTABLE_OWNER_MODULE)_r_mem_allocex (tableSize, HEAP_ZERO_MEMORY);
 
 		if (udp4Table)
 		{
@@ -1693,7 +1693,7 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 	if (tableSize)
 	{
-		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = (PMIB_UDP6TABLE_OWNER_MODULE)_r_mem_allocex (tableSize, 0);
+		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = (PMIB_UDP6TABLE_OWNER_MODULE)_r_mem_allocex (tableSize, HEAP_ZERO_MEMORY);
 
 		if (udp6Table)
 		{
@@ -1871,7 +1871,7 @@ void _app_generate_services ()
 		dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
 
 	DWORD bufferSize = initialBufferSize;
-	LPVOID pBuffer = _r_mem_allocex (bufferSize, 0);
+	LPVOID pBuffer = _r_mem_allocex (bufferSize, HEAP_ZERO_MEMORY);
 
 	if (!pBuffer)
 		return;
@@ -1882,7 +1882,7 @@ void _app_generate_services ()
 		{
 			// Set the buffer
 			bufferSize += returnLength;
-			pBuffer = _r_mem_reallocex (pBuffer, bufferSize, 0);
+			pBuffer = _r_mem_reallocex (pBuffer, bufferSize, HEAP_ZERO_MEMORY);
 
 			if (pBuffer)
 			{
@@ -1980,7 +1980,7 @@ void _app_generate_services ()
 
 			if (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength) == STATUS_BUFFER_TOO_SMALL)
 			{
-				serviceSid = (LPBYTE)_r_mem_allocex (serviceSidLength, 0);
+				serviceSid = (LPBYTE)_r_mem_allocex (serviceSidLength, HEAP_ZERO_MEMORY);
 
 				if (serviceSid)
 				{
