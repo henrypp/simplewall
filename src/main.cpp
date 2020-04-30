@@ -4313,7 +4313,7 @@ find_wrap:
 
 						if (listview_rules_id)
 						{
-							const INT item_id = _r_listview_getcolumncount (hwnd, listview_rules_id);
+							const INT item_id = _r_listview_getitemcount (hwnd, listview_rules_id);
 
 							_r_fastlock_acquireshared (&lock_checkbox);
 
