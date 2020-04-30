@@ -330,9 +330,9 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 				_r_listview_addcolumn (hwnd, IDC_RULE_APPS_ID, 0, app.LocaleString (IDS_NAME, nullptr), 0, LVCFMT_LEFT);
 
-				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 0, L"", 0, LVGS_COLLAPSIBLE);
-				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 1, L"", 0, LVGS_COLLAPSIBLE);
-				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 2, L"", 0, LVGS_COLLAPSIBLE);
+				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 
 				// apps (apply to)
 				for (auto &p : apps)
@@ -344,32 +344,29 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 					PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
-					if (!ptr_app)
+					if (ptr_app)
 					{
-						_r_obj_dereference (ptr_app_object);
-						continue;
+						INT group_id;
+
+						if (ptr_app->type == DataAppUWP)
+							group_id = 2;
+
+						else if (ptr_app->type == DataAppService)
+							group_id = 1;
+
+						else
+							group_id = 0;
+
+						// check for services
+						const bool is_enabled = (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ()) || ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash);
+
+						_r_fastlock_acquireshared (&lock_checkbox);
+
+						_r_listview_additem (hwnd, IDC_RULE_APPS_ID, 0, 0, _r_path_getfilename (ptr_app->display_name), ptr_app->icon_id, group_id, p.first);
+						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
+
+						_r_fastlock_releaseshared (&lock_checkbox);
 					}
-
-					INT group_id;
-
-					if (ptr_app->type == DataAppUWP)
-						group_id = 2;
-
-					else if (ptr_app->type == DataAppService)
-						group_id = 1;
-
-					else
-						group_id = 0;
-
-					// check for services
-					const bool is_enabled = (ptr_rule->apps.find (p.first) != ptr_rule->apps.end ()) || ptr_rule->is_forservices && (p.first == config.ntoskrnl_hash || p.first == config.svchost_hash);
-
-					_r_fastlock_acquireshared (&lock_checkbox);
-
-					_r_listview_additem (hwnd, IDC_RULE_APPS_ID, 0, 0, _r_path_getfilename (ptr_app->display_name), ptr_app->icon_id, group_id, p.first);
-					_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
-
-					_r_fastlock_releaseshared (&lock_checkbox);
 
 					_r_obj_dereference (ptr_app_object);
 				}
@@ -972,6 +969,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						for (INT i = 0; i < _r_listview_getitemcount (hpage_apps, IDC_RULE_APPS_ID); i++)
 						{
 							const size_t app_hash = _r_listview_getitemlparam (hpage_apps, IDC_RULE_APPS_ID, i);
+
+							if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
+								continue;
 
 							if (_app_isappfound (app_hash))
 							{
