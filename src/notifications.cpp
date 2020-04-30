@@ -84,29 +84,14 @@ bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 
 bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app)
 {
-	if (!ptr_app || !ptr_log_object)
-	{
-		_r_obj_dereference (ptr_log_object);
-		return false;
-	}
-
 	// check for last display time
 	const time_t current_time = _r_unixtime_now ();
 	const time_t notification_timeout = app.ConfigGet (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT).AsLonglong ();
 
 	if (notification_timeout && ((current_time - ptr_app->last_notify) <= notification_timeout))
-	{
-		_r_obj_dereference (ptr_log_object);
 		return false;
-	}
 
 	PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
-
-	if (!ptr_log)
-	{
-		_r_obj_dereference (ptr_log_object);
-		return false;
-	}
 
 	ptr_app->last_notify = current_time;
 
@@ -120,13 +105,13 @@ bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app)
 		ptr_app->pnotification = nullptr;
 	}
 
-	ptr_app->pnotification = ptr_log_object;
+	ptr_app->pnotification = _r_obj_reference (ptr_log_object);
 
 	if (app.ConfigGet (L"IsNotificationsSound", true).AsBool ())
 		_app_notifyplaysound ();
 
 	if (!_r_wnd_isundercursor (hwnd))
-		_app_notifyshow (hwnd, ptr_log_object, true, true);
+		_app_notifyshow (hwnd, ptr_log, true, true);
 
 	return true;
 }
@@ -209,14 +194,9 @@ PR_OBJECT _app_notifyget_obj (size_t app_hash)
 	return nullptr;
 }
 
-bool _app_notifyshow (HWND hwnd, PR_OBJECT ptr_log_object, bool is_forced, bool is_safety)
+bool _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, bool is_forced, bool is_safety)
 {
-	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () || !ptr_log_object)
-		return false;
-
-	PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
-
-	if (!ptr_log)
+	if (!app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ())
 		return false;
 
 	PR_OBJECT ptr_app_object = _app_getappitem (ptr_log->app_hash);
@@ -379,7 +359,10 @@ void _app_notifyrefresh (HWND hwnd, bool is_safety)
 		return;
 	}
 
-	_app_notifyshow (hwnd, ptr_log_object, true, is_safety);
+	PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
+
+	if (ptr_log)
+		_app_notifyshow (hwnd, ptr_log, true, is_safety);
 
 	_r_obj_dereference (ptr_log_object);
 }
