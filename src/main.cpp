@@ -2119,97 +2119,101 @@ find_wrap:
 		{
 			const HMENU hmenu = GetMenu (hwnd);
 
-			app.LocaleMenu (hmenu, IDS_FILE, 0, true, nullptr);
-			app.LocaleMenu (hmenu, IDS_SETTINGS, IDM_SETTINGS, false, L"...\tF2");
-			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_EXPORT, 2, true, nullptr);
-			app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_IMPORT, 3, true, nullptr);
-			app.LocaleMenu (hmenu, IDS_IMPORT, IDM_IMPORT, false, L"...\tCtrl+O");
-			app.LocaleMenu (hmenu, IDS_EXPORT, IDM_EXPORT, false, L"...\tCtrl+S");
-			app.LocaleMenu (hmenu, IDS_EXIT, IDM_EXIT, false, nullptr);
+			if (hmenu)
+			{
+				app.LocaleMenu (hmenu, IDS_FILE, 0, true, nullptr);
+				app.LocaleMenu (hmenu, IDS_SETTINGS, IDM_SETTINGS, false, L"...\tF2");
+				app.LocaleMenu (hmenu, IDS_ADD_FILE, IDM_ADD_FILE, false, L"...");
+				app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_EXPORT, 5, true, nullptr);
+				app.LocaleMenu (GetSubMenu (hmenu, 0), IDS_IMPORT, 6, true, nullptr);
+				app.LocaleMenu (hmenu, IDS_IMPORT, IDM_IMPORT, false, L"...\tCtrl+O");
+				app.LocaleMenu (hmenu, IDS_EXPORT, IDM_EXPORT, false, L"...\tCtrl+S");
+				app.LocaleMenu (hmenu, IDS_EXIT, IDM_EXIT, false, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_EDIT, 1, true, nullptr);
+				app.LocaleMenu (hmenu, IDS_EDIT, 1, true, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, L"\tCtrl+Shift+X");
-			app.LocaleMenu (hmenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, L"\tCtrl+Shift+T");
+				app.LocaleMenu (hmenu, IDS_PURGE_UNUSED, IDM_PURGE_UNUSED, false, L"\tCtrl+Shift+X");
+				app.LocaleMenu (hmenu, IDS_PURGE_TIMERS, IDM_PURGE_TIMERS, false, L"\tCtrl+Shift+T");
 
-			app.LocaleMenu (hmenu, IDS_FIND, IDM_FIND, false, L"...\tCtrl+F");
-			app.LocaleMenu (hmenu, IDS_FINDNEXT, IDM_FINDNEXT, false, L"\tF3");
+				app.LocaleMenu (hmenu, IDS_FIND, IDM_FIND, false, L"...\tCtrl+F");
+				app.LocaleMenu (hmenu, IDS_FINDNEXT, IDM_FINDNEXT, false, L"\tF3");
 
-			app.LocaleMenu (hmenu, IDS_REFRESH, IDM_REFRESH, false, L"\tF5");
+				app.LocaleMenu (hmenu, IDS_REFRESH, IDM_REFRESH, false, L"\tF5");
 
-			app.LocaleMenu (hmenu, IDS_VIEW, 2, true, nullptr);
+				app.LocaleMenu (hmenu, IDS_VIEW, 2, true, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_ALWAYSONTOP_CHK, IDM_ALWAYSONTOP_CHK, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_SHOWFILENAMESONLY_CHK, IDM_SHOWFILENAMESONLY_CHK, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_AUTOSIZECOLUMNS_CHK, IDM_AUTOSIZECOLUMNS_CHK, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ENABLESPECIALGROUP_CHK, IDM_ENABLESPECIALGROUP_CHK, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ALWAYSONTOP_CHK, IDM_ALWAYSONTOP_CHK, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_SHOWFILENAMESONLY_CHK, IDM_SHOWFILENAMESONLY_CHK, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_AUTOSIZECOLUMNS_CHK, IDM_AUTOSIZECOLUMNS_CHK, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ENABLESPECIALGROUP_CHK, IDM_ENABLESPECIALGROUP_CHK, false, nullptr);
 
-			app.LocaleMenu (GetSubMenu (hmenu, 2), IDS_ICONS, 5, true, nullptr);
-			app.LocaleMenu (hmenu, IDS_ICONSSMALL, IDM_SIZE_SMALL, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ICONSLARGE, IDM_SIZE_LARGE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ICONSEXTRALARGE, IDM_SIZE_EXTRALARGE, false, nullptr);
+				app.LocaleMenu (GetSubMenu (hmenu, 2), IDS_ICONS, 5, true, nullptr);
+				app.LocaleMenu (hmenu, IDS_ICONSSMALL, IDM_SIZE_SMALL, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ICONSLARGE, IDM_SIZE_LARGE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ICONSEXTRALARGE, IDM_SIZE_EXTRALARGE, false, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_VIEW_ICON, IDM_VIEW_ICON, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_VIEW_DETAILS, IDM_VIEW_DETAILS, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_VIEW_TILE, IDM_VIEW_TILE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_VIEW_ICON, IDM_VIEW_ICON, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_VIEW_DETAILS, IDM_VIEW_DETAILS, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_VIEW_TILE, IDM_VIEW_TILE, false, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_ICONSISHIDDEN, IDM_ICONSISHIDDEN, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ICONSISHIDDEN, IDM_ICONSISHIDDEN, false, nullptr);
 
-			app.LocaleMenu (GetSubMenu (hmenu, 2), IDS_LANGUAGE, LANG_MENU, true, L" (Language)");
+				app.LocaleMenu (GetSubMenu (hmenu, 2), IDS_LANGUAGE, LANG_MENU, true, L" (Language)");
 
-			app.LocaleMenu (hmenu, IDS_FONT, IDM_FONT, false, L"...");
+				app.LocaleMenu (hmenu, IDS_FONT, IDM_FONT, false, L"...");
 
-			const rstring recommended = app.LocaleString (IDS_RECOMMENDED, nullptr);
+				const rstring recommended = app.LocaleString (IDS_RECOMMENDED, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_TRAY_RULES, 3, true, nullptr);
+				app.LocaleMenu (hmenu, IDS_TRAY_RULES, 3, true, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_TAB_NETWORK, IDM_CONNECTIONS_TITLE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_TITLE_SECURITY, IDM_SECURITY_TITLE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_TITLE_ADVANCED, IDM_ADVANCED_TITLE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_TAB_NETWORK, IDM_CONNECTIONS_TITLE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_TITLE_SECURITY, IDM_SECURITY_TITLE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_TITLE_ADVANCED, IDM_ADVANCED_TITLE, false, nullptr);
 
-			_r_menu_enableitem (hmenu, IDM_CONNECTIONS_TITLE, MF_BYCOMMAND, false);
-			_r_menu_enableitem (hmenu, IDM_SECURITY_TITLE, MF_BYCOMMAND, false);
-			_r_menu_enableitem (hmenu, IDM_ADVANCED_TITLE, MF_BYCOMMAND, false);
+				_r_menu_enableitem (hmenu, IDM_CONNECTIONS_TITLE, MF_BYCOMMAND, false);
+				_r_menu_enableitem (hmenu, IDM_SECURITY_TITLE, MF_BYCOMMAND, false);
+				_r_menu_enableitem (hmenu, IDM_ADVANCED_TITLE, MF_BYCOMMAND, false);
 
-			app.LocaleMenu (hmenu, IDS_RULE_BLOCKOUTBOUND, IDM_RULE_BLOCKOUTBOUND, false, _r_fmt (L" (%s)", recommended.GetString ()));
-			app.LocaleMenu (hmenu, IDS_RULE_BLOCKINBOUND, IDM_RULE_BLOCKINBOUND, false, _r_fmt (L" (%s)", recommended.GetString ()));
-			app.LocaleMenu (hmenu, IDS_RULE_ALLOWLOOPBACK, IDM_RULE_ALLOWLOOPBACK, false, _r_fmt (L" (%s)", recommended.GetString ()));
-			app.LocaleMenu (hmenu, IDS_RULE_ALLOW6TO4, IDM_RULE_ALLOW6TO4, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_RULE_BLOCKOUTBOUND, IDM_RULE_BLOCKOUTBOUND, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_RULE_BLOCKINBOUND, IDM_RULE_BLOCKINBOUND, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_RULE_ALLOWLOOPBACK, IDM_RULE_ALLOWLOOPBACK, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_RULE_ALLOW6TO4, IDM_RULE_ALLOW6TO4, false, _r_fmt (L" (%s)", recommended.GetString ()));
 
-			app.LocaleMenu (hmenu, IDS_SECUREFILTERS_CHK, IDM_SECUREFILTERS_CHK, false, _r_fmt (L" (%s)", recommended.GetString ()));
-			app.LocaleMenu (hmenu, IDS_USESTEALTHMODE_CHK, IDM_USESTEALTHMODE_CHK, false, _r_fmt (L" (%s)", recommended.GetString ()));
-			app.LocaleMenu (hmenu, IDS_INSTALLBOOTTIMEFILTERS_CHK, IDM_INSTALLBOOTTIMEFILTERS_CHK, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_SECUREFILTERS_CHK, IDM_SECUREFILTERS_CHK, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_USESTEALTHMODE_CHK, IDM_USESTEALTHMODE_CHK, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_INSTALLBOOTTIMEFILTERS_CHK, IDM_INSTALLBOOTTIMEFILTERS_CHK, false, _r_fmt (L" (%s)", recommended.GetString ()));
 
-			app.LocaleMenu (hmenu, IDS_USENETWORKRESOLUTION_CHK, IDM_USENETWORKRESOLUTION_CHK, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_USECERTIFICATES_CHK, IDM_USECERTIFICATES_CHK, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_USEREFRESHDEVICES_CHK, IDM_USEREFRESHDEVICES_CHK, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_USENETWORKRESOLUTION_CHK, IDM_USENETWORKRESOLUTION_CHK, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_USECERTIFICATES_CHK, IDM_USECERTIFICATES_CHK, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_USEREFRESHDEVICES_CHK, IDM_USEREFRESHDEVICES_CHK, false, _r_fmt (L" (%s)", recommended.GetString ()));
 
-			app.LocaleMenu (hmenu, IDS_TRAY_BLOCKLIST_RULES, 4, true, nullptr);
+				app.LocaleMenu (hmenu, IDS_TRAY_BLOCKLIST_RULES, 4, true, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_BLOCKLIST_SPY, IDM_BLOCKLIST_SPY_TITLE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_BLOCKLIST_UPDATE, IDM_BLOCKLIST_UPDATE_TITLE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_BLOCKLIST_EXTRA, IDM_BLOCKLIST_EXTRA_TITLE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_BLOCKLIST_SPY, IDM_BLOCKLIST_SPY_TITLE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_BLOCKLIST_UPDATE, IDM_BLOCKLIST_UPDATE_TITLE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_BLOCKLIST_EXTRA, IDM_BLOCKLIST_EXTRA_TITLE, false, nullptr);
 
-			_r_menu_enableitem (hmenu, IDM_BLOCKLIST_SPY_TITLE, MF_BYCOMMAND, false);
-			_r_menu_enableitem (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, MF_BYCOMMAND, false);
-			_r_menu_enableitem (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, MF_BYCOMMAND, false);
+				_r_menu_enableitem (hmenu, IDM_BLOCKLIST_SPY_TITLE, MF_BYCOMMAND, false);
+				_r_menu_enableitem (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, MF_BYCOMMAND, false);
+				_r_menu_enableitem (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, MF_BYCOMMAND, false);
 
-			app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_SPY_DISABLE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_SPY_ALLOW, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_SPY_BLOCK, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_SPY_DISABLE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_SPY_ALLOW, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_SPY_BLOCK, false, _r_fmt (L" (%s)", recommended.GetString ()));
 
-			app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_UPDATE_DISABLE, false, _r_fmt (L" (%s)", recommended.GetString ()));
-			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_UPDATE_ALLOW, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_UPDATE_BLOCK, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_UPDATE_DISABLE, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_UPDATE_ALLOW, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_UPDATE_BLOCK, false, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_EXTRA_DISABLE, false, _r_fmt (L" (%s)", recommended.GetString ()));
-			app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_EXTRA_ALLOW, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_EXTRA_BLOCK, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_DISABLE, IDM_BLOCKLIST_EXTRA_DISABLE, false, _r_fmt (L" (%s)", recommended.GetString ()));
+				app.LocaleMenu (hmenu, IDS_ACTION_ALLOW, IDM_BLOCKLIST_EXTRA_ALLOW, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ACTION_BLOCK, IDM_BLOCKLIST_EXTRA_BLOCK, false, nullptr);
 
-			app.LocaleMenu (hmenu, IDS_HELP, 5, true, nullptr);
-			app.LocaleMenu (hmenu, IDS_WEBSITE, IDM_WEBSITE, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_CHECKUPDATES, IDM_CHECKUPDATES, false, nullptr);
-			app.LocaleMenu (hmenu, IDS_ABOUT, IDM_ABOUT, false, L"\tF1");
+				app.LocaleMenu (hmenu, IDS_HELP, 5, true, nullptr);
+				app.LocaleMenu (hmenu, IDS_WEBSITE, IDM_WEBSITE, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_CHECKUPDATES, IDM_CHECKUPDATES, false, nullptr);
+				app.LocaleMenu (hmenu, IDS_ABOUT, IDM_ABOUT, false, L"\tF1");
+			}
 
 			// localize toolbar
 			_app_setinterfacestate (hwnd);
@@ -2790,16 +2794,14 @@ find_wrap:
 
 						_app_generate_timermenu (hsubmenu2, hash_item);
 
-						AppendMenu (hmenu, MF_STRING, IDM_ADD_FILE, app.LocaleString (IDS_ADD_FILE, L"..."));
+						AppendMenu (hmenu, MF_STRING, IDM_EXPLORE, app.LocaleString (IDS_EXPLORE, L"\tEnter"));
+						AppendMenu (hmenu, MF_STRING, IDM_DELETE, app.LocaleString (IDS_DELETE, L"\tDel"));
 						AppendMenu (hmenu, MF_SEPARATOR, 0, nullptr);
 						AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu1, app.LocaleString (IDS_TRAY_RULES, nullptr));
 						AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu2, app.LocaleString (IDS_TIMER, nullptr));
 						AppendMenu (hmenu, MF_SEPARATOR, 0, nullptr);
 						AppendMenu (hmenu, MF_STRING, IDM_CHECK, app.LocaleString (IDS_CHECK, nullptr));
 						AppendMenu (hmenu, MF_STRING, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, nullptr));
-						AppendMenu (hmenu, MF_SEPARATOR, 0, nullptr);
-						AppendMenu (hmenu, MF_STRING, IDM_EXPLORE, app.LocaleString (IDS_EXPLORE, L"\tEnter"));
-						AppendMenu (hmenu, MF_STRING, IDM_DELETE, app.LocaleString (IDS_DELETE, L"\tDel"));
 						AppendMenu (hmenu, MF_SEPARATOR, 0, nullptr);
 						AppendMenu (hmenu, MF_STRING, IDM_SELECT_ALL, app.LocaleString (IDS_SELECT_ALL, L"\tCtrl+A"));
 						AppendMenu (hmenu, MF_SEPARATOR, 0, nullptr);
@@ -2811,10 +2813,7 @@ find_wrap:
 						_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, _app_getappinfo (hash_item, InfoIsSilent) != FALSE);
 
 						if (listview_id != IDC_APPS_PROFILE)
-						{
-							_r_menu_enableitem (hmenu, IDM_ADD_FILE, MF_BYCOMMAND, false);
 							_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, false);
-						}
 					}
 					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 					{
