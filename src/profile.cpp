@@ -314,6 +314,7 @@ COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
 
 	const bool is_profilelist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM);
 	const bool is_networklist = (listview_id == IDC_NETWORK) || (listview_id == IDC_LOG);
+	const bool is_editorlist = (listview_id == IDC_RULE_APPS_ID);
 
 	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
 
@@ -337,10 +338,10 @@ COLORREF _app_getappcolor (INT listview_id, size_t app_hash)
 		else if (is_profilelist && app.ConfigGet (L"IsHighlightSilent", true, L"colors").AsBool () && ptr_app->is_silent)
 			color_value = L"ColorSilent";
 
-		else if (!is_profilelist && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
+		else if (!is_profilelist && !is_editorlist && app.ConfigGet (L"IsHighlightService", true, L"colors").AsBool () && ptr_app->type == DataAppService)
 			color_value = L"ColorService";
 
-		else if (!is_profilelist && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool () && ptr_app->type == DataAppUWP)
+		else if (!is_profilelist && !is_editorlist && app.ConfigGet (L"IsHighlightPackage", true, L"colors").AsBool () && ptr_app->type == DataAppUWP)
 			color_value = L"ColorPackage";
 
 		else if (app.ConfigGet (L"IsHighlightPico", true, L"colors").AsBool () && ptr_app->type == DataAppPico)
@@ -482,7 +483,7 @@ INT _app_getappgroup (size_t app_hash, const PITEM_APP ptr_app)
 
 INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 {
-	if (!ptr_rule || !ptr_rule->is_enabled)
+	if (!ptr_rule->is_enabled)
 		return 2;
 
 	//if (app.ConfigGet (L"IsEnableSpecialGroup", true).AsBool () && (ptr_rule->is_forservices || !ptr_rule->apps.empty ()))
@@ -769,7 +770,7 @@ rstring _app_gettooltip (HWND hwnd, INT listview_id, LPARAM lparam)
 
 void _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, size_t app_hash, PITEM_APP ptr_app)
 {
-	if (!ptr_app || !listview_id || item == INVALID_INT)
+	if (!listview_id || item == INVALID_INT)
 		return;
 
 	_app_getappicon (ptr_app, true, &ptr_app->icon_id, nullptr);
@@ -782,7 +783,7 @@ void _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, size_t app_hash,
 
 void _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_rule, bool include_apps)
 {
-	if (!ptr_rule || !listview_id || item == INVALID_INT)
+	if (!listview_id || item == INVALID_INT)
 		return;
 
 	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->is_readonly && ptr_rule->type == DataRuleCustom ? _r_fmt (L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
@@ -1732,9 +1733,12 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		}
 
 		// add rules
-		for (size_t i = 0; i < rules_arr.size (); i++)
+		INT item_id = INVALID_INT;
+
+		for (auto &p : rules_arr)
 		{
-			PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+			item_id += 1;
+			PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 			if (!ptr_rule_object)
 				continue;
@@ -1749,7 +1753,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 				{
 					_r_fastlock_acquireshared (&lock_checkbox);
 
-					_r_listview_additem (hwnd, listview_id, 0, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
+					_r_listview_additem (hwnd, listview_id, 0, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), item_id);
 					_app_setruleiteminfo (hwnd, listview_id, 0, ptr_rule, false);
 
 					_r_fastlock_releaseshared (&lock_checkbox);
