@@ -5,9 +5,6 @@
 
 void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 {
-	if (!ptr_app)
-		return;
-
 	const size_t app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
 
 	const INT listview_id = _app_getlistview_id (ptr_app->type);
@@ -20,7 +17,7 @@ void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 		ptr_app->timer = 0;
 
-		if (ptr_app->htimer)
+		if (_r_fs_isvalidhandle (ptr_app->htimer))
 		{
 			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 			ptr_app->htimer = nullptr;
@@ -31,13 +28,13 @@ void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 		const time_t current_time = _r_unixtime_now ();
 		bool is_created = false;
 
-		if (ptr_app->htimer)
+		if (_r_fs_isvalidhandle (ptr_app->htimer))
 		{
-			is_created = !!ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0);
+			is_created = ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0);
 		}
 		else
 		{
-			is_created = !!CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
+			is_created = CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, DWORD (seconds * _R_SECONDSCLOCK_MSEC), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
 		}
 
 		if (is_created)
@@ -52,7 +49,7 @@ void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 			ptr_app->timer = 0;
 
-			if (ptr_app->htimer)
+			if (_r_fs_isvalidhandle (ptr_app->htimer))
 			{
 				DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 				ptr_app->htimer = nullptr;
@@ -73,7 +70,7 @@ void _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 void _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 {
-	if (!ptr_app || !_app_istimeractive (ptr_app))
+	if (!_app_istimeractive (ptr_app))
 		return;
 
 	ptr_app->is_enabled = false;
@@ -81,7 +78,7 @@ void _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 
 	ptr_app->timer = 0;
 
-	if (ptr_app->htimer)
+	if (_r_fs_isvalidhandle (ptr_app->htimer))
 	{
 		DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, nullptr);
 		ptr_app->htimer = nullptr;
@@ -105,13 +102,11 @@ void _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 
 bool _app_istimeractive (const PITEM_APP ptr_app)
 {
-	return ptr_app->htimer || (ptr_app->timer && (ptr_app->timer > _r_unixtime_now ()));
+	return _r_fs_isvalidhandle (ptr_app->htimer) || (ptr_app->timer && (ptr_app->timer > _r_unixtime_now ()));
 }
 
 bool _app_istimersactive ()
 {
-	_r_fastlock_acquireshared (&lock_access);
-
 	for (auto &p : apps)
 	{
 		PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
@@ -124,15 +119,11 @@ bool _app_istimersactive ()
 		if (ptr_app && _app_istimeractive (ptr_app))
 		{
 			_r_obj_dereference (ptr_app_object);
-			_r_fastlock_releaseshared (&lock_access);
-
 			return true;
 		}
 
 		_r_obj_dereference (ptr_app_object);
 	}
-
-	_r_fastlock_releaseshared (&lock_access);
 
 	return false;
 }
@@ -142,9 +133,7 @@ void CALLBACK _app_timer_callback (PVOID lparam, BOOLEAN)
 	const HWND hwnd = app.GetHWND ();
 	const size_t app_hash = (size_t)lparam;
 
-	_r_fastlock_acquireshared (&lock_access);
 	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
-	_r_fastlock_releaseshared (&lock_access);
 
 	if (!ptr_app_object)
 		return;
