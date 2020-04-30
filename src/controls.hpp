@@ -21,6 +21,9 @@ void _app_listviewsetfont (HWND hwnd, INT listview_id, bool is_redraw);
 INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPARAM lparam);
 void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id = INVALID_INT, bool is_notifycode = false);
 
+void _app_refreshgroups (HWND hwnd, INT listview_id);
+void _app_refreshstatus (HWND hwnd, INT listview_id = INVALID_INT);
+
 INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam);
 void _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos = INVALID_INT);
 
