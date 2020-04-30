@@ -2727,11 +2727,7 @@ find_wrap:
 					INT command_id = 0;
 					const INT ctrl_id = static_cast<INT>(lpnmlv->hdr.idFrom);
 
-					if (ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP)
-					{
-						command_id = IDM_EXPLORE;
-					}
-					else if (ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_LOG)
+					if (ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_LOG)
 					{
 						command_id = IDM_PROPERTIES;
 					}
@@ -2794,7 +2790,7 @@ find_wrap:
 
 						_app_generate_timermenu (hsubmenu2, hash_item);
 
-						AppendMenu (hmenu, MF_STRING, IDM_EXPLORE, app.LocaleString (IDS_EXPLORE, L"\tEnter"));
+						AppendMenu (hmenu, MF_STRING, IDM_PROPERTIES, app.LocaleString (IDS_EXPLORE, L"\tEnter"));
 						AppendMenu (hmenu, MF_STRING, IDM_DELETE, app.LocaleString (IDS_DELETE, L"\tDel"));
 						AppendMenu (hmenu, MF_SEPARATOR, 0, nullptr);
 						AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu1, app.LocaleString (IDS_TRAY_RULES, nullptr));
@@ -2808,7 +2804,7 @@ find_wrap:
 						AppendMenu (hmenu, MF_STRING, IDM_COPY, app.LocaleString (IDS_COPY, L"\tCtrl+C"));
 						AppendMenu (hmenu, MF_STRING, IDM_COPY2, app.LocaleString (IDS_COPY, _r_fmt (L" \"%s\"", _r_listview_getcolumntext (hwnd, listview_id, lv_column_current).GetString ())));
 
-						SetMenuDefaultItem (hmenu, IDM_EXPLORE, MF_BYCOMMAND);
+						SetMenuDefaultItem (hmenu, IDM_PROPERTIES, MF_BYCOMMAND);
 
 						_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, _app_getappinfo (hash_item, InfoIsSilent) != FALSE);
 
@@ -3975,7 +3971,6 @@ find_wrap:
 
 				case IDM_DISABLENOTIFICATIONS:
 				case IDM_DISABLETIMER:
-				case IDM_EXPLORE:
 				{
 					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
@@ -3998,12 +3993,7 @@ find_wrap:
 
 						if (ptr_app)
 						{
-							if (ctrl_id == IDM_EXPLORE)
-							{
-								if (ptr_app->type != DataAppPico && ptr_app->type != DataAppDevice)
-									_r_path_explore (ptr_app->real_path);
-							}
-							else if (ctrl_id == IDM_DISABLENOTIFICATIONS)
+							if (ctrl_id == IDM_DISABLENOTIFICATIONS)
 							{
 								if (new_val == INVALID_INT)
 									new_val = !ptr_app->is_silent;
@@ -4018,18 +4008,15 @@ find_wrap:
 							{
 								_app_timer_reset (hwnd, ptr_app);
 							}
-
-							_r_obj_dereference (ptr_app_object);
 						}
+
+						_r_obj_dereference (ptr_app_object);
 					}
 
-					if (ctrl_id == IDM_DISABLETIMER || ctrl_id == IDM_DISABLENOTIFICATIONS)
-					{
-						_app_listviewsort (hwnd, listview_id);
-						_app_refreshstatus (hwnd, listview_id);
+					_app_listviewsort (hwnd, listview_id);
+					_app_refreshstatus (hwnd, listview_id);
 
-						_app_profile_save ();
-					}
+					_app_profile_save ();
 
 					break;
 				}
@@ -4336,14 +4323,23 @@ find_wrap:
 				case IDM_PROPERTIES:
 				{
 					const INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
-					const INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED);
+					INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)INVALID_INT, LVNI_SELECTED);
 
 					if (item == INVALID_INT)
 						break;
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
-						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_EXPLORE, 0), 0);
+						do
+						{
+							const size_t app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+
+							LPCWSTR path = (LPCWSTR)_app_getappinfo (app_hash, InfoPath);
+
+							if (path)
+								_r_path_explore (path);
+						}
+						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT);
 					}
 					else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 					{
