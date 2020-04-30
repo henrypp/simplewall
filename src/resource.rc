@@ -670,8 +670,8 @@ BEGIN
 
 	IDS_TAB_APPS "Apps"
 	IDS_TAB_SERVICES "Services"
-	IDS_TAB_PACKAGES "Packages"
-	IDS_TAB_NETWORK "Network"
+	IDS_TAB_PACKAGES "UWP apps"
+	IDS_TAB_NETWORK "Connections"
 
 	IDS_STATE "State"
 
