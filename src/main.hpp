@@ -82,8 +82,8 @@ enum EnumXmlType
 
 enum EnumInfo
 {
-	InfoPath = 0,
-	InfoName = 1,
+	InfoName = 0,
+	InfoPath = 1,
 	InfoTimestamp = 2,
 	InfoTimer = 3,
 	InfoIconId = 4,

@@ -15,7 +15,12 @@ LONG_PTR _app_getappinfo (size_t app_hash, EnumInfo info_key)
 
 	if (ptr_app)
 	{
-		if (info_key == InfoName)
+		if (info_key == InfoPath)
+		{
+			if (!_r_str_isempty (ptr_app->real_path))
+				result = (LONG_PTR)ptr_app->real_path;
+		}
+		else if (info_key == InfoName)
 		{
 			if (!_r_str_isempty (ptr_app->display_name))
 				result = (LONG_PTR)ptr_app->display_name;
