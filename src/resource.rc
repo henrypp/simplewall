@@ -660,8 +660,8 @@ BEGIN
 	IDS_RECOMMENDED "recommended"
 	IDS_ICONSISTABLEVIEW "Show as table"
 
-	IDS_ACTION_ALLOW_HINT "Allow access forever"
-	IDS_ACTION_BLOCK_HINT "Block access forever ('til kingdom come)"
+	IDS_ACTION_ALLOW_HINT "Allow network access forever"
+	IDS_ACTION_BLOCK_HINT "Block network access forever ('til kingdom come)"
 	IDS_ACTION_LATER_HINT "Ignore and ask me later"
 
 	IDS_RULE_APPLY_2 "Apply ""%s"" for this app"
