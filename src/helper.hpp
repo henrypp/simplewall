@@ -43,8 +43,6 @@ void _app_generate_timermenu (HMENU hsubmenu, size_t app_hash);
 
 bool _app_item_get (EnumDataType type, size_t app_hash, rstring* display_name, rstring* real_path, time_t* ptime, void** lpdata);
 
-void _app_refreshstatus (HWND hwnd, INT listview_id = INVALID_INT);
-
 rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port);
 //rstring _app_parsehostaddress_wsa (LPCWSTR hostname, USHORT port);
 
