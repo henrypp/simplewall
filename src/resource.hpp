@@ -542,6 +542,7 @@
 #define IDP_LOGOPEN 112
 #define IDP_LOGCLEAR 113
 #define IDP_HEARTH 114
+#define IDP_LOGUI 115
 
 // Icons
 #define IDI_MAIN 100
