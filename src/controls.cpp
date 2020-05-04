@@ -419,24 +419,31 @@ void _app_refreshgroups (HWND hwnd, INT listview_id)
 
 	for (INT i = 0; i < total_count; i++)
 	{
-		if (listview_id == IDC_RULE_APPS_ID && !_r_listview_isitemchecked (hwnd, listview_id, i))
-			continue;
-
-		LVITEM lvi = {0};
-
-		lvi.mask = LVIF_GROUPID;
-		lvi.iItem = i;
-
-		if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)&lvi))
+		if (listview_id == IDC_RULE_APPS_ID)
 		{
-			if (lvi.iGroupId == 2)
-				group3_count += 1;
+			if (_r_listview_isitemchecked (hwnd, listview_id, i))
+			{
+				group1_count = group2_count = group3_count += 1;
+			}
+		}
+		else
+		{
+			LVITEM lvi = {0};
 
-			else if (lvi.iGroupId == 1)
-				group2_count += 1;
+			lvi.mask = LVIF_GROUPID;
+			lvi.iItem = i;
 
-			else
-				group1_count += 1;
+			if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)&lvi))
+			{
+				if (lvi.iGroupId == 2)
+					group3_count += 1;
+
+				else if (lvi.iGroupId == 1)
+					group2_count += 1;
+
+				else
+					group1_count += 1;
+			}
 		}
 	}
 
