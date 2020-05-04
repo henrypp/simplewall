@@ -344,12 +344,12 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 
 void _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, bool is_notifycode)
 {
-	if (listview_id == IDC_LOG) // temporary solution
-		return;
-
 	const HWND hlistview = GetDlgItem (hwnd, listview_id);
 
 	if (!hlistview)
+		return;
+
+	if ((GetWindowLongPtr (hlistview, GWL_STYLE) & (LVS_NOSORTHEADER | LVS_OWNERDATA)) != 0)
 		return;
 
 	const INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
@@ -387,6 +387,9 @@ void _app_refreshgroups (HWND hwnd, INT listview_id)
 	UINT group1_title;
 	UINT group2_title;
 	UINT group3_title;
+
+	if (!SendDlgItemMessage (hwnd, listview_id, LVM_ISGROUPVIEWENABLED, 0, 0))
+		return;
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
@@ -524,8 +527,7 @@ void _app_refreshstatus (HWND hwnd, INT listview_id)
 		if (listview_id == INVALID_INT)
 			listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
-		if ((SendDlgItemMessage (hwnd, listview_id, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0) & LVS_EX_CHECKBOXES) != 0)
-			_app_refreshgroups (hwnd, listview_id);
+		_app_refreshgroups (hwnd, listview_id);
 	}
 
 	if (pstatus)
