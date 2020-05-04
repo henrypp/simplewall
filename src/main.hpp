@@ -439,7 +439,7 @@ typedef struct tagITEM_LOG
 
 	HICON hicon = nullptr;
 
-	time_t date = 0;
+	time_t timestamp = 0;
 
 	size_t app_hash = 0;
 

@@ -260,7 +260,7 @@ bool _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, bool is_forced, bool is_safe
 		_r_ctrl_settabletext (hwnd, IDC_PORT_ID, app.LocaleString (IDS_PORT, L":"), IDC_PORT_TEXT, ptr_log->remote_port ? _app_formatport (ptr_log->remote_port, false).GetString () : empty_text);
 		_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, app.LocaleString (IDS_DIRECTION, L":"), IDC_DIRECTION_TEXT, app.LocaleString (is_inbound ? IDS_DIRECTION_2 : IDS_DIRECTION_1, ptr_log->is_loopback ? L" (Loopback)" : nullptr));
 		_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, !_r_str_isempty (ptr_log->filter_name) ? ptr_log->filter_name : empty_text);
-		_r_ctrl_settabletext (hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->date, FDTF_SHORTDATE | FDTF_LONGTIME));
+		_r_ctrl_settabletext (hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_date (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
 		SAFE_DELETE_ARRAY (remote_fmt);
 	}
