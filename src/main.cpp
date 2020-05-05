@@ -202,7 +202,7 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 	{
 		_app_initinterfacestate (hwnd, true);
 
-		_app_freethreadpool (&threads_pool);
+		_app_freethreadpool (threads_pool);
 
 		PINSTALL_CONTEXT pcontext = (PINSTALL_CONTEXT)_r_mem_allocex (sizeof (INSTALL_CONTEXT), HEAP_ZERO_MEMORY);
 
@@ -1690,7 +1690,7 @@ void _app_tabs_init (HWND hwnd)
 	CreateWindowEx (0, WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_NETWORK, hinst, nullptr);
 	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TAB_NETWORK, nullptr), INVALID_INT, IDC_NETWORK);
 
-	CreateWindowEx (0, WC_LISTVIEW, nullptr, listview_style, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_LOG, hinst, nullptr);
+	CreateWindowEx (0, WC_LISTVIEW, nullptr, listview_style | LVS_NOSORTHEADER, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, (HMENU)IDC_LOG, hinst, nullptr);
 	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, app.LocaleString (IDS_TITLE_LOGGING, nullptr), INVALID_INT, IDC_LOG);
 
 	for (INT i = 0; i < tabs_count; i++)
@@ -1761,7 +1761,6 @@ void _app_initialize ()
 	_r_fastlock_initialize (&lock_logbusy);
 	_r_fastlock_initialize (&lock_logthread);
 	_r_fastlock_initialize (&lock_transaction);
-	_r_fastlock_initialize (&lock_writelog);
 
 	// set privileges
 	{
@@ -2985,16 +2984,6 @@ find_wrap:
 					app.LocaleMenu (hsubmenu, IDS_LOGSHOW, IDM_TRAY_LOGSHOW, false, nullptr);
 					app.LocaleMenu (hsubmenu, IDS_LOGCLEAR, IDM_TRAY_LOGCLEAR, false, nullptr);
 
-					{
-						const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
-
-						if (!_r_fs_exists (path))
-						{
-							_r_menu_enableitem (hsubmenu, IDM_TRAY_LOGSHOW, MF_BYCOMMAND, false);
-							_r_menu_enableitem (hsubmenu, IDM_TRAY_LOGCLEAR, MF_BYCOMMAND, false);
-						}
-					}
-
 					if (_r_fs_exists (app.GetLogPath ()))
 					{
 						app.LocaleMenu (hsubmenu, IDS_TRAY_LOGERR, ERRLOG_ID, true, nullptr);
@@ -3812,15 +3801,23 @@ find_wrap:
 
 				case IDM_TRAY_LOGSHOW:
 				{
-					const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
+					if (app.ConfigGet (L"IsLogUiEnabled", true).AsBool ())
+					{
+						_r_wnd_toggle (hwnd, true);
+						_app_settab_id (hwnd, IDC_LOG);
+					}
+					else
+					{
+						const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
 
-					if (!_r_fs_exists (path))
-						return FALSE;
+						if (!_r_fs_exists (path))
+							return FALSE;
 
-					if (_r_fs_isvalidhandle (config.hlogfile))
-						FlushFileBuffers (config.hlogfile);
+						if (_r_fs_isvalidhandle (config.hlogfile))
+							FlushFileBuffers (config.hlogfile);
 
-					_r_run (nullptr, _r_fmt (L"%s \"%s\"", _app_getlogviewer ().GetString (), path.GetString ()));
+						_r_run (nullptr, _r_fmt (L"%s \"%s\"", _app_getlogviewer ().GetString (), path.GetString ()));
+					}
 
 					break;
 				}
@@ -3831,16 +3828,15 @@ find_wrap:
 
 					const bool is_validhandle = _r_fs_isvalidhandle (config.hlogfile);
 
-					if ((is_validhandle && _r_fs_size (config.hlogfile) != (LONG64)((_r_str_length (SZ_LOG_TITLE) + 1) * sizeof (WCHAR))) || (!is_validhandle && _r_fs_exists (path)))
+					if ((is_validhandle && _r_fs_size (config.hlogfile) != (LONG64)((_r_str_length (SZ_LOG_TITLE) + 1) * sizeof (WCHAR))) || (!is_validhandle && _r_fs_exists (path)) || !log_arr.empty ())
 					{
 						if (!app.ShowConfirmMessage (hwnd, nullptr, app.LocaleString (IDS_QUESTION, nullptr), L"ConfirmLogClear"))
 							break;
 
 						_app_freelogstack ();
 
-						_r_fastlock_acquireexclusive (&lock_writelog);
 						_app_logclear ();
-						_r_fastlock_releaseexclusive (&lock_writelog);
+						_app_logclear_ui (hwnd);
 					}
 
 					break;
