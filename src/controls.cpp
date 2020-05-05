@@ -119,13 +119,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced)
 	INT calculated_width = 0;
 
 	// set general column id
-	INT column_general_id;
-
-	if (listview_id == IDC_LOG)
-		column_general_id = 1; // column "name" was a general in log listview
-
-	else
-		column_general_id = 0;
+	INT column_general_id = 0;
 
 	const bool is_tableview = (SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
 
