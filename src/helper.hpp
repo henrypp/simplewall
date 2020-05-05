@@ -21,7 +21,7 @@ rstring _app_formatport (UINT16 port, bool is_noempty);
 
 void _app_freeobjects_map (OBJECTS_MAP& ptr_map, bool is_forced);
 void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec);
-void _app_freethreadpool (THREADS_VEC* ptr_pool);
+void _app_freethreadpool (THREADS_VEC& ptr_vec);
 void _app_freelogstack ();
 
 void _app_getappicon (const PITEM_APP ptr_app, bool is_small, PINT picon_id, HICON* picon);

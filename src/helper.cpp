@@ -167,40 +167,47 @@ void _app_freeobjects_map (OBJECTS_MAP& ptr_map, bool is_forced)
 {
 	if (is_forced || ptr_map.size () >= UMAP_CACHE_LIMIT)
 	{
-		for (auto &p : ptr_map)
-			_r_obj_dereference (p.second);
+		for (auto &it = ptr_map.end (); it-- != ptr_map.begin ();)
+		{
+			PR_OBJECT ptr_object = _r_obj_reference (it->second);
 
-		ptr_map.clear ();
+			if (ptr_object)
+				_r_obj_dereferenceex (ptr_object, 2);
+
+			ptr_map.erase (it);
+
+		}
 	}
 }
 
 void _app_freeobjects_vec (OBJECTS_VEC& ptr_vec)
 {
-	for (auto &p : ptr_vec)
-		_r_obj_dereference (p);
+	for (auto &it = ptr_vec.end (); it-- != ptr_vec.begin ();)
+	{
+		PR_OBJECT ptr_object = _r_obj_reference (*it);
 
-	ptr_vec.clear ();
+		if (ptr_object)
+			_r_obj_dereferenceex (ptr_object, 2);
+
+		ptr_vec.erase (it);
+	}
 }
 
-void _app_freethreadpool (THREADS_VEC* ptr_pool)
+void _app_freethreadpool (THREADS_VEC& ptr_vec)
 {
-	if (!ptr_pool || ptr_pool->empty ())
-		return;
-
-	const size_t count = ptr_pool->size ();
-
-	for (size_t i = (count - 1); i != INVALID_SIZE_T; i--)
+	for (auto &it = ptr_vec.end (); it-- != ptr_vec.begin ();)
 	{
-		HANDLE hthread = ptr_pool->at (i);
+		HANDLE hthread = *it;
 
 		if (_r_fs_isvalidhandle (hthread))
 		{
-			if (WaitForSingleObjectEx (hthread, 0, FALSE) == WAIT_OBJECT_0)
-			{
-				CloseHandle (hthread);
-				ptr_pool->erase (ptr_pool->begin () + i);
-			}
+			if (WaitForSingleObjectEx (hthread, 0, FALSE) != WAIT_OBJECT_0)
+				continue;
+
+			CloseHandle (hthread);
 		}
+
+		ptr_vec.erase (it);
 	}
 }
 
@@ -2076,9 +2083,12 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 
 			for (UINT8 loop = 0; loop < 2; loop++)
 			{
-				for (size_t i = 0; i < rules_arr.size (); i++)
+				INT index = INVALID_INT;
+
+				for (auto &p : rules_arr)
 				{
-					PR_OBJECT ptr_rule_object = _r_obj_reference (rules_arr.at (i));
+					index += 1;
+					PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 					if (!ptr_rule_object)
 						continue;
@@ -2115,7 +2125,7 @@ void _app_generate_rulesmenu (HMENU hsubmenu, size_t app_hash)
 						mii.hbmpChecked = config.hbmp_checked;
 						mii.hbmpUnchecked = config.hbmp_unchecked;
 						mii.fState = (is_enabled ? MF_CHECKED : MF_UNCHECKED);
-						mii.wID = IDX_RULES_SPECIAL + UINT (i);
+						mii.wID = IDX_RULES_SPECIAL + index;
 
 						InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
 					}
