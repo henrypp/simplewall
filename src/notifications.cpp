@@ -7,7 +7,7 @@ HFONT hfont_title = nullptr;
 HFONT hfont_link = nullptr;
 HFONT hfont_text = nullptr;
 
-void _app_notifycreatewindow (HWND hwnd)
+void _app_notifycreatewindow ()
 {
 	config.hnotification = CreateDialog (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_NOTIFICATION), nullptr, &NotificationProc);
 }

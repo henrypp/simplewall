@@ -3,7 +3,7 @@
 
 #pragma once
 
-void _app_notifycreatewindow (HWND hwnd);
+void _app_notifycreatewindow ();
 bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds);
 
 bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app);
