@@ -77,7 +77,6 @@ inline _R_FASTLOCK lock_checkbox;
 inline _R_FASTLOCK lock_logbusy;
 inline _R_FASTLOCK lock_logthread;
 inline _R_FASTLOCK lock_transaction;
-inline _R_FASTLOCK lock_writelog;
 
 // dropped events callback subscription (win7+)
 #ifndef FWP_DIRECTION_IN
