@@ -126,7 +126,7 @@ void _app_listviewresize (HWND hwnd, INT listview_id, bool is_forced)
 	const INT total_width = _R_RECT_WIDTH (&rc_client);
 	const INT spacing = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
 
-	const INT column_max_width = _r_dc_getdpi (hwnd, 120);
+	const INT column_max_width = _r_dc_getdpi (hwnd, 174);
 
 	for (INT i = 0; i < column_count; i++)
 	{
