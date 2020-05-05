@@ -30,11 +30,11 @@ LONG_PTR _app_getappinfo (size_t app_hash, EnumInfo info_key)
 		}
 		else if (info_key == InfoTimestamp)
 		{
-			result = ptr_app->timestamp;
+			result = (LONG_PTR)&ptr_app->timestamp;
 		}
 		else if (info_key == InfoTimer)
 		{
-			result = ptr_app->timer;
+			result = (LONG_PTR)&ptr_app->timer;
 		}
 		else if (info_key == InfoIconId)
 		{

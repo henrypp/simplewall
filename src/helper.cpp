@@ -2148,7 +2148,8 @@ void _app_generate_timermenu (HMENU hsubmenu, size_t app_hash)
 	bool is_checked = (app_hash == 0);
 
 	const time_t current_time = _r_unixtime_now ();
-	const time_t app_time = (time_t)_app_getappinfo (app_hash, InfoTimer);
+	const time_t* ptime = (time_t*)_app_getappinfo (app_hash, InfoTimer);
+	const time_t app_time = ptime ? *ptime : 0;
 
 	UINT index = 0;
 
