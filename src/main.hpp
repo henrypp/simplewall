@@ -84,8 +84,8 @@ enum EnumInfo
 {
 	InfoName = 0,
 	InfoPath = 1,
-	InfoTimestamp = 2,
-	InfoTimer = 3,
+	InfoTimestampPtr = 2,
+	InfoTimerPtr = 3,
 	InfoIconId = 4,
 	InfoListviewId = 5,
 	InfoIsSilent = 6,

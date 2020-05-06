@@ -28,11 +28,11 @@ LONG_PTR _app_getappinfo (size_t app_hash, EnumInfo info_key)
 			else if (!_r_str_isempty (ptr_app->original_path))
 				result = (LONG_PTR)ptr_app->original_path;
 		}
-		else if (info_key == InfoTimestamp)
+		else if (info_key == InfoTimestampPtr)
 		{
 			result = (LONG_PTR)&ptr_app->timestamp;
 		}
-		else if (info_key == InfoTimer)
+		else if (info_key == InfoTimerPtr)
 		{
 			result = (LONG_PTR)&ptr_app->timer;
 		}
