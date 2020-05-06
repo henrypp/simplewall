@@ -253,7 +253,7 @@ PR_OBJECT _app_getrulebyhash (size_t rule_hash)
 
 PR_OBJECT _app_getnetworkitem (size_t network_hash)
 {
-	if (!network_hash || network_map.find (network_hash) == network_map.end ())
+	if (network_map.find (network_hash) == network_map.end ())
 		return nullptr;
 
 	return _r_obj_reference (network_map[network_hash]);
@@ -270,7 +270,7 @@ size_t _app_getnetworkapp (size_t network_hash)
 
 	if (ptr_network)
 	{
-		size_t app_hash = ptr_network->app_hash;
+		const size_t app_hash = ptr_network->app_hash;
 
 		_r_obj_dereference (ptr_network_object);
 
@@ -499,7 +499,10 @@ INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 
 INT _app_getruleicon (const PITEM_RULE ptr_rule)
 {
-	return ptr_rule->is_block ? 1 : 0;
+	if (ptr_rule->is_block)
+		return 1;
+
+	return 0;
 }
 
 COLORREF _app_getrulecolor (INT listview_id, size_t rule_idx)
