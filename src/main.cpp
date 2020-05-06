@@ -1770,7 +1770,6 @@ void _app_initialize ()
 	// initialize spinlocks
 	_r_fastlock_initialize (&lock_access);
 	_r_fastlock_initialize (&lock_apply);
-	_r_fastlock_initialize (&lock_cache);
 	_r_fastlock_initialize (&lock_checkbox);
 	_r_fastlock_initialize (&lock_logbusy);
 	_r_fastlock_initialize (&lock_logthread);

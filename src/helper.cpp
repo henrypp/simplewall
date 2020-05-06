@@ -126,9 +126,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 					{
 						_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", ptr_cache));
 
-						_r_fastlock_acquireexclusive (&lock_cache);
 						_app_freeobjects_map (cache_hosts, MAP_CACHE_MAX);
-						_r_fastlock_releaseexclusive (&lock_cache);
 
 						cache_hosts[addr_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 					}
@@ -415,9 +413,7 @@ PR_OBJECT _app_getsignatureinfo (size_t app_hash, const PITEM_APP ptr_app)
 
 								if (CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, ptr_cache, num_chars) > 1)
 								{
-									_r_fastlock_acquireexclusive (&lock_cache);
 									_app_freeobjects_map (cache_signatures, MAP_CACHE_MAX);
-									_r_fastlock_releaseexclusive (&lock_cache);
 
 									cache_signatures[app_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
@@ -537,9 +533,7 @@ PR_OBJECT _app_getversioninfo (size_t app_hash, const PITEM_APP ptr_app)
 
 						if (_r_str_alloc (&ptr_cache, buffer.GetLength (), buffer))
 						{
-							_r_fastlock_acquireexclusive (&lock_cache);
 							_app_freeobjects_map (cache_versions, MAP_CACHE_MAX);
-							_r_fastlock_releaseexclusive (&lock_cache);
 
 							cache_versions[app_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 
@@ -2469,9 +2463,7 @@ bool _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT * forma
 
 					if (_r_str_alloc (&ptr_cache, host.GetLength (), host))
 					{
-						_r_fastlock_acquireexclusive (&lock_cache);
 						_app_freeobjects_map (cache_dns, MAP_CACHE_MAX);
-						_r_fastlock_releaseexclusive (&lock_cache);
 
 						cache_dns[dns_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 					}
@@ -2752,9 +2744,7 @@ bool _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR* pbuffer)
 
 						if (_r_str_alloc (&ptr_cache, len, ppQueryResultsSet->Data.PTR.pNameHost))
 						{
-							_r_fastlock_acquireexclusive (&lock_cache);
 							_app_freeobjects_map (cache_arpa, MAP_CACHE_MAX);
-							_r_fastlock_releaseexclusive (&lock_cache);
 
 							cache_arpa[arpa_hash] = _r_obj_allocate (ptr_cache, &_app_dereferencestring);
 						}
