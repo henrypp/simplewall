@@ -1375,9 +1375,7 @@ void _app_profile_load_helper (const pugi::xml_node& root, EnumDataType type, UI
 	{
 		if (type == DataAppRegular)
 		{
-			_r_fastlock_acquireshared (&lock_access);
 			_app_addapplication (nullptr, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), 0, item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool ());
-			_r_fastlock_releaseshared (&lock_access);
 		}
 		else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleCustom)
 		{
@@ -1599,16 +1597,14 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			_r_listview_deleteallitems (hwnd, i);
 	}
 
-	_r_fastlock_acquireshared (&lock_access);
-
 	// clear apps
-	_app_freeobjects_map (apps, true);
+	_app_freeobjects_map (apps, 0);
 
 	// clear services/uwp apps
-	_app_freeobjects_map (apps_helper, true);
+	_app_freeobjects_map (apps_helper, 0);
 
 	// clear rules config
-	_app_freeobjects_map (rules_config, true);
+	_app_freeobjects_map (rules_config, 0);
 
 	// clear rules
 	_app_freeobjects_vec (rules_arr);
@@ -1619,8 +1615,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 	// generate services list
 	_app_generate_services ();
-
-	_r_fastlock_releaseshared (&lock_access);
 
 	// load profile
 	if (!_r_str_isempty (path_custom) || _r_fs_exists (config.profile_path) || _r_fs_exists (config.profile_path_backup))
@@ -1638,9 +1632,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
 				app.LogError (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path), UID);
 
-			_r_fastlock_acquireshared (&lock_access);
 			_app_profile_load_fallback ();
-			_r_fastlock_releaseshared (&lock_access);
 		}
 		else
 		{
@@ -1658,9 +1650,7 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 					if (root_apps)
 						_app_profile_load_helper (root_apps, DataAppRegular, version);
 
-					_r_fastlock_acquireshared (&lock_access);
 					_app_profile_load_fallback ();
-					_r_fastlock_releaseshared (&lock_access);
 
 					// load rules config (new!)
 					pugi::xml_node root_rules_config = root.child (L"rules_config");
@@ -1685,8 +1675,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	if (hwnd)
 	{
 		const time_t current_time = _r_unixtime_now ();
-
-		_r_fastlock_acquireshared (&lock_access);
 
 		// add apps
 		for (auto &p : apps)
@@ -1767,8 +1755,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 			_r_obj_dereference (ptr_rule_object);
 		}
-
-		_r_fastlock_releaseshared (&lock_access);
 	}
 
 	if (hwnd && current_listview_id)
@@ -1806,8 +1792,6 @@ void _app_profile_save (LPCWSTR path_custom)
 		// save apps
 		if (root_apps)
 		{
-			_r_fastlock_acquireshared (&lock_access);
-
 			for (auto &p : apps)
 			{
 				PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
@@ -1860,15 +1844,11 @@ void _app_profile_save (LPCWSTR path_custom)
 
 				_r_obj_dereference (ptr_app_object);
 			}
-
-			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		// save user rules
 		if (root_rules_custom)
 		{
-			_r_fastlock_acquireshared (&lock_access);
-
 			for (auto& p : rules_arr)
 			{
 				PR_OBJECT ptr_rule_object = _r_obj_reference (p);
@@ -1927,15 +1907,11 @@ void _app_profile_save (LPCWSTR path_custom)
 
 				_r_obj_dereference (ptr_rule_object);
 			}
-
-			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		// save rules config
 		if (root_rule_config)
 		{
-			_r_fastlock_acquireshared (&lock_access);
-
 			for (auto &p : rules_config)
 			{
 				PR_OBJECT ptr_config_object = _r_obj_reference (p.second);
@@ -1998,8 +1974,6 @@ void _app_profile_save (LPCWSTR path_custom)
 
 				_r_obj_dereference (ptr_config_object);
 			}
-
-			_r_fastlock_releaseshared (&lock_access);
 		}
 
 		doc.save_file (_r_str_isempty (path_custom) ? config.profile_path : path_custom, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);

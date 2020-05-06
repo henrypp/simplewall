@@ -2395,7 +2395,7 @@ find_wrap:
 		{
 			const time_t current_timestamp = (time_t)lparam;
 
-			_app_freeobjects_map (rules_config, true);
+			_app_freeobjects_map (rules_config, 0);
 
 			_r_fs_makebackup (config.profile_path, current_timestamp);
 
