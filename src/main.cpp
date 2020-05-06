@@ -1768,7 +1768,6 @@ void _app_initialize ()
 	pugi::set_memory_management_functions (&_r_mem_alloc, &_r_mem_free); // set allocation routine
 
 	// initialize spinlocks
-	_r_fastlock_initialize (&lock_access);
 	_r_fastlock_initialize (&lock_apply);
 	_r_fastlock_initialize (&lock_checkbox);
 	_r_fastlock_initialize (&lock_logbusy);
@@ -2573,11 +2572,7 @@ find_wrap:
 					}
 					else
 					{
-						if (_r_fastlock_tryacquireshared (&lock_access))
-						{
-							result = _app_nmcustdraw_listview (lpnmcd);
-							_r_fastlock_releaseshared (&lock_access);
-						}
+						result = _app_nmcustdraw_listview (lpnmcd);
 					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
@@ -2594,17 +2589,12 @@ find_wrap:
 
 				case LVN_GETINFOTIP:
 				{
-					if (_r_fastlock_tryacquireshared (&lock_access))
-					{
-						LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
+					LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
 
-						const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
-						const LPARAM idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+					const INT listview_id = static_cast<INT>(lpnmlv->hdr.idFrom);
+					const LPARAM idx = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
 
-						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (hwnd, listview_id, idx));
-
-						_r_fastlock_releaseshared (&lock_access);
-					}
+					_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (hwnd, listview_id, idx));
 
 					break;
 				}

@@ -70,7 +70,6 @@ inline GUIDS_VEC filter_ids;
 
 inline ITEM_LIST_HEAD log_stack;
 
-inline _R_FASTLOCK lock_access;
 inline _R_FASTLOCK lock_apply;
 inline _R_FASTLOCK lock_checkbox;
 inline _R_FASTLOCK lock_logbusy;

@@ -399,13 +399,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			{
 				case NM_CUSTOMDRAW:
 				{
-					LONG result = CDRF_DODEFAULT;
-
-					if (_r_fastlock_tryacquireshared (&lock_access))
-					{
-						result = _app_nmcustdraw_listview ((LPNMLVCUSTOMDRAW)lparam);
-						_r_fastlock_releaseshared (&lock_access);
-					}
+					LONG result = _app_nmcustdraw_listview ((LPNMLVCUSTOMDRAW)lparam);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
