@@ -929,7 +929,7 @@ bool _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state)
 
 bool _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT update_state, INT extra_state)
 {
-	if (!ptr_rule || ptr_rule->type != DataRuleBlocklist || _r_str_isempty (ptr_rule->pname))
+	if (ptr_rule->type != DataRuleBlocklist)
 		return false;
 
 	if (_r_str_compare (ptr_rule->pname, L"spy_", 4) == 0)
@@ -952,12 +952,11 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 	const INT listview_id = _app_getlistview_id (DataRuleBlocklist);
 
 	size_t changes_count = 0;
-	INT index = -1; // negative initial value is required for correct array indexing
+	INT index = INVALID_INT; // negative initial value is required for correct array indexing
 
 	for (auto &p : rules_arr)
 	{
 		index += 1;
-
 		PR_OBJECT ptr_rule_object = _r_obj_reference (p);
 
 		if (!ptr_rule_object)
@@ -1005,7 +1004,7 @@ void _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 	{
 		if (hwnd)
 		{
-			if ((INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT) == listview_id)
+			if (listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT))
 				_app_listviewsort (hwnd, listview_id);
 
 			_app_refreshstatus (hwnd, listview_id);
@@ -1054,9 +1053,6 @@ rstring _app_appexpandrules (size_t app_hash, LPCWSTR delimeter)
 
 rstring _app_rulesexpandapps (const PITEM_RULE ptr_rule, bool is_fordisplay, LPCWSTR delimeter)
 {
-	if (!ptr_rule)
-		return nullptr;
-
 	rstring result;
 
 	if (is_fordisplay && ptr_rule->is_forservices)
@@ -1111,7 +1107,7 @@ rstring _app_rulesexpandapps (const PITEM_RULE ptr_rule, bool is_fordisplay, LPC
 
 bool _app_isappfound (size_t app_hash)
 {
-	return app_hash && apps.find (app_hash) != apps.end ();
+	return apps.find (app_hash) != apps.end ();
 }
 
 bool _app_isapphaveconnection (size_t app_hash)
@@ -1213,9 +1209,6 @@ bool _app_isappused (const PITEM_APP ptr_app, size_t app_hash)
 
 bool _app_isappexists (const PITEM_APP ptr_app)
 {
-	if (!ptr_app)
-		return false;
-
 	if (ptr_app->is_undeletable)
 		return true;
 
