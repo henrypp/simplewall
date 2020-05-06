@@ -169,7 +169,7 @@ enum EnumInstall
 #define BACKUP_HOURS_PERIOD 4 // make backup every X hour(s) (default)
 
 #define LEN_IP_MAX 68
-#define UMAP_CACHE_LIMIT 1024
+#define MAP_CACHE_MAX 1024
 
 #define FILTERS_TIMEOUT 9000
 #define TRANSACTION_TIMEOUT 6000
