@@ -3805,7 +3805,15 @@ find_wrap:
 					if (app.ConfigGet (L"IsLogUiEnabled", true).AsBool ())
 					{
 						_r_wnd_toggle (hwnd, true);
-						_app_settab_id (hwnd, IDC_LOG);
+
+						if (!log_arr.empty ())
+						{
+							_app_showitem (hwnd, IDC_LOG, _app_getposition (hwnd, IDC_LOG, (log_arr.size () - 1)));
+						}
+						else
+						{
+							_app_settab_id (hwnd, IDC_LOG);
+						}
 					}
 					else
 					{
