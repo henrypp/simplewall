@@ -5,13 +5,13 @@
 
 const UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
 
-UINT WINAPI ApplyThread (LPVOID lparam)
+NTSTATUS WINAPI ApplyThread (LPVOID lparam)
 {
 	PINSTALL_CONTEXT pcontext = (PINSTALL_CONTEXT)lparam;
 
 	_r_fastlock_acquireshared (&lock_apply);
 
-	const HANDLE& hengine = _wfp_getenginehandle ();
+	const HANDLE hengine = _wfp_getenginehandle ();
 
 	// dropped packets logging (win7+)
 	if (config.is_neteventset)
@@ -45,12 +45,10 @@ UINT WINAPI ApplyThread (LPVOID lparam)
 
 	_r_fastlock_releaseshared (&lock_apply);
 
-	_endthreadex (0);
-
-	return ERROR_SUCCESS;
+	return _r_sys_endthread (ERROR_SUCCESS);
 }
 
-UINT WINAPI NetworkMonitorThread (LPVOID lparam)
+NTSTATUS WINAPI NetworkMonitorThread (LPVOID lparam)
 {
 	DWORD network_timeout = app.ConfigGet (L"NetworkTimeout", NETWORK_TIMEOUT).AsUlong ();
 
@@ -68,6 +66,7 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 			_app_generate_connections (network_map, checker_map);
 
 			const bool is_highlighting_enabled = app.ConfigGet (L"IsEnableHighlighting", true).AsBool () && app.ConfigGet (L"IsHighlightConnection", true, L"colors").AsBool ();
+			const INT current_listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 			bool is_refresh = false;
 
 			// add new connections into list
@@ -85,27 +84,27 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 
 				if (ptr_network)
 				{
-					const INT item = _r_listview_getitemcount (hwnd, network_listview_id);
+					const INT item_id = _r_listview_getitemcount (hwnd, network_listview_id);
 
-					_r_listview_additem (hwnd, network_listview_id, item, 0, _r_path_getfilename (ptr_network->path), ptr_network->icon_id, I_GROUPIDNONE, p.first);
+					_r_listview_additem (hwnd, network_listview_id, item_id, 0, _r_path_getfilename (ptr_network->path), ptr_network->icon_id, I_GROUPIDNONE, p.first);
 
-					_r_listview_setitem (hwnd, network_listview_id, item, 1, ptr_network->local_fmt);
-					_r_listview_setitem (hwnd, network_listview_id, item, 3, ptr_network->remote_fmt);
-					_r_listview_setitem (hwnd, network_listview_id, item, 5, _app_getprotoname (ptr_network->protocol, ptr_network->af));
-					_r_listview_setitem (hwnd, network_listview_id, item, 6, _app_getstatename (ptr_network->state));
+					_r_listview_setitem (hwnd, network_listview_id, item_id, 1, ptr_network->local_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item_id, 3, ptr_network->remote_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item_id, 5, _app_getprotoname (ptr_network->protocol, ptr_network->af));
+					_r_listview_setitem (hwnd, network_listview_id, item_id, 6, _app_getstatename (ptr_network->state));
 
 					if (ptr_network->local_port)
-						_r_listview_setitem (hwnd, network_listview_id, item, 2, _app_formatport (ptr_network->local_port, true));
+						_r_listview_setitem (hwnd, network_listview_id, item_id, 2, _app_formatport (ptr_network->local_port, true));
 
 					if (ptr_network->remote_port)
-						_r_listview_setitem (hwnd, network_listview_id, item, 4, _app_formatport (ptr_network->remote_port, true));
+						_r_listview_setitem (hwnd, network_listview_id, item_id, 4, _app_formatport (ptr_network->remote_port, true));
 
 					// redraw listview item
 					if (is_highlighting_enabled)
 					{
 						const INT app_listview_id = (INT)_app_getappinfo (ptr_network->app_hash, InfoListviewId);
 
-						if (app_listview_id && IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
+						if (app_listview_id && current_listview_id == app_listview_id)
 						{
 							const INT item_pos = _app_getposition (hwnd, app_listview_id, ptr_network->app_hash);
 
@@ -123,70 +122,67 @@ UINT WINAPI NetworkMonitorThread (LPVOID lparam)
 			// refresh network tab as well
 			if (is_refresh)
 			{
-				const INT current_listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
-
 				if (current_listview_id == network_listview_id)
 				{
 					SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, FALSE, 0);
 
-					_app_listviewresize (hwnd, network_listview_id, false);
 					_app_listviewsort (hwnd, network_listview_id);
+					_app_listviewresize (hwnd, network_listview_id, false);
 
 					SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, TRUE, 0);
 				}
 			}
 
 			// remove closed connections from list
-			const INT item_count = _r_listview_getitemcount (hwnd, network_listview_id);
+			INT item_count = _r_listview_getitemcount (hwnd, network_listview_id);
 
-			if (item_count)
+			for (INT i = 0; i < item_count;)
 			{
-				for (INT i = item_count - 1; i != INVALID_INT; i--)
+				const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
+
+				if (checker_map.find (network_hash) != checker_map.end ())
 				{
-					const size_t network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
+					i += 1;
+					continue;
+				}
 
-					if (checker_map.find (network_hash) == checker_map.end ())
+				SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
+				item_count = _r_listview_getitemcount (hwnd, network_listview_id);
+
+				PR_OBJECT ptr_network_object = _app_getnetworkitem (network_hash);
+
+				// redraw listview item
+				if (ptr_network_object)
+				{
+					if (is_highlighting_enabled)
 					{
-						SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
+						PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
 
-						PR_OBJECT ptr_network_object = _app_getnetworkitem (network_hash);
-
-						// redraw listview item
-						if (ptr_network_object)
+						if (ptr_network)
 						{
-							if (is_highlighting_enabled)
+							const INT app_listview_id = (INT)_app_getappinfo (ptr_network->app_hash, InfoListviewId);
+
+							if (app_listview_id && current_listview_id == app_listview_id)
 							{
-								PITEM_NETWORK ptr_network = (PITEM_NETWORK)ptr_network_object->pdata;
+								const INT item_pos = _app_getposition (hwnd, app_listview_id, ptr_network->app_hash);
 
-								if (ptr_network)
-								{
-									const INT app_listview_id = (INT)_app_getappinfo (ptr_network->app_hash, InfoListviewId);
-
-									if (app_listview_id && IsWindowVisible (GetDlgItem (hwnd, app_listview_id)))
-									{
-										const INT item_pos = _app_getposition (hwnd, app_listview_id, ptr_network->app_hash);
-
-										if (item_pos != INVALID_INT)
-											_r_listview_redraw (hwnd, app_listview_id, item_pos, item_pos);
-									}
-								}
+								if (item_pos != INVALID_INT)
+									_r_listview_redraw (hwnd, app_listview_id, item_pos, item_pos);
 							}
 						}
-
-						network_map.erase (network_hash);
-
-						_r_obj_dereferenceex (ptr_network_object, 2);
 					}
 				}
+
+				network_map.erase (network_hash);
+
+				_r_obj_dereferenceex (ptr_network_object, 2);
 			}
 
 			WaitForSingleObjectEx (NtCurrentThread (), network_timeout, FALSE);
 		}
 	}
 
-	_endthreadex (0);
-
-	return ERROR_SUCCESS;
+	return _r_sys_endthread (ERROR_SUCCESS);
 }
 
 bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
@@ -211,19 +207,18 @@ bool _app_changefilters (HWND hwnd, bool is_install, bool is_forced)
 			pcontext->hwnd = hwnd;
 			pcontext->is_install = is_install;
 
-			const HANDLE hthread = _r_createthread (&ApplyThread, (LPVOID)pcontext, true, THREAD_PRIORITY_HIGHEST);
+			HANDLE hthread = _r_sys_createthread (&ApplyThread, (LPVOID)pcontext, true, THREAD_PRIORITY_HIGHEST);
 
-			if (hthread)
-			{
-				threads_pool.push_back (hthread);
-				ResumeThread (hthread);
-			}
-			else
+			if (!hthread)
 			{
 				_r_mem_free (pcontext);
+				return false;
 			}
 
-			return hthread != nullptr;
+			threads_pool.push_back (hthread);
+			NtResumeThread (hthread, nullptr);
+
+			return true;
 		}
 	}
 
@@ -1993,7 +1988,7 @@ find_wrap:
 			_app_notifycreatewindow ();
 
 			// create network monitor thread
-			_r_createthread (&NetworkMonitorThread, (LPVOID)hwnd, false, THREAD_PRIORITY_LOWEST);
+			_r_sys_createthread (&NetworkMonitorThread, (LPVOID)hwnd, false, THREAD_PRIORITY_LOWEST);
 
 			// install filters
 			{
@@ -4709,7 +4704,7 @@ find_wrap:
 					PITEM_LOG ptr_log = new ITEM_LOG;
 
 					ptr_log->app_hash = config.my_hash;
-					ptr_log->date = _r_unixtime_now ();
+					ptr_log->timestamp = _r_unixtime_now ();
 
 					ptr_log->af = AF_INET;
 					ptr_log->protocol = IPPROTO_TCP;
@@ -4723,7 +4718,7 @@ find_wrap:
 					_r_str_alloc (&ptr_log->path, _r_str_length (app.GetBinaryPath ()), app.GetBinaryPath ());
 					_r_str_alloc (&ptr_log->filter_name, _r_str_length (FN_AD), FN_AD);
 
-					_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &ptr_log->remote_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
+					//_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &ptr_log->remote_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
 					//_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, &ptr_log->local_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
 
 					PR_OBJECT ptr_app_object = _app_getappitem (config.my_hash);
