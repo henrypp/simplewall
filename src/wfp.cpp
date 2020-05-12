@@ -384,35 +384,33 @@ void _wfp_uninitialize (bool is_full)
 
 	DWORD rc;
 
-	FWP_VALUE val;
-
 	// dropped packets logging (win7+)
 	if (config.is_neteventset)
 	{
 		_wfp_logunsubscribe (hengine);
+		config.is_neteventset = false;
 
-		if (_r_sys_validversion (6, 2))
-		{
-			// monitor ipsec connection (win8+)
-			val.type = FWP_UINT32;
-			val.uint32 = 0;
+		//if (_r_sys_validversion (6, 2))
+		//{
+		//	// monitor ipsec connection (win8+)
+		//	val.type = FWP_UINT32;
+		//	val.uint32 = 0;
 
-			FwpmEngineSetOption (hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+		//	FwpmEngineSetOption (hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
-			// packet queuing (win8+)
-			val.type = FWP_UINT32;
-			val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_NONE;
+		//	// packet queuing (win8+)
+		//	val.type = FWP_UINT32;
+		//	val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_NONE;
 
-			FwpmEngineSetOption (hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
-		}
+		//	FwpmEngineSetOption (hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
+		//}
 
-		val.type = FWP_UINT32;
-		val.uint32 = 0;
+		//val.type = FWP_UINT32;
+		//val.uint32 = 0;
 
-		rc = FwpmEngineSetOption (hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+		//rc = FwpmEngineSetOption (hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 
-		if (rc == ERROR_SUCCESS)
-			config.is_neteventset = false;
+		//if (rc == ERROR_SUCCESS)
 	}
 
 	if (is_full)
@@ -731,8 +729,6 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 
 void _wfp_clearfilter_ids ()
 {
-	_r_fastlock_acquireshared (&lock_access);
-
 	// clear common filters
 	filter_ids.clear ();
 
@@ -773,8 +769,6 @@ void _wfp_clearfilter_ids ()
 
 		_r_obj_dereference (ptr_rule_object);
 	}
-
-	_r_fastlock_releaseshared (&lock_access);
 }
 
 void _wfp_destroyfilters (HANDLE hengine)
@@ -824,7 +818,7 @@ bool _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC& ptr_filters, UINT lin
 	return true;
 }
 
-bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, GUIDS_VEC * pmfarr)
+bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWSTR rule_remote, LPCWSTR rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, GUIDS_VEC* pmfarr)
 {
 	UINT32 count = 0;
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
