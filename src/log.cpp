@@ -319,9 +319,6 @@ void _app_logclear_ui (HWND hwnd)
 
 void _wfp_logsubscribe (HANDLE hengine)
 {
-	if (!hengine)
-		return;
-
 	if (config.hnetevent)
 		return; // already subscribed
 
@@ -389,9 +386,6 @@ void _wfp_logsubscribe (HANDLE hengine)
 
 void _wfp_logunsubscribe (HANDLE hengine)
 {
-	if (!hengine)
-		return;
-
 	if (config.hnetevent)
 	{
 		_app_loginit (false); // destroy log file handle if present
@@ -407,7 +401,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 {
 	const HANDLE hengine = _wfp_getenginehandle ();
 
-	if (!hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
+	if (!filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
 		return;
 
 	// set allowed directions
@@ -875,7 +869,7 @@ void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5* pEvent)
 	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
-NTSTATUS LogThread (LPVOID lparam)
+THREAD_FN LogThread (LPVOID lparam)
 {
 	const HWND hwnd = (HWND)lparam;
 
