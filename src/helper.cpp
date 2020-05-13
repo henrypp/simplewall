@@ -1522,8 +1522,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 {
 	checker_map.clear ();
 
-	const DWORD format_flags = app.ConfigGet (L"IsNetworkResolutionsInTabEnabled", false).AsBool () ? FMTADDR_RESOLVE_HOST : 0;
-
 	DWORD tableSize = 0;
 	GetExtendedTcpTable (nullptr, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
@@ -1573,9 +1571,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 						if (_app_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) || _app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
 							ptr_network->is_connection = true;
 					}
-
-					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, format_flags);
-					_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, 0, &ptr_network->remote_fmt, format_flags);
 
 					ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
 					checker_map[net_hash] = true;
@@ -1630,9 +1625,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 							ptr_network->is_connection = true;
 					}
 
-					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, format_flags);
-					_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr6, 0, &ptr_network->remote_fmt, format_flags);
-
 					ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
 					checker_map[net_hash] = true;
 				}
@@ -1683,8 +1675,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 					if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
 						ptr_network->is_connection = true;
 
-					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &ptr_network->local_fmt, format_flags);
-
 					ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
 					checker_map[net_hash] = true;
 				}
@@ -1731,8 +1721,6 @@ void _app_generate_connections (OBJECTS_MAP& ptr_map, HASHER_MAP& checker_map)
 
 					if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
 						ptr_network->is_connection = true;
-
-					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr6, 0, &ptr_network->local_fmt, format_flags);
 
 					ptr_map[net_hash] = _r_obj_allocate (ptr_network, &_app_dereferencenetwork);
 					checker_map[net_hash] = true;
