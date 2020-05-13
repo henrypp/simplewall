@@ -238,10 +238,10 @@ struct STATIC_DATA
 
 	WCHAR search_string[128] = {0};
 
-	PISID padminsid = nullptr;
-	PACL pacl_default = nullptr;
-	PACL pacl_engine = nullptr;
-	PACL pacl_secure = nullptr;
+	PSID pbuiltin_world_sid = nullptr;
+	PSID pbuiltin_localservice_sid = nullptr;
+	PSID pbuiltin_admins_sid = nullptr;
+	PSID pbuiltin_netops_sid = nullptr;
 
 	HIMAGELIST himg_toolbar = nullptr;
 	HIMAGELIST himg_rules_small = nullptr;
@@ -481,13 +481,9 @@ typedef struct tagITEM_NETWORK
 	~tagITEM_NETWORK ()
 	{
 		SAFE_DELETE_ARRAY (path);
-		SAFE_DELETE_ARRAY (remote_fmt);
-		SAFE_DELETE_ARRAY (local_fmt);
 	}
 
 	LPWSTR path = nullptr;
-	LPWSTR remote_fmt = nullptr;
-	LPWSTR local_fmt = nullptr;
 
 	size_t app_hash = 0;
 
