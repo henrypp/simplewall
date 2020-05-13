@@ -350,29 +350,29 @@ void _wfp_logsubscribe (HANDLE hengine)
 
 			subscription.enumTemplate = &enum_template;
 
-			DWORD rc;
+			DWORD code;
 
 			if (_FwpmNetEventSubscribe4)
-				rc = _FwpmNetEventSubscribe4 (hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10rs5+
+				code = _FwpmNetEventSubscribe4 (hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10rs5+
 
 			else if (_FwpmNetEventSubscribe3)
-				rc = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, nullptr, &config.hnetevent); // win10rs4+
+				code = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, nullptr, &config.hnetevent); // win10rs4+
 
 			else if (_FwpmNetEventSubscribe2)
-				rc = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hnetevent); // win10rs1+
+				code = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hnetevent); // win10rs1+
 
 			else if (_FwpmNetEventSubscribe1)
-				rc = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, nullptr, &config.hnetevent); // win8+
+				code = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, nullptr, &config.hnetevent); // win8+
 
 			else if (_FwpmNetEventSubscribe0)
-				rc = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, nullptr, &config.hnetevent); // win7+
+				code = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, nullptr, &config.hnetevent); // win7+
 
 			else
-				rc = ERROR_INVALID_FUNCTION;
+				code = ERROR_INVALID_FUNCTION;
 
-			if (rc != ERROR_SUCCESS)
+			if (code != ERROR_SUCCESS)
 			{
-				app.LogError (L"FwpmNetEventSubscribe", rc, nullptr, 0);
+				app.LogError (L"FwpmNetEventSubscribe", code, nullptr, 0);
 			}
 			else
 			{
@@ -390,9 +390,9 @@ void _wfp_logunsubscribe (HANDLE hengine)
 	{
 		_app_loginit (false); // destroy log file handle if present
 
-		const DWORD rc = FwpmNetEventUnsubscribe (hengine, config.hnetevent);
+		const DWORD code = FwpmNetEventUnsubscribe (hengine, config.hnetevent);
 
-		if (rc == ERROR_SUCCESS)
+		if (code == ERROR_SUCCESS)
 			config.hnetevent = nullptr;
 	}
 }
