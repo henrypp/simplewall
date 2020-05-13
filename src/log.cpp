@@ -875,7 +875,7 @@ void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5* pEvent)
 	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
-NTSTATUS WINAPI LogThread (LPVOID lparam)
+NTSTATUS LogThread (LPVOID lparam)
 {
 	const HWND hwnd = (HWND)lparam;
 
