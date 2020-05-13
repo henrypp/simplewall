@@ -1627,8 +1627,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
 				app.LogError (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" PR_PTRDIFF L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path), UID);
-
-			_app_profile_load_fallback ();
 		}
 		else
 		{
@@ -1645,9 +1643,6 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 					if (root_apps)
 						_app_profile_load_helper (root_apps, DataAppRegular, version);
-
-					_app_profile_load_fallback ();
-
 					// load rules config (new!)
 					pugi::xml_node root_rules_config = root.child (L"rules_config");
 
@@ -1659,14 +1654,16 @@ void _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 					if (root_rules_custom)
 						_app_profile_load_helper (root_rules_custom, DataRuleCustom, version);
-
-					// load internal rules (new!)
-					if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
-						_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
 				}
 			}
 		}
 	}
+
+	_app_profile_load_fallback ();
+
+	// load internal rules (new!)
+	if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
+		_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
 
 	if (hwnd)
 	{
