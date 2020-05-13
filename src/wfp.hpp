@@ -9,12 +9,12 @@ EnumInstall _wfp_issublayerinstalled (HANDLE hengine);
 bool _wfp_isfiltersapplying ();
 EnumInstall _wfp_isfiltersinstalled ();
 
-HANDLE& _wfp_getenginehandle ();
+HANDLE _wfp_getenginehandle ();
 
-bool _wfp_initialize (bool is_full);
-void _wfp_uninitialize (bool is_full);
+bool _wfp_initialize (HANDLE hengine, bool is_full);
+void _wfp_uninitialize (HANDLE hengine, bool is_full);
 
-void _wfp_installfilters ();
+void _wfp_installfilters (HANDLE hengine);
 
 bool _wfp_transact_start (HANDLE hengine, UINT line);
 bool _wfp_transact_commit (HANDLE hengine, UINT line);
@@ -31,8 +31,6 @@ bool _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, size_t app_hash, LPCWS
 bool _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT line, bool is_intransact = false);
 bool _wfp_create3filters (HANDLE hengine, const OBJECTS_VEC& ptr_apps, UINT line, bool is_intransact = false);
 bool _wfp_create2filters (HANDLE hengine, UINT line, bool is_intransact = false);
-
-void _wfp_setfiltersecurity (HANDLE hengine, const LPGUID pfilter_id, const PACL pacl, UINT line);
 
 size_t _wfp_dumpfilters (HANDLE hengine, const GUID* pprovider_id, GUIDS_VEC* ptr_filters);
 

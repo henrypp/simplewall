@@ -5,7 +5,7 @@
 
 const UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
 
-NTSTATUS WINAPI ApplyThread (LPVOID lparam)
+THREAD_FN ApplyThread (LPVOID lparam)
 {
 	PINSTALL_CONTEXT pcontext = (PINSTALL_CONTEXT)lparam;
 
@@ -13,26 +13,27 @@ NTSTATUS WINAPI ApplyThread (LPVOID lparam)
 
 	const HANDLE hengine = _wfp_getenginehandle ();
 
-	// dropped packets logging (win7+)
-	if (config.is_neteventset)
-		_wfp_logunsubscribe (hengine);
+	if (hengine)
+	{
+		// dropped packets logging (win7+)
+		if (config.is_neteventset)
+			_wfp_logunsubscribe (hengine);
 
-	if (pcontext->is_install)
-	{
-		if (_wfp_initialize (true))
-			_wfp_installfilters ();
-	}
-	else
-	{
-		if (_wfp_initialize (false))
+		if (pcontext->is_install)
+		{
+			if (_wfp_initialize (hengine, true))
+				_wfp_installfilters (hengine);
+		}
+		else
+		{
 			_wfp_destroyfilters (hengine);
+			_wfp_uninitialize (hengine, true);
+		}
 
-		_wfp_uninitialize (true);
+		// dropped packets logging (win7+)
+		if (config.is_neteventset)
+			_wfp_logsubscribe (hengine);
 	}
-
-	// dropped packets logging (win7+)
-	if (config.is_neteventset)
-		_wfp_logsubscribe (hengine);
 
 	_app_restoreinterfacestate (pcontext->hwnd, true);
 	_app_setinterfacestate (pcontext->hwnd);
@@ -48,7 +49,7 @@ NTSTATUS WINAPI ApplyThread (LPVOID lparam)
 	return _r_sys_endthread (ERROR_SUCCESS);
 }
 
-NTSTATUS WINAPI NetworkMonitorThread (LPVOID lparam)
+THREAD_FN NetworkMonitorThread (LPVOID lparam)
 {
 	DWORD network_timeout = app.ConfigGet (L"NetworkTimeout", NETWORK_TIMEOUT).AsUlong ();
 
@@ -70,7 +71,7 @@ NTSTATUS WINAPI NetworkMonitorThread (LPVOID lparam)
 			bool is_refresh = false;
 
 			// add new connections into list
-			for (auto &p : network_map)
+			for (auto p : network_map)
 			{
 				if (checker_map.find (p.first) == checker_map.end () || !checker_map[p.first])
 					continue;
@@ -84,12 +85,18 @@ NTSTATUS WINAPI NetworkMonitorThread (LPVOID lparam)
 
 				if (ptr_network)
 				{
+					LPWSTR local_fmt = nullptr;
+					LPWSTR remote_fmt = nullptr;
+
+					_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, &local_fmt, 0);
+					_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, 0, &remote_fmt, 0);
+
 					const INT item_id = _r_listview_getitemcount (hwnd, network_listview_id);
 
 					_r_listview_additem (hwnd, network_listview_id, item_id, 0, _r_path_getfilename (ptr_network->path), ptr_network->icon_id, I_GROUPIDNONE, p.first);
 
-					_r_listview_setitem (hwnd, network_listview_id, item_id, 1, ptr_network->local_fmt);
-					_r_listview_setitem (hwnd, network_listview_id, item_id, 3, ptr_network->remote_fmt);
+					_r_listview_setitem (hwnd, network_listview_id, item_id, 1, !_r_str_isempty (local_fmt) ? local_fmt : SZ_EMPTY);
+					_r_listview_setitem (hwnd, network_listview_id, item_id, 3, !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY);
 					_r_listview_setitem (hwnd, network_listview_id, item_id, 5, _app_getprotoname (ptr_network->protocol, ptr_network->af));
 					_r_listview_setitem (hwnd, network_listview_id, item_id, 6, _app_getstatename (ptr_network->state));
 
@@ -98,6 +105,9 @@ NTSTATUS WINAPI NetworkMonitorThread (LPVOID lparam)
 
 					if (ptr_network->remote_port)
 						_r_listview_setitem (hwnd, network_listview_id, item_id, 4, _app_formatport (ptr_network->remote_port, true));
+
+					SAFE_DELETE_ARRAY (local_fmt);
+					SAFE_DELETE_ARRAY (remote_fmt);
 
 					// redraw listview item
 					if (is_highlighting_enabled)
@@ -495,29 +505,21 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 			app.ConfigSet (L"IsSecureFilters", new_val);
 			_r_menu_checkitem (hmenu, IDM_SECUREFILTERS_CHK, 0, MF_BYCOMMAND, new_val);
 
-			PACL& pacl = new_val ? config.pacl_secure : config.pacl_default;
+			const HANDLE hengine = _wfp_getenginehandle ();
 
-			if (pacl)
+			if (hengine)
 			{
-				const HANDLE hengine = _wfp_getenginehandle ();
-
 				GUIDS_VEC filter_all;
 
 				if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 				{
-					for (auto &id : filter_all)
-						_wfp_setfiltersecurity (hengine, &id, pacl, __LINE__);
+					for (auto filter_id : filter_all)
+						_app_setsecurityinfoforfilter (hengine, &filter_id, new_val, __LINE__);
 				}
 
-				// set security information
-				if (config.padminsid)
-				{
-					FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
-					FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, OWNER_SECURITY_INFORMATION, (const SID*)config.padminsid, nullptr, nullptr, nullptr);
-				}
+				_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, new_val);
+				_app_setsecurityinfoforprovider (hengine, &GUID_WfpSublayer, new_val);
 
-				FwpmProviderSetSecurityInfoByKey (hengine, &GUID_WfpProvider, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
-				FwpmSubLayerSetSecurityInfoByKey (hengine, &GUID_WfpSublayer, DACL_SECURITY_INFORMATION, nullptr, nullptr, pacl, nullptr);
 			}
 
 			break;
@@ -549,7 +551,7 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 
 			if (new_val)
 			{
-				for (auto &p : apps)
+				for (auto p : apps)
 				{
 					PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
 
@@ -721,7 +723,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					INT item = 0;
 
-					for (auto &ptr_clr : colors)
+					for (auto ptr_clr : colors)
 					{
 						ptr_clr->new_clr = app.ConfigGet (ptr_clr->pcfg_value, ptr_clr->default_clr, L"colors").AsUlong ();
 
@@ -1049,7 +1051,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 							size_t index = 0;
 
-							for (auto &ptr_clr : colors)
+							for (auto ptr_clr : colors)
 							{
 								if (ptr_clr)
 									cust[index++] = ptr_clr->default_clr;
@@ -1797,23 +1799,6 @@ void _app_initialize ()
 	config.svchost_hash = _r_str_hash (_r_path_expand (PATH_SVCHOST));
 	config.my_hash = _r_str_hash (app.GetBinaryPath ());
 
-	// get the Administrators group security identifier
-	if (!config.padminsid)
-	{
-		DWORD size = SECURITY_MAX_SID_SIZE;
-
-		config.padminsid = (PISID)_r_mem_allocex (size, 0);
-
-		if (config.padminsid)
-		{
-			if (!CreateWellKnownSid (WinBuiltinAdministratorsSid, nullptr, config.padminsid, &size))
-			{
-				_r_mem_free (config.padminsid);
-				config.padminsid = nullptr;
-			}
-		}
-	}
-
 	// initialize timers
 	{
 		if (config.htimer)
@@ -1836,6 +1821,8 @@ void _app_initialize ()
 	// initialize thread objects
 	if (!config.done_evt)
 		config.done_evt = CreateEventEx (nullptr, nullptr, 0, EVENT_ALL_ACCESS);
+
+	_app_generate_credentials ();
 }
 
 INT FirstDriveFromMask (DWORD unitmask)
@@ -1974,8 +1961,6 @@ find_wrap:
 			// add blocklist to update
 			if (!app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
 				app.UpdateAddComponent (L"Internal rules", L"profile_internal", _r_fmt (L"%" PRIi64, config.profile_internal_timestamp), config.profile_internal_path, false);
-			else
-				_r_menu_enableitem (GetMenu (hwnd), 4, MF_BYPOSITION, false);
 
 			// initialize tab
 			_app_settab_id (hwnd, app.ConfigGet (L"CurrentTab", IDC_APPS_PROFILE).AsInt ());
@@ -2033,12 +2018,15 @@ find_wrap:
 
 		case RM_INITIALIZE:
 		{
-			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, false);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, false);
 
 			const HMENU hmenu = GetMenu (hwnd);
 
 			if (hmenu)
 			{
+				if (app.ConfigGet (L"IsInternalRulesDisabled", false).AsBool ())
+					_r_menu_enableitem (hmenu, 4, MF_BYPOSITION, false);
+
 				_r_menu_checkitem (hmenu, IDM_ALWAYSONTOP_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"AlwaysOnTop", _APP_ALWAYSONTOP).AsBool ());
 				_r_menu_checkitem (hmenu, IDM_SHOWFILENAMESONLY_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"ShowFilenames", true).AsBool ());
 				_r_menu_checkitem (hmenu, IDM_AUTOSIZECOLUMNS_CHK, 0, MF_BYCOMMAND, app.ConfigGet (L"AutoSizeColumns", true).AsBool ());
@@ -2099,8 +2087,6 @@ find_wrap:
 			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, nullptr, 0, app.ConfigGet (L"IsNotificationsEnabled", true).AsBool () ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
 			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, nullptr, 0, app.ConfigGet (L"IsLogEnabled", false).AsBool () ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
 			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, nullptr, 0, app.ConfigGet (L"IsLogUiEnabled", true).AsBool () ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED);
-
-			_app_setinterfacestate (hwnd);
 
 			break;
 		}
@@ -2328,7 +2314,7 @@ find_wrap:
 		{
 			// refresh tray icon
 			_r_tray_destroy (hwnd, UID);
-			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, false);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, app.GetSharedImage (app.GetHINSTANCE (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, false);
 
 			break;
 		}
@@ -2445,7 +2431,10 @@ find_wrap:
 				CloseHandle (config.done_evt);
 			}
 
-			_wfp_uninitialize (false);
+			HANDLE hengine = _wfp_getenginehandle ();
+
+			if (hengine)
+				_wfp_uninitialize (hengine, false);
 
 			ImageList_Destroy (config.himg_toolbar);
 			ImageList_Destroy (config.himg_rules_small);
@@ -3033,7 +3022,13 @@ find_wrap:
 			{
 				case PBT_APMSUSPEND:
 				{
-					_wfp_uninitialize (false);
+					if (config.is_neteventset)
+					{
+						HANDLE hengine = _wfp_getenginehandle ();
+
+						if (hengine)
+							_wfp_logunsubscribe (hengine);
+					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 					return TRUE;
@@ -3042,8 +3037,13 @@ find_wrap:
 				case PBT_APMRESUMECRITICAL:
 				case PBT_APMRESUMESUSPEND:
 				{
-					if (_wfp_isfiltersinstalled () && !_wfp_getenginehandle ())
-						_wfp_initialize (true);
+					if (config.is_neteventset)
+					{
+						HANDLE hengine = _wfp_getenginehandle ();
+
+						if (hengine)
+							_wfp_logsubscribe (hengine);
+					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 					return TRUE;
@@ -3392,7 +3392,7 @@ find_wrap:
 					app.ConfigSet (L"ShowFilenames", new_val);
 
 					// regroup apps
-					for (auto &p : apps)
+					for (auto p : apps)
 					{
 						PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
 
@@ -3437,7 +3437,7 @@ find_wrap:
 					app.ConfigSet (L"IsEnableSpecialGroup", new_val);
 
 					// regroup apps
-					for (auto &p : apps)
+					for (auto p : apps)
 					{
 						PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
 
@@ -3547,7 +3547,7 @@ find_wrap:
 					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					app.ConfigSet (L"IsIconsHidden", new_val);
 
-					for (auto &p : apps)
+					for (auto p : apps)
 					{
 						PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
 
@@ -4521,7 +4521,7 @@ find_wrap:
 								{
 									guids.insert (guids.end (), ptr_rule->guids.begin (), ptr_rule->guids.end ());
 
-									for (auto &p : ptr_rule->apps)
+									for (auto p : ptr_rule->apps)
 										apps_checker[p.first] = true;
 
 									SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
@@ -4535,7 +4535,7 @@ find_wrap:
 									_r_obj_dereference (ptr_rule_object);
 								}
 
-								for (auto &p : apps_checker)
+								for (auto p : apps_checker)
 								{
 									const size_t app_hash = p.first;
 									PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
@@ -4583,7 +4583,7 @@ find_wrap:
 					GUIDS_VEC guids;
 					std::vector<size_t> apps_list;
 
-					for (auto &p : apps)
+					for (auto p : apps)
 					{
 						PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
 
@@ -4618,7 +4618,7 @@ find_wrap:
 						_r_obj_dereference (ptr_app_object);
 					}
 
-					for (auto &p : apps_list)
+					for (auto p : apps_list)
 						_app_freeapplication (p);
 
 					if (is_deleted)
@@ -4639,7 +4639,7 @@ find_wrap:
 
 					OBJECTS_VEC rules;
 
-					for (auto &p : apps)
+					for (auto p : apps)
 					{
 						PR_OBJECT ptr_app_object = _r_obj_reference (p.second);
 
@@ -4791,7 +4791,7 @@ find_wrap:
 						UINT32 remote_addr = _byteswap_ulong (ipv4_remote.S_un.S_addr);
 						UINT32 local_addr = _byteswap_ulong (ipv4_local.S_un.S_addr);
 
-						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.padminsid, IPPROTO_TCP, FWP_IP_VERSION_V4, remote_addr, nullptr, RP_AD, local_addr, nullptr, LP_AD, layer_id, filter_id, FWP_DIRECTION_OUTBOUND, false, false);
+						_wfp_logcallback (flags, &ft, (UINT8*)path.GetString (), nullptr, (SID*)config.pbuiltin_admins_sid, IPPROTO_TCP, FWP_IP_VERSION_V4, remote_addr, nullptr, RP_AD, local_addr, nullptr, LP_AD, layer_id, filter_id, FWP_DIRECTION_OUTBOUND, false, false);
 					}
 
 					break;
@@ -4847,29 +4847,32 @@ INT APIENTRY wWinMain (HINSTANCE, HINSTANCE, LPWSTR, INT)
 					{
 						_app_initialize ();
 
-						if (is_install)
+						HANDLE hengine = _wfp_getenginehandle ();
+
+						if (hengine)
 						{
-							if (is_silent || ((_wfp_isfiltersinstalled () == InstallDisabled) && _app_installmessage (nullptr, true)))
+							if (is_install)
 							{
-								if (is_temporary)
-									config.is_filterstemporary = true;
+								if (is_silent || ((_wfp_isfiltersinstalled () == InstallDisabled) && _app_installmessage (nullptr, true)))
+								{
+									if (is_temporary)
+										config.is_filterstemporary = true;
 
-								_app_profile_load (nullptr);
+									_app_profile_load (nullptr);
 
-								if (_wfp_initialize (true))
-									_wfp_installfilters ();
+									if (_wfp_initialize (hengine, true))
+										_wfp_installfilters (hengine);
 
-								_wfp_uninitialize (false);
+									_wfp_uninitialize (hengine, false);
+								}
 							}
-						}
-						else if (is_uninstall)
-						{
-							if (is_silent || ((_wfp_isfiltersinstalled () != InstallDisabled) && _app_installmessage (nullptr, false)))
+							else if (is_uninstall)
 							{
-								if (_wfp_initialize (false))
-									_wfp_destroyfilters (_wfp_getenginehandle ());
-
-								_wfp_uninitialize (true);
+								if (is_silent || ((_wfp_isfiltersinstalled () != InstallDisabled) && _app_installmessage (nullptr, false)))
+								{
+									_wfp_destroyfilters (hengine);
+									_wfp_uninitialize (hengine, true);
+								}
 							}
 						}
 					}
