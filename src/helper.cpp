@@ -1963,32 +1963,11 @@ void _app_generate_services ()
 			if (!real_path.IsEmpty ())
 				real_path = _r_path_dospathfromnt (real_path);
 
-			// query service security identifier
-			UNICODE_STRING serviceNameUs = {0};
-			RtlInitUnicodeString (&serviceNameUs, (PWSTR)service_name);
-
 			rstring sidstring;
+			LPVOID serviceSid = _app_queryservicesid (service_name);
 
-			LPBYTE serviceSid = nullptr;
-			ULONG serviceSidLength = 0;
-
-			if (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength) == STATUS_BUFFER_TOO_SMALL)
-			{
-				serviceSid = (LPBYTE)_r_mem_allocex (serviceSidLength, HEAP_ZERO_MEMORY);
-
-				if (serviceSid)
-				{
-					if (NT_SUCCESS (RtlCreateServiceSid (&serviceNameUs, serviceSid, &serviceSidLength)))
-					{
-						sidstring = _r_str_fromsid (serviceSid);
-					}
-					else
-					{
-						_r_mem_free (serviceSid);
-						serviceSid = nullptr;
-					}
-				}
-			}
+			if (serviceSid)
+				sidstring = _r_str_fromsid (serviceSid);
 
 			if (serviceSid && !sidstring.IsEmpty ())
 			{
