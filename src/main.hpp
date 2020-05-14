@@ -243,6 +243,12 @@ struct STATIC_DATA
 	PSID pbuiltin_admins_sid = nullptr;
 	PSID pbuiltin_netops_sid = nullptr;
 
+	PSID pservice_mpssvc_sid = nullptr;
+	PSID pservice_nlasvc_sid = nullptr;
+	PSID pservice_policyagent_sid = nullptr;
+	PSID pservice_rpcss_sid = nullptr;
+	PSID pservice_wdiservicehost_sid = nullptr;
+
 	HIMAGELIST himg_toolbar = nullptr;
 	HIMAGELIST himg_rules_small = nullptr;
 	HIMAGELIST himg_rules_large = nullptr;
