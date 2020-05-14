@@ -511,15 +511,14 @@ void _app_config_apply (HWND hwnd, INT ctrl_id)
 			{
 				GUIDS_VEC filter_all;
 
+				_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, new_val);
+				_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, new_val);
+
 				if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
 				{
 					for (auto filter_id : filter_all)
 						_app_setsecurityinfoforfilter (hengine, &filter_id, new_val, __LINE__);
 				}
-
-				_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, new_val);
-				_app_setsecurityinfoforprovider (hengine, &GUID_WfpSublayer, new_val);
-
 			}
 
 			break;
