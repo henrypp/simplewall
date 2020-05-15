@@ -238,6 +238,7 @@ struct STATIC_DATA
 
 	WCHAR search_string[128] = {0};
 
+	PSID pbuiltin_current_sid = nullptr;
 	PSID pbuiltin_world_sid = nullptr;
 	PSID pbuiltin_localservice_sid = nullptr;
 	PSID pbuiltin_admins_sid = nullptr;
