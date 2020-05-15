@@ -38,7 +38,7 @@ void _app_dereferencestring (PVOID pdata)
 	delete[] LPWSTR (pdata);
 }
 
-bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, UINT16 port, LPWSTR* ptr_dest, DWORD flags)
+bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID paddr, UINT16 port, LPWSTR* ptr_dest, DWORD flags)
 {
 	if (af != AF_INET && af != AF_INET6)
 		return false;
@@ -47,16 +47,19 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
+	PIN_ADDR p4addr = PIN_ADDR (paddr);
+	PIN6_ADDR p6addr = PIN6_ADDR (paddr);
+
 	if ((flags & FMTADDR_AS_ARPA) != 0)
 	{
 		if (af == AF_INET)
 		{
-			_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhu.%hhu.%hhu.%hhu.%s", ((PIN_ADDR)ptr_addr)->s_impno, ((PIN_ADDR)ptr_addr)->s_lh, ((PIN_ADDR)ptr_addr)->s_host, ((PIN_ADDR)ptr_addr)->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W));
+			_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhu.%hhu.%hhu.%hhu.%s", p4addr->s_impno, p4addr->s_lh, p4addr->s_host, p4addr->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W));
 		}
 		else
 		{
 			for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
-				_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhx.%hhx.", ((PIN6_ADDR)ptr_addr)->s6_addr[i] & 0xF, (((PIN6_ADDR)ptr_addr)->s6_addr[i] >> 4) & 0xF));
+				_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L"%hhx.%hhx.", p6addr->s6_addr[i] & 0xF, (p6addr->s6_addr[i] >> 4) & 0xF));
 
 			_r_str_cat (formatted_address, _countof (formatted_address), DNS_IP6_REVERSE_DOMAIN_STRING_W);
 		}
@@ -70,15 +73,15 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 		WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
-		if (InetNtop (af, ptr_addr, addr_str, _countof (addr_str)))
+		if (InetNtop (af, paddr, addr_str, _countof (addr_str)))
 		{
 			if ((flags & FMTADDR_AS_RULE) != 0)
 			{
 				if (af == AF_INET)
-					result = !IN4_IS_ADDR_UNSPECIFIED ((PIN_ADDR)ptr_addr);
+					result = !IN4_IS_ADDR_UNSPECIFIED (p4addr);
 
 				else
-					result = !IN6_IS_ADDR_UNSPECIFIED ((PIN6_ADDR)ptr_addr);
+					result = !IN6_IS_ADDR_UNSPECIFIED (p6addr);
 
 				if (result)
 					_r_str_cat (formatted_address, _countof (formatted_address), (af == AF_INET6) ? _r_fmt (L"[%s]", addr_str) : addr_str);
@@ -122,7 +125,7 @@ bool _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID ptr_addr, U
 
 					LPWSTR ptr_cache = nullptr;
 
-					if (_app_resolveaddress (af, ptr_addr, &ptr_cache))
+					if (_app_resolveaddress (af, paddr, &ptr_cache))
 					{
 						_r_str_cat (formatted_address, _countof (formatted_address), _r_fmt (L" (%s)", ptr_cache));
 
@@ -1496,23 +1499,27 @@ bool _app_isvalidconnection (ADDRESS_FAMILY af, const PVOID paddr)
 {
 	if (af == AF_INET)
 	{
-		return (!IN4_IS_ADDR_UNSPECIFIED (PIN_ADDR (paddr)) &&
-				!IN4_IS_ADDR_LOOPBACK (PIN_ADDR (paddr)) &&
-				!IN4_IS_ADDR_LINKLOCAL (PIN_ADDR (paddr)) &&
-				!IN4_IS_ADDR_MC_ADMINLOCAL (PIN_ADDR (paddr)) &&
-				!IN4_IS_ADDR_MC_SITELOCAL (PIN_ADDR (paddr))
+		PIN_ADDR p4addr = PIN_ADDR (paddr);
+
+		return (!IN4_IS_ADDR_UNSPECIFIED (p4addr) &&
+				!IN4_IS_ADDR_LOOPBACK (p4addr) &&
+				!IN4_IS_ADDR_LINKLOCAL (p4addr) &&
+				!IN4_IS_ADDR_MULTICAST (p4addr) &&
+				!IN4_IS_ADDR_MC_ADMINLOCAL (p4addr) &&
+				!IN4_IS_ADDR_RFC1918 (p4addr)
 				);
 	}
 	else if (af == AF_INET6)
 	{
-		return (!IN6_IS_ADDR_UNSPECIFIED (PIN6_ADDR (paddr)) &&
-				!IN6_IS_ADDR_LOOPBACK (PIN6_ADDR (paddr)) &&
-				!IN6_IS_ADDR_LINKLOCAL (PIN6_ADDR (paddr)) &&
-				!IN6_IS_ADDR_SITELOCAL (PIN6_ADDR (paddr)) &&
-				!IN6_IS_ADDR_MC_NODELOCAL (PIN6_ADDR (paddr)) &&
-				!IN6_IS_ADDR_MC_LINKLOCAL (PIN6_ADDR (paddr)) &&
-				!IN6_IS_ADDR_MC_SITELOCAL (PIN6_ADDR (paddr))
-				);
+		PIN6_ADDR p6addr = PIN6_ADDR (paddr);
+
+		return  (!IN6_IS_ADDR_UNSPECIFIED (p6addr) &&
+				 !IN6_IS_ADDR_LOOPBACK (p6addr) &&
+				 !IN6_IS_ADDR_LINKLOCAL (p6addr) &&
+				 !IN6_IS_ADDR_MULTICAST (p6addr) &&
+				 !IN6_IS_ADDR_SITELOCAL (p6addr) &&
+				 !IN6_IS_ADDR_ANYCAST (p6addr)
+				 );
 	}
 
 	return false;
