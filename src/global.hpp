@@ -33,6 +33,7 @@
 #include "log.hpp"
 #include "notifications.hpp"
 #include "profile.hpp"
+#include "security.hpp"
 #include "timer.hpp"
 #include "wfp.hpp"
 

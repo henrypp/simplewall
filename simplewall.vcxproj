@@ -244,6 +244,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\notifications.cpp" />
     <ClCompile Include="src\profile.cpp" />
+    <ClCompile Include="src\security.cpp" />
     <ClCompile Include="src\timer.cpp" />
     <ClCompile Include="src\wfp.cpp" />
   </ItemGroup>
@@ -265,6 +266,7 @@
     <ClInclude Include="src\profile.hpp" />
     <ClInclude Include="src\pugiconfig.hpp" />
     <ClInclude Include="src\resource.hpp" />
+    <ClInclude Include="src\security.hpp" />
     <ClInclude Include="src\timer.hpp" />
     <ClInclude Include="src\wfp.hpp" />
   </ItemGroup>
