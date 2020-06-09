@@ -739,7 +739,7 @@ IDP_NOTIFICATIONS	PNG		"res\\error.png"
 IDP_LOG				PNG		"res\\note.png"
 IDP_LOGOPEN			PNG		"res\\page_white_magnify.png"
 IDP_LOGCLEAR		PNG		"res\\page_white_delete.png"
-IDP_HEARTH			PNG		"res\\heart.png"
+IDP_DONATE			PNG		"res\\paypal_fulllogo.png"
 IDP_LOGUI			PNG		"res\\eye.png"
 
 //
