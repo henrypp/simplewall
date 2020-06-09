@@ -5,7 +5,7 @@
 
 rstring _app_getlogviewer ()
 {
-	rstring result = app.ConfigGet (L"LogViewer", LOG_VIEWER_DEFAULT);
+	rstring result = app.ConfigGetString (L"LogViewer", LOG_VIEWER_DEFAULT);
 
 	if (result.IsEmpty ())
 		return _r_path_expand (LOG_VIEWER_DEFAULT);
@@ -13,52 +13,40 @@ rstring _app_getlogviewer ()
 	return _r_path_expand (result);
 }
 
-void _app_loginit (bool is_install)
+VOID _app_loginit (BOOLEAN is_install)
 {
 	// dropped packets logging (win7+)
 	if (!config.hnetevent)
 		return;
 
-	// reset all handles
+	// reset log handle
 	SAFE_DELETE_HANDLE (config.hlogfile);
 
-	if (!is_install || !app.ConfigGet (L"IsLogEnabled", false).AsBool ())
+	if (!is_install || !app.ConfigGetBoolean (L"IsLogEnabled", FALSE))
 		return; // already closed or not enabled
 
-	const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
+	rstring path = _r_path_expand (app.ConfigGetString (L"LogPath", LOG_PATH_DEFAULT));
 
-	config.hlogfile = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	config.hlogfile = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
-	if (!_r_fs_isvalidhandle (config.hlogfile))
-	{
-		app.LogError (L"CreateFile", GetLastError (), path, 0);
-	}
-	else
-	{
-		if (GetLastError () != ERROR_ALREADY_EXISTS)
-		{
-			DWORD written = 0;
-			const BYTE bom[] = {0xFF, 0xFE};
-
-			WriteFile (config.hlogfile, bom, sizeof (bom), &written, nullptr); // write utf-16 le byte order mask
-
-			WriteFile (config.hlogfile, SZ_LOG_TITLE, DWORD (_r_str_length (SZ_LOG_TITLE) * sizeof (WCHAR)), &written, nullptr); // adds csv header
-		}
-		else
-		{
-			if (_app_logchecklimit ())
-				_app_logclear ();
-
-			_r_fs_setpos (config.hlogfile, 0, FILE_END);
-		}
-	}
-}
-
-void _app_logwrite (PITEM_LOG ptr_log)
-{
 	if (!_r_fs_isvalidhandle (config.hlogfile))
 		return;
 
+	if (GetLastError () != ERROR_ALREADY_EXISTS)
+	{
+		DWORD written = 0;
+		BYTE bom[] = {0xFF, 0xFE};
+
+		WriteFile (config.hlogfile, bom, sizeof (bom), &written, NULL); // write utf-16 le byte order mask
+	}
+	else
+	{
+		_r_fs_setpos (config.hlogfile, 0, FILE_END);
+	}
+}
+
+VOID _app_logwrite (PITEM_LOG ptr_log)
+{
 	// parse path
 	rstring path;
 	{
@@ -84,137 +72,111 @@ void _app_logwrite (PITEM_LOG ptr_log)
 				}
 			}
 
-			_r_obj_dereference (ptr_app_object);
+			_r_obj2_dereference (ptr_app_object);
 		}
 	}
 
-	// parse filter name
-	rstring filter_name;
-	{
-		if (!_r_str_isempty (ptr_log->provider_name) && !_r_str_isempty (ptr_log->filter_name))
-			filter_name.Format (L"%s\\%s", ptr_log->provider_name, ptr_log->filter_name);
-
-		else if (!_r_str_isempty (ptr_log->filter_name))
-			filter_name = ptr_log->filter_name;
-	}
-
-	// parse direction
-	rstring direction;
-	{
-		if (ptr_log->direction == FWP_DIRECTION_INBOUND)
-			direction = SZ_DIRECTION_IN;
-
-		else if (ptr_log->direction == FWP_DIRECTION_OUTBOUND)
-			direction = SZ_DIRECTION_OUT;
-
-		if (ptr_log->is_loopback)
-			direction.Append (SZ_DIRECTION_LOOPBACK);
-	}
-
-	LPWSTR local_fmt = nullptr;
-	LPWSTR remote_fmt = nullptr;
+	LPWSTR local_fmt = NULL;
+	LPWSTR remote_fmt = NULL;
 
 	_app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, &local_fmt, FMTADDR_RESOLVE_HOST);
 	_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, &remote_fmt, FMTADDR_RESOLVE_HOST);
 
 	rstring buffer;
 	buffer.Format (SZ_LOG_BODY,
-				   _r_fmt_date (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
+				   _r_fmt_dateex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME).GetString (),
 				   !_r_str_isempty (ptr_log->username) ? ptr_log->username : SZ_EMPTY,
 				   !path.IsEmpty () ? path.GetString () : SZ_EMPTY,
 				   !_r_str_isempty (local_fmt) ? local_fmt : SZ_EMPTY,
-				   ptr_log->local_port ? _app_formatport (ptr_log->local_port, true).GetString () : SZ_EMPTY,
+				   ptr_log->local_port ? _app_formatport (ptr_log->local_port, TRUE).GetString () : SZ_EMPTY,
 				   !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY,
-				   ptr_log->remote_port ? _app_formatport (ptr_log->remote_port, true).GetString () : SZ_EMPTY,
+				   ptr_log->remote_port ? _app_formatport (ptr_log->remote_port, TRUE).GetString () : SZ_EMPTY,
 				   _app_getprotoname (ptr_log->protocol, ptr_log->af).GetString (),
-				   !filter_name.IsEmpty () ? filter_name.GetString () : SZ_EMPTY,
+				   _app_getfiltername (ptr_log->provider_name, ptr_log->filter_name, SZ_EMPTY).GetString (),
 				   ptr_log->filter_id,
-				   !direction.IsEmpty () ? direction.GetString () : SZ_EMPTY,
+				   _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback).GetString (),
 				   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 	);
 
-	SAFE_DELETE_ARRAY (local_fmt);
-	SAFE_DELETE_ARRAY (remote_fmt);
+	SAFE_DELETE_MEMORY (local_fmt);
+	SAFE_DELETE_MEMORY (remote_fmt);
 
-	if (_app_logchecklimit ())
+	if (_app_logislimitreached ())
 		_app_logclear ();
 
 	DWORD written = 0;
-	WriteFile (config.hlogfile, buffer.GetString (), DWORD (buffer.GetLength () * sizeof (WCHAR)), &written, nullptr);
+
+	if (_r_fs_size (config.hlogfile) == 2)
+		WriteFile (config.hlogfile, SZ_LOG_TITLE, (DWORD)(_r_str_length (SZ_LOG_TITLE) * sizeof (WCHAR)), &written, NULL); // adds csv header
+
+	WriteFile (config.hlogfile, buffer.GetString (), (DWORD)(buffer.GetLength () * sizeof (WCHAR)), &written, NULL);
 }
 
-bool _app_logisexists (HWND hwnd, PITEM_LOG ptr_log_new)
+BOOLEAN _app_logisexists (HWND hwnd, PITEM_LOG ptr_log_new)
 {
-	bool is_hitcount = false;
+	BOOLEAN is_duplicate_found = FALSE;
 
 	for (auto &p : log_arr)
 	{
-		PR_OBJECT ptr_log_object = _r_obj_reference (p);
+		PITEM_LOG ptr_log = (PITEM_LOG)_r_obj_reference (p);
 
-		if (!ptr_log_object)
+		if (!ptr_log)
 			continue;
 
-		PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
-
-		if (ptr_log)
+		if (
+			ptr_log->is_allow == ptr_log_new->is_allow &&
+			ptr_log->af == ptr_log_new->af &&
+			ptr_log->direction == ptr_log_new->direction &&
+			ptr_log->protocol == ptr_log_new->protocol &&
+			ptr_log->remote_port == ptr_log_new->remote_port &&
+			ptr_log->local_port == ptr_log_new->local_port
+			)
 		{
-			if (
-				ptr_log->is_allow == ptr_log_new->is_allow &&
-				ptr_log->af == ptr_log_new->af &&
-				ptr_log->direction == ptr_log_new->direction &&
-				ptr_log->protocol == ptr_log_new->protocol &&
-				ptr_log->remote_port == ptr_log_new->remote_port &&
-				ptr_log->local_port == ptr_log_new->local_port
-				)
+			if (ptr_log->af == AF_INET)
 			{
-				if (ptr_log->af == AF_INET)
+				if (
+					ptr_log->remote_addr.S_un.S_addr == ptr_log_new->remote_addr.S_un.S_addr &&
+					ptr_log->local_addr.S_un.S_addr == ptr_log_new->local_addr.S_un.S_addr
+					)
 				{
-					if (
-						ptr_log->remote_addr.S_un.S_addr == ptr_log_new->remote_addr.S_un.S_addr &&
-						ptr_log->local_addr.S_un.S_addr == ptr_log_new->local_addr.S_un.S_addr
-						)
-					{
-						is_hitcount = true;
-					}
+					is_duplicate_found = TRUE;
 				}
-				else if (ptr_log->af == AF_INET6)
+			}
+			else if (ptr_log->af == AF_INET6)
+			{
+				if (
+					RtlEqualMemory (ptr_log->remote_addr6.u.Byte, ptr_log_new->remote_addr6.u.Byte, FWP_V6_ADDR_SIZE) &&
+					RtlEqualMemory (ptr_log->local_addr6.u.Byte, ptr_log_new->local_addr6.u.Byte, FWP_V6_ADDR_SIZE)
+					)
 				{
-					if (
-						RtlEqualMemory (ptr_log->remote_addr6.u.Byte, ptr_log_new->remote_addr6.u.Byte, FWP_V6_ADDR_SIZE) &&
-						RtlEqualMemory (ptr_log->local_addr6.u.Byte, ptr_log_new->local_addr6.u.Byte, FWP_V6_ADDR_SIZE)
-						)
-					{
-						is_hitcount = true;
-					}
+					is_duplicate_found = TRUE;
 				}
+			}
 
-				if (is_hitcount)
-				{
-					ptr_log_new->timestamp = ptr_log->timestamp; // upd date
-					_r_obj_dereference (ptr_log_object);
+			if (is_duplicate_found)
+			{
+				ptr_log_new->timestamp = ptr_log->timestamp; // upd date
+				_r_obj_dereference (ptr_log);
 
-					break;
-				}
+				return TRUE;
 			}
 		}
 
-		_r_obj_dereference (ptr_log_object);
+		_r_obj_dereference (ptr_log);
 	}
 
-	return is_hitcount;
+	return FALSE;
 }
 
-void _app_logwrite_ui (HWND hwnd, PR_OBJECT ptr_log_object)
+VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 {
-	PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
-
 	if (_app_logisexists (hwnd, ptr_log))
 		return;
 
-	const INT log_listview_id = IDC_LOG;
+	INT log_listview_id = IDC_LOG;
 
-	size_t index = log_arr.size ();
-	log_arr.push_back (_r_obj_reference (ptr_log_object));
+	SIZE_T index = log_arr.size ();
+	log_arr.push_back ((PITEM_LOG)_r_obj_reference (ptr_log));
 
 	INT icon_id = (INT)_app_getappinfo (ptr_log->app_hash, InfoIconId);
 
@@ -226,13 +188,13 @@ void _app_logwrite_ui (HWND hwnd, PR_OBJECT ptr_log_object)
 	if (_r_str_isempty (display_name))
 		display_name = ptr_log->path;
 
-	LPWSTR local_fmt = nullptr;
-	LPWSTR remote_fmt = nullptr;
+	LPWSTR local_fmt = NULL;
+	LPWSTR remote_fmt = NULL;
 
 	_app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, &local_fmt, 0);
 	_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, &remote_fmt, 0);
 
-	const INT item_id = _r_listview_getitemcount (hwnd, log_listview_id);
+	INT item_id = _r_listview_getitemcount (hwnd, log_listview_id, FALSE);
 
 	_r_listview_additem (hwnd, log_listview_id, item_id, 0, !_r_str_isempty (display_name) ? display_name : SZ_EMPTY, icon_id, I_GROUPIDNONE, index);
 	_r_listview_setitem (hwnd, log_listview_id, item_id, 1, !_r_str_isempty (local_fmt) ? local_fmt : SZ_EMPTY);
@@ -240,49 +202,36 @@ void _app_logwrite_ui (HWND hwnd, PR_OBJECT ptr_log_object)
 	_r_listview_setitem (hwnd, log_listview_id, item_id, 5, _app_getprotoname (ptr_log->protocol, ptr_log->af));
 
 	if (ptr_log->local_port)
-		_r_listview_setitem (hwnd, log_listview_id, item_id, 2, _app_formatport (ptr_log->local_port, true));
+		_r_listview_setitem (hwnd, log_listview_id, item_id, 2, _app_formatport (ptr_log->local_port, TRUE));
 
 	if (ptr_log->remote_port)
-		_r_listview_setitem (hwnd, log_listview_id, item_id, 4, _app_formatport (ptr_log->remote_port, true));
+		_r_listview_setitem (hwnd, log_listview_id, item_id, 4, _app_formatport (ptr_log->remote_port, TRUE));
 
-	{
-		rstring direction;
+	_r_listview_setitem (hwnd, log_listview_id, item_id, 6, _app_getfiltername (NULL, ptr_log->filter_name, SZ_EMPTY));
+	_r_listview_setitem (hwnd, log_listview_id, item_id, 7, _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback));
+	_r_listview_setitem (hwnd, log_listview_id, item_id, 8, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
 
-		if (ptr_log->direction == FWP_DIRECTION_INBOUND)
-			direction = SZ_DIRECTION_IN;
-
-		else if (ptr_log->direction == FWP_DIRECTION_OUTBOUND)
-			direction = SZ_DIRECTION_OUT;
-
-		if (ptr_log->is_loopback)
-			direction.Append (SZ_DIRECTION_LOOPBACK);
-
-		_r_listview_setitem (hwnd, log_listview_id, item_id, 6, direction);
-	}
-
-	_r_listview_setitem (hwnd, log_listview_id, item_id, 7, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
-
-	SAFE_DELETE_ARRAY (local_fmt);
-	SAFE_DELETE_ARRAY (remote_fmt);
+	SAFE_DELETE_MEMORY (local_fmt);
+	SAFE_DELETE_MEMORY (remote_fmt);
 
 	if (log_listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT))
 	{
-		_app_listviewresize (hwnd, log_listview_id, false);
-		_app_listviewsort (hwnd, log_listview_id);
+		_app_listviewresize (hwnd, log_listview_id, FALSE);
+		_app_listviewsort (hwnd, log_listview_id, INVALID_INT, FALSE);
 	}
 }
 
-bool _app_logchecklimit ()
+BOOLEAN _app_logislimitreached ()
 {
-	const DWORD limit = app.ConfigGet (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT).AsUlong ();
+	DWORD limit = app.ConfigGetUlong (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
 
 	if (!limit || !_r_fs_isvalidhandle (config.hlogfile))
-		return false;
+		return FALSE;
 
 	return (_r_fs_size (config.hlogfile) >= (limit * _R_BYTESIZE_KB));
 }
 
-void _app_logclear ()
+VOID _app_logclear ()
 {
 	if (_r_fs_isvalidhandle (config.hlogfile))
 	{
@@ -290,47 +239,44 @@ void _app_logclear ()
 
 		SetEndOfFile (config.hlogfile);
 
-		DWORD written = 0;
-		WriteFile (config.hlogfile, SZ_LOG_TITLE, DWORD (_r_str_length (SZ_LOG_TITLE) * sizeof (WCHAR)), &written, nullptr); // adds csv header
-
 		FlushFileBuffers (config.hlogfile);
 	}
 	else
 	{
-		const rstring path = _r_path_expand (app.ConfigGet (L"LogPath", LOG_PATH_DEFAULT));
+		rstring path = _r_path_expand (app.ConfigGetString (L"LogPath", LOG_PATH_DEFAULT));
 
-		_r_fs_remove (path, RFS_FORCEREMOVE);
-		_r_fs_remove (_r_fmt (L"%s.bak", path.GetString ()), RFS_FORCEREMOVE);
+		_r_fs_remove (path, _R_FLAG_REMOVE_FORCE);
+		_r_fs_remove (_r_fmt (L"%s.bak", path.GetString ()), _R_FLAG_REMOVE_FORCE);
 	}
 }
 
-void _app_logclear_ui (HWND hwnd)
+VOID _app_logclear_ui (HWND hwnd)
 {
 	SendDlgItemMessage (hwnd, IDC_LOG, LVM_DELETEALLITEMS, 0, 0);
 	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, 0, 0);
 
-	_app_freeobjects_vec (log_arr);
+	_app_freelogobjects_vec (log_arr);
 
 	if (IsWindowVisible (GetDlgItem (hwnd, IDC_LOG)))
-		_app_listviewresize (hwnd, IDC_LOG, false);
+		_app_listviewresize (hwnd, IDC_LOG, FALSE);
 
 	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, (WPARAM)log_arr.size (), LVSICF_NOSCROLL);
 }
 
-void _wfp_logsubscribe (HANDLE hengine)
+VOID _wfp_logsubscribe (HANDLE hengine)
 {
 	if (config.hnetevent)
 		return; // already subscribed
 
-	HMODULE hlib = LoadLibraryEx (L"fwpuclnt.dll", nullptr, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32);
+	HMODULE hlib = LoadLibraryEx (L"fwpuclnt.dll", NULL, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32);
 
 	if (hlib)
 	{
-		using FWPMNES4 = decltype (&FwpmNetEventSubscribe4); // win10rs5+
-		using FWPMNES3 = decltype (&FwpmNetEventSubscribe3); // win10rs4+
-		using FWPMNES2 = decltype (&FwpmNetEventSubscribe2); // win10rs1+
-		using FWPMNES1 = decltype (&FwpmNetEventSubscribe1); // win8+
-		using FWPMNES0 = decltype (&FwpmNetEventSubscribe0); // win7+
+		typedef DWORD (WINAPI *FWPMNES4)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK4 callback, void* context, HANDLE* eventsHandle); // win10rs5+
+		typedef DWORD (WINAPI *FWPMNES3)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK3 callback, void* context, HANDLE* eventsHandle); // win10rs4+
+		typedef DWORD (WINAPI *FWPMNES2)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK2 callback, void* context, HANDLE* eventsHandle); // win10rs1+
+		typedef DWORD (WINAPI *FWPMNES1)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK1 callback, void* context, HANDLE* eventsHandle); // win8+
+		typedef DWORD (WINAPI *FWPMNES0)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK0 callback, void* context, HANDLE* eventsHandle); // win7+
 
 		const FWPMNES4 _FwpmNetEventSubscribe4 = (FWPMNES4)GetProcAddress (hlib, "FwpmNetEventSubscribe4");
 		const FWPMNES3 _FwpmNetEventSubscribe3 = (FWPMNES3)GetProcAddress (hlib, "FwpmNetEventSubscribe3");
@@ -346,37 +292,37 @@ void _wfp_logsubscribe (HANDLE hengine)
 			RtlSecureZeroMemory (&subscription, sizeof (subscription));
 			RtlSecureZeroMemory (&enum_template, sizeof (enum_template));
 
-			enum_template.numFilterConditions = 0; // get events for all conditions
+			//enum_template.numFilterConditions = 0; // get events for all conditions
 
 			subscription.enumTemplate = &enum_template;
 
 			DWORD code;
 
 			if (_FwpmNetEventSubscribe4)
-				code = _FwpmNetEventSubscribe4 (hengine, &subscription, &_wfp_logcallback4, nullptr, &config.hnetevent); // win10rs5+
+				code = _FwpmNetEventSubscribe4 (hengine, &subscription, &_wfp_logcallback4, NULL, &config.hnetevent); // win10rs5+
 
 			else if (_FwpmNetEventSubscribe3)
-				code = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, nullptr, &config.hnetevent); // win10rs4+
+				code = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, NULL, &config.hnetevent); // win10rs4+
 
 			else if (_FwpmNetEventSubscribe2)
-				code = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, nullptr, &config.hnetevent); // win10rs1+
+				code = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, NULL, &config.hnetevent); // win10rs1+
 
 			else if (_FwpmNetEventSubscribe1)
-				code = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, nullptr, &config.hnetevent); // win8+
+				code = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, NULL, &config.hnetevent); // win8+
 
 			else if (_FwpmNetEventSubscribe0)
-				code = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, nullptr, &config.hnetevent); // win7+
+				code = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, NULL, &config.hnetevent); // win7+
 
 			else
 				code = ERROR_INVALID_FUNCTION;
 
 			if (code != ERROR_SUCCESS)
 			{
-				app.LogError (L"FwpmNetEventSubscribe", code, nullptr, 0);
+				app.LogError (L"FwpmNetEventSubscribe", code, NULL, 0);
 			}
 			else
 			{
-				_app_loginit (true); // create log file
+				_app_loginit (TRUE); // create log file
 			}
 		}
 
@@ -384,24 +330,24 @@ void _wfp_logsubscribe (HANDLE hengine)
 	}
 }
 
-void _wfp_logunsubscribe (HANDLE hengine)
+VOID _wfp_logunsubscribe (HANDLE hengine)
 {
 	if (config.hnetevent)
 	{
-		_app_loginit (false); // destroy log file handle if present
+		_app_loginit (FALSE); // destroy log file handle if present
 
-		const DWORD code = FwpmNetEventUnsubscribe (hengine, config.hnetevent);
+		DWORD code = FwpmNetEventUnsubscribe (hengine, config.hnetevent);
 
 		if (code == ERROR_SUCCESS)
-			config.hnetevent = nullptr;
+			config.hnetevent = NULL;
 	}
 }
 
-void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr4, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remote_port, UINT32 local_addr4, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, bool is_allow, bool is_loopback)
+VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* app_id, SID* package_id, SID* user_id, UINT8 proto, FWP_IP_VERSION ipver, UINT32 remote_addr4, FWP_BYTE_ARRAY16 const* remote_addr6, UINT16 remote_port, UINT32 local_addr4, FWP_BYTE_ARRAY16 const* local_addr6, UINT16 local_port, UINT16 layer_id, UINT64 filter_id, UINT32 direction, BOOLEAN is_allow, BOOLEAN is_loopback)
 {
-	const HANDLE hengine = _wfp_getenginehandle ();
+	HANDLE hengine = _wfp_getenginehandle ();
 
-	if (!filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGet (L"IsExcludeClassifyAllow", true).AsBool ()))
+	if (!hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGetBoolean (L"IsExcludeClassifyAllow", TRUE)))
 		return;
 
 	// set allowed directions
@@ -423,13 +369,13 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
 	{
-		FWPM_LAYER *layer = nullptr;
+		FWPM_LAYER *layer = NULL;
 
 		if (FwpmLayerGetById (hengine, layer_id, &layer) == ERROR_SUCCESS && layer)
 		{
 			if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)))
 			{
-				FwpmFreeMemory ((void **)&layer);
+				FwpmFreeMemory ((LPVOID*)&layer);
 				return;
 			}
 			else if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)))
@@ -437,12 +383,12 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 				direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 			}
 
-			FwpmFreeMemory ((void**)&layer);
+			FwpmFreeMemory ((LPVOID*)&layer);
 		}
 	}
 
 	// get filter information
-	bool is_myprovider = false;
+	BOOLEAN is_myprovider = FALSE;
 
 	rstring filter_name;
 	rstring provider_name;
@@ -450,8 +396,8 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 	UINT8 filter_weight = 0;
 
 	{
-		FWPM_FILTER *ptr_filter = nullptr;
-		FWPM_PROVIDER *ptr_provider = nullptr;
+		FWPM_FILTER *ptr_filter = NULL;
+		FWPM_PROVIDER *ptr_provider = NULL;
 
 		if (FwpmFilterGetById (hengine, filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
 		{
@@ -463,7 +409,7 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 			if (ptr_filter->providerKey)
 			{
 				if (RtlEqualMemory (ptr_filter->providerKey, &GUID_WfpProvider, sizeof (GUID)))
-					is_myprovider = true;
+					is_myprovider = TRUE;
 
 				if (FwpmProviderGetByKey (hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
 					provider_name = !_r_str_isempty (ptr_provider->displayData.name) ? ptr_provider->displayData.name : ptr_provider->displayData.description;
@@ -471,251 +417,240 @@ void CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		}
 
 		if (ptr_filter)
-			FwpmFreeMemory ((void**)&ptr_filter);
+			FwpmFreeMemory ((LPVOID*)&ptr_filter);
 
 		if (ptr_provider)
-			FwpmFreeMemory ((void**)&ptr_provider);
+			FwpmFreeMemory ((LPVOID*)&ptr_provider);
 
 		// prevent filter "not found" items
 		if (filter_name.IsEmpty () && provider_name.IsEmpty ())
 			return;
 	}
 
-	PITEM_LIST_ENTRY ptr_entry = (PITEM_LIST_ENTRY)_aligned_malloc (sizeof (ITEM_LIST_ENTRY), MEMORY_ALLOCATION_ALIGNMENT);
+	PITEM_LOG_LISTENTRY ptr_entry = (PITEM_LOG_LISTENTRY)_aligned_malloc (sizeof (ITEM_LOG_LISTENTRY), MEMORY_ALLOCATION_ALIGNMENT);
 
-	if (ptr_entry)
+	if (!ptr_entry)
+		return;
+
+	PITEM_LOG ptr_log = (PITEM_LOG)_r_obj_allocateex (sizeof (ITEM_LOG), &_app_dereferencelog);
+
+	// get package id (win8+)
+	rstring sidstring;
+
+	if ((flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) != 0 && package_id)
 	{
-		PITEM_LOG ptr_log = new ITEM_LOG;
+		sidstring = _r_str_fromsid (package_id);
 
-		// get package id (win8+)
-		rstring sidstring;
+		if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, _r_str_hash (sidstring), NULL, NULL, NULL, NULL))
+			sidstring.Release ();
+	}
 
-		if ((flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) != 0 && package_id)
+	// copy converted nt device path into win32
+	if ((flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) != 0 && !sidstring.IsEmpty ())
+	{
+		_r_str_alloc (&ptr_log->path, sidstring.GetLength (), sidstring);
+		ptr_log->app_hash = _r_str_hash (sidstring);
+	}
+	else if ((flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) != 0 && app_id)
+	{
+		rstring path = _r_path_dospathfromnt ((LPCWSTR)app_id);
+
+		if (!path.IsEmpty ())
 		{
-			sidstring = _r_str_fromsid (package_id);
+			_r_str_alloc (&ptr_log->path, path.GetLength (), path);
+			ptr_log->app_hash = _r_str_hash (path);
+		}
+	}
+	else
+	{
+		ptr_log->app_hash = 0;
+	}
 
-			if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, _r_str_hash (sidstring), nullptr, nullptr, nullptr, nullptr))
-				sidstring.Release ();
+	// copy date and time
+	if (pft)
+		ptr_log->timestamp = _r_unixtime_from_filetime (pft);
+
+	// get username information
+	if ((flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) != 0 && user_id)
+	{
+		rstring userstring = _r_sys_getusernamefromsid (user_id);
+
+		if (!userstring.IsEmpty ())
+			_r_str_alloc (&ptr_log->username, userstring.GetLength (), userstring);
+	}
+
+	// indicates the direction of the packet transmission
+	switch (direction)
+	{
+		case FWP_DIRECTION_IN:
+		case FWP_DIRECTION_INBOUND:
+		{
+			ptr_log->direction = FWP_DIRECTION_INBOUND;
+			break;
 		}
 
-		// copy converted nt device path into win32
-		if ((flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) != 0 && !sidstring.IsEmpty ())
+		case FWP_DIRECTION_OUT:
+		case FWP_DIRECTION_OUTBOUND:
 		{
-			_r_str_alloc (&ptr_log->path, sidstring.GetLength (), sidstring);
-			ptr_log->app_hash = _r_str_hash (sidstring);
+			ptr_log->direction = FWP_DIRECTION_OUTBOUND;
+			break;
 		}
-		else if ((flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) != 0 && app_id)
-		{
-			const rstring path = _r_path_dospathfromnt (LPCWSTR (app_id));
+	}
 
-			if (!path.IsEmpty ())
-			{
-				_r_str_alloc (&ptr_log->path, path.GetLength (), path);
-				ptr_log->app_hash = _r_str_hash (path);
-			}
+	// destination
+	if ((flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET) != 0)
+	{
+		if (ipver == FWP_IP_VERSION_V4)
+		{
+			ptr_log->af = AF_INET;
+
+			// remote address
+			if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr4)
+				ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (remote_addr4);
+
+			// local address
+			if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr4)
+				ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (local_addr4);
 		}
-		else
+		else if (ipver == FWP_IP_VERSION_V6)
 		{
-			ptr_log->app_hash = 0;
-		}
+			ptr_log->af = AF_INET6;
 
-		// copy date and time
-		if (pft)
-			ptr_log->timestamp = _r_unixtime_from_filetime (pft);
+			// remote address
+			if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr6)
+				RtlCopyMemory (ptr_log->remote_addr6.u.Byte, remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 
-		// get username information
-		if ((flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) != 0 && user_id)
-		{
-			SID_NAME_USE sid_type;
-
-			WCHAR username[MAX_PATH] = {0};
-			WCHAR domain[MAX_PATH] = {0};
-
-			DWORD length1 = _countof (username);
-			DWORD length2 = _countof (domain);
-
-			if (LookupAccountSid (nullptr, user_id, username, &length1, domain, &length2, &sid_type))
-			{
-				rstring userstring;
-				userstring.Format (L"%s\\%s", domain, username);
-
-				_r_str_alloc (&ptr_log->username, userstring.GetLength (), userstring);
-			}
+			// local address
+			if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr6)
+				RtlCopyMemory (ptr_log->local_addr6.u.Byte, local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 		}
 
-		// indicates the direction of the packet transmission
-		switch (direction)
+		if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) != 0 && remote_port)
+			ptr_log->remote_port = remote_port;
+
+		if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET) != 0 && local_port)
+			ptr_log->local_port = local_port;
+	}
+
+	// protocol
+	if ((flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET) != 0)
+		ptr_log->protocol = proto;
+
+	// indicates FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW state
+	ptr_log->is_allow = is_allow;
+
+	// indicates whether the packet originated from (or was heading to) the loopback adapter
+	ptr_log->is_loopback = is_loopback;
+
+	// set filter information
+	ptr_log->filter_id = filter_id;
+
+	ptr_log->is_myprovider = is_myprovider;
+
+	_r_str_alloc (&ptr_log->filter_name, filter_name.GetLength (), filter_name);
+	_r_str_alloc (&ptr_log->provider_name, provider_name.GetLength (), provider_name);
+
+	ptr_log->is_blocklist = (filter_weight == FILTER_WEIGHT_BLOCKLIST);
+	ptr_log->is_system = (filter_weight == FILTER_WEIGHT_HIGHEST) || (filter_weight == FILTER_WEIGHT_HIGHEST_IMPORTANT);
+	ptr_log->is_custom = (filter_weight == FILTER_WEIGHT_CUSTOM) || (filter_weight == FILTER_WEIGHT_CUSTOM_BLOCK);
+
+	// push into a slist
+	{
+		ptr_entry->Body = ptr_log;
+
+		RtlInterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
+		InterlockedIncrement (&log_stack.item_count);
+
+		// check if thread has been terminated
+		LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
+
+		if (!thread_count || !_r_fastlock_islocked (&lock_logthread))
 		{
-			case FWP_DIRECTION_IN:
-			case FWP_DIRECTION_INBOUND:
+			_app_freethreadpool (threads_pool);
+
+			HANDLE hthread = _r_sys_createthreadex (&LogThread, app.GetHWND (), TRUE, THREAD_PRIORITY_HIGHEST);
+
+			if (hthread)
 			{
-				ptr_log->direction = FWP_DIRECTION_INBOUND;
-				break;
-			}
+				InterlockedIncrement (&log_stack.thread_count);
 
-			case FWP_DIRECTION_OUT:
-			case FWP_DIRECTION_OUTBOUND:
-			{
-				ptr_log->direction = FWP_DIRECTION_OUTBOUND;
-				break;
-			}
-		}
+				threads_pool.push_back (hthread);
 
-		// destination
-		if ((flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET) != 0)
-		{
-			if (ipver == FWP_IP_VERSION_V4)
-			{
-				ptr_log->af = AF_INET;
-
-				// remote address
-				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr4)
-					ptr_log->remote_addr.S_un.S_addr = _byteswap_ulong (remote_addr4);
-
-				// local address
-				if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr4)
-					ptr_log->local_addr.S_un.S_addr = _byteswap_ulong (local_addr4);
-			}
-			else if (ipver == FWP_IP_VERSION_V6)
-			{
-				ptr_log->af = AF_INET6;
-
-				// remote address
-				if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) != 0 && remote_addr6)
-					RtlCopyMemory (ptr_log->remote_addr6.u.Byte, remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-
-				// local address
-				if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) != 0 && local_addr6)
-					RtlCopyMemory (ptr_log->local_addr6.u.Byte, local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-			}
-
-			if ((flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) != 0 && remote_port)
-				ptr_log->remote_port = remote_port;
-
-			if ((flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET) != 0 && local_port)
-				ptr_log->local_port = local_port;
-		}
-
-		// protocol
-		if ((flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET) != 0)
-			ptr_log->protocol = proto;
-
-		// indicates FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW state
-		ptr_log->is_allow = is_allow;
-
-		// indicates whether the packet originated from (or was heading to) the loopback adapter
-		ptr_log->is_loopback = is_loopback;
-
-		// set filter information
-		ptr_log->filter_id = filter_id;
-
-		ptr_log->is_myprovider = is_myprovider;
-
-		_r_str_alloc (&ptr_log->filter_name, filter_name.GetLength (), filter_name);
-		_r_str_alloc (&ptr_log->provider_name, provider_name.GetLength (), provider_name);
-
-		ptr_log->is_blocklist = (filter_weight == FILTER_WEIGHT_BLOCKLIST);
-		ptr_log->is_system = (filter_weight == FILTER_WEIGHT_HIGHEST) || (filter_weight == FILTER_WEIGHT_HIGHEST_IMPORTANT);
-		ptr_log->is_custom = (filter_weight == FILTER_WEIGHT_CUSTOM) || (filter_weight == FILTER_WEIGHT_CUSTOM_BLOCK);
-
-		// push into a slist
-		{
-			ptr_entry->Body = _r_obj_allocate (ptr_log, &_app_dereferencelog);
-
-			RtlInterlockedPushEntrySList (&log_stack.ListHead, &ptr_entry->ListEntry);
-			InterlockedIncrement (&log_stack.item_count);
-
-			// check if thread has been terminated
-			const LONG thread_count = InterlockedCompareExchange (&log_stack.thread_count, 0, 0);
-
-			if (!thread_count || !_r_fastlock_islocked (&lock_logthread))
-			{
-				_app_freethreadpool (threads_pool);
-
-				const HANDLE hthread = _r_sys_createthread (&LogThread, app.GetHWND (), true, THREAD_PRIORITY_HIGHEST);
-
-				if (hthread)
-				{
-					InterlockedIncrement (&log_stack.thread_count);
-
-					threads_pool.push_back (hthread);
-
-					NtResumeThread (hthread, nullptr);
-				}
+				NtResumeThread (hthread, NULL);
 			}
 		}
 	}
 }
 
 // win7+ callback
-void CALLBACK _wfp_logcallback0 (LPVOID, const FWPM_NET_EVENT1* pEvent)
+VOID CALLBACK _wfp_logcallback0 (LPVOID pContext, const FWPM_NET_EVENT1* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
 	UINT32 direction;
-	bool is_loopback;
+	BOOLEAN is_loopback;
 
 	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
 		layer_id = pEvent->classifyDrop->layerId;
 		filter_id = pEvent->classifyDrop->filterId;
 		direction = pEvent->classifyDrop->msFwpDirection;
-		is_loopback = pEvent->classifyDrop->isLoopback;
+		is_loopback = !!pEvent->classifyDrop->isLoopback;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
 	{
 		layer_id = pEvent->ipsecDrop->layerId;
 		filter_id = pEvent->ipsecDrop->filterId;
 		direction = pEvent->ipsecDrop->direction;
-		is_loopback = false;
+		is_loopback = FALSE;
 	}
 	else
 	{
 		return;
 	}
 
-	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, nullptr, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, false, is_loopback);
+	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, NULL, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, FALSE, is_loopback);
 }
 
 // win8+ callback
-void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2* pEvent)
+VOID CALLBACK _wfp_logcallback1 (LPVOID pContext, const FWPM_NET_EVENT2* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
 	UINT32 direction;
 
-	bool is_loopback;
-	bool is_allow = false;
+	BOOLEAN is_loopback;
+	BOOLEAN is_allow = FALSE;
 
 	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
 		layer_id = pEvent->classifyDrop->layerId;
 		filter_id = pEvent->classifyDrop->filterId;
 		direction = pEvent->classifyDrop->msFwpDirection;
-		is_loopback = pEvent->classifyDrop->isLoopback;
+		is_loopback = !!pEvent->classifyDrop->isLoopback;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
 	{
 		layer_id = pEvent->ipsecDrop->layerId;
 		filter_id = pEvent->ipsecDrop->filterId;
 		direction = pEvent->ipsecDrop->direction;
-		is_loopback = false;
+		is_loopback = FALSE;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
 	{
 		layer_id = pEvent->classifyAllow->layerId;
 		filter_id = pEvent->classifyAllow->filterId;
 		direction = pEvent->classifyAllow->msFwpDirection;
-		is_loopback = pEvent->classifyAllow->isLoopback;
+		is_loopback = !!pEvent->classifyAllow->isLoopback;
 
-		is_allow = true;
+		is_allow = TRUE;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
 	{
 		layer_id = pEvent->classifyDropMac->layerId;
 		filter_id = pEvent->classifyDropMac->filterId;
 		direction = pEvent->classifyDropMac->msFwpDirection;
-		is_loopback = pEvent->classifyDropMac->isLoopback;
+		is_loopback = !!pEvent->classifyDropMac->isLoopback;
 	}
 	else
 	{
@@ -726,44 +661,44 @@ void CALLBACK _wfp_logcallback1 (LPVOID, const FWPM_NET_EVENT2* pEvent)
 }
 
 // win10rs1+ callback
-void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3* pEvent)
+VOID CALLBACK _wfp_logcallback2 (LPVOID pContext, const FWPM_NET_EVENT3* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
 	UINT32 direction;
 
-	bool is_loopback;
-	bool is_allow = false;
+	BOOLEAN is_loopback;
+	BOOLEAN is_allow = FALSE;
 
 	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
 		layer_id = pEvent->classifyDrop->layerId;
 		filter_id = pEvent->classifyDrop->filterId;
 		direction = pEvent->classifyDrop->msFwpDirection;
-		is_loopback = pEvent->classifyDrop->isLoopback;
+		is_loopback = !!pEvent->classifyDrop->isLoopback;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
 	{
 		layer_id = pEvent->ipsecDrop->layerId;
 		filter_id = pEvent->ipsecDrop->filterId;
 		direction = pEvent->ipsecDrop->direction;
-		is_loopback = false;
+		is_loopback = FALSE;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
 	{
 		layer_id = pEvent->classifyAllow->layerId;
 		filter_id = pEvent->classifyAllow->filterId;
 		direction = pEvent->classifyAllow->msFwpDirection;
-		is_loopback = pEvent->classifyAllow->isLoopback;
+		is_loopback = !!pEvent->classifyAllow->isLoopback;
 
-		is_allow = true;
+		is_allow = TRUE;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
 	{
 		layer_id = pEvent->classifyDropMac->layerId;
 		filter_id = pEvent->classifyDropMac->filterId;
 		direction = pEvent->classifyDropMac->msFwpDirection;
-		is_loopback = pEvent->classifyDropMac->isLoopback;
+		is_loopback = !!pEvent->classifyDropMac->isLoopback;
 	}
 	else
 	{
@@ -774,44 +709,44 @@ void CALLBACK _wfp_logcallback2 (LPVOID, const FWPM_NET_EVENT3* pEvent)
 }
 
 // win10rs4+ callback
-void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4* pEvent)
+VOID CALLBACK _wfp_logcallback3 (LPVOID pContext, const FWPM_NET_EVENT4* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
 	UINT32 direction;
 
-	bool is_loopback;
-	bool is_allow = false;
+	BOOLEAN is_loopback;
+	BOOLEAN is_allow = FALSE;
 
 	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
 		layer_id = pEvent->classifyDrop->layerId;
 		filter_id = pEvent->classifyDrop->filterId;
 		direction = pEvent->classifyDrop->msFwpDirection;
-		is_loopback = pEvent->classifyDrop->isLoopback;
+		is_loopback = !!pEvent->classifyDrop->isLoopback;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
 	{
 		layer_id = pEvent->ipsecDrop->layerId;
 		filter_id = pEvent->ipsecDrop->filterId;
 		direction = pEvent->ipsecDrop->direction;
-		is_loopback = false;
+		is_loopback = FALSE;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
 	{
 		layer_id = pEvent->classifyAllow->layerId;
 		filter_id = pEvent->classifyAllow->filterId;
 		direction = pEvent->classifyAllow->msFwpDirection;
-		is_loopback = pEvent->classifyAllow->isLoopback;
+		is_loopback = !!pEvent->classifyAllow->isLoopback;
 
-		is_allow = true;
+		is_allow = TRUE;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
 	{
 		layer_id = pEvent->classifyDropMac->layerId;
 		filter_id = pEvent->classifyDropMac->filterId;
 		direction = pEvent->classifyDropMac->msFwpDirection;
-		is_loopback = pEvent->classifyDropMac->isLoopback;
+		is_loopback = !!pEvent->classifyDropMac->isLoopback;
 	}
 	else
 	{
@@ -822,44 +757,44 @@ void CALLBACK _wfp_logcallback3 (LPVOID, const FWPM_NET_EVENT4* pEvent)
 }
 
 // win10rs5+ callback
-void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5* pEvent)
+VOID CALLBACK _wfp_logcallback4 (LPVOID pContext, const FWPM_NET_EVENT5* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
 	UINT32 direction;
 
-	bool is_loopback;
-	bool is_allow = false;
+	BOOLEAN is_loopback;
+	BOOLEAN is_allow = FALSE;
 
 	if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && pEvent->classifyDrop)
 	{
 		layer_id = pEvent->classifyDrop->layerId;
 		filter_id = pEvent->classifyDrop->filterId;
 		direction = pEvent->classifyDrop->msFwpDirection;
-		is_loopback = pEvent->classifyDrop->isLoopback;
+		is_loopback = !!pEvent->classifyDrop->isLoopback;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && pEvent->ipsecDrop)
 	{
 		layer_id = pEvent->ipsecDrop->layerId;
 		filter_id = pEvent->ipsecDrop->filterId;
 		direction = pEvent->ipsecDrop->direction;
-		is_loopback = false;
+		is_loopback = FALSE;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW && pEvent->classifyAllow)
 	{
 		layer_id = pEvent->classifyAllow->layerId;
 		filter_id = pEvent->classifyAllow->filterId;
 		direction = pEvent->classifyAllow->msFwpDirection;
-		is_loopback = pEvent->classifyAllow->isLoopback;
+		is_loopback = !!pEvent->classifyAllow->isLoopback;
 
-		is_allow = true;
+		is_allow = TRUE;
 	}
 	else if (pEvent->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP_MAC && pEvent->classifyDropMac)
 	{
 		layer_id = pEvent->classifyDropMac->layerId;
 		filter_id = pEvent->classifyDropMac->filterId;
 		direction = pEvent->classifyDropMac->msFwpDirection;
-		is_loopback = pEvent->classifyDropMac->isLoopback;
+		is_loopback = !!pEvent->classifyDropMac->isLoopback;
 	}
 	else
 	{
@@ -871,71 +806,63 @@ void CALLBACK _wfp_logcallback4 (LPVOID, const FWPM_NET_EVENT5* pEvent)
 
 THREAD_FN LogThread (LPVOID lparam)
 {
-	const HWND hwnd = (HWND)lparam;
+	HWND hwnd = (HWND)lparam;
 
 	_r_fastlock_acquireshared (&lock_logthread);
 
-	while (true)
+	while (TRUE)
 	{
-		const PSLIST_ENTRY listEntry = RtlInterlockedPopEntrySList (&log_stack.ListHead);
+		PSLIST_ENTRY listEntry = RtlInterlockedPopEntrySList (&log_stack.ListHead);
 
 		if (!listEntry)
 			break;
 
 		InterlockedDecrement (&log_stack.item_count);
 
-		PITEM_LIST_ENTRY ptr_entry = CONTAINING_RECORD (listEntry, ITEM_LIST_ENTRY, ListEntry);
-		PR_OBJECT ptr_log_object = ptr_entry->Body;
+		PITEM_LOG_LISTENTRY ptr_entry = CONTAINING_RECORD (listEntry, ITEM_LOG_LISTENTRY, ListEntry);
+		PITEM_LOG ptr_log = (PITEM_LOG)ptr_entry->Body;
 
 		_aligned_free (ptr_entry);
 
-		if (!ptr_log_object)
-			continue;
-
-		PITEM_LOG ptr_log = (PITEM_LOG)ptr_log_object->pdata;
-
 		if (!ptr_log)
-		{
-			_r_obj_dereference (ptr_log_object);
 			continue;
-		}
 
-		const bool is_logenabled = app.ConfigGet (L"IsLogEnabled", false).AsBool ();
-		const bool is_loguienabled = app.ConfigGet (L"IsLogUiEnabled", true).AsBool ();
-		const bool is_notificationenabled = app.ConfigGet (L"IsNotificationsEnabled", true).AsBool ();
+		BOOLEAN is_logenabled = app.ConfigGetBoolean (L"IsLogEnabled", FALSE);
+		BOOLEAN is_loguienabled = app.ConfigGetBoolean (L"IsLogUiEnabled", FALSE);
+		BOOLEAN is_notificationenabled = app.ConfigGetBoolean (L"IsNotificationsEnabled", TRUE);
 
-		const bool is_exludestealth = (!(ptr_log->is_system && app.ConfigGet (L"IsExcludeStealth", true).AsBool ()));
+		BOOLEAN is_exludestealth = !(ptr_log->is_system && app.ConfigGetBoolean (L"IsExcludeStealth", TRUE));
 
 		// apps collector
-		const bool is_notexist = ptr_log->app_hash && !_r_str_isempty (ptr_log->path) && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);
+		BOOLEAN is_notexist = ptr_log->app_hash && !_r_str_isempty (ptr_log->path) && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);
 
 		if (is_notexist)
 		{
 			_r_fastlock_acquireshared (&lock_logbusy);
-			ptr_log->app_hash = _app_addapplication (hwnd, ptr_log->path, 0, 0, 0, false, false);
+			ptr_log->app_hash = _app_addapplication (hwnd, ptr_log->path, 0, 0, 0, FALSE, FALSE);
 			_r_fastlock_releaseshared (&lock_logbusy);
 
-			const INT app_listview_id = (INT)_app_getappinfo (ptr_log->app_hash, InfoListviewId);
+			INT app_listview_id = (INT)_app_getappinfo (ptr_log->app_hash, InfoListviewId);
 
 			if (app_listview_id && app_listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT))
 			{
-				_app_listviewsort (hwnd, app_listview_id);
+				_app_listviewsort (hwnd, app_listview_id, INVALID_INT, FALSE);
 				_app_refreshstatus (hwnd, app_listview_id);
 			}
 
-			_app_profile_save ();
+			_app_profile_save (NULL);
 		}
 
 		// made network name resolution
 		{
 			_r_fastlock_acquireshared (&lock_logbusy);
 
-			LPWSTR buffer = nullptr;
+			LPWSTR address_fmt = NULL;
 
-			_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &buffer, FMTADDR_RESOLVE_HOST);
-			_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, &buffer, FMTADDR_RESOLVE_HOST);
+			_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &address_fmt, FMTADDR_RESOLVE_HOST);
+			_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, &address_fmt, FMTADDR_RESOLVE_HOST);
 
-			SAFE_DELETE_ARRAY (buffer);
+			SAFE_DELETE_MEMORY (address_fmt);
 
 			_r_fastlock_releaseshared (&lock_logbusy);
 		}
@@ -951,12 +878,12 @@ THREAD_FN LogThread (LPVOID lparam)
 			{
 				// write log to a ui
 				if (is_loguienabled)
-					_app_logwrite_ui (hwnd, ptr_log_object);
+					_app_logwrite_ui (hwnd, ptr_log);
 
 				// display notification
 				if (is_notificationenabled && ptr_log->app_hash && !ptr_log->is_allow)
 				{
-					if (!(ptr_log->is_blocklist && app.ConfigGet (L"IsExcludeBlocklist", true).AsBool ()) && !(ptr_log->is_custom && app.ConfigGet (L"IsExcludeCustomRules", true).AsBool ()))
+					if (!(ptr_log->is_blocklist && app.ConfigGetBoolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && app.ConfigGetBoolean (L"IsExcludeCustomRules", TRUE)))
 					{
 						PR_OBJECT ptr_app_object = _app_getappitem (ptr_log->app_hash);
 
@@ -967,17 +894,17 @@ THREAD_FN LogThread (LPVOID lparam)
 							if (ptr_app)
 							{
 								if (!ptr_app->is_silent)
-									_app_notifyadd (config.hnotification, _r_obj_reference (ptr_log_object), ptr_app);
+									_app_notifyadd (config.hnotification, (PITEM_LOG)_r_obj_reference (ptr_log), ptr_app);
 							}
 
-							_r_obj_dereference (ptr_app_object);
+							_r_obj2_dereference (ptr_app_object);
 						}
 					}
 				}
 			}
 		}
 
-		_r_obj_dereference (ptr_log_object);
+		_r_obj_dereference (ptr_log);
 	}
 
 	_r_fastlock_releaseshared (&lock_logthread);

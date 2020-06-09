@@ -3,25 +3,25 @@
 
 #pragma once
 
-void _app_notifycreatewindow ();
-bool _app_notifycommand (HWND hwnd, INT button_id, time_t seconds);
+VOID _app_notifycreatewindow ();
+BOOLEAN _app_notifycommand (HWND hwnd, INT button_id, time_t seconds);
 
-bool _app_notifyadd (HWND hwnd, PR_OBJECT ptr_log_object, PITEM_APP ptr_app);
-void _app_freenotify (size_t app_hash, PITEM_APP ptr_app);
+BOOLEAN _app_notifyadd (HWND hwnd, PITEM_LOG ptr_log, PITEM_APP ptr_app);
+VOID _app_freenotify (SIZE_T app_hash, PITEM_APP ptr_app);
 
-size_t _app_notifyget_id (HWND hwnd, bool is_nearest);
-PR_OBJECT _app_notifyget_obj (size_t app_hash);
+SIZE_T _app_notifyget_id (HWND hwnd, BOOLEAN is_nearest);
+PITEM_LOG _app_notifyget_obj (SIZE_T app_hash);
 
-bool _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, bool is_forced, bool is_safety);
-void _app_notifyhide (HWND hwnd);
+BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEAN is_safety);
+VOID _app_notifyhide (HWND hwnd);
 
-void _app_notifyplaysound ();
+VOID _app_notifyplaysound ();
 
-void _app_notifyrefresh (HWND hwnd, bool is_safety);
+VOID _app_notifyrefresh (HWND hwnd, BOOLEAN is_safety);
 
-void _app_notifysetpos (HWND hwnd, bool is_forced);
+VOID _app_notifysetpos (HWND hwnd, BOOLEAN is_forced);
 
-HFONT _app_notifyfontinit (HWND hwnd, PLOGFONT plf, LONG height, LONG weight, LPCWSTR name, BYTE is_underline);
-void _app_notifyfontset (HWND hwnd);
+HFONT _app_notifyfontinit (HWND hwnd, PLOGFONT plf, LONG height, LONG weight, LPCWSTR name, BOOLEAN is_underline);
+VOID _app_notifyfontset (HWND hwnd);
 
 INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

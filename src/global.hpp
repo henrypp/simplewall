@@ -3,27 +3,26 @@
 
 #pragma once
 
+#include "routine.hpp"
+
 #include <winsock2.h>
 #include <ws2ipdef.h>
 #include <ws2tcpip.h>
 #include <windns.h>
 #include <mstcpip.h>
-#include <windows.h>
-#include <wincodec.h>
-#include <netfw.h>
 #include <iphlpapi.h>
-#include <subauth.h>
-#include <fwpmu.h>
-#include <dbt.h>
 #include <aclapi.h>
-#include <shobjidl.h>
+#include <dbt.h>
+#include <fwpmu.h>
+#include <mmsystem.h>
+#include <netfw.h>
 #include <shlguid.h>
+#include <shobjidl.h>
 #include <softpub.h>
-#include <algorithm>
-#include <unordered_map>
+#include <subauth.h>
+#include <wincodec.h>
 
 #include "app.hpp"
-#include "routine.hpp"
 #include "rapp.hpp"
 #include "main.hpp"
 
@@ -46,14 +45,12 @@ inline rapp app;
 
 inline STATIC_DATA config;
 
-inline FWPM_SESSION session;
-
 inline OBJECTS_MAP apps;
-inline OBJECTS_MAP apps_helper;
+inline OBJECTS_APP_HELPER apps_helper;
 inline OBJECTS_VEC rules_arr;
-inline OBJECTS_MAP rules_config;
-inline OBJECTS_MAP network_map;
-inline OBJECTS_VEC log_arr;
+inline OBJECTS_RULE_CONFIG rules_config;
+inline OBJECTS_NETWORK network_map;
+inline OBJECTS_LOG log_arr;
 
 inline OBJECTS_MAP cache_arpa;
 inline OBJECTS_MAP cache_signatures;
