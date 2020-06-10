@@ -87,7 +87,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 		return 0;
 
 	// prevent possible duplicate apps entries with short path (issue #640)
-	WCHAR path_full[1024] = {0};
+	WCHAR path_full[1024];
 
 	if (_r_str_find (path, INVALID_SIZE_T, L'~', 0) != INVALID_SIZE_T)
 	{
@@ -129,7 +129,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	{
 		real_path = path;
 
-		if (!is_ntoskrnl && _r_str_find (real_path, real_path.GetLength (), OBJ_NAME_PATH_SEPARATOR, 0) == INVALID_SIZE_T)
+		if (!is_ntoskrnl && _r_str_find (real_path.GetString (), real_path.GetLength (), OBJ_NAME_PATH_SEPARATOR, 0) == INVALID_SIZE_T)
 		{
 			if (_app_item_get (DataAppService, app_hash, NULL, &real_path, timestamp ? NULL : &timestamp, NULL))
 				ptr_app->type = DataAppService;
@@ -148,13 +148,13 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 
 	if (!real_path.IsEmpty () && ptr_app->type == DataAppRegular)
 	{
-		DWORD dwAttr = GetFileAttributes (real_path);
+		DWORD dwAttr = GetFileAttributes (real_path.GetString ());
 
-		ptr_app->is_system = is_ntoskrnl || (dwAttr & FILE_ATTRIBUTE_SYSTEM) == FILE_ATTRIBUTE_SYSTEM || (_r_str_compare_length (real_path, config.windows_dir, config.wd_length) == 0);
+		ptr_app->is_system = is_ntoskrnl || (dwAttr & FILE_ATTRIBUTE_SYSTEM) == FILE_ATTRIBUTE_SYSTEM || (_r_str_compare_length (real_path.GetString (), config.windows_dir, config.wd_length) == 0);
 	}
 
 	_r_str_alloc (&ptr_app->original_path, app_length, path);
-	_r_str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path);
+	_r_str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path.GetString ());
 
 	if (is_ntoskrnl && !_r_str_isempty (ptr_app->original_path))
 	{
@@ -376,7 +376,7 @@ COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash)
 	if (color_value.IsEmpty ())
 		return 0;
 
-	return _app_getcolorvalue (_r_str_hash (color_value));
+	return _app_getcolorvalue (_r_str_hash (color_value.GetString ()));
 }
 
 VOID _app_freeapplication (SIZE_T app_hash)
@@ -544,14 +544,14 @@ COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 	if (color_value.IsEmpty ())
 		return 0;
 
-	return _app_getcolorvalue (_r_str_hash (color_value));
+	return _app_getcolorvalue (_r_str_hash (color_value.GetString ()));
 }
 
 rstring _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 {
 	rstring result;
 
-	INT listview_id = PtrToInt ((LPVOID)lpnmlv->hdr.idFrom);
+	INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 	BOOLEAN is_appslist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP);
 
 	if (is_appslist || listview_id == IDC_RULE_APPS_ID)
@@ -752,9 +752,9 @@ rstring _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 						   app.LocaleString (IDS_ADDRESS, L" (" SZ_DIRECTION_REMOTE L")").GetString (),
 						   !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY,
 						   app.LocaleString (IDS_PROTOCOL, NULL).GetString (),
-						   _app_getprotoname (ptr_network->protocol, ptr_network->af).GetString (),
+						   _app_getprotoname (ptr_network->protocol, ptr_network->af, NULL).GetString (),
 						   app.LocaleString (IDS_STATE, NULL).GetString (),
-						   _app_getstatename (ptr_network->state, SZ_EMPTY).GetString ()
+						   _app_getconnectionstatusname (ptr_network->state, SZ_EMPTY).GetString ()
 			);
 
 			SAFE_DELETE_MEMORY (local_fmt);
@@ -786,11 +786,11 @@ rstring _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 						   app.LocaleString (IDS_ADDRESS, L" (" SZ_DIRECTION_REMOTE L")").GetString (),
 						   !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY,
 						   app.LocaleString (IDS_PROTOCOL, NULL).GetString (),
-						   _app_getprotoname (ptr_log->protocol, ptr_log->af).GetString (),
+						   _app_getprotoname (ptr_log->protocol, ptr_log->af, NULL).GetString (),
 						   app.LocaleString (IDS_FILTER, NULL).GetString (),
 						   _app_getfiltername (NULL, ptr_log->filter_name, SZ_EMPTY).GetString (),
 						   app.LocaleString (IDS_DIRECTION, NULL).GetString (),
-						   _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback).GetString (),
+						   _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE).GetString (),
 						   app.LocaleString (IDS_STATE, NULL).GetString (),
 						   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 			);
@@ -817,7 +817,7 @@ VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, SIZE_T app_hash,
 	_app_getappicon (ptr_app, TRUE, &ptr_app->icon_id, NULL);
 
 	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app));
-	_r_listview_setitem (hwnd, listview_id, item, 1, _r_fmt_dateex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME));
+	_r_listview_setitem (hwnd, listview_id, item, 1, _r_fmt_dateex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME).GetString ());
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
 }
@@ -827,9 +827,9 @@ VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 	if (!listview_id || item == INVALID_INT)
 		return;
 
-	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->is_readonly && ptr_rule->type == DataRuleCustom ? _r_fmt (L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->pname) : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
-	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC) : app.LocaleString (IDS_ANY, NULL));
-	_r_listview_setitem (hwnd, listview_id, item, 2, app.LocaleString (ptr_rule->direction == FWP_DIRECTION_MAX ? IDS_ANY : IDS_DIRECTION_1 + ptr_rule->direction, NULL));
+	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->is_readonly && ptr_rule->type == DataRuleCustom ? _r_fmt (L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->pname).GetString () : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
+	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL).GetString () : app.LocaleString (IDS_ANY, NULL).GetString ());
+	_r_listview_setitem (hwnd, listview_id, item, 2, _app_getdirectionname (ptr_rule->direction, FALSE, TRUE).GetString ());
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_rule->is_enabled);
 
@@ -1387,7 +1387,7 @@ VOID _app_profile_load_fallback ()
 			_app_addapplication (NULL, PROC_SYSTEM_NAME, 0, 0, 0, FALSE, FALSE);
 
 		if (!_app_isappfound (config.svchost_hash))
-			_app_addapplication (NULL, _r_path_expand (PATH_SVCHOST), 0, 0, 0, FALSE, FALSE);
+			_app_addapplication (NULL, _r_path_expand (PATH_SVCHOST).GetString (), 0, 0, 0, FALSE, FALSE);
 
 		_app_setappinfo (config.ntoskrnl_hash, InfoIsUndeletable, TRUE);
 		_app_setappinfo (config.svchost_hash, InfoIsUndeletable, TRUE);
@@ -1424,9 +1424,9 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 				SIZE_T rule_remote_length = min (attr_rule_remote.GetLength (), RULE_RULE_CCH_MAX);
 				SIZE_T rule_local_length = min (attr_rule_local.GetLength (), RULE_RULE_CCH_MAX);
 
-				_r_str_alloc (&ptr_rule->pname, name_length, attr_name);
-				_r_str_alloc (&ptr_rule->prule_remote, rule_remote_length, attr_rule_remote);
-				_r_str_alloc (&ptr_rule->prule_local, rule_local_length, attr_rule_local);
+				_r_str_alloc (&ptr_rule->pname, name_length, attr_name.GetString ());
+				_r_str_alloc (&ptr_rule->prule_remote, rule_remote_length, attr_rule_remote.GetString ());
+				_r_str_alloc (&ptr_rule->prule_local, rule_local_length, attr_rule_local.GetString ());
 			}
 
 			ptr_rule->direction = (FWP_DIRECTION)item.attribute (L"dir").as_int ();
@@ -1492,14 +1492,14 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 						_r_str_replace (apps_rule.GetBuffer (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
 					rstringvec rvc;
-					_r_str_split (apps_rule, apps_rule.GetLength (), DIVIDER_APP[0], rvc);
+					_r_str_split (apps_rule.GetString (), apps_rule.GetLength (), DIVIDER_APP[0], rvc);
 
 					for (auto& p : rvc)
 					{
 						_r_str_trim (p, DIVIDER_TRIM);
 
-						rstring app_path = _r_path_expand (p);
-						SIZE_T app_hash = _r_str_hash (app_path);
+						rstring app_path = _r_path_expand (p.GetString ());
+						SIZE_T app_hash = _r_str_hash (app_path.GetString ());
 
 						if (app_hash)
 						{
@@ -1507,7 +1507,7 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 								continue;
 
 							if (!_app_isappfound (app_hash))
-								app_hash = _app_addapplication (NULL, app_path, 0, 0, 0, FALSE, FALSE);
+								app_hash = _app_addapplication (NULL, app_path.GetString (), 0, 0, 0, FALSE, FALSE);
 
 							if (ptr_rule->type == DataRuleSystem)
 								_app_setappinfo (app_hash, InfoIsUndeletable, TRUE);
@@ -1527,7 +1527,7 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 			if (rule_name.IsEmpty ())
 				continue;
 
-			SIZE_T rule_hash = _r_str_hash (rule_name);
+			SIZE_T rule_hash = _r_str_hash (rule_name.GetString ());
 
 			if (rule_hash && rules_config.find (rule_hash) == rules_config.end ())
 			{
@@ -1540,8 +1540,8 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 				if (version < XML_PROFILE_VER_3)
 					_r_str_replace (attr_apps.GetBuffer (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
-				_r_str_alloc (&ptr_config->pname, rule_name.GetLength (), rule_name);
-				_r_str_alloc (&ptr_config->papps, attr_apps.GetLength (), attr_apps);
+				_r_str_alloc (&ptr_config->pname, rule_name.GetLength (), rule_name.GetString ());
+				_r_str_alloc (&ptr_config->papps, attr_apps.GetLength (), attr_apps.GetString ());
 
 				rules_config[rule_hash] = ptr_config;
 			}
@@ -1563,7 +1563,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 	if (path_backup)
 	{
 		DWORD size = 0;
-		LPVOID pbuffer = _r_loadresource (app.GetHINSTANCE (), path_backup, RT_RCDATA, &size);
+		PVOID pbuffer = _r_loadresource (app.GetHINSTANCE (), path_backup, RT_RCDATA, &size);
 
 		if (pbuffer)
 			load_backup = doc_backup.load_buffer (pbuffer, size, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
@@ -1584,7 +1584,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 
 	// show only syntax, memory and i/o errors...
 	if (!load_original && load_original.status != pugi::status_file_not_found && load_original.status != pugi::status_no_document_element)
-		app.LogError (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path), UID);
+		app.LogError (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path).GetString (), UID);
 
 	if (load_original && root)
 	{
@@ -1658,7 +1658,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		{
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
-				app.LogError (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path), UID);
+				app.LogError (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path).GetString (), UID);
 		}
 		else
 		{
@@ -1794,7 +1794,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 VOID _app_profile_save (LPCWSTR path_custom)
 {
 	time_t current_time = _r_unixtime_now ();
-	BOOLEAN is_backuprequired = !path_custom && app.ConfigGetBoolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (config.profile_path_backup) || ((current_time - app.ConfigGetLong64 (L"BackupTimestamp", 0)) >= app.ConfigGetLong64 (L"BackupPeriod", _R_SECONDSCLOCK_HOUR (BACKUP_HOURS_PERIOD))));
+	BOOLEAN is_backuprequired = !path_custom && app.ConfigGetBoolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (config.profile_path_backup) || ((current_time - app.ConfigGetLong64 (L"BackupTimestamp", 0)) >= app.ConfigGetLong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
 
 	pugi::xml_document doc;
 	pugi::xml_node root = doc.append_child (L"root");
@@ -1916,7 +1916,7 @@ VOID _app_profile_save (LPCWSTR path_custom)
 						rstring rule_apps = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
 
 						if (!rule_apps.IsEmpty ())
-							item.append_attribute (L"apps").set_value (rule_apps);
+							item.append_attribute (L"apps").set_value (rule_apps.GetString ());
 					}
 
 					if (ptr_rule->is_block)
@@ -1986,7 +1986,7 @@ VOID _app_profile_save (LPCWSTR path_custom)
 					item.append_attribute (L"name").set_value (ptr_config->pname);
 
 					if (!rule_apps.IsEmpty ())
-						item.append_attribute (L"apps").set_value (rule_apps);
+						item.append_attribute (L"apps").set_value (rule_apps.GetString ());
 
 					item.append_attribute (L"is_enabled").set_value (ptr_config->is_enabled);
 				}

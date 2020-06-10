@@ -44,7 +44,7 @@ BOOLEAN _app_initinterfacestate (HWND hwnd, BOOLEAN is_forced)
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
 
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"...").GetString ());
 
 		return TRUE;
 	}
@@ -62,7 +62,7 @@ VOID _app_restoreinterfacestate (HWND hwnd, BOOLEAN is_enabled)
 
 	ENUM_INSTALL_TYPE install_type = _wfp_isfiltersinstalled ();
 
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), NULL));
+	_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), NULL).GetString ());
 }
 
 VOID _app_setinterfacestate (HWND hwnd)
@@ -82,9 +82,9 @@ VOID _app_setinterfacestate (HWND hwnd)
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), NULL));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), NULL).GetString ());
 
-	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (string_id, NULL), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
+	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (string_id, NULL).GetString (), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
 	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
 }
@@ -134,7 +134,7 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 
 		// get column text width
 		rstring column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
-		INT column_width = _r_dc_fontwidth (hdc_header, column_text, column_text.GetLength ()) + spacing;
+		INT column_width = _r_dc_fontwidth (hdc_header, column_text.GetString (), column_text.GetLength ()) + spacing;
 
 		if (column_width >= max_width)
 		{
@@ -148,7 +148,7 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 				for (INT j = 0; j < _r_listview_getitemcount (hwnd, listview_id, FALSE); j++)
 				{
 					rstring item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
-					INT text_width = _r_dc_fontwidth (hdc_listview, item_text, item_text.GetLength ()) + spacing;
+					INT text_width = _r_dc_fontwidth (hdc_listview, item_text.GetString (), item_text.GetLength ()) + spacing;
 
 					// do not continue reaching higher and higher values for performance reason!
 					if (text_width >= max_width)
@@ -196,7 +196,7 @@ VOID _app_listviewsetview (HWND hwnd, INT listview_id)
 	}
 	else
 	{
-		SHGetImageList (icons_size, IID_IImageList2, (LPVOID*)&himg);
+		SHGetImageList (icons_size, IID_IImageList2, (PVOID*)&himg);
 	}
 
 	if (himg)
@@ -216,18 +216,18 @@ VOID _app_listviewinitfont (HWND hwnd, PLOGFONT plf)
 	if (!buffer.IsEmpty ())
 	{
 		rstringvec rvc;
-		_r_str_split (buffer, buffer.GetLength (), L';', rvc);
+		_r_str_split (buffer.GetString (), buffer.GetLength (), L';', rvc);
 
 		if (!rvc.empty ())
 		{
-			_r_str_copy (plf->lfFaceName, LF_FACESIZE, rvc.at (0)); // face name
+			_r_str_copy (plf->lfFaceName, LF_FACESIZE, rvc.at (0).GetString ()); // face name
 
 			if (rvc.size () >= 2)
 			{
-				plf->lfHeight = _r_dc_fontsizetoheight (hwnd, _r_str_tointeger (rvc.at (1))); // size
+				plf->lfHeight = _r_dc_fontsizetoheight (hwnd, _r_str_tointeger (rvc.at (1).GetString ())); // size
 
 				if (rvc.size () >= 3)
-					plf->lfWeight = _r_str_tointeger (rvc.at (2)); // weight
+					plf->lfWeight = _r_str_tointeger (rvc.at (2).GetString ()); // weight
 			}
 		}
 	}
@@ -288,8 +288,8 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 
 	rstring cfg_name = _r_fmt (L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	INT column_id = app.ConfigGetInteger (L"SortColumn", 0, cfg_name);
-	BOOLEAN is_descend = app.ConfigGetBoolean (L"SortIsDescending", FALSE, cfg_name);
+	INT column_id = app.ConfigGetInteger (L"SortColumn", 0, cfg_name.GetString ());
+	BOOLEAN is_descend = app.ConfigGetBoolean (L"SortIsDescending", FALSE, cfg_name.GetString ());
 
 	INT result = 0;
 
@@ -330,8 +330,8 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	if (!result)
 	{
 		result = _r_str_compare_logical (
-			_r_listview_getitemtext (hparent, listview_id, item1, column_id),
-			_r_listview_getitemtext (hparent, listview_id, item2, column_id)
+			_r_listview_getitemtext (hparent, listview_id, item1, column_id).GetString (),
+			_r_listview_getitemtext (hparent, listview_id, item2, column_id).GetString ()
 		);
 	}
 
@@ -354,20 +354,20 @@ VOID _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, BOOLEAN is_no
 		return;
 
 	rstring cfg_name = _r_fmt (L"listview\\%04" TEXT (PRIX32), listview_id);
-	BOOLEAN is_descend = app.ConfigGetBoolean (L"SortIsDescending", FALSE, cfg_name);
+	BOOLEAN is_descend = app.ConfigGetBoolean (L"SortIsDescending", FALSE, cfg_name.GetString ());
 
 	if (is_notifycode)
 		is_descend = !is_descend;
 
 	if (column_id == INVALID_INT)
-		column_id = app.ConfigGetInteger (L"SortColumn", 0, cfg_name);
+		column_id = app.ConfigGetInteger (L"SortColumn", 0, cfg_name.GetString ());
 
 	column_id = _r_calc_clamp (INT, column_id, 0, column_count - 1); // set range
 
 	if (is_notifycode)
 	{
-		app.ConfigSetBoolean (L"SortIsDescending", is_descend, cfg_name);
-		app.ConfigSetInteger (L"SortColumn", column_id, cfg_name);
+		app.ConfigSetBoolean (L"SortIsDescending", is_descend, cfg_name.GetString ());
+		app.ConfigSetInteger (L"SortColumn", column_id, cfg_name.GetString ());
 	}
 
 	for (INT i = 0; i < column_count; i++)
@@ -446,9 +446,9 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 		}
 	}
 
-	_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (group1_title, total_count ? _r_fmt (L" (%d/%d)", group1_count, total_count).GetString () : NULL), 0, 0);
-	_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (group2_title, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : NULL), 0, 0);
-	_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (group3_title, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : NULL), 0, 0);
+	_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (group1_title, total_count ? _r_fmt (L" (%d/%d)", group1_count, total_count).GetString () : NULL).GetString (), 0, 0);
+	_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (group2_title, total_count ? _r_fmt (L" (%d/%d)", group2_count, total_count).GetString () : NULL).GetString (), 0, 0);
+	_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (group3_title, total_count ? _r_fmt (L" (%d/%d)", group3_count, total_count).GetString () : NULL).GetString (), 0, 0);
 }
 
 VOID _app_refreshstatus (HWND hwnd, INT listview_id)
@@ -495,7 +495,7 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 
 			if (i)
 			{
-				size[i] = _r_dc_fontwidth (hdc, text[i], text[i].GetLength ()) + spacing;
+				size[i] = _r_dc_fontwidth (hdc, text[i].GetString (), text[i].GetLength ()) + spacing;
 				lay += size[i];
 			}
 		}
@@ -510,7 +510,7 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 		SendMessage (hstatus, SB_SETPARTS, parts_count, (LPARAM)parts);
 
 		for (INT i = 1; i < parts_count; i++)
-			_r_status_settext (hwnd, IDC_STATUSBAR, i, text[i]);
+			_r_status_settext (hwnd, IDC_STATUSBAR, i, text[i].GetString ());
 
 		ReleaseDC (hstatus, hdc);
 	}
@@ -583,7 +583,7 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 			INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
 			BOOLEAN is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
 
-			INT listview_id = PtrToInt ((LPVOID)lpnmlv->nmcd.hdr.idFrom);
+			INT listview_id = PtrToInt ((PVOID)lpnmlv->nmcd.hdr.idFrom);
 
 			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK || listview_id == IDC_LOG)
 			{

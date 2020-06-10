@@ -244,32 +244,30 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 		}
 	}
 
-	SetWindowText (hwnd, _r_fmt (L"%s - " APP_NAME, app.LocaleString (IDS_NOTIFY_TITLE, NULL).GetString ()));
+	SetWindowText (hwnd, _r_fmt (L"%s - " APP_NAME, app.LocaleString (IDS_NOTIFY_TITLE, NULL).GetString ()).GetString ());
 
 	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
 	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, (LONG_PTR)ptr_log->hicon);
 
 	// print table text
 	{
-		BOOLEAN is_inbound = (ptr_log->direction == FWP_DIRECTION_INBOUND);
-
 		LPWSTR remote_fmt = NULL;
 		_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, &remote_fmt, FMTADDR_RESOLVE_HOST);
 
-		_r_ctrl_settabletext (hwnd, IDC_FILE_ID, app.LocaleString (IDS_NAME, L":"), IDC_FILE_TEXT, !_r_str_isempty (ptr_app->display_name) ? _r_path_getfilename (ptr_app->display_name) : empty_text);
-		_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":"), IDC_SIGNATURE_TEXT, is_signed.IsEmpty () ? empty_text : is_signed);
-		_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, app.LocaleString (IDS_ADDRESS, L":"), IDC_ADDRESS_TEXT, !_r_str_isempty (remote_fmt) ? remote_fmt : empty_text);
-		_r_ctrl_settabletext (hwnd, IDC_PORT_ID, app.LocaleString (IDS_PORT, L":"), IDC_PORT_TEXT, ptr_log->remote_port ? _app_formatport (ptr_log->remote_port, FALSE).GetString () : empty_text);
-		_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, app.LocaleString (IDS_DIRECTION, L":"), IDC_DIRECTION_TEXT, app.LocaleString (is_inbound ? IDS_DIRECTION_2 : IDS_DIRECTION_1, ptr_log->is_loopback ? L" (Loopback)" : NULL));
-		_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":"), IDC_FILTER_TEXT, !_r_str_isempty (ptr_log->filter_name) ? ptr_log->filter_name : empty_text);
-		_r_ctrl_settabletext (hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":"), IDC_DATE_TEXT, _r_fmt_dateex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
+		_r_ctrl_settabletext (hwnd, IDC_FILE_ID, app.LocaleString (IDS_NAME, L":").GetString (), IDC_FILE_TEXT, !_r_str_isempty (ptr_app->display_name) ? _r_path_getfilename (ptr_app->display_name) : empty_text.GetString ());
+		_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, app.LocaleString (IDS_SIGNATURE, L":").GetString (), IDC_SIGNATURE_TEXT, is_signed.IsEmpty () ? empty_text.GetString () : is_signed.GetString ());
+		_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, app.LocaleString (IDS_ADDRESS, L":").GetString (), IDC_ADDRESS_TEXT, !_r_str_isempty (remote_fmt) ? remote_fmt : empty_text.GetString ());
+		_r_ctrl_settabletext (hwnd, IDC_PORT_ID, app.LocaleString (IDS_PORT, L":").GetString (), IDC_PORT_TEXT, ptr_log->remote_port ? _app_formatport (ptr_log->remote_port, FALSE).GetString () : empty_text.GetString ());
+		_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, app.LocaleString (IDS_DIRECTION, L":").GetString (), IDC_DIRECTION_TEXT, _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE).GetString ());
+		_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, app.LocaleString (IDS_FILTER, L":").GetString (), IDC_FILTER_TEXT, !_r_str_isempty (ptr_log->filter_name) ? ptr_log->filter_name : empty_text.GetString ());
+		_r_ctrl_settabletext (hwnd, IDC_DATE_ID, app.LocaleString (IDS_DATE, L":").GetString (), IDC_DATE_TEXT, _r_fmt_dateex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME).GetString ());
 
 		SAFE_DELETE_MEMORY (remote_fmt);
 	}
 
-	_r_ctrl_settext (hwnd, IDC_RULES_BTN, app.LocaleString (IDS_TRAY_RULES, NULL));
-	_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, NULL));
-	_r_ctrl_settext (hwnd, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK, NULL));
+	_r_ctrl_settext (hwnd, IDC_RULES_BTN, app.LocaleString (IDS_TRAY_RULES, NULL).GetString ());
+	_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, NULL).GetString ());
+	_r_ctrl_settext (hwnd, IDC_BLOCK_BTN, app.LocaleString (IDS_ACTION_BLOCK, NULL).GetString ());
 
 	_r_ctrl_enable (hwnd, IDC_RULES_BTN, !is_safety);
 	_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
@@ -325,11 +323,11 @@ VOID _app_notifyplaysound ()
 
 			if (!path.IsEmpty ())
 			{
-				path = _r_path_expand (path);
+				path = _r_path_expand (path.GetString ());
 
-				if (_r_fs_exists (path))
+				if (_r_fs_exists (path.GetString ()))
 				{
-					_r_str_copy (notify_snd_path, RTL_NUMBER_OF (notify_snd_path), path);
+					_r_str_copy (notify_snd_path, RTL_NUMBER_OF (notify_snd_path), path.GetString ());
 					result = TRUE;
 				}
 			}
@@ -371,56 +369,61 @@ VOID _app_notifysetpos (HWND hwnd, BOOLEAN is_forced)
 {
 	if (!is_forced && IsWindowVisible (hwnd))
 	{
-		RECT windowRect = {0};
-		GetWindowRect (hwnd, &windowRect);
+		RECT windowRect;
 
-		_r_wnd_adjustwindowrect (hwnd, &windowRect);
-		SetWindowPos (hwnd, NULL, windowRect.left, windowRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+		if (GetWindowRect (hwnd, &windowRect))
+		{
+			_r_wnd_adjustwindowrect (hwnd, &windowRect);
+			SetWindowPos (hwnd, NULL, windowRect.left, windowRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 
-		return;
+			return;
+		}
 	}
 
 	BOOLEAN is_intray = app.ConfigGetBoolean (L"IsNotificationsOnTray", FALSE);
 
 	if (is_intray)
 	{
-		RECT windowRect = {0};
-		GetWindowRect (hwnd, &windowRect);
+		RECT windowRect;
 
-		RECT desktopRect = {0};
-		SystemParametersInfo (SPI_GETWORKAREA, 0, &desktopRect, 0);
-
-		APPBARDATA abd = {0};
-
-		abd.cbSize = sizeof (abd);
-
-		if (SHAppBarMessage (ABM_GETTASKBARPOS, &abd))
+		if (GetWindowRect (hwnd, &windowRect))
 		{
-			INT border_x = _r_dc_getsystemmetrics (hwnd, SM_CXBORDER);
+			RECT desktopRect;
 
-			if (abd.uEdge == ABE_LEFT)
+			if (SystemParametersInfo (SPI_GETWORKAREA, 0, &desktopRect, 0))
 			{
-				windowRect.left = abd.rc.right + border_x;
-				windowRect.top = (desktopRect.bottom - _r_calc_rectheight (LONG, &windowRect)) - border_x;
-			}
-			else if (abd.uEdge == ABE_TOP)
-			{
-				windowRect.left = (desktopRect.right - _r_calc_rectwidth (LONG, &windowRect)) - border_x;
-				windowRect.top = abd.rc.bottom + border_x;
-			}
-			else if (abd.uEdge == ABE_RIGHT)
-			{
-				windowRect.left = (desktopRect.right - _r_calc_rectwidth (LONG, &windowRect)) - border_x;
-				windowRect.top = (desktopRect.bottom - _r_calc_rectheight (LONG, &windowRect)) - border_x;
-			}
-			else/* if (abd.uEdge == ABE_BOTTOM)*/
-			{
-				windowRect.left = (desktopRect.right - (windowRect.right - windowRect.left)) - border_x;
-				windowRect.top = (desktopRect.bottom - _r_calc_rectheight (LONG, &windowRect)) - border_x;
-			}
+				APPBARDATA abd;
+				abd.cbSize = sizeof (abd);
 
-			SetWindowPos (hwnd, NULL, windowRect.left, windowRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-			return;
+				if ((BOOL)SHAppBarMessage (ABM_GETTASKBARPOS, &abd))
+				{
+					INT border_x = _r_dc_getsystemmetrics (hwnd, SM_CXBORDER);
+
+					if (abd.uEdge == ABE_LEFT)
+					{
+						windowRect.left = abd.rc.right + border_x;
+						windowRect.top = (desktopRect.bottom - _r_calc_rectheight (LONG, &windowRect)) - border_x;
+					}
+					else if (abd.uEdge == ABE_TOP)
+					{
+						windowRect.left = (desktopRect.right - _r_calc_rectwidth (LONG, &windowRect)) - border_x;
+						windowRect.top = abd.rc.bottom + border_x;
+					}
+					else if (abd.uEdge == ABE_RIGHT)
+					{
+						windowRect.left = (desktopRect.right - _r_calc_rectwidth (LONG, &windowRect)) - border_x;
+						windowRect.top = (desktopRect.bottom - _r_calc_rectheight (LONG, &windowRect)) - border_x;
+					}
+					else/* if (abd.uEdge == ABE_BOTTOM)*/
+					{
+						windowRect.left = (desktopRect.right - (windowRect.right - windowRect.left)) - border_x;
+						windowRect.top = (desktopRect.bottom - _r_calc_rectheight (LONG, &windowRect)) - border_x;
+					}
+
+					SetWindowPos (hwnd, NULL, windowRect.left, windowRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+					return;
+				}
+			}
 		}
 	}
 
@@ -603,10 +606,10 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 		case WM_ERASEBKGND:
 		{
-			RECT rc = {0};
-			GetClientRect (hwnd, &rc);
+			RECT clientRect;
 
-			_r_dc_fillrect ((HDC)wparam, &rc, GetSysColor (COLOR_WINDOW));
+			if (GetClientRect (hwnd, &clientRect))
+				_r_dc_fillrect ((HDC)wparam, &clientRect, GetSysColor (COLOR_WINDOW));
 
 			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 			return TRUE;
@@ -619,17 +622,19 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 			if (hdc)
 			{
-				RECT rc = {0};
-				GetClientRect (hwnd, &rc);
+				RECT clientRect;
 
-				INT wnd_width = _r_calc_rectwidth (INT, &rc);
-				INT wnd_height = _r_calc_rectheight (INT, &rc);
+				if (GetClientRect (hwnd, &clientRect))
+				{
+					INT wnd_width = _r_calc_rectwidth (INT, &clientRect);
+					INT wnd_height = _r_calc_rectheight (INT, &clientRect);
 
-				SetRect (&rc, 0, wnd_height - _r_dc_getdpi (hwnd, _R_SIZE_FOOTERHEIGHT), wnd_width, wnd_height);
-				_r_dc_fillrect (hdc, &rc, GetSysColor (COLOR_3DFACE));
+					SetRect (&clientRect, 0, wnd_height - _r_dc_getdpi (hwnd, _R_SIZE_FOOTERHEIGHT), wnd_width, wnd_height);
+					_r_dc_fillrect (hdc, &clientRect, GetSysColor (COLOR_3DFACE));
 
-				for (INT i = 0; i < wnd_width; i++)
-					SetPixelV (hdc, i, rc.top, GetSysColor (COLOR_APPWORKSPACE));
+					for (INT i = 0; i < wnd_width; i++)
+						SetPixelV (hdc, i, clientRect.top, GetSysColor (COLOR_APPWORKSPACE));
+				}
 
 				EndPaint (hwnd, &ps);
 			}
@@ -668,11 +673,11 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			INT wnd_icon_size = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
 			INT wnd_spacing = _r_dc_getdpi (hwnd, 12);
 
-			RECT rcText = {0};
-			RECT rcIcon = {0};
+			RECT textRect;
+			RECT iconRect;
 
-			SetRect (&rcText, wnd_spacing, 0, _r_calc_rectwidth (INT, &drawInfo->rcItem) - (wnd_spacing * 3) - wnd_icon_size, _r_calc_rectheight (INT, &drawInfo->rcItem));
-			SetRect (&rcIcon, _r_calc_rectwidth (INT, &drawInfo->rcItem) - wnd_icon_size - wnd_spacing, (_r_calc_rectheight (INT, &drawInfo->rcItem) / 2) - (wnd_icon_size / 2), wnd_icon_size, wnd_icon_size);
+			SetRect (&textRect, wnd_spacing, 0, _r_calc_rectwidth (INT, &drawInfo->rcItem) - (wnd_spacing * 3) - wnd_icon_size, _r_calc_rectheight (INT, &drawInfo->rcItem));
+			SetRect (&iconRect, _r_calc_rectwidth (INT, &drawInfo->rcItem) - wnd_icon_size - wnd_spacing, (_r_calc_rectheight (INT, &drawInfo->rcItem) / 2) - (wnd_icon_size / 2), wnd_icon_size, wnd_icon_size);
 
 			SetBkMode (drawInfo->hDC, TRANSPARENT);
 
@@ -681,10 +686,10 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 			// draw title text
 			WCHAR text[128] = {0};
-			_r_str_printf (text, RTL_NUMBER_OF (text), app.LocaleString (IDS_NOTIFY_HEADER, NULL), APP_NAME);
+			_r_str_printf (text, RTL_NUMBER_OF (text), app.LocaleString (IDS_NOTIFY_HEADER, NULL).GetString (), APP_NAME);
 
 			COLORREF clr_prev = SetTextColor (drawInfo->hDC, GetSysColor (COLOR_WINDOW));
-			DrawTextEx (drawInfo->hDC, text, (INT)_r_str_length (text), &rcText, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
+			DrawTextEx (drawInfo->hDC, text, (INT)_r_str_length (text), &textRect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
 			SetTextColor (drawInfo->hDC, clr_prev);
 
 			// draw icon
@@ -694,7 +699,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				hicon = config.hicon_large;
 
 			if (hicon)
-				DrawIconEx (drawInfo->hDC, rcIcon.left, rcIcon.top, hicon, rcIcon.right, rcIcon.bottom, 0, NULL, DI_IMAGE | DI_MASK);
+				DrawIconEx (drawInfo->hDC, iconRect.left, iconRect.top, hicon, iconRect.right, iconRect.bottom, 0, NULL, DI_IMAGE | DI_MASK);
 
 			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 			return TRUE;
@@ -744,7 +749,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			{
 				case BCN_DROPDOWN:
 				{
-					INT ctrl_id = PtrToInt ((LPVOID)nmlp->idFrom);
+					INT ctrl_id = PtrToInt ((PVOID)nmlp->idFrom);
 
 					if (!_r_ctrl_isenabled (hwnd, ctrl_id) || (ctrl_id != IDC_RULES_BTN && ctrl_id != IDC_ALLOW_BTN))
 						break;
@@ -756,13 +761,13 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					if (ctrl_id == IDC_RULES_BTN)
 					{
-						AppendMenu (hsubmenu, MF_STRING, IDM_DISABLENOTIFICATIONS, app.LocaleString (IDS_DISABLENOTIFICATIONS, NULL));
+						AppendMenu (hsubmenu, MF_STRING, IDM_DISABLENOTIFICATIONS, app.LocaleString (IDS_DISABLENOTIFICATIONS, NULL).GetString ());
 
 						_app_generate_rulesmenu (hsubmenu, _app_notifyget_id (hwnd, FALSE));
 					}
 					else if (ctrl_id == IDC_ALLOW_BTN)
 					{
-						AppendMenu (hsubmenu, MF_STRING, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, NULL));
+						AppendMenu (hsubmenu, MF_STRING, IDC_ALLOW_BTN, app.LocaleString (IDS_ACTION_ALLOW, NULL).GetString ());
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
 
 						_app_generate_timermenu (hsubmenu, 0);
@@ -770,12 +775,14 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						_r_menu_checkitem (hsubmenu, IDC_ALLOW_BTN, IDC_ALLOW_BTN, MF_BYCOMMAND, IDC_ALLOW_BTN);
 					}
 
-					RECT buttonRect = {0};
+					RECT buttonRect;
 
-					GetClientRect (nmlp->hwndFrom, &buttonRect);
-					ClientToScreen (nmlp->hwndFrom, (LPPOINT)&buttonRect);
+					if (GetClientRect (nmlp->hwndFrom, &buttonRect))
+					{
+						ClientToScreen (nmlp->hwndFrom, (LPPOINT)&buttonRect);
 
-					_r_wnd_adjustwindowrect (nmlp->hwndFrom, &buttonRect);
+						_r_wnd_adjustwindowrect (nmlp->hwndFrom, &buttonRect);
+					}
 
 					_r_menu_popup (hsubmenu, hwnd, (LPPOINT)&buttonRect, TRUE);
 
@@ -814,7 +821,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 									nmlvgit.iItem = item_id;
 									nmlvgit.lParam = 0;
 
-									_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _app_gettooltip (app.GetHWND (), &nmlvgit));
+									_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _app_gettooltip (app.GetHWND (), &nmlvgit).GetString ());
 								}
 							}
 
@@ -823,23 +830,23 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					}
 					else if (ctrl_id == IDC_RULES_BTN)
 					{
-						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_NOTIFY_TOOLTIP, NULL));
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_NOTIFY_TOOLTIP, NULL).GetString ());
 					}
 					else if (ctrl_id == IDC_ALLOW_BTN)
 					{
-						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_ACTION_ALLOW_HINT, NULL));
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_ACTION_ALLOW_HINT, NULL).GetString ());
 					}
 					else if (ctrl_id == IDC_BLOCK_BTN)
 					{
-						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_ACTION_BLOCK_HINT, NULL));
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_ACTION_BLOCK_HINT, NULL).GetString ());
 					}
 					else if (ctrl_id == IDC_LATER_BTN)
 					{
-						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_ACTION_LATER_HINT, NULL));
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_ACTION_LATER_HINT, NULL).GetString ());
 					}
 					else
 					{
-						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_ctrl_gettext (hwnd, ctrl_id));
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_ctrl_gettext (hwnd, ctrl_id).GetString ());
 					}
 
 					if (!_r_str_isempty (buffer))
@@ -1173,7 +1180,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 					if (hedit)
 					{
-						WCHAR class_name[64] = {0};
+						WCHAR class_name[128];
 
 						if (GetClassName (hedit, class_name, RTL_NUMBER_OF (class_name)) > 0)
 						{

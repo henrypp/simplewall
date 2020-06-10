@@ -125,7 +125,7 @@ PACL _app_createaccesscontrollist (PACL pAcl, BOOLEAN is_secure)
 	{
 		PACCESS_ALLOWED_ACE pAce = NULL;
 
-		if (!GetAce (pAcl, cAce, (LPVOID*)&pAce))
+		if (!GetAce (pAcl, cAce, (PVOID*)&pAce))
 			continue;
 
 		if (pAce->Header.AceType == ACCESS_ALLOWED_ACE_TYPE)
@@ -214,7 +214,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 	{
 		PACCESS_ALLOWED_ACE pAce = NULL;
 
-		if (!GetAce (pDacl, cAce, (LPVOID*)&pAce))
+		if (!GetAce (pDacl, cAce, (PVOID*)&pAce))
 			continue;
 
 		if (pAce->Header.AceType != ACCESS_ALLOWED_ACE_TYPE)
@@ -328,7 +328,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 	}
 
 	if (psecurityDescriptor)
-		FwpmFreeMemory ((LPVOID*)&psecurityDescriptor);
+		FwpmFreeMemory ((PVOID*)&psecurityDescriptor);
 }
 
 VOID _app_setsecurityinfoforprovider (HANDLE hengine, const GUID* lpguid, BOOLEAN is_secure)
@@ -359,7 +359,7 @@ VOID _app_setsecurityinfoforprovider (HANDLE hengine, const GUID* lpguid, BOOLEA
 	}
 
 	if (psecurityDescriptor)
-		FwpmFreeMemory ((LPVOID*)&psecurityDescriptor);
+		FwpmFreeMemory ((PVOID*)&psecurityDescriptor);
 }
 
 VOID _app_setsecurityinfoforsublayer (HANDLE hengine, const GUID* lpguid, BOOLEAN is_secure)
@@ -390,7 +390,7 @@ VOID _app_setsecurityinfoforsublayer (HANDLE hengine, const GUID* lpguid, BOOLEA
 	}
 
 	if (psecurityDescriptor)
-		FwpmFreeMemory ((LPVOID*)&psecurityDescriptor);
+		FwpmFreeMemory ((PVOID*)&psecurityDescriptor);
 }
 
 VOID _app_setsecurityinfoforfilter (HANDLE hengine, const GUID* lpguid, BOOLEAN is_secure, UINT line)
@@ -402,7 +402,7 @@ VOID _app_setsecurityinfoforfilter (HANDLE hengine, const GUID* lpguid, BOOLEAN 
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogError (L"FwpmFilterSetSecurityInfoByKey", code, _r_fmt (L"#%d", line), 0);
+		app.LogError (L"FwpmFilterSetSecurityInfoByKey", code, _r_fmt (L"#%d", line).GetString (), 0);
 		return;
 	}
 
@@ -415,11 +415,11 @@ VOID _app_setsecurityinfoforfilter (HANDLE hengine, const GUID* lpguid, BOOLEAN 
 		code = FwpmFilterSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			app.LogError (L"FwpmFilterSetSecurityInfoByKey", code, _r_fmt (L"#%d", line), 0);
+			app.LogError (L"FwpmFilterSetSecurityInfoByKey", code, _r_fmt (L"#%d", line).GetString (), 0);
 
 		LocalFree (pNewDacl);
 	}
 
 	if (psecurityDescriptor)
-		FwpmFreeMemory ((LPVOID*)&psecurityDescriptor);
+		FwpmFreeMemory ((PVOID*)&psecurityDescriptor);
 }

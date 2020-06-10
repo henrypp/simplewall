@@ -10,7 +10,7 @@ rstring _app_getlogviewer ()
 	if (result.IsEmpty ())
 		return _r_path_expand (LOG_VIEWER_DEFAULT);
 
-	return _r_path_expand (result);
+	return _r_path_expand (result.GetString ());
 }
 
 VOID _app_loginit (BOOLEAN is_install)
@@ -25,9 +25,9 @@ VOID _app_loginit (BOOLEAN is_install)
 	if (!is_install || !app.ConfigGetBoolean (L"IsLogEnabled", FALSE))
 		return; // already closed or not enabled
 
-	rstring path = _r_path_expand (app.ConfigGetString (L"LogPath", LOG_PATH_DEFAULT));
+	rstring path = _r_path_expand (app.ConfigGetString (L"LogPath", LOG_PATH_DEFAULT).GetString ());
 
-	config.hlogfile = CreateFile (path, GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	config.hlogfile = CreateFile (path.GetString (), GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (!_r_fs_isvalidhandle (config.hlogfile))
 		return;
@@ -91,10 +91,10 @@ VOID _app_logwrite (PITEM_LOG ptr_log)
 				   ptr_log->local_port ? _app_formatport (ptr_log->local_port, TRUE).GetString () : SZ_EMPTY,
 				   !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY,
 				   ptr_log->remote_port ? _app_formatport (ptr_log->remote_port, TRUE).GetString () : SZ_EMPTY,
-				   _app_getprotoname (ptr_log->protocol, ptr_log->af).GetString (),
+				   _app_getprotoname (ptr_log->protocol, ptr_log->af, SZ_UNKNOWN).GetString (),
 				   _app_getfiltername (ptr_log->provider_name, ptr_log->filter_name, SZ_EMPTY).GetString (),
 				   ptr_log->filter_id,
-				   _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback).GetString (),
+				   _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE).GetString (),
 				   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 	);
 
@@ -199,16 +199,16 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	_r_listview_additem (hwnd, log_listview_id, item_id, 0, !_r_str_isempty (display_name) ? display_name : SZ_EMPTY, icon_id, I_GROUPIDNONE, index);
 	_r_listview_setitem (hwnd, log_listview_id, item_id, 1, !_r_str_isempty (local_fmt) ? local_fmt : SZ_EMPTY);
 	_r_listview_setitem (hwnd, log_listview_id, item_id, 3, !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY);
-	_r_listview_setitem (hwnd, log_listview_id, item_id, 5, _app_getprotoname (ptr_log->protocol, ptr_log->af));
+	_r_listview_setitem (hwnd, log_listview_id, item_id, 5, _app_getprotoname (ptr_log->protocol, ptr_log->af, NULL).GetString ());
 
 	if (ptr_log->local_port)
-		_r_listview_setitem (hwnd, log_listview_id, item_id, 2, _app_formatport (ptr_log->local_port, TRUE));
+		_r_listview_setitem (hwnd, log_listview_id, item_id, 2, _app_formatport (ptr_log->local_port, TRUE).GetString ());
 
 	if (ptr_log->remote_port)
-		_r_listview_setitem (hwnd, log_listview_id, item_id, 4, _app_formatport (ptr_log->remote_port, TRUE));
+		_r_listview_setitem (hwnd, log_listview_id, item_id, 4, _app_formatport (ptr_log->remote_port, TRUE).GetString ());
 
-	_r_listview_setitem (hwnd, log_listview_id, item_id, 6, _app_getfiltername (NULL, ptr_log->filter_name, SZ_EMPTY));
-	_r_listview_setitem (hwnd, log_listview_id, item_id, 7, _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback));
+	_r_listview_setitem (hwnd, log_listview_id, item_id, 6, _app_getfiltername (NULL, ptr_log->filter_name, SZ_EMPTY).GetString ());
+	_r_listview_setitem (hwnd, log_listview_id, item_id, 7, _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE).GetString ());
 	_r_listview_setitem (hwnd, log_listview_id, item_id, 8, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
 
 	SAFE_DELETE_MEMORY (local_fmt);
@@ -228,7 +228,7 @@ BOOLEAN _app_logislimitreached ()
 	if (!limit || !_r_fs_isvalidhandle (config.hlogfile))
 		return FALSE;
 
-	return (_r_fs_size (config.hlogfile) >= (limit * _R_BYTESIZE_KB));
+	return (_r_fs_size (config.hlogfile) >= (_r_calc_kilobytes2bytes (LONG64, limit)));
 }
 
 VOID _app_logclear ()
@@ -243,10 +243,10 @@ VOID _app_logclear ()
 	}
 	else
 	{
-		rstring path = _r_path_expand (app.ConfigGetString (L"LogPath", LOG_PATH_DEFAULT));
+		rstring path = _r_path_expand (app.ConfigGetString (L"LogPath", LOG_PATH_DEFAULT).GetString ());
 
-		_r_fs_remove (path, _R_FLAG_REMOVE_FORCE);
-		_r_fs_remove (_r_fmt (L"%s.bak", path.GetString ()), _R_FLAG_REMOVE_FORCE);
+		_r_fs_remove (path.GetString (), _R_FLAG_REMOVE_FORCE);
+		_r_fs_remove (_r_fmt (L"%s.bak", path.GetString ()).GetString (), _R_FLAG_REMOVE_FORCE);
 	}
 }
 
@@ -375,7 +375,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		{
 			if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)))
 			{
-				FwpmFreeMemory ((LPVOID*)&layer);
+				FwpmFreeMemory ((PVOID*)&layer);
 				return;
 			}
 			else if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)))
@@ -383,7 +383,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 				direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 			}
 
-			FwpmFreeMemory ((LPVOID*)&layer);
+			FwpmFreeMemory ((PVOID*)&layer);
 		}
 	}
 
@@ -417,10 +417,10 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		}
 
 		if (ptr_filter)
-			FwpmFreeMemory ((LPVOID*)&ptr_filter);
+			FwpmFreeMemory ((PVOID*)&ptr_filter);
 
 		if (ptr_provider)
-			FwpmFreeMemory ((LPVOID*)&ptr_provider);
+			FwpmFreeMemory ((PVOID*)&ptr_provider);
 
 		// prevent filter "not found" items
 		if (filter_name.IsEmpty () && provider_name.IsEmpty ())
@@ -441,15 +441,15 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 	{
 		sidstring = _r_str_fromsid (package_id);
 
-		if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, _r_str_hash (sidstring), NULL, NULL, NULL, NULL))
+		if (sidstring.IsEmpty () || !_app_item_get (DataAppUWP, _r_str_hash (sidstring.GetString ()), NULL, NULL, NULL, NULL))
 			sidstring.Release ();
 	}
 
 	// copy converted nt device path into win32
 	if ((flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) != 0 && !sidstring.IsEmpty ())
 	{
-		_r_str_alloc (&ptr_log->path, sidstring.GetLength (), sidstring);
-		ptr_log->app_hash = _r_str_hash (sidstring);
+		_r_str_alloc (&ptr_log->path, sidstring.GetLength (), sidstring.GetString ());
+		ptr_log->app_hash = _r_str_hash (sidstring.GetString ());
 	}
 	else if ((flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) != 0 && app_id)
 	{
@@ -457,8 +457,8 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 		if (!path.IsEmpty ())
 		{
-			_r_str_alloc (&ptr_log->path, path.GetLength (), path);
-			ptr_log->app_hash = _r_str_hash (path);
+			_r_str_alloc (&ptr_log->path, path.GetLength (), path.GetString ());
+			ptr_log->app_hash = _r_str_hash (path.GetString ());
 		}
 	}
 	else
@@ -476,7 +476,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		rstring userstring = _r_sys_getusernamefromsid (user_id);
 
 		if (!userstring.IsEmpty ())
-			_r_str_alloc (&ptr_log->username, userstring.GetLength (), userstring);
+			_r_str_alloc (&ptr_log->username, userstring.GetLength (), userstring.GetString ());
 	}
 
 	// indicates the direction of the packet transmission
@@ -547,8 +547,8 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 	ptr_log->is_myprovider = is_myprovider;
 
-	_r_str_alloc (&ptr_log->filter_name, filter_name.GetLength (), filter_name);
-	_r_str_alloc (&ptr_log->provider_name, provider_name.GetLength (), provider_name);
+	_r_str_alloc (&ptr_log->filter_name, filter_name.GetLength (), filter_name.GetString ());
+	_r_str_alloc (&ptr_log->provider_name, provider_name.GetLength (), provider_name.GetString ());
 
 	ptr_log->is_blocklist = (filter_weight == FILTER_WEIGHT_BLOCKLIST);
 	ptr_log->is_system = (filter_weight == FILTER_WEIGHT_HIGHEST) || (filter_weight == FILTER_WEIGHT_HIGHEST_IMPORTANT);
@@ -583,7 +583,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 }
 
 // win7+ callback
-VOID CALLBACK _wfp_logcallback0 (LPVOID pContext, const FWPM_NET_EVENT1* pEvent)
+VOID CALLBACK _wfp_logcallback0 (PVOID pContext, const FWPM_NET_EVENT1* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
@@ -613,7 +613,7 @@ VOID CALLBACK _wfp_logcallback0 (LPVOID pContext, const FWPM_NET_EVENT1* pEvent)
 }
 
 // win8+ callback
-VOID CALLBACK _wfp_logcallback1 (LPVOID pContext, const FWPM_NET_EVENT2* pEvent)
+VOID CALLBACK _wfp_logcallback1 (PVOID pContext, const FWPM_NET_EVENT2* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
@@ -661,7 +661,7 @@ VOID CALLBACK _wfp_logcallback1 (LPVOID pContext, const FWPM_NET_EVENT2* pEvent)
 }
 
 // win10rs1+ callback
-VOID CALLBACK _wfp_logcallback2 (LPVOID pContext, const FWPM_NET_EVENT3* pEvent)
+VOID CALLBACK _wfp_logcallback2 (PVOID pContext, const FWPM_NET_EVENT3* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
@@ -709,7 +709,7 @@ VOID CALLBACK _wfp_logcallback2 (LPVOID pContext, const FWPM_NET_EVENT3* pEvent)
 }
 
 // win10rs4+ callback
-VOID CALLBACK _wfp_logcallback3 (LPVOID pContext, const FWPM_NET_EVENT4* pEvent)
+VOID CALLBACK _wfp_logcallback3 (PVOID pContext, const FWPM_NET_EVENT4* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
@@ -757,7 +757,7 @@ VOID CALLBACK _wfp_logcallback3 (LPVOID pContext, const FWPM_NET_EVENT4* pEvent)
 }
 
 // win10rs5+ callback
-VOID CALLBACK _wfp_logcallback4 (LPVOID pContext, const FWPM_NET_EVENT5* pEvent)
+VOID CALLBACK _wfp_logcallback4 (PVOID pContext, const FWPM_NET_EVENT5* pEvent)
 {
 	UINT16 layer_id;
 	UINT64 filter_id;
@@ -804,7 +804,7 @@ VOID CALLBACK _wfp_logcallback4 (LPVOID pContext, const FWPM_NET_EVENT5* pEvent)
 	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
-THREAD_FN LogThread (LPVOID lparam)
+THREAD_FN LogThread (PVOID lparam)
 {
 	HWND hwnd = (HWND)lparam;
 

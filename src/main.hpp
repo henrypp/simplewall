@@ -95,7 +95,7 @@ typedef enum _ENUM_INSTALL_TYPE
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%USERPROFILE%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
 #define LOG_VIEWER_DEFAULT L"%SystemRoot%\\notepad.exe"
-#define LOG_SIZE_LIMIT_DEFAULT _R_BYTESIZE_KB
+#define LOG_SIZE_LIMIT_DEFAULT _r_calc_kilobytes2bytes (DWORD, 1)
 
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
@@ -136,7 +136,7 @@ typedef enum _ENUM_INSTALL_TYPE
 #define SZ_DIRECTION_IN L"Inbound"
 #define SZ_DIRECTION_OUT L"Outbound"
 #define SZ_DIRECTION_ANY L"Any"
-#define SZ_DIRECTION_LOOPBACK L"-Loopback"
+#define SZ_DIRECTION_LOOPBACK L"Loopback"
 
 #define SZ_LOG_TITLE L"Date" DIVIDER_CSV L"User" DIVIDER_CSV L"Path" DIVIDER_CSV L"Address (" SZ_DIRECTION_LOCAL L")" DIVIDER_CSV L"Port (" SZ_DIRECTION_LOCAL L")" DIVIDER_CSV L"Address (" SZ_DIRECTION_REMOTE L")" DIVIDER_CSV L"Port (" SZ_DIRECTION_REMOTE L")" DIVIDER_CSV L"Protocol" DIVIDER_CSV L"Filter name" DIVIDER_CSV L"Filter ID" DIVIDER_CSV L"Direction" DIVIDER_CSV L"State\r\n"
 #define SZ_LOG_BODY L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"#%" TEXT (PRIu64) L"\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"\r\n"
@@ -144,7 +144,7 @@ typedef enum _ENUM_INSTALL_TYPE
 #define UI_FONT L"Segoe UI"
 #define UI_FONT_NOTIFICATION L"Calibri"
 #define UI_FONT_DEFAULT UI_FONT L";9;400"
-#define BACKUP_HOURS_PERIOD 4 // make backup every X hour(s) (default)
+#define BACKUP_HOURS_PERIOD _r_calc_hours2seconds (time_t, 4) // make backup every X hour(s) (default)
 
 #define LEN_IP_MAX 68
 #define MAP_CACHE_MAX 1024

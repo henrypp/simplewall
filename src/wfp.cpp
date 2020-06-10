@@ -31,7 +31,7 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (HANDLE hengine)
 
 	if (FwpmProviderGetByKey (hengine, &GUID_WfpProvider, &ptr_provider) == ERROR_SUCCESS)
 	{
-		FwpmFreeMemory ((LPVOID*)&ptr_provider);
+		FwpmFreeMemory ((PVOID*)&ptr_provider);
 
 		return InstallEnabledTemporary;
 	}
@@ -62,7 +62,7 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (HANDLE hengine)
 
 	if (FwpmSubLayerGetByKey (hengine, &GUID_WfpSublayer, &ptr_sublayer) == ERROR_SUCCESS)
 	{
-		FwpmFreeMemory ((LPVOID*)&ptr_sublayer);
+		FwpmFreeMemory ((PVOID*)&ptr_sublayer);
 
 		return InstallEnabledTemporary;
 	}
@@ -519,7 +519,7 @@ BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line)
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogError (L"FwpmTransactionBegin", code, _r_fmt (L"#%d", line), UID);
+		app.LogError (L"FwpmTransactionBegin", code, _r_fmt (L"#%d", line).GetString (), UID);
 		return FALSE;
 	}
 
@@ -534,7 +534,7 @@ BOOLEAN _wfp_transact_commit (HANDLE hengine, UINT line)
 	{
 		FwpmTransactionAbort (hengine);
 
-		app.LogError (L"FwpmTransactionCommit", code, _r_fmt (L"#%d", line), UID);
+		app.LogError (L"FwpmTransactionCommit", code, _r_fmt (L"#%d", line).GetString (), UID);
 		return FALSE;
 
 	}
@@ -559,10 +559,10 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 {
 	FWPM_FILTER filter = {0};
 
-	WCHAR fltr_name[128] = {0};
+	WCHAR fltr_name[128];
 	_r_str_copy (fltr_name, RTL_NUMBER_OF (fltr_name), APP_NAME);
 
-	WCHAR fltr_desc[128] = {0};
+	WCHAR fltr_desc[128];
 	_r_str_copy (fltr_desc, RTL_NUMBER_OF (fltr_desc), _r_str_isempty (name) ? SZ_EMPTY : name);
 
 	filter.displayData.name = fltr_name;
@@ -738,7 +738,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, LP
 
 		if (!ptr_app_object)
 		{
-			app.LogError (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash), 0);
+			app.LogError (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash).GetString (), 0);
 			return FALSE;
 		}
 
@@ -746,7 +746,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, LP
 
 		if (!ptr_app)
 		{
-			app.LogError (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash), 0);
+			app.LogError (TEXT (__FUNCTION__), 0, _r_fmt (L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash).GetString (), 0);
 			_r_obj2_dereference (ptr_app_object);
 
 			return FALSE;
@@ -935,7 +935,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, LP
 							{
 								for (auto &p : rvc)
 								{
-									if (!_wfp_createrulefilter (hengine, name, app_hash, p, NULL, protocol, af, dir, weight, action, flag, pmfarr))
+									if (!_wfp_createrulefilter (hengine, name, app_hash, p.GetString (), NULL, protocol, af, dir, weight, action, flag, pmfarr))
 										return FALSE;
 								}
 							}
@@ -1124,10 +1124,10 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT 
 					// apply rules for services hosts
 					if (ptr_rule->is_forservices)
 					{
-						if (!_wfp_createrulefilter (hengine, ptr_rule->pname, config.ntoskrnl_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
+						if (!_wfp_createrulefilter (hengine, ptr_rule->pname, config.ntoskrnl_hash, rule_remote.GetString (), rule_local.GetString (), ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
 							is_haveerrors = TRUE;
 
-						if (!_wfp_createrulefilter (hengine, ptr_rule->pname, config.svchost_hash, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
+						if (!_wfp_createrulefilter (hengine, ptr_rule->pname, config.svchost_hash, rule_remote.GetString (), rule_local.GetString (), ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
 							is_haveerrors = TRUE;
 					}
 
@@ -1138,13 +1138,13 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, const OBJECTS_VEC& ptr_rules, UINT 
 							if (ptr_rule->is_forservices && (papps.first == config.ntoskrnl_hash || papps.first == config.svchost_hash))
 								continue;
 
-							if (!_wfp_createrulefilter (hengine, ptr_rule->pname, papps.first, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
+							if (!_wfp_createrulefilter (hengine, ptr_rule->pname, papps.first, rule_remote.GetString (), rule_local.GetString (), ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
 								is_haveerrors = TRUE;
 						}
 					}
 					else
 					{
-						if (!_wfp_createrulefilter (hengine, ptr_rule->pname, 0, rule_remote, rule_local, ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
+						if (!_wfp_createrulefilter (hengine, ptr_rule->pname, 0, rule_remote.GetString (), rule_local.GetString (), ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, &guids))
 							is_haveerrors = TRUE;
 					}
 				}
@@ -1628,7 +1628,7 @@ SIZE_T _wfp_dumpfilters (HANDLE hengine, const GUID* pprovider_id, GUIDS_VEC* pt
 						ptr_filters->push_back (pfilter->filterKey);
 				}
 
-				FwpmFreeMemory ((LPVOID*)&matchingFwpFilter);
+				FwpmFreeMemory ((PVOID*)&matchingFwpFilter);
 			}
 			else
 			{
@@ -1651,7 +1651,7 @@ BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable)
 	BOOLEAN result = FALSE;
 
 	INetFwPolicy2* pNetFwPolicy2 = NULL;
-	HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), NULL, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (LPVOID*)&pNetFwPolicy2);
+	HRESULT hr = CoCreateInstance (__uuidof (NetFwPolicy2), NULL, CLSCTX_INPROC_SERVER, __uuidof (INetFwPolicy2), (PVOID*)&pNetFwPolicy2);
 
 	if (SUCCEEDED (hr) && pNetFwPolicy2)
 	{
@@ -1694,7 +1694,7 @@ BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable)
 					result = TRUE;
 
 				else
-					app.LogError (L"put_FirewallEnabled", hr, _r_fmt (L"%d", type), 0);
+					app.LogError (L"put_FirewallEnabled", hr, _r_fmt (L"%d", type).GetString (), 0);
 			}
 		}
 	}
@@ -1814,9 +1814,9 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 	{
 		path_buff = path;
 
-		if (_r_str_hash (path_buff) == config.ntoskrnl_hash)
+		if (_r_str_hash (path_buff.GetString ()) == config.ntoskrnl_hash)
 		{
-			if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
+			if (ByteBlobAlloc ((PVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
 				return ERROR_SUCCESS;
 		}
 		else
@@ -1838,12 +1838,12 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 				else
 				{
 					// file path (root)
-					WCHAR path_root[MAX_PATH] = {0};
+					WCHAR path_root[MAX_PATH];
 					_r_str_copy (path_root, RTL_NUMBER_OF (path_root), path);
 					PathStripToRoot (path_root);
 
 					// file path (without root)
-					WCHAR path_noroot[MAX_PATH] = {0};
+					WCHAR path_noroot[MAX_PATH];
 					_r_str_copy (path_noroot, RTL_NUMBER_OF (path_noroot), PathSkipRoot (path));
 
 					path_buff = path_root;
@@ -1862,7 +1862,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 				return code;
 			}
 
-			if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
+			if (ByteBlobAlloc ((PVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
 				return ERROR_SUCCESS;
 		}
 	}
@@ -1873,7 +1873,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 		if (type == DataAppDevice)
 			_r_str_tolower (path_buff.GetBuffer ()); // lower is important!
 
-		if (ByteBlobAlloc ((LPVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
+		if (ByteBlobAlloc ((PVOID)path_buff.GetString (), (path_buff.GetLength () + 1) * sizeof (WCHAR), lpblob))
 			return ERROR_SUCCESS;
 	}
 

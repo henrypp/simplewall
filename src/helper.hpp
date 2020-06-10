@@ -32,10 +32,10 @@ VOID _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app, LPWSTR* extracted_
 BOOLEAN _app_getfileicon (LPCWSTR path, BOOLEAN is_small, PINT picon_id, HICON* picon);
 PR_OBJECT _app_getsignatureinfo (SIZE_T app_hash, const PITEM_APP ptr_app);
 PR_OBJECT _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app);
-rstring _app_getservicename (UINT16 port, LPCWSTR empty_text);
-rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af);
-rstring _app_getstatename (DWORD state, LPCWSTR default_value);
-rstring _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback);
+rstring _app_getservicename (UINT16 port, LPCWSTR default_value);
+rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af, LPCWSTR default_value);
+rstring _app_getconnectionstatusname (DWORD state, LPCWSTR default_value);
+rstring _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, BOOLEAN is_localized);
 rstring _app_getfiltername (LPCWSTR provider_name, LPCWSTR filter_name, LPCWSTR default_value);
 COLORREF _app_getcolorvalue (SIZE_T color_hash);
 
@@ -46,14 +46,14 @@ VOID _app_generate_services ();
 VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash);
 VOID _app_generate_timermenu (HMENU hsubmenu, SIZE_T app_hash);
 
-BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, rstring* display_name, rstring* real_path, time_t* ptime, LPVOID* lpdata);
+BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, rstring* display_name, rstring* real_path, time_t* ptime, PVOID* lpdata);
 
 rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port);
 
 BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, PUSHORT port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR paddr_dns, SIZE_T dns_length);
 BOOLEAN _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr);
 
-BOOLEAN _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR* pbuffer);
+BOOLEAN _app_resolveaddress (ADDRESS_FAMILY af, PVOID paddr, LPWSTR* pbuffer);
 
 INT _app_getlistview_id (ENUM_TYPE_DATA type);
 

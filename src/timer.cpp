@@ -26,15 +26,15 @@ VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 	else
 	{
 		time_t current_time = _r_unixtime_now ();
-		BOOL is_created = FALSE;
+		BOOLEAN is_created = FALSE;
 
 		if (_r_fs_isvalidhandle (ptr_app->htimer))
 		{
-			is_created = ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, (DWORD)seconds * _R_SECONDSCLOCK_MSEC, 0);
+			is_created = !!ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, _r_calc_seconds2milliseconds (DWORD, seconds), 0);
 		}
 		else
 		{
-			is_created = CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, (DWORD)seconds * _R_SECONDSCLOCK_MSEC, 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
+			is_created = !!CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, _r_calc_seconds2milliseconds (DWORD, seconds), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
 		}
 
 		if (is_created)
@@ -164,5 +164,5 @@ VOID CALLBACK _app_timer_callback (PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 	_r_listview_redraw (hwnd, listview_id, INVALID_INT);
 
 	if (app.ConfigGetBoolean (L"IsNotificationsTimer", TRUE))
-		_r_tray_popup (hwnd, UID, NIIF_INFO | (app.ConfigGetBoolean (L"IsNotificationsSound", TRUE) ? 0 : NIIF_NOSOUND), APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_TIMER_DONE, NULL), ptr_app->display_name));
+		_r_tray_popup (hwnd, UID, NIIF_INFO | (app.ConfigGetBoolean (L"IsNotificationsSound", TRUE) ? 0 : NIIF_NOSOUND), APP_NAME, _r_fmt (app.LocaleString (IDS_STATUS_TIMER_DONE, NULL).GetString (), ptr_app->display_name).GetString ());
 }

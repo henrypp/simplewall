@@ -20,15 +20,15 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
 			// localize window
-			SetWindowText (hwnd, app.LocaleString (IDS_RULE, NULL));
+			SetWindowText (hwnd, app.LocaleString (IDS_RULE, NULL).GetString ());
 
 			if (pcontext->item_id != INVALID_INT)
-				SetDlgItemText (hwnd, IDC_RULE_ID, _r_listview_getitemtext (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0));
+				SetDlgItemText (hwnd, IDC_RULE_ID, _r_listview_getitemtext (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0).GetString ());
 
 			SetDlgItemText (hwnd, IDC_RULE_HINT, L"eg. 192.168.0.1\r\neg. [fe80::]\r\neg. 192.168.0.1:443\r\neg. [fe80::]:443\r\neg. 192.168.0.1-192.168.0.255\r\neg. 192.168.0.1-192.168.0.255:443\r\neg. 192.168.0.0/16\r\neg. fe80::/10\r\neg. 80\r\neg. 443\r\neg. 20-21\r\neg. 49152-65534");
 
-			SetDlgItemText (hwnd, IDC_SAVE, app.LocaleString (pcontext->item_id != INVALID_INT ? IDS_SAVE : IDS_ADD, NULL));
-			SetDlgItemText (hwnd, IDC_CLOSE, app.LocaleString (IDS_CLOSE, NULL));
+			SetDlgItemText (hwnd, IDC_SAVE, app.LocaleString (pcontext->item_id != INVALID_INT ? IDS_SAVE : IDS_ADD, NULL).GetString ());
+			SetDlgItemText (hwnd, IDC_CLOSE, app.LocaleString (IDS_CLOSE, NULL).GetString ());
 
 			_r_wnd_addstyle (hwnd, IDC_SAVE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
@@ -83,7 +83,7 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (!_app_parserulestring (rule_single, NULL))
 					{
-						_r_ctrl_showtip (hwnd, IDC_RULE_ID, 0, NULL, app.LocaleString (IDS_STATUS_SYNTAX_ERROR, NULL));
+						_r_ctrl_showtip (hwnd, IDC_RULE_ID, 0, NULL, app.LocaleString (IDS_STATUS_SYNTAX_ERROR, NULL).GetString ());
 						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
 
 						return FALSE;
@@ -91,11 +91,11 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					if (pcontext->item_id == INVALID_INT)
 					{
-						_r_listview_additem (pcontext->hwnd, pcontext->listview_id, INVALID_INT, 0, rule_single);
+						_r_listview_additem (pcontext->hwnd, pcontext->listview_id, INVALID_INT, 0, rule_single.GetString ());
 					}
 					else
 					{
-						_r_listview_setitem (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0, rule_single);
+						_r_listview_setitem (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0, rule_single.GetString ());
 					}
 
 					[[fallthrough]];
@@ -137,7 +137,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			// name
 			if (GetDlgItem (hwnd, IDC_RULE_NAME_ID))
 			{
-				SetDlgItemText (hwnd, IDC_RULE_NAME, app.LocaleString (IDS_NAME, L":"));
+				SetDlgItemText (hwnd, IDC_RULE_NAME, app.LocaleString (IDS_NAME, L":").GetString ());
 
 				if (!_r_str_isempty (ptr_rule->pname))
 					SetDlgItemText (hwnd, IDC_RULE_NAME_ID, ptr_rule->pname);
@@ -151,11 +151,11 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			// direction
 			if (GetDlgItem (hwnd, IDC_RULE_DIRECTION))
 			{
-				SetDlgItemText (hwnd, IDC_RULE_DIRECTION, app.LocaleString (IDS_DIRECTION, L":"));
+				SetDlgItemText (hwnd, IDC_RULE_DIRECTION, app.LocaleString (IDS_DIRECTION, L":").GetString ());
 
-				SetDlgItemText (hwnd, IDC_RULE_DIRECTION_OUTBOUND, app.LocaleString (IDS_DIRECTION_1, NULL));
-				SetDlgItemText (hwnd, IDC_RULE_DIRECTION_INBOUND, app.LocaleString (IDS_DIRECTION_2, NULL));
-				SetDlgItemText (hwnd, IDC_RULE_DIRECTION_ANY, text_any);
+				SetDlgItemText (hwnd, IDC_RULE_DIRECTION_OUTBOUND, app.LocaleString (IDS_DIRECTION_1, NULL).GetString ());
+				SetDlgItemText (hwnd, IDC_RULE_DIRECTION_INBOUND, app.LocaleString (IDS_DIRECTION_2, NULL).GetString ());
+				SetDlgItemText (hwnd, IDC_RULE_DIRECTION_ANY, text_any.GetString ());
 
 				if (ptr_rule->direction == FWP_DIRECTION_OUTBOUND)
 					CheckRadioButton (hwnd, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY, IDC_RULE_DIRECTION_OUTBOUND);
@@ -174,10 +174,10 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			// action
 			if (GetDlgItem (hwnd, IDC_RULE_ACTION))
 			{
-				SetDlgItemText (hwnd, IDC_RULE_ACTION, app.LocaleString (IDS_ACTION, L":"));
+				SetDlgItemText (hwnd, IDC_RULE_ACTION, app.LocaleString (IDS_ACTION, L":").GetString ());
 
-				SetDlgItemText (hwnd, IDC_RULE_ACTION_BLOCK, app.LocaleString (IDS_ACTION_BLOCK, NULL));
-				SetDlgItemText (hwnd, IDC_RULE_ACTION_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, NULL));
+				SetDlgItemText (hwnd, IDC_RULE_ACTION_BLOCK, app.LocaleString (IDS_ACTION_BLOCK, NULL).GetString ());
+				SetDlgItemText (hwnd, IDC_RULE_ACTION_ALLOW, app.LocaleString (IDS_ACTION_ALLOW, NULL).GetString ());
 
 				CheckRadioButton (hwnd, IDC_RULE_ACTION_BLOCK, IDC_RULE_ACTION_ALLOW, ptr_rule->is_block ? IDC_RULE_ACTION_BLOCK : IDC_RULE_ACTION_ALLOW);
 
@@ -188,7 +188,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			// protocols
 			if (GetDlgItem (hwnd, IDC_RULE_PROTOCOL_ID))
 			{
-				SetDlgItemText (hwnd, IDC_RULE_PROTOCOL, app.LocaleString (IDS_PROTOCOL, L":"));
+				SetDlgItemText (hwnd, IDC_RULE_PROTOCOL, app.LocaleString (IDS_PROTOCOL, L":").GetString ());
 
 				UINT8 protos[] = {
 					IPPROTO_ICMP,
@@ -215,7 +215,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 				for (auto &proto : protos)
 				{
-					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_INSERTSTRING, (WPARAM)index, (LPARAM)_r_fmt (L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (proto, AF_UNSPEC).GetString (), proto).GetString ());
+					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_INSERTSTRING, (WPARAM)index, (LPARAM)_r_fmt (L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (proto, AF_UNSPEC, SZ_UNKNOWN).GetString (), proto).GetString ());
 					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETITEMDATA, (WPARAM)index, (LPARAM)proto);
 
 					if (ptr_rule->protocol == proto)
@@ -227,7 +227,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				// unknown protocol
 				if (SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_GETCURSEL, 0, 0) == CB_ERR)
 				{
-					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_INSERTSTRING, (WPARAM)index, (LPARAM)_r_fmt (L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (ptr_rule->protocol, AF_UNSPEC).GetString (), ptr_rule->protocol).GetString ());
+					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_INSERTSTRING, (WPARAM)index, (LPARAM)_r_fmt (L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, SZ_UNKNOWN).GetString (), ptr_rule->protocol).GetString ());
 					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETITEMDATA, (WPARAM)index, (LPARAM)ptr_rule->protocol);
 
 					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETCURSEL, (WPARAM)index, 0);
@@ -239,7 +239,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			// rule (remote)
 			if (GetDlgItem (hwnd, IDC_RULE_REMOTE_ID))
 			{
-				SetDlgItemText (hwnd, IDC_RULE_REMOTE, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L"):"));
+				SetDlgItemText (hwnd, IDC_RULE_REMOTE, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L"):").GetString ());
 
 				_r_listview_setstyle (hwnd, IDC_RULE_REMOTE_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP, FALSE);
 				_r_listview_addcolumn (hwnd, IDC_RULE_REMOTE_ID, 0, NULL, -100, 0);
@@ -256,7 +256,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						_r_str_trim (rule_single, DIVIDER_TRIM DIVIDER_RULE);
 
 						_r_fastlock_acquireshared (&lock_checkbox);
-						_r_listview_additem (hwnd, IDC_RULE_REMOTE_ID, index, 0, rule_single);
+						_r_listview_additem (hwnd, IDC_RULE_REMOTE_ID, index, 0, rule_single.GetString ());
 						_r_fastlock_releaseshared (&lock_checkbox);
 
 						index += 1;
@@ -265,9 +265,9 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					_r_listview_setcolumn (hwnd, IDC_RULE_REMOTE_ID, 0, NULL, -100);
 				}
 
-				SetDlgItemText (hwnd, IDC_RULE_REMOTE_ADD, app.LocaleString (IDS_ADD, L"..."));
-				SetDlgItemText (hwnd, IDC_RULE_REMOTE_EDIT, app.LocaleString (IDS_EDIT2, L"..."));
-				SetDlgItemText (hwnd, IDC_RULE_REMOTE_DELETE, app.LocaleString (IDS_DELETE, NULL));
+				SetDlgItemText (hwnd, IDC_RULE_REMOTE_ADD, app.LocaleString (IDS_ADD, L"...").GetString ());
+				SetDlgItemText (hwnd, IDC_RULE_REMOTE_EDIT, app.LocaleString (IDS_EDIT2, L"...").GetString ());
+				SetDlgItemText (hwnd, IDC_RULE_REMOTE_DELETE, app.LocaleString (IDS_DELETE, NULL).GetString ());
 
 				_r_ctrl_enable (hwnd, IDC_RULE_REMOTE_ADD, !ptr_rule->is_readonly);
 				_r_ctrl_enable (hwnd, IDC_RULE_REMOTE_EDIT, FALSE);
@@ -281,7 +281,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			// rule (local)
 			if (GetDlgItem (hwnd, IDC_RULE_LOCAL_ID))
 			{
-				SetDlgItemText (hwnd, IDC_RULE_LOCAL, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_LOCAL L"):"));
+				SetDlgItemText (hwnd, IDC_RULE_LOCAL, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_LOCAL L"):").GetString ());
 
 				_r_listview_setstyle (hwnd, IDC_RULE_LOCAL_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP, FALSE);
 				_r_listview_addcolumn (hwnd, IDC_RULE_LOCAL_ID, 0, NULL, -100, 0);
@@ -298,7 +298,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						_r_str_trim (rule_single, DIVIDER_TRIM DIVIDER_RULE);
 
 						_r_fastlock_acquireshared (&lock_checkbox);
-						_r_listview_additem (hwnd, IDC_RULE_LOCAL_ID, index, 0, rule_single);
+						_r_listview_additem (hwnd, IDC_RULE_LOCAL_ID, index, 0, rule_single.GetString ());
 						_r_fastlock_releaseshared (&lock_checkbox);
 
 						index += 1;
@@ -307,9 +307,9 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					_r_listview_setcolumn (hwnd, IDC_RULE_LOCAL_ID, 0, NULL, -100);
 				}
 
-				SetDlgItemText (hwnd, IDC_RULE_LOCAL_ADD, app.LocaleString (IDS_ADD, L"..."));
-				SetDlgItemText (hwnd, IDC_RULE_LOCAL_EDIT, app.LocaleString (IDS_EDIT2, L"..."));
-				SetDlgItemText (hwnd, IDC_RULE_LOCAL_DELETE, app.LocaleString (IDS_DELETE, NULL));
+				SetDlgItemText (hwnd, IDC_RULE_LOCAL_ADD, app.LocaleString (IDS_ADD, L"...").GetString ());
+				SetDlgItemText (hwnd, IDC_RULE_LOCAL_EDIT, app.LocaleString (IDS_EDIT2, L"...").GetString ());
+				SetDlgItemText (hwnd, IDC_RULE_LOCAL_DELETE, app.LocaleString (IDS_DELETE, NULL).GetString ());
 
 				_r_ctrl_enable (hwnd, IDC_RULE_LOCAL_ADD, !ptr_rule->is_readonly);
 				_r_ctrl_enable (hwnd, IDC_RULE_LOCAL_EDIT, FALSE);
@@ -327,7 +327,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 				_r_listview_setstyle (hwnd, IDC_RULE_APPS_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, TRUE);
 
-				_r_listview_addcolumn (hwnd, IDC_RULE_APPS_ID, 0, app.LocaleString (IDS_NAME, NULL), 0, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, IDC_RULE_APPS_ID, 0, app.LocaleString (IDS_NAME, NULL).GetString (), 0, LVCFMT_LEFT);
 
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
@@ -382,10 +382,10 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 			// hints
 			if (GetDlgItem (hwnd, IDC_RULE_HINT))
-				SetDlgItemText (hwnd, IDC_RULE_HINT, app.LocaleString (IDS_RULE_HINT, NULL));
+				SetDlgItemText (hwnd, IDC_RULE_HINT, app.LocaleString (IDS_RULE_HINT, NULL).GetString ());
 
 			if (GetDlgItem (hwnd, IDC_RULE_APPS_HINT))
-				SetDlgItemText (hwnd, IDC_RULE_APPS_HINT, app.LocaleString (IDS_RULE_APPS_HINT, NULL));
+				SetDlgItemText (hwnd, IDC_RULE_APPS_HINT, app.LocaleString (IDS_RULE_APPS_HINT, NULL).GetString ());
 
 			break;
 		}
@@ -412,7 +412,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						break;
 
 					INT command_id = 0;
-					INT ctrl_id = PtrToInt ((LPVOID)lpnmlv->hdr.idFrom);
+					INT ctrl_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 
 					if (ctrl_id == IDC_RULE_REMOTE_ID)
 					{
@@ -433,7 +433,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				{
 					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					INT listview_id = PtrToInt ((LPVOID)lpnmlv->hdr.idFrom);
+					INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 
 					if (
 						listview_id != IDC_RULE_REMOTE_ID &&
@@ -459,11 +459,11 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						UINT id_edit = is_remote ? IDC_RULE_REMOTE_EDIT : IDC_RULE_LOCAL_EDIT;
 						UINT id_delete = is_remote ? IDC_RULE_REMOTE_DELETE : IDC_RULE_LOCAL_DELETE;
 
-						AppendMenu (hsubmenu, MF_STRING, id_add, app.LocaleString (IDS_ADD, L"..."));
-						AppendMenu (hsubmenu, MF_STRING, id_edit, app.LocaleString (IDS_EDIT2, L"..."));
-						AppendMenu (hsubmenu, MF_STRING, id_delete, app.LocaleString (IDS_DELETE, NULL));
+						AppendMenu (hsubmenu, MF_STRING, id_add, app.LocaleString (IDS_ADD, L"...").GetString ());
+						AppendMenu (hsubmenu, MF_STRING, id_edit, app.LocaleString (IDS_EDIT2, L"...").GetString ());
+						AppendMenu (hsubmenu, MF_STRING, id_delete, app.LocaleString (IDS_DELETE, NULL).GetString ());
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, app.LocaleString (IDS_COPY, NULL));
+						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, app.LocaleString (IDS_COPY, NULL).GetString ());
 
 						if (ptr_rule->is_readonly)
 						{
@@ -481,12 +481,12 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					}
 					else if (listview_id == IDC_RULE_APPS_ID)
 					{
-						AppendMenu (hsubmenu, MF_STRING, IDM_CHECK, app.LocaleString (IDS_CHECK, NULL));
-						AppendMenu (hsubmenu, MF_STRING, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, NULL));
+						AppendMenu (hsubmenu, MF_STRING, IDM_CHECK, app.LocaleString (IDS_CHECK, NULL).GetString ());
+						AppendMenu (hsubmenu, MF_STRING, IDM_UNCHECK, app.LocaleString (IDS_UNCHECK, NULL).GetString ());
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-						AppendMenu (hsubmenu, MF_STRING, IDM_PROPERTIES, app.LocaleString (IDS_SHOWINLIST, NULL));
+						AppendMenu (hsubmenu, MF_STRING, IDM_PROPERTIES, app.LocaleString (IDS_SHOWINLIST, NULL).GetString ());
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, app.LocaleString (IDS_COPY, NULL));
+						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, app.LocaleString (IDS_COPY, NULL).GetString ());
 
 						if (ptr_rule->type != DataRuleCustom)
 						{
@@ -514,7 +514,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
 
-					INT listview_id = PtrToInt ((LPVOID)lpnmlv->hdr.idFrom);
+					INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 
 					_app_listviewsort (hwnd, listview_id, lpnmlv->iSubItem, TRUE);
 
@@ -525,7 +525,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
 
-					INT listview_id = PtrToInt ((LPVOID)lpnmlv->hdr.idFrom);
+					INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 
 					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
 					{
@@ -549,7 +549,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
 
-					INT listview_id = PtrToInt ((LPVOID)lpnmlv->hdr.idFrom);
+					INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 
 					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
 					{
@@ -594,7 +594,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				{
 					LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
 
-					_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (hwnd, lpnmlv));
+					_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, _app_gettooltip (hwnd, lpnmlv).GetString ());
 
 					break;
 				}
@@ -604,7 +604,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
 
 					lpnmlv->dwFlags = EMF_CENTERED;
-					_r_str_copy (lpnmlv->szMarkup, RTL_NUMBER_OF (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, NULL));
+					_r_str_copy (lpnmlv->szMarkup, RTL_NUMBER_OF (lpnmlv->szMarkup), app.LocaleString (IDS_STATUS_EMPTY, NULL).GetString ());
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 					return TRUE;
@@ -664,7 +664,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					INT listview_id = ((ctrl_id == IDC_RULE_REMOTE_DELETE) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID);
 					INT selected = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
 
-					if (!selected || app.ShowMessage (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_fmt (app.LocaleString (IDS_QUESTION_DELETE, NULL), selected)) != IDYES)
+					if (!selected || app.ShowMessage (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_fmt (app.LocaleString (IDS_QUESTION_DELETE, NULL).GetString (), selected).GetString ()) != IDYES)
 						break;
 
 					INT count = _r_listview_getitemcount (hwnd, listview_id, FALSE) - 1;
@@ -736,7 +736,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 					_r_str_trim (buffer, DIVIDER_TRIM);
 
-					_r_clipboard_set (hwnd, buffer, buffer.GetLength ());
+					_r_clipboard_set (hwnd, buffer.GetString (), buffer.GetLength ());
 
 					break;
 				}
@@ -778,9 +778,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
 			//// configure tabs
-			_r_tab_additem (hwnd, IDC_TAB, 0, app.LocaleString (IDS_SETTINGS_GENERAL, NULL), I_IMAGENONE, (LPARAM)CreateDialogParam (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_EDITOR_GENERAL), hwnd, &EditorPagesProc, (LPARAM)ptr_rule));
-			_r_tab_additem (hwnd, IDC_TAB, 1, app.LocaleString (IDS_RULE, NULL), I_IMAGENONE, (LPARAM)CreateDialogParam (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_EDITOR_RULE), hwnd, &EditorPagesProc, (LPARAM)ptr_rule));
-			_r_tab_additem (hwnd, IDC_TAB, 2, app.LocaleString (IDS_TAB_APPS, NULL), I_IMAGENONE, (LPARAM)CreateDialogParam (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_EDITOR_APPS), hwnd, &EditorPagesProc, (LPARAM)ptr_rule));
+			_r_tab_additem (hwnd, IDC_TAB, 0, app.LocaleString (IDS_SETTINGS_GENERAL, NULL).GetString (), I_IMAGENONE, (LPARAM)CreateDialogParam (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_EDITOR_GENERAL), hwnd, &EditorPagesProc, (LPARAM)ptr_rule));
+			_r_tab_additem (hwnd, IDC_TAB, 1, app.LocaleString (IDS_RULE, NULL).GetString (), I_IMAGENONE, (LPARAM)CreateDialogParam (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_EDITOR_RULE), hwnd, &EditorPagesProc, (LPARAM)ptr_rule));
+			_r_tab_additem (hwnd, IDC_TAB, 2, app.LocaleString (IDS_TAB_APPS, NULL).GetString (), I_IMAGENONE, (LPARAM)CreateDialogParam (app.GetHINSTANCE (), MAKEINTRESOURCE (IDD_EDITOR_APPS), hwnd, &EditorPagesProc, (LPARAM)ptr_rule));
 
 #if !defined(_APP_NO_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
@@ -796,13 +796,13 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				if (ptr_rule->is_readonly)
 					title.AppendFormat (L" (%s)", SZ_RULE_INTERNAL_TITLE);
 
-				SetWindowText (hwnd, title);
+				SetWindowText (hwnd, title.GetString ());
 			}
 
-			SetDlgItemText (hwnd, IDC_ENABLE_CHK, app.LocaleString (IDS_ENABLE_CHK, NULL));
+			SetDlgItemText (hwnd, IDC_ENABLE_CHK, app.LocaleString (IDS_ENABLE_CHK, NULL).GetString ());
 
-			SetDlgItemText (hwnd, IDC_SAVE, app.LocaleString (IDS_SAVE, NULL));
-			SetDlgItemText (hwnd, IDC_CLOSE, app.LocaleString (IDS_CLOSE, NULL));
+			SetDlgItemText (hwnd, IDC_SAVE, app.LocaleString (IDS_SAVE, NULL).GetString ());
+			SetDlgItemText (hwnd, IDC_CLOSE, app.LocaleString (IDS_CLOSE, NULL).GetString ());
 
 			_r_wnd_addstyle (hwnd, IDC_SAVE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 			_r_wnd_addstyle (hwnd, IDC_CLOSE, app.IsClassicUI () ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
@@ -893,7 +893,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							rstring name = _r_ctrl_gettext (hpage_general, IDC_RULE_NAME_ID);
 
 							_r_str_trim (name, DIVIDER_TRIM DIVIDER_RULE);
-							_r_str_alloc (&ptr_rule->pname, min (name.GetLength (), RULE_NAME_CCH_MAX), name);
+							_r_str_alloc (&ptr_rule->pname, min (name.GetLength (), RULE_NAME_CCH_MAX), name.GetString ());
 						}
 
 						// rule (remote)
@@ -916,7 +916,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							_r_str_trim (buffer, DIVIDER_TRIM DIVIDER_RULE);
-							_r_str_alloc (&ptr_rule->prule_remote, buffer.GetLength (), buffer);
+							_r_str_alloc (&ptr_rule->prule_remote, buffer.GetLength (), buffer.GetString ());
 						}
 
 						// rule (local)
@@ -939,7 +939,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							}
 
 							_r_str_trim (buffer, DIVIDER_TRIM DIVIDER_RULE);
-							_r_str_alloc (&ptr_rule->prule_local, buffer.GetLength (), buffer);
+							_r_str_alloc (&ptr_rule->prule_local, buffer.GetLength (), buffer.GetString ());
 						}
 
 						ptr_rule->protocol = (UINT8)SendDlgItemMessage (hpage_general, IDC_RULE_PROTOCOL_ID, CB_GETITEMDATA, SendDlgItemMessage (hpage_general, IDC_RULE_PROTOCOL_ID, CB_GETCURSEL, 0, 0), 0);

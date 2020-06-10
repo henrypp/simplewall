@@ -82,12 +82,12 @@ BOOLEAN _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID paddr, U
 	{
 		if (af == AF_INET)
 		{
-			_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (L"%hhu.%hhu.%hhu.%hhu.%s", p4addr->s_impno, p4addr->s_lh, p4addr->s_host, p4addr->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W));
+			_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (L"%hhu.%hhu.%hhu.%hhu.%s", p4addr->s_impno, p4addr->s_lh, p4addr->s_host, p4addr->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W).GetString ());
 		}
 		else
 		{
 			for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
-				_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (L"%hhx.%hhx.", p6addr->s6_addr[i] & 0xF, (p6addr->s6_addr[i] >> 4) & 0xF));
+				_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (L"%hhx.%hhx.", p6addr->s6_addr[i] & 0xF, (p6addr->s6_addr[i] >> 4) & 0xF).GetString ());
 
 			_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), DNS_IP6_REVERSE_DOMAIN_STRING_W);
 		}
@@ -97,7 +97,7 @@ BOOLEAN _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID paddr, U
 	else
 	{
 		if ((flags & FMTADDR_USE_PROTOCOL) != 0)
-			_r_str_printf (formatted_address, RTL_NUMBER_OF (formatted_address), L"%s://", _app_getprotoname (proto, AF_UNSPEC).GetString ());
+			_r_str_printf (formatted_address, RTL_NUMBER_OF (formatted_address), L"%s://", _app_getprotoname (proto, AF_UNSPEC, SZ_UNKNOWN).GetString ());
 
 		WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
@@ -112,7 +112,7 @@ BOOLEAN _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID paddr, U
 					result = !IN6_IS_ADDR_UNSPECIFIED (p6addr);
 
 				if (result)
-					_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), (af == AF_INET6) ? _r_fmt (L"[%s]", addr_str) : addr_str);
+					_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), (af == AF_INET6) ? _r_fmt (L"[%s]", addr_str).GetString () : addr_str);
 			}
 			else
 			{
@@ -122,7 +122,7 @@ BOOLEAN _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID paddr, U
 		}
 
 		if (port && (flags & FMTADDR_USE_PROTOCOL) == 0)
-			_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port));
+			_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (!_r_str_isempty (formatted_address) ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port).GetString ());
 	}
 
 	if ((flags & FMTADDR_RESOLVE_HOST) != 0)
@@ -141,7 +141,7 @@ BOOLEAN _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID paddr, U
 					PR_OBJECT ptr_cache_object = _r_obj2_reference (phash);
 
 					if (ptr_cache_object->pdata)
-						_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (L" (%s)", (LPCWSTR)ptr_cache_object->pdata));
+						_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (L" (%s)", (LPCWSTR)ptr_cache_object->pdata).GetString ());
 
 					_r_obj2_dereference (ptr_cache_object);
 				}
@@ -154,7 +154,7 @@ BOOLEAN _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, const PVOID paddr, U
 
 				if (_app_resolveaddress (af, paddr, &ptr_cache))
 				{
-					_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (L" (%s)", ptr_cache));
+					_r_str_cat (formatted_address, RTL_NUMBER_OF (formatted_address), _r_fmt (L" (%s)", ptr_cache).GetString ());
 
 					_app_freeobjects_map (cache_hosts, MAP_CACHE_MAX);
 
@@ -381,7 +381,7 @@ VOID _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app, LPWSTR* extracted_
 		if (!_app_item_get (ptr_app->type, app_hash, &name, NULL, NULL, NULL))
 			name = ptr_app->original_path;
 
-		_r_str_alloc (extracted_name, name.GetLength (), name);
+		_r_str_alloc (extracted_name, name.GetLength (), name.GetString ());
 	}
 	else
 	{
@@ -565,32 +565,32 @@ PR_OBJECT _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 
 				if (hglob)
 				{
-					LPVOID versionInfo = LockResource (hglob);
+					PVOID versionInfo = LockResource (hglob);
 
 					if (versionInfo)
 					{
 						rstring buffer;
 
 						UINT vLen = 0, langD = 0;
-						LPVOID retbuf = NULL;
+						PVOID retbuf = NULL;
 
-						WCHAR author_entry[128] = {0};
-						WCHAR description_entry[128] = {0};
+						WCHAR authorEntry[128];
+						WCHAR descriptionEntry[128];
 
 						if (VerQueryValue (versionInfo, L"\\VarFileInfo\\Translation", &retbuf, &vLen) && vLen == 4)
 						{
 							RtlCopyMemory (&langD, retbuf, vLen);
 
-							_r_str_printf (author_entry, RTL_NUMBER_OF (author_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
-							_r_str_printf (description_entry, RTL_NUMBER_OF (description_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
+							_r_str_printf (authorEntry, RTL_NUMBER_OF (authorEntry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
+							_r_str_printf (descriptionEntry, RTL_NUMBER_OF (descriptionEntry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langD & 0xff00) >> 8, langD & 0xff, (langD & 0xff000000) >> 24, (langD & 0xff0000) >> 16);
 						}
 						else
 						{
-							_r_str_printf (author_entry, RTL_NUMBER_OF (author_entry), L"\\StringFileInfo\\%04X04B0\\CompanyName", GetUserDefaultLangID ());
-							_r_str_printf (description_entry, RTL_NUMBER_OF (description_entry), L"\\StringFileInfo\\%04X04B0\\FileDescription", GetUserDefaultLangID ());
+							_r_str_printf (authorEntry, RTL_NUMBER_OF (authorEntry), L"\\StringFileInfo\\%04X04B0\\CompanyName", GetUserDefaultLangID ());
+							_r_str_printf (descriptionEntry, RTL_NUMBER_OF (descriptionEntry), L"\\StringFileInfo\\%04X04B0\\FileDescription", GetUserDefaultLangID ());
 						}
 
-						if (VerQueryValue (versionInfo, description_entry, &retbuf, &vLen))
+						if (VerQueryValue (versionInfo, descriptionEntry, &retbuf, &vLen))
 						{
 							buffer.Append (SZ_TAB);
 							buffer.Append ((LPCWSTR)retbuf);
@@ -598,7 +598,7 @@ PR_OBJECT _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 							UINT length = 0;
 							VS_FIXEDFILEINFO* verInfo = NULL;
 
-							if (VerQueryValue (versionInfo, L"\\", (LPVOID*)&verInfo, &length))
+							if (VerQueryValue (versionInfo, L"\\", (PVOID*)&verInfo, &length))
 							{
 								buffer.Append (_r_fmt (L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS)));
 
@@ -614,7 +614,7 @@ PR_OBJECT _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 							buffer.Append (L"\r\n");
 						}
 
-						if (VerQueryValue (versionInfo, author_entry, &retbuf, &vLen))
+						if (VerQueryValue (versionInfo, authorEntry, &retbuf, &vLen))
 						{
 							buffer.Append (SZ_TAB);
 							buffer.Append ((LPCWSTR)retbuf);
@@ -626,7 +626,7 @@ PR_OBJECT _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 						// get signature information
 						LPWSTR ptr_cache = NULL;
 
-						if (_r_str_alloc (&ptr_cache, buffer.GetLength (), buffer))
+						if (_r_str_alloc (&ptr_cache, buffer.GetLength (), buffer.GetString ()))
 						{
 							_app_freeobjects_map (cache_versions, MAP_CACHE_MAX);
 
@@ -647,7 +647,7 @@ PR_OBJECT _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 	return ptr_cache_object;
 }
 
-rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
+rstring _app_getservicename (UINT16 port, LPCWSTR default_value)
 {
 	switch (port)
 	{
@@ -1317,10 +1317,10 @@ rstring _app_getservicename (UINT16 port, LPCWSTR empty_text)
 			return L"traceroute";
 	}
 
-	return empty_text;
+	return default_value;
 }
 
-rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af)
+rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af, LPCWSTR default_value)
 {
 	switch (proto)
 	{
@@ -1394,10 +1394,10 @@ rstring _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af)
 			return L"sctp";
 	}
 
-	return SZ_UNKNOWN;
+	return default_value;
 }
 
-rstring _app_getstatename (DWORD state, LPCWSTR default_value)
+rstring _app_getconnectionstatusname (DWORD state, LPCWSTR default_value)
 {
 	switch (state)
 	{
@@ -1441,21 +1441,38 @@ rstring _app_getstatename (DWORD state, LPCWSTR default_value)
 	return default_value;
 }
 
-rstring _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback)
+rstring _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, BOOLEAN is_localized)
 {
 	rstring result;
 
-	if (direction == FWP_DIRECTION_INBOUND)
-		result = SZ_DIRECTION_IN;
+	if (is_localized)
+	{
+		if (direction == FWP_DIRECTION_OUTBOUND)
+			result = app.LocaleString (IDS_DIRECTION_1, NULL);
 
-	else if (direction == FWP_DIRECTION_OUTBOUND)
-		result = SZ_DIRECTION_OUT;
+		else if (direction == FWP_DIRECTION_INBOUND)
+			result = app.LocaleString (IDS_DIRECTION_2, NULL);
 
-	else if (direction == FWP_DIRECTION_MAX)
-		result = SZ_DIRECTION_ANY;
+		else if (direction == FWP_DIRECTION_MAX)
+			result = app.LocaleString (IDS_ANY, NULL);
 
-	if (is_loopback)
-		result.Append (SZ_DIRECTION_LOOPBACK);
+		if (is_loopback)
+			result.AppendFormat (L" (%s)", SZ_DIRECTION_LOOPBACK);
+	}
+	else
+	{
+		if (direction == FWP_DIRECTION_OUTBOUND)
+			result = SZ_DIRECTION_OUT;
+
+		else if (direction == FWP_DIRECTION_INBOUND)
+			result = SZ_DIRECTION_IN;
+
+		else if (direction == FWP_DIRECTION_MAX)
+			result = SZ_DIRECTION_ANY;
+
+		if (is_loopback)
+			result.Append (L"-" SZ_DIRECTION_LOOPBACK);
+	}
 
 	return result;
 }
@@ -1568,14 +1585,14 @@ rstring _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, PSIZE_
 		}
 	}
 
-	*phash = _r_str_hash (proc_name);
+	*phash = _r_str_hash (proc_name.GetString ());
 
 	if (!proc_name.IsEmpty ())
 	{
 		*picon_id = (INT)_app_getappinfo (*phash, InfoIconId);
 
 		if (!*picon_id)
-			_app_getfileicon (proc_name, TRUE, picon_id, NULL);
+			_app_getfileicon (proc_name.GetString (), TRUE, picon_id, NULL);
 	}
 	else
 	{
@@ -1596,7 +1613,7 @@ SIZE_T _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, PVOID remote_addr, DWO
 	if (local_addr)
 		_app_formatip (af, local_addr, local_addr_str, RTL_NUMBER_OF (local_addr_str));
 
-	return _r_str_hash (_r_fmt (L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG), af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state));
+	return _r_str_hash (_r_fmt (L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG), af, pid, remote_addr_str, remote_port, local_addr_str, local_port, proto, state).GetString ());
 }
 
 BOOLEAN _app_isvalidconnection (ADDRESS_FAMILY af, const PVOID paddr)
@@ -1633,14 +1650,23 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 {
 	checker_map.clear ();
 
-	DWORD tableSize = 0;
-	GetExtendedTcpTable (NULL, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
+	DWORD allocationSize = 0x4000;
+	PVOID memoryAddress = _r_mem_allocatezero (allocationSize);
 
-	if (tableSize)
+	DWORD requiredSize = 0;
+	GetExtendedTcpTable (NULL, &requiredSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
+
+	if (requiredSize)
 	{
-		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = (PMIB_TCPTABLE_OWNER_MODULE)_r_mem_allocatezero (tableSize);
+		if (allocationSize < requiredSize)
+		{
+			memoryAddress = _r_mem_reallocatezero (memoryAddress, requiredSize);
+			allocationSize = requiredSize;
+		}
 
-		if (GetExtendedTcpTable (tcp4Table, &tableSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
+		PMIB_TCPTABLE_OWNER_MODULE tcp4Table = (PMIB_TCPTABLE_OWNER_MODULE)memoryAddress;
+
+		if (GetExtendedTcpTable (tcp4Table, &requiredSize, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
 			for (DWORD i = 0; i < tcp4Table->dwNumEntries; i++)
 			{
@@ -1650,14 +1676,11 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 				remote_addr.S_un.S_addr = tcp4Table->table[i].dwRemoteAddr;
 				local_addr.S_un.S_addr = tcp4Table->table[i].dwLocalAddr;
 
-				SIZE_T net_hash = _app_getnetworkhash (AF_INET, tcp4Table->table[i].dwOwningPid, &remote_addr, tcp4Table->table[i].dwRemotePort, &local_addr, tcp4Table->table[i].dwLocalPort, IPPROTO_TCP, tcp4Table->table[i].dwState);
+				SIZE_T network_hash = _app_getnetworkhash (AF_INET, tcp4Table->table[i].dwOwningPid, &remote_addr, tcp4Table->table[i].dwRemotePort, &local_addr, tcp4Table->table[i].dwLocalPort, IPPROTO_TCP, tcp4Table->table[i].dwState);
 
-				if (!net_hash)
-					continue;
-
-				if (ptr_map.find (net_hash) != ptr_map.end ())
+				if (ptr_map.find (network_hash) != ptr_map.end ())
 				{
-					checker_map[net_hash] = FALSE;
+					checker_map[network_hash] = FALSE;
 					continue;
 				}
 
@@ -1665,7 +1688,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 
 				rstring path = _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
-				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
+				_r_str_alloc (&ptr_network->path, path.GetLength (), path.GetString ());
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
@@ -1684,33 +1707,34 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 						ptr_network->is_connection = TRUE;
 				}
 
-				ptr_map[net_hash] = ptr_network;
-				checker_map[net_hash] = TRUE;
+				ptr_map[network_hash] = ptr_network;
+				checker_map[network_hash] = TRUE;
 			}
 		}
-
-		_r_mem_free (tcp4Table);
 	}
 
-	tableSize = 0;
-	GetExtendedTcpTable (NULL, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0);
+	requiredSize = 0;
+	GetExtendedTcpTable (NULL, &requiredSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
-	if (tableSize)
+	if (requiredSize)
 	{
-		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = (PMIB_TCP6TABLE_OWNER_MODULE)_r_mem_allocatezero (tableSize);
+		if (allocationSize < requiredSize)
+		{
+			memoryAddress = _r_mem_reallocate (memoryAddress, requiredSize);
+			allocationSize = requiredSize;
+		}
 
-		if (GetExtendedTcpTable (tcp6Table, &tableSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
+		PMIB_TCP6TABLE_OWNER_MODULE tcp6Table = (PMIB_TCP6TABLE_OWNER_MODULE)memoryAddress;
+
+		if (GetExtendedTcpTable (tcp6Table, &requiredSize, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
 			for (DWORD i = 0; i < tcp6Table->dwNumEntries; i++)
 			{
-				SIZE_T net_hash = _app_getnetworkhash (AF_INET6, tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].ucRemoteAddr, tcp6Table->table[i].dwRemotePort, tcp6Table->table[i].ucLocalAddr, tcp6Table->table[i].dwLocalPort, IPPROTO_TCP, tcp6Table->table[i].dwState);
+				SIZE_T network_hash = _app_getnetworkhash (AF_INET6, tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].ucRemoteAddr, tcp6Table->table[i].dwRemotePort, tcp6Table->table[i].ucLocalAddr, tcp6Table->table[i].dwLocalPort, IPPROTO_TCP, tcp6Table->table[i].dwState);
 
-				if (!net_hash)
-					continue;
-
-				if (ptr_map.find (net_hash) != ptr_map.end ())
+				if (ptr_map.find (network_hash) != ptr_map.end ())
 				{
-					checker_map[net_hash] = FALSE;
+					checker_map[network_hash] = FALSE;
 					continue;
 				}
 
@@ -1718,7 +1742,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 
 				rstring path = _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
-				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
+				_r_str_alloc (&ptr_network->path, path.GetLength (), path.GetString ());
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
@@ -1737,36 +1761,37 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 						ptr_network->is_connection = TRUE;
 				}
 
-				ptr_map[net_hash] = ptr_network;
-				checker_map[net_hash] = TRUE;
+				ptr_map[network_hash] = ptr_network;
+				checker_map[network_hash] = TRUE;
 			}
 		}
-
-		_r_mem_free (tcp6Table);
 	}
 
-	tableSize = 0;
-	GetExtendedUdpTable (NULL, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0);
+	requiredSize = 0;
+	GetExtendedUdpTable (NULL, &requiredSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0);
 
-	if (tableSize)
+	if (requiredSize)
 	{
-		PMIB_UDPTABLE_OWNER_MODULE udp4Table = (PMIB_UDPTABLE_OWNER_MODULE)_r_mem_allocatezero (tableSize);
+		if (allocationSize < requiredSize)
+		{
+			memoryAddress = _r_mem_reallocate (memoryAddress, requiredSize);
+			allocationSize = requiredSize;
+		}
 
-		if (GetExtendedUdpTable (udp4Table, &tableSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
+		PMIB_UDPTABLE_OWNER_MODULE udp4Table = (PMIB_UDPTABLE_OWNER_MODULE)memoryAddress;
+
+		if (GetExtendedUdpTable (udp4Table, &requiredSize, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
 			for (DWORD i = 0; i < udp4Table->dwNumEntries; i++)
 			{
 				IN_ADDR local_addr = {0};
 				local_addr.S_un.S_addr = udp4Table->table[i].dwLocalAddr;
 
-				SIZE_T net_hash = _app_getnetworkhash (AF_INET, udp4Table->table[i].dwOwningPid, NULL, 0, &local_addr, udp4Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
+				SIZE_T network_hash = _app_getnetworkhash (AF_INET, udp4Table->table[i].dwOwningPid, NULL, 0, &local_addr, udp4Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (!net_hash)
-					continue;
-
-				if (ptr_map.find (net_hash) != ptr_map.end ())
+				if (ptr_map.find (network_hash) != ptr_map.end ())
 				{
-					checker_map[net_hash] = FALSE;
+					checker_map[network_hash] = FALSE;
 					continue;
 				}
 
@@ -1774,7 +1799,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 
 				rstring path = _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
-				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
+				_r_str_alloc (&ptr_network->path, path.GetLength (), path.GetString ());
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
@@ -1787,33 +1812,35 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 				if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
 					ptr_network->is_connection = TRUE;
 
-				ptr_map[net_hash] = ptr_network;
-				checker_map[net_hash] = TRUE;
+				ptr_map[network_hash] = ptr_network;
+				checker_map[network_hash] = TRUE;
 			}
 		}
 
-		_r_mem_free (udp4Table);
 	}
 
-	tableSize = 0;
-	GetExtendedUdpTable (NULL, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0);
+	requiredSize = 0;
+	GetExtendedUdpTable (NULL, &requiredSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0);
 
-	if (tableSize)
+	if (requiredSize)
 	{
-		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = (PMIB_UDP6TABLE_OWNER_MODULE)_r_mem_allocatezero (tableSize);
+		if (allocationSize < requiredSize)
+		{
+			memoryAddress = _r_mem_reallocate (memoryAddress, requiredSize);
+			allocationSize = requiredSize;
+		}
 
-		if (GetExtendedUdpTable (udp6Table, &tableSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
+		PMIB_UDP6TABLE_OWNER_MODULE udp6Table = (PMIB_UDP6TABLE_OWNER_MODULE)memoryAddress;
+
+		if (GetExtendedUdpTable (udp6Table, &requiredSize, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
 			for (DWORD i = 0; i < udp6Table->dwNumEntries; i++)
 			{
-				SIZE_T net_hash = _app_getnetworkhash (AF_INET6, udp6Table->table[i].dwOwningPid, NULL, 0, udp6Table->table[i].ucLocalAddr, udp6Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
+				SIZE_T network_hash = _app_getnetworkhash (AF_INET6, udp6Table->table[i].dwOwningPid, NULL, 0, udp6Table->table[i].ucLocalAddr, udp6Table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (!net_hash)
-					continue;
-
-				if (ptr_map.find (net_hash) != ptr_map.end ())
+				if (ptr_map.find (network_hash) != ptr_map.end ())
 				{
-					checker_map[net_hash] = FALSE;
+					checker_map[network_hash] = FALSE;
 					continue;
 				}
 
@@ -1821,7 +1848,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 
 				rstring path = _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
 
-				_r_str_alloc (&ptr_network->path, path.GetLength (), path);
+				_r_str_alloc (&ptr_network->path, path.GetLength (), path.GetString ());
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;
@@ -1834,23 +1861,23 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 				if (_app_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
 					ptr_network->is_connection = TRUE;
 
-				ptr_map[net_hash] = ptr_network;
-				checker_map[net_hash] = TRUE;
+				ptr_map[network_hash] = ptr_network;
+				checker_map[network_hash] = TRUE;
 			}
 		}
-
-		_r_mem_free (udp6Table);
 	}
+
+	if (memoryAddress)
+		_r_mem_free (memoryAddress);
 }
 
 VOID _app_generate_packages ()
 {
-	HKEY hkey = NULL;
-	HKEY hsubkey = NULL;
+	HKEY hkey;
 
-	LONG rc = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages", 0, KEY_READ, &hkey);
+	LONG code = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages", 0, KEY_READ, &hkey);
 
-	if (rc == ERROR_SUCCESS)
+	if (code == ERROR_SUCCESS)
 	{
 		DWORD index = 0;
 		DWORD max_length = _r_reg_querysubkeylength (hkey);
@@ -1861,6 +1888,7 @@ VOID _app_generate_packages ()
 			return;
 		}
 
+		HKEY hsubkey;
 		LPWSTR key_name = (LPWSTR)_r_mem_allocatezero ((max_length + 1) * sizeof (WCHAR));
 
 		while (TRUE)
@@ -1870,9 +1898,9 @@ VOID _app_generate_packages ()
 			if (RegEnumKeyEx (hkey, index++, key_name, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
 				break;
 
-			rc = RegOpenKeyEx (hkey, key_name, 0, KEY_READ, &hsubkey);
+			code = RegOpenKeyEx (hkey, key_name, 0, KEY_READ, &hsubkey);
 
-			if (rc == ERROR_SUCCESS)
+			if (code == ERROR_SUCCESS)
 			{
 				LPBYTE package_sid = _r_reg_querybinary (hsubkey, L"PackageSid");
 
@@ -1892,7 +1920,7 @@ VOID _app_generate_packages ()
 					continue;
 				}
 
-				SIZE_T app_hash = _r_str_hash (package_sid_string);
+				SIZE_T app_hash = _r_str_hash (package_sid_string.GetString ());
 
 				if (_app_isapphelperfound (app_hash))
 				{
@@ -1908,9 +1936,9 @@ VOID _app_generate_packages ()
 				{
 					if (display_name.At (0) == L'@')
 					{
-						WCHAR name[MAX_PATH] = {0};
+						WCHAR name[MAX_PATH];
 
-						if (SUCCEEDED (SHLoadIndirectString (display_name, name, RTL_NUMBER_OF (name), NULL)))
+						if (SUCCEEDED (SHLoadIndirectString (display_name.GetString (), name, RTL_NUMBER_OF (name), NULL)))
 							display_name = name;
 
 						else
@@ -1937,12 +1965,12 @@ VOID _app_generate_packages ()
 				rstring path = _r_reg_querystring (hsubkey, L"PackageRootFolder");
 
 				if (!path.IsEmpty ())
-					_r_str_alloc (&ptr_item->real_path, path.GetLength (), path);
+					_r_str_alloc (&ptr_item->real_path, path.GetLength (), path.GetString ());
 
 				RegCloseKey (hsubkey);
 
-				_r_str_alloc (&ptr_item->display_name, display_name.GetLength (), display_name);
-				_r_str_alloc (&ptr_item->internal_name, package_sid_string.GetLength (), package_sid_string);
+				_r_str_alloc (&ptr_item->display_name, display_name.GetLength (), display_name.GetString ());
+				_r_str_alloc (&ptr_item->internal_name, package_sid_string.GetLength (), package_sid_string.GetString ());
 
 				// load additional info from appx manifest
 				_app_load_appxmanifest (ptr_item);
@@ -1976,7 +2004,7 @@ VOID _app_generate_services ()
 		dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
 
 	DWORD bufferSize = initialBufferSize;
-	LPVOID pBuffer = _r_mem_allocatezero (bufferSize);
+	PVOID pBuffer = _r_mem_allocatezero (bufferSize);
 
 	if (!pBuffer)
 		return;
@@ -2029,7 +2057,7 @@ VOID _app_generate_services ()
 			{
 				HKEY hkey = NULL;
 
-				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s\\Parameters", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
+				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s\\Parameters", service_name).GetString (), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 				{
 					// query path
 					real_path = _r_reg_querystring (hkey, L"ServiceDll");
@@ -2046,7 +2074,7 @@ VOID _app_generate_services ()
 			{
 				HKEY hkey = NULL;
 
-				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s", service_name), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
+				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _r_fmt (L"System\\CurrentControlSet\\Services\\%s", service_name).GetString (), 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 				{
 					// query path
 					if (real_path.IsEmpty ())
@@ -2072,7 +2100,7 @@ VOID _app_generate_services ()
 			}
 
 			if (!real_path.IsEmpty ())
-				real_path = _r_path_dospathfromnt (real_path);
+				real_path = _r_path_dospathfromnt (real_path.GetString ());
 
 			PSID pserviceSid = _app_queryservicesid (service_name);
 
@@ -2105,7 +2133,7 @@ VOID _app_generate_services ()
 				ptr_item->timestamp = timestamp;
 
 				_r_str_alloc (&ptr_item->display_name, _r_str_length (display_name), display_name);
-				_r_str_alloc (&ptr_item->real_path, real_path.GetLength (), real_path);
+				_r_str_alloc (&ptr_item->real_path, real_path.GetLength (), real_path.GetString ());
 				_r_str_alloc (&ptr_item->internal_name, _r_str_length (service_name), service_name);
 
 				ptr_item->pdata = _r_mem_allocatezero (sd_length);
@@ -2134,7 +2162,7 @@ VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash)
 	if (!app_hash || !pstatus->rules_count)
 	{
 		AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, NULL));
+		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY, NULL).GetString ());
 
 		_r_menu_enableitem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND, FALSE);
 	}
@@ -2184,8 +2212,8 @@ VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash)
 							continue;
 						}
 
-						WCHAR buffer[128] = {0};
-						_r_str_printf (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? SZ_RULE_INTERNAL_MENU : NULL), ptr_rule->pname);
+						WCHAR buffer[128];
+						_r_str_printf (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_RULE_APPLY_2, ptr_rule->is_readonly ? SZ_RULE_INTERNAL_MENU : NULL).GetString (), ptr_rule->pname);
 
 						MENUITEMINFO mii = {0};
 
@@ -2209,8 +2237,8 @@ VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash)
 	}
 
 	AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-	AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, app.LocaleString (IDS_EDITRULES, NULL));
-	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"..."));
+	AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, app.LocaleString (IDS_EDITRULES, NULL).GetString ());
+	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR, L"...").GetString ());
 
 	_r_mem_free (pstatus);
 }
@@ -2228,7 +2256,7 @@ VOID _app_generate_timermenu (HMENU hsubmenu, SIZE_T app_hash)
 		UINT menu_id = IDX_TIMER + (UINT)i;
 		time_t timer = timers.at (i);
 
-		AppendMenu (hsubmenu, MF_STRING, menu_id, _r_fmt_interval (timer + 1, 1));
+		AppendMenu (hsubmenu, MF_STRING, menu_id, _r_fmt_interval (timer + 1, 1).GetString ());
 
 		if (!is_checked && (app_time > current_time) && (app_time <= (current_time + timer)))
 		{
@@ -2241,7 +2269,7 @@ VOID _app_generate_timermenu (HMENU hsubmenu, SIZE_T app_hash)
 		_r_menu_checkitem (hsubmenu, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND, IDM_DISABLETIMER);
 }
 
-BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, rstring* display_name, rstring* real_path, time_t* ptime, LPVOID* lpdata)
+BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, rstring* display_name, rstring* real_path, time_t* ptime, PVOID* lpdata)
 {
 	PITEM_APP_HELPER ptr_app_item = _app_getapphelperitem (app_hash);
 
@@ -2306,7 +2334,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 			for (auto &current = ppQueryResultsSet; current != NULL; current = current->pNext)
 			{
 				// ipv4 address
-				WCHAR str[INET_ADDRSTRLEN] = {0};
+				WCHAR str[INET_ADDRSTRLEN];
 
 				if (_app_formatip (AF_INET, &(current->Data.A.IpAddress), str, RTL_NUMBER_OF (str)))
 				{
@@ -2337,7 +2365,7 @@ rstring _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 		{
 			for (auto &current = ppQueryResultsSet; current != NULL; current = current->pNext)
 			{
-				WCHAR str[INET6_ADDRSTRLEN] = {0};
+				WCHAR str[INET6_ADDRSTRLEN];
 
 				if (_app_formatip (AF_INET6, &(current->Data.AAAA.Ip6Address), str, RTL_NUMBER_OF (str)))
 				{
@@ -2440,11 +2468,11 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 				}
 				else
 				{
-					_r_str_copy (paddr_dns, dns_length, host);
+					_r_str_copy (paddr_dns, dns_length, host.GetString ());
 
 					LPWSTR ptr_cache = NULL;
 
-					if (_r_str_alloc (&ptr_cache, host.GetLength (), host))
+					if (_r_str_alloc (&ptr_cache, host.GetLength (), host.GetString ()))
 					{
 						_app_freeobjects_map (cache_dns, MAP_CACHE_MAX);
 
@@ -2469,11 +2497,11 @@ BOOLEAN _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 	if (rule.IsEmpty ())
 		return TRUE;
 
-	if (!_app_isrulevalidchars (rule))
+	if (!_app_isrulevalidchars (rule.GetString ()))
 		return FALSE;
 
 	ENUM_TYPE_DATA type = DataUnknown;
-	SIZE_T range_pos = _r_str_find (rule, rule.GetLength (), DIVIDER_RULE_RANGE, 0);
+	SIZE_T range_pos = _r_str_find (rule.GetString (), rule.GetLength (), DIVIDER_RULE_RANGE, 0);
 	BOOLEAN is_range = (range_pos != INVALID_SIZE_T);
 
 	WCHAR range_start[LEN_IP_MAX] = {0};
@@ -2481,13 +2509,13 @@ BOOLEAN _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 
 	if (is_range)
 	{
-		_r_str_copy (range_start, RTL_NUMBER_OF (range_start), _r_str_extract (rule, rule.GetLength (), 0, range_pos));
-		_r_str_copy (range_end, RTL_NUMBER_OF (range_end), _r_str_extract (rule, rule.GetLength (), range_pos + 1));
+		_r_str_copy (range_start, RTL_NUMBER_OF (range_start), _r_str_extract (rule.GetString (), rule.GetLength (), 0, range_pos).GetString ());
+		_r_str_copy (range_end, RTL_NUMBER_OF (range_end), _r_str_extract (rule.GetString (), rule.GetLength (), range_pos + 1).GetString ());
 	}
 
 	// auto-parse rule type
 	{
-		SIZE_T rule_hash = _r_str_hash (rule);
+		SIZE_T rule_hash = _r_str_hash (rule.GetString ());
 		BOOLEAN is_exists = cache_types.find (rule_hash) != cache_types.end ();
 
 		if (is_exists)
@@ -2496,15 +2524,15 @@ BOOLEAN _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 		}
 		else
 		{
-			if (_app_isruleport (rule))
+			if (_app_isruleport (rule.GetString ()))
 			{
 				type = DataTypePort;
 			}
-			else if (is_range ? (_app_isruleip (range_start) && _app_isruleip (range_end)) : _app_isruleip (rule))
+			else if (is_range ? (_app_isruleip (range_start) && _app_isruleip (range_end)) : _app_isruleip (rule.GetString ()))
 			{
 				type = DataTypeIp;
 			}
-			else if (_app_isrulehost (rule))
+			else if (_app_isrulehost (rule.GetString ()))
 			{
 				type = DataTypeHost;
 			}
@@ -2536,7 +2564,7 @@ BOOLEAN _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 		{
 			// ...port
 			ptr_addr->type = DataTypePort;
-			ptr_addr->port = (UINT16)_r_str_touinteger (rule);
+			ptr_addr->port = (UINT16)_r_str_touinteger (rule.GetString ());
 
 			return TRUE;
 		}
@@ -2635,7 +2663,7 @@ BOOLEAN _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 		else
 		{
 			// ...ip/host
-			if (_app_parsenetworkstring (rule, &format, &port2, &addr4, &addr6, ptr_addr->host, RTL_NUMBER_OF (ptr_addr->host)))
+			if (_app_parsenetworkstring (rule.GetString (), &format, &port2, &addr4, &addr6, ptr_addr->host, RTL_NUMBER_OF (ptr_addr->host)))
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
@@ -2680,7 +2708,7 @@ BOOLEAN _app_parserulestring (rstring rule, PITEM_ADDRESS ptr_addr)
 	return TRUE;
 }
 
-BOOLEAN _app_resolveaddress (ADDRESS_FAMILY af, LPVOID paddr, LPWSTR* pbuffer)
+BOOLEAN _app_resolveaddress (ADDRESS_FAMILY af, PVOID paddr, LPWSTR* pbuffer)
 {
 	if (af != AF_INET && af != AF_INET6)
 		return FALSE;
@@ -2771,10 +2799,8 @@ HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)
 	if (!hicon)
 		return NULL;
 
-	RECT iconRectangle = {0};
-
-	iconRectangle.right = icon_size;
-	iconRectangle.bottom = icon_size;
+	RECT iconRectangle;
+	SetRect (&iconRectangle, 0, 0, icon_size, icon_size);
 
 	HBITMAP hbitmap = NULL;
 	HDC screenHdc = GetDC (NULL);
@@ -2858,7 +2884,7 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 	WICRect rect = {0, 0, icon_size, icon_size};
 
 	// Create the ImagingFactory
-	if (FAILED (CoCreateInstance (CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID*)&wicFactory)))
+	if (FAILED (CoCreateInstance (CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (PVOID*)&wicFactory)))
 		goto DoExit;
 
 	// Load the resource
@@ -2999,7 +3025,7 @@ VOID _app_load_appxmanifest (PITEM_APP_HELPER ptr_app_item)
 	{
 		path.Format (L"%s\\%s", ptr_app_item->real_path, appx_names[i]);
 
-		if (_r_fs_exists (path))
+		if (_r_fs_exists (path.GetString ()))
 			goto DoOpen;
 	}
 
@@ -3008,7 +3034,7 @@ VOID _app_load_appxmanifest (PITEM_APP_HELPER ptr_app_item)
 DoOpen:
 
 	pugi::xml_document doc;
-	pugi::xml_parse_result xml_result = doc.load_file (path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
+	pugi::xml_parse_result xml_result = doc.load_file (path.GetString (), PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
 
 	if (xml_result)
 	{
@@ -3024,7 +3050,7 @@ DoOpen:
 				{
 					result.Format (L"%s\\%s", ptr_app_item->real_path, item.attribute (L"Executable").as_string ());
 
-					if (_r_fs_exists (result))
+					if (_r_fs_exists (result.GetString ()))
 						break;
 				}
 			}
