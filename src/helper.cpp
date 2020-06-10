@@ -1720,7 +1720,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 	{
 		if (allocationSize < requiredSize)
 		{
-			memoryAddress = _r_mem_reallocate (memoryAddress, requiredSize);
+			memoryAddress = _r_mem_reallocatezero (memoryAddress, requiredSize);
 			allocationSize = requiredSize;
 		}
 
@@ -1774,7 +1774,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 	{
 		if (allocationSize < requiredSize)
 		{
-			memoryAddress = _r_mem_reallocate (memoryAddress, requiredSize);
+			memoryAddress = _r_mem_reallocatezero (memoryAddress, requiredSize);
 			allocationSize = requiredSize;
 		}
 
@@ -1826,7 +1826,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK& ptr_map, HASHER_MAP& checker_ma
 	{
 		if (allocationSize < requiredSize)
 		{
-			memoryAddress = _r_mem_reallocate (memoryAddress, requiredSize);
+			memoryAddress = _r_mem_reallocatezero (memoryAddress, requiredSize);
 			allocationSize = requiredSize;
 		}
 
@@ -2006,25 +2006,19 @@ VOID _app_generate_services ()
 	DWORD bufferSize = initialBufferSize;
 	PVOID pBuffer = _r_mem_allocatezero (bufferSize);
 
-	if (!pBuffer)
-		return;
-
 	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, (LPBYTE)pBuffer, bufferSize, &returnLength, &servicesReturned, NULL, NULL))
 	{
 		if (GetLastError () == ERROR_MORE_DATA)
 		{
 			// Set the buffer
 			bufferSize += returnLength;
-			pBuffer = _r_mem_reallocateex (pBuffer, bufferSize, HEAP_ZERO_MEMORY);
+			pBuffer = _r_mem_reallocatezero (pBuffer, bufferSize);
 
-			if (pBuffer)
+			// Now query again for services
+			if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, (LPBYTE)pBuffer, bufferSize, &returnLength, &servicesReturned, NULL, NULL))
 			{
-				// Now query again for services
-				if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, dwServiceType, dwServiceState, (LPBYTE)pBuffer, bufferSize, &returnLength, &servicesReturned, NULL, NULL))
-				{
-					_r_mem_free (pBuffer);
-					pBuffer = NULL;
-				}
+				_r_mem_free (pBuffer);
+				pBuffer = NULL;
 			}
 		}
 		else
