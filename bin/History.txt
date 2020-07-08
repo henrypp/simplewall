@@ -1,3 +1,24 @@
+v3.2 (2020)
+- new rules editor
+- added option "IsInternalRulesDisabled" for completely disable internal rules (issue #630)
+- added temporary filtering mode whether is active until reboot (issue #576)
+- added packets logging interface (issue #672)
+- added tile view for listview
+- improved tooltips details for apps and rules
+- improved listview resizing performance
+- changed "Enabled apps" group title into "Apps with internet access"
+- now highlight app with user rules only when user rules group is disabled
+- removed compatibility with v2 profile databases
+- removed special group for rules
+- removed user id from title
+- fixed local network connection treats as valid network connection (issue #579)
+- fixed notification window will bring focus to it's parent window (issue #668)
+- fixed "/uninstall" argument does not removing filters (issue #645)
+- fixed wfp engine security violation (issue #680)
+- fixed getting uwp app paths and timestamps
+- fixed internal upnp rule
+- fixed bugs
+
 v3.1.2 (26 March 2020)
 - reverted disable windows firewall on startup (issue #559 and #562)
 - fixed application cannot be started because of continuously restart
