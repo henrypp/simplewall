@@ -188,7 +188,7 @@ PACL _app_createaccesscontrollist (PACL pAcl, BOOLEAN is_secure)
 		if (code == ERROR_SUCCESS)
 			return pNewDacl;
 
-		app.LogError (L"SetEntriesInAcl", code, NULL, 0);
+		app.LogError (0, L"SetEntriesInAcl", code, NULL);
 	}
 
 	return NULL;
@@ -203,7 +203,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogError (L"FwpmEngineGetSecurityInfo", code, NULL, 0);
+		app.LogError (0, L"FwpmEngineGetSecurityInfo", code, NULL);
 		return;
 	}
 
@@ -309,19 +309,19 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 
 		if (code != ERROR_SUCCESS)
 		{
-			app.LogError (L"SetEntriesInAcl", code, NULL, 0);
+			app.LogError (0, L"SetEntriesInAcl", code, NULL);
 		}
 		else
 		{
 			code = FwpmEngineSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 			if (code != ERROR_SUCCESS)
-				app.LogError (L"FwpmEngineSetSecurityInfo", code, NULL, 0);
+				app.LogError (0, L"FwpmEngineSetSecurityInfo", code, NULL);
 
 			code = FwpmNetEventsSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 			if (code != ERROR_SUCCESS)
-				app.LogError (L"FwpmEngineSetSecurityInfo", code, NULL, 0);
+				app.LogError (0, L"FwpmEngineSetSecurityInfo", code, NULL);
 
 			LocalFree (pNewDacl);
 		}
@@ -331,7 +331,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 		FwpmFreeMemory ((PVOID*)&psecurityDescriptor);
 }
 
-VOID _app_setsecurityinfoforprovider (HANDLE hengine, const GUID* lpguid, BOOLEAN is_secure)
+VOID _app_setsecurityinfoforprovider (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure)
 {
 	PACL pDacl = NULL;
 	PSECURITY_DESCRIPTOR psecurityDescriptor = NULL;
@@ -340,7 +340,7 @@ VOID _app_setsecurityinfoforprovider (HANDLE hengine, const GUID* lpguid, BOOLEA
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogError (L"FwpmProviderGetSecurityInfoByKey", code, NULL, 0);
+		app.LogError (0, L"FwpmProviderGetSecurityInfoByKey", code, NULL);
 		return;
 	}
 
@@ -353,7 +353,7 @@ VOID _app_setsecurityinfoforprovider (HANDLE hengine, const GUID* lpguid, BOOLEA
 		code = FwpmProviderSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			app.LogError (L"FwpmProviderSetSecurityInfoByKey", code, L"DACL_SECURITY_INFORMATION", 0);
+			app.LogError (0, L"FwpmProviderSetSecurityInfoByKey", code, L"DACL_SECURITY_INFORMATION");
 
 		LocalFree (pNewDacl);
 	}
@@ -362,7 +362,7 @@ VOID _app_setsecurityinfoforprovider (HANDLE hengine, const GUID* lpguid, BOOLEA
 		FwpmFreeMemory ((PVOID*)&psecurityDescriptor);
 }
 
-VOID _app_setsecurityinfoforsublayer (HANDLE hengine, const GUID* lpguid, BOOLEAN is_secure)
+VOID _app_setsecurityinfoforsublayer (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure)
 {
 	PACL pDacl = NULL;
 	PSECURITY_DESCRIPTOR psecurityDescriptor = NULL;
@@ -371,7 +371,7 @@ VOID _app_setsecurityinfoforsublayer (HANDLE hengine, const GUID* lpguid, BOOLEA
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogError (L"FwpmSubLayerGetSecurityInfoByKey", code, NULL, 0);
+		app.LogError (0, L"FwpmSubLayerGetSecurityInfoByKey", code, NULL);
 		return;
 	}
 
@@ -384,7 +384,7 @@ VOID _app_setsecurityinfoforsublayer (HANDLE hengine, const GUID* lpguid, BOOLEA
 		code = FwpmSubLayerSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			app.LogError (L"FwpmSubLayerSetSecurityInfoByKey", code, NULL, 0);
+			app.LogError (0, L"FwpmSubLayerSetSecurityInfoByKey", code, NULL);
 
 		LocalFree (pNewDacl);
 	}
@@ -393,7 +393,7 @@ VOID _app_setsecurityinfoforsublayer (HANDLE hengine, const GUID* lpguid, BOOLEA
 		FwpmFreeMemory ((PVOID*)&psecurityDescriptor);
 }
 
-VOID _app_setsecurityinfoforfilter (HANDLE hengine, const GUID* lpguid, BOOLEAN is_secure, UINT line)
+VOID _app_setsecurityinfoforfilter (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure, UINT line)
 {
 	PACL pDacl = NULL;
 	PSECURITY_DESCRIPTOR psecurityDescriptor = NULL;
@@ -402,7 +402,7 @@ VOID _app_setsecurityinfoforfilter (HANDLE hengine, const GUID* lpguid, BOOLEAN 
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogError (L"FwpmFilterSetSecurityInfoByKey", code, _r_fmt (L"#%d", line).GetString (), 0);
+		app.LogErrorV (0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
 		return;
 	}
 
@@ -415,7 +415,7 @@ VOID _app_setsecurityinfoforfilter (HANDLE hengine, const GUID* lpguid, BOOLEAN 
 		code = FwpmFilterSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			app.LogError (L"FwpmFilterSetSecurityInfoByKey", code, _r_fmt (L"#%d", line).GetString (), 0);
+			app.LogErrorV (0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
 
 		LocalFree (pNewDacl);
 	}
