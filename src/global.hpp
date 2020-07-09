@@ -45,18 +45,18 @@ inline rapp app;
 
 inline STATIC_DATA config;
 
-inline OBJECTS_MAP apps;
-inline OBJECTS_APP_HELPER apps_helper;
-inline OBJECTS_VEC rules_arr;
-inline OBJECTS_RULE_CONFIG rules_config;
-inline OBJECTS_NETWORK network_map;
-inline OBJECTS_LOG log_arr;
+inline OBJECTS_APP_MAP apps;
+inline OBJECTS_APP_HELPER_MAP apps_helper;
+inline OBJECTS_RULE_VECTOR rules_arr;
+inline OBJECTS_RULE_CONFIG_MAP rules_config;
+inline OBJECTS_NETWORK_MAP network_map;
+inline OBJECTS_LOG_VECTOR log_arr;
 
-inline OBJECTS_MAP cache_arpa;
-inline OBJECTS_MAP cache_signatures;
-inline OBJECTS_MAP cache_versions;
-inline OBJECTS_MAP cache_dns;
-inline OBJECTS_MAP cache_hosts;
+inline OBJECTS_STRINGS_MAP cache_arpa;
+inline OBJECTS_STRINGS_MAP cache_signatures;
+inline OBJECTS_STRINGS_MAP cache_versions;
+inline OBJECTS_STRINGS_MAP cache_dns;
+inline OBJECTS_STRINGS_MAP cache_hosts;
 inline TYPES_MAP cache_types;
 
 inline THREADS_VEC threads_pool;

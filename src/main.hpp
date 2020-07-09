@@ -22,7 +22,6 @@
 #pragma comment(lib, "wintrust.lib")
 #pragma comment(lib, "windowscodecs.lib")
 
-
 // guids
 EXTERN_C static const GUID GUID_WfpProvider = {0xb0d553e2, 0xc6a0, 0x4a9a, {0xae, 0xb8, 0xc7, 0x52, 0x48, 0x3e, 0xd6, 0x2f}};
 EXTERN_C static const GUID GUID_WfpSublayer = {0x9fee6f59, 0xb951, 0x4f9a, {0xb5, 0x2f, 0x13, 0x3d, 0xcf, 0x7a, 0x42, 0x79}};
@@ -97,24 +96,23 @@ typedef enum _ENUM_INSTALL_TYPE
 #define LOG_VIEWER_DEFAULT L"%SystemRoot%\\notepad.exe"
 #define LOG_SIZE_LIMIT_DEFAULT _r_calc_kilobytes2bytes (DWORD, 1)
 
-#define PROC_SYSTEM_PID 4
-#define PROC_SYSTEM_NAME L"System"
-
 #define PROC_WAITING_PID 0
 #define PROC_WAITING_NAME L"Waiting connections"
+
+#define PROC_SYSTEM_PID 4
+#define PROC_SYSTEM_NAME L"System"
 
 #define PATH_NTOSKRNL L"%SystemRoot%\\system32\\ntoskrnl.exe"
 #define PATH_SVCHOST L"%SystemRoot%\\system32\\svchost.exe"
 #define PATH_SHELL32 L"%SystemRoot%\\system32\\shell32.dll"
 #define PATH_WINSTORE L"%SystemRoot%\\system32\\wsreset.exe"
 
-#define WIKI_URL L"https://github.com/henrypp/simplewall/wiki/Rules-editor#rule-syntax-format"
 #define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
 
 #define BOOTTIME_FILTER_NAME L"Boot-time filter"
 #define SUBLAYER_WEIGHT_DEFAULT 0xFFFE
 
-#define DIVIDER_COPY L','
+#define DIVIDER_COPY L", "
 #define DIVIDER_CSV L","
 #define DIVIDER_APP L"|"
 #define DIVIDER_RULE L";"
@@ -142,8 +140,6 @@ typedef enum _ENUM_INSTALL_TYPE
 #define SZ_LOG_BODY L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"#%" TEXT (PRIu64) L"\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"\r\n"
 
 #define UI_FONT L"Segoe UI"
-#define UI_FONT_NOTIFICATION L"Calibri"
-#define UI_FONT_DEFAULT UI_FONT L";9;400"
 #define BACKUP_HOURS_PERIOD _r_calc_hours2seconds (time_t, 4) // make backup every X hour(s) (default)
 
 #define LEN_IP_MAX 68
@@ -199,10 +195,9 @@ typedef enum _ENUM_INSTALL_TYPE
 #define RULE_NAME_CCH_MAX 64
 #define RULE_RULE_CCH_MAX 256
 
-typedef std::vector<PR_OBJECT> OBJECTS_VEC;
 typedef std::vector<HANDLE> THREADS_VEC;
 typedef std::vector<GUID> GUIDS_VEC;
-typedef std::unordered_map<SIZE_T, PR_OBJECT> OBJECTS_MAP;
+typedef std::vector<SIZE_T> HASH_VEC;
 typedef std::unordered_map<SIZE_T, ENUM_TYPE_DATA> TYPES_MAP;
 typedef std::unordered_map<SIZE_T, BOOLEAN> HASHER_MAP;
 
@@ -215,6 +210,11 @@ typedef struct tagSTATIC_DATA
 	WCHAR windows_dir[MAX_PATH] = {0};
 
 	WCHAR search_string[128] = {0};
+
+	PR_STRING ntoskrnl_path = NULL;
+	PR_STRING svchost_path = NULL;
+	PR_STRING shell32_path = NULL;
+	PR_STRING winstore_path = NULL;
 
 	PSID pbuiltin_current_sid = NULL;
 	PSID pbuiltin_world_sid = NULL;
@@ -273,23 +273,6 @@ typedef struct tagSTATIC_DATA
 
 typedef struct tagITEM_LOG
 {
-	LPWSTR path;
-	LPWSTR provider_name;
-	LPWSTR filter_name;
-	LPWSTR username;
-
-	HICON hicon;
-
-	time_t timestamp;
-
-	SIZE_T app_hash;
-
-	ADDRESS_FAMILY af;
-
-	UINT64 filter_id;
-
-	FWP_DIRECTION direction;
-
 	union
 	{
 		IN_ADDR remote_addr;
@@ -301,6 +284,23 @@ typedef struct tagITEM_LOG
 		IN_ADDR local_addr;
 		IN6_ADDR local_addr6;
 	};
+
+	PR_STRING path;
+	PR_STRING provider_name;
+	PR_STRING filter_name;
+	PR_STRING username;
+
+	HICON hicon;
+
+	time_t timestamp;
+
+	UINT64 filter_id;
+
+	SIZE_T app_hash;
+
+	FWP_DIRECTION direction;
+
+	ADDRESS_FAMILY af;
 
 	UINT16 remote_port;
 	UINT16 local_port;
@@ -317,91 +317,85 @@ typedef struct tagITEM_LOG
 
 typedef struct tagITEM_APP
 {
-	GUIDS_VEC guids;
+	GUIDS_VEC* guids;
 
-	LPWSTR display_name = NULL;
-	LPWSTR original_path = NULL;
-	LPWSTR real_path = NULL;
+	PR_STRING display_name;
+	PR_STRING original_path;
+	PR_STRING real_path;
 
-	PITEM_LOG pnotification = NULL;
+	PITEM_LOG pnotification;
 
-	HANDLE htimer = NULL;
+	HANDLE htimer;
 
-	time_t timestamp = 0;
-	time_t timer = 0;
-	time_t last_notify = 0;
+	time_t timestamp;
+	time_t timer;
+	time_t last_notify;
 
-	INT icon_id = 0;
+	INT icon_id;
 
-	ENUM_TYPE_DATA type = DataUnknown;
+	ENUM_TYPE_DATA type;
 
-	UINT8 profile = 0; // ffu!
+	UINT8 profile; // reserved ffu!
 
-	BOOLEAN is_enabled = FALSE;
-	BOOLEAN is_haveerrors = FALSE;
-	BOOLEAN is_system = FALSE;
-	BOOLEAN is_silent = FALSE;
-	BOOLEAN is_signed = FALSE;
-	BOOLEAN is_undeletable = FALSE;
+	BOOLEAN is_enabled;
+	BOOLEAN is_haveerrors;
+	BOOLEAN is_system;
+	BOOLEAN is_silent;
+	BOOLEAN is_signed;
+	BOOLEAN is_undeletable;
 } ITEM_APP, *PITEM_APP;
 
 typedef struct tagITEM_APP_HELPER
 {
+	PR_STRING display_name;
+	PR_STRING real_path;
+	PR_STRING internal_name;
+
+	PVOID pdata; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
+
 	time_t timestamp;
 
 	ENUM_TYPE_DATA type;
-
-	LPWSTR display_name;
-	LPWSTR real_path;
-	LPWSTR internal_name;
-
-	PVOID pdata; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 } ITEM_APP_HELPER, *PITEM_APP_HELPER;
 
 typedef struct tagITEM_RULE
 {
-	HASHER_MAP apps;
+	HASHER_MAP* apps;
+	GUIDS_VEC* guids;
 
-	GUIDS_VEC guids;
+	PR_STRING name;
+	PR_STRING rule_remote;
+	PR_STRING rule_local;
 
-	LPWSTR pname = NULL;
-	LPWSTR prule_remote = NULL;
-	LPWSTR prule_local = NULL;
+	ADDRESS_FAMILY af;
 
-	ADDRESS_FAMILY af = AF_UNSPEC;
+	FWP_DIRECTION direction;
 
-	FWP_DIRECTION direction = FWP_DIRECTION_OUTBOUND;
+	UINT8 profile; // reserved ffu!
 
-	UINT8 profile = 0; // ffu!
+	UINT8 weight;
+	UINT8 protocol;
 
-	UINT8 weight = 0;
-	UINT8 protocol = 0;
+	ENUM_TYPE_DATA type;
 
-	ENUM_TYPE_DATA type = DataUnknown;
-
-	BOOLEAN is_haveerrors = FALSE;
-	BOOLEAN is_forservices = FALSE;
-	BOOLEAN is_readonly = FALSE;
-	BOOLEAN is_enabled = FALSE;
-	BOOLEAN is_enabled_default = FALSE;
-	BOOLEAN is_block = FALSE;
+	BOOLEAN is_haveerrors;
+	BOOLEAN is_forservices;
+	BOOLEAN is_readonly;
+	BOOLEAN is_enabled;
+	BOOLEAN is_enabled_default;
+	BOOLEAN is_block;
 } ITEM_RULE, *PITEM_RULE;
 
 typedef struct tagITEM_RULE_CONFIG
 {
-	LPWSTR pname;
-	LPWSTR papps;
+	PR_STRING name;
+	PR_STRING apps;
 
 	BOOLEAN is_enabled;
 } ITEM_RULE_CONFIG, *PITEM_RULE_CONFIG;
 
 typedef struct tagITEM_NETWORK
 {
-	LPWSTR path;
-	SIZE_T app_hash;
-	ADDRESS_FAMILY af;
-	FWP_DIRECTION direction;
-
 	union
 	{
 		IN_ADDR remote_addr;
@@ -413,6 +407,13 @@ typedef struct tagITEM_NETWORK
 		IN_ADDR local_addr;
 		IN6_ADDR local_addr6;
 	};
+
+	PR_STRING path;
+	SIZE_T app_hash;
+
+	FWP_DIRECTION direction;
+
+	ADDRESS_FAMILY af;
 
 	DWORD state;
 
@@ -447,12 +448,12 @@ typedef struct tagITEM_CONTEXT
 
 typedef struct tagITEM_COLOR
 {
-	LPWSTR pcfg_name;
-	LPWSTR pcfg_value;
-	SIZE_T clr_hash;
-	UINT locale_id;
+	PR_STRING configName;
+	PR_STRING configValue;
+	SIZE_T hash;
 	COLORREF default_clr;
 	COLORREF new_clr;
+	UINT locale_id;
 	BOOLEAN is_enabled;
 } ITEM_COLOR, *PITEM_COLOR;
 
@@ -482,15 +483,15 @@ typedef struct tagITEM_LIST_HEAD
 	volatile LONG thread_count;
 } ITEM_LIST_HEAD, *PITEM_LIST_HEAD;
 
-typedef struct _ITEM_LOG_LISTENTRY
+typedef struct tagITEM_LOG_LISTENTRY
 {
 	SLIST_ENTRY ListEntry;
 
 #ifndef _WIN64
-	ULONG_PTR Reserved = 0;
+	ULONG_PTR Reserved;
 #endif // _WIN64
 
-	PITEM_LOG Body = NULL;
+	PITEM_LOG Body;
 
 	//SLIST_ENTRY ListEntry;
 	//QUAD_PTR Body;
@@ -499,8 +500,13 @@ typedef struct _ITEM_LOG_LISTENTRY
 C_ASSERT (FIELD_OFFSET (ITEM_LOG_LISTENTRY, ListEntry) == 0x00);
 C_ASSERT (FIELD_OFFSET (ITEM_LOG_LISTENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
 
-typedef std::unordered_map<SIZE_T, PITEM_APP_HELPER> OBJECTS_APP_HELPER;
-typedef std::unordered_map<SIZE_T, PITEM_RULE_CONFIG> OBJECTS_RULE_CONFIG;
-typedef std::unordered_map<SIZE_T, PITEM_NETWORK> OBJECTS_NETWORK;
-typedef std::vector<PITEM_LOG> OBJECTS_LOG;
+typedef std::unordered_map<SIZE_T, PITEM_APP> OBJECTS_APP_MAP;
+typedef std::unordered_map<SIZE_T, PITEM_APP_HELPER> OBJECTS_APP_HELPER_MAP;
+typedef std::unordered_map<SIZE_T, PITEM_RULE_CONFIG> OBJECTS_RULE_CONFIG_MAP;
+typedef std::unordered_map<SIZE_T, PITEM_NETWORK> OBJECTS_NETWORK_MAP;
+typedef std::unordered_map<SIZE_T, PR_STRING> OBJECTS_STRINGS_MAP;
+
+typedef std::vector<PITEM_APP> OBJECTS_APP_VECTOR;
+typedef std::vector<PITEM_RULE> OBJECTS_RULE_VECTOR;
+typedef std::vector<PITEM_LOG> OBJECTS_LOG_VECTOR;
 
