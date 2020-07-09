@@ -15,7 +15,6 @@ VOID _app_setinterfacestate (HWND hwnd);
 VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced);
 VOID _app_listviewsetview (HWND hwnd, INT listview_id);
 
-VOID _app_listviewinitfont (HWND hwnd, PLOGFONT plf);
 VOID _app_listviewsetfont (HWND hwnd, INT listview_id, BOOLEAN is_redraw);
 
 INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPARAM lparam);
