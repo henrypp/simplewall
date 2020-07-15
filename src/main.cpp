@@ -4953,7 +4953,7 @@ find_wrap:
 					InetPton (ptr_log->af, RM_AD, &ptr_log->remote_addr);
 					ptr_log->remote_port = RP_AD;
 
-					ptr_log->path = _r_obj_createstring (app.GetBinaryPath ());
+					ptr_log->path = _r_obj_createstring (app.GetAppBinaryPath ());
 					ptr_log->filter_name = _r_obj_createstring (FN_AD);
 
 					//_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &ptr_log->remote_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
@@ -4991,7 +4991,7 @@ find_wrap:
 					IN_ADDR ipv4_local = {0};
 
 					PR_STRING ntPath = NULL;
-					_r_path_ntpathfromdos (app.GetBinaryPath (), &ntPath);
+					_r_path_ntpathfromdos (app.GetAppBinaryPath (), &ntPath);
 
 					UINT16 layer_id = 0;
 					UINT64 filter_id = 0;
