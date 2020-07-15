@@ -44,7 +44,7 @@ BOOLEAN _app_initinterfacestate (HWND hwnd, BOOLEAN is_forced)
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
 
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (IDS_STATUS_FILTERS_PROCESSING, L"..."));
+		_r_status_settextformat (hwnd, IDC_STATUSBAR, 0, L"%s...", app.LocaleString (IDS_STATUS_FILTERS_PROCESSING));
 
 		return TRUE;
 	}
@@ -62,7 +62,7 @@ VOID _app_restoreinterfacestate (HWND hwnd, BOOLEAN is_enabled)
 
 	ENUM_INSTALL_TYPE install_type = _wfp_isfiltersinstalled ();
 
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), NULL));
+	_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type)));
 }
 
 VOID _app_setinterfacestate (HWND hwnd)
@@ -82,9 +82,9 @@ VOID _app_setinterfacestate (HWND hwnd)
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type), NULL));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type)));
 
-	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (string_id, NULL), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
+	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (string_id), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
 	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
 }
@@ -436,9 +436,10 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 		}
 	}
 
-	WCHAR groupString1[128];
-	WCHAR groupString2[128];
-	WCHAR groupString3[128];
+	WCHAR groupString1[128] = {0};
+	WCHAR groupString2[128] = {0};
+	WCHAR groupString3[128] = {0};
+	PR_STRING localizedString = NULL;
 
 	if (total_count)
 	{
@@ -446,16 +447,17 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 		_r_str_printf (groupString2, RTL_NUMBER_OF (groupString2), L" (%d/%d)", group2_count, total_count);
 		_r_str_printf (groupString3, RTL_NUMBER_OF (groupString3), L" (%d/%d)", group3_count, total_count);
 	}
-	else
-	{
-		*groupString1 = UNICODE_NULL;
-		*groupString2 = UNICODE_NULL;
-		*groupString3 = UNICODE_NULL;
-	}
 
-	_r_listview_setgroup (hwnd, listview_id, 0, app.LocaleString (group1_title, groupString1), 0, 0);
-	_r_listview_setgroup (hwnd, listview_id, 1, app.LocaleString (group2_title, groupString2), 0, 0);
-	_r_listview_setgroup (hwnd, listview_id, 2, app.LocaleString (group3_title, groupString3), 0, 0);
+	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", app.LocaleString (group1_title), groupString1));
+	_r_listview_setgroup (hwnd, listview_id, 0, _r_obj_getstringorempty (localizedString), 0, 0);
+
+	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", app.LocaleString (group2_title), groupString2));
+	_r_listview_setgroup (hwnd, listview_id, 1, _r_obj_getstringorempty (localizedString), 0, 0);
+
+	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", app.LocaleString (group3_title), groupString3));
+	_r_listview_setgroup (hwnd, listview_id, 2, _r_obj_getstringorempty (localizedString), 0, 0);
+
+	SAFE_DELETE_REFERENCE (localizedString);
 }
 
 VOID _app_refreshstatus (HWND hwnd, INT listview_id)
@@ -486,7 +488,7 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 				case 1:
 				{
 					if (pstatus)
-						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), app.LocaleString (IDS_STATUS_UNUSED_APPS, NULL).GetString (), pstatus->apps_unused_count);
+						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), app.LocaleString (IDS_STATUS_UNUSED_APPS), pstatus->apps_unused_count);
 
 					break;
 				}
@@ -494,7 +496,7 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 				case 2:
 				{
 					if (pstatus)
-						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), app.LocaleString (IDS_STATUS_TIMER_APPS, NULL).GetString (), pstatus->apps_timer_count);
+						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), app.LocaleString (IDS_STATUS_TIMER_APPS), pstatus->apps_timer_count);
 
 					break;
 				}
