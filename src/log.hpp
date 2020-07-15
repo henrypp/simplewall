@@ -3,7 +3,7 @@
 
 #pragma once
 
-rstring _app_getlogviewer ();
+PR_STRING _app_getlogviewer ();
 
 VOID _app_loginit (BOOLEAN is_install);
 VOID _app_logwrite (PITEM_LOG ptr_log);
