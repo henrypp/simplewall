@@ -5,78 +5,72 @@
 
 LONG_PTR _app_getappinfo (SIZE_T app_hash, ENUM_INFO_DATA info_key)
 {
-	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+	LONG_PTR result;
+	PITEM_APP ptr_app;
 
-	if (!ptr_app_object)
+	ptr_app = _app_getappitem (app_hash);
+
+	if (!ptr_app)
 		return 0;
 
-	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
-	LONG_PTR result = 0;
+	result = 0;
 
-	if (ptr_app)
+	if (info_key == InfoPath)
 	{
-		if (info_key == InfoPath)
-		{
-			if (!_r_str_isempty (ptr_app->real_path))
-				result = (LONG_PTR)ptr_app->real_path;
-		}
-		else if (info_key == InfoName)
-		{
-			if (!_r_str_isempty (ptr_app->display_name))
-				result = (LONG_PTR)ptr_app->display_name;
+		if (!_r_str_isempty (ptr_app->real_path))
+			result = (LONG_PTR)ptr_app->real_path->Buffer;
+	}
+	else if (info_key == InfoName)
+	{
+		if (!_r_str_isempty (ptr_app->display_name))
+			result = (LONG_PTR)ptr_app->display_name->Buffer;
 
-			else if (!_r_str_isempty (ptr_app->original_path))
-				result = (LONG_PTR)ptr_app->original_path;
-		}
-		else if (info_key == InfoTimestampPtr)
-		{
-			result = (LONG_PTR)&ptr_app->timestamp;
-		}
-		else if (info_key == InfoTimerPtr)
-		{
-			result = (LONG_PTR)&ptr_app->timer;
-		}
-		else if (info_key == InfoIconId)
-		{
-			result = (LONG_PTR)ptr_app->icon_id;
-		}
-		else if (info_key == InfoListviewId)
-		{
-			result = (LONG_PTR)_app_getlistview_id (ptr_app->type);
-		}
-		else if (info_key == InfoIsSilent)
-		{
-			result = ptr_app->is_silent ? TRUE : FALSE;
-		}
-		else if (info_key == InfoIsUndeletable)
-		{
-			result = ptr_app->is_undeletable ? TRUE : FALSE;
-		}
+		else if (!_r_str_isempty (ptr_app->original_path))
+			result = (LONG_PTR)ptr_app->original_path->Buffer;
+	}
+	else if (info_key == InfoTimestampPtr)
+	{
+		result = (LONG_PTR)&ptr_app->timestamp;
+	}
+	else if (info_key == InfoTimerPtr)
+	{
+		result = (LONG_PTR)&ptr_app->timer;
+	}
+	else if (info_key == InfoIconId)
+	{
+		result = (LONG_PTR)ptr_app->icon_id;
+	}
+	else if (info_key == InfoListviewId)
+	{
+		result = (LONG_PTR)_app_getlistview_id (ptr_app->type);
+	}
+	else if (info_key == InfoIsSilent)
+	{
+		result = ptr_app->is_silent ? TRUE : FALSE;
+	}
+	else if (info_key == InfoIsUndeletable)
+	{
+		result = ptr_app->is_undeletable ? TRUE : FALSE;
 	}
 
-	_r_obj2_dereference (ptr_app_object);
+	_r_obj_dereference (ptr_app);
 
 	return result;
 }
 
 BOOLEAN _app_setappinfo (SIZE_T app_hash, ENUM_INFO_DATA info_key, LONG_PTR info_value)
 {
-	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+	PITEM_APP ptr_app = _app_getappitem (app_hash);
 
-	if (!ptr_app_object)
+	if (!ptr_app)
 		return FALSE;
 
-	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
-
-	if (ptr_app)
+	if (info_key == InfoIsUndeletable)
 	{
-		if (info_key == InfoIsUndeletable)
-		{
-			ptr_app->is_undeletable = info_value ? TRUE : FALSE;
-		}
+		ptr_app->is_undeletable = info_value ? TRUE : FALSE;
 	}
 
-	_r_obj2_dereference (ptr_app_object);
+	_r_obj_dereference (ptr_app);
 
 	return TRUE;
 }
@@ -86,93 +80,107 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	if (_r_str_isempty (path) || PathIsDirectory (path))
 		return 0;
 
-	// prevent possible duplicate apps entries with short path (issue #640)
 	WCHAR path_full[1024];
+	PITEM_APP ptr_app;
+	PR_STRING signatureString;
+	SIZE_T app_length;
+	SIZE_T app_hash;
+	BOOLEAN is_ntoskrnl;
 
-	if (_r_str_find (path, INVALID_SIZE_T, L'~', 0) != INVALID_SIZE_T)
+	app_length = _r_str_length (path);
+
+	// prevent possible duplicate apps entries with short path (issue #640)
+	if (_r_str_findchar (path, app_length, L'~', TRUE) != INVALID_SIZE_T)
 	{
 		if (GetLongPathName (path, path_full, RTL_NUMBER_OF (path_full)))
+		{
 			path = path_full;
+			app_length = _r_str_length (path_full);
+		}
 	}
 
-	SIZE_T app_length = _r_str_length (path);
-	SIZE_T app_hash = _r_str_hash (path);
+	app_hash = _r_str_hash (path);
 
 	if (_app_isappfound (app_hash))
 		return app_hash; // already exists
 
-	PITEM_APP ptr_app = new ITEM_APP;
-
-	BOOLEAN is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
-
-	rstring real_path;
+	ptr_app = (PITEM_APP)_r_obj_allocateex (sizeof (ITEM_APP), &_app_dereferenceapp);
+	is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
 
 	if (_r_str_compare_length (path, L"\\device\\", 8) == 0) // device path
 	{
-		real_path = path;
-
+		ptr_app->real_path = _r_obj_createstring (path);
 		ptr_app->type = DataAppDevice;
 	}
 	else if (_r_str_compare_length (path, L"S-1-", 4) == 0) // windows store (win8+)
 	{
+		_app_item_get (DataAppUWP, app_hash, NULL, &ptr_app->real_path, timestamp ? NULL : &timestamp, NULL);
 		ptr_app->type = DataAppUWP;
-
-		_app_item_get (DataAppUWP, app_hash, NULL, &real_path, timestamp ? NULL : &timestamp, NULL);
-	}
-	else if (PathIsNetworkPath (path)) // network path
-	{
-		real_path = path;
-
-		ptr_app->type = DataAppNetwork;
 	}
 	else
 	{
-		real_path = path;
-
-		if (!is_ntoskrnl && _r_str_find (real_path.GetString (), real_path.GetLength (), OBJ_NAME_PATH_SEPARATOR, 0) == INVALID_SIZE_T)
+		if (!is_ntoskrnl && _r_str_findchar (path, app_length, OBJ_NAME_PATH_SEPARATOR, TRUE) == INVALID_SIZE_T)
 		{
-			if (_app_item_get (DataAppService, app_hash, NULL, &real_path, timestamp ? NULL : &timestamp, NULL))
+			if (_app_item_get (DataAppService, app_hash, NULL, &ptr_app->real_path, timestamp ? NULL : &timestamp, NULL))
+			{
 				ptr_app->type = DataAppService;
-
+			}
 			else
+			{
+				ptr_app->real_path = _r_obj_createstring (path);
 				ptr_app->type = DataAppPico;
+			}
 		}
 		else
 		{
-			ptr_app->type = DataAppRegular;
-
 			if (is_ntoskrnl) // "System" process
-				real_path = _r_path_expand (PATH_NTOSKRNL);
+			{
+				ptr_app->real_path = _r_obj_createstring2 (config.ntoskrnl_path);
+			}
+			else
+			{
+				ptr_app->real_path = _r_obj_createstring (path);
+			}
+
+			if (PathIsNetworkPath (path))
+			{
+				ptr_app->type = DataAppNetwork; // network path
+			}
+			else
+			{
+				ptr_app->type = DataAppRegular;
+			}
 		}
 	}
 
-	if (!real_path.IsEmpty () && ptr_app->type == DataAppRegular)
+	if (!_r_str_isempty (ptr_app->real_path) && ptr_app->type == DataAppRegular)
 	{
-		DWORD dwAttr = GetFileAttributes (real_path.GetString ());
+		DWORD dwAttr = GetFileAttributes (_r_obj_getstring (ptr_app->real_path));
 
-		ptr_app->is_system = is_ntoskrnl || (dwAttr & FILE_ATTRIBUTE_SYSTEM) == FILE_ATTRIBUTE_SYSTEM || (_r_str_compare_length (real_path.GetString (), config.windows_dir, config.wd_length) == 0);
+		ptr_app->is_system = is_ntoskrnl || (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0 || (_r_str_compare_length (_r_obj_getstring (ptr_app->real_path), config.windows_dir, config.wd_length) == 0);
 	}
 
-	_r_str_alloc (&ptr_app->original_path, app_length, path);
-	_r_str_alloc (&ptr_app->real_path, real_path.GetLength (), real_path.GetString ());
+	ptr_app->original_path = _r_obj_createstringex (path, app_length * sizeof (WCHAR));
 
 	if (is_ntoskrnl && !_r_str_isempty (ptr_app->original_path))
 	{
 		_r_str_tolower (ptr_app->original_path);
-		ptr_app->original_path[0] = _r_str_upper (ptr_app->original_path[0]); // fix "System" lowercase
+		ptr_app->original_path->Buffer[0] = _r_str_upper (ptr_app->original_path->Buffer[0]); // fix "System" lowercase
 	}
 
 	// get display name
-	_app_getdisplayname (app_hash, ptr_app, &ptr_app->display_name);
+	_r_obj_movereference (&ptr_app->display_name, _app_getdisplayname (app_hash, ptr_app));
 
 	// get signature information
 	if (app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE))
 	{
-		PR_OBJECT ptr_signer_object = _app_getsignatureinfo (app_hash, ptr_app);
+		signatureString = _app_getsignatureinfo (app_hash, ptr_app);
 
-		if (ptr_signer_object)
-			_r_obj2_dereference (ptr_signer_object);
+		if (signatureString)
+			_r_obj_dereference (signatureString);
 	}
+
+	ptr_app->guids = new GUIDS_VEC; // initialize stl
 
 	ptr_app->is_enabled = is_enabled;
 	ptr_app->is_silent = is_silent;
@@ -185,7 +193,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 		ptr_app->is_undeletable = TRUE;
 
 	// insert object into the map
-	apps[app_hash] = _r_obj2_allocateex (ptr_app, &_app_dereferenceapp);
+	apps.emplace (app_hash, ptr_app);
 
 	// insert item
 	if (hwnd)
@@ -196,7 +204,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 		{
 			_r_fastlock_acquireshared (&lock_checkbox);
 
-			_r_listview_additem (hwnd, listview_id, 0, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+			_r_listview_additem (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
 			_app_setappiteminfo (hwnd, listview_id, 0, app_hash, ptr_app);
 
 			_r_fastlock_releaseshared (&lock_checkbox);
@@ -206,10 +214,15 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	return app_hash;
 }
 
-PR_OBJECT _app_getappitem (SIZE_T app_hash)
+PITEM_APP _app_getappitem (SIZE_T app_hash)
 {
 	if (_app_isappfound (app_hash))
-		return _r_obj2_reference (apps[app_hash]);
+	{
+		PVOID pdata = apps.at (app_hash);
+
+		if (pdata)
+			return (PITEM_APP)_r_obj_reference (pdata);
+	}
 
 	return NULL;
 }
@@ -218,51 +231,47 @@ PITEM_APP_HELPER _app_getapphelperitem (SIZE_T app_hash)
 {
 	if (_app_isapphelperfound (app_hash))
 	{
-		PVOID ptr = apps_helper[app_hash];
+		PVOID pdata = apps_helper.at (app_hash);
 
-		if (ptr)
-			return (PITEM_APP_HELPER)_r_obj_reference (ptr);
+		if (pdata)
+			return (PITEM_APP_HELPER)_r_obj_reference (pdata);
 	}
 
 	return NULL;
 }
 
-PR_OBJECT _app_getrulebyid (SIZE_T idx)
+PITEM_RULE _app_getrulebyid (SIZE_T idx)
 {
 	if (idx != INVALID_SIZE_T && idx < rules_arr.size ())
 	{
-		PR_OBJECT ptr_rule_object = rules_arr.at (idx);
+		PITEM_RULE pdata = rules_arr.at (idx);
 
-		if (ptr_rule_object)
-			return _r_obj2_reference (ptr_rule_object);
+		if (pdata)
+			return (PITEM_RULE)_r_obj_reference (pdata);
 	}
 
 	return NULL;
 }
 
-PR_OBJECT _app_getrulebyhash (SIZE_T rule_hash)
+PITEM_RULE _app_getrulebyhash (SIZE_T rule_hash)
 {
 	if (!rule_hash)
 		return NULL;
 
-	for (auto &p : rules_arr)
+	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!p)
+		if (!*it)
 			continue;
 
-		PR_OBJECT ptr_rule_object = _r_obj2_reference (p);
-		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
 
-		if (ptr_rule)
+		if (ptr_rule->is_readonly)
 		{
-			if (ptr_rule->is_readonly)
-			{
-				if (_r_str_hash (ptr_rule->pname) == rule_hash)
-					return ptr_rule_object;
-			}
+			if (_r_str_hash (ptr_rule->name) == rule_hash)
+				return ptr_rule;
 		}
 
-		_r_obj2_dereference (ptr_rule_object);
+		_r_obj_dereference (ptr_rule);
 	}
 
 	return NULL;
@@ -272,10 +281,10 @@ PITEM_NETWORK _app_getnetworkitem (SIZE_T network_hash)
 {
 	if (network_map.find (network_hash) != network_map.end ())
 	{
-		PVOID ptr = network_map[network_hash];
+		PVOID pdata = network_map.at (network_hash);
 
-		if (ptr)
-			return (PITEM_NETWORK)_r_obj_reference (ptr);
+		if (pdata)
+			return (PITEM_NETWORK)_r_obj_reference (pdata);
 	}
 
 	return NULL;
@@ -301,8 +310,13 @@ SIZE_T _app_getnetworkapp (SIZE_T network_hash)
 
 PITEM_LOG _app_getlogitem (SIZE_T idx)
 {
-	if (idx != INVALID_SIZE_T && idx < log_arr.size () && log_arr.at (idx) != NULL)
-		return (PITEM_LOG)_r_obj_reference (log_arr.at (idx));
+	if (idx != INVALID_SIZE_T && idx < log_arr.size ())
+	{
+		PVOID pdata = log_arr.at (idx);
+
+		if (pdata)
+			return (PITEM_LOG)_r_obj_reference (pdata);
+	}
 
 	return NULL;
 }
@@ -325,58 +339,53 @@ SIZE_T _app_getlogapp (SIZE_T idx)
 
 COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash)
 {
-	rstring color_value;
+	PITEM_APP ptr_app = _app_getappitem (app_hash);
 
-	PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
-
-	if (!ptr_app_object)
+	if (!ptr_app)
 		return 0;
+
+	LPCWSTR colorValue = NULL;
 
 	BOOLEAN is_profilelist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM);
 	BOOLEAN is_networklist = (listview_id >= IDC_NETWORK && listview_id <= IDC_LOG);
 	BOOLEAN is_editorlist = (listview_id == IDC_RULE_APPS_ID);
 
-	PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+	if (app.ConfigGetBoolean (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
+		colorValue = L"ColorInvalid";
 
-	if (ptr_app)
-	{
-		if (app.ConfigGetBoolean (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
-			color_value = L"ColorInvalid";
+	else if (app.ConfigGetBoolean (L"IsHighlightTimer", TRUE, L"colors") && _app_istimeractive (ptr_app))
+		colorValue = L"ColorTimer";
 
-		else if (app.ConfigGetBoolean (L"IsHighlightTimer", TRUE, L"colors") && _app_istimeractive (ptr_app))
-			color_value = L"ColorTimer";
+	else if (!is_networklist && !ptr_app->is_silent && app.ConfigGetBoolean (L"IsHighlightConnection", TRUE, L"colors") && _app_isapphaveconnection (app_hash))
+		colorValue = L"ColorConnection";
 
-		else if (!is_networklist && !ptr_app->is_silent && app.ConfigGetBoolean (L"IsHighlightConnection", TRUE, L"colors") && _app_isapphaveconnection (app_hash))
-			color_value = L"ColorConnection";
+	else if (app.ConfigGetBoolean (L"IsHighlightSigned", TRUE, L"colors") && !ptr_app->is_silent && app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
+		colorValue = L"ColorSigned";
 
-		else if (app.ConfigGetBoolean (L"IsHighlightSigned", TRUE, L"colors") && !ptr_app->is_silent && app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
-			color_value = L"ColorSigned";
+	else if ((!is_profilelist || !app.ConfigGetBoolean (L"IsEnableSpecialGroup", TRUE)) && (app.ConfigGetBoolean (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash)))
+		colorValue = L"ColorSpecial";
 
-		else if ((!is_profilelist || !app.ConfigGetBoolean (L"IsEnableSpecialGroup", TRUE)) && (app.ConfigGetBoolean (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash)))
-			color_value = L"ColorSpecial";
+	else if (is_profilelist && app.ConfigGetBoolean (L"IsHighlightSilent", TRUE, L"colors") && ptr_app->is_silent)
+		colorValue = L"ColorSilent";
 
-		else if (is_profilelist && app.ConfigGetBoolean (L"IsHighlightSilent", TRUE, L"colors") && ptr_app->is_silent)
-			color_value = L"ColorSilent";
+	else if (!is_profilelist && !is_editorlist && app.ConfigGetBoolean (L"IsHighlightService", TRUE, L"colors") && ptr_app->type == DataAppService)
+		colorValue = L"ColorService";
 
-		else if (!is_profilelist && !is_editorlist && app.ConfigGetBoolean (L"IsHighlightService", TRUE, L"colors") && ptr_app->type == DataAppService)
-			color_value = L"ColorService";
+	else if (!is_profilelist && !is_editorlist && app.ConfigGetBoolean (L"IsHighlightPackage", TRUE, L"colors") && ptr_app->type == DataAppUWP)
+		colorValue = L"ColorPackage";
 
-		else if (!is_profilelist && !is_editorlist && app.ConfigGetBoolean (L"IsHighlightPackage", TRUE, L"colors") && ptr_app->type == DataAppUWP)
-			color_value = L"ColorPackage";
+	else if (app.ConfigGetBoolean (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DataAppPico)
+		colorValue = L"ColorPico";
 
-		else if (app.ConfigGetBoolean (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DataAppPico)
-			color_value = L"ColorPico";
+	else if (app.ConfigGetBoolean (L"IsHighlightSystem", TRUE, L"colors") && ptr_app->is_system)
+		colorValue = L"ColorSystem";
 
-		else if (app.ConfigGetBoolean (L"IsHighlightSystem", TRUE, L"colors") && ptr_app->is_system)
-			color_value = L"ColorSystem";
-	}
+	_r_obj_dereference (ptr_app);
 
-	_r_obj2_dereference (ptr_app_object);
+	if (colorValue)
+		return _app_getcolorvalue (_r_str_hash (colorValue));
 
-	if (color_value.IsEmpty ())
-		return 0;
-
-	return _app_getcolorvalue (_r_str_hash (color_value.GetString ()));
+	return 0;
 }
 
 VOID _app_freeapplication (SIZE_T app_hash)
@@ -386,48 +395,44 @@ VOID _app_freeapplication (SIZE_T app_hash)
 
 	INT index = INVALID_INT;
 
-	for (auto &p : rules_arr)
+	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
 		index += 1;
 
-		if (!p)
+		if (!*it)
 			continue;
 
-		PR_OBJECT ptr_rule_object = _r_obj2_reference (p);
-		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
 
-		if (ptr_rule)
+		if (ptr_rule->type == DataRuleCustom)
 		{
-			if (ptr_rule->type == DataRuleCustom)
+			if (ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ())
 			{
-				if (ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ())
+				ptr_rule->apps->erase (app_hash);
+
+				if (ptr_rule->is_enabled && ptr_rule->apps->empty ())
 				{
-					ptr_rule->apps.erase (app_hash);
+					ptr_rule->is_enabled = FALSE;
+					ptr_rule->is_haveerrors = FALSE;
+				}
 
-					if (ptr_rule->is_enabled && ptr_rule->apps.empty ())
+				INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+
+				if (rule_listview_id)
+				{
+					INT item_pos = _app_getposition (app.GetHWND (), rule_listview_id, index);
+
+					if (item_pos != INVALID_INT)
 					{
-						ptr_rule->is_enabled = FALSE;
-						ptr_rule->is_haveerrors = FALSE;
-					}
-
-					INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
-
-					if (rule_listview_id)
-					{
-						INT item_pos = _app_getposition (app.GetHWND (), rule_listview_id, index);
-
-						if (item_pos != INVALID_INT)
-						{
-							_r_fastlock_acquireshared (&lock_checkbox);
-							_app_setruleiteminfo (app.GetHWND (), rule_listview_id, item_pos, ptr_rule, FALSE);
-							_r_fastlock_releaseshared (&lock_checkbox);
-						}
+						_r_fastlock_acquireshared (&lock_checkbox);
+						_app_setruleiteminfo (app.GetHWND (), rule_listview_id, item_pos, ptr_rule, FALSE);
+						_r_fastlock_releaseshared (&lock_checkbox);
 					}
 				}
 			}
 		}
 
-		_r_obj2_dereference (ptr_rule_object);
+		_r_obj_dereference (ptr_rule);
 	}
 
 	apps.erase (app_hash);
@@ -435,59 +440,54 @@ VOID _app_freeapplication (SIZE_T app_hash)
 
 VOID _app_getcount (PITEM_STATUS ptr_status)
 {
-	for (auto &p : apps)
-	{
-		PR_OBJECT ptr_app_object = _r_obj2_reference (p.second);
+	PITEM_APP ptr_app;
+	PITEM_RULE ptr_rule;
+	SIZE_T app_hash;
+	BOOLEAN is_used;
 
-		if (!ptr_app_object)
+	for (auto it = apps.begin (); it != apps.end (); ++it)
+	{
+		if (!it->second)
 			continue;
 
-		SIZE_T app_hash = p.first;
-		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+		app_hash = it->first;
+		ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+		is_used = _app_isappused (ptr_app, app_hash);
 
-		if (ptr_app)
-		{
-			BOOLEAN is_used = _app_isappused (ptr_app, app_hash);
+		if (_app_istimeractive (ptr_app))
+			ptr_status->apps_timer_count += 1;
 
-			if (_app_istimeractive (ptr_app))
-				ptr_status->apps_timer_count += 1;
+		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppUWP))
+			ptr_status->apps_unused_count += 1;
 
-			if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppUWP))
-				ptr_status->apps_unused_count += 1;
+		if (is_used)
+			ptr_status->apps_count += 1;
 
-			if (is_used)
-				ptr_status->apps_count += 1;
-		}
-
-		_r_obj2_dereference (ptr_app_object);
+		_r_obj_dereference (ptr_app);
 	}
 
-	for (auto &p : rules_arr)
+	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!p)
+		if (!*it)
 			continue;
 
-		PR_OBJECT ptr_rule_object = _r_obj2_reference (p);
-		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
 
-		if (ptr_rule)
+		if (ptr_rule->type == DataRuleCustom)
 		{
-			if (ptr_rule->type == DataRuleCustom)
-			{
-				if (ptr_rule->is_enabled && !ptr_rule->apps.empty ())
-					ptr_status->rules_global_count += 1;
+			if (ptr_rule->is_enabled && !ptr_rule->apps->empty ())
+				ptr_status->rules_global_count += 1;
 
-				if (ptr_rule->is_readonly)
-					ptr_status->rules_predefined_count += 1;
+			if (ptr_rule->is_readonly)
+				ptr_status->rules_predefined_count += 1;
 
-				else
-					ptr_status->rules_user_count += 1;
+			else
+				ptr_status->rules_user_count += 1;
 
-				ptr_status->rules_count += 1;
-			}
+			ptr_status->rules_count += 1;
 		}
 
-		_r_obj2_dereference (ptr_rule_object);
+		_r_obj_dereference (ptr_rule);
 	}
 }
 
@@ -521,215 +521,229 @@ INT _app_getruleicon (const PITEM_RULE ptr_rule)
 
 COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 {
-	PR_OBJECT ptr_rule_object = _app_getrulebyid (rule_idx);
+	PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
 
-	if (!ptr_rule_object)
+	if (!ptr_rule)
 		return 0;
 
-	rstring color_value;
+	LPCWSTR colorValue = NULL;
 
-	PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+	if (app.ConfigGetBoolean (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
+		colorValue = L"ColorInvalid";
 
-	if (ptr_rule)
-	{
-		if (app.ConfigGetBoolean (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
-			color_value = L"ColorInvalid";
+	else if (app.ConfigGetBoolean (L"IsHighlightSpecial", TRUE, L"colors") && !ptr_rule->apps->empty ())
+		colorValue = L"ColorSpecial";
 
-		else if (app.ConfigGetBoolean (L"IsHighlightSpecial", TRUE, L"colors") && !ptr_rule->apps.empty ())
-			color_value = L"ColorSpecial";
-	}
+	_r_obj_dereference (ptr_rule);
 
-	_r_obj2_dereference (ptr_rule_object);
+	if (colorValue)
+		return _app_getcolorvalue (_r_str_hash (colorValue));
 
-	if (color_value.IsEmpty ())
-		return 0;
-
-	return _app_getcolorvalue (_r_str_hash (color_value.GetString ()));
+	return 0;
 }
 
-rstring _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
+PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 {
-	rstring result;
+	PR_STRING string = NULL;
 
 	INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 	BOOLEAN is_appslist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP);
+	BOOLEAN is_ruleslist = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
 
 	if (is_appslist || listview_id == IDC_RULE_APPS_ID)
 	{
 		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
-		PR_OBJECT ptr_app_object = _app_getappitem (lparam);
+		PITEM_APP ptr_app = _app_getappitem (lparam);
+		PR_STRING displayName = NULL;
 
-		if (ptr_app_object)
+		if (ptr_app)
 		{
-			PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+			string = _r_format_string (L"%s\r\n", _r_obj_getstring (!_r_str_isempty (ptr_app->real_path) ? ptr_app->real_path : (!_r_str_isempty (ptr_app->display_name) ? ptr_app->display_name : ptr_app->original_path)));
 
-			if (ptr_app)
+			// app information
 			{
-				result.Format (L"%s\r\n", (!_r_str_isempty (ptr_app->real_path) ? ptr_app->real_path : (!_r_str_isempty (ptr_app->display_name) ? ptr_app->display_name : ptr_app->original_path)));
+				PR_STRING infoString;
 
-				// app information
+				infoString = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+
+				if (ptr_app->type == DataAppRegular)
 				{
-					rstring app_info;
+					PR_STRING versionString = _app_getversioninfo (lparam, ptr_app);
 
-					if (ptr_app->type == DataAppRegular)
+					if (versionString)
 					{
-						PR_OBJECT ptr_version_object = _app_getversioninfo (lparam, ptr_app);
+						if (!_r_str_isempty (versionString))
+							_r_string_appendformat (&infoString, SZ_TAB L"%s\r\n", versionString->Buffer);
 
-						if (ptr_version_object)
-						{
-							if (ptr_version_object->pdata)
-								app_info.AppendFormat (SZ_TAB L"%s\r\n", (LPCWSTR)ptr_version_object->pdata);
-
-							_r_obj2_dereference (ptr_version_object);
-						}
+						_r_obj_dereference (versionString);
 					}
-					else if (ptr_app->type == DataAppService)
+				}
+				else if (ptr_app->type == DataAppService)
+				{
+					if (_app_item_get (ptr_app->type, lparam, &displayName, NULL, NULL, NULL))
 					{
-						rstring display_name;
+						_r_string_appendformat (&infoString, SZ_TAB L"%s" SZ_TAB_CRLF L"%s\r\n", _r_obj_getstringorempty (ptr_app->original_path), _r_obj_getstringorempty (displayName));
 
-						if (_app_item_get (ptr_app->type, lparam, &display_name, NULL, NULL, NULL))
-							app_info.AppendFormat (SZ_TAB L"%s" SZ_TAB_CRLF L"%s\r\n", ptr_app->original_path, display_name.GetString ());
+						if (displayName)
+							_r_obj_dereference (displayName);
 					}
-					else if (ptr_app->type == DataAppUWP)
+				}
+				else if (ptr_app->type == DataAppUWP)
+				{
+					if (_app_item_get (ptr_app->type, lparam, &displayName, NULL, NULL, NULL))
 					{
-						rstring display_name;
+						_r_string_appendformat (&infoString, SZ_TAB L"%s\r\n", _r_obj_getstringorempty (displayName));
 
-						if (_app_item_get (ptr_app->type, lparam, &display_name, NULL, NULL, NULL))
-							app_info.AppendFormat (SZ_TAB L"%s\r\n", display_name.GetString ());
-					}
-
-					// signature information
-					if (app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
-					{
-						PR_OBJECT ptr_signature_object = _app_getsignatureinfo (lparam, ptr_app);
-
-						if (ptr_signature_object)
-						{
-							if (ptr_signature_object->pdata)
-								app_info.AppendFormat (SZ_TAB L"%s: %s\r\n", app.LocaleString (IDS_SIGNATURE, NULL).GetString (), (LPCWSTR)ptr_signature_object->pdata);
-
-							_r_obj2_dereference (ptr_signature_object);
-						}
-					}
-
-					if (!app_info.IsEmpty ())
-					{
-						app_info.InsertFormat (0, L"%s:\r\n", app.LocaleString (IDS_FILE, NULL).GetString ());
-						result.Append (app_info);
+						if (displayName)
+							_r_obj_dereference (displayName);
 					}
 				}
 
-				// app timer
-				if (_app_istimeractive (ptr_app))
-					result.AppendFormat (L"%s:" SZ_TAB_CRLF L"%s\r\n", app.LocaleString (IDS_TIMELEFT, NULL).GetString (), _r_fmt_interval (ptr_app->timer - _r_unixtime_now (), 3).GetString ());
-
-				// app rules
+				// signature information
+				if (app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
 				{
-					rstring app_rules = _app_appexpandrules (lparam, SZ_TAB_CRLF);
+					PR_STRING signatureString = _app_getsignatureinfo (lparam, ptr_app);
 
-					if (!app_rules.IsEmpty ())
+					if (signatureString)
 					{
-						app_rules.InsertFormat (0, L"%s:" SZ_TAB_CRLF, app.LocaleString (IDS_RULE, NULL).GetString ());
-						app_rules.Append (L"\r\n");
+						if (!_r_str_isempty (signatureString))
+							_r_string_appendformat (&infoString, SZ_TAB L"%s: %s\r\n", app.LocaleString (IDS_SIGNATURE), signatureString->Buffer);
 
-						result.Append (app_rules);
+						_r_obj_dereference (signatureString);
 					}
 				}
 
-				// app notes
+				if (!_r_str_isempty (infoString))
 				{
-					rstring app_notes;
+					_r_string_insertformat (&infoString, 0, L"%s:\r\n", app.LocaleString (IDS_FILE));
+					_r_string_append (&string, infoString->Buffer);
+				}
 
-					// app type
-					if (ptr_app->type == DataAppNetwork)
-						app_notes.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_NETWORK, NULL).GetString ());
+				_r_obj_dereference (infoString);
+			}
 
-					else if (ptr_app->type == DataAppPico)
-						app_notes.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PICO, NULL).GetString ());
+			// app timer
+			if (_app_istimeractive (ptr_app))
+			{
+				WCHAR intervalString[128];
+				_r_format_interval (intervalString, RTL_NUMBER_OF (intervalString), ptr_app->timer - _r_unixtime_now (), 3);
 
-					else if (!is_appslist && ptr_app->type == DataAppService)
-						app_notes.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SERVICE, NULL).GetString ());
+				_r_string_appendformat (&string, L"%s:" SZ_TAB_CRLF L"%s\r\n", app.LocaleString (IDS_TIMELEFT), intervalString);
+			}
 
-					else if (!is_appslist && ptr_app->type == DataAppUWP)
-						app_notes.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PACKAGE, NULL).GetString ());
+			// app rules
+			{
+				PR_STRING appRulesString = _app_appexpandrules (lparam, SZ_TAB_CRLF);
 
-					// app settings
-					if (ptr_app->is_system)
-						app_notes.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SYSTEM, NULL).GetString ());
+				if (appRulesString)
+				{
+					if (!_r_str_isempty (appRulesString))
+						_r_string_appendformat (&string, L"%s:" SZ_TAB_CRLF L"%s\r\n", app.LocaleString (IDS_RULE), appRulesString->Buffer);
 
-					if (_app_isapphaveconnection (lparam))
-						app_notes.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION, NULL).GetString ());
-
-					if (is_appslist && ptr_app->is_silent)
-						app_notes.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SILENT, NULL).GetString ());
-
-					if (!_app_isappexists (ptr_app))
-						app_notes.AppendFormat (SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_INVALID, NULL).GetString ());
-
-					if (!app_notes.IsEmpty ())
-					{
-						app_notes.InsertFormat (0, L"%s:\r\n", app.LocaleString (IDS_NOTES, NULL).GetString ());
-						result.Append (app_notes);
-					}
+					_r_obj_dereference (appRulesString);
 				}
 			}
 
-			_r_obj2_dereference (ptr_app_object);
+			// app notes
+			{
+				PR_STRING notesString;
+
+				notesString = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+
+				// app type
+				if (ptr_app->type == DataAppNetwork)
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_NETWORK));
+
+				else if (ptr_app->type == DataAppPico)
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PICO));
+
+				else if (!is_appslist && ptr_app->type == DataAppService)
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SERVICE));
+
+				else if (!is_appslist && ptr_app->type == DataAppUWP)
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PACKAGE));
+
+				// app settings
+				if (ptr_app->is_system)
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SYSTEM));
+
+				if (_app_isapphaveconnection (lparam))
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION));
+
+				if (is_appslist && ptr_app->is_silent)
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SILENT));
+
+				if (!_app_isappexists (ptr_app))
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_INVALID));
+
+				if (!_r_str_isempty (notesString))
+				{
+					_r_string_insertformat (&notesString, 0, L"%s:\r\n", app.LocaleString (IDS_NOTES));
+					_r_string_append2 (&string, notesString);
+				}
+
+				_r_obj_dereference (notesString);
+			}
+
+			_r_obj_dereference (ptr_app);
 		}
 	}
-	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
+	else if (is_ruleslist)
 	{
 		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
-		PR_OBJECT ptr_rule_object = _app_getrulebyid (lparam);
+		PITEM_RULE ptr_rule = _app_getrulebyid (lparam);
 
-		if (ptr_rule_object)
+		if (ptr_rule)
 		{
-			PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+			LPCWSTR empty;
 
-			if (ptr_rule)
+			PR_STRING ruleRemoteString = NULL;
+			PR_STRING ruleLocalString = NULL;
+
+			empty = app.LocaleString (IDS_STATUS_EMPTY);
+
+			if (!_r_str_isempty (ptr_rule->rule_remote))
+				ruleRemoteString = _r_obj_reference (ptr_rule->rule_remote);
+
+			if (!_r_str_isempty (ptr_rule->rule_local))
+				ruleLocalString = _r_obj_reference (ptr_rule->rule_local);
+
+			// rule information
+			string = _r_format_string (L"%s (#%" TEXT (PR_SIZE_T) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
+									   _r_obj_getstringordefault (ptr_rule->name, empty),
+									   lparam,
+									   app.LocaleString (IDS_RULE),
+									   SZ_TAB,
+									   _r_obj_getstringordefault (ruleRemoteString, empty),
+									   app.LocaleString (IDS_RULE),
+									   SZ_TAB,
+									   _r_obj_getstringordefault (ruleLocalString, empty)
+			);
+
+			SAFE_DELETE_REFERENCE (ruleRemoteString);
+			SAFE_DELETE_REFERENCE (ruleLocalString);
+
+			// rule apps
+			if (ptr_rule->is_forservices || !ptr_rule->apps->empty ())
 			{
-				rstring empty = app.LocaleString (IDS_STATUS_EMPTY, NULL);
+				PR_STRING ruleAppsString = _app_rulesexpandapps (ptr_rule, TRUE, SZ_TAB_CRLF);
 
-				rstring rule_remote = ptr_rule->prule_remote;
-				rstring rule_local = ptr_rule->prule_local;
-
-				if (!rule_remote.IsEmpty ())
-					rule_remote.Replace (DIVIDER_RULE, SZ_TAB_CRLF);
-
-				else
-					rule_remote = empty;
-
-				if (!rule_local.IsEmpty ())
-					rule_local.Replace (DIVIDER_RULE, SZ_TAB_CRLF);
-
-				else
-					rule_local = empty;
-
-				// rule information
-				result.Format (L"%s (#%" TEXT (PR_SIZE_T) L")\r\n%s:\r\n%s%s\r\n%s:\r\n%s%s", ptr_rule->pname, lparam, app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_REMOTE L")").GetString (), SZ_TAB, rule_remote.GetString (), app.LocaleString (IDS_RULE, L" (" SZ_DIRECTION_LOCAL L")").GetString (), SZ_TAB, rule_local.GetString ());
-
-				// rule apps
-				if (ptr_rule->is_forservices || !ptr_rule->apps.empty ())
-					result.AppendFormat (L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_TAB_APPS, NULL).GetString (), SZ_TAB, _app_rulesexpandapps (ptr_rule, TRUE, SZ_TAB_CRLF).GetString ());
-
-				// rule notes
+				if (ruleAppsString)
 				{
-					rstring buffer;
+					if (!_r_str_isempty (ruleAppsString))
+						_r_string_appendformat (&string, L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_TAB_APPS), SZ_TAB, ruleAppsString->Buffer);
 
-					if (ptr_rule->is_readonly && ptr_rule->type == DataRuleCustom)
-					{
-						buffer.AppendFormat (SZ_TAB L"%s\r\n", SZ_RULE_INTERNAL_TITLE);
-					}
-
-					if (!buffer.IsEmpty ())
-					{
-						buffer.InsertFormat (0, L"\r\n%s:\r\n", app.LocaleString (IDS_NOTES, NULL).GetString ());
-						result.Append (buffer);
-					}
+					_r_obj_dereference (ruleAppsString);
 				}
 			}
 
-			_r_obj2_dereference (ptr_rule_object);
+			// rule notes
+			if (ptr_rule->is_readonly && ptr_rule->type == DataRuleCustom)
+			{
+				_r_string_appendformat (&string, SZ_TAB L"\r\n%s:\r\n" SZ_TAB L"%s\r\n", app.LocaleString (IDS_NOTES), SZ_RULE_INTERNAL_TITLE);
+			}
+
+			_r_obj_dereference (ptr_rule);
 		}
 	}
 	else if (listview_id == IDC_NETWORK)
@@ -739,26 +753,30 @@ rstring _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 
 		if (ptr_network)
 		{
-			LPWSTR local_fmt = NULL;
-			LPWSTR remote_fmt = NULL;
+			LPCWSTR empty;
 
-			_app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, &local_fmt, 0);
-			_app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, &remote_fmt, 0);
+			PR_STRING localAddressString;
+			PR_STRING remoteAddressString;
 
-			result.Format (L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
-						   (!_r_str_isempty (ptr_network->path) ? ptr_network->path : SZ_EMPTY),
-						   app.LocaleString (IDS_ADDRESS, L" (" SZ_DIRECTION_LOCAL L")").GetString (),
-						   !_r_str_isempty (local_fmt) ? local_fmt : SZ_EMPTY,
-						   app.LocaleString (IDS_ADDRESS, L" (" SZ_DIRECTION_REMOTE L")").GetString (),
-						   !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY,
-						   app.LocaleString (IDS_PROTOCOL, NULL).GetString (),
-						   _app_getprotoname (ptr_network->protocol, ptr_network->af, NULL).GetString (),
-						   app.LocaleString (IDS_STATE, NULL).GetString (),
-						   _app_getconnectionstatusname (ptr_network->state, SZ_EMPTY).GetString ()
+			empty = app.LocaleString (IDS_STATUS_EMPTY);
+
+			localAddressString = _app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, 0);
+			remoteAddressString = _app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, 0);
+
+			string = _r_format_string (L"%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
+									   _r_obj_getstringordefault (ptr_network->path, empty),
+									   app.LocaleString (IDS_ADDRESS),
+									   _r_obj_getstringordefault (localAddressString, empty),
+									   app.LocaleString (IDS_ADDRESS),
+									   _r_obj_getstringordefault (remoteAddressString, empty),
+									   app.LocaleString (IDS_PROTOCOL),
+									   _app_getprotoname (ptr_network->protocol, ptr_network->af, empty),
+									   app.LocaleString (IDS_STATE),
+									   _app_getconnectionstatusname (ptr_network->state, empty)
 			);
 
-			SAFE_DELETE_MEMORY (local_fmt);
-			SAFE_DELETE_MEMORY (remote_fmt);
+			SAFE_DELETE_REFERENCE (localAddressString);
+			SAFE_DELETE_REFERENCE (remoteAddressString);
 
 			_r_obj_dereference (ptr_network);
 		}
@@ -771,42 +789,60 @@ rstring _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 
 		if (ptr_log)
 		{
-			LPWSTR local_fmt = NULL;
-			LPWSTR remote_fmt = NULL;
+			WCHAR dateString[256];
 
-			_app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, ptr_log->local_port, &local_fmt, 0);
-			_app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, &remote_fmt, 0);
+			LPCWSTR empty;
 
-			result.Format (L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
-						   (!_r_str_isempty (ptr_log->path) ? ptr_log->path : SZ_EMPTY),
-						   app.LocaleString (IDS_DATE, NULL).GetString (),
-						   _r_fmt_dateex (ptr_log->timestamp, FDTF_LONGDATE | FDTF_LONGTIME).GetString (),
-						   app.LocaleString (IDS_ADDRESS, L" (" SZ_DIRECTION_LOCAL L")").GetString (),
-						   !_r_str_isempty (local_fmt) ? local_fmt : SZ_EMPTY,
-						   app.LocaleString (IDS_ADDRESS, L" (" SZ_DIRECTION_REMOTE L")").GetString (),
-						   !_r_str_isempty (remote_fmt) ? remote_fmt : SZ_EMPTY,
-						   app.LocaleString (IDS_PROTOCOL, NULL).GetString (),
-						   _app_getprotoname (ptr_log->protocol, ptr_log->af, NULL).GetString (),
-						   app.LocaleString (IDS_FILTER, NULL).GetString (),
-						   _app_getfiltername (NULL, ptr_log->filter_name, SZ_EMPTY).GetString (),
-						   app.LocaleString (IDS_DIRECTION, NULL).GetString (),
-						   _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE).GetString (),
-						   app.LocaleString (IDS_STATE, NULL).GetString (),
-						   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
+			PR_STRING localAddressString;
+			PR_STRING remoteAddressString;
+			PR_STRING directionString;
+
+			_r_format_dateex (dateString, RTL_NUMBER_OF (dateString), ptr_log->timestamp, FDTF_LONGDATE | FDTF_LONGTIME);
+
+			empty = app.LocaleString (IDS_STATUS_EMPTY);
+
+			localAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, ptr_log->local_port, 0);
+			remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, 0);
+			directionString = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE);
+
+			string = _r_format_string (L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
+									   _r_obj_getstringordefault (ptr_log->path, empty),
+									   app.LocaleString (IDS_DATE),
+									   dateString,
+									   app.LocaleString (IDS_ADDRESS),
+									   _r_obj_getstringordefault (localAddressString, empty),
+									   app.LocaleString (IDS_ADDRESS),
+									   _r_obj_getstringordefault (remoteAddressString, empty),
+									   app.LocaleString (IDS_PROTOCOL),
+									   _app_getprotoname (ptr_log->protocol, ptr_log->af, empty),
+									   app.LocaleString (IDS_FILTER),
+									   _r_obj_getstringordefault (ptr_log->filter_name, empty),
+									   app.LocaleString (IDS_DIRECTION),
+									   _r_obj_getstringorempty (directionString),
+									   app.LocaleString (IDS_STATE),
+									   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 			);
 
-			SAFE_DELETE_MEMORY (local_fmt);
-			SAFE_DELETE_MEMORY (remote_fmt);
+			SAFE_DELETE_REFERENCE (localAddressString);
+			SAFE_DELETE_REFERENCE (remoteAddressString);
+			SAFE_DELETE_REFERENCE (directionString);
 
 			_r_obj_dereference (ptr_log);
 		}
 	}
 	else if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
 	{
-		result = _r_listview_getitemtext (hwnd, listview_id, lpnmlv->iItem, 0);
+		PR_STRING itemText = _r_listview_getitemtext (hwnd, listview_id, lpnmlv->iItem, 0);
+
+		if (itemText)
+		{
+			string = _r_obj_reference (itemText);
+
+			_r_obj_dereference (itemText);
+		}
 	}
 
-	return result;
+	return string;
 }
 
 VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, SIZE_T app_hash, PITEM_APP ptr_app)
@@ -816,8 +852,12 @@ VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, SIZE_T app_hash,
 
 	_app_getappicon (ptr_app, TRUE, &ptr_app->icon_id, NULL);
 
-	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app));
-	_r_listview_setitem (hwnd, listview_id, item, 1, _r_fmt_dateex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME).GetString ());
+	_r_listview_setitem (hwnd, listview_id, item, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app));
+
+	WCHAR dateString[256];
+	_r_format_dateex (dateString, RTL_NUMBER_OF (dateString), ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+
+	_r_listview_setitem (hwnd, listview_id, item, 1, dateString);
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
 }
@@ -827,38 +867,66 @@ VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 	if (!listview_id || item == INVALID_INT)
 		return;
 
-	_r_listview_setitem (hwnd, listview_id, item, 0, ptr_rule->is_readonly && ptr_rule->type == DataRuleCustom ? _r_fmt (L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->pname).GetString () : ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule));
-	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL).GetString () : app.LocaleString (IDS_ANY, NULL).GetString ());
-	_r_listview_setitem (hwnd, listview_id, item, 2, _app_getdirectionname (ptr_rule->direction, FALSE, TRUE).GetString ());
+	INT ruleIconId;
+	INT ruleGroupId;
+
+	ruleIconId = _app_getruleicon (ptr_rule);
+	ruleGroupId = _app_getrulegroup (ptr_rule);
+
+	LPCWSTR ruleNamePtr = NULL;
+	WCHAR ruleName[RULE_NAME_CCH_MAX];
+	PR_STRING directionString;
+
+	if (!_r_str_isempty (ptr_rule->name))
+	{
+		if (ptr_rule->is_readonly && ptr_rule->type == DataRuleCustom)
+		{
+			_r_str_printf (ruleName, RTL_NUMBER_OF (ruleName), L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->Buffer);
+			ruleNamePtr = ruleName;
+		}
+		else
+		{
+			ruleNamePtr = ptr_rule->name->Buffer;
+		}
+	}
+
+	directionString = _app_getdirectionname (ptr_rule->direction, FALSE, TRUE);
+
+	_r_listview_setitem (hwnd, listview_id, item, 0, ruleNamePtr, ruleIconId, ruleGroupId);
+	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL) : app.LocaleString (IDS_ANY));
+	_r_listview_setitem (hwnd, listview_id, item, 2, _r_obj_getstringorempty (directionString));
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_rule->is_enabled);
 
+	if (directionString)
+		_r_obj_dereference (directionString);
+
 	if (include_apps)
 	{
-		for (auto &p : ptr_rule->apps)
-		{
-			SIZE_T app_hash = p.first;
-			PR_OBJECT ptr_app_object = _app_getappitem (app_hash);
+		SIZE_T app_hash;
+		PITEM_APP ptr_app;
+		INT app_listview_id;
+		INT item_pos;
 
-			if (!ptr_app_object)
+		for (auto it = ptr_rule->apps->begin (); it != ptr_rule->apps->end (); ++it)
+		{
+			app_hash = it->first;
+			ptr_app = _app_getappitem (app_hash);
+
+			if (!ptr_app)
 				continue;
 
-			PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+			app_listview_id = _app_getlistview_id (ptr_app->type);
 
-			if (ptr_app)
+			if (app_listview_id)
 			{
-				INT app_listview_id = _app_getlistview_id (ptr_app->type);
+				item_pos = _app_getposition (app.GetHWND (), app_listview_id, app_hash);
 
-				if (app_listview_id)
-				{
-					INT item_pos = _app_getposition (app.GetHWND (), app_listview_id, app_hash);
-
-					if (item_pos != INVALID_INT)
-						_app_setappiteminfo (hwnd, app_listview_id, item_pos, app_hash, ptr_app);
-				}
+				if (item_pos != INVALID_INT)
+					_app_setappiteminfo (hwnd, app_listview_id, item_pos, app_hash, ptr_app);
 			}
 
-			_r_obj2_dereference (ptr_app_object);
+			_r_obj_dereference (ptr_app);
 		}
 	}
 }
@@ -867,39 +935,41 @@ VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable)
 {
 	ptr_rule->is_enabled = is_enable;
 
-	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->pname))
+	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->name))
 	{
-		SIZE_T rule_hash = _r_str_hash (ptr_rule->pname);
+		PVOID pdata;
+		PITEM_RULE_CONFIG ptr_config;
+		SIZE_T rule_hash = _r_str_hash (ptr_rule->name);
 
 		if (rule_hash)
 		{
 			if (rules_config.find (rule_hash) != rules_config.end ())
 			{
-				PITEM_RULE_CONFIG ptr_config;
-				PVOID ptr = rules_config[rule_hash];
+				pdata = rules_config[rule_hash];
 
-				if (ptr && (ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (ptr)))
+				if (pdata)
 				{
+					ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (pdata);
 					ptr_config->is_enabled = is_enable;
 
 					_r_obj_dereference (ptr_config);
 				}
 				else
 				{
-					PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_allocateex (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
+					ptr_config = (PITEM_RULE_CONFIG)_r_obj_allocateex (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
 
 					ptr_config->is_enabled = is_enable;
-					_r_str_alloc (&ptr_config->pname, _r_str_length (ptr_rule->pname), ptr_rule->pname);
+					ptr_config->name = _r_obj_createstring2 (ptr_rule->name);
 
 					rules_config[rule_hash] = ptr_config;
 				}
 			}
 			else
 			{
-				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_allocateex (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
+				ptr_config = (PITEM_RULE_CONFIG)_r_obj_allocateex (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
 
 				ptr_config->is_enabled = is_enable;
-				_r_str_alloc (&ptr_config->pname, _r_str_length (ptr_rule->pname), ptr_rule->pname);
+				ptr_config->name = _r_obj_createstring2 (ptr_rule->name);
 
 				rules_config[rule_hash] = ptr_config;
 			}
@@ -911,9 +981,9 @@ VOID _app_ruleenable2 (PITEM_RULE ptr_rule, BOOLEAN is_enable)
 {
 	ptr_rule->is_enabled = is_enable;
 
-	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->pname))
+	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->name))
 	{
-		SIZE_T rule_hash = _r_str_hash (ptr_rule->pname);
+		SIZE_T rule_hash = _r_str_hash (ptr_rule->name);
 
 		if (rule_hash)
 		{
@@ -957,16 +1027,21 @@ BOOLEAN _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state)
 
 BOOLEAN _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT update_state, INT extra_state)
 {
-	if (ptr_rule->type != DataRuleBlocklist)
+	if (ptr_rule->type != DataRuleBlocklist || _r_str_isempty (ptr_rule->name))
 		return FALSE;
 
-	if (_r_str_compare_length (ptr_rule->pname, L"spy_", 4) == 0)
+	LPCWSTR ruleName = ptr_rule->name->Buffer;
+
+	if (!ruleName)
+		return FALSE;
+
+	if (_r_str_compare_length (ruleName, L"spy_", 4) == 0)
 		return _app_ruleblocklistsetchange (ptr_rule, spy_state);
 
-	else if (_r_str_compare_length (ptr_rule->pname, L"update_", 7) == 0)
+	else if (_r_str_compare_length (ruleName, L"update_", 7) == 0)
 		return _app_ruleblocklistsetchange (ptr_rule, update_state);
 
-	else if (_r_str_compare_length (ptr_rule->pname, L"extra_", 6) == 0)
+	else if (_r_str_compare_length (ruleName, L"extra_", 6) == 0)
 		return _app_ruleblocklistsetchange (ptr_rule, extra_state);
 
 	// fallback: block rules with other names by default!
@@ -975,32 +1050,31 @@ BOOLEAN _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT upda
 
 VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extra_state, BOOLEAN is_instantapply)
 {
-	OBJECTS_VEC rules;
+	OBJECTS_RULE_VECTOR rules;
 
 	INT listview_id = _app_getlistview_id (DataRuleBlocklist);
 
 	SIZE_T changes_count = 0;
 	INT index = INVALID_INT; // negative initial value is required for correct array indexing
 
-	for (auto &p : rules_arr)
+	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
 		index += 1;
 
-		if (!p)
+		if (!*it)
 			continue;
 
-		PR_OBJECT ptr_rule_object = _r_obj2_reference (p);
-		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
 
-		if (!ptr_rule || ptr_rule->type != DataRuleBlocklist)
+		if (ptr_rule->type != DataRuleBlocklist)
 		{
-			_r_obj2_dereference (ptr_rule_object);
+			_r_obj_dereference (ptr_rule);
 			continue;
 		}
 
 		if (!_app_ruleblocklistsetstate (ptr_rule, spy_state, update_state, extra_state))
 		{
-			_r_obj2_dereference (ptr_rule_object);
+			_r_obj_dereference (ptr_rule);
 			continue;
 		}
 
@@ -1021,11 +1095,11 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 		if (is_instantapply)
 		{
-			rules.push_back (ptr_rule_object); // be freed later!
+			rules.emplace_back (ptr_rule); // be freed later!
 			continue;
 		}
 
-		_r_obj2_dereference (ptr_rule_object);
+		_r_obj_dereference (ptr_rule);
 	}
 
 	if (changes_count)
@@ -1043,114 +1117,116 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 			HANDLE hengine = _wfp_getenginehandle ();
 
 			if (hengine)
-				_wfp_create4filters (hengine, rules, __LINE__);
+				_wfp_create4filters (hengine, &rules, __LINE__);
 
-			_app_freeobjects_vec (rules);
+			_app_freerules_vec (&rules);
 		}
 
 		_app_profile_save (NULL); // required!
 	}
 }
 
-rstring _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
+PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
 {
-	rstring result;
+	PR_STRING string;
 
-	for (auto &p : rules_arr)
+	string = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+
+	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!p)
+		if (!*it)
 			continue;
 
-		PR_OBJECT ptr_rule_object = _r_obj2_reference (p);
-		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
 
-		if (ptr_rule)
+		if (ptr_rule->is_enabled && ptr_rule->type == DataRuleCustom && ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ())
 		{
-			if (ptr_rule->is_enabled && ptr_rule->type == DataRuleCustom && ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ())
+			if (!_r_str_isempty (ptr_rule->name))
 			{
-				if (!_r_str_isempty (ptr_rule->pname))
-				{
-					result.Append (ptr_rule->pname);
+				_r_string_append2 (&string, ptr_rule->name);
 
-					if (ptr_rule->is_readonly)
-						result.Append (SZ_RULE_INTERNAL_MENU);
+				if (ptr_rule->is_readonly)
+					_r_string_append (&string, SZ_RULE_INTERNAL_MENU);
 
-					result.Append (delimeter);
-				}
+				_r_string_append (&string, delimeter);
 			}
 		}
 
-		_r_obj2_dereference (ptr_rule_object);
+		_r_obj_dereference (ptr_rule);
 	}
 
-	if (!result.IsEmpty ())
-		_r_str_trim (result, delimeter);
+	_r_str_trim (string, delimeter);
 
-	return result;
+	if (_r_str_isempty (string))
+	{
+		_r_obj_dereference (string);
+		return NULL;
+	}
+
+	return string;
 }
 
-rstring _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay, LPCWSTR delimeter)
+PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay, LPCWSTR delimeter)
 {
-	rstring result;
+	PR_STRING string;
+
+	string = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
 
 	if (is_fordisplay && ptr_rule->is_forservices)
 	{
-		static rstring svchost_path = _r_path_expand (PATH_SVCHOST);
-
-		result.AppendFormat (L"%s%s", PROC_SYSTEM_NAME, delimeter);
-		result.AppendFormat (L"%s%s", svchost_path.GetString (), delimeter);
+		_r_string_appendformat (&string, L"%s%s%s%s", PROC_SYSTEM_NAME, delimeter, _r_obj_getstring (config.svchost_path), delimeter);
 	}
 
-	for (auto &p : ptr_rule->apps)
+	for (auto it = ptr_rule->apps->begin (); it != ptr_rule->apps->end (); ++it)
 	{
-		PR_OBJECT ptr_app_object = _app_getappitem (p.first);
+		PITEM_APP ptr_app = _app_getappitem (it->first);
 
-		if (!ptr_app_object)
+		if (!ptr_app)
 			continue;
 
-		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
-
-		if (ptr_app)
+		if (is_fordisplay)
 		{
-			if (is_fordisplay)
+			if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
 			{
-				if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
-				{
-					if (!_r_str_isempty (ptr_app->display_name))
-						result.Append (ptr_app->display_name);
-				}
-				else
-				{
-					if (!_r_str_isempty (ptr_app->original_path))
-						result.Append (ptr_app->original_path);
-				}
+				if (!_r_str_isempty (ptr_app->display_name))
+					_r_string_append2 (&string, ptr_app->display_name);
 			}
 			else
 			{
 				if (!_r_str_isempty (ptr_app->original_path))
-					result.Append (ptr_app->original_path);
+					_r_string_append2 (&string, ptr_app->original_path);
 			}
-
-			result.Append (delimeter);
+		}
+		else
+		{
+			if (!_r_str_isempty (ptr_app->original_path))
+				_r_string_append2 (&string, ptr_app->original_path);
 		}
 
-		_r_obj2_dereference (ptr_app_object);
+		_r_string_append (&string, delimeter);
+
+		_r_obj_dereference (ptr_app);
 	}
 
-	if (!result.IsEmpty ())
-		_r_str_trim (result, delimeter);
+	_r_str_trim (string, delimeter);
 
-	return result;
+	if (_r_str_isempty (string))
+	{
+		_r_obj_dereference (string);
+		return NULL;
+	}
+
+	return string;
 }
 
 BOOLEAN _app_isappfound (SIZE_T app_hash)
 {
-	return apps.find (app_hash) != apps.end ();
+	return app_hash && apps.find (app_hash) != apps.end ();
 }
 
 BOOLEAN _app_isapphelperfound (SIZE_T app_hash)
 {
-	return apps_helper.find (app_hash) != apps_helper.end ();
+	return app_hash && apps_helper.find (app_hash) != apps_helper.end ();
 }
 
 BOOLEAN _app_isapphaveconnection (SIZE_T app_hash)
@@ -1158,12 +1234,12 @@ BOOLEAN _app_isapphaveconnection (SIZE_T app_hash)
 	if (!app_hash)
 		return FALSE;
 
-	for (auto &p : network_map)
+	for (auto it = network_map.begin (); it != network_map.end (); ++it)
 	{
-		PITEM_NETWORK ptr_network = (PITEM_NETWORK)_r_obj_reference (p.second);
-
-		if (!ptr_network)
+		if (!it->second)
 			continue;
+
+		PITEM_NETWORK ptr_network = (PITEM_NETWORK)_r_obj_reference (it->second);
 
 		if (ptr_network->app_hash == app_hash)
 		{
@@ -1182,33 +1258,29 @@ BOOLEAN _app_isapphaveconnection (SIZE_T app_hash)
 
 BOOLEAN _app_isapphavedrive (INT letter)
 {
-	for (auto &p : apps)
+	for (auto it = apps.begin (); it != apps.end (); ++it)
 	{
-		PR_OBJECT ptr_app_object = _r_obj2_reference (p.second);
-
-		if (!ptr_app_object)
+		if (!it->second)
 			continue;
 
-		PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+		SIZE_T app_hash = it->first;
+		PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
 
-		if (!ptr_app)
+		if (!_r_str_isempty (ptr_app->original_path))
 		{
-			_r_obj2_dereference (ptr_app_object);
-			continue;
-		}
+			INT drive_id = PathGetDriveNumber (ptr_app->original_path->Buffer);
 
-		INT drive_id = PathGetDriveNumber (ptr_app->original_path);
-
-		if ((drive_id != INVALID_INT && drive_id == letter) || ptr_app->type == DataAppDevice)
-		{
-			if (ptr_app->is_enabled || _app_isapphaverule (p.first))
+			if ((drive_id != INVALID_INT && drive_id == letter) || ptr_app->type == DataAppDevice)
 			{
-				_r_obj2_dereference (ptr_app_object);
-				return TRUE;
+				if (ptr_app->is_enabled || _app_isapphaverule (app_hash))
+				{
+					_r_obj_dereference (ptr_app);
+					return TRUE;
+				}
 			}
 		}
 
-		_r_obj2_dereference (ptr_app_object);
+		_r_obj_dereference (ptr_app);
 	}
 
 	return FALSE;
@@ -1219,21 +1291,20 @@ BOOLEAN _app_isapphaverule (SIZE_T app_hash)
 	if (!app_hash)
 		return FALSE;
 
-	for (auto &p : rules_arr)
+	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!p)
+		if (!*it)
 			continue;
 
-		PR_OBJECT ptr_rule_object = _r_obj2_reference (p);
-		PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
 
-		if (ptr_rule && ptr_rule->is_enabled && ptr_rule->type == DataRuleCustom && ptr_rule->apps.find (app_hash) != ptr_rule->apps.end ())
+		if (ptr_rule->is_enabled && ptr_rule->type == DataRuleCustom && ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ())
 		{
-			_r_obj2_dereference (ptr_rule_object);
+			_r_obj_dereference (ptr_rule);
 			return TRUE;
 		}
 
-		_r_obj2_dereference (ptr_rule_object);
+		_r_obj_dereference (ptr_rule);
 	}
 
 	return FALSE;
@@ -1259,7 +1330,7 @@ BOOLEAN _app_isappexists (const PITEM_APP ptr_app)
 		return TRUE;
 
 	else if (ptr_app->type == DataAppRegular)
-		return !_r_str_isempty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path);
+		return !_r_str_isempty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path->Buffer);
 
 	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
 		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path), NULL, NULL, NULL, NULL);
@@ -1269,30 +1340,28 @@ BOOLEAN _app_isappexists (const PITEM_APP ptr_app)
 
 BOOLEAN _app_isrulehost (LPCWSTR rule)
 {
-	PNET_ADDRESS_INFO pni = (PNET_ADDRESS_INFO)_r_mem_allocatezero (sizeof (NET_ADDRESS_INFO));
+	NET_ADDRESS_INFO addressInfo;
+	memset (&addressInfo, 0, sizeof (NET_ADDRESS_INFO));
 
 	USHORT port;
 	BYTE prefix_length;
 
 	DWORD types = NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE;
-	DWORD code = ParseNetworkString (rule, types, pni, &port, &prefix_length);
-
-	_r_mem_free (pni);
+	DWORD code = ParseNetworkString (rule, types, &addressInfo, &port, &prefix_length);
 
 	return (code == ERROR_SUCCESS);
 }
 
 BOOLEAN _app_isruleip (LPCWSTR rule)
 {
-	PNET_ADDRESS_INFO pni = (PNET_ADDRESS_INFO)_r_mem_allocatezero (sizeof (NET_ADDRESS_INFO));
+	NET_ADDRESS_INFO addressInfo;
+	memset (&addressInfo, 0, sizeof (NET_ADDRESS_INFO));
 
 	USHORT port;
 	BYTE prefix_length;
 
 	DWORD types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
-	DWORD code = ParseNetworkString (rule, types, pni, &port, &prefix_length);
-
-	_r_mem_free (pni);
+	DWORD code = ParseNetworkString (rule, types, &addressInfo, &port, &prefix_length);
 
 	return (code == ERROR_SUCCESS);
 }
@@ -1326,7 +1395,7 @@ BOOLEAN _app_isrulevalidchars (LPCWSTR rule)
 		{
 			BOOLEAN is_valid = FALSE;
 
-			for (auto &chr : valid_chars)
+			for (auto chr : valid_chars)
 			{
 				if (rule[i] == chr)
 				{
@@ -1376,7 +1445,7 @@ BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_st
 VOID _app_profile_load_fallback ()
 {
 	if (!_app_isappfound (config.my_hash))
-		_app_addapplication (NULL, app.GetBinaryPath (), 0, 0, 0, FALSE, TRUE);
+		_app_addapplication (NULL, app.GetAppBinaryPath (), 0, 0, 0, FALSE, TRUE);
 
 	_app_setappinfo (config.my_hash, InfoIsUndeletable, TRUE);
 
@@ -1387,7 +1456,7 @@ VOID _app_profile_load_fallback ()
 			_app_addapplication (NULL, PROC_SYSTEM_NAME, 0, 0, 0, FALSE, FALSE);
 
 		if (!_app_isappfound (config.svchost_hash))
-			_app_addapplication (NULL, _r_path_expand (PATH_SVCHOST).GetString (), 0, 0, 0, FALSE, FALSE);
+			_app_addapplication (NULL, _r_obj_getstring (config.svchost_path), 0, 0, 0, FALSE, FALSE);
 
 		_app_setappinfo (config.ntoskrnl_hash, InfoIsUndeletable, TRUE);
 		_app_setappinfo (config.svchost_hash, InfoIsUndeletable, TRUE);
@@ -1408,25 +1477,44 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 		}
 		else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleCustom)
 		{
-			PITEM_RULE ptr_rule = new ITEM_RULE;
-
-			SIZE_T rule_hash = _r_str_hash (item.attribute (L"name").as_string ());
-
+			PITEM_RULE ptr_rule;
 			PITEM_RULE_CONFIG ptr_config = NULL;
+			SIZE_T rule_hash;
+			BOOLEAN is_internal;
 
-			// allocate required memory
+			ptr_rule = (PITEM_RULE)_r_obj_allocateex (sizeof (ITEM_RULE), &_app_dereferencerule);
+
+			// initialize stl
+			ptr_rule->apps = new HASHER_MAP;
+			ptr_rule->guids = new GUIDS_VEC;
+
+			// set rule name
+			if (!item.attribute (L"name").empty ())
 			{
-				rstring attr_name = item.attribute (L"name").as_string ();
-				rstring attr_rule_remote = item.attribute (L"rule").as_string ();
-				rstring attr_rule_local = item.attribute (L"rule_local").as_string ();
+				ptr_rule->name = _r_obj_createstring (item.attribute (L"name").as_string ());
 
-				SIZE_T name_length = min (attr_name.GetLength (), RULE_NAME_CCH_MAX);
-				SIZE_T rule_remote_length = min (attr_rule_remote.GetLength (), RULE_RULE_CCH_MAX);
-				SIZE_T rule_local_length = min (attr_rule_local.GetLength (), RULE_RULE_CCH_MAX);
+				if (_r_obj_getstringlength (ptr_rule->name) > RULE_NAME_CCH_MAX)
+					_r_string_setsize (ptr_rule->name, RULE_NAME_CCH_MAX * sizeof (WCHAR));
 
-				_r_str_alloc (&ptr_rule->pname, name_length, attr_name.GetString ());
-				_r_str_alloc (&ptr_rule->prule_remote, rule_remote_length, attr_rule_remote.GetString ());
-				_r_str_alloc (&ptr_rule->prule_local, rule_local_length, attr_rule_local.GetString ());
+				rule_hash = _r_str_hash (ptr_rule->name);
+			}
+
+			// set rule destination
+			if (!item.attribute (L"rule").empty ())
+			{
+				ptr_rule->rule_remote = _r_obj_createstring (item.attribute (L"rule").as_string ());
+
+				if (_r_obj_getstringlength (ptr_rule->rule_remote) > RULE_RULE_CCH_MAX)
+					_r_string_setsize (ptr_rule->rule_remote, RULE_RULE_CCH_MAX * sizeof (WCHAR));
+			}
+
+			// set rule source
+			if (!item.attribute (L"rule_local").empty ())
+			{
+				ptr_rule->rule_local = _r_obj_createstring (item.attribute (L"rule_local").as_string ());
+
+				if (_r_obj_getstringlength (ptr_rule->rule_local) > RULE_RULE_CCH_MAX)
+					_r_string_setsize (ptr_rule->rule_local, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 			}
 
 			ptr_rule->direction = (FWP_DIRECTION)item.attribute (L"dir").as_int ();
@@ -1451,12 +1539,16 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 			ptr_rule->is_enabled = item.attribute (L"is_enabled").as_bool ();
 
 			if (type == DataRuleBlocklist)
+			{
 				_app_ruleblocklistsetstate (ptr_rule, blocklist_spy_state, blocklist_update_state, blocklist_extra_state);
+			}
 			else
+			{
 				ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
+			}
 
 			// load rules config
-			BOOLEAN is_internal = (type == DataRuleBlocklist || type == DataRuleSystem);
+			is_internal = (type == DataRuleBlocklist || type == DataRuleSystem);
 
 			if (is_internal)
 			{
@@ -1472,62 +1564,91 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 
 			// load apps
 			{
-				rstring apps_rule = item.attribute (L"apps").as_string ();
+				PR_STRING ruleApps;
 
-				if (is_internal && ptr_config && !_r_str_isempty (ptr_config->papps))
+				ruleApps = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+
+				if (!item.attribute (L"apps").empty ())
+					_r_string_append (&ruleApps, item.attribute (L"apps").as_string ());
+
+				if (is_internal && ptr_config && !_r_str_isempty (ptr_config->apps))
 				{
-					if (apps_rule.IsEmpty ())
-						apps_rule = ptr_config->papps;
-
+					if (!_r_str_isempty (ruleApps))
+					{
+						_r_string_appendformat (&ruleApps, L"%s%s", DIVIDER_APP, ptr_config->apps->Buffer);
+					}
 					else
-						apps_rule.AppendFormat (L"%s%s", DIVIDER_APP, ptr_config->papps);
+					{
+						_r_string_append2 (&ruleApps, ptr_config->apps);
+					}
 				}
 
 				if (ptr_config)
 					_r_obj_dereference (ptr_config);
 
-				if (!apps_rule.IsEmpty ())
+				if (!_r_str_isempty (ruleApps))
 				{
 					if (version < XML_PROFILE_VER_3)
-						_r_str_replace (apps_rule.GetBuffer (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
+						_r_str_replacechar (ruleApps->Buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
-					rstringvec rvc;
-					_r_str_split (apps_rule.GetString (), apps_rule.GetLength (), DIVIDER_APP[0], rvc);
+					R_STRINGREF remainingPart;
+					PR_STRING appPath;
+					PR_STRING expandedPath;
+					SIZE_T app_hash;
 
-					for (auto& p : rvc)
+					_r_stringref_initializeex (&remainingPart, ruleApps->Buffer, ruleApps->Length);
+
+					while (remainingPart.Length != 0)
 					{
-						_r_str_trim (p, DIVIDER_TRIM);
+						appPath = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_APP[0], TRUE);
 
-						rstring app_path = _r_path_expand (p.GetString ());
-						SIZE_T app_hash = _r_str_hash (app_path.GetString ());
-
-						if (app_hash)
+						if (appPath)
 						{
-							if (item.attribute (L"is_services").as_bool () && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
-								continue;
+							expandedPath = _r_str_expandenvironmentstring (appPath);
 
-							if (!_app_isappfound (app_hash))
-								app_hash = _app_addapplication (NULL, app_path.GetString (), 0, 0, 0, FALSE, FALSE);
+							if (expandedPath)
+								_r_obj_movereference (&appPath, expandedPath);
 
-							if (ptr_rule->type == DataRuleSystem)
-								_app_setappinfo (app_hash, InfoIsUndeletable, TRUE);
+							if (appPath)
+							{
+								app_hash = _r_str_hash (appPath);
 
-							ptr_rule->apps[app_hash] = TRUE;
+								if (app_hash)
+								{
+									if (item.attribute (L"is_services").as_bool () && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
+									{
+										_r_obj_dereference (appPath);
+										continue;
+									}
+
+									if (!_app_isappfound (app_hash))
+										app_hash = _app_addapplication (NULL, _r_obj_getstring (appPath), 0, 0, 0, FALSE, FALSE);
+
+									if (ptr_rule->type == DataRuleSystem)
+										_app_setappinfo (app_hash, InfoIsUndeletable, TRUE);
+
+									ptr_rule->apps->emplace (app_hash, TRUE);
+								}
+
+								_r_obj_dereference (appPath);
+							}
 						}
 					}
 				}
+
+				_r_obj_dereference (ruleApps);
 			}
 
-			rules_arr.push_back (_r_obj2_allocateex (ptr_rule, &_app_dereferencerule));
+			rules_arr.emplace_back (ptr_rule);
 		}
 		else if (type == DataRulesConfig)
 		{
-			rstring rule_name = item.attribute (L"name").as_string ();
+			LPCWSTR rule_name = item.attribute (L"name").as_string ();
 
-			if (rule_name.IsEmpty ())
+			if (_r_str_isempty (rule_name))
 				continue;
 
-			SIZE_T rule_hash = _r_str_hash (rule_name.GetString ());
+			SIZE_T rule_hash = _r_str_hash (rule_name);
 
 			if (rule_hash && rules_config.find (rule_hash) == rules_config.end ())
 			{
@@ -1535,13 +1656,11 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 
 				ptr_config->is_enabled = item.attribute (L"is_enabled").as_bool ();
 
-				rstring attr_apps = item.attribute (L"apps").as_string ();
+				ptr_config->name = _r_obj_createstring (rule_name);
+				ptr_config->apps = _r_obj_createstring (item.attribute (L"apps").as_string ());
 
 				if (version < XML_PROFILE_VER_3)
-					_r_str_replace (attr_apps.GetBuffer (), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
-
-				_r_str_alloc (&ptr_config->pname, rule_name.GetLength (), rule_name.GetString ());
-				_r_str_alloc (&ptr_config->papps, attr_apps.GetLength (), attr_apps.GetString ());
+					_r_str_replacechar (ptr_config->apps->Buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
 				rules_config[rule_hash] = ptr_config;
 			}
@@ -1584,7 +1703,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 
 	// show only syntax, memory and i/o errors...
 	if (!load_original && load_original.status != pugi::status_file_not_found && load_original.status != pugi::status_no_document_element)
-		app.LogError (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path).GetString (), UID);
+		app.LogErrorV (UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path);
 
 	if (load_original && root)
 	{
@@ -1624,16 +1743,16 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	_r_fastlock_acquireexclusive (&lock_apply);
 
 	// clear apps
-	_app_freeobjects_map (apps, 0);
+	_app_freeapps_map (&apps);
 
 	// clear services/uwp apps
-	_app_freeappshelper_map (apps_helper);
+	_app_freeappshelper_map (&apps_helper);
 
 	// clear rules config
-	_app_freerulesconfig_map (rules_config);
+	_app_freerulesconfig_map (&rules_config);
 
 	// clear rules
-	_app_freeobjects_vec (rules_arr);
+	_app_freerules_vec (&rules_arr);
 
 	// generate uwp apps list (win8+)
 	if (_r_sys_validversion (6, 2))
@@ -1658,7 +1777,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		{
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
-				app.LogError (L"pugi::load_file", 0, _r_fmt (L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path).GetString (), UID);
+				app.LogErrorV (UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path);
 		}
 		else
 		{
@@ -1703,47 +1822,48 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		time_t current_time = _r_unixtime_now ();
 
 		// add apps
-		for (auto &p : apps)
+		for (auto it = apps.begin (); it != apps.end (); ++it)
 		{
-			PR_OBJECT ptr_app_object = _r_obj2_reference (p.second);
-
-			if (!ptr_app_object)
+			if (!it->second)
 				continue;
 
-			SIZE_T app_hash = p.first;
-			PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+			SIZE_T app_hash = it->first;
+			PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
 
-			if (ptr_app)
+			INT listview_id = _app_getlistview_id (ptr_app->type);
+
+			if (listview_id)
 			{
-				INT listview_id = _app_getlistview_id (ptr_app->type);
+				_r_fastlock_acquireshared (&lock_checkbox);
 
-				if (listview_id)
-				{
-					_r_fastlock_acquireshared (&lock_checkbox);
+				_r_listview_additem (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+				_app_setappiteminfo (hwnd, listview_id, 0, app_hash, ptr_app);
 
-					_r_listview_additem (hwnd, listview_id, 0, 0, ptr_app->display_name, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
-					_app_setappiteminfo (hwnd, listview_id, 0, app_hash, ptr_app);
-
-					_r_fastlock_releaseshared (&lock_checkbox);
-				}
-
-				// install timer
-				if (ptr_app->timer)
-					_app_timer_set (hwnd, ptr_app, ptr_app->timer - current_time);
+				_r_fastlock_releaseshared (&lock_checkbox);
 			}
 
-			_r_obj2_dereference (ptr_app_object);
+			// install timer
+			if (ptr_app->timer)
+				_app_timer_set (hwnd, ptr_app, ptr_app->timer - current_time);
+
+			_r_obj_dereference (ptr_app);
 		}
 
 		// add services and store apps
-		for (auto &p : apps_helper)
+		for (auto it = apps_helper.begin (); it != apps_helper.end (); ++it)
 		{
-			PITEM_APP_HELPER ptr_app_item = (PITEM_APP_HELPER)_r_obj_reference (p.second);
-
-			if (!ptr_app_item)
+			if (!it->second)
 				continue;
 
-			_app_addapplication (hwnd, ptr_app_item->internal_name, ptr_app_item->timestamp, 0, 0, FALSE, FALSE);
+			PITEM_APP_HELPER ptr_app_item = (PITEM_APP_HELPER)_r_obj_reference (it->second);
+
+			if (_r_str_isempty (ptr_app_item->internal_name))
+			{
+				_r_obj_dereference (ptr_app_item);
+				continue;
+			}
+
+			_app_addapplication (hwnd, ptr_app_item->internal_name->Buffer, ptr_app_item->timestamp, 0, 0, FALSE, FALSE);
 
 			_r_obj_dereference (ptr_app_item);
 		}
@@ -1751,29 +1871,26 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		// add rules
 		for (SIZE_T i = 0; i < rules_arr.size (); i++)
 		{
-			PR_OBJECT ptr_rule_object = _r_obj2_reference (rules_arr.at (i));
+			PVOID pdata = rules_arr.at (i);
 
-			if (!ptr_rule_object)
+			if (!pdata)
 				continue;
 
-			PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+			PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (pdata);
 
-			if (ptr_rule)
+			INT listview_id = _app_getlistview_id (ptr_rule->type);
+
+			if (listview_id)
 			{
-				INT listview_id = _app_getlistview_id (ptr_rule->type);
+				_r_fastlock_acquireshared (&lock_checkbox);
 
-				if (listview_id)
-				{
-					_r_fastlock_acquireshared (&lock_checkbox);
+				_r_listview_additem (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
+				_app_setruleiteminfo (hwnd, listview_id, 0, ptr_rule, FALSE);
 
-					_r_listview_additem (hwnd, listview_id, 0, 0, ptr_rule->pname, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
-					_app_setruleiteminfo (hwnd, listview_id, 0, ptr_rule, FALSE);
-
-					_r_fastlock_releaseshared (&lock_checkbox);
-				}
+				_r_fastlock_releaseshared (&lock_checkbox);
 			}
 
-			_r_obj2_dereference (ptr_rule_object);
+			_r_obj_dereference (ptr_rule);
 		}
 	}
 
@@ -1812,76 +1929,60 @@ VOID _app_profile_save (LPCWSTR path_custom)
 		// save apps
 		if (root_apps)
 		{
-			for (auto &p : apps)
+			for (auto it = apps.begin (); it != apps.end (); ++it)
 			{
-				PR_OBJECT ptr_app_object = _r_obj2_reference (p.second);
-
-				if (!ptr_app_object)
+				if (!it->second)
 					continue;
 
-				PITEM_APP ptr_app = (PITEM_APP)ptr_app_object->pdata;
+				PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
 
-				if (ptr_app)
+				if (_r_str_isempty (ptr_app->original_path) || (!_app_isappused (ptr_app, it->first) && (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)))
 				{
-					if (!ptr_app->original_path)
-					{
-						_r_obj2_dereference (ptr_app_object);
-						continue;
-					}
-
-					if (!_app_isappused (ptr_app, p.first) && (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP))
-					{
-						_r_obj2_dereference (ptr_app_object);
-						continue;
-					}
-
-					pugi::xml_node item = root_apps.append_child (L"item");
-
-					if (item)
-					{
-						item.append_attribute (L"path").set_value (ptr_app->original_path);
-
-						if (ptr_app->timestamp)
-							item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
-
-						// set timer (if presented)
-						if (ptr_app->timer && _app_istimeractive (ptr_app))
-							item.append_attribute (L"timer").set_value (ptr_app->timer);
-
-						// ffu!
-						if (ptr_app->profile)
-							item.append_attribute (L"profile").set_value (ptr_app->profile);
-
-						if (ptr_app->is_silent)
-							item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
-
-						if (ptr_app->is_enabled)
-							item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
-					}
+					_r_obj_dereference (ptr_app);
+					continue;
 				}
 
-				_r_obj2_dereference (ptr_app_object);
+				pugi::xml_node item = root_apps.append_child (L"item");
+
+				if (item)
+				{
+					item.append_attribute (L"path").set_value (ptr_app->original_path->Buffer);
+
+					if (ptr_app->timestamp)
+						item.append_attribute (L"timestamp").set_value (ptr_app->timestamp);
+
+					// set timer (if presented)
+					if (ptr_app->timer && _app_istimeractive (ptr_app))
+						item.append_attribute (L"timer").set_value (ptr_app->timer);
+
+					// ffu!
+					if (ptr_app->profile)
+						item.append_attribute (L"profile").set_value (ptr_app->profile);
+
+					if (ptr_app->is_silent)
+						item.append_attribute (L"is_silent").set_value (ptr_app->is_silent);
+
+					if (ptr_app->is_enabled)
+						item.append_attribute (L"is_enabled").set_value (ptr_app->is_enabled);
+				}
+
+				_r_obj_dereference (ptr_app);
 			}
 		}
 
 		// save user rules
 		if (root_rules_custom)
 		{
-			for (auto &p : rules_arr)
+			for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 			{
-				if (!p)
+				if (!*it)
 					continue;
 
-				PR_OBJECT ptr_rule_object = _r_obj2_reference (p);
+				PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
 
-				if (!ptr_rule_object)
-					continue;
-
-				PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
-
-				if (!ptr_rule || ptr_rule->is_readonly || _r_str_isempty (ptr_rule->pname))
+				if (ptr_rule->is_readonly || _r_str_isempty (ptr_rule->name))
 				{
-					_r_obj2_dereference (ptr_rule_object);
+					_r_obj_dereference (ptr_rule);
 					continue;
 				}
 
@@ -1889,13 +1990,13 @@ VOID _app_profile_save (LPCWSTR path_custom)
 
 				if (item)
 				{
-					item.append_attribute (L"name").set_value (ptr_rule->pname);
+					item.append_attribute (L"name").set_value (ptr_rule->name->Buffer);
 
-					if (!_r_str_isempty (ptr_rule->prule_remote))
-						item.append_attribute (L"rule").set_value (ptr_rule->prule_remote);
+					if (!_r_str_isempty (ptr_rule->rule_remote))
+						item.append_attribute (L"rule").set_value (ptr_rule->rule_remote->Buffer);
 
-					if (!_r_str_isempty (ptr_rule->prule_local))
-						item.append_attribute (L"rule_local").set_value (ptr_rule->prule_local);
+					if (!_r_str_isempty (ptr_rule->rule_local))
+						item.append_attribute (L"rule_local").set_value (ptr_rule->rule_local->Buffer);
 
 					// ffu!
 					if (ptr_rule->profile)
@@ -1911,12 +2012,17 @@ VOID _app_profile_save (LPCWSTR path_custom)
 						item.append_attribute (L"version").set_value (ptr_rule->af);
 
 					// add apps attribute
-					if (!ptr_rule->apps.empty ())
+					if (!ptr_rule->apps->empty ())
 					{
-						rstring rule_apps = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
+						PR_STRING rule_apps = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
 
-						if (!rule_apps.IsEmpty ())
-							item.append_attribute (L"apps").set_value (rule_apps.GetString ());
+						if (rule_apps)
+						{
+							if (!_r_str_isempty (rule_apps))
+								item.append_attribute (L"apps").set_value (rule_apps->Buffer);
+
+							_r_obj_dereference (rule_apps);
+						}
 					}
 
 					if (ptr_rule->is_block)
@@ -1926,67 +2032,70 @@ VOID _app_profile_save (LPCWSTR path_custom)
 						item.append_attribute (L"is_enabled").set_value (ptr_rule->is_enabled);
 				}
 
-				_r_obj2_dereference (ptr_rule_object);
+				_r_obj_dereference (ptr_rule);
 			}
 		}
 
 		// save rules config
 		if (root_rule_config)
 		{
-			for (auto &p : rules_config)
+			for (auto it = rules_config.begin (); it != rules_config.end (); ++it)
 			{
-				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (p.second);
-
-				if (!ptr_config)
+				if (!it->second)
 					continue;
 
-				if (_r_str_isempty (ptr_config->pname))
+				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (it->second);
+
+				if (_r_str_isempty (ptr_config->name))
 				{
 					_r_obj_dereference (ptr_config);
 					continue;
 				}
 
-				rstring rule_apps;
+				PR_STRING rule_apps = NULL;
 				BOOLEAN is_enabled_default = ptr_config->is_enabled;
 
 				{
-					SIZE_T rule_hash = _r_str_hash (ptr_config->pname);
-					PR_OBJECT ptr_rule_object = _app_getrulebyhash (rule_hash);
+					SIZE_T rule_hash = _r_str_hash (ptr_config->name);
+					PITEM_RULE ptr_rule = _app_getrulebyhash (rule_hash);
 
-					if (ptr_rule_object)
+					if (ptr_rule)
 					{
-						PITEM_RULE ptr_rule = (PITEM_RULE)ptr_rule_object->pdata;
+						is_enabled_default = ptr_rule->is_enabled_default;
 
-						if (ptr_rule)
+						if (ptr_rule->type == DataRuleCustom && !ptr_rule->apps->empty ())
 						{
-							is_enabled_default = ptr_rule->is_enabled_default;
-
-							if (ptr_rule->type == DataRuleCustom && !ptr_rule->apps.empty ())
-								rule_apps = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
+							rule_apps = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
 						}
 
-						_r_obj2_dereference (ptr_rule_object);
+						_r_obj_dereference (ptr_rule);
 					}
 				}
 
 				// skip saving untouched configuration
-				if (ptr_config->is_enabled == is_enabled_default)
+				if (ptr_config->is_enabled == is_enabled_default && _r_str_isempty (rule_apps))
 				{
-					if (rule_apps.IsEmpty ())
-					{
-						_r_obj_dereference (ptr_config);
-						continue;
-					}
+					if (rule_apps)
+						_r_obj_clearreference (&rule_apps);
+
+					_r_obj_dereference (ptr_config);
+
+					continue;
 				}
 
 				pugi::xml_node item = root_rule_config.append_child (L"item");
 
 				if (item)
 				{
-					item.append_attribute (L"name").set_value (ptr_config->pname);
+					item.append_attribute (L"name").set_value (ptr_config->name->Buffer);
 
-					if (!rule_apps.IsEmpty ())
-						item.append_attribute (L"apps").set_value (rule_apps.GetString ());
+					if (rule_apps)
+					{
+						if (!_r_str_isempty (rule_apps))
+							item.append_attribute (L"apps").set_value (rule_apps->Buffer);
+
+						_r_obj_clearreference (&rule_apps);
+					}
 
 					item.append_attribute (L"is_enabled").set_value (ptr_config->is_enabled);
 				}

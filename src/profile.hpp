@@ -8,10 +8,10 @@ BOOLEAN _app_setappinfo (SIZE_T app_hash, ENUM_INFO_DATA info_key, LONG_PTR info
 
 SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t timer, time_t last_notify, BOOLEAN is_silent, BOOLEAN is_enabled);
 
-PR_OBJECT _app_getappitem (SIZE_T app_hash);
+PITEM_APP _app_getappitem (SIZE_T app_hash);
 PITEM_APP_HELPER _app_getapphelperitem (SIZE_T app_hash);
-PR_OBJECT _app_getrulebyid (SIZE_T idx);
-PR_OBJECT _app_getrulebyhash (SIZE_T rule_hash);
+PITEM_RULE _app_getrulebyid (SIZE_T idx);
+PITEM_RULE _app_getrulebyhash (SIZE_T rule_hash);
 PITEM_NETWORK _app_getnetworkitem (SIZE_T network_hash);
 SIZE_T _app_getnetworkapp (SIZE_T network_hash);
 PITEM_LOG _app_getlogitem (SIZE_T idx);
@@ -27,7 +27,7 @@ INT _app_getrulegroup (const PITEM_RULE ptr_rule);
 INT _app_getruleicon (const PITEM_RULE ptr_rule);
 COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx);
 
-rstring _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv);
+PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv);
 
 VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, SIZE_T app_hash, PITEM_APP ptr_app);
 VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_rule, BOOLEAN include_apps);
@@ -39,8 +39,8 @@ BOOLEAN _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state);
 BOOLEAN _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT update_state, INT extra_state);
 VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extra_state, BOOLEAN is_instantapply);
 
-rstring _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter);
-rstring _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay, LPCWSTR delimeter);
+PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter);
+PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay, LPCWSTR delimeter);
 
 BOOLEAN _app_isappfound (SIZE_T app_hash);
 BOOLEAN _app_isapphelperfound (SIZE_T app_hash);
