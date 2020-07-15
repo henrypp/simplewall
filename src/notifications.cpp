@@ -67,7 +67,7 @@ BOOLEAN _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 	_app_freeapps_vec (&rules);
 
 	_app_refreshstatus (app.GetHWND (), listview_id);
-	_app_profile_save (NULL);
+	_app_profile_save ();
 
 	if (listview_id && (INT)_r_tab_getlparam (app.GetHWND (), IDC_TAB, INVALID_INT) == listview_id)
 	{
@@ -942,7 +942,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							}
 
 							_app_refreshstatus (app.GetHWND (), listview_id);
-							_app_profile_save (NULL);
+							_app_profile_save ();
 
 							_r_obj_dereference (ptr_app);
 						}
@@ -1150,7 +1150,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						}
 
 						_app_refreshstatus (app.GetHWND (), listview_id);
-						_app_profile_save (NULL);
+						_app_profile_save ();
 					}
 
 					_r_obj_dereference (ptr_rule);

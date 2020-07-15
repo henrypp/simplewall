@@ -899,7 +899,7 @@ THREAD_FN LogThread (PVOID lparam)
 				_app_refreshstatus (hwnd, app_listview_id);
 			}
 
-			_app_profile_save (NULL);
+			_app_profile_save ();
 		}
 
 		// made network name resolution

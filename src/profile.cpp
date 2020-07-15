@@ -1122,7 +1122,7 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 			_app_freerules_vec (&rules);
 		}
 
-		_app_profile_save (NULL); // required!
+		_app_profile_save (); // required!
 	}
 }
 
@@ -1662,7 +1662,7 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 				if (version < XML_PROFILE_VER_3)
 					_r_str_replacechar (ptr_config->apps->Buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
-				rules_config[rule_hash] = ptr_config;
+				rules_config.emplace (rule_hash, ptr_config);
 			}
 		}
 	}
@@ -1908,10 +1908,10 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	}
 }
 
-VOID _app_profile_save (LPCWSTR path_custom)
+VOID _app_profile_save ()
 {
 	time_t current_time = _r_unixtime_now ();
-	BOOLEAN is_backuprequired = !path_custom && app.ConfigGetBoolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (config.profile_path_backup) || ((current_time - app.ConfigGetLong64 (L"BackupTimestamp", 0)) >= app.ConfigGetLong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
+	BOOLEAN is_backuprequired = app.ConfigGetBoolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (config.profile_path_backup) || ((current_time - app.ConfigGetLong64 (L"BackupTimestamp", 0)) >= app.ConfigGetLong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
 
 	pugi::xml_document doc;
 	pugi::xml_node root = doc.append_child (L"root");
@@ -2104,7 +2104,7 @@ VOID _app_profile_save (LPCWSTR path_custom)
 			}
 		}
 
-		doc.save_file (path_custom ? path_custom : config.profile_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
+		doc.save_file (config.profile_path, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
 
 		// make backup
 		if (is_backuprequired)

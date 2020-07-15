@@ -58,4 +58,4 @@ BOOLEAN _app_isrulevalidchars (LPCWSTR rule);
 BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_strict);
 VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptimestamp);
 VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom);
-VOID _app_profile_save (LPCWSTR path_custom);
+VOID _app_profile_save ();

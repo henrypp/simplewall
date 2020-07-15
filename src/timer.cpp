@@ -153,7 +153,7 @@ VOID CALLBACK _app_timer_callback (PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 	_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
 	_app_refreshstatus (hwnd, listview_id);
 
-	_app_profile_save (NULL);
+	_app_profile_save ();
 
 	_r_listview_redraw (hwnd, listview_id, INVALID_INT);
 

@@ -38,7 +38,7 @@ THREAD_FN ApplyThread (PVOID lparam)
 	_app_restoreinterfacestate (pcontext->hwnd, TRUE);
 	_app_setinterfacestate (pcontext->hwnd);
 
-	_app_profile_save (NULL);
+	_app_profile_save ();
 
 	SetEvent (config.done_evt);
 
@@ -230,7 +230,7 @@ BOOLEAN _app_changefilters (HWND hwnd, BOOLEAN is_install, BOOLEAN is_forced)
 		return TRUE;
 	}
 
-	_app_profile_save (NULL);
+	_app_profile_save ();
 
 	_r_listview_redraw (hwnd, listview_id, INVALID_INT);
 
@@ -2491,7 +2491,7 @@ find_wrap:
 
 		case RM_CONFIG_UPDATE:
 		{
-			_app_profile_save (NULL);
+			_app_profile_save ();
 			_app_profile_load (hwnd, NULL);
 
 			_app_refreshstatus (hwnd, INVALID_INT);
@@ -2597,7 +2597,7 @@ find_wrap:
 
 			DragFinish ((HDROP)wparam);
 
-			_app_profile_save (NULL);
+			_app_profile_save ();
 			_app_refreshstatus (hwnd, INVALID_INT);
 
 			{
@@ -2809,7 +2809,7 @@ find_wrap:
 								_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
 								_app_refreshstatus (hwnd, listview_id);
 
-								_app_profile_save (NULL);
+								_app_profile_save ();
 							}
 						}
 					}
@@ -3396,7 +3396,7 @@ find_wrap:
 				_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
 				_app_refreshstatus (hwnd, listview_id);
 
-				_app_profile_save (NULL);
+				_app_profile_save ();
 
 				return FALSE;
 			}
@@ -3435,7 +3435,7 @@ find_wrap:
 				_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
 				_app_refreshstatus (hwnd, listview_id);
 
-				_app_profile_save (NULL);
+				_app_profile_save ();
 
 				return FALSE;
 			}
@@ -3512,11 +3512,14 @@ find_wrap:
 					{
 						if (!_app_profile_load_check (path, XmlProfileV3, TRUE))
 						{
-							app.ShowErrorMessage (hwnd, L"Profile loading error!", ERROR_INVALID_DATA, NULL);
+							app.ShowErrorMessage (hwnd, L"Import failure!", ERROR_INVALID_DATA, NULL);
 						}
 						else
 						{
-							_app_profile_save (config.profile_path_backup); // made backup
+							// made backup
+							_r_fs_remove (config.profile_path_backup, _R_FLAG_REMOVE_FORCE);
+							_app_profile_save ();
+
 							_app_profile_load (hwnd, path); // load profile
 
 							_app_refreshstatus (hwnd, INVALID_INT);
@@ -3549,7 +3552,11 @@ find_wrap:
 
 					if (GetSaveFileName (&ofn))
 					{
-						_app_profile_save (path);
+						_app_profile_save ();
+
+						// added information for export profile failure (issue #707)
+						if (!_r_fs_copy (config.profile_path, path, 0))
+							app.ShowErrorMessage (hwnd, L"Export failure!", GetLastError (), NULL);
 					}
 
 					break;
@@ -4155,7 +4162,7 @@ find_wrap:
 						}
 
 						_app_refreshstatus (hwnd, INVALID_INT);
-						_app_profile_save (NULL);
+						_app_profile_save ();
 					}
 
 					break;
@@ -4202,7 +4209,7 @@ find_wrap:
 					_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
 					_app_refreshstatus (hwnd, listview_id);
 
-					_app_profile_save (NULL);
+					_app_profile_save ();
 
 					break;
 				}
@@ -4378,7 +4385,7 @@ find_wrap:
 						_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
 						_app_refreshstatus (hwnd, listview_id);
 
-						_app_profile_save (NULL);
+						_app_profile_save ();
 					}
 
 					break;
@@ -4439,7 +4446,7 @@ find_wrap:
 										_app_addapplication (hwnd, ptr_network->path->Buffer, 0, 0, 0, FALSE, FALSE);
 
 										_app_refreshstatus (hwnd, listview_id);
-										_app_profile_save (NULL);
+										_app_profile_save ();
 									}
 
 									ptr_rule->apps->emplace (ptr_network->app_hash, TRUE);
@@ -4482,7 +4489,7 @@ find_wrap:
 										_app_addapplication (hwnd, ptr_log->path->Buffer, 0, 0, 0, FALSE, FALSE);
 
 										_app_refreshstatus (hwnd, listview_id);
-										_app_profile_save (NULL);
+										_app_profile_save ();
 									}
 
 									ptr_rule->apps->emplace (ptr_log->app_hash, TRUE);
@@ -4521,7 +4528,7 @@ find_wrap:
 						_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
 						_app_refreshstatus (hwnd, listview_id);
 
-						_app_profile_save (NULL);
+						_app_profile_save ();
 					}
 
 					_r_obj_dereference (ptr_rule);
@@ -4565,7 +4572,7 @@ find_wrap:
 							_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
 							_app_refreshstatus (hwnd, listview_id);
 
-							_app_profile_save (NULL);
+							_app_profile_save ();
 						}
 
 						_r_obj_dereference (ptr_rule);
@@ -4585,7 +4592,7 @@ find_wrap:
 								_app_addapplication (hwnd, ptr_network->path->Buffer, 0, 0, 0, FALSE, FALSE);
 
 								_app_refreshstatus (hwnd, listview_id);
-								_app_profile_save (NULL);
+								_app_profile_save ();
 							}
 
 							INT app_listview_id = (INT)_app_getappinfo (ptr_network->app_hash, InfoListviewId);
@@ -4614,7 +4621,7 @@ find_wrap:
 								_app_addapplication (hwnd, ptr_log->path->Buffer, 0, 0, 0, FALSE, FALSE);
 
 								_app_refreshstatus (hwnd, listview_id);
-								_app_profile_save (NULL);
+								_app_profile_save ();
 							}
 
 							INT app_listview_id = (INT)_app_getappinfo (ptr_log->app_hash, InfoListviewId);
@@ -4799,7 +4806,7 @@ find_wrap:
 						_wfp_destroyfilters_array (hengine, &guids, __LINE__);
 
 					_app_refreshstatus (hwnd, INVALID_INT);
-					_app_profile_save (NULL);
+					_app_profile_save ();
 
 					break;
 				}
@@ -4855,7 +4862,7 @@ find_wrap:
 							_wfp_destroyfilters_array (hengine, &guids, __LINE__);
 
 						_app_refreshstatus (hwnd, INVALID_INT);
-						_app_profile_save (NULL);
+						_app_profile_save ();
 					}
 
 					break;
@@ -4894,7 +4901,7 @@ find_wrap:
 
 					_app_freeapps_vec (&rules);
 
-					_app_profile_save (NULL);
+					_app_profile_save ();
 
 					INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
 
