@@ -18,9 +18,6 @@
     <ClCompile Include="..\routine\routine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\routine\rstring.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\routine\rapp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -66,9 +63,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\routine\rconfig.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\routine\rstring.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\routine\rapp.hpp">
