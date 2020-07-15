@@ -1,9 +1,10 @@
-v3.2 (2020)
+v3.2 Beta (15 July 2020)
 - new rules editor
 - added option "IsInternalRulesDisabled" for completely disable internal rules (issue #630)
 - added temporary filtering mode whether is active until reboot (issue #576)
 - added packets logging interface (issue #672)
 - added tile view for listview
+- added information for export profile failure (issue #707)
 - improved tooltips details for apps and rules
 - improved listview resizing performance
 - changed "Enabled apps" group title into "Apps with internet access"
@@ -15,7 +16,9 @@ v3.2 (2020)
 - fixed notification window will bring focus to it's parent window (issue #668)
 - fixed "/uninstall" argument does not removing filters (issue #645)
 - fixed wfp engine security violation (issue #680)
+- fixed support custom windows themes (issue #701)
 - fixed getting uwp app paths and timestamps
+- fixed dpi support (issue #693)
 - fixed internal upnp rule
 - fixed bugs
 
