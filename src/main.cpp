@@ -164,7 +164,7 @@ THREAD_FN NetworkMonitorThread (PVOID lparam)
 
 					SendDlgItemMessage (hwnd, network_listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
-					PITEM_NETWORK ptr_network = _app_getnetworkitem (network_hash);
+					ptr_network = _app_getnetworkitem (network_hash);
 
 					// redraw listview item
 					if (ptr_network)

@@ -1114,12 +1114,12 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 
 			if (!ptr_rule->apps->empty ())
 			{
-				for (auto it = ptr_rule->apps->begin (); it != ptr_rule->apps->end (); ++it)
+				for (auto it2 = ptr_rule->apps->begin (); it2 != ptr_rule->apps->end (); ++it2)
 				{
-					if (ptr_rule->is_forservices && (it->first == config.ntoskrnl_hash || it->first == config.svchost_hash))
+					if (ptr_rule->is_forservices && (it2->first == config.ntoskrnl_hash || it2->first == config.svchost_hash))
 						continue;
 
-					if (!_wfp_createrulefilter (hengine, ruleNamePtr, it->first, ruleRemoteString, ruleLocalString, ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, ptr_rule->guids))
+					if (!_wfp_createrulefilter (hengine, ruleNamePtr, it2->first, ruleRemoteString, ruleLocalString, ptr_rule->protocol, ptr_rule->af, ptr_rule->direction, ptr_rule->weight, ptr_rule->is_block ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT, 0, ptr_rule->guids))
 						ptr_rule->is_haveerrors = TRUE;
 				}
 			}
@@ -1166,7 +1166,7 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 				if (!*it)
 					continue;
 
-				PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+				ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
 
 				if (ptr_rule->is_enabled)
 				{

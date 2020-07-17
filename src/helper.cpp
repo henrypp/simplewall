@@ -693,7 +693,6 @@ PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 						{
 							_r_string_appendformat (&versionCacheString, SZ_TAB L"%s", buffer);
 
-							UINT length;
 							VS_FIXEDFILEINFO* verInfo;
 
 							if (VerQueryValue (versionInfo, L"\\", (PVOID*)&verInfo, &length))
