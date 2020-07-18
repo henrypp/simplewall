@@ -1134,16 +1134,12 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 
 			if (remoteRemainingPart.Length != 0)
 			{
-				SAFE_DELETE_REFERENCE (ruleRemoteString);
-
-				ruleRemoteString = _r_str_splitatchar (&remoteRemainingPart, &remoteRemainingPart, DIVIDER_RULE[0], TRUE);
+				_r_obj_movereference (&ruleRemoteString, _r_str_splitatchar (&remoteRemainingPart, &remoteRemainingPart, DIVIDER_RULE[0], TRUE));
 			}
 
 			if (localRemainingPart.Length != 0)
 			{
-				SAFE_DELETE_REFERENCE (ruleLocalString);
-
-				ruleLocalString = _r_str_splitatchar (&localRemainingPart, &localRemainingPart, DIVIDER_RULE[0], TRUE);
+				_r_obj_movereference (&ruleLocalString, _r_str_splitatchar (&localRemainingPart, &localRemainingPart, DIVIDER_RULE[0], TRUE));
 			}
 		}
 
