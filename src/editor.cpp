@@ -93,6 +93,8 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						return FALSE;
 					}
 
+					_r_str_trim (ruleString, DIVIDER_TRIM DIVIDER_RULE);
+
 					if (!_app_parserulestring (ruleString, NULL))
 					{
 						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, app.LocaleString (IDS_STATUS_SYNTAX_ERROR));
