@@ -1,4 +1,4 @@
-v3.2 Beta (15 July 2020)
+v3.2 Beta (18 July 2020)
 - new rules editor
 - added option "IsInternalRulesDisabled" for completely disable internal rules (issue #630)
 - added temporary filtering mode whether is active until reboot (issue #576)
