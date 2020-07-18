@@ -4110,7 +4110,7 @@ find_wrap:
 
 				case IDM_ADD_FILE:
 				{
-					WCHAR files[_R_BUFFER_LENGTH] = {0};
+					WCHAR files[8192] = {0};
 					OPENFILENAME ofn = {0};
 
 					ofn.lStructSize = sizeof (ofn);
