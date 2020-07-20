@@ -85,15 +85,16 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 					PR_STRING ruleString = _r_ctrl_gettext (hwnd, IDC_RULE_ID);
 
-					if (_r_str_isempty (ruleString))
-					{
-						if (ruleString)
-							_r_obj_dereference (ruleString);
-
+					if (!ruleString)
 						return FALSE;
-					}
 
 					_r_str_trim (ruleString, DIVIDER_TRIM DIVIDER_RULE);
+
+					if (_r_str_isempty (ruleString))
+					{
+						_r_obj_dereference (ruleString);
+						return FALSE;
+					}
 
 					if (!_app_parserulestring (ruleString, NULL))
 					{

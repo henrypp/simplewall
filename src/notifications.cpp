@@ -187,6 +187,7 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	PR_STRING remotePortString;
 	PR_STRING directionString;
 	PR_STRING localizedString = NULL;
+	LPCWSTR emptyString;
 
 	if (app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE))
 	{
@@ -220,6 +221,7 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, FMTADDR_RESOLVE_HOST);
 	remotePortString = _app_formatport (ptr_log->remote_port, FALSE);
 	directionString = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE);
+	emptyString = app.LocaleString (IDS_STATUS_EMPTY);
 
 	_r_format_dateex (dateString, RTL_NUMBER_OF (dateString), ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
@@ -227,19 +229,19 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, _r_obj_getstring (localizedString), IDC_FILE_TEXT, _r_path_getbasename (_r_obj_getstring (ptr_app->display_name)));
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", app.LocaleString (IDS_SIGNATURE)));
-	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, _r_obj_getstring (localizedString), IDC_SIGNATURE_TEXT, _r_obj_getstringordefault (signatureString, SZ_EMPTY));
+	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, _r_obj_getstring (localizedString), IDC_SIGNATURE_TEXT, _r_obj_getstringordefault (signatureString, emptyString));
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", app.LocaleString (IDS_ADDRESS)));
-	_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, _r_obj_getstring (localizedString), IDC_ADDRESS_TEXT, _r_obj_getstringordefault (remoteAddressString, SZ_EMPTY));
+	_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, _r_obj_getstring (localizedString), IDC_ADDRESS_TEXT, _r_obj_getstringordefault (remoteAddressString, emptyString));
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", app.LocaleString (IDS_PORT)));
-	_r_ctrl_settabletext (hwnd, IDC_PORT_ID, _r_obj_getstring (localizedString), IDC_PORT_TEXT, _r_obj_getstringordefault (remotePortString, SZ_EMPTY));
+	_r_ctrl_settabletext (hwnd, IDC_PORT_ID, _r_obj_getstring (localizedString), IDC_PORT_TEXT, _r_obj_getstringordefault (remotePortString, emptyString));
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", app.LocaleString (IDS_DIRECTION)));
-	_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, _r_obj_getstring (localizedString), IDC_DIRECTION_TEXT, _r_obj_getstringordefault (directionString, SZ_EMPTY));
+	_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, _r_obj_getstring (localizedString), IDC_DIRECTION_TEXT, _r_obj_getstringordefault (directionString, emptyString));
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", app.LocaleString (IDS_FILTER)));
-	_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, _r_obj_getstring (localizedString), IDC_FILTER_TEXT, _r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY));
+	_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, _r_obj_getstring (localizedString), IDC_FILTER_TEXT, _r_obj_getstringordefault (ptr_log->filter_name, emptyString));
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", app.LocaleString (IDS_DATE)));
 	_r_ctrl_settabletext (hwnd, IDC_DATE_ID, _r_obj_getstring (localizedString), IDC_DATE_TEXT, dateString);
