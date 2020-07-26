@@ -82,7 +82,7 @@ typedef enum _ENUM_INSTALL_TYPE
 } ENUM_INSTALL_TYPE;
 
 // config
-#define LANG_MENU 6
+#define LANG_MENU 5
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
 #define XML_PROFILE_VER_3 3

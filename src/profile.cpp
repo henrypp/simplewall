@@ -362,7 +362,7 @@ COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash)
 	else if (_r_config_getboolean (L"IsHighlightSigned", TRUE, L"colors") && !ptr_app->is_silent && _r_config_getboolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
 		colorValue = L"ColorSigned";
 
-	else if ((!is_profilelist || !_r_config_getboolean (L"IsEnableSpecialGroup", TRUE)) && (_r_config_getboolean (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash)))
+	else if (!is_profilelist && (_r_config_getboolean (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash)))
 		colorValue = L"ColorSpecial";
 
 	else if (is_profilelist && _r_config_getboolean (L"IsHighlightSilent", TRUE, L"colors") && ptr_app->is_silent)
@@ -494,7 +494,7 @@ VOID _app_getcount (PITEM_STATUS ptr_status)
 INT _app_getappgroup (SIZE_T app_hash, PITEM_APP ptr_app)
 {
 	// apps with special rule
-	if (_r_config_getboolean (L"IsEnableSpecialGroup", TRUE) && _app_isapphaverule (app_hash))
+	if (_app_isapphaverule (app_hash))
 		return 1;
 
 	if (!ptr_app->is_enabled)

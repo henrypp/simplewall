@@ -2092,7 +2092,6 @@ find_wrap:
 				_r_menu_checkitem (hmenu, IDM_ALWAYSONTOP_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"AlwaysOnTop", _APP_ALWAYSONTOP));
 				_r_menu_checkitem (hmenu, IDM_SHOWFILENAMESONLY_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"ShowFilenames", TRUE));
 				_r_menu_checkitem (hmenu, IDM_AUTOSIZECOLUMNS_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"AutoSizeColumns", TRUE));
-				_r_menu_checkitem (hmenu, IDM_ENABLESPECIALGROUP_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsEnableSpecialGroup", TRUE));
 
 				{
 					UINT menu_id;
@@ -2205,9 +2204,8 @@ find_wrap:
 				_r_menu_setitemtext (hmenu, IDM_ALWAYSONTOP_CHK, _r_locale_getstring (IDS_ALWAYSONTOP_CHK), FALSE);
 				_r_menu_setitemtext (hmenu, IDM_SHOWFILENAMESONLY_CHK, _r_locale_getstring (IDS_SHOWFILENAMESONLY_CHK), FALSE);
 				_r_menu_setitemtext (hmenu, IDM_AUTOSIZECOLUMNS_CHK, _r_locale_getstring (IDS_AUTOSIZECOLUMNS_CHK), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_ENABLESPECIALGROUP_CHK, _r_locale_getstring (IDS_ENABLESPECIALGROUP_CHK), FALSE);
 
-				_r_menu_setitemtext (GetSubMenu (hmenu, 2), 5, _r_locale_getstring (IDS_ICONS), TRUE);
+				_r_menu_setitemtext (GetSubMenu (hmenu, 2), 4, _r_locale_getstring (IDS_ICONS), TRUE);
 
 				_r_menu_setitemtext (hmenu, IDM_SIZE_SMALL, _r_locale_getstring (IDS_ICONSSMALL), FALSE);
 				_r_menu_setitemtext (hmenu, IDM_SIZE_LARGE, _r_locale_getstring (IDS_ICONSLARGE), FALSE);
@@ -3628,50 +3626,6 @@ find_wrap:
 					}
 
 					_app_listviewsort (hwnd, (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT), INVALID_INT, FALSE);
-
-					break;
-				}
-
-				case IDM_ENABLESPECIALGROUP_CHK:
-				{
-					BOOLEAN new_val = !_r_config_getboolean (L"IsEnableSpecialGroup", TRUE);
-
-					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
-					_r_config_setboolean (L"IsEnableSpecialGroup", new_val);
-
-					// regroup apps
-					for (auto it = apps.begin (); it != apps.end (); ++it)
-					{
-						if (!it->second)
-							continue;
-
-						SIZE_T app_hash = it->first;
-						PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
-
-						INT listview_id = _app_getlistview_id (ptr_app->type);
-
-						if (listview_id)
-						{
-							INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
-
-							if (item_pos != INVALID_INT)
-							{
-								_r_fastlock_acquireshared (&lock_checkbox);
-								_app_setappiteminfo (hwnd, listview_id, item_pos, app_hash, ptr_app);
-								_r_fastlock_releaseshared (&lock_checkbox);
-							}
-						}
-
-						_r_obj_dereference (ptr_app);
-					}
-
-					INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
-
-					if (listview_id)
-					{
-						_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
-						_app_refreshstatus (hwnd, listview_id);
-					}
 
 					break;
 				}
