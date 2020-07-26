@@ -1445,7 +1445,7 @@ LPCWSTR _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af, LPCWSTR default_value
 			return L"egp";
 
 		case IPPROTO_IGP:
-			return L"egp";
+			return L"igp";
 
 		case IPPROTO_PUP:
 			return L"pup";
