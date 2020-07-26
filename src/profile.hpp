@@ -41,6 +41,7 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter);
 PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay, LPCWSTR delimeter);
+PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter);
 
 BOOLEAN _app_isappfound (SIZE_T app_hash);
 BOOLEAN _app_isapphelperfound (SIZE_T app_hash);

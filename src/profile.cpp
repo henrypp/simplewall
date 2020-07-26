@@ -697,16 +697,10 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 		{
 			LPCWSTR empty;
 
-			PR_STRING ruleRemoteString = NULL;
-			PR_STRING ruleLocalString = NULL;
+			PR_STRING ruleRemoteString = _app_rulesexpandrules (ptr_rule->rule_remote, L"\r\n" SZ_TAB);
+			PR_STRING ruleLocalString = _app_rulesexpandrules (ptr_rule->rule_local, L"\r\n" SZ_TAB);
 
 			empty = _r_locale_getstring (IDS_STATUS_EMPTY);
-
-			if (!_r_str_isempty (ptr_rule->rule_remote))
-				ruleRemoteString = _r_obj_reference (ptr_rule->rule_remote);
-
-			if (!_r_str_isempty (ptr_rule->rule_local))
-				ruleLocalString = _r_obj_reference (ptr_rule->rule_local);
 
 			// rule information
 			string = _r_format_string (L"%s (#%" TEXT (PR_SIZE_T) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
@@ -1206,6 +1200,45 @@ PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay
 		_r_string_append (&string, delimeter);
 
 		_r_obj_dereference (ptr_app);
+	}
+
+	_r_str_trim (string, delimeter);
+
+	if (_r_str_isempty (string))
+	{
+		_r_obj_dereference (string);
+		return NULL;
+	}
+
+	return string;
+}
+
+PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter)
+{
+	PR_STRING string;
+
+	if (_r_str_isempty (rule))
+		return NULL;
+
+	string = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+
+	PR_STRING rulePart;
+	PR_STRINGREF remainingPart;
+
+	remainingPart = &rule->sr;
+
+	while (remainingPart->Length != 0)
+	{
+		rulePart = _r_str_splitatchar (remainingPart, remainingPart, DIVIDER_RULE[0], TRUE);
+
+		if (rulePart)
+		{
+			_r_str_trim (rulePart, DIVIDER_TRIM);
+
+			_r_string_appendformat (&string, L"%s%s", rulePart->Buffer, delimeter);
+
+			_r_obj_dereference (rulePart);
+		}
 	}
 
 	_r_str_trim (string, delimeter);
