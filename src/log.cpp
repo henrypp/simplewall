@@ -5,7 +5,7 @@
 
 PR_STRING _app_getlogviewer ()
 {
-	LPCWSTR result = app.ConfigGetString (L"LogViewer", LOG_VIEWER_DEFAULT);
+	LPCWSTR result = _r_config_getstring (L"LogViewer", LOG_VIEWER_DEFAULT);
 
 	if (_r_str_isempty (result))
 		return _r_path_expand (LOG_VIEWER_DEFAULT);
@@ -22,10 +22,10 @@ VOID _app_loginit (BOOLEAN is_install)
 	// reset log handle
 	SAFE_DELETE_HANDLE (config.hlogfile);
 
-	if (!is_install || !app.ConfigGetBoolean (L"IsLogEnabled", FALSE))
+	if (!is_install || !_r_config_getboolean (L"IsLogEnabled", FALSE))
 		return; // already closed or not enabled
 
-	PR_STRING logPath = _r_path_expand (app.ConfigGetString (L"LogPath", LOG_PATH_DEFAULT));
+	PR_STRING logPath = _r_path_expand (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
 
 	if (!logPath)
 		return;
@@ -260,7 +260,7 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 
 BOOLEAN _app_logislimitreached ()
 {
-	ULONG limit = app.ConfigGetUlong (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
+	ULONG limit = _r_config_getulong (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
 
 	if (!limit || !_r_fs_isvalidhandle (config.hlogfile))
 		return FALSE;
@@ -280,7 +280,7 @@ VOID _app_logclear ()
 	}
 	else
 	{
-		PR_STRING logPath = _r_path_expand (app.ConfigGetString (L"LogPath", LOG_PATH_DEFAULT));
+		PR_STRING logPath = _r_path_expand (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
 
 		if (logPath)
 		{
@@ -354,7 +354,7 @@ VOID _wfp_logsubscribe (HANDLE hengine)
 
 			if (code != ERROR_SUCCESS)
 			{
-				app.LogError (0, L"FwpmNetEventSubscribe", code, NULL);
+				_r_logerror (0, L"FwpmNetEventSubscribe", code, NULL);
 			}
 			else
 			{
@@ -383,7 +383,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 {
 	HANDLE hengine = _wfp_getenginehandle ();
 
-	if (!hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && app.ConfigGetBoolean (L"IsExcludeClassifyAllow", TRUE)))
+	if (!hengine || !filter_id || !layer_id || _wfp_isfiltersapplying () || (is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE)))
 		return;
 
 	// set allowed directions
@@ -617,7 +617,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 		{
 			_app_freethreadpool (&threads_pool);
 
-			HANDLE hthread = _r_sys_createthreadex (&LogThread, app.GetHWND (), TRUE, THREAD_PRIORITY_HIGHEST);
+			HANDLE hthread = _r_sys_createthreadex (&LogThread, _r_app_gethwnd (), TRUE, THREAD_PRIORITY_HIGHEST);
 
 			if (hthread)
 			{
@@ -876,11 +876,11 @@ THREAD_FN LogThread (PVOID lparam)
 		if (!ptr_log)
 			continue;
 
-		BOOLEAN is_logenabled = app.ConfigGetBoolean (L"IsLogEnabled", FALSE);
-		BOOLEAN is_loguienabled = app.ConfigGetBoolean (L"IsLogUiEnabled", FALSE);
-		BOOLEAN is_notificationenabled = app.ConfigGetBoolean (L"IsNotificationsEnabled", TRUE);
+		BOOLEAN is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
+		BOOLEAN is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
+		BOOLEAN is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
 
-		BOOLEAN is_exludestealth = !(ptr_log->is_system && app.ConfigGetBoolean (L"IsExcludeStealth", TRUE));
+		BOOLEAN is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
 
 		// apps collector
 		BOOLEAN is_notexist = ptr_log->app_hash && !_r_str_isempty (ptr_log->path) && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);
@@ -933,7 +933,7 @@ THREAD_FN LogThread (PVOID lparam)
 				// display notification
 				if (is_notificationenabled && ptr_log->app_hash && !ptr_log->is_allow)
 				{
-					if (!(ptr_log->is_blocklist && app.ConfigGetBoolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && app.ConfigGetBoolean (L"IsExcludeCustomRules", TRUE)))
+					if (!(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE)))
 					{
 						PITEM_APP ptr_app = _app_getappitem (ptr_log->app_hash);
 

@@ -41,8 +41,6 @@
 
 #include "resource.hpp"
 
-inline rapp app;
-
 inline STATIC_DATA config;
 
 inline OBJECTS_APP_MAP apps;

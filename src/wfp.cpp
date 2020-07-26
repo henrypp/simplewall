@@ -107,7 +107,7 @@ HANDLE _wfp_getenginehandle ()
 
 		if (code != ERROR_SUCCESS)
 		{
-			app.LogError (UID, L"FwpmEngineOpen", code, NULL);
+			_r_logerror (UID, L"FwpmEngineOpen", code, NULL);
 		}
 		else
 		{
@@ -187,7 +187,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 						is_intransact = FALSE;
 					}
 
-					app.LogError (UID, L"FwpmProviderAdd", code, NULL);
+					_r_logerror (UID, L"FwpmProviderAdd", code, NULL);
 					result = FALSE;
 
 					goto DoExit;
@@ -207,7 +207,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 
 				sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
 				sublayer.subLayerKey = GUID_WfpSublayer;
-				sublayer.weight = (UINT16)app.ConfigGetUinteger (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT); // highest weight for UINT16
+				sublayer.weight = (UINT16)_r_config_getuinteger (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT); // highest weight for UINT16
 
 				if (!config.is_filterstemporary)
 					sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
@@ -222,7 +222,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 						is_intransact = FALSE;
 					}
 
-					app.LogError (UID, L"FwpmSubLayerAdd", code, NULL);
+					_r_logerror (UID, L"FwpmSubLayerAdd", code, NULL);
 					result = FALSE;
 
 					goto DoExit;
@@ -244,7 +244,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 	// set security information
 	if (is_providerexist || is_sublayerexist)
 	{
-		BOOLEAN is_secure = app.ConfigGetBoolean (L"IsSecureFilters", TRUE);
+		BOOLEAN is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
 		_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, is_secure);
 		_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, is_secure);
@@ -253,7 +253,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 	// set engine options
 	if (is_full)
 	{
-		static BOOLEAN is_win8 = _r_sys_validversion (6, 2);
+		BOOLEAN is_win8 = _r_sys_isosversiongreaterorequal (WINDOWS_8);
 
 		FWP_VALUE val;
 
@@ -267,7 +267,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 
 			if (code != ERROR_SUCCESS)
 			{
-				app.LogError (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
+				_r_logerror (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
 			}
 			else
 			{
@@ -281,16 +281,16 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 						FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
 
 					// 1903+
-					if (_r_sys_validversionex (10, 0, 18362, VER_GREATER_EQUAL))
+					if (_r_sys_isosversiongreaterorequal (WINDOWS_10_19H1))
 						val.uint32 |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
 
 					code = FwpmEngineSetOption (hengine, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
 					if (code != ERROR_SUCCESS)
-						app.LogError (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
+						_r_logerror (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
 
 					// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
-					if (app.ConfigGetBoolean (L"IsMonitorIPSecConnections", TRUE))
+					if (_r_config_getboolean (L"IsMonitorIPSecConnections", TRUE))
 					{
 						val.type = FWP_UINT32;
 						val.uint32 = 1;
@@ -298,7 +298,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 						code = FwpmEngineSetOption (hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 						if (code != ERROR_SUCCESS)
-							app.LogError (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
+							_r_logerror (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
 					}
 				}
 
@@ -309,7 +309,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 		}
 
 		// packet queuing (win8+)
-		if (is_win8 && app.ConfigGetBoolean (L"IsPacketQueuingEnabled", TRUE))
+		if (is_win8 && _r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
 		{
 			// enables inbound or forward packet queuing independently. when enabled, the system is able to evenly distribute cpu load to multiple cpus for site-to-site ipsec tunnel scenarios.
 			val.type = FWP_UINT32;
@@ -318,7 +318,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 			code = FwpmEngineSetOption (hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
 
 			if (code != ERROR_SUCCESS)
-				app.LogError (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
+				_r_logerror (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
 		}
 	}
 
@@ -387,13 +387,13 @@ VOID _wfp_uninitialize (HANDLE hengine, BOOLEAN is_full)
 		code = FwpmSubLayerDeleteByKey (hengine, &GUID_WfpSublayer);
 
 		if (code != ERROR_SUCCESS && code != FWP_E_SUBLAYER_NOT_FOUND)
-			app.LogError (UID, L"FwpmSubLayerDeleteByKey", code, NULL);
+			_r_logerror (UID, L"FwpmSubLayerDeleteByKey", code, NULL);
 
 		// destroy provider
 		code = FwpmProviderDeleteByKey (hengine, &GUID_WfpProvider);
 
 		if (code != ERROR_SUCCESS && code != FWP_E_PROVIDER_NOT_FOUND)
-			app.LogError (UID, L"FwpmProviderDeleteByKey", code, NULL);
+			_r_logerror (UID, L"FwpmProviderDeleteByKey", code, NULL);
 
 		if (is_intransact)
 			_wfp_transact_commit (hengine, __LINE__);
@@ -495,7 +495,7 @@ VOID _wfp_installfilters (HANDLE hengine)
 		_wfp_transact_commit (hengine, __LINE__);
 
 	// secure filters
-	BOOLEAN is_secure = app.ConfigGetBoolean (L"IsSecureFilters", TRUE);
+	BOOLEAN is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
 	if (is_secure)
 	{
@@ -521,7 +521,7 @@ BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line)
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogErrorV (UID, L"FwpmTransactionBegin", code, L"#%" TEXT (PRIu32), line);
+		_r_logerror_v (UID, L"FwpmTransactionBegin", code, L"#%" TEXT (PRIu32), line);
 		return FALSE;
 	}
 
@@ -536,7 +536,7 @@ BOOLEAN _wfp_transact_commit (HANDLE hengine, UINT line)
 	{
 		FwpmTransactionAbort (hengine);
 
-		app.LogErrorV (UID, L"FwpmTransactionCommit", code, L"#%" TEXT (PRIu32), line);
+		_r_logerror_v (UID, L"FwpmTransactionCommit", code, L"#%" TEXT (PRIu32), line);
 		return FALSE;
 
 	}
@@ -552,7 +552,7 @@ BOOLEAN _wfp_deletefilter (HANDLE hengine, LPCGUID pfilter_id)
 	{
 		PR_STRING guidString = _r_str_fromguid ((LPGUID)pfilter_id);
 
-		app.LogError (UID, L"FwpmFilterDeleteByKey", code, _r_obj_getstringordefault (guidString, SZ_EMPTY));
+		_r_logerror (UID, L"FwpmFilterDeleteByKey", code, _r_obj_getstringordefault (guidString, SZ_EMPTY));
 
 		if (guidString)
 			_r_obj_dereference (guidString);
@@ -584,7 +584,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 			filter.flags = FWPM_FILTER_FLAG_PERSISTENT;
 
 		// filter is indexed to help enable faster lookup during classification (win8+)
-		if (_r_sys_validversion (6, 2))
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 			filter.flags |= FWPM_FILTER_FLAG_INDEXED;
 	}
 
@@ -621,7 +621,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 	}
 	else
 	{
-		app.LogError (UID, L"FwpmFilterAdd", code, fltr_desc);
+		_r_logerror (UID, L"FwpmFilterAdd", code, fltr_desc);
 	}
 
 	return code;
@@ -681,7 +681,7 @@ BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC* ptr_filters, UINT 
 	if (ptr_filters->empty ())
 		return FALSE;
 
-	BOOLEAN is_enabled = _app_initinterfacestate (app.GetHWND (), FALSE);
+	BOOLEAN is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
 
 	_r_fastlock_acquireshared (&lock_transaction);
 
@@ -700,7 +700,7 @@ BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC* ptr_filters, UINT 
 
 	_r_fastlock_releaseshared (&lock_transaction);
 
-	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
+	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
 
 	return TRUE;
 }
@@ -736,7 +736,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 		if (!ptr_app)
 		{
-			app.LogErrorV (0, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash);
+			_r_logerror_v (0, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash);
 			return FALSE;
 		}
 
@@ -757,7 +757,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 			}
 			else
 			{
-				app.LogError (0, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->display_name));
+				_r_logerror (0, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->display_name));
 				_r_obj_dereference (ptr_app);
 
 				return FALSE;
@@ -778,7 +778,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 			}
 			else
 			{
-				app.LogError (0, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->display_name));
+				_r_logerror (0, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->display_name));
 				_r_obj_dereference (ptr_app);
 
 				return FALSE;
@@ -804,7 +804,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 				// do not log file not found to error log
 				if (code != ERROR_FILE_NOT_FOUND && code != ERROR_PATH_NOT_FOUND)
-					app.LogError (0, L"FwpmGetAppIdFromFileName", code, path);
+					_r_logerror (0, L"FwpmGetAppIdFromFileName", code, path);
 
 				_r_obj_dereference (ptr_app);
 
@@ -1027,7 +1027,7 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 	if (ptr_rules->empty ())
 		return FALSE;
 
-	BOOLEAN is_enabled = _app_initinterfacestate (app.GetHWND (), FALSE);
+	BOOLEAN is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = TRUE;
@@ -1153,7 +1153,7 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 	{
 		_wfp_transact_commit (hengine, line);
 
-		BOOLEAN is_secure = app.ConfigGetBoolean (L"IsSecureFilters", TRUE);
+		BOOLEAN is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
 		if (is_secure)
 		{
@@ -1177,7 +1177,7 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
-	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
+	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
 
 	return TRUE;
 }
@@ -1187,7 +1187,7 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT 
 	if (ptr_apps->empty ())
 		return FALSE;
 
-	BOOLEAN is_enabled = _app_initinterfacestate (app.GetHWND (), FALSE);
+	BOOLEAN is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
 	FWP_ACTION_TYPE action = FWP_ACTION_PERMIT;
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
@@ -1246,7 +1246,7 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT 
 	{
 		_wfp_transact_commit (hengine, line);
 
-		BOOLEAN is_secure = app.ConfigGetBoolean (L"IsSecureFilters", TRUE);
+		BOOLEAN is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
 		if (is_secure)
 		{
@@ -1267,14 +1267,14 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT 
 		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
-	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
+	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
 
 	return TRUE;
 }
 
 BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 {
-	BOOLEAN is_enabled = _app_initinterfacestate (app.GetHWND (), FALSE);
+	BOOLEAN is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = TRUE;
@@ -1302,7 +1302,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 	FWPM_FILTER_CONDITION fwfc[3] = {0};
 
 	// add loopback connections permission
-	if (app.ConfigGetBoolean (L"AllowLoopbackConnections", TRUE))
+	if (_r_config_getboolean (L"AllowLoopbackConnections", TRUE))
 	{
 		// match all loopback (localhost) data
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
@@ -1311,7 +1311,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
 
 		// tests if the network traffic is (non-)app container loopback traffic (win8+)
-		if (_r_sys_validversion (6, 2))
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
 			fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
 			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
@@ -1420,7 +1420,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 
 	// firewall service rules
 	// https://msdn.microsoft.com/en-us/library/gg462153.aspx
-	if (app.ConfigGetBoolean (L"AllowIPv6", TRUE))
+	if (_r_config_getboolean (L"AllowIPv6", TRUE))
 	{
 		// allows 6to4 tunneling, which enables ipv6 to run over an ipv4 network
 		fwfc[0].fieldKey = FWPM_CONDITION_IP_PROTOCOL;
@@ -1453,7 +1453,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 
 	// prevent port scanning using stealth discards and silent drops
 	// https://docs.microsoft.com/ru-ru/windows/desktop/FWP/preventing-port-scanning
-	if (app.ConfigGetBoolean (L"UseStealthMode", TRUE))
+	if (_r_config_getboolean (L"UseStealthMode", TRUE))
 	{
 		// blocks udp port scanners
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
@@ -1462,7 +1462,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
 
 		// tests if the network traffic is (non-)app container loopback traffic (win8+)
-		if (_r_sys_validversion (6, 2))
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 
 		fwfc[1].fieldKey = FWPM_CONDITION_ICMP_TYPE;
@@ -1482,7 +1482,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 
 	// configure outbound layer
 	{
-		FWP_ACTION_TYPE action = app.ConfigGetBoolean (L"BlockOutboundConnections", TRUE) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+		FWP_ACTION_TYPE action = _r_config_getboolean (L"BlockOutboundConnections", TRUE) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
 		_wfp_createfilter (hengine, L"BlockConnectionsV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, action, 0, &filter_ids);
 		_wfp_createfilter (hengine, L"BlockConnectionsV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, action, 0, &filter_ids);
@@ -1494,7 +1494,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 
 	// configure inbound layer
 	{
-		FWP_ACTION_TYPE action = (app.ConfigGetBoolean (L"UseStealthMode", TRUE) || app.ConfigGetBoolean (L"BlockInboundConnections", TRUE)) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+		FWP_ACTION_TYPE action = (_r_config_getboolean (L"UseStealthMode", TRUE) || _r_config_getboolean (L"BlockInboundConnections", TRUE)) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
 		_wfp_createfilter (hengine, L"BlockRecvAcceptConnectionsV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, action, 0, &filter_ids);
 		_wfp_createfilter (hengine, L"BlockRecvAcceptConnectionsV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, action, 0, &filter_ids);
@@ -1504,7 +1504,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 	}
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
-	if (app.ConfigGetBoolean (L"InstallBoottimeFilters", TRUE) && !config.is_filterstemporary)
+	if (_r_config_getboolean (L"InstallBoottimeFilters", TRUE) && !config.is_filterstemporary)
 	{
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
 		fwfc[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
@@ -1512,7 +1512,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
 
 		// tests if the network traffic is (non-)app container loopback traffic (win8+)
-		if (_r_sys_validversion (6, 2))
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
 			fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
 			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
@@ -1553,7 +1553,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 	{
 		_wfp_transact_commit (hengine, line);
 
-		BOOLEAN is_secure = app.ConfigGetBoolean (L"IsSecureFilters", TRUE);
+		BOOLEAN is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
 		if (is_secure)
 		{
@@ -1564,7 +1564,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 		_r_fastlock_releaseshared (&lock_transaction);
 	}
 
-	_app_restoreinterfacestate (app.GetHWND (), is_enabled);
+	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
 
 	return TRUE;
 }
@@ -1580,7 +1580,7 @@ SIZE_T _wfp_dumpfilters (HANDLE hengine, LPCGUID pprovider_id, GUIDS_VEC* ptr_fi
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogError (0, L"FwpmFilterCreateEnumHandle", code, NULL);
+		_r_logerror (0, L"FwpmFilterCreateEnumHandle", code, NULL);
 		return 0;
 	}
 	else
@@ -1591,7 +1591,7 @@ SIZE_T _wfp_dumpfilters (HANDLE hengine, LPCGUID pprovider_id, GUIDS_VEC* ptr_fi
 
 		if (code != ERROR_SUCCESS)
 		{
-			app.LogError (0, L"FwpmFilterEnum", code, NULL);
+			_r_logerror (0, L"FwpmFilterEnum", code, NULL);
 		}
 		else
 		{
@@ -1673,14 +1673,14 @@ BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable)
 				}
 				else
 				{
-					app.LogErrorV (0, L"put_FirewallEnabled", hr, L"%d", type);
+					_r_logerror_v (0, L"put_FirewallEnabled", hr, L"%d", type);
 				}
 			}
 		}
 	}
 	else
 	{
-		app.LogError (0, L"CoCreateInstance", hr, L"INetFwPolicy2");
+		_r_logerror (0, L"CoCreateInstance", hr, L"INetFwPolicy2");
 	}
 
 	if (pNetFwPolicy2)
@@ -1702,7 +1702,7 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 
 	if (!scm)
 	{
-		app.LogError (0, L"OpenSCManager", GetLastError (), NULL);
+		_r_logerror (0, L"OpenSCManager", GetLastError (), NULL);
 	}
 	else
 	{
@@ -1722,7 +1722,7 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 				DWORD code = GetLastError ();
 
 				if (code != ERROR_ACCESS_DENIED)
-					app.LogError (0, L"OpenService", code, name);
+					_r_logerror (0, L"OpenService", code, name);
 			}
 			else
 			{
@@ -1735,7 +1735,7 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 				}
 
 				if (!ChangeServiceConfig (sc, SERVICE_NO_CHANGE, is_enable ? SERVICE_AUTO_START : SERVICE_DISABLED, SERVICE_NO_CHANGE, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
-					app.LogError (0, L"ChangeServiceConfig", GetLastError (), name);
+					_r_logerror (0, L"ChangeServiceConfig", GetLastError (), name);
 
 				CloseServiceHandle (sc);
 			}
@@ -1750,7 +1750,7 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 
 				if (!sc)
 				{
-					app.LogError (0, L"OpenService", GetLastError (), name);
+					_r_logerror (0, L"OpenService", GetLastError (), name);
 				}
 				else
 				{
@@ -1759,14 +1759,14 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 
 					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof (ssp), &dwBytesNeeded))
 					{
-						app.LogError (0, L"QueryServiceStatusEx", GetLastError (), name);
+						_r_logerror (0, L"QueryServiceStatusEx", GetLastError (), name);
 					}
 					else
 					{
 						if (ssp.dwCurrentState != SERVICE_RUNNING)
 						{
 							if (!StartService (sc, 0, NULL))
-								app.LogError (0, L"StartService", GetLastError (), name);
+								_r_logerror (0, L"StartService", GetLastError (), name);
 						}
 
 						CloseServiceHandle (sc);

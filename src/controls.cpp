@@ -44,7 +44,7 @@ BOOLEAN _app_initinterfacestate (HWND hwnd, BOOLEAN is_forced)
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
 		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
 
-		_r_status_settextformat (hwnd, IDC_STATUSBAR, 0, L"%s...", app.LocaleString (IDS_STATUS_FILTERS_PROCESSING));
+		_r_status_settextformat (hwnd, IDC_STATUSBAR, 0, L"%s...", _r_locale_getstring (IDS_STATUS_FILTERS_PROCESSING));
 
 		return TRUE;
 	}
@@ -62,7 +62,7 @@ VOID _app_restoreinterfacestate (HWND hwnd, BOOLEAN is_enabled)
 
 	ENUM_INSTALL_TYPE install_type = _wfp_isfiltersinstalled ();
 
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type)));
+	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (install_type)));
 }
 
 VOID _app_setinterfacestate (HWND hwnd)
@@ -73,8 +73,8 @@ VOID _app_setinterfacestate (HWND hwnd)
 	INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 	UINT string_id = is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START;
 
-	HICON hico_sm = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
-	HICON hico_big = app.GetSharedImage (app.GetHINSTANCE (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
+	HICON hico_sm = _r_app_getsharedimage (_r_app_gethinstance (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
+	HICON hico_big = _r_app_getsharedimage (_r_app_gethinstance (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
 
 	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
 	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
@@ -82,16 +82,16 @@ VOID _app_setinterfacestate (HWND hwnd)
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, app.LocaleString (_app_getinterfacestatelocale (install_type)));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (install_type)));
 
-	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, app.LocaleString (string_id), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
+	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _r_locale_getstring (string_id), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
 	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
 }
 
 VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 {
-	if (!listview_id || (!is_forced && !app.ConfigGetBoolean (L"AutoSizeColumns", TRUE)))
+	if (!listview_id || (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE)))
 		return;
 
 	INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
@@ -205,8 +205,8 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 VOID _app_listviewsetview (HWND hwnd, INT listview_id)
 {
 	BOOLEAN is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
-	INT view_type = is_mainview ? _r_calc_clamp (INT, app.ConfigGetInteger (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
-	INT icons_size = is_mainview ? _r_calc_clamp (INT, app.ConfigGetInteger (L"IconSize", SHIL_SYSSMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
+	INT view_type = is_mainview ? _r_calc_clamp (INT, _r_config_getinteger (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
+	INT icons_size = is_mainview ? _r_calc_clamp (INT, _r_config_getinteger (L"IconSize", SHIL_SYSSMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
 	HIMAGELIST himg = NULL;
 
 	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
@@ -240,7 +240,7 @@ VOID _app_listviewsetfont (HWND hwnd, INT listview_id, BOOLEAN is_redraw)
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		app.ConfigGetFont (L"Font", hwnd, &lf);
+		_r_config_getfont (L"Font", hwnd, &lf);
 
 		config.hfont = CreateFontIndirect (&lf);
 	}
@@ -264,8 +264,8 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	WCHAR configName[128];
 	_r_str_printf (configName, RTL_NUMBER_OF (configName), L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	INT column_id = app.ConfigGetInteger (L"SortColumn", 0, configName);
-	BOOLEAN is_descend = app.ConfigGetBoolean (L"SortIsDescending", FALSE, configName);
+	INT column_id = _r_config_getinteger (L"SortColumn", 0, configName);
+	BOOLEAN is_descend = _r_config_getboolean (L"SortIsDescending", FALSE, configName);
 
 	INT result = 0;
 
@@ -344,20 +344,20 @@ VOID _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, BOOLEAN is_no
 	WCHAR configName[128];
 	_r_str_printf (configName, RTL_NUMBER_OF (configName), L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	BOOLEAN is_descend = app.ConfigGetBoolean (L"SortIsDescending", FALSE, configName);
+	BOOLEAN is_descend = _r_config_getboolean (L"SortIsDescending", FALSE, configName);
 
 	if (is_notifycode)
 		is_descend = !is_descend;
 
 	if (column_id == INVALID_INT)
-		column_id = app.ConfigGetInteger (L"SortColumn", 0, configName);
+		column_id = _r_config_getinteger (L"SortColumn", 0, configName);
 
 	column_id = _r_calc_clamp (INT, column_id, 0, column_count - 1); // set range
 
 	if (is_notifycode)
 	{
-		app.ConfigSetBoolean (L"SortIsDescending", is_descend, configName);
-		app.ConfigSetInteger (L"SortColumn", column_id, configName);
+		_r_config_setboolean (L"SortIsDescending", is_descend, configName);
+		_r_config_setinteger (L"SortColumn", column_id, configName);
 	}
 
 	for (INT i = 0; i < column_count; i++)
@@ -448,13 +448,13 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 		_r_str_printf (groupString3, RTL_NUMBER_OF (groupString3), L" (%d/%d)", group3_count, total_count);
 	}
 
-	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", app.LocaleString (group1_title), groupString1));
+	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", _r_locale_getstring (group1_title), groupString1));
 	_r_listview_setgroup (hwnd, listview_id, 0, _r_obj_getstringorempty (localizedString), 0, 0);
 
-	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", app.LocaleString (group2_title), groupString2));
+	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", _r_locale_getstring (group2_title), groupString2));
 	_r_listview_setgroup (hwnd, listview_id, 1, _r_obj_getstringorempty (localizedString), 0, 0);
 
-	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", app.LocaleString (group3_title), groupString3));
+	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", _r_locale_getstring (group3_title), groupString3));
 	_r_listview_setgroup (hwnd, listview_id, 2, _r_obj_getstringorempty (localizedString), 0, 0);
 
 	SAFE_DELETE_REFERENCE (localizedString);
@@ -488,7 +488,7 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 				case 1:
 				{
 					if (pstatus)
-						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), app.LocaleString (IDS_STATUS_UNUSED_APPS), pstatus->apps_unused_count);
+						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), pstatus->apps_unused_count);
 
 					break;
 				}
@@ -496,7 +496,7 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 				case 2:
 				{
 					if (pstatus)
-						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), app.LocaleString (IDS_STATUS_TIMER_APPS), pstatus->apps_timer_count);
+						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_TIMER_APPS), pstatus->apps_timer_count);
 
 					break;
 				}
@@ -583,7 +583,7 @@ VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 
 LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 {
-	if (!app.ConfigGetBoolean (L"IsEnableHighlighting", TRUE))
+	if (!_r_config_getboolean (L"IsEnableHighlighting", TRUE))
 		return CDRF_DODEFAULT;
 
 	switch (lpnmlv->nmcd.dwDrawStage)

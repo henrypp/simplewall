@@ -172,7 +172,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	_r_obj_movereference (&ptr_app->display_name, _app_getdisplayname (app_hash, ptr_app));
 
 	// get signature information
-	if (app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE))
+	if (_r_config_getboolean (L"IsCertificatesEnabled", FALSE))
 	{
 		signatureString = _app_getsignatureinfo (app_hash, ptr_app);
 
@@ -350,34 +350,34 @@ COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash)
 	BOOLEAN is_networklist = (listview_id >= IDC_NETWORK && listview_id <= IDC_LOG);
 	BOOLEAN is_editorlist = (listview_id == IDC_RULE_APPS_ID);
 
-	if (app.ConfigGetBoolean (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
+	if (_r_config_getboolean (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
 		colorValue = L"ColorInvalid";
 
-	else if (app.ConfigGetBoolean (L"IsHighlightTimer", TRUE, L"colors") && _app_istimeractive (ptr_app))
+	else if (_r_config_getboolean (L"IsHighlightTimer", TRUE, L"colors") && _app_istimeractive (ptr_app))
 		colorValue = L"ColorTimer";
 
-	else if (!is_networklist && !ptr_app->is_silent && app.ConfigGetBoolean (L"IsHighlightConnection", TRUE, L"colors") && _app_isapphaveconnection (app_hash))
+	else if (!is_networklist && !ptr_app->is_silent && _r_config_getboolean (L"IsHighlightConnection", TRUE, L"colors") && _app_isapphaveconnection (app_hash))
 		colorValue = L"ColorConnection";
 
-	else if (app.ConfigGetBoolean (L"IsHighlightSigned", TRUE, L"colors") && !ptr_app->is_silent && app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
+	else if (_r_config_getboolean (L"IsHighlightSigned", TRUE, L"colors") && !ptr_app->is_silent && _r_config_getboolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
 		colorValue = L"ColorSigned";
 
-	else if ((!is_profilelist || !app.ConfigGetBoolean (L"IsEnableSpecialGroup", TRUE)) && (app.ConfigGetBoolean (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash)))
+	else if ((!is_profilelist || !_r_config_getboolean (L"IsEnableSpecialGroup", TRUE)) && (_r_config_getboolean (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash)))
 		colorValue = L"ColorSpecial";
 
-	else if (is_profilelist && app.ConfigGetBoolean (L"IsHighlightSilent", TRUE, L"colors") && ptr_app->is_silent)
+	else if (is_profilelist && _r_config_getboolean (L"IsHighlightSilent", TRUE, L"colors") && ptr_app->is_silent)
 		colorValue = L"ColorSilent";
 
-	else if (!is_profilelist && !is_editorlist && app.ConfigGetBoolean (L"IsHighlightService", TRUE, L"colors") && ptr_app->type == DataAppService)
+	else if (!is_profilelist && !is_editorlist && _r_config_getboolean (L"IsHighlightService", TRUE, L"colors") && ptr_app->type == DataAppService)
 		colorValue = L"ColorService";
 
-	else if (!is_profilelist && !is_editorlist && app.ConfigGetBoolean (L"IsHighlightPackage", TRUE, L"colors") && ptr_app->type == DataAppUWP)
+	else if (!is_profilelist && !is_editorlist && _r_config_getboolean (L"IsHighlightPackage", TRUE, L"colors") && ptr_app->type == DataAppUWP)
 		colorValue = L"ColorPackage";
 
-	else if (app.ConfigGetBoolean (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DataAppPico)
+	else if (_r_config_getboolean (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DataAppPico)
 		colorValue = L"ColorPico";
 
-	else if (app.ConfigGetBoolean (L"IsHighlightSystem", TRUE, L"colors") && ptr_app->is_system)
+	else if (_r_config_getboolean (L"IsHighlightSystem", TRUE, L"colors") && ptr_app->is_system)
 		colorValue = L"ColorSystem";
 
 	_r_obj_dereference (ptr_app);
@@ -420,12 +420,12 @@ VOID _app_freeapplication (SIZE_T app_hash)
 
 				if (rule_listview_id)
 				{
-					INT item_pos = _app_getposition (app.GetHWND (), rule_listview_id, index);
+					INT item_pos = _app_getposition (_r_app_gethwnd (), rule_listview_id, index);
 
 					if (item_pos != INVALID_INT)
 					{
 						_r_fastlock_acquireshared (&lock_checkbox);
-						_app_setruleiteminfo (app.GetHWND (), rule_listview_id, item_pos, ptr_rule, FALSE);
+						_app_setruleiteminfo (_r_app_gethwnd (), rule_listview_id, item_pos, ptr_rule, FALSE);
 						_r_fastlock_releaseshared (&lock_checkbox);
 					}
 				}
@@ -494,7 +494,7 @@ VOID _app_getcount (PITEM_STATUS ptr_status)
 INT _app_getappgroup (SIZE_T app_hash, PITEM_APP ptr_app)
 {
 	// apps with special rule
-	if (app.ConfigGetBoolean (L"IsEnableSpecialGroup", TRUE) && _app_isapphaverule (app_hash))
+	if (_r_config_getboolean (L"IsEnableSpecialGroup", TRUE) && _app_isapphaverule (app_hash))
 		return 1;
 
 	if (!ptr_app->is_enabled)
@@ -528,10 +528,10 @@ COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 
 	LPCWSTR colorValue = NULL;
 
-	if (app.ConfigGetBoolean (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
+	if (_r_config_getboolean (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
 		colorValue = L"ColorInvalid";
 
-	else if (app.ConfigGetBoolean (L"IsHighlightSpecial", TRUE, L"colors") && !ptr_rule->apps->empty ())
+	else if (_r_config_getboolean (L"IsHighlightSpecial", TRUE, L"colors") && !ptr_rule->apps->empty ())
 		colorValue = L"ColorSpecial";
 
 	_r_obj_dereference (ptr_rule);
@@ -600,14 +600,14 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				}
 
 				// signature information
-				if (app.ConfigGetBoolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
+				if (_r_config_getboolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
 				{
 					PR_STRING signatureString = _app_getsignatureinfo (lparam, ptr_app);
 
 					if (signatureString)
 					{
 						if (!_r_str_isempty (signatureString))
-							_r_string_appendformat (&infoString, SZ_TAB L"%s: %s\r\n", app.LocaleString (IDS_SIGNATURE), signatureString->Buffer);
+							_r_string_appendformat (&infoString, SZ_TAB L"%s: %s\r\n", _r_locale_getstring (IDS_SIGNATURE), signatureString->Buffer);
 
 						_r_obj_dereference (signatureString);
 					}
@@ -615,7 +615,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 
 				if (!_r_str_isempty (infoString))
 				{
-					_r_string_insertformat (&infoString, 0, L"%s:\r\n", app.LocaleString (IDS_FILE));
+					_r_string_insertformat (&infoString, 0, L"%s:\r\n", _r_locale_getstring (IDS_FILE));
 					_r_string_append (&string, infoString->Buffer);
 				}
 
@@ -628,7 +628,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				WCHAR intervalString[128];
 				_r_format_interval (intervalString, RTL_NUMBER_OF (intervalString), ptr_app->timer - _r_unixtime_now (), 3);
 
-				_r_string_appendformat (&string, L"%s:" SZ_TAB_CRLF L"%s\r\n", app.LocaleString (IDS_TIMELEFT), intervalString);
+				_r_string_appendformat (&string, L"%s:" SZ_TAB_CRLF L"%s\r\n", _r_locale_getstring (IDS_TIMELEFT), intervalString);
 			}
 
 			// app rules
@@ -638,7 +638,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				if (appRulesString)
 				{
 					if (!_r_str_isempty (appRulesString))
-						_r_string_appendformat (&string, L"%s:" SZ_TAB_CRLF L"%s\r\n", app.LocaleString (IDS_RULE), appRulesString->Buffer);
+						_r_string_appendformat (&string, L"%s:" SZ_TAB_CRLF L"%s\r\n", _r_locale_getstring (IDS_RULE), appRulesString->Buffer);
 
 					_r_obj_dereference (appRulesString);
 				}
@@ -652,33 +652,33 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 
 				// app type
 				if (ptr_app->type == DataAppNetwork)
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_NETWORK));
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_NETWORK));
 
 				else if (ptr_app->type == DataAppPico)
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PICO));
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_PICO));
 
 				else if (!is_appslist && ptr_app->type == DataAppService)
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SERVICE));
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SERVICE));
 
 				else if (!is_appslist && ptr_app->type == DataAppUWP)
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_PACKAGE));
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_PACKAGE));
 
 				// app settings
 				if (ptr_app->is_system)
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SYSTEM));
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SYSTEM));
 
 				if (_app_isapphaveconnection (lparam))
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_CONNECTION));
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_CONNECTION));
 
 				if (is_appslist && ptr_app->is_silent)
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_SILENT));
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SILENT));
 
 				if (!_app_isappexists (ptr_app))
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", app.LocaleString (IDS_HIGHLIGHT_INVALID));
+					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_INVALID));
 
 				if (!_r_str_isempty (notesString))
 				{
-					_r_string_insertformat (&notesString, 0, L"%s:\r\n", app.LocaleString (IDS_NOTES));
+					_r_string_insertformat (&notesString, 0, L"%s:\r\n", _r_locale_getstring (IDS_NOTES));
 					_r_string_append2 (&string, notesString);
 				}
 
@@ -700,7 +700,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 			PR_STRING ruleRemoteString = NULL;
 			PR_STRING ruleLocalString = NULL;
 
-			empty = app.LocaleString (IDS_STATUS_EMPTY);
+			empty = _r_locale_getstring (IDS_STATUS_EMPTY);
 
 			if (!_r_str_isempty (ptr_rule->rule_remote))
 				ruleRemoteString = _r_obj_reference (ptr_rule->rule_remote);
@@ -712,10 +712,10 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 			string = _r_format_string (L"%s (#%" TEXT (PR_SIZE_T) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
 									   _r_obj_getstringordefault (ptr_rule->name, empty),
 									   lparam,
-									   app.LocaleString (IDS_RULE),
+									   _r_locale_getstring (IDS_RULE),
 									   SZ_TAB,
 									   _r_obj_getstringordefault (ruleRemoteString, empty),
-									   app.LocaleString (IDS_RULE),
+									   _r_locale_getstring (IDS_RULE),
 									   SZ_TAB,
 									   _r_obj_getstringordefault (ruleLocalString, empty)
 			);
@@ -731,7 +731,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				if (ruleAppsString)
 				{
 					if (!_r_str_isempty (ruleAppsString))
-						_r_string_appendformat (&string, L"\r\n%s:\r\n%s%s", app.LocaleString (IDS_TAB_APPS), SZ_TAB, ruleAppsString->Buffer);
+						_r_string_appendformat (&string, L"\r\n%s:\r\n%s%s", _r_locale_getstring (IDS_TAB_APPS), SZ_TAB, ruleAppsString->Buffer);
 
 					_r_obj_dereference (ruleAppsString);
 				}
@@ -740,7 +740,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 			// rule notes
 			if (ptr_rule->is_readonly && ptr_rule->type == DataRuleCustom)
 			{
-				_r_string_appendformat (&string, SZ_TAB L"\r\n%s:\r\n" SZ_TAB L"%s\r\n", app.LocaleString (IDS_NOTES), SZ_RULE_INTERNAL_TITLE);
+				_r_string_appendformat (&string, SZ_TAB L"\r\n%s:\r\n" SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_NOTES), SZ_RULE_INTERNAL_TITLE);
 			}
 
 			_r_obj_dereference (ptr_rule);
@@ -758,20 +758,20 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 			PR_STRING localAddressString;
 			PR_STRING remoteAddressString;
 
-			empty = app.LocaleString (IDS_STATUS_EMPTY);
+			empty = _r_locale_getstring (IDS_STATUS_EMPTY);
 
 			localAddressString = _app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, 0);
 			remoteAddressString = _app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, 0);
 
 			string = _r_format_string (L"%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
 									   _r_obj_getstringordefault (ptr_network->path, empty),
-									   app.LocaleString (IDS_ADDRESS),
+									   _r_locale_getstring (IDS_ADDRESS),
 									   _r_obj_getstringordefault (localAddressString, empty),
-									   app.LocaleString (IDS_ADDRESS),
+									   _r_locale_getstring (IDS_ADDRESS),
 									   _r_obj_getstringordefault (remoteAddressString, empty),
-									   app.LocaleString (IDS_PROTOCOL),
+									   _r_locale_getstring (IDS_PROTOCOL),
 									   _app_getprotoname (ptr_network->protocol, ptr_network->af, empty),
-									   app.LocaleString (IDS_STATE),
+									   _r_locale_getstring (IDS_STATE),
 									   _app_getconnectionstatusname (ptr_network->state, empty)
 			);
 
@@ -799,7 +799,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 
 			_r_format_dateex (dateString, RTL_NUMBER_OF (dateString), ptr_log->timestamp, FDTF_LONGDATE | FDTF_LONGTIME);
 
-			empty = app.LocaleString (IDS_STATUS_EMPTY);
+			empty = _r_locale_getstring (IDS_STATUS_EMPTY);
 
 			localAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, ptr_log->local_port, 0);
 			remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, 0);
@@ -807,19 +807,19 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 
 			string = _r_format_string (L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
 									   _r_obj_getstringordefault (ptr_log->path, empty),
-									   app.LocaleString (IDS_DATE),
+									   _r_locale_getstring (IDS_DATE),
 									   dateString,
-									   app.LocaleString (IDS_ADDRESS),
+									   _r_locale_getstring (IDS_ADDRESS),
 									   _r_obj_getstringordefault (localAddressString, empty),
-									   app.LocaleString (IDS_ADDRESS),
+									   _r_locale_getstring (IDS_ADDRESS),
 									   _r_obj_getstringordefault (remoteAddressString, empty),
-									   app.LocaleString (IDS_PROTOCOL),
+									   _r_locale_getstring (IDS_PROTOCOL),
 									   _app_getprotoname (ptr_log->protocol, ptr_log->af, empty),
-									   app.LocaleString (IDS_FILTER),
+									   _r_locale_getstring (IDS_FILTER),
 									   _r_obj_getstringordefault (ptr_log->filter_name, empty),
-									   app.LocaleString (IDS_DIRECTION),
+									   _r_locale_getstring (IDS_DIRECTION),
 									   _r_obj_getstringorempty (directionString),
-									   app.LocaleString (IDS_STATE),
+									   _r_locale_getstring (IDS_STATE),
 									   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 			);
 
@@ -893,7 +893,7 @@ VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 	directionString = _app_getdirectionname (ptr_rule->direction, FALSE, TRUE);
 
 	_r_listview_setitem (hwnd, listview_id, item, 0, ruleNamePtr, ruleIconId, ruleGroupId);
-	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL) : app.LocaleString (IDS_ANY));
+	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL) : _r_locale_getstring (IDS_ANY));
 	_r_listview_setitem (hwnd, listview_id, item, 2, _r_obj_getstringorempty (directionString));
 
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_rule->is_enabled);
@@ -920,7 +920,7 @@ VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 
 			if (app_listview_id)
 			{
-				item_pos = _app_getposition (app.GetHWND (), app_listview_id, app_hash);
+				item_pos = _app_getposition (_r_app_gethwnd (), app_listview_id, app_hash);
 
 				if (item_pos != INVALID_INT)
 					_app_setappiteminfo (hwnd, app_listview_id, item_pos, app_hash, ptr_app);
@@ -1445,12 +1445,12 @@ BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_st
 VOID _app_profile_load_fallback ()
 {
 	if (!_app_isappfound (config.my_hash))
-		_app_addapplication (NULL, app.GetAppBinaryPath (), 0, 0, 0, FALSE, TRUE);
+		_app_addapplication (NULL, _r_app_getbinarypath (), 0, 0, 0, FALSE, TRUE);
 
 	_app_setappinfo (config.my_hash, InfoIsUndeletable, TRUE);
 
 	// disable deletion for this shit ;)
-	if (!app.ConfigGetBoolean (L"IsInternalRulesDisabled", FALSE))
+	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
 		if (!_app_isappfound (config.ntoskrnl_hash))
 			_app_addapplication (NULL, PROC_SYSTEM_NAME, 0, 0, 0, FALSE, FALSE);
@@ -1465,9 +1465,9 @@ VOID _app_profile_load_fallback ()
 
 VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT version)
 {
-	INT blocklist_spy_state = _r_calc_clamp (INT, app.ConfigGetInteger (L"BlocklistSpyState", 2), 0, 2);
-	INT blocklist_update_state = _r_calc_clamp (INT, app.ConfigGetInteger (L"BlocklistUpdateState", 0), 0, 2);
-	INT blocklist_extra_state = _r_calc_clamp (INT, app.ConfigGetInteger (L"BlocklistExtraState", 0), 0, 2);
+	INT blocklist_spy_state = _r_calc_clamp (INT, _r_config_getinteger (L"BlocklistSpyState", 2), 0, 2);
+	INT blocklist_update_state = _r_calc_clamp (INT, _r_config_getinteger (L"BlocklistUpdateState", 0), 0, 2);
+	INT blocklist_extra_state = _r_calc_clamp (INT, _r_config_getinteger (L"BlocklistExtraState", 0), 0, 2);
 
 	for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
 	{
@@ -1682,7 +1682,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 	if (path_backup)
 	{
 		DWORD size = 0;
-		PVOID pbuffer = _r_loadresource (app.GetHINSTANCE (), path_backup, RT_RCDATA, &size);
+		PVOID pbuffer = _r_loadresource (NULL, path_backup, RT_RCDATA, &size);
 
 		if (pbuffer)
 			load_backup = doc_backup.load_buffer (pbuffer, size, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
@@ -1703,7 +1703,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 
 	// show only syntax, memory and i/o errors...
 	if (!load_original && load_original.status != pugi::status_file_not_found && load_original.status != pugi::status_no_document_element)
-		app.LogErrorV (UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path);
+		_r_logerror_v (UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path);
 
 	if (load_original && root)
 	{
@@ -1755,7 +1755,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	_app_freerules_vec (&rules_arr);
 
 	// generate uwp apps list (win8+)
-	if (_r_sys_validversion (6, 2))
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		_app_generate_packages ();
 
 	// generate services list
@@ -1777,7 +1777,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		{
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
-				app.LogErrorV (UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path);
+				_r_logerror_v (UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path);
 		}
 		else
 		{
@@ -1814,7 +1814,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	_app_profile_load_fallback ();
 
 	// load internal rules (new!)
-	if (!app.ConfigGetBoolean (L"IsInternalRulesDisabled", FALSE))
+	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 		_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
 
 	if (hwnd)
@@ -1911,7 +1911,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 VOID _app_profile_save ()
 {
 	time_t current_time = _r_unixtime_now ();
-	BOOLEAN is_backuprequired = app.ConfigGetBoolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (config.profile_path_backup) || ((current_time - app.ConfigGetLong64 (L"BackupTimestamp", 0)) >= app.ConfigGetLong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
+	BOOLEAN is_backuprequired = _r_config_getboolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (config.profile_path_backup) || ((current_time - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
 
 	pugi::xml_document doc;
 	pugi::xml_node root = doc.append_child (L"root");
@@ -2110,7 +2110,7 @@ VOID _app_profile_save ()
 		if (is_backuprequired)
 		{
 			doc.save_file (config.profile_path_backup, L"\t", PUGIXML_SAVE_FLAGS, PUGIXML_SAVE_ENCODING);
-			app.ConfigSetLong64 (L"BackupTimestamp", current_time);
+			_r_config_setlong64 (L"BackupTimestamp", current_time);
 		}
 	}
 }

@@ -172,7 +172,7 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 
 	if ((flags & FMTADDR_RESOLVE_HOST) != 0)
 	{
-		if (is_success && app.ConfigGetBoolean (L"IsNetworkResolutionsEnabled", FALSE))
+		if (is_success && _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 		{
 			SIZE_T addr_hash = _r_str_hash (formatted_address);
 			BOOLEAN is_exists = cache_hosts.find (addr_hash) != cache_hosts.end ();
@@ -430,7 +430,7 @@ VOID _app_freelogstack ()
 
 VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, HICON* picon)
 {
-	BOOLEAN is_iconshidden = app.ConfigGetBoolean (L"IsIconsHidden", FALSE);
+	BOOLEAN is_iconshidden = _r_config_getboolean (L"IsIconsHidden", FALSE);
 
 	if (ptr_app->type == DataAppRegular || ptr_app->type == DataAppService)
 	{
@@ -487,7 +487,7 @@ PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app)
 
 	if (pathString)
 	{
-		if (app.ConfigGetBoolean (L"ShowFilenames", TRUE))
+		if (_r_config_getboolean (L"ShowFilenames", TRUE))
 		{
 			return _r_obj_createstring (_r_path_getbasename (_r_obj_getstring (pathString)));
 		}
@@ -1542,15 +1542,15 @@ PR_STRING _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, B
 	{
 		if (direction == FWP_DIRECTION_OUTBOUND)
 		{
-			string = _r_obj_createstring (app.LocaleString (IDS_DIRECTION_1));
+			string = _r_obj_createstring (_r_locale_getstring (IDS_DIRECTION_1));
 		}
 		else if (direction == FWP_DIRECTION_INBOUND)
 		{
-			string = _r_obj_createstring (app.LocaleString (IDS_DIRECTION_2));
+			string = _r_obj_createstring (_r_locale_getstring (IDS_DIRECTION_2));
 		}
 		else if (direction == FWP_DIRECTION_MAX)
 		{
-			string = _r_obj_createstring (app.LocaleString (IDS_ANY));
+			string = _r_obj_createstring (_r_locale_getstring (IDS_ANY));
 		}
 		else
 		{
@@ -2151,7 +2151,7 @@ VOID _app_generate_services ()
 	DWORD dwServiceState = SERVICE_STATE_ALL;
 
 	// win10+
-	if (_r_sys_validversion (10, 0))
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
 		dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
 
 	DWORD bufferSize = initialBufferSize;
@@ -2323,12 +2323,20 @@ VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash)
 	if (!app_hash || !pstatus->rules_count)
 	{
 		AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, app.LocaleString (IDS_STATUS_EMPTY));
+		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, _r_locale_getstring (IDS_STATUS_EMPTY));
 
 		_r_menu_enableitem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND, FALSE);
 	}
 	else
 	{
+		MENUITEMINFO mii = {0};
+
+		WCHAR buffer[128];
+		PITEM_RULE ptr_rule;
+
+		BOOLEAN is_global;
+		BOOLEAN is_enabled;
+
 		for (UINT8 type = 0; type < 2; type++)
 		{
 			if (type == 0)
@@ -2348,15 +2356,15 @@ VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash)
 			{
 				for (SIZE_T i = 0; i < rules_arr.size (); i++)
 				{
-					PVOID pdata = rules_arr.at (i);
+					ptr_rule = rules_arr.at (i);
 
-					if (!pdata)
+					if (!ptr_rule)
 						continue;
 
-					PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (pdata);
+					ptr_rule = (PITEM_RULE)_r_obj_reference (ptr_rule);
 
-					BOOLEAN is_global = (ptr_rule->is_enabled && ptr_rule->apps->empty ());
-					BOOLEAN is_enabled = is_global || (ptr_rule->is_enabled && (ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ()));
+					is_global = (ptr_rule->is_enabled && ptr_rule->apps->empty ());
+					is_enabled = is_global || (ptr_rule->is_enabled && (ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ()));
 
 					if (ptr_rule->type != DataRuleCustom || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)))
 					{
@@ -2370,13 +2378,10 @@ VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash)
 						continue;
 					}
 
-					WCHAR buffer[128];
-					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), app.LocaleString (IDS_RULE_APPLY_2), _r_obj_getstring (ptr_rule->name));
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_RULE_APPLY_2), _r_obj_getstring (ptr_rule->name));
 
 					if (ptr_rule->is_readonly)
 						_r_str_append (buffer, RTL_NUMBER_OF (buffer), SZ_RULE_INTERNAL_MENU);
-
-					MENUITEMINFO mii = {0};
 
 					mii.cbSize = sizeof (mii);
 					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING | MIIM_BITMAP | MIIM_CHECKMARKS;
@@ -2397,8 +2402,8 @@ VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash)
 	}
 
 	AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-	AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, app.LocaleString (IDS_EDITRULES));
-	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, app.LocaleString (IDS_OPENRULESEDITOR));
+	AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, _r_locale_getstring (IDS_EDITRULES));
+	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, _r_locale_getstring (IDS_OPENRULESEDITOR));
 
 	_r_mem_free (pstatus);
 }
@@ -2491,7 +2496,7 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
 	{
 		if (dnsStatus != DNS_INFO_NO_RECORDS)
-			app.LogError (0, L"DnsQuery (DNS_TYPE_A)", dnsStatus, hostname);
+			_r_logerror (0, L"DnsQuery (DNS_TYPE_A)", dnsStatus, hostname);
 	}
 	else
 	{
@@ -2527,7 +2532,7 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
 	{
 		if (dnsStatus != DNS_INFO_NO_RECORDS)
-			app.LogError (0, L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, hostname);
+			_r_logerror (0, L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, hostname);
 	}
 	else
 	{
@@ -2580,7 +2585,7 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 
 	if (code != ERROR_SUCCESS)
 	{
-		app.LogError (0, L"ParseNetworkString", code, network_string);
+		_r_logerror (0, L"ParseNetworkString", code, network_string);
 		return FALSE;
 	}
 	else
