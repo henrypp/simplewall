@@ -3515,7 +3515,7 @@ find_wrap:
 					{
 						if (!_app_profile_load_check (path, XmlProfileV3, TRUE))
 						{
-							_r_show_errormessage (hwnd, L"Import failure!", ERROR_INVALID_DATA, NULL);
+							_r_show_errormessage (hwnd, L"Import failure!", ERROR_INVALID_DATA, path, NULL);
 						}
 						else
 						{
@@ -3559,7 +3559,7 @@ find_wrap:
 
 						// added information for export profile failure (issue #707)
 						if (!_r_fs_copy (config.profile_path, path, 0))
-							_r_show_errormessage (hwnd, L"Export failure!", GetLastError (), NULL);
+							_r_show_errormessage (hwnd, L"Export failure!", GetLastError (), path, NULL);
 					}
 
 					break;
@@ -3982,7 +3982,8 @@ find_wrap:
 						{
 							processPath = _r_format_string (L"%s \"%s\"", _r_obj_getstring (viewerPath), logPath->Buffer);
 
-							_r_sys_createprocess (NULL, processPath->Buffer, NULL);
+							if (!_r_sys_createprocess (NULL, processPath->Buffer, NULL))
+								_r_show_errormessage (hwnd, NULL, GetLastError (), viewerPath->Buffer, NULL);
 
 							_r_obj_dereference (processPath);
 							_r_obj_dereference (viewerPath);
@@ -4030,7 +4031,8 @@ find_wrap:
 						{
 							processPath = _r_format_string (L"%s \"%s\"", viewerPath->Buffer, logPath);
 
-							_r_sys_createprocess (NULL, processPath->Buffer, NULL);
+							if (!_r_sys_createprocess (NULL, processPath->Buffer, NULL))
+								_r_show_errormessage (hwnd, NULL, GetLastError (), viewerPath->Buffer, NULL);
 
 							_r_obj_dereference (processPath);
 							_r_obj_dereference (viewerPath);
@@ -5020,7 +5022,7 @@ INT APIENTRY wWinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdL
 	{
 		// parse arguments
 		{
-			INT numargs = 0;
+			INT numargs;
 			LPWSTR* arga = CommandLineToArgvW (GetCommandLine (), &numargs);
 
 			if (arga)
@@ -5045,7 +5047,7 @@ INT APIENTRY wWinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdL
 						is_temporary = TRUE;
 				}
 
-				SAFE_DELETE_LOCAL (arga);
+				LocalFree (arga);
 
 				if (is_install || is_uninstall)
 				{
@@ -5114,5 +5116,5 @@ INT APIENTRY wWinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdL
 		}
 	}
 
-	return (INT)msg.wParam;
+	return ERROR_SUCCESS;
 }
