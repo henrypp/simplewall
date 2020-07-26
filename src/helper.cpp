@@ -1099,6 +1099,12 @@ LPCWSTR _app_getservicename (UINT16 port, LPCWSTR default_value)
 		case 995:
 			return L"pop3s";
 
+		case 1025:
+			return L"NFS-or-IIS";
+
+		case 1027:
+			return L"IIS";
+
 		case 1029:
 			return L"ms-lsa";
 
