@@ -303,8 +303,6 @@ SIZE_T _app_getnetworkapp (SIZE_T network_hash)
 		return app_hash;
 	}
 
-	_r_obj_dereference (ptr_network);
-
 	return 0;
 }
 
