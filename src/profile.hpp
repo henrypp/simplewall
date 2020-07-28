@@ -16,7 +16,7 @@ PITEM_NETWORK _app_getnetworkitem (SIZE_T network_hash);
 SIZE_T _app_getnetworkapp (SIZE_T network_hash);
 PITEM_LOG _app_getlogitem (SIZE_T idx);
 SIZE_T _app_getlogapp (SIZE_T idx);
-COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash);
+COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_validconnection);
 
 VOID _app_freeapplication (SIZE_T app_hash);
 

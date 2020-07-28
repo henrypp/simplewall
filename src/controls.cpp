@@ -597,16 +597,25 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 		{
 			INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
 			BOOLEAN is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
+			BOOLEAN is_validconnection = FALSE;
 
 			INT listview_id = PtrToInt ((PVOID)lpnmlv->nmcd.hdr.idFrom);
 
 			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK || listview_id == IDC_LOG)
 			{
-				SIZE_T app_hash;
+				SIZE_T app_hash = 0;
 
 				if (listview_id == IDC_NETWORK)
 				{
-					app_hash = _app_getnetworkapp (lpnmlv->nmcd.lItemlParam); // initialize
+					PITEM_NETWORK ptr_network = _app_getnetworkitem (lpnmlv->nmcd.lItemlParam);
+
+					if (ptr_network)
+					{
+						app_hash = ptr_network->app_hash; // initialize
+						is_validconnection = ptr_network->is_connection;
+
+						_r_obj_dereference (ptr_network);
+					}
 				}
 				else if (listview_id == IDC_LOG)
 				{
@@ -619,7 +628,7 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 
 				if (app_hash)
 				{
-					COLORREF new_clr = _app_getappcolor (listview_id, app_hash);
+					COLORREF new_clr = _app_getappcolor (listview_id, app_hash, is_validconnection);
 
 					if (new_clr)
 					{
