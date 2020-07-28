@@ -13,9 +13,9 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			pcontext = (PITEM_CONTEXT)lparam;
 
-#if !defined(_APP_NO_DARKTHEME)
+#if defined(_APP_HAVE_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
-#endif // !_APP_NO_DARKTHEME
+#endif // _APP_HAVE_DARKTHEME
 
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
@@ -149,9 +149,9 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 			ptr_rule = (PITEM_RULE)lparam;
 
-#ifndef _APP_NO_DARKTHEME
+#if defined(_APP_HAVE_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
-#endif // _APP_NO_DARKTHEME
+#endif // _APP_HAVE_DARKTHEME
 
 			EnableThemeDialogTexture (hwnd, ETDT_ENABLETAB);
 
@@ -857,9 +857,9 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			_r_tab_additem (hwnd, IDC_TAB, 1, _r_locale_getstring (IDS_RULE), I_IMAGENONE, (LPARAM)CreateDialogParam (NULL, MAKEINTRESOURCE (IDD_EDITOR_RULE), hwnd, &EditorPagesProc, (LPARAM)ptr_rule));
 			_r_tab_additem (hwnd, IDC_TAB, 2, _r_locale_getstring (IDS_TAB_APPS), I_IMAGENONE, (LPARAM)CreateDialogParam (NULL, MAKEINTRESOURCE (IDD_EDITOR_APPS), hwnd, &EditorPagesProc, (LPARAM)ptr_rule));
 
-#if !defined(_APP_NO_DARKTHEME)
+#if defined(_APP_HAVE_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
-#endif // !_APP_NO_DARKTHEME
+#endif // _APP_HAVE_DARKTHEME
 
 			// localize window
 			{

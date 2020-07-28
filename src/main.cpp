@@ -608,9 +608,9 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 	{
 		case WM_INITDIALOG:
 		{
-#ifndef _APP_NO_DARKTHEME
+#if defined(_APP_HAVE_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
-#endif // _APP_NO_DARKTHEME
+#endif // _APP_HAVE_DARKTHEME
 
 			break;
 		}
@@ -2010,9 +2010,9 @@ find_wrap:
 			// initialize tabs
 			_app_tabs_init (hwnd);
 
-#ifndef _APP_NO_DARKTHEME
+#if defined(_APP_HAVE_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
-#endif // _APP_NO_DARKTHEME
+#endif // _APP_HAVE_DARKTHEME
 
 			// load profile
 			_app_profile_load (hwnd, NULL);

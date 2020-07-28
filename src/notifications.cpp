@@ -508,9 +508,9 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 	{
 		case WM_INITDIALOG:
 		{
-#if !defined(_APP_NO_DARKTHEME)
+#if defined(_APP_HAVE_DARKTHEME)
 			_r_wnd_setdarktheme (hwnd);
-#endif // !_APP_NO_DARKTHEME
+#endif // _APP_HAVE_DARKTHEME
 
 			_app_notifyfontset (hwnd);
 
