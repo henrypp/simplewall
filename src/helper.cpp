@@ -2692,7 +2692,7 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 	if (is_range)
 	{
 		PR_STRING rangeStart = _r_str_extract (rule, 0, range_pos);
-		PR_STRING rangeEnd = _r_str_extract (rule, range_pos + 1);
+		PR_STRING rangeEnd = _r_str_extract (rule, range_pos + 1, INVALID_SIZE_T);
 
 		_r_str_copy (range_start, RTL_NUMBER_OF (range_start), _r_obj_getstring (rangeStart));
 		_r_str_copy (range_end, RTL_NUMBER_OF (range_end), _r_obj_getstring (rangeEnd));
@@ -2730,7 +2730,7 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 				if (cache_types.size () >= MAP_CACHE_MAX)
 					cache_types.clear ();
 
-				cache_types[rule_hash] = type;
+				cache_types.emplace (rule_hash, type);
 			}
 		}
 	}
@@ -2761,14 +2761,11 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 			// ...port range
 			ptr_addr->type = DataTypePort;
 
-			if (ptr_addr->prange)
-			{
-				ptr_addr->prange->valueLow.type = FWP_UINT16;
-				ptr_addr->prange->valueLow.uint16 = (UINT16)wcstoul (range_start, NULL, 10);
+			ptr_addr->range.valueLow.type = FWP_UINT16;
+			ptr_addr->range.valueLow.uint16 = (UINT16)wcstoul (range_start, NULL, 10);
 
-				ptr_addr->prange->valueHigh.type = FWP_UINT16;
-				ptr_addr->prange->valueHigh.uint16 = (UINT16)wcstoul (range_end, NULL, 10);
-			}
+			ptr_addr->range.valueHigh.type = FWP_UINT16;
+			ptr_addr->range.valueHigh.uint16 = (UINT16)wcstoul (range_end, NULL, 10);
 
 			return TRUE;
 		}
@@ -2789,19 +2786,13 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
-					if (ptr_addr->prange)
-					{
-						ptr_addr->prange->valueLow.type = FWP_UINT32;
-						ptr_addr->prange->valueLow.uint32 = addr4.addr;
-					}
+					ptr_addr->range.valueLow.type = FWP_UINT32;
+					ptr_addr->range.valueLow.uint32 = addr4.addr;
 				}
 				else if (format == NET_ADDRESS_IPV6)
 				{
-					if (ptr_addr->prange)
-					{
-						ptr_addr->prange->valueLow.type = FWP_BYTE_ARRAY16_TYPE;
-						RtlCopyMemory (ptr_addr->prange->valueLow.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
-					}
+					ptr_addr->range.valueLow.type = FWP_BYTE_ARRAY16_TYPE;
+					RtlCopyMemory (ptr_addr->range.valueLow.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
 				}
 				else
 				{
@@ -2821,19 +2812,13 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 			{
 				if (format == NET_ADDRESS_IPV4)
 				{
-					if (ptr_addr->prange)
-					{
-						ptr_addr->prange->valueHigh.type = FWP_UINT32;
-						ptr_addr->prange->valueHigh.uint32 = addr4.addr;
-					}
+					ptr_addr->range.valueHigh.type = FWP_UINT32;
+					ptr_addr->range.valueHigh.uint32 = addr4.addr;
 				}
 				else if (format == NET_ADDRESS_IPV6)
 				{
-					if (ptr_addr->prange)
-					{
-						ptr_addr->prange->valueHigh.type = FWP_BYTE_ARRAY16_TYPE;
-						RtlCopyMemory (ptr_addr->prange->valueHigh.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
-					}
+					ptr_addr->range.valueHigh.type = FWP_BYTE_ARRAY16_TYPE;
+					RtlCopyMemory (ptr_addr->range.valueHigh.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
 				}
 				else
 				{
@@ -2851,33 +2836,8 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 		else
 		{
 			// ...ip/host
-			if (_app_parsenetworkstring (rule->Buffer, &format, &port2, &addr4, &addr6, ptr_addr->host, RTL_NUMBER_OF (ptr_addr->host)))
+			if (_app_parsenetworkstring (rule->Buffer, &format, &port2, &ptr_addr->addr4, &ptr_addr->addr6, ptr_addr->host, RTL_NUMBER_OF (ptr_addr->host)))
 			{
-				if (format == NET_ADDRESS_IPV4)
-				{
-					if (ptr_addr->paddr4)
-					{
-						ptr_addr->paddr4->mask = addr4.mask;
-						ptr_addr->paddr4->addr = addr4.addr;
-					}
-				}
-				else if (format == NET_ADDRESS_IPV6)
-				{
-					if (ptr_addr->paddr6)
-					{
-						ptr_addr->paddr6->prefixLength = addr6.prefixLength;
-						RtlCopyMemory (ptr_addr->paddr6->addr, addr6.addr, FWP_V6_ADDR_SIZE);
-					}
-				}
-				else if (format == NET_ADDRESS_DNS_NAME)
-				{
-					// ptr_addr->host = <hosts>;
-				}
-				else
-				{
-					return FALSE;
-				}
-
 				ptr_addr->type = DataTypeIp;
 				ptr_addr->format = format;
 
