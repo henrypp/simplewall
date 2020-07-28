@@ -459,12 +459,17 @@ typedef struct tagITEM_COLOR
 
 typedef struct tagITEM_ADDRESS
 {
+	union
+	{
+		union
+		{
+			FWP_V4_ADDR_AND_MASK addr4;
+			FWP_V6_ADDR_AND_MASK addr6;
+		};
+		FWP_RANGE range;
+	};
+
 	WCHAR host[NI_MAXHOST];
-
-	FWP_V4_ADDR_AND_MASK* paddr4;
-	FWP_V6_ADDR_AND_MASK* paddr6;
-
-	FWP_RANGE* prange;
 
 	ENUM_TYPE_DATA type;
 
