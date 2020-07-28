@@ -1435,37 +1435,37 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 		fwfc[1].conditionValue.type = FWP_UINT16;
 		fwfc[1].conditionValue.uint16 = 0x03; // destination unreachable
 
-		_wfp_createfilter (hengine, L"BlockIcmpErrorV4", fwfc, 2, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, NULL, FWP_ACTION_BLOCK, 0, &filter_ids);
-		_wfp_createfilter (hengine, L"BlockIcmpErrorV6", fwfc, 2, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FWP_ACTION_BLOCK, 0, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockIcmpErrorV4", fwfc, 2, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, NULL, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockIcmpErrorV6", fwfc, 2, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
 
 		// blocks tcp port scanners (exclude loopback)
 		fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_IPSEC_SECURED;
 
-		_wfp_createfilter (hengine, L"BlockTcpRstOnCloseV4", fwfc, 1, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_INBOUND_TRANSPORT_V4_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V4_SILENT_DROP, FWP_ACTION_CALLOUT_TERMINATING, 0, &filter_ids);
-		_wfp_createfilter (hengine, L"BlockTcpRstOnCloseV6", fwfc, 1, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_INBOUND_TRANSPORT_V6_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V6_SILENT_DROP, FWP_ACTION_CALLOUT_TERMINATING, 0, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockTcpRstOnCloseV4", fwfc, 1, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_INBOUND_TRANSPORT_V4_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V4_SILENT_DROP, FWP_ACTION_CALLOUT_TERMINATING, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockTcpRstOnCloseV6", fwfc, 1, FILTER_WEIGHT_HIGHEST, &FWPM_LAYER_INBOUND_TRANSPORT_V6_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V6_SILENT_DROP, FWP_ACTION_CALLOUT_TERMINATING, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
 	}
 
 	// configure outbound layer
 	{
 		FWP_ACTION_TYPE action = _r_config_getboolean (L"BlockOutboundConnections", TRUE) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
-		_wfp_createfilter (hengine, L"BlockConnectionsV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, action, 0, &filter_ids);
-		_wfp_createfilter (hengine, L"BlockConnectionsV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, action, 0, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockConnectionsV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockConnectionsV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
 
 		// win7+
-		_wfp_createfilter (hengine, L"BlockConnectionsRedirectionV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, action, 0, &filter_ids);
-		_wfp_createfilter (hengine, L"BlockConnectionsRedirectionV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, action, 0, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockConnectionsRedirectionV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockConnectionsRedirectionV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
 	}
 
 	// configure inbound layer
 	{
 		FWP_ACTION_TYPE action = (_r_config_getboolean (L"UseStealthMode", TRUE) || _r_config_getboolean (L"BlockInboundConnections", TRUE)) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
-		_wfp_createfilter (hengine, L"BlockRecvAcceptConnectionsV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, action, 0, &filter_ids);
-		_wfp_createfilter (hengine, L"BlockRecvAcceptConnectionsV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, action, 0, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockRecvAcceptConnectionsV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
+		_wfp_createfilter (hengine, L"BlockRecvAcceptConnectionsV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
 
-		//_wfp_createfilter (L"BlockResourceAssignmentV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, action, 0, &filter_ids);
-		//_wfp_createfilter (L"BlockResourceAssignmentV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, action, 0, &filter_ids);
+		//_wfp_createfilter (L"BlockResourceAssignmentV4", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
+		//_wfp_createfilter (L"BlockResourceAssignmentV6", NULL, 0, FILTER_WEIGHT_LOWEST, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, &filter_ids);
 	}
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
