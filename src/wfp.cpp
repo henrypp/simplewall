@@ -516,7 +516,7 @@ BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line)
 {
 	DWORD code = FwpmTransactionBegin (hengine, 0);
 
-	//if (rc == FWP_E_TXN_IN_PROGRESS)
+	//if (code == FWP_E_TXN_IN_PROGRESS)
 	//	return FALSE;
 
 	if (code != ERROR_SUCCESS)
@@ -563,19 +563,15 @@ BOOLEAN _wfp_deletefilter (HANDLE hengine, LPCGUID pfilter_id)
 	return TRUE;
 }
 
-DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, const GUID* layer_id, const GUID* callout_id, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* ptr_filters)
+DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, LPCGUID layer_id, LPCGUID callout_id, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* guids)
 {
 	FWPM_FILTER filter = {0};
-	WCHAR fltr_name[128];
-	WCHAR fltr_desc[128];
+
 	ULONG code;
 	UINT64 filter_id;
 
-	_r_str_copy (fltr_name, RTL_NUMBER_OF (fltr_name), APP_NAME);
-	_r_str_copy (fltr_desc, RTL_NUMBER_OF (fltr_desc), name ? name : SZ_EMPTY);
-
-	filter.displayData.name = fltr_name;
-	filter.displayData.description = fltr_desc;
+	filter.displayData.name = APP_NAME;
+	filter.displayData.description = name ? name : SZ_EMPTY;
 
 	// set filter flags
 	if ((flags & FWPM_FILTER_FLAG_BOOTTIME) == 0)
@@ -616,12 +612,12 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 
 	if (code == ERROR_SUCCESS)
 	{
-		if (ptr_filters)
-			ptr_filters->emplace_back (filter.filterKey);
+		if (guids)
+			guids->emplace_back (filter.filterKey);
 	}
 	else
 	{
-		_r_logerror (UID, L"FwpmFilterAdd", code, fltr_desc);
+		_r_logerror (UID, L"FwpmFilterAdd", code, filter.displayData.description);
 	}
 
 	return code;
@@ -705,68 +701,56 @@ BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC* ptr_filters, UINT 
 	return TRUE;
 }
 
-BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR_STRING rule_remote, PR_STRING rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, GUIDS_VEC* pmfarr)
+BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR_STRING rule_remote, PR_STRING rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, GUIDS_VEC* guids)
 {
 	UINT32 count = 0;
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
 
-	FWP_BYTE_BLOB* bPath = NULL;
-	FWP_BYTE_BLOB* bSid = NULL;
-
-	FWP_V4_ADDR_AND_MASK addr4 = {0};
-	FWP_V6_ADDR_AND_MASK addr6 = {0};
-
-	FWP_RANGE range;
-	RtlSecureZeroMemory (&range, sizeof (range));
-
 	ITEM_ADDRESS addr;
-	RtlSecureZeroMemory (&addr, sizeof (addr));
 
-	addr.paddr4 = &addr4;
-	addr.paddr6 = &addr6;
-	addr.prange = &range;
-
+	FWP_BYTE_BLOB* pblob = NULL;
+	PITEM_APP ptr_app = NULL;
 	BOOLEAN is_remoteaddr_set = FALSE;
 	BOOLEAN is_remoteport_set = FALSE;
+	BOOLEAN result = FALSE;
+	PVOID pdata;
+
+	RtlSecureZeroMemory (&addr, sizeof (addr));
 
 	// set path condition
 	if (app_hash)
 	{
-		PITEM_APP ptr_app = _app_getappitem (app_hash);
+		ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
 		{
 			_r_logerror_v (0, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash);
-			return FALSE;
+
+			goto CleanupExit;
 		}
 
 		if (ptr_app->type == DataAppService) // windows service
 		{
-			PVOID pdata = NULL;
-
 			if (_app_item_get (ptr_app->type, app_hash, NULL, NULL, NULL, &pdata))
 			{
-				ByteBlobAlloc (pdata, RtlLengthSecurityDescriptor (pdata), &bSid);
+				ByteBlobAlloc (pdata, RtlLengthSecurityDescriptor (pdata), &pblob);
 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_SECURITY_DESCRIPTOR_TYPE;
-				fwfc[count].conditionValue.sd = bSid;
+				fwfc[count].conditionValue.sd = pblob;
 
 				count += 1;
 			}
 			else
 			{
 				_r_logerror (0, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->display_name));
-				_r_obj_dereference (ptr_app);
 
-				return FALSE;
+				goto CleanupExit;
 			}
 		}
 		else if (ptr_app->type == DataAppUWP) // windows store app (win8+)
 		{
-			PVOID pdata = NULL;
-
 			if (_app_item_get (ptr_app->type, app_hash, NULL, NULL, NULL, &pdata))
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_PACKAGE_ID;
@@ -779,40 +763,33 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 			else
 			{
 				_r_logerror (0, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->display_name));
-				_r_obj_dereference (ptr_app);
 
-				return FALSE;
+				goto CleanupExit;
 			}
 		}
 		else
 		{
 			LPCWSTR path = _r_obj_getstring (ptr_app->original_path);
-			DWORD code = _FwpmGetAppIdFromFileName1 (path, &bPath, ptr_app->type);
+			DWORD code = _FwpmGetAppIdFromFileName1 (path, &pblob, ptr_app->type);
 
 			if (code == ERROR_SUCCESS)
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_APP_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_BYTE_BLOB_TYPE;
-				fwfc[count].conditionValue.byteBlob = bPath;
+				fwfc[count].conditionValue.byteBlob = pblob;
 
 				count += 1;
 			}
 			else
 			{
-				ByteBlobFree (&bPath);
-
 				// do not log file not found to error log
 				if (code != ERROR_FILE_NOT_FOUND && code != ERROR_PATH_NOT_FOUND)
 					_r_logerror (0, L"FwpmGetAppIdFromFileName", code, path);
 
-				_r_obj_dereference (ptr_app);
-
-				return FALSE;
+				goto CleanupExit;
 			}
 		}
-
-		_r_obj_dereference (ptr_app);
 	}
 
 	// set ip/port condition
@@ -828,10 +805,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 			{
 				if (!_app_parserulestring (rules[i], &addr))
 				{
-					ByteBlobFree (&bSid);
-					ByteBlobFree (&bPath);
-
-					return FALSE;
+					goto CleanupExit;
 				}
 				else
 				{
@@ -858,17 +832,14 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 							}
 							else
 							{
-								ByteBlobFree (&bSid);
-								ByteBlobFree (&bPath);
-
-								return FALSE;
+								goto CleanupExit;
 							}
 						}
 
 						fwfc[count].fieldKey = (addr.type == DataTypePort) ? ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT) : ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
 						fwfc[count].matchType = FWP_MATCH_RANGE;
 						fwfc[count].conditionValue.type = FWP_RANGE_TYPE;
-						fwfc[count].conditionValue.rangeValue = &range;
+						fwfc[count].conditionValue.rangeValue = &addr.range;
 
 						count += 1;
 					}
@@ -891,7 +862,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 							af = AF_INET;
 
 							fwfc[count].conditionValue.type = FWP_V4_ADDR_MASK;
-							fwfc[count].conditionValue.v4AddrMask = &addr4;
+							fwfc[count].conditionValue.v4AddrMask = &addr.addr4;
 
 							count += 1;
 						}
@@ -900,15 +871,12 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 							af = AF_INET6;
 
 							fwfc[count].conditionValue.type = FWP_V6_ADDR_MASK;
-							fwfc[count].conditionValue.v6AddrMask = &addr6;
+							fwfc[count].conditionValue.v6AddrMask = &addr.addr6;
 
 							count += 1;
 						}
 						else if (addr.format == NET_ADDRESS_DNS_NAME)
 						{
-							ByteBlobFree (&bSid);
-							ByteBlobFree (&bPath);
-
 							PR_STRING hostPart;
 							R_STRINGREF remainingPart;
 
@@ -920,26 +888,24 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 								if (hostPart)
 								{
-									if (!_wfp_createrulefilter (hengine, name, app_hash, hostPart, NULL, protocol, af, dir, weight, action, flag, pmfarr))
+									if (!_wfp_createrulefilter (hengine, name, app_hash, hostPart, NULL, protocol, af, dir, weight, action, flag, guids))
 									{
-										ByteBlobFree (&bSid);
-										ByteBlobFree (&bPath);
+										_r_obj_dereference (hostPart);
 
-										return FALSE;
+										goto CleanupExit;
 									}
 
 									_r_obj_dereference (hostPart);
 								}
 							}
 
-							return TRUE;
+							result = TRUE;
+
+							goto CleanupExit;
 						}
 						else
 						{
-							ByteBlobFree (&bSid);
-							ByteBlobFree (&bPath);
-
-							return FALSE;
+							goto CleanupExit;
 						}
 
 						// set port if available
@@ -955,10 +921,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 					}
 					else
 					{
-						ByteBlobFree (&bSid);
-						ByteBlobFree (&bPath);
-
-						return FALSE;
+						goto CleanupExit;
 					}
 				}
 			}
@@ -981,18 +944,18 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 	{
 		if (af == AF_INET || af == AF_UNSPEC)
 		{
-			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, action, flag, pmfarr);
+			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, action, flag, guids);
 
 			// win7+
-			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, action, flag, pmfarr);
+			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, action, flag, guids);
 		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
 		{
-			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, action, flag, pmfarr);
+			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, action, flag, guids);
 
 			// win7+
-			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, action, flag, pmfarr);
+			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, action, flag, guids);
 		}
 	}
 
@@ -1001,23 +964,30 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 	{
 		if (af == AF_INET || af == AF_UNSPEC)
 		{
-			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, action, flag, pmfarr);
+			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, action, flag, guids);
 
 			if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
-				_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, FWP_ACTION_PERMIT, flag, pmfarr);
+				_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, FWP_ACTION_PERMIT, flag, guids);
 		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
 		{
-			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, action, flag, pmfarr);
+			_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, action, flag, guids);
 
 			if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
-				_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, FWP_ACTION_PERMIT, flag, pmfarr);
+				_wfp_createfilter (hengine, name, fwfc, count, weight, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, FWP_ACTION_PERMIT, flag, guids);
 		}
 	}
 
-	ByteBlobFree (&bSid);
-	ByteBlobFree (&bPath);
+	result = TRUE;
+
+CleanupExit:
+
+	if(ptr_app)
+		_r_obj_dereference (ptr_app);
+
+	if (pblob)
+		ByteBlobFree (&pblob);
 
 	return TRUE;
 }
@@ -1364,17 +1334,12 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 			L"ff00::/8"
 		};
 
-		FWP_V4_ADDR_AND_MASK addr4 = {0};
-		FWP_V6_ADDR_AND_MASK addr6 = {0};
 		ITEM_ADDRESS addr;
 		PR_STRING ruleString;
 
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (ip_list); i++)
 		{
 			RtlSecureZeroMemory (&addr, sizeof (addr));
-
-			addr.paddr4 = &addr4;
-			addr.paddr6 = &addr6;
 
 			ruleString = _r_obj_createstring (ip_list[i]);
 
@@ -1385,7 +1350,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 				if (addr.format == NET_ADDRESS_IPV4)
 				{
 					fwfc[1].conditionValue.type = FWP_V4_ADDR_MASK;
-					fwfc[1].conditionValue.v4AddrMask = &addr4;
+					fwfc[1].conditionValue.v4AddrMask = &addr.addr4;
 
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
 					_wfp_createfilter (hengine, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FWP_ACTION_PERMIT, 0, &filter_ids);
@@ -1400,7 +1365,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 				else if (addr.format == NET_ADDRESS_IPV6)
 				{
 					fwfc[1].conditionValue.type = FWP_V6_ADDR_MASK;
-					fwfc[1].conditionValue.v6AddrMask = &addr6;
+					fwfc[1].conditionValue.v6AddrMask = &addr.addr6;
 
 					fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
 					_wfp_createfilter (hengine, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FWP_ACTION_PERMIT, 0, &filter_ids);

@@ -20,13 +20,13 @@ BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line);
 BOOLEAN _wfp_transact_commit (HANDLE hengine, UINT line);
 
 BOOLEAN _wfp_deletefilter (HANDLE hengine, LPCGUID pfilter_id);
-DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, const GUID* layer_id, const GUID* callout_id, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* ptr_filters);
+DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, LPCGUID layer_id, LPCGUID callout_id, FWP_ACTION_TYPE action, UINT32 flags, GUIDS_VEC* guids);
 
 VOID _wfp_clearfilter_ids ();
 VOID _wfp_destroyfilters (HANDLE hengine);
 BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, GUIDS_VEC* ptr_filters, UINT line);
 
-BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR_STRING rule_remote, PR_STRING rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, GUIDS_VEC* pmfarr);
+BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR_STRING rule_remote, PR_STRING rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, GUIDS_VEC* guids);
 
 BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UINT line, BOOLEAN is_intransact = FALSE);
 BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT line, BOOLEAN is_intransact = FALSE);
