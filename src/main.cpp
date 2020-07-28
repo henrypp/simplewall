@@ -99,7 +99,7 @@ THREAD_FN NetworkMonitorThread (PVOID lparam)
 
 				item_id = _r_listview_getitemcount (hwnd, network_listview_id, FALSE);
 
-				_r_listview_additem (hwnd, network_listview_id, item_id, 0, _r_path_getbasename (_r_obj_getstring (ptr_network->path)), ptr_network->icon_id, I_GROUPIDNONE, it->first);
+				_r_listview_additemex (hwnd, network_listview_id, item_id, 0, _r_path_getbasename (_r_obj_getstring (ptr_network->path)), ptr_network->icon_id, I_GROUPIDNONE, it->first);
 
 				_r_listview_setitem (hwnd, network_listview_id, item_id, 1, _r_obj_getstringordefault (localAddressString, SZ_EMPTY));
 				_r_listview_setitem (hwnd, network_listview_id, item_id, 3, _r_obj_getstringordefault (remoteAddressString, SZ_EMPTY));
@@ -728,7 +728,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						_r_fastlock_acquireshared (&lock_checkbox);
 
-						_r_listview_additem (hwnd, IDC_COLORS, item, 0, _r_locale_getstring (ptr_clr->locale_id), config.icon_id, I_GROUPIDNONE, (LPARAM)ptr_clr);
+						_r_listview_additemex (hwnd, IDC_COLORS, item, 0, _r_locale_getstring (ptr_clr->locale_id), config.icon_id, I_GROUPIDNONE, (LPARAM)ptr_clr);
 						_r_listview_setitemcheck (hwnd, IDC_COLORS, item, _r_config_getboolean (_r_obj_getstring (ptr_clr->configName), ptr_clr->is_enabled, L"colors"));
 
 						_r_fastlock_releaseshared (&lock_checkbox);
@@ -4482,7 +4482,7 @@ find_wrap:
 
 							_r_fastlock_acquireshared (&lock_checkbox);
 
-							_r_listview_additem (hwnd, listview_rules_id, item_id, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
+							_r_listview_additemex (hwnd, listview_rules_id, item_id, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
 							_app_setruleiteminfo (hwnd, listview_rules_id, item_id, ptr_rule, TRUE);
 
 							_r_fastlock_releaseshared (&lock_checkbox);

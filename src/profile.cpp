@@ -204,7 +204,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 		{
 			_r_fastlock_acquireshared (&lock_checkbox);
 
-			_r_listview_additem (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+			_r_listview_additemex (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
 			_app_setappiteminfo (hwnd, listview_id, 0, app_hash, ptr_app);
 
 			_r_fastlock_releaseshared (&lock_checkbox);
@@ -846,7 +846,7 @@ VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, SIZE_T app_hash,
 
 	_app_getappicon (ptr_app, TRUE, &ptr_app->icon_id, NULL);
 
-	_r_listview_setitem (hwnd, listview_id, item, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app));
+	_r_listview_setitemex (hwnd, listview_id, item, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), 0);
 
 	WCHAR dateString[256];
 	_r_format_dateex (dateString, RTL_NUMBER_OF (dateString), ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
@@ -886,7 +886,7 @@ VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 
 	directionString = _app_getdirectionname (ptr_rule->direction, FALSE, TRUE);
 
-	_r_listview_setitem (hwnd, listview_id, item, 0, ruleNamePtr, ruleIconId, ruleGroupId);
+	_r_listview_setitemex (hwnd, listview_id, item, 0, ruleNamePtr, ruleIconId, ruleGroupId, 0);
 	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL) : _r_locale_getstring (IDS_ANY));
 	_r_listview_setitem (hwnd, listview_id, item, 2, _r_obj_getstringorempty (directionString));
 
@@ -1869,7 +1869,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			{
 				_r_fastlock_acquireshared (&lock_checkbox);
 
-				_r_listview_additem (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+				_r_listview_additemex (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
 				_app_setappiteminfo (hwnd, listview_id, 0, app_hash, ptr_app);
 
 				_r_fastlock_releaseshared (&lock_checkbox);
@@ -1917,7 +1917,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			{
 				_r_fastlock_acquireshared (&lock_checkbox);
 
-				_r_listview_additem (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
+				_r_listview_additemex (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
 				_app_setruleiteminfo (hwnd, listview_id, 0, ptr_rule, FALSE);
 
 				_r_fastlock_releaseshared (&lock_checkbox);

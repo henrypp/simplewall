@@ -1107,7 +1107,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							_r_fastlock_acquireshared (&lock_checkbox);
 
-							_r_listview_additem (_r_app_gethwnd (), rules_listview_id, item_id, 0, _r_obj_getstringorempty (ptr_rule->name), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
+							_r_listview_additemex (_r_app_gethwnd (), rules_listview_id, item_id, 0, _r_obj_getstringorempty (ptr_rule->name), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
 							_app_setruleiteminfo (_r_app_gethwnd (), rules_listview_id, item_id, ptr_rule, TRUE);
 
 							_r_fastlock_releaseshared (&lock_checkbox);

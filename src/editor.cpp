@@ -413,7 +413,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 						_r_fastlock_acquireshared (&lock_checkbox);
 
-						_r_listview_additem (hwnd, IDC_RULE_APPS_ID, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, group_id, app_hash);
+						_r_listview_additemex (hwnd, IDC_RULE_APPS_ID, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, group_id, app_hash);
 						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
 						_r_fastlock_releaseshared (&lock_checkbox);

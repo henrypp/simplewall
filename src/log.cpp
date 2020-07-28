@@ -230,7 +230,7 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 
 	item_id = _r_listview_getitemcount (hwnd, listview_id, FALSE);
 
-	_r_listview_additem (hwnd, listview_id, item_id, 0, !_r_str_isempty (display_name) ? display_name : SZ_EMPTY, icon_id, I_GROUPIDNONE, index);
+	_r_listview_additemex (hwnd, listview_id, item_id, 0, !_r_str_isempty (display_name) ? display_name : SZ_EMPTY, icon_id, I_GROUPIDNONE, index);
 	_r_listview_setitem (hwnd, listview_id, item_id, 1, _r_obj_getstringordefault (localAddressString, SZ_EMPTY));
 	_r_listview_setitem (hwnd, listview_id, item_id, 3, _r_obj_getstringordefault (remoteAddressString, SZ_EMPTY));
 	_r_listview_setitem (hwnd, listview_id, item_id, 5, _app_getprotoname (ptr_log->protocol, ptr_log->af, SZ_EMPTY));

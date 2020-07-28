@@ -61,7 +61,7 @@ VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 	{
 		_r_fastlock_acquireshared (&lock_checkbox);
 
-		_r_listview_setitem (hwnd, listview_id, item_pos, 0, NULL, I_IMAGENONE, _app_getappgroup (app_hash, ptr_app));
+		_r_listview_setitemex (hwnd, listview_id, item_pos, 0, NULL, I_IMAGENONE, _app_getappgroup (app_hash, ptr_app), 0);
 		_r_listview_setitemcheck (hwnd, listview_id, item_pos, ptr_app->is_enabled);
 
 		_r_fastlock_releaseshared (&lock_checkbox);
