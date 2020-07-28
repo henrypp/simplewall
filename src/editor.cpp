@@ -267,6 +267,32 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				_r_ctrl_enable (hwnd, IDC_RULE_PROTOCOL_ID, !ptr_rule->is_readonly);
 			}
 
+			// family (ports-only)
+			if (GetDlgItem (hwnd, IDC_RULE_VERSION_ID))
+			{
+				_r_ctrl_settextformat (hwnd, IDC_RULE_VERSION, L"%s:", _r_locale_getstring (IDS_PORTVERSION));
+
+				SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_INSERTSTRING, 0, (LPARAM)_r_locale_getstring (IDS_ANY));
+				SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_SETITEMDATA, 0, (LPARAM)AF_UNSPEC);
+
+				SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_INSERTSTRING, 1, (LPARAM)L"IPv4");
+				SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_SETITEMDATA, 1, (LPARAM)AF_INET);
+
+				SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_INSERTSTRING, 2, (LPARAM)L"IPv6");
+				SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_SETITEMDATA, 2, (LPARAM)AF_INET6);
+
+				if (ptr_rule->af == AF_UNSPEC)
+					SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_SETCURSEL, (WPARAM)0, 0);
+
+				else if (ptr_rule->af == AF_INET)
+					SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_SETCURSEL, (WPARAM)1, 0);
+
+				else if (ptr_rule->af == AF_INET6)
+					SendDlgItemMessage (hwnd, IDC_RULE_VERSION_ID, CB_SETCURSEL, (WPARAM)2, 0);
+
+				_r_ctrl_enable (hwnd, IDC_RULE_VERSION_ID, !ptr_rule->is_readonly);
+			}
+
 			// rule (remote)
 			if (GetDlgItem (hwnd, IDC_RULE_REMOTE_ID))
 			{
@@ -1056,6 +1082,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						}
 
 						ptr_rule->protocol = (UINT8)SendDlgItemMessage (hpage_general, IDC_RULE_PROTOCOL_ID, CB_GETITEMDATA, SendDlgItemMessage (hpage_general, IDC_RULE_PROTOCOL_ID, CB_GETCURSEL, 0, 0), 0);
+						ptr_rule->af = (ADDRESS_FAMILY)SendDlgItemMessage (hpage_general, IDC_RULE_VERSION_ID, CB_GETITEMDATA, SendDlgItemMessage (hpage_general, IDC_RULE_VERSION_ID, CB_GETCURSEL, 0, 0), 0);
 
 						ptr_rule->direction = _r_calc_clamp (FWP_DIRECTION, _r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY) - IDC_RULE_DIRECTION_OUTBOUND, (INT)FWP_DIRECTION_OUTBOUND, (INT)FWP_DIRECTION_MAX);
 						ptr_rule->is_block = _r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_ACTION_BLOCK, IDC_RULE_ACTION_ALLOW) == IDC_RULE_ACTION_BLOCK;
