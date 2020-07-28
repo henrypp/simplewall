@@ -611,7 +611,7 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 
 					if (ptr_network)
 					{
-						app_hash = ptr_network->app_hash; // initialize
+						app_hash = ptr_network->app_hash;
 						is_validconnection = ptr_network->is_connection;
 
 						_r_obj_dereference (ptr_network);
@@ -619,11 +619,15 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 				}
 				else if (listview_id == IDC_LOG)
 				{
-					app_hash = _app_getlogapp (lpnmlv->nmcd.lItemlParam); // initialize
+					app_hash = _app_getlogapp (lpnmlv->nmcd.lItemlParam);
+
+					is_validconnection = _app_isapphaveconnection (app_hash);
 				}
 				else
 				{
 					app_hash = lpnmlv->nmcd.lItemlParam;
+
+					is_validconnection = _app_isapphaveconnection (app_hash);
 				}
 
 				if (app_hash)

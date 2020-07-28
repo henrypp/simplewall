@@ -354,7 +354,7 @@ COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_validcon
 	else if (_r_config_getboolean (L"IsHighlightTimer", TRUE, L"colors") && _app_istimeractive (ptr_app))
 		colorValue = L"ColorTimer";
 
-	else if (!ptr_app->is_silent && _r_config_getboolean (L"IsHighlightConnection", TRUE, L"colors") && ((is_networklist && is_validconnection) || (!is_networklist && _app_isapphaveconnection (app_hash))))
+	else if (_r_config_getboolean (L"IsHighlightConnection", TRUE, L"colors") && is_validconnection)
 		colorValue = L"ColorConnection";
 
 	else if (_r_config_getboolean (L"IsHighlightSigned", TRUE, L"colors") && !ptr_app->is_silent && _r_config_getboolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
