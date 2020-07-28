@@ -849,19 +849,21 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 				case IDD_SETTINGS_BLOCKLIST:
 				{
+					LPCWSTR recommendedString = _r_locale_getstring (IDS_RECOMMENDED);
+
 					LPCWSTR disableString = _r_locale_getstring (IDS_DISABLE);
 					LPCWSTR allowString = _r_locale_getstring (IDS_ACTION_ALLOW);
 					LPCWSTR blockString = _r_locale_getstring (IDS_ACTION_BLOCK);
 
 					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_SPY_DISABLE, disableString);
 					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_SPY_ALLOW, allowString);
-					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_SPY_BLOCK, L"%s (default)", blockString);
+					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_SPY_BLOCK, L"%s (%s)", blockString, recommendedString);
 
-					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, L"%s (default)", disableString);
+					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, L"%s (%s)", disableString, recommendedString);
 					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_UPDATE_ALLOW, allowString);
 					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_UPDATE_BLOCK, blockString);
 
-					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, L"%s (default)", disableString);
+					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, L"%s (%s)", disableString, recommendedString);
 					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_EXTRA_ALLOW, allowString);
 					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_EXTRA_BLOCK, blockString);
 
@@ -2271,16 +2273,15 @@ find_wrap:
 				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_DISABLE, _r_locale_getstring (IDS_DISABLE), FALSE);
 				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW), FALSE);
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (default)", _r_locale_getstring (IDS_ACTION_BLOCK)));
+				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_ACTION_BLOCK), recommendedString));
 				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_BLOCK, _r_obj_getstringorempty (localizedString), FALSE);
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (default)", _r_locale_getstring (IDS_DISABLE)));
+				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_DISABLE), recommendedString));
 				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, _r_obj_getstringorempty (localizedString), FALSE);
 
 				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW), FALSE);
 				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_BLOCK, _r_locale_getstring (IDS_ACTION_BLOCK), FALSE);
 
-				//_r_obj_movereference (&localizedString, _r_locale_string2 (IDS_DISABLE, L" (default)"));
 				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, _r_obj_getstringorempty (localizedString), FALSE);
 
 				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW), FALSE);
