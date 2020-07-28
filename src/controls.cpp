@@ -389,7 +389,7 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 		group2_title = IDS_GROUP_SPECIAL;
 		group3_title = IDS_GROUP_DISABLED;
 	}
-	else if (listview_id == IDC_RULE_APPS_ID)
+	else if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK)
 	{
 		group1_title = IDS_TAB_APPS;
 		group2_title = IDS_TAB_SERVICES;

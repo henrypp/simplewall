@@ -99,7 +99,7 @@ THREAD_FN NetworkMonitorThread (PVOID lparam)
 
 				item_id = _r_listview_getitemcount (hwnd, network_listview_id, FALSE);
 
-				_r_listview_additemex (hwnd, network_listview_id, item_id, 0, _r_path_getbasename (_r_obj_getstring (ptr_network->path)), ptr_network->icon_id, I_GROUPIDNONE, it->first);
+				_r_listview_additemex (hwnd, network_listview_id, item_id, 0, _r_path_getbasename (_r_obj_getstring (ptr_network->path)), ptr_network->icon_id, _app_getnetworkgroup (ptr_network), it->first);
 
 				_r_listview_setitem (hwnd, network_listview_id, item_id, 1, _r_obj_getstringordefault (localAddressString, SZ_EMPTY));
 				_r_listview_setitem (hwnd, network_listview_id, item_id, 3, _r_obj_getstringordefault (remoteAddressString, SZ_EMPTY));
@@ -142,6 +142,8 @@ THREAD_FN NetworkMonitorThread (PVOID lparam)
 				if (current_listview_id == network_listview_id)
 				{
 					SendDlgItemMessage (hwnd, network_listview_id, WM_SETREDRAW, FALSE, 0);
+
+					_app_refreshgroups (hwnd, network_listview_id);
 
 					_app_listviewsort (hwnd, network_listview_id, INVALID_INT, FALSE);
 					_app_listviewresize (hwnd, network_listview_id, FALSE);
@@ -1773,7 +1775,7 @@ VOID _app_tabs_init (HWND hwnd)
 		}
 		else if (listview_id == IDC_NETWORK || listview_id == IDC_LOG)
 		{
-			_r_listview_setstyle (hwnd, listview_id, listview_ex_style & ~LVS_EX_CHECKBOXES, FALSE); // no checkboxes
+			_r_listview_setstyle (hwnd, listview_id, listview_ex_style & ~LVS_EX_CHECKBOXES, (listview_id == IDC_NETWORK)); // no checkboxes
 
 			_r_listview_addcolumn (hwnd, listview_id, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
 
@@ -1794,6 +1796,10 @@ VOID _app_tabs_init (HWND hwnd)
 			if (listview_id == IDC_NETWORK)
 			{
 				_r_listview_addcolumn (hwnd, listview_id, 6, _r_locale_getstring (IDS_STATE), 0, LVCFMT_RIGHT);
+
+				_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+				_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+				_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 			}
 			else if (listview_id == IDC_LOG)
 			{
@@ -1993,8 +1999,6 @@ find_wrap:
 			addcolor (IDS_HIGHLIGHT_SIGNED, L"IsHighlightSigned", TRUE, L"ColorSigned", LISTVIEW_COLOR_SIGNED);
 			addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", TRUE, L"ColorPico", LISTVIEW_COLOR_PICO);
 			addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", TRUE, L"ColorSystem", LISTVIEW_COLOR_SYSTEM);
-			addcolor (IDS_HIGHLIGHT_SERVICE, L"IsHighlightService", TRUE, L"ColorService", LISTVIEW_COLOR_SERVICE);
-			addcolor (IDS_HIGHLIGHT_PACKAGE, L"IsHighlightPackage", TRUE, L"ColorPackage", LISTVIEW_COLOR_PACKAGE);
 			addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", TRUE, L"ColorConnection", LISTVIEW_COLOR_CONNECTION);
 
 			// restore window size and position (required!)

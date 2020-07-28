@@ -410,20 +410,14 @@ typedef struct tagITEM_NETWORK
 
 	PR_STRING path;
 	SIZE_T app_hash;
-
 	FWP_DIRECTION direction;
-
 	ADDRESS_FAMILY af;
-
 	DWORD state;
-
+	ENUM_TYPE_DATA type;
 	INT icon_id;
-
 	UINT16 remote_port;
 	UINT16 local_port;
-
 	UINT8 protocol;
-
 	BOOLEAN is_connection;
 } ITEM_NETWORK, *PITEM_NETWORK;
 

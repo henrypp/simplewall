@@ -345,8 +345,6 @@ COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_validcon
 	LPCWSTR colorValue = NULL;
 
 	BOOLEAN is_profilelist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM);
-	BOOLEAN is_networklist = (listview_id >= IDC_NETWORK && listview_id <= IDC_LOG);
-	BOOLEAN is_editorlist = (listview_id == IDC_RULE_APPS_ID);
 
 	if (_r_config_getboolean (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
 		colorValue = L"ColorInvalid";
@@ -365,12 +363,6 @@ COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_validcon
 
 	else if (is_profilelist && _r_config_getboolean (L"IsHighlightSilent", TRUE, L"colors") && ptr_app->is_silent)
 		colorValue = L"ColorSilent";
-
-	else if (!is_profilelist && !is_editorlist && _r_config_getboolean (L"IsHighlightService", TRUE, L"colors") && ptr_app->type == DataAppService)
-		colorValue = L"ColorService";
-
-	else if (!is_profilelist && !is_editorlist && _r_config_getboolean (L"IsHighlightPackage", TRUE, L"colors") && ptr_app->type == DataAppUWP)
-		colorValue = L"ColorPackage";
 
 	else if (_r_config_getboolean (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DataAppPico)
 		colorValue = L"ColorPico";
@@ -501,7 +493,18 @@ INT _app_getappgroup (SIZE_T app_hash, PITEM_APP ptr_app)
 	return 0;
 }
 
-INT _app_getrulegroup (const PITEM_RULE ptr_rule)
+INT _app_getnetworkgroup (PITEM_NETWORK ptr_network)
+{
+	if (ptr_network->type == DataAppService)
+		return 1;
+
+	if (ptr_network->type == DataAppUWP)
+		return 2;
+
+	return 0;
+}
+
+INT _app_getrulegroup (PITEM_RULE ptr_rule)
 {
 	if (!ptr_rule->is_enabled)
 		return 2;
@@ -509,7 +512,7 @@ INT _app_getrulegroup (const PITEM_RULE ptr_rule)
 	return 0;
 }
 
-INT _app_getruleicon (const PITEM_RULE ptr_rule)
+INT _app_getruleicon (PITEM_RULE ptr_rule)
 {
 	if (ptr_rule->is_block)
 		return 1;

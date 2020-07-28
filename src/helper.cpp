@@ -1644,19 +1644,37 @@ PR_STRING _app_getservicenamefromtag (HANDLE pid, LPCVOID ptag)
 	return serviceNameString;
 }
 
-PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, PSIZE_T phash)
+BOOLEAN _app_isimmersiveprocess (HANDLE hprocess)
+{
+	HMODULE huser32 = GetModuleHandle (L"user32.dll");
+
+	if (huser32)
+	{
+		typedef BOOL (WINAPI* IIP) (HANDLE); // IsImmersiveProcess
+		const IIP _IsImmersiveProcess = (IIP)GetProcAddress (huser32, "IsImmersiveProcess");
+
+		if (_IsImmersiveProcess)
+			return !!_IsImmersiveProcess (hprocess);
+	}
+
+	return FALSE;
+}
+
+PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PITEM_NETWORK ptr_network)
 {
 	if (pid == PROC_WAITING_PID)
 	{
-		*phash = 0;
-		*picon_id = config.icon_id;
+		ptr_network->app_hash = 0;
+		ptr_network->icon_id = config.icon_id;
+		ptr_network->type = DataAppRegular;
 
 		return _r_obj_createstring (PROC_WAITING_NAME);
 	}
 	else if (pid == PROC_SYSTEM_PID)
 	{
-		*phash = config.ntoskrnl_hash;
-		*picon_id = config.icon_id;
+		ptr_network->app_hash = config.ntoskrnl_hash;
+		ptr_network->icon_id = config.icon_id;
+		ptr_network->type = DataAppRegular;
 
 		return _r_obj_createstring (PROC_SYSTEM_NAME);
 	}
@@ -1668,7 +1686,10 @@ PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, PSIZ
 		PR_STRING serviceName = _app_getservicenamefromtag (UlongToHandle (pid), UlongToPtr (*(PULONG)pmodules));
 
 		if (serviceName)
+		{
 			_r_obj_movereference (&processName, serviceName);
+			ptr_network->type = DataAppService;
+		}
 	}
 
 	if (!processName)
@@ -1677,6 +1698,15 @@ PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, PSIZ
 
 		if (hprocess)
 		{
+			if (_r_sys_isosversiongreaterorequal (WINDOWS_8) && _app_isimmersiveprocess (hprocess))
+			{
+				ptr_network->type = DataAppUWP;
+			}
+			else
+			{
+				ptr_network->type = DataAppRegular;
+			}
+
 			DWORD size = 1024;
 			processName = _r_obj_createstringex (NULL, size * sizeof (WCHAR));
 
@@ -1711,16 +1741,16 @@ PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PINT picon_id, PSIZ
 	{
 		SIZE_T app_hash = _r_str_hash (processName);
 
-		*phash = app_hash;
-		*picon_id = (INT)_app_getappinfo (app_hash, InfoIconId);
+		ptr_network->app_hash = app_hash;
+		ptr_network->icon_id = (INT)_app_getappinfo (app_hash, InfoIconId);
 
-		if (!*picon_id)
-			_app_getfileicon (_r_obj_getstring (processName), TRUE, picon_id, NULL);
+		if (!ptr_network->icon_id)
+			_app_getfileicon (_r_obj_getstring (processName), TRUE, &ptr_network->icon_id, NULL);
 	}
 	else
 	{
-		*picon_id = config.icon_id;
-		*phash = 0;
+		ptr_network->app_hash = 0;
+		ptr_network->icon_id = config.icon_id;
 	}
 
 	return processName;
@@ -1833,7 +1863,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK_MAP* ptr_map, HASHER_MAP* checke
 				}
 
 				ptr_network = (PITEM_NETWORK)_r_obj_allocateex (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
-				ptr_network->path = _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
+				ptr_network->path = _app_getnetworkpath (tcp4Table->table[i].dwOwningPid, tcp4Table->table[i].OwningModuleInfo, ptr_network);
 
 				if (!ptr_network->path)
 				{
@@ -1890,7 +1920,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK_MAP* ptr_map, HASHER_MAP* checke
 				}
 
 				ptr_network = (PITEM_NETWORK)_r_obj_allocateex (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
-				ptr_network->path = _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
+				ptr_network->path = _app_getnetworkpath (tcp6Table->table[i].dwOwningPid, tcp6Table->table[i].OwningModuleInfo, ptr_network);
 
 				if (!ptr_network->path)
 				{
@@ -1950,7 +1980,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK_MAP* ptr_map, HASHER_MAP* checke
 				}
 
 				ptr_network = (PITEM_NETWORK)_r_obj_allocateex (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
-				ptr_network->path = _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
+				ptr_network->path = _app_getnetworkpath (udp4Table->table[i].dwOwningPid, udp4Table->table[i].OwningModuleInfo, ptr_network);
 
 				if (!ptr_network->path)
 				{
@@ -2001,7 +2031,7 @@ VOID _app_generate_connections (OBJECTS_NETWORK_MAP* ptr_map, HASHER_MAP* checke
 				}
 
 				ptr_network = (PITEM_NETWORK)_r_obj_allocateex (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
-				ptr_network->path = _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, &ptr_network->icon_id, &ptr_network->app_hash);
+				ptr_network->path = _app_getnetworkpath (udp6Table->table[i].dwOwningPid, udp6Table->table[i].OwningModuleInfo, ptr_network);
 
 				if (!ptr_network->path)
 				{

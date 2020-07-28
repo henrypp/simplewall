@@ -23,8 +23,9 @@ VOID _app_freeapplication (SIZE_T app_hash);
 VOID _app_getcount (PITEM_STATUS ptr_status);
 
 INT _app_getappgroup (SIZE_T app_hash, const PITEM_APP ptr_app);
-INT _app_getrulegroup (const PITEM_RULE ptr_rule);
-INT _app_getruleicon (const PITEM_RULE ptr_rule);
+INT _app_getnetworkgroup (PITEM_NETWORK ptr_network);
+INT _app_getrulegroup (PITEM_RULE ptr_rule);
+INT _app_getruleicon (PITEM_RULE ptr_rule);
 COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx);
 
 PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv);
