@@ -1694,7 +1694,7 @@ VOID _app_tabs_init (HWND hwnd)
 	RECT rc = {0};
 	GetClientRect (hwnd, &rc);
 
-	SetWindowPos (GetDlgItem (hwnd, IDC_TAB), NULL, 0, 0, _r_calc_rectwidth (INT, &rc), _r_calc_rectheight (INT, &rc), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+	SetWindowPos (GetDlgItem (hwnd, IDC_TAB), NULL, 0, 0, _r_calc_rectwidth (INT, &rc), _r_calc_rectheight (INT, &rc), SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
 
 	PR_STRING localizedString = NULL;
 	HINSTANCE hinst = _r_app_gethinstance ();
@@ -1744,6 +1744,8 @@ VOID _app_tabs_init (HWND hwnd)
 
 		if (!hlistview)
 			continue;
+
+		SetWindowPos (hlistview, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
 
 		_app_listviewsetfont (hwnd, listview_id, FALSE);
 
@@ -1800,8 +1802,6 @@ VOID _app_tabs_init (HWND hwnd)
 		}
 
 		_r_tab_adjustchild (hwnd, IDC_TAB, hlistview);
-
-		BringWindowToTop (hlistview); // HACK!!!
 	}
 
 	if (localizedString)
