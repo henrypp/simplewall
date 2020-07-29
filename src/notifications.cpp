@@ -92,13 +92,13 @@ BOOLEAN _app_notifyadd (HWND hwnd, PITEM_LOG ptr_log, PITEM_APP ptr_app)
 	if (!ptr_log->hicon)
 		_app_getappicon (ptr_app, FALSE, NULL, &ptr_log->hicon);
 
-	// remove existing log item (if exists)
-	SAFE_DELETE_REFERENCE (ptr_app->pnotification);
-
-	ptr_app->pnotification = (PITEM_LOG)_r_obj_reference (ptr_log);
+	_r_obj_movereference ((PVOID*)&ptr_app->pnotification, _r_obj_reference (ptr_log));
 
 	if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
-		_app_notifyplaysound ();
+	{
+		if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) || !_r_wnd_isfullscreenmode ())
+			_app_notifyplaysound ();
+	}
 
 	if (!_r_wnd_isundercursor (hwnd))
 		_app_notifyshow (hwnd, ptr_log, TRUE, TRUE);
