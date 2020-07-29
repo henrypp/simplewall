@@ -521,9 +521,7 @@ BEGIN
 
 	IDS_HIGHLIGHT_INVALID "Invalid (file not found or filter problem)"
 	IDS_HIGHLIGHT_NETWORK "Shared network app"
-	IDS_HIGHLIGHT_PACKAGE "Universal Windows Platform app"
 	IDS_HIGHLIGHT_PICO "Pico app"
-	IDS_HIGHLIGHT_SERVICE "Windows service"
 	IDS_HIGHLIGHT_SIGNED "Signed app"
 	IDS_HIGHLIGHT_SILENT "Disabled notifications"
 	IDS_HIGHLIGHT_SPECIAL "User rules"
@@ -555,7 +553,6 @@ BEGIN
 	IDS_GROUP_BLOCKED "Apps without internet access"
 
 	IDS_GROUP_ENABLED "Enabled rules"
-	IDS_GROUP_SPECIAL "Enabled rules (specific apps)"
 	IDS_GROUP_DISABLED "Disabled rules"
 
 	IDS_DIRECTION_1 "Outbound"
@@ -565,9 +562,7 @@ BEGIN
 	IDS_ACTION_ALLOW "Allow"
 	IDS_ACTION_BLOCK "Block"
 
-	IDS_DISABLE_CHK "Disable rule"
 	IDS_ENABLE_CHK "Enable rule"
-	IDS_ENABLEFORAPPS_CHK "Enable for selected apps"
 
 	IDS_WIKI "Help"
 	IDS_SAVE "Save"
@@ -591,7 +586,6 @@ BEGIN
 	IDS_STARTMINIMIZED_CHK "Start minimized"
 	IDS_SHOWFILENAMESONLY_CHK "Show filenames only"
 	IDS_AUTOSIZECOLUMNS_CHK "Autosize columns"
-	IDS_ENABLESPECIALGROUP_CHK "Enable group of user rules"
 	IDS_SKIPUACWARNING_CHK "Skip ""User Account Control"" prompt warning"
 	IDS_CHECKUPDATES_CHK "Periodically check for updates (recommended)"
 	IDS_CHECKUPDATESBETA_CHK "Update to beta versions"
@@ -624,7 +618,6 @@ BEGIN
 
 	IDS_ENABLENOTIFICATIONS_CHK "Enable packets notifications"
 	IDS_NOTIFICATIONSOUND_CHK "Enable notifications sound"
-	IDS_NOTIFICATIONDISPLAYTIMEOUT_HINT "Display timeout (sec.):"
 	IDS_NOTIFICATIONTIMEOUT_HINT "Timeout between similar notifications (sec.):"
 	IDS_EXCLUDESTEALTH_CHK "port scanner connections"
 	IDS_EXCLUDECLASSIFYALLOW_CHK "allowed connections"
