@@ -469,8 +469,7 @@ VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, 
 
 PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app)
 {
-	PR_STRING nameString;
-	PR_STRING pathString;
+	PR_STRING string;
 
 	if (ptr_app->type == DataAppService)
 	{
@@ -479,20 +478,20 @@ PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app)
 
 	if (ptr_app->type == DataAppUWP)
 	{
-		if (_app_item_get (ptr_app->type, app_hash, &nameString, NULL, NULL, NULL))
-			return nameString;
+		if (_app_item_get (ptr_app->type, app_hash, &string, NULL, NULL, NULL))
+			return string;
 	}
 
-	pathString = ((app_hash == config.ntoskrnl_hash) ? ptr_app->original_path : ptr_app->real_path);
+	string = ((app_hash == config.ntoskrnl_hash) ? ptr_app->original_path : ptr_app->real_path);
 
-	if (pathString)
+	if (string)
 	{
 		if (_r_config_getboolean (L"ShowFilenames", TRUE))
 		{
-			return _r_obj_createstring (_r_path_getbasename (_r_obj_getstring (pathString)));
+			return _r_obj_createstring (_r_path_getbasename (_r_obj_getstring (string)));
 		}
 
-		return _r_obj_reference (pathString);
+		return _r_obj_reference (string);
 	}
 
 	return NULL;
