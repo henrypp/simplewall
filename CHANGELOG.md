@@ -1,3 +1,6 @@
+v3.2.2 (29 July 2020)
+- user rules broken with 3.2.1 (issue #729)
+
 v3.2.1 (29 July 2020)
 - added Enable silent-mode when full screen app in foreground option
 - added error message for createprocess failure (issue #720)
