@@ -1217,20 +1217,21 @@ PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter)
 
 	string = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
 
+	R_STRINGREF remainingPart;
 	PR_STRING rulePart;
-	PR_STRINGREF remainingPart;
 
-	remainingPart = &rule->sr;
+	_r_stringref_initializeex (&remainingPart, rule->Buffer, rule->Length);
 
-	while (remainingPart->Length != 0)
+	while (remainingPart.Length != 0)
 	{
-		rulePart = _r_str_splitatchar (remainingPart, remainingPart, DIVIDER_RULE[0], TRUE);
+		rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0], TRUE);
 
 		if (rulePart)
 		{
 			_r_str_trim (rulePart, DIVIDER_TRIM);
 
-			_r_string_appendformat (&string, L"%s%s", rulePart->Buffer, delimeter);
+			if (!_r_str_isempty (rulePart))
+				_r_string_appendformat (&string, L"%s%s", rulePart->Buffer, delimeter);
 
 			_r_obj_dereference (rulePart);
 		}
