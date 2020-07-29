@@ -658,12 +658,6 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				else if (ptr_app->type == DataAppPico)
 					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_PICO));
 
-				else if (!is_appslist && ptr_app->type == DataAppService)
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SERVICE));
-
-				else if (!is_appslist && ptr_app->type == DataAppUWP)
-					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_PACKAGE));
-
 				// app settings
 				if (ptr_app->is_system)
 					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SYSTEM));
