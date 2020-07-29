@@ -1612,7 +1612,7 @@ COLORREF _app_getcolorvalue (SIZE_T color_hash)
 	return 0;
 }
 
-PR_STRING _app_getservicenamefromtag (HANDLE pid, LPCVOID ptag)
+PR_STRING _app_getservicenamefromtag (HANDLE hprocess, LPCVOID ptag)
 {
 	PR_STRING serviceNameString = NULL;
 	HMODULE hlib = GetModuleHandle (L"advapi32.dll");
@@ -1626,7 +1626,7 @@ PR_STRING _app_getservicenamefromtag (HANDLE pid, LPCVOID ptag)
 		{
 			PSC_SERVICE_TAG_QUERY pnameTag = (PSC_SERVICE_TAG_QUERY)_r_mem_allocatezero (sizeof (SC_SERVICE_TAG_QUERY));
 
-			pnameTag->ProcessId = HandleToUlong (pid);
+			pnameTag->ProcessId = HandleToUlong (hprocess);
 			pnameTag->ServiceTag = PtrToUlong (ptag);
 
 			_I_QueryTagInformation (NULL, ServiceNameFromTagInformation, pnameTag);
