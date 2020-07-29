@@ -1,3 +1,15 @@
+v3.2.1 (29 July 2020)
+- added Enable silent-mode when full screen app in foreground option
+- added error message for createprocess failure (issue #720)
+- highlighting valid connections in network tab
+- changed "Disabled apps" group title into "Apps without internet access"
+- skip uac warning does not worked (issue #724)
+- notification window localized in english only
+- revert ip version selection ipv4/ipv6 in rules editor (issue #723)
+- revert expand rules in tooltip (issue #723)
+- revert "recommended" tag (fix #719)
+- fixed bugs
+
 v3.2 Beta (18 July 2020)
 - new rules editor
 - added option "IsInternalRulesDisabled" for completely disable internal rules (issue #630)
