@@ -355,7 +355,7 @@ VOID _app_notifysetpos (HWND hwnd, BOOLEAN is_forced)
 		if (GetWindowRect (hwnd, &windowRect))
 		{
 			_r_wnd_adjustwindowrect (hwnd, &windowRect);
-			SetWindowPos (hwnd, NULL, windowRect.left, windowRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+			SetWindowPos (hwnd, NULL, windowRect.left, windowRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
 
 			return;
 		}
@@ -401,7 +401,7 @@ VOID _app_notifysetpos (HWND hwnd, BOOLEAN is_forced)
 						windowRect.top = (desktopRect.bottom - _r_calc_rectheight (LONG, &windowRect)) - border_x;
 					}
 
-					SetWindowPos (hwnd, NULL, windowRect.left, windowRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+					SetWindowPos (hwnd, NULL, windowRect.left, windowRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
 					return;
 				}
 			}
