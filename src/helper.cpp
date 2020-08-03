@@ -2096,6 +2096,8 @@ VOID _app_generate_packages ()
 			if (RegEnumKeyEx (hkey, key_index++, keyName->Buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
 				break;
 
+			_r_string_trimtonullterminator (keyName);
+
 			code = RegOpenKeyEx (hkey, keyName->Buffer, 0, KEY_READ, &hsubkey);
 
 			if (code == ERROR_SUCCESS)
@@ -2123,10 +2125,15 @@ VOID _app_generate_packages ()
 										UINT localizedLength = 256;
 										PR_STRING localizedName = _r_obj_createstringex (NULL, localizedLength * sizeof (WCHAR));
 
-										if (SUCCEEDED (SHLoadIndirectString (_r_obj_getstring (displayName), localizedName->Buffer, localizedLength, NULL)))
+										if (SUCCEEDED (SHLoadIndirectString (displayName->Buffer, localizedName->Buffer, localizedLength, NULL)))
+										{
+											_r_string_trimtonullterminator (localizedName);
 											_r_obj_movereference (&displayName, localizedName);
+										}
 										else
+										{
 											_r_obj_dereference (localizedName);
+										}
 									}
 
 									PITEM_APP_HELPER ptr_item = (PITEM_APP_HELPER)_r_obj_allocateex (sizeof (ITEM_APP_HELPER), &_app_dereferenceappshelper);
@@ -2712,7 +2719,7 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 	ENUM_TYPE_DATA type = DataUnknown;
 
 	SIZE_T rule_length = _r_obj_getstringlength (rule);
-	SIZE_T range_pos = _r_str_findchar (rule->Buffer, rule_length, DIVIDER_RULE_RANGE, TRUE);
+	SIZE_T range_pos = _r_str_findchar (rule->Buffer, rule_length, DIVIDER_RULE_RANGE);
 	BOOLEAN is_range = (range_pos != INVALID_SIZE_T);
 
 	WCHAR range_start[LEN_IP_MAX] = {0};
