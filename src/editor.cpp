@@ -308,11 +308,11 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					PR_STRING rulePart;
 					R_STRINGREF remainingPart;
 
-					_r_stringref_initializeex (&remainingPart, ptr_rule->rule_remote->Buffer, ptr_rule->rule_remote->Length);
+					_r_stringref_initialize2 (&remainingPart, ptr_rule->rule_remote);
 
 					while (remainingPart.Length != 0)
 					{
-						rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0], TRUE);
+						rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0]);
 
 						if (rulePart)
 						{
@@ -360,11 +360,11 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					PR_STRING rulePart;
 					R_STRINGREF remainingPart;
 
-					_r_stringref_initializeex (&remainingPart, ptr_rule->rule_local->Buffer, ptr_rule->rule_local->Length);
+					_r_stringref_initialize2 (&remainingPart, ptr_rule->rule_local);
 
 					while (remainingPart.Length != 0)
 					{
-						rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0], TRUE);
+						rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0]);
 
 						if (rulePart)
 						{

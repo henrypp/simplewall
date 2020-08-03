@@ -884,7 +884,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 							while (remainingPart.Length != 0)
 							{
-								hostPart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0], TRUE);
+								hostPart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0]);
 
 								if (hostPart)
 								{
@@ -1061,12 +1061,12 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 		ruleLocalString = NULL;
 
 		if (!_r_str_isempty (ptr_rule->rule_remote))
-			ruleRemoteString = _r_str_splitatchar (&ptr_rule->rule_remote->sr, &remoteRemainingPart, DIVIDER_RULE[0], TRUE);
+			ruleRemoteString = _r_str_splitatchar (&ptr_rule->rule_remote->sr, &remoteRemainingPart, DIVIDER_RULE[0]);
 		else
 			_r_obj_initializeemptystringref (&remoteRemainingPart);
 
 		if (!_r_str_isempty (ptr_rule->rule_local))
-			ruleLocalString = _r_str_splitatchar (&ptr_rule->rule_local->sr, &localRemainingPart, DIVIDER_RULE[0], TRUE);
+			ruleLocalString = _r_str_splitatchar (&ptr_rule->rule_local->sr, &localRemainingPart, DIVIDER_RULE[0]);
 		else
 			_r_obj_initializeemptystringref (&localRemainingPart);
 
@@ -1104,12 +1104,12 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 
 			if (remoteRemainingPart.Length != 0)
 			{
-				_r_obj_movereference (&ruleRemoteString, _r_str_splitatchar (&remoteRemainingPart, &remoteRemainingPart, DIVIDER_RULE[0], TRUE));
+				_r_obj_movereference (&ruleRemoteString, _r_str_splitatchar (&remoteRemainingPart, &remoteRemainingPart, DIVIDER_RULE[0]));
 			}
 
 			if (localRemainingPart.Length != 0)
 			{
-				_r_obj_movereference (&ruleLocalString, _r_str_splitatchar (&localRemainingPart, &localRemainingPart, DIVIDER_RULE[0], TRUE));
+				_r_obj_movereference (&ruleLocalString, _r_str_splitatchar (&localRemainingPart, &localRemainingPart, DIVIDER_RULE[0]));
 			}
 		}
 

@@ -90,7 +90,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	app_length = _r_str_length (path);
 
 	// prevent possible duplicate apps entries with short path (issue #640)
-	if (_r_str_findchar (path, app_length, L'~', TRUE) != INVALID_SIZE_T)
+	if (_r_str_findchar (path, app_length, L'~') != INVALID_SIZE_T)
 	{
 		if (GetLongPathName (path, path_full, RTL_NUMBER_OF (path_full)))
 		{
@@ -119,7 +119,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	}
 	else
 	{
-		if (!is_ntoskrnl && _r_str_findchar (path, app_length, OBJ_NAME_PATH_SEPARATOR, TRUE) == INVALID_SIZE_T)
+		if (!is_ntoskrnl && _r_str_findchar (path, app_length, OBJ_NAME_PATH_SEPARATOR) == INVALID_SIZE_T)
 		{
 			if (_app_item_get (DataAppService, app_hash, NULL, &ptr_app->real_path, timestamp ? NULL : &timestamp, NULL))
 			{
@@ -1220,11 +1220,11 @@ PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter)
 	R_STRINGREF remainingPart;
 	PR_STRING rulePart;
 
-	_r_stringref_initializeex (&remainingPart, rule->Buffer, rule->Length);
+	_r_stringref_initialize2 (&remainingPart, rule);
 
 	while (remainingPart.Length != 0)
 	{
-		rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0], TRUE);
+		rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0]);
 
 		if (rulePart)
 		{
@@ -1625,11 +1625,11 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 					PR_STRING expandedPath;
 					SIZE_T app_hash;
 
-					_r_stringref_initializeex (&remainingPart, ruleApps->Buffer, ruleApps->Length);
+					_r_stringref_initialize2 (&remainingPart, ruleApps);
 
 					while (remainingPart.Length != 0)
 					{
-						appPath = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_APP[0], TRUE);
+						appPath = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_APP[0]);
 
 						if (appPath)
 						{
