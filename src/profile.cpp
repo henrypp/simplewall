@@ -565,7 +565,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 			{
 				PR_STRING infoString;
 
-				infoString = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+				infoString = _r_obj_createstringbuilder ();
 
 				if (ptr_app->type == DataAppRegular)
 				{
@@ -617,7 +617,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				if (!_r_str_isempty (infoString))
 				{
 					_r_string_insertformat (&infoString, 0, L"%s:\r\n", _r_locale_getstring (IDS_FILE));
-					_r_string_append (&string, infoString->Buffer);
+					_r_string_append2 (&string, infoString);
 				}
 
 				_r_obj_dereference (infoString);
@@ -649,7 +649,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 			{
 				PR_STRING notesString;
 
-				notesString = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+				notesString = _r_obj_createstringbuilder ();
 
 				// app type
 				if (ptr_app->type == DataAppNetwork)
@@ -1119,7 +1119,7 @@ PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
 {
 	PR_STRING string;
 
-	string = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+	string = _r_obj_createstringbuilder ();
 
 	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
@@ -1159,7 +1159,7 @@ PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay
 {
 	PR_STRING string;
 
-	string = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+	string = _r_obj_createstringbuilder ();
 
 	if (is_fordisplay && ptr_rule->is_forservices)
 	{
@@ -1215,7 +1215,7 @@ PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter)
 	if (_r_str_isempty (rule))
 		return NULL;
 
-	string = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+	string = _r_obj_createstringbuilder ();
 
 	R_STRINGREF remainingPart;
 	PR_STRING rulePart;
@@ -1595,7 +1595,7 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 			{
 				PR_STRING ruleApps;
 
-				ruleApps = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+				ruleApps = _r_obj_createstringbuilder ();
 
 				if (!item.attribute (L"apps").empty ())
 					_r_string_append (&ruleApps, item.attribute (L"apps").as_string ());

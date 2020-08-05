@@ -4233,7 +4233,7 @@ find_wrap:
 					column_count = _r_listview_getcolumncount (hwnd, listview_id);
 					column_current = (INT)lparam;
 
-					buffer = _r_obj_createstringbuilder (512 * sizeof (WCHAR));
+					buffer = _r_obj_createstringbuilder ();
 
 					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{

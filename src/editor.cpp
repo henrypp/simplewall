@@ -824,7 +824,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					if (!listview_id || !_r_listview_getitemcount (hwnd, listview_id, FALSE))
 						break;
 
-					buffer = _r_obj_createstringbuilder (512 * sizeof (WCHAR));
+					buffer = _r_obj_createstringbuilder ();
 
 					item = INVALID_INT;
 
@@ -1014,7 +1014,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (ptr_rule->rule_remote)
 								_r_obj_clearreference (&ptr_rule->rule_remote);
 
-							buffer = _r_obj_createstringbuilder (RULE_RULE_CCH_MAX * sizeof (WCHAR));
+							buffer = _r_obj_createstringbuilder ();
 
 							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_RULE_REMOTE_ID, FALSE); i++)
 							{
@@ -1028,9 +1028,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									{
 										// check maximum length of one rule
 										if ((_r_obj_getstringlength (buffer) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+										{
+											_r_obj_dereference (string);
 											break;
+										}
 
-										_r_string_appendformat (&buffer, L"%s" DIVIDER_RULE, _r_obj_getstring (string));
+										_r_string_appendformat (&buffer, L"%s" DIVIDER_RULE, string->Buffer);
 									}
 
 									_r_obj_dereference (string);
@@ -1050,7 +1053,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (ptr_rule->rule_local)
 								_r_obj_clearreference (&ptr_rule->rule_local);
 
-							buffer = _r_obj_createstringbuilder (RULE_RULE_CCH_MAX * sizeof (WCHAR));
+							buffer = _r_obj_createstringbuilder ();
 
 							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_RULE_LOCAL_ID, FALSE); i++)
 							{
@@ -1064,9 +1067,12 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									{
 										// check maximum length of one rule
 										if ((_r_obj_getstringlength (buffer) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+										{
+											_r_obj_dereference (string);
 											break;
+										}
 
-										_r_string_appendformat (&buffer, L"%s" DIVIDER_RULE, _r_obj_getstring (string));
+										_r_string_appendformat (&buffer, L"%s" DIVIDER_RULE, string->Buffer);
 									}
 
 									_r_obj_dereference (string);

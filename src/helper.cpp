@@ -260,7 +260,7 @@ PR_STRING _app_formatport (UINT16 port, BOOLEAN is_noempty)
 
 		LPCWSTR seviceString = _app_getservicename (port, NULL);
 
-		if (!_r_str_isempty (seviceString))
+		if (seviceString)
 			_r_string_appendformat (&string, L" (%s)", seviceString);
 	}
 	else
@@ -666,7 +666,7 @@ PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 
 					if (versionInfo)
 					{
-						versionCacheString = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+						versionCacheString = _r_obj_createstringbuilder ();
 
 						PVOID buffer;
 						ULONG langId;
@@ -2530,7 +2530,7 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 
 	PDNS_RECORD ppQueryResultsSet = NULL;
 
-	string = _r_obj_createstringbuilder (256 * sizeof (WCHAR));
+	string = _r_obj_createstringbuilder ();
 
 	// ipv4 address
 	DNS_STATUS dnsStatus = DnsQuery (hostname, DNS_TYPE_A, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
