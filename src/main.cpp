@@ -1718,7 +1718,7 @@ VOID _app_tabs_init (HWND hwnd)
 	SetWindowPos (GetDlgItem (hwnd, IDC_TAB), NULL, 0, 0, _r_calc_rectwidth (INT, &rc), _r_calc_rectheight (INT, &rc), SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
 
 	PR_STRING localizedString = NULL;
-	HINSTANCE hinst = _r_app_gethinstance ();
+	HINSTANCE hinst = _r_sys_getimagebase ();
 	DWORD listview_ex_style = LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES | LVS_EX_HEADERINALLVIEWS;
 	DWORD listview_style = WS_CHILD | WS_TABSTOP | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SHAREIMAGELISTS | LVS_AUTOARRANGE;
 	INT tabs_count = 0;
@@ -1872,7 +1872,7 @@ VOID _app_initialize ()
 	config.shell32_path = _r_path_expand (PATH_SHELL32);
 	config.winstore_path = _r_path_expand (PATH_WINSTORE);
 
-	config.my_hash = _r_str_hash (_r_app_getbinarypath ());
+	config.my_hash = _r_str_hash (_r_sys_getimagepathname ());
 	config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME);
 	config.svchost_hash = _r_str_hash (config.svchost_path);
 
@@ -2103,7 +2103,7 @@ find_wrap:
 
 		case RM_INITIALIZE:
 		{
-			_r_tray_create (hwnd, UID, WM_TRAYICON, _r_app_getsharedimage (_r_app_gethinstance (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
 
 			HMENU hmenu = GetMenu (hwnd);
 
@@ -2461,7 +2461,7 @@ find_wrap:
 		{
 			// refresh tray icon
 			_r_tray_destroy (hwnd, UID);
-			_r_tray_create (hwnd, UID, WM_TRAYICON, _r_app_getsharedimage (_r_app_gethinstance (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
+			_r_tray_create (hwnd, UID, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
 
 			break;
 		}
@@ -5062,7 +5062,7 @@ INT APIENTRY wWinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdL
 		// parse arguments
 		{
 			INT numargs;
-			LPWSTR* arga = CommandLineToArgvW (GetCommandLine (), &numargs);
+			LPWSTR* arga = CommandLineToArgvW (_r_sys_getimagecommandline (), &numargs);
 
 			if (arga)
 			{
@@ -5135,7 +5135,7 @@ INT APIENTRY wWinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdL
 
 		if (_r_app_createwindow (IDD_MAIN, IDI_MAIN, &DlgProc))
 		{
-			HACCEL haccel = LoadAccelerators (_r_app_gethinstance (), MAKEINTRESOURCE (IDA_MAIN));
+			HACCEL haccel = LoadAccelerators (_r_sys_getimagebase (), MAKEINTRESOURCE (IDA_MAIN));
 
 			if (haccel)
 			{

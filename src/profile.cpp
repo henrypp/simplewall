@@ -1474,7 +1474,7 @@ BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_st
 VOID _app_profile_load_fallback ()
 {
 	if (!_app_isappfound (config.my_hash))
-		_app_addapplication (NULL, _r_app_getbinarypath (), 0, 0, 0, FALSE, TRUE);
+		_app_addapplication (NULL, _r_sys_getimagepathname (), 0, 0, 0, FALSE, TRUE);
 
 	_app_setappinfo (config.my_hash, InfoIsUndeletable, TRUE);
 

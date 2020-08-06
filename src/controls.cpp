@@ -73,8 +73,8 @@ VOID _app_setinterfacestate (HWND hwnd)
 	INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 	UINT string_id = is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START;
 
-	HICON hico_sm = _r_app_getsharedimage (_r_app_gethinstance (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
-	HICON hico_big = _r_app_getsharedimage (_r_app_gethinstance (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
+	HICON hico_sm = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
+	HICON hico_big = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
 
 	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
 	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
