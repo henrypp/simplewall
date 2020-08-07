@@ -28,7 +28,7 @@ INT _app_getrulegroup (PITEM_RULE ptr_rule);
 INT _app_getruleicon (PITEM_RULE ptr_rule);
 COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx);
 
-PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv);
+PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id);
 
 VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, SIZE_T app_hash, PITEM_APP ptr_app);
 VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_rule, BOOLEAN include_apps);

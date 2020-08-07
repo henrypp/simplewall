@@ -2734,7 +2734,7 @@ find_wrap:
 				case LVN_GETINFOTIP:
 				{
 					LPNMLVGETINFOTIP lpnmlv = (LPNMLVGETINFOTIP)lparam;
-					PR_STRING string = _app_gettooltip (hwnd, lpnmlv);
+					PR_STRING string = _app_gettooltip (hwnd, (INT)lpnmlv->hdr.idFrom, lpnmlv->iItem);
 
 					if (string)
 					{

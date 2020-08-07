@@ -543,18 +543,17 @@ COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 	return 0;
 }
 
-PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
+PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 {
 	PR_STRING string = NULL;
 
-	INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 	BOOLEAN is_appslist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP);
 	BOOLEAN is_ruleslist = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
 
 	if (is_appslist || listview_id == IDC_RULE_APPS_ID)
 	{
-		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
-		PITEM_APP ptr_app = _app_getappitem (lparam);
+		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+		PITEM_APP ptr_app = _app_getappitem (app_hash);
 		PR_STRING displayName = NULL;
 
 		if (ptr_app)
@@ -569,7 +568,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 
 				if (ptr_app->type == DataAppRegular)
 				{
-					PR_STRING versionString = _app_getversioninfo (lparam, ptr_app);
+					PR_STRING versionString = _app_getversioninfo (app_hash, ptr_app);
 
 					if (versionString)
 					{
@@ -581,7 +580,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				}
 				else if (ptr_app->type == DataAppService)
 				{
-					if (_app_item_get (ptr_app->type, lparam, &displayName, NULL, NULL, NULL))
+					if (_app_item_get (ptr_app->type, app_hash, &displayName, NULL, NULL, NULL))
 					{
 						_r_string_appendformat (&infoString, SZ_TAB L"%s" SZ_TAB_CRLF L"%s\r\n", _r_obj_getstringorempty (ptr_app->original_path), _r_obj_getstringorempty (displayName));
 
@@ -591,7 +590,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				}
 				else if (ptr_app->type == DataAppUWP)
 				{
-					if (_app_item_get (ptr_app->type, lparam, &displayName, NULL, NULL, NULL))
+					if (_app_item_get (ptr_app->type, app_hash, &displayName, NULL, NULL, NULL))
 					{
 						_r_string_appendformat (&infoString, SZ_TAB L"%s\r\n", _r_obj_getstringorempty (displayName));
 
@@ -603,7 +602,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				// signature information
 				if (_r_config_getboolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
 				{
-					PR_STRING signatureString = _app_getsignatureinfo (lparam, ptr_app);
+					PR_STRING signatureString = _app_getsignatureinfo (app_hash, ptr_app);
 
 					if (signatureString)
 					{
@@ -634,7 +633,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 
 			// app rules
 			{
-				PR_STRING appRulesString = _app_appexpandrules (lparam, SZ_TAB_CRLF);
+				PR_STRING appRulesString = _app_appexpandrules (app_hash, SZ_TAB_CRLF);
 
 				if (appRulesString)
 				{
@@ -662,7 +661,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 				if (ptr_app->is_system)
 					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SYSTEM));
 
-				if (_app_isapphaveconnection (lparam))
+				if (_app_isapphaveconnection (app_hash))
 					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_CONNECTION));
 
 				if (is_appslist && ptr_app->is_silent)
@@ -685,7 +684,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 	}
 	else if (is_ruleslist)
 	{
-		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_RULE ptr_rule = _app_getrulebyid (lparam);
 
 		if (ptr_rule)
@@ -737,7 +736,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 	}
 	else if (listview_id == IDC_NETWORK)
 	{
-		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_NETWORK ptr_network = _app_getnetworkitem (lparam);
 
 		if (ptr_network)
@@ -773,7 +772,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 	}
 	else if (listview_id == IDC_LOG)
 	{
-		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_LOG ptr_log = _app_getlogitem (lparam);
 
 		if (ptr_log)
@@ -821,7 +820,7 @@ PR_STRING _app_gettooltip (HWND hwnd, LPNMLVGETINFOTIP lpnmlv)
 	}
 	else if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
 	{
-		PR_STRING itemText = _r_listview_getitemtext (hwnd, listview_id, lpnmlv->iItem, 0);
+		PR_STRING itemText = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 
 		if (itemText)
 		{

@@ -798,13 +798,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 								if (item_id != INVALID_INT)
 								{
-									NMLVGETINFOTIP nmlvgit = {0};
-
-									nmlvgit.hdr.idFrom = (UINT_PTR)listview_id;
-									nmlvgit.iItem = item_id;
-									nmlvgit.lParam = 0;
-
-									PR_STRING string = _app_gettooltip (_r_app_gethwnd (), &nmlvgit);
+									PR_STRING string = _app_gettooltip (_r_app_gethwnd (), listview_id, item_id);
 
 									if (string)
 									{
