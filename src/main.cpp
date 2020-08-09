@@ -503,19 +503,22 @@ VOID _app_config_apply (HWND hwnd, INT ctrl_id)
 			_r_config_setboolean (L"IsSecureFilters", new_val);
 			_r_menu_checkitem (hmenu, IDM_SECUREFILTERS_CHK, 0, MF_BYCOMMAND, new_val);
 
-			HANDLE hengine = _wfp_getenginehandle ();
-
-			if (hengine)
+			if (_wfp_isfiltersinstalled ())
 			{
-				GUIDS_VEC filter_all;
+				HANDLE hengine = _wfp_getenginehandle ();
 
-				_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, new_val);
-				_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, new_val);
-
-				if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
+				if (hengine)
 				{
-					for (auto it = filter_all.begin (); it != filter_all.end (); ++it)
-						_app_setsecurityinfoforfilter (hengine, &(*it), new_val, __LINE__);
+					GUIDS_VEC filter_all;
+
+					_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, new_val);
+					_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, new_val);
+
+					if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, &filter_all))
+					{
+						for (auto it = filter_all.begin (); it != filter_all.end (); ++it)
+							_app_setsecurityinfoforfilter (hengine, &(*it), new_val, __LINE__);
+					}
 				}
 			}
 
@@ -598,10 +601,13 @@ VOID _app_config_apply (HWND hwnd, INT ctrl_id)
 		}
 	}
 
-	HANDLE hengine = _wfp_getenginehandle ();
+	if (_wfp_isfiltersinstalled ())
+	{
+		HANDLE hengine = _wfp_getenginehandle ();
 
-	if (hengine)
-		_wfp_create2filters (hengine, __LINE__);
+		if (hengine)
+			_wfp_create2filters (hengine, __LINE__);
+	}
 }
 
 INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -2787,10 +2793,13 @@ find_wrap:
 
 									rules.emplace_back (ptr_app);
 
-									HANDLE hengine = _wfp_getenginehandle ();
+									if (_wfp_isfiltersinstalled ())
+									{
+										HANDLE hengine = _wfp_getenginehandle ();
 
-									if (hengine)
-										_wfp_create3filters (hengine, &rules, __LINE__);
+										if (hengine)
+											_wfp_create3filters (hengine, &rules, __LINE__);
+									}
 
 									is_changed = TRUE;
 								}
@@ -2818,10 +2827,13 @@ find_wrap:
 
 									rules.emplace_back (ptr_rule);
 
-									HANDLE hengine = _wfp_getenginehandle ();
+									if (_wfp_isfiltersinstalled ())
+									{
+										HANDLE hengine = _wfp_getenginehandle ();
 
-									if (hengine)
-										_wfp_create4filters (hengine, &rules, __LINE__);
+										if (hengine)
+											_wfp_create4filters (hengine, &rules, __LINE__);
+									}
 
 									is_changed = TRUE;
 								}
@@ -3419,10 +3431,13 @@ find_wrap:
 				OBJECTS_RULE_VECTOR rules;
 				rules.emplace_back (ptr_rule);
 
-				HANDLE hengine = _wfp_getenginehandle ();
+				if (_wfp_isfiltersinstalled ())
+				{
+					HANDLE hengine = _wfp_getenginehandle ();
 
-				if (hengine)
-					_wfp_create4filters (hengine, &rules, __LINE__);
+					if (hengine)
+						_wfp_create4filters (hengine, &rules, __LINE__);
+				}
 
 				_r_obj_dereference (ptr_rule);
 
@@ -3458,10 +3473,13 @@ find_wrap:
 					rules.emplace_back (ptr_app);
 				}
 
-				HANDLE hengine = _wfp_getenginehandle ();
+				if (_wfp_isfiltersinstalled ())
+				{
+					HANDLE hengine = _wfp_getenginehandle ();
 
-				if (hengine)
-					_wfp_create3filters (hengine, &rules, __LINE__);
+					if (hengine)
+						_wfp_create3filters (hengine, &rules, __LINE__);
+				}
 
 				_app_freeapps_vec (&rules);
 
@@ -4329,10 +4347,13 @@ find_wrap:
 
 						if (is_changed)
 						{
-							HANDLE hengine = _wfp_getenginehandle ();
+							if (_wfp_isfiltersinstalled ())
+							{
+								HANDLE hengine = _wfp_getenginehandle ();
 
-							if (hengine)
-								_wfp_create3filters (hengine, &rules, __LINE__);
+								if (hengine)
+									_wfp_create3filters (hengine, &rules, __LINE__);
+							}
 
 							_app_freeapps_vec (&rules);
 						}
@@ -4372,10 +4393,13 @@ find_wrap:
 
 						if (is_changed)
 						{
-							HANDLE hengine = _wfp_getenginehandle ();
+							if (_wfp_isfiltersinstalled ())
+							{
+								HANDLE hengine = _wfp_getenginehandle ();
 
-							if (hengine)
-								_wfp_create4filters (hengine, &rules, __LINE__);
+								if (hengine)
+									_wfp_create4filters (hengine, &rules, __LINE__);
+							}
 
 							_app_freerules_vec (&rules);
 						}
@@ -4801,10 +4825,13 @@ find_wrap:
 						}
 					}
 
-					HANDLE hengine = _wfp_getenginehandle ();
+					if (_wfp_isfiltersinstalled ())
+					{
+						HANDLE hengine = _wfp_getenginehandle ();
 
-					if (hengine)
-						_wfp_destroyfilters_array (hengine, &guids, __LINE__);
+						if (hengine)
+							_wfp_destroyfilters_array (hengine, &guids, __LINE__);
+					}
 
 					_app_refreshstatus (hwnd, INVALID_INT);
 					_app_profile_save ();
@@ -4857,10 +4884,13 @@ find_wrap:
 
 					if (is_deleted)
 					{
-						HANDLE hengine = _wfp_getenginehandle ();
+						if (_wfp_isfiltersinstalled ())
+						{
+							HANDLE hengine = _wfp_getenginehandle ();
 
-						if (hengine)
-							_wfp_destroyfilters_array (hengine, &guids, __LINE__);
+							if (hengine)
+								_wfp_destroyfilters_array (hengine, &guids, __LINE__);
+						}
 
 						_app_refreshstatus (hwnd, INVALID_INT);
 						_app_profile_save ();
@@ -4895,10 +4925,13 @@ find_wrap:
 						}
 					}
 
-					HANDLE hengine = _wfp_getenginehandle ();
+					if (_wfp_isfiltersinstalled ())
+					{
+						HANDLE hengine = _wfp_getenginehandle ();
 
-					if (hengine)
-						_wfp_create3filters (hengine, &rules, __LINE__);
+						if (hengine)
+							_wfp_create3filters (hengine, &rules, __LINE__);
+					}
 
 					_app_freeapps_vec (&rules);
 

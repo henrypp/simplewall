@@ -1121,17 +1121,20 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					_app_ruleenable (ptr_rule, (IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED));
 
 					// apply filter
-					HANDLE hengine = _wfp_getenginehandle ();
-
-					if (hengine)
+					if (_wfp_isfiltersinstalled ())
 					{
-						OBJECTS_RULE_VECTOR rules;
-						rules.emplace_back (ptr_rule);
+						HANDLE hengine = _wfp_getenginehandle ();
 
-						_wfp_create4filters (hengine, &rules, __LINE__);
+						if (hengine)
+						{
+							OBJECTS_RULE_VECTOR rules;
+							rules.emplace_back (ptr_rule);
 
-						// note: do not needed!
-						//_app_dereferenceobjects (rules, &_app_dereferencerule);
+							_wfp_create4filters (hengine, &rules, __LINE__);
+
+							// note: do not needed!
+							//_app_dereferenceobjects (rules, &_app_dereferencerule);
+						}
 					}
 
 					EndDialog (hwnd, TRUE);

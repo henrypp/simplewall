@@ -59,10 +59,13 @@ BOOLEAN _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 
 	ptr_app->last_notify = _r_unixtime_now ();
 
-	HANDLE hengine = _wfp_getenginehandle ();
+	if (_wfp_isfiltersinstalled ())
+	{
+		HANDLE hengine = _wfp_getenginehandle ();
 
-	if (hengine)
-		_wfp_create3filters (hengine, &rules, __LINE__);
+		if (hengine)
+			_wfp_create3filters (hengine, &rules, __LINE__);
+	}
 
 	_app_freeapps_vec (&rules);
 
@@ -916,10 +919,13 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							OBJECTS_RULE_VECTOR rules;
 							rules.emplace_back (ptr_rule);
 
-							HANDLE hengine = _wfp_getenginehandle ();
+							if (_wfp_isfiltersinstalled ())
+							{
+								HANDLE hengine = _wfp_getenginehandle ();
 
-							if (hengine)
-								_wfp_create4filters (hengine, &rules, __LINE__);
+								if (hengine)
+									_wfp_create4filters (hengine, &rules, __LINE__);
+							}
 
 							if (listview_id == app_listview_id || listview_id == rule_listview_id)
 							{

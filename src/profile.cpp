@@ -1102,10 +1102,13 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 		if (is_instantapply)
 		{
-			HANDLE hengine = _wfp_getenginehandle ();
+			if (_wfp_isfiltersinstalled ())
+			{
+				HANDLE hengine = _wfp_getenginehandle ();
 
-			if (hengine)
-				_wfp_create4filters (hengine, &rules, __LINE__);
+				if (hengine)
+					_wfp_create4filters (hengine, &rules, __LINE__);
+			}
 
 			_app_freerules_vec (&rules);
 		}
