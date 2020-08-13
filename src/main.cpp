@@ -1338,7 +1338,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					OPENFILENAME ofn = {0};
 
 					WCHAR path[512];
-					PR_STRING expandedPath = NULL;
+					PR_STRING expandedPath;
 
 					expandedPath = _r_ctrl_gettext (hwnd, IDC_LOGPATH);
 
@@ -1394,7 +1394,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					OPENFILENAME ofn = {0};
 
 					WCHAR path[512];
-					PR_STRING expandedPath = NULL;
+					PR_STRING expandedPath;
 
 					expandedPath = _r_ctrl_gettext (hwnd, IDC_LOGVIEWER);
 
@@ -4575,10 +4575,15 @@ find_wrap:
 						{
 							SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 
-							LPCWSTR path = (LPCWSTR)_app_getappinfo (app_hash, InfoPath);
+							PR_STRING path = (PR_STRING)_app_getappinfo (app_hash, InfoPath);
 
 							if (path)
-								_r_path_explore (path);
+							{
+								if (!_r_str_isempty (path))
+									_r_path_explore (path->Buffer);
+
+								_r_obj_dereference (path);
+							}
 						}
 						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT);
 					}

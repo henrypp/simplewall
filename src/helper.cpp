@@ -24,7 +24,7 @@ VOID NTAPI _app_dereferenceappshelper (PVOID pdata)
 	SAFE_DELETE_REFERENCE (ptr_item->real_path);
 	SAFE_DELETE_REFERENCE (ptr_item->internal_name);
 
-	SAFE_DELETE_MEMORY (ptr_item->pdata);
+	SAFE_DELETE_REFERENCE (ptr_item->pbytes);
 }
 
 VOID NTAPI _app_dereferencelog (PVOID pdata)
@@ -473,13 +473,17 @@ PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app)
 
 	if (ptr_app->type == DataAppService)
 	{
-		return _r_obj_reference (ptr_app->original_path);
+		if (ptr_app->original_path)
+			return _r_obj_createstring2 (ptr_app->original_path);
 	}
 
 	if (ptr_app->type == DataAppUWP)
 	{
 		if (_app_item_get (ptr_app->type, app_hash, &string, NULL, NULL, NULL))
-			return string;
+		{
+			if (string)
+				return string;
+		}
 	}
 
 	string = ((app_hash == config.ntoskrnl_hash) ? ptr_app->original_path : ptr_app->real_path);
@@ -487,11 +491,9 @@ PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app)
 	if (string)
 	{
 		if (_r_config_getboolean (L"ShowFilenames", TRUE))
-		{
 			return _r_obj_createstring (_r_path_getbasename (_r_obj_getstring (string)));
-		}
 
-		return _r_obj_reference (string);
+		return _r_obj_createstring2 (string);
 	}
 
 	return NULL;
@@ -2067,7 +2069,7 @@ VOID _app_generate_packages ()
 	DWORD key_index;
 	DWORD max_length;
 	DWORD size;
-	LPBYTE packageSid;
+	PR_BYTE packageSid;
 	PR_STRING keyName;
 	PR_STRING displayName;
 	PR_STRING packageSidString;
@@ -2106,9 +2108,9 @@ VOID _app_generate_packages ()
 
 				if (packageSid)
 				{
-					if (RtlValidSid (packageSid))
+					if (RtlValidSid (packageSid->Buffer))
 					{
-						packageSidString = _r_str_fromsid (packageSid);
+						packageSidString = _r_str_fromsid (packageSid->Buffer);
 
 						if (packageSidString)
 						{
@@ -2139,7 +2141,7 @@ VOID _app_generate_packages ()
 									PITEM_APP_HELPER ptr_item = (PITEM_APP_HELPER)_r_obj_allocateex (sizeof (ITEM_APP_HELPER), &_app_dereferenceappshelper);
 
 									ptr_item->type = DataAppUWP;
-									ptr_item->pdata = packageSid;
+									_r_obj_movereference (&ptr_item->pbytes, packageSid);
 
 									// query timestamp
 									ptr_item->timestamp = _r_reg_querytimestamp (hsubkey);
@@ -2155,7 +2157,7 @@ VOID _app_generate_packages ()
 									packageSidString = NULL;
 									packageSid = NULL;
 
-									apps_helper[app_hash] = ptr_item;
+									apps_helper.emplace (app_hash, ptr_item);
 								}
 							}
 
@@ -2165,7 +2167,7 @@ VOID _app_generate_packages ()
 					}
 
 					if (packageSid)
-						_r_mem_free (packageSid);
+						_r_obj_dereference (packageSid);
 				}
 
 				RegCloseKey (hsubkey);
@@ -2224,8 +2226,10 @@ VOID _app_generate_services ()
 	// now traverse each service to get information
 	if (buffer)
 	{
-		LPENUM_SERVICE_STATUS_PROCESS service = (LPENUM_SERVICE_STATUS_PROCESS)buffer;
-		LPENUM_SERVICE_STATUS_PROCESS services = (LPENUM_SERVICE_STATUS_PROCESS)buffer;
+		LPENUM_SERVICE_STATUS_PROCESS service;
+		LPENUM_SERVICE_STATUS_PROCESS services;
+
+		services = (LPENUM_SERVICE_STATUS_PROCESS)buffer;
 
 		for (DWORD i = 0; i < servicesReturned; i++)
 		{
@@ -2337,12 +2341,12 @@ VOID _app_generate_services ()
 				_r_obj_movereference (&ptr_item->real_path, servicePath);
 				servicePath = NULL;
 
-				ptr_item->pdata = _r_mem_allocatezero (sd_length);
-				RtlCopyMemory (ptr_item->pdata, pservice_sd, sd_length);
+				ptr_item->pbytes = _r_obj_createbyteex (NULL, sd_length);
+				RtlCopyMemory (ptr_item->pbytes->Buffer, pservice_sd, sd_length);
 
 				SAFE_DELETE_LOCAL (pservice_sd);
 
-				apps_helper[app_hash] = ptr_item;
+				apps_helper.emplace (app_hash, ptr_item);
 
 				_r_mem_free (pserviceSid);
 			}
@@ -2479,7 +2483,7 @@ VOID _app_generate_timermenu (HMENU hsubmenu, SIZE_T app_hash)
 		_r_menu_checkitem (hsubmenu, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND, IDM_DISABLETIMER);
 }
 
-BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, PR_STRING* displayName, PR_STRING* realPath, time_t* ptime, PVOID* lpdata)
+BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, PR_STRING* displayName, PR_STRING* realPath, time_t* ptime, PR_BYTE* lpdata)
 {
 	PITEM_APP_HELPER ptr_app_item = _app_getapphelperitem (app_hash);
 
@@ -2495,23 +2499,26 @@ BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, PR_STRING* displayN
 	if (displayName)
 	{
 		if (!_r_str_isempty (ptr_app_item->display_name))
-			*displayName = _r_obj_reference (ptr_app_item->display_name);
+			*displayName = _r_obj_createstring2 (ptr_app_item->display_name);
 
 		else if (!_r_str_isempty (ptr_app_item->real_path))
-			*displayName = _r_obj_reference (ptr_app_item->real_path);
+			*displayName = _r_obj_createstring2 (ptr_app_item->real_path);
 
 		else if (!_r_str_isempty (ptr_app_item->internal_name))
-			*displayName = _r_obj_reference (ptr_app_item->internal_name);
+			*displayName = _r_obj_createstring2 (ptr_app_item->internal_name);
 	}
 
 	if (realPath)
 	{
 		if (!_r_str_isempty (ptr_app_item->real_path))
-			*realPath = _r_obj_reference (ptr_app_item->real_path);
+			*realPath = _r_obj_createstring2 (ptr_app_item->real_path);
 	}
 
 	if (lpdata)
-		*lpdata = ptr_app_item->pdata;
+	{
+		if (ptr_app_item->pbytes)
+			*lpdata = _r_obj_reference (ptr_app_item->pbytes);
+	}
 
 	if (ptime)
 		*ptime = ptr_app_item->timestamp;

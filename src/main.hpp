@@ -64,8 +64,8 @@ typedef enum _ENUM_TYPE_XML
 
 typedef enum _ENUM_INFO_DATA
 {
-	InfoName = 0,
-	InfoPath = 1,
+	InfoPath = 0,
+	InfoName = 1,
 	InfoTimestampPtr = 2,
 	InfoTimerPtr = 3,
 	InfoIconId = 4,
@@ -349,7 +349,7 @@ typedef struct tagITEM_APP_HELPER
 	PR_STRING real_path;
 	PR_STRING internal_name;
 
-	PVOID pdata; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
+	PR_BYTE pbytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 
 	time_t timestamp;
 

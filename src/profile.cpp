@@ -18,15 +18,15 @@ LONG_PTR _app_getappinfo (SIZE_T app_hash, ENUM_INFO_DATA info_key)
 	if (info_key == InfoPath)
 	{
 		if (!_r_str_isempty (ptr_app->real_path))
-			result = (LONG_PTR)ptr_app->real_path->Buffer;
+			result = (LONG_PTR)_r_obj_reference (ptr_app->real_path);
 	}
 	else if (info_key == InfoName)
 	{
 		if (!_r_str_isempty (ptr_app->display_name))
-			result = (LONG_PTR)ptr_app->display_name->Buffer;
+			result = (LONG_PTR)_r_obj_reference (ptr_app->display_name);
 
 		else if (!_r_str_isempty (ptr_app->original_path))
-			result = (LONG_PTR)ptr_app->original_path->Buffer;
+			result = (LONG_PTR)_r_obj_reference (ptr_app->original_path);
 	}
 	else if (info_key == InfoTimestampPtr)
 	{
@@ -823,11 +823,7 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 		PR_STRING itemText = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 
 		if (itemText)
-		{
-			string = _r_obj_reference (itemText);
-
-			_r_obj_dereference (itemText);
-		}
+			_r_obj_movereference (&string, itemText);
 	}
 
 	return string;
@@ -933,7 +929,7 @@ VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable)
 		{
 			if (rules_config.find (rule_hash) != rules_config.end ())
 			{
-				pdata = rules_config[rule_hash];
+				pdata = rules_config.at (rule_hash);
 
 				if (pdata)
 				{
@@ -949,7 +945,7 @@ VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable)
 					ptr_config->is_enabled = is_enable;
 					ptr_config->name = _r_obj_createstring2 (ptr_rule->name);
 
-					rules_config[rule_hash] = ptr_config;
+					rules_config.insert_or_assign (rule_hash, ptr_config);
 				}
 			}
 			else
@@ -959,7 +955,7 @@ VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable)
 				ptr_config->is_enabled = is_enable;
 				ptr_config->name = _r_obj_createstring2 (ptr_rule->name);
 
-				rules_config[rule_hash] = ptr_config;
+				rules_config.insert_or_assign (rule_hash, ptr_config);
 			}
 		}
 	}
@@ -977,7 +973,7 @@ VOID _app_ruleenable2 (PITEM_RULE ptr_rule, BOOLEAN is_enable)
 		{
 			if (rules_config.find (rule_hash) != rules_config.end ())
 			{
-				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (rules_config[rule_hash]);
+				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (rules_config.at (rule_hash));
 
 				if (ptr_config)
 				{
@@ -1134,10 +1130,14 @@ PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
 		{
 			if (!_r_str_isempty (ptr_rule->name))
 			{
-				_r_string_append2 (&string, ptr_rule->name);
-
 				if (ptr_rule->is_readonly)
-					_r_string_append (&string, SZ_RULE_INTERNAL_MENU);
+				{
+					_r_string_append2 (&string, ptr_rule->name);
+				}
+				else
+				{
+					_r_string_appendformat (&string, L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->Buffer);
+				}
 
 				_r_string_append (&string, delimeter);
 			}
@@ -1586,10 +1586,14 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 				// internal rules
 				if (rules_config.find (rule_hash) != rules_config.end ())
 				{
-					ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (rules_config[rule_hash]);
+					PVOID pdata = rules_config.at (rule_hash);
 
-					if (ptr_config)
+					if (pdata)
+					{
+						ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (pdata);
+
 						ptr_rule->is_enabled = ptr_config->is_enabled;
+					}
 				}
 			}
 

@@ -48,7 +48,7 @@ VOID _app_generate_services ();
 VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash);
 VOID _app_generate_timermenu (HMENU hsubmenu, SIZE_T app_hash);
 
-BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, PR_STRING* displayName, PR_STRING* realPath, time_t* ptime, PVOID* lpdata);
+BOOLEAN _app_item_get (ENUM_TYPE_DATA type, SIZE_T app_hash, PR_STRING* displayName, PR_STRING* realPath, time_t* ptime, PR_BYTE* lpdata);
 
 PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port);
 

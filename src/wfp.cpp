@@ -710,10 +710,10 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 	FWP_BYTE_BLOB* pblob = NULL;
 	PITEM_APP ptr_app = NULL;
+	PR_BYTE pdata = NULL;
 	BOOLEAN is_remoteaddr_set = FALSE;
 	BOOLEAN is_remoteport_set = FALSE;
 	BOOLEAN result = FALSE;
-	PVOID pdata;
 
 	RtlSecureZeroMemory (&addr, sizeof (addr));
 
@@ -733,7 +733,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 		{
 			if (_app_item_get (ptr_app->type, app_hash, NULL, NULL, NULL, &pdata))
 			{
-				ByteBlobAlloc (pdata, RtlLengthSecurityDescriptor (pdata), &pblob);
+				ByteBlobAlloc (pdata->Buffer, RtlLengthSecurityDescriptor (pdata->Buffer), &pblob);
 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -756,7 +756,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_PACKAGE_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_SID;
-				fwfc[count].conditionValue.sid = (SID*)pdata;
+				fwfc[count].conditionValue.sid = (SID*)pdata->Buffer;
 
 				count += 1;
 			}
@@ -983,7 +983,10 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 CleanupExit:
 
-	if(ptr_app)
+	if (pdata)
+		_r_obj_dereference (pdata);
+
+	if (ptr_app)
 		_r_obj_dereference (ptr_app);
 
 	if (pblob)

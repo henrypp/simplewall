@@ -195,7 +195,7 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	SIZE_T index;
 	INT icon_id;
 	INT item_id;
-	LPCWSTR display_name;
+	PR_STRING nameString;
 	PR_STRING localAddressString;
 	PR_STRING localPortString;
 	PR_STRING remoteAddressString;
@@ -215,10 +215,10 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	if (!icon_id)
 		icon_id = config.icon_id;
 
-	display_name = (LPCWSTR)_app_getappinfo (ptr_log->app_hash, InfoName);
+	nameString = (PR_STRING)_app_getappinfo (ptr_log->app_hash, InfoName);
 
-	if (!display_name && !_r_str_isempty (ptr_log->path))
-		display_name = ptr_log->path->Buffer;
+	if (!nameString && !_r_str_isempty (ptr_log->path))
+		nameString = _r_obj_reference (ptr_log->path);
 
 	localAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, 0);
 	remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, 0);
@@ -230,7 +230,7 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 
 	item_id = _r_listview_getitemcount (hwnd, listview_id, FALSE);
 
-	_r_listview_additemex (hwnd, listview_id, item_id, 0, !_r_str_isempty (display_name) ? display_name : SZ_EMPTY, icon_id, I_GROUPIDNONE, index);
+	_r_listview_additemex (hwnd, listview_id, item_id, 0, _r_obj_getstringordefault (nameString, SZ_EMPTY), icon_id, I_GROUPIDNONE, index);
 	_r_listview_setitem (hwnd, listview_id, item_id, 1, _r_obj_getstringordefault (localAddressString, SZ_EMPTY));
 	_r_listview_setitem (hwnd, listview_id, item_id, 3, _r_obj_getstringordefault (remoteAddressString, SZ_EMPTY));
 	_r_listview_setitem (hwnd, listview_id, item_id, 5, _app_getprotoname (ptr_log->protocol, ptr_log->af, SZ_EMPTY));
@@ -245,6 +245,7 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	_r_listview_setitem (hwnd, listview_id, item_id, 7, _r_obj_getstringorempty (directionString));
 	_r_listview_setitem (hwnd, listview_id, item_id, 8, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
 
+	SAFE_DELETE_REFERENCE (nameString);
 	SAFE_DELETE_REFERENCE (localAddressString);
 	SAFE_DELETE_REFERENCE (remoteAddressString);
 	SAFE_DELETE_REFERENCE (localPortString);

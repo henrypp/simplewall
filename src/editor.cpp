@@ -997,15 +997,17 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						{
 							PR_STRING name = _r_ctrl_gettext (hpage_general, IDC_RULE_NAME_ID);
 
+							if (!name)
+								return FALSE;
+
+							_r_str_trim (name, DIVIDER_TRIM DIVIDER_RULE);
+
 							if (_r_str_isempty (name))
 							{
-								if (name)
-									_r_obj_dereference (name);
-
+								_r_obj_dereference (name);
 								return FALSE;
 							}
 
-							_r_str_trim (name, DIVIDER_TRIM DIVIDER_RULE);
 							_r_obj_movereference (&ptr_rule->name, name);
 						}
 
