@@ -169,7 +169,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	}
 
 	// get display name
-	_r_obj_movereference (&ptr_app->display_name, _app_getdisplayname (app_hash, ptr_app));
+	_r_obj_movereference (&ptr_app->display_name, _app_getdisplayname (app_hash, ptr_app, FALSE));
 
 	// get signature information
 	if (_r_config_getboolean (L"IsCertificatesEnabled", FALSE))

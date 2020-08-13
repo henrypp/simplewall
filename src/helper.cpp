@@ -467,17 +467,16 @@ VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, 
 	}
 }
 
-PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app)
+PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app, BOOLEAN is_shortened)
 {
-	PR_STRING string;
+	PR_STRING string = NULL;
 
 	if (ptr_app->type == DataAppService)
 	{
 		if (ptr_app->original_path)
 			return _r_obj_createstring2 (ptr_app->original_path);
 	}
-
-	if (ptr_app->type == DataAppUWP)
+	else if (ptr_app->type == DataAppUWP)
 	{
 		if (_app_item_get (ptr_app->type, app_hash, &string, NULL, NULL, NULL))
 		{
@@ -490,7 +489,7 @@ PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app)
 
 	if (string)
 	{
-		if (_r_config_getboolean (L"ShowFilenames", TRUE))
+		if (is_shortened || _r_config_getboolean (L"ShowFilenames", TRUE))
 			return _r_obj_createstring (_r_path_getbasename (_r_obj_getstring (string)));
 
 		return _r_obj_createstring2 (string);

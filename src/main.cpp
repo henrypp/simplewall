@@ -3654,7 +3654,7 @@ find_wrap:
 						SIZE_T app_hash = it->first;
 						PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
 
-						_r_obj_movereference (&ptr_app->display_name, _app_getdisplayname (app_hash, ptr_app));
+						_r_obj_movereference (&ptr_app->display_name, _app_getdisplayname (app_hash, ptr_app, FALSE));
 
 						INT listview_id = _app_getlistview_id (ptr_app->type);
 

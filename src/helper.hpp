@@ -31,7 +31,7 @@ VOID _app_freethreadpool (THREADS_VEC* ptr_vec);
 VOID _app_freelogstack ();
 
 VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, HICON* picon);
-PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app);
+PR_STRING _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app, BOOLEAN is_shortened);
 BOOLEAN _app_getfileicon (LPCWSTR path, BOOLEAN is_small, PINT picon_id, HICON* picon);
 PR_STRING _app_getsignatureinfo (SIZE_T app_hash, const PITEM_APP ptr_app);
 PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app);

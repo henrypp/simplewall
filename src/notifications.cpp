@@ -186,6 +186,7 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	WCHAR windowTitle[128];
 	WCHAR dateString[128];
 	PR_STRING signatureString = NULL;
+	PR_STRING nameString;
 	PR_STRING remoteAddressString;
 	PR_STRING remotePortString;
 	PR_STRING directionString;
@@ -221,6 +222,7 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, (LONG_PTR)ptr_log->hicon);
 
 	// print table text
+	nameString = _app_getdisplayname (ptr_log->app_hash, ptr_app, TRUE);
 	remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, FMTADDR_RESOLVE_HOST);
 	remotePortString = _app_formatport (ptr_log->remote_port, FALSE);
 	directionString = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE);
@@ -229,7 +231,7 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	_r_format_dateex (dateString, RTL_NUMBER_OF (dateString), ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", _r_locale_getstring (IDS_NAME)));
-	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, _r_obj_getstring (localizedString), IDC_FILE_TEXT, _r_path_getbasename (_r_obj_getstring (ptr_app->display_name)));
+	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, _r_obj_getstring (localizedString), IDC_FILE_TEXT, _r_obj_getstringordefault (nameString, emptyString));
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", _r_locale_getstring (IDS_SIGNATURE)));
 	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, _r_obj_getstring (localizedString), IDC_SIGNATURE_TEXT, _r_obj_getstringordefault (signatureString, emptyString));
@@ -282,6 +284,7 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
+	SAFE_DELETE_REFERENCE (nameString);
 	SAFE_DELETE_REFERENCE (signatureString);
 	SAFE_DELETE_REFERENCE (remoteAddressString);
 	SAFE_DELETE_REFERENCE (remotePortString);
