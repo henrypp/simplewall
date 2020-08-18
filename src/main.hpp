@@ -408,11 +408,11 @@ typedef struct tagITEM_NETWORK
 
 	PR_STRING path;
 	SIZE_T app_hash;
-	FWP_DIRECTION direction;
-	ADDRESS_FAMILY af;
 	DWORD state;
-	ENUM_TYPE_DATA type;
 	INT icon_id;
+	FWP_DIRECTION direction;
+	ENUM_TYPE_DATA type;
+	ADDRESS_FAMILY af;
 	UINT16 remote_port;
 	UINT16 local_port;
 	UINT8 protocol;
