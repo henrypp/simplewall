@@ -2189,139 +2189,100 @@ find_wrap:
 
 		case RM_LOCALIZE:
 		{
-			PR_STRING localizedString = NULL;
 			HMENU hmenu = GetMenu (hwnd);
 
 			if (hmenu)
 			{
-				_r_menu_setitemtext (hmenu, 0, _r_locale_getstring (IDS_FILE), TRUE);
-				_r_menu_setitemtext (hmenu, 1, _r_locale_getstring (IDS_EDIT), TRUE);
-				_r_menu_setitemtext (hmenu, 2, _r_locale_getstring (IDS_VIEW), TRUE);
-				_r_menu_setitemtext (hmenu, 3, _r_locale_getstring (IDS_TRAY_RULES), TRUE);
-				_r_menu_setitemtext (hmenu, 4, _r_locale_getstring (IDS_TRAY_BLOCKLIST_RULES), TRUE);
-				_r_menu_setitemtext (hmenu, 5, _r_locale_getstring (IDS_HELP), TRUE);
+				_r_menu_setitemtext (hmenu, 0, TRUE, _r_locale_getstring (IDS_FILE));
+				_r_menu_setitemtext (hmenu, 1, TRUE, _r_locale_getstring (IDS_EDIT));
+				_r_menu_setitemtext (hmenu, 2, TRUE, _r_locale_getstring (IDS_VIEW));
+				_r_menu_setitemtext (hmenu, 3, TRUE, _r_locale_getstring (IDS_TRAY_RULES));
+				_r_menu_setitemtext (hmenu, 4, TRUE, _r_locale_getstring (IDS_TRAY_BLOCKLIST_RULES));
+				_r_menu_setitemtext (hmenu, 5, TRUE, _r_locale_getstring (IDS_HELP));
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s...\tF2", _r_locale_getstring (IDS_SETTINGS)));
-				_r_menu_setitemtext (hmenu, IDM_SETTINGS, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtextformat (hmenu, IDM_SETTINGS, FALSE, L"%s...\tF2", _r_locale_getstring (IDS_SETTINGS));
+				_r_menu_setitemtextformat (hmenu, IDM_ADD_FILE, FALSE, L"%s...", _r_locale_getstring (IDS_ADD_FILE));
+				_r_menu_setitemtextformat (hmenu, IDM_IMPORT, FALSE, L"%s...\tCtrl+O", _r_locale_getstring (IDS_IMPORT));
+				_r_menu_setitemtextformat (hmenu, IDM_EXPORT, FALSE, L"%s...\tCtrl+S", _r_locale_getstring (IDS_EXPORT));
+				_r_menu_setitemtextformat (hmenu, IDM_EXIT, FALSE, _r_locale_getstring (IDS_EXIT));
+				_r_menu_setitemtextformat (hmenu, IDM_PURGE_UNUSED, FALSE, L"%s\tCtrl+Shift+X", _r_locale_getstring (IDS_PURGE_UNUSED));
+				_r_menu_setitemtextformat (hmenu, IDM_PURGE_TIMERS, FALSE, L"%s\tCtrl+Shift+T", _r_locale_getstring (IDS_PURGE_TIMERS));
+				_r_menu_setitemtextformat (hmenu, IDM_FIND, FALSE, L"%s\tCtrl+F", _r_locale_getstring (IDS_FIND));
+				_r_menu_setitemtextformat (hmenu, IDM_FINDNEXT, FALSE, L"%s\tF3", _r_locale_getstring (IDS_FINDNEXT));
+				_r_menu_setitemtextformat (hmenu, IDM_REFRESH, FALSE, L"%s\tF5", _r_locale_getstring (IDS_REFRESH));
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s...", _r_locale_getstring (IDS_ADD_FILE)));
-				_r_menu_setitemtext (hmenu, IDM_ADD_FILE, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_ALWAYSONTOP_CHK, FALSE, _r_locale_getstring (IDS_ALWAYSONTOP_CHK));
+				_r_menu_setitemtext (hmenu, IDM_SHOWFILENAMESONLY_CHK, FALSE, _r_locale_getstring (IDS_SHOWFILENAMESONLY_CHK));
+				_r_menu_setitemtext (hmenu, IDM_AUTOSIZECOLUMNS_CHK, FALSE, _r_locale_getstring (IDS_AUTOSIZECOLUMNS_CHK));
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s...\tCtrl+O", _r_locale_getstring (IDS_IMPORT)));
-				_r_menu_setitemtext (hmenu, IDM_IMPORT, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtext (GetSubMenu (hmenu, 2), 4, TRUE, _r_locale_getstring (IDS_ICONS));
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s...\tCtrl+S", _r_locale_getstring (IDS_EXPORT)));
-				_r_menu_setitemtext (hmenu, IDM_EXPORT, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_SIZE_SMALL, FALSE, _r_locale_getstring (IDS_ICONSSMALL));
+				_r_menu_setitemtext (hmenu, IDM_SIZE_LARGE, FALSE, _r_locale_getstring (IDS_ICONSLARGE));
+				_r_menu_setitemtext (hmenu, IDM_SIZE_EXTRALARGE, FALSE, _r_locale_getstring (IDS_ICONSEXTRALARGE));
 
-				_r_menu_setitemtext (hmenu, IDM_EXIT, _r_locale_getstring (IDS_EXIT), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_VIEW_ICON, FALSE, _r_locale_getstring (IDS_VIEW_ICON));
+				_r_menu_setitemtext (hmenu, IDM_VIEW_DETAILS, FALSE, _r_locale_getstring (IDS_VIEW_DETAILS));
+				_r_menu_setitemtext (hmenu, IDM_VIEW_TILE, FALSE, _r_locale_getstring (IDS_VIEW_TILE));
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s\tCtrl+Shift+X", _r_locale_getstring (IDS_PURGE_UNUSED)));
-				_r_menu_setitemtext (hmenu, IDM_PURGE_UNUSED, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_ICONSISHIDDEN, FALSE, _r_locale_getstring (IDS_ICONSISHIDDEN));
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s\tCtrl+Shift+T", _r_locale_getstring (IDS_PURGE_TIMERS)));
-				_r_menu_setitemtext (hmenu, IDM_PURGE_TIMERS, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtextformat (GetSubMenu (hmenu, 2), LANG_MENU, TRUE, L"%s (Language)", _r_locale_getstring (IDS_LANGUAGE));
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s\tCtrl+F", _r_locale_getstring (IDS_FIND)));
-				_r_menu_setitemtext (hmenu, IDM_FIND, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s\tF3", _r_locale_getstring (IDS_FINDNEXT)));
-				_r_menu_setitemtext (hmenu, IDM_FINDNEXT, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s\tF5", _r_locale_getstring (IDS_REFRESH)));
-				_r_menu_setitemtext (hmenu, IDM_REFRESH, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_menu_setitemtext (hmenu, IDM_ALWAYSONTOP_CHK, _r_locale_getstring (IDS_ALWAYSONTOP_CHK), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_SHOWFILENAMESONLY_CHK, _r_locale_getstring (IDS_SHOWFILENAMESONLY_CHK), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_AUTOSIZECOLUMNS_CHK, _r_locale_getstring (IDS_AUTOSIZECOLUMNS_CHK), FALSE);
-
-				_r_menu_setitemtext (GetSubMenu (hmenu, 2), 4, _r_locale_getstring (IDS_ICONS), TRUE);
-
-				_r_menu_setitemtext (hmenu, IDM_SIZE_SMALL, _r_locale_getstring (IDS_ICONSSMALL), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_SIZE_LARGE, _r_locale_getstring (IDS_ICONSLARGE), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_SIZE_EXTRALARGE, _r_locale_getstring (IDS_ICONSEXTRALARGE), FALSE);
-
-				_r_menu_setitemtext (hmenu, IDM_VIEW_ICON, _r_locale_getstring (IDS_VIEW_ICON), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_VIEW_DETAILS, _r_locale_getstring (IDS_VIEW_DETAILS), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_VIEW_TILE, _r_locale_getstring (IDS_VIEW_TILE), FALSE);
-
-				_r_menu_setitemtext (hmenu, IDM_ICONSISHIDDEN, _r_locale_getstring (IDS_ICONSISHIDDEN), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (Language)", _r_locale_getstring (IDS_LANGUAGE)));
-				_r_menu_setitemtext (GetSubMenu (hmenu, 2), LANG_MENU, _r_obj_getstringorempty (localizedString), TRUE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s...", _r_locale_getstring (IDS_FONT)));
-				_r_menu_setitemtext (hmenu, IDM_FONT, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtextformat (hmenu, IDM_FONT, FALSE, L"%s...", _r_locale_getstring (IDS_FONT));
 
 				LPCWSTR recommendedString = _r_locale_getstring (IDS_RECOMMENDED);
 
-				_r_menu_setitemtext (hmenu, IDM_CONNECTIONS_TITLE, _r_locale_getstring (IDS_TAB_NETWORK), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_SECURITY_TITLE, _r_locale_getstring (IDS_TITLE_SECURITY), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_ADVANCED_TITLE, _r_locale_getstring (IDS_TITLE_ADVANCED), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_CONNECTIONS_TITLE, FALSE, _r_locale_getstring (IDS_TAB_NETWORK));
+				_r_menu_setitemtext (hmenu, IDM_SECURITY_TITLE, FALSE, _r_locale_getstring (IDS_TITLE_SECURITY));
+				_r_menu_setitemtext (hmenu, IDM_ADVANCED_TITLE, FALSE, _r_locale_getstring (IDS_TITLE_ADVANCED));
 
 				_r_menu_enableitem (hmenu, IDM_CONNECTIONS_TITLE, MF_BYCOMMAND, FALSE);
 				_r_menu_enableitem (hmenu, IDM_SECURITY_TITLE, MF_BYCOMMAND, FALSE);
 				_r_menu_enableitem (hmenu, IDM_ADVANCED_TITLE, MF_BYCOMMAND, FALSE);
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_RULE_BLOCKOUTBOUND), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_RULE_BLOCKOUTBOUND, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtextformat (hmenu, IDM_RULE_BLOCKOUTBOUND, FALSE, L"%s (%s)", _r_locale_getstring (IDS_RULE_BLOCKOUTBOUND), recommendedString);
+				_r_menu_setitemtextformat (hmenu, IDM_RULE_BLOCKINBOUND, FALSE, L"%s (%s)", _r_locale_getstring (IDS_RULE_BLOCKINBOUND), recommendedString);
+				_r_menu_setitemtextformat (hmenu, IDM_RULE_ALLOWLOOPBACK, FALSE, L"%s (%s)", _r_locale_getstring (IDS_RULE_ALLOWLOOPBACK), recommendedString);
+				_r_menu_setitemtextformat (hmenu, IDM_RULE_ALLOW6TO4, FALSE, L"%s (%s)", _r_locale_getstring (IDS_RULE_ALLOW6TO4), recommendedString);
+				_r_menu_setitemtextformat (hmenu, IDM_SECUREFILTERS_CHK, FALSE, L"%s (%s)", _r_locale_getstring (IDS_SECUREFILTERS_CHK), recommendedString);
+				_r_menu_setitemtextformat (hmenu, IDM_USESTEALTHMODE_CHK, FALSE, L"%s (%s)", _r_locale_getstring (IDS_USESTEALTHMODE_CHK), recommendedString);
+				_r_menu_setitemtextformat (hmenu, IDM_INSTALLBOOTTIMEFILTERS_CHK, FALSE, L"%s (%s)", _r_locale_getstring (IDS_INSTALLBOOTTIMEFILTERS_CHK), recommendedString);
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_RULE_BLOCKINBOUND), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_RULE_BLOCKINBOUND, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_USENETWORKRESOLUTION_CHK, FALSE, _r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK));
+				_r_menu_setitemtext (hmenu, IDM_USECERTIFICATES_CHK, FALSE, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
+				_r_menu_setitemtextformat (hmenu, IDM_USEREFRESHDEVICES_CHK, FALSE, L"%s (%s)", _r_locale_getstring (IDS_USEREFRESHDEVICES_CHK), recommendedString);
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_RULE_ALLOWLOOPBACK), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_RULE_ALLOWLOOPBACK, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_RULE_ALLOW6TO4), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_RULE_ALLOW6TO4, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_SECUREFILTERS_CHK), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_SECUREFILTERS_CHK, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_USESTEALTHMODE_CHK), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_USESTEALTHMODE_CHK, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_INSTALLBOOTTIMEFILTERS_CHK), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_INSTALLBOOTTIMEFILTERS_CHK, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_menu_setitemtext (hmenu, IDM_USENETWORKRESOLUTION_CHK, _r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_USECERTIFICATES_CHK, _r_locale_getstring (IDS_USECERTIFICATES_CHK), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_USEREFRESHDEVICES_CHK), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_USEREFRESHDEVICES_CHK, _r_obj_getstringorempty (localizedString), FALSE);
-
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_TITLE, _r_locale_getstring (IDS_BLOCKLIST_SPY), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, _r_locale_getstring (IDS_BLOCKLIST_UPDATE), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, _r_locale_getstring (IDS_BLOCKLIST_EXTRA), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_TITLE, FALSE, _r_locale_getstring (IDS_BLOCKLIST_SPY));
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, FALSE, _r_locale_getstring (IDS_BLOCKLIST_UPDATE));
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, FALSE, _r_locale_getstring (IDS_BLOCKLIST_EXTRA));
 
 				_r_menu_enableitem (hmenu, IDM_BLOCKLIST_SPY_TITLE, MF_BYCOMMAND, FALSE);
 				_r_menu_enableitem (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, MF_BYCOMMAND, FALSE);
 				_r_menu_enableitem (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, MF_BYCOMMAND, FALSE);
 
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_DISABLE, _r_locale_getstring (IDS_DISABLE), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_DISABLE, FALSE, _r_locale_getstring (IDS_DISABLE));
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_ALLOW, FALSE, _r_locale_getstring (IDS_ACTION_ALLOW));
+				_r_menu_setitemtextformat (hmenu, IDM_BLOCKLIST_SPY_BLOCK, FALSE, L"%s (%s)", _r_locale_getstring (IDS_ACTION_BLOCK), recommendedString);
+				_r_menu_setitemtextformat (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, FALSE, L"%s (%s)", _r_locale_getstring (IDS_DISABLE), recommendedString);
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_ACTION_BLOCK), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_BLOCK, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_ALLOW, FALSE, _r_locale_getstring (IDS_ACTION_ALLOW));
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_BLOCK, FALSE, _r_locale_getstring (IDS_ACTION_BLOCK));
 
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_DISABLE), recommendedString));
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtextformat (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, FALSE, L"%s (%s)", _r_locale_getstring (IDS_DISABLE), recommendedString);
 
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_BLOCK, _r_locale_getstring (IDS_ACTION_BLOCK), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_ALLOW, FALSE, _r_locale_getstring (IDS_ACTION_ALLOW));
+				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_BLOCK, FALSE, _r_locale_getstring (IDS_ACTION_BLOCK));
 
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtext (hmenu, IDM_WEBSITE, FALSE, _r_locale_getstring (IDS_WEBSITE));
+				_r_menu_setitemtext (hmenu, IDM_CHECKUPDATES, FALSE, _r_locale_getstring (IDS_CHECKUPDATES));
 
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_BLOCK, _r_locale_getstring (IDS_ACTION_BLOCK), FALSE);
-
-				_r_menu_setitemtext (hmenu, IDM_WEBSITE, _r_locale_getstring (IDS_WEBSITE), FALSE);
-				_r_menu_setitemtext (hmenu, IDM_CHECKUPDATES, _r_locale_getstring (IDS_CHECKUPDATES), FALSE);
-
-				_r_obj_movereference (&localizedString, _r_format_string (L"%s\tF1", _r_locale_getstring (IDS_ABOUT)));
-				_r_menu_setitemtext (hmenu, IDM_ABOUT, _r_obj_getstringorempty (localizedString), FALSE);
+				_r_menu_setitemtextformat (hmenu, IDM_ABOUT, FALSE, L"%s\tF1", _r_locale_getstring (IDS_ABOUT));
 
 				_r_locale_enum ((HWND)GetSubMenu (hmenu, 2), LANG_MENU, IDX_LANGUAGE); // enum localizations
 			}
+
+			PR_STRING localizedString = NULL;
 
 			// localize toolbar
 			_app_setinterfacestate (hwnd);
@@ -3182,53 +3143,49 @@ find_wrap:
 #define NOTIFICATIONS_ID 4
 #define LOGGING_ID 5
 #define ERRLOG_ID 6
-					PR_STRING localizedString = NULL;
-
 					HMENU hmenu = LoadMenu (NULL, MAKEINTRESOURCE (IDM_TRAY));
 					HMENU hsubmenu = GetSubMenu (hmenu, 0);
 
 					BOOLEAN is_filtersinstalled = (_wfp_isfiltersinstalled () != InstallDisabled);
 
-					_r_menu_setitembitmap (hsubmenu, IDM_TRAY_START, is_filtersinstalled ? config.hbmp_disable : config.hbmp_enable, FALSE);
+					_r_menu_setitembitmap (hsubmenu, IDM_TRAY_START, FALSE, is_filtersinstalled ? config.hbmp_disable : config.hbmp_enable);
 
 					// localize
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_SHOW, _r_locale_getstring (IDS_TRAY_SHOW), FALSE);
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_START, _r_locale_getstring (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START), FALSE);
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_SHOW, FALSE, _r_locale_getstring (IDS_TRAY_SHOW));
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_START, FALSE, _r_locale_getstring (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START));
 
-					_r_menu_setitemtext (hsubmenu, NOTIFICATIONS_ID, _r_locale_getstring (IDS_TITLE_NOTIFICATIONS), TRUE);
-					_r_menu_setitemtext (hsubmenu, LOGGING_ID, _r_locale_getstring (IDS_TITLE_LOGGING), TRUE);
+					_r_menu_setitemtext (hsubmenu, NOTIFICATIONS_ID, TRUE, _r_locale_getstring (IDS_TITLE_NOTIFICATIONS));
+					_r_menu_setitemtext (hsubmenu, LOGGING_ID, TRUE, _r_locale_getstring (IDS_TITLE_LOGGING));
 
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, _r_locale_getstring (IDS_ENABLENOTIFICATIONS_CHK), FALSE);
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, _r_locale_getstring (IDS_NOTIFICATIONSOUND_CHK), FALSE);
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_locale_getstring (IDS_NOTIFICATIONFULLSCREENSILENTMODE_CHK), FALSE);
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, _r_locale_getstring (IDS_NOTIFICATIONONTRAY_CHK), FALSE);
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, FALSE, _r_locale_getstring (IDS_ENABLENOTIFICATIONS_CHK));
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, FALSE, _r_locale_getstring (IDS_NOTIFICATIONSOUND_CHK));
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_NOTIFICATIONFULLSCREENSILENTMODE_CHK, FALSE, _r_locale_getstring (IDS_NOTIFICATIONFULLSCREENSILENTMODE_CHK));
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, FALSE, _r_locale_getstring (IDS_NOTIFICATIONONTRAY_CHK));
 
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ENABLELOG_CHK, _r_locale_getstring (IDS_ENABLELOG_CHK), FALSE);
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ENABLELOG_CHK, FALSE, _r_locale_getstring (IDS_ENABLELOG_CHK));
 
-					_r_obj_movereference (&localizedString, _r_format_string (L"%s (session only)", _r_locale_getstring (IDS_ENABLEUILOG_CHK)));
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ENABLEUILOG_CHK, _r_obj_getstringorempty (localizedString), FALSE);
+					_r_menu_setitemtextformat (hsubmenu, IDM_TRAY_ENABLEUILOG_CHK, FALSE, L"%s (session only)", _r_locale_getstring (IDS_ENABLEUILOG_CHK));
 
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGSHOW, _r_locale_getstring (IDS_LOGSHOW), FALSE);
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGCLEAR, _r_locale_getstring (IDS_LOGCLEAR), FALSE);
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGSHOW, FALSE, _r_locale_getstring (IDS_LOGSHOW));
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGCLEAR, FALSE, _r_locale_getstring (IDS_LOGCLEAR));
 
 					if (_r_fs_exists (_r_app_getlogpath ()))
 					{
-						_r_menu_setitemtext (hsubmenu, ERRLOG_ID, _r_locale_getstring (IDS_TRAY_LOGERR), TRUE);
+						_r_menu_setitemtext (hsubmenu, ERRLOG_ID, TRUE, _r_locale_getstring (IDS_TRAY_LOGERR));
 
-						_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGSHOW_ERR, _r_locale_getstring (IDS_LOGSHOW), FALSE);
-						_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGCLEAR_ERR, _r_locale_getstring (IDS_LOGCLEAR), FALSE);
+						_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGSHOW_ERR, FALSE, _r_locale_getstring (IDS_LOGSHOW));
+						_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGCLEAR_ERR, FALSE, _r_locale_getstring (IDS_LOGCLEAR));
 					}
 					else
 					{
 						DeleteMenu (hsubmenu, ERRLOG_ID, MF_BYPOSITION);
 					}
 
-					_r_obj_movereference (&localizedString, _r_format_string (L"%s...", _r_locale_getstring (IDS_SETTINGS)));
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_SETTINGS, _r_obj_getstringorempty (localizedString), FALSE);
+					_r_menu_setitemtextformat (hsubmenu, IDM_TRAY_SETTINGS, FALSE, L"%s...", _r_locale_getstring (IDS_SETTINGS));
 
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_WEBSITE, _r_locale_getstring (IDS_WEBSITE), FALSE);
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ABOUT, _r_locale_getstring (IDS_ABOUT), FALSE);
-					_r_menu_setitemtext (hsubmenu, IDM_TRAY_EXIT, _r_locale_getstring (IDS_EXIT), FALSE);
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_WEBSITE, FALSE, _r_locale_getstring (IDS_WEBSITE));
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_ABOUT, FALSE, _r_locale_getstring (IDS_ABOUT));
+					_r_menu_setitemtext (hsubmenu, IDM_TRAY_EXIT, FALSE, _r_locale_getstring (IDS_EXIT));
 
 					_r_menu_checkitem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNotificationsEnabled", TRUE));
 					_r_menu_checkitem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNotificationsSound", TRUE));
@@ -3256,8 +3213,6 @@ find_wrap:
 					_r_menu_popup (hsubmenu, hwnd, NULL, TRUE);
 
 					DestroyMenu (hmenu);
-
-					SAFE_DELETE_REFERENCE (localizedString);
 
 					break;
 				}
