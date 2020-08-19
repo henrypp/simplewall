@@ -278,6 +278,7 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 		is_forced = FALSE;
 
 	InvalidateRect (GetDlgItem (hwnd, IDC_HEADER_ID), NULL, TRUE);
+	InvalidateRect (GetDlgItem (hwnd, IDC_FILE_TEXT), NULL, TRUE);
 	InvalidateRect (hwnd, NULL, TRUE);
 
 	_r_wnd_top (hwnd, !is_fullscreenmode);
@@ -642,12 +643,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			INT ctrl_id = GetDlgCtrlID ((HWND)lparam);
 
 			SetBkMode (hdc, TRANSPARENT); // HACK!!!
-
-			if (ctrl_id == IDC_FILE_TEXT)
-				SetTextColor (hdc, GetSysColor (COLOR_HIGHLIGHT));
-
-			else
-				SetTextColor (hdc, GetSysColor (COLOR_WINDOWTEXT));
+			SetTextColor (hdc, GetSysColor ((ctrl_id == IDC_FILE_TEXT) ? COLOR_HIGHLIGHT : COLOR_WINDOWTEXT));
 
 			return (INT_PTR)GetSysColorBrush (COLOR_WINDOW);
 		}
