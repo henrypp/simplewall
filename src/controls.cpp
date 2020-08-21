@@ -620,8 +620,6 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 				else if (listview_id == IDC_LOG)
 				{
 					app_hash = _app_getlogapp (lpnmlv->nmcd.lItemlParam);
-
-					is_validconnection = _app_isapphaveconnection (app_hash);
 				}
 				else
 				{
