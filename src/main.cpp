@@ -1101,17 +1101,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					break;
 				}
-
-				case LVN_GETEMPTYMARKUP:
-				{
-					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
-
-					lpnmlv->dwFlags = EMF_CENTERED;
-					_r_str_copy (lpnmlv->szMarkup, RTL_NUMBER_OF (lpnmlv->szMarkup), _r_locale_getstring (IDS_STATUS_EMPTY));
-
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-					return TRUE;
-				}
 			}
 
 			break;
@@ -2397,8 +2386,6 @@ find_wrap:
 					_r_listview_setcolumn (hwnd, listview_id, 7, _r_locale_getstring (IDS_DIRECTION), 0);
 					_r_listview_setcolumn (hwnd, listview_id, 8, _r_locale_getstring (IDS_STATE), 0);
 				}
-
-				SendDlgItemMessage (hwnd, listview_id, LVM_RESETEMPTYTEXT, 0, 0);
 			}
 
 			INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
@@ -2813,17 +2800,6 @@ find_wrap:
 					}
 
 					break;
-				}
-
-				case LVN_GETEMPTYMARKUP:
-				{
-					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
-
-					lpnmlv->dwFlags = EMF_CENTERED;
-					_r_str_copy (lpnmlv->szMarkup, RTL_NUMBER_OF (lpnmlv->szMarkup), _r_locale_getstring (IDS_STATUS_EMPTY));
-
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-					return TRUE;
 				}
 
 				case NM_DBLCLK:

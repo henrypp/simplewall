@@ -688,17 +688,6 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 					break;
 				}
-
-				case LVN_GETEMPTYMARKUP:
-				{
-					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
-
-					lpnmlv->dwFlags = EMF_CENTERED;
-					_r_str_copy (lpnmlv->szMarkup, RTL_NUMBER_OF (lpnmlv->szMarkup), _r_locale_getstring (IDS_STATUS_EMPTY));
-
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-					return TRUE;
-				}
 			}
 
 			break;
