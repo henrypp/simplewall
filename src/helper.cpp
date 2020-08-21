@@ -638,107 +638,114 @@ PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 	if (_r_str_isempty (ptr_app->real_path))
 		return NULL;
 
+	HINSTANCE hlib = NULL;
+	HRSRC hres = NULL;
+	HGLOBAL hglob = NULL;
 	PR_STRING versionCacheString = NULL;
 
 	if (cache_versions.find (app_hash) != cache_versions.end ())
 	{
-		PR_STRING pdata = cache_versions.at (app_hash);
+		versionCacheString = cache_versions.at (app_hash);
 
-		if (pdata)
-			versionCacheString = _r_obj_reference (pdata);
+		goto CleanupExit;
 	}
-	else
+
+	cache_versions.emplace (app_hash, (PR_STRING)NULL);
+
+	hlib = LoadLibraryEx (ptr_app->real_path->Buffer, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
+
+	if (!hlib)
+		goto CleanupExit;
+
+	hres = FindResource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION);
+
+	if (!hres)
+		goto CleanupExit;
+
+	hglob = LoadResource (hlib, hres);
+
+	if (!hglob)
+		goto CleanupExit;
+
+	PVOID versionInfo = LockResource (hglob);
+
+	if (versionInfo)
 	{
-		cache_versions[app_hash] = NULL;
+		versionCacheString = _r_obj_createstringbuilder ();
 
-		HINSTANCE hlib = LoadLibraryEx (ptr_app->real_path->Buffer, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
+		PVOID buffer;
+		ULONG langId;
+		UINT length;
 
-		if (hlib)
+		WCHAR authorEntry[128];
+		WCHAR descriptionEntry[128];
+
+		if (VerQueryValue (versionInfo, L"\\VarFileInfo\\Translation", &buffer, &length) && length == 4)
 		{
-			HRSRC hres = FindResource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION);
+			RtlCopyMemory (&langId, buffer, length);
 
-			if (hres)
+			_r_str_printf (authorEntry, RTL_NUMBER_OF (authorEntry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langId & 0xff00) >> 8, langId & 0xff, (langId & 0xff000000) >> 24, (langId & 0xff0000) >> 16);
+			_r_str_printf (descriptionEntry, RTL_NUMBER_OF (descriptionEntry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langId & 0xff00) >> 8, langId & 0xff, (langId & 0xff000000) >> 24, (langId & 0xff0000) >> 16);
+		}
+		else
+		{
+			_r_str_printf (authorEntry, RTL_NUMBER_OF (authorEntry), L"\\StringFileInfo\\%04X04B0\\CompanyName", GetUserDefaultLangID ());
+			_r_str_printf (descriptionEntry, RTL_NUMBER_OF (descriptionEntry), L"\\StringFileInfo\\%04X04B0\\FileDescription", GetUserDefaultLangID ());
+		}
+
+		if (VerQueryValue (versionInfo, descriptionEntry, &buffer, &length))
+		{
+			_r_string_appendformat (&versionCacheString, SZ_TAB L"%s", buffer);
+
+			VS_FIXEDFILEINFO* verInfo;
+
+			if (VerQueryValue (versionInfo, L"\\", (PVOID*)&verInfo, &length))
 			{
-				HGLOBAL hglob = LoadResource (hlib, hres);
+				_r_string_appendformat (&versionCacheString, L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS));
 
-				if (hglob)
+				if (HIWORD (verInfo->dwFileVersionLS) || LOWORD (verInfo->dwFileVersionLS))
 				{
-					PVOID versionInfo = LockResource (hglob);
+					_r_string_appendformat (&versionCacheString, L".%d", HIWORD (verInfo->dwFileVersionLS));
 
-					if (versionInfo)
-					{
-						versionCacheString = _r_obj_createstringbuilder ();
-
-						PVOID buffer;
-						ULONG langId;
-						UINT length;
-
-						WCHAR authorEntry[128];
-						WCHAR descriptionEntry[128];
-
-						if (VerQueryValue (versionInfo, L"\\VarFileInfo\\Translation", &buffer, &length) && length == 4)
-						{
-							RtlCopyMemory (&langId, buffer, length);
-
-							_r_str_printf (authorEntry, RTL_NUMBER_OF (authorEntry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (langId & 0xff00) >> 8, langId & 0xff, (langId & 0xff000000) >> 24, (langId & 0xff0000) >> 16);
-							_r_str_printf (descriptionEntry, RTL_NUMBER_OF (descriptionEntry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (langId & 0xff00) >> 8, langId & 0xff, (langId & 0xff000000) >> 24, (langId & 0xff0000) >> 16);
-						}
-						else
-						{
-							_r_str_printf (authorEntry, RTL_NUMBER_OF (authorEntry), L"\\StringFileInfo\\%04X04B0\\CompanyName", GetUserDefaultLangID ());
-							_r_str_printf (descriptionEntry, RTL_NUMBER_OF (descriptionEntry), L"\\StringFileInfo\\%04X04B0\\FileDescription", GetUserDefaultLangID ());
-						}
-
-						if (VerQueryValue (versionInfo, descriptionEntry, &buffer, &length))
-						{
-							_r_string_appendformat (&versionCacheString, SZ_TAB L"%s", buffer);
-
-							VS_FIXEDFILEINFO* verInfo;
-
-							if (VerQueryValue (versionInfo, L"\\", (PVOID*)&verInfo, &length))
-							{
-								_r_string_appendformat (&versionCacheString, L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS));
-
-								if (HIWORD (verInfo->dwFileVersionLS) || LOWORD (verInfo->dwFileVersionLS))
-								{
-									_r_string_appendformat (&versionCacheString, L".%d", HIWORD (verInfo->dwFileVersionLS));
-
-									if (LOWORD (verInfo->dwFileVersionLS))
-										_r_string_appendformat (&versionCacheString, L".%d", LOWORD (verInfo->dwFileVersionLS));
-								}
-							}
-
-							_r_string_append (&versionCacheString, L"\r\n");
-						}
-
-						if (VerQueryValue (versionInfo, authorEntry, &buffer, &length))
-						{
-							_r_string_appendformat (&versionCacheString, SZ_TAB L"%s\r\n", buffer);
-						}
-
-						_r_str_trim (versionCacheString, DIVIDER_TRIM);
-
-						if (_r_str_isempty (versionCacheString))
-						{
-							_r_obj_clearreference (&versionCacheString);
-						}
-						else
-						{
-							_app_freestrings_map (&cache_versions, MAP_CACHE_MAX);
-
-							cache_versions.insert_or_assign (app_hash, _r_obj_reference (versionCacheString));
-						}
-					}
-
-					FreeResource (hglob);
+					if (LOWORD (verInfo->dwFileVersionLS))
+						_r_string_appendformat (&versionCacheString, L".%d", LOWORD (verInfo->dwFileVersionLS));
 				}
 			}
 
-			FreeLibrary (hlib);
+			_r_string_append (&versionCacheString, L"\r\n");
 		}
+
+		if (VerQueryValue (versionInfo, authorEntry, &buffer, &length))
+		{
+			_r_string_appendformat (&versionCacheString, SZ_TAB L"%s\r\n", buffer);
+		}
+
+		_r_str_trim (versionCacheString, DIVIDER_TRIM);
+
+		if (_r_str_isempty (versionCacheString))
+		{
+			_r_obj_clearreference (&versionCacheString);
+
+			goto CleanupExit;
+		}
+
+		_app_freestrings_map (&cache_versions, MAP_CACHE_MAX);
+
+		cache_versions.insert_or_assign (app_hash, versionCacheString);
 	}
 
-	return versionCacheString;
+CleanupExit:
+
+	if (hglob)
+		FreeResource (hglob);
+
+	if (hlib)
+		FreeLibrary (hlib);
+
+	if (versionCacheString)
+		return _r_obj_reference (versionCacheString);
+
+	return NULL;
 }
 
 LPCWSTR _app_getservicename (UINT16 port, LPCWSTR default_value)
@@ -2697,7 +2704,7 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 				}
 				else
 				{
-					_r_str_copy (dnsString, dnsLength, _r_obj_getstringorempty (hostString));
+					_r_str_copy (dnsString, dnsLength, hostString->Buffer);
 
 					_app_freestrings_map (&cache_dns, MAP_CACHE_MAX);
 
