@@ -548,20 +548,20 @@ PR_STRING _app_getsignatureinfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 	if (_r_str_isempty (ptr_app->real_path) || (ptr_app->type != DataAppRegular && ptr_app->type != DataAppService && ptr_app->type != DataAppUWP))
 		return NULL;
 
+	HANDLE hfile = NULL;
 	PR_STRING signatureCacheString = NULL;
 
 	if (cache_signatures.find (app_hash) != cache_signatures.end ())
 	{
-		PR_STRING pdata = cache_signatures.at (app_hash);
+		signatureCacheString = cache_signatures.at (app_hash);
 
-		if (pdata)
-			signatureCacheString = _r_obj_reference (pdata);
+		goto CleanupExit;
 	}
 	else
 	{
-		cache_signatures[app_hash] = NULL;
+		cache_signatures.emplace (app_hash, (PR_STRING)NULL);
 
-		HANDLE hfile = CreateFile (ptr_app->real_path->Buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+		hfile = CreateFile (ptr_app->real_path->Buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 		if (_r_fs_isvalidhandle (hfile))
 		{
@@ -583,9 +583,8 @@ PR_STRING _app_getsignatureinfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 			trustData.pFile = &fileInfo;
 
 			trustData.dwStateAction = WTD_STATEACTION_VERIFY;
-			LONG status = WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trustData);
 
-			if (status == S_OK)
+			if (WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trustData) == ERROR_SUCCESS)
 			{
 				PCRYPT_PROVIDER_DATA provData = WTHelperProvDataFromStateData (trustData.hWVTStateData);
 
@@ -599,17 +598,17 @@ PR_STRING _app_getsignatureinfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 
 						if (psProvCert)
 						{
-							DWORD num_chars = CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, NULL, 0);
+							ULONG num_chars = CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, NULL, 0) - 1;
 
 							if (num_chars)
 							{
 								signatureCacheString = _r_obj_createstringex (NULL, num_chars * sizeof (WCHAR));
 
-								if (CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, signatureCacheString->Buffer, num_chars))
+								if (CertGetNameString (psProvCert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, signatureCacheString->Buffer, num_chars + 1))
 								{
 									_app_freestrings_map (&cache_signatures, MAP_CACHE_MAX);
 
-									cache_signatures.insert_or_assign (app_hash, _r_obj_reference (signatureCacheString));
+									cache_signatures.insert_or_assign (app_hash, signatureCacheString);
 								}
 								else
 								{
@@ -623,14 +622,20 @@ PR_STRING _app_getsignatureinfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 
 			trustData.dwStateAction = WTD_STATEACTION_CLOSE;
 			WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trustData);
-
-			CloseHandle (hfile);
 		}
 	}
 
+CleanupExit:
+
+	if (_r_fs_isvalidhandle (hfile))
+		CloseHandle (hfile);
+
 	ptr_app->is_signed = !_r_str_isempty (signatureCacheString);
 
-	return signatureCacheString;
+	if (signatureCacheString)
+		return _r_obj_reference (signatureCacheString);
+
+	return NULL;
 }
 
 PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
