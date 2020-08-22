@@ -50,7 +50,6 @@ inline OBJECTS_RULE_CONFIG_MAP rules_config;
 inline OBJECTS_NETWORK_MAP network_map;
 inline OBJECTS_LOG_VECTOR log_arr;
 
-inline OBJECTS_STRINGS_MAP cache_arpa;
 inline OBJECTS_STRINGS_MAP cache_signatures;
 inline OBJECTS_STRINGS_MAP cache_versions;
 inline OBJECTS_STRINGS_MAP cache_dns;

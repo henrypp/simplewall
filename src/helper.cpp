@@ -68,51 +68,36 @@ VOID NTAPI _app_dereferenceruleconfig (PVOID pdata)
 
 PR_STRING _app_resolveaddress (ADDRESS_FAMILY af, LPCVOID paddr)
 {
-	PR_STRING arpaString = _app_formataddress (af, 0, paddr, 0, FMTADDR_AS_ARPA);
-	PR_STRING domainString = NULL;
+	PDNS_RECORD ppQueryResultsSet;
+	PR_STRING string;
+	PR_STRING arpaString;
+	DNS_STATUS dnsStatus;
 
-	if (arpaString)
+	string = NULL;
+	arpaString = _app_formataddress (af, 0, paddr, 0, FMTADDR_AS_ARPA);
+
+	if (!arpaString)
+		goto CleanupExit;
+
+	dnsStatus = DnsQuery (arpaString->Buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
+
+	if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR)
 	{
-		SIZE_T arpa_hash = _r_str_hash (arpaString);
-		BOOLEAN is_exists = cache_arpa.find (arpa_hash) != cache_arpa.end ();
-
-		if (is_exists)
+		if (ppQueryResultsSet)
 		{
-			PR_STRING pdata = cache_arpa[arpa_hash];
+			if (!_r_str_isempty (ppQueryResultsSet->Data.PTR.pNameHost))
+				string = _r_obj_createstring (ppQueryResultsSet->Data.PTR.pNameHost);
 
-			if (pdata)
-				domainString = _r_obj_reference (pdata);
-		}
-		else
-		{
-			cache_arpa[arpa_hash] = NULL;
-
-			PDNS_RECORD ppQueryResultsSet = NULL;
-			DNS_STATUS dnsStatus = DnsQuery (_r_obj_getstring (arpaString), DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
-
-			if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR)
-			{
-				if (ppQueryResultsSet)
-				{
-					if (!_r_str_isempty (ppQueryResultsSet->Data.PTR.pNameHost))
-					{
-						domainString = _r_obj_createstring (ppQueryResultsSet->Data.PTR.pNameHost);
-						PR_STRING arpaCacheString = _r_obj_createstring2 (domainString);
-
-						_app_freestrings_map (&cache_arpa, MAP_CACHE_MAX);
-
-						cache_arpa[arpa_hash] = arpaCacheString;
-					}
-
-					DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
-				}
-			}
+			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
 		}
 	}
 
-	SAFE_DELETE_REFERENCE (arpaString);
+CleanupExit:
 
-	return domainString;
+	if (arpaString)
+		_r_obj_dereference (arpaString);
+
+	return string;
 }
 
 PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UINT16 port, DWORD flags)
@@ -174,34 +159,30 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 	{
 		if (is_success && _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 		{
+			PR_STRING domainString;
 			SIZE_T addr_hash = _r_str_hash (formatted_address);
-			BOOLEAN is_exists = cache_hosts.find (addr_hash) != cache_hosts.end ();
 
-			if (is_exists)
+			if (cache_hosts.find (addr_hash) != cache_hosts.end ())
 			{
-				PR_STRING pdata = cache_hosts[addr_hash];
-
-				if (pdata)
-				{
-					PR_STRING addressString = _r_obj_reference (pdata);
-
-					_r_str_appendformat (formatted_address, RTL_NUMBER_OF (formatted_address), L" (%s)", _r_obj_getstring (addressString));
-					_r_obj_dereference (addressString);
-				}
+				domainString = cache_hosts.at (addr_hash);
 			}
 			else
 			{
-				cache_hosts[addr_hash] = NULL;
+				cache_hosts.emplace (addr_hash, (PR_STRING)NULL);
 
-				PR_STRING domainString = _app_resolveaddress (af, paddr);
+				domainString = _app_resolveaddress (af, paddr);
 
 				if (domainString)
 				{
 					_app_freestrings_map (&cache_hosts, MAP_CACHE_MAX);
 
-					_r_str_appendformat (formatted_address, RTL_NUMBER_OF (formatted_address), L" (%s)", _r_obj_getstring (domainString));
-					_r_obj_movereference (&cache_hosts[addr_hash], domainString);
+					cache_hosts.insert_or_assign (addr_hash, domainString);
 				}
+			}
+
+			if (domainString)
+			{
+				_r_str_appendformat (formatted_address, RTL_NUMBER_OF (formatted_address), L" (%s)", domainString->Buffer);
 			}
 		}
 	}
@@ -2551,12 +2532,12 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	string = _r_obj_createstringbuilder ();
 
 	// ipv4 address
-	DNS_STATUS dnsStatus = DnsQuery (hostname, DNS_TYPE_A, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
+	DNS_STATUS code = DnsQuery (hostname, DNS_TYPE_A, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
 
-	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
+	if (code != DNS_ERROR_RCODE_NO_ERROR)
 	{
-		if (dnsStatus != DNS_INFO_NO_RECORDS)
-			_r_logerror (0, L"DnsQuery (DNS_TYPE_A)", dnsStatus, hostname);
+		if (code != DNS_INFO_NO_RECORDS)
+			_r_logerror (0, L"DnsQuery (DNS_TYPE_A)", code, hostname);
 	}
 	else
 	{
@@ -2587,12 +2568,12 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	}
 
 	// ipv6 address
-	dnsStatus = DnsQuery (hostname, DNS_TYPE_AAAA, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
+	code = DnsQuery (hostname, DNS_TYPE_AAAA, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
 
-	if (dnsStatus != DNS_ERROR_RCODE_NO_ERROR)
+	if (code != DNS_ERROR_RCODE_NO_ERROR)
 	{
-		if (dnsStatus != DNS_INFO_NO_RECORDS)
-			_r_logerror (0, L"DnsQuery (DNS_TYPE_AAAA)", dnsStatus, hostname);
+		if (code != DNS_INFO_NO_RECORDS)
+			_r_logerror (0, L"DnsQuery (DNS_TYPE_AAAA)", code, hostname);
 	}
 	else
 	{
@@ -2687,17 +2668,13 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 
 				if (cache_dns.find (dns_hash) != cache_dns.end ())
 				{
-					PR_STRING pdata = cache_dns.at (dns_hash);
+					PR_STRING dnsCacheString = cache_dns.at (dns_hash);
 
-					if (pdata)
+					if (dnsCacheString)
 					{
-						PR_STRING dnsCacheString = _r_obj_reference (pdata);
+						_r_str_copy (dnsString, dnsLength, dnsCacheString->Buffer);
 
-						_r_str_copy (dnsString, dnsLength, _r_obj_getstring (dnsCacheString));
-
-						_r_obj_dereference (dnsCacheString);
-
-						return !_r_str_isempty (dnsString);
+						return TRUE;
 					}
 				}
 
@@ -2758,11 +2735,10 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 	// auto-parse rule type
 	{
 		SIZE_T rule_hash = _r_str_hash (rule);
-		BOOLEAN is_exists = cache_types.find (rule_hash) != cache_types.end ();
 
-		if (is_exists)
+		if (cache_types.find (rule_hash) != cache_types.end ())
 		{
-			type = cache_types[rule_hash];
+			type = cache_types.at (rule_hash);
 		}
 		else
 		{
@@ -2784,7 +2760,7 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 				if (cache_types.size () >= MAP_CACHE_MAX)
 					cache_types.clear ();
 
-				cache_types.emplace (rule_hash, type);
+				cache_types.insert_or_assign (rule_hash, type);
 			}
 		}
 	}
