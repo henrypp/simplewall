@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--Internal rules for simplewall-->
 <!--Minimum required version is 3.0.2-->
-<root timestamp="1596439235" type="4" version="3">
+<root timestamp="1598206206" type="4" version="3">
 	<rules_system>
 		<item name="DHCP" rule="67;547" rule_local="68;546" dir="2" protocol="17" is_services="true" is_enabled="true" />
 		<item name="DNS" rule="53" protocol="17" is_services="true" is_enabled="true" />
@@ -16,6 +16,7 @@
 		<item name="mDNS" rule="224.0.0.251:5353;[ff02::fb]:5353" protocol="17" is_services="true" is_enabled="true" />
 		<item name="NetBIOS [inbound]" rule_local="137-139" dir="1" is_services="true" is_enabled="true" />
 		<item name="NetBIOS [outbound]" rule="137-139" is_services="true" is_enabled="true" />
+		<item name="NCSI" apps="nlasvc" is_enabled="true" />
 		<item name="NTP" rule="123" protocol="17" is_services="true" />
 		<item name="RDP [inbound]" rule_local="3389" dir="1" is_services="true" />
 		<item name="RDP [outbound]" rule="3389" is_services="true" />
