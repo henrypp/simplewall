@@ -439,7 +439,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 						_r_fastlock_acquireshared (&lock_checkbox);
 
-						_r_listview_additemex (hwnd, IDC_RULE_APPS_ID, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, group_id, app_hash);
+						_r_listview_additemex (hwnd, IDC_RULE_APPS_ID, 0, 0, _app_getdisplayname (app_hash, ptr_app, TRUE), ptr_app->icon_id, group_id, app_hash);
 						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
 						_r_fastlock_releaseshared (&lock_checkbox);
@@ -798,7 +798,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				case IDM_COPY:
 				{
 					HWND hlistview;
-					PR_STRING buffer;
+					R_STRINGBUILDER buffer = {0};
 					PR_STRING string;
 					INT listview_id;
 					INT item;
@@ -813,7 +813,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					if (!listview_id || !_r_listview_getitemcount (hwnd, listview_id, FALSE))
 						break;
 
-					buffer = _r_obj_createstringbuilder ();
+					_r_obj_createstringbuilder (&buffer);
 
 					item = INVALID_INT;
 
@@ -830,12 +830,12 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						}
 					}
 
-					_r_str_trim (buffer, DIVIDER_TRIM);
+					_r_str_trim (buffer.Buffer, DIVIDER_TRIM);
 
-					if (!_r_str_isempty (buffer))
-						_r_clipboard_set (hwnd, buffer->Buffer, _r_obj_getstringlength (buffer));
+					if (!_r_str_isempty (&buffer))
+						_r_clipboard_set (hwnd, buffer.Buffer->Buffer, _r_obj_getstringlength (buffer.Buffer));
 
-					_r_obj_dereference (buffer);
+					_r_obj_dereference (buffer.Buffer);
 
 					break;
 				}
@@ -974,7 +974,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (!SendDlgItemMessage (hpage_general, IDC_RULE_NAME_ID, WM_GETTEXTLENGTH, 0, 0))
 						return FALSE;
 
-					PR_STRING buffer;
+					R_STRINGBUILDER buffer = {0};
 					PR_STRING string;
 
 					ptr_rule->is_haveerrors = FALSE; // reset errors
@@ -1005,7 +1005,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (ptr_rule->rule_remote)
 								_r_obj_clearreference (&ptr_rule->rule_remote);
 
-							buffer = _r_obj_createstringbuilder ();
+							_r_obj_createstringbuilder (&buffer);
 
 							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_RULE_REMOTE_ID, FALSE); i++)
 							{
@@ -1018,7 +1018,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (!_r_str_isempty (string))
 									{
 										// check maximum length of one rule
-										if ((_r_obj_getstringlength (buffer) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+										if ((_r_obj_getstringlength (buffer.Buffer) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
 										{
 											_r_obj_dereference (string);
 											break;
@@ -1031,12 +1031,16 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								}
 							}
 
-							_r_str_trim (buffer, DIVIDER_TRIM DIVIDER_RULE);
+							_r_str_trim (buffer.Buffer, DIVIDER_TRIM DIVIDER_RULE);
 
-							if (!_r_str_isempty (buffer))
-								_r_obj_movereference (&ptr_rule->rule_remote, buffer);
+							if (!_r_str_isempty (&buffer))
+							{
+								_r_obj_movereference (&ptr_rule->rule_remote, buffer.Buffer);
+							}
 							else
-								_r_obj_clearreference (&buffer);
+							{
+								_r_obj_clearreference (&buffer.Buffer);
+							}
 						}
 
 						// rule (local)
@@ -1044,7 +1048,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 							if (ptr_rule->rule_local)
 								_r_obj_clearreference (&ptr_rule->rule_local);
 
-							buffer = _r_obj_createstringbuilder ();
+							_r_obj_createstringbuilder (&buffer);
 
 							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_RULE_LOCAL_ID, FALSE); i++)
 							{
@@ -1057,7 +1061,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (!_r_str_isempty (string))
 									{
 										// check maximum length of one rule
-										if ((_r_obj_getstringlength (buffer) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+										if ((_r_obj_getstringlength (buffer.Buffer) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
 										{
 											_r_obj_dereference (string);
 											break;
@@ -1070,12 +1074,16 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								}
 							}
 
-							_r_str_trim (buffer, DIVIDER_TRIM DIVIDER_RULE);
+							_r_str_trim (buffer.Buffer, DIVIDER_TRIM DIVIDER_RULE);
 
-							if (!_r_str_isempty (buffer))
-								_r_obj_movereference (&ptr_rule->rule_local, buffer);
+							if (!_r_str_isempty (&buffer))
+							{
+								_r_obj_movereference (&ptr_rule->rule_local, buffer.Buffer);
+							}
 							else
-								_r_obj_clearreference (&buffer);
+							{
+								_r_obj_clearreference (&buffer.Buffer);
+							}
 						}
 
 						ptr_rule->protocol = (UINT8)SendDlgItemMessage (hpage_general, IDC_RULE_PROTOCOL_ID, CB_GETITEMDATA, SendDlgItemMessage (hpage_general, IDC_RULE_PROTOCOL_ID, CB_GETCURSEL, 0, 0), 0);
@@ -1109,7 +1117,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					}
 
 					// enable rule
-					_app_ruleenable (ptr_rule, (IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED));
+					_app_ruleenable (ptr_rule, (IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED), TRUE);
 
 					// apply filter
 					if (_wfp_isfiltersinstalled ())
