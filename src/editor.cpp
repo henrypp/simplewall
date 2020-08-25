@@ -830,12 +830,12 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						}
 					}
 
-					_r_str_trim (buffer.Buffer, DIVIDER_TRIM);
+					_r_str_trim (&buffer, DIVIDER_TRIM);
 
 					if (!_r_str_isempty (&buffer))
-						_r_clipboard_set (hwnd, buffer.Buffer->Buffer, _r_obj_getstringlength (buffer.Buffer));
+						_r_clipboard_set (hwnd, buffer.String->Buffer, _r_obj_getstringlength (buffer.String));
 
-					_r_obj_dereference (buffer.Buffer);
+					_r_obj_deletestringbuilder (&buffer);
 
 					break;
 				}
@@ -1018,7 +1018,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (!_r_str_isempty (string))
 									{
 										// check maximum length of one rule
-										if ((_r_obj_getstringlength (buffer.Buffer) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+										if ((_r_obj_getstringlength (buffer.String) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
 										{
 											_r_obj_dereference (string);
 											break;
@@ -1031,15 +1031,15 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								}
 							}
 
-							_r_str_trim (buffer.Buffer, DIVIDER_TRIM DIVIDER_RULE);
+							_r_str_trim (&buffer, DIVIDER_TRIM DIVIDER_RULE);
 
 							if (!_r_str_isempty (&buffer))
 							{
-								_r_obj_movereference (&ptr_rule->rule_remote, buffer.Buffer);
+								_r_obj_movereference (&ptr_rule->rule_remote, _r_obj_finalstringbuilder (&buffer));
 							}
 							else
 							{
-								_r_obj_clearreference (&buffer.Buffer);
+								_r_obj_deletestringbuilder (&buffer);
 							}
 						}
 
@@ -1061,7 +1061,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (!_r_str_isempty (string))
 									{
 										// check maximum length of one rule
-										if ((_r_obj_getstringlength (buffer.Buffer) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+										if ((_r_obj_getstringlength (buffer.String) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
 										{
 											_r_obj_dereference (string);
 											break;
@@ -1074,15 +1074,15 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 								}
 							}
 
-							_r_str_trim (buffer.Buffer, DIVIDER_TRIM DIVIDER_RULE);
+							_r_str_trim (&buffer, DIVIDER_TRIM DIVIDER_RULE);
 
 							if (!_r_str_isempty (&buffer))
 							{
-								_r_obj_movereference (&ptr_rule->rule_local, buffer.Buffer);
+								_r_obj_movereference (&ptr_rule->rule_local, _r_obj_finalstringbuilder (&buffer));
 							}
 							else
 							{
-								_r_obj_clearreference (&buffer.Buffer);
+								_r_obj_deletestringbuilder (&buffer);
 							}
 						}
 

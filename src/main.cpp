@@ -1565,7 +1565,6 @@ VOID _app_imagelist_init (HWND hwnd)
 	// get default icon for executable
 	_app_getfileicon (_r_obj_getstring (config.ntoskrnl_path), FALSE, &config.icon_id, &config.hicon_large);
 	_app_getfileicon (_r_obj_getstring (config.ntoskrnl_path), TRUE, NULL, &config.hicon_small);
-	_app_getfileicon (_r_obj_getstring (config.shell32_path), FALSE, &config.icon_service_id, NULL);
 
 	// get default icon for windows store package (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
@@ -1864,7 +1863,6 @@ VOID _app_initialize ()
 
 	config.svchost_path = _r_path_expand (PATH_SVCHOST);
 	config.ntoskrnl_path = _r_path_expand (PATH_NTOSKRNL);
-	config.shell32_path = _r_path_expand (PATH_SHELL32);
 	config.winstore_path = _r_path_expand (PATH_WINSTORE);
 
 	config.my_hash = _r_str_hash (_r_sys_getimagepathname ());
@@ -2124,7 +2122,7 @@ find_wrap:
 					else
 						menu_id = IDM_VIEW_DETAILS;
 
-					_r_menu_checkitem (hmenu, IDM_VIEW_ICON, IDM_VIEW_TILE, MF_BYCOMMAND, menu_id);
+					_r_menu_checkitem (hmenu, IDM_VIEW_DETAILS, IDM_VIEW_TILE, MF_BYCOMMAND, menu_id);
 				}
 
 				{
@@ -2210,8 +2208,8 @@ find_wrap:
 				_r_menu_setitemtext (hmenu, IDM_SIZE_LARGE, FALSE, _r_locale_getstring (IDS_ICONSLARGE));
 				_r_menu_setitemtext (hmenu, IDM_SIZE_EXTRALARGE, FALSE, _r_locale_getstring (IDS_ICONSEXTRALARGE));
 
-				_r_menu_setitemtext (hmenu, IDM_VIEW_ICON, FALSE, _r_locale_getstring (IDS_VIEW_ICON));
 				_r_menu_setitemtext (hmenu, IDM_VIEW_DETAILS, FALSE, _r_locale_getstring (IDS_VIEW_DETAILS));
+				_r_menu_setitemtext (hmenu, IDM_VIEW_ICON, FALSE, _r_locale_getstring (IDS_VIEW_ICON));
 				_r_menu_setitemtext (hmenu, IDM_VIEW_TILE, FALSE, _r_locale_getstring (IDS_VIEW_TILE));
 
 				_r_menu_setitemtext (hmenu, IDM_ICONSISHIDDEN, FALSE, _r_locale_getstring (IDS_ICONSISHIDDEN));
@@ -2568,7 +2566,7 @@ find_wrap:
 				string = _r_obj_createstringex (NULL, length * sizeof (WCHAR));
 
 				if (DragQueryFile ((HDROP)wparam, i, string->Buffer, length + 1))
-					app_hash = _app_addapplication (hwnd, string->Buffer, 0, 0, 0, FALSE, FALSE);
+					app_hash = _app_addapplication (hwnd, DataUnknown, string->Buffer, NULL, NULL);
 
 				_r_obj_dereference (string);
 			}
@@ -2768,7 +2766,7 @@ find_wrap:
 								{
 									_r_fastlock_acquireshared (&lock_checkbox);
 
-									_app_ruleenable (ptr_rule, is_enabled);
+									_app_ruleenable (ptr_rule, is_enabled, TRUE);
 									_app_setruleiteminfo (hwnd, listview_id, lpnmlv->iItem, ptr_rule, TRUE);
 
 									_r_fastlock_releaseshared (&lock_checkbox);
@@ -3329,13 +3327,13 @@ find_wrap:
 						ptr_rule->apps->erase (app_hash);
 
 						if (ptr_rule->apps->empty ())
-							_app_ruleenable (ptr_rule, FALSE);
+							_app_ruleenable (ptr_rule, FALSE, TRUE);
 					}
 					else
 					{
 						ptr_rule->apps->emplace (app_hash, TRUE);
 
-						_app_ruleenable (ptr_rule, TRUE);
+						_app_ruleenable (ptr_rule, TRUE, TRUE);
 					}
 
 					_r_fastlock_acquireshared (&lock_checkbox);
@@ -3585,19 +3583,20 @@ find_wrap:
 						SIZE_T app_hash = it->first;
 						PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
 
-						_r_obj_movereference (&ptr_app->display_name, _app_getdisplayname (app_hash, ptr_app, FALSE));
-
-						INT listview_id = _app_getlistview_id (ptr_app->type);
-
-						if (listview_id)
+						if (!_r_str_isempty (ptr_app->short_name))
 						{
-							INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
+							INT listview_id = _app_getlistview_id (ptr_app->type);
 
-							if (item_pos != INVALID_INT)
+							if (listview_id)
 							{
-								_r_fastlock_acquireshared (&lock_checkbox);
-								_app_setappiteminfo (hwnd, listview_id, item_pos, app_hash, ptr_app);
-								_r_fastlock_releaseshared (&lock_checkbox);
+								INT item_pos = _app_getposition (hwnd, listview_id, app_hash);
+
+								if (item_pos != INVALID_INT)
+								{
+									_r_fastlock_acquireshared (&lock_checkbox);
+									_app_setappiteminfo (hwnd, listview_id, item_pos, app_hash, ptr_app);
+									_r_fastlock_releaseshared (&lock_checkbox);
+								}
 							}
 						}
 
@@ -3609,8 +3608,8 @@ find_wrap:
 					break;
 				}
 
-				case IDM_VIEW_ICON:
 				case IDM_VIEW_DETAILS:
+				case IDM_VIEW_ICON:
 				case IDM_VIEW_TILE:
 				{
 					INT view_type;
@@ -3624,7 +3623,7 @@ find_wrap:
 					else
 						view_type = LV_VIEW_DETAILS;
 
-					_r_menu_checkitem (GetMenu (hwnd), IDM_VIEW_ICON, IDM_VIEW_TILE, MF_BYCOMMAND, ctrl_id);
+					_r_menu_checkitem (GetMenu (hwnd), IDM_VIEW_DETAILS, IDM_VIEW_TILE, MF_BYCOMMAND, ctrl_id);
 					_r_config_setinteger (L"ViewType", view_type);
 
 					INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
@@ -4076,7 +4075,7 @@ find_wrap:
 
 						if (files[ofn.nFileOffset - 1] != 0)
 						{
-							app_hash = _app_addapplication (hwnd, files, 0, 0, 0, FALSE, FALSE);
+							app_hash = _app_addapplication (hwnd, DataUnknown, files, NULL, NULL);
 						}
 						else
 						{
@@ -4094,7 +4093,7 @@ find_wrap:
 								if (*p)
 								{
 									_r_str_printf (full_path, RTL_NUMBER_OF (full_path), L"%s\\%s", dir, p);
-									app_hash = _app_addapplication (hwnd, full_path, 0, 0, 0, FALSE, FALSE);
+									app_hash = _app_addapplication (hwnd, DataUnknown, full_path, NULL, NULL);
 								}
 							}
 						}
@@ -4173,7 +4172,7 @@ find_wrap:
 					INT column_count;
 					INT column_current;
 
-					PR_STRING buffer;
+					R_STRINGBUILDER buffer;
 					PR_STRING string;
 
 					listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
@@ -4182,7 +4181,7 @@ find_wrap:
 					column_count = _r_listview_getcolumncount (hwnd, listview_id);
 					column_current = (INT)lparam;
 
-					buffer = _r_obj_createstringbuilder ();
+					_r_obj_createstringbuilder (&buffer);
 
 					while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != INVALID_INT)
 					{
@@ -4201,7 +4200,7 @@ find_wrap:
 								}
 							}
 
-							_r_str_trim (buffer, DIVIDER_COPY);
+							_r_str_trim (&buffer, DIVIDER_COPY);
 						}
 						else
 						{
@@ -4219,12 +4218,12 @@ find_wrap:
 						_r_string_append (&buffer, L"\r\n");
 					}
 
-					_r_str_trim (buffer, DIVIDER_TRIM);
+					_r_str_trim (&buffer, DIVIDER_TRIM);
 
-					if (!_r_str_isempty (buffer))
-						_r_clipboard_set (hwnd, buffer->Buffer, _r_obj_getstringlength (buffer));
+					if (!_r_str_isempty (&buffer))
+						_r_clipboard_set (hwnd, buffer.String->Buffer, _r_obj_getstringlength (buffer.String));
 
-					_r_obj_dereference (buffer);
+					_r_obj_deletestringbuilder (&buffer);
 
 					break;
 				}
@@ -4253,10 +4252,13 @@ find_wrap:
 							if (ptr_app->is_enabled != new_val)
 							{
 								if (!new_val)
+								{
 									_app_timer_reset (hwnd, ptr_app);
-
+								}
 								else
+								{
 									_app_freenotify (app_hash, ptr_app);
+								}
 
 								ptr_app->is_enabled = new_val;
 
@@ -4304,7 +4306,7 @@ find_wrap:
 
 							if (ptr_rule->is_enabled != new_val)
 							{
-								_app_ruleenable (ptr_rule, new_val);
+								_app_ruleenable (ptr_rule, new_val, TRUE);
 
 								_r_fastlock_acquireshared (&lock_checkbox);
 								_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, TRUE);
@@ -4361,7 +4363,7 @@ find_wrap:
 					ptr_rule->apps = new HASHER_MAP;
 					ptr_rule->guids = new GUIDS_VEC;
 
-					_app_ruleenable (ptr_rule, TRUE);
+					_app_ruleenable (ptr_rule, TRUE, TRUE);
 
 					ptr_rule->type = DataRuleCustom;
 					ptr_rule->is_block = FALSE;
@@ -4399,7 +4401,7 @@ find_wrap:
 								{
 									if (!_app_isappfound (ptr_network->app_hash))
 									{
-										_app_addapplication (hwnd, ptr_network->path->Buffer, 0, 0, 0, FALSE, FALSE);
+										_app_addapplication (hwnd, DataUnknown, ptr_network->path->Buffer, NULL, NULL);
 
 										_app_refreshstatus (hwnd, listview_id);
 										_app_profile_save ();
@@ -4442,7 +4444,7 @@ find_wrap:
 								{
 									if (!_app_isappfound (ptr_log->app_hash))
 									{
-										_app_addapplication (hwnd, ptr_log->path->Buffer, 0, 0, 0, FALSE, FALSE);
+										_app_addapplication (hwnd, DataUnknown, ptr_log->path->Buffer, NULL, NULL);
 
 										_app_refreshstatus (hwnd, listview_id);
 										_app_profile_save ();
@@ -4550,7 +4552,7 @@ find_wrap:
 						{
 							if (!_app_isappfound (ptr_network->app_hash))
 							{
-								_app_addapplication (hwnd, ptr_network->path->Buffer, 0, 0, 0, FALSE, FALSE);
+								_app_addapplication (hwnd, DataUnknown, ptr_network->path->Buffer, NULL, NULL);
 
 								_app_refreshstatus (hwnd, listview_id);
 								_app_profile_save ();
@@ -4579,7 +4581,7 @@ find_wrap:
 						{
 							if (!_app_isappfound (ptr_log->app_hash))
 							{
-								_app_addapplication (hwnd, ptr_log->path->Buffer, 0, 0, 0, FALSE, FALSE);
+								_app_addapplication (hwnd, DataUnknown, ptr_log->path->Buffer, NULL, NULL);
 
 								_app_refreshstatus (hwnd, listview_id);
 								_app_profile_save ();
@@ -4923,7 +4925,7 @@ find_wrap:
 					InetPton (ptr_log->af, RM_AD, &ptr_log->remote_addr);
 					ptr_log->remote_port = RP_AD;
 
-					ptr_log->path = _r_obj_createstring (_r_app_getbinarypath ());
+					ptr_log->path = _r_obj_createstring (_r_sys_getimagepathname ());
 					ptr_log->filter_name = _r_obj_createstring (FN_AD);
 
 					//_app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, &ptr_log->remote_fmt, FMTADDR_USE_PROTOCOL | FMTADDR_RESOLVE_HOST);
@@ -4961,7 +4963,7 @@ find_wrap:
 					IN_ADDR ipv4_local = {0};
 
 					PR_STRING ntPath = NULL;
-					_r_path_ntpathfromdos (_r_app_getbinarypath (), &ntPath);
+					_r_path_ntpathfromdos (_r_sys_getimagepathname (), &ntPath);
 
 					UINT16 layer_id = 0;
 					UINT64 filter_id = 0;

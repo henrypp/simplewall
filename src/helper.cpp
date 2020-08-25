@@ -592,7 +592,7 @@ PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 	HINSTANCE hlib = NULL;
 	HRSRC hres = NULL;
 	HGLOBAL hglob = NULL;
-	R_STRINGBUILDER versionCacheSB = {0};
+	R_STRINGBUILDER versionCache = {0};
 	PR_STRING versionCacheString = NULL;
 
 	if (cache_versions.find (app_hash) != cache_versions.end ())
@@ -623,7 +623,7 @@ PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 
 	if (versionInfo)
 	{
-		_r_obj_createstringbuilder (&versionCacheSB);
+		_r_obj_createstringbuilder (&versionCache);
 
 		PVOID buffer;
 		ULONG langId;
@@ -647,43 +647,43 @@ PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
 
 		if (VerQueryValue (versionInfo, descriptionEntry, &buffer, &length))
 		{
-			_r_string_appendformat (&versionCacheSB, SZ_TAB L"%s", buffer);
+			_r_string_appendformat (&versionCache, SZ_TAB L"%s", buffer);
 
 			VS_FIXEDFILEINFO* verInfo;
 
 			if (VerQueryValue (versionInfo, L"\\", (PVOID*)&verInfo, &length))
 			{
-				_r_string_appendformat (&versionCacheSB, L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS));
+				_r_string_appendformat (&versionCache, L" %d.%d", HIWORD (verInfo->dwFileVersionMS), LOWORD (verInfo->dwFileVersionMS));
 
 				if (HIWORD (verInfo->dwFileVersionLS) || LOWORD (verInfo->dwFileVersionLS))
 				{
-					_r_string_appendformat (&versionCacheSB, L".%d", HIWORD (verInfo->dwFileVersionLS));
+					_r_string_appendformat (&versionCache, L".%d", HIWORD (verInfo->dwFileVersionLS));
 
 					if (LOWORD (verInfo->dwFileVersionLS))
-						_r_string_appendformat (&versionCacheSB, L".%d", LOWORD (verInfo->dwFileVersionLS));
+						_r_string_appendformat (&versionCache, L".%d", LOWORD (verInfo->dwFileVersionLS));
 				}
 			}
 
-			_r_string_append (&versionCacheSB, L"\r\n");
+			_r_string_append (&versionCache, L"\r\n");
 		}
 
 		if (VerQueryValue (versionInfo, authorEntry, &buffer, &length))
 		{
-			_r_string_appendformat (&versionCacheSB, SZ_TAB L"%s\r\n", buffer);
+			_r_string_appendformat (&versionCache, SZ_TAB L"%s\r\n", buffer);
 		}
 
-		_r_str_trim (versionCacheSB.Buffer, DIVIDER_TRIM);
+		_r_str_trim (&versionCache, DIVIDER_TRIM);
 
-		if (_r_str_isempty (&versionCacheSB))
+		if (_r_str_isempty (&versionCache))
 		{
-			_r_obj_clearreference (&versionCacheSB.Buffer);
+			_r_obj_deletestringbuilder (&versionCache);
 
 			goto CleanupExit;
 		}
 
 		_app_freestrings_map (&cache_versions, MAP_CACHE_MAX);
 
-		_r_obj_movereference (&versionCacheString, versionCacheSB.Buffer);
+		_r_obj_movereference (&versionCacheString, _r_obj_finalstringbuilder (&versionCache));
 
 		cache_versions.insert_or_assign (app_hash, versionCacheString);
 	}
@@ -2519,15 +2519,15 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 		ppQueryResultsSet = NULL;
 	}
 
-	_r_str_trim (string.Buffer, DIVIDER_RULE);
+	_r_str_trim (&string, DIVIDER_RULE);
 
 	if (_r_str_isempty (&string))
 	{
-		_r_obj_dereference (string.Buffer);
+		_r_obj_deletestringbuilder (&string);
 		return NULL;
 	}
 
-	return string.Buffer;
+	return _r_obj_finalstringbuilder (&string);
 }
 
 BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, PUSHORT port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR dnsString, SIZE_T dnsLength)
