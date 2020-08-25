@@ -37,7 +37,7 @@ EXTERN_C static GUID GUID_WfpListenCallout6_DEPRECATED = {0xa02187ca, 0xe655, 0x
 // enums
 typedef enum _ENUM_TYPE_DATA
 {
-	DataUnknown,
+	DataUnknown = 0,
 	DataAppRegular,
 	DataAppDevice,
 	DataAppNetwork,
@@ -56,29 +56,30 @@ typedef enum _ENUM_TYPE_DATA
 typedef enum _ENUM_TYPE_XML
 {
 	XmlApps = 0,
-	XmlRules = 1,
-	XmlRulesConfig = 2,
-	XmlProfileV3 = 3,
-	XmlProfileInternalV3 = 4,
+	XmlRules,
+	XmlRulesConfig,
+	XmlProfileV3,
+	XmlProfileInternalV3,
 } ENUM_TYPE_XML;
 
 typedef enum _ENUM_INFO_DATA
 {
-	InfoPath = 0,
-	InfoName = 1,
-	InfoTimestampPtr = 2,
-	InfoTimerPtr = 3,
-	InfoIconId = 4,
-	InfoListviewId = 5,
-	InfoIsSilent = 6,
-	InfoIsUndeletable = 7,
+	InfoPath = 1,
+	InfoName,
+	InfoTimestampPtr,
+	InfoTimerPtr,
+	InfoIconId,
+	InfoListviewId,
+	InfoIsSilent,
+	InfoIsEnabled,
+	InfoIsUndeletable,
 } ENUM_INFO_DATA;
 
 typedef enum _ENUM_INSTALL_TYPE
 {
 	InstallDisabled = 0,
-	InstallEnabled = 1,
-	InstallEnabledTemporary = 2,
+	InstallEnabled,
+	InstallEnabledTemporary,
 } ENUM_INSTALL_TYPE;
 
 // config
@@ -211,7 +212,6 @@ typedef struct tagSTATIC_DATA
 
 	PR_STRING ntoskrnl_path = NULL;
 	PR_STRING svchost_path = NULL;
-	PR_STRING shell32_path = NULL;
 	PR_STRING winstore_path = NULL;
 
 	PSID pbuiltin_current_sid = NULL;
@@ -260,7 +260,6 @@ typedef struct tagSTATIC_DATA
 	SIZE_T wd_length = 0;
 
 	INT icon_id = 0;
-	INT icon_service_id = 0;
 	INT icon_uwp_id = 0;
 
 	BOOLEAN is_notifytimeout = FALSE;
@@ -317,11 +316,13 @@ typedef struct tagITEM_APP
 {
 	GUIDS_VEC* guids;
 
-	PR_STRING display_name;
 	PR_STRING original_path;
+	PR_STRING display_name;
+	PR_STRING short_name;
 	PR_STRING real_path;
 
 	PITEM_LOG pnotification;
+	PR_BYTE pbytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 
 	HANDLE htimer;
 
@@ -337,24 +338,10 @@ typedef struct tagITEM_APP
 
 	BOOLEAN is_enabled;
 	BOOLEAN is_haveerrors;
-	BOOLEAN is_system;
 	BOOLEAN is_silent;
 	BOOLEAN is_signed;
 	BOOLEAN is_undeletable;
 } ITEM_APP, *PITEM_APP;
-
-typedef struct tagITEM_APP_HELPER
-{
-	PR_STRING display_name;
-	PR_STRING real_path;
-	PR_STRING internal_name;
-
-	PR_BYTE pbytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
-
-	time_t timestamp;
-
-	ENUM_TYPE_DATA type;
-} ITEM_APP_HELPER, *PITEM_APP_HELPER;
 
 typedef struct tagITEM_RULE
 {
@@ -495,7 +482,6 @@ C_ASSERT (FIELD_OFFSET (ITEM_LOG_LISTENTRY, ListEntry) == 0x00);
 C_ASSERT (FIELD_OFFSET (ITEM_LOG_LISTENTRY, Body) == MEMORY_ALLOCATION_ALIGNMENT);
 
 typedef std::unordered_map<SIZE_T, PITEM_APP> OBJECTS_APP_MAP;
-typedef std::unordered_map<SIZE_T, PITEM_APP_HELPER> OBJECTS_APP_HELPER_MAP;
 typedef std::unordered_map<SIZE_T, PITEM_RULE_CONFIG> OBJECTS_RULE_CONFIG_MAP;
 typedef std::unordered_map<SIZE_T, PITEM_NETWORK> OBJECTS_NETWORK_MAP;
 typedef std::unordered_map<SIZE_T, PR_STRING> OBJECTS_STRINGS_MAP;

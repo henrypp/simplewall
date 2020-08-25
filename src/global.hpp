@@ -44,7 +44,6 @@
 inline STATIC_DATA config;
 
 inline OBJECTS_APP_MAP apps;
-inline OBJECTS_APP_HELPER_MAP apps_helper;
 inline OBJECTS_RULE_VECTOR rules_arr;
 inline OBJECTS_RULE_CONFIG_MAP rules_config;
 inline OBJECTS_NETWORK_MAP network_map;
