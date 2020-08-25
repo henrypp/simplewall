@@ -1,3 +1,15 @@
+v3.2.3 (25 August 2020)
+- added ncsi system rule (issue #709)
+- added command line mutex checking (issue #750)
+- added noficitation window redraw (issue #731)
+- use logical sorting order (issue #735)
+- check for provider status before create filters
+- do not highlight connections in log tab
+- fixed support oldest win7 versions (issue #737)
+- removed listview empty markup
+- cosmetic fixes
+- fixed bugs
+
 v3.2.2 (29 July 2020)
 - user rules broken with 3.2.1 (issue #729)
 
