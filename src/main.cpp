@@ -5030,8 +5030,14 @@ INT APIENTRY wWinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdL
 
 	if (_r_app_initialize (APP_NAME, APP_NAME_SHORT, APP_VERSION, APP_COPYRIGHT))
 	{
+		HANDLE hcmdmutex = NULL;
+		PR_STRING hcmdname = _r_format_string (L"%sCmd", _r_app_getnameshort ());
+
 		// parse arguments
+		if (!_r_mutex_isexists (hcmdname))
 		{
+			_r_mutex_create (hcmdname, &hcmdmutex);
+
 			INT numargs;
 			LPWSTR* arga = CommandLineToArgvW (_r_sys_getimagecommandline (), &numargs);
 
@@ -5096,12 +5102,24 @@ INT APIENTRY wWinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdL
 					}
 					else
 					{
+						_r_mutex_destroy (&hcmdmutex);
+
 						return ERROR_ACCESS_DENIED;
 					}
+
+					_r_mutex_destroy (&hcmdmutex);
 
 					return ERROR_SUCCESS;
 				}
 			}
+
+			_r_obj_dereference (hcmdname);
+
+			_r_mutex_destroy (&hcmdmutex);
+		}
+		else
+		{
+			return ERROR_SUCCESS;
 		}
 
 		if (_r_app_createwindow (IDD_MAIN, IDI_MAIN, &DlgProc))
