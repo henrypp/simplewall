@@ -13,69 +13,100 @@ LONG_PTR _app_getappinfo (SIZE_T app_hash, ENUM_INFO_DATA info_key)
 	if (!ptr_app)
 		return 0;
 
-	result = 0;
-
-	if (info_key == InfoPath)
-	{
-		if (!_r_str_isempty (ptr_app->real_path))
-			result = (LONG_PTR)_r_obj_reference (ptr_app->real_path);
-	}
-	else if (info_key == InfoName)
-	{
-		if (!_r_str_isempty (ptr_app->display_name))
-			result = (LONG_PTR)_r_obj_reference (ptr_app->display_name);
-
-		else if (!_r_str_isempty (ptr_app->original_path))
-			result = (LONG_PTR)_r_obj_reference (ptr_app->original_path);
-	}
-	else if (info_key == InfoTimestampPtr)
-	{
-		result = (LONG_PTR)&ptr_app->timestamp;
-	}
-	else if (info_key == InfoTimerPtr)
-	{
-		result = (LONG_PTR)&ptr_app->timer;
-	}
-	else if (info_key == InfoIconId)
-	{
-		result = (LONG_PTR)ptr_app->icon_id;
-	}
-	else if (info_key == InfoListviewId)
-	{
-		result = (LONG_PTR)_app_getlistview_id (ptr_app->type);
-	}
-	else if (info_key == InfoIsSilent)
-	{
-		result = ptr_app->is_silent ? TRUE : FALSE;
-	}
-	else if (info_key == InfoIsUndeletable)
-	{
-		result = ptr_app->is_undeletable ? TRUE : FALSE;
-	}
+	result = _app_getappinfo (ptr_app, info_key);
 
 	_r_obj_dereference (ptr_app);
 
 	return result;
 }
 
-BOOLEAN _app_setappinfo (SIZE_T app_hash, ENUM_INFO_DATA info_key, LONG_PTR info_value)
+LONG_PTR _app_getappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_key)
+{
+	if (info_key == InfoPath)
+	{
+		if (!_r_str_isempty (ptr_app->real_path))
+			return (LONG_PTR)_r_obj_reference (ptr_app->real_path);
+	}
+	else if (info_key == InfoName)
+	{
+		if (!_r_str_isempty (ptr_app->display_name))
+			return (LONG_PTR)_r_obj_reference (ptr_app->display_name);
+
+		else if (!_r_str_isempty (ptr_app->original_path))
+			return (LONG_PTR)_r_obj_reference (ptr_app->original_path);
+	}
+	else if (info_key == InfoTimestampPtr)
+	{
+		return (LONG_PTR)&ptr_app->timestamp;
+	}
+	else if (info_key == InfoTimerPtr)
+	{
+		return (LONG_PTR)&ptr_app->timer;
+	}
+	else if (info_key == InfoIconId)
+	{
+		if (ptr_app->icon_id)
+			return (LONG_PTR)ptr_app->icon_id;
+
+		return (LONG_PTR)config.icon_id;
+	}
+	else if (info_key == InfoListviewId)
+	{
+		return (LONG_PTR)_app_getlistview_id (ptr_app->type);
+	}
+	else if (info_key == InfoIsSilent)
+	{
+		return (LONG_PTR)(ptr_app->is_silent ? TRUE : FALSE);
+	}
+	else if (info_key == InfoIsEnabled)
+	{
+		return (LONG_PTR)(ptr_app->is_enabled ? TRUE : FALSE);
+	}
+	else if (info_key == InfoIsUndeletable)
+	{
+		return (LONG_PTR)(ptr_app->is_undeletable ? TRUE : FALSE);
+	}
+
+	return 0;
+}
+
+VOID _app_setappinfo (SIZE_T app_hash, ENUM_INFO_DATA info_key, LONG_PTR info_value)
 {
 	PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 	if (!ptr_app)
-		return FALSE;
+		return;
 
-	if (info_key == InfoIsUndeletable)
+	_app_setappinfo (ptr_app, info_key, info_value);
+
+	_r_obj_dereference (ptr_app);
+}
+
+VOID _app_setappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_key, LONG_PTR info_value)
+{
+	if (info_key == InfoTimestampPtr)
+	{
+		ptr_app->timestamp = *((time_t*)info_value);
+	}
+	else if (info_key == InfoTimerPtr)
+	{
+		ptr_app->timer = *((time_t*)info_value);
+	}
+	else if (info_key == InfoIsSilent)
+	{
+		ptr_app->is_silent = info_value ? TRUE : FALSE;
+	}
+	else if (info_key == InfoIsEnabled)
+	{
+		ptr_app->is_enabled = info_value ? TRUE : FALSE;
+	}
+	else if (info_key == InfoIsUndeletable)
 	{
 		ptr_app->is_undeletable = info_value ? TRUE : FALSE;
 	}
-
-	_r_obj_dereference (ptr_app);
-
-	return TRUE;
 }
 
-SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t timer, time_t last_notify, BOOLEAN is_silent, BOOLEAN is_enabled)
+SIZE_T _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_STRING display_name, PR_STRING real_path)
 {
 	if (_r_str_isempty (path) || PathIsDirectory (path))
 		return 0;
@@ -83,19 +114,19 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	WCHAR path_full[1024];
 	PITEM_APP ptr_app;
 	PR_STRING signatureString;
-	SIZE_T app_length;
+	SIZE_T path_length;
 	SIZE_T app_hash;
 	BOOLEAN is_ntoskrnl;
 
-	app_length = _r_str_length (path);
+	path_length = _r_str_length (path);
 
 	// prevent possible duplicate apps entries with short path (issue #640)
-	if (_r_str_findchar (path, app_length, L'~') != INVALID_SIZE_T)
+	if (_r_str_findchar (path, path_length, L'~') != INVALID_SIZE_T)
 	{
 		if (GetLongPathName (path, path_full, RTL_NUMBER_OF (path_full)))
 		{
 			path = path_full;
-			app_length = _r_str_length (path_full);
+			path_length = _r_str_length (path_full);
 		}
 	}
 
@@ -107,69 +138,46 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 	ptr_app = (PITEM_APP)_r_obj_allocateex (sizeof (ITEM_APP), &_app_dereferenceapp);
 	is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
 
-	if (_r_str_compare_length (path, L"\\device\\", 8) == 0) // device path
+	if (type == DataAppService || type == DataAppUWP)
 	{
-		ptr_app->real_path = _r_obj_createstring (path);
-		ptr_app->type = DataAppDevice;
+		ptr_app->type = type;
+
+		if (display_name)
+			ptr_app->display_name = _r_obj_reference (display_name);
+
+		if (real_path)
+			ptr_app->real_path = _r_obj_reference (real_path);
 	}
-	else if (_r_str_compare_length (path, L"S-1-", 4) == 0) // windows store (win8+)
+	else if (_r_str_compare_length (path, L"\\device\\", 8) == 0) // device path
 	{
-		_app_item_get (DataAppUWP, app_hash, NULL, &ptr_app->real_path, timestamp ? NULL : &timestamp, NULL);
-		ptr_app->type = DataAppUWP;
+		ptr_app->type = DataAppDevice;
+		ptr_app->real_path = _r_obj_createstring (path);
 	}
 	else
 	{
-		if (!is_ntoskrnl && _r_str_findchar (path, app_length, OBJ_NAME_PATH_SEPARATOR) == INVALID_SIZE_T)
+		if (!is_ntoskrnl && _r_str_findchar (path, path_length, OBJ_NAME_PATH_SEPARATOR) == INVALID_SIZE_T)
 		{
-			if (_app_item_get (DataAppService, app_hash, NULL, &ptr_app->real_path, timestamp ? NULL : &timestamp, NULL))
-			{
-				ptr_app->type = DataAppService;
-			}
-			else
-			{
-				ptr_app->real_path = _r_obj_createstring (path);
-				ptr_app->type = DataAppPico;
-			}
+			ptr_app->type = DataAppPico;
 		}
 		else
 		{
-			if (is_ntoskrnl) // "System" process
-			{
-				ptr_app->real_path = _r_obj_createstring2 (config.ntoskrnl_path);
-			}
-			else
-			{
-				ptr_app->real_path = _r_obj_createstring (path);
-			}
-
-			if (PathIsNetworkPath (path))
-			{
-				ptr_app->type = DataAppNetwork; // network path
-			}
-			else
-			{
-				ptr_app->type = DataAppRegular;
-			}
+			ptr_app->type = PathIsNetworkPath (path) ? DataAppNetwork : DataAppRegular;
 		}
+
+		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstring2 (config.ntoskrnl_path) : _r_obj_createstring (path);
 	}
 
-	if (!_r_str_isempty (ptr_app->real_path) && ptr_app->type == DataAppRegular)
-	{
-		DWORD dwAttr = GetFileAttributes (_r_obj_getstring (ptr_app->real_path));
+	ptr_app->original_path = _r_obj_createstringex (path, path_length * sizeof (WCHAR));
 
-		ptr_app->is_system = is_ntoskrnl || (dwAttr & FILE_ATTRIBUTE_SYSTEM) != 0 || (_r_str_compare_length (_r_obj_getstring (ptr_app->real_path), config.windows_dir, config.wd_length) == 0);
-	}
-
-	ptr_app->original_path = _r_obj_createstringex (path, app_length * sizeof (WCHAR));
-
-	if (is_ntoskrnl && !_r_str_isempty (ptr_app->original_path))
+	// fix "System" lowercase
+	if (is_ntoskrnl)
 	{
 		_r_str_tolower (ptr_app->original_path);
-		ptr_app->original_path->Buffer[0] = _r_str_upper (ptr_app->original_path->Buffer[0]); // fix "System" lowercase
+		ptr_app->original_path->Buffer[0] = _r_str_upper (ptr_app->original_path->Buffer[0]);
 	}
 
-	// get display name
-	_r_obj_movereference (&ptr_app->display_name, _app_getdisplayname (app_hash, ptr_app, FALSE));
+	if (ptr_app->type == DataAppRegular || ptr_app->type == DataAppDevice || ptr_app->type == DataAppNetwork)
+		ptr_app->short_name = _r_obj_createstring (_r_path_getbasename (path));
 
 	// get signature information
 	if (_r_config_getboolean (L"IsCertificatesEnabled", FALSE))
@@ -182,12 +190,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 
 	ptr_app->guids = new GUIDS_VEC; // initialize stl
 
-	ptr_app->is_enabled = is_enabled;
-	ptr_app->is_silent = is_silent;
-
-	ptr_app->timestamp = timestamp ? timestamp : _r_unixtime_now ();
-	ptr_app->timer = timer;
-	ptr_app->last_notify = last_notify;
+	ptr_app->timestamp = _r_unixtime_now ();
 
 	if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
 		ptr_app->is_undeletable = TRUE;
@@ -204,7 +207,7 @@ SIZE_T _app_addapplication (HWND hwnd, LPCWSTR path, time_t timestamp, time_t ti
 		{
 			_r_fastlock_acquireshared (&lock_checkbox);
 
-			_r_listview_additemex (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+			_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
 			_app_setappiteminfo (hwnd, listview_id, 0, app_hash, ptr_app);
 
 			_r_fastlock_releaseshared (&lock_checkbox);
@@ -222,19 +225,6 @@ PITEM_APP _app_getappitem (SIZE_T app_hash)
 
 		if (pdata)
 			return (PITEM_APP)_r_obj_reference (pdata);
-	}
-
-	return NULL;
-}
-
-PITEM_APP_HELPER _app_getapphelperitem (SIZE_T app_hash)
-{
-	if (_app_isapphelperfound (app_hash))
-	{
-		PVOID pdata = apps_helper.at (app_hash);
-
-		if (pdata)
-			return (PITEM_APP_HELPER)_r_obj_reference (pdata);
 	}
 
 	return NULL;
@@ -335,42 +325,70 @@ SIZE_T _app_getlogapp (SIZE_T idx)
 	return 0;
 }
 
-COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_validconnection)
+COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_systemapp, BOOLEAN is_validconnection)
 {
 	PITEM_APP ptr_app = _app_getappitem (app_hash);
-
-	if (!ptr_app)
-		return 0;
-
 	LPCWSTR colorValue = NULL;
-
 	BOOLEAN is_profilelist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM);
 
-	if (_r_config_getboolean (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
-		colorValue = L"ColorInvalid";
+	if (ptr_app)
+	{
+		if (_r_config_getboolean (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
+		{
+			colorValue = L"ColorInvalid";
+			goto CleanupExit;
+		}
 
-	else if (_r_config_getboolean (L"IsHighlightTimer", TRUE, L"colors") && _app_istimeractive (ptr_app))
-		colorValue = L"ColorTimer";
+		if (_r_config_getboolean (L"IsHighlightTimer", TRUE, L"colors") && _app_istimeractive (ptr_app))
+		{
+			colorValue = L"ColorTimer";
+			goto CleanupExit;
+		}
+	}
 
-	else if (_r_config_getboolean (L"IsHighlightConnection", TRUE, L"colors") && is_validconnection)
+	if (_r_config_getboolean (L"IsHighlightConnection", TRUE, L"colors") && is_validconnection)
+	{
 		colorValue = L"ColorConnection";
+		goto CleanupExit;
+	}
 
-	else if (_r_config_getboolean (L"IsHighlightSigned", TRUE, L"colors") && !ptr_app->is_silent && _r_config_getboolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
-		colorValue = L"ColorSigned";
+	if (ptr_app)
+	{
+		if (_r_config_getboolean (L"IsHighlightSigned", TRUE, L"colors") && !ptr_app->is_silent && _r_config_getboolean (L"IsCertificatesEnabled", FALSE) && ptr_app->is_signed)
+		{
+			colorValue = L"ColorSigned";
+			goto CleanupExit;
+		}
 
-	else if (!is_profilelist && (_r_config_getboolean (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash)))
-		colorValue = L"ColorSpecial";
+		if (!is_profilelist && (_r_config_getboolean (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash)))
+		{
+			colorValue = L"ColorSpecial";
+			goto CleanupExit;
+		}
 
-	else if (is_profilelist && _r_config_getboolean (L"IsHighlightSilent", TRUE, L"colors") && ptr_app->is_silent)
-		colorValue = L"ColorSilent";
+		if (is_profilelist && _r_config_getboolean (L"IsHighlightSilent", TRUE, L"colors") && ptr_app->is_silent)
+		{
+			colorValue = L"ColorSilent";
+			goto CleanupExit;
+		}
 
-	else if (_r_config_getboolean (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DataAppPico)
-		colorValue = L"ColorPico";
+		if (_r_config_getboolean (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DataAppPico)
+		{
+			colorValue = L"ColorPico";
+			goto CleanupExit;
+		}
+	}
 
-	else if (_r_config_getboolean (L"IsHighlightSystem", TRUE, L"colors") && ptr_app->is_system)
+	if (_r_config_getboolean (L"IsHighlightSystem", TRUE, L"colors") && is_systemapp)
+	{
 		colorValue = L"ColorSystem";
+		goto CleanupExit;
+	}
 
-	_r_obj_dereference (ptr_app);
+	if (ptr_app)
+		_r_obj_dereference (ptr_app);
+
+CleanupExit:
 
 	if (colorValue)
 		return _app_getcolorvalue (_r_str_hash (colorValue));
@@ -532,7 +550,7 @@ COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 	if (_r_config_getboolean (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
 		colorValue = L"ColorInvalid";
 
-	else if (_r_config_getboolean (L"IsHighlightSpecial", TRUE, L"colors") && !ptr_rule->apps->empty ())
+	else if (_r_config_getboolean (L"IsHighlightSpecial", TRUE, L"colors") && ptr_rule->type == DataRuleCustom && !ptr_rule->apps->empty ())
 		colorValue = L"ColorSpecial";
 
 	_r_obj_dereference (ptr_rule);
@@ -545,7 +563,7 @@ COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 
 PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 {
-	PR_STRING string = NULL;
+	R_STRINGBUILDER string = {0};
 
 	BOOLEAN is_appslist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP);
 	BOOLEAN is_ruleslist = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
@@ -554,17 +572,25 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 	{
 		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_APP ptr_app = _app_getappitem (app_hash);
-		PR_STRING displayName = NULL;
 
 		if (ptr_app)
 		{
-			string = _r_format_string (L"%s\r\n", _r_obj_getstring (!_r_str_isempty (ptr_app->real_path) ? ptr_app->real_path : (!_r_str_isempty (ptr_app->display_name) ? ptr_app->display_name : ptr_app->original_path)));
+			_r_obj_createstringbuilder (&string);
+
+			// app path
+			{
+				PR_STRING pathString = _r_format_string (L"%s\r\n", _r_obj_getstring (!_r_str_isempty (ptr_app->real_path) ? ptr_app->real_path : (!_r_str_isempty (ptr_app->display_name) ? ptr_app->display_name : ptr_app->original_path)));
+
+				_r_string_append2 (&string, pathString);
+
+				_r_obj_dereference (pathString);
+			}
 
 			// app information
 			{
-				PR_STRING infoString;
+				R_STRINGBUILDER infoString;
 
-				infoString = _r_obj_createstringbuilder ();
+				_r_obj_createstringbuilder (&infoString);
 
 				if (ptr_app->type == DataAppRegular)
 				{
@@ -580,23 +606,11 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 				}
 				else if (ptr_app->type == DataAppService)
 				{
-					if (_app_item_get (ptr_app->type, app_hash, &displayName, NULL, NULL, NULL))
-					{
-						_r_string_appendformat (&infoString, SZ_TAB L"%s" SZ_TAB_CRLF L"%s\r\n", _r_obj_getstringorempty (ptr_app->original_path), _r_obj_getstringorempty (displayName));
-
-						if (displayName)
-							_r_obj_dereference (displayName);
-					}
+					_r_string_appendformat (&infoString, SZ_TAB L"%s" SZ_TAB_CRLF L"%s\r\n", _r_obj_getstringorempty (ptr_app->original_path), _r_obj_getstringorempty (ptr_app->display_name));
 				}
 				else if (ptr_app->type == DataAppUWP)
 				{
-					if (_app_item_get (ptr_app->type, app_hash, &displayName, NULL, NULL, NULL))
-					{
-						_r_string_appendformat (&infoString, SZ_TAB L"%s\r\n", _r_obj_getstringorempty (displayName));
-
-						if (displayName)
-							_r_obj_dereference (displayName);
-					}
+					_r_string_appendformat (&infoString, SZ_TAB L"%s\r\n", _r_obj_getstringorempty (ptr_app->display_name));
 				}
 
 				// signature information
@@ -613,13 +627,13 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 					}
 				}
 
-				if (!_r_str_isempty (infoString))
+				if (!_r_str_isempty (&infoString))
 				{
 					_r_string_insertformat (&infoString, 0, L"%s:\r\n", _r_locale_getstring (IDS_FILE));
-					_r_string_append2 (&string, infoString);
+					_r_string_append2 (&string, _r_obj_finalstringbuilder (&infoString));
 				}
 
-				_r_obj_dereference (infoString);
+				_r_obj_deletestringbuilder (&infoString);
 			}
 
 			// app timer
@@ -646,9 +660,9 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 
 			// app notes
 			{
-				PR_STRING notesString;
+				R_STRINGBUILDER notesString;
 
-				notesString = _r_obj_createstringbuilder ();
+				_r_obj_createstringbuilder (&notesString);
 
 				// app type
 				if (ptr_app->type == DataAppNetwork)
@@ -658,7 +672,7 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_PICO));
 
 				// app settings
-				if (ptr_app->is_system)
+				if (_app_isappfromsystem (_r_obj_getstring (ptr_app->real_path), app_hash))
 					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SYSTEM));
 
 				if (_app_isapphaveconnection (app_hash))
@@ -670,16 +684,21 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 				if (!_app_isappexists (ptr_app))
 					_r_string_appendformat (&notesString, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_INVALID));
 
-				if (!_r_str_isempty (notesString))
+				if (!_r_str_isempty (&notesString))
 				{
 					_r_string_insertformat (&notesString, 0, L"%s:\r\n", _r_locale_getstring (IDS_NOTES));
-					_r_string_append2 (&string, notesString);
+					_r_string_append2 (&string, _r_obj_finalstringbuilder (&notesString));
 				}
 
-				_r_obj_dereference (notesString);
+				_r_obj_deletestringbuilder (&notesString);
 			}
 
 			_r_obj_dereference (ptr_app);
+
+			if (!_r_str_isempty (&string))
+				return _r_obj_finalstringbuilder (&string);
+
+			_r_obj_deletestringbuilder (&string);
 		}
 	}
 	else if (is_ruleslist)
@@ -689,25 +708,31 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 
 		if (ptr_rule)
 		{
+			_r_obj_createstringbuilder (&string);
+
 			LPCWSTR empty;
 
+			PR_STRING infoString;
 			PR_STRING ruleRemoteString = _app_rulesexpandrules (ptr_rule->rule_remote, L"\r\n" SZ_TAB);
 			PR_STRING ruleLocalString = _app_rulesexpandrules (ptr_rule->rule_local, L"\r\n" SZ_TAB);
 
 			empty = _r_locale_getstring (IDS_STATUS_EMPTY);
 
 			// rule information
-			string = _r_format_string (L"%s (#%" TEXT (PR_SIZE_T) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
-									   _r_obj_getstringordefault (ptr_rule->name, empty),
-									   lparam,
-									   _r_locale_getstring (IDS_RULE),
-									   SZ_TAB,
-									   _r_obj_getstringordefault (ruleRemoteString, empty),
-									   _r_locale_getstring (IDS_RULE),
-									   SZ_TAB,
-									   _r_obj_getstringordefault (ruleLocalString, empty)
+			infoString = _r_format_string (L"%s (#%" TEXT (PR_SIZE_T) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
+										   _r_obj_getstringordefault (ptr_rule->name, empty),
+										   lparam,
+										   _r_locale_getstring (IDS_RULE),
+										   SZ_TAB,
+										   _r_obj_getstringordefault (ruleRemoteString, empty),
+										   _r_locale_getstring (IDS_RULE),
+										   SZ_TAB,
+										   _r_obj_getstringordefault (ruleLocalString, empty)
 			);
 
+			_r_string_append2 (&string, infoString);
+
+			SAFE_DELETE_REFERENCE (infoString);
 			SAFE_DELETE_REFERENCE (ruleRemoteString);
 			SAFE_DELETE_REFERENCE (ruleLocalString);
 
@@ -732,6 +757,11 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 			}
 
 			_r_obj_dereference (ptr_rule);
+
+			if (!_r_str_isempty (&string))
+				return _r_obj_finalstringbuilder (&string);
+
+			_r_obj_deletestringbuilder (&string);
 		}
 	}
 	else if (listview_id == IDC_NETWORK)
@@ -743,6 +773,7 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 		{
 			LPCWSTR empty;
 
+			PR_STRING infoString;
 			PR_STRING localAddressString;
 			PR_STRING remoteAddressString;
 
@@ -751,22 +782,24 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 			localAddressString = _app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, ptr_network->local_port, 0);
 			remoteAddressString = _app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, ptr_network->remote_port, 0);
 
-			string = _r_format_string (L"%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
-									   _r_obj_getstringordefault (ptr_network->path, empty),
-									   _r_locale_getstring (IDS_ADDRESS),
-									   _r_obj_getstringordefault (localAddressString, empty),
-									   _r_locale_getstring (IDS_ADDRESS),
-									   _r_obj_getstringordefault (remoteAddressString, empty),
-									   _r_locale_getstring (IDS_PROTOCOL),
-									   _app_getprotoname (ptr_network->protocol, ptr_network->af, empty),
-									   _r_locale_getstring (IDS_STATE),
-									   _app_getconnectionstatusname (ptr_network->state, empty)
+			infoString = _r_format_string (L"%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
+										   _r_obj_getstringordefault (ptr_network->path, empty),
+										   _r_locale_getstring (IDS_ADDRESS),
+										   _r_obj_getstringordefault (localAddressString, empty),
+										   _r_locale_getstring (IDS_ADDRESS),
+										   _r_obj_getstringordefault (remoteAddressString, empty),
+										   _r_locale_getstring (IDS_PROTOCOL),
+										   _app_getprotoname (ptr_network->protocol, ptr_network->af, empty),
+										   _r_locale_getstring (IDS_STATE),
+										   _app_getconnectionstatusname (ptr_network->state, empty)
 			);
 
 			SAFE_DELETE_REFERENCE (localAddressString);
 			SAFE_DELETE_REFERENCE (remoteAddressString);
 
 			_r_obj_dereference (ptr_network);
+
+			return infoString;
 		}
 
 	}
@@ -781,6 +814,7 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 
 			LPCWSTR empty;
 
+			PR_STRING infoString;
 			PR_STRING localAddressString;
 			PR_STRING remoteAddressString;
 			PR_STRING directionString;
@@ -793,22 +827,22 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 			remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, 0);
 			directionString = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE);
 
-			string = _r_format_string (L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
-									   _r_obj_getstringordefault (ptr_log->path, empty),
-									   _r_locale_getstring (IDS_DATE),
-									   dateString,
-									   _r_locale_getstring (IDS_ADDRESS),
-									   _r_obj_getstringordefault (localAddressString, empty),
-									   _r_locale_getstring (IDS_ADDRESS),
-									   _r_obj_getstringordefault (remoteAddressString, empty),
-									   _r_locale_getstring (IDS_PROTOCOL),
-									   _app_getprotoname (ptr_log->protocol, ptr_log->af, empty),
-									   _r_locale_getstring (IDS_FILTER),
-									   _r_obj_getstringordefault (ptr_log->filter_name, empty),
-									   _r_locale_getstring (IDS_DIRECTION),
-									   _r_obj_getstringorempty (directionString),
-									   _r_locale_getstring (IDS_STATE),
-									   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
+			infoString = _r_format_string (L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n" SZ_TAB L"%s\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s\r\n%s:\r\n" SZ_TAB L"%s",
+										   _r_obj_getstringordefault (ptr_log->path, empty),
+										   _r_locale_getstring (IDS_DATE),
+										   dateString,
+										   _r_locale_getstring (IDS_ADDRESS),
+										   _r_obj_getstringordefault (localAddressString, empty),
+										   _r_locale_getstring (IDS_ADDRESS),
+										   _r_obj_getstringordefault (remoteAddressString, empty),
+										   _r_locale_getstring (IDS_PROTOCOL),
+										   _app_getprotoname (ptr_log->protocol, ptr_log->af, empty),
+										   _r_locale_getstring (IDS_FILTER),
+										   _r_obj_getstringordefault (ptr_log->filter_name, empty),
+										   _r_locale_getstring (IDS_DIRECTION),
+										   _r_obj_getstringorempty (directionString),
+										   _r_locale_getstring (IDS_STATE),
+										   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 			);
 
 			SAFE_DELETE_REFERENCE (localAddressString);
@@ -816,17 +850,16 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 			SAFE_DELETE_REFERENCE (directionString);
 
 			_r_obj_dereference (ptr_log);
+
+			return infoString;
 		}
 	}
 	else if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
 	{
-		PR_STRING itemText = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
-
-		if (itemText)
-			_r_obj_movereference (&string, itemText);
+		return _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 	}
 
-	return string;
+	return NULL;
 }
 
 VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, SIZE_T app_hash, PITEM_APP ptr_app)
@@ -836,7 +869,7 @@ VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, SIZE_T app_hash,
 
 	_app_getappicon (ptr_app, TRUE, &ptr_app->icon_id, NULL);
 
-	_r_listview_setitemex (hwnd, listview_id, item, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), 0);
+	_r_listview_setitemex (hwnd, listview_id, item, 0, _app_getdisplayname (app_hash, ptr_app, FALSE), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), 0);
 
 	WCHAR dateString[256];
 	_r_format_dateex (dateString, RTL_NUMBER_OF (dateString), ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
@@ -915,13 +948,12 @@ VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 	}
 }
 
-VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable)
+VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable, BOOLEAN is_createconfig)
 {
 	ptr_rule->is_enabled = is_enable;
 
 	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->name))
 	{
-		PVOID pdata;
 		PITEM_RULE_CONFIG ptr_config;
 		SIZE_T rule_hash = _r_str_hash (ptr_rule->name);
 
@@ -929,26 +961,19 @@ VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable)
 		{
 			if (rules_config.find (rule_hash) != rules_config.end ())
 			{
-				pdata = rules_config.at (rule_hash);
-
-				if (pdata)
+				if (rules_config.at (rule_hash))
 				{
-					ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (pdata);
+					ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (rules_config.at (rule_hash));
+
 					ptr_config->is_enabled = is_enable;
 
 					_r_obj_dereference (ptr_config);
-				}
-				else
-				{
-					ptr_config = (PITEM_RULE_CONFIG)_r_obj_allocateex (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
 
-					ptr_config->is_enabled = is_enable;
-					ptr_config->name = _r_obj_createstring2 (ptr_rule->name);
-
-					rules_config.insert_or_assign (rule_hash, ptr_config);
+					return;
 				}
 			}
-			else
+
+			if (is_createconfig)
 			{
 				ptr_config = (PITEM_RULE_CONFIG)_r_obj_allocateex (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
 
@@ -956,31 +981,6 @@ VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable)
 				ptr_config->name = _r_obj_createstring2 (ptr_rule->name);
 
 				rules_config.insert_or_assign (rule_hash, ptr_config);
-			}
-		}
-	}
-}
-
-VOID _app_ruleenable2 (PITEM_RULE ptr_rule, BOOLEAN is_enable)
-{
-	ptr_rule->is_enabled = is_enable;
-
-	if (ptr_rule->is_readonly && !_r_str_isempty (ptr_rule->name))
-	{
-		SIZE_T rule_hash = _r_str_hash (ptr_rule->name);
-
-		if (rule_hash)
-		{
-			if (rules_config.find (rule_hash) != rules_config.end ())
-			{
-				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (rules_config.at (rule_hash));
-
-				if (ptr_config)
-				{
-					ptr_config->is_enabled = is_enable;
-
-					_r_obj_dereference (ptr_config);
-				}
 			}
 		}
 	}
@@ -1063,7 +1063,7 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 		}
 
 		changes_count += 1;
-		_app_ruleenable2 (ptr_rule, ptr_rule->is_enabled);
+		_app_ruleenable (ptr_rule, ptr_rule->is_enabled, FALSE);
 
 		if (hwnd)
 		{
@@ -1115,9 +1115,9 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
 {
-	PR_STRING string;
+	R_STRINGBUILDER string;
 
-	string = _r_obj_createstringbuilder ();
+	_r_obj_createstringbuilder (&string);
 
 	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
@@ -1146,22 +1146,22 @@ PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
 		_r_obj_dereference (ptr_rule);
 	}
 
-	_r_str_trim (string, delimeter);
+	_r_str_trim (&string, delimeter);
 
-	if (_r_str_isempty (string))
+	if (_r_str_isempty (&string))
 	{
-		_r_obj_dereference (string);
+		_r_obj_deletestringbuilder (&string);
 		return NULL;
 	}
 
-	return string;
+	return _r_obj_finalstringbuilder (&string);
 }
 
 PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay, LPCWSTR delimeter)
 {
-	PR_STRING string;
+	R_STRINGBUILDER string;
 
-	string = _r_obj_createstringbuilder ();
+	_r_obj_createstringbuilder (&string);
 
 	if (is_fordisplay && ptr_rule->is_forservices)
 	{
@@ -1177,7 +1177,7 @@ PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay
 
 		if (is_fordisplay)
 		{
-			if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
+			if (ptr_app->type == DataAppUWP)
 			{
 				if (!_r_str_isempty (ptr_app->display_name))
 					_r_string_append2 (&string, ptr_app->display_name);
@@ -1199,25 +1199,25 @@ PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay
 		_r_obj_dereference (ptr_app);
 	}
 
-	_r_str_trim (string, delimeter);
+	_r_str_trim (&string, delimeter);
 
-	if (_r_str_isempty (string))
+	if (_r_str_isempty (&string))
 	{
-		_r_obj_dereference (string);
+		_r_obj_deletestringbuilder (&string);
 		return NULL;
 	}
 
-	return string;
+	return _r_obj_finalstringbuilder (&string);
 }
 
 PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter)
 {
-	PR_STRING string;
+	R_STRINGBUILDER string;
 
 	if (_r_str_isempty (rule))
 		return NULL;
 
-	string = _r_obj_createstringbuilder ();
+	_r_obj_createstringbuilder (&string);
 
 	R_STRINGREF remainingPart;
 	PR_STRING rulePart;
@@ -1239,15 +1239,15 @@ PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter)
 		}
 	}
 
-	_r_str_trim (string, delimeter);
+	_r_str_trim (&string, delimeter);
 
-	if (_r_str_isempty (string))
+	if (_r_str_isempty (&string))
 	{
-		_r_obj_dereference (string);
+		_r_obj_deletestringbuilder (&string);
 		return NULL;
 	}
 
-	return string;
+	return _r_obj_finalstringbuilder (&string);
 }
 
 BOOLEAN _app_isappfound (SIZE_T app_hash)
@@ -1255,9 +1255,24 @@ BOOLEAN _app_isappfound (SIZE_T app_hash)
 	return app_hash && apps.find (app_hash) != apps.end ();
 }
 
-BOOLEAN _app_isapphelperfound (SIZE_T app_hash)
+BOOLEAN _app_isappfromsystem (LPCWSTR path, SIZE_T app_hash)
 {
-	return app_hash && apps_helper.find (app_hash) != apps_helper.end ();
+	if (!app_hash)
+		return FALSE;
+
+	if (app_hash == config.ntoskrnl_hash)
+		return TRUE;
+
+	if (path)
+	{
+		if (_r_str_compare_length (path, config.windows_dir, config.wd_length) == 0)
+			return TRUE;
+
+		if ((GetFileAttributes (path) & FILE_ATTRIBUTE_SYSTEM) != 0)
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 BOOLEAN _app_isapphaveconnection (SIZE_T app_hash)
@@ -1357,16 +1372,16 @@ BOOLEAN _app_isappexists (const PITEM_APP ptr_app)
 	if (ptr_app->is_enabled && ptr_app->is_haveerrors)
 		return FALSE;
 
+	if (ptr_app->type == DataAppRegular)
+		return !_r_str_isempty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path->Buffer);
+
 	if (ptr_app->type == DataAppDevice || ptr_app->type == DataAppNetwork || ptr_app->type == DataAppPico)
 		return TRUE;
 
-	else if (ptr_app->type == DataAppRegular)
-		return !_r_str_isempty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path->Buffer);
+	if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
+		return TRUE;
 
-	else if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
-		return _app_item_get (ptr_app->type, _r_str_hash (ptr_app->original_path), NULL, NULL, NULL, NULL);
-
-	return TRUE;
+	return FALSE;
 }
 
 BOOLEAN _app_isrulehost (LPCWSTR rule)
@@ -1445,14 +1460,14 @@ BOOLEAN _app_isrulevalidchars (LPCWSTR rule)
 	return TRUE;
 }
 
-BOOLEAN _app_profile_load_check_node (pugi::xml_node& root, ENUM_TYPE_XML type, BOOLEAN is_strict)
+BOOLEAN _app_profile_load_check_node (pugi::xml_node* root, ENUM_TYPE_XML type, BOOLEAN is_strict)
 {
 	if (root)
 	{
 		if (is_strict)
-			return (root.attribute (L"type").as_int () == type);
+			return (root->attribute (L"type").as_int () == type);
 
-		return (root.attribute (L"type").empty () || (root.attribute (L"type").as_int () == type));
+		return (root->attribute (L"type").empty () || (root->attribute (L"type").as_int () == type));
 	}
 
 	return FALSE;
@@ -1467,7 +1482,7 @@ BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_st
 	{
 		pugi::xml_node root = doc.child (L"root");
 
-		return _app_profile_load_check_node (root, type, is_strict);
+		return _app_profile_load_check_node (&root, type, is_strict);
 	}
 
 	return FALSE;
@@ -1476,7 +1491,10 @@ BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_st
 VOID _app_profile_load_fallback ()
 {
 	if (!_app_isappfound (config.my_hash))
-		_app_addapplication (NULL, _r_sys_getimagepathname (), 0, 0, 0, FALSE, TRUE);
+	{
+		_app_addapplication (NULL, DataUnknown, _r_sys_getimagepathname (), NULL, NULL);
+		_app_setappinfo (config.my_hash, InfoIsEnabled, TRUE);
+	}
 
 	_app_setappinfo (config.my_hash, InfoIsUndeletable, TRUE);
 
@@ -1484,27 +1502,52 @@ VOID _app_profile_load_fallback ()
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
 		if (!_app_isappfound (config.ntoskrnl_hash))
-			_app_addapplication (NULL, PROC_SYSTEM_NAME, 0, 0, 0, FALSE, FALSE);
+			_app_addapplication (NULL, DataUnknown, PROC_SYSTEM_NAME, NULL, NULL);
 
 		if (!_app_isappfound (config.svchost_hash))
-			_app_addapplication (NULL, _r_obj_getstring (config.svchost_path), 0, 0, 0, FALSE, FALSE);
+			_app_addapplication (NULL, DataUnknown, _r_obj_getstring (config.svchost_path), NULL, NULL);
 
 		_app_setappinfo (config.ntoskrnl_hash, InfoIsUndeletable, TRUE);
 		_app_setappinfo (config.svchost_hash, InfoIsUndeletable, TRUE);
 	}
 }
 
-VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT version)
+VOID _app_profile_load_helper (pugi::xml_node* root, ENUM_TYPE_DATA type, UINT version)
 {
 	INT blocklist_spy_state = _r_calc_clamp (INT, _r_config_getinteger (L"BlocklistSpyState", 2), 0, 2);
 	INT blocklist_update_state = _r_calc_clamp (INT, _r_config_getinteger (L"BlocklistUpdateState", 0), 0, 2);
 	INT blocklist_extra_state = _r_calc_clamp (INT, _r_config_getinteger (L"BlocklistExtraState", 0), 0, 2);
+	PITEM_APP ptr_app;
+	SIZE_T app_hash;
 
-	for (pugi::xml_node item = root.child (L"item"); item; item = item.next_sibling (L"item"))
+	for (pugi::xml_node item = root->child (L"item"); item; item = item.next_sibling (L"item"))
 	{
 		if (type == DataAppRegular)
 		{
-			_app_addapplication (NULL, item.attribute (L"path").as_string (), item.attribute (L"timestamp").as_llong (), item.attribute (L"timer").as_llong (), 0, item.attribute (L"is_silent").as_bool (), item.attribute (L"is_enabled").as_bool ());
+			app_hash = _app_addapplication (NULL, DataUnknown, item.attribute (L"path").as_string (), NULL, NULL);
+			ptr_app = _app_getappitem (app_hash);
+
+			if (ptr_app)
+			{
+				time_t time;
+
+				_app_setappinfo (ptr_app, InfoIsSilent, (LONG_PTR)item.attribute (L"is_silent").as_bool ());
+				_app_setappinfo (ptr_app, InfoIsEnabled, (LONG_PTR)item.attribute (L"is_enabled").as_bool ());
+
+				if (!item.attribute (L"timestamp").empty ())
+				{
+					time = item.attribute (L"timestamp").as_llong ();
+					_app_setappinfo (ptr_app, InfoTimestampPtr, (LONG_PTR)&time);
+				}
+
+				if (!item.attribute (L"timer").empty ())
+				{
+					time = item.attribute (L"timer").as_llong ();
+					_app_setappinfo (ptr_app, InfoTimerPtr, (LONG_PTR)&time);
+				}
+
+				_r_obj_dereference (ptr_app);
+			}
 		}
 		else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleCustom)
 		{
@@ -1599,16 +1642,16 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 
 			// load apps
 			{
-				PR_STRING ruleApps;
+				R_STRINGBUILDER ruleApps;
 
-				ruleApps = _r_obj_createstringbuilder ();
+				_r_obj_createstringbuilder (&ruleApps);
 
 				if (!item.attribute (L"apps").empty ())
 					_r_string_append (&ruleApps, item.attribute (L"apps").as_string ());
 
 				if (is_internal && ptr_config && !_r_str_isempty (ptr_config->apps))
 				{
-					if (!_r_str_isempty (ruleApps))
+					if (!_r_str_isempty (&ruleApps))
 					{
 						_r_string_appendformat (&ruleApps, L"%s%s", DIVIDER_APP, ptr_config->apps->Buffer);
 					}
@@ -1621,17 +1664,17 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 				if (ptr_config)
 					_r_obj_dereference (ptr_config);
 
-				if (!_r_str_isempty (ruleApps))
+				if (!_r_str_isempty (&ruleApps))
 				{
 					if (version < XML_PROFILE_VER_3)
-						_r_str_replacechar (ruleApps->Buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
+						_r_str_replacechar (ruleApps.String->Buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
 					R_STRINGREF remainingPart;
 					PR_STRING appPath;
 					PR_STRING expandedPath;
 					SIZE_T app_hash;
 
-					_r_stringref_initialize2 (&remainingPart, ruleApps);
+					_r_stringref_initialize2 (&remainingPart, _r_obj_finalstringbuilder (&ruleApps));
 
 					while (remainingPart.Length != 0)
 					{
@@ -1657,7 +1700,7 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 									}
 
 									if (!_app_isappfound (app_hash))
-										app_hash = _app_addapplication (NULL, _r_obj_getstring (appPath), 0, 0, 0, FALSE, FALSE);
+										app_hash = _app_addapplication (NULL, DataUnknown, _r_obj_getstring (appPath), NULL, NULL);
 
 									if (ptr_rule->type == DataRuleSystem)
 										_app_setappinfo (app_hash, InfoIsUndeletable, TRUE);
@@ -1671,7 +1714,7 @@ VOID _app_profile_load_helper (pugi::xml_node& root, ENUM_TYPE_DATA type, UINT v
 					}
 				}
 
-				_r_obj_dereference (ruleApps);
+				_r_obj_deletestringbuilder (&ruleApps);
 			}
 
 			rules_arr.emplace_back (ptr_rule);
@@ -1742,7 +1785,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 
 	if (load_original && root)
 	{
-		if (_app_profile_load_check_node (root, XmlProfileInternalV3, TRUE))
+		if (_app_profile_load_check_node (&root, XmlProfileInternalV3, TRUE))
 		{
 			UINT version = root.attribute (L"version").as_uint ();
 
@@ -1752,12 +1795,12 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 			pugi::xml_node root_rules_system = root.child (L"rules_system");
 
 			if (root_rules_system)
-				_app_profile_load_helper (root_rules_system, DataRuleSystem, version);
+				_app_profile_load_helper (&root_rules_system, DataRuleSystem, version);
 
 			pugi::xml_node root_rules_blocklist = root.child (L"rules_blocklist");
 
 			if (root_rules_blocklist)
-				_app_profile_load_helper (root_rules_blocklist, DataRuleBlocklist, version);
+				_app_profile_load_helper (&root_rules_blocklist, DataRuleBlocklist, version);
 		}
 	}
 }
@@ -1779,9 +1822,6 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 	// clear apps
 	_app_freeapps_map (&apps);
-
-	// clear services/uwp apps
-	_app_freeappshelper_map (&apps_helper);
 
 	// clear rules config
 	_app_freerulesconfig_map (&rules_config);
@@ -1822,25 +1862,25 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			{
 				UINT version = root.attribute (L"version").as_uint ();
 
-				if (_app_profile_load_check_node (root, XmlProfileV3, TRUE))
+				if (_app_profile_load_check_node (&root, XmlProfileV3, TRUE))
 				{
 					// load apps (new!)
 					pugi::xml_node root_apps = root.child (L"apps");
 
 					if (root_apps)
-						_app_profile_load_helper (root_apps, DataAppRegular, version);
+						_app_profile_load_helper (&root_apps, DataAppRegular, version);
 
 					// load rules config (new!)
 					pugi::xml_node root_rules_config = root.child (L"rules_config");
 
 					if (root_rules_config)
-						_app_profile_load_helper (root_rules_config, DataRulesConfig, version);
+						_app_profile_load_helper (&root_rules_config, DataRulesConfig, version);
 
 					// load user rules (new!)
 					pugi::xml_node root_rules_custom = root.child (L"rules_custom");
 
 					if (root_rules_custom)
-						_app_profile_load_helper (root_rules_custom, DataRuleCustom, version);
+						_app_profile_load_helper (&root_rules_custom, DataRuleCustom, version);
 				}
 			}
 		}
@@ -1871,7 +1911,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			{
 				_r_fastlock_acquireshared (&lock_checkbox);
 
-				_r_listview_additemex (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
+				_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, ptr_app->icon_id, _app_getappgroup (app_hash, ptr_app), app_hash);
 				_app_setappiteminfo (hwnd, listview_id, 0, app_hash, ptr_app);
 
 				_r_fastlock_releaseshared (&lock_checkbox);
@@ -1882,25 +1922,6 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 				_app_timer_set (hwnd, ptr_app, ptr_app->timer - current_time);
 
 			_r_obj_dereference (ptr_app);
-		}
-
-		// add services and store apps
-		for (auto it = apps_helper.begin (); it != apps_helper.end (); ++it)
-		{
-			if (!it->second)
-				continue;
-
-			PITEM_APP_HELPER ptr_app_item = (PITEM_APP_HELPER)_r_obj_reference (it->second);
-
-			if (_r_str_isempty (ptr_app_item->internal_name))
-			{
-				_r_obj_dereference (ptr_app_item);
-				continue;
-			}
-
-			_app_addapplication (hwnd, ptr_app_item->internal_name->Buffer, ptr_app_item->timestamp, 0, 0, FALSE, FALSE);
-
-			_r_obj_dereference (ptr_app_item);
 		}
 
 		// add rules
@@ -1919,7 +1940,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			{
 				_r_fastlock_acquireshared (&lock_checkbox);
 
-				_r_listview_additemex (hwnd, listview_id, 0, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
+				_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
 				_app_setruleiteminfo (hwnd, listview_id, 0, ptr_rule, FALSE);
 
 				_r_fastlock_releaseshared (&lock_checkbox);
