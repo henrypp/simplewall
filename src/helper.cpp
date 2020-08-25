@@ -2032,7 +2032,9 @@ VOID _app_generate_packages ()
 	PR_BYTE packageSid;
 	PR_STRING keyName;
 	PR_STRING displayName;
+	PR_STRING pathString;
 	PR_STRING packageSidString;
+	PITEM_APP ptr_app;
 	SIZE_T app_hash;
 
 	code = RegOpenKeyEx (HKEY_CLASSES_ROOT, L"Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages", 0, KEY_READ, &hkey);
@@ -2098,8 +2100,10 @@ VOID _app_generate_packages ()
 										}
 									}
 
-									app_hash = _app_addapplication (NULL, DataAppUWP, packageSidString->Buffer, displayName, _r_reg_querystring (hsubkey, L"PackageRootFolder"));
-									PITEM_APP ptr_app = _app_getappitem (app_hash);
+									pathString = _r_reg_querystring (hsubkey, L"PackageRootFolder");
+
+									app_hash = _app_addapplication (NULL, DataAppUWP, packageSidString->Buffer, displayName, pathString);
+									ptr_app = _app_getappitem (app_hash);
 
 									if (ptr_app)
 									{
@@ -2114,6 +2118,11 @@ VOID _app_generate_packages ()
 
 										_r_obj_dereference (ptr_app);
 									}
+
+									if (pathString)
+										_r_obj_dereference (pathString);
+
+									_r_obj_dereference (displayName);
 								}
 							}
 
@@ -2184,6 +2193,8 @@ VOID _app_generate_services ()
 	{
 		LPENUM_SERVICE_STATUS_PROCESS service;
 		LPENUM_SERVICE_STATUS_PROCESS services;
+		PITEM_APP ptr_app;
+		SIZE_T app_hash;
 
 		services = (LPENUM_SERVICE_STATUS_PROCESS)buffer;
 
@@ -2194,7 +2205,7 @@ VOID _app_generate_services ()
 			LPCWSTR service_name = service->lpServiceName;
 			LPCWSTR display_name = service->lpDisplayName;
 
-			SIZE_T app_hash = _r_str_hash (service_name);
+			app_hash = _r_str_hash (service_name);
 
 			if (_app_isappfound (app_hash))
 				continue;
@@ -2286,8 +2297,10 @@ VOID _app_generate_services ()
 					continue;
 				}
 
-				app_hash = _app_addapplication (NULL, DataAppService, service_name, _r_obj_createstring (display_name), servicePath ? _r_obj_reference (servicePath) : NULL);
-				PITEM_APP ptr_app = _app_getappitem (app_hash);
+				PR_STRING nameString = _r_obj_createstring (display_name);
+
+				app_hash = _app_addapplication (NULL, DataAppService, service_name, nameString, servicePath);
+				ptr_app = _app_getappitem (app_hash);
 
 				if (ptr_app)
 				{
@@ -2299,6 +2312,8 @@ VOID _app_generate_services ()
 
 					_r_obj_dereference (ptr_app);
 				}
+
+				_r_obj_dereference (nameString);
 
 				SAFE_DELETE_LOCAL (pservice_sd);
 
