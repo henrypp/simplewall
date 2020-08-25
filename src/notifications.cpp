@@ -186,7 +186,6 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	WCHAR windowTitle[128];
 	WCHAR dateString[128];
 	PR_STRING signatureString = NULL;
-	PR_STRING nameString;
 	PR_STRING remoteAddressString;
 	PR_STRING remotePortString;
 	PR_STRING directionString;
@@ -222,7 +221,6 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, (LONG_PTR)ptr_log->hicon);
 
 	// print table text
-	nameString = _app_getdisplayname (ptr_log->app_hash, ptr_app, TRUE);
 	remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, FMTADDR_RESOLVE_HOST);
 	remotePortString = _app_formatport (ptr_log->remote_port, FALSE);
 	directionString = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE);
@@ -231,7 +229,7 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 	_r_format_dateex (dateString, RTL_NUMBER_OF (dateString), ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", _r_locale_getstring (IDS_NAME)));
-	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, _r_obj_getstring (localizedString), IDC_FILE_TEXT, _r_obj_getstringordefault (nameString, emptyString));
+	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, _r_obj_getstring (localizedString), IDC_FILE_TEXT, _app_getdisplayname (ptr_log->app_hash, ptr_app, TRUE));
 
 	_r_obj_movereference (&localizedString, _r_format_string (L"%s:", _r_locale_getstring (IDS_SIGNATURE)));
 	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, _r_obj_getstring (localizedString), IDC_SIGNATURE_TEXT, _r_obj_getstringordefault (signatureString, emptyString));
@@ -285,7 +283,6 @@ BOOLEAN _app_notifyshow (HWND hwnd, PITEM_LOG ptr_log, BOOLEAN is_forced, BOOLEA
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
-	SAFE_DELETE_REFERENCE (nameString);
 	SAFE_DELETE_REFERENCE (signatureString);
 	SAFE_DELETE_REFERENCE (remoteAddressString);
 	SAFE_DELETE_REFERENCE (remotePortString);
@@ -720,7 +717,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			if ((exstyle & WS_EX_LAYERED) == 0)
 				SetWindowLongPtr (hwnd, GWL_EXSTYLE, exstyle | WS_EX_LAYERED);
 
-			SetLayeredWindowAttributes (hwnd, 0, (msg == WM_ENTERSIZEMOVE) ? 100 : 255, LWA_ALPHA);
+			SetLayeredWindowAttributes (hwnd, 0, (msg == WM_ENTERSIZEMOVE) ? 150 : 255, LWA_ALPHA);
 			SetCursor (LoadCursor (NULL, (msg == WM_ENTERSIZEMOVE) ? IDC_SIZEALL : IDC_ARROW));
 
 			break;
@@ -881,12 +878,12 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 								ptr_rule->apps->erase (ptr_log->app_hash);
 
 								if (ptr_rule->apps->empty ())
-									_app_ruleenable (ptr_rule, FALSE);
+									_app_ruleenable (ptr_rule, FALSE, TRUE);
 							}
 							else
 							{
 								ptr_rule->apps->emplace (ptr_log->app_hash, TRUE);
-								_app_ruleenable (ptr_rule, TRUE);
+								_app_ruleenable (ptr_rule, TRUE, TRUE);
 							}
 
 							INT listview_id = (INT)_r_tab_getlparam (_r_app_gethwnd (), IDC_TAB, INVALID_INT);
@@ -1088,7 +1085,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					ptr_rule->type = DataRuleCustom;
 					ptr_rule->is_block = FALSE;
 
-					_app_ruleenable (ptr_rule, TRUE);
+					_app_ruleenable (ptr_rule, TRUE, TRUE);
 
 					if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), _r_app_gethwnd (), &EditorProc, (LPARAM)ptr_rule))
 					{
@@ -1106,7 +1103,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 							_r_fastlock_acquireshared (&lock_checkbox);
 
-							_r_listview_additemex (_r_app_gethwnd (), rules_listview_id, item_id, 0, _r_obj_getstringorempty (ptr_rule->name), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
+							_r_listview_additemex (_r_app_gethwnd (), rules_listview_id, item_id, 0, SZ_EMPTY, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
 							_app_setruleiteminfo (_r_app_gethwnd (), rules_listview_id, item_id, ptr_rule, TRUE);
 
 							_r_fastlock_releaseshared (&lock_checkbox);
