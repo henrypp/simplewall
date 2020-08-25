@@ -710,7 +710,6 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 	FWP_BYTE_BLOB* pblob = NULL;
 	PITEM_APP ptr_app = NULL;
-	PR_BYTE pdata = NULL;
 	BOOLEAN is_remoteaddr_set = FALSE;
 	BOOLEAN is_remoteport_set = FALSE;
 	BOOLEAN result = FALSE;
@@ -731,9 +730,9 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 		if (ptr_app->type == DataAppService) // windows service
 		{
-			if (_app_item_get (ptr_app->type, app_hash, NULL, NULL, NULL, &pdata))
+			if (ptr_app->pbytes)
 			{
-				ByteBlobAlloc (pdata->Buffer, RtlLengthSecurityDescriptor (pdata->Buffer), &pblob);
+				ByteBlobAlloc (ptr_app->pbytes->Buffer, RtlLengthSecurityDescriptor (ptr_app->pbytes->Buffer), &pblob);
 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -744,25 +743,25 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 			}
 			else
 			{
-				_r_logerror (0, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->display_name));
+				_r_logerror (0, TEXT (__FUNCTION__), 0, _app_getdisplayname (app_hash, ptr_app, TRUE));
 
 				goto CleanupExit;
 			}
 		}
 		else if (ptr_app->type == DataAppUWP) // windows store app (win8+)
 		{
-			if (_app_item_get (ptr_app->type, app_hash, NULL, NULL, NULL, &pdata))
+			if (ptr_app->pbytes)
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_PACKAGE_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_SID;
-				fwfc[count].conditionValue.sid = (SID*)pdata->Buffer;
+				fwfc[count].conditionValue.sid = (SID*)ptr_app->pbytes->Buffer;
 
 				count += 1;
 			}
 			else
 			{
-				_r_logerror (0, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->display_name));
+				_r_logerror (0, TEXT (__FUNCTION__), 0, _app_getdisplayname (app_hash, ptr_app, TRUE));
 
 				goto CleanupExit;
 			}
@@ -982,9 +981,6 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 	result = TRUE;
 
 CleanupExit:
-
-	if (pdata)
-		_r_obj_dereference (pdata);
 
 	if (ptr_app)
 		_r_obj_dereference (ptr_app);
