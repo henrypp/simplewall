@@ -597,6 +597,7 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 		{
 			INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
 			BOOLEAN is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
+			BOOLEAN is_systemapp = FALSE;
 			BOOLEAN is_validconnection = FALSE;
 
 			INT listview_id = PtrToInt ((PVOID)lpnmlv->nmcd.hdr.idFrom);
@@ -612,6 +613,7 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 					if (ptr_network)
 					{
 						app_hash = ptr_network->app_hash;
+						is_systemapp = _app_isappfromsystem (_r_obj_getstring (ptr_network->path), app_hash);
 						is_validconnection = ptr_network->is_connection;
 
 						_r_obj_dereference (ptr_network);
@@ -619,18 +621,34 @@ LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
 				}
 				else if (listview_id == IDC_LOG)
 				{
-					app_hash = _app_getlogapp (lpnmlv->nmcd.lItemlParam);
+					PITEM_LOG ptr_log = _app_getlogitem (lpnmlv->nmcd.lItemlParam);
+
+					if (ptr_log)
+					{
+						app_hash = _app_getlogapp (lpnmlv->nmcd.lItemlParam);
+						is_systemapp = _app_isappfromsystem (_r_obj_getstring (ptr_log->path), app_hash);
+
+						_r_obj_dereference (ptr_log);
+					}
 				}
 				else
 				{
 					app_hash = lpnmlv->nmcd.lItemlParam;
-
 					is_validconnection = _app_isapphaveconnection (app_hash);
+
+					PR_STRING realPath = (PR_STRING)_app_getappinfo (app_hash, InfoPath);
+
+					if (realPath)
+					{
+						is_systemapp = _app_isappfromsystem (_r_obj_getstring (realPath), app_hash);
+
+						_r_obj_dereference (realPath);
+					}
 				}
 
 				if (app_hash)
 				{
-					COLORREF new_clr = _app_getappcolor (listview_id, app_hash, is_validconnection);
+					COLORREF new_clr = _app_getappcolor (listview_id, app_hash, is_systemapp, is_validconnection);
 
 					if (new_clr)
 					{
