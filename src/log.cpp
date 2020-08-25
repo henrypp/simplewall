@@ -193,9 +193,8 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 {
 	INT listview_id;
 	SIZE_T index;
-	INT icon_id;
 	INT item_id;
-	PR_STRING nameString;
+	PITEM_APP ptr_app;
 	PR_STRING localAddressString;
 	PR_STRING localPortString;
 	PR_STRING remoteAddressString;
@@ -205,20 +204,12 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	if (_app_logisexists (hwnd, ptr_log))
 		return;
 
+	ptr_app = _app_getappitem (ptr_log->app_hash);
+
 	listview_id = IDC_LOG;
 	index = log_arr.size ();
 
 	log_arr.emplace_back ((PITEM_LOG)_r_obj_reference (ptr_log));
-
-	icon_id = (INT)_app_getappinfo (ptr_log->app_hash, InfoIconId);
-
-	if (!icon_id)
-		icon_id = config.icon_id;
-
-	nameString = (PR_STRING)_app_getappinfo (ptr_log->app_hash, InfoName);
-
-	if (!nameString && !_r_str_isempty (ptr_log->path))
-		nameString = _r_obj_reference (ptr_log->path);
 
 	localAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, 0);
 	remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, 0);
@@ -230,7 +221,7 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 
 	item_id = _r_listview_getitemcount (hwnd, listview_id, FALSE);
 
-	_r_listview_additemex (hwnd, listview_id, item_id, 0, _r_obj_getstringordefault (nameString, SZ_EMPTY), icon_id, I_GROUPIDNONE, index);
+	_r_listview_additemex (hwnd, listview_id, item_id, 0, ptr_app ? _app_getdisplayname (ptr_log->app_hash, ptr_app, TRUE) : SZ_EMPTY, ptr_app ? (INT)_app_getappinfo (ptr_app, InfoIconId) : config.icon_id, I_GROUPIDNONE, index);
 	_r_listview_setitem (hwnd, listview_id, item_id, 1, _r_obj_getstringordefault (localAddressString, SZ_EMPTY));
 	_r_listview_setitem (hwnd, listview_id, item_id, 3, _r_obj_getstringordefault (remoteAddressString, SZ_EMPTY));
 	_r_listview_setitem (hwnd, listview_id, item_id, 5, _app_getprotoname (ptr_log->protocol, ptr_log->af, SZ_EMPTY));
@@ -245,12 +236,12 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	_r_listview_setitem (hwnd, listview_id, item_id, 7, _r_obj_getstringorempty (directionString));
 	_r_listview_setitem (hwnd, listview_id, item_id, 8, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
 
-	SAFE_DELETE_REFERENCE (nameString);
 	SAFE_DELETE_REFERENCE (localAddressString);
 	SAFE_DELETE_REFERENCE (remoteAddressString);
 	SAFE_DELETE_REFERENCE (localPortString);
 	SAFE_DELETE_REFERENCE (remotePortString);
 	SAFE_DELETE_REFERENCE (directionString);
+	SAFE_DELETE_REFERENCE (ptr_app);
 
 	if (listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT))
 	{
@@ -490,7 +481,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 		if (sidString)
 		{
-			if (!_app_item_get (DataAppUWP, _r_str_hash (sidString), NULL, NULL, NULL, NULL))
+			if (!_app_isappfound (_r_str_hash (sidString)))
 				_r_obj_clearreference (&sidString);
 		}
 	}
@@ -889,7 +880,7 @@ THREAD_FN LogThread (PVOID lparam)
 		if (is_notexist)
 		{
 			_r_fastlock_acquireshared (&lock_logbusy);
-			ptr_log->app_hash = _app_addapplication (hwnd, ptr_log->path->Buffer, 0, 0, 0, FALSE, FALSE);
+			ptr_log->app_hash = _app_addapplication (hwnd, DataUnknown, ptr_log->path->Buffer, NULL, NULL);
 			_r_fastlock_releaseshared (&lock_logbusy);
 
 			INT app_listview_id = (INT)_app_getappinfo (ptr_log->app_hash, InfoListviewId);
@@ -940,7 +931,7 @@ THREAD_FN LogThread (PVOID lparam)
 
 						if (ptr_app)
 						{
-							if (!ptr_app->is_silent)
+							if (!_app_getappinfo (ptr_app, InfoIsSilent))
 								_app_notifyadd (config.hnotification, (PITEM_LOG)_r_obj_reference (ptr_log), ptr_app);
 
 							_r_obj_dereference (ptr_app);
