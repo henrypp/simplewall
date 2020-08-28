@@ -146,7 +146,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 		{
 			result = FALSE;
 
-			goto DoExit;
+			goto CleanupExit;
 		}
 
 		result = TRUE;
@@ -190,7 +190,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 					_r_logerror (UID, L"FwpmProviderAdd", code, NULL);
 					result = FALSE;
 
-					goto DoExit;
+					goto CleanupExit;
 				}
 				else
 				{
@@ -225,7 +225,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 					_r_logerror (UID, L"FwpmSubLayerAdd", code, NULL);
 					result = FALSE;
 
-					goto DoExit;
+					goto CleanupExit;
 				}
 				else
 				{
@@ -322,7 +322,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 		}
 	}
 
-DoExit:
+CleanupExit:
 
 	_r_fastlock_releaseshared (&lock_transaction);
 
@@ -1054,7 +1054,7 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 			continue;
 		}
 
-		ruleNamePtr = _r_obj_getstringorempty (ptr_rule->name);
+		ruleNamePtr = _r_obj_getstring (ptr_rule->name);
 
 		ruleRemoteString = NULL;
 		ruleLocalString = NULL;
@@ -1189,11 +1189,8 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT 
 		is_intransact = !_wfp_transact_start (hengine, line);
 	}
 
-	if (!guids.empty ())
-	{
-		for (auto it = guids.begin (); it != guids.end (); ++it)
-			_wfp_deletefilter (hengine, &(*it));
-	}
+	for (auto it = guids.begin (); it != guids.end (); ++it)
+		_wfp_deletefilter (hengine, &(*it));
 
 	for (auto it = ptr_apps->begin (); it != ptr_apps->end (); ++it)
 	{
@@ -1756,12 +1753,12 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 
 	if (type == DataAppRegular || type == DataAppNetwork || type == DataAppService)
 	{
-		if (_r_str_hash (_r_obj_getstring (originalPath)) == config.ntoskrnl_hash)
+		if (_r_str_hash (originalPath) == config.ntoskrnl_hash)
 		{
-			ByteBlobAlloc (_r_obj_getstring (originalPath), _r_obj_getstringsize (originalPath) + sizeof (UNICODE_NULL), lpblob);
+			ByteBlobAlloc (originalPath->Buffer, originalPath->Length + sizeof (UNICODE_NULL), lpblob);
 			code = ERROR_SUCCESS;
 
-			goto DoExit;
+			goto CleanupExit;
 		}
 		else
 		{
@@ -1777,7 +1774,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 			{
 				if (PathIsRelative (path))
 				{
-					goto DoExit;
+					goto CleanupExit;
 				}
 				else
 				{
@@ -1795,9 +1792,9 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 					code = _r_path_ntpathfromdos (pathRoot, &ntPath);
 
 					if (code != ERROR_SUCCESS)
-						goto DoExit;
+						goto CleanupExit;
 
-					_r_obj_movereference (&originalPath, _r_format_string (L"%s%c%s", _r_obj_getstring (ntPath), OBJ_NAME_PATH_SEPARATOR, pathSkipRoot));
+					_r_obj_movereference (&originalPath, _r_format_string (L"%s%s", _r_obj_getstring (ntPath), pathSkipRoot));
 				}
 			}
 			else if (code == ERROR_SUCCESS)
@@ -1807,7 +1804,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 			}
 			else
 			{
-				goto DoExit;
+				goto CleanupExit;
 
 			}
 
@@ -1822,10 +1819,10 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 		ByteBlobAlloc (_r_obj_getstring (originalPath), _r_obj_getstringsize (originalPath) + sizeof (UNICODE_NULL), lpblob);
 		code = ERROR_SUCCESS;
 
-		goto DoExit;
+		goto CleanupExit;
 	}
 
-DoExit:
+CleanupExit:
 
 	if (originalPath)
 		_r_obj_dereference (originalPath);
