@@ -115,13 +115,13 @@
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_DEPRECATIONS;_APP_NO_GUEST;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <CallingConvention>StdCall</CallingConvention>
       <IntelJCCErratum>true</IntelJCCErratum>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -130,6 +130,7 @@
       <SubSystem>Windows</SubSystem>
       <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
       <AdditionalOptions>/DEPENDENTLOADFLAG:0xA00 %(AdditionalOptions)</AdditionalOptions>
+      <CETCompat>true</CETCompat>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -145,13 +146,13 @@
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_APP_NO_DEPRECATIONS;_APP_NO_GUEST;_APP_HAVE_AUTORUN;_APP_HAVE_SKIPUAC;_APP_HAVE_TRAY;_APP_HAVE_SETTINGS;_APP_HAVE_UPDATES;_APP_HAVE_MINSIZE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <CallingConvention>StdCall</CallingConvention>
       <IntelJCCErratum>true</IntelJCCErratum>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -160,6 +161,7 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalOptions>/DEPENDENTLOADFLAG:0xA00 %(AdditionalOptions)</AdditionalOptions>
       <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
+      <CETCompat>true</CETCompat>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -183,6 +185,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <CallingConvention>StdCall</CallingConvention>
       <IntelJCCErratum>true</IntelJCCErratum>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -192,6 +195,7 @@
       <SubSystem>Windows</SubSystem>
       <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
       <AdditionalOptions>/DEPENDENTLOADFLAG:0xA00 %(AdditionalOptions)</AdditionalOptions>
+      <CETCompat>true</CETCompat>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -215,6 +219,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <CallingConvention>StdCall</CallingConvention>
       <IntelJCCErratum>true</IntelJCCErratum>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -224,6 +229,7 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalOptions>/DEPENDENTLOADFLAG:0xA00 %(AdditionalOptions)</AdditionalOptions>
       <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
+      <CETCompat>true</CETCompat>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
