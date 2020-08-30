@@ -90,7 +90,18 @@ VOID _app_setappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_key, LONG_PTR info_
 	}
 	else if (info_key == InfoTimerPtr)
 	{
-		ptr_app->timer = *((time_t*)info_value);
+		time_t timestamp = *((time_t*)info_value);
+
+		// check timer expiration
+		if (timestamp <= _r_unixtime_now ())
+		{
+			ptr_app->timer = 0;
+			ptr_app->is_enabled = FALSE;
+		}
+		else
+		{
+			ptr_app->timer = timestamp;
+		}
 	}
 	else if (info_key == InfoIsSilent)
 	{
