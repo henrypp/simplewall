@@ -2246,9 +2246,8 @@ VOID _app_generate_services ()
 						if (servicePath)
 						{
 							PathRemoveArgs (servicePath->Buffer);
-							_r_string_trimtonullterminator (servicePath);
-
 							PathUnquoteSpaces (servicePath->Buffer);
+
 							_r_string_trimtonullterminator (servicePath);
 						}
 					}
