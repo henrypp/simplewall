@@ -1816,7 +1816,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 		if (type == DataAppDevice)
 			_r_str_tolower (originalPath); // lower is important!
 
-		ByteBlobAlloc (_r_obj_getstring (originalPath), _r_obj_getstringsize (originalPath) + sizeof (UNICODE_NULL), lpblob);
+		ByteBlobAlloc (originalPath->Buffer, originalPath->Length + sizeof (UNICODE_NULL), lpblob);
 		code = ERROR_SUCCESS;
 
 		goto CleanupExit;
