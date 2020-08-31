@@ -2126,13 +2126,11 @@ VOID _app_generate_packages ()
 								}
 							}
 
-							if (packageSidString)
-								_r_obj_dereference (packageSidString);
+							_r_obj_dereference (packageSidString);
 						}
 					}
 
-					if (packageSid)
-						_r_obj_dereference (packageSid);
+					_r_obj_dereference (packageSid);
 				}
 
 				RegCloseKey (hsubkey);
