@@ -209,7 +209,7 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	listview_id = IDC_LOG;
 	index = log_arr.size ();
 
-	log_arr.emplace_back ((PITEM_LOG)_r_obj_reference (ptr_log));
+	log_arr.push_back ((PITEM_LOG)_r_obj_reference (ptr_log));
 
 	localAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, 0);
 	remoteAddressString = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, 0);
@@ -615,7 +615,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 			{
 				InterlockedIncrement (&log_stack.thread_count);
 
-				threads_pool.emplace_back (hthread);
+				threads_pool.push_back (hthread);
 
 				NtResumeThread (hthread, NULL);
 			}

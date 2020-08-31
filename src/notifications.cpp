@@ -46,7 +46,7 @@ BOOLEAN _app_notifycommand (HWND hwnd, INT button_id, time_t seconds)
 			}
 		}
 
-		rules.emplace_back (ptr_app);
+		rules.push_back (ptr_app);
 	}
 	else if (button_id == IDC_LATER_BTN)
 	{
@@ -913,7 +913,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 							}
 
 							OBJECTS_RULE_VECTOR rules;
-							rules.emplace_back (ptr_rule);
+							rules.push_back (ptr_rule);
 
 							if (_wfp_isfiltersinstalled ())
 							{
@@ -1090,7 +1090,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 					if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), _r_app_gethwnd (), &EditorProc, (LPARAM)ptr_rule))
 					{
 						SIZE_T rule_idx = rules_arr.size ();
-						rules_arr.emplace_back ((PITEM_RULE)_r_obj_reference (ptr_rule));
+						rules_arr.push_back ((PITEM_RULE)_r_obj_reference (ptr_rule));
 
 						INT listview_id = (INT)_r_tab_getlparam (_r_app_gethwnd (), IDC_TAB, INVALID_INT);
 

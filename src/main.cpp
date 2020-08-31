@@ -226,7 +226,7 @@ BOOLEAN _app_changefilters (HWND hwnd, BOOLEAN is_install, BOOLEAN is_forced)
 			return FALSE;
 		}
 
-		threads_pool.emplace_back (hthread);
+		threads_pool.push_back (hthread);
 		_r_sys_resumethread (hthread);
 
 		return TRUE;
@@ -258,7 +258,7 @@ VOID addcolor (UINT locale_id, LPCWSTR configName, BOOLEAN is_enabled, LPCWSTR c
 	ptr_clr->locale_id = locale_id;
 	ptr_clr->is_enabled = is_enabled;
 
-	colors.emplace_back (ptr_clr);
+	colors.push_back (ptr_clr);
 }
 
 BOOLEAN _app_installmessage (HWND hwnd, BOOLEAN is_install)
@@ -1878,13 +1878,13 @@ VOID _app_initialize ()
 
 		timers.clear ();
 
-		timers.emplace_back (_r_calc_minutes2seconds (time_t, 2));
-		timers.emplace_back (_r_calc_minutes2seconds (time_t, 5));
-		timers.emplace_back (_r_calc_minutes2seconds (time_t, 10));
-		timers.emplace_back (_r_calc_hours2seconds (time_t, 1));
-		timers.emplace_back (_r_calc_hours2seconds (time_t, 2));
-		timers.emplace_back (_r_calc_hours2seconds (time_t, 4));
-		timers.emplace_back (_r_calc_hours2seconds (time_t, 6));
+		timers.push_back (_r_calc_minutes2seconds (time_t, 2));
+		timers.push_back (_r_calc_minutes2seconds (time_t, 5));
+		timers.push_back (_r_calc_minutes2seconds (time_t, 10));
+		timers.push_back (_r_calc_hours2seconds (time_t, 1));
+		timers.push_back (_r_calc_hours2seconds (time_t, 2));
+		timers.push_back (_r_calc_hours2seconds (time_t, 4));
+		timers.push_back (_r_calc_hours2seconds (time_t, 6));
 	}
 
 	// initialize thread objects
@@ -2737,7 +2737,7 @@ find_wrap:
 									if (!is_enabled && _app_istimeractive (ptr_app))
 										_app_timer_reset (hwnd, ptr_app);
 
-									rules.emplace_back (ptr_app);
+									rules.push_back (ptr_app);
 
 									if (_wfp_isfiltersinstalled ())
 									{
@@ -2771,7 +2771,7 @@ find_wrap:
 
 									_r_fastlock_releaseshared (&lock_checkbox);
 
-									rules.emplace_back (ptr_rule);
+									rules.push_back (ptr_rule);
 
 									if (_wfp_isfiltersinstalled ())
 									{
@@ -3358,7 +3358,7 @@ find_wrap:
 				}
 
 				OBJECTS_RULE_VECTOR rules;
-				rules.emplace_back (ptr_rule);
+				rules.push_back (ptr_rule);
 
 				if (_wfp_isfiltersinstalled ())
 				{
@@ -3399,7 +3399,7 @@ find_wrap:
 
 					_app_timer_set (hwnd, ptr_app, seconds);
 
-					rules.emplace_back (ptr_app);
+					rules.push_back (ptr_app);
 				}
 
 				if (_wfp_isfiltersinstalled ())
@@ -4266,7 +4266,7 @@ find_wrap:
 								_app_setappiteminfo (hwnd, listview_id, item, app_hash, ptr_app);
 								_r_fastlock_releaseshared (&lock_checkbox);
 
-								rules.emplace_back (ptr_app);
+								rules.push_back (ptr_app);
 
 								is_changed = TRUE;
 
@@ -4312,7 +4312,7 @@ find_wrap:
 								_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, TRUE);
 								_r_fastlock_releaseshared (&lock_checkbox);
 
-								rules.emplace_back (ptr_rule);
+								rules.push_back (ptr_rule);
 
 								is_changed = TRUE;
 
@@ -4467,7 +4467,7 @@ find_wrap:
 					if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, (LPARAM)ptr_rule))
 					{
 						SIZE_T rule_idx = rules_arr.size ();
-						rules_arr.emplace_back ((PITEM_RULE)_r_obj_reference (ptr_rule));
+						rules_arr.push_back ((PITEM_RULE)_r_obj_reference (ptr_rule));
 
 						INT listview_rules_id = _app_getlistview_id (DataRuleCustom);
 
@@ -4809,7 +4809,7 @@ find_wrap:
 
 							guids.insert (guids.end (), ptr_app->guids->begin (), ptr_app->guids->end ());
 
-							apps_list.emplace_back (app_hash);
+							apps_list.push_back (app_hash);
 
 							is_deleted = TRUE;
 						}
@@ -4855,7 +4855,7 @@ find_wrap:
 						{
 							_app_timer_reset (hwnd, ptr_app);
 
-							rules.emplace_back (ptr_app);
+							rules.push_back (ptr_app);
 						}
 						else
 						{

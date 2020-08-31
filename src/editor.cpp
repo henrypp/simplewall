@@ -1127,7 +1127,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						if (hengine)
 						{
 							OBJECTS_RULE_VECTOR rules;
-							rules.emplace_back (ptr_rule);
+							rules.push_back (ptr_rule);
 
 							_wfp_create4filters (hengine, &rules, __LINE__);
 

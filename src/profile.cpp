@@ -1090,7 +1090,7 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 		if (is_instantapply)
 		{
-			rules.emplace_back (ptr_rule); // be freed later!
+			rules.push_back (ptr_rule); // be freed later!
 			continue;
 		}
 
@@ -1728,7 +1728,7 @@ VOID _app_profile_load_helper (pugi::xml_node* root, ENUM_TYPE_DATA type, UINT v
 				_r_obj_deletestringbuilder (&ruleApps);
 			}
 
-			rules_arr.emplace_back (ptr_rule);
+			rules_arr.push_back (ptr_rule);
 		}
 		else if (type == DataRulesConfig)
 		{

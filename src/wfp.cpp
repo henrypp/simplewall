@@ -448,7 +448,7 @@ VOID _wfp_installfilters (HANDLE hengine)
 
 			if (ptr_app->is_enabled)
 			{
-				rules.emplace_back (ptr_app);
+				rules.push_back (ptr_app);
 			}
 			else
 			{
@@ -476,7 +476,7 @@ VOID _wfp_installfilters (HANDLE hengine)
 
 			if (ptr_rule->is_enabled)
 			{
-				rules.emplace_back (ptr_rule);
+				rules.push_back (ptr_rule);
 			}
 			else
 			{
@@ -613,7 +613,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 	if (code == ERROR_SUCCESS)
 	{
 		if (guids)
-			guids->emplace_back (filter.filterKey);
+			guids->push_back (filter.filterKey);
 	}
 	else
 	{
@@ -1563,7 +1563,7 @@ SIZE_T _wfp_dumpfilters (HANDLE hengine, LPCGUID pprovider_id, GUIDS_VEC* ptr_fi
 					FWPM_FILTER* pfilter = matchingFwpFilter[i];
 
 					if (pfilter && pfilter->providerKey && RtlEqualMemory (pfilter->providerKey, pprovider_id, sizeof (GUID)))
-						ptr_filters->emplace_back (pfilter->filterKey);
+						ptr_filters->push_back (pfilter->filterKey);
 				}
 
 				FwpmFreeMemory ((PVOID*)&matchingFwpFilter);
