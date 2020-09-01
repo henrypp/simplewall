@@ -1792,7 +1792,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptim
 
 	// show only syntax, memory and i/o errors...
 	if (!load_original && load_original.status != pugi::status_file_not_found && load_original.status != pugi::status_no_document_element)
-		_r_logerror_v (UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path);
+		_r_logerror_v (Error, UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", load_original.status, load_original.offset, load_original.description (), path);
 
 	if (load_original && root)
 	{
@@ -1863,7 +1863,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		{
 			// show only syntax, memory and i/o errors...
 			if (result.status != pugi::status_file_not_found && result.status != pugi::status_no_document_element)
-				_r_logerror_v (UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path);
+				_r_logerror_v (Error, UID, L"pugi::load_file", 0, L"status: %d,offset: %" TEXT (PR_PTRDIFF) L",text: %hs,file: %s", result.status, result.offset, result.description (), !_r_str_isempty (path_custom) ? path_custom : config.profile_path);
 		}
 		else
 		{

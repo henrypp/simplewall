@@ -346,7 +346,7 @@ VOID _wfp_logsubscribe (HANDLE hengine)
 
 			if (code != ERROR_SUCCESS)
 			{
-				_r_logerror (0, L"FwpmNetEventSubscribe", code, NULL);
+				_r_logerror (Warning, 0, L"FwpmNetEventSubscribe", code, NULL);
 			}
 			else
 			{

@@ -2466,7 +2466,7 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	if (code != DNS_ERROR_RCODE_NO_ERROR)
 	{
 		if (code != DNS_INFO_NO_RECORDS)
-			_r_logerror (0, L"DnsQuery (DNS_TYPE_A)", code, hostname);
+			_r_logerror (Information, 0, L"DnsQuery (DNS_TYPE_A)", code, hostname);
 	}
 	else
 	{
@@ -2502,7 +2502,7 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	if (code != DNS_ERROR_RCODE_NO_ERROR)
 	{
 		if (code != DNS_INFO_NO_RECORDS)
-			_r_logerror (0, L"DnsQuery (DNS_TYPE_AAAA)", code, hostname);
+			_r_logerror (Information, 0, L"DnsQuery (DNS_TYPE_AAAA)", code, hostname);
 	}
 	else
 	{
@@ -2555,7 +2555,7 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 
 	if (code != ERROR_SUCCESS)
 	{
-		_r_logerror (0, L"ParseNetworkString", code, network_string);
+		_r_logerror (Warning, 0, L"ParseNetworkString", code, network_string);
 		return FALSE;
 	}
 	else

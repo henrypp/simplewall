@@ -188,7 +188,7 @@ PACL _app_createaccesscontrollist (PACL pAcl, BOOLEAN is_secure)
 		if (code == ERROR_SUCCESS)
 			return pNewDacl;
 
-		_r_logerror (0, L"SetEntriesInAcl", code, NULL);
+		_r_logerror (Error, 0, L"SetEntriesInAcl", code, NULL);
 	}
 
 	return NULL;
@@ -203,7 +203,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 
 	if (code != ERROR_SUCCESS)
 	{
-		_r_logerror (0, L"FwpmEngineGetSecurityInfo", code, NULL);
+		_r_logerror (Error, 0, L"FwpmEngineGetSecurityInfo", code, NULL);
 		return;
 	}
 
@@ -309,19 +309,19 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 
 		if (code != ERROR_SUCCESS)
 		{
-			_r_logerror (0, L"SetEntriesInAcl", code, NULL);
+			_r_logerror (Error, 0, L"SetEntriesInAcl", code, NULL);
 		}
 		else
 		{
 			code = FwpmEngineSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 			if (code != ERROR_SUCCESS)
-				_r_logerror (0, L"FwpmEngineSetSecurityInfo", code, NULL);
+				_r_logerror (Error, 0, L"FwpmEngineSetSecurityInfo", code, NULL);
 
 			code = FwpmNetEventsSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 			if (code != ERROR_SUCCESS)
-				_r_logerror (0, L"FwpmEngineSetSecurityInfo", code, NULL);
+				_r_logerror (Error, 0, L"FwpmEngineSetSecurityInfo", code, NULL);
 
 			LocalFree (pNewDacl);
 		}
@@ -340,7 +340,7 @@ VOID _app_setsecurityinfoforprovider (HANDLE hengine, LPCGUID lpguid, BOOLEAN is
 
 	if (code != ERROR_SUCCESS)
 	{
-		_r_logerror (0, L"FwpmProviderGetSecurityInfoByKey", code, NULL);
+		_r_logerror (Error, 0, L"FwpmProviderGetSecurityInfoByKey", code, NULL);
 		return;
 	}
 
@@ -353,7 +353,7 @@ VOID _app_setsecurityinfoforprovider (HANDLE hengine, LPCGUID lpguid, BOOLEAN is
 		code = FwpmProviderSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			_r_logerror (0, L"FwpmProviderSetSecurityInfoByKey", code, L"DACL_SECURITY_INFORMATION");
+			_r_logerror (Error, 0, L"FwpmProviderSetSecurityInfoByKey", code, L"DACL_SECURITY_INFORMATION");
 
 		LocalFree (pNewDacl);
 	}
@@ -371,7 +371,7 @@ VOID _app_setsecurityinfoforsublayer (HANDLE hengine, LPCGUID lpguid, BOOLEAN is
 
 	if (code != ERROR_SUCCESS)
 	{
-		_r_logerror (0, L"FwpmSubLayerGetSecurityInfoByKey", code, NULL);
+		_r_logerror (Error, 0, L"FwpmSubLayerGetSecurityInfoByKey", code, NULL);
 		return;
 	}
 
@@ -384,7 +384,7 @@ VOID _app_setsecurityinfoforsublayer (HANDLE hengine, LPCGUID lpguid, BOOLEAN is
 		code = FwpmSubLayerSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			_r_logerror (0, L"FwpmSubLayerSetSecurityInfoByKey", code, NULL);
+			_r_logerror (Error, 0, L"FwpmSubLayerSetSecurityInfoByKey", code, NULL);
 
 		LocalFree (pNewDacl);
 	}
@@ -402,7 +402,7 @@ VOID _app_setsecurityinfoforfilter (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_s
 
 	if (code != ERROR_SUCCESS)
 	{
-		_r_logerror_v (0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
+		_r_logerror_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
 		return;
 	}
 
@@ -415,7 +415,7 @@ VOID _app_setsecurityinfoforfilter (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_s
 		code = FwpmFilterSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pNewDacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			_r_logerror_v (0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
+			_r_logerror_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
 
 		LocalFree (pNewDacl);
 	}

@@ -107,7 +107,7 @@ HANDLE _wfp_getenginehandle ()
 
 		if (code != ERROR_SUCCESS)
 		{
-			_r_logerror (UID, L"FwpmEngineOpen", code, NULL);
+			_r_logerror (Critical, UID, L"FwpmEngineOpen", code, NULL);
 		}
 		else
 		{
@@ -187,7 +187,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 						is_intransact = FALSE;
 					}
 
-					_r_logerror (UID, L"FwpmProviderAdd", code, NULL);
+					_r_logerror (Error, UID, L"FwpmProviderAdd", code, NULL);
 					result = FALSE;
 
 					goto CleanupExit;
@@ -222,7 +222,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 						is_intransact = FALSE;
 					}
 
-					_r_logerror (UID, L"FwpmSubLayerAdd", code, NULL);
+					_r_logerror (Error, UID, L"FwpmSubLayerAdd", code, NULL);
 					result = FALSE;
 
 					goto CleanupExit;
@@ -267,7 +267,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 
 			if (code != ERROR_SUCCESS)
 			{
-				_r_logerror (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
+				_r_logerror (Warning, 0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
 			}
 			else
 			{
@@ -287,7 +287,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 					code = FwpmEngineSetOption (hengine, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
 					if (code != ERROR_SUCCESS)
-						_r_logerror (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
+						_r_logerror (Warning, 0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
 
 					// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
 					if (_r_config_getboolean (L"IsMonitorIPSecConnections", TRUE))
@@ -298,7 +298,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 						code = FwpmEngineSetOption (hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 						if (code != ERROR_SUCCESS)
-							_r_logerror (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
+							_r_logerror (Warning, 0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
 					}
 				}
 
@@ -318,7 +318,7 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 			code = FwpmEngineSetOption (hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
 
 			if (code != ERROR_SUCCESS)
-				_r_logerror (0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
+				_r_logerror (Warning, 0, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
 		}
 	}
 
@@ -387,13 +387,13 @@ VOID _wfp_uninitialize (HANDLE hengine, BOOLEAN is_full)
 		code = FwpmSubLayerDeleteByKey (hengine, &GUID_WfpSublayer);
 
 		if (code != ERROR_SUCCESS && code != FWP_E_SUBLAYER_NOT_FOUND)
-			_r_logerror (UID, L"FwpmSubLayerDeleteByKey", code, NULL);
+			_r_logerror (Error, UID, L"FwpmSubLayerDeleteByKey", code, NULL);
 
 		// destroy provider
 		code = FwpmProviderDeleteByKey (hengine, &GUID_WfpProvider);
 
 		if (code != ERROR_SUCCESS && code != FWP_E_PROVIDER_NOT_FOUND)
-			_r_logerror (UID, L"FwpmProviderDeleteByKey", code, NULL);
+			_r_logerror (Error, UID, L"FwpmProviderDeleteByKey", code, NULL);
 
 		if (is_intransact)
 			_wfp_transact_commit (hengine, __LINE__);
@@ -521,7 +521,7 @@ BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line)
 
 	if (code != ERROR_SUCCESS)
 	{
-		_r_logerror_v (UID, L"FwpmTransactionBegin", code, L"#%" TEXT (PRIu32), line);
+		_r_logerror_v (Error, UID, L"FwpmTransactionBegin", code, L"#%" TEXT (PRIu32), line);
 		return FALSE;
 	}
 
@@ -536,7 +536,7 @@ BOOLEAN _wfp_transact_commit (HANDLE hengine, UINT line)
 	{
 		FwpmTransactionAbort (hengine);
 
-		_r_logerror_v (UID, L"FwpmTransactionCommit", code, L"#%" TEXT (PRIu32), line);
+		_r_logerror_v (Error, UID, L"FwpmTransactionCommit", code, L"#%" TEXT (PRIu32), line);
 		return FALSE;
 
 	}
@@ -552,7 +552,7 @@ BOOLEAN _wfp_deletefilter (HANDLE hengine, LPCGUID pfilter_id)
 	{
 		PR_STRING guidString = _r_str_fromguid ((LPGUID)pfilter_id);
 
-		_r_logerror (UID, L"FwpmFilterDeleteByKey", code, _r_obj_getstringordefault (guidString, SZ_EMPTY));
+		_r_logerror (Error, UID, L"FwpmFilterDeleteByKey", code, _r_obj_getstringordefault (guidString, SZ_EMPTY));
 
 		if (guidString)
 			_r_obj_dereference (guidString);
@@ -617,7 +617,7 @@ DWORD _wfp_createfilter (HANDLE hengine, LPCWSTR name, FWPM_FILTER_CONDITION* lp
 	}
 	else
 	{
-		_r_logerror (UID, L"FwpmFilterAdd", code, filter.displayData.description);
+		_r_logerror (Error, UID, L"FwpmFilterAdd", code, filter.displayData.description);
 	}
 
 	return code;
@@ -723,7 +723,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 
 		if (!ptr_app)
 		{
-			_r_logerror_v (0, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash);
+			_r_logerror_v (Error, 0, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash);
 
 			goto CleanupExit;
 		}
@@ -743,7 +743,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 			}
 			else
 			{
-				_r_logerror (0, TEXT (__FUNCTION__), 0, _app_getdisplayname (app_hash, ptr_app, TRUE));
+				_r_logerror (Error, 0, TEXT (__FUNCTION__), 0, _app_getdisplayname (app_hash, ptr_app, TRUE));
 
 				goto CleanupExit;
 			}
@@ -761,7 +761,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 			}
 			else
 			{
-				_r_logerror (0, TEXT (__FUNCTION__), 0, _app_getdisplayname (app_hash, ptr_app, TRUE));
+				_r_logerror (Error, 0, TEXT (__FUNCTION__), 0, _app_getdisplayname (app_hash, ptr_app, TRUE));
 
 				goto CleanupExit;
 			}
@@ -784,7 +784,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, LPCWSTR name, SIZE_T app_hash, PR
 			{
 				// do not log file not found to error log
 				if (code != ERROR_FILE_NOT_FOUND && code != ERROR_PATH_NOT_FOUND)
-					_r_logerror (0, L"FwpmGetAppIdFromFileName", code, path);
+					_r_logerror (Error, 0, L"FwpmGetAppIdFromFileName", code, path);
 
 				goto CleanupExit;
 			}
@@ -1539,22 +1539,13 @@ SIZE_T _wfp_dumpfilters (HANDLE hengine, LPCGUID pprovider_id, GUIDS_VEC* ptr_fi
 
 	DWORD code = FwpmFilterCreateEnumHandle (hengine, NULL, &henum);
 
-	if (code != ERROR_SUCCESS)
-	{
-		_r_logerror (0, L"FwpmFilterCreateEnumHandle", code, NULL);
-		return 0;
-	}
-	else
+	if (code == ERROR_SUCCESS)
 	{
 		FWPM_FILTER** matchingFwpFilter = NULL;
 
 		code = FwpmFilterEnum (hengine, henum, UINT32_MAX, &matchingFwpFilter, &count);
 
-		if (code != ERROR_SUCCESS)
-		{
-			_r_logerror (0, L"FwpmFilterEnum", code, NULL);
-		}
-		else
+		if (code == ERROR_SUCCESS)
 		{
 			if (matchingFwpFilter)
 			{
@@ -1634,14 +1625,10 @@ BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable)
 				}
 				else
 				{
-					_r_logerror_v (0, L"put_FirewallEnabled", hr, L"%d", type);
+					_r_logerror_v (Information, 0, L"put_FirewallEnabled", hr, L"%d", type);
 				}
 			}
 		}
-	}
-	else
-	{
-		_r_logerror (0, L"CoCreateInstance", hr, L"INetFwPolicy2");
 	}
 
 	if (pNetFwPolicy2)
@@ -1663,7 +1650,7 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 
 	if (!scm)
 	{
-		_r_logerror (0, L"OpenSCManager", GetLastError (), NULL);
+		_r_logerror (Information, 0, L"OpenSCManager", GetLastError (), NULL);
 	}
 	else
 	{
@@ -1683,7 +1670,7 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 				DWORD code = GetLastError ();
 
 				if (code != ERROR_ACCESS_DENIED)
-					_r_logerror (0, L"OpenService", code, name);
+					_r_logerror (Information, 0, L"OpenService", code, name);
 			}
 			else
 			{
@@ -1696,7 +1683,7 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 				}
 
 				if (!ChangeServiceConfig (sc, SERVICE_NO_CHANGE, is_enable ? SERVICE_AUTO_START : SERVICE_DISABLED, SERVICE_NO_CHANGE, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
-					_r_logerror (0, L"ChangeServiceConfig", GetLastError (), name);
+					_r_logerror (Information, 0, L"ChangeServiceConfig", GetLastError (), name);
 
 				CloseServiceHandle (sc);
 			}
@@ -1711,7 +1698,7 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 
 				if (!sc)
 				{
-					_r_logerror (0, L"OpenService", GetLastError (), name);
+					_r_logerror (Information, 0, L"OpenService", GetLastError (), name);
 				}
 				else
 				{
@@ -1720,14 +1707,14 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 
 					if (!QueryServiceStatusEx (sc, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof (ssp), &dwBytesNeeded))
 					{
-						_r_logerror (0, L"QueryServiceStatusEx", GetLastError (), name);
+						_r_logerror (Information, 0, L"QueryServiceStatusEx", GetLastError (), name);
 					}
 					else
 					{
 						if (ssp.dwCurrentState != SERVICE_RUNNING)
 						{
 							if (!StartService (sc, 0, NULL))
-								_r_logerror (0, L"StartService", GetLastError (), name);
+								_r_logerror (Information, 0, L"StartService", GetLastError (), name);
 						}
 
 						CloseServiceHandle (sc);
