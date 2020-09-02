@@ -8,9 +8,9 @@ PR_STRING _app_getlogviewer ()
 	LPCWSTR result = _r_config_getstring (L"LogViewer", LOG_VIEWER_DEFAULT);
 
 	if (_r_str_isempty (result))
-		return _r_path_expand (LOG_VIEWER_DEFAULT);
+		return _r_str_expandenvironmentstring (LOG_VIEWER_DEFAULT);
 
-	return _r_path_expand (result);
+	return _r_str_expandenvironmentstring (result);
 }
 
 VOID _app_loginit (BOOLEAN is_install)
@@ -25,7 +25,7 @@ VOID _app_loginit (BOOLEAN is_install)
 	if (!is_install || !_r_config_getboolean (L"IsLogEnabled", FALSE))
 		return; // already closed or not enabled
 
-	PR_STRING logPath = _r_path_expand (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
+	PR_STRING logPath = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
 
 	if (!logPath)
 		return;
@@ -272,7 +272,7 @@ VOID _app_logclear ()
 	}
 	else
 	{
-		PR_STRING logPath = _r_path_expand (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
+		PR_STRING logPath = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
 
 		if (logPath)
 		{

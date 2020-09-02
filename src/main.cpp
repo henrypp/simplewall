@@ -1303,7 +1303,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						if (logpath)
 						{
-							_r_obj_movereference (&logpath, _r_path_unexpand (_r_obj_getstring (logpath)));
+							_r_obj_movereference (&logpath, _r_str_expandenvironmentstring (_r_obj_getstring (logpath)));
 
 							_r_config_setstring (L"LogPath", _r_obj_getstring (logpath));
 
@@ -1325,7 +1325,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					expandedPath = _r_ctrl_gettext (hwnd, IDC_LOGPATH);
 
-					_r_obj_movereference (&expandedPath, _r_path_expand (_r_obj_getstring (expandedPath)));
+					_r_obj_movereference (&expandedPath, _r_str_expandenvironmentstring (_r_obj_getstring (expandedPath)));
 					_r_str_copy (path, RTL_NUMBER_OF (path), _r_obj_getstring (expandedPath));
 
 					ofn.lStructSize = sizeof (ofn);
@@ -1339,7 +1339,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					if (GetSaveFileName (&ofn))
 					{
-						_r_obj_movereference (&expandedPath, _r_path_unexpand (path));
+						_r_obj_movereference (&expandedPath, _r_str_unexpandenvironmentstring (path));
 
 						_r_config_setstring (L"LogPath", _r_obj_getstring (expandedPath));
 						_r_ctrl_settext (hwnd, IDC_LOGPATH, _r_obj_getstringorempty (expandedPath));
@@ -1361,7 +1361,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 						if (logviewer)
 						{
-							_r_obj_movereference (&logviewer, _r_path_unexpand (_r_obj_getstring (logviewer)));
+							_r_obj_movereference (&logviewer, _r_str_unexpandenvironmentstring (_r_obj_getstring (logviewer)));
 
 							_r_config_setstring (L"LogViewer", _r_obj_getstring (logviewer));
 
@@ -1381,7 +1381,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					expandedPath = _r_ctrl_gettext (hwnd, IDC_LOGVIEWER);
 
-					_r_obj_movereference (&expandedPath, _r_path_expand (_r_obj_getstring (expandedPath)));
+					_r_obj_movereference (&expandedPath, _r_str_expandenvironmentstring (_r_obj_getstring (expandedPath)));
 					_r_str_copy (path, RTL_NUMBER_OF (path), _r_obj_getstring (expandedPath));
 
 					ofn.lStructSize = sizeof (ofn);
@@ -1395,7 +1395,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 					if (GetOpenFileName (&ofn))
 					{
-						_r_obj_movereference (&expandedPath, _r_path_unexpand (path));
+						_r_obj_movereference (&expandedPath, _r_str_unexpandenvironmentstring (path));
 
 						_r_config_setstring (L"LogViewer", _r_obj_getstringorempty (expandedPath));
 						_r_ctrl_settext (hwnd, IDC_LOGVIEWER, _r_obj_getstringorempty (expandedPath));
@@ -1855,9 +1855,11 @@ VOID _app_initialize ()
 	_r_str_printf (config.profile_path_backup, RTL_NUMBER_OF (config.profile_path_backup), L"%s\\" XML_PROFILE L".bak", _r_app_getprofiledirectory ());
 	_r_str_printf (config.profile_internal_path, RTL_NUMBER_OF (config.profile_internal_path), L"%s\\" XML_PROFILE_INTERNAL, _r_app_getprofiledirectory ());
 
-	config.svchost_path = _r_path_expand (PATH_SVCHOST);
-	config.ntoskrnl_path = _r_path_expand (PATH_NTOSKRNL);
-	config.winstore_path = _r_path_expand (PATH_WINSTORE);
+	config.svchost_path = _r_str_expandenvironmentstring (PATH_SVCHOST);
+	config.ntoskrnl_path = _r_str_expandenvironmentstring (PATH_NTOSKRNL);
+
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		config.winstore_path = _r_str_expandenvironmentstring (PATH_WINSTORE);
 
 	config.my_hash = _r_str_hash (_r_sys_getimagepathname ());
 	config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME);
@@ -3943,7 +3945,7 @@ find_wrap:
 						PR_STRING viewerPath;
 						PR_STRING processPath;
 
-						logPath = _r_path_expand (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
+						logPath = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
 
 						if (!logPath)
 							return FALSE;
@@ -3978,7 +3980,7 @@ find_wrap:
 
 				case IDM_TRAY_LOGCLEAR:
 				{
-					PR_STRING path = _r_path_expand (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
+					PR_STRING path = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
 
 					if (_r_fs_isvalidhandle (config.hlogfile) || (path && _r_fs_exists (path->Buffer)) || !log_arr.empty ())
 					{
