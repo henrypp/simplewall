@@ -420,9 +420,15 @@ typedef struct tagITEM_STATUS
 typedef struct tagITEM_CONTEXT
 {
 	HWND hwnd;
-	INT listview_id;
-	INT item_id;
-	BOOLEAN is_install;
+	union
+	{
+		struct
+		{
+			INT listview_id;
+			INT item_id;
+		};
+		BOOLEAN is_install;
+	};
 } ITEM_CONTEXT, *PITEM_CONTEXT;
 
 typedef struct tagITEM_COLOR
