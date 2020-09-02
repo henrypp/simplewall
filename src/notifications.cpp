@@ -163,7 +163,7 @@ PITEM_LOG _app_notifyget_obj (SIZE_T app_hash)
 
 	if (ptr_app)
 	{
-		PITEM_LOG ptr_log = (PITEM_LOG)_r_obj_reference (ptr_app->pnotification);
+		PITEM_LOG ptr_log = (PITEM_LOG)_r_obj_referencesafe (ptr_app->pnotification);
 
 		_r_obj_dereference (ptr_app);
 

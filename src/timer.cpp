@@ -109,10 +109,10 @@ BOOLEAN _app_istimersactive ()
 {
 	for (auto it = apps.begin (); it != apps.end (); ++it)
 	{
-		if (!it->second)
-			continue;
+		PITEM_APP ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
 
-		PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+		if (!ptr_app)
+			continue;
 
 		if (_app_istimeractive (ptr_app))
 		{

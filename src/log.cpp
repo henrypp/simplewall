@@ -139,10 +139,10 @@ BOOLEAN _app_logisexists (HWND hwnd, PITEM_LOG ptr_log_new)
 
 	for (auto it = log_arr.begin (); it != log_arr.end (); ++it)
 	{
-		if (!*it)
-			continue;
+		PITEM_LOG ptr_log = (PITEM_LOG)_r_obj_referencesafe (*it);
 
-		PITEM_LOG ptr_log = (PITEM_LOG)_r_obj_reference (*it);
+		if (!ptr_log)
+			continue;
 
 		if (
 			ptr_log->is_allow == ptr_log_new->is_allow &&
@@ -177,6 +177,7 @@ BOOLEAN _app_logisexists (HWND hwnd, PITEM_LOG ptr_log_new)
 			if (is_duplicate_found)
 			{
 				ptr_log_new->timestamp = ptr_log->timestamp; // upd date
+
 				_r_obj_dereference (ptr_log);
 
 				return TRUE;

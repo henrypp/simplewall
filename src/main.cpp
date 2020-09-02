@@ -552,12 +552,12 @@ VOID _app_config_apply (HWND hwnd, INT ctrl_id)
 
 				for (auto it = apps.begin (); it != apps.end (); ++it)
 				{
-					if (!it->second)
+					ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
+
+					if (!ptr_app)
 						continue;
 
 					app_hash = it->first;
-					ptr_app = (PITEM_APP)_r_obj_reference (it->second);
-
 					signatureString = _app_getsignatureinfo (app_hash, ptr_app);
 
 					SAFE_DELETE_REFERENCE (signatureString);
@@ -3563,6 +3563,8 @@ find_wrap:
 
 				case IDM_SHOWFILENAMESONLY_CHK:
 				{
+					PITEM_APP ptr_app;
+					SIZE_T app_hash;
 					BOOLEAN new_val = !_r_config_getboolean (L"ShowFilenames", TRUE);
 
 					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
@@ -3571,11 +3573,12 @@ find_wrap:
 					// regroup apps
 					for (auto it = apps.begin (); it != apps.end (); ++it)
 					{
-						if (!it->second)
+						ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
+
+						if (!ptr_app)
 							continue;
 
-						SIZE_T app_hash = it->first;
-						PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+						app_hash = it->first;
 
 						if (!_r_str_isempty (ptr_app->short_name))
 						{
@@ -3666,6 +3669,8 @@ find_wrap:
 
 				case IDM_ICONSISHIDDEN:
 				{
+					PITEM_APP ptr_app;
+					SIZE_T app_hash;
 					BOOLEAN new_val = !_r_config_getboolean (L"IsIconsHidden", FALSE);
 
 					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
@@ -3673,11 +3678,11 @@ find_wrap:
 
 					for (auto it = apps.begin (); it != apps.end (); ++it)
 					{
-						if (!it->second)
-							continue;
+						app_hash = it->first;
+						ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
 
-						SIZE_T app_hash = it->first;
-						PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+						if (!ptr_app)
+							continue;
 
 						INT listview_id = _app_getlistview_id (ptr_app->type);
 
@@ -4775,16 +4780,19 @@ find_wrap:
 				{
 					BOOLEAN is_deleted = FALSE;
 
+					PITEM_APP ptr_app;
+					SIZE_T app_hash;
+
 					GUIDS_VEC guids;
 					HASH_VEC apps_list;
 
 					for (auto it = apps.begin (); it != apps.end (); ++it)
 					{
-						if (!it->second)
-							continue;
+						app_hash = it->first;
+						ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
 
-						SIZE_T app_hash = it->first;
-						PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+						if (!ptr_app)
+							continue;
 
 						if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || ((ptr_app->type != DataAppService && ptr_app->type != DataAppUWP) && !_app_isappused (ptr_app, app_hash))))
 						{
@@ -4837,13 +4845,14 @@ find_wrap:
 						break;
 
 					OBJECTS_APP_VECTOR rules;
+					PITEM_APP ptr_app;
 
 					for (auto it = apps.begin (); it != apps.end (); ++it)
 					{
-						if (!it->second)
-							continue;
+						ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
 
-						PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+						if (!ptr_app)
+							continue;
 
 						if (_app_istimeractive (ptr_app))
 						{

@@ -232,10 +232,7 @@ PITEM_APP _app_getappitem (SIZE_T app_hash)
 {
 	if (_app_isappfound (app_hash))
 	{
-		PVOID pdata = apps.at (app_hash);
-
-		if (pdata)
-			return (PITEM_APP)_r_obj_reference (pdata);
+		return (PITEM_APP)_r_obj_referencesafe (apps.at (app_hash));
 	}
 
 	return NULL;
@@ -245,10 +242,7 @@ PITEM_RULE _app_getrulebyid (SIZE_T idx)
 {
 	if (idx != INVALID_SIZE_T && idx < rules_arr.size ())
 	{
-		PITEM_RULE pdata = rules_arr.at (idx);
-
-		if (pdata)
-			return (PITEM_RULE)_r_obj_reference (pdata);
+		return (PITEM_RULE)_r_obj_referencesafe (rules_arr.at (idx));
 	}
 
 	return NULL;
@@ -261,18 +255,18 @@ PITEM_RULE _app_getrulebyhash (SIZE_T rule_hash)
 
 	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!*it)
-			continue;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
-
-		if (ptr_rule->is_readonly)
+		if (ptr_rule)
 		{
-			if (_r_str_hash (ptr_rule->name) == rule_hash)
-				return ptr_rule;
-		}
+			if (ptr_rule->is_readonly)
+			{
+				if (_r_str_hash (ptr_rule->name) == rule_hash)
+					return ptr_rule;
+			}
 
-		_r_obj_dereference (ptr_rule);
+			_r_obj_dereference (ptr_rule);
+		}
 	}
 
 	return NULL;
@@ -282,10 +276,7 @@ PITEM_NETWORK _app_getnetworkitem (SIZE_T network_hash)
 {
 	if (network_map.find (network_hash) != network_map.end ())
 	{
-		PVOID pdata = network_map.at (network_hash);
-
-		if (pdata)
-			return (PITEM_NETWORK)_r_obj_reference (pdata);
+		return (PITEM_NETWORK)_r_obj_referencesafe (network_map.at (network_hash));
 	}
 
 	return NULL;
@@ -311,10 +302,7 @@ PITEM_LOG _app_getlogitem (SIZE_T idx)
 {
 	if (idx != INVALID_SIZE_T && idx < log_arr.size ())
 	{
-		PVOID pdata = log_arr.at (idx);
-
-		if (pdata)
-			return (PITEM_LOG)_r_obj_reference (pdata);
+		return (PITEM_LOG)_r_obj_referencesafe (log_arr.at (idx));
 	}
 
 	return NULL;
@@ -418,40 +406,40 @@ VOID _app_freeapplication (SIZE_T app_hash)
 	{
 		index += 1;
 
-		if (!*it)
-			continue;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
-
-		if (ptr_rule->type == DataRuleCustom)
+		if (ptr_rule)
 		{
-			if (ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ())
+			if (ptr_rule->type == DataRuleCustom)
 			{
-				ptr_rule->apps->erase (app_hash);
-
-				if (ptr_rule->is_enabled && ptr_rule->apps->empty ())
+				if (ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ())
 				{
-					ptr_rule->is_enabled = FALSE;
-					ptr_rule->is_haveerrors = FALSE;
-				}
+					ptr_rule->apps->erase (app_hash);
 
-				INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
-
-				if (rule_listview_id)
-				{
-					INT item_pos = _app_getposition (_r_app_gethwnd (), rule_listview_id, index);
-
-					if (item_pos != INVALID_INT)
+					if (ptr_rule->is_enabled && ptr_rule->apps->empty ())
 					{
-						_r_fastlock_acquireshared (&lock_checkbox);
-						_app_setruleiteminfo (_r_app_gethwnd (), rule_listview_id, item_pos, ptr_rule, FALSE);
-						_r_fastlock_releaseshared (&lock_checkbox);
+						ptr_rule->is_enabled = FALSE;
+						ptr_rule->is_haveerrors = FALSE;
+					}
+
+					INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+
+					if (rule_listview_id)
+					{
+						INT item_pos = _app_getposition (_r_app_gethwnd (), rule_listview_id, index);
+
+						if (item_pos != INVALID_INT)
+						{
+							_r_fastlock_acquireshared (&lock_checkbox);
+							_app_setruleiteminfo (_r_app_gethwnd (), rule_listview_id, item_pos, ptr_rule, FALSE);
+							_r_fastlock_releaseshared (&lock_checkbox);
+						}
 					}
 				}
 			}
-		}
 
-		_r_obj_dereference (ptr_rule);
+			_r_obj_dereference (ptr_rule);
+		}
 	}
 
 	apps.erase (app_hash);
@@ -466,11 +454,12 @@ VOID _app_getcount (PITEM_STATUS ptr_status)
 
 	for (auto it = apps.begin (); it != apps.end (); ++it)
 	{
-		if (!it->second)
+		ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
+
+		if (!ptr_app)
 			continue;
 
 		app_hash = it->first;
-		ptr_app = (PITEM_APP)_r_obj_reference (it->second);
 		is_used = _app_isappused (ptr_app, app_hash);
 
 		if (_app_istimeractive (ptr_app))
@@ -487,26 +476,26 @@ VOID _app_getcount (PITEM_STATUS ptr_status)
 
 	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!*it)
-			continue;
+		ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-		ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
-
-		if (ptr_rule->type == DataRuleCustom)
+		if (ptr_rule)
 		{
-			if (ptr_rule->is_enabled && !ptr_rule->apps->empty ())
-				ptr_status->rules_global_count += 1;
+			if (ptr_rule->type == DataRuleCustom)
+			{
+				if (ptr_rule->is_enabled && !ptr_rule->apps->empty ())
+					ptr_status->rules_global_count += 1;
 
-			if (ptr_rule->is_readonly)
-				ptr_status->rules_predefined_count += 1;
+				if (ptr_rule->is_readonly)
+					ptr_status->rules_predefined_count += 1;
 
-			else
-				ptr_status->rules_user_count += 1;
+				else
+					ptr_status->rules_user_count += 1;
 
-			ptr_status->rules_count += 1;
+				ptr_status->rules_count += 1;
+			}
+
+			_r_obj_dereference (ptr_rule);
 		}
-
-		_r_obj_dereference (ptr_rule);
 	}
 }
 
@@ -972,10 +961,10 @@ VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable, BOOLEAN is_createc
 		{
 			if (rules_config.find (rule_hash) != rules_config.end ())
 			{
-				if (rules_config.at (rule_hash))
-				{
-					ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (rules_config.at (rule_hash));
+				ptr_config = (PITEM_RULE_CONFIG)_r_obj_referencesafe (rules_config.at (rule_hash));
 
+				if (ptr_config)
+				{
 					ptr_config->is_enabled = is_enable;
 
 					_r_obj_dereference (ptr_config);
@@ -1056,10 +1045,10 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 	{
 		index += 1;
 
-		if (!*it)
-			continue;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+		if (!ptr_rule)
+			continue;
 
 		if (ptr_rule->type != DataRuleBlocklist)
 		{
@@ -1132,10 +1121,10 @@ PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
 
 	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!*it)
-			continue;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+		if (!ptr_rule)
+			continue;
 
 		if (ptr_rule->is_enabled && ptr_rule->type == DataRuleCustom && ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ())
 		{
@@ -1295,10 +1284,10 @@ BOOLEAN _app_isapphaveconnection (SIZE_T app_hash)
 
 	for (auto it = network_map.begin (); it != network_map.end (); ++it)
 	{
-		if (!it->second)
-			continue;
+		PITEM_NETWORK ptr_network = (PITEM_NETWORK)_r_obj_referencesafe (it->second);
 
-		PITEM_NETWORK ptr_network = (PITEM_NETWORK)_r_obj_reference (it->second);
+		if (!ptr_network)
+			continue;
 
 		if (ptr_network->app_hash == app_hash)
 		{
@@ -1317,13 +1306,17 @@ BOOLEAN _app_isapphaveconnection (SIZE_T app_hash)
 
 BOOLEAN _app_isapphavedrive (INT letter)
 {
+	PITEM_APP ptr_app;
+	SIZE_T app_hash;
+
 	for (auto it = apps.begin (); it != apps.end (); ++it)
 	{
-		if (!it->second)
+		ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
+
+		if (!ptr_app)
 			continue;
 
-		SIZE_T app_hash = it->first;
-		PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+		app_hash = it->first;
 
 		if (!_r_str_isempty (ptr_app->original_path))
 		{
@@ -1352,18 +1345,18 @@ BOOLEAN _app_isapphaverule (SIZE_T app_hash)
 
 	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!*it)
-			continue;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
-
-		if (ptr_rule->is_enabled && ptr_rule->type == DataRuleCustom && ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ())
+		if (ptr_rule)
 		{
-			_r_obj_dereference (ptr_rule);
-			return TRUE;
-		}
+			if (ptr_rule->is_enabled && ptr_rule->type == DataRuleCustom && ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ())
+			{
+				_r_obj_dereference (ptr_rule);
+				return TRUE;
+			}
 
-		_r_obj_dereference (ptr_rule);
+			_r_obj_dereference (ptr_rule);
+		}
 	}
 
 	return FALSE;
@@ -1642,12 +1635,10 @@ VOID _app_profile_load_helper (pugi::xml_node* root, ENUM_TYPE_DATA type, UINT v
 				// internal rules
 				if (rules_config.find (rule_hash) != rules_config.end ())
 				{
-					PVOID pdata = rules_config.at (rule_hash);
+					ptr_config = (PITEM_RULE_CONFIG)_r_obj_referencesafe (rules_config.at (rule_hash));
 
-					if (pdata)
+					if (ptr_config)
 					{
-						ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (pdata);
-
 						ptr_rule->is_enabled = ptr_config->is_enabled;
 					}
 				}
@@ -1907,16 +1898,20 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 	if (hwnd)
 	{
+		PITEM_APP ptr_app;
+		PITEM_RULE ptr_rule;
+		SIZE_T app_hash;
 		time_t current_time = _r_unixtime_now ();
 
 		// add apps
 		for (auto it = apps.begin (); it != apps.end (); ++it)
 		{
-			if (!it->second)
+			ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
+
+			if (!ptr_app)
 				continue;
 
-			SIZE_T app_hash = it->first;
-			PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+			app_hash = it->first;
 
 			INT listview_id = _app_getlistview_id (ptr_app->type);
 
@@ -1940,12 +1935,10 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		// add rules
 		for (SIZE_T i = 0; i < rules_arr.size (); i++)
 		{
-			PVOID pdata = rules_arr.at (i);
+			ptr_rule = (PITEM_RULE)_r_obj_referencesafe (rules_arr.at (i));
 
-			if (!pdata)
+			if (!ptr_rule)
 				continue;
-
-			PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (pdata);
 
 			INT listview_id = _app_getlistview_id (ptr_rule->type);
 
@@ -2000,10 +1993,10 @@ VOID _app_profile_save ()
 		{
 			for (auto it = apps.begin (); it != apps.end (); ++it)
 			{
-				if (!it->second)
-					continue;
+				PITEM_APP ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
 
-				PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+				if (!ptr_app)
+					continue;
 
 				if (_r_str_isempty (ptr_app->original_path) || (!_app_isappused (ptr_app, it->first) && (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)))
 				{
@@ -2044,10 +2037,10 @@ VOID _app_profile_save ()
 		{
 			for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 			{
-				if (!*it)
-					continue;
+				PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-				PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+				if (!ptr_rule)
+					continue;
 
 				if (ptr_rule->is_readonly || _r_str_isempty (ptr_rule->name))
 				{
@@ -2110,10 +2103,10 @@ VOID _app_profile_save ()
 		{
 			for (auto it = rules_config.begin (); it != rules_config.end (); ++it)
 			{
-				if (!it->second)
-					continue;
+				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_referencesafe (it->second);
 
-				PITEM_RULE_CONFIG ptr_config = (PITEM_RULE_CONFIG)_r_obj_reference (it->second);
+				if (!ptr_config)
+					continue;
 
 				if (_r_str_isempty (ptr_config->name))
 				{

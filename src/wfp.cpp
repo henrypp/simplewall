@@ -441,10 +441,10 @@ VOID _wfp_installfilters (HANDLE hengine)
 
 		for (auto it = apps.begin (); it != apps.end (); ++it)
 		{
-			if (!it->second)
-				continue;
+			PITEM_APP ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
 
-			PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+			if (!ptr_app)
+				continue;
 
 			if (ptr_app->is_enabled)
 			{
@@ -469,10 +469,10 @@ VOID _wfp_installfilters (HANDLE hengine)
 
 		for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 		{
-			if (!*it)
-				continue;
+			PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-			PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+			if (!ptr_rule)
+				continue;
 
 			if (ptr_rule->is_enabled)
 			{
@@ -631,10 +631,10 @@ VOID _wfp_clearfilter_ids ()
 	// clear apps filters
 	for (auto it = apps.begin (); it != apps.end (); ++it)
 	{
-		if (!it->second)
-			continue;
+		PITEM_APP ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
 
-		PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+		if (!ptr_app)
+			continue;
 
 		ptr_app->is_haveerrors = FALSE;
 		ptr_app->guids->clear ();
@@ -645,10 +645,10 @@ VOID _wfp_clearfilter_ids ()
 	// clear rules filters
 	for (auto it = rules_arr.begin (); it != rules_arr.end (); ++it)
 	{
-		if (!*it)
-			continue;
+		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-		PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+		if (!ptr_rule)
+			continue;
 
 		ptr_rule->is_haveerrors = FALSE;
 		ptr_rule->guids->clear ();
@@ -1007,10 +1007,10 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 	{
 		for (auto it = ptr_rules->begin (); it != ptr_rules->end (); ++it)
 		{
-			if (!*it)
-				continue;
+			PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-			PITEM_RULE ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+			if (!ptr_rule)
+				continue;
 
 			if (!ptr_rule->guids->empty ())
 			{
@@ -1040,10 +1040,10 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 
 	for (auto it = ptr_rules->begin (); it != ptr_rules->end (); ++it)
 	{
-		if (!*it)
-			continue;
+		ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-		ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+		if (!ptr_rule)
+			continue;
 
 		ptr_rule->is_haveerrors = FALSE;
 		ptr_rule->guids->clear ();
@@ -1128,10 +1128,10 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 		{
 			for (auto it = ptr_rules->begin (); it != ptr_rules->end (); ++it)
 			{
-				if (!*it)
-					continue;
+				ptr_rule = (PITEM_RULE)_r_obj_referencesafe (*it);
 
-				ptr_rule = (PITEM_RULE)_r_obj_reference (*it);
+				if (!ptr_rule)
+					continue;
 
 				if (ptr_rule->is_enabled)
 				{
@@ -1168,10 +1168,10 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT 
 	{
 		for (auto it = ptr_apps->begin (); it != ptr_apps->end (); ++it)
 		{
-			if (!*it)
-				continue;
+			PITEM_APP ptr_app = (PITEM_APP)_r_obj_referencesafe (*it);
 
-			PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (*it);
+			if (!ptr_app)
+				continue;
 
 			if (!ptr_app->guids->empty ())
 			{
@@ -1194,10 +1194,10 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT 
 
 	for (auto it = ptr_apps->begin (); it != ptr_apps->end (); ++it)
 	{
-		if (!*it)
-			continue;
+		PITEM_APP ptr_app = (PITEM_APP)_r_obj_referencesafe (*it);
 
-		PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (*it);
+		if (!ptr_app)
+			continue;
 
 		if (ptr_app->is_enabled)
 		{
@@ -1218,10 +1218,10 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT 
 		{
 			for (auto it = ptr_apps->begin (); it != ptr_apps->end (); ++it)
 			{
-				if (!*it)
-					continue;
+				PITEM_APP ptr_app = (PITEM_APP)_r_obj_referencesafe (*it);
 
-				PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (*it);
+				if (!ptr_app)
+					continue;
 
 				for (auto it2 = ptr_app->guids->begin (); it2 != ptr_app->guids->end (); ++it2)
 					_app_setsecurityinfoforfilter (hengine, &(*it2), is_secure, line);

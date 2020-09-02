@@ -555,10 +555,7 @@ CleanupExit:
 
 	ptr_app->is_signed = !_r_str_isempty (signatureCacheString);
 
-	if (signatureCacheString)
-		return _r_obj_reference (signatureCacheString);
-
-	return NULL;
+	return (PR_STRING)_r_obj_referencesafe (signatureCacheString);
 }
 
 PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
@@ -673,10 +670,7 @@ CleanupExit:
 	if (hlib)
 		FreeLibrary (hlib);
 
-	if (versionCacheString)
-		return _r_obj_reference (versionCacheString);
-
-	return NULL;
+	return (PR_STRING)_r_obj_referencesafe (versionCacheString);
 }
 
 LPCWSTR _app_getservicename (UINT16 port, LPCWSTR default_value)
@@ -2344,12 +2338,10 @@ VOID _app_generate_rulesmenu (HMENU hsubmenu, SIZE_T app_hash)
 			{
 				for (SIZE_T i = 0; i < rules_arr.size (); i++)
 				{
-					ptr_rule = rules_arr.at (i);
+					ptr_rule = (PITEM_RULE)_r_obj_referencesafe (rules_arr.at (i));
 
 					if (!ptr_rule)
 						continue;
-
-					ptr_rule = (PITEM_RULE)_r_obj_reference (ptr_rule);
 
 					is_global = (ptr_rule->is_enabled && ptr_rule->apps->empty ());
 					is_enabled = is_global || (ptr_rule->is_enabled && (ptr_rule->apps->find (app_hash) != ptr_rule->apps->end ()));
