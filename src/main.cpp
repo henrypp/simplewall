@@ -5,7 +5,7 @@
 
 UINT WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
 
-THREAD_FN ApplyThread (PVOID lparam)
+THREAD_API ApplyThread (PVOID lparam)
 {
 	PITEM_CONTEXT pcontext = (PITEM_CONTEXT)lparam;
 
@@ -46,10 +46,10 @@ THREAD_FN ApplyThread (PVOID lparam)
 
 	_r_fastlock_releaseshared (&lock_apply);
 
-	return _r_sys_endthread (ERROR_SUCCESS);
+	return ERROR_SUCCESS;
 }
 
-THREAD_FN NetworkMonitorThread (PVOID lparam)
+THREAD_API NetworkMonitorThread (PVOID lparam)
 {
 	DWORD network_timeout = _r_config_getulong (L"NetworkTimeout", NETWORK_TIMEOUT);
 
@@ -195,7 +195,7 @@ THREAD_FN NetworkMonitorThread (PVOID lparam)
 		}
 	}
 
-	return _r_sys_endthread (ERROR_SUCCESS);
+	return ERROR_SUCCESS;
 }
 
 BOOLEAN _app_changefilters (HWND hwnd, BOOLEAN is_install, BOOLEAN is_forced)
@@ -211,8 +211,6 @@ BOOLEAN _app_changefilters (HWND hwnd, BOOLEAN is_install, BOOLEAN is_forced)
 	{
 		_app_initinterfacestate (hwnd, TRUE);
 
-		_app_freethreadpool (&threads_pool);
-
 		PITEM_CONTEXT pcontext = (PITEM_CONTEXT)_r_mem_allocatezero (sizeof (ITEM_CONTEXT));
 
 		pcontext->hwnd = hwnd;
@@ -226,7 +224,6 @@ BOOLEAN _app_changefilters (HWND hwnd, BOOLEAN is_install, BOOLEAN is_forced)
 			return FALSE;
 		}
 
-		threads_pool.push_back (hthread);
 		_r_sys_resumethread (hthread);
 
 		return TRUE;

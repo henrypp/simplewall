@@ -24,4 +24,4 @@ VOID CALLBACK _wfp_logcallback2 (PVOID pContext, const FWPM_NET_EVENT3* pEvent);
 VOID CALLBACK _wfp_logcallback3 (PVOID pContext, const FWPM_NET_EVENT4* pEvent);
 VOID CALLBACK _wfp_logcallback4 (PVOID pContext, const FWPM_NET_EVENT5* pEvent);
 
-THREAD_FN LogThread (PVOID lparam);
+THREAD_API LogThread (PVOID lparam);

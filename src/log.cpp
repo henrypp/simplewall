@@ -607,15 +607,11 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 		if (!thread_count || !_r_fastlock_islocked (&lock_logthread))
 		{
-			_app_freethreadpool (&threads_pool);
-
 			HANDLE hthread = _r_sys_createthreadex (&LogThread, _r_app_gethwnd (), TRUE, THREAD_PRIORITY_HIGHEST);
 
 			if (hthread)
 			{
 				InterlockedIncrement (&log_stack.thread_count);
-
-				threads_pool.push_back (hthread);
 
 				NtResumeThread (hthread, NULL);
 			}
@@ -845,7 +841,7 @@ VOID CALLBACK _wfp_logcallback4 (PVOID pContext, const FWPM_NET_EVENT5* pEvent)
 	_wfp_logcallback (pEvent->header.flags, &pEvent->header.timeStamp, pEvent->header.appId.data, pEvent->header.packageSid, pEvent->header.userId, pEvent->header.ipProtocol, pEvent->header.ipVersion, pEvent->header.remoteAddrV4, &pEvent->header.remoteAddrV6, pEvent->header.remotePort, pEvent->header.localAddrV4, &pEvent->header.localAddrV6, pEvent->header.localPort, layer_id, filter_id, direction, is_allow, is_loopback);
 }
 
-THREAD_FN LogThread (PVOID lparam)
+THREAD_API LogThread (PVOID lparam)
 {
 	HWND hwnd = (HWND)lparam;
 
@@ -948,5 +944,5 @@ THREAD_FN LogThread (PVOID lparam)
 
 	InterlockedDecrement (&log_stack.thread_count);
 
-	return _r_sys_endthread (ERROR_SUCCESS);
+	return ERROR_SUCCESS;
 }
