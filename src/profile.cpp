@@ -1279,7 +1279,9 @@ BOOLEAN _app_isappfromsystem (LPCWSTR path, SIZE_T app_hash)
 		if (_r_str_compare_length (path, config.windows_dir, config.wd_length) == 0)
 			return TRUE;
 
-		if ((GetFileAttributes (path) & FILE_ATTRIBUTE_SYSTEM) != 0)
+		ULONG attr = GetFileAttributes (path);
+
+		if ((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_SYSTEM) != 0)
 			return TRUE;
 	}
 
