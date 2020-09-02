@@ -338,29 +338,6 @@ VOID _app_freelogobjects_vec (OBJECTS_LOG_VECTOR* ptr_vec)
 	}
 }
 
-VOID _app_freethreadpool (THREADS_VEC* ptr_vec)
-{
-	HANDLE hthread;
-
-	for (auto it = ptr_vec->begin (); it != ptr_vec->end ();)
-	{
-		hthread = *it;
-
-		if (_r_fs_isvalidhandle (hthread))
-		{
-			if (WaitForSingleObjectEx (hthread, 0, FALSE) != WAIT_OBJECT_0)
-			{
-				++it;
-				continue;
-			}
-
-			CloseHandle (hthread);
-		}
-
-		it = ptr_vec->erase (it);
-	}
-}
-
 VOID _app_freelogstack ()
 {
 	PSLIST_ENTRY listEntry;

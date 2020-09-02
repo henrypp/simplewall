@@ -55,8 +55,6 @@ inline OBJECTS_STRINGS_MAP cache_dns;
 inline OBJECTS_STRINGS_MAP cache_hosts;
 inline TYPES_MAP cache_types;
 
-inline THREADS_VEC threads_pool;
-
 inline std::vector<PITEM_COLOR> colors;
 inline std::vector<time_t> timers;
 

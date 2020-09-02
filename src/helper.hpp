@@ -25,7 +25,6 @@ VOID _app_freerulesconfig_map (OBJECTS_RULE_CONFIG_MAP* ptr_map);
 VOID _app_freeapps_vec (OBJECTS_APP_VECTOR* ptr_vec);
 VOID _app_freerules_vec (OBJECTS_RULE_VECTOR* ptr_vec);
 VOID _app_freelogobjects_vec (OBJECTS_LOG_VECTOR* ptr_vec);
-VOID _app_freethreadpool (THREADS_VEC* ptr_vec);
 VOID _app_freelogstack ();
 
 VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, HICON* picon);
