@@ -216,15 +216,13 @@ BOOLEAN _app_changefilters (HWND hwnd, BOOLEAN is_install, BOOLEAN is_forced)
 		pcontext->hwnd = hwnd;
 		pcontext->is_install = is_install;
 
-		HANDLE hthread = _r_sys_createthreadex (&ApplyThread, (PVOID)pcontext, TRUE, THREAD_PRIORITY_HIGHEST);
-
-		if (!hthread)
+		if (!NT_SUCCESS (_r_sys_createthreadex (&ApplyThread, NULL, (PVOID)pcontext, FALSE, THREAD_PRIORITY_HIGHEST)))
 		{
 			_r_mem_free (pcontext);
+
 			return FALSE;
 		}
 
-		_r_sys_resumethread (hthread);
 
 		return TRUE;
 	}
@@ -2030,8 +2028,8 @@ find_wrap:
 			// add blocklist to update
 			if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 			{
-				WCHAR internalProfileVersion[128];
-				_r_str_printf (internalProfileVersion, RTL_NUMBER_OF (internalProfileVersion), L"%" TEXT (PR_LONG64), config.profile_internal_timestamp);
+				WCHAR internalProfileVersion[64];
+				_r_str_fromlong64 (internalProfileVersion, RTL_NUMBER_OF (internalProfileVersion), config.profile_internal_timestamp);
 
 				_r_update_addcomponent (L"Internal rules", L"profile_internal", internalProfileVersion, config.profile_internal_path, FALSE);
 			}
@@ -2047,7 +2045,7 @@ find_wrap:
 			_app_notifycreatewindow ();
 
 			// create network monitor thread
-			_r_sys_createthreadex (&NetworkMonitorThread, (PVOID)hwnd, FALSE, THREAD_PRIORITY_LOWEST);
+			_r_sys_createthreadex (&NetworkMonitorThread, NULL, (PVOID)hwnd, FALSE, THREAD_PRIORITY_LOWEST);
 
 			// install filters
 			{

@@ -607,13 +607,9 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 
 		if (!thread_count || !_r_fastlock_islocked (&lock_logthread))
 		{
-			HANDLE hthread = _r_sys_createthreadex (&LogThread, _r_app_gethwnd (), TRUE, THREAD_PRIORITY_HIGHEST);
-
-			if (hthread)
+			if (NT_SUCCESS (_r_sys_createthreadex (&LogThread, NULL, _r_app_gethwnd (), FALSE, THREAD_PRIORITY_HIGHEST)))
 			{
 				InterlockedIncrement (&log_stack.thread_count);
-
-				NtResumeThread (hthread, NULL);
 			}
 		}
 	}
