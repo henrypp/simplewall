@@ -810,6 +810,7 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			_r_ctrl_settextformat (hwnd, IDC_TITLE_HIGHLIGHTING, L"%s:", _r_locale_getstring (IDS_TITLE_HIGHLIGHTING));
 			_r_ctrl_settextformat (hwnd, IDC_TITLE_NOTIFICATIONS, L"%s:", _r_locale_getstring (IDS_TITLE_NOTIFICATIONS));
 			_r_ctrl_settextformat (hwnd, IDC_TITLE_LOGGING, L"%s:", _r_locale_getstring (IDS_TITLE_LOGGING));
+			_r_ctrl_settextformat (hwnd, IDC_TITLE_LOGVIEWER, L"%s:", _r_locale_getstring (IDS_LOGVIEWER_HINT));
 			_r_ctrl_settextformat (hwnd, IDC_TITLE_INTERFACE, L"%s:", _r_locale_getstring (IDS_TITLE_INTERFACE));
 			_r_ctrl_settextformat (hwnd, IDC_TITLE_EXCLUDE, L"%s:", _r_locale_getstring (IDS_TITLE_EXCLUDE));
 			_r_ctrl_settextformat (hwnd, IDC_TITLE_ADVANCED, L"%s:", _r_locale_getstring (IDS_TITLE_ADVANCED));
@@ -925,7 +926,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				{
 					_r_ctrl_settext (hwnd, IDC_ENABLELOG_CHK, _r_locale_getstring (IDS_ENABLELOG_CHK));
 
-					_r_ctrl_settextformat (hwnd, IDC_LOGVIEWER_HINT, L"%s:", _r_locale_getstring (IDS_LOGVIEWER_HINT));
 					_r_ctrl_settext (hwnd, IDC_LOGSIZELIMIT_HINT, _r_locale_getstring (IDS_LOGSIZELIMIT_HINT));
 
 					_r_ctrl_settextformat (hwnd, IDC_ENABLEUILOG_CHK, L"%s (session only)", _r_locale_getstring (IDS_ENABLEUILOG_CHK));
