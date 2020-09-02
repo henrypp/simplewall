@@ -2007,7 +2007,7 @@ VOID _app_generate_packages ()
 	DWORD max_length;
 	DWORD size;
 	PR_BYTE packageSid;
-	PR_STRING keyName;
+	PR_STRING key_name;
 	PR_STRING displayName;
 	PR_STRING pathString;
 	PR_STRING packageSidString;
@@ -2026,20 +2026,19 @@ VOID _app_generate_packages ()
 			return;
 		}
 
-		keyName = _r_obj_createstringex (NULL, max_length * sizeof (WCHAR));
-
+		key_name = _r_obj_createstringex (NULL, max_length * sizeof (WCHAR));
 		key_index = 0;
 
 		while (TRUE)
 		{
 			size = max_length;
 
-			if (RegEnumKeyEx (hkey, key_index++, keyName->Buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+			if (RegEnumKeyEx (hkey, key_index++, key_name->Buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
 				break;
 
-			_r_string_trimtonullterminator (keyName);
+			_r_string_trimtonullterminator (key_name);
 
-			code = RegOpenKeyEx (hkey, keyName->Buffer, 0, KEY_READ, &hsubkey);
+			code = RegOpenKeyEx (hkey, key_name->Buffer, 0, KEY_READ, &hsubkey);
 
 			if (code == ERROR_SUCCESS)
 			{
@@ -2063,7 +2062,7 @@ VOID _app_generate_packages ()
 								{
 									if (displayName->Buffer[0] == L'@')
 									{
-										UINT localizedLength = 0x100;
+										UINT localizedLength = 0x200;
 										PR_STRING localizedName = _r_obj_createstringex (NULL, localizedLength * sizeof (WCHAR));
 
 										if (SUCCEEDED (SHLoadIndirectString (displayName->Buffer, localizedName->Buffer, localizedLength, NULL)))
@@ -2114,7 +2113,7 @@ VOID _app_generate_packages ()
 			}
 		}
 
-		_r_obj_dereference (keyName);
+		_r_obj_dereference (key_name);
 
 		RegCloseKey (hkey);
 	}
@@ -2629,7 +2628,7 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 	if (is_range)
 	{
 		PR_STRING rangeStart = _r_str_extract (rule, 0, range_pos);
-		PR_STRING rangeEnd = _r_str_extract (rule, range_pos + 1, INVALID_SIZE_T);
+		PR_STRING rangeEnd = _r_str_extract (rule, range_pos + 1, rule_length - range_pos - 1);
 
 		_r_str_copy (range_start, RTL_NUMBER_OF (range_start), _r_obj_getstring (rangeStart));
 		_r_str_copy (range_end, RTL_NUMBER_OF (range_end), _r_obj_getstring (rangeEnd));
