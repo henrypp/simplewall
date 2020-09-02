@@ -1265,9 +1265,6 @@ INT_PTR CALLBACK SettingsProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					_r_ctrl_enable (hwnd, IDC_LOGPATH, is_checked); // input
 					_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_checked); // button
 
-					_r_ctrl_enable (hwnd, IDC_LOGVIEWER, is_checked); // input
-					_r_ctrl_enable (hwnd, IDC_LOGVIEWER_BTN, is_checked); // button
-
 					EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0), is_checked);
 
 					_r_ctrl_enable (hwnd, IDC_EXCLUDESTEALTH_CHK, is_enabled);
