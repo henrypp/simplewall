@@ -1468,15 +1468,7 @@ BOOLEAN _app_isrulevalidchars (LPCWSTR rule)
 
 BOOLEAN _app_profile_load_check_node (pugi::xml_node* root, ENUM_TYPE_XML type, BOOLEAN is_strict)
 {
-	if (root)
-	{
-		if (is_strict)
-			return (root->attribute (L"type").as_int () == type);
-
-		return (root->attribute (L"type").empty () || (root->attribute (L"type").as_int () == type));
-	}
-
-	return FALSE;
+	return is_strict ? (root->attribute (L"type").as_int () == type) : (root->attribute (L"type").empty () || (root->attribute (L"type").as_int () == type));
 }
 
 BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_strict)
