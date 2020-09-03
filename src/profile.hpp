@@ -52,10 +52,12 @@ BOOLEAN _app_isapphaverule (SIZE_T app_hash);
 BOOLEAN _app_isappused (const PITEM_APP ptr_app, SIZE_T app_hash);
 BOOLEAN _app_isappexists (const PITEM_APP ptr_app);
 
-BOOLEAN _app_isrulehost (LPCWSTR rule);
-BOOLEAN _app_isruleip (LPCWSTR rule);
-BOOLEAN _app_isruleport (LPCWSTR rule);
-BOOLEAN _app_isrulevalidchars (LPCWSTR rule);
+#define TULE_TYPE_HOST (NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE)
+#define TULE_TYPE_IP (NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE)
+
+BOOLEAN _app_isruletype (LPCWSTR rule, ULONG types);
+BOOLEAN _app_isruleport (LPCWSTR rule, SIZE_T length);
+BOOLEAN _app_isrulevalid (LPCWSTR rule, SIZE_T length);
 
 BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_strict);
 VOID _app_profile_load_fallback ();

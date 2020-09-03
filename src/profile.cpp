@@ -1390,37 +1390,25 @@ BOOLEAN _app_isappexists (const PITEM_APP ptr_app)
 	return FALSE;
 }
 
-BOOLEAN _app_isrulehost (LPCWSTR rule)
+BOOLEAN _app_isruletype (LPCWSTR rule, ULONG types)
 {
-	NET_ADDRESS_INFO addressInfo;
-	memset (&addressInfo, 0, sizeof (NET_ADDRESS_INFO));
+	ULONG code;
+	PNET_ADDRESS_INFO addressInfo;
 
-	USHORT port;
-	BYTE prefix_length;
+	addressInfo = (PNET_ADDRESS_INFO)_r_mem_allocatezero (sizeof (NET_ADDRESS_INFO));
 
-	DWORD types = NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE;
-	DWORD code = ParseNetworkString (rule, types, &addressInfo, &port, &prefix_length);
+	// host - NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE;
+	// ip - NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE
+	code = ParseNetworkString (rule, types, addressInfo, NULL, NULL);
+
+	_r_mem_free (addressInfo);
 
 	return (code == ERROR_SUCCESS);
 }
 
-BOOLEAN _app_isruleip (LPCWSTR rule)
+BOOLEAN _app_isruleport (LPCWSTR rule, SIZE_T length)
 {
-	NET_ADDRESS_INFO addressInfo;
-	memset (&addressInfo, 0, sizeof (NET_ADDRESS_INFO));
-
-	USHORT port;
-	BYTE prefix_length;
-
-	DWORD types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
-	DWORD code = ParseNetworkString (rule, types, &addressInfo, &port, &prefix_length);
-
-	return (code == ERROR_SUCCESS);
-}
-
-BOOLEAN _app_isruleport (LPCWSTR rule)
-{
-	for (SIZE_T i = 0; i < _r_str_length (rule); i++)
+	for (SIZE_T i = 0; i < length; i++)
 	{
 		if (iswdigit (rule[i]) == 0 && rule[i] != DIVIDER_RULE_RANGE)
 			return FALSE;
@@ -1429,7 +1417,7 @@ BOOLEAN _app_isruleport (LPCWSTR rule)
 	return TRUE;
 }
 
-BOOLEAN _app_isrulevalidchars (LPCWSTR rule)
+BOOLEAN _app_isrulevalid (LPCWSTR rule, SIZE_T length)
 {
 	WCHAR valid_chars[] = {
 		L'.',
@@ -1441,7 +1429,7 @@ BOOLEAN _app_isrulevalidchars (LPCWSTR rule)
 		L'_',
 	};
 
-	for (SIZE_T i = 0; i < _r_str_length (rule); i++)
+	for (SIZE_T i = 0; i < length; i++)
 	{
 		if (iswalnum (rule[i]) == 0)
 		{
