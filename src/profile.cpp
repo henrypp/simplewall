@@ -1132,11 +1132,11 @@ PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
 			{
 				if (ptr_rule->is_readonly)
 				{
-					_r_string_append2 (&string, ptr_rule->name);
+					_r_string_appendformat (&string, L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->Buffer);
 				}
 				else
 				{
-					_r_string_appendformat (&string, L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->Buffer);
+					_r_string_append2 (&string, ptr_rule->name);
 				}
 
 				_r_string_append (&string, delimeter);
