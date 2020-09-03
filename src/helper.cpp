@@ -58,34 +58,30 @@ VOID NTAPI _app_dereferenceruleconfig (PVOID pdata)
 
 PR_STRING _app_resolveaddress (ADDRESS_FAMILY af, LPCVOID paddr)
 {
-	PDNS_RECORD ppQueryResultsSet;
-	PR_STRING string;
+	PR_STRING string = NULL;
 	PR_STRING arpaString;
+	PDNS_RECORD ppQueryResultsSet;
 	DNS_STATUS dnsStatus;
 
-	string = NULL;
 	arpaString = _app_formataddress (af, 0, paddr, 0, FMTADDR_AS_ARPA);
 
-	if (!arpaString)
-		goto CleanupExit;
-
-	dnsStatus = DnsQuery (arpaString->Buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
-
-	if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR)
-	{
-		if (ppQueryResultsSet)
-		{
-			if (!_r_str_isempty (ppQueryResultsSet->Data.PTR.pNameHost))
-				string = _r_obj_createstring (ppQueryResultsSet->Data.PTR.pNameHost);
-
-			DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
-		}
-	}
-
-CleanupExit:
-
 	if (arpaString)
+	{
+		dnsStatus = DnsQuery (arpaString->Buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &ppQueryResultsSet, NULL);
+
+		if (dnsStatus == DNS_ERROR_RCODE_NO_ERROR)
+		{
+			if (ppQueryResultsSet)
+			{
+				if (!_r_str_isempty (ppQueryResultsSet->Data.PTR.pNameHost))
+					string = _r_obj_createstring (ppQueryResultsSet->Data.PTR.pNameHost);
+
+				DnsRecordListFree (ppQueryResultsSet, DnsFreeRecordList);
+			}
+		}
+
 		_r_obj_dereference (arpaString);
+	}
 
 	return string;
 }
@@ -149,7 +145,7 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 	{
 		if (is_success && _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 		{
-			PR_STRING domainString;
+			PR_STRING domainString = NULL;
 			SIZE_T addr_hash = _r_str_hash (formatted_address);
 
 			if (cache_hosts.find (addr_hash) != cache_hosts.end ())
@@ -220,8 +216,6 @@ BOOLEAN _app_formatip (ADDRESS_FAMILY af, LPCVOID paddr, LPWSTR out_buffer, ULON
 
 PR_STRING _app_formatport (UINT16 port, BOOLEAN is_noempty)
 {
-	PR_STRING string;
-
 	if (!port)
 		return NULL;
 
@@ -230,16 +224,20 @@ PR_STRING _app_formatport (UINT16 port, BOOLEAN is_noempty)
 		LPCWSTR seviceString = _app_getservicename (port, NULL);
 
 		if (seviceString)
-			string = _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, seviceString);
+		{
+			return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, seviceString);
+		}
 		else
-			string = _r_format_string (L"%" TEXT (PRIu16), port);
+		{
+			return _r_format_string (L"%" TEXT (PRIu16), port);
+		}
 	}
 	else
 	{
-		string = _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, _app_getservicename (port, SZ_UNKNOWN));
+		return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, _app_getservicename (port, SZ_UNKNOWN));
 	}
 
-	return string;
+	return NULL;
 }
 
 VOID _app_freestrings_map (OBJECTS_STRINGS_MAP* ptr_map, SIZE_T max_size)
@@ -555,7 +553,7 @@ CleanupExit:
 
 	ptr_app->is_signed = !_r_str_isempty (signatureCacheString);
 
-	return (PR_STRING)_r_obj_referencesafe (signatureCacheString);
+	return _r_obj_referencesafe (signatureCacheString);
 }
 
 PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app)
@@ -670,7 +668,7 @@ CleanupExit:
 	if (hlib)
 		FreeLibrary (hlib);
 
-	return (PR_STRING)_r_obj_referencesafe (versionCacheString);
+	return _r_obj_referencesafe (versionCacheString);
 }
 
 LPCWSTR _app_getservicename (UINT16 port, LPCWSTR default_value)
@@ -1474,7 +1472,7 @@ LPCWSTR _app_getconnectionstatusname (DWORD state, LPCWSTR default_value)
 
 PR_STRING _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, BOOLEAN is_localized)
 {
-	LPCWSTR text;
+	LPCWSTR text = NULL;
 
 	if (is_localized)
 	{
@@ -1490,15 +1488,6 @@ PR_STRING _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, B
 		{
 			text = _r_locale_getstring (IDS_ANY);
 		}
-		else
-		{
-			return NULL;
-		}
-
-		if (is_loopback)
-			return _r_format_string (L"%s (" SZ_DIRECTION_LOOPBACK L")", text);
-
-		return _r_obj_createstring (text);
 	}
 	else
 	{
@@ -1514,18 +1503,15 @@ PR_STRING _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, B
 		{
 			text = SZ_DIRECTION_ANY;
 		}
-		else
-		{
-			return NULL;
-		}
-
-		if (is_loopback)
-			return _r_format_string (L"%s-" SZ_DIRECTION_LOOPBACK, text);
-
-		return _r_obj_createstring (text);
 	}
 
-	return NULL;
+	if (!text)
+		return NULL;
+
+	if (is_loopback)
+		return _r_format_string (L"%s (" SZ_DIRECTION_LOOPBACK L")", text);
+
+	return _r_obj_createstring (text);
 }
 
 COLORREF _app_getcolorvalue (SIZE_T color_hash)
@@ -1566,6 +1552,7 @@ PR_STRING _app_getservicenamefromtag (HANDLE hprocess, LPCVOID ptag)
 			if (pnameTag->Buffer)
 			{
 				serviceNameString = _r_obj_createstring ((LPCWSTR)pnameTag->Buffer);
+
 				LocalFree (pnameTag->Buffer);
 			}
 
@@ -1620,6 +1607,7 @@ PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 		if (serviceName)
 		{
 			_r_obj_movereference (&processName, serviceName);
+
 			ptr_network->type = DataAppService;
 		}
 	}
@@ -1639,7 +1627,7 @@ PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 				ptr_network->type = DataAppRegular;
 			}
 
-			DWORD size = 1024;
+			DWORD size = 0x400;
 			processName = _r_obj_createstringex (NULL, size * sizeof (WCHAR));
 
 			BOOL is_success = QueryFullProcessImageName (hprocess, 0, processName->Buffer, &size);
@@ -1649,7 +1637,7 @@ PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 			{
 				if (GetLastError () == ERROR_GEN_FAILURE)
 				{
-					size = 1024;
+					size = 0x400;
 					QueryFullProcessImageName (hprocess, PROCESS_NAME_NATIVE, processName->Buffer, &size);
 
 					is_success = TRUE;
@@ -1690,20 +1678,16 @@ PR_STRING _app_getnetworkpath (DWORD pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 
 SIZE_T _app_getnetworkhash (ADDRESS_FAMILY af, DWORD pid, LPCVOID remote_addr, DWORD remote_port, LPCVOID local_addr, DWORD local_port, UINT8 proto, DWORD state)
 {
-	PR_STRING networkString;
-	WCHAR remoteAddress[LEN_IP_MAX];
-	WCHAR localAddress[LEN_IP_MAX];
-	SIZE_T networkHash;
+	WCHAR remoteAddress[LEN_IP_MAX] = {0};
+	WCHAR localAddress[LEN_IP_MAX] = {0};
+	PR_STRING networkString = NULL;
+	SIZE_T networkHash = 0;
 
 	if (remote_addr)
 		_app_formatip (af, remote_addr, remoteAddress, RTL_NUMBER_OF (remoteAddress), FALSE);
-	else
-		*remoteAddress = UNICODE_NULL;
 
 	if (local_addr)
 		_app_formatip (af, local_addr, localAddress, RTL_NUMBER_OF (localAddress), FALSE);
-	else
-		*localAddress = UNICODE_NULL;
 
 	networkString = _r_format_string (L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG),
 									  af,
@@ -2025,7 +2009,7 @@ VOID _app_generate_packages ()
 
 		while (TRUE)
 		{
-			size = max_length;
+			size = max_length + 1;
 
 			if (RegEnumKeyEx (hkey, key_index++, key_name->Buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
 				break;
@@ -2062,6 +2046,7 @@ VOID _app_generate_packages ()
 										if (SUCCEEDED (SHLoadIndirectString (displayName->Buffer, localizedName->Buffer, localizedLength, NULL)))
 										{
 											_r_string_trimtonullterminator (localizedName);
+
 											_r_obj_movereference (&displayName, localizedName);
 										}
 										else
@@ -2129,7 +2114,7 @@ VOID _app_generate_services ()
 
 	// win10+
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-		dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
+		dwServiceType |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE;
 
 	DWORD bufferSize = initialBufferSize;
 	PVOID buffer = _r_mem_allocatezero (bufferSize);
@@ -2159,12 +2144,17 @@ VOID _app_generate_services ()
 	// now traverse each service to get information
 	if (buffer)
 	{
+		LPQUERY_SERVICE_CONFIG svconfig = NULL;
 		LPENUM_SERVICE_STATUS_PROCESS service;
 		LPENUM_SERVICE_STATUS_PROCESS services;
 		PITEM_APP ptr_app;
 		SIZE_T app_hash;
+		ULONG required_length;
 
 		services = (LPENUM_SERVICE_STATUS_PROCESS)buffer;
+
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
+			svconfig = (LPQUERY_SERVICE_CONFIG)_r_mem_allocatezero (0x1000);
 
 		for (DWORD i = 0; i < servicesReturned; i++)
 		{
@@ -2172,6 +2162,25 @@ VOID _app_generate_services ()
 
 			LPCWSTR service_name = service->lpServiceName;
 			LPCWSTR display_name = service->lpDisplayName;
+
+			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
+			{
+				SC_HANDLE svc = OpenService (hsvcmgr, service_name, SERVICE_QUERY_CONFIG);
+
+				if (svc)
+				{
+					if (QueryServiceConfig (svc, svconfig, 0x1000, &required_length))
+					{
+						if ((svconfig->dwServiceType & SERVICE_USERSERVICE_INSTANCE) != 0)
+						{
+							CloseServiceHandle (svc);
+							continue;
+						}
+					}
+
+					CloseServiceHandle (svc);
+				}
+			}
 
 			app_hash = _r_str_hash (service_name);
 
@@ -2228,9 +2237,9 @@ VOID _app_generate_services ()
 				}
 			}
 
-			if (servicePath)
+			if (!_r_str_isempty (servicePath))
 			{
-				PR_STRING convertedPath = _r_path_dospathfromnt (_r_obj_getstring (servicePath));
+				PR_STRING convertedPath = _r_path_dospathfromnt (servicePath->Buffer);
 
 				if (convertedPath)
 					_r_obj_movereference (&servicePath, convertedPath);
@@ -2289,6 +2298,9 @@ VOID _app_generate_services ()
 
 			SAFE_DELETE_REFERENCE (servicePath);
 		}
+
+		if (svconfig)
+			_r_mem_free (svconfig);
 
 		_r_mem_free (buffer);
 	}
@@ -2422,8 +2434,7 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	if (_r_str_isempty (hostname))
 		return NULL;
 
-	R_STRINGBUILDER string;
-
+	R_STRINGBUILDER string = {0};
 	PDNS_RECORD ppQueryResultsSet = NULL;
 
 	_r_obj_createstringbuilder (&string);
@@ -2504,6 +2515,7 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	if (_r_str_isempty (&string))
 	{
 		_r_obj_deletestringbuilder (&string);
+
 		return NULL;
 	}
 
@@ -2518,8 +2530,8 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 	USHORT port;
 	BYTE prefix_length;
 
-	DWORD types = NET_STRING_ANY_ADDRESS | NET_STRING_ANY_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_ANY_ADDRESS_NO_SCOPE | NET_STRING_ANY_SERVICE_NO_SCOPE;
-	DWORD code = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
+	ULONG types = NET_STRING_ANY_ADDRESS | NET_STRING_ANY_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_ANY_ADDRESS_NO_SCOPE | NET_STRING_ANY_SERVICE_NO_SCOPE;
+	ULONG code = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
 
 	if (code != ERROR_SUCCESS)
 	{
@@ -2627,7 +2639,7 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 
 		if (rangeEnd)
 		{
-			_r_str_copy (range_end, RTL_NUMBER_OF (range_end), _r_obj_getstring (rangeEnd));
+			_r_str_copy (range_end, RTL_NUMBER_OF (range_end), rangeEnd->Buffer);
 			_r_obj_dereference (rangeEnd);
 		}
 
@@ -3036,7 +3048,7 @@ VOID _app_load_appxmanifest (PITEM_APP ptr_app)
 		return;
 
 	WCHAR path[512];
-	PR_STRING resultPath;
+	PR_STRING resultPath = NULL;
 
 	LPCWSTR appx_names[] = {
 		L"AppxManifest.xml",
@@ -3054,8 +3066,6 @@ VOID _app_load_appxmanifest (PITEM_APP ptr_app)
 	return;
 
 DoOpen:
-
-	resultPath = NULL;
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result xml_result = doc.load_file (path, PUGIXML_LOAD_FLAGS, PUGIXML_LOAD_ENCODING);
