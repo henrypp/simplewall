@@ -119,7 +119,9 @@ VOID _app_freenotify (SIZE_T app_hash, PITEM_APP ptr_app)
 	}
 
 	if (_app_notifyget_id (hwnd, FALSE) == app_hash)
+	{
 		_app_notifyget_id (hwnd, TRUE);
+	}
 
 	_app_notifyrefresh (hwnd, TRUE);
 }
@@ -132,22 +134,25 @@ SIZE_T _app_notifyget_id (HWND hwnd, BOOLEAN is_nearest)
 	{
 		for (auto it = apps.begin (); it != apps.end (); ++it)
 		{
-			if (!it->second || it->first == app_hash_current) // exclude current app from enumeration
+			if (it->first == app_hash_current) // exclude current app from enumeration
 				continue;
 
 			SIZE_T app_hash = it->first;
-			PITEM_APP ptr_app = (PITEM_APP)_r_obj_reference (it->second);
+			PITEM_APP ptr_app = (PITEM_APP)_r_obj_referencesafe (it->second);
 
-			if (ptr_app->pnotification)
+			if (ptr_app)
 			{
+				if (ptr_app->pnotification)
+				{
+					_r_obj_dereference (ptr_app);
+
+					SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)app_hash);
+
+					return app_hash;
+				}
+
 				_r_obj_dereference (ptr_app);
-
-				SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)app_hash);
-
-				return app_hash;
 			}
-
-			_r_obj_dereference (ptr_app);
 		}
 
 		SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
@@ -352,10 +357,11 @@ VOID _app_notifyrefresh (HWND hwnd, BOOLEAN is_safety)
 
 VOID _app_notifysetpos (HWND hwnd, BOOLEAN is_forced)
 {
+	RECT windowRect;
+	RECT desktopRect;
+
 	if (!is_forced && IsWindowVisible (hwnd))
 	{
-		RECT windowRect;
-
 		if (GetWindowRect (hwnd, &windowRect))
 		{
 			_r_wnd_adjustwindowrect (hwnd, &windowRect);
@@ -369,12 +375,8 @@ VOID _app_notifysetpos (HWND hwnd, BOOLEAN is_forced)
 
 	if (is_intray)
 	{
-		RECT windowRect;
-
 		if (GetWindowRect (hwnd, &windowRect))
 		{
-			RECT desktopRect;
-
 			if (SystemParametersInfo (SPI_GETWORKAREA, 0, &desktopRect, 0))
 			{
 				APPBARDATA abd;
@@ -563,6 +565,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				{
 					_r_wnd_top (hwnd, TRUE);
 					SetActiveWindow (hwnd);
+
 					break;
 				}
 			}
@@ -629,6 +632,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
+		case WM_CTLCOLOREDIT:
 		case WM_CTLCOLORDLG:
 		{
 			return (INT_PTR)GetSysColorBrush (COLOR_WINDOW);
@@ -997,7 +1001,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						NMHDR hdr = {0};
 
 						hdr.code = BCN_DROPDOWN;
-						hdr.idFrom = (UINT_PTR)ctrl_id;
+						hdr.idFrom = (UINT_PTR)(UINT)ctrl_id;
 						hdr.hwndFrom = GetDlgItem (hwnd, ctrl_id);
 
 						SendMessage (hwnd, WM_NOTIFY, TRUE, (LPARAM)&hdr);
