@@ -2605,9 +2605,6 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 	if (_r_str_isempty (rule))
 		return TRUE;
 
-	if (!_app_isrulevalidchars (rule->Buffer))
-		return FALSE;
-
 	ENUM_TYPE_DATA type = DataUnknown;
 
 	SIZE_T rule_length = _r_obj_getstringlength (rule);
@@ -2622,11 +2619,20 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 		PR_STRING rangeStart = _r_str_extract (rule, 0, range_pos);
 		PR_STRING rangeEnd = _r_str_extract (rule, range_pos + 1, rule_length - range_pos - 1);
 
-		_r_str_copy (range_start, RTL_NUMBER_OF (range_start), _r_obj_getstring (rangeStart));
-		_r_str_copy (range_end, RTL_NUMBER_OF (range_end), _r_obj_getstring (rangeEnd));
+		if (rangeStart)
+		{
+			_r_str_copy (range_start, RTL_NUMBER_OF (range_start), rangeStart->Buffer);
+			_r_obj_dereference (rangeStart);
+		}
 
-		_r_obj_dereference (rangeStart);
-		_r_obj_dereference (rangeEnd);
+		if (rangeEnd)
+		{
+			_r_str_copy (range_end, RTL_NUMBER_OF (range_end), _r_obj_getstring (rangeEnd));
+			_r_obj_dereference (rangeEnd);
+		}
+
+		if (_r_str_isempty (range_start) || _r_str_isempty (range_end))
+			return FALSE;
 	}
 
 	// auto-parse rule type
@@ -2639,26 +2645,30 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 		}
 		else
 		{
-			if (_app_isruleport (rule->Buffer))
+			if (_app_isrulevalid (rule->Buffer, rule_length))
 			{
-				type = DataTypePort;
-			}
-			else if (is_range ? (_app_isruleip (range_start) && _app_isruleip (range_end)) : _app_isruleip (rule->Buffer))
-			{
-				type = DataTypeIp;
-			}
-			else if (_app_isrulehost (rule->Buffer))
-			{
-				type = DataTypeHost;
+				if (_app_isruleport (rule->Buffer, rule_length))
+				{
+					type = DataTypePort;
+				}
+				else if (!is_range && _app_isruletype (rule->Buffer, TULE_TYPE_IP))
+				{
+					type = DataTypeIp;
+				}
+				else if (is_range && _app_isruletype (range_start, TULE_TYPE_IP) && _app_isruletype (range_end, TULE_TYPE_IP))
+				{
+					type = DataTypeIp;
+				}
+				else if (_app_isruletype (rule->Buffer, TULE_TYPE_HOST))
+				{
+					type = DataTypeHost;
+				}
 			}
 
-			if (type != DataUnknown)
-			{
-				if (cache_types.size () >= MAP_CACHE_MAX)
-					cache_types.clear ();
+			if (cache_types.size () >= MAP_CACHE_MAX)
+				cache_types.clear ();
 
-				cache_types.insert_or_assign (rule_hash, type);
-			}
+			cache_types.insert_or_assign (rule_hash, type);
 		}
 	}
 
