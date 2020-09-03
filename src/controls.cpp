@@ -232,11 +232,11 @@ VOID _app_listviewsetview (HWND hwnd, INT listview_id)
 	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
 }
 
-VOID _app_listviewsetfont (HWND hwnd, INT listview_id, BOOLEAN is_redraw)
+VOID _app_listviewsetfont (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 {
 	LOGFONT lf = {0};
 
-	if (is_redraw || !config.hfont)
+	if (is_forced || !config.hfont)
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
