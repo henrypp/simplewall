@@ -158,5 +158,5 @@ VOID CALLBACK _app_timer_callback (PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 	_r_listview_redraw (hwnd, listview_id, INVALID_INT);
 
 	if (_r_config_getboolean (L"IsNotificationsTimer", TRUE))
-		_r_tray_popupformat (hwnd, UID, NIIF_INFO | (_r_config_getboolean (L"IsNotificationsSound", TRUE) ? 0 : NIIF_NOSOUND), APP_NAME, _r_locale_getstring (IDS_STATUS_TIMER_DONE), _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY));
+		_r_tray_popupformat (hwnd, UID, NIIF_INFO | (_r_config_getboolean (L"IsNotificationsSound", TRUE) ? 0 : NIIF_NOSOUND), APP_NAME, _r_locale_getstring (IDS_STATUS_TIMER_DONE), _app_getdisplayname (app_hash, ptr_app, TRUE));
 }
