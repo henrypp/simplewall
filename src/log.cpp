@@ -45,9 +45,9 @@ VOID _app_loginit (BOOLEAN is_install)
 		{
 			_r_fs_setpos (config.hlogfile, 0, FILE_END);
 		}
-
-		_r_obj_dereference (logPath);
 	}
+
+	_r_obj_dereference (logPath);
 }
 
 VOID _app_logwrite (PITEM_LOG ptr_log)
@@ -278,6 +278,7 @@ VOID _app_logclear ()
 		if (logPath)
 		{
 			_r_fs_remove (logPath->Buffer, _R_FLAG_REMOVE_FORCE);
+
 			_r_obj_dereference (logPath);
 
 		}
@@ -491,9 +492,9 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, FILETIME const* pft, UINT8 const* 
 	if ((flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) != 0 && sidString)
 	{
 		_r_obj_movereference (&ptr_log->path, sidString);
-		ptr_log->app_hash = _r_str_hash (ptr_log->path);
-
 		sidString = NULL;
+
+		ptr_log->app_hash = _r_str_hash (ptr_log->path);
 	}
 	else if ((flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) != 0 && app_id)
 	{
