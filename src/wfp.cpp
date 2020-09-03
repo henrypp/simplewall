@@ -1034,8 +1034,8 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 	PITEM_RULE ptr_rule;
 	R_STRINGREF remoteRemainingPart;
 	R_STRINGREF localRemainingPart;
-	PR_STRING ruleRemoteString;
-	PR_STRING ruleLocalString;
+	PR_STRING ruleRemoteString = NULL;
+	PR_STRING ruleLocalString = NULL;
 	LPCWSTR ruleNamePtr;
 
 	for (auto it = ptr_rules->begin (); it != ptr_rules->end (); ++it)
@@ -1055,9 +1055,6 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, OBJECTS_RULE_VECTOR* ptr_rules, UIN
 		}
 
 		ruleNamePtr = _r_obj_getstring (ptr_rule->name);
-
-		ruleRemoteString = NULL;
-		ruleLocalString = NULL;
 
 		if (!_r_str_isempty (ptr_rule->rule_remote))
 			ruleRemoteString = _r_str_splitatchar (&ptr_rule->rule_remote->sr, &remoteRemainingPart, DIVIDER_RULE[0]);
@@ -1783,7 +1780,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 					if (code != ERROR_SUCCESS)
 						goto CleanupExit;
 
-					_r_obj_movereference (&originalPath, _r_format_string (L"%s%s", _r_obj_getstring (ntPath), pathSkipRoot));
+					_r_obj_movereference (&originalPath, _r_format_string (L"%s%s", ntPath->Buffer, pathSkipRoot));
 				}
 			}
 			else if (code == ERROR_SUCCESS)
@@ -1797,7 +1794,7 @@ DWORD _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 
 			}
 
-			ByteBlobAlloc (_r_obj_getstring (originalPath), _r_obj_getstringsize (originalPath) + sizeof (UNICODE_NULL), lpblob);
+			ByteBlobAlloc (originalPath->Buffer, originalPath->Length + sizeof (UNICODE_NULL), lpblob);
 		}
 	}
 	else if (type == DataAppPico || type == DataAppDevice)

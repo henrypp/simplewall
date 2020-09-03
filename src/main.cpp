@@ -106,10 +106,10 @@ THREAD_API NetworkMonitorThread (PVOID lparam)
 				_r_listview_setitem (hwnd, network_listview_id, item_id, 5, _app_getprotoname (ptr_network->protocol, ptr_network->af, SZ_EMPTY));
 				_r_listview_setitem (hwnd, network_listview_id, item_id, 6, _app_getconnectionstatusname (ptr_network->state, NULL));
 
-				if (localPortString)
+				if (ptr_network->local_port)
 					_r_listview_setitem (hwnd, network_listview_id, item_id, 2, _r_obj_getstringorempty (localPortString));
 
-				if (remotePortString)
+				if (ptr_network->remote_port)
 					_r_listview_setitem (hwnd, network_listview_id, item_id, 4, _r_obj_getstringorempty (remotePortString));
 
 				SAFE_DELETE_REFERENCE (localAddressString);
@@ -1940,9 +1940,10 @@ find_wrap:
 
 				if (item_text)
 				{
-					if (StrStrNIW (_r_obj_getstring (item_text), lpfr->lpstrFindWhat, (UINT)_r_obj_getstringlength (item_text)) != NULL)
+					if (StrStrNIW (item_text->Buffer, lpfr->lpstrFindWhat, (UINT)_r_obj_getstringlength (item_text)) != NULL)
 					{
 						_app_showitem (hwnd, listview_id, current_item, INVALID_INT);
+
 						_r_obj_dereference (item_text);
 
 						return FALSE;
@@ -2685,6 +2686,7 @@ find_wrap:
 					if (string)
 					{
 						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, string->Buffer);
+
 						_r_obj_dereference (string);
 					}
 
