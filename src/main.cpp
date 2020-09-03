@@ -2413,53 +2413,6 @@ find_wrap:
 			break;
 		}
 
-		case RM_DPICHANGED:
-		{
-			PR_STRING localizedString = NULL;
-
-			_app_imagelist_init (hwnd);
-
-			SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
-
-			// reset toolbar information
-			_app_setinterfacestate (hwnd);
-
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, _r_locale_getstring (IDS_REFRESH), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, I_IMAGENONE);
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, _r_locale_getstring (IDS_SETTINGS), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, I_IMAGENONE);
-
-			_r_obj_movereference (&localizedString, _r_format_string (L"%s...", _r_locale_getstring (IDS_OPENRULESEDITOR)));
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, _r_obj_getstringorempty (localizedString), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
-
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, _r_locale_getstring (IDS_ENABLENOTIFICATIONS_CHK), BTNS_CHECK | BTNS_AUTOSIZE, 0, I_IMAGENONE);
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, _r_locale_getstring (IDS_ENABLELOG_CHK), BTNS_CHECK | BTNS_AUTOSIZE, 0, I_IMAGENONE);
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, _r_locale_getstring (IDS_ENABLEUILOG_CHK), BTNS_CHECK | BTNS_AUTOSIZE, 0, I_IMAGENONE);
-
-			_r_obj_movereference (&localizedString, _r_format_string (L"%s (Ctrl+I)", _r_locale_getstring (IDS_LOGSHOW)));
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, _r_obj_getstringorempty (localizedString), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
-
-			_r_obj_movereference (&localizedString, _r_format_string (L"%s (Ctrl+X)", _r_locale_getstring (IDS_LOGCLEAR)));
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, _r_obj_getstringorempty (localizedString), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
-
-			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, _r_locale_getstring (IDS_DONATE), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
-
-			_app_toolbar_resize ();
-
-			INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
-
-			if (listview_id)
-			{
-				_app_listviewsetview (hwnd, listview_id);
-				_app_listviewsetfont (hwnd, listview_id, TRUE);
-				_app_listviewresize (hwnd, listview_id, FALSE);
-			}
-
-			_app_refreshstatus (hwnd, 0);
-
-			SAFE_DELETE_REFERENCE (localizedString);
-
-			break;
-		}
-
 		case RM_CONFIG_UPDATE:
 		{
 			_app_profile_save ();
@@ -2582,6 +2535,53 @@ find_wrap:
 					_app_showitem (hwnd, app_listview_id, _app_getposition (hwnd, app_listview_id, app_hash), INVALID_INT);
 				}
 			}
+
+			break;
+		}
+
+		case WM_DPICHANGED:
+		{
+			PR_STRING localizedString = NULL;
+
+			_app_imagelist_init (hwnd);
+
+			SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+
+			// reset toolbar information
+			_app_setinterfacestate (hwnd);
+
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, _r_locale_getstring (IDS_REFRESH), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, I_IMAGENONE);
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, _r_locale_getstring (IDS_SETTINGS), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, I_IMAGENONE);
+
+			_r_obj_movereference (&localizedString, _r_format_string (L"%s...", _r_locale_getstring (IDS_OPENRULESEDITOR)));
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, _r_obj_getstringorempty (localizedString), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
+
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, _r_locale_getstring (IDS_ENABLENOTIFICATIONS_CHK), BTNS_CHECK | BTNS_AUTOSIZE, 0, I_IMAGENONE);
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, _r_locale_getstring (IDS_ENABLELOG_CHK), BTNS_CHECK | BTNS_AUTOSIZE, 0, I_IMAGENONE);
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, _r_locale_getstring (IDS_ENABLEUILOG_CHK), BTNS_CHECK | BTNS_AUTOSIZE, 0, I_IMAGENONE);
+
+			_r_obj_movereference (&localizedString, _r_format_string (L"%s (Ctrl+I)", _r_locale_getstring (IDS_LOGSHOW)));
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, _r_obj_getstringorempty (localizedString), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
+
+			_r_obj_movereference (&localizedString, _r_format_string (L"%s (Ctrl+X)", _r_locale_getstring (IDS_LOGCLEAR)));
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, _r_obj_getstringorempty (localizedString), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
+
+			_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, _r_locale_getstring (IDS_DONATE), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
+
+			_app_toolbar_resize ();
+
+			INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
+
+			if (listview_id)
+			{
+				_app_listviewsetview (hwnd, listview_id);
+				_app_listviewsetfont (hwnd, listview_id, TRUE);
+				_app_listviewresize (hwnd, listview_id, FALSE);
+			}
+
+			_app_refreshstatus (hwnd, 0);
+
+			SAFE_DELETE_REFERENCE (localizedString);
 
 			break;
 		}
