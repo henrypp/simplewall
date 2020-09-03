@@ -1201,7 +1201,9 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, OBJECTS_APP_VECTOR* ptr_apps, UINT 
 
 		if (ptr_app->is_enabled)
 		{
-			if (!_wfp_createrulefilter (hengine, _r_obj_getstring (ptr_app->display_name), _r_str_hash (ptr_app->original_path), NULL, NULL, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, ptr_app->guids))
+			SIZE_T app_hash = _r_str_hash (ptr_app->original_path);
+
+			if (!_wfp_createrulefilter (hengine, _app_getdisplayname (app_hash, ptr_app, TRUE), app_hash, NULL, NULL, 0, AF_UNSPEC, FWP_DIRECTION_MAX, FILTER_WEIGHT_APPLICATION, action, 0, ptr_app->guids))
 				ptr_app->is_haveerrors = TRUE;
 		}
 
