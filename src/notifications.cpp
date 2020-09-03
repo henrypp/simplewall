@@ -594,17 +594,6 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			break;
 		}
 
-		case WM_ERASEBKGND:
-		{
-			RECT clientRect;
-
-			if (GetClientRect (hwnd, &clientRect))
-				_r_dc_fillrect ((HDC)wparam, &clientRect, GetSysColor (COLOR_WINDOW));
-
-			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-			return TRUE;
-		}
-
 		case WM_PAINT:
 		{
 			PAINTSTRUCT ps = {0};
