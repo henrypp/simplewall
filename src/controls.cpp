@@ -211,11 +211,7 @@ VOID _app_listviewsetview (HWND hwnd, INT listview_id)
 
 	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
-		if (icons_size == SHIL_SMALL || icons_size == SHIL_SYSSMALL)
-			himg = config.himg_rules_small;
-
-		else
-			himg = config.himg_rules_large;
+		himg = (icons_size == SHIL_SMALL || icons_size == SHIL_SYSSMALL) ? config.himg_rules_small : config.himg_rules_large;
 	}
 	else
 	{
@@ -229,7 +225,6 @@ VOID _app_listviewsetview (HWND hwnd, INT listview_id)
 	}
 
 	SendDlgItemMessage (hwnd, listview_id, LVM_SETVIEW, (WPARAM)view_type, 0);
-	SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT)); // HACK!!!
 }
 
 VOID _app_listviewsetfont (HWND hwnd, INT listview_id, BOOLEAN is_forced)
