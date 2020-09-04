@@ -216,7 +216,7 @@ BOOLEAN _app_changefilters (HWND hwnd, BOOLEAN is_install, BOOLEAN is_forced)
 		pcontext->hwnd = hwnd;
 		pcontext->is_install = is_install;
 
-		if (!NT_SUCCESS (_r_sys_createthreadex (&ApplyThread, NULL, (PVOID)pcontext, FALSE, THREAD_PRIORITY_HIGHEST)))
+		if (!NT_SUCCESS (_r_sys_createthreadex (&ApplyThread, (PVOID)pcontext, NULL, THREAD_PRIORITY_HIGHEST)))
 		{
 			_r_mem_free (pcontext);
 
@@ -2046,7 +2046,7 @@ find_wrap:
 			_app_notifycreatewindow ();
 
 			// create network monitor thread
-			_r_sys_createthreadex (&NetworkMonitorThread, NULL, (PVOID)hwnd, FALSE, THREAD_PRIORITY_LOWEST);
+			_r_sys_createthreadex (&NetworkMonitorThread, (PVOID)hwnd, NULL, THREAD_PRIORITY_LOWEST);
 
 			// install filters
 			{
