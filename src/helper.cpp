@@ -2217,17 +2217,7 @@ VOID _app_generate_services ()
 				{
 					// query path
 					if (!servicePath)
-					{
 						servicePath = _r_reg_querystring (hkey, L"ImagePath");
-
-						if (servicePath)
-						{
-							PathRemoveArgs (servicePath->Buffer);
-							PathUnquoteSpaces (servicePath->Buffer);
-
-							_r_string_trimtonullterminator (servicePath);
-						}
-					}
 
 					// query timestamp
 					if (!serviceTimestamp)
@@ -2239,6 +2229,11 @@ VOID _app_generate_services ()
 
 			if (!_r_str_isempty (servicePath))
 			{
+				PathRemoveArgs (servicePath->Buffer);
+				PathUnquoteSpaces (servicePath->Buffer);
+
+				_r_string_trimtonullterminator (servicePath);
+
 				PR_STRING convertedPath = _r_path_dospathfromnt (servicePath->Buffer);
 
 				if (convertedPath)
