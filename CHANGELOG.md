@@ -1,3 +1,16 @@
+v3.2.4 (5 September 2020)
+- removed assertion from release builds (issue #764)
+- removed user service instance from the list (win10+)
+- fixed parsing not existing apps (issue #732, #739)
+- displays incorrect name on timer expiration
+- check app timer expiration on profile load
+- incorrect read-only rules tooltip markup
+- create filter does not report errors
+- fixed checking of file attributes
+- fixed parsing ip/port ranges
+- cosmetic fixes
+- fixed bugs
+
 v3.2.3 (25 August 2020)
 - added ncsi system rule (issue #709)
 - added command line mutex checking (issue #750)
