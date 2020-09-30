@@ -31,7 +31,7 @@ To remove all filters created by simplewall, start simplewall and press "Disable
 - Windows services support
 - Free and open source
 - Localization support
-- IPv6 support
+- IPv4 and IPv6 support
 
 ```
 To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
