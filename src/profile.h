@@ -9,6 +9,7 @@ VOID _app_setappinfo (SIZE_T app_hash, ENUM_INFO_DATA info_key, LONG_PTR info_va
 VOID _app_setappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_key, LONG_PTR info_value);
 
 SIZE_T _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_STRING display_name, PR_STRING real_path);
+PITEM_RULE _app_addrule (PR_STRING name, PR_STRING rule_remote, PR_STRING rule_local, FWP_DIRECTION direction, UINT8 protocol, ADDRESS_FAMILY af);
 
 PITEM_APP _app_getappitem (SIZE_T app_hash);
 PITEM_RULE _app_getrulebyid (SIZE_T idx);
@@ -59,8 +60,8 @@ BOOLEAN _app_isruletype (LPCWSTR rule, ULONG types);
 BOOLEAN _app_isruleport (LPCWSTR rule, SIZE_T length);
 BOOLEAN _app_isrulevalid (LPCWSTR rule, SIZE_T length);
 
-BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type, BOOLEAN is_strict);
+BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type);
 VOID _app_profile_load_fallback ();
-VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR path_backup, time_t* ptimestamp);
+VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR resource_name, time_t* ptimestamp);
 VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom);
 VOID _app_profile_save ();

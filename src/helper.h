@@ -15,16 +15,13 @@ VOID NTAPI _app_dereferencerule (PVOID pdata);
 VOID NTAPI _app_dereferenceruleconfig (PVOID pdata);
 
 PR_STRING _app_resolveaddress (ADDRESS_FAMILY af, LPCVOID paddr);
-PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UINT16 port, DWORD flags);
+PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UINT16 port, ULONG flags);
 BOOLEAN _app_formatip (ADDRESS_FAMILY af, LPCVOID paddr, LPWSTR out_buffer, ULONG buffer_size, BOOLEAN is_checkempty);
 PR_STRING _app_formatport (UINT16 port, BOOLEAN is_noempty);
 
 VOID _app_freestrings_map (OBJECTS_STRINGS_MAP* ptr_map, SIZE_T max_size);
 VOID _app_freeapps_map (OBJECTS_APP_MAP* ptr_map);
 VOID _app_freerulesconfig_map (OBJECTS_RULE_CONFIG_MAP* ptr_map);
-VOID _app_freeapps_vec (OBJECTS_APP_VECTOR* ptr_vec);
-VOID _app_freerules_vec (OBJECTS_RULE_VECTOR* ptr_vec);
-VOID _app_freelogobjects_vec (OBJECTS_LOG_VECTOR* ptr_vec);
 VOID _app_freelogstack ();
 
 VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, HICON* picon);
@@ -34,7 +31,7 @@ PR_STRING _app_getsignatureinfo (SIZE_T app_hash, const PITEM_APP ptr_app);
 PR_STRING _app_getversioninfo (SIZE_T app_hash, const PITEM_APP ptr_app);
 LPCWSTR _app_getservicename (UINT16 port, LPCWSTR default_value);
 LPCWSTR _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af, LPCWSTR default_value);
-LPCWSTR _app_getconnectionstatusname (DWORD state, LPCWSTR default_value);
+LPCWSTR _app_getconnectionstatusname (ULONG state, LPCWSTR default_value);
 PR_STRING _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, BOOLEAN is_localized);
 COLORREF _app_getcolorvalue (SIZE_T color_hash);
 
@@ -54,5 +51,3 @@ INT _app_getlistview_id (ENUM_TYPE_DATA type);
 
 HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size);
 HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size);
-
-VOID _app_load_appxmanifest (PITEM_APP ptr_app_item);
