@@ -1,9 +1,9 @@
 // simplewall
 // Copyright (c) 2016-2020 Henry++
 
-#include "global.hpp"
+#include "global.h"
 
-VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
+VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, LONG64 seconds)
 {
 	SIZE_T app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
 
@@ -17,24 +17,34 @@ VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 		ptr_app->timer = 0;
 
-		if (_r_fs_isvalidhandle (ptr_app->htimer))
+		if (_app_istimerset (ptr_app->htimer))
 		{
-			DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, NULL);
-			ptr_app->htimer = NULL;
+			_app_timer_remove (&ptr_app->htimer);
 		}
 	}
 	else
 	{
-		time_t current_time = _r_unixtime_now ();
+		LONG64 current_time = _r_unixtime_now ();
 		BOOLEAN is_created = FALSE;
+		FILETIME file_time = {0};
 
-		if (_r_fs_isvalidhandle (ptr_app->htimer))
+		_r_unixtime_to_filetime (current_time + seconds, &file_time);
+
+		if (_app_istimerset (ptr_app->htimer))
 		{
-			is_created = !!ChangeTimerQueueTimer (config.htimer, ptr_app->htimer, _r_calc_seconds2milliseconds (DWORD, seconds), 0);
+			SetThreadpoolTimer (ptr_app->htimer, &file_time, 0, 0);
+			is_created = TRUE;
 		}
 		else
 		{
-			is_created = !!CreateTimerQueueTimer (&ptr_app->htimer, config.htimer, &_app_timer_callback, (PVOID)app_hash, _r_calc_seconds2milliseconds (DWORD, seconds), 0, WT_EXECUTEONLYONCE | WT_EXECUTEINTIMERTHREAD);
+			PTP_TIMER tptimer = CreateThreadpoolTimer (&_app_timer_callback, (PVOID)app_hash, NULL);
+
+			if (tptimer)
+			{
+				SetThreadpoolTimer (tptimer, &file_time, 0, 0);
+				ptr_app->htimer = tptimer;
+				is_created = TRUE;
+			}
 		}
 
 		if (is_created)
@@ -46,13 +56,11 @@ VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 		{
 			ptr_app->is_enabled = FALSE;
 			ptr_app->is_haveerrors = FALSE;
-
 			ptr_app->timer = 0;
 
-			if (_r_fs_isvalidhandle (ptr_app->htimer))
+			if (_app_istimerset (ptr_app->htimer))
 			{
-				DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, NULL);
-				ptr_app->htimer = NULL;
+				_app_timer_remove (&ptr_app->htimer);
 			}
 		}
 	}
@@ -70,7 +78,7 @@ VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, time_t seconds)
 
 VOID _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 {
-	if (!_app_istimeractive (ptr_app))
+	if (!_app_istimerset (ptr_app->htimer))
 		return;
 
 	ptr_app->is_enabled = FALSE;
@@ -78,10 +86,9 @@ VOID _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 
 	ptr_app->timer = 0;
 
-	if (_r_fs_isvalidhandle (ptr_app->htimer))
+	if (_app_istimerset (ptr_app->htimer))
 	{
-		DeleteTimerQueueTimer (config.htimer, ptr_app->htimer, NULL);
-		ptr_app->htimer = NULL;
+		_app_timer_remove (&ptr_app->htimer);
 	}
 
 	SIZE_T app_hash = _r_str_hash (ptr_app->original_path); // note: be carefull (!)
@@ -100,9 +107,18 @@ VOID _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 	}
 }
 
-BOOLEAN _app_istimeractive (const PITEM_APP ptr_app)
+VOID _app_timer_remove (PTP_TIMER* ptptimer)
 {
-	return _r_fs_isvalidhandle (ptr_app->htimer) || (ptr_app->timer && (ptr_app->timer > _r_unixtime_now ()));
+	PTP_TIMER current_timer = *ptptimer;
+
+	*ptptimer = NULL;
+
+	CloseThreadpoolTimer (current_timer);
+}
+
+BOOLEAN _app_istimerset (PTP_TIMER tptimer)
+{
+	return tptimer && IsThreadpoolTimerSet (tptimer);
 }
 
 BOOLEAN _app_istimersactive ()
@@ -114,7 +130,7 @@ BOOLEAN _app_istimersactive ()
 		if (!ptr_app)
 			continue;
 
-		if (_app_istimeractive (ptr_app))
+		if (_app_istimerset (ptr_app->htimer))
 		{
 			_r_obj_dereference (ptr_app);
 			return TRUE;
@@ -126,37 +142,45 @@ BOOLEAN _app_istimersactive ()
 	return FALSE;
 }
 
-VOID CALLBACK _app_timer_callback (PVOID lpParameter, BOOLEAN TimerOrWaitFired)
+VOID CALLBACK _app_timer_callback (PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer)
 {
 	HWND hwnd = _r_app_gethwnd ();
-	SIZE_T app_hash = (SIZE_T)lpParameter;
+	SIZE_T app_hash = (SIZE_T)context;
 
 	PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 	if (!ptr_app)
 		return;
 
-	OBJECTS_APP_VECTOR rules;
-	rules.push_back (ptr_app);
-
 	_app_timer_reset (hwnd, ptr_app);
+
+	INT listview_id = _app_getlistview_id (ptr_app->type);
 
 	HANDLE hengine = _wfp_getenginehandle ();
 
 	if (hengine)
-		_wfp_create3filters (hengine, &rules, __LINE__);
+	{
+		PR_LIST rules = _r_obj_createlist ();
+
+		_r_obj_addlistitem (rules, ptr_app);
+
+		_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+
+		_r_obj_dereference (rules);
+	}
 
 	_r_obj_dereference (ptr_app);
 
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
+	if (listview_id)
+	{
+		_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
+		_app_refreshstatus (hwnd, listview_id);
 
-	_app_listviewsort (hwnd, listview_id, INVALID_INT, FALSE);
-	_app_refreshstatus (hwnd, listview_id);
+		_r_listview_redraw (hwnd, listview_id, INVALID_INT);
+	}
 
 	_app_profile_save ();
 
-	_r_listview_redraw (hwnd, listview_id, INVALID_INT);
-
 	if (_r_config_getboolean (L"IsNotificationsTimer", TRUE))
-		_r_tray_popupformat (hwnd, UID, NIIF_INFO | (_r_config_getboolean (L"IsNotificationsSound", TRUE) ? 0 : NIIF_NOSOUND), APP_NAME, _r_locale_getstring (IDS_STATUS_TIMER_DONE), _app_getdisplayname (app_hash, ptr_app, TRUE));
+		_r_tray_popupformat (hwnd, UID, NIIF_INFO | (_r_config_getboolean (L"IsNotificationsSound", TRUE) ? 0 : NIIF_NOSOUND), APP_NAME, _r_locale_getstring (IDS_STATUS_TIMER_DONE), _app_getdisplayname (0, ptr_app, TRUE));
 }
