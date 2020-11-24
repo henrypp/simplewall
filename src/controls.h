@@ -30,5 +30,3 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id);
 
 INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam);
 VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos);
-
-LONG_PTR _app_nmcustdraw (LPNMLVCUSTOMDRAW lpnmlv);

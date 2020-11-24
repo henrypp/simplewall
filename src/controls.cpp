@@ -1,7 +1,7 @@
 // simplewall
 // Copyright (c) 2016-2020 Henry++
 
-#include "global.hpp"
+#include "global.h"
 
 VOID _app_settab_id (HWND hwnd, INT page_id)
 {
@@ -89,6 +89,104 @@ VOID _app_setinterfacestate (HWND hwnd)
 	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
 }
 
+VOID _app_imagelist_init (HWND hwnd)
+{
+	INT icon_size_small = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
+	INT icon_size_large = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
+	INT icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (hwnd, _r_config_getinteger (L"ToolbarSize", _R_SIZE_ITEMHEIGHT)), icon_size_small, icon_size_large);
+
+	SAFE_DELETE_OBJECT (config.hbmp_enable);
+	SAFE_DELETE_OBJECT (config.hbmp_disable);
+	SAFE_DELETE_OBJECT (config.hbmp_allow);
+	SAFE_DELETE_OBJECT (config.hbmp_block);
+	SAFE_DELETE_OBJECT (config.hbmp_cross);
+	SAFE_DELETE_OBJECT (config.hbmp_rules);
+	SAFE_DELETE_OBJECT (config.hbmp_checked);
+	SAFE_DELETE_OBJECT (config.hbmp_unchecked);
+
+	SAFE_DELETE_ICON (config.hicon_large);
+	SAFE_DELETE_ICON (config.hicon_small);
+	SAFE_DELETE_ICON (config.hicon_uwp);
+
+	// get default icon for executable
+	_app_getfileicon (_r_obj_getstring (config.ntoskrnl_path), FALSE, &config.icon_id, &config.hicon_large);
+	_app_getfileicon (_r_obj_getstring (config.ntoskrnl_path), TRUE, NULL, &config.hicon_small);
+
+	// get default icon for windows store package (win8+)
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+	{
+		if (!_app_getfileicon (_r_obj_getstring (config.winstore_path), TRUE, &config.icon_uwp_id, &config.hicon_uwp))
+		{
+			config.icon_uwp_id = config.icon_id;
+			config.hicon_uwp = CopyIcon (config.hicon_small);
+		}
+	}
+
+	config.hbmp_enable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_size_small);
+	config.hbmp_disable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_size_small);
+
+	config.hbmp_allow = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_size_small);
+	config.hbmp_block = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_size_small);
+	config.hbmp_cross = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CROSS), icon_size_small);
+	config.hbmp_rules = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_size_small);
+
+	config.hbmp_checked = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CHECKED), icon_size_small);
+	config.hbmp_unchecked = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_UNCHECKED), icon_size_small);
+
+	// toolbar imagelist
+	if (config.himg_toolbar)
+		ImageList_SetIconSize (config.himg_toolbar, icon_size_toolbar, icon_size_toolbar);
+	else
+		config.himg_toolbar = ImageList_Create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, 0, 0);
+
+	if (config.himg_toolbar)
+	{
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_REFRESH), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_NOTIFICATIONS), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_LOG), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_LOGOPEN), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_LOGCLEAR), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ADD), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_DONATE), icon_size_toolbar), NULL);
+		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_LOGUI), icon_size_toolbar), NULL);
+	}
+
+	// rules imagelist (small)
+	if (config.himg_rules_small)
+	{
+		ImageList_SetIconSize (config.himg_rules_small, icon_size_small, icon_size_small);
+	}
+	else
+	{
+		config.himg_rules_small = ImageList_Create (icon_size_small, icon_size_small, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, 2, 2);
+	}
+
+	if (config.himg_rules_small)
+	{
+		ImageList_Add (config.himg_rules_small, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_size_small), NULL);
+		ImageList_Add (config.himg_rules_small, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_size_small), NULL);
+	}
+
+	// rules imagelist (large)
+	if (config.himg_rules_large)
+	{
+		ImageList_SetIconSize (config.himg_rules_large, icon_size_large, icon_size_large);
+	}
+	else
+	{
+		config.himg_rules_large = ImageList_Create (icon_size_large, icon_size_large, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, 2, 2);
+	}
+
+	if (config.himg_rules_large)
+	{
+		ImageList_Add (config.himg_rules_large, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_size_large), NULL);
+		ImageList_Add (config.himg_rules_large, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_size_large), NULL);
+	}
+}
+
 VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 {
 	if (!listview_id || (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE)))
@@ -100,8 +198,8 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 		return;
 
 	RECT rc_client;
-	PR_STRING columnText;
-	PR_STRING itemText;
+	PR_STRING column_text;
+	PR_STRING item_text;
 	HWND hlistview;
 	HWND hheader;
 	HDC hdc_listview;
@@ -135,7 +233,7 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 
 	is_tableview = ((INT)SendMessage (hlistview, LVM_GETVIEW, 0, 0) == LV_VIEW_DETAILS);
 
-	total_width = _r_calc_rectwidth (INT, &rc_client);
+	total_width = _r_calc_rectwidth (&rc_client);
 
 	max_width = _r_dc_getdpi (hwnd, 158);
 	spacing = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
@@ -146,12 +244,12 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 			continue;
 
 		// get column text width
-		columnText = _r_listview_getcolumntext (hwnd, listview_id, i);
+		column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
 
-		if (!columnText)
+		if (!column_text)
 			continue;
 
-		column_width = _r_dc_fontwidth (hdc_header, _r_obj_getstring (columnText), _r_obj_getstringlength (columnText)) + spacing;
+		column_width = _r_dc_getfontwidth (hdc_header, _r_obj_getstring (column_text), _r_obj_getstringlength (column_text)) + spacing;
 
 		if (column_width >= max_width)
 		{
@@ -162,14 +260,14 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 			// calculate max width of listview subitems (only for details view)
 			if (is_tableview)
 			{
-				for (INT j = 0; j < _r_listview_getitemcount (hwnd, listview_id, FALSE); j++)
+				for (INT j = 0; j < _r_listview_getitemcount (hwnd, listview_id); j++)
 				{
-					itemText = _r_listview_getitemtext (hwnd, listview_id, j, i);
+					item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
 
-					if (itemText)
+					if (item_text)
 					{
-						text_width = _r_dc_fontwidth (hdc_listview, _r_obj_getstring (itemText), _r_obj_getstringlength (itemText)) + spacing;
-						_r_obj_dereference (itemText);
+						text_width = _r_dc_getfontwidth (hdc_listview, _r_obj_getstring (item_text), _r_obj_getstringlength (item_text)) + spacing;
+						_r_obj_dereference (item_text);
 
 						// do not continue reaching higher and higher values for performance reason!
 						if (text_width >= max_width)
@@ -189,7 +287,7 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 
 		calculated_width += column_width;
 
-		_r_obj_dereference (columnText);
+		_r_obj_dereference (column_text);
 	}
 
 	// set general column width
@@ -205,8 +303,8 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 VOID _app_listviewsetview (HWND hwnd, INT listview_id)
 {
 	BOOLEAN is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
-	INT view_type = is_mainview ? _r_calc_clamp (INT, _r_config_getinteger (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
-	INT icons_size = is_mainview ? _r_calc_clamp (INT, _r_config_getinteger (L"IconSize", SHIL_SYSSMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
+	INT view_type = is_mainview ? _r_calc_clamp (_r_config_getinteger (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
+	INT icons_size = is_mainview ? _r_calc_clamp (_r_config_getinteger (L"IconSize", SHIL_SYSSMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
 	HIMAGELIST himg = NULL;
 
 	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
@@ -235,7 +333,7 @@ VOID _app_listviewsetfont (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		_r_config_getfont (L"Font", hwnd, &lf);
+		_r_config_getfont (L"Font", hwnd, &lf, NULL);
 
 		config.hfont = CreateFontIndirect (&lf);
 	}
@@ -256,11 +354,11 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	if (item1 == INVALID_INT || item2 == INVALID_INT)
 		return 0;
 
-	WCHAR configName[128];
-	_r_str_printf (configName, RTL_NUMBER_OF (configName), L"listview\\%04" TEXT (PRIX32), listview_id);
+	WCHAR config_name[128];
+	_r_str_printf (config_name, RTL_NUMBER_OF (config_name), L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	INT column_id = _r_config_getinteger (L"SortColumn", 0, configName);
-	BOOLEAN is_descend = _r_config_getboolean (L"SortIsDescending", FALSE, configName);
+	INT column_id = _r_config_getintegerex (L"SortColumn", 0, config_name);
+	BOOLEAN is_descend = _r_config_getbooleanex (L"SortIsDescending", FALSE, config_name);
 
 	INT result = 0;
 
@@ -284,8 +382,8 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 		// timestamp sorting
 		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
 		{
-			time_t* timestamp1 = (time_t*)_app_getappinfo (lparam1, InfoTimestampPtr);
-			time_t* timestamp2 = (time_t*)_app_getappinfo (lparam2, InfoTimestampPtr);
+			PLONG64 timestamp1 = (PLONG64)_app_getappinfo (lparam1, InfoTimestampPtr);
+			PLONG64 timestamp2 = (PLONG64)_app_getappinfo (lparam2, InfoTimestampPtr);
 
 			if (timestamp1 && timestamp2)
 			{
@@ -300,22 +398,19 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 
 	if (!result)
 	{
-		PR_STRING itemText1 = _r_listview_getitemtext (hparent, listview_id, item1, column_id);
-		PR_STRING itemText2 = _r_listview_getitemtext (hparent, listview_id, item2, column_id);
+		PR_STRING item_text_1 = _r_listview_getitemtext (hparent, listview_id, item1, column_id);
+		PR_STRING item_text_2 = _r_listview_getitemtext (hparent, listview_id, item2, column_id);
 
-		if (itemText1 && itemText2)
+		if (item_text_1 && item_text_2)
 		{
-			result = _r_str_compare_logical (
-				itemText1->Buffer,
-				itemText2->Buffer
-			);
+			result = _r_str_compare_logical (item_text_1->buffer, item_text_2->buffer);
 		}
 
-		if (itemText1)
-			_r_obj_dereference (itemText1);
+		if (item_text_1)
+			_r_obj_dereference (item_text_1);
 
-		if (itemText2)
-			_r_obj_dereference (itemText2);
+		if (item_text_2)
+			_r_obj_dereference (item_text_2);
 	}
 
 	return is_descend ? -result : result;
@@ -336,23 +431,23 @@ VOID _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, BOOLEAN is_no
 	if (!column_count)
 		return;
 
-	WCHAR configName[128];
-	_r_str_printf (configName, RTL_NUMBER_OF (configName), L"listview\\%04" TEXT (PRIX32), listview_id);
+	WCHAR config_name[128];
+	_r_str_printf (config_name, RTL_NUMBER_OF (config_name), L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	BOOLEAN is_descend = _r_config_getboolean (L"SortIsDescending", FALSE, configName);
+	BOOLEAN is_descend = _r_config_getbooleanex (L"SortIsDescending", FALSE, config_name);
 
 	if (is_notifycode)
 		is_descend = !is_descend;
 
 	if (column_id == INVALID_INT)
-		column_id = _r_config_getinteger (L"SortColumn", 0, configName);
+		column_id = _r_config_getintegerex (L"SortColumn", 0, config_name);
 
-	column_id = _r_calc_clamp (INT, column_id, 0, column_count - 1); // set range
+	column_id = _r_calc_clamp (column_id, 0, column_count - 1); // set range
 
 	if (is_notifycode)
 	{
-		_r_config_setboolean (L"SortIsDescending", is_descend, configName);
-		_r_config_setinteger (L"SortColumn", column_id, configName);
+		_r_config_setbooleanex (L"SortIsDescending", is_descend, config_name);
+		_r_config_setintegerex (L"SortColumn", column_id, config_name);
 	}
 
 	for (INT i = 0; i < column_count; i++)
@@ -361,6 +456,69 @@ VOID _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, BOOLEAN is_no
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
 	SendMessage (hlistview, LVM_SORTITEMS, (WPARAM)hlistview, (LPARAM)&_app_listviewcompare_callback);
+}
+
+VOID _app_toolbar_init (HWND hwnd)
+{
+	config.hrebar = GetDlgItem (hwnd, IDC_REBAR);
+
+	_r_toolbar_setstyle (hwnd, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
+
+	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_REFRESH, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 2);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_SETTINGS, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 3);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 6);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 7);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
+
+	REBARBANDINFO rbi = {0};
+
+	rbi.cbSize = sizeof (rbi);
+	rbi.fMask = RBBIM_STYLE | RBBIM_CHILD;
+	rbi.fStyle = RBBS_CHILDEDGE | RBBS_USECHEVRON | RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER;
+	rbi.hwndChild = GetDlgItem (hwnd, IDC_TOOLBAR);
+
+	SendMessage (config.hrebar, RB_INSERTBAND, 0, (LPARAM)&rbi);
+}
+
+VOID _app_toolbar_resize ()
+{
+	REBARBANDINFO rbi = {0};
+	SIZE ideal_size = {0};
+	ULONG button_size;
+
+	rbi.cbSize = sizeof (rbi);
+
+	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+
+	button_size = (ULONG)SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETBUTTONSIZE, 0, 0);
+
+	if (button_size)
+	{
+		rbi.fMask |= RBBIM_CHILDSIZE;
+		rbi.cxMinChild = LOWORD (button_size);
+		rbi.cyMinChild = HIWORD (button_size);
+	}
+
+	if (SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
+	{
+		rbi.fMask |= RBBIM_SIZE | RBBIM_IDEALSIZE;
+		rbi.cx = (UINT)ideal_size.cx;
+		rbi.cxIdeal = (UINT)ideal_size.cx;
+	}
+
+	SendMessage (config.hrebar, RB_SETBANDINFO, 0, (LPARAM)&rbi);
 }
 
 VOID _app_refreshgroups (HWND hwnd, INT listview_id)
@@ -395,7 +553,7 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 		return;
 	}
 
-	INT total_count = _r_listview_getitemcount (hwnd, listview_id, FALSE);
+	INT total_count = _r_listview_getitemcount (hwnd, listview_id);
 
 	INT group1_count = 0;
 	INT group2_count = 0;
@@ -431,28 +589,28 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 		}
 	}
 
-	WCHAR groupString1[128] = {0};
-	WCHAR groupString2[128] = {0};
-	WCHAR groupString3[128] = {0};
-	PR_STRING localizedString = NULL;
+	WCHAR group1_string[128] = {0};
+	WCHAR group2_string[128] = {0};
+	WCHAR group3_string[128] = {0};
+	PR_STRING localized_string = NULL;
 
 	if (total_count)
 	{
-		_r_str_printf (groupString1, RTL_NUMBER_OF (groupString1), L" (%d/%d)", group1_count, total_count);
-		_r_str_printf (groupString2, RTL_NUMBER_OF (groupString2), L" (%d/%d)", group2_count, total_count);
-		_r_str_printf (groupString3, RTL_NUMBER_OF (groupString3), L" (%d/%d)", group3_count, total_count);
+		_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group1_count, total_count);
+		_r_str_printf (group2_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group2_count, total_count);
+		_r_str_printf (group3_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group3_count, total_count);
 	}
 
-	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", _r_locale_getstring (group1_title), groupString1));
-	_r_listview_setgroup (hwnd, listview_id, 0, _r_obj_getstringorempty (localizedString), 0, 0);
+	_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group1_title), group1_string));
+	_r_listview_setgroup (hwnd, listview_id, 0, _r_obj_getstringorempty (localized_string), 0, 0);
 
-	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", _r_locale_getstring (group2_title), groupString2));
-	_r_listview_setgroup (hwnd, listview_id, 1, _r_obj_getstringorempty (localizedString), 0, 0);
+	_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group2_title), group2_string));
+	_r_listview_setgroup (hwnd, listview_id, 1, _r_obj_getstringorempty (localized_string), 0, 0);
 
-	_r_obj_movereference (&localizedString, _r_format_string (L"%s%s", _r_locale_getstring (group3_title), groupString3));
-	_r_listview_setgroup (hwnd, listview_id, 2, _r_obj_getstringorempty (localizedString), 0, 0);
+	_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group3_title), group3_string));
+	_r_listview_setgroup (hwnd, listview_id, 2, _r_obj_getstringorempty (localized_string), 0, 0);
 
-	SAFE_DELETE_REFERENCE (localizedString);
+	SAFE_DELETE_REFERENCE (localized_string);
 }
 
 VOID _app_refreshstatus (HWND hwnd, INT listview_id)
@@ -468,15 +626,14 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 	{
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
-		const INT parts_count = 3;
 		INT spacing = _r_dc_getdpi (hwnd, 12);
 
-		PR_STRING text[parts_count] = {0};
-		INT parts[parts_count] = {0};
-		LONG size[parts_count] = {0};
+		PR_STRING text[UI_STATUSBAR_PARTS_COUNT] = {0};
+		INT parts[UI_STATUSBAR_PARTS_COUNT] = {0};
+		LONG size[UI_STATUSBAR_PARTS_COUNT] = {0};
 		LONG lay = 0;
 
-		for (INT i = 0; i < parts_count; i++)
+		for (INT i = 0; i < UI_STATUSBAR_PARTS_COUNT; i++)
 		{
 			switch (i)
 			{
@@ -499,7 +656,7 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 
 			if (i)
 			{
-				size[i] = _r_dc_fontwidth (hdc, _r_obj_getstringorempty (text[i]), _r_obj_getstringlength (text[i])) + spacing;
+				size[i] = _r_dc_getfontwidth (hdc, _r_obj_getstringorempty (text[i]), _r_obj_getstringlength (text[i])) + spacing;
 				lay += size[i];
 			}
 		}
@@ -507,17 +664,18 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 		RECT rc_client = {0};
 		GetClientRect (hstatus, &rc_client);
 
-		parts[0] = _r_calc_rectwidth (INT, &rc_client) - lay - _r_dc_getsystemmetrics (hwnd, SM_CXVSCROLL) - (_r_dc_getsystemmetrics (hwnd, SM_CXBORDER) * 2);
+		parts[0] = _r_calc_rectwidth (&rc_client) - lay - _r_dc_getsystemmetrics (hwnd, SM_CXVSCROLL) - (_r_dc_getsystemmetrics (hwnd, SM_CXBORDER) * 2);
 		parts[1] = parts[0] + size[1];
 		parts[2] = parts[1] + size[2];
 
-		SendMessage (hstatus, SB_SETPARTS, parts_count, (LPARAM)parts);
+		SendMessage (hstatus, SB_SETPARTS, UI_STATUSBAR_PARTS_COUNT, (LPARAM)parts);
 
-		for (INT i = 1; i < parts_count; i++)
+		for (INT i = 1; i < UI_STATUSBAR_PARTS_COUNT; i++)
 		{
 			if (text[i])
 			{
 				_r_status_settext (hwnd, IDC_STATUSBAR, i, _r_obj_getstringorempty (text[i]));
+
 				_r_obj_dereference (text[i]);
 			}
 		}
@@ -557,14 +715,14 @@ VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 
 	_app_settab_id (hwnd, listview_id);
 
-	INT total_count = _r_listview_getitemcount (hwnd, listview_id, FALSE);
+	INT total_count = _r_listview_getitemcount (hwnd, listview_id);
 
 	if (!total_count)
 		return;
 
 	if (item != INVALID_INT)
 	{
-		item = _r_calc_clamp (INT, item, 0, total_count - 1);
+		item = _r_calc_clamp (item, 0, total_count - 1);
 
 		PostMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
 
@@ -574,207 +732,4 @@ VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 
 	if (scroll_pos > 0)
 		PostMessage (hlistview, LVM_SCROLL, 0, (LPARAM)scroll_pos); // restore scroll position
-}
-
-LONG_PTR _app_nmcustdraw_listview (LPNMLVCUSTOMDRAW lpnmlv)
-{
-	if (!_r_config_getboolean (L"IsEnableHighlighting", TRUE))
-		return CDRF_DODEFAULT;
-
-	switch (lpnmlv->nmcd.dwDrawStage)
-	{
-		case CDDS_PREPAINT:
-		{
-			return CDRF_NOTIFYITEMDRAW;
-		}
-
-		case CDDS_ITEMPREPAINT:
-		{
-			INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
-			BOOLEAN is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
-			BOOLEAN is_systemapp = FALSE;
-			BOOLEAN is_validconnection = FALSE;
-
-			INT listview_id = PtrToInt ((PVOID)lpnmlv->nmcd.hdr.idFrom);
-
-			if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK || listview_id == IDC_LOG)
-			{
-				SIZE_T app_hash = 0;
-
-				if (listview_id == IDC_NETWORK)
-				{
-					PITEM_NETWORK ptr_network = _app_getnetworkitem (lpnmlv->nmcd.lItemlParam);
-
-					if (ptr_network)
-					{
-						app_hash = ptr_network->app_hash;
-						is_systemapp = _app_isappfromsystem (_r_obj_getstring (ptr_network->path), app_hash);
-						is_validconnection = ptr_network->is_connection;
-
-						_r_obj_dereference (ptr_network);
-					}
-				}
-				else if (listview_id == IDC_LOG)
-				{
-					PITEM_LOG ptr_log = _app_getlogitem (lpnmlv->nmcd.lItemlParam);
-
-					if (ptr_log)
-					{
-						app_hash = _app_getlogapp (lpnmlv->nmcd.lItemlParam);
-						is_systemapp = _app_isappfromsystem (_r_obj_getstring (ptr_log->path), app_hash);
-
-						_r_obj_dereference (ptr_log);
-					}
-				}
-				else
-				{
-					app_hash = lpnmlv->nmcd.lItemlParam;
-					is_validconnection = _app_isapphaveconnection (app_hash);
-
-					PR_STRING realPath = (PR_STRING)_app_getappinfo (app_hash, InfoPath);
-
-					if (realPath)
-					{
-						is_systemapp = _app_isappfromsystem (_r_obj_getstring (realPath), app_hash);
-
-						_r_obj_dereference (realPath);
-					}
-				}
-
-				if (app_hash)
-				{
-					COLORREF new_clr = _app_getappcolor (listview_id, app_hash, is_systemapp, is_validconnection);
-
-					if (new_clr)
-					{
-						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-						lpnmlv->clrTextBk = new_clr;
-
-						if (is_tableview)
-							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
-
-						return CDRF_NEWFONT;
-					}
-				}
-			}
-			else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
-			{
-				SIZE_T rule_idx = lpnmlv->nmcd.lItemlParam;
-
-				COLORREF new_clr = _app_getrulecolor (listview_id, rule_idx);
-
-				if (new_clr)
-				{
-					lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-					lpnmlv->clrTextBk = new_clr;
-
-					if (is_tableview)
-						_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
-
-					return CDRF_NEWFONT;
-				}
-
-			}
-			else if (listview_id == IDC_COLORS)
-			{
-				PITEM_COLOR ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
-
-				if (ptr_clr)
-				{
-					COLORREF new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
-
-					if (new_clr)
-					{
-						lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-						lpnmlv->clrTextBk = new_clr;
-
-						if (is_tableview)
-							_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, lpnmlv->clrTextBk);
-
-						return CDRF_NEWFONT;
-					}
-				}
-			}
-
-			break;
-		}
-	}
-
-	return CDRF_DODEFAULT;
-}
-
-LONG_PTR _app_nmcustdraw_toolbar (LPNMLVCUSTOMDRAW lpnmlv)
-{
-	switch (lpnmlv->nmcd.dwDrawStage)
-	{
-		case CDDS_PREPAINT:
-		{
-			return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
-		}
-
-		case CDDS_ITEMPREPAINT:
-		{
-			TBBUTTONINFO tbi = {0};
-
-			tbi.cbSize = sizeof (tbi);
-			tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
-
-			if ((INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi) == INVALID_INT)
-				break;
-
-			if ((tbi.fsState & TBSTATE_ENABLED) == 0)
-			{
-				INT icon_size_x = 0;
-				INT icon_size_y = 0;
-
-				SelectObject (lpnmlv->nmcd.hdc, (HFONT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, WM_GETFONT, 0, 0)); // fix
-
-				SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
-				SetTextColor (lpnmlv->nmcd.hdc, GetSysColor (COLOR_GRAYTEXT));
-
-				if (tbi.iImage != I_IMAGENONE)
-				{
-					HIMAGELIST himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
-
-					if (himglist)
-					{
-						DWORD padding = (DWORD)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
-						UINT rebar_height = (UINT)SendMessage (GetParent (lpnmlv->nmcd.hdr.hwndFrom), RB_GETBARHEIGHT, 0, 0);
-
-						ImageList_GetIconSize (himglist, &icon_size_x, &icon_size_y);
-
-						IMAGELISTDRAWPARAMS ildp = {0};
-
-						ildp.cbSize = sizeof (ildp);
-						ildp.himl = himglist;
-						ildp.hdcDst = lpnmlv->nmcd.hdc;
-						ildp.i = tbi.iImage;
-						ildp.x = lpnmlv->nmcd.rc.left + (LOWORD (padding) / 2);
-						ildp.y = (rebar_height / 2) - (icon_size_y / 2);
-						ildp.fState = ILS_SATURATE; // grayscale
-						ildp.fStyle = ILD_NORMAL | ILD_ASYNC;
-
-						ImageList_DrawIndirect (&ildp);
-					}
-				}
-
-				if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
-				{
-					WCHAR text[MAX_PATH] = {0};
-					SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
-
-					if (tbi.iImage != I_IMAGENONE)
-						lpnmlv->nmcd.rc.left += icon_size_x;
-
-					DrawTextEx (lpnmlv->nmcd.hdc, text, (INT)_r_str_length (text), &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, NULL);
-				}
-
-				return CDRF_SKIPDEFAULT;
-			}
-
-			break;
-		}
-	}
-
-	return CDRF_DODEFAULT;
 }
