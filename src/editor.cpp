@@ -1,11 +1,11 @@
 // simplewall
 // Copyright (c) 2016-2020 Henry++
 
-#include "global.hpp"
+#include "global.h"
 
 INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	static PITEM_CONTEXT pcontext;
+	static PITEM_CONTEXT pcontext = NULL;
 
 	switch (msg)
 	{
@@ -24,12 +24,13 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			if (pcontext->item_id != INVALID_INT)
 			{
-				PR_STRING itemText = _r_listview_getitemtext (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0);
+				PR_STRING item_text = _r_listview_getitemtext (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0);
 
-				if (itemText)
+				if (item_text)
 				{
-					_r_ctrl_settext (hwnd, IDC_RULE_ID, itemText->Buffer);
-					_r_obj_dereference (itemText);
+					_r_ctrl_settext (hwnd, IDC_RULE_ID, item_text->buffer);
+
+					_r_obj_dereference (item_text);
 				}
 			}
 
@@ -85,44 +86,48 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (!_r_ctrl_isenabled (hwnd, IDC_SAVE))
 						return FALSE;
 
-					PR_STRING ruleString = _r_ctrl_gettext (hwnd, IDC_RULE_ID);
+					PR_STRING rule_string = _r_ctrl_gettext (hwnd, IDC_RULE_ID);
 
-					if (!ruleString)
+					if (!rule_string)
 						return FALSE;
 
-					_r_str_trim (ruleString, DIVIDER_TRIM DIVIDER_RULE);
+					_r_str_trim (rule_string, DIVIDER_TRIM DIVIDER_RULE);
 
-					if (_r_str_isempty (ruleString))
+					if (_r_str_isempty (rule_string))
 					{
-						_r_obj_dereference (ruleString);
+						_r_obj_dereference (rule_string);
 						return FALSE;
 					}
 
-					if (!_app_parserulestring (ruleString, NULL))
+					if (!_app_parserulestring (rule_string, NULL))
 					{
 						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_SYNTAX_ERROR));
 						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
 
-						_r_obj_dereference (ruleString);
+						_r_obj_dereference (rule_string);
 
 						return FALSE;
 					}
 
 					if (pcontext->item_id == INVALID_INT)
 					{
-						_r_listview_additem (pcontext->hwnd, pcontext->listview_id, INVALID_INT, 0, ruleString->Buffer);
+						_r_listview_additem (pcontext->hwnd, pcontext->listview_id, INVALID_INT, 0, rule_string->buffer);
 					}
 					else
 					{
-						_r_listview_setitem (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0, ruleString->Buffer);
+						_r_listview_setitem (pcontext->hwnd, pcontext->listview_id, pcontext->item_id, 0, rule_string->buffer);
 					}
 
-					_r_obj_dereference (ruleString);
+					_r_obj_dereference (rule_string);
 
 					[[fallthrough]];
 				}
 
 				case IDCANCEL: // process Esc key
+				{
+					[[fallthrough]];
+				}
+
 				case IDC_CLOSE:
 				{
 					EndDialog (hwnd, FALSE);
@@ -163,7 +168,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				_r_ctrl_settextformat (hwnd, IDC_RULE_NAME, L"%s:", _r_locale_getstring (IDS_NAME));
 
 				if (!_r_str_isempty (ptr_rule->name))
-					_r_ctrl_settext (hwnd, IDC_RULE_NAME_ID, ptr_rule->name->Buffer);
+					_r_ctrl_settext (hwnd, IDC_RULE_NAME_ID, ptr_rule->name->buffer);
 
 				SendDlgItemMessage (hwnd, IDC_RULE_NAME_ID, EM_LIMITTEXT, RULE_NAME_CCH_MAX - 1, 0);
 				SendDlgItemMessage (hwnd, IDC_RULE_NAME_ID, EM_SETREADONLY, ptr_rule->is_readonly, 0);
@@ -226,7 +231,6 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 				INT index = 0;
 				WCHAR format[256];
-				LPCWSTR protocolString;
 
 				SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_INSERTSTRING, (WPARAM)index, (LPARAM)_r_locale_getstring (IDS_ANY));
 				SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETITEMDATA, (WPARAM)index, 0);
@@ -236,16 +240,14 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 				index += 1;
 
-				for (auto protocolId : protos)
+				for (SIZE_T i = 0; i < RTL_NUMBER_OF (protos); i++)
 				{
-					protocolString = _app_getprotoname (protocolId, AF_UNSPEC, SZ_UNKNOWN);
-
-					_r_str_printf (format, RTL_NUMBER_OF (format), L"%s (%" TEXT (PRIu8) L")", protocolString, protocolId);
+					_r_str_printf (format, RTL_NUMBER_OF (format), L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (protos[i], AF_UNSPEC, SZ_UNKNOWN), protos[i]);
 
 					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_INSERTSTRING, (WPARAM)index, (LPARAM)format);
-					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETITEMDATA, (WPARAM)index, (LPARAM)protocolId);
+					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETITEMDATA, (WPARAM)index, (LPARAM)protos[i]);
 
-					if (ptr_rule->protocol == protocolId)
+					if (ptr_rule->protocol == protos[i])
 						SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETCURSEL, (WPARAM)index, 0);
 
 					index += 1;
@@ -254,9 +256,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				// unknown protocol
 				if (SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_GETCURSEL, 0, 0) == CB_ERR)
 				{
-					protocolString = _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, SZ_UNKNOWN);
-
-					_r_str_printf (format, RTL_NUMBER_OF (format), L"%s (%" TEXT (PRIu8) L")", protocolString, ptr_rule->protocol);
+					_r_str_printf (format, RTL_NUMBER_OF (format), L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, SZ_UNKNOWN), ptr_rule->protocol);
 
 					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_INSERTSTRING, (WPARAM)index, (LPARAM)format);
 					SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETITEMDATA, (WPARAM)index, (LPARAM)ptr_rule->protocol);
@@ -305,27 +305,27 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				{
 					INT index = 0;
 
-					PR_STRING rulePart;
-					R_STRINGREF remainingPart;
+					PR_STRING rule_part;
+					R_STRINGREF remaining_part;
 
-					_r_stringref_initialize2 (&remainingPart, ptr_rule->rule_remote);
+					_r_stringref_initialize2 (&remaining_part, ptr_rule->rule_remote);
 
-					while (remainingPart.Length != 0)
+					while (remaining_part.length != 0)
 					{
-						rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0]);
+						rule_part = _r_str_splitatchar (&remaining_part, &remaining_part, DIVIDER_RULE[0]);
 
-						if (rulePart)
+						if (rule_part)
 						{
-							if (!_r_str_isempty (rulePart))
+							if (!_r_str_isempty (rule_part))
 							{
 								_r_fastlock_acquireshared (&lock_checkbox);
-								_r_listview_additem (hwnd, IDC_RULE_REMOTE_ID, index, 0, rulePart->Buffer);
+								_r_listview_additem (hwnd, IDC_RULE_REMOTE_ID, index, 0, rule_part->buffer);
 								_r_fastlock_releaseshared (&lock_checkbox);
 
 								index += 1;
 							}
 
-							_r_obj_dereference (rulePart);
+							_r_obj_dereference (rule_part);
 						}
 					}
 
@@ -357,27 +357,27 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				{
 					INT index = 0;
 
-					PR_STRING rulePart;
-					R_STRINGREF remainingPart;
+					PR_STRING rule_part;
+					R_STRINGREF remaining_part;
 
-					_r_stringref_initialize2 (&remainingPart, ptr_rule->rule_local);
+					_r_stringref_initialize2 (&remaining_part, ptr_rule->rule_local);
 
-					while (remainingPart.Length != 0)
+					while (remaining_part.length != 0)
 					{
-						rulePart = _r_str_splitatchar (&remainingPart, &remainingPart, DIVIDER_RULE[0]);
+						rule_part = _r_str_splitatchar (&remaining_part, &remaining_part, DIVIDER_RULE[0]);
 
-						if (rulePart)
+						if (rule_part)
 						{
-							if (!_r_str_isempty (rulePart))
+							if (!_r_str_isempty (rule_part))
 							{
 								_r_fastlock_acquireshared (&lock_checkbox);
-								_r_listview_additem (hwnd, IDC_RULE_LOCAL_ID, index, 0, rulePart->Buffer);
+								_r_listview_additem (hwnd, IDC_RULE_LOCAL_ID, index, 0, rule_part->buffer);
 								_r_fastlock_releaseshared (&lock_checkbox);
 
 								index += 1;
 							}
 
-							_r_obj_dereference (rulePart);
+							_r_obj_dereference (rule_part);
 						}
 					}
 
@@ -477,7 +477,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			{
 				case NM_CUSTOMDRAW:
 				{
-					LONG_PTR result = _app_nmcustdraw_listview ((LPNMLVCUSTOMDRAW)lparam);
+					LONG_PTR result = _app_message_custdraw ((LPNMLVCUSTOMDRAW)lparam);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
@@ -532,18 +532,18 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 					if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
 					{
-						PR_STRING localizedString = NULL;
-						BOOLEAN is_remote = listview_id == IDC_RULE_REMOTE_ID;
+						PR_STRING localized_string = NULL;
+						BOOLEAN is_remote = (listview_id == IDC_RULE_REMOTE_ID);
 
 						UINT id_add = is_remote ? IDC_RULE_REMOTE_ADD : IDC_RULE_LOCAL_ADD;
 						UINT id_edit = is_remote ? IDC_RULE_REMOTE_EDIT : IDC_RULE_LOCAL_EDIT;
 						UINT id_delete = is_remote ? IDC_RULE_REMOTE_DELETE : IDC_RULE_LOCAL_DELETE;
 
-						_r_obj_movereference (&localizedString, _r_format_string (L"%s...", _r_locale_getstring (IDS_ADD)));
-						AppendMenu (hsubmenu, MF_STRING, id_add, _r_obj_getstringorempty (localizedString));
+						_r_obj_movereference (&localized_string, _r_format_string (L"%s...", _r_locale_getstring (IDS_ADD)));
+						AppendMenu (hsubmenu, MF_STRING, id_add, _r_obj_getstringorempty (localized_string));
 
-						_r_obj_movereference (&localizedString, _r_format_string (L"%s...", _r_locale_getstring (IDS_EDIT2)));
-						AppendMenu (hsubmenu, MF_STRING, id_edit, _r_obj_getstringorempty (localizedString));
+						_r_obj_movereference (&localized_string, _r_format_string (L"%s...", _r_locale_getstring (IDS_EDIT2)));
+						AppendMenu (hsubmenu, MF_STRING, id_edit, _r_obj_getstringorempty (localized_string));
 
 						AppendMenu (hsubmenu, MF_STRING, id_delete, _r_locale_getstring (IDS_DELETE));
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
@@ -563,7 +563,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 							_r_menu_enableitem (hsubmenu, IDM_COPY, MF_BYCOMMAND, FALSE);
 						}
 
-						SAFE_DELETE_REFERENCE (localizedString);
+						SAFE_DELETE_REFERENCE (localized_string);
 					}
 					else if (listview_id == IDC_RULE_APPS_ID)
 					{
@@ -574,7 +574,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
 						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, _r_locale_getstring (IDS_COPY));
 
-						if (ptr_rule->type != DataRuleCustom)
+						if (ptr_rule->type != DataRuleUser)
 						{
 							_r_menu_enableitem (hsubmenu, IDM_CHECK, MF_BYCOMMAND, FALSE);
 							_r_menu_enableitem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND, FALSE);
@@ -599,7 +599,6 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				case LVN_COLUMNCLICK:
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-
 					INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 
 					_app_listviewsort (hwnd, listview_id, lpnmlv->iSubItem, TRUE);
@@ -610,7 +609,6 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				case LVN_ITEMCHANGING:
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-
 					INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 
 					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
@@ -619,7 +617,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						{
 							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
-								if (!_r_fastlock_islocked (&lock_checkbox) && ptr_rule->type != DataRuleCustom)
+								if (!_r_fastlock_islocked (&lock_checkbox) && ptr_rule->type != DataRuleUser)
 								{
 									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 									return TRUE;
@@ -634,7 +632,6 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 				case LVN_ITEMCHANGED:
 				{
 					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-
 					INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
 
 					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
@@ -683,7 +680,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 					if (string)
 					{
-						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, string->Buffer);
+						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, string->buffer);
 						_r_obj_dereference (string);
 					}
 
@@ -744,13 +741,13 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					INT listview_id = ((ctrl_id == IDC_RULE_REMOTE_DELETE) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID);
 					INT selected = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0);
 
-					WCHAR messageText[256];
-					_r_str_printf (messageText, RTL_NUMBER_OF (messageText), _r_locale_getstring (IDS_QUESTION_DELETE), selected);
+					WCHAR message_text[256];
+					_r_str_printf (message_text, RTL_NUMBER_OF (message_text), _r_locale_getstring (IDS_QUESTION_DELETE), selected);
 
-					if (!selected || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, messageText) != IDYES)
+					if (!selected || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, message_text) != IDYES)
 						break;
 
-					INT count = _r_listview_getitemcount (hwnd, listview_id, FALSE) - 1;
+					INT count = _r_listview_getitemcount (hwnd, listview_id) - 1;
 
 					for (INT i = count; i != INVALID_INT; i--)
 					{
@@ -811,7 +808,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 					listview_id = GetDlgCtrlID (hlistview);
 
-					if (!listview_id || !_r_listview_getitemcount (hwnd, listview_id, FALSE))
+					if (!listview_id || !_r_listview_getitemcount (hwnd, listview_id))
 						break;
 
 					_r_obj_createstringbuilder (&buffer);
@@ -825,7 +822,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 						if (string)
 						{
 							if (!_r_str_isempty (string))
-								_r_string_appendformat (&buffer, L"%s\r\n", string->Buffer);
+								_r_string_appendformat (&buffer, L"%s\r\n", string->buffer);
 
 							_r_obj_dereference (string);
 						}
@@ -834,7 +831,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					_r_str_trim (&buffer, DIVIDER_TRIM);
 
 					if (!_r_str_isempty (&buffer))
-						_r_clipboard_set (hwnd, buffer.String->Buffer, _r_obj_getstringlength (buffer.String));
+						_r_clipboard_set (hwnd, buffer.string->buffer, _r_obj_getstringlength (buffer.string));
 
 					_r_obj_deletestringbuilder (&buffer);
 
@@ -1008,7 +1005,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							_r_obj_createstringbuilder (&buffer);
 
-							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_RULE_REMOTE_ID, FALSE); i++)
+							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_RULE_REMOTE_ID); i++)
 							{
 								string = _r_listview_getitemtext (hpage_rule, IDC_RULE_REMOTE_ID, i, 0);
 
@@ -1019,13 +1016,13 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (!_r_str_isempty (string))
 									{
 										// check maximum length of one rule
-										if ((_r_obj_getstringlength (buffer.String) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+										if ((_r_obj_getstringlength (buffer.string) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
 										{
 											_r_obj_dereference (string);
 											break;
 										}
 
-										_r_string_appendformat (&buffer, L"%s" DIVIDER_RULE, string->Buffer);
+										_r_string_appendformat (&buffer, L"%s" DIVIDER_RULE, string->buffer);
 									}
 
 									_r_obj_dereference (string);
@@ -1051,7 +1048,7 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 							_r_obj_createstringbuilder (&buffer);
 
-							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_RULE_LOCAL_ID, FALSE); i++)
+							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_RULE_LOCAL_ID); i++)
 							{
 								string = _r_listview_getitemtext (hpage_rule, IDC_RULE_LOCAL_ID, i, 0);
 
@@ -1062,13 +1059,13 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 									if (!_r_str_isempty (string))
 									{
 										// check maximum length of one rule
-										if ((_r_obj_getstringlength (buffer.String) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+										if ((_r_obj_getstringlength (buffer.string) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
 										{
 											_r_obj_dereference (string);
 											break;
 										}
 
-										_r_string_appendformat (&buffer, L"%s" DIVIDER_RULE, string->Buffer);
+										_r_string_appendformat (&buffer, L"%s" DIVIDER_RULE, string->buffer);
 									}
 
 									_r_obj_dereference (string);
@@ -1090,19 +1087,19 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 						ptr_rule->protocol = (UINT8)SendDlgItemMessage (hpage_general, IDC_RULE_PROTOCOL_ID, CB_GETITEMDATA, SendDlgItemMessage (hpage_general, IDC_RULE_PROTOCOL_ID, CB_GETCURSEL, 0, 0), 0);
 						ptr_rule->af = (ADDRESS_FAMILY)SendDlgItemMessage (hpage_general, IDC_RULE_VERSION_ID, CB_GETITEMDATA, SendDlgItemMessage (hpage_general, IDC_RULE_VERSION_ID, CB_GETCURSEL, 0, 0), 0);
 
-						ptr_rule->direction = _r_calc_clamp (FWP_DIRECTION, _r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY) - IDC_RULE_DIRECTION_OUTBOUND, (INT)FWP_DIRECTION_OUTBOUND, (INT)FWP_DIRECTION_MAX);
+						ptr_rule->direction = (FWP_DIRECTION)_r_calc_clamp (_r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY) - IDC_RULE_DIRECTION_OUTBOUND, FWP_DIRECTION_OUTBOUND, FWP_DIRECTION_MAX);
 						ptr_rule->is_block = _r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_ACTION_BLOCK, IDC_RULE_ACTION_ALLOW) == IDC_RULE_ACTION_BLOCK;
 
-						if (ptr_rule->type == DataRuleCustom)
+						if (ptr_rule->type == DataRuleUser)
 							ptr_rule->weight = (ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM);
 					}
 
 					// save rule apps
-					if (ptr_rule->type == DataRuleCustom)
+					if (ptr_rule->type == DataRuleUser)
 					{
 						ptr_rule->apps->clear ();
 
-						for (INT i = 0; i < _r_listview_getitemcount (hpage_apps, IDC_RULE_APPS_ID, FALSE); i++)
+						for (INT i = 0; i < _r_listview_getitemcount (hpage_apps, IDC_RULE_APPS_ID); i++)
 						{
 							SIZE_T app_hash = _r_listview_getitemlparam (hpage_apps, IDC_RULE_APPS_ID, i);
 
@@ -1127,13 +1124,13 @@ INT_PTR CALLBACK EditorProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 						if (hengine)
 						{
-							OBJECTS_RULE_VECTOR rules;
-							rules.push_back (ptr_rule);
+							PR_LIST rules = _r_obj_createlist ();
 
-							_wfp_create4filters (hengine, &rules, __LINE__);
+							_r_obj_addlistitem (rules, ptr_rule);
 
-							// note: do not needed!
-							//_app_dereferenceobjects (rules, &_app_dereferencerule);
+							_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+
+							_r_obj_dereference (rules);
 						}
 					}
 
