@@ -317,7 +317,7 @@ VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, 
 
 	if (ptr_app->type == DataAppRegular || ptr_app->type == DataAppService)
 	{
-		if (is_iconshidden || !_app_getfileicon (_r_obj_getstring (ptr_app->real_path), is_small, picon_id, picon))
+		if (is_iconshidden || (_r_str_isempty (ptr_app->real_path) || !_app_getfileicon (ptr_app->real_path->buffer, is_small, picon_id, picon)))
 		{
 			if (picon_id)
 				*picon_id = config.icon_id;
@@ -380,9 +380,6 @@ LPCWSTR _app_getdisplayname (SIZE_T app_hash, PITEM_APP ptr_app, BOOLEAN is_shor
 
 BOOLEAN _app_getfileicon (LPCWSTR path, BOOLEAN is_small, PINT picon_id, HICON* picon)
 {
-	if (_r_str_isempty (path))
-		return FALSE;
-
 	SHFILEINFO shfi = {0};
 	ULONG flags = 0;
 
@@ -1607,7 +1604,7 @@ PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 		}
 	}
 
-	if (process_name)
+	if (!_r_str_isempty (process_name))
 	{
 		SIZE_T app_hash = _r_str_hash (process_name);
 
@@ -1615,7 +1612,7 @@ PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 		ptr_network->icon_id = (INT)_app_getappinfo (app_hash, InfoIconId);
 
 		if (!ptr_network->icon_id)
-			_app_getfileicon (_r_obj_getstring (process_name), TRUE, &ptr_network->icon_id, NULL);
+			_app_getfileicon (process_name->buffer, TRUE, &ptr_network->icon_id, NULL);
 	}
 	else
 	{

@@ -109,16 +109,22 @@ VOID _app_imagelist_init (HWND hwnd)
 	SAFE_DELETE_ICON (config.hicon_uwp);
 
 	// get default icon for executable
-	_app_getfileicon (_r_obj_getstring (config.ntoskrnl_path), FALSE, &config.icon_id, &config.hicon_large);
-	_app_getfileicon (_r_obj_getstring (config.ntoskrnl_path), TRUE, NULL, &config.hicon_small);
+	if (!_r_str_isempty (config.ntoskrnl_path))
+	{
+		_app_getfileicon (config.ntoskrnl_path->buffer, FALSE, &config.icon_id, &config.hicon_large);
+		_app_getfileicon (config.ntoskrnl_path->buffer, TRUE, NULL, &config.hicon_small);
+	}
 
 	// get default icon for windows store package (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 	{
-		if (!_app_getfileicon (_r_obj_getstring (config.winstore_path), TRUE, &config.icon_uwp_id, &config.hicon_uwp))
+		if (!_r_str_isempty (config.winstore_path))
 		{
-			config.icon_uwp_id = config.icon_id;
-			config.hicon_uwp = CopyIcon (config.hicon_small);
+			if (!_app_getfileicon (config.winstore_path->buffer, TRUE, &config.icon_uwp_id, &config.hicon_uwp))
+			{
+				config.icon_uwp_id = config.icon_id;
+				config.hicon_uwp = CopyIcon (config.hicon_small);
+			}
 		}
 	}
 
