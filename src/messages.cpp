@@ -8,7 +8,7 @@ VOID _app_message_contextmenu (HWND hwnd, LPNMITEMACTIVATE lpnmlv)
 	if (lpnmlv->iItem == INVALID_INT)
 		return;
 
-	INT listview_id = PtrToInt ((PVOID)lpnmlv->hdr.idFrom);
+	INT listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
 	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG))
 		return;
@@ -228,6 +228,7 @@ VOID _app_message_contextmenu (HWND hwnd, LPNMITEMACTIVATE lpnmlv)
 	SAFE_DELETE_REFERENCE (localized_string);
 }
 
+
 VOID _app_message_traycontextmenu (HWND hwnd)
 {
 	SetForegroundWindow (hwnd); // don't touch
@@ -350,6 +351,186 @@ VOID _app_message_dpichanged (HWND hwnd)
 	_app_refreshstatus (hwnd, 0);
 
 	SAFE_DELETE_REFERENCE (localized_string);
+}
+
+LONG_PTR _app_message_custdraw (LPNMLVCUSTOMDRAW lpnmlv)
+{
+	switch (lpnmlv->nmcd.dwDrawStage)
+	{
+		case CDDS_PREPAINT:
+		{
+			INT ctrl_id = (INT)(INT_PTR)lpnmlv->nmcd.hdr.idFrom;
+
+			if (ctrl_id == IDC_TOOLBAR)
+			{
+				return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
+			}
+
+			return CDRF_NOTIFYITEMDRAW;
+		}
+
+		case CDDS_ITEMPREPAINT:
+		{
+			if (lpnmlv->dwItemType != LVCDI_ITEM)
+				return CDRF_DODEFAULT;
+
+			INT ctrl_id = (INT)(INT_PTR)lpnmlv->nmcd.hdr.idFrom;
+
+			if (ctrl_id == IDC_TOOLBAR)
+			{
+				TBBUTTONINFO tbi = {0};
+
+				tbi.cbSize = sizeof (tbi);
+				tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
+
+				if ((INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi) == INVALID_INT)
+					break;
+
+				if ((tbi.fsState & TBSTATE_ENABLED) == 0)
+				{
+					INT icon_size_x = 0;
+					INT icon_size_y = 0;
+
+					SelectObject (lpnmlv->nmcd.hdc, (HFONT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, WM_GETFONT, 0, 0)); // fix
+
+					SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
+					SetTextColor (lpnmlv->nmcd.hdc, GetSysColor (COLOR_GRAYTEXT));
+
+					if (tbi.iImage != I_IMAGENONE)
+					{
+						HIMAGELIST himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
+
+						if (himglist)
+						{
+							ULONG padding = (ULONG)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
+							UINT rebar_height = (UINT)SendMessage (GetParent (lpnmlv->nmcd.hdr.hwndFrom), RB_GETBARHEIGHT, 0, 0);
+
+							ImageList_GetIconSize (himglist, &icon_size_x, &icon_size_y);
+
+							IMAGELISTDRAWPARAMS ildp = {0};
+
+							ildp.cbSize = sizeof (ildp);
+							ildp.himl = himglist;
+							ildp.hdcDst = lpnmlv->nmcd.hdc;
+							ildp.i = tbi.iImage;
+							ildp.x = lpnmlv->nmcd.rc.left + (LOWORD (padding) / 2);
+							ildp.y = (rebar_height / 2) - (icon_size_y / 2);
+							ildp.fState = ILS_SATURATE; // grayscale
+							ildp.fStyle = ILD_NORMAL | ILD_ASYNC;
+
+							ImageList_DrawIndirect (&ildp);
+						}
+					}
+
+					if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
+					{
+						WCHAR text[MAX_PATH] = {0};
+						SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
+
+						if (tbi.iImage != I_IMAGENONE)
+							lpnmlv->nmcd.rc.left += icon_size_x;
+
+						DrawTextEx (lpnmlv->nmcd.hdc, text, (INT)_r_str_length (text), &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, NULL);
+					}
+
+					return CDRF_SKIPDEFAULT;
+				}
+			}
+			else
+			{
+				if (!_r_config_getboolean (L"IsEnableHighlighting", TRUE))
+					return CDRF_DODEFAULT;
+
+				COLORREF new_clr = 0;
+				INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
+				BOOLEAN is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
+				BOOLEAN is_systemapp = FALSE;
+				BOOLEAN is_validconnection = FALSE;
+
+				if ((ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP) || ctrl_id == IDC_RULE_APPS_ID || ctrl_id == IDC_NETWORK || ctrl_id == IDC_LOG)
+				{
+					SIZE_T app_hash = 0;
+
+					if (ctrl_id == IDC_NETWORK)
+					{
+						PITEM_NETWORK ptr_network = _app_getnetworkitem (lpnmlv->nmcd.lItemlParam);
+
+						if (ptr_network)
+						{
+							app_hash = ptr_network->app_hash;
+							is_systemapp = _app_isappfromsystem (_r_obj_getstring (ptr_network->path), app_hash);
+							is_validconnection = ptr_network->is_connection;
+
+							_r_obj_dereference (ptr_network);
+						}
+					}
+					else if (ctrl_id == IDC_LOG)
+					{
+						PITEM_LOG ptr_log = _app_getlogitem (lpnmlv->nmcd.lItemlParam);
+
+						if (ptr_log)
+						{
+							app_hash = _app_getlogapp (lpnmlv->nmcd.lItemlParam);
+							is_systemapp = _app_isappfromsystem (_r_obj_getstring (ptr_log->path), app_hash);
+
+							_r_obj_dereference (ptr_log);
+						}
+					}
+					else
+					{
+						app_hash = lpnmlv->nmcd.lItemlParam;
+						is_validconnection = _app_isapphaveconnection (app_hash);
+
+						PR_STRING real_path = (PR_STRING)_app_getappinfo (app_hash, InfoPath);
+
+						if (real_path)
+						{
+							is_systemapp = _app_isappfromsystem (_r_obj_getstring (real_path), app_hash);
+
+							_r_obj_dereference (real_path);
+						}
+					}
+
+					if (app_hash)
+					{
+						new_clr = _app_getappcolor (ctrl_id, app_hash, is_systemapp, is_validconnection);
+					}
+				}
+				else if (ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_RULES_CUSTOM)
+				{
+					new_clr = _app_getrulecolor (ctrl_id, lpnmlv->nmcd.lItemlParam);
+				}
+				else if (ctrl_id == IDC_COLORS)
+				{
+					PITEM_COLOR ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
+
+					if (ptr_clr)
+					{
+						new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
+					}
+				}
+				else
+				{
+					break;
+				}
+
+				if (new_clr)
+				{
+					lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
+					lpnmlv->clrTextBk = new_clr;
+
+					if (is_tableview)
+						_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
+
+					return CDRF_NEWFONT;
+				}
+			}
+
+			break;
+		}
+	}
+
+	return CDRF_DODEFAULT;
 }
 
 VOID _app_message_find (HWND hwnd, LPFINDREPLACE lpfr)
@@ -862,7 +1043,8 @@ VOID _app_command_idtotimers (HWND hwnd, INT ctrl_id)
 				if (!ptr_app)
 					continue;
 
-				_app_timer_set (hwnd, ptr_app, *seconds);
+				if (seconds)
+					_app_timer_set (hwnd, ptr_app, *seconds);
 
 				_r_obj_addlistitem (rules, ptr_app);
 			}

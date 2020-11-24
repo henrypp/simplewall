@@ -6,6 +6,7 @@
 VOID _app_message_contextmenu (HWND hwnd, LPNMITEMACTIVATE lpnmlv);
 VOID _app_message_traycontextmenu (HWND hwnd);
 
+LONG_PTR _app_message_custdraw (LPNMLVCUSTOMDRAW lpnmlv);
 VOID _app_message_dpichanged (HWND hwnd);
 VOID _app_message_find (HWND hwnd, LPFINDREPLACE lpfr);
 VOID _app_message_resizewindow (HWND hwnd, LPARAM lparam);
