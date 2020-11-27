@@ -728,7 +728,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			{
 				case BCN_DROPDOWN:
 				{
-					INT ctrl_id = PtrToInt ((PVOID)nmlp->idFrom);
+					INT ctrl_id = (INT)(INT_PTR)nmlp->idFrom;
 
 					if (!_r_ctrl_isenabled (hwnd, ctrl_id) || (ctrl_id != IDC_RULES_BTN && ctrl_id != IDC_ALLOW_BTN))
 						break;
@@ -799,6 +799,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 									if (string)
 									{
 										_r_str_copy (buffer, RTL_NUMBER_OF (buffer), string->buffer);
+
 										_r_obj_dereference (string);
 									}
 								}
@@ -850,7 +851,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
 			if ((ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= IDX_RULES_SPECIAL + (INT)_r_obj_getlistsize (rules_arr)))
 			{
-				SIZE_T rule_idx = (ctrl_id - IDX_RULES_SPECIAL);
+				SIZE_T rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
 				PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
 
 				if (!ptr_rule)
@@ -950,7 +951,7 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				if (!_r_ctrl_isenabled (hwnd, IDC_ALLOW_BTN))
 					return FALSE;
 
-				SIZE_T timer_idx = (ctrl_id - IDX_TIMER);
+				SIZE_T timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
 				PLONG64 seconds = (PLONG64)_r_obj_getarrayitem (timers, timer_idx);
 
 				if (seconds)
@@ -1001,8 +1002,8 @@ INT_PTR CALLBACK NotificationProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 						NMHDR hdr = {0};
 
 						hdr.code = BCN_DROPDOWN;
-						hdr.idFrom = (UINT_PTR)(UINT)ctrl_id;
 						hdr.hwndFrom = GetDlgItem (hwnd, ctrl_id);
+						hdr.idFrom = (UINT_PTR)(UINT)ctrl_id;
 
 						SendMessage (hwnd, WM_NOTIFY, TRUE, (LPARAM)&hdr);
 					}
