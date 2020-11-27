@@ -107,18 +107,18 @@ VOID _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 	}
 }
 
-VOID _app_timer_remove (PTP_TIMER* ptptimer)
+VOID _app_timer_remove (PTP_TIMER* timer)
 {
-	PTP_TIMER current_timer = *ptptimer;
+	PTP_TIMER current_timer = *timer;
 
-	*ptptimer = NULL;
+	*timer = NULL;
 
 	CloseThreadpoolTimer (current_timer);
 }
 
-BOOLEAN _app_istimerset (PTP_TIMER tptimer)
+BOOLEAN _app_istimerset (PTP_TIMER timer)
 {
-	return tptimer && IsThreadpoolTimerSet (tptimer);
+	return timer && IsThreadpoolTimerSet (timer);
 }
 
 BOOLEAN _app_istimersactive ()
