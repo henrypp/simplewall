@@ -7,10 +7,10 @@ PR_STRING _app_getlogviewer ()
 {
 	LPCWSTR result = _r_config_getstring (L"LogViewer", LOG_VIEWER_DEFAULT);
 
-	if (_r_str_isempty (result))
-		return _r_str_expandenvironmentstring (LOG_VIEWER_DEFAULT);
+	if (!_r_str_isempty (result))
+		return _r_str_expandenvironmentstring (result);
 
-	return _r_str_expandenvironmentstring (result);
+	return _r_str_expandenvironmentstring (LOG_VIEWER_DEFAULT);
 }
 
 VOID _app_loginit (BOOLEAN is_install)
@@ -198,15 +198,16 @@ BOOLEAN _app_logisexists (HWND hwnd, PITEM_LOG ptr_log_new)
 
 VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 {
-	INT listview_id;
-	SIZE_T index;
-	INT item_id;
+	WCHAR index_string[128];
 	PITEM_APP ptr_app;
 	PR_STRING local_address_string;
 	PR_STRING local_port_string;
 	PR_STRING remote_address_string;
 	PR_STRING remote_port_string;
 	PR_STRING direction_string;
+	SIZE_T index;
+	INT listview_id;
+	INT item_id;
 
 	if (_app_logisexists (hwnd, ptr_log))
 		return;
@@ -240,6 +241,9 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	_r_listview_setitem (hwnd, listview_id, item_id, 6, _r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY));
 	_r_listview_setitem (hwnd, listview_id, item_id, 7, _r_obj_getstringorempty (direction_string));
 	_r_listview_setitem (hwnd, listview_id, item_id, 8, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
+
+	_r_str_printf (index_string, RTL_NUMBER_OF (index_string), L"%" PR_SIZE_T, index);
+	_r_listview_setitem (hwnd, listview_id, item_id, 9, index_string);
 
 	SAFE_DELETE_REFERENCE (local_address_string);
 	SAFE_DELETE_REFERENCE (remote_address_string);
