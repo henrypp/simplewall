@@ -96,15 +96,16 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 					if (_r_str_isempty (rule_string))
 					{
 						_r_obj_dereference (rule_string);
+						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
+
 						return FALSE;
 					}
 
 					if (!_app_parserulestring (rule_string, NULL))
 					{
 						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_SYNTAX_ERROR));
-						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
-
 						_r_obj_dereference (rule_string);
+						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
 
 						return FALSE;
 					}
@@ -124,10 +125,6 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 
 				case IDCANCEL: // process Esc key
-				{
-					[[fallthrough]];
-				}
-
 				case IDC_CLOSE:
 				{
 					EndDialog (hwnd, FALSE);
@@ -681,6 +678,7 @@ INT_PTR CALLBACK EditorPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 					if (string)
 					{
 						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, string->buffer);
+
 						_r_obj_dereference (string);
 					}
 
