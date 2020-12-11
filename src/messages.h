@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2020 Henry++
+// Copyright (c) 2016-2021 Henry++
 
 #pragma once
 
@@ -19,7 +19,6 @@ FORCEINLINE VOID _app_message_uninitialize (HWND hwnd)
 	_r_tray_destroy (hwnd, UID);
 }
 
-VOID _app_command_idtorules (HWND hwnd, INT ctrl_id);
 VOID _app_command_idtotimers (HWND hwnd, INT ctrl_id);
 
 VOID _app_command_logshow (HWND hwnd);
