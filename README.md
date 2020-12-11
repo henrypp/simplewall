@@ -13,8 +13,10 @@ You can download either the installer or portable version. For correct working, 
 
 ### Command line:
 List of arguments for `simplewall.exe`:
-- `/install` - enable filtering (you can set `/silent` argument to skip prompt)
-- `/uninstall` - remove all installed filters
+~~~
+-install - enable filtering (you can set "-silent" argument to skip prompt)
+-uninstall - remove all installed filters
+~~~
 
 ### Uninstall:
 When you uninstall simplewall, all previously installed filters are stay alive in system.
@@ -49,4 +51,4 @@ To activate portable mode, create "simplewall.ini" in application folder, or mov
 Website: [www.henrypp.org](https://www.henrypp.org)<br />
 Support: support@henrypp.org<br />
 <br />
-(c) 2016-2020 Henry++
+(c) 2016-2021 Henry++
