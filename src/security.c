@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2020 Henry++
+// Copyright (c) 2020-2021 Henry++
 
 #include "global.h"
 
@@ -52,20 +52,20 @@ VOID _app_generate_credentials ()
 
 			if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
 			{
-				PTOKEN_USER ptoken_user = (PTOKEN_USER)_r_mem_allocatezero (token_length);
+				PTOKEN_USER token_user = _r_mem_allocatezero (token_length);
 
-				if (GetTokenInformation (htoken, TokenUser, ptoken_user, token_length, &token_length))
+				if (GetTokenInformation (htoken, TokenUser, token_user, token_length, &token_length))
 				{
-					if (RtlValidSid (ptoken_user->User.Sid))
+					if (RtlValidSid (token_user->User.Sid))
 					{
-						ULONG sid_length = RtlLengthSid (ptoken_user->User.Sid);
+						ULONG sid_length = RtlLengthSid (token_user->User.Sid);
 						config.pbuiltin_current_sid = _r_mem_allocatezero (sid_length);
 
-						RtlCopyMemory (config.pbuiltin_current_sid, ptoken_user->User.Sid, sid_length);
+						memcpy (config.pbuiltin_current_sid, token_user->User.Sid, sid_length);
 					}
 				}
 
-				_r_mem_free (ptoken_user);
+				_r_mem_free (token_user);
 			}
 
 			CloseHandle (htoken);
@@ -116,7 +116,7 @@ PACL _app_createaccesscontrollist (PACL pacl, BOOLEAN is_secure)
 	{
 		PACCESS_ALLOWED_ACE pace = NULL;
 
-		if (!GetAce (pacl, ace_index, (PVOID*)&pace))
+		if (!GetAce (pacl, ace_index, &pace))
 			continue;
 
 		if (pace->Header.AceType == ACCESS_ALLOWED_ACE_TYPE)
@@ -204,7 +204,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 	{
 		PACCESS_ALLOWED_ACE pace = NULL;
 
-		if (!GetAce (pdacl, ace_index, (PVOID*)&pace))
+		if (!GetAce (pdacl, ace_index, &pace))
 			continue;
 
 		if (pace->Header.AceType != ACCESS_ALLOWED_ACE_TYPE)

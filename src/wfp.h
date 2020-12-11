@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2020 Henry++
+// Copyright (c) 2016-2021 Henry++
 
 #pragma once
 
@@ -19,7 +19,7 @@ VOID _wfp_installfilters (HANDLE hengine);
 BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line);
 BOOLEAN _wfp_transact_commit (HANDLE hengine, UINT line);
 
-BOOLEAN _wfp_deletefilter (HANDLE hengine, LPCGUID pfilter_id);
+BOOLEAN _wfp_deletefilter (HANDLE hengine, LPCGUID filter_id);
 ULONG _wfp_createfilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, LPCGUID layer_id, LPCGUID callout_id, FWP_ACTION_TYPE action, UINT32 flags, PR_ARRAY guids);
 
 VOID _wfp_clearfilter_ids ();
@@ -32,12 +32,12 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN i
 BOOLEAN _wfp_create3filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN is_intransact);
 BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact);
 
-SIZE_T _wfp_dumpfilters (HANDLE hengine, LPCGUID pprovider_id, PR_ARRAY guids);
+SIZE_T _wfp_dumpfilters (HANDLE hengine, LPCGUID provider_id, PR_ARRAY guids);
 
-BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, const PBOOLEAN pis_enable);
+BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable);
 VOID _mps_changeconfig2 (BOOLEAN is_enable);
 
 ULONG _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYPE_DATA type);
 
-VOID ByteBlobAlloc (_In_ LPCVOID pdata, _In_ SIZE_T length, _Outptr_ FWP_BYTE_BLOB** byte_blob);
-VOID ByteBlobFree (_In_ FWP_BYTE_BLOB** byte_blob);
+VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Outptr_ FWP_BYTE_BLOB** byte_blob);
+VOID ByteBlobFree (_Inout_ FWP_BYTE_BLOB** byte_blob);

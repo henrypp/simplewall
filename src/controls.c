@@ -1,11 +1,11 @@
 // simplewall
-// Copyright (c) 2016-2020 Henry++
+// Copyright (c) 2016-2021 Henry++
 
 #include "global.h"
 
 VOID _app_settab_id (HWND hwnd, INT page_id)
 {
-	if (!page_id || ((INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
+	if (!page_id || ((INT)_r_tab_getlparam (hwnd, IDC_TAB, -1) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
 		return;
 
 	for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
@@ -93,7 +93,7 @@ VOID _app_imagelist_init (HWND hwnd)
 {
 	INT icon_size_small = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
 	INT icon_size_large = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
-	INT icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (hwnd, _r_config_getinteger (L"ToolbarSize", _R_SIZE_ITEMHEIGHT)), icon_size_small, icon_size_large);
+	INT icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (hwnd, _r_config_getinteger (L"ToolbarSize", PR_SIZE_ITEMHEIGHT)), icon_size_small, icon_size_large);
 
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
@@ -101,15 +101,13 @@ VOID _app_imagelist_init (HWND hwnd)
 	SAFE_DELETE_OBJECT (config.hbmp_block);
 	SAFE_DELETE_OBJECT (config.hbmp_cross);
 	SAFE_DELETE_OBJECT (config.hbmp_rules);
-	SAFE_DELETE_OBJECT (config.hbmp_checked);
-	SAFE_DELETE_OBJECT (config.hbmp_unchecked);
 
 	SAFE_DELETE_ICON (config.hicon_large);
 	SAFE_DELETE_ICON (config.hicon_small);
 	SAFE_DELETE_ICON (config.hicon_uwp);
 
 	// get default icon for executable
-	if (!_r_str_isempty (config.ntoskrnl_path))
+	if (!_r_obj_isstringempty (config.ntoskrnl_path))
 	{
 		_app_getfileicon (config.ntoskrnl_path->buffer, FALSE, &config.icon_id, &config.hicon_large);
 		_app_getfileicon (config.ntoskrnl_path->buffer, TRUE, NULL, &config.hicon_small);
@@ -118,7 +116,7 @@ VOID _app_imagelist_init (HWND hwnd)
 	// get default icon for windows store package (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 	{
-		if (!_r_str_isempty (config.winstore_path))
+		if (!_r_obj_isstringempty (config.winstore_path))
 		{
 			if (!_app_getfileicon (config.winstore_path->buffer, TRUE, &config.icon_uwp_id, &config.hicon_uwp))
 			{
@@ -136,14 +134,15 @@ VOID _app_imagelist_init (HWND hwnd)
 	config.hbmp_cross = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CROSS), icon_size_small);
 	config.hbmp_rules = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_size_small);
 
-	config.hbmp_checked = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CHECKED), icon_size_small);
-	config.hbmp_unchecked = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_UNCHECKED), icon_size_small);
-
 	// toolbar imagelist
 	if (config.himg_toolbar)
+	{
 		ImageList_SetIconSize (config.himg_toolbar, icon_size_toolbar, icon_size_toolbar);
+	}
 	else
+	{
 		config.himg_toolbar = ImageList_Create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, 0, 0);
+	}
 
 	if (config.himg_toolbar)
 	{
@@ -313,13 +312,13 @@ VOID _app_listviewsetview (HWND hwnd, INT listview_id)
 	INT icons_size = is_mainview ? _r_calc_clamp (_r_config_getinteger (L"IconSize", SHIL_SYSSMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SYSSMALL;
 	HIMAGELIST himg = NULL;
 
-	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
+	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
 	{
 		himg = (icons_size == SHIL_SMALL || icons_size == SHIL_SYSSMALL) ? config.himg_rules_small : config.himg_rules_large;
 	}
 	else
 	{
-		SHGetImageList (icons_size, IID_IImageList2, (PVOID*)&himg);
+		SHGetImageList (icons_size, &IID_IImageList2, &himg);
 	}
 
 	if (himg)
@@ -357,7 +356,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	INT item1 = _app_getposition (hparent, listview_id, lparam1);
 	INT item2 = _app_getposition (hparent, listview_id, lparam2);
 
-	if (item1 == INVALID_INT || item2 == INVALID_INT)
+	if (item1 == -1 || item2 == -1)
 		return 0;
 
 	WCHAR config_name[128];
@@ -376,10 +375,13 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 		if (is_checked1 != is_checked2)
 		{
 			if (is_checked1 && !is_checked2)
+			{
 				result = is_descend ? 1 : -1;
-
+			}
 			else if (!is_checked1 && is_checked2)
+			{
 				result = is_descend ? -1 : 1;
+			}
 		}
 	}
 
@@ -388,16 +390,22 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 		// timestamp sorting
 		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
 		{
-			PLONG64 timestamp1 = (PLONG64)_app_getappinfo (lparam1, InfoTimestampPtr);
-			PLONG64 timestamp2 = (PLONG64)_app_getappinfo (lparam2, InfoTimestampPtr);
+			PVOID timer1_ptr = _app_getappinfobyhash (lparam1, InfoTimestampPtr);
+			PVOID timer2_ptr = _app_getappinfobyhash (lparam2, InfoTimestampPtr);
 
-			if (timestamp1 && timestamp2)
+			if (timer1_ptr && timer2_ptr)
 			{
-				if ((*timestamp1) < (*timestamp2))
-					result = -1;
+				LONG64 timestamp1 = *((PLONG64)timer1_ptr);
+				LONG64 timestamp2 = *((PLONG64)timer2_ptr);
 
-				else if ((*timestamp1) > (*timestamp2))
+				if (timestamp1 < timestamp2)
+				{
+					result = -1;
+				}
+				else if (timestamp1 > timestamp2)
+				{
 					result = 1;
+				}
 			}
 		}
 	}
@@ -445,7 +453,7 @@ VOID _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, BOOLEAN is_no
 	if (is_notifycode)
 		is_descend = !is_descend;
 
-	if (column_id == INVALID_INT)
+	if (column_id == -1)
 		column_id = _r_config_getintegerex (L"SortColumn", 0, config_name);
 
 	column_id = _r_calc_clamp (column_id, 0, column_count - 1); // set range
@@ -473,19 +481,19 @@ VOID _app_toolbar_init (HWND hwnd)
 	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_REFRESH, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 2);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_SETTINGS, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 3);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 6);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 7);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, 0, BTNS_SEP, NULL, 0, I_IMAGENONE);
+	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
 
 	REBARBANDINFO rbi = {0};
@@ -529,9 +537,9 @@ VOID _app_toolbar_resize ()
 
 VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 {
-	UINT group1_title;
-	UINT group2_title;
-	UINT group3_title;
+	UINT group1_title = 0;
+	UINT group2_title = 0;
+	UINT group3_title = 0;
 
 	if (!SendDlgItemMessage (hwnd, listview_id, LVM_ISGROUPVIEWENABLED, 0, 0))
 		return;
@@ -554,6 +562,11 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 		group2_title = IDS_TAB_SERVICES;
 		group3_title = IDS_TAB_PACKAGES;
 	}
+	else if (listview_id == IDC_APP_RULES_ID)
+	{
+		group1_title = IDS_TRAY_SYSTEM_RULES;
+		group2_title = IDS_TRAY_USER_RULES;
+	}
 	else
 	{
 		return;
@@ -567,7 +580,7 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 
 	for (INT i = 0; i < total_count; i++)
 	{
-		if (listview_id == IDC_RULE_APPS_ID)
+		if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
 		{
 			if (_r_listview_isitemchecked (hwnd, listview_id, i))
 			{
@@ -584,13 +597,17 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 			if (SendDlgItemMessage (hwnd, listview_id, LVM_GETITEM, 0, (LPARAM)&lvi))
 			{
 				if (lvi.iGroupId == 2)
+				{
 					group3_count += 1;
-
+				}
 				else if (lvi.iGroupId == 1)
+				{
 					group2_count += 1;
-
+				}
 				else
+				{
 					group1_count += 1;
+				}
 			}
 		}
 	}
@@ -602,27 +619,42 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 
 	if (total_count)
 	{
-		_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group1_count, total_count);
-		_r_str_printf (group2_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group2_count, total_count);
-		_r_str_printf (group3_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group3_count, total_count);
+		if (group1_title)
+			_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group1_count, total_count);
+
+		if (group2_title)
+			_r_str_printf (group2_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group2_count, total_count);
+
+		if (group3_title)
+			_r_str_printf (group3_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group3_count, total_count);
 	}
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group1_title), group1_string));
-	_r_listview_setgroup (hwnd, listview_id, 0, _r_obj_getstringorempty (localized_string), 0, 0);
+	if (group1_title)
+	{
+		_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group1_title), group1_string));
+		_r_listview_setgroup (hwnd, listview_id, 0, _r_obj_getstringorempty (localized_string), 0, 0);
+	}
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group2_title), group2_string));
-	_r_listview_setgroup (hwnd, listview_id, 1, _r_obj_getstringorempty (localized_string), 0, 0);
+	if (group2_title)
+	{
+		_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group2_title), group2_string));
+		_r_listview_setgroup (hwnd, listview_id, 1, _r_obj_getstringorempty (localized_string), 0, 0);
+	}
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group3_title), group3_string));
-	_r_listview_setgroup (hwnd, listview_id, 2, _r_obj_getstringorempty (localized_string), 0, 0);
+	if (group3_title)
+	{
+		_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group3_title), group3_string));
+		_r_listview_setgroup (hwnd, listview_id, 2, _r_obj_getstringorempty (localized_string), 0, 0);
+	}
 
 	SAFE_DELETE_REFERENCE (localized_string);
 }
 
 VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 {
-	PITEM_STATUS pstatus = (PITEM_STATUS)_r_mem_allocatezero (sizeof (ITEM_STATUS));
-	_app_getcount (pstatus);
+	ITEM_STATUS status = {0};
+
+	_app_getcount (&status);
 
 	HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
 	HDC hdc = GetDC (hstatus);
@@ -645,17 +677,13 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 			{
 				case 1:
 				{
-					if (pstatus)
-						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), pstatus->apps_unused_count);
-
+					text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), status.apps_unused_count);
 					break;
 				}
 
 				case 2:
 				{
-					if (pstatus)
-						text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_TIMER_APPS), pstatus->apps_timer_count);
-
+					text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_TIMER_APPS), status.apps_timer_count);
 					break;
 				}
 			}
@@ -692,14 +720,11 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 	// group information
 	if (listview_id)
 	{
-		if (listview_id == INVALID_INT)
-			listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, INVALID_INT);
+		if (listview_id == -1)
+			listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
 
 		_app_refreshgroups (hwnd, listview_id);
 	}
-
-	if (pstatus)
-		_r_mem_free (pstatus);
 }
 
 INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam)
@@ -709,7 +734,7 @@ INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam)
 	lvfi.flags = LVFI_PARAM;
 	lvfi.lParam = lparam;
 
-	return (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)INVALID_INT, (LPARAM)&lvfi);
+	return (INT)SendDlgItemMessage (hwnd, listview_id, LVM_FINDITEM, (WPARAM)-1, (LPARAM)&lvfi);
 }
 
 VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
@@ -726,16 +751,33 @@ VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 	if (!total_count)
 		return;
 
-	if (item != INVALID_INT)
+	if (item != -1)
 	{
 		item = _r_calc_clamp (item, 0, total_count - 1);
 
 		PostMessage (hlistview, LVM_ENSUREVISIBLE, (WPARAM)item, TRUE); // ensure item visible
 
-		ListView_SetItemState (hlistview, INVALID_INT, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
+		ListView_SetItemState (hlistview, -1, 0, LVIS_SELECTED | LVIS_FOCUSED); // deselect all
 		ListView_SetItemState (hlistview, (WPARAM)item, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED); // select item
 	}
 
 	if (scroll_pos > 0)
 		PostMessage (hlistview, LVM_SCROLL, 0, (LPARAM)scroll_pos); // restore scroll position
+}
+
+BOOLEAN _app_showappitem (HWND hwnd, PITEM_APP ptr_app)
+{
+	INT listview_id = PtrToInt (_app_getappinfo (ptr_app, InfoListviewId));
+
+	if (listview_id)
+	{
+		if (listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1))
+			_app_listviewsort (hwnd, listview_id, -1, FALSE);
+
+		_app_showitem (hwnd, listview_id, _app_getposition (hwnd, listview_id, ptr_app->app_hash), -1);
+
+		return TRUE;
+	}
+
+	return FALSE;
 }

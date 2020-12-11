@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2020 Henry++
+// Copyright (c) 2016-2021 Henry++
 
 #pragma once
 
@@ -30,3 +30,4 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id);
 
 INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam);
 VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos);
+BOOLEAN _app_showappitem (HWND hwnd, PITEM_APP ptr_app);
