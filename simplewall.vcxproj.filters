@@ -15,99 +15,135 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\routine\routine.cpp">
+    <ClCompile Include="..\routine\routine.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\routine\rapp.cpp">
+    <ClCompile Include="..\routine\rapp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\main.cpp">
+    <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\wfp.cpp">
+    <ClCompile Include="src\wfp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\profile.cpp">
+    <ClCompile Include="src\profile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\log.cpp">
+    <ClCompile Include="src\log.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\notifications.cpp">
+    <ClCompile Include="src\notifications.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\timer.cpp">
+    <ClCompile Include="src\timer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\helper.cpp">
+    <ClCompile Include="src\helper.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\editor.cpp">
+    <ClCompile Include="src\editor.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\controls.cpp">
+    <ClCompile Include="src\controls.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\security.cpp">
+    <ClCompile Include="..\mxml\mxml-search.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-set.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-attr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-entity.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-file.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-get.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-index.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-node.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mxml\mxml-private.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\messages.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\security.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\routine\routine.hpp">
+    <ClInclude Include="..\routine\routine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\main.hpp">
+    <ClInclude Include="src\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource.hpp">
+    <ClInclude Include="src\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\routine\rconfig.hpp">
+    <ClInclude Include="..\routine\rconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\routine\rapp.hpp">
+    <ClInclude Include="..\routine\rapp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\app.hpp">
+    <ClInclude Include="src\app.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\pugixml\src\pugixml.hpp">
+    <ClInclude Include="src\wfp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pugiconfig.hpp">
+    <ClInclude Include="src\profile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\wfp.hpp">
+    <ClInclude Include="src\log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\profile.hpp">
+    <ClInclude Include="src\notifications.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\log.hpp">
+    <ClInclude Include="src\timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\notifications.hpp">
+    <ClInclude Include="src\helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\timer.hpp">
+    <ClInclude Include="src\global.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\helper.hpp">
+    <ClInclude Include="..\routine\ntapi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\global.hpp">
+    <ClInclude Include="src\editor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\routine\ntapi.hpp">
+    <ClInclude Include="src\controls.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\editor.hpp">
+    <ClInclude Include="src\security.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\controls.hpp">
+    <ClInclude Include="..\mxml\mxml-private.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\security.hpp">
+    <ClInclude Include="..\mxml\mxml.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\messages.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
