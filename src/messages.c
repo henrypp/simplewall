@@ -767,7 +767,7 @@ VOID _app_message_localize (HWND hwnd)
 
 		_r_menu_setitemtextformat (hmenu, IDM_ABOUT, FALSE, L"%s\tF1", _r_locale_getstring (IDS_ABOUT));
 
-		_r_locale_enum ((HWND)GetSubMenu (hmenu, 2), LANG_MENU, IDX_LANGUAGE); // enum localizations
+		_r_locale_enum (GetSubMenu (hmenu, 2), LANG_MENU, IDX_LANGUAGE); // enum localizations
 	}
 
 	PR_STRING localized_string = NULL;
@@ -1596,30 +1596,25 @@ VOID _app_command_properties (HWND hwnd)
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
 		ITEM_CONTEXT context = {0};
-		INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+		PITEM_APP ptr_app = _r_obj_findhashtable (apps, app_hash);
 
-		if (item != -1)
+		if (!ptr_app)
+			return;
+
+		context.is_settorules = FALSE;
+		context.ptr_app = ptr_app;
+
+		if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
 		{
-			SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
-			PITEM_APP ptr_app = _r_obj_findhashtable (apps, app_hash);
+			_r_fastlock_acquireshared (&lock_checkbox);
+			_app_setappiteminfo (hwnd, listview_id, item, ptr_app);
+			_r_fastlock_releaseshared (&lock_checkbox);
 
-			if (!ptr_app)
-				return;
+			_app_listviewsort (hwnd, listview_id, -1, FALSE);
+			_app_refreshstatus (hwnd, listview_id);
 
-			context.is_settorules = FALSE;
-			context.ptr_app = ptr_app;
-
-			if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
-			{
-				_r_fastlock_acquireshared (&lock_checkbox);
-				_app_setappiteminfo (hwnd, listview_id, item, ptr_app);
-				_r_fastlock_releaseshared (&lock_checkbox);
-
-				_app_listviewsort (hwnd, listview_id, -1, FALSE);
-				_app_refreshstatus (hwnd, listview_id);
-
-				_app_profile_save ();
-			}
+			_app_profile_save ();
 		}
 	}
 	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
