@@ -136,7 +136,7 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 		}
 	}
 
-	app_hash = _r_str_hash (path);
+	app_hash = _r_str_hash (path, path_length);
 	ptr_app = _r_obj_findhashtable (apps, app_hash);
 
 	if (ptr_app)
@@ -223,12 +223,12 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 
 		if (listview_id)
 		{
-			_r_fastlock_acquireshared (&lock_checkbox);
+			_r_spinlock_acquireshared (&lock_checkbox);
 
 			_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, ptr_app->icon_id, _app_getappgroup (ptr_app), app_hash);
 			_app_setappiteminfo (hwnd, listview_id, 0, ptr_app);
 
-			_r_fastlock_releaseshared (&lock_checkbox);
+			_r_spinlock_releaseshared (&lock_checkbox);
 		}
 	}
 
@@ -421,7 +421,7 @@ COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_systemap
 CleanupExit:
 
 	if (color_value)
-		return _app_getcolorvalue (_r_str_hash (color_value));
+		return _app_getcolorvalue (_r_str_hash (color_value, _r_str_length (color_value)));
 
 	return 0;
 }
@@ -457,9 +457,9 @@ VOID _app_freeapplication (SIZE_T app_hash)
 
 						if (item_pos != -1)
 						{
-							_r_fastlock_acquireshared (&lock_checkbox);
+							_r_spinlock_acquireshared (&lock_checkbox);
 							_app_setruleiteminfo (_r_app_gethwnd (), rule_listview_id, item_pos, ptr_rule, FALSE);
-							_r_fastlock_releaseshared (&lock_checkbox);
+							_r_spinlock_releaseshared (&lock_checkbox);
 						}
 					}
 				}
@@ -572,7 +572,7 @@ COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 		color_value = L"ColorSpecial";
 
 	if (color_value)
-		return _app_getcolorvalue (_r_str_hash (color_value));
+		return _app_getcolorvalue (_r_str_hash (color_value, _r_str_length (color_value)));
 
 	return 0;
 }
@@ -1073,9 +1073,9 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 
 			if (item_pos != -1)
 			{
-				_r_fastlock_acquireshared (&lock_checkbox);
+				_r_spinlock_acquireshared (&lock_checkbox);
 				_app_setruleiteminfo (hwnd, listview_id, item_pos, ptr_rule, FALSE);
-				_r_fastlock_releaseshared (&lock_checkbox);
+				_r_spinlock_releaseshared (&lock_checkbox);
 			}
 		}
 
@@ -1900,7 +1900,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			_r_listview_deleteallitems (hwnd, i);
 	}
 
-	_r_fastlock_acquireexclusive (&lock_apply);
+	_r_spinlock_acquireexclusive (&lock_apply);
 
 	// clear apps
 	_r_obj_clearhashtable (apps);
@@ -1918,7 +1918,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 	// generate services list
 	_app_generate_services ();
 
-	_r_fastlock_releaseexclusive (&lock_apply);
+	_r_spinlock_releaseexclusive (&lock_apply);
 
 	// load profile
 	HANDLE hfile;
@@ -2009,7 +2009,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 		INT listview_id;
 
 		// add apps
-		_r_fastlock_acquireshared (&lock_apps);
+		_r_spinlock_acquireshared (&lock_apps);
 
 		while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 		{
@@ -2017,12 +2017,12 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 			if (listview_id)
 			{
-				_r_fastlock_acquireshared (&lock_checkbox);
+				_r_spinlock_acquireshared (&lock_checkbox);
 
 				_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, ptr_app->icon_id, _app_getappgroup (ptr_app), ptr_app->app_hash);
 				_app_setappiteminfo (hwnd, listview_id, 0, ptr_app);
 
-				_r_fastlock_releaseshared (&lock_checkbox);
+				_r_spinlock_releaseshared (&lock_checkbox);
 			}
 
 			// install timer
@@ -2030,10 +2030,10 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 				_app_timer_set (hwnd, ptr_app, ptr_app->timer - current_time);
 		}
 
-		_r_fastlock_releaseshared (&lock_apps);
+		_r_spinlock_releaseshared (&lock_apps);
 
 		// add rules
-		_r_fastlock_acquireshared (&lock_rules);
+		_r_spinlock_acquireshared (&lock_rules);
 
 		for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 		{
@@ -2046,16 +2046,16 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 
 			if (listview_id)
 			{
-				_r_fastlock_acquireshared (&lock_checkbox);
+				_r_spinlock_acquireshared (&lock_checkbox);
 
 				_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
 				_app_setruleiteminfo (hwnd, listview_id, 0, ptr_rule, FALSE);
 
-				_r_fastlock_releaseshared (&lock_checkbox);
+				_r_spinlock_releaseshared (&lock_checkbox);
 			}
 		}
 
-		_r_fastlock_releaseshared (&lock_rules);
+		_r_spinlock_releaseshared (&lock_rules);
 	}
 
 	if (hwnd && current_listview_id)

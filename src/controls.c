@@ -619,27 +619,18 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 
 	if (total_count)
 	{
-		if (group1_title)
-			_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group1_count, total_count);
-
-		if (group2_title)
-			_r_str_printf (group2_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group2_count, total_count);
+		_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group1_count, total_count);
+		_r_str_printf (group2_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group2_count, total_count);
 
 		if (group3_title)
 			_r_str_printf (group3_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group3_count, total_count);
 	}
 
-	if (group1_title)
-	{
-		_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group1_title), group1_string));
-		_r_listview_setgroup (hwnd, listview_id, 0, _r_obj_getstringorempty (localized_string), 0, 0);
-	}
+	_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group1_title), group1_string));
+	_r_listview_setgroup (hwnd, listview_id, 0, _r_obj_getstringorempty (localized_string), 0, 0);
 
-	if (group2_title)
-	{
-		_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group2_title), group2_string));
-		_r_listview_setgroup (hwnd, listview_id, 1, _r_obj_getstringorempty (localized_string), 0, 0);
-	}
+	_r_obj_movereference (&localized_string, _r_format_string (L"%s%s", _r_locale_getstring (group2_title), group2_string));
+	_r_listview_setgroup (hwnd, listview_id, 1, _r_obj_getstringorempty (localized_string), 0, 0);
 
 	if (group3_title)
 	{

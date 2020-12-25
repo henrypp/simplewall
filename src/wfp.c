@@ -5,7 +5,7 @@
 
 BOOLEAN _wfp_isfiltersapplying ()
 {
-	return _r_fastlock_islocked (&lock_apply) || _r_fastlock_islocked (&lock_transaction);
+	return _r_spinlock_islocked (&lock_apply) || _r_spinlock_islocked (&lock_transaction);
 }
 
 ENUM_INSTALL_TYPE _wfp_isproviderinstalled (HANDLE hengine)
@@ -75,20 +75,17 @@ ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ()
 HANDLE _wfp_getenginehandle ()
 {
 	static HANDLE engine_handle = NULL;
-	WCHAR provider_name[64];
 	HANDLE current_handle;
 
 	current_handle = InterlockedCompareExchangePointer (&engine_handle, NULL, NULL);
 
 	if (!current_handle)
 	{
-		_r_str_copy (provider_name, RTL_NUMBER_OF (provider_name), APP_NAME);
-
 		FWPM_SESSION session;
-		RtlSecureZeroMemory (&session, sizeof (session));
+		memset (&session, 0, sizeof (session));
 
-		session.displayData.name = provider_name;
-		session.displayData.description = provider_name;
+		session.displayData.name = APP_NAME;
+		session.displayData.description = APP_NAME;
 
 		session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
 
@@ -119,14 +116,13 @@ HANDLE _wfp_getenginehandle ()
 
 BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 {
-	WCHAR provider_name[64];
 	ULONG code;
 	BOOLEAN is_success;
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
 	BOOLEAN is_intransact;
 
-	_r_fastlock_acquireshared (&lock_transaction);
+	_r_spinlock_acquireshared (&lock_transaction);
 
 	if (hengine)
 	{
@@ -156,8 +152,6 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 	{
 		if (!is_providerexist || !is_sublayerexist)
 		{
-			_r_str_copy (provider_name, RTL_NUMBER_OF (provider_name), APP_NAME);
-
 			is_intransact = _wfp_transact_start (hengine, __LINE__);
 
 			if (!is_providerexist)
@@ -165,8 +159,8 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 				// create provider
 				FWPM_PROVIDER provider = {0};
 
-				provider.displayData.name = provider_name;
-				provider.displayData.description = provider_name;
+				provider.displayData.name = APP_NAME;
+				provider.displayData.description = APP_NAME;
 
 				provider.providerKey = GUID_WfpProvider;
 
@@ -198,8 +192,8 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 			{
 				FWPM_SUBLAYER sublayer = {0};
 
-				sublayer.displayData.name = provider_name;
-				sublayer.displayData.description = provider_name;
+				sublayer.displayData.name = APP_NAME;
+				sublayer.displayData.description = APP_NAME;
 
 				sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
 				sublayer.subLayerKey = GUID_WfpSublayer;
@@ -320,14 +314,14 @@ BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
 
 CleanupExit:
 
-	_r_fastlock_releaseshared (&lock_transaction);
+	_r_spinlock_releaseshared (&lock_transaction);
 
 	return is_success;
 }
 
 VOID _wfp_uninitialize (HANDLE hengine, BOOLEAN is_full)
 {
-	_r_fastlock_acquireshared (&lock_transaction);
+	_r_spinlock_acquireshared (&lock_transaction);
 
 	ULONG code;
 
@@ -395,7 +389,7 @@ VOID _wfp_uninitialize (HANDLE hengine, BOOLEAN is_full)
 			_wfp_transact_commit (hengine, __LINE__);
 	}
 
-	_r_fastlock_releaseshared (&lock_transaction);
+	_r_spinlock_releaseshared (&lock_transaction);
 }
 
 VOID _wfp_installfilters (HANDLE hengine)
@@ -406,7 +400,7 @@ VOID _wfp_installfilters (HANDLE hengine)
 
 	_wfp_clearfilter_ids ();
 
-	_r_fastlock_acquireshared (&lock_transaction);
+	_r_spinlock_acquireshared (&lock_transaction);
 
 	// dump all filters into array
 	PR_ARRAY guids = _r_obj_createarrayex (sizeof (GUID), 0x800, NULL);
@@ -504,7 +498,7 @@ VOID _wfp_installfilters (HANDLE hengine)
 	_r_obj_dereference (rules);
 	_r_obj_dereference (guids);
 
-	_r_fastlock_releaseshared (&lock_transaction);
+	_r_spinlock_releaseshared (&lock_transaction);
 }
 
 BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line)
@@ -566,25 +560,35 @@ FORCEINLINE LPCWSTR _wfp_filtertypetostring (ENUM_TYPE_DATA filter_type)
 {
 	switch (filter_type)
 	{
-		//case DataAppRegular:
-		//case DataAppDevice:
-		//case DataAppNetwork:
-		//case DataAppPico:
-		//case DataAppService:
-		//case DataAppUWP:
-		//	return L"App";
+		case DataAppRegular:
+		case DataAppDevice:
+		case DataAppNetwork:
+		case DataAppPico:
+		case DataAppService:
+		case DataAppUWP:
+		{
+			return L"Apps";
+		}
 
 		case DataRuleBlocklist:
+		{
 			return L"Blocklist";
+		}
 
 		case DataRuleSystem:
-			return L"System";
+		{
+			return L"System rules";
+		}
 
 		case DataRuleUser:
-			return L"User";
+		{
+			return L"User rules";
+		}
 
 		case DataFilterGeneral:
+		{
 			return L"Internal";
+		}
 	}
 
 	return NULL;
@@ -712,14 +716,14 @@ VOID _wfp_destroyfilters (HANDLE hengine)
 	// destroy all filters
 	PR_ARRAY guids = _r_obj_createarrayex (sizeof (GUID), 0x1000, NULL);
 
-	_r_fastlock_acquireshared (&lock_transaction);
+	_r_spinlock_acquireshared (&lock_transaction);
 
 	if (_wfp_dumpfilters (hengine, &GUID_WfpProvider, guids))
 		_wfp_destroyfilters_array (hengine, guids, __LINE__);
 
 	_r_obj_dereference (guids);
 
-	_r_fastlock_releaseshared (&lock_transaction);
+	_r_spinlock_releaseshared (&lock_transaction);
 }
 
 BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, PR_ARRAY guids, UINT line)
@@ -730,7 +734,7 @@ BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, PR_ARRAY guids, UINT line)
 	LPCGUID guid;
 	BOOLEAN is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
 
-	_r_fastlock_acquireshared (&lock_transaction);
+	_r_spinlock_acquireshared (&lock_transaction);
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
@@ -753,7 +757,7 @@ BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, PR_ARRAY guids, UINT line)
 	if (is_intransact)
 		_wfp_transact_commit (hengine, line);
 
-	_r_fastlock_releaseshared (&lock_transaction);
+	_r_spinlock_releaseshared (&lock_transaction);
 
 	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
 
@@ -1084,7 +1088,7 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN i
 				_app_setsecurityinfoforfilter (hengine, guid, FALSE, line);
 		}
 
-		_r_fastlock_acquireshared (&lock_transaction);
+		_r_spinlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
 	}
 
@@ -1212,7 +1216,7 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN i
 			}
 		}
 
-		_r_fastlock_releaseshared (&lock_transaction);
+		_r_spinlock_releaseshared (&lock_transaction);
 	}
 
 	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
@@ -1257,7 +1261,7 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN i
 				_app_setsecurityinfoforfilter (hengine, guid, FALSE, line);
 		}
 
-		_r_fastlock_acquireshared (&lock_transaction);
+		_r_spinlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
 	}
 
@@ -1305,7 +1309,7 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN i
 			}
 		}
 
-		_r_fastlock_releaseshared (&lock_transaction);
+		_r_spinlock_releaseshared (&lock_transaction);
 	}
 
 	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
@@ -1336,7 +1340,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 			}
 		}
 
-		_r_fastlock_acquireshared (&lock_transaction);
+		_r_spinlock_acquireshared (&lock_transaction);
 		is_intransact = !_wfp_transact_start (hengine, line);
 	}
 
@@ -1615,7 +1619,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 			}
 		}
 
-		_r_fastlock_releaseshared (&lock_transaction);
+		_r_spinlock_releaseshared (&lock_transaction);
 	}
 
 	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);

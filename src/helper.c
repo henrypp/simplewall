@@ -154,7 +154,7 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 		if (is_success && _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 		{
 			PR_STRING domain_string = NULL;
-			SIZE_T addr_hash = _r_str_hash (formatted_address);
+			SIZE_T addr_hash = _r_str_hash (formatted_address, _r_str_length (formatted_address));
 			PR_HASHSTORE hashstore = _r_obj_findhashtable (cache_hosts, addr_hash);
 
 			if (hashstore)
@@ -2090,7 +2090,7 @@ VOID _app_generate_services ()
 				}
 			}
 
-			app_hash = _r_str_hash (service_name);
+			app_hash = _r_str_hash (service_name, _r_str_length (service_name));
 
 			if (_r_obj_findhashtable (apps, app_hash))
 				continue;
@@ -2156,7 +2156,7 @@ VOID _app_generate_services ()
 				ULONG sd_length = 0;
 
 				EXPLICIT_ACCESS ea;
-				RtlSecureZeroMemory (&ea, sizeof (ea));
+				memset (&ea, 0, sizeof (ea));
 
 				// When evaluating SECURITY_DESCRIPTOR conditions, the filter engine
 				// checks for FWP_ACTRL_MATCH_FILTER access. If the DACL grants access,
@@ -2428,7 +2428,7 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 		{
 			if (dns_string)
 			{
-				SIZE_T dns_hash = _r_str_hash (ni.NamedAddress.Address);
+				SIZE_T dns_hash = _r_str_hash (ni.NamedAddress.Address, _r_str_length (ni.NamedAddress.Address));
 				PR_HASHSTORE hashstore = _r_obj_findhashtable (cache_dns, dns_hash);
 
 				if (hashstore)

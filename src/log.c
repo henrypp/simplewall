@@ -626,7 +626,7 @@ VOID CALLBACK _wfp_logcallback (UINT32 flags, const FILETIME* pft, UINT8 const* 
 	RtlInterlockedPushEntrySList (&log_list_stack, &ptr_entry->list_entry);
 
 	// check if thread has not exists
-	if (!_r_fastlock_islocked (&lock_logthread))
+	if (!_r_spinlock_islocked (&lock_logthread))
 	{
 		_r_sys_createthreadex (&LogThread, _r_app_gethwnd (), NULL, THREAD_PRIORITY_HIGHEST);
 	}
@@ -948,7 +948,7 @@ THREAD_API LogThread (PVOID lparam)
 {
 	HWND hwnd = (HWND)lparam;
 
-	_r_fastlock_acquireshared (&lock_logthread);
+	_r_spinlock_acquireshared (&lock_logthread);
 
 	while (TRUE)
 	{
@@ -976,9 +976,9 @@ THREAD_API LogThread (PVOID lparam)
 
 		if (is_notexist)
 		{
-			_r_fastlock_acquireshared (&lock_logbusy);
+			_r_spinlock_acquireshared (&lock_logbusy);
 			PITEM_APP ptr_app = _app_addapplication (hwnd, DataUnknown, ptr_log->path->buffer, NULL, NULL);
-			_r_fastlock_releaseshared (&lock_logbusy);
+			_r_spinlock_releaseshared (&lock_logbusy);
 
 			if (ptr_app)
 				ptr_log->app_hash = ptr_app->app_hash;
@@ -996,7 +996,7 @@ THREAD_API LogThread (PVOID lparam)
 
 		// made network name resolution
 		{
-			_r_fastlock_acquireshared (&lock_logbusy);
+			_r_spinlock_acquireshared (&lock_logbusy);
 
 			PR_STRING address_string;
 
@@ -1006,7 +1006,7 @@ THREAD_API LogThread (PVOID lparam)
 			address_string = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, FMTADDR_RESOLVE_HOST);
 			SAFE_DELETE_REFERENCE (address_string);
 
-			_r_fastlock_releaseshared (&lock_logbusy);
+			_r_spinlock_releaseshared (&lock_logbusy);
 		}
 
 		if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth)
@@ -1042,7 +1042,7 @@ THREAD_API LogThread (PVOID lparam)
 		_r_obj_dereference (ptr_log);
 	}
 
-	_r_fastlock_releaseshared (&lock_logthread);
+	_r_spinlock_releaseshared (&lock_logthread);
 
 	return ERROR_SUCCESS;
 }

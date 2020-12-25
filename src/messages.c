@@ -1172,9 +1172,9 @@ VOID _app_command_checkbox (HWND hwnd, INT ctrl_id)
 
 				ptr_app->is_enabled = new_val;
 
-				_r_fastlock_acquireshared (&lock_checkbox);
+				_r_spinlock_acquireshared (&lock_checkbox);
 				_app_setappiteminfo (hwnd, listview_id, item, ptr_app);
-				_r_fastlock_releaseshared (&lock_checkbox);
+				_r_spinlock_releaseshared (&lock_checkbox);
 
 				_r_obj_addlistitem (rules, ptr_app);
 
@@ -1209,9 +1209,9 @@ VOID _app_command_checkbox (HWND hwnd, INT ctrl_id)
 			{
 				_app_ruleenable (ptr_rule, new_val, TRUE);
 
-				_r_fastlock_acquireshared (&lock_checkbox);
+				_r_spinlock_acquireshared (&lock_checkbox);
 				_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, TRUE);
-				_r_fastlock_releaseshared (&lock_checkbox);
+				_r_spinlock_releaseshared (&lock_checkbox);
 
 				_r_obj_addlistitem (rules, ptr_rule);
 
@@ -1323,8 +1323,6 @@ VOID _app_command_delete (HWND hwnd)
 
 				SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
 
-				ptr_rule = _r_obj_getarrayitem (rules_arr, rule_idx);
-
 				SecureZeroMemory (ptr_rule, sizeof (ITEM_RULE));
 
 				//rules_arr.at (rule_idx) = NULL;
@@ -1346,9 +1344,9 @@ VOID _app_command_delete (HWND hwnd)
 
 						if (item_pos != -1)
 						{
-							_r_fastlock_acquireshared (&lock_checkbox);
+							_r_spinlock_acquireshared (&lock_checkbox);
 							_app_setappiteminfo (hwnd, app_listview_id, item_pos, ptr_app);
-							_r_fastlock_releaseshared (&lock_checkbox);
+							_r_spinlock_releaseshared (&lock_checkbox);
 						}
 					}
 				}
@@ -1415,7 +1413,7 @@ VOID _app_command_disable (HWND hwnd, INT ctrl_id)
 	INT item = -1;
 	BOOL new_val = -1;
 
-	_r_fastlock_acquireshared (&lock_apps);
+	_r_spinlock_acquireshared (&lock_apps);
 
 	while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
 	{
@@ -1441,7 +1439,7 @@ VOID _app_command_disable (HWND hwnd, INT ctrl_id)
 		}
 	}
 
-	_r_fastlock_releaseshared (&lock_apps);
+	_r_spinlock_releaseshared (&lock_apps);
 
 	_app_listviewsort (hwnd, listview_id, -1, FALSE);
 	_app_refreshstatus (hwnd, listview_id);
@@ -1568,12 +1566,12 @@ VOID _app_command_openeditor (HWND hwnd)
 		{
 			INT item_id = _r_listview_getitemcount (hwnd, listview_rules_id);
 
-			_r_fastlock_acquireshared (&lock_checkbox);
+			_r_spinlock_acquireshared (&lock_checkbox);
 
 			_r_listview_additemex (hwnd, listview_rules_id, item_id, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
 			_app_setruleiteminfo (hwnd, listview_rules_id, item_id, ptr_rule, TRUE);
 
-			_r_fastlock_releaseshared (&lock_checkbox);
+			_r_spinlock_releaseshared (&lock_checkbox);
 		}
 
 		_app_listviewsort (hwnd, listview_id, -1, FALSE);
@@ -1607,9 +1605,9 @@ VOID _app_command_properties (HWND hwnd)
 
 		if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
 		{
-			_r_fastlock_acquireshared (&lock_checkbox);
+			_r_spinlock_acquireshared (&lock_checkbox);
 			_app_setappiteminfo (hwnd, listview_id, item, ptr_app);
-			_r_fastlock_releaseshared (&lock_checkbox);
+			_r_spinlock_releaseshared (&lock_checkbox);
 
 			_app_listviewsort (hwnd, listview_id, -1, FALSE);
 			_app_refreshstatus (hwnd, listview_id);
@@ -1631,9 +1629,9 @@ VOID _app_command_properties (HWND hwnd)
 
 		if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
 		{
-			_r_fastlock_acquireshared (&lock_checkbox);
+			_r_spinlock_acquireshared (&lock_checkbox);
 			_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, TRUE);
-			_r_fastlock_releaseshared (&lock_checkbox);
+			_r_spinlock_releaseshared (&lock_checkbox);
 
 			_app_listviewsort (hwnd, listview_id, -1, FALSE);
 			_app_refreshstatus (hwnd, listview_id);
@@ -1712,7 +1710,7 @@ VOID _app_command_purgeunused (HWND hwnd)
 	guids = _r_obj_createarrayex (sizeof (GUID), 1024, NULL);
 	apps_list = _r_obj_createarray (sizeof (SIZE_T), NULL);
 
-	_r_fastlock_acquireshared (&lock_apps);
+	_r_spinlock_acquireshared (&lock_apps);
 
 	while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 	{
@@ -1740,9 +1738,9 @@ VOID _app_command_purgeunused (HWND hwnd)
 		}
 	}
 
-	_r_fastlock_releaseshared (&lock_apps);
+	_r_spinlock_releaseshared (&lock_apps);
 
-	_r_fastlock_acquireexclusive (&lock_apps);
+	_r_spinlock_acquireexclusive (&lock_apps);
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (apps_list); i++)
 	{
@@ -1754,7 +1752,7 @@ VOID _app_command_purgeunused (HWND hwnd)
 		}
 	}
 
-	_r_fastlock_releaseexclusive (&lock_apps);
+	_r_spinlock_releaseexclusive (&lock_apps);
 
 	if (is_deleted)
 	{
@@ -1783,7 +1781,7 @@ VOID _app_command_purgetimers (HWND hwnd)
 	PITEM_APP ptr_app;
 	SIZE_T enum_key = 0;
 
-	_r_fastlock_acquireshared (&lock_apps);
+	_r_spinlock_acquireshared (&lock_apps);
 
 	while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 	{
@@ -1795,7 +1793,7 @@ VOID _app_command_purgetimers (HWND hwnd)
 		}
 	}
 
-	_r_fastlock_releaseshared (&lock_apps);
+	_r_spinlock_releaseshared (&lock_apps);
 
 	if (!_r_obj_islistempty (rules))
 	{

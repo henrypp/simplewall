@@ -4,10 +4,10 @@
 #pragma once
 
 VOID _app_notifycreatewindow ();
-BOOLEAN _app_notifycommand (HWND hwnd, INT button_id, time_t seconds);
+BOOLEAN _app_notifycommand (HWND hwnd, INT button_id, LONG64 seconds);
 
 BOOLEAN _app_notifyadd (HWND hwnd, PITEM_LOG ptr_log, PITEM_APP ptr_app);
-VOID _app_freenotify (SIZE_T app_hash, PITEM_APP ptr_app);
+VOID _app_freenotify (PITEM_APP ptr_app);
 
 SIZE_T _app_notifyget_id (HWND hwnd, BOOLEAN is_nearest);
 PITEM_LOG _app_notifyget_obj (SIZE_T app_hash);
