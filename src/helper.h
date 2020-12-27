@@ -15,7 +15,7 @@ VOID NTAPI _app_dereferencenetwork (PVOID entry);
 VOID NTAPI _app_dereferencelog (PVOID entry);
 VOID NTAPI _app_dereferencerule (PVOID entry);
 
-PR_HASHSTORE _app_addcachetable (PR_HASHTABLE table, SIZE_T hash_code, PR_STRING string, INT number);
+PR_HASHSTORE _app_addcachetable (PR_HASHTABLE hashtable, SIZE_T hash_code, PR_STRING string, INT number);
 
 PR_STRING _app_resolveaddress (ADDRESS_FAMILY af, LPCVOID paddr);
 PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UINT16 port, ULONG flags);

@@ -57,13 +57,26 @@ VOID NTAPI _app_dereferencerule (PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->guids);
 }
 
-PR_HASHSTORE _app_addcachetable (PR_HASHTABLE table, SIZE_T hash_code, PR_STRING string, INT number)
+PR_HASHSTORE _app_addcachetable (PR_HASHTABLE hashtable, SIZE_T hash_code, PR_STRING string, INT number)
 {
-	R_HASHSTORE hashstore = {0};
+	R_HASHSTORE hashstore;
 
 	_r_obj_initializehashstoreex (&hashstore, string, number);
 
-	return _r_obj_addhashtableitem (table, hash_code, &hashstore);
+	// check hashtable overflow and remove
+	while (_r_obj_gethashtablecount (hashtable) >= MAP_CACHE_MAX)
+	{
+		PR_HASHSTORE hashtable_entry;
+		SIZE_T enum_key = 0;
+		SIZE_T hashtable_hash;
+
+		if (!_r_obj_enumhashtable (hashtable, &hashtable_entry, &hashtable_hash, &enum_key))
+			break;
+
+		_r_obj_removehashtableentry (hashtable, hashtable_hash);
+	}
+
+	return _r_obj_addhashtableitem (hashtable, hash_code, &hashstore);
 }
 
 PR_STRING _app_resolveaddress (ADDRESS_FAMILY af, LPCVOID paddr)
@@ -438,8 +451,6 @@ PR_STRING _app_getsignatureinfo (PITEM_APP ptr_app)
 
 							if (CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, signature_cache_string->buffer, num_chars + 1))
 							{
-								// _app_freestrings_map (&cache_signatures, MAP_CACHE_MAX);
-
 								hashstore->value_string = signature_cache_string;
 							}
 							else
@@ -519,7 +530,7 @@ PR_STRING _app_getversioninfo (PITEM_APP ptr_app)
 		WCHAR author_entry[128];
 		WCHAR description_entry[128];
 
-		if (VerQueryValue (version_info, L"\\VarFileInfo\\Translation", &buffer, &length) && length == 4)
+		if (VerQueryValue (version_info, L"\\VarFileInfo\\Translation", &buffer, &length) && length == sizeof (UINT))
 		{
 			memcpy (&lang_id, buffer, length);
 
@@ -569,8 +580,6 @@ PR_STRING _app_getversioninfo (PITEM_APP ptr_app)
 
 			goto CleanupExit;
 		}
-
-		//_app_freestrings_map (&cache_versions, MAP_CACHE_MAX);
 
 		hashstore->value_string = version_cache_string;
 	}
@@ -2447,8 +2456,6 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 				{
 					_r_str_copy (dns_string, dns_length, host_string->buffer);
 
-					//_app_freestrings_map (&cache_dns, MAP_CACHE_MAX);
-
 					_app_addcachetable (cache_dns, dns_hash, host_string, 0);
 
 					return TRUE;
@@ -2529,9 +2536,6 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
 					type = DataTypeHost;
 				}
 			}
-
-			if (_r_obj_gethashtablecount (cache_types) >= MAP_CACHE_MAX)
-				_r_obj_clearhashtable (cache_types);
 
 			_app_addcachetable (cache_types, rule_hash, NULL, type);
 		}

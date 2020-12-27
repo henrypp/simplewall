@@ -156,7 +156,7 @@ typedef enum _ENUM_INSTALL_TYPE
 #define UI_STATUSBAR_PARTS_COUNT 3
 
 #define LEN_IP_MAX 68
-#define MAP_CACHE_MAX 500 // half of thousand limit for unordered_map
+#define MAP_CACHE_MAX 512 // half of thousand limit for hashtable
 
 #define FILTERS_TIMEOUT 9000
 #define TRANSACTION_TIMEOUT 6000
