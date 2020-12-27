@@ -1329,7 +1329,7 @@ BOOLEAN _app_isapphaverule (SIZE_T app_hash, BOOLEAN is_countdisabled)
 
 		if (ptr_rule)
 		{
-			if (is_countdisabled || (ptr_rule->is_enabled && ptr_rule->type == DataRuleUser))
+			if (ptr_rule->type == DataRuleUser && (is_countdisabled || (ptr_rule->is_enabled)))
 			{
 				if (_r_obj_findhashtable (ptr_rule->apps, app_hash))
 					return TRUE;
