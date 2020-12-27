@@ -1674,12 +1674,12 @@ BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable)
 	if (!pis_enabled && !pis_enable)
 		return FALSE;
 
+	HRESULT hr;
 	BOOLEAN result = FALSE;
 
 	INetFwPolicy2* INetFwPolicy = NULL;
-	HRESULT hr = CoCreateInstance (&IID_INetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
 
-	if (FAILED (hr))
+	if (FAILED (hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy)))
 		goto CleanupExit;
 
 	NET_FW_PROFILE_TYPE2 profile_types[] = {
@@ -1696,9 +1696,7 @@ BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable)
 		{
 			VARIANT_BOOL is_enabled;
 
-			hr = INetFwPolicy2_get_FirewallEnabled (INetFwPolicy, profile_types[i], &is_enabled);
-
-			if (SUCCEEDED (hr))
+			if (SUCCEEDED (hr = INetFwPolicy2_get_FirewallEnabled (INetFwPolicy, profile_types[i], &is_enabled)))
 			{
 				if (is_enabled == VARIANT_TRUE)
 				{
@@ -1715,9 +1713,7 @@ BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable)
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
 		{
-			hr = INetFwPolicy2_put_FirewallEnabled (INetFwPolicy, profile_types[i], *pis_enable ? VARIANT_TRUE : VARIANT_FALSE);
-
-			if (SUCCEEDED (hr))
+			if (SUCCEEDED (hr = INetFwPolicy2_put_FirewallEnabled (INetFwPolicy, profile_types[i], *pis_enable ? VARIANT_TRUE : VARIANT_FALSE)))
 			{
 				result = TRUE;
 			}
