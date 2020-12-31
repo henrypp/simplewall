@@ -52,7 +52,6 @@ VOID _app_loginit (BOOLEAN is_install)
 		InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
 	}
 
-
 	_r_obj_dereference (log_path);
 }
 
