@@ -64,7 +64,7 @@ PR_HASHSTORE _app_addcachetable (PR_HASHTABLE hashtable, SIZE_T hash_code, PR_ST
 	_r_obj_initializehashstoreex (&hashstore, string, number);
 
 	// check hashtable overflow and remove
-	while (_r_obj_gethashtablecount (hashtable) >= MAP_CACHE_MAX)
+	while (_r_obj_gethashtablesize (hashtable) >= MAP_CACHE_MAX)
 	{
 		PR_HASHSTORE hashtable_entry;
 		SIZE_T enum_key = 0;
