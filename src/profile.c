@@ -1820,7 +1820,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR resource_name, PLONG64 pt
 
 	if (resource_name)
 	{
-		PVOID pbuffer = _r_loadresource (NULL, resource_name, RT_RCDATA, NULL);
+		PVOID pbuffer = _r_res_loadresource (NULL, resource_name, RT_RCDATA, NULL);
 
 		if (pbuffer)
 		{

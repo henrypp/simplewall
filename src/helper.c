@@ -2780,7 +2780,7 @@ HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
 	if (FAILED (CoCreateInstance (&CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, &wicFactory)))
 		goto CleanupExit;
 
-	resource_buffer = (WICInProcPointer)_r_loadresource (hinst, name, L"PNG", &resource_length);
+	resource_buffer = (WICInProcPointer)_r_res_loadresource (hinst, name, L"PNG", &resource_length);
 
 	if (!resource_buffer)
 		goto CleanupExit;

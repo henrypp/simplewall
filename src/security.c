@@ -19,7 +19,7 @@ PSID _app_quyerybuiltinsid (WELL_KNOWN_SID_TYPE sid_type)
 PSID _app_queryservicesid (LPCWSTR name)
 {
 	UNICODE_STRING service_name;
-	RtlInitUnicodeString (&service_name, (LPWSTR)name);
+	RtlInitUnicodeString (&service_name, name);
 
 	ULONG sid_length = 0;
 	PSID psid = NULL;
