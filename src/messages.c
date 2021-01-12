@@ -1454,7 +1454,6 @@ VOID _app_command_openeditor (HWND hwnd)
 	_app_ruleenable (ptr_rule, TRUE, FALSE);
 
 	ptr_rule->type = DataRuleUser;
-	ptr_rule->is_block = FALSE;
 
 	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
 
@@ -1512,8 +1511,6 @@ VOID _app_command_openeditor (HWND hwnd)
 	}
 	else if (listview_id == IDC_LOG)
 	{
-		//ptr_rule->is_block = FALSE;
-
 		INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 
 		if (item != -1)
@@ -1560,24 +1557,28 @@ VOID _app_command_openeditor (HWND hwnd)
 	if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
 	{
 		SIZE_T rule_idx = _r_obj_addarrayitem (rules_arr, ptr_rule);
-		INT listview_rules_id = _app_getlistview_id (DataRuleUser);
 
-		if (listview_rules_id)
+		if (rule_idx != SIZE_MAX)
 		{
-			INT item_id = _r_listview_getitemcount (hwnd, listview_rules_id);
+			INT listview_rules_id = _app_getlistview_id (DataRuleUser);
 
-			_r_spinlock_acquireshared (&lock_checkbox);
+			if (listview_rules_id)
+			{
+				INT item_id = _r_listview_getitemcount (hwnd, listview_rules_id);
 
-			_r_listview_additemex (hwnd, listview_rules_id, item_id, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
-			_app_setruleiteminfo (hwnd, listview_rules_id, item_id, ptr_rule, TRUE);
+				_r_spinlock_acquireshared (&lock_checkbox);
 
-			_r_spinlock_releaseshared (&lock_checkbox);
+				_r_listview_additemex (hwnd, listview_rules_id, item_id, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
+				_app_setruleiteminfo (hwnd, listview_rules_id, item_id, ptr_rule, TRUE);
+
+				_r_spinlock_releaseshared (&lock_checkbox);
+			}
+
+			_app_listviewsort (hwnd, listview_id, -1, FALSE);
+			_app_refreshstatus (hwnd, listview_id);
+
+			_app_profile_save ();
 		}
-
-		_app_listviewsort (hwnd, listview_id, -1, FALSE);
-		_app_refreshstatus (hwnd, listview_id);
-
-		_app_profile_save ();
 	}
 
 	_r_mem_free (ptr_rule);
