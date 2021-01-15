@@ -321,7 +321,14 @@ VOID _wfp_logsubscribe (HANDLE hengine)
 
 	if (!hfwpuclnt)
 	{
-		_r_log (Warning, 0, L"LoadLibraryEx", GetLastError (), L"fwpuclnt.dll");
+		code = GetLastError ();
+
+		// fix https://github.com/henrypp/simplewall/issues/774
+		if (_r_sys_isosversionequal (WINDOWS_7))
+			_r_show_errormessage (_r_app_gethwnd (), NULL, code, L"Are you really using non-updated Windows without required updates like KB2533623? My condolences.", NULL);
+
+		_r_log (Warning, 0, L"LoadLibraryEx", code, L"fwpuclnt.dll");
+
 		return;
 	}
 
