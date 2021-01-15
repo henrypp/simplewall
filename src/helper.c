@@ -167,7 +167,7 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 		if (is_success && _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 		{
 			PR_STRING domain_string = NULL;
-			SIZE_T addr_hash = _r_str_hash (formatted_address, _r_str_length (formatted_address));
+			SIZE_T addr_hash = _r_str_hash (formatted_address);
 			PR_HASHSTORE hashstore = _r_obj_findhashtable (cache_hosts, addr_hash);
 
 			if (hashstore)
@@ -2036,7 +2036,7 @@ VOID _app_generate_services ()
 	ULONG buffer_size = initial_buffer_size;
 	PVOID buffer = _r_mem_allocatezero (buffer_size);
 
-	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, (PBYTE)buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
+	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 	{
 		if (GetLastError () == ERROR_MORE_DATA)
 		{
@@ -2045,7 +2045,7 @@ VOID _app_generate_services ()
 			buffer = _r_mem_reallocatezero (buffer, buffer_size);
 
 			// Now query again for services
-			if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, (PBYTE)buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
+			if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 			{
 				_r_mem_free (buffer);
 				buffer = NULL;
@@ -2099,7 +2099,7 @@ VOID _app_generate_services ()
 				}
 			}
 
-			app_hash = _r_str_hash (service_name, _r_str_length (service_name));
+			app_hash = _r_str_hash (service_name);
 
 			if (_r_obj_findhashtable (apps, app_hash))
 				continue;
@@ -2437,7 +2437,7 @@ BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* for
 		{
 			if (dns_string)
 			{
-				SIZE_T dns_hash = _r_str_hash (ni.NamedAddress.Address, _r_str_length (ni.NamedAddress.Address));
+				SIZE_T dns_hash = _r_str_hash (ni.NamedAddress.Address);
 				PR_HASHSTORE hashstore = _r_obj_findhashtable (cache_dns, dns_hash);
 
 				if (hashstore)

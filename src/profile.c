@@ -136,7 +136,7 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 		}
 	}
 
-	app_hash = _r_str_hash (path, path_length);
+	app_hash = _r_str_hashex (path, path_length);
 	ptr_app = _r_obj_findhashtable (apps, app_hash);
 
 	if (ptr_app)
@@ -421,7 +421,7 @@ COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_systemap
 CleanupExit:
 
 	if (color_value)
-		return _app_getcolorvalue (_r_str_hash (color_value, _r_str_length (color_value)));
+		return _app_getcolorvalue (_r_str_hash (color_value));
 
 	return 0;
 }
@@ -572,7 +572,7 @@ COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 		color_value = L"ColorSpecial";
 
 	if (color_value)
-		return _app_getcolorvalue (_r_str_hash (color_value, _r_str_length (color_value)));
+		return _app_getcolorvalue (_r_str_hash (color_value));
 
 	return 0;
 }
