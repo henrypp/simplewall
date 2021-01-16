@@ -95,8 +95,8 @@ VOID _app_logwrite (PITEM_LOG ptr_log)
 	local_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, FMTADDR_RESOLVE_HOST);
 	remote_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, FMTADDR_RESOLVE_HOST);
 
-	local_port_string = _app_formatport (ptr_log->local_port, TRUE);
-	remote_port_string = _app_formatport (ptr_log->remote_port, TRUE);
+	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol, TRUE);
+	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol, TRUE);
 
 	direction_string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
@@ -217,8 +217,8 @@ VOID _app_logwrite_ui (HWND hwnd, PITEM_LOG ptr_log)
 	local_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, 0);
 	remote_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, 0);
 
-	local_port_string = _app_formatport (ptr_log->local_port, TRUE);
-	remote_port_string = _app_formatport (ptr_log->remote_port, TRUE);
+	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol, TRUE);
+	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol, TRUE);
 
 	direction_string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
@@ -300,6 +300,12 @@ VOID _app_logclear_ui (HWND hwnd)
 
 VOID _wfp_logsubscribe (HANDLE hengine)
 {
+	typedef ULONG (WINAPI *FWPMNES4)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK4 callback, PVOID context, HANDLE* eventsHandle); // win10rs5+
+	typedef ULONG (WINAPI *FWPMNES3)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK3 callback, PVOID context, HANDLE* eventsHandle); // win10rs4+
+	typedef ULONG (WINAPI *FWPMNES2)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK2 callback, PVOID context, HANDLE* eventsHandle); // win10rs1+
+	typedef ULONG (WINAPI *FWPMNES1)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK1 callback, PVOID context, HANDLE* eventsHandle); // win8+
+	typedef ULONG (WINAPI *FWPMNES0)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK0 callback, PVOID context, HANDLE* eventsHandle); // win7+
+
 	FWPMNES4 _FwpmNetEventSubscribe4;
 	FWPMNES3 _FwpmNetEventSubscribe3;
 	FWPMNES2 _FwpmNetEventSubscribe2;
@@ -345,8 +351,8 @@ VOID _wfp_logsubscribe (HANDLE hengine)
 		goto CleanupExit; // there is no function to call
 	}
 
-	RtlSecureZeroMemory (&subscription, sizeof (subscription));
-	RtlSecureZeroMemory (&enum_template, sizeof (enum_template));
+	memset (&subscription, 0, sizeof (subscription));
+	memset (&enum_template, 0, sizeof (enum_template));
 
 	subscription.enumTemplate = &enum_template;
 	hevent = NULL;
