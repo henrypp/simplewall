@@ -843,7 +843,12 @@ LPCWSTR _app_getservicename (UINT16 port, UINT8 proto, LPCWSTR default_value)
 			return L"svrloc";
 
 		case 443:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"quic";
+
 			return L"https";
+		}
 
 		case 444:
 			return L"snpp";
