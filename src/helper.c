@@ -237,14 +237,14 @@ BOOLEAN _app_formatip (ADDRESS_FAMILY af, LPCVOID paddr, LPWSTR out_buffer, ULON
 	return FALSE;
 }
 
-PR_STRING _app_formatport (UINT16 port, BOOLEAN is_noempty)
+PR_STRING _app_formatport (UINT16 port, UINT8 proto, BOOLEAN is_noempty)
 {
 	if (!port)
 		return NULL;
 
 	if (is_noempty)
 	{
-		LPCWSTR sevice_string = _app_getservicename (port, NULL);
+		LPCWSTR sevice_string = _app_getservicename (port, proto, NULL);
 
 		if (sevice_string)
 		{
@@ -257,7 +257,7 @@ PR_STRING _app_formatport (UINT16 port, BOOLEAN is_noempty)
 	}
 	else
 	{
-		return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, _app_getservicename (port, SZ_UNKNOWN));
+		return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, _app_getservicename (port, proto, SZ_UNKNOWN));
 	}
 
 	return NULL;
@@ -595,7 +595,7 @@ CleanupExit:
 	return _r_obj_referencesafe (version_cache_string);
 }
 
-LPCWSTR _app_getservicename (UINT16 port, LPCWSTR default_value)
+LPCWSTR _app_getservicename (UINT16 port, UINT8 proto, LPCWSTR default_value)
 {
 	switch (port)
 	{
@@ -2292,7 +2292,7 @@ VOID _app_generate_timerscontrol (PVOID hwnd, INT ctrl_id, PITEM_APP ptr_app)
 	}
 }
 
-PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
+PR_STRING _app_parsehoststring (LPCWSTR hostname, USHORT port)
 {
 	if (_r_str_isempty (hostname))
 		return NULL;
@@ -2386,277 +2386,296 @@ PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port)
 	return NULL;
 }
 
-BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, PUSHORT port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR dns_string, SIZE_T dns_length)
+BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, PITEM_ADDRESS address)
 {
 	NET_ADDRESS_INFO ni;
-	memset (&ni, 0, sizeof (ni));
-
+	NET_ADDRESS_INFO ni_end;
 	USHORT port;
 	BYTE prefix_length;
 
 	ULONG types = NET_STRING_ANY_ADDRESS | NET_STRING_ANY_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_ANY_ADDRESS_NO_SCOPE | NET_STRING_ANY_SERVICE_NO_SCOPE;
-	ULONG code = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
+	ULONG code;
 
-	if (code != ERROR_SUCCESS)
+	if (address->is_range)
 	{
-		_r_log (Warning, 0, L"ParseNetworkString", code, network_string);
-		return FALSE;
+		code = ParseNetworkString (address->range_start, types, &ni, &port, NULL);
+
+		if (code != ERROR_SUCCESS)
+			goto CleanupExit;
+
+		code = ParseNetworkString (address->range_end, types, &ni_end, NULL, NULL);
 	}
 	else
 	{
-		if (format_ptr)
-			*format_ptr = ni.Format;
-
-		if (port_ptr)
-			*port_ptr = port;
-
-		if (ni.Format == NET_ADDRESS_IPV4)
-		{
-			if (paddr4)
-			{
-				ULONG mask = 0;
-				ConvertLengthToIpv4Mask (prefix_length, &mask);
-
-				paddr4->addr = _r_byteswap_ulong (ni.Ipv4Address.sin_addr.S_un.S_addr);
-				paddr4->mask = _r_byteswap_ulong (mask);
-			}
-
-			return TRUE;
-		}
-		else if (ni.Format == NET_ADDRESS_IPV6)
-		{
-			if (paddr6)
-			{
-				memcpy (paddr6->addr, ni.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
-				paddr6->prefixLength = min (prefix_length, 128);
-			}
-
-			return TRUE;
-		}
-		else if (ni.Format == NET_ADDRESS_DNS_NAME)
-		{
-			if (dns_string)
-			{
-				SIZE_T dns_hash = _r_str_hash (ni.NamedAddress.Address);
-				PR_HASHSTORE hashstore = _r_obj_findhashtable (cache_dns, dns_hash);
-
-				if (hashstore)
-				{
-					if (hashstore->value_string)
-					{
-						_r_str_copy (dns_string, dns_length, hashstore->value_string->buffer);
-
-						return TRUE;
-					}
-				}
-
-				PR_STRING host_string = _app_parsehostaddress_dns (ni.NamedAddress.Address, port);
-
-				if (host_string)
-				{
-					_r_str_copy (dns_string, dns_length, host_string->buffer);
-
-					_app_addcachetable (cache_dns, dns_hash, host_string, 0);
-
-					return TRUE;
-				}
-
-				return FALSE;
-			}
-
-			return TRUE;
-		}
+		code = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
 	}
+
+	if (code != ERROR_SUCCESS)
+		goto CleanupExit;
+
+	address->format = ni.Format;
+	address->port = port;
+
+	if (ni.Format == NET_ADDRESS_IPV4)
+	{
+		if (address->is_range)
+		{
+			address->range.valueLow.type = FWP_UINT32;
+			address->range.valueLow.uint32 = _r_byteswap_ulong (ni.Ipv4Address.sin_addr.S_un.S_addr);
+
+			address->range.valueHigh.type = FWP_UINT32;
+			address->range.valueHigh.uint32 = _r_byteswap_ulong (ni_end.Ipv4Address.sin_addr.S_un.S_addr);
+		}
+		else
+		{
+			ULONG mask = 0;
+
+			if (ConvertLengthToIpv4Mask (prefix_length, &mask) == NOERROR)
+				mask = _r_byteswap_ulong (mask);
+
+			address->addr4.addr = _r_byteswap_ulong (ni.Ipv4Address.sin_addr.S_un.S_addr);
+			address->addr4.mask = mask;
+		}
+
+		return TRUE;
+	}
+	else if (ni.Format == NET_ADDRESS_IPV6)
+	{
+		if (address->is_range)
+		{
+			address->range.valueLow.type = FWP_BYTE_ARRAY16_TYPE;
+			memcpy (address->addr6_low, ni.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
+			address->range.valueLow.byteArray16 = (FWP_BYTE_ARRAY16*)address->addr6_low;
+
+			address->range.valueHigh.type = FWP_BYTE_ARRAY16_TYPE;
+			memcpy (address->addr6_high, ni_end.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
+			address->range.valueHigh.byteArray16 = (FWP_BYTE_ARRAY16*)address->addr6_high;
+		}
+		else
+		{
+			memcpy (address->addr6.addr, ni.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
+			address->addr6.prefixLength = min (prefix_length, 128);
+		}
+
+		return TRUE;
+	}
+	else if (ni.Format == NET_ADDRESS_DNS_NAME)
+	{
+		SIZE_T dns_hash = _r_str_hash (ni.NamedAddress.Address);
+		PR_HASHSTORE hashstore = _r_obj_findhashtable (cache_dns, dns_hash);
+
+		if (hashstore)
+		{
+			if (hashstore->value_string)
+			{
+				_r_str_copy (address->host, RTL_NUMBER_OF (address->host), hashstore->value_string->buffer);
+
+				return TRUE;
+			}
+		}
+
+		PR_STRING host_string = _app_parsehoststring (ni.NamedAddress.Address, port);
+
+		if (host_string)
+		{
+			_r_str_copy (address->host, RTL_NUMBER_OF (address->host), host_string->buffer);
+
+			_app_addcachetable (cache_dns, dns_hash, host_string, 0);
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+CleanupExit:
+
+	_r_log (Information, 0, L"ParseNetworkString", code, network_string);
 
 	return FALSE;
 }
 
-BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr)
+BOOLEAN _app_preparserulestring (PR_STRING rule, PITEM_ADDRESS address)
 {
-	if (_r_obj_isstringempty (rule))
-		return TRUE;
+	const WCHAR valid_chars[] = {
+		L'.',
+		L':',
+		L'[',
+		L']',
+		L'/',
+		L'-',
+		L'_',
+	};
 
-	ENUM_TYPE_DATA type = DataUnknown;
+	SIZE_T length = _r_obj_getstringlength (rule);
 
-	SIZE_T rule_length = _r_obj_getstringlength (rule);
-	SIZE_T range_pos = _r_str_findchar (rule->buffer, rule_length, DIVIDER_RULE_RANGE);
-	BOOLEAN is_range = (range_pos != SIZE_MAX);
+	// validate rule symbols if rule is unknown/new...
+	// "type" is maybe already set, so check it to prevent duplicate execution
 
-	WCHAR range_start[LEN_IP_MAX] = {0};
-	WCHAR range_end[LEN_IP_MAX] = {0};
-
-	if (is_range)
+	if (address->type == DataUnknown)
 	{
-		PR_STRING range_start_string = _r_str_extract (rule, 0, range_pos);
-		PR_STRING range_end_string = _r_str_extract (rule, range_pos + 1, rule_length - range_pos - 1);
+		for (SIZE_T i = 0; i < length; i++)
+		{
+			if (IsCharAlphaNumeric (rule->buffer[i]))
+				continue;
+
+			BOOLEAN is_valid = FALSE;
+
+			for (SIZE_T j = 0; j < RTL_NUMBER_OF (valid_chars); j++)
+			{
+				if (rule->buffer[i] == valid_chars[j])
+				{
+					is_valid = TRUE;
+					break;
+				}
+			}
+
+			if (is_valid)
+				continue;
+
+			return FALSE;
+		}
+	}
+
+	// parse rule range
+	SIZE_T range_pos = _r_str_findchar (rule->buffer, length, DIVIDER_RULE_RANGE);
+
+	// extract start and end position of rule
+	if ((address->is_range = (range_pos != SIZE_MAX)))
+	{
+		PR_STRING range_start_string = _r_str_extractex (rule->buffer, length, 0, range_pos);
+		PR_STRING range_end_string = _r_str_extractex (rule->buffer, length, range_pos + 1, length - range_pos - 1);
 
 		if (range_start_string)
 		{
-			_r_str_copy (range_start, RTL_NUMBER_OF (range_start), range_start_string->buffer);
+			_r_str_copy (address->range_start, RTL_NUMBER_OF (address->range_start), range_start_string->buffer);
+
 			_r_obj_dereference (range_start_string);
 		}
 
 		if (range_end_string)
 		{
-			_r_str_copy (range_end, RTL_NUMBER_OF (range_end), range_end_string->buffer);
+			_r_str_copy (address->range_end, RTL_NUMBER_OF (address->range_end), range_end_string->buffer);
+
 			_r_obj_dereference (range_end_string);
 		}
 
-		if (_r_str_isempty (range_start) || _r_str_isempty (range_end))
+		// there is incorrect range syntax
+		if (_r_str_isempty (address->range_start) || _r_str_isempty (address->range_end))
+		{
+			address->type = DataUnknown;
 			return FALSE;
+		}
 	}
 
-	// auto-parse rule type
+	// check rule for port
+	if (address->type == DataUnknown)
 	{
-		SIZE_T rule_hash = _r_obj_getstringhash (rule);
-		PR_HASHSTORE hashstore = _r_obj_findhashtable (cache_types, rule_hash);
+		address->type = DataTypePort;
 
-		if (hashstore)
+		for (SIZE_T i = 0; i < length; i++)
 		{
-			type = hashstore->value_number;
-		}
-		else
-		{
-			if (_app_isrulevalid (rule->buffer, rule_length))
+			if (iswdigit (rule->buffer[i]) == 0 && rule->buffer[i] != DIVIDER_RULE_RANGE)
 			{
-				if (_app_isruleport (rule->buffer, rule_length))
-				{
-					type = DataTypePort;
-				}
-				else if (!is_range && _app_isruletype (rule->buffer, TULE_TYPE_IP))
-				{
-					type = DataTypeIp;
-				}
-				else if (is_range && _app_isruletype (range_start, TULE_TYPE_IP) && _app_isruletype (range_end, TULE_TYPE_IP))
-				{
-					type = DataTypeIp;
-				}
-				else if (_app_isruletype (rule->buffer, TULE_TYPE_HOST))
-				{
-					type = DataTypeHost;
-				}
+				address->type = DataUnknown;
+				break;
 			}
-
-			_app_addcachetable (cache_types, rule_hash, NULL, type);
 		}
 	}
 
-	if (type == DataUnknown)
-		return FALSE;
-
-	if (!ptr_addr)
+	if (address->type != DataUnknown)
 		return TRUE;
 
-	if (type == DataTypeHost)
-		is_range = FALSE;
+#define RULE_TYPE_HOST (NET_STRING_NAMED_ADDRESS | NET_STRING_NAMED_SERVICE)
+#define RULE_TYPE_IP (NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE)
 
-	ptr_addr->is_range = is_range;
-
-	if (type == DataTypePort)
+	// check rule for ip address
+	if (address->is_range)
 	{
-		if (!is_range)
+		if (ParseNetworkString (address->range_start, RULE_TYPE_IP, NULL, NULL, NULL) == ERROR_SUCCESS && ParseNetworkString (address->range_end, RULE_TYPE_IP, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
-			// ...port
-			ptr_addr->type = DataTypePort;
-			ptr_addr->port = (UINT16)_r_str_touinteger (rule->buffer);
-
-			return TRUE;
-		}
-		else
-		{
-			// ...port range
-			ptr_addr->type = DataTypePort;
-
-			ptr_addr->range.valueLow.type = FWP_UINT16;
-			ptr_addr->range.valueLow.uint16 = (UINT16)wcstoul (range_start, NULL, 10);
-
-			ptr_addr->range.valueHigh.type = FWP_UINT16;
-			ptr_addr->range.valueHigh.uint16 = (UINT16)wcstoul (range_end, NULL, 10);
-
+			address->type = DataTypeIp;
 			return TRUE;
 		}
 	}
 	else
 	{
-		NET_ADDRESS_FORMAT format;
-
-		FWP_V4_ADDR_AND_MASK addr4 = {0};
-		FWP_V6_ADDR_AND_MASK addr6 = {0};
-
-		USHORT port2 = 0;
-
-		if (type == DataTypeIp && is_range)
+		if (ParseNetworkString (rule->buffer, RULE_TYPE_IP, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
-			// ...ip range (start)
-			if (_app_parsenetworkstring (range_start, &format, &port2, &addr4, &addr6, NULL, 0))
-			{
-				if (format == NET_ADDRESS_IPV4)
-				{
-					ptr_addr->range.valueLow.type = FWP_UINT32;
-					ptr_addr->range.valueLow.uint32 = addr4.addr;
-				}
-				else if (format == NET_ADDRESS_IPV6)
-				{
-					ptr_addr->range.valueLow.type = FWP_BYTE_ARRAY16_TYPE;
-					memcpy (ptr_addr->range.valueLow.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
-				}
-				else
-				{
-					return FALSE;
-				}
+			address->type = DataTypeIp;
+			return TRUE;
+		}
+	}
 
-				if (port2 && !ptr_addr->port)
-					ptr_addr->port = port2;
-			}
-			else
-			{
-				return FALSE;
-			}
+	if (ParseNetworkString (rule->buffer, RULE_TYPE_HOST, NULL, NULL, NULL) == ERROR_SUCCESS)
+	{
+		address->type = DataTypeHost;
+		address->is_range = FALSE; // reset range status
 
-			// ...ip range (end)
-			if (_app_parsenetworkstring (range_end, &format, &port2, &addr4, &addr6, NULL, 0))
-			{
-				if (format == NET_ADDRESS_IPV4)
-				{
-					ptr_addr->range.valueHigh.type = FWP_UINT32;
-					ptr_addr->range.valueHigh.uint32 = addr4.addr;
-				}
-				else if (format == NET_ADDRESS_IPV6)
-				{
-					ptr_addr->range.valueHigh.type = FWP_BYTE_ARRAY16_TYPE;
-					memcpy (ptr_addr->range.valueHigh.byteArray16->byteArray16, addr6.addr, FWP_V6_ADDR_SIZE);
-				}
-				else
-				{
-					return FALSE;
-				}
-			}
-			else
-			{
-				return FALSE;
-			}
+		return TRUE;
+	}
 
-			ptr_addr->format = format;
-			ptr_addr->type = DataTypeIp;
+	return FALSE;
+}
+
+BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS address)
+{
+	if (_r_obj_isstringempty (rule))
+		return TRUE;
+
+	ITEM_ADDRESS address_copy;
+	BOOLEAN is_checkonly = FALSE;
+
+	if (!address)
+	{
+		memset (&address_copy, 0, sizeof (address_copy));
+
+		is_checkonly = TRUE;
+		address = &address_copy;
+	}
+
+	// auto-parse rule type
+	SIZE_T rule_hash = _r_obj_getstringhash (rule);
+	PR_HASHSTORE hashstore = _r_obj_findhashtable (cache_types, rule_hash);
+
+	if (hashstore)
+		address->type = hashstore->value_number;
+
+	if (!_app_preparserulestring (rule, address))
+		return FALSE;
+
+	if (is_checkonly)
+		return TRUE;
+
+	_app_addcachetable (cache_types, rule_hash, NULL, address->type);
+
+	if (address->type == DataTypePort)
+	{
+		if (address->is_range)
+		{
+			// ...port range
+			address->range.valueLow.type = FWP_UINT16;
+			address->range.valueLow.uint16 = (UINT16)_r_str_touinteger (address->range_start);
+
+			address->range.valueHigh.type = FWP_UINT16;
+			address->range.valueHigh.uint16 = (UINT16)_r_str_touinteger (address->range_end);
+
+			return TRUE;
 		}
 		else
 		{
-			// ...ip/host
-			if (_app_parsenetworkstring (rule->buffer, &format, &port2, &ptr_addr->addr4, &ptr_addr->addr6, ptr_addr->host, RTL_NUMBER_OF (ptr_addr->host)))
-			{
-				ptr_addr->type = DataTypeIp;
-				ptr_addr->format = format;
+			// ...port
+			address->port = (UINT16)_r_str_touinteger (rule->buffer);
 
-				if (port2)
-					ptr_addr->port = port2;
-
-				return TRUE;
-			}
-			else
-			{
-				return FALSE;
-			}
+			return TRUE;
 		}
+	}
+	else if (address->type == DataTypeIp || address->type == DataTypeHost)
+	{
+		address->type = DataTypeIp;
+
+		if (!_app_parsenetworkstring (rule->buffer, address))
+			return FALSE;
 	}
 
 	return TRUE;

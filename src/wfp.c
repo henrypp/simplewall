@@ -437,7 +437,7 @@ VOID _wfp_installfilters (HANDLE hengine)
 	// apply internal rules
 	_wfp_create2filters (hengine, __LINE__, is_intransact);
 
-	PR_LIST rules = _r_obj_createlistex (0x200, NULL);
+	PR_LIST rules = _r_obj_createlistex (0x2000, NULL);
 
 	// apply apps rules
 	PITEM_APP ptr_app;
@@ -452,9 +452,11 @@ VOID _wfp_installfilters (HANDLE hengine)
 	}
 
 	if (!_r_obj_islistempty (rules))
+	{
 		_wfp_create3filters (hengine, rules, __LINE__, is_intransact);
 
-	_r_obj_clearlist (rules);
+		_r_obj_clearlist (rules);
+	}
 
 	// apply blocklist/system/user rules
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
@@ -468,9 +470,11 @@ VOID _wfp_installfilters (HANDLE hengine)
 	}
 
 	if (!_r_obj_islistempty (rules))
+	{
 		_wfp_create4filters (hengine, rules, __LINE__, is_intransact);
 
-	_r_obj_clearlist (rules);
+		_r_obj_clearlist (rules);
+	}
 
 	if (is_intransact)
 		_wfp_transact_commit (hengine, __LINE__);
@@ -769,15 +773,13 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWS
 	UINT32 count = 0;
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
 
-	ITEM_ADDRESS addr;
+	ITEM_ADDRESS address;
 
 	FWP_BYTE_BLOB* byte_blob = NULL;
 	PITEM_APP ptr_app = NULL;
 	BOOLEAN is_remoteaddr_set = FALSE;
 	BOOLEAN is_remoteport_set = FALSE;
 	BOOLEAN is_success = FALSE;
-
-	memset (&addr, 0, sizeof (addr));
 
 	// set path condition
 	if (app_hash)
@@ -856,7 +858,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWS
 
 	// set ip/port condition
 	{
-		PR_STRING rules[] = {
+		const PR_STRING rules[] = {
 			rule_remote,
 			rule_local
 		};
@@ -866,84 +868,88 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWS
 			if (_r_obj_isstringempty (rules[i]))
 				continue;
 
-			if (!_app_parserulestring (rules[i], &addr))
-			{
+			memset (&address, 0, sizeof (address));
+
+			if (!_app_parserulestring (rules[i], &address))
 				goto CleanupExit;
+
+			if (i == 0)
+			{
+				if (address.type == DataTypePort)
+				{
+					is_remoteport_set = TRUE;
+				}
+				else if (address.type == DataTypeIp || address.type == DataTypeHost)
+				{
+					is_remoteaddr_set = TRUE;
+				}
+			}
+
+			if (address.is_range)
+			{
+				if (address.type == DataTypeIp)
+				{
+					if (address.format == NET_ADDRESS_IPV4)
+					{
+						af = AF_INET;
+					}
+					else if (address.format == NET_ADDRESS_IPV6)
+					{
+						af = AF_INET6;
+					}
+					else
+					{
+						goto CleanupExit;
+					}
+				}
+
+				fwfc[count].fieldKey = (address.type == DataTypePort) ? ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT) : ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
+				fwfc[count].matchType = FWP_MATCH_RANGE;
+				fwfc[count].conditionValue.type = FWP_RANGE_TYPE;
+				fwfc[count].conditionValue.rangeValue = &address.range;
+
+				count += 1;
 			}
 			else
 			{
-				if (i == 0)
-				{
-					if (addr.type == DataTypeIp || addr.type == DataTypeHost)
-						is_remoteaddr_set = TRUE;
-
-					else if (addr.type == DataTypePort)
-						is_remoteport_set = TRUE;
-				}
-
-				if (addr.is_range && (addr.type == DataTypeIp || addr.type == DataTypePort))
-				{
-					if (addr.type == DataTypeIp)
-					{
-						if (addr.format == NET_ADDRESS_IPV4)
-						{
-							af = AF_INET;
-						}
-						else if (addr.format == NET_ADDRESS_IPV6)
-						{
-							af = AF_INET6;
-						}
-						else
-						{
-							goto CleanupExit;
-						}
-					}
-
-					fwfc[count].fieldKey = (addr.type == DataTypePort) ? ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT) : ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
-					fwfc[count].matchType = FWP_MATCH_RANGE;
-					fwfc[count].conditionValue.type = FWP_RANGE_TYPE;
-					fwfc[count].conditionValue.rangeValue = &addr.range;
-
-					count += 1;
-				}
-				else if (addr.type == DataTypePort)
+				if (address.type == DataTypePort)
 				{
 					fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT);
 					fwfc[count].matchType = FWP_MATCH_EQUAL;
 					fwfc[count].conditionValue.type = FWP_UINT16;
-					fwfc[count].conditionValue.uint16 = addr.port;
+					fwfc[count].conditionValue.uint16 = address.port;
 
 					count += 1;
 				}
-				else if (addr.type == DataTypeHost || addr.type == DataTypeIp)
+				else if (address.type == DataTypeIp || address.type == DataTypeHost)
 				{
 					fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
 					fwfc[count].matchType = FWP_MATCH_EQUAL;
 
-					if (addr.format == NET_ADDRESS_IPV4)
+					if (address.format == NET_ADDRESS_IPV4)
 					{
 						af = AF_INET;
 
 						fwfc[count].conditionValue.type = FWP_V4_ADDR_MASK;
-						fwfc[count].conditionValue.v4AddrMask = &addr.addr4;
+						fwfc[count].conditionValue.v4AddrMask = &address.addr4;
 
 						count += 1;
 					}
-					else if (addr.format == NET_ADDRESS_IPV6)
+					else if (address.format == NET_ADDRESS_IPV6)
 					{
 						af = AF_INET6;
 
 						fwfc[count].conditionValue.type = FWP_V6_ADDR_MASK;
-						fwfc[count].conditionValue.v6AddrMask = &addr.addr6;
+						fwfc[count].conditionValue.v6AddrMask = &address.addr6;
 
 						count += 1;
 					}
-					else if (addr.format == NET_ADDRESS_DNS_NAME)
+					else if (address.format == NET_ADDRESS_DNS_NAME)
 					{
 						PR_STRING host_part;
 						R_STRINGREF remaining_part;
 
-						_r_obj_initializestringref (&remaining_part, addr.host);
+						_r_obj_initializestringref (&remaining_part, address.host);
 
 						while (remaining_part.length != 0)
 						{
@@ -970,21 +976,24 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWS
 					{
 						goto CleanupExit;
 					}
-
-					// set port if available
-					if (addr.port)
-					{
-						fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT);
-						fwfc[count].matchType = FWP_MATCH_EQUAL;
-						fwfc[count].conditionValue.type = FWP_UINT16;
-						fwfc[count].conditionValue.uint16 = addr.port;
-
-						count += 1;
-					}
 				}
 				else
 				{
 					goto CleanupExit;
+				}
+			}
+
+			// set port if available
+			if (address.type == DataTypeIp || address.type == DataTypeHost)
+			{
+				if (address.port)
+				{
+					fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT);
+					fwfc[count].matchType = FWP_MATCH_EQUAL;
+					fwfc[count].conditionValue.type = FWP_UINT16;
+					fwfc[count].conditionValue.uint16 = address.port;
+
+					count += 1;
 				}
 			}
 		}
@@ -1406,65 +1415,69 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 			L"224.0.0.0/4",
 			L"240.0.0.0/4",
 			L"255.255.255.255/32",
-			L"::/0",
-			L"::/128",
-			L"::1/128",
-			L"::ffff:0:0/96",
-			L"::ffff:0:0:0/96",
-			L"64:ff9b::/96",
-			L"100::/64",
-			L"2001::/32",
-			L"2001:20::/28",
-			L"2001:db8::/32",
-			L"2002::/16",
-			L"fc00::/7",
-			L"fe80::/10",
-			L"ff00::/8"
+			L"[::]/0",
+			L"[::]/128",
+			L"[::1]/128",
+			L"[::ffff:0:0]/96",
+			L"[::ffff:0:0:0]/96",
+			L"[64:ff9b::]/96",
+			L"[100::]/64",
+			L"[2001::]/32",
+			L"[2001:20::]/28",
+			L"[2001:db8::]/32",
+			L"[2002::]/16",
+			L"[fc00::]/7",
+			L"[fe80::]/10",
+			L"[ff00::]/8"
 		};
 
-		ITEM_ADDRESS addr;
+		ITEM_ADDRESS address;
 		PR_STRING rule_string;
 
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (ip_list); i++)
 		{
-			memset (&addr, 0, sizeof (addr));
+			memset (&address, 0, sizeof (address));
 
 			rule_string = _r_obj_createstring (ip_list[i]);
 
-			if (_app_parserulestring (rule_string, &addr))
+			if (!_app_parserulestring (rule_string, &address))
 			{
-				fwfc[1].matchType = FWP_MATCH_EQUAL;
+				_r_obj_dereference (rule_string);
 
-				if (addr.format == NET_ADDRESS_IPV4)
-				{
-					fwfc[1].conditionValue.type = FWP_V4_ADDR_MASK;
-					fwfc[1].conditionValue.v4AddrMask = &addr.addr4;
+				continue;
+			}
 
-					fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
-					_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+			fwfc[1].matchType = FWP_MATCH_EQUAL;
 
-					// win7+
-					_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+			if (address.format == NET_ADDRESS_IPV4)
+			{
+				fwfc[1].conditionValue.type = FWP_V4_ADDR_MASK;
+				fwfc[1].conditionValue.v4AddrMask = &address.addr4;
 
-					fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
-					_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
-					_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
-				}
-				else if (addr.format == NET_ADDRESS_IPV6)
-				{
-					fwfc[1].conditionValue.type = FWP_V6_ADDR_MASK;
-					fwfc[1].conditionValue.v6AddrMask = &addr.addr6;
+				fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
+				_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
 
-					fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
-					_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+				// win7+
+				_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
 
-					// win7+
-					_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+				fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
+				_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+			}
+			else if (address.format == NET_ADDRESS_IPV6)
+			{
+				fwfc[1].conditionValue.type = FWP_V6_ADDR_MASK;
+				fwfc[1].conditionValue.v6AddrMask = &address.addr6;
 
-					fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
-					_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
-					_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
-				}
+				fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
+				_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+
+				// win7+
+				_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+
+				fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
+				_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (hengine, DataFilterGeneral, NULL, fwfc, 2, FILTER_WEIGHT_HIGHEST_IMPORTANT, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, FWP_ACTION_PERMIT, 0, filter_ids);
 			}
 
 			_r_obj_dereference (rule_string);

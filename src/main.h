@@ -34,12 +34,6 @@ DEFINE_GUID (GUID_WfpInboundCallout6_DEPRECATED, 0xd0420299, 0x52d8, 0x4f18, 0xb
 DEFINE_GUID (GUID_WfpListenCallout4_DEPRECATED, 0x51fa679d, 0x578b, 0x4835, 0xa6, 0x3e, 0xca, 0xd7, 0x68, 0x7f, 0x74, 0x95);
 DEFINE_GUID (GUID_WfpListenCallout6_DEPRECATED, 0xa02187ca, 0xe655, 0x4adb, 0xa1, 0xf2, 0x47, 0xa2, 0xc9, 0x78, 0xf9, 0xce);
 
-typedef ULONG (WINAPI *FWPMNES4)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK4 callback, PVOID context, HANDLE* eventsHandle); // win10rs5+
-typedef ULONG (WINAPI *FWPMNES3)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK3 callback, PVOID context, HANDLE* eventsHandle); // win10rs4+
-typedef ULONG (WINAPI *FWPMNES2)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK2 callback, PVOID context, HANDLE* eventsHandle); // win10rs1+
-typedef ULONG (WINAPI *FWPMNES1)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK1 callback, PVOID context, HANDLE* eventsHandle); // win8+
-typedef ULONG (WINAPI *FWPMNES0)(HANDLE engineHandle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK0 callback, PVOID context, HANDLE* eventsHandle); // win7+
-
 // enums
 typedef enum _ENUM_TYPE_DATA
 {
@@ -448,20 +442,28 @@ typedef struct tagITEM_COLOR
 
 typedef struct tagITEM_ADDRESS
 {
+	WCHAR host[256];
+	WCHAR range_start[LEN_IP_MAX];
+	WCHAR range_end[LEN_IP_MAX];
+
 	union
 	{
 		FWP_V4_ADDR_AND_MASK addr4;
 		FWP_V6_ADDR_AND_MASK addr6;
-		FWP_RANGE range;
+
+		struct
+		{
+			FWP_RANGE range;
+
+			UINT8 addr6_low[FWP_V6_ADDR_SIZE];
+			UINT8 addr6_high[FWP_V6_ADDR_SIZE];
+		};
 	};
 
-	WCHAR host[NI_MAXHOST];
+	UINT16 port;
 
 	ENUM_TYPE_DATA type;
-
 	NET_ADDRESS_FORMAT format;
-
-	UINT16 port;
 
 	BOOLEAN is_range;
 } ITEM_ADDRESS, *PITEM_ADDRESS;

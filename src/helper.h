@@ -20,7 +20,7 @@ PR_HASHSTORE _app_addcachetable (PR_HASHTABLE hashtable, SIZE_T hash_code, PR_ST
 PR_STRING _app_resolveaddress (ADDRESS_FAMILY af, LPCVOID paddr);
 PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UINT16 port, ULONG flags);
 BOOLEAN _app_formatip (ADDRESS_FAMILY af, LPCVOID paddr, LPWSTR out_buffer, ULONG buffer_size, BOOLEAN is_checkempty);
-PR_STRING _app_formatport (UINT16 port, BOOLEAN is_noempty);
+PR_STRING _app_formatport (UINT16 port, UINT8 proto, BOOLEAN is_noempty);
 
 VOID _app_freelogstack ();
 
@@ -29,7 +29,7 @@ LPCWSTR _app_getdisplayname (PITEM_APP ptr_app, BOOLEAN is_shortened);
 BOOLEAN _app_getfileicon (LPCWSTR path, BOOLEAN is_small, PINT picon_id, HICON* picon);
 PR_STRING _app_getsignatureinfo (PITEM_APP ptr_app);
 PR_STRING _app_getversioninfo (PITEM_APP ptr_app);
-LPCWSTR _app_getservicename (UINT16 port, LPCWSTR default_value);
+LPCWSTR _app_getservicename (UINT16 port, UINT8 proto, LPCWSTR default_value);
 LPCWSTR _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af, LPCWSTR default_value);
 LPCWSTR _app_getconnectionstatusname (ULONG state, LPCWSTR default_value);
 PR_STRING _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, BOOLEAN is_localized);
@@ -41,10 +41,10 @@ VOID _app_generate_services ();
 
 VOID _app_generate_timerscontrol (PVOID hwnd, INT ctrl_id, PITEM_APP ptr_app);
 
-PR_STRING _app_parsehostaddress_dns (LPCWSTR hostname, USHORT port);
-
-BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, NET_ADDRESS_FORMAT* format_ptr, PUSHORT port_ptr, FWP_V4_ADDR_AND_MASK* paddr4, FWP_V6_ADDR_AND_MASK* paddr6, LPWSTR dnsString, SIZE_T dnsLength);
-BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS ptr_addr);
+PR_STRING _app_parsehoststring (LPCWSTR hostname, USHORT port);
+BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, PITEM_ADDRESS address);
+BOOLEAN _app_preparserulestring (PR_STRING rule, PITEM_ADDRESS address);
+BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS address);
 
 INT _app_getlistview_id (ENUM_TYPE_DATA type);
 
