@@ -1882,7 +1882,7 @@ ULONG _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 
 					// file path (without root)
 					_r_str_copy (path_skip_root, RTL_NUMBER_OF (path_skip_root), PathSkipRoot (path));
-					_r_str_tolower (path_skip_root, _r_str_length (path_skip_root)); // lower is important!
+					_r_str_tolower (path_skip_root); // lower is important!
 
 					code = _r_path_ntpathfromdos (path_root, &nt_path);
 
@@ -1909,7 +1909,7 @@ ULONG _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYP
 	else if (type == DataAppPico || type == DataAppDevice)
 	{
 		if (type == DataAppDevice)
-			_r_str_tolower (original_path->buffer, _r_obj_getstringlength (original_path)); // lower is important!
+			_r_str_tolower (original_path->buffer); // lower is important!
 
 		ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), lpblob);
 		code = ERROR_SUCCESS;

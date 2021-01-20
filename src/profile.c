@@ -127,7 +127,7 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 	path_length = _r_str_length (path);
 
 	// prevent possible duplicate apps entries with short path (issue #640)
-	if (_r_str_findchar (path, path_length, L'~') != SIZE_MAX)
+	if (_r_str_findchar (path, L'~') != SIZE_MAX)
 	{
 		if (GetLongPathName (path, path_full, RTL_NUMBER_OF (path_full)))
 		{
@@ -136,7 +136,7 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 		}
 	}
 
-	app_hash = _r_str_hashex (path, path_length);
+	app_hash = _r_str_hash (path);
 	ptr_app = _r_obj_findhashtable (apps, app_hash);
 
 	if (ptr_app)
@@ -168,7 +168,7 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 	}
 	else
 	{
-		if (!is_ntoskrnl && _r_str_findchar (path, path_length, OBJ_NAME_PATH_SEPARATOR) == SIZE_MAX)
+		if (!is_ntoskrnl && _r_str_findchar (path, OBJ_NAME_PATH_SEPARATOR) == SIZE_MAX)
 		{
 			ptr_app->type = DataAppPico;
 		}
@@ -185,7 +185,7 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 	// fix "System" lowercase
 	if (is_ntoskrnl)
 	{
-		_r_str_tolower (ptr_app->original_path->buffer, _r_obj_getstringlength (ptr_app->original_path));
+		_r_str_tolower (ptr_app->original_path->buffer);
 		ptr_app->original_path->buffer[0] = _r_str_upper (ptr_app->original_path->buffer[0]);
 	}
 
@@ -1630,7 +1630,7 @@ VOID _app_profile_load_helper (mxml_node_t* root_node, ENUM_TYPE_DATA type, UINT
 				if (!_r_obj_isstringempty (string))
 				{
 					if (version < XML_PROFILE_VER_3)
-						_r_str_replacechar (string->buffer, _r_obj_getstringlength (string), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
+						_r_str_replacechar (string->buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
 					R_STRINGREF remaining_part;
 					PR_STRING expanded_path;
@@ -1714,7 +1714,7 @@ VOID _app_profile_load_helper (mxml_node_t* root_node, ENUM_TYPE_DATA type, UINT
 						ptr_config->apps = _r_str_multibyte2unicode (text);
 
 						if (ptr_config->apps && version < XML_PROFILE_VER_3)
-							_r_str_replacechar (ptr_config->apps->buffer, _r_obj_getstringlength (ptr_config->apps), DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
+							_r_str_replacechar (ptr_config->apps->buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 					}
 				}
 			}

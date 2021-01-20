@@ -2543,7 +2543,7 @@ BOOLEAN _app_preparserulestring (PR_STRING rule, PITEM_ADDRESS address)
 	}
 
 	// parse rule range
-	SIZE_T range_pos = _r_str_findchar (rule->buffer, length, DIVIDER_RULE_RANGE);
+	SIZE_T range_pos = _r_str_findchar (rule->buffer, DIVIDER_RULE_RANGE);
 
 	// extract start and end position of rule
 	if ((address->is_range = (range_pos != SIZE_MAX)))
