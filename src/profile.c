@@ -225,7 +225,7 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 		{
 			_r_spinlock_acquireshared (&lock_checkbox);
 
-			_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, ptr_app->icon_id, _app_getappgroup (ptr_app), app_hash);
+			_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, 0, 0, app_hash);
 			_app_setappiteminfo (hwnd, listview_id, 0, ptr_app);
 
 			_r_spinlock_releaseshared (&lock_checkbox);
@@ -1957,7 +1957,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			{
 				_r_spinlock_acquireshared (&lock_checkbox);
 
-				_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, ptr_app->icon_id, _app_getappgroup (ptr_app), ptr_app->app_hash);
+				_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, 0, 0, ptr_app->app_hash);
 				_app_setappiteminfo (hwnd, listview_id, 0, ptr_app);
 
 				_r_spinlock_releaseshared (&lock_checkbox);
@@ -1986,7 +1986,7 @@ VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
 			{
 				_r_spinlock_acquireshared (&lock_checkbox);
 
-				_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), i);
+				_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, 0, 0, i);
 				_app_setruleiteminfo (hwnd, listview_id, 0, ptr_rule, FALSE);
 
 				_r_spinlock_releaseshared (&lock_checkbox);

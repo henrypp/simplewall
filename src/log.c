@@ -283,7 +283,7 @@ VOID _app_logclear ()
 
 		if (log_path)
 		{
-			_r_fs_remove (log_path->buffer, PR_FLAG_REMOVE_FORCE);
+			_r_fs_deletefile (log_path->buffer, TRUE);
 
 			_r_obj_dereference (log_path);
 		}

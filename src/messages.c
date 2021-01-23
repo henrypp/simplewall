@@ -1076,7 +1076,7 @@ VOID _app_command_logerrclear (HWND hwnd)
 	if (!_r_fs_exists (path))
 		return;
 
-	_r_fs_remove (path, PR_FLAG_REMOVE_FORCE);
+	_r_fs_deletefile (path, TRUE);
 }
 
 VOID _app_command_copy (HWND hwnd, INT ctrl_id, INT column_id)
@@ -1568,7 +1568,7 @@ VOID _app_command_openeditor (HWND hwnd)
 
 				_r_spinlock_acquireshared (&lock_checkbox);
 
-				_r_listview_additemex (hwnd, listview_rules_id, item_id, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), _app_getruleicon (ptr_rule), _app_getrulegroup (ptr_rule), rule_idx);
+				_r_listview_additemex (hwnd, listview_rules_id, item_id, 0, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), 0, 0, rule_idx);
 				_app_setruleiteminfo (hwnd, listview_rules_id, item_id, ptr_rule, TRUE);
 
 				_r_spinlock_releaseshared (&lock_checkbox);

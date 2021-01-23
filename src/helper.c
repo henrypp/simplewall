@@ -2085,6 +2085,11 @@ VOID _app_generate_services ()
 			LPCWSTR service_name = service->lpServiceName;
 			LPCWSTR display_name = service->lpDisplayName;
 
+			app_hash = _r_str_hash (service_name);
+
+			if (_r_obj_findhashtable (apps, app_hash))
+				continue;
+
 			if (svconfig && _r_sys_isosversiongreaterorequal (WINDOWS_10))
 			{
 				SC_HANDLE svc = OpenService (hsvcmgr, service_name, SERVICE_QUERY_CONFIG);
@@ -2103,11 +2108,6 @@ VOID _app_generate_services ()
 					CloseServiceHandle (svc);
 				}
 			}
-
-			app_hash = _r_str_hash (service_name);
-
-			if (_r_obj_findhashtable (apps, app_hash))
-				continue;
 
 			PR_STRING service_path = NULL;
 			LONG64 service_timestamp = 0;
