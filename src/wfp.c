@@ -514,7 +514,7 @@ BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line)
 
 	if (code != ERROR_SUCCESS)
 	{
-		_r_log_v (Error, UID, L"FwpmTransactionBegin", code, L"#%" TEXT (PRIu32), line);
+		_r_log_v (Error, UID, L"FwpmTransactionBegin", code, L"#%" PRIu32, line);
 		return FALSE;
 	}
 
@@ -529,7 +529,7 @@ BOOLEAN _wfp_transact_commit (HANDLE hengine, UINT line)
 	{
 		FwpmTransactionAbort (hengine);
 
-		_r_log_v (Error, UID, L"FwpmTransactionCommit", code, L"#%" TEXT (PRIu32), line);
+		_r_log_v (Error, UID, L"FwpmTransactionCommit", code, L"#%" PRIu32, line);
 		return FALSE;
 
 	}
@@ -649,7 +649,7 @@ ULONG _wfp_createfilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWSTR nam
 
 	filter.displayData.name = filter_name;
 	filter.displayData.description = filter_description;
-	filter.providerKey = (GUID*)&GUID_WfpProvider;
+	filter.providerKey = (LPGUID)&GUID_WfpProvider;
 	filter.subLayerKey = GUID_WfpSublayer;
 	filter.weight.type = FWP_UINT8;
 	filter.weight.uint8 = weight;
@@ -788,7 +788,7 @@ BOOLEAN _wfp_createrulefilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWS
 
 		if (!ptr_app)
 		{
-			_r_log_v (Error, 0, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_SIZE_T) L"\" not found!", app_hash);
+			_r_log_v (Error, 0, TEXT (__FUNCTION__), 0, L"App \"%" PR_SIZE_T L"\" not found!", app_hash);
 
 			goto CleanupExit;
 		}
