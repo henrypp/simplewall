@@ -112,6 +112,26 @@ VOID _app_setappinfobyhash (SIZE_T app_hash, ENUM_INFO_DATA info_data, PVOID val
 		_app_setappinfo (ptr_app, info_data, value);
 }
 
+PVOID _app_getruleinfo (PITEM_RULE ptr_rule, ENUM_INFO_DATA info_data)
+{
+	if (info_data == InfoListviewId)
+	{
+		return IntToPtr (_app_getlistview_id (ptr_rule->type));
+	}
+
+	return NULL;
+}
+
+PVOID _app_getruleinfobyid (SIZE_T idx, ENUM_INFO_DATA info_data)
+{
+	PITEM_RULE ptr_rule = _app_getrulebyid (idx);
+
+	if (ptr_rule)
+		return _app_getruleinfo (ptr_rule, info_data);
+
+	return NULL;
+}
+
 PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_STRING display_name, PR_STRING real_path)
 {
 	if (_r_str_isempty (path) || PathIsDirectory (path))
@@ -746,7 +766,7 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 			empty_string = _r_locale_getstring (IDS_STATUS_EMPTY);
 
 			// rule information
-			info_string = _r_format_string (L"%s (#%" TEXT (PR_SIZE_T) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
+			info_string = _r_format_string (L"%s (#%" PR_SIZE_T L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
 											_r_obj_getstringordefault (ptr_rule->name, empty_string),
 											lparam,
 											_r_locale_getstring (IDS_RULE),

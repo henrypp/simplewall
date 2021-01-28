@@ -8,6 +8,9 @@ PVOID _app_getappinfobyhash (SIZE_T app_hash, ENUM_INFO_DATA info_data);
 VOID _app_setappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_data, PVOID value);
 VOID _app_setappinfobyhash (SIZE_T app_hash, ENUM_INFO_DATA info_data, PVOID value);
 
+PVOID _app_getruleinfo (PITEM_RULE ptr_rule, ENUM_INFO_DATA info_data);
+PVOID _app_getruleinfobyid (SIZE_T idx, ENUM_INFO_DATA info_data);
+
 PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_STRING display_name, PR_STRING real_path);
 PITEM_RULE _app_addrule (PR_STRING name, PR_STRING rule_remote, PR_STRING rule_local, FWP_DIRECTION direction, UINT8 protocol, ADDRESS_FAMILY af);
 
