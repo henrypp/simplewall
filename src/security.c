@@ -3,7 +3,7 @@
 
 #include "global.h"
 
-PSID _app_quyerybuiltinsid (WELL_KNOWN_SID_TYPE sid_type)
+PSID _app_quyerybuiltinsid (_In_ WELL_KNOWN_SID_TYPE sid_type)
 {
 	ULONG sid_length = SECURITY_MAX_SID_SIZE;
 	PSID psid = _r_mem_allocatezero (sid_length);
@@ -16,7 +16,7 @@ PSID _app_quyerybuiltinsid (WELL_KNOWN_SID_TYPE sid_type)
 	return NULL;
 }
 
-PSID _app_queryservicesid (LPCWSTR name)
+PSID _app_queryservicesid (_In_ LPCWSTR name)
 {
 	UNICODE_STRING service_name;
 	RtlInitUnicodeString (&service_name, name);
@@ -127,7 +127,7 @@ PACL _app_createaccesscontrollist (PACL pacl, BOOLEAN is_secure)
 			// src: https://github.com/henrypp/simplewall/blob/v.2.3.13/src/main.cpp#L8354
 			// src: https://github.com/henrypp/simplewall/blob/v.2.4.6/src/main.cpp#L8828
 			// src: https://github.com/henrypp/simplewall/blob/v.3.0.5/src/wfp.cpp#L109
-			if (EqualSid (&pace->SidStart, config.pbuiltin_current_sid) && (pace->Mask & (FWPM_GENERIC_EXECUTE | FWPM_GENERIC_WRITE | DELETE | WRITE_DAC | WRITE_OWNER)) != 0)
+			if (RtlEqualSid (&pace->SidStart, config.pbuiltin_current_sid) && (pace->Mask & (FWPM_GENERIC_EXECUTE | FWPM_GENERIC_WRITE | DELETE | WRITE_DAC | WRITE_OWNER)) != 0)
 				is_currentuserhaverights = TRUE;
 
 			// versions of SW before v3.1.1 added Carte blanche for Everyone
@@ -135,12 +135,12 @@ PACL _app_createaccesscontrollist (PACL pacl, BOOLEAN is_secure)
 			// src: https://github.com/henrypp/simplewall/blob/v.2.4.6/src/main.cpp#L8833
 			// src: https://github.com/henrypp/simplewall/blob/v.3.0.5/src/wfp.cpp#L114
 			// src: https://github.com/henrypp/simplewall/blob/v.3.1.1/src/wfp.cpp#L150
-			else if (EqualSid (&pace->SidStart, config.pbuiltin_world_sid) && ((pace->Mask & ~(FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN)) & (FWPM_GENERIC_EXECUTE | FWPM_GENERIC_READ)) != 0)
+			else if (RtlEqualSid (&pace->SidStart, config.pbuiltin_world_sid) && ((pace->Mask & ~(FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN)) & (FWPM_GENERIC_EXECUTE | FWPM_GENERIC_READ)) != 0)
 				is_openforeveryone = TRUE;
 		}
 		else if (pace->Header.AceType == ACCESS_DENIED_ACE_TYPE)
 		{
-			if (EqualSid (&pace->SidStart, config.pbuiltin_world_sid) && (pace->Mask == (FWPM_ACTRL_WRITE | DELETE | WRITE_DAC | WRITE_OWNER)))
+			if (RtlEqualSid (&pace->SidStart, config.pbuiltin_world_sid) && (pace->Mask == (FWPM_ACTRL_WRITE | DELETE | WRITE_DAC | WRITE_OWNER)))
 				is_secured = TRUE;
 		}
 	}
@@ -150,8 +150,6 @@ PACL _app_createaccesscontrollist (PACL pacl, BOOLEAN is_secure)
 		PACL pnewdacl = NULL;
 		ULONG count = 0;
 		EXPLICIT_ACCESS ea[3];
-
-		RtlSecureZeroMemory (&ea, sizeof (ea));
 
 		// revoke current user access rights
 		if (is_currentuserhaverights)
@@ -184,7 +182,18 @@ PACL _app_createaccesscontrollist (PACL pacl, BOOLEAN is_secure)
 	return NULL;
 }
 
-VOID _app_setsecurityinfoforengine (HANDLE hengine)
+VOID _app_setexplicitaccess (_Out_ PEXPLICIT_ACCESS pea, _In_ ACCESS_MODE mode, _In_ ULONG rights, _In_ ULONG inheritance, _In_opt_ PSID psid)
+{
+	pea->grfAccessMode = mode;
+	pea->grfAccessPermissions = rights;
+	pea->grfInheritance = inheritance;
+
+	memset (&(pea->Trustee), 0, sizeof (pea->Trustee));
+
+	BuildTrusteeWithSid (&(pea->Trustee), psid);
+}
+
+VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 {
 	PACL pdacl = NULL;
 	PSECURITY_DESCRIPTOR psecurity_descriptor = NULL;
@@ -216,7 +225,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 		// src: https://github.com/henrypp/simplewall/blob/v.2.3.13/src/main.cpp#L8354
 		// src: https://github.com/henrypp/simplewall/blob/v.2.4.6/src/main.cpp#L8815
 		// src: https://github.com/henrypp/simplewall/blob/v.3.0.5/src/wfp.cpp#L96
-		if (EqualSid (&pace->SidStart, config.pbuiltin_current_sid) && (pace->Mask == (FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER)))
+		if (RtlEqualSid (&pace->SidStart, config.pbuiltin_current_sid) && (pace->Mask == (FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER)))
 			is_currentuserhaverights = TRUE;
 
 		// versions of SW before v3.1.1 added Carte blanche for Everyone
@@ -224,7 +233,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 		// src: https://github.com/henrypp/simplewall/blob/v.2.4.6/src/main.cpp#L8820
 		// src: https://github.com/henrypp/simplewall/blob/v.3.0.5/src/wfp.cpp#L101
 		// src: https://github.com/henrypp/simplewall/blob/v.3.1.1/src/wfp.cpp#L137
-		if (EqualSid (&pace->SidStart, config.pbuiltin_world_sid) && ((pace->Mask & ~(FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN)) & (FWPM_GENERIC_ALL)) != 0)
+		if (RtlEqualSid (&pace->SidStart, config.pbuiltin_world_sid) && ((pace->Mask & ~(FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN)) & (FWPM_GENERIC_ALL)) != 0)
 			is_openforeveryone = TRUE;
 	}
 
@@ -237,7 +246,6 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 		ULONG count = 0;
 
 		EXPLICIT_ACCESS ea[18];
-		RtlSecureZeroMemory (&ea, sizeof (ea));
 
 		// revoke current user access rights
 		if (is_currentuserhaverights)
@@ -321,7 +329,7 @@ VOID _app_setsecurityinfoforengine (HANDLE hengine)
 		FwpmFreeMemory ((PVOID*)&psecurity_descriptor);
 }
 
-VOID _app_setsecurityinfoforprovider (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure)
+VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure)
 {
 	PACL pdacl = NULL;
 	PACL pnewdacl = NULL;
@@ -353,7 +361,7 @@ VOID _app_setsecurityinfoforprovider (HANDLE hengine, LPCGUID lpguid, BOOLEAN is
 		FwpmFreeMemory ((PVOID*)&psecurity_descriptor);
 }
 
-VOID _app_setsecurityinfoforsublayer (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure)
+VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure)
 {
 	PACL pdacl = NULL;
 	PACL pnewdacl = NULL;
@@ -385,7 +393,7 @@ VOID _app_setsecurityinfoforsublayer (HANDLE hengine, LPCGUID lpguid, BOOLEAN is
 		FwpmFreeMemory ((PVOID*)&psecurity_descriptor);
 }
 
-VOID _app_setsecurityinfoforfilter (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure, UINT line)
+VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure, _In_ UINT line)
 {
 	PACL pdacl = NULL;
 	PACL pnewdacl = NULL;
@@ -399,7 +407,7 @@ VOID _app_setsecurityinfoforfilter (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_s
 		if (code != FWP_E_FILTER_NOT_FOUND)
 #endif // !DEBUG
 		{
-			_r_log_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
+			_r_log_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" PRIu32, line);
 		}
 
 		return;
@@ -414,7 +422,7 @@ VOID _app_setsecurityinfoforfilter (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_s
 		code = FwpmFilterSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pnewdacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			_r_log_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
+			_r_log_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" PRIu32, line);
 
 		LocalFree (pnewdacl);
 	}

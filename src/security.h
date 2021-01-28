@@ -3,23 +3,15 @@
 
 #pragma once
 
-PSID _app_quyerybuiltinsid (WELL_KNOWN_SID_TYPE sid_type);
-PSID _app_queryservicesid (LPCWSTR name);
+PSID _app_quyerybuiltinsid (_In_ WELL_KNOWN_SID_TYPE sid_type);
+PSID _app_queryservicesid (_In_ LPCWSTR name);
 
 VOID _app_generate_credentials ();
 
-FORCEINLINE VOID _app_setexplicitaccess (PEXPLICIT_ACCESS pea, ACCESS_MODE mode, ULONG rights, ULONG inheritance, PSID psid)
-{
-	pea->grfAccessMode = mode;
-	pea->grfAccessPermissions = rights;
-	pea->grfInheritance = inheritance;
-
-	BuildTrusteeWithSid (&(pea->Trustee), psid);
-}
-
 PACL _app_createaccesscontrollist (PACL pacl, BOOLEAN is_secure);
 
-VOID _app_setsecurityinfoforengine (HANDLE hengine);
-VOID _app_setsecurityinfoforprovider (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure);
-VOID _app_setsecurityinfoforsublayer (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure);
-VOID _app_setsecurityinfoforfilter (HANDLE hengine, LPCGUID lpguid, BOOLEAN is_secure, UINT line);
+VOID _app_setexplicitaccess (_Out_ PEXPLICIT_ACCESS pea, _In_ ACCESS_MODE mode, _In_ ULONG rights, _In_ ULONG inheritance, _In_opt_ PSID psid);
+VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine);
+VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure);
+VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure);
+VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure, _In_ UINT line);
