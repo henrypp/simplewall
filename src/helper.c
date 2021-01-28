@@ -157,7 +157,7 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 
 		if (port && (flags & FMTADDR_USE_PROTOCOL) == 0)
 		{
-			_r_str_appendformat (formatted_address, RTL_NUMBER_OF (formatted_address), !_r_str_isempty (formatted_address) ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port);
+			_r_str_appendformat (formatted_address, RTL_NUMBER_OF (formatted_address), !_r_str_isempty (formatted_address) ? L":%" PRIu16 : L"%" PRIu16, port);
 			is_success = TRUE;
 		}
 	}
@@ -244,20 +244,20 @@ PR_STRING _app_formatport (UINT16 port, UINT8 proto, BOOLEAN is_noempty)
 
 	if (is_noempty)
 	{
-		LPCWSTR sevice_string = _app_getservicename (port, proto, NULL);
+		LPCWSTR service_string = _app_getservicename (port, proto, NULL);
 
-		if (sevice_string)
+		if (service_string)
 		{
-			return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, sevice_string);
+			return _r_format_string (L"%" PRIu16 L" (%s)", port, service_string);
 		}
 		else
 		{
-			return _r_format_string (L"%" TEXT (PRIu16), port);
+			return _r_format_string (L"%" PRIu16, port);
 		}
 	}
 	else
 	{
-		return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, _app_getservicename (port, proto, SZ_UNKNOWN));
+		return _r_format_string (L"%" PRIu16 L" (%s)", port, _app_getservicename (port, proto, SZ_UNKNOWN));
 	}
 
 	return NULL;
@@ -1618,7 +1618,7 @@ SIZE_T _app_getnetworkhash (ADDRESS_FAMILY af, ULONG pid, LPCVOID remote_addr, U
 	if (local_addr)
 		_app_formatip (af, local_addr, local_address, RTL_NUMBER_OF (local_address), FALSE);
 
-	network_string = _r_format_string (L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG),
+	network_string = _r_format_string (L"%" PRIu8 L"_%" PR_ULONG L"_%s_%" PR_ULONG L"_%s_%" PR_ULONG L"_%" PRIu8 L"_%" PR_ULONG,
 									   af,
 									   pid,
 									   remote_address,
@@ -1943,7 +1943,7 @@ VOID _app_generate_packages ()
 
 				if (code == ERROR_SUCCESS)
 				{
-					package_sid = _r_reg_querybinary (hsubkey, L"PackageSid");
+					package_sid = _r_reg_querybinary (hsubkey, NULL, L"PackageSid");
 
 					if (package_sid)
 					{
@@ -1957,7 +1957,7 @@ VOID _app_generate_packages ()
 
 								if (!_r_obj_findhashtable (apps, app_hash))
 								{
-									display_name = _r_reg_querystring (hsubkey, L"DisplayName");
+									display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
 
 									if (display_name)
 									{
@@ -1982,7 +1982,7 @@ VOID _app_generate_packages ()
 										if (_r_obj_isstringempty (display_name))
 											_r_obj_movereference (&display_name, _r_obj_reference (key_name));
 
-										real_path = _r_reg_querystring (hsubkey, L"PackageRootFolder");
+										real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
 
 										ptr_app = _app_addapplication (NULL, DataAppUWP, package_sid_string->buffer, display_name, real_path);
 
@@ -2066,17 +2066,17 @@ VOID _app_generate_services ()
 	// now traverse each service to get information
 	if (buffer)
 	{
-		LPQUERY_SERVICE_CONFIG svconfig = NULL;
+		WCHAR general_key[256];
+		EXPLICIT_ACCESS ea;
 		LPENUM_SERVICE_STATUS_PROCESS service;
 		LPENUM_SERVICE_STATUS_PROCESS services;
 		PITEM_APP ptr_app;
+		HKEY hkey;
 		SIZE_T app_hash;
-		ULONG required_length;
+		PVOID service_sd;
+		ULONG sd_length;
 
 		services = (LPENUM_SERVICE_STATUS_PROCESS)buffer;
-
-		if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-			svconfig = _r_mem_allocatezero (0x1000);
 
 		for (ULONG i = 0; i < services_returned; i++)
 		{
@@ -2084,69 +2084,42 @@ VOID _app_generate_services ()
 
 			LPCWSTR service_name = service->lpServiceName;
 			LPCWSTR display_name = service->lpDisplayName;
+			PR_STRING service_path;
+			PSID service_sid;
+			LONG64 service_timestamp;
 
 			app_hash = _r_str_hash (service_name);
 
 			if (_r_obj_findhashtable (apps, app_hash))
 				continue;
 
-			if (svconfig && _r_sys_isosversiongreaterorequal (WINDOWS_10))
-			{
-				SC_HANDLE svc = OpenService (hsvcmgr, service_name, SERVICE_QUERY_CONFIG);
-
-				if (svc)
-				{
-					if (QueryServiceConfig (svc, svconfig, 0x1000, &required_length))
-					{
-						if ((svconfig->dwServiceType & SERVICE_USERSERVICE_INSTANCE) != 0)
-						{
-							CloseServiceHandle (svc);
-							continue;
-						}
-					}
-
-					CloseServiceHandle (svc);
-				}
-			}
-
-			PR_STRING service_path = NULL;
-			LONG64 service_timestamp = 0;
-
-			HKEY hkey;
-
-			WCHAR general_key[256];
-			WCHAR parameters_key[256];
-
 			_r_str_printf (general_key, RTL_NUMBER_OF (general_key), L"System\\CurrentControlSet\\Services\\%s", service_name);
-			_r_str_printf (parameters_key, RTL_NUMBER_OF (parameters_key), L"System\\CurrentControlSet\\Services\\%s\\Parameters", service_name);
 
-			// query "ServiceDll" path
-			if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, parameters_key, 0, KEY_READ, &hkey) == ERROR_SUCCESS)
+			if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, general_key, 0, KEY_READ, &hkey) != ERROR_SUCCESS)
+				continue;
+
+			// skip userservice instances service types (win10+)
+			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
 			{
-				// query path
-				service_path = _r_reg_querystring (hkey, L"ServiceDll");
+				ULONG service_type = _r_reg_queryulong (hkey, NULL, L"Type");
 
-				// query timestamp
-				service_timestamp = _r_reg_querytimestamp (hkey);
-
-				RegCloseKey (hkey);
+				if (!service_type || (service_type & SERVICE_USERSERVICE_INSTANCE) != 0)
+				{
+					RegCloseKey (hkey);
+					continue;
+				}
 			}
 
-			// fallback
-			if (!service_path || !service_timestamp)
+			// query service path
+			service_path = _r_reg_querystring (hkey, L"Parameters", L"ServiceDLL");
+
+			if (!service_path)
+				service_path = _r_reg_querystring (hkey, NULL, L"ImagePath");
+
+			if (!service_path)
 			{
-				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, general_key, 0, KEY_READ, &hkey) == ERROR_SUCCESS)
-				{
-					// query path
-					if (!service_path)
-						service_path = _r_reg_querystring (hkey, L"ImagePath");
-
-					// query timestamp
-					if (!service_timestamp)
-						service_timestamp = _r_reg_querytimestamp (hkey);
-
-					RegCloseKey (hkey);
-				}
+				RegCloseKey (hkey);
+				continue;
 			}
 
 			if (!_r_obj_isstringempty (service_path))
@@ -2162,59 +2135,62 @@ VOID _app_generate_services ()
 					_r_obj_movereference (&service_path, converted_path);
 			}
 
-			PSID service_sid = _app_queryservicesid (service_name);
+			// query service timestamp
+			service_timestamp = _r_reg_querytimestamp (hkey);
 
-			if (service_sid)
+			// query service sid
+			service_sid = _app_queryservicesid (service_name);
+
+			if (!service_sid)
 			{
-				PVOID service_sd = NULL;
-				ULONG sd_length = 0;
+				_r_obj_dereference (service_path);
+				RegCloseKey (hkey);
 
-				EXPLICIT_ACCESS ea;
-				memset (&ea, 0, sizeof (ea));
-
-				// When evaluating SECURITY_DESCRIPTOR conditions, the filter engine
-				// checks for FWP_ACTRL_MATCH_FILTER access. If the DACL grants access,
-				// it does not mean that the traffic is allowed; it just means that the
-				// condition evaluates to true. Likewise if it denies access, the
-				// condition evaluates to false.
-				_app_setexplicitaccess (&ea, GRANT_ACCESS, FWP_ACTRL_MATCH_FILTER, NO_INHERITANCE, service_sid);
-
-				// Security descriptors must be in self-relative form (i.e., contiguous).
-				// The security descriptor returned by BuildSecurityDescriptorW is
-				// already self-relative, but if you're using another mechanism to build
-				// the descriptor, you may have to convert it. See MakeSelfRelativeSD for
-				// details.
-				if (BuildSecurityDescriptor (NULL, NULL, 1, &ea, 0, NULL, NULL, &sd_length, &service_sd) != ERROR_SUCCESS)
-				{
-					SAFE_DELETE_REFERENCE (service_path);
-					continue;
-				}
-
-				PR_STRING name_string = _r_obj_createstring (display_name);
-
-				ptr_app = _app_addapplication (NULL, DataAppService, service_name, name_string, service_path);
-
-				if (ptr_app)
-				{
-					_app_setappinfo (ptr_app, InfoTimestampPtr, &service_timestamp);
-
-					_r_obj_movereference (&ptr_app->pbytes, _r_obj_createbyteex (NULL, sd_length));
-
-					memcpy (ptr_app->pbytes->buffer, service_sd, sd_length);
-				}
-
-				_r_obj_dereference (name_string);
-
-				SAFE_DELETE_LOCAL (service_sd);
-
-				_r_mem_free (service_sid);
+				continue;
 			}
 
-			SAFE_DELETE_REFERENCE (service_path);
-		}
+			// When evaluating SECURITY_DESCRIPTOR conditions, the filter engine
+			// checks for FWP_ACTRL_MATCH_FILTER access. If the DACL grants access,
+			// it does not mean that the traffic is allowed; it just means that the
+			// condition evaluates to true. Likewise if it denies access, the
+			// condition evaluates to false.
+			_app_setexplicitaccess (&ea, GRANT_ACCESS, FWP_ACTRL_MATCH_FILTER, NO_INHERITANCE, service_sid);
 
-		if (svconfig)
-			_r_mem_free (svconfig);
+			// Security descriptors must be in self-relative form (i.e., contiguous).
+			// The security descriptor returned by BuildSecurityDescriptorW is
+			// already self-relative, but if you're using another mechanism to build
+			// the descriptor, you may have to convert it. See MakeSelfRelativeSD for
+			// details.
+			if (BuildSecurityDescriptor (NULL, NULL, 1, &ea, 0, NULL, NULL, &sd_length, &service_sd) != ERROR_SUCCESS || !service_sd)
+			{
+				_r_obj_dereference (service_path);
+				RegCloseKey (hkey);
+
+				continue;
+			}
+
+			PR_STRING name_string = _r_obj_createstring (display_name);
+
+			ptr_app = _app_addapplication (NULL, DataAppService, service_name, name_string, service_path);
+
+			if (ptr_app)
+			{
+				PR_BYTE bytes = _r_obj_createbyteex (NULL, sd_length);
+
+				memcpy (bytes->buffer, service_sd, sd_length);
+
+				_app_setappinfo (ptr_app, InfoTimestampPtr, &service_timestamp);
+
+				_r_obj_movereference (&ptr_app->pbytes, bytes);
+			}
+
+			LocalFree (service_sd);
+
+			_r_obj_dereference (name_string);
+			_r_obj_dereference (service_path);
+
+			_r_mem_free (service_sid);
+		}
 
 		_r_mem_free (buffer);
 	}
