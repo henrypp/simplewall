@@ -922,7 +922,7 @@ VOID _app_command_idtotimers (HWND hwnd, INT ctrl_id)
 {
 	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
 
-	if (!listview_id || !SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0))
+	if (!listview_id || !_r_listview_getselectedcount (hwnd, listview_id))
 		return;
 
 	SIZE_T timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
@@ -1258,7 +1258,7 @@ VOID _app_command_delete (HWND hwnd)
 	if (listview_id != IDC_APPS_PROFILE && listview_id != IDC_RULES_CUSTOM && listview_id != IDC_NETWORK)
 		return;
 
-	if (!(selected = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETSELECTEDCOUNT, 0, 0)))
+	if (!(selected = _r_listview_getselectedcount (hwnd, listview_id)))
 		return;
 
 	if (listview_id != IDC_NETWORK)
@@ -1291,7 +1291,7 @@ VOID _app_command_delete (HWND hwnd)
 				if (!_r_obj_isarrayempty (ptr_app->guids))
 					_r_obj_addarrayitems (guids, ptr_app->guids->items, ptr_app->guids->count);
 
-				SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
+				_r_listview_deleteitem (hwnd, listview_id, i);
 
 				_app_timer_reset (hwnd, ptr_app);
 				_app_freenotify (ptr_app);
@@ -1321,7 +1321,7 @@ VOID _app_command_delete (HWND hwnd)
 				while (_r_obj_enumhashtable (ptr_rule->apps, &hashstore, &hash_code, &enum_key))
 					_app_addcachetable (apps_checker, hash_code, NULL, 0);
 
-				SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
+				_r_listview_deleteitem (hwnd, listview_id, i);
 
 				SecureZeroMemory (ptr_rule, sizeof (ITEM_RULE));
 
@@ -1372,7 +1372,7 @@ VOID _app_command_delete (HWND hwnd)
 
 				if (SetTcpEntry (&tcprow) == NO_ERROR)
 				{
-					SendDlgItemMessage (hwnd, listview_id, LVM_DELETEITEM, (WPARAM)i, 0);
+					_r_listview_deleteitem (hwnd, listview_id, i);
 
 					_r_obj_removehashtableentry (network_map, network_hash);
 
@@ -1724,7 +1724,7 @@ VOID _app_command_purgeunused (HWND hwnd)
 				INT item_pos = _app_getposition (hwnd, app_listview_id, ptr_app->app_hash);
 
 				if (item_pos != -1)
-					SendDlgItemMessage (hwnd, app_listview_id, LVM_DELETEITEM, (WPARAM)item_pos, 0);
+					_r_listview_deleteitem (hwnd, app_listview_id, item_pos);
 			}
 
 			_app_timer_reset (hwnd, ptr_app);

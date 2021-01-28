@@ -28,6 +28,10 @@ VOID _app_toolbar_resize ();
 VOID _app_refreshgroups (HWND hwnd, INT listview_id);
 VOID _app_refreshstatus (HWND hwnd, INT listview_id);
 
-INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam);
 VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos);
 BOOLEAN _app_showappitem (HWND hwnd, PITEM_APP ptr_app);
+
+FORCEINLINE INT _app_getposition (HWND hwnd, INT listview_id, LPARAM lparam)
+{
+	return _r_listview_finditem (hwnd, listview_id, -1, lparam);
+}
