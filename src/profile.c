@@ -3,7 +3,8 @@
 
 #include "global.h"
 
-PVOID _app_getappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_data)
+_Ret_maybenull_
+PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data)
 {
 	if (info_data == InfoPath)
 	{
@@ -57,7 +58,8 @@ PVOID _app_getappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_data)
 	return NULL;
 }
 
-PVOID _app_getappinfobyhash (SIZE_T app_hash, ENUM_INFO_DATA info_data)
+_Ret_maybenull_
+PVOID _app_getappinfobyhash (_In_ SIZE_T app_hash, _In_ ENUM_INFO_DATA info_data)
 {
 	PITEM_APP ptr_app;
 
@@ -69,7 +71,7 @@ PVOID _app_getappinfobyhash (SIZE_T app_hash, ENUM_INFO_DATA info_data)
 	return _app_getappinfo (ptr_app, info_data);
 }
 
-VOID _app_setappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_data, PVOID value)
+VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In_ PVOID value)
 {
 	if (info_data == InfoTimestampPtr)
 	{
@@ -104,7 +106,7 @@ VOID _app_setappinfo (PITEM_APP ptr_app, ENUM_INFO_DATA info_data, PVOID value)
 	}
 }
 
-VOID _app_setappinfobyhash (SIZE_T app_hash, ENUM_INFO_DATA info_data, PVOID value)
+VOID _app_setappinfobyhash (_In_ SIZE_T app_hash, _In_ ENUM_INFO_DATA info_data, _In_ PVOID value)
 {
 	PITEM_APP ptr_app = _r_obj_findhashtable (apps, app_hash);
 
@@ -112,7 +114,8 @@ VOID _app_setappinfobyhash (SIZE_T app_hash, ENUM_INFO_DATA info_data, PVOID val
 		_app_setappinfo (ptr_app, info_data, value);
 }
 
-PVOID _app_getruleinfo (PITEM_RULE ptr_rule, ENUM_INFO_DATA info_data)
+_Ret_maybenull_
+PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
 {
 	if (info_data == InfoListviewId)
 	{
@@ -122,7 +125,8 @@ PVOID _app_getruleinfo (PITEM_RULE ptr_rule, ENUM_INFO_DATA info_data)
 	return NULL;
 }
 
-PVOID _app_getruleinfobyid (SIZE_T idx, ENUM_INFO_DATA info_data)
+_Ret_maybenull_
+PVOID _app_getruleinfobyid (_In_ SIZE_T idx, _In_ ENUM_INFO_DATA info_data)
 {
 	PITEM_RULE ptr_rule = _app_getrulebyid (idx);
 
@@ -132,7 +136,8 @@ PVOID _app_getruleinfobyid (SIZE_T idx, ENUM_INFO_DATA info_data)
 	return NULL;
 }
 
-PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_STRING display_name, PR_STRING real_path)
+_Ret_maybenull_
+PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In_ LPCWSTR path, _In_opt_ PR_STRING display_name, _In_opt_ PR_STRING real_path)
 {
 	if (_r_str_isempty (path) || PathIsDirectory (path))
 		return NULL;
@@ -255,7 +260,7 @@ PITEM_APP _app_addapplication (HWND hwnd, ENUM_TYPE_DATA type, LPCWSTR path, PR_
 	return ptr_app;
 }
 
-PITEM_RULE _app_addrule (PR_STRING name, PR_STRING rule_remote, PR_STRING rule_local, FWP_DIRECTION direction, UINT8 protocol, ADDRESS_FAMILY af)
+PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote, _In_opt_ PR_STRING rule_local, _In_ FWP_DIRECTION direction, _In_ UINT8 protocol, _In_ ADDRESS_FAMILY af)
 {
 	PITEM_RULE ptr_rule = _r_mem_allocatezero (sizeof (ITEM_RULE));
 
@@ -297,17 +302,18 @@ PITEM_RULE _app_addrule (PR_STRING name, PR_STRING rule_remote, PR_STRING rule_l
 	return ptr_rule;
 }
 
-PITEM_RULE_CONFIG _app_addruleconfigtable (PR_HASHTABLE table, SIZE_T rule_hash, PR_STRING name, BOOLEAN is_enabled)
+PITEM_RULE_CONFIG _app_addruleconfigtable (_In_ PR_HASHTABLE hashtable, _In_ SIZE_T rule_hash, _In_opt_ PR_STRING name, _In_ BOOLEAN is_enabled)
 {
 	ITEM_RULE_CONFIG entry = {0};
 
 	entry.name = name;
 	entry.is_enabled = is_enabled;
 
-	return _r_obj_addhashtableitem (table, rule_hash, &entry);
+	return _r_obj_addhashtableitem (hashtable, rule_hash, &entry);
 }
 
-PITEM_RULE _app_getrulebyid (SIZE_T idx)
+_Ret_maybenull_
+PITEM_RULE _app_getrulebyid (_In_ SIZE_T idx)
 {
 	if (idx != SIZE_MAX && idx < _r_obj_getarraysize (rules_arr))
 	{
@@ -317,14 +323,17 @@ PITEM_RULE _app_getrulebyid (SIZE_T idx)
 	return NULL;
 }
 
-PITEM_RULE _app_getrulebyhash (SIZE_T rule_hash)
+_Ret_maybenull_
+PITEM_RULE _app_getrulebyhash (_In_ SIZE_T rule_hash)
 {
+	PITEM_RULE ptr_rule;
+
 	if (!rule_hash)
 		return NULL;
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
-		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
+		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
 		if (ptr_rule)
 		{
@@ -339,7 +348,7 @@ PITEM_RULE _app_getrulebyhash (SIZE_T rule_hash)
 	return NULL;
 }
 
-SIZE_T _app_getnetworkapp (SIZE_T network_hash)
+SIZE_T _app_getnetworkapp (_In_ SIZE_T network_hash)
 {
 	PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, network_hash);
 
@@ -351,7 +360,8 @@ SIZE_T _app_getnetworkapp (SIZE_T network_hash)
 	return 0;
 }
 
-PITEM_LOG _app_getlogitem (SIZE_T idx)
+_Ret_maybenull_
+PITEM_LOG _app_getlogitem (_In_ SIZE_T idx)
 {
 	if (idx != SIZE_MAX && idx < _r_obj_getlistsize (log_arr))
 	{
@@ -361,7 +371,7 @@ PITEM_LOG _app_getlogitem (SIZE_T idx)
 	return NULL;
 }
 
-SIZE_T _app_getlogapp (SIZE_T idx)
+SIZE_T _app_getlogapp (_In_ SIZE_T idx)
 {
 	PITEM_LOG ptr_log = _app_getlogitem (idx);
 
@@ -377,7 +387,7 @@ SIZE_T _app_getlogapp (SIZE_T idx)
 	return 0;
 }
 
-COLORREF _app_getappcolor (INT listview_id, SIZE_T app_hash, BOOLEAN is_systemapp, BOOLEAN is_validconnection)
+COLORREF _app_getappcolor (_In_ INT listview_id, _In_ SIZE_T app_hash, _In_ BOOLEAN is_systemapp, _In_ BOOLEAN is_validconnection)
 {
 	PITEM_APP ptr_app = _r_obj_findhashtable (apps, app_hash);
 	LPCWSTR color_value = NULL;
@@ -446,11 +456,8 @@ CleanupExit:
 	return 0;
 }
 
-VOID _app_freeapplication (SIZE_T app_hash)
+VOID _app_freeapplication (_In_ SIZE_T app_hash)
 {
-	if (!app_hash)
-		return;
-
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
 		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
@@ -490,7 +497,7 @@ VOID _app_freeapplication (SIZE_T app_hash)
 	_r_obj_removehashtableentry (apps, app_hash);
 }
 
-VOID _app_getcount (PITEM_STATUS ptr_status)
+VOID _app_getcount (_Inout_ PITEM_STATUS status)
 {
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
@@ -502,13 +509,13 @@ VOID _app_getcount (PITEM_STATUS ptr_status)
 		is_used = _app_isappused (ptr_app);
 
 		if (_app_istimerset (ptr_app->htimer))
-			ptr_status->apps_timer_count += 1;
+			status->apps_timer_count += 1;
 
 		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppUWP))
-			ptr_status->apps_unused_count += 1;
+			status->apps_unused_count += 1;
 
 		if (is_used)
-			ptr_status->apps_count += 1;
+			status->apps_count += 1;
 	}
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
@@ -520,24 +527,24 @@ VOID _app_getcount (PITEM_STATUS ptr_status)
 			if (ptr_rule->type == DataRuleUser)
 			{
 				if (ptr_rule->is_enabled && !_r_obj_ishashtableempty (ptr_rule->apps))
-					ptr_status->rules_global_count += 1;
+					status->rules_global_count += 1;
 
 				if (ptr_rule->is_readonly)
 				{
-					ptr_status->rules_predefined_count += 1;
+					status->rules_predefined_count += 1;
 				}
 				else
 				{
-					ptr_status->rules_user_count += 1;
+					status->rules_user_count += 1;
 				}
 
-				ptr_status->rules_count += 1;
+				status->rules_count += 1;
 			}
 		}
 	}
 }
 
-INT _app_getappgroup (PITEM_APP ptr_app)
+INT _app_getappgroup (_In_ PITEM_APP ptr_app)
 {
 	// apps with special rule
 	if (_app_isapphaverule (ptr_app->app_hash, FALSE))
@@ -549,7 +556,7 @@ INT _app_getappgroup (PITEM_APP ptr_app)
 	return 0;
 }
 
-INT _app_getnetworkgroup (PITEM_NETWORK ptr_network)
+INT _app_getnetworkgroup (_In_ PITEM_NETWORK ptr_network)
 {
 	if (ptr_network->type == DataAppService)
 		return 1;
@@ -560,7 +567,7 @@ INT _app_getnetworkgroup (PITEM_NETWORK ptr_network)
 	return 0;
 }
 
-INT _app_getrulegroup (PITEM_RULE ptr_rule)
+INT _app_getrulegroup (_In_ PITEM_RULE ptr_rule)
 {
 	if (!ptr_rule->is_enabled)
 		return 2;
@@ -568,7 +575,7 @@ INT _app_getrulegroup (PITEM_RULE ptr_rule)
 	return 0;
 }
 
-INT _app_getruleicon (PITEM_RULE ptr_rule)
+INT _app_getruleicon (_In_ PITEM_RULE ptr_rule)
 {
 	if (ptr_rule->is_block)
 		return 1;
@@ -576,7 +583,7 @@ INT _app_getruleicon (PITEM_RULE ptr_rule)
 	return 0;
 }
 
-COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
+COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
 {
 	PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
 
@@ -597,7 +604,8 @@ COLORREF _app_getrulecolor (INT listview_id, SIZE_T rule_idx)
 	return 0;
 }
 
-PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
+_Ret_maybenull_
+PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id)
 {
 	R_STRINGBUILDER buffer = {0};
 	PR_STRING string;
@@ -907,7 +915,7 @@ PR_STRING _app_gettooltip (HWND hwnd, INT listview_id, INT item_id)
 	return NULL;
 }
 
-VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_APP ptr_app)
+VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _Inout_ PITEM_APP ptr_app)
 {
 	if (!listview_id || item == -1)
 		return;
@@ -924,7 +932,7 @@ VOID _app_setappiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_APP ptr_ap
 	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
 }
 
-VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_rule, BOOLEAN include_apps)
+VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps)
 {
 	if (!listview_id || item == -1)
 		return;
@@ -991,7 +999,7 @@ VOID _app_setruleiteminfo (HWND hwnd, INT listview_id, INT item, PITEM_RULE ptr_
 	}
 }
 
-VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable, BOOLEAN is_createconfig)
+VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ BOOLEAN is_createconfig)
 {
 	ptr_rule->is_enabled = is_enable;
 
@@ -1019,7 +1027,7 @@ VOID _app_ruleenable (PITEM_RULE ptr_rule, BOOLEAN is_enable, BOOLEAN is_createc
 	}
 }
 
-BOOLEAN _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state)
+BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ INT new_state)
 {
 	if (new_state == -1)
 		return FALSE; // don't change
@@ -1042,7 +1050,7 @@ BOOLEAN _app_ruleblocklistsetchange (PITEM_RULE ptr_rule, INT new_state)
 	return TRUE;
 }
 
-BOOLEAN _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT update_state, INT extra_state)
+BOOLEAN _app_ruleblocklistsetstate (_Inout_ PITEM_RULE ptr_rule, _In_ INT spy_state, _In_ INT update_state, _In_ INT extra_state)
 {
 	if (ptr_rule->type != DataRuleBlocklist || _r_obj_isstringempty (ptr_rule->name))
 		return FALSE;
@@ -1065,7 +1073,7 @@ BOOLEAN _app_ruleblocklistsetstate (PITEM_RULE ptr_rule, INT spy_state, INT upda
 	return _app_ruleblocklistsetchange (ptr_rule, 2);
 }
 
-VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extra_state, BOOLEAN is_instantapply)
+VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT update_state, _In_ INT extra_state, _In_ BOOLEAN is_instantapply)
 {
 	PR_LIST rules = _r_obj_createlistex (0x200, NULL);
 	SIZE_T changes_count = 0;
@@ -1132,7 +1140,8 @@ VOID _app_ruleblocklistset (HWND hwnd, INT spy_state, INT update_state, INT extr
 	_r_obj_dereference (rules);
 }
 
-PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
+_Ret_maybenull_
+PR_STRING _app_appexpandrules (_In_ SIZE_T app_hash, _In_ LPCWSTR delimeter)
 {
 	R_STRINGBUILDER buffer;
 	PR_STRING string;
@@ -1177,7 +1186,8 @@ PR_STRING _app_appexpandrules (SIZE_T app_hash, LPCWSTR delimeter)
 
 }
 
-PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay, LPCWSTR delimeter)
+_Ret_maybenull_
+PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordisplay, _In_ LPCWSTR delimeter)
 {
 	R_STRINGBUILDER buffer;
 	PR_STRING string;
@@ -1234,7 +1244,8 @@ PR_STRING _app_rulesexpandapps (const PITEM_RULE ptr_rule, BOOLEAN is_fordisplay
 	return NULL;
 }
 
-PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter)
+_Ret_maybenull_
+PR_STRING _app_rulesexpandrules (_In_ PR_STRING rule, _In_ LPCWSTR delimeter)
 {
 	R_STRINGBUILDER buffer;
 	R_STRINGREF remaining_part;
@@ -1274,11 +1285,8 @@ PR_STRING _app_rulesexpandrules (PR_STRING rule, LPCWSTR delimeter)
 	return NULL;
 }
 
-BOOLEAN _app_isappfromsystem (LPCWSTR path, SIZE_T app_hash)
+BOOLEAN _app_isappfromsystem (_In_ LPCWSTR path, _In_ SIZE_T app_hash)
 {
-	if (!app_hash)
-		return FALSE;
-
 	if (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash)
 		return TRUE;
 
@@ -1296,11 +1304,8 @@ BOOLEAN _app_isappfromsystem (LPCWSTR path, SIZE_T app_hash)
 	return FALSE;
 }
 
-BOOLEAN _app_isapphaveconnection (SIZE_T app_hash)
+BOOLEAN _app_isapphaveconnection (_In_ SIZE_T app_hash)
 {
-	if (!app_hash)
-		return FALSE;
-
 	PITEM_NETWORK ptr_network;
 	SIZE_T enum_key = 0;
 
@@ -1316,7 +1321,7 @@ BOOLEAN _app_isapphaveconnection (SIZE_T app_hash)
 	return FALSE;
 }
 
-BOOLEAN _app_isapphavedrive (INT letter)
+BOOLEAN _app_isapphavedrive (_In_ INT letter)
 {
 	PITEM_APP ptr_app;
 	SIZE_T enum_key = 0;
@@ -1338,14 +1343,13 @@ BOOLEAN _app_isapphavedrive (INT letter)
 	return FALSE;
 }
 
-BOOLEAN _app_isapphaverule (SIZE_T app_hash, BOOLEAN is_countdisabled)
+BOOLEAN _app_isapphaverule (_In_ SIZE_T app_hash, _In_ BOOLEAN is_countdisabled)
 {
-	if (!app_hash)
-		return FALSE;
+	PITEM_RULE ptr_rule;
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
-		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
+		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
 		if (ptr_rule)
 		{
@@ -1360,15 +1364,15 @@ BOOLEAN _app_isapphaverule (SIZE_T app_hash, BOOLEAN is_countdisabled)
 	return FALSE;
 }
 
-BOOLEAN _app_isappused (const PITEM_APP ptr_app)
+BOOLEAN _app_isappused (_In_ PITEM_APP ptr_app)
 {
-	if (ptr_app && (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (ptr_app->app_hash, TRUE)))
+	if (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (ptr_app->app_hash, TRUE))
 		return TRUE;
 
 	return FALSE;
 }
 
-BOOLEAN _app_isappexists (const PITEM_APP ptr_app)
+BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app)
 {
 	if (ptr_app->is_undeletable)
 		return TRUE;
@@ -1388,7 +1392,7 @@ BOOLEAN _app_isappexists (const PITEM_APP ptr_app)
 	return FALSE;
 }
 
-VOID _app_openappdirectory (const PITEM_APP ptr_app)
+VOID _app_openappdirectory (_In_ PITEM_APP ptr_app)
 {
 	PR_STRING path = _app_getappinfo (ptr_app, InfoPath);
 
@@ -1401,12 +1405,12 @@ VOID _app_openappdirectory (const PITEM_APP ptr_app)
 	}
 }
 
-BOOLEAN _app_profile_load_check_node (mxml_node_t* root_node, ENUM_TYPE_XML type)
+BOOLEAN _app_profile_load_check_node (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_XML type)
 {
 	return (_r_str_tointeger_a (mxmlElementGetAttr (root_node, "type")) == type);
 }
 
-BOOLEAN _app_profile_load_check (LPCWSTR path, ENUM_TYPE_XML type)
+BOOLEAN _app_profile_load_check (_In_ LPCWSTR path, _In_ ENUM_TYPE_XML type)
 {
 	HANDLE hfile = CreateFile (path, FILE_GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
@@ -1467,7 +1471,7 @@ VOID _app_profile_load_fallback ()
 	}
 }
 
-VOID _app_profile_load_helper (mxml_node_t* root_node, ENUM_TYPE_DATA type, UINT version)
+VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA type, _In_ UINT version)
 {
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule = NULL;
@@ -1744,7 +1748,7 @@ VOID _app_profile_load_helper (mxml_node_t* root_node, ENUM_TYPE_DATA type, UINT
 	}
 }
 
-VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR resource_name, PLONG64 ptimestamp)
+VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, _Out_ PLONG64 ptimestamp)
 {
 	HANDLE hfile;
 
@@ -1814,9 +1818,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR resource_name, PLONG64 pt
 			INT version = _r_str_tointeger_a (mxmlElementGetAttr (root_node, "version"));
 
 			if (ptimestamp)
-			{
 				*ptimestamp = _r_str_tolong64_a (mxmlElementGetAttr (root_node, "timestamp"));
-			}
 
 			mxml_node_t *rules_system_node;
 			mxml_node_t *rules_blocklist_node;
@@ -1845,7 +1847,7 @@ VOID _app_profile_load_internal (LPCWSTR path, LPCWSTR resource_name, PLONG64 pt
 		mxmlDelete (xml_resource_node);
 }
 
-VOID _app_profile_load (HWND hwnd, LPCWSTR path_custom)
+VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 {
 	INT current_listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
 	INT selected_item = (INT)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);

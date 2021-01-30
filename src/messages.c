@@ -3,7 +3,7 @@
 
 #include "global.h"
 
-VOID _app_message_contextmenu (HWND hwnd, LPNMITEMACTIVATE lpnmlv)
+VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 {
 	if (lpnmlv->iItem == -1)
 		return;
@@ -215,13 +215,14 @@ VOID _app_message_contextmenu (HWND hwnd, LPNMITEMACTIVATE lpnmlv)
 }
 
 
-VOID _app_message_traycontextmenu (HWND hwnd)
+VOID _app_message_traycontextmenu (_In_ HWND hwnd)
 {
 	SetForegroundWindow (hwnd); // don't touch
 
 #define NOTIFICATIONS_ID 4
 #define LOGGING_ID 5
 #define ERRLOG_ID 6
+
 	HMENU hmenu = LoadMenu (NULL, MAKEINTRESOURCE (IDM_TRAY));
 	HMENU hsubmenu = GetSubMenu (hmenu, 0);
 
@@ -294,7 +295,7 @@ VOID _app_message_traycontextmenu (HWND hwnd)
 	DestroyMenu (hmenu);
 }
 
-VOID _app_message_dpichanged (HWND hwnd)
+VOID _app_message_dpichanged (_In_ HWND hwnd)
 {
 	PR_STRING localized_string = NULL;
 
@@ -339,7 +340,7 @@ VOID _app_message_dpichanged (HWND hwnd)
 	SAFE_DELETE_REFERENCE (localized_string);
 }
 
-LONG_PTR _app_message_custdraw (LPNMLVCUSTOMDRAW lpnmlv)
+LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv)
 {
 	switch (lpnmlv->nmcd.dwDrawStage)
 	{
@@ -517,7 +518,7 @@ LONG_PTR _app_message_custdraw (LPNMLVCUSTOMDRAW lpnmlv)
 	return CDRF_DODEFAULT;
 }
 
-VOID _app_message_find (HWND hwnd, LPFINDREPLACE lpfr)
+VOID _app_message_find (_In_ HWND hwnd, _In_ LPFINDREPLACE lpfr)
 {
 	if ((lpfr->Flags & FR_DIALOGTERM) != 0)
 	{
@@ -575,7 +576,7 @@ find_wrap:
 	}
 }
 
-VOID _app_message_resizewindow (HWND hwnd, LPARAM lparam)
+VOID _app_message_resizewindow (_In_ HWND hwnd, _In_ LPARAM lparam)
 {
 	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
@@ -603,7 +604,7 @@ VOID _app_message_resizewindow (HWND hwnd, LPARAM lparam)
 	_app_refreshstatus (hwnd, 0);
 }
 
-VOID _app_message_initialize (HWND hwnd)
+VOID _app_message_initialize (_In_ HWND hwnd)
 {
 	_r_tray_create (hwnd, UID, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
 
@@ -675,7 +676,7 @@ VOID _app_message_initialize (HWND hwnd)
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, NULL, 0, _r_config_getboolean (L"IsLogUiEnabled", FALSE) ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
 }
 
-VOID _app_message_localize (HWND hwnd)
+VOID _app_message_localize (_In_ HWND hwnd)
 {
 	HMENU hmenu = GetMenu (hwnd);
 
@@ -918,7 +919,7 @@ VOID _app_message_localize (HWND hwnd)
 	SAFE_DELETE_REFERENCE (localized_string);
 }
 
-VOID _app_command_idtotimers (HWND hwnd, INT ctrl_id)
+VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
 	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
 
@@ -963,7 +964,7 @@ VOID _app_command_idtotimers (HWND hwnd, INT ctrl_id)
 	_app_profile_save ();
 }
 
-VOID _app_command_logshow (HWND hwnd)
+VOID _app_command_logshow (_In_ HWND hwnd)
 {
 	if (_r_config_getboolean (L"IsLogUiEnabled", FALSE))
 	{
@@ -1019,7 +1020,7 @@ VOID _app_command_logshow (HWND hwnd)
 	}
 }
 
-VOID _app_command_logclear (HWND hwnd)
+VOID _app_command_logclear (_In_ HWND hwnd)
 {
 	PR_STRING path = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
 
@@ -1037,7 +1038,7 @@ VOID _app_command_logclear (HWND hwnd)
 	SAFE_DELETE_REFERENCE (path);
 }
 
-VOID _app_command_logerrshow (HWND hwnd)
+VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 {
 	PR_STRING viewer_path;
 	PR_STRING process_path;
@@ -1066,7 +1067,7 @@ VOID _app_command_logerrshow (HWND hwnd)
 	}
 }
 
-VOID _app_command_logerrclear (HWND hwnd)
+VOID _app_command_logerrclear (_In_opt_ HWND hwnd)
 {
 	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
 		return;
@@ -1079,7 +1080,7 @@ VOID _app_command_logerrclear (HWND hwnd)
 	_r_fs_deletefile (path, TRUE);
 }
 
-VOID _app_command_copy (HWND hwnd, INT ctrl_id, INT column_id)
+VOID _app_command_copy (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT column_id)
 {
 	R_STRINGBUILDER buffer;
 	PR_STRING string;
@@ -1141,7 +1142,7 @@ VOID _app_command_copy (HWND hwnd, INT ctrl_id, INT column_id)
 	_r_obj_deletestringbuilder (&buffer);
 }
 
-VOID _app_command_checkbox (HWND hwnd, INT ctrl_id)
+VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
 	PR_LIST rules = _r_obj_createlistex (0x400, NULL);
 	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
@@ -1244,7 +1245,7 @@ VOID _app_command_checkbox (HWND hwnd, INT ctrl_id)
 	}
 }
 
-VOID _app_command_delete (HWND hwnd)
+VOID _app_command_delete (_In_ HWND hwnd)
 {
 	MIB_TCPROW tcprow;
 	WCHAR message_text[512];
@@ -1402,11 +1403,11 @@ VOID _app_command_delete (HWND hwnd)
 	_app_profile_save ();
 }
 
-VOID _app_command_disable (HWND hwnd, INT ctrl_id)
+VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
 	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
 
-	// note: these commands only for profile...
+	// note: these commands only for apps...
 	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
 		return;
 
@@ -1447,7 +1448,7 @@ VOID _app_command_disable (HWND hwnd, INT ctrl_id)
 	_app_profile_save ();
 }
 
-VOID _app_command_openeditor (HWND hwnd)
+VOID _app_command_openeditor (_In_ HWND hwnd)
 {
 	PITEM_RULE ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, 0, 0);
 
@@ -1584,7 +1585,7 @@ VOID _app_command_openeditor (HWND hwnd)
 	_r_mem_free (ptr_rule);
 }
 
-VOID _app_command_properties (HWND hwnd)
+VOID _app_command_properties (_In_ HWND hwnd)
 {
 	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
 	INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
@@ -1698,7 +1699,7 @@ VOID _app_command_properties (HWND hwnd)
 	}
 }
 
-VOID _app_command_purgeunused (HWND hwnd)
+VOID _app_command_purgeunused (_In_ HWND hwnd)
 {
 	BOOLEAN is_deleted = FALSE;
 
@@ -1773,7 +1774,7 @@ VOID _app_command_purgeunused (HWND hwnd)
 	_r_obj_dereference (apps_list);
 }
 
-VOID _app_command_purgetimers (HWND hwnd)
+VOID _app_command_purgetimers (_In_ HWND hwnd)
 {
 	if (!_app_istimersactive () || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_locale_getstring (IDS_QUESTION_TIMERS)) != IDYES)
 		return;
@@ -1820,10 +1821,9 @@ VOID _app_command_purgetimers (HWND hwnd)
 	}
 }
 
-VOID _app_command_selectfont (HWND hwnd)
+VOID _app_command_selectfont (_In_ HWND hwnd)
 {
 	CHOOSEFONT cf = {0};
-
 	LOGFONT lf = {0};
 
 	cf.lStructSize = sizeof (cf);

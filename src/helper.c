@@ -3,7 +3,7 @@
 
 #include "global.h"
 
-VOID NTAPI _app_dereferenceapp (PVOID entry)
+VOID NTAPI _app_dereferenceapp (_In_ PVOID entry)
 {
 	PITEM_APP ptr_item = entry;
 
@@ -17,7 +17,7 @@ VOID NTAPI _app_dereferenceapp (PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->guids);
 }
 
-VOID NTAPI _app_dereferenceruleconfig (PVOID entry)
+VOID NTAPI _app_dereferenceruleconfig (_In_ PVOID entry)
 {
 	PITEM_RULE_CONFIG ptr_rule_config = entry;
 
@@ -25,7 +25,7 @@ VOID NTAPI _app_dereferenceruleconfig (PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_rule_config->apps);
 }
 
-VOID NTAPI _app_dereferencelog (PVOID entry)
+VOID NTAPI _app_dereferencelog (_In_ PVOID entry)
 {
 	PITEM_LOG ptr_item = entry;
 
@@ -37,14 +37,14 @@ VOID NTAPI _app_dereferencelog (PVOID entry)
 	SAFE_DELETE_ICON (ptr_item->hicon);
 }
 
-VOID NTAPI _app_dereferencenetwork (PVOID entry)
+VOID NTAPI _app_dereferencenetwork (_In_ PVOID entry)
 {
 	PITEM_NETWORK ptr_network = entry;
 
 	SAFE_DELETE_REFERENCE (ptr_network->path);
 }
 
-VOID NTAPI _app_dereferencerule (PVOID entry)
+VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
 {
 	PITEM_RULE ptr_item = entry;
 
@@ -57,7 +57,7 @@ VOID NTAPI _app_dereferencerule (PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->guids);
 }
 
-PR_HASHSTORE _app_addcachetable (PR_HASHTABLE hashtable, SIZE_T hash_code, PR_STRING string, INT number)
+PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_opt_ PR_STRING string, _In_opt_ LONG number)
 {
 	R_HASHSTORE hashstore;
 
@@ -79,14 +79,14 @@ PR_HASHSTORE _app_addcachetable (PR_HASHTABLE hashtable, SIZE_T hash_code, PR_ST
 	return _r_obj_addhashtableitem (hashtable, hash_code, &hashstore);
 }
 
-PR_STRING _app_resolveaddress (ADDRESS_FAMILY af, LPCVOID paddr)
+PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 {
 	PR_STRING string = NULL;
 	PR_STRING arpa_string;
 	PDNS_RECORD dns_records;
 	DNS_STATUS code;
 
-	arpa_string = _app_formataddress (af, 0, paddr, 0, FMTADDR_AS_ARPA);
+	arpa_string = _app_formataddress (af, 0, address, 0, FMTADDR_AS_ARPA);
 
 	if (arpa_string)
 	{
@@ -109,21 +109,23 @@ PR_STRING _app_resolveaddress (ADDRESS_FAMILY af, LPCVOID paddr)
 	return string;
 }
 
-PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UINT16 port, ULONG flags)
+PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPCVOID address, _In_opt_ UINT16 port, _In_ ULONG flags)
 {
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
-	PIN_ADDR p4addr = (PIN_ADDR)paddr;
-	PIN6_ADDR p6addr = (PIN6_ADDR)paddr;
 	BOOLEAN is_success = FALSE;
 
 	if ((flags & FMTADDR_AS_ARPA) != 0)
 	{
 		if (af == AF_INET)
 		{
+			PIN_ADDR p4addr = (PIN_ADDR)address;
+
 			_r_str_appendformat (formatted_address, RTL_NUMBER_OF (formatted_address), L"%hhu.%hhu.%hhu.%hhu.%s", p4addr->s_impno, p4addr->s_lh, p4addr->s_host, p4addr->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W);
 		}
 		else if (af == AF_INET6)
 		{
+			PIN6_ADDR p6addr = (PIN6_ADDR)address;
+
 			for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
 				_r_str_appendformat (formatted_address, RTL_NUMBER_OF (formatted_address), L"%hhx.%hhx.", p6addr->s6_addr[i] & 0xF, (p6addr->s6_addr[i] >> 4) & 0xF);
 
@@ -141,7 +143,7 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 
 		WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
 
-		if (_app_formatip (af, paddr, addr_str, RTL_NUMBER_OF (addr_str), (flags & FMTADDR_AS_RULE) != 0))
+		if (_app_formatip (af, address, addr_str, RTL_NUMBER_OF (addr_str), (flags & FMTADDR_AS_RULE) != 0))
 		{
 			if (af == AF_INET6 && port)
 			{
@@ -180,7 +182,7 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 
 				if (hashstore)
 				{
-					domain_string = _app_resolveaddress (af, paddr);
+					domain_string = _app_resolveaddress (af, address);
 
 					if (domain_string)
 					{
@@ -202,14 +204,11 @@ PR_STRING _app_formataddress (ADDRESS_FAMILY af, UINT8 proto, LPCVOID paddr, UIN
 	return NULL;
 }
 
-BOOLEAN _app_formatip (ADDRESS_FAMILY af, LPCVOID paddr, LPWSTR out_buffer, ULONG buffer_size, BOOLEAN is_checkempty)
+BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR out_buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty)
 {
-	PIN_ADDR p4addr;
-	PIN6_ADDR p6addr;
-
 	if (af == AF_INET)
 	{
-		p4addr = (PIN_ADDR)paddr;
+		PIN_ADDR p4addr = (PIN_ADDR)address;
 
 		if (is_checkempty)
 		{
@@ -222,7 +221,7 @@ BOOLEAN _app_formatip (ADDRESS_FAMILY af, LPCVOID paddr, LPWSTR out_buffer, ULON
 	}
 	else if (af == AF_INET6)
 	{
-		p6addr = (PIN6_ADDR)paddr;
+		PIN6_ADDR p6addr = (PIN6_ADDR)address;
 
 		if (is_checkempty)
 		{
@@ -237,7 +236,7 @@ BOOLEAN _app_formatip (ADDRESS_FAMILY af, LPCVOID paddr, LPWSTR out_buffer, ULON
 	return FALSE;
 }
 
-PR_STRING _app_formatport (UINT16 port, UINT8 proto, BOOLEAN is_noempty)
+PR_STRING _app_formatport (_In_ UINT16 port, _In_ UINT8 proto, _In_ BOOLEAN is_noempty)
 {
 	if (!port)
 		return NULL;
@@ -284,7 +283,7 @@ VOID _app_freelogstack ()
 	}
 }
 
-VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, HICON* picon)
+VOID _app_getappicon (_In_ const PITEM_APP ptr_app, _In_ BOOLEAN is_small, _Out_opt_ PINT picon_id, _Out_opt_ HICON* picon)
 {
 	BOOLEAN is_iconshidden = _r_config_getboolean (L"IsIconsHidden", FALSE);
 
@@ -317,7 +316,7 @@ VOID _app_getappicon (const PITEM_APP ptr_app, BOOLEAN is_small, PINT picon_id, 
 	}
 }
 
-LPCWSTR _app_getdisplayname (PITEM_APP ptr_app, BOOLEAN is_shortened)
+LPCWSTR _app_getdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened)
 {
 	if (ptr_app->app_hash == config.ntoskrnl_hash)
 	{
@@ -351,7 +350,8 @@ LPCWSTR _app_getdisplayname (PITEM_APP ptr_app, BOOLEAN is_shortened)
 	return ptr_app->real_path->buffer;
 }
 
-BOOLEAN _app_getfileicon (LPCWSTR path, BOOLEAN is_small, PINT picon_id, HICON* picon)
+_Success_ (return)
+BOOLEAN _app_getfileicon (_In_ LPCWSTR path, _In_ BOOLEAN is_small, _Out_opt_ PINT picon_id, _Out_opt_ HICON* picon)
 {
 	SHFILEINFO shfi = {0};
 	ULONG flags = 0;
@@ -370,22 +370,17 @@ BOOLEAN _app_getfileicon (LPCWSTR path, BOOLEAN is_small, PINT picon_id, HICON* 
 		if (picon_id)
 			*picon_id = shfi.iIcon;
 
-		if (picon && shfi.hIcon)
-			*picon = shfi.hIcon;
-	}
-	else
-	{
-		if (picon_id)
-			*picon_id = config.icon_id;
-
 		if (picon)
-			*picon = CopyIcon (is_small ? config.hicon_small : config.hicon_large);
+			*picon = shfi.hIcon;
+
+		return TRUE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
-PR_STRING _app_getsignatureinfo (PITEM_APP ptr_app)
+_Ret_maybenull_
+PR_STRING _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 {
 	if (_r_obj_isstringempty (ptr_app->real_path) || (ptr_app->type != DataAppRegular && ptr_app->type != DataAppService && ptr_app->type != DataAppUWP))
 		return NULL;
@@ -477,7 +472,8 @@ CleanupExit:
 	return _r_obj_referencesafe (signature_cache_string);
 }
 
-PR_STRING _app_getversioninfo (PITEM_APP ptr_app)
+_Ret_maybenull_
+PR_STRING _app_getversioninfo (_In_ PITEM_APP ptr_app)
 {
 	if (_r_obj_isstringempty (ptr_app->real_path))
 		return NULL;
@@ -545,7 +541,7 @@ PR_STRING _app_getversioninfo (PITEM_APP ptr_app)
 
 		if (VerQueryValue (version_info, description_entry, &buffer, &length))
 		{
-			_r_obj_appendstringbuilderformat (&version_cache, SZ_TAB L"%s", buffer);
+			_r_obj_appendstringbuilderformat (&version_cache, SZ_TAB L"%s", (LPCWSTR)buffer);
 
 			VS_FIXEDFILEINFO* ver_info;
 
@@ -567,7 +563,7 @@ PR_STRING _app_getversioninfo (PITEM_APP ptr_app)
 
 		if (VerQueryValue (version_info, author_entry, &buffer, &length))
 		{
-			_r_obj_appendstringbuilderformat (&version_cache, SZ_TAB L"%s\r\n", buffer);
+			_r_obj_appendstringbuilderformat (&version_cache, SZ_TAB L"%s\r\n", (LPCWSTR)buffer);
 		}
 
 		version_cache_string = _r_obj_finalstringbuilder (&version_cache);
@@ -595,7 +591,8 @@ CleanupExit:
 	return _r_obj_referencesafe (version_cache_string);
 }
 
-LPCWSTR _app_getservicename (UINT16 port, UINT8 proto, LPCWSTR default_value)
+_Ret_maybenull_
+LPCWSTR _app_getservicename (_In_ UINT16 port, _In_ UINT8 proto, _In_opt_ LPCWSTR default_value)
 {
 	switch (port)
 	{
@@ -1278,7 +1275,8 @@ LPCWSTR _app_getservicename (UINT16 port, UINT8 proto, LPCWSTR default_value)
 	return default_value;
 }
 
-LPCWSTR _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af, LPCWSTR default_value)
+_Ret_maybenull_
+LPCWSTR _app_getprotoname (_In_ UINT8 proto, _In_ ADDRESS_FAMILY af, _In_opt_ LPCWSTR default_value)
 {
 	switch (proto)
 	{
@@ -1355,7 +1353,8 @@ LPCWSTR _app_getprotoname (UINT8 proto, ADDRESS_FAMILY af, LPCWSTR default_value
 	return default_value;
 }
 
-LPCWSTR _app_getconnectionstatusname (ULONG state, LPCWSTR default_value)
+_Ret_maybenull_
+LPCWSTR _app_getconnectionstatusname (_In_ ULONG state, _In_opt_ LPCWSTR default_value)
 {
 	switch (state)
 	{
@@ -1399,7 +1398,8 @@ LPCWSTR _app_getconnectionstatusname (ULONG state, LPCWSTR default_value)
 	return default_value;
 }
 
-PR_STRING _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, BOOLEAN is_localized)
+_Ret_maybenull_
+PR_STRING _app_getdirectionname (_In_ FWP_DIRECTION direction, _In_ BOOLEAN is_loopback, _In_ BOOLEAN is_localized)
 {
 	LPCWSTR text = NULL;
 
@@ -1443,7 +1443,7 @@ PR_STRING _app_getdirectionname (FWP_DIRECTION direction, BOOLEAN is_loopback, B
 	return _r_obj_createstring (text);
 }
 
-COLORREF _app_getcolorvalue (SIZE_T color_hash)
+COLORREF _app_getcolorvalue (_In_ SIZE_T color_hash)
 {
 	if (!color_hash)
 		return 0;
@@ -1669,7 +1669,7 @@ BOOLEAN _app_isvalidconnection (ADDRESS_FAMILY af, LPCVOID paddr)
 	return FALSE;
 }
 
-VOID _app_generate_connections (PR_HASHTABLE checker_map)
+VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 {
 	_r_obj_clearhashtable (checker_map);
 
@@ -2198,7 +2198,7 @@ VOID _app_generate_services ()
 	CloseServiceHandle (hsvcmgr);
 }
 
-VOID _app_generate_timerscontrol (PVOID hwnd, INT ctrl_id, PITEM_APP ptr_app)
+VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_ PITEM_APP ptr_app)
 {
 	WCHAR interval_string[128];
 	LONG64 current_time;
@@ -2273,11 +2273,9 @@ VOID _app_generate_timerscontrol (PVOID hwnd, INT ctrl_id, PITEM_APP ptr_app)
 	}
 }
 
-PR_STRING _app_parsehoststring (LPCWSTR hostname, USHORT port)
+_Ret_maybenull_
+PR_STRING _app_parsehoststring (_In_ LPCWSTR hostname, _In_opt_ USHORT port)
 {
-	if (_r_str_isempty (hostname))
-		return NULL;
-
 	R_STRINGBUILDER buffer;
 	PR_STRING string;
 	PDNS_RECORD dns_records = NULL;
@@ -2367,7 +2365,8 @@ PR_STRING _app_parsehoststring (LPCWSTR hostname, USHORT port)
 	return NULL;
 }
 
-BOOLEAN _app_parsenetworkstring (LPCWSTR network_string, PITEM_ADDRESS address)
+_Success_ (return)
+BOOLEAN _app_parsenetworkstring (_In_ LPCWSTR network_string, _Inout_ PITEM_ADDRESS address)
 {
 	NET_ADDRESS_INFO ni;
 	NET_ADDRESS_INFO ni_end;
@@ -2476,7 +2475,7 @@ CleanupExit:
 	return FALSE;
 }
 
-BOOLEAN _app_preparserulestring (PR_STRING rule, PITEM_ADDRESS address)
+BOOLEAN _app_preparserulestring (_In_ PR_STRING rule, _In_ PITEM_ADDRESS address)
 {
 	const WCHAR valid_chars[] = {
 		L'.',
@@ -2599,7 +2598,7 @@ BOOLEAN _app_preparserulestring (PR_STRING rule, PITEM_ADDRESS address)
 	return FALSE;
 }
 
-BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS address)
+BOOLEAN _app_parserulestring (_In_opt_ PR_STRING rule, _Inout_opt_ PITEM_ADDRESS address)
 {
 	if (_r_obj_isstringempty (rule))
 		return TRUE;
@@ -2662,7 +2661,7 @@ BOOLEAN _app_parserulestring (PR_STRING rule, PITEM_ADDRESS address)
 	return TRUE;
 }
 
-INT _app_getlistview_id (ENUM_TYPE_DATA type)
+INT _app_getlistview_id (_In_ ENUM_TYPE_DATA type)
 {
 	if (type == DataAppRegular || type == DataAppDevice || type == DataAppNetwork || type == DataAppPico)
 		return IDC_APPS_PROFILE;
@@ -2685,11 +2684,9 @@ INT _app_getlistview_id (ENUM_TYPE_DATA type)
 	return 0;
 }
 
-HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)
+_Ret_maybenull_
+HBITMAP _app_bitmapfromico (_In_ HICON hicon, _In_ INT icon_size)
 {
-	if (!hicon)
-		return NULL;
-
 	RECT icon_rect;
 	SetRect (&icon_rect, 0, 0, icon_size, icon_size);
 
@@ -2755,7 +2752,8 @@ HBITMAP _app_bitmapfromico (HICON hicon, INT icon_size)
 	return hbitmap;
 }
 
-HBITMAP _app_bitmapfrompng (HINSTANCE hinst, LPCWSTR name, INT icon_size)
+_Ret_maybenull_
+HBITMAP _app_bitmapfrompng (_In_opt_ HINSTANCE hinst, _In_ LPCWSTR name, _In_ INT icon_size)
 {
 	BOOLEAN is_success = FALSE;
 

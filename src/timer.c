@@ -3,10 +3,10 @@
 
 #include "global.h"
 
-VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, LONG64 seconds)
+VOID _app_timer_set (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app, _In_ LONG64 seconds)
 {
-	INT listview_id = _app_getlistview_id (ptr_app->type);
-	INT item_pos = _app_getposition (hwnd, listview_id, ptr_app->app_hash);
+	INT listview_id;
+	INT item_pos;
 
 	if (seconds <= 0)
 	{
@@ -63,19 +63,28 @@ VOID _app_timer_set (HWND hwnd, PITEM_APP ptr_app, LONG64 seconds)
 		}
 	}
 
-	if (item_pos != -1)
+	if (hwnd)
 	{
-		_r_spinlock_acquireshared (&lock_checkbox);
+		listview_id = _app_getlistview_id (ptr_app->type);
+		item_pos = _app_getposition (hwnd, listview_id, ptr_app->app_hash);
 
-		_r_listview_setitemex (hwnd, listview_id, item_pos, 0, NULL, I_IMAGENONE, _app_getappgroup (ptr_app), 0);
-		_r_listview_setitemcheck (hwnd, listview_id, item_pos, ptr_app->is_enabled);
+		if (item_pos != -1)
+		{
+			_r_spinlock_acquireshared (&lock_checkbox);
 
-		_r_spinlock_releaseshared (&lock_checkbox);
+			_r_listview_setitemex (hwnd, listview_id, item_pos, 0, NULL, I_IMAGENONE, _app_getappgroup (ptr_app), 0);
+			_r_listview_setitemcheck (hwnd, listview_id, item_pos, ptr_app->is_enabled);
+
+			_r_spinlock_releaseshared (&lock_checkbox);
+		}
 	}
 }
 
-VOID _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
+VOID _app_timer_reset (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app)
 {
+	INT listview_id;
+	INT item_pos;
+
 	ptr_app->is_enabled = FALSE;
 	ptr_app->is_haveerrors = FALSE;
 
@@ -86,33 +95,31 @@ VOID _app_timer_reset (HWND hwnd, PITEM_APP ptr_app)
 		_app_timer_remove (&ptr_app->htimer);
 	}
 
-	INT listview_id = _app_getlistview_id (ptr_app->type);
-
-	if (listview_id)
+	if (hwnd)
 	{
-		INT item_pos = _app_getposition (hwnd, listview_id, ptr_app->app_hash);
+		listview_id = _app_getlistview_id (ptr_app->type);
 
-		if (item_pos != -1)
+		if (listview_id)
 		{
-			_r_spinlock_acquireshared (&lock_checkbox);
-			_app_setappiteminfo (hwnd, listview_id, item_pos, ptr_app);
-			_r_spinlock_releaseshared (&lock_checkbox);
+			item_pos = _app_getposition (hwnd, listview_id, ptr_app->app_hash);
+
+			if (item_pos != -1)
+			{
+				_r_spinlock_acquireshared (&lock_checkbox);
+				_app_setappiteminfo (hwnd, listview_id, item_pos, ptr_app);
+				_r_spinlock_releaseshared (&lock_checkbox);
+			}
 		}
 	}
 }
 
-VOID _app_timer_remove (PTP_TIMER* timer)
+VOID _app_timer_remove (_Inout_ PTP_TIMER* timer)
 {
 	PTP_TIMER current_timer = *timer;
 
 	*timer = NULL;
 
 	CloseThreadpoolTimer (current_timer);
-}
-
-BOOLEAN _app_istimerset (PTP_TIMER timer)
-{
-	return timer && IsThreadpoolTimerSet (timer);
 }
 
 BOOLEAN _app_istimersactive ()
@@ -129,7 +136,7 @@ BOOLEAN _app_istimersactive ()
 	return FALSE;
 }
 
-VOID CALLBACK _app_timer_callback (PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer)
+VOID CALLBACK _app_timer_callback (_Inout_ PTP_CALLBACK_INSTANCE instance, _Inout_opt_ PVOID context, _Inout_ PTP_TIMER timer)
 {
 	HANDLE hengine;
 	HWND hwnd;

@@ -3,7 +3,7 @@
 
 #include "global.h"
 
-VOID _app_settab_id (HWND hwnd, INT page_id)
+VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id)
 {
 	if (!page_id || ((INT)_r_tab_getlparam (hwnd, IDC_TAB, -1) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
 		return;
@@ -22,7 +22,7 @@ VOID _app_settab_id (HWND hwnd, INT page_id)
 	_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
-UINT _app_getinterfacestatelocale (ENUM_INSTALL_TYPE install_type)
+UINT _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type)
 {
 	if (install_type == InstallEnabled)
 		return IDS_STATUS_FILTERS_ACTIVE;
@@ -34,15 +34,12 @@ UINT _app_getinterfacestatelocale (ENUM_INSTALL_TYPE install_type)
 	return IDS_STATUS_FILTERS_INACTIVE;
 }
 
-BOOLEAN _app_initinterfacestate (HWND hwnd, BOOLEAN is_forced)
+BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 {
-	if (!hwnd)
-		return FALSE;
-
-	if (is_forced || !!SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0))
+	if (is_forced || !!((INT)SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ISBUTTONENABLED, IDM_TRAY_START, 0)))
 	{
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (FALSE, 0));
-		SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (FALSE, 0));
+		_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, FALSE);
+		_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, FALSE);
 
 		_r_status_settextformat (hwnd, IDC_STATUSBAR, 0, L"%s...", _r_locale_getstring (IDS_STATUS_FILTERS_PROCESSING));
 
@@ -52,26 +49,24 @@ BOOLEAN _app_initinterfacestate (HWND hwnd, BOOLEAN is_forced)
 	return FALSE;
 }
 
-VOID _app_restoreinterfacestate (HWND hwnd, BOOLEAN is_enabled)
+VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled)
 {
 	if (!is_enabled)
 		return;
 
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_TRAY_START, MAKELPARAM (TRUE, 0));
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_ENABLEBUTTON, IDM_REFRESH, MAKELPARAM (TRUE, 0));
+	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, TRUE);
+	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, TRUE);
 
-	ENUM_INSTALL_TYPE install_type = _wfp_isfiltersinstalled ();
-
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (install_type)));
+	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (_wfp_isfiltersinstalled ())));
 }
 
-VOID _app_setinterfacestate (HWND hwnd)
+VOID _app_setinterfacestate (_In_ HWND hwnd)
 {
 	ENUM_INSTALL_TYPE install_type = _wfp_isfiltersinstalled ();
 
 	BOOLEAN is_filtersinstalled = (install_type != InstallDisabled);
-	INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 	UINT string_id = is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START;
+	INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 
 	HICON hico_sm = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
 	HICON hico_big = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
@@ -89,7 +84,7 @@ VOID _app_setinterfacestate (HWND hwnd)
 	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
 }
 
-VOID _app_imagelist_init (HWND hwnd)
+VOID _app_imagelist_init (_In_opt_ HWND hwnd)
 {
 	INT icon_size_small = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
 	INT icon_size_large = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
@@ -192,9 +187,9 @@ VOID _app_imagelist_init (HWND hwnd)
 	}
 }
 
-VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
+VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_forced)
 {
-	if (!listview_id || (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE)))
+	if (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE))
 		return;
 
 	INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
@@ -306,7 +301,7 @@ VOID _app_listviewresize (HWND hwnd, INT listview_id, BOOLEAN is_forced)
 		ReleaseDC (hheader, hdc_header);
 }
 
-VOID _app_listviewsetview (HWND hwnd, INT listview_id)
+VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id)
 {
 	BOOLEAN is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
 	INT view_type = is_mainview ? _r_calc_clamp (_r_config_getinteger (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
@@ -330,24 +325,24 @@ VOID _app_listviewsetview (HWND hwnd, INT listview_id)
 	_r_listview_setview (hwnd, listview_id, view_type);
 }
 
-VOID _app_listviewsetfont (HWND hwnd, INT listview_id, BOOLEAN is_forced)
+VOID _app_listviewsetfont (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_forced)
 {
-	LOGFONT lf = {0};
+	LOGFONT logfont = {0};
 
 	if (is_forced || !config.hfont)
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		_r_config_getfont (L"Font", hwnd, &lf, NULL);
+		_r_config_getfont (L"Font", hwnd, &logfont, NULL);
 
-		config.hfont = CreateFontIndirect (&lf);
+		config.hfont = CreateFontIndirect (&logfont);
 	}
 
 	if (config.hfont)
 		SendDlgItemMessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
 }
 
-INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPARAM lparam)
+INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lparam2, _In_ LPARAM lparam)
 {
 	WCHAR config_name[128];
 	HWND hwnd;
@@ -435,7 +430,7 @@ INT CALLBACK _app_listviewcompare_callback (LPARAM lparam1, LPARAM lparam2, LPAR
 	return is_descend ? -result : result;
 }
 
-VOID _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, BOOLEAN is_notifycode)
+VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT column_id, _In_ BOOLEAN is_notifycode)
 {
 	HWND hlistview = GetDlgItem (hwnd, listview_id);
 
@@ -477,7 +472,7 @@ VOID _app_listviewsort (HWND hwnd, INT listview_id, INT column_id, BOOLEAN is_no
 	SendMessage (hlistview, LVM_SORTITEMS, (WPARAM)hlistview, (LPARAM)&_app_listviewcompare_callback);
 }
 
-VOID _app_toolbar_init (HWND hwnd)
+VOID _app_toolbar_init (_In_ HWND hwnd)
 {
 	config.hrebar = GetDlgItem (hwnd, IDC_REBAR);
 
@@ -540,7 +535,7 @@ VOID _app_toolbar_resize ()
 	SendMessage (config.hrebar, RB_SETBANDINFO, 0, (LPARAM)&rbi);
 }
 
-VOID _app_refreshgroups (HWND hwnd, INT listview_id)
+VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 {
 	UINT group1_title = 0;
 	UINT group2_title = 0;
@@ -640,7 +635,7 @@ VOID _app_refreshgroups (HWND hwnd, INT listview_id)
 	SAFE_DELETE_REFERENCE (localized_string);
 }
 
-VOID _app_refreshstatus (HWND hwnd, INT listview_id)
+VOID _app_refreshstatus (_In_ HWND hwnd, _In_ INT listview_id)
 {
 	ITEM_STATUS status = {0};
 
@@ -717,7 +712,7 @@ VOID _app_refreshstatus (HWND hwnd, INT listview_id)
 	}
 }
 
-VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
+VOID _app_showitem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _In_ INT scroll_pos)
 {
 	HWND hlistview = GetDlgItem (hwnd, listview_id);
 
@@ -742,7 +737,7 @@ VOID _app_showitem (HWND hwnd, INT listview_id, INT item, INT scroll_pos)
 		PostMessage (hlistview, LVM_SCROLL, 0, (LPARAM)scroll_pos); // restore scroll position
 }
 
-BOOLEAN _app_showappitem (HWND hwnd, PITEM_APP ptr_app)
+BOOLEAN _app_showappitem (_In_ HWND hwnd, _In_ PITEM_APP ptr_app)
 {
 	INT listview_id = PtrToInt (_app_getappinfo (ptr_app, InfoListviewId));
 

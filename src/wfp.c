@@ -8,7 +8,7 @@ BOOLEAN _wfp_isfiltersapplying ()
 	return _r_spinlock_islocked (&lock_apply) || _r_spinlock_islocked (&lock_transaction);
 }
 
-ENUM_INSTALL_TYPE _wfp_isproviderinstalled (HANDLE hengine)
+ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE hengine)
 {
 	ENUM_INSTALL_TYPE result = InstallDisabled;
 	FWPM_PROVIDER *ptr_provider = NULL;
@@ -17,7 +17,7 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (HANDLE hengine)
 	{
 		if (ptr_provider)
 		{
-			if ((ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED) != 0)
+			if (!!(ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED))
 			{
 				result = InstallDisabled;
 			}
@@ -37,7 +37,7 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (HANDLE hengine)
 	return result;
 }
 
-ENUM_INSTALL_TYPE _wfp_issublayerinstalled (HANDLE hengine)
+ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE hengine)
 {
 	ENUM_INSTALL_TYPE result = InstallDisabled;
 	FWPM_SUBLAYER *ptr_sublayer = NULL;
@@ -46,7 +46,7 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (HANDLE hengine)
 	{
 		if (ptr_sublayer)
 		{
-			if ((ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT) != 0)
+			if (!!(ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT))
 			{
 				result = InstallEnabled;
 			}
@@ -114,7 +114,7 @@ HANDLE _wfp_getenginehandle ()
 	return current_handle;
 }
 
-BOOLEAN _wfp_initialize (HANDLE hengine, BOOLEAN is_full)
+BOOLEAN _wfp_initialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
 {
 	ULONG code;
 	BOOLEAN is_success;
@@ -319,7 +319,7 @@ CleanupExit:
 	return is_success;
 }
 
-VOID _wfp_uninitialize (HANDLE hengine, BOOLEAN is_full)
+VOID _wfp_uninitialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
 {
 	_r_spinlock_acquireshared (&lock_transaction);
 
@@ -392,7 +392,7 @@ VOID _wfp_uninitialize (HANDLE hengine, BOOLEAN is_full)
 	_r_spinlock_releaseshared (&lock_transaction);
 }
 
-VOID _wfp_installfilters (HANDLE hengine)
+VOID _wfp_installfilters (_In_ HANDLE hengine)
 {
 	// set security information
 	_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, FALSE);
@@ -505,7 +505,7 @@ VOID _wfp_installfilters (HANDLE hengine)
 	_r_spinlock_releaseshared (&lock_transaction);
 }
 
-BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line)
+BOOLEAN _wfp_transact_start (_In_ HANDLE hengine, _In_ UINT line)
 {
 	ULONG code = FwpmTransactionBegin (hengine, 0);
 
@@ -521,7 +521,7 @@ BOOLEAN _wfp_transact_start (HANDLE hengine, UINT line)
 	return TRUE;
 }
 
-BOOLEAN _wfp_transact_commit (HANDLE hengine, UINT line)
+BOOLEAN _wfp_transact_commit (_In_ HANDLE hengine, _In_ UINT line)
 {
 	ULONG code = FwpmTransactionCommit (hengine);
 
@@ -537,7 +537,7 @@ BOOLEAN _wfp_transact_commit (HANDLE hengine, UINT line)
 	return TRUE;
 }
 
-BOOLEAN _wfp_deletefilter (HANDLE hengine, LPCGUID filter_id)
+BOOLEAN _wfp_deletefilter (_In_ HANDLE hengine, _In_ LPCGUID filter_id)
 {
 	ULONG code = FwpmFilterDeleteByKey (hengine, filter_id);
 
@@ -560,7 +560,7 @@ BOOLEAN _wfp_deletefilter (HANDLE hengine, LPCGUID filter_id)
 	return TRUE;
 }
 
-FORCEINLINE LPCWSTR _wfp_filtertypetostring (ENUM_TYPE_DATA filter_type)
+FORCEINLINE LPCWSTR _wfp_filtertypetostring (_In_ ENUM_TYPE_DATA filter_type)
 {
 	switch (filter_type)
 	{
@@ -598,7 +598,7 @@ FORCEINLINE LPCWSTR _wfp_filtertypetostring (ENUM_TYPE_DATA filter_type)
 	return NULL;
 }
 
-ULONG _wfp_createfilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWSTR name, FWPM_FILTER_CONDITION* lpcond, UINT32 count, UINT8 weight, LPCGUID layer_id, LPCGUID callout_id, FWP_ACTION_TYPE action, UINT32 flags, PR_ARRAY guids)
+ULONG _wfp_createfilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_type, _In_opt_ LPCWSTR name, _In_count_ (count) FWPM_FILTER_CONDITION* lpcond, _In_ UINT32 count, _In_ UINT8 weight, _In_opt_ LPCGUID layer_id, _In_opt_ LPCGUID callout_id, _In_ FWP_ACTION_TYPE action, _In_ UINT32 flags, _In_opt_ PR_ARRAY guids)
 {
 	FWPM_FILTER filter = {0};
 
@@ -662,10 +662,10 @@ ULONG _wfp_createfilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWSTR nam
 	}
 
 	if (layer_id)
-		RtlCopyMemory (&filter.layerKey, layer_id, sizeof (GUID));
+		memcpy (&filter.layerKey, layer_id, sizeof (GUID));
 
 	if (callout_id)
-		RtlCopyMemory (&filter.action.calloutKey, callout_id, sizeof (GUID));
+		memcpy (&filter.action.calloutKey, callout_id, sizeof (GUID));
 
 	code = FwpmFilterAdd (hengine, &filter, NULL, &filter_id);
 
@@ -713,7 +713,7 @@ VOID _wfp_clearfilter_ids ()
 	}
 }
 
-VOID _wfp_destroyfilters (HANDLE hengine)
+VOID _wfp_destroyfilters (_In_ HANDLE hengine)
 {
 	_wfp_clearfilter_ids ();
 
@@ -730,7 +730,7 @@ VOID _wfp_destroyfilters (HANDLE hengine)
 	_r_spinlock_releaseshared (&lock_transaction);
 }
 
-BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, PR_ARRAY guids, UINT line)
+BOOLEAN _wfp_destroyfilters_array (_In_ HANDLE hengine, _In_ PR_ARRAY guids, _In_ UINT line)
 {
 	if (_r_obj_isarrayempty (guids))
 		return FALSE;
@@ -768,7 +768,7 @@ BOOLEAN _wfp_destroyfilters_array (HANDLE hengine, PR_ARRAY guids, UINT line)
 	return TRUE;
 }
 
-BOOLEAN _wfp_createrulefilter (HANDLE hengine, ENUM_TYPE_DATA filter_type, LPCWSTR name, SIZE_T app_hash, PR_STRING rule_remote, PR_STRING rule_local, UINT8 protocol, ADDRESS_FAMILY af, FWP_DIRECTION dir, UINT8 weight, FWP_ACTION_TYPE action, UINT32 flag, PR_ARRAY guids)
+BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_type, _In_opt_ LPCWSTR name, _In_opt_ SIZE_T app_hash, _In_opt_ PR_STRING rule_remote, _In_opt_ PR_STRING rule_local, _In_opt_ UINT8 protocol, _In_opt_ ADDRESS_FAMILY af, _In_opt_ FWP_DIRECTION dir, _In_ UINT8 weight, _In_ FWP_ACTION_TYPE action, _In_opt_ UINT32 flag, _In_opt_ PR_ARRAY guids)
 {
 	UINT32 count = 0;
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
@@ -1060,7 +1060,7 @@ CleanupExit:
 	return is_success;
 }
 
-BOOLEAN _wfp_create4filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN is_intransact)
+BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT line, _In_ BOOLEAN is_intransact)
 {
 	if (_r_obj_islistempty (rules))
 		return FALSE;
@@ -1235,7 +1235,7 @@ BOOLEAN _wfp_create4filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN i
 	return TRUE;
 }
 
-BOOLEAN _wfp_create3filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN is_intransact)
+BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT line, _In_ BOOLEAN is_intransact)
 {
 	if (_r_obj_islistempty (rules))
 		return FALSE;
@@ -1328,7 +1328,7 @@ BOOLEAN _wfp_create3filters (HANDLE hengine, PR_LIST rules, UINT line, BOOLEAN i
 	return TRUE;
 }
 
-BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
+BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN is_intransact)
 {
 	LPCGUID guid;
 	BOOLEAN is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
@@ -1640,7 +1640,7 @@ BOOLEAN _wfp_create2filters (HANDLE hengine, UINT line, BOOLEAN is_intransact)
 	return TRUE;
 }
 
-SIZE_T _wfp_dumpfilters (HANDLE hengine, LPCGUID provider_id, PR_ARRAY guids)
+SIZE_T _wfp_dumpfilters (_In_ HANDLE hengine, _In_ LPCGUID provider_id, _Inout_ PR_ARRAY guids)
 {
 	_r_obj_cleararray (guids);
 
@@ -1682,7 +1682,7 @@ SIZE_T _wfp_dumpfilters (HANDLE hengine, LPCGUID provider_id, PR_ARRAY guids)
 	return result;
 }
 
-BOOLEAN _mps_firewallapi (PBOOLEAN pis_enabled, PBOOLEAN pis_enable)
+BOOLEAN _mps_firewallapi (_Inout_opt_ PBOOLEAN pis_enabled, _In_opt_ PBOOLEAN pis_enable)
 {
 	if (!pis_enabled && !pis_enable)
 		return FALSE;
@@ -1745,7 +1745,7 @@ CleanupExit:
 	return result;
 }
 
-VOID _mps_changeconfig2 (BOOLEAN is_enable)
+VOID _mps_changeconfig2 (_In_ BOOLEAN is_enable)
 {
 	// check settings
 	BOOLEAN is_wfenabled = FALSE;
@@ -1839,7 +1839,8 @@ VOID _mps_changeconfig2 (BOOLEAN is_enable)
 	}
 }
 
-ULONG _FwpmGetAppIdFromFileName1 (LPCWSTR path, FWP_BYTE_BLOB** lpblob, ENUM_TYPE_DATA type)
+_Success_ (return == ERROR_SUCCESS)
+ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB** lpblob, _In_ ENUM_TYPE_DATA type)
 {
 	ULONG code = ERROR_FILE_NOT_FOUND;
 
@@ -1935,7 +1936,7 @@ VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Outptr_ FWP_BYT
 	blob->size = (UINT32)bytes_count;
 	blob->data = PTR_ADD_OFFSET (blob, sizeof (FWP_BYTE_BLOB));
 
-	RtlCopyMemory (blob->data, data, bytes_count);
+	memcpy (blob->data, data, bytes_count);
 
 	*byte_blob = blob;
 }
