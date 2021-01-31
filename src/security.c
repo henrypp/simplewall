@@ -3,6 +3,7 @@
 
 #include "global.h"
 
+_Ret_maybenull_
 PSID _app_quyerybuiltinsid (_In_ WELL_KNOWN_SID_TYPE sid_type)
 {
 	ULONG sid_length = SECURITY_MAX_SID_SIZE;
@@ -16,6 +17,7 @@ PSID _app_quyerybuiltinsid (_In_ WELL_KNOWN_SID_TYPE sid_type)
 	return NULL;
 }
 
+_Ret_maybenull_
 PSID _app_queryservicesid (_In_ LPCWSTR name)
 {
 	UNICODE_STRING service_name;
@@ -105,7 +107,8 @@ VOID _app_generate_credentials ()
 		config.pservice_wdiservicehost_sid = _app_queryservicesid (L"WdiServiceHost");
 }
 
-PACL _app_createaccesscontrollist (PACL pacl, BOOLEAN is_secure)
+_Ret_maybenull_
+PACL _app_createaccesscontrollist (_In_ PACL pacl, _In_ BOOLEAN is_secure)
 {
 	BOOLEAN is_secured = FALSE;
 
@@ -347,12 +350,10 @@ VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID lpguid, 
 
 	if (pnewdacl)
 	{
-		FwpmProviderSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, NULL, NULL);
-
-		code = FwpmProviderSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pnewdacl, NULL);
+		code = FwpmProviderSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
 
 		if (code != ERROR_SUCCESS)
-			_r_log (Error, 0, L"FwpmProviderSetSecurityInfoByKey", code, L"DACL_SECURITY_INFORMATION");
+			_r_log (Error, 0, L"FwpmProviderSetSecurityInfoByKey", code, NULL);
 
 		LocalFree (pnewdacl);
 	}
@@ -379,9 +380,7 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID lpguid, 
 
 	if (pnewdacl)
 	{
-		FwpmSubLayerSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, NULL, NULL);
-
-		code = FwpmSubLayerSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pnewdacl, NULL);
+		code = FwpmSubLayerSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
 
 		if (code != ERROR_SUCCESS)
 			_r_log (Error, 0, L"FwpmSubLayerSetSecurityInfoByKey", code, NULL);
@@ -417,9 +416,7 @@ VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _I
 
 	if (pnewdacl)
 	{
-		FwpmFilterSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, NULL, NULL);
-
-		code = FwpmFilterSetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, pnewdacl, NULL);
+		code = FwpmFilterSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
 
 		if (code != ERROR_SUCCESS)
 			_r_log_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" PRIu32, line);
