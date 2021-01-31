@@ -1752,7 +1752,7 @@ VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA 
 	}
 }
 
-VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, _Out_ PLONG64 ptimestamp)
+VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 ptimestamp)
 {
 	HANDLE hfile;
 
