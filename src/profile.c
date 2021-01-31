@@ -121,6 +121,10 @@ PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
 	{
 		return IntToPtr (_app_getlistview_id (ptr_rule->type));
 	}
+	else if (info_data == InfoIsReadonly)
+	{
+		return IntToPtr (ptr_rule->is_readonly ? TRUE : FALSE);
+	}
 
 	return NULL;
 }

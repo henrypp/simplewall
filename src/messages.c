@@ -96,13 +96,10 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 			_r_obj_movereference (&localized_string, _r_format_string (L"%s\tDel", _r_locale_getstring (IDS_DELETE)));
 			AppendMenu (hmenu, MF_STRING, IDM_DELETE, _r_obj_getstringorempty (localized_string));
 
-			PITEM_RULE ptr_rule = _app_getrulebyid (hash_item);
+			BOOLEAN is_readonly = !!(PtrToInt (_app_getruleinfobyid (hash_item, InfoIsReadonly)));
 
-			if (ptr_rule)
-			{
-				if (ptr_rule->is_readonly)
-					_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
-			}
+			if (is_readonly)
+				_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
 		}
 
 		AppendMenu (hmenu, MF_SEPARATOR, 0, NULL);
