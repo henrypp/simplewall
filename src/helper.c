@@ -351,7 +351,7 @@ LPCWSTR _app_getdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened)
 }
 
 _Success_ (return)
-BOOLEAN _app_getfileicon (_In_ LPCWSTR path, _In_ BOOLEAN is_small, _Out_opt_ PINT picon_id, _Out_opt_ HICON* picon)
+BOOLEAN _app_getfileicon (_In_ LPCWSTR path, _In_ BOOLEAN is_small, _Out_opt_ PINT picon_id, _Out_opt_ HICON * picon)
 {
 	SHFILEINFO shfi = {0};
 	ULONG flags = 0;
@@ -1921,103 +1921,103 @@ VOID _app_generate_packages ()
 
 	code = RegOpenKeyEx (HKEY_CURRENT_USER, L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages", 0, KEY_READ, &hkey);
 
-	if (code == ERROR_SUCCESS)
+	if (code != ERROR_SUCCESS)
+		return;
+
+	max_length = _r_reg_querysubkeylength (hkey);
+
+	if (max_length)
 	{
-		max_length = _r_reg_querysubkeylength (hkey);
+		key_name = _r_obj_createstringex (NULL, max_length * sizeof (WCHAR));
+		key_index = 0;
 
-		if (max_length)
+		while (TRUE)
 		{
-			key_name = _r_obj_createstringex (NULL, max_length * sizeof (WCHAR));
-			key_index = 0;
+			size = max_length + 1;
 
-			while (TRUE)
+			if (RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+				break;
+
+			_r_obj_trimstringtonullterminator (key_name);
+
+			code = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
+
+			if (code == ERROR_SUCCESS)
 			{
-				size = max_length + 1;
+				package_sid = _r_reg_querybinary (hsubkey, NULL, L"PackageSid");
 
-				if (RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
-					break;
-
-				_r_obj_trimstringtonullterminator (key_name);
-
-				code = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
-
-				if (code == ERROR_SUCCESS)
+				if (package_sid)
 				{
-					package_sid = _r_reg_querybinary (hsubkey, NULL, L"PackageSid");
-
-					if (package_sid)
+					if (RtlValidSid (package_sid->buffer))
 					{
-						if (RtlValidSid (package_sid->buffer))
+						package_sid_string = _r_str_fromsid (package_sid->buffer);
+
+						if (package_sid_string)
 						{
-							package_sid_string = _r_str_fromsid (package_sid->buffer);
+							app_hash = _r_obj_getstringhash (package_sid_string);
 
-							if (package_sid_string)
+							if (!_r_obj_findhashtable (apps, app_hash))
 							{
-								app_hash = _r_obj_getstringhash (package_sid_string);
+								display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
 
-								if (!_r_obj_findhashtable (apps, app_hash))
+								if (display_name)
 								{
-									display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
-
-									if (display_name)
+									if (display_name->buffer[0] == L'@')
 									{
-										if (display_name->buffer[0] == L'@')
+										UINT localized_length = 0x200;
+										PR_STRING localized_name = _r_obj_createstringex (NULL, localized_length * sizeof (WCHAR));
+
+										if (SUCCEEDED (SHLoadIndirectString (display_name->buffer, localized_name->buffer, localized_length, NULL)))
 										{
-											UINT localized_length = 0x200;
-											PR_STRING localized_name = _r_obj_createstringex (NULL, localized_length * sizeof (WCHAR));
+											_r_obj_trimstringtonullterminator (localized_name);
 
-											if (SUCCEEDED (SHLoadIndirectString (display_name->buffer, localized_name->buffer, localized_length, NULL)))
-											{
-												_r_obj_trimstringtonullterminator (localized_name);
-
-												_r_obj_movereference (&display_name, localized_name);
-											}
-											else
-											{
-												_r_obj_dereference (localized_name);
-											}
+											_r_obj_movereference (&display_name, localized_name);
 										}
-
-										// use registry key name as fallback package name
-										if (_r_obj_isstringempty (display_name))
-											_r_obj_movereference (&display_name, _r_obj_reference (key_name));
-
-										real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
-
-										ptr_app = _app_addapplication (NULL, DataAppUWP, package_sid_string->buffer, display_name, real_path);
-
-										if (ptr_app)
+										else
 										{
-											LONG64 timestamp = _r_reg_querytimestamp (hsubkey);
-
-											_app_setappinfo (ptr_app, InfoTimestampPtr, &timestamp);
-
-											_r_obj_movereference (&ptr_app->pbytes, _r_obj_reference (package_sid));
+											_r_obj_dereference (localized_name);
 										}
-
-										if (real_path)
-											_r_obj_dereference (real_path);
-
-										_r_obj_dereference (display_name);
 									}
+
+									// use registry key name as fallback package name
+									if (_r_obj_isstringempty (display_name))
+										_r_obj_movereference (&display_name, _r_obj_reference (key_name));
+
+									real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
+
+									ptr_app = _app_addapplication (NULL, DataAppUWP, package_sid_string->buffer, display_name, real_path);
+
+									if (ptr_app)
+									{
+										LONG64 timestamp = _r_reg_querytimestamp (hsubkey);
+
+										_app_setappinfo (ptr_app, InfoTimestampPtr, &timestamp);
+
+										_r_obj_movereference (&ptr_app->pbytes, _r_obj_reference (package_sid));
+									}
+
+									if (real_path)
+										_r_obj_dereference (real_path);
+
+									_r_obj_dereference (display_name);
 								}
-
-								_r_obj_dereference (package_sid_string);
 							}
-						}
 
-						_r_obj_dereference (package_sid);
+							_r_obj_dereference (package_sid_string);
+						}
 					}
 
-					RegCloseKey (hsubkey);
+					_r_obj_dereference (package_sid);
 				}
-			}
 
-			_r_obj_dereference (key_name);
+				RegCloseKey (hsubkey);
+			}
 		}
 
-		RegCloseKey (hkey);
+		_r_obj_dereference (key_name);
 	}
+
+	RegCloseKey (hkey);
 }
 
 VOID _app_generate_services ()
