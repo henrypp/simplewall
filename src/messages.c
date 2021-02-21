@@ -323,7 +323,7 @@ VOID _app_message_dpichanged (_In_ HWND hwnd)
 
 	_app_toolbar_resize ();
 
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 	if (listview_id)
 	{
@@ -523,7 +523,7 @@ VOID _app_message_find (_In_ HWND hwnd, _In_ LPFINDREPLACE lpfr)
 	}
 	else if ((lpfr->Flags & FR_FINDNEXT) != 0)
 	{
-		INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+		INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 		if (!listview_id)
 			return;
@@ -571,34 +571,6 @@ find_wrap:
 			goto find_wrap;
 		}
 	}
-}
-
-VOID _app_message_resizewindow (_In_ HWND hwnd, _In_ LPARAM lparam)
-{
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
-	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
-
-	RECT rc = {0};
-	GetClientRect (GetDlgItem (hwnd, IDC_STATUSBAR), &rc);
-
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
-	INT statusbar_height = _r_calc_rectheight (&rc);
-	INT rebar_height = (INT)SendDlgItemMessage (hwnd, IDC_REBAR, RB_GETBARHEIGHT, 0, 0);
-
-	HDWP hdefer = BeginDeferWindowPos (2);
-
-	hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, LOWORD (lparam), rebar_height, SWP_NOZORDER | SWP_NOOWNERZORDER);
-	hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOOWNERZORDER);
-
-	EndDeferWindowPos (hdefer);
-
-	if (listview_id)
-	{
-		_r_tab_adjustchild (hwnd, IDC_TAB, GetDlgItem (hwnd, listview_id));
-		_app_listviewresize (hwnd, listview_id, FALSE);
-	}
-
-	_app_refreshstatus (hwnd, 0);
 }
 
 VOID _app_message_initialize (_In_ HWND hwnd)
@@ -797,9 +769,9 @@ VOID _app_message_localize (_In_ HWND hwnd)
 	_app_toolbar_resize ();
 
 	// localize tabs
-	for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
+	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB); i++)
 	{
-		INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
+		INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, i);
 
 		UINT locale_id;
 
@@ -895,7 +867,7 @@ VOID _app_message_localize (_In_ HWND hwnd)
 		}
 	}
 
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 	if (listview_id)
 	{
@@ -918,7 +890,7 @@ VOID _app_message_localize (_In_ HWND hwnd)
 
 VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 	if (!listview_id || !_r_listview_getselectedcount (hwnd, listview_id))
 		return;
@@ -1085,7 +1057,7 @@ VOID _app_command_copy (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT column_id)
 	INT column_count;
 	INT item;
 
-	listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 	item = -1;
 
 	column_count = _r_listview_getcolumncount (hwnd, listview_id);
@@ -1142,7 +1114,7 @@ VOID _app_command_copy (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT column_id)
 VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
 	PR_LIST rules = _r_obj_createlistex (0x400, NULL);
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 	INT item = -1;
 	BOOLEAN new_val = (ctrl_id == IDM_CHECK);
 	BOOLEAN is_changed = FALSE;
@@ -1251,7 +1223,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 	INT selected;
 	INT count;
 
-	listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 	if (listview_id != IDC_APPS_PROFILE && listview_id != IDC_RULES_CUSTOM && listview_id != IDC_NETWORK)
 		return;
@@ -1402,7 +1374,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 
 VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 	// note: these commands only for apps...
 	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
@@ -1453,7 +1425,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 	ptr_rule->type = DataRuleUser;
 
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
@@ -1584,7 +1556,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 VOID _app_command_properties (_In_ HWND hwnd)
 {
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 	INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 
 	if (item == -1)
@@ -1809,7 +1781,7 @@ VOID _app_command_purgetimers (_In_ HWND hwnd)
 
 	_app_profile_save ();
 
-	INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 	if (listview_id)
 	{
@@ -1840,9 +1812,9 @@ VOID _app_command_selectfont (_In_ HWND hwnd)
 
 		INT current_page = (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
 
-		for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
+		for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB); i++)
 		{
-			INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
+			INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, i);
 
 			if (listview_id)
 			{
