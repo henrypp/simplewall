@@ -1121,7 +1121,7 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 	{
 		if (hwnd)
 		{
-			if (listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1))
+			if (listview_id == (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1))
 				_app_listviewsort (hwnd, listview_id, -1, FALSE);
 
 			_app_refreshstatus (hwnd, listview_id);
@@ -1853,7 +1853,7 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 
 VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 {
-	INT current_listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+	INT current_listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 	INT selected_item = (INT)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 	INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, current_listview_id), SB_VERT);
 
@@ -2024,7 +2024,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	if (hwnd && current_listview_id)
 	{
-		INT new_listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+		INT new_listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 		if (new_listview_id)
 		{

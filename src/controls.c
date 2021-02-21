@@ -5,12 +5,17 @@
 
 VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id)
 {
-	if (!page_id || ((INT)_r_tab_getlparam (hwnd, IDC_TAB, -1) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
+	if (!page_id || ((INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
 		return;
 
-	for (INT i = 0; i < (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETITEMCOUNT, 0, 0); i++)
+	INT count = _r_tab_getitemcount (hwnd, IDC_TAB);
+
+	if (!count)
+		return;
+
+	for (INT i = 0; i < count; i++)
 	{
-		INT listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, i);
+		INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, i);
 
 		if (listview_id == page_id)
 		{
@@ -706,7 +711,7 @@ VOID _app_refreshstatus (_In_ HWND hwnd, _In_ INT listview_id)
 	if (listview_id)
 	{
 		if (listview_id == -1)
-			listview_id = (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1);
+			listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 		_app_refreshgroups (hwnd, listview_id);
 	}
@@ -743,7 +748,7 @@ BOOLEAN _app_showappitem (_In_ HWND hwnd, _In_ PITEM_APP ptr_app)
 
 	if (listview_id)
 	{
-		if (listview_id == (INT)_r_tab_getlparam (hwnd, IDC_TAB, -1))
+		if (listview_id == (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1))
 			_app_listviewsort (hwnd, listview_id, -1, FALSE);
 
 		_app_showitem (hwnd, listview_id, _app_getposition (hwnd, listview_id, ptr_app->app_hash), -1);
