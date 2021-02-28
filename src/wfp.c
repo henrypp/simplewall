@@ -784,7 +784,7 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 	// set path condition
 	if (app_hash)
 	{
-		ptr_app = _r_obj_findhashtable (apps, app_hash);
+		ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
 		{

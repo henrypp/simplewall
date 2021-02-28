@@ -63,7 +63,7 @@ PVOID _app_getappinfobyhash (_In_ SIZE_T app_hash, _In_ ENUM_INFO_DATA info_data
 {
 	PITEM_APP ptr_app;
 
-	ptr_app = _r_obj_findhashtable (apps, app_hash);
+	ptr_app = _app_getappitem (app_hash);
 
 	if (!ptr_app)
 		return NULL;
@@ -108,7 +108,7 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 
 VOID _app_setappinfobyhash (_In_ SIZE_T app_hash, _In_ ENUM_INFO_DATA info_data, _In_ PVOID value)
 {
-	PITEM_APP ptr_app = _r_obj_findhashtable (apps, app_hash);
+	PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 	if (ptr_app)
 		_app_setappinfo (ptr_app, info_data, value);
@@ -166,7 +166,7 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	}
 
 	app_hash = _r_str_hash (path);
-	ptr_app = _r_obj_findhashtable (apps, app_hash);
+	ptr_app = _app_getappitem (app_hash);
 
 	if (ptr_app)
 		return ptr_app; // already exists
@@ -393,7 +393,7 @@ SIZE_T _app_getlogapp (_In_ SIZE_T idx)
 
 COLORREF _app_getappcolor (_In_ INT listview_id, _In_ SIZE_T app_hash, _In_ BOOLEAN is_systemapp, _In_ BOOLEAN is_validconnection)
 {
-	PITEM_APP ptr_app = _r_obj_findhashtable (apps, app_hash);
+	PITEM_APP ptr_app = _app_getappitem (app_hash);
 	LPCWSTR color_value = NULL;
 	BOOLEAN is_profilelist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM);
 	BOOLEAN is_networklist = (listview_id == IDC_NETWORK || listview_id == IDC_LOG);
@@ -620,7 +620,7 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 	if (is_appslist || listview_id == IDC_RULE_APPS_ID)
 	{
 		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
-		PITEM_APP ptr_app = _r_obj_findhashtable (apps, app_hash);
+		PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 		if (ptr_app)
 		{
@@ -985,7 +985,7 @@ VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, 
 
 		while (_r_obj_enumhashtable (ptr_rule->apps, &hashstore, &hash_code, &enum_key))
 		{
-			ptr_app = _r_obj_findhashtable (apps, hash_code);
+			ptr_app = _app_getappitem (hash_code);
 
 			if (!ptr_app)
 				continue;
@@ -1209,7 +1209,7 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 
 	while (_r_obj_enumhashtable (ptr_rule->apps, &hashstore, &hash_code, &enum_key))
 	{
-		ptr_app = _r_obj_findhashtable (apps, hash_code);
+		ptr_app = _app_getappitem (hash_code);
 
 		if (!ptr_app)
 			continue;
@@ -1451,7 +1451,7 @@ VOID _app_profile_load_fallback ()
 {
 	PITEM_APP ptr_app;
 
-	if (!_r_obj_findhashtable (apps, config.my_hash))
+	if (!_app_getappitem (config.my_hash))
 	{
 		ptr_app = _app_addapplication (NULL, DataUnknown, _r_sys_getimagepathname (), NULL, NULL);
 
@@ -1464,10 +1464,10 @@ VOID _app_profile_load_fallback ()
 	// disable deletion for this shit ;)
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
-		if (!_r_obj_findhashtable (apps, config.ntoskrnl_hash))
+		if (!_app_getappitem (config.ntoskrnl_hash))
 			_app_addapplication (NULL, DataUnknown, PROC_SYSTEM_NAME, NULL, NULL);
 
-		if (!_r_obj_findhashtable (apps, config.svchost_hash))
+		if (!_app_getappitem (config.svchost_hash))
 			_app_addapplication (NULL, DataUnknown, _r_obj_getstring (config.svchost_path), NULL, NULL);
 
 		_app_setappinfobyhash (config.ntoskrnl_hash, InfoIsUndeletable, IntToPtr (TRUE));
@@ -1687,7 +1687,7 @@ VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA 
 									continue;
 								}
 
-								ptr_app = _r_obj_findhashtable (apps, app_hash);
+								ptr_app = _app_getappitem (app_hash);
 
 								if (!ptr_app)
 								{

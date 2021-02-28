@@ -25,6 +25,12 @@ PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote
 PITEM_RULE_CONFIG _app_addruleconfigtable (_In_ PR_HASHTABLE hashtable, _In_ SIZE_T rule_hash, _In_opt_ PR_STRING name, _In_ BOOLEAN is_enabled);
 
 _Ret_maybenull_
+FORCEINLINE PITEM_APP _app_getappitem (_In_ SIZE_T app_hash)
+{
+	return _r_obj_findhashtable (apps, app_hash);
+}
+
+_Ret_maybenull_
 PITEM_RULE _app_getrulebyid (_In_ SIZE_T idx);
 
 _Ret_maybenull_
