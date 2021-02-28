@@ -54,7 +54,8 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map);
 VOID _app_generate_packages ();
 VOID _app_generate_services ();
 
-VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_ PITEM_APP ptr_app);
+VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash);
+VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_opt_ PITEM_APP ptr_app);
 
 _Ret_maybenull_
 PR_STRING _app_parsehoststring (_In_ LPCWSTR hostname, _In_opt_ USHORT port);

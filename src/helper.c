@@ -1956,7 +1956,7 @@ VOID _app_generate_packages ()
 						{
 							app_hash = _r_obj_getstringhash (package_sid_string);
 
-							if (!_r_obj_findhashtable (apps, app_hash))
+							if (!_app_getappitem (app_hash))
 							{
 								display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
 
@@ -2090,7 +2090,7 @@ VOID _app_generate_services ()
 
 			app_hash = _r_str_hash (service_name);
 
-			if (_r_obj_findhashtable (apps, app_hash))
+			if (_app_getappitem (app_hash))
 				continue;
 
 			_r_str_printf (general_key, RTL_NUMBER_OF (general_key), L"System\\CurrentControlSet\\Services\\%s", service_name);
@@ -2198,12 +2198,98 @@ VOID _app_generate_services ()
 	CloseServiceHandle (hsvcmgr);
 }
 
-VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_ PITEM_APP ptr_app)
+VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
+{
+	ITEM_STATUS status = {0};
+
+	_app_getcount (&status);
+
+	if (!app_hash || !status.rules_count)
+	{
+		AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
+		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, _r_locale_getstring (IDS_STATUS_EMPTY));
+
+		_r_menu_enableitem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND, FALSE);
+	}
+	else
+	{
+		MENUITEMINFO mii;
+		WCHAR buffer[128];
+		PITEM_RULE ptr_rule;
+		UINT size_of;
+		BOOLEAN is_global;
+		BOOLEAN is_enabled;
+
+		size_of = sizeof (mii);
+
+		for (UINT8 type = 0; type < 2; type++)
+		{
+			if (type == 0)
+			{
+				if (!status.rules_predefined_count)
+					continue;
+			}
+			else
+			{
+				if (!status.rules_user_count)
+					continue;
+			}
+
+			AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
+
+			for (UINT8 loop = 0; loop < 2; loop++)
+			{
+				for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
+				{
+					ptr_rule = _r_obj_getarrayitem (rules_arr, i);
+
+					if (!ptr_rule)
+						continue;
+
+					is_global = (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps));
+					is_enabled = is_global || (ptr_rule->is_enabled && (_r_obj_findhashtable (ptr_rule->apps, app_hash)));
+
+					if (ptr_rule->type != DataRuleUser || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)))
+						continue;
+
+					if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
+						continue;
+
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_RULE_APPLY_2), _r_obj_getstring (ptr_rule->name));
+
+					if (ptr_rule->is_readonly)
+						_r_str_append (buffer, RTL_NUMBER_OF (buffer), SZ_RULE_INTERNAL_MENU);
+
+					memset (&mii, 0, size_of);
+
+					mii.cbSize = size_of;
+					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING/* | MIIM_BITMAP | MIIM_CHECKMARKS*/;
+					mii.fType = MFT_STRING;
+					mii.dwTypeData = buffer;
+					//mii.hbmpItem = ptr_rule->is_block ? config.hbmp_block : config.hbmp_allow;
+					//mii.hbmpChecked = config.hbmp_checked;
+					//mii.hbmpUnchecked = config.hbmp_unchecked;
+					mii.fState = (is_enabled ? MF_CHECKED : MF_UNCHECKED);
+					mii.wID = IDX_RULES_SPECIAL + (UINT)i;
+
+					InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
+				}
+			}
+		}
+	}
+
+	AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
+	//AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, _r_locale_getstring (IDS_EDITRULES));
+	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, _r_locale_getstring (IDS_OPENRULESEDITOR));
+}
+
+VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_opt_ PITEM_APP ptr_app)
 {
 	WCHAR interval_string[128];
 	LONG64 current_time;
 	PVOID timer_ptr;
 	LONG64 app_time = 0;
+	LONG64 timestamp;
 	UINT index;
 	BOOLEAN is_checked = (ptr_app == NULL);
 	BOOLEAN is_menu = (ctrl_id == 0);
@@ -2229,7 +2315,7 @@ VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_ PITEM_
 		if (!timer_ptr)
 			continue;
 
-		LONG64 timestamp = *((PLONG64)timer_ptr);
+		timestamp = *((PLONG64)timer_ptr);
 
 		_r_format_interval (interval_string, RTL_NUMBER_OF (interval_string), timestamp + 1, 1);
 
