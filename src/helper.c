@@ -2239,7 +2239,9 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 
 			for (UINT8 loop = 0; loop < 2; loop++)
 			{
-				for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
+				SIZE_T limit_group = 10; // limit rules
+
+				for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr) && limit_group; i++)
 				{
 					ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
@@ -2263,7 +2265,7 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 					memset (&mii, 0, size_of);
 
 					mii.cbSize = size_of;
-					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING/* | MIIM_BITMAP | MIIM_CHECKMARKS*/;
+					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
 					mii.fType = MFT_STRING;
 					mii.dwTypeData = buffer;
 					//mii.hbmpItem = ptr_rule->is_block ? config.hbmp_block : config.hbmp_allow;
@@ -2273,13 +2275,14 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 					mii.wID = IDX_RULES_SPECIAL + (UINT)i;
 
 					InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
+
+					limit_group -= 1;
 				}
 			}
 		}
 	}
 
 	AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-	//AppendMenu (hsubmenu, MF_STRING, IDM_EDITRULES, _r_locale_getstring (IDS_EDITRULES));
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, _r_locale_getstring (IDS_OPENRULESEDITOR));
 }
 
