@@ -76,8 +76,7 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 	HICON hico_sm = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
 	HICON hico_big = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
 
-	SendMessage (hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hico_sm);
-	SendMessage (hwnd, WM_SETICON, ICON_BIG, (LPARAM)hico_big);
+	_r_wnd_seticon (hwnd, hico_sm, hico_big);
 
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
