@@ -18,6 +18,7 @@ FORCEINLINE VOID _app_message_uninitialize (_In_ HWND hwnd)
 	_r_tray_destroy (hwnd, UID);
 }
 
+VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id);
 VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id);
 
 VOID _app_command_logshow (_In_ HWND hwnd);
