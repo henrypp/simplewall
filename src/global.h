@@ -26,17 +26,6 @@
 #include "rapp.h"
 #include "main.h"
 
-#include "controls.h"
-#include "editor.h"
-#include "helper.h"
-#include "log.h"
-#include "messages.h"
-#include "notifications.h"
-#include "profile.h"
-#include "security.h"
-#include "timer.h"
-#include "wfp.h"
-
 #include "config.h"
 #include "..\..\mxml\mxml.h"
 
@@ -79,3 +68,14 @@ DECLSPEC_SELECTANY R_SPINLOCK lock_transaction;
 #ifndef FWP_DIRECTION_OUT
 #define FWP_DIRECTION_OUT 0x00003901L
 #endif
+
+#include "controls.h"
+#include "editor.h"
+#include "helper.h"
+#include "log.h"
+#include "messages.h"
+#include "notifications.h"
+#include "profile.h"
+#include "security.h"
+#include "timer.h"
+#include "wfp.h"
