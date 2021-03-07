@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2020 Henry++
+// Copyright (c) 2021 Henry++
 
 #include "global.h"
 
