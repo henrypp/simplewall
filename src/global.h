@@ -26,7 +26,6 @@
 #include "rapp.h"
 #include "main.h"
 
-#include "config.h"
 #include "..\..\mxml\mxml.h"
 
 #include "resource.h"
