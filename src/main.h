@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2020 Henry++
+// Copyright (c) 2016-2021 Henry++
 
 #pragma once
 
@@ -69,6 +69,7 @@ typedef enum _ENUM_INFO_DATA
 	InfoIconId,
 	InfoListviewId,
 	InfoIsEnabled,
+	InfoIsReadonly,
 	InfoIsSilent,
 	InfoIsTimerSet,
 	InfoIsUndeletable,
@@ -467,6 +468,40 @@ typedef struct tagITEM_ADDRESS
 
 	BOOLEAN is_range;
 } ITEM_ADDRESS, *PITEM_ADDRESS;
+
+typedef struct _ITEM_LOG_CALLBACK
+{
+	union
+	{
+		UINT32 remote_addr4;
+		const FWP_BYTE_ARRAY16* remote_addr6;
+	} DUMMYUNIONNAME;
+
+	union
+	{
+		UINT32 local_addr4;
+		const FWP_BYTE_ARRAY16* local_addr6;
+	} DUMMYUNIONNAME2;
+
+	FWP_IP_VERSION version;
+
+	const FILETIME* timestamp;
+	PUINT8 app_id;
+	PSID package_id;
+	PSID user_id;
+
+	UINT64 filter_id;
+
+	UINT32 flags;
+	UINT32 direction;
+
+	UINT16 remote_port;
+	UINT16 local_port;
+	UINT16 layer_id;
+	UINT8 protocol;
+	BOOLEAN is_allow;
+	BOOLEAN is_loopback;
+} ITEM_LOG_CALLBACK, *PITEM_LOG_CALLBACK;
 
 typedef struct tagITEM_LOG_LISTENTRY
 {
