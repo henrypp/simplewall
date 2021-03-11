@@ -500,6 +500,8 @@ VOID _app_toolbar_init (_In_ HWND hwnd)
 	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
 
+	_r_toolbar_resize (hwnd, IDC_TOOLBAR);
+
 	REBARBANDINFO rbi = {0};
 
 	rbi.cbSize = sizeof (rbi);
