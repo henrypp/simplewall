@@ -412,22 +412,25 @@ typedef struct tagITEM_CONTEXT
 
 	union
 	{
-		PITEM_RULE ptr_rule;
-		PITEM_APP ptr_app;
-	};
+		struct
+		{
+			union
+			{
+				PITEM_RULE ptr_rule;
+				PITEM_APP ptr_app;
+			};
 
-	union
-	{
+			BOOLEAN is_settorules;
+		};
+
 		struct
 		{
 			INT listview_id;
 			INT item_id;
 		};
+
 		BOOLEAN is_install;
 	};
-
-	BOOLEAN is_settorules;
-
 } ITEM_CONTEXT, *PITEM_CONTEXT;
 
 typedef struct tagITEM_COLOR
