@@ -1807,8 +1807,6 @@ VOID _app_initialize ()
 	{
 		(*cache_array[i]) = _r_obj_createhashtableex (sizeof (R_HASHSTORE), MAP_CACHE_MAX, &_r_util_dereferencehashstoreprocedure);
 	}
-
-	WindowsFirewallAcquireFirewallCategory ();
 }
 
 INT FirstDriveFromMask (_In_ ULONG unitmask)
