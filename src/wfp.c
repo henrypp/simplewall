@@ -17,11 +17,11 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE hengine)
 	{
 		if (ptr_provider)
 		{
-			if (!!(ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED))
+			if ((ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED))
 			{
 				result = InstallDisabled;
 			}
-			else if ((ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT) != 0)
+			else if ((ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT))
 			{
 				result = InstallEnabled;
 			}
@@ -46,7 +46,7 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE hengine)
 	{
 		if (ptr_sublayer)
 		{
-			if (!!(ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT))
+			if ((ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT))
 			{
 				result = InstallEnabled;
 			}
@@ -271,7 +271,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
 						FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
 
 					// 1903+
-					if (_r_sys_isosversiongreaterorequal (WINDOWS_10_19H1))
+					if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
 						val.uint32 |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
 
 					code = FwpmEngineSetOption (hengine, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
