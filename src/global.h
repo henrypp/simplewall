@@ -57,6 +57,7 @@ DECLSPEC_SELECTANY R_SPINLOCK lock_apply;
 DECLSPEC_SELECTANY R_SPINLOCK lock_checkbox;
 DECLSPEC_SELECTANY R_SPINLOCK lock_logbusy;
 DECLSPEC_SELECTANY R_SPINLOCK lock_logthread;
+DECLSPEC_SELECTANY R_SPINLOCK lock_profile;
 DECLSPEC_SELECTANY R_SPINLOCK lock_transaction;
 
 // dropped events callback subscription (win7+)

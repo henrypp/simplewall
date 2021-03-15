@@ -548,45 +548,6 @@ VOID _app_getcount (_Inout_ PITEM_STATUS status)
 	}
 }
 
-INT _app_getappgroup (_In_ PITEM_APP ptr_app)
-{
-	// apps with special rule
-	if (_app_isapphaverule (ptr_app->app_hash, FALSE))
-		return 1;
-
-	if (!ptr_app->is_enabled)
-		return 2;
-
-	return 0;
-}
-
-INT _app_getnetworkgroup (_In_ PITEM_NETWORK ptr_network)
-{
-	if (ptr_network->type == DataAppService)
-		return 1;
-
-	if (ptr_network->type == DataAppUWP)
-		return 2;
-
-	return 0;
-}
-
-INT _app_getrulegroup (_In_ PITEM_RULE ptr_rule)
-{
-	if (!ptr_rule->is_enabled)
-		return 2;
-
-	return 0;
-}
-
-INT _app_getruleicon (_In_ PITEM_RULE ptr_rule)
-{
-	if (ptr_rule->is_block)
-		return 1;
-
-	return 0;
-}
-
 COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
 {
 	PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
@@ -1368,14 +1329,6 @@ BOOLEAN _app_isapphaverule (_In_ SIZE_T app_hash, _In_ BOOLEAN is_countdisabled)
 	return FALSE;
 }
 
-BOOLEAN _app_isappused (_In_ PITEM_APP ptr_app)
-{
-	if (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (ptr_app->app_hash, TRUE))
-		return TRUE;
-
-	return FALSE;
-}
-
 BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app)
 {
 	if (ptr_app->is_undeletable)
@@ -1403,15 +1356,10 @@ VOID _app_openappdirectory (_In_ PITEM_APP ptr_app)
 	if (path)
 	{
 		if (!_r_obj_isstringempty (path))
-			_r_path_explore (path->buffer);
+			_r_shell_openfile (path->buffer);
 
 		_r_obj_dereference (path);
 	}
-}
-
-BOOLEAN _app_profile_load_check_node (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_XML type)
-{
-	return (_r_str_tointeger_a (mxmlElementGetAttr (root_node, "type")) == type);
 }
 
 BOOLEAN _app_profile_load_check (_In_ LPCWSTR path, _In_ ENUM_TYPE_XML type)
@@ -1890,6 +1838,8 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	mxml_node_t *xml_node = NULL;
 	mxml_node_t *root_node = NULL;
 
+	_r_spinlock_acquireshared (&lock_profile);
+
 	hfile = CreateFile (path_custom ? path_custom : config.profile_path, FILE_GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (_r_fs_isvalidhandle (hfile))
@@ -1909,6 +1859,8 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 			CloseHandle (hfile);
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_profile);
 
 	if (!xml_node)
 	{
@@ -2077,14 +2029,6 @@ VOID _app_profile_save ()
 	LONG64 current_time = 0;
 	BOOLEAN is_backuprequired = FALSE;
 
-	hfile = CreateFile (config.profile_path, FILE_GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (!_r_fs_isvalidhandle (hfile))
-	{
-		_r_log (Error, UID, L"CreateFile", GetLastError (), config.profile_path);
-		return;
-	}
-
 	mxmlSetWrapMargin (0x2000);
 
 	current_time = _r_unixtime_now ();
@@ -2239,10 +2183,33 @@ VOID _app_profile_save ()
 		mxmlElementSetAttrf (item_node, "is_enabled", "%" PRIu8, ptr_config->is_enabled);
 	}
 
-	mxmlSaveFd (xml_node, hfile, &_app_profile_save_callback);
+	_r_spinlock_acquireexclusive (&lock_profile);
+
+	hfile = CreateFile (config.profile_path, FILE_GENERIC_READ | FILE_GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (!_r_fs_isvalidhandle (hfile))
+	{
+		_r_log (Error, UID, L"CreateFile", GetLastError (), config.profile_path);
+	}
+	else
+	{
+		if (GetLastError () == ERROR_ALREADY_EXISTS)
+		{
+			_r_fs_setpos (hfile, 2, FILE_BEGIN);
+
+			SetEndOfFile (hfile);
+
+			FlushFileBuffers (hfile);
+		}
+
+		mxmlSaveFd (xml_node, hfile, &_app_profile_save_callback);
+
+		CloseHandle (hfile);
+	}
+
 	mxmlDelete (xml_node);
 
-	CloseHandle (hfile);
+	_r_spinlock_releaseexclusive (&lock_profile);
 
 	// make backup
 	if (is_backuprequired)

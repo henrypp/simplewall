@@ -46,12 +46,61 @@ COLORREF _app_getappcolor (_In_ INT listview_id, _In_ SIZE_T app_hash, _In_ BOOL
 
 VOID _app_freeapplication (_In_ SIZE_T app_hash);
 
+BOOLEAN _app_isappfromsystem (_In_ LPCWSTR path, _In_ SIZE_T app_hash);
+BOOLEAN _app_isapphaveconnection (_In_ SIZE_T app_hash);
+BOOLEAN _app_isapphavedrive (_In_ INT letter);
+BOOLEAN _app_isapphaverule (_In_ SIZE_T app_hash, _In_ BOOLEAN is_countdisabled);
+BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app);
+
+FORCEINLINE BOOLEAN _app_isappused (_In_ PITEM_APP ptr_app)
+{
+	if (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (ptr_app->app_hash, TRUE))
+		return TRUE;
+
+	return FALSE;
+}
+
 VOID _app_getcount (_Inout_ PITEM_STATUS status);
 
-INT _app_getappgroup (_In_ PITEM_APP ptr_app);
-INT _app_getnetworkgroup (_In_ PITEM_NETWORK ptr_network);
-INT _app_getrulegroup (_In_ PITEM_RULE ptr_rule);
-INT _app_getruleicon (_In_ PITEM_RULE ptr_rule);
+FORCEINLINE INT _app_getappgroup (_In_ PITEM_APP ptr_app)
+{
+	// apps with special rule
+	if (_app_isapphaverule (ptr_app->app_hash, FALSE))
+		return 1;
+
+	if (!ptr_app->is_enabled)
+		return 2;
+
+	return 0;
+}
+
+FORCEINLINE INT _app_getrulegroup (_In_ PITEM_RULE ptr_rule)
+{
+	if (!ptr_rule->is_enabled)
+		return 2;
+
+	return 0;
+}
+
+FORCEINLINE INT _app_getnetworkgroup (_In_ PITEM_NETWORK ptr_network)
+{
+	if (ptr_network->type == DataAppService)
+		return 1;
+
+	if (ptr_network->type == DataAppUWP)
+		return 2;
+
+	return 0;
+}
+
+FORCEINLINE INT _app_getruleicon (_In_ PITEM_RULE ptr_rule)
+{
+	if (ptr_rule->is_block)
+		return 1;
+
+	return 0;
+}
+
 COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx);
 
 _Ret_maybenull_
@@ -75,17 +124,14 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 _Ret_maybenull_
 PR_STRING _app_rulesexpandrules (_In_ PR_STRING rule, _In_ LPCWSTR delimeter);
 
-BOOLEAN _app_isappfromsystem (_In_ LPCWSTR path, _In_ SIZE_T app_hash);
-BOOLEAN _app_isapphaveconnection (_In_ SIZE_T app_hash);
-BOOLEAN _app_isapphavedrive (_In_ INT letter);
-BOOLEAN _app_isapphaverule (_In_ SIZE_T app_hash, _In_ BOOLEAN is_countdisabled);
-BOOLEAN _app_isappused (_In_ PITEM_APP ptr_app);
-BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app);
-
 VOID _app_openappdirectory (_In_ PITEM_APP ptr_app);
 
-//BOOLEAN _app_profile_load_check_node (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_XML type);
 BOOLEAN _app_profile_load_check (_In_ LPCWSTR path, _In_ ENUM_TYPE_XML type);
+
+FORCEINLINE BOOLEAN _app_profile_load_check_node (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_XML type)
+{
+	return (_r_str_tointeger_a (mxmlElementGetAttr (root_node, "type")) == type);
+}
 
 VOID _app_profile_load_fallback ();
 //VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA type, _In_ UINT version);
