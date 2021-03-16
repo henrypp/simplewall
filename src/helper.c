@@ -2286,7 +2286,7 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, _r_locale_getstring (IDS_OPENRULESEDITOR));
 }
 
-VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_ INT ctrl_id, _In_opt_ PITEM_APP ptr_app)
+VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_app)
 {
 	WCHAR interval_string[128];
 	LONG64 current_time;
