@@ -399,8 +399,6 @@ VOID _wfp_logunsubscribe (_In_ HANDLE hengine)
 		_r_log (Warning, 0, L"FwpmNetEventUnsubscribe", code, NULL);
 }
 
-
-
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 {
 	HANDLE hengine = _wfp_getenginehandle ();
