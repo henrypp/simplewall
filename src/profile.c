@@ -148,6 +148,7 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 
 	WCHAR path_full[1024];
 	PITEM_APP ptr_app;
+	PITEM_APP ptr_app_added;
 	PR_STRING signature_string;
 	SIZE_T path_length;
 	SIZE_T app_hash;
@@ -171,8 +172,7 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	if (ptr_app)
 		return ptr_app; // already exists
 
-	PVOID original_memory = _r_mem_allocatezero (sizeof (ITEM_APP));
-	ptr_app = original_memory;
+	ptr_app = _r_mem_allocatezero (sizeof (ITEM_APP));
 	is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
 
 	ptr_app->app_hash = app_hash;
@@ -238,30 +238,30 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 		ptr_app->is_undeletable = TRUE;
 
 	// insert object into the map
-	ptr_app = _r_obj_addhashtableitem (apps, app_hash, ptr_app);
+	ptr_app_added = _r_obj_addhashtableitem (apps, app_hash, ptr_app);
 
-	_r_mem_free (original_memory);
+	_r_mem_free (ptr_app);
 
-	if (!ptr_app)
+	if (!ptr_app_added)
 		return NULL;
 
 	// insert item
 	if (hwnd)
 	{
-		INT listview_id = _app_getlistview_id (ptr_app->type);
+		INT listview_id = _app_getlistview_id (ptr_app_added->type);
 
 		if (listview_id)
 		{
 			_r_spinlock_acquireshared (&lock_checkbox);
 
 			_r_listview_additemex (hwnd, listview_id, 0, 0, SZ_EMPTY, 0, 0, app_hash);
-			_app_setappiteminfo (hwnd, listview_id, 0, ptr_app);
+			_app_setappiteminfo (hwnd, listview_id, 0, ptr_app_added);
 
 			_r_spinlock_releaseshared (&lock_checkbox);
 		}
 	}
 
-	return ptr_app;
+	return ptr_app_added;
 }
 
 PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote, _In_opt_ PR_STRING rule_local, _In_ FWP_DIRECTION direction, _In_ UINT8 protocol, _In_ ADDRESS_FAMILY af)
