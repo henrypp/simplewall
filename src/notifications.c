@@ -736,7 +736,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 							AppendMenu (hsubmenu, MF_STRING, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
 							AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
 
-							_app_generate_timerscontrol (hsubmenu, 0, NULL);
+							_app_generate_timerscontrol (hsubmenu, NULL);
 
 							_r_menu_checkitem (hsubmenu, IDC_ALLOW_BTN, IDC_ALLOW_BTN, MF_BYCOMMAND, IDC_ALLOW_BTN);
 						}

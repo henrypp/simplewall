@@ -76,7 +76,7 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 			AppendMenu (hsubmenu_timers, MF_SEPARATOR, 0, NULL);
 
 			if (ptr_app)
-				_app_generate_timerscontrol (hsubmenu_timers, 0, ptr_app);
+				_app_generate_timerscontrol (hsubmenu_timers, ptr_app);
 		}
 
 		AppendMenu (hmenu, MF_SEPARATOR, 0, NULL);

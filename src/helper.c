@@ -2286,7 +2286,7 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, _r_locale_getstring (IDS_OPENRULESEDITOR));
 }
 
-VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_opt_ PITEM_APP ptr_app)
+VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_ INT ctrl_id, _In_opt_ PITEM_APP ptr_app)
 {
 	WCHAR interval_string[128];
 	LONG64 current_time;
@@ -2295,7 +2295,6 @@ VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_opt_ PI
 	LONG64 timestamp;
 	UINT index;
 	BOOLEAN is_checked = (ptr_app == NULL);
-	BOOLEAN is_menu = (ctrl_id == 0);
 
 	current_time = _r_unixtime_now ();
 
@@ -2303,12 +2302,6 @@ VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_opt_ PI
 	{
 		timer_ptr = _app_getappinfo (ptr_app, InfoTimerPtr);
 		app_time = timer_ptr ? *((PLONG64)timer_ptr) : 0;
-	}
-
-	if (!is_menu)
-	{
-		SendDlgItemMessage (hwnd, ctrl_id, CB_INSERTSTRING, 0, (LPARAM)_r_locale_getstring (IDS_DISABLETIMER));
-		SendDlgItemMessage (hwnd, ctrl_id, CB_SETITEMDATA, 0, (LPARAM)-1);
 	}
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (timers); i++)
@@ -2322,43 +2315,21 @@ VOID _app_generate_timerscontrol (_In_ PVOID hwnd, _In_ INT ctrl_id, _In_opt_ PI
 
 		_r_format_interval (interval_string, RTL_NUMBER_OF (interval_string), timestamp + 1, 1);
 
-		if (is_menu)
+		index = IDX_TIMER + (UINT)i;
+
+		AppendMenu (hsubmenu, MF_STRING, index, interval_string);
+
+		if (!is_checked && (app_time > current_time) && (app_time <= (current_time + timestamp)))
 		{
-			index = IDX_TIMER + (UINT)i;
-
-			AppendMenu (hwnd, MF_STRING, index, interval_string);
-
-			if (!is_checked && (app_time > current_time) && (app_time <= (current_time + timestamp)))
-			{
-				_r_menu_checkitem (hwnd, IDX_TIMER, index, MF_BYCOMMAND, index);
-				is_checked = TRUE;
-			}
+			_r_menu_checkitem (hsubmenu, IDX_TIMER, index, MF_BYCOMMAND, index);
+			is_checked = TRUE;
 		}
-		else
-		{
-			index = (UINT)i + 1;
 
-			SendDlgItemMessage (hwnd, ctrl_id, CB_INSERTSTRING, (WPARAM)index, (LPARAM)interval_string);
-			SendDlgItemMessage (hwnd, ctrl_id, CB_SETITEMDATA, (WPARAM)index, (LPARAM)i);
-
-			if (!is_checked && (app_time > current_time) && (app_time <= (current_time + timestamp)))
-			{
-				SendDlgItemMessage (hwnd, IDC_RULE_PROTOCOL_ID, CB_SETCURSEL, (WPARAM)index, 0);
-				is_checked = TRUE;
-			}
-		}
 	}
 
 	if (!is_checked)
 	{
-		if (is_menu)
-		{
-			_r_menu_checkitem (hwnd, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND, IDM_DISABLETIMER);
-		}
-		else
-		{
-			SendDlgItemMessage (hwnd, ctrl_id, CB_SETCURSEL, 0, 0);
-		}
+		_r_menu_checkitem (hsubmenu, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND, IDM_DISABLETIMER);
 	}
 }
 
