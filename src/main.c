@@ -2129,14 +2129,12 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case TCN_SELCHANGE:
 				{
-					INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
+					UINT swp_flags;
+					INT listview_id;
+
+					listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 
 					if (!listview_id)
-						break;
-
-					HWND hlistview = GetDlgItem (hwnd, listview_id);
-
-					if (!hlistview)
 						break;
 
 					_app_listviewsetview (hwnd, listview_id);
@@ -2149,10 +2147,12 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 					_r_listview_redraw (hwnd, listview_id, -1);
 
-					ShowWindow (hlistview, SW_SHOWNA);
+					swp_flags = SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOOWNERZORDER;
 
-					if (IsWindowVisible (hwnd) && !IsIconic (hwnd)) // HACK!!!
-						SetFocus (hlistview);
+					if (!IsWindowVisible (hwnd) || IsIconic (hwnd)) // HACK!!!
+						swp_flags |= SWP_NOACTIVATE;
+
+					SetWindowPos (GetDlgItem (hwnd, listview_id), NULL, 0, 0, 0, 0, swp_flags);
 
 					break;
 				}
