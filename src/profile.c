@@ -1864,7 +1864,10 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	if (!xml_node)
 	{
-		_r_log (Error, UID, L"mxmlLoadFd", GetLastError (), path_custom ? path_custom : config.profile_path);
+		ULONG code = GetLastError ();
+
+		if (code != ERROR_FILE_NOT_FOUND)
+			_r_log (Error, UID, L"mxmlLoadFd", code, path_custom ? path_custom : config.profile_path);
 	}
 	else
 	{
