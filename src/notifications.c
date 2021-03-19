@@ -349,16 +349,19 @@ VOID _app_notifyrefresh (_In_ HWND hwnd, _In_ BOOLEAN is_safety)
 
 VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 {
-	RECT window_rect = {0};
-	RECT desktop_rect = {0};
+	R_RECTANGLE window_rect;
+	RECT desktop_rect;
+	UINT swp_flags;
 	BOOLEAN is_intray;
+
+	swp_flags = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER;
 
 	if (!is_forced && IsWindowVisible (hwnd))
 	{
-		if (GetWindowRect (hwnd, &window_rect))
+		if (_r_wnd_getposition (hwnd, &window_rect))
 		{
-			_r_wnd_adjustwindowrect (hwnd, &window_rect, NULL);
-			SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
+			_r_wnd_adjustworkingarea (NULL, &window_rect);
+			SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
 
 			return;
 		}
@@ -368,7 +371,7 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 
 	if (is_intray)
 	{
-		if (GetWindowRect (hwnd, &window_rect))
+		if (_r_wnd_getposition (hwnd, &window_rect))
 		{
 			if (SystemParametersInfo (SPI_GETWORKAREA, 0, &desktop_rect, 0))
 			{
@@ -382,25 +385,25 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 					if (abd.uEdge == ABE_LEFT)
 					{
 						window_rect.left = abd.rc.right + border_x;
-						window_rect.top = (desktop_rect.bottom - _r_calc_rectheight (&window_rect)) - border_x;
+						window_rect.top = (desktop_rect.bottom - window_rect.height) - border_x;
 					}
 					else if (abd.uEdge == ABE_TOP)
 					{
-						window_rect.left = (desktop_rect.right - _r_calc_rectwidth (&window_rect)) - border_x;
+						window_rect.left = (desktop_rect.right - window_rect.width) - border_x;
 						window_rect.top = abd.rc.bottom + border_x;
 					}
 					else if (abd.uEdge == ABE_RIGHT)
 					{
-						window_rect.left = (desktop_rect.right - _r_calc_rectwidth (&window_rect)) - border_x;
-						window_rect.top = (desktop_rect.bottom - _r_calc_rectheight (&window_rect)) - border_x;
+						window_rect.left = (desktop_rect.right - window_rect.width) - border_x;
+						window_rect.top = (desktop_rect.bottom - window_rect.height) - border_x;
 					}
 					else/* if (abd.uEdge == ABE_BOTTOM)*/
 					{
-						window_rect.left = (desktop_rect.right - (window_rect.right - window_rect.left)) - border_x;
-						window_rect.top = (desktop_rect.bottom - _r_calc_rectheight (&window_rect)) - border_x;
+						window_rect.left = (desktop_rect.right - window_rect.width) - border_x;
+						window_rect.top = (desktop_rect.bottom - window_rect.height) - border_x;
 					}
 
-					SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
+					SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
 					return;
 				}
 			}
@@ -427,8 +430,8 @@ HFONT _app_notifyfontinit (_In_ HWND hwnd, _In_ PLOGFONT plf, _In_ LONG height, 
 VOID _app_notifyfontset (_In_ HWND hwnd)
 {
 	_r_wnd_seticon (hwnd,
-		_r_app_getsharedimage (NULL, SIH_EXCLAMATION, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)),
-		_r_app_getsharedimage (NULL, SIH_EXCLAMATION, _r_dc_getsystemmetrics (hwnd, SM_CXICON))
+					_r_app_getsharedimage (NULL, SIH_EXCLAMATION, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)),
+					_r_app_getsharedimage (NULL, SIH_EXCLAMATION, _r_dc_getsystemmetrics (hwnd, SM_CXICON))
 	);
 
 	INT title_font_height = 12;
@@ -584,24 +587,26 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 		case WM_PAINT:
 		{
-			PAINTSTRUCT ps = {0};
+			PAINTSTRUCT ps;
+			RECT rect;
+
 			HDC hdc = BeginPaint (hwnd, &ps);
 
 			if (hdc)
 			{
-				RECT client_rect = {0};
-				GetClientRect (hwnd, &client_rect);
+				if (GetClientRect (hwnd, &rect))
+				{
+					LONG wnd_width = rect.right;
+					LONG wnd_height = rect.bottom;
+					LONG footer_height = _r_dc_getdpi (hwnd, PR_SIZE_FOOTERHEIGHT);
 
-				INT wnd_width = _r_calc_rectwidth (&client_rect);
-				INT wnd_height = _r_calc_rectheight (&client_rect);
-				INT footer_height = _r_dc_getdpi (hwnd, PR_SIZE_FOOTERHEIGHT);
+					SetRect (&rect, 0, wnd_height - footer_height, wnd_width, wnd_height);
 
-				SetRect (&client_rect, 0, wnd_height - footer_height, wnd_width, wnd_height);
+					_r_dc_fillrect (hdc, &rect, GetSysColor (COLOR_BTNFACE));
 
-				_r_dc_fillrect (hdc, &client_rect, GetSysColor (COLOR_BTNFACE));
-
-				for (INT i = 0; i < wnd_width; i++)
-					SetPixelV (hdc, i, client_rect.top, GetSysColor (COLOR_APPWORKSPACE));
+					for (INT i = 0; i < wnd_width; i++)
+						SetPixelV (hdc, i, rect.top, GetSysColor (COLOR_APPWORKSPACE));
+				}
 
 				EndPaint (hwnd, &ps);
 			}
@@ -713,6 +718,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				case BCN_DROPDOWN:
 				{
 					RECT rect;
+					R_RECTANGLE rectangle;
 					HMENU hsubmenu;
 					INT ctrl_id;
 
@@ -745,7 +751,9 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 						{
 							ClientToScreen (nmlp->hwndFrom, (PPOINT)&rect);
 
-							_r_wnd_adjustwindowrect (nmlp->hwndFrom, &rect, NULL);
+							_r_wnd_recttorectangle (&rectangle, &rect);
+							_r_wnd_adjustworkingarea (nmlp->hwndFrom, &rectangle);
+							_r_wnd_rectangletorect (&rect, &rectangle);
 
 							_r_menu_popup (hsubmenu, hwnd, (PPOINT)&rect, TRUE);
 						}

@@ -948,7 +948,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 			{
 				if (GetClientRect (hlistview, &rect))
 				{
-					_r_listview_setcolumn (hwnd, IDC_COLORS, 0, NULL, _r_calc_rectwidth (&rect));
+					_r_listview_setcolumn (hwnd, IDC_COLORS, 0, NULL, rect.right);
 				}
 			}
 

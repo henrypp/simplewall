@@ -237,7 +237,7 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 
 	is_tableview = (_r_listview_getview (hwnd, listview_id) == LV_VIEW_DETAILS);
 
-	total_width = _r_calc_rectwidth (&rc_client);
+	total_width = rc_client.right;
 
 	max_width = _r_dc_getdpi (hwnd, 158);
 	spacing = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
@@ -689,7 +689,7 @@ VOID _app_refreshstatus (_In_ HWND hwnd, _In_ INT listview_id)
 		RECT rc_client = {0};
 		GetClientRect (hstatus, &rc_client);
 
-		parts[0] = _r_calc_rectwidth (&rc_client) - lay - _r_dc_getsystemmetrics (hwnd, SM_CXVSCROLL) - (_r_dc_getsystemmetrics (hwnd, SM_CXBORDER) * 2);
+		parts[0] = rc_client.right - lay - _r_dc_getsystemmetrics (hwnd, SM_CXVSCROLL) - (_r_dc_getsystemmetrics (hwnd, SM_CXBORDER) * 2);
 		parts[1] = parts[0] + size[1];
 		parts[2] = parts[1] + size[2];
 
