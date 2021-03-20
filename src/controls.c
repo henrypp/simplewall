@@ -98,7 +98,6 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd)
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
 	SAFE_DELETE_OBJECT (config.hbmp_allow);
 	SAFE_DELETE_OBJECT (config.hbmp_block);
-	SAFE_DELETE_OBJECT (config.hbmp_cross);
 	SAFE_DELETE_OBJECT (config.hbmp_rules);
 
 	SAFE_DELETE_ICON (config.hicon_large);
@@ -130,7 +129,6 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd)
 
 	config.hbmp_allow = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_size_small);
 	config.hbmp_block = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_size_small);
-	config.hbmp_cross = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CROSS), icon_size_small);
 	config.hbmp_rules = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_size_small);
 
 	// toolbar imagelist
@@ -196,11 +194,6 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	if (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE))
 		return;
 
-	INT column_count = _r_listview_getcolumncount (hwnd, listview_id);
-
-	if (!column_count)
-		return;
-
 	RECT rc_client;
 	PR_STRING column_text;
 	PR_STRING item_text;
@@ -208,6 +201,7 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	HWND hheader;
 	HDC hdc_listview;
 	HDC hdc_header;
+	INT column_count;
 	INT column_width;
 	INT text_width;
 	INT calculated_width;
@@ -218,9 +212,16 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	BOOLEAN is_tableview;
 
 	hlistview = GetDlgItem (hwnd, listview_id);
-	hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
 
-	GetClientRect (hlistview, &rc_client);
+	if (!hlistview || !GetClientRect (hlistview, &rc_client))
+		return;
+
+	column_count = _r_listview_getcolumncount (hwnd, listview_id);
+
+	if (!column_count)
+		return;
+
+	hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
 
 	// get device context and fix font set
 	hdc_listview = GetDC (hlistview);

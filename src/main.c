@@ -2142,7 +2142,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 					_app_listviewsort (hwnd, listview_id, -1, FALSE);
 
-					_app_listviewresize (hwnd, listview_id, FALSE);
 					_app_refreshstatus (hwnd, listview_id);
 
 					_r_listview_redraw (hwnd, listview_id, -1);
@@ -2153,6 +2152,8 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						swp_flags |= SWP_NOACTIVATE;
 
 					SetWindowPos (GetDlgItem (hwnd, listview_id), NULL, 0, 0, 0, 0, swp_flags);
+
+					_app_listviewresize (hwnd, listview_id, FALSE);
 
 					break;
 				}
@@ -2212,7 +2213,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 							{
 								if (app_hash == config.my_hash)
 								{
-									if (!_r_show_confirmmessage (hwnd, L"Warning!", L"Do not dissalow simplewall executable.", NULL))
+									if (!_r_show_confirmmessage (hwnd, L"Warning!", L"Do not disallow simplewall executable.", NULL))
 									{
 										SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 										return TRUE;
