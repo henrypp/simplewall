@@ -48,10 +48,6 @@ BOOLEAN _app_notifycommand (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seco
 
 		_r_obj_addlistitem (rules, ptr_app);
 	}
-	else if (button_id == IDC_LATER_BTN)
-	{
-		// TODO: do somethig!!!
-	}
 	else if (button_id == IDM_DISABLENOTIFICATIONS)
 	{
 		ptr_app->is_silent = TRUE;
@@ -254,7 +250,6 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	_r_ctrl_enable (hwnd, IDC_RULES_BTN, !is_safety);
 	_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
 	_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, !is_safety);
-	_r_ctrl_enable (hwnd, IDC_LATER_BTN, !is_safety);
 
 	if (is_safety)
 	{
@@ -456,7 +451,7 @@ VOID _app_notifyfontset (_In_ HWND hwnd)
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_DATE_TEXT; i++)
 			SendDlgItemMessage (hwnd, i, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 
-		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_LATER_BTN; i++)
+		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_BLOCK_BTN; i++)
 			SendDlgItemMessage (hwnd, i, WM_SETFONT, (WPARAM)hfont_text, TRUE);
 	}
 
@@ -464,19 +459,16 @@ VOID _app_notifyfontset (_In_ HWND hwnd)
 	SendDlgItemMessage (hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)config.hbmp_rules);
 	SendDlgItemMessage (hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)config.hbmp_allow);
 	SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)config.hbmp_block);
-	SendDlgItemMessage (hwnd, IDC_LATER_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)config.hbmp_cross);
 
 	_r_ctrl_setbuttonmargins (hwnd, IDC_RULES_BTN);
 	_r_ctrl_setbuttonmargins (hwnd, IDC_ALLOW_BTN);
 	_r_ctrl_setbuttonmargins (hwnd, IDC_BLOCK_BTN);
-	_r_ctrl_setbuttonmargins (hwnd, IDC_LATER_BTN);
 
 	BOOLEAN is_classic = _r_app_isclassicui ();
 
 	_r_wnd_addstyle (hwnd, IDC_RULES_BTN, is_classic ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 	_r_wnd_addstyle (hwnd, IDC_ALLOW_BTN, is_classic ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 	_r_wnd_addstyle (hwnd, IDC_BLOCK_BTN, is_classic ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
-	_r_wnd_addstyle (hwnd, IDC_LATER_BTN, is_classic ? WS_EX_STATICEDGE : 0, WS_EX_STATICEDGE, GWL_EXSTYLE);
 
 	InvalidateRect (hwnd, NULL, TRUE);
 }
@@ -519,7 +511,6 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				_r_ctrl_settiptext (htip, hwnd, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_ALLOW_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_BLOCK_BTN, LPSTR_TEXTCALLBACK);
-				_r_ctrl_settiptext (htip, hwnd, IDC_LATER_BTN, LPSTR_TEXTCALLBACK);
 			}
 
 			break;
@@ -573,7 +564,6 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				_r_ctrl_enable (hwnd, IDC_RULES_BTN, TRUE);
 				_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, TRUE);
 				_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, TRUE);
-				_r_ctrl_enable (hwnd, IDC_LATER_BTN, TRUE);
 			}
 
 			break;
@@ -814,10 +804,6 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 					{
 						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_BLOCK_HINT));
 					}
-					else if (ctrl_id == IDC_LATER_BTN)
-					{
-						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_LATER_HINT));
-					}
 					else
 					{
 						PR_STRING string = _r_ctrl_gettext (hwnd, ctrl_id);
@@ -1005,7 +991,6 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 				case IDC_ALLOW_BTN:
 				case IDC_BLOCK_BTN:
-				case IDC_LATER_BTN:
 				{
 					if (_r_ctrl_isenabled (hwnd, ctrl_id))
 						_app_notifycommand (hwnd, ctrl_id, 0);

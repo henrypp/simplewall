@@ -223,7 +223,6 @@ typedef struct tagSTATIC_DATA
 	HBITMAP hbmp_disable;
 	HBITMAP hbmp_allow;
 	HBITMAP hbmp_block;
-	HBITMAP hbmp_cross;
 	HBITMAP hbmp_rules;
 
 	volatile HANDLE hlogfile;
