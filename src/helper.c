@@ -61,7 +61,7 @@ PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T has
 {
 	R_HASHSTORE hashstore;
 
-	_r_obj_initializehashstoreex (&hashstore, string, number);
+	_r_obj_initializehashstore (&hashstore, string, number);
 
 	// check hashtable overflow and remove
 	while (_r_obj_gethashtablesize (hashtable) >= MAP_CACHE_MAX)
