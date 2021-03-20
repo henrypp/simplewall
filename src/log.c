@@ -295,6 +295,8 @@ VOID _app_logclear_ui (_In_ HWND hwnd)
 	SendDlgItemMessage (hwnd, IDC_LOG, LVM_DELETEALLITEMS, 0, 0);
 	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, 0, 0);
 
+	_app_listviewresize (hwnd, IDC_LOG, FALSE);
+
 	_r_obj_clearlist (log_arr);
 }
 
