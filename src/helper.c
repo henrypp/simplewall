@@ -2200,7 +2200,7 @@ VOID _app_generate_services ()
 
 VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 {
-	ITEM_STATUS status = {0};
+	ITEM_STATUS status;
 
 	_app_getcount (&status);
 

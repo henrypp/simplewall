@@ -644,7 +644,7 @@ VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 
 VOID _app_refreshstatus (_In_ HWND hwnd, _In_ INT listview_id)
 {
-	ITEM_STATUS status = {0};
+	ITEM_STATUS status;
 
 	_app_getcount (&status);
 

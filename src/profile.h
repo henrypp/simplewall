@@ -60,7 +60,7 @@ FORCEINLINE BOOLEAN _app_isappused (_In_ PITEM_APP ptr_app)
 	return FALSE;
 }
 
-VOID _app_getcount (_Inout_ PITEM_STATUS status);
+VOID _app_getcount (_Out_ PITEM_STATUS status);
 
 FORCEINLINE INT _app_getappgroup (_In_ PITEM_APP ptr_app)
 {

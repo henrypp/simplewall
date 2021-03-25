@@ -501,12 +501,22 @@ VOID _app_freeapplication (_In_ SIZE_T app_hash)
 	_r_obj_removehashtableentry (apps, app_hash);
 }
 
-VOID _app_getcount (_Inout_ PITEM_STATUS status)
+VOID _app_getcount (_Out_ PITEM_STATUS status)
 {
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
 	SIZE_T enum_key = 0;
 	BOOLEAN is_used;
+
+	status->apps_count = 0;
+	status->apps_timer_count = 0;
+	status->apps_unused_count = 0;
+	status->rules_count = 0;
+	status->rules_global_count = 0;
+	status->rules_predefined_count = 0;
+	status->rules_user_count = 0;
+
+	_r_spinlock_acquireshared (&lock_apps);
 
 	while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 	{
@@ -521,6 +531,10 @@ VOID _app_getcount (_Inout_ PITEM_STATUS status)
 		if (is_used)
 			status->apps_count += 1;
 	}
+
+	_r_spinlock_releaseshared (&lock_apps);
+
+	_r_spinlock_acquireshared (&lock_rules);
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
@@ -546,6 +560,8 @@ VOID _app_getcount (_Inout_ PITEM_STATUS status)
 			}
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_rules);
 }
 
 COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
@@ -1291,6 +1307,8 @@ BOOLEAN _app_isapphavedrive (_In_ INT letter)
 	PITEM_APP ptr_app;
 	SIZE_T enum_key = 0;
 
+	_r_spinlock_acquireshared (&lock_apps);
+
 	while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 	{
 		if (!_r_obj_isstringempty (ptr_app->original_path))
@@ -1300,10 +1318,16 @@ BOOLEAN _app_isapphavedrive (_In_ INT letter)
 			if ((drive_id != -1 && drive_id == letter) || ptr_app->type == DataAppDevice)
 			{
 				if (ptr_app->is_enabled || _app_isapphaverule (ptr_app->app_hash, FALSE))
+				{
+					_r_spinlock_releaseshared (&lock_apps);
+
 					return TRUE;
+				}
 			}
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_apps);
 
 	return FALSE;
 }
@@ -1311,6 +1335,8 @@ BOOLEAN _app_isapphavedrive (_In_ INT letter)
 BOOLEAN _app_isapphaverule (_In_ SIZE_T app_hash, _In_ BOOLEAN is_countdisabled)
 {
 	PITEM_RULE ptr_rule;
+
+	_r_spinlock_acquireshared (&lock_rules);
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
@@ -1321,10 +1347,16 @@ BOOLEAN _app_isapphaverule (_In_ SIZE_T app_hash, _In_ BOOLEAN is_countdisabled)
 			if (ptr_rule->type == DataRuleUser && (is_countdisabled || (ptr_rule->is_enabled)))
 			{
 				if (_r_obj_findhashtable (ptr_rule->apps, app_hash))
+				{
+					_r_spinlock_releaseshared (&lock_rules);
+
 					return TRUE;
+				}
 			}
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_rules);
 
 	return FALSE;
 }
