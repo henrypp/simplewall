@@ -419,6 +419,8 @@ typedef struct tagITEM_CONTEXT
 				PITEM_APP ptr_app;
 			};
 
+			INT page_id;
+
 			BOOLEAN is_settorules;
 		};
 
