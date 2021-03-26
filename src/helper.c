@@ -347,7 +347,7 @@ LPCWSTR _app_getdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened)
 			return ptr_app->short_name->buffer;
 	}
 
-	return ptr_app->real_path->buffer;
+	return ptr_app->real_path ? ptr_app->real_path->buffer : NULL;
 }
 
 _Success_ (return)
