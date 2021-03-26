@@ -287,6 +287,16 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 VOID _app_notifyhide (_In_ HWND hwnd)
 {
+	SIZE_T app_hash = _app_notifyget_id (hwnd, FALSE);
+	PITEM_APP ptr_app = _app_getappitem (app_hash);
+
+	if (ptr_app)
+	{
+		_app_freenotify (ptr_app);
+
+		ptr_app->last_notify = _r_unixtime_now ();
+	}
+
 	ShowWindow (hwnd, SW_HIDE);
 }
 
@@ -979,10 +989,11 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 					{
 						context.is_settorules = FALSE;
 						context.ptr_app = ptr_app;
+						context.page_id = 1; // open rules tab
 
 						if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
 						{
-
+							_app_notifyhide (hwnd);
 						}
 					}
 
