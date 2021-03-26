@@ -1447,8 +1447,8 @@ VOID _app_profile_load_fallback ()
 		if (!_app_getappitem (config.ntoskrnl_hash))
 			_app_addapplication (NULL, DataUnknown, PROC_SYSTEM_NAME, NULL, NULL);
 
-		if (!_app_getappitem (config.svchost_hash))
-			_app_addapplication (NULL, DataUnknown, _r_obj_getstring (config.svchost_path), NULL, NULL);
+		if (!_app_getappitem (config.svchost_hash) && config.svchost_path)
+			_app_addapplication (NULL, DataUnknown, config.svchost_path->buffer, NULL, NULL);
 
 		_app_setappinfobyhash (config.ntoskrnl_hash, InfoIsUndeletable, IntToPtr (TRUE));
 		_app_setappinfobyhash (config.svchost_hash, InfoIsUndeletable, IntToPtr (TRUE));
@@ -1671,7 +1671,7 @@ VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA 
 
 								if (!ptr_app)
 								{
-									ptr_app = _app_addapplication (NULL, DataUnknown, _r_obj_getstring (path_string), NULL, NULL);
+									ptr_app = _app_addapplication (NULL, DataUnknown, path_string->buffer, NULL, NULL);
 
 									if (ptr_app)
 										app_hash = ptr_app->app_hash;
