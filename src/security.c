@@ -198,19 +198,22 @@ VOID _app_setexplicitaccess (_Out_ PEXPLICIT_ACCESS pea, _In_ ACCESS_MODE mode, 
 
 VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 {
-	PACL pdacl = NULL;
-	PSECURITY_DESCRIPTOR psecurity_descriptor = NULL;
+	PSECURITY_DESCRIPTOR security_descriptor;
+	PACL pdacl;
 	ULONG code;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
 
-	code = FwpmEngineGetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &psecurity_descriptor);
+	code = FwpmEngineGetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &security_descriptor);
 
 	if (code != ERROR_SUCCESS)
 	{
 		_r_log (Error, 0, L"FwpmEngineGetSecurityInfo", code, NULL);
 		return;
 	}
+
+	if (!pdacl)
+		return;
 
 	for (WORD ace_index = 0; ace_index < pdacl->AceCount; ace_index++)
 	{
@@ -328,17 +331,17 @@ VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 		}
 	}
 
-	if (psecurity_descriptor)
-		FwpmFreeMemory ((PVOID*)&psecurity_descriptor);
+	if (security_descriptor)
+		FwpmFreeMemory ((PVOID*)&security_descriptor);
 }
 
 VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure)
 {
-	PACL pdacl = NULL;
-	PACL pnewdacl = NULL;
-	PSECURITY_DESCRIPTOR psecurity_descriptor = NULL;
+	PSECURITY_DESCRIPTOR security_descriptor;
+	PACL pnewdacl;
+	PACL pdacl;
 
-	ULONG code = FwpmProviderGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &psecurity_descriptor);
+	ULONG code = FwpmProviderGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &security_descriptor);
 
 	if (code != ERROR_SUCCESS)
 	{
@@ -346,29 +349,32 @@ VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID lpguid, 
 		return;
 	}
 
-	pnewdacl = _app_createaccesscontrollist (pdacl, is_secure);
-
-	if (pnewdacl)
+	if (pdacl)
 	{
-		code = FwpmProviderSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
+		pnewdacl = _app_createaccesscontrollist (pdacl, is_secure);
 
-		if (code != ERROR_SUCCESS)
-			_r_log (Error, 0, L"FwpmProviderSetSecurityInfoByKey", code, NULL);
+		if (pnewdacl)
+		{
+			code = FwpmProviderSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
 
-		LocalFree (pnewdacl);
+			if (code != ERROR_SUCCESS)
+				_r_log (Error, 0, L"FwpmProviderSetSecurityInfoByKey", code, NULL);
+
+			LocalFree (pnewdacl);
+		}
 	}
 
-	if (psecurity_descriptor)
-		FwpmFreeMemory ((PVOID*)&psecurity_descriptor);
+	if (security_descriptor)
+		FwpmFreeMemory ((PVOID*)&security_descriptor);
 }
 
 VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure)
 {
-	PACL pdacl = NULL;
-	PACL pnewdacl = NULL;
-	PSECURITY_DESCRIPTOR psecurity_descriptor = NULL;
+	PSECURITY_DESCRIPTOR security_descriptor;
+	PACL pnewdacl;
+	PACL pdacl;
 
-	ULONG code = FwpmSubLayerGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &psecurity_descriptor);
+	ULONG code = FwpmSubLayerGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &security_descriptor);
 
 	if (code != ERROR_SUCCESS)
 	{
@@ -376,29 +382,32 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID lpguid, 
 		return;
 	}
 
-	pnewdacl = _app_createaccesscontrollist (pdacl, is_secure);
-
-	if (pnewdacl)
+	if (pdacl)
 	{
-		code = FwpmSubLayerSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
+		pnewdacl = _app_createaccesscontrollist (pdacl, is_secure);
 
-		if (code != ERROR_SUCCESS)
-			_r_log (Error, 0, L"FwpmSubLayerSetSecurityInfoByKey", code, NULL);
+		if (pnewdacl)
+		{
+			code = FwpmSubLayerSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
 
-		LocalFree (pnewdacl);
+			if (code != ERROR_SUCCESS)
+				_r_log (Error, 0, L"FwpmSubLayerSetSecurityInfoByKey", code, NULL);
+
+			LocalFree (pnewdacl);
+		}
 	}
 
-	if (psecurity_descriptor)
-		FwpmFreeMemory ((PVOID*)&psecurity_descriptor);
+	if (security_descriptor)
+		FwpmFreeMemory ((PVOID*)&security_descriptor);
 }
 
 VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure, _In_ UINT line)
 {
-	PACL pdacl = NULL;
-	PACL pnewdacl = NULL;
-	PSECURITY_DESCRIPTOR psecurity_descriptor = NULL;
+	PSECURITY_DESCRIPTOR security_descriptor;
+	PACL pnewdacl;
+	PACL pdacl;
 
-	ULONG code = FwpmFilterGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &psecurity_descriptor);
+	ULONG code = FwpmFilterGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &security_descriptor);
 
 	if (code != ERROR_SUCCESS)
 	{
@@ -412,18 +421,21 @@ VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _I
 		return;
 	}
 
-	pnewdacl = _app_createaccesscontrollist (pdacl, is_secure);
-
-	if (pnewdacl)
+	if (pdacl)
 	{
-		code = FwpmFilterSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
+		pnewdacl = _app_createaccesscontrollist (pdacl, is_secure);
 
-		if (code != ERROR_SUCCESS)
-			_r_log_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" PRIu32, line);
+		if (pnewdacl)
+		{
+			code = FwpmFilterSetSecurityInfoByKey (hengine, lpguid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, pnewdacl, NULL);
 
-		LocalFree (pnewdacl);
+			if (code != ERROR_SUCCESS)
+				_r_log_v (Error, 0, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" PRIu32, line);
+
+			LocalFree (pnewdacl);
+		}
 	}
 
-	if (psecurity_descriptor)
-		FwpmFreeMemory ((PVOID*)&psecurity_descriptor);
+	if (security_descriptor)
+		FwpmFreeMemory ((PVOID*)&security_descriptor);
 }
