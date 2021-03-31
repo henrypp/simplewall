@@ -971,7 +971,7 @@ VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, 
 
 			if (app_listview_id)
 			{
-				item_pos = _app_getposition (_r_app_gethwnd (), app_listview_id, ptr_app->app_hash);
+				item_pos = _app_getposition (hwnd, app_listview_id, ptr_app->app_hash);
 
 				if (item_pos != -1)
 					_app_setappiteminfo (hwnd, app_listview_id, item_pos, ptr_app);
