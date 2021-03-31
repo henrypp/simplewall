@@ -428,6 +428,7 @@ typedef struct tagITEM_CONTEXT
 		{
 			INT listview_id;
 			INT item_id;
+			INT current_length;
 		};
 
 		BOOLEAN is_install;
