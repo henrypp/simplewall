@@ -2239,7 +2239,7 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 
 			for (UINT8 loop = 0; loop < 2; loop++)
 			{
-				SIZE_T limit_group = 10; // limit rules
+				SIZE_T limit_group = 14; // limit rules
 
 				for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr) && limit_group; i++)
 				{
