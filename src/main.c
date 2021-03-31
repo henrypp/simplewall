@@ -7,7 +7,7 @@ UINT WM_FINDMSGSTRING = 0;
 
 THREAD_API ApplyThread (_In_ PVOID lparam)
 {
-	PITEM_CONTEXT pcontext = (PITEM_CONTEXT)lparam;
+	PITEM_CONTEXT context = (PITEM_CONTEXT)lparam;
 
 	_r_spinlock_acquireshared (&lock_apply);
 
@@ -19,7 +19,7 @@ THREAD_API ApplyThread (_In_ PVOID lparam)
 		if (config.is_neteventset)
 			_wfp_logunsubscribe (hengine);
 
-		if (pcontext->is_install)
+		if (context->is_install)
 		{
 			if (_wfp_initialize (hengine, TRUE))
 				_wfp_installfilters (hengine);
@@ -35,14 +35,14 @@ THREAD_API ApplyThread (_In_ PVOID lparam)
 			_wfp_logsubscribe (hengine);
 	}
 
-	_app_restoreinterfacestate (pcontext->hwnd, TRUE);
-	_app_setinterfacestate (pcontext->hwnd);
+	_app_restoreinterfacestate (context->hwnd, TRUE);
+	_app_setinterfacestate (context->hwnd);
 
 	_app_profile_save ();
 
 	SetEvent (config.done_evt);
 
-	_r_mem_free (pcontext);
+	_r_mem_free (context);
 
 	_r_spinlock_releaseshared (&lock_apply);
 
