@@ -999,7 +999,7 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	SIZE_T timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
 	PLONG64 seconds = _r_obj_getarrayitem (timers, timer_idx);
-	INT item = -1;
+	INT item_id = -1;
 
 	if (_wfp_isfiltersinstalled ())
 	{
@@ -1009,9 +1009,9 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 		{
 			PR_LIST rules = _r_obj_createlistex (10, NULL);
 
-			while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
+			while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 			{
-				SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+				SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 				PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 				if (ptr_app)
@@ -1157,22 +1157,22 @@ VOID _app_command_copy (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT column_id)
 	PR_STRING string;
 	INT listview_id;
 	INT column_count;
-	INT item;
+	INT item_id;
 
 	listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
-	item = -1;
+	item_id = -1;
 
 	column_count = _r_listview_getcolumncount (hwnd, listview_id);
 
 	_r_obj_initializestringbuilder (&buffer);
 
-	while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
+	while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 	{
 		if (ctrl_id == IDM_COPY)
 		{
 			for (INT i = 0; i < column_count; i++)
 			{
-				string = _r_listview_getitemtext (hwnd, listview_id, item, i);
+				string = _r_listview_getitemtext (hwnd, listview_id, item_id, i);
 
 				if (string)
 				{
@@ -1189,7 +1189,7 @@ VOID _app_command_copy (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT column_id)
 		}
 		else
 		{
-			string = _r_listview_getitemtext (hwnd, listview_id, item, column_id);
+			string = _r_listview_getitemtext (hwnd, listview_id, item_id, column_id);
 
 			if (string)
 			{
@@ -1217,15 +1217,15 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
 	PR_LIST rules = _r_obj_createlistex (0x400, NULL);
 	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
-	INT item = -1;
+	INT item_id = -1;
 	BOOLEAN new_val = (ctrl_id == IDM_CHECK);
 	BOOLEAN is_changed = FALSE;
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
-		while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
+		while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 		{
-			SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+			SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 			PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 			if (!ptr_app)
@@ -1245,7 +1245,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 				ptr_app->is_enabled = new_val;
 
 				_r_spinlock_acquireshared (&lock_checkbox);
-				_app_setappiteminfo (hwnd, listview_id, item, ptr_app);
+				_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
 				_r_spinlock_releaseshared (&lock_checkbox);
 
 				_r_obj_addlistitem (rules, ptr_app);
@@ -1269,9 +1269,9 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 	}
 	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
-		while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
+		while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 		{
-			SIZE_T rule_idx = _r_listview_getitemlparam (hwnd, listview_id, item);
+			SIZE_T rule_idx = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 			PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
 
 			if (!ptr_rule)
@@ -1282,7 +1282,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 				_app_ruleenable (ptr_rule, new_val, TRUE);
 
 				_r_spinlock_acquireshared (&lock_checkbox);
-				_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, TRUE);
+				_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, TRUE);
 				_r_spinlock_releaseshared (&lock_checkbox);
 
 				_r_obj_addlistitem (rules, ptr_rule);
@@ -1482,14 +1482,14 @@ VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
 		return;
 
-	INT item = -1;
+	INT item_id = -1;
 	BOOL new_val = -1;
 
 	_r_spinlock_acquireshared (&lock_apps);
 
-	while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
+	while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 	{
-		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
@@ -1531,11 +1531,11 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
-		INT item = -1;
+		INT item_id = -1;
 
-		while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
+		while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 		{
-			SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+			SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 
 			if (_app_getappitem (app_hash))
 			{
@@ -1547,18 +1547,18 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 	{
 		ptr_rule->is_block = TRUE;
 
-		INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+		INT item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 
-		if (item != -1)
+		if (item_id != -1)
 		{
-			SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+			SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 			PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, network_hash);
 
 			if (ptr_network)
 			{
 				if (!ptr_rule->name)
 				{
-					ptr_rule->name = _r_listview_getitemtext (hwnd, listview_id, item, 0);
+					ptr_rule->name = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 				}
 
 				if (ptr_network->app_hash && !_r_obj_isstringempty (ptr_network->path))
@@ -1583,18 +1583,18 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 	}
 	else if (listview_id == IDC_LOG)
 	{
-		INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+		INT item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 
-		if (item != -1)
+		if (item_id != -1)
 		{
-			SIZE_T log_idx = _r_listview_getitemlparam (hwnd, listview_id, item);
+			SIZE_T log_idx = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 			PITEM_LOG ptr_log = _app_getlogitem (log_idx);
 
 			if (ptr_log)
 			{
 				if (!ptr_rule->name)
 				{
-					ptr_rule->name = _r_listview_getitemtext (hwnd, listview_id, item, 0);
+					ptr_rule->name = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 				}
 
 				if (ptr_log->app_hash && !_r_obj_isstringempty (ptr_log->path))
@@ -1659,15 +1659,15 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 VOID _app_command_properties (_In_ HWND hwnd)
 {
 	INT listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
-	INT item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+	INT item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 
-	if (item == -1)
+	if (item_id == -1)
 		return;
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
 		ITEM_CONTEXT context = {0};
-		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
@@ -1679,7 +1679,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
 		{
 			_r_spinlock_acquireshared (&lock_checkbox);
-			_app_setappiteminfo (hwnd, listview_id, item, ptr_app);
+			_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
 			_r_spinlock_releaseshared (&lock_checkbox);
 
 			_app_listviewsort (hwnd, listview_id, -1, FALSE);
@@ -1691,7 +1691,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
 		ITEM_CONTEXT context = {0};
-		SIZE_T rule_idx = _r_listview_getitemlparam (hwnd, listview_id, item);
+		SIZE_T rule_idx = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
 
 		if (!ptr_rule)
@@ -1703,7 +1703,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
 		{
 			_r_spinlock_acquireshared (&lock_checkbox);
-			_app_setruleiteminfo (hwnd, listview_id, item, ptr_rule, TRUE);
+			_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, TRUE);
 			_r_spinlock_releaseshared (&lock_checkbox);
 
 			_app_listviewsort (hwnd, listview_id, -1, FALSE);
@@ -1714,7 +1714,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 	}
 	else if (listview_id == IDC_NETWORK)
 	{
-		SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+		SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, network_hash);
 
 		if (!ptr_network)
@@ -1741,7 +1741,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 	}
 	else if (listview_id == IDC_LOG)
 	{
-		SIZE_T log_idx = _r_listview_getitemlparam (hwnd, listview_id, item);
+		SIZE_T log_idx = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_LOG ptr_log = _app_getlogitem (log_idx);
 
 		if (!ptr_log)

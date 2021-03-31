@@ -719,7 +719,7 @@ VOID _app_refreshstatus (_In_ HWND hwnd, _In_ INT listview_id)
 	}
 }
 
-VOID _app_showitem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _In_ INT scroll_pos)
+VOID _app_showitem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ INT scroll_pos)
 {
 	HWND hlistview = GetDlgItem (hwnd, listview_id);
 
@@ -733,11 +733,11 @@ VOID _app_showitem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _In_ IN
 	if (!total_count)
 		return;
 
-	if (item != -1)
+	if (item_id != -1)
 	{
-		item = _r_calc_clamp (item, 0, total_count - 1);
+		item_id = _r_calc_clamp (item_id, 0, total_count - 1);
 
-		_r_listview_setitemvisible (hwnd, listview_id, item);
+		_r_listview_setitemvisible (hwnd, listview_id, item_id);
 	}
 
 	if (scroll_pos > 0)

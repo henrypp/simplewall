@@ -896,26 +896,26 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 	return NULL;
 }
 
-VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _Inout_ PITEM_APP ptr_app)
+VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _Inout_ PITEM_APP ptr_app)
 {
-	if (!listview_id || item == -1)
+	if (!listview_id || item_id == -1)
 		return;
 
 	_app_getappicon (ptr_app, TRUE, &ptr_app->icon_id, NULL);
 
-	_r_listview_setitemex (hwnd, listview_id, item, 0, _app_getdisplayname (ptr_app, FALSE), ptr_app->icon_id, _app_getappgroup (ptr_app), 0);
+	_r_listview_setitemex (hwnd, listview_id, item_id, 0, _app_getdisplayname (ptr_app, FALSE), ptr_app->icon_id, _app_getappgroup (ptr_app), 0);
 
 	WCHAR date_string[256];
 	_r_format_unixtimeex (date_string, RTL_NUMBER_OF (date_string), ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
 
-	_r_listview_setitem (hwnd, listview_id, item, 1, date_string);
+	_r_listview_setitem (hwnd, listview_id, item_id, 1, date_string);
 
-	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_app->is_enabled);
+	_r_listview_setitemcheck (hwnd, listview_id, item_id, ptr_app->is_enabled);
 }
 
-VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps)
+VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps)
 {
-	if (!listview_id || item == -1)
+	if (!listview_id || item_id == -1)
 		return;
 
 	WCHAR rule_name[RULE_NAME_CCH_MAX];
@@ -942,11 +942,11 @@ VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, 
 
 	direction_string = _app_getdirectionname (ptr_rule->direction, FALSE, TRUE);
 
-	_r_listview_setitemex (hwnd, listview_id, item, 0, rule_name_ptr, rule_icon_id, rule_group_id, 0);
-	_r_listview_setitem (hwnd, listview_id, item, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL) : _r_locale_getstring (IDS_ANY));
-	_r_listview_setitem (hwnd, listview_id, item, 2, _r_obj_getstringorempty (direction_string));
+	_r_listview_setitemex (hwnd, listview_id, item_id, 0, rule_name_ptr, rule_icon_id, rule_group_id, 0);
+	_r_listview_setitem (hwnd, listview_id, item_id, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL) : _r_locale_getstring (IDS_ANY));
+	_r_listview_setitem (hwnd, listview_id, item_id, 2, _r_obj_getstringorempty (direction_string));
 
-	_r_listview_setitemcheck (hwnd, listview_id, item, ptr_rule->is_enabled);
+	_r_listview_setitemcheck (hwnd, listview_id, item_id, ptr_rule->is_enabled);
 
 	if (direction_string)
 		_r_obj_dereference (direction_string);

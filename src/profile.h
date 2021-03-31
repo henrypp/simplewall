@@ -106,8 +106,8 @@ COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx);
 _Ret_maybenull_
 PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id);
 
-VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _Inout_ PITEM_APP ptr_app);
-VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps);
+VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _Inout_ PITEM_APP ptr_app);
+VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps);
 
 VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ BOOLEAN is_createconfig);
 
