@@ -2333,6 +2333,60 @@ VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_ap
 	}
 }
 
+BOOLEAN _app_setruletoapp (_In_ HWND hwnd, _Inout_ PITEM_RULE ptr_rule, _In_ INT item_id, _In_ PITEM_APP ptr_app, _In_ BOOLEAN is_enable)
+{
+	INT listview_id;
+
+	if (ptr_rule->is_forservices && (ptr_app->app_hash == config.ntoskrnl_hash || ptr_app->app_hash == config.svchost_hash))
+		return FALSE;
+
+	if (is_enable == (_r_obj_findhashtable (ptr_rule->apps, ptr_app->app_hash) != NULL))
+		return FALSE;
+
+	if (is_enable)
+	{
+		_app_addcachetable (ptr_rule->apps, ptr_app->app_hash, NULL, 0);
+
+		_app_ruleenable (ptr_rule, TRUE, TRUE);
+	}
+	else
+	{
+		_r_obj_removehashtableentry (ptr_rule->apps, ptr_app->app_hash);
+
+		if (_r_obj_ishashtableempty (ptr_rule->apps))
+			_app_ruleenable (ptr_rule, FALSE, TRUE);
+	}
+
+	listview_id = _app_getlistview_id (ptr_rule->type);
+
+	if (listview_id)
+	{
+		if (item_id != -1)
+		{
+			_r_spinlock_acquireshared (&lock_checkbox);
+			_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, FALSE);
+			_r_spinlock_releaseshared (&lock_checkbox);
+		}
+	}
+
+	listview_id = PtrToInt (_app_getappinfo (ptr_app, InfoListviewId));
+
+	if (listview_id)
+	{
+		item_id = _app_getposition (hwnd, listview_id, ptr_app->app_hash);
+
+		if (item_id != -1)
+		{
+			_r_spinlock_acquireshared (&lock_checkbox);
+			_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
+			_r_spinlock_releaseshared (&lock_checkbox);
+		}
+	}
+
+
+	return TRUE;
+}
+
 _Ret_maybenull_
 PR_STRING _app_parsehoststring (_In_ LPCWSTR hostname, _In_opt_ USHORT port)
 {

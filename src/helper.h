@@ -57,6 +57,8 @@ VOID _app_generate_services ();
 VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash);
 VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_app);
 
+BOOLEAN _app_setruletoapp (_In_ HWND hwnd, _Inout_ PITEM_RULE ptr_rule, _In_ INT item_id, _In_ PITEM_APP ptr_app, _In_ BOOLEAN is_enable);
+
 _Ret_maybenull_
 PR_STRING _app_parsehoststring (_In_ LPCWSTR hostname, _In_opt_ USHORT port);
 

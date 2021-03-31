@@ -940,7 +940,7 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 	if (!_r_listview_getselectedcount (hwnd, listview_id))
 		return;
 
-	INT item = -1;
+	INT item_id = -1;
 	BOOL is_remove = -1;
 
 	SIZE_T rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
@@ -950,9 +950,9 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 	if (!ptr_rule)
 		return;
 
-	while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
+	while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 	{
-		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 
 		if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 			continue;
@@ -967,37 +967,7 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 		if (is_remove == -1)
 			is_remove = !!(ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, app_hash));
 
-		if (is_remove)
-		{
-			_r_obj_removehashtableentry (ptr_rule->apps, app_hash);
-
-			if (_r_obj_ishashtableempty (ptr_rule->apps))
-				_app_ruleenable (ptr_rule, FALSE, TRUE);
-		}
-		else
-		{
-			_app_addcachetable (ptr_rule->apps, app_hash, NULL, 0);
-
-			_app_ruleenable (ptr_rule, TRUE, TRUE);
-		}
-
-		_r_spinlock_acquireshared (&lock_checkbox);
-		_app_setappiteminfo (hwnd, listview_id, item, ptr_app);
-		_r_spinlock_releaseshared (&lock_checkbox);
-	}
-
-	INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
-
-	if (rule_listview_id)
-	{
-		INT item_pos = _app_getposition (hwnd, rule_listview_id, rule_idx);
-
-		if (item_pos != -1)
-		{
-			_r_spinlock_acquireshared (&lock_checkbox);
-			_app_setruleiteminfo (hwnd, rule_listview_id, item_pos, ptr_rule, TRUE);
-			_r_spinlock_releaseshared (&lock_checkbox);
-		}
+		_app_setruletoapp (hwnd, ptr_rule, item_id, ptr_app, !is_remove);
 	}
 
 	PR_LIST rules = _r_obj_createlist (NULL);
