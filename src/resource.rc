@@ -757,6 +757,7 @@ BEGIN
 	IDS_TITLE_TRAY "Tray icon"
 	IDS_TRAYICONSINGLECLICK_CHK "Single click on tray icon to open"
 
+	IDS_ENABLE_APP_CHK "Enable network access"
 	IDS_APP_HINT "There is no reason to set any permissive rule for app with already enabled internet access."
 END
 
