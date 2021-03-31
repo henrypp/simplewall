@@ -972,14 +972,17 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	PR_LIST rules = _r_obj_createlist (NULL);
 
-	_r_obj_addlistitem (rules, ptr_rule);
 
 	if (_wfp_isfiltersinstalled ())
 	{
 		HANDLE hengine = _wfp_getenginehandle ();
 
 		if (hengine)
+		{
+			_r_obj_addlistitem (rules, ptr_rule);
+
 			_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+		}
 	}
 
 	_r_obj_dereference (rules);
