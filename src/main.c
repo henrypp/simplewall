@@ -79,7 +79,7 @@ THREAD_API NetworkMonitorThread (_In_ PVOID lparam)
 
 		while (TRUE)
 		{
-			_app_generate_connections (checker_map);
+			_app_generate_connections (network_map, checker_map);
 
 			is_highlighting_enabled = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getbooleanex (L"IsHighlightConnection", TRUE, L"colors");
 			current_listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
@@ -168,7 +168,11 @@ THREAD_API NetworkMonitorThread (_In_ PVOID lparam)
 
 					SIZE_T app_hash = _app_getnetworkapp (network_hash);
 
+					_r_spinlock_acquireexclusive (&lock_network);
+
 					_r_obj_removehashtableentry (network_map, network_hash);
+
+					_r_spinlock_releaseexclusive (&lock_network);
 
 					// redraw listview item
 					if (app_hash)
@@ -1695,6 +1699,7 @@ VOID _app_initialize ()
 	_r_spinlock_initialize (&lock_checkbox);
 	_r_spinlock_initialize (&lock_logbusy);
 	_r_spinlock_initialize (&lock_logthread);
+	_r_spinlock_initialize (&lock_network);
 	_r_spinlock_initialize (&lock_profile);
 	_r_spinlock_initialize (&lock_transaction);
 

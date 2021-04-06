@@ -1669,7 +1669,7 @@ BOOLEAN _app_isvalidconnection (ADDRESS_FAMILY af, LPCVOID paddr)
 	return FALSE;
 }
 
-VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
+VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASHTABLE checker_map)
 {
 	_r_obj_clearhashtable (checker_map);
 
@@ -1705,7 +1705,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 
 				network.network_hash = _app_getnetworkhash (AF_INET, tcp4_table->table[i].dwOwningPid, &remote_addr, tcp4_table->table[i].dwRemotePort, &local_addr, tcp4_table->table[i].dwLocalPort, IPPROTO_TCP, tcp4_table->table[i].dwState);
 
-				if (_r_obj_findhashtable (network_map, network.network_hash))
+				if (_r_obj_findhashtable (result_map, network.network_hash))
 				{
 					_app_addcachetable (checker_map, network.network_hash, NULL, 0);
 
@@ -1734,7 +1734,11 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 						network.is_connection = TRUE;
 				}
 
-				_r_obj_addhashtableitem (network_map, network.network_hash, &network);
+				_r_spinlock_acquireexclusive (&lock_network);
+
+				_r_obj_addhashtableitem (result_map, network.network_hash, &network);
+
+				_r_spinlock_releaseexclusive (&lock_network);
 
 				_app_addcachetable (checker_map, network.network_hash, NULL, 1);
 			}
@@ -1762,7 +1766,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 
 				network.network_hash = _app_getnetworkhash (AF_INET6, tcp6_table->table[i].dwOwningPid, tcp6_table->table[i].ucRemoteAddr, tcp6_table->table[i].dwRemotePort, tcp6_table->table[i].ucLocalAddr, tcp6_table->table[i].dwLocalPort, IPPROTO_TCP, tcp6_table->table[i].dwState);
 
-				if (_r_obj_findhashtable (network_map, network.network_hash))
+				if (_r_obj_findhashtable (result_map, network.network_hash))
 				{
 					_app_addcachetable (checker_map, network.network_hash, NULL, 0);
 
@@ -1791,7 +1795,11 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 						network.is_connection = TRUE;
 				}
 
-				_r_obj_addhashtableitem (network_map, network.network_hash, &network);
+				_r_spinlock_acquireexclusive (&lock_network);
+
+				_r_obj_addhashtableitem (result_map, network.network_hash, &network);
+
+				_r_spinlock_releaseexclusive (&lock_network);
 
 				_app_addcachetable (checker_map, network.network_hash, NULL, 1);
 			}
@@ -1822,7 +1830,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 
 				network.network_hash = _app_getnetworkhash (AF_INET, udp4_table->table[i].dwOwningPid, NULL, 0, &local_addr, udp4_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (_r_obj_findhashtable (network_map, network.network_hash))
+				if (_r_obj_findhashtable (result_map, network.network_hash))
 				{
 					_app_addcachetable (checker_map, network.network_hash, NULL, 0);
 
@@ -1843,7 +1851,11 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 				if (_app_isvalidconnection (network.af, &network.local_addr))
 					network.is_connection = TRUE;
 
-				_r_obj_addhashtableitem (network_map, network.network_hash, &network);
+				_r_spinlock_acquireexclusive (&lock_network);
+
+				_r_obj_addhashtableitem (result_map, network.network_hash, &network);
+
+				_r_spinlock_releaseexclusive (&lock_network);
 
 				_app_addcachetable (checker_map, network.network_hash, NULL, 1);
 			}
@@ -1871,7 +1883,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 
 				network.network_hash = _app_getnetworkhash (AF_INET6, udp6_table->table[i].dwOwningPid, NULL, 0, udp6_table->table[i].ucLocalAddr, udp6_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (_r_obj_findhashtable (network_map, network.network_hash))
+				if (_r_obj_findhashtable (result_map, network.network_hash))
 				{
 					_app_addcachetable (checker_map, network.network_hash, NULL, 0);
 
@@ -1892,7 +1904,11 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 				if (_app_isvalidconnection (network.af, &network.local_addr6))
 					network.is_connection = TRUE;
 
-				_r_obj_addhashtableitem (network_map, network.network_hash, &network);
+				_r_spinlock_acquireexclusive(&lock_network);
+
+				_r_obj_addhashtableitem (result_map, network.network_hash, &network);
+
+				_r_spinlock_releaseexclusive (&lock_network);
 
 				_app_addcachetable (checker_map, network.network_hash, NULL, 1);
 			}

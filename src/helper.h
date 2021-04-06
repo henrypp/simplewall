@@ -50,7 +50,7 @@ PR_STRING _app_getdirectionname (_In_ FWP_DIRECTION direction, _In_ BOOLEAN is_l
 
 COLORREF _app_getcolorvalue (_In_ SIZE_T color_hash);
 
-VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map);
+VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASHTABLE checker_map);
 VOID _app_generate_packages ();
 VOID _app_generate_services ();
 
