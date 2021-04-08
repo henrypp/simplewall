@@ -1,25 +1,24 @@
 import os
 import math
 import re
-import time
 import xml.dom.minidom
 
-def natural_sort(list, key=lambda s:s):
-    def get_alphanum_key_func (key):
-        convert = lambda text: int (text) if text.isdigit () else text
-        return lambda s: [convert (c) for c in re.split ('([0-9]+)', key (s))]
-    list.sort (key=get_alphanum_key_func (key))
+def natural_sort (list, key=lambda s:s):
+	def get_alphanum_key_func (key):
+		convert = lambda text: int (text) if text.isdigit () else text
+		return lambda s: [convert (c) for c in re.split ('([0-9]+)', key (s))]
+	list.sort (key=get_alphanum_key_func (key))
 
-current_dir = os.path.dirname (os.path.abspath (__file__))
-rules_dir = current_dir + '\\..\\3rd-party\\WindowsSpyBlocker\\data\\firewall'
-rules_file = 'bin\\profile_internal.xml'
+CURRENT_DIRECTORY = os.path.dirname (os.path.abspath (__file__))
+RULES_DIR = os.path.join (CURRENT_DIRECTORY, '..', '3rd-party', 'WindowsSpyBlocker', 'data', 'firewall')
+RULES_FILE = os.path.join (CURRENT_DIRECTORY, 'bin', 'profile_internal.xml')
 
 # Open profile xml
-with open (rules_file, 'r', newline='') as f:
+with open (RULES_FILE, 'r', newline='') as f:
 	data = f.read ()
 
 	if not data:
-		raise Exception ('File reading failure: ' + rules_file)
+		raise Exception ('File reading failure: ' + RULES_FILE)
 
 	# toprettyxml() hack
 	data = data.replace ('\n', '')
@@ -28,9 +27,10 @@ with open (rules_file, 'r', newline='') as f:
 	xml_doc = xml.dom.minidom.parseString (data)
 	xml_root = xml_doc.getElementsByTagName ("root")
 
+	f.close ()
+
 # Store timestamp
-timestamp = float (xml_root[0].getAttribute ("timestamp"))
-timestamp_current = time.time ()
+timestamp = int (xml_root[0].getAttribute ("timestamp"))
 
 # Cleanup xml
 for node in xml_doc.getElementsByTagName ("rules_blocklist"):
@@ -44,14 +44,16 @@ if not xml_section:
 	raise Exception ('Parse xml failure.')
 
 # Enumerate Windows Spy Blocker spy/extra and update rules
-for f in os.listdir (rules_dir):
+for f in os.listdir (RULES_DIR):
 	module_name = os.path.splitext (f)[0]
-	module_path = os.path.join (rules_dir,  f)
+	module_path = os.path.join (RULES_DIR, f)
 
-	time_lastmod = os.path.getmtime (module_path);
+	print ('Parsing ' + module_name + '...')
 
-	if math.isclose (time_lastmod, timestamp, abs_tol=0.001):
-		timestamp = time_lastmod;
+	lastmod = int (os.path.getmtime (module_path));
+
+	if lastmod > timestamp:
+		timestamp = lastmod;
 
 	with open (module_path, 'r') as f:
 		rows = f.readlines ()
@@ -70,8 +72,9 @@ for f in os.listdir (rules_dir):
 		f.close ()
 
 # Set new rule timestamp
-xml_root[0].setAttribute ("timestamp", str (int (timestamp)))
-xml_doc.normalize ()
+xml_root[0].setAttribute ("timestamp", str (timestamp))
+
+print ('\nBlocklist timetamp ' + str (timestamp))
 
 # Save updated profile xml
 data = xml_doc.toprettyxml (indent="\t", newl="\n")
@@ -79,6 +82,6 @@ data = xml_doc.toprettyxml (indent="\t", newl="\n")
 if data:
 	data = data.replace ('/>', ' />')
 
-	with open (rules_file, "w", newline='') as f:
+	with open (RULES_FILE, "w", newline='') as f:
 		f.write (data)
 		f.close ()
