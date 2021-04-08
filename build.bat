@@ -2,3 +2,5 @@
 
 cd ..\builder
 build simplewall simplewall 3.3
+
+pause
