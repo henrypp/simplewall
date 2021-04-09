@@ -317,14 +317,34 @@ PITEM_RULE_CONFIG _app_addruleconfigtable (_In_ PR_HASHTABLE hashtable, _In_ SIZ
 }
 
 _Ret_maybenull_
+PITEM_APP _app_getappitem (_In_ SIZE_T app_hash)
+{
+	PITEM_APP ptr_app;
+
+	_r_spinlock_acquireshared (&lock_apps);
+
+	ptr_app = _r_obj_findhashtable (apps, app_hash);
+
+	_r_spinlock_releaseshared (&lock_apps);
+
+	return ptr_app;
+}
+
+_Ret_maybenull_
 PITEM_RULE _app_getrulebyid (_In_ SIZE_T idx)
 {
-	if (idx != SIZE_MAX && idx < _r_obj_getarraysize (rules_arr))
-	{
-		return _r_obj_getarrayitem (rules_arr, idx);
-	}
+	PITEM_RULE ptr_rule;
 
-	return NULL;
+	_r_spinlock_acquireshared (&lock_rules);
+
+	if (idx != SIZE_MAX && idx < _r_obj_getarraysize (rules_arr))
+		ptr_rule = _r_obj_getarrayitem (rules_arr, idx);
+	else
+		ptr_rule = NULL;
+
+	_r_spinlock_releaseshared (&lock_rules);
+
+	return ptr_rule;
 }
 
 _Ret_maybenull_
@@ -335,6 +355,8 @@ PITEM_RULE _app_getrulebyhash (_In_ SIZE_T rule_hash)
 	if (!rule_hash)
 		return NULL;
 
+	_r_spinlock_acquireshared (&lock_rules);
+
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
 		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
@@ -344,22 +366,32 @@ PITEM_RULE _app_getrulebyhash (_In_ SIZE_T rule_hash)
 			if (ptr_rule->is_readonly)
 			{
 				if (_r_obj_getstringhash (ptr_rule->name) == rule_hash)
+				{
+					_r_spinlock_releaseshared (&lock_rules);
+
 					return ptr_rule;
+				}
 			}
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_rules);
 
 	return NULL;
 }
 
 SIZE_T _app_getnetworkapp (_In_ SIZE_T network_hash)
 {
-	PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, network_hash);
+	PITEM_NETWORK ptr_network;
+
+	_r_spinlock_acquireshared (&lock_network);
+
+	ptr_network = _r_obj_findhashtable (network_map, network_hash);
+
+	_r_spinlock_releaseshared (&lock_network);
 
 	if (ptr_network)
-	{
 		return ptr_network->app_hash;
-	}
 
 	return 0;
 }
@@ -462,9 +494,11 @@ CleanupExit:
 
 VOID _app_freeapplication (_In_ SIZE_T app_hash)
 {
+	PITEM_RULE ptr_rule;
+
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
-		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
+		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
 		if (ptr_rule)
 		{
