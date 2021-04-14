@@ -26,8 +26,6 @@
 #include "rapp.h"
 #include "main.h"
 
-#include "..\..\mxml\mxml.h"
-
 #include "resource.h"
 
 DECLSPEC_SELECTANY STATIC_DATA config;

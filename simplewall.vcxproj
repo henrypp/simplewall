@@ -248,16 +248,6 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\mxml\mxml-attr.c" />
-    <ClCompile Include="..\mxml\mxml-entity.c" />
-    <ClCompile Include="..\mxml\mxml-file.c" />
-    <ClCompile Include="..\mxml\mxml-get.c" />
-    <ClCompile Include="..\mxml\mxml-index.c" />
-    <ClCompile Include="..\mxml\mxml-node.c" />
-    <ClCompile Include="..\mxml\mxml-private.c" />
-    <ClCompile Include="..\mxml\mxml-search.c" />
-    <ClCompile Include="..\mxml\mxml-set.c" />
-    <ClCompile Include="..\mxml\mxml-string.c" />
     <ClCompile Include="..\routine\rapp.c" />
     <ClCompile Include="..\routine\routine.c" />
     <ClCompile Include="src\controls.c" />
@@ -273,8 +263,6 @@
     <ClCompile Include="src\messages.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\mxml\mxml-private.h" />
-    <ClInclude Include="..\mxml\mxml.h" />
     <ClInclude Include="..\routine\ntapi.h" />
     <ClInclude Include="..\routine\rapp.h" />
     <ClInclude Include="..\routine\rconfig.h" />
