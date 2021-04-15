@@ -1,3 +1,30 @@
+v3.3 Beta (15 April 2021)
+- added option for tray icon to open window in single click
+- added warning message for allowing service host
+- added quic service for internal rules (issue #819)
+- added multiple rules at once in rules editor
+- added properties dialog for apps
+- added index column for logs
+- added sorting for logs
+- do not mark apps as unused if it applied for rules
+- set limit for rules popup menu (issue #692)
+- increased speed of service enumeration
+- removed notification ignore button
+- use threadpool for timers
+- improved multi-monitor support
+- improved listviews highlighting
+- improved file dialogs
+- fixed rule window does not display rule length limitation (issue #867)
+- fixed update period timestamp does not set correctly (issue #745)
+- fixed crash when user uses ipv6 range in rules (issue #822)
+- fixed support filesystems with custom driver (issue #817)
+- fixed blank notification window (issue #775)
+- fixed dependencies load flags for win10rs1+
+- fixed crash on app startup (issue #775)
+- updated project sdk
+- cosmetic fixes
+- fixed bugs
+
 v3.2.4 (5 September 2020)
 - removed assertion from release builds (issue #764)
 - removed user service instance from the list (win10+)
