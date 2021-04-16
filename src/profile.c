@@ -1430,35 +1430,25 @@ VOID _app_openappdirectory (_In_ PITEM_APP ptr_app)
 
 BOOLEAN _app_profile_load_check (_In_ LPCWSTR path, _In_ ENUM_TYPE_XML type)
 {
-	HANDLE hfile = CreateFile (path, FILE_GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	R_XML_LIBRARY xml_library;
+	BOOLEAN is_success;
 
-	if (_r_fs_isvalidhandle (hfile))
+	if (_r_xml_initializelibrary (&xml_library, TRUE, NULL) != S_OK)
+		return FALSE;
+
+	is_success = FALSE;
+
+	if (_r_xml_parsefile (&xml_library, path) == S_OK)
 	{
-		mxml_node_t *xml_node;
-		mxml_node_t *root_node;
-
-		BOOLEAN is_success = FALSE;
-
-		xml_node = mxmlLoadFd (NULL, hfile, MXML_OPAQUE_CALLBACK);
-
-		if (xml_node)
+		if (_r_xml_findchildbytagname (&xml_library, L"root"))
 		{
-			root_node = mxmlFindElement (xml_node, xml_node, "root", NULL, NULL, MXML_DESCEND);
-
-			if (root_node)
-			{
-				is_success = _app_profile_load_check_node (root_node, type);
-			}
-
-			mxmlDelete (xml_node);
+			is_success = _app_profile_load_check_node (&xml_library, type);
 		}
-
-		CloseHandle (hfile);
-
-		return is_success;
 	}
 
-	return FALSE;
+	_r_xml_destroylibrary (&xml_library);
+
+	return is_success;
 }
 
 VOID _app_profile_load_fallback ()
@@ -1489,139 +1479,137 @@ VOID _app_profile_load_fallback ()
 	}
 }
 
-VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA type, _In_ UINT version)
+VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ UINT version)
 {
-	PITEM_APP ptr_app = NULL;
-	PITEM_RULE ptr_rule = NULL;
-	PITEM_RULE_CONFIG ptr_config = NULL;
-	PR_STRING string = NULL;
-	SIZE_T rule_hash = 0;
-	LPCSTR text;
-	INT blocklist_spy_state;
-	INT blocklist_update_state;
-	INT blocklist_extra_state;
-
-	blocklist_spy_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistSpyState", 2), 0, 2);
-	blocklist_update_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistUpdateState", 0), 0, 2);
-	blocklist_extra_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistExtraState", 0), 0, 2);
-
-	for (mxml_node_t* item_node = mxmlGetFirstChild (root_node); item_node; item_node = mxmlGetNextSibling (item_node))
+	if (type == DataAppRegular)
 	{
-		if (type == DataAppRegular)
+		PR_STRING string;
+		LONG64 timestamp;
+		LONG64 timer;
+		BOOLEAN is_enabled;
+		BOOLEAN is_silent;
+		PITEM_APP ptr_app;
+
+		string = _r_xml_getattribute_string (xml_library, L"path");
+
+		if (!string)
+			return;
+
+		// workaround for native paths
+		// https://github.com/henrypp/simplewall/issues/817
+		if (_r_obj_getstringlength (string) > 2 && _r_obj_getstringhash (string) != config.ntoskrnl_hash && string->buffer[1] != L':')
 		{
-			text = mxmlElementGetAttr (item_node, "path");
+			PR_STRING dos_path = _r_path_dospathfromnt (string->buffer);
 
-			if (_r_str_isempty_a (text))
-				continue;
+			if (dos_path)
+				_r_obj_movereference (&string, dos_path);
+		}
 
-			string = _r_str_multibyte2unicode (text);
-
-			if (!string)
-				continue;
-
+		if (!_r_obj_isstringempty (string))
+		{
 			ptr_app = _app_addapplication (NULL, DataUnknown, string->buffer, NULL, NULL);
 
 			if (ptr_app)
 			{
-				LONG64 time;
+				is_enabled = _r_xml_getattribute_boolean (xml_library, L"is_enabled");
+				is_silent = _r_xml_getattribute_boolean (xml_library, L"is_silent");
 
-				text = mxmlElementGetAttr (item_node, "is_silent");
+				timestamp = _r_xml_getattribute_long64 (xml_library, L"timestamp");
+				timer = _r_xml_getattribute_long64 (xml_library, L"timer");
 
-				if (text)
-					_app_setappinfo (ptr_app, InfoIsSilent, IntToPtr (_r_str_toboolean_a (text)));
+				if (is_silent)
+					_app_setappinfo (ptr_app, InfoIsSilent, IntToPtr (is_silent));
 
-				text = mxmlElementGetAttr (item_node, "is_enabled");
+				if (is_enabled)
+					_app_setappinfo (ptr_app, InfoIsEnabled, IntToPtr (is_enabled));
 
-				if (text)
-					_app_setappinfo (ptr_app, InfoIsEnabled, IntToPtr (_r_str_toboolean_a (text)));
+				if (timestamp)
+					_app_setappinfo (ptr_app, InfoTimestampPtr, &timestamp);
 
-				text = mxmlElementGetAttr (item_node, "timestamp");
-
-				if (text)
-				{
-					time = _r_str_tolong64_a (text);
-					_app_setappinfo (ptr_app, InfoTimestampPtr, &time);
-				}
-
-				text = mxmlElementGetAttr (item_node, "timer");
-
-				if (text)
-				{
-					time = _r_str_tolong64_a (text);
-					_app_setappinfo (ptr_app, InfoTimerPtr, &time);
-				}
+				if (timer)
+					_app_setappinfo (ptr_app, InfoTimerPtr, &timer);
 			}
-
-			_r_obj_dereference (string);
 		}
-		else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleUser)
+
+		_r_obj_dereference (string);
+	}
+	else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleUser)
+	{
+		PR_STRING rule_name;
+		PR_STRING rule_remote;
+		PR_STRING rule_local;
+		FWP_DIRECTION direction;
+		UINT8 protocol;
+		ADDRESS_FAMILY af;
+		PITEM_RULE ptr_rule;
+		PITEM_APP ptr_app;
+		SIZE_T rule_hash;
+
+		rule_name = _r_xml_getattribute_string (xml_library, L"name");
+
+		if (!rule_name)
+			return;
+
+		rule_remote = _r_xml_getattribute_string (xml_library, L"rule");
+		rule_local = _r_xml_getattribute_string (xml_library, L"rule_local");
+		direction = (FWP_DIRECTION)_r_xml_getattribute_integer (xml_library, L"dir");
+		protocol = (UINT8)_r_xml_getattribute_integer (xml_library, L"protocol");
+		af = (ADDRESS_FAMILY)_r_xml_getattribute_integer (xml_library, L"version");
+
+		ptr_rule = _app_addrule (rule_name, rule_remote, rule_local, direction, protocol, af);
+
+		_r_obj_dereference (rule_name);
+
+		if (rule_remote)
+			_r_obj_dereference (rule_remote);
+
+		if (rule_local)
+			_r_obj_dereference (rule_local);
+
+		if (!ptr_rule)
+			return;
+
+		rule_hash = _r_obj_getstringhash (ptr_rule->name);
+
+		ptr_rule->type = ((type == DataRuleSystem && _r_xml_getattribute_boolean (xml_library, L"is_custom")) ? DataRuleUser : type);
+		ptr_rule->is_block = _r_xml_getattribute_boolean (xml_library, L"is_block");
+		ptr_rule->is_forservices = _r_xml_getattribute_boolean (xml_library, L"is_services");
+		ptr_rule->is_readonly = (type != DataRuleUser);
+
+		// calculate rule weight
+		if (type == DataRuleBlocklist)
 		{
-			BOOLEAN is_internal = FALSE;
+			ptr_rule->weight = FILTER_WEIGHT_BLOCKLIST;
+		}
+		else if (type == DataRuleSystem)
+		{
+			ptr_rule->weight = FILTER_WEIGHT_SYSTEM;
+		}
+		else if (type == DataRuleUser)
+		{
+			ptr_rule->weight = ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM;
+		}
 
-			text = mxmlElementGetAttr (item_node, "name");
+		ptr_rule->is_enabled = _r_xml_getattribute_boolean (xml_library, L"is_enabled");
 
-			if (_r_str_isempty_a (text))
-				continue;
+		if (type == DataRuleBlocklist)
+		{
+			INT blocklist_spy_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistSpyState", 2), 0, 2);
+			INT blocklist_update_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistUpdateState", 0), 0, 2);
+			INT blocklist_extra_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistExtraState", 0), 0, 2);
 
-			string = _r_str_multibyte2unicode (text);
+			_app_ruleblocklistsetstate (ptr_rule, blocklist_spy_state, blocklist_update_state, blocklist_extra_state);
+		}
+		else
+		{
+			ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
+		}
 
-			if (!string)
-				continue;
+		// load rules config
+		{
+			PITEM_RULE_CONFIG ptr_config = NULL;
+			BOOLEAN is_internal;
 
-			PR_STRING rule_remote = _r_str_multibyte2unicode (mxmlElementGetAttr (item_node, "rule"));
-			PR_STRING rule_local = _r_str_multibyte2unicode (mxmlElementGetAttr (item_node, "rule_local"));
-			FWP_DIRECTION direction = (FWP_DIRECTION)_r_str_tointeger_a (mxmlElementGetAttr (item_node, "dir"));
-			UINT8 protocol = (UINT8)_r_str_tointeger_a (mxmlElementGetAttr (item_node, "protocol"));
-			ADDRESS_FAMILY af = (ADDRESS_FAMILY)_r_str_tointeger_a (mxmlElementGetAttr (item_node, "version"));
-			PITEM_RULE ptr_rule = _app_addrule (string, rule_remote, rule_local, direction, protocol, af);
-
-			_r_obj_dereference (string);
-
-			if (rule_remote)
-				_r_obj_dereference (rule_remote);
-
-			if (rule_local)
-				_r_obj_dereference (rule_local);
-
-			if (!ptr_rule)
-				continue;
-
-			rule_hash = _r_obj_getstringhash (ptr_rule->name);
-
-			ptr_rule->type = ((type == DataRuleSystem && _r_str_toboolean_a (mxmlElementGetAttr (item_node, "is_custom"))) ? DataRuleUser : type);
-			ptr_rule->is_block = _r_str_toboolean_a (mxmlElementGetAttr (item_node, "is_block"));
-			ptr_rule->is_forservices = _r_str_toboolean_a (mxmlElementGetAttr (item_node, "is_services"));
-			ptr_rule->is_readonly = (type != DataRuleUser);
-
-			// calculate rule weight
-			if (type == DataRuleBlocklist)
-			{
-				ptr_rule->weight = FILTER_WEIGHT_BLOCKLIST;
-			}
-			else if (type == DataRuleSystem)
-			{
-				ptr_rule->weight = FILTER_WEIGHT_SYSTEM;
-			}
-			else if (type == DataRuleUser)
-			{
-				ptr_rule->weight = ptr_rule->is_block ? FILTER_WEIGHT_CUSTOM_BLOCK : FILTER_WEIGHT_CUSTOM;
-			}
-
-			ptr_rule->is_enabled = _r_str_toboolean_a (mxmlElementGetAttr (item_node, "is_enabled"));
-
-			if (type == DataRuleBlocklist)
-			{
-				_app_ruleblocklistsetstate (ptr_rule, blocklist_spy_state, blocklist_update_state, blocklist_extra_state);
-			}
-			else
-			{
-				ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
-			}
-
-			// reset (required!)
-			ptr_config = NULL;
-
-			// load rules config
 			is_internal = (type == DataRuleBlocklist || type == DataRuleSystem);
 
 			if (is_internal)
@@ -1638,21 +1626,17 @@ VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA 
 			// load apps
 			{
 				R_STRINGBUILDER rule_apps;
+				PR_STRING string;
 
 				_r_obj_initializestringbuilder (&rule_apps);
 
-				text = mxmlElementGetAttr (item_node, "apps");
+				string = _r_xml_getattribute_string (xml_library, L"apps");
 
-				if (!_r_str_isempty_a (text))
+				if (!_r_obj_isstringempty (string))
 				{
-					string = _r_str_multibyte2unicode (text);
+					_r_obj_appendstringbuilder2 (&rule_apps, string);
 
-					if (string)
-					{
-						_r_obj_appendstringbuilder2 (&rule_apps, string);
-
-						_r_obj_dereference (string);
-					}
+					_r_obj_dereference (string);
 				}
 
 				if (is_internal && ptr_config && !_r_obj_isstringempty (ptr_config->apps))
@@ -1695,7 +1679,7 @@ VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA 
 
 							if (app_hash)
 							{
-								if (_r_str_toboolean_a (mxmlElementGetAttr (item_node, "is_services")) && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
+								if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 								{
 									_r_obj_dereference (path_string);
 									continue;
@@ -1724,145 +1708,129 @@ VOID _app_profile_load_helper (_In_ mxml_node_t* root_node, _In_ ENUM_TYPE_DATA 
 
 				_r_obj_deletestringbuilder (&rule_apps);
 			}
-
-			_r_obj_addarrayitem (rules_arr, ptr_rule);
 		}
-		else if (type == DataRulesConfig)
+
+		_r_obj_addarrayitem (rules_arr, ptr_rule);
+	}
+	else if (type == DataRulesConfig)
+	{
+		PR_STRING rule_name;
+		PITEM_RULE_CONFIG ptr_config;
+		SIZE_T rule_hash;
+
+		rule_name = _r_xml_getattribute_string (xml_library, L"name");
+
+		if (!rule_name)
+			return;
+
+		rule_hash = _r_obj_getstringhash (rule_name);
+
+		if (rule_hash)
 		{
-			text = mxmlElementGetAttr (item_node, "name");
+			ptr_config = _r_obj_findhashtable (rules_config, rule_hash);
 
-			if (_r_str_isempty_a (text))
-				continue;
-
-			string = _r_str_multibyte2unicode (text);
-
-			if (!string)
-				continue;
-
-			rule_hash = _r_obj_getstringhash (string);
-
-			if (rule_hash)
+			if (!ptr_config)
 			{
-				ptr_config = _r_obj_findhashtable (rules_config, rule_hash);
+				ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_reference (rule_name), _r_xml_getattribute_boolean (xml_library, L"is_enabled"));
 
-				if (!ptr_config)
-				{
-					ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_reference (string), _r_str_toboolean_a (mxmlElementGetAttr (item_node, "is_enabled")));
+				ptr_config->apps = _r_xml_getattribute_string (xml_library, L"apps");
 
-					text = mxmlElementGetAttr (item_node, "apps");
-
-					if (!_r_str_isempty_a (text))
-					{
-						ptr_config->apps = _r_str_multibyte2unicode (text);
-
-						if (ptr_config->apps && version < XML_PROFILE_VER_3)
-							_r_str_replacechar (ptr_config->apps->buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
-					}
-				}
+				if (ptr_config->apps && version < XML_PROFILE_VER_3)
+					_r_str_replacechar (ptr_config->apps->buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 			}
-
-			_r_obj_dereference (string);
 		}
+
+		_r_obj_dereference (rule_name);
 	}
 }
 
-VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 ptimestamp)
+VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp)
 {
-	HANDLE hfile;
+	R_XML_LIBRARY xml_file;
+	R_XML_LIBRARY xml_resource;
 
-	mxml_node_t *xml_file_node = NULL;
-	mxml_node_t *xml_resource_node = NULL;
-
-	mxml_node_t *file_root_node = NULL;
-	mxml_node_t *resource_root_node = NULL;
-
-	mxml_node_t *root_node = NULL;
+	PR_XML_LIBRARY xml_library;
 
 	LONG64 timestamp_file = 0;
 	LONG64 timestamp_resource = 0;
 
+	INT version_file = 0;
+	INT version_resource = 0;
+	INT version = 0;
+
+	_r_xml_initializelibrary (&xml_file, TRUE, NULL);
+	_r_xml_initializelibrary (&xml_resource, TRUE, NULL);
+
 	if (path)
 	{
-		hfile = CreateFile (path, FILE_GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-		if (_r_fs_isvalidhandle (hfile))
+		if (_r_xml_parsefile (&xml_file, path) == S_OK)
 		{
-			xml_file_node = mxmlLoadFd (NULL, hfile, MXML_OPAQUE_CALLBACK);
-
-			if (xml_file_node)
+			if (_r_xml_findchildbytagname (&xml_file, L"root"))
 			{
-				file_root_node = mxmlFindElement (xml_file_node, xml_file_node, "root", NULL, NULL, MXML_DESCEND);
+				version_file = _r_xml_getattribute_integer (&xml_file, L"version");
+				timestamp_file = _r_xml_getattribute_long64 (&xml_file, L"timestamp");
 			}
-
-			CloseHandle (hfile);
 		}
 	}
 
 	if (resource_name)
 	{
-		PVOID pbuffer = _r_res_loadresource (NULL, resource_name, RT_RCDATA, NULL);
+		PVOID buffer;
+		ULONG buffer_size;
 
-		if (pbuffer)
+		buffer = _r_res_loadresource (NULL, resource_name, RT_RCDATA, &buffer_size);
+
+		if (buffer)
 		{
-			xml_resource_node = mxmlLoadString (NULL, pbuffer, MXML_OPAQUE_CALLBACK);
-
-			if (xml_resource_node)
+			if (_r_xml_parsestring (&xml_resource, buffer, buffer_size) == S_OK)
 			{
-				resource_root_node = mxmlFindElement (xml_resource_node, xml_resource_node, "root", NULL, NULL, MXML_DESCEND);
+				if (_r_xml_findchildbytagname (&xml_resource, L"root"))
+				{
+					version_resource = _r_xml_getattribute_integer (&xml_resource, L"version");
+					timestamp_resource = _r_xml_getattribute_long64 (&xml_resource, L"timestamp");
+				}
 			}
 		}
 	}
 
-	if (file_root_node)
-	{
-		timestamp_file = _r_str_tolong64_a (mxmlElementGetAttr (file_root_node, "timestamp"));
-	}
+	xml_library = (timestamp_file > timestamp_resource) ? &xml_file : &xml_resource;
+	version = (timestamp_file > timestamp_resource) ? version_file : version_resource;
 
-	if (resource_root_node)
+	if (xml_library->stream)
 	{
-		timestamp_resource = _r_str_tolong64_a (mxmlElementGetAttr (resource_root_node, "timestamp"));
-	}
-
-	root_node = (timestamp_file > timestamp_resource) ? file_root_node : resource_root_node;
-
-	if (!root_node)
-	{
-		_r_log (Error, UID, L"mxmlLoadFd", GetLastError (), path);
-	}
-	else
-	{
-		if (_app_profile_load_check_node (root_node, XmlProfileInternalV3))
+		if (_app_profile_load_check_node (xml_library, XmlProfileInternalV3))
 		{
-			INT version = _r_str_tointeger_a (mxmlElementGetAttr (root_node, "version"));
+			if (timestamp)
+				*timestamp = (timestamp_file > timestamp_resource) ? timestamp_file : timestamp_resource;
 
-			if (ptimestamp)
-				*ptimestamp = _r_str_tolong64_a (mxmlElementGetAttr (root_node, "timestamp"));
+			LPCWSTR parent_tag = NULL;
+			BOOLEAN is_found = FALSE;
 
-			mxml_node_t *rules_system_node;
-			mxml_node_t *rules_blocklist_node;
-
-			rules_system_node = mxmlFindElement (root_node, root_node, "rules_system", NULL, NULL, MXML_DESCEND);
-			rules_blocklist_node = mxmlFindElement (root_node, root_node, "rules_blocklist", NULL, NULL, MXML_DESCEND);
+			INT version = _r_xml_getattribute_integer (xml_library, L"version");
 
 			// load system rules
-			if (rules_system_node)
+			if (_r_xml_findchildbytagname (xml_library, L"rules_system"))
 			{
-				_app_profile_load_helper (rules_system_node, DataRuleSystem, version);
+				while (_r_xml_enumchilditemsbytagname (xml_library, L"item"))
+				{
+					_app_profile_load_helper (xml_library, DataRuleSystem, version);
+				}
 			}
 
-			// load blocklist
-			if (rules_blocklist_node)
+			// load blocklist rules
+			if (_r_xml_findchildbytagname (xml_library, L"rules_blocklist"))
 			{
-				_app_profile_load_helper (rules_blocklist_node, DataRuleBlocklist, version);
+				while (_r_xml_enumchilditemsbytagname (xml_library, L"item"))
+				{
+					_app_profile_load_helper (xml_library, DataRuleBlocklist, version);
+				}
 			}
 		}
 	}
 
-	if (xml_file_node)
-		mxmlDelete (xml_file_node);
+	_r_xml_destroylibrary (&xml_file);
 
-	if (xml_resource_node)
-		mxmlDelete (xml_resource_node);
+	_r_xml_destroylibrary (&xml_resource);
 }
 
 VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
@@ -1870,6 +1838,9 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	INT current_listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 	INT selected_item = (INT)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
 	INT scroll_pos = GetScrollPos (GetDlgItem (hwnd, current_listview_id), SB_VERT);
+
+	R_XML_LIBRARY xml_library;
+	HRESULT hr;
 
 	// clean listview
 	if (hwnd)
@@ -1881,13 +1852,21 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	_r_spinlock_acquireexclusive (&lock_apply);
 
 	// clear apps
+	_r_spinlock_acquireexclusive (&lock_apps);
+
 	_r_obj_clearhashtable (apps);
+
+	_r_spinlock_releaseexclusive (&lock_apps);
 
 	// clear rules config
 	_r_obj_clearhashtable (rules_config);
 
 	// clear rules
+	_r_spinlock_acquireexclusive (&lock_rules);
+
 	_r_obj_cleararray (rules_arr);
+
+	_r_spinlock_releaseexclusive (&lock_rules);
 
 	// generate uwp apps list (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
@@ -1899,85 +1878,64 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	_r_spinlock_releaseexclusive (&lock_apply);
 
 	// load profile
-	HANDLE hfile;
-
-	mxml_node_t *xml_node = NULL;
-	mxml_node_t *root_node = NULL;
+	_r_xml_initializelibrary (&xml_library, TRUE, NULL);
 
 	_r_spinlock_acquireshared (&lock_profile);
 
-	hfile = CreateFile (path_custom ? path_custom : config.profile_path, FILE_GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (_r_fs_isvalidhandle (hfile))
-	{
-		xml_node = mxmlLoadFd (NULL, hfile, MXML_OPAQUE_CALLBACK);
-		CloseHandle (hfile);
-	}
+	hr = _r_xml_parsefile (&xml_library, path_custom ? path_custom : config.profile_path);
 
 	// load backup
-	if (!xml_node && !path_custom)
+	if (hr != S_OK && !path_custom)
 	{
-		hfile = CreateFile (config.profile_path_backup, FILE_GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-		if (_r_fs_isvalidhandle (hfile))
-		{
-			xml_node = mxmlLoadFd (NULL, hfile, MXML_OPAQUE_CALLBACK);
-			CloseHandle (hfile);
-		}
+		hr = _r_xml_parsefile (&xml_library, config.profile_path_backup);
 	}
 
 	_r_spinlock_releaseshared (&lock_profile);
 
-	if (!xml_node)
+	if (hr != S_OK)
 	{
-		ULONG code = GetLastError ();
-
-		if (code != ERROR_FILE_NOT_FOUND)
-			_r_log (Error, UID, L"mxmlLoadFd", code, path_custom ? path_custom : config.profile_path);
+		if (hr != HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND))
+			_r_log (Error, UID, L"_r_xml_parsefile", hr, path_custom ? path_custom : config.profile_path);
 	}
 	else
 	{
-		if (mxmlGetType (xml_node) == MXML_ELEMENT)
+		if (_r_xml_findchildbytagname (&xml_library, L"root"))
 		{
-			root_node = mxmlFindElement (xml_node, xml_node, "root", NULL, NULL, MXML_DESCEND);
-
-			if (root_node)
+			if (_app_profile_load_check_node (&xml_library, XmlProfileV3))
 			{
-				if (_app_profile_load_check_node (root_node, XmlProfileV3))
+				INT version = _r_xml_getattribute_integer (&xml_library, L"version");
+
+				// load apps
+				if (_r_xml_findchildbytagname (&xml_library, L"apps"))
 				{
-					INT version = _r_str_tointeger_a (mxmlElementGetAttr (root_node, "version"));
-
-					mxml_node_t *apps_node;
-					mxml_node_t *rules_config_node;
-					mxml_node_t *rules_custom_node;
-
-					apps_node = mxmlFindElement (root_node, root_node, "apps", NULL, NULL, MXML_DESCEND);
-					rules_config_node = mxmlFindElement (root_node, root_node, "rules_config", NULL, NULL, MXML_DESCEND);
-					rules_custom_node = mxmlFindElement (root_node, root_node, "rules_custom", NULL, NULL, MXML_DESCEND);
-
-					// load apps
-					if (apps_node)
+					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
 					{
-						_app_profile_load_helper (apps_node, DataAppRegular, version);
+						_app_profile_load_helper (&xml_library, DataAppRegular, version);
 					}
+				}
 
-					// load rules config
-					if (rules_config_node)
+				// load rules config
+				if (_r_xml_findchildbytagname (&xml_library, L"rules_config"))
+				{
+					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
 					{
-						_app_profile_load_helper (rules_config_node, DataRulesConfig, version);
+						_app_profile_load_helper (&xml_library, DataRulesConfig, version);
 					}
+				}
 
-					// load user rules
-					if (rules_custom_node)
+				// load user rules
+				if (_r_xml_findchildbytagname (&xml_library, L"rules_custom"))
+				{
+					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
 					{
-						_app_profile_load_helper (rules_custom_node, DataRuleUser, version);
+						_app_profile_load_helper (&xml_library, DataRuleUser, version);
 					}
 				}
 			}
 		}
-
-		mxmlDelete (xml_node);
 	}
+
+	_r_xml_destroylibrary (&xml_library);
 
 	_app_profile_load_fallback ();
 
@@ -2057,69 +2015,60 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	}
 }
 
-LPCSTR _app_profile_save_callback (mxml_node_t *node, INT position)
-{
-	LPCSTR element_name = mxmlGetElement (node);
-
-	if (!element_name)
-		return NULL;
-
-	if (position == MXML_WS_BEFORE_OPEN || position == MXML_WS_BEFORE_CLOSE)
-	{
-		if (_stricmp (element_name, "apps") == 0 || _stricmp (element_name, "rules_custom") == 0 || _stricmp (element_name, "rules_config") == 0)
-		{
-			return "\t";
-		}
-		else if (_stricmp (element_name, "item") == 0)
-		{
-			return "\t\t";
-		}
-	}
-	else if (position == MXML_WS_AFTER_OPEN || position == MXML_WS_AFTER_CLOSE)
-	{
-		return "\r\n";
-	}
-
-	return NULL;
-}
-
 VOID _app_profile_save ()
 {
-	HANDLE hfile = NULL;
-
-	mxml_node_t* xml_node = NULL;
-	mxml_node_t* root_node = NULL;
-	mxml_node_t* apps_node = NULL;
-	mxml_node_t* rules_custom_node = NULL;
-	mxml_node_t* rules_config_node = NULL;
-	mxml_node_t* item_node = NULL;
-
-	PR_STRING string = NULL;
-	LONG64 current_time = 0;
-	BOOLEAN is_backuprequired = FALSE;
-
-	mxmlSetWrapMargin (0x2000);
+	R_XML_LIBRARY xml_library;
+	LONG64 current_time;
+	BOOLEAN is_backuprequired;
+	HRESULT hr;
 
 	current_time = _r_unixtime_now ();
 	is_backuprequired = _r_config_getboolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (config.profile_path_backup) || ((current_time - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
 
-	xml_node = mxmlNewXML ("1.0");
-	root_node = mxmlNewElement (xml_node, "root");
+	hr = _r_xml_initializelibrary (&xml_library, FALSE, NULL);
 
-	mxmlElementSetAttrf (root_node, "timestamp", "%" PR_LONG64, current_time);
-	mxmlElementSetAttrf (root_node, "type", "%" PRIi32, XmlProfileV3);
-	mxmlElementSetAttrf (root_node, "version", "%" PRIi32, XML_PROFILE_VER_CURRENT);
+	if (hr != S_OK)
+	{
+		_r_log (Error, UID, L"_r_xml_initializelibrary", hr, NULL);
 
-	apps_node = mxmlNewElement (root_node, "apps");
-	rules_custom_node = mxmlNewElement (root_node, "rules_custom");
-	rules_config_node = mxmlNewElement (root_node, "rules_config");
+		return;
+	}
+
+	hr = _r_xml_createfile (&xml_library, config.profile_path);
+
+	if (hr != S_OK)
+	{
+		_r_log (Error, UID, L"_r_xml_createfile", hr, config.profile_path);
+
+		return;
+	}
+
+	_r_spinlock_acquireexclusive (&lock_profile);
+
+	_r_xml_writestartdocument (&xml_library);
+
+	_r_xml_writestartelement (&xml_library, L"root");
+
+	_r_xml_setattribute_long64 (&xml_library, L"timestamp", current_time);
+	_r_xml_setattribute_integer (&xml_library, L"type", XmlProfileV3);
+	_r_xml_setattribute_integer (&xml_library, L"version", XML_PROFILE_VER_CURRENT);
+
+	_r_xml_writewhitespace (&xml_library, L"\n\t");
+
+	_r_xml_writestartelement (&xml_library, L"apps");
 
 	// save apps
 	PITEM_APP ptr_app;
+	PITEM_RULE ptr_rule;
 	PITEM_RULE_CONFIG ptr_config;
-	SIZE_T enum_key = 0;
+	PR_STRING string = NULL;
+	SIZE_T enum_key;
 	BOOLEAN is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", TRUE);
 	BOOLEAN is_usedapp = FALSE;
+
+	_r_spinlock_acquireshared (&lock_apps);
+
+	enum_key = 0;
 
 	while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 	{
@@ -2132,58 +2081,77 @@ VOID _app_profile_save ()
 		if (!is_usedapp && (!is_keepunusedapps || (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)))
 			continue;
 
-		item_node = mxmlNewElement (apps_node, "item");
+		_r_xml_writewhitespace (&xml_library, L"\n\t\t");
 
-		mxmlElementSetAttrf (item_node, "path", "%ws", ptr_app->original_path->buffer);
+		_r_xml_writestartelement (&xml_library, L"item");
+
+		_r_xml_setattribute (&xml_library, L"path", ptr_app->original_path->buffer);
 
 		if (ptr_app->timestamp)
-			mxmlElementSetAttrf (item_node, "timestamp", "%" PR_LONG64, ptr_app->timestamp);
+			_r_xml_setattribute_long64 (&xml_library, L"timestamp", ptr_app->timestamp);
 
 		// set timer (if presented)
 		if (ptr_app->timer && _app_istimerset (ptr_app->htimer))
-			mxmlElementSetAttrf (item_node, "timer", "%" PR_LONG64, ptr_app->timer);
+			_r_xml_setattribute_long64 (&xml_library, L"timer", ptr_app->timer);
 
 		// ffu!
 		if (ptr_app->profile)
-			mxmlElementSetAttrf (item_node, "profile", "%" PRIu8, ptr_app->profile);
+			_r_xml_setattribute_integer (&xml_library, L"profile", ptr_app->profile);
 
 		if (ptr_app->is_silent)
-			mxmlElementSetAttrf (item_node, "is_silent", "%" PRIu8, ptr_app->is_silent);
+			_r_xml_setattribute_boolean (&xml_library, L"is_silent", ptr_app->is_silent);
 
 		if (ptr_app->is_enabled)
-			mxmlElementSetAttrf (item_node, "is_enabled", "%" PRIu8, ptr_app->is_enabled);
+			_r_xml_setattribute_boolean (&xml_library, L"is_enabled", ptr_app->is_enabled);
+
+		_r_xml_writeendelement (&xml_library);
 	}
+
+	_r_spinlock_releaseshared (&lock_apps);
+
+	_r_xml_writewhitespace (&xml_library, L"\n\t");
+
+	_r_xml_writeendelement (&xml_library);
+
+	_r_xml_writewhitespace (&xml_library, L"\n\t");
+
+	// save rules
+	_r_xml_writestartelement (&xml_library, L"rules_custom");
+
+	_r_spinlock_acquireshared (&lock_rules);
 
 	// save user rules
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
-		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
+		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
 		if (!ptr_rule || ptr_rule->is_readonly || _r_obj_isstringempty (ptr_rule->name))
 			continue;
 
-		item_node = mxmlNewElement (rules_custom_node, "item");
+		_r_xml_writewhitespace (&xml_library, L"\n\t\t");
 
-		mxmlElementSetAttrf (item_node, "name", "%ws", ptr_rule->name->buffer);
+		_r_xml_writestartelement (&xml_library, L"item");
+
+		_r_xml_setattribute (&xml_library, L"name", ptr_rule->name->buffer);
 
 		if (!_r_obj_isstringempty (ptr_rule->rule_remote))
-			mxmlElementSetAttrf (item_node, "rule", "%ws", ptr_rule->rule_remote->buffer);
+			_r_xml_setattribute (&xml_library, L"rule", ptr_rule->rule_remote->buffer);
 
 		if (!_r_obj_isstringempty (ptr_rule->rule_local))
-			mxmlElementSetAttrf (item_node, "rule_local", "%ws", ptr_rule->rule_local->buffer);
+			_r_xml_setattribute (&xml_library, L"rule_local", ptr_rule->rule_local->buffer);
 
 		// ffu!
 		if (ptr_rule->profile)
-			mxmlElementSetAttrf (item_node, "profile", "%" PRIu8, ptr_rule->profile);
+			_r_xml_setattribute_integer (&xml_library, L"profile", ptr_rule->profile);
 
 		if (ptr_rule->direction != FWP_DIRECTION_OUTBOUND)
-			mxmlElementSetAttrf (item_node, "dir", "%" PRIu8, ptr_rule->direction);
+			_r_xml_setattribute_integer (&xml_library, L"dir", ptr_rule->direction);
 
 		if (ptr_rule->protocol != 0)
-			mxmlElementSetAttrf (item_node, "protocol", "%" PRIu8, ptr_rule->protocol);
+			_r_xml_setattribute_integer (&xml_library, L"protocol", ptr_rule->protocol);
 
 		if (ptr_rule->af != AF_UNSPEC)
-			mxmlElementSetAttrf (item_node, "version", "%" PRIu8, ptr_rule->af);
+			_r_xml_setattribute_integer (&xml_library, L"version", ptr_rule->af);
 
 		// add apps attribute
 		if (!_r_obj_ishashtableempty (ptr_rule->apps))
@@ -2193,20 +2161,32 @@ VOID _app_profile_save ()
 			if (string)
 			{
 				if (!_r_obj_isstringempty (string))
-					mxmlElementSetAttrf (item_node, "apps", "%ws", string->buffer);
+					_r_xml_setattribute (&xml_library, L"apps", string->buffer);
 
 				_r_obj_clearreference (&string);
 			}
 		}
 
 		if (ptr_rule->is_block)
-			mxmlElementSetAttrf (item_node, "is_block", "%" PRIu8, ptr_rule->is_block);
+			_r_xml_setattribute_boolean (&xml_library, L"is_block", ptr_rule->is_block);
 
 		if (ptr_rule->is_enabled)
-			mxmlElementSetAttrf (item_node, "is_enabled", "%" PRIu8, ptr_rule->is_enabled);
+			_r_xml_setattribute_boolean (&xml_library, L"is_enabled", ptr_rule->is_enabled);
+
+		_r_xml_writeendelement (&xml_library);
 	}
 
+	_r_spinlock_releaseshared (&lock_rules);
+
+	_r_xml_writewhitespace (&xml_library, L"\n\t");
+
+	_r_xml_writeendelement (&xml_library);
+
+	_r_xml_writewhitespace (&xml_library, L"\n\t");
+
 	// save rules config
+	_r_xml_writestartelement (&xml_library, L"rules_config");
+
 	enum_key = 0;
 
 	while (_r_obj_enumhashtable (rules_config, &ptr_config, NULL, &enum_key))
@@ -2216,7 +2196,7 @@ VOID _app_profile_save ()
 
 		BOOLEAN is_enabled_default = ptr_config->is_enabled;
 		SIZE_T rule_hash = _r_obj_getstringhash (ptr_config->name);
-		PITEM_RULE ptr_rule = _app_getrulebyhash (rule_hash);
+		ptr_rule = _app_getrulebyhash (rule_hash);
 
 		if (ptr_rule)
 		{
@@ -2237,53 +2217,45 @@ VOID _app_profile_save ()
 			continue;
 		}
 
-		item_node = mxmlNewElement (rules_config_node, "item");
+		_r_xml_writewhitespace (&xml_library, L"\n\t\t");
 
-		mxmlElementSetAttrf (item_node, "name", "%ws", ptr_config->name->buffer);
+		_r_xml_writestartelement (&xml_library, L"item");
+
+		_r_xml_setattribute (&xml_library, L"name", ptr_config->name->buffer);
 
 		if (string)
 		{
 			if (!_r_obj_isstringempty (string))
-				mxmlElementSetAttrf (item_node, "apps", "%ws", string->buffer);
+				_r_xml_setattribute (&xml_library, L"apps", string->buffer);
 
 			_r_obj_clearreference (&string);
 		}
 
-		mxmlElementSetAttrf (item_node, "is_enabled", "%" PRIu8, ptr_config->is_enabled);
+		_r_xml_setattribute_boolean (&xml_library, L"is_enabled", ptr_config->is_enabled);
+
+		_r_xml_writeendelement (&xml_library);
 	}
 
-	_r_spinlock_acquireexclusive (&lock_profile);
+	_r_xml_writewhitespace (&xml_library, L"\n\t");
 
-	hfile = CreateFile (config.profile_path, FILE_GENERIC_READ | FILE_GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	_r_xml_writeendelement (&xml_library);
 
-	if (!_r_fs_isvalidhandle (hfile))
-	{
-		_r_log (Error, UID, L"CreateFile", GetLastError (), config.profile_path);
-	}
-	else
-	{
-		if (GetLastError () == ERROR_ALREADY_EXISTS)
-		{
-			_r_fs_setpos (hfile, 2, FILE_BEGIN);
+	_r_xml_writewhitespace (&xml_library, L"\n");
 
-			SetEndOfFile (hfile);
+	_r_xml_writeendelement (&xml_library);
 
-			FlushFileBuffers (hfile);
-		}
+	_r_xml_writewhitespace (&xml_library, L"\n");
 
-		mxmlSaveFd (xml_node, hfile, &_app_profile_save_callback);
-
-		CloseHandle (hfile);
-	}
-
-	mxmlDelete (xml_node);
+	_r_xml_writeenddocument (&xml_library);
 
 	_r_spinlock_releaseexclusive (&lock_profile);
+
+	_r_xml_destroylibrary (&xml_library);
 
 	// make backup
 	if (is_backuprequired)
 	{
-		_r_fs_copy (config.profile_path, config.profile_path_backup, 0);
+		_r_fs_copyfile (config.profile_path, config.profile_path_backup, 0);
 		_r_config_setlong64 (L"BackupTimestamp", current_time);
 	}
 }
