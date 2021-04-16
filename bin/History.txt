@@ -1,3 +1,7 @@
+v3.3.1 Beta (16 April 2021)
+- added workaround for native paths on profile loading (issue #817)
+- fixed net events does not subscribe on os version lower than 1607
+
 v3.3 Beta (15 April 2021)
 - added option for tray icon to open window in single click
 - added warning message for allowing service host
