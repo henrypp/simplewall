@@ -1077,11 +1077,11 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 
 		if (viewer_path)
 		{
-			process_path = _r_format_string (L"%s \"%s\"", _r_obj_getstring (viewer_path), log_path->buffer);
+			process_path = _r_format_string (L"\"%s\" \"%s\"", viewer_path->buffer, log_path->buffer);
 
 			if (process_path)
 			{
-				if (!_r_sys_createprocess (NULL, process_path->buffer, NULL))
+				if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
 					_r_show_errormessage (hwnd, NULL, GetLastError (), viewer_path->buffer, NULL);
 
 				_r_obj_dereference (process_path);
@@ -1126,11 +1126,11 @@ VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 
 		if (viewer_path)
 		{
-			process_path = _r_format_string (L"%s \"%s\"", viewer_path->buffer, log_path);
+			process_path = _r_format_string (L"\"%s\" \"%s\"", viewer_path->buffer, log_path);
 
 			if (process_path)
 			{
-				if (!_r_sys_createprocess (NULL, process_path->buffer, NULL))
+				if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
 					_r_show_errormessage (hwnd, NULL, GetLastError (), viewer_path->buffer, NULL);
 
 				_r_obj_dereference (process_path);
