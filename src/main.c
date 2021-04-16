@@ -2716,7 +2716,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								_app_profile_save ();
 
 								// added information for export profile failure (issue #707)
-								if (!_r_fs_copy (config.profile_path, path->buffer, 0))
+								if (!_r_fs_copyfile (config.profile_path, path->buffer, 0))
 									_r_show_errormessage (hwnd, L"Export failure!", GetLastError (), path->buffer, NULL);
 
 								_r_obj_dereference (path);
