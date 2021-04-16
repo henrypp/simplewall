@@ -39,10 +39,9 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 	{
 		if (GetLastError () != ERROR_ALREADY_EXISTS)
 		{
-			ULONG written;
 			BYTE bom[] = {0xFF, 0xFE};
 
-			WriteFile (new_handle, bom, sizeof (bom), &written, NULL); // write utf-16 le byte order mask
+			WriteFile (new_handle, bom, sizeof (bom), NULL, NULL); // write utf-16 le byte order mask
 		}
 		else
 		{
@@ -119,13 +118,11 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	if (_app_logislimitreached ())
 		_app_logclear ();
 
-	ULONG written;
-
 	if (_r_fs_getsize (config.hlogfile) == 2)
-		WriteFile (config.hlogfile, SZ_LOG_TITLE, (ULONG)(_r_str_length (SZ_LOG_TITLE) * sizeof (WCHAR)), &written, NULL); // adds csv header
+		WriteFile (config.hlogfile, SZ_LOG_TITLE, (ULONG)(_r_str_length (SZ_LOG_TITLE) * sizeof (WCHAR)), NULL, NULL); // adds csv header
 
 	if (buffer)
-		WriteFile (config.hlogfile, buffer->buffer, (ULONG)buffer->length, &written, NULL);
+		WriteFile (config.hlogfile, buffer->buffer, (ULONG)buffer->length, NULL, NULL);
 
 	SAFE_DELETE_REFERENCE (local_address_string);
 	SAFE_DELETE_REFERENCE (local_port_string);
@@ -138,11 +135,12 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 
 BOOLEAN _app_logisexists (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log_new)
 {
+	PITEM_LOG ptr_log;
 	BOOLEAN is_duplicate_found = FALSE;
 
 	for (SIZE_T i = 0; i < _r_obj_getlistsize (log_arr); i++)
 	{
-		PITEM_LOG ptr_log = _r_obj_referencesafe (_r_obj_getlistitem (log_arr, i));
+		ptr_log = _r_obj_referencesafe (_r_obj_getlistitem (log_arr, i));
 
 		if (!ptr_log)
 			continue;
@@ -360,13 +358,13 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 		code = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, NULL, &hevent); // win10rs4+
 
 	else if (_FwpmNetEventSubscribe2)
-		code = _FwpmNetEventSubscribe2 (hengine, &subscription, (FWPM_NET_EVENT_CALLBACK2)&_wfp_logcallback4, NULL, &hevent); // win10rs1+
+		code = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, NULL, &hevent); // win10rs1+
 
 	else if (_FwpmNetEventSubscribe1)
-		code = _FwpmNetEventSubscribe1 (hengine, &subscription, (FWPM_NET_EVENT_CALLBACK1)&_wfp_logcallback4, NULL, &hevent); // win8+
+		code = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, NULL, &hevent); // win8+
 
 	else if (_FwpmNetEventSubscribe0)
-		code = _FwpmNetEventSubscribe0 (hengine, &subscription, (FWPM_NET_EVENT_CALLBACK0)&_wfp_logcallback4, NULL, &hevent); // win7+
+		code = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, NULL, &hevent); // win7+
 
 	if (code != ERROR_SUCCESS)
 	{
