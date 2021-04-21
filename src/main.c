@@ -79,7 +79,7 @@ THREAD_API NetworkMonitorThread (_In_ PVOID lparam)
 
 		while (TRUE)
 		{
-			_app_generate_connections (network_map, checker_map);
+			_app_generate_connections (checker_map);
 
 			is_highlighting_enabled = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getbooleanex (L"IsHighlightConnection", TRUE, L"colors");
 			current_listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
@@ -87,7 +87,7 @@ THREAD_API NetworkMonitorThread (_In_ PVOID lparam)
 			enum_key = 0;
 
 			// add new connections into list
-			while (_r_obj_enumhashtable (network_map, &ptr_network, NULL, &enum_key))
+			while (_r_obj_enumhashtable (network_table, &ptr_network, NULL, &enum_key))
 			{
 				hashstore = _r_obj_findhashtable (checker_map, ptr_network->network_hash);
 
@@ -170,7 +170,7 @@ THREAD_API NetworkMonitorThread (_In_ PVOID lparam)
 
 					_r_spinlock_acquireexclusive (&lock_network);
 
-					_r_obj_removehashtableentry (network_map, network_hash);
+					_r_obj_removehashtableentry (network_table, network_hash);
 
 					_r_spinlock_releaseexclusive (&lock_network);
 
@@ -1695,9 +1695,11 @@ VOID _app_initialize ()
 	// initialize spinlocks
 	_r_spinlock_initialize (&lock_apps);
 	_r_spinlock_initialize (&lock_rules);
+	_r_spinlock_initialize (&lock_rules_config);
 	_r_spinlock_initialize (&lock_apply);
 	_r_spinlock_initialize (&lock_checkbox);
 	_r_spinlock_initialize (&lock_logbusy);
+	_r_spinlock_initialize (&lock_loglist);
 	_r_spinlock_initialize (&lock_logthread);
 	_r_spinlock_initialize (&lock_network);
 	_r_spinlock_initialize (&lock_profile);
@@ -1748,6 +1750,7 @@ VOID _app_initialize ()
 			_r_calc_minutes2seconds (2),
 			_r_calc_minutes2seconds (5),
 			_r_calc_minutes2seconds (10),
+			_r_calc_minutes2seconds (30),
 			_r_calc_hours2seconds (1),
 			_r_calc_hours2seconds (2),
 			_r_calc_hours2seconds (4),
@@ -1757,14 +1760,12 @@ VOID _app_initialize ()
 		timers = _r_obj_createarrayex (sizeof (LONG64), RTL_NUMBER_OF (timer_array) + 1, NULL);
 
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
-		{
 			_r_obj_addarrayitem (timers, &timer_array[i]);
-		}
 	}
 
 	// initialize colors array
 	if (!colors)
-		colors = _r_obj_createarrayex (sizeof (ITEM_COLOR), 20, NULL);
+		colors = _r_obj_createarrayex (sizeof (ITEM_COLOR), 16, NULL);
 
 	// initialize thread objects
 	if (!config.done_evt)
@@ -1774,29 +1775,27 @@ VOID _app_initialize ()
 
 	// initialize global filters array object
 	if (!filter_ids)
-		filter_ids = _r_obj_createarrayex (sizeof (GUID), 1024, NULL);
+		filter_ids = _r_obj_createarrayex (sizeof (GUID), 16, NULL);
 
 	// initialize apps table
 	if (!apps)
-		apps = _r_obj_createhashtableex (sizeof (ITEM_APP), 512, &_app_dereferenceapp);
+		apps = _r_obj_createhashtableex (sizeof (ITEM_APP), 16, &_app_dereferenceapp);
 
 	// initialize rules array object
 	if (!rules_arr)
-		rules_arr = _r_obj_createarrayex (sizeof (ITEM_RULE), 2048, &_app_dereferencerule);
+		rules_arr = _r_obj_createarrayex (sizeof (ITEM_RULE), 16, &_app_dereferencerule);
 
 	// initialize rules configuration table
 	if (!rules_config)
-		rules_config = _r_obj_createhashtableex (sizeof (ITEM_RULE_CONFIG), 1024, &_app_dereferenceruleconfig);
+		rules_config = _r_obj_createhashtableex (sizeof (ITEM_RULE_CONFIG), 16, &_app_dereferenceruleconfig);
 
 	// initialize log list object
 	if (!log_arr)
 		log_arr = _r_obj_createlistex (1024, &_r_obj_dereference);
 
 	// initialize network table
-	if (!network_map)
-	{
-		network_map = _r_obj_createhashtableex (sizeof (ITEM_NETWORK), 1024, &_app_dereferencenetwork);
-	}
+	if (!network_table)
+		network_table = _r_obj_createhashtableex (sizeof (ITEM_NETWORK), 16, &_app_dereferencenetwork);
 
 	// initialize hasher table
 	PR_HASHTABLE* cache_array[] = {
@@ -1804,14 +1803,11 @@ VOID _app_initialize ()
 		&cache_hosts,
 		&cache_signatures,
 		&cache_types,
-		&cache_hosts,
 		&cache_versions
 	};
 
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (cache_array); i++)
-	{
 		(*cache_array[i]) = _r_obj_createhashtableex (sizeof (R_HASHSTORE), MAP_CACHE_MAX, &_r_util_dereferencehashstoreprocedure);
-	}
 }
 
 INT FirstDriveFromMask (_In_ ULONG unitmask)
@@ -1999,7 +1995,11 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		{
 			LONG64 current_timestamp = (LONG64)lparam;
 
+			_r_spinlock_acquireexclusive (&lock_rules_config);
+
 			_r_obj_clearhashtable (rules_config);
+
+			_r_spinlock_releaseexclusive (&lock_rules_config);
 
 			_r_fs_makebackup (config.profile_path, current_timestamp, TRUE);
 
@@ -2768,20 +2768,20 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 					while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 					{
-						if (!_r_obj_isstringempty (ptr_app->short_name))
+						if (_r_obj_isstringempty (ptr_app->short_name))
+							continue;
+
+						INT listview_id = _app_getlistview_id (ptr_app->type);
+
+						if (listview_id)
 						{
-							INT listview_id = _app_getlistview_id (ptr_app->type);
+							INT item_pos = _app_getposition (hwnd, listview_id, ptr_app->app_hash);
 
-							if (listview_id)
+							if (item_pos != -1)
 							{
-								INT item_pos = _app_getposition (hwnd, listview_id, ptr_app->app_hash);
-
-								if (item_pos != -1)
-								{
-									_r_spinlock_acquireshared (&lock_checkbox);
-									_app_setappiteminfo (hwnd, listview_id, item_pos, ptr_app);
-									_r_spinlock_releaseshared (&lock_checkbox);
-								}
+								_r_spinlock_acquireshared (&lock_checkbox);
+								_app_setappiteminfo (hwnd, listview_id, item_pos, ptr_app);
+								_r_spinlock_releaseshared (&lock_checkbox);
 							}
 						}
 					}
