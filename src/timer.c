@@ -127,11 +127,19 @@ BOOLEAN _app_istimersactive ()
 	PITEM_APP ptr_app;
 	SIZE_T enum_key = 0;
 
+	_r_spinlock_acquireshared (&lock_apps);
+
 	while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 	{
 		if (_app_istimerset (ptr_app->htimer))
+		{
+			_r_spinlock_releaseshared (&lock_apps);
+
 			return TRUE;
+		}
 	}
+
+	_r_spinlock_releaseshared (&lock_apps);
 
 	return FALSE;
 }

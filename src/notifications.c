@@ -149,6 +149,7 @@ SIZE_T _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest)
 		_r_spinlock_releaseshared (&lock_apps);
 
 		SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
+
 		return 0;
 	}
 
@@ -839,7 +840,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 		{
 			INT ctrl_id = LOWORD (wparam);
 
-			if ((ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= IDX_RULES_SPECIAL + (INT)_r_obj_getarraysize (rules_arr)))
+			if ((ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getarraysize (rules_arr)))
 			{
 				SIZE_T rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
 				PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
@@ -1056,8 +1057,16 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 					if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), _r_app_gethwnd (), &PropertiesProc, (LPARAM)&context))
 					{
-						SIZE_T rule_idx = _r_obj_addarrayitem (rules_arr, ptr_rule);
-						INT listview_id = (INT)_r_tab_getitemlparam (_r_app_gethwnd (), IDC_TAB, -1);
+						SIZE_T rule_idx;
+						INT listview_id;
+
+						_r_spinlock_acquireexclusive (&lock_rules);
+
+						rule_idx = _r_obj_addarrayitem (rules_arr, ptr_rule);
+
+						_r_spinlock_releaseexclusive (&lock_rules);
+
+						listview_id = (INT)_r_tab_getitemlparam (_r_app_gethwnd (), IDC_TAB, -1);
 
 						// set rule information
 						INT rules_listview_id = _app_getlistview_id (ptr_rule->type);

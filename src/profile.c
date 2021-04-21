@@ -130,9 +130,9 @@ PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
 }
 
 _Ret_maybenull_
-PVOID _app_getruleinfobyid (_In_ SIZE_T idx, _In_ ENUM_INFO_DATA info_data)
+PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data)
 {
-	PITEM_RULE ptr_rule = _app_getrulebyid (idx);
+	PITEM_RULE ptr_rule = _app_getrulebyid (index);
 
 	if (ptr_rule)
 		return _app_getruleinfo (ptr_rule, info_data);
@@ -206,7 +206,7 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 			ptr_app->type = PathIsNetworkPath (path) ? DataAppNetwork : DataAppRegular;
 		}
 
-		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstring2 (config.ntoskrnl_path) : _r_obj_createstringex (path, path_length * sizeof (WCHAR));
+		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstringfromstring (config.ntoskrnl_path) : _r_obj_createstringex (path, path_length * sizeof (WCHAR));
 	}
 
 	ptr_app->original_path = _r_obj_createstringex (path, path_length * sizeof (WCHAR));
@@ -237,8 +237,12 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
 		ptr_app->is_undeletable = TRUE;
 
-	// insert object into the map
+	// insert object into the table
+	_r_spinlock_acquireexclusive (&lock_apps);
+
 	ptr_app_added = _r_obj_addhashtableitem (apps, app_hash, ptr_app);
+
+	_r_spinlock_releaseexclusive (&lock_apps);
 
 	_r_mem_free (ptr_app);
 
@@ -331,16 +335,14 @@ PITEM_APP _app_getappitem (_In_ SIZE_T app_hash)
 }
 
 _Ret_maybenull_
-PITEM_RULE _app_getrulebyid (_In_ SIZE_T idx)
+PITEM_RULE _app_getrulebyid (_In_ SIZE_T index)
 {
-	PITEM_RULE ptr_rule;
+	PITEM_RULE ptr_rule = NULL;
 
 	_r_spinlock_acquireshared (&lock_rules);
 
-	if (idx != SIZE_MAX && idx < _r_obj_getarraysize (rules_arr))
-		ptr_rule = _r_obj_getarrayitem (rules_arr, idx);
-	else
-		ptr_rule = NULL;
+	if (index != SIZE_MAX && index < _r_obj_getarraysize (rules_arr))
+		ptr_rule = _r_obj_getarrayitem (rules_arr, index);
 
 	_r_spinlock_releaseshared (&lock_rules);
 
@@ -380,15 +382,26 @@ PITEM_RULE _app_getrulebyhash (_In_ SIZE_T rule_hash)
 	return NULL;
 }
 
+_Ret_maybenull_
+PITEM_RULE_CONFIG _app_getruleconfigitem (_In_ SIZE_T rule_hash)
+{
+	PITEM_RULE_CONFIG ptr_rule_config;
+
+	if (!rule_hash)
+		return NULL;
+
+	_r_spinlock_acquireshared (&lock_rules_config);
+
+	ptr_rule_config = _r_obj_findhashtable (rules_config, rule_hash);
+
+	_r_spinlock_releaseshared (&lock_rules_config);
+
+	return ptr_rule_config;
+}
+
 SIZE_T _app_getnetworkapp (_In_ SIZE_T network_hash)
 {
-	PITEM_NETWORK ptr_network;
-
-	_r_spinlock_acquireshared (&lock_network);
-
-	ptr_network = _r_obj_findhashtable (network_map, network_hash);
-
-	_r_spinlock_releaseshared (&lock_network);
+	PITEM_NETWORK ptr_network = _app_getnetworkitem (network_hash);
 
 	if (ptr_network)
 		return ptr_network->app_hash;
@@ -397,19 +410,39 @@ SIZE_T _app_getnetworkapp (_In_ SIZE_T network_hash)
 }
 
 _Ret_maybenull_
-PITEM_LOG _app_getlogitem (_In_ SIZE_T idx)
+PITEM_NETWORK _app_getnetworkitem (_In_ SIZE_T network_hash)
 {
-	if (idx != SIZE_MAX && idx < _r_obj_getlistsize (log_arr))
-	{
-		return _r_obj_referencesafe (_r_obj_getlistitem (log_arr, idx));
-	}
+	PITEM_NETWORK ptr_network;
 
-	return NULL;
+	_r_spinlock_acquireshared (&lock_network);
+
+	ptr_network = _r_obj_findhashtable (network_table, network_hash);
+
+	_r_spinlock_releaseshared (&lock_network);
+
+	return ptr_network;
 }
 
-SIZE_T _app_getlogapp (_In_ SIZE_T idx)
+_Ret_maybenull_
+PITEM_LOG _app_getlogitem (_In_ SIZE_T index)
 {
-	PITEM_LOG ptr_log = _app_getlogitem (idx);
+	PITEM_LOG ptr_log = NULL;
+
+	_r_spinlock_acquireshared (&lock_loglist);
+
+	if (index != SIZE_MAX && index < _r_obj_getlistsize (log_arr))
+	{
+		ptr_log = _r_obj_getlistitem (log_arr, index);
+	}
+
+	_r_spinlock_releaseshared (&lock_loglist);
+
+	return _r_obj_referencesafe (ptr_log);
+}
+
+SIZE_T _app_getlogapp (_In_ SIZE_T index)
+{
+	PITEM_LOG ptr_log = _app_getlogitem (index);
 
 	if (ptr_log)
 	{
@@ -496,41 +529,45 @@ VOID _app_freeapplication (_In_ SIZE_T app_hash)
 {
 	PITEM_RULE ptr_rule;
 
+	_r_spinlock_acquireshared (&lock_rules);
+
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
 		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
-		if (ptr_rule)
+		if (!ptr_rule)
+			continue;
+
+		if (ptr_rule->type == DataRuleUser)
 		{
-			if (ptr_rule->type == DataRuleUser)
+			if (_r_obj_findhashtable (ptr_rule->apps, app_hash))
 			{
-				if (_r_obj_findhashtable (ptr_rule->apps, app_hash))
+				_r_obj_removehashtableentry (ptr_rule->apps, app_hash);
+
+				if (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps))
 				{
-					_r_obj_removehashtableentry (ptr_rule->apps, app_hash);
+					ptr_rule->is_enabled = FALSE;
+					ptr_rule->is_haveerrors = FALSE;
+				}
 
-					if (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps))
+				INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
+
+				if (rule_listview_id)
+				{
+					INT item_pos = _app_getposition (_r_app_gethwnd (), rule_listview_id, i);
+
+					if (item_pos != -1)
 					{
-						ptr_rule->is_enabled = FALSE;
-						ptr_rule->is_haveerrors = FALSE;
-					}
-
-					INT rule_listview_id = _app_getlistview_id (ptr_rule->type);
-
-					if (rule_listview_id)
-					{
-						INT item_pos = _app_getposition (_r_app_gethwnd (), rule_listview_id, i);
-
-						if (item_pos != -1)
-						{
-							_r_spinlock_acquireshared (&lock_checkbox);
-							_app_setruleiteminfo (_r_app_gethwnd (), rule_listview_id, item_pos, ptr_rule, FALSE);
-							_r_spinlock_releaseshared (&lock_checkbox);
-						}
+						_r_spinlock_acquireshared (&lock_checkbox);
+						_app_setruleiteminfo (_r_app_gethwnd (), rule_listview_id, item_pos, ptr_rule, FALSE);
+						_r_spinlock_releaseshared (&lock_checkbox);
 					}
 				}
 			}
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_rules);
 
 	_r_obj_removehashtableentry (apps, app_hash);
 }
@@ -574,24 +611,24 @@ VOID _app_getcount (_Out_ PITEM_STATUS status)
 	{
 		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
-		if (ptr_rule)
+		if (!ptr_rule)
+			continue;
+
+		if (ptr_rule->type == DataRuleUser)
 		{
-			if (ptr_rule->type == DataRuleUser)
+			if (ptr_rule->is_enabled && !_r_obj_ishashtableempty (ptr_rule->apps))
+				status->rules_global_count += 1;
+
+			if (ptr_rule->is_readonly)
 			{
-				if (ptr_rule->is_enabled && !_r_obj_ishashtableempty (ptr_rule->apps))
-					status->rules_global_count += 1;
-
-				if (ptr_rule->is_readonly)
-				{
-					status->rules_predefined_count += 1;
-				}
-				else
-				{
-					status->rules_user_count += 1;
-				}
-
-				status->rules_count += 1;
+				status->rules_predefined_count += 1;
 			}
+			else
+			{
+				status->rules_user_count += 1;
+			}
+
+			status->rules_count += 1;
 		}
 	}
 
@@ -639,7 +676,7 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 
 			// app path
 			{
-				PR_STRING path_string = _r_format_string (L"%s\r\n", _r_obj_getstring (!_r_obj_isstringempty (ptr_app->real_path) ? ptr_app->real_path : (!_r_obj_isstringempty (ptr_app->display_name) ? ptr_app->display_name : ptr_app->original_path)));
+				PR_STRING path_string = _r_format_string (L"%s\r\n", _r_obj_getstring (ptr_app->real_path ? ptr_app->real_path : ptr_app->display_name ? ptr_app->display_name : ptr_app->original_path));
 
 				if (path_string)
 				{
@@ -837,7 +874,7 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 	else if (listview_id == IDC_NETWORK)
 	{
 		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
-		PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, lparam);
+		PITEM_NETWORK ptr_network = _app_getnetworkitem (lparam);
 
 		if (ptr_network)
 		{
@@ -1025,7 +1062,7 @@ VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ 
 
 		if (rule_hash)
 		{
-			ptr_config = _r_obj_findhashtable (rules_config, rule_hash);
+			ptr_config = _app_getruleconfigitem (rule_hash);
 
 			if (ptr_config)
 			{
@@ -1036,7 +1073,11 @@ VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ 
 
 			if (is_createconfig)
 			{
-				ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_createstring2 (ptr_rule->name), is_enable);
+				_r_spinlock_acquireexclusive (&lock_rules_config);
+
+				ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_createstringfromstring (ptr_rule->name), is_enable);
+
+				_r_spinlock_releaseexclusive (&lock_rules_config);
 			}
 		}
 	}
@@ -1091,12 +1132,15 @@ BOOLEAN _app_ruleblocklistsetstate (_Inout_ PITEM_RULE ptr_rule, _In_ INT spy_st
 VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT update_state, _In_ INT extra_state, _In_ BOOLEAN is_instantapply)
 {
 	PR_LIST rules = _r_obj_createlistex (0x200, NULL);
+	PITEM_RULE ptr_rule;
 	SIZE_T changes_count = 0;
 	INT listview_id = _app_getlistview_id (DataRuleBlocklist);
 
+	_r_spinlock_acquireshared (&lock_rules);
+
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
-		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
+		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
 		if (!ptr_rule)
 			continue;
@@ -1127,6 +1171,8 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 			_r_obj_addlistitem (rules, ptr_rule); // be freed later!
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_rules);
 
 	if (changes_count)
 	{
@@ -1160,12 +1206,15 @@ PR_STRING _app_appexpandrules (_In_ SIZE_T app_hash, _In_ LPCWSTR delimeter)
 {
 	R_STRINGBUILDER buffer;
 	PR_STRING string;
+	PITEM_RULE ptr_rule;
 
 	_r_obj_initializestringbuilder (&buffer);
 
+	_r_spinlock_acquireshared (&lock_rules);
+
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
-		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
+		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
 		if (!ptr_rule)
 			continue;
@@ -1187,6 +1236,8 @@ PR_STRING _app_appexpandrules (_In_ SIZE_T app_hash, _In_ LPCWSTR delimeter)
 			}
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_rules);
 
 	string = _r_obj_finalstringbuilder (&buffer);
 
@@ -1324,14 +1375,22 @@ BOOLEAN _app_isapphaveconnection (_In_ SIZE_T app_hash)
 	PITEM_NETWORK ptr_network;
 	SIZE_T enum_key = 0;
 
-	while (_r_obj_enumhashtable (network_map, &ptr_network, NULL, &enum_key))
+	_r_spinlock_acquireshared (&lock_network);
+
+	while (_r_obj_enumhashtable (network_table, &ptr_network, NULL, &enum_key))
 	{
 		if (ptr_network->app_hash == app_hash)
 		{
 			if (ptr_network->is_connection)
+			{
+				_r_spinlock_releaseshared (&lock_network);
+
 				return TRUE;
+			}
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_network);
 
 	return FALSE;
 }
@@ -1615,7 +1674,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 			if (is_internal)
 			{
 				// internal rules
-				ptr_config = _r_obj_findhashtable (rules_config, rule_hash);
+				ptr_config = _app_getruleconfigitem (rule_hash);
 
 				if (ptr_config)
 				{
@@ -1710,7 +1769,11 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 			}
 		}
 
+		_r_spinlock_acquireexclusive (&lock_rules);
+
 		_r_obj_addarrayitem (rules_arr, ptr_rule);
+
+		_r_spinlock_releaseexclusive (&lock_rules);
 	}
 	else if (type == DataRulesConfig)
 	{
@@ -1727,11 +1790,15 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 		if (rule_hash)
 		{
-			ptr_config = _r_obj_findhashtable (rules_config, rule_hash);
+			ptr_config = _app_getruleconfigitem (rule_hash);
 
 			if (!ptr_config)
 			{
+				_r_spinlock_acquireexclusive (&lock_rules_config);
+
 				ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_reference (rule_name), _r_xml_getattribute_boolean (xml_library, L"is_enabled"));
+
+				_r_spinlock_releaseexclusive (&lock_rules_config);
 
 				ptr_config->apps = _r_xml_getattribute_string (xml_library, L"apps");
 
@@ -1858,15 +1925,19 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	_r_spinlock_releaseexclusive (&lock_apps);
 
-	// clear rules config
-	_r_obj_clearhashtable (rules_config);
-
 	// clear rules
 	_r_spinlock_acquireexclusive (&lock_rules);
 
 	_r_obj_cleararray (rules_arr);
 
 	_r_spinlock_releaseexclusive (&lock_rules);
+
+	// clear rules config
+	_r_spinlock_acquireexclusive (&lock_rules_config);
+
+	_r_obj_clearhashtable (rules_config);
+
+	_r_spinlock_releaseexclusive (&lock_rules_config);
 
 	// generate uwp apps list (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
@@ -2189,6 +2260,8 @@ VOID _app_profile_save ()
 
 	enum_key = 0;
 
+	_r_spinlock_acquireshared (&lock_rules_config);
+
 	while (_r_obj_enumhashtable (rules_config, &ptr_config, NULL, &enum_key))
 	{
 		if (_r_obj_isstringempty (ptr_config->name))
@@ -2235,6 +2308,8 @@ VOID _app_profile_save ()
 
 		_r_xml_writeendelement (&xml_library);
 	}
+
+	_r_spinlock_releaseshared (&lock_rules_config);
 
 	_r_xml_writewhitespace (&xml_library, L"\n\t");
 

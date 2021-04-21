@@ -460,6 +460,8 @@ INT_PTR CALLBACK PropertiesPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 					INT group_id;
 					BOOLEAN is_enabled;
 
+					_r_spinlock_acquireshared (&lock_apps);
+
 					while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 					{
 						if (ptr_app->type == DataAppUWP)
@@ -485,6 +487,8 @@ INT_PTR CALLBACK PropertiesPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 
 						_r_spinlock_releaseshared (&lock_checkbox);
 					}
+
+					_r_spinlock_releaseshared (&lock_apps);
 				}
 
 				// resize column

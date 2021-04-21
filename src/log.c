@@ -138,6 +138,8 @@ BOOLEAN _app_logisexists (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log_new)
 	PITEM_LOG ptr_log;
 	BOOLEAN is_duplicate_found = FALSE;
 
+	_r_spinlock_acquireshared (&lock_loglist);
+
 	for (SIZE_T i = 0; i < _r_obj_getlistsize (log_arr); i++)
 	{
 		ptr_log = _r_obj_referencesafe (_r_obj_getlistitem (log_arr, i));
@@ -181,12 +183,16 @@ BOOLEAN _app_logisexists (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log_new)
 
 				_r_obj_dereference (ptr_log);
 
+				_r_spinlock_releaseshared (&lock_loglist);
+
 				return TRUE;
 			}
 		}
 
 		_r_obj_dereference (ptr_log);
 	}
+
+	_r_spinlock_releaseshared (&lock_loglist);
 
 	return FALSE;
 }
@@ -210,7 +216,12 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	ptr_app = _app_getappitem (ptr_log->app_hash);
 
 	listview_id = IDC_LOG;
+
+	_r_spinlock_acquireexclusive (&lock_loglist);
+
 	index = _r_obj_addlistitem (log_arr, _r_obj_reference (ptr_log));
+
+	_r_spinlock_releaseexclusive (&lock_loglist);
 
 	local_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, 0);
 	remote_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, 0);
@@ -295,7 +306,11 @@ VOID _app_logclear_ui (_In_ HWND hwnd)
 
 	_app_listviewresize (hwnd, IDC_LOG, FALSE);
 
+	_r_spinlock_acquireexclusive (&lock_loglist);
+
 	_r_obj_clearlist (log_arr);
+
+	_r_spinlock_releaseexclusive (&lock_loglist);
 }
 
 VOID _wfp_logsubscribe (_In_ HANDLE hengine)
@@ -1183,47 +1198,62 @@ THREAD_API LogThread (_In_ PVOID lparam)
 {
 	HWND hwnd = (HWND)lparam;
 
+	PSLIST_ENTRY list_item;
+	PITEM_LOG_LISTENTRY ptr_entry;
+	PITEM_LOG ptr_log;
+	PITEM_APP ptr_app;
+
+	PR_STRING string;
+
+	INT listview_id;
+
+	BOOLEAN is_logenabled;
+	BOOLEAN is_loguienabled;
+	BOOLEAN is_notificationenabled;
+	BOOLEAN is_exludestealth;
+	BOOLEAN is_notexist;
+
 	_r_spinlock_acquireshared (&lock_logthread);
 
 	while (TRUE)
 	{
-		PSLIST_ENTRY list_item = RtlInterlockedPopEntrySList (&log_list_stack);
+		list_item = RtlInterlockedPopEntrySList (&log_list_stack);
 
 		if (!list_item)
 			break;
 
-		PITEM_LOG_LISTENTRY ptr_entry = CONTAINING_RECORD (list_item, ITEM_LOG_LISTENTRY, list_entry);
-		PITEM_LOG ptr_log = ptr_entry->body;
+		ptr_entry = CONTAINING_RECORD (list_item, ITEM_LOG_LISTENTRY, list_entry);
+		ptr_log = ptr_entry->body;
 
 		_aligned_free (ptr_entry);
 
 		if (!ptr_log)
 			continue;
 
-		BOOLEAN is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
-		BOOLEAN is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
-		BOOLEAN is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
+		is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
+		is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
+		is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
 
-		BOOLEAN is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
+		is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
 
 		// apps collector
-		BOOLEAN is_notexist = ptr_log->app_hash && !ptr_log->is_allow && !_app_getappitem (ptr_log->app_hash);
+		is_notexist = ptr_log->app_hash && !ptr_log->is_allow && !_app_getappitem (ptr_log->app_hash);
 
 		if (is_notexist)
 		{
 			_r_spinlock_acquireshared (&lock_logbusy);
-			PITEM_APP ptr_app = _app_addapplication (hwnd, DataUnknown, ptr_log->path->buffer, NULL, NULL);
+			ptr_app = _app_addapplication (hwnd, DataUnknown, ptr_log->path->buffer, NULL, NULL);
 			_r_spinlock_releaseshared (&lock_logbusy);
 
 			if (ptr_app)
 				ptr_log->app_hash = ptr_app->app_hash;
 
-			INT app_listview_id = PtrToInt (_app_getappinfobyhash (ptr_log->app_hash, InfoListviewId));
+			listview_id = PtrToInt (_app_getappinfobyhash (ptr_log->app_hash, InfoListviewId));
 
-			if (app_listview_id && app_listview_id == (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1))
+			if (listview_id && listview_id == (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1))
 			{
-				_app_listviewsort (hwnd, app_listview_id, -1, FALSE);
-				_app_refreshstatus (hwnd, app_listview_id);
+				_app_listviewsort (hwnd, listview_id, -1, FALSE);
+				_app_refreshstatus (hwnd, listview_id);
 			}
 
 			_app_profile_save ();
@@ -1233,13 +1263,15 @@ THREAD_API LogThread (_In_ PVOID lparam)
 		{
 			_r_spinlock_acquireshared (&lock_logbusy);
 
-			PR_STRING address_string;
+			string = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_RESOLVE_HOST);
 
-			address_string = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_RESOLVE_HOST);
-			SAFE_DELETE_REFERENCE (address_string);
+			if (string)
+				_r_obj_dereference (string);
 
-			address_string = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, FMTADDR_RESOLVE_HOST);
-			SAFE_DELETE_REFERENCE (address_string);
+			string = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, FMTADDR_RESOLVE_HOST);
+
+			if (string)
+				_r_obj_dereference (string);
 
 			_r_spinlock_releaseshared (&lock_logbusy);
 		}
@@ -1262,7 +1294,7 @@ THREAD_API LogThread (_In_ PVOID lparam)
 				{
 					if (!(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE)))
 					{
-						PITEM_APP ptr_app = _app_getappitem (ptr_log->app_hash);
+						ptr_app = _app_getappitem (ptr_log->app_hash);
 
 						if (ptr_app)
 						{

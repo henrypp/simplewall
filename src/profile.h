@@ -16,7 +16,7 @@ _Ret_maybenull_
 PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data);
 
 _Ret_maybenull_
-PVOID _app_getruleinfobyid (_In_ SIZE_T idx, _In_ ENUM_INFO_DATA info_data);
+PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data);
 
 _Ret_maybenull_
 PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In_ LPCWSTR path, _In_opt_ PR_STRING display_name, _In_opt_ PR_STRING real_path);
@@ -28,17 +28,23 @@ _Ret_maybenull_
 PITEM_APP _app_getappitem (_In_ SIZE_T app_hash);
 
 _Ret_maybenull_
-PITEM_RULE _app_getrulebyid (_In_ SIZE_T idx);
+PITEM_RULE _app_getrulebyid (_In_ SIZE_T index);
 
 _Ret_maybenull_
 PITEM_RULE _app_getrulebyhash (_In_ SIZE_T rule_hash);
 
+_Ret_maybenull_
+PITEM_RULE_CONFIG _app_getruleconfigitem (_In_ SIZE_T rule_hash);
+
 SIZE_T _app_getnetworkapp (_In_ SIZE_T network_hash);
 
 _Ret_maybenull_
-PITEM_LOG _app_getlogitem (_In_ SIZE_T idx);
+PITEM_NETWORK _app_getnetworkitem (_In_ SIZE_T network_hash);
 
-SIZE_T _app_getlogapp (_In_ SIZE_T idx);
+_Ret_maybenull_
+PITEM_LOG _app_getlogitem (_In_ SIZE_T index);
+
+SIZE_T _app_getlogapp (_In_ SIZE_T index);
 COLORREF _app_getappcolor (_In_ INT listview_id, _In_ SIZE_T app_hash, _In_ BOOLEAN is_systemapp, _In_ BOOLEAN is_validconnection);
 
 VOID _app_freeapplication (_In_ SIZE_T app_hash);

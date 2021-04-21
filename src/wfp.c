@@ -443,6 +443,8 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 	PITEM_APP ptr_app;
 	SIZE_T enum_key = 0;
 
+	_r_spinlock_acquireshared (&lock_apps);
+
 	while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 	{
 		if (ptr_app->is_enabled)
@@ -450,6 +452,8 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 			_r_obj_addlistitem (rules, ptr_app);
 		}
 	}
+
+	_r_spinlock_releaseshared (&lock_apps);
 
 	if (!_r_obj_islistempty (rules))
 	{
@@ -459,15 +463,17 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 	}
 
 	// apply blocklist/system/user rules
+	_r_spinlock_acquireshared (&lock_rules);
+
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
 		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
 		if (ptr_rule && ptr_rule->is_enabled)
-		{
 			_r_obj_addlistitem (rules, ptr_rule);
-		}
 	}
+
+	_r_spinlock_releaseshared (&lock_rules);
 
 	if (!_r_obj_islistempty (rules))
 	{
@@ -692,6 +698,8 @@ VOID _wfp_clearfilter_ids ()
 	_r_obj_cleararray (filter_ids);
 
 	// clear apps filters
+	_r_spinlock_acquireshared (&lock_apps);
+
 	while (_r_obj_enumhashtable (apps, &ptr_app, NULL, &enum_key))
 	{
 		ptr_app->is_haveerrors = FALSE;
@@ -699,7 +707,11 @@ VOID _wfp_clearfilter_ids ()
 		_r_obj_cleararray (ptr_app->guids);
 	}
 
+	_r_spinlock_releaseshared (&lock_apps);
+
 	// clear rules filters
+	_r_spinlock_acquireshared (&lock_rules);
+
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr); i++)
 	{
 		ptr_rule = _r_obj_getarrayitem (rules_arr, i);
@@ -711,6 +723,8 @@ VOID _wfp_clearfilter_ids ()
 
 		_r_obj_cleararray (ptr_rule->guids);
 	}
+
+	_r_spinlock_releaseshared (&lock_rules);
 }
 
 VOID _wfp_destroyfilters (_In_ HANDLE hengine)
@@ -1840,7 +1854,7 @@ VOID _mps_changeconfig2 (_In_ BOOLEAN is_enable)
 }
 
 _Success_ (return == ERROR_SUCCESS)
-ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB** lpblob, _In_ ENUM_TYPE_DATA type)
+ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB * *lpblob, _In_ ENUM_TYPE_DATA type)
 {
 	ULONG code = ERROR_FILE_NOT_FOUND;
 

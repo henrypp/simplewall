@@ -199,7 +199,7 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 
 		SetMenuDefaultItem (hmenu, IDM_PROPERTIES, MF_BYCOMMAND);
 
-		ptr_network = _r_obj_findhashtable (network_map, hash_item);
+		ptr_network = _app_getnetworkitem (hash_item);
 
 		if (ptr_network)
 		{
@@ -483,7 +483,7 @@ LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv)
 
 					if (ctrl_id == IDC_NETWORK)
 					{
-						PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, lpnmlv->nmcd.lItemlParam);
+						PITEM_NETWORK ptr_network = _app_getnetworkitem (lpnmlv->nmcd.lItemlParam);
 
 						if (ptr_network)
 						{
@@ -1044,6 +1044,8 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 	{
 		_r_wnd_toggle (hwnd, TRUE);
 
+		_r_spinlock_acquireshared (&lock_loglist);
+
 		if (!_r_obj_islistempty (log_arr))
 		{
 			_app_showitem (hwnd, IDC_LOG, _app_getposition (hwnd, IDC_LOG, (_r_obj_getlistsize (log_arr) - 1)), -1);
@@ -1052,6 +1054,8 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 		{
 			_app_settab_id (hwnd, IDC_LOG);
 		}
+
+		_r_spinlock_releaseshared (&lock_loglist);
 	}
 	else
 	{
@@ -1097,8 +1101,15 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 VOID _app_command_logclear (_In_ HWND hwnd)
 {
 	PR_STRING path = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
+	BOOLEAN is_valid;
 
-	if (_r_fs_isvalidhandle (config.hlogfile) || (path && _r_fs_exists (path->buffer)) || !_r_obj_islistempty (log_arr))
+	_r_spinlock_acquireshared (&lock_loglist);
+
+	is_valid = _r_fs_isvalidhandle (config.hlogfile) || (path && _r_fs_exists (path->buffer)) || !_r_obj_islistempty (log_arr);
+
+	_r_spinlock_releaseshared (&lock_loglist);
+
+	if (is_valid)
 	{
 		if (_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
 		{
@@ -1380,6 +1391,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 			PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
 			PR_HASHTABLE apps_checker;
 			PR_HASHSTORE hashstore;
+			PITEM_APP ptr_app;
 			SIZE_T hash_code;
 			SIZE_T enum_key = 0;
 
@@ -1406,7 +1418,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 
 				while (_r_obj_enumhashtable (apps_checker, &hashstore, &hash_code, &enum_key))
 				{
-					PITEM_APP ptr_app = _app_getappitem (hash_code);
+					ptr_app = _app_getappitem (hash_code);
 
 					if (!ptr_app)
 						continue;
@@ -1430,7 +1442,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 		else if (listview_id == IDC_NETWORK)
 		{
 			SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
-			PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, network_hash);
+			PITEM_NETWORK ptr_network = _app_getnetworkitem (network_hash);
 
 			if (!ptr_network)
 				continue;
@@ -1449,7 +1461,11 @@ VOID _app_command_delete (_In_ HWND hwnd)
 				{
 					_r_listview_deleteitem (hwnd, listview_id, i);
 
-					_r_obj_removehashtableentry (network_map, network_hash);
+					_r_spinlock_acquireexclusive (&lock_network);
+
+					_r_obj_removehashtableentry (network_table, network_hash);
+
+					_r_spinlock_releaseexclusive (&lock_network);
 
 					continue;
 				}
@@ -1555,7 +1571,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 		if (item_id != -1)
 		{
 			SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
-			PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, network_hash);
+			PITEM_NETWORK ptr_network = _app_getnetworkitem (network_hash);
 
 			if (ptr_network)
 			{
@@ -1631,7 +1647,13 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 	if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
 	{
-		SIZE_T rule_idx = _r_obj_addarrayitem (rules_arr, ptr_rule);
+		SIZE_T rule_idx;
+
+		_r_spinlock_acquireexclusive (&lock_rules);
+
+		rule_idx = _r_obj_addarrayitem (rules_arr, ptr_rule);
+
+		_r_spinlock_releaseexclusive (&lock_rules);
 
 		if (rule_idx != SIZE_MAX)
 		{
@@ -1718,7 +1740,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 	else if (listview_id == IDC_NETWORK)
 	{
 		SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
-		PITEM_NETWORK ptr_network = _r_obj_findhashtable (network_map, network_hash);
+		PITEM_NETWORK ptr_network = _app_getnetworkitem (network_hash);
 
 		if (!ptr_network)
 			return;

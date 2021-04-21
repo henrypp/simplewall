@@ -1669,27 +1669,29 @@ BOOLEAN _app_isvalidconnection (ADDRESS_FAMILY af, LPCVOID paddr)
 	return FALSE;
 }
 
-VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASHTABLE checker_map)
+VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map)
 {
 	_r_obj_clearhashtable (checker_map);
 
 	ITEM_NETWORK network;
 
+	PVOID buffer;
 	ULONG allocated_size = 0x4000;
-	PVOID network_table = _r_mem_allocatezero (allocated_size);
-
 	ULONG required_size = 0;
+
+	buffer = _r_mem_allocatezero (allocated_size);
+
 	GetExtendedTcpTable (NULL, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
 	if (required_size)
 	{
 		if (allocated_size < required_size)
 		{
-			network_table = _r_mem_reallocatezero (network_table, required_size);
+			buffer = _r_mem_reallocatezero (buffer, required_size);
 			allocated_size = required_size;
 		}
 
-		PMIB_TCPTABLE_OWNER_MODULE tcp4_table = network_table;
+		PMIB_TCPTABLE_OWNER_MODULE tcp4_table = buffer;
 
 		if (GetExtendedTcpTable (tcp4_table, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
@@ -1705,7 +1707,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 
 				network.network_hash = _app_getnetworkhash (AF_INET, tcp4_table->table[i].dwOwningPid, &remote_addr, tcp4_table->table[i].dwRemotePort, &local_addr, tcp4_table->table[i].dwLocalPort, IPPROTO_TCP, tcp4_table->table[i].dwState);
 
-				if (_r_obj_findhashtable (result_map, network.network_hash))
+				if (_app_getnetworkitem (network.network_hash))
 				{
 					_app_addcachetable (checker_map, network.network_hash, NULL, 0);
 
@@ -1736,7 +1738,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 
 				_r_spinlock_acquireexclusive (&lock_network);
 
-				_r_obj_addhashtableitem (result_map, network.network_hash, &network);
+				_r_obj_addhashtableitem (network_table, network.network_hash, &network);
 
 				_r_spinlock_releaseexclusive (&lock_network);
 
@@ -1752,11 +1754,11 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 	{
 		if (allocated_size < required_size)
 		{
-			network_table = _r_mem_reallocatezero (network_table, required_size);
+			buffer = _r_mem_reallocatezero (buffer, required_size);
 			allocated_size = required_size;
 		}
 
-		PMIB_TCP6TABLE_OWNER_MODULE tcp6_table = network_table;
+		PMIB_TCP6TABLE_OWNER_MODULE tcp6_table = buffer;
 
 		if (GetExtendedTcpTable (tcp6_table, &required_size, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
@@ -1766,7 +1768,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 
 				network.network_hash = _app_getnetworkhash (AF_INET6, tcp6_table->table[i].dwOwningPid, tcp6_table->table[i].ucRemoteAddr, tcp6_table->table[i].dwRemotePort, tcp6_table->table[i].ucLocalAddr, tcp6_table->table[i].dwLocalPort, IPPROTO_TCP, tcp6_table->table[i].dwState);
 
-				if (_r_obj_findhashtable (result_map, network.network_hash))
+				if (_app_getnetworkitem (network.network_hash))
 				{
 					_app_addcachetable (checker_map, network.network_hash, NULL, 0);
 
@@ -1797,7 +1799,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 
 				_r_spinlock_acquireexclusive (&lock_network);
 
-				_r_obj_addhashtableitem (result_map, network.network_hash, &network);
+				_r_obj_addhashtableitem (network_table, network.network_hash, &network);
 
 				_r_spinlock_releaseexclusive (&lock_network);
 
@@ -1813,11 +1815,11 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 	{
 		if (allocated_size < required_size)
 		{
-			network_table = _r_mem_reallocatezero (network_table, required_size);
+			buffer = _r_mem_reallocatezero (buffer, required_size);
 			allocated_size = required_size;
 		}
 
-		PMIB_UDPTABLE_OWNER_MODULE udp4_table = network_table;
+		PMIB_UDPTABLE_OWNER_MODULE udp4_table = buffer;
 
 		if (GetExtendedUdpTable (udp4_table, &required_size, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
@@ -1830,7 +1832,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 
 				network.network_hash = _app_getnetworkhash (AF_INET, udp4_table->table[i].dwOwningPid, NULL, 0, &local_addr, udp4_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (_r_obj_findhashtable (result_map, network.network_hash))
+				if (_app_getnetworkitem (network.network_hash))
 				{
 					_app_addcachetable (checker_map, network.network_hash, NULL, 0);
 
@@ -1853,7 +1855,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 
 				_r_spinlock_acquireexclusive (&lock_network);
 
-				_r_obj_addhashtableitem (result_map, network.network_hash, &network);
+				_r_obj_addhashtableitem (network_table, network.network_hash, &network);
 
 				_r_spinlock_releaseexclusive (&lock_network);
 
@@ -1869,11 +1871,11 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 	{
 		if (allocated_size < required_size)
 		{
-			network_table = _r_mem_reallocatezero (network_table, required_size);
+			buffer = _r_mem_reallocatezero (buffer, required_size);
 			allocated_size = required_size;
 		}
 
-		PMIB_UDP6TABLE_OWNER_MODULE udp6_table = network_table;
+		PMIB_UDP6TABLE_OWNER_MODULE udp6_table = buffer;
 
 		if (GetExtendedUdpTable (udp6_table, &required_size, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
@@ -1883,7 +1885,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 
 				network.network_hash = _app_getnetworkhash (AF_INET6, udp6_table->table[i].dwOwningPid, NULL, 0, udp6_table->table[i].ucLocalAddr, udp6_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (_r_obj_findhashtable (result_map, network.network_hash))
+				if (_app_getnetworkitem (network.network_hash))
 				{
 					_app_addcachetable (checker_map, network.network_hash, NULL, 0);
 
@@ -1904,9 +1906,9 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 				if (_app_isvalidconnection (network.af, &network.local_addr6))
 					network.is_connection = TRUE;
 
-				_r_spinlock_acquireexclusive(&lock_network);
+				_r_spinlock_acquireexclusive (&lock_network);
 
-				_r_obj_addhashtableitem (result_map, network.network_hash, &network);
+				_r_obj_addhashtableitem (network_table, network.network_hash, &network);
 
 				_r_spinlock_releaseexclusive (&lock_network);
 
@@ -1915,8 +1917,8 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE result_map, _Inout_ PR_HASH
 		}
 	}
 
-	if (network_table)
-		_r_mem_free (network_table);
+	if (buffer)
+		_r_mem_free (buffer);
 }
 
 VOID _app_generate_packages ()
@@ -2257,6 +2259,8 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 			{
 				SIZE_T limit_group = 14; // limit rules
 
+				_r_spinlock_acquireshared (&lock_rules);
+
 				for (SIZE_T i = 0; i < _r_obj_getarraysize (rules_arr) && limit_group; i++)
 				{
 					ptr_rule = _r_obj_getarrayitem (rules_arr, i);
@@ -2294,6 +2298,8 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
 
 					limit_group -= 1;
 				}
+
+				_r_spinlock_releaseshared (&lock_rules);
 			}
 		}
 	}
