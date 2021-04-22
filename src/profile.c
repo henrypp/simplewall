@@ -1718,7 +1718,6 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 						_r_str_replacechar (string->buffer, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
 					R_STRINGREF remaining_part;
-					PR_STRING expanded_path;
 					SIZE_T app_hash;
 
 					_r_obj_initializestringref2 (&remaining_part, string);
@@ -1729,7 +1728,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 						if (path_string)
 						{
-							expanded_path = _r_str_expandenvironmentstring (path_string->buffer);
+							PR_STRING expanded_path = _r_str_expandenvironmentstring (path_string->buffer);
 
 							if (expanded_path)
 								_r_obj_movereference (&path_string, expanded_path);
