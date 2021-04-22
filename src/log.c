@@ -342,7 +342,7 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 
 	if (!hfwpuclnt)
 	{
-		_r_log (Warning, 0, L"LoadLibraryEx", GetLastError (), L"fwpuclnt.dll");
+		_r_log (LOG_LEVEL_WARNING, 0, L"LoadLibraryEx", GetLastError (), L"fwpuclnt.dll");
 
 		return;
 	}
@@ -355,7 +355,7 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 
 	if (!_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
 	{
-		_r_log (Warning, 0, L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
+		_r_log (LOG_LEVEL_WARNING, 0, L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
 
 		goto CleanupExit; // there is no function to call
 	}
@@ -383,7 +383,7 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 
 	if (code != ERROR_SUCCESS)
 	{
-		_r_log (Warning, 0, L"FwpmNetEventSubscribe", code, NULL);
+		_r_log (LOG_LEVEL_WARNING, 0, L"FwpmNetEventSubscribe", code, NULL);
 	}
 	else
 	{
@@ -411,7 +411,7 @@ VOID _wfp_logunsubscribe (_In_ HANDLE hengine)
 	ULONG code = FwpmNetEventUnsubscribe (hengine, current_handle);
 
 	if (code != ERROR_SUCCESS)
-		_r_log (Warning, 0, L"FwpmNetEventUnsubscribe", code, NULL);
+		_r_log (LOG_LEVEL_WARNING, 0, L"FwpmNetEventUnsubscribe", code, NULL);
 }
 
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)

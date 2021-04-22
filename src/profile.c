@@ -1966,7 +1966,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	if (hr != S_OK)
 	{
 		if (hr != HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND))
-			_r_log (Error, UID, L"_r_xml_parsefile", hr, path_custom ? path_custom : config.profile_path);
+			_r_log (LOG_LEVEL_ERROR, UID, L"_r_xml_parsefile", hr, path_custom ? path_custom : config.profile_path);
 	}
 	else
 	{
@@ -2100,7 +2100,7 @@ VOID _app_profile_save ()
 
 	if (hr != S_OK)
 	{
-		_r_log (Error, UID, L"_r_xml_initializelibrary", hr, NULL);
+		_r_log (LOG_LEVEL_ERROR, UID, L"_r_xml_initializelibrary", hr, NULL);
 
 		return;
 	}
@@ -2109,7 +2109,7 @@ VOID _app_profile_save ()
 
 	if (hr != S_OK)
 	{
-		_r_log (Error, UID, L"_r_xml_createfile", hr, config.profile_path);
+		_r_log (LOG_LEVEL_ERROR, UID, L"_r_xml_createfile", hr, config.profile_path);
 
 		return;
 	}

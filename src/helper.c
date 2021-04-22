@@ -2424,7 +2424,7 @@ PR_STRING _app_parsehoststring (_In_ LPCWSTR hostname, _In_opt_ USHORT port)
 	if (code != DNS_ERROR_RCODE_NO_ERROR)
 	{
 		if (code != DNS_INFO_NO_RECORDS)
-			_r_log (Information, 0, L"DnsQuery (DNS_TYPE_A)", code, hostname);
+			_r_log (LOG_LEVEL_INFO, 0, L"DnsQuery (DNS_TYPE_A)", code, hostname);
 	}
 	else
 	{
@@ -2460,7 +2460,7 @@ PR_STRING _app_parsehoststring (_In_ LPCWSTR hostname, _In_opt_ USHORT port)
 	if (code != DNS_ERROR_RCODE_NO_ERROR)
 	{
 		if (code != DNS_INFO_NO_RECORDS)
-			_r_log (Information, 0, L"DnsQuery (DNS_TYPE_AAAA)", code, hostname);
+			_r_log (LOG_LEVEL_INFO, 0, L"DnsQuery (DNS_TYPE_AAAA)", code, hostname);
 	}
 	else
 	{
@@ -2606,7 +2606,7 @@ BOOLEAN _app_parsenetworkstring (_In_ LPCWSTR network_string, _Inout_ PITEM_ADDR
 
 CleanupExit:
 
-	_r_log (Information, 0, L"ParseNetworkString", code, network_string);
+	_r_log (LOG_LEVEL_INFO, 0, L"ParseNetworkString", code, network_string);
 
 	return FALSE;
 }
