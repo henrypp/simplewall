@@ -17,9 +17,15 @@ VOID NTAPI _app_dereferencerule (_In_ PVOID entry);
 
 PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_opt_ PR_STRING string, _In_opt_ LONG number);
 
+_Ret_maybenull_
 PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
+
+_Ret_maybenull_
 PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPCVOID address, _In_opt_ UINT16 port, _In_ ULONG flags);
+
 BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR out_buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty);
+
+_Ret_maybenull_
 PR_STRING _app_formatport (_In_ UINT16 port, _In_ UINT8 proto, _In_ BOOLEAN is_noempty);
 
 VOID _app_freelogstack ();

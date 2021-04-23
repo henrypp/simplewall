@@ -79,6 +79,7 @@ PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T has
 	return _r_obj_addhashtableitem (hashtable, hash_code, &hashstore);
 }
 
+_Ret_maybenull_
 PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 {
 	PR_STRING string = NULL;
@@ -109,6 +110,7 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 	return string;
 }
 
+_Ret_maybenull_
 PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPCVOID address, _In_opt_ UINT16 port, _In_ ULONG flags)
 {
 	WCHAR formatted_address[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
@@ -236,6 +238,7 @@ BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes
 	return FALSE;
 }
 
+_Ret_maybenull_
 PR_STRING _app_formatport (_In_ UINT16 port, _In_ UINT8 proto, _In_ BOOLEAN is_noempty)
 {
 	if (!port)
