@@ -1062,6 +1062,7 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 		PR_STRING log_path;
 		PR_STRING viewer_path;
 		PR_STRING process_path;
+		HANDLE current_handle;
 
 		log_path = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
 
@@ -1074,8 +1075,10 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 			return;
 		}
 
-		if (_r_fs_isvalidhandle (config.hlogfile))
-			FlushFileBuffers (config.hlogfile);
+		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+
+		if (_r_fs_isvalidhandle (current_handle))
+			FlushFileBuffers (current_handle);
 
 		viewer_path = _app_getlogviewer ();
 
@@ -1100,12 +1103,17 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 
 VOID _app_command_logclear (_In_ HWND hwnd)
 {
-	PR_STRING path = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
+	PR_STRING log_path;
+	HANDLE current_handle;
 	BOOLEAN is_valid;
+
+	log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
+
+	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 	_r_spinlock_acquireshared (&lock_loglist);
 
-	is_valid = _r_fs_isvalidhandle (config.hlogfile) || (path && _r_fs_exists (path->buffer)) || !_r_obj_islistempty (log_arr);
+	is_valid = _r_fs_isvalidhandle (current_handle) || (log_path && _r_fs_exists (log_path->buffer)) || !_r_obj_islistempty (log_arr);
 
 	_r_spinlock_releaseshared (&lock_loglist);
 
@@ -1115,12 +1123,13 @@ VOID _app_command_logclear (_In_ HWND hwnd)
 		{
 			_app_freelogstack ();
 
-			_app_logclear ();
+			_app_logclear (current_handle);
 			_app_logclear_ui (hwnd);
 		}
 	}
 
-	SAFE_DELETE_REFERENCE (path);
+	if (log_path)
+		_r_obj_dereference (log_path);
 }
 
 VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
