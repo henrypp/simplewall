@@ -3,23 +3,13 @@
 
 #include "global.h"
 
-PR_STRING _app_getlogviewer ()
-{
-	LPCWSTR result = _r_config_getstring (L"LogViewer", LOG_VIEWER_DEFAULT);
-
-	if (!_r_str_isempty (result))
-		return _r_str_expandenvironmentstring (result);
-
-	return _r_str_expandenvironmentstring (LOG_VIEWER_DEFAULT);
-}
-
 VOID _app_loginit (_In_ BOOLEAN is_install)
 {
 	HANDLE current_handle;
 	HANDLE new_handle;
 	PR_STRING log_path;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, config.hlogfile);
+	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 	// reset log handle
 	if (_r_fs_isvalidhandle (current_handle))
@@ -28,20 +18,21 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 	if (!is_install || !_r_config_getboolean (L"IsLogEnabled", FALSE))
 		return; // already closed or not enabled
 
-	log_path = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
+	log_path = _app_getlogpath ();
 
 	if (!log_path)
 		return;
 
-	new_handle = CreateFile (log_path->buffer, GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	new_handle = CreateFile (log_path->buffer, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (_r_fs_isvalidhandle (new_handle))
 	{
 		if (GetLastError () != ERROR_ALREADY_EXISTS)
 		{
 			BYTE bom[] = {0xFF, 0xFE};
+			ULONG unused;
 
-			WriteFile (new_handle, bom, sizeof (bom), NULL, NULL); // write utf-16 le byte order mask
+			WriteFile (new_handle, bom, sizeof (bom), &unused, NULL); // write utf-16 le byte order mask
 		}
 		else
 		{
@@ -64,6 +55,13 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	PR_STRING remote_port_string;
 	PR_STRING direction_string;
 	PR_STRING buffer;
+	HANDLE current_handle;
+	ULONG unused;
+
+	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+
+	if (!_r_fs_isvalidhandle (current_handle))
+		return;
 
 	// parse path
 	{
@@ -115,22 +113,36 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 							   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 	);
 
-	if (_app_logislimitreached ())
-		_app_logclear ();
+	if (local_address_string)
+		_r_obj_dereference (local_address_string);
 
-	if (_r_fs_getsize (config.hlogfile) == 2)
-		WriteFile (config.hlogfile, SZ_LOG_TITLE, (ULONG)(_r_str_length (SZ_LOG_TITLE) * sizeof (WCHAR)), NULL, NULL); // adds csv header
+	if (local_port_string)
+		_r_obj_dereference (local_port_string);
+
+	if (remote_address_string)
+		_r_obj_dereference (remote_address_string);
+
+	if (remote_port_string)
+		_r_obj_dereference (remote_port_string);
+
+	if (direction_string)
+		_r_obj_dereference (direction_string);
+
+	if (path)
+		_r_obj_dereference (path);
+
+	if (_app_logislimitreached (current_handle))
+		_app_logclear (current_handle);
+
+	if (_r_fs_getsize (current_handle) == 2)
+		WriteFile (current_handle, SZ_LOG_TITLE, (ULONG)(_r_str_length (SZ_LOG_TITLE) * sizeof (WCHAR)), &unused, NULL); // adds csv header
 
 	if (buffer)
-		WriteFile (config.hlogfile, buffer->buffer, (ULONG)buffer->length, NULL, NULL);
+	{
+		WriteFile (current_handle, buffer->buffer, (ULONG)buffer->length, &unused, NULL);
 
-	SAFE_DELETE_REFERENCE (local_address_string);
-	SAFE_DELETE_REFERENCE (local_port_string);
-	SAFE_DELETE_REFERENCE (remote_address_string);
-	SAFE_DELETE_REFERENCE (remote_port_string);
-	SAFE_DELETE_REFERENCE (direction_string);
-	SAFE_DELETE_REFERENCE (path);
-	SAFE_DELETE_REFERENCE (buffer);
+		_r_obj_dereference (buffer);
+	}
 }
 
 BOOLEAN _app_logisexists (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log_new)
@@ -251,11 +263,20 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	_r_str_printf (index_string, RTL_NUMBER_OF (index_string), L"%" PR_SIZE_T, index);
 	_r_listview_setitem (hwnd, listview_id, item_id, 9, index_string);
 
-	SAFE_DELETE_REFERENCE (local_address_string);
-	SAFE_DELETE_REFERENCE (remote_address_string);
-	SAFE_DELETE_REFERENCE (local_port_string);
-	SAFE_DELETE_REFERENCE (remote_port_string);
-	SAFE_DELETE_REFERENCE (direction_string);
+	if (local_address_string)
+		_r_obj_dereference (local_address_string);
+
+	if (remote_address_string)
+		_r_obj_dereference (remote_address_string);
+
+	if (local_port_string)
+		_r_obj_dereference (local_port_string);
+
+	if (remote_port_string)
+		_r_obj_dereference (remote_port_string);
+
+	if (direction_string)
+		_r_obj_dereference (direction_string);
 
 	if (listview_id == (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1))
 	{
@@ -264,38 +285,38 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	}
 }
 
-BOOLEAN _app_logislimitreached ()
+BOOLEAN _app_logislimitreached (_In_opt_ HANDLE hfile)
 {
-	LONG64 limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
+	LONG64 limit;
 
-	if (!limit || !_r_fs_isvalidhandle (config.hlogfile))
+	limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
+
+	if (!limit || !_r_fs_isvalidhandle (hfile))
 		return FALSE;
 
-	return (_r_fs_getsize (config.hlogfile) >= (_r_calc_kilobytes2bytes64 (limit)));
+	return (_r_fs_getsize (hfile) >= (_r_calc_kilobytes2bytes64 (limit)));
 }
 
-VOID _app_logclear ()
+VOID _app_logclear (_In_opt_ HANDLE hfile)
 {
-	HANDLE current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+	PR_STRING log_path;
 
-	if (_r_fs_isvalidhandle (current_handle))
+	if (_r_fs_isvalidhandle (hfile))
 	{
-		_r_fs_setpos (current_handle, 2, FILE_BEGIN);
+		_r_fs_setpos (hfile, 2, FILE_BEGIN);
 
-		SetEndOfFile (current_handle);
+		SetEndOfFile (hfile);
 
-		FlushFileBuffers (current_handle);
+		FlushFileBuffers (hfile);
 	}
-	else
+
+	log_path = _app_getlogpath ();
+
+	if (log_path)
 	{
-		PR_STRING log_path = _r_str_expandenvironmentstring (_r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
+		_r_fs_deletefile (log_path->buffer, TRUE);
 
-		if (log_path)
-		{
-			_r_fs_deletefile (log_path->buffer, TRUE);
-
-			_r_obj_dereference (log_path);
-		}
+		_r_obj_dereference (log_path);
 	}
 }
 

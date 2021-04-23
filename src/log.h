@@ -3,14 +3,22 @@
 
 #pragma once
 
-PR_STRING _app_getlogviewer ();
+FORCEINLINE PR_STRING _app_getlogpath ()
+{
+	return _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
+}
+
+FORCEINLINE PR_STRING _app_getlogviewer ()
+{
+	return _r_config_getstringexpand (L"LogViewer", LOG_VIEWER_DEFAULT);
+}
 
 VOID _app_loginit (_In_ BOOLEAN is_install);
 VOID _app_logwrite (_In_ PITEM_LOG ptr_log);
 BOOLEAN _app_logisexists (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log_new);
 VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log);
-BOOLEAN _app_logislimitreached ();
-VOID _app_logclear ();
+BOOLEAN _app_logislimitreached (_In_opt_ HANDLE hfile);
+VOID _app_logclear (_In_opt_ HANDLE hfile);
 VOID _app_logclear_ui (_In_ HWND hwnd);
 
 VOID _wfp_logsubscribe (_In_ HANDLE hengine);
