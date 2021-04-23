@@ -1,3 +1,12 @@
+v3.3.2 Beta (23 April 2021)
+- added half an hour timer
+- added missing spinlocks
+- fixed file write operation can cause crash
+- fixed path unexpand does not worked
+- fixed running log viewer
+- fixed little memory leak
+- fixed bugs
+
 v3.3.1 Beta (16 April 2021)
 - added workaround for native paths on profile loading (issue #817)
 - fixed net events does not subscribe on os version lower than 1607
