@@ -755,11 +755,27 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 				case IDD_SETTINGS_LOGGING:
 				{
+					PR_STRING string = NULL;
+
 					CheckDlgButton (hwnd, IDC_ENABLELOG_CHK, _r_config_getboolean (L"IsLogEnabled", FALSE) ? BST_CHECKED : BST_UNCHECKED);
 
-					_r_ctrl_settext (hwnd, IDC_LOGPATH, _r_config_getstring (L"LogPath", LOG_PATH_DEFAULT));
-					_r_ctrl_settext (hwnd, IDC_LOGVIEWER, _r_config_getstring (L"LogViewer", LOG_VIEWER_DEFAULT));
+					string = _app_getlogpath ();
 
+					if (string)
+					{
+						_r_ctrl_settext (hwnd, IDC_LOGPATH, string->buffer);
+
+						_r_obj_dereference (string);
+					}
+
+					string = _app_getlogviewer ();
+
+					if (string)
+					{
+						_r_ctrl_settext (hwnd, IDC_LOGVIEWER, string->buffer);
+
+						_r_obj_dereference (string);
+					}
 					UDACCEL ud = {0};
 					ud.nInc = 64; // set step to 64kb
 
@@ -1328,9 +1344,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 						if (log_path)
 						{
-							_r_obj_movereference (&log_path, _r_str_expandenvironmentstring (_r_obj_getstring (log_path)));
-
-							_r_config_setstring (L"LogPath", _r_obj_getstring (log_path));
+							_r_config_setstringexpand (L"LogPath", log_path->buffer);
 
 							if (_r_config_getboolean (L"IsLogEnabled", FALSE))
 								_app_loginit (TRUE);
@@ -1345,7 +1359,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				case IDC_LOGPATH_BTN:
 				{
 					R_FILE_DIALOG file_dialog;
-					PR_STRING expanded_path;
+					PR_STRING path;
 
 					COMDLG_FILTERSPEC filters[] = {
 						L"Log files (*.log, *.csv)", L"*.log;*.csv",
@@ -1356,32 +1370,28 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 
-						expanded_path = _r_ctrl_gettext (hwnd, IDC_LOGPATH);
+						path = _r_ctrl_gettext (hwnd, IDC_LOGPATH);
 
-						if (expanded_path)
+						if (path)
 						{
-							_r_obj_movereference (&expanded_path, _r_str_expandenvironmentstring (expanded_path->buffer));
-
-							_r_filedialog_setpath (&file_dialog, _r_obj_getstring (expanded_path));
+							_r_filedialog_setpath (&file_dialog, path->buffer);
 						}
 
 						if (_r_filedialog_show (hwnd, &file_dialog))
 						{
-							_r_obj_movereference (&expanded_path, _r_filedialog_getpath (&file_dialog));
+							_r_obj_movereference (&path, _r_filedialog_getpath (&file_dialog));
 
-							if (expanded_path)
+							if (path)
 							{
-								_r_obj_movereference (&expanded_path, _r_str_unexpandenvironmentstring (expanded_path->buffer));
-
-								_r_config_setstring (L"LogPath", _r_obj_getstring (expanded_path));
-								_r_ctrl_settext (hwnd, IDC_LOGPATH, _r_obj_getstringorempty (expanded_path));
+								_r_config_setstringexpand (L"LogPath", path->buffer);
+								_r_ctrl_settext (hwnd, IDC_LOGPATH, path->buffer);
 
 								_app_loginit (_r_config_getboolean (L"IsLogEnabled", FALSE));
 							}
 						}
 
-						if (expanded_path)
-							_r_obj_dereference (expanded_path);
+						if (path)
+							_r_obj_dereference (path);
 
 						_r_filedialog_destroy (&file_dialog);
 					}
@@ -1393,16 +1403,13 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				{
 					if (notify_code == EN_KILLFOCUS)
 					{
-						PR_STRING logviewer = _r_ctrl_gettext (hwnd, ctrl_id);
+						PR_STRING log_viewer = _r_ctrl_gettext (hwnd, ctrl_id);
 
-						if (logviewer)
+						if (log_viewer)
 						{
-							_r_obj_movereference (&logviewer, _r_str_unexpandenvironmentstring (_r_obj_getstring (logviewer)));
+							_r_config_setstringexpand (L"LogViewer", log_viewer->buffer);
 
-							_r_config_setstring (L"LogViewer", _r_obj_getstring (logviewer));
-
-							if (logviewer)
-								_r_obj_dereference (logviewer);
+							_r_obj_dereference (log_viewer);
 						}
 					}
 
@@ -1412,7 +1419,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				case IDC_LOGVIEWER_BTN:
 				{
 					R_FILE_DIALOG file_dialog;
-					PR_STRING expanded_path;
+					PR_STRING path;
 
 					COMDLG_FILTERSPEC filters[] = {
 						L"Executable files (*.exe)", L"*.exe",
@@ -1423,30 +1430,26 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 
-						expanded_path = _r_ctrl_gettext (hwnd, IDC_LOGVIEWER);
+						path = _r_ctrl_gettext (hwnd, IDC_LOGVIEWER);
 
-						if (expanded_path)
+						if (path)
 						{
-							_r_obj_movereference (&expanded_path, _r_str_expandenvironmentstring (expanded_path->buffer));
-
-							_r_filedialog_setpath (&file_dialog, _r_obj_getstring (expanded_path));
+							_r_filedialog_setpath (&file_dialog, path->buffer);
 						}
 
 						if (_r_filedialog_show (hwnd, &file_dialog))
 						{
-							_r_obj_movereference (&expanded_path, _r_filedialog_getpath (&file_dialog));
+							_r_obj_movereference (&path, _r_filedialog_getpath (&file_dialog));
 
-							if (expanded_path)
+							if (path)
 							{
-								_r_obj_movereference (&expanded_path, _r_str_unexpandenvironmentstring (expanded_path->buffer));
-
-								_r_config_setstring (L"LogViewer", _r_obj_getstring (expanded_path));
-								_r_ctrl_settext (hwnd, IDC_LOGVIEWER, _r_obj_getstringorempty (expanded_path));
+								_r_config_setstringexpand (L"LogViewer", path->buffer);
+								_r_ctrl_settext (hwnd, IDC_LOGVIEWER, path->buffer);
 							}
 						}
 
-						if (expanded_path)
-							_r_obj_dereference (expanded_path);
+						if (path)
+							_r_obj_dereference (path);
 
 						_r_filedialog_destroy (&file_dialog);
 					}
