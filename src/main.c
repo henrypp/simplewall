@@ -1366,7 +1366,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 						L"All files (*.*)", L"*.*",
 					};
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVE))
+					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 
@@ -1426,7 +1426,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 						L"All files (*.*)", L"*.*",
 					};
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPEN))
+					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 
@@ -2661,7 +2661,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						L"All files (*.*)", L"*.*",
 					};
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPEN))
+					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 						_r_filedialog_setpath (&file_dialog, XML_PROFILE);
@@ -2709,7 +2709,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						L"All files (*.*)", L"*.*",
 					};
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVE))
+					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 						_r_filedialog_setpath (&file_dialog, XML_PROFILE);
@@ -3138,7 +3138,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						L"All files (*.*)", L"*.*",
 					};
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPEN))
+					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 
