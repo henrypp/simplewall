@@ -354,7 +354,7 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 	HANDLE hevent;
 	ULONG code;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
+	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
 
 	if (current_handle)
 		return; // already subscribed
@@ -422,14 +422,17 @@ CleanupExit:
 
 VOID _wfp_logunsubscribe (_In_ HANDLE hengine)
 {
-	HANDLE current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
+	HANDLE current_handle;
+	ULONG code;
+
+	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
 
 	if (!current_handle)
 		return;
 
 	_app_loginit (FALSE); // destroy log file handle if present
 
-	ULONG code = FwpmNetEventUnsubscribe (hengine, current_handle);
+	code = FwpmNetEventUnsubscribe (hengine, current_handle);
 
 	if (code != ERROR_SUCCESS)
 		_r_log (LOG_LEVEL_WARNING, 0, L"FwpmNetEventUnsubscribe", code, NULL);
