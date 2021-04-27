@@ -1859,7 +1859,6 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB * *l
 	ULONG code = ERROR_FILE_NOT_FOUND;
 
 	PR_STRING original_path = _r_obj_createstring (path);
-	PR_STRING nt_path = NULL;
 
 	if (type == DataAppRegular || type == DataAppNetwork || type == DataAppService)
 	{
@@ -1872,50 +1871,55 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB * *l
 		}
 		else
 		{
-			code = _r_path_ntpathfromdos (path, &nt_path);
+			PR_STRING nt_path;
 
-			// file is inaccessible or not found, maybe low-level driver preventing file access?
-			// try another way!
-			if (
-				code == ERROR_ACCESS_DENIED ||
-				code == ERROR_FILE_NOT_FOUND ||
-				code == ERROR_PATH_NOT_FOUND
-				)
-			{
-				if (PathIsRelative (path))
-				{
-					goto CleanupExit;
-				}
-				else
-				{
-					WCHAR path_root[128];
-					WCHAR path_skip_root[512];
+			nt_path = _r_path_ntpathfromdos (path, &code);
 
-					// file path (root)
-					_r_str_copy (path_root, RTL_NUMBER_OF (path_root), path);
-					PathStripToRoot (path_root);
-
-					// file path (without root)
-					_r_str_copy (path_skip_root, RTL_NUMBER_OF (path_skip_root), PathSkipRoot (path));
-					_r_str_tolower (path_skip_root); // lower is important!
-
-					code = _r_path_ntpathfromdos (path_root, &nt_path);
-
-					if (code != ERROR_SUCCESS)
-						goto CleanupExit;
-
-					_r_obj_movereference (&original_path, _r_format_string (L"%s%s", nt_path->buffer, path_skip_root));
-				}
-			}
-			else if (code == ERROR_SUCCESS)
+			if (nt_path)
 			{
 				_r_obj_movereference (&original_path, nt_path);
-				nt_path = NULL;
 			}
 			else
 			{
-				goto CleanupExit;
+				// file is inaccessible or not found, maybe low-level driver preventing file access?
+				// try another way!
+				if (
+					code == ERROR_ACCESS_DENIED ||
+					code == ERROR_FILE_NOT_FOUND ||
+					code == ERROR_PATH_NOT_FOUND
+					)
+				{
+					if (PathIsRelative (path))
+					{
+						goto CleanupExit;
+					}
+					else
+					{
+						WCHAR path_root[128];
+						WCHAR path_skip_root[512];
 
+						// file path (root)
+						_r_str_copy (path_root, RTL_NUMBER_OF (path_root), path);
+						PathStripToRoot (path_root);
+
+						// file path (without root)
+						_r_str_copy (path_skip_root, RTL_NUMBER_OF (path_skip_root), PathSkipRoot (path));
+						_r_str_tolower (path_skip_root); // lower is important!
+
+						nt_path = _r_path_ntpathfromdos (path_root, &code);
+
+						if (!nt_path)
+							goto CleanupExit;
+
+						_r_obj_movereference (&original_path, _r_format_string (L"%s%s", nt_path->buffer, path_skip_root));
+
+						_r_obj_dereference (nt_path);
+					}
+				}
+				else
+				{
+					goto CleanupExit;
+				}
 			}
 
 			ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), lpblob);
@@ -1936,9 +1940,6 @@ CleanupExit:
 
 	if (original_path)
 		_r_obj_dereference (original_path);
-
-	if (nt_path)
-		_r_obj_dereference (nt_path);
 
 	return code;
 }
