@@ -1198,7 +1198,8 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 		_app_profile_save (); // required!
 	}
 
-	_r_obj_dereference (rules);
+	if (rules)
+		_r_obj_dereference (rules);
 }
 
 _Ret_maybenull_

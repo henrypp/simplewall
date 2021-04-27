@@ -55,18 +55,21 @@ BOOLEAN _app_notifycommand (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seco
 
 	ptr_app->last_notify = _r_unixtime_now ();
 
-	if (!_r_obj_islistempty (rules))
+	if (rules)
 	{
-		if (_wfp_isfiltersinstalled ())
+		if (!_r_obj_islistempty (rules))
 		{
-			HANDLE hengine = _wfp_getenginehandle ();
+			if (_wfp_isfiltersinstalled ())
+			{
+				HANDLE hengine = _wfp_getenginehandle ();
 
-			if (hengine)
-				_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+				if (hengine)
+					_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+			}
 		}
-	}
 
-	_r_obj_dereference (rules);
+		_r_obj_dereference (rules);
+	}
 
 	_app_refreshstatus (_r_app_gethwnd (), listview_id);
 	_app_profile_save ();
@@ -224,25 +227,25 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	_r_format_unixtimeex (date_string, RTL_NUMBER_OF (date_string), ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_NAME)));
-	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, _r_obj_getstring (localized_string), IDC_FILE_TEXT, _app_getdisplayname (ptr_app, TRUE));
+	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_FILE_TEXT, _app_getdisplayname (ptr_app, TRUE));
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_SIGNATURE)));
-	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, _r_obj_getstring (localized_string), IDC_SIGNATURE_TEXT, _r_obj_getstringordefault (signature_string, empty_string));
+	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_SIGNATURE_TEXT, _r_obj_getstringordefault (signature_string, empty_string));
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_ADDRESS)));
-	_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, _r_obj_getstring (localized_string), IDC_ADDRESS_TEXT, _r_obj_getstringordefault (remote_address_string, empty_string));
+	_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_ADDRESS_TEXT, _r_obj_getstringordefault (remote_address_string, empty_string));
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_PORT)));
-	_r_ctrl_settabletext (hwnd, IDC_PORT_ID, _r_obj_getstring (localized_string), IDC_PORT_TEXT, _r_obj_getstringordefault (remote_port_string, empty_string));
+	_r_ctrl_settabletext (hwnd, IDC_PORT_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_PORT_TEXT, _r_obj_getstringordefault (remote_port_string, empty_string));
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_DIRECTION)));
 	_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, _r_obj_getstring (localized_string), IDC_DIRECTION_TEXT, _r_obj_getstringordefault (direction_string, empty_string));
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_FILTER)));
-	_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, _r_obj_getstring (localized_string), IDC_FILTER_TEXT, _r_obj_getstringordefault (ptr_log->filter_name, empty_string));
+	_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_FILTER_TEXT, _r_obj_getstringordefault (ptr_log->filter_name, empty_string));
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_DATE)));
-	_r_ctrl_settabletext (hwnd, IDC_DATE_ID, _r_obj_getstring (localized_string), IDC_DATE_TEXT, date_string);
+	_r_ctrl_settabletext (hwnd, IDC_DATE_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_DATE_TEXT, date_string);
 
 	_r_ctrl_settext (hwnd, IDC_RULES_BTN, _r_locale_getstring (IDS_TRAY_RULES));
 	_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
