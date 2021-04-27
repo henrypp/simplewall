@@ -227,11 +227,11 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	hdc_listview = GetDC (hlistview);
 	hdc_header = GetDC (hheader);
 
-	if (hdc_listview)
-		SelectObject (hdc_listview, (HFONT)SendMessage (hlistview, WM_GETFONT, 0, 0)); // fix
+	if (!hdc_listview || !hdc_header)
+		return;
 
-	if (hdc_header)
-		SelectObject (hdc_header, (HFONT)SendMessage (hheader, WM_GETFONT, 0, 0)); // fix
+	SelectObject (hdc_listview, (HFONT)SendMessage (hlistview, WM_GETFONT, 0, 0)); // fix
+	SelectObject (hdc_header, (HFONT)SendMessage (hheader, WM_GETFONT, 0, 0)); // fix
 
 	calculated_width = 0;
 	column_general_id = 0; // set general column id
@@ -254,7 +254,7 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 		if (!column_text)
 			continue;
 
-		column_width = _r_dc_getfontwidth (hdc_header, _r_obj_getstring (column_text), _r_obj_getstringlength (column_text)) + spacing;
+		column_width = _r_dc_getfontwidth (hdc_header, column_text->buffer, _r_obj_getstringlength (column_text)) + spacing;
 
 		if (column_width >= max_width)
 		{
@@ -271,7 +271,7 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 
 					if (item_text)
 					{
-						text_width = _r_dc_getfontwidth (hdc_listview, _r_obj_getstring (item_text), _r_obj_getstringlength (item_text)) + spacing;
+						text_width = _r_dc_getfontwidth (hdc_listview, item_text->buffer, _r_obj_getstringlength (item_text)) + spacing;
 
 						_r_obj_dereference (item_text);
 
@@ -299,11 +299,8 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	// set general column width
 	_r_listview_setcolumn (hwnd, listview_id, column_general_id, NULL, max (total_width - calculated_width, max_width));
 
-	if (hdc_listview)
-		ReleaseDC (hlistview, hdc_listview);
-
-	if (hdc_header)
-		ReleaseDC (hheader, hdc_header);
+	ReleaseDC (hlistview, hdc_listview);
+	ReleaseDC (hheader, hdc_header);
 }
 
 VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id)

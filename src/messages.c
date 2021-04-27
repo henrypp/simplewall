@@ -1902,18 +1902,21 @@ VOID _app_command_purgetimers (_In_ HWND hwnd)
 
 	_r_spinlock_releaseshared (&lock_apps);
 
-	if (!_r_obj_islistempty (rules))
+	if (rules)
 	{
-		if (_wfp_isfiltersinstalled ())
+		if (!_r_obj_islistempty (rules))
 		{
-			HANDLE hengine = _wfp_getenginehandle ();
+			if (_wfp_isfiltersinstalled ())
+			{
+				HANDLE hengine = _wfp_getenginehandle ();
 
-			if (hengine)
-				_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+				if (hengine)
+					_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+			}
 		}
-	}
 
-	_r_obj_dereference (rules);
+		_r_obj_dereference (rules);
+	}
 
 	_app_profile_save ();
 

@@ -199,12 +199,15 @@ VOID _app_setexplicitaccess (_Out_ PEXPLICIT_ACCESS pea, _In_ ACCESS_MODE mode, 
 VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
+	PSID psid_owner;
+	PSID psid_group;
 	PACL pdacl;
+	PACL psacl;
 	ULONG code;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
 
-	code = FwpmEngineGetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &security_descriptor);
+	code = FwpmEngineGetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, &psid_owner, &psid_group, &pdacl, &psacl, &security_descriptor);
 
 	if (code != ERROR_SUCCESS)
 	{
@@ -338,10 +341,14 @@ VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
-	PACL pnewdacl;
+	PSID psid_owner;
+	PSID psid_group;
 	PACL pdacl;
+	PACL psacl;
+	PACL pnewdacl;
+	ULONG code;
 
-	ULONG code = FwpmProviderGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &security_descriptor);
+	code = FwpmProviderGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, &psid_owner, &psid_group, &pdacl, &psacl, &security_descriptor);
 
 	if (code != ERROR_SUCCESS)
 	{
@@ -371,10 +378,14 @@ VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID lpguid, 
 VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
-	PACL pnewdacl;
+	PSID psid_owner;
+	PSID psid_group;
 	PACL pdacl;
+	PACL psacl;
+	PACL pnewdacl;
+	ULONG code;
 
-	ULONG code = FwpmSubLayerGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &security_descriptor);
+	code = FwpmSubLayerGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, &psid_owner, &psid_group, &pdacl, &psacl, &security_descriptor);
 
 	if (code != ERROR_SUCCESS)
 	{
@@ -404,10 +415,14 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID lpguid, 
 VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID lpguid, _In_ BOOLEAN is_secure, _In_ UINT line)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
-	PACL pnewdacl;
+	PSID psid_owner;
+	PSID psid_group;
 	PACL pdacl;
+	PACL psacl;
+	PACL pnewdacl;
+	ULONG code;
 
-	ULONG code = FwpmFilterGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, NULL, NULL, &pdacl, NULL, &security_descriptor);
+	code = FwpmFilterGetSecurityInfoByKey (hengine, lpguid, DACL_SECURITY_INFORMATION, &psid_owner, &psid_group, &pdacl, &psacl, &security_descriptor);
 
 	if (code != ERROR_SUCCESS)
 	{
