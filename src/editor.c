@@ -92,7 +92,7 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			// localize window
 			SetWindowText (hwnd, _r_locale_getstring (IDS_RULE));
 
-			_r_edit_settextlimit (hwnd, IDC_RULE_ID, _r_calc_clamp (RULE_RULE_CCH_MAX - context->current_length - 1, 1, RULE_RULE_CCH_MAX));
+			_r_edit_settextlimit (hwnd, IDC_RULE_ID, _r_calc_clamp32 (RULE_RULE_CCH_MAX - context->current_length - 1, 1, RULE_RULE_CCH_MAX));
 
 			if (context->item_id != -1)
 			{
