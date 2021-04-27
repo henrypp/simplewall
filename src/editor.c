@@ -562,7 +562,7 @@ INT_PTR CALLBACK PropertiesPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 1, _r_locale_getstring (IDS_TRAY_USER_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 
 				// initialize
-				WCHAR buffer[128];
+				WCHAR buffer[128] = {0};
 				PITEM_RULE ptr_rule;
 				BOOLEAN is_enabled;
 
@@ -578,7 +578,8 @@ INT_PTR CALLBACK PropertiesPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 					// check for services
 					is_enabled = ((ptr_rule->is_forservices && (context->ptr_app->app_hash == config.ntoskrnl_hash || context->ptr_app->app_hash == config.svchost_hash)) || _r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash));
 
-					_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_obj_getstring (ptr_rule->name));
+					if (ptr_rule->name)
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), ptr_rule->name->buffer);
 
 					if (ptr_rule->is_readonly)
 						_r_str_append (buffer, RTL_NUMBER_OF (buffer), SZ_RULE_INTERNAL_MENU);
@@ -1286,7 +1287,7 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 				case IDOK: // process Enter key
 				case IDC_SAVE:
 				{
-					PR_LIST rules = _r_obj_createlist (NULL);
+					PR_LIST rules = NULL;
 
 					if (context->is_settorules)
 					{
@@ -1393,6 +1394,8 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 						// enable rule
 						_app_ruleenable (context->ptr_rule, (IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED), TRUE);
 
+						rules = _r_obj_createlist (NULL);
+
 						_r_obj_addlistitem (rules, context->ptr_rule);
 					}
 					else
@@ -1402,6 +1405,10 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 						context->ptr_app->is_haveerrors = FALSE; // reset errors
 
 						context->ptr_app->is_enabled = !!(IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED);
+
+						rules = _r_obj_createlist (NULL);
+
+						_r_obj_addlistitem (rules, context->ptr_app);
 
 						if (hpage_rule)
 						{
@@ -1436,24 +1443,27 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 					}
 
 					// apply filter
-					if (!_r_obj_islistempty (rules) && _wfp_isfiltersinstalled ())
+					if (rules)
 					{
-						HANDLE hengine = _wfp_getenginehandle ();
-
-						if (hengine)
+						if (!_r_obj_islistempty (rules) && _wfp_isfiltersinstalled ())
 						{
-							if (context->is_settorules)
+							HANDLE hengine = _wfp_getenginehandle ();
+
+							if (hengine)
 							{
-								_wfp_create4filters (hengine, rules, __LINE__, FALSE);
-							}
-							else
-							{
-								_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+								if (context->is_settorules)
+								{
+									_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+								}
+								else
+								{
+									_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+								}
 							}
 						}
-					}
 
-					_r_obj_dereference (rules);
+						_r_obj_dereference (rules);
+					}
 
 					EndDialog (hwnd, TRUE);
 
