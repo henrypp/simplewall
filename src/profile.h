@@ -49,7 +49,7 @@ COLORREF _app_getappcolor (_In_ INT listview_id, _In_ SIZE_T app_hash, _In_ BOOL
 
 VOID _app_freeapplication (_In_ SIZE_T app_hash);
 
-BOOLEAN _app_isappfromsystem (_In_ LPCWSTR path, _In_ SIZE_T app_hash);
+BOOLEAN _app_isappfromsystem (_In_opt_ LPCWSTR path, _In_ SIZE_T app_hash);
 BOOLEAN _app_isapphaveconnection (_In_ SIZE_T app_hash);
 BOOLEAN _app_isapphavedrive (_In_ INT letter);
 BOOLEAN _app_isapphaverule (_In_ SIZE_T app_hash, _In_ BOOLEAN is_countdisabled);

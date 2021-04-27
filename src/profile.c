@@ -1351,7 +1351,7 @@ PR_STRING _app_rulesexpandrules (_In_ PR_STRING rule, _In_ LPCWSTR delimeter)
 	return NULL;
 }
 
-BOOLEAN _app_isappfromsystem (_In_ LPCWSTR path, _In_ SIZE_T app_hash)
+BOOLEAN _app_isappfromsystem (_In_opt_ LPCWSTR path, _In_ SIZE_T app_hash)
 {
 	if (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash)
 		return TRUE;
