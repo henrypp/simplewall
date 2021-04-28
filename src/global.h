@@ -61,6 +61,12 @@ DECLSPEC_SELECTANY R_SPINLOCK lock_network;
 DECLSPEC_SELECTANY R_SPINLOCK lock_profile;
 DECLSPEC_SELECTANY R_SPINLOCK lock_transaction;
 
+DECLSPEC_SELECTANY R_SPINLOCK lock_cache_dns;
+DECLSPEC_SELECTANY R_SPINLOCK lock_cache_hosts;
+DECLSPEC_SELECTANY R_SPINLOCK lock_cache_signatures;
+DECLSPEC_SELECTANY R_SPINLOCK lock_cache_types;
+DECLSPEC_SELECTANY R_SPINLOCK lock_cache_versions;
+
 // dropped events callback subscription (win7+)
 #ifndef FWP_DIRECTION_IN
 #define FWP_DIRECTION_IN 0x00003900L

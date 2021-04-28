@@ -1712,6 +1712,12 @@ VOID _app_initialize ()
 	_r_spinlock_initialize (&lock_profile);
 	_r_spinlock_initialize (&lock_transaction);
 
+	_r_spinlock_initialize (&lock_cache_dns);
+	_r_spinlock_initialize (&lock_cache_hosts);
+	_r_spinlock_initialize (&lock_cache_signatures);
+	_r_spinlock_initialize (&lock_cache_types);
+	_r_spinlock_initialize (&lock_cache_versions);
+
 	// set privileges
 	{
 		ULONG privileges[] = {
