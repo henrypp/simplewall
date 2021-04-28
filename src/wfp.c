@@ -847,8 +847,7 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 		}
 		else
 		{
-			LPCWSTR path = _r_obj_getstring (ptr_app->original_path);
-			ULONG code = _FwpmGetAppIdFromFileName1 (path, &byte_blob, ptr_app->type);
+			ULONG code = _FwpmGetAppIdFromFileName1 (ptr_app->original_path, ptr_app->type, &byte_blob);
 
 			if (code == ERROR_SUCCESS)
 			{
@@ -863,7 +862,7 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 			{
 				// do not log file not found to error log
 				if (code != ERROR_FILE_NOT_FOUND && code != ERROR_PATH_NOT_FOUND)
-					_r_log (LOG_LEVEL_ERROR, 0, L"FwpmGetAppIdFromFileName", code, path);
+					_r_log (LOG_LEVEL_ERROR, 0, L"FwpmGetAppIdFromFileName", code, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
@@ -1854,32 +1853,24 @@ VOID _mps_changeconfig2 (_In_ BOOLEAN is_enable)
 }
 
 _Success_ (return == ERROR_SUCCESS)
-ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB * *lpblob, _In_ ENUM_TYPE_DATA type)
+ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type, _Outptr_ FWP_BYTE_BLOB** lpblob)
 {
-	ULONG code = ERROR_FILE_NOT_FOUND;
-
-	PR_STRING original_path = _r_obj_createstring (path);
+	PR_STRING original_path;
+	ULONG code;
 
 	if (type == DataAppRegular || type == DataAppNetwork || type == DataAppService)
 	{
-		if (_r_obj_getstringhash (original_path) == config.ntoskrnl_hash)
+		if (_r_obj_getstringhash (path) == config.ntoskrnl_hash)
 		{
-			ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), lpblob);
-			code = ERROR_SUCCESS;
+			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), lpblob);
 
-			goto CleanupExit;
+			return ERROR_SUCCESS;
 		}
 		else
 		{
-			PR_STRING nt_path;
+			original_path = _r_path_ntpathfromdos (path->buffer, &code);
 
-			nt_path = _r_path_ntpathfromdos (path, &code);
-
-			if (nt_path)
-			{
-				_r_obj_movereference (&original_path, nt_path);
-			}
-			else
+			if (!original_path)
 			{
 				// file is inaccessible or not found, maybe low-level driver preventing file access?
 				// try another way!
@@ -1889,9 +1880,9 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB * *l
 					code == ERROR_PATH_NOT_FOUND
 					)
 				{
-					if (PathIsRelative (path))
+					if (PathIsRelative (path->buffer))
 					{
-						goto CleanupExit;
+						return code;
 					}
 					else
 					{
@@ -1899,49 +1890,49 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB * *l
 						WCHAR path_skip_root[512];
 
 						// file path (root)
-						_r_str_copy (path_root, RTL_NUMBER_OF (path_root), path);
+						_r_str_copy (path_root, RTL_NUMBER_OF (path_root), path->buffer);
 						PathStripToRoot (path_root);
 
 						// file path (without root)
-						_r_str_copy (path_skip_root, RTL_NUMBER_OF (path_skip_root), PathSkipRoot (path));
+						_r_str_copy (path_skip_root, RTL_NUMBER_OF (path_skip_root), PathSkipRoot (path->buffer));
 						_r_str_tolower (path_skip_root); // lower is important!
 
-						nt_path = _r_path_ntpathfromdos (path_root, &code);
+						original_path = _r_path_ntpathfromdos (path_root, &code);
 
-						if (!nt_path)
-							goto CleanupExit;
+						if (!original_path)
+							return code;
 
-						_r_obj_movereference (&original_path, _r_format_string (L"%s%s", nt_path->buffer, path_skip_root));
-
-						_r_obj_dereference (nt_path);
+						_r_obj_movereference (&original_path, _r_format_string (L"%s%s", original_path->buffer, path_skip_root));
 					}
 				}
 				else
 				{
-					goto CleanupExit;
+					return code;
 				}
 			}
 
 			ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), lpblob);
+
+			_r_obj_dereference (original_path);
+
+			return ERROR_SUCCESS;
 		}
 	}
 	else if (type == DataAppPico || type == DataAppDevice)
 	{
+		original_path = _r_obj_createstringfromstring (path);
+
 		if (type == DataAppDevice)
 			_r_str_tolower (original_path->buffer); // lower is important!
 
 		ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), lpblob);
-		code = ERROR_SUCCESS;
 
-		goto CleanupExit;
-	}
-
-CleanupExit:
-
-	if (original_path)
 		_r_obj_dereference (original_path);
 
-	return code;
+		return ERROR_SUCCESS;
+	}
+
+	return ERROR_UNIDENTIFIED_ERROR;
 }
 
 VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Outptr_ FWP_BYTE_BLOB** byte_blob)

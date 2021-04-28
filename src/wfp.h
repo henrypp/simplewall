@@ -38,7 +38,7 @@ BOOLEAN _mps_firewallapi (_Inout_opt_ PBOOLEAN pis_enabled, _In_opt_ PBOOLEAN pi
 VOID _mps_changeconfig2 (_In_ BOOLEAN is_enable);
 
 _Success_ (return == ERROR_SUCCESS)
-ULONG _FwpmGetAppIdFromFileName1 (_In_ LPCWSTR path, _Outptr_ FWP_BYTE_BLOB** lpblob, _In_ ENUM_TYPE_DATA type);
+ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type, _Outptr_ FWP_BYTE_BLOB** lpblob);
 
 VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Outptr_ FWP_BYTE_BLOB** byte_blob);
 VOID ByteBlobFree (_Inout_ FWP_BYTE_BLOB** byte_blob);
