@@ -556,7 +556,8 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 				{
 					signature_string = _app_getsignatureinfo (ptr_app);
 
-					SAFE_DELETE_REFERENCE (signature_string);
+					if (signature_string)
+						_r_obj_dereference (signature_string);
 				}
 
 				_r_spinlock_releaseshared (&lock_apps);
