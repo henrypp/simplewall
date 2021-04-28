@@ -662,29 +662,24 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 	R_STRINGBUILDER buffer = {0};
 	PR_STRING string;
 
+	LPARAM lparam;
+
 	BOOLEAN is_appslist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP);
 	BOOLEAN is_ruleslist = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) || listview_id == IDC_APP_RULES_ID;
 
+	lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+
 	if (is_appslist || listview_id == IDC_RULE_APPS_ID)
 	{
-		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
-		PITEM_APP ptr_app = _app_getappitem (app_hash);
+		PITEM_APP ptr_app = _app_getappitem (lparam);
 
 		if (ptr_app)
 		{
 			_r_obj_initializestringbuilder (&buffer);
 
 			// app path
-			{
-				PR_STRING path_string = _r_format_string (L"%s\r\n", _r_obj_getstring (ptr_app->real_path ? ptr_app->real_path : ptr_app->display_name ? ptr_app->display_name : ptr_app->original_path));
-
-				if (path_string)
-				{
-					_r_obj_appendstringbuilder2 (&buffer, path_string);
-
-					_r_obj_dereference (path_string);
-				}
-			}
+			_r_obj_appendstringbuilder (&buffer, _r_obj_getstringordefault (ptr_app->real_path ? ptr_app->real_path : ptr_app->display_name ? ptr_app->display_name : ptr_app->original_path, SZ_EMPTY));
+			_r_obj_appendstringbuilder (&buffer, L"\r\n");
 
 			// app information
 			{
@@ -698,19 +693,26 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 
 					if (version_string)
 					{
-						if (!_r_obj_isstringempty (version_string))
-							_r_obj_appendstringbuilderformat (&info_string, SZ_TAB L"%s\r\n", version_string->buffer);
+						_r_obj_appendstringbuilder (&info_string, SZ_TAB);
+						_r_obj_appendstringbuilder (&info_string, version_string->buffer);
+						_r_obj_appendstringbuilder (&info_string, L"\r\n");
 
 						_r_obj_dereference (version_string);
 					}
 				}
 				else if (ptr_app->type == DataAppService)
 				{
-					_r_obj_appendstringbuilderformat (&info_string, SZ_TAB L"%s" SZ_TAB_CRLF L"%s\r\n", _r_obj_getstringorempty (ptr_app->original_path), _r_obj_getstringorempty (ptr_app->display_name));
+					_r_obj_appendstringbuilder (&info_string, SZ_TAB);
+					_r_obj_appendstringbuilder (&info_string, _r_obj_getstringordefault (ptr_app->original_path, SZ_EMPTY));
+					_r_obj_appendstringbuilder (&info_string, SZ_TAB_CRLF);
+					_r_obj_appendstringbuilder (&info_string, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY));
+					_r_obj_appendstringbuilder (&info_string, L"\r\n");
 				}
 				else if (ptr_app->type == DataAppUWP)
 				{
-					_r_obj_appendstringbuilderformat (&info_string, SZ_TAB L"%s\r\n", _r_obj_getstringorempty (ptr_app->display_name));
+					_r_obj_appendstringbuilder (&info_string, SZ_TAB);
+					_r_obj_appendstringbuilder (&info_string, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY));
+					_r_obj_appendstringbuilder (&info_string, L"\r\n");
 				}
 
 				// signature information
@@ -720,8 +722,7 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 
 					if (signature_string)
 					{
-						if (!_r_obj_isstringempty (signature_string))
-							_r_obj_appendstringbuilderformat (&info_string, SZ_TAB L"%s: %s\r\n", _r_locale_getstring (IDS_SIGNATURE), signature_string->buffer);
+						_r_obj_appendstringbuilderformat (&info_string, SZ_TAB L"%s: %s\r\n", _r_locale_getstring (IDS_SIGNATURE), signature_string->buffer);
 
 						_r_obj_dereference (signature_string);
 					}
@@ -732,7 +733,7 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 				if (!_r_obj_isstringempty (string))
 				{
 					_r_obj_insertstringbuilderformat (&info_string, 0, L"%s:\r\n", _r_locale_getstring (IDS_FILE));
-					_r_obj_appendstringbuilder2 (&buffer, _r_obj_finalstringbuilder (&info_string));
+					_r_obj_appendstringbuilderstring (&buffer, string);
 				}
 
 				_r_obj_deletestringbuilder (&info_string);
@@ -749,12 +750,11 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 
 			// app rules
 			{
-				PR_STRING app_rules_string = _app_appexpandrules (app_hash, SZ_TAB_CRLF);
+				PR_STRING app_rules_string = _app_appexpandrules (lparam, SZ_TAB_CRLF);
 
 				if (app_rules_string)
 				{
-					if (!_r_obj_isstringempty (app_rules_string))
-						_r_obj_appendstringbuilderformat (&buffer, L"%s:" SZ_TAB_CRLF L"%s\r\n", _r_locale_getstring (IDS_RULE), app_rules_string->buffer);
+					_r_obj_appendstringbuilderformat (&buffer, L"%s:" SZ_TAB_CRLF L"%s\r\n", _r_locale_getstring (IDS_RULE), app_rules_string->buffer);
 
 					_r_obj_dereference (app_rules_string);
 				}
@@ -769,32 +769,52 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 				// app type
 				if (ptr_app->type == DataAppNetwork)
 				{
-					_r_obj_appendstringbuilderformat (&notes_string, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_NETWORK));
+					_r_obj_appendstringbuilder (&notes_string, SZ_TAB);
+					_r_obj_appendstringbuilder (&notes_string, _r_locale_getstring (IDS_HIGHLIGHT_NETWORK));
+					_r_obj_appendstringbuilder (&notes_string, L"\r\n");
 				}
 				else if (ptr_app->type == DataAppPico)
 				{
-					_r_obj_appendstringbuilderformat (&notes_string, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_PICO));
+					_r_obj_appendstringbuilder (&notes_string, SZ_TAB);
+					_r_obj_appendstringbuilder (&notes_string, _r_locale_getstring (IDS_HIGHLIGHT_PICO));
+					_r_obj_appendstringbuilder (&notes_string, L"\r\n");
 				}
 
 				// app settings
-				if (_app_isappfromsystem (_r_obj_getstring (ptr_app->real_path), app_hash))
-					_r_obj_appendstringbuilderformat (&notes_string, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SYSTEM));
+				if (_app_isappfromsystem (_r_obj_getstring (ptr_app->real_path), lparam))
+				{
+					_r_obj_appendstringbuilder (&notes_string, SZ_TAB);
+					_r_obj_appendstringbuilder (&notes_string, _r_locale_getstring (IDS_HIGHLIGHT_SYSTEM));
+					_r_obj_appendstringbuilder (&notes_string, L"\r\n");
+				}
 
-				if (_app_isapphaveconnection (app_hash))
-					_r_obj_appendstringbuilderformat (&notes_string, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_CONNECTION));
+				if (_app_isapphaveconnection (lparam))
+				{
+					_r_obj_appendstringbuilder (&notes_string, SZ_TAB);
+					_r_obj_appendstringbuilder (&notes_string, _r_locale_getstring (IDS_HIGHLIGHT_CONNECTION));
+					_r_obj_appendstringbuilder (&notes_string, L"\r\n");
+				}
 
 				if (is_appslist && ptr_app->is_silent)
-					_r_obj_appendstringbuilderformat (&notes_string, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_SILENT));
+				{
+					_r_obj_appendstringbuilder (&notes_string, SZ_TAB);
+					_r_obj_appendstringbuilder (&notes_string, _r_locale_getstring (IDS_HIGHLIGHT_SILENT));
+					_r_obj_appendstringbuilder (&notes_string, L"\r\n");
+				}
 
 				if (!_app_isappexists (ptr_app))
-					_r_obj_appendstringbuilderformat (&notes_string, SZ_TAB L"%s\r\n", _r_locale_getstring (IDS_HIGHLIGHT_INVALID));
+				{
+					_r_obj_appendstringbuilder (&notes_string, SZ_TAB);
+					_r_obj_appendstringbuilder (&notes_string, _r_locale_getstring (IDS_HIGHLIGHT_INVALID));
+					_r_obj_appendstringbuilder (&notes_string, L"\r\n");
+				}
 
 				string = _r_obj_finalstringbuilder (&notes_string);
 
 				if (!_r_obj_isstringempty (string))
 				{
 					_r_obj_insertstringbuilderformat (&notes_string, 0, L"%s:\r\n", _r_locale_getstring (IDS_NOTES));
-					_r_obj_appendstringbuilder2 (&buffer, _r_obj_finalstringbuilder (&notes_string));
+					_r_obj_appendstringbuilderstring (&buffer, _r_obj_finalstringbuilder (&notes_string));
 				}
 
 				_r_obj_deletestringbuilder (&notes_string);
@@ -810,7 +830,6 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 	}
 	else if (is_ruleslist)
 	{
-		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_RULE ptr_rule = _app_getrulebyid (lparam);
 
 		if (ptr_rule)
@@ -837,7 +856,7 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 											_r_obj_getstringordefault (rule_local_string, empty_string)
 			);
 
-			_r_obj_appendstringbuilder2 (&buffer, info_string);
+			_r_obj_appendstringbuilderstring (&buffer, info_string);
 
 			SAFE_DELETE_REFERENCE (info_string);
 			SAFE_DELETE_REFERENCE (rule_remote_string);
@@ -873,7 +892,6 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 	}
 	else if (listview_id == IDC_NETWORK)
 	{
-		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_NETWORK ptr_network = _app_getnetworkitem (lparam);
 
 		if (ptr_network)
@@ -910,7 +928,6 @@ PR_STRING _app_gettooltip (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 	}
 	else if (listview_id == IDC_LOG)
 	{
-		LPARAM lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_LOG ptr_log = _app_getlogitem (lparam);
 
 		if (ptr_log)
@@ -1220,21 +1237,18 @@ PR_STRING _app_appexpandrules (_In_ SIZE_T app_hash, _In_ LPCWSTR delimeter)
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->is_enabled && ptr_rule->type == DataRuleUser && _r_obj_findhashtable (ptr_rule->apps, app_hash))
+		if (ptr_rule->is_enabled && ptr_rule->type == DataRuleUser && !_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
 		{
-			if (!_r_obj_isstringempty (ptr_rule->name))
+			if (ptr_rule->is_readonly)
 			{
-				if (ptr_rule->is_readonly)
-				{
-					_r_obj_appendstringbuilderformat (&buffer, L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->buffer);
-				}
-				else
-				{
-					_r_obj_appendstringbuilder2 (&buffer, ptr_rule->name);
-				}
-
-				_r_obj_appendstringbuilder (&buffer, delimeter);
+				_r_obj_appendstringbuilderformat (&buffer, L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->buffer);
 			}
+			else
+			{
+				_r_obj_appendstringbuilderstring (&buffer, ptr_rule->name);
+			}
+
+			_r_obj_appendstringbuilder (&buffer, delimeter);
 		}
 	}
 
@@ -1282,18 +1296,18 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 			if (ptr_app->type == DataAppUWP)
 			{
 				if (!_r_obj_isstringempty (ptr_app->display_name))
-					_r_obj_appendstringbuilder2 (&buffer, ptr_app->display_name);
+					_r_obj_appendstringbuilderstring (&buffer, ptr_app->display_name);
 			}
 			else
 			{
 				if (!_r_obj_isstringempty (ptr_app->original_path))
-					_r_obj_appendstringbuilder2 (&buffer, ptr_app->original_path);
+					_r_obj_appendstringbuilderstring (&buffer, ptr_app->original_path);
 			}
 		}
 		else
 		{
 			if (!_r_obj_isstringempty (ptr_app->original_path))
-				_r_obj_appendstringbuilder2 (&buffer, ptr_app->original_path);
+				_r_obj_appendstringbuilderstring (&buffer, ptr_app->original_path);
 		}
 
 		_r_obj_appendstringbuilder (&buffer, delimeter);
@@ -1694,7 +1708,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 				if (!_r_obj_isstringempty (string))
 				{
-					_r_obj_appendstringbuilder2 (&rule_apps, string);
+					_r_obj_appendstringbuilderstring (&rule_apps, string);
 
 					_r_obj_dereference (string);
 				}
@@ -1707,7 +1721,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 					}
 					else
 					{
-						_r_obj_appendstringbuilder2 (&rule_apps, ptr_config->apps);
+						_r_obj_appendstringbuilderstring (&rule_apps, ptr_config->apps);
 					}
 				}
 
@@ -1757,7 +1771,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 								if (ptr_rule->type == DataRuleSystem && ptr_app)
 									_app_setappinfo (ptr_app, InfoIsUndeletable, IntToPtr (TRUE));
 
-								_app_addcachetable (ptr_rule->apps, app_hash, NULL, 0);
+								_app_addcachetablevalue (ptr_rule->apps, app_hash, NULL, 0);
 							}
 
 							_r_obj_dereference (path_string);
