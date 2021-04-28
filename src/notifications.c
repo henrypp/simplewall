@@ -239,7 +239,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	_r_ctrl_settabletext (hwnd, IDC_PORT_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_PORT_TEXT, _r_obj_getstringordefault (remote_port_string, empty_string));
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_DIRECTION)));
-	_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, _r_obj_getstring (localized_string), IDC_DIRECTION_TEXT, _r_obj_getstringordefault (direction_string, empty_string));
+	_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_DIRECTION_TEXT, _r_obj_getstringordefault (direction_string, empty_string));
 
 	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_FILTER)));
 	_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, _r_obj_getstringordefault (localized_string, empty_string), IDC_FILTER_TEXT, _r_obj_getstringordefault (ptr_log->filter_name, empty_string));
