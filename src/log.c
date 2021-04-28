@@ -523,7 +523,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	if (!ptr_entry)
 		return;
 
-	PITEM_LOG ptr_log = _r_obj_allocateex (sizeof (ITEM_LOG), &_app_dereferencelog);
+	PITEM_LOG ptr_log = _r_obj_allocate (sizeof (ITEM_LOG), &_app_dereferencelog);
 
 	// copy date and time
 	if (log->timestamp)
