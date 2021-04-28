@@ -1937,7 +1937,9 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 
 VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Outptr_ FWP_BYTE_BLOB** byte_blob)
 {
-	FWP_BYTE_BLOB* blob = _r_mem_allocatezero (sizeof (FWP_BYTE_BLOB) + bytes_count);
+	FWP_BYTE_BLOB* blob;
+
+	blob = _r_mem_allocatezero (sizeof (FWP_BYTE_BLOB) + bytes_count);
 
 	blob->size = (UINT32)bytes_count;
 	blob->data = PTR_ADD_OFFSET (blob, sizeof (FWP_BYTE_BLOB));
@@ -1949,12 +1951,11 @@ VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Outptr_ FWP_BYT
 
 VOID ByteBlobFree (_Inout_ FWP_BYTE_BLOB** byte_blob)
 {
-	FWP_BYTE_BLOB* original_blob = *byte_blob;
+	FWP_BYTE_BLOB* original_blob;
+
+	original_blob = *byte_blob;
+	*byte_blob = NULL;
 
 	if (original_blob)
-	{
-		*byte_blob = NULL;
-
 		_r_mem_free (original_blob);
-	}
 }
