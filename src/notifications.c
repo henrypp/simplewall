@@ -874,7 +874,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 							}
 							else
 							{
-								_app_addcachetable (ptr_rule->apps, ptr_log->app_hash, NULL, 0);
+								_app_addcachetablevalue (ptr_rule->apps, ptr_log->app_hash, NULL, 0);
 
 								_app_ruleenable (ptr_rule, TRUE, TRUE);
 							}
@@ -1038,7 +1038,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 					ptr_rule = _app_addrule (rule_name, rule_string, NULL, ptr_log->direction, ptr_log->protocol, ptr_log->af);
 
-					_app_addcachetable (ptr_rule->apps, app_hash, NULL, 0);
+					_app_addcachetablevalue (ptr_rule->apps, app_hash, NULL, 0);
 
 					ptr_rule->type = DataRuleUser;
 					ptr_rule->is_block = FALSE;

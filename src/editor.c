@@ -1386,7 +1386,7 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 
 								if (_app_getappitem (app_hash))
 								{
-									_app_addcachetable (context->ptr_rule->apps, app_hash, NULL, 0);
+									_app_addcachetablevalue (context->ptr_rule->apps, app_hash, NULL, 0);
 								}
 							}
 						}

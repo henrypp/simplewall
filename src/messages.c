@@ -1415,7 +1415,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 					_r_obj_addarrayitems (guids, ptr_rule->guids->items, ptr_rule->guids->count);
 
 				while (_r_obj_enumhashtable (ptr_rule->apps, &hashstore, &hash_code, &enum_key))
-					_app_addcachetable (apps_checker, hash_code, NULL, 0);
+					_app_addcachetablevalue (apps_checker, hash_code, NULL, 0);
 
 				_r_listview_deleteitem (hwnd, listview_id, i);
 
@@ -1567,7 +1567,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 			if (_app_getappitem (app_hash))
 			{
-				_app_addcachetable (ptr_rule->apps, app_hash, NULL, 0);
+				_app_addcachetablevalue (ptr_rule->apps, app_hash, NULL, 0);
 			}
 		}
 	}
@@ -1599,7 +1599,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 						_app_profile_save ();
 					}
 
-					_app_addcachetable (ptr_rule->apps, ptr_network->app_hash, NULL, 0);
+					_app_addcachetablevalue (ptr_rule->apps, ptr_network->app_hash, NULL, 0);
 				}
 
 				ptr_rule->protocol = ptr_network->protocol;
@@ -1635,7 +1635,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 						_app_profile_save ();
 					}
 
-					_app_addcachetable (ptr_rule->apps, ptr_log->app_hash, NULL, 0);
+					_app_addcachetablevalue (ptr_rule->apps, ptr_log->app_hash, NULL, 0);
 				}
 
 				ptr_rule->protocol = ptr_log->protocol;

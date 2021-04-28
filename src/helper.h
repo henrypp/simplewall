@@ -15,7 +15,14 @@ VOID NTAPI _app_dereferencenetwork (_In_ PVOID entry);
 VOID NTAPI _app_dereferencelog (_In_ PVOID entry);
 VOID NTAPI _app_dereferencerule (_In_ PVOID entry);
 
-PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_opt_ PR_STRING string, _In_opt_ LONG number);
+_Ret_maybenull_
+PR_HASHSTORE _app_addcachetablevalue (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_opt_ PR_STRING string, _In_opt_ LONG number);
+
+_Ret_maybenull_
+PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_ PR_SPINLOCK spin_lock, _In_opt_ PR_STRING string, _In_opt_ LONG number);
+
+_Ret_maybenull_
+PR_HASHSTORE _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ SIZE_T hash_code, _In_ PR_SPINLOCK spin_lock);
 
 _Ret_maybenull_
 PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
