@@ -1,3 +1,11 @@
+v3.3.3 (29 April 2021)
+- fixed listview tooltip can cause crash (issue #890)
+- fixed editor does not create filters for the app
+- fixed incorrect shared icons behaviour
+- fixed interlocked operations logic
+- fixed caching behaviour
+- fixed internal bugs
+
 v3.3.2 Beta (23 April 2021)
 - added half an hour timer
 - added missing spinlocks
