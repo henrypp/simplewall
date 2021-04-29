@@ -522,8 +522,6 @@ PR_STRING _app_getversioninfo (_In_ PITEM_APP ptr_app)
 		return NULL;
 
 	HINSTANCE hlib = NULL;
-	HRSRC hres = NULL;
-	HGLOBAL hglob = NULL;
 	PVOID version_info;
 	R_STRINGBUILDER version_cache;
 	PR_STRING version_cache_string = NULL;
@@ -544,72 +542,82 @@ PR_STRING _app_getversioninfo (_In_ PITEM_APP ptr_app)
 	if (!hlib)
 		goto CleanupExit;
 
-	hres = FindResource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION);
-
-	if (!hres)
-		goto CleanupExit;
-
-	hglob = LoadResource (hlib, hres);
-
-	if (!hglob)
-		goto CleanupExit;
-
-	version_info = LockResource (hglob);
+	version_info = _r_res_loadresource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION, NULL);
 
 	if (version_info)
 	{
 		_r_obj_initializestringbuilder (&version_cache);
 
-		PVOID buffer;
-		ULONG lang_id;
-		UINT length;
+		UINT lang_id[4] = {0};
+		UINT code_page[4] = {0};
 
-		WCHAR author_entry[128];
-		WCHAR description_entry[128];
+		C_ASSERT (RTL_NUMBER_OF (lang_id) == RTL_NUMBER_OF (code_page));
 
-		if (VerQueryValue (version_info, L"\\VarFileInfo\\Translation", &buffer, &length) && length == sizeof (UINT))
+		// Load language and codepage from the file
+		_r_res_querytranslation (version_info, &lang_id[0], &code_page[0]);
+
+		// Use the default language and codepage from the file
+		lang_id[1] = GetUserDefaultLangID ();
+		code_page[1] = code_page[0];
+
+		// Use the language from the DLL and Latin codepage (most common)
+		lang_id[2] = lang_id[0];
+		code_page[2] = 1252;
+
+		// Use the default language and Latin codepage (most common)
+		lang_id[2] = GetUserDefaultLangID ();
+		code_page[2] = 1252;
+
+		PR_STRING description;
+		PR_STRING company;
+		VS_FIXEDFILEINFO* ver_info = NULL;
+
+		for (SIZE_T i = 0; i < RTL_NUMBER_OF (lang_id); i++)
 		{
-			memcpy (&lang_id, buffer, length);
+			if (!lang_id[i] || !code_page[i])
+				continue;
 
-			_r_str_printf (author_entry, RTL_NUMBER_OF (author_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\CompanyName", (lang_id & 0xff00) >> 8, lang_id & 0xff, (lang_id & 0xff000000) >> 24, (lang_id & 0xff0000) >> 16);
-			_r_str_printf (description_entry, RTL_NUMBER_OF (description_entry), L"\\StringFileInfo\\%02X%02X%02X%02X\\FileDescription", (lang_id & 0xff00) >> 8, lang_id & 0xff, (lang_id & 0xff000000) >> 24, (lang_id & 0xff0000) >> 16);
-		}
-		else
-		{
-			lang_id = GetUserDefaultLangID ();
+			// get file description
+			description = _r_res_querystring (version_info, L"FileDescription", lang_id[i], code_page[i]);
 
-			_r_str_printf (author_entry, RTL_NUMBER_OF (author_entry), L"\\StringFileInfo\\%04X04B0\\CompanyName", lang_id);
-			_r_str_printf (description_entry, RTL_NUMBER_OF (description_entry), L"\\StringFileInfo\\%04X04B0\\FileDescription", lang_id);
-		}
-
-		if (VerQueryValue (version_info, description_entry, &buffer, &length))
-		{
-			_r_obj_appendstringbuilder (&version_cache, SZ_TAB);
-			_r_obj_appendstringbuilder (&version_cache, (LPCWSTR)buffer);
-
-			VS_FIXEDFILEINFO* ver_info;
-
-			if (VerQueryValue (version_info, L"\\", &ver_info, &length))
+			if (description)
 			{
-				_r_obj_appendstringbuilderformat (&version_cache, L" %d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
+				_r_obj_appendstringbuilder (&version_cache, SZ_TAB);
+				_r_obj_appendstringbuilderstring (&version_cache, description);
 
-				if (HIWORD (ver_info->dwFileVersionLS) || LOWORD (ver_info->dwFileVersionLS))
+				// get file version
+				if (_r_res_queryversion (version_info, &ver_info))
 				{
-					_r_obj_appendstringbuilderformat (&version_cache, L".%d", HIWORD (ver_info->dwFileVersionLS));
+					_r_obj_appendstringbuilderformat (&version_cache, L" %d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
 
-					if (LOWORD (ver_info->dwFileVersionLS))
-						_r_obj_appendstringbuilderformat (&version_cache, L".%d", LOWORD (ver_info->dwFileVersionLS));
+					if (HIWORD (ver_info->dwFileVersionLS) || LOWORD (ver_info->dwFileVersionLS))
+					{
+						_r_obj_appendstringbuilderformat (&version_cache, L".%d", HIWORD (ver_info->dwFileVersionLS));
+
+						if (LOWORD (ver_info->dwFileVersionLS))
+							_r_obj_appendstringbuilderformat (&version_cache, L".%d", LOWORD (ver_info->dwFileVersionLS));
+					}
 				}
+
+				_r_obj_appendstringbuilder (&version_cache, L"\r\n");
+
+				_r_obj_dereference (description);
 			}
 
-			_r_obj_appendstringbuilder (&version_cache, L"\r\n");
-		}
+			// get file company
+			company = _r_res_querystring (version_info, L"CompanyName", lang_id[i], code_page[i]);
 
-		if (VerQueryValue (version_info, author_entry, &buffer, &length))
-		{
-			_r_obj_appendstringbuilder (&version_cache, SZ_TAB);
-			_r_obj_appendstringbuilder (&version_cache, (LPCWSTR)buffer);
-			_r_obj_appendstringbuilder (&version_cache, L"\r\n");
+			if (company)
+			{
+				_r_obj_appendstringbuilder (&version_cache, SZ_TAB);
+				_r_obj_appendstringbuilderstring (&version_cache, company);
+				_r_obj_appendstringbuilder (&version_cache, L"\r\n");
+
+				_r_obj_dereference (company);
+			}
+
+			if (description || company) // locale was right
+				break;
 		}
 
 		PR_STRING string;
@@ -630,9 +638,6 @@ PR_STRING _app_getversioninfo (_In_ PITEM_APP ptr_app)
 	}
 
 CleanupExit:
-
-	if (hglob)
-		FreeResource (hglob);
 
 	if (hlib)
 		FreeLibrary (hlib);
