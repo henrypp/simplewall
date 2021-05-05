@@ -157,7 +157,7 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	path_length = _r_str_length (path);
 
 	// prevent possible duplicate apps entries with short path (issue #640)
-	if (_r_str_findchar (path, L'~') != SIZE_MAX)
+	if (_r_str_findchar (path, path_length, L'~') != SIZE_MAX)
 	{
 		if (GetLongPathName (path, path_full, RTL_NUMBER_OF (path_full)))
 		{
@@ -197,7 +197,7 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	}
 	else
 	{
-		if (!is_ntoskrnl && _r_str_findchar (path, OBJ_NAME_PATH_SEPARATOR) == SIZE_MAX)
+		if (!is_ntoskrnl && _r_str_findchar (path, path_length, OBJ_NAME_PATH_SEPARATOR) == SIZE_MAX)
 		{
 			ptr_app->type = DataAppPico;
 		}
