@@ -21,8 +21,8 @@
 ### Description:
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
 
-The lightweight application is less than a megabyte, and it is compatible with Windows 7 and higher operating systems.
-You can download either the installer or portable version. For correct working, need administrator rights.
+The lightweight application is only a megabyte, and it is compatible with Windows 7 and higher operating systems.
+You can download either the installer or portable version. You require administrator rights.
 
 ### Features:
 - Simple interface without annoying pop ups
@@ -47,7 +47,7 @@ When install rules, you can choose two modes:
 - Temporary rules. Rules are reset after the next reboot.
 
 ### Uninstall:
-When you uninstall simplewall, all previously installed filters are stay alive in system.
+When you uninstall simplewall, all previously installed filters stay alive in system.
 To remove all filters created by simplewall, start simplewall and press "Disable filters" button.
 
 ### Command line:
@@ -65,13 +65,13 @@ List of arguments for `simplewall.exe`:
 A: Yes. Installed filters are working even if simplewall is terminated.
 
 #### Q: What apps are blocked in default configuration?
-A: By default simplewall block **all** applications, you do not need create custom rules to block specific application.
+A: By default, simplewall blocks **all** applications, you do not need to create custom rules to block specific application.
 
 #### Q: Why does my network icon have an exclamation mark?
 A: When you are connected to a network, Windows checks for internet connectivity using Active Probing. This feature is named as NCSI (Network Connectivity Status Indicator). You can resolve this by one of this ways:
 
 - You can allow NCSI rule in "System rules" tab (enabled by default).
-- You can disable NCSI throught system registry:
+- You can disable NCSI through system registry:
 
 ~~~reg
 ; Create "Disable NCSI.reg" and import it into registry.
@@ -81,7 +81,7 @@ A: When you are connected to a network, Windows checks for internet connectivity
 "DisablePassivePolling"=dword:00000001
 ~~~
 
-- You can disable NCSI throught group policy:
+- You can disable NCSI through group policy:
 
 > 1) Launch the editor by typing in `gpedit.msc` in Run.
 > 2) Navigate to `Computer Configuration -> Administrative Templates -> System -> Internet Communication Management -> Internet Communication Settings`
@@ -89,7 +89,7 @@ A: When you are connected to a network, Windows checks for internet connectivity
 > 4) Now open the Command Prompt and enter `gpupdate /force` to enforce the changes made to the Group Policies.
 
 #### Q: Where is blacklist mode?
-A: Blacklist is removed many days ago for uselessness. But if you need it back you can configure blacklist in that way:
+A: Blacklist was removed many days ago for uselessness. But if you need it, you can configure blacklist in these way:
 
 > 1) Open `Settings` -> `Rules`
 > 2) Uncheck `Block outbound for all` and `Block inbound for all` options.
