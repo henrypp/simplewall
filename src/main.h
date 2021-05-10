@@ -238,9 +238,9 @@ typedef struct tagSTATIC_DATA
 
 	LONG64 profile_internal_timestamp;
 
-	SIZE_T ntoskrnl_hash;
-	SIZE_T svchost_hash;
-	SIZE_T my_hash;
+	ULONG_PTR ntoskrnl_hash;
+	ULONG_PTR svchost_hash;
+	ULONG_PTR my_hash;
 
 	SIZE_T wd_length;
 
@@ -278,7 +278,7 @@ typedef struct tagITEM_LOG
 
 	UINT64 filter_id;
 
-	SIZE_T app_hash;
+	ULONG_PTR app_hash;
 
 	FWP_DIRECTION direction;
 
@@ -315,7 +315,7 @@ typedef struct tagITEM_APP
 	LONG64 timer;
 	LONG64 last_notify;
 
-	SIZE_T app_hash;
+	ULONG_PTR app_hash;
 
 	INT icon_id;
 
@@ -381,8 +381,8 @@ typedef struct tagITEM_NETWORK
 	};
 
 	PR_STRING path;
-	SIZE_T app_hash;
-	SIZE_T network_hash;
+	ULONG_PTR app_hash;
+	ULONG_PTR network_hash;
 	ULONG state;
 	INT icon_id;
 	FWP_DIRECTION direction;
@@ -439,7 +439,7 @@ typedef struct tagITEM_COLOR
 {
 	PR_STRING config_name;
 	PR_STRING config_value;
-	SIZE_T hash;
+	ULONG_PTR hash;
 	COLORREF default_clr;
 	COLORREF new_clr;
 	UINT locale_id;

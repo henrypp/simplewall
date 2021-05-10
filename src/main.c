@@ -157,16 +157,19 @@ THREAD_API NetworkMonitorThread (_In_ PVOID lparam)
 
 			if (item_count)
 			{
+				ULONG_PTR network_hash;
+				ULONG_PTR app_hash;
+
 				for (INT i = item_count - 1; i != -1; i--)
 				{
-					SIZE_T network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
+					network_hash = _r_listview_getitemlparam (hwnd, network_listview_id, i);
 
 					if (_r_obj_findhashtable (checker_map, network_hash))
 						continue;
 
 					_r_listview_deleteitem (hwnd, network_listview_id, i);
 
-					SIZE_T app_hash = _app_getnetworkapp (network_hash);
+					app_hash = _app_getnetworkapp (network_hash);
 
 					_r_spinlock_acquireexclusive (&lock_network);
 
@@ -2273,7 +2276,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 							if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 							{
-								SIZE_T app_hash = lpnmlv->lParam;
+								ULONG_PTR app_hash = lpnmlv->lParam;
 								PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 								if (!ptr_app)
@@ -3199,7 +3202,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						while ((item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item, LVNI_SELECTED)) != -1)
 						{
-							SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
+							ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item);
 							PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 							if (ptr_app)

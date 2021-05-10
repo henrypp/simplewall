@@ -1379,7 +1379,7 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 								if (!_r_listview_isitemchecked (hpage_apps, IDC_RULE_APPS_ID, i))
 									continue;
 
-								SIZE_T app_hash = _r_listview_getitemlparam (hpage_apps, IDC_RULE_APPS_ID, i);
+								ULONG_PTR app_hash = _r_listview_getitemlparam (hpage_apps, IDC_RULE_APPS_ID, i);
 
 								if (context->ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 									continue;

@@ -16,13 +16,13 @@ VOID NTAPI _app_dereferencelog (_In_ PVOID entry);
 VOID NTAPI _app_dereferencerule (_In_ PVOID entry);
 
 _Ret_maybenull_
-PR_HASHSTORE _app_addcachetablevalue (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_opt_ PR_STRING string, _In_opt_ LONG number);
+PR_HASHSTORE _app_addcachetablevalue (_Inout_ PR_HASHTABLE hashtable, _In_ ULONG_PTR hash_code, _In_opt_ PR_STRING string, _In_opt_ LONG number);
 
 _Ret_maybenull_
-PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_ PR_SPINLOCK spin_lock, _In_opt_ PR_STRING string, _In_opt_ LONG number);
+PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ ULONG_PTR hash_code, _In_ PR_SPINLOCK spin_lock, _In_opt_ PR_STRING string, _In_opt_ LONG number);
 
 _Ret_maybenull_
-PR_HASHSTORE _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ SIZE_T hash_code, _In_ PR_SPINLOCK spin_lock);
+PR_HASHSTORE _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ ULONG_PTR hash_code, _In_ PR_SPINLOCK spin_lock);
 
 _Ret_maybenull_
 PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
@@ -67,7 +67,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE checker_map);
 VOID _app_generate_packages ();
 VOID _app_generate_services ();
 
-VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash);
+VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ ULONG_PTR app_hash);
 VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_app);
 
 BOOLEAN _app_setruletoapp (_In_ HWND hwnd, _Inout_ PITEM_RULE ptr_rule, _In_ INT item_id, _In_ PITEM_APP ptr_app, _In_ BOOLEAN is_enable);

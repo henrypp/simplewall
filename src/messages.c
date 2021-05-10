@@ -15,7 +15,7 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 	PR_STRING localized_string;
 	PR_STRING column_text;
 
-	SIZE_T hash_item;
+	ULONG_PTR hash_item;
 
 	INT listview_id;
 	INT lv_column_current;
@@ -952,7 +952,7 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 	{
-		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+		ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 
 		if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 			continue;
@@ -1014,7 +1014,7 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 			while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 			{
-				SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+				ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 				PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 				if (ptr_app)
@@ -1248,7 +1248,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 	{
 		while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 		{
-			SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+			ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 			PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 			if (!ptr_app)
@@ -1375,7 +1375,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 
 		if (listview_id == IDC_APPS_PROFILE)
 		{
-			SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
+			ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
 			PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 			if (!ptr_app)
@@ -1401,7 +1401,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 			PR_HASHTABLE apps_checker;
 			PR_HASHSTORE hashstore;
 			PITEM_APP ptr_app;
-			SIZE_T hash_code;
+			ULONG_PTR hash_code;
 			SIZE_T enum_key = 0;
 
 			if (!ptr_rule)
@@ -1450,7 +1450,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 		}
 		else if (listview_id == IDC_NETWORK)
 		{
-			SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
+			ULONG_PTR network_hash = _r_listview_getitemlparam (hwnd, listview_id, i);
 			PITEM_NETWORK ptr_network = _app_getnetworkitem (network_hash);
 
 			if (!ptr_network)
@@ -1517,7 +1517,7 @@ VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 	{
-		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+		ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
@@ -1563,7 +1563,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 		while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 		{
-			SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+			ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 
 			if (_app_getappitem (app_hash))
 			{
@@ -1579,7 +1579,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 		if (item_id != -1)
 		{
-			SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+			ULONG_PTR network_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 			PITEM_NETWORK ptr_network = _app_getnetworkitem (network_hash);
 
 			if (ptr_network)
@@ -1701,7 +1701,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
 		ITEM_CONTEXT context = {0};
-		SIZE_T app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+		ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
@@ -1748,7 +1748,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 	}
 	else if (listview_id == IDC_NETWORK)
 	{
-		SIZE_T network_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+		ULONG_PTR network_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		PITEM_NETWORK ptr_network = _app_getnetworkitem (network_hash);
 
 		if (!ptr_network)
@@ -1851,7 +1851,7 @@ VOID _app_command_purgeunused (_In_ HWND hwnd)
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (apps_list); i++)
 	{
-		PSIZE_T hash = _r_obj_getarrayitem (apps_list, i);
+		PULONG_PTR hash = _r_obj_getarrayitem (apps_list, i);
 
 		if (hash)
 		{

@@ -9,8 +9,8 @@ BOOLEAN _app_notifycommand (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seco
 BOOLEAN _app_notifyadd (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ PITEM_APP ptr_app);
 VOID _app_freenotify (_Inout_ PITEM_APP ptr_app);
 
-SIZE_T _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest);
-PITEM_LOG _app_notifyget_obj (_In_ SIZE_T app_hash);
+ULONG_PTR _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest);
+PITEM_LOG _app_notifyget_obj (_In_ ULONG_PTR app_hash);
 
 BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_forced, _In_ BOOLEAN is_safety);
 VOID _app_notifyhide (_In_ HWND hwnd);

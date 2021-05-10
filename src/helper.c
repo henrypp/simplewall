@@ -58,7 +58,7 @@ VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
 }
 
 _Ret_maybenull_
-PR_HASHSTORE _app_addcachetablevalue (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_opt_ PR_STRING string, _In_opt_ LONG number)
+PR_HASHSTORE _app_addcachetablevalue (_Inout_ PR_HASHTABLE hashtable, _In_ ULONG_PTR hash_code, _In_opt_ PR_STRING string, _In_opt_ LONG number)
 {
 	R_HASHSTORE hashstore;
 	PR_HASHSTORE result;
@@ -71,7 +71,7 @@ PR_HASHSTORE _app_addcachetablevalue (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_
 }
 
 _Ret_maybenull_
-PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T hash_code, _In_ PR_SPINLOCK spin_lock, _In_opt_ PR_STRING string, _In_opt_ LONG number)
+PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ ULONG_PTR hash_code, _In_ PR_SPINLOCK spin_lock, _In_opt_ PR_STRING string, _In_opt_ LONG number)
 {
 	PR_HASHSTORE result;
 
@@ -82,7 +82,7 @@ PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T has
 	{
 		PR_HASHSTORE hashtable_entry;
 		SIZE_T enum_key = 0;
-		SIZE_T hashtable_hash;
+		ULONG_PTR hashtable_hash;
 
 		if (!_r_obj_enumhashtable (hashtable, &hashtable_entry, &hashtable_hash, &enum_key))
 			break;
@@ -102,7 +102,7 @@ PR_HASHSTORE _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ SIZE_T has
 }
 
 _Ret_maybenull_
-PR_HASHSTORE _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ SIZE_T hash_code, _In_ PR_SPINLOCK spin_lock)
+PR_HASHSTORE _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ ULONG_PTR hash_code, _In_ PR_SPINLOCK spin_lock)
 {
 	PR_HASHSTORE hashstore;
 
@@ -207,7 +207,7 @@ PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPC
 		if (is_success && _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 		{
 			PR_STRING domain_string = NULL;
-			SIZE_T addr_hash;
+			ULONG_PTR addr_hash;
 			PR_HASHSTORE hashstore;
 
 			addr_hash = _r_str_hash (formatted_address);
@@ -1642,7 +1642,7 @@ PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 
 	if (!_r_obj_isstringempty (process_name))
 	{
-		SIZE_T app_hash = _r_obj_getstringhash (process_name);
+		ULONG_PTR app_hash = _r_obj_getstringhash (process_name);
 
 		ptr_network->app_hash = app_hash;
 		ptr_network->icon_id = PtrToInt (_app_getappinfobyhash (app_hash, InfoIconId));
@@ -1659,12 +1659,12 @@ PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 	return process_name;
 }
 
-SIZE_T _app_getnetworkhash (ADDRESS_FAMILY af, ULONG pid, LPCVOID remote_addr, ULONG remote_port, LPCVOID local_addr, ULONG local_port, UINT8 proto, ULONG state)
+ULONG_PTR _app_getnetworkhash (ADDRESS_FAMILY af, ULONG pid, LPCVOID remote_addr, ULONG remote_port, LPCVOID local_addr, ULONG local_port, UINT8 proto, ULONG state)
 {
 	WCHAR remote_address[LEN_IP_MAX] = {0};
 	WCHAR local_address[LEN_IP_MAX] = {0};
 	PR_STRING network_string;
-	SIZE_T network_hash;
+	ULONG_PTR network_hash;
 
 	if (remote_addr)
 		_app_formatip (af, remote_addr, remote_address, RTL_NUMBER_OF (remote_address), FALSE);
@@ -1983,7 +1983,7 @@ VOID _app_generate_packages ()
 	PR_STRING display_name;
 	PR_STRING real_path;
 	PITEM_APP ptr_app;
-	SIZE_T app_hash;
+	ULONG_PTR app_hash;
 	HKEY hkey;
 	HKEY hsubkey;
 	ULONG key_index;
@@ -2143,8 +2143,8 @@ VOID _app_generate_services ()
 		LPENUM_SERVICE_STATUS_PROCESS service;
 		LPENUM_SERVICE_STATUS_PROCESS services;
 		PITEM_APP ptr_app;
+		ULONG_PTR app_hash;
 		HKEY hkey;
-		SIZE_T app_hash;
 		PVOID service_sd;
 		ULONG sd_length;
 
@@ -2270,7 +2270,7 @@ VOID _app_generate_services ()
 	CloseServiceHandle (hsvcmgr);
 }
 
-VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ SIZE_T app_hash)
+VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ ULONG_PTR app_hash)
 {
 	ITEM_STATUS status;
 
@@ -2631,7 +2631,7 @@ BOOLEAN _app_parsenetworkstring (_In_ LPCWSTR network_string, _Inout_ PITEM_ADDR
 	}
 	else if (ni.Format == NET_ADDRESS_DNS_NAME)
 	{
-		SIZE_T dns_hash;
+		ULONG_PTR dns_hash;
 		PR_HASHSTORE hashstore;
 
 		dns_hash = _r_str_hash (ni.NamedAddress.Address);
@@ -2808,7 +2808,7 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRING rule, _Inout_opt_ PITEM_ADDRESS
 	}
 
 	// auto-parse rule type
-	SIZE_T rule_hash;
+	ULONG_PTR rule_hash;
 	PR_HASHSTORE hashstore;
 
 	rule_hash = _r_obj_getstringhash (rule);

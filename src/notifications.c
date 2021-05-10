@@ -14,7 +14,7 @@ VOID _app_notifycreatewindow ()
 
 BOOLEAN _app_notifycommand (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seconds)
 {
-	SIZE_T app_hash = _app_notifyget_id (hwnd, FALSE);
+	ULONG_PTR app_hash = _app_notifyget_id (hwnd, FALSE);
 	PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 	if (!ptr_app)
@@ -123,9 +123,9 @@ VOID _app_freenotify (_Inout_ PITEM_APP ptr_app)
 	_app_notifyrefresh (hwnd, TRUE);
 }
 
-SIZE_T _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest)
+ULONG_PTR _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest)
 {
-	SIZE_T app_hash_current = (SIZE_T)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	ULONG_PTR app_hash_current = (ULONG_PTR)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
 	if (is_nearest)
 	{
@@ -159,9 +159,11 @@ SIZE_T _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest)
 	return app_hash_current;
 }
 
-PITEM_LOG _app_notifyget_obj (_In_ SIZE_T app_hash)
+PITEM_LOG _app_notifyget_obj (_In_ ULONG_PTR app_hash)
 {
-	PITEM_APP ptr_app = _app_getappitem (app_hash);
+	PITEM_APP ptr_app;
+
+	ptr_app = _app_getappitem (app_hash);
 
 	if (ptr_app)
 	{
@@ -291,7 +293,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 VOID _app_notifyhide (_In_ HWND hwnd)
 {
-	SIZE_T app_hash = _app_notifyget_id (hwnd, FALSE);
+	ULONG_PTR app_hash = _app_notifyget_id (hwnd, FALSE);
 	PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 	if (ptr_app)
@@ -986,7 +988,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				case IDC_RULES_BTN:
 				{
 					ITEM_CONTEXT context = {0};
-					SIZE_T app_hash = _app_notifyget_id (hwnd, FALSE);
+					ULONG_PTR app_hash = _app_notifyget_id (hwnd, FALSE);
 					PITEM_APP ptr_app = _app_getappitem (app_hash);
 
 					if (ptr_app)
@@ -1018,7 +1020,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 					PITEM_APP ptr_app;
 					PITEM_RULE ptr_rule;
 					PITEM_LOG ptr_log;
-					SIZE_T app_hash;
+					ULONG_PTR app_hash;
 
 					ptr_log = _app_notifyget_obj (_app_notifyget_id (hwnd, FALSE));
 

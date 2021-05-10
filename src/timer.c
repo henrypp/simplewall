@@ -152,7 +152,7 @@ VOID CALLBACK _app_timer_callback (_Inout_ PTP_CALLBACK_INSTANCE instance, _Inou
 	PR_LIST rules;
 	INT listview_id;
 
-	ptr_app = _app_getappitem ((SIZE_T)context);
+	ptr_app = _app_getappitem ((ULONG_PTR)context);
 
 	if (!ptr_app)
 		return;
