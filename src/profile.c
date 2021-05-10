@@ -143,9 +143,6 @@ PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data)
 _Ret_maybenull_
 PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In_ LPCWSTR path, _In_opt_ PR_STRING display_name, _In_opt_ PR_STRING real_path)
 {
-	if (_r_str_isempty (path) || PathIsDirectory (path))
-		return NULL;
-
 	WCHAR path_full[1024];
 	PITEM_APP ptr_app;
 	PITEM_APP ptr_app_added;
@@ -155,6 +152,12 @@ PITEM_APP _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	BOOLEAN is_ntoskrnl;
 
 	path_length = _r_str_length (path);
+
+	if (!path_length)
+		return NULL;
+
+	if (path_length > 2 && path[1] == L':' && PathIsDirectory (path))
+		return NULL;
 
 	// prevent possible duplicate apps entries with short path (issue #640)
 	if (_r_str_findchar (path, path_length, L'~') != SIZE_MAX)
