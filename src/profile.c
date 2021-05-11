@@ -1577,7 +1577,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 		// workaround for native paths
 		// https://github.com/henrypp/simplewall/issues/817
-		if (_r_obj_getstringlength (string) > 2 && _r_obj_getstringhash (string) != config.ntoskrnl_hash && string->buffer[1] != L':')
+		if (_r_obj_getstringlength (string) > 2 && _r_str_compare_length (string->buffer, L"\\device\\", 8) == 0)
 		{
 			PR_STRING dos_path = _r_path_dospathfromnt (string->buffer);
 
