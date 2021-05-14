@@ -1,0 +1,18 @@
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v2
+    - name: Checkout submodules
+      run: ${{github.workspace}}/.github/workflows/checkout_submodules.bat
+      shell: cmd
+    - name: Compile
+      run: ${{github.workspace}}/.github/workflows/compile.bat
+      shell: cmd
+    - name: Build package
+      run: ${{github.workspace}}/build.bat
+      shell: cmd
