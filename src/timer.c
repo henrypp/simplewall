@@ -150,12 +150,15 @@ VOID CALLBACK _app_timer_callback (_Inout_ PTP_CALLBACK_INSTANCE instance, _Inou
 	HWND hwnd;
 	PITEM_APP ptr_app;
 	PR_LIST rules;
+	HRESULT hr;
 	INT listview_id;
 
 	ptr_app = _app_getappitem ((ULONG_PTR)context);
 
 	if (!ptr_app)
 		return;
+
+	hr = CoInitializeEx (NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	hwnd = _r_app_gethwnd ();
 
@@ -187,4 +190,7 @@ VOID CALLBACK _app_timer_callback (_Inout_ PTP_CALLBACK_INSTANCE instance, _Inou
 
 	if (_r_config_getboolean (L"IsNotificationsTimer", TRUE))
 		_r_tray_popupformat (hwnd, UID, NIIF_INFO | (_r_config_getboolean (L"IsNotificationsSound", TRUE) ? 0 : NIIF_NOSOUND), APP_NAME, _r_locale_getstring (IDS_STATUS_TIMER_DONE), _app_getdisplayname (ptr_app, TRUE));
+
+	if (hr == S_OK || hr == S_FALSE)
+		CoUninitialize ();
 }
