@@ -103,6 +103,7 @@
     <GenerateManifest>false</GenerateManifest>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)bin\$(PlatformArchitecture)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <TargetName>$(ProjectName)</TargetName>
@@ -111,6 +112,7 @@
     <GenerateManifest>false</GenerateManifest>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)bin\$(PlatformArchitecture)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)bin\$(PlatformArchitecture)\</OutDir>
