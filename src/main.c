@@ -3317,108 +3317,94 @@ INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_
 
 	if (_r_app_initialize ())
 	{
-		WCHAR arguments_mutex_name[16];
+		WCHAR arguments_mutex_name[32];
 		HANDLE arguments_mutex = NULL;
 		_r_str_printf (arguments_mutex_name, RTL_NUMBER_OF (arguments_mutex_name), L"%sCmd", _r_app_getnameshort ());
 
 		// parse arguments
 		if (!_r_mutex_isexists (arguments_mutex_name))
 		{
+			BOOLEAN is_install = FALSE;
+			BOOLEAN is_uninstall = FALSE;
+			BOOLEAN is_silent = FALSE;
+			BOOLEAN is_temporary = FALSE;
+
 			_r_mutex_create (arguments_mutex_name, &arguments_mutex);
 
-			INT numargs;
-			LPWSTR* arga = CommandLineToArgvW (cmdline, &numargs);
-
-			if (arga)
+			if (_r_sys_getopt (cmdline, L"install", NULL))
 			{
-				BOOLEAN is_install = FALSE;
-				BOOLEAN is_uninstall = FALSE;
-				BOOLEAN is_silent = FALSE;
-				BOOLEAN is_temporary = FALSE;
-				LPWSTR argument;
+				is_install = TRUE;
+			}
+			else if (_r_sys_getopt (cmdline, L"uninstall", NULL))
+			{
+				is_uninstall = TRUE;
+			}
 
-				for (INT i = 0; i < numargs; i++)
+			if (is_install)
+			{
+				if (_r_sys_getopt (cmdline, L"silent", NULL))
 				{
-					argument = arga[i];
-
-					if (!(*argument == L'/' || *argument == L'-'))
-						continue;
-
-					argument += 1;
-
-					if (_r_str_compare (argument, L"install") == 0)
-					{
-						is_install = TRUE;
-					}
-					else if (_r_str_compare (argument, L"uninstall") == 0)
-					{
-						is_uninstall = TRUE;
-					}
-					else if (_r_str_compare (argument, L"silent") == 0)
-					{
-						is_silent = TRUE;
-					}
-					else if (_r_str_compare (argument, L"temp") == 0)
-					{
-						is_temporary = TRUE;
-					}
+					is_silent = TRUE;
 				}
 
-				LocalFree (arga);
-
-				if (is_install || is_uninstall)
+				if (_r_sys_getopt (cmdline, L"temp", NULL))
 				{
-					if (_r_sys_iselevated ())
+					is_temporary = TRUE;
+				}
+			}
+
+			if (is_install || is_uninstall)
+			{
+				if (_r_sys_iselevated ())
+				{
+					_app_initialize ();
+
+					HANDLE hengine = _wfp_getenginehandle ();
+
+					if (hengine)
 					{
-						_app_initialize ();
-
-						HANDLE hengine = _wfp_getenginehandle ();
-
-						if (hengine)
+						if (is_install)
 						{
-							if (is_install)
+							if (is_silent || ((_wfp_isfiltersinstalled () == InstallDisabled) && _app_installmessage (NULL, TRUE)))
 							{
-								if (is_silent || ((_wfp_isfiltersinstalled () == InstallDisabled) && _app_installmessage (NULL, TRUE)))
-								{
-									if (is_temporary)
-										config.is_filterstemporary = TRUE;
+								if (is_temporary)
+									config.is_filterstemporary = TRUE;
 
-									_app_profile_load (NULL, NULL);
+								_app_profile_load (NULL, NULL);
 
-									if (_wfp_initialize (hengine, TRUE))
-										_wfp_installfilters (hengine);
+								if (_wfp_initialize (hengine, TRUE))
+									_wfp_installfilters (hengine);
 
-									_wfp_uninitialize (hengine, FALSE);
-								}
+								_wfp_uninitialize (hengine, FALSE);
 							}
-							else if (is_uninstall)
+						}
+						else if (is_uninstall)
+						{
+							if (is_silent)
 							{
-								if (is_silent)
+								OutputDebugString (L"If you'd like to make a call, please hang up and try again!");
+							}
+							else
+							{
+								if (((_wfp_isfiltersinstalled () != InstallDisabled) && _app_installmessage (NULL, FALSE)))
 								{
-									OutputDebugString (L"If you'd like to make a call, please hang up and try again!");
-								}
-								else
-								{
-									if (((_wfp_isfiltersinstalled () != InstallDisabled) && _app_installmessage (NULL, FALSE)))
-									{
-										_wfp_destroyfilters (hengine);
-										_wfp_uninitialize (hengine, TRUE);
-									}
+									_wfp_destroyfilters (hengine);
+									_wfp_uninitialize (hengine, TRUE);
 								}
 							}
 						}
 					}
-					else
-					{
-						_r_mutex_destroy (&arguments_mutex);
-
-						return ERROR_ACCESS_DENIED;
-					}
-
+				}
+				else
+				{
 					_r_mutex_destroy (&arguments_mutex);
 
-					return ERROR_SUCCESS;
+					return ERROR_ACCESS_DENIED;
 				}
+
+				_r_mutex_destroy (&arguments_mutex);
+
+				return ERROR_SUCCESS;
 			}
 
 			_r_mutex_destroy (&arguments_mutex);
