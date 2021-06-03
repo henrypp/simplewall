@@ -2896,6 +2896,7 @@ HBITMAP _app_bitmapfromico (_In_ HICON hicon, _In_ INT icon_size)
 		if (hdc)
 		{
 			BITMAPINFO bitmap_info = {0};
+			PVOID pbits;
 
 			bitmap_info.bmiHeader.biSize = sizeof (bitmap_info);
 			bitmap_info.bmiHeader.biPlanes = 1;
@@ -2905,7 +2906,7 @@ HBITMAP _app_bitmapfromico (_In_ HICON hicon, _In_ INT icon_size)
 			bitmap_info.bmiHeader.biHeight = icon_size;
 			bitmap_info.bmiHeader.biBitCount = 32;
 
-			hbitmap = CreateDIBSection (hdc, &bitmap_info, DIB_RGB_COLORS, NULL, NULL, 0);
+			hbitmap = CreateDIBSection (hdc, &bitmap_info, DIB_RGB_COLORS, &pbits, NULL, 0);
 
 			if (hbitmap)
 			{
