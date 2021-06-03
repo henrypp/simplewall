@@ -2515,6 +2515,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			{
 				case PBT_APMSUSPEND:
 				{
+					_app_freelogstack ();
+					_app_logclear_ui (hwnd);
+
 					if (config.is_neteventset)
 					{
 						HANDLE hengine = _wfp_getenginehandle ();
