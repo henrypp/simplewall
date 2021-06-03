@@ -1,3 +1,12 @@
+v3.3.4 (3 June 2021)
+- autoclean packets log ui when system suspended
+- fixed config may not be saved when profile directory does not exist
+- fixed unnecessary checking for app paths attributes
+- fixed threadpool does not initialized com library
+- fixed installer silent mode (issue #907)
+- updated blocklist and system rules
+- fixed internal bugs
+
 v3.3.3 (29 April 2021)
 - fixed listview tooltip can cause crash (issue #890)
 - fixed editor does not create filters for the app
