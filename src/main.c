@@ -3331,23 +3331,23 @@ INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_
 
 			_r_mutex_create (arguments_mutex_name, &arguments_mutex);
 
-			if (_r_sys_getopt (cmdline, L"install", NULL))
+			if (_r_sys_getopt (cmdline, L"install", L"i", NULL))
 			{
 				is_install = TRUE;
 			}
-			else if (_r_sys_getopt (cmdline, L"uninstall", NULL))
+			else if (_r_sys_getopt (cmdline, L"uninstall", L"u", NULL))
 			{
 				is_uninstall = TRUE;
 			}
 
 			if (is_install)
 			{
-				if (_r_sys_getopt (cmdline, L"silent", NULL))
+				if (_r_sys_getopt (cmdline, L"silent", L"s", NULL))
 				{
 					is_silent = TRUE;
 				}
 
-				if (_r_sys_getopt (cmdline, L"temp", NULL))
+				if (_r_sys_getopt (cmdline, L"temp", L"t", NULL))
 				{
 					is_temporary = TRUE;
 				}
