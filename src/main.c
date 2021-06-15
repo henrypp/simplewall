@@ -1990,8 +1990,8 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		case RM_TASKBARCREATED:
 		{
 			// refresh tray icon
-			_r_tray_destroy (hwnd, UID);
-			_r_tray_create (hwnd, UID, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
+			_r_tray_destroy (hwnd, &GUID_TrayIcon);
+			_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
 
 			break;
 		}
@@ -2054,7 +2054,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			if (config.hnotification)
 				DestroyWindow (config.hnotification);
 
-			_r_tray_destroy (hwnd, UID);
+			_r_tray_destroy (hwnd, &GUID_TrayIcon);
 
 			_app_loginit (FALSE);
 			_app_freelogstack ();

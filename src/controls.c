@@ -85,7 +85,7 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _r_locale_getstring (string_id), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
-	_r_tray_setinfo (hwnd, UID, hico_sm, APP_NAME);
+	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, APP_NAME);
 }
 
 VOID _app_imagelist_init (_In_opt_ HWND hwnd)

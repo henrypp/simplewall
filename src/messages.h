@@ -15,7 +15,7 @@ VOID _app_message_localize (_In_ HWND hwnd);
 
 FORCEINLINE VOID _app_message_uninitialize (_In_ HWND hwnd)
 {
-	_r_tray_destroy (hwnd, UID);
+	_r_tray_destroy (hwnd, &GUID_TrayIcon);
 }
 
 VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id);
