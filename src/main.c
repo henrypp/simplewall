@@ -1991,7 +1991,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		{
 			// refresh tray icon
 			_r_tray_destroy (hwnd, &GUID_TrayIcon);
-			_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
+			_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (NULL, SM_CXSMICON)), _r_app_getname (), FALSE);
 
 			break;
 		}

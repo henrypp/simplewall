@@ -621,7 +621,7 @@ find_wrap:
 
 VOID _app_message_initialize (_In_ HWND hwnd)
 {
-	_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)), APP_NAME, FALSE);
+	_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (NULL, SM_CXSMICON)), _r_app_getname (), FALSE);
 
 	HMENU hmenu = GetMenu (hwnd);
 

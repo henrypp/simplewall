@@ -73,8 +73,8 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 	UINT string_id = is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START;
 	INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 
-	HICON hico_sm = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON));
-	HICON hico_big = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (hwnd, SM_CXICON));
+	HICON hico_sm = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (NULL, SM_CXSMICON));
+	HICON hico_big = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (NULL, SM_CXICON));
 
 	_r_wnd_seticon (hwnd, hico_sm, hico_big);
 
@@ -85,7 +85,7 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _r_locale_getstring (string_id), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
-	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, APP_NAME);
+	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
 }
 
 VOID _app_imagelist_init (_In_opt_ HWND hwnd)
