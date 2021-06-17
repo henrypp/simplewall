@@ -622,7 +622,7 @@ ULONG _wfp_createfilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_type, _
 		return hr;
 	}
 
-	_r_str_copy (filter_name, RTL_NUMBER_OF (filter_name), APP_NAME);
+	_r_str_copy (filter_name, RTL_NUMBER_OF (filter_name), _r_app_getname ());
 
 	filter_type_string = _wfp_filtertypetostring (filter_type);
 

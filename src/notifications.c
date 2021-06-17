@@ -213,7 +213,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 		}
 	}
 
-	_r_str_printf (window_title, RTL_NUMBER_OF (window_title), L"%s - " APP_NAME, _r_locale_getstring (IDS_NOTIFY_TITLE));
+	_r_str_printf (window_title, RTL_NUMBER_OF (window_title), L"%s - %s", _r_locale_getstring (IDS_NOTIFY_TITLE), _r_app_getname ());
 
 	SetWindowText (hwnd, window_title);
 
@@ -660,7 +660,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 			// draw title text
 			WCHAR text[128];
-			_r_str_printf (text, RTL_NUMBER_OF (text), _r_locale_getstring (IDS_NOTIFY_HEADER), APP_NAME);
+			_r_str_printf (text, RTL_NUMBER_OF (text), _r_locale_getstring (IDS_NOTIFY_HEADER), _r_app_getname ());
 
 			COLORREF clr_prev = SetTextColor (draw_info->hDC, RGB (255, 255, 255));
 			DrawTextEx (draw_info->hDC, text, (INT)_r_str_length (text), &text_rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
