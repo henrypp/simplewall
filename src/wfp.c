@@ -615,11 +615,11 @@ ULONG _wfp_createfilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_type, _
 	ULONG code;
 
 	// create filter guid
-	HRESULT hr = CoCreateGuid (&filter.filterKey);
+	code = _r_math_createguid (&filter.filterKey);
 
-	if (FAILED (hr))
+	if (code != ERROR_SUCCESS)
 	{
-		return hr;
+		return code;
 	}
 
 	_r_str_copy (filter_name, RTL_NUMBER_OF (filter_name), _r_app_getname ());
