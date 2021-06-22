@@ -13,6 +13,12 @@ CURRENT_DIRECTORY = os.path.dirname (os.path.abspath (__file__))
 RULES_DIR = os.path.join (CURRENT_DIRECTORY, '..', '3rd-party', 'WindowsSpyBlocker', 'data', 'firewall')
 RULES_FILE = os.path.join (CURRENT_DIRECTORY, 'bin', 'profile_internal.xml')
 
+if not os.path.isdir (RULES_DIR):
+	raise Exception ('Rules directory not found: ' + RULES_DIR)
+
+if not os.path.isfile (RULES_FILE):
+	raise Exception ('Profile internal not found: ' + RULES_FILE)
+
 # Open profile xml
 with open (RULES_FILE, 'r', newline='') as f:
 	data = f.read ()
