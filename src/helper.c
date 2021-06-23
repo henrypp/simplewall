@@ -2211,7 +2211,7 @@ VOID _app_generate_services ()
 			service_timestamp = _r_reg_querytimestamp (hkey);
 
 			// query service sid
-			service_sid = _app_queryservicesid (service_name);
+			service_sid = _r_sys_getservicesid (service_name);
 
 			if (!service_sid)
 			{

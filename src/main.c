@@ -252,7 +252,7 @@ VOID addcolor (_In_ UINT locale_id, _In_ LPCWSTR config_name, _In_ BOOLEAN is_en
 	ptr_clr.locale_id = locale_id;
 	ptr_clr.is_enabled = is_enabled;
 
-	_r_obj_addarrayitem (colors, &ptr_clr);
+	_r_obj_addarrayitem (colors, &ptr_clr, NULL);
 }
 
 BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
@@ -1777,7 +1777,7 @@ VOID _app_initialize ()
 		timers = _r_obj_createarrayex (sizeof (LONG64), RTL_NUMBER_OF (timer_array) + 1, NULL);
 
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
-			_r_obj_addarrayitem (timers, &timer_array[i]);
+			_r_obj_addarrayitem (timers, &timer_array[i], NULL);
 	}
 
 	// initialize colors array
@@ -1960,12 +1960,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			layout_manager.original_size.x = 300;
 			layout_manager.original_size.y = 300;
 
-			break;
-		}
-
-		case WM_NCCREATE:
-		{
-			_r_wnd_enablenonclientscaling (hwnd);
 			break;
 		}
 
@@ -2304,7 +2298,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 										{
 											PR_LIST rules = _r_obj_createlist (NULL);
 
-											_r_obj_addlistitem (rules, ptr_app);
+											_r_obj_addlistitem (rules, ptr_app, NULL);
 
 											_wfp_create3filters (hengine, rules, __LINE__, FALSE);
 
@@ -2340,7 +2334,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 										{
 											PR_LIST rules = _r_obj_createlist (NULL);
 
-											_r_obj_addlistitem (rules, ptr_rule);
+											_r_obj_addlistitem (rules, ptr_rule, NULL);
 
 											_wfp_create4filters (hengine, rules, __LINE__, FALSE);
 
@@ -2417,10 +2411,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		{
 			INT listview_id;
 
+			_r_toolbar_resize (config.hrebar, IDC_TOOLBAR);
+
 			if (!_r_layout_resize (&layout_manager, wparam))
 				break;
-
-			_r_toolbar_resize (config.hrebar, IDC_TOOLBAR);
 
 			listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1);
 

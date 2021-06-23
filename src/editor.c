@@ -121,12 +121,6 @@ INT_PTR CALLBACK AddRuleProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			break;
 		}
 
-		case WM_NCCREATE:
-		{
-			_r_wnd_enablenonclientscaling (hwnd);
-			break;
-		}
-
 		case WM_CLOSE:
 		{
 			EndDialog (hwnd, FALSE);
@@ -1192,25 +1186,10 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 			break;
 		}
 
-		case WM_NCCREATE:
-		{
-			_r_wnd_enablenonclientscaling (hwnd);
-			break;
-		}
-
 		case WM_DESTROY:
 		{
-			if (hicon_small)
-			{
-				DestroyIcon (hicon_small);
-				hicon_small = NULL;
-			}
-
-			if (hicon_large)
-			{
-				DestroyIcon (hicon_large);
-				hicon_large = NULL;
-			}
+			SAFE_DELETE_ICON (hicon_small);
+			SAFE_DELETE_ICON (hicon_large);
 
 			_r_window_saveposition (hwnd, L"editor");
 
@@ -1396,7 +1375,7 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 
 						rules = _r_obj_createlist (NULL);
 
-						_r_obj_addlistitem (rules, context->ptr_rule);
+						_r_obj_addlistitem (rules, context->ptr_rule, NULL);
 					}
 					else
 					{
@@ -1408,7 +1387,7 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 
 						rules = _r_obj_createlist (NULL);
 
-						_r_obj_addlistitem (rules, context->ptr_app);
+						_r_obj_addlistitem (rules, context->ptr_app, NULL);
 
 						if (hpage_rule)
 						{

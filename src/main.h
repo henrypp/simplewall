@@ -206,10 +206,8 @@ typedef struct tagSTATIC_DATA
 	PR_STRING winstore_path;
 
 	PSID pbuiltin_current_sid;
-	PSID pbuiltin_world_sid;
-	PSID pbuiltin_localservice_sid;
-	PSID pbuiltin_admins_sid;
 	PSID pbuiltin_netops_sid;
+	PSID pbuiltin_admins_sid;
 
 	PSID pservice_mpssvc_sid;
 	PSID pservice_nlasvc_sid;

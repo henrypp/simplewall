@@ -46,7 +46,7 @@ BOOLEAN _app_notifycommand (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seco
 			}
 		}
 
-		_r_obj_addlistitem (rules, ptr_app);
+		_r_obj_addlistitem (rules, ptr_app, NULL);
 	}
 	else if (button_id == IDM_DISABLENOTIFICATIONS)
 	{
@@ -532,12 +532,6 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			break;
 		}
 
-		case WM_NCCREATE:
-		{
-			_r_wnd_enablenonclientscaling (hwnd);
-			break;
-		}
-
 		case WM_DPICHANGED:
 		{
 			_app_notifyfontset (hwnd);
@@ -915,7 +909,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 								{
 									PR_LIST rules = _r_obj_createlist (NULL);
 
-									_r_obj_addlistitem (rules, ptr_rule);
+									_r_obj_addlistitem (rules, ptr_rule, NULL);
 
 									_wfp_create4filters (hengine, rules, __LINE__, FALSE);
 
@@ -1067,7 +1061,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 						_r_spinlock_acquireexclusive (&lock_rules);
 
-						rule_idx = _r_obj_addarrayitem (rules_arr, ptr_rule);
+						_r_obj_addarrayitem (rules_arr, ptr_rule, &rule_idx);
 
 						_r_spinlock_releaseexclusive (&lock_rules);
 

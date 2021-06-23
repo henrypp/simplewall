@@ -1191,7 +1191,7 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 
 		if (is_instantapply)
 		{
-			_r_obj_addlistitem (rules, ptr_rule); // be freed later!
+			_r_obj_addlistitem (rules, ptr_rule, NULL); // be freed later!
 		}
 	}
 
@@ -1791,7 +1791,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 		_r_spinlock_acquireexclusive (&lock_rules);
 
-		_r_obj_addarrayitem (rules_arr, ptr_rule);
+		_r_obj_addarrayitem (rules_arr, ptr_rule, NULL);
 
 		_r_spinlock_releaseexclusive (&lock_rules);
 	}

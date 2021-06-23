@@ -171,7 +171,7 @@ VOID CALLBACK _app_timer_callback (_Inout_ PTP_CALLBACK_INSTANCE instance, _Inou
 	{
 		rules = _r_obj_createlist (NULL);
 
-		_r_obj_addlistitem (rules, ptr_app);
+		_r_obj_addlistitem (rules, ptr_app, NULL);
 
 		_wfp_create3filters (hengine, rules, __LINE__, FALSE);
 

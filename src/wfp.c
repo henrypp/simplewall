@@ -449,7 +449,7 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 	{
 		if (ptr_app->is_enabled)
 		{
-			_r_obj_addlistitem (rules, ptr_app);
+			_r_obj_addlistitem (rules, ptr_app, NULL);
 		}
 	}
 
@@ -470,7 +470,7 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 		PITEM_RULE ptr_rule = _r_obj_getarrayitem (rules_arr, i);
 
 		if (ptr_rule && ptr_rule->is_enabled)
-			_r_obj_addlistitem (rules, ptr_rule);
+			_r_obj_addlistitem (rules, ptr_rule, NULL);
 	}
 
 	_r_spinlock_releaseshared (&lock_rules);
@@ -678,7 +678,7 @@ ULONG _wfp_createfilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_type, _
 	if (code == ERROR_SUCCESS)
 	{
 		if (guids)
-			_r_obj_addarrayitem (guids, &filter.filterKey);
+			_r_obj_addarrayitem (guids, &filter.filterKey, NULL);
 	}
 	else
 	{
@@ -1679,7 +1679,7 @@ SIZE_T _wfp_dumpfilters (_In_ HANDLE hengine, _In_ LPCGUID provider_id, _Inout_ 
 
 					if (filter && filter->providerKey && memcmp (filter->providerKey, provider_id, sizeof (GUID)) == 0)
 					{
-						_r_obj_addarrayitem (guids, &filter->filterKey);
+						_r_obj_addarrayitem (guids, &filter->filterKey, NULL);
 						result += 1;
 					}
 				}

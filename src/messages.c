@@ -344,8 +344,6 @@ VOID _app_message_dpichanged (_In_ HWND hwnd)
 
 	_app_imagelist_init (hwnd);
 
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
-
 	// reset toolbar information
 	_app_setinterfacestate (hwnd);
 
@@ -979,7 +977,7 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 		if (hengine)
 		{
-			_r_obj_addlistitem (rules, ptr_rule);
+			_r_obj_addlistitem (rules, ptr_rule, NULL);
 
 			_wfp_create4filters (hengine, rules, __LINE__, FALSE);
 		}
@@ -1022,7 +1020,7 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 					if (seconds)
 						_app_timer_set (hwnd, ptr_app, *seconds);
 
-					_r_obj_addlistitem (rules, ptr_app);
+					_r_obj_addlistitem (rules, ptr_app, NULL);
 				}
 			}
 
@@ -1271,7 +1269,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 				_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
 				_r_spinlock_releaseshared (&lock_checkbox);
 
-				_r_obj_addlistitem (rules, ptr_app);
+				_r_obj_addlistitem (rules, ptr_app, NULL);
 
 				is_changed = TRUE;
 
@@ -1308,7 +1306,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 				_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, TRUE);
 				_r_spinlock_releaseshared (&lock_checkbox);
 
-				_r_obj_addlistitem (rules, ptr_rule);
+				_r_obj_addlistitem (rules, ptr_rule, NULL);
 
 				is_changed = TRUE;
 
@@ -1660,7 +1658,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 		_r_spinlock_acquireexclusive (&lock_rules);
 
-		rule_idx = _r_obj_addarrayitem (rules_arr, ptr_rule);
+		_r_obj_addarrayitem (rules_arr, ptr_rule, &rule_idx);
 
 		_r_spinlock_releaseexclusive (&lock_rules);
 
@@ -1839,7 +1837,7 @@ VOID _app_command_purgeunused (_In_ HWND hwnd)
 			if (!_r_obj_isarrayempty (ptr_app->guids))
 				_r_obj_addarrayitems (guids, ptr_app->guids->items, ptr_app->guids->count);
 
-			_r_obj_addarrayitem (apps_list, &ptr_app->app_hash);
+			_r_obj_addarrayitem (apps_list, &ptr_app->app_hash, NULL);
 
 			is_deleted = TRUE;
 		}
@@ -1896,7 +1894,7 @@ VOID _app_command_purgetimers (_In_ HWND hwnd)
 		{
 			_app_timer_reset (hwnd, ptr_app);
 
-			_r_obj_addlistitem (rules, ptr_app);
+			_r_obj_addlistitem (rules, ptr_app, NULL);
 		}
 	}
 
