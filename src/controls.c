@@ -88,7 +88,7 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
 }
 
-VOID _app_imagelist_init (_In_opt_ HWND hwnd)
+VOID _app_imagelist_init (_In_ HWND hwnd)
 {
 	INT icon_size_small = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
 	INT icon_size_large = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
@@ -155,6 +155,8 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd)
 		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_DONATE), icon_size_toolbar), NULL);
 		ImageList_Add (config.himg_toolbar, _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_LOGUI), icon_size_toolbar), NULL);
 	}
+
+	SendDlgItemMessage (GetDlgItem (hwnd, IDC_TOOLBAR) ? hwnd : config.hrebar, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
 	// rules imagelist (small)
 	if (config.himg_rules_small)
@@ -480,8 +482,6 @@ VOID _app_toolbar_init (_In_ HWND hwnd)
 
 	_r_toolbar_setstyle (hwnd, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
 
-	SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
-
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
 	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
 	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
@@ -501,26 +501,14 @@ VOID _app_toolbar_init (_In_ HWND hwnd)
 	_r_toolbar_resize (hwnd, IDC_TOOLBAR);
 
 	REBARBANDINFO rbi = {0};
-
-	rbi.cbSize = sizeof (rbi);
-	rbi.fMask = RBBIM_STYLE | RBBIM_CHILD;
-	rbi.fStyle = RBBS_CHILDEDGE | RBBS_USECHEVRON | RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER;
-	rbi.hwndChild = GetDlgItem (hwnd, IDC_TOOLBAR);
-
-	SendMessage (config.hrebar, RB_INSERTBAND, 0, (LPARAM)&rbi);
-}
-
-VOID _app_toolbar_resize ()
-{
-	REBARBANDINFO rbi = {0};
-	SIZE ideal_size = {0};
 	ULONG button_size;
 
 	rbi.cbSize = sizeof (rbi);
+	rbi.fMask = RBBIM_STYLE | RBBIM_CHILD;
+	rbi.fStyle = RBBS_USECHEVRON | RBBS_VARIABLEHEIGHT;
+	rbi.hwndChild = GetDlgItem (hwnd, IDC_TOOLBAR);
 
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
-
-	button_size = (ULONG)SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETBUTTONSIZE, 0, 0);
+	button_size = (ULONG)SendDlgItemMessage (hwnd, IDC_TOOLBAR, TB_GETBUTTONSIZE, 0, 0);
 
 	if (button_size)
 	{
@@ -529,14 +517,24 @@ VOID _app_toolbar_resize ()
 		rbi.cyMinChild = HIWORD (button_size);
 	}
 
+	SendMessage (config.hrebar, RB_INSERTBAND, 0, (LPARAM)&rbi);
+}
+
+VOID _app_toolbar_resize ()
+{
+	REBARBANDINFO rbi = {0};
+	SIZE ideal_size = {0};
+
+	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+
 	if (SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
 	{
-		rbi.fMask |= RBBIM_SIZE | RBBIM_IDEALSIZE;
-		rbi.cx = (UINT)ideal_size.cx;
+		rbi.cbSize = sizeof (rbi);
+		rbi.fMask |= RBBIM_IDEALSIZE;
 		rbi.cxIdeal = (UINT)ideal_size.cx;
-	}
 
-	SendMessage (config.hrebar, RB_SETBANDINFO, 0, (LPARAM)&rbi);
+		SendMessage (config.hrebar, RB_SETBANDINFO, 0, (LPARAM)&rbi);
+	}
 }
 
 VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
