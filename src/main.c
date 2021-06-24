@@ -252,7 +252,7 @@ VOID addcolor (_In_ UINT locale_id, _In_ LPCWSTR config_name, _In_ BOOLEAN is_en
 	ptr_clr.locale_id = locale_id;
 	ptr_clr.is_enabled = is_enabled;
 
-	_r_obj_addarrayitem (colors, &ptr_clr, NULL);
+	_r_obj_addarrayitem (colors, &ptr_clr);
 }
 
 BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
@@ -1777,7 +1777,7 @@ VOID _app_initialize ()
 		timers = _r_obj_createarrayex (sizeof (LONG64), RTL_NUMBER_OF (timer_array) + 1, NULL);
 
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
-			_r_obj_addarrayitem (timers, &timer_array[i], NULL);
+			_r_obj_addarrayitem (timers, &timer_array[i]);
 	}
 
 	// initialize colors array
@@ -2298,7 +2298,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 										{
 											PR_LIST rules = _r_obj_createlist (NULL);
 
-											_r_obj_addlistitem (rules, ptr_app, NULL);
+											_r_obj_addlistitem (rules, ptr_app);
 
 											_wfp_create3filters (hengine, rules, __LINE__, FALSE);
 
@@ -2334,7 +2334,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 										{
 											PR_LIST rules = _r_obj_createlist (NULL);
 
-											_r_obj_addlistitem (rules, ptr_rule, NULL);
+											_r_obj_addlistitem (rules, ptr_rule);
 
 											_wfp_create4filters (hengine, rules, __LINE__, FALSE);
 

@@ -1375,7 +1375,7 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 
 						rules = _r_obj_createlist (NULL);
 
-						_r_obj_addlistitem (rules, context->ptr_rule, NULL);
+						_r_obj_addlistitem (rules, context->ptr_rule);
 					}
 					else
 					{
@@ -1387,7 +1387,7 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 
 						rules = _r_obj_createlist (NULL);
 
-						_r_obj_addlistitem (rules, context->ptr_app, NULL);
+						_r_obj_addlistitem (rules, context->ptr_app);
 
 						if (hpage_rule)
 						{

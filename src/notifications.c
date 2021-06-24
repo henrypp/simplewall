@@ -46,7 +46,7 @@ BOOLEAN _app_notifycommand (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seco
 			}
 		}
 
-		_r_obj_addlistitem (rules, ptr_app, NULL);
+		_r_obj_addlistitem (rules, ptr_app);
 	}
 	else if (button_id == IDM_DISABLENOTIFICATIONS)
 	{
@@ -909,7 +909,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 								{
 									PR_LIST rules = _r_obj_createlist (NULL);
 
-									_r_obj_addlistitem (rules, ptr_rule, NULL);
+									_r_obj_addlistitem (rules, ptr_rule);
 
 									_wfp_create4filters (hengine, rules, __LINE__, FALSE);
 
@@ -1061,7 +1061,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 						_r_spinlock_acquireexclusive (&lock_rules);
 
-						_r_obj_addarrayitem (rules_arr, ptr_rule, &rule_idx);
+						_r_obj_addarrayitemex (rules_arr, ptr_rule, &rule_idx);
 
 						_r_spinlock_releaseexclusive (&lock_rules);
 

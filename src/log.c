@@ -231,7 +231,7 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 
 	_r_spinlock_acquireexclusive (&lock_loglist);
 
-	_r_obj_addlistitem (log_arr, _r_obj_reference (ptr_log), &index);
+	_r_obj_addlistitemex (log_arr, _r_obj_reference (ptr_log), &index);
 
 	_r_spinlock_releaseexclusive (&lock_loglist);
 
