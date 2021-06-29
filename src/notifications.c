@@ -391,7 +391,7 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 
 				if (SHAppBarMessage (ABM_GETTASKBARPOS, &abd))
 				{
-					INT border_x = _r_dc_getsystemmetrics (hwnd, SM_CXBORDER);
+					INT border_x = _r_dc_getsystemmetrics (SM_CXBORDER, _r_dc_getwindowdpi (hwnd));
 
 					if (abd.uEdge == ABE_LEFT)
 					{
@@ -424,10 +424,10 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 	_r_wnd_center (hwnd, NULL); // display window on center (depends on error, config etc...)
 }
 
-HFONT _app_notifyfontinit (_In_ HWND hwnd, _In_ PLOGFONT plf, _In_ LONG height, _In_ LONG weight, _In_ BOOLEAN is_underline)
+HFONT _app_notifyfontinit (_In_ LONG dpi_value, _In_ PLOGFONT plf, _In_ LONG height, _In_ LONG weight, _In_ BOOLEAN is_underline)
 {
 	if (height)
-		plf->lfHeight = _r_dc_fontsizetoheight (hwnd, height);
+		plf->lfHeight = _r_dc_fontsizetoheight (height, dpi_value);
 
 	plf->lfWeight = weight;
 	plf->lfUnderline = is_underline;
@@ -440,9 +440,11 @@ HFONT _app_notifyfontinit (_In_ HWND hwnd, _In_ PLOGFONT plf, _In_ LONG height, 
 
 VOID _app_notifyfontset (_In_ HWND hwnd)
 {
+	LONG dpi_value = _r_dc_getwindowdpi (hwnd);
+
 	_r_wnd_seticon (hwnd,
-					_r_app_getsharedimage (NULL, SIH_EXCLAMATION, _r_dc_getsystemmetrics (hwnd, SM_CXSMICON)),
-					_r_app_getsharedimage (NULL, SIH_EXCLAMATION, _r_dc_getsystemmetrics (hwnd, SM_CXICON))
+					_r_app_getsharedimage (NULL, SIH_EXCLAMATION, _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value)),
+					_r_app_getsharedimage (NULL, SIH_EXCLAMATION, _r_dc_getsystemmetrics (SM_CXICON, dpi_value))
 	);
 
 	INT title_font_height = 12;
@@ -457,9 +459,9 @@ VOID _app_notifyfontset (_In_ HWND hwnd)
 		SAFE_DELETE_OBJECT (hfont_link);
 		SAFE_DELETE_OBJECT (hfont_text);
 
-		hfont_title = _app_notifyfontinit (hwnd, &ncm.lfCaptionFont, title_font_height, FW_NORMAL, FALSE);
-		hfont_link = _app_notifyfontinit (hwnd, &ncm.lfMessageFont, text_font_height, FW_NORMAL, TRUE);
-		hfont_text = _app_notifyfontinit (hwnd, &ncm.lfMessageFont, text_font_height, FW_NORMAL, FALSE);
+		hfont_title = _app_notifyfontinit (dpi_value, &ncm.lfCaptionFont, title_font_height, FW_NORMAL, FALSE);
+		hfont_link = _app_notifyfontinit (dpi_value, &ncm.lfMessageFont, text_font_height, FW_NORMAL, TRUE);
+		hfont_text = _app_notifyfontinit (dpi_value, &ncm.lfMessageFont, text_font_height, FW_NORMAL, FALSE);
 
 		SendDlgItemMessage (hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)hfont_title, TRUE);
 		SendDlgItemMessage (hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)hfont_link, TRUE);
@@ -598,7 +600,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				{
 					LONG wnd_width = rect.right;
 					LONG wnd_height = rect.bottom;
-					LONG footer_height = _r_dc_getdpi (hwnd, PR_SIZE_FOOTERHEIGHT);
+					LONG footer_height = _r_dc_getdpi (PR_SIZE_FOOTERHEIGHT, _r_dc_getwindowdpi (hwnd));
 
 					SetRect (&rect, 0, wnd_height - footer_height, wnd_width, wnd_height);
 
@@ -638,8 +640,9 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			if (draw_info->CtlID != IDC_HEADER_ID)
 				break;
 
-			INT wnd_icon_size = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
-			INT wnd_spacing = _r_dc_getdpi (hwnd, 12);
+			LONG dpi_value = _r_dc_getwindowdpi (hwnd);
+			INT wnd_icon_size = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
+			INT wnd_spacing = _r_dc_getdpi (12, dpi_value);
 
 			RECT text_rect;
 			RECT icon_rect;

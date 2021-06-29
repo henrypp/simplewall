@@ -72,9 +72,10 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 	BOOLEAN is_filtersinstalled = (install_type != InstallDisabled);
 	UINT string_id = is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START;
 	INT icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
+	LONG dpi_value = _r_dc_getsystemdpi ();
 
-	HICON hico_sm = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (NULL, SM_CXSMICON));
-	HICON hico_big = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (NULL, SM_CXICON));
+	HICON hico_sm = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value));
+	HICON hico_big = _r_app_getsharedimage (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (SM_CXICON, dpi_value));
 
 	_r_wnd_seticon (hwnd, hico_sm, hico_big);
 
@@ -90,9 +91,10 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 
 VOID _app_imagelist_init (_In_ HWND hwnd)
 {
-	INT icon_size_small = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
-	INT icon_size_large = _r_dc_getsystemmetrics (hwnd, SM_CXICON);
-	INT icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (hwnd, _r_config_getinteger (L"ToolbarSize", PR_SIZE_ITEMHEIGHT)), icon_size_small, icon_size_large);
+	LONG dpi_value = _r_dc_getwindowdpi (hwnd);
+	INT icon_size_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	INT icon_size_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
+	INT icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getinteger (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_size_small, icon_size_large);
 
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
@@ -203,6 +205,7 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	HWND hheader;
 	HDC hdc_listview;
 	HDC hdc_header;
+	LONG dpi_value;
 	INT column_count;
 	INT column_width;
 	INT text_width;
@@ -242,8 +245,10 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 
 	total_width = rc_client.right;
 
-	max_width = _r_dc_getdpi (hwnd, 158);
-	spacing = _r_dc_getsystemmetrics (hwnd, SM_CXSMICON);
+	dpi_value = _r_dc_getwindowdpi (hwnd);
+
+	max_width = _r_dc_getdpi (158, dpi_value);
+	spacing = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 
 	for (INT i = 0; i < column_count; i++)
 	{
@@ -337,7 +342,7 @@ VOID _app_listviewsetfont (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		_r_config_getfont (L"Font", hwnd, &logfont, NULL);
+		_r_config_getfont (L"Font", &logfont, _r_dc_getwindowdpi (hwnd));
 
 		config.hfont = CreateFontIndirect (&logfont);
 	}
@@ -472,6 +477,8 @@ VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT column_id
 		_r_listview_setcolumnsortindex (hwnd, listview_id, i, 0);
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
+
+	//SendMessage (hlistview, LVM_SETSELECTEDCOLUMN, (WPARAM)column_id, 0);
 
 	SendMessage (hlistview, LVM_SORTITEMS, (WPARAM)hlistview, (LPARAM)&_app_listviewcompare_callback);
 }
@@ -645,18 +652,19 @@ VOID _app_refreshstatus (_In_ HWND hwnd, _In_ INT listview_id)
 
 	HWND hstatus = GetDlgItem (hwnd, IDC_STATUSBAR);
 	HDC hdc = GetDC (hstatus);
+	LONG dpi_value = _r_dc_getwindowdpi (hwnd);
 
 	// item count
 	if (hdc)
 	{
 		SelectObject (hdc, (HFONT)SendMessage (hstatus, WM_GETFONT, 0, 0)); // fix
 
-		INT spacing = _r_dc_getdpi (hwnd, 12);
 
 		PR_STRING text[UI_STATUSBAR_PARTS_COUNT] = {0};
 		INT parts[UI_STATUSBAR_PARTS_COUNT] = {0};
 		LONG size[UI_STATUSBAR_PARTS_COUNT] = {0};
 		LONG lay = 0;
+		INT spacing = _r_dc_getdpi (12, dpi_value);
 
 		for (INT i = 0; i < UI_STATUSBAR_PARTS_COUNT; i++)
 		{
@@ -685,7 +693,7 @@ VOID _app_refreshstatus (_In_ HWND hwnd, _In_ INT listview_id)
 		RECT rc_client = {0};
 		GetClientRect (hstatus, &rc_client);
 
-		parts[0] = rc_client.right - lay - _r_dc_getsystemmetrics (hwnd, SM_CXVSCROLL) - (_r_dc_getsystemmetrics (hwnd, SM_CXBORDER) * 2);
+		parts[0] = rc_client.right - lay - _r_dc_getsystemmetrics (SM_CXVSCROLL, dpi_value) - (_r_dc_getsystemmetrics (SM_CXBORDER, dpi_value) * 2);
 		parts[1] = parts[0] + size[1];
 		parts[2] = parts[1] + size[2];
 

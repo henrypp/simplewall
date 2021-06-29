@@ -619,7 +619,10 @@ find_wrap:
 
 VOID _app_message_initialize (_In_ HWND hwnd)
 {
-	_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (NULL, SM_CXSMICON)), _r_app_getname (), FALSE);
+	LONG dpi_value = _r_dc_getsystemdpi ();
+	HICON hicon = _r_app_getsharedimage (_r_sys_getimagebase (), (_wfp_isfiltersinstalled () != InstallDisabled) ? IDI_ACTIVE : IDI_INACTIVE, _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value));
+
+	_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, hicon, _r_app_getname (), FALSE);
 
 	HMENU hmenu = GetMenu (hwnd);
 
@@ -1930,6 +1933,7 @@ VOID _app_command_selectfont (_In_ HWND hwnd)
 {
 	CHOOSEFONT cf = {0};
 	LOGFONT lf = {0};
+	LONG dpi_value;
 
 	cf.lStructSize = sizeof (cf);
 	cf.hwndOwner = hwnd;
@@ -1938,15 +1942,19 @@ VOID _app_command_selectfont (_In_ HWND hwnd)
 	cf.nSizeMin = 8;
 	cf.lpLogFont = &lf;
 
-	_r_config_getfont (L"Font", hwnd, &lf, NULL);
+	dpi_value = _r_dc_getwindowdpi (hwnd);
+
+	_r_config_getfont (L"Font", &lf, dpi_value);
 
 	if (ChooseFont (&cf))
 	{
-		_r_config_setfont (L"Font", hwnd, &lf, NULL);
+		INT current_page;
+
+		_r_config_setfont (L"Font", &lf, dpi_value);
 
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		INT current_page = (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
+		current_page = (INT)SendDlgItemMessage (hwnd, IDC_TAB, TCM_GETCURSEL, 0, 0);
 
 		for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB); i++)
 		{
