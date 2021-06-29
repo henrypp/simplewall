@@ -2748,7 +2748,7 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRING rule, _In_ PITEM_ADDRESS address
 
 		for (SIZE_T i = 0; i < length; i++)
 		{
-			if (iswdigit (rule->buffer[i]) == 0 && rule->buffer[i] != DIVIDER_RULE_RANGE)
+			if (!_r_str_isdigit (rule->buffer[i]) && rule->buffer[i] != DIVIDER_RULE_RANGE)
 			{
 				address->type = DataUnknown;
 				break;
