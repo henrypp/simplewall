@@ -1755,7 +1755,7 @@ VOID _app_initialize ()
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		config.winstore_path = _r_str_expandenvironmentstring (PATH_WINSTORE);
 
-	config.my_hash = _r_str_hash (_r_sys_getimagepathname ());
+	config.my_hash = _r_str_hash (_r_sys_getimagepath ());
 	config.ntoskrnl_hash = _r_str_hash (PROC_SYSTEM_NAME);
 	config.svchost_hash = _r_obj_getstringhash (config.svchost_path);
 

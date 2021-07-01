@@ -1537,7 +1537,7 @@ VOID _app_profile_load_fallback ()
 
 	if (!_app_getappitem (config.my_hash))
 	{
-		ptr_app = _app_addapplication (NULL, DataUnknown, _r_sys_getimagepathname (), NULL, NULL);
+		ptr_app = _app_addapplication (NULL, DataUnknown, _r_sys_getimagepath (), NULL, NULL);
 
 		if (ptr_app)
 			_app_setappinfo (ptr_app, InfoIsEnabled, IntToPtr (TRUE));
