@@ -27,36 +27,7 @@ VOID _app_generate_credentials ()
 {
 	// For revoke current user (v3.0.5 Beta and lower)
 	if (!config.pbuiltin_current_sid)
-	{
-		// get user sid
-		HANDLE htoken;
-
-		if (OpenProcessToken (NtCurrentProcess (), TOKEN_QUERY, &htoken))
-		{
-			ULONG token_length = 0;
-			GetTokenInformation (htoken, TokenUser, NULL, 0, &token_length);
-
-			if (GetLastError () == ERROR_INSUFFICIENT_BUFFER)
-			{
-				PTOKEN_USER token_user = _r_mem_allocatezero (token_length);
-
-				if (GetTokenInformation (htoken, TokenUser, token_user, token_length, &token_length))
-				{
-					if (RtlValidSid (token_user->User.Sid))
-					{
-						ULONG sid_length = RtlLengthSid (token_user->User.Sid);
-						config.pbuiltin_current_sid = _r_mem_allocatezero (sid_length);
-
-						memcpy (config.pbuiltin_current_sid, token_user->User.Sid, sid_length);
-					}
-				}
-
-				_r_mem_free (token_user);
-			}
-
-			CloseHandle (htoken);
-		}
-	}
+		config.pbuiltin_current_sid = _r_sys_getcurrenttoken ().token_sid;
 
 	// S-1-5-32-544 (BUILTIN\Administrators)
 	if (!config.pbuiltin_admins_sid)
@@ -323,7 +294,7 @@ VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID*)&security_descriptor);
+		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
 VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID provider_guid, _In_ BOOLEAN is_secure)
@@ -360,7 +331,7 @@ VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID provider
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID*)&security_descriptor);
+		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
 VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer_guid, _In_ BOOLEAN is_secure)
@@ -397,7 +368,7 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID*)&security_descriptor);
+		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
 VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_guid, _In_ BOOLEAN is_secure, _In_ UINT line)
@@ -440,5 +411,5 @@ VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_gui
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID*)&security_descriptor);
+		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
