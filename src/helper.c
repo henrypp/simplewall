@@ -1513,55 +1513,6 @@ COLORREF _app_getcolorvalue (_In_ SIZE_T color_hash)
 	return 0;
 }
 
-PR_STRING _app_getservicenamefromtag (HANDLE hprocess, LPCVOID service_tag)
-{
-	PR_STRING service_name_string = NULL;
-	HMODULE hlib = GetModuleHandle (L"advapi32.dll");
-
-	if (hlib)
-	{
-		typedef ULONG (NTAPI* IQTI) (PVOID, SC_SERVICE_TAG_QUERY_TYPE, PSC_SERVICE_TAG_QUERY); // I_QueryTagInformation
-		const IQTI _I_QueryTagInformation = (IQTI)GetProcAddress (hlib, "I_QueryTagInformation");
-
-		if (_I_QueryTagInformation)
-		{
-			PSC_SERVICE_TAG_QUERY service_tag_query = _r_mem_allocatezero (sizeof (SC_SERVICE_TAG_QUERY));
-
-			service_tag_query->ProcessId = HandleToUlong (hprocess);
-			service_tag_query->ServiceTag = PtrToUlong (service_tag);
-
-			_I_QueryTagInformation (NULL, ServiceNameFromTagInformation, service_tag_query);
-
-			if (service_tag_query->Buffer)
-			{
-				service_name_string = _r_obj_createstring ((LPCWSTR)service_tag_query->Buffer);
-
-				LocalFree (service_tag_query->Buffer);
-			}
-
-			_r_mem_free (service_tag_query);
-		}
-	}
-
-	return service_name_string;
-}
-
-BOOLEAN _app_isimmersiveprocess (HANDLE hprocess)
-{
-	HMODULE huser32 = GetModuleHandle (L"user32.dll");
-
-	if (huser32)
-	{
-		typedef BOOL (WINAPI* IIP) (HANDLE); // IsImmersiveProcess
-		const IIP _IsImmersiveProcess = (IIP)GetProcAddress (huser32, "IsImmersiveProcess");
-
-		if (_IsImmersiveProcess)
-			return !!_IsImmersiveProcess (hprocess);
-	}
-
-	return FALSE;
-}
-
 PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_network)
 {
 	if (pid == PROC_WAITING_PID)
@@ -1585,7 +1536,7 @@ PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 
 	if (pmodules)
 	{
-		PR_STRING service_name = _app_getservicenamefromtag (UlongToHandle (pid), UlongToPtr (*(PULONG)pmodules));
+		PR_STRING service_name = _r_sys_querytagname (UlongToHandle (pid), UlongToPtr (*(PULONG)pmodules));
 
 		if (service_name)
 		{
@@ -1601,7 +1552,7 @@ PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 
 		if (hprocess)
 		{
-			if (_r_sys_isosversiongreaterorequal (WINDOWS_8) && _app_isimmersiveprocess (hprocess))
+			if (_r_sys_isosversiongreaterorequal (WINDOWS_8) && _r_sys_isprocessimmersive (hprocess))
 			{
 				ptr_network->type = DataAppUWP;
 			}
