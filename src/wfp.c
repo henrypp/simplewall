@@ -30,7 +30,7 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE hengine)
 				result = InstallEnabledTemporary;
 			}
 
-			FwpmFreeMemory ((PVOID*)&ptr_provider);
+			FwpmFreeMemory ((PVOID_PTR)&ptr_provider);
 		}
 	}
 
@@ -55,7 +55,7 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE hengine)
 				result = InstallEnabledTemporary;
 			}
 
-			FwpmFreeMemory ((PVOID*)&ptr_sublayer);
+			FwpmFreeMemory ((PVOID_PTR)&ptr_sublayer);
 		}
 	}
 
@@ -1684,7 +1684,7 @@ SIZE_T _wfp_dumpfilters (_In_ HANDLE hengine, _In_ LPCGUID provider_id, _Inout_ 
 					}
 				}
 
-				FwpmFreeMemory ((PVOID*)&matching_filters_enum);
+				FwpmFreeMemory ((PVOID_PTR)&matching_filters_enum);
 			}
 		}
 	}

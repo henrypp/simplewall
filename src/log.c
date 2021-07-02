@@ -455,7 +455,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 			{
 				if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)))
 				{
-					FwpmFreeMemory ((PVOID*)&layer);
+					FwpmFreeMemory ((PVOID_PTR)&layer);
 					return;
 				}
 				else if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)))
@@ -463,7 +463,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 					log->direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 				}
 
-				FwpmFreeMemory ((PVOID*)&layer);
+				FwpmFreeMemory ((PVOID_PTR)&layer);
 			}
 		}
 	}
@@ -508,10 +508,10 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		}
 
 		if (ptr_filter)
-			FwpmFreeMemory ((PVOID*)&ptr_filter);
+			FwpmFreeMemory ((PVOID_PTR)&ptr_filter);
 
 		if (ptr_provider)
-			FwpmFreeMemory ((PVOID*)&ptr_provider);
+			FwpmFreeMemory ((PVOID_PTR)&ptr_provider);
 
 		// prevent filter "not found" items
 		if (!filter_name && !provider_name)
@@ -1192,7 +1192,7 @@ VOID CALLBACK _wfp_logcallback1 (_In_ PVOID context, _In_ const FWPM_NET_EVENT2 
 }
 
 // win10rs1+ callback
-VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3 * event)
+VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3* event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1201,7 +1201,7 @@ VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3 
 }
 
 // win10rs4+ callback
-VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4 * event)
+VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4* event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1210,7 +1210,7 @@ VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4 
 }
 
 // win10rs5+ callback
-VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5 * event)
+VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5* event)
 {
 	ITEM_LOG_CALLBACK log;
 
