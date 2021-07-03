@@ -1536,7 +1536,7 @@ PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 
 	if (pmodules)
 	{
-		PR_STRING service_name = _r_sys_querytagname (UlongToHandle (pid), UlongToPtr (*(PULONG)pmodules));
+		PR_STRING service_name = _r_sys_querytaginformation (UlongToHandle (pid), UlongToPtr (*(PULONG)pmodules));
 
 		if (service_name)
 		{
