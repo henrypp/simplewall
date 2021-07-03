@@ -1536,12 +1536,10 @@ PR_STRING _app_getnetworkpath (ULONG pid, PULONG64 pmodules, PITEM_NETWORK ptr_n
 
 	if (pmodules)
 	{
-		PR_STRING service_name = _r_sys_querytaginformation (UlongToHandle (pid), UlongToPtr (*(PULONG)pmodules));
+		process_name = _r_sys_querytaginformation (UlongToHandle (pid), UlongToPtr (*(PULONG)pmodules));
 
-		if (service_name)
+		if (process_name)
 		{
-			_r_obj_movereference (&process_name, service_name);
-
 			ptr_network->type = DataAppService;
 		}
 	}
