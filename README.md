@@ -104,6 +104,8 @@ A: When you are connected to a network, Windows checks for internet connectivity
 Create `Disable NCSI.reg` and import it into registry.
 
 ```reg
+Windows Registry Editor Version 5.00
+
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkConnectivityStatusIndicator]
 "NoActiveProbe"=dword:00000001
 "DisablePassivePolling"=dword:00000001
