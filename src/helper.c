@@ -565,8 +565,8 @@ PR_STRING _app_getversioninfo (_In_ PITEM_APP ptr_app)
 		code_page[2] = 1252;
 
 		// Use the default language and Latin codepage (most common)
-		lang_id[2] = GetUserDefaultLangID ();
-		code_page[2] = 1252;
+		lang_id[3] = GetUserDefaultLangID ();
+		code_page[3] = 1252;
 
 		PR_STRING description;
 		PR_STRING company;
@@ -2862,7 +2862,7 @@ HBITMAP _app_bitmapfromico (_In_ HICON hicon, _In_ INT icon_size)
 				HGDIOBJ old_bitmap = SelectObject (hdc, hbitmap);
 
 				BLENDFUNCTION blend_func = {0};
-				blend_func.BlendOp = AC_SRC_OVER;
+				//blend_func.BlendOp = AC_SRC_OVER;
 				blend_func.AlphaFormat = AC_SRC_ALPHA;
 				blend_func.SourceConstantAlpha = 255;
 
