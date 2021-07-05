@@ -50,9 +50,9 @@ if not xml_section:
 	raise Exception ('Parse xml failure.')
 
 # Enumerate Windows Spy Blocker spy/extra and update rules
-for f in os.listdir (RULES_DIR):
-	module_name = os.path.splitext (f)[0]
-	module_path = os.path.join (RULES_DIR, f)
+for file_name in os.listdir (RULES_DIR):
+	module_name = os.path.splitext (file_name)[0]
+	module_path = os.path.join (RULES_DIR, file_name)
 
 	print ('Parsing ' + module_name + '...')
 
@@ -64,6 +64,7 @@ for f in os.listdir (RULES_DIR):
 	with open (module_path, 'r') as f:
 		rows = f.readlines ()
 		natural_sort (rows)
+		f.close ()
 
 		for string in rows:
 			line = string.strip ("\n\r\t ")
@@ -74,8 +75,6 @@ for f in os.listdir (RULES_DIR):
 				new_item.setAttribute ("rule", line)
 
 				xml_section[0].appendChild (new_item)
-
-		f.close ()
 
 # Set new rule timestamp
 xml_root[0].setAttribute ("timestamp", str (timestamp))
