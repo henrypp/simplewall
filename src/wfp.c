@@ -1067,8 +1067,7 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 
 CleanupExit:
 
-	if (byte_blob)
-		ByteBlobFree (&byte_blob);
+	ByteBlobFree (&byte_blob);
 
 	return is_success;
 }

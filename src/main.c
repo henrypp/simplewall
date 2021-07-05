@@ -7,11 +7,13 @@ UINT WM_FINDMSGSTRING = 0;
 
 THREAD_API ApplyThread (_In_ PVOID lparam)
 {
-	PITEM_CONTEXT context = (PITEM_CONTEXT)lparam;
+	PITEM_CONTEXT context;
+	HANDLE hengine;
 
 	_r_spinlock_acquireshared (&lock_apply);
 
-	HANDLE hengine = _wfp_getenginehandle ();
+	context = (PITEM_CONTEXT)lparam;
+	hengine = _wfp_getenginehandle ();
 
 	if (hengine)
 	{

@@ -202,9 +202,9 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	PR_STRING column_text;
 	PR_STRING item_text;
 	HWND hlistview;
-	HWND hheader;
-	HDC hdc_listview;
-	HDC hdc_header;
+	HWND hheader = NULL;
+	HDC hdc_listview = NULL;
+	HDC hdc_header =NULL;
 	LONG dpi_value;
 	INT column_count;
 	INT column_width;
@@ -226,14 +226,18 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	if (!column_count)
 		return;
 
-	hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
-
 	// get device context and fix font set
 	hdc_listview = GetDC (hlistview);
+
+	if (!hdc_listview)
+		goto CleanupExit;
+
+	hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
+
 	hdc_header = GetDC (hheader);
 
-	if (!hdc_listview || !hdc_header)
-		return;
+	if (!hdc_header)
+		goto CleanupExit;
 
 	SelectObject (hdc_listview, (HFONT)SendMessage (hlistview, WM_GETFONT, 0, 0)); // fix
 	SelectObject (hdc_header, (HFONT)SendMessage (hheader, WM_GETFONT, 0, 0)); // fix
@@ -306,8 +310,13 @@ VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_
 	// set general column width
 	_r_listview_setcolumn (hwnd, listview_id, column_general_id, NULL, max (total_width - calculated_width, max_width));
 
-	ReleaseDC (hlistview, hdc_listview);
-	ReleaseDC (hheader, hdc_header);
+CleanupExit:
+
+	if (hdc_listview)
+		ReleaseDC (hlistview, hdc_listview);
+
+	if (hdc_header)
+		ReleaseDC (hheader, hdc_header);
 }
 
 VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id)
