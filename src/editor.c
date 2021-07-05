@@ -745,7 +745,7 @@ INT_PTR CALLBACK PropertiesPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 
 						SAFE_DELETE_REFERENCE (localized_string);
 					}
-					else if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
+					else /*if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)*/
 					{
 						AppendMenu (hsubmenu, MF_STRING, IDM_CHECK, _r_locale_getstring (IDS_CHECK));
 						AppendMenu (hsubmenu, MF_STRING, IDM_UNCHECK, _r_locale_getstring (IDS_UNCHECK));
@@ -1025,13 +1025,9 @@ INT_PTR CALLBACK PropertiesPagesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 						{
 							listview_id2 = PtrToInt (_app_getappinfobyhash (item_param, InfoListviewId));
 						}
-						else if (listview_id == IDC_APP_RULES_ID)
+						else /*if (listview_id == IDC_APP_RULES_ID)*/
 						{
 							listview_id2 = PtrToInt (_app_getruleinfobyid (item_param, InfoListviewId));
-						}
-						else
-						{
-							break;
 						}
 
 						if (listview_id2)
@@ -1302,9 +1298,9 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 								_r_obj_movereference (&context->ptr_rule->name, string);
 							}
 
-							// rule (remote)
 							if (hpage_rule)
 							{
+								// rule (remote)
 								if (context->ptr_rule->rule_remote)
 									_r_obj_clearreference (&context->ptr_rule->rule_remote);
 
@@ -1318,11 +1314,8 @@ INT_PTR CALLBACK PropertiesProc (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 								{
 									_r_obj_dereference (string);
 								}
-							}
 
-							// rule (local)
-							if (hpage_rule)
-							{
+								// rule (local)
 								if (context->ptr_rule->rule_local)
 									_r_obj_clearreference (&context->ptr_rule->rule_local);
 

@@ -740,7 +740,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 							_app_generate_rulescontrol (hsubmenu, _app_notifyget_id (hwnd, FALSE));
 						}
-						else if (ctrl_id == IDC_ALLOW_BTN)
+						else /*if (ctrl_id == IDC_ALLOW_BTN)*/
 						{
 							AppendMenu (hsubmenu, MF_STRING, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
 							AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
@@ -1136,7 +1136,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 									SendMessage (hedit, WM_COPY, 0, 0);
 
 								// edit control hotkey for "ctrl+a"
-								else if (ctrl_id == IDM_SELECT_ALL)
+								else /*if (ctrl_id == IDM_SELECT_ALL)*/
 									SendMessage (hedit, EM_SETSEL, 0, (LPARAM)-1);
 							}
 						}

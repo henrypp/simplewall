@@ -2577,7 +2577,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 									_r_listview_redraw (hwnd, (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1), -1);
 							}
 						}
-						else if (wparam == DBT_DEVICEREMOVECOMPLETE)
+						else /*if (wparam == DBT_DEVICEREMOVECOMPLETE)*/
 						{
 							if (IsWindowVisible (hwnd))
 								_r_listview_redraw (hwnd, (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1), -1);
