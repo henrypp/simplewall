@@ -1,3 +1,12 @@
+v3.3.5 (5 July 2021)
+- added command line short opts
+- use guid for tray icon
+- updated project sdk
+- fixed toolbar glitch on hidpi displays (issue #950)
+- fixed multi-monitor with diffirent dpi support
+- fixed installer creates unused files
+- fixed internal bugs
+
 v3.3.4 (3 June 2021)
 - autoclean packets log ui when system suspended
 - fixed config may not be saved when profile directory does not exist
