@@ -1,0 +1,24 @@
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v2
+    - name: Checkout submodules
+      run: ${{github.workspace}}/.github/workflows/checkout_submodules.bat
+      shell: cmd
+    - name: Compile
+      run: ${{github.workspace}}/.github/workflows/compile.bat
+      shell: cmd
+    - name: Build package
+      run: ${{github.workspace}}/build.bat
+      shell: cmd
+    - run: echo "HOME=$env:USERPROFILE" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Binaries
+        path: ${{env.HOME}}/Desktop/simplewall*
