@@ -25,32 +25,60 @@ PSID _app_quyerybuiltinsid (_In_ WELL_KNOWN_SID_TYPE sid_type)
 
 VOID _app_generate_credentials ()
 {
+	R_STRINGREF service_name;
+
 	// For revoke current user (v3.0.5 Beta and lower)
 	if (!config.pbuiltin_current_sid)
+	{
 		config.pbuiltin_current_sid = _r_sys_getcurrenttoken ().token_sid;
+	}
 
 	// S-1-5-32-544 (BUILTIN\Administrators)
 	if (!config.pbuiltin_admins_sid)
+	{
 		config.pbuiltin_admins_sid = _app_quyerybuiltinsid (WinBuiltinAdministratorsSid);
+	}
 
 	// S-1-5-32-556 (BUILTIN\Network Configuration Operators)
 	if (!config.pbuiltin_netops_sid)
+	{
 		config.pbuiltin_netops_sid = _app_quyerybuiltinsid (WinBuiltinNetworkConfigurationOperatorsSid);
+	}
 
 	if (!config.pservice_mpssvc_sid)
-		config.pservice_mpssvc_sid = _r_sys_getservicesid (L"mpssvc");
+	{
+		_r_obj_initializestringref (&service_name, L"mpssvc");
+
+		config.pservice_mpssvc_sid = _r_sys_getservicesid (&service_name);
+	}
 
 	if (!config.pservice_nlasvc_sid)
-		config.pservice_nlasvc_sid = _r_sys_getservicesid (L"NlaSvc");
+	{
+		_r_obj_initializestringref (&service_name, L"NlaSvc");
+
+		config.pservice_nlasvc_sid = _r_sys_getservicesid (&service_name);
+	}
 
 	if (!config.pservice_policyagent_sid)
-		config.pservice_policyagent_sid = _r_sys_getservicesid (L"PolicyAgent");
+	{
+		_r_obj_initializestringref (&service_name, L"PolicyAgent");
+
+		config.pservice_policyagent_sid = _r_sys_getservicesid (&service_name);
+	}
 
 	if (!config.pservice_rpcss_sid)
-		config.pservice_rpcss_sid = _r_sys_getservicesid (L"RpcSs");
+	{
+		_r_obj_initializestringref (&service_name, L"RpcSs");
+
+		config.pservice_rpcss_sid = _r_sys_getservicesid (&service_name);
+	}
 
 	if (!config.pservice_wdiservicehost_sid)
-		config.pservice_wdiservicehost_sid = _r_sys_getservicesid (L"WdiServiceHost");
+	{
+		_r_obj_initializestringref (&service_name, L"WdiServiceHost");
+
+		config.pservice_wdiservicehost_sid = _r_sys_getservicesid (&service_name);
+	}
 }
 
 _Ret_maybenull_
@@ -321,7 +349,7 @@ VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID provider
 
 		if (new_dacl)
 		{
-			code = FwpmProviderSetSecurityInfoByKey (hengine, provider_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
+			code = FwpmProviderSetSecurityInfoByKey (hengine, provider_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
 
 			if (code != ERROR_SUCCESS)
 				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey", code, NULL);
@@ -358,7 +386,7 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer
 
 		if (new_dacl)
 		{
-			code = FwpmSubLayerSetSecurityInfoByKey (hengine, sublayer_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
+			code = FwpmSubLayerSetSecurityInfoByKey (hengine, sublayer_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
 
 			if (code != ERROR_SUCCESS)
 				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey", code, NULL);
@@ -401,7 +429,7 @@ VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_gui
 
 		if (new_dacl)
 		{
-			code = FwpmFilterSetSecurityInfoByKey (hengine, filter_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID*)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
+			code = FwpmFilterSetSecurityInfoByKey (hengine, filter_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
 
 			if (code != ERROR_SUCCESS)
 				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" PRIu32, line);

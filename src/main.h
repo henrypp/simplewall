@@ -48,12 +48,14 @@ typedef enum _ENUM_TYPE_DATA
 	DataAppUWP, // win8+
 	DataRuleBlocklist,
 	DataRuleSystem,
+	DataRuleSystemUser,
 	DataRuleUser,
 	DataRulesConfig,
 	DataTypePort,
 	DataTypeIp,
 	DataTypeHost,
 	DataFilterGeneral,
+	DataListviewCurrent,
 } ENUM_TYPE_DATA;
 
 typedef enum _ENUM_TYPE_XML
@@ -66,6 +68,7 @@ typedef enum _ENUM_INFO_DATA
 {
 	InfoPath = 1,
 	InfoName,
+	InfoBytesData,
 	InfoTimestampPtr,
 	InfoTimerPtr,
 	InfoIconId,
@@ -88,8 +91,9 @@ typedef enum _ENUM_INSTALL_TYPE
 #define LANG_MENU 5
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
-#define XML_PROFILE_VER_3 3
-#define XML_PROFILE_VER_CURRENT XML_PROFILE_VER_3
+#define XML_PROFILE_VER_3 0x03
+#define XML_PROFILE_VER_4 0x04
+#define XML_PROFILE_VER_CURRENT XML_PROFILE_VER_4
 
 #define XML_PROFILE L"profile.xml"
 #define XML_PROFILE_INTERNAL L"profile_internal.xml"
@@ -105,21 +109,13 @@ typedef enum _ENUM_INSTALL_TYPE
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
 
-#define PATH_NTOSKRNL L"%SystemRoot%\\system32\\ntoskrnl.exe"
-#define PATH_SVCHOST L"%SystemRoot%\\system32\\svchost.exe"
-#define PATH_SHELL32 L"%SystemRoot%\\system32\\shell32.dll"
-#define PATH_WINSTORE L"%SystemRoot%\\system32\\wsreset.exe"
+#define PATH_NTOSKRNL L"\\ntoskrnl.exe"
+#define PATH_SVCHOST L"\\svchost.exe"
+#define PATH_WINSTORE L"\\wsreset.exe"
 
 #define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
 
 #define SUBLAYER_WEIGHT_DEFAULT 0xFFFE
-
-#define FILTER_NAME_ICMP_ERROR L"BlockIcmpError"
-#define FILTER_NAME_TCP_RST_ONCLOSE L"BlockTcpRstOnClose"
-#define FILTER_NAME_BLOCK_CONNECTION L"BlockConnection"
-#define FILTER_NAME_BLOCK_CONNECTION_REDIRECT L"BlockConnectionRedirect"
-#define FILTER_NAME_BLOCK_RECVACCEPT L"BlockRecvAccept"
-#define FILTER_NAME_BOOTTIME L"BlockBoottime"
 
 #define DIVIDER_COPY L", "
 #define DIVIDER_CSV L","
@@ -152,10 +148,9 @@ typedef enum _ENUM_INSTALL_TYPE
 #define UI_STATUSBAR_PARTS_COUNT 3
 
 #define LEN_IP_MAX 68
-#define MAP_CACHE_MAX 512 // half of thousand limit for hashtable
+#define MAP_CACHE_MAX 900 // limit for caching hashtable
 
-#define FILTERS_TIMEOUT 9000
-#define TRANSACTION_TIMEOUT 6000
+#define TRANSACTION_TIMEOUT 9000
 #define NETWORK_TIMEOUT 3500
 
 // notifications
@@ -171,21 +166,28 @@ typedef enum _ENUM_INSTALL_TYPE
 #define LISTVIEW_COLOR_TIMER RGB(255, 190, 142)
 #define LISTVIEW_COLOR_INVALID RGB (255, 125, 148)
 #define LISTVIEW_COLOR_SPECIAL RGB (255, 255, 170)
-#define LISTVIEW_COLOR_SILENT RGB (201, 201, 201)
 #define LISTVIEW_COLOR_SIGNED RGB (175, 228, 163)
 #define LISTVIEW_COLOR_PICO RGB (51, 153, 255)
 #define LISTVIEW_COLOR_SYSTEM RGB(151, 196, 251)
 #define LISTVIEW_COLOR_CONNECTION RGB(255, 168, 242)
 
+// filter names
+#define FW_NAME_BLOCK_CONNECTION L"BlockConnection"
+#define FW_NAME_BLOCK_REDIRECT L"BlockRedirect"
+#define FW_NAME_BLOCK_RECVACCEPT L"BlockRecvAccept"
+#define FW_NAME_ICMP_ERROR L"BlockIcmpError"
+#define FW_NAME_TCP_RST_ONCLOSE L"BlockTcpRstOnClose"
+#define FW_NAME_BOOTTIME L"BlockBoottime"
+
 // filter weights
-#define FILTER_WEIGHT_HIGHEST_IMPORTANT 0x0F
-#define FILTER_WEIGHT_HIGHEST 0x0E
-#define FILTER_WEIGHT_BLOCKLIST 0x0D
-#define FILTER_WEIGHT_CUSTOM_BLOCK 0x0C
-#define FILTER_WEIGHT_CUSTOM 0x0B
-#define FILTER_WEIGHT_SYSTEM 0x0A
-#define FILTER_WEIGHT_APPLICATION 0x09
-#define FILTER_WEIGHT_LOWEST 0x08
+#define FW_WEIGHT_HIGHEST_IMPORTANT 0x0f
+#define FW_WEIGHT_HIGHEST 0x0e
+#define FW_WEIGHT_RULE_BLOCKLIST 0x0d
+#define FW_WEIGHT_RULE_USER_BLOCK 0x0c
+#define FW_WEIGHT_RULE_USER 0x0b
+#define FW_WEIGHT_RULE_SYSTEM 0x0a
+#define FW_WEIGHT_APP 0x09
+#define FW_WEIGHT_LOWEST 0x08
 
 // memory limitation for 1 rule
 #define RULE_NAME_CCH_MAX 64
@@ -201,8 +203,10 @@ typedef struct tagSTATIC_DATA
 
 	WCHAR search_string[128];
 
+	PR_STRING my_path;
 	PR_STRING ntoskrnl_path;
 	PR_STRING svchost_path;
+	PR_STRING system_path;
 	PR_STRING winstore_path;
 
 	PSID pbuiltin_current_sid;
@@ -227,7 +231,7 @@ typedef struct tagSTATIC_DATA
 
 	volatile HANDLE hlogfile;
 	volatile HANDLE hnetevent;
-	HANDLE done_evt;
+	volatile LONG logitem_id;
 	HFONT hfont;
 	HICON hicon_large;
 	HICON hicon_small;
@@ -241,6 +245,14 @@ typedef struct tagSTATIC_DATA
 	ULONG_PTR ntoskrnl_hash;
 	ULONG_PTR svchost_hash;
 	ULONG_PTR my_hash;
+
+	ULONG_PTR color_timer;
+	ULONG_PTR color_invalid;
+	ULONG_PTR color_special;
+	ULONG_PTR color_signed;
+	ULONG_PTR color_pico;
+	ULONG_PTR color_system;
+	ULONG_PTR color_network;
 
 	SIZE_T wd_length;
 
@@ -271,6 +283,10 @@ typedef struct tagITEM_LOG
 	PR_STRING provider_name;
 	PR_STRING filter_name;
 	PR_STRING username;
+	PR_STRING local_addr_str;
+	PR_STRING local_host_str;
+	PR_STRING remote_addr_str;
+	PR_STRING remote_host_str;
 
 	HICON hicon;
 
@@ -286,6 +302,8 @@ typedef struct tagITEM_LOG
 
 	UINT16 remote_port;
 	UINT16 local_port;
+
+	INT icon_id;
 
 	UINT8 protocol;
 
@@ -305,6 +323,8 @@ typedef struct tagITEM_APP
 	PR_STRING display_name;
 	PR_STRING short_name;
 	PR_STRING real_path;
+	PR_STRING signature;
+	PR_STRING version_info;
 
 	PITEM_LOG pnotification;
 	PR_BYTE pbytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
@@ -323,12 +343,22 @@ typedef struct tagITEM_APP
 
 	UINT8 profile; // reserved ffu!
 
-	BOOLEAN is_enabled;
-	BOOLEAN is_haveerrors;
-	BOOLEAN is_silent;
-	BOOLEAN is_signed;
-	BOOLEAN is_undeletable;
+	struct
+	{
+		ULONG is_enabled : 1;
+		ULONG is_haveerrors : 1;
+		ULONG is_silent : 1;
+		ULONG is_undeletable : 1;
+		ULONG spare_bits : 28;
+	};
 } ITEM_APP, *PITEM_APP;
+
+typedef struct ITEM_FILTER_CONFIG
+{
+	FWP_DIRECTION direction;
+	UINT8 protocol;
+	ADDRESS_FAMILY af;
+} ITEM_FILTER_CONFIG, *PITEM_FILTER_CONFIG;
 
 typedef struct tagITEM_RULE
 {
@@ -339,23 +369,32 @@ typedef struct tagITEM_RULE
 	PR_STRING rule_remote;
 	PR_STRING rule_local;
 
-	ADDRESS_FAMILY af;
+	struct
+	{
+		ULONG is_enabled : 1;
+		ULONG is_haveerrors : 1;
+		ULONG is_forservices : 1;
+		ULONG is_readonly : 1;
+		ULONG is_enabled_default : 1;
+		ULONG spare_bits : 27;
+	};
 
-	FWP_DIRECTION direction;
+	union
+	{
+		ITEM_FILTER_CONFIG config;
 
-	UINT8 profile; // reserved ffu!
-
-	UINT8 weight;
-	UINT8 protocol;
+		struct
+		{
+			FWP_DIRECTION direction;
+			UINT8 protocol;
+			ADDRESS_FAMILY af;
+		};
+	};
 
 	ENUM_TYPE_DATA type;
-
-	BOOLEAN is_haveerrors;
-	BOOLEAN is_forservices;
-	BOOLEAN is_readonly;
-	BOOLEAN is_enabled;
-	BOOLEAN is_enabled_default;
-	BOOLEAN is_block;
+	FWP_ACTION_TYPE action;
+	UINT8 profile; // reserved ffu!
+	UINT8 weight;
 } ITEM_RULE, *PITEM_RULE;
 
 typedef struct tagITEM_RULE_CONFIG
@@ -382,7 +421,6 @@ typedef struct tagITEM_NETWORK
 
 	PR_STRING path;
 	ULONG_PTR app_hash;
-	ULONG_PTR network_hash;
 	ULONG state;
 	INT icon_id;
 	FWP_DIRECTION direction;
@@ -439,7 +477,6 @@ typedef struct tagITEM_COLOR
 {
 	PR_STRING config_name;
 	PR_STRING config_value;
-	ULONG_PTR hash;
 	COLORREF default_clr;
 	COLORREF new_clr;
 	UINT locale_id;
@@ -479,23 +516,23 @@ typedef struct _ITEM_LOG_CALLBACK
 	union
 	{
 		UINT32 remote_addr4;
-		const FWP_BYTE_ARRAY16* remote_addr6;
+		const FWP_BYTE_ARRAY16 *remote_addr6;
 	} DUMMYUNIONNAME;
 
 	union
 	{
 		UINT32 local_addr4;
-		const FWP_BYTE_ARRAY16* local_addr6;
+		const FWP_BYTE_ARRAY16 *local_addr6;
 	} DUMMYUNIONNAME2;
 
-	FWP_IP_VERSION version;
-
-	const FILETIME* timestamp;
+	const FILETIME *timestamp;
 	PUINT8 app_id;
 	PSID package_id;
 	PSID user_id;
 
 	UINT64 filter_id;
+
+	FWP_IP_VERSION version;
 
 	UINT32 flags;
 	UINT32 direction;
@@ -507,20 +544,3 @@ typedef struct _ITEM_LOG_CALLBACK
 	BOOLEAN is_allow;
 	BOOLEAN is_loopback;
 } ITEM_LOG_CALLBACK, *PITEM_LOG_CALLBACK;
-
-typedef struct tagITEM_LOG_LISTENTRY
-{
-	SLIST_ENTRY list_entry;
-
-#ifndef _WIN64
-	ULONG_PTR reserved;
-#endif // _WIN64
-
-	PITEM_LOG body;
-
-	//SLIST_ENTRY ListEntry;
-	//QUAD_PTR Body;
-} ITEM_LOG_LISTENTRY, *PITEM_LOG_LISTENTRY;
-
-C_ASSERT (FIELD_OFFSET (ITEM_LOG_LISTENTRY, list_entry) == 0x00);
-C_ASSERT (FIELD_OFFSET (ITEM_LOG_LISTENTRY, body) == MEMORY_ALLOCATION_ALIGNMENT);

@@ -45,10 +45,166 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 	_r_obj_dereference (log_path);
 }
 
+ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
+{
+	PR_STRING log_string;
+	ULONG_PTR log_hash;
+
+	log_string = _r_format_string (L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG_PTR) L"_%" TEXT (PRIu8) L"_%" TEXT (PRIu8) L"_%" TEXT (PRIu16) L"_%" TEXT (PRIu16) L"_%s_%s",
+								   ptr_log->af,
+								   ptr_log->app_hash,
+								   ptr_log->protocol,
+								   ptr_log->direction,
+								   ptr_log->local_port,
+								   ptr_log->remote_port,
+								   _r_obj_getstring (ptr_log->local_addr_str),
+								   _r_obj_getstring (ptr_log->remote_addr_str)
+	);
+
+	if (!log_string)
+		return 0;
+
+	log_hash = _r_obj_getstringhash (log_string);
+
+	_r_obj_dereference (log_string);
+
+	return log_hash;
+}
+
+BOOLEAN _app_islogfound (_In_ ULONG_PTR log_hash)
+{
+	BOOLEAN is_found;
+
+	_r_queuedlock_acquireshared (&lock_loglist);
+
+	is_found = (_r_obj_findhashtable (log_table, log_hash) != NULL);
+
+	_r_queuedlock_releaseshared (&lock_loglist);
+
+	return is_found;
+}
+
+VOID _app_setlogiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_LOG ptr_log)
+{
+	PR_STRING string;
+
+	if (ptr_log->local_addr_str)
+		_r_listview_setitem (hwnd, listview_id, item_id, 1, ptr_log->local_addr_str->buffer);
+
+	if (ptr_log->local_host_str)
+		_r_listview_setitem (hwnd, listview_id, item_id, 2, ptr_log->local_host_str->buffer);
+
+	if (ptr_log->remote_addr_str)
+		_r_listview_setitem (hwnd, listview_id, item_id, 4, ptr_log->remote_addr_str->buffer);
+
+	if (ptr_log->remote_host_str)
+		_r_listview_setitem (hwnd, listview_id, item_id, 5, ptr_log->remote_host_str->buffer);
+
+	_r_listview_setitem (hwnd, listview_id, item_id, 8, _app_getprotoname (ptr_log->protocol, ptr_log->af, L""));
+
+	if (ptr_log->local_port)
+	{
+		string = _app_formatport (ptr_log->local_port, ptr_log->protocol, TRUE);
+
+		if (string)
+		{
+			_r_listview_setitem (hwnd, listview_id, item_id, 3, string->buffer);
+
+			_r_obj_dereference (string);
+		}
+	}
+
+	if (ptr_log->remote_port)
+	{
+		string = _app_formatport (ptr_log->remote_port, ptr_log->protocol, TRUE);
+
+		if (string)
+		{
+			_r_listview_setitem (hwnd, listview_id, item_id, 6, string->buffer);
+
+			_r_obj_dereference (string);
+		}
+	}
+
+	string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
+
+	if (string)
+	{
+		_r_listview_setitem (hwnd, listview_id, item_id, 9, string->buffer);
+
+		_r_obj_dereference (string);
+	}
+
+	if (ptr_log->filter_name)
+		_r_listview_setitem (hwnd, listview_id, item_id, 7, ptr_log->filter_name->buffer);
+
+	_r_listview_setitem (hwnd, listview_id, item_id, 10, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
+
+	string = _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+
+	if (string)
+	{
+		_r_listview_setitem (hwnd, listview_id, item_id, 11, string->buffer);
+
+		_r_obj_dereference (string);
+	}
+}
+
+BOOLEAN _app_logislimitreached (_In_ HANDLE hfile)
+{
+	LONG64 limit;
+
+	limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
+
+	if (!limit)
+		return FALSE;
+
+	return (_r_fs_getsize (hfile) >= (_r_calc_kilobytes2bytes64 (limit)));
+}
+
+VOID _app_logclear (_In_opt_ HANDLE hfile)
+{
+	PR_STRING log_path;
+
+	if (_r_fs_isvalidhandle (hfile))
+	{
+		_r_fs_setpos (hfile, 2, FILE_BEGIN);
+
+		SetEndOfFile (hfile);
+
+		FlushFileBuffers (hfile);
+	}
+
+	log_path = _app_getlogpath ();
+
+	if (log_path)
+	{
+		_r_fs_deletefile (log_path->buffer, TRUE);
+
+		_r_obj_dereference (log_path);
+	}
+}
+
+VOID _app_logclear_ui (_In_ HWND hwnd)
+{
+	SendDlgItemMessage (hwnd, IDC_LOG, LVM_DELETEALLITEMS, 0, 0);
+	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, 0, 0);
+
+	InterlockedCompareExchange (&config.logitem_id, 0, config.logitem_id);
+
+	_app_listviewresize (hwnd, IDC_LOG, FALSE);
+
+	_r_queuedlock_acquireexclusive (&lock_loglist);
+
+	_r_obj_clearhashtable (log_table);
+
+	_r_queuedlock_releaseexclusive (&lock_loglist);
+}
+
 VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 {
 	PR_STRING path = NULL;
-	WCHAR date_string[256];
+	PR_STRING date_string;
 	PR_STRING local_address_string;
 	PR_STRING local_port_string;
 	PR_STRING remote_address_string;
@@ -84,13 +240,15 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 			{
 				path = _r_obj_reference (ptr_app->original_path);
 			}
+
+			_r_obj_dereference (ptr_app);
 		}
 	}
 
-	_r_format_unixtimeex (date_string, RTL_NUMBER_OF (date_string), ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+	date_string = _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
 
-	local_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, FMTADDR_RESOLVE_HOST);
-	remote_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, FMTADDR_RESOLVE_HOST);
+	local_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, 0);
+	remote_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, 0);
 
 	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol, TRUE);
 	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol, TRUE);
@@ -98,7 +256,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	direction_string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
 	buffer = _r_format_string (SZ_LOG_BODY,
-							   date_string,
+							   _r_obj_getstringordefault (date_string, SZ_EMPTY),
 							   _r_obj_getstringordefault (ptr_log->username, SZ_EMPTY),
 							   _r_obj_getstringordefault (path, SZ_EMPTY),
 							   _r_obj_getstringordefault (local_address_string, SZ_EMPTY),
@@ -112,6 +270,9 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 							   _r_obj_getstringordefault (direction_string, SZ_EMPTY),
 							   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 	);
+
+	if (date_string)
+		_r_obj_dereference (date_string);
 
 	if (local_address_string)
 		_r_obj_dereference (local_address_string);
@@ -135,7 +296,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 		_app_logclear (current_handle);
 
 	if (_r_fs_getsize (current_handle) == 2)
-		WriteFile (current_handle, SZ_LOG_TITLE, (ULONG)(_r_str_length (SZ_LOG_TITLE) * sizeof (WCHAR)), &unused, NULL); // adds csv header
+		WriteFile (current_handle, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)), &unused, NULL); // adds csv header
 
 	if (buffer)
 	{
@@ -145,202 +306,72 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	}
 }
 
-BOOLEAN _app_logisexists (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log_new)
-{
-	PITEM_LOG ptr_log;
-	BOOLEAN is_duplicate_found = FALSE;
-
-	_r_spinlock_acquireshared (&lock_loglist);
-
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (log_arr); i++)
-	{
-		ptr_log = _r_obj_referencesafe (_r_obj_getlistitem (log_arr, i));
-
-		if (!ptr_log)
-			continue;
-
-		if (
-			ptr_log->is_allow == ptr_log_new->is_allow &&
-			ptr_log->af == ptr_log_new->af &&
-			ptr_log->direction == ptr_log_new->direction &&
-			ptr_log->protocol == ptr_log_new->protocol &&
-			ptr_log->remote_port == ptr_log_new->remote_port &&
-			ptr_log->local_port == ptr_log_new->local_port
-			)
-		{
-			if (ptr_log->af == AF_INET)
-			{
-				if (
-					ptr_log->remote_addr.S_un.S_addr == ptr_log_new->remote_addr.S_un.S_addr &&
-					ptr_log->local_addr.S_un.S_addr == ptr_log_new->local_addr.S_un.S_addr
-					)
-				{
-					is_duplicate_found = TRUE;
-				}
-			}
-			else if (ptr_log->af == AF_INET6)
-			{
-				if (
-					RtlEqualMemory (ptr_log->remote_addr6.u.Byte, ptr_log_new->remote_addr6.u.Byte, FWP_V6_ADDR_SIZE) &&
-					RtlEqualMemory (ptr_log->local_addr6.u.Byte, ptr_log_new->local_addr6.u.Byte, FWP_V6_ADDR_SIZE)
-					)
-				{
-					is_duplicate_found = TRUE;
-				}
-			}
-
-			if (is_duplicate_found)
-			{
-				ptr_log_new->timestamp = ptr_log->timestamp; // upd date
-
-				_r_obj_dereference (ptr_log);
-
-				_r_spinlock_releaseshared (&lock_loglist);
-
-				return TRUE;
-			}
-		}
-
-		_r_obj_dereference (ptr_log);
-	}
-
-	_r_spinlock_releaseshared (&lock_loglist);
-
-	return FALSE;
-}
-
 VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 {
-	WCHAR index_string[128];
 	PITEM_APP ptr_app;
-	PR_STRING local_address_string;
-	PR_STRING local_port_string;
-	PR_STRING remote_address_string;
-	PR_STRING remote_port_string;
-	PR_STRING direction_string;
-	SIZE_T index;
-	INT listview_id;
+	ULONG_PTR log_hash;
+	SIZE_T table_size;
 	INT item_id;
 
-	if (_app_logisexists (hwnd, ptr_log))
+	log_hash = _app_getloghash (hwnd, ptr_log);
+
+	if (!log_hash)
 		return;
+
+	// log was already in list, so skip it...
+	if (_app_islogfound (log_hash))
+		return;
+
+	_r_queuedlock_acquireshared (&lock_loglist);
+
+	table_size = _r_obj_gethashtablesize (log_table);
+
+	_r_queuedlock_releaseshared (&lock_loglist);
+
+	if (table_size >= MAP_CACHE_MAX)
+	{
+		ULONG_PTR hash_code;
+
+		item_id = InterlockedDecrement (&config.logitem_id) - 1;
+
+		hash_code = _r_listview_getitemlparam (hwnd, IDC_LOG, item_id);
+		_r_listview_deleteitem (hwnd, IDC_LOG, item_id);
+
+		_r_queuedlock_acquireexclusive (&lock_loglist);
+
+		_r_obj_removehashtablepointer (log_table, hash_code);
+
+		_r_queuedlock_releaseexclusive (&lock_loglist);
+	}
+
+	_r_queuedlock_acquireexclusive (&lock_loglist);
+
+	_r_obj_addhashtablepointer (log_table, log_hash, _r_obj_reference (ptr_log));
+
+	_r_queuedlock_releaseexclusive (&lock_loglist);
 
 	ptr_app = _app_getappitem (ptr_log->app_hash);
 
-	listview_id = IDC_LOG;
+	//item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
 
-	_r_spinlock_acquireexclusive (&lock_loglist);
+	item_id = InterlockedIncrement (&config.logitem_id) - 1;
 
-	_r_obj_addlistitemex (log_arr, _r_obj_reference (ptr_log), &index);
+	_r_listview_additemex (hwnd, IDC_LOG, item_id, ptr_app ? _app_getappdisplayname (ptr_app, TRUE) : SZ_EMPTY, I_IMAGECALLBACK, I_GROUPIDNONE, log_hash);
+	_app_setlogiteminfo (hwnd, IDC_LOG, item_id, ptr_log);
 
-	_r_spinlock_releaseexclusive (&lock_loglist);
+	if (ptr_app)
+		_r_obj_dereference (ptr_app);
 
-	local_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, 0);
-	remote_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, 0);
-
-	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol, TRUE);
-	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol, TRUE);
-
-	direction_string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
-
-	item_id = _r_listview_getitemcount (hwnd, listview_id);
-
-	_r_listview_additemex (hwnd, listview_id, item_id, 0, ptr_app ? _app_getdisplayname (ptr_app, TRUE) : SZ_EMPTY, ptr_app ? PtrToInt (_app_getappinfo (ptr_app, InfoIconId)) : config.icon_id, I_GROUPIDNONE, index);
-	_r_listview_setitem (hwnd, listview_id, item_id, 1, _r_obj_getstringordefault (local_address_string, SZ_EMPTY));
-	_r_listview_setitem (hwnd, listview_id, item_id, 3, _r_obj_getstringordefault (remote_address_string, SZ_EMPTY));
-	_r_listview_setitem (hwnd, listview_id, item_id, 5, _app_getprotoname (ptr_log->protocol, ptr_log->af, SZ_EMPTY));
-
-	if (local_port_string)
-		_r_listview_setitem (hwnd, listview_id, item_id, 2, _r_obj_getstringorempty (local_port_string));
-
-	if (remote_port_string)
-		_r_listview_setitem (hwnd, listview_id, item_id, 4, _r_obj_getstringorempty (remote_port_string));
-
-	_r_listview_setitem (hwnd, listview_id, item_id, 6, _r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY));
-	_r_listview_setitem (hwnd, listview_id, item_id, 7, _r_obj_getstringorempty (direction_string));
-	_r_listview_setitem (hwnd, listview_id, item_id, 8, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
-
-	_r_str_printf (index_string, RTL_NUMBER_OF (index_string), L"%" PR_SIZE_T, index);
-	_r_listview_setitem (hwnd, listview_id, item_id, 9, index_string);
-
-	if (local_address_string)
-		_r_obj_dereference (local_address_string);
-
-	if (remote_address_string)
-		_r_obj_dereference (remote_address_string);
-
-	if (local_port_string)
-		_r_obj_dereference (local_port_string);
-
-	if (remote_port_string)
-		_r_obj_dereference (remote_port_string);
-
-	if (direction_string)
-		_r_obj_dereference (direction_string);
-
-	if (listview_id == (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1))
-	{
-		_app_listviewresize (hwnd, listview_id, FALSE);
-		_app_listviewsort (hwnd, listview_id, -1, FALSE);
-	}
-}
-
-BOOLEAN _app_logislimitreached (_In_opt_ HANDLE hfile)
-{
-	LONG64 limit;
-
-	limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
-
-	if (!limit || !_r_fs_isvalidhandle (hfile))
-		return FALSE;
-
-	return (_r_fs_getsize (hfile) >= (_r_calc_kilobytes2bytes64 (limit)));
-}
-
-VOID _app_logclear (_In_opt_ HANDLE hfile)
-{
-	PR_STRING log_path;
-
-	if (_r_fs_isvalidhandle (hfile))
-	{
-		_r_fs_setpos (hfile, 2, FILE_BEGIN);
-
-		SetEndOfFile (hfile);
-
-		FlushFileBuffers (hfile);
-	}
-
-	log_path = _app_getlogpath ();
-
-	if (log_path)
-	{
-		_r_fs_deletefile (log_path->buffer, TRUE);
-
-		_r_obj_dereference (log_path);
-	}
-}
-
-VOID _app_logclear_ui (_In_ HWND hwnd)
-{
-	SendDlgItemMessage (hwnd, IDC_LOG, LVM_DELETEALLITEMS, 0, 0);
-	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, 0, 0);
-
-	_app_listviewresize (hwnd, IDC_LOG, FALSE);
-
-	_r_spinlock_acquireexclusive (&lock_loglist);
-
-	_r_obj_clearlist (log_arr);
-
-	_r_spinlock_releaseexclusive (&lock_loglist);
+	_app_updatelistviewbylparam (hwnd, IDC_LOG, 0);
 }
 
 VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 {
-	typedef ULONG (WINAPI *FWPMNES4)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK4 callback, PVOID context, HANDLE* events_handle); // win10rs5+
-	typedef ULONG (WINAPI *FWPMNES3)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK3 callback, PVOID context, HANDLE* events_handle); // win10rs4+
-	typedef ULONG (WINAPI *FWPMNES2)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK2 callback, PVOID context, HANDLE* events_handle); // win10rs1+
-	typedef ULONG (WINAPI *FWPMNES1)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK1 callback, PVOID context, HANDLE* events_handle); // win8+
-	typedef ULONG (WINAPI *FWPMNES0)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0* subscription, FWPM_NET_EVENT_CALLBACK0 callback, PVOID context, HANDLE* events_handle); // win7+
+	typedef ULONG (WINAPI *FWPMNES4)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK4 callback, PVOID context, HANDLE *events_handle); // win10rs5+
+	typedef ULONG (WINAPI *FWPMNES3)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK3 callback, PVOID context, HANDLE *events_handle); // win10rs4+
+	typedef ULONG (WINAPI *FWPMNES2)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK2 callback, PVOID context, HANDLE *events_handle); // win10rs1+
+	typedef ULONG (WINAPI *FWPMNES1)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK1 callback, PVOID context, HANDLE *events_handle); // win8+
+	typedef ULONG (WINAPI *FWPMNES0)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK0 callback, PVOID context, HANDLE *events_handle); // win7+
 
 	FWPMNES4 _FwpmNetEventSubscribe4;
 	FWPMNES3 _FwpmNetEventSubscribe3;
@@ -364,7 +395,6 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 	if (!hfwpuclnt)
 	{
 		_r_log (LOG_LEVEL_WARNING, NULL, L"LoadLibraryEx", GetLastError (), L"fwpuclnt.dll");
-
 		return;
 	}
 
@@ -377,12 +407,11 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 	if (!_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
 	{
 		_r_log (LOG_LEVEL_WARNING, NULL, L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
-
 		goto CleanupExit; // there is no function to call
 	}
 
-	memset (&subscription, 0, sizeof (subscription));
-	memset (&enum_template, 0, sizeof (enum_template));
+	RtlZeroMemory (&subscription, sizeof (subscription));
+	RtlZeroMemory (&enum_template, sizeof (enum_template));
 
 	subscription.enumTemplate = &enum_template;
 	hevent = NULL;
@@ -440,9 +469,11 @@ VOID _wfp_logunsubscribe (_In_ HANDLE hengine)
 
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 {
-	HANDLE hengine = _wfp_getenginehandle ();
+	HANDLE hengine;
 
-	if (!hengine || !log->filter_id || !log->layer_id || _wfp_isfiltersapplying () || (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE)))
+	hengine = _wfp_getenginehandle ();
+
+	if (!hengine || !log->filter_id || !log->layer_id || (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE)))
 		return;
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
@@ -453,12 +484,12 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		{
 			if (layer)
 			{
-				if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6, sizeof (GUID)))
+				if (IsEqualGUID (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) || IsEqualGUID (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
 				{
 					FwpmFreeMemory ((PVOID_PTR)&layer);
 					return;
 				}
-				else if (RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, sizeof (GUID)) || RtlEqualMemory (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, sizeof (GUID)))
+				else if (IsEqualGUID (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) || IsEqualGUID (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6))
 				{
 					log->direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 				}
@@ -483,47 +514,60 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		if (FwpmFilterGetById (hengine, log->filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
 		{
 			if (!_r_str_isempty (ptr_filter->displayData.description))
+			{
 				filter_name = _r_obj_createstring (ptr_filter->displayData.description);
-
+			}
 			else if (!_r_str_isempty (ptr_filter->displayData.name))
+			{
 				filter_name = _r_obj_createstring (ptr_filter->displayData.name);
+			}
 
 			if (ptr_filter->weight.type == FWP_UINT8)
+			{
 				filter_weight = ptr_filter->weight.uint8;
+			}
 
 			if (ptr_filter->providerKey)
 			{
-				if (RtlEqualMemory (ptr_filter->providerKey, &GUID_WfpProvider, sizeof (GUID)))
+				if (IsEqualGUID (ptr_filter->providerKey, &GUID_WfpProvider))
+				{
 					is_myprovider = TRUE;
+				}
 
 				if (FwpmProviderGetByKey (hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
 				{
 					if (!_r_str_isempty (ptr_provider->displayData.name))
+					{
 						provider_name = _r_obj_createstring (ptr_provider->displayData.name);
-
+					}
 					else if (!_r_str_isempty (ptr_provider->displayData.description))
+					{
 						provider_name = _r_obj_createstring (ptr_provider->displayData.description);
+					}
 				}
 			}
 		}
 
 		if (ptr_filter)
+		{
 			FwpmFreeMemory ((PVOID_PTR)&ptr_filter);
+		}
 
 		if (ptr_provider)
+		{
 			FwpmFreeMemory ((PVOID_PTR)&ptr_provider);
+		}
 
 		// prevent filter "not found" items
 		if (!filter_name && !provider_name)
+		{
 			return;
+		}
 	}
 
-	PITEM_LOG_LISTENTRY ptr_entry = _aligned_malloc (sizeof (ITEM_LOG_LISTENTRY), MEMORY_ALLOCATION_ALIGNMENT);
+	PITEM_LOG ptr_log;
 
-	if (!ptr_entry)
-		return;
-
-	PITEM_LOG ptr_log = _r_obj_allocate (sizeof (ITEM_LOG), &_app_dereferencelog);
+	ptr_log = _r_obj_allocate (sizeof (ITEM_LOG), &_app_dereferencelog);
 
 	// copy date and time
 	if (log->timestamp)
@@ -538,7 +582,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 		if (sid_string)
 		{
-			if (!_app_getappitem (_r_obj_getstringhash (sid_string)))
+			if (!_app_isappfound (_r_obj_getstringhash (sid_string)))
 				_r_obj_clearreference (&sid_string);
 		}
 	}
@@ -571,7 +615,9 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 	// get username information
 	if ((log->flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) && log->user_id)
+	{
 		ptr_log->username = _r_sys_getusernamefromsid (log->user_id);
+	}
 
 	// destination
 	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))
@@ -582,11 +628,15 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 			// remote address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) && log->remote_addr4)
+			{
 				ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (log->remote_addr4);
+			}
 
 			// local address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) && log->local_addr4)
+			{
 				ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (log->local_addr4);
+			}
 		}
 		else if (log->version == FWP_IP_VERSION_V6)
 		{
@@ -594,24 +644,34 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 			// remote address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) && log->remote_addr6)
-				memcpy (ptr_log->remote_addr6.u.Byte, log->remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
+			{
+				RtlCopyMemory (ptr_log->remote_addr6.u.Byte, log->remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
+			}
 
 			// local address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) && log->local_addr6)
-				memcpy (ptr_log->local_addr6.u.Byte, log->local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
+			{
+				RtlCopyMemory (ptr_log->local_addr6.u.Byte, log->local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
+			}
 		}
 	}
 
 	// ports
 	if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET) && log->local_port)
+	{
 		ptr_log->local_port = log->local_port;
+	}
 
 	if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) && log->remote_port)
+	{
 		ptr_log->remote_port = log->remote_port;
+	}
 
 	// protocol
 	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
+	{
 		ptr_log->protocol = log->protocol;
+	}
 
 	// indicates FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW state
 	ptr_log->is_allow = log->is_allow;
@@ -627,20 +687,11 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	ptr_log->filter_name = filter_name;
 	ptr_log->provider_name = provider_name;
 
-	ptr_log->is_blocklist = (filter_weight == FILTER_WEIGHT_BLOCKLIST);
-	ptr_log->is_system = (filter_weight == FILTER_WEIGHT_HIGHEST) || (filter_weight == FILTER_WEIGHT_HIGHEST_IMPORTANT);
-	ptr_log->is_custom = (filter_weight == FILTER_WEIGHT_CUSTOM) || (filter_weight == FILTER_WEIGHT_CUSTOM_BLOCK);
+	ptr_log->is_blocklist = (filter_weight == FW_WEIGHT_RULE_BLOCKLIST);
+	ptr_log->is_system = (filter_weight == FW_WEIGHT_HIGHEST) || (filter_weight == FW_WEIGHT_HIGHEST_IMPORTANT);
+	ptr_log->is_custom = (filter_weight == FW_WEIGHT_RULE_USER) || (filter_weight == FW_WEIGHT_RULE_USER_BLOCK);
 
-	// push into a singly linked list
-	ptr_entry->body = ptr_log;
-
-	RtlInterlockedPushEntrySList (&log_list_stack, &ptr_entry->list_entry);
-
-	// check if thread has not exists
-	if (!_r_spinlock_islocked (&lock_logthread))
-	{
-		_r_sys_createthreadex (&LogThread, _r_app_gethwnd (), NULL, THREAD_PRIORITY_HIGHEST);
-	}
+	_r_workqueue_queueitem (&log_queue, &LogThread, ptr_log);
 }
 
 _Success_ (return)
@@ -650,7 +701,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PV
 
 	if (version == WINDOWS_7)
 	{
-		FWPM_NET_EVENT1* event = data;
+		FWPM_NET_EVENT1 *event = data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -739,7 +790,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PV
 	}
 	else if (version == WINDOWS_8)
 	{
-		FWPM_NET_EVENT2* event = data;
+		FWPM_NET_EVENT2 *event = data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -847,7 +898,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PV
 	}
 	else if (version == WINDOWS_10_1607)
 	{
-		FWPM_NET_EVENT3* event = data;
+		FWPM_NET_EVENT3 *event = data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -955,7 +1006,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PV
 	}
 	else if (version == WINDOWS_10_1803)
 	{
-		FWPM_NET_EVENT4* event = data;
+		FWPM_NET_EVENT4 *event = data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -1063,7 +1114,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PV
 	}
 	else if (version == WINDOWS_10_1809)
 	{
-		FWPM_NET_EVENT5* event = data;
+		FWPM_NET_EVENT5 *event = data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -1192,7 +1243,7 @@ VOID CALLBACK _wfp_logcallback1 (_In_ PVOID context, _In_ const FWPM_NET_EVENT2 
 }
 
 // win10rs1+ callback
-VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3* event)
+VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3 * event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1201,7 +1252,7 @@ VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3*
 }
 
 // win10rs4+ callback
-VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4* event)
+VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4 * event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1210,7 +1261,7 @@ VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4*
 }
 
 // win10rs5+ callback
-VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5* event)
+VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5 * event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1218,18 +1269,12 @@ VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5*
 		_wfp_logcallback (&log);
 }
 
-THREAD_API LogThread (_In_ PVOID lparam)
+THREAD_API LogThread (_In_ PVOID arglist)
 {
-	HWND hwnd = (HWND)lparam;
+	HWND hwnd;
 
-	PSLIST_ENTRY list_item;
-	PITEM_LOG_LISTENTRY ptr_entry;
 	PITEM_LOG ptr_log;
-	PITEM_APP ptr_app;
-
-	PR_STRING string;
-
-	INT listview_id;
+	PITEM_APP ptr_app = NULL;
 
 	BOOLEAN is_logenabled;
 	BOOLEAN is_loguienabled;
@@ -1237,103 +1282,102 @@ THREAD_API LogThread (_In_ PVOID lparam)
 	BOOLEAN is_exludestealth;
 	BOOLEAN is_notexist;
 
-	_r_spinlock_acquireshared (&lock_logthread);
+	hwnd = _r_app_gethwnd ();
 
-	while (TRUE)
+	ptr_log = arglist;
+
+	is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
+	is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
+	is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
+
+	is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
+
+	// apps collector
+	is_notexist = ptr_log->app_hash && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);
+
+	if (is_notexist)
 	{
-		list_item = RtlInterlockedPopEntrySList (&log_list_stack);
+		ptr_log->app_hash = _app_addapplication (hwnd, DataUnknown, &ptr_log->path->sr, NULL, NULL);
 
-		if (!list_item)
-			break;
-
-		ptr_entry = CONTAINING_RECORD (list_item, ITEM_LOG_LISTENTRY, list_entry);
-		ptr_log = ptr_entry->body;
-
-		_aligned_free (ptr_entry);
-
-		if (!ptr_log)
-			continue;
-
-		is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
-		is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
-		is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
-
-		is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
-
-		// apps collector
-		is_notexist = ptr_log->app_hash && !ptr_log->is_allow && !_app_getappitem (ptr_log->app_hash);
-
-		if (is_notexist)
+		if (ptr_log->app_hash)
 		{
-			_r_spinlock_acquireshared (&lock_logbusy);
-			ptr_app = _app_addapplication (hwnd, DataUnknown, ptr_log->path->buffer, NULL, NULL);
-			_r_spinlock_releaseshared (&lock_logbusy);
+			ptr_app = _app_getappitem (ptr_log->app_hash);
 
 			if (ptr_app)
-				ptr_log->app_hash = ptr_app->app_hash;
-
-			listview_id = PtrToInt (_app_getappinfobyhash (ptr_log->app_hash, InfoListviewId));
-
-			if (listview_id && listview_id == (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, -1))
 			{
-				_app_listviewsort (hwnd, listview_id, -1, FALSE);
-				_app_refreshstatus (hwnd, listview_id);
+				_app_updatelistviewbylparam (hwnd, ptr_app->type, PR_UPDATE_TYPE);
 			}
 
 			_app_profile_save ();
 		}
+	}
 
-		// made network name resolution
+	if (!ptr_app)
+	{
+		ptr_app = _app_getappitem (ptr_log->app_hash);
+	}
+
+	// made network name resolution
+	ptr_log->remote_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, 0);
+	ptr_log->local_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, 0);
+
+	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
+	{
+		ptr_log->remote_host_str = _app_resolveaddress (ptr_log->af, &ptr_log->remote_addr);
+		ptr_log->local_host_str = _app_resolveaddress (ptr_log->af, &ptr_log->local_addr);
+	}
+
+	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth)
+	{
+		if (ptr_app)
 		{
-			_r_spinlock_acquireshared (&lock_logbusy);
-
-			string = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_RESOLVE_HOST);
-
-			if (string)
-				_r_obj_dereference (string);
-
-			string = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, FMTADDR_RESOLVE_HOST);
-
-			if (string)
-				_r_obj_dereference (string);
-
-			_r_spinlock_releaseshared (&lock_logbusy);
+			_app_getappicon (ptr_app, TRUE, &ptr_log->icon_id, NULL);
+			_app_getappicon (ptr_app, FALSE, NULL, &ptr_log->hicon);
+		}
+		else
+		{
+			ptr_log->icon_id = config.icon_id;
+			ptr_log->hicon = CopyIcon (config.hicon_large);
 		}
 
-		if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth)
+		// write log to a file
+		if (is_logenabled)
 		{
-			// write log to a file
-			if (is_logenabled)
-				_app_logwrite (ptr_log);
+			_app_logwrite (ptr_log);
+		}
 
-			// only for my own provider
-			if (ptr_log->is_myprovider)
+		// only for my own provider
+		if (ptr_log->is_myprovider)
+		{
+			// write log to a ui
+			if (is_loguienabled)
 			{
-				// write log to a ui
-				if (is_loguienabled)
-					_app_logwrite_ui (hwnd, ptr_log);
+				_app_logwrite_ui (hwnd, ptr_log);
+			}
 
-				// display notification
-				if (is_notificationenabled && ptr_log->app_hash && !ptr_log->is_allow)
+			// display notification
+			if (is_notificationenabled && ptr_log->app_hash && !ptr_log->is_allow)
+			{
+				if (!(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE)))
 				{
-					if (!(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE)))
+					if (ptr_app)
 					{
-						ptr_app = _app_getappitem (ptr_log->app_hash);
-
-						if (ptr_app)
+						if (!PtrToInt (_app_getappinfo (ptr_app, InfoIsSilent)))
 						{
-							if (!PtrToInt (_app_getappinfo (ptr_app, InfoIsSilent)))
-								_app_notifyadd (config.hnotification, _r_obj_reference (ptr_log), ptr_app);
+							_app_notifyadd (config.hnotification, _r_obj_reference (ptr_log), ptr_app);
 						}
 					}
 				}
 			}
 		}
-
-		_r_obj_dereference (ptr_log);
 	}
 
-	_r_spinlock_releaseshared (&lock_logthread);
+	if (ptr_app)
+	{
+		_r_obj_dereference (ptr_app);
+	}
+
+	_r_obj_dereference (ptr_log);
 
 	return ERROR_SUCCESS;
 }
