@@ -6,6 +6,11 @@ Simple tool to configure Windows Filtering Platform (WFP) which can configure ne
 The lightweight application is less than a megabyte, and it is compatible with Windows 7 SP1 and higher operating systems.
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
+Nota bene:
+Keep in mind, simplewall is not a control UI over Windows Firewall, and does not interact in any level with Windows Firewall. It works
+over Windows Filtering Platform (WFP) which is a set of API and system services that provide a platform for creating network filtering
+applications. Windows Filtering Platform is a development technology and not a firewall itself, but simplewall is the tool that uses this technology.
+
 Command line:
 List of arguments for simplewall.exe:
 -install - enable filtering (you can set "-silent" argument to skip prompt)
