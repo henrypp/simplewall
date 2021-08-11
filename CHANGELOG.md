@@ -1,3 +1,18 @@
+v3.4 (11 August 2021)
+- added arm64 binaries (portable only)
+- added protocol and host name information into network alert window  (issue #843)
+- added limit number of packets log entries (issue #941)
+- added host resolving for packet logger listview
+- added listview group for forever blocked apps
+- fixed loading icons of each application freezes interface (issue #830)
+- fixed log listview can have empty lines due to race condition
+- fixed ui not properly display installation status (issue #962)
+- fixed memory leak when loading profile (issue #888, #937)
+- fixed high cpu usage for packet logger (issue #949)
+- updated system rules
+- updated project sdk
+- fixed internal bugs
+
 v3.3.5 (5 July 2021)
 - added command line short opts
 - use guid for tray icon
