@@ -144,6 +144,8 @@ THREAD_API NetworkMonitorThread (_In_ PVOID arglist)
 
 		while (TRUE)
 		{
+			_r_obj_clearhashtable (checker_map);
+
 			_app_generate_connections (network_table, checker_map);
 
 			is_highlighting_enabled = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getbooleanex (L"IsHighlightConnection", TRUE, L"colors");
@@ -220,7 +222,7 @@ THREAD_API NetworkMonitorThread (_In_ PVOID arglist)
 		}
 	}
 
-	return ERROR_SUCCESS;
+	return STATUS_SUCCESS;
 }
 
 BOOLEAN _app_changefilters (_In_ HWND hwnd, _In_ BOOLEAN is_install, _In_ BOOLEAN is_forced)
@@ -1745,13 +1747,13 @@ VOID _app_initialize ()
 		R_THREAD_ENVIRONMENT environment;
 
 		_r_sys_setenvironment (&environment, THREAD_PRIORITY_LOWEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&file_queue, 0, 10, 2000, &environment);
+		_r_workqueue_initialize (&file_queue, 0, 10, 1000, &environment);
 
-		_r_sys_setenvironment (&environment, THREAD_PRIORITY_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+		_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 		_r_workqueue_initialize (&log_queue, 0, 4, 4000, &environment);
 
-		_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_MEDIUM);
-		_r_workqueue_initialize (&wfp_queue, 0, 1, 500, &environment);
+		_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+		_r_workqueue_initialize (&wfp_queue, 0, 1, 1000, &environment);
 	}
 
 	// initialize timers
