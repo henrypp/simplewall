@@ -1,6 +1,6 @@
 v3.4.1 (15 August 2021)
 - fixed blocklist can does not change action status
-- fixed crash at startup (issue #986)
+- fixed crash at startup (issue #976)
 - fixed profile import compatibility
 - fixed install update
 
