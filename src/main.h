@@ -61,7 +61,7 @@ typedef enum _ENUM_TYPE_DATA
 typedef enum _ENUM_TYPE_XML
 {
 	XmlProfileV3 = 3,
-	XmlProfileInternalV3,
+	XmlProfileInternalV3 = 4,
 } ENUM_TYPE_XML;
 
 typedef enum _ENUM_INFO_DATA
