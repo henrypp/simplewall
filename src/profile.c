@@ -1432,7 +1432,13 @@ BOOLEAN _app_profile_load_check (_In_ LPCWSTR path)
 	{
 		if (_r_xml_findchildbytagname (&xml_library, L"root"))
 		{
-			is_success = (_r_xml_getattribute_integer (&xml_library, L"type") == XmlProfileV3 && _r_xml_getattribute_integer (&xml_library, L"version") == XML_PROFILE_VER_CURRENT);
+			if (_r_xml_getattribute_integer (&xml_library, L"type") == XmlProfileV3)
+			{
+				// min supported is v3
+				if (_r_xml_getattribute_integer (&xml_library, L"version") >= XML_PROFILE_VER_3)
+
+					is_success = TRUE;
+			}
 		}
 	}
 
