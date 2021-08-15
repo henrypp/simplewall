@@ -1436,8 +1436,9 @@ BOOLEAN _app_profile_load_check (_In_ LPCWSTR path)
 			{
 				// min supported is v3
 				if (_r_xml_getattribute_integer (&xml_library, L"version") >= XML_PROFILE_VER_3)
-
+				{
 					is_success = TRUE;
+				}
 			}
 		}
 	}
