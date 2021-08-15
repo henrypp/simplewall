@@ -1635,7 +1635,7 @@ ULONG_PTR _app_getnetworkhash (_In_ ADDRESS_FAMILY af, _In_ ULONG pid, _In_opt_ 
 	return network_hash;
 }
 
-BOOLEAN _app_isvalidconnection (ADDRESS_FAMILY af, LPCVOID paddr)
+BOOLEAN _app_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID paddr)
 {
 	if (af == AF_INET)
 	{
@@ -1665,10 +1665,8 @@ BOOLEAN _app_isvalidconnection (ADDRESS_FAMILY af, LPCVOID paddr)
 	return FALSE;
 }
 
-VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HASHTABLE checker_map)
+VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Out_ PR_HASHTABLE checker_map)
 {
-	_r_obj_clearhashtable (checker_map);
-
 	PITEM_NETWORK ptr_network;
 	ULONG_PTR network_hash;
 
@@ -1676,7 +1674,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 	ULONG allocated_size;
 	ULONG required_size;
 
-	required_size = sizeof (MIB_TCPTABLE_OWNER_MODULE);
+	required_size = 0;
 	GetExtendedTcpTable (NULL, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
 	allocated_size = required_size;
@@ -1740,7 +1738,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 		}
 	}
 
-	required_size = sizeof (MIB_TCP6TABLE_OWNER_MODULE);
+	required_size = 0;
 	GetExtendedTcpTable (NULL, &required_size, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
 	if (required_size)
@@ -1801,7 +1799,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 		}
 	}
 
-	required_size = sizeof (MIB_UDPTABLE_OWNER_MODULE);
+	required_size = 0;
 	GetExtendedUdpTable (NULL, &required_size, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0);
 
 	if (required_size)
@@ -1857,7 +1855,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 		}
 	}
 
-	required_size = sizeof (MIB_UDP6TABLE_OWNER_MODULE);
+	required_size = 0;
 	GetExtendedUdpTable (NULL, &required_size, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0);
 
 	if (required_size)
