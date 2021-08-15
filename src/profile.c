@@ -997,16 +997,13 @@ BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ INT new_s
 	ptr_rule->is_enabled = (new_state != 0);
 	ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
 
-	if (new_state)
+	if ((new_state != 1))
 	{
-		if ((new_state != 1))
-		{
-			ptr_rule->action = FWP_ACTION_BLOCK;
-		}
-		else
-		{
-			ptr_rule->action = FWP_ACTION_PERMIT;
-		}
+		ptr_rule->action = FWP_ACTION_BLOCK;
+	}
+	else
+	{
+		ptr_rule->action = FWP_ACTION_PERMIT;
 	}
 
 	return TRUE;
