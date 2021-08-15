@@ -1,3 +1,9 @@
+v3.4.1 (15 August 2021)
+- fixed blocklist can does not change action status
+- fixed crash at startup (issue #986)
+- fixed profile import compatibility
+- fixed install update
+
 v3.4 (11 August 2021)
 - added arm64 binaries (portable only)
 - added protocol and host name information into network alert window  (issue #843)
