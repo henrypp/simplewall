@@ -2708,7 +2708,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 									R_ERROR_INFO error_info = {0};
 									error_info.description = path->buffer;
 
-									_r_show_errormessage (hwnd, L"Import failure!", ERROR_INVALID_DATA, &error_info);
+									_r_show_errormessage (hwnd, NULL, ERROR_INVALID_DATA, &error_info);
 								}
 								else
 								{
@@ -2760,7 +2760,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 									R_ERROR_INFO error_info = {0};
 									error_info.description = path->buffer;
 
-									_r_show_errormessage (hwnd, L"Export failure!", GetLastError (), &error_info);
+									_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
 								}
 
 								_r_obj_dereference (path);
