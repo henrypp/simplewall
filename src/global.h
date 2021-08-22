@@ -40,7 +40,6 @@ DECLSPEC_SELECTANY PR_HASHTABLE log_table = NULL;
 DECLSPEC_SELECTANY PR_HASHTABLE cache_dns = NULL;
 
 DECLSPEC_SELECTANY PR_HASHTABLE colors_table = NULL;
-DECLSPEC_SELECTANY PR_ARRAY timers = NULL;
 
 DECLSPEC_SELECTANY PR_ARRAY filter_ids = NULL;
 
@@ -59,6 +58,19 @@ DECLSPEC_SELECTANY R_QUEUED_LOCK lock_cache_dns;
 DECLSPEC_SELECTANY R_WORKQUEUE file_queue;
 DECLSPEC_SELECTANY R_WORKQUEUE log_queue;
 DECLSPEC_SELECTANY R_WORKQUEUE wfp_queue;
+
+// timers array
+DECLSPEC_SELECTANY LONG64 timer_array[] =
+{
+	2 * 60,
+	5 * 60,
+	10 * 60,
+	30 * 60,
+	1 * 3600,
+	2 * 3600,
+	4 * 3600,
+	6 * 3600
+};
 
 // dropped events callback subscription (win7+)
 #ifndef FWP_DIRECTION_IN

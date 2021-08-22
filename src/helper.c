@@ -2300,7 +2300,6 @@ VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_ap
 	LONG64 current_time;
 	LONG64 app_time;
 	LONG64 timestamp;
-	PVOID timer_ptr;
 	PR_STRING interval_string;
 	UINT index;
 	BOOLEAN is_checked = (ptr_app == NULL);
@@ -2309,7 +2308,7 @@ VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_ap
 
 	if (ptr_app)
 	{
-		timer_ptr = _app_getappinfo (ptr_app, InfoTimerPtr);
+		PVOID timer_ptr = _app_getappinfo (ptr_app, InfoTimerPtr);
 		app_time = timer_ptr ? *((PLONG64)timer_ptr) : 0;
 	}
 	else
@@ -2317,14 +2316,9 @@ VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_ap
 		app_time = 0;
 	}
 
-	for (SIZE_T i = 0; i < _r_obj_getarraysize (timers); i++)
+	for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
 	{
-		timer_ptr = _r_obj_getarrayitem (timers, i);
-
-		if (!timer_ptr)
-			continue;
-
-		timestamp = *((PLONG64)timer_ptr);
+		timestamp = timer_array[i];
 
 		interval_string = _r_format_interval (timestamp + 1, 1);
 

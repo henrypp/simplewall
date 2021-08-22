@@ -705,7 +705,7 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 		_r_menu_checkitem (hmenu, IDM_USESTEALTHMODE_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"UseStealthMode", TRUE));
 		_r_menu_checkitem (hmenu, IDM_INSTALLBOOTTIMEFILTERS_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"InstallBoottimeFilters", TRUE));
 
-		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", FALSE));
+		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 		_r_menu_checkitem (hmenu, IDM_USEREFRESHDEVICES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsRefreshDevices", TRUE));
 
@@ -1042,7 +1042,7 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 		return;
 
 	SIZE_T timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
-	PLONG64 seconds = _r_obj_getarrayitem (timers, timer_idx);
+	LONG64 seconds = timer_array[timer_idx];
 	INT item_id = -1;
 
 	if (_wfp_isfiltersinstalled ())
@@ -1060,8 +1060,7 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 				if (ptr_app)
 				{
-					if (seconds)
-						_app_timer_set (hwnd, ptr_app, *seconds);
+					_app_timer_set (hwnd, ptr_app, seconds);
 
 					_r_obj_addlistitem (rules, ptr_app);
 				}

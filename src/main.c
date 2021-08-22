@@ -5,7 +5,7 @@
 
 UINT WM_FINDMSGSTRING = 0;
 
-THREAD_API ApplyThread (_In_ PVOID arglist)
+NTSTATUS NTAPI ApplyThread (_In_ PVOID arglist)
 {
 	PITEM_CONTEXT context;
 	HANDLE hengine;
@@ -120,7 +120,7 @@ VOID _app_setnetworkiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT ite
 	}
 }
 
-THREAD_API NetworkMonitorThread (_In_ PVOID arglist)
+NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 {
 	ULONG network_timeout;
 
@@ -404,7 +404,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 		case IDC_USECERTIFICATES_CHK:
 		case IDM_USECERTIFICATES_CHK:
 		{
-			new_val = !_r_config_getboolean (L"IsCertificatesEnabled", FALSE);
+			new_val = !_r_config_getboolean (L"IsCertificatesEnabled", TRUE);
 			break;
 		}
 
@@ -626,7 +626,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					CheckDlgButton (hwnd, IDC_USESTEALTHMODE_CHK, _r_config_getboolean (L"UseStealthMode", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, _r_config_getboolean (L"InstallBoottimeFilters", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 
-					CheckDlgButton (hwnd, IDC_USECERTIFICATES_CHK, _r_config_getboolean (L"IsCertificatesEnabled", FALSE) ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_USECERTIFICATES_CHK, _r_config_getboolean (L"IsCertificatesEnabled", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE) ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_USEREFRESHDEVICES_CHK, _r_config_getboolean (L"IsRefreshDevices", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 
@@ -1746,35 +1746,14 @@ VOID _app_initialize ()
 	{
 		R_THREAD_ENVIRONMENT environment;
 
-		_r_sys_setenvironment (&environment, THREAD_PRIORITY_LOWEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&file_queue, 0, 10, 1000, &environment);
-
 		_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&log_queue, 0, 4, 4000, &environment);
+		_r_workqueue_initialize (&file_queue, 0, 8, 1000, &environment);
+
+		_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+		_r_workqueue_initialize (&log_queue, 0, 4, 500, &environment);
 
 		_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&wfp_queue, 0, 1, 1000, &environment);
-	}
-
-	// initialize timers
-	if (!timers)
-	{
-		LONG64 timer_array[] =
-		{
-			_r_calc_minutes2seconds (2),
-			_r_calc_minutes2seconds (5),
-			_r_calc_minutes2seconds (10),
-			_r_calc_minutes2seconds (30),
-			_r_calc_hours2seconds (1),
-			_r_calc_hours2seconds (2),
-			_r_calc_hours2seconds (4),
-			_r_calc_hours2seconds (6)
-		};
-
-		timers = _r_obj_createarrayex (sizeof (LONG64), RTL_NUMBER_OF (timer_array) + 1, NULL);
-
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
-			_r_obj_addarrayitem (timers, &timer_array[i]);
+		_r_workqueue_initialize (&wfp_queue, 0, 1, 500, &environment);
 	}
 
 	// initialize colors array
@@ -2627,7 +2606,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				_app_command_idtorules (hwnd, ctrl_id);
 				return FALSE;
 			}
-			else if (notify_code == 0 && ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (INT)(INT_PTR)_r_obj_getarraysize (timers)))
+			else if (notify_code == 0 && ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
 			{
 				_app_command_idtotimers (hwnd, ctrl_id);
 				return FALSE;

@@ -201,7 +201,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	}
 	else
 	{
-		signature_string = _r_obj_createstring (_r_locale_getstring (IDS_SIGN_UNSIGNED));
+		signature_string = _r_locale_getstringex (IDS_SIGN_UNSIGNED);
 	}
 
 	_r_str_printf (window_title, RTL_NUMBER_OF (window_title), L"%s - %s", _r_locale_getstring (IDS_NOTIFY_TITLE), _r_app_getname ());
@@ -303,8 +303,11 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 VOID _app_notifyhide (_In_ HWND hwnd)
 {
-	ULONG_PTR app_hash = _app_notifyget_id (hwnd, FALSE);
-	PITEM_APP ptr_app = _app_getappitem (app_hash);
+	ULONG_PTR app_hash;
+	PITEM_APP ptr_app;
+
+	app_hash = _app_notifyget_id (hwnd, FALSE);
+	ptr_app = _app_getappitem (app_hash);
 
 	if (ptr_app)
 	{
@@ -916,16 +919,15 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 				return FALSE;
 			}
-			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= IDX_TIMER + (INT)_r_obj_getarraysize (timers)))
+			else if ((ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1))))
 			{
 				if (!_r_ctrl_isenabled (hwnd, IDC_ALLOW_BTN))
 					return FALSE;
 
 				SIZE_T timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
-				PLONG64 seconds = _r_obj_getarrayitem (timers, timer_idx);
+				LONG64 seconds = timer_array[timer_idx];
 
-				if (seconds)
-					_app_notifycommand (hwnd, IDC_ALLOW_BTN, *seconds);
+				_app_notifycommand (hwnd, IDC_ALLOW_BTN, seconds);
 
 				return FALSE;
 			}
