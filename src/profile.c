@@ -169,14 +169,14 @@ PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data)
 	return NULL;
 }
 
-THREAD_API _app_queuefileinformation (_In_ PVOID arglist)
+NTSTATUS NTAPI _app_queuefileinformation (_In_ PVOID arglist)
 {
 	PITEM_APP ptr_app;
 	HWND hwnd;
 
 	ptr_app = arglist;
 
-	if (_r_config_getboolean (L"IsCertificatesEnabled", FALSE))
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
 	{
 		_app_getsignatureinfo (ptr_app);
 	}

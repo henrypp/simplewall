@@ -18,7 +18,7 @@ PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
 _Ret_maybenull_
 PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data);
 
-THREAD_API _app_queuefileinformation (_In_ PVOID arglist);
+NTSTATUS NTAPI _app_queuefileinformation (_In_ PVOID arglist);
 
 ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In_ PR_STRINGREF path, _In_opt_ PR_STRING display_name, _In_opt_ PR_STRING real_path);
 
