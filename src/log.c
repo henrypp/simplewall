@@ -695,9 +695,9 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	_r_workqueue_queueitem (&log_queue, &LogThread, ptr_log);
 }
 
-BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PVOID data, _In_ INT version)
+FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PVOID data, _In_ INT version)
 {
-	RtlSecureZeroMemory (log, sizeof (ITEM_LOG_CALLBACK));
+	RtlZeroMemory (log, sizeof (ITEM_LOG_CALLBACK));
 
 	if (version == WINDOWS_7)
 	{
@@ -1225,7 +1225,7 @@ BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PVOID data, _I
 }
 
 // win7+ callback
-VOID CALLBACK _wfp_logcallback0 (_In_ PVOID context, _In_ const FWPM_NET_EVENT1 * event)
+VOID CALLBACK _wfp_logcallback0 (_In_ PVOID context, _In_ const FWPM_NET_EVENT1 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1234,7 +1234,7 @@ VOID CALLBACK _wfp_logcallback0 (_In_ PVOID context, _In_ const FWPM_NET_EVENT1 
 }
 
 // win8+ callback
-VOID CALLBACK _wfp_logcallback1 (_In_ PVOID context, _In_ const FWPM_NET_EVENT2 * event)
+VOID CALLBACK _wfp_logcallback1 (_In_ PVOID context, _In_ const FWPM_NET_EVENT2 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1243,7 +1243,7 @@ VOID CALLBACK _wfp_logcallback1 (_In_ PVOID context, _In_ const FWPM_NET_EVENT2 
 }
 
 // win10rs1+ callback
-VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3 * event)
+VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1252,7 +1252,7 @@ VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3 
 }
 
 // win10rs4+ callback
-VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4 * event)
+VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1261,7 +1261,7 @@ VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4 
 }
 
 // win10rs5+ callback
-VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5 * event)
+VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1279,18 +1279,15 @@ NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
 	BOOLEAN is_logenabled;
 	BOOLEAN is_loguienabled;
 	BOOLEAN is_notificationenabled;
+
+	BOOLEAN is_exludeallow;
+	BOOLEAN is_exludeblocklist;
 	BOOLEAN is_exludestealth;
 	BOOLEAN is_notexist;
 
 	hwnd = _r_app_gethwnd ();
 
 	ptr_log = arglist;
-
-	is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
-	is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
-	is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
-
-	is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
 
 	// apps collector
 	is_notexist = ptr_log->app_hash && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);
@@ -1321,23 +1318,37 @@ NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
 	ptr_log->remote_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, 0);
 	ptr_log->local_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, 0);
 
-	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
-	{
-		ptr_log->remote_host_str = _app_resolveaddress (ptr_log->af, &ptr_log->remote_addr);
-		ptr_log->local_host_str = _app_resolveaddress (ptr_log->af, &ptr_log->local_addr);
-	}
+	is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
+	is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
+	is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
 
-	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth)
+	is_exludeallow = !(ptr_log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE));
+	is_exludeblocklist = !(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE));
+	is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
+
+	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth && is_exludeallow)
 	{
+		// get file icon
 		if (ptr_app)
 		{
 			_app_getappicon (ptr_app, TRUE, &ptr_log->icon_id, NULL);
-			_app_getappicon (ptr_app, FALSE, NULL, &ptr_log->hicon);
+
+			if (is_notificationenabled)
+				_app_getappicon (ptr_app, FALSE, NULL, &ptr_log->hicon);
 		}
 		else
 		{
 			ptr_log->icon_id = config.icon_id;
-			ptr_log->hicon = CopyIcon (config.hicon_large);
+
+			if (is_notificationenabled)
+				ptr_log->hicon = CopyIcon (config.hicon_large);
+		}
+
+		// resolve network address
+		if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
+		{
+			ptr_log->remote_host_str = _app_resolveaddress (ptr_log->af, &ptr_log->remote_addr);
+			ptr_log->local_host_str = _app_resolveaddress (ptr_log->af, &ptr_log->local_addr);
 		}
 
 		// write log to a file
@@ -1356,16 +1367,13 @@ NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
 			}
 
 			// display notification
-			if (is_notificationenabled && ptr_log->app_hash && !ptr_log->is_allow)
+			if (is_notificationenabled && ptr_app && !ptr_log->is_allow)
 			{
-				if (!(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE)))
+				if (is_exludeblocklist)
 				{
-					if (ptr_app)
+					if (!PtrToInt (_app_getappinfo (ptr_app, InfoIsSilent)))
 					{
-						if (!PtrToInt (_app_getappinfo (ptr_app, InfoIsSilent)))
-						{
-							_app_notifyadd (config.hnotification, _r_obj_reference (ptr_log), ptr_app);
-						}
+						_app_notifyadd (config.hnotification, _r_obj_reference (ptr_log), ptr_app);
 					}
 				}
 			}
@@ -1373,11 +1381,9 @@ NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
 	}
 
 	if (ptr_app)
-	{
 		_r_obj_dereference (ptr_app);
-	}
 
 	_r_obj_dereference (ptr_log);
 
-	return ERROR_SUCCESS;
+	return STATUS_SUCCESS;
 }
