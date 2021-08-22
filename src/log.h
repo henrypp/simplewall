@@ -36,4 +36,4 @@ VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3*
 VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4* event);
 VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5* event);
 
-THREAD_API LogThread (_In_ PVOID arglist);
+NTSTATUS NTAPI LogThread (_In_ PVOID arglist);

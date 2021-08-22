@@ -681,6 +681,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 	// set filter information
 	ptr_log->filter_id = log->filter_id;
+	ptr_log->direction = log->direction;
 
 	ptr_log->is_myprovider = is_myprovider;
 
@@ -694,8 +695,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	_r_workqueue_queueitem (&log_queue, &LogThread, ptr_log);
 }
 
-_Success_ (return)
-FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PVOID data, _In_ INT version)
+BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PVOID data, _In_ INT version)
 {
 	RtlSecureZeroMemory (log, sizeof (ITEM_LOG_CALLBACK));
 
@@ -1269,7 +1269,7 @@ VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5 
 		_wfp_logcallback (&log);
 }
 
-THREAD_API LogThread (_In_ PVOID arglist)
+NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
 {
 	HWND hwnd;
 
