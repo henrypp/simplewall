@@ -573,6 +573,571 @@ LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv)
 	return CDRF_DODEFAULT;
 }
 
+
+VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app, _Inout_ LPNMLVDISPINFOW lpnmlv)
+{
+	PR_STRING string;
+
+	// set text
+	if ((lpnmlv->item.mask & LVIF_TEXT))
+	{
+		switch (lpnmlv->item.iSubItem)
+		{
+			case 0:
+			{
+				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _app_getappdisplayname (ptr_app, FALSE));
+				break;
+			}
+
+			case 1:
+			{
+				string = _r_format_unixtimeex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+
+				if (string)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+					_r_obj_dereference (string);
+				}
+
+				break;
+			}
+		}
+	}
+
+	// set image
+	if ((lpnmlv->item.mask & LVIF_IMAGE))
+	{
+		if (ptr_app->icon_id)
+		{
+			lpnmlv->item.iImage = ptr_app->icon_id;
+		}
+		else
+		{
+			lpnmlv->item.iImage = config.icon_id;
+		}
+	}
+
+	// set group id
+	if ((lpnmlv->item.mask & LVIF_GROUPID))
+	{
+		if (listview_id == IDC_RULE_APPS_ID)
+		{
+			if (ptr_app->type == DataAppUWP)
+			{
+				lpnmlv->item.iGroupId = 2;
+			}
+			else if (ptr_app->type == DataAppService)
+			{
+				lpnmlv->item.iGroupId = 1;
+			}
+			else
+			{
+				lpnmlv->item.iGroupId = 0;
+			}
+		}
+		else
+		{
+			// apps with special rule
+			if (_app_isapphaverule (ptr_app->app_hash, FALSE))
+			{
+				lpnmlv->item.iGroupId = 1;
+			}
+			else if (ptr_app->is_enabled)
+			{
+				lpnmlv->item.iGroupId = 0;
+			}
+			else
+			{
+				// silent apps without rules and not enabled added into silent group
+				if (ptr_app->is_silent)
+				{
+					lpnmlv->item.iGroupId = 3;
+				}
+				else
+				{
+					lpnmlv->item.iGroupId = 2;
+				}
+			}
+		}
+	}
+}
+
+VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_rule, _Inout_ LPNMLVDISPINFOW lpnmlv)
+{
+	PR_STRING string;
+	LPCWSTR name;
+
+	// set text
+	if ((lpnmlv->item.mask & LVIF_TEXT))
+	{
+		switch (lpnmlv->item.iSubItem)
+		{
+			case 0:
+			{
+				if (ptr_rule->name)
+				{
+					if (ptr_rule->is_readonly && ptr_rule->type == DataRuleUser)
+					{
+						_r_str_printf (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->buffer);
+					}
+					else
+					{
+						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_rule->name->buffer);
+					}
+
+				}
+
+				break;
+			}
+
+			case 1:
+			{
+				if (ptr_rule->protocol)
+				{
+					name = _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL);
+				}
+				else
+				{
+					name = _r_locale_getstring (IDS_ANY);
+				}
+
+				if (name)
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
+
+				break;
+			}
+
+			case 2:
+			{
+				string = _app_getdirectionname (ptr_rule->direction, FALSE, TRUE);
+
+				if (string)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+					_r_obj_dereference (string);
+				}
+
+				break;
+			}
+		}
+	}
+
+	// set image
+	if ((lpnmlv->item.mask & LVIF_IMAGE))
+	{
+		lpnmlv->item.iImage = (ptr_rule->action == FWP_ACTION_BLOCK) ? 1 : 0;
+	}
+
+	// set group id
+	if ((lpnmlv->item.mask & LVIF_GROUPID))
+	{
+		if (listview_id == IDC_APP_RULES_ID)
+		{
+			lpnmlv->item.iGroupId = ptr_rule->is_readonly ? 0 : 1;
+		}
+		else
+		{
+			lpnmlv->item.iGroupId = ptr_rule->is_enabled ? 0 : 2;
+		}
+	}
+}
+
+VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ LPNMLVDISPINFOW lpnmlv)
+{
+	PITEM_APP ptr_app;
+	PR_STRING string;
+	LPCWSTR name;
+
+	// set text
+	if ((lpnmlv->item.mask & LVIF_TEXT))
+	{
+		switch (lpnmlv->item.iSubItem)
+		{
+			case 0:
+			{
+				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_network->path->buffer));
+				break;
+			}
+
+			case 1:
+			{
+				if (ptr_network->local_addr_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->local_addr_str->buffer);
+				}
+
+				break;
+			}
+
+			case 2:
+			{
+				if (ptr_network->local_host_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->local_host_str->buffer);
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, SZ_LOADING);
+				}
+
+				break;
+			}
+
+			case 3:
+			{
+				if (ptr_network->local_port)
+				{
+					string = _app_formatport (ptr_network->local_port, ptr_network->protocol);
+
+					if (string)
+					{
+						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+						_r_obj_dereference (string);
+					}
+				}
+
+				break;
+			}
+
+			case 4:
+			{
+				if (ptr_network->remote_addr_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->remote_addr_str->buffer);
+				}
+
+				break;
+			}
+
+			case 5:
+			{
+				if (ptr_network->remote_host_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->remote_host_str->buffer);
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, SZ_LOADING);
+				}
+
+				break;
+			}
+
+			case 6:
+			{
+				if (ptr_network->remote_port)
+				{
+					string = _app_formatport (ptr_network->remote_port, ptr_network->protocol);
+
+					if (string)
+					{
+						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+						_r_obj_dereference (string);
+					}
+				}
+
+				break;
+			}
+
+			case 7:
+			{
+				name = _app_getprotoname (ptr_network->protocol, ptr_network->af, NULL);
+
+				if (name)
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
+
+				break;
+			}
+
+			case 8:
+			{
+				name = _app_getconnectionstatusname (ptr_network->state);
+
+				if (name)
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
+
+				break;
+			}
+		}
+	}
+
+	// set image
+	if ((lpnmlv->item.mask & LVIF_IMAGE))
+	{
+		if (ptr_network->icon_id)
+		{
+			lpnmlv->item.iImage = ptr_network->icon_id;
+		}
+		else
+		{
+			ptr_app = _app_getappitem (ptr_network->app_hash);
+
+			if (ptr_app)
+			{
+				lpnmlv->item.iImage = ptr_app->icon_id;
+
+				_r_obj_dereference (ptr_app);
+			}
+		}
+	}
+
+	// set group id
+	if ((lpnmlv->item.mask & LVIF_GROUPID))
+	{
+		if (ptr_network->type == DataAppService)
+		{
+			lpnmlv->item.iGroupId = 1;
+		}
+		else if (ptr_network->type == DataAppUWP)
+		{
+			lpnmlv->item.iGroupId = 2;
+		}
+		else
+		{
+			lpnmlv->item.iGroupId = 0;
+		}
+	}
+}
+
+VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITEM_APP ptr_app, _In_ PITEM_LOG ptr_log)
+{
+	PR_STRING string;
+	LPCWSTR name;
+
+	// set text
+	if ((lpnmlv->item.mask & LVIF_TEXT))
+	{
+		switch (lpnmlv->item.iSubItem)
+		{
+			case 0:
+			{
+				if (ptr_app)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _app_getappdisplayname (ptr_app, TRUE));
+				}
+				else if (ptr_log->path)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_log->path->buffer));
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, SZ_EMPTY);
+				}
+
+				break;
+			}
+
+			case 1:
+			{
+				if (ptr_log->local_addr_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->local_addr_str->buffer);
+				}
+
+				break;
+			}
+
+			case 2:
+			{
+				if (ptr_log->local_host_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->local_host_str->buffer);
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, SZ_LOADING);
+				}
+
+				break;
+			}
+
+			case 3:
+			{
+				if (ptr_log->local_port)
+				{
+					string = _app_formatport (ptr_log->local_port, ptr_log->protocol);
+
+					if (string)
+					{
+						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+						_r_obj_dereference (string);
+					}
+				}
+
+				break;
+			}
+
+			case 4:
+			{
+				if (ptr_log->remote_addr_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->remote_addr_str->buffer);
+				}
+
+				break;
+			}
+
+			case 5:
+			{
+				if (ptr_log->remote_host_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->remote_host_str->buffer);
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, SZ_LOADING);
+				}
+
+				break;
+			}
+
+			case 6:
+			{
+				if (ptr_log->remote_port)
+				{
+					string = _app_formatport (ptr_log->remote_port, ptr_log->protocol);
+
+					if (string)
+					{
+						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+						_r_obj_dereference (string);
+					}
+				}
+
+				break;
+			}
+
+			case 7:
+			{
+				name = _app_getprotoname (ptr_log->protocol, ptr_log->af, NULL);
+
+				if (name)
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
+
+				break;
+			}
+
+			case 8:
+			{
+				string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
+
+				if (string)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+					_r_obj_dereference (string);
+				}
+
+				break;
+			}
+
+			case 9:
+			{
+				string = _r_obj_concatstrings (2, ptr_log->is_allow ? L"[A] " : L"[B] ", _r_obj_getstringorempty (ptr_log->filter_name));
+
+				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+				_r_obj_dereference (string);
+
+				break;
+			}
+
+			case 10:
+			{
+				string = _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+
+				if (string)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+					_r_obj_dereference (string);
+				}
+
+				break;
+			}
+		}
+	}
+
+	// set image
+	if ((lpnmlv->item.mask & LVIF_IMAGE))
+	{
+		if (ptr_log->icon_id)
+		{
+			lpnmlv->item.iImage = ptr_log->icon_id;
+		}
+		else if (ptr_app)
+		{
+			lpnmlv->item.iImage = ptr_app->icon_id;
+		}
+	}
+}
+
+BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ LPNMLVDISPINFOW lpnmlv)
+{
+	PITEM_NETWORK ptr_network;
+	PITEM_RULE ptr_rule;
+	PITEM_APP ptr_app;
+	PITEM_LOG ptr_log;
+
+	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP || listview_id == IDC_RULE_APPS_ID)
+	{
+		ptr_app = _app_getappitem (lpnmlv->item.lParam);
+
+		if (ptr_app)
+		{
+			_app_displayinfoapp_callback (listview_id, ptr_app, lpnmlv);
+			_r_obj_dereference (ptr_app);
+		}
+
+		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+		return TRUE;
+	}
+	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
+	{
+		ptr_rule = _app_getrulebyid (lpnmlv->item.lParam);
+
+		if (ptr_rule)
+		{
+			_app_displayinforule_callback (listview_id, ptr_rule, lpnmlv);
+			_r_obj_dereference (ptr_rule);
+		}
+
+		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+		return TRUE;
+	}
+	else if (listview_id == IDC_NETWORK)
+	{
+		ptr_network = _app_getnetworkitem (lpnmlv->item.lParam);
+
+		if (ptr_network)
+		{
+			_app_displayinfonetwork_callback (ptr_network, lpnmlv);
+			_r_obj_dereference (ptr_network);
+		}
+
+		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+		return TRUE;
+	}
+	else if (listview_id == IDC_LOG)
+	{
+		ptr_log = _app_getlogitem (lpnmlv->item.lParam);
+
+		if (ptr_log)
+		{
+			ptr_app = _app_getappitem (ptr_log->app_hash);
+
+			_app_displayinfolog_callback (lpnmlv, ptr_app, ptr_log);
+
+			if (ptr_app)
+				_r_obj_dereference (ptr_app);
+
+			_r_obj_dereference (ptr_log);
+		}
+
+		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 VOID _app_message_find (_In_ HWND hwnd, _In_ LPFINDREPLACE lpfr)
 {
 	if ((lpfr->Flags & FR_DIALOGTERM) != 0)
