@@ -47,7 +47,7 @@ _Ret_maybenull_
 LPCWSTR _app_getprotoname (_In_ ULONG proto, _In_ ADDRESS_FAMILY af, _In_opt_ LPCWSTR default_value);
 
 _Ret_maybenull_
-LPCWSTR _app_getconnectionstatusname (_In_ ULONG state, _In_opt_ LPCWSTR default_value);
+LPCWSTR _app_getconnectionstatusname (_In_ ULONG state);
 
 _Ret_maybenull_
 PR_STRING _app_getdirectionname (_In_ FWP_DIRECTION direction, _In_ BOOLEAN is_loopback, _In_ BOOLEAN is_localized);

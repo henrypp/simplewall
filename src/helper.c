@@ -1369,7 +1369,7 @@ LPCWSTR _app_getprotoname (_In_ ULONG proto, _In_ ADDRESS_FAMILY af, _In_opt_ LP
 }
 
 _Ret_maybenull_
-LPCWSTR _app_getconnectionstatusname (_In_ ULONG state, _In_opt_ LPCWSTR default_value)
+LPCWSTR _app_getconnectionstatusname (_In_ ULONG state)
 {
 	switch (state)
 	{
@@ -1410,7 +1410,7 @@ LPCWSTR _app_getconnectionstatusname (_In_ ULONG state, _In_opt_ LPCWSTR default
 			return L"Delete TCB";
 	}
 
-	return default_value;
+	return NULL;
 }
 
 _Ret_maybenull_
