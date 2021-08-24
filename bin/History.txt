@@ -1,3 +1,13 @@
+v3.4.2 (24 August 2021)
+- enable checking apps certificates by default
+- show notifications immediately without waiting for busy operations to complete
+- impoved listview responsiveness by using virtual listview callback
+- fixed packets log displays incorrect direction (issue #945)
+- fixed missed listview icons on refresh
+- fixed thread environment
+- fixed internal bugs
+- cosmetic fixes
+
 v3.4.1 (15 August 2021)
 - fixed blocklist can does not change action status
 - fixed crash at startup (issue #976)
