@@ -1752,6 +1752,50 @@ PR_ARRAY _wfp_dumpfilters (_In_ HANDLE hengine, _In_ LPCGUID provider_id)
 	return guids;
 }
 
+VOID NTAPI _wfp_applythread (_In_ PVOID arglist, _In_ ULONG busy_count)
+{
+	PITEM_CONTEXT context;
+	HANDLE hengine;
+
+	_r_queuedlock_acquireshared (&lock_apply);
+
+	context = (PITEM_CONTEXT)arglist;
+	hengine = _wfp_getenginehandle ();
+
+	if (hengine)
+	{
+		// dropped packets logging (win7+)
+		if (config.is_neteventset)
+			_wfp_logunsubscribe (hengine);
+
+		if (context->is_install)
+		{
+			if (_wfp_initialize (hengine, TRUE))
+				_wfp_installfilters (hengine);
+		}
+		else
+		{
+			_wfp_destroyfilters (hengine);
+			_wfp_uninitialize (hengine, TRUE);
+		}
+
+		// dropped packets logging (win7+)
+		if (config.is_neteventset)
+		{
+			_wfp_logsubscribe (hengine);
+		}
+	}
+
+	_app_restoreinterfacestate (context->hwnd, TRUE);
+	_app_setinterfacestate (context->hwnd);
+
+	_r_freelist_deleteitem (&context_free_list, context);
+
+	_app_profile_save ();
+
+	_r_queuedlock_releaseshared (&lock_apply);
+}
+
 ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type, _Out_ PVOID_PTR byte_blob)
 {
 	PR_STRING original_path;

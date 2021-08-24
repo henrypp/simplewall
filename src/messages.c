@@ -947,11 +947,10 @@ VOID _app_message_localize (_In_ HWND hwnd)
 			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_PORT)));
 			_r_listview_setcolumn (hwnd, listview_id, 6, _r_obj_getstringorempty (localized_string), 0);
 
-			_r_listview_setcolumn (hwnd, listview_id, 7, _r_locale_getstring (IDS_FILTER), 0);
-			_r_listview_setcolumn (hwnd, listview_id, 8, _r_locale_getstring (IDS_PROTOCOL), 0);
-			_r_listview_setcolumn (hwnd, listview_id, 9, _r_locale_getstring (IDS_DIRECTION), 0);
-			_r_listview_setcolumn (hwnd, listview_id, 10, _r_locale_getstring (IDS_STATE), 0);
-			_r_listview_setcolumn (hwnd, listview_id, 11, _r_locale_getstring (IDS_DATE), 0);
+			_r_listview_setcolumn (hwnd, listview_id, 7, _r_locale_getstring (IDS_PROTOCOL), 0);
+			_r_listview_setcolumn (hwnd, listview_id, 8, _r_locale_getstring (IDS_DIRECTION), 0);
+			_r_listview_setcolumn (hwnd, listview_id, 9, _r_locale_getstring (IDS_FILTER), 0);
+			_r_listview_setcolumn (hwnd, listview_id, 10, _r_locale_getstring (IDS_DATE), 0);
 		}
 	}
 
@@ -1051,7 +1050,7 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 		if (hengine)
 		{
-			PR_LIST rules = _r_obj_createlistex (10, &_r_obj_dereference);
+			PR_LIST rules = _r_obj_createlistex (8, &_r_obj_dereference);
 
 			while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
 			{
@@ -1286,7 +1285,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 	BOOLEAN new_val;
 	BOOLEAN is_changed;
 
-	rules = _r_obj_createlistex (0x400, &_r_obj_dereference);
+	rules = _r_obj_createlistex (8, &_r_obj_dereference);
 
 	listview_id = _app_getcurrentlistview_id (hwnd);
 	item_id = -1;

@@ -106,9 +106,10 @@ VOID _app_freenotify (_Inout_ PITEM_APP ptr_app)
 {
 	HWND hwnd;
 
-	SAFE_DELETE_REFERENCE (ptr_app->pnotification);
-
 	hwnd = config.hnotification;
+
+	if (ptr_app->pnotification)
+		_r_obj_clearreference (&ptr_app->pnotification);
 
 	if (_app_notifyget_id (hwnd, FALSE) == ptr_app->app_hash)
 	{
@@ -120,7 +121,9 @@ VOID _app_freenotify (_Inout_ PITEM_APP ptr_app)
 
 ULONG_PTR _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest)
 {
-	ULONG_PTR app_hash_current = (ULONG_PTR)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	ULONG_PTR app_hash_current;
+
+	app_hash_current = (ULONG_PTR)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
 	if (is_nearest)
 	{
@@ -186,14 +189,13 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 		return FALSE;
 
 	WCHAR window_title[128];
-	PR_STRING date_string;
-	PR_STRING signature_string = NULL;
-	PR_STRING remote_address_string;
-	PR_STRING remote_port_string;
-	PR_STRING direction_string;
+	PITEM_CONTEXT context;
+	PR_STRING string = NULL;
+	PR_STRING signature_string;
 	PR_STRING localized_string = NULL;
 	R_STRINGREF empty_string;
 	R_STRINGREF display_name;
+	BOOLEAN is_fullscreenmode;
 
 	if (!_r_obj_isstringempty (ptr_app->signature))
 	{
@@ -209,41 +211,50 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	SetWindowText (hwnd, window_title);
 
 	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
-	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, (LONG_PTR)ptr_log->hicon);
-
-	// print table text
-	remote_address_string = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_USE_PROTOCOL);
-	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol, FALSE);
-	direction_string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE);
+	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, 0);
 
 	_r_obj_initializestringrefconst (&empty_string, _r_locale_getstring (IDS_STATUS_EMPTY));
 	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
 
-	date_string = _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
-
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_NAME)));
+	// print name
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
 	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, &display_name);
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_SIGNATURE)));
+	// print signature
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
 	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, signature_string ? &signature_string->sr : &empty_string);
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_ADDRESS)));
-	_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, remote_address_string ? &remote_address_string->sr : &empty_string);
+	// print address
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
+	_r_obj_movereference (&string, _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_USE_PROTOCOL));
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_HOST)));
-	_r_ctrl_settabletext (hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, ptr_log->remote_host_str ? &ptr_log->remote_host_str->sr : &empty_string);
+	_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, string ? &string->sr : &empty_string);
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_PORT)));
-	_r_ctrl_settabletext (hwnd, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, remote_port_string ? &remote_port_string->sr : &empty_string);
+	// print host
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
+	_r_ctrl_settabletext (hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &empty_string);
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_DIRECTION)));
-	_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, direction_string ? &direction_string->sr : &empty_string);
+	// print port
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
+	_r_obj_movereference (&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_FILTER)));
+	_r_ctrl_settabletext (hwnd, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty_string);
+
+	// print direction
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
+	_r_obj_movereference (&string, _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
+
+	_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty_string);
+
+	// print filter name
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":"));
 	_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty_string);
 
-	_r_obj_movereference (&localized_string, _r_format_string (L"%s:", _r_locale_getstring (IDS_DATE)));
-	_r_ctrl_settabletext (hwnd, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, date_string ? &date_string->sr : &empty_string);
+	// print date
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
+	_r_obj_movereference (&string, _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
+
+	_r_ctrl_settabletext (hwnd, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_string);
 
 	_r_ctrl_settext (hwnd, IDC_RULES_BTN, _r_locale_getstring (IDS_TRAY_RULES));
 	_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
@@ -264,8 +275,17 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	_app_notifysetpos (hwnd, FALSE);
 
+	// query busy information
+	context = _r_freelist_allocateitem (&context_free_list);
+
+	context->hwnd = hwnd;
+	context->lparam = ptr_log->app_hash;
+	context->ptr_log = _r_obj_reference (ptr_log);
+
+	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queuenotifyinformation, context);
+
 	// prevent fullscreen apps lose focus
-	BOOLEAN is_fullscreenmode = _r_wnd_isfullscreenmode ();
+	is_fullscreenmode = _r_wnd_isfullscreenmode ();
 
 	if (is_forced && is_fullscreenmode)
 		is_forced = FALSE;
@@ -278,23 +298,14 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
 
-	if (date_string)
-		_r_obj_dereference (date_string);
-
-	if (signature_string)
-		_r_obj_dereference (signature_string);
-
-	if (remote_address_string)
-		_r_obj_dereference (remote_address_string);
-
-	if (remote_port_string)
-		_r_obj_dereference (remote_port_string);
-
-	if (direction_string)
-		_r_obj_dereference (direction_string);
+	if (string)
+		_r_obj_dereference (string);
 
 	if (localized_string)
 		_r_obj_dereference (localized_string);
+
+	if (signature_string)
+		_r_obj_dereference (signature_string);
 
 	_r_obj_dereference (ptr_app);
 
