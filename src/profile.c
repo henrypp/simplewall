@@ -101,7 +101,10 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 		else
 		{
 			ptr_app->timer = timestamp;
+			ptr_app->is_enabled = TRUE;
 		}
+
+		_app_updateitembylparam (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 	}
 	else if (info_data == InfoIsSilent)
 	{
@@ -113,6 +116,8 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 	else if (info_data == InfoIsEnabled)
 	{
 		ptr_app->is_enabled = (PtrToInt (value) ? TRUE : FALSE);
+
+		_app_updateitembylparam (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 	}
 	else if (info_data == InfoIsUndeletable)
 	{
@@ -167,32 +172,6 @@ PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data)
 	}
 
 	return NULL;
-}
-
-NTSTATUS NTAPI _app_queuefileinformation (_In_ PVOID arglist)
-{
-	PITEM_APP ptr_app;
-	HWND hwnd;
-
-	ptr_app = arglist;
-
-	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
-	{
-		_app_getsignatureinfo (ptr_app);
-	}
-
-	_app_getappicon (ptr_app, TRUE, &ptr_app->icon_id, NULL);
-
-	_app_getversioninfo (ptr_app);
-
-	hwnd = _r_app_gethwnd ();
-
-	if (hwnd && _r_wnd_isvisible (hwnd))
-		_app_setlistviewbylparam (hwnd, ptr_app->app_hash, PR_SETITEM_REDRAW, TRUE);
-
-	_r_obj_dereference (ptr_app);
-
-	return STATUS_SUCCESS;
 }
 
 ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In_ PR_STRINGREF path, _In_opt_ PR_STRING display_name, _In_opt_ PR_STRING real_path)
@@ -305,7 +284,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	// insert item
 	if (hwnd)
 	{
-		_app_addlistviewapp (hwnd, ptr_app, app_hash);
+		_app_addlistviewapp (hwnd, ptr_app);
 	}
 
 	return app_hash;
@@ -708,229 +687,16 @@ COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
 	return 0;
 }
 
-BOOLEAN _app_getdisplayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ LPNMLVDISPINFOW lpnmlv)
+VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_APP ptr_app)
 {
-	PITEM_NETWORK ptr_network;
-	PITEM_RULE ptr_rule;
-	PITEM_APP ptr_app;
-	PITEM_LOG ptr_log;
-
-	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP || listview_id == IDC_RULE_APPS_ID)
-	{
-		ptr_app = _app_getappitem (lpnmlv->item.lParam);
-
-		if (ptr_app)
-		{
-			if ((lpnmlv->item.mask & LVIF_IMAGE))
-			{
-				lpnmlv->item.iImage = ptr_app->icon_id;
-			}
-
-			if ((lpnmlv->item.mask & LVIF_GROUPID))
-			{
-				if (listview_id == IDC_RULE_APPS_ID)
-				{
-					if (ptr_app->type == DataAppUWP)
-					{
-						lpnmlv->item.iGroupId = 2;
-					}
-					else if (ptr_app->type == DataAppService)
-					{
-						lpnmlv->item.iGroupId = 1;
-					}
-					else
-					{
-						lpnmlv->item.iGroupId = 0;
-					}
-				}
-				else
-				{
-					// apps with special rule
-					if (_app_isapphaverule (ptr_app->app_hash, FALSE))
-					{
-						lpnmlv->item.iGroupId = 1;
-					}
-					else if (ptr_app->is_enabled)
-					{
-						lpnmlv->item.iGroupId = 0;
-					}
-					else
-					{
-						// silent apps without rules and not enabled added to different group
-						if (ptr_app->is_silent)
-						{
-							lpnmlv->item.iGroupId = 3;
-						}
-						else
-						{
-							lpnmlv->item.iGroupId = 2;
-						}
-					}
-				}
-			}
-
-			_r_obj_dereference (ptr_app);
-		}
-
-		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-		return TRUE;
-	}
-	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
-	{
-		ptr_rule = _app_getrulebyid (lpnmlv->item.lParam);
-
-		if (ptr_rule)
-		{
-			if ((lpnmlv->item.mask & LVIF_IMAGE))
-			{
-				lpnmlv->item.iImage = (ptr_rule->action == FWP_ACTION_BLOCK) ? 1 : 0;
-			}
-
-			if ((lpnmlv->item.mask & LVIF_GROUPID))
-			{
-				if (listview_id == IDC_APP_RULES_ID)
-				{
-					lpnmlv->item.iGroupId = ptr_rule->is_readonly ? 0 : 1;
-				}
-				else
-				{
-					lpnmlv->item.iGroupId = ptr_rule->is_enabled ? 0 : 2;
-				}
-			}
-
-			_r_obj_dereference (ptr_rule);
-		}
-
-		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-		return TRUE;
-	}
-	else if (listview_id == IDC_NETWORK)
-	{
-		ptr_network = _app_getnetworkitem (lpnmlv->item.lParam);
-
-		if (ptr_network)
-		{
-			if ((lpnmlv->item.mask & LVIF_IMAGE))
-			{
-				ptr_app = _app_getappitem (ptr_network->app_hash);
-
-				if (ptr_app)
-				{
-					lpnmlv->item.iImage = ptr_app->icon_id;
-
-					_r_obj_dereference (ptr_app);
-				}
-				else
-				{
-					lpnmlv->item.iImage = ptr_network->icon_id;
-				}
-			}
-
-			if ((lpnmlv->item.mask & LVIF_GROUPID))
-			{
-				if (ptr_network->type == DataAppService)
-				{
-					lpnmlv->item.iGroupId = 1;
-				}
-				else if (ptr_network->type == DataAppUWP)
-				{
-					lpnmlv->item.iGroupId = 2;
-				}
-				else
-				{
-					lpnmlv->item.iGroupId = 0;
-				}
-			}
-
-			_r_obj_dereference (ptr_network);
-
-			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-			return TRUE;
-		}
-	}
-	else if (listview_id == IDC_LOG)
-	{
-		if ((lpnmlv->item.mask & LVIF_IMAGE))
-		{
-			ptr_log = _app_getlogitem (lpnmlv->item.lParam);
-
-			if (ptr_log)
-			{
-				ptr_app = _app_getappitem (ptr_log->app_hash);
-
-				if (ptr_app)
-				{
-					lpnmlv->item.iImage = ptr_app->icon_id;
-
-					_r_obj_dereference (ptr_app);
-				}
-				else
-				{
-					lpnmlv->item.iImage = ptr_log->icon_id;
-				}
-			}
-
-			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
-VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _Inout_ PITEM_APP ptr_app)
-{
-	PR_STRING date_string;
-
-	if (!listview_id || item_id == -1)
-		return;
-
-	_r_listview_setitemex (hwnd, listview_id, item_id, 0, _app_getappdisplayname (ptr_app, FALSE), I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
-
-	date_string = _r_format_unixtimeex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
-
-	if (date_string)
-	{
-		_r_listview_setitem (hwnd, listview_id, item_id, 1, date_string->buffer);
-
-		_r_obj_dereference (date_string);
-	}
-
+	_r_listview_setitemex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_app->is_enabled);
 }
 
 VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps)
 {
-	if (!listview_id || item_id == -1)
-		return;
-
-	WCHAR rule_name[RULE_NAME_CCH_MAX];
-	LPCWSTR rule_name_ptr = NULL;
-	PR_STRING direction_string;
-
-	if (!_r_obj_isstringempty (ptr_rule->name))
-	{
-		if (ptr_rule->is_readonly && ptr_rule->type == DataRuleUser)
-		{
-			_r_str_printf (rule_name, RTL_NUMBER_OF (rule_name), L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->buffer);
-			rule_name_ptr = rule_name;
-		}
-		else
-		{
-			rule_name_ptr = ptr_rule->name->buffer;
-		}
-	}
-
-	direction_string = _app_getdirectionname (ptr_rule->direction, FALSE, TRUE);
-
-	_r_listview_setitemex (hwnd, listview_id, item_id, 0, rule_name_ptr, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
-	_r_listview_setitem (hwnd, listview_id, item_id, 1, ptr_rule->protocol ? _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL) : _r_locale_getstring (IDS_ANY));
-	_r_listview_setitem (hwnd, listview_id, item_id, 2, _r_obj_getstringorempty (direction_string));
-
+	_r_listview_setitemex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_rule->is_enabled);
-
-	if (direction_string)
-		_r_obj_dereference (direction_string);
 
 	if (include_apps)
 	{
@@ -1722,6 +1488,8 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 								continue;
 							}
 
+							_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
+
 							if (!_app_isappfound (app_hash))
 							{
 								app_hash = _app_addapplication (NULL, DataUnknown, &path_string->sr, NULL, NULL);
@@ -1731,8 +1499,6 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 							{
 								_app_setappinfobyhash (app_hash, InfoIsUndeletable, IntToPtr (TRUE));
 							}
-
-							_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
 						}
 
 						_r_obj_dereference (path_string);
@@ -2017,7 +1783,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 		{
-			_app_addlistviewapp (hwnd, ptr_app, ptr_app->app_hash);
+			_app_addlistviewapp (hwnd, ptr_app);
 
 			// install timer
 			if (ptr_app->timer)
@@ -2035,22 +1801,17 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 		{
 			ptr_rule = _r_obj_getlistitem (rules_list, i);
 
-			if (!ptr_rule)
-				continue;
-
-			_app_addlistviewrule (hwnd, ptr_rule, i, FALSE);
+			if (ptr_rule)
+				_app_addlistviewrule (hwnd, ptr_rule, i, FALSE);
 		}
 
 		_r_queuedlock_releaseshared (&lock_rules);
-	}
 
-	if (hwnd)
-	{
 		new_listview_id = _app_getcurrentlistview_id (hwnd);
 
 		_app_updatelistviewbylparam (hwnd, new_listview_id, 0);
 
-		if (_r_wnd_isvisible (hwnd) && current_listview_id == new_listview_id)
+		if (_r_wnd_isvisible (hwnd) && (current_listview_id == new_listview_id))
 		{
 			_app_showitem (hwnd, current_listview_id, selected_item, scroll_pos);
 		}
