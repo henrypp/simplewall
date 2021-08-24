@@ -338,17 +338,20 @@ BOOLEAN _app_getfileicon (_In_ LPCWSTR path, _In_ BOOLEAN is_small, _Out_opt_ PI
 	return FALSE;
 }
 
-BOOLEAN _app_getappicon (_In_opt_ PITEM_APP ptr_app, _In_ BOOLEAN is_small, _Out_opt_ PINT icon_id, _Out_opt_ HICON * hicon)
+BOOLEAN _app_getappicon (_In_opt_ PITEM_APP ptr_app, _In_ BOOLEAN is_small, _Out_opt_ PINT icon_id, _Out_opt_ HICON* hicon)
 {
-	BOOLEAN is_success;
+	BOOLEAN is_success = FALSE;
 
 	if (ptr_app && !_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app))
 	{
-		is_success = _app_getfileicon (ptr_app->real_path->buffer, is_small, icon_id, hicon);
-	}
-	else
-	{
-		is_success = FALSE;
+		if (ptr_app->icon_id && icon_id)
+		{
+			*icon_id = ptr_app->icon_id;
+			is_success = TRUE;
+		}
+
+		if (hicon || !is_success)
+			is_success = _app_getfileicon (ptr_app->real_path->buffer, is_small, icon_id, hicon);
 	}
 
 	if (!is_success)
@@ -2826,9 +2829,15 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 	context = arglist;
 
 	// query file icon
-	ptr_app = _app_getappitem (context->ptr_log->app_hash);
+	if (!context->ptr_log->hicon)
+	{
+		ptr_app = _app_getappitem (context->ptr_log->app_hash);
 
-	_app_getappicon (ptr_app, FALSE, NULL, &context->ptr_log->hicon);
+		_app_getappicon (ptr_app, FALSE, NULL, &context->ptr_log->hicon);
+
+		if (ptr_app)
+			_r_obj_dereference (ptr_app);
+	}
 
 	if (_r_wnd_isvisible (context->hwnd) && context->ptr_log->app_hash == _app_notifyget_id (context->hwnd, FALSE))
 	{
@@ -2868,9 +2877,6 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 		}
 	}
 
-	if (ptr_app)
-		_r_obj_dereference (ptr_app);
-
 	_r_obj_dereference (context->ptr_log);
 
 	_r_freelist_deleteitem (&context_free_list, context);
@@ -2894,6 +2900,7 @@ PR_STRING _app_getemptystring ()
 VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	PITEM_CONTEXT context;
+	PITEM_APP ptr_app;
 	HWND hwnd;
 	INT listview_id;
 	BOOLEAN is_log;
@@ -2906,6 +2913,18 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 
 	if (is_log)
 	{
+		// query file icon
+		if (!context->ptr_log->icon_id)
+		{
+			ptr_app = _app_getappitem (context->ptr_log->app_hash);
+
+			_app_getappicon (ptr_app, TRUE, &context->ptr_log->icon_id, NULL);
+
+			if (ptr_app)
+				_r_obj_dereference (ptr_app);
+		}
+
+		// query address information
 		if (is_resolutionenabled)
 		{
 			_r_obj_movereference (&context->ptr_log->local_host_str, _app_resolveaddress (context->ptr_log->af, &context->ptr_log->local_addr));
@@ -2924,6 +2943,18 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 	}
 	else
 	{
+		// query file icon
+		if (!context->ptr_network->icon_id)
+		{
+			ptr_app = _app_getappitem (context->ptr_network->app_hash);
+
+			_app_getappicon (ptr_app, TRUE, &context->ptr_network->icon_id, NULL);
+
+			if (ptr_app)
+				_r_obj_dereference (ptr_app);
+		}
+
+		// query address information
 		_r_obj_movereference (&context->ptr_network->local_addr_str, _app_formataddress (context->ptr_network->af, 0, &context->ptr_network->local_addr, 0, 0));
 		_r_obj_movereference (&context->ptr_network->remote_addr_str, _app_formataddress (context->ptr_network->af, 0, &context->ptr_network->remote_addr, 0, 0));
 
