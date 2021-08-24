@@ -239,7 +239,6 @@ VOID _app_updateitembylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ BOOLEAN i
 					_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, FALSE);
 					_r_obj_dereference (ptr_rule);
 				}
-
 			}
 
 			_app_setcheckboxlock (hwnd, listview_id, FALSE);

@@ -760,17 +760,10 @@ BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ INT new_s
 	if (new_state == 2 && ptr_rule->is_enabled && is_block)
 		return FALSE; // not changed
 
+	ptr_rule->action = (new_state != 1) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+
 	ptr_rule->is_enabled = (new_state != 0);
 	ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
-
-	if ((new_state != 1))
-	{
-		ptr_rule->action = FWP_ACTION_BLOCK;
-	}
-	else
-	{
-		ptr_rule->action = FWP_ACTION_PERMIT;
-	}
 
 	return TRUE;
 }
@@ -836,7 +829,7 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 	{
 		if (hwnd)
 		{
-			_app_updatelistviewbylparam (hwnd, DataRuleBlocklist, PR_UPDATE_TYPE);
+			_app_updatelistviewbylparam (hwnd, DataRuleBlocklist, PR_UPDATE_TYPE | PR_UPDATE_NORESIZE);
 		}
 
 		if (is_instantapply)

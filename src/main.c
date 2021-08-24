@@ -718,23 +718,27 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 				case IDD_SETTINGS_BLOCKLIST:
 				{
-					LPCWSTR recommendedString = _r_locale_getstring (IDS_RECOMMENDED);
+					LPCWSTR recommended_string;
+					LPCWSTR disable_string;
+					LPCWSTR allow_string;
+					LPCWSTR block_string;
 
-					LPCWSTR disableString = _r_locale_getstring (IDS_DISABLE);
-					LPCWSTR allowString = _r_locale_getstring (IDS_ACTION_ALLOW);
-					LPCWSTR blockString = _r_locale_getstring (IDS_ACTION_BLOCK);
+					recommended_string = _r_locale_getstring (IDS_RECOMMENDED);
+					disable_string = _r_locale_getstring (IDS_DISABLE);
+					allow_string = _r_locale_getstring (IDS_ACTION_ALLOW);
+					block_string = _r_locale_getstring (IDS_ACTION_BLOCK);
 
-					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_SPY_DISABLE, disableString);
-					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_SPY_ALLOW, allowString);
-					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_SPY_BLOCK, L"%s (%s)", blockString, recommendedString);
+					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_SPY_DISABLE, disable_string);
+					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_SPY_ALLOW, allow_string);
+					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_SPY_BLOCK, L"%s (%s)", block_string, recommended_string);
 
-					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, L"%s (%s)", disableString, recommendedString);
-					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_UPDATE_ALLOW, allowString);
-					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_UPDATE_BLOCK, blockString);
+					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, L"%s (%s)", disable_string, recommended_string);
+					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_UPDATE_ALLOW, allow_string);
+					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_UPDATE_BLOCK, block_string);
 
-					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, L"%s (%s)", disableString, recommendedString);
-					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_EXTRA_ALLOW, allowString);
-					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_EXTRA_BLOCK, blockString);
+					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, L"%s (%s)", disable_string, recommended_string);
+					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_EXTRA_ALLOW, allow_string);
+					_r_ctrl_settext (hwnd, IDC_BLOCKLIST_EXTRA_BLOCK, block_string);
 
 					_r_ctrl_settextformat (hwnd, IDC_BLOCKLIST_INFO, L"Author: <a href=\"%s\">WindowsSpyBlocker</a> - block spying and tracking on Windows systems.", WINDOWSSPYBLOCKER_URL);
 
