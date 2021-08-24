@@ -2201,7 +2201,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					lpnmlv = (LPNMLVDISPINFOW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					_app_getdisplayinfo (hwnd, listview_id, lpnmlv);
+					_app_message_displayinfo (hwnd, listview_id, lpnmlv);
 
 					break;
 				}
@@ -2625,8 +2625,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_SHOWFILENAMESONLY_CHK:
 				{
-					PITEM_APP ptr_app;
-					SIZE_T enum_key;
+					INT listview_id;
 					BOOLEAN new_val;
 
 					new_val = !_r_config_getboolean (L"ShowFilenames", TRUE);
@@ -2634,22 +2633,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					_r_config_setboolean (L"ShowFilenames", new_val);
 
-					// regroup apps
-					_r_queuedlock_acquireshared (&lock_apps);
+					listview_id = _app_getcurrentlistview_id (hwnd);
 
-					enum_key = 0;
-
-					while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
-					{
-						if (_r_obj_isstringempty (ptr_app->short_name))
-							continue;
-
-						_app_updateitembylparam (hwnd, ptr_app->app_hash, TRUE);
-					}
-
-					_r_queuedlock_releaseshared (&lock_apps);
-
-					_app_listviewsort (hwnd, _app_getcurrentlistview_id (hwnd), -1, FALSE);
+					_r_listview_redraw (hwnd, listview_id, -1);
+					_app_listviewsort (hwnd, listview_id, -1, FALSE);
 
 					break;
 				}

@@ -446,7 +446,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, TRUE);
 
-						_r_listview_additemex (hwnd, IDC_RULE_APPS_ID, 0, _app_getappdisplayname (ptr_app, TRUE), I_IMAGECALLBACK, I_GROUPIDCALLBACK, ptr_app->app_hash);
+						_r_listview_additemex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, ptr_app->app_hash);
 						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
 						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, FALSE);
@@ -529,7 +529,6 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 1, _r_locale_getstring (IDS_TRAY_USER_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 
 				// initialize
-				WCHAR buffer[128] = {0};
 				PITEM_RULE ptr_rule;
 				BOOLEAN is_enabled;
 
@@ -545,15 +544,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					// check for services
 					is_enabled = ((ptr_rule->is_forservices && (context->ptr_app->app_hash == config.ntoskrnl_hash || context->ptr_app->app_hash == config.svchost_hash)) || _r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash));
 
-					if (ptr_rule->name)
-						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), ptr_rule->name->buffer);
-
-					if (ptr_rule->is_readonly)
-						_r_str_append (buffer, RTL_NUMBER_OF (buffer), SZ_RULE_INTERNAL_MENU);
-
 					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, TRUE);
 
-					_r_listview_additemex (hwnd, IDC_APP_RULES_ID, 0, buffer, I_IMAGECALLBACK, I_GROUPIDCALLBACK, i);
+					_r_listview_additemex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, i);
 					_r_listview_setitemcheck (hwnd, IDC_APP_RULES_ID, 0, is_enabled);
 
 					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, FALSE);
@@ -762,7 +755,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					lpnmlv = (LPNMLVDISPINFOW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					_app_getdisplayinfo (hwnd, listview_id, lpnmlv);
+					_app_message_displayinfo (hwnd, listview_id, lpnmlv);
 
 					break;
 				}
