@@ -5,121 +5,6 @@
 
 UINT WM_FINDMSGSTRING = 0;
 
-NTSTATUS NTAPI ApplyThread (_In_ PVOID arglist)
-{
-	PITEM_CONTEXT context;
-	HANDLE hengine;
-
-	_r_queuedlock_acquireshared (&lock_apply);
-
-	context = (PITEM_CONTEXT)arglist;
-	hengine = _wfp_getenginehandle ();
-
-	if (hengine)
-	{
-		// dropped packets logging (win7+)
-		if (config.is_neteventset)
-			_wfp_logunsubscribe (hengine);
-
-		if (context->is_install)
-		{
-			if (_wfp_initialize (hengine, TRUE))
-			{
-				_wfp_installfilters (hengine);
-			}
-		}
-		else
-		{
-			_wfp_destroyfilters (hengine);
-			_wfp_uninitialize (hengine, TRUE);
-		}
-
-		// dropped packets logging (win7+)
-		if (config.is_neteventset)
-		{
-			_wfp_logsubscribe (hengine);
-		}
-	}
-
-	_app_restoreinterfacestate (context->hwnd, TRUE);
-	_app_setinterfacestate (context->hwnd);
-
-	_app_profile_save ();
-
-	_r_mem_free (context);
-
-	_r_queuedlock_releaseshared (&lock_apply);
-
-	return STATUS_SUCCESS;
-}
-
-VOID _app_setnetworkiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_NETWORK ptr_network)
-{
-	PR_STRING string;
-
-	string = _app_formataddress (ptr_network->af, 0, &ptr_network->local_addr, 0, 0);
-
-	if (string)
-	{
-		_r_listview_setitem (hwnd, IDC_NETWORK, item_id, 1, string->buffer);
-		_r_obj_dereference (string);
-	}
-
-	string = _app_formataddress (ptr_network->af, 0, &ptr_network->remote_addr, 0, 0);
-
-	if (string)
-	{
-		_r_listview_setitem (hwnd, IDC_NETWORK, item_id, 4, string->buffer);
-		_r_obj_dereference (string);
-	}
-
-	_r_listview_setitem (hwnd, IDC_NETWORK, item_id, 7, _app_getprotoname (ptr_network->protocol, ptr_network->af, SZ_EMPTY));
-	_r_listview_setitem (hwnd, IDC_NETWORK, item_id, 8, _app_getconnectionstatusname (ptr_network->state, NULL));
-
-	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
-	{
-		string = _app_resolveaddress (ptr_network->af, &ptr_network->local_addr);
-
-		if (string)
-		{
-			_r_listview_setitem (hwnd, IDC_NETWORK, item_id, 2, string->buffer);
-			_r_obj_dereference (string);
-		}
-
-		string = _app_resolveaddress (ptr_network->af, &ptr_network->remote_addr);
-
-		if (string)
-		{
-			_r_listview_setitem (hwnd, IDC_NETWORK, item_id, 5, string->buffer);
-			_r_obj_dereference (string);
-		}
-	}
-
-	if (ptr_network->local_port)
-	{
-		string = _app_formatport (ptr_network->local_port, ptr_network->protocol, TRUE);
-
-		if (string)
-		{
-			_r_listview_setitem (hwnd, IDC_NETWORK, item_id, 3, string->buffer);
-
-			_r_obj_dereference (string);
-		}
-	}
-
-	if (ptr_network->remote_port)
-	{
-		string = _app_formatport (ptr_network->remote_port, ptr_network->protocol, TRUE);
-
-		if (string)
-		{
-			_r_listview_setitem (hwnd, IDC_NETWORK, item_id, 6, string->buffer);
-
-			_r_obj_dereference (string);
-		}
-	}
-}
-
 NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 {
 	ULONG network_timeout;
@@ -130,6 +15,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 	{
 		PR_HASHTABLE checker_map;
 		PITEM_NETWORK ptr_network;
+		PITEM_CONTEXT context;
 		ULONG_PTR network_hash;
 		PR_STRING string;
 		HWND hwnd;
@@ -139,13 +25,11 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 		BOOLEAN is_refresh;
 
 		hwnd = (HWND)arglist;
-		network_timeout = _r_calc_clamp32 (network_timeout, 500, 60 * 1000); // set allowed range
+		network_timeout = _r_calc_clamp32 (network_timeout, 1000, 60 * 1000); // set allowed range
 		checker_map = _r_obj_createhashtablepointer (8);
 
 		while (TRUE)
 		{
-			_r_obj_clearhashtable (checker_map);
-
 			_app_generate_connections (network_table, checker_map);
 
 			is_highlighting_enabled = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getbooleanex (L"IsHighlightConnection", TRUE, L"colors");
@@ -164,14 +48,17 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 
 				item_id = _r_listview_getitemcount (hwnd, IDC_NETWORK);
 
-				_r_listview_additemex (hwnd, IDC_NETWORK, item_id, _r_path_getbasename (ptr_network->path->buffer), I_IMAGECALLBACK, I_GROUPIDCALLBACK, network_hash);
-				_app_setnetworkiteminfo (hwnd, IDC_NETWORK, item_id, ptr_network);
+				_r_listview_additemex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, network_hash);
 
-				// redraw listview item
-				if (is_highlighting_enabled)
-				{
-					_app_setlistviewbylparam (hwnd, ptr_network->app_hash, PR_SETITEM_REDRAW, TRUE);
-				}
+				// resolve network address
+				context = _r_freelist_allocateitem (&context_free_list);
+
+				context->hwnd = hwnd;
+				context->listview_id = IDC_NETWORK;
+				context->lparam = network_hash;
+				context->ptr_network = _r_obj_reference (ptr_network);
+
+				_r_workqueue_queueitem (&resolve_log_queue, &_app_queueresolveinformation, context);
 
 				is_refresh = TRUE;
 			}
@@ -179,7 +66,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 			// refresh network tab as well
 			if (is_refresh)
 			{
-				_app_updatelistviewbylparam (hwnd, IDC_NETWORK, 0);
+				_app_updatelistviewbylparam (hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
 			}
 
 			// remove closed connections from list
@@ -238,12 +125,12 @@ BOOLEAN _app_changefilters (_In_ HWND hwnd, _In_ BOOLEAN is_install, _In_ BOOLEA
 	{
 		_app_initinterfacestate (hwnd, TRUE);
 
-		context = _r_mem_allocatezero (sizeof (ITEM_CONTEXT));
+		context = _r_freelist_allocateitem (&context_free_list);
 
 		context->hwnd = hwnd;
 		context->is_install = is_install;
 
-		_r_workqueue_queueitem (&wfp_queue, &ApplyThread, context);
+		_r_workqueue_queueitem (&wfp_queue, &_wfp_applythread, context);
 
 		return TRUE;
 	}
@@ -1561,17 +1448,16 @@ VOID _app_tabs_init (_In_ HWND hwnd)
 {
 	RECT rect = {0};
 
-	PR_STRING localized_string = NULL;
-	ULONG style;
-	LONG rebar_height;
 	LONG statusbar_height;
+	LONG rebar_height;
+	ULONG style;
 
 	HWND hlistview;
 	INT listview_id;
 	INT tabs_count;
 
-	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
+	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 
 	GetClientRect (hwnd, &rect);
 
@@ -1591,20 +1477,22 @@ VOID _app_tabs_init (_In_ HWND hwnd)
 		if (!hlistview)
 			continue;
 
+		_r_tab_adjustchild (hwnd, IDC_TAB, hlistview);
+
 		if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM)
 		{
 			_r_listview_setstyle (hwnd, listview_id, style | LVS_EX_CHECKBOXES, TRUE); // with checkboxes
 
 			if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 			{
-				_r_listview_addcolumn (hwnd, listview_id, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
-				_r_listview_addcolumn (hwnd, listview_id, 1, _r_locale_getstring (IDS_ADDED), 0, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 0, L"", -80, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, listview_id, 1, L"", -20, LVCFMT_RIGHT);
 			}
 			else
 			{
-				_r_listview_addcolumn (hwnd, listview_id, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
-				_r_listview_addcolumn (hwnd, listview_id, 1, _r_locale_getstring (IDS_PROTOCOL), 0, LVCFMT_RIGHT);
-				_r_listview_addcolumn (hwnd, listview_id, 2, _r_locale_getstring (IDS_DIRECTION), 0, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 0, L"", -80, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, listview_id, 1, L"", -10, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, listview_id, 2, L"", -10, LVCFMT_RIGHT);
 			}
 
 			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
@@ -1616,29 +1504,15 @@ VOID _app_tabs_init (_In_ HWND hwnd)
 		{
 			_r_listview_setstyle (hwnd, listview_id, style, TRUE);
 
-			_r_listview_addcolumn (hwnd, listview_id, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_ADDRESS)));
-			_r_listview_addcolumn (hwnd, listview_id, 1, _r_obj_getstringorempty (localized_string), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_HOST)));
-			_r_listview_addcolumn (hwnd, listview_id, 2, _r_obj_getstringorempty (localized_string), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_PORT)));
-			_r_listview_addcolumn (hwnd, listview_id, 3, _r_obj_getstringorempty (localized_string), 0, LVCFMT_RIGHT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_ADDRESS)));
-			_r_listview_addcolumn (hwnd, listview_id, 4, _r_obj_getstringorempty (localized_string), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_HOST)));
-			_r_listview_addcolumn (hwnd, listview_id, 5, _r_obj_getstringorempty (localized_string), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_PORT)));
-			_r_listview_addcolumn (hwnd, listview_id, 6, _r_obj_getstringorempty (localized_string), 0, LVCFMT_RIGHT);
-
-			_r_listview_addcolumn (hwnd, listview_id, 7, _r_locale_getstring (IDS_PROTOCOL), 0, LVCFMT_RIGHT);
-
-			_r_listview_addcolumn (hwnd, listview_id, 8, _r_locale_getstring (IDS_STATE), 0, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 0, L"", -20, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 1, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 2, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 3, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 4, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 5, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 6, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 7, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 8, L"", -10, LVCFMT_RIGHT);
 
 			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 			_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
@@ -1648,61 +1522,27 @@ VOID _app_tabs_init (_In_ HWND hwnd)
 		{
 			_r_listview_setstyle (hwnd, listview_id, style, FALSE);
 
-			_r_listview_addcolumn (hwnd, listview_id, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_ADDRESS)));
-			_r_listview_addcolumn (hwnd, listview_id, 1, _r_obj_getstringorempty (localized_string), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_HOST)));
-			_r_listview_addcolumn (hwnd, listview_id, 2, _r_obj_getstringorempty (localized_string), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_PORT)));
-			_r_listview_addcolumn (hwnd, listview_id, 3, _r_obj_getstringorempty (localized_string), 0, LVCFMT_RIGHT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_ADDRESS)));
-			_r_listview_addcolumn (hwnd, listview_id, 4, _r_obj_getstringorempty (localized_string), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_HOST)));
-			_r_listview_addcolumn (hwnd, listview_id, 5, _r_obj_getstringorempty (localized_string), 0, LVCFMT_LEFT);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_PORT)));
-			_r_listview_addcolumn (hwnd, listview_id, 6, _r_obj_getstringorempty (localized_string), 0, LVCFMT_RIGHT);
-
-			_r_listview_addcolumn (hwnd, listview_id, 7, _r_locale_getstring (IDS_FILTER), 0, LVCFMT_LEFT);
-
-			_r_listview_addcolumn (hwnd, listview_id, 8, _r_locale_getstring (IDS_PROTOCOL), 0, LVCFMT_RIGHT);
-
-			_r_listview_addcolumn (hwnd, listview_id, 9, _r_locale_getstring (IDS_DIRECTION), 0, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 10, _r_locale_getstring (IDS_STATE), 0, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 11, _r_locale_getstring (IDS_DATE), 0, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 0, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 1, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 2, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 3, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 4, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 5, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 6, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 7, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 8, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 9, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 10, L"", -10, LVCFMT_RIGHT);
 		}
 
 		_app_listviewsetfont (hwnd, listview_id);
 
 		BringWindowToTop (hlistview); // HACK!!!
-
-		_r_tab_adjustchild (hwnd, IDC_TAB, hlistview);
 	}
-
-	if (localized_string)
-		_r_obj_dereference (localized_string);
 }
 
 VOID _app_initialize ()
 {
-	// initialize spinlocks
-	_r_queuedlock_initialize (&lock_apps);
-	_r_queuedlock_initialize (&lock_apply);
-	_r_queuedlock_initialize (&lock_context);
-	_r_queuedlock_initialize (&lock_rules);
-	_r_queuedlock_initialize (&lock_rules_config);
-	_r_queuedlock_initialize (&lock_loglist);
-	_r_queuedlock_initialize (&lock_network);
-	_r_queuedlock_initialize (&lock_profile);
-	_r_queuedlock_initialize (&lock_transaction);
-
-	_r_queuedlock_initialize (&lock_cache_dns);
-
 	// set privileges
 	{
 		ULONG privileges[] = {
@@ -1742,15 +1582,21 @@ VOID _app_initialize ()
 	config.ntoskrnl_hash = _r_obj_getstringhash (config.system_path);
 	config.svchost_hash = _r_obj_getstringhash (config.svchost_path);
 
+	// initialize free list
+	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);
+
 	// initialize workqueue
 	{
 		R_THREAD_ENVIRONMENT environment;
 
 		_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&file_queue, 0, 8, 1000, &environment);
+		_r_workqueue_initialize (&file_queue, 0, 12, 500, &environment);
+		_r_workqueue_initialize (&resolve_log_queue, 0, 6, 500, &environment);
 
 		_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&log_queue, 0, 4, 500, &environment);
+		_r_workqueue_initialize (&log_queue, 0, 3, 500, &environment);
+
+		_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 500, NULL);
 
 		_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 		_r_workqueue_initialize (&wfp_queue, 0, 1, 500, &environment);
@@ -1906,7 +1752,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			// initialize layout manager
 			_r_layout_initializemanager (&layout_manager, hwnd);
 
-			_r_layout_setoriginalsize (&layout_manager, 500, 300);
+			_r_layout_setoriginalsize (&layout_manager, 420, 240);
 
 			// create network monitor thread
 			_r_sys_createthread2 (&NetworkMonitorThread, hwnd);
@@ -3438,8 +3284,8 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_ LPWSTR cmdline, _In_ INT show_cmd)
 {
 	MSG msg;
-
-	RtlSecureZeroMemory (&config, sizeof (config));
+	HWND hwnd;
+	HACCEL haccel;
 
 	if (_r_app_initialize ())
 	{
@@ -3448,13 +3294,13 @@ INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_
 
 		if (_r_app_createwindow (IDD_MAIN, IDI_MAIN, &DlgProc))
 		{
-			HACCEL haccel = LoadAccelerators (hinst, MAKEINTRESOURCE (IDA_MAIN));
+			haccel = LoadAccelerators (hinst, MAKEINTRESOURCE (IDA_MAIN));
 
 			if (haccel)
 			{
 				while (GetMessage (&msg, NULL, 0, 0) > 0)
 				{
-					HWND hwnd = GetActiveWindow ();
+					hwnd = GetActiveWindow ();
 
 					if (!TranslateAccelerator (hwnd, haccel, &msg) && !IsDialogMessage (hwnd, &msg))
 					{

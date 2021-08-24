@@ -84,72 +84,6 @@ BOOLEAN _app_islogfound (_In_ ULONG_PTR log_hash)
 	return is_found;
 }
 
-VOID _app_setlogiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_LOG ptr_log)
-{
-	PR_STRING string;
-
-	if (ptr_log->local_addr_str)
-		_r_listview_setitem (hwnd, listview_id, item_id, 1, ptr_log->local_addr_str->buffer);
-
-	if (ptr_log->local_host_str)
-		_r_listview_setitem (hwnd, listview_id, item_id, 2, ptr_log->local_host_str->buffer);
-
-	if (ptr_log->remote_addr_str)
-		_r_listview_setitem (hwnd, listview_id, item_id, 4, ptr_log->remote_addr_str->buffer);
-
-	if (ptr_log->remote_host_str)
-		_r_listview_setitem (hwnd, listview_id, item_id, 5, ptr_log->remote_host_str->buffer);
-
-	_r_listview_setitem (hwnd, listview_id, item_id, 8, _app_getprotoname (ptr_log->protocol, ptr_log->af, L""));
-
-	if (ptr_log->local_port)
-	{
-		string = _app_formatport (ptr_log->local_port, ptr_log->protocol, TRUE);
-
-		if (string)
-		{
-			_r_listview_setitem (hwnd, listview_id, item_id, 3, string->buffer);
-
-			_r_obj_dereference (string);
-		}
-	}
-
-	if (ptr_log->remote_port)
-	{
-		string = _app_formatport (ptr_log->remote_port, ptr_log->protocol, TRUE);
-
-		if (string)
-		{
-			_r_listview_setitem (hwnd, listview_id, item_id, 6, string->buffer);
-
-			_r_obj_dereference (string);
-		}
-	}
-
-	string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
-
-	if (string)
-	{
-		_r_listview_setitem (hwnd, listview_id, item_id, 9, string->buffer);
-
-		_r_obj_dereference (string);
-	}
-
-	if (ptr_log->filter_name)
-		_r_listview_setitem (hwnd, listview_id, item_id, 7, ptr_log->filter_name->buffer);
-
-	_r_listview_setitem (hwnd, listview_id, item_id, 10, ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK);
-
-	string = _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
-
-	if (string)
-	{
-		_r_listview_setitem (hwnd, listview_id, item_id, 11, string->buffer);
-
-		_r_obj_dereference (string);
-	}
-}
-
 BOOLEAN _app_logislimitreached (_In_ HANDLE hfile)
 {
 	LONG64 limit;
@@ -190,8 +124,6 @@ VOID _app_logclear_ui (_In_ HWND hwnd)
 	SendDlgItemMessage (hwnd, IDC_LOG, LVM_DELETEALLITEMS, 0, 0);
 	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, 0, 0);
 
-	InterlockedCompareExchange (&config.logitem_id, 0, config.logitem_id);
-
 	_app_listviewresize (hwnd, IDC_LOG, FALSE);
 
 	_r_queuedlock_acquireexclusive (&lock_loglist);
@@ -205,9 +137,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 {
 	PR_STRING path = NULL;
 	PR_STRING date_string;
-	PR_STRING local_address_string;
 	PR_STRING local_port_string;
-	PR_STRING remote_address_string;
 	PR_STRING remote_port_string;
 	PR_STRING direction_string;
 	PR_STRING buffer;
@@ -247,11 +177,8 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 
 	date_string = _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
 
-	local_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->local_addr, 0, 0);
-	remote_address_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, 0, 0);
-
-	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol, TRUE);
-	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol, TRUE);
+	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol);
+	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol);
 
 	direction_string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
@@ -259,10 +186,10 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 							   _r_obj_getstringordefault (date_string, SZ_EMPTY),
 							   _r_obj_getstringordefault (ptr_log->username, SZ_EMPTY),
 							   _r_obj_getstringordefault (path, SZ_EMPTY),
-							   _r_obj_getstringordefault (local_address_string, SZ_EMPTY),
-							   _r_obj_getstringordefault (local_port_string, SZ_EMPTY),
-							   _r_obj_getstringordefault (remote_address_string, SZ_EMPTY),
-							   _r_obj_getstringordefault (remote_port_string, SZ_EMPTY),
+							   _r_obj_getstringordefault (ptr_log->local_addr_str, SZ_EMPTY),
+							   local_port_string->buffer,
+							   _r_obj_getstringordefault (ptr_log->remote_addr_str, SZ_EMPTY),
+							   remote_port_string->buffer,
 							   _app_getprotoname (ptr_log->protocol, ptr_log->af, SZ_UNKNOWN),
 							   _r_obj_getstringorempty (ptr_log->provider_name),
 							   _r_obj_getstringorempty (ptr_log->filter_name),
@@ -271,20 +198,16 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 							   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 	);
 
+	if (_app_logislimitreached (current_handle))
+		_app_logclear (current_handle);
+
+	if (_r_fs_getsize (current_handle) == 2)
+		WriteFile (current_handle, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)), &unused, NULL); // adds csv header
+
+	WriteFile (current_handle, buffer->buffer, (ULONG)buffer->length, &unused, NULL);
+
 	if (date_string)
 		_r_obj_dereference (date_string);
-
-	if (local_address_string)
-		_r_obj_dereference (local_address_string);
-
-	if (local_port_string)
-		_r_obj_dereference (local_port_string);
-
-	if (remote_address_string)
-		_r_obj_dereference (remote_address_string);
-
-	if (remote_port_string)
-		_r_obj_dereference (remote_port_string);
 
 	if (direction_string)
 		_r_obj_dereference (direction_string);
@@ -292,22 +215,15 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	if (path)
 		_r_obj_dereference (path);
 
-	if (_app_logislimitreached (current_handle))
-		_app_logclear (current_handle);
+	_r_obj_dereference (local_port_string);
+	_r_obj_dereference (remote_port_string);
 
-	if (_r_fs_getsize (current_handle) == 2)
-		WriteFile (current_handle, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)), &unused, NULL); // adds csv header
-
-	if (buffer)
-	{
-		WriteFile (current_handle, buffer->buffer, (ULONG)buffer->length, &unused, NULL);
-
-		_r_obj_dereference (buffer);
-	}
+	_r_obj_dereference (buffer);
 }
 
 VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 {
+	PITEM_CONTEXT context;
 	PITEM_APP ptr_app;
 	ULONG_PTR log_hash;
 	SIZE_T table_size;
@@ -332,7 +248,7 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	{
 		ULONG_PTR hash_code;
 
-		item_id = InterlockedDecrement (&config.logitem_id) - 1;
+		item_id = _r_listview_getitemcount (hwnd, IDC_LOG) - 1;
 
 		hash_code = _r_listview_getitemlparam (hwnd, IDC_LOG, item_id);
 		_r_listview_deleteitem (hwnd, IDC_LOG, item_id);
@@ -352,12 +268,22 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 
 	ptr_app = _app_getappitem (ptr_log->app_hash);
 
-	//item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
+	item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
 
-	item_id = InterlockedIncrement (&config.logitem_id) - 1;
+	_r_listview_additemex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDNONE, log_hash);
 
-	_r_listview_additemex (hwnd, IDC_LOG, item_id, ptr_app ? _app_getappdisplayname (ptr_app, TRUE) : SZ_EMPTY, I_IMAGECALLBACK, I_GROUPIDNONE, log_hash);
-	_app_setlogiteminfo (hwnd, IDC_LOG, item_id, ptr_log);
+	// resolve network address
+	//if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
+	{
+		context = _r_freelist_allocateitem (&context_free_list);
+
+		context->hwnd = hwnd;
+		context->listview_id = IDC_LOG;
+		context->lparam = log_hash;
+		context->ptr_log = _r_obj_reference (ptr_log);
+
+		_r_workqueue_queueitem (&resolve_log_queue, &_app_queueresolveinformation, context);
+	}
 
 	if (ptr_app)
 		_r_obj_dereference (ptr_app);
@@ -692,7 +618,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	ptr_log->is_system = (filter_weight == FW_WEIGHT_HIGHEST) || (filter_weight == FW_WEIGHT_HIGHEST_IMPORTANT);
 	ptr_log->is_custom = (filter_weight == FW_WEIGHT_RULE_USER) || (filter_weight == FW_WEIGHT_RULE_USER_BLOCK);
 
-	_r_workqueue_queueitem (&log_queue, &LogThread, ptr_log);
+	_r_workqueue_queueitem (&log_queue, &_app_logthread, ptr_log);
 }
 
 FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PVOID data, _In_ INT version)
@@ -1269,7 +1195,7 @@ VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5 
 		_wfp_logcallback (&log);
 }
 
-NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
+VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	HWND hwnd;
 
@@ -1314,10 +1240,6 @@ NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
 		ptr_app = _app_getappitem (ptr_log->app_hash);
 	}
 
-	// made network name resolution
-	ptr_log->remote_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, 0);
-	ptr_log->local_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, 0);
-
 	is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
 	is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
 	is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
@@ -1328,28 +1250,9 @@ NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
 
 	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth && is_exludeallow)
 	{
-		// get file icon
-		if (ptr_app)
-		{
-			_app_getappicon (ptr_app, TRUE, &ptr_log->icon_id, NULL);
-
-			if (is_notificationenabled)
-				_app_getappicon (ptr_app, FALSE, NULL, &ptr_log->hicon);
-		}
-		else
-		{
-			ptr_log->icon_id = config.icon_id;
-
-			if (is_notificationenabled)
-				ptr_log->hicon = CopyIcon (config.hicon_large);
-		}
-
-		// resolve network address
-		if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
-		{
-			ptr_log->remote_host_str = _app_resolveaddress (ptr_log->af, &ptr_log->remote_addr);
-			ptr_log->local_host_str = _app_resolveaddress (ptr_log->af, &ptr_log->local_addr);
-		}
+		// get network string
+		ptr_log->remote_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, 0);
+		ptr_log->local_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, 0);
 
 		// write log to a file
 		if (is_logenabled)
@@ -1384,6 +1287,4 @@ NTSTATUS NTAPI LogThread (_In_ PVOID arglist)
 		_r_obj_dereference (ptr_app);
 
 	_r_obj_dereference (ptr_log);
-
-	return STATUS_SUCCESS;
 }

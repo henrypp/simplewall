@@ -16,7 +16,6 @@ FORCEINLINE PR_STRING _app_getlogviewer ()
 VOID _app_loginit (_In_ BOOLEAN is_install);
 ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log);
 BOOLEAN _app_islogfound (_In_ ULONG_PTR log_hash);
-VOID _app_setlogiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_LOG ptr_log);
 BOOLEAN _app_logislimitreached (_In_ HANDLE hfile);
 
 VOID _app_logclear (_In_opt_ HANDLE hfile);
@@ -36,4 +35,4 @@ VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3*
 VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4* event);
 VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5* event);
 
-NTSTATUS NTAPI LogThread (_In_ PVOID arglist);
+VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count);

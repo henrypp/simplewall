@@ -23,25 +23,18 @@ _Ret_maybenull_
 PVOID _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ ULONG_PTR hash_code, _In_ PR_QUEUED_LOCK spin_lock);
 
 _Ret_maybenull_
-PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
-
-_Ret_maybenull_
 PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPCVOID address, _In_opt_ UINT16 port, _In_ ULONG flags);
 
 _Success_ (return)
 BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR out_buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty);
 
-_Ret_maybenull_
-PR_STRING _app_formatport (_In_ UINT16 port, _In_ UINT8 proto, _In_ BOOLEAN is_noempty);
+PR_STRING _app_formatport (_In_ UINT16 port, _In_ UINT8 proto);
 
 BOOLEAN _app_isappvalidbinary (_In_ PITEM_APP ptr_app);
 BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path);
 
-_Success_ (return)
 BOOLEAN _app_getfileicon (_In_ LPCWSTR path, _In_ BOOLEAN is_small, _Out_opt_ PINT icon_id, _Out_opt_ HICON* hicon);
-
-_Success_ (return)
-BOOLEAN _app_getappicon (_In_ const PITEM_APP ptr_app, _In_ BOOLEAN is_small, _Out_opt_ PINT icon_id, _Out_opt_ HICON* hicon);
+BOOLEAN _app_getappicon (_In_opt_ PITEM_APP ptr_app, _In_ BOOLEAN is_small, _Out_opt_ PINT icon_id, _Out_opt_ HICON* hicon);
 
 LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened);
 VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app);
@@ -79,6 +72,13 @@ BOOLEAN _app_parsenetworkstring (_In_ LPCWSTR network_string, _Inout_ PITEM_ADDR
 
 BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _In_ PITEM_ADDRESS address);
 BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDRESS address);
+
+_Ret_maybenull_
+PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
+
+VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count);
+VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_count);
+VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_count);
 
 _Ret_maybenull_
 HBITMAP _app_bitmapfromico (_In_ HICON hicon, _In_ INT icon_size);

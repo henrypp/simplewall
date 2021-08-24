@@ -982,7 +982,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					_app_setcheckboxlock (hwnd, listview_id, TRUE);
 
 					while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+					{
 						_r_listview_setitemcheck (hwnd, listview_id, item_id, new_val);
+					}
 
 					_app_setcheckboxlock (hwnd, listview_id, FALSE);
 

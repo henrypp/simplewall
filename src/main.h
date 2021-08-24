@@ -131,6 +131,7 @@ typedef enum _ENUM_INSTALL_TYPE
 #define SZ_RULE_INTERNAL_TITLE L"Internal rule"
 #define SZ_RULE_NEW_TITLE L"<new rule>"
 #define SZ_UNKNOWN L"unknown"
+#define SZ_LOADING L"Loading..."
 
 #define SZ_DIRECTION_REMOTE L"Remote"
 #define SZ_DIRECTION_LOCAL L"Local"
@@ -151,7 +152,7 @@ typedef enum _ENUM_INSTALL_TYPE
 #define MAP_CACHE_MAX 900 // limit for caching hashtable
 
 #define TRANSACTION_TIMEOUT 9000
-#define NETWORK_TIMEOUT 3500
+#define NETWORK_TIMEOUT 2500
 
 // notifications
 #define NOTIFY_GRADIENT_1 RGB (0, 68, 112)
@@ -231,7 +232,6 @@ typedef struct tagSTATIC_DATA
 
 	volatile HANDLE hlogfile;
 	volatile HANDLE hnetevent;
-	volatile LONG logitem_id;
 	HFONT hfont;
 	HICON hicon_large;
 	HICON hicon_small;
@@ -420,6 +420,10 @@ typedef struct tagITEM_NETWORK
 	};
 
 	PR_STRING path;
+	PR_STRING local_addr_str;
+	PR_STRING local_host_str;
+	PR_STRING remote_addr_str;
+	PR_STRING remote_host_str;
 	ULONG_PTR app_hash;
 	ULONG state;
 	INT icon_id;
@@ -446,6 +450,7 @@ typedef struct tagITEM_STATUS
 typedef struct tagITEM_CONTEXT
 {
 	HWND hwnd;
+	INT listview_id;
 
 	union
 	{
@@ -453,20 +458,29 @@ typedef struct tagITEM_CONTEXT
 		{
 			union
 			{
-				PITEM_RULE ptr_rule;
 				PITEM_APP ptr_app;
+				PITEM_RULE ptr_rule;
 			};
 
 			INT page_id;
-
 			BOOLEAN is_settorules;
 		};
 
 		struct
 		{
-			INT listview_id;
 			INT item_id;
 			INT current_length;
+		};
+
+		struct
+		{
+			union
+			{
+				PITEM_LOG ptr_log;
+				PITEM_NETWORK ptr_network;
+			};
+
+			LPARAM lparam;
 		};
 
 		BOOLEAN is_install;

@@ -53,7 +53,6 @@ INT _app_getlistviewbytype_id (_In_ ENUM_TYPE_DATA type)
 VOID _app_setlistviewbylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ ULONG flags, _In_ BOOLEAN is_app)
 {
 	INT listview_id;
-	INT item_id;
 
 	if (is_app)
 	{
@@ -73,12 +72,7 @@ VOID _app_setlistviewbylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ ULONG fl
 	{
 		if (listview_id == _app_getcurrentlistview_id (hwnd))
 		{
-			item_id = _app_getposition (hwnd, listview_id, lparam);
-
-			if (item_id != -1)
-			{
-				_r_listview_redraw (hwnd, listview_id, item_id);
-			}
+			_r_listview_redraw (hwnd, listview_id, -1);
 		}
 	}
 }
@@ -120,13 +114,14 @@ VOID _app_updatelistviewbylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ ULONG
 		if (!(flags & PR_UPDATE_NORESIZE))
 			_app_listviewresize (hwnd, listview_id, FALSE);
 
-		_r_listview_redraw (hwnd, listview_id, -1);
+		if (!(flags & PR_UPDATE_NOREDRAW))
+			_r_listview_redraw (hwnd, listview_id, -1);
 	}
 
 	_app_refreshstatus (hwnd);
 }
 
-VOID _app_addlistviewapp (_In_ HWND hwnd, _In_ PITEM_APP ptr_app, _In_ ULONG_PTR app_hash)
+VOID _app_addlistviewapp (_In_ HWND hwnd, _In_ PITEM_APP ptr_app)
 {
 	INT listview_id;
 	INT item_id;
@@ -139,7 +134,7 @@ VOID _app_addlistviewapp (_In_ HWND hwnd, _In_ PITEM_APP ptr_app, _In_ ULONG_PTR
 
 		_app_setcheckboxlock (hwnd, listview_id, TRUE);
 
-		_r_listview_additemex (hwnd, listview_id, item_id, _r_obj_getstringordefault (ptr_app->display_name, SZ_EMPTY), I_IMAGECALLBACK, I_GROUPIDCALLBACK, app_hash);
+		_r_listview_additemex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, ptr_app->app_hash);
 		_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
 
 		_app_setcheckboxlock (hwnd, listview_id, FALSE);
@@ -159,7 +154,7 @@ VOID _app_addlistviewrule (_In_ HWND hwnd, _In_ PITEM_RULE ptr_rule, _In_ SIZE_T
 
 		_app_setcheckboxlock (hwnd, listview_id, TRUE);
 
-		_r_listview_additemex (hwnd, listview_id, item_id, _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY), I_IMAGECALLBACK, I_GROUPIDCALLBACK, rule_idx);
+		_r_listview_additemex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, rule_idx);
 		_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, is_forapp);
 
 		_app_setcheckboxlock (hwnd, listview_id, FALSE);
@@ -200,7 +195,7 @@ VOID _app_showitembylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ BOOLEAN is_
 
 VOID _app_updateitembyidx (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id)
 {
-	_r_listview_setitemex (hwnd, listview_id, item_id, 0, NULL, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitemex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 }
 
 VOID _app_updateitembylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ BOOLEAN is_app)

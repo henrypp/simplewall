@@ -57,6 +57,11 @@ VOID NTAPI _app_dereferencenetwork (_In_ PVOID entry)
 	ptr_network = entry;
 
 	SAFE_DELETE_REFERENCE (ptr_network->path);
+
+	SAFE_DELETE_REFERENCE (ptr_network->local_addr_str);
+	SAFE_DELETE_REFERENCE (ptr_network->local_host_str);
+	SAFE_DELETE_REFERENCE (ptr_network->remote_addr_str);
+	SAFE_DELETE_REFERENCE (ptr_network->remote_host_str);
 }
 
 VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
@@ -147,37 +152,6 @@ PVOID _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ ULONG_PTR hash_
 	string = _r_obj_findhashtablepointer (cache_table, hash_code);
 
 	_r_queuedlock_releaseshared (spin_lock);
-
-	return string;
-}
-
-_Ret_maybenull_
-PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
-{
-	PR_STRING string = NULL;
-	PR_STRING arpa_string;
-	PDNS_RECORD dns_records;
-	DNS_STATUS code;
-
-	arpa_string = _app_formataddress (af, 0, address, 0, FMTADDR_AS_ARPA);
-
-	if (arpa_string)
-	{
-		code = DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
-
-		if (code == DNS_ERROR_RCODE_NO_ERROR)
-		{
-			if (dns_records)
-			{
-				if (!_r_str_isempty (dns_records->Data.PTR.pNameHost))
-					string = _r_obj_createstring (dns_records->Data.PTR.pNameHost);
-
-				DnsRecordListFree (dns_records, DnsFreeRecordList);
-			}
-		}
-
-		_r_obj_dereference (arpa_string);
-	}
 
 	return string;
 }
@@ -281,31 +255,18 @@ BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes
 	return FALSE;
 }
 
-_Ret_maybenull_
-PR_STRING _app_formatport (_In_ UINT16 port, _In_ UINT8 proto, _In_ BOOLEAN is_noempty)
+PR_STRING _app_formatport (_In_ UINT16 port, _In_ UINT8 proto)
 {
-	if (!port)
-		return NULL;
+	LPCWSTR service_string;
 
-	if (is_noempty)
-	{
-		LPCWSTR service_string = _app_getservicename (port, proto, NULL);
+	service_string = _app_getservicename (port, proto, NULL);
 
-		if (service_string)
-		{
-			return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, service_string);
-		}
-		else
-		{
-			return _r_format_string (L"%" TEXT (PRIu16), port);
-		}
-	}
-	else
+	if (service_string)
 	{
-		return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, _app_getservicename (port, proto, SZ_UNKNOWN));
+		return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, service_string);
 	}
 
-	return NULL;
+	return _r_format_string (L"%" TEXT (PRIu16), port);
 }
 
 BOOLEAN _app_isappvalidbinary (_In_ PITEM_APP ptr_app)
@@ -343,7 +304,6 @@ BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path)
 	return TRUE;
 }
 
-_Success_ (return)
 BOOLEAN _app_getfileicon (_In_ LPCWSTR path, _In_ BOOLEAN is_small, _Out_opt_ PINT icon_id, _Out_opt_ HICON * hicon)
 {
 	SHFILEINFO shfi = {0};
@@ -369,15 +329,20 @@ BOOLEAN _app_getfileicon (_In_ LPCWSTR path, _In_ BOOLEAN is_small, _Out_opt_ PI
 		return TRUE;
 	}
 
+	if (icon_id)
+		*icon_id = 0;
+
+	if (hicon)
+		*hicon = NULL;
+
 	return FALSE;
 }
 
-_Success_ (return)
-BOOLEAN _app_getappicon (_In_ const PITEM_APP ptr_app, _In_ BOOLEAN is_small, _Out_opt_ PINT icon_id, _Out_opt_ HICON * hicon)
+BOOLEAN _app_getappicon (_In_opt_ PITEM_APP ptr_app, _In_ BOOLEAN is_small, _Out_opt_ PINT icon_id, _Out_opt_ HICON * hicon)
 {
 	BOOLEAN is_success;
 
-	if (!_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app))
+	if (ptr_app && !_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app))
 	{
 		is_success = _app_getfileicon (ptr_app->real_path->buffer, is_small, icon_id, hicon);
 	}
@@ -388,7 +353,7 @@ BOOLEAN _app_getappicon (_In_ const PITEM_APP ptr_app, _In_ BOOLEAN is_small, _O
 
 	if (!is_success)
 	{
-		if (ptr_app->type == DataAppUWP)
+		if (ptr_app && ptr_app->type == DataAppUWP)
 		{
 			if (icon_id)
 				*icon_id = config.icon_uwp_id;
@@ -458,7 +423,7 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 	hfile = CreateFile (ptr_app->real_path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (!_r_fs_isvalidhandle (hfile))
-		goto CleanupExit;
+		return;
 
 	WINTRUST_FILE_INFO file_info = {0};
 	WINTRUST_DATA trust_data = {0};
@@ -495,13 +460,16 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 
 				if (prov_cert)
 				{
-					ULONG num_chars = CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, NULL, 0) - 1;
+					PR_STRING string;
+					ULONG length;
 
-					if (num_chars)
+					length = CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, NULL, 0) - 1;
+
+					if (length)
 					{
-						PR_STRING string = _r_obj_createstringex (NULL, num_chars * sizeof (WCHAR));
+						string = _r_obj_createstringex (NULL, length * sizeof (WCHAR));
 
-						if (CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, num_chars + 1) <= 1)
+						if (CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1) <= 1)
 						{
 							_r_obj_dereference (string);
 						}
@@ -518,10 +486,7 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 	trust_data.dwStateAction = WTD_STATEACTION_CLOSE;
 	WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trust_data);
 
-CleanupExit:
-
-	if (_r_fs_isvalidhandle (hfile))
-		CloseHandle (hfile);
+	CloseHandle (hfile);
 }
 
 VOID _app_getversioninfo (_Inout_ PITEM_APP ptr_app)
@@ -533,7 +498,7 @@ VOID _app_getversioninfo (_Inout_ PITEM_APP ptr_app)
 		return;
 
 	HINSTANCE hlib;
-	R_STRINGBUILDER version_cache;
+	R_STRINGBUILDER version_builder;
 	PR_STRING version_string;
 	PVOID version_info;
 
@@ -544,97 +509,97 @@ VOID _app_getversioninfo (_Inout_ PITEM_APP ptr_app)
 
 	version_info = _r_res_loadresource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION, NULL);
 
-	if (version_info)
+	if (!version_info)
+		goto CleanupExit;
+
+	UINT lang_id[4] = {0};
+	UINT code_page[4] = {0};
+
+	C_ASSERT (RTL_NUMBER_OF (lang_id) == RTL_NUMBER_OF (code_page));
+
+	// Load language and codepage from the file
+	_r_res_querytranslation (version_info, &lang_id[0], &code_page[0]);
+
+	// Use the default language and codepage from the file
+	lang_id[1] = GetUserDefaultLangID ();
+	code_page[1] = code_page[0];
+
+	// Use the language from the DLL and Latin codepage (most common)
+	lang_id[2] = lang_id[0];
+	code_page[2] = 1252;
+
+	// Use the default language and Latin codepage (most common)
+	lang_id[3] = GetUserDefaultLangID ();
+	code_page[3] = 1252;
+
+	PR_STRING description;
+	PR_STRING company;
+	VS_FIXEDFILEINFO *ver_info = NULL;
+
+	_r_obj_initializestringbuilder (&version_builder);
+
+	for (SIZE_T i = 0; i < RTL_NUMBER_OF (lang_id); i++)
 	{
-		_r_obj_initializestringbuilder (&version_cache);
+		if (!lang_id[i] || !code_page[i])
+			continue;
 
-		UINT lang_id[4] = {0};
-		UINT code_page[4] = {0};
+		// get file description
+		description = _r_res_querystring (version_info, L"FileDescription", lang_id[i], code_page[i]);
 
-		C_ASSERT (RTL_NUMBER_OF (lang_id) == RTL_NUMBER_OF (code_page));
-
-		// Load language and codepage from the file
-		_r_res_querytranslation (version_info, &lang_id[0], &code_page[0]);
-
-		// Use the default language and codepage from the file
-		lang_id[1] = GetUserDefaultLangID ();
-		code_page[1] = code_page[0];
-
-		// Use the language from the DLL and Latin codepage (most common)
-		lang_id[2] = lang_id[0];
-		code_page[2] = 1252;
-
-		// Use the default language and Latin codepage (most common)
-		lang_id[3] = GetUserDefaultLangID ();
-		code_page[3] = 1252;
-
-		PR_STRING description;
-		PR_STRING company;
-		VS_FIXEDFILEINFO *ver_info = NULL;
-
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (lang_id); i++)
+		if (description)
 		{
-			if (!lang_id[i] || !code_page[i])
-				continue;
+			_r_obj_appendstringbuilder (&version_builder, SZ_TAB);
+			_r_obj_appendstringbuilder2 (&version_builder, description);
 
-			// get file description
-			description = _r_res_querystring (version_info, L"FileDescription", lang_id[i], code_page[i]);
-
-			if (description)
+			// get file version
+			if (_r_res_queryversion (version_info, &ver_info))
 			{
-				_r_obj_appendstringbuilder (&version_cache, SZ_TAB);
-				_r_obj_appendstringbuilder2 (&version_cache, description);
+				_r_obj_appendstringbuilderformat (&version_builder, L" %d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
 
-				// get file version
-				if (_r_res_queryversion (version_info, &ver_info))
+				if (HIWORD (ver_info->dwFileVersionLS) || LOWORD (ver_info->dwFileVersionLS))
 				{
-					_r_obj_appendstringbuilderformat (&version_cache, L" %d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
+					_r_obj_appendstringbuilderformat (&version_builder, L".%d", HIWORD (ver_info->dwFileVersionLS));
 
-					if (HIWORD (ver_info->dwFileVersionLS) || LOWORD (ver_info->dwFileVersionLS))
+					if (LOWORD (ver_info->dwFileVersionLS))
 					{
-						_r_obj_appendstringbuilderformat (&version_cache, L".%d", HIWORD (ver_info->dwFileVersionLS));
-
-						if (LOWORD (ver_info->dwFileVersionLS))
-						{
-							_r_obj_appendstringbuilderformat (&version_cache, L".%d", LOWORD (ver_info->dwFileVersionLS));
-						}
+						_r_obj_appendstringbuilderformat (&version_builder, L".%d", LOWORD (ver_info->dwFileVersionLS));
 					}
 				}
-
-				_r_obj_appendstringbuilder (&version_cache, L"\r\n");
-
-				_r_obj_dereference (description);
 			}
 
-			// get file company
-			company = _r_res_querystring (version_info, L"CompanyName", lang_id[i], code_page[i]);
+			_r_obj_appendstringbuilder (&version_builder, L"\r\n");
 
-			if (company)
-			{
-				_r_obj_appendstringbuilder (&version_cache, SZ_TAB);
-				_r_obj_appendstringbuilder2 (&version_cache, company);
-				_r_obj_appendstringbuilder (&version_cache, L"\r\n");
-
-				_r_obj_dereference (company);
-			}
-
-			if (description || company) // locale was right
-				break;
+			_r_obj_dereference (description);
 		}
 
-		version_string = _r_obj_finalstringbuilder (&version_cache);
+		// get file company
+		company = _r_res_querystring (version_info, L"CompanyName", lang_id[i], code_page[i]);
 
-		_r_str_trimstring2 (version_string, DIVIDER_TRIM);
-
-		if (_r_obj_isstringempty (version_string))
+		if (company)
 		{
-			_r_obj_deletestringbuilder (&version_cache);
+			_r_obj_appendstringbuilder (&version_builder, SZ_TAB);
+			_r_obj_appendstringbuilder2 (&version_builder, company);
+			_r_obj_appendstringbuilder (&version_builder, L"\r\n");
 
-			goto CleanupExit;
+			_r_obj_dereference (company);
 		}
 
-		_r_obj_movereference (&ptr_app->version_info, version_string);
+		if (description || company) // locale was right
+			break;
 	}
+
+	version_string = _r_obj_finalstringbuilder (&version_builder);
+
+	_r_str_trimstring2 (version_string, DIVIDER_TRIM);
+
+	if (_r_obj_isstringempty (version_string))
+	{
+		_r_obj_deletestringbuilder (&version_builder);
+
+		goto CleanupExit;
+	}
+
+	_r_obj_movereference (&ptr_app->version_info, version_string);
 
 CleanupExit:
 
@@ -1665,7 +1630,7 @@ BOOLEAN _app_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID paddr)
 	return FALSE;
 }
 
-VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Out_ PR_HASHTABLE checker_map)
+VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HASHTABLE checker_map)
 {
 	PITEM_NETWORK ptr_network;
 	ULONG_PTR network_hash;
@@ -1673,6 +1638,8 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Out_ PR_HASHT
 	PVOID buffer;
 	ULONG allocated_size;
 	ULONG required_size;
+
+	_r_obj_clearhashtable (checker_map);
 
 	required_size = 0;
 	GetExtendedTcpTable (NULL, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
@@ -2042,7 +2009,9 @@ VOID _app_generate_packages ()
 
 VOID _app_generate_services ()
 {
-	SC_HANDLE hsvcmgr = OpenSCManager (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
+	SC_HANDLE hsvcmgr;
+
+	hsvcmgr = OpenSCManager (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
 
 	if (!hsvcmgr)
 		return;
@@ -2778,6 +2747,215 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDR
 	}
 
 	return TRUE;
+}
+
+_Ret_maybenull_
+PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
+{
+	PDNS_RECORD dns_records;
+	PR_STRING arpa_string;
+	PR_STRING string;
+	DNS_STATUS code;
+
+	arpa_string = _app_formataddress (af, 0, address, 0, FMTADDR_AS_ARPA);
+	string = NULL;
+
+	if (arpa_string)
+	{
+		code = DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+
+		if (code == DNS_ERROR_RCODE_NO_ERROR)
+		{
+			if (dns_records)
+			{
+				if (!_r_str_isempty (dns_records->Data.PTR.pNameHost))
+				{
+					string = _r_obj_createstring (dns_records->Data.PTR.pNameHost);
+				}
+
+				DnsRecordListFree (dns_records, DnsFreeRecordList);
+			}
+		}
+
+		_r_obj_dereference (arpa_string);
+	}
+
+	return string;
+}
+
+VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
+{
+	PITEM_APP ptr_app;
+	HWND hwnd;
+
+	ptr_app = arglist;
+	hwnd = _r_app_gethwnd ();
+
+	// query app icon
+	_app_getappicon (ptr_app, TRUE, &ptr_app->icon_id, NULL);
+
+	// query file version info
+	_app_getversioninfo (ptr_app);
+
+	// query certificate information
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+	{
+		_app_getsignatureinfo (ptr_app);
+	}
+
+	// redraw listview
+	if (!(busy_count % 4)) // lol, hack!!!
+	{
+		if (_r_wnd_isvisible (hwnd))
+		{
+			_r_listview_redraw (hwnd, _app_getcurrentlistview_id (hwnd), -1);
+		}
+	}
+
+	_r_obj_dereference (ptr_app);
+}
+
+VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
+{
+	PITEM_CONTEXT context;
+	PITEM_APP ptr_app;
+	PR_STRING remote_host_str;
+	PR_STRING localized_string;
+	HWND hctrl;
+
+	context = arglist;
+
+	// query file icon
+	ptr_app = _app_getappitem (context->ptr_log->app_hash);
+
+	_app_getappicon (ptr_app, FALSE, NULL, &context->ptr_log->hicon);
+
+	if (_r_wnd_isvisible (context->hwnd) && context->ptr_log->app_hash == _app_notifyget_id (context->hwnd, FALSE))
+	{
+		hctrl = GetDlgItem (context->hwnd, IDC_HEADER_ID);
+
+		// set icon
+		if (hctrl)
+		{
+			SetWindowLongPtr (hctrl, GWLP_USERDATA, (LONG_PTR)context->ptr_log->hicon);
+			InvalidateRect (hctrl, NULL, TRUE);
+		}
+	}
+
+	// query notification host name
+	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
+	{
+		if (!context->ptr_log->remote_host_str)
+		{
+			remote_host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
+		}
+		else
+		{
+			remote_host_str = _r_obj_reference (context->ptr_log->remote_host_str);
+		}
+
+		if (remote_host_str)
+		{
+			if (_r_wnd_isvisible (context->hwnd) && context->ptr_log->app_hash == _app_notifyget_id (context->hwnd, FALSE))
+			{
+				localized_string = _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":");
+				_r_ctrl_settabletext (context->hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &remote_host_str->sr);
+
+				_r_obj_dereference (localized_string);
+			}
+
+			_r_obj_dereference (remote_host_str);
+		}
+	}
+
+	if (ptr_app)
+		_r_obj_dereference (ptr_app);
+
+	_r_obj_dereference (context->ptr_log);
+
+	_r_freelist_deleteitem (&context_free_list, context);
+}
+
+PR_STRING _app_getemptystring ()
+{
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static PR_STRING string = NULL;
+
+	if (_r_initonce_begin (&init_once))
+	{
+		string = _r_obj_createstring (L"");
+
+		_r_initonce_end (&init_once);
+	}
+
+	return _r_obj_referencesafe (string);
+}
+
+VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
+{
+	PITEM_CONTEXT context;
+	HWND hwnd;
+	INT listview_id;
+	BOOLEAN is_log;
+	BOOLEAN is_resolutionenabled;
+
+	context = arglist;
+
+	is_log = (context->listview_id == IDC_LOG);
+	is_resolutionenabled = _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE);
+
+	if (is_log)
+	{
+		if (is_resolutionenabled)
+		{
+			_r_obj_movereference (&context->ptr_log->local_host_str, _app_resolveaddress (context->ptr_log->af, &context->ptr_log->local_addr));
+			_r_obj_movereference (&context->ptr_log->remote_host_str, _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr));
+		}
+
+		if (!context->ptr_log->local_host_str)
+			context->ptr_log->local_host_str = _app_getemptystring ();
+
+		if (!context->ptr_log->remote_host_str)
+			context->ptr_log->remote_host_str = _app_getemptystring ();
+
+		listview_id = IDC_LOG;
+
+		_r_obj_dereference (context->ptr_log);
+	}
+	else
+	{
+		_r_obj_movereference (&context->ptr_network->local_addr_str, _app_formataddress (context->ptr_network->af, 0, &context->ptr_network->local_addr, 0, 0));
+		_r_obj_movereference (&context->ptr_network->remote_addr_str, _app_formataddress (context->ptr_network->af, 0, &context->ptr_network->remote_addr, 0, 0));
+
+		if (is_resolutionenabled)
+		{
+			_r_obj_movereference (&context->ptr_network->local_host_str, _app_resolveaddress (context->ptr_network->af, &context->ptr_network->local_addr));
+			_r_obj_movereference (&context->ptr_network->remote_host_str, _app_resolveaddress (context->ptr_network->af, &context->ptr_network->remote_addr));
+		}
+
+		if (!context->ptr_network->local_host_str)
+			context->ptr_network->local_host_str = _app_getemptystring ();
+
+		if (!context->ptr_network->remote_host_str)
+			context->ptr_network->remote_host_str = _app_getemptystring ();
+
+		listview_id = IDC_NETWORK;
+
+		_r_obj_dereference (context->ptr_network);
+	}
+
+	// redraw listview
+	if (!(busy_count % 4)) // lol, hack!!!
+	{
+		hwnd = _r_app_gethwnd ();
+
+		if (_r_wnd_isvisible (hwnd) && (_app_getcurrentlistview_id (hwnd) == listview_id))
+		{
+			_r_listview_redraw (hwnd, listview_id, -1);
+		}
+	}
+
+	_r_freelist_deleteitem (&context_free_list, context);
 }
 
 _Ret_maybenull_

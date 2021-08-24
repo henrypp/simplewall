@@ -19,10 +19,11 @@ VOID _app_setlistviewbylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ ULONG fl
 #define PR_UPDATE_NOREFRESH 0x0004
 #define PR_UPDATE_NOSORT 0x0008
 #define PR_UPDATE_NORESIZE 0x0010
+#define PR_UPDATE_NOREDRAW 0x0020
 
 VOID _app_updatelistviewbylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ ULONG flags);
 
-VOID _app_addlistviewapp (_In_ HWND hwnd, _In_ PITEM_APP ptr_app, _In_ ULONG_PTR app_hash);
+VOID _app_addlistviewapp (_In_ HWND hwnd, _In_ PITEM_APP ptr_app);
 VOID _app_addlistviewrule (_In_ HWND hwnd, _In_ PITEM_RULE ptr_rule, _In_ SIZE_T rule_idx, _In_ BOOLEAN is_forapp);
 
 _Ret_maybenull_
