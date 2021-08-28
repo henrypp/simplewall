@@ -2,7 +2,7 @@
 // Copyright (c) 2016-2021 Henry++
 
 #pragma once
-
+#include <mscat.h>
 #define FMTADDR_AS_ARPA 0x0001
 #define FMTADDR_AS_RULE 0x0002
 #define FMTADDR_USE_PROTOCOL 0x0004
