@@ -413,6 +413,112 @@ LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortene
 	return ptr_app->real_path ? ptr_app->real_path->buffer : NULL;
 }
 
+_Success_ (return != NULL)
+HCATADMIN _app_calculatefilehash (_In_ HANDLE hfile, _Out_ PVOID_PTR file_hash_ptr, _Out_ PULONG file_hash_length_ptr, _Out_ PHANDLE hcat_info_ptr)
+{
+	typedef BOOL (WINAPI *CCAAC2)(PHANDLE phCatAdmin, const GUID *pgSubsystem, PCWSTR pwszHashAlgorithm, PCCERT_STRONG_SIGN_PARA pStrongHashPolicy, DWORD dwFlags); // CryptCATAdminAcquireContext2 (win8+)
+	typedef BOOL (WINAPI *CCAHFFH2)(PHANDLE phCatAdmin, HANDLE hFile, PULONG pcbHash, BYTE *pbHash, DWORD dwFlags); // CryptCATAdminCalcHashFromFileHandle2 (win8+)
+
+	static GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+
+	static CCAAC2 _CryptCATAdminAcquireContext2 = NULL;
+	static CCAHFFH2 _CryptCATAdminCalcHashFromFileHandle2 = NULL;
+
+	HCATADMIN hcat_admin;
+	HCATINFO hcat_info;
+
+	PBYTE file_hash;
+	ULONG file_hash_length;
+
+	if (_r_initonce_begin (&init_once))
+	{
+		HMODULE hwintrust = LoadLibraryEx (L"wintrust.dll", NULL, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32);
+
+		if (hwintrust)
+		{
+			_CryptCATAdminAcquireContext2 = (CCAAC2)GetProcAddress (hwintrust, "CryptCATAdminAcquireContext2");
+			_CryptCATAdminCalcHashFromFileHandle2 = (CCAHFFH2)GetProcAddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2");
+
+			FreeLibrary (hwintrust);
+		}
+
+		_r_initonce_end (&init_once);
+	}
+
+	if (_CryptCATAdminAcquireContext2)
+	{
+		if (!_CryptCATAdminAcquireContext2 (&hcat_admin, &DriverActionVerify, BCRYPT_SHA256_ALGORITHM, NULL, 0))
+			return NULL;
+	}
+	else
+	{
+		if (!CryptCATAdminAcquireContext (&hcat_admin, &DriverActionVerify, 0))
+			return NULL;
+	}
+
+	file_hash_length = 32;
+	file_hash = _r_mem_allocatezero (file_hash_length);
+
+	if (_CryptCATAdminCalcHashFromFileHandle2)
+	{
+		if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
+		{
+			file_hash = _r_mem_reallocatezero (file_hash, file_hash_length);
+
+			if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
+			{
+				CryptCATAdminReleaseContext (hcat_admin, 0);
+				_r_mem_free (file_hash);
+
+				return NULL;
+			}
+		}
+	}
+	else
+	{
+		if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
+		{
+			file_hash = _r_mem_reallocatezero (file_hash, file_hash_length);
+
+			if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
+			{
+				CryptCATAdminReleaseContext (hcat_admin, 0);
+				_r_mem_free (file_hash);
+
+				return NULL;
+			}
+		}
+	}
+
+	hcat_info = CryptCATAdminEnumCatalogFromHash (hcat_admin, file_hash, file_hash_length, 0, NULL);
+
+	if (!hcat_info)
+	{
+		if (CryptCATAdminAcquireContext (&hcat_admin, &DriverActionVerify, 0))
+		{
+			if (CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
+			{
+				hcat_info = CryptCATAdminEnumCatalogFromHash (hcat_admin, file_hash, file_hash_length, 0, NULL);
+			}
+		}
+	}
+
+	if (!hcat_info)
+	{
+		CryptCATAdminReleaseContext (hcat_admin, 0);
+		_r_mem_free (file_hash);
+
+		return NULL;
+	}
+
+	*file_hash_ptr = file_hash;
+	*file_hash_length_ptr = file_hash_length;
+	*hcat_info_ptr = hcat_info;
+
+	return hcat_admin;
+}
+
 VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 {
 	if (!_app_isappvalidbinary (ptr_app))
@@ -430,7 +536,7 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 
 	WINTRUST_FILE_INFO file_info = {0};
 	WINTRUST_DATA trust_data = {0};
-	WINTRUST_CATALOG_INFO  catalog_info = { 0 };
+	WINTRUST_CATALOG_INFO catalog_info = {0};
 
 	GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
@@ -451,57 +557,37 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 
 	trust_data.dwStateAction = WTD_STATEACTION_VERIFY;
 
-	
-	HCATADMIN hCatAdmin = NULL;
-	const GUID subsystem = DRIVER_ACTION_VERIFY;
-	BYTE bHash[32] = { 0 };
-	DWORD dwHash = sizeof(bHash);
+	PVOID file_hash;
+	ULONG file_hash_length;
+	HCATADMIN hcat_admin;
+	HCATINFO hcat_info;
 
-	HCATINFO hCatInfo = NULL;
+	hcat_admin = _app_calculatefilehash (hfile, &file_hash, &file_hash_length, &hcat_info);
 
-	if (CryptCATAdminAcquireContext2(&hCatAdmin, &subsystem, BCRYPT_SHA256_ALGORITHM, NULL, 0)) // try sha2 signature
+	if (hcat_admin)
 	{
+		CATALOG_INFO catalog = {0};
+		PR_STRING member_tag;
 
-		if (CryptCATAdminCalcHashFromFileHandle2(hCatAdmin, hfile, &dwHash, bHash, 0))
-		{
-			hCatInfo = CryptCATAdminEnumCatalogFromHash(hCatAdmin, bHash, dwHash, 0, NULL);
+		member_tag = _r_str_fromhex (file_hash, file_hash_length, TRUE);
 
-		}
-	}
-	
-	if (!hCatInfo) // Try sha1 signature
-	{
-		if (CryptCATAdminAcquireContext(&hCatAdmin, &subsystem, 0))
+		if (CryptCATCatalogInfoFromContext (hcat_info, &catalog, 0))
 		{
-			if (CryptCATAdminCalcHashFromFileHandle(hfile, &dwHash, bHash, 0))
-			{
-				hCatInfo = CryptCATAdminEnumCatalogFromHash(hCatAdmin, bHash, dwHash, 0, NULL);
-			}
+			catalog_info.cbStruct = sizeof (WINTRUST_CATALOG_INFO);
+			catalog_info.pcwszCatalogFilePath = catalog.wszCatalogFile;
+			catalog_info.pcwszMemberFilePath = ptr_app->real_path->buffer;
+			catalog_info.pcwszMemberTag = member_tag->buffer;
+
+			trust_data.dwUnionChoice = WTD_CHOICE_CATALOG;
+			trust_data.pCatalog = &catalog_info;
 		}
 
+		CryptCATAdminReleaseCatalogContext (hcat_admin, hcat_info, 0);
+		CryptCATAdminReleaseContext (hcat_admin, 0);
+
+		_r_obj_dereference (member_tag);
+		_r_mem_free (file_hash);
 	}
-	
-	if(hCatInfo)
-	{
-		WCHAR pszMemberTag[260] = { 0 };
-		for (DWORD dw = 0; dw < dwHash; ++dw)
-		{
-			wsprintfW(&pszMemberTag[dw * 2], L"%02X", bHash[dw]);
-		}
-
-		CATALOG_INFO  catalog = { 0 };
-		CryptCATCatalogInfoFromContext(hCatInfo, &catalog, 0);
-		catalog_info.cbStruct = sizeof(WINTRUST_CATALOG_INFO);
-		catalog_info.pcwszCatalogFilePath = catalog.wszCatalogFile;
-		catalog_info.pcwszMemberFilePath = ptr_app->real_path->buffer;
-		catalog_info.pcwszMemberTag = pszMemberTag;;
-
-		trust_data.dwUnionChoice = WTD_CHOICE_CATALOG;
-		trust_data.pCatalog = &catalog_info;
-
-		CryptCATAdminReleaseContext(hCatInfo, 0);
-	}
-		
 
 	if (WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trust_data) == ERROR_SUCCESS)
 	{
@@ -542,6 +628,7 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 
 	trust_data.dwStateAction = WTD_STATEACTION_CLOSE;
 	WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trust_data);
+
 	CloseHandle (hfile);
 }
 

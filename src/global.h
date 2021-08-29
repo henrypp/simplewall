@@ -21,6 +21,7 @@
 #include <softpub.h>
 #include <subauth.h>
 #include <wincodec.h>
+#include <mscat.h>
 
 #include "app.h"
 #include "rapp.h"
