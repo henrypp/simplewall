@@ -430,6 +430,8 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 
 	WINTRUST_FILE_INFO file_info = {0};
 	WINTRUST_DATA trust_data = {0};
+	WINTRUST_CATALOG_INFO  catalog_info = { 0 };
+
 	GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
 	PCRYPT_PROVIDER_DATA prov_data;
@@ -448,6 +450,58 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 	trust_data.pFile = &file_info;
 
 	trust_data.dwStateAction = WTD_STATEACTION_VERIFY;
+
+	
+	HCATADMIN hCatAdmin = NULL;
+	const GUID subsystem = DRIVER_ACTION_VERIFY;
+	BYTE bHash[32] = { 0 };
+	DWORD dwHash = sizeof(bHash);
+
+	HCATINFO hCatInfo = NULL;
+
+	if (CryptCATAdminAcquireContext2(&hCatAdmin, &subsystem, BCRYPT_SHA256_ALGORITHM, NULL, 0)) // try sha2 signature
+	{
+
+		if (CryptCATAdminCalcHashFromFileHandle2(hCatAdmin, hfile, &dwHash, bHash, 0))
+		{
+			hCatInfo = CryptCATAdminEnumCatalogFromHash(hCatAdmin, bHash, dwHash, 0, NULL);
+
+		}
+	}
+	
+	if (!hCatInfo) // Try sha1 signature
+	{
+		if (CryptCATAdminAcquireContext(&hCatAdmin, &subsystem, 0))
+		{
+			if (CryptCATAdminCalcHashFromFileHandle(hfile, &dwHash, bHash, 0))
+			{
+				hCatInfo = CryptCATAdminEnumCatalogFromHash(hCatAdmin, bHash, dwHash, 0, NULL);
+			}
+		}
+
+	}
+	
+	if(hCatInfo)
+	{
+		WCHAR pszMemberTag[260] = { 0 };
+		for (DWORD dw = 0; dw < dwHash; ++dw)
+		{
+			wsprintfW(&pszMemberTag[dw * 2], L"%02X", bHash[dw]);
+		}
+
+		CATALOG_INFO  catalog = { 0 };
+		CryptCATCatalogInfoFromContext(hCatInfo, &catalog, 0);
+		catalog_info.cbStruct = sizeof(WINTRUST_CATALOG_INFO);
+		catalog_info.pcwszCatalogFilePath = catalog.wszCatalogFile;
+		catalog_info.pcwszMemberFilePath = ptr_app->real_path->buffer;
+		catalog_info.pcwszMemberTag = pszMemberTag;;
+
+		trust_data.dwUnionChoice = WTD_CHOICE_CATALOG;
+		trust_data.pCatalog = &catalog_info;
+
+		CryptCATAdminReleaseContext(hCatInfo, 0);
+	}
+		
 
 	if (WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trust_data) == ERROR_SUCCESS)
 	{
@@ -488,7 +542,6 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 
 	trust_data.dwStateAction = WTD_STATEACTION_CLOSE;
 	WinVerifyTrust ((HWND)INVALID_HANDLE_VALUE, &WinTrustActionGenericVerifyV2, &trust_data);
-
 	CloseHandle (hfile);
 }
 
