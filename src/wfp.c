@@ -913,6 +913,12 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 		}
 	}
 
+	FWP_V4_ADDR_AND_MASK fwpAddr4AndMask1;
+	FWP_V4_ADDR_AND_MASK fwpAddr4AndMask2;
+
+	FWP_V6_ADDR_AND_MASK fwpAddr6AndMask1;
+	FWP_V6_ADDR_AND_MASK fwpAddr6AndMask2;
+
 	// set ip/port condition
 	{
 		PR_STRINGREF rules[] = {
@@ -988,7 +994,18 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 						af = AF_INET;
 
 						fwfc[count].conditionValue.type = FWP_V4_ADDR_MASK;
-						fwfc[count].conditionValue.v4AddrMask = &address.addr4;
+						//fwfc[count].conditionValue.v4AddrMask = &address.addr4;
+
+						if (i == 0)
+						{
+							fwpAddr4AndMask1 = address.addr4;
+							fwfc[count].conditionValue.v4AddrMask = &fwpAddr4AndMask1;
+						}
+						else
+						{
+							fwpAddr4AndMask2 = address.addr4;
+							fwfc[count].conditionValue.v4AddrMask = &fwpAddr4AndMask2;
+						}
 
 						count += 1;
 					}
@@ -997,7 +1014,18 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 						af = AF_INET6;
 
 						fwfc[count].conditionValue.type = FWP_V6_ADDR_MASK;
-						fwfc[count].conditionValue.v6AddrMask = &address.addr6;
+						//fwfc[count].conditionValue.v6AddrMask = &address.addr6;
+
+						if (i == 0)
+						{
+							fwpAddr6AndMask1 = address.addr6;
+							fwfc[count].conditionValue.v6AddrMask = &fwpAddr6AndMask1;
+						}
+						else
+						{
+							fwpAddr6AndMask2 = address.addr6;
+							fwfc[count].conditionValue.v6AddrMask = &fwpAddr6AndMask2;
+						}
 
 						count += 1;
 					}
