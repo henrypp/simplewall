@@ -561,14 +561,13 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 	ULONG file_hash_length;
 	HCATADMIN hcat_admin;
 	HCATINFO hcat_info;
+	PR_STRING member_tag = NULL;
+	CATALOG_INFO catalog = { 0 };
 
 	hcat_admin = _app_calculatefilehash (hfile, &file_hash, &file_hash_length, &hcat_info);
 
 	if (hcat_admin)
 	{
-		CATALOG_INFO catalog = {0};
-		PR_STRING member_tag;
-
 		member_tag = _r_str_fromhex (file_hash, file_hash_length, TRUE);
 
 		if (CryptCATCatalogInfoFromContext (hcat_info, &catalog, 0))
@@ -585,7 +584,6 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 		CryptCATAdminReleaseCatalogContext (hcat_admin, hcat_info, 0);
 		CryptCATAdminReleaseContext (hcat_admin, 0);
 
-		_r_obj_dereference (member_tag);
 		_r_mem_free (file_hash);
 	}
 
@@ -624,6 +622,11 @@ VOID _app_getsignatureinfo (_Inout_ PITEM_APP ptr_app)
 				}
 			}
 		}
+	}
+
+	if (hcat_admin)
+	{
+		_r_obj_dereference(member_tag);
 	}
 
 	trust_data.dwStateAction = WTD_STATEACTION_CLOSE;
