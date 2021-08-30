@@ -1,3 +1,8 @@
+v3.4.3 (30 August 2021)
+- added verify code signatures from catalog files (issue #1003)
+- fixed crash at startup (issue #995)
+- fixed rule reference (issue #1002)
+
 v3.4.2 (24 August 2021)
 - enable checking apps certificates by default
 - show notifications immediately without waiting for busy operations to complete
