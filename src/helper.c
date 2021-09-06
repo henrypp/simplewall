@@ -2899,26 +2899,26 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 	PDNS_RECORD dns_records;
 	PR_STRING arpa_string;
 	PR_STRING string;
-	DNS_STATUS code;
 
 	arpa_string = _app_formataddress (af, 0, address, 0, FMTADDR_AS_ARPA);
 	string = NULL;
 
 	if (arpa_string)
 	{
-		code = DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+		DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
 
-		if (code == DNS_ERROR_RCODE_NO_ERROR)
+		if (dns_records)
 		{
-			if (dns_records)
+			for (PDNS_RECORD dns_record = dns_records; dns_record; dns_record = dns_record->pNext)
 			{
-				if (!_r_str_isempty (dns_records->Data.PTR.pNameHost))
+				if (dns_record->wType == DNS_TYPE_PTR)
 				{
-					string = _r_obj_createstring (dns_records->Data.PTR.pNameHost);
+					string = _r_obj_createstring (dns_record->Data.PTR.pNameHost);
+					break;
 				}
-
-				DnsRecordListFree (dns_records, DnsFreeRecordList);
 			}
+
+			DnsRecordListFree (dns_records, DnsFreeRecordList);
 		}
 
 		_r_obj_dereference (arpa_string);
