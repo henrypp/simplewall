@@ -2899,26 +2899,34 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 	PDNS_RECORD dns_records;
 	PR_STRING arpa_string;
 	PR_STRING string;
+	DNS_STATUS status;
+	WORD type;
 
 	arpa_string = _app_formataddress (af, 0, address, 0, FMTADDR_AS_ARPA);
 	string = NULL;
 
 	if (arpa_string)
 	{
-		DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+		type = DNS_TYPE_PTR;
+		dns_records = NULL;
 
-		if (dns_records)
+		status = DnsQuery (arpa_string->buffer, type, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+
+		if (status == NO_ERROR)
 		{
-			for (PDNS_RECORD dns_record = dns_records; dns_record; dns_record = dns_record->pNext)
+			if (dns_records)
 			{
-				if (dns_record->wType == DNS_TYPE_PTR)
+				for (PDNS_RECORD dns_record = dns_records; dns_record; dns_record = dns_record->pNext)
 				{
-					string = _r_obj_createstring (dns_record->Data.PTR.pNameHost);
-					break;
+					if (dns_record->wType == type)
+					{
+						string = _r_obj_createstring (dns_record->Data.PTR.pNameHost);
+						break;
+					}
 				}
-			}
 
-			DnsRecordListFree (dns_records, DnsFreeRecordList);
+				DnsRecordListFree (dns_records, DnsFreeRecordList);
+			}
 		}
 
 		_r_obj_dereference (arpa_string);
