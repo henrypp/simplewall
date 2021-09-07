@@ -53,7 +53,7 @@ typedef enum _ENUM_TYPE_DATA
 	DataRulesConfig,
 	DataTypePort,
 	DataTypeIp,
-	DataTypeHost,
+	//DataTypeHost,
 	DataFilterGeneral,
 	DataListviewCurrent,
 } ENUM_TYPE_DATA;
@@ -64,6 +64,13 @@ typedef enum _ENUM_TYPE_XML
 	XmlProfileInternalV3 = 4,
 } ENUM_TYPE_XML;
 
+typedef enum _ENUM_INSTALL_TYPE
+{
+	InstallDisabled = 0,
+	InstallEnabled,
+	InstallEnabledTemporary,
+} ENUM_INSTALL_TYPE;
+
 typedef enum _ENUM_INFO_DATA
 {
 	InfoPath = 1,
@@ -71,7 +78,6 @@ typedef enum _ENUM_INFO_DATA
 	InfoBytesData,
 	InfoTimestampPtr,
 	InfoTimerPtr,
-	InfoIconId,
 	InfoListviewId,
 	InfoIsEnabled,
 	InfoIsReadonly,
@@ -80,12 +86,13 @@ typedef enum _ENUM_INFO_DATA
 	InfoIsUndeletable,
 } ENUM_INFO_DATA;
 
-typedef enum _ENUM_INSTALL_TYPE
+typedef enum _ENUM_INFO_DATA2
 {
-	InstallDisabled = 0,
-	InstallEnabled,
-	InstallEnabledTemporary,
-} ENUM_INSTALL_TYPE;
+	INFO_ICON_ID,
+	INFO_ICON_HANDLE, // DestroyIcon
+	INFO_SIGNATURE_STRING, // dereference required
+	INFO_VERSION_STRING, // dereference required
+} ENUM_INFO_DATA2;
 
 // config
 #define LANG_MENU 5
@@ -152,7 +159,7 @@ typedef enum _ENUM_INSTALL_TYPE
 #define MAP_CACHE_MAX 900 // limit for caching hashtable
 
 #define TRANSACTION_TIMEOUT 9000
-#define NETWORK_TIMEOUT 2500
+#define NETWORK_TIMEOUT 3500
 
 // notifications
 #define NOTIFY_GRADIENT_1 RGB (0, 68, 112)
@@ -194,13 +201,14 @@ typedef enum _ENUM_INSTALL_TYPE
 #define RULE_NAME_CCH_MAX 64
 #define RULE_RULE_CCH_MAX 256
 
-typedef struct tagSTATIC_DATA
+typedef struct _STATIC_DATA
 {
 	WCHAR profile_path[MAX_PATH];
 	WCHAR profile_path_backup[MAX_PATH];
 	WCHAR profile_internal_path[MAX_PATH];
 
-	WCHAR windows_dir[MAX_PATH];
+	WCHAR windows_dir_buffer[MAX_PATH];
+	R_STRINGREF windows_dir;
 
 	WCHAR search_string[128];
 
@@ -234,7 +242,6 @@ typedef struct tagSTATIC_DATA
 	volatile HANDLE hnetevent;
 	HFONT hfont;
 	HICON hicon_large;
-	HICON hicon_small;
 	HICON hicon_uwp;
 	HWND hnotification;
 	HWND hrebar;
@@ -254,8 +261,6 @@ typedef struct tagSTATIC_DATA
 	ULONG_PTR color_system;
 	ULONG_PTR color_network;
 
-	SIZE_T wd_length;
-
 	INT icon_id;
 	INT icon_uwp_id;
 
@@ -265,7 +270,7 @@ typedef struct tagSTATIC_DATA
 	BOOLEAN is_filterstemporary;
 } STATIC_DATA, *PSTATIC_DATA;
 
-typedef struct tagITEM_LOG
+typedef struct _ITEM_LOG
 {
 	union
 	{
@@ -288,8 +293,6 @@ typedef struct tagITEM_LOG
 	PR_STRING remote_addr_str;
 	PR_STRING remote_host_str;
 
-	HICON hicon;
-
 	LONG64 timestamp;
 
 	UINT64 filter_id;
@@ -303,8 +306,6 @@ typedef struct tagITEM_LOG
 	UINT16 remote_port;
 	UINT16 local_port;
 
-	INT icon_id;
-
 	UINT8 protocol;
 
 	BOOLEAN is_allow;
@@ -315,7 +316,7 @@ typedef struct tagITEM_LOG
 	BOOLEAN is_myprovider;
 } ITEM_LOG, *PITEM_LOG;
 
-typedef struct tagITEM_APP
+typedef struct _ITEM_APP
 {
 	PR_ARRAY guids;
 
@@ -323,8 +324,6 @@ typedef struct tagITEM_APP
 	PR_STRING display_name;
 	PR_STRING short_name;
 	PR_STRING real_path;
-	PR_STRING signature;
-	PR_STRING version_info;
 
 	PITEM_LOG pnotification;
 	PR_BYTE pbytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
@@ -336,8 +335,6 @@ typedef struct tagITEM_APP
 	LONG64 last_notify;
 
 	ULONG_PTR app_hash;
-
-	INT icon_id;
 
 	ENUM_TYPE_DATA type;
 
@@ -353,14 +350,30 @@ typedef struct tagITEM_APP
 	};
 } ITEM_APP, *PITEM_APP;
 
-typedef struct ITEM_FILTER_CONFIG
+typedef struct _ITEM_APP_INFO
+{
+	PR_STRING path;
+
+	PR_STRING signature_info;
+	PR_STRING version_info;
+
+	HICON hicon_large;
+
+	ULONG_PTR app_hash;
+
+	INT large_icon_id;
+
+	ENUM_TYPE_DATA type;
+} ITEM_APP_INFO, *PITEM_APP_INFO;
+
+typedef struct _ITEM_FILTER_CONFIG
 {
 	FWP_DIRECTION direction;
 	UINT8 protocol;
 	ADDRESS_FAMILY af;
 } ITEM_FILTER_CONFIG, *PITEM_FILTER_CONFIG;
 
-typedef struct tagITEM_RULE
+typedef struct _ITEM_RULE
 {
 	PR_HASHTABLE apps;
 	PR_ARRAY guids;
@@ -397,7 +410,7 @@ typedef struct tagITEM_RULE
 	UINT8 weight;
 } ITEM_RULE, *PITEM_RULE;
 
-typedef struct tagITEM_RULE_CONFIG
+typedef struct _ITEM_RULE_CONFIG
 {
 	PR_STRING name;
 	PR_STRING apps;
@@ -405,7 +418,7 @@ typedef struct tagITEM_RULE_CONFIG
 	BOOLEAN is_enabled;
 } ITEM_RULE_CONFIG, *PITEM_RULE_CONFIG;
 
-typedef struct tagITEM_NETWORK
+typedef struct _ITEM_NETWORK
 {
 	union
 	{
@@ -426,7 +439,6 @@ typedef struct tagITEM_NETWORK
 	PR_STRING remote_host_str;
 	ULONG_PTR app_hash;
 	ULONG state;
-	INT icon_id;
 	FWP_DIRECTION direction;
 	ENUM_TYPE_DATA type;
 	ADDRESS_FAMILY af;
@@ -436,7 +448,7 @@ typedef struct tagITEM_NETWORK
 	BOOLEAN is_connection;
 } ITEM_NETWORK, *PITEM_NETWORK;
 
-typedef struct tagITEM_STATUS
+typedef struct _ITEM_STATUS
 {
 	SIZE_T apps_count;
 	SIZE_T apps_timer_count;
@@ -447,7 +459,7 @@ typedef struct tagITEM_STATUS
 	SIZE_T rules_user_count;
 } ITEM_STATUS, *PITEM_STATUS;
 
-typedef struct tagITEM_CONTEXT
+typedef struct _ITEM_CONTEXT
 {
 	HWND hwnd;
 	INT listview_id;
@@ -487,7 +499,7 @@ typedef struct tagITEM_CONTEXT
 	};
 } ITEM_CONTEXT, *PITEM_CONTEXT;
 
-typedef struct tagITEM_COLOR
+typedef struct _ITEM_COLOR
 {
 	PR_STRING config_name;
 	PR_STRING config_value;
@@ -497,7 +509,7 @@ typedef struct tagITEM_COLOR
 	BOOLEAN is_enabled;
 } ITEM_COLOR, *PITEM_COLOR;
 
-typedef struct tagITEM_ADDRESS
+typedef struct _ITEM_ADDRESS
 {
 	WCHAR host[256];
 	WCHAR range_start[LEN_IP_MAX];
