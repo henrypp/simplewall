@@ -22,7 +22,7 @@ PR_STRING _app_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT 
 		{
 			_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE);
 
-			if (!_r_obj_isstringempty (string))
+			if (!_r_obj_isstringempty2 (string))
 			{
 				// check maximum length of one rule
 				if ((_r_obj_getstringlength (buffer.string) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
@@ -153,7 +153,7 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 
 					_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE);
 
-					if (_r_obj_isstringempty (string))
+					if (_r_obj_isstringempty2 (string))
 					{
 						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
 						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
@@ -480,7 +480,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// app icon
 			if (GetDlgItem (hwnd, IDC_APP_ICON_ID))
 			{
-				_app_getappicon (context->ptr_app, FALSE, NULL, &hicon_large);
+				hicon_large = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_ICON_HANDLE);
 
 				SendDlgItemMessage (hwnd, IDC_APP_ICON_ID, STM_SETICON, (WPARAM)hicon_large, 0);
 			}
@@ -496,17 +496,16 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// app signature
 			if (GetDlgItem (hwnd, IDC_APP_SIGNATURE_ID))
 			{
-				PR_STRING signature_string = NULL;
+				PR_STRING string;
 
-				if (!_r_obj_isstringempty (context->ptr_app->signature))
-					signature_string = _r_obj_reference (context->ptr_app->signature);
+				string = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_SIGNATURE_STRING);
 
-				_r_ctrl_settextformat (hwnd, IDC_APP_SIGNATURE_ID, L"%s: %s", _r_locale_getstring (IDS_SIGNATURE), _r_obj_getstringordefault (signature_string, _r_locale_getstring (IDS_SIGN_UNSIGNED)));
+				_r_ctrl_settextformat (hwnd, IDC_APP_SIGNATURE_ID, L"%s: %s", _r_locale_getstring (IDS_SIGNATURE), _r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED)));
 
 				SendDlgItemMessage (hwnd, IDC_APP_SIGNATURE_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 
-				if (signature_string)
-					_r_obj_dereference (signature_string);
+				if (string)
+					_r_obj_dereference (string);
 			}
 
 			// app path
@@ -585,12 +584,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 		case WM_DESTROY:
 		{
-			if (hicon_large)
-			{
-				DestroyIcon (hicon_large);
-				hicon_large = NULL;
-			}
-
+			SAFE_DELETE_ICON (hicon_large);
 			break;
 		}
 
@@ -1101,7 +1095,6 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 {
 	static R_LAYOUT_MANAGER layout_manager = {0};
 	static PITEM_CONTEXT context = NULL;
-	static HICON hicon_small = NULL;
 	static HICON hicon_large = NULL;
 
 	switch (msg)
@@ -1139,10 +1132,9 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 				_app_addeditortab (hwnd, IDS_TRAY_RULES, IDD_EDITOR_APPRULES, context, &tabs_count);
 
 				// set icon
-				_app_getappicon (context->ptr_app, TRUE, NULL, &hicon_small);
-				_app_getappicon (context->ptr_app, FALSE, NULL, &hicon_large);
+				hicon_large = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_ICON_HANDLE);
 
-				_r_wnd_seticon (hwnd, hicon_small, hicon_large);
+				_r_wnd_seticon (hwnd, hicon_large, hicon_large);
 
 				// show state
 				_r_ctrl_settext (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_APP_CHK));
@@ -1170,7 +1162,6 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 		case WM_DESTROY:
 		{
-			SAFE_DELETE_ICON (hicon_small);
 			SAFE_DELETE_ICON (hicon_large);
 
 			_r_window_saveposition (hwnd, L"editor");
@@ -1285,7 +1276,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 								_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE);
 
-								if (_r_obj_isstringempty (string))
+								if (_r_obj_isstringempty2 (string))
 								{
 									_r_ctrl_showballoontip (hpage_general, IDC_RULE_NAME_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
 									_r_obj_dereference (string);
