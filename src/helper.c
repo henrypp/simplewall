@@ -2885,7 +2885,7 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 	return string;
 }
 
-VOID _app_preparefilequery (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type)
+VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type)
 {
 	PITEM_APP_INFO ptr_app_info;
 
