@@ -157,16 +157,16 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 		{
 			if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
 			{
-				if (!_r_obj_isstringempty (ptr_app->real_path))
+				if (ptr_app->real_path)
 				{
 					path = _r_obj_reference (ptr_app->real_path);
 				}
-				else if (!_r_obj_isstringempty (ptr_app->display_name))
+				else if (ptr_app->display_name)
 				{
 					path = _r_obj_reference (ptr_app->display_name);
 				}
 			}
-			else if (!_r_obj_isstringempty (ptr_app->original_path))
+			else if (ptr_app->original_path)
 			{
 				path = _r_obj_reference (ptr_app->original_path);
 			}

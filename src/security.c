@@ -6,12 +6,15 @@
 _Ret_maybenull_
 PSID _app_quyerybuiltinsid (_In_ WELL_KNOWN_SID_TYPE sid_type)
 {
-	ULONG sid_length = SECURITY_MAX_SID_SIZE;
-	PSID sid = _r_mem_allocatezero (sid_length);
+	PSID sid;
+	ULONG sid_length;
+
+	sid_length = SECURITY_MAX_SID_SIZE;
+	sid = _r_mem_allocatezero (sid_length);
 
 	if (!CreateWellKnownSid (sid_type, NULL, sid, &sid_length))
 	{
-		_r_log_v (LOG_LEVEL_ERROR, NULL, L"CreateWellKnownSid", GetLastError (), L"%" PRIu32, sid_type);
+		_r_log_v (LOG_LEVEL_ERROR, NULL, L"CreateWellKnownSid", GetLastError (), L"%" TEXT (PRIu32), sid_type);
 	}
 	else
 	{
@@ -29,21 +32,15 @@ VOID _app_generate_credentials ()
 
 	// For revoke current user (v3.0.5 Beta and lower)
 	if (!config.pbuiltin_current_sid)
-	{
 		config.pbuiltin_current_sid = _r_sys_getcurrenttoken ().token_sid;
-	}
 
 	// S-1-5-32-544 (BUILTIN\Administrators)
 	if (!config.pbuiltin_admins_sid)
-	{
 		config.pbuiltin_admins_sid = _app_quyerybuiltinsid (WinBuiltinAdministratorsSid);
-	}
 
 	// S-1-5-32-556 (BUILTIN\Network Configuration Operators)
 	if (!config.pbuiltin_netops_sid)
-	{
 		config.pbuiltin_netops_sid = _app_quyerybuiltinsid (WinBuiltinNetworkConfigurationOperatorsSid);
-	}
 
 	if (!config.pservice_mpssvc_sid)
 	{
@@ -417,7 +414,7 @@ VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_gui
 		if (code != FWP_E_FILTER_NOT_FOUND)
 #endif // !DEBUG
 		{
-			_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" PRIu32, line);
+			_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
 		}
 
 		return;
@@ -432,7 +429,7 @@ VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_gui
 			code = FwpmFilterSetSecurityInfoByKey (hengine, filter_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
 
 			if (code != ERROR_SUCCESS)
-				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" PRIu32, line);
+				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
 
 			LocalFree (new_dacl);
 		}
