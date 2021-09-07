@@ -89,7 +89,7 @@ _Ret_maybenull_
 PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordisplay, _In_ LPCWSTR delimeter);
 
 _Ret_maybenull_
-PR_STRING _app_rulesexpandrules (_In_ PR_STRING rule, _In_ LPCWSTR delimeter);
+PR_STRING _app_rulesexpandrules (_In_opt_ PR_STRING rule, _In_ LPCWSTR delimeter);
 
 BOOLEAN _app_profile_load_check (_In_ LPCWSTR path);
 BOOLEAN _app_profile_load_check_node (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_XML type);

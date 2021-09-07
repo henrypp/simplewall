@@ -8,15 +8,15 @@ PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data)
 {
 	if (info_data == InfoPath)
 	{
-		if (!_r_obj_isstringempty (ptr_app->real_path))
+		if (ptr_app->real_path)
 			return _r_obj_reference (ptr_app->real_path);
 	}
 	else if (info_data == InfoName)
 	{
-		if (!_r_obj_isstringempty (ptr_app->display_name))
+		if (ptr_app->display_name)
 			return _r_obj_reference (ptr_app->display_name);
 
-		else if (!_r_obj_isstringempty (ptr_app->original_path))
+		else if (ptr_app->original_path)
 			return _r_obj_reference (ptr_app->original_path);
 	}
 	else if (info_data == InfoTimestampPtr)
@@ -26,13 +26,6 @@ PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data)
 	else if (info_data == InfoTimerPtr)
 	{
 		return &ptr_app->timer;
-	}
-	else if (info_data == InfoIconId)
-	{
-		if (ptr_app->icon_id)
-			return IntToPtr (ptr_app->icon_id);
-
-		return IntToPtr (config.icon_id);
 	}
 	else if (info_data == InfoListviewId)
 	{
@@ -279,7 +272,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	_r_queuedlock_releaseexclusive (&lock_apps);
 
 	// queue file information
-	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, _r_obj_reference (ptr_app));
+	_app_queryfileinformation (ptr_app->real_path, app_hash, ptr_app->type);
 
 	// insert item
 	if (hwnd)
@@ -525,14 +518,14 @@ COLORREF _app_getappcolor (_In_ INT listview_id, _In_ ULONG_PTR app_hash, _In_ B
 		goto CleanupExit;
 	}
 
+	if (_r_config_getbooleanex (L"IsHighlightSigned", TRUE, L"colors") && _app_isappsigned (app_hash))
+	{
+		color_hash = config.color_signed;
+		goto CleanupExit;
+	}
+
 	if (ptr_app)
 	{
-		if (_r_config_getbooleanex (L"IsHighlightSigned", TRUE, L"colors") && !_r_obj_isstringempty (ptr_app->signature))
-		{
-			color_hash = config.color_signed;
-			goto CleanupExit;
-		}
-
 		if (!is_profilelist && (_r_config_getbooleanex (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash, FALSE)))
 		{
 			color_hash = config.color_special;
@@ -891,7 +884,7 @@ PR_STRING _app_appexpandrules (_In_ ULONG_PTR app_hash, _In_ LPCWSTR delimeter)
 
 	_r_str_trimstring (string, &delimeter_sr);
 
-	if (!_r_obj_isstringempty (string))
+	if (!_r_obj_isstringempty2 (string))
 		return string;
 
 	_r_obj_deletestringbuilder (&buffer);
@@ -934,18 +927,18 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 		{
 			if (ptr_app->type == DataAppUWP)
 			{
-				if (!_r_obj_isstringempty (ptr_app->display_name))
+				if (ptr_app->display_name)
 					_r_obj_appendstringbuilder2 (&buffer, ptr_app->display_name);
 			}
 			else
 			{
-				if (!_r_obj_isstringempty (ptr_app->original_path))
+				if (ptr_app->original_path)
 					_r_obj_appendstringbuilder2 (&buffer, ptr_app->original_path);
 			}
 		}
 		else
 		{
-			if (!_r_obj_isstringempty (ptr_app->original_path))
+			if (ptr_app->original_path)
 				_r_obj_appendstringbuilder2 (&buffer, ptr_app->original_path);
 		}
 
@@ -958,7 +951,7 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 
 	_r_str_trimstring (string, &delimeter_sr);
 
-	if (!_r_obj_isstringempty (string))
+	if (!_r_obj_isstringempty2 (string))
 		return string;
 
 	_r_obj_deletestringbuilder (&buffer);
@@ -967,7 +960,7 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 }
 
 _Ret_maybenull_
-PR_STRING _app_rulesexpandrules (_In_ PR_STRING rule, _In_ LPCWSTR delimeter)
+PR_STRING _app_rulesexpandrules (_In_opt_ PR_STRING rule, _In_ LPCWSTR delimeter)
 {
 	R_STRINGBUILDER buffer;
 	R_STRINGREF delimeter_sr;
@@ -996,7 +989,7 @@ PR_STRING _app_rulesexpandrules (_In_ PR_STRING rule, _In_ LPCWSTR delimeter)
 
 	_r_str_trimstring (string, &delimeter_sr);
 
-	if (!_r_obj_isstringempty (string))
+	if (!_r_obj_isstringempty2 (string))
 		return string;
 
 	_r_obj_deletestringbuilder (&buffer);
@@ -1006,16 +999,12 @@ PR_STRING _app_rulesexpandrules (_In_ PR_STRING rule, _In_ LPCWSTR delimeter)
 
 BOOLEAN _app_isappfromsystem (_In_opt_ PR_STRING path, _In_ ULONG_PTR app_hash)
 {
-	R_STRINGREF sr;
-
 	if (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash)
 		return TRUE;
 
 	if (path)
 	{
-		_r_obj_initializestringrefex (&sr, config.windows_dir, config.wd_length * sizeof (WCHAR));
-
-		if (_r_str_isstartswith (&path->sr, &sr, TRUE))
+		if (_r_str_isstartswith (&path->sr, &config.windows_dir, TRUE))
 		{
 			return TRUE;
 		}
@@ -1439,7 +1428,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 				if (is_internal && ptr_config && !_r_obj_isstringempty (ptr_config->apps))
 				{
-					if (!_r_obj_isstringempty (_r_obj_finalstringbuilder (&rule_apps)))
+					if (!_r_obj_isstringempty2 (rule_apps.string))
 					{
 						_r_obj_appendstringbuilder (&rule_apps, DIVIDER_APP);
 					}
@@ -1449,7 +1438,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 				string = _r_obj_finalstringbuilder (&rule_apps);
 
-				if (!_r_obj_isstringempty (string))
+				if (!_r_obj_isstringempty2 (string))
 				{
 					if (version < XML_PROFILE_VER_3)
 					{
@@ -1826,7 +1815,6 @@ VOID _app_profile_save ()
 	if (hr != S_OK)
 	{
 		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_initializelibrary", hr, NULL);
-
 		return;
 	}
 
@@ -1835,7 +1823,6 @@ VOID _app_profile_save ()
 	if (hr != S_OK)
 	{
 		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_createfile", hr, config.profile_path);
-
 		return;
 	}
 
@@ -1857,7 +1844,7 @@ VOID _app_profile_save ()
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
 	PITEM_RULE_CONFIG ptr_config;
-	PR_STRING string = NULL;
+	PR_STRING apps_string = NULL;
 	SIZE_T enum_key;
 	BOOLEAN is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", TRUE);
 	BOOLEAN is_usedapp = FALSE;
@@ -1952,14 +1939,12 @@ VOID _app_profile_save ()
 		// add apps attribute
 		if (!_r_obj_ishashtableempty (ptr_rule->apps))
 		{
-			string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
+			apps_string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
 
-			if (string)
+			if (apps_string)
 			{
-				if (!_r_obj_isstringempty (string))
-					_r_xml_setattribute (&xml_library, L"apps", string->buffer);
-
-				_r_obj_clearreference (&string);
+				_r_xml_setattribute (&xml_library, L"apps", apps_string->buffer);
+				_r_obj_clearreference (&apps_string);
 			}
 		}
 
@@ -2006,18 +1991,15 @@ VOID _app_profile_save ()
 
 			if (ptr_rule->type == DataRuleUser && !_r_obj_ishashtableempty (ptr_rule->apps))
 			{
-				string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
+				apps_string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
 			}
 
 			_r_obj_dereference (ptr_rule);
 		}
 
 		// skip saving untouched configuration
-		if (ptr_config->is_enabled == is_enabled_default && _r_obj_isstringempty (string))
+		if (ptr_config->is_enabled == is_enabled_default && !apps_string)
 		{
-			if (string)
-				_r_obj_clearreference (&string);
-
 			continue;
 		}
 
@@ -2027,12 +2009,10 @@ VOID _app_profile_save ()
 
 		_r_xml_setattribute (&xml_library, L"name", ptr_config->name->buffer);
 
-		if (string)
+		if (apps_string)
 		{
-			if (!_r_obj_isstringempty (string))
-				_r_xml_setattribute (&xml_library, L"apps", string->buffer);
-
-			_r_obj_clearreference (&string);
+			_r_xml_setattribute (&xml_library, L"apps", apps_string->buffer);
+			_r_obj_clearreference (&apps_string);
 		}
 
 		_r_xml_setattribute_boolean (&xml_library, L"is_enabled", ptr_config->is_enabled);
@@ -2054,9 +2034,9 @@ VOID _app_profile_save ()
 
 	_r_xml_writeenddocument (&xml_library);
 
-	_r_queuedlock_releaseexclusive (&lock_profile);
-
 	_r_xml_destroylibrary (&xml_library);
+
+	_r_queuedlock_releaseexclusive (&lock_profile);
 
 	// make backup
 	if (is_backuprequired)
