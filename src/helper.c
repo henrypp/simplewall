@@ -2753,20 +2753,12 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	}
 	else
 	{
-		if (ParseNetworkString (rule_string, RULE_TYPE_IP, NULL, NULL, NULL) == ERROR_SUCCESS)
+		if (ParseNetworkString (rule_string, types, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
 			address->type = DataTypeIp;
 			return TRUE;
 		}
 	}
-
-	//if (ParseNetworkString (rule_string, RULE_TYPE_HOST, NULL, NULL, NULL) == ERROR_SUCCESS)
-	//{
-	//	address->type = DataTypeHost;
-	//	address->is_range = FALSE; // reset range status
-	//
-	//	return TRUE;
-	//}
 
 	return FALSE;
 }
