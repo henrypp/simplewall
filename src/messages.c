@@ -607,14 +607,9 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 	// set image
 	if ((lpnmlv->item.mask & LVIF_IMAGE))
 	{
-		if (ptr_app->icon_id)
-		{
-			lpnmlv->item.iImage = ptr_app->icon_id;
-		}
-		else
-		{
-			lpnmlv->item.iImage = config.icon_id;
-		}
+		PVOID ptr = _app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID);
+
+		lpnmlv->item.iImage = PtrToInt (ptr);
 	}
 
 	// set group id
@@ -694,7 +689,7 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 			{
 				if (ptr_rule->protocol)
 				{
-					name = _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, NULL);
+					name = _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, SZ_UNKNOWN);
 				}
 				else
 				{
@@ -744,7 +739,6 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 
 VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ LPNMLVDISPINFOW lpnmlv)
 {
-	PITEM_APP ptr_app;
 	PR_STRING string;
 	LPCWSTR name;
 
@@ -864,21 +858,9 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 	// set image
 	if ((lpnmlv->item.mask & LVIF_IMAGE))
 	{
-		if (ptr_network->icon_id)
-		{
-			lpnmlv->item.iImage = ptr_network->icon_id;
-		}
-		else
-		{
-			ptr_app = _app_getappitem (ptr_network->app_hash);
+		PVOID ptr = _app_getappinfoparam2 (ptr_network->app_hash, INFO_ICON_ID);
 
-			if (ptr_app)
-			{
-				lpnmlv->item.iImage = ptr_app->icon_id;
-
-				_r_obj_dereference (ptr_app);
-			}
-		}
+		lpnmlv->item.iImage = PtrToInt (ptr);
 	}
 
 	// set group id
@@ -1058,14 +1040,9 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 	// set image
 	if ((lpnmlv->item.mask & LVIF_IMAGE))
 	{
-		if (ptr_log->icon_id)
-		{
-			lpnmlv->item.iImage = ptr_log->icon_id;
-		}
-		else if (ptr_app)
-		{
-			lpnmlv->item.iImage = ptr_app->icon_id;
-		}
+		PVOID ptr = _app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID);
+
+		lpnmlv->item.iImage = PtrToInt (ptr);
 	}
 }
 
@@ -2227,7 +2204,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 					ptr_rule->name = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 				}
 
-				if (ptr_network->app_hash && !_r_obj_isstringempty (ptr_network->path))
+				if (ptr_network->app_hash && ptr_network->path)
 				{
 					if (!_app_isappfound (ptr_network->app_hash))
 					{
@@ -2269,7 +2246,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 					ptr_rule->name = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 				}
 
-				if (ptr_log->app_hash && !_r_obj_isstringempty (ptr_log->path))
+				if (ptr_log->app_hash && ptr_log->path)
 				{
 					if (!_app_isappfound (ptr_log->app_hash))
 					{
@@ -2396,7 +2373,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		if (!ptr_network)
 			return;
 
-		if (ptr_network->app_hash && !_r_obj_isstringempty (ptr_network->path))
+		if (ptr_network->app_hash && ptr_network->path)
 		{
 			if (!_app_isappfound (ptr_network->app_hash))
 			{
@@ -2426,7 +2403,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		if (!ptr_log)
 			return;
 
-		if (ptr_log->app_hash && !_r_obj_isstringempty (ptr_log->path))
+		if (ptr_log->app_hash && ptr_log->path)
 		{
 			if (!_app_isappfound (ptr_log->app_hash))
 			{
