@@ -942,7 +942,7 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 				{
 					is_remoteport_set = TRUE;
 				}
-				else if (address.type == DataTypeIp || address.type == DataTypeHost)
+				else if (address.type == DataTypeIp)
 				{
 					is_remoteaddr_set = TRUE;
 				}
@@ -984,7 +984,7 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 
 					count += 1;
 				}
-				else if (address.type == DataTypeIp || address.type == DataTypeHost)
+				else if (address.type == DataTypeIp)
 				{
 					fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
 					fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -1029,27 +1029,6 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 
 						count += 1;
 					}
-					else if (address.format == NET_ADDRESS_DNS_NAME)
-					{
-						R_STRINGREF host_part;
-						R_STRINGREF remaining_part;
-
-						_r_obj_initializestringref (&remaining_part, address.host);
-
-						while (remaining_part.length != 0)
-						{
-							_r_str_splitatchar (&remaining_part, DIVIDER_RULE[0], &host_part, &remaining_part);
-
-							if (!_wfp_createrulefilter (hengine, filter_type, filter_name, app_hash, filter_config, &host_part, NULL, weight, action, flags, guids))
-							{
-								goto CleanupExit;
-							}
-						}
-
-						is_success = TRUE;
-
-						goto CleanupExit;
-					}
 					else
 					{
 						goto CleanupExit;
@@ -1062,7 +1041,7 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 			}
 
 			// set port if available
-			if (address.type == DataTypeIp || address.type == DataTypeHost)
+			if (address.type == DataTypeIp)
 			{
 				if (address.port)
 				{
