@@ -282,7 +282,7 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 		context->lparam = log_hash;
 		context->ptr_log = _r_obj_reference (ptr_log);
 
-		_r_workqueue_queueitem (&resolve_log_queue, &_app_queueresolveinformation, context);
+		_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
 	}
 
 	if (ptr_app)

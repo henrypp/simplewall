@@ -53,7 +53,6 @@ typedef enum _ENUM_TYPE_DATA
 	DataRulesConfig,
 	DataTypePort,
 	DataTypeIp,
-	//DataTypeHost,
 	DataFilterGeneral,
 	DataListviewCurrent,
 } ENUM_TYPE_DATA;
@@ -162,9 +161,6 @@ typedef enum _ENUM_INFO_DATA2
 #define NETWORK_TIMEOUT 3500
 
 // notifications
-#define NOTIFY_GRADIENT_1 RGB (0, 68, 112)
-#define NOTIFY_GRADIENT_2 RGB (7, 111, 95)
-
 #define NOTIFY_TIMER_SAFETY_ID 666
 #define NOTIFY_TIMER_SAFETY_TIMEOUT 900
 

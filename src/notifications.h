@@ -24,6 +24,6 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
 HFONT _app_notifyfontinit (_In_ LONG dpi_value, _In_ PLOGFONT plf, _In_ LONG height, _In_ LONG weight, _In_ BOOLEAN is_underline);
 VOID _app_notifyfontset (_In_ HWND hwnd);
 
-VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPRECT lprc, _In_ COLORREF rgb1, _In_ COLORREF rgb2, _In_ ULONG mode);
+VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPRECT rect);
 
 INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam);
