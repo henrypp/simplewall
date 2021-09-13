@@ -114,7 +114,7 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 
 		if (ptr_app)
 		{
-			_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, PtrToInt (_app_getappinfo (ptr_app, InfoIsSilent)) != FALSE);
+			_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, PtrToInt (_app_getappinfo (ptr_app, INFO_IS_SILENT)) != FALSE);
 
 			_r_obj_dereference (ptr_app);
 		}
@@ -138,7 +138,7 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DELETE), L"\tDel"));
 			AppendMenu (hmenu, MF_STRING, IDM_DELETE, localized_string->buffer);
 
-			is_readonly = !!(PtrToInt (_app_getruleinfobyid (hash_code, InfoIsReadonly)));
+			is_readonly = !!(PtrToInt (_app_getruleinfobyid (hash_code, INFO_IS_READONLY)));
 
 			if (is_readonly)
 				_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
@@ -284,7 +284,7 @@ VOID _app_message_traycontextmenu (_In_ HWND hwnd)
 	HMENU hmenu = LoadMenu (NULL, MAKEINTRESOURCE (IDM_TRAY));
 	HMENU hsubmenu = GetSubMenu (hmenu, 0);
 
-	BOOLEAN is_filtersinstalled = (_wfp_isfiltersinstalled () != InstallDisabled);
+	BOOLEAN is_filtersinstalled = (_wfp_isfiltersinstalled () != INSTALL_DISABLED);
 
 	_r_menu_setitembitmap (hsubmenu, IDM_TRAY_START, FALSE, is_filtersinstalled ? config.hbmp_disable : config.hbmp_enable);
 
@@ -383,7 +383,7 @@ VOID _app_message_dpichanged (_In_ HWND hwnd)
 	_app_toolbar_resize ();
 
 	_app_listviewloadfont (hwnd, TRUE);
-	_app_updatelistviewbylparam (hwnd, DataListviewCurrent, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+	_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 	if (localized_string)
 		_r_obj_dereference (localized_string);
@@ -521,7 +521,7 @@ LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv)
 						app_hash = lpnmlv->nmcd.lItemlParam;
 						is_validconnection = _app_isapphaveconnection (app_hash);
 
-						real_path = _app_getappinfobyhash (app_hash, InfoPath);
+						real_path = _app_getappinfobyhash (app_hash, INFO_PATH);
 
 						if (real_path)
 						{
@@ -617,11 +617,11 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 	{
 		if (listview_id == IDC_RULE_APPS_ID)
 		{
-			if (ptr_app->type == DataAppUWP)
+			if (ptr_app->type == DATA_APP_UWP)
 			{
 				lpnmlv->item.iGroupId = 2;
 			}
-			else if (ptr_app->type == DataAppService)
+			else if (ptr_app->type == DATA_APP_SERVICE)
 			{
 				lpnmlv->item.iGroupId = 1;
 			}
@@ -671,7 +671,7 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 			{
 				if (ptr_rule->name)
 				{
-					if (ptr_rule->is_readonly && ptr_rule->type == DataRuleUser)
+					if (ptr_rule->is_readonly && ptr_rule->type == DATA_RULE_USER)
 					{
 						_r_str_printf (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, L"%s" SZ_RULE_INTERNAL_MENU, ptr_rule->name->buffer);
 					}
@@ -866,11 +866,11 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 	// set group id
 	if ((lpnmlv->item.mask & LVIF_GROUPID))
 	{
-		if (ptr_network->type == DataAppService)
+		if (ptr_network->type == DATA_APP_SERVICE)
 		{
 			lpnmlv->item.iGroupId = 1;
 		}
-		else if (ptr_network->type == DataAppUWP)
+		else if (ptr_network->type == DATA_APP_UWP)
 		{
 			lpnmlv->item.iGroupId = 2;
 		}
@@ -1496,7 +1496,7 @@ VOID _app_message_localize (_In_ HWND hwnd)
 		}
 	}
 
-	_app_updatelistviewbylparam (hwnd, DataListviewCurrent, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+	_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 	_app_notifyrefresh (config.hnotification, FALSE);
 
@@ -2142,7 +2142,7 @@ VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 			if (new_val == -1)
 				new_val = !ptr_app->is_silent;
 
-			_app_setappinfo (ptr_app, InfoIsSilent, IntToPtr (new_val));
+			_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (new_val));
 		}
 		else if (ctrl_id == IDM_DISABLETIMER)
 		{
@@ -2208,7 +2208,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 				{
 					if (!_app_isappfound (ptr_network->app_hash))
 					{
-						ptr_network->app_hash = _app_addapplication (hwnd, DataUnknown, &ptr_network->path->sr, NULL, NULL);
+						ptr_network->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_network->path->sr, NULL, NULL);
 
 						if (ptr_network->app_hash)
 						{
@@ -2250,7 +2250,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 				{
 					if (!_app_isappfound (ptr_log->app_hash))
 					{
-						ptr_log->app_hash = _app_addapplication (hwnd, DataUnknown, &ptr_log->path->sr, NULL, NULL);
+						ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_log->path->sr, NULL, NULL);
 
 						if (ptr_log->app_hash)
 						{
@@ -2292,7 +2292,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 		if (rule_idx != SIZE_MAX)
 		{
 			_app_addlistviewrule (hwnd, ptr_rule, rule_idx, TRUE);
-			_app_updatelistviewbylparam (hwnd, DataListviewCurrent, PR_UPDATE_TYPE);
+			_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 			_app_profile_save ();
 		}
@@ -2377,7 +2377,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		{
 			if (!_app_isappfound (ptr_network->app_hash))
 			{
-				ptr_network->app_hash = _app_addapplication (hwnd, DataUnknown, &ptr_network->path->sr, NULL, NULL);
+				ptr_network->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_network->path->sr, NULL, NULL);
 
 				if (ptr_network->app_hash)
 				{
@@ -2407,7 +2407,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		{
 			if (!_app_isappfound (ptr_log->app_hash))
 			{
-				ptr_log->app_hash = _app_addapplication (hwnd, DataUnknown, &ptr_log->path->sr, NULL, NULL);
+				ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_log->path->sr, NULL, NULL);
 
 				if (ptr_log->app_hash)
 				{
@@ -2499,7 +2499,7 @@ VOID _app_command_purgeunused (_In_ HWND hwnd)
 				_wfp_destroyfilters_array (hengine, guids, __LINE__);
 		}
 
-		_app_updatelistviewbylparam (hwnd, DataListviewCurrent, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+		_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 		_app_profile_save ();
 	}
 
@@ -2550,7 +2550,7 @@ VOID _app_command_purgetimers (_In_ HWND hwnd)
 		_r_obj_dereference (rules);
 	}
 
-	_app_updatelistviewbylparam (hwnd, DataListviewCurrent, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+	_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 	_app_profile_save ();
 }
@@ -2577,7 +2577,7 @@ VOID _app_command_selectfont (_In_ HWND hwnd)
 		_r_config_setfont (L"Font", &lf, dpi_value);
 
 		_app_listviewloadfont (hwnd, TRUE);
-		_app_updatelistviewbylparam (hwnd, DataListviewCurrent, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+		_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 		RedrawWindow (hwnd, NULL, NULL, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
 	}

@@ -537,7 +537,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				{
 					ptr_rule = _r_obj_getlistitem (rules_list, i);
 
-					if (!ptr_rule || ptr_rule->type != DataRuleUser)
+					if (!ptr_rule || ptr_rule->type != DATA_RULE_USER)
 						continue;
 
 					// check for services
@@ -720,7 +720,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
 						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, _r_locale_getstring (IDS_COPY));
 
-						if (context->is_settorules && context->ptr_rule->type != DataRuleUser)
+						if (context->is_settorules && context->ptr_rule->type != DATA_RULE_USER)
 						{
 							_r_menu_enableitem (hsubmenu, IDM_CHECK, MF_BYCOMMAND, FALSE);
 							_r_menu_enableitem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND, FALSE);
@@ -778,7 +778,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 						{
 							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
-								if (!_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom) && context->ptr_rule->type != DataRuleUser)
+								if (!_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom) && context->ptr_rule->type != DATA_RULE_USER)
 								{
 									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 									return TRUE;
@@ -1334,12 +1334,12 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 								context->ptr_rule->action = FWP_ACTION_PERMIT;
 							}
 
-							if (context->ptr_rule->type == DataRuleUser)
+							if (context->ptr_rule->type == DATA_RULE_USER)
 								context->ptr_rule->weight = ((context->ptr_rule->action == FWP_ACTION_BLOCK) ? FW_WEIGHT_RULE_USER_BLOCK : FW_WEIGHT_RULE_USER);
 						}
 
 						// save rule apps
-						if (context->ptr_rule->type == DataRuleUser)
+						if (context->ptr_rule->type == DATA_RULE_USER)
 						{
 							_r_obj_clearhashtable (context->ptr_rule->apps);
 

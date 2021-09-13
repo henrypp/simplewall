@@ -155,7 +155,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 
 		if (ptr_app)
 		{
-			if (ptr_app->type == DataAppUWP || ptr_app->type == DataAppService)
+			if (ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE)
 			{
 				if (ptr_app->real_path)
 				{
@@ -1220,7 +1220,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 
 	if (is_notexist)
 	{
-		ptr_log->app_hash = _app_addapplication (hwnd, DataUnknown, &ptr_log->path->sr, NULL, NULL);
+		ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_log->path->sr, NULL, NULL);
 
 		if (ptr_log->app_hash)
 		{
@@ -1274,7 +1274,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 			{
 				if (is_exludeblocklist)
 				{
-					if (!PtrToInt (_app_getappinfo (ptr_app, InfoIsSilent)))
+					if (!PtrToInt (_app_getappinfo (ptr_app, INFO_IS_SILENT)))
 					{
 						_app_notifyadd (config.hnotification, _r_obj_reference (ptr_log), ptr_app);
 					}

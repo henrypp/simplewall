@@ -6,12 +6,12 @@
 _Ret_maybenull_
 PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data)
 {
-	if (info_data == InfoPath)
+	if (info_data == INFO_PATH)
 	{
 		if (ptr_app->real_path)
 			return _r_obj_reference (ptr_app->real_path);
 	}
-	else if (info_data == InfoName)
+	else if (info_data == INFO_DISPLAY_NAME)
 	{
 		if (ptr_app->display_name)
 			return _r_obj_reference (ptr_app->display_name);
@@ -19,31 +19,27 @@ PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data)
 		else if (ptr_app->original_path)
 			return _r_obj_reference (ptr_app->original_path);
 	}
-	else if (info_data == InfoTimestampPtr)
+	else if (info_data == INFO_TIMESTAMP_PTR)
 	{
 		return &ptr_app->timestamp;
 	}
-	else if (info_data == InfoTimerPtr)
+	else if (info_data == INFO_TIMER_PTR)
 	{
 		return &ptr_app->timer;
 	}
-	else if (info_data == InfoListviewId)
+	else if (info_data == INFO_LISTVIEW_ID)
 	{
 		return IntToPtr (_app_getlistviewbytype_id (ptr_app->type));
 	}
-	else if (info_data == InfoIsEnabled)
+	else if (info_data == INFO_IS_ENABLED)
 	{
 		return IntToPtr (ptr_app->is_enabled ? TRUE : FALSE);
 	}
-	else if (info_data == InfoIsSilent)
+	else if (info_data == INFO_IS_SILENT)
 	{
 		return IntToPtr (ptr_app->is_silent ? TRUE : FALSE);
 	}
-	else if (info_data == InfoIsTimerSet)
-	{
-		return IntToPtr (_app_istimerset (ptr_app->htimer) ? TRUE : FALSE);
-	}
-	else if (info_data == InfoIsUndeletable)
+	else if (info_data == INFO_IS_UNDELETABLE)
 	{
 		return IntToPtr (ptr_app->is_undeletable ? TRUE : FALSE);
 	}
@@ -73,15 +69,15 @@ PVOID _app_getappinfobyhash (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA info_d
 
 VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In_ PVOID value)
 {
-	if (info_data == InfoBytesData)
+	if (info_data == INFO_BYTES_DATA)
 	{
 		_r_obj_movereference (&ptr_app->pbytes, value);
 	}
-	else if (info_data == InfoTimestampPtr)
+	else if (info_data == INFO_TIMESTAMP_PTR)
 	{
 		ptr_app->timestamp = *((PLONG64)value);
 	}
-	else if (info_data == InfoTimerPtr)
+	else if (info_data == INFO_TIMER_PTR)
 	{
 		LONG64 timestamp = *((PLONG64)value);
 
@@ -99,20 +95,20 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 
 		_app_updateitembylparam (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 	}
-	else if (info_data == InfoIsSilent)
+	else if (info_data == INFO_IS_SILENT)
 	{
 		ptr_app->is_silent = (PtrToInt (value) ? TRUE : FALSE);
 
 		if (ptr_app->is_silent)
 			_app_freenotify (ptr_app);
 	}
-	else if (info_data == InfoIsEnabled)
+	else if (info_data == INFO_IS_ENABLED)
 	{
 		ptr_app->is_enabled = (PtrToInt (value) ? TRUE : FALSE);
 
 		_app_updateitembylparam (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 	}
-	else if (info_data == InfoIsUndeletable)
+	else if (info_data == INFO_IS_UNDELETABLE)
 	{
 		ptr_app->is_undeletable = (PtrToInt (value) ? TRUE : FALSE);
 	}
@@ -135,11 +131,11 @@ VOID _app_setappinfobyhash (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA info_da
 _Ret_maybenull_
 PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
 {
-	if (info_data == InfoListviewId)
+	if (info_data == INFO_LISTVIEW_ID)
 	{
 		return IntToPtr (_app_getlistviewbytype_id (ptr_rule->type));
 	}
-	else if (info_data == InfoIsReadonly)
+	else if (info_data == INFO_IS_READONLY)
 	{
 		return IntToPtr (ptr_rule->is_readonly ? TRUE : FALSE);
 	}
@@ -206,10 +202,10 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 
 	if (_r_str_isstartswith2 (&path_temp, L"S-1-", TRUE)) // uwp (win8+)
 	{
-		type = DataAppUWP;
+		type = DATA_APP_UWP;
 	}
 
-	if (type == DataAppService || type == DataAppUWP)
+	if (type == DATA_APP_SERVICE || type == DATA_APP_UWP)
 	{
 		ptr_app->type = type;
 
@@ -225,18 +221,18 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	}
 	else if (_r_str_isstartswith2 (&path_temp, L"\\device\\", TRUE)) // device path
 	{
-		ptr_app->type = DataAppDevice;
+		ptr_app->type = DATA_APP_DEVICE;
 		ptr_app->real_path = _r_obj_createstring3 (&path_temp);
 	}
 	else
 	{
 		if (!is_ntoskrnl && _r_str_findchar (&path_temp, OBJ_NAME_PATH_SEPARATOR, FALSE) == SIZE_MAX)
 		{
-			ptr_app->type = DataAppPico;
+			ptr_app->type = DATA_APP_PICO;
 		}
 		else
 		{
-			ptr_app->type = PathIsNetworkPath (path_temp.buffer) ? DataAppNetwork : DataAppRegular;
+			ptr_app->type = PathIsNetworkPath (path_temp.buffer) ? DATA_APP_NETWORK : DATA_APP_REGULAR;
 		}
 
 		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstring2 (config.ntoskrnl_path) : _r_obj_createstring3 (&path_temp);
@@ -251,7 +247,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 		ptr_app->original_path->buffer[0] = _r_str_upper (ptr_app->original_path->buffer[0]);
 	}
 
-	if (ptr_app->type == DataAppRegular || ptr_app->type == DataAppDevice || ptr_app->type == DataAppNetwork)
+	if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK)
 	{
 		ptr_app->short_name = _r_path_getbasenamestring (&path_temp);
 	}
@@ -259,7 +255,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
 
-	if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
+	if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
 	{
 		ptr_app->is_undeletable = TRUE;
 	}
@@ -292,7 +288,7 @@ PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote
 	ptr_rule->apps = _r_obj_createhashtable (sizeof (SHORT), NULL); // initialize hashtable
 	ptr_rule->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 
-	ptr_rule->type = DataRuleUser;
+	ptr_rule->type = DATA_RULE_USER;
 
 	// set rule name
 	if (name)
@@ -532,7 +528,7 @@ COLORREF _app_getappcolor (_In_ INT listview_id, _In_ ULONG_PTR app_hash, _In_ B
 			goto CleanupExit;
 		}
 
-		if (_r_config_getbooleanex (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DataAppPico)
+		if (_r_config_getbooleanex (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DATA_APP_PICO)
 		{
 			color_hash = config.color_pico;
 			goto CleanupExit;
@@ -569,7 +565,7 @@ VOID _app_freeapplication (_In_ ULONG_PTR app_hash)
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->type == DataRuleUser)
+		if (ptr_rule->type == DATA_RULE_USER)
 		{
 			if (_r_obj_findhashtable (ptr_rule->apps, app_hash))
 			{
@@ -615,7 +611,7 @@ VOID _app_getcount (_Out_ PITEM_STATUS status)
 		if (_app_istimerset (ptr_app->htimer))
 			status->apps_timer_count += 1;
 
-		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DataAppService || ptr_app->type == DataAppUWP))
+		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
 			status->apps_unused_count += 1;
 
 		if (is_used)
@@ -633,7 +629,7 @@ VOID _app_getcount (_Out_ PITEM_STATUS status)
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->type == DataRuleUser)
+		if (ptr_rule->type == DATA_RULE_USER)
 		{
 			if (ptr_rule->is_enabled && !_r_obj_ishashtableempty (ptr_rule->apps))
 				status->rules_global_count += 1;
@@ -763,7 +759,7 @@ BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ INT new_s
 
 BOOLEAN _app_ruleblocklistsetstate (_Inout_ PITEM_RULE ptr_rule, _In_ INT spy_state, _In_ INT update_state, _In_ INT extra_state)
 {
-	if (ptr_rule->type != DataRuleBlocklist || _r_obj_isstringempty (ptr_rule->name))
+	if (ptr_rule->type != DATA_RULE_BLOCKLIST || _r_obj_isstringempty (ptr_rule->name))
 		return FALSE;
 
 	if (_r_str_isstartswith2 (&ptr_rule->name->sr, L"spy_", TRUE))
@@ -796,7 +792,7 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->type != DataRuleBlocklist)
+		if (ptr_rule->type != DATA_RULE_BLOCKLIST)
 			continue;
 
 		if (!_app_ruleblocklistsetstate (ptr_rule, spy_state, update_state, extra_state))
@@ -822,7 +818,7 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 	{
 		if (hwnd)
 		{
-			_app_updatelistviewbylparam (hwnd, DataRuleBlocklist, PR_UPDATE_TYPE | PR_UPDATE_NORESIZE);
+			_app_updatelistviewbylparam (hwnd, DATA_RULE_BLOCKLIST, PR_UPDATE_TYPE | PR_UPDATE_NORESIZE);
 		}
 
 		if (is_instantapply)
@@ -865,7 +861,7 @@ PR_STRING _app_appexpandrules (_In_ ULONG_PTR app_hash, _In_ LPCWSTR delimeter)
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->is_enabled && ptr_rule->type == DataRuleUser && !_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
+		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER && !_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
 		{
 			_r_obj_appendstringbuilder2 (&buffer, ptr_rule->name);
 
@@ -925,7 +921,7 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 
 		if (is_fordisplay)
 		{
-			if (ptr_app->type == DataAppUWP)
+			if (ptr_app->type == DATA_APP_UWP)
 			{
 				if (ptr_app->display_name)
 					_r_obj_appendstringbuilder2 (&buffer, ptr_app->display_name);
@@ -1051,7 +1047,7 @@ BOOLEAN _app_isapphavedrive (_In_ INT letter)
 		if (_r_obj_isstringempty (ptr_app->original_path))
 			continue;
 
-		if (ptr_app->type == DataAppRegular)
+		if (ptr_app->type == DATA_APP_REGULAR)
 		{
 			drive_id = PathGetDriveNumber (ptr_app->original_path->buffer);
 		}
@@ -1060,7 +1056,7 @@ BOOLEAN _app_isapphavedrive (_In_ INT letter)
 			drive_id = -1;
 		}
 
-		if (ptr_app->type == DataAppDevice || (drive_id != -1 && drive_id == letter))
+		if (ptr_app->type == DATA_APP_DEVICE || (drive_id != -1 && drive_id == letter))
 		{
 			if (ptr_app->is_enabled || _app_isapphaverule (ptr_app->app_hash, FALSE))
 			{
@@ -1088,7 +1084,7 @@ BOOLEAN _app_isapphaverule (_In_ ULONG_PTR app_hash, _In_ BOOLEAN is_countdisabl
 
 		if (ptr_rule)
 		{
-			if (ptr_rule->type == DataRuleUser && (is_countdisabled || (ptr_rule->is_enabled)))
+			if (ptr_rule->type == DATA_RULE_USER && (is_countdisabled || (ptr_rule->is_enabled)))
 			{
 				if (_r_obj_findhashtable (ptr_rule->apps, app_hash))
 				{
@@ -1113,14 +1109,14 @@ BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app)
 	if (ptr_app->is_enabled && ptr_app->is_haveerrors)
 		return FALSE;
 
-	if (ptr_app->type == DataAppRegular)
+	if (ptr_app->type == DATA_APP_REGULAR)
 		return !_r_obj_isstringempty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path->buffer);
 
-	if (ptr_app->type == DataAppDevice || ptr_app->type == DataAppNetwork || ptr_app->type == DataAppPico)
+	if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK || ptr_app->type == DATA_APP_PICO)
 		return TRUE;
 
 	// Service and UWP is already undeletable
-	//if (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)
+	//if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
 	//	return TRUE;
 
 	return FALSE;
@@ -1180,7 +1176,7 @@ BOOLEAN _app_profile_load_check (_In_ LPCWSTR path)
 	{
 		if (_r_xml_findchildbytagname (&xml_library, L"root"))
 		{
-			if (_r_xml_getattribute_integer (&xml_library, L"type") == XmlProfileV3)
+			if (_r_xml_getattribute_integer (&xml_library, L"type") == XML_PROFILE_V3)
 			{
 				// min supported is v3
 				if (_r_xml_getattribute_integer (&xml_library, L"version") >= XML_PROFILE_VER_3)
@@ -1210,25 +1206,25 @@ VOID _app_profile_load_fallback ()
 
 	if (!_app_isappfound (config.my_hash))
 	{
-		app_hash = _app_addapplication (NULL, DataUnknown, &config.my_path->sr, NULL, NULL);
+		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &config.my_path->sr, NULL, NULL);
 
 		if (app_hash)
-			_app_setappinfobyhash (app_hash, InfoIsEnabled, IntToPtr (TRUE));
+			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
 	}
 
-	_app_setappinfobyhash (config.my_hash, InfoIsUndeletable, IntToPtr (TRUE));
+	_app_setappinfobyhash (config.my_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
 
 	// disable deletion for this shit ;)
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
 		if (!_app_isappfound (config.ntoskrnl_hash) && config.system_path)
-			_app_addapplication (NULL, DataUnknown, &config.system_path->sr, NULL, NULL);
+			_app_addapplication (NULL, DATA_UNKNOWN, &config.system_path->sr, NULL, NULL);
 
 		if (!_app_isappfound (config.svchost_hash) && config.svchost_path)
-			_app_addapplication (NULL, DataUnknown, &config.svchost_path->sr, NULL, NULL);
+			_app_addapplication (NULL, DATA_UNKNOWN, &config.svchost_path->sr, NULL, NULL);
 
-		_app_setappinfobyhash (config.ntoskrnl_hash, InfoIsUndeletable, IntToPtr (TRUE));
-		_app_setappinfobyhash (config.svchost_hash, InfoIsUndeletable, IntToPtr (TRUE));
+		_app_setappinfobyhash (config.ntoskrnl_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+		_app_setappinfobyhash (config.svchost_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
 	}
 }
 
@@ -1247,7 +1243,7 @@ BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version)
 
 VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ UINT version)
 {
-	if (type == DataAppRegular)
+	if (type == DATA_APP_REGULAR)
 	{
 		PR_STRING string;
 		LONG64 timestamp;
@@ -1275,7 +1271,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 			PITEM_APP ptr_app;
 			ULONG_PTR app_hash;
 
-			app_hash = _app_addapplication (NULL, DataUnknown, &string->sr, NULL, NULL);
+			app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &string->sr, NULL, NULL);
 
 			if (app_hash)
 			{
@@ -1291,22 +1287,22 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 					if (is_silent)
 					{
-						_app_setappinfo (ptr_app, InfoIsSilent, IntToPtr (is_silent));
+						_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (is_silent));
 					}
 
 					if (is_enabled)
 					{
-						_app_setappinfo (ptr_app, InfoIsEnabled, IntToPtr (is_enabled));
+						_app_setappinfo (ptr_app, INFO_IS_ENABLED, IntToPtr (is_enabled));
 					}
 
 					if (timestamp)
 					{
-						_app_setappinfo (ptr_app, InfoTimestampPtr, &timestamp);
+						_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
 					}
 
 					if (timer)
 					{
-						_app_setappinfo (ptr_app, InfoTimerPtr, &timer);
+						_app_setappinfo (ptr_app, INFO_TIMER_PTR, &timer);
 					}
 
 					_r_obj_dereference (ptr_app);
@@ -1316,7 +1312,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 		_r_obj_dereference (string);
 	}
-	else if (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleSystemUser || type == DataRuleUser)
+	else if (type == DATA_RULE_BLOCKLIST || type == DATA_RULE_SYSTEM || type == DATA_RULE_SYSTEM_USER || type == DATA_RULE_USER)
 	{
 		PR_STRING rule_name;
 		PR_STRING rule_remote;
@@ -1358,28 +1354,28 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 		rule_hash = _r_obj_getstringhash (ptr_rule->name);
 
-		ptr_rule->type = (type == DataRuleSystemUser) ? DataRuleUser : type;
+		ptr_rule->type = (type == DATA_RULE_SYSTEM_USER) ? DATA_RULE_USER : type;
 		ptr_rule->action = _r_xml_getattribute_boolean (xml_library, L"is_block") ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 		ptr_rule->is_forservices = _r_xml_getattribute_boolean (xml_library, L"is_services");
-		ptr_rule->is_readonly = (type != DataRuleUser);
+		ptr_rule->is_readonly = (type != DATA_RULE_USER);
 
 		// calculate rule weight
-		if (type == DataRuleBlocklist)
+		if (type == DATA_RULE_BLOCKLIST)
 		{
 			ptr_rule->weight = FW_WEIGHT_RULE_BLOCKLIST;
 		}
-		else if (type == DataRuleSystem || type == DataRuleSystemUser)
+		else if (type == DATA_RULE_SYSTEM || type == DATA_RULE_SYSTEM_USER)
 		{
 			ptr_rule->weight = FW_WEIGHT_RULE_SYSTEM;
 		}
-		else if (type == DataRuleUser)
+		else if (type == DATA_RULE_USER)
 		{
 			ptr_rule->weight = (ptr_rule->action == FWP_ACTION_BLOCK) ? FW_WEIGHT_RULE_USER_BLOCK : FW_WEIGHT_RULE_USER;
 		}
 
 		ptr_rule->is_enabled = _r_xml_getattribute_boolean (xml_library, L"is_enabled");
 
-		if (type == DataRuleBlocklist)
+		if (type == DATA_RULE_BLOCKLIST)
 		{
 			INT blocklist_spy_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistSpyState", 2), 0, 2);
 			INT blocklist_update_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistUpdateState", 0), 0, 2);
@@ -1397,7 +1393,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 			PITEM_RULE_CONFIG ptr_config = NULL;
 			BOOLEAN is_internal;
 
-			is_internal = (type == DataRuleBlocklist || type == DataRuleSystem || type == DataRuleSystemUser);
+			is_internal = (type == DATA_RULE_BLOCKLIST || type == DATA_RULE_SYSTEM || type == DATA_RULE_SYSTEM_USER);
 
 			if (is_internal)
 			{
@@ -1474,12 +1470,12 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 							if (!_app_isappfound (app_hash))
 							{
-								app_hash = _app_addapplication (NULL, DataUnknown, &path_string->sr, NULL, NULL);
+								app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &path_string->sr, NULL, NULL);
 							}
 
-							if (ptr_rule->type == DataRuleSystem)
+							if (ptr_rule->type == DATA_RULE_SYSTEM)
 							{
-								_app_setappinfobyhash (app_hash, InfoIsUndeletable, IntToPtr (TRUE));
+								_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
 							}
 						}
 
@@ -1497,7 +1493,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 		_r_queuedlock_releaseexclusive (&lock_rules);
 	}
-	else if (type == DataRulesConfig)
+	else if (type == DATA_RULE_CONFIG)
 	{
 		PR_STRING rule_name;
 		PITEM_RULE_CONFIG ptr_config;
@@ -1597,7 +1593,7 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 	xml_library = is_loadfromresource ? &xml_resource : &xml_file;
 	version = is_loadfromresource ? version_resource : version_file;
 
-	if (_app_profile_load_check_node (xml_library, XmlProfileInternalV3))
+	if (_app_profile_load_check_node (xml_library, XML_PROFILE_INTERNAL_V3))
 	{
 		if (timestamp)
 			*timestamp = (timestamp_file > timestamp_resource) ? timestamp_file : timestamp_resource;
@@ -1607,7 +1603,7 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 		{
 			while (_r_xml_enumchilditemsbytagname (xml_library, L"item"))
 			{
-				_app_profile_load_helper (xml_library, DataRuleSystem, version);
+				_app_profile_load_helper (xml_library, DATA_RULE_SYSTEM, version);
 			}
 		}
 
@@ -1616,7 +1612,7 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 		{
 			while (_r_xml_enumchilditemsbytagname (xml_library, L"item"))
 			{
-				_app_profile_load_helper (xml_library, DataRuleSystemUser, version);
+				_app_profile_load_helper (xml_library, DATA_RULE_SYSTEM_USER, version);
 			}
 		}
 
@@ -1625,7 +1621,7 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 		{
 			while (_r_xml_enumchilditemsbytagname (xml_library, L"item"))
 			{
-				_app_profile_load_helper (xml_library, DataRuleBlocklist, version);
+				_app_profile_load_helper (xml_library, DATA_RULE_BLOCKLIST, version);
 			}
 		}
 	}
@@ -1709,7 +1705,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	{
 		if (_r_xml_findchildbytagname (&xml_library, L"root"))
 		{
-			if (_app_profile_load_check_node (&xml_library, XmlProfileV3))
+			if (_app_profile_load_check_node (&xml_library, XML_PROFILE_V3))
 			{
 				INT version = _r_xml_getattribute_integer (&xml_library, L"version");
 
@@ -1718,7 +1714,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 				{
 					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
 					{
-						_app_profile_load_helper (&xml_library, DataAppRegular, version);
+						_app_profile_load_helper (&xml_library, DATA_APP_REGULAR, version);
 					}
 				}
 
@@ -1727,7 +1723,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 				{
 					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
 					{
-						_app_profile_load_helper (&xml_library, DataRulesConfig, version);
+						_app_profile_load_helper (&xml_library, DATA_RULE_CONFIG, version);
 					}
 				}
 
@@ -1736,7 +1732,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 				{
 					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
 					{
-						_app_profile_load_helper (&xml_library, DataRuleUser, version);
+						_app_profile_load_helper (&xml_library, DATA_RULE_USER, version);
 					}
 				}
 			}
@@ -1833,7 +1829,7 @@ VOID _app_profile_save ()
 	_r_xml_writestartelement (&xml_library, L"root");
 
 	_r_xml_setattribute_long64 (&xml_library, L"timestamp", current_time);
-	_r_xml_setattribute_integer (&xml_library, L"type", XmlProfileV3);
+	_r_xml_setattribute_integer (&xml_library, L"type", XML_PROFILE_V3);
 	_r_xml_setattribute_integer (&xml_library, L"version", XML_PROFILE_VER_CURRENT);
 
 	_r_xml_writewhitespace (&xml_library, L"\n\t");
@@ -1861,7 +1857,7 @@ VOID _app_profile_save ()
 		is_usedapp = _app_isappused (ptr_app);
 
 		// do not save unused apps/uwp apps...
-		if (!is_usedapp && (!is_keepunusedapps || (ptr_app->type == DataAppService || ptr_app->type == DataAppUWP)))
+		if (!is_usedapp && (!is_keepunusedapps || (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)))
 			continue;
 
 		_r_xml_writewhitespace (&xml_library, L"\n\t\t");
@@ -1989,7 +1985,7 @@ VOID _app_profile_save ()
 		{
 			is_enabled_default = !!ptr_rule->is_enabled_default;
 
-			if (ptr_rule->type == DataRuleUser && !_r_obj_ishashtableempty (ptr_rule->apps))
+			if (ptr_rule->type == DATA_RULE_USER && !_r_obj_ishashtableempty (ptr_rule->apps))
 			{
 				apps_string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
 			}

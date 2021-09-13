@@ -22,27 +22,27 @@ INT _app_getlistviewbytab_id (_In_ HWND hwnd, _In_ INT tab_id)
 
 INT _app_getlistviewbytype_id (_In_ ENUM_TYPE_DATA type)
 {
-	if (type == DataAppRegular || type == DataAppDevice || type == DataAppNetwork || type == DataAppPico)
+	if (type == DATA_APP_REGULAR || type == DATA_APP_DEVICE || type == DATA_APP_NETWORK || type == DATA_APP_PICO)
 	{
 		return IDC_APPS_PROFILE;
 	}
-	else if (type == DataAppService)
+	else if (type == DATA_APP_SERVICE)
 	{
 		return IDC_APPS_SERVICE;
 	}
-	else if (type == DataAppUWP)
+	else if (type == DATA_APP_UWP)
 	{
 		return IDC_APPS_UWP;
 	}
-	else if (type == DataRuleBlocklist)
+	else if (type == DATA_RULE_BLOCKLIST)
 	{
 		return IDC_RULES_BLOCKLIST;
 	}
-	else if (type == DataRuleSystem)
+	else if (type == DATA_RULE_SYSTEM)
 	{
 		return IDC_RULES_SYSTEM;
 	}
-	else if (type == DataRuleSystemUser || type == DataRuleUser)
+	else if (type == DATA_RULE_SYSTEM_USER || type == DATA_RULE_USER)
 	{
 		return IDC_RULES_CUSTOM;
 	}
@@ -56,11 +56,11 @@ VOID _app_setlistviewbylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ ULONG fl
 
 	if (is_app)
 	{
-		listview_id = PtrToInt (_app_getappinfobyhash (lparam, InfoListviewId));
+		listview_id = PtrToInt (_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID));
 	}
 	else
 	{
-		listview_id = PtrToInt (_app_getruleinfobyid (lparam, InfoListviewId));
+		listview_id = PtrToInt (_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID));
 	}
 
 	if ((flags & PR_SETITEM_UPDATE))
@@ -86,7 +86,7 @@ VOID _app_updatelistviewbylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ ULONG
 	{
 		type = (INT)(INT_PTR)lparam;
 
-		if (type == DataListviewCurrent)
+		if (type == DATA_LISTVIEW_CURRENT)
 		{
 			listview_id = _app_getcurrentlistview_id (hwnd);
 		}
@@ -168,11 +168,11 @@ VOID _app_showitembylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ BOOLEAN is_
 
 	if (is_app)
 	{
-		listview_id = PtrToInt (_app_getappinfobyhash (lparam, InfoListviewId));
+		listview_id = PtrToInt (_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID));
 	}
 	else
 	{
-		listview_id = PtrToInt (_app_getruleinfobyid (lparam, InfoListviewId));
+		listview_id = PtrToInt (_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID));
 	}
 
 	if (listview_id)
@@ -205,11 +205,11 @@ VOID _app_updateitembylparam (_In_ HWND hwnd, _In_ LPARAM lparam, _In_ BOOLEAN i
 
 	if (is_app)
 	{
-		listview_id = PtrToInt (_app_getappinfobyhash (lparam, InfoListviewId));
+		listview_id = PtrToInt (_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID));
 	}
 	else
 	{
-		listview_id = PtrToInt (_app_getruleinfobyid (lparam, InfoListviewId));
+		listview_id = PtrToInt (_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID));
 	}
 
 	if (listview_id)
@@ -383,13 +383,13 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 		_r_obj_initializestringbuilder (&sb);
 
 		// app type
-		if (ptr_app->type == DataAppNetwork)
+		if (ptr_app->type == DATA_APP_NETWORK)
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_NETWORK));
 			_r_obj_appendstringbuilder (&sb, L"\r\n");
 		}
-		else if (ptr_app->type == DataAppPico)
+		else if (ptr_app->type == DATA_APP_PICO)
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_PICO));
@@ -507,7 +507,7 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ LP
 			}
 
 			// rule notes
-			if (ptr_rule->is_readonly && ptr_rule->type == DataRuleUser)
+			if (ptr_rule->is_readonly && ptr_rule->type == DATA_RULE_USER)
 			{
 				string_tmp = _r_obj_concatstrings (5, SZ_TAB L"\r\n", _r_locale_getstring (IDS_NOTES), L":\r\n" SZ_TAB, SZ_RULE_INTERNAL_TITLE, L"\r\n");
 
@@ -586,13 +586,13 @@ VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id)
 
 UINT _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type)
 {
-	if (install_type == InstallEnabled)
+	if (install_type == INSTALL_ENABLED)
 		return IDS_STATUS_FILTERS_ACTIVE;
 
-	else if (install_type == InstallEnabledTemporary)
+	else if (install_type == INSTALL_ENABLED_TEMPORARY)
 		return IDS_STATUS_FILTERS_ACTIVE_TEMP;
 
-	// InstallDisabled
+	// INSTALL_DISABLED
 	return IDS_STATUS_FILTERS_INACTIVE;
 }
 
@@ -635,7 +635,7 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 	BOOLEAN is_filtersinstalled;
 
 	install_type = _wfp_isfiltersinstalled ();
-	is_filtersinstalled = (install_type != InstallDisabled);
+	is_filtersinstalled = (install_type != INSTALL_DISABLED);
 
 	dpi_value = _r_dc_getsystemdpi ();
 	string_id = is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START;
@@ -1014,8 +1014,8 @@ INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lpa
 		// timestamp sorting
 		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
 		{
-			PVOID timer1_ptr = _app_getappinfobyhash (lparam1, InfoTimestampPtr);
-			PVOID timer2_ptr = _app_getappinfobyhash (lparam2, InfoTimestampPtr);
+			PVOID timer1_ptr = _app_getappinfobyhash (lparam1, INFO_TIMESTAMP_PTR);
+			PVOID timer2_ptr = _app_getappinfobyhash (lparam2, INFO_TIMESTAMP_PTR);
 
 			if (timer1_ptr && timer2_ptr)
 			{

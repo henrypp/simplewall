@@ -39,50 +39,49 @@ DEFINE_GUID (GUID_WfpListenCallout6_DEPRECATED, 0xa02187ca, 0xe655, 0x4adb, 0xa1
 // enums
 typedef enum _ENUM_TYPE_DATA
 {
-	DataUnknown = 0,
-	DataAppRegular,
-	DataAppDevice,
-	DataAppNetwork,
-	DataAppPico, // win10+
-	DataAppService,
-	DataAppUWP, // win8+
-	DataRuleBlocklist,
-	DataRuleSystem,
-	DataRuleSystemUser,
-	DataRuleUser,
-	DataRulesConfig,
-	DataTypePort,
-	DataTypeIp,
-	DataFilterGeneral,
-	DataListviewCurrent,
+	DATA_UNKNOWN = 0,
+	DATA_APP_REGULAR,
+	DATA_APP_DEVICE,
+	DATA_APP_NETWORK,
+	DATA_APP_SERVICE,
+	DATA_APP_UWP, // win8+
+	DATA_APP_PICO, // win10+
+	DATA_RULE_BLOCKLIST,
+	DATA_RULE_SYSTEM,
+	DATA_RULE_SYSTEM_USER,
+	DATA_RULE_USER,
+	DATA_RULE_CONFIG,
+	DATA_TYPE_PORT,
+	DATA_TYPE_IP,
+	DATA_FILTER_GENERAL,
+	DATA_LISTVIEW_CURRENT,
 } ENUM_TYPE_DATA;
 
 typedef enum _ENUM_TYPE_XML
 {
-	XmlProfileV3 = 3,
-	XmlProfileInternalV3 = 4,
+	XML_PROFILE_V3 = 3,
+	XML_PROFILE_INTERNAL_V3 = 4,
 } ENUM_TYPE_XML;
 
 typedef enum _ENUM_INSTALL_TYPE
 {
-	InstallDisabled = 0,
-	InstallEnabled,
-	InstallEnabledTemporary,
+	INSTALL_DISABLED = 0,
+	INSTALL_ENABLED,
+	INSTALL_ENABLED_TEMPORARY,
 } ENUM_INSTALL_TYPE;
 
 typedef enum _ENUM_INFO_DATA
 {
-	InfoPath = 1,
-	InfoName,
-	InfoBytesData,
-	InfoTimestampPtr,
-	InfoTimerPtr,
-	InfoListviewId,
-	InfoIsEnabled,
-	InfoIsReadonly,
-	InfoIsSilent,
-	InfoIsTimerSet,
-	InfoIsUndeletable,
+	INFO_PATH = 0,
+	INFO_BYTES_DATA,
+	INFO_DISPLAY_NAME,
+	INFO_TIMESTAMP_PTR,
+	INFO_TIMER_PTR,
+	INFO_LISTVIEW_ID,
+	INFO_IS_ENABLED,
+	INFO_IS_READONLY,
+	INFO_IS_SILENT,
+	INFO_IS_UNDELETABLE,
 } ENUM_INFO_DATA;
 
 typedef enum _ENUM_INFO_DATA2
