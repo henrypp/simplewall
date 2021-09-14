@@ -3,9 +3,8 @@
 
 #pragma once
 
-#define FMTADDR_AS_ARPA 0x0001
-#define FMTADDR_AS_RULE 0x0002
-#define FMTADDR_USE_PROTOCOL 0x0004
+#define FMTADDR_AS_RULE 0x0001
+#define FMTADDR_USE_PROTOCOL 0x0002
 
 VOID NTAPI _app_dereferenceapp (_In_ PVOID entry);
 VOID NTAPI _app_dereferenceappinfo (_In_ PVOID entry);
@@ -19,15 +18,15 @@ BOOLEAN _app_ischeckboxlocked (_In_ HWND hwnd);
 VOID _app_setcheckboxlock (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ BOOLEAN is_lock);
 
 VOID _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ ULONG_PTR hash_code, _In_ PR_QUEUED_LOCK spin_lock, _In_opt_ PR_STRING string);
-
-_Success_ (return)
 BOOLEAN _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ ULONG_PTR hash_code, _In_ PR_QUEUED_LOCK spin_lock, _Out_ PR_STRING* string);
+
+PR_STRING _app_formatarpa (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
 
 _Ret_maybenull_
 PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPCVOID address, _In_opt_ UINT16 port, _In_ ULONG flags);
 
 _Success_ (return)
-BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR out_buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty);
+BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty);
 
 PR_STRING _app_formatport (_In_ UINT16 port, _In_ UINT8 proto);
 

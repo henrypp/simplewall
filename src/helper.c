@@ -151,74 +151,89 @@ VOID _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ ULONG_PTR hash_cod
 	_r_queuedlock_releaseexclusive (spin_lock);
 }
 
-_Success_ (return)
-BOOLEAN _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ ULONG_PTR hash_code, _In_ PR_QUEUED_LOCK spin_lock, _Out_ PR_STRING * string)
+BOOLEAN _app_getcachetable (_Inout_ PR_HASHTABLE cache_table, _In_ ULONG_PTR hash_code, _In_ PR_QUEUED_LOCK spin_lock, _Out_ PR_STRING *string)
 {
+	PR_OBJECT_POINTER object_ptr;
+
 	_r_queuedlock_acquireshared (spin_lock);
 
-	*string = _r_obj_findhashtablepointer (cache_table, hash_code);
+	object_ptr = _r_obj_findhashtable (cache_table, hash_code);
 
 	_r_queuedlock_releaseshared (spin_lock);
 
-	return (*string != NULL);
+	if (object_ptr)
+	{
+		*string = _r_obj_referencesafe (object_ptr->object_body);
+
+		return TRUE;
+	}
+
+	*string = NULL;
+
+	return FALSE;
+}
+
+PR_STRING _app_formatarpa (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
+{
+	R_STRINGBUILDER formatted_address;
+	PIN_ADDR p4addr;
+	PIN6_ADDR p6addr;
+
+	_r_obj_initializestringbuilder (&formatted_address);
+
+	if (af == AF_INET)
+	{
+		p4addr = (PIN_ADDR)address;
+
+		_r_obj_appendstringbuilderformat (&formatted_address, L"%hhu.%hhu.%hhu.%hhu.%s", p4addr->s_impno, p4addr->s_lh, p4addr->s_host, p4addr->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W);
+	}
+	else if (af == AF_INET6)
+	{
+		p6addr = (PIN6_ADDR)address;
+
+		for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
+			_r_obj_appendstringbuilderformat (&formatted_address, L"%hhx.%hhx.", p6addr->s6_addr[i] & 0xF, (p6addr->s6_addr[i] >> 4) & 0xF);
+
+		_r_obj_appendstringbuilder (&formatted_address, DNS_IP6_REVERSE_DOMAIN_STRING_W);
+	}
+
+	return _r_obj_finalstringbuilder (&formatted_address);
 }
 
 _Ret_maybenull_
 PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPCVOID address, _In_opt_ UINT16 port, _In_ ULONG flags)
 {
+	WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH];
 	R_STRINGBUILDER formatted_address;
-	BOOLEAN is_success = FALSE;
+	BOOLEAN is_success;
 
 	_r_obj_initializestringbuilder (&formatted_address);
 
-	if ((flags & FMTADDR_AS_ARPA) != 0)
+	is_success = FALSE;
+
+	if ((flags & FMTADDR_USE_PROTOCOL))
 	{
-		if (af == AF_INET)
-		{
-			PIN_ADDR p4addr = (PIN_ADDR)address;
+		_r_obj_appendstringbuilderformat (&formatted_address, L"%s://", _app_getprotoname (proto, AF_UNSPEC, SZ_UNKNOWN));
+	}
 
-			_r_obj_appendstringbuilderformat (&formatted_address, L"%hhu.%hhu.%hhu.%hhu.%s", p4addr->s_impno, p4addr->s_lh, p4addr->s_host, p4addr->s_net, DNS_IP4_REVERSE_DOMAIN_STRING_W);
+	if (_app_formatip (af, address, addr_str, RTL_NUMBER_OF (addr_str), !!(flags & FMTADDR_AS_RULE)))
+	{
+		if (af == AF_INET6 && port)
+		{
+			_r_obj_appendstringbuilderformat (&formatted_address, L"[%s]", addr_str);
 		}
-		else if (af == AF_INET6)
+		else
 		{
-			PIN6_ADDR p6addr = (PIN6_ADDR)address;
-
-			for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
-				_r_obj_appendstringbuilderformat (&formatted_address, L"%hhx.%hhx.", p6addr->s6_addr[i] & 0xF, (p6addr->s6_addr[i] >> 4) & 0xF);
-
-			_r_obj_appendstringbuilder (&formatted_address, DNS_IP6_REVERSE_DOMAIN_STRING_W);
+			_r_obj_appendstringbuilder (&formatted_address, addr_str);
 		}
 
 		is_success = TRUE;
 	}
-	else
+
+	if (port && !(flags & FMTADDR_USE_PROTOCOL))
 	{
-		WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH] = {0};
-
-		if ((flags & FMTADDR_USE_PROTOCOL))
-		{
-			_r_obj_appendstringbuilderformat (&formatted_address, L"%s://", _app_getprotoname (proto, AF_UNSPEC, SZ_UNKNOWN));
-		}
-
-		if (_app_formatip (af, address, addr_str, RTL_NUMBER_OF (addr_str), (flags & FMTADDR_AS_RULE) != 0))
-		{
-			if (af == AF_INET6 && port)
-			{
-				_r_obj_appendstringbuilderformat (&formatted_address, L"[%s]", addr_str);
-			}
-			else
-			{
-				_r_obj_appendstringbuilder (&formatted_address, addr_str);
-			}
-
-			is_success = TRUE;
-		}
-
-		if (port && !(flags & FMTADDR_USE_PROTOCOL))
-		{
-			_r_obj_appendstringbuilderformat (&formatted_address, is_success ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port);
-			is_success = TRUE;
-		}
+		_r_obj_appendstringbuilderformat (&formatted_address, is_success ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port);
+		is_success = TRUE;
 	}
 
 	if (is_success)
@@ -230,11 +245,14 @@ PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPC
 }
 
 _Success_ (return)
-BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR out_buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty)
+BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty)
 {
+	PIN_ADDR p4addr;
+	PIN6_ADDR p6addr;
+
 	if (af == AF_INET)
 	{
-		PIN_ADDR p4addr = (PIN_ADDR)address;
+		p4addr = (PIN_ADDR)address;
 
 		if (is_checkempty)
 		{
@@ -242,12 +260,12 @@ BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes
 				return FALSE;
 		}
 
-		if (NT_SUCCESS (RtlIpv4AddressToStringEx (p4addr, 0, out_buffer, &buffer_size)))
+		if (NT_SUCCESS (RtlIpv4AddressToStringEx (p4addr, 0, buffer, &buffer_size)))
 			return TRUE;
 	}
 	else if (af == AF_INET6)
 	{
-		PIN6_ADDR p6addr = (PIN6_ADDR)address;
+		p6addr = (PIN6_ADDR)address;
 
 		if (is_checkempty)
 		{
@@ -255,7 +273,7 @@ BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes
 				return FALSE;
 		}
 
-		if (NT_SUCCESS (RtlIpv6AddressToStringEx (p6addr, 0, 0, out_buffer, &buffer_size)))
+		if (NT_SUCCESS (RtlIpv6AddressToStringEx (p6addr, 0, 0, buffer, &buffer_size)))
 			return TRUE;
 	}
 
@@ -380,7 +398,7 @@ BOOLEAN _app_isappvalidbinary (_In_ ENUM_TYPE_DATA type, _In_ PR_STRING path)
 		PR_STRINGREF_INIT (L".dll"),
 	};
 
-	if (type != DataAppRegular && type != DataAppService && type != DataAppUWP)
+	if (type != DATA_APP_REGULAR && type != DATA_APP_SERVICE && type != DATA_APP_UWP)
 		return FALSE;
 
 	if (!_app_isappvalidpath (&path->sr))
@@ -446,12 +464,12 @@ LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortene
 			return ptr_app->original_path->buffer;
 	}
 
-	if (ptr_app->type == DataAppService)
+	if (ptr_app->type == DATA_APP_SERVICE)
 	{
 		if (ptr_app->original_path)
 			return ptr_app->original_path->buffer;
 	}
-	else if (ptr_app->type == DataAppUWP)
+	else if (ptr_app->type == DATA_APP_UWP)
 	{
 		if (ptr_app->display_name)
 			return ptr_app->display_name->buffer;
@@ -589,7 +607,7 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 
 	if (!is_success)
 	{
-		if (ptr_app_info->type == DataAppUWP)
+		if (ptr_app_info->type == DATA_APP_UWP)
 		{
 			if (!ptr_app_info->large_icon_id)
 				ptr_app_info->large_icon_id = config.icon_uwp_id;
@@ -1717,7 +1735,7 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 	if (pid == PROC_WAITING_PID)
 	{
 		ptr_network->app_hash = 0;
-		ptr_network->type = DataAppRegular;
+		ptr_network->type = DATA_APP_REGULAR;
 		ptr_network->path = _r_obj_createstring (PROC_WAITING_NAME);
 
 		return TRUE;
@@ -1725,7 +1743,7 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 	else if (pid == PROC_SYSTEM_PID)
 	{
 		ptr_network->app_hash = config.ntoskrnl_hash;
-		ptr_network->type = DataAppRegular;
+		ptr_network->type = DATA_APP_REGULAR;
 		ptr_network->path = _r_obj_createstring (PROC_SYSTEM_NAME);
 
 		return TRUE;
@@ -1739,7 +1757,7 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 
 		if (process_name)
 		{
-			ptr_network->type = DataAppService;
+			ptr_network->type = DATA_APP_SERVICE;
 		}
 	}
 
@@ -1754,11 +1772,11 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 		{
 			if (_r_sys_isosversiongreaterorequal (WINDOWS_8) && _r_sys_isprocessimmersive (hprocess))
 			{
-				ptr_network->type = DataAppUWP;
+				ptr_network->type = DATA_APP_UWP;
 			}
 			else
 			{
-				ptr_network->type = DataAppRegular;
+				ptr_network->type = DATA_APP_REGULAR;
 			}
 
 			status = _r_sys_queryprocessstring (hprocess, ProcessImageFileNameWin32, &process_name);
@@ -2182,7 +2200,7 @@ VOID _app_generate_packages ()
 
 									real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
 
-									app_hash = _app_addapplication (NULL, DataAppUWP, &package_sid_string->sr, display_name, real_path);
+									app_hash = _app_addapplication (NULL, DATA_APP_UWP, &package_sid_string->sr, display_name, real_path);
 
 									if (app_hash)
 									{
@@ -2194,8 +2212,8 @@ VOID _app_generate_packages ()
 										{
 											LONG64 timestamp = _r_reg_querytimestamp (hsubkey);
 
-											_app_setappinfo (ptr_app, InfoTimestampPtr, &timestamp);
-											_app_setappinfo (ptr_app, InfoBytesData, _r_obj_reference (package_sid));
+											_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
+											_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_reference (package_sid));
 
 											_r_obj_dereference (ptr_app);
 										}
@@ -2359,7 +2377,7 @@ VOID _app_generate_services ()
 					{
 						PR_STRING name_string = _r_obj_createstring (service->lpDisplayName);
 
-						app_hash = _app_addapplication (NULL, DataAppService, &service_name, name_string, service_path);
+						app_hash = _app_addapplication (NULL, DATA_APP_SERVICE, &service_name, name_string, service_path);
 
 						if (app_hash)
 						{
@@ -2369,8 +2387,8 @@ VOID _app_generate_services ()
 
 							if (ptr_app)
 							{
-								_app_setappinfo (ptr_app, InfoTimestampPtr, &service_timestamp);
-								_app_setappinfo (ptr_app, InfoBytesData, _r_obj_createbyteex (service_sd, sd_length));
+								_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &service_timestamp);
+								_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_createbyteex (service_sd, sd_length));
 
 								_r_obj_dereference (ptr_app);
 							}
@@ -2448,7 +2466,7 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ ULONG_PTR app_has
 					is_global = (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps));
 					is_enabled = is_global || (ptr_rule->is_enabled && (_r_obj_findhashtable (ptr_rule->apps, app_hash)));
 
-					if (ptr_rule->type != DataRuleUser || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)))
+					if (ptr_rule->type != DATA_RULE_USER || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)))
 						continue;
 
 					if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
@@ -2495,7 +2513,7 @@ VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_ap
 
 	if (ptr_app)
 	{
-		PVOID timer_ptr = _app_getappinfo (ptr_app, InfoTimerPtr);
+		PVOID timer_ptr = _app_getappinfo (ptr_app, INFO_TIMER_PTR);
 		app_time = timer_ptr ? *((PLONG64)timer_ptr) : 0;
 	}
 	else
@@ -2674,7 +2692,7 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	// validate rule symbols if rule is unknown/new...
 	// "type" is maybe already set, so check it to prevent duplicate execution
 
-	if (address->type == DataUnknown)
+	if (address->type == DATA_UNKNOWN)
 	{
 		for (SIZE_T i = 0; i < length; i++)
 		{
@@ -2709,7 +2727,7 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 		if (_r_obj_isstringempty2 (&range_start_part) || _r_obj_isstringempty2 (&range_end_part))
 		{
 			address->is_range = FALSE;
-			address->type = DataUnknown;
+			address->type = DATA_UNKNOWN;
 
 			return FALSE;
 		}
@@ -2719,21 +2737,21 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	}
 
 	// check rule for port
-	if (address->type == DataUnknown)
+	if (address->type == DATA_UNKNOWN)
 	{
-		address->type = DataTypePort;
+		address->type = DATA_TYPE_PORT;
 
 		for (SIZE_T i = 0; i < length; i++)
 		{
 			if (!_r_str_isdigit (rule->buffer[i]) && rule->buffer[i] != DIVIDER_RULE_RANGE)
 			{
-				address->type = DataUnknown;
+				address->type = DATA_UNKNOWN;
 				break;
 			}
 		}
 	}
 
-	if (address->type != DataUnknown)
+	if (address->type != DATA_UNKNOWN)
 		return TRUE;
 
 	WCHAR rule_string[256];
@@ -2747,7 +2765,7 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	{
 		if (ParseNetworkString (address->range_start, types, NULL, NULL, NULL) == ERROR_SUCCESS && ParseNetworkString (address->range_end, types, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
-			address->type = DataTypeIp;
+			address->type = DATA_TYPE_IP;
 			return TRUE;
 		}
 	}
@@ -2755,7 +2773,7 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	{
 		if (ParseNetworkString (rule_string, types, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
-			address->type = DataTypeIp;
+			address->type = DATA_TYPE_IP;
 			return TRUE;
 		}
 	}
@@ -2794,7 +2812,7 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDR
 	if (is_checkonly)
 		return TRUE;
 
-	if (address->type == DataTypePort)
+	if (address->type == DATA_TYPE_PORT)
 	{
 		if (address->is_range)
 		{
@@ -2821,7 +2839,7 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDR
 			return TRUE;
 		}
 	}
-	else if (address->type == DataTypeIp)
+	else if (address->type == DATA_TYPE_IP)
 	{
 		WCHAR rule_string[256];
 		_r_str_copystring (rule_string, RTL_NUMBER_OF (rule_string), rule);
@@ -2835,44 +2853,48 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDR
 	return TRUE;
 }
 
-_Ret_maybenull_
 PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 {
 	PDNS_RECORD dns_records;
 	PR_STRING arpa_string;
 	PR_STRING string;
+	ULONG_PTR arpa_hash;
 	DNS_STATUS status;
-	WORD type;
 
-	arpa_string = _app_formataddress (af, 0, address, 0, FMTADDR_AS_ARPA);
+	arpa_string = _app_formatarpa (af, address);
+	arpa_hash = _r_obj_getstringhash (arpa_string);
+
+	if (_app_getcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, &string))
+		return string;
+
+	dns_records = NULL;
 	string = NULL;
 
-	if (arpa_string)
+	status = DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+
+	if (status == NO_ERROR)
 	{
-		type = DNS_TYPE_PTR;
-		dns_records = NULL;
-
-		status = DnsQuery (arpa_string->buffer, type, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
-
-		if (status == NO_ERROR)
+		if (dns_records)
 		{
-			if (dns_records)
+			for (PDNS_RECORD dns_record = dns_records; dns_record; dns_record = dns_record->pNext)
 			{
-				for (PDNS_RECORD dns_record = dns_records; dns_record; dns_record = dns_record->pNext)
+				if (dns_record->wType == DNS_TYPE_PTR)
 				{
-					if (dns_record->wType == type)
-					{
-						string = _r_obj_createstring (dns_record->Data.PTR.pNameHost);
-						break;
-					}
+					string = _r_obj_createstring (dns_record->Data.PTR.pNameHost);
+					break;
 				}
-
-				DnsRecordListFree (dns_records, DnsFreeRecordList);
 			}
-		}
 
-		_r_obj_dereference (arpa_string);
+			DnsRecordListFree (dns_records, DnsFreeRecordList);
+		}
 	}
+
+	if (!string)
+		string = _r_obj_referenceemptystring ();
+
+	_app_addcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, _r_obj_reference (string));
+
+	_r_obj_dereference (arpa_string);
 
 	return string;
 }
@@ -2958,36 +2980,63 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	PITEM_CONTEXT context;
-	PR_STRING remote_host_str;
+	PR_STRING host_str;
+	PR_STRING signature_str;
 	PR_STRING localized_string;
 
 	context = arglist;
 
+	host_str = NULL;
+	signature_str = NULL;
+
 	// query notification host name
 	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 	{
-		if (!context->ptr_log->remote_host_str)
+		host_str = InterlockedCompareExchangePointer (&context->ptr_log->remote_host_str, NULL, NULL);
+
+		if (host_str)
 		{
-			remote_host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
+			_r_obj_reference (host_str);
 		}
 		else
 		{
-			remote_host_str = _r_obj_reference (context->ptr_log->remote_host_str);
-		}
+			host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
 
-		if (remote_host_str)
-		{
-			if (_r_wnd_isvisible (context->hwnd) && context->ptr_log->app_hash == _app_notifyget_id (context->hwnd, FALSE))
-			{
-				localized_string = _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":");
-				_r_ctrl_settabletext (context->hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &remote_host_str->sr);
-
-				_r_obj_dereference (localized_string);
-			}
-
-			_r_obj_dereference (remote_host_str);
+			_r_obj_movereference (&context->ptr_log->remote_host_str, _r_obj_reference (host_str));
 		}
 	}
+
+	if (_r_wnd_isvisible (context->hwnd))
+	{
+		if (context->ptr_log->app_hash == _app_notifyget_id (context->hwnd, FALSE))
+		{
+			// print signature
+			localized_string = _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":");
+
+			signature_str = _app_getappinfoparam2 (context->ptr_log->app_hash, INFO_SIGNATURE_STRING);
+
+			if (_r_obj_isstringempty (signature_str))
+				_r_obj_movereference (&signature_str, _r_locale_getstringex (IDS_SIGN_UNSIGNED));
+
+			_r_ctrl_settabletext (context->hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
+
+			// print host
+			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
+
+			if (_r_obj_isstringempty (host_str))
+				_r_obj_movereference (&host_str, _r_locale_getstringex (IDS_STATUS_EMPTY));
+
+			_r_ctrl_settabletext (context->hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
+
+			_r_obj_dereference (localized_string);
+		}
+	}
+
+	if (signature_str)
+		_r_obj_dereference (signature_str);
+
+	if (host_str)
+		_r_obj_dereference (host_str);
 
 	_r_obj_dereference (context->ptr_log);
 
@@ -2997,36 +3046,34 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	PITEM_CONTEXT context;
-	HWND hwnd;
-	INT listview_id;
-	BOOLEAN is_log;
+	PR_STRING local_host_str;
+	PR_STRING remote_host_str;
 	BOOLEAN is_resolutionenabled;
 
 	context = arglist;
 
-	is_log = (context->listview_id == IDC_LOG);
 	is_resolutionenabled = _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE);
 
-	if (is_log)
+	if (context->listview_id == IDC_LOG)
 	{
 		// query address information
 		if (is_resolutionenabled)
 		{
-			_r_obj_movereference (&context->ptr_log->local_host_str, _app_resolveaddress (context->ptr_log->af, &context->ptr_log->local_addr));
-			_r_obj_movereference (&context->ptr_log->remote_host_str, _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr));
+			local_host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->local_addr);
+			remote_host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
+		}
+		else
+		{
+			local_host_str = _r_obj_referenceemptystring ();
+			remote_host_str = _r_obj_referenceemptystring ();
 		}
 
-		if (!context->ptr_log->local_host_str)
-			context->ptr_log->local_host_str = _r_obj_referenceemptystring ();
-
-		if (!context->ptr_log->remote_host_str)
-			context->ptr_log->remote_host_str = _r_obj_referenceemptystring ();
-
-		listview_id = IDC_LOG;
+		_r_obj_movereference (&context->ptr_log->local_host_str, local_host_str);
+		_r_obj_movereference (&context->ptr_log->remote_host_str, remote_host_str);
 
 		_r_obj_dereference (context->ptr_log);
 	}
-	else
+	else if (context->listview_id == IDC_NETWORK)
 	{
 		// query address information
 		_r_obj_movereference (&context->ptr_network->local_addr_str, _app_formataddress (context->ptr_network->af, 0, &context->ptr_network->local_addr, 0, 0));
@@ -3034,17 +3081,17 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 
 		if (is_resolutionenabled)
 		{
-			_r_obj_movereference (&context->ptr_network->local_host_str, _app_resolveaddress (context->ptr_network->af, &context->ptr_network->local_addr));
-			_r_obj_movereference (&context->ptr_network->remote_host_str, _app_resolveaddress (context->ptr_network->af, &context->ptr_network->remote_addr));
+			local_host_str = _app_resolveaddress (context->ptr_network->af, &context->ptr_network->local_addr);
+			remote_host_str = _app_resolveaddress (context->ptr_network->af, &context->ptr_network->remote_addr);
+		}
+		else
+		{
+			local_host_str = _r_obj_referenceemptystring ();
+			remote_host_str = _r_obj_referenceemptystring ();
 		}
 
-		if (!context->ptr_network->local_host_str)
-			context->ptr_network->local_host_str = _r_obj_referenceemptystring ();
-
-		if (!context->ptr_network->remote_host_str)
-			context->ptr_network->remote_host_str = _r_obj_referenceemptystring ();
-
-		listview_id = IDC_NETWORK;
+		_r_obj_movereference (&context->ptr_network->local_host_str, local_host_str);
+		_r_obj_movereference (&context->ptr_network->remote_host_str, remote_host_str);
 
 		_r_obj_dereference (context->ptr_network);
 	}
@@ -3052,11 +3099,12 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 	// redraw listview
 	if (!(busy_count % 4)) // lol, hack!!!
 	{
-		hwnd = _r_app_gethwnd ();
-
-		if (_r_wnd_isvisible (hwnd) && (_app_getcurrentlistview_id (hwnd) == listview_id))
+		if (_r_wnd_isvisible (context->hwnd))
 		{
-			_r_listview_redraw (hwnd, listview_id, -1);
+			if (_app_getcurrentlistview_id (context->hwnd) == context->listview_id)
+			{
+				_r_listview_redraw (context->hwnd, context->listview_id, -1);
+			}
 		}
 	}
 
