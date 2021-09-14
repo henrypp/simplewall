@@ -50,6 +50,8 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 
 				_r_listview_additemex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, network_hash);
 
+				_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type);
+
 				// resolve network address
 				context = _r_freelist_allocateitem (&context_free_list);
 
@@ -58,7 +60,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 				context->lparam = network_hash;
 				context->ptr_network = _r_obj_reference (ptr_network);
 
-				_r_workqueue_queueitem (&resolve_log_queue, &_app_queueresolveinformation, context);
+				_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
 
 				is_refresh = TRUE;
 			}
@@ -427,7 +429,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 				{
-					_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, _r_obj_reference (ptr_app));
+					_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type);
 				}
 
 				_r_queuedlock_releaseshared (&lock_apps);
@@ -831,7 +833,9 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 		case WM_VSCROLL:
 		case WM_HSCROLL:
 		{
-			INT ctrl_id = GetDlgCtrlID ((HWND)lparam);
+			INT ctrl_id;
+
+			ctrl_id = GetDlgCtrlID ((HWND)lparam);
 
 			if (ctrl_id == IDC_LOGSIZELIMIT)
 				_r_config_setulong (L"LogSizeLimitKb", (ULONG)SendDlgItemMessage (hwnd, ctrl_id, UDM_GETPOS32, 0, 0));
@@ -844,7 +848,9 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 		case WM_NOTIFY:
 		{
-			LPNMHDR nmlp = (LPNMHDR)lparam;
+			LPNMHDR nmlp;
+
+			nmlp = (LPNMHDR)lparam;
 
 			switch (nmlp->code)
 			{
@@ -1547,6 +1553,8 @@ VOID _app_tabs_init (_In_ HWND hwnd)
 
 VOID _app_initialize ()
 {
+	R_ENVIRONMENT environment;
+
 	// set privileges
 	{
 		ULONG privileges[] = {
@@ -1557,7 +1565,7 @@ VOID _app_initialize ()
 			SE_DEBUG_PRIVILEGE,
 		};
 
-		_r_sys_setprivilege (privileges, RTL_NUMBER_OF (privileges), TRUE);
+		_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
 	}
 
 	// register message
@@ -1565,10 +1573,33 @@ VOID _app_initialize ()
 		WM_FINDMSGSTRING = RegisterWindowMessage (FINDMSGSTRING);
 
 	// set process priority
-	SetPriorityClass (NtCurrentProcess (), ABOVE_NORMAL_PRIORITY_CLASS);
+	_r_sys_setenvironment (&environment, PROCESS_PRIORITY_CLASS_HIGH, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+
+	_r_sys_setprocessenvironment (NtCurrentProcess (), &environment);
+
+	// initialize workqueue
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_LOWEST, IoPriorityVeryLow, MEMORY_PRIORITY_NORMAL);
+
+	_r_workqueue_initialize (&file_queue, 0, 12, 1500, &environment);
+	_r_workqueue_initialize (&resolver_queue, 0, 6, 1500, &environment);
+	_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 1500, &environment);
+
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+
+	_r_workqueue_initialize (&log_queue, 0, 3, 1500, &environment);
+
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+
+	_r_workqueue_initialize (&wfp_queue, 0, 1, 500, &environment);
 
 	// static initializer
-	config.wd_length = GetWindowsDirectory (config.windows_dir, RTL_NUMBER_OF (config.windows_dir));
+	{
+		SIZE_T length;
+
+		length = GetWindowsDirectory (config.windows_dir_buffer, RTL_NUMBER_OF (config.windows_dir_buffer));
+
+		_r_obj_initializestringrefex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
+	}
 
 	_r_str_printf (config.profile_path, RTL_NUMBER_OF (config.profile_path), L"%s\\" XML_PROFILE, _r_app_getprofiledirectory ());
 	_r_str_printf (config.profile_path_backup, RTL_NUMBER_OF (config.profile_path_backup), L"%s\\" XML_PROFILE L".bak", _r_app_getprofiledirectory ());
@@ -1588,23 +1619,6 @@ VOID _app_initialize ()
 
 	// initialize free list
 	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);
-
-	// initialize workqueue
-	{
-		R_THREAD_ENVIRONMENT environment;
-
-		_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&file_queue, 0, 12, 500, &environment);
-		_r_workqueue_initialize (&resolve_log_queue, 0, 6, 500, &environment);
-
-		_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&log_queue, 0, 3, 500, &environment);
-
-		_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 500, NULL);
-
-		_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-		_r_workqueue_initialize (&wfp_queue, 0, 1, 500, &environment);
-	}
 
 	// initialize colors array
 	if (!colors_table)
@@ -1651,8 +1665,12 @@ VOID _app_initialize ()
 	if (!network_table)
 		network_table = _r_obj_createhashtablepointer (8);
 
-	// initialize dns hash table
-	cache_dns = _r_obj_createhashtablepointer (8);
+	// initialize cache table
+	if (!cache_information)
+		cache_information = _r_obj_createhashtablepointer (8);
+
+	if (!cache_resolution)
+		cache_resolution = _r_obj_createhashtablepointer (8);
 }
 
 INT FirstDriveFromMask (_In_ ULONG unitmask)
@@ -1718,9 +1736,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			{
 				ENUM_INSTALL_TYPE install_type = _wfp_isfiltersinstalled ();
 
-				if (install_type != InstallDisabled)
+				if (install_type != INSTALL_DISABLED)
 				{
-					if (install_type == InstallEnabledTemporary)
+					if (install_type == INSTALL_ENABLED_TEMPORARY)
 						config.is_filterstemporary = TRUE;
 
 					_app_changefilters (hwnd, TRUE, TRUE);
@@ -1901,7 +1919,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				if (DragQueryFile (hdrop, i, string->buffer, length + 1))
 				{
-					app_hash = _app_addapplication (hwnd, DataUnknown, &string->sr, NULL, NULL);
+					app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &string->sr, NULL, NULL);
 				}
 
 				_r_obj_dereference (string);
@@ -1934,7 +1952,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 		case WM_NOTIFY:
 		{
-			LPNMHDR nmlp = (LPNMHDR)lparam;
+			LPNMHDR nmlp;
+
+			nmlp = (LPNMHDR)lparam;
 
 			switch (nmlp->code)
 			{
@@ -2667,7 +2687,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_menu_checkitem (GetMenu (hwnd), IDM_VIEW_DETAILS, IDM_VIEW_TILE, MF_BYCOMMAND, ctrl_id);
 					_r_config_setinteger (L"ViewType", view_type);
 
-					_app_updatelistviewbylparam (hwnd, DataListviewCurrent, PR_UPDATE_TYPE);
+					_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 					break;
 				}
@@ -2694,7 +2714,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_menu_checkitem (GetMenu (hwnd), IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, MF_BYCOMMAND, ctrl_id);
 					_r_config_setinteger (L"IconSize", icon_size);
 
-					_app_updatelistviewbylparam (hwnd, DataListviewCurrent, PR_UPDATE_TYPE);
+					_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 					break;
 				}
@@ -2718,7 +2738,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 						{
-							_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, _r_obj_reference (ptr_app));
+							_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type);
 						}
 
 						_r_queuedlock_releaseshared (&lock_apps);
@@ -2943,7 +2963,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (_wfp_isfiltersapplying ())
 						break;
 
-					BOOLEAN is_filtersinstalled = !(_wfp_isfiltersinstalled () != InstallDisabled);
+					BOOLEAN is_filtersinstalled = !(_wfp_isfiltersinstalled () != INSTALL_DISABLED);
 
 					if (_app_installmessage (hwnd, is_filtersinstalled))
 						_app_changefilters (hwnd, is_filtersinstalled, TRUE);
@@ -2972,7 +2992,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 							if (path)
 							{
-								app_hash = _app_addapplication (hwnd, DataUnknown, &path->sr, NULL, NULL);
+								app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &path->sr, NULL, NULL);
 
 								if (app_hash)
 								{
@@ -3231,7 +3251,7 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 			{
 				if (is_install)
 				{
-					if (is_silent || ((_wfp_isfiltersinstalled () == InstallDisabled) && _app_installmessage (NULL, TRUE)))
+					if (is_silent || ((_wfp_isfiltersinstalled () == INSTALL_DISABLED) && _app_installmessage (NULL, TRUE)))
 					{
 						if (is_temporary)
 							config.is_filterstemporary = TRUE;
@@ -3252,7 +3272,7 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 					}
 					else
 					{
-						if (((_wfp_isfiltersinstalled () != InstallDisabled) && _app_installmessage (NULL, FALSE)))
+						if (((_wfp_isfiltersinstalled () != INSTALL_DISABLED) && _app_installmessage (NULL, FALSE)))
 						{
 							_wfp_destroyfilters (hengine);
 							_wfp_uninitialize (hengine, TRUE);
