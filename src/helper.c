@@ -2947,15 +2947,18 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	_app_getfileicon (ptr_app_info);
 
 	// refresh notification
-	if (_r_wnd_isvisible (hnotification) && ptr_app_info->app_hash == _app_notifyget_id (hnotification, FALSE))
+	if (_r_wnd_isvisible (hnotification))
 	{
-		HWND hctrl = GetDlgItem (hnotification, IDC_HEADER_ID);
-
-		// set icon
-		if (hctrl)
+		if (ptr_app_info->app_hash == _app_notifyget_id (hnotification, FALSE))
 		{
-			SetWindowLongPtr (hctrl, GWLP_USERDATA, (LONG_PTR)ptr_app_info->hicon_large);
-			InvalidateRect (hctrl, NULL, TRUE);
+			HWND hctrl = GetDlgItem (hnotification, IDC_HEADER_ID);
+
+			// set icon
+			if (hctrl)
+			{
+				SetWindowLongPtr (hctrl, GWLP_USERDATA, (LONG_PTR)ptr_app_info->hicon_large);
+				InvalidateRect (hctrl, NULL, TRUE);
+			}
 		}
 	}
 
@@ -2970,7 +2973,10 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	{
 		if (_r_wnd_isvisible (hwnd))
 		{
-			_r_listview_redraw (hwnd, _app_getcurrentlistview_id (hwnd), -1);
+			INT listview_id = _app_getcurrentlistview_id (hwnd);
+
+			_r_listview_redraw (hwnd, listview_id, -1);
+			UpdateWindow (GetDlgItem (hwnd, listview_id));
 		}
 	}
 
@@ -3104,6 +3110,7 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 			if (_app_getcurrentlistview_id (context->hwnd) == context->listview_id)
 			{
 				_r_listview_redraw (context->hwnd, context->listview_id, -1);
+				UpdateWindow (GetDlgItem (context->hwnd, context->listview_id));
 			}
 		}
 	}
