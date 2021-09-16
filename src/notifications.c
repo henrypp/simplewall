@@ -190,28 +190,25 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	WCHAR window_title[128];
 	PITEM_CONTEXT context;
+	PITEM_APP_INFO ptr_app_info;
 	PR_STRING string = NULL;
-	PR_STRING signature_string;
 	PR_STRING localized_string = NULL;
 	R_STRINGREF empty_string;
 	R_STRINGREF display_name;
 	BOOLEAN is_fullscreenmode;
 
-	if (!_r_obj_isstringempty (ptr_app->signature))
-	{
-		signature_string = _r_obj_reference (ptr_app->signature);
-	}
-	else
-	{
-		signature_string = _r_locale_getstringex (IDS_SIGN_UNSIGNED);
-	}
+	static R_STRINGREF loading_text = PR_STRINGREF_INIT (SZ_LOADING);
 
+	ptr_app_info = _app_getappinfobyhash2 (ptr_log->app_hash);
+
+	// set window title
 	_r_str_printf (window_title, RTL_NUMBER_OF (window_title), L"%s - %s", _r_locale_getstring (IDS_NOTIFY_TITLE), _r_app_getname ());
 
 	SetWindowText (hwnd, window_title);
 
+	// set notification information
 	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
-	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, 0);
+	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, (LONG_PTR)(ptr_app_info ? ptr_app_info->hicon_large : 0));
 
 	_r_obj_initializestringrefconst (&empty_string, _r_locale_getstring (IDS_STATUS_EMPTY));
 	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
@@ -222,7 +219,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	// print signature
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
-	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, signature_string ? &signature_string->sr : &empty_string);
+	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading_text);
 
 	// print address
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
@@ -232,7 +229,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	// print host
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
-	_r_ctrl_settabletext (hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &empty_string);
+	_r_ctrl_settabletext (hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading_text);
 
 	// print port
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
@@ -275,28 +272,28 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	_app_notifysetpos (hwnd, FALSE);
 
-	// query busy information
-	context = _r_freelist_allocateitem (&context_free_list);
-
-	context->hwnd = hwnd;
-	context->lparam = ptr_log->app_hash;
-	context->ptr_log = _r_obj_reference (ptr_log);
-
-	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queuenotifyinformation, context);
-
 	// prevent fullscreen apps lose focus
 	is_fullscreenmode = _r_wnd_isfullscreenmode ();
 
 	if (is_forced && is_fullscreenmode)
 		is_forced = FALSE;
 
-	InvalidateRect (GetDlgItem (hwnd, IDC_HEADER_ID), NULL, TRUE);
-	InvalidateRect (GetDlgItem (hwnd, IDC_FILE_TEXT), NULL, TRUE);
-	InvalidateRect (hwnd, NULL, TRUE);
-
 	_r_wnd_top (hwnd, !is_fullscreenmode);
 
 	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
+
+	InvalidateRect (GetDlgItem (hwnd, IDC_HEADER_ID), NULL, TRUE);
+	InvalidateRect (GetDlgItem (hwnd, IDC_FILE_TEXT), NULL, TRUE);
+
+	UpdateWindow (hwnd);
+
+	// query busy information
+	context = _r_freelist_allocateitem (&context_free_list);
+
+	context->hwnd = hwnd;
+	context->ptr_log = _r_obj_reference (ptr_log);
+
+	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queuenotifyinformation, context);
 
 	if (string)
 		_r_obj_dereference (string);
@@ -304,8 +301,8 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	if (localized_string)
 		_r_obj_dereference (localized_string);
 
-	if (signature_string)
-		_r_obj_dereference (signature_string);
+	if (ptr_app_info)
+		_r_obj_dereference (ptr_app_info);
 
 	_r_obj_dereference (ptr_app);
 
@@ -512,29 +509,43 @@ VOID _app_notifyfontset (_In_ HWND hwnd)
 	_r_ctrl_setbuttonmargins (hwnd, IDC_ALLOW_BTN);
 	_r_ctrl_setbuttonmargins (hwnd, IDC_BLOCK_BTN);
 
-	InvalidateRect (hwnd, NULL, TRUE);
+	InvalidateRect (hwnd, NULL, FALSE);
 }
 
-VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPRECT lprc, _In_ COLORREF rgb1, _In_ COLORREF rgb2, _In_ ULONG mode)
+VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPRECT rect)
 {
+	static COLORREF gradient_arr[] = {
+		RGB (0, 68, 112),
+		RGB (7, 111, 95),
+	};
+
 	GRADIENT_RECT gradient_rect = {0};
 	TRIVERTEX trivertx[2] = {0};
 
+	C_ASSERT (RTL_NUMBER_OF (gradient_arr) == RTL_NUMBER_OF (trivertx));
+
 	gradient_rect.LowerRight = 1;
+	//gradient_rect.UpperLeft = 0;
 
-	trivertx[0].x = lprc->left - 1;
-	trivertx[0].y = lprc->top - 1;
-	trivertx[0].Red = GetRValue (rgb1) << 8;
-	trivertx[0].Green = GetGValue (rgb1) << 8;
-	trivertx[0].Blue = GetBValue (rgb1) << 8;
+	for (ULONG i = 0; i < RTL_NUMBER_OF (trivertx); i++)
+	{
+		trivertx[i].Red = GetRValue (gradient_arr[i]) << 8;
+		trivertx[i].Green = GetGValue (gradient_arr[i]) << 8;
+		trivertx[i].Blue = GetBValue (gradient_arr[i]) << 8;
 
-	trivertx[1].x = lprc->right;
-	trivertx[1].y = lprc->bottom;
-	trivertx[1].Red = GetRValue (rgb2) << 8;
-	trivertx[1].Green = GetGValue (rgb2) << 8;
-	trivertx[1].Blue = GetBValue (rgb2) << 8;
+		if (i == 0)
+		{
+			trivertx[i].x = -1;
+			trivertx[i].y = -1;
+		}
+		else
+		{
+			trivertx[i].x = rect->right;
+			trivertx[i].y = rect->bottom;
+		}
+	}
 
-	GradientFill (hdc, trivertx, RTL_NUMBER_OF (trivertx), &gradient_rect, 1, mode);
+	GradientFill (hdc, trivertx, RTL_NUMBER_OF (trivertx), &gradient_rect, 1, GRADIENT_FILL_RECT_H);
 }
 
 INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
@@ -543,9 +554,11 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 	{
 		case WM_INITDIALOG:
 		{
+			HWND htip;
+
 			_app_notifyfontset (hwnd);
 
-			HWND htip = _r_ctrl_createtip (hwnd);
+			htip = _r_ctrl_createtip (hwnd);
 
 			if (htip)
 			{
@@ -615,22 +628,23 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 		{
 			PAINTSTRUCT ps;
 			RECT rect;
+			HDC hdc;
 
-			HDC hdc = BeginPaint (hwnd, &ps);
+			hdc = BeginPaint (hwnd, &ps);
 
 			if (hdc)
 			{
 				if (GetClientRect (hwnd, &rect))
 				{
-					LONG wnd_width = rect.right;
-					LONG wnd_height = rect.bottom;
-					LONG footer_height = _r_dc_getdpi (PR_SIZE_FOOTERHEIGHT, _r_dc_getwindowdpi (hwnd));
+					LONG footer_height;
 
-					SetRect (&rect, 0, wnd_height - footer_height, wnd_width, wnd_height);
+					footer_height = _r_dc_getdpi (PR_SIZE_FOOTERHEIGHT, _r_dc_getwindowdpi (hwnd));
+
+					SetRect (&rect, 0, rect.bottom - footer_height, rect.right, rect.bottom);
 
 					_r_dc_fillrect (hdc, &rect, GetSysColor (COLOR_BTNFACE));
 
-					for (INT i = 0; i < wnd_width; i++)
+					for (INT i = 0; i < rect.right; i++)
 						SetPixelV (hdc, i, rect.top, GetSysColor (COLOR_APPWORKSPACE));
 				}
 
@@ -640,61 +654,91 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			break;
 		}
 
-		case WM_CTLCOLOREDIT:
 		case WM_CTLCOLORDLG:
 		{
-			return (INT_PTR)GetSysColorBrush (COLOR_WINDOW);
+			HDC hdc;
+
+			hdc = (HDC)wparam;
+
+			SetBkMode (hdc, TRANSPARENT); // HACK!!!
+
+			SetTextColor (hdc, GetSysColor (COLOR_WINDOWTEXT));
+			SetDCBrushColor (hdc, GetSysColor (COLOR_WINDOW));
+
+			return (INT_PTR)GetStockObject (DC_BRUSH);
 		}
 
 		case WM_CTLCOLORSTATIC:
 		{
-			HDC hdc = (HDC)wparam;
-			INT ctrl_id = GetDlgCtrlID ((HWND)lparam);
+			HDC hdc;
+			INT text_clr;
+
+			hdc = (HDC)wparam;
+
+			if (GetDlgCtrlID ((HWND)lparam) == IDC_FILE_TEXT)
+			{
+				text_clr = COLOR_HIGHLIGHT;
+			}
+			else
+			{
+				text_clr = COLOR_WINDOWTEXT;
+			}
 
 			SetBkMode (hdc, TRANSPARENT); // HACK!!!
-			SetTextColor (hdc, GetSysColor ((ctrl_id == IDC_FILE_TEXT) ? COLOR_HIGHLIGHT : COLOR_WINDOWTEXT));
 
-			return (INT_PTR)GetSysColorBrush (COLOR_WINDOW);
+			SetTextColor (hdc, GetSysColor (text_clr));
+			SetDCBrushColor (hdc, GetSysColor (COLOR_WINDOW));
+
+			return (INT_PTR)GetStockObject (DC_BRUSH);
 		}
 
 		case WM_DRAWITEM:
 		{
-			LPDRAWITEMSTRUCT draw_info = (LPDRAWITEMSTRUCT)lparam;
+			LPDRAWITEMSTRUCT draw_info;
+			RECT rect;
+			LONG dpi_value;
+			INT wnd_icon_size;
+			INT wnd_spacing;
+
+			WCHAR text[128];
+			COLORREF clr_prev;
+			HICON hicon;
+
+			draw_info = (LPDRAWITEMSTRUCT)lparam;
 
 			if (draw_info->CtlID != IDC_HEADER_ID)
 				break;
 
-			LONG dpi_value = _r_dc_getwindowdpi (hwnd);
-			INT wnd_icon_size = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
-			INT wnd_spacing = _r_dc_getdpi (12, dpi_value);
+			dpi_value = _r_dc_getwindowdpi (hwnd);
+			wnd_icon_size = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
+			wnd_spacing = _r_dc_getdpi (12, dpi_value);
 
-			RECT text_rect;
-			RECT icon_rect;
+			SetBkMode (draw_info->hDC, TRANSPARENT); // HACK!!!
 
-			SetRect (&text_rect, wnd_spacing, 0, _r_calc_rectwidth (&draw_info->rcItem) - (wnd_spacing * 3) - wnd_icon_size, _r_calc_rectheight (&draw_info->rcItem));
-			SetRect (&icon_rect, _r_calc_rectwidth (&draw_info->rcItem) - wnd_icon_size - wnd_spacing, (_r_calc_rectheight (&draw_info->rcItem) / 2) - (wnd_icon_size / 2), wnd_icon_size, wnd_icon_size);
-
-			SetBkMode (draw_info->hDC, TRANSPARENT);
-
-			// draw background
-			_app_notifydrawgradient (draw_info->hDC, &draw_info->rcItem, _r_config_getulong (L"NotificationBackground1", NOTIFY_GRADIENT_1), _r_config_getulong (L"NotificationBackground2", NOTIFY_GRADIENT_2), GRADIENT_FILL_RECT_H);
+			// draw title gradient
+			_app_notifydrawgradient (draw_info->hDC, &draw_info->rcItem);
 
 			// draw title text
-			WCHAR text[128];
+			SetRect (&rect, wnd_spacing, 0, _r_calc_rectwidth (&draw_info->rcItem) - (wnd_spacing * 3) - wnd_icon_size, _r_calc_rectheight (&draw_info->rcItem));
+
 			_r_str_printf (text, RTL_NUMBER_OF (text), _r_locale_getstring (IDS_NOTIFY_HEADER), _r_app_getname ());
 
-			COLORREF clr_prev = SetTextColor (draw_info->hDC, RGB (255, 255, 255));
-			DrawTextEx (draw_info->hDC, text, (INT)_r_str_getlength (text), &text_rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
+			clr_prev = SetTextColor (draw_info->hDC, RGB (255, 255, 255));
+			DrawTextEx (draw_info->hDC, text, (INT)(INT_PTR)_r_str_getlength (text), &rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
 			SetTextColor (draw_info->hDC, clr_prev);
 
 			// draw icon
-			HICON hicon = (HICON)GetWindowLongPtr (draw_info->hwndItem, GWLP_USERDATA);
+			hicon = (HICON)GetWindowLongPtr (draw_info->hwndItem, GWLP_USERDATA);
 
 			if (!hicon)
 				hicon = config.hicon_large;
 
 			if (hicon)
-				DrawIconEx (draw_info->hDC, icon_rect.left, icon_rect.top, hicon, icon_rect.right, icon_rect.bottom, 0, NULL, DI_IMAGE | DI_MASK);
+			{
+				SetRect (&rect, _r_calc_rectwidth (&draw_info->rcItem) - wnd_icon_size - wnd_spacing, (_r_calc_rectheight (&draw_info->rcItem) / 2) - (wnd_icon_size / 2), wnd_icon_size, wnd_icon_size);
+
+				DrawIconEx (draw_info->hDC, rect.left, rect.top, hicon, rect.right, rect.bottom, 0, NULL, DI_IMAGE | DI_MASK);
+			}
 
 			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 			return TRUE;
@@ -727,7 +771,9 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 		case WM_EXITSIZEMOVE:
 		case WM_CAPTURECHANGED:
 		{
-			LONG_PTR exstyle = _r_wnd_getstyle_ex (hwnd);
+			LONG_PTR exstyle;
+
+			exstyle = _r_wnd_getstyle_ex (hwnd);
 
 			if (!(exstyle & WS_EX_LAYERED))
 				_r_wnd_setstyle_ex (hwnd, exstyle | WS_EX_LAYERED);
@@ -740,7 +786,9 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 		case WM_NOTIFY:
 		{
-			LPNMHDR nmlp = (LPNMHDR)lparam;
+			LPNMHDR nmlp;
+
+			nmlp = (LPNMHDR)lparam;
 
 			switch (nmlp->code)
 			{
@@ -795,13 +843,17 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 				case TTN_GETDISPINFO:
 				{
-					LPNMTTDISPINFO lpnmdi = (LPNMTTDISPINFO)lparam;
+					LPNMTTDISPINFO lpnmdi;
+
+					WCHAR buffer[1024] = {0};
+					INT ctrl_id;
+
+					lpnmdi = (LPNMTTDISPINFO)lparam;
 
 					if ((lpnmdi->uFlags & TTF_IDISHWND) == 0)
 						break;
 
-					WCHAR buffer[1024] = {0};
-					INT ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
+					ctrl_id = GetDlgCtrlID ((HWND)lpnmdi->hdr.idFrom);
 
 					if (ctrl_id == IDC_FILE_TEXT)
 					{
@@ -810,7 +862,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 						app_hash = _app_notifyget_id (hwnd, FALSE);
 
-						string = _app_gettooltipbylparam (_r_app_gethwnd (), PtrToInt (_app_getappinfobyhash (app_hash, InfoListviewId)), app_hash);
+						string = _app_gettooltipbylparam (_r_app_gethwnd (), PtrToInt (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID)), app_hash);
 
 						if (string)
 						{
@@ -854,7 +906,9 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 		case WM_COMMAND:
 		{
-			INT ctrl_id = LOWORD (wparam);
+			INT ctrl_id;
+
+			ctrl_id = LOWORD (wparam);
 
 			if ((ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list)))
 			{
@@ -916,7 +970,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 								}
 							}
 
-							_app_updatelistviewbylparam (_r_app_gethwnd (), DataListviewCurrent, PR_UPDATE_TYPE);
+							_app_updatelistviewbylparam (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 							_r_obj_dereference (ptr_app);
 							_r_obj_dereference (ptr_rule);
@@ -1058,7 +1112,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 						// update app information
 						_app_updateitembylparam (_r_app_gethwnd (), app_hash, TRUE);
 
-						_app_updatelistviewbylparam (_r_app_gethwnd (), DataListviewCurrent, PR_UPDATE_TYPE);
+						_app_updatelistviewbylparam (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 						_app_profile_save ();
 					}
@@ -1074,7 +1128,9 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				case IDM_COPY: // ctrl+c
 				case IDM_SELECT_ALL: // ctrl+a
 				{
-					HWND hedit = GetFocus ();
+					HWND hedit;
+
+					hedit = GetFocus ();
 
 					if (hedit)
 					{
