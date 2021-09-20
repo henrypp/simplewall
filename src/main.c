@@ -3200,18 +3200,25 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 
 	// parse arguments
 	if (_r_mutex_isexists (arguments_mutex_name))
-	{
 		return TRUE;
-	}
 
 	BOOLEAN is_install = FALSE;
 	BOOLEAN is_uninstall = FALSE;
 	BOOLEAN is_silent = FALSE;
 	BOOLEAN is_temporary = FALSE;
+	BOOLEAN result = FALSE;
 
 	_r_mutex_create (arguments_mutex_name, &arguments_mutex);
 
-	if (_r_sys_getopt (cmdline, L"install", NULL))
+	if (_r_sys_getopt (cmdline, L"help", NULL))
+	{
+		_r_show_message (NULL, MB_OK | MB_ICONINFORMATION, _r_app_getname (), L"Available options:", L"\"simplewall.exe -install\" - enable filtering.\r\n\"simplewall.exe -install -temp\" - enable filtering until reboot.\r\n\"simplewall.exe -install -silent\" - enable filtering without prompt.\r\n\"simplewall.exe -uninstall\" - remove all installed filters.\r\n\"simplewall.exe -help\" - show this message.");
+
+		result = TRUE;
+
+		goto CleanupExit;
+	}
+	else if (_r_sys_getopt (cmdline, L"install", NULL))
 	{
 		is_install = TRUE;
 	}
@@ -3235,23 +3242,21 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 
 	if (is_install || is_uninstall)
 	{
-		if (!_r_sys_iselevated ())
-		{
-			_r_mutex_destroy (&arguments_mutex);
 
-			return TRUE;
-		}
-		else
+		// already elevated
+		//if (_r_sys_iselevated ())
 		{
+			HANDLE hengine;
+
 			_app_initialize ();
 
-			HANDLE hengine = _wfp_getenginehandle ();
+			hengine = _wfp_getenginehandle ();
 
 			if (hengine)
 			{
 				if (is_install)
 				{
-					if (is_silent || ((_wfp_isfiltersinstalled () == INSTALL_DISABLED) && _app_installmessage (NULL, TRUE)))
+					if (is_silent || _app_installmessage (NULL, TRUE))
 					{
 						if (is_temporary)
 							config.is_filterstemporary = TRUE;
@@ -3266,30 +3271,23 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 				}
 				else if (is_uninstall)
 				{
-					if (is_silent)
+					if (((_wfp_isfiltersinstalled () != INSTALL_DISABLED) && _app_installmessage (NULL, FALSE)))
 					{
-						OutputDebugString (L"If you'd like to make a call, please hang up and try again!");
-					}
-					else
-					{
-						if (((_wfp_isfiltersinstalled () != INSTALL_DISABLED) && _app_installmessage (NULL, FALSE)))
-						{
-							_wfp_destroyfilters (hengine);
-							_wfp_uninitialize (hengine, TRUE);
-						}
+						_wfp_destroyfilters (hengine);
+						_wfp_uninitialize (hengine, TRUE);
 					}
 				}
 			}
 		}
 
-		_r_mutex_destroy (&arguments_mutex);
-
-		return TRUE;
+		result = TRUE;
 	}
+
+CleanupExit:
 
 	_r_mutex_destroy (&arguments_mutex);
 
-	return FALSE;
+	return result;
 }
 
 INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_ LPWSTR cmdline, _In_ INT show_cmd)
