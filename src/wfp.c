@@ -1371,7 +1371,6 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT 
 
 	if (!is_intransact)
 	{
-		PITEM_APP ptr_app;
 		BOOLEAN is_secure;
 
 		_wfp_transact_commit (hengine, line);
@@ -1827,23 +1826,24 @@ VOID _wfp_firewallenable (_In_ BOOLEAN is_enable)
 				_r_log_v (LOG_LEVEL_INFO, NULL, L"INetFwPolicy2_put_FirewallEnabled", hr, L"%d", profile_types[i]);
 			}
 		}
-	}
 
-	if (INetFwPolicy)
 		INetFwPolicy2_Release (INetFwPolicy);
+	}
 }
 
 BOOLEAN _wfp_firewallisenabled ()
 {
 	HRESULT hr;
-	INetFwPolicy2 *INetFwPolicy = NULL;
-	VARIANT_BOOL status = VARIANT_FALSE;
+	INetFwPolicy2 *INetFwPolicy;
+	VARIANT_BOOL status;
 
 	static NET_FW_PROFILE_TYPE2 profile_types[] = {
 		NET_FW_PROFILE2_DOMAIN,
 		NET_FW_PROFILE2_PRIVATE,
 		NET_FW_PROFILE2_PUBLIC
 	};
+
+	status = VARIANT_FALSE;
 
 	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
 
@@ -1859,10 +1859,9 @@ BOOLEAN _wfp_firewallisenabled ()
 					break;
 			}
 		}
-	}
 
-	if (INetFwPolicy)
 		INetFwPolicy2_Release (INetFwPolicy);
+	}
 
 	if (status == VARIANT_TRUE)
 		return TRUE;
@@ -1960,7 +1959,7 @@ VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Out_ PVOID_PTR 
 
 	blob = _r_mem_allocatezero (sizeof (FWP_BYTE_BLOB) + bytes_count);
 
-	blob->size = (UINT32)bytes_count;
+	blob->size = (UINT)(UINT_PTR)bytes_count;
 	blob->data = PTR_ADD_OFFSET (blob, sizeof (FWP_BYTE_BLOB));
 
 	RtlCopyMemory (blob->data, data, bytes_count);
