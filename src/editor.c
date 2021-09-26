@@ -137,16 +137,23 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 				_r_ctrl_enable (hwnd, IDC_SAVE, _r_ctrl_gettextlength (hwnd, IDC_RULE_ID) != 0); // enable apply button
 				return FALSE;
 			}
+			else if (notify_code == EN_MAXTEXT)
+			{
+				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, SZ_MAXTEXT);
+				return FALSE;
+			}
 
 			switch (ctrl_id)
 			{
 				case IDOK: // process Enter key
 				case IDC_SAVE:
 				{
+					PR_STRING string;
+
 					if (!_r_ctrl_isenabled (hwnd, IDC_SAVE))
 						return FALSE;
 
-					PR_STRING string = _r_ctrl_gettext (hwnd, IDC_RULE_ID);
+					string = _r_ctrl_gettext (hwnd, IDC_RULE_ID);
 
 					if (!string)
 						return FALSE;
@@ -862,6 +869,13 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 		case WM_COMMAND:
 		{
 			INT ctrl_id = LOWORD (wparam);
+			INT notify_code = HIWORD (wparam);
+
+			if (notify_code == EN_MAXTEXT)
+			{
+				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, SZ_MAXTEXT);
+				return FALSE;
+			}
 
 			switch (ctrl_id)
 			{

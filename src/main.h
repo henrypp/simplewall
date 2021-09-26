@@ -137,6 +137,7 @@ typedef enum _ENUM_INFO_DATA2
 #define SZ_RULE_NEW_TITLE L"<new rule>"
 #define SZ_UNKNOWN L"unknown"
 #define SZ_LOADING L"Loading..."
+#define SZ_MAXTEXT L"Limit reached."
 
 #define SZ_DIRECTION_REMOTE L"Remote"
 #define SZ_DIRECTION_LOCAL L"Local"
