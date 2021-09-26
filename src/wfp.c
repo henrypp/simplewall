@@ -1518,9 +1518,7 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 			RtlZeroMemory (&address, sizeof (address));
 
 			if (!_app_parserulestring (&loopback_list[i], &address))
-			{
 				continue;
-			}
 
 			fwfc[1].matchType = FWP_MATCH_EQUAL;
 
