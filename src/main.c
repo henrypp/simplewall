@@ -76,7 +76,6 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 
 			if (item_count)
 			{
-				ULONG_PTR network_hash;
 				ULONG_PTR app_hash;
 
 				for (INT i = item_count - 1; i != -1; i--)
@@ -942,7 +941,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				{
 					LONG_PTR result;
 
-					result = _app_message_custdraw ((LPNMLVCUSTOMDRAW)lparam);
+					result = _app_message_custdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
@@ -2022,7 +2021,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				{
 					LONG_PTR result;
 
-					result = _app_message_custdraw ((LPNMLVCUSTOMDRAW)lparam);
+					result = _app_message_custdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
@@ -2283,7 +2282,19 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case NM_RCLICK:
 				{
-					_app_message_contextmenu (hwnd, (LPNMITEMACTIVATE)lparam);
+					LPNMITEMACTIVATE lpnmlv;
+
+					if (nmlp->idFrom)
+					{
+						lpnmlv = (LPNMITEMACTIVATE)lparam;
+
+						_app_message_contextmenu (hwnd, lpnmlv);
+					}
+					else
+					{
+						_app_message_contextmenu_columns (hwnd, nmlp);
+					}
+
 					break;
 				}
 			}
@@ -3048,7 +3059,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						PITEM_APP ptr_app;
 
-						while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
 							hash_code = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 							ptr_app = _app_getappitem (hash_code);
@@ -3069,7 +3080,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						PITEM_NETWORK ptr_network;
 
-						while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
 							hash_code = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 							ptr_network = _app_getnetworkitem (hash_code);
@@ -3090,7 +3101,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						PITEM_LOG ptr_log;
 
-						while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
 							hash_code = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 							ptr_log = _app_getlogitem (hash_code);

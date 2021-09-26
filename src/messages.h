@@ -4,6 +4,8 @@
 #pragma once
 
 VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv);
+VOID _app_message_contextmenu_columns (_In_ HWND hwnd, _In_ LPNMHDR nmlp);
+
 VOID _app_message_traycontextmenu (_In_ HWND hwnd);
 
 LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv);

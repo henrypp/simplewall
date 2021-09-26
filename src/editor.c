@@ -626,7 +626,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			{
 				case NM_CUSTOMDRAW:
 				{
-					LONG_PTR result = _app_message_custdraw ((LPNMLVCUSTOMDRAW)lparam);
+					LONG_PTR result;
+
+					result = _app_message_custdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
 					return result;
@@ -895,7 +897,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					if ((ctrl_id == IDC_RULE_REMOTE_EDIT || ctrl_id == IDC_RULE_LOCAL_EDIT))
 					{
 						// edit rule
-						item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+						item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
 
 						if (item_id == -1)
 							break;
@@ -982,7 +984,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 					_app_setcheckboxlock (hwnd, listview_id, TRUE);
 
-					while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+					while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 					{
 						_r_listview_setitemcheck (hwnd, listview_id, item_id, new_val);
 					}
@@ -1025,7 +1027,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 						break;
 					}
 
-					item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+					item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
 
 					if (item_id != -1)
 					{
@@ -1059,7 +1061,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 					item_id = -1;
 
-					while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+					while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 					{
 						string = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 

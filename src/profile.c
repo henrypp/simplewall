@@ -1644,7 +1644,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	if (hwnd)
 	{
 		current_listview_id = _app_getcurrentlistview_id (hwnd);
-		selected_item = (INT)SendDlgItemMessage (hwnd, current_listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+		selected_item = _r_listview_getnextselected (hwnd, current_listview_id, -1);
 		scroll_pos = GetScrollPos (GetDlgItem (hwnd, current_listview_id), SB_VERT);
 
 		for (INT i = IDC_APPS_PROFILE; i <= IDC_RULES_CUSTOM; i++)
