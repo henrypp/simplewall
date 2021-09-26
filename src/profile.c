@@ -1944,8 +1944,8 @@ VOID _app_profile_save ()
 			}
 		}
 
-		if ((ptr_rule->action == FWP_ACTION_BLOCK))
-			_r_xml_setattribute_boolean (&xml_library, L"is_block", (ptr_rule->action == FWP_ACTION_BLOCK));
+		if (ptr_rule->action == FWP_ACTION_BLOCK)
+			_r_xml_setattribute_boolean (&xml_library, L"is_block", TRUE);
 
 		if (ptr_rule->is_enabled)
 			_r_xml_setattribute_boolean (&xml_library, L"is_enabled", !!ptr_rule->is_enabled);
