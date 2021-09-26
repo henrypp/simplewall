@@ -436,10 +436,9 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 		}
 
 		_r_obj_deletestringbuilder (&sb);
-	}
 
-	if (ptr_app)
 		_r_obj_dereference (ptr_app);
+	}
 }
 
 _Ret_maybenull_

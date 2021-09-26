@@ -357,6 +357,9 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 	else if (_FwpmNetEventSubscribe0)
 		code = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, NULL, &hevent); // win7+
 
+	else
+		goto CleanupExit;
+
 	if (code != ERROR_SUCCESS)
 	{
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", code, NULL);
