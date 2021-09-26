@@ -273,6 +273,48 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 		_r_obj_dereference (localized_string);
 }
 
+VOID _app_message_contextmenu_columns (_In_ HWND hwnd, _In_ LPNMHDR nmlp)
+{
+	HWND hlistview;
+	HMENU hmenu;
+	PR_STRING column_text;
+	INT listview_id;
+
+	hlistview = GetParent (nmlp->hwndFrom);
+
+	if (!hlistview)
+		return;
+
+	listview_id = GetDlgCtrlID (hlistview);
+
+	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG))
+		return;
+
+	hmenu = CreatePopupMenu ();
+
+	if (!hmenu)
+		return;
+
+	for (INT i = 0; i < _r_listview_getcolumncount (hwnd, listview_id); i++)
+	{
+		column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
+
+		if (column_text)
+		{
+			AppendMenu (hmenu, MF_STRING, IDX_COLUMN + i, column_text->buffer);
+
+			_r_menu_checkitem (hmenu, IDX_COLUMN + i, 0, MF_BYCOMMAND, TRUE);
+
+			_r_obj_dereference (column_text);
+		}
+
+	}
+
+	_r_menu_popup (hmenu, hwnd, NULL, TRUE);
+
+	DestroyMenu (hmenu);
+}
+
 VOID _app_message_traycontextmenu (_In_ HWND hwnd)
 {
 	SetForegroundWindow (hwnd); // don't touch
@@ -389,7 +431,7 @@ VOID _app_message_dpichanged (_In_ HWND hwnd)
 		_r_obj_dereference (localized_string);
 }
 
-LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv)
+LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 {
 	INT ctrl_id;
 
@@ -480,7 +522,7 @@ LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv)
 					return CDRF_DODEFAULT;
 
 				COLORREF new_clr = 0;
-				INT view_type = (INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, LVM_GETVIEW, 0, 0);
+				INT view_type = _r_listview_getview (hwnd, ctrl_id);
 				BOOLEAN is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
 				BOOLEAN is_systemapp = FALSE;
 				BOOLEAN is_validconnection = FALSE;
@@ -572,7 +614,6 @@ LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv)
 
 	return CDRF_DODEFAULT;
 }
-
 
 VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app, _Inout_ LPNMLVDISPINFOW lpnmlv)
 {
@@ -1135,7 +1176,7 @@ VOID _app_message_find (_In_ HWND hwnd, _In_ LPFINDREPLACE lpfr)
 
 		BOOLEAN is_wrap = TRUE;
 
-		INT selected_item = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+		INT selected_item = _r_listview_getnextselected (hwnd, listview_id, -1);
 
 		INT current_item = selected_item + 1;
 		INT last_item = total_count;
@@ -1528,7 +1569,7 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 	if (!ptr_rule)
 		return;
 
-	while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
 		app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 
@@ -1594,7 +1635,7 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 		{
 			PR_LIST rules = _r_obj_createlistex (8, &_r_obj_dereference);
 
-			while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+			while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 			{
 				ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 				PITEM_APP ptr_app = _app_getappitem (app_hash);
@@ -1774,7 +1815,7 @@ VOID _app_command_copy (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT column_id)
 
 	_r_obj_initializestringbuilder (&buffer);
 
-	while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
 		if (ctrl_id == IDM_COPY)
 		{
@@ -1837,10 +1878,13 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
-		while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+		ULONG_PTR app_hash;
+		PITEM_APP ptr_app;
+
+		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
-			ULONG_PTR app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
-			PITEM_APP ptr_app = _app_getappitem (app_hash);
+			app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+			ptr_app = _app_getappitem (app_hash);
 
 			if (!ptr_app)
 				continue;
@@ -1887,7 +1931,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 	}
 	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
-		while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
 			SIZE_T rule_idx = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 			PITEM_RULE ptr_rule = _app_getrulebyid (rule_idx);
@@ -2129,7 +2173,7 @@ VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 	INT item_id = -1;
 	BOOL new_val = -1;
 
-	while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
 		app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 		ptr_app = _app_getappitem (app_hash);
@@ -2176,7 +2220,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 	{
 		item_id = -1;
 
-		while ((item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)item_id, LVNI_SELECTED)) != -1)
+		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
 			app_hash = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 
@@ -2190,7 +2234,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 	{
 		ptr_rule->action = FWP_ACTION_BLOCK;
 
-		item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+		item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
 
 		if (item_id != -1)
 		{
@@ -2232,7 +2276,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 	}
 	else if (listview_id == IDC_LOG)
 	{
-		item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+		item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
 
 		if (item_id != -1)
 		{
@@ -2307,7 +2351,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 	INT item_id;
 
 	listview_id = _app_getcurrentlistview_id (hwnd);
-	item_id = (INT)SendDlgItemMessage (hwnd, listview_id, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+	item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
 
 	if (item_id == -1)
 		return;

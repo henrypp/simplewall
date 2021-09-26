@@ -8,7 +8,7 @@ VOID _app_message_contextmenu_columns (_In_ HWND hwnd, _In_ LPNMHDR nmlp);
 
 VOID _app_message_traycontextmenu (_In_ HWND hwnd);
 
-LONG_PTR _app_message_custdraw (_In_ LPNMLVCUSTOMDRAW lpnmlv);
+LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv);
 VOID _app_message_dpichanged (_In_ HWND hwnd);
 BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ LPNMLVDISPINFOW lpnmlv);
 VOID _app_message_find (_In_ HWND hwnd, _In_ LPFINDREPLACE lpfr);
