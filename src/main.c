@@ -149,21 +149,22 @@ BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
 	WCHAR str_main[256];
 	WCHAR radio_text_1[128];
 	WCHAR radio_text_2[128];
+	WCHAR str_flag[128];
 	WCHAR str_button_text_1[64];
 	WCHAR str_button_text_2[64];
 
 	TASKDIALOGCONFIG tdc = {0};
 
-	TASKDIALOG_BUTTON td_buttons[2];
-	TASKDIALOG_BUTTON td_radios[2];
+	TASKDIALOG_BUTTON td_buttons[2] = {0};
+	TASKDIALOG_BUTTON td_radios[2] = {0};
 
 	tdc.cbSize = sizeof (tdc);
-	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_NO_SET_FOREGROUND;
+	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_NO_SET_FOREGROUND | TDF_VERIFICATION_FLAG_CHECKED;
 	tdc.hwndParent = hwnd;
 	tdc.pszWindowTitle = _r_app_getname ();
 	tdc.pszMainIcon = is_install ? TD_INFORMATION_ICON : TD_WARNING_ICON;
 	//tdc.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
-	tdc.pszMainInstruction = str_main;
+	tdc.pszMainInstruction = _r_app_getname ();
 	tdc.pfCallback = &_r_msg_callback;
 	tdc.lpCallbackData = MAKELONG (0, TRUE); // on top
 
@@ -184,40 +185,52 @@ BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
 	if (is_install)
 	{
 		_r_str_copy (str_main, RTL_NUMBER_OF (str_main), _r_locale_getstring (IDS_QUESTION_START));
+		_r_str_copy (str_flag, RTL_NUMBER_OF (str_flag), _r_locale_getstring (IDS_DISABLEWINDOWSFIREWALL_CHK));
 
 		tdc.pRadioButtons = td_radios;
 		tdc.cRadioButtons = RTL_NUMBER_OF (td_radios);
 
 		tdc.nDefaultRadioButton = IDYES;
 
+		_r_str_copy (radio_text_1, RTL_NUMBER_OF (radio_text_1), _r_locale_getstring (IDS_INSTALL_PERMANENT));
+		_r_str_copy (radio_text_2, RTL_NUMBER_OF (radio_text_2), _r_locale_getstring (IDS_INSTALL_TEMPORARY));
+
 		td_radios[0].nButtonID = IDYES;
 		td_radios[0].pszButtonText = radio_text_1;
 
 		td_radios[1].nButtonID = IDNO;
 		td_radios[1].pszButtonText = radio_text_2;
-
-		_r_str_copy (radio_text_1, RTL_NUMBER_OF (radio_text_1), _r_locale_getstring (IDS_INSTALL_PERMANENT));
-		_r_str_copy (radio_text_2, RTL_NUMBER_OF (radio_text_2), _r_locale_getstring (IDS_INSTALL_TEMPORARY));
 	}
 	else
 	{
 		_r_str_copy (str_main, RTL_NUMBER_OF (str_main), _r_locale_getstring (IDS_QUESTION_STOP));
+		_r_str_copy (str_flag, RTL_NUMBER_OF (str_flag), _r_locale_getstring (IDS_ENABLEWINDOWSFIREWALL_CHK));
 	}
 
 	INT command_id;
 	INT radio_id;
+	BOOL is_flagchecked;
 
-	if (_r_msg_taskdialog (&tdc, &command_id, &radio_id, NULL))
+	tdc.pszContent = str_main;
+	tdc.pszVerificationText = str_flag;
+
+	if (_r_msg_taskdialog (&tdc, &command_id, &radio_id, &is_flagchecked))
 	{
 		if (command_id == IDYES)
 		{
 			if (is_install)
 			{
 				config.is_filterstemporary = (radio_id == IDNO);
+
+				if (is_flagchecked)
+					_wfp_firewallenable (FALSE);
 			}
 			else
 			{
 				config.is_filterstemporary = FALSE;
+
+				if (is_flagchecked)
+					_wfp_firewallenable (TRUE);
 			}
 
 			return TRUE;
