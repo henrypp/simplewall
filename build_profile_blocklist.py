@@ -10,7 +10,7 @@ def natural_sort (list, key=lambda s:s):
 	list.sort (key=get_alphanum_key_func (key))
 
 CURRENT_DIRECTORY = os.path.dirname (os.path.abspath (__file__))
-RULES_DIR = os.path.join (CURRENT_DIRECTORY, '..', '3rd-party', 'WindowsSpyBlocker', 'data', 'firewall')
+RULES_DIR = os.path.join (CURRENT_DIRECTORY, '..', '!repos', 'WindowsSpyBlocker', 'data', 'firewall')
 RULES_FILE = os.path.join (CURRENT_DIRECTORY, 'bin', 'profile_internal.xml')
 
 if not os.path.isdir (RULES_DIR):
