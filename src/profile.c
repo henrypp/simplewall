@@ -1534,6 +1534,32 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 	}
 }
 
+PVOID _app_loadpackedresource (_In_ LPCWSTR resource_name, _Out_ PULONG buffer_length_out)
+{
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static PVOID memory_buffer = NULL;
+	static ULONG memory_length = 0;
+
+	if (_r_initonce_begin (&init_once))
+	{
+		PVOID buffer;
+		ULONG buffer_length;
+
+		buffer = _r_res_loadresource (NULL, resource_name, RT_RCDATA, &buffer_length);
+
+		if (buffer)
+		{
+			_r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, buffer, buffer_length, &memory_buffer, &memory_length);
+		}
+
+		_r_initonce_end (&init_once);
+	}
+
+	*buffer_length_out = memory_length;
+
+	return memory_buffer;
+}
+
 VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp)
 {
 	R_XML_LIBRARY xml_file;
@@ -1572,7 +1598,7 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 		PVOID buffer;
 		ULONG buffer_size;
 
-		buffer = _r_res_loadresource (NULL, resource_name, RT_RCDATA, &buffer_size);
+		buffer = _app_loadpackedresource (resource_name, &buffer_size);
 
 		if (buffer)
 		{

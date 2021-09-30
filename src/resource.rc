@@ -768,7 +768,7 @@ END
 //
 // RC data
 //
-IDR_PROFILE_INTERNAL RCDATA		"..\\bin\\profile_internal.xml"
+IDR_PROFILE_INTERNAL RCDATA		"..\\bin\\profile_internal_packed.bin"
 
 //
 // PNG resources
