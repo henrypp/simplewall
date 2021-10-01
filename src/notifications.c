@@ -215,47 +215,47 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	// print name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
-	_r_ctrl_settabletext (hwnd, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, &display_name);
+	_r_ctrl_settablestring (hwnd, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, &display_name);
 
 	// print signature
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
-	_r_ctrl_settabletext (hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading_text);
+	_r_ctrl_settablestring (hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading_text);
 
 	// print address
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
 	_r_obj_movereference (&string, _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_USE_PROTOCOL));
 
-	_r_ctrl_settabletext (hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, string ? &string->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, string ? &string->sr : &empty_string);
 
 	// print host
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
-	_r_ctrl_settabletext (hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading_text);
+	_r_ctrl_settablestring (hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading_text);
 
 	// print port
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
 	_r_obj_movereference (&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
 
-	_r_ctrl_settabletext (hwnd, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty_string);
 
 	// print direction
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
 	_r_obj_movereference (&string, _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
 
-	_r_ctrl_settabletext (hwnd, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty_string);
 
 	// print filter name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":"));
-	_r_ctrl_settabletext (hwnd, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty_string);
 
 	// print date
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
 	_r_obj_movereference (&string, _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
-	_r_ctrl_settabletext (hwnd, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_string);
 
-	_r_ctrl_settext (hwnd, IDC_RULES_BTN, _r_locale_getstring (IDS_TRAY_RULES));
-	_r_ctrl_settext (hwnd, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
-	_r_ctrl_settext (hwnd, IDC_BLOCK_BTN, _r_locale_getstring (IDS_ACTION_BLOCK));
+	_r_ctrl_setstring (hwnd, IDC_RULES_BTN, _r_locale_getstring (IDS_TRAY_RULES));
+	_r_ctrl_setstring (hwnd, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
+	_r_ctrl_setstring (hwnd, IDC_BLOCK_BTN, _r_locale_getstring (IDS_ACTION_BLOCK));
 
 	_r_ctrl_enable (hwnd, IDC_RULES_BTN, !is_safety);
 	_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
@@ -885,7 +885,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 					}
 					else
 					{
-						PR_STRING string = _r_ctrl_gettext (hwnd, ctrl_id);
+						PR_STRING string = _r_ctrl_getstring (hwnd, ctrl_id);
 
 						if (string)
 						{

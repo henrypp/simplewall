@@ -3024,7 +3024,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 			if (_r_obj_isstringempty (signature_str))
 				_r_obj_movereference (&signature_str, _r_locale_getstringex (IDS_SIGN_UNSIGNED));
 
-			_r_ctrl_settabletext (context->hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
+			_r_ctrl_settablestring (context->hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
 
 			// print host
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
@@ -3032,7 +3032,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 			if (_r_obj_isstringempty (host_str))
 				_r_obj_movereference (&host_str, _r_locale_getstringex (IDS_STATUS_EMPTY));
 
-			_r_ctrl_settabletext (context->hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
+			_r_ctrl_settablestring (context->hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
 
 			_r_obj_dereference (localized_string);
 		}

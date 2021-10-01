@@ -99,18 +99,18 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 
 				if (string)
 				{
-					_r_ctrl_settext (hwnd, IDC_RULE_ID, string->buffer);
+					_r_ctrl_setstring (hwnd, IDC_RULE_ID, string->buffer);
 
 					_r_obj_dereference (string);
 				}
 			}
 
-			_r_ctrl_settext (hwnd, IDC_RULE_HINT, L"eg. 192.168.0.1\r\neg. [fe80::]\r\neg. 192.168.0.1:443\r\neg. [fe80::]:443\r\neg. 192.168.0.1-192.168.0.255\r\neg. 192.168.0.1-192.168.0.255:443\r\neg. 192.168.0.0/16\r\neg. fe80::/10\r\neg. 80\r\neg. 443\r\neg. 20-21\r\neg. 49152-65534");
+			_r_ctrl_setstring (hwnd, IDC_RULE_HINT, L"eg. 192.168.0.1\r\neg. [fe80::]\r\neg. 192.168.0.1:443\r\neg. [fe80::]:443\r\neg. 192.168.0.1-192.168.0.255\r\neg. 192.168.0.1-192.168.0.255:443\r\neg. 192.168.0.0/16\r\neg. fe80::/10\r\neg. 80\r\neg. 443\r\neg. 20-21\r\neg. 49152-65534");
 
-			_r_ctrl_settext (hwnd, IDC_SAVE, _r_locale_getstring (context->item_id != -1 ? IDS_SAVE : IDS_ADD));
-			_r_ctrl_settext (hwnd, IDC_CLOSE, _r_locale_getstring (IDS_CLOSE));
+			_r_ctrl_setstring (hwnd, IDC_SAVE, _r_locale_getstring (context->item_id != -1 ? IDS_SAVE : IDS_ADD));
+			_r_ctrl_setstring (hwnd, IDC_CLOSE, _r_locale_getstring (IDS_CLOSE));
 
-			_r_ctrl_enable (hwnd, IDC_SAVE, _r_ctrl_gettextlength (hwnd, IDC_RULE_ID) != 0); // enable apply button
+			_r_ctrl_enable (hwnd, IDC_SAVE, _r_ctrl_getstringlength (hwnd, IDC_RULE_ID) != 0); // enable apply button
 
 			break;
 		}
@@ -134,7 +134,7 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 
 			if (notify_code == EN_CHANGE)
 			{
-				_r_ctrl_enable (hwnd, IDC_SAVE, _r_ctrl_gettextlength (hwnd, IDC_RULE_ID) != 0); // enable apply button
+				_r_ctrl_enable (hwnd, IDC_SAVE, _r_ctrl_getstringlength (hwnd, IDC_RULE_ID) != 0); // enable apply button
 				return FALSE;
 			}
 			else if (notify_code == EN_MAXTEXT)
@@ -153,7 +153,7 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 					if (!_r_ctrl_isenabled (hwnd, IDC_SAVE))
 						return FALSE;
 
-					string = _r_ctrl_gettext (hwnd, IDC_RULE_ID);
+					string = _r_ctrl_getstring (hwnd, IDC_RULE_ID);
 
 					if (!string)
 						return FALSE;
@@ -240,10 +240,10 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// name
 			if (GetDlgItem (hwnd, IDC_RULE_NAME_ID))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_RULE_NAME, L"%s:", _r_locale_getstring (IDS_NAME));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_NAME, L"%s:", _r_locale_getstring (IDS_NAME));
 
 				if (!_r_obj_isstringempty (context->ptr_rule->name))
-					_r_ctrl_settext (hwnd, IDC_RULE_NAME_ID, context->ptr_rule->name->buffer);
+					_r_ctrl_setstring (hwnd, IDC_RULE_NAME_ID, context->ptr_rule->name->buffer);
 
 				SendDlgItemMessage (hwnd, IDC_RULE_NAME_ID, EM_LIMITTEXT, RULE_NAME_CCH_MAX - 1, 0);
 				SendDlgItemMessage (hwnd, IDC_RULE_NAME_ID, EM_SETREADONLY, context->ptr_rule->is_readonly, 0);
@@ -252,11 +252,11 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// direction
 			if (GetDlgItem (hwnd, IDC_RULE_DIRECTION))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_RULE_DIRECTION, L"%s:", _r_locale_getstring (IDS_DIRECTION));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_DIRECTION, L"%s:", _r_locale_getstring (IDS_DIRECTION));
 
-				_r_ctrl_settext (hwnd, IDC_RULE_DIRECTION_OUTBOUND, _r_locale_getstring (IDS_DIRECTION_1));
-				_r_ctrl_settext (hwnd, IDC_RULE_DIRECTION_INBOUND, _r_locale_getstring (IDS_DIRECTION_2));
-				_r_ctrl_settext (hwnd, IDC_RULE_DIRECTION_ANY, _r_locale_getstring (IDS_ANY));
+				_r_ctrl_setstring (hwnd, IDC_RULE_DIRECTION_OUTBOUND, _r_locale_getstring (IDS_DIRECTION_1));
+				_r_ctrl_setstring (hwnd, IDC_RULE_DIRECTION_INBOUND, _r_locale_getstring (IDS_DIRECTION_2));
+				_r_ctrl_setstring (hwnd, IDC_RULE_DIRECTION_ANY, _r_locale_getstring (IDS_ANY));
 
 				if (context->ptr_rule->direction == FWP_DIRECTION_OUTBOUND)
 				{
@@ -279,10 +279,10 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// action
 			if (GetDlgItem (hwnd, IDC_RULE_ACTION))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_RULE_ACTION, L"%s:", _r_locale_getstring (IDS_ACTION));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_ACTION, L"%s:", _r_locale_getstring (IDS_ACTION));
 
-				_r_ctrl_settext (hwnd, IDC_RULE_ACTION_BLOCK, _r_locale_getstring (IDS_ACTION_BLOCK));
-				_r_ctrl_settext (hwnd, IDC_RULE_ACTION_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW));
+				_r_ctrl_setstring (hwnd, IDC_RULE_ACTION_BLOCK, _r_locale_getstring (IDS_ACTION_BLOCK));
+				_r_ctrl_setstring (hwnd, IDC_RULE_ACTION_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW));
 
 				CheckRadioButton (hwnd, IDC_RULE_ACTION_BLOCK, IDC_RULE_ACTION_ALLOW, (context->ptr_rule->action == FWP_ACTION_BLOCK) ? IDC_RULE_ACTION_BLOCK : IDC_RULE_ACTION_ALLOW);
 
@@ -293,7 +293,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// protocols
 			if (GetDlgItem (hwnd, IDC_RULE_PROTOCOL_ID))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_RULE_PROTOCOL, L"%s:", _r_locale_getstring (IDS_PROTOCOL));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_PROTOCOL, L"%s:", _r_locale_getstring (IDS_PROTOCOL));
 
 				WCHAR format[256];
 
@@ -350,7 +350,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// family (ports-only)
 			if (GetDlgItem (hwnd, IDC_RULE_VERSION_ID))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_RULE_VERSION, L"%s:", _r_locale_getstring (IDS_PORTVERSION));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_VERSION, L"%s:", _r_locale_getstring (IDS_PORTVERSION));
 
 				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 0, _r_locale_getstring (IDS_ANY));
 				_r_combobox_setitemparam (hwnd, IDC_RULE_VERSION_ID, 0, (LPARAM)AF_UNSPEC);
@@ -380,7 +380,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// rule (remote)
 			if (GetDlgItem (hwnd, IDC_RULE_REMOTE_ID))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_RULE_REMOTE, L"%s (" SZ_DIRECTION_REMOTE L"):", _r_locale_getstring (IDS_RULE));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE, L"%s (" SZ_DIRECTION_REMOTE L"):", _r_locale_getstring (IDS_RULE));
 
 				_r_listview_setstyle (hwnd, IDC_RULE_REMOTE_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP, FALSE);
 				_r_listview_addcolumn (hwnd, IDC_RULE_REMOTE_ID, 0, NULL, -100, 0);
@@ -392,9 +392,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					_r_listview_setcolumn (hwnd, IDC_RULE_REMOTE_ID, 0, NULL, -100);
 				}
 
-				_r_ctrl_settextformat (hwnd, IDC_RULE_REMOTE_ADD, L"%s...", _r_locale_getstring (IDS_ADD));
-				_r_ctrl_settextformat (hwnd, IDC_RULE_REMOTE_EDIT, L"%s...", _r_locale_getstring (IDS_EDIT2));
-				_r_ctrl_settext (hwnd, IDC_RULE_REMOTE_DELETE, _r_locale_getstring (IDS_DELETE));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE_ADD, L"%s...", _r_locale_getstring (IDS_ADD));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE_EDIT, L"%s...", _r_locale_getstring (IDS_EDIT2));
+				_r_ctrl_setstring (hwnd, IDC_RULE_REMOTE_DELETE, _r_locale_getstring (IDS_DELETE));
 
 				_r_ctrl_enable (hwnd, IDC_RULE_REMOTE_ADD, !context->ptr_rule->is_readonly);
 				_r_ctrl_enable (hwnd, IDC_RULE_REMOTE_EDIT, FALSE);
@@ -404,7 +404,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// rule (local)
 			if (GetDlgItem (hwnd, IDC_RULE_LOCAL_ID))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_RULE_LOCAL, L"%s (" SZ_DIRECTION_LOCAL L"):", _r_locale_getstring (IDS_RULE));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL, L"%s (" SZ_DIRECTION_LOCAL L"):", _r_locale_getstring (IDS_RULE));
 
 				_r_listview_setstyle (hwnd, IDC_RULE_LOCAL_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP, FALSE);
 				_r_listview_addcolumn (hwnd, IDC_RULE_LOCAL_ID, 0, NULL, -100, 0);
@@ -416,9 +416,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					_r_listview_setcolumn (hwnd, IDC_RULE_LOCAL_ID, 0, NULL, -100);
 				}
 
-				_r_ctrl_settextformat (hwnd, IDC_RULE_LOCAL_ADD, L"%s...", _r_locale_getstring (IDS_ADD));
-				_r_ctrl_settextformat (hwnd, IDC_RULE_LOCAL_EDIT, L"%s...", _r_locale_getstring (IDS_EDIT2));
-				_r_ctrl_settext (hwnd, IDC_RULE_LOCAL_DELETE, _r_locale_getstring (IDS_DELETE));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL_ADD, L"%s...", _r_locale_getstring (IDS_ADD));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL_EDIT, L"%s...", _r_locale_getstring (IDS_EDIT2));
+				_r_ctrl_setstring (hwnd, IDC_RULE_LOCAL_DELETE, _r_locale_getstring (IDS_DELETE));
 
 				_r_ctrl_enable (hwnd, IDC_RULE_LOCAL_ADD, !context->ptr_rule->is_readonly);
 				_r_ctrl_enable (hwnd, IDC_RULE_LOCAL_EDIT, FALSE);
@@ -475,13 +475,13 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// app group
 			if (GetDlgItem (hwnd, IDC_APP_NAME))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_APP_NAME, L"%s:", _r_locale_getstring (IDS_SETTINGS_GENERAL));
+				_r_ctrl_setstringformat (hwnd, IDC_APP_NAME, L"%s:", _r_locale_getstring (IDS_SETTINGS_GENERAL));
 			}
 
 			// app path
 			if (GetDlgItem (hwnd, IDC_APP_PATH))
 			{
-				_r_ctrl_settextformat (hwnd, IDC_APP_PATH, L"%s:", _r_locale_getstring (IDS_FILEPATH));
+				_r_ctrl_setstringformat (hwnd, IDC_APP_PATH, L"%s:", _r_locale_getstring (IDS_FILEPATH));
 			}
 
 			// app icon
@@ -495,7 +495,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// app display name
 			if (GetDlgItem (hwnd, IDC_APP_NAME_ID))
 			{
-				_r_ctrl_settext (hwnd, IDC_APP_NAME_ID, _app_getappdisplayname (context->ptr_app, TRUE));
+				_r_ctrl_setstring (hwnd, IDC_APP_NAME_ID, _app_getappdisplayname (context->ptr_app, TRUE));
 
 				SendDlgItemMessage (hwnd, IDC_APP_NAME_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 			}
@@ -507,7 +507,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 				string = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_SIGNATURE_STRING);
 
-				_r_ctrl_settextformat (hwnd, IDC_APP_SIGNATURE_ID, L"%s: %s", _r_locale_getstring (IDS_SIGNATURE), _r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED)));
+				_r_ctrl_setstringformat (hwnd, IDC_APP_SIGNATURE_ID, L"%s: %s", _r_locale_getstring (IDS_SIGNATURE), _r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED)));
 
 				SendDlgItemMessage (hwnd, IDC_APP_SIGNATURE_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 
@@ -518,7 +518,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// app path
 			if (GetDlgItem (hwnd, IDC_APP_PATH_ID))
 			{
-				_r_ctrl_settext (hwnd, IDC_APP_PATH_ID, _r_obj_getstring (context->ptr_app->real_path));
+				_r_ctrl_setstring (hwnd, IDC_APP_PATH_ID, _r_obj_getstring (context->ptr_app->real_path));
 			}
 
 			// app rules
@@ -573,17 +573,17 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// hints
 			if (GetDlgItem (hwnd, IDC_RULE_HINT))
 			{
-				_r_ctrl_settext (hwnd, IDC_RULE_HINT, _r_locale_getstring (IDS_RULE_HINT));
+				_r_ctrl_setstring (hwnd, IDC_RULE_HINT, _r_locale_getstring (IDS_RULE_HINT));
 			}
 
 			if (GetDlgItem (hwnd, IDC_RULE_APPS_HINT))
 			{
-				_r_ctrl_settext (hwnd, IDC_RULE_APPS_HINT, _r_locale_getstring (IDS_RULE_APPS_HINT));
+				_r_ctrl_setstring (hwnd, IDC_RULE_APPS_HINT, _r_locale_getstring (IDS_RULE_APPS_HINT));
 			}
 
 			if (GetDlgItem (hwnd, IDC_APP_HINT))
 			{
-				_r_ctrl_settext (hwnd, IDC_APP_HINT, _r_locale_getstring (IDS_APP_HINT));
+				_r_ctrl_setstring (hwnd, IDC_APP_HINT, _r_locale_getstring (IDS_APP_HINT));
 			}
 
 			break;
@@ -1136,7 +1136,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 				_app_addeditortab (hwnd, IDS_TAB_APPS, IDD_EDITOR_APPS, context, &tabs_count);
 
 				// set state
-				_r_ctrl_settext (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_CHK));
+				_r_ctrl_setstring (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_CHK));
 
 				CheckDlgButton (hwnd, IDC_ENABLE_CHK, context->ptr_rule->is_enabled ? BST_CHECKED : BST_UNCHECKED);
 			}
@@ -1153,7 +1153,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 				_r_wnd_seticon (hwnd, hicon_large, hicon_large);
 
 				// show state
-				_r_ctrl_settext (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_APP_CHK));
+				_r_ctrl_setstring (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_APP_CHK));
 
 				CheckDlgButton (hwnd, IDC_ENABLE_CHK, context->ptr_app->is_enabled ? BST_CHECKED : BST_UNCHECKED);
 			}
@@ -1168,8 +1168,8 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 			// set window title
 			SetWindowText (hwnd, title);
 
-			_r_ctrl_settext (hwnd, IDC_SAVE, _r_locale_getstring (IDS_SAVE));
-			_r_ctrl_settext (hwnd, IDC_CLOSE, _r_locale_getstring (IDS_CLOSE));
+			_r_ctrl_setstring (hwnd, IDC_SAVE, _r_locale_getstring (IDS_SAVE));
+			_r_ctrl_setstring (hwnd, IDC_CLOSE, _r_locale_getstring (IDS_CLOSE));
 
 			_r_tab_selectitem (hwnd, IDC_TAB, _r_calc_clamp (context->page_id, 0, _r_tab_getitemcount (hwnd, IDC_TAB)));
 
@@ -1273,7 +1273,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 						HWND hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
 						HWND hpage_apps = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 2);
 
-						if (!hpage_general || !_r_ctrl_gettextlength (hpage_general, IDC_RULE_NAME_ID))
+						if (!hpage_general || !_r_ctrl_getstringlength (hpage_general, IDC_RULE_NAME_ID))
 							return FALSE;
 
 						PR_STRING string;
@@ -1285,7 +1285,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 						{
 							// name
 							{
-								string = _r_ctrl_gettext (hpage_general, IDC_RULE_NAME_ID);
+								string = _r_ctrl_getstring (hpage_general, IDC_RULE_NAME_ID);
 
 								if (!string)
 									return FALSE;
