@@ -1,3 +1,18 @@
+v3.5 (4 October 2021)
+- in this release fqdn support was removed because of security issue (issues #1012)
+- improved performance due caching network resolution and file information
+- partially revert of windows defender power off (issue #1022)
+- added ballon tip to display input limitations (issue #809)
+- added compress internal profile in resources with lznt1
+- fixed signatures information pointer use-after-free when dns resolver avoid arpa requests (issue #1008)
+- fixed resolve network addresses can cause crash (issue #1015)
+- fixed notification color issues (issue #1007)
+- fixed update installation (issue #1016)
+- fixed blank notification (issue #1009)
+- fixed version information retrieval
+- fixed workqueue environment
+- fixed internal bugs
+
 v3.4.3 (30 August 2021)
 - added verify code signatures from catalog files (issue #1003)
 - fixed crash at startup (issue #995)
