@@ -176,6 +176,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Windows</SubSystem>
       <AdditionalOptions>/DEPENDENTLOADFLAG:0x800 /BREPRO %(AdditionalOptions)</AdditionalOptions>
+      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -276,6 +277,7 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalOptions>/DEPENDENTLOADFLAG:0x800 /BREPRO %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
