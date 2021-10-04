@@ -3222,7 +3222,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 {
 	WCHAR arguments_mutex_name[32];
-	HANDLE arguments_mutex = NULL;
+	HANDLE arguments_mutex;
 
 	_r_str_printf (arguments_mutex_name, RTL_NUMBER_OF (arguments_mutex_name), L"%sCmd", _r_app_getnameshort ());
 
