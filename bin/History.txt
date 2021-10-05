@@ -1,3 +1,9 @@
+v3.5.1 (6 October 2021)
+- optimized certificate checking
+- fixed check apps for digital signatures option not works (issue #1037)
+- fixed lock to avoid duplicate file information loading
+- fixed crash on profile loading (issue #1033)
+
 v3.5 (4 October 2021)
 - in this release fqdn support was removed because of security issue (issues #1012)
 - improved performance due caching network resolution and file information
