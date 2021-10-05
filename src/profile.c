@@ -165,8 +165,8 @@ PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data)
 
 ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In_ PR_STRINGREF path, _In_opt_ PR_STRING display_name, _In_opt_ PR_STRING real_path)
 {
-	R_STRINGREF path_temp;
 	WCHAR path_full[1024];
+	R_STRINGREF path_temp;
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
 	BOOLEAN is_ntoskrnl;
@@ -191,9 +191,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	app_hash = _r_obj_getstringrefhash (&path_temp);
 
 	if (_app_isappfound (app_hash))
-	{
 		return app_hash; // already exists
-	}
 
 	ptr_app = _r_obj_allocate (sizeof (ITEM_APP), &_app_dereferenceapp);
 	is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
@@ -252,6 +250,9 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 		ptr_app->short_name = _r_path_getbasenamestring (&path_temp);
 	}
 
+	if (!ptr_app->real_path)
+		ptr_app->real_path = _r_obj_createstring3 (&path_temp);
+
 	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
 
@@ -272,9 +273,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 
 	// insert item
 	if (hwnd)
-	{
 		_app_addlistviewapp (hwnd, ptr_app);
-	}
 
 	return app_hash;
 }
