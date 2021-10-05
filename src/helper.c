@@ -2911,6 +2911,9 @@ VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _I
 
 	if (ptr_app_info)
 	{
+		if (InterlockedCompareExchange (&ptr_app_info->lock, 0, 0))
+			return;
+
 		// all information is already exists
 		if (ptr_app_info->signature_info && ptr_app_info->version_info && ptr_app_info->large_icon_id)
 			return;
@@ -2929,6 +2932,8 @@ VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _I
 
 		_r_queuedlock_releaseexclusive (&lock_cache_information);
 	}
+
+	InterlockedIncrement (&ptr_app_info->lock);
 
 	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, _r_obj_reference (ptr_app_info));
 }
@@ -2983,6 +2988,8 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	}
 
 	_r_obj_dereference (ptr_app_info); // CHECK
+
+	InterlockedDecrement (&ptr_app_info->lock);
 }
 
 VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_count)

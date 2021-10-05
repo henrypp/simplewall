@@ -357,6 +357,8 @@ typedef struct _ITEM_APP_INFO
 
 	ULONG_PTR app_hash;
 
+	volatile LONG lock;
+
 	INT large_icon_id;
 
 	ENUM_TYPE_DATA type;
