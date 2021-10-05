@@ -2938,6 +2938,7 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	PITEM_APP_INFO ptr_app_info;
 	HWND hnotification;
 	HWND hwnd;
+	HWND hctrl;
 
 	ptr_app_info = arglist;
 	hnotification = config.hnotification;
@@ -2951,7 +2952,7 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	{
 		if (ptr_app_info->app_hash == _app_notifyget_id (hnotification, FALSE))
 		{
-			HWND hctrl = GetDlgItem (hnotification, IDC_HEADER_ID);
+			hctrl = GetDlgItem (hnotification, IDC_HEADER_ID);
 
 			// set icon
 			if (hctrl)
@@ -2963,7 +2964,8 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	}
 
 	// query certificate information
-	_app_getfilesignatureinfo (ptr_app_info);
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+		_app_getfilesignatureinfo (ptr_app_info);
 
 	// query version info
 	_app_getfileversioninfo (ptr_app_info);
