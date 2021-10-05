@@ -46,7 +46,7 @@ BOOLEAN _app_loadfileicon (_In_ LPCWSTR path, _Out_opt_ PINT icon_id, _Out_opt_ 
 LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened);
 
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info);
-VOID _app_getfilesignatureinfo (_Inout_ PITEM_APP_INFO app_info);
+VOID _app_getfilesignatureinfo (_Inout_ PITEM_APP_INFO ptr_app_info);
 VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info);
 
 _Ret_maybenull_
