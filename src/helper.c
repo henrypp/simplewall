@@ -496,6 +496,8 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 
 	if (!_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
+		SAFE_DELETE_ICON (ptr_app_info->hicon_large);
+
 		is_success = _app_loadfileicon (ptr_app_info->path->buffer, &ptr_app_info->large_icon_id, &ptr_app_info->hicon_large);
 	}
 
@@ -521,7 +523,7 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 }
 
 _Success_ (return)
-BOOLEAN _app_calculatefilehash (_In_ HANDLE hfile, _In_opt_ LPCWSTR algorithm_id, _Out_ PVOID_PTR file_hash_ptr, _Out_ PULONG file_hash_length_ptr, _Out_ HCATADMIN * hcat_admin_ptr)
+static BOOLEAN _app_calculatefilehash (_In_ HANDLE hfile, _In_opt_ LPCWSTR algorithm_id, _Out_ PVOID_PTR file_hash_ptr, _Out_ PULONG file_hash_length_ptr, _Out_ HCATADMIN * hcat_admin_ptr)
 {
 	typedef BOOL (WINAPI *CCAAC2)(PHANDLE phCatAdmin, const GUID *pgSubsystem, PCWSTR pwszHashAlgorithm, PCCERT_STRONG_SIGN_PARA pStrongHashPolicy, DWORD dwFlags); // CryptCATAdminAcquireContext2 (win8+)
 	typedef BOOL (WINAPI *CCAHFFH2)(PHANDLE phCatAdmin, HANDLE hFile, PULONG pcbHash, BYTE *pbHash, DWORD dwFlags); // CryptCATAdminCalcHashFromFileHandle2 (win8+)
@@ -604,7 +606,7 @@ BOOLEAN _app_calculatefilehash (_In_ HANDLE hfile, _In_opt_ LPCWSTR algorithm_id
 }
 
 _Ret_maybenull_
-PR_STRING _app_verifygetstring (_In_ HANDLE state_data)
+static PR_STRING _app_verifygetstring (_In_ HANDLE state_data)
 {
 	PCRYPT_PROVIDER_DATA prov_data;
 	PCRYPT_PROVIDER_SGNR prov_signer;
@@ -652,7 +654,7 @@ PR_STRING _app_verifygetstring (_In_ HANDLE state_data)
 	return NULL;
 }
 
-LONG _app_verifyfromfile (_In_ ULONG union_choice, _In_ PVOID union_data, _In_ LPGUID action_id, _In_opt_ PVOID policy_callback, _Out_ PR_STRING_PTR signature)
+static LONG _app_verifyfromfile (_In_ ULONG union_choice, _In_ PVOID union_data, _In_ LPGUID action_id, _In_opt_ PVOID policy_callback, _Out_ PR_STRING_PTR signature_string)
 {
 	WINTRUST_DATA trust_data = {0};
 	LONG status;
@@ -681,13 +683,13 @@ LONG _app_verifyfromfile (_In_ ULONG union_choice, _In_ PVOID union_data, _In_ L
 	trust_data.dwStateAction = WTD_STATEACTION_VERIFY;
 	status = WinVerifyTrust (INVALID_HANDLE_VALUE, action_id, &trust_data);
 
-	if (status == ERROR_SUCCESS)
+	if (status == ERROR_SUCCESS && trust_data.hWVTStateData)
 	{
-		*signature = _app_verifygetstring (trust_data.hWVTStateData);
+		*signature_string = _app_verifygetstring (trust_data.hWVTStateData);
 	}
 	else
 	{
-		*signature = NULL;
+		*signature_string = NULL;
 	}
 
 	// Close state data
@@ -697,7 +699,7 @@ LONG _app_verifyfromfile (_In_ ULONG union_choice, _In_ PVOID union_data, _In_ L
 	return status;
 }
 
-LONG _app_verifyfilefromcatalog (_In_ HANDLE hfile, _In_ LPCWSTR file_path, _In_opt_ LPCWSTR algorithm_id, _Out_ PR_STRING_PTR signature)
+static LONG _app_verifyfilefromcatalog (_In_ HANDLE hfile, _In_ LPCWSTR file_path, _In_opt_ LPCWSTR algorithm_id, _Out_ PR_STRING_PTR signature_string)
 {
 	static GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
 
@@ -711,15 +713,14 @@ LONG _app_verifyfilefromcatalog (_In_ HANDLE hfile, _In_ LPCWSTR file_path, _In_
 	LONG status;
 	PR_STRING string;
 
-	*signature = NULL;
-
 	file_size = _r_fs_getsize (hfile);
 
-	if (!file_size)
-		return TRUST_E_NOSIGNATURE;
+	if (!file_size || file_size > _r_calc_megabytes2bytes64 (32))
+	{
+		*signature_string = NULL;
 
-	if (file_size > _r_calc_megabytes2bytes64 (32))
 		return TRUST_E_NOSIGNATURE;
+	}
 
 	string = NULL;
 	status = TRUST_E_FAIL;
@@ -732,8 +733,6 @@ LONG _app_verifyfilefromcatalog (_In_ HANDLE hfile, _In_ LPCWSTR file_path, _In_
 		{
 			CATALOG_INFO ci = {0};
 			DRIVER_VER_INFO ver_info = {0};
-
-			CryptCATCatalogInfoFromContext (hcat_info, &ci, 0);
 
 			file_hash_tag = _r_str_fromhex (file_hash, file_hash_length, TRUE);
 
@@ -762,12 +761,12 @@ LONG _app_verifyfilefromcatalog (_In_ HANDLE hfile, _In_ LPCWSTR file_path, _In_
 			_r_obj_dereference (file_hash_tag);
 		}
 
-		_r_mem_free (file_hash);
-
 		CryptCATAdminReleaseContext (hcat_admin, 0);
+
+		_r_mem_free (file_hash);
 	}
 
-	*signature = string;
+	*signature_string = string;
 
 	return status;
 }
@@ -781,9 +780,6 @@ VOID _app_getfilesignatureinfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	HANDLE hfile;
 	PR_STRING string;
 	LONG status;
-
-	if (ptr_app_info->signature_info) // already exists
-		return;
 
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
@@ -828,9 +824,6 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	PR_STRING version_string = NULL;
 	HINSTANCE hlib = NULL;
 	PVOID version_info;
-
-	if (ptr_app_info->version_info) // already exists
-		return;
 
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		goto CleanupExit;
@@ -2984,8 +2977,8 @@ VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _I
 		if (InterlockedCompareExchange (&ptr_app_info->lock, 0, 0))
 			return;
 
-		// all information is already exists
-		if (ptr_app_info->signature_info && ptr_app_info->version_info && ptr_app_info->large_icon_id)
+		// all information is already set
+		if (ptr_app_info->signature_info && ptr_app_info->version_info && ptr_app_info->large_icon_id && ptr_app_info->hicon_large)
 			return;
 	}
 	else
@@ -3005,7 +2998,7 @@ VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _I
 
 	InterlockedIncrement (&ptr_app_info->lock);
 
-	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, _r_obj_reference (ptr_app_info));
+	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, ptr_app_info);
 }
 
 VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
@@ -3020,7 +3013,10 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	hwnd = _r_app_gethwnd ();
 
 	// query app icon
-	_app_getfileicon (ptr_app_info);
+	if (!ptr_app_info->hicon_large || !ptr_app_info->large_icon_id)
+	{
+		_app_getfileicon (ptr_app_info);
+	}
 
 	// refresh notification
 	if (_r_wnd_isvisible (hnotification))
@@ -3039,11 +3035,17 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	}
 
 	// query certificate information
-	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
-		_app_getfilesignatureinfo (ptr_app_info);
+	if (!ptr_app_info->signature_info)
+	{
+		if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+			_app_getfilesignatureinfo (ptr_app_info);
+	}
 
 	// query version info
-	_app_getfileversioninfo (ptr_app_info);
+	if (!ptr_app_info->version_info)
+	{
+		_app_getfileversioninfo (ptr_app_info);
+	}
 
 	// redraw listview
 	if (!(busy_count % 4)) // lol, hack!!!
@@ -3057,9 +3059,9 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 		}
 	}
 
-	_r_obj_dereference (ptr_app_info); // CHECK
-
 	InterlockedDecrement (&ptr_app_info->lock);
+
+	_r_obj_dereference (ptr_app_info);
 }
 
 VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
