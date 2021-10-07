@@ -301,7 +301,7 @@ VOID _app_message_contextmenu_columns (_In_ HWND hwnd, _In_ LPNMHDR nmlp)
 
 		if (column_text)
 		{
-			AppendMenu (hmenu, MF_STRING, IDX_COLUMN + i, column_text->buffer);
+			AppendMenu (hmenu, MF_STRING, IDX_COLUMN + (UINT_PTR)i, column_text->buffer);
 
 			_r_menu_checkitem (hmenu, IDX_COLUMN + i, 0, MF_BYCOMMAND, TRUE);
 
@@ -317,16 +317,20 @@ VOID _app_message_contextmenu_columns (_In_ HWND hwnd, _In_ LPNMHDR nmlp)
 
 VOID _app_message_traycontextmenu (_In_ HWND hwnd)
 {
+	HMENU hmenu;
+	HMENU hsubmenu;
+	BOOLEAN is_filtersinstalled;
+
 	SetForegroundWindow (hwnd); // don't touch
 
 #define NOTIFICATIONS_ID 4
 #define LOGGING_ID 5
 #define ERRLOG_ID 6
 
-	HMENU hmenu = LoadMenu (NULL, MAKEINTRESOURCE (IDM_TRAY));
-	HMENU hsubmenu = GetSubMenu (hmenu, 0);
+	hmenu = LoadMenu (NULL, MAKEINTRESOURCE (IDM_TRAY));
+	hsubmenu = GetSubMenu (hmenu, 0);
 
-	BOOLEAN is_filtersinstalled = (_wfp_isfiltersinstalled () != INSTALL_DISABLED);
+	is_filtersinstalled = (_wfp_isfiltersinstalled () != INSTALL_DISABLED);
 
 	_r_menu_setitembitmap (hsubmenu, IDM_TRAY_START, FALSE, is_filtersinstalled ? config.hbmp_disable : config.hbmp_enable);
 
@@ -522,7 +526,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 					return CDRF_DODEFAULT;
 
 				COLORREF new_clr = 0;
-				INT view_type = _r_listview_getview (hwnd, ctrl_id);
+				ULONG view_type = _r_listview_getview (hwnd, ctrl_id);
 				BOOLEAN is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
 				BOOLEAN is_systemapp = FALSE;
 				BOOLEAN is_validconnection = FALSE;
@@ -1102,10 +1106,9 @@ BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ 
 		{
 			_app_displayinfoapp_callback (listview_id, ptr_app, lpnmlv);
 			_r_obj_dereference (ptr_app);
-		}
 
-		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-		return TRUE;
+			return TRUE;
+		}
 	}
 	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
 	{
@@ -1115,10 +1118,9 @@ BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ 
 		{
 			_app_displayinforule_callback (listview_id, ptr_rule, lpnmlv);
 			_r_obj_dereference (ptr_rule);
-		}
 
-		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-		return TRUE;
+			return TRUE;
+		}
 	}
 	else if (listview_id == IDC_NETWORK)
 	{
@@ -1128,10 +1130,9 @@ BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ 
 		{
 			_app_displayinfonetwork_callback (ptr_network, lpnmlv);
 			_r_obj_dereference (ptr_network);
-		}
 
-		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-		return TRUE;
+			return TRUE;
+		}
 	}
 	else if (listview_id == IDC_LOG)
 	{
@@ -1147,10 +1148,9 @@ BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ 
 				_r_obj_dereference (ptr_app);
 
 			_r_obj_dereference (ptr_log);
-		}
 
-		SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
-		return TRUE;
+			return TRUE;
+		}
 	}
 
 	return FALSE;
@@ -1158,47 +1158,54 @@ BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ 
 
 VOID _app_message_find (_In_ HWND hwnd, _In_ LPFINDREPLACE lpfr)
 {
+	PR_STRING string;
+	INT listview_id;
+	INT total_count;
+	INT selected_item;
+	INT current_item;
+	INT last_item;
+	BOOLEAN is_wrap;
+
 	if ((lpfr->Flags & FR_DIALOGTERM) != 0)
 	{
 		config.hfind = NULL;
 	}
 	else if ((lpfr->Flags & FR_FINDNEXT) != 0)
 	{
-		INT listview_id = _app_getcurrentlistview_id (hwnd);
+		listview_id = _app_getcurrentlistview_id (hwnd);
 
 		if (!listview_id)
 			return;
 
-		INT total_count = _r_listview_getitemcount (hwnd, listview_id);
+		total_count = _r_listview_getitemcount (hwnd, listview_id);
 
 		if (!total_count)
 			return;
 
-		BOOLEAN is_wrap = TRUE;
+		is_wrap = TRUE;
 
-		INT selected_item = _r_listview_getnextselected (hwnd, listview_id, -1);
+		selected_item = _r_listview_getnextselected (hwnd, listview_id, -1);
 
-		INT current_item = selected_item + 1;
-		INT last_item = total_count;
+		current_item = selected_item + 1;
+		last_item = total_count;
 
 find_wrap:
 
 		for (; current_item < last_item; current_item++)
 		{
-			PR_STRING item_text = _r_listview_getitemtext (hwnd, listview_id, current_item, 0);
+			string = _r_listview_getitemtext (hwnd, listview_id, current_item, 0);
 
-			if (item_text)
+			if (string)
 			{
-				if (StrStrNIW (item_text->buffer, lpfr->lpstrFindWhat, (UINT)_r_obj_getstringlength (item_text)) != NULL)
+				if (StrStrNIW (string->buffer, lpfr->lpstrFindWhat, (UINT)_r_obj_getstringlength (string)) != NULL)
 				{
 					_app_showitem (hwnd, listview_id, current_item, -1);
-
-					_r_obj_dereference (item_text);
+					_r_obj_dereference (string);
 
 					return;
 				}
 
-				_r_obj_dereference (item_text);
+				_r_obj_dereference (string);
 			}
 		}
 
@@ -1304,7 +1311,10 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 
 VOID _app_message_localize (_In_ HWND hwnd)
 {
-	HMENU hmenu = GetMenu (hwnd);
+	HMENU hmenu;
+	HWND hnotify;
+
+	hmenu = GetMenu (hwnd);
 
 	if (hmenu)
 	{
@@ -1539,7 +1549,10 @@ VOID _app_message_localize (_In_ HWND hwnd)
 
 	_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
-	_app_notifyrefresh (config.hnotification, FALSE);
+	hnotify = _app_notifygetwindow ();
+
+	if (hnotify)
+		_app_notifyrefresh (hnotify, FALSE);
 
 	if (localized_string)
 		_r_obj_dereference (localized_string);
@@ -1547,27 +1560,28 @@ VOID _app_message_localize (_In_ HWND hwnd)
 
 VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
+	SIZE_T rule_idx;
+	PITEM_RULE ptr_rule;
+	PITEM_APP ptr_app;
+	PR_LIST rules;
+	ULONG_PTR app_hash;
 	INT listview_id;
+	INT item_id;
+	BOOL is_remove;
 
 	listview_id = _app_getcurrentlistview_id (hwnd);
 
 	if (!_r_listview_getselectedcount (hwnd, listview_id))
 		return;
 
-	INT item_id = -1;
-	BOOL is_remove = -1;
-
-	SIZE_T rule_idx;
-	PITEM_RULE ptr_rule;
-	PITEM_APP ptr_app;
-	PR_LIST rules;
-	ULONG_PTR app_hash;
-
 	rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
 	ptr_rule = _app_getrulebyid (rule_idx);
 
 	if (!ptr_rule)
 		return;
+
+	item_id = -1;
+	is_remove = -1;
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
@@ -1616,16 +1630,19 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
+	SIZE_T timer_idx;
+	LONG64 seconds;
 	INT listview_id;
+	INT item_id;
 
 	listview_id = _app_getcurrentlistview_id (hwnd);
 
 	if (!listview_id || !_r_listview_getselectedcount (hwnd, listview_id))
 		return;
 
-	SIZE_T timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
-	LONG64 seconds = timer_array[timer_idx];
-	INT item_id = -1;
+	timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
+	seconds = timer_array[timer_idx];
+	item_id = -1;
 
 	if (_wfp_isfiltersinstalled ())
 	{
@@ -1768,19 +1785,15 @@ VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 		{
 			process_path = _r_format_string (L"\"%s\" \"%s\"", viewer_path->buffer, log_path);
 
-			if (process_path)
+			if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
 			{
-				if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
-				{
-					R_ERROR_INFO error_info = {0};
-					error_info.description = viewer_path->buffer;
+				R_ERROR_INFO error_info = {0};
+				error_info.description = viewer_path->buffer;
 
-					_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
-				}
-
-				_r_obj_dereference (process_path);
+				_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
 			}
 
+			_r_obj_dereference (process_path);
 			_r_obj_dereference (viewer_path);
 		}
 	}
@@ -1788,10 +1801,12 @@ VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 
 VOID _app_command_logerrclear (_In_opt_ HWND hwnd)
 {
+	LPCWSTR path;
+
 	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
 		return;
 
-	LPCWSTR path = _r_app_getlogpath ();
+	path = _r_app_getlogpath ();
 
 	if (!_r_fs_exists (path))
 		return;
@@ -2159,7 +2174,11 @@ VOID _app_command_delete (_In_ HWND hwnd)
 
 VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 {
+	PITEM_APP ptr_app;
+	ULONG_PTR app_hash;
 	INT listview_id;
+	INT item_id;
+	BOOL new_val;
 
 	listview_id = _app_getcurrentlistview_id (hwnd);
 
@@ -2167,11 +2186,8 @@ VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
 		return;
 
-	PITEM_APP ptr_app;
-	ULONG_PTR app_hash;
-
-	INT item_id = -1;
-	BOOL new_val = -1;
+	item_id = -1;
+	new_val = -1;
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
@@ -2473,22 +2489,21 @@ VOID _app_command_properties (_In_ HWND hwnd)
 
 VOID _app_command_purgeunused (_In_ HWND hwnd)
 {
-	BOOLEAN is_deleted = FALSE;
-
 	PITEM_APP ptr_app;
 	ULONG_PTR hash_code;
 	SIZE_T enum_key;
-
 	PR_HASHTABLE apps_list;
 	PR_ARRAY guids;
-
 	INT listview_id;
 	INT item_id;
+	BOOLEAN is_deleted;
 
 	apps_list = _r_obj_createhashtable (sizeof (SHORT), NULL);
 	guids = _r_obj_createarray (sizeof (GUID), NULL);
 
 	_r_queuedlock_acquireshared (&lock_apps);
+
+	is_deleted = FALSE;
 
 	enum_key = 0;
 
@@ -2553,12 +2568,12 @@ VOID _app_command_purgeunused (_In_ HWND hwnd)
 
 VOID _app_command_purgetimers (_In_ HWND hwnd)
 {
-	if (!_app_istimersactive () || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_locale_getstring (IDS_QUESTION_TIMERS)) != IDYES)
-		return;
-
 	PR_LIST rules;
 	PITEM_APP ptr_app;
 	SIZE_T enum_key;
+
+	if (!_app_istimersactive () || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_locale_getstring (IDS_QUESTION_TIMERS)) != IDYES)
+		return;
 
 	rules = _r_obj_createlist (NULL);
 
