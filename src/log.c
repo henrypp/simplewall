@@ -1203,7 +1203,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 	HWND hwnd;
 
 	PITEM_LOG ptr_log;
-	PITEM_APP ptr_app = NULL;
+	PITEM_APP ptr_app;
 
 	BOOLEAN is_logenabled;
 	BOOLEAN is_loguienabled;
@@ -1217,6 +1217,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 	hwnd = _r_app_gethwnd ();
 
 	ptr_log = arglist;
+	ptr_app = NULL;
 
 	// apps collector
 	is_notexist = ptr_log->app_hash && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);
@@ -1279,7 +1280,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 				{
 					if (!PtrToInt (_app_getappinfo (ptr_app, INFO_IS_SILENT)))
 					{
-						_app_notifyadd (config.hnotification, _r_obj_reference (ptr_log), ptr_app);
+						_app_notifyadd (_r_obj_reference (ptr_log), ptr_app);
 					}
 				}
 			}
