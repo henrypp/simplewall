@@ -557,10 +557,16 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ LP
 
 VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id)
 {
+	HWND hctrl;
 	INT item_count;
 	INT listview_id;
 
-	if (!page_id || (_app_getcurrentlistview_id (hwnd) == page_id && IsWindowVisible (GetDlgItem (hwnd, page_id))))
+	if (!page_id)
+		return;
+
+	hctrl = GetDlgItem (hwnd, page_id);
+
+	if (!hctrl || (_app_getcurrentlistview_id (hwnd) == page_id && _r_wnd_isvisible (hctrl)))
 		return;
 
 	item_count = _r_tab_getitemcount (hwnd, IDC_TAB);
