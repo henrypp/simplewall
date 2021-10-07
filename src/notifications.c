@@ -3,13 +3,33 @@
 
 #include "global.h"
 
-HFONT hfont_title = NULL;
-HFONT hfont_link = NULL;
-HFONT hfont_text = NULL;
+static HFONT hfont_title = NULL;
+static HFONT hfont_link = NULL;
+static HFONT hfont_text = NULL;
 
 VOID _app_notifycreatewindow ()
 {
-	config.hnotification = CreateDialog (NULL, MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc);
+	HWND hwnd;
+
+	hwnd = CreateDialog (NULL, MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc);
+
+	InterlockedCompareExchangePointer (&config.hnotification, hwnd, NULL);
+}
+
+VOID _app_notifydestroywindow ()
+{
+	HWND hwnd;
+
+	hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, config.hnotification);
+
+	if (hwnd)
+		DestroyWindow (hwnd);
+}
+
+_Ret_maybenull_
+HWND _app_notifygetwindow ()
+{
+	return InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
 }
 
 BOOLEAN _app_notifycommand (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seconds)
@@ -72,16 +92,22 @@ BOOLEAN _app_notifycommand (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seco
 	return TRUE;
 }
 
-BOOLEAN _app_notifyadd (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ PITEM_APP ptr_app)
+BOOLEAN _app_notifyadd (_In_ PITEM_LOG ptr_log, _In_ PITEM_APP ptr_app)
 {
-	// check for last display time
+	HWND hnotify;
 	LONG64 current_time;
 	LONG64 notification_timeout;
 
 	current_time = _r_unixtime_now ();
 	notification_timeout = _r_config_getlong64 (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT);
 
+	// check for last display time
 	if (notification_timeout && ((current_time - ptr_app->last_notify) <= notification_timeout))
+		return FALSE;
+
+	hnotify = _app_notifygetwindow ();
+
+	if (!hnotify)
 		return FALSE;
 
 	ptr_app->last_notify = current_time;
@@ -96,27 +122,28 @@ BOOLEAN _app_notifyadd (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ PITEM_APP p
 		}
 	}
 
-	if (!_r_wnd_isundercursor (hwnd))
-		_app_notifyshow (hwnd, ptr_log, TRUE, TRUE);
+	if (!_r_wnd_isundercursor (hnotify))
+		_app_notifyshow (hnotify, ptr_log, TRUE, TRUE);
 
 	return TRUE;
 }
 
 VOID _app_freenotify (_Inout_ PITEM_APP ptr_app)
 {
-	HWND hwnd;
+	HWND hnotify;
 
-	hwnd = config.hnotification;
+	hnotify = _app_notifygetwindow ();
 
 	if (ptr_app->pnotification)
 		_r_obj_clearreference (&ptr_app->pnotification);
 
-	if (_app_notifyget_id (hwnd, FALSE) == ptr_app->app_hash)
+	if (hnotify)
 	{
-		_app_notifyget_id (hwnd, TRUE);
-	}
+		if (_app_notifyget_id (hnotify, FALSE) == ptr_app->app_hash)
+			_app_notifyget_id (hnotify, TRUE);
 
-	_app_notifyrefresh (hwnd, TRUE);
+		_app_notifyrefresh (hnotify, TRUE);
+	}
 }
 
 ULONG_PTR _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest)
@@ -208,7 +235,8 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	// set notification information
 	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
-	SetWindowLongPtr (GetDlgItem (hwnd, IDC_HEADER_ID), GWLP_USERDATA, (LONG_PTR)(ptr_app_info ? ptr_app_info->hicon_large : 0));
+
+	_app_notifyseticon (hwnd, ptr_app_info ? ptr_app_info->hicon_large : NULL, FALSE);
 
 	_r_obj_initializestringrefconst (&empty_string, _r_locale_getstring (IDS_STATUS_EMPTY));
 	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
@@ -363,14 +391,16 @@ VOID _app_notifyplaysound ()
 VOID _app_notifyrefresh (_In_ HWND hwnd, _In_ BOOLEAN is_safety)
 {
 	PITEM_LOG ptr_log;
+	ULONG_PTR app_hash;
 
-	if (!IsWindowVisible (hwnd) || !_r_config_getboolean (L"IsNotificationsEnabled", TRUE))
+	if (!_r_wnd_isvisible (hwnd) || !_r_config_getboolean (L"IsNotificationsEnabled", TRUE))
 	{
 		_app_notifyhide (hwnd);
 		return;
 	}
 
-	ptr_log = _app_notifyget_obj (_app_notifyget_id (hwnd, FALSE));
+	app_hash = _app_notifyget_id (hwnd, FALSE);
+	ptr_log = _app_notifyget_obj (app_hash);
 
 	if (!ptr_log)
 	{
@@ -383,6 +413,27 @@ VOID _app_notifyrefresh (_In_ HWND hwnd, _In_ BOOLEAN is_safety)
 	_r_obj_dereference (ptr_log);
 }
 
+VOID _app_notifyseticon (_In_ HWND hwnd, _In_opt_ HICON hicon, _In_ BOOLEAN is_redraw)
+{
+	HWND hctrl;
+	//HICON hprev_icon;
+
+	hctrl = GetDlgItem (hwnd, IDC_HEADER_ID);
+
+	if (hctrl)
+	{
+		//hprev_icon = (HICON)GetWindowLongPtr (hctrl, GWLP_USERDATA);
+
+		SetWindowLongPtr (hctrl, GWLP_USERDATA, (LONG_PTR)hicon);
+
+		//if (hprev_icon)
+		//	DestroyIcon (hprev_icon);
+
+		if (is_redraw)
+			InvalidateRect (hctrl, NULL, TRUE);
+	}
+}
+
 VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 {
 	R_RECTANGLE window_rect;
@@ -392,7 +443,7 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 
 	swp_flags = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER;
 
-	if (!is_forced && IsWindowVisible (hwnd))
+	if (!is_forced && _r_wnd_isvisible (hwnd))
 	{
 		if (_r_wnd_getposition (hwnd, &window_rect))
 		{
@@ -433,7 +484,7 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 						window_rect.left = (desktop_rect.right - window_rect.width) - border_x;
 						window_rect.top = (desktop_rect.bottom - window_rect.height) - border_x;
 					}
-					else/* if (abd.uEdge == ABE_BOTTOM)*/
+					else //if (abd.uEdge == ABE_BOTTOM)
 					{
 						window_rect.left = (desktop_rect.right - window_rect.width) - border_x;
 						window_rect.top = (desktop_rect.bottom - window_rect.height) - border_x;
@@ -449,18 +500,18 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 	_r_wnd_center (hwnd, NULL); // display window on center (depends on error, config etc...)
 }
 
-HFONT _app_notifyfontinit (_In_ LONG dpi_value, _In_ PLOGFONT plf, _In_ LONG height, _In_ LONG weight, _In_ BOOLEAN is_underline)
+HFONT _app_notifyfontinit (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ LONG height, _In_ LONG weight, _In_ BOOLEAN is_underline)
 {
 	if (height)
-		plf->lfHeight = _r_dc_fontsizetoheight (height, dpi_value);
+		logfont->lfHeight = _r_dc_fontsizetoheight (height, dpi_value);
 
-	plf->lfWeight = weight;
-	plf->lfUnderline = is_underline;
+	logfont->lfWeight = weight;
+	logfont->lfUnderline = is_underline;
 
-	plf->lfCharSet = DEFAULT_CHARSET;
-	plf->lfQuality = DEFAULT_QUALITY;
+	logfont->lfCharSet = DEFAULT_CHARSET;
+	logfont->lfQuality = DEFAULT_QUALITY;
 
-	return CreateFontIndirect (plf);
+	return CreateFontIndirect (logfont);
 }
 
 VOID _app_notifyfontset (_In_ HWND hwnd)
@@ -486,9 +537,9 @@ VOID _app_notifyfontset (_In_ HWND hwnd)
 		SAFE_DELETE_OBJECT (hfont_link);
 		SAFE_DELETE_OBJECT (hfont_text);
 
-		hfont_title = _app_notifyfontinit (dpi_value, &ncm.lfCaptionFont, title_font_height, FW_NORMAL, FALSE);
-		hfont_link = _app_notifyfontinit (dpi_value, &ncm.lfMessageFont, text_font_height, FW_NORMAL, TRUE);
-		hfont_text = _app_notifyfontinit (dpi_value, &ncm.lfMessageFont, text_font_height, FW_NORMAL, FALSE);
+		hfont_title = _app_notifyfontinit (&ncm.lfCaptionFont, dpi_value, title_font_height, FW_NORMAL, FALSE);
+		hfont_link = _app_notifyfontinit (&ncm.lfMessageFont, dpi_value, text_font_height, FW_NORMAL, TRUE);
+		hfont_text = _app_notifyfontinit (&ncm.lfMessageFont, dpi_value, text_font_height, FW_NORMAL, FALSE);
 
 		SendDlgItemMessage (hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)hfont_title, TRUE);
 		SendDlgItemMessage (hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)hfont_link, TRUE);
@@ -814,7 +865,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 							_app_generate_rulescontrol (hsubmenu, _app_notifyget_id (hwnd, FALSE));
 						}
-						else /*if (ctrl_id == IDC_ALLOW_BTN)*/
+						else //if (ctrl_id == IDC_ALLOW_BTN)
 						{
 							AppendMenu (hsubmenu, MF_STRING, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
 							AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
@@ -1146,7 +1197,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 									SendMessage (hedit, WM_COPY, 0, 0);
 								}
 								// edit control hotkey for "ctrl+a"
-								else /*if (ctrl_id == IDM_SELECT_ALL)*/
+								else //if (ctrl_id == IDM_SELECT_ALL)
 								{
 									SendMessage (hedit, EM_SETSEL, 0, (LPARAM)-1);
 								}
