@@ -722,7 +722,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 						SAFE_DELETE_REFERENCE (localized_string);
 					}
-					else /*if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)*/
+					else //if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
 					{
 						AppendMenu (hsubmenu, MF_STRING, IDM_CHECK, _r_locale_getstring (IDS_CHECK));
 						AppendMenu (hsubmenu, MF_STRING, IDM_UNCHECK, _r_locale_getstring (IDS_UNCHECK));
@@ -778,8 +778,11 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 				case LVN_ITEMCHANGING:
 				{
-					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-					INT listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+					LPNMLISTVIEW lpnmlv;
+					INT listview_id;
+
+					lpnmlv = (LPNMLISTVIEW)lparam;
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
 					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
 					{
@@ -801,8 +804,11 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 				case LVN_ITEMCHANGED:
 				{
-					LPNMLISTVIEW lpnmlv = (LPNMLISTVIEW)lparam;
-					INT listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+					LPNMLISTVIEW lpnmlv;
+					INT listview_id;
+
+					lpnmlv = (LPNMLISTVIEW)lparam;
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
 					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
 					{
