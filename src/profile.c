@@ -250,9 +250,6 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 		ptr_app->short_name = _r_path_getbasenamestring (&path_temp);
 	}
 
-	if (!ptr_app->real_path)
-		ptr_app->real_path = _r_obj_createstring3 (&path_temp);
-
 	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
 
@@ -268,12 +265,13 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 
 	_r_queuedlock_releaseexclusive (&lock_apps);
 
-	// queue file information
-	_app_queryfileinformation (ptr_app->real_path, app_hash, ptr_app->type);
-
 	// insert item
 	if (hwnd)
 		_app_addlistviewapp (hwnd, ptr_app);
+
+	// queue file information
+	if (ptr_app->real_path)
+		_app_queryfileinformation (ptr_app->real_path, app_hash, ptr_app->type);
 
 	return app_hash;
 }
@@ -1109,7 +1107,7 @@ BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app)
 		return FALSE;
 
 	if (ptr_app->type == DATA_APP_REGULAR)
-		return !_r_obj_isstringempty (ptr_app->real_path) && _r_fs_exists (ptr_app->real_path->buffer);
+		return ptr_app->real_path && _r_fs_exists (ptr_app->real_path->buffer);
 
 	if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK || ptr_app->type == DATA_APP_PICO)
 		return TRUE;
