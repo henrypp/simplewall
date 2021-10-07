@@ -50,7 +50,8 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 
 				_r_listview_additemex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, network_hash);
 
-				_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type);
+				if (ptr_network->path && ptr_network->app_hash)
+					_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type);
 
 				// resolve network address
 				context = _r_freelist_allocateitem (&context_free_list);
@@ -441,7 +442,8 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 				{
-					_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type);
+					if (ptr_app->real_path)
+						_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type);
 				}
 
 				_r_queuedlock_releaseshared (&lock_apps);
@@ -1167,9 +1169,14 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 				case IDC_ENABLELOG_CHK:
 				{
-					BOOLEAN is_postmessage = ((INT)lparam == WM_APP);
-					BOOLEAN is_enabled = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
-					BOOLEAN is_logging_enabled = is_enabled || (IsDlgButtonChecked (hwnd, IDC_ENABLEUILOG_CHK) == BST_CHECKED);
+					HWND hctrl;
+					BOOLEAN is_postmessage;
+					BOOLEAN is_enabled;
+					BOOLEAN is_logging_enabled;
+
+					is_postmessage = ((INT)lparam == WM_APP);
+					is_enabled = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					is_logging_enabled = is_enabled || (IsDlgButtonChecked (hwnd, IDC_ENABLEUILOG_CHK) == BST_CHECKED);
 
 					if (!is_postmessage)
 					{
@@ -1183,7 +1190,10 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
 					_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
 
-					EnableWindow ((HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0), is_enabled);
+					hctrl = (HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0);
+
+					if (hctrl)
+						_r_ctrl_enable (hctrl, 0, is_enabled);
 
 					_r_ctrl_enable (hwnd, IDC_EXCLUDESTEALTH_CHK, is_logging_enabled);
 
@@ -1235,13 +1245,13 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 				case IDC_LOGPATH_BTN:
 				{
-					R_FILE_DIALOG file_dialog;
-					PR_STRING path;
-
-					COMDLG_FILTERSPEC filters[] = {
+					static COMDLG_FILTERSPEC filters[] = {
 						L"Log files (*.log, *.csv)", L"*.log;*.csv",
 						L"All files (*.*)", L"*.*",
 					};
+
+					R_FILE_DIALOG file_dialog;
+					PR_STRING path;
 
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
 					{
@@ -1297,13 +1307,13 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 				case IDC_LOGVIEWER_BTN:
 				{
-					R_FILE_DIALOG file_dialog;
-					PR_STRING path;
-
-					COMDLG_FILTERSPEC filters[] = {
+					static COMDLG_FILTERSPEC filters[] = {
 						L"Executable files (*.exe)", L"*.exe",
 						L"All files (*.*)", L"*.*",
 					};
+
+					R_FILE_DIALOG file_dialog;
+					PR_STRING path;
 
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
 					{
@@ -1346,8 +1356,12 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 				case IDC_ENABLENOTIFICATIONS_CHK:
 				{
-					BOOLEAN is_postmessage = ((INT)lparam == WM_APP);
-					BOOLEAN is_enabled = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					HWND hctrl;
+					BOOLEAN is_postmessage;
+					BOOLEAN is_enabled;
+
+					is_postmessage = ((INT)lparam == WM_APP);
+					is_enabled = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 
 					if (!is_postmessage)
 						_r_config_setboolean (L"IsNotificationsEnabled", is_enabled);
@@ -1357,10 +1371,10 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONSOUND_CHK, is_enabled);
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONONTRAY_CHK, is_enabled);
 
-					HWND hbuddy = (HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0);
+					hctrl = (HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0);
 
-					if (hbuddy)
-						EnableWindow (hbuddy, is_enabled);
+					if (hctrl)
+						_r_ctrl_enable (hctrl, 0, is_enabled);
 
 					_r_ctrl_enable (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, is_enabled);
 					_r_ctrl_enable (hwnd, IDC_EXCLUDECUSTOM_CHK, is_enabled);
@@ -1368,7 +1382,12 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_NOTIFICATIONSOUND_CHK, 0), WM_APP);
 
 					if (!is_postmessage)
-						_app_notifyrefresh (config.hnotification, FALSE);
+					{
+						hctrl = _app_notifygetwindow ();
+
+						if (hctrl)
+							_app_notifyrefresh (hctrl, FALSE);
+					}
 
 					break;
 				}
@@ -1396,10 +1415,14 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 				case IDC_NOTIFICATIONONTRAY_CHK:
 				{
+					HWND hnotify;
+
 					_r_config_setboolean (L"IsNotificationsOnTray", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 
-					if (IsWindowVisible (config.hnotification))
-						_app_notifysetpos (config.hnotification, TRUE);
+					hnotify = _app_notifygetwindow ();
+
+					if (hnotify)
+						_app_notifysetpos (hnotify, TRUE);
 
 					break;
 				}
@@ -1742,11 +1765,11 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			// initialize tabs
 			_app_tabs_init (hwnd);
 
-			// load profile
-			_app_profile_load (hwnd, NULL);
-
 			// create notification window
 			_app_notifycreatewindow ();
+
+			// load profile
+			_app_profile_load (hwnd, NULL);
 
 			// install filters
 			{
@@ -1902,8 +1925,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			if (hengine)
 				_wfp_uninitialize (hengine, FALSE);
 
-			if (config.hnotification)
-				DestroyWindow (config.hnotification);
+			_app_notifydestroywindow ();
 
 			ImageList_Destroy (config.himg_toolbar);
 			ImageList_Destroy (config.himg_rules_small);
@@ -1962,7 +1984,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 		case WM_SETTINGCHANGE:
 		{
-			_app_notifyrefresh (config.hnotification, FALSE);
+			_r_wnd_changesettings (hwnd, wparam, lparam);
 			break;
 		}
 
@@ -2012,6 +2034,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_app_updatelistviewbylparam (hwnd, listview_id, PR_UPDATE_FORCE | PR_UPDATE_NORESIZE);
 
 					ShowWindow (hlistview, SW_SHOWNA);
+					UpdateWindow (hlistview);
 
 					if (_r_wnd_isvisiblefull (hwnd)) // HACK!!!
 						SetFocus (hlistview);
@@ -2248,13 +2271,15 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case NM_DBLCLK:
 				{
-					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
+					LPNMITEMACTIVATE lpnmlv;
+
+					lpnmlv = (LPNMITEMACTIVATE)lparam;
 
 					if (lpnmlv->iItem == -1)
 						break;
 
-					INT command_id = 0;
 					INT ctrl_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+					INT command_id = 0;
 
 					if (ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_LOG)
 					{
@@ -2335,20 +2360,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		{
 			switch (LOWORD (lparam))
 			{
-				case NIN_POPUPOPEN:
-				{
-					PITEM_LOG ptr_log = _app_notifyget_obj (_app_notifyget_id (config.hnotification, FALSE));
-
-					if (ptr_log)
-					{
-						_app_notifyshow (config.hnotification, ptr_log, TRUE, FALSE);
-
-						_r_obj_dereference (ptr_log);
-					}
-
-					break;
-				}
-
 				case NIN_KEYSELECT:
 				{
 					if (GetForegroundWindow () != hwnd)
@@ -2482,32 +2493,35 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			INT ctrl_id = LOWORD (wparam);
 			INT notify_code = HIWORD (wparam);
 
-			if (notify_code == 0 && ctrl_id >= IDX_LANGUAGE && ctrl_id <= IDX_LANGUAGE + (INT)(INT_PTR)_r_locale_getcount () + 1)
+			if (notify_code == 0)
 			{
-				HMENU hmenu;
-				HMENU hsubmenu;
-
-				hmenu = GetMenu (hwnd);
-
-				if (hmenu)
+				if (ctrl_id >= IDX_LANGUAGE && ctrl_id <= IDX_LANGUAGE + (INT)(INT_PTR)_r_locale_getcount () + 1)
 				{
-					hsubmenu = GetSubMenu (GetSubMenu (hmenu, 2), LANG_MENU);
+					HMENU hmenu;
+					HMENU hsubmenu;
 
-					if (hsubmenu)
-						_r_locale_apply (hsubmenu, ctrl_id, IDX_LANGUAGE);
+					hmenu = GetMenu (hwnd);
+
+					if (hmenu)
+					{
+						hsubmenu = GetSubMenu (GetSubMenu (hmenu, 2), LANG_MENU);
+
+						if (hsubmenu)
+							_r_locale_apply (hsubmenu, ctrl_id, IDX_LANGUAGE);
+					}
+
+					return FALSE;
 				}
-
-				return FALSE;
-			}
-			else if (notify_code == 0 && ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= (IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list)))
-			{
-				_app_command_idtorules (hwnd, ctrl_id);
-				return FALSE;
-			}
-			else if (notify_code == 0 && ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
-			{
-				_app_command_idtotimers (hwnd, ctrl_id);
-				return FALSE;
+				else if (ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= (IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list)))
+				{
+					_app_command_idtorules (hwnd, ctrl_id);
+					return FALSE;
+				}
+				else if (ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
+				{
+					_app_command_idtotimers (hwnd, ctrl_id);
+					return FALSE;
+				}
 			}
 
 			switch (ctrl_id)
@@ -2561,13 +2575,13 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_IMPORT:
 				{
-					R_FILE_DIALOG file_dialog;
-					PR_STRING path;
-
-					COMDLG_FILTERSPEC filters[] = {
+					static COMDLG_FILTERSPEC filters[] = {
 						L"Xml files (*.xml)", L"*.xml;*.xml.bak",
 						L"All files (*.*)", L"*.*",
 					};
+
+					R_FILE_DIALOG file_dialog;
+					PR_STRING path;
 
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
 					{
@@ -2610,13 +2624,13 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_EXPORT:
 				{
-					R_FILE_DIALOG file_dialog;
-					PR_STRING path;
-
-					COMDLG_FILTERSPEC filters[] = {
+					static COMDLG_FILTERSPEC filters[] = {
 						L"Xml files (*.xml)", L"*.xml;*.xml.bak",
 						L"All files (*.*)", L"*.*",
 					};
+
+					R_FILE_DIALOG file_dialog;
+					PR_STRING path;
 
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
 					{
@@ -2766,7 +2780,8 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 						{
-							_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type);
+							if (ptr_app->real_path)
+								_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type);
 						}
 
 						_r_queuedlock_releaseshared (&lock_apps);
@@ -2859,7 +2874,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_BLOCKLIST_EXTRA_ALLOW:
 				case IDM_BLOCKLIST_EXTRA_BLOCK:
 				{
-					HMENU hmenu = GetMenu (hwnd);
+					HMENU hmenu;
+					INT new_state;
+
+					hmenu = GetMenu (hwnd);
 
 					if (!hmenu)
 						break;
@@ -2868,7 +2886,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, ctrl_id);
 
-						INT new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_SPY_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_SPY_DISABLE, 0, 2);
 
 						_r_config_setinteger (L"BlocklistSpyState", new_state);
 
@@ -2878,7 +2896,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, ctrl_id);
 
-						INT new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_UPDATE_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_UPDATE_DISABLE, 0, 2);
 
 						_r_config_setinteger (L"BlocklistUpdateState", new_state);
 
@@ -2888,7 +2906,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, ctrl_id);
 
-						INT new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_EXTRA_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 
 						_r_config_setinteger (L"BlocklistExtraState", new_state);
 
@@ -2922,12 +2940,18 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_TRAY_ENABLENOTIFICATIONS_CHK:
 				{
-					BOOLEAN new_val = !_r_config_getboolean (L"IsNotificationsEnabled", TRUE);
+					HWND hnotify;
+					BOOLEAN new_val;
+
+					new_val = !_r_config_getboolean (L"IsNotificationsEnabled", TRUE);
 
 					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, NULL, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
 					_r_config_setboolean (L"IsNotificationsEnabled", new_val);
 
-					_app_notifyrefresh (config.hnotification, TRUE);
+					hnotify = _app_notifygetwindow ();
+
+					if (hnotify)
+						_app_notifyrefresh (hnotify, TRUE);
 
 					break;
 				}
@@ -2952,12 +2976,17 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_TRAY_NOTIFICATIONONTRAY_CHK:
 				{
-					BOOLEAN new_val = !_r_config_getboolean (L"IsNotificationsOnTray", FALSE);
+					HWND hnotify;
+					BOOLEAN new_val;
+
+					new_val = !_r_config_getboolean (L"IsNotificationsOnTray", FALSE);
 
 					_r_config_setboolean (L"IsNotificationsOnTray", new_val);
 
-					if (IsWindowVisible (config.hnotification))
-						_app_notifysetpos (config.hnotification, TRUE);
+					hnotify = _app_notifygetwindow ();
+
+					if (hnotify)
+						_app_notifysetpos (hnotify, TRUE);
 
 					break;
 				}
@@ -2988,10 +3017,12 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_TRAY_START:
 				{
+					BOOLEAN is_filtersinstalled;
+
 					if (_wfp_isfiltersapplying ())
 						break;
 
-					BOOLEAN is_filtersinstalled = !(_wfp_isfiltersinstalled () != INSTALL_DISABLED);
+					is_filtersinstalled = !(_wfp_isfiltersinstalled () != INSTALL_DISABLED);
 
 					if (_app_installmessage (hwnd, is_filtersinstalled))
 						_app_changefilters (hwnd, is_filtersinstalled, TRUE);
@@ -3001,14 +3032,14 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_ADD_FILE:
 				{
-					R_FILE_DIALOG file_dialog;
-					PR_STRING path;
-					ULONG_PTR app_hash;
-
-					COMDLG_FILTERSPEC filters[] = {
+					static COMDLG_FILTERSPEC filters[] = {
 						L"Executable files (*.exe)", L"*.exe",
 						L"All files (*.*)", L"*.*",
 					};
+
+					R_FILE_DIALOG file_dialog;
+					PR_STRING path;
+					ULONG_PTR app_hash;
 
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
 					{
@@ -3329,17 +3360,39 @@ INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_
 		if (_app_parseargs (cmdline))
 			return ERROR_SUCCESS;
 
-		if (_r_app_createwindow (IDD_MAIN, IDI_MAIN, &DlgProc))
+		hwnd = _r_app_createwindow (IDD_MAIN, IDI_MAIN, &DlgProc);
+
+		if (hwnd)
 		{
-			haccel = LoadAccelerators (hinst, MAKEINTRESOURCE (IDA_MAIN));
+			haccel = LoadAccelerators (_r_sys_getimagebase (), MAKEINTRESOURCE (IDA_MAIN));
 
 			if (haccel)
 			{
-				while (GetMessage (&msg, NULL, 0, 0) > 0)
+				BOOL result;
+				BOOL is_proceed;
+
+				while (TRUE)
 				{
+					is_proceed = FALSE;
+					result = GetMessage (&msg, NULL, 0, 0);
+
+					if (!result || result == -1)
+						break;
+
 					hwnd = GetActiveWindow ();
 
-					if (!TranslateAccelerator (hwnd, haccel, &msg) && !IsDialogMessage (hwnd, &msg))
+					if (msg.hwnd == hwnd || IsChild (hwnd, msg.hwnd))
+					{
+						if (TranslateAccelerator (hwnd, haccel, &msg))
+							is_proceed = TRUE;
+					}
+
+					if (IsDialogMessage (hwnd, &msg))
+					{
+						is_proceed = TRUE;
+					}
+
+					if (!is_proceed)
 					{
 						TranslateMessage (&msg);
 						DispatchMessage (&msg);
