@@ -72,7 +72,7 @@ typedef enum _ENUM_INSTALL_TYPE
 
 typedef enum _ENUM_INFO_DATA
 {
-	INFO_PATH = 0,
+	INFO_PATH = 1,
 	INFO_BYTES_DATA,
 	INFO_DISPLAY_NAME,
 	INFO_TIMESTAMP_PTR,
@@ -236,10 +236,11 @@ typedef struct _STATIC_DATA
 
 	volatile HANDLE hlogfile;
 	volatile HANDLE hnetevent;
+	volatile HWND hnotification;
+
 	HFONT hfont;
 	HICON hicon_large;
 	HICON hicon_uwp;
-	HWND hnotification;
 	HWND hrebar;
 	HWND hfind;
 
@@ -353,15 +354,17 @@ typedef struct _ITEM_APP_INFO
 	PR_STRING signature_info;
 	PR_STRING version_info;
 
-	HICON hicon_large;
+	volatile HICON hicon_large;
+	volatile LONG large_icon_id;
+	volatile LONG lock;
 
 	ULONG_PTR app_hash;
 
-	volatile LONG lock;
-
-	INT large_icon_id;
-
 	ENUM_TYPE_DATA type;
+
+	INT listview_id;
+
+	BOOLEAN is_added;
 } ITEM_APP_INFO, *PITEM_APP_INFO;
 
 typedef struct _ITEM_FILTER_CONFIG
