@@ -51,7 +51,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 				_r_listview_additemex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, network_hash);
 
 				if (ptr_network->path && ptr_network->app_hash)
-					_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type);
+					_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
 
 				// resolve network address
 				context = _r_freelist_allocateitem (&context_free_list);
@@ -443,7 +443,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 				{
 					if (ptr_app->real_path)
-						_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type);
+						_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_getlistviewbytype_id (ptr_app->type));
 				}
 
 				_r_queuedlock_releaseshared (&lock_apps);
@@ -2781,7 +2781,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 						{
 							if (ptr_app->real_path)
-								_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type);
+								_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_getlistviewbytype_id (ptr_app->type));
 						}
 
 						_r_queuedlock_releaseshared (&lock_apps);

@@ -271,7 +271,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 
 	// queue file information
 	if (ptr_app->real_path)
-		_app_queryfileinformation (ptr_app->real_path, app_hash, ptr_app->type);
+		_app_queryfileinformation (ptr_app->real_path, app_hash, ptr_app->type, _app_getlistviewbytype_id (ptr_app->type));
 
 	return app_hash;
 }
