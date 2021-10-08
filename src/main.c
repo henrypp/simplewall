@@ -1619,13 +1619,13 @@ VOID _app_initialize ()
 	// initialize workqueue
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_LOWEST, IoPriorityVeryLow, MEMORY_PRIORITY_NORMAL);
 
-	_r_workqueue_initialize (&file_queue, 0, 12, 1500, &environment);
-	_r_workqueue_initialize (&resolver_queue, 0, 6, 1500, &environment);
-	_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 1500, &environment);
+	_r_workqueue_initialize (&file_queue, 0, 12, 500, &environment);
+	_r_workqueue_initialize (&resolver_queue, 0, 6, 500, &environment);
+	_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 500, &environment);
 
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
-	_r_workqueue_initialize (&log_queue, 0, 3, 1500, &environment);
+	_r_workqueue_initialize (&log_queue, 0, 3, 500, &environment);
 
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
