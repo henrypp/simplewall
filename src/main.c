@@ -1682,7 +1682,7 @@ VOID _app_initialize ()
 
 	// initialize apps table
 	if (!apps_table)
-		apps_table = _r_obj_createhashtablepointer (8);
+		apps_table = _r_obj_createhashtablepointer (32);
 
 	// initialize context table
 	if (!context_table)
@@ -1698,18 +1698,18 @@ VOID _app_initialize ()
 
 	// initialize log hashtable object
 	if (!log_table)
-		log_table = _r_obj_createhashtablepointer (8);
+		log_table = _r_obj_createhashtablepointer (32);
 
 	// initialize network table
 	if (!network_table)
-		network_table = _r_obj_createhashtablepointer (8);
+		network_table = _r_obj_createhashtablepointer (32);
 
 	// initialize cache table
 	if (!cache_information)
-		cache_information = _r_obj_createhashtablepointer (8);
+		cache_information = _r_obj_createhashtablepointer (32);
 
 	if (!cache_resolution)
-		cache_resolution = _r_obj_createhashtablepointer (8);
+		cache_resolution = _r_obj_createhashtablepointer (32);
 }
 
 INT FirstDriveFromMask (_In_ ULONG unitmask)
