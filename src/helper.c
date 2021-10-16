@@ -28,8 +28,6 @@ VOID NTAPI _app_dereferenceappinfo (_In_ PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->path);
 	SAFE_DELETE_REFERENCE (ptr_item->signature_info);
 	SAFE_DELETE_REFERENCE (ptr_item->version_info);
-
-	SAFE_DELETE_ICON (ptr_item->hicon_large);
 }
 
 VOID NTAPI _app_dereferenceruleconfig (_In_ PVOID entry)
@@ -314,7 +312,6 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 	PITEM_APP_INFO ptr_app_info;
 	PVOID result;
 
-	result = NULL;
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
 	if (ptr_app_info)
@@ -323,9 +320,13 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 		{
 			case INFO_ICON_ID:
 			{
-				if (ptr_app_info->large_icon_id)
+				LONG icon_id;
+
+				icon_id = InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0);
+
+				if (icon_id)
 				{
-					result = IntToPtr (ptr_app_info->large_icon_id);
+					result = IntToPtr (icon_id);
 				}
 				else
 				{
@@ -335,24 +336,16 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 				break;
 			}
 
-			case INFO_ICON_HANDLE:
-			{
-				if (ptr_app_info->hicon_large)
-				{
-					result = CopyIcon (ptr_app_info->hicon_large);
-				}
-				else
-				{
-					result = CopyIcon (config.hicon_large);
-				}
-
-				break;
-			}
-
 			case INFO_SIGNATURE_STRING:
 			{
 				if (ptr_app_info->signature_info)
+				{
 					result = _r_obj_reference (ptr_app_info->signature_info);
+				}
+				else
+				{
+					result = NULL;
+				}
 
 				break;
 			}
@@ -360,16 +353,39 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 			case INFO_VERSION_STRING:
 			{
 				if (ptr_app_info->version_info)
+				{
 					result = _r_obj_reference (ptr_app_info->version_info);
+				}
+				else
+				{
+					result = NULL;
+				}
 
+				break;
+			}
+
+			default:
+			{
+				result = NULL;
 				break;
 			}
 		}
 
 		_r_obj_dereference (ptr_app_info);
+
+		return result;
 	}
 
-	return result;
+	// fallback
+	switch (info)
+	{
+		case INFO_ICON_ID:
+		{
+			return IntToPtr (config.icon_id);
+		}
+	}
+
+	return NULL;
 }
 
 BOOLEAN _app_isappsigned (_In_ ULONG_PTR app_hash)
@@ -456,6 +472,39 @@ BOOLEAN _app_loadfileicon (_In_ LPCWSTR path, _Out_opt_ PINT icon_id, _Out_opt_ 
 	return FALSE;
 }
 
+HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
+{
+	PITEM_APP ptr_app;
+	HICON hicon;
+
+	ptr_app = _app_getappitem (app_hash);
+
+	if (!ptr_app)
+	{
+		return CopyIcon (config.hicon_large);
+	}
+
+	if (!ptr_app->real_path || _r_config_getboolean (L"IsIconsHidden", FALSE) || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
+	{
+		if (ptr_app->type == DATA_APP_UWP)
+		{
+			_r_obj_dereference (ptr_app);
+
+			return CopyIcon (config.hicon_uwp);
+		}
+
+		_r_obj_dereference (ptr_app);
+
+		return CopyIcon (config.hicon_large);
+	}
+
+	_app_loadfileicon (ptr_app->real_path->buffer, NULL, &hicon);
+
+	_r_obj_dereference (ptr_app);
+
+	return hicon;
+}
+
 LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened)
 {
 	if (ptr_app->app_hash == config.ntoskrnl_hash)
@@ -492,34 +541,28 @@ LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortene
 
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 {
-	BOOLEAN is_success = FALSE;
+	INT icon_id = 0;
 
 	if (!_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
-		SAFE_DELETE_ICON (ptr_app_info->hicon_large);
-
-		is_success = _app_loadfileicon (ptr_app_info->path->buffer, &ptr_app_info->large_icon_id, &ptr_app_info->hicon_large);
+		_app_loadfileicon (ptr_app_info->path->buffer, &icon_id, NULL);
 	}
 
-	if (!is_success)
+	if (!icon_id)
 	{
 		if (ptr_app_info->type == DATA_APP_UWP)
 		{
-			if (!ptr_app_info->large_icon_id)
-				ptr_app_info->large_icon_id = config.icon_uwp_id;
-
-			if (!ptr_app_info->hicon_large)
-				ptr_app_info->hicon_large = CopyIcon (config.hicon_uwp);
+			if (!icon_id)
+				icon_id = config.icon_uwp_id;
 		}
 		else
 		{
-			if (!ptr_app_info->large_icon_id)
-				ptr_app_info->large_icon_id = config.icon_id;
-
-			if (!ptr_app_info->hicon_large)
-				ptr_app_info->hicon_large = CopyIcon (config.hicon_large);
+			if (!icon_id)
+				icon_id = config.icon_id;
 		}
 	}
+
+	InterlockedCompareExchange (&ptr_app_info->large_icon_id, icon_id, ptr_app_info->large_icon_id);
 }
 
 _Success_ (return)
@@ -2962,24 +3005,26 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 	return string;
 }
 
-VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type)
+VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type, _In_ INT listview_id)
 {
 	PITEM_APP_INFO ptr_app_info;
 
-	_r_queuedlock_acquireshared (&lock_cache_information);
-
-	ptr_app_info = _r_obj_findhashtablepointer (cache_information, app_hash);
-
-	_r_queuedlock_releaseshared (&lock_cache_information);
+	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
 	if (ptr_app_info)
 	{
-		if (InterlockedCompareExchange (&ptr_app_info->lock, 0, 0))
+		if (InterlockedCompareExchange (&ptr_app_info->lock, 0, 0) != 0)
+		{
+			_r_obj_dereference (ptr_app_info);
 			return;
+		}
 
 		// all information is already set
-		if (ptr_app_info->signature_info && ptr_app_info->version_info && ptr_app_info->large_icon_id && ptr_app_info->hicon_large)
+		if (ptr_app_info->signature_info && ptr_app_info->version_info && ptr_app_info->large_icon_id)
+		{
+			_r_obj_dereference (ptr_app_info);
 			return;
+		}
 	}
 	else
 	{
@@ -2988,10 +3033,11 @@ VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _I
 		ptr_app_info->path = _r_obj_reference (path);
 		ptr_app_info->app_hash = app_hash;
 		ptr_app_info->type = type;
+		ptr_app_info->listview_id = listview_id;
 
 		_r_queuedlock_acquireexclusive (&lock_cache_information);
 
-		_r_obj_addhashtablepointer (cache_information, ptr_app_info->app_hash, _r_obj_reference (ptr_app_info));
+		_r_obj_addhashtablepointer (cache_information, app_hash, _r_obj_reference (ptr_app_info));
 
 		_r_queuedlock_releaseexclusive (&lock_cache_information);
 	}
@@ -3004,34 +3050,15 @@ VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _I
 VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	PITEM_APP_INFO ptr_app_info;
-	HWND hnotification;
 	HWND hwnd;
-	HWND hctrl;
 
 	ptr_app_info = arglist;
-	hnotification = config.hnotification;
 	hwnd = _r_app_gethwnd ();
 
 	// query app icon
-	if (!ptr_app_info->hicon_large || !ptr_app_info->large_icon_id)
+	if (!ptr_app_info->large_icon_id)
 	{
 		_app_getfileicon (ptr_app_info);
-	}
-
-	// refresh notification
-	if (_r_wnd_isvisible (hnotification))
-	{
-		if (ptr_app_info->app_hash == _app_notifyget_id (hnotification, FALSE))
-		{
-			hctrl = GetDlgItem (hnotification, IDC_HEADER_ID);
-
-			// set icon
-			if (hctrl)
-			{
-				SetWindowLongPtr (hctrl, GWLP_USERDATA, (LONG_PTR)ptr_app_info->hicon_large);
-				InvalidateRect (hctrl, NULL, TRUE);
-			}
-		}
 	}
 
 	// query certificate information
@@ -3052,10 +3079,10 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	{
 		if (_r_wnd_isvisible (hwnd))
 		{
-			INT listview_id = _app_getcurrentlistview_id (hwnd);
-
-			_r_listview_redraw (hwnd, listview_id, -1);
-			UpdateWindow (GetDlgItem (hwnd, listview_id));
+			if (ptr_app_info->listview_id == _app_getcurrentlistview_id (hwnd))
+			{
+				_r_listview_redraw (hwnd, ptr_app_info->listview_id, -1);
+			}
 		}
 	}
 
@@ -3070,11 +3097,14 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 	PR_STRING host_str;
 	PR_STRING signature_str;
 	PR_STRING localized_string;
+	HICON hicon;
+	BOOLEAN is_iconset;
 
 	context = arglist;
 
 	host_str = NULL;
 	signature_str = NULL;
+	is_iconset = FALSE;
 
 	// query notification host name
 	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
@@ -3093,11 +3123,18 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 		}
 	}
 
+	// query file icon
+	hicon = _app_getfileiconsafe (context->ptr_log->app_hash);
+
 	if (_r_wnd_isvisible (context->hwnd))
 	{
 		if (context->ptr_log->app_hash == _app_notifyget_id (context->hwnd, FALSE))
 		{
-			// print signature
+			// set file icon
+			_app_notifyseticon (context->hwnd, hicon, TRUE);
+			is_iconset = TRUE;
+
+			// set signature information
 			localized_string = _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":");
 
 			signature_str = _app_getappinfoparam2 (context->ptr_log->app_hash, INFO_SIGNATURE_STRING);
@@ -3107,7 +3144,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 
 			_r_ctrl_settablestring (context->hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
 
-			// print host
+			// set resolved host
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 
 			if (_r_obj_isstringempty (host_str))
@@ -3118,6 +3155,9 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 			_r_obj_dereference (localized_string);
 		}
 	}
+
+	if (!is_iconset && hicon)
+		DestroyIcon (hicon);
 
 	if (signature_str)
 		_r_obj_dereference (signature_str);
@@ -3191,7 +3231,6 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 			if (_app_getcurrentlistview_id (context->hwnd) == context->listview_id)
 			{
 				_r_listview_redraw (context->hwnd, context->listview_id, -1);
-				UpdateWindow (GetDlgItem (context->hwnd, context->listview_id));
 			}
 		}
 	}
