@@ -588,6 +588,9 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					PITEM_COLOR ptr_clr;
 					SIZE_T enum_key = 0;
 					INT item_id = 0;
+					INT icon_id;
+
+					_app_getdefaulticon (&icon_id, NULL);
 
 					_app_setcheckboxlock (hwnd, IDC_COLORS, TRUE);
 
@@ -595,7 +598,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					{
 						ptr_clr->new_clr = _r_config_getulongex (_r_obj_getstring (ptr_clr->config_value), ptr_clr->default_clr, L"colors");
 
-						_r_listview_additemex (hwnd, IDC_COLORS, item_id, _r_locale_getstring (ptr_clr->locale_id), config.icon_id, I_GROUPIDNONE, (LPARAM)ptr_clr);
+						_r_listview_additemex (hwnd, IDC_COLORS, item_id, _r_locale_getstring (ptr_clr->locale_id), icon_id, I_GROUPIDNONE, (LPARAM)ptr_clr);
 						_r_listview_setitemcheck (hwnd, IDC_COLORS, item_id, _r_config_getbooleanex (_r_obj_getstring (ptr_clr->config_name), ptr_clr->is_enabled, L"colors"));
 
 						item_id += 1;
@@ -1648,9 +1651,6 @@ VOID _app_initialize ()
 	config.svchost_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_SVCHOST);
 	config.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
 	config.ntoskrnl_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_NTOSKRNL);
-
-	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-		config.winstore_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_WINSTORE);
 
 	config.my_hash = _r_obj_getstringhash (config.my_path);
 	config.ntoskrnl_hash = _r_obj_getstringhash (config.system_path);

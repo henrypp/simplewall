@@ -236,7 +236,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	// set notification information
 	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
 
-	_app_notifyseticon (hwnd, CopyIcon (config.hicon_large), FALSE);
+	_app_notifyseticon (hwnd, NULL, FALSE);
 
 	_r_obj_initializestringrefconst (&empty_string, _r_locale_getstring (IDS_STATUS_EMPTY));
 	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
@@ -782,7 +782,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			hicon = (HICON)GetWindowLongPtr (draw_info->hwndItem, GWLP_USERDATA);
 
 			if (!hicon)
-				hicon = config.hicon_large;
+				_app_getdefaulticon (NULL, &hicon);
 
 			if (hicon)
 			{

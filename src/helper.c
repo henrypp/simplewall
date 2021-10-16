@@ -330,7 +330,9 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 				}
 				else
 				{
-					result = IntToPtr (config.icon_id);
+					_app_getdefaulticon (&icon_id, NULL);
+
+					result = IntToPtr (icon_id);
 				}
 
 				break;
@@ -381,7 +383,11 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 	{
 		case INFO_ICON_ID:
 		{
-			return IntToPtr (config.icon_id);
+			INT icon_id;
+
+			_app_getdefaulticon (&icon_id, NULL);
+
+			return IntToPtr (icon_id);
 		}
 	}
 
@@ -442,7 +448,53 @@ BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path)
 	return TRUE;
 }
 
-BOOLEAN _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt_ HICON *hicon)
+VOID _app_getdefaulticon (_Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon)
+{
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static HICON memory_hicon = NULL;
+	static INT memory_icon_id = 0;
+
+	if (_r_initonce_begin (&init_once))
+	{
+		_app_loadfileicon (config.ntoskrnl_path, &memory_icon_id, &memory_hicon);
+
+		_r_initonce_end (&init_once);
+	}
+
+	if (icon_id)
+		*icon_id = memory_icon_id;
+
+	if (hicon)
+		*hicon = CopyIcon (memory_hicon);
+}
+
+VOID _app_getdefaulticon_uwp (_Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon)
+{
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static HICON memory_hicon = NULL;
+	static INT memory_icon_id = 0;
+
+	if (_r_initonce_begin (&init_once))
+	{
+		PR_STRING path;
+
+		path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\wsreset.exe");
+
+		_app_loadfileicon (path, &memory_icon_id, &memory_hicon);
+
+		_r_obj_dereference (path);
+
+		_r_initonce_end (&init_once);
+	}
+
+	if (icon_id)
+		*icon_id = memory_icon_id;
+
+	if (hicon)
+		*hicon = CopyIcon (memory_hicon);
+}
+
+VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon)
 {
 	SHFILEINFO shfi = {0};
 	UINT flags;
@@ -460,16 +512,10 @@ BOOLEAN _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt
 		if (hicon)
 			*hicon = shfi.hIcon;
 
-		return TRUE;
+		return;
 	}
 
-	if (icon_id)
-		*icon_id = config.icon_id;
-
-	if (hicon)
-		*hicon = CopyIcon(config.hicon_large);
-
-	return FALSE;
+	_app_getdefaulticon (icon_id, hicon);
 }
 
 HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
@@ -481,21 +527,27 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 
 	if (!ptr_app)
 	{
-		return CopyIcon (config.hicon_large);
+		_app_getdefaulticon (NULL, &hicon);
+
+		return hicon;
 	}
 
 	if (!ptr_app->real_path || _r_config_getboolean (L"IsIconsHidden", FALSE) || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
 	{
 		if (ptr_app->type == DATA_APP_UWP)
 		{
+			_app_getdefaulticon_uwp (NULL, &hicon);
+
 			_r_obj_dereference (ptr_app);
 
-			return CopyIcon (config.hicon_uwp);
+			return hicon;
 		}
+
+		_app_getdefaulticon (NULL, &hicon);
 
 		_r_obj_dereference (ptr_app);
 
-		return CopyIcon (config.hicon_large);
+		return hicon;
 	}
 
 	_app_loadfileicon (ptr_app->real_path, NULL, &hicon);
@@ -552,13 +604,11 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 	{
 		if (ptr_app_info->type == DATA_APP_UWP)
 		{
-			if (!icon_id)
-				icon_id = config.icon_uwp_id;
+			_app_getdefaulticon_uwp (&icon_id, NULL);
 		}
 		else
 		{
-			if (!icon_id)
-				icon_id = config.icon_id;
+			_app_getdefaulticon (&icon_id, NULL);
 		}
 	}
 

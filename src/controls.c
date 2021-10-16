@@ -663,12 +663,6 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 
 VOID _app_imagelist_init (_In_ HWND hwnd)
 {
-	HBITMAP hbitmap;
-	LONG dpi_value;
-	INT icon_size_small;
-	INT icon_size_large;
-	INT icon_size_toolbar;
-
 	static UINT toolbar_ids[] = {
 		IDP_SHIELD_ENABLE,
 		IDP_SHIELD_DISABLE,
@@ -688,14 +682,17 @@ VOID _app_imagelist_init (_In_ HWND hwnd)
 		IDP_BLOCK
 	};
 
+	HBITMAP hbitmap;
+	LONG dpi_value;
+	INT icon_size_small;
+	INT icon_size_large;
+	INT icon_size_toolbar;
+
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
 	SAFE_DELETE_OBJECT (config.hbmp_allow);
 	SAFE_DELETE_OBJECT (config.hbmp_block);
 	SAFE_DELETE_OBJECT (config.hbmp_rules);
-
-	SAFE_DELETE_ICON (config.hicon_large);
-	SAFE_DELETE_ICON (config.hicon_uwp);
 
 	dpi_value = _r_dc_getwindowdpi (hwnd);
 
@@ -703,21 +700,6 @@ VOID _app_imagelist_init (_In_ HWND hwnd)
 	icon_size_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 
 	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getinteger (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_size_small, icon_size_large);
-
-	// get default icon for executable
-	if (config.ntoskrnl_path)
-	{
-		_app_loadfileicon (config.ntoskrnl_path, &config.icon_id, &config.hicon_large);
-	}
-
-	// get default icon for windows store package (win8+)
-	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-	{
-		if (config.winstore_path)
-		{
-			_app_loadfileicon (config.winstore_path, &config.icon_uwp_id, &config.hicon_uwp);
-		}
-	}
 
 	config.hbmp_enable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_size_small);
 	config.hbmp_disable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_size_small);

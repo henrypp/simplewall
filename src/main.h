@@ -115,7 +115,6 @@ typedef enum _ENUM_INFO_DATA2
 
 #define PATH_NTOSKRNL L"\\ntoskrnl.exe"
 #define PATH_SVCHOST L"\\svchost.exe"
-#define PATH_WINSTORE L"\\wsreset.exe"
 
 #define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
 
@@ -211,7 +210,6 @@ typedef struct _STATIC_DATA
 	PR_STRING ntoskrnl_path;
 	PR_STRING svchost_path;
 	PR_STRING system_path;
-	PR_STRING winstore_path;
 
 	PSID pbuiltin_current_sid;
 	PSID pbuiltin_netops_sid;
@@ -238,8 +236,6 @@ typedef struct _STATIC_DATA
 	volatile HWND hnotification;
 
 	HFONT hfont;
-	HICON hicon_large;
-	HICON hicon_uwp;
 	HWND hrebar;
 	HWND hfind;
 
@@ -256,9 +252,6 @@ typedef struct _STATIC_DATA
 	ULONG_PTR color_pico;
 	ULONG_PTR color_system;
 	ULONG_PTR color_network;
-
-	INT icon_id;
-	INT icon_uwp_id;
 
 	BOOLEAN is_notifytimeout;
 	BOOLEAN is_notifymouse;
