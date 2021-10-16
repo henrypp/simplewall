@@ -515,7 +515,11 @@ VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt_ H
 		return;
 	}
 
-	_app_getdefaulticon (icon_id, hicon);
+	if (icon_id)
+		*icon_id = 0;
+
+	if (hicon)
+		*hicon = NULL;
 }
 
 HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
