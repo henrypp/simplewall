@@ -87,7 +87,6 @@ typedef enum _ENUM_INFO_DATA
 typedef enum _ENUM_INFO_DATA2
 {
 	INFO_ICON_ID,
-	INFO_ICON_HANDLE, // DestroyIcon
 	INFO_SIGNATURE_STRING, // dereference required
 	INFO_VERSION_STRING, // dereference required
 } ENUM_INFO_DATA2;
@@ -354,7 +353,6 @@ typedef struct _ITEM_APP_INFO
 	PR_STRING signature_info;
 	PR_STRING version_info;
 
-	volatile HICON hicon_large;
 	volatile LONG large_icon_id;
 	volatile LONG lock;
 
@@ -363,8 +361,6 @@ typedef struct _ITEM_APP_INFO
 	ENUM_TYPE_DATA type;
 
 	INT listview_id;
-
-	BOOLEAN is_added;
 } ITEM_APP_INFO, *PITEM_APP_INFO;
 
 typedef struct _ITEM_FILTER_CONFIG
