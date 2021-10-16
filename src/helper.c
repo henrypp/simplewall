@@ -467,7 +467,7 @@ BOOLEAN _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt
 		*icon_id = config.icon_id;
 
 	if (hicon)
-		*hicon = NULL;
+		*hicon = CopyIcon(config.hicon_large);
 
 	return FALSE;
 }
