@@ -236,7 +236,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	// set notification information
 	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)ptr_log->app_hash);
 
-	_app_notifyseticon (hwnd, ptr_app_info ? ptr_app_info->hicon_large : NULL, FALSE);
+	_app_notifyseticon (hwnd, CopyIcon (config.hicon_large), FALSE);
 
 	_r_obj_initializestringrefconst (&empty_string, _r_locale_getstring (IDS_STATUS_EMPTY));
 	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
@@ -416,18 +416,18 @@ VOID _app_notifyrefresh (_In_ HWND hwnd, _In_ BOOLEAN is_safety)
 VOID _app_notifyseticon (_In_ HWND hwnd, _In_opt_ HICON hicon, _In_ BOOLEAN is_redraw)
 {
 	HWND hctrl;
-	//HICON hprev_icon;
+	HICON hprev_icon;
 
 	hctrl = GetDlgItem (hwnd, IDC_HEADER_ID);
 
 	if (hctrl)
 	{
-		//hprev_icon = (HICON)GetWindowLongPtr (hctrl, GWLP_USERDATA);
+		hprev_icon = (HICON)GetWindowLongPtr (hctrl, GWLP_USERDATA);
 
 		SetWindowLongPtr (hctrl, GWLP_USERDATA, (LONG_PTR)hicon);
 
-		//if (hprev_icon)
-		//	DestroyIcon (hprev_icon);
+		if (hprev_icon)
+			DestroyIcon (hprev_icon);
 
 		if (is_redraw)
 			InvalidateRect (hctrl, NULL, TRUE);
