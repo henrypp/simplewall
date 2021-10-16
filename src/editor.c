@@ -1117,7 +1117,6 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 {
 	static R_LAYOUT_MANAGER layout_manager = {0};
 	static PITEM_CONTEXT context = NULL;
-	static HICON hicon_large = NULL;
 
 	switch (msg)
 	{
@@ -1153,11 +1152,6 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 				_app_addeditortab (hwnd, IDS_SETTINGS_GENERAL, IDD_EDITOR_APPINFO, context, &tabs_count);
 				_app_addeditortab (hwnd, IDS_TRAY_RULES, IDD_EDITOR_APPRULES, context, &tabs_count);
 
-				// set icon
-				hicon_large = _app_getfileiconsafe (context->ptr_app->app_hash);
-
-				_r_wnd_seticon (hwnd, hicon_large, hicon_large);
-
 				// show state
 				_r_ctrl_setstring (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_APP_CHK));
 
@@ -1184,8 +1178,6 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 		case WM_DESTROY:
 		{
-			SAFE_DELETE_ICON (hicon_large);
-
 			_r_window_saveposition (hwnd, L"editor");
 
 			_r_layout_destroymanager (&layout_manager);
