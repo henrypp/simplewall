@@ -8,14 +8,14 @@ BOOLEAN _wfp_isfiltersapplying ()
 	return _r_queuedlock_islocked (&lock_apply) || _r_queuedlock_islocked (&lock_transaction);
 }
 
-ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE hengine)
+ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE engine_handle)
 {
 	ENUM_INSTALL_TYPE result;
 	FWPM_PROVIDER *ptr_provider;
 
 	result = INSTALL_DISABLED;
 
-	if (FwpmProviderGetByKey (hengine, &GUID_WfpProvider, &ptr_provider) == ERROR_SUCCESS)
+	if (FwpmProviderGetByKey (engine_handle, &GUID_WfpProvider, &ptr_provider) == ERROR_SUCCESS)
 	{
 		if (ptr_provider)
 		{
@@ -39,14 +39,14 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE hengine)
 	return result;
 }
 
-ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE hengine)
+ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE engine_handle)
 {
 	ENUM_INSTALL_TYPE result;
 	FWPM_SUBLAYER *ptr_sublayer;
 
 	result = INSTALL_DISABLED;
 
-	if (FwpmSubLayerGetByKey (hengine, &GUID_WfpSublayer, &ptr_sublayer) == ERROR_SUCCESS)
+	if (FwpmSubLayerGetByKey (engine_handle, &GUID_WfpSublayer, &ptr_sublayer) == ERROR_SUCCESS)
 	{
 		if (ptr_sublayer)
 		{
@@ -68,12 +68,12 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE hengine)
 
 ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ()
 {
-	HANDLE hengine;
+	HANDLE engine_handle;
 
-	hengine = _wfp_getenginehandle ();
+	engine_handle = _wfp_getenginehandle ();
 
-	if (hengine)
-		return _wfp_isproviderinstalled (hengine);
+	if (engine_handle)
+		return _wfp_isproviderinstalled (engine_handle);
 
 	return INSTALL_DISABLED;
 }
@@ -124,7 +124,7 @@ HANDLE _wfp_getenginehandle ()
 	return current_handle;
 }
 
-BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
+BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 {
 	FWP_VALUE val;
 
@@ -144,15 +144,15 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
-	_app_setsecurityinfoforengine (hengine);
+	_app_setsecurityinfoforengine (engine_handle);
 
 	// install engine provider and it's sublayer
-	is_providerexist = (_wfp_isproviderinstalled (hengine) != INSTALL_DISABLED);
-	is_sublayerexist = (_wfp_issublayerinstalled (hengine) != INSTALL_DISABLED);
+	is_providerexist = (_wfp_isproviderinstalled (engine_handle) != INSTALL_DISABLED);
+	is_sublayerexist = (_wfp_issublayerinstalled (engine_handle) != INSTALL_DISABLED);
 
 	if (!is_providerexist || !is_sublayerexist)
 	{
-		is_intransact = _wfp_transact_start (hengine, __LINE__);
+		is_intransact = _wfp_transact_start (engine_handle, __LINE__);
 
 		if (!is_providerexist)
 		{
@@ -167,13 +167,13 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 			if (!config.is_filterstemporary)
 				provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
 
-			code = FwpmProviderAdd (hengine, &provider, NULL);
+			code = FwpmProviderAdd (engine_handle, &provider, NULL);
 
 			if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
 			{
 				if (is_intransact)
 				{
-					FwpmTransactionAbort (hengine);
+					FwpmTransactionAbort (engine_handle);
 					is_intransact = FALSE;
 				}
 
@@ -202,13 +202,13 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 			if (!config.is_filterstemporary)
 				sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
 
-			code = FwpmSubLayerAdd (hengine, &sublayer, NULL);
+			code = FwpmSubLayerAdd (engine_handle, &sublayer, NULL);
 
 			if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
 			{
 				if (is_intransact)
 				{
-					FwpmTransactionAbort (hengine);
+					FwpmTransactionAbort (engine_handle);
 					is_intransact = FALSE;
 				}
 
@@ -225,18 +225,18 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 
 		if (is_intransact)
 		{
-			if (!_wfp_transact_commit (hengine, __LINE__))
+			if (!_wfp_transact_commit (engine_handle, __LINE__))
 				is_success = FALSE;
 		}
 	}
 
 	// set provider security information
 	if (is_providerexist)
-		_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, is_secure);
+		_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, is_secure);
 
 	// set sublayer security information
 	if (is_sublayerexist)
-		_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, is_secure);
+		_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, is_secure);
 
 	// set engine options
 	RtlZeroMemory (&val, sizeof (val));
@@ -247,7 +247,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 		val.type = FWP_UINT32;
 		val.uint32 = 1;
 
-		code = FwpmEngineSetOption (hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+		code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 
 		if (code != ERROR_SUCCESS)
 		{
@@ -268,7 +268,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 				if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
 					val.uint32 |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
 
-				code = FwpmEngineSetOption (hengine, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
+				code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
 				if (code != ERROR_SUCCESS)
 					_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
@@ -279,7 +279,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 					val.type = FWP_UINT32;
 					val.uint32 = 1;
 
-					code = FwpmEngineSetOption (hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+					code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 					if (code != ERROR_SUCCESS)
 						_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
@@ -288,7 +288,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 
 			config.is_neteventset = TRUE;
 
-			_wfp_logsubscribe (hengine);
+			_wfp_logsubscribe (engine_handle);
 		}
 	}
 
@@ -299,7 +299,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 		val.type = FWP_UINT32;
 		val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
 
-		code = FwpmEngineSetOption (hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
+		code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
 
 		if (code != ERROR_SUCCESS)
 			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
@@ -312,7 +312,7 @@ CleanupExit:
 	return is_success;
 }
 
-VOID _wfp_uninitialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
+VOID _wfp_uninitialize (_In_ HANDLE engine_handle, _In_ BOOLEAN is_full)
 {
 	_r_queuedlock_acquireshared (&lock_transaction);
 
@@ -321,7 +321,7 @@ VOID _wfp_uninitialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
 	// dropped packets logging (win7+)
 	if (config.is_neteventset)
 	{
-		_wfp_logunsubscribe (hengine);
+		_wfp_logunsubscribe (engine_handle);
 
 		//if (_r_sys_validversion (6, 2))
 		//{
@@ -329,31 +329,31 @@ VOID _wfp_uninitialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
 		//	val.type = FWP_UINT32;
 		//	val.uint32 = 0;
 
-		//	FwpmEngineSetOption (hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+		//	FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 		//	// packet queuing (win8+)
 		//	val.type = FWP_UINT32;
 		//	val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_NONE;
 
-		//	FwpmEngineSetOption (hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
+		//	FwpmEngineSetOption (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
 		//}
 
 		//val.type = FWP_UINT32;
 		//val.uint32 = 0;
 
-		//code = FwpmEngineSetOption (hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+		//code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 	}
 
 	if (is_full)
 	{
-		_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, FALSE);
-		_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, FALSE);
+		_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
+		_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
 
-		BOOLEAN is_intransact = _wfp_transact_start (hengine, __LINE__);
+		BOOLEAN is_intransact = _wfp_transact_start (engine_handle, __LINE__);
 
 		// destroy callouts (deprecated)
 		{
-			LPCGUID callouts[] = {
+			static LPCGUID callouts[] = {
 				&GUID_WfpOutboundCallout4_DEPRECATED,
 				&GUID_WfpOutboundCallout6_DEPRECATED,
 				&GUID_WfpInboundCallout4_DEPRECATED,
@@ -363,33 +363,33 @@ VOID _wfp_uninitialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
 			};
 
 			for (SIZE_T i = 0; i < RTL_NUMBER_OF (callouts); i++)
-				FwpmCalloutDeleteByKey (hengine, callouts[i]);
+				FwpmCalloutDeleteByKey (engine_handle, callouts[i]);
 		}
 
 		// destroy sublayer
-		code = FwpmSubLayerDeleteByKey (hengine, &GUID_WfpSublayer);
+		code = FwpmSubLayerDeleteByKey (engine_handle, &GUID_WfpSublayer);
 
 		if (code != ERROR_SUCCESS && code != FWP_E_SUBLAYER_NOT_FOUND)
 			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmSubLayerDeleteByKey", code, NULL);
 
 		// destroy provider
-		code = FwpmProviderDeleteByKey (hengine, &GUID_WfpProvider);
+		code = FwpmProviderDeleteByKey (engine_handle, &GUID_WfpProvider);
 
 		if (code != ERROR_SUCCESS && code != FWP_E_PROVIDER_NOT_FOUND)
 			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderDeleteByKey", code, NULL);
 
 		if (is_intransact)
-			_wfp_transact_commit (hengine, __LINE__);
+			_wfp_transact_commit (engine_handle, __LINE__);
 	}
 
 	_r_queuedlock_releaseshared (&lock_transaction);
 }
 
-VOID _wfp_installfilters (_In_ HANDLE hengine)
+VOID _wfp_installfilters (_In_ HANDLE engine_handle)
 {
 	// set security information
-	_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, FALSE);
-	_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, FALSE);
+	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
+	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
 
 	_wfp_clearfilter_ids ();
 
@@ -403,7 +403,7 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 	BOOLEAN is_intransact;
 	BOOLEAN is_secure;
 
-	guids = _wfp_dumpfilters (hengine, &GUID_WfpProvider);
+	guids = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider);
 
 	// restore filters security
 	if (guids)
@@ -413,11 +413,11 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 			guid = _r_obj_getarrayitem (guids, i);
 
 			if (guid)
-				_app_setsecurityinfoforfilter (hengine, guid, FALSE, __LINE__);
+				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, __LINE__);
 		}
 	}
 
-	is_intransact = _wfp_transact_start (hengine, __LINE__);
+	is_intransact = _wfp_transact_start (engine_handle, __LINE__);
 
 	// destroy all filters
 	if (guids)
@@ -427,14 +427,14 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 			guid = _r_obj_getarrayitem (guids, i);
 
 			if (guid)
-				_wfp_deletefilter (hengine, guid);
+				_wfp_deletefilter (engine_handle, guid);
 		}
 
 		_r_obj_dereference (guids);
 	}
 
 	// apply internal rules
-	_wfp_create2filters (hengine, __LINE__, is_intransact);
+	_wfp_create2filters (engine_handle, __LINE__, is_intransact);
 
 	rules = _r_obj_createlist (&_r_obj_dereference);
 
@@ -458,7 +458,7 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 
 	if (!_r_obj_islistempty (rules))
 	{
-		_wfp_create3filters (hengine, rules, __LINE__, is_intransact);
+		_wfp_create3filters (engine_handle, rules, __LINE__, is_intransact);
 
 		_r_obj_clearlist (rules);
 	}
@@ -480,20 +480,20 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 
 	if (!_r_obj_islistempty (rules))
 	{
-		_wfp_create4filters (hengine, rules, __LINE__, is_intransact);
+		_wfp_create4filters (engine_handle, rules, __LINE__, is_intransact);
 
 		//_r_obj_clearlist (rules);
 	}
 
 	if (is_intransact)
-		_wfp_transact_commit (hengine, __LINE__);
+		_wfp_transact_commit (engine_handle, __LINE__);
 
 	// secure filters
 	is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
 	if (is_secure)
 	{
-		guids = _wfp_dumpfilters (hengine, &GUID_WfpProvider);
+		guids = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider);
 
 		if (guids)
 		{
@@ -502,24 +502,24 @@ VOID _wfp_installfilters (_In_ HANDLE hengine)
 				guid = _r_obj_getarrayitem (guids, i);
 
 				if (guid)
-					_app_setsecurityinfoforfilter (hengine, guid, is_secure, __LINE__);
+					_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, __LINE__);
 			}
 
 			_r_obj_dereference (guids);
 		}
 	}
 
-	_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, is_secure);
-	_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, is_secure);
+	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, is_secure);
+	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, is_secure);
 
 	_r_obj_dereference (rules);
 
 	_r_queuedlock_releaseshared (&lock_transaction);
 }
 
-BOOLEAN _wfp_transact_start (_In_ HANDLE hengine, _In_ UINT line)
+BOOLEAN _wfp_transact_start (_In_ HANDLE engine_handle, _In_ UINT line)
 {
-	ULONG code = FwpmTransactionBegin (hengine, 0);
+	ULONG code = FwpmTransactionBegin (engine_handle, 0);
 
 	//if (code == FWP_E_TXN_IN_PROGRESS)
 	//	return FALSE;
@@ -533,13 +533,13 @@ BOOLEAN _wfp_transact_start (_In_ HANDLE hengine, _In_ UINT line)
 	return TRUE;
 }
 
-BOOLEAN _wfp_transact_commit (_In_ HANDLE hengine, _In_ UINT line)
+BOOLEAN _wfp_transact_commit (_In_ HANDLE engine_handle, _In_ UINT line)
 {
-	ULONG code = FwpmTransactionCommit (hengine);
+	ULONG code = FwpmTransactionCommit (engine_handle);
 
 	if (code != ERROR_SUCCESS)
 	{
-		FwpmTransactionAbort (hengine);
+		FwpmTransactionAbort (engine_handle);
 
 		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit", code, L"#%" PRIu32, line);
 		return FALSE;
@@ -549,9 +549,9 @@ BOOLEAN _wfp_transact_commit (_In_ HANDLE hengine, _In_ UINT line)
 	return TRUE;
 }
 
-BOOLEAN _wfp_deletefilter (_In_ HANDLE hengine, _In_ LPCGUID filter_id)
+BOOLEAN _wfp_deletefilter (_In_ HANDLE engine_handle, _In_ LPCGUID filter_id)
 {
-	ULONG code = FwpmFilterDeleteByKey (hengine, filter_id);
+	ULONG code = FwpmFilterDeleteByKey (engine_handle, filter_id);
 
 #if !defined(_DEBUG)
 	if (code != ERROR_SUCCESS && code != FWP_E_FILTER_NOT_FOUND)
@@ -611,7 +611,7 @@ FORCEINLINE LPCWSTR _wfp_filtertypetostring (_In_ ENUM_TYPE_DATA filter_type)
 	return NULL;
 }
 
-ULONG _wfp_createfilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA type, _In_opt_ LPCWSTR filter_name, _In_reads_ (count) FWPM_FILTER_CONDITION *lpcond, _In_ UINT32 count, _In_opt_ LPCGUID layer_id, _In_opt_ LPCGUID callout_id, _In_ UINT8 weight, _In_ FWP_ACTION_TYPE action, _In_ UINT32 flags, _Inout_opt_ PR_ARRAY guids)
+ULONG _wfp_createfilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA type, _In_opt_ LPCWSTR filter_name, _In_reads_ (count) FWPM_FILTER_CONDITION *lpcond, _In_ UINT32 count, _In_opt_ LPCGUID layer_id, _In_opt_ LPCGUID callout_id, _In_ UINT8 weight, _In_ FWP_ACTION_TYPE action, _In_ UINT32 flags, _Inout_opt_ PR_ARRAY guids)
 {
 	FWPM_FILTER filter = {0};
 	WCHAR filter_description[128];
@@ -677,7 +677,7 @@ ULONG _wfp_createfilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA type, _In_opt_
 	if (callout_id)
 		RtlCopyMemory (&filter.action.calloutKey, callout_id, sizeof (GUID));
 
-	code = FwpmFilterAdd (hengine, &filter, NULL, &filter_id);
+	code = FwpmFilterAdd (engine_handle, &filter, NULL, &filter_id);
 
 	if (code == ERROR_SUCCESS)
 	{
@@ -733,7 +733,7 @@ VOID _wfp_clearfilter_ids ()
 	_r_queuedlock_releaseshared (&lock_rules);
 }
 
-VOID _wfp_destroyfilters (_In_ HANDLE hengine)
+VOID _wfp_destroyfilters (_In_ HANDLE engine_handle)
 {
 	_wfp_clearfilter_ids ();
 
@@ -742,11 +742,11 @@ VOID _wfp_destroyfilters (_In_ HANDLE hengine)
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
-	guids = _wfp_dumpfilters (hengine, &GUID_WfpProvider);
+	guids = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider);
 
 	if (guids)
 	{
-		_wfp_destroyfilters_array (hengine, guids, __LINE__);
+		_wfp_destroyfilters_array (engine_handle, guids, __LINE__);
 
 		_r_obj_dereference (guids);
 	}
@@ -754,7 +754,7 @@ VOID _wfp_destroyfilters (_In_ HANDLE hengine)
 	_r_queuedlock_releaseshared (&lock_transaction);
 }
 
-BOOLEAN _wfp_destroyfilters_array (_In_ HANDLE hengine, _In_ PR_ARRAY guids, _In_ UINT line)
+BOOLEAN _wfp_destroyfilters_array (_In_ HANDLE engine_handle, _In_ PR_ARRAY guids, _In_ UINT line)
 {
 	LPCGUID guid;
 	BOOLEAN is_enabled;
@@ -769,21 +769,21 @@ BOOLEAN _wfp_destroyfilters_array (_In_ HANDLE hengine, _In_ PR_ARRAY guids, _In
 		guid = _r_obj_getarrayitem (guids, i);
 
 		if (guid)
-			_app_setsecurityinfoforfilter (hengine, guid, FALSE, line);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
 	}
 
-	is_intransact = _wfp_transact_start (hengine, line);
+	is_intransact = _wfp_transact_start (engine_handle, line);
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
 		if (guid)
-			_wfp_deletefilter (hengine, guid);
+			_wfp_deletefilter (engine_handle, guid);
 	}
 
 	if (is_intransact)
-		_wfp_transact_commit (hengine, line);
+		_wfp_transact_commit (engine_handle, line);
 
 	_r_queuedlock_releaseshared (&lock_transaction);
 
@@ -792,7 +792,7 @@ BOOLEAN _wfp_destroyfilters_array (_In_ HANDLE hengine, _In_ PR_ARRAY guids, _In
 	return TRUE;
 }
 
-BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_type, _In_opt_ LPCWSTR filter_name, _In_opt_ ULONG_PTR app_hash, _In_opt_ PITEM_FILTER_CONFIG filter_config, _In_opt_ PR_STRINGREF rule_remote, _In_opt_ PR_STRINGREF rule_local, _In_ UINT8 weight, _In_ FWP_ACTION_TYPE action, _In_ UINT32 flags, _Inout_opt_ PR_ARRAY guids)
+BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA filter_type, _In_opt_ LPCWSTR filter_name, _In_opt_ ULONG_PTR app_hash, _In_opt_ PITEM_FILTER_CONFIG filter_config, _In_opt_ PR_STRINGREF rule_remote, _In_opt_ PR_STRINGREF rule_local, _In_ UINT8 weight, _In_ FWP_ACTION_TYPE action, _In_ UINT32 flags, _Inout_opt_ PR_ARRAY guids)
 {
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
 	UINT32 count = 0;
@@ -1055,18 +1055,18 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 	{
 		if (af == AF_INET || af == AF_UNSPEC)
 		{
-			_wfp_createfilter (hengine, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, weight, action, flags, guids);
+			_wfp_createfilter (engine_handle, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, weight, action, flags, guids);
 
 			// win7+
-			_wfp_createfilter (hengine, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, weight, action, flags, guids);
+			_wfp_createfilter (engine_handle, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, weight, action, flags, guids);
 		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
 		{
-			_wfp_createfilter (hengine, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, weight, action, flags, guids);
+			_wfp_createfilter (engine_handle, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, weight, action, flags, guids);
 
 			// win7+
-			_wfp_createfilter (hengine, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, weight, action, flags, guids);
+			_wfp_createfilter (engine_handle, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, weight, action, flags, guids);
 		}
 	}
 
@@ -1075,18 +1075,18 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE hengine, _In_ ENUM_TYPE_DATA filter_t
 	{
 		if (af == AF_INET || af == AF_UNSPEC)
 		{
-			_wfp_createfilter (hengine, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, weight, action, flags, guids);
+			_wfp_createfilter (engine_handle, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, weight, action, flags, guids);
 
 			if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
-				_wfp_createfilter (hengine, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, weight, FWP_ACTION_PERMIT, flags, guids);
+				_wfp_createfilter (engine_handle, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, weight, FWP_ACTION_PERMIT, flags, guids);
 		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
 		{
-			_wfp_createfilter (hengine, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, weight, action, flags, guids);
+			_wfp_createfilter (engine_handle, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, weight, action, flags, guids);
 
 			if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
-				_wfp_createfilter (hengine, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, weight, FWP_ACTION_PERMIT, flags, guids);
+				_wfp_createfilter (engine_handle, filter_type, filter_name, fwfc, count, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, weight, FWP_ACTION_PERMIT, flags, guids);
 		}
 	}
 
@@ -1102,7 +1102,7 @@ CleanupExit:
 	return is_success;
 }
 
-BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT line, _In_ BOOLEAN is_intransact)
+BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In_ UINT line, _In_ BOOLEAN is_intransact)
 {
 	PR_ARRAY guids;
 	LPCGUID guid;
@@ -1140,11 +1140,11 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT
 			guid = _r_obj_getarrayitem (guids, i);
 
 			if (guid)
-				_app_setsecurityinfoforfilter (hengine, guid, FALSE, line);
+				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
-		is_intransact = !_wfp_transact_start (hengine, line);
+		is_intransact = !_wfp_transact_start (engine_handle, line);
 	}
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
@@ -1152,7 +1152,7 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT
 		guid = _r_obj_getarrayitem (guids, i);
 
 		if (guid)
-			_wfp_deletefilter (hengine, guid);
+			_wfp_deletefilter (engine_handle, guid);
 	}
 
 	R_STRINGREF remote_remaining_part;
@@ -1202,12 +1202,12 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT
 			// apply rules for services hosts
 			if (ptr_rule->is_forservices)
 			{
-				if (!_wfp_createrulefilter (hengine, ptr_rule->type, rule_name, config.ntoskrnl_hash, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
+				if (!_wfp_createrulefilter (engine_handle, ptr_rule->type, rule_name, config.ntoskrnl_hash, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
 				{
 					ptr_rule->is_haveerrors = TRUE;
 				}
 
-				if (!_wfp_createrulefilter (hengine, ptr_rule->type, rule_name, config.svchost_hash, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
+				if (!_wfp_createrulefilter (engine_handle, ptr_rule->type, rule_name, config.svchost_hash, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
 				{
 					ptr_rule->is_haveerrors = TRUE;
 				}
@@ -1223,7 +1223,7 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT
 					if (ptr_rule->is_forservices && (hash_code == config.ntoskrnl_hash || hash_code == config.svchost_hash))
 						continue;
 
-					if (!_wfp_createrulefilter (hengine, ptr_rule->type, rule_name, hash_code, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
+					if (!_wfp_createrulefilter (engine_handle, ptr_rule->type, rule_name, hash_code, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
 					{
 						ptr_rule->is_haveerrors = TRUE;
 					}
@@ -1231,7 +1231,7 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT
 			}
 			else
 			{
-				if (!_wfp_createrulefilter (hengine, ptr_rule->type, rule_name, 0, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
+				if (!_wfp_createrulefilter (engine_handle, ptr_rule->type, rule_name, 0, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
 				{
 					ptr_rule->is_haveerrors = TRUE;
 				}
@@ -1256,7 +1256,7 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT
 	{
 		BOOLEAN is_secure;
 
-		_wfp_transact_commit (hengine, line);
+		_wfp_transact_commit (engine_handle, line);
 
 		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
@@ -1273,7 +1273,7 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT
 						guid = _r_obj_getarrayitem (ptr_rule->guids, j);
 
 						if (guid)
-							_app_setsecurityinfoforfilter (hengine, guid, is_secure, line);
+							_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
 					}
 				}
 			}
@@ -1289,7 +1289,7 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE hengine, _In_  PR_LIST rules, _In_ UINT
 	return TRUE;
 }
 
-BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT line, _In_ BOOLEAN is_intransact)
+BOOLEAN _wfp_create3filters (_In_ HANDLE engine_handle, _In_ PR_LIST rules, _In_ UINT line, _In_ BOOLEAN is_intransact)
 {
 	if (_r_obj_islistempty (rules))
 		return FALSE;
@@ -1324,11 +1324,11 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT 
 			guid = _r_obj_getarrayitem (guids, i);
 
 			if (guid)
-				_app_setsecurityinfoforfilter (hengine, guid, FALSE, line);
+				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
-		is_intransact = !_wfp_transact_start (hengine, line);
+		is_intransact = !_wfp_transact_start (engine_handle, line);
 	}
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
@@ -1336,7 +1336,7 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT 
 		guid = _r_obj_getarrayitem (guids, i);
 
 		if (guid)
-			_wfp_deletefilter (hengine, guid);
+			_wfp_deletefilter (engine_handle, guid);
 	}
 
 	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
@@ -1345,7 +1345,7 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT 
 
 		if (ptr_app && ptr_app->is_enabled)
 		{
-			if (!_wfp_createrulefilter (hengine, ptr_app->type, _app_getappdisplayname (ptr_app, TRUE), ptr_app->app_hash, NULL, NULL, NULL, FW_WEIGHT_APP, FWP_ACTION_PERMIT, 0, ptr_app->guids))
+			if (!_wfp_createrulefilter (engine_handle, ptr_app->type, _app_getappdisplayname (ptr_app, TRUE), ptr_app->app_hash, NULL, NULL, NULL, FW_WEIGHT_APP, FWP_ACTION_PERMIT, 0, ptr_app->guids))
 			{
 				ptr_app->is_haveerrors = TRUE;
 			}
@@ -1356,7 +1356,7 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT 
 	{
 		BOOLEAN is_secure;
 
-		_wfp_transact_commit (hengine, line);
+		_wfp_transact_commit (engine_handle, line);
 
 		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
@@ -1373,7 +1373,7 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT 
 						guid = _r_obj_getarrayitem (ptr_app->guids, j);
 
 						if (guid)
-							_app_setsecurityinfoforfilter (hengine, guid, is_secure, line);
+							_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
 					}
 				}
 			}
@@ -1389,7 +1389,7 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE hengine, _In_ PR_LIST rules, _In_ UINT 
 	return TRUE;
 }
 
-BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN is_intransact)
+BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOOLEAN is_intransact)
 {
 	LPCGUID guid;
 	BOOLEAN is_enabled;
@@ -1442,12 +1442,12 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
 				if (guid)
-					_app_setsecurityinfoforfilter (hengine, guid, FALSE, line);
+					_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
 			}
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
-		is_intransact = !_wfp_transact_start (hengine, line);
+		is_intransact = !_wfp_transact_start (engine_handle, line);
 	}
 
 	if (!_r_obj_isarrayempty (filter_ids))
@@ -1457,7 +1457,7 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 			guid = _r_obj_getarrayitem (filter_ids, i);
 
 			if (guid)
-				_wfp_deletefilter (hengine, guid);
+				_wfp_deletefilter (engine_handle, guid);
 		}
 
 		_r_obj_cleararray (filter_ids);
@@ -1483,18 +1483,18 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 		}
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 		// win7+
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 1, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (loopback_list); i++)
 		{
@@ -1511,14 +1511,14 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 				fwfc[1].conditionValue.v4AddrMask = &address.addr4;
 
 				fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
-				_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 				// win7+
-				_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 				fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
-				_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
-				_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 			}
 			else if (address.format == NET_ADDRESS_IPV6)
 			{
@@ -1526,14 +1526,14 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 				fwfc[1].conditionValue.v6AddrMask = &address.addr6;
 
 				fwfc[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
-				_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 				// win7+
-				_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 				fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
-				_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
-				_wfp_createfilter (hengine, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+				_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, NULL, fwfc, 2, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 			}
 		}
 	}
@@ -1547,7 +1547,7 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 		fwfc[0].matchType = FWP_MATCH_EQUAL;
 		fwfc[0].conditionValue.type = FWP_UINT8;
 		fwfc[0].conditionValue.uint8 = IPPROTO_IPV6; // ipv6 header
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, L"Allow6to4", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, L"Allow6to4", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 		// allows icmpv6 router solicitation messages, which are required for the ipv6 stack to work properly
 		fwfc[0].fieldKey = FWPM_CONDITION_ICMP_TYPE;
@@ -1555,19 +1555,19 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 		fwfc[0].conditionValue.type = FWP_UINT16;
 
 		fwfc[0].conditionValue.uint16 = 0x85;
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, L"AllowIcmpV6Type133", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, L"AllowIcmpV6Type133", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 		// allows icmpv6 router advertise messages, which are required for the ipv6 stack to work properly
 		fwfc[0].conditionValue.uint16 = 0x86;
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, L"AllowIcmpV6Type134", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, L"AllowIcmpV6Type134", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 		// allows icmpv6 neighbor solicitation messages, which are required for the ipv6 stack to work properly
 		fwfc[0].conditionValue.uint16 = 0x87;
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, L"AllowIcmpV6Type135", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, L"AllowIcmpV6Type135", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 
 		// allows icmpv6 neighbor advertise messages, which are required for the ipv6 stack to work properly
 		fwfc[0].conditionValue.uint16 = 0x88;
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, L"AllowIcmpV6Type136", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, L"AllowIcmpV6Type136", fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
 	}
 
 	// prevent port scanning using stealth discards and silent drops
@@ -1589,34 +1589,34 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 		fwfc[1].conditionValue.type = FWP_UINT16;
 		fwfc[1].conditionValue.uint16 = 0x03; // destination unreachable
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_ICMP_ERROR, fwfc, 2, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_HIGHEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_ICMP_ERROR, fwfc, 2, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_HIGHEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_ICMP_ERROR, fwfc, 2, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_HIGHEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_ICMP_ERROR, fwfc, 2, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_HIGHEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
 
 		// blocks tcp port scanners (exclude loopback)
 		fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_IPSEC_SECURED;
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_TCP_RST_ONCLOSE, fwfc, 1, &FWPM_LAYER_INBOUND_TRANSPORT_V4_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V4_SILENT_DROP, FW_WEIGHT_HIGHEST, FWP_ACTION_CALLOUT_TERMINATING, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_TCP_RST_ONCLOSE, fwfc, 1, &FWPM_LAYER_INBOUND_TRANSPORT_V6_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V6_SILENT_DROP, FW_WEIGHT_HIGHEST, FWP_ACTION_CALLOUT_TERMINATING, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_TCP_RST_ONCLOSE, fwfc, 1, &FWPM_LAYER_INBOUND_TRANSPORT_V4_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V4_SILENT_DROP, FW_WEIGHT_HIGHEST, FWP_ACTION_CALLOUT_TERMINATING, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_TCP_RST_ONCLOSE, fwfc, 1, &FWPM_LAYER_INBOUND_TRANSPORT_V6_DISCARD, &FWPM_CALLOUT_WFP_TRANSPORT_LAYER_V6_SILENT_DROP, FW_WEIGHT_HIGHEST, FWP_ACTION_CALLOUT_TERMINATING, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
 	}
 
 	// configure outbound layer
 	{
 		FWP_ACTION_TYPE action = _r_config_getboolean (L"BlockOutboundConnections", TRUE) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BLOCK_CONNECTION, NULL, 0, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BLOCK_CONNECTION, NULL, 0, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BLOCK_CONNECTION, NULL, 0, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BLOCK_CONNECTION, NULL, 0, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
 
 		// win7+
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BLOCK_REDIRECT, NULL, 0, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BLOCK_REDIRECT, NULL, 0, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BLOCK_REDIRECT, NULL, 0, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V4, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BLOCK_REDIRECT, NULL, 0, &FWPM_LAYER_ALE_CONNECT_REDIRECT_V6, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
 	}
 
 	// configure inbound layer
 	{
 		FWP_ACTION_TYPE action = (_r_config_getboolean (L"UseStealthMode", TRUE) || _r_config_getboolean (L"BlockInboundConnections", TRUE)) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BLOCK_RECVACCEPT, NULL, 0, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BLOCK_RECVACCEPT, NULL, 0, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BLOCK_RECVACCEPT, NULL, 0, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BLOCK_RECVACCEPT, NULL, 0, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_LOWEST, action, FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT, filter_ids);
 	}
 
 	// install boot-time filters (enforced at boot-time, even before "base filtering engine" service starts)
@@ -1634,26 +1634,26 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 		}
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_INBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_INBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_INBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_INBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_HIGHEST_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_INBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_INBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_INBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_INBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V4, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, NULL, 0, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FW_WEIGHT_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 
 		// win7+ boot-time features
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
@@ -1661,15 +1661,15 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 		fwfc[0].conditionValue.type = FWP_UINT32;
 		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_OUTBOUND_PASS_THRU | FWP_CONDITION_FLAG_IS_INBOUND_PASS_THRU;
 
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V4, NULL, FW_WEIGHT_APP, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (hengine, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V6, NULL, FW_WEIGHT_APP, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V4, NULL, FW_WEIGHT_APP, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FW_NAME_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V6, NULL, FW_WEIGHT_APP, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 	}
 
 	if (!is_intransact)
 	{
 		BOOLEAN is_secure;
 
-		_wfp_transact_commit (hengine, line);
+		_wfp_transact_commit (engine_handle, line);
 
 		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
@@ -1680,7 +1680,7 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
 				if (guid)
-					_app_setsecurityinfoforfilter (hengine, guid, is_secure, line);
+					_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
 			}
 		}
 
@@ -1693,20 +1693,20 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE hengine, _In_ UINT line, _In_ BOOLEAN i
 }
 
 _Ret_maybenull_
-PR_ARRAY _wfp_dumpfilters (_In_ HANDLE hengine, _In_ LPCGUID provider_id)
+PR_ARRAY _wfp_dumpfilters (_In_ HANDLE engine_handle, _In_ LPCGUID provider_id)
 {
 	PR_ARRAY guids = NULL;
 	HANDLE enum_handle;
 	ULONG code;
 	UINT32 return_count;
 
-	code = FwpmFilterCreateEnumHandle (hengine, NULL, &enum_handle);
+	code = FwpmFilterCreateEnumHandle (engine_handle, NULL, &enum_handle);
 
 	if (code == ERROR_SUCCESS)
 	{
 		FWPM_FILTER **filters_enum;
 
-		code = FwpmFilterEnum (hengine, enum_handle, UINT32_MAX, &filters_enum, &return_count);
+		code = FwpmFilterEnum (engine_handle, enum_handle, UINT32_MAX, &filters_enum, &return_count);
 
 		if (code == ERROR_SUCCESS)
 		{
@@ -1733,7 +1733,7 @@ PR_ARRAY _wfp_dumpfilters (_In_ HANDLE hengine, _In_ LPCGUID provider_id)
 			}
 		}
 
-		FwpmFilterDestroyEnumHandle (hengine, enum_handle);
+		FwpmFilterDestroyEnumHandle (engine_handle, enum_handle);
 	}
 
 	return guids;
@@ -1742,34 +1742,34 @@ PR_ARRAY _wfp_dumpfilters (_In_ HANDLE hengine, _In_ LPCGUID provider_id)
 VOID NTAPI _wfp_applythread (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	PITEM_CONTEXT context;
-	HANDLE hengine;
+	HANDLE engine_handle;
 
 	_r_queuedlock_acquireshared (&lock_apply);
 
 	context = (PITEM_CONTEXT)arglist;
-	hengine = _wfp_getenginehandle ();
+	engine_handle = _wfp_getenginehandle ();
 
-	if (hengine)
+	if (engine_handle)
 	{
 		// dropped packets logging (win7+)
 		if (config.is_neteventset)
-			_wfp_logunsubscribe (hengine);
+			_wfp_logunsubscribe (engine_handle);
 
 		if (context->is_install)
 		{
-			if (_wfp_initialize (hengine))
-				_wfp_installfilters (hengine);
+			if (_wfp_initialize (engine_handle))
+				_wfp_installfilters (engine_handle);
 		}
 		else
 		{
-			_wfp_destroyfilters (hengine);
-			_wfp_uninitialize (hengine, TRUE);
+			_wfp_destroyfilters (engine_handle);
+			_wfp_uninitialize (engine_handle, TRUE);
 		}
 
 		// dropped packets logging (win7+)
 		if (config.is_neteventset)
 		{
-			_wfp_logsubscribe (hengine);
+			_wfp_logsubscribe (engine_handle);
 		}
 	}
 
