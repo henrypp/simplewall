@@ -487,7 +487,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// app icon
 			if (GetDlgItem (hwnd, IDC_APP_ICON_ID))
 			{
-				hicon_large = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_ICON_HANDLE);
+				hicon_large = _app_getfileiconsafe (context->ptr_app->app_hash);
 
 				SendDlgItemMessage (hwnd, IDC_APP_ICON_ID, STM_SETICON, (WPARAM)hicon_large, 0);
 			}
@@ -1154,7 +1154,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 				_app_addeditortab (hwnd, IDS_TRAY_RULES, IDD_EDITOR_APPRULES, context, &tabs_count);
 
 				// set icon
-				hicon_large = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_ICON_HANDLE);
+				hicon_large = _app_getfileiconsafe (context->ptr_app->app_hash);
 
 				_r_wnd_seticon (hwnd, hicon_large, hicon_large);
 
