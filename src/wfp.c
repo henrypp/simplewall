@@ -124,33 +124,25 @@ HANDLE _wfp_getenginehandle ()
 	return current_handle;
 }
 
-BOOLEAN _wfp_initialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
+BOOLEAN _wfp_initialize (_In_ HANDLE hengine)
 {
+	FWP_VALUE val;
+
 	ULONG code;
 	BOOLEAN is_success;
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
 	BOOLEAN is_intransact;
 
+	BOOLEAN is_secure;
+	BOOLEAN is_win8;
+
+	is_success = TRUE; // already initialized
+
+	is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
+	is_win8 = _r_sys_isosversiongreaterorequal (WINDOWS_8);
+
 	_r_queuedlock_acquireshared (&lock_transaction);
-
-	if (hengine)
-	{
-		is_success = TRUE; // already initialized
-	}
-	else
-	{
-		hengine = _wfp_getenginehandle ();
-
-		if (!hengine)
-		{
-			is_success = FALSE;
-
-			goto CleanupExit;
-		}
-
-		is_success = TRUE;
-	}
 
 	_app_setsecurityinfoforengine (hengine);
 
@@ -158,168 +150,159 @@ BOOLEAN _wfp_initialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full)
 	is_providerexist = (_wfp_isproviderinstalled (hengine) != INSTALL_DISABLED);
 	is_sublayerexist = (_wfp_issublayerinstalled (hengine) != INSTALL_DISABLED);
 
-	if (is_full)
+	if (!is_providerexist || !is_sublayerexist)
 	{
-		if (!is_providerexist || !is_sublayerexist)
+		is_intransact = _wfp_transact_start (hengine, __LINE__);
+
+		if (!is_providerexist)
 		{
-			is_intransact = _wfp_transact_start (hengine, __LINE__);
+			// create provider
+			FWPM_PROVIDER provider = {0};
 
-			if (!is_providerexist)
+			provider.displayData.name = APP_NAME;
+			provider.displayData.description = APP_NAME;
+
+			provider.providerKey = GUID_WfpProvider;
+
+			if (!config.is_filterstemporary)
+				provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
+
+			code = FwpmProviderAdd (hengine, &provider, NULL);
+
+			if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
 			{
-				// create provider
-				FWPM_PROVIDER provider = {0};
-
-				provider.displayData.name = APP_NAME;
-				provider.displayData.description = APP_NAME;
-
-				provider.providerKey = GUID_WfpProvider;
-
-				if (!config.is_filterstemporary)
-					provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
-
-				code = FwpmProviderAdd (hengine, &provider, NULL);
-
-				if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
+				if (is_intransact)
 				{
-					if (is_intransact)
-					{
-						FwpmTransactionAbort (hengine);
-						is_intransact = FALSE;
-					}
-
-					_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderAdd", code, NULL);
-					is_success = FALSE;
-
-					goto CleanupExit;
+					FwpmTransactionAbort (hengine);
+					is_intransact = FALSE;
 				}
-				else
-				{
-					is_providerexist = TRUE;
-				}
-			}
 
-			if (!is_sublayerexist)
-			{
-				FWPM_SUBLAYER sublayer = {0};
+				_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderAdd", code, NULL);
+				is_success = FALSE;
 
-				sublayer.displayData.name = APP_NAME;
-				sublayer.displayData.description = APP_NAME;
-
-				sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
-				sublayer.subLayerKey = GUID_WfpSublayer;
-				sublayer.weight = (UINT16)_r_config_getuinteger (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT); // highest weight for UINT16
-
-				if (!config.is_filterstemporary)
-					sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
-
-				code = FwpmSubLayerAdd (hengine, &sublayer, NULL);
-
-				if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
-				{
-					if (is_intransact)
-					{
-						FwpmTransactionAbort (hengine);
-						is_intransact = FALSE;
-					}
-
-					_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmSubLayerAdd", code, NULL);
-					is_success = FALSE;
-
-					goto CleanupExit;
-				}
-				else
-				{
-					is_sublayerexist = TRUE;
-				}
-			}
-
-			if (is_intransact)
-			{
-				if (!_wfp_transact_commit (hengine, __LINE__))
-					is_success = FALSE;
-			}
-		}
-	}
-
-	// set security information
-	if (is_providerexist || is_sublayerexist)
-	{
-		BOOLEAN is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
-
-		_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, is_secure);
-		_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, is_secure);
-	}
-
-	// set engine options
-	if (is_full)
-	{
-		BOOLEAN is_win8 = _r_sys_isosversiongreaterorequal (WINDOWS_8);
-
-		FWP_VALUE val;
-
-		// dropped packets logging (win7+)
-		if (!config.is_neteventset)
-		{
-			val.type = FWP_UINT32;
-			val.uint32 = 1;
-
-			code = FwpmEngineSetOption (hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
-
-			if (code != ERROR_SUCCESS)
-			{
-				_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
+				goto CleanupExit;
 			}
 			else
 			{
-				// configure dropped packets logging (win8+)
-				if (is_win8)
-				{
-					// the filter engine will collect wfp network events that match any supplied key words
-					val.type = FWP_UINT32;
-					val.uint32 = FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW |
-						FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST |
-						FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
-
-					// 1903+
-					if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
-						val.uint32 |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
-
-					code = FwpmEngineSetOption (hengine, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
-
-					if (code != ERROR_SUCCESS)
-						_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
-
-					// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
-					if (_r_config_getboolean (L"IsMonitorIPSecConnections", TRUE))
-					{
-						val.type = FWP_UINT32;
-						val.uint32 = 1;
-
-						code = FwpmEngineSetOption (hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
-
-						if (code != ERROR_SUCCESS)
-							_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
-					}
-				}
-
-				config.is_neteventset = TRUE;
-
-				_wfp_logsubscribe (hengine);
+				is_providerexist = TRUE;
 			}
 		}
 
-		// packet queuing (win8+)
-		if (is_win8 && _r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
+		if (!is_sublayerexist)
 		{
-			// enables inbound or forward packet queuing independently. when enabled, the system is able to evenly distribute cpu load to multiple cpus for site-to-site ipsec tunnel scenarios.
-			val.type = FWP_UINT32;
-			val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
+			FWPM_SUBLAYER sublayer = {0};
 
-			code = FwpmEngineSetOption (hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
+			sublayer.displayData.name = APP_NAME;
+			sublayer.displayData.description = APP_NAME;
 
-			if (code != ERROR_SUCCESS)
-				_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
+			sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
+			sublayer.subLayerKey = GUID_WfpSublayer;
+			sublayer.weight = (UINT16)_r_config_getuinteger (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT); // highest weight for UINT16
+
+			if (!config.is_filterstemporary)
+				sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
+
+			code = FwpmSubLayerAdd (hengine, &sublayer, NULL);
+
+			if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
+			{
+				if (is_intransact)
+				{
+					FwpmTransactionAbort (hengine);
+					is_intransact = FALSE;
+				}
+
+				_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmSubLayerAdd", code, NULL);
+				is_success = FALSE;
+
+				goto CleanupExit;
+			}
+			else
+			{
+				is_sublayerexist = TRUE;
+			}
 		}
+
+		if (is_intransact)
+		{
+			if (!_wfp_transact_commit (hengine, __LINE__))
+				is_success = FALSE;
+		}
+	}
+
+	// set provider security information
+	if (is_providerexist)
+		_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, is_secure);
+
+	// set sublayer security information
+	if (is_sublayerexist)
+		_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, is_secure);
+
+	// set engine options
+	RtlZeroMemory (&val, sizeof (val));
+
+	// dropped packets logging (win7+)
+	if (!config.is_neteventset)
+	{
+		val.type = FWP_UINT32;
+		val.uint32 = 1;
+
+		code = FwpmEngineSetOption (hengine, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+
+		if (code != ERROR_SUCCESS)
+		{
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
+		}
+		else
+		{
+			// configure dropped packets logging (win8+)
+			if (is_win8)
+			{
+				// the filter engine will collect wfp network events that match any supplied key words
+				val.type = FWP_UINT32;
+				val.uint32 = FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW |
+					FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST |
+					FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
+
+				// 1903+
+				if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
+					val.uint32 |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
+
+				code = FwpmEngineSetOption (hengine, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
+
+				if (code != ERROR_SUCCESS)
+					_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
+
+				// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
+				if (_r_config_getboolean (L"IsMonitorIPSecConnections", TRUE))
+				{
+					val.type = FWP_UINT32;
+					val.uint32 = 1;
+
+					code = FwpmEngineSetOption (hengine, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+
+					if (code != ERROR_SUCCESS)
+						_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
+				}
+			}
+
+			config.is_neteventset = TRUE;
+
+			_wfp_logsubscribe (hengine);
+		}
+	}
+
+	// packet queuing (win8+)
+	if (is_win8 && _r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
+	{
+		// enables inbound or forward packet queuing independently. when enabled, the system is able to evenly distribute cpu load to multiple cpus for site-to-site ipsec tunnel scenarios.
+		val.type = FWP_UINT32;
+		val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
+
+		code = FwpmEngineSetOption (hengine, FWPM_ENGINE_PACKET_QUEUING, &val);
+
+		if (code != ERROR_SUCCESS)
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
 	}
 
 CleanupExit:
@@ -1774,7 +1757,7 @@ VOID NTAPI _wfp_applythread (_In_ PVOID arglist, _In_ ULONG busy_count)
 
 		if (context->is_install)
 		{
-			if (_wfp_initialize (hengine, TRUE))
+			if (_wfp_initialize (hengine))
 				_wfp_installfilters (hengine);
 		}
 		else

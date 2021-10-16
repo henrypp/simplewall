@@ -3322,7 +3322,7 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 
 						_app_profile_load (NULL, NULL);
 
-						if (_wfp_initialize (hengine, TRUE))
+						if (_wfp_initialize (hengine))
 							_wfp_installfilters (hengine);
 
 						_wfp_uninitialize (hengine, FALSE);

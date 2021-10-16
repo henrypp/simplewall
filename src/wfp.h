@@ -11,7 +11,7 @@ ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ();
 
 HANDLE _wfp_getenginehandle ();
 
-BOOLEAN _wfp_initialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full);
+BOOLEAN _wfp_initialize (_In_ HANDLE hengine);
 VOID _wfp_uninitialize (_In_ HANDLE hengine, _In_ BOOLEAN is_full);
 
 VOID _wfp_installfilters (_In_ HANDLE hengine);
