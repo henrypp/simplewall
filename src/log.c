@@ -291,7 +291,7 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	_app_updatelistviewbylparam (hwnd, IDC_LOG, 0);
 }
 
-VOID _wfp_logsubscribe (_In_ HANDLE hengine)
+VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 {
 	typedef ULONG (WINAPI *FWPMNES4)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK4 callback, PVOID context, HANDLE *events_handle); // win10rs5+
 	typedef ULONG (WINAPI *FWPMNES3)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK3 callback, PVOID context, HANDLE *events_handle); // win10rs4+
@@ -343,19 +343,19 @@ VOID _wfp_logsubscribe (_In_ HANDLE hengine)
 	hevent = NULL;
 
 	if (_FwpmNetEventSubscribe4)
-		code = _FwpmNetEventSubscribe4 (hengine, &subscription, &_wfp_logcallback4, NULL, &hevent); // win10rs5+
+		code = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &hevent); // win10rs5+
 
 	else if (_FwpmNetEventSubscribe3)
-		code = _FwpmNetEventSubscribe3 (hengine, &subscription, &_wfp_logcallback3, NULL, &hevent); // win10rs4+
+		code = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &hevent); // win10rs4+
 
 	else if (_FwpmNetEventSubscribe2)
-		code = _FwpmNetEventSubscribe2 (hengine, &subscription, &_wfp_logcallback2, NULL, &hevent); // win10rs1+
+		code = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &hevent); // win10rs1+
 
 	else if (_FwpmNetEventSubscribe1)
-		code = _FwpmNetEventSubscribe1 (hengine, &subscription, &_wfp_logcallback1, NULL, &hevent); // win8+
+		code = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &hevent); // win8+
 
 	else if (_FwpmNetEventSubscribe0)
-		code = _FwpmNetEventSubscribe0 (hengine, &subscription, &_wfp_logcallback0, NULL, &hevent); // win7+
+		code = _FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &hevent); // win7+
 
 	else
 		goto CleanupExit;
@@ -378,7 +378,7 @@ CleanupExit:
 	FreeLibrary (hfwpuclnt);
 }
 
-VOID _wfp_logunsubscribe (_In_ HANDLE hengine)
+VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle)
 {
 	HANDLE current_handle;
 	ULONG code;
@@ -390,7 +390,7 @@ VOID _wfp_logunsubscribe (_In_ HANDLE hengine)
 
 	_app_loginit (FALSE); // destroy log file handle if present
 
-	code = FwpmNetEventUnsubscribe (hengine, current_handle);
+	code = FwpmNetEventUnsubscribe (engine_handle, current_handle);
 
 	if (code != ERROR_SUCCESS)
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", code, NULL);
@@ -398,18 +398,18 @@ VOID _wfp_logunsubscribe (_In_ HANDLE hengine)
 
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 {
-	HANDLE hengine;
+	HANDLE engine_handle;
 
-	hengine = _wfp_getenginehandle ();
+	engine_handle = _wfp_getenginehandle ();
 
-	if (!hengine || !log->filter_id || !log->layer_id || (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE)))
+	if (!engine_handle || !log->filter_id || !log->layer_id || (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE)))
 		return;
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
 	{
 		FWPM_LAYER *layer;
 
-		if (FwpmLayerGetById (hengine, log->layer_id, &layer) == ERROR_SUCCESS)
+		if (FwpmLayerGetById (engine_handle, log->layer_id, &layer) == ERROR_SUCCESS)
 		{
 			if (layer)
 			{
@@ -440,7 +440,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		FWPM_FILTER *ptr_filter = NULL;
 		FWPM_PROVIDER *ptr_provider = NULL;
 
-		if (FwpmFilterGetById (hengine, log->filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
+		if (FwpmFilterGetById (engine_handle, log->filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
 		{
 			if (!_r_str_isempty (ptr_filter->displayData.description))
 			{
@@ -463,7 +463,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 					is_myprovider = TRUE;
 				}
 
-				if (FwpmProviderGetByKey (hengine, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
+				if (FwpmProviderGetByKey (engine_handle, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
 				{
 					if (!_r_str_isempty (ptr_provider->displayData.name))
 					{

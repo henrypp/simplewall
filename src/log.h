@@ -24,8 +24,8 @@ VOID _app_logclear_ui (_In_ HWND hwnd);
 VOID _app_logwrite (_In_ PITEM_LOG ptr_log);
 VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log);
 
-VOID _wfp_logsubscribe (_In_ HANDLE hengine);
-VOID _wfp_logunsubscribe (_In_ HANDLE hengine);
+VOID _wfp_logsubscribe (_In_ HANDLE engine_handle);
+VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle);
 
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log);
 
