@@ -707,7 +707,7 @@ VOID _app_imagelist_init (_In_ HWND hwnd)
 	// get default icon for executable
 	if (config.ntoskrnl_path)
 	{
-		_app_loadfileicon (config.ntoskrnl_path->buffer, &config.icon_id, &config.hicon_large);
+		_app_loadfileicon (config.ntoskrnl_path, &config.icon_id, &config.hicon_large);
 	}
 
 	// get default icon for windows store package (win8+)
@@ -715,7 +715,7 @@ VOID _app_imagelist_init (_In_ HWND hwnd)
 	{
 		if (config.winstore_path)
 		{
-			_app_loadfileicon (config.winstore_path->buffer, &config.icon_uwp_id, &config.hicon_uwp);
+			_app_loadfileicon (config.winstore_path, &config.icon_uwp_id, &config.hicon_uwp);
 		}
 	}
 

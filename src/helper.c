@@ -442,7 +442,7 @@ BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path)
 	return TRUE;
 }
 
-BOOLEAN _app_loadfileicon (_In_ LPCWSTR path, _Out_opt_ PINT icon_id, _Out_opt_ HICON * hicon)
+BOOLEAN _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt_ HICON *hicon)
 {
 	SHFILEINFO shfi = {0};
 	UINT flags;
@@ -452,7 +452,7 @@ BOOLEAN _app_loadfileicon (_In_ LPCWSTR path, _Out_opt_ PINT icon_id, _Out_opt_ 
 	if (hicon)
 		flags |= SHGFI_ICON;
 
-	if (SHGetFileInfo (path, 0, &shfi, sizeof (shfi), flags))
+	if (SHGetFileInfo (path->buffer, 0, &shfi, sizeof (shfi), flags))
 	{
 		if (icon_id)
 			*icon_id = shfi.iIcon;
@@ -498,7 +498,7 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 		return CopyIcon (config.hicon_large);
 	}
 
-	_app_loadfileicon (ptr_app->real_path->buffer, NULL, &hicon);
+	_app_loadfileicon (ptr_app->real_path, NULL, &hicon);
 
 	_r_obj_dereference (ptr_app);
 
@@ -545,7 +545,7 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 
 	if (!_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
-		_app_loadfileicon (ptr_app_info->path->buffer, &icon_id, NULL);
+		_app_loadfileicon (ptr_app_info->path, &icon_id, NULL);
 	}
 
 	if (!icon_id)
