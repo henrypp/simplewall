@@ -2801,12 +2801,24 @@ BOOLEAN _app_parsenetworkstring (_In_ LPCWSTR network_string, _Inout_ PITEM_ADDR
 
 	if (address->is_range)
 	{
-		code = ParseNetworkString (address->range_start, types, &ni, &port, NULL);
+		USHORT range_port1 = 0;
+		USHORT range_port2 = 0;
+
+		code = ParseNetworkString (address->range_start, types, &ni, &range_port1, NULL);
 
 		if (code != ERROR_SUCCESS)
 			goto CleanupExit;
 
-		code = ParseNetworkString (address->range_end, types, &ni_end, NULL, NULL);
+		code = ParseNetworkString (address->range_end, types, &ni_end, &range_port2, NULL);
+
+		if (range_port1)
+		{
+			port = range_port1;
+		}
+		else if (range_port2)
+		{
+			port = range_port2;
+		}
 	}
 	else
 	{
