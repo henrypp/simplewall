@@ -896,11 +896,14 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 		}
 	}
 
-	FWP_V4_ADDR_AND_MASK fwpAddr4AndMask1;
-	FWP_V4_ADDR_AND_MASK fwpAddr4AndMask2;
+	FWP_V4_ADDR_AND_MASK fwp_addr4_and_mask1;
+	FWP_V4_ADDR_AND_MASK fwp_addr4_and_mask2;
 
-	FWP_V6_ADDR_AND_MASK fwpAddr6AndMask1;
-	FWP_V6_ADDR_AND_MASK fwpAddr6AndMask2;
+	FWP_V6_ADDR_AND_MASK fwp_addr6_and_mask1;
+	FWP_V6_ADDR_AND_MASK fwp_addr6_and_mask2;
+
+	FWP_RANGE fwp_range1;
+	FWP_RANGE fwp_range2;
 
 	// set ip/port condition
 	{
@@ -930,6 +933,11 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 					is_remoteaddr_set = TRUE;
 				}
 			}
+			else
+			{
+				is_remoteport_set = FALSE;
+				is_remoteaddr_set = FALSE;
+			}
 
 			if (address.is_range)
 			{
@@ -952,7 +960,17 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 				fwfc[count].fieldKey = (address.type == DATA_TYPE_PORT) ? ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT) : ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
 				fwfc[count].matchType = FWP_MATCH_RANGE;
 				fwfc[count].conditionValue.type = FWP_RANGE_TYPE;
-				fwfc[count].conditionValue.rangeValue = &address.range;
+
+				if (i == 0)
+				{
+					fwp_range1 = address.range;
+					fwfc[count].conditionValue.rangeValue = &fwp_range1;
+				}
+				else
+				{
+					fwp_range2 = address.range;
+					fwfc[count].conditionValue.rangeValue = &fwp_range2;
+				}
 
 				count += 1;
 			}
@@ -981,13 +999,13 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 
 						if (i == 0)
 						{
-							fwpAddr4AndMask1 = address.addr4;
-							fwfc[count].conditionValue.v4AddrMask = &fwpAddr4AndMask1;
+							fwp_addr4_and_mask1 = address.addr4;
+							fwfc[count].conditionValue.v4AddrMask = &fwp_addr4_and_mask1;
 						}
 						else
 						{
-							fwpAddr4AndMask2 = address.addr4;
-							fwfc[count].conditionValue.v4AddrMask = &fwpAddr4AndMask2;
+							fwp_addr4_and_mask2 = address.addr4;
+							fwfc[count].conditionValue.v4AddrMask = &fwp_addr4_and_mask2;
 						}
 
 						count += 1;
@@ -1001,13 +1019,13 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 
 						if (i == 0)
 						{
-							fwpAddr6AndMask1 = address.addr6;
-							fwfc[count].conditionValue.v6AddrMask = &fwpAddr6AndMask1;
+							fwp_addr6_and_mask1 = address.addr6;
+							fwfc[count].conditionValue.v6AddrMask = &fwp_addr6_and_mask1;
 						}
 						else
 						{
-							fwpAddr6AndMask2 = address.addr6;
-							fwfc[count].conditionValue.v6AddrMask = &fwpAddr6AndMask2;
+							fwp_addr6_and_mask2 = address.addr6;
+							fwfc[count].conditionValue.v6AddrMask = &fwp_addr6_and_mask2;
 						}
 
 						count += 1;
@@ -1159,6 +1177,7 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In
 	R_STRINGREF local_remaining_part;
 	R_STRINGREF rule_remote_part;
 	R_STRINGREF rule_local_part;
+	LPCWSTR rule_name;
 
 	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
 	{
@@ -1172,6 +1191,8 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In
 
 		if (!ptr_rule->is_enabled)
 			continue;
+
+		rule_name = _r_obj_getstring (ptr_rule->name);
 
 		if (!_r_obj_isstringempty (ptr_rule->rule_remote))
 		{
@@ -1195,10 +1216,6 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In
 
 		while (TRUE)
 		{
-			LPCWSTR rule_name;
-
-			rule_name = _r_obj_getstring (ptr_rule->name);
-
 			// apply rules for services hosts
 			if (ptr_rule->is_forservices)
 			{
