@@ -917,8 +917,6 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 			if (_r_obj_isstringempty (rules[i]))
 				continue;
 
-			RtlZeroMemory (&address, sizeof (address));
-
 			if (!_app_parserulestring (rules[i], &address))
 				goto CleanupExit;
 
@@ -952,7 +950,15 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 					}
 				}
 
-				fwfc[count].fieldKey = (address.type == DATA_TYPE_PORT) ? ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT) : ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
+				if (address.type == DATA_TYPE_PORT)
+				{
+					fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_PORT : FWPM_CONDITION_IP_LOCAL_PORT);
+				}
+				else
+				{
+					fwfc[count].fieldKey = ((i == 0) ? FWPM_CONDITION_IP_REMOTE_ADDRESS : FWPM_CONDITION_IP_LOCAL_ADDRESS);
+				}
+
 				fwfc[count].matchType = FWP_MATCH_RANGE;
 				fwfc[count].conditionValue.type = FWP_RANGE_TYPE;
 
@@ -1509,8 +1515,6 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (loopback_list); i++)
 		{
-			RtlZeroMemory (&address, sizeof (address));
-
 			if (!_app_parserulestring (&loopback_list[i], &address))
 				continue;
 
