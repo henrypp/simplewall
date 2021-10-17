@@ -576,23 +576,20 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 		return hicon;
 	}
 
-	if (!ptr_app || !ptr_app->real_path || _r_config_getboolean (L"IsIconsHidden", FALSE) || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
+	if (!ptr_app->real_path || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path) || _r_config_getboolean (L"IsIconsHidden", FALSE))
 	{
-		if (ptr_app)
+		if (ptr_app->type == DATA_APP_UWP)
 		{
-			if (ptr_app->type == DATA_APP_UWP)
-			{
-				_app_getdefaulticon_uwp (NULL, &hicon);
-
-				_r_obj_dereference (ptr_app);
-
-				return hicon;
-			}
+			_app_getdefaulticon_uwp (NULL, &hicon);
 
 			_r_obj_dereference (ptr_app);
+
+			return hicon;
 		}
 
 		_app_getdefaulticon (NULL, &hicon);
+
+		_r_obj_dereference (ptr_app);
 
 		return hicon;
 	}
@@ -844,6 +841,8 @@ static LONG _app_verifyfilefromcatalog (_In_ HANDLE hfile, _In_ LPCWSTR file_pat
 	static GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
 
 	WINTRUST_CATALOG_INFO catalog_info = {0};
+	DRIVER_VER_INFO ver_info = {0};
+	CATALOG_INFO ci = {0};
 	HCATADMIN hcat_admin;
 	HCATINFO hcat_info;
 	LONG64 file_size;
@@ -871,9 +870,6 @@ static LONG _app_verifyfilefromcatalog (_In_ HANDLE hfile, _In_ LPCWSTR file_pat
 
 		if (hcat_info)
 		{
-			CATALOG_INFO ci = {0};
-			DRIVER_VER_INFO ver_info = {0};
-
 			file_hash_tag = _r_str_fromhex (file_hash, file_hash_length, TRUE);
 
 			if (CryptCATCatalogInfoFromContext (hcat_info, &ci, 0))
@@ -3286,7 +3282,7 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 		else
 		{
 			local_host_str = _r_obj_referenceemptystring ();
-			remote_host_str = _r_obj_referenceemptystring ();
+			remote_host_str = _r_obj_reference (local_host_str);
 		}
 
 		_r_obj_movereference (&context->ptr_log->local_host_str, local_host_str);
@@ -3308,7 +3304,7 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 		else
 		{
 			local_host_str = _r_obj_referenceemptystring ();
-			remote_host_str = _r_obj_referenceemptystring ();
+			remote_host_str = _r_obj_reference (local_host_str);
 		}
 
 		_r_obj_movereference (&context->ptr_network->local_host_str, local_host_str);

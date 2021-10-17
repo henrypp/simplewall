@@ -1464,12 +1464,11 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 	}
 
 	FWPM_FILTER_CONDITION fwfc[3] = {0};
+	ITEM_ADDRESS address;
 
 	// add loopback connections permission
 	if (_r_config_getboolean (L"AllowLoopbackConnections", TRUE))
 	{
-		ITEM_ADDRESS address;
-
 		// match all loopback (localhost) data
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
 		fwfc[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
