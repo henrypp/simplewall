@@ -3068,7 +3068,10 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 	arpa_hash = _r_obj_getstringhash (arpa_string);
 
 	if (_app_getcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, &string))
+	{
+		_r_obj_dereference (arpa_string);
 		return string;
+	}
 
 	dns_records = NULL;
 	string = NULL;
