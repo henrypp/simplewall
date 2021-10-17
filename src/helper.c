@@ -2811,14 +2811,14 @@ BOOLEAN _app_parsenetworkstring (_In_ LPCWSTR network_string, _Inout_ PITEM_ADDR
 
 		code = ParseNetworkString (address->range_end, types, &ni_end, &range_port2, NULL);
 
-		if (range_port1)
-		{
-			port = range_port1;
-		}
-		else if (range_port2)
+		if (range_port2)
 		{
 			port = range_port2;
 		}
+		else if (range_port1)
+			{
+				port = range_port1;
+			}
 	}
 	else
 	{
