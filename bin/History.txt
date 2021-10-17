@@ -1,3 +1,6 @@
+v3.5.2 (18 October 2021)
+- fixed using uninitialzed port variable in ip ranges [regression] (issue #1055)
+
 v3.5.2 (17 October 2021)
 - builded with windows 11 sdk
 - fixed port can be omited when parsing ip ranges (issue #1010)
