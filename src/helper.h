@@ -41,10 +41,10 @@ BOOLEAN _app_isappsigned (_In_ ULONG_PTR app_hash);
 BOOLEAN _app_isappvalidbinary (_In_ ENUM_TYPE_DATA type, _In_ PR_STRING path);
 BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path);
 
-VOID _app_getdefaulticon (_Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon);
-VOID _app_getdefaulticon_uwp (_Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon);
+VOID _app_getdefaulticon (_Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon);
+VOID _app_getdefaulticon_uwp (_Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon);
 
-VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon);
+VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon, _In_ BOOLEAN is_loaddefaults);
 HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash);
 
 LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened);

@@ -314,7 +314,22 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
-	if (ptr_app_info)
+	if (!ptr_app_info)
+	{
+		// fallback
+		switch (info)
+		{
+			case INFO_ICON_ID:
+			{
+				LONG icon_id;
+
+				_app_getdefaulticon (&icon_id, NULL);
+
+				return LongToPtr (icon_id);
+			}
+		}
+	}
+	else
 	{
 		switch (info)
 		{
@@ -324,15 +339,15 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 
 				icon_id = InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0);
 
-				if (icon_id)
+				if (icon_id != 0)
 				{
-					result = IntToPtr (icon_id);
+					result = LongToPtr (icon_id);
 				}
 				else
 				{
 					_app_getdefaulticon (&icon_id, NULL);
 
-					result = IntToPtr (icon_id);
+					result = LongToPtr (icon_id);
 				}
 
 				break;
@@ -376,19 +391,6 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 		_r_obj_dereference (ptr_app_info);
 
 		return result;
-	}
-
-	// fallback
-	switch (info)
-	{
-		case INFO_ICON_ID:
-		{
-			INT icon_id;
-
-			_app_getdefaulticon (&icon_id, NULL);
-
-			return IntToPtr (icon_id);
-		}
 	}
 
 	return NULL;
@@ -448,39 +450,19 @@ BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path)
 	return TRUE;
 }
 
-VOID _app_getdefaulticon (_Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon)
+VOID _app_getdefaulticon (_Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon)
 {
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static HICON memory_hicon = NULL;
-	static INT memory_icon_id = 0;
-
-	if (_r_initonce_begin (&init_once))
-	{
-		_app_loadfileicon (config.ntoskrnl_path, &memory_icon_id, &memory_hicon);
-
-		_r_initonce_end (&init_once);
-	}
-
-	if (icon_id)
-		*icon_id = memory_icon_id;
-
-	if (hicon)
-		*hicon = CopyIcon (memory_hicon);
-}
-
-VOID _app_getdefaulticon_uwp (_Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon)
-{
-	static R_INITONCE init_once = PR_INITONCE_INIT;
-	static HICON memory_hicon = NULL;
-	static INT memory_icon_id = 0;
+	static LONG memory_icon_id = 0;
 
 	if (_r_initonce_begin (&init_once))
 	{
 		PR_STRING path;
 
-		path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\wsreset.exe");
+		path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\svchost.exe");
 
-		_app_loadfileicon (path, &memory_icon_id, &memory_hicon);
+		_app_loadfileicon (path, &memory_icon_id, &memory_hicon, FALSE);
 
 		_r_obj_dereference (path);
 
@@ -488,18 +470,69 @@ VOID _app_getdefaulticon_uwp (_Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon)
 	}
 
 	if (icon_id)
+	{
 		*icon_id = memory_icon_id;
+	}
 
 	if (hicon)
-		*hicon = CopyIcon (memory_hicon);
+	{
+		if (memory_hicon)
+		{
+			*hicon = CopyIcon (memory_hicon);
+		}
+		else
+		{
+			*hicon = NULL;
+		}
+	}
 }
 
-VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt_ HICON_PTR hicon)
+VOID _app_getdefaulticon_uwp (_Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon)
+{
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static HICON memory_hicon = NULL;
+	static LONG memory_icon_id = 0;
+
+	if (_r_initonce_begin (&init_once))
+	{
+		PR_STRING path;
+
+		path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\wsreset.exe");
+
+		_app_loadfileicon (path, &memory_icon_id, &memory_hicon, FALSE);
+
+		_r_obj_dereference (path);
+
+		_r_initonce_end (&init_once);
+	}
+
+	if (icon_id)
+	{
+		*icon_id = memory_icon_id;
+	}
+
+	if (hicon)
+	{
+		if (memory_hicon)
+		{
+			*hicon = CopyIcon (memory_hicon);
+		}
+		else
+		{
+			*hicon = NULL;
+		}
+	}
+}
+
+VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon, _In_ BOOLEAN is_loaddefaults)
 {
 	SHFILEINFO shfi = {0};
 	UINT flags;
 
-	flags = SHGFI_SYSICONINDEX;
+	flags = SHGFI_LARGEICON;
+
+	if (icon_id)
+		flags |= SHGFI_SYSICONINDEX;
 
 	if (hicon)
 		flags |= SHGFI_ICON;
@@ -511,15 +544,22 @@ VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PINT icon_id, _Out_opt_ H
 
 		if (hicon)
 			*hicon = shfi.hIcon;
-
-		return;
 	}
+	else
+	{
+		if (is_loaddefaults)
+		{
+			_app_getdefaulticon (icon_id, hicon);
+		}
+		else
+		{
+			if (icon_id)
+				*icon_id = 0;
 
-	if (icon_id)
-		*icon_id = 0;
-
-	if (hicon)
-		*hicon = NULL;
+			if (hicon)
+				*hicon = NULL;
+		}
+	}
 }
 
 HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
@@ -536,25 +576,28 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 		return hicon;
 	}
 
-	if (!ptr_app->real_path || _r_config_getboolean (L"IsIconsHidden", FALSE) || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
+	if (!ptr_app || !ptr_app->real_path || _r_config_getboolean (L"IsIconsHidden", FALSE) || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
 	{
-		if (ptr_app->type == DATA_APP_UWP)
+		if (ptr_app)
 		{
-			_app_getdefaulticon_uwp (NULL, &hicon);
+			if (ptr_app->type == DATA_APP_UWP)
+			{
+				_app_getdefaulticon_uwp (NULL, &hicon);
+
+				_r_obj_dereference (ptr_app);
+
+				return hicon;
+			}
 
 			_r_obj_dereference (ptr_app);
-
-			return hicon;
 		}
 
 		_app_getdefaulticon (NULL, &hicon);
 
-		_r_obj_dereference (ptr_app);
-
 		return hicon;
 	}
 
-	_app_loadfileicon (ptr_app->real_path, NULL, &hicon);
+	_app_loadfileicon (ptr_app->real_path, NULL, &hicon, TRUE);
 
 	_r_obj_dereference (ptr_app);
 
@@ -597,11 +640,11 @@ LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortene
 
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 {
-	INT icon_id = 0;
+	LONG icon_id = 0;
 
 	if (!_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
-		_app_loadfileicon (ptr_app_info->path, &icon_id, NULL);
+		_app_loadfileicon (ptr_app_info->path, &icon_id, NULL, TRUE);
 	}
 
 	if (!icon_id)
@@ -3074,7 +3117,7 @@ VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _I
 		}
 
 		// all information is already set
-		if (ptr_app_info->signature_info && ptr_app_info->version_info && ptr_app_info->large_icon_id)
+		if (ptr_app_info->signature_info && ptr_app_info->version_info && InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0) != 0)
 		{
 			_r_obj_dereference (ptr_app_info);
 			return;
@@ -3110,7 +3153,7 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	hwnd = _r_app_gethwnd ();
 
 	// query app icon
-	if (!ptr_app_info->large_icon_id)
+	if (InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0) == 0)
 	{
 		_app_getfileicon (ptr_app_info);
 	}
