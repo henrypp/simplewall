@@ -2816,9 +2816,13 @@ BOOLEAN _app_parsenetworkstring (_In_ LPCWSTR network_string, _Inout_ PITEM_ADDR
 			port = range_port2;
 		}
 		else if (range_port1)
-			{
-				port = range_port1;
-			}
+		{
+			port = range_port1;
+		}
+		else
+		{
+			port = 0;
+		}
 	}
 	else
 	{
@@ -2882,7 +2886,8 @@ CleanupExit:
 	return FALSE;
 }
 
-BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS address)
+_Success_ (return)
+BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Out_ PITEM_ADDRESS address)
 {
 	static WCHAR valid_chars[] = {
 		L'.',
@@ -2897,35 +2902,28 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	R_STRINGREF range_start_part;
 	R_STRINGREF range_end_part;
 	SIZE_T length;
+	BOOLEAN is_valid;
 
 	length = _r_obj_getstringreflength (rule);
 
-	// validate rule symbols if rule is unknown/new...
-	// "type" is maybe already set, so check it to prevent duplicate execution
-
-	if (address->type == DATA_UNKNOWN)
+	for (SIZE_T i = 0; i < length; i++)
 	{
-		for (SIZE_T i = 0; i < length; i++)
+		if (IsCharAlphaNumeric (rule->buffer[i]))
+			continue;
+
+		is_valid = FALSE;
+
+		for (SIZE_T j = 0; j < RTL_NUMBER_OF (valid_chars); j++)
 		{
-			if (IsCharAlphaNumeric (rule->buffer[i]))
-				continue;
-
-			BOOLEAN is_valid = FALSE;
-
-			for (SIZE_T j = 0; j < RTL_NUMBER_OF (valid_chars); j++)
+			if (rule->buffer[i] == valid_chars[j])
 			{
-				if (rule->buffer[i] == valid_chars[j])
-				{
-					is_valid = TRUE;
-					break;
-				}
+				is_valid = TRUE;
+				break;
 			}
-
-			if (is_valid)
-				continue;
-
-			return FALSE;
 		}
+
+		if (!is_valid)
+			return FALSE;
 	}
 
 	// parse rule range
@@ -2936,12 +2934,7 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	{
 		// there is incorrect range syntax
 		if (_r_obj_isstringempty2 (&range_start_part) || _r_obj_isstringempty2 (&range_end_part))
-		{
-			address->is_range = FALSE;
-			address->type = DATA_UNKNOWN;
-
 			return FALSE;
-		}
 
 		_r_str_copystring (address->range_start, RTL_NUMBER_OF (address->range_start), &range_start_part);
 		_r_str_copystring (address->range_end, RTL_NUMBER_OF (address->range_end), &range_end_part);
@@ -2967,6 +2960,7 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 
 	WCHAR rule_string[256];
 	ULONG types;
+
 	_r_str_copystring (rule_string, RTL_NUMBER_OF (rule_string), rule);
 
 	types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
@@ -2974,7 +2968,10 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	// check rule for ip address
 	if (address->is_range)
 	{
-		if (ParseNetworkString (address->range_start, types, NULL, NULL, NULL) == ERROR_SUCCESS && ParseNetworkString (address->range_end, types, NULL, NULL, NULL) == ERROR_SUCCESS)
+		if (
+			ParseNetworkString (address->range_start, types, NULL, NULL, NULL) == ERROR_SUCCESS &&
+			ParseNetworkString (address->range_end, types, NULL, NULL, NULL) == ERROR_SUCCESS
+			)
 		{
 			address->type = DATA_TYPE_IP;
 			return TRUE;
@@ -2992,14 +2989,20 @@ BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS a
 	return FALSE;
 }
 
-BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDRESS address)
+_Success_ (return)
+BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Out_opt_ PITEM_ADDRESS address)
 {
-	if (_r_obj_isstringempty (rule))
-		return TRUE;
-
 	ITEM_ADDRESS address_copy;
 	ULONG_PTR rule_hash;
 	BOOLEAN is_checkonly;
+
+	if (_r_obj_isstringempty (rule))
+	{
+		if (address)
+			RtlZeroMemory (address, sizeof (ITEM_ADDRESS));
+
+		return TRUE;
+	}
 
 	if (address)
 	{
@@ -3007,12 +3010,13 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDR
 	}
 	else
 	{
-		RtlZeroMemory (&address_copy, sizeof (address_copy));
-
 		address = &address_copy;
 
 		is_checkonly = TRUE;
 	}
+
+	// clean struct
+	RtlZeroMemory (address, sizeof (ITEM_ADDRESS));
 
 	// auto-parse rule type
 	rule_hash = _r_obj_getstringrefhash (rule);
@@ -3056,9 +3060,7 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDR
 		_r_str_copystring (rule_string, RTL_NUMBER_OF (rule_string), rule);
 
 		if (!_app_parsenetworkstring (rule_string, address))
-		{
 			return FALSE;
-		}
 	}
 
 	return TRUE;

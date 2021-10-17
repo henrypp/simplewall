@@ -80,8 +80,11 @@ BOOLEAN _app_setruletoapp (_In_ HWND hwnd, _Inout_ PITEM_RULE ptr_rule, _In_ INT
 _Success_ (return)
 BOOLEAN _app_parsenetworkstring (_In_ LPCWSTR network_string, _Inout_ PITEM_ADDRESS address);
 
-BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Inout_ PITEM_ADDRESS address);
-BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDRESS address);
+_Success_ (return)
+BOOLEAN _app_preparserulestring (_In_ PR_STRINGREF rule, _Out_ PITEM_ADDRESS address);
+
+_Success_ (return)
+BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Out_opt_ PITEM_ADDRESS address);
 
 _Ret_maybenull_
 PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
