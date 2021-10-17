@@ -1,3 +1,11 @@
+v3.5.2 (17 October 2021)
+- builded with windows 11 sdk
+- fixed port can be omited when parsing ip ranges (issue #1010)
+- fixed remote range replaces local range (issue #1044)
+- fixed interface stuck by comctl library (issue #1009)
+- fixed massive gdi handles leak
+- fixed internal bugs
+
 v3.5.1 (6 October 2021)
 - optimized certificate checking
 - fixed check apps for digital signatures option not works (issue #1037)
