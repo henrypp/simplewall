@@ -106,9 +106,6 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 	{
 		ptr_app->is_enabled = (PtrToInt (value) ? TRUE : FALSE);
 
-		if (ptr_app->is_enabled)
-			ptr_app->is_silent = FALSE;
-
 		_app_updateitembylparam (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 	}
 	else if (info_data == INFO_IS_UNDELETABLE)
