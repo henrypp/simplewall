@@ -587,8 +587,8 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 					PITEM_COLOR ptr_clr;
 					SIZE_T enum_key = 0;
+					LONG icon_id;
 					INT item_id = 0;
-					INT icon_id;
 
 					_app_getdefaulticon (&icon_id, NULL);
 
@@ -1675,6 +1675,12 @@ VOID _app_initialize ()
 	}
 
 	_app_generate_credentials ();
+
+	// load default icons
+	_app_getdefaulticon (NULL, NULL);
+
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		_app_getdefaulticon_uwp (NULL, NULL);
 
 	// initialize global filters array object
 	if (!filter_ids)
