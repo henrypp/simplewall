@@ -933,11 +933,6 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 					is_remoteaddr_set = TRUE;
 				}
 			}
-			else
-			{
-				is_remoteport_set = FALSE;
-				is_remoteaddr_set = FALSE;
-			}
 
 			if (address.is_range)
 			{
