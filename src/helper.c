@@ -3056,6 +3056,7 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Inout_opt_ PITEM_ADDR
 	return TRUE;
 }
 
+_Ret_maybenull_
 PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 {
 	PDNS_RECORD dns_records;
@@ -3211,15 +3212,11 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 	{
 		host_str = InterlockedCompareExchangePointer (&context->ptr_log->remote_host_str, NULL, NULL);
 
-		if (host_str)
-		{
-			_r_obj_reference (host_str);
-		}
-		else
+		if (!host_str)
 		{
 			host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
 
-			_r_obj_movereference (&context->ptr_log->remote_host_str, _r_obj_reference (host_str));
+			_r_obj_movereference (&context->ptr_log->remote_host_str, host_str);
 		}
 	}
 
@@ -3261,9 +3258,6 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 
 	if (signature_str)
 		_r_obj_dereference (signature_str);
-
-	if (host_str)
-		_r_obj_dereference (host_str);
 
 	_r_obj_dereference (context->ptr_log);
 
