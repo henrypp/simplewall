@@ -246,7 +246,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					_r_ctrl_setstring (hwnd, IDC_RULE_NAME_ID, context->ptr_rule->name->buffer);
 
 				SendDlgItemMessage (hwnd, IDC_RULE_NAME_ID, EM_LIMITTEXT, RULE_NAME_CCH_MAX - 1, 0);
-				SendDlgItemMessage (hwnd, IDC_RULE_NAME_ID, EM_SETREADONLY, context->ptr_rule->is_readonly, 0);
+				SendDlgItemMessage (hwnd, IDC_RULE_NAME_ID, EM_SETREADONLY, (WPARAM)context->ptr_rule->is_readonly, 0);
 			}
 
 			// direction
