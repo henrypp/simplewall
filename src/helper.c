@@ -960,6 +960,9 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	PR_STRING version_string = NULL;
 	HINSTANCE hlib = NULL;
 	PVOID version_info;
+	PR_STRING string;
+	VS_FIXEDFILEINFO *ver_info;
+	ULONG lcid;
 
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		goto CleanupExit;
@@ -973,10 +976,6 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 
 	if (!version_info)
 		goto CleanupExit;
-
-	PR_STRING string;
-	VS_FIXEDFILEINFO *ver_info;
-	ULONG lcid;
 
 	_r_obj_initializestringbuilder (&sb);
 
@@ -996,10 +995,16 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	// get file version
 	if (_r_res_queryversion (version_info, &ver_info))
 	{
-		if (string)
-			_r_obj_appendstringbuilderformat (&sb, L" %d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
+		if (_r_obj_isstringempty2 (sb.string))
+		{
+			_r_obj_appendstringbuilder (&sb, SZ_TAB);
+		}
 		else
-			_r_obj_appendstringbuilderformat (&sb, SZ_TAB L"%d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
+		{
+			_r_obj_appendstringbuilder (&sb, L" ");
+		}
+
+		_r_obj_appendstringbuilderformat (&sb, L"%d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
 
 		if (HIWORD (ver_info->dwFileVersionLS) || LOWORD (ver_info->dwFileVersionLS))
 		{
@@ -1012,7 +1017,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 		}
 	}
 
-	if (string)
+	if (!_r_obj_isstringempty2 (sb.string))
 		_r_obj_appendstringbuilder (&sb, L"\r\n");
 
 	// get file company
