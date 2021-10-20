@@ -20,7 +20,7 @@ PR_STRING _app_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT 
 
 		if (string)
 		{
-			_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE);
+			_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
 
 			if (!_r_obj_isstringempty2 (string))
 			{
@@ -41,7 +41,7 @@ PR_STRING _app_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT 
 
 	string = _r_obj_finalstringbuilder (&buffer);
 
-	_r_str_trimstring (string, &divider_sr);
+	_r_str_trimstring (string, &divider_sr, 0);
 
 	return string;
 }
@@ -158,7 +158,7 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 					if (!string)
 						return FALSE;
 
-					_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE);
+					_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
 
 					if (_r_obj_isstringempty2 (string))
 					{
@@ -293,11 +293,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			// protocols
 			if (GetDlgItem (hwnd, IDC_RULE_PROTOCOL_ID))
 			{
-				_r_ctrl_setstringformat (hwnd, IDC_RULE_PROTOCOL, L"%s:", _r_locale_getstring (IDS_PROTOCOL));
-
-				WCHAR format[256];
-
-				UINT8 protos[] = {
+				static UINT8 protos[] = {
 					IPPROTO_ICMP,
 					IPPROTO_IGMP,
 					IPPROTO_IPV4,
@@ -310,7 +306,10 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					IPPROTO_SCTP,
 				};
 
+				WCHAR format[256];
 				INT index = 0;
+
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_PROTOCOL, L"%s:", _r_locale_getstring (IDS_PROTOCOL));
 
 				_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, _r_locale_getstring (IDS_ANY));
 				_r_combobox_setitemparam (hwnd, IDC_RULE_PROTOCOL_ID, index, 0);
@@ -318,10 +317,10 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				if (context->ptr_rule->protocol == 0)
 					_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
 
-				index += 1;
-
 				for (SIZE_T i = 0; i < RTL_NUMBER_OF (protos); i++)
 				{
+					index += 1;
+
 					_r_str_printf (format, RTL_NUMBER_OF (format), L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (protos[i], AF_UNSPEC, SZ_UNKNOWN), protos[i]);
 
 					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, format);
@@ -329,8 +328,6 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 					if (context->ptr_rule->protocol == protos[i])
 						_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
-
-					index += 1;
 				}
 
 				// unknown protocol
@@ -453,7 +450,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, TRUE);
 
-						_r_listview_additemex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, ptr_app->app_hash);
+						_r_listview_additem_ex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewparam (ptr_app->app_hash));
 						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
 						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, FALSE);
@@ -552,7 +549,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, TRUE);
 
-					_r_listview_additemex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, i);
+					_r_listview_additem_ex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewparam (i));
 					_r_listview_setitemcheck (hwnd, IDC_APP_RULES_ID, 0, is_enabled);
 
 					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, FALSE);
@@ -597,13 +594,14 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 		case WM_SIZE:
 		{
-			HWND hlistview;
-			INT listview_ids[] = {
+			static INT listview_ids[] = {
 				IDC_RULE_APPS_ID,
 				IDC_APP_RULES_ID,
 				IDC_RULE_REMOTE_ID,
 				IDC_RULE_LOCAL_ID,
 			};
+
+			HWND hlistview;
 
 			for (SIZE_T i = 0; i < RTL_NUMBER_OF (listview_ids); i++)
 			{
@@ -750,6 +748,20 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					break;
 				}
 
+				case LVN_DELETEITEM:
+				{
+					LPNMLISTVIEW lpnmlv;
+					INT listview_id;
+
+					lpnmlv = (LPNMLISTVIEW)lparam;
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+
+					if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
+						_app_destroylistviewparam (lpnmlv->lParam);
+
+					break;
+				}
+
 				case LVN_GETDISPINFO:
 				{
 					LPNMLVDISPINFOW lpnmlv;
@@ -858,7 +870,10 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					lpnmlv = (LPNMLVGETINFOTIP)lparam;
 					listview_id = (INT)lpnmlv->hdr.idFrom;
 
-					string = _app_gettooltipbylparam (hwnd, listview_id, _r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem));
+					if (listview_id != IDC_RULE_APPS_ID && listview_id != IDC_APP_RULES_ID)
+						break;
+
+					string = _app_gettooltipbylparam (hwnd, listview_id, _app_getlistviewlparamvalue (hwnd, listview_id, lpnmlv->iItem));
 
 					if (string)
 					{
@@ -1016,7 +1031,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 				case IDM_PROPERTIES:
 				{
-					LPARAM item_param;
+					ULONG_PTR index;
 					INT listview_id;
 					INT item_id;
 
@@ -1037,9 +1052,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 					if (item_id != -1)
 					{
-						item_param = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+						index = _app_getlistviewlparamvalue (hwnd, listview_id, item_id);
 
-						_app_showitembylparam (_r_app_gethwnd (), item_param, (listview_id == IDC_RULE_APPS_ID));
+						_app_showitembylparam (_r_app_gethwnd (), index, (listview_id == IDC_RULE_APPS_ID));
 					}
 
 					break;
@@ -1082,7 +1097,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 					string = _r_obj_finalstringbuilder (&buffer);
 
-					_r_str_trimstring2 (string, DIVIDER_TRIM);
+					_r_str_trimstring2 (string, DIVIDER_TRIM, 0);
 
 					_r_clipboard_set (hwnd, &string->sr);
 
@@ -1288,7 +1303,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 								if (!string)
 									return FALSE;
 
-								_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE);
+								_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
 
 								if (_r_obj_isstringempty2 (string))
 								{
@@ -1355,6 +1370,8 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 						// save rule apps
 						if (context->ptr_rule->type == DATA_RULE_USER)
 						{
+							ULONG_PTR app_hash;
+
 							_r_obj_clearhashtable (context->ptr_rule->apps);
 
 							for (INT i = 0; i < _r_listview_getitemcount (hpage_apps, IDC_RULE_APPS_ID); i++)
@@ -1362,7 +1379,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 								if (!_r_listview_isitemchecked (hpage_apps, IDC_RULE_APPS_ID, i))
 									continue;
 
-								ULONG_PTR app_hash = _r_listview_getitemlparam (hpage_apps, IDC_RULE_APPS_ID, i);
+								app_hash = _app_getlistviewlparamvalue (hpage_apps, IDC_RULE_APPS_ID, i);
 
 								if (context->ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 									continue;
@@ -1404,7 +1421,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_APP_RULES_ID); i++)
 							{
-								rule_idx = _r_listview_getitemlparam (hpage_rule, IDC_APP_RULES_ID, i);
+								rule_idx = _app_getlistviewlparamvalue (hpage_rule, IDC_APP_RULES_ID, i);
 								ptr_rule = _r_obj_getlistitem (rules_list, rule_idx);
 
 								if (!ptr_rule)
@@ -1428,7 +1445,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 					// apply filter
 					if (rules)
 					{
-						if (!_r_obj_islistempty (rules) && _wfp_isfiltersinstalled ())
+						if (!_r_obj_islistempty2 (rules) && _wfp_isfiltersinstalled ())
 						{
 							HANDLE hengine = _wfp_getenginehandle ();
 
