@@ -776,7 +776,7 @@ static PR_STRING _app_verifygetstring (_In_ HANDLE state_data)
 
 			if (length > 1)
 			{
-				string = _r_obj_createstringex (NULL, length * sizeof (WCHAR));
+				string = _r_obj_createstring_ex (NULL, length * sizeof (WCHAR));
 
 				CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1);
 				_r_obj_trimstringtonullterminator (string);
@@ -1034,7 +1034,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 
 	version_string = _r_obj_finalstringbuilder (&sb);
 
-	_r_str_trimstring2 (version_string, DIVIDER_TRIM);
+	_r_str_trimstring2 (version_string, DIVIDER_TRIM, 0);
 
 	if (_r_obj_isstringempty2 (version_string))
 		_r_obj_clearreference (&version_string);
@@ -2343,7 +2343,7 @@ VOID _app_generate_packages ()
 
 	if (max_length)
 	{
-		key_name = _r_obj_createstringex (NULL, max_length * sizeof (WCHAR));
+		key_name = _r_obj_createstring_ex (NULL, max_length * sizeof (WCHAR));
 		key_index = 0;
 
 		while (TRUE)
@@ -2383,7 +2383,7 @@ VOID _app_generate_packages ()
 											UINT localized_length;
 
 											localized_length = 512;
-											localized_name = _r_obj_createstringex (NULL, localized_length * sizeof (WCHAR));
+											localized_name = _r_obj_createstring_ex (NULL, localized_length * sizeof (WCHAR));
 
 											if (SUCCEEDED (SHLoadIndirectString (display_name->buffer, localized_name->buffer, localized_length, NULL)))
 											{
@@ -2505,6 +2505,7 @@ VOID _app_generate_services ()
 		PR_STRING service_path;
 		LONG64 service_timestamp;
 		ULONG_PTR app_hash;
+		ULONG service_type;
 		ULONG sd_length;
 
 		HKEY hkey;
@@ -2530,7 +2531,7 @@ VOID _app_generate_services ()
 			// skip userservice instances service types (win10+)
 			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
 			{
-				ULONG service_type = _r_reg_queryulong (hkey, NULL, L"Type");
+				service_type = _r_reg_queryulong (hkey, NULL, L"Type");
 
 				if (!service_type || (service_type & SERVICE_USERSERVICE_INSTANCE) != 0)
 				{
@@ -2543,19 +2544,34 @@ VOID _app_generate_services ()
 			service_path = _r_reg_querystring (hkey, L"Parameters", L"ServiceDLL");
 
 			if (!service_path)
-				service_path = _r_reg_querystring (hkey, NULL, L"ImagePath");
+			{
+				// Windows 8 places the ServiceDll for some services in the root key. (dmex)
+				if (_r_sys_isosversionequal (WINDOWS_8) || _r_sys_isosversionequal (WINDOWS_8_1))
+					service_path = _r_reg_querystring (hkey, NULL, L"ServiceDLL");
+
+				if (!service_path)
+					service_path = _r_reg_querystring (hkey, NULL, L"ImagePath");
+			}
 
 			if (service_path)
 			{
-				PathRemoveArgs (service_path->buffer);
-				PathUnquoteSpaces (service_path->buffer);
+				R_STRINGREF dummy_filename;
+				R_STRINGREF dummy_argument;
+				PR_STRING converted_path;
 
-				_r_obj_trimstringtonullterminator (service_path);
-
-				PR_STRING converted_path = _r_path_dospathfromnt (service_path->buffer);
+				_r_path_parsecommandlinefuzzy (&service_path->sr, &dummy_filename, &dummy_argument, &converted_path);
 
 				if (converted_path)
+				{
 					_r_obj_movereference (&service_path, converted_path);
+				}
+				else
+				{
+					converted_path = _r_path_dospathfromnt (service_path);
+
+					if (converted_path)
+						_r_obj_movereference (&service_path, converted_path);
+				}
 
 				// query service timestamp
 				service_timestamp = _r_reg_querytimestamp (hkey);
@@ -2592,7 +2608,7 @@ VOID _app_generate_services ()
 							if (ptr_app)
 							{
 								_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &service_timestamp);
-								_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_createbyteex (service_sd, sd_length));
+								_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_createbyte_ex (service_sd, sd_length));
 
 								_r_obj_dereference (ptr_app);
 							}
@@ -3210,6 +3226,7 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	PITEM_CONTEXT context;
+	PITEM_APP_INFO ptr_app_info;
 	PR_STRING host_str;
 	PR_STRING signature_str;
 	PR_STRING localized_string;
@@ -3232,6 +3249,23 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 			host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
 
 			_r_obj_movereference (&context->ptr_log->remote_host_str, host_str);
+		}
+	}
+
+	// query signature
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+	{
+		ptr_app_info = _app_getappinfobyhash2 (context->ptr_log->app_hash);
+
+		if (ptr_app_info)
+		{
+			if (InterlockedCompareExchange (&ptr_app_info->lock, 0, 0) == 0)
+			{
+				if (!ptr_app_info->signature_info)
+					_app_getfilesignatureinfo (ptr_app_info);
+			}
+
+			_r_obj_dereference (ptr_app_info);
 		}
 	}
 
