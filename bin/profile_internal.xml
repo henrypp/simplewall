@@ -13,6 +13,7 @@
 		<item name="NetBIOS [outbound]" rule="137-139" is_services="true" is_enabled="true" />
 		<item name="NCSI" apps="NlaSvc" is_enabled="true" />
 		<item name="NTP" rule="123" protocol="17" is_services="true" />
+		<item name="Printer Service" rule_remote="515;631" protocol="6" apps="Spooler" />
 		<item name="RDP [inbound]" rule_local="3389" dir="1" is_services="true" />
 		<item name="RDP [outbound]" rule="3389" is_services="true" />
 		<item name="SMB [inbound]" rule_local="445" dir="1" protocol="6" is_services="true" />
