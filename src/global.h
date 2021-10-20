@@ -65,6 +65,7 @@ DECLSPEC_SELECTANY R_WORKQUEUE resolve_notify_queue = {0};
 DECLSPEC_SELECTANY R_WORKQUEUE wfp_queue = {0};
 
 DECLSPEC_SELECTANY R_FREE_LIST context_free_list = {0};
+DECLSPEC_SELECTANY R_FREE_LIST listview_free_list = {0};
 
 // timers array
 DECLSPEC_SELECTANY LONG64 timer_array[] =
