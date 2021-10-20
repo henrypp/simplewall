@@ -771,7 +771,7 @@ IDR_PROFILE_INTERNAL RCDATA		"..\\bin\\profile_internal_packed.bin"
 //
 // PNG resources
 //
-IDP_ADD				PNG		"res\\add.png"
+IDP_ADD				PNG		"res\\plus.png"
 IDP_ALLOW			PNG		"res\\accept_button.png"
 IDP_BLOCK			PNG		"res\\delete.png"
 IDP_SHIELD_ENABLE	PNG		"res\\tick_shield.png"
