@@ -280,6 +280,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 	{
 		case WM_INITDIALOG:
 		{
+			WCHAR buffer[256];
+			HWND hctrl;
+
 			context = (PITEM_CONTEXT)lparam;
 
 			EnableThemeDialogTexture (hwnd, ETDT_ENABLETAB);
@@ -355,7 +358,6 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					IPPROTO_SCTP,
 				};
 
-				WCHAR format[256];
 				INT index = 0;
 
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_PROTOCOL, L"%s:", _r_locale_getstring (IDS_PROTOCOL));
@@ -370,9 +372,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				{
 					index += 1;
 
-					_r_str_printf (format, RTL_NUMBER_OF (format), L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (protos[i], AF_UNSPEC, SZ_UNKNOWN), protos[i]);
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (protos[i], AF_UNSPEC, SZ_UNKNOWN), protos[i]);
 
-					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, format);
+					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, buffer);
 					_r_combobox_setitemparam (hwnd, IDC_RULE_PROTOCOL_ID, index, (LPARAM)protos[i]);
 
 					if (context->ptr_rule->protocol == protos[i])
@@ -382,9 +384,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				// unknown protocol
 				if (_r_combobox_getcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID) == CB_ERR)
 				{
-					_r_str_printf (format, RTL_NUMBER_OF (format), L"%s (%" TEXT (PR_ULONG) L")", _app_getprotoname (context->ptr_rule->protocol, AF_UNSPEC, SZ_UNKNOWN), context->ptr_rule->protocol);
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PR_ULONG) L")", _app_getprotoname (context->ptr_rule->protocol, AF_UNSPEC, SZ_UNKNOWN), context->ptr_rule->protocol);
 
-					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, format);
+					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, buffer);
 					_r_combobox_setitemparam (hwnd, IDC_RULE_PROTOCOL_ID, index, (LPARAM)context->ptr_rule->protocol);
 
 					_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
@@ -471,6 +473,17 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				_r_ctrl_enable (hwnd, IDC_RULE_LOCAL_DELETE, FALSE);
 			}
 
+			// search
+			hctrl = GetDlgItem (hwnd, IDC_SEARCH);
+
+			if (hctrl)
+			{
+				_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s...", _r_locale_getstring (IDS_FIND));
+				_r_ctrl_setcuebanner (hwnd, IDC_SEARCH, buffer);
+
+				SetWindowPos (hctrl, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
+			}
+
 			// apps
 			if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
 			{
@@ -483,6 +496,8 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+
+				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED);
 
 				// apps (apply to)
 				{
@@ -580,6 +595,8 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 0, _r_locale_getstring (IDS_TRAY_SYSTEM_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 1, _r_locale_getstring (IDS_TRAY_USER_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+
+				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_COLLAPSED, LVGS_COLLAPSED);
 
 				// initialize
 				PITEM_RULE ptr_rule;
@@ -967,6 +984,36 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, SZ_MAXTEXT);
 				return FALSE;
 			}
+			else if (notify_code == EN_CHANGE)
+			{
+				PR_STRING string;
+				INT listview_id;
+
+				if (ctrl_id != IDC_SEARCH)
+					break;
+
+				if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
+				{
+					listview_id = IDC_RULE_APPS_ID;
+				}
+				else if (GetDlgItem (hwnd, IDC_APP_RULES_ID))
+				{
+					listview_id = IDC_APP_RULES_ID;
+				}
+				else
+				{
+					return FALSE;
+				}
+
+				string = _r_ctrl_getstring (hwnd, IDC_SEARCH);
+
+				_app_message_applyfilter (hwnd, listview_id, string);
+
+				if (string)
+					_r_obj_dereference (string);
+
+				return FALSE;
+			}
 
 			switch (ctrl_id)
 			{
@@ -1315,7 +1362,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 						ShowWindow (hpage, SW_SHOWNA);
 
-						if (_r_wnd_isvisiblefull (hwnd)) // HACK!!!
+						if (_r_wnd_isvisible (hwnd)) // HACK!!!
 							SetFocus (hpage);
 					}
 
