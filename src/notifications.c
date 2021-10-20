@@ -277,7 +277,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 	// print date
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
-	_r_obj_movereference (&string, _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
+	_r_obj_movereference (&string, _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
 	_r_ctrl_settablestring (hwnd, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_string);
 
@@ -1153,7 +1153,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 						_r_queuedlock_acquireexclusive (&lock_rules);
 
-						_r_obj_addlistitemex (rules_list, _r_obj_reference (ptr_rule), &rule_idx);
+						_r_obj_addlistitem_ex (rules_list, _r_obj_reference (ptr_rule), &rule_idx);
 
 						_r_queuedlock_releaseexclusive (&lock_rules);
 

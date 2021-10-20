@@ -675,13 +675,13 @@ COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
 
 VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_APP ptr_app)
 {
-	_r_listview_setitemex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_app->is_enabled);
 }
 
 VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps)
 {
-	_r_listview_setitemex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_rule->is_enabled);
 
 	if (include_apps)
@@ -875,7 +875,7 @@ PR_STRING _app_appexpandrules (_In_ ULONG_PTR app_hash, _In_ LPCWSTR delimeter)
 
 	string = _r_obj_finalstringbuilder (&buffer);
 
-	_r_str_trimstring (string, &delimeter_sr);
+	_r_str_trimstring (string, &delimeter_sr, 0);
 
 	if (!_r_obj_isstringempty2 (string))
 		return string;
@@ -942,7 +942,7 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 
 	string = _r_obj_finalstringbuilder (&buffer);
 
-	_r_str_trimstring (string, &delimeter_sr);
+	_r_str_trimstring (string, &delimeter_sr, 0);
 
 	if (!_r_obj_isstringempty2 (string))
 		return string;
@@ -980,7 +980,7 @@ PR_STRING _app_rulesexpandrules (_In_opt_ PR_STRING rule, _In_ LPCWSTR delimeter
 
 	string = _r_obj_finalstringbuilder (&buffer);
 
-	_r_str_trimstring (string, &delimeter_sr);
+	_r_str_trimstring (string, &delimeter_sr, 0);
 
 	if (!_r_obj_isstringempty2 (string))
 		return string;
@@ -1257,7 +1257,9 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 		// https://github.com/henrypp/simplewall/issues/817
 		if (_r_str_isstartswith2 (&string->sr, L"\\device\\", TRUE))
 		{
-			PR_STRING dos_path = _r_path_dospathfromnt (string->buffer);
+			PR_STRING dos_path;
+
+			dos_path = _r_path_dospathfromnt (string);
 
 			if (dos_path)
 				_r_obj_movereference (&string, dos_path);
