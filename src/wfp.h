@@ -9,6 +9,7 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE engine_handle);
 BOOLEAN _wfp_isfiltersapplying ();
 ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ();
 
+_Ret_maybenull_
 HANDLE _wfp_getenginehandle ();
 
 BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle);

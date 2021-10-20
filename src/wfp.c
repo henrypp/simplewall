@@ -78,6 +78,7 @@ ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ()
 	return INSTALL_DISABLED;
 }
 
+_Ret_maybenull_
 HANDLE _wfp_getenginehandle ()
 {
 	static HANDLE engine_handle = NULL;
@@ -1729,7 +1730,7 @@ PR_ARRAY _wfp_dumpfilters (_In_ HANDLE engine_handle, _In_ LPCGUID provider_id)
 			{
 				FWPM_FILTER *filter;
 
-				guids = _r_obj_createarrayex (sizeof (GUID), return_count, NULL);
+				guids = _r_obj_createarray_ex (sizeof (GUID), return_count, NULL);
 
 				for (UINT32 i = 0; i < return_count; i++)
 				{
@@ -1882,7 +1883,7 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 		}
 		else
 		{
-			original_path = _r_path_ntpathfromdos (path->buffer, &code);
+			original_path = _r_path_ntpathfromdos (path, &code);
 
 			if (!original_path)
 			{
@@ -1900,23 +1901,31 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 					}
 					else
 					{
-						WCHAR path_root[512];
+						PR_STRING path_root;
 						R_STRINGREF path_skip_root;
 
 						// file path (without root)
-						_r_str_copystring (path_root, RTL_NUMBER_OF (path_root), &path->sr);
-						PathStripToRoot (path_root);
+						path_root = _r_obj_createstring2 (path);
+						PathStripToRoot (path_root->buffer);
+
+						_r_obj_trimstringtonullterminator (path_root);
 
 						// file path (without root)
 						_r_obj_initializestringref (&path_skip_root, PathSkipRoot (path->buffer));
-						_r_str_tolower (&path_skip_root); // lower is important!
 
 						original_path = _r_path_ntpathfromdos (path_root, &code);
 
 						if (!original_path)
+						{
+							_r_obj_dereference (path_root);
 							return code;
+						}
 
 						_r_obj_movereference (&original_path, _r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root));
+
+						_r_str_tolower (&original_path->sr); // lower is important!
+
+						_r_obj_dereference (path_root);
 					}
 				}
 				else
