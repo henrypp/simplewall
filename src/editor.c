@@ -3,7 +3,56 @@
 
 #include "global.h"
 
-PR_STRING _app_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT exclude_id)
+static VOID _app_addeditortab (_In_ HWND hwnd, _In_ UINT locale_id, _In_ INT dlg_id, _In_ PITEM_CONTEXT context, _Inout_ PINT tabs_count)
+{
+	HWND htab;
+
+	htab = CreateDialogParam (NULL, MAKEINTRESOURCE (dlg_id), hwnd, &PropertiesPagesProc, (LPARAM)context);
+
+	if (!htab)
+		return;
+
+	_r_tab_additem (hwnd, IDC_TAB, *tabs_count, _r_locale_getstring (locale_id), I_IMAGENONE, (LPARAM)htab);
+
+	*tabs_count += 1;
+
+	_r_tab_adjustchild (hwnd, IDC_TAB, htab);
+
+	SendMessage (htab, RM_INITIALIZE, 0, 0);
+}
+
+static VOID _app_settabcounttitle (_In_ HWND hwnd, _In_ INT listview_id)
+{
+	WCHAR buffer[128];
+	HWND hparent;
+	UINT locale_id;
+	INT checked_count;
+	INT tab_id;
+
+	if (listview_id == IDC_RULE_APPS_ID)
+	{
+		locale_id = IDS_TAB_APPS;
+		tab_id = 2;
+	}
+	else // if (listview_id == IDC_APP_RULES_ID)
+	{
+		locale_id = IDS_TRAY_RULES;
+		tab_id = 1;
+	}
+
+	hparent = GetParent (hwnd);
+
+	if (!hparent)
+		return;
+
+	checked_count = _r_listview_getitemcheckedcount (hwnd, listview_id);
+
+	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%d)", _r_locale_getstring (locale_id), checked_count);
+
+	_r_tab_setitem (hparent, IDC_TAB, tab_id, buffer, I_IMAGENONE, 0);
+}
+
+static PR_STRING _app_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT exclude_id)
 {
 	static R_STRINGREF divider_sr = PR_STRINGREF_INIT (DIVIDER_RULE);
 	R_STRINGBUILDER buffer;
@@ -46,7 +95,7 @@ PR_STRING _app_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT 
 	return string;
 }
 
-VOID _app_setrulestolistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ PR_STRING rule)
+static VOID _app_setrulestolistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ PR_STRING rule)
 {
 	PR_STRING rule_string;
 	R_STRINGREF first_part;
@@ -457,6 +506,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					}
 
 					_r_queuedlock_releaseshared (&lock_apps);
+
 				}
 
 				// resize column
@@ -586,6 +636,19 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			break;
 		}
 
+		case RM_INITIALIZE:
+		{
+			// apps
+			if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
+				_app_settabcounttitle (hwnd, IDC_RULE_APPS_ID);
+
+			// rules
+			if (GetDlgItem (hwnd, IDC_APP_RULES_ID))
+				_app_settabcounttitle (hwnd, IDC_APP_RULES_ID);
+
+			break;
+		}
+
 		case WM_DESTROY:
 		{
 			SAFE_DELETE_ICON (hicon_large);
@@ -663,8 +726,13 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 				case NM_RCLICK:
 				{
-					LPNMITEMACTIVATE lpnmlv = (LPNMITEMACTIVATE)lparam;
-					INT listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+					LPNMITEMACTIVATE lpnmlv;
+					HMENU hsubmenu;
+					BOOLEAN is_selected;
+					INT listview_id;
+
+					lpnmlv = (LPNMITEMACTIVATE)lparam;
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
 					if (
 						listview_id != IDC_RULE_REMOTE_ID &&
@@ -675,8 +743,6 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					{
 						break;
 					}
-					HMENU hsubmenu;
-					BOOLEAN is_selected;
 
 					hsubmenu = CreatePopupMenu ();
 
@@ -831,6 +897,8 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 								if (_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom))
 									break;
 
+								_app_settabcounttitle (hwnd, listview_id);
+
 								_app_refreshgroups (hwnd, listview_id);
 								_app_listviewsort (hwnd, listview_id, -1, FALSE);
 							}
@@ -911,9 +979,11 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 						break;
 
 					PR_STRING string;
-					INT listview_id = ((ctrl_id == IDC_RULE_REMOTE_ADD || ctrl_id == IDC_RULE_REMOTE_EDIT) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID);
+					INT listview_id;
 					INT item_id;
 					INT current_length;
+
+					listview_id = ((ctrl_id == IDC_RULE_REMOTE_ADD || ctrl_id == IDC_RULE_REMOTE_EDIT) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID);
 
 					if ((ctrl_id == IDC_RULE_REMOTE_EDIT || ctrl_id == IDC_RULE_LOCAL_EDIT))
 					{
@@ -1114,20 +1184,6 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 	return FALSE;
 }
 
-FORCEINLINE VOID _app_addeditortab (_In_ HWND hwnd, _In_ UINT locale_id, _In_ INT dlg_id, _In_ PITEM_CONTEXT context, _Inout_ PINT tabs_count)
-{
-	HWND htab = CreateDialogParam (NULL, MAKEINTRESOURCE (dlg_id), hwnd, &PropertiesPagesProc, (LPARAM)context);
-
-	if (htab)
-	{
-		_r_tab_additem (hwnd, IDC_TAB, *tabs_count, _r_locale_getstring (locale_id), I_IMAGENONE, (LPARAM)htab);
-
-		*tabs_count += 1;
-
-		_r_tab_adjustchild (hwnd, IDC_TAB, htab);
-	}
-}
-
 INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
 {
 	static R_LAYOUT_MANAGER layout_manager = {0};
@@ -1138,11 +1194,12 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 		case WM_INITDIALOG:
 		{
 			WCHAR title[128];
+			INT tabs_count;
 
 			context = (PITEM_CONTEXT)lparam;
 
 			// configure tabs
-			INT tabs_count = 0;
+			tabs_count = 0;
 
 			if (context->is_settorules)
 			{
