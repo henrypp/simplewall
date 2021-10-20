@@ -175,7 +175,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 		}
 	}
 
-	date_string = _r_format_unixtimeex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+	date_string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
 
 	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol);
 	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol);
@@ -250,7 +250,7 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 
 		item_id = _r_listview_getitemcount (hwnd, IDC_LOG) - 1;
 
-		hash_code = _r_listview_getitemlparam (hwnd, IDC_LOG, item_id);
+		hash_code = _app_getlistviewlparamvalue (hwnd, IDC_LOG, item_id);
 		_r_listview_deleteitem (hwnd, IDC_LOG, item_id);
 
 		_r_queuedlock_acquireexclusive (&lock_loglist);
@@ -270,20 +270,17 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 
 	item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
 
-	_r_listview_additemex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDNONE, log_hash);
+	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_createlistviewparam (log_hash));
 
 	// resolve network address
-	//if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
-	{
-		context = _r_freelist_allocateitem (&context_free_list);
+	context = _r_freelist_allocateitem (&context_free_list);
 
-		context->hwnd = hwnd;
-		context->listview_id = IDC_LOG;
-		context->lparam = log_hash;
-		context->ptr_log = _r_obj_reference (ptr_log);
+	context->hwnd = hwnd;
+	context->listview_id = IDC_LOG;
+	context->lparam = log_hash;
+	context->ptr_log = _r_obj_reference (ptr_log);
 
-		_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
-	}
+	_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
 
 	if (ptr_app)
 		_r_obj_dereference (ptr_app);
@@ -526,7 +523,15 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	}
 	else if ((log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) && log->app_id)
 	{
-		PR_STRING path = _r_path_dospathfromnt ((LPCWSTR)(log->app_id));
+		PR_STRING path;
+		PR_STRING resolved_path;
+
+		path = _r_obj_createstring ((LPCWSTR)(log->app_id));
+
+		resolved_path = _r_path_dospathfromnt (path);
+
+		if (resolved_path)
+			_r_obj_movereference (&path, resolved_path);
 
 		if (path)
 		{
