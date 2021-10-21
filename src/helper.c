@@ -2799,7 +2799,7 @@ BOOLEAN _app_setruletoapp (_In_ HWND hwnd, _Inout_ PITEM_RULE ptr_rule, _In_ INT
 	{
 		listview_id = _app_getlistviewbytype_id (ptr_rule->type);
 
-		_app_updateitembylparam (hwnd, _r_listview_getitemlparam (hwnd, listview_id, item_id), FALSE);
+		_app_updateitembylparam (hwnd, _app_getlistviewlparamvalue (hwnd, listview_id, item_id), FALSE);
 	}
 
 	_app_updateitembylparam (hwnd, ptr_app->app_hash, TRUE);
