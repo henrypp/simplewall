@@ -855,14 +855,14 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 				goto CleanupExit;
 			}
 		}
-		else if (ptr_app->type == DATA_APP_UWP) // windows store app (win8+)
+		else if (ptr_app->type == DATA_APP_UWP) // uwp app (win8+)
 		{
 			if (ptr_app->pbytes)
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_PACKAGE_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_SID;
-				fwfc[count].conditionValue.sid = (SID *)ptr_app->pbytes->buffer;
+				fwfc[count].conditionValue.sid = (PSID)ptr_app->pbytes->buffer;
 
 				count += 1;
 			}
