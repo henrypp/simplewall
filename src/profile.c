@@ -354,14 +354,18 @@ PITEM_RULE _app_getrulebyid (_In_ SIZE_T index)
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	ptr_rule = _r_obj_getlistitem (rules_list, index);
+	if (index < _r_obj_getlistsize (rules_list))
+	{
+		ptr_rule = _r_obj_getlistitem (rules_list, index);
+	}
+	else
+	{
+		ptr_rule = NULL;
+	}
 
 	_r_queuedlock_releaseshared (&lock_rules);
 
-	if (ptr_rule)
-		return _r_obj_reference (ptr_rule);
-
-	return NULL;
+	return _r_obj_referencesafe (ptr_rule);
 }
 
 _Ret_maybenull_
