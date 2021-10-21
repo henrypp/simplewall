@@ -1361,9 +1361,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 						_r_tab_adjustchild (hwnd, IDC_TAB, hpage);
 
 						ShowWindow (hpage, SW_SHOWNA);
-
-						if (_r_wnd_isvisible (hwnd)) // HACK!!!
-							SetFocus (hpage);
+						SetFocus (NULL);
 					}
 
 					break;
