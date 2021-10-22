@@ -54,6 +54,9 @@
     <ClCompile Include="src\security.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\search.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\routine\routine.h">
@@ -111,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\routine\rtypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\search.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

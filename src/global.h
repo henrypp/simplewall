@@ -96,6 +96,7 @@ DECLSPEC_SELECTANY LONG64 timer_array[] =
 #include "messages.h"
 #include "notifications.h"
 #include "profile.h"
+#include "search.h"
 #include "security.h"
 #include "timer.h"
 #include "wfp.h"
