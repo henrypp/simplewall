@@ -222,10 +222,11 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 					WCHAR rule_string[256];
 					R_STRINGREF remaining_part;
 					R_STRINGREF first_part;
+					INT item_id;
 
 					_r_obj_initializestringref2 (&remaining_part, string);
 
-					INT item_id = _r_listview_getitemcount (context->hwnd, context->listview_id);
+					item_id = _r_listview_getitemcount (context->hwnd, context->listview_id);
 
 					while (remaining_part.length != 0)
 					{
@@ -478,10 +479,9 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 			if (hctrl)
 			{
-				_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s...", _r_locale_getstring (IDS_FIND));
-				_r_ctrl_setcuebanner (hwnd, IDC_SEARCH, buffer);
+				_app_search_initialize (hctrl);
 
-				SetWindowPos (hctrl, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
+				SetWindowPos (hctrl, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED); // HACK!!!
 			}
 
 			// apps
@@ -986,7 +986,6 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			}
 			else if (notify_code == EN_CHANGE)
 			{
-				PR_STRING string;
 				INT listview_id;
 
 				if (ctrl_id != IDC_SEARCH)
@@ -1005,12 +1004,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					return FALSE;
 				}
 
-				string = _r_ctrl_getstring (hwnd, IDC_SEARCH);
-
-				_app_message_applyfilter (hwnd, listview_id, string);
-
-				if (string)
-					_r_obj_dereference (string);
+				_app_search_applyfilter (hwnd, listview_id, hwnd);
 
 				return FALSE;
 			}
