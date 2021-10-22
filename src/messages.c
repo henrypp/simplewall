@@ -1202,13 +1202,22 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 {
 	HICON hicon;
 	HMENU hmenu;
-	LPCWSTR icon_id;
+
 	LONG dpi_value;
 
-	dpi_value = _r_dc_getsystemdpi ();
-	icon_id = MAKEINTRESOURCE (_wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE);
+	LONG icon_small_x;
+	LONG icon_small_y;
 
-	hicon = _r_loadicon (_r_sys_getimagebase (), icon_id, _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value), TRUE);
+	UINT icon_id;
+
+	dpi_value = _r_dc_getsystemdpi ();
+
+	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
+
+	icon_id = _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE;
+
+	hicon = _r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small_x, icon_small_y, TRUE);
 
 	_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, hicon, _r_app_getname (), FALSE);
 

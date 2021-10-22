@@ -516,26 +516,42 @@ HFONT _app_notifyfontinit (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ L
 
 VOID _app_notifyfontset (_In_ HWND hwnd)
 {
+	NONCLIENTMETRICS ncm = {0};
+
 	LONG dpi_value;
 
-	INT title_font_height = 12;
-	INT text_font_height = 9;
+	LONG icon_small_x;
+	LONG icon_small_y;
 
-	NONCLIENTMETRICS ncm = {0};
-	ncm.cbSize = sizeof (ncm);
+	LONG icon_large_x;
+	LONG icon_large_y;
+
+	INT title_font_height;
+	INT text_font_height;
 
 	dpi_value = _r_dc_getwindowdpi (hwnd);
 
+	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
+
+	icon_large_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
+	icon_large_y = _r_dc_getsystemmetrics (SM_CYICON, dpi_value);
+
 	_r_wnd_seticon (hwnd,
-					_r_loadicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value), TRUE),
-					_r_loadicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), _r_dc_getsystemmetrics (SM_CXICON, dpi_value), TRUE)
+					_r_sys_loadicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small_x, icon_small_y, TRUE),
+					_r_sys_loadicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large_x, icon_large_y, TRUE)
 	);
+
+	ncm.cbSize = sizeof (ncm);
 
 	if (SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
 	{
 		SAFE_DELETE_OBJECT (hfont_title);
 		SAFE_DELETE_OBJECT (hfont_link);
 		SAFE_DELETE_OBJECT (hfont_text);
+
+		title_font_height = 12;
+		text_font_height = 9;
 
 		hfont_title = _app_notifyfontinit (&ncm.lfCaptionFont, dpi_value, title_font_height, FW_NORMAL, FALSE);
 		hfont_link = _app_notifyfontinit (&ncm.lfMessageFont, dpi_value, text_font_height, FW_NORMAL, TRUE);
