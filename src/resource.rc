@@ -784,6 +784,7 @@ IDP_LOGOPEN			PNG		"res\\page_white_magnify.png"
 IDP_LOGCLEAR		PNG		"res\\page_white_delete.png"
 IDP_DONATE			PNG		"res\\paypal_fulllogo.png"
 IDP_LOGUI			PNG		"res\\eye.png"
+IDP_SEARCH			PNG		"res\\cross.png"
 
 //
 // Icon resources
