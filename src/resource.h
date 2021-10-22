@@ -565,6 +565,7 @@
 #define IDP_LOGCLEAR 110
 #define IDP_DONATE 111
 #define IDP_LOGUI 112
+#define IDP_SEARCH 113
 
 // Icons
 #define IDI_MAIN 100
