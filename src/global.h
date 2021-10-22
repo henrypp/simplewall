@@ -20,7 +20,6 @@
 #include <shobjidl.h>
 #include <softpub.h>
 #include <subauth.h>
-#include <wincodec.h>
 #include <mscat.h>
 
 #include "app.h"
