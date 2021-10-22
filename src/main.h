@@ -20,7 +20,6 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "wintrust.lib")
-#pragma comment(lib, "windowscodecs.lib")
 
 // guids
 DEFINE_GUID (GUID_TrayIcon, 0xdab4837e, 0xcb0f, 0x47da, 0x92, 0x22, 0x21, 0x20, 0x74, 0x9f, 0x5c, 0x41);
@@ -158,6 +157,9 @@ typedef enum _ENUM_INFO_DATA2
 #define TRANSACTION_TIMEOUT 9000
 #define NETWORK_TIMEOUT 3500
 
+// search
+#define LV_HIDDEN_GROUP_ID 17
+
 // notifications
 #define NOTIFY_TIMER_SAFETY_ID 666
 #define NOTIFY_TIMER_SAFETY_TIMEOUT 900
@@ -165,13 +167,13 @@ typedef enum _ENUM_INFO_DATA2
 #define NOTIFY_TIMEOUT_DEFAULT 60 // sec.
 
 // default colors
-#define LISTVIEW_COLOR_TIMER RGB(255, 190, 142)
-#define LISTVIEW_COLOR_INVALID RGB (255, 125, 148)
-#define LISTVIEW_COLOR_SPECIAL RGB (255, 255, 170)
-#define LISTVIEW_COLOR_SIGNED RGB (175, 228, 163)
-#define LISTVIEW_COLOR_PICO RGB (51, 153, 255)
-#define LISTVIEW_COLOR_SYSTEM RGB(151, 196, 251)
-#define LISTVIEW_COLOR_CONNECTION RGB(255, 168, 242)
+#define LV_COLOR_TIMER RGB(255, 190, 142)
+#define LV_COLOR_INVALID RGB (255, 125, 148)
+#define LV_COLOR_SPECIAL RGB (255, 255, 170)
+#define LV_COLOR_SIGNED RGB (175, 228, 163)
+#define LV_COLOR_PICO RGB (51, 153, 255)
+#define LV_COLOR_SYSTEM RGB(151, 196, 251)
+#define LV_COLOR_CONNECTION RGB(255, 168, 242)
 
 // filter names
 #define FW_NAME_BLOCK_CONNECTION L"BlockConnection"
@@ -204,8 +206,6 @@ typedef struct _STATIC_DATA
 	WCHAR windows_dir_buffer[MAX_PATH];
 	R_STRINGREF windows_dir;
 
-	WCHAR search_string[128];
-
 	PR_STRING my_path;
 	PR_STRING ntoskrnl_path;
 	PR_STRING svchost_path;
@@ -237,7 +237,6 @@ typedef struct _STATIC_DATA
 
 	HFONT hfont;
 	HWND hrebar;
-	HWND hfind;
 
 	LONG64 profile_internal_timestamp;
 
@@ -265,13 +264,13 @@ typedef struct _ITEM_LOG
 	{
 		IN_ADDR remote_addr;
 		IN6_ADDR remote_addr6;
-	};
+	} DUMMYUNIONNAME;
 
 	union
 	{
 		IN_ADDR local_addr;
 		IN6_ADDR local_addr6;
-	};
+	} DUMMYUNIONNAME2;
 
 	PR_STRING path;
 	PR_STRING provider_name;
@@ -336,7 +335,7 @@ typedef struct _ITEM_APP
 		ULONG is_silent : 1;
 		ULONG is_undeletable : 1;
 		ULONG spare_bits : 28;
-	};
+	} DUMMYSTRUCTNAME;
 } ITEM_APP, *PITEM_APP;
 
 typedef struct _ITEM_APP_INFO
@@ -380,7 +379,7 @@ typedef struct _ITEM_RULE
 		ULONG is_readonly : 1;
 		ULONG is_enabled_default : 1;
 		ULONG spare_bits : 27;
-	};
+	} DUMMYSTRUCTNAME;
 
 	union
 	{
@@ -391,8 +390,8 @@ typedef struct _ITEM_RULE
 			FWP_DIRECTION direction;
 			UINT8 protocol;
 			ADDRESS_FAMILY af;
-		};
-	};
+		} DUMMYSTRUCTNAME2;
+	} DUMMYUNIONNAME;
 
 	ENUM_TYPE_DATA type;
 	FWP_ACTION_TYPE action;
@@ -414,13 +413,13 @@ typedef struct _ITEM_NETWORK
 	{
 		IN_ADDR remote_addr;
 		IN6_ADDR remote_addr6;
-	};
+	} DUMMYUNIONNAME;
 
 	union
 	{
 		IN_ADDR local_addr;
 		IN6_ADDR local_addr6;
-	};
+	} DUMMYUNIONNAME2;
 
 	PR_STRING path;
 	PR_STRING local_addr_str;
@@ -462,17 +461,17 @@ typedef struct _ITEM_CONTEXT
 			{
 				PITEM_APP ptr_app;
 				PITEM_RULE ptr_rule;
-			};
+			} DUMMYUNIONNAME;
 
 			INT page_id;
 			BOOLEAN is_settorules;
-		};
+		} DUMMYSTRUCTNAME;
 
 		struct
 		{
 			INT item_id;
 			INT current_length;
-		};
+		} DUMMYSTRUCTNAME2;
 
 		struct
 		{
@@ -480,14 +479,21 @@ typedef struct _ITEM_CONTEXT
 			{
 				PITEM_LOG ptr_log;
 				PITEM_NETWORK ptr_network;
-			};
+			} DUMMYUNIONNAME2;
 
 			LPARAM lparam;
-		};
+		} DUMMYSTRUCTNAME3;
 
 		BOOLEAN is_install;
-	};
+	} DUMMYUNIONNAME;
 } ITEM_CONTEXT, *PITEM_CONTEXT;
+
+typedef struct _ITEM_LISTVIEW_CONTEXT
+{
+	ULONG_PTR id_code;
+
+	BOOLEAN is_hidden;
+} ITEM_LISTVIEW_CONTEXT, *PITEM_LISTVIEW_CONTEXT;
 
 typedef struct _ITEM_COLOR
 {
@@ -501,7 +507,6 @@ typedef struct _ITEM_COLOR
 
 typedef struct _ITEM_ADDRESS
 {
-	WCHAR host[256];
 	WCHAR range_start[LEN_IP_MAX];
 	WCHAR range_end[LEN_IP_MAX];
 
@@ -516,8 +521,8 @@ typedef struct _ITEM_ADDRESS
 
 			UINT8 addr6_low[FWP_V6_ADDR_SIZE];
 			UINT8 addr6_high[FWP_V6_ADDR_SIZE];
-		};
-	};
+		} DUMMYSTRUCTNAME;
+	} DUMMYUNIONNAME;
 
 	UINT16 port;
 
@@ -531,13 +536,13 @@ typedef struct _ITEM_LOG_CALLBACK
 {
 	union
 	{
-		UINT32 remote_addr4;
+		ULONG_PTR remote_addr4;
 		const FWP_BYTE_ARRAY16 *remote_addr6;
 	} DUMMYUNIONNAME;
 
 	union
 	{
-		UINT32 local_addr4;
+		ULONG_PTR local_addr4;
 		const FWP_BYTE_ARRAY16 *local_addr6;
 	} DUMMYUNIONNAME2;
 
