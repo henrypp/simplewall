@@ -958,7 +958,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					if (listview_id != IDC_RULE_APPS_ID && listview_id != IDC_APP_RULES_ID)
 						break;
 
-					string = _app_gettooltipbylparam (hwnd, listview_id, _app_getlistviewlparamvalue (hwnd, listview_id, lpnmlv->iItem));
+					string = _app_gettooltipbylparam (hwnd, listview_id, _app_getlistviewitemlparam (hwnd, listview_id, lpnmlv->iItem));
 
 					if (string)
 					{
@@ -1163,7 +1163,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 					if (item_id != -1)
 					{
-						index = _app_getlistviewlparamvalue (hwnd, listview_id, item_id);
+						index = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
 
 						_app_showitembylparam (_r_app_gethwnd (), index, (listview_id == IDC_RULE_APPS_ID));
 					}
@@ -1475,7 +1475,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 								if (!_r_listview_isitemchecked (hpage_apps, IDC_RULE_APPS_ID, i))
 									continue;
 
-								app_hash = _app_getlistviewlparamvalue (hpage_apps, IDC_RULE_APPS_ID, i);
+								app_hash = _app_getlistviewitemlparam (hpage_apps, IDC_RULE_APPS_ID, i);
 
 								if (context->ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 									continue;
@@ -1517,7 +1517,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_APP_RULES_ID); i++)
 							{
-								rule_idx = _app_getlistviewlparamvalue (hpage_rule, IDC_APP_RULES_ID, i);
+								rule_idx = _app_getlistviewitemlparam (hpage_rule, IDC_APP_RULES_ID, i);
 								ptr_rule = _r_obj_getlistitem (rules_list, rule_idx);
 
 								if (!ptr_rule)
