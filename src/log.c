@@ -563,13 +563,13 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 			// remote address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) && log->remote_addr4)
 			{
-				ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (log->remote_addr4);
+				ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong ((ULONG)log->remote_addr4);
 			}
 
 			// local address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) && log->local_addr4)
 			{
-				ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (log->local_addr4);
+				ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong ((ULONG)log->local_addr4);
 			}
 		}
 		else if (log->version == FWP_IP_VERSION_V6)
