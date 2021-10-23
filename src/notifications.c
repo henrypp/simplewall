@@ -588,7 +588,7 @@ VOID _app_notifyfontset (_In_ HWND hwnd)
 	InvalidateRect (hwnd, NULL, TRUE);
 }
 
-VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPRECT rect)
+VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPCRECT rect)
 {
 	static COLORREF gradient_arr[] = {
 		RGB (0, 68, 112),
@@ -632,8 +632,6 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 		{
 			HWND htip;
 
-			_app_notifyfontset (hwnd);
-
 			htip = _r_ctrl_createtip (hwnd);
 
 			if (htip)
@@ -644,6 +642,8 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				_r_ctrl_settiptext (htip, hwnd, IDC_BLOCK_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_LATER_BTN, LPSTR_TEXTCALLBACK);
 			}
+
+			_app_notifyfontset (hwnd);
 
 			break;
 		}

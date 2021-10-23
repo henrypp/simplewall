@@ -30,6 +30,6 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
 HFONT _app_notifyfontinit (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ LONG size, _In_ BOOLEAN is_underline);
 VOID _app_notifyfontset (_In_ HWND hwnd);
 
-VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPRECT rect);
+VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPCRECT rect);
 
 INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam);
