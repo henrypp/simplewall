@@ -719,12 +719,11 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				if (GetClientRect (hwnd, &rect))
 				{
 					footer_height = _r_dc_getdpi (PR_SIZE_FOOTERHEIGHT, _r_dc_getwindowdpi (hwnd));
+
 					clr = GetSysColor (COLOR_WINDOW);
 
 					wnd_width = rect.right;
 					wnd_height = rect.bottom;
-
-					_r_dc_fillrect (hdc, &rect, clr);
 
 					SetRect (&rect, 0, wnd_height - footer_height, wnd_width, wnd_height);
 
@@ -780,14 +779,10 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			return (INT_PTR)GetStockObject (DC_BRUSH);
 		}
 
-		case WM_ERASEBKGND:
-		{
-			return TRUE;
-		}
-
 		case WM_DRAWITEM:
 		{
 			LPDRAWITEMSTRUCT draw_info;
+
 			RECT text_rect;
 			RECT icon_rect;
 
