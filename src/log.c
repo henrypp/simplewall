@@ -1285,7 +1285,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 				{
 					if (!PtrToInt (_app_getappinfo (ptr_app, INFO_IS_SILENT)))
 					{
-						_app_notifyadd (_r_obj_reference (ptr_log), ptr_app);
+						_app_notify_addobject (_r_obj_reference (ptr_log), ptr_app);
 					}
 				}
 			}

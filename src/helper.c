@@ -14,7 +14,7 @@ VOID NTAPI _app_dereferenceapp (_In_ PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->short_name);
 	SAFE_DELETE_REFERENCE (ptr_item->original_path);
 
-	SAFE_DELETE_REFERENCE (ptr_item->pnotification);
+	SAFE_DELETE_REFERENCE (ptr_item->notification);
 
 	SAFE_DELETE_REFERENCE (ptr_item->guids);
 }
@@ -1909,7 +1909,7 @@ ULONG_PTR _app_addcolor (_In_ UINT locale_id, _In_ LPCWSTR config_name, _In_ BOO
 
 	ptr_clr.config_name = _r_obj_createstring (config_name);
 	ptr_clr.config_value = _r_obj_createstring (config_value);
-	ptr_clr.new_clr = _r_config_getulongex (config_value, default_clr, L"colors");
+	ptr_clr.new_clr = _r_config_getulong_ex (config_value, default_clr, L"colors");
 
 	ptr_clr.default_clr = default_clr;
 	ptr_clr.locale_id = locale_id;
@@ -3274,10 +3274,10 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 
 	if (_r_wnd_isvisible (context->hwnd))
 	{
-		if (context->ptr_log->app_hash == _app_notifyget_id (context->hwnd, FALSE))
+		if (context->ptr_log->app_hash == _app_notify_getapp_id (context->hwnd))
 		{
 			// set file icon
-			_app_notifyseticon (context->hwnd, hicon, TRUE);
+			_app_notify_setapp_icon (context->hwnd, hicon, TRUE);
 			is_iconset = TRUE;
 
 			// set signature information
@@ -3286,7 +3286,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 			signature_str = _app_getappinfoparam2 (context->ptr_log->app_hash, INFO_SIGNATURE_STRING);
 
 			if (_r_obj_isstringempty (signature_str))
-				_r_obj_movereference (&signature_str, _r_locale_getstringex (IDS_SIGN_UNSIGNED));
+				_r_obj_movereference (&signature_str, _r_locale_getstring_ex (IDS_SIGN_UNSIGNED));
 
 			_r_ctrl_settablestring (context->hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
 
@@ -3294,7 +3294,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 
 			if (_r_obj_isstringempty (host_str))
-				_r_obj_movereference (&host_str, _r_locale_getstringex (IDS_STATUS_EMPTY));
+				_r_obj_movereference (&host_str, _r_locale_getstring_ex (IDS_STATUS_EMPTY));
 
 			_r_ctrl_settablestring (context->hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
 

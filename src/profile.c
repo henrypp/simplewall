@@ -71,7 +71,7 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 {
 	if (info_data == INFO_BYTES_DATA)
 	{
-		_r_obj_movereference (&ptr_app->pbytes, value);
+		_r_obj_movereference (&ptr_app->bytes, value);
 	}
 	else if (info_data == INFO_TIMESTAMP_PTR)
 	{
@@ -100,7 +100,7 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 		ptr_app->is_silent = (PtrToInt (value) ? TRUE : FALSE);
 
 		if (ptr_app->is_silent)
-			_app_freenotify (ptr_app);
+			_app_notify_freeobject (ptr_app);
 	}
 	else if (info_data == INFO_IS_ENABLED)
 	{
@@ -496,26 +496,26 @@ COLORREF _app_getappcolor (_In_ INT listview_id, _In_ ULONG_PTR app_hash, _In_ B
 
 	if (ptr_app && !is_networklist)
 	{
-		if (_r_config_getbooleanex (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
+		if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
 		{
 			color_hash = config.color_invalid;
 			goto CleanupExit;
 		}
 
-		if (_r_config_getbooleanex (L"IsHighlightTimer", TRUE, L"colors") && _app_istimerset (ptr_app->htimer))
+		if (_r_config_getboolean_ex (L"IsHighlightTimer", TRUE, L"colors") && _app_istimerset (ptr_app->htimer))
 		{
 			color_hash = config.color_timer;
 			goto CleanupExit;
 		}
 	}
 
-	if (_r_config_getbooleanex (L"IsHighlightConnection", TRUE, L"colors") && is_validconnection)
+	if (_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors") && is_validconnection)
 	{
 		color_hash = config.color_network;
 		goto CleanupExit;
 	}
 
-	if (_r_config_getbooleanex (L"IsHighlightSigned", TRUE, L"colors") && _app_isappsigned (app_hash))
+	if (_r_config_getboolean_ex (L"IsHighlightSigned", TRUE, L"colors") && _app_isappsigned (app_hash))
 	{
 		color_hash = config.color_signed;
 		goto CleanupExit;
@@ -523,20 +523,20 @@ COLORREF _app_getappcolor (_In_ INT listview_id, _In_ ULONG_PTR app_hash, _In_ B
 
 	if (ptr_app)
 	{
-		if (!is_profilelist && (_r_config_getbooleanex (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash, FALSE)))
+		if (!is_profilelist && (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash, FALSE)))
 		{
 			color_hash = config.color_special;
 			goto CleanupExit;
 		}
 
-		if (_r_config_getbooleanex (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DATA_APP_PICO)
+		if (_r_config_getboolean_ex (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DATA_APP_PICO)
 		{
 			color_hash = config.color_pico;
 			goto CleanupExit;
 		}
 	}
 
-	if (_r_config_getbooleanex (L"IsHighlightSystem", TRUE, L"colors") && is_systemapp)
+	if (_r_config_getboolean_ex (L"IsHighlightSystem", TRUE, L"colors") && is_systemapp)
 	{
 		color_hash = config.color_system;
 		goto CleanupExit;
@@ -663,10 +663,10 @@ COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
 
 	color_hash = 0;
 
-	if (_r_config_getbooleanex (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
+	if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
 		color_hash = config.color_invalid;
 
-	else if (_r_config_getbooleanex (L"IsHighlightSpecial", TRUE, L"colors") && (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps)))
+	else if (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps)))
 		color_hash = config.color_special;
 
 	_r_obj_dereference (ptr_rule);

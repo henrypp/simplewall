@@ -229,8 +229,6 @@ typedef struct _STATIC_DATA
 	HBITMAP hbmp_disable;
 	HBITMAP hbmp_allow;
 	HBITMAP hbmp_block;
-	HBITMAP hbmp_cross;
-	HBITMAP hbmp_rules;
 
 	volatile HANDLE hlogfile;
 	volatile HANDLE hnetevent;
@@ -314,8 +312,8 @@ typedef struct _ITEM_APP
 	PR_STRING short_name;
 	PR_STRING real_path;
 
-	PITEM_LOG pnotification;
-	PR_BYTE pbytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
+	PITEM_LOG notification;
+	PR_BYTE bytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 
 	PTP_TIMER htimer;
 
