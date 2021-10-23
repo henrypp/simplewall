@@ -707,7 +707,10 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			PAINTSTRUCT ps;
 			RECT rect;
 			HDC hdc;
+			LONG wnd_width;
+			LONG wnd_height;
 			LONG footer_height;
+			COLORREF clr;
 
 			hdc = BeginPaint (hwnd, &ps);
 
@@ -716,15 +719,21 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				if (GetClientRect (hwnd, &rect))
 				{
 					footer_height = _r_dc_getdpi (PR_SIZE_FOOTERHEIGHT, _r_dc_getwindowdpi (hwnd));
+					clr = GetSysColor (COLOR_WINDOW);
 
-					_r_dc_fillrect (hdc, &rect, GetSysColor (COLOR_WINDOW));
+					wnd_width = rect.right;
+					wnd_height = rect.bottom;
 
-					SetRect (&rect, 0, rect.bottom - footer_height, rect.right, rect.bottom);
+					_r_dc_fillrect (hdc, &rect, clr);
 
-					_r_dc_fillrect (hdc, &rect, GetSysColor (COLOR_BTNFACE));
+					SetRect (&rect, 0, wnd_height - footer_height, wnd_width, wnd_height);
+
+					_r_dc_fillrect (hdc, &rect, _r_dc_getcolorshade (clr, 90));
+
+					clr = _r_dc_getcolorshade (clr, 70);
 
 					for (INT i = 0; i < rect.right; i++)
-						SetPixelV (hdc, i, rect.top, GetSysColor (COLOR_APPWORKSPACE));
+						SetPixelV (hdc, i, rect.top, clr);
 				}
 
 				EndPaint (hwnd, &ps);
