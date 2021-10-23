@@ -229,8 +229,9 @@ BEGIN
 	EDITTEXT		IDC_DATE_TEXT, 8, 144, 132, 12, WS_CHILD | WS_VISIBLE | NOT WS_TABSTOP | NOT WS_BORDER | ES_READONLY | ES_AUTOHSCROLL | ES_RIGHT
 
 	PUSHBUTTON		"", IDC_RULES_BTN, 8, 166, 82, 15, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_SPLITBUTTON
-	PUSHBUTTON		"", IDC_ALLOW_BTN, 144, 166, 82, 15, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_SPLITBUTTON
-	PUSHBUTTON		"", IDC_BLOCK_BTN, 230, 166, 82, 15, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON
+	PUSHBUTTON		"", IDC_ALLOW_BTN, 114, 166, 82, 15, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_SPLITBUTTON
+	PUSHBUTTON		"", IDC_BLOCK_BTN, 200, 166, 82, 15, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON
+	PUSHBUTTON		"", IDC_LATER_BTN, 286, 166, 26, 15, WS_TABSTOP | WS_CHILD | WS_VISIBLE | BS_ICON | BS_PUSHBUTTON
 END
 
 IDD_EDITOR DIALOGEX 0, 0, 292, 220
@@ -699,7 +700,7 @@ BEGIN
 
 	IDS_ACTION_ALLOW_HINT "Allow network access forever"
 	IDS_ACTION_BLOCK_HINT "Block network access forever ('til kingdom come)"
-	//IDS_ACTION_LATER_HINT "Ignore and ask me later"
+	IDS_ACTION_LATER_HINT "Ignore and ask me later"
 
 	IDS_RULE_APPLY_2 "Apply ""%s"" for this app"
 
@@ -774,6 +775,7 @@ IDR_PROFILE_INTERNAL RCDATA		"..\\bin\\profile_internal_packed.bin"
 IDP_ADD				PNG		"res\\plus.png"
 IDP_ALLOW			PNG		"res\\accept_button.png"
 IDP_BLOCK			PNG		"res\\delete.png"
+IDP_CROSS			PNG		"res\\cross.png"
 IDP_SHIELD_ENABLE	PNG		"res\\tick_shield.png"
 IDP_SHIELD_DISABLE	PNG		"res\\cross_shield.png"
 IDP_REFRESH			PNG		"res\\arrow_refresh.png"
@@ -784,7 +786,7 @@ IDP_LOGOPEN			PNG		"res\\page_white_magnify.png"
 IDP_LOGCLEAR		PNG		"res\\page_white_delete.png"
 IDP_DONATE			PNG		"res\\paypal_fulllogo.png"
 IDP_LOGUI			PNG		"res\\eye.png"
-IDP_SEARCH			PNG		"res\\cross.png"
+IDP_SEARCH			PNG		"res\\search.png"
 
 //
 // Icon resources
