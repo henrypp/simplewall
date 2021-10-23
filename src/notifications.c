@@ -135,6 +135,7 @@ BOOLEAN _app_notifyadd (_In_ PITEM_LOG ptr_log, _In_ PITEM_APP ptr_app)
 VOID _app_freenotify (_Inout_ PITEM_APP ptr_app)
 {
 	HWND hnotify;
+	ULONG_PTR app_hash;
 
 	hnotify = _app_notifygetwindow ();
 
@@ -143,10 +144,16 @@ VOID _app_freenotify (_Inout_ PITEM_APP ptr_app)
 
 	if (hnotify)
 	{
-		if (_app_notifyget_id (hnotify, FALSE) == ptr_app->app_hash)
-			_app_notifyget_id (hnotify, TRUE);
+		app_hash = _app_notifyget_id (hnotify, TRUE);
 
-		_app_notifyrefresh (hnotify, TRUE);
+		if (app_hash)
+		{
+			_app_notifyrefresh (hnotify, TRUE);
+		}
+		else
+		{
+			_app_notifyhide (hnotify);
+		}
 	}
 }
 
@@ -166,7 +173,7 @@ ULONG_PTR _app_notifyget_id (_In_ HWND hwnd, _In_ BOOLEAN is_nearest)
 
 		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 		{
-			if (ptr_app->app_hash == app_hash_current) // exclude current app from enumeration
+			if (app_hash_current && ptr_app->app_hash == app_hash_current) // exclude current app from enumeration
 				continue;
 
 			if (ptr_app->pnotification)
@@ -215,7 +222,7 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 	WCHAR window_title[128];
 	PITEM_CONTEXT context;
 	PITEM_APP ptr_app;
-	PR_STRING string ;
+	PR_STRING string;
 	PR_STRING localized_string;
 	R_STRINGREF empty_string;
 	R_STRINGREF display_name;
@@ -340,21 +347,6 @@ BOOLEAN _app_notifyshow (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is
 
 VOID _app_notifyhide (_In_ HWND hwnd)
 {
-	ULONG_PTR app_hash;
-	PITEM_APP ptr_app;
-
-	app_hash = _app_notifyget_id (hwnd, FALSE);
-	ptr_app = _app_getappitem (app_hash);
-
-	if (ptr_app)
-	{
-		ptr_app->last_notify = _r_unixtime_now ();
-
-		_app_freenotify (ptr_app);
-
-		_r_obj_dereference (ptr_app);
-	}
-
 	ShowWindow (hwnd, SW_HIDE);
 }
 
@@ -368,6 +360,7 @@ VOID _app_notifyplaysound ()
 #define NOTIFY_SOUND_NAME L"MailBeep"
 
 		HKEY hkey;
+		PR_STRING expanded_string;
 
 		if (RegOpenKeyEx (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", 0, KEY_READ, &hkey) == ERROR_SUCCESS)
 		{
@@ -375,7 +368,7 @@ VOID _app_notifyplaysound ()
 
 			if (path)
 			{
-				PR_STRING expanded_string = _r_str_expandenvironmentstring (&path->sr);
+				expanded_string = _r_str_expandenvironmentstring (&path->sr);
 
 				if (expanded_string)
 					_r_obj_movereference (&path, expanded_string);
@@ -1014,6 +1007,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 				PITEM_LOG ptr_log;
 				PITEM_APP ptr_app;
 				SIZE_T rule_idx;
+				BOOLEAN is_remove;
 
 				rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
 				ptr_rule = _app_getrulebyid (rule_idx);
@@ -1033,7 +1027,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 						{
 							_app_freenotify (ptr_app);
 
-							BOOLEAN is_remove = ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, ptr_log->app_hash);
+							is_remove = ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, ptr_log->app_hash);
 
 							if (is_remove)
 							{
