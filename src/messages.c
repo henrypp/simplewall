@@ -1300,7 +1300,9 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 VOID _app_message_localize (_In_ HWND hwnd)
 {
 	HMENU hmenu;
+	HMENU hsubmenu;
 	HWND hnotify;
+	LPCWSTR recommended_string;
 
 	hmenu = GetMenu (hwnd);
 
@@ -1309,7 +1311,7 @@ VOID _app_message_localize (_In_ HWND hwnd)
 		_r_menu_setitemtext (hmenu, 0, TRUE, _r_locale_getstring (IDS_FILE));
 		_r_menu_setitemtext (hmenu, 1, TRUE, _r_locale_getstring (IDS_EDIT));
 		_r_menu_setitemtext (hmenu, 2, TRUE, _r_locale_getstring (IDS_VIEW));
-		_r_menu_setitemtext (hmenu, 3, TRUE, _r_locale_getstring (IDS_TRAY_RULES));
+		_r_menu_setitemtext (hmenu, 3, TRUE, _r_locale_getstring (IDS_SETTINGS));
 		_r_menu_setitemtext (hmenu, 4, TRUE, _r_locale_getstring (IDS_TRAY_BLOCKLIST_RULES));
 		_r_menu_setitemtext (hmenu, 5, TRUE, _r_locale_getstring (IDS_HELP));
 
@@ -1338,19 +1340,26 @@ VOID _app_message_localize (_In_ HWND hwnd)
 
 		_r_menu_setitemtext (hmenu, IDM_ICONSISHIDDEN, FALSE, _r_locale_getstring (IDS_ICONSISHIDDEN));
 
-		_r_menu_setitemtextformat (GetSubMenu (hmenu, 2), LANG_MENU, TRUE, L"%s (Language)", _r_locale_getstring (IDS_LANGUAGE));
+		hsubmenu = GetSubMenu (hmenu, 2);
+
+		if (hsubmenu)
+		{
+			_r_menu_setitemtextformat (hsubmenu, LANG_MENU, TRUE, L"%s (Language)", _r_locale_getstring (IDS_LANGUAGE));
+			_r_locale_enum (hsubmenu, LANG_MENU, IDX_LANGUAGE); // enum localizations
+		}
 
 		_r_menu_setitemtextformat (hmenu, IDM_FONT, FALSE, L"%s...", _r_locale_getstring (IDS_FONT));
 
-		LPCWSTR recommended_string = _r_locale_getstring (IDS_RECOMMENDED);
+		hsubmenu = GetSubMenu (hmenu, 3);
 
-		_r_menu_setitemtext (hmenu, IDM_CONNECTIONS_TITLE, FALSE, _r_locale_getstring (IDS_TAB_NETWORK));
-		_r_menu_setitemtext (hmenu, IDM_SECURITY_TITLE, FALSE, _r_locale_getstring (IDS_TITLE_SECURITY));
-		_r_menu_setitemtext (hmenu, IDM_ADVANCED_TITLE, FALSE, _r_locale_getstring (IDS_TITLE_ADVANCED));
+		if (hsubmenu)
+		{
+			_r_menu_setitemtext (hsubmenu, 0, TRUE, _r_locale_getstring (IDS_TAB_NETWORK));
+			_r_menu_setitemtext (hsubmenu, 1, TRUE, _r_locale_getstring (IDS_TITLE_SECURITY));
+			_r_menu_setitemtext (hsubmenu, 2, TRUE, _r_locale_getstring (IDS_TITLE_ADVANCED));
+		}
 
-		_r_menu_enableitem (hmenu, IDM_CONNECTIONS_TITLE, MF_BYCOMMAND, FALSE);
-		_r_menu_enableitem (hmenu, IDM_SECURITY_TITLE, MF_BYCOMMAND, FALSE);
-		_r_menu_enableitem (hmenu, IDM_ADVANCED_TITLE, MF_BYCOMMAND, FALSE);
+		recommended_string = _r_locale_getstring (IDS_RECOMMENDED);
 
 		_r_menu_setitemtextformat (hmenu, IDM_RULE_BLOCKOUTBOUND, FALSE, L"%s (%s)", _r_locale_getstring (IDS_RULE_BLOCKOUTBOUND), recommended_string);
 		_r_menu_setitemtextformat (hmenu, IDM_RULE_BLOCKINBOUND, FALSE, L"%s (%s)", _r_locale_getstring (IDS_RULE_BLOCKINBOUND), recommended_string);
@@ -1364,13 +1373,14 @@ VOID _app_message_localize (_In_ HWND hwnd)
 		_r_menu_setitemtext (hmenu, IDM_USECERTIFICATES_CHK, FALSE, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
 		_r_menu_setitemtextformat (hmenu, IDM_USEREFRESHDEVICES_CHK, FALSE, L"%s (%s)", _r_locale_getstring (IDS_USEREFRESHDEVICES_CHK), recommended_string);
 
-		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_TITLE, FALSE, _r_locale_getstring (IDS_BLOCKLIST_SPY));
-		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, FALSE, _r_locale_getstring (IDS_BLOCKLIST_UPDATE));
-		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, FALSE, _r_locale_getstring (IDS_BLOCKLIST_EXTRA));
+		hsubmenu = GetSubMenu (hmenu, 4);
 
-		_r_menu_enableitem (hmenu, IDM_BLOCKLIST_SPY_TITLE, MF_BYCOMMAND, FALSE);
-		_r_menu_enableitem (hmenu, IDM_BLOCKLIST_UPDATE_TITLE, MF_BYCOMMAND, FALSE);
-		_r_menu_enableitem (hmenu, IDM_BLOCKLIST_EXTRA_TITLE, MF_BYCOMMAND, FALSE);
+		if (hsubmenu)
+		{
+			_r_menu_setitemtext (hsubmenu, 0, TRUE, _r_locale_getstring (IDS_BLOCKLIST_SPY));
+			_r_menu_setitemtext (hsubmenu, 1, TRUE, _r_locale_getstring (IDS_BLOCKLIST_UPDATE));
+			_r_menu_setitemtext (hsubmenu, 2, TRUE, _r_locale_getstring (IDS_BLOCKLIST_EXTRA));
+		}
 
 		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_DISABLE, FALSE, _r_locale_getstring (IDS_DISABLE));
 		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_ALLOW, FALSE, _r_locale_getstring (IDS_ACTION_ALLOW));
@@ -1389,8 +1399,6 @@ VOID _app_message_localize (_In_ HWND hwnd)
 		_r_menu_setitemtext (hmenu, IDM_CHECKUPDATES, FALSE, _r_locale_getstring (IDS_CHECKUPDATES));
 
 		_r_menu_setitemtextformat (hmenu, IDM_ABOUT, FALSE, L"%s\tF1", _r_locale_getstring (IDS_ABOUT));
-
-		_r_locale_enum (GetSubMenu (hmenu, 2), LANG_MENU, IDX_LANGUAGE); // enum localizations
 	}
 
 	PR_STRING localized_string = NULL;
