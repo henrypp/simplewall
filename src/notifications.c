@@ -437,7 +437,6 @@ VOID _app_notifyseticon (_In_ HWND hwnd, _In_opt_ HICON hicon, _In_ BOOLEAN is_r
 VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 {
 	R_RECTANGLE window_rect;
-	RECT desktop_rect;
 	UINT swp_flags;
 	BOOLEAN is_intray;
 
@@ -460,35 +459,50 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 	{
 		if (_r_wnd_getposition (hwnd, &window_rect))
 		{
-			if (SystemParametersInfo (SPI_GETWORKAREA, 0, &desktop_rect, 0))
+			MONITORINFO monitor_info = {0};
+			APPBARDATA taskbar_rect = {0};
+
+			HMONITOR hmonitor;
+			PRECT rect;
+			LONG dpi_value;
+			LONG border_x;
+
+			dpi_value = _r_dc_getwindowdpi (hwnd);
+
+			monitor_info.cbSize = sizeof (monitor_info);
+			hmonitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONEAREST);
+
+			if (GetMonitorInfo (hmonitor, &monitor_info))
 			{
-				APPBARDATA abd = {0};
-				abd.cbSize = sizeof (abd);
+				taskbar_rect.cbSize = sizeof (taskbar_rect);
 
-				if (SHAppBarMessage (ABM_GETTASKBARPOS, &abd))
+				if (SHAppBarMessage (ABM_GETTASKBARPOS, &taskbar_rect))
 				{
-					INT border_x = _r_dc_getsystemmetrics (SM_CXBORDER, _r_dc_getwindowdpi (hwnd));
+					border_x = _r_dc_getsystemmetrics (SM_CXBORDER, dpi_value);
+					rect = &monitor_info.rcWork;
 
-					if (abd.uEdge == ABE_LEFT)
+					if (taskbar_rect.uEdge == ABE_LEFT)
 					{
-						window_rect.left = abd.rc.right + border_x;
-						window_rect.top = (desktop_rect.bottom - window_rect.height) - border_x;
+						window_rect.left = taskbar_rect.rc.right + border_x;
+						window_rect.top = (rect->bottom - window_rect.height) - border_x;
 					}
-					else if (abd.uEdge == ABE_TOP)
+					else if (taskbar_rect.uEdge == ABE_TOP)
 					{
-						window_rect.left = (desktop_rect.right - window_rect.width) - border_x;
-						window_rect.top = abd.rc.bottom + border_x;
+						window_rect.left = (rect->right - window_rect.width) - border_x;
+						window_rect.top = taskbar_rect.rc.bottom + border_x;
 					}
-					else if (abd.uEdge == ABE_RIGHT)
+					else if (taskbar_rect.uEdge == ABE_RIGHT)
 					{
-						window_rect.left = (desktop_rect.right - window_rect.width) - border_x;
-						window_rect.top = (desktop_rect.bottom - window_rect.height) - border_x;
+						window_rect.left = (rect->right - window_rect.width) - border_x;
+						window_rect.top = (rect->bottom - window_rect.height) - border_x;
 					}
-					else //if (abd.uEdge == ABE_BOTTOM)
+					else //if (taskbar_rect.uEdge == ABE_BOTTOM)
 					{
-						window_rect.left = (desktop_rect.right - window_rect.width) - border_x;
-						window_rect.top = (desktop_rect.bottom - window_rect.height) - border_x;
+						window_rect.left = (rect->right - window_rect.width) - border_x;
+						window_rect.top = (rect->bottom - window_rect.height) - border_x;
 					}
+
+					_r_wnd_adjustworkingarea (NULL, &window_rect);
 
 					SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
 					return;
@@ -500,12 +514,11 @@ VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 	_r_wnd_center (hwnd, NULL); // display window on center (depends on error, config etc...)
 }
 
-HFONT _app_notifyfontinit (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ LONG height, _In_ LONG weight, _In_ BOOLEAN is_underline)
+HFONT _app_notifyfontinit (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ LONG size, _In_ BOOLEAN is_underline)
 {
-	if (height)
-		logfont->lfHeight = _r_dc_fontsizetoheight (height, dpi_value);
+	if (size)
+		logfont->lfHeight = _r_dc_fontsizetoheight (size, dpi_value);
 
-	logfont->lfWeight = weight;
 	logfont->lfUnderline = is_underline;
 
 	logfont->lfCharSet = DEFAULT_CHARSET;
@@ -544,7 +557,7 @@ VOID _app_notifyfontset (_In_ HWND hwnd)
 
 	ncm.cbSize = sizeof (ncm);
 
-	if (SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
+	if (_r_dc_getsystemparametersinfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, dpi_value))
 	{
 		SAFE_DELETE_OBJECT (hfont_title);
 		SAFE_DELETE_OBJECT (hfont_link);
@@ -553,9 +566,9 @@ VOID _app_notifyfontset (_In_ HWND hwnd)
 		title_font_height = 12;
 		text_font_height = 9;
 
-		hfont_title = _app_notifyfontinit (&ncm.lfCaptionFont, dpi_value, title_font_height, FW_NORMAL, FALSE);
-		hfont_link = _app_notifyfontinit (&ncm.lfMessageFont, dpi_value, text_font_height, FW_NORMAL, TRUE);
-		hfont_text = _app_notifyfontinit (&ncm.lfMessageFont, dpi_value, text_font_height, FW_NORMAL, FALSE);
+		hfont_title = _app_notifyfontinit (&ncm.lfCaptionFont, dpi_value, title_font_height, FALSE);
+		hfont_link = _app_notifyfontinit (&ncm.lfMessageFont, dpi_value, text_font_height, TRUE);
+		hfont_text = _app_notifyfontinit (&ncm.lfMessageFont, dpi_value, text_font_height, FALSE);
 
 		SendDlgItemMessage (hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)hfont_title, TRUE);
 		SendDlgItemMessage (hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)hfont_link, TRUE);

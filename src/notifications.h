@@ -27,7 +27,7 @@ VOID _app_notifyrefresh (_In_ HWND hwnd, _In_ BOOLEAN is_safety);
 VOID _app_notifyseticon (_In_ HWND hwnd, _In_opt_ HICON hicon, _In_ BOOLEAN is_redraw);
 VOID _app_notifysetpos (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
 
-HFONT _app_notifyfontinit (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ LONG height, _In_ LONG weight, _In_ BOOLEAN is_underline);
+HFONT _app_notifyfontinit (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ LONG size, _In_ BOOLEAN is_underline);
 VOID _app_notifyfontset (_In_ HWND hwnd);
 
 VOID _app_notifydrawgradient (_In_ HDC hdc, _In_ LPRECT rect);
