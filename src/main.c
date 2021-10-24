@@ -1477,7 +1477,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					hnotify = _app_notify_getwindow ();
 
 					if (hnotify)
-						_app_notify_setpos (hnotify, TRUE);
+						_app_notify_setposition (hnotify, TRUE);
 
 					break;
 				}
@@ -3051,7 +3051,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					hnotify = _app_notify_getwindow ();
 
 					if (hnotify)
-						_app_notify_setpos (hnotify, TRUE);
+						_app_notify_setposition (hnotify, TRUE);
 
 					break;
 				}
