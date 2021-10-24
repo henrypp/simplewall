@@ -42,7 +42,7 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 	localized_string = NULL;
 	column_text = NULL;
 
-	hash_code = _app_getlistviewitemlparam (hwnd, listview_id, lpnmlv->iItem);
+	hash_code = _app_getlistviewitemcontext (hwnd, listview_id, lpnmlv->iItem);
 	lv_column_current = lpnmlv->iSubItem;
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
@@ -533,7 +533,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 				BOOLEAN is_systemapp = FALSE;
 				BOOLEAN is_validconnection = FALSE;
 
-				index = _app_getlistviewitemlparam (hwnd, ctrl_id, (INT)(INT_PTR)lpnmlv->nmcd.dwItemSpec);
+				index = _app_getlistviewitemcontext (hwnd, ctrl_id, (INT)(INT_PTR)lpnmlv->nmcd.dwItemSpec);
 
 				if ((ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP) || ctrl_id == IDC_RULE_APPS_ID || ctrl_id == IDC_NETWORK || ctrl_id == IDC_LOG)
 				{
@@ -1138,7 +1138,7 @@ BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ 
 	PITEM_LOG ptr_log;
 	ULONG_PTR index;
 
-	index = _app_getlistviewitemlparam (hwnd, listview_id, lpnmlv->item.iItem);
+	index = _app_getlistviewitemcontext (hwnd, listview_id, lpnmlv->item.iItem);
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP || listview_id == IDC_RULE_APPS_ID)
 	{
@@ -1584,7 +1584,7 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
-		app_hash = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+		app_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 
 		if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
 			continue;
@@ -1657,7 +1657,7 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 			while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 			{
-				app_hash = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+				app_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 				ptr_app = _app_getappitem (app_hash);
 
 				if (ptr_app)
@@ -1899,7 +1899,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
-			app_hash = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+			app_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 			ptr_app = _app_getappitem (app_hash);
 
 			if (!ptr_app)
@@ -1952,7 +1952,7 @@ VOID _app_command_checkbox (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
-			rule_idx = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+			rule_idx = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 			ptr_rule = _app_getrulebyid (rule_idx);
 
 			if (!ptr_rule)
@@ -2041,7 +2041,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 			ULONG_PTR app_hash;
 			PITEM_APP ptr_app;
 
-			app_hash = _app_getlistviewitemlparam (hwnd, listview_id, i);
+			app_hash = _app_getlistviewitemcontext (hwnd, listview_id, i);
 			ptr_app = _app_getappitem (app_hash);
 
 			if (!ptr_app)
@@ -2076,7 +2076,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 			ULONG_PTR hash_code;
 			SIZE_T enum_key;
 
-			rule_idx = _app_getlistviewitemlparam (hwnd, listview_id, i);
+			rule_idx = _app_getlistviewitemcontext (hwnd, listview_id, i);
 			ptr_rule = _app_getrulebyid (rule_idx);
 
 			if (!ptr_rule)
@@ -2123,7 +2123,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 			ULONG_PTR network_hash;
 			PITEM_NETWORK ptr_network;
 
-			network_hash = _app_getlistviewitemlparam (hwnd, listview_id, i);
+			network_hash = _app_getlistviewitemcontext (hwnd, listview_id, i);
 			ptr_network = _app_getnetworkitem (network_hash);
 
 			if (!ptr_network)
@@ -2195,7 +2195,7 @@ VOID _app_command_disable (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
-		app_hash = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+		app_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 		ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
@@ -2242,7 +2242,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
-			app_hash = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+			app_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 
 			if (_app_isappfound (app_hash))
 			{
@@ -2261,7 +2261,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 			ULONG_PTR network_hash;
 			PITEM_NETWORK ptr_network;
 
-			network_hash = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+			network_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 			ptr_network = _app_getnetworkitem (network_hash);
 
 			if (ptr_network)
@@ -2306,7 +2306,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 			SIZE_T log_idx;
 			PITEM_LOG ptr_log;
 
-			log_idx = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+			log_idx = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 			ptr_log = _app_getlogitem (log_idx);
 
 			if (ptr_log)
@@ -2388,7 +2388,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		ULONG_PTR app_hash;
 		PITEM_APP ptr_app;
 
-		app_hash = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+		app_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 		ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
@@ -2416,7 +2416,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		SIZE_T rule_idx;
 		PITEM_RULE ptr_rule;
 
-		rule_idx = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+		rule_idx = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 		ptr_rule = _app_getrulebyid (rule_idx);
 
 		if (!ptr_rule)
@@ -2443,7 +2443,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		PITEM_NETWORK ptr_network;
 		ULONG_PTR network_hash;
 
-		network_hash = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+		network_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 		ptr_network = _app_getnetworkitem (network_hash);
 
 		if (!ptr_network)
@@ -2476,7 +2476,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		SIZE_T log_idx;
 		PITEM_LOG ptr_log;
 
-		log_idx = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+		log_idx = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 		ptr_log = _app_getlogitem (log_idx);
 
 		if (!ptr_log)

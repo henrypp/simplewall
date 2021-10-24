@@ -250,7 +250,7 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 
 		item_id = _r_listview_getitemcount (hwnd, IDC_LOG) - 1;
 
-		hash_code = _app_getlistviewitemlparam (hwnd, IDC_LOG, item_id);
+		hash_code = _app_getlistviewitemcontext (hwnd, IDC_LOG, item_id);
 		_r_listview_deleteitem (hwnd, IDC_LOG, item_id);
 
 		_r_queuedlock_acquireexclusive (&lock_loglist);

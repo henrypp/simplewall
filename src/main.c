@@ -79,7 +79,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 
 			for (INT i = item_count - 1; i != -1; i--)
 			{
-				network_hash = _app_getlistviewitemlparam (hwnd, IDC_NETWORK, i);
+				network_hash = _app_getlistviewitemcontext (hwnd, IDC_NETWORK, i);
 
 				if (_r_obj_findhashtable (checker_map, network_hash))
 					continue;
@@ -2186,7 +2186,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					lpnmlv = (LPNMLVGETINFOTIP)lparam;
 					listview_id = (INT)lpnmlv->hdr.idFrom;
 
-					string = _app_gettooltipbylparam (hwnd, listview_id, _app_getlistviewitemlparam (hwnd, listview_id, lpnmlv->iItem));
+					string = _app_gettooltipbylparam (hwnd, listview_id, _app_getlistviewitemcontext (hwnd, listview_id, lpnmlv->iItem));
 
 					if (string)
 					{
@@ -2217,7 +2217,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						ULONG_PTR app_hash;
 
-						app_hash = _app_getlistviewitemlparam (hwnd, listview_id, lpnmlv->iItem);
+						app_hash = _app_getlistviewitemcontext (hwnd, listview_id, lpnmlv->iItem);
 
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1))
 						{
@@ -3205,7 +3205,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
-							hash_code = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+							hash_code = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 							ptr_app = _app_getappitem (hash_code);
 
 							if (ptr_app)
@@ -3226,7 +3226,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
-							hash_code = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+							hash_code = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 							ptr_network = _app_getnetworkitem (hash_code);
 
 							if (ptr_network)
@@ -3247,7 +3247,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
-							hash_code = _app_getlistviewitemlparam (hwnd, listview_id, item_id);
+							hash_code = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 							ptr_log = _app_getlogitem (hash_code);
 
 							if (ptr_log)
