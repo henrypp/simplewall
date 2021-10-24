@@ -270,7 +270,7 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 
 	item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
 
-	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_createlistviewparam (log_hash));
+	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_createlistviewcontext (log_hash));
 
 	// resolve network address
 	context = _r_freelist_allocateitem (&context_free_list);

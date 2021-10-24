@@ -46,7 +46,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 
 			item_id = _r_listview_getitemcount (hwnd, IDC_NETWORK);
 
-			_r_listview_additem_ex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewparam (network_hash));
+			_r_listview_additem_ex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (network_hash));
 
 			if (ptr_network->path && ptr_network->app_hash)
 				_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
@@ -2159,7 +2159,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (!context)
 						break;
 
-					_app_destroylistviewparam (context);
+					_app_destroylistviewcontext (context);
 
 					break;
 				}

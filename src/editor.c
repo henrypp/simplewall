@@ -539,7 +539,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, TRUE);
 
-						_r_listview_additem_ex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewparam (ptr_app->app_hash));
+						_r_listview_additem_ex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (ptr_app->app_hash));
 						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
 						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, FALSE);
@@ -641,7 +641,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, TRUE);
 
-					_r_listview_additem_ex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewparam (i));
+					_r_listview_additem_ex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (i));
 					_r_listview_setitemcheck (hwnd, IDC_APP_RULES_ID, 0, is_enabled);
 
 					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, FALSE);
@@ -882,7 +882,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					if (!context)
 						break;
 
-					_app_destroylistviewparam (context);
+					_app_destroylistviewcontext (context);
 
 					break;
 				}
