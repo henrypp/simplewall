@@ -837,9 +837,9 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 
 		if (ptr_app->type == DATA_APP_SERVICE) // windows service
 		{
-			if (ptr_app->pbytes)
+			if (ptr_app->bytes)
 			{
-				ByteBlobAlloc (ptr_app->pbytes->buffer, RtlLengthSecurityDescriptor (ptr_app->pbytes->buffer), &byte_blob);
+				ByteBlobAlloc (ptr_app->bytes->buffer, RtlLengthSecurityDescriptor (ptr_app->bytes->buffer), &byte_blob);
 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -857,12 +857,12 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 		}
 		else if (ptr_app->type == DATA_APP_UWP) // uwp app (win8+)
 		{
-			if (ptr_app->pbytes)
+			if (ptr_app->bytes)
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_PACKAGE_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
 				fwfc[count].conditionValue.type = FWP_SID;
-				fwfc[count].conditionValue.sid = (PSID)ptr_app->pbytes->buffer;
+				fwfc[count].conditionValue.sid = (PSID)ptr_app->bytes->buffer;
 
 				count += 1;
 			}
