@@ -2938,7 +2938,8 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (hctrl)
 					{
 						SetFocus (hctrl);
-						SendMessage (hctrl, EM_SETSEL, 0, (LPARAM)-1);
+
+						_r_edit_setselection (config.hrebar, IDC_SEARCH, -1);
 					}
 
 					break;
