@@ -2342,12 +2342,11 @@ VOID _app_load_appxmanifest (_Inout_ PR_STRING_PTR package_root_folder)
 		_r_obj_movereference (&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
 
 		if (_r_fs_exists (manifest_path->buffer))
-			goto DoOpen;
+			is_success = TRUE;
 	}
 
-	goto CleanupExit;
-
-DoOpen:
+	if (!is_success)
+		goto CleanupExit;
 
 	if (_r_xml_initializelibrary (&xml_library, TRUE, NULL) != S_OK)
 		goto CleanupExit;
