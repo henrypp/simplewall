@@ -431,9 +431,7 @@ BOOLEAN _app_isappvalidbinary (_In_ ENUM_TYPE_DATA type, _In_ PR_STRING path)
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (valid_exts); i++)
 	{
 		if (_r_str_isendsswith (&path->sr, &valid_exts[i], TRUE))
-		{
 			return TRUE;
-		}
 	}
 
 	return FALSE;
@@ -638,13 +636,14 @@ LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortene
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 {
 	LONG icon_id = 0;
+	LONG default_icon_id = 0;
+
+	_app_getdefaulticon (&default_icon_id, NULL);
 
 	if (!_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
-	{
 		_app_loadfileicon (ptr_app_info->path, &icon_id, NULL, TRUE);
-	}
 
-	if (!icon_id)
+	if (!icon_id || icon_id == default_icon_id)
 	{
 		if (ptr_app_info->type == DATA_APP_UWP)
 		{
@@ -652,7 +651,7 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 		}
 		else
 		{
-			_app_getdefaulticon (&icon_id, NULL);
+			icon_id = default_icon_id;
 		}
 	}
 
@@ -1960,9 +1959,7 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 		process_name = _r_sys_querytaginformation (UlongToHandle (pid), UlongToPtr (*(PULONG)modules));
 
 		if (process_name)
-		{
 			ptr_network->type = DATA_APP_SERVICE;
-		}
 	}
 
 	if (!process_name)
@@ -1987,9 +1984,7 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 
 			// fix for WSL processes (issue #606)
 			if (status == STATUS_UNSUCCESSFUL)
-			{
 				status = _r_sys_queryprocessstring (hprocess, ProcessImageFileName, &process_name);
-			}
 
 			NtClose (hprocess);
 		}
@@ -2319,6 +2314,75 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 		_r_mem_free (buffer);
 }
 
+VOID _app_load_appxmanifest (_Inout_ PR_STRING_PTR package_root_folder)
+{
+	static R_STRINGREF appx_names[] = {
+		PR_STRINGREF_INIT (L"AppxManifest.xml"),
+		PR_STRINGREF_INIT (L"VSAppxManifest.xml"),
+	};
+
+	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
+
+	R_XML_LIBRARY xml_library = {0};
+	PR_STRING manifest_path;
+	PR_STRING result_path;
+	PR_STRING path_string;
+	R_STRINGREF executable_sr;
+	BOOLEAN is_success;
+
+	path_string = *package_root_folder;
+
+	manifest_path = NULL;
+	result_path = NULL;
+
+	is_success = FALSE;
+
+	for (SIZE_T i = 0; i < RTL_NUMBER_OF (appx_names); i++)
+	{
+		_r_obj_movereference (&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
+
+		if (_r_fs_exists (manifest_path->buffer))
+			goto DoOpen;
+	}
+
+	goto CleanupExit;
+
+DoOpen:
+
+	if (_r_xml_initializelibrary (&xml_library, TRUE, NULL) != S_OK)
+		goto CleanupExit;
+
+	if (_r_xml_parsefile (&xml_library, manifest_path->buffer) != S_OK)
+		goto CleanupExit;
+
+	if (!_r_xml_findchildbytagname (&xml_library, L"Applications"))
+		goto CleanupExit;
+
+	while (_r_xml_enumchilditemsbytagname (&xml_library, L"Application"))
+	{
+		if (!_r_xml_getattribute (&xml_library, L"Executable", &executable_sr))
+			continue;
+
+		_r_obj_movereference (&result_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr));
+
+		if (_r_fs_exists (result_path->buffer))
+		{
+			_r_obj_swapreference (package_root_folder, result_path);
+			break;
+		}
+	}
+
+CleanupExit:
+
+	if (result_path)
+		_r_obj_dereference (result_path);
+
+	if (manifest_path)
+		_r_obj_dereference (manifest_path);
+
+	_r_xml_destroylibrary (&xml_library);
+}
+
 VOID _app_generate_packages ()
 {
 	PR_BYTE package_sid;
@@ -2403,6 +2467,9 @@ VOID _app_generate_packages ()
 										_r_obj_movereference (&display_name, _r_obj_reference (key_name));
 
 									real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
+
+									// load additional info from appx manifest
+									_app_load_appxmanifest (&real_path);
 
 									app_hash = _app_addapplication (NULL, DATA_APP_UWP, &package_sid_string->sr, display_name, real_path);
 
@@ -2595,14 +2662,15 @@ VOID _app_generate_services ()
 					// details.
 					if (BuildSecurityDescriptor (NULL, NULL, 1, &ea, 0, NULL, NULL, &sd_length, &service_sd) == ERROR_SUCCESS && service_sd)
 					{
-						PR_STRING name_string = _r_obj_createstring (service->lpDisplayName);
+						PR_STRING name_string;
+						PITEM_APP ptr_app;
+
+						name_string = _r_obj_createstring (service->lpDisplayName);
 
 						app_hash = _app_addapplication (NULL, DATA_APP_SERVICE, &service_name, name_string, service_path);
 
 						if (app_hash)
 						{
-							PITEM_APP ptr_app;
-
 							ptr_app = _app_getappitem (app_hash);
 
 							if (ptr_app)
