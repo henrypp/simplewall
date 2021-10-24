@@ -30,7 +30,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 	{
 		_app_generate_connections (network_table, checker_map);
 
-		is_highlighting_enabled = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getbooleanex (L"IsHighlightConnection", TRUE, L"colors");
+		is_highlighting_enabled = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors");
 		is_refresh = FALSE;
 		enum_key = 0;
 
@@ -237,13 +237,43 @@ BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
 	return FALSE;
 }
 
-VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
+VOID _app_config_apply (_In_ HWND hwnd, _In_opt_ HWND hsettings, _In_ INT ctrl_id)
 {
 	HMENU hmenu;
+	HANDLE hengine;
+
 	BOOLEAN new_val;
 
 	switch (ctrl_id)
 	{
+		case IDC_LOADONSTARTUP_CHK:
+		case IDM_LOADONSTARTUP_CHK:
+		{
+			new_val = !_r_autorun_isenabled ();
+			break;
+		}
+
+		case IDC_STARTMINIMIZED_CHK:
+		case IDM_STARTMINIMIZED_CHK:
+		{
+			new_val = !_r_config_getboolean (L"IsStartMinimized", FALSE);
+			break;
+		}
+
+		case IDC_SKIPUACWARNING_CHK:
+		case IDM_SKIPUACWARNING_CHK:
+		{
+			new_val = !_r_skipuac_isenabled ();
+			break;
+		}
+
+		case IDC_CHECKUPDATES_CHK:
+		case IDM_CHECKUPDATES_CHK:
+		{
+			new_val = !_r_config_getboolean (L"CheckUpdates", TRUE);
+			break;
+		}
+
 		case IDC_RULE_BLOCKOUTBOUND:
 		case IDM_RULE_BLOCKOUTBOUND:
 		{
@@ -273,21 +303,18 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 		}
 
 		case IDC_SECUREFILTERS_CHK:
-		case IDM_SECUREFILTERS_CHK:
 		{
 			new_val = !_r_config_getboolean (L"IsSecureFilters", TRUE);
 			break;
 		}
 
 		case IDC_USESTEALTHMODE_CHK:
-		case IDM_USESTEALTHMODE_CHK:
 		{
 			new_val = !_r_config_getboolean (L"UseStealthMode", TRUE);
 			break;
 		}
 
 		case IDC_INSTALLBOOTTIMEFILTERS_CHK:
-		case IDM_INSTALLBOOTTIMEFILTERS_CHK:
 		{
 			new_val = !_r_config_getboolean (L"InstallBoottimeFilters", TRUE);
 			break;
@@ -324,6 +351,56 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	switch (ctrl_id)
 	{
+		case IDC_LOADONSTARTUP_CHK:
+		case IDM_LOADONSTARTUP_CHK:
+		{
+			BOOLEAN is_enabled;
+
+			_r_autorun_enable (hwnd, new_val);
+			is_enabled = _r_autorun_isenabled ();
+
+			_r_menu_checkitem (hmenu, IDM_LOADONSTARTUP_CHK, 0, MF_BYCOMMAND, is_enabled);
+
+			if (hsettings)
+				CheckDlgButton (hsettings, IDC_LOADONSTARTUP_CHK, is_enabled ? BST_CHECKED : BST_UNCHECKED);
+
+			break;
+		}
+
+		case IDC_STARTMINIMIZED_CHK:
+		case IDM_STARTMINIMIZED_CHK:
+		{
+			_r_config_setboolean (L"IsStartMinimized", new_val);
+			_r_menu_checkitem (hmenu, IDM_STARTMINIMIZED_CHK, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
+		case IDC_SKIPUACWARNING_CHK:
+		case IDM_SKIPUACWARNING_CHK:
+		{
+			BOOLEAN is_enabled;
+
+			_r_skipuac_enable (hwnd, new_val);
+			is_enabled = _r_skipuac_isenabled ();
+
+			_r_menu_checkitem (hmenu, IDM_SKIPUACWARNING_CHK, 0, MF_BYCOMMAND, is_enabled);
+
+			if (hsettings)
+				CheckDlgButton (hsettings, IDC_SKIPUACWARNING_CHK, is_enabled ? BST_CHECKED : BST_UNCHECKED);
+
+			break;
+		}
+
+		case IDC_CHECKUPDATES_CHK:
+		case IDM_CHECKUPDATES_CHK:
+		{
+			_r_config_setboolean (L"CheckUpdates", new_val);
+			_r_menu_checkitem (hmenu, IDM_CHECKUPDATES_CHK, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
 		case IDC_RULE_BLOCKOUTBOUND:
 		case IDM_RULE_BLOCKOUTBOUND:
 		{
@@ -361,23 +438,18 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 		}
 
 		case IDC_USESTEALTHMODE_CHK:
-		case IDM_USESTEALTHMODE_CHK:
 		{
 			_r_config_setboolean (L"UseStealthMode", new_val);
-			_r_menu_checkitem (hmenu, IDM_USESTEALTHMODE_CHK, 0, MF_BYCOMMAND, new_val);
-
 			break;
 		}
 
 		case IDC_SECUREFILTERS_CHK:
-		case IDM_SECUREFILTERS_CHK:
 		{
 			_r_config_setboolean (L"IsSecureFilters", new_val);
-			_r_menu_checkitem (hmenu, IDM_SECUREFILTERS_CHK, 0, MF_BYCOMMAND, new_val);
 
 			if (_wfp_isfiltersinstalled ())
 			{
-				HANDLE hengine = _wfp_getenginehandle ();
+				hengine = _wfp_getenginehandle ();
 
 				if (hengine)
 				{
@@ -407,11 +479,8 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 		}
 
 		case IDC_INSTALLBOOTTIMEFILTERS_CHK:
-		case IDM_INSTALLBOOTTIMEFILTERS_CHK:
 		{
 			_r_config_setboolean (L"InstallBoottimeFilters", new_val);
-			_r_menu_checkitem (hmenu, IDM_INSTALLBOOTTIMEFILTERS_CHK, 0, MF_BYCOMMAND, new_val);
-
 			break;
 		}
 
@@ -461,8 +530,15 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	switch (ctrl_id)
 	{
+		case IDM_LOADONSTARTUP_CHK:
+		case IDC_LOADONSTARTUP_CHK:
+		case IDM_STARTMINIMIZED_CHK:
+		case IDC_STARTMINIMIZED_CHK:
+		case IDM_SKIPUACWARNING_CHK:
+		case IDC_SKIPUACWARNING_CHK:
+		case IDM_CHECKUPDATES_CHK:
+		case IDC_CHECKUPDATES_CHK:
 		case IDC_SECUREFILTERS_CHK:
-		case IDM_SECUREFILTERS_CHK:
 		case IDC_USENETWORKRESOLUTION_CHK:
 		case IDM_USENETWORKRESOLUTION_CHK:
 		case IDC_USECERTIFICATES_CHK:
@@ -476,7 +552,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 	if (_wfp_isfiltersinstalled ())
 	{
-		HANDLE hengine = _wfp_getenginehandle ();
+		hengine = _wfp_getenginehandle ();
 
 		if (hengine)
 			_wfp_create2filters (hengine, __LINE__, FALSE);
@@ -598,10 +674,10 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 					while (_r_obj_enumhashtable (colors_table, &ptr_clr, NULL, &enum_key))
 					{
-						ptr_clr->new_clr = _r_config_getulongex (_r_obj_getstring (ptr_clr->config_value), ptr_clr->default_clr, L"colors");
+						ptr_clr->new_clr = _r_config_getulong_ex (_r_obj_getstring (ptr_clr->config_value), ptr_clr->default_clr, L"colors");
 
 						_r_listview_additem_ex (hwnd, IDC_COLORS, item_id, _r_locale_getstring (ptr_clr->locale_id), icon_id, I_GROUPIDNONE, (LPARAM)ptr_clr);
-						_r_listview_setitemcheck (hwnd, IDC_COLORS, item_id, _r_config_getbooleanex (_r_obj_getstring (ptr_clr->config_name), ptr_clr->is_enabled, L"colors"));
+						_r_listview_setitemcheck (hwnd, IDC_COLORS, item_id, _r_config_getboolean_ex (_r_obj_getstring (ptr_clr->config_name), ptr_clr->is_enabled, L"colors"));
 
 						item_id += 1;
 					}
@@ -938,7 +1014,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 							{
 								is_enabled = (lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2);
 
-								_r_config_setbooleanex (_r_obj_getstring (ptr_clr->config_name), is_enabled, L"colors");
+								_r_config_setboolean_ex (_r_obj_getstring (ptr_clr->config_name), is_enabled, L"colors");
 
 								_r_listview_redraw (_r_app_gethwnd (), _app_getcurrentlistview_id (_r_app_gethwnd ()), -1);
 							}
@@ -1002,7 +1078,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 							if (ChooseColor (&cc))
 							{
 								ptr_clr_current->new_clr = cc.rgbResult;
-								_r_config_setulongex (_r_obj_getstring (ptr_clr_current->config_value), cc.rgbResult, L"colors");
+								_r_config_setulong_ex (_r_obj_getstring (ptr_clr_current->config_value), cc.rgbResult, L"colors");
 
 								_r_listview_redraw (hwnd, IDC_COLORS, -1);
 								_r_listview_redraw (_r_app_gethwnd (), _app_getcurrentlistview_id (_r_app_gethwnd ()), -1);
@@ -1049,41 +1125,6 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					break;
 				}
 
-#if defined(APP_HAVE_AUTORUN)
-				case IDC_LOADONSTARTUP_CHK:
-				{
-					_r_autorun_enable (hwnd, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					CheckDlgButton (hwnd, ctrl_id, _r_autorun_isenabled () ? BST_CHECKED : BST_UNCHECKED);
-
-					break;
-				}
-#endif // APP_HAVE_AUTORUN
-
-				case IDC_STARTMINIMIZED_CHK:
-				{
-					_r_config_setboolean (L"IsStartMinimized", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					break;
-				}
-
-#if defined(APP_HAVE_SKIPUAC)
-				case IDC_SKIPUACWARNING_CHK:
-				{
-					_r_skipuac_enable (hwnd, (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
-					CheckDlgButton (hwnd, ctrl_id, _r_skipuac_isenabled () ? BST_CHECKED : BST_UNCHECKED);
-
-					break;
-				}
-#endif // APP_HAVE_SKIPUAC
-
-				case IDC_CHECKUPDATES_CHK:
-				{
-					BOOLEAN is_enabled = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
-
-					_r_config_setboolean (L"CheckUpdates", is_enabled);
-
-					break;
-				}
-
 				case IDC_LANGUAGE:
 				{
 					if (notify_code == CBN_SELCHANGE)
@@ -1116,6 +1157,10 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					break;
 				}
 
+				case IDC_LOADONSTARTUP_CHK:
+				case IDC_STARTMINIMIZED_CHK:
+				case IDC_SKIPUACWARNING_CHK:
+				case IDC_CHECKUPDATES_CHK:
 				case IDC_RULE_BLOCKOUTBOUND:
 				case IDC_RULE_BLOCKINBOUND:
 				case IDC_RULE_ALLOWLOOPBACK:
@@ -1127,7 +1172,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				case IDC_USENETWORKRESOLUTION_CHK:
 				case IDC_USEREFRESHDEVICES_CHK:
 				{
-					_app_config_apply (_r_app_gethwnd (), ctrl_id);
+					_app_config_apply (_r_app_gethwnd (), hwnd, ctrl_id);
 					break;
 				}
 
@@ -1393,10 +1438,10 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 					if (!is_postmessage)
 					{
-						hctrl = _app_notifygetwindow ();
+						hctrl = _app_notify_getwindow ();
 
 						if (hctrl)
-							_app_notifyrefresh (hctrl, FALSE);
+							_app_notify_refresh (hctrl, FALSE);
 					}
 
 					break;
@@ -1429,10 +1474,10 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 					_r_config_setboolean (L"IsNotificationsOnTray", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 
-					hnotify = _app_notifygetwindow ();
+					hnotify = _app_notify_getwindow ();
 
 					if (hnotify)
-						_app_notifysetpos (hnotify, TRUE);
+						_app_notify_setpos (hnotify, TRUE);
 
 					break;
 				}
@@ -1750,6 +1795,8 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 	{
 		case WM_INITDIALOG:
 		{
+			ENUM_INSTALL_TYPE install_type;
+
 			_app_initialize ();
 
 			app_global.main.hwnd = hwnd; // HACK!!!
@@ -1774,26 +1821,24 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			_app_tabs_init (hwnd);
 
 			// create notification window
-			_app_notifycreatewindow ();
+			_app_notify_createwindow ();
 
 			// load profile
 			_app_profile_load (hwnd, NULL);
 
 			// install filters
+			install_type = _wfp_isfiltersinstalled ();
+
+			if (install_type != INSTALL_DISABLED)
 			{
-				ENUM_INSTALL_TYPE install_type = _wfp_isfiltersinstalled ();
+				if (install_type == INSTALL_ENABLED_TEMPORARY)
+					config.is_filterstemporary = TRUE;
 
-				if (install_type != INSTALL_DISABLED)
-				{
-					if (install_type == INSTALL_ENABLED_TEMPORARY)
-						config.is_filterstemporary = TRUE;
-
-					_app_changefilters (hwnd, TRUE, TRUE);
-				}
-				else
-				{
-					_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (install_type)));
-				}
+				_app_changefilters (hwnd, TRUE, TRUE);
+			}
+			else
+			{
+				_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (install_type)));
 			}
 
 			// initialize settings
@@ -1868,7 +1913,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 			icon_id = _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE;
 
-			hicon = _r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small_x, icon_small_y, TRUE);
+			hicon = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small_x, icon_small_y);
 
 			// refresh tray icon
 			_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, hicon, _r_app_getname (), FALSE);
@@ -1942,7 +1987,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			if (hengine)
 				_wfp_uninitialize (hengine, FALSE);
 
-			_app_notifydestroywindow ();
+			_app_notify_destroywindow ();
 
 			ImageList_Destroy (config.himg_toolbar);
 			ImageList_Destroy (config.himg_rules_small);
@@ -2210,7 +2255,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 									_app_setcheckboxlock (hwnd, listview_id, FALSE);
 
 									if (is_enabled)
-										_app_freenotify (ptr_app);
+										_app_notify_freeobject (ptr_app);
 
 									if (!is_enabled && _app_istimerset (ptr_app->htimer))
 										_app_timer_reset (hwnd, ptr_app);
@@ -2868,18 +2913,19 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					break;
 				}
 
+				case IDM_LOADONSTARTUP_CHK:
+				case IDM_STARTMINIMIZED_CHK:
+				case IDM_SKIPUACWARNING_CHK:
+				case IDM_CHECKUPDATES_CHK:
 				case IDM_RULE_BLOCKOUTBOUND:
 				case IDM_RULE_BLOCKINBOUND:
 				case IDM_RULE_ALLOWLOOPBACK:
 				case IDM_RULE_ALLOW6TO4:
-				case IDM_SECUREFILTERS_CHK:
-				case IDM_USESTEALTHMODE_CHK:
-				case IDM_INSTALLBOOTTIMEFILTERS_CHK:
 				case IDM_USENETWORKRESOLUTION_CHK:
 				case IDM_USECERTIFICATES_CHK:
 				case IDM_USEREFRESHDEVICES_CHK:
 				{
-					_app_config_apply (hwnd, ctrl_id);
+					_app_config_apply (hwnd, NULL, ctrl_id);
 					break;
 				}
 
@@ -2967,10 +3013,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, NULL, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
 					_r_config_setboolean (L"IsNotificationsEnabled", new_val);
 
-					hnotify = _app_notifygetwindow ();
+					hnotify = _app_notify_getwindow ();
 
 					if (hnotify)
-						_app_notifyrefresh (hnotify, TRUE);
+						_app_notify_refresh (hnotify, TRUE);
 
 					break;
 				}
@@ -3002,10 +3048,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 					_r_config_setboolean (L"IsNotificationsOnTray", new_val);
 
-					hnotify = _app_notifygetwindow ();
+					hnotify = _app_notify_getwindow ();
 
 					if (hnotify)
-						_app_notifysetpos (hnotify, TRUE);
+						_app_notify_setpos (hnotify, TRUE);
 
 					break;
 				}
