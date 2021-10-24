@@ -1317,23 +1317,23 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 					hedit = GetFocus ();
 
-					if (hedit)
+					if (!hedit)
+						break;
+
+					if (!GetClassName (hedit, class_name, RTL_NUMBER_OF (class_name)))
+						break;
+
+					if (_r_str_compare (class_name, WC_EDIT) == 0)
 					{
-						if (GetClassName (hedit, class_name, RTL_NUMBER_OF (class_name)) > 0)
+						// edit control hotkey for "ctrl+c" (issue #597)
+						if (ctrl_id == IDM_COPY)
 						{
-							if (_r_str_compare (class_name, WC_EDIT) == 0)
-							{
-								// edit control hotkey for "ctrl+c" (issue #597)
-								if (ctrl_id == IDM_COPY)
-								{
-									SendMessage (hedit, WM_COPY, 0, 0);
-								}
-								// edit control hotkey for "ctrl+a"
-								else //if (ctrl_id == IDM_SELECT_ALL)
-								{
-									SendMessage (hedit, EM_SETSEL, 0, (LPARAM)-1);
-								}
-							}
+							SendMessage (hedit, WM_COPY, 0, 0);
+						}
+						// edit control hotkey for "ctrl+a"
+						else //if (ctrl_id == IDM_SELECT_ALL)
+						{
+							SendMessage (hedit, EM_SETSEL, 0, (LPARAM)-1);
 						}
 					}
 
