@@ -210,6 +210,7 @@ typedef struct _STATIC_DATA
 	PR_STRING ntoskrnl_path;
 	PR_STRING svchost_path;
 	PR_STRING system_path;
+	PR_STRING search_string;
 
 	PSID pbuiltin_current_sid;
 	PSID pbuiltin_netops_sid;

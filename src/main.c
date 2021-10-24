@@ -2093,12 +2093,11 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (!hlistview)
 						break;
 
-					_app_search_applyfilter (hwnd, listview_id, config.hrebar);
+					_app_search_applyfilter (hwnd, listview_id, config.search_string);
 
 					_app_updatelistviewbylparam (hwnd, listview_id, PR_UPDATE_FORCE | PR_UPDATE_NORESIZE);
 
 					ShowWindow (hlistview, SW_SHOWNA);
-					UpdateWindow (hlistview);
 
 					if (_r_wnd_isvisiblefull (hwnd)) // HACK!!!
 						SetFocus (hlistview);
@@ -2118,16 +2117,49 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					return result;
 				}
 
-				case LVN_DELETEITEM:
+				case LVN_INSERTITEM:
 				{
 					LPNMLISTVIEW lpnmlv;
+					PITEM_LISTVIEW_CONTEXT context;
 					INT listview_id;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG)
-						_app_destroylistviewparam (lpnmlv->lParam);
+					if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG))
+						break;
+
+					if (_r_obj_isstringempty (config.search_string))
+						break;
+
+					context = (PITEM_LISTVIEW_CONTEXT)_r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+
+					if (!context)
+						break;
+
+					_app_search_applyfilteritem (hwnd, listview_id, lpnmlv->iItem, context, config.search_string);
+
+					break;
+				}
+
+				case LVN_DELETEITEM:
+				{
+					LPNMLISTVIEW lpnmlv;
+					PITEM_LISTVIEW_CONTEXT context;
+					INT listview_id;
+
+					lpnmlv = (LPNMLISTVIEW)lparam;
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+
+					if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG))
+						break;
+
+					context = (PITEM_LISTVIEW_CONTEXT)lpnmlv->lParam;
+
+					if (!context)
+						break;
+
+					_app_destroylistviewparam (context);
 
 					break;
 				}
@@ -2576,10 +2608,21 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 			if (notify_code == EN_CHANGE)
 			{
+				PR_STRING string;
+				INT listview_id;
+
 				if (ctrl_id != IDC_SEARCH)
 					break;
 
-				_app_search_applyfilter (hwnd, _app_getcurrentlistview_id (hwnd), config.hrebar);
+				listview_id = _app_getcurrentlistview_id (hwnd);
+				string = _r_ctrl_getstring (config.hrebar, IDC_SEARCH);
+
+				_r_obj_swapreference (&config.search_string, string);
+
+				_app_search_applyfilter (hwnd, listview_id, string);
+
+				if (string)
+					_r_obj_dereference (string);
 
 				return FALSE;
 			}

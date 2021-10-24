@@ -693,7 +693,16 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 
 		case WM_DESTROY:
 		{
+			// apps
+			if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
+				_r_listview_deleteallitems (hwnd, IDC_RULE_APPS_ID);
+
+			// app rules
+			if (GetDlgItem (hwnd, IDC_APP_RULES_ID))
+				_r_listview_deleteallitems (hwnd, IDC_APP_RULES_ID);
+
 			SAFE_DELETE_ICON (hicon_large);
+
 			break;
 		}
 
@@ -859,13 +868,21 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				case LVN_DELETEITEM:
 				{
 					LPNMLISTVIEW lpnmlv;
+					PITEM_LISTVIEW_CONTEXT context;
 					INT listview_id;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
-						_app_destroylistviewparam (lpnmlv->lParam);
+					if (!(listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID))
+						break;
+
+					context = (PITEM_LISTVIEW_CONTEXT)lpnmlv->lParam;
+
+					if (!context)
+						break;
+
+					_app_destroylistviewparam (context);
 
 					break;
 				}
@@ -1011,6 +1028,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 			}
 			else if (notify_code == EN_CHANGE)
 			{
+				PR_STRING string;
 				INT listview_id;
 
 				if (ctrl_id != IDC_SEARCH)
@@ -1029,7 +1047,12 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					return FALSE;
 				}
 
-				_app_search_applyfilter (hwnd, listview_id, hwnd);
+				string = _r_ctrl_getstring (hwnd, IDC_SEARCH);
+
+				_app_search_applyfilter (hwnd, listview_id, string);
+
+				if (string)
+					_r_obj_dereference (string);
 
 				return FALSE;
 			}
