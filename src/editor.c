@@ -141,6 +141,7 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 			SetWindowText (hwnd, _r_locale_getstring (IDS_RULE));
 
 			_r_edit_settextlimit (hwnd, IDC_RULE_ID, _r_calc_clamp32 (RULE_RULE_CCH_MAX - context->current_length - 1, 1, RULE_RULE_CCH_MAX));
+			_r_edit_setcuebanner (hwnd, IDC_RULE_ID, L"Example: 192.168.0.1;192.168.0.17");
 
 			if (context->item_id != -1)
 			{
@@ -161,6 +162,8 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 
 			_r_ctrl_enable (hwnd, IDC_SAVE, _r_ctrl_getstringlength (hwnd, IDC_RULE_ID) != 0); // enable apply button
 
+			SetFocus (NULL);
+
 			break;
 		}
 
@@ -168,6 +171,28 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 		{
 			EndDialog (hwnd, FALSE);
 			break;
+		}
+
+		case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc;
+
+			hdc = BeginPaint (hwnd, &ps);
+
+			if (hdc)
+			{
+				_r_dc_drawwindowdefault (hdc, hwnd, TRUE);
+
+				EndPaint (hwnd, &ps);
+			}
+
+			break;
+		}
+
+		case WM_ERASEBKGND:
+		{
+			return TRUE;
 		}
 
 		case WM_SETTINGCHANGE:
@@ -1302,6 +1327,28 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 		{
 			EndDialog (hwnd, FALSE);
 			break;
+		}
+
+		case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc;
+
+			hdc = BeginPaint (hwnd, &ps);
+
+			if (hdc)
+			{
+				_r_dc_drawwindowdefault (hdc, hwnd, FALSE);
+
+				EndPaint (hwnd, &ps);
+			}
+
+			break;
+		}
+
+		case WM_ERASEBKGND:
+		{
+			return TRUE;
 		}
 
 		case WM_SIZE:
