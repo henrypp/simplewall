@@ -959,7 +959,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	R_STRINGBUILDER sb;
 	PR_STRING version_string = NULL;
 	HINSTANCE hlib = NULL;
-	PVOID version_info;
+	PVOID ver_block;
 	PR_STRING string;
 	VS_FIXEDFILEINFO *ver_info;
 	ULONG lcid;
@@ -972,17 +972,17 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	if (!hlib)
 		goto CleanupExit;
 
-	version_info = _r_res_loadresource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION, NULL);
+	ver_block = _r_res_loadresource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION, NULL);
 
-	if (!version_info)
+	if (!ver_block)
 		goto CleanupExit;
 
 	_r_obj_initializestringbuilder (&sb);
 
-	lcid = _r_res_querytranslation (version_info);
+	lcid = _r_res_querytranslation (ver_block);
 
 	// get file description
-	string = _r_res_querystring (version_info, L"FileDescription", lcid);
+	string = _r_res_querystring (ver_block, L"FileDescription", lcid);
 
 	if (string)
 	{
@@ -993,7 +993,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	}
 
 	// get file version
-	if (_r_res_queryversion (version_info, &ver_info))
+	if (_r_res_queryversion (ver_block, &ver_info))
 	{
 		if (_r_obj_isstringempty2 (sb.string))
 		{
@@ -1021,7 +1021,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 		_r_obj_appendstringbuilder (&sb, L"\r\n");
 
 	// get file company
-	string = _r_res_querystring (version_info, L"CompanyName", lcid);
+	string = _r_res_querystring (ver_block, L"CompanyName", lcid);
 
 	if (string)
 	{
