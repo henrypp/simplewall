@@ -87,13 +87,16 @@ BOOLEAN _app_islogfound (_In_ ULONG_PTR log_hash)
 BOOLEAN _app_logislimitreached (_In_ HANDLE hfile)
 {
 	LONG64 limit;
+	LONG64 file_size;
 
 	limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
 
 	if (!limit)
 		return FALSE;
 
-	return (_r_fs_getsize (hfile) >= (_r_calc_kilobytes2bytes64 (limit)));
+	file_size = _r_fs_getsize (hfile);
+
+	return (file_size >= (_r_calc_kilobytes2bytes64 (limit)));
 }
 
 VOID _app_logclear (_In_opt_ HANDLE hfile)
