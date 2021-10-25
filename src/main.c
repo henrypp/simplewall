@@ -665,7 +665,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					LONG icon_id;
 					INT item_id;
 
-					_app_getdefaulticon (&icon_id, NULL);
+					icon_id = _app_getdefaultappicon_id ();
 
 					_app_setcheckboxlock (hwnd, IDC_COLORS, TRUE);
 
@@ -1731,10 +1731,7 @@ VOID _app_initialize ()
 	_app_generate_credentials ();
 
 	// load default icons
-	_app_getdefaulticon (NULL, NULL);
-
-	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-		_app_getdefaulticon_uwp (NULL, NULL);
+	_app_getdefaulticons (0, NULL);
 
 	// initialize global filters array object
 	if (!filter_ids)

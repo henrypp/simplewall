@@ -321,11 +321,7 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 		{
 			case INFO_ICON_ID:
 			{
-				LONG icon_id;
-
-				_app_getdefaulticon (&icon_id, NULL);
-
-				return LongToPtr (icon_id);
+				return LongToPtr (_app_getdefaultappicon_id ());
 			}
 		}
 	}
@@ -345,7 +341,14 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 				}
 				else
 				{
-					_app_getdefaulticon (&icon_id, NULL);
+					if (ptr_app_info->type == DATA_APP_UWP)
+					{
+						icon_id = _app_getdefaultuwpicon_id ();
+					}
+					else
+					{
+						icon_id = _app_getdefaultappicon_id ();
+					}
 
 					result = LongToPtr (icon_id);
 				}
@@ -448,79 +451,71 @@ BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path)
 	return TRUE;
 }
 
-VOID _app_getdefaulticon (_Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon)
+ICON_INFORMATION _app_getdefaulticons ()
 {
 	static R_INITONCE init_once = PR_INITONCE_INIT;
-	static HICON memory_hicon = NULL;
-	static LONG memory_icon_id = 0;
+	static ICON_INFORMATION icon_info = {0};
 
 	if (_r_initonce_begin (&init_once))
 	{
 		PR_STRING path;
 
+		// load default icons
 		path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\svchost.exe");
 
-		_app_loadfileicon (path, &memory_icon_id, &memory_hicon, FALSE);
+		_app_loadfileicon (path, &icon_info.app_icon_id, &icon_info.app_hicon, FALSE);
+
+		// load uwp icons
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		{
+			_r_obj_movereference (&path, _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\wsreset.exe"));
+
+			_app_loadfileicon (path, &icon_info.uwp_icon_id, &icon_info.uwp_hicon, FALSE);
+		}
 
 		_r_obj_dereference (path);
 
 		_r_initonce_end (&init_once);
 	}
 
-	if (icon_id)
-		*icon_id = memory_icon_id;
-
-	if (hicon)
-	{
-		if (memory_hicon)
-		{
-			*hicon = CopyIcon (memory_hicon);
-		}
-		else
-		{
-			*hicon = NULL;
-		}
-	}
+	return icon_info;
 }
 
-VOID _app_getdefaulticon_uwp (_Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon)
+_Ret_maybenull_
+HICON _app_getdefaultapphicon ()
 {
-	static R_INITONCE init_once = PR_INITONCE_INIT;
-	static HICON memory_hicon = NULL;
-	static LONG memory_icon_id = 0;
+	ICON_INFORMATION icon_info;
 
-	if (_r_initonce_begin (&init_once))
-	{
-		PR_STRING path;
+	icon_info = _app_getdefaulticons ();
 
-		path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\wsreset.exe");
+	if (icon_info.app_hicon)
+		return CopyIcon (icon_info.app_hicon);
 
-		_app_loadfileicon (path, &memory_icon_id, &memory_hicon, FALSE);
+	return NULL;
+}
 
-		_r_obj_dereference (path);
+LONG _app_getdefaultappicon_id ()
+{
+	ICON_INFORMATION icon_info;
 
-		_r_initonce_end (&init_once);
-	}
+	icon_info = _app_getdefaulticons ();
 
-	if (icon_id)
-		*icon_id = memory_icon_id;
+	return icon_info.app_icon_id;
+}
 
-	if (hicon)
-	{
-		if (memory_hicon)
-		{
-			*hicon = CopyIcon (memory_hicon);
-		}
-		else
-		{
-			*hicon = NULL;
-		}
-	}
+LONG _app_getdefaultuwpicon_id ()
+{
+	ICON_INFORMATION icon_info;
+
+	icon_info = _app_getdefaulticons ();
+
+	return icon_info.uwp_icon_id;
 }
 
 VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon, _In_ BOOLEAN is_loaddefaults)
 {
 	SHFILEINFO shfi = {0};
+	ICON_INFORMATION icon_info;
 	UINT flags;
 
 	flags = SHGFI_LARGEICON;
@@ -538,71 +533,98 @@ VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ 
 
 		if (hicon)
 			*hicon = shfi.hIcon;
-	}
-	else
-	{
-		if (is_loaddefaults)
-		{
-			_app_getdefaulticon (icon_id, hicon);
-		}
-		else
-		{
-			if (icon_id)
-				*icon_id = 0;
 
-			if (hicon)
-				*hicon = NULL;
-		}
+		return;
 	}
+
+	if (!icon_id && !hicon)
+		return;
+
+	if (is_loaddefaults)
+	{
+		icon_info = _app_getdefaulticons ();
+
+		if (icon_id)
+			*icon_id = icon_info.app_icon_id;
+
+		if (hicon)
+		{
+			if (icon_info.app_hicon)
+			{
+				*hicon = CopyIcon (icon_info.app_hicon);
+			}
+			else
+			{
+				*hicon = NULL;
+			}
+		}
+
+		return;
+	}
+
+	// set to null
+	if (icon_id)
+		*icon_id = 0;
+
+	if (hicon)
+		*hicon = NULL;
+}
+
+static HICON _app_setdefaulticons (_In_ ENUM_TYPE_DATA type, _In_ PICON_INFORMATION icon_info)
+{
+	if (type == DATA_APP_UWP)
+	{
+		if (icon_info->uwp_hicon)
+			return CopyIcon (icon_info->uwp_hicon);
+	}
+
+	if (icon_info->app_hicon)
+		return CopyIcon (icon_info->app_hicon);
+
+	return NULL;
 }
 
 HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 {
+	ICON_INFORMATION icon_info;
 	PITEM_APP ptr_app;
 	HICON hicon;
 	LONG icon_id;
-	LONG default_icon_id;
+	BOOLEAN is_iconshidded;
 
+	icon_info = _app_getdefaulticons ();
 	ptr_app = _app_getappitem (app_hash);
 
 	if (!ptr_app)
 	{
-		_app_getdefaulticon (NULL, &hicon);
+		if (icon_info.app_hicon)
+			return CopyIcon (icon_info.app_hicon);
 
-		return hicon;
+		return NULL;
 	}
 
-	if (!ptr_app->real_path || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path) || _r_config_getboolean (L"IsIconsHidden", FALSE))
+	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
+
+	if (!ptr_app->real_path || is_iconshidded || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
 	{
-		if (ptr_app->type == DATA_APP_UWP)
-		{
-			_app_getdefaulticon_uwp (NULL, &hicon);
-
-			_r_obj_dereference (ptr_app);
-
-			return hicon;
-		}
-
-		_app_getdefaulticon (NULL, &hicon);
+		hicon = _app_setdefaulticons (ptr_app->type, &icon_info);
 
 		_r_obj_dereference (ptr_app);
 
 		return hicon;
 	}
 
-	_app_getdefaulticon (&default_icon_id, NULL);
-
 	_app_loadfileicon (ptr_app->real_path, &icon_id, &hicon, TRUE);
 
-	_r_obj_dereference (ptr_app);
-
-	if (!icon_id || icon_id == default_icon_id)
+	if (!icon_id || (ptr_app->type == DATA_APP_UWP && icon_id == icon_info.app_icon_id))
 	{
 		if (hicon)
 			DestroyIcon (hicon);
 
-		_app_getdefaulticon_uwp (NULL, &hicon);
+		hicon = _app_setdefaulticons (ptr_app->type, &icon_info);
 	}
+
+	_r_obj_dereference (ptr_app);
 
 	return hicon;
 }
@@ -644,18 +666,20 @@ LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortene
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 {
 	LONG icon_id = 0;
-	LONG default_icon_id = 0;
+	LONG default_icon_id;
+	BOOLEAN is_iconshidded;
 
-	_app_getdefaulticon (&default_icon_id, NULL);
+	default_icon_id = _app_getdefaultappicon_id ();
+	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
 
-	if (!_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
+	if (!is_iconshidded && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		_app_loadfileicon (ptr_app_info->path, &icon_id, NULL, TRUE);
 
 	if (!icon_id || (ptr_app_info->type == DATA_APP_UWP && icon_id == default_icon_id))
 	{
 		if (ptr_app_info->type == DATA_APP_UWP)
 		{
-			_app_getdefaulticon_uwp (&icon_id, NULL);
+			icon_id = _app_getdefaultuwpicon_id ();
 		}
 		else
 		{
@@ -684,7 +708,9 @@ static BOOLEAN _app_calculatefilehash (_In_ HANDLE hfile, _In_opt_ LPCWSTR algor
 
 	if (_r_initonce_begin (&init_once))
 	{
-		HMODULE hwintrust = LoadLibraryEx (L"wintrust.dll", NULL, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32);
+		HMODULE hwintrust;
+
+		hwintrust = LoadLibraryEx (L"wintrust.dll", NULL, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32);
 
 		if (hwintrust)
 		{
@@ -966,9 +992,9 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	R_STRINGBUILDER sb;
 	PR_STRING version_string = NULL;
 	HINSTANCE hlib = NULL;
+	VS_FIXEDFILEINFO *ver_info;
 	PVOID ver_block;
 	PR_STRING string;
-	VS_FIXEDFILEINFO *ver_info;
 	ULONG lcid;
 
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))

@@ -191,7 +191,7 @@ HICON _app_notify_getapp_icon (_In_ HWND hwnd)
 	}
 
 	if (!hicon)
-		_app_getdefaulticon (NULL, &hicon);
+		hicon = _app_getdefaultapphicon ();
 
 	return hicon;
 }
