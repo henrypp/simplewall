@@ -468,9 +468,7 @@ VOID _app_getdefaulticon (_Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon)
 	}
 
 	if (icon_id)
-	{
 		*icon_id = memory_icon_id;
-	}
 
 	if (hicon)
 	{
@@ -505,9 +503,7 @@ VOID _app_getdefaulticon_uwp (_Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon
 	}
 
 	if (icon_id)
-	{
 		*icon_id = memory_icon_id;
-	}
 
 	if (hicon)
 	{
@@ -564,6 +560,8 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 {
 	PITEM_APP ptr_app;
 	HICON hicon;
+	LONG icon_id;
+	LONG default_icon_id;
 
 	ptr_app = _app_getappitem (app_hash);
 
@@ -592,9 +590,19 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 		return hicon;
 	}
 
-	_app_loadfileicon (ptr_app->real_path, NULL, &hicon, TRUE);
+	_app_getdefaulticon (&default_icon_id, NULL);
+
+	_app_loadfileicon (ptr_app->real_path, &icon_id, &hicon, TRUE);
 
 	_r_obj_dereference (ptr_app);
+
+	if (!icon_id || icon_id == default_icon_id)
+	{
+		if (hicon)
+			DestroyIcon (hicon);
+
+		_app_getdefaulticon_uwp (NULL, &hicon);
+	}
 
 	return hicon;
 }
@@ -643,7 +651,7 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 	if (!_r_config_getboolean (L"IsIconsHidden", FALSE) && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		_app_loadfileicon (ptr_app_info->path, &icon_id, NULL, TRUE);
 
-	if (!icon_id || icon_id == default_icon_id)
+	if (!icon_id || (ptr_app_info->type == DATA_APP_UWP && icon_id == default_icon_id))
 	{
 		if (ptr_app_info->type == DATA_APP_UWP)
 		{
@@ -2328,6 +2336,7 @@ VOID _app_load_appxmanifest (_Inout_ PR_STRING_PTR package_root_folder)
 	PR_STRING result_path;
 	PR_STRING path_string;
 	R_STRINGREF executable_sr;
+	HRESULT hr;
 	BOOLEAN is_success;
 
 	path_string = *package_root_folder;
@@ -2342,16 +2351,23 @@ VOID _app_load_appxmanifest (_Inout_ PR_STRING_PTR package_root_folder)
 		_r_obj_movereference (&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
 
 		if (_r_fs_exists (manifest_path->buffer))
+		{
 			is_success = TRUE;
+			break;
+		}
 	}
 
 	if (!is_success)
 		goto CleanupExit;
 
-	if (_r_xml_initializelibrary (&xml_library, TRUE, NULL) != S_OK)
+	hr = _r_xml_initializelibrary (&xml_library, TRUE, NULL);
+
+	if (hr != S_OK)
 		goto CleanupExit;
 
-	if (_r_xml_parsefile (&xml_library, manifest_path->buffer) != S_OK)
+	hr = _r_xml_parsefile (&xml_library, manifest_path->buffer);
+
+	if (hr != S_OK)
 		goto CleanupExit;
 
 	if (!_r_xml_findchildbytagname (&xml_library, L"Applications"))
