@@ -732,7 +732,7 @@ VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ 
 	}
 }
 
-BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ INT new_state)
+BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ LONG new_state)
 {
 	BOOLEAN is_block;
 
@@ -758,7 +758,7 @@ BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ INT new_s
 	return TRUE;
 }
 
-BOOLEAN _app_ruleblocklistsetstate (_Inout_ PITEM_RULE ptr_rule, _In_ INT spy_state, _In_ INT update_state, _In_ INT extra_state)
+BOOLEAN _app_ruleblocklistsetstate (_Inout_ PITEM_RULE ptr_rule, _In_ LONG spy_state, _In_ LONG update_state, _In_ LONG extra_state)
 {
 	if (ptr_rule->type != DATA_RULE_BLOCKLIST || _r_obj_isstringempty (ptr_rule->name))
 		return FALSE;
@@ -1177,10 +1177,10 @@ BOOLEAN _app_profile_load_check (_In_ LPCWSTR path)
 	{
 		if (_r_xml_findchildbytagname (&xml_library, L"root"))
 		{
-			if (_r_xml_getattribute_integer (&xml_library, L"type") == XML_PROFILE_V3)
+			if (_r_xml_getattribute_long (&xml_library, L"type") == XML_PROFILE_V3)
 			{
 				// min supported is v3
-				if (_r_xml_getattribute_integer (&xml_library, L"version") >= XML_PROFILE_VER_3)
+				if (_r_xml_getattribute_long (&xml_library, L"version") >= XML_PROFILE_VER_3)
 				{
 					is_success = TRUE;
 				}
@@ -1198,7 +1198,7 @@ BOOLEAN _app_profile_load_check_node (_Inout_ PR_XML_LIBRARY xml_library, _In_ E
 	if (!xml_library->stream)
 		return FALSE;
 
-	return (_r_xml_getattribute_integer (xml_library, L"type") == type);
+	return (_r_xml_getattribute_long (xml_library, L"type") == type);
 }
 
 VOID _app_profile_load_fallback ()
@@ -1341,9 +1341,9 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 		rule_remote = _r_xml_getattribute_string (xml_library, L"rule");
 		rule_local = _r_xml_getattribute_string (xml_library, L"rule_local");
-		direction = (FWP_DIRECTION)_r_xml_getattribute_integer (xml_library, L"dir");
-		protocol = (UINT8)_r_xml_getattribute_integer (xml_library, L"protocol");
-		af = (ADDRESS_FAMILY)_r_xml_getattribute_integer (xml_library, L"version");
+		direction = (FWP_DIRECTION)_r_xml_getattribute_long (xml_library, L"dir");
+		protocol = (UINT8)_r_xml_getattribute_long (xml_library, L"protocol");
+		af = (ADDRESS_FAMILY)_r_xml_getattribute_long (xml_library, L"version");
 
 		ptr_rule = _app_addrule (rule_name, rule_remote, rule_local, direction, protocol, af);
 
@@ -1380,9 +1380,13 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 		if (type == DATA_RULE_BLOCKLIST)
 		{
-			INT blocklist_spy_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistSpyState", 2), 0, 2);
-			INT blocklist_update_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistUpdateState", 0), 0, 2);
-			INT blocklist_extra_state = _r_calc_clamp (_r_config_getinteger (L"BlocklistExtraState", 0), 0, 2);
+			LONG blocklist_spy_state;
+			LONG blocklist_update_state;
+			LONG blocklist_extra_state;
+
+			blocklist_spy_state = _r_calc_clamp32 (_r_config_getlong (L"BlocklistSpyState", 2), 0, 2);
+			blocklist_update_state = _r_calc_clamp32 (_r_config_getlong (L"BlocklistUpdateState", 0), 0, 2);
+			blocklist_extra_state = _r_calc_clamp32 (_r_config_getlong (L"BlocklistExtraState", 0), 0, 2);
 
 			_app_ruleblocklistsetstate (ptr_rule, blocklist_spy_state, blocklist_update_state, blocklist_extra_state);
 		}
@@ -1570,9 +1574,9 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 	PR_XML_LIBRARY xml_library;
 	LONG64 timestamp_file;
 	LONG64 timestamp_resource;
-	INT version_file;
-	INT version_resource;
-	INT version;
+	LONG version_file;
+	LONG version_resource;
+	LONG version;
 	BOOLEAN is_loadfromresource;
 
 	_r_xml_initializelibrary (&xml_file, TRUE, NULL);
@@ -1590,7 +1594,7 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 		{
 			if (_r_xml_findchildbytagname (&xml_file, L"root"))
 			{
-				version_file = _r_xml_getattribute_integer (&xml_file, L"version");
+				version_file = _r_xml_getattribute_long (&xml_file, L"version");
 				timestamp_file = _r_xml_getattribute_long64 (&xml_file, L"timestamp");
 			}
 		}
@@ -1609,7 +1613,7 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 			{
 				if (_r_xml_findchildbytagname (&xml_resource, L"root"))
 				{
-					version_resource = _r_xml_getattribute_integer (&xml_resource, L"version");
+					version_resource = _r_xml_getattribute_long (&xml_resource, L"version");
 					timestamp_resource = _r_xml_getattribute_long64 (&xml_resource, L"timestamp");
 				}
 			}
@@ -1726,9 +1730,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	if (hr != S_OK)
 	{
 		if (hr != HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND))
-		{
 			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_parsefile", hr, path_custom ? path_custom : config.profile_path);
-		}
 	}
 	else
 	{
@@ -1736,7 +1738,9 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 		{
 			if (_app_profile_load_check_node (&xml_library, XML_PROFILE_V3))
 			{
-				INT version = _r_xml_getattribute_integer (&xml_library, L"version");
+				LONG version;
+
+				version = _r_xml_getattribute_long (&xml_library, L"version");
 
 				// load apps
 				if (_r_xml_findchildbytagname (&xml_library, L"apps"))
@@ -1858,8 +1862,8 @@ VOID _app_profile_save ()
 	_r_xml_writestartelement (&xml_library, L"root");
 
 	_r_xml_setattribute_long64 (&xml_library, L"timestamp", current_time);
-	_r_xml_setattribute_integer (&xml_library, L"type", XML_PROFILE_V3);
-	_r_xml_setattribute_integer (&xml_library, L"version", XML_PROFILE_VER_CURRENT);
+	_r_xml_setattribute_long (&xml_library, L"type", XML_PROFILE_V3);
+	_r_xml_setattribute_long (&xml_library, L"version", XML_PROFILE_VER_CURRENT);
 
 	_r_xml_writewhitespace (&xml_library, L"\n\t");
 
@@ -1904,7 +1908,7 @@ VOID _app_profile_save ()
 
 		// ffu!
 		if (ptr_app->profile)
-			_r_xml_setattribute_integer (&xml_library, L"profile", ptr_app->profile);
+			_r_xml_setattribute_long (&xml_library, L"profile", ptr_app->profile);
 
 		if (ptr_app->is_silent)
 			_r_xml_setattribute_boolean (&xml_library, L"is_silent", !!ptr_app->is_silent);
@@ -1950,16 +1954,16 @@ VOID _app_profile_save ()
 
 		// ffu!
 		if (ptr_rule->profile)
-			_r_xml_setattribute_integer (&xml_library, L"profile", ptr_rule->profile);
+			_r_xml_setattribute_long (&xml_library, L"profile", ptr_rule->profile);
 
 		if (ptr_rule->direction != FWP_DIRECTION_OUTBOUND)
-			_r_xml_setattribute_integer (&xml_library, L"dir", ptr_rule->direction);
+			_r_xml_setattribute_long (&xml_library, L"dir", ptr_rule->direction);
 
 		if (ptr_rule->protocol != 0)
-			_r_xml_setattribute_integer (&xml_library, L"protocol", ptr_rule->protocol);
+			_r_xml_setattribute_long (&xml_library, L"protocol", ptr_rule->protocol);
 
 		if (ptr_rule->af != AF_UNSPEC)
-			_r_xml_setattribute_integer (&xml_library, L"version", ptr_rule->af);
+			_r_xml_setattribute_long (&xml_library, L"version", ptr_rule->af);
 
 		// add apps attribute
 		if (!_r_obj_ishashtableempty (ptr_rule->apps))

@@ -198,7 +198,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 
 			sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
 			sublayer.subLayerKey = GUID_WfpSublayer;
-			sublayer.weight = (UINT16)_r_config_getuinteger (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT); // highest weight for UINT16
+			sublayer.weight = (UINT16)_r_config_getlong (L"SublayerWeight", SUBLAYER_WEIGHT_DEFAULT); // highest weight for UINT16
 
 			if (!config.is_filterstemporary)
 				sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;

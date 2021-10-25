@@ -630,9 +630,9 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					for (INT i = IDC_BLOCKLIST_SPY_DISABLE; i <= IDC_BLOCKLIST_EXTRA_BLOCK; i++)
 						CheckDlgButton (hwnd, i, BST_UNCHECKED); // HACK!!! reset button checkboxes!
 
-					CheckDlgButton (hwnd, (IDC_BLOCKLIST_SPY_DISABLE + _r_calc_clamp (_r_config_getinteger (L"BlocklistSpyState", 2), 0, 2)), BST_CHECKED);
-					CheckDlgButton (hwnd, (IDC_BLOCKLIST_UPDATE_DISABLE + _r_calc_clamp (_r_config_getinteger (L"BlocklistUpdateState", 0), 0, 2)), BST_CHECKED);
-					CheckDlgButton (hwnd, (IDC_BLOCKLIST_EXTRA_DISABLE + _r_calc_clamp (_r_config_getinteger (L"BlocklistExtraState", 0), 0, 2)), BST_CHECKED);
+					CheckDlgButton (hwnd, (IDC_BLOCKLIST_SPY_DISABLE + _r_calc_clamp32 (_r_config_getlong (L"BlocklistSpyState", 2), 0, 2)), BST_CHECKED);
+					CheckDlgButton (hwnd, (IDC_BLOCKLIST_UPDATE_DISABLE + _r_calc_clamp32 (_r_config_getlong (L"BlocklistUpdateState", 0), 0, 2)), BST_CHECKED);
+					CheckDlgButton (hwnd, (IDC_BLOCKLIST_EXTRA_DISABLE + _r_calc_clamp32 (_r_config_getlong (L"BlocklistExtraState", 0), 0, 2)), BST_CHECKED);
 
 					break;
 				}
@@ -1186,35 +1186,38 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				case IDC_BLOCKLIST_EXTRA_ALLOW:
 				case IDC_BLOCKLIST_EXTRA_BLOCK:
 				{
-					HMENU hmenu = GetMenu (_r_app_gethwnd ());
+					HMENU hmenu;
+					LONG new_state;
+
+					hmenu = GetMenu (_r_app_gethwnd ());
 
 					if (ctrl_id >= IDC_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDC_BLOCKLIST_SPY_BLOCK)
 					{
-						INT new_state = _r_calc_clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
+						new_state = _r_calc_clamp32 (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
 
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_SPY_DISABLE + new_state);
 
-						_r_config_setinteger (L"BlocklistSpyState", new_state);
+						_r_config_setlong (L"BlocklistSpyState", new_state);
 
 						_app_ruleblocklistset (_r_app_gethwnd (), new_state, -1, -1, TRUE);
 					}
 					else if (ctrl_id >= IDC_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDC_BLOCKLIST_UPDATE_BLOCK)
 					{
-						INT new_state = _r_calc_clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
+						new_state = _r_calc_clamp32 (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
 
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_UPDATE_DISABLE + new_state);
 
-						_r_config_setinteger (L"BlocklistUpdateState", new_state);
+						_r_config_setlong (L"BlocklistUpdateState", new_state);
 
 						_app_ruleblocklistset (_r_app_gethwnd (), -1, new_state, -1, TRUE);
 					}
 					else if (ctrl_id >= IDC_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
 					{
-						INT new_state = _r_calc_clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
+						new_state = _r_calc_clamp32 (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_EXTRA_DISABLE + new_state);
 
-						_r_config_setinteger (L"BlocklistExtraState", new_state);
+						_r_config_setlong (L"BlocklistExtraState", new_state);
 
 						_app_ruleblocklistset (_r_app_gethwnd (), -1, -1, new_state, TRUE);
 					}
@@ -1731,7 +1734,7 @@ VOID _app_initialize ()
 	_app_generate_credentials ();
 
 	// load default icons
-	_app_getdefaulticons (0, NULL);
+	_app_getdefaulticons ();
 
 	// initialize global filters array object
 	if (!filter_ids)
@@ -1869,7 +1872,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			_r_sys_createthread2 (&NetworkMonitorThread, hwnd);
 
 			// initialize tab
-			_app_settab_id (hwnd, _r_config_getinteger (L"CurrentTab", IDC_APPS_PROFILE));
+			_app_settab_id (hwnd, _r_config_getlong (L"CurrentTab", IDC_APPS_PROFILE));
 
 			break;
 		}
@@ -1967,7 +1970,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		{
 			HANDLE hengine;
 
-			_r_config_setinteger (L"CurrentTab", _app_getcurrentlistview_id (hwnd));
+			_r_config_setlong (L"CurrentTab", _app_getcurrentlistview_id (hwnd));
 
 			_r_tray_destroy (hwnd, &GUID_TrayIcon);
 
@@ -2841,7 +2844,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_VIEW_ICON:
 				case IDM_VIEW_TILE:
 				{
-					INT view_type;
+					LONG view_type;
 
 					if (ctrl_id == IDM_VIEW_ICON)
 					{
@@ -2857,7 +2860,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					}
 
 					_r_menu_checkitem (GetMenu (hwnd), IDM_VIEW_DETAILS, IDM_VIEW_TILE, MF_BYCOMMAND, ctrl_id);
-					_r_config_setinteger (L"ViewType", view_type);
+					_r_config_setlong (L"ViewType", view_type);
 
 					_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
@@ -2868,7 +2871,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_SIZE_LARGE:
 				case IDM_SIZE_EXTRALARGE:
 				{
-					INT icon_size;
+					LONG icon_size;
 
 					if (ctrl_id == IDM_SIZE_LARGE)
 					{
@@ -2884,7 +2887,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					}
 
 					_r_menu_checkitem (GetMenu (hwnd), IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, MF_BYCOMMAND, ctrl_id);
-					_r_config_setinteger (L"IconSize", icon_size);
+					_r_config_setlong (L"IconSize", icon_size);
 
 					_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
@@ -2981,7 +2984,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_BLOCKLIST_EXTRA_BLOCK:
 				{
 					HMENU hmenu;
-					INT new_state;
+					LONG new_state;
 
 					hmenu = GetMenu (hwnd);
 
@@ -2992,9 +2995,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, ctrl_id);
 
-						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_SPY_DISABLE, 0, 2);
+						new_state = _r_calc_clamp32 (ctrl_id - IDM_BLOCKLIST_SPY_DISABLE, 0, 2);
 
-						_r_config_setinteger (L"BlocklistSpyState", new_state);
+						_r_config_setlong (L"BlocklistSpyState", new_state);
 
 						_app_ruleblocklistset (hwnd, new_state, -1, -1, TRUE);
 					}
@@ -3002,9 +3005,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, ctrl_id);
 
-						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_UPDATE_DISABLE, 0, 2);
+						new_state = _r_calc_clamp32 (ctrl_id - IDM_BLOCKLIST_UPDATE_DISABLE, 0, 2);
 
-						_r_config_setinteger (L"BlocklistUpdateState", new_state);
+						_r_config_setlong (L"BlocklistUpdateState", new_state);
 
 						_app_ruleblocklistset (hwnd, -1, new_state, -1, TRUE);
 					}
@@ -3012,9 +3015,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, ctrl_id);
 
-						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_EXTRA_DISABLE, 0, 2);
+						new_state = _r_calc_clamp32 (ctrl_id - IDM_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 
-						_r_config_setinteger (L"BlocklistExtraState", new_state);
+						_r_config_setlong (L"BlocklistExtraState", new_state);
 
 						_app_ruleblocklistset (hwnd, -1, -1, new_state, TRUE);
 					}

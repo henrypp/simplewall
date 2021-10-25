@@ -729,7 +729,7 @@ VOID _app_imagelist_init (_In_ HWND hwnd)
 	icon_large_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 	icon_large_y = _r_dc_getsystemmetrics (SM_CYICON, dpi_value);
 
-	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getinteger (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small_x, icon_large_x);
+	icon_size_toolbar = _r_calc_clamp32 (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small_x, icon_large_x);
 
 	config.hbmp_enable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_small_x, icon_small_y);
 	config.hbmp_disable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_small_x, icon_small_y);
@@ -933,13 +933,13 @@ CleanupExit:
 VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id)
 {
 	HIMAGELIST himg;
-	INT view_type;
-	INT icons_size;
+	LONG view_type;
+	LONG icons_size;
 	BOOLEAN is_mainview;
 
 	is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
-	view_type = is_mainview ? _r_calc_clamp (_r_config_getinteger (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
-	icons_size = is_mainview ? _r_calc_clamp (_r_config_getinteger (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SMALL;
+	view_type = is_mainview ? _r_calc_clamp32 (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
+	icons_size = is_mainview ? _r_calc_clamp32 (_r_config_getlong (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SMALL;
 
 	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
 	{
@@ -951,9 +951,7 @@ VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id)
 	}
 
 	if (himg)
-	{
 		_r_listview_setimagelist (hwnd, listview_id, himg);
-	}
 
 	_r_listview_setview (hwnd, listview_id, view_type);
 }
@@ -982,9 +980,9 @@ INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lpa
 {
 	WCHAR config_name[128];
 	HWND hwnd;
+	LONG column_id;
 	INT listview_id;
 	INT result;
-	INT column_id;
 	INT item_id1;
 	INT item_id2;
 	BOOLEAN is_descend;
@@ -1004,7 +1002,7 @@ INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lpa
 
 	_r_str_printf (config_name, RTL_NUMBER_OF (config_name), L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	column_id = _r_config_getinteger_ex (L"SortColumn", 0, config_name);
+	column_id = _r_config_getlong_ex (L"SortColumn", 0, config_name);
 	is_descend = _r_config_getboolean_ex (L"SortIsDescending", FALSE, config_name);
 
 	result = 0;
@@ -1107,7 +1105,7 @@ INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lpa
 	return is_descend ? -result : result;
 }
 
-VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT column_id, _In_ BOOLEAN is_notifycode)
+VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG column_id, _In_ BOOLEAN is_notifycode)
 {
 	HWND hlistview;
 	INT column_count;
@@ -1135,14 +1133,14 @@ VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT column_id
 		is_descend = !is_descend;
 
 	if (column_id == -1)
-		column_id = _r_config_getinteger_ex (L"SortColumn", 0, config_name);
+		column_id = _r_config_getlong_ex (L"SortColumn", 0, config_name);
 
-	column_id = _r_calc_clamp (column_id, 0, column_count - 1); // set range
+	column_id = _r_calc_clamp32 (column_id, 0, column_count - 1); // set range
 
 	if (is_notifycode)
 	{
 		_r_config_setboolean_ex (L"SortIsDescending", is_descend, config_name);
-		_r_config_setinteger_ex (L"SortColumn", column_id, config_name);
+		_r_config_setlong_ex (L"SortColumn", column_id, config_name);
 	}
 
 	for (INT i = 0; i < column_count; i++)

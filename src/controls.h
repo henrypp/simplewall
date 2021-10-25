@@ -45,7 +45,7 @@ VOID _app_listviewloadfont (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
 VOID _app_listviewsetfont (_In_ HWND hwnd, _In_ INT listview_id);
 
 INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lparam2, _In_ LPARAM lparam);
-VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT column_id, _In_ BOOLEAN is_notifycode);
+VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG column_id, _In_ BOOLEAN is_notifycode);
 
 VOID _app_toolbar_init (_In_ HWND hwnd);
 VOID _app_toolbar_resize ();
