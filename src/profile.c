@@ -183,9 +183,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	if (_r_str_findchar (&path_temp, L'~', FALSE) != SIZE_MAX)
 	{
 		if (GetLongPathName (path_temp.buffer, path_full, RTL_NUMBER_OF (path_full)))
-		{
 			_r_obj_initializestringref (&path_temp, path_full);
-		}
 	}
 
 	app_hash = _r_obj_getstringrefhash (&path_temp);
@@ -199,23 +197,17 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	ptr_app->app_hash = app_hash;
 
 	if (_r_str_isstartswith2 (&path_temp, L"S-1-", TRUE)) // uwp (win8+)
-	{
 		type = DATA_APP_UWP;
-	}
 
 	if (type == DATA_APP_SERVICE || type == DATA_APP_UWP)
 	{
 		ptr_app->type = type;
 
 		if (display_name)
-		{
 			ptr_app->display_name = _r_obj_reference (display_name);
-		}
 
 		if (real_path)
-		{
 			ptr_app->real_path = _r_obj_reference (real_path);
-		}
 	}
 	else if (_r_str_isstartswith2 (&path_temp, L"\\device\\", TRUE)) // device path
 	{
@@ -246,17 +238,13 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	}
 
 	if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK)
-	{
 		ptr_app->short_name = _r_path_getbasenamestring (&path_temp);
-	}
 
 	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
 
 	if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
-	{
 		ptr_app->is_undeletable = TRUE;
-	}
 
 	// insert object into the table
 	_r_queuedlock_acquireexclusive (&lock_apps);
@@ -803,14 +791,10 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 		changes_count += 1;
 
 		if (hwnd)
-		{
 			_app_updateitembylparam (hwnd, i, FALSE);
-		}
 
 		if (is_instantapply)
-		{
 			_r_obj_addlistitem (rules, _r_obj_reference (ptr_rule)); // dereference later!
-		}
 	}
 
 	_r_queuedlock_releaseshared (&lock_rules);
@@ -818,11 +802,9 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 	if (changes_count)
 	{
 		if (hwnd)
-		{
 			_app_updatelistviewbylparam (hwnd, DATA_RULE_BLOCKLIST, PR_UPDATE_TYPE | PR_UPDATE_NORESIZE);
-		}
 
-		if (is_instantapply)
+			if (is_instantapply)
 		{
 			if (rules->count)
 			{
@@ -867,9 +849,7 @@ PR_STRING _app_appexpandrules (_In_ ULONG_PTR app_hash, _In_ LPCWSTR delimeter)
 			_r_obj_appendstringbuilder2 (&buffer, ptr_rule->name);
 
 			if (ptr_rule->is_readonly)
-			{
 				_r_obj_appendstringbuilder (&buffer, SZ_RULE_INTERNAL_MENU);
-			}
 
 			_r_obj_appendstringbuilder3 (&buffer, &delimeter_sr);
 		}
@@ -1002,9 +982,7 @@ BOOLEAN _app_isappfromsystem (_In_opt_ PR_STRING path, _In_ ULONG_PTR app_hash)
 	if (path)
 	{
 		if (_r_str_isstartswith (&path->sr, &config.windows_dir, TRUE))
-		{
 			return TRUE;
-		}
 	}
 
 	return FALSE;
@@ -1181,9 +1159,7 @@ BOOLEAN _app_profile_load_check (_In_ LPCWSTR path)
 			{
 				// min supported is v3
 				if (_r_xml_getattribute_long (&xml_library, L"version") >= XML_PROFILE_VER_3)
-				{
 					is_success = TRUE;
-				}
 			}
 		}
 	}
@@ -1289,24 +1265,16 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 					timer = _r_xml_getattribute_long64 (xml_library, L"timer");
 
 					if (is_silent)
-					{
 						_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (is_silent));
-					}
 
 					if (is_enabled)
-					{
 						_app_setappinfo (ptr_app, INFO_IS_ENABLED, IntToPtr (is_enabled));
-					}
 
 					if (timestamp)
-					{
 						_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
-					}
 
 					if (timer)
-					{
 						_app_setappinfo (ptr_app, INFO_TIMER_PTR, &timer);
-					}
 
 					_r_obj_dereference (ptr_app);
 				}
@@ -1408,9 +1376,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 				ptr_config = _app_getruleconfigitem (rule_hash);
 
 				if (ptr_config)
-				{
 					ptr_rule->is_enabled = ptr_config->is_enabled;
-				}
 			}
 
 			// load apps
@@ -1432,9 +1398,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 				if (is_internal && ptr_config && !_r_obj_isstringempty (ptr_config->apps))
 				{
 					if (!_r_obj_isstringempty2 (rule_apps.string))
-					{
 						_r_obj_appendstringbuilder (&rule_apps, DIVIDER_APP);
-					}
 
 					_r_obj_appendstringbuilder2 (&rule_apps, ptr_config->apps);
 				}
@@ -1444,9 +1408,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 				if (!_r_obj_isstringempty2 (string))
 				{
 					if (version < XML_PROFILE_VER_3)
-					{
 						_r_str_replacechar (&string->sr, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
-					}
 
 					R_STRINGREF remaining_part;
 					R_STRINGREF first_part;
@@ -1476,14 +1438,10 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 							_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
 
 							if (!_app_isappfound (app_hash))
-							{
 								app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &path_string->sr, NULL, NULL);
-							}
 
 							if (ptr_rule->type == DATA_RULE_SYSTEM)
-							{
 								_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
-							}
 						}
 
 						_r_obj_dereference (path_string);
@@ -1530,9 +1488,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 					ptr_config->apps = _r_xml_getattribute_string (xml_library, L"apps");
 
 					if (ptr_config->apps && version < XML_PROFILE_VER_3)
-					{
 						_r_str_replacechar (&ptr_config->apps->sr, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
-					}
 				}
 			}
 		}
@@ -1555,9 +1511,7 @@ PVOID _app_loadpackedresource (_In_ LPCWSTR resource_name, _Out_ PULONG buffer_l
 		buffer = _r_res_loadresource (NULL, resource_name, RT_RCDATA, &buffer_length);
 
 		if (buffer)
-		{
 			_r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, buffer, buffer_length, &memory_buffer, &memory_length);
-		}
 
 		_r_initonce_end (&init_once);
 	}
@@ -1721,9 +1675,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	// load backup
 	if (hr != S_OK && !path_custom)
-	{
 		hr = _r_xml_parsefile (&xml_library, config.profile_path_backup);
-	}
 
 	_r_queuedlock_releaseshared (&lock_profile);
 
@@ -1798,9 +1750,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 			// install timer
 			if (ptr_app->timer)
-			{
 				_app_timer_set (hwnd, ptr_app, ptr_app->timer - current_time);
-			}
 		}
 
 		_r_queuedlock_releaseshared (&lock_apps);
@@ -1823,9 +1773,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 		_app_updatelistviewbylparam (hwnd, new_listview_id, 0);
 
 		if (_r_wnd_isvisible (hwnd) && (current_listview_id == new_listview_id))
-		{
 			_app_showitem (hwnd, current_listview_id, selected_item, scroll_pos);
-		}
 	}
 }
 
@@ -2019,18 +1967,14 @@ VOID _app_profile_save ()
 			is_enabled_default = !!ptr_rule->is_enabled_default;
 
 			if (ptr_rule->type == DATA_RULE_USER && !_r_obj_ishashtableempty (ptr_rule->apps))
-			{
 				apps_string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
-			}
 
 			_r_obj_dereference (ptr_rule);
 		}
 
 		// skip saving untouched configuration
 		if (ptr_config->is_enabled == is_enabled_default && !apps_string)
-		{
 			continue;
-		}
 
 		_r_xml_writewhitespace (&xml_library, L"\n\t\t");
 

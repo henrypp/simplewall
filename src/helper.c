@@ -3167,19 +3167,19 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Out_opt_ PITEM_ADDRES
 			_r_obj_initializestringref (&sr, address->range_start);
 
 			address->range.valueLow.type = FWP_UINT16;
-			address->range.valueLow.uint16 = (UINT16)_r_str_touinteger (&sr);
+			address->range.valueLow.uint16 = (UINT16)_r_str_toulong (&sr);
 
 			_r_obj_initializestringref (&sr, address->range_end);
 
 			address->range.valueHigh.type = FWP_UINT16;
-			address->range.valueHigh.uint16 = (UINT16)_r_str_touinteger (&sr);
+			address->range.valueHigh.uint16 = (UINT16)_r_str_toulong (&sr);
 
 			return TRUE;
 		}
 		else
 		{
 			// ...port
-			address->port = (UINT16)_r_str_touinteger (rule);
+			address->port = (UINT16)_r_str_toulong (rule);
 
 			return TRUE;
 		}
