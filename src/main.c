@@ -1869,7 +1869,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			_r_layout_setoriginalsize (&layout_manager, 500, 220);
 
 			// create network monitor thread
-			_r_sys_createthread2 (&NetworkMonitorThread, hwnd);
+			_r_sys_createthread (&NetworkMonitorThread, hwnd, NULL, NULL);
 
 			// initialize tab
 			_app_settab_id (hwnd, _r_config_getlong (L"CurrentTab", IDC_APPS_PROFILE));
