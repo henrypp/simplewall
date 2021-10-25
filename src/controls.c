@@ -932,10 +932,10 @@ CleanupExit:
 
 VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id)
 {
-	BOOLEAN is_mainview;
+	HIMAGELIST himg;
 	INT view_type;
 	INT icons_size;
-	HIMAGELIST himg;
+	BOOLEAN is_mainview;
 
 	is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
 	view_type = is_mainview ? _r_calc_clamp (_r_config_getinteger (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
@@ -975,9 +975,7 @@ VOID _app_listviewloadfont (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 VOID _app_listviewsetfont (_In_ HWND hwnd, _In_ INT listview_id)
 {
 	if (config.hfont)
-	{
 		SendDlgItemMessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
-	}
 }
 
 INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lparam2, _In_ LPARAM lparam)
