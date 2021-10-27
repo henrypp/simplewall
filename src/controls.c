@@ -1407,7 +1407,7 @@ VOID _app_refreshstatus (_In_ HWND hwnd)
 	parts[1] = parts[0] + size[1];
 	parts[2] = parts[1] + size[2];
 
-	_r_status_setparts (hwnd, IDC_STATUSBAR, UI_STATUSBAR_PARTS_COUNT, parts);
+	_r_status_setparts (hwnd, IDC_STATUSBAR, parts, UI_STATUSBAR_PARTS_COUNT);
 
 	for (INT i = 1; i < UI_STATUSBAR_PARTS_COUNT; i++)
 	{
