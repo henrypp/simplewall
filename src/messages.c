@@ -2542,9 +2542,7 @@ VOID _app_command_purgeunused (_In_ HWND hwnd)
 			item_id = _app_getposition (hwnd, listview_id, hash_code);
 
 			if (item_id != -1)
-			{
 				_r_listview_deleteitem (hwnd, listview_id, item_id);
-			}
 		}
 
 		_app_timer_reset (NULL, ptr_app);
