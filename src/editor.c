@@ -722,9 +722,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				hlistview = GetDlgItem (hwnd, listview_ids[i]);
 
 				if (hlistview)
-				{
 					_r_listview_setcolumn (hwnd, listview_ids[i], 0, NULL, -100);
-				}
 			}
 
 			break;
@@ -1376,7 +1374,17 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 		case WM_SIZE:
 		{
+			HWND hpage;
+			INT item_id;
+
 			_r_layout_resize (&layout_manager, wparam);
+
+			item_id = _r_tab_getcurrentitem (hwnd, IDC_TAB);
+			hpage = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, item_id);
+
+			if (hpage)
+				_r_tab_adjustchild (hwnd, IDC_TAB, hpage);
+
 			break;
 		}
 
