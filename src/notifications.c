@@ -1099,7 +1099,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 				if (ptr_log)
 				{
-					if (ptr_log->app_hash && !(ptr_rule->is_forservices && (ptr_log->app_hash == config.ntoskrnl_hash || ptr_log->app_hash == config.svchost_hash)))
+					if (ptr_log->app_hash && !(ptr_rule->is_forservices && _app_issystemhash (ptr_log->app_hash)))
 					{
 						ptr_app = _app_getappitem (ptr_log->app_hash);
 

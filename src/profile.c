@@ -192,7 +192,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 		return app_hash; // already exists
 
 	ptr_app = _r_obj_allocate (sizeof (ITEM_APP), &_app_dereferenceapp);
-	is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
+	is_ntoskrnl = (app_hash == profile_info.ntoskrnl_hash);
 
 	ptr_app->app_hash = app_hash;
 
@@ -225,7 +225,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 			ptr_app->type = PathIsNetworkPath (path_temp.buffer) ? DATA_APP_NETWORK : DATA_APP_REGULAR;
 		}
 
-		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstring2 (config.ntoskrnl_path) : _r_obj_createstring3 (&path_temp);
+		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstring2 (profile_info.ntoskrnl_path) : _r_obj_createstring3 (&path_temp);
 	}
 
 	ptr_app->original_path = _r_obj_createstring3 (&path_temp);
@@ -804,7 +804,7 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 		if (hwnd)
 			_app_updatelistviewbylparam (hwnd, DATA_RULE_BLOCKLIST, PR_UPDATE_TYPE | PR_UPDATE_NORESIZE);
 
-			if (is_instantapply)
+		if (is_instantapply)
 		{
 			if (rules->count)
 			{
@@ -886,7 +886,7 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 
 	if (is_fordisplay && ptr_rule->is_forservices)
 	{
-		string = _r_obj_concatstrings (4, PROC_SYSTEM_NAME, delimeter, _r_obj_getstring (config.svchost_path), delimeter);
+		string = _r_obj_concatstrings (4, PROC_SYSTEM_NAME, delimeter, _r_obj_getstring (profile_info.svchost_path), delimeter);
 
 		_r_obj_appendstringbuilder2 (&buffer, string);
 
@@ -976,7 +976,7 @@ PR_STRING _app_rulesexpandrules (_In_opt_ PR_STRING rule, _In_ LPCWSTR delimeter
 
 BOOLEAN _app_isappfromsystem (_In_opt_ PR_STRING path, _In_ ULONG_PTR app_hash)
 {
-	if (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash)
+	if (_app_issystemhash (app_hash))
 		return TRUE;
 
 	if (path)
@@ -1141,6 +1141,11 @@ BOOLEAN _app_isnetworkfound (_In_ ULONG_PTR network_hash)
 	return is_found;
 }
 
+BOOLEAN _app_issystemhash (_In_ ULONG_PTR app_hash)
+{
+	return (app_hash == profile_info.ntoskrnl_hash || app_hash == profile_info.svchost_hash);
+}
+
 BOOLEAN _app_profile_load_check (_In_ LPCWSTR path)
 {
 	R_XML_LIBRARY xml_library;
@@ -1181,27 +1186,27 @@ VOID _app_profile_load_fallback ()
 {
 	ULONG_PTR app_hash;
 
-	if (!_app_isappfound (config.my_hash))
+	if (!_app_isappfound (profile_info.my_hash))
 	{
-		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &config.my_path->sr, NULL, NULL);
+		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &profile_info.my_path->sr, NULL, NULL);
 
 		if (app_hash)
 			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
 	}
 
-	_app_setappinfobyhash (config.my_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+	_app_setappinfobyhash (profile_info.my_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
 
 	// disable deletion for this shit ;)
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
-		if (!_app_isappfound (config.ntoskrnl_hash) && config.system_path)
-			_app_addapplication (NULL, DATA_UNKNOWN, &config.system_path->sr, NULL, NULL);
+		if (!_app_isappfound (profile_info.ntoskrnl_hash) && profile_info.system_path)
+			_app_addapplication (NULL, DATA_UNKNOWN, &profile_info.system_path->sr, NULL, NULL);
 
-		if (!_app_isappfound (config.svchost_hash) && config.svchost_path)
-			_app_addapplication (NULL, DATA_UNKNOWN, &config.svchost_path->sr, NULL, NULL);
+		if (!_app_isappfound (profile_info.svchost_hash) && profile_info.svchost_path)
+			_app_addapplication (NULL, DATA_UNKNOWN, &profile_info.svchost_path->sr, NULL, NULL);
 
-		_app_setappinfobyhash (config.ntoskrnl_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
-		_app_setappinfobyhash (config.svchost_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+		_app_setappinfobyhash (profile_info.ntoskrnl_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+		_app_setappinfobyhash (profile_info.svchost_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
 	}
 }
 
@@ -1429,7 +1434,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 						if (app_hash)
 						{
-							if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
+							if (ptr_rule->is_forservices && _app_issystemhash (app_hash))
 							{
 								_r_obj_dereference (path_string);
 								continue;
@@ -1671,18 +1676,18 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	_r_queuedlock_acquireshared (&lock_profile);
 
-	hr = _r_xml_parsefile (&xml_library, path_custom ? path_custom : config.profile_path);
+	hr = _r_xml_parsefile (&xml_library, path_custom ? path_custom : profile_info.profile_path);
 
 	// load backup
 	if (hr != S_OK && !path_custom)
-		hr = _r_xml_parsefile (&xml_library, config.profile_path_backup);
+		hr = _r_xml_parsefile (&xml_library, profile_info.profile_path_backup);
 
 	_r_queuedlock_releaseshared (&lock_profile);
 
 	if (hr != S_OK)
 	{
 		if (hr != HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND))
-			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_parsefile", hr, path_custom ? path_custom : config.profile_path);
+			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_parsefile", hr, path_custom ? path_custom : profile_info.profile_path);
 	}
 	else
 	{
@@ -1730,7 +1735,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	// load internal rules (new!)
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-		_app_profile_load_internal (config.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &config.profile_internal_timestamp);
+		_app_profile_load_internal (profile_info.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
 
 	if (hwnd)
 	{
@@ -1785,7 +1790,7 @@ VOID _app_profile_save ()
 	HRESULT hr;
 
 	current_time = _r_unixtime_now ();
-	is_backuprequired = _r_config_getboolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (config.profile_path_backup) || ((current_time - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
+	is_backuprequired = _r_config_getboolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (profile_info.profile_path_backup) || ((current_time - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
 
 	hr = _r_xml_initializelibrary (&xml_library, FALSE, NULL);
 
@@ -1795,11 +1800,11 @@ VOID _app_profile_save ()
 		return;
 	}
 
-	hr = _r_xml_createfile (&xml_library, config.profile_path);
+	hr = _r_xml_createfile (&xml_library, profile_info.profile_path);
 
 	if (hr != S_OK)
 	{
-		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_createfile", hr, config.profile_path);
+		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_createfile", hr, profile_info.profile_path);
 		return;
 	}
 
@@ -2014,7 +2019,7 @@ VOID _app_profile_save ()
 	// make backup
 	if (is_backuprequired)
 	{
-		_r_fs_copyfile (config.profile_path, config.profile_path_backup, 0);
+		_r_fs_copyfile (profile_info.profile_path, profile_info.profile_path_backup, 0);
 		_r_config_setlong64 (L"BackupTimestamp", current_time);
 	}
 }

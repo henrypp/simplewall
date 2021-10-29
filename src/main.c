@@ -1696,18 +1696,18 @@ VOID _app_initialize ()
 		_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
 	}
 
-	_r_str_printf (config.profile_path, RTL_NUMBER_OF (config.profile_path), L"%s\\" XML_PROFILE, _r_app_getprofiledirectory ());
-	_r_str_printf (config.profile_path_backup, RTL_NUMBER_OF (config.profile_path_backup), L"%s\\" XML_PROFILE L".bak", _r_app_getprofiledirectory ());
-	_r_str_printf (config.profile_internal_path, RTL_NUMBER_OF (config.profile_internal_path), L"%s\\" XML_PROFILE_INTERNAL, _r_app_getprofiledirectory ());
+	_r_str_printf (profile_info.profile_path, RTL_NUMBER_OF (profile_info.profile_path), L"%s\\" XML_PROFILE, _r_app_getprofiledirectory ());
+	_r_str_printf (profile_info.profile_path_backup, RTL_NUMBER_OF (profile_info.profile_path_backup), L"%s\\" XML_PROFILE L".bak", _r_app_getprofiledirectory ());
+	_r_str_printf (profile_info.profile_internal_path, RTL_NUMBER_OF (profile_info.profile_internal_path), L"%s\\" XML_PROFILE_INTERNAL, _r_app_getprofiledirectory ());
 
-	config.my_path = _r_obj_createstring (_r_sys_getimagepath ());
-	config.svchost_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_SVCHOST);
-	config.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
-	config.ntoskrnl_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_NTOSKRNL);
+	profile_info.my_path = _r_obj_createstring (_r_sys_getimagepath ());
+	profile_info.svchost_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_SVCHOST);
+	profile_info.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
+	profile_info.ntoskrnl_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_NTOSKRNL);
 
-	config.my_hash = _r_obj_getstringhash (config.my_path);
-	config.ntoskrnl_hash = _r_obj_getstringhash (config.system_path);
-	config.svchost_hash = _r_obj_getstringhash (config.svchost_path);
+	profile_info.my_hash = _r_obj_getstringhash (profile_info.my_path);
+	profile_info.ntoskrnl_hash = _r_obj_getstringhash (profile_info.system_path);
+	profile_info.svchost_hash = _r_obj_getstringhash (profile_info.svchost_path);
 
 	// initialize free list
 	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);
@@ -1854,9 +1854,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 			{
 				WCHAR internal_profile_version[64];
-				_r_str_fromlong64 (internal_profile_version, RTL_NUMBER_OF (internal_profile_version), config.profile_internal_timestamp);
+				_r_str_fromlong64 (internal_profile_version, RTL_NUMBER_OF (internal_profile_version), profile_info.profile_internal_timestamp);
 
-				_r_update_addcomponent (L"Internal rules", L"rules", internal_profile_version, config.profile_internal_path, FALSE);
+				_r_update_addcomponent (L"Internal rules", L"rules", internal_profile_version, profile_info.profile_internal_path, FALSE);
 			}
 
 			// create network monitor thread
@@ -1932,7 +1932,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 
-			_r_fs_makebackup (config.profile_path, TRUE);
+			_r_fs_makebackup (profile_info.profile_path, TRUE);
 
 			_app_profile_load (hwnd, NULL);
 
@@ -2214,7 +2214,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1))
 						{
-							if (app_hash == config.my_hash)
+							if (app_hash == profile_info.my_hash)
 							{
 								if (!_r_show_confirmmessage (hwnd, L"WARNING!", L"If you disallow this, you cannot use resolve network addresses option. Continue?", NULL))
 								{
@@ -2225,7 +2225,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						}
 						else if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2))
 						{
-							if (app_hash == config.svchost_hash)
+							if (app_hash == profile_info.svchost_hash)
 							{
 								if (!_r_show_confirmmessage (hwnd, L"WARNING!", L"Be careful, through service host (svchost.exe) internet traffic can let out through unexpected ways. Continue?", NULL))
 								{
@@ -2730,7 +2730,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								else
 								{
 									// made backup
-									_r_fs_deletefile (config.profile_path_backup, TRUE);
+									_r_fs_deletefile (profile_info.profile_path_backup, TRUE);
 									_app_profile_save ();
 
 									_app_profile_load (hwnd, path->buffer); // load profile
@@ -2772,7 +2772,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								_app_profile_save ();
 
 								// added information for export profile failure (issue #707)
-								if (!_r_fs_copyfile (config.profile_path, path->buffer, 0))
+								if (!_r_fs_copyfile (profile_info.profile_path, path->buffer, 0))
 								{
 									R_ERROR_INFO error_info = {0};
 									error_info.description = path->buffer;

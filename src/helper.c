@@ -631,7 +631,7 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 
 LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened)
 {
-	if (ptr_app->app_hash == config.ntoskrnl_hash)
+	if (ptr_app->app_hash == profile_info.ntoskrnl_hash)
 	{
 		if (ptr_app->original_path)
 			return ptr_app->original_path->buffer;
@@ -1979,7 +1979,7 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 	}
 	else if (pid == PROC_SYSTEM_PID)
 	{
-		ptr_network->app_hash = config.ntoskrnl_hash;
+		ptr_network->app_hash = profile_info.ntoskrnl_hash;
 		ptr_network->type = DATA_APP_REGULAR;
 		ptr_network->path = _r_obj_createstring (PROC_SYSTEM_NAME);
 
@@ -2873,16 +2873,14 @@ VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_ap
 	}
 
 	if (!is_checked)
-	{
 		_r_menu_checkitem (hsubmenu, IDM_DISABLETIMER, IDM_DISABLETIMER, MF_BYCOMMAND, IDM_DISABLETIMER);
-	}
 }
 
 BOOLEAN _app_setruletoapp (_In_ HWND hwnd, _Inout_ PITEM_RULE ptr_rule, _In_ INT item_id, _In_ PITEM_APP ptr_app, _In_ BOOLEAN is_enable)
 {
 	INT listview_id;
 
-	if (ptr_rule->is_forservices && (ptr_app->app_hash == config.ntoskrnl_hash || ptr_app->app_hash == config.svchost_hash))
+	if (ptr_rule->is_forservices && _app_issystemhash (ptr_app->app_hash))
 		return FALSE;
 
 	if (is_enable == (_r_obj_findhashtable (ptr_rule->apps, ptr_app->app_hash) != NULL))

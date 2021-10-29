@@ -535,7 +535,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 					while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 					{
 						// check for services
-						is_enabled = (_r_obj_findhashtable (context->ptr_rule->apps, ptr_app->app_hash)) || (context->ptr_rule->is_forservices && (ptr_app->app_hash == config.ntoskrnl_hash || ptr_app->app_hash == config.svchost_hash));
+						is_enabled = (_r_obj_findhashtable (context->ptr_rule->apps, ptr_app->app_hash)) || (context->ptr_rule->is_forservices && _app_issystemhash (ptr_app->app_hash));
 
 						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, TRUE);
 
@@ -637,7 +637,7 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 						continue;
 
 					// check for services
-					is_enabled = ((ptr_rule->is_forservices && (context->ptr_app->app_hash == config.ntoskrnl_hash || context->ptr_app->app_hash == config.svchost_hash)) || _r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash));
+					is_enabled = ((ptr_rule->is_forservices && _app_issystemhash (context->ptr_app->app_hash)) || _r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash));
 
 					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, TRUE);
 
@@ -1555,7 +1555,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 								app_hash = _app_getlistviewitemcontext (hpage_apps, IDC_RULE_APPS_ID, i);
 
-								if (context->ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
+								if (context->ptr_rule->is_forservices && _app_issystemhash (app_hash))
 									continue;
 
 								if (_app_isappfound (app_hash))

@@ -61,6 +61,8 @@ BOOLEAN _app_isappunused (_In_ PITEM_APP ptr_app);
 
 BOOLEAN _app_isnetworkfound (_In_ ULONG_PTR network_hash);
 
+BOOLEAN _app_issystemhash (_In_ ULONG_PTR app_hash);
+
 FORCEINLINE BOOLEAN _app_isappused (_In_ PITEM_APP ptr_app)
 {
 	if (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (ptr_app->app_hash, TRUE))
