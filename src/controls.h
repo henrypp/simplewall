@@ -50,6 +50,8 @@ VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG column_i
 VOID _app_toolbar_init (_In_ HWND hwnd);
 VOID _app_toolbar_resize ();
 
+VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam);
+
 VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id);
 VOID _app_refreshstatus (_In_ HWND hwnd);
 

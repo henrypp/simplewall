@@ -1786,8 +1786,6 @@ INT FirstDriveFromMask (_In_ ULONG unitmask)
 
 INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
 {
-	static R_LAYOUT_MANAGER layout_manager = {0};
-
 	switch (msg)
 	{
 		case WM_INITDIALOG:
@@ -1860,11 +1858,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				_r_update_addcomponent (L"Internal rules", L"rules", internal_profile_version, config.profile_internal_path, FALSE);
 			}
-
-			// initialize layout manager
-			_r_layout_initializemanager (&layout_manager, hwnd);
-
-			_r_layout_setoriginalsize (&layout_manager, 480, 220);
 
 			// create network monitor thread
 			_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
@@ -2444,28 +2437,28 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 		case WM_SIZE:
 		{
-			INT listview_id;
-
-			_r_toolbar_resize (config.hrebar, IDC_TOOLBAR);
-
-			if (!_r_layout_resize (&layout_manager, wparam))
-				break;
-
-			_app_toolbar_resize ();
-
-			listview_id = _app_getcurrentlistview_id (hwnd);
-
-			if (listview_id)
-				_app_listviewresize (hwnd, listview_id, FALSE);
-
-			_app_refreshstatus (hwnd);
-
+			_app_window_resize (hwnd, lparam);
 			break;
 		}
 
 		case WM_GETMINMAXINFO:
 		{
-			_r_layout_resizeminimumsize (&layout_manager, lparam);
+			LPMINMAXINFO minmax;
+			R_SIZE point;
+			LONG dpi_value;
+
+			minmax = (LPMINMAXINFO)lparam;
+
+			point.cx = 480;
+			point.cy = 220;
+
+			dpi_value = _r_dc_getwindowdpi (hwnd);
+
+			_r_dc_getsizedpivalue (&point, dpi_value, TRUE);
+
+			minmax->ptMinTrackSize.x = point.cx;
+			minmax->ptMinTrackSize.y = point.cy;
+
 			break;
 		}
 
