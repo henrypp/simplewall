@@ -1654,20 +1654,18 @@ VOID _app_tabs_init (_In_ HWND hwnd)
 
 VOID _app_initialize ()
 {
+	static ULONG privileges[] = {
+		SE_SECURITY_PRIVILEGE,
+		SE_TAKE_OWNERSHIP_PRIVILEGE,
+		SE_BACKUP_PRIVILEGE,
+		SE_RESTORE_PRIVILEGE,
+		SE_DEBUG_PRIVILEGE,
+	};
+
 	R_ENVIRONMENT environment;
 
 	// set privileges
-	{
-		ULONG privileges[] = {
-			SE_SECURITY_PRIVILEGE,
-			SE_TAKE_OWNERSHIP_PRIVILEGE,
-			SE_BACKUP_PRIVILEGE,
-			SE_RESTORE_PRIVILEGE,
-			SE_DEBUG_PRIVILEGE,
-		};
-
-		_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
-	}
+	_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
 
 	// set process priority
 	_r_sys_setenvironment (&environment, PROCESS_PRIORITY_CLASS_HIGH, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
@@ -1795,6 +1793,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		case WM_INITDIALOG:
 		{
 			ENUM_INSTALL_TYPE install_type;
+			R_ENVIRONMENT environment;
 
 			_app_initialize ();
 
@@ -1868,7 +1867,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			_r_layout_setoriginalsize (&layout_manager, 500, 220);
 
 			// create network monitor thread
-			_r_sys_createthread (&NetworkMonitorThread, hwnd, NULL, NULL);
+			_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+
+			_r_sys_createthread (&NetworkMonitorThread, hwnd, NULL, &environment);
 
 			// initialize tab
 			_app_settab_id (hwnd, _r_config_getlong (L"CurrentTab", IDC_APPS_PROFILE));
