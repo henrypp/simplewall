@@ -1205,6 +1205,8 @@ VOID _app_toolbar_resize ()
 	SIZE ideal_size = {0};
 	UINT index;
 
+	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+
 	index = (UINT)SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, RB_IDTOINDEX, 0, 0);
 
 	if (index == UINT_MAX)
@@ -1227,13 +1229,14 @@ VOID _app_toolbar_resize ()
 VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam)
 {
 	HDWP hdefer;
-	INT listview_id;
+	LONG rebar_height;
+	LONG statusbar_height;
 	INT current_listview_id;
-	INT rebar_height;
+	INT listview_id;
 	INT tab_count;
-	INT statusbar_height;
 
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+	_app_toolbar_resize ();
+
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
 	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
@@ -1243,8 +1246,8 @@ VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam)
 
 	hdefer = BeginDeferWindowPos (2);
 
-	hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, LOWORD (lparam), rebar_height, SWP_NOZORDER | SWP_NOOWNERZORDER);
-	hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOOWNERZORDER);
+	hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, LOWORD (lparam), rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+	hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 
 	EndDeferWindowPos (hdefer);
 
@@ -1268,10 +1271,19 @@ VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam)
 
 VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 {
-	UINT group1_title = 0;
-	UINT group2_title = 0;
-	UINT group3_title = 0;
-	UINT group4_title = 0;
+	UINT group1_title;
+	UINT group2_title;
+	UINT group3_title;
+	UINT group4_title;
+
+	INT total_count;
+
+	INT group1_count;
+	INT group2_count;
+	INT group3_count;
+	INT group4_count;
+
+	INT group_id;
 
 	if (!_r_listview_isgroupviewenabled (hwnd, listview_id))
 		return;
@@ -1288,30 +1300,31 @@ VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 		group1_title = IDS_GROUP_ENABLED;
 		group2_title = IDS_STATUS_EMPTY;
 		group3_title = IDS_GROUP_DISABLED;
+		group4_title = 0;
 	}
 	else if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK)
 	{
 		group1_title = IDS_TAB_APPS;
 		group2_title = IDS_TAB_SERVICES;
 		group3_title = IDS_TAB_PACKAGES;
+		group4_title = 0;
 	}
 	else if (listview_id == IDC_APP_RULES_ID)
 	{
 		group1_title = IDS_TRAY_SYSTEM_RULES;
 		group2_title = IDS_TRAY_USER_RULES;
+		group3_title = 0;
+		group4_title = 0;
 	}
 	else
 	{
 		return;
 	}
 
-	INT total_count;
-
-	INT group1_count = 0;
-	INT group2_count = 0;
-	INT group3_count = 0;
-	INT group4_count = 0;
-	INT group_id;
+	group1_count = 0;
+	group2_count = 0;
+	group3_count = 0;
+	group4_count = 0;
 
 	total_count = _r_listview_getitemcount (hwnd, listview_id);
 
@@ -1320,9 +1333,7 @@ VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 		if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
 		{
 			if (_r_listview_isitemchecked (hwnd, listview_id, i))
-			{
 				group1_count = group2_count = group3_count += 1;
-			}
 		}
 		else
 		{
@@ -1340,7 +1351,7 @@ VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 			{
 				group2_count += 1;
 			}
-			else
+			else if (group_id == 0)
 			{
 				group1_count += 1;
 			}
@@ -1351,40 +1362,27 @@ VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 	WCHAR group2_string[128] = {0};
 	WCHAR group3_string[128] = {0};
 	WCHAR group4_string[128] = {0};
-	PR_STRING localized_string = NULL;
 
 	if (total_count)
 	{
-		_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L" (%d/%d)", group1_count, total_count);
-		_r_str_printf (group2_string, RTL_NUMBER_OF (group2_string), L" (%d/%d)", group2_count, total_count);
+		_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L"%s (%d/%d)", _r_locale_getstring (group1_title), group1_count, total_count);
+		_r_str_printf (group2_string, RTL_NUMBER_OF (group2_string), L"%s (%d/%d)", _r_locale_getstring (group2_title), group2_count, total_count);
 
 		if (group3_title)
-			_r_str_printf (group3_string, RTL_NUMBER_OF (group3_string), L" (%d/%d)", group3_count, total_count);
+			_r_str_printf (group3_string, RTL_NUMBER_OF (group3_string), L"%s (%d/%d)", _r_locale_getstring (group3_title), group3_count, total_count);
 
 		if (group4_title)
-			_r_str_printf (group4_string, RTL_NUMBER_OF (group4_string), L" (%d/%d) [silent]", group4_count, total_count);
+			_r_str_printf (group4_string, RTL_NUMBER_OF (group4_string), L"%s (%d/%d) [silent]", _r_locale_getstring (group4_title), group4_count, total_count);
 	}
 
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (group1_title), group1_string));
-	_r_listview_setgroup (hwnd, listview_id, 0, localized_string->buffer, 0, 0);
-
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (group2_title), group2_string));
-	_r_listview_setgroup (hwnd, listview_id, 1, localized_string->buffer, 0, 0);
+	_r_listview_setgroup (hwnd, listview_id, 0, group1_string, 0, 0);
+	_r_listview_setgroup (hwnd, listview_id, 1, group2_string, 0, 0);
 
 	if (group3_title)
-	{
-		_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (group3_title), group3_string));
-		_r_listview_setgroup (hwnd, listview_id, 2, localized_string->buffer, 0, 0);
-	}
+		_r_listview_setgroup (hwnd, listview_id, 2, group3_string, 0, 0);
 
 	if (group4_title)
-	{
-		_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (group4_title), group4_string));
-		_r_listview_setgroup (hwnd, listview_id, 3, localized_string->buffer, 0, 0);
-	}
-
-	if (localized_string)
-		_r_obj_dereference (localized_string);
+		_r_listview_setgroup (hwnd, listview_id, 3, group4_string, 0, 0);
 }
 
 VOID _app_refreshstatus (_In_ HWND hwnd)
