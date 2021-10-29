@@ -1864,7 +1864,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			// initialize layout manager
 			_r_layout_initializemanager (&layout_manager, hwnd);
 
-			_r_layout_setoriginalsize (&layout_manager, 500, 220);
+			_r_layout_setoriginalsize (&layout_manager, 480, 220);
 
 			// create network monitor thread
 			_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
