@@ -12,7 +12,7 @@ VOID _app_notify_createwindow ()
 
 	if (!current_hwnd)
 	{
-		hwnd = CreateDialogParam (NULL, MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, 0);
+		hwnd = _r_wnd_createwindow (NULL, MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, NULL);
 
 		if (hwnd)
 		{

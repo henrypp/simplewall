@@ -7,7 +7,7 @@ static VOID _app_addeditortab (_In_ HWND hwnd, _In_ UINT locale_id, _In_ INT dlg
 {
 	HWND htab;
 
-	htab = CreateDialogParam (NULL, MAKEINTRESOURCE (dlg_id), hwnd, &PropertiesPagesProc, (LPARAM)context);
+	htab = _r_wnd_createwindow (NULL, MAKEINTRESOURCE (dlg_id), hwnd, &PropertiesPagesProc, context);
 
 	if (!htab)
 		return;
