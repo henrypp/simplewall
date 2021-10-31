@@ -1559,9 +1559,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 									continue;
 
 								if (_app_isappfound (app_hash))
-								{
 									_r_obj_addhashtableitem (context->ptr_rule->apps, app_hash, NULL);
-								}
 							}
 						}
 
