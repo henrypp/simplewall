@@ -3462,56 +3462,59 @@ CleanupExit:
 INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_ LPWSTR cmdline, _In_ INT show_cmd)
 {
 	MSG msg;
+	HWND main_wnd;
 	HWND hwnd;
 	HACCEL haccel;
+	BOOL result;
+	BOOL is_proceed;
 
-	if (_r_app_initialize ())
+	if (!_r_app_initialize ())
+		return ERROR_APP_INIT_FAILURE;
+
+	if (_app_parseargs (cmdline))
+		return ERROR_SUCCESS;
+
+	main_wnd = _r_app_createwindow (IDD_MAIN, IDI_MAIN, &DlgProc);
+
+	if (!main_wnd)
+		return ERROR_APP_INIT_FAILURE;
+
+	haccel = LoadAccelerators (NULL, MAKEINTRESOURCE (IDA_MAIN));
+
+	if (haccel)
 	{
-		if (_app_parseargs (cmdline))
-			return ERROR_SUCCESS;
-
-		hwnd = _r_app_createwindow (IDD_MAIN, IDI_MAIN, &DlgProc);
-
-		if (hwnd)
+		while (TRUE)
 		{
-			haccel = LoadAccelerators (_r_sys_getimagebase (), MAKEINTRESOURCE (IDA_MAIN));
+			result = GetMessage (&msg, NULL, 0, 0);
 
-			if (haccel)
+			if (result <= 0)
+				break;
+
+			is_proceed = FALSE;
+
+			if (msg.hwnd && _r_wnd_isdialog (msg.hwnd))
 			{
-				BOOL result;
-				BOOL is_proceed;
+				hwnd = msg.hwnd;
+			}
+			else
+			{
+				hwnd = main_wnd;
+			}
 
-				while (TRUE)
-				{
-					is_proceed = FALSE;
-					result = GetMessage (&msg, NULL, 0, 0);
+			if (TranslateAccelerator (hwnd, haccel, &msg))
+				is_proceed = TRUE;
 
-					if (!result || result == -1)
-						break;
+			if (IsDialogMessage (hwnd, &msg))
+				is_proceed = TRUE;
 
-					hwnd = GetActiveWindow ();
-
-					if (msg.hwnd == hwnd || IsChild (hwnd, msg.hwnd))
-					{
-						if (TranslateAccelerator (hwnd, haccel, &msg))
-							is_proceed = TRUE;
-					}
-
-					if (IsDialogMessage (hwnd, &msg))
-					{
-						is_proceed = TRUE;
-					}
-
-					if (!is_proceed)
-					{
-						TranslateMessage (&msg);
-						DispatchMessage (&msg);
-					}
-				}
-
-				DestroyAcceleratorTable (haccel);
+			if (!is_proceed)
+			{
+				TranslateMessage (&msg);
+				DispatchMessage (&msg);
 			}
 		}
+
+		DestroyAcceleratorTable (haccel);
 	}
 
 	return ERROR_SUCCESS;
