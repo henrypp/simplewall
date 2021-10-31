@@ -94,8 +94,12 @@ typedef enum _ENUM_INFO_DATA2
 #define LANG_MENU 5
 #define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
 
+// v3.0.2: first major update, rule attribute "apps" now separated by "|"
 #define XML_PROFILE_VER_3 0x03
+
+// v3.4: added "rules_custom" into internal profile and "os_version" for rule attributes
 #define XML_PROFILE_VER_4 0x04
+
 #define XML_PROFILE_VER_CURRENT XML_PROFILE_VER_4
 
 #define XML_PROFILE L"profile.xml"
@@ -199,17 +203,9 @@ typedef enum _ENUM_INFO_DATA2
 
 typedef struct _STATIC_DATA
 {
-	WCHAR profile_path[MAX_PATH];
-	WCHAR profile_path_backup[MAX_PATH];
-	WCHAR profile_internal_path[MAX_PATH];
-
 	WCHAR windows_dir_buffer[MAX_PATH];
 	R_STRINGREF windows_dir;
 
-	PR_STRING my_path;
-	PR_STRING ntoskrnl_path;
-	PR_STRING svchost_path;
-	PR_STRING system_path;
 	PR_STRING search_string;
 
 	PSID pbuiltin_current_sid;
@@ -238,12 +234,6 @@ typedef struct _STATIC_DATA
 	HFONT hfont;
 	HWND hrebar;
 
-	LONG64 profile_internal_timestamp;
-
-	ULONG_PTR ntoskrnl_hash;
-	ULONG_PTR svchost_hash;
-	ULONG_PTR my_hash;
-
 	ULONG_PTR color_timer;
 	ULONG_PTR color_invalid;
 	ULONG_PTR color_special;
@@ -257,6 +247,24 @@ typedef struct _STATIC_DATA
 	BOOLEAN is_neteventset;
 	BOOLEAN is_filterstemporary;
 } STATIC_DATA, *PSTATIC_DATA;
+
+typedef struct _PROFILE_DATA
+{
+	WCHAR profile_path[MAX_PATH];
+	WCHAR profile_path_backup[MAX_PATH];
+	WCHAR profile_internal_path[MAX_PATH];
+
+	PR_STRING my_path;
+	PR_STRING ntoskrnl_path;
+	PR_STRING svchost_path;
+	PR_STRING system_path;
+
+	LONG64 profile_internal_timestamp;
+
+	ULONG_PTR ntoskrnl_hash;
+	ULONG_PTR svchost_hash;
+	ULONG_PTR my_hash;
+} PROFILE_DATA, *PPROFILE_DATA;
 
 typedef struct _ITEM_LOG
 {
