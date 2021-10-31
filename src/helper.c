@@ -3298,9 +3298,7 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 
 	// query app icon
 	if (InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0) == 0)
-	{
 		_app_getfileicon (ptr_app_info);
-	}
 
 	// query certificate information
 	if (!ptr_app_info->signature_info)
@@ -3321,9 +3319,7 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 		if (_r_wnd_isvisible (hwnd))
 		{
 			if (ptr_app_info->listview_id == _app_getcurrentlistview_id (hwnd))
-			{
 				_r_listview_redraw (hwnd, ptr_app_info->listview_id, -1);
-			}
 		}
 	}
 
@@ -3336,6 +3332,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 {
 	PITEM_CONTEXT context;
 	PITEM_APP_INFO ptr_app_info;
+	PR_STRING current_host;
 	PR_STRING host_str;
 	PR_STRING signature_str;
 	PR_STRING localized_string;
@@ -3344,21 +3341,28 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 
 	context = arglist;
 
-	host_str = NULL;
 	signature_str = NULL;
 	is_iconset = FALSE;
 
 	// query notification host name
 	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 	{
-		host_str = InterlockedCompareExchangePointer (&context->ptr_log->remote_host_str, NULL, NULL);
+		current_host = InterlockedCompareExchangePointer (&context->ptr_log->remote_host_str, NULL, NULL);
 
-		if (!host_str)
+		if (current_host)
+		{
+			host_str = _r_obj_reference (current_host);
+		}
+		else
 		{
 			host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
 
-			_r_obj_movereference (&context->ptr_log->remote_host_str, host_str);
+			_r_obj_swapreference (&context->ptr_log->remote_host_str, host_str);
 		}
+	}
+	else
+	{
+		host_str = NULL;
 	}
 
 	// query signature
@@ -3416,6 +3420,9 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 
 	if (signature_str)
 		_r_obj_dereference (signature_str);
+
+	if (host_str)
+		_r_obj_dereference (host_str);
 
 	_r_obj_dereference (context->ptr_log);
 
