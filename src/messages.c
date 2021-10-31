@@ -1218,7 +1218,7 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 
 	hicon = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small_x, icon_small_y);
 
-	_r_tray_create (hwnd, &GUID_TrayIcon, WM_TRAYICON, hicon, _r_app_getname (), FALSE);
+	_r_tray_create (hwnd, &GUID_TrayIcon, RM_TRAYICON, hicon, _r_app_getname (), FALSE);
 
 	hmenu = GetMenu (hwnd);
 
@@ -1719,7 +1719,7 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 
 		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
-		if (_r_fs_isvalidhandle (current_handle))
+		if (current_handle)
 			FlushFileBuffers (current_handle);
 
 		viewer_path = _app_getlogviewer ();
@@ -1754,11 +1754,16 @@ VOID _app_command_logclear (_In_ HWND hwnd)
 
 	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
-	_r_queuedlock_acquireshared (&lock_loglist);
+	is_valid = (current_handle && _r_fs_getsize (current_handle) > 2) || (log_path && _r_fs_exists (log_path->buffer));
 
-	is_valid = _r_fs_isvalidhandle (current_handle) || (log_path && _r_fs_exists (log_path->buffer)) || !_r_obj_ishashtableempty (log_table);
+	if (!is_valid)
+	{
+		_r_queuedlock_acquireshared (&lock_loglist);
 
-	_r_queuedlock_releaseshared (&lock_loglist);
+		is_valid = !_r_obj_ishashtableempty (log_table);
+
+		_r_queuedlock_releaseshared (&lock_loglist);
+	}
 
 	if (is_valid)
 	{
