@@ -1731,7 +1731,12 @@ LPCWSTR _app_getservicename (_In_ UINT16 port, _In_ UINT8 proto, _In_opt_ LPCWST
 			return L"bctp-server";
 
 		case 11371:
-			return L"hkp";
+		{
+			if (proto == IPPROTO_UDP)
+				return L"hkp";
+
+			return L"pksd";
+		}
 
 		case 25565:
 			return L"minecraft";
