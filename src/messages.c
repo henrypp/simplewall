@@ -431,8 +431,7 @@ VOID _app_message_dpichanged (_In_ HWND hwnd)
 	_app_listviewloadfont (hwnd, TRUE);
 	_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
-	if (localized_string)
-		_r_obj_dereference (localized_string);
+	_r_obj_dereference (localized_string);
 }
 
 LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
@@ -1590,7 +1589,7 @@ VOID _app_command_idtorules (_In_ HWND hwnd, _In_ INT ctrl_id)
 	{
 		app_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
 
-		if (ptr_rule->is_forservices && (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash))
+		if (ptr_rule->is_forservices && _app_issystemhash (app_hash))
 			continue;
 
 		ptr_app = _app_getappitem (app_hash);
