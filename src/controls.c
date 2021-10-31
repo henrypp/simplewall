@@ -1237,19 +1237,23 @@ VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam)
 
 	_app_toolbar_resize ();
 
+	SendDlgItemMessage (hwnd, IDC_REBAR, WM_SIZE, 0, 0);
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
-	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
-
 	current_listview_id = _app_getlistviewbytab_id (hwnd, -1);
+
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
+	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
 
 	hdefer = BeginDeferWindowPos (2);
 
-	hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, LOWORD (lparam), rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-	hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+	if (hdefer)
+	{
+		hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, LOWORD (lparam), rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+		hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 
-	EndDeferWindowPos (hdefer);
+		EndDeferWindowPos (hdefer);
+	}
 
 	tab_count = _r_tab_getitemcount (hwnd, IDC_TAB);
 
