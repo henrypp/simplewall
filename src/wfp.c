@@ -78,7 +78,6 @@ ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ()
 	return INSTALL_DISABLED;
 }
 
-_Ret_maybenull_
 HANDLE _wfp_getenginehandle ()
 {
 	static HANDLE engine_handle = NULL;
@@ -101,11 +100,11 @@ HANDLE _wfp_getenginehandle ()
 
 		code = FwpmEngineOpen (NULL, RPC_C_AUTHN_WINNT, NULL, &session, &new_handle);
 
-		if (code != ERROR_SUCCESS)
+		if (code != ERROR_SUCCESS || !new_handle)
 		{
 			_r_log (LOG_LEVEL_CRITICAL, &GUID_TrayIcon, L"FwpmEngineOpen", code, NULL);
 
-			RtlRaiseStatus (code); // WIN32
+			RtlRaiseStatus (STATUS_APP_INIT_FAILURE);
 		}
 		else
 		{
