@@ -377,12 +377,7 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
 
 	if (current_handle)
-	{
-		// Already in the cache, so replace it.
-		InterlockedCompareExchangePointer (&config.hnetevent, new_handle, config.hnetevent);
-
-		FwpmNetEventUnsubscribe (engine_handle, current_handle);
-	}
+		FwpmNetEventUnsubscribe (engine_handle, new_handle);
 
 	// initialize log file
 	if (_r_config_getboolean (L"IsLogEnabled", FALSE))
@@ -400,15 +395,15 @@ VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle)
 
 	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
 
-	if (!current_handle)
-		return;
+	if (current_handle)
+	{
+		code = FwpmNetEventUnsubscribe (engine_handle, current_handle);
+
+		if (code != ERROR_SUCCESS)
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", code, NULL);
+	}
 
 	_app_loginit (FALSE); // destroy log file handle if present
-
-	code = FwpmNetEventUnsubscribe (engine_handle, current_handle);
-
-	if (code != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", code, NULL);
 }
 
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
