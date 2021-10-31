@@ -64,7 +64,7 @@ ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	if (!log_string)
 		return 0;
 
-	log_hash = _r_obj_getstringhash (log_string);
+	log_hash = _r_obj_getstringhash (log_string, TRUE);
 
 	_r_obj_dereference (log_string);
 
@@ -511,7 +511,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 		if (sid_string)
 		{
-			if (!_app_isappfound (_r_obj_getstringhash (sid_string)))
+			if (!_app_isappfound (_r_obj_getstringhash (sid_string, TRUE)))
 				_r_obj_clearreference (&sid_string);
 		}
 	}
@@ -522,7 +522,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		_r_obj_movereference (&ptr_log->path, sid_string);
 		sid_string = NULL;
 
-		ptr_log->app_hash = _r_obj_getstringhash (ptr_log->path);
+		ptr_log->app_hash = _r_obj_getstringhash (ptr_log->path, TRUE);
 	}
 	else if ((log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) && log->app_id)
 	{
@@ -539,7 +539,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		if (path)
 		{
 			_r_obj_movereference (&ptr_log->path, path);
-			ptr_log->app_hash = _r_obj_getstringhash (ptr_log->path);
+			ptr_log->app_hash = _r_obj_getstringhash (ptr_log->path, TRUE);
 		}
 	}
 	else

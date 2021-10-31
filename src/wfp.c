@@ -1875,7 +1875,7 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 
 	if (type == DATA_APP_REGULAR || type == DATA_APP_NETWORK || type == DATA_APP_SERVICE)
 	{
-		if (_r_obj_getstringhash (path) == profile_info.ntoskrnl_hash)
+		if (_r_obj_getstringhash (path, TRUE) == profile_info.ntoskrnl_hash)
 		{
 			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), byte_blob);
 

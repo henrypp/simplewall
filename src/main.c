@@ -1705,9 +1705,9 @@ VOID _app_initialize ()
 	profile_info.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
 	profile_info.ntoskrnl_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_NTOSKRNL);
 
-	profile_info.my_hash = _r_obj_getstringhash (profile_info.my_path);
-	profile_info.ntoskrnl_hash = _r_obj_getstringhash (profile_info.system_path);
-	profile_info.svchost_hash = _r_obj_getstringhash (profile_info.svchost_path);
+	profile_info.my_hash = _r_obj_getstringhash (profile_info.my_path, TRUE);
+	profile_info.ntoskrnl_hash = _r_obj_getstringhash (profile_info.system_path, TRUE);
+	profile_info.svchost_hash = _r_obj_getstringhash (profile_info.svchost_path, TRUE);
 
 	// initialize free list
 	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);

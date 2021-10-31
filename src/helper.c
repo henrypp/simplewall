@@ -1953,7 +1953,7 @@ ULONG_PTR _app_addcolor (_In_ UINT locale_id, _In_ LPCWSTR config_name, _In_ BOO
 	ptr_clr.locale_id = locale_id;
 	ptr_clr.is_enabled = is_enabled;
 
-	hash_code = _r_obj_getstringhash (ptr_clr.config_value);
+	hash_code = _r_obj_getstringhash (ptr_clr.config_value, TRUE);
 
 	_r_obj_addhashtableitem (colors_table, hash_code, &ptr_clr);
 
@@ -2031,7 +2031,7 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 
 	if (process_name)
 	{
-		ptr_network->app_hash = _r_obj_getstringhash (process_name);
+		ptr_network->app_hash = _r_obj_getstringhash (process_name, TRUE);
 		ptr_network->path = process_name;
 
 		return TRUE;
@@ -2067,7 +2067,7 @@ ULONG_PTR _app_getnetworkhash (_In_ ADDRESS_FAMILY af, _In_ ULONG pid, _In_opt_ 
 	if (!network_string)
 		return 0;
 
-	network_hash = _r_obj_getstringhash (network_string);
+	network_hash = _r_obj_getstringhash (network_string, TRUE);
 
 	_r_obj_dereference (network_string);
 
@@ -2479,7 +2479,7 @@ VOID _app_generate_packages ()
 
 						if (package_sid_string)
 						{
-							if (!_app_isappfound (_r_obj_getstringhash (package_sid_string)))
+							if (!_app_isappfound (_r_obj_getstringhash (package_sid_string, TRUE)))
 							{
 								display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
 
@@ -2631,7 +2631,7 @@ VOID _app_generate_services ()
 
 			_r_obj_initializestringref (&service_name, service->lpServiceName);
 
-			app_hash = _r_obj_getstringrefhash (&service_name);
+			app_hash = _r_obj_getstringrefhash (&service_name, TRUE);
 
 			if (_app_isappfound (app_hash))
 				continue;
@@ -3126,7 +3126,6 @@ _Success_ (return)
 BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Out_opt_ PITEM_ADDRESS address)
 {
 	ITEM_ADDRESS address_copy;
-	ULONG_PTR rule_hash;
 	BOOLEAN is_checkonly;
 
 	if (_r_obj_isstringempty (rule))
@@ -3151,9 +3150,7 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Out_opt_ PITEM_ADDRES
 	// clean struct
 	RtlZeroMemory (address, sizeof (ITEM_ADDRESS));
 
-	// auto-parse rule type
-	rule_hash = _r_obj_getstringrefhash (rule);
-
+	// parse rule type
 	if (!_app_preparserulestring (rule, address))
 		return FALSE;
 
@@ -3209,7 +3206,7 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 	DNS_STATUS status;
 
 	arpa_string = _app_formatarpa (af, address);
-	arpa_hash = _r_obj_getstringhash (arpa_string);
+	arpa_hash = _r_obj_getstringhash (arpa_string, TRUE);
 
 	if (_app_getcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, &string))
 	{
