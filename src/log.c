@@ -9,10 +9,10 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 	HANDLE new_handle;
 	PR_STRING log_path;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, config.hlogfile);
 
 	// reset log handle
-	if (_r_fs_isvalidhandle (current_handle))
+	if (current_handle)
 		CloseHandle (current_handle);
 
 	if (!is_install || !_r_config_getboolean (L"IsLogEnabled", FALSE))
@@ -39,7 +39,15 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 			_r_fs_setpos (new_handle, 0, FILE_END);
 		}
 
-		InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
+		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
+
+		if (current_handle)
+		{
+			// Already in the cache, so replace it.
+			InterlockedCompareExchangePointer (&config.hlogfile, new_handle, config.hlogfile);
+
+			CloseHandle (current_handle);
+		}
 	}
 
 	_r_obj_dereference (log_path);
@@ -144,6 +152,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	PR_STRING remote_port_string;
 	PR_STRING direction_string;
 	PR_STRING buffer;
+	PITEM_APP ptr_app;
 	HANDLE current_handle;
 	ULONG unused;
 
@@ -153,29 +162,27 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 		return;
 
 	// parse path
+	ptr_app = _app_getappitem (ptr_log->app_hash);
+
+	if (ptr_app)
 	{
-		PITEM_APP ptr_app = _app_getappitem (ptr_log->app_hash);
-
-		if (ptr_app)
+		if (ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE)
 		{
-			if (ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE)
+			if (ptr_app->real_path)
 			{
-				if (ptr_app->real_path)
-				{
-					path = _r_obj_reference (ptr_app->real_path);
-				}
-				else if (ptr_app->display_name)
-				{
-					path = _r_obj_reference (ptr_app->display_name);
-				}
+				path = _r_obj_reference (ptr_app->real_path);
 			}
-			else if (ptr_app->original_path)
+			else if (ptr_app->display_name)
 			{
-				path = _r_obj_reference (ptr_app->original_path);
+				path = _r_obj_reference (ptr_app->display_name);
 			}
-
-			_r_obj_dereference (ptr_app);
 		}
+		else if (ptr_app->original_path)
+		{
+			path = _r_obj_reference (ptr_app->original_path);
+		}
+
+		_r_obj_dereference (ptr_app);
 	}
 
 	date_string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
@@ -307,8 +314,8 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	FWPM_NET_EVENT_SUBSCRIPTION subscription;
 	FWPM_NET_EVENT_ENUM_TEMPLATE enum_template;
 	HANDLE current_handle;
+	HANDLE new_handle;
 	HMODULE hfwpuclnt;
-	HANDLE hevent;
 	ULONG code;
 
 	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
@@ -340,38 +347,46 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	RtlZeroMemory (&enum_template, sizeof (enum_template));
 
 	subscription.enumTemplate = &enum_template;
-	hevent = NULL;
+	new_handle = NULL;
 
 	if (_FwpmNetEventSubscribe4)
-		code = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &hevent); // win10rs5+
-
+	{
+		code = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
+	}
 	else if (_FwpmNetEventSubscribe3)
-		code = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &hevent); // win10rs4+
-
+	{
+		code = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
+	}
 	else if (_FwpmNetEventSubscribe2)
-		code = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &hevent); // win10rs1+
-
+	{
+		code = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
+	}
 	else if (_FwpmNetEventSubscribe1)
-		code = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &hevent); // win8+
-
+	{
+		code = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle); // win8+
+	}
 	else if (_FwpmNetEventSubscribe0)
-		code = _FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &hevent); // win7+
-
+	{
+		code = _FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &new_handle); // win7+
+	}
 	else
+	{
 		goto CleanupExit;
-
-	if (code != ERROR_SUCCESS)
-	{
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", code, NULL);
 	}
-	else
-	{
-		InterlockedCompareExchangePointer (&config.hnetevent, hevent, NULL);
 
-		// initialize log file
-		if (_r_config_getboolean (L"IsLogEnabled", FALSE))
-			_app_loginit (TRUE);
+	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
+
+	if (current_handle)
+	{
+		// Already in the cache, so replace it.
+		InterlockedCompareExchangePointer (&config.hnetevent, new_handle, config.hnetevent);
+
+		FwpmNetEventUnsubscribe (engine_handle, current_handle);
 	}
+
+	// initialize log file
+	if (_r_config_getboolean (L"IsLogEnabled", FALSE))
+		_app_loginit (TRUE);
 
 CleanupExit:
 
