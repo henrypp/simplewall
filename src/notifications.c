@@ -5,27 +5,43 @@
 
 VOID _app_notify_createwindow ()
 {
+	HWND current_hwnd;
 	HWND hwnd;
 
-	hwnd = CreateDialogParam (NULL, MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, 0);
+	current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
 
-	InterlockedCompareExchangePointer (&config.hnotification, hwnd, NULL);
+	if (!current_hwnd)
+	{
+		hwnd = CreateDialogParam (NULL, MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, 0);
+
+		if (hwnd)
+		{
+			current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, hwnd, NULL);
+
+			if (current_hwnd)
+				DestroyWindow (hwnd);
+		}
+	}
 }
 
 VOID _app_notify_destroywindow ()
 {
-	HWND hwnd;
+	HWND current_hwnd;
 
-	hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, config.hnotification);
+	current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, config.hnotification);
 
-	if (hwnd)
-		DestroyWindow (hwnd);
+	if (current_hwnd)
+		DestroyWindow (current_hwnd);
 }
 
 _Ret_maybenull_
 HWND _app_notify_getwindow ()
 {
-	return InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
+	HWND current_hwnd;
+
+	current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
+
+	return current_hwnd;
 }
 
 BOOLEAN _app_notify_command (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seconds)
