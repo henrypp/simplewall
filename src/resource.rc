@@ -720,9 +720,9 @@ BEGIN
 	IDS_HIGHLIGHT_CONNECTION "Have network connections"
 	IDS_SHOWINLIST "Show in list"
 
-	IDS_BLOCKLIST_SPY "Microsoft spying and telemetry servers"
-	IDS_BLOCKLIST_UPDATE "Microsoft update servers"
-	IDS_BLOCKLIST_EXTRA "Microsoft applications servers"
+	IDS_BLOCKLIST_SPY "Microsoft spying and telemetry"
+	IDS_BLOCKLIST_UPDATE "Microsoft update"
+	IDS_BLOCKLIST_EXTRA "Microsoft applications"
 
 	IDS_PORT "Port"
 
