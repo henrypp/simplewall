@@ -37,8 +37,8 @@ VOID _app_search_initialize (_In_ HWND hwnd);
 VOID _app_search_drawbutton (_Inout_ PEDIT_CONTEXT context, _In_ LPCRECT button_rect);
 VOID _app_search_getbuttonrect (_In_ PEDIT_CONTEXT context, _Inout_ PRECT rect);
 
-BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING string);
-BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_LISTVIEW_CONTEXT context, _In_opt_ PR_STRING string);
-VOID _app_search_applyfilter (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING string);
+BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING search_string);
+BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _Inout_ PITEM_LISTVIEW_CONTEXT context, _In_opt_ PR_STRING search_string);
+VOID _app_search_applyfilter (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING search_string);
 
 LRESULT CALLBACK _app_search_subclass_proc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam);

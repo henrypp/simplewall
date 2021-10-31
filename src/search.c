@@ -25,9 +25,7 @@ VOID _app_search_initializetheme (_Inout_ PEDIT_CONTEXT context)
 		if (htheme)
 		{
 			if (!SUCCEEDED (GetThemeInt (htheme, EP_EDITBORDER_NOSCROLL, EPSHV_NORMAL, TMT_BORDERSIZE, &context->cx_border)))
-			{
 				context->cx_border = 0;
-			}
 
 			CloseThemeData (htheme);
 		}
@@ -151,7 +149,42 @@ VOID _app_search_getbuttonrect (_In_ PEDIT_CONTEXT context, _Inout_ PRECT rect)
 	rect->top += context->cx_border;
 }
 
-BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING string)
+BOOLEAN _app_search_isstringfound (_In_opt_ PR_STRING string, _In_ PR_STRING search_string, _Inout_ PITEM_LISTVIEW_CONTEXT context, _Inout_ PBOOLEAN is_changed)
+{
+	if (!string)
+	{
+		if (context->is_hidden)
+		{
+			context->is_hidden = FALSE;
+			*is_changed = TRUE;
+		}
+
+		return FALSE;
+	}
+
+	if (_r_str_findstring (&string->sr, &search_string->sr, TRUE) != SIZE_MAX)
+	{
+		if (context->is_hidden)
+		{
+			context->is_hidden = FALSE;
+			*is_changed = TRUE;
+		}
+
+		return TRUE;
+	}
+	else
+	{
+		if (!context->is_hidden)
+		{
+			context->is_hidden = TRUE;
+			*is_changed = TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING search_string)
 {
 	PITEM_LISTVIEW_CONTEXT context;
 	INT item_count;
@@ -171,7 +204,7 @@ BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _
 		if (!context)
 			continue;
 
-		if (_app_search_applyfilteritem (hwnd, listview_id, i, context, string))
+		if (_app_search_applyfilteritem (hwnd, listview_id, i, context, search_string))
 			is_changed = TRUE;
 	}
 
@@ -181,55 +214,199 @@ BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _
 	return is_changed;
 }
 
-BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_LISTVIEW_CONTEXT context, _In_opt_ PR_STRING string)
+BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _Inout_ PITEM_LISTVIEW_CONTEXT context, _In_opt_ PR_STRING search_string)
 {
-	PR_STRING item_string;
+	PR_STRING string;
+	PITEM_APP ptr_app;
+	PITEM_RULE ptr_rule;
+	PITEM_NETWORK ptr_network;
+	PITEM_LOG ptr_log;
 	BOOLEAN is_changed;
 
-	is_changed = FALSE;
+	string = NULL;
 
-	if (!string)
+	ptr_app = NULL;
+	ptr_rule = NULL;
+	ptr_network = NULL;
+	ptr_log = NULL;
+
+	// reset hidden state
+	if (context->is_hidden)
 	{
-		if (context->is_hidden)
-		{
-			context->is_hidden = FALSE;
-			is_changed = TRUE;
-		}
+		context->is_hidden = FALSE;
+		is_changed = TRUE;
 	}
 	else
 	{
-		item_string = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
+		is_changed = FALSE;
+	}
 
-		if (item_string)
+	if (!search_string)
+		goto CleanupExit;
+
+	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID)
+	{
+		ptr_app = _app_getappitem (context->id_code);
+
+		if (ptr_app)
 		{
-			if (_r_str_findstring (&item_string->sr, &string->sr, TRUE) != SIZE_MAX)
+			if (ptr_app->display_name)
 			{
-				if (context->is_hidden)
-				{
-					context->is_hidden = FALSE;
-					is_changed = TRUE;
-				}
-			}
-			else
-			{
-				if (!context->is_hidden)
-				{
-					context->is_hidden = TRUE;
-					is_changed = TRUE;
-				}
+				if (_app_search_isstringfound (ptr_app->display_name, search_string, context, &is_changed))
+					goto CleanupExit;
 			}
 
-			_r_obj_dereference (item_string);
-		}
-		else
-		{
-			if (context->is_hidden)
+			if (ptr_app->real_path)
 			{
-				context->is_hidden = FALSE;
-				is_changed = TRUE;
+				if (_app_search_isstringfound (ptr_app->real_path, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_app->original_path)
+			{
+				if (_app_search_isstringfound (ptr_app->original_path, search_string, context, &is_changed))
+					goto CleanupExit;
 			}
 		}
 	}
+	else if ((listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) || listview_id == IDC_APP_RULES_ID)
+	{
+		ptr_rule = _app_getrulebyid (context->id_code);
+
+		if (ptr_rule)
+		{
+			if (ptr_rule->name)
+			{
+				if (_app_search_isstringfound (ptr_rule->name, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_rule->rule_remote)
+			{
+				if (_app_search_isstringfound (ptr_rule->rule_remote, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_rule->rule_local)
+			{
+				if (_app_search_isstringfound (ptr_rule->rule_local, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+		}
+	}
+	else if (listview_id == IDC_NETWORK)
+	{
+		ptr_network = _app_getnetworkitem (context->id_code);
+
+		if (ptr_network)
+		{
+			if (ptr_network->path)
+			{
+				if (_app_search_isstringfound (ptr_network->path, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_network->remote_addr_str)
+			{
+				if (_app_search_isstringfound (ptr_network->remote_addr_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_network->local_addr_str)
+			{
+				if (_app_search_isstringfound (ptr_network->local_addr_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_network->remote_host_str)
+			{
+				if (_app_search_isstringfound (ptr_network->remote_host_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_network->local_host_str)
+			{
+				if (_app_search_isstringfound (ptr_network->local_host_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+		}
+	}
+	else if (listview_id == IDC_LOG)
+	{
+		ptr_log = _app_getlogitem (context->id_code);
+
+		if (ptr_log)
+		{
+			if (ptr_log->path)
+			{
+				if (_app_search_isstringfound (ptr_log->path, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_log->provider_name)
+			{
+				if (_app_search_isstringfound (ptr_log->provider_name, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_log->filter_name)
+			{
+				if (_app_search_isstringfound (ptr_log->filter_name, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_log->username)
+			{
+				if (_app_search_isstringfound (ptr_log->username, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_log->remote_addr_str)
+			{
+				if (_app_search_isstringfound (ptr_log->remote_addr_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_log->local_addr_str)
+			{
+				if (_app_search_isstringfound (ptr_log->local_addr_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_log->remote_host_str)
+			{
+				if (_app_search_isstringfound (ptr_log->remote_host_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_log->local_host_str)
+			{
+				if (_app_search_isstringfound (ptr_log->local_host_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+		}
+	}
+
+	string = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
+
+	_app_search_isstringfound (string, search_string, context, &is_changed);
+
+CleanupExit:
+
+	if (string)
+		_r_obj_dereference (string);
+
+	if (ptr_app)
+		_r_obj_dereference (ptr_app);
+
+	if (ptr_rule)
+		_r_obj_dereference (ptr_rule);
+
+	if (ptr_network)
+		_r_obj_dereference (ptr_network);
+
+	if (ptr_log)
+		_r_obj_dereference (ptr_log);
 
 	if (is_changed)
 		_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, NULL, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
@@ -237,12 +414,12 @@ BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ 
 	return is_changed;
 }
 
-VOID _app_search_applyfilter (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING string)
+VOID _app_search_applyfilter (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING search_string)
 {
 	if (!((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID))
 		return;
 
-	_app_search_applyfiltercallback (hwnd, listview_id, string);
+	_app_search_applyfiltercallback (hwnd, listview_id, search_string);
 }
 
 LRESULT CALLBACK _app_search_subclass_proc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
