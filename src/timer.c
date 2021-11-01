@@ -155,11 +155,19 @@ VOID CALLBACK _app_timer_callback (_Inout_ PTP_CALLBACK_INSTANCE instance, _Inou
 
 	if (_r_config_getboolean (L"IsNotificationsTimer", TRUE))
 	{
-		_r_tray_popupformat (hwnd, &GUID_TrayIcon, NIIF_INFO | (_r_config_getboolean (L"IsNotificationsSound", TRUE) ? 0 : NIIF_NOSOUND), _r_app_getname (), _r_locale_getstring (IDS_STATUS_TIMER_DONE), _app_getappdisplayname (ptr_app, TRUE));
+		WCHAR buffer[256];
+		ULONG icon_id;
+
+		icon_id = NIIF_INFO;
+
+		if (!_r_config_getboolean (L"IsNotificationsSound", TRUE))
+			icon_id |= NIIF_NOSOUND;
+
+		_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s - %s", _r_app_getname (), _app_getappdisplayname (ptr_app, TRUE));
+
+		_r_tray_popup (hwnd, &GUID_TrayIcon, icon_id, buffer, _r_locale_getstring (IDS_STATUS_TIMER_DONE));
 	}
 
 	if (hr == S_OK || hr == S_FALSE)
-	{
 		CoUninitialize ();
-	}
 }
