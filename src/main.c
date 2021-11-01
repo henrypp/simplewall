@@ -642,6 +642,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					CheckDlgButton (hwnd, IDC_CONFIRMEXIT_CHK, _r_config_getboolean (L"ConfirmExit2", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_CONFIRMEXITTIMER_CHK, _r_config_getboolean (L"ConfirmExitTimer", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 					CheckDlgButton (hwnd, IDC_CONFIRMLOGCLEAR_CHK, _r_config_getboolean (L"ConfirmLogClear", TRUE) ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_CONFIRMALLOW_CHK, _r_config_getboolean (L"ConfirmAllow", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 
 					CheckDlgButton (hwnd, IDC_TRAYICONSINGLECLICK_CHK, _r_config_getboolean (L"IsTrayIconSingleClick", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 
@@ -853,6 +854,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					_r_ctrl_setstring (hwnd, IDC_CONFIRMEXIT_CHK, _r_locale_getstring (IDS_CONFIRMEXIT_CHK));
 					_r_ctrl_setstring (hwnd, IDC_CONFIRMEXITTIMER_CHK, _r_locale_getstring (IDS_CONFIRMEXITTIMER_CHK));
 					_r_ctrl_setstring (hwnd, IDC_CONFIRMLOGCLEAR_CHK, _r_locale_getstring (IDS_CONFIRMLOGCLEAR_CHK));
+					_r_ctrl_setstring (hwnd, IDC_CONFIRMALLOW_CHK, _r_locale_getstring (IDS_CONFIRMALLOW_CHK));
 
 					_r_ctrl_setstring (hwnd, IDC_TRAYICONSINGLECLICK_CHK, _r_locale_getstring (IDS_TRAYICONSINGLECLICK_CHK));
 
@@ -1157,6 +1159,12 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				case IDC_CONFIRMLOGCLEAR_CHK:
 				{
 					_r_config_setboolean (L"ConfirmLogClear", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+					break;
+				}
+
+				case IDC_CONFIRMALLOW_CHK:
+				{
+					_r_config_setboolean (L"ConfirmAllow", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 					break;
 				}
 
@@ -1791,9 +1799,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			ENUM_INSTALL_TYPE install_type;
 			R_ENVIRONMENT environment;
 
-			_app_initialize ();
-
 			app_global.main.hwnd = hwnd; // HACK!!!
+
+			_app_initialize ();
 
 			// init buffered paint
 			BufferedPaintInit ();
@@ -2194,22 +2202,24 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				{
 					LPNMLISTVIEW lpnmlv;
 					INT listview_id;
+					ULONG_PTR app_hash;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 
 					if (_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom))
 						break;
 
-					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
-
-					if (listview_id != IDC_APPS_PROFILE)
+					if (!(lpnmlv->uChanged & LVIF_STATE))
 						break;
 
-					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
-					{
-						ULONG_PTR app_hash;
+					if (!lpnmlv->lParam)
+						break;
 
-						app_hash = _app_getlistviewitemcontext (hwnd, listview_id, lpnmlv->iItem);
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+
+					if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
+					{
+						app_hash = _app_getlistviewparam_id (lpnmlv->lParam);
 
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1))
 						{
@@ -2227,6 +2237,14 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 							if (app_hash == profile_info.svchost_hash)
 							{
 								if (!_r_show_confirmmessage (hwnd, L"WARNING!", L"Be careful, through service host (svchost.exe) internet traffic can let out through unexpected ways. Continue?", NULL))
+								{
+									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+									return TRUE;
+								}
+							}
+							else
+							{
+								if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION_ALLOW), L"ConfirmAllow"))
 								{
 									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 									return TRUE;
