@@ -90,35 +90,56 @@ HANDLE _wfp_getenginehandle ()
 		FWPM_SESSION session;
 		HANDLE new_handle;
 		ULONG code;
+		ULONG attempts;
 
-		RtlZeroMemory (&session, sizeof (session));
+		attempts = 6;
 
-		session.displayData.name = APP_NAME;
-		session.displayData.description = APP_NAME;
-
-		session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
-
-		code = FwpmEngineOpen (NULL, RPC_C_AUTHN_WINNT, NULL, &session, &new_handle);
-
-		if (code != ERROR_SUCCESS || !new_handle)
+		do
 		{
-			_r_log (LOG_LEVEL_CRITICAL, &GUID_TrayIcon, L"FwpmEngineOpen", code, NULL);
+			RtlZeroMemory (&session, sizeof (session));
 
-			RtlRaiseStatus (STATUS_APP_INIT_FAILURE);
-		}
-		else
-		{
-			current_handle = InterlockedCompareExchangePointer (&engine_handle, new_handle, NULL);
+			session.displayData.name = APP_NAME;
+			session.displayData.description = APP_NAME;
 
-			if (!current_handle)
+			session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
+
+			code = FwpmEngineOpen (NULL, RPC_C_AUTHN_WINNT, NULL, &session, &new_handle);
+
+			// The error say that BFE service is not in the running state, so we wait.
+			if (code == EPT_S_NOT_REGISTERED)
 			{
-				current_handle = new_handle;
+				if (attempts != 1)
+				{
+					_r_sys_sleep (500);
+					continue;
+				}
+			}
+
+			if (code != ERROR_SUCCESS || !new_handle)
+			{
+				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", code, NULL);
+
+				RtlExitUserProcess (STATUS_UNSUCCESSFUL);
+
+				break;
 			}
 			else
 			{
-				FwpmEngineClose (new_handle);
+				current_handle = InterlockedCompareExchangePointer (&engine_handle, new_handle, NULL);
+
+				if (!current_handle)
+				{
+					current_handle = new_handle;
+				}
+				else
+				{
+					FwpmEngineClose (new_handle);
+				}
+
+				break;
 			}
 		}
+		while (--attempts);
 	}
 
 	return current_handle;
@@ -129,6 +150,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 	FWP_VALUE val;
 
 	ULONG code;
+	UINT32 opt_value;
 	BOOLEAN is_success;
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
@@ -231,12 +253,10 @@ BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 	}
 
 	// set provider security information
-	if (is_providerexist)
-		_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, is_secure);
+	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, is_secure);
 
 	// set sublayer security information
-	if (is_sublayerexist)
-		_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, is_secure);
+	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, is_secure);
 
 	// set engine options
 	RtlZeroMemory (&val, sizeof (val));
@@ -244,29 +264,70 @@ BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 	// dropped packets logging (win7+)
 	if (!config.is_neteventset)
 	{
-		val.type = FWP_UINT32;
-		val.uint32 = 1;
+		FWP_VALUE0* fwp_query = NULL;
 
-		code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+		// query net events state
+		config.is_neteventenabled = FALSE;
 
-		if (code != ERROR_SUCCESS)
+		code = FwpmEngineGetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &fwp_query);
+
+		if (code == ERROR_SUCCESS)
 		{
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
+			if (fwp_query)
+			{
+				config.is_neteventenabled = (fwp_query->type == FWP_UINT32) && (!!fwp_query->uint32);
+
+				FwpmFreeMemory ((PVOID_PTR)&fwp_query);
+			}
+		}
+
+		// enable net events (if it is disabled)
+		if (config.is_neteventenabled)
+		{
+			config.is_neteventset = TRUE;
 		}
 		else
+		{
+			val.type = FWP_UINT32;
+			val.uint32 = 1;
+
+			code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+
+			if (code != ERROR_SUCCESS)
+			{
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
+			}
+			else
+			{
+				config.is_neteventset = TRUE;
+			}
+		}
+
+		if (config.is_neteventset)
 		{
 			// configure dropped packets logging (win8+)
 			if (is_win8)
 			{
+				opt_value = 0;
+
+				// add allowed connections monitor
+				if (_r_config_getboolean (L"IsMonitorAllowed", FALSE))
+					opt_value |= FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW;
+
+				// add inbound multicast and broadcast connections monitor
+				if (_r_config_getboolean (L"IsMonitorInbound", TRUE))
+					opt_value |= FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST | FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
+
+				// add port scanning drop connections monitor (1903+)
+				if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
+				{
+					if (_r_config_getboolean (L"IsMonitorPortScanningDrop", FALSE))
+						opt_value |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
+				}
+
 				// the filter engine will collect wfp network events that match any supplied key words
 				val.type = FWP_UINT32;
-				val.uint32 = FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW |
-					FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST |
-					FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
-
-				// 1903+
-				if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
-					val.uint32 |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
+				val.uint32 = opt_value;
 
 				code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
@@ -274,35 +335,32 @@ BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 					_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
 
 				// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
-				if (_r_config_getboolean (L"IsMonitorIPSecConnections", TRUE))
-				{
-					val.type = FWP_UINT32;
-					val.uint32 = 1;
+				opt_value = _r_config_getboolean (L"IsMonitorIPSecConnections", FALSE);
 
-					code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+				val.type = FWP_UINT32;
+				val.uint32 = opt_value;
 
-					if (code != ERROR_SUCCESS)
-						_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
-				}
+				FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 			}
-
-			config.is_neteventset = TRUE;
 
 			_wfp_logsubscribe (engine_handle);
 		}
 	}
 
 	// packet queuing (win8+)
-	if (is_win8 && _r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
+	if (is_win8)
 	{
-		// enables inbound or forward packet queuing independently. when enabled, the system is able to evenly distribute cpu load to multiple cpus for site-to-site ipsec tunnel scenarios.
-		val.type = FWP_UINT32;
-		val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
+		if (_r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
+		{
+			// enables inbound or forward packet queuing independently. when enabled, the system is able to evenly distribute cpu load to multiple cpus for site-to-site ipsec tunnel scenarios.
+			val.type = FWP_UINT32;
+			val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
 
-		code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
+			code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
 
-		if (code != ERROR_SUCCESS)
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
+			if (code != ERROR_SUCCESS)
+				_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_PACKET_QUEUING");
+		}
 	}
 
 CleanupExit:
@@ -314,9 +372,11 @@ CleanupExit:
 
 VOID _wfp_uninitialize (_In_ HANDLE engine_handle, _In_ BOOLEAN is_full)
 {
-	_r_queuedlock_acquireshared (&lock_transaction);
-
+	FWP_VALUE val;
 	ULONG code;
+	BOOLEAN is_intransact;
+
+	_r_queuedlock_acquireshared (&lock_transaction);
 
 	// dropped packets logging (win7+)
 	if (config.is_neteventset)
@@ -337,11 +397,21 @@ VOID _wfp_uninitialize (_In_ HANDLE engine_handle, _In_ BOOLEAN is_full)
 
 		//	FwpmEngineSetOption (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
 		//}
+	}
 
-		//val.type = FWP_UINT32;
-		//val.uint32 = 0;
+	if (!config.is_neteventenabled && config.is_neteventset)
+	{
+		RtlZeroMemory (&val, sizeof (val));
 
-		//code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+		val.type = FWP_UINT32;
+		val.uint32 = 0;
+
+		code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+
+		if (code == ERROR_SUCCESS)
+		{
+			config.is_neteventset = FALSE;
+		}
 	}
 
 	if (is_full)
@@ -349,7 +419,7 @@ VOID _wfp_uninitialize (_In_ HANDLE engine_handle, _In_ BOOLEAN is_full)
 		_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
 		_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
 
-		BOOLEAN is_intransact = _wfp_transact_start (engine_handle, __LINE__);
+		is_intransact = _wfp_transact_start (engine_handle, __LINE__);
 
 		// destroy callouts (deprecated)
 		{
@@ -551,7 +621,10 @@ BOOLEAN _wfp_transact_commit (_In_ HANDLE engine_handle, _In_ UINT line)
 
 BOOLEAN _wfp_deletefilter (_In_ HANDLE engine_handle, _In_ LPCGUID filter_id)
 {
-	ULONG code = FwpmFilterDeleteByKey (engine_handle, filter_id);
+	PR_STRING string;
+	ULONG code;
+
+	code = FwpmFilterDeleteByKey (engine_handle, filter_id);
 
 #if !defined(_DEBUG)
 	if (code != ERROR_SUCCESS && code != FWP_E_FILTER_NOT_FOUND)
@@ -559,12 +632,12 @@ BOOLEAN _wfp_deletefilter (_In_ HANDLE engine_handle, _In_ LPCGUID filter_id)
 	if (code != ERROR_SUCCESS)
 #endif // !DEBUG
 	{
-		PR_STRING guid_string = _r_str_fromguid (filter_id);
+		string = _r_str_fromguid (filter_id, TRUE);
 
-		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey", code, _r_obj_getstringordefault (guid_string, SZ_EMPTY));
+		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey", code, _r_obj_getstringordefault (string, SZ_EMPTY));
 
-		if (guid_string)
-			_r_obj_dereference (guid_string);
+		if (string)
+			_r_obj_dereference (string);
 
 		return FALSE;
 	}
@@ -1783,9 +1856,7 @@ VOID NTAPI _wfp_applythread (_In_ PVOID arglist, _In_ ULONG busy_count)
 
 		// dropped packets logging (win7+)
 		if (config.is_neteventset)
-		{
 			_wfp_logsubscribe (engine_handle);
-		}
 	}
 
 	_app_restoreinterfacestate (context->hwnd, TRUE);
