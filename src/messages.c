@@ -2014,7 +2014,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 	PR_ARRAY guids = NULL;
 	INT listview_id;
 	INT selected_count;
-	INT count;
+	INT item_count;
 
 	listview_id = _app_getcurrentlistview_id (hwnd);
 
@@ -2026,20 +2026,63 @@ VOID _app_command_delete (_In_ HWND hwnd)
 	if (!selected_count)
 		return;
 
+	item_count = _r_listview_getitemcount (hwnd, listview_id);
+
 	if (listview_id != IDC_NETWORK)
 	{
-		WCHAR message_text[512];
-		_r_str_printf (message_text, RTL_NUMBER_OF (message_text), _r_locale_getstring (IDS_QUESTION_DELETE), selected_count);
+		static R_STRINGREF crlf = PR_STRINGREF_INIT (L"\r\n");
 
-		if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, message_text) != IDYES)
+		R_STRINGBUILDER sb;
+		PR_STRING string;
+
+		_r_obj_initializestringbuilder (&sb);
+
+		string = _r_locale_getstring_ex (IDS_QUESTION_DELETE);
+
+		if (string)
+		{
+			_r_obj_appendstringbuilder2 (&sb, string);
+			_r_obj_appendstringbuilder3 (&sb, &crlf);
+			_r_obj_appendstringbuilder3 (&sb, &crlf);
+
+			_r_obj_dereference (string);
+		}
+
+		for (INT i = 0, j = 1; i < item_count; i++)
+		{
+			if (!_r_listview_isitemselected (hwnd, listview_id, i))
+				continue;
+
+			string = _r_listview_getitemtext (hwnd, listview_id, i, 0);
+
+			if (string)
+			{
+				_r_obj_appendstringbuilderformat (&sb, L"%" TEXT (PRId32) ") ", j);
+				_r_obj_appendstringbuilder2 (&sb, string);
+				_r_obj_appendstringbuilder3 (&sb, &crlf);
+
+				_r_obj_dereference (string);
+			}
+
+			j += 1;
+		}
+
+		string = _r_obj_finalstringbuilder (&sb);
+
+		_r_str_trimstring (string, &crlf, PR_TRIM_END_ONLY);
+
+		if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, string->buffer) != IDYES)
+		{
+			_r_obj_dereference (string);
 			return;
+		}
 
 		guids = _r_obj_createarray (sizeof (GUID), NULL);
+
+		_r_obj_dereference (string);
 	}
 
-	count = _r_listview_getitemcount (hwnd, listview_id) - 1;
-
-	for (INT i = count; i != -1; i--)
+	for (INT i = item_count - 1; i != -1; i--)
 	{
 		if (!_r_listview_isitemselected (hwnd, listview_id, i))
 			continue;
@@ -2058,9 +2101,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 			if (!ptr_app->is_undeletable) // skip "undeletable" apps
 			{
 				if (!_r_obj_isarrayempty (ptr_app->guids))
-				{
 					_r_obj_addarrayitems (guids, ptr_app->guids->items, ptr_app->guids->count);
-				}
 
 				_r_listview_deleteitem (hwnd, listview_id, i);
 
