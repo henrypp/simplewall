@@ -887,7 +887,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			LONG wnd_spacing;
 			INT bk_mode_prev;
 
-			WCHAR text[128];
+			PR_STRING string;
 			COLORREF clr_prev;
 			HICON hicon;
 
@@ -911,11 +911,16 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			SetRect (&icon_rect, _r_calc_rectwidth (&draw_info->rcItem) - icon_size_x - wnd_spacing, (_r_calc_rectheight (&draw_info->rcItem) / 2) - (icon_size_x / 2), icon_size_x, icon_size_x);
 
 			// draw title text
-			_r_str_printf (text, RTL_NUMBER_OF (text), _r_locale_getstring (IDS_NOTIFY_HEADER), _r_app_getname ());
+			string = _r_locale_getstring_ex (IDS_NOTIFY_HEADER);
 
-			clr_prev = SetTextColor (draw_info->hDC, RGB (255, 255, 255));
-			DrawTextEx (draw_info->hDC, text, (INT)(INT_PTR)_r_str_getlength (text), &text_rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
-			SetTextColor (draw_info->hDC, clr_prev);
+			if (string)
+			{
+				clr_prev = SetTextColor (draw_info->hDC, RGB (255, 255, 255));
+				DrawTextEx (draw_info->hDC, string->buffer, (INT)(INT_PTR)_r_obj_getstringlength (string), &text_rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
+				SetTextColor (draw_info->hDC, clr_prev);
+
+				_r_obj_dereference (string);
+			}
 
 			// draw icon
 			hicon = _app_notify_getapp_icon (hwnd);
