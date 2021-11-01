@@ -311,7 +311,7 @@ BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 				opt_value = 0;
 
 				// add allowed connections monitor
-				if (_r_config_getboolean (L"IsMonitorAllowed", FALSE))
+				if (_r_config_getboolean (L"IsMonitorAllowed", TRUE))
 					opt_value |= FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW;
 
 				// add inbound multicast and broadcast connections monitor
