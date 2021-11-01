@@ -367,15 +367,16 @@ STYLE WS_CHILD | WS_SYSMENU | WS_TABSTOP | WS_GROUP | DS_SHELLFONT | DS_CONTROL
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Ms Shell Dlg"
 BEGIN
-	GROUPBOX		"", IDC_TITLE_CONFIRMATIONS, 0, 0, 262, 52, WS_GROUP
+	GROUPBOX		"", IDC_TITLE_CONFIRMATIONS, 0, 0, 262, 64, WS_GROUP
 
 	AUTOCHECKBOX	"", IDC_CONFIRMEXIT_CHK, 8, 12, 246, 10
 	AUTOCHECKBOX	"", IDC_CONFIRMEXITTIMER_CHK, 8, 24, 246, 10
 	AUTOCHECKBOX	"", IDC_CONFIRMLOGCLEAR_CHK, 8, 36, 246, 10
+	AUTOCHECKBOX	"", IDC_CONFIRMALLOW_CHK, 8, 48, 246, 10
 
-	GROUPBOX		"", IDC_TITLE_TRAY, 0, 54, 262, 32, WS_GROUP
+	GROUPBOX		"", IDC_TITLE_TRAY, 0, 66, 262, 32, WS_GROUP
 
-	AUTOCHECKBOX	"", IDC_TRAYICONSINGLECLICK_CHK, 8, 66, 246, 10
+	AUTOCHECKBOX	"", IDC_TRAYICONSINGLECLICK_CHK, 8, 78, 246, 10
 END
 
 IDD_SETTINGS_HIGHLIGHTING DIALOGEX 0, 0, 262, 172
@@ -673,7 +674,7 @@ BEGIN
 	IDS_NOTIFY_TOOLTIP "Set user rule to allow access to an address and/or port for this application."
 
 	IDS_QUESTION "Are you sure?"
-	IDS_QUESTION_DELETE "Delete %d item(s)?"
+	IDS_QUESTION_DELETE "Delete selected item(s)?"
 	IDS_QUESTION_START "This will deny network access to apps as defined by the current configuration. Continue?"
 	IDS_QUESTION_STOP "This will restore network access for all apps that are currently blocked. Continue?"
 	IDS_QUESTION_EXIT "Installed filters will continue to work even if you exit. Continue?"
@@ -682,7 +683,7 @@ BEGIN
 	IDS_QUESTION_RESET ""
 	IDS_QUESTION_FLAG_CHK "Do not ask again"
 
-	IDS_STATUS_TOTAL "Total apps: %d"
+	IDS_STATUS_TOTAL ""
 
 	IDS_STATUS_UNUSED_APPS "Unused apps"
 	IDS_STATUS_TIMER_APPS "Apps with timer"
@@ -690,7 +691,7 @@ BEGIN
 	IDS_STATUS_EMPTY "<empty>"
 
 	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule!"
-	IDS_STATUS_TIMER_DONE "Timer for ""%s"" has been expired"
+	IDS_STATUS_TIMER_DONE "Timer for application has been expired"
 
 	IDS_ADDRESS_LOCAL "Source"
 	IDS_ADDRESS_REMOTE "Destination"
@@ -733,7 +734,7 @@ BEGIN
 	IDS_PORT "Port"
 
 	IDS_NOTIFY_TITLE "Network alert"
-	IDS_NOTIFY_HEADER "%s has blocked connection of this app"
+	IDS_NOTIFY_HEADER "Network connection was blocked"
 
 	IDS_DISABLE "Disable"
 	IDS_TITLE_SECURITY "Security"
@@ -768,6 +769,9 @@ BEGIN
 	IDS_APP_HINT "There is no reason to set any permissive rule for app with already enabled internet access."
 
 	IDS_HOST "Host"
+
+	IDS_CONFIRMALLOW_CHK "Confirm when allowing application"
+	IDS_QUESTION_ALLOW "Are you sure you want to enable full internet access for this application?"
 END
 
 //
