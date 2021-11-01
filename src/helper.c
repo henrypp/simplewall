@@ -665,9 +665,11 @@ LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortene
 
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 {
-	LONG icon_id = 0;
+	LONG icon_id;
 	LONG default_icon_id;
 	BOOLEAN is_iconshidded;
+
+	icon_id = 0;
 
 	default_icon_id = _app_getdefaultappicon_id ();
 	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
@@ -693,9 +695,6 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
 _Success_ (return)
 static BOOLEAN _app_calculatefilehash (_In_ HANDLE hfile, _In_opt_ LPCWSTR algorithm_id, _Out_ PVOID_PTR file_hash_ptr, _Out_ PULONG file_hash_length_ptr, _Out_ HCATADMIN * hcat_admin_ptr)
 {
-	typedef BOOL (WINAPI *CCAAC2)(PHANDLE phCatAdmin, const GUID *pgSubsystem, PCWSTR pwszHashAlgorithm, PCCERT_STRONG_SIGN_PARA pStrongHashPolicy, DWORD dwFlags); // CryptCATAdminAcquireContext2 (win8+)
-	typedef BOOL (WINAPI *CCAHFFH2)(PHANDLE phCatAdmin, HANDLE hFile, PULONG pcbHash, BYTE *pbHash, DWORD dwFlags); // CryptCATAdminCalcHashFromFileHandle2 (win8+)
-
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
 

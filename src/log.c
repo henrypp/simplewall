@@ -300,12 +300,6 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 
 VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 {
-	typedef ULONG (WINAPI *FWPMNES4)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK4 callback, PVOID context, HANDLE *events_handle); // win10rs5+
-	typedef ULONG (WINAPI *FWPMNES3)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK3 callback, PVOID context, HANDLE *events_handle); // win10rs4+
-	typedef ULONG (WINAPI *FWPMNES2)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK2 callback, PVOID context, HANDLE *events_handle); // win10rs1+
-	typedef ULONG (WINAPI *FWPMNES1)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK1 callback, PVOID context, HANDLE *events_handle); // win8+
-	typedef ULONG (WINAPI *FWPMNES0)(HANDLE engine_handle, const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription, FWPM_NET_EVENT_CALLBACK0 callback, PVOID context, HANDLE *events_handle); // win7+
-
 	FWPMNES4 _FwpmNetEventSubscribe4;
 	FWPMNES3 _FwpmNetEventSubscribe3;
 	FWPMNES2 _FwpmNetEventSubscribe2;
@@ -340,6 +334,7 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	if (!_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
 	{
 		_r_log (LOG_LEVEL_WARNING, NULL, L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
+
 		goto CleanupExit; // there is no function to call
 	}
 
@@ -562,9 +557,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 	// get username information
 	if ((log->flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) && log->user_id)
-	{
 		ptr_log->username = _r_sys_getusernamefromsid (log->user_id);
-	}
 
 	// destination
 	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))
@@ -575,15 +568,11 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 			// remote address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) && log->remote_addr4)
-			{
 				ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong ((ULONG)log->remote_addr4);
-			}
 
 			// local address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) && log->local_addr4)
-			{
 				ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong ((ULONG)log->local_addr4);
-			}
 		}
 		else if (log->version == FWP_IP_VERSION_V6)
 		{
@@ -591,34 +580,24 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 			// remote address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) && log->remote_addr6)
-			{
 				RtlCopyMemory (ptr_log->remote_addr6.u.Byte, log->remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-			}
 
 			// local address
 			if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) && log->local_addr6)
-			{
 				RtlCopyMemory (ptr_log->local_addr6.u.Byte, log->local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-			}
 		}
 	}
 
 	// ports
 	if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET) && log->local_port)
-	{
 		ptr_log->local_port = log->local_port;
-	}
 
 	if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) && log->remote_port)
-	{
 		ptr_log->remote_port = log->remote_port;
-	}
 
 	// protocol
 	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
-	{
 		ptr_log->protocol = log->protocol;
-	}
 
 	// indicates FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW state
 	ptr_log->is_allow = log->is_allow;
@@ -642,7 +621,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	_r_workqueue_queueitem (&log_queue, &_app_logthread, ptr_log);
 }
 
-FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PVOID data, _In_ INT version)
+FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ PVOID data, _In_ ULONG version)
 {
 	RtlZeroMemory (log, sizeof (ITEM_LOG_CALLBACK));
 
@@ -1172,47 +1151,47 @@ FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ const PV
 }
 
 // win7+ callback
-VOID CALLBACK _wfp_logcallback0 (_In_ PVOID context, _In_ const FWPM_NET_EVENT1 *event)
+VOID CALLBACK _wfp_logcallback0 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT1 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (&log, (const PVOID)event, WINDOWS_7))
+	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_7))
 		_wfp_logcallback (&log);
 }
 
 // win8+ callback
-VOID CALLBACK _wfp_logcallback1 (_In_ PVOID context, _In_ const FWPM_NET_EVENT2 *event)
+VOID CALLBACK _wfp_logcallback1 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT2 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (&log, (const PVOID)event, WINDOWS_8))
+	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_8))
 		_wfp_logcallback (&log);
 }
 
 // win10rs1+ callback
-VOID CALLBACK _wfp_logcallback2 (_In_ PVOID context, _In_ const FWPM_NET_EVENT3 *event)
+VOID CALLBACK _wfp_logcallback2 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT3 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (&log, (const PVOID)event, WINDOWS_10_1607))
+	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1607))
 		_wfp_logcallback (&log);
 }
 
 // win10rs4+ callback
-VOID CALLBACK _wfp_logcallback3 (_In_ PVOID context, _In_ const FWPM_NET_EVENT4 *event)
+VOID CALLBACK _wfp_logcallback3 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT4 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (&log, (const PVOID)event, WINDOWS_10_1803))
+	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1803))
 		_wfp_logcallback (&log);
 }
 
 // win10rs5+ callback
-VOID CALLBACK _wfp_logcallback4 (_In_ PVOID context, _In_ const FWPM_NET_EVENT5 *event)
+VOID CALLBACK _wfp_logcallback4 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT5 *event)
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (&log, (const PVOID)event, WINDOWS_10_1809))
+	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1809))
 		_wfp_logcallback (&log);
 }
 
