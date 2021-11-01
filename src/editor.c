@@ -1117,19 +1117,19 @@ INT_PTR CALLBACK PropertiesPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM
 				case IDC_RULE_REMOTE_DELETE:
 				case IDC_RULE_LOCAL_DELETE:
 				{
-					WCHAR message_text[256];
-					INT listview_id = ((ctrl_id == IDC_RULE_REMOTE_DELETE) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID);
-					INT selected_count = _r_listview_getselectedcount (hwnd, listview_id);
-					INT count;
+					INT listview_id;
+					INT selected_count;
+					INT item_count;
 
-					_r_str_printf (message_text, RTL_NUMBER_OF (message_text), _r_locale_getstring (IDS_QUESTION_DELETE), selected_count);
+					listview_id = ((ctrl_id == IDC_RULE_REMOTE_DELETE) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID);
+					selected_count = _r_listview_getselectedcount (hwnd, listview_id);
 
-					if (!selected_count || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, message_text) != IDYES)
+					if (!selected_count || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_locale_getstring (IDS_QUESTION_DELETE)) != IDYES)
 						break;
 
-					count = _r_listview_getitemcount (hwnd, listview_id) - 1;
+					item_count = _r_listview_getitemcount (hwnd, listview_id) - 1;
 
-					for (INT i = count; i != -1; i--)
+					for (INT i = item_count; i != -1; i--)
 					{
 						if (_r_listview_isitemselected (hwnd, listview_id, i))
 							_r_listview_deleteitem (hwnd, listview_id, i);
