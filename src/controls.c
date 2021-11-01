@@ -624,13 +624,19 @@ BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 
 VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled)
 {
+	ENUM_INSTALL_TYPE install_type;
+	UINT locale_id;
+
 	if (!is_enabled)
 		return;
+
+	install_type = _wfp_isfiltersinstalled ();
+	locale_id = _app_getinterfacestatelocale (install_type);
 
 	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, TRUE);
 	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, TRUE);
 
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (_wfp_isfiltersinstalled ())));
+	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (locale_id));
 }
 
 VOID _app_setinterfacestate (_In_ HWND hwnd)
@@ -639,7 +645,6 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 
 	HICON hico_sm;
 	HICON hico_big;
-
 
 	LONG dpi_value;
 
