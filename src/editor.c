@@ -55,6 +55,7 @@ static VOID _app_settabcounttitle (_In_ HWND hwnd, _In_ INT listview_id)
 static PR_STRING _app_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT exclude_id)
 {
 	static R_STRINGREF divider_sr = PR_STRINGREF_INIT (DIVIDER_RULE);
+
 	R_STRINGBUILDER buffer;
 	PR_STRING string;
 
@@ -100,8 +101,9 @@ static VOID _app_setrulestolistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ PR_S
 	PR_STRING rule_string;
 	R_STRINGREF first_part;
 	R_STRINGREF remaining_part;
+	INT item_id;
 
-	INT item_id = 0;
+	item_id = 0;
 
 	_r_obj_initializestringref2 (&remaining_part, rule);
 
@@ -236,7 +238,7 @@ INT_PTR CALLBACK AddRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam,
 
 					if (_r_obj_isstringempty2 (string))
 					{
-						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
+						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, SZ_EMPTY);
 						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
 
 						_r_obj_dereference (string);
@@ -1452,18 +1454,22 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 				case IDOK: // process Enter key
 				case IDC_SAVE:
 				{
-					PR_LIST rules = NULL;
+					HWND hpage_general;
+					HWND hpage_rule;
+					HWND hpage_apps;
+					PR_STRING string;
+					PR_LIST rules;
+
+					rules = NULL;
 
 					if (context->is_settorules)
 					{
-						HWND hpage_general = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 0);
-						HWND hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
-						HWND hpage_apps = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 2);
+						hpage_general = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 0);
+						hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
+						hpage_apps = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 2);
 
 						if (!hpage_general || !_r_ctrl_getstringlength (hpage_general, IDC_RULE_NAME_ID))
 							return FALSE;
-
-						PR_STRING string;
 
 						context->ptr_rule->is_haveerrors = FALSE; // reset errors
 
@@ -1481,7 +1487,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 								if (_r_obj_isstringempty2 (string))
 								{
-									_r_ctrl_showballoontip (hpage_general, IDC_RULE_NAME_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
+									_r_ctrl_showballoontip (hpage_general, IDC_RULE_NAME_ID, 0, NULL, SZ_EMPTY);
 									_r_obj_dereference (string);
 
 									return FALSE;
@@ -1572,7 +1578,7 @@ INT_PTR CALLBACK PropertiesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 					}
 					else
 					{
-						HWND hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
+						hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
 
 						context->ptr_app->is_haveerrors = FALSE; // reset errors
 						context->ptr_app->is_enabled = !!(IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED);

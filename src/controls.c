@@ -470,23 +470,20 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 		{
 			PR_STRING rule_remote_string;
 			PR_STRING rule_local_string;
-			LPCWSTR empty_string;
 
 			rule_remote_string = _app_rulesexpandrules (ptr_rule->rule_remote, L"\r\n" SZ_TAB);
 			rule_local_string = _app_rulesexpandrules (ptr_rule->rule_local, L"\r\n" SZ_TAB);
 
-			empty_string = _r_locale_getstring (IDS_STATUS_EMPTY);
-
 			// rule information
 			_r_obj_appendstringbuilderformat (&buffer, L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
-											  _r_obj_getstringordefault (ptr_rule->name, empty_string),
+											  _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
 											  lparam,
 											  _r_locale_getstring (IDS_RULE),
 											  SZ_TAB,
-											  _r_obj_getstringordefault (rule_remote_string, empty_string),
+											  _r_obj_getstringordefault (rule_remote_string, SZ_EMPTY),
 											  _r_locale_getstring (IDS_RULE),
 											  SZ_TAB,
-											  _r_obj_getstringordefault (rule_local_string, empty_string)
+											  _r_obj_getstringordefault (rule_local_string, SZ_EMPTY)
 			);
 
 			if (rule_remote_string)
@@ -688,7 +685,7 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
 }
 
-VOID _app_imagelist_init (_In_ HWND hwnd)
+VOID _app_imagelist_init (_In_ LONG dpi_value)
 {
 	static UINT toolbar_ids[] = {
 		IDP_SHIELD_ENABLE,
@@ -711,8 +708,6 @@ VOID _app_imagelist_init (_In_ HWND hwnd)
 
 	HBITMAP hbitmap;
 
-	LONG dpi_value;
-
 	LONG icon_small_x;
 	LONG icon_small_y;
 
@@ -725,8 +720,6 @@ VOID _app_imagelist_init (_In_ HWND hwnd)
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
 	SAFE_DELETE_OBJECT (config.hbmp_allow);
 	SAFE_DELETE_OBJECT (config.hbmp_block);
-
-	dpi_value = _r_dc_getwindowdpi (hwnd);
 
 	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
@@ -763,7 +756,8 @@ VOID _app_imagelist_init (_In_ HWND hwnd)
 		}
 	}
 
-	SendDlgItemMessage (GetDlgItem (hwnd, IDC_TOOLBAR) ? hwnd : config.hrebar, IDC_TOOLBAR, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+	if (config.htoolbar)
+		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
 	// rules imagelist (small)
 	if (config.himg_rules_small)
@@ -961,7 +955,7 @@ VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id)
 	_r_listview_setview (hwnd, listview_id, view_type);
 }
 
-VOID _app_listviewloadfont (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
+VOID _app_listviewloadfont (_In_ LONG dpi_value, _In_ BOOLEAN is_forced)
 {
 	LOGFONT logfont = {0};
 
@@ -969,7 +963,7 @@ VOID _app_listviewloadfont (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		_r_config_getfont (L"Font", &logfont, _r_dc_getwindowdpi (hwnd));
+		_r_config_getfont (L"Font", &logfont, dpi_value);
 
 		config.hfont = CreateFontIndirect (&logfont);
 	}
@@ -1156,82 +1150,149 @@ VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG column_i
 	SendMessage (hlistview, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listviewcompare_callback);
 }
 
-VOID _app_toolbar_init (_In_ HWND hwnd)
+VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
-	HWND hctrl;
 	ULONG button_size;
+	LONG rebar_height;
 
 	config.hrebar = GetDlgItem (hwnd, IDC_REBAR);
 
-	_r_toolbar_setstyle (hwnd, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
-
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
-	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
-	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
-	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_REFRESH, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 2);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_SETTINGS, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 3);
-	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 6);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 7);
-	_r_toolbar_addseparator (hwnd, IDC_TOOLBAR);
-	_r_toolbar_addbutton (hwnd, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
-
-	_r_toolbar_resize (hwnd, IDC_TOOLBAR);
-
-	// insert toolbar
-	hctrl = GetDlgItem (hwnd, IDC_TOOLBAR);
-
-	if (hctrl)
+	SendMessage (config.hrebar, RB_SETBARINFO, 0, (LPARAM)(&(REBARINFO)
 	{
-		button_size = _r_toolbar_getbuttonsize (hwnd, IDC_TOOLBAR);
+		sizeof (REBARINFO)
+	}));
 
-		_r_rebar_insertband (hwnd, IDC_REBAR, 0, hctrl, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, LOWORD (button_size), HIWORD (button_size));
+	config.htoolbar = CreateWindowEx (
+		0,
+		TOOLBARCLASSNAME,
+		NULL,
+		WS_CHILD | WS_VISIBLE | CCS_NOPARENTALIGN | CCS_NODIVIDER | TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TRANSPARENT | TBSTYLE_TOOLTIPS | TBSTYLE_AUTOSIZE,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		config.hrebar,
+		(HMENU)IDC_TOOLBAR,
+		_r_sys_getimagebase (),
+		NULL
+	);
+
+	if (config.htoolbar)
+	{
+		_r_toolbar_setstyle (config.hrebar, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
+
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
+		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
+		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
+		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 2);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 3);
+		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 6);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 7);
+		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
+
+		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+		SendMessage (config.htoolbar, WM_SETFONT, SendMessage (config.hrebar, WM_GETFONT, 0, 0), TRUE); // fix font
+
+		_r_toolbar_resize (config.hrebar, IDC_TOOLBAR);
+
+		// insert toolbar
+		button_size = _r_toolbar_getbuttonsize (config.hrebar, IDC_TOOLBAR);
+
+		_r_rebar_insertband (hwnd, IDC_REBAR, 0, config.htoolbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, LOWORD (button_size), HIWORD (button_size));
 	}
 
 	// insert searchbar
-	hctrl = GetDlgItem (hwnd, IDC_SEARCH);
+	config.hsearchbar = CreateWindowEx (
+		WS_EX_CLIENTEDGE,
+		WC_EDIT,
+		NULL,
+		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | ES_AUTOHSCROLL,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		config.hrebar,
+		(HMENU)IDC_SEARCH,
+		_r_sys_getimagebase (),
+		NULL
+	);
 
-	if (hctrl)
+	if (config.hsearchbar)
 	{
-		_app_search_initialize (hctrl);
+		SendMessage (config.hsearchbar, WM_SETFONT, SendMessage (config.hrebar, WM_GETFONT, 0, 0), TRUE); // fix font
 
-		_r_rebar_insertband (hwnd, IDC_REBAR, 1, hctrl, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, _r_dc_getdpi (180, _r_dc_getwindowdpi (hwnd)), _r_rebar_getheight (hwnd, IDC_REBAR));
+		_app_search_initialize (config.hsearchbar);
+
+		rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
+
+		_r_rebar_insertband (hwnd, IDC_REBAR, 1, config.hsearchbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, _r_dc_getdpi (180, dpi_value), rebar_height);
 	}
 }
 
-VOID _app_toolbar_resize ()
+VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
-	REBARBANDINFO rbi = {0};
+	REBARBANDINFO rbi;
 	SIZE ideal_size = {0};
-	UINT index;
+	RECT rect;
+	ULONG button_size;
+	LONG rebar_height;
+	UINT rebar_count;
+	UINT rebar_index;
 
-	SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+	SendMessage (config.htoolbar, TB_AUTOSIZE, 0, 0);
 
-	index = (UINT)SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, RB_IDTOINDEX, 0, 0);
+	rebar_count = (UINT)SendMessage (config.hrebar, RB_GETBANDCOUNT, 0, 0);
 
-	if (index == UINT_MAX)
-		return;
-
-	rbi.cbSize = sizeof (rbi);
-	rbi.fMask |= RBBIM_IDEALSIZE;
-
-	if (SendMessage (config.hrebar, RB_GETBANDINFO, (WPARAM)index, (LPARAM)&rbi))
+	for (UINT i = 0; i < rebar_count; i++)
 	{
-		if (SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
-		{
-			rbi.cxIdeal = (UINT)ideal_size.cx;
+		rebar_index = (UINT)SendMessage (config.hrebar, RB_IDTOINDEX, (WPARAM)i, 0);
 
-			SendMessage (config.hrebar, RB_SETBANDINFO, (WPARAM)index, (LPARAM)&rbi);
+		if (rebar_index == UINT_MAX)
+			continue;
+
+		RtlZeroMemory (&rbi, sizeof (rbi));
+
+		rbi.cbSize = sizeof (rbi);
+		rbi.fMask |= RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
+
+		if (!SendMessage (config.hrebar, RB_GETBANDINFO, (WPARAM)rebar_index, (LPARAM)&rbi))
+			continue;
+
+		if (rebar_index == 0)
+		{
+			if (!SendMessage (config.htoolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
+				continue;
+
+			button_size = _r_toolbar_getbuttonsize (config.hrebar, IDC_TOOLBAR);
+
+			rbi.cxIdeal = (UINT)ideal_size.cx;
+			rbi.cxMinChild = LOWORD (button_size);
+			rbi.cyMinChild = HIWORD (button_size);
 		}
+		else if (rebar_index == 1)
+		{
+			if (!GetWindowRect (config.hsearchbar, &rect))
+				continue;
+
+			rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
+
+			rbi.cxIdeal = (UINT)_r_dc_getdpi (180, dpi_value);
+			rbi.cxMinChild = rbi.cxIdeal;
+			rbi.cyMinChild = rebar_height;
+		}
+
+		SendMessage (config.hrebar, RB_SETBANDINFO, (WPARAM)rebar_index, (LPARAM)&rbi);
 	}
 }
 
-VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam)
+VOID _app_window_resize (_In_ HWND hwnd, _In_ LPCRECT rect, _In_ LONG dpi_value)
 {
 	HDWP hdefer;
 	LONG rebar_height;
@@ -1240,9 +1301,9 @@ VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam)
 	INT listview_id;
 	INT tab_count;
 
-	_app_toolbar_resize ();
+	_app_toolbar_resize (hwnd, dpi_value);
 
-	SendDlgItemMessage (hwnd, IDC_REBAR, WM_SIZE, 0, 0);
+	SendMessage (config.hrebar, WM_SIZE, 0, 0);
 	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
 	current_listview_id = _app_getlistviewbytab_id (hwnd, -1);
@@ -1254,8 +1315,8 @@ VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam)
 
 	if (hdefer)
 	{
-		hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, LOWORD (lparam), rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-		hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, LOWORD (lparam), HIWORD (lparam) - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+		hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, rect->right, rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+		hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, rect->right, rect->bottom - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 
 		EndDeferWindowPos (hdefer);
 	}
@@ -1307,7 +1368,7 @@ VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
 		group1_title = IDS_GROUP_ENABLED;
-		group2_title = IDS_STATUS_EMPTY;
+		group2_title = 0;
 		group3_title = IDS_GROUP_DISABLED;
 		group4_title = 0;
 	}
@@ -1374,8 +1435,11 @@ VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 
 	if (total_count)
 	{
-		_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L"%s (%d/%d)", _r_locale_getstring (group1_title), group1_count, total_count);
-		_r_str_printf (group2_string, RTL_NUMBER_OF (group2_string), L"%s (%d/%d)", _r_locale_getstring (group2_title), group2_count, total_count);
+		if (group1_title)
+			_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L"%s (%d/%d)", _r_locale_getstring (group1_title), group1_count, total_count);
+
+		if (group2_title)
+			_r_str_printf (group2_string, RTL_NUMBER_OF (group2_string), L"%s (%d/%d)", _r_locale_getstring (group2_title), group2_count, total_count);
 
 		if (group3_title)
 			_r_str_printf (group3_string, RTL_NUMBER_OF (group3_string), L"%s (%d/%d)", _r_locale_getstring (group3_title), group3_count, total_count);
