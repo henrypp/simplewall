@@ -1198,7 +1198,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 				case IDC_RULES_BTN:
 				{
-					ITEM_CONTEXT context = {0};
+					PEDITOR_CONTEXT context;
 					PITEM_APP ptr_app;
 					ULONG_PTR app_hash;
 
@@ -1207,13 +1207,13 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 					if (ptr_app)
 					{
-						context.is_settorules = FALSE;
-						context.ptr_app = ptr_app;
-						context.page_id = 1; // open rules tab
+						context = _app_editor_createwindow (_r_app_gethwnd (), ptr_app, 1, FALSE);
 
-						if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
+						if (context)
 						{
 							_app_notify_hide (hwnd);
+
+							_app_editor_deletewindow (context);
 						}
 
 						_r_obj_dereference (ptr_app);
@@ -1234,6 +1234,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 				case IDM_OPENRULESEDITOR:
 				{
+					PEDITOR_CONTEXT context;
 					PITEM_APP ptr_app;
 					PITEM_RULE ptr_rule;
 					PITEM_LOG ptr_log;
@@ -1277,12 +1278,9 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 					_app_ruleenable (ptr_rule, TRUE, TRUE);
 
-					ITEM_CONTEXT context = {0};
+					context = _app_editor_createwindow (_r_app_gethwnd (), ptr_rule, 0, TRUE);
 
-					context.is_settorules = TRUE;
-					context.ptr_rule = ptr_rule;
-
-					if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), _r_app_gethwnd (), &PropertiesProc, (LPARAM)&context))
+					if (context)
 					{
 						SIZE_T rule_idx;
 
@@ -1301,6 +1299,8 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 						_app_updatelistviewbylparam (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 						_app_profile_save ();
+
+						_app_editor_deletewindow (context);
 					}
 
 					if (ptr_app)

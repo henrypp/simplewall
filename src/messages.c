@@ -2396,12 +2396,11 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 		}
 	}
 
-	ITEM_CONTEXT context = {0};
+	PEDITOR_CONTEXT context;
 
-	context.is_settorules = TRUE;
-	context.ptr_rule = ptr_rule;
+	context = _app_editor_createwindow (hwnd, ptr_rule, 0, TRUE);
 
-	if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
+	if (context)
 	{
 		SIZE_T rule_idx;
 
@@ -2418,6 +2417,8 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 
 			_app_profile_save ();
 		}
+
+		_app_editor_deletewindow (context);
 	}
 
 	_r_obj_dereference (ptr_rule);
@@ -2436,7 +2437,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
-		ITEM_CONTEXT context = {0};
+		PEDITOR_CONTEXT context;
 		ULONG_PTR app_hash;
 		PITEM_APP ptr_app;
 
@@ -2446,10 +2447,9 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		if (!ptr_app)
 			return;
 
-		context.is_settorules = FALSE;
-		context.ptr_app = ptr_app;
+		context = _app_editor_createwindow (hwnd, ptr_app, 0, FALSE);
 
-		if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
+		if (context)
 		{
 			_app_setcheckboxlock (hwnd, listview_id, TRUE);
 			_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
@@ -2458,13 +2458,15 @@ VOID _app_command_properties (_In_ HWND hwnd)
 			_app_updatelistviewbylparam (hwnd, listview_id, 0);
 
 			_app_profile_save ();
+
+			_app_editor_deletewindow (context);
 		}
 
 		_r_obj_dereference (ptr_app);
 	}
 	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
 	{
-		ITEM_CONTEXT context = {0};
+		PEDITOR_CONTEXT context;
 		SIZE_T rule_idx;
 		PITEM_RULE ptr_rule;
 
@@ -2474,10 +2476,9 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		if (!ptr_rule)
 			return;
 
-		context.is_settorules = TRUE;
-		context.ptr_rule = ptr_rule;
+		context = _app_editor_createwindow (hwnd, ptr_rule, 0, TRUE);
 
-		if (DialogBoxParam (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &PropertiesProc, (LPARAM)&context))
+		if (context)
 		{
 			_app_setcheckboxlock (hwnd, listview_id, TRUE);
 			_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, TRUE);
@@ -2486,6 +2487,8 @@ VOID _app_command_properties (_In_ HWND hwnd)
 			_app_updatelistviewbylparam (hwnd, listview_id, 0);
 
 			_app_profile_save ();
+
+			_app_editor_deletewindow (context);
 		}
 
 		_r_obj_dereference (ptr_rule);
