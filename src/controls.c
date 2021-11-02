@@ -692,7 +692,7 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
 }
 
-VOID _app_imagelist_init (_Reserved_ HWND hwnd, _In_ LONG dpi_value)
+VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value)
 {
 	static UINT toolbar_ids[] = {
 		IDP_SHIELD_ENABLE,
