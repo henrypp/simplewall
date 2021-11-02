@@ -834,9 +834,13 @@ static LONG _app_verifyfromfile (_In_ ULONG union_choice, _In_ PVOID union_data,
 	trust_data.dwUnionChoice = union_choice;
 
 	if (union_choice == WTD_CHOICE_CATALOG)
+	{
 		trust_data.pCatalog = union_data;
+	}
 	else
+	{
 		trust_data.pFile = union_data;
+	}
 
 	if (_r_config_getboolean (L"IsOCSPEnabled", FALSE))
 	{
@@ -2756,7 +2760,7 @@ VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ ULONG_PTR app_has
 	if (!app_hash || !status.rules_count)
 	{
 		AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, _r_locale_getstring (IDS_STATUS_EMPTY));
+		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, SZ_EMPTY);
 
 		_r_menu_enableitem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND, FALSE);
 	}
@@ -3406,7 +3410,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 
 			if (_r_obj_isstringempty (host_str))
-				_r_obj_movereference (&host_str, _r_locale_getstring_ex (IDS_STATUS_EMPTY));
+				_r_obj_movereference (&host_str, _r_obj_createstring (SZ_EMPTY));
 
 			_r_ctrl_settablestring (context->hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
 
