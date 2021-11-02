@@ -233,6 +233,8 @@ typedef struct _STATIC_DATA
 
 	HFONT hfont;
 	HWND hrebar;
+	HWND htoolbar;
+	HWND hsearchbar;
 
 	ULONG_PTR color_timer;
 	ULONG_PTR color_invalid;
@@ -244,6 +246,7 @@ typedef struct _STATIC_DATA
 
 	BOOLEAN is_notifytimeout;
 	BOOLEAN is_notifymouse;
+	BOOLEAN is_neteventenabled;
 	BOOLEAN is_neteventset;
 	BOOLEAN is_filterstemporary;
 } STATIC_DATA, *PSTATIC_DATA;
