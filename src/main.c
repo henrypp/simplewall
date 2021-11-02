@@ -1556,7 +1556,7 @@ INT _app_addwindowtabs (_In_ HWND hwnd)
 	return tabs_count;
 }
 
-VOID _app_tabs_init (_In_ HWND hwnd)
+VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
 	RECT rect = {0};
 
@@ -1576,7 +1576,7 @@ VOID _app_tabs_init (_In_ HWND hwnd)
 	SetWindowPos (config.hrebar, NULL, 0, 0, rect.right, rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 	SetWindowPos (GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, rect.right, rect.bottom - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 
-	_app_listviewloadfont (hwnd, TRUE);
+	_app_listviewloadfont (dpi_value, TRUE);
 
 	style = LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_HEADERINALLVIEWS | LVS_EX_HEADERDRAGDROP;
 	tabs_count = _app_addwindowtabs (hwnd);
@@ -1798,8 +1798,12 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		{
 			ENUM_INSTALL_TYPE install_type;
 			R_ENVIRONMENT environment;
+			LONG dpi_value;
 
-			app_global.main.hwnd = hwnd; // HACK!!!
+			// initialize vars
+			dpi_value = _r_dc_getwindowdpi (hwnd);
+
+			_r_app_sethwnd (hwnd); // HACK!!!
 
 			_app_initialize ();
 
@@ -1813,14 +1817,14 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			_r_window_restoreposition (hwnd, L"window");
 
 			// initialize imagelist
-			_app_imagelist_init (hwnd);
+			_app_imagelist_init (hwnd, dpi_value);
 
 			// initialize toolbar
-			_app_toolbar_init (hwnd);
-			_app_toolbar_resize ();
+			_app_toolbar_init (hwnd, dpi_value);
+			_app_toolbar_resize (hwnd, dpi_value);
 
 			// initialize tabs
-			_app_tabs_init (hwnd);
+			_app_tabs_init (hwnd, dpi_value);
 
 			// create notification window
 			_app_notify_createwindow ();
@@ -1840,7 +1844,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			}
 			else
 			{
-				_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (install_type)));
+				_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
 			}
 
 			// initialize settings
@@ -1948,6 +1952,56 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			break;
 		}
 
+		case RM_TRAYICON:
+		{
+			switch (LOWORD (lparam))
+			{
+				case NIN_KEYSELECT:
+				{
+					if (GetForegroundWindow () != hwnd)
+						_r_wnd_toggle (hwnd, TRUE);
+
+					break;
+				}
+
+				case WM_MBUTTONUP:
+				{
+					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_TRAY_LOGSHOW, 0), 0);
+					break;
+				}
+
+				case WM_LBUTTONUP:
+				{
+					if (_r_config_getboolean (L"IsTrayIconSingleClick", TRUE))
+					{
+						_r_wnd_toggle (hwnd, FALSE);
+					}
+					else
+					{
+						SetForegroundWindow (hwnd);
+					}
+
+					break;
+				}
+
+				case WM_LBUTTONDBLCLK:
+				{
+					if (!_r_config_getboolean (L"IsTrayIconSingleClick", TRUE))
+						_r_wnd_toggle (hwnd, FALSE);
+
+					break;
+				}
+
+				case WM_CONTEXTMENU:
+				{
+					_app_message_traycontextmenu (hwnd);
+					break;
+				}
+			}
+
+			break;
+		}
+
 		case WM_CLOSE:
 		{
 			if (_wfp_isfiltersinstalled ())
@@ -2040,13 +2094,49 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 		case WM_DPICHANGED:
 		{
-			_app_message_dpichanged (hwnd);
+			_app_message_dpichanged (hwnd, LOWORD (wparam));
 			break;
 		}
 
 		case WM_SETTINGCHANGE:
 		{
 			_r_wnd_changesettings (hwnd, wparam, lparam);
+			break;
+		}
+
+		case WM_SIZE:
+		{
+			RECT rect;
+			LONG dpi_value;
+
+			if (GetClientRect (hwnd, &rect))
+			{
+				dpi_value = _r_dc_getwindowdpi (hwnd);
+
+				_app_window_resize (hwnd, &rect, dpi_value);
+			}
+
+			break;
+		}
+
+		case WM_GETMINMAXINFO:
+		{
+			LPMINMAXINFO minmax;
+			R_SIZE point;
+			LONG dpi_value;
+
+			minmax = (LPMINMAXINFO)lparam;
+
+			point.cx = 480;
+			point.cy = 220;
+
+			dpi_value = _r_dc_getwindowdpi (hwnd);
+
+			_r_dc_getsizedpivalue (&point, dpi_value, TRUE);
+
+			minmax->ptMinTrackSize.x = point.cx;
+			minmax->ptMinTrackSize.y = point.cy;
+
 			break;
 		}
 
@@ -2445,87 +2535,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						_app_message_contextmenu_columns (hwnd, nmlp);
 					}
 
-					break;
-				}
-			}
-
-			break;
-		}
-
-		case WM_SIZE:
-		{
-			_app_window_resize (hwnd, lparam);
-			break;
-		}
-
-		case WM_GETMINMAXINFO:
-		{
-			LPMINMAXINFO minmax;
-			R_SIZE point;
-			LONG dpi_value;
-
-			minmax = (LPMINMAXINFO)lparam;
-
-			point.cx = 480;
-			point.cy = 220;
-
-			dpi_value = _r_dc_getwindowdpi (hwnd);
-
-			_r_dc_getsizedpivalue (&point, dpi_value, TRUE);
-
-			minmax->ptMinTrackSize.x = point.cx;
-			minmax->ptMinTrackSize.y = point.cy;
-
-			break;
-		}
-
-		case RM_TRAYICON:
-		{
-			switch (LOWORD (lparam))
-			{
-				case NIN_KEYSELECT:
-				{
-					if (GetForegroundWindow () != hwnd)
-					{
-						_r_wnd_toggle (hwnd, FALSE);
-					}
-
-					break;
-				}
-
-				case WM_MBUTTONUP:
-				{
-					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_TRAY_LOGSHOW, 0), 0);
-					break;
-				}
-
-				case WM_LBUTTONUP:
-				{
-					if (_r_config_getboolean (L"IsTrayIconSingleClick", TRUE))
-					{
-						_r_wnd_toggle (hwnd, FALSE);
-					}
-					else
-					{
-						SetForegroundWindow (hwnd);
-					}
-
-					break;
-				}
-
-				case WM_LBUTTONDBLCLK:
-				{
-					if (!_r_config_getboolean (L"IsTrayIconSingleClick", TRUE))
-					{
-						_r_wnd_toggle (hwnd, FALSE);
-					}
-
-					break;
-				}
-
-				case WM_CONTEXTMENU:
-				{
-					_app_message_traycontextmenu (hwnd);
 					break;
 				}
 			}

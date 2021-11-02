@@ -301,14 +301,14 @@ VOID _app_notify_setapp_id (_In_ HWND hwnd, _In_opt_ ULONG_PTR app_hash)
 
 VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_forced, _In_ BOOLEAN is_safety)
 {
-	static R_STRINGREF loading_text = PR_STRINGREF_INIT (SZ_LOADING);
+	static R_STRINGREF loading_sr = PR_STRINGREF_INIT (SZ_LOADING);
+	static R_STRINGREF empty_sr = PR_STRINGREF_INIT (SZ_EMPTY);
 
 	WCHAR window_title[128];
 	PITEM_CONTEXT context;
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	PR_STRING localized_string;
-	R_STRINGREF empty_string;
 	R_STRINGREF display_name;
 	BOOLEAN is_fullscreenmode;
 
@@ -332,7 +332,6 @@ VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_f
 	_app_notify_setapp_id (hwnd, ptr_log->app_hash);
 	_app_notify_setapp_icon (hwnd, NULL, FALSE);
 
-	_r_obj_initializestringrefconst (&empty_string, _r_locale_getstring (IDS_STATUS_EMPTY));
 	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
 
 	// print name
@@ -341,39 +340,39 @@ VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_f
 
 	// print signature
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
-	_r_ctrl_settablestring (hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading_text);
+	_r_ctrl_settablestring (hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading_sr);
 
 	// print address
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
 	_r_obj_movereference (&string, _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_USE_PROTOCOL));
 
-	_r_ctrl_settablestring (hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, string ? &string->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, string ? &string->sr : &empty_sr);
 
 	// print host
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
-	_r_ctrl_settablestring (hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading_text);
+	_r_ctrl_settablestring (hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading_sr);
 
 	// print port
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
 	_r_obj_movereference (&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
 
-	_r_ctrl_settablestring (hwnd, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty_sr);
 
 	// print direction
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
 	_r_obj_movereference (&string, _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
 
-	_r_ctrl_settablestring (hwnd, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty_sr);
 
 	// print filter name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":"));
-	_r_ctrl_settablestring (hwnd, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty_sr);
 
 	// print date
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
 	_r_obj_movereference (&string, _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
-	_r_ctrl_settablestring (hwnd, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_string);
+	_r_ctrl_settablestring (hwnd, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_sr);
 
 	_r_ctrl_setstring (hwnd, IDC_RULES_BTN, _r_locale_getstring (IDS_TRAY_RULES));
 	_r_ctrl_setstring (hwnd, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
@@ -494,71 +493,69 @@ VOID _app_notify_setposition (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 
 	swp_flags = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER;
 
+	_r_wnd_getposition (hwnd, &window_rect);
+
 	if (!is_forced && _r_wnd_isvisible (hwnd))
 	{
-		if (_r_wnd_getposition (hwnd, &window_rect))
-		{
-			_r_wnd_adjustworkingarea (NULL, &window_rect);
-			SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
+		_r_wnd_adjustworkingarea (NULL, &window_rect);
 
-			return;
-		}
+		SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
+
+		return;
 	}
 
 	is_intray = _r_config_getboolean (L"IsNotificationsOnTray", FALSE);
 
 	if (is_intray)
 	{
-		if (_r_wnd_getposition (hwnd, &window_rect))
+		MONITORINFO monitor_info = {0};
+		APPBARDATA taskbar_rect = {0};
+
+		HMONITOR hmonitor;
+		PRECT rect;
+		LONG dpi_value;
+		LONG border_x;
+
+		dpi_value = _r_dc_getwindowdpi (hwnd);
+
+		monitor_info.cbSize = sizeof (monitor_info);
+		hmonitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONEAREST);
+
+		if (GetMonitorInfo (hmonitor, &monitor_info))
 		{
-			MONITORINFO monitor_info = {0};
-			APPBARDATA taskbar_rect = {0};
+			taskbar_rect.cbSize = sizeof (taskbar_rect);
 
-			HMONITOR hmonitor;
-			PRECT rect;
-			LONG dpi_value;
-			LONG border_x;
-
-			dpi_value = _r_dc_getwindowdpi (hwnd);
-
-			monitor_info.cbSize = sizeof (monitor_info);
-			hmonitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONEAREST);
-
-			if (GetMonitorInfo (hmonitor, &monitor_info))
+			if (SHAppBarMessage (ABM_GETTASKBARPOS, &taskbar_rect))
 			{
-				taskbar_rect.cbSize = sizeof (taskbar_rect);
+				border_x = _r_dc_getsystemmetrics (SM_CXBORDER, dpi_value);
+				rect = &monitor_info.rcWork;
 
-				if (SHAppBarMessage (ABM_GETTASKBARPOS, &taskbar_rect))
+				if (taskbar_rect.uEdge == ABE_LEFT)
 				{
-					border_x = _r_dc_getsystemmetrics (SM_CXBORDER, dpi_value);
-					rect = &monitor_info.rcWork;
-
-					if (taskbar_rect.uEdge == ABE_LEFT)
-					{
-						window_rect.left = taskbar_rect.rc.right + border_x;
-						window_rect.top = (rect->bottom - window_rect.height) - border_x;
-					}
-					else if (taskbar_rect.uEdge == ABE_TOP)
-					{
-						window_rect.left = (rect->right - window_rect.width) - border_x;
-						window_rect.top = taskbar_rect.rc.bottom + border_x;
-					}
-					else if (taskbar_rect.uEdge == ABE_RIGHT)
-					{
-						window_rect.left = (rect->right - window_rect.width) - border_x;
-						window_rect.top = (rect->bottom - window_rect.height) - border_x;
-					}
-					else //if (taskbar_rect.uEdge == ABE_BOTTOM)
-					{
-						window_rect.left = (rect->right - window_rect.width) - border_x;
-						window_rect.top = (rect->bottom - window_rect.height) - border_x;
-					}
-
-					_r_wnd_adjustworkingarea (NULL, &window_rect);
-
-					SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
-					return;
+					window_rect.left = taskbar_rect.rc.right + border_x;
+					window_rect.top = (rect->bottom - window_rect.height) - border_x;
 				}
+				else if (taskbar_rect.uEdge == ABE_TOP)
+				{
+					window_rect.left = (rect->right - window_rect.width) - border_x;
+					window_rect.top = taskbar_rect.rc.bottom + border_x;
+				}
+				else if (taskbar_rect.uEdge == ABE_RIGHT)
+				{
+					window_rect.left = (rect->right - window_rect.width) - border_x;
+					window_rect.top = (rect->bottom - window_rect.height) - border_x;
+				}
+				else //if (taskbar_rect.uEdge == ABE_BOTTOM)
+				{
+					window_rect.left = (rect->right - window_rect.width) - border_x;
+					window_rect.top = (rect->bottom - window_rect.height) - border_x;
+				}
+
+				_r_wnd_adjustworkingarea (NULL, &window_rect);
+
+				SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
+
+				return;
 			}
 		}
 	}
@@ -612,11 +609,9 @@ VOID _app_notify_initializefont (_In_ HWND hwnd, _Inout_ PNOTIFY_CONTEXT context
 		SendDlgItemMessage (hwnd, i, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
 }
 
-VOID _app_notify_initialize (_In_ HWND hwnd)
+VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
 	PNOTIFY_CONTEXT context;
-
-	LONG dpi_value;
 
 	LONG icon_small_x;
 	LONG icon_small_y;
@@ -628,8 +623,6 @@ VOID _app_notify_initialize (_In_ HWND hwnd)
 
 	if (!context)
 		return;
-
-	dpi_value = _r_dc_getwindowdpi (hwnd);
 
 	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
@@ -660,15 +653,13 @@ VOID _app_notify_initialize (_In_ HWND hwnd)
 	SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
 	SendDlgItemMessage (hwnd, IDC_LATER_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
 
-	_r_ctrl_setbuttonmargins (hwnd, IDC_RULES_BTN);
-	_r_ctrl_setbuttonmargins (hwnd, IDC_ALLOW_BTN);
-	_r_ctrl_setbuttonmargins (hwnd, IDC_BLOCK_BTN);
-	_r_ctrl_setbuttonmargins (hwnd, IDC_LATER_BTN);
+	_r_ctrl_setbuttonmargins (hwnd, IDC_RULES_BTN, dpi_value);
+	_r_ctrl_setbuttonmargins (hwnd, IDC_ALLOW_BTN, dpi_value);
+	_r_ctrl_setbuttonmargins (hwnd, IDC_BLOCK_BTN, dpi_value);
+	_r_ctrl_setbuttonmargins (hwnd, IDC_LATER_BTN, dpi_value);
 
 	// load font
 	_app_notify_initializefont (hwnd, context, dpi_value);
-
-	SendMessage (hwnd, WM_THEMECHANGED, 0, 0);
 }
 
 VOID _app_notify_drawgradient (_In_ HDC hdc, _In_ LPCRECT rect)
@@ -713,15 +704,18 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 	{
 		case WM_INITDIALOG:
 		{
-			HWND htip;
 			PNOTIFY_CONTEXT context;
+			HWND htip;
+			LONG dpi_value;
 
 			// initialize context
 			context = _r_mem_allocatezero (sizeof (NOTIFY_CONTEXT));
 
 			SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)context);
 
-			_app_notify_initialize (hwnd);
+			dpi_value = _r_dc_getwindowdpi (hwnd);
+
+			_app_notify_initialize (hwnd, dpi_value);
 
 			// initialize tips
 			htip = _r_ctrl_createtip (hwnd);
@@ -802,7 +796,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 		case WM_DPICHANGED:
 		{
-			_app_notify_initialize (hwnd);
+			_app_notify_initialize (hwnd, LOWORD (wparam));
 			_app_notify_refresh (hwnd, FALSE);
 
 			break;
@@ -837,19 +831,6 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 		}
 
 		case WM_CTLCOLORDLG:
-		{
-			HDC hdc;
-
-			hdc = (HDC)wparam;
-
-			SetBkMode (hdc, TRANSPARENT); // HACK!!!
-
-			SetTextColor (hdc, GetSysColor (COLOR_WINDOWTEXT));
-			SetDCBrushColor (hdc, GetSysColor (COLOR_WINDOW));
-
-			return (INT_PTR)GetStockObject (DC_BRUSH);
-		}
-
 		case WM_CTLCOLORSTATIC:
 		{
 			HDC hdc;
@@ -857,7 +838,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 			hdc = (HDC)wparam;
 
-			if (GetDlgCtrlID ((HWND)lparam) == IDC_FILE_TEXT)
+			if (msg == WM_CTLCOLORSTATIC && (GetDlgCtrlID ((HWND)lparam) == IDC_FILE_TEXT))
 			{
 				text_clr = COLOR_HIGHLIGHT;
 			}

@@ -399,11 +399,11 @@ VOID _app_message_traycontextmenu (_In_ HWND hwnd)
 	DestroyMenu (hmenu);
 }
 
-VOID _app_message_dpichanged (_In_ HWND hwnd)
+VOID _app_message_dpichanged (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
 	PR_STRING localized_string = NULL;
 
-	_app_imagelist_init (hwnd);
+	_app_imagelist_init (hwnd, dpi_value);
 
 	// reset toolbar information
 	_app_setinterfacestate (hwnd);
@@ -426,9 +426,9 @@ VOID _app_message_dpichanged (_In_ HWND hwnd)
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, _r_locale_getstring (IDS_DONATE), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
 
-	_app_toolbar_resize ();
+	_app_toolbar_resize (hwnd, dpi_value);
 
-	_app_listviewloadfont (hwnd, TRUE);
+	_app_listviewloadfont (dpi_value, TRUE);
 	_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 	_r_obj_dereference (localized_string);
@@ -1306,6 +1306,7 @@ VOID _app_message_localize (_In_ HWND hwnd)
 	HMENU hmenu;
 	HMENU hsubmenu;
 	LPCWSTR recommended_string;
+	LONG dpi_value;
 
 	hmenu = GetMenu (hwnd);
 
@@ -1440,7 +1441,9 @@ VOID _app_message_localize (_In_ HWND hwnd)
 	_r_edit_setcuebanner (config.hrebar, IDC_SEARCH, localized_string->buffer);
 
 	// set rebar size
-	_app_toolbar_resize ();
+	dpi_value = _r_dc_getwindowdpi (hwnd);
+
+	_app_toolbar_resize (hwnd, dpi_value);
 
 	// localize tabs
 	INT listview_id;
@@ -2701,7 +2704,7 @@ VOID _app_command_selectfont (_In_ HWND hwnd)
 	{
 		_r_config_setfont (L"Font", &lf, dpi_value);
 
-		_app_listviewloadfont (hwnd, TRUE);
+		_app_listviewloadfont (dpi_value, TRUE);
 		_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 		RedrawWindow (hwnd, NULL, NULL, RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);

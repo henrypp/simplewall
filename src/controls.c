@@ -592,16 +592,25 @@ VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id)
 		_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
-UINT _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type)
+LPCWSTR _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type)
 {
+	UINT locale_id;
+
 	if (install_type == INSTALL_ENABLED)
-		return IDS_STATUS_FILTERS_ACTIVE;
-
+	{
+		locale_id = IDS_STATUS_FILTERS_ACTIVE;
+	}
 	else if (install_type == INSTALL_ENABLED_TEMPORARY)
-		return IDS_STATUS_FILTERS_ACTIVE_TEMP;
+	{
+		locale_id = IDS_STATUS_FILTERS_ACTIVE_TEMP;
+	}
+	else
+	{
+		// INSTALL_DISABLED
+		locale_id = IDS_STATUS_FILTERS_INACTIVE;
+	}
 
-	// INSTALL_DISABLED
-	return IDS_STATUS_FILTERS_INACTIVE;
+	return _r_locale_getstring (locale_id);
 }
 
 BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
@@ -622,18 +631,16 @@ BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled)
 {
 	ENUM_INSTALL_TYPE install_type;
-	UINT locale_id;
 
 	if (!is_enabled)
 		return;
 
 	install_type = _wfp_isfiltersinstalled ();
-	locale_id = _app_getinterfacestatelocale (install_type);
 
 	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, TRUE);
 	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, TRUE);
 
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (locale_id));
+	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
 }
 
 VOID _app_setinterfacestate (_In_ HWND hwnd)
@@ -678,14 +685,14 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _r_locale_getstring (_app_getinterfacestatelocale (install_type)));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _r_locale_getstring (string_id), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
 }
 
-VOID _app_imagelist_init (_In_ LONG dpi_value)
+VOID _app_imagelist_init (_Reserved_ HWND hwnd, _In_ LONG dpi_value)
 {
 	static UINT toolbar_ids[] = {
 		IDP_SHIELD_ENABLE,

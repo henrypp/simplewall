@@ -31,26 +31,26 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 
 VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id);
 
-UINT _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type);
+LPCWSTR _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type);
 BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
 VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled);
 VOID _app_setinterfacestate (_In_ HWND hwnd);
 
-VOID _app_imagelist_init (_In_ HWND hwnd);
+VOID _app_imagelist_init (_Reserved_ HWND hwnd, _In_ LONG dpi_value);
 
 VOID _app_listviewresize (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_forced);
 VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id);
 
-VOID _app_listviewloadfont (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
+VOID _app_listviewloadfont (_In_ LONG dpi_value, _In_ BOOLEAN is_forced);
 VOID _app_listviewsetfont (_In_ HWND hwnd, _In_ INT listview_id);
 
 INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lparam2, _In_ LPARAM lparam);
 VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG column_id, _In_ BOOLEAN is_notifycode);
 
-VOID _app_toolbar_init (_In_ HWND hwnd);
-VOID _app_toolbar_resize ();
+VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value);
+VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value);
 
-VOID _app_window_resize (_In_ HWND hwnd, _In_ LPARAM lparam);
+VOID _app_window_resize (_In_ HWND hwnd, _In_ LPCRECT rect, _In_ LONG dpi_value);
 
 VOID _app_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id);
 VOID _app_refreshstatus (_In_ HWND hwnd);
