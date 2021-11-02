@@ -356,7 +356,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_opt_ HWND hsettings, _In_ INT ctrl_i
 		{
 			BOOLEAN is_enabled;
 
-			_r_autorun_enable (hwnd, new_val);
+			_r_autorun_enable (hsettings ? hsettings : hwnd, new_val);
 			is_enabled = _r_autorun_isenabled ();
 
 			_r_menu_checkitem (hmenu, IDM_LOADONSTARTUP_CHK, 0, MF_BYCOMMAND, is_enabled);
@@ -381,7 +381,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_opt_ HWND hsettings, _In_ INT ctrl_i
 		{
 			BOOLEAN is_enabled;
 
-			_r_skipuac_enable (hwnd, new_val);
+			_r_skipuac_enable (hsettings ? hsettings : hwnd, new_val);
 			is_enabled = _r_skipuac_isenabled ();
 
 			_r_menu_checkitem (hmenu, IDM_SKIPUACWARNING_CHK, 0, MF_BYCOMMAND, is_enabled);
