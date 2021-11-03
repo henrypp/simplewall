@@ -372,13 +372,6 @@ BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ 
 				goto CleanupExit;
 		}
 
-		// provider name
-		if (ptr_log->provider_name)
-		{
-			if (_app_search_isstringfound (ptr_log->provider_name, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
-
 		// filter name
 		if (ptr_log->filter_name)
 		{

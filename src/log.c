@@ -175,20 +175,20 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 
 	direction_string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
-	buffer = _r_format_string (SZ_LOG_BODY,
-							   _r_obj_getstringordefault (date_string, SZ_EMPTY),
-							   _r_obj_getstringordefault (ptr_log->username, SZ_EMPTY),
-							   _r_obj_getstringordefault (path, SZ_EMPTY),
-							   _r_obj_getstringordefault (ptr_log->local_addr_str, SZ_EMPTY),
-							   local_port_string->buffer,
-							   _r_obj_getstringordefault (ptr_log->remote_addr_str, SZ_EMPTY),
-							   remote_port_string->buffer,
-							   _r_obj_getstringordefault (ptr_log->protocol_str, SZ_DIRECTION_ANY),
-							   _r_obj_getstringorempty (ptr_log->provider_name),
-							   _r_obj_getstringorempty (ptr_log->filter_name),
-							   ptr_log->filter_id,
-							   _r_obj_getstringordefault (direction_string, SZ_EMPTY),
-							   (ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
+	buffer = _r_format_string (
+		SZ_LOG_BODY,
+		_r_obj_getstringordefault (date_string, SZ_EMPTY),
+		_r_obj_getstringordefault (ptr_log->username, SZ_EMPTY),
+		_r_obj_getstringordefault (path, SZ_EMPTY),
+		_r_obj_getstringordefault (ptr_log->local_addr_str, SZ_EMPTY),
+		local_port_string->buffer,
+		_r_obj_getstringordefault (ptr_log->remote_addr_str, SZ_EMPTY),
+		remote_port_string->buffer,
+		_r_obj_getstringordefault (ptr_log->protocol_str, SZ_DIRECTION_ANY),
+		ptr_log->filter_name->buffer,
+		ptr_log->filter_id,
+		_r_obj_getstringordefault (direction_string, SZ_EMPTY),
+		(ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 	);
 
 	if (_app_logislimitreached (current_handle))
@@ -394,6 +394,11 @@ VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle)
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 {
 	HANDLE engine_handle;
+	PITEM_LOG ptr_log;
+	PR_STRING filter_name;
+	PR_STRING sid_string;
+	UINT8 filter_weight;
+	BOOLEAN is_myprovider;
 
 	engine_handle = _wfp_getenginehandle ();
 
@@ -424,63 +429,39 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	}
 
 	// get filter information
-	BOOLEAN is_myprovider = FALSE;
+	filter_name = NULL;
+	is_myprovider = FALSE;
+	filter_weight = 0;
 
-	PR_STRING filter_name = NULL;
-	PR_STRING provider_name = NULL;
+	FWPM_FILTER *ptr_filter = NULL;
 
-	UINT8 filter_weight = 0;
-
+	if (FwpmFilterGetById (engine_handle, log->filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
 	{
-		FWPM_FILTER *ptr_filter = NULL;
-		FWPM_PROVIDER *ptr_provider = NULL;
-
-		if (FwpmFilterGetById (engine_handle, log->filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
+		if (!_r_str_isempty (ptr_filter->displayData.description))
 		{
-			if (!_r_str_isempty (ptr_filter->displayData.description))
-			{
-				filter_name = _r_obj_createstring (ptr_filter->displayData.description);
-			}
-			else if (!_r_str_isempty (ptr_filter->displayData.name))
-			{
-				filter_name = _r_obj_createstring (ptr_filter->displayData.name);
-			}
-
-			if (ptr_filter->weight.type == FWP_UINT8)
-				filter_weight = ptr_filter->weight.uint8;
-
-			if (ptr_filter->providerKey)
-			{
-				if (IsEqualGUID (ptr_filter->providerKey, &GUID_WfpProvider))
-					is_myprovider = TRUE;
-
-				if (FwpmProviderGetByKey (engine_handle, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
-				{
-					if (!_r_str_isempty (ptr_provider->displayData.name))
-					{
-						provider_name = _r_obj_createstring (ptr_provider->displayData.name);
-					}
-					else if (!_r_str_isempty (ptr_provider->displayData.description))
-					{
-						provider_name = _r_obj_createstring (ptr_provider->displayData.description);
-					}
-				}
-			}
+			filter_name = _r_obj_createstring (ptr_filter->displayData.description);
+		}
+		else if (!_r_str_isempty (ptr_filter->displayData.name))
+		{
+			filter_name = _r_obj_createstring (ptr_filter->displayData.name);
 		}
 
-		if (ptr_filter)
-			FwpmFreeMemory ((PVOID_PTR)&ptr_filter);
+		if (ptr_filter->weight.type == FWP_UINT8)
+			filter_weight = ptr_filter->weight.uint8;
 
-		if (ptr_provider)
-			FwpmFreeMemory ((PVOID_PTR)&ptr_provider);
-
-		// prevent filter "not found" items
-		if (!filter_name && !provider_name)
-			return;
+		if (ptr_filter->providerKey)
+		{
+			if (IsEqualGUID (ptr_filter->providerKey, &GUID_WfpProvider))
+				is_myprovider = TRUE;
+		}
 	}
 
-	PITEM_LOG ptr_log;
-	PR_STRING sid_string;
+	if (ptr_filter)
+		FwpmFreeMemory ((PVOID_PTR)&ptr_filter);
+
+	// prevent filter "not found" items
+	if (!filter_name)
+		return;
 
 	ptr_log = _r_obj_allocate (sizeof (ITEM_LOG), &_app_dereferencelog);
 
@@ -489,8 +470,6 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		ptr_log->timestamp = _r_unixtime_from_filetime (log->timestamp);
 
 	// get package id (win8+)
-	sid_string = NULL;
-
 	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && log->package_id)
 	{
 		sid_string = _r_str_fromsid (log->package_id);
@@ -500,6 +479,10 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 			if (!_app_isappfound (_r_obj_getstringhash (sid_string, TRUE)))
 				_r_obj_clearreference (&sid_string);
 		}
+	}
+	else
+	{
+		sid_string = NULL;
 	}
 
 	// copy converted nt device path into win32
@@ -530,9 +513,6 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	{
 		ptr_log->app_hash = 0;
 	}
-
-	if (sid_string)
-		_r_obj_clearreference (&sid_string);
 
 	// get username information
 	if ((log->flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) && log->user_id)
@@ -594,13 +574,15 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	ptr_log->is_myprovider = is_myprovider;
 
 	ptr_log->filter_name = filter_name;
-	ptr_log->provider_name = provider_name;
 
 	ptr_log->is_blocklist = (filter_weight == FW_WEIGHT_RULE_BLOCKLIST);
 	ptr_log->is_system = (filter_weight == FW_WEIGHT_HIGHEST) || (filter_weight == FW_WEIGHT_HIGHEST_IMPORTANT);
 	ptr_log->is_custom = (filter_weight == FW_WEIGHT_RULE_USER) || (filter_weight == FW_WEIGHT_RULE_USER_BLOCK);
 
 	_r_workqueue_queueitem (&log_queue, &_app_logthread, ptr_log);
+
+	if (sid_string)
+		_r_obj_dereference (sid_string);
 }
 
 FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ PVOID data, _In_ ULONG version)

@@ -47,7 +47,6 @@ VOID NTAPI _app_dereferencelog (_In_ PVOID entry)
 	ptr_item = entry;
 
 	SAFE_DELETE_REFERENCE (ptr_item->path);
-	SAFE_DELETE_REFERENCE (ptr_item->provider_name);
 	SAFE_DELETE_REFERENCE (ptr_item->filter_name);
 	SAFE_DELETE_REFERENCE (ptr_item->username);
 	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
