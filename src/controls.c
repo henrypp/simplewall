@@ -1212,7 +1212,15 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 		// insert toolbar
 		button_size = _r_toolbar_getbuttonsize (config.hrebar, IDC_TOOLBAR);
 
-		_r_rebar_insertband (hwnd, IDC_REBAR, 0, config.htoolbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, LOWORD (button_size), HIWORD (button_size));
+		_r_rebar_insertband (
+			hwnd,
+			IDC_REBAR,
+			REBAR_TOOLBAR_ID,
+			config.htoolbar,
+			RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON,
+			LOWORD (button_size),
+			HIWORD (button_size)
+		);
 	}
 
 	// insert searchbar
@@ -1239,7 +1247,15 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 
 		rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 
-		_r_rebar_insertband (hwnd, IDC_REBAR, 1, config.hsearchbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, _r_dc_getdpi (180, dpi_value), rebar_height);
+		_r_rebar_insertband (
+			hwnd,
+			IDC_REBAR,
+			REBAR_SEARCH_ID,
+			config.hsearchbar,
+			RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON,
+			_r_dc_getdpi (180, dpi_value),
+			_r_dc_getdpi (22, dpi_value)
+		);
 	}
 }
 
@@ -1247,11 +1263,8 @@ VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
 	REBARBANDINFO rbi;
 	SIZE ideal_size = {0};
-	RECT rect;
 	ULONG button_size;
-	LONG rebar_height;
 	UINT rebar_count;
-	UINT rebar_index;
 
 	SendMessage (config.htoolbar, TB_AUTOSIZE, 0, 0);
 
@@ -1259,20 +1272,15 @@ VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 
 	for (UINT i = 0; i < rebar_count; i++)
 	{
-		rebar_index = (UINT)SendMessage (config.hrebar, RB_IDTOINDEX, (WPARAM)i, 0);
-
-		if (rebar_index == UINT_MAX)
-			continue;
-
 		RtlZeroMemory (&rbi, sizeof (rbi));
 
 		rbi.cbSize = sizeof (rbi);
-		rbi.fMask |= RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
+		rbi.fMask = RBBIM_ID | RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
 
-		if (!SendMessage (config.hrebar, RB_GETBANDINFO, (WPARAM)rebar_index, (LPARAM)&rbi))
+		if (!SendMessage (config.hrebar, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rbi))
 			continue;
 
-		if (rebar_index == 0)
+		if (rbi.wID == REBAR_TOOLBAR_ID)
 		{
 			if (!SendMessage (config.htoolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
 				continue;
@@ -1283,19 +1291,18 @@ VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 			rbi.cxMinChild = LOWORD (button_size);
 			rbi.cyMinChild = HIWORD (button_size);
 		}
-		else if (rebar_index == 1)
+		else if (rbi.wID == REBAR_SEARCH_ID)
 		{
-			if (!GetWindowRect (config.hsearchbar, &rect))
-				continue;
-
-			rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
-
 			rbi.cxIdeal = (UINT)_r_dc_getdpi (180, dpi_value);
 			rbi.cxMinChild = rbi.cxIdeal;
-			rbi.cyMinChild = rebar_height;
+			rbi.cyMinChild = _r_dc_getdpi (22, dpi_value);
+		}
+		else
+		{
+			continue;
 		}
 
-		SendMessage (config.hrebar, RB_SETBANDINFO, (WPARAM)rebar_index, (LPARAM)&rbi);
+		SendMessage (config.hrebar, RB_SETBANDINFO, (WPARAM)i, (LPARAM)&rbi);
 	}
 }
 
