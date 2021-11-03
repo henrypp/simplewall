@@ -256,9 +256,9 @@ typedef struct _STATIC_DATA
 
 typedef struct _PROFILE_DATA
 {
-	WCHAR profile_path[MAX_PATH];
-	WCHAR profile_path_backup[MAX_PATH];
-	WCHAR profile_internal_path[MAX_PATH];
+	PR_STRING profile_path;
+	PR_STRING profile_path_backup;
+	PR_STRING profile_internal_path;
 
 	PR_STRING my_path;
 	PR_STRING ntoskrnl_path;

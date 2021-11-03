@@ -461,14 +461,14 @@ ICON_INFORMATION _app_getdefaulticons ()
 		PR_STRING path;
 
 		// load default icons
-		path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\svchost.exe");
+		path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, L"\\svchost.exe");
 
 		_app_loadfileicon (path, &icon_info.app_icon_id, &icon_info.app_hicon, FALSE);
 
 		// load uwp icons
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
-			_r_obj_movereference (&path, _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), L"\\wsreset.exe"));
+			_r_obj_movereference (&path, _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, L"\\wsreset.exe"));
 
 			_app_loadfileicon (path, &icon_info.uwp_icon_id, &icon_info.uwp_hicon, FALSE);
 		}

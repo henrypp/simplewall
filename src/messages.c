@@ -353,7 +353,7 @@ VOID _app_message_traycontextmenu (_In_ HWND hwnd)
 	_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGSHOW, FALSE, _r_locale_getstring (IDS_LOGSHOW));
 	_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGCLEAR, FALSE, _r_locale_getstring (IDS_LOGCLEAR));
 
-	if (_r_fs_exists (_r_app_getlogpath ()))
+	if (_r_fs_exists (_r_app_getlogpath ()->buffer))
 	{
 		_r_menu_setitemtext (hsubmenu, ERRLOG_ID, TRUE, _r_locale_getstring (IDS_TRAY_LOGERR));
 
@@ -1798,17 +1798,17 @@ VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 {
 	PR_STRING viewer_path;
 	PR_STRING process_path;
-	LPCWSTR log_path;
+	PR_STRING log_path;
 
 	log_path = _r_app_getlogpath ();
 
-	if (_r_fs_exists (log_path))
+	if (_r_fs_exists (log_path->buffer))
 	{
 		viewer_path = _app_getlogviewer ();
 
 		if (viewer_path)
 		{
-			process_path = _r_format_string (L"\"%s\" \"%s\"", viewer_path->buffer, log_path);
+			process_path = _r_format_string (L"\"%s\" \"%s\"", viewer_path->buffer, log_path->buffer);
 
 			if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
 			{
@@ -1826,22 +1826,23 @@ VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 
 VOID _app_command_logerrclear (_In_opt_ HWND hwnd)
 {
-	LPCWSTR path;
+	PR_STRING path;
+
+	path = _r_app_getlogpath ();
+
+	if (!_r_fs_exists (path->buffer))
+		return;
 
 	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
 		return;
 
-	path = _r_app_getlogpath ();
-
-	if (!_r_fs_exists (path))
-		return;
-
-	_r_fs_deletefile (path, TRUE);
+	_r_fs_deletefile (path->buffer, TRUE);
 }
 
 VOID _app_command_copy (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT column_id)
 {
 	static R_STRINGREF divider_sr = PR_STRINGREF_INIT (DIVIDER_COPY);
+
 	R_STRINGBUILDER buffer;
 	PR_STRING string;
 	INT listview_id;

@@ -1528,11 +1528,13 @@ PVOID _app_loadpackedresource (_In_ LPCWSTR resource_name, _Out_ PULONG buffer_l
 	return memory_buffer;
 }
 
-VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp)
+VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp)
 {
 	R_XML_LIBRARY xml_file;
 	R_XML_LIBRARY xml_resource;
 	PR_XML_LIBRARY xml_library;
+	PVOID buffer;
+	ULONG buffer_size;
 	LONG64 timestamp_file;
 	LONG64 timestamp_resource;
 	LONG version_file;
@@ -1549,34 +1551,25 @@ VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, 
 	version_file = 0;
 	version_resource = 0;
 
-	if (path)
+	if (_r_xml_parsefile (&xml_file, path->buffer) == S_OK)
 	{
-		if (_r_xml_parsefile (&xml_file, path) == S_OK)
+		if (_r_xml_findchildbytagname (&xml_file, L"root"))
 		{
-			if (_r_xml_findchildbytagname (&xml_file, L"root"))
-			{
-				version_file = _r_xml_getattribute_long (&xml_file, L"version");
-				timestamp_file = _r_xml_getattribute_long64 (&xml_file, L"timestamp");
-			}
+			version_file = _r_xml_getattribute_long (&xml_file, L"version");
+			timestamp_file = _r_xml_getattribute_long64 (&xml_file, L"timestamp");
 		}
 	}
 
-	if (resource_name)
+	buffer = _app_loadpackedresource (resource_name, &buffer_size);
+
+	if (buffer)
 	{
-		PVOID buffer;
-		ULONG buffer_size;
-
-		buffer = _app_loadpackedresource (resource_name, &buffer_size);
-
-		if (buffer)
+		if (_r_xml_parsestring (&xml_resource, buffer, buffer_size) == S_OK)
 		{
-			if (_r_xml_parsestring (&xml_resource, buffer, buffer_size) == S_OK)
+			if (_r_xml_findchildbytagname (&xml_resource, L"root"))
 			{
-				if (_r_xml_findchildbytagname (&xml_resource, L"root"))
-				{
-					version_resource = _r_xml_getattribute_long (&xml_resource, L"version");
-					timestamp_resource = _r_xml_getattribute_long64 (&xml_resource, L"timestamp");
-				}
+				version_resource = _r_xml_getattribute_long (&xml_resource, L"version");
+				timestamp_resource = _r_xml_getattribute_long64 (&xml_resource, L"timestamp");
 			}
 		}
 	}
@@ -1678,18 +1671,18 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	_r_queuedlock_acquireshared (&lock_profile);
 
-	hr = _r_xml_parsefile (&xml_library, path_custom ? path_custom : profile_info.profile_path);
+	hr = _r_xml_parsefile (&xml_library, path_custom ? path_custom : profile_info.profile_path->buffer);
 
 	// load backup
 	if (hr != S_OK && !path_custom)
-		hr = _r_xml_parsefile (&xml_library, profile_info.profile_path_backup);
+		hr = _r_xml_parsefile (&xml_library, profile_info.profile_path_backup->buffer);
 
 	_r_queuedlock_releaseshared (&lock_profile);
 
 	if (hr != S_OK)
 	{
 		if (hr != HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND))
-			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_parsefile", hr, path_custom ? path_custom : profile_info.profile_path);
+			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_parsefile", hr, path_custom ? path_custom : profile_info.profile_path->buffer);
 	}
 	else
 	{
@@ -1792,7 +1785,7 @@ VOID _app_profile_save ()
 	HRESULT hr;
 
 	current_time = _r_unixtime_now ();
-	is_backuprequired = _r_config_getboolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (profile_info.profile_path_backup) || ((current_time - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
+	is_backuprequired = _r_config_getboolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (profile_info.profile_path_backup->buffer) || ((current_time - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
 
 	hr = _r_xml_initializelibrary (&xml_library, FALSE, NULL);
 
@@ -1802,11 +1795,11 @@ VOID _app_profile_save ()
 		return;
 	}
 
-	hr = _r_xml_createfile (&xml_library, profile_info.profile_path);
+	hr = _r_xml_createfile (&xml_library, profile_info.profile_path->buffer);
 
 	if (hr != S_OK)
 	{
-		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_createfile", hr, profile_info.profile_path);
+		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_createfile", hr, profile_info.profile_path->buffer);
 		return;
 	}
 
@@ -2021,7 +2014,7 @@ VOID _app_profile_save ()
 	// make backup
 	if (is_backuprequired)
 	{
-		_r_fs_copyfile (profile_info.profile_path, profile_info.profile_path_backup, 0);
+		_r_fs_copyfile (profile_info.profile_path->buffer, profile_info.profile_path_backup->buffer, 0);
 		_r_config_setlong64 (L"BackupTimestamp", current_time);
 	}
 }

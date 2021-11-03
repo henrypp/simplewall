@@ -98,6 +98,6 @@ BOOLEAN _app_profile_load_check_node (_Inout_ PR_XML_LIBRARY xml_library, _In_ E
 
 VOID _app_profile_load_fallback ();
 VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ UINT version);
-VOID _app_profile_load_internal (_In_ LPCWSTR path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp);
+VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp);
 VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom);
 VOID _app_profile_save ();

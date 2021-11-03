@@ -1702,14 +1702,14 @@ VOID _app_initialize ()
 		_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
 	}
 
-	_r_str_printf (profile_info.profile_path, RTL_NUMBER_OF (profile_info.profile_path), L"%s\\" XML_PROFILE, _r_app_getprofiledirectory ());
-	_r_str_printf (profile_info.profile_path_backup, RTL_NUMBER_OF (profile_info.profile_path_backup), L"%s\\" XML_PROFILE L".bak", _r_app_getprofiledirectory ());
-	_r_str_printf (profile_info.profile_internal_path, RTL_NUMBER_OF (profile_info.profile_internal_path), L"%s\\" XML_PROFILE_INTERNAL, _r_app_getprofiledirectory ());
+	profile_info.profile_path = _r_format_string (L"%s\\" XML_PROFILE, _r_app_getprofiledirectory ()->buffer);
+	profile_info.profile_path_backup = _r_format_string (L"%s\\" XML_PROFILE L".bak", _r_app_getprofiledirectory ()->buffer);
+	profile_info.profile_internal_path = _r_format_string (L"%s\\" XML_PROFILE_INTERNAL, _r_app_getprofiledirectory ()->buffer);
 
 	profile_info.my_path = _r_obj_createstring (_r_sys_getimagepath ());
-	profile_info.svchost_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_SVCHOST);
+	profile_info.svchost_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, PATH_SVCHOST);
 	profile_info.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
-	profile_info.ntoskrnl_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory (), PATH_NTOSKRNL);
+	profile_info.ntoskrnl_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, PATH_NTOSKRNL);
 
 	profile_info.my_hash = _r_obj_getstringhash (profile_info.my_path, TRUE);
 	profile_info.ntoskrnl_hash = _r_obj_getstringhash (profile_info.system_path, TRUE);
@@ -1943,7 +1943,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 
-			_r_fs_makebackup (profile_info.profile_path, TRUE);
+			_r_fs_makebackup (profile_info.profile_path->buffer, TRUE);
 
 			_app_profile_load (hwnd, NULL);
 
@@ -2756,7 +2756,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								else
 								{
 									// made backup
-									_r_fs_deletefile (profile_info.profile_path_backup, TRUE);
+									_r_fs_deletefile (profile_info.profile_path_backup->buffer, TRUE);
 									_app_profile_save ();
 
 									_app_profile_load (hwnd, path->buffer); // load profile
@@ -2798,7 +2798,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								_app_profile_save ();
 
 								// added information for export profile failure (issue #707)
-								if (!_r_fs_copyfile (profile_info.profile_path, path->buffer, 0))
+								if (!_r_fs_copyfile (profile_info.profile_path->buffer, path->buffer, 0))
 								{
 									R_ERROR_INFO error_info = {0};
 									error_info.description = path->buffer;
