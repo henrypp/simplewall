@@ -363,6 +363,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 		{
 			WCHAR buffer[256];
 			HWND hctrl;
+			PR_STRING string;
 
 			context = (PEDITOR_CONTEXT)lparam;
 			_app_editor_setcontext (hwnd, context);
@@ -454,24 +455,32 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				{
 					index += 1;
 
-					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", _app_getprotoname (protos[i], AF_UNSPEC, SZ_UNKNOWN), protos[i]);
+					string = _app_getprotoname (protos[i], AF_UNSPEC, TRUE);
+
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", string->buffer, protos[i]);
 
 					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, buffer);
 					_r_combobox_setitemparam (hwnd, IDC_RULE_PROTOCOL_ID, index, (LPARAM)protos[i]);
 
 					if (context->ptr_rule->protocol == protos[i])
 						_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
+
+					_r_obj_dereference (string);
 				}
 
 				// unknown protocol
 				if (_r_combobox_getcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID) == CB_ERR)
 				{
-					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PR_ULONG) L")", _app_getprotoname (context->ptr_rule->protocol, AF_UNSPEC, SZ_UNKNOWN), context->ptr_rule->protocol);
+					string = _app_getprotoname (context->ptr_rule->protocol, AF_UNSPEC, TRUE);
+
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PR_ULONG) L")", string->buffer, context->ptr_rule->protocol);
 
 					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, buffer);
 					_r_combobox_setitemparam (hwnd, IDC_RULE_PROTOCOL_ID, index, (LPARAM)context->ptr_rule->protocol);
 
 					_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
+
+					_r_obj_dereference (string);
 				}
 
 				_r_ctrl_enable (hwnd, IDC_RULE_PROTOCOL_ID, !context->ptr_rule->is_readonly);
@@ -1627,6 +1636,9 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 
 							context->ptr_rule->protocol = (UINT8)_r_combobox_getitemparam (hpage_general, IDC_RULE_PROTOCOL_ID, _r_combobox_getcurrentitem (hpage_general, IDC_RULE_PROTOCOL_ID));
 							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemparam (hpage_general, IDC_RULE_VERSION_ID, _r_combobox_getcurrentitem (hpage_general, IDC_RULE_VERSION_ID));
+
+							string = _app_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af, FALSE);
+							_r_obj_movereference (&context->ptr_rule->protocol_str, string);
 
 							context->ptr_rule->direction = (FWP_DIRECTION)_r_calc_clamp (_r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY) - IDC_RULE_DIRECTION_OUTBOUND, FWP_DIRECTION_OUTBOUND, FWP_DIRECTION_MAX);
 
