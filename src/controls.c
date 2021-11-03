@@ -1495,13 +1495,13 @@ VOID _app_refreshstatus (_In_ HWND hwnd)
 
 	_r_dc_fixwindowfont (hdc, hstatus); // fix
 
-	PR_STRING text[UI_STATUSBAR_PARTS_COUNT] = {0};
-	INT parts[UI_STATUSBAR_PARTS_COUNT] = {0};
-	LONG size[UI_STATUSBAR_PARTS_COUNT] = {0};
+	PR_STRING text[STATUSBAR_PARTS_COUNT] = {0};
+	INT parts[STATUSBAR_PARTS_COUNT] = {0};
+	LONG size[STATUSBAR_PARTS_COUNT] = {0};
 	LONG calculated_width = 0;
 	LONG spacing = _r_dc_getdpi (16, dpi_value);
 
-	for (INT i = 0; i < UI_STATUSBAR_PARTS_COUNT; i++)
+	for (INT i = 0; i < STATUSBAR_PARTS_COUNT; i++)
 	{
 		switch (i)
 		{
@@ -1532,9 +1532,9 @@ VOID _app_refreshstatus (_In_ HWND hwnd)
 	parts[1] = parts[0] + size[1];
 	parts[2] = parts[1] + size[2];
 
-	_r_status_setparts (hwnd, IDC_STATUSBAR, parts, UI_STATUSBAR_PARTS_COUNT);
+	_r_status_setparts (hwnd, IDC_STATUSBAR, parts, STATUSBAR_PARTS_COUNT);
 
-	for (INT i = 1; i < UI_STATUSBAR_PARTS_COUNT; i++)
+	for (INT i = 1; i < STATUSBAR_PARTS_COUNT; i++)
 	{
 		if (text[i])
 		{
