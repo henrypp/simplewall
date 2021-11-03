@@ -42,12 +42,7 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
 
 		if (current_handle)
-		{
-			// Already in the cache, so replace it.
-			InterlockedCompareExchangePointer (&config.hlogfile, new_handle, config.hlogfile);
-
-			CloseHandle (current_handle);
-		}
+			CloseHandle (new_handle);
 	}
 
 	_r_obj_dereference (log_path);
@@ -68,9 +63,6 @@ ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 								   _r_obj_getstring (ptr_log->local_addr_str),
 								   _r_obj_getstring (ptr_log->remote_addr_str)
 	);
-
-	if (!log_string)
-		return 0;
 
 	log_hash = _r_obj_getstringhash (log_string, TRUE);
 
@@ -146,7 +138,7 @@ VOID _app_logclear_ui (_In_ HWND hwnd)
 
 VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 {
-	PR_STRING path = NULL;
+	PR_STRING path;
 	PR_STRING date_string;
 	PR_STRING local_port_string;
 	PR_STRING remote_port_string;
@@ -158,7 +150,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 
 	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
-	if (!_r_fs_isvalidhandle (current_handle))
+	if (!current_handle)
 		return;
 
 	// parse path
@@ -166,23 +158,13 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 
 	if (ptr_app)
 	{
-		if (ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE)
-		{
-			if (ptr_app->real_path)
-			{
-				path = _r_obj_reference (ptr_app->real_path);
-			}
-			else if (ptr_app->display_name)
-			{
-				path = _r_obj_reference (ptr_app->display_name);
-			}
-		}
-		else if (ptr_app->original_path)
-		{
-			path = _r_obj_reference (ptr_app->original_path);
-		}
+		path = _app_getappname (ptr_app);
 
 		_r_obj_dereference (ptr_app);
+	}
+	else
+	{
+		path = NULL;
 	}
 
 	date_string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
@@ -200,7 +182,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 							   local_port_string->buffer,
 							   _r_obj_getstringordefault (ptr_log->remote_addr_str, SZ_EMPTY),
 							   remote_port_string->buffer,
-							   _app_getprotoname (ptr_log->protocol, ptr_log->af, SZ_UNKNOWN),
+							   _r_obj_getstringordefault (ptr_log->protocol_str, SZ_DIRECTION_ANY),
 							   _r_obj_getstringorempty (ptr_log->provider_name),
 							   _r_obj_getstringorempty (ptr_log->filter_name),
 							   ptr_log->filter_id,
@@ -322,6 +304,7 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	if (!hfwpuclnt)
 	{
 		_r_log (LOG_LEVEL_WARNING, NULL, L"LoadLibraryEx", GetLastError (), L"fwpuclnt.dll");
+
 		return;
 	}
 
@@ -463,16 +446,12 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 			}
 
 			if (ptr_filter->weight.type == FWP_UINT8)
-			{
 				filter_weight = ptr_filter->weight.uint8;
-			}
 
 			if (ptr_filter->providerKey)
 			{
 				if (IsEqualGUID (ptr_filter->providerKey, &GUID_WfpProvider))
-				{
 					is_myprovider = TRUE;
-				}
 
 				if (FwpmProviderGetByKey (engine_handle, ptr_filter->providerKey, &ptr_provider) == ERROR_SUCCESS && ptr_provider)
 				{
@@ -489,23 +468,18 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		}
 
 		if (ptr_filter)
-		{
 			FwpmFreeMemory ((PVOID_PTR)&ptr_filter);
-		}
 
 		if (ptr_provider)
-		{
 			FwpmFreeMemory ((PVOID_PTR)&ptr_provider);
-		}
 
 		// prevent filter "not found" items
 		if (!filter_name && !provider_name)
-		{
 			return;
-		}
 	}
 
 	PITEM_LOG ptr_log;
+	PR_STRING sid_string;
 
 	ptr_log = _r_obj_allocate (sizeof (ITEM_LOG), &_app_dereferencelog);
 
@@ -514,7 +488,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		ptr_log->timestamp = _r_unixtime_from_filetime (log->timestamp);
 
 	// get package id (win8+)
-	PR_STRING sid_string = NULL;
+	sid_string = NULL;
 
 	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && log->package_id)
 	{
@@ -530,9 +504,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	// copy converted nt device path into win32
 	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && sid_string)
 	{
-		_r_obj_movereference (&ptr_log->path, sid_string);
-		sid_string = NULL;
-
+		_r_obj_swapreference (&ptr_log->path, sid_string);
 		ptr_log->app_hash = _r_obj_getstringhash (ptr_log->path, TRUE);
 	}
 	else if ((log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) && log->app_id)
@@ -603,7 +575,10 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 	// protocol
 	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
+	{
 		ptr_log->protocol = log->protocol;
+		ptr_log->protocol_str = _app_getprotoname (ptr_log->protocol, ptr_log->af, FALSE);
+	}
 
 	// indicates FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW state
 	ptr_log->is_allow = log->is_allow;
@@ -1234,18 +1209,14 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 			ptr_app = _app_getappitem (ptr_log->app_hash);
 
 			if (ptr_app)
-			{
 				_app_updatelistviewbylparam (hwnd, ptr_app->type, PR_UPDATE_TYPE);
-			}
 
 			_app_profile_save ();
 		}
 	}
 
 	if (!ptr_app)
-	{
 		ptr_app = _app_getappitem (ptr_log->app_hash);
-	}
 
 	is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
 	is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
@@ -1263,18 +1234,14 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 
 		// write log to a file
 		if (is_logenabled)
-		{
 			_app_logwrite (ptr_log);
-		}
 
 		// only for my own provider
 		if (ptr_log->is_myprovider)
 		{
 			// write log to a ui
 			if (is_loguienabled)
-			{
 				_app_logwrite_ui (hwnd, ptr_log);
-			}
 
 			// display notification
 			if (is_notificationenabled && ptr_app && !ptr_log->is_allow)
@@ -1282,9 +1249,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 				if (is_exludeblocklist)
 				{
 					if (!PtrToInt (_app_getappinfo (ptr_app, INFO_IS_SILENT)))
-					{
 						_app_notify_addobject (_r_obj_reference (ptr_log), ptr_app);
-					}
 				}
 			}
 		}
