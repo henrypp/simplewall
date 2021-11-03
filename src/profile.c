@@ -307,6 +307,8 @@ PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote
 	ptr_rule->protocol = protocol;
 	ptr_rule->af = af;
 
+	ptr_rule->protocol_str = _app_getprotoname (protocol, af, FALSE);
+
 	return ptr_rule;
 }
 
