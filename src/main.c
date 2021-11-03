@@ -2098,6 +2098,20 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			break;
 		}
 
+		case WM_THEMECHANGED:
+		{
+			LONG dpi_value;
+
+			dpi_value = _r_dc_getwindowdpi (hwnd);
+
+			_app_toolbar_resize (hwnd, dpi_value);
+
+			_app_listviewloadfont (dpi_value, TRUE);
+			_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+
+			break;
+		}
+
 		case WM_SETTINGCHANGE:
 		{
 			_r_wnd_changesettings (hwnd, wparam, lparam);
