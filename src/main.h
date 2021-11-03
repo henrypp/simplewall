@@ -276,54 +276,6 @@ typedef struct _PROFILE_DATA
 	ULONG_PTR my_hash;
 } PROFILE_DATA, *PPROFILE_DATA;
 
-typedef struct _ITEM_LOG
-{
-	union
-	{
-		IN_ADDR remote_addr;
-		IN6_ADDR remote_addr6;
-	} DUMMYUNIONNAME;
-
-	union
-	{
-		IN_ADDR local_addr;
-		IN6_ADDR local_addr6;
-	} DUMMYUNIONNAME2;
-
-	PR_STRING path;
-	PR_STRING provider_name;
-	PR_STRING filter_name;
-	PR_STRING username;
-	PR_STRING protocol_str;
-	PR_STRING local_addr_str;
-	PR_STRING remote_addr_str;
-
-	volatile PR_STRING local_host_str;
-	volatile PR_STRING remote_host_str;
-
-	LONG64 timestamp;
-
-	UINT64 filter_id;
-
-	ULONG_PTR app_hash;
-
-	FWP_DIRECTION direction;
-
-	ADDRESS_FAMILY af;
-
-	UINT16 remote_port;
-	UINT16 local_port;
-
-	UINT8 protocol;
-
-	BOOLEAN is_allow;
-	BOOLEAN is_loopback;
-	BOOLEAN is_blocklist;
-	BOOLEAN is_custom;
-	BOOLEAN is_system;
-	BOOLEAN is_myprovider;
-} ITEM_LOG, *PITEM_LOG;
-
 typedef struct _ITEM_APP
 {
 	PR_ARRAY guids;
@@ -333,7 +285,7 @@ typedef struct _ITEM_APP
 	PR_STRING short_name;
 	PR_STRING real_path;
 
-	PITEM_LOG notification;
+	PVOID notification; // PITEM_LOG
 	PR_BYTE bytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
 
 	PTP_TIMER htimer;
@@ -466,6 +418,55 @@ typedef struct _ITEM_NETWORK
 
 	BOOLEAN is_connection;
 } ITEM_NETWORK, *PITEM_NETWORK;
+
+typedef struct _ITEM_LOG
+{
+	union
+	{
+		IN_ADDR remote_addr;
+		IN6_ADDR remote_addr6;
+	} DUMMYUNIONNAME;
+
+	union
+	{
+		IN_ADDR local_addr;
+		IN6_ADDR local_addr6;
+	} DUMMYUNIONNAME2;
+
+	PR_STRING path;
+	PR_STRING provider_name;
+	PR_STRING filter_name;
+	PR_STRING username;
+	PR_STRING protocol_str;
+
+	volatile PR_STRING local_addr_str;
+	volatile PR_STRING remote_addr_str;
+
+	volatile PR_STRING local_host_str;
+	volatile PR_STRING remote_host_str;
+
+	LONG64 timestamp;
+
+	UINT64 filter_id;
+
+	ULONG_PTR app_hash;
+
+	FWP_DIRECTION direction;
+
+	ADDRESS_FAMILY af;
+
+	UINT16 remote_port;
+	UINT16 local_port;
+
+	UINT8 protocol;
+
+	BOOLEAN is_allow;
+	BOOLEAN is_loopback;
+	BOOLEAN is_blocklist;
+	BOOLEAN is_custom;
+	BOOLEAN is_system;
+	BOOLEAN is_myprovider;
+} ITEM_LOG, *PITEM_LOG;
 
 typedef struct _ITEM_STATUS
 {
