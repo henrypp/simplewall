@@ -650,7 +650,7 @@ BEGIN
 
 	IDS_CONFIRMEXIT_CHK "Show confirmation dialog on exit"
 	IDS_CONFIRMEXITTIMER_CHK "Show confirmation dialog on exit when timers are active"
-	IDS_CONFIRMDELETE_CHK "Confirm when deleting applications"
+	IDS_CONFIRMDELETE_CHK ""
 	IDS_CONFIRMLOGCLEAR_CHK "Confirm when clearing the log file"
 
 	IDS_COLORS_HINT "Double-click an item to change it."
