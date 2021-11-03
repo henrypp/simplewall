@@ -120,7 +120,6 @@ typedef enum _ENUM_INFO_DATA2
 #define SUBLAYER_WEIGHT_DEFAULT 0xFFFE
 
 #define DIVIDER_COPY L", "
-#define DIVIDER_CSV L","
 #define DIVIDER_APP L"|"
 #define DIVIDER_RULE L";"
 #define DIVIDER_RULE_RANGE L'-'
@@ -145,8 +144,8 @@ typedef enum _ENUM_INFO_DATA2
 #define SZ_DIRECTION_ANY L"Any"
 #define SZ_DIRECTION_LOOPBACK L"Loopback"
 
-#define SZ_LOG_TITLE L"Date" DIVIDER_CSV L"User" DIVIDER_CSV L"Path" DIVIDER_CSV L"Address (" SZ_DIRECTION_LOCAL L")" DIVIDER_CSV L"Port (" SZ_DIRECTION_LOCAL L")" DIVIDER_CSV L"Address (" SZ_DIRECTION_REMOTE L")" DIVIDER_CSV L"Port (" SZ_DIRECTION_REMOTE L")" DIVIDER_CSV L"Protocol" DIVIDER_CSV L"Filter name" DIVIDER_CSV L"Filter ID" DIVIDER_CSV L"Direction" DIVIDER_CSV L"State\r\n"
-#define SZ_LOG_BODY L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\\%s\"" DIVIDER_CSV L"\"#%" TEXT (PRIu64) L"\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"\r\n"
+#define SZ_LOG_TITLE L"Date,Username,Path,Address (" SZ_DIRECTION_LOCAL L"),Port (" SZ_DIRECTION_LOCAL L"),Address (" SZ_DIRECTION_REMOTE L"),Port (" SZ_DIRECTION_REMOTE L"),Protocol,Filter name,Filter ID,Direction,State\r\n"
+#define SZ_LOG_BODY L"\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"#%" TEXT (PRIu64) L"\",\"%s\",\"%s\"\r\n"
 
 #define BACKUP_HOURS_PERIOD _r_calc_hours2seconds (4) // make backup every X hour(s) (default)
 
@@ -434,7 +433,6 @@ typedef struct _ITEM_LOG
 	} DUMMYUNIONNAME2;
 
 	PR_STRING path;
-	PR_STRING provider_name;
 	PR_STRING filter_name;
 	PR_STRING username;
 	PR_STRING protocol_str;
@@ -575,6 +573,7 @@ typedef struct _ITEM_LOG_CALLBACK
 	UINT16 local_port;
 	UINT16 layer_id;
 	UINT8 protocol;
+
 	BOOLEAN is_allow;
 	BOOLEAN is_loopback;
 } ITEM_LOG_CALLBACK, *PITEM_LOG_CALLBACK;
