@@ -454,9 +454,6 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 
 		case CDDS_ITEMPREPAINT:
 		{
-			if (lpnmlv->dwItemType != LVCDI_ITEM)
-				return CDRF_DODEFAULT;
-
 			ctrl_id = (INT)(INT_PTR)lpnmlv->nmcd.hdr.idFrom;
 
 			if (ctrl_id == IDC_TOOLBAR)
@@ -471,8 +468,10 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 
 				if ((tbi.fsState & TBSTATE_ENABLED) == 0)
 				{
-					INT icon_size_x = 0;
-					INT icon_size_y = 0;
+					HIMAGELIST himglist;
+					ULONG padding;
+					INT icon_size_x;
+					INT icon_size_y;
 
 					_r_dc_fixwindowfont (lpnmlv->nmcd.hdc, lpnmlv->nmcd.hdr.hwndFrom); // fix
 
@@ -481,16 +480,14 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 
 					if (tbi.iImage != I_IMAGENONE)
 					{
-						HIMAGELIST himglist;
-						ULONG padding;
-						UINT rebar_height;
-
 						himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
 
 						if (himglist)
 						{
 							padding = (ULONG)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
-							rebar_height = (UINT)SendMessage (GetParent (lpnmlv->nmcd.hdr.hwndFrom), RB_GETBARHEIGHT, 0, 0);
+
+							icon_size_x = 0;
+							icon_size_y = 0;
 
 							ImageList_GetIconSize (himglist, &icon_size_x, &icon_size_y);
 
@@ -499,7 +496,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 								himglist,
 								tbi.iImage,
 								lpnmlv->nmcd.rc.left + (LOWORD (padding) / 2),
-								(rebar_height / 2) - (icon_size_y / 2),
+								lpnmlv->nmcd.rc.top + HIWORD (padding) / 2,
 								ILS_SATURATE, // grayscale
 								ILD_NORMAL | ILD_ASYNC
 							);
@@ -522,17 +519,31 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 			}
 			else
 			{
+				COLORREF new_clr;
+				ULONG_PTR index;
+				ULONG view_type;
+				BOOLEAN is_tableview;
+				BOOLEAN is_systemapp;
+				BOOLEAN is_validconnection;
+
+				if (lpnmlv->dwItemType != LVCDI_ITEM)
+					return CDRF_DODEFAULT;
+
+				if (!lpnmlv->nmcd.lItemlParam)
+					return CDRF_DODEFAULT;
+
 				if (!_r_config_getboolean (L"IsEnableHighlighting", TRUE))
 					return CDRF_DODEFAULT;
 
-				COLORREF new_clr = 0;
-				ULONG_PTR index;
-				ULONG view_type = _r_listview_getview (hwnd, ctrl_id);
-				BOOLEAN is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
-				BOOLEAN is_systemapp = FALSE;
-				BOOLEAN is_validconnection = FALSE;
+				new_clr = 0;
 
-				index = _app_getlistviewitemcontext (hwnd, ctrl_id, (INT)(INT_PTR)lpnmlv->nmcd.dwItemSpec);
+				view_type = _r_listview_getview (hwnd, ctrl_id);
+				is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
+
+				is_systemapp = FALSE;
+				is_validconnection = FALSE;
+
+				index = _app_getlistviewparam_id (lpnmlv->nmcd.lItemlParam);
 
 				if ((ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP) || ctrl_id == IDC_RULE_APPS_ID || ctrl_id == IDC_NETWORK || ctrl_id == IDC_LOG)
 				{
@@ -540,7 +551,9 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 
 					if (ctrl_id == IDC_NETWORK)
 					{
-						PITEM_NETWORK ptr_network = _app_getnetworkitem (index);
+						PITEM_NETWORK ptr_network;
+
+						ptr_network = _app_getnetworkitem (index);
 
 						if (ptr_network)
 						{
@@ -553,7 +566,9 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 					}
 					else if (ctrl_id == IDC_LOG)
 					{
-						PITEM_LOG ptr_log = _app_getlogitem (index);
+						PITEM_LOG ptr_log;
+
+						ptr_log = _app_getlogitem (index);
 
 						if (ptr_log)
 						{
@@ -581,9 +596,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 					}
 
 					if (app_hash)
-					{
 						new_clr = _app_getappcolor (ctrl_id, app_hash, is_systemapp, is_validconnection);
-					}
 				}
 				else if (ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_RULES_CUSTOM || ctrl_id == IDC_APP_RULES_ID)
 				{
@@ -591,12 +604,11 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 				}
 				else if (ctrl_id == IDC_COLORS)
 				{
-					PITEM_COLOR ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
+					PITEM_COLOR ptr_clr;
 
-					if (ptr_clr)
-					{
-						new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
-					}
+					ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
+
+					new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
 				}
 				else
 				{
