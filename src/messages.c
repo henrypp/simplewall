@@ -1004,8 +1004,10 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 
 			case 1:
 			{
-				if (ptr_log->local_addr_str)
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->local_addr_str->buffer);
+				string = InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
+
+				if (string)
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 
 				break;
 			}
@@ -1044,8 +1046,10 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 
 			case 4:
 			{
-				if (ptr_log->remote_addr_str)
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->remote_addr_str->buffer);
+				string = InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
+
+				if (string)
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 
 				break;
 			}
