@@ -117,6 +117,8 @@ HANDLE _wfp_getenginehandle ()
 
 			if (code != ERROR_SUCCESS || !new_handle)
 			{
+				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen", code, NULL);
+
 				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", code, NULL);
 
 				RtlExitUserProcess (STATUS_UNSUCCESSFUL);

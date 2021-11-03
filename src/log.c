@@ -369,10 +369,16 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 		goto CleanupExit;
 	}
 
+	if (code != ERROR_SUCCESS)
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", code, NULL);
+
 	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
 
 	if (current_handle)
-		FwpmNetEventUnsubscribe (engine_handle, new_handle);
+	{
+		if (new_handle)
+			FwpmNetEventUnsubscribe (engine_handle, new_handle);
+	}
 
 	// initialize log file
 	if (_r_config_getboolean (L"IsLogEnabled", FALSE))
