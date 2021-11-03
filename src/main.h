@@ -90,10 +90,6 @@ typedef enum _ENUM_INFO_DATA2
 	INFO_VERSION_STRING, // dereference required
 } ENUM_INFO_DATA2;
 
-// config
-#define LANG_MENU 5
-#define UID 1984 // if you want to keep a secret, you must also hide it from yourself.
-
 // v3.0.2: first major update, rule attribute "apps" now separated by "|"
 #define XML_PROFILE_VER_3 0x03
 
@@ -160,18 +156,26 @@ typedef enum _ENUM_INFO_DATA2
 #define TRANSACTION_TIMEOUT 9000
 #define NETWORK_TIMEOUT 3500
 
-// controls
-#define LV_HIDDEN_GROUP_ID 17
-#define STATUSBAR_PARTS_COUNT 3
+// ui
+#define LANG_MENU 5
+#define NOTIFICATIONS_ID 4
+#define LOGGING_ID 5
+#define ERRLOG_ID 6
 
 #define REBAR_TOOLBAR_ID 0
 #define REBAR_SEARCH_ID 1
+
+#define LV_HIDDEN_GROUP_ID 17
+
+#define STATUSBAR_PARTS_COUNT 3
 
 // notifications
 #define NOTIFY_TIMER_SAFETY_ID 666
 #define NOTIFY_TIMER_SAFETY_TIMEOUT 900
 
 #define NOTIFY_TIMEOUT_DEFAULT 60 // sec.
+
+#define NOTIFY_SOUND_NAME L"MailBeep"
 
 // default colors
 #define LV_COLOR_TIMER RGB(255, 190, 142)
@@ -290,10 +294,12 @@ typedef struct _ITEM_LOG
 	PR_STRING provider_name;
 	PR_STRING filter_name;
 	PR_STRING username;
+	PR_STRING protocol_str;
 	PR_STRING local_addr_str;
-	PR_STRING local_host_str;
 	PR_STRING remote_addr_str;
-	PR_STRING remote_host_str;
+
+	volatile PR_STRING local_host_str;
+	volatile PR_STRING remote_host_str;
 
 	LONG64 timestamp;
 
@@ -384,6 +390,7 @@ typedef struct _ITEM_RULE
 	PR_STRING name;
 	PR_STRING rule_remote;
 	PR_STRING rule_local;
+	PR_STRING protocol_str;
 
 	struct
 	{
@@ -436,18 +443,27 @@ typedef struct _ITEM_NETWORK
 	} DUMMYUNIONNAME2;
 
 	PR_STRING path;
-	PR_STRING local_addr_str;
-	PR_STRING local_host_str;
-	PR_STRING remote_addr_str;
-	PR_STRING remote_host_str;
+
+	volatile PR_STRING local_addr_str;
+	volatile PR_STRING remote_addr_str;
+
+	volatile PR_STRING local_host_str;
+	volatile PR_STRING remote_host_str;
+
+	PR_STRING protocol_str;
+
 	ULONG_PTR app_hash;
 	ULONG state;
+
 	FWP_DIRECTION direction;
 	ENUM_TYPE_DATA type;
 	ADDRESS_FAMILY af;
+
 	UINT16 remote_port;
 	UINT16 local_port;
+
 	UINT8 protocol;
+
 	BOOLEAN is_connection;
 } ITEM_NETWORK, *PITEM_NETWORK;
 
