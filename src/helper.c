@@ -52,8 +52,11 @@ VOID NTAPI _app_dereferencelog (_In_ PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->username);
 	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
 
-	SAFE_DELETE_REFERENCE (ptr_item->local_addr_str);
-	SAFE_DELETE_REFERENCE (ptr_item->remote_addr_str);
+	if (ptr_item->local_addr_str)
+		_r_obj_dereference (ptr_item->local_addr_str);
+
+	if (ptr_item->remote_addr_str)
+		_r_obj_dereference (ptr_item->remote_addr_str);
 
 	if (ptr_item->local_host_str)
 		_r_obj_dereference (ptr_item->local_host_str);
