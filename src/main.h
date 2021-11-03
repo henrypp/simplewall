@@ -153,7 +153,6 @@ typedef enum _ENUM_INFO_DATA2
 #define SZ_LOG_BODY L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\\%s\"" DIVIDER_CSV L"\"#%" TEXT (PRIu64) L"\"" DIVIDER_CSV L"\"%s\"" DIVIDER_CSV L"\"%s\"\r\n"
 
 #define BACKUP_HOURS_PERIOD _r_calc_hours2seconds (4) // make backup every X hour(s) (default)
-#define UI_STATUSBAR_PARTS_COUNT 3
 
 #define LEN_IP_MAX 68
 #define MAP_CACHE_MAX 900 // limit for caching hashtable
@@ -161,8 +160,12 @@ typedef enum _ENUM_INFO_DATA2
 #define TRANSACTION_TIMEOUT 9000
 #define NETWORK_TIMEOUT 3500
 
-// search
+// controls
 #define LV_HIDDEN_GROUP_ID 17
+#define STATUSBAR_PARTS_COUNT 3
+
+#define REBAR_TOOLBAR_ID 0
+#define REBAR_SEARCH_ID 1
 
 // notifications
 #define NOTIFY_TIMER_SAFETY_ID 666
@@ -466,24 +469,6 @@ typedef struct _ITEM_CONTEXT
 
 	union
 	{
-		struct
-		{
-			union
-			{
-				PITEM_APP ptr_app;
-				PITEM_RULE ptr_rule;
-			} DUMMYUNIONNAME;
-
-			INT page_id;
-			BOOLEAN is_settorules;
-		} DUMMYSTRUCTNAME;
-
-		struct
-		{
-			INT item_id;
-			INT current_length;
-		} DUMMYSTRUCTNAME2;
-
 		struct
 		{
 			union
