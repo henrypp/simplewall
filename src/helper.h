@@ -68,7 +68,7 @@ BOOLEAN _app_isappsigned (_In_ ULONG_PTR app_hash);
 BOOLEAN _app_isappvalidbinary (_In_ ENUM_TYPE_DATA type, _In_ PR_STRING path);
 BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path);
 
-ICON_INFORMATION _app_getdefaulticons ();
+PICON_INFORMATION _app_getdefaulticons ();
 
 _Ret_maybenull_
 HICON _app_getdefaultapphicon ();

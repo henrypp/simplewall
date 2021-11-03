@@ -451,7 +451,7 @@ BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path)
 	return TRUE;
 }
 
-ICON_INFORMATION _app_getdefaulticons ()
+PICON_INFORMATION _app_getdefaulticons ()
 {
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static ICON_INFORMATION icon_info = {0};
@@ -478,44 +478,44 @@ ICON_INFORMATION _app_getdefaulticons ()
 		_r_initonce_end (&init_once);
 	}
 
-	return icon_info;
+	return &icon_info;
 }
 
 _Ret_maybenull_
 HICON _app_getdefaultapphicon ()
 {
-	ICON_INFORMATION icon_info;
+	PICON_INFORMATION icon_info;
 
 	icon_info = _app_getdefaulticons ();
 
-	if (icon_info.app_hicon)
-		return CopyIcon (icon_info.app_hicon);
+	if (icon_info->app_hicon)
+		return CopyIcon (icon_info->app_hicon);
 
 	return NULL;
 }
 
 LONG _app_getdefaultappicon_id ()
 {
-	ICON_INFORMATION icon_info;
+	PICON_INFORMATION icon_info;
 
 	icon_info = _app_getdefaulticons ();
 
-	return icon_info.app_icon_id;
+	return icon_info->app_icon_id;
 }
 
 LONG _app_getdefaultuwpicon_id ()
 {
-	ICON_INFORMATION icon_info;
+	PICON_INFORMATION icon_info;
 
 	icon_info = _app_getdefaulticons ();
 
-	return icon_info.uwp_icon_id;
+	return icon_info->uwp_icon_id;
 }
 
 VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon, _In_ BOOLEAN is_loaddefaults)
 {
 	SHFILEINFO shfi = {0};
-	ICON_INFORMATION icon_info;
+	PICON_INFORMATION icon_info;
 	UINT flags;
 
 	flags = SHGFI_LARGEICON;
@@ -545,13 +545,13 @@ VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ 
 		icon_info = _app_getdefaulticons ();
 
 		if (icon_id)
-			*icon_id = icon_info.app_icon_id;
+			*icon_id = icon_info->app_icon_id;
 
 		if (hicon)
 		{
-			if (icon_info.app_hicon)
+			if (icon_info->app_hicon)
 			{
-				*hicon = CopyIcon (icon_info.app_hicon);
+				*hicon = CopyIcon (icon_info->app_hicon);
 			}
 			else
 			{
@@ -570,7 +570,7 @@ VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ 
 		*hicon = NULL;
 }
 
-static HICON _app_setdefaulticons (_In_ ENUM_TYPE_DATA type, _In_ PICON_INFORMATION icon_info)
+HICON _app_setdefaulticons (_In_ ENUM_TYPE_DATA type, _In_ PICON_INFORMATION icon_info)
 {
 	if (type == DATA_APP_UWP)
 	{
@@ -586,7 +586,7 @@ static HICON _app_setdefaulticons (_In_ ENUM_TYPE_DATA type, _In_ PICON_INFORMAT
 
 HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 {
-	ICON_INFORMATION icon_info;
+	PICON_INFORMATION icon_info;
 	PITEM_APP ptr_app;
 	HICON hicon;
 	LONG icon_id;
@@ -597,8 +597,8 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 
 	if (!ptr_app)
 	{
-		if (icon_info.app_hicon)
-			return CopyIcon (icon_info.app_hicon);
+		if (icon_info->app_hicon)
+			return CopyIcon (icon_info->app_hicon);
 
 		return NULL;
 	}
@@ -607,7 +607,7 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 
 	if (!ptr_app->real_path || is_iconshidded || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
 	{
-		hicon = _app_setdefaulticons (ptr_app->type, &icon_info);
+		hicon = _app_setdefaulticons (ptr_app->type, icon_info);
 
 		_r_obj_dereference (ptr_app);
 
@@ -616,12 +616,12 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 
 	_app_loadfileicon (ptr_app->real_path, &icon_id, &hicon, TRUE);
 
-	if (!icon_id || (ptr_app->type == DATA_APP_UWP && icon_id == icon_info.app_icon_id))
+	if (!icon_id || (ptr_app->type == DATA_APP_UWP && icon_id == icon_info->app_icon_id))
 	{
 		if (hicon)
 			DestroyIcon (hicon);
 
-		hicon = _app_setdefaulticons (ptr_app->type, &icon_info);
+		hicon = _app_setdefaulticons (ptr_app->type, icon_info);
 	}
 
 	_r_obj_dereference (ptr_app);
@@ -2513,7 +2513,7 @@ VOID _app_generate_packages ()
 
 									// use registry key name as fallback package name
 									if (_r_obj_isstringempty (display_name))
-										_r_obj_movereference (&display_name, _r_obj_reference (key_name));
+										_r_obj_swapreference (&display_name, key_name);
 
 									real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
 
@@ -3360,7 +3360,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 		{
 			host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
 
-			_r_obj_swapreference (&context->ptr_log->remote_host_str, host_str);
+			InterlockedCompareExchangePointer (&context->ptr_log->remote_host_str, host_str, NULL);
 		}
 	}
 	else
