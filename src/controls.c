@@ -1254,7 +1254,7 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 			config.hsearchbar,
 			RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON,
 			_r_dc_getdpi (180, dpi_value),
-			_r_dc_getdpi (22, dpi_value)
+			20
 		);
 	}
 }
@@ -1295,7 +1295,7 @@ VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 		{
 			rbi.cxIdeal = (UINT)_r_dc_getdpi (180, dpi_value);
 			rbi.cxMinChild = rbi.cxIdeal;
-			rbi.cyMinChild = _r_dc_getdpi (22, dpi_value);
+			rbi.cyMinChild = 20;
 		}
 		else
 		{
