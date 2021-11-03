@@ -459,63 +459,64 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 			if (ctrl_id == IDC_TOOLBAR)
 			{
 				TBBUTTONINFO tbi = {0};
+				HIMAGELIST himglist;
+				ULONG padding;
+				ULONG button_size;
+				INT icon_size_x;
+				INT icon_size_y;
 
 				tbi.cbSize = sizeof (tbi);
 				tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
 
-				if ((INT)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi) == -1)
-					break;
+				if (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi) == -1)
+					return CDRF_DODEFAULT;
 
-				if ((tbi.fsState & TBSTATE_ENABLED) == 0)
+				if ((tbi.fsState & TBSTATE_ENABLED) != 0)
+					return CDRF_DODEFAULT;
+
+				himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
+
+				if (!himglist)
+					return CDRF_DODEFAULT;
+
+				if (!ImageList_GetIconSize (himglist, &icon_size_x, &icon_size_y))
+					return CDRF_DODEFAULT;
+
+				_r_dc_fixwindowfont (lpnmlv->nmcd.hdc, lpnmlv->nmcd.hdr.hwndFrom); // fix
+
+				SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
+				SetTextColor (lpnmlv->nmcd.hdc, GetSysColor (COLOR_GRAYTEXT));
+
+				// draw image
+				if (tbi.iImage != I_IMAGENONE)
 				{
-					HIMAGELIST himglist;
-					ULONG padding;
-					INT icon_size_x;
-					INT icon_size_y;
+					padding = (ULONG)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
+					button_size = (ULONG)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONSIZE, 0, 0);
 
-					_r_dc_fixwindowfont (lpnmlv->nmcd.hdc, lpnmlv->nmcd.hdr.hwndFrom); // fix
+					_r_dc_drawimagelisticon (
+						lpnmlv->nmcd.hdc,
+						himglist,
+						tbi.iImage,
+						lpnmlv->nmcd.rc.left + (LOWORD (padding) / 2),
+						(HIWORD (button_size) / 2) - (icon_size_y / 2),
+						ILS_SATURATE, // grayscale
+						ILD_NORMAL | ILD_ASYNC
+					);
+				}
 
-					SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
-					SetTextColor (lpnmlv->nmcd.hdc, GetSysColor (COLOR_GRAYTEXT));
+				// draw text
+				if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
+				{
+					WCHAR text[128] = {0};
+					SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
 
 					if (tbi.iImage != I_IMAGENONE)
-					{
-						himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
+						lpnmlv->nmcd.rc.left += icon_size_x;
 
-						if (himglist)
-						{
-							padding = (ULONG)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
-
-							icon_size_x = 0;
-							icon_size_y = 0;
-
-							ImageList_GetIconSize (himglist, &icon_size_x, &icon_size_y);
-
-							_r_dc_drawimagelisticon (
-								lpnmlv->nmcd.hdc,
-								himglist,
-								tbi.iImage,
-								lpnmlv->nmcd.rc.left + (LOWORD (padding) / 2),
-								lpnmlv->nmcd.rc.top + HIWORD (padding) / 2,
-								ILS_SATURATE, // grayscale
-								ILD_NORMAL | ILD_ASYNC
-							);
-						}
-					}
-
-					if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
-					{
-						WCHAR text[128] = {0};
-						SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
-
-						if (tbi.iImage != I_IMAGENONE)
-							lpnmlv->nmcd.rc.left += icon_size_x;
-
-						DrawTextEx (lpnmlv->nmcd.hdc, text, (INT)_r_str_getlength (text), &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, NULL);
-					}
-
-					return CDRF_SKIPDEFAULT;
+					DrawTextEx (lpnmlv->nmcd.hdc, text, (INT)_r_str_getlength (text), &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, NULL);
 				}
+
+				return CDRF_SKIPDEFAULT;
 			}
 			else
 			{
