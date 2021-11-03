@@ -216,14 +216,11 @@ BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _
 
 BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _Inout_ PITEM_LISTVIEW_CONTEXT context, _In_opt_ PR_STRING search_string)
 {
-	PR_STRING string;
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
 	PITEM_NETWORK ptr_network;
 	PITEM_LOG ptr_log;
 	BOOLEAN is_changed;
-
-	string = NULL;
 
 	ptr_app = NULL;
 	ptr_rule = NULL;
@@ -292,6 +289,12 @@ BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ 
 				if (_app_search_isstringfound (ptr_rule->rule_local, search_string, context, &is_changed))
 					goto CleanupExit;
 			}
+
+			if (ptr_rule->protocol_str)
+			{
+				if (_app_search_isstringfound (ptr_rule->protocol_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 		}
 	}
 	else if (listview_id == IDC_NETWORK)
@@ -327,6 +330,12 @@ BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ 
 			if (ptr_network->local_host_str)
 			{
 				if (_app_search_isstringfound (ptr_network->local_host_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_network->protocol_str)
+			{
+				if (_app_search_isstringfound (ptr_network->protocol_str, search_string, context, &is_changed))
 					goto CleanupExit;
 			}
 		}
@@ -384,17 +393,16 @@ BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ 
 				if (_app_search_isstringfound (ptr_log->local_host_str, search_string, context, &is_changed))
 					goto CleanupExit;
 			}
+
+			if (ptr_log->protocol_str)
+			{
+				if (_app_search_isstringfound (ptr_log->protocol_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 		}
 	}
 
-	string = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
-
-	_app_search_isstringfound (string, search_string, context, &is_changed);
-
 CleanupExit:
-
-	if (string)
-		_r_obj_dereference (string);
 
 	if (ptr_app)
 		_r_obj_dereference (ptr_app);
