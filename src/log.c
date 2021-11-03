@@ -53,15 +53,16 @@ ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	PR_STRING log_string;
 	ULONG_PTR log_hash;
 
-	log_string = _r_format_string (L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG_PTR) L"_%" TEXT (PRIu8) L"_%" TEXT (PRIu8) L"_%" TEXT (PRIu16) L"_%" TEXT (PRIu16) L"_%s_%s",
-								   ptr_log->af,
-								   ptr_log->app_hash,
-								   ptr_log->protocol,
-								   ptr_log->direction,
-								   ptr_log->local_port,
-								   ptr_log->remote_port,
-								   _r_obj_getstring (ptr_log->local_addr_str),
-								   _r_obj_getstring (ptr_log->remote_addr_str)
+	log_string = _r_format_string (
+		L"log-hash:%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG_PTR) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu16) L"-%" TEXT (PRIu16) L"-%s-%s",
+		ptr_log->af,
+		ptr_log->app_hash,
+		ptr_log->protocol,
+		ptr_log->direction,
+		ptr_log->local_port,
+		ptr_log->remote_port,
+		_r_obj_getstring (ptr_log->local_addr_str),
+		_r_obj_getstring (ptr_log->remote_addr_str)
 	);
 
 	log_hash = _r_obj_getstringhash (log_string, TRUE);
