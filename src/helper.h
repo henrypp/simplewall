@@ -52,6 +52,8 @@ PR_STRING _app_formatarpa (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
 _Ret_maybenull_
 PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPCVOID address, _In_opt_ UINT16 port, _In_ ULONG flags);
 
+VOID _app_formataddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
+
 _Success_ (return)
 BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty);
 
@@ -80,6 +82,7 @@ VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ 
 HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash);
 
 LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened);
+PR_STRING _app_getappname (_In_ PITEM_APP ptr_app);
 
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info);
 VOID _app_getfilesignatureinfo (_Inout_ PITEM_APP_INFO ptr_app_info);
@@ -88,8 +91,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info);
 _Ret_maybenull_
 LPCWSTR _app_getservicename (_In_ UINT16 port, _In_ UINT8 proto, _In_opt_ LPCWSTR default_value);
 
-_Ret_maybenull_
-LPCWSTR _app_getprotoname (_In_ ULONG proto, _In_ ADDRESS_FAMILY af, _In_opt_ LPCWSTR default_value);
+PR_STRING _app_getprotoname (_In_ ULONG proto, _In_ ADDRESS_FAMILY af, _In_ BOOLEAN is_notnull);
 
 _Ret_maybenull_
 LPCWSTR _app_getconnectionstatusname (_In_ ULONG state);
@@ -120,6 +122,8 @@ BOOLEAN _app_parserulestring (_In_opt_ PR_STRINGREF rule, _Out_opt_ PITEM_ADDRES
 
 _Ret_maybenull_
 PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
+
+PR_STRING _app_resolveaddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _In_ BOOLEAN is_resolutionenabled);
 
 VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type, _In_ INT listview_id);
 

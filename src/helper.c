@@ -32,12 +32,12 @@ VOID NTAPI _app_dereferenceappinfo (_In_ PVOID entry)
 
 VOID NTAPI _app_dereferenceruleconfig (_In_ PVOID entry)
 {
-	PITEM_RULE_CONFIG ptr_rule_config;
+	PITEM_RULE_CONFIG ptr_item;
 
-	ptr_rule_config = entry;
+	ptr_item = entry;
 
-	SAFE_DELETE_REFERENCE (ptr_rule_config->name);
-	SAFE_DELETE_REFERENCE (ptr_rule_config->apps);
+	SAFE_DELETE_REFERENCE (ptr_item->name);
+	SAFE_DELETE_REFERENCE (ptr_item->apps);
 }
 
 VOID NTAPI _app_dereferencelog (_In_ PVOID entry)
@@ -50,25 +50,38 @@ VOID NTAPI _app_dereferencelog (_In_ PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->provider_name);
 	SAFE_DELETE_REFERENCE (ptr_item->filter_name);
 	SAFE_DELETE_REFERENCE (ptr_item->username);
+	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
 
 	SAFE_DELETE_REFERENCE (ptr_item->local_addr_str);
-	SAFE_DELETE_REFERENCE (ptr_item->local_host_str);
 	SAFE_DELETE_REFERENCE (ptr_item->remote_addr_str);
-	SAFE_DELETE_REFERENCE (ptr_item->remote_host_str);
+
+	if (ptr_item->local_host_str)
+		_r_obj_dereference (ptr_item->local_host_str);
+
+	if (ptr_item->remote_host_str)
+		_r_obj_dereference (ptr_item->remote_host_str);
 }
 
 VOID NTAPI _app_dereferencenetwork (_In_ PVOID entry)
 {
-	PITEM_NETWORK ptr_network;
+	PITEM_NETWORK ptr_item;
 
-	ptr_network = entry;
+	ptr_item = entry;
 
-	SAFE_DELETE_REFERENCE (ptr_network->path);
+	SAFE_DELETE_REFERENCE (ptr_item->path);
+	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
 
-	SAFE_DELETE_REFERENCE (ptr_network->local_addr_str);
-	SAFE_DELETE_REFERENCE (ptr_network->local_host_str);
-	SAFE_DELETE_REFERENCE (ptr_network->remote_addr_str);
-	SAFE_DELETE_REFERENCE (ptr_network->remote_host_str);
+	if (ptr_item->local_addr_str)
+		_r_obj_dereference (ptr_item->local_addr_str);
+
+	if (ptr_item->remote_addr_str)
+		_r_obj_dereference (ptr_item->remote_addr_str);
+
+	if (ptr_item->local_host_str)
+		_r_obj_dereference (ptr_item->local_host_str);
+
+	if (ptr_item->remote_host_str)
+		_r_obj_dereference (ptr_item->remote_host_str);
 }
 
 VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
@@ -82,6 +95,7 @@ VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->name);
 	SAFE_DELETE_REFERENCE (ptr_item->rule_remote);
 	SAFE_DELETE_REFERENCE (ptr_item->rule_local);
+	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
 
 	SAFE_DELETE_REFERENCE (ptr_item->guids);
 }
@@ -203,6 +217,7 @@ PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPC
 {
 	WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH];
 	R_STRINGBUILDER formatted_address;
+	PR_STRING string;
 	BOOLEAN is_success;
 
 	_r_obj_initializestringbuilder (&formatted_address);
@@ -211,7 +226,15 @@ PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPC
 
 	if ((flags & FMTADDR_USE_PROTOCOL))
 	{
-		_r_obj_appendstringbuilderformat (&formatted_address, L"%s://", _app_getprotoname (proto, AF_UNSPEC, SZ_UNKNOWN));
+		string = _app_getprotoname (proto, af, FALSE);
+
+		if (string)
+		{
+			_r_obj_appendstringbuilder2 (&formatted_address, string);
+			_r_obj_appendstringbuilder (&formatted_address, L"://");
+
+			_r_obj_dereference (string);
+		}
 	}
 
 	if (_app_formatip (af, address, addr_str, RTL_NUMBER_OF (addr_str), !!(flags & FMTADDR_AS_RULE)))
@@ -240,6 +263,27 @@ PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPC
 	_r_obj_deletestringbuilder (&formatted_address);
 
 	return NULL;
+}
+
+VOID _app_formataddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
+{
+	PR_STRING current_string;
+	PR_STRING new_string;
+
+	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
+
+	if (current_string)
+		return;
+
+	new_string = _app_formataddress (af, 0, address, 0, 0);
+
+	if (!new_string)
+		return;
+
+	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
+
+	if (current_string)
+		_r_obj_dereference (new_string);
 }
 
 _Success_ (return)
@@ -661,6 +705,26 @@ LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortene
 	}
 
 	return ptr_app->real_path ? ptr_app->real_path->buffer : NULL;
+}
+
+PR_STRING _app_getappname (_In_ PITEM_APP ptr_app)
+{
+	if (ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE)
+	{
+		if (ptr_app->real_path)
+			return _r_obj_reference (ptr_app->real_path);
+
+		if (ptr_app->display_name)
+			return _r_obj_reference (ptr_app->display_name);
+	}
+
+	if (ptr_app->original_path)
+		return _r_obj_reference (ptr_app->original_path);
+
+	if (ptr_app->real_path)
+		return _r_obj_reference (ptr_app->real_path);
+
+	return NULL;
 }
 
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info)
@@ -1775,82 +1839,88 @@ LPCWSTR _app_getservicename (_In_ UINT16 port, _In_ UINT8 proto, _In_opt_ LPCWST
 	return default_value;
 }
 
-_Ret_maybenull_
-LPCWSTR _app_getprotoname (_In_ ULONG proto, _In_ ADDRESS_FAMILY af, _In_opt_ LPCWSTR default_value)
+PR_STRING _app_getprotoname (_In_ ULONG proto, _In_ ADDRESS_FAMILY af, _In_ BOOLEAN is_notnull)
 {
+	static R_STRINGREF unknown_sr = PR_STRINGREF_INIT (SZ_UNKNOWN);
+
 	switch (proto)
 	{
+		// NOTE: this is used for "any" protocol
 		case IPPROTO_HOPOPTS:
-			return L"hopopt";
+			//return L"hopopt";
+			break;
 
 		case IPPROTO_ICMP:
-			return L"icmp";
+			return _r_obj_createstring (L"icmp");
 
 		case IPPROTO_IGMP:
-			return L"igmp";
+			return _r_obj_createstring (L"igmp");
 
 		case IPPROTO_GGP:
-			return L"ggp";
+			return _r_obj_createstring (L"ggp");
 
 		case IPPROTO_IPV4:
-			return L"ipv4";
+			return _r_obj_createstring (L"ipv4");
 
 		case IPPROTO_ST:
-			return L"st";
+			return _r_obj_createstring (L"st");
 
 		case IPPROTO_TCP:
-			return ((af == AF_INET6) ? L"tcp6" : L"tcp");
+			return _r_obj_createstring (((af == AF_INET6) ? L"tcp6" : L"tcp"));
 
 		case IPPROTO_CBT:
-			return L"cbt";
+			return _r_obj_createstring (L"cbt");
 
 		case IPPROTO_EGP:
-			return L"egp";
+			return _r_obj_createstring (L"egp");
 
 		case IPPROTO_IGP:
-			return L"igp";
+			return _r_obj_createstring (L"igp");
 
 		case IPPROTO_PUP:
-			return L"pup";
+			return _r_obj_createstring (L"pup");
 
 		case IPPROTO_UDP:
-			return ((af == AF_INET6) ? L"udp6" : L"udp");
+			return _r_obj_createstring (((af == AF_INET6) ? L"udp6" : L"udp"));
 
 		case IPPROTO_IDP:
-			return L"xns-idp";
+			return _r_obj_createstring (L"xns-idp");
 
 		case IPPROTO_RDP:
-			return L"rdp";
+			return _r_obj_createstring (L"rdp");
 
 		case IPPROTO_IPV6:
-			return L"ipv6";
+			return _r_obj_createstring (L"ipv6");
 
 		case IPPROTO_ROUTING:
-			return L"ipv6-route";
+			return _r_obj_createstring (L"ipv6-route");
 
 		case IPPROTO_FRAGMENT:
-			return L"ipv6-frag";
+			return _r_obj_createstring (L"ipv6-frag");
 
 		case IPPROTO_ESP:
-			return L"esp";
+			return _r_obj_createstring (L"esp");
 
 		case IPPROTO_AH:
-			return L"ah";
+			return _r_obj_createstring (L"ah");
 
 		case IPPROTO_ICMPV6:
-			return L"ipv6-icmp";
+			return _r_obj_createstring (L"ipv6-icmp");
 
 		case IPPROTO_DSTOPTS:
-			return L"ipv6-opts";
+			return _r_obj_createstring (L"ipv6-opts");
 
 		case IPPROTO_L2TP:
-			return L"l2tp";
+			return _r_obj_createstring (L"l2tp");
 
 		case IPPROTO_SCTP:
-			return L"sctp";
+			return _r_obj_createstring (L"sctp");
 	}
 
-	return default_value;
+	if (is_notnull)
+		return _r_obj_createstring3 (&unknown_sr);
+
+	return NULL;
 }
 
 _Ret_maybenull_
@@ -2156,6 +2226,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
+				ptr_network->protocol_str = _app_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
 
 				ptr_network->remote_addr.S_un.S_addr = tcp4_table->table[i].dwRemoteAddr;
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp4_table->table[i].dwRemotePort);
@@ -2217,6 +2288,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
+				ptr_network->protocol_str = _app_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
 
 				RtlCopyMemory (ptr_network->remote_addr6.u.Byte, tcp6_table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp6_table->table[i].dwRemotePort);
@@ -2281,6 +2353,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
+				ptr_network->protocol_str = _app_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
 
 				ptr_network->local_addr.S_un.S_addr = udp4_table->table[i].dwLocalAddr;
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)udp4_table->table[i].dwLocalPort);
@@ -2334,6 +2407,7 @@ VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HAS
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;
+				ptr_network->protocol_str = _app_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
 
 				RtlCopyMemory (ptr_network->local_addr6.u.Byte, udp6_table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)udp6_table->table[i].dwLocalPort);
@@ -3249,6 +3323,42 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 	return string;
 }
 
+PR_STRING _app_resolveaddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _In_ BOOLEAN is_resolutionenabled)
+{
+	PR_STRING current_string;
+	PR_STRING new_string;
+
+	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
+
+	if (current_string)
+		return current_string;
+
+	if (is_resolutionenabled)
+	{
+		new_string = _app_resolveaddress (af, address);
+
+		if (!new_string)
+			new_string = _r_obj_referenceemptystring ();
+	}
+	else
+	{
+		new_string = _r_obj_referenceemptystring ();
+	}
+
+	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
+
+	if (!current_string)
+	{
+		current_string = new_string;
+	}
+	else
+	{
+		_r_obj_dereference (new_string);
+	}
+
+	return current_string;
+}
+
 VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type, _In_ INT listview_id)
 {
 	PITEM_APP_INFO ptr_app_info;
@@ -3335,7 +3445,6 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 {
 	PITEM_CONTEXT context;
 	PITEM_APP_INFO ptr_app_info;
-	PR_STRING current_host;
 	PR_STRING host_str;
 	PR_STRING signature_str;
 	PR_STRING localized_string;
@@ -3345,27 +3454,17 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 	context = arglist;
 
 	signature_str = NULL;
+	host_str = NULL;
+
 	is_iconset = FALSE;
 
 	// query notification host name
 	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 	{
-		current_host = InterlockedCompareExchangePointer (&context->ptr_log->remote_host_str, NULL, NULL);
+		host_str = _app_resolveaddress_interlocked (&context->ptr_log->remote_host_str, context->ptr_log->af, &context->ptr_log->remote_addr, TRUE);
 
-		if (current_host)
-		{
-			host_str = _r_obj_reference (current_host);
-		}
-		else
-		{
-			host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
-
-			InterlockedCompareExchangePointer (&context->ptr_log->remote_host_str, host_str, NULL);
-		}
-	}
-	else
-	{
-		host_str = NULL;
+		if (host_str)
+			host_str = _r_obj_reference (host_str);
 	}
 
 	// query signature
@@ -3435,8 +3534,6 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	PITEM_CONTEXT context;
-	PR_STRING local_host_str;
-	PR_STRING remote_host_str;
 	BOOLEAN is_resolutionenabled;
 
 	context = arglist;
@@ -3445,42 +3542,19 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 
 	if (context->listview_id == IDC_LOG)
 	{
-		// query address information
-		if (is_resolutionenabled)
-		{
-			local_host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->local_addr);
-			remote_host_str = _app_resolveaddress (context->ptr_log->af, &context->ptr_log->remote_addr);
-		}
-		else
-		{
-			local_host_str = _r_obj_referenceemptystring ();
-			remote_host_str = _r_obj_reference (local_host_str);
-		}
-
-		_r_obj_movereference (&context->ptr_log->local_host_str, local_host_str);
-		_r_obj_movereference (&context->ptr_log->remote_host_str, remote_host_str);
+		_app_resolveaddress_interlocked (&context->ptr_log->local_host_str, context->ptr_log->af, &context->ptr_log->local_addr, is_resolutionenabled);
+		_app_resolveaddress_interlocked (&context->ptr_log->remote_host_str, context->ptr_log->af, &context->ptr_log->remote_addr, is_resolutionenabled);
 
 		_r_obj_dereference (context->ptr_log);
 	}
 	else if (context->listview_id == IDC_NETWORK)
 	{
 		// query address information
-		_r_obj_movereference (&context->ptr_network->local_addr_str, _app_formataddress (context->ptr_network->af, 0, &context->ptr_network->local_addr, 0, 0));
-		_r_obj_movereference (&context->ptr_network->remote_addr_str, _app_formataddress (context->ptr_network->af, 0, &context->ptr_network->remote_addr, 0, 0));
+		_app_formataddress_interlocked (&context->ptr_network->local_addr_str, context->ptr_network->af, &context->ptr_network->local_addr);
+		_app_formataddress_interlocked (&context->ptr_network->remote_addr_str, context->ptr_network->af, &context->ptr_network->remote_addr);
 
-		if (is_resolutionenabled)
-		{
-			local_host_str = _app_resolveaddress (context->ptr_network->af, &context->ptr_network->local_addr);
-			remote_host_str = _app_resolveaddress (context->ptr_network->af, &context->ptr_network->remote_addr);
-		}
-		else
-		{
-			local_host_str = _r_obj_referenceemptystring ();
-			remote_host_str = _r_obj_reference (local_host_str);
-		}
-
-		_r_obj_movereference (&context->ptr_network->local_host_str, local_host_str);
-		_r_obj_movereference (&context->ptr_network->remote_host_str, remote_host_str);
+		_app_resolveaddress_interlocked (&context->ptr_network->local_host_str, context->ptr_network->af, &context->ptr_network->local_addr, is_resolutionenabled);
+		_app_resolveaddress_interlocked (&context->ptr_network->remote_host_str, context->ptr_network->af, &context->ptr_network->remote_addr, is_resolutionenabled);
 
 		_r_obj_dereference (context->ptr_network);
 	}
@@ -3491,9 +3565,7 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 		if (_r_wnd_isvisible (context->hwnd))
 		{
 			if (_app_getcurrentlistview_id (context->hwnd) == context->listview_id)
-			{
 				_r_listview_redraw (context->hwnd, context->listview_id, -1);
-			}
 		}
 	}
 
