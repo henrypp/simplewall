@@ -208,7 +208,7 @@ BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
 	INT radio_id;
 	BOOL is_flagchecked;
 
-	tdc.pszContent = str_main;
+	tdc.pszMainInstruction = str_main;
 	tdc.pszVerificationText = str_flag;
 
 	if (_r_msg_taskdialog (&tdc, &command_id, &radio_id, &is_flagchecked))
