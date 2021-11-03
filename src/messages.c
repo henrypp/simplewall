@@ -321,14 +321,18 @@ VOID _app_message_traycontextmenu (_In_ HWND hwnd)
 	HMENU hsubmenu;
 	BOOLEAN is_filtersinstalled;
 
-	SetForegroundWindow (hwnd); // don't touch
-
-#define NOTIFICATIONS_ID 4
-#define LOGGING_ID 5
-#define ERRLOG_ID 6
-
 	hmenu = LoadMenu (NULL, MAKEINTRESOURCE (IDM_TRAY));
+
+	if (!hmenu)
+		return;
+
 	hsubmenu = GetSubMenu (hmenu, 0);
+
+	if (!hsubmenu)
+	{
+		DestroyMenu (hmenu);
+		return;
+	}
 
 	is_filtersinstalled = (_wfp_isfiltersinstalled () != INSTALL_DISABLED);
 
@@ -394,6 +398,8 @@ VOID _app_message_traycontextmenu (_In_ HWND hwnd)
 	if (_wfp_isfiltersapplying ())
 		_r_menu_enableitem (hsubmenu, IDM_TRAY_START, MF_BYCOMMAND, FALSE);
 
+	SetForegroundWindow (hwnd); // don't touch
+
 	_r_menu_popup (hsubmenu, hwnd, NULL, TRUE);
 
 	DestroyMenu (hmenu);
@@ -445,9 +451,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 			ctrl_id = (INT)(INT_PTR)lpnmlv->nmcd.hdr.idFrom;
 
 			if (ctrl_id == IDC_TOOLBAR)
-			{
 				return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
-			}
 
 			return CDRF_NOTIFYITEMDRAW;
 		}
@@ -728,7 +732,6 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_rule, _Inout_ LPNMLVDISPINFOW lpnmlv)
 {
 	PR_STRING string;
-	LPCWSTR name;
 
 	// set text
 	if ((lpnmlv->item.mask & LVIF_TEXT))
@@ -747,7 +750,10 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 					{
 						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_rule->name->buffer);
 					}
-
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, SZ_EMPTY);
 				}
 
 				break;
@@ -755,17 +761,14 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 
 			case 1:
 			{
-				if (ptr_rule->protocol)
+				if (ptr_rule->protocol_str)
 				{
-					name = _app_getprotoname (ptr_rule->protocol, AF_UNSPEC, SZ_UNKNOWN);
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_rule->protocol_str->buffer);
 				}
 				else
 				{
-					name = _r_locale_getstring (IDS_ANY);
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_locale_getstring (IDS_ANY));
 				}
-
-				if (name)
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
 
 				break;
 			}
@@ -831,19 +834,21 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 
 			case 1:
 			{
-				if (ptr_network->local_addr_str)
-				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->local_addr_str->buffer);
-				}
+				string = InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
+
+				if (string)
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 
 				break;
 			}
 
 			case 2:
 			{
-				if (ptr_network->local_host_str)
+				string = InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
+
+				if (string)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->local_host_str->buffer);
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 				}
 				else
 				{
@@ -871,19 +876,21 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 
 			case 4:
 			{
-				if (ptr_network->remote_addr_str)
-				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->remote_addr_str->buffer);
-				}
+				string = InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
+
+				if (string)
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 
 				break;
 			}
 
 			case 5:
 			{
-				if (ptr_network->remote_host_str)
+				string = InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
+
+				if (string)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->remote_host_str->buffer);
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 				}
 				else
 				{
@@ -911,10 +918,14 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 
 			case 7:
 			{
-				name = _app_getprotoname (ptr_network->protocol, ptr_network->af, NULL);
-
-				if (name)
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
+				if (ptr_network->protocol_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_network->protocol_str->buffer);
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_locale_getstring (IDS_ANY));
+				}
 
 				break;
 			}
@@ -967,7 +978,6 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITEM_APP ptr_app, _In_ PITEM_LOG ptr_log)
 {
 	PR_STRING string;
-	LPCWSTR name;
 
 	// set text
 	if ((lpnmlv->item.mask & LVIF_TEXT))
@@ -995,18 +1005,18 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 			case 1:
 			{
 				if (ptr_log->local_addr_str)
-				{
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->local_addr_str->buffer);
-				}
 
 				break;
 			}
 
 			case 2:
 			{
-				if (ptr_log->local_host_str)
+				string = InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
+
+				if (string)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->local_host_str->buffer);
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 				}
 				else
 				{
@@ -1035,18 +1045,18 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 			case 4:
 			{
 				if (ptr_log->remote_addr_str)
-				{
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->remote_addr_str->buffer);
-				}
 
 				break;
 			}
 
 			case 5:
 			{
-				if (ptr_log->remote_host_str)
+				string = InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
+
+				if (string)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->remote_host_str->buffer);
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 				}
 				else
 				{
@@ -1074,10 +1084,14 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 
 			case 7:
 			{
-				name = _app_getprotoname (ptr_log->protocol, ptr_log->af, NULL);
-
-				if (name)
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
+				if (ptr_log->protocol_str)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, ptr_log->protocol_str->buffer);
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_locale_getstring (IDS_ANY));
+				}
 
 				break;
 			}
