@@ -51,10 +51,11 @@ VOID _app_notify_refresh (_In_ HWND hwnd, _In_ BOOLEAN is_safety);
 
 VOID _app_notify_setposition (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
 
-HFONT _app_notify_fontcreate (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ LONG size, _In_ BOOLEAN is_underline);
+HFONT _app_notify_createfont (_Inout_ PLOGFONT logfont, _In_ LONG size, _In_ BOOLEAN is_underline, _In_ LONG dpi_value);
 
 VOID _app_notify_initializefont (_In_ HWND hwnd, _Inout_ PNOTIFY_CONTEXT context, _In_ LONG dpi_value);
 VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value);
+VOID _app_notify_destroy (_In_ HWND hwnd);
 
 VOID _app_notify_drawgradient (_In_ HDC hdc, _In_ LPCRECT rect);
 

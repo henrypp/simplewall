@@ -128,14 +128,12 @@ BOOLEAN _app_notify_addobject (_In_ PITEM_LOG ptr_log, _In_ PITEM_APP ptr_app)
 
 	ptr_app->last_notify = current_time;
 
-	_r_obj_movereference (&ptr_app->notification, _r_obj_reference (ptr_log));
+	_r_obj_swapreference (&ptr_app->notification, ptr_log);
 
 	if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
 	{
 		if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) || !_r_wnd_isfullscreenmode ())
-		{
 			_app_notify_playsound ();
-		}
 	}
 
 	if (!_r_wnd_isundercursor (hnotify))
@@ -193,23 +191,13 @@ _Ret_maybenull_
 HICON _app_notify_getapp_icon (_In_ HWND hwnd)
 {
 	PNOTIFY_CONTEXT context;
-	HICON hicon;
 
 	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
 	if (context)
-	{
-		hicon = context->hicon;
-	}
-	else
-	{
-		hicon = NULL;
-	}
+		return context->hicon;
 
-	if (!hicon)
-		hicon = _app_getdefaultapphicon ();
-
-	return hicon;
+	return NULL;
 }
 
 ULONG_PTR _app_notify_getapp_id (_In_ HWND hwnd)
@@ -275,13 +263,21 @@ ULONG_PTR _app_notify_getnextapp_id (_In_ HWND hwnd)
 VOID _app_notify_setapp_icon (_In_ HWND hwnd, _In_opt_ HICON hicon, _In_ BOOLEAN is_redraw)
 {
 	PNOTIFY_CONTEXT context;
+	HICON hicon_prev;
 
 	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
 	if (!context)
 		return;
 
+	if (!hicon)
+		hicon = _app_getdefaultapphicon ();
+
+	hicon_prev = context->hicon;
 	context->hicon = hicon;
+
+	if (hicon_prev)
+		DestroyIcon (hicon_prev);
 
 	if (is_redraw)
 		RedrawWindow (hwnd, NULL, NULL, RDW_ALLCHILDREN | RDW_ERASE | RDW_INVALIDATE);
@@ -293,10 +289,8 @@ VOID _app_notify_setapp_id (_In_ HWND hwnd, _In_opt_ ULONG_PTR app_hash)
 
 	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
 
-	if (!context)
-		return;
-
-	context->app_hash = app_hash;
+	if (context)
+		context->app_hash = app_hash;
 }
 
 VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_forced, _In_ BOOLEAN is_safety)
@@ -312,30 +306,30 @@ VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_f
 	R_STRINGREF display_name;
 	BOOLEAN is_fullscreenmode;
 
-	if (!_r_config_getboolean (L"IsNotificationsEnabled", TRUE))
-		return;
-
 	ptr_app = _app_getappitem (ptr_log->app_hash);
 
 	if (!ptr_app)
+	{
+		_app_notify_hide (hwnd);
 		return;
+	}
 
 	string = NULL;
 	localized_string = NULL;
+
+	// set notification information
+	_app_notify_setapp_id (hwnd, ptr_log->app_hash);
+	_app_notify_setapp_icon (hwnd, NULL, FALSE);
 
 	// set window title
 	_r_str_printf (window_title, RTL_NUMBER_OF (window_title), L"%s - %s", _r_locale_getstring (IDS_NOTIFY_TITLE), _r_app_getname ());
 
 	SetWindowText (hwnd, window_title);
 
-	// set notification information
-	_app_notify_setapp_id (hwnd, ptr_log->app_hash);
-	_app_notify_setapp_icon (hwnd, NULL, FALSE);
-
-	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
-
 	// print name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
+	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
+
 	_r_ctrl_settablestring (hwnd, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, &display_name);
 
 	// print signature
@@ -435,8 +429,6 @@ VOID _app_notify_playsound ()
 
 	if (_r_obj_isstringempty (path) || !_r_fs_exists (path->buffer))
 	{
-#define NOTIFY_SOUND_NAME L"MailBeep"
-
 		HKEY hkey;
 		PR_STRING expanded_string;
 
@@ -465,7 +457,10 @@ VOID _app_notify_refresh (_In_ HWND hwnd, _In_ BOOLEAN is_safety)
 	PITEM_LOG ptr_log;
 	ULONG_PTR app_hash;
 
-	if (!_r_wnd_isvisible (hwnd) || !_r_config_getboolean (L"IsNotificationsEnabled", TRUE))
+	if (!_r_wnd_isvisible (hwnd))
+		return;
+
+	if (!_r_config_getboolean (L"IsNotificationsEnabled", TRUE))
 	{
 		_app_notify_hide (hwnd);
 		return;
@@ -563,13 +558,10 @@ VOID _app_notify_setposition (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 	_r_wnd_center (hwnd, NULL); // display window on center (depends on error, config etc...)
 }
 
-HFONT _app_notify_fontcreate (_Inout_ PLOGFONT logfont, _In_ LONG dpi_value, _In_ LONG size, _In_ BOOLEAN is_underline)
+HFONT _app_notify_createfont (_Inout_ PLOGFONT logfont, _In_ LONG size, _In_ BOOLEAN is_underline, _In_ LONG dpi_value)
 {
-	if (size)
-		logfont->lfHeight = _r_dc_fontsizetoheight (size, dpi_value);
-
+	logfont->lfHeight = _r_dc_fontsizetoheight (size, dpi_value);
 	logfont->lfUnderline = is_underline;
-
 	logfont->lfCharSet = DEFAULT_CHARSET;
 	logfont->lfQuality = DEFAULT_QUALITY;
 
@@ -585,19 +577,21 @@ VOID _app_notify_initializefont (_In_ HWND hwnd, _Inout_ PNOTIFY_CONTEXT context
 
 	ncm.cbSize = sizeof (ncm);
 
+	if (!SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
+		return;
+
 	SAFE_DELETE_OBJECT (context->hfont_title);
 	SAFE_DELETE_OBJECT (context->hfont_link);
 	SAFE_DELETE_OBJECT (context->hfont_text);
 
-	if (!_r_dc_getsystemparametersinfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, dpi_value))
-		return;
-
 	title_font_height = 12;
 	text_font_height = 9;
 
-	context->hfont_title = _app_notify_fontcreate (&ncm.lfCaptionFont, dpi_value, title_font_height, FALSE);
-	context->hfont_link = _app_notify_fontcreate (&ncm.lfMessageFont, dpi_value, text_font_height, TRUE);
-	context->hfont_text = _app_notify_fontcreate (&ncm.lfMessageFont, dpi_value, text_font_height, FALSE);
+	context->hfont_title = _app_notify_createfont (&ncm.lfCaptionFont, title_font_height, FALSE, dpi_value);
+	context->hfont_link = _app_notify_createfont (&ncm.lfMessageFont, text_font_height, TRUE, dpi_value);
+	context->hfont_text = _app_notify_createfont (&ncm.lfMessageFont, text_font_height, FALSE, dpi_value);
+
+	SendMessage (hwnd, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
 
 	SendDlgItemMessage (hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)context->hfont_title, TRUE);
 	SendDlgItemMessage (hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)context->hfont_link, TRUE);
@@ -636,6 +630,9 @@ VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value)
 					_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large_x, icon_large_y)
 	);
 
+	// load font
+	_app_notify_initializefont (hwnd, context, dpi_value);
+
 	// load images
 	SAFE_DELETE_OBJECT (context->hbmp_allow);
 	SAFE_DELETE_OBJECT (context->hbmp_block);
@@ -647,7 +644,7 @@ VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value)
 	context->hbmp_cross = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CROSS), icon_small_x, icon_small_y);
 	context->hbmp_rules = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_small_x, icon_small_y);
 
-	// set button images
+	// set button configuration
 	SendDlgItemMessage (hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
 	SendDlgItemMessage (hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_allow);
 	SendDlgItemMessage (hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
@@ -657,9 +654,31 @@ VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value)
 	_r_ctrl_setbuttonmargins (hwnd, IDC_ALLOW_BTN, dpi_value);
 	_r_ctrl_setbuttonmargins (hwnd, IDC_BLOCK_BTN, dpi_value);
 	_r_ctrl_setbuttonmargins (hwnd, IDC_LATER_BTN, dpi_value);
+}
 
-	// load font
-	_app_notify_initializefont (hwnd, context, dpi_value);
+VOID _app_notify_destroy (_In_ HWND hwnd)
+{
+	PNOTIFY_CONTEXT context;
+
+	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+
+	if (!context)
+		return;
+
+	SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
+
+	SAFE_DELETE_ICON (context->hicon);
+
+	SAFE_DELETE_OBJECT (context->hfont_title);
+	SAFE_DELETE_OBJECT (context->hfont_link);
+	SAFE_DELETE_OBJECT (context->hfont_text);
+
+	SAFE_DELETE_OBJECT (context->hbmp_allow);
+	SAFE_DELETE_OBJECT (context->hbmp_block);
+	SAFE_DELETE_OBJECT (context->hbmp_cross);
+	SAFE_DELETE_OBJECT (context->hbmp_rules);
+
+	_r_mem_free (context);
 }
 
 VOID _app_notify_drawgradient (_In_ HDC hdc, _In_ LPCRECT rect)
@@ -742,23 +761,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 		case WM_NCDESTROY:
 		{
-			PNOTIFY_CONTEXT context;
-
-			context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
-
-			SAFE_DELETE_OBJECT (context->hfont_title);
-			SAFE_DELETE_OBJECT (context->hfont_link);
-			SAFE_DELETE_OBJECT (context->hfont_text);
-
-			SAFE_DELETE_OBJECT (context->hbmp_allow);
-			SAFE_DELETE_OBJECT (context->hbmp_block);
-			SAFE_DELETE_OBJECT (context->hbmp_cross);
-			SAFE_DELETE_OBJECT (context->hbmp_rules);
-
-			SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
-
-			_r_mem_free (context);
-
+			_app_notify_destroy (hwnd);
 			break;
 		}
 
@@ -797,7 +800,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 		case WM_DPICHANGED:
 		{
 			_app_notify_initialize (hwnd, LOWORD (wparam));
-			_app_notify_refresh (hwnd, FALSE);
+			_app_notify_refresh (hwnd, TRUE);
 
 			break;
 		}
