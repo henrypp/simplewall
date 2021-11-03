@@ -267,7 +267,7 @@ PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPC
 	return NULL;
 }
 
-VOID _app_formataddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
+PR_STRING _app_formataddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 {
 	PR_STRING current_string;
 	PR_STRING new_string;
@@ -275,17 +275,22 @@ VOID _app_formataddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_F
 	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
 
 	if (current_string)
-		return;
+		return current_string;
 
 	new_string = _app_formataddress (af, 0, address, 0, 0);
 
-	if (!new_string)
-		return;
-
 	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
 
-	if (current_string)
+	if (!current_string)
+	{
+		current_string = new_string;
+	}
+	else
+	{
 		_r_obj_dereference (new_string);
+	}
+
+	return current_string;
 }
 
 _Success_ (return)
@@ -3447,6 +3452,7 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 {
 	PITEM_CONTEXT context;
 	PITEM_APP_INFO ptr_app_info;
+	PR_STRING address_str;
 	PR_STRING host_str;
 	PR_STRING signature_str;
 	PR_STRING localized_string;
@@ -3459,6 +3465,9 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 	host_str = NULL;
 
 	is_iconset = FALSE;
+
+	// query address string
+	address_str = _app_formataddress (context->ptr_log->af, context->ptr_log->protocol, &context->ptr_log->remote_addr, 0, FMTADDR_USE_PROTOCOL);
 
 	// query notification host name
 	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
@@ -3507,7 +3516,15 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 
 			_r_ctrl_settablestring (context->hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
 
-			// set resolved host
+			// set address string
+			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
+
+			if (_r_obj_isstringempty (address_str))
+				_r_obj_movereference (&address_str, _r_obj_createstring (SZ_EMPTY));
+
+			_r_ctrl_settablestring (context->hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &address_str->sr);
+
+			// set host string
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 
 			if (_r_obj_isstringempty (host_str))
@@ -3524,6 +3541,9 @@ VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_coun
 
 	if (signature_str)
 		_r_obj_dereference (signature_str);
+
+	if (address_str)
+		_r_obj_dereference (address_str);
 
 	if (host_str)
 		_r_obj_dereference (host_str);

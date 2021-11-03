@@ -52,7 +52,7 @@ PR_STRING _app_formatarpa (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
 _Ret_maybenull_
 PR_STRING _app_formataddress (_In_ ADDRESS_FAMILY af, _In_ UINT8 proto, _In_ LPCVOID address, _In_opt_ UINT16 port, _In_ ULONG flags);
 
-VOID _app_formataddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
+PR_STRING _app_formataddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
 
 _Success_ (return)
 BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes_to_ (buffer_size, buffer_size) LPWSTR buffer, _In_ ULONG buffer_size, _In_ BOOLEAN is_checkempty);

@@ -338,9 +338,7 @@ VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_f
 
 	// print address
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
-	_r_obj_movereference (&string, _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_USE_PROTOCOL));
-
-	_r_ctrl_settablestring (hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, string ? &string->sr : &empty_sr);
+	_r_ctrl_settablestring (hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &loading_sr);
 
 	// print host
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
