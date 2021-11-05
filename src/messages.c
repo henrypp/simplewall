@@ -525,6 +525,10 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 			else
 			{
 				COLORREF new_clr;
+				PITEM_NETWORK ptr_network;
+				PITEM_LOG ptr_log;
+				PITEM_COLOR ptr_clr;
+				ULONG_PTR app_hash;
 				ULONG_PTR index;
 				ULONG view_type;
 				BOOLEAN is_tableview;
@@ -548,16 +552,13 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 				is_systemapp = FALSE;
 				is_validconnection = FALSE;
 
-				index = _app_getlistviewparam_id (lpnmlv->nmcd.lItemlParam);
-
 				if ((ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP) || ctrl_id == IDC_RULE_APPS_ID || ctrl_id == IDC_NETWORK || ctrl_id == IDC_LOG)
 				{
-					ULONG_PTR app_hash = 0;
+					app_hash = 0;
+					index = _app_getlistviewparam_id (lpnmlv->nmcd.lItemlParam);
 
 					if (ctrl_id == IDC_NETWORK)
 					{
-						PITEM_NETWORK ptr_network;
-
 						ptr_network = _app_getnetworkitem (index);
 
 						if (ptr_network)
@@ -571,7 +572,6 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 					}
 					else if (ctrl_id == IDC_LOG)
 					{
-						PITEM_LOG ptr_log;
 
 						ptr_log = _app_getlogitem (index);
 
@@ -605,12 +605,12 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 				}
 				else if (ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_RULES_CUSTOM || ctrl_id == IDC_APP_RULES_ID)
 				{
+					index = _app_getlistviewparam_id (lpnmlv->nmcd.lItemlParam);
+
 					new_clr = _app_getrulecolor (ctrl_id, index);
 				}
 				else if (ctrl_id == IDC_COLORS)
 				{
-					PITEM_COLOR ptr_clr;
-
 					ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
 
 					new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
@@ -1764,8 +1764,9 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 
 			if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
 			{
-				R_ERROR_INFO error_info = {0};
-				error_info.description = viewer_path->buffer;
+				R_ERROR_INFO error_info;
+
+				_r_error_initialize (&error_info, NULL, viewer_path->buffer);
 
 				_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
 			}
@@ -1830,8 +1831,9 @@ VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 
 			if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
 			{
-				R_ERROR_INFO error_info = {0};
-				error_info.description = viewer_path->buffer;
+				R_ERROR_INFO error_info;
+
+				_r_error_initialize (&error_info, NULL, viewer_path->buffer);
 
 				_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
 			}
