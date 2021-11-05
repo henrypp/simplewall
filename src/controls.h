@@ -34,7 +34,7 @@ VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id);
 LPCWSTR _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type);
 BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
 VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled);
-VOID _app_setinterfacestate (_In_ HWND hwnd);
+VOID _app_setinterfacestate (_In_ HWND hwnd, _In_ LONG dpi_value);
 
 VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value);
 

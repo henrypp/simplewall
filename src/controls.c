@@ -643,14 +643,12 @@ VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled)
 	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
 }
 
-VOID _app_setinterfacestate (_In_ HWND hwnd)
+VOID _app_setinterfacestate (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
 	ENUM_INSTALL_TYPE install_type;
 
 	HICON hico_sm;
 	HICON hico_big;
-
-	LONG dpi_value;
 
 	LONG icon_small_x;
 	LONG icon_small_y;
@@ -665,8 +663,6 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 
 	install_type = _wfp_isfiltersinstalled ();
 	is_filtersinstalled = (install_type != INSTALL_DISABLED);
-
-	dpi_value = _r_dc_getsystemdpi ();
 
 	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
@@ -688,6 +684,13 @@ VOID _app_setinterfacestate (_In_ HWND hwnd)
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _r_locale_getstring (string_id), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
+
+	// fix tray icon size
+	dpi_value = _r_dc_gettaskbardpi ();
+
+	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+
+	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small_x, icon_small_y);
 
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
 }

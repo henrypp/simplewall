@@ -412,7 +412,7 @@ VOID _app_message_dpichanged (_In_ HWND hwnd, _In_ LONG dpi_value)
 	_app_imagelist_init (hwnd, dpi_value);
 
 	// reset toolbar information
-	_app_setinterfacestate (hwnd);
+	_app_setinterfacestate (hwnd, dpi_value);
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, _r_locale_getstring (IDS_REFRESH), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, I_IMAGENONE);
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, _r_locale_getstring (IDS_SETTINGS), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, I_IMAGENONE);
@@ -1240,7 +1240,7 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 
 	UINT icon_id;
 
-	dpi_value = _r_dc_getsystemdpi ();
+	dpi_value = _r_dc_gettaskbardpi ();
 
 	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
@@ -1340,6 +1340,8 @@ VOID _app_message_localize (_In_ HWND hwnd)
 	LONG dpi_value;
 
 	hmenu = GetMenu (hwnd);
+
+	dpi_value = _r_dc_getwindowdpi (hwnd);
 
 	if (hmenu)
 	{
@@ -1446,7 +1448,7 @@ VOID _app_message_localize (_In_ HWND hwnd)
 	PR_STRING localized_string = NULL;
 
 	// localize toolbar
-	_app_setinterfacestate (hwnd);
+	_app_setinterfacestate (hwnd, dpi_value);
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, _r_locale_getstring (IDS_REFRESH), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, I_IMAGENONE);
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, _r_locale_getstring (IDS_SETTINGS), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, I_IMAGENONE);
@@ -1472,8 +1474,6 @@ VOID _app_message_localize (_In_ HWND hwnd)
 	_r_edit_setcuebanner (config.hrebar, IDC_SEARCH, localized_string->buffer);
 
 	// set rebar size
-	dpi_value = _r_dc_getwindowdpi (hwnd);
-
 	_app_toolbar_resize (hwnd, dpi_value);
 
 	// localize tabs

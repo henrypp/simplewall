@@ -1910,7 +1910,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 			UINT icon_id;
 
-			dpi_value = _r_dc_getsystemdpi ();
+			dpi_value = _r_dc_gettaskbardpi ();
 
 			icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 			icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
