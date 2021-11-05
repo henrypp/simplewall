@@ -270,7 +270,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_opt_ HWND hsettings, _In_ INT ctrl_i
 		case IDC_CHECKUPDATES_CHK:
 		case IDM_CHECKUPDATES_CHK:
 		{
-			new_val = !_r_config_getboolean (L"CheckUpdates", TRUE);
+			new_val = !_r_update_isenabled (FALSE);
 			break;
 		}
 
@@ -395,7 +395,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_opt_ HWND hsettings, _In_ INT ctrl_i
 		case IDC_CHECKUPDATES_CHK:
 		case IDM_CHECKUPDATES_CHK:
 		{
-			_r_config_setboolean (L"CheckUpdates", new_val);
+			_r_update_enable (new_val);
 			_r_menu_checkitem (hmenu, IDM_CHECKUPDATES_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -583,7 +583,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					CheckDlgButton (hwnd, IDC_SKIPUACWARNING_CHK, _r_skipuac_isenabled () ? BST_CHECKED : BST_UNCHECKED);
 #endif // APP_HAVE_SKIPUAC
 
-					CheckDlgButton (hwnd, IDC_CHECKUPDATES_CHK, _r_config_getboolean (L"CheckUpdates", TRUE) ? BST_CHECKED : BST_UNCHECKED);
+					CheckDlgButton (hwnd, IDC_CHECKUPDATES_CHK, _r_update_isenabled (FALSE) ? BST_CHECKED : BST_UNCHECKED);
 
 					_r_locale_enum (hwnd, IDC_LANGUAGE, 0);
 
