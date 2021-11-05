@@ -56,12 +56,6 @@ typedef enum _ENUM_TYPE_DATA
 	DATA_LISTVIEW_CURRENT,
 } ENUM_TYPE_DATA;
 
-typedef enum _ENUM_TYPE_XML
-{
-	XML_PROFILE_V3 = 3,
-	XML_PROFILE_INTERNAL_V3 = 4,
-} ENUM_TYPE_XML;
-
 typedef enum _ENUM_INSTALL_TYPE
 {
 	INSTALL_DISABLED = 0,
@@ -89,17 +83,6 @@ typedef enum _ENUM_INFO_DATA2
 	INFO_SIGNATURE_STRING, // dereference required
 	INFO_VERSION_STRING, // dereference required
 } ENUM_INFO_DATA2;
-
-// v3.0.2: first major update, rule attribute "apps" now separated by "|"
-#define XML_PROFILE_VER_3 0x03
-
-// v3.4: added "rules_custom" into internal profile and "os_version" for rule attributes
-#define XML_PROFILE_VER_4 0x04
-
-#define XML_PROFILE_VER_CURRENT XML_PROFILE_VER_4
-
-#define XML_PROFILE L"profile.xml"
-#define XML_PROFILE_INTERNAL L"profile_internal.xml"
 
 #define LOG_PATH_EXT L"log"
 #define LOG_PATH_DEFAULT L"%USERPROFILE%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
