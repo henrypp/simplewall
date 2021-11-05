@@ -1150,9 +1150,25 @@ BOOLEAN _app_issystemhash (_In_ ULONG_PTR app_hash)
 	return (app_hash == profile_info.ntoskrnl_hash || app_hash == profile_info.svchost_hash);
 }
 
-BOOLEAN _app_profile_load_check (_In_ LPCWSTR path)
+BOOLEAN _app_isprofilenodevalid (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_VERSION_XML min_version, _In_ ENUM_TYPE_XML type)
+{
+	if (!xml_library->stream)
+		return FALSE;
+
+	if (_r_xml_getattribute_long (xml_library, L"type") != type)
+		return FALSE;
+
+	// min supported is v3
+	if (_r_xml_getattribute_long (xml_library, L"version") >= min_version)
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOLEAN _app_isprofilevalid (_In_opt_ HWND hwnd, _In_ PR_STRING path)
 {
 	R_XML_LIBRARY xml_library;
+	R_ERROR_INFO error_info;
 	BOOLEAN is_success;
 
 	if (_r_xml_initializelibrary (&xml_library, TRUE, NULL) != S_OK)
@@ -1160,30 +1176,56 @@ BOOLEAN _app_profile_load_check (_In_ LPCWSTR path)
 
 	is_success = FALSE;
 
-	if (_r_xml_parsefile (&xml_library, path) == S_OK)
+	if (_r_xml_parsefile (&xml_library, path->buffer) == S_OK)
 	{
 		if (_r_xml_findchildbytagname (&xml_library, L"root"))
 		{
-			if (_r_xml_getattribute_long (&xml_library, L"type") == XML_PROFILE_V3)
-			{
-				// min supported is v3
-				if (_r_xml_getattribute_long (&xml_library, L"version") >= XML_PROFILE_VER_3)
-					is_success = TRUE;
-			}
+			// min supported is v3
+			is_success = _app_isprofilenodevalid (&xml_library, XML_VERSION_3, XML_TYPE_PROFILE);
 		}
 	}
 
 	_r_xml_destroylibrary (&xml_library);
 
+	if (is_success)
+	{
+		if (hwnd)
+		{
+			_r_error_initialize (&error_info, NULL, path->buffer);
+
+			_r_show_errormessage (hwnd, NULL, ERROR_INVALID_DATA, &error_info);
+		}
+	}
+
 	return is_success;
 }
 
-BOOLEAN _app_profile_load_check_node (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_XML type)
+BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version)
 {
-	if (!xml_library->stream)
-		return FALSE;
+	static PR_STRING version_string = NULL;
 
-	return (_r_xml_getattribute_long (xml_library, L"type") == type);
+	PR_STRING current_version;
+	PR_STRING new_version;
+
+	current_version = InterlockedCompareExchangePointer (&version_string, NULL, NULL);
+
+	if (!current_version)
+	{
+		new_version = _r_format_string (L"%d.%d", NtCurrentPeb ()->OSMajorVersion, NtCurrentPeb ()->OSMinorVersion);
+
+		current_version = InterlockedCompareExchangePointer (&version_string, new_version, NULL);
+
+		if (!current_version)
+		{
+			current_version = new_version;
+		}
+		else
+		{
+			_r_obj_dereference (new_version);
+		}
+	}
+
+	return (_r_str_versioncompare (&current_version->sr, os_version) != -1);
 }
 
 VOID _app_profile_load_fallback ()
@@ -1214,20 +1256,7 @@ VOID _app_profile_load_fallback ()
 	}
 }
 
-BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version)
-{
-	static PR_STRING current_version = NULL;
-	INT result;
-
-	if (!current_version)
-		current_version = _r_format_string (L"%d.%d", NtCurrentPeb ()->OSMajorVersion, NtCurrentPeb ()->OSMinorVersion);
-
-	result = _r_str_versioncompare (&current_version->sr, os_version);
-
-	return (result != -1);
-}
-
-VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ UINT version)
+VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ ENUM_VERSION_XML version)
 {
 	if (type == DATA_APP_REGULAR)
 	{
@@ -1416,7 +1445,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 
 				if (!_r_obj_isstringempty2 (string))
 				{
-					if (version < XML_PROFILE_VER_3)
+					if (version < XML_VERSION_3)
 						_r_str_replacechar (&string->sr, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 
 					R_STRINGREF remaining_part;
@@ -1496,7 +1525,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 				{
 					ptr_config->apps = _r_xml_getattribute_string (xml_library, L"apps");
 
-					if (ptr_config->apps && version < XML_PROFILE_VER_3)
+					if (ptr_config->apps && version < XML_VERSION_3)
 						_r_str_replacechar (&ptr_config->apps->sr, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
 				}
 			}
@@ -1582,7 +1611,7 @@ VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name
 	xml_library = is_loadfromresource ? &xml_resource : &xml_file;
 	version = is_loadfromresource ? version_resource : version_file;
 
-	if (_app_profile_load_check_node (xml_library, XML_PROFILE_INTERNAL_V3))
+	if (_app_isprofilenodevalid (xml_library, XML_VERSION_4, XML_TYPE_PROFILE_INTERNAL))
 	{
 		if (timestamp)
 			*timestamp = (timestamp_file > timestamp_resource) ? timestamp_file : timestamp_resource;
@@ -1690,7 +1719,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	{
 		if (_r_xml_findchildbytagname (&xml_library, L"root"))
 		{
-			if (_app_profile_load_check_node (&xml_library, XML_PROFILE_V3))
+			if (_app_isprofilenodevalid (&xml_library, XML_VERSION_3, XML_TYPE_PROFILE))
 			{
 				LONG version;
 
@@ -1812,8 +1841,8 @@ VOID _app_profile_save ()
 	_r_xml_writestartelement (&xml_library, L"root");
 
 	_r_xml_setattribute_long64 (&xml_library, L"timestamp", current_time);
-	_r_xml_setattribute_long (&xml_library, L"type", XML_PROFILE_V3);
-	_r_xml_setattribute_long (&xml_library, L"version", XML_PROFILE_VER_CURRENT);
+	_r_xml_setattribute_long (&xml_library, L"type", XML_TYPE_PROFILE);
+	_r_xml_setattribute_long (&xml_library, L"version", XML_VERSION_CURRENT);
 
 	_r_xml_writewhitespace (&xml_library, L"\n\t");
 

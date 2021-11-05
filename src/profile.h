@@ -3,6 +3,30 @@
 
 #pragma once
 
+// profile types
+typedef enum _ENUM_TYPE_XML
+{
+	XML_TYPE_PROFILE = 3,
+	XML_TYPE_PROFILE_INTERNAL = 4,
+} ENUM_TYPE_XML;
+
+// profile versions
+typedef enum _ENUM_VERSION_XML
+{
+	// v3.0.2: first major update, rule attribute "apps" now separated by "|"
+	XML_VERSION_3 = 3,
+
+	// v3.4: added "rules_custom" into internal profile and "os_version" for rule attributes
+	XML_VERSION_4 = 4,
+
+	XML_VERSION_5 = 5,
+} ENUM_VERSION_XML;
+
+#define XML_VERSION_CURRENT XML_VERSION_4
+
+#define XML_PROFILE L"profile.xml"
+#define XML_PROFILE_INTERNAL L"profile_internal.xml"
+
 _Ret_maybenull_
 PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data);
 
@@ -93,11 +117,13 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 _Ret_maybenull_
 PR_STRING _app_rulesexpandrules (_In_opt_ PR_STRING rule, _In_ LPCWSTR delimeter);
 
-BOOLEAN _app_profile_load_check (_In_ LPCWSTR path);
-BOOLEAN _app_profile_load_check_node (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_XML type);
+BOOLEAN _app_isprofilenodevalid (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_VERSION_XML min_version, _In_ ENUM_TYPE_XML type);
+BOOLEAN _app_isprofilevalid (_In_opt_ HWND hwnd, _In_ PR_STRING path);
+
+BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version);
 
 VOID _app_profile_load_fallback ();
-VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ UINT version);
+VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ ENUM_VERSION_XML version);
 VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp);
 VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom);
 VOID _app_profile_save ();
