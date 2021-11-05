@@ -798,7 +798,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 		case WM_DPICHANGED:
 		{
 			_app_notify_initialize (hwnd, LOWORD (wparam));
-			_app_notify_refresh (hwnd, TRUE);
+			_app_notify_refresh (hwnd, FALSE);
 
 			break;
 		}
