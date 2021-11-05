@@ -154,7 +154,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;APP_UPDATE_PERIOD=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -184,7 +184,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;APP_UPDATE_PERIOD=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -217,7 +217,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;APP_UPDATE_PERIOD=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -251,7 +251,7 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;APP_UPDATE_PERIOD=2;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -285,7 +285,7 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;APP_UPDATE_PERIOD=2;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -322,7 +322,7 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;WIN32_LEAN_AND_MEAN;APP_NO_DEPRECATIONS;APP_NO_GUEST;APP_HAVE_AUTORUN;APP_HAVE_SKIPUAC;APP_HAVE_TRAY;APP_HAVE_SETTINGS;APP_HAVE_UPDATES;APP_UPDATE_PERIOD=2;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>
       </EnableParallelCodeGeneration>
       <TreatWarningAsError>true</TreatWarningAsError>

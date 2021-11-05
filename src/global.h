@@ -3,8 +3,6 @@
 
 #pragma once
 
-#define APP_UPDATE_PERIOD _r_calc_days2seconds (2) // set update checking period for 2 days
-
 #include "routine.h"
 
 #include <winsock2.h>
