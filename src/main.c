@@ -2760,14 +2760,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 							if (path)
 							{
-								if (!_app_profile_load_check (path->buffer))
-								{
-									R_ERROR_INFO error_info = {0};
-									error_info.description = path->buffer;
-
-									_r_show_errormessage (hwnd, NULL, ERROR_INVALID_DATA, &error_info);
-								}
-								else
+								if (_app_isprofilevalid (hwnd, path))
 								{
 									// made backup
 									_r_fs_deletefile (profile_info.profile_path_backup->buffer, TRUE);
@@ -2814,8 +2807,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								// added information for export profile failure (issue #707)
 								if (!_r_fs_copyfile (profile_info.profile_path->buffer, path->buffer, 0))
 								{
-									R_ERROR_INFO error_info = {0};
-									error_info.description = path->buffer;
+									R_ERROR_INFO error_info;
+
+									_r_error_initialize (&error_info, NULL, path->buffer);
 
 									_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
 								}
