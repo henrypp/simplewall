@@ -89,8 +89,6 @@ typedef enum _ENUM_INFO_DATA2
 
 #define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
 
-#define SUBLAYER_WEIGHT_DEFAULT 0xFFFE
-
 #define DIVIDER_COPY L", "
 #define DIVIDER_APP L"|"
 #define DIVIDER_RULE L";"
@@ -157,24 +155,6 @@ typedef enum _ENUM_INFO_DATA2
 #define LV_COLOR_PICO RGB (51, 153, 255)
 #define LV_COLOR_SYSTEM RGB(151, 196, 251)
 #define LV_COLOR_CONNECTION RGB(255, 168, 242)
-
-// filter names
-#define FW_NAME_BLOCK_CONNECTION L"BlockConnection"
-#define FW_NAME_BLOCK_REDIRECT L"BlockRedirect"
-#define FW_NAME_BLOCK_RECVACCEPT L"BlockRecvAccept"
-#define FW_NAME_ICMP_ERROR L"BlockIcmpError"
-#define FW_NAME_TCP_RST_ONCLOSE L"BlockTcpRstOnClose"
-#define FW_NAME_BOOTTIME L"BlockBoottime"
-
-// filter weights
-#define FW_WEIGHT_HIGHEST_IMPORTANT 0x0f
-#define FW_WEIGHT_HIGHEST 0x0e
-#define FW_WEIGHT_RULE_BLOCKLIST 0x0d
-#define FW_WEIGHT_RULE_USER_BLOCK 0x0c
-#define FW_WEIGHT_RULE_USER 0x0b
-#define FW_WEIGHT_RULE_SYSTEM 0x0a
-#define FW_WEIGHT_APP 0x09
-#define FW_WEIGHT_LOWEST 0x08
 
 // memory limitation for 1 rule
 #define RULE_NAME_CCH_MAX 64
