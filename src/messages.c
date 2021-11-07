@@ -1117,7 +1117,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 
 			case 9:
 			{
-				string = _r_obj_concatstrings (2, ptr_log->is_allow ? L"[A] " : L"[B] ", _r_obj_getstringorempty (ptr_log->filter_name));
+				string = _r_obj_concatstrings (2, ptr_log->is_allow ? L"[A] " : L"[B] ", _r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY));
 
 				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 				_r_obj_dereference (string);
