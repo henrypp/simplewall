@@ -125,6 +125,47 @@ Windows Registry Editor Version 5.00
 4) Open the Command Prompt (Admin) and enter `gpupdate /force` to enforce the changes made to the Group Policies.
 </details>
 
+#### Q: How can i disable Windows Firewall?
+Start command line as administrator, and enter commands:
+
+<details>
+<summary>Disable Windows Firewall profiles:</summary>
+
+---
+~~~bat
+netsh advfirewall set allprofiles state off
+~~~
+</details>
+
+<details>
+<summary>Enable Windows Firewall profiles:</summary>
+
+---
+~~~bat
+netsh advfirewall set allprofiles state on
+~~~
+</details>
+
+#### Q: How can i view all filters information?
+Start command line as administrator, and enter commands:
+
+<details>
+<summary>Dump WFP filters and it's state:</summary>
+
+---
+~~~bat
+cd /d %USERPROFILE%\Desktop
+
+netsh wfp show filters
+netsh wfp show state
+~~~
+</details>
+
+- Filters information saved into `filters.xml` file.
+- Filters, providers, callouts and layers for _ALL firewalls_ saved into `wfpstate.xml` file.
+
+Open it in any text editor and study.
+
 #### Q: Other questions:
 - [How to fix Windows Update and Windows Store internet access (temporary solution)](https://github.com/henrypp/simplewall/issues/206#issuecomment-439830634)
 - [Windows Security center integration (impossible)](https://stackoverflow.com/questions/3698285/how-can-i-tell-the-windows-security-center-that-im-an-antivirus/3698375#3698375)
