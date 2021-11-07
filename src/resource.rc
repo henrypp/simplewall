@@ -62,6 +62,7 @@ BEGIN
 		MENUITEM " ", IDM_ALWAYSONTOP_CHK
 		MENUITEM " ", IDM_AUTOSIZECOLUMNS_CHK
 		MENUITEM " ", IDM_SHOWFILENAMESONLY_CHK
+		MENUITEM " ", IDM_SHOWSEARCHBAR_CHK
 		MENUITEM SEPARATOR
 		POPUP " "
 		BEGIN
@@ -771,6 +772,8 @@ BEGIN
 
 	IDS_CONFIRMALLOW_CHK "Confirm when allowing application"
 	IDS_QUESTION_ALLOW "Are you sure you want to enable full internet access for this application?"
+
+	IDS_SHOWSEARCHBAR_CHK "Show search bar"
 END
 
 //

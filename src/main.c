@@ -2867,6 +2867,21 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					break;
 				}
 
+				case IDM_SHOWSEARCHBAR_CHK:
+				{
+					BOOLEAN new_val;
+
+					new_val = !_r_config_getboolean (L"IsShowSearchBar", TRUE);
+
+					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
+					_r_config_setboolean (L"IsShowSearchBar", new_val);
+
+					if (config.hsearchbar)
+						_app_search_setvisible (hwnd, config.hsearchbar);
+
+					break;
+				}
+
 				case IDM_VIEW_DETAILS:
 				case IDM_VIEW_ICON:
 				case IDM_VIEW_TILE:
@@ -2958,15 +2973,14 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_FIND:
 				{
-					HWND hctrl;
-
-					hctrl = GetDlgItem (config.hrebar, IDC_SEARCH);
-
-					if (hctrl)
+					if (config.hsearchbar)
 					{
-						SetFocus (hctrl);
+						if (_r_wnd_isvisible (config.hsearchbar))
+						{
+							SetFocus (config.hsearchbar);
 
-						_r_edit_setselection (config.hrebar, IDC_SEARCH, -1);
+							SendMessage (config.hsearchbar, EM_SETSEL, 0, (LPARAM)-1);
+						}
 					}
 
 					break;
@@ -2978,7 +2992,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						break;
 
 					_app_profile_load (hwnd, NULL);
-
 					_app_changefilters (hwnd, TRUE, FALSE);
 
 					break;

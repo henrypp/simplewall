@@ -78,13 +78,34 @@ VOID _app_search_initialize (_In_ HWND hwnd)
 
 	SetWindowLongPtr (context->hwnd, GWLP_USERDATA, (LONG_PTR)context);
 
-	context->def_window_proc = (WNDPROC)GetWindowLongPtr (hwnd, GWLP_WNDPROC);
+	context->def_window_proc = (WNDPROC)GetWindowLongPtr (context->hwnd, GWLP_WNDPROC);
 	SetWindowLongPtr (context->hwnd, GWLP_WNDPROC, (LONG_PTR)_app_search_subclass_proc);
 
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s...", _r_locale_getstring (IDS_FIND));
-	SendMessage (hwnd, EM_SETCUEBANNER, FALSE, (LPARAM)buffer);
+	SendMessage (context->hwnd, EM_SETCUEBANNER, FALSE, (LPARAM)buffer);
 
 	SendMessage (context->hwnd, WM_THEMECHANGED, 0, 0);
+}
+
+VOID _app_search_setvisible (_In_ HWND hwnd, _In_ HWND hsearch)
+{
+	BOOLEAN is_visible;
+
+	is_visible = _r_config_getboolean (L"IsShowSearchBar", TRUE);
+
+	if (is_visible)
+	{
+		ShowWindow (hsearch, SW_SHOWNA);
+
+		if (_r_wnd_isvisible (hwnd))
+			SetFocus (hsearch);
+	}
+	else
+	{
+		SetWindowText (hsearch, L"");
+
+		ShowWindow (hsearch, SW_HIDE);
+	}
 }
 
 VOID _app_search_drawbutton (_Inout_ PEDIT_CONTEXT context, _In_ LPCRECT button_rect)

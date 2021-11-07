@@ -34,6 +34,8 @@ VOID _app_search_destroytheme (_Inout_ PEDIT_CONTEXT context);
 
 VOID _app_search_initialize (_In_ HWND hwnd);
 
+VOID _app_search_setvisible (_In_ HWND hwnd, _In_ HWND hsearch);
+
 VOID _app_search_drawbutton (_Inout_ PEDIT_CONTEXT context, _In_ LPCRECT button_rect);
 VOID _app_search_getbuttonrect (_In_ PEDIT_CONTEXT context, _Inout_ PRECT rect);
 

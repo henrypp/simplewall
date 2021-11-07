@@ -139,7 +139,8 @@ typedef enum _ENUM_INFO_DATA2
 #define NETWORK_TIMEOUT 3500
 
 // ui
-#define LANG_MENU 5
+#define ICONS_MENU 5
+#define LANG_MENU 6
 #define NOTIFICATIONS_ID 4
 #define LOGGING_ID 5
 #define ERRLOG_ID 6

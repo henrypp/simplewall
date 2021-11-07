@@ -1247,6 +1247,7 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 		SendMessage (config.hsearchbar, WM_SETFONT, SendMessage (config.hrebar, WM_GETFONT, 0, 0), TRUE); // fix font
 
 		_app_search_initialize (config.hsearchbar);
+		_app_search_setvisible (hwnd, config.hsearchbar);
 
 		rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 
