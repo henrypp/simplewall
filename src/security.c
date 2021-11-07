@@ -396,6 +396,43 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
+VOID _app_setsecurityinfoforcallout (_In_ HANDLE hengine, _In_ LPCGUID callout_guid, _In_ BOOLEAN is_secure)
+{
+	PSECURITY_DESCRIPTOR security_descriptor;
+	PSID sid_owner;
+	PSID sid_group;
+	PACL dacl;
+	PACL sacl;
+	PACL new_dacl;
+	ULONG code;
+
+	code = FwpmCalloutGetSecurityInfoByKey (hengine, callout_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+
+	if (code != ERROR_SUCCESS)
+	{
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey", code, NULL);
+		return;
+	}
+
+	if (dacl)
+	{
+		new_dacl = _app_createaccesscontrollist (dacl, is_secure);
+
+		if (new_dacl)
+		{
+			code = FwpmCalloutSetSecurityInfoByKey (hengine, callout_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
+
+			if (code != ERROR_SUCCESS)
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey", code, NULL);
+
+			LocalFree (new_dacl);
+		}
+	}
+
+	if (security_descriptor)
+		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
+}
+
 VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_guid, _In_ BOOLEAN is_secure, _In_ UINT line)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;

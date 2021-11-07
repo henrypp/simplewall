@@ -15,4 +15,5 @@ VOID _app_setexplicitaccess (_Out_ PEXPLICIT_ACCESS ea, _In_ ACCESS_MODE mode, _
 VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine);
 VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID provider_guid, _In_ BOOLEAN is_secure);
 VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer_guid, _In_ BOOLEAN is_secure);
+VOID _app_setsecurityinfoforcallout (_In_ HANDLE hengine, _In_ LPCGUID callout_guid, _In_ BOOLEAN is_secure);
 VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_guid, _In_ BOOLEAN is_secure, _In_ UINT line);
