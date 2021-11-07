@@ -556,16 +556,6 @@ VOID _app_notify_setposition (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 	_r_wnd_center (hwnd, NULL); // display window on center (depends on error, config etc...)
 }
 
-HFONT _app_notify_createfont (_Inout_ PLOGFONT logfont, _In_ LONG size, _In_ BOOLEAN is_underline, _In_ LONG dpi_value)
-{
-	logfont->lfHeight = _r_dc_fontsizetoheight (size, dpi_value);
-	logfont->lfUnderline = is_underline;
-	logfont->lfCharSet = DEFAULT_CHARSET;
-	logfont->lfQuality = DEFAULT_QUALITY;
-
-	return CreateFontIndirect (logfont);
-}
-
 VOID _app_notify_initializefont (_In_ HWND hwnd, _Inout_ PNOTIFY_CONTEXT context, _In_ LONG dpi_value)
 {
 	NONCLIENTMETRICS ncm = {0};
@@ -575,7 +565,7 @@ VOID _app_notify_initializefont (_In_ HWND hwnd, _Inout_ PNOTIFY_CONTEXT context
 
 	ncm.cbSize = sizeof (ncm);
 
-	if (!SystemParametersInfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0))
+	if (!_r_dc_getsystemparametersinfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, dpi_value))
 		return;
 
 	SAFE_DELETE_OBJECT (context->hfont_title);
@@ -585,9 +575,9 @@ VOID _app_notify_initializefont (_In_ HWND hwnd, _Inout_ PNOTIFY_CONTEXT context
 	title_font_height = 12;
 	text_font_height = 9;
 
-	context->hfont_title = _app_notify_createfont (&ncm.lfCaptionFont, title_font_height, FALSE, dpi_value);
-	context->hfont_link = _app_notify_createfont (&ncm.lfMessageFont, text_font_height, TRUE, dpi_value);
-	context->hfont_text = _app_notify_createfont (&ncm.lfMessageFont, text_font_height, FALSE, dpi_value);
+	context->hfont_title = _app_createfont (&ncm.lfCaptionFont, title_font_height, FALSE, dpi_value);
+	context->hfont_link = _app_createfont (&ncm.lfMessageFont, text_font_height, TRUE, dpi_value);
+	context->hfont_text = _app_createfont (&ncm.lfMessageFont, text_font_height, FALSE, dpi_value);
 
 	SendMessage (hwnd, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
 
