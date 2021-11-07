@@ -4,15 +4,15 @@
 #include "global.h"
 
 _Ret_maybenull_
-PEDITOR_CONTEXT _app_editor_createwindow (_In_ HWND hwnd, _In_ PVOID pdata, _In_ INT page_id, _In_ BOOLEAN is_settorules)
+PEDITOR_CONTEXT _app_editor_createwindow (_In_ HWND hwnd, _In_ PVOID lparam, _In_ INT page_id, _In_ BOOLEAN is_settorules)
 {
 	PEDITOR_CONTEXT context;
 
 	context = _r_mem_allocatezero (sizeof (EDITOR_CONTEXT));
 
-	context->is_settorules = is_settorules;
-	context->ptr_app = pdata;
+	context->ptr_app = lparam;
 	context->page_id = page_id;
+	context->is_settorules = is_settorules;
 
 	if (_r_wnd_createmodalwindow (NULL, MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, context))
 		return context;
@@ -68,10 +68,14 @@ VOID _app_editor_settabtitle (_In_ HWND hwnd, _In_ INT listview_id)
 		locale_id = IDS_TAB_APPS;
 		tab_id = 2;
 	}
-	else // if (listview_id == IDC_APP_RULES_ID)
+	else if (listview_id == IDC_APP_RULES_ID)
 	{
 		locale_id = IDS_TRAY_RULES;
 		tab_id = 1;
+	}
+	else
+	{
+		return;
 	}
 
 	hparent = GetParent (hwnd);

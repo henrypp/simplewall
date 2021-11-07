@@ -29,7 +29,7 @@ typedef struct _EDITOR_CONTEXT
 } EDITOR_CONTEXT, *PEDITOR_CONTEXT;
 
 _Ret_maybenull_
-PEDITOR_CONTEXT _app_editor_createwindow (_In_ HWND hwnd, _In_ PVOID pdata, _In_ INT page_id, _In_ BOOLEAN is_settorules);
+PEDITOR_CONTEXT _app_editor_createwindow (_In_ HWND hwnd, _In_ PVOID lparam, _In_ INT page_id, _In_ BOOLEAN is_settorules);
 
 FORCEINLINE VOID _app_editor_deletewindow (_In_ PEDITOR_CONTEXT context)
 {
