@@ -126,7 +126,7 @@ Windows Registry Editor Version 5.00
 </details>
 
 #### Q: How can i disable Windows Firewall?
-Start command line as administrator, and enter commands:
+Start command line _as an administrator_, and enter commands below.
 
 <details>
 <summary>Disable Windows Firewall profiles:</summary>
@@ -147,22 +147,29 @@ netsh advfirewall set allprofiles state on
 </details>
 
 #### Q: How can i view all filters information?
-Start command line as administrator, and enter commands:
+Start command line _as an administrator_, and enter commands below.
 
 <details>
-<summary>Dump WFP filters and it's state:</summary>
+<summary>Dump filters information saved into a `filters.xml` file:</summary>
 
 ---
 ~~~bat
 cd /d %USERPROFILE%\Desktop
 
 netsh wfp show filters
-netsh wfp show state
 ~~~
 </details>
 
-- Filters information saved into `filters.xml` file.
-- Filters, providers, callouts and layers for _ALL firewalls_ saved into `wfpstate.xml` file.
+<details>
+<summary>Dump providers, callouts and layers information into a `wfpstate.xml` file:</summary>
+
+---
+~~~bat
+cd /d %USERPROFILE%\Desktop
+
+netsh wfp show state
+~~~
+</details>
 
 Open it in any text editor and study.
 
