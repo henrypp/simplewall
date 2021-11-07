@@ -400,6 +400,13 @@ BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ 
 				goto CleanupExit;
 		}
 
+		// layer name
+		if (ptr_log->layer_name)
+		{
+			if (_app_search_isstringfound (ptr_log->layer_name, search_string, context, &is_changed))
+				goto CleanupExit;
+		}
+
 		// user name
 		if (ptr_log->username)
 		{
