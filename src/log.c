@@ -168,7 +168,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 		path = NULL;
 	}
 
-	date_string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+	date_string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
 	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol);
 	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol);
@@ -397,6 +397,8 @@ PR_STRING _wfp_getlayername (_In_ LPCGUID layer_guid)
 	static LPCGUID layer_guids[] = {
 		&FWPM_LAYER_ALE_AUTH_CONNECT_V4,
 		&FWPM_LAYER_ALE_AUTH_CONNECT_V6,
+		&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
+		&FWPM_LAYER_ALE_CONNECT_REDIRECT_V6,
 		&FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4,
 		&FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6,
 		&FWPM_LAYER_ALE_AUTH_LISTEN_V4,
@@ -412,6 +414,8 @@ PR_STRING _wfp_getlayername (_In_ LPCGUID layer_guid)
 	static R_STRINGREF layer_names[] = {
 		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_CONNECT_V4"),
 		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_CONNECT_V6"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_CONNECT_REDIRECT_V4"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_CONNECT_REDIRECT_V6"),
 		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4"),
 		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6"),
 		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_LISTEN_V4"),
