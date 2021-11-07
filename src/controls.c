@@ -282,16 +282,12 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 	else if (ptr_network)
 	{
 		if (ptr_network->path)
-		{
 			tmp_string3 = ptr_network->path;
-		}
 	}
 	else if (ptr_log)
 	{
 		if (ptr_log->path)
-		{
 			tmp_string3 = ptr_log->path;
-		}
 	}
 
 	if (tmp_string3)
@@ -444,6 +440,37 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 		_r_obj_deletestringbuilder (&sb);
 
 		_r_obj_dereference (ptr_app);
+	}
+
+	// show additional log information
+	if (ptr_log)
+	{
+		_r_obj_appendstringbuilder (buffer, _r_locale_getstring (IDS_FILTER));
+		_r_obj_appendstringbuilder (buffer, L":\r\n");
+
+		_r_obj_appendstringbuilder (buffer, SZ_TAB);
+
+		if (ptr_log->filter_name)
+		{
+			_r_obj_appendstringbuilder2 (buffer, ptr_log->filter_name);
+		}
+		else
+		{
+			_r_obj_appendstringbuilder (buffer, SZ_EMPTY);
+		}
+
+		_r_obj_appendstringbuilder (buffer, L"\r\n" SZ_TAB);
+
+		if (ptr_log->layer_name)
+		{
+			_r_obj_appendstringbuilder2 (buffer, ptr_log->layer_name);
+		}
+		else
+		{
+			_r_obj_appendstringbuilder (buffer, SZ_EMPTY);
+		}
+
+		_r_obj_appendstringbuilder (buffer, L"\r\n");
 	}
 }
 
