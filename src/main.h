@@ -222,6 +222,8 @@ typedef struct _STATIC_DATA
 	volatile HWND hnotification;
 
 	HFONT hfont;
+	HFONT wnd_font;
+
 	HWND hrebar;
 	HWND htoolbar;
 	HWND hsearchbar;

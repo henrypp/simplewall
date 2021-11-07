@@ -409,6 +409,8 @@ VOID _app_message_dpichanged (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
 	PR_STRING localized_string = NULL;
 
+	_app_windowloadfont (dpi_value);
+
 	_app_imagelist_init (hwnd, dpi_value);
 
 	// reset toolbar information
@@ -432,10 +434,10 @@ VOID _app_message_dpichanged (_In_ HWND hwnd, _In_ LONG dpi_value)
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, _r_locale_getstring (IDS_DONATE), BTNS_BUTTON | BTNS_AUTOSIZE, 0, I_IMAGENONE);
 
-	_app_toolbar_resize (hwnd, dpi_value);
-
 	_app_listviewloadfont (dpi_value, TRUE);
 	_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+
+	SendMessage (hwnd, WM_SIZE, 0, 0);
 
 	_r_obj_dereference (localized_string);
 }

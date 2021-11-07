@@ -2104,10 +2104,12 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
-			_app_toolbar_resize (hwnd, dpi_value);
-
+			_app_windowloadfont (dpi_value);
 			_app_listviewloadfont (dpi_value, TRUE);
+
 			_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+
+			SendMessage (hwnd, WM_SIZE, 0, 0);
 
 			break;
 		}

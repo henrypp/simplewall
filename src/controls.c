@@ -689,6 +689,7 @@ VOID _app_setinterfacestate (_In_ HWND hwnd, _In_ LONG dpi_value)
 	dpi_value = _r_dc_gettaskbardpi ();
 
 	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
 
 	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small_x, icon_small_y);
 
@@ -975,7 +976,7 @@ VOID _app_listviewloadfont (_In_ LONG dpi_value, _In_ BOOLEAN is_forced)
 
 		_r_config_getfont (L"Font", &logfont, dpi_value);
 
-		config.hfont = CreateFontIndirect (&logfont);
+		config.hfont = _app_createfont (&logfont, 0, FALSE, 0);
 	}
 }
 
@@ -983,6 +984,32 @@ VOID _app_listviewsetfont (_In_ HWND hwnd, _In_ INT listview_id)
 {
 	if (config.hfont)
 		SendDlgItemMessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
+}
+
+HFONT _app_createfont (_Inout_ PLOGFONT logfont, _In_ LONG size, _In_ BOOLEAN is_underline, _In_ LONG dpi_value)
+{
+	if (size)
+		logfont->lfHeight = _r_dc_fontsizetoheight (size, dpi_value);
+
+	logfont->lfUnderline = is_underline;
+	logfont->lfCharSet = DEFAULT_CHARSET;
+	logfont->lfQuality = DEFAULT_QUALITY;
+
+	return CreateFontIndirect (logfont);
+}
+
+VOID _app_windowloadfont (_In_ LONG dpi_value)
+{
+	NONCLIENTMETRICS ncm = {0};
+
+	ncm.cbSize = sizeof (ncm);
+
+	if (!_r_dc_getsystemparametersinfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, dpi_value))
+		return;
+
+	SAFE_DELETE_OBJECT (config.wnd_font);
+
+	config.wnd_font = _app_createfont (&ncm.lfMessageFont, 0, FALSE, 0);
 }
 
 INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lparam2, _In_ LPARAM lparam)
@@ -1167,6 +1194,8 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 
 	config.hrebar = GetDlgItem (hwnd, IDC_REBAR);
 
+	_app_windowloadfont (dpi_value);
+
 	SendMessage (config.hrebar, RB_SETBARINFO, 0, (LPARAM)(&(REBARINFO)
 	{
 		sizeof (REBARINFO)
@@ -1191,6 +1220,9 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 	{
 		_r_toolbar_setstyle (config.hrebar, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
 
+		SendMessage (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+
 		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
@@ -1206,9 +1238,6 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 7);
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
-
-		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
-		SendMessage (config.htoolbar, WM_SETFONT, SendMessage (config.hrebar, WM_GETFONT, 0, 0), TRUE); // fix font
 
 		_r_toolbar_resize (config.hrebar, IDC_TOOLBAR);
 
@@ -1244,7 +1273,7 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 
 	if (config.hsearchbar)
 	{
-		SendMessage (config.hsearchbar, WM_SETFONT, SendMessage (config.hrebar, WM_GETFONT, 0, 0), TRUE); // fix font
+		SendMessage (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 
 		_app_search_initialize (config.hsearchbar);
 		_app_search_setvisible (hwnd, config.hsearchbar);
@@ -1269,6 +1298,8 @@ VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 	SIZE ideal_size = {0};
 	ULONG button_size;
 	UINT rebar_count;
+
+	_app_toolbar_setfont ();
 
 	SendMessage (config.htoolbar, TB_AUTOSIZE, 0, 0);
 
@@ -1308,6 +1339,15 @@ VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 
 		SendMessage (config.hrebar, RB_SETBANDINFO, (WPARAM)i, (LPARAM)&rbi);
 	}
+}
+
+VOID _app_toolbar_setfont ()
+{
+	if (config.htoolbar)
+		SendMessage (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+
+	if (config.hsearchbar)
+		SendMessage (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 }
 
 VOID _app_window_resize (_In_ HWND hwnd, _In_ LPCRECT rect, _In_ LONG dpi_value)

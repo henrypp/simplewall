@@ -44,11 +44,15 @@ VOID _app_listviewsetview (_In_ HWND hwnd, _In_ INT listview_id);
 VOID _app_listviewloadfont (_In_ LONG dpi_value, _In_ BOOLEAN is_forced);
 VOID _app_listviewsetfont (_In_ HWND hwnd, _In_ INT listview_id);
 
+HFONT _app_createfont (_Inout_ PLOGFONT logfont, _In_ LONG size, _In_ BOOLEAN is_underline, _In_ LONG dpi_value);
+VOID _app_windowloadfont (_In_ LONG dpi_value);
+
 INT CALLBACK _app_listviewcompare_callback (_In_ LPARAM lparam1, _In_ LPARAM lparam2, _In_ LPARAM lparam);
 VOID _app_listviewsort (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG column_id, _In_ BOOLEAN is_notifycode);
 
 VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value);
 VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value);
+VOID _app_toolbar_setfont ();
 
 VOID _app_window_resize (_In_ HWND hwnd, _In_ LPCRECT rect, _In_ LONG dpi_value);
 
