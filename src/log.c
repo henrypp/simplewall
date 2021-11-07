@@ -185,7 +185,8 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 		_r_obj_getstringordefault (ptr_log->remote_addr_str, SZ_EMPTY),
 		remote_port_string->buffer,
 		_r_obj_getstringordefault (ptr_log->protocol_str, SZ_DIRECTION_ANY),
-		ptr_log->filter_name->buffer,
+		_r_obj_getstringordefault (ptr_log->layer_name, SZ_EMPTY),
+		_r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY),
 		ptr_log->filter_id,
 		_r_obj_getstringordefault (direction_string, SZ_EMPTY),
 		(ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
@@ -391,11 +392,55 @@ VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle)
 	_app_loginit (FALSE); // destroy log file handle if present
 }
 
+PR_STRING _wfp_getlayername (_In_ LPCGUID layer_guid)
+{
+	static LPCGUID layer_guids[] = {
+		&FWPM_LAYER_ALE_AUTH_CONNECT_V4,
+		&FWPM_LAYER_ALE_AUTH_CONNECT_V6,
+		&FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4,
+		&FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6,
+		&FWPM_LAYER_ALE_AUTH_LISTEN_V4,
+		&FWPM_LAYER_ALE_AUTH_LISTEN_V6,
+		&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
+		&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
+		&FWPM_LAYER_OUTBOUND_TRANSPORT_V4,
+		&FWPM_LAYER_OUTBOUND_TRANSPORT_V6,
+		&FWPM_LAYER_INBOUND_TRANSPORT_V4,
+		&FWPM_LAYER_INBOUND_TRANSPORT_V6,
+	};
+
+	static R_STRINGREF layer_names[] = {
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_CONNECT_V4"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_CONNECT_V6"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_LISTEN_V4"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_LISTEN_V6"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_OUTBOUND_TRANSPORT_V4"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_OUTBOUND_TRANSPORT_V6"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_INBOUND_TRANSPORT_V4"),
+		PR_STRINGREF_INIT (L"FWPM_LAYER_INBOUND_TRANSPORT_V6"),
+	};
+
+	C_ASSERT (RTL_NUMBER_OF (layer_guids) == RTL_NUMBER_OF (layer_names));
+
+	for (SIZE_T i = 0; i < RTL_NUMBER_OF (layer_guids); i++)
+	{
+		if (IsEqualGUID (layer_guid, layer_guids[i]))
+			return _r_obj_createstring3 (&layer_names[i]);
+	}
+
+	return _r_str_fromguid (layer_guid, TRUE);
+}
+
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 {
 	HANDLE engine_handle;
 	PITEM_LOG ptr_log;
 	PR_STRING filter_name;
+	PR_STRING layer_name;
 	PR_STRING sid_string;
 	UINT8 filter_weight;
 	BOOLEAN is_myprovider;
@@ -405,64 +450,59 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	if (!engine_handle || !log->filter_id || !log->layer_id || (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE)))
 		return;
 
+	FWPM_LAYER *layer_ptr;
+	FWPM_FILTER *filter_ptr;
+
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
+	if (FwpmLayerGetById (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS || !layer_ptr)
+		return;
+
+	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) || IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
 	{
-		FWPM_LAYER *layer;
-
-		if (FwpmLayerGetById (engine_handle, log->layer_id, &layer) == ERROR_SUCCESS)
-		{
-			if (layer)
-			{
-				if (IsEqualGUID (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) || IsEqualGUID (&layer->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
-				{
-					FwpmFreeMemory ((PVOID_PTR)&layer);
-					return;
-				}
-				else if (IsEqualGUID (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) || IsEqualGUID (&layer->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6))
-				{
-					log->direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
-				}
-
-				FwpmFreeMemory ((PVOID_PTR)&layer);
-			}
-		}
+		FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
+		return;
+	}
+	else if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) || IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6))
+	{
+		log->direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 	}
 
+	layer_name = _wfp_getlayername (&layer_ptr->layerKey);
+
+	FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
+
 	// get filter information
+	if (FwpmFilterGetById (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS || !filter_ptr)
+	{
+		_r_obj_dereference (layer_name);
+		return;
+	}
+
 	filter_name = NULL;
 	is_myprovider = FALSE;
 	filter_weight = 0;
 
-	FWPM_FILTER *ptr_filter = NULL;
-
-	if (FwpmFilterGetById (engine_handle, log->filter_id, &ptr_filter) == ERROR_SUCCESS && ptr_filter)
+	if (!_r_str_isempty (filter_ptr->displayData.description))
 	{
-		if (!_r_str_isempty (ptr_filter->displayData.description))
-		{
-			filter_name = _r_obj_createstring (ptr_filter->displayData.description);
-		}
-		else if (!_r_str_isempty (ptr_filter->displayData.name))
-		{
-			filter_name = _r_obj_createstring (ptr_filter->displayData.name);
-		}
-
-		if (ptr_filter->weight.type == FWP_UINT8)
-			filter_weight = ptr_filter->weight.uint8;
-
-		if (ptr_filter->providerKey)
-		{
-			if (IsEqualGUID (ptr_filter->providerKey, &GUID_WfpProvider))
-				is_myprovider = TRUE;
-		}
+		filter_name = _r_obj_createstring (filter_ptr->displayData.description);
+	}
+	else if (!_r_str_isempty (filter_ptr->displayData.name))
+	{
+		filter_name = _r_obj_createstring (filter_ptr->displayData.name);
 	}
 
-	if (ptr_filter)
-		FwpmFreeMemory ((PVOID_PTR)&ptr_filter);
+	if (filter_ptr->weight.type == FWP_UINT8)
+		filter_weight = filter_ptr->weight.uint8;
 
-	// prevent filter "not found" items
-	if (!filter_name)
-		return;
+	if (filter_ptr->providerKey)
+	{
+		if (IsEqualGUID (filter_ptr->providerKey, &GUID_WfpProvider))
+			is_myprovider = TRUE;
+	}
 
+	FwpmFreeMemory ((PVOID_PTR)&filter_ptr);
+
+	// allocate log object
 	ptr_log = _r_obj_allocate (sizeof (ITEM_LOG), &_app_dereferencelog);
 
 	// copy date and time
@@ -574,6 +614,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	ptr_log->is_myprovider = is_myprovider;
 
 	ptr_log->filter_name = filter_name;
+	ptr_log->layer_name = layer_name;
 
 	ptr_log->is_blocklist = (filter_weight == FW_WEIGHT_RULE_BLOCKLIST);
 	ptr_log->is_system = (filter_weight == FW_WEIGHT_HIGHEST) || (filter_weight == FW_WEIGHT_HIGHEST_IMPORTANT);
