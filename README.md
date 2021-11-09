@@ -15,7 +15,7 @@
 -------
 
 <p align="center">
-	<img src="https://www.henrypp.org/images/simplewall.png" />
+	<img src="https://www.henrypp.org/images/simplewall.png?cachefix" />
 </p>
 
 ### Description:
@@ -63,6 +63,115 @@ List of arguments for `simplewall.exe`:
 -uninstall - remove all installed filters.
 ~~~
 
+### Rules editor:
+simplewall have two types of custom user rules rules:
+- **Global rules:** rule applied for all applications.
+- **Special rules:** rule applied only for specified applications.
+
+<img src="https://www.henrypp.org/images/simplewall_rule3.png" />
+
+_To set rule applications, open rule and then navigate to "Apps" tab._
+
+<details>
+<summary>Rule syntax format:</summary>
+
+---
+- IP addresses `192.168.0.1; 192.168.0.1; [fc00::]`
+- IP addresses with port `192.168.0.1:80; 192.168.0.1:443; [fc00::]:443;`
+- IP ranges `192.168.0.1-192.168.0.255; 192.168.0.1-192.168.0.255;`
+- IP ranges (with port) `192.168.0.1-192.168.0.255:80; 192.168.0.1-192.168.0.255:443;` (v2.0.20+)
+- IP with prefix lengths (CIDR) `192.168.0.0/16; 192.168.0.0/24; fe80::/10`
+- Ports `21; 80; 443;`
+- Ports ranges `20-21; 49152-65534;`
+
+_To specify more than one ip, port and/or host, use semicolon._
+---
+</details>
+
+<details>
+<summary>IPv4 CIDR blocks:</summary>
+
+---
+|Address format|Mask|
+|---|---|
+|a.b.c.d/32|255.255.255.255|
+|a.b.c.d/31|255.255.255.254|
+|a.b.c.d/30|255.255.255.252|
+|a.b.c.d/29|255.255.255.248|
+|a.b.c.d/28|255.255.255.240|
+|a.b.c.d/27|255.255.255.224|
+|a.b.c.d/26|255.255.255.192|
+|a.b.c.d/25|255.255.255.128|
+|a.b.c.0/24|255.255.255.0|
+|a.b.c.0/23|255.255.254.0|
+|a.b.c.0/22|255.255.252.0|
+|a.b.c.0/21|255.255.248.0|
+|a.b.c.0/20|255.255.240.0|
+|a.b.c.0/19|255.255.224.0|
+|a.b.c.0/18|255.255.192.0|
+|a.b.c.0/17|255.255.128.0|
+|a.b.0.0/16|255.255.0.0|
+|a.b.0.0/15|255.254.0.0|
+|a.b.0.0/14|255.252.0.0|
+|a.b.0.0/13|255.248.0.0|
+|a.b.0.0/12|255.240.0.0|
+|a.b.0.0/11|255.224.0.0|
+|a.b.0.0/10|255.192.0.0|
+|a.b.0.0/9|255.128.0.0|
+|a.0.0.0/8|255.0.0.0|
+|a.0.0.0/7|254.0.0.0|
+|a.0.0.0/6|252.0.0.0|
+|a.0.0.0/5|248.0.0.0|
+|a.0.0.0/4|240.0.0.0|
+|a.0.0.0/3|224.0.0.0|
+|a.0.0.0/2|192.0.0.0|
+|a.0.0.0/1|128.0.0.0|
+|0.0.0.0/0|0.0.0.0|
+---
+</details>
+
+<details>
+<summary>IPv6 CIDR blocks:</summary>
+
+---
+`2001:0db8:0123:4567:89ab:cdef:1234:5678` <br>
+`|||| |||| |||| |||| |||| |||| |||| ||||` <br>
+`|||| |||| |||| |||| |||| |||| |||| |||128	Single end-points and loopback` <br>
+`|||| |||| |||| |||| |||| |||| |||| |||127	Point-to-point links (inter-router)` <br>
+`|||| |||| |||| |||| |||| |||| |||| ||124` <br>
+`|||| |||| |||| |||| |||| |||| |||| |120` <br>
+`|||| |||| |||| |||| |||| |||| |||| 116` <br>
+`|||| |||| |||| |||| |||| |||| |||112` <br>
+`|||| |||| |||| |||| |||| |||| ||108` <br>
+`|||| |||| |||| |||| |||| |||| |104` <br>
+`|||| |||| |||| |||| |||| |||| 100` <br>
+`|||| |||| |||| |||| |||| |||96` <br>
+`|||| |||| |||| |||| |||| ||92` <br>
+`|||| |||| |||| |||| |||| |88` <br>
+`|||| |||| |||| |||| |||| 84` <br>
+`|||| |||| |||| |||| |||80` <br>
+`|||| |||| |||| |||| ||76` <br>
+`|||| |||| |||| |||| |72` <br>
+`|||| |||| |||| |||| 68` <br>
+`|||| |||| |||| |||64	Single LAN (default prefix size for SLAAC)` <br>
+`|||| |||| |||| ||60	Some (very limited) 6rd deployments (/60 = 16 /64)` <br>
+`|||| |||| |||| |56	Minimal end sites assignment[12] (e.g. Home network) (/56 = 256 /64)` <br>
+`|||| |||| |||| 52	(/52 = 4096 /64)` <br>
+`|||| |||| |||48	Typical assignment for larger sites (/48 = 65536 /64) - Many ISP also do for residential` <br>
+`|||| |||| ||44` <br>
+`|||| |||| |40` <br>
+`|||| |||| 36	possible future Local Internet registry extra-small allocations` <br>
+`|||| |||32	Local Internet registry minimum allocations` <br>
+`|||| ||28	Local Internet registry medium allocations` <br>
+`|||| |24	Local Internet registry large allocations` <br>
+`|||| 20	Local Internet registry extra large allocations` <br>
+`|||16` <br>
+`||12	Regional Internet Registry allocations from IANA[15]` <br>
+`|8` <br>
+`4` <br>
+---
+</details>
+
 ### FAQ:
 #### Q: Are internet connections blocked when simplewall is not running?
 A: Yes. Installed filters are working even if simplewall is terminated.
@@ -87,6 +196,7 @@ A: Blacklist was removed many days ago for uselessness. But if you need it, you 
 2) Uncheck `Block outbound for all` and `Block inbound for all` options.
 3) Create user rule (green cross on toolbar) with block action, any direction, `Block connection` name and empty remote and local rule.
 4) You can assign this rule for apps whatever you want to block network access.
+---
 </details>
 
 #### Q: Why does my network icon have an exclamation mark?
@@ -98,6 +208,7 @@ A: When you are connected to a network, Windows checks for internet connectivity
 ---
 1) Open `System rules` tab.
 2) Allow `NCSI` rule (enabled by default).
+---
 </details>
 
 <details>
@@ -113,6 +224,7 @@ Windows Registry Editor Version 5.00
 "NoActiveProbe"=dword:00000001
 "DisablePassivePolling"=dword:00000001
 ```
+---
 </details>
 
 <details>
@@ -123,6 +235,7 @@ Windows Registry Editor Version 5.00
 2) Go to `Computer Configuration -> Administrative Templates -> System -> Internet Communication Management -> Internet Communication Settings`.
 3) Double-click `Turn off Windows Network Connectivity Status Indicator active tests` and then select Enabled. Click Ok.
 4) Open the Command Prompt (Admin) and enter `gpupdate /force` to enforce the changes made to the Group Policies.
+---
 </details>
 
 #### Q: How can i disable Windows Firewall?
@@ -135,6 +248,7 @@ Start command line _as an administrator_, and enter commands below.
 ~~~bat
 netsh advfirewall set allprofiles state off
 ~~~
+---
 </details>
 
 <details>
@@ -144,6 +258,7 @@ netsh advfirewall set allprofiles state off
 ~~~bat
 netsh advfirewall set allprofiles state on
 ~~~
+---
 </details>
 
 #### Q: How can i view all filters information?
@@ -158,6 +273,7 @@ cd /d %USERPROFILE%\Desktop
 
 netsh wfp show filters
 ~~~
+---
 </details>
 
 <details>
@@ -169,6 +285,7 @@ cd /d %USERPROFILE%\Desktop
 
 netsh wfp show state
 ~~~
+---
 </details>
 
 Open it in any text editor and study.
