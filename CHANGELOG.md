@@ -1,4 +1,30 @@
-v3.5.2 (18 October 2021)
+v3.6 (9 November 2021)
+- improved multi-threading safety
+- improved startup time
+- improved dpi support
+- added option to confirm allowing applications (issue #1070)
+- added filtering for the application list (issue #663)
+- added editor list items count mark for tab title
+- added wfp initialization failure workaround
+- added filtering for editor apps and rules
+- added layer name into log
+- moved log exclude configuration into another settings page (issue #1064)
+- revert notification x button (issue #973)
+- changed create rule toolbar icon (#723)
+- fixed filters with hard permit can access internet (issue #689)
+- fixed issue with hotkeys for switch tabs (issue #723)
+- fixed rebar incrorrect resizing when dpi was changed
+- fixed update installation issue (issue #1061)
+- fixed notification multi-monitor support
+- fixed service missing path (issue #1036)
+- fixed editor can cause crash (#1071)
+- fixed big memory leak (issue #1066)
+- fixed net events unsubscription
+- optimized listview sorting
+- fixed internal bugs
+- cosmetic fixes
+
+v3.5.3 (18 October 2021)
 - fixed using uninitialzed port variable in ip ranges [regression] (issue #1055)
 
 v3.5.2 (17 October 2021)
@@ -53,7 +79,7 @@ v3.4.1 (15 August 2021)
 
 v3.4 (11 August 2021)
 - added arm64 binaries (portable only)
-- added protocol and host name information into network alert window  (issue #843)
+- added protocol and host name information into network alert window (issue #843)
 - added limit number of packets log entries (issue #941)
 - added host resolving for packet logger listview
 - added listview group for forever blocked apps
