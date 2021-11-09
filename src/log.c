@@ -392,6 +392,55 @@ VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle)
 	_app_loginit (FALSE); // destroy log file handle if present
 }
 
+VOID _wfp_logsetoption (_In_ HANDLE engine_handle)
+{
+	FWP_VALUE val;
+	UINT32 mask;
+	ULONG code;
+
+	if (!config.is_neteventset)
+		return;
+
+	// configure dropped packets logging (win8+)
+	if (!_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		return;
+
+	mask = 0;
+
+	// add allowed connections monitor
+	if (!_r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
+		mask |= FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW;
+
+	// add inbound multicast and broadcast connections monitor
+	if (!_r_config_getboolean (L"IsExcludeInbound", FALSE))
+		mask |= FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST | FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
+
+	// add port scanning drop connections monitor (1903+)
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
+	{
+		if (!_r_config_getboolean (L"IsExcludePortScanningDrop", FALSE))
+			mask |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
+	}
+
+	// the filter engine will collect wfp network events that match any supplied key words
+	val.type = FWP_UINT32;
+	val.uint32 = mask;
+
+	code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
+
+	if (code != ERROR_SUCCESS)
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
+
+	// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
+	val.type = FWP_UINT32;
+	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE);
+
+	code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+
+	if (code != ERROR_SUCCESS)
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
+}
+
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 {
 	HANDLE engine_handle;

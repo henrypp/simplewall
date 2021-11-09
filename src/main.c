@@ -1506,7 +1506,15 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 				case IDC_EXCLUDECLASSIFYALLOW_CHK:
 				{
+					HANDLE hengine;
+
 					_r_config_setboolean (L"IsExcludeClassifyAllow", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
+
+					hengine = _wfp_getenginehandle ();
+
+					if (hengine)
+						_wfp_logsetoption (hengine);
+
 					break;
 				}
 

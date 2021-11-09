@@ -74,6 +74,8 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log);
 VOID _wfp_logsubscribe (_In_ HANDLE engine_handle);
 VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle);
 
+VOID _wfp_logsetoption (_In_ HANDLE engine_handle);
+
 VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log);
 
 VOID CALLBACK _wfp_logcallback0 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT1* event);
