@@ -44,6 +44,7 @@ BOOLEAN _wfp_isfiltersapplying ();
 ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ();
 
 HANDLE _wfp_getenginehandle ();
+PR_STRING _wfp_getlayername (_In_ LPCGUID layer_guid);
 
 BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle);
 VOID _wfp_uninitialize (_In_ HANDLE engine_handle, _In_ BOOLEAN is_full);
