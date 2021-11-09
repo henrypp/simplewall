@@ -776,6 +776,8 @@ BEGIN
 	IDS_QUESTION_ALLOW "Are you sure you want to enable full internet access for this application?"
 
 	IDS_SHOWSEARCHBAR_CHK "Show search bar"
+
+	IDS_LAYER "Layer"
 END
 
 //
