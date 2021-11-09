@@ -408,9 +408,11 @@ VOID _app_setsecurityinfoforcallout (_In_ HANDLE hengine, _In_ LPCGUID callout_g
 
 	code = FwpmCalloutGetSecurityInfoByKey (hengine, callout_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
-	if (code != ERROR_SUCCESS && code != FWP_E_CALLOUT_NOT_FOUND)
+	if (code != ERROR_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey", code, NULL);
+		if (code != FWP_E_CALLOUT_NOT_FOUND)
+			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey", code, NULL);
+
 		return;
 	}
 
