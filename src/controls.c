@@ -1338,7 +1338,7 @@ VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 		RtlZeroMemory (&rbi, sizeof (rbi));
 
 		rbi.cbSize = sizeof (rbi);
-		rbi.fMask = RBBIM_ID | RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
+		rbi.fMask = RBBIM_ID | RBBIM_CHILD | RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
 
 		if (!SendMessage (config.hrebar, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rbi))
 			continue;
@@ -1356,7 +1356,15 @@ VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
 		}
 		else if (rbi.wID == REBAR_SEARCH_ID)
 		{
-			rbi.cxIdeal = (UINT)_r_dc_getdpi (180, dpi_value);
+			if (_r_wnd_isvisible (rbi.hwndChild))
+			{
+				rbi.cxIdeal = (UINT)_r_dc_getdpi (180, dpi_value);
+			}
+			else
+			{
+				rbi.cxIdeal = 0;
+			}
+
 			rbi.cxMinChild = rbi.cxIdeal;
 			rbi.cyMinChild = 20;
 		}

@@ -2879,7 +2879,11 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_config_setboolean (L"IsShowSearchBar", new_val);
 
 					if (config.hsearchbar)
+					{
 						_app_search_setvisible (hwnd, config.hsearchbar);
+
+						SendMessage (hwnd, WM_SIZE, 0, 0);
+					}
 
 					break;
 				}
