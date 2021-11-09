@@ -445,10 +445,13 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 	// show additional log information
 	if (ptr_log)
 	{
-		_r_obj_appendstringbuilder (buffer, _r_locale_getstring (IDS_FILTER));
+		_r_obj_appendstringbuilder (buffer, _r_locale_getstring (IDS_TITLE_ADVANCED));
 		_r_obj_appendstringbuilder (buffer, L":\r\n");
 
 		_r_obj_appendstringbuilder (buffer, SZ_TAB);
+
+		_r_obj_appendstringbuilder (buffer, _r_locale_getstring (IDS_FILTER));
+		_r_obj_appendstringbuilder (buffer, L": ");
 
 		if (ptr_log->filter_name)
 		{
@@ -460,6 +463,9 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 		}
 
 		_r_obj_appendstringbuilder (buffer, L"\r\n" SZ_TAB);
+
+		_r_obj_appendstringbuilder (buffer, _r_locale_getstring (IDS_LAYER));
+		_r_obj_appendstringbuilder (buffer, L": ");
 
 		if (ptr_log->layer_name)
 		{
