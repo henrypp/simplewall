@@ -212,19 +212,16 @@ BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 	FWP_VALUE val;
 
 	ULONG code;
-	UINT32 opt_value;
 	BOOLEAN is_success;
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
 	BOOLEAN is_intransact;
 
 	BOOLEAN is_secure;
-	BOOLEAN is_win8;
 
 	is_success = TRUE; // already initialized
 
 	is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
-	is_win8 = _r_sys_isosversiongreaterorequal (WINDOWS_8);
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
@@ -367,54 +364,21 @@ BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
 
 		if (config.is_neteventset)
 		{
-			// configure dropped packets logging (win8+)
-			if (is_win8)
-			{
-				opt_value = 0;
-
-				// add allowed connections monitor
-				if (_r_config_getboolean (L"IsMonitorAllowed", TRUE))
-					opt_value |= FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW;
-
-				// add inbound multicast and broadcast connections monitor
-				if (_r_config_getboolean (L"IsMonitorInbound", TRUE))
-					opt_value |= FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST | FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
-
-				// add port scanning drop connections monitor (1903+)
-				if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
-				{
-					if (_r_config_getboolean (L"IsMonitorPortScanningDrop", FALSE))
-						opt_value |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
-				}
-
-				// the filter engine will collect wfp network events that match any supplied key words
-				val.type = FWP_UINT32;
-				val.uint32 = opt_value;
-
-				code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
-
-				if (code != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
-
-				// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
-				opt_value = _r_config_getboolean (L"IsMonitorIPSecConnections", FALSE);
-
-				val.type = FWP_UINT32;
-				val.uint32 = opt_value;
-
-				FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
-			}
+			_wfp_logsetoption (engine_handle);
 
 			_wfp_logsubscribe (engine_handle);
 		}
 	}
 
 	// packet queuing (win8+)
-	if (is_win8)
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 	{
 		if (_r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
 		{
-			// enables inbound or forward packet queuing independently. when enabled, the system is able to evenly distribute cpu load to multiple cpus for site-to-site ipsec tunnel scenarios.
+			// Enables inbound or forward packet queuing independently.
+			// when enabled, the system is able to evenly distribute cpu load
+			// to multiple cpus for site-to-site ipsec tunnel scenarios.
+
 			val.type = FWP_UINT32;
 			val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
 
