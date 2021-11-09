@@ -2671,44 +2671,42 @@ VOID NTAPI _wfp_applythread (_In_ PVOID arglist, _In_ ULONG busy_count)
 
 VOID _wfp_firewallenable (_In_ BOOLEAN is_enable)
 {
-	HRESULT hr;
-	INetFwPolicy2 *INetFwPolicy = NULL;
-
 	static NET_FW_PROFILE_TYPE2 profile_types[] = {
 		NET_FW_PROFILE2_DOMAIN,
 		NET_FW_PROFILE2_PRIVATE,
 		NET_FW_PROFILE2_PUBLIC
 	};
 
+	INetFwPolicy2 *INetFwPolicy = NULL;
+	HRESULT hr;
+
 	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
 
-	if (SUCCEEDED (hr))
+	if (FAILED (hr))
+		return;
+
+	for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
 	{
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
-		{
-			hr = INetFwPolicy2_put_FirewallEnabled (INetFwPolicy, profile_types[i], is_enable ? VARIANT_TRUE : VARIANT_FALSE);
+		hr = INetFwPolicy2_put_FirewallEnabled (INetFwPolicy, profile_types[i], is_enable ? VARIANT_TRUE : VARIANT_FALSE);
 
-			if (FAILED (hr))
-			{
-				_r_log_v (LOG_LEVEL_INFO, NULL, L"INetFwPolicy2_put_FirewallEnabled", hr, L"%d", profile_types[i]);
-			}
-		}
-
-		INetFwPolicy2_Release (INetFwPolicy);
+		if (FAILED (hr))
+			_r_log_v (LOG_LEVEL_INFO, NULL, L"INetFwPolicy2_put_FirewallEnabled", hr, L"%d", profile_types[i]);
 	}
+
+	INetFwPolicy2_Release (INetFwPolicy);
 }
 
 BOOLEAN _wfp_firewallisenabled ()
 {
-	HRESULT hr;
-	INetFwPolicy2 *INetFwPolicy;
-	VARIANT_BOOL status;
-
 	static NET_FW_PROFILE_TYPE2 profile_types[] = {
 		NET_FW_PROFILE2_DOMAIN,
 		NET_FW_PROFILE2_PRIVATE,
 		NET_FW_PROFILE2_PUBLIC
 	};
+
+	INetFwPolicy2 *INetFwPolicy;
+	VARIANT_BOOL status;
+	HRESULT hr;
 
 	status = VARIANT_FALSE;
 

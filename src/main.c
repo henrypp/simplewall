@@ -66,9 +66,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 
 		// refresh network tab as well
 		if (is_refresh)
-		{
 			_app_updatelistviewbylparam (hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
-		}
 
 		// remove closed connections from list
 		INT item_count = _r_listview_getitemcount (hwnd, IDC_NETWORK);
@@ -98,9 +96,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 				if (app_hash)
 				{
 					if (is_highlighting_enabled)
-					{
 						_app_setlistviewbylparam (hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
-					}
 				}
 			}
 		}
