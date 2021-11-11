@@ -301,11 +301,11 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	if (current_handle)
 		return; // already subscribed
 
-	hfwpuclnt = LoadLibraryEx (L"fwpuclnt.dll", NULL, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32);
+	hfwpuclnt = _r_sys_loadlibrary (L"fwpuclnt.dll");
 
 	if (!hfwpuclnt)
 	{
-		_r_log (LOG_LEVEL_WARNING, NULL, L"LoadLibraryEx", GetLastError (), L"fwpuclnt.dll");
+		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", GetLastError (), L"fwpuclnt.dll");
 
 		return;
 	}

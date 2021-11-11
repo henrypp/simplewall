@@ -781,7 +781,7 @@ static BOOLEAN _app_calculatefilehash (_In_ HANDLE hfile, _In_opt_ LPCWSTR algor
 	{
 		HMODULE hwintrust;
 
-		hwintrust = LoadLibraryEx (L"wintrust.dll", NULL, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32);
+		hwintrust = _r_sys_loadlibrary (L"wintrust.dll");
 
 		if (hwintrust)
 		{
