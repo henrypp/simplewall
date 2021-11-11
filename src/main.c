@@ -2702,6 +2702,18 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			switch (ctrl_id)
 			{
 				case IDCANCEL: // process Esc key
+				{
+					if (GetFocus () == config.hsearchbar)
+					{
+						SetWindowText (config.hsearchbar, L"");
+						SetFocus (hwnd);
+
+						break;
+					}
+
+					// fall through
+				}
+
 				case IDM_TRAY_SHOW:
 				{
 					_r_wnd_toggle (hwnd, FALSE);
