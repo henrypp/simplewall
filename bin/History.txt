@@ -1,3 +1,11 @@
+v3.6.1 (11 November 2021)
+- added clear search on escape button
+- fixed crash on delete filters (issue #1084)
+- fixed import profile warning (issue #1086)
+- fixed crash dumps processing
+- updated locales
+- cosmetic fixes
+
 v3.6 (9 November 2021)
 - improved multi-threading safety
 - improved startup time
