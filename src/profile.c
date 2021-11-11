@@ -1171,23 +1171,23 @@ BOOLEAN _app_isprofilevalid (_In_opt_ HWND hwnd, _In_ PR_STRING path)
 	R_ERROR_INFO error_info;
 	BOOLEAN is_success;
 
-	if (_r_xml_initializelibrary (&xml_library, TRUE, NULL) != S_OK)
-		return FALSE;
-
 	is_success = FALSE;
 
-	if (_r_xml_parsefile (&xml_library, path->buffer) == S_OK)
+	if (_r_xml_initializelibrary (&xml_library, TRUE, NULL) == S_OK)
 	{
-		if (_r_xml_findchildbytagname (&xml_library, L"root"))
+		if (_r_xml_parsefile (&xml_library, path->buffer) == S_OK)
 		{
-			// min supported is v3
-			is_success = _app_isprofilenodevalid (&xml_library, XML_VERSION_3, XML_TYPE_PROFILE);
+			if (_r_xml_findchildbytagname (&xml_library, L"root"))
+			{
+				// min supported is v3
+				is_success = _app_isprofilenodevalid (&xml_library, XML_VERSION_3, XML_TYPE_PROFILE);
+			}
 		}
+
+		_r_xml_destroylibrary (&xml_library);
 	}
 
-	_r_xml_destroylibrary (&xml_library);
-
-	if (is_success)
+	if (!is_success)
 	{
 		if (hwnd)
 		{
