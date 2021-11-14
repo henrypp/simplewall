@@ -1761,6 +1761,33 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 				}
 
 				case IDCANCEL: // process Esc key
+				{
+					HWND hpage;
+					HWND hsearch;
+					INT item_id;
+
+					item_id = _r_tab_getcurrentitem (hwnd, IDC_TAB);
+					hpage = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, item_id);
+
+					if (hpage)
+					{
+						hsearch = GetDlgItem (hpage, IDC_SEARCH);
+
+						if (hsearch)
+						{
+							if (GetFocus () == hsearch)
+							{
+								SetWindowText (hsearch, L"");
+								SetFocus (hwnd);
+
+								break;
+							}
+						}
+					}
+
+					// fall through
+				}
+
 				case IDC_CLOSE:
 				{
 					EndDialog (hwnd, FALSE);
