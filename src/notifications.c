@@ -875,6 +875,8 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 			bk_mode_prev = SetBkMode (draw_info->hDC, TRANSPARENT); // HACK!!!
 
+			SendMessage (hwnd, WM_ERASEBKGND, (WPARAM)draw_info->hDC, 0);
+
 			// draw title gradient
 			_app_notify_drawgradient (draw_info->hDC, &draw_info->rcItem);
 
