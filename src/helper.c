@@ -2157,9 +2157,12 @@ ULONG_PTR _app_getnetworkhash (_In_ ADDRESS_FAMILY af, _In_ ULONG pid, _In_opt_ 
 
 BOOLEAN _app_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID paddr)
 {
+	PIN_ADDR p4addr;
+	PIN6_ADDR p6addr;
+
 	if (af == AF_INET)
 	{
-		PIN_ADDR p4addr = (PIN_ADDR)paddr;
+		p4addr = (PIN_ADDR)paddr;
 
 		return (!IN4_IS_ADDR_UNSPECIFIED (p4addr) &&
 				!IN4_IS_ADDR_LOOPBACK (p4addr) &&
@@ -2171,7 +2174,7 @@ BOOLEAN _app_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID paddr)
 	}
 	else if (af == AF_INET6)
 	{
-		PIN6_ADDR p6addr = (PIN6_ADDR)paddr;
+		p6addr = (PIN6_ADDR)paddr;
 
 		return  (!IN6_IS_ADDR_UNSPECIFIED (p6addr) &&
 				 !IN6_IS_ADDR_LOOPBACK (p6addr) &&
