@@ -186,7 +186,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 			_r_obj_initializestringref (&path_temp, path_full);
 	}
 
-	app_hash = _r_obj_getstringrefhash (&path_temp, TRUE);
+	app_hash = _r_str_gethash3 (&path_temp, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return app_hash; // already exists
@@ -280,7 +280,7 @@ PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote
 	{
 		ptr_rule->name = _r_obj_reference (name);
 
-		if (_r_obj_getstringlength (ptr_rule->name) > RULE_NAME_CCH_MAX)
+		if (_r_str_getlength2 (ptr_rule->name) > RULE_NAME_CCH_MAX)
 			_r_obj_setstringlength (ptr_rule->name, RULE_NAME_CCH_MAX * sizeof (WCHAR));
 	}
 
@@ -289,7 +289,7 @@ PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote
 	{
 		ptr_rule->rule_remote = _r_obj_reference (rule_remote);
 
-		if (_r_obj_getstringlength (ptr_rule->rule_remote) > RULE_RULE_CCH_MAX)
+		if (_r_str_getlength2 (ptr_rule->rule_remote) > RULE_RULE_CCH_MAX)
 			_r_obj_setstringlength (ptr_rule->rule_remote, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 	}
 
@@ -298,7 +298,7 @@ PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote
 	{
 		ptr_rule->rule_local = _r_obj_reference (rule_local);
 
-		if (_r_obj_getstringlength (ptr_rule->rule_local) > RULE_RULE_CCH_MAX)
+		if (_r_str_getlength2 (ptr_rule->rule_local) > RULE_RULE_CCH_MAX)
 			_r_obj_setstringlength (ptr_rule->rule_local, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 	}
 
@@ -376,7 +376,7 @@ PITEM_RULE _app_getrulebyhash (_In_ ULONG_PTR rule_hash)
 		{
 			if (ptr_rule->is_readonly)
 			{
-				if (_r_obj_getstringhash (ptr_rule->name, TRUE) == rule_hash)
+				if (_r_str_gethash2 (ptr_rule->name, TRUE) == rule_hash)
 				{
 					_r_queuedlock_releaseshared (&lock_rules);
 
@@ -699,7 +699,7 @@ VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ 
 		PITEM_RULE_CONFIG ptr_config;
 		ULONG_PTR rule_hash;
 
-		rule_hash = _r_obj_getstringhash (ptr_rule->name, TRUE);
+		rule_hash = _r_str_gethash2 (ptr_rule->name, TRUE);
 
 		if (rule_hash)
 		{
@@ -1361,7 +1361,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 		if (rule_local)
 			_r_obj_dereference (rule_local);
 
-		rule_hash = _r_obj_getstringhash (ptr_rule->name, TRUE);
+		rule_hash = _r_str_gethash2 (ptr_rule->name, TRUE);
 
 		ptr_rule->type = (type == DATA_RULE_SYSTEM_USER) ? DATA_RULE_USER : type;
 		ptr_rule->action = _r_xml_getattribute_boolean (xml_library, L"is_block") ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
@@ -1463,7 +1463,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 						if (!path_string)
 							path_string = _r_obj_createstring3 (&first_part);
 
-						app_hash = _r_obj_getstringhash (path_string, TRUE);
+						app_hash = _r_str_gethash2 (path_string, TRUE);
 
 						if (app_hash)
 						{
@@ -1507,7 +1507,7 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 		if (!rule_name)
 			return;
 
-		rule_hash = _r_obj_getstringhash (rule_name, TRUE);
+		rule_hash = _r_str_gethash2 (rule_name, TRUE);
 
 		if (rule_hash)
 		{
@@ -1989,7 +1989,7 @@ VOID _app_profile_save ()
 		ULONG_PTR rule_hash;
 
 		is_enabled_default = ptr_config->is_enabled;
-		rule_hash = _r_obj_getstringhash (ptr_config->name, TRUE);
+		rule_hash = _r_str_gethash2 (ptr_config->name, TRUE);
 
 		ptr_rule = _app_getrulebyhash (rule_hash);
 

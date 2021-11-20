@@ -120,7 +120,7 @@ PR_STRING _app_editor_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _I
 			if (!_r_obj_isstringempty2 (string))
 			{
 				// check maximum length of one rule
-				if ((_r_obj_getstringlength (buffer.string) + _r_obj_getstringlength (string)) > RULE_RULE_CCH_MAX)
+				if ((_r_str_getlength2 (buffer.string) + _r_str_getlength2 (string)) > RULE_RULE_CCH_MAX)
 				{
 					_r_obj_dereference (string);
 					break;
@@ -1191,7 +1191,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 
 					if (string)
 					{
-						current_length = _r_obj_getstringlength (string);
+						current_length = _r_str_getlength2 (string);
 
 						_r_obj_dereference (string);
 					}

@@ -890,7 +890,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			if (string)
 			{
 				clr_prev = SetTextColor (draw_info->hDC, RGB (255, 255, 255));
-				DrawTextEx (draw_info->hDC, string->buffer, (INT)(INT_PTR)_r_obj_getstringlength (string), &text_rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
+				DrawTextEx (draw_info->hDC, string->buffer, (INT)(INT_PTR)_r_str_getlength2 (string), &text_rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, NULL);
 				SetTextColor (draw_info->hDC, clr_prev);
 
 				_r_obj_dereference (string);

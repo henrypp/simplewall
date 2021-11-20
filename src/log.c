@@ -65,7 +65,7 @@ ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 		_r_obj_getstring (ptr_log->remote_addr_str)
 	);
 
-	log_hash = _r_obj_getstringhash (log_string, TRUE);
+	log_hash = _r_str_gethash2 (log_string, TRUE);
 
 	_r_obj_dereference (log_string);
 
@@ -522,7 +522,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 		if (sid_string)
 		{
-			if (!_app_isappfound (_r_obj_getstringhash (sid_string, TRUE)))
+			if (!_app_isappfound (_r_str_gethash2 (sid_string, TRUE)))
 				_r_obj_clearreference (&sid_string);
 		}
 	}
@@ -535,7 +535,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && sid_string)
 	{
 		_r_obj_swapreference (&ptr_log->path, sid_string);
-		ptr_log->app_hash = _r_obj_getstringhash (ptr_log->path, TRUE);
+		ptr_log->app_hash = _r_str_gethash2 (ptr_log->path, TRUE);
 	}
 	else if ((log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) && log->app_id)
 	{
@@ -552,7 +552,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		if (path)
 		{
 			_r_obj_movereference (&ptr_log->path, path);
-			ptr_log->app_hash = _r_obj_getstringhash (ptr_log->path, TRUE);
+			ptr_log->app_hash = _r_str_gethash2 (ptr_log->path, TRUE);
 		}
 	}
 	else
