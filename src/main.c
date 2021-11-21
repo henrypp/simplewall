@@ -2121,12 +2121,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			break;
 		}
 
-		case WM_SETTINGCHANGE:
-		{
-			_r_wnd_changesettings (hwnd, wparam, lparam);
-			break;
-		}
-
 		case WM_SIZE:
 		{
 			RECT rect;
