@@ -12,18 +12,11 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 	PR_STRING string;
 	HWND hwnd;
 	SIZE_T enum_key;
-	ULONG network_timeout;
 	INT item_id;
 	BOOLEAN is_highlighting_enabled;
 	BOOLEAN is_refresh;
 
-	network_timeout = _r_config_getulong (L"NetworkTimeout", NETWORK_TIMEOUT);
-
-	if (network_timeout == 0 || network_timeout == INFINITE)
-		return STATUS_SUCCESS;
-
 	hwnd = (HWND)arglist;
-	network_timeout = _r_calc_clamp32 (network_timeout, 1000, 60 * 1000); // set allowed range
 	checker_map = _r_obj_createhashtablepointer (8);
 
 	while (TRUE)
@@ -101,7 +94,7 @@ NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
 			}
 		}
 
-		WaitForSingleObjectEx (NtCurrentThread (), network_timeout, FALSE);
+		WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
 	}
 
 	return STATUS_SUCCESS;
@@ -1662,6 +1655,22 @@ VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 	}
 }
 
+VOID _app_initializenetworkmonitor (_In_ HWND hwnd)
+{
+	R_ENVIRONMENT environment;
+	BOOLEAN is_enabled;
+
+	is_enabled = _r_config_getboolean (L"IsNetworkMonitorEnabled", TRUE);
+
+	if (!is_enabled)
+		return;
+
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+
+	// create network monitor thread
+	_r_sys_createthread (&NetworkMonitorThread, hwnd, NULL, &environment);
+}
+
 VOID _app_initialize ()
 {
 	static ULONG privileges[] = {
@@ -1804,7 +1813,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		case WM_INITDIALOG:
 		{
 			ENUM_INSTALL_TYPE install_type;
-			R_ENVIRONMENT environment;
 			LONG dpi_value;
 
 			// initialize vars
@@ -1877,10 +1885,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				_r_update_addcomponent (L"Internal rules", L"rules", internal_profile_version, profile_info.profile_internal_path, FALSE);
 			}
 
-			// create network monitor thread
-			_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-
-			_r_sys_createthread (&NetworkMonitorThread, hwnd, NULL, &environment);
+			_app_initializenetworkmonitor (hwnd);
 
 			// initialize tab
 			_app_settab_id (hwnd, _r_config_getlong (L"CurrentTab", IDC_APPS_PROFILE));
