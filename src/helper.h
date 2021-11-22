@@ -102,7 +102,6 @@ PR_STRING _app_getdirectionname (_In_ FWP_DIRECTION direction, _In_ BOOLEAN is_l
 ULONG_PTR _app_addcolor (_In_ UINT locale_id, _In_ LPCWSTR config_name, _In_ BOOLEAN is_enabled, _In_ LPCWSTR config_value, _In_ COLORREF default_clr);
 COLORREF _app_getcolorvalue (_In_ ULONG_PTR color_hash);
 
-VOID _app_generate_connections (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HASHTABLE checker_map);
 VOID _app_generate_packages ();
 VOID _app_generate_services ();
 

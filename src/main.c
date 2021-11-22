@@ -3,103 +3,6 @@
 
 #include "global.h"
 
-NTSTATUS NTAPI NetworkMonitorThread (_In_ PVOID arglist)
-{
-	PR_HASHTABLE checker_map;
-	PITEM_NETWORK ptr_network;
-	PITEM_CONTEXT context;
-	ULONG_PTR network_hash;
-	PR_STRING string;
-	HWND hwnd;
-	SIZE_T enum_key;
-	INT item_id;
-	BOOLEAN is_highlighting_enabled;
-	BOOLEAN is_refresh;
-
-	hwnd = (HWND)arglist;
-	checker_map = _r_obj_createhashtablepointer (8);
-
-	while (TRUE)
-	{
-		_app_generate_connections (network_table, checker_map);
-
-		is_highlighting_enabled = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors");
-		is_refresh = FALSE;
-		enum_key = 0;
-
-		// add new connections into list
-		while (_r_obj_enumhashtablepointer (network_table, &ptr_network, &network_hash, &enum_key))
-		{
-			string = _r_obj_findhashtablepointer (checker_map, network_hash);
-
-			if (!string)
-				continue;
-
-			_r_obj_dereference (string);
-
-			item_id = _r_listview_getitemcount (hwnd, IDC_NETWORK);
-
-			_r_listview_additem_ex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (network_hash));
-
-			if (ptr_network->path && ptr_network->app_hash)
-				_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
-
-			// resolve network address
-			context = _r_freelist_allocateitem (&context_free_list);
-
-			context->hwnd = hwnd;
-			context->listview_id = IDC_NETWORK;
-			context->lparam = network_hash;
-			context->ptr_network = _r_obj_reference (ptr_network);
-
-			_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
-
-			is_refresh = TRUE;
-		}
-
-		// refresh network tab as well
-		if (is_refresh)
-			_app_updatelistviewbylparam (hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
-
-		// remove closed connections from list
-		INT item_count = _r_listview_getitemcount (hwnd, IDC_NETWORK);
-
-		if (item_count)
-		{
-			ULONG_PTR app_hash;
-
-			for (INT i = item_count - 1; i != -1; i--)
-			{
-				network_hash = _app_getlistviewitemcontext (hwnd, IDC_NETWORK, i);
-
-				if (_r_obj_findhashtable (checker_map, network_hash))
-					continue;
-
-				_r_listview_deleteitem (hwnd, IDC_NETWORK, i);
-
-				app_hash = _app_getnetworkapp (network_hash);
-
-				_r_queuedlock_acquireexclusive (&lock_network);
-
-				_r_obj_removehashtablepointer (network_table, network_hash);
-
-				_r_queuedlock_releaseexclusive (&lock_network);
-
-				// redraw listview item
-				if (app_hash)
-				{
-					if (is_highlighting_enabled)
-						_app_setlistviewbylparam (hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
-				}
-			}
-		}
-
-		WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
-	}
-
-	return STATUS_SUCCESS;
-}
-
 BOOLEAN _app_changefilters (_In_ HWND hwnd, _In_ BOOLEAN is_install, _In_ BOOLEAN is_forced)
 {
 	PITEM_CONTEXT context;
@@ -1655,22 +1558,6 @@ VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 	}
 }
 
-VOID _app_initializenetworkmonitor (_In_ HWND hwnd)
-{
-	R_ENVIRONMENT environment;
-	BOOLEAN is_enabled;
-
-	is_enabled = _r_config_getboolean (L"IsNetworkMonitorEnabled", TRUE);
-
-	if (!is_enabled)
-		return;
-
-	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-
-	// create network monitor thread
-	_r_sys_createthread (&NetworkMonitorThread, hwnd, NULL, &environment);
-}
-
 VOID _app_initialize ()
 {
 	static ULONG privileges[] = {
@@ -1885,7 +1772,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				_r_update_addcomponent (L"Internal rules", L"rules", internal_profile_version, profile_info.profile_internal_path, FALSE);
 			}
 
-			_app_initializenetworkmonitor (hwnd);
+			_app_network_initialize (hwnd);
 
 			// initialize tab
 			_app_settab_id (hwnd, _r_config_getlong (L"CurrentTab", IDC_APPS_PROFILE));

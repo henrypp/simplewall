@@ -357,6 +357,7 @@
     <ClCompile Include="src\helper.c" />
     <ClCompile Include="src\log.c" />
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\network.c" />
     <ClCompile Include="src\notifications.c" />
     <ClCompile Include="src\profile.c" />
     <ClCompile Include="src\search.c" />
@@ -378,6 +379,7 @@
     <ClInclude Include="src\helper.h" />
     <ClInclude Include="src\log.h" />
     <ClInclude Include="src\main.h" />
+    <ClInclude Include="src\network.h" />
     <ClInclude Include="src\notifications.h" />
     <ClInclude Include="src\profile.h" />
     <ClInclude Include="src\resource.h" />

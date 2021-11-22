@@ -57,6 +57,9 @@
     <ClCompile Include="src\search.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\network.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\routine\routine.h">
@@ -117,6 +120,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\search.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

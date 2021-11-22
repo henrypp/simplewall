@@ -68,7 +68,7 @@ DECLSPEC_SELECTANY R_FREE_LIST context_free_list = {0};
 DECLSPEC_SELECTANY R_FREE_LIST listview_free_list = {0};
 
 // timers array
-DECLSPEC_SELECTANY LONG64 timer_array[] =
+DECLSPEC_SELECTANY const LONG64 timer_array[] =
 {
 	2 * 60,
 	5 * 60,
@@ -94,6 +94,7 @@ DECLSPEC_SELECTANY LONG64 timer_array[] =
 #include "helper.h"
 #include "log.h"
 #include "messages.h"
+#include "network.h"
 #include "notifications.h"
 #include "profile.h"
 #include "search.h"
