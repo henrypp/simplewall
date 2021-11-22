@@ -1722,14 +1722,14 @@ VOID _app_initialize ()
 	profile_info.profile_path_backup = _r_format_string (L"%s\\" XML_PROFILE L".bak", path->buffer);
 	profile_info.profile_internal_path = _r_format_string (L"%s\\" XML_PROFILE_INTERNAL, path->buffer);
 
-	profile_info.my_path = _r_obj_createstring (_r_sys_getimagepath ());
-	profile_info.svchost_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, PATH_SVCHOST);
-	profile_info.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
-	profile_info.ntoskrnl_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, PATH_NTOSKRNL);
+	config.my_path = _r_obj_createstring (_r_sys_getimagepath ());
+	config.svchost_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, PATH_SVCHOST);
+	config.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
+	config.ntoskrnl_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, PATH_NTOSKRNL);
 
-	profile_info.my_hash = _r_str_gethash2 (profile_info.my_path, TRUE);
-	profile_info.ntoskrnl_hash = _r_str_gethash2 (profile_info.system_path, TRUE);
-	profile_info.svchost_hash = _r_str_gethash2 (profile_info.svchost_path, TRUE);
+	config.my_hash = _r_str_gethash2 (config.my_path, TRUE);
+	config.ntoskrnl_hash = _r_str_gethash2 (config.system_path, TRUE);
+	config.svchost_hash = _r_str_gethash2 (config.svchost_path, TRUE);
 
 	// initialize free list
 	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);
@@ -2335,7 +2335,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1))
 						{
-							if (app_hash == profile_info.my_hash)
+							if (app_hash == config.my_hash)
 							{
 								if (!_r_show_confirmmessage (hwnd, L"WARNING!", L"If you disallow this, you cannot use resolve network addresses option. Continue?", NULL))
 								{
@@ -2346,7 +2346,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						}
 						else if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2))
 						{
-							if (app_hash == profile_info.svchost_hash)
+							if (app_hash == config.svchost_hash)
 							{
 								if (!_r_show_confirmmessage (hwnd, L"WARNING!", L"Be careful, through service host (svchost.exe) internet traffic can let out through unexpected ways. Continue?", NULL))
 								{

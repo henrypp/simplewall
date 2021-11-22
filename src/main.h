@@ -167,6 +167,11 @@ typedef struct _STATIC_DATA
 
 	PR_STRING search_string;
 
+	PR_STRING my_path;
+	PR_STRING ntoskrnl_path;
+	PR_STRING svchost_path;
+	PR_STRING system_path;
+
 	PSID pbuiltin_current_sid;
 	PSID pbuiltin_netops_sid;
 	PSID pbuiltin_admins_sid;
@@ -205,6 +210,10 @@ typedef struct _STATIC_DATA
 	ULONG_PTR color_system;
 	ULONG_PTR color_network;
 
+	ULONG_PTR ntoskrnl_hash;
+	ULONG_PTR svchost_hash;
+	ULONG_PTR my_hash;
+
 	BOOLEAN is_notifytimeout;
 	BOOLEAN is_notifymouse;
 	BOOLEAN is_neteventenabled;
@@ -218,16 +227,7 @@ typedef struct _PROFILE_DATA
 	PR_STRING profile_path_backup;
 	PR_STRING profile_internal_path;
 
-	PR_STRING my_path;
-	PR_STRING ntoskrnl_path;
-	PR_STRING svchost_path;
-	PR_STRING system_path;
-
 	LONG64 profile_internal_timestamp;
-
-	ULONG_PTR ntoskrnl_hash;
-	ULONG_PTR svchost_hash;
-	ULONG_PTR my_hash;
 } PROFILE_DATA, *PPROFILE_DATA;
 
 typedef struct _ITEM_APP

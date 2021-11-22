@@ -1465,12 +1465,36 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In
 			// apply rules for services hosts
 			if (ptr_rule->is_forservices)
 			{
-				if (!_wfp_createrulefilter (engine_handle, ptr_rule->type, rule_name, profile_info.ntoskrnl_hash, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
+				if (!_wfp_createrulefilter (
+					engine_handle,
+					ptr_rule->type,
+					rule_name,
+					config.ntoskrnl_hash,
+					&ptr_rule->config,
+					&rule_remote_part,
+					&rule_local_part,
+					ptr_rule->weight,
+					ptr_rule->action,
+					0,
+					ptr_rule->guids
+					))
 				{
 					ptr_rule->is_haveerrors = TRUE;
 				}
 
-				if (!_wfp_createrulefilter (engine_handle, ptr_rule->type, rule_name, profile_info.svchost_hash, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
+				if (!_wfp_createrulefilter (
+					engine_handle,
+					ptr_rule->type,
+					rule_name,
+					config.svchost_hash,
+					&ptr_rule->config,
+					&rule_remote_part,
+					&rule_local_part,
+					ptr_rule->weight,
+					ptr_rule->action,
+					0,
+					ptr_rule->guids
+					))
 				{
 					ptr_rule->is_haveerrors = TRUE;
 				}
@@ -2743,7 +2767,7 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 
 	if (type == DATA_APP_REGULAR || type == DATA_APP_NETWORK || type == DATA_APP_SERVICE)
 	{
-		if (_r_str_gethash2 (path, TRUE) == profile_info.ntoskrnl_hash)
+		if (_r_str_gethash2 (path, TRUE) == config.ntoskrnl_hash)
 		{
 			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), byte_blob);
 

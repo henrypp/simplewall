@@ -192,7 +192,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 		return app_hash; // already exists
 
 	ptr_app = _r_obj_allocate (sizeof (ITEM_APP), &_app_dereferenceapp);
-	is_ntoskrnl = (app_hash == profile_info.ntoskrnl_hash);
+	is_ntoskrnl = (app_hash == config.ntoskrnl_hash);
 
 	ptr_app->app_hash = app_hash;
 
@@ -225,7 +225,7 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 			ptr_app->type = PathIsNetworkPath (path_temp.buffer) ? DATA_APP_NETWORK : DATA_APP_REGULAR;
 		}
 
-		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstring2 (profile_info.ntoskrnl_path) : _r_obj_createstring3 (&path_temp);
+		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstring2 (config.ntoskrnl_path) : _r_obj_createstring3 (&path_temp);
 	}
 
 	ptr_app->original_path = _r_obj_createstring3 (&path_temp);
@@ -890,7 +890,7 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 
 	if (is_fordisplay && ptr_rule->is_forservices)
 	{
-		string = _r_obj_concatstrings (4, PROC_SYSTEM_NAME, delimeter, _r_obj_getstring (profile_info.svchost_path), delimeter);
+		string = _r_obj_concatstrings (4, PROC_SYSTEM_NAME, delimeter, _r_obj_getstring (config.svchost_path), delimeter);
 
 		_r_obj_appendstringbuilder2 (&buffer, string);
 
@@ -1147,7 +1147,7 @@ BOOLEAN _app_isnetworkfound (_In_ ULONG_PTR network_hash)
 
 BOOLEAN _app_issystemhash (_In_ ULONG_PTR app_hash)
 {
-	return (app_hash == profile_info.ntoskrnl_hash || app_hash == profile_info.svchost_hash);
+	return (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash);
 }
 
 BOOLEAN _app_isprofilenodevalid (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_VERSION_XML min_version, _In_ ENUM_TYPE_XML type)
@@ -1232,27 +1232,27 @@ VOID _app_profile_load_fallback ()
 {
 	ULONG_PTR app_hash;
 
-	if (!_app_isappfound (profile_info.my_hash))
+	if (!_app_isappfound (config.my_hash))
 	{
-		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &profile_info.my_path->sr, NULL, NULL);
+		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &config.my_path->sr, NULL, NULL);
 
 		if (app_hash)
 			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
 	}
 
-	_app_setappinfobyhash (profile_info.my_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+	_app_setappinfobyhash (config.my_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
 
 	// disable deletion for this shit ;)
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
-		if (!_app_isappfound (profile_info.ntoskrnl_hash) && profile_info.system_path)
-			_app_addapplication (NULL, DATA_UNKNOWN, &profile_info.system_path->sr, NULL, NULL);
+		if (!_app_isappfound (config.ntoskrnl_hash) && config.system_path)
+			_app_addapplication (NULL, DATA_UNKNOWN, &config.system_path->sr, NULL, NULL);
 
-		if (!_app_isappfound (profile_info.svchost_hash) && profile_info.svchost_path)
-			_app_addapplication (NULL, DATA_UNKNOWN, &profile_info.svchost_path->sr, NULL, NULL);
+		if (!_app_isappfound (config.svchost_hash) && config.svchost_path)
+			_app_addapplication (NULL, DATA_UNKNOWN, &config.svchost_path->sr, NULL, NULL);
 
-		_app_setappinfobyhash (profile_info.ntoskrnl_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
-		_app_setappinfobyhash (profile_info.svchost_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+		_app_setappinfobyhash (config.ntoskrnl_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+		_app_setappinfobyhash (config.svchost_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
 	}
 }
 

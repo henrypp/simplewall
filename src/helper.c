@@ -683,7 +683,7 @@ HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash)
 
 LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened)
 {
-	if (ptr_app->app_hash == profile_info.ntoskrnl_hash)
+	if (ptr_app->app_hash == config.ntoskrnl_hash)
 	{
 		if (ptr_app->original_path)
 			return ptr_app->original_path->buffer;
@@ -2065,7 +2065,7 @@ BOOLEAN _app_getnetworkpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ 
 	}
 	else if (pid == PROC_SYSTEM_PID)
 	{
-		ptr_network->app_hash = profile_info.ntoskrnl_hash;
+		ptr_network->app_hash = config.ntoskrnl_hash;
 		ptr_network->type = DATA_APP_REGULAR;
 		ptr_network->path = _r_obj_createstring (PROC_SYSTEM_NAME);
 
