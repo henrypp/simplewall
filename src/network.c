@@ -308,6 +308,10 @@ ULONG_PTR _app_network_gethash (_In_ ADDRESS_FAMILY af, _In_ ULONG pid, _In_opt_
 
 BOOLEAN _app_network_getpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ PITEM_NETWORK ptr_network)
 {
+	PR_STRING process_name;
+	NTSTATUS status;
+	HANDLE hprocess;
+
 	if (pid == PROC_WAITING_PID)
 	{
 		ptr_network->app_hash = 0;
@@ -325,7 +329,7 @@ BOOLEAN _app_network_getpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_
 		return TRUE;
 	}
 
-	PR_STRING process_name = NULL;
+	process_name = NULL;
 
 	if (modules)
 	{
@@ -337,9 +341,6 @@ BOOLEAN _app_network_getpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_
 
 	if (!process_name)
 	{
-		NTSTATUS status;
-		HANDLE hprocess;
-
 		status = _r_sys_openprocess (UlongToHandle (pid), PROCESS_QUERY_LIMITED_INFORMATION, &hprocess);
 
 		if (NT_SUCCESS (status))
@@ -415,7 +416,9 @@ NTSTATUS NTAPI _app_network_threadproc (_In_ PVOID arglist)
 	ULONG_PTR network_hash;
 	PR_STRING string;
 	HWND hwnd;
+	ULONG_PTR app_hash;
 	SIZE_T enum_key;
+	INT item_count;
 	INT item_id;
 	BOOLEAN is_highlighting_enabled;
 	BOOLEAN is_refresh;
@@ -466,12 +469,10 @@ NTSTATUS NTAPI _app_network_threadproc (_In_ PVOID arglist)
 			_app_updatelistviewbylparam (hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
 
 		// remove closed connections from list
-		INT item_count = _r_listview_getitemcount (hwnd, IDC_NETWORK);
+		item_count = _r_listview_getitemcount (hwnd, IDC_NETWORK);
 
 		if (item_count)
 		{
-			ULONG_PTR app_hash;
-
 			for (INT i = item_count - 1; i != -1; i--)
 			{
 				network_hash = _app_getlistviewitemcontext (hwnd, IDC_NETWORK, i);
