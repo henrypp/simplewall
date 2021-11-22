@@ -3,30 +3,6 @@
 
 #pragma once
 
-// profile types
-typedef enum _ENUM_TYPE_XML
-{
-	XML_TYPE_PROFILE = 3,
-	XML_TYPE_PROFILE_INTERNAL = 4,
-} ENUM_TYPE_XML;
-
-// profile versions
-typedef enum _ENUM_VERSION_XML
-{
-	// v3.0.2: first major update, rule attribute "apps" now separated by "|"
-	XML_VERSION_3 = 3,
-
-	// v3.4: added "rules_custom" into internal profile and "os_version" for rule attributes
-	XML_VERSION_4 = 4,
-
-	XML_VERSION_5 = 5,
-} ENUM_VERSION_XML;
-
-#define XML_VERSION_CURRENT XML_VERSION_4
-
-#define XML_PROFILE L"profile.xml"
-#define XML_PROFILE_INTERNAL L"profile_internal.xml"
-
 _Ret_maybenull_
 PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data);
 
