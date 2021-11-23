@@ -53,16 +53,28 @@ VOID NTAPI _app_dereferencelog (_In_ PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
 
 	if (ptr_item->local_addr_str)
+	{
 		_r_obj_dereference (ptr_item->local_addr_str);
+		ptr_item->local_addr_str = NULL;
+	}
 
 	if (ptr_item->remote_addr_str)
+	{
 		_r_obj_dereference (ptr_item->remote_addr_str);
+		ptr_item->remote_addr_str = NULL;
+	}
 
 	if (ptr_item->local_host_str)
+	{
 		_r_obj_dereference (ptr_item->local_host_str);
+		ptr_item->local_host_str = NULL;
+	}
 
 	if (ptr_item->remote_host_str)
+	{
 		_r_obj_dereference (ptr_item->remote_host_str);
+		ptr_item->remote_host_str = NULL;
+	}
 }
 
 VOID NTAPI _app_dereferencenetwork (_In_ PVOID entry)
@@ -75,16 +87,28 @@ VOID NTAPI _app_dereferencenetwork (_In_ PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
 
 	if (ptr_item->local_addr_str)
+	{
 		_r_obj_dereference (ptr_item->local_addr_str);
+		ptr_item->local_addr_str = NULL;
+	}
 
 	if (ptr_item->remote_addr_str)
+	{
 		_r_obj_dereference (ptr_item->remote_addr_str);
+		ptr_item->remote_addr_str = NULL;
+	}
 
 	if (ptr_item->local_host_str)
+	{
 		_r_obj_dereference (ptr_item->local_host_str);
+		ptr_item->local_host_str = NULL;
+	}
 
 	if (ptr_item->remote_host_str)
+	{
 		_r_obj_dereference (ptr_item->remote_host_str);
+		ptr_item->remote_host_str = NULL;
+	}
 }
 
 VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
