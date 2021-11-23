@@ -3173,7 +3173,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
 							hash_code = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
-							ptr_network = _app_getnetworkitem (hash_code);
+							ptr_network = _app_network_getitem (hash_code);
 
 							if (ptr_network)
 							{

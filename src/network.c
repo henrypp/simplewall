@@ -52,7 +52,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				network_hash = _app_network_gethash (AF_INET, tcp4_table->table[i].dwOwningPid, &remote_addr, tcp4_table->table[i].dwRemotePort, &local_addr, tcp4_table->table[i].dwLocalPort, IPPROTO_TCP, tcp4_table->table[i].dwState);
 
-				if (_app_isnetworkfound (network_hash))
+				if (_app_network_isitemfound (network_hash))
 				{
 					_r_obj_addhashtablepointer (checker_map, network_hash, NULL);
 					continue;
@@ -114,7 +114,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 			{
 				network_hash = _app_network_gethash (AF_INET6, tcp6_table->table[i].dwOwningPid, tcp6_table->table[i].ucRemoteAddr, tcp6_table->table[i].dwRemotePort, tcp6_table->table[i].ucLocalAddr, tcp6_table->table[i].dwLocalPort, IPPROTO_TCP, tcp6_table->table[i].dwState);
 
-				if (_app_isnetworkfound (network_hash))
+				if (_app_network_isitemfound (network_hash))
 				{
 					_r_obj_addhashtablepointer (checker_map, network_hash, NULL);
 					continue;
@@ -179,7 +179,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				network_hash = _app_network_gethash (AF_INET, udp4_table->table[i].dwOwningPid, NULL, 0, &local_addr, udp4_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (_app_isnetworkfound (network_hash))
+				if (_app_network_isitemfound (network_hash))
 				{
 					_r_obj_addhashtablepointer (checker_map, network_hash, NULL);
 					continue;
@@ -233,7 +233,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 			{
 				network_hash = _app_network_gethash (AF_INET6, udp6_table->table[i].dwOwningPid, NULL, 0, udp6_table->table[i].ucLocalAddr, udp6_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
-				if (_app_isnetworkfound (network_hash))
+				if (_app_network_isitemfound (network_hash))
 				{
 					_r_obj_addhashtablepointer (checker_map, network_hash, NULL);
 					continue;
@@ -270,6 +270,39 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 	if (buffer)
 		_r_mem_free (buffer);
+}
+
+_Ret_maybenull_
+PITEM_NETWORK _app_network_getitem (_In_ ULONG_PTR network_hash)
+{
+	PITEM_NETWORK ptr_network;
+
+	_r_queuedlock_acquireshared (&lock_network);
+
+	ptr_network = _r_obj_findhashtablepointer (network_table, network_hash);
+
+	_r_queuedlock_releaseshared (&lock_network);
+
+	return ptr_network;
+}
+
+ULONG_PTR _app_network_getappitem (_In_ ULONG_PTR network_hash)
+{
+	PITEM_NETWORK ptr_network;
+	ULONG_PTR hash_code;
+
+	ptr_network = _app_network_getitem (network_hash);
+
+	if (ptr_network)
+	{
+		hash_code = ptr_network->app_hash;
+
+		_r_obj_dereference (ptr_network);
+
+		return hash_code;
+	}
+
+	return 0;
 }
 
 ULONG_PTR _app_network_gethash (_In_ ADDRESS_FAMILY af, _In_ ULONG pid, _In_opt_ LPCVOID remote_addr, _In_opt_ ULONG remote_port, _In_opt_ LPCVOID local_addr, _In_opt_ ULONG local_port, _In_ UINT8 proto, _In_ ULONG state)
@@ -375,6 +408,44 @@ BOOLEAN _app_network_getpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_
 	return FALSE;
 }
 
+BOOLEAN _app_network_isapphaveconnection (_In_ ULONG_PTR app_hash)
+{
+	PITEM_NETWORK ptr_network;
+	SIZE_T enum_key = 0;
+
+	_r_queuedlock_acquireshared (&lock_network);
+
+	while (_r_obj_enumhashtablepointer (network_table, &ptr_network, NULL, &enum_key))
+	{
+		if (ptr_network->app_hash == app_hash)
+		{
+			if (ptr_network->is_connection)
+			{
+				_r_queuedlock_releaseshared (&lock_network);
+
+				return TRUE;
+			}
+		}
+	}
+
+	_r_queuedlock_releaseshared (&lock_network);
+
+	return FALSE;
+}
+
+BOOLEAN _app_network_isitemfound (_In_ ULONG_PTR network_hash)
+{
+	BOOLEAN is_found;
+
+	_r_queuedlock_acquireshared (&lock_network);
+
+	is_found = (_r_obj_findhashtable (network_table, network_hash) != NULL);
+
+	_r_queuedlock_releaseshared (&lock_network);
+
+	return is_found;
+}
+
 BOOLEAN _app_network_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
 {
 	PIN_ADDR p4addr;
@@ -406,6 +477,15 @@ BOOLEAN _app_network_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID add
 	}
 
 	return FALSE;
+}
+
+VOID _app_network_removeitem(_In_ ULONG_PTR network_hash)
+{
+	_r_queuedlock_acquireexclusive (&lock_network);
+
+	_r_obj_removehashtablepointer (network_table, network_hash);
+
+	_r_queuedlock_releaseexclusive (&lock_network);
 }
 
 NTSTATUS NTAPI _app_network_threadproc (_In_ PVOID arglist)
@@ -482,7 +562,7 @@ NTSTATUS NTAPI _app_network_threadproc (_In_ PVOID arglist)
 
 				_r_listview_deleteitem (hwnd, IDC_NETWORK, i);
 
-				app_hash = _app_getnetworkapp (network_hash);
+				app_hash = _app_network_getappitem (network_hash);
 
 				_r_queuedlock_acquireexclusive (&lock_network);
 

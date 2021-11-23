@@ -324,7 +324,7 @@ BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ 
 	}
 	else if (listview_id == IDC_NETWORK)
 	{
-		ptr_network = _app_getnetworkitem (context->id_code);
+		ptr_network = _app_network_getitem (context->id_code);
 
 		if (!ptr_network)
 			goto CleanupExit;

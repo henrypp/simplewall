@@ -406,7 +406,7 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 			_r_obj_appendstringbuilder (&sb, L"\r\n");
 		}
 
-		if (_app_isapphaveconnection (app_hash))
+		if (_app_network_isapphaveconnection (app_hash))
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_CONNECTION));
@@ -558,7 +558,7 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 	{
 		PITEM_NETWORK ptr_network;
 
-		ptr_network = _app_getnetworkitem (lparam);
+		ptr_network = _app_network_getitem (lparam);
 
 		if (ptr_network)
 		{

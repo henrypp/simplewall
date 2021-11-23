@@ -405,39 +405,6 @@ PITEM_RULE_CONFIG _app_getruleconfigitem (_In_ ULONG_PTR rule_hash)
 	return ptr_rule_config;
 }
 
-ULONG_PTR _app_getnetworkapp (_In_ ULONG_PTR network_hash)
-{
-	PITEM_NETWORK ptr_network;
-	ULONG_PTR hash_code;
-
-	ptr_network = _app_getnetworkitem (network_hash);
-
-	if (ptr_network)
-	{
-		hash_code = ptr_network->app_hash;
-
-		_r_obj_dereference (ptr_network);
-
-		return hash_code;
-	}
-
-	return 0;
-}
-
-_Ret_maybenull_
-PITEM_NETWORK _app_getnetworkitem (_In_ ULONG_PTR network_hash)
-{
-	PITEM_NETWORK ptr_network;
-
-	_r_queuedlock_acquireshared (&lock_network);
-
-	ptr_network = _r_obj_findhashtablepointer (network_table, network_hash);
-
-	_r_queuedlock_releaseshared (&lock_network);
-
-	return ptr_network;
-}
-
 _Ret_maybenull_
 PITEM_LOG _app_getlogitem (_In_ ULONG_PTR log_hash)
 {
@@ -992,31 +959,6 @@ BOOLEAN _app_isappfromsystem (_In_opt_ PR_STRING path, _In_ ULONG_PTR app_hash)
 	return FALSE;
 }
 
-BOOLEAN _app_isapphaveconnection (_In_ ULONG_PTR app_hash)
-{
-	PITEM_NETWORK ptr_network;
-	SIZE_T enum_key = 0;
-
-	_r_queuedlock_acquireshared (&lock_network);
-
-	while (_r_obj_enumhashtablepointer (network_table, &ptr_network, NULL, &enum_key))
-	{
-		if (ptr_network->app_hash == app_hash)
-		{
-			if (ptr_network->is_connection)
-			{
-				_r_queuedlock_releaseshared (&lock_network);
-
-				return TRUE;
-			}
-		}
-	}
-
-	_r_queuedlock_releaseshared (&lock_network);
-
-	return FALSE;
-}
-
 BOOLEAN _app_isapphavedrive (_In_ INT letter)
 {
 	PITEM_APP ptr_app;
@@ -1130,19 +1072,6 @@ BOOLEAN _app_isappunused (_In_ PITEM_APP ptr_app)
 	}
 
 	return FALSE;
-}
-
-BOOLEAN _app_isnetworkfound (_In_ ULONG_PTR network_hash)
-{
-	BOOLEAN is_found;
-
-	_r_queuedlock_acquireshared (&lock_network);
-
-	is_found = (_r_obj_findhashtable (network_table, network_hash) != NULL);
-
-	_r_queuedlock_releaseshared (&lock_network);
-
-	return is_found;
 }
 
 BOOLEAN _app_issystemhash (_In_ ULONG_PTR app_hash)

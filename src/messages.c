@@ -205,7 +205,7 @@ VOID _app_message_contextmenu (_In_ HWND hwnd, _In_ LPNMITEMACTIVATE lpnmlv)
 
 		SetMenuDefaultItem (hmenu, IDM_PROPERTIES, MF_BYCOMMAND);
 
-		ptr_network = _app_getnetworkitem (hash_code);
+		ptr_network = _app_network_getitem (hash_code);
 
 		if (ptr_network)
 		{
@@ -561,7 +561,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 
 					if (ctrl_id == IDC_NETWORK)
 					{
-						ptr_network = _app_getnetworkitem (index);
+						ptr_network = _app_network_getitem (index);
 
 						if (ptr_network)
 						{
@@ -590,7 +590,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 						PR_STRING real_path;
 
 						app_hash = index;
-						is_validconnection = _app_isapphaveconnection (app_hash);
+						is_validconnection = _app_network_isapphaveconnection (app_hash);
 
 						real_path = _app_getappinfobyhash (app_hash, INFO_PATH);
 
@@ -1198,7 +1198,7 @@ BOOLEAN _app_message_displayinfo (_In_ HWND hwnd, _In_ INT listview_id, _Inout_ 
 	}
 	else if (listview_id == IDC_NETWORK)
 	{
-		ptr_network = _app_getnetworkitem (index);
+		ptr_network = _app_network_getitem (index);
 
 		if (ptr_network)
 		{
@@ -2214,7 +2214,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 			PITEM_NETWORK ptr_network;
 
 			network_hash = _app_getlistviewitemcontext (hwnd, listview_id, i);
-			ptr_network = _app_getnetworkitem (network_hash);
+			ptr_network = _app_network_getitem (network_hash);
 
 			if (!ptr_network)
 				continue;
@@ -2233,11 +2233,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 				{
 					_r_listview_deleteitem (hwnd, listview_id, i);
 
-					_r_queuedlock_acquireexclusive (&lock_network);
-
-					_r_obj_removehashtablepointer (network_table, network_hash);
-
-					_r_queuedlock_releaseexclusive (&lock_network);
+					_app_network_removeitem (network_hash);
 				}
 			}
 
@@ -2352,7 +2348,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 			PITEM_NETWORK ptr_network;
 
 			network_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
-			ptr_network = _app_getnetworkitem (network_hash);
+			ptr_network = _app_network_getitem (network_hash);
 
 			if (ptr_network)
 			{
@@ -2537,7 +2533,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		ULONG_PTR network_hash;
 
 		network_hash = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
-		ptr_network = _app_getnetworkitem (network_hash);
+		ptr_network = _app_network_getitem (network_hash);
 
 		if (!ptr_network)
 			return;

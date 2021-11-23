@@ -37,11 +37,6 @@ PITEM_RULE _app_getrulebyhash (_In_ ULONG_PTR rule_hash);
 _Ret_maybenull_
 PITEM_RULE_CONFIG _app_getruleconfigitem (_In_ ULONG_PTR rule_hash);
 
-ULONG_PTR _app_getnetworkapp (_In_ ULONG_PTR network_hash);
-
-_Ret_maybenull_
-PITEM_NETWORK _app_getnetworkitem (_In_ ULONG_PTR network_hash);
-
 _Ret_maybenull_
 PITEM_LOG _app_getlogitem (_In_ ULONG_PTR log_hash);
 
@@ -51,16 +46,12 @@ COLORREF _app_getappcolor (_In_ INT listview_id, _In_ ULONG_PTR app_hash, _In_ B
 VOID _app_freeapplication (_In_ ULONG_PTR app_hash);
 
 BOOLEAN _app_isappfromsystem (_In_opt_ PR_STRING path, _In_ ULONG_PTR app_hash);
-BOOLEAN _app_isapphaveconnection (_In_ ULONG_PTR app_hash);
 BOOLEAN _app_isapphavedrive (_In_ INT letter);
 BOOLEAN _app_isapphaverule (_In_ ULONG_PTR app_hash, _In_ BOOLEAN is_countdisabled);
 BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app);
 
 BOOLEAN _app_isappfound (_In_ ULONG_PTR app_hash);
 BOOLEAN _app_isappunused (_In_ PITEM_APP ptr_app);
-
-BOOLEAN _app_isnetworkfound (_In_ ULONG_PTR network_hash);
-
 BOOLEAN _app_issystemhash (_In_ ULONG_PTR app_hash);
 
 FORCEINLINE BOOLEAN _app_isappused (_In_ PITEM_APP ptr_app)
