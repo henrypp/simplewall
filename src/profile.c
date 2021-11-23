@@ -1228,6 +1228,42 @@ BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version)
 	return (_r_str_versioncompare (&current_version->sr, os_version) != -1);
 }
 
+BOOLEAN _app_loadpackedresource (_In_ LPCWSTR resource_name, _Out_ PR_BYTE_PTR out_buffer)
+{
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static PR_BYTE memory_buffer = NULL;
+
+	if (_r_initonce_begin (&init_once))
+	{
+		R_BYTEREF buffer;
+
+		if (_r_res_loadresource (NULL, resource_name, RT_RCDATA, &buffer))
+			_r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, &buffer, &memory_buffer);
+
+		_r_initonce_end (&init_once);
+	}
+
+	*out_buffer = memory_buffer;
+
+	return (memory_buffer != NULL);
+}
+
+VOID _app_profile_initialize ()
+{
+	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
+	static R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE);
+	static R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE L".bak");
+	static R_STRINGREF profile_internal_sr = PR_STRINGREF_INIT (XML_PROFILE_INTERNAL);
+
+	PR_STRING path;
+
+	path = _r_app_getprofiledirectory ();
+
+	_r_obj_movereference (&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
+	_r_obj_movereference (&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
+	_r_obj_movereference (&profile_info.profile_internal_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
+}
+
 VOID _app_profile_load_fallback ()
 {
 	ULONG_PTR app_hash;
@@ -1535,36 +1571,12 @@ VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYP
 	}
 }
 
-PVOID _app_loadpackedresource (_In_ LPCWSTR resource_name, _Out_ PULONG buffer_length_ptr)
-{
-	static R_INITONCE init_once = PR_INITONCE_INIT;
-	static PR_BYTE memory_buffer;
-
-	if (_r_initonce_begin (&init_once))
-	{
-		PVOID buffer;
-		ULONG buffer_length;
-
-		buffer = _r_res_loadresource (NULL, resource_name, RT_RCDATA, &buffer_length);
-
-		if (buffer)
-			_r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, buffer, buffer_length, &memory_buffer);
-
-		_r_initonce_end (&init_once);
-	}
-
-	*buffer_length_ptr = (ULONG)memory_buffer->length;
-
-	return memory_buffer->buffer;
-}
-
 VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp)
 {
 	R_XML_LIBRARY xml_file;
 	R_XML_LIBRARY xml_resource;
 	PR_XML_LIBRARY xml_library;
-	PVOID buffer;
-	ULONG buffer_size;
+	PR_BYTE buffer;
 	LONG64 timestamp_file;
 	LONG64 timestamp_resource;
 	LONG version_file;
@@ -1590,11 +1602,9 @@ VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name
 		}
 	}
 
-	buffer = _app_loadpackedresource (resource_name, &buffer_size);
-
-	if (buffer)
+	if (_app_loadpackedresource (resource_name, &buffer))
 	{
-		if (_r_xml_parsestring (&xml_resource, buffer, buffer_size) == S_OK)
+		if (_r_xml_parsestring (&xml_resource, buffer->buffer, (ULONG)buffer->length) == S_OK)
 		{
 			if (_r_xml_findchildbytagname (&xml_resource, L"root"))
 			{

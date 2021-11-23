@@ -98,6 +98,8 @@ BOOLEAN _app_isprofilevalid (_In_opt_ HWND hwnd, _In_ PR_STRING path);
 
 BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version);
 
+VOID _app_profile_initialize ();
+
 VOID _app_profile_load_fallback ();
 VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ ENUM_VERSION_XML version);
 VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp);
