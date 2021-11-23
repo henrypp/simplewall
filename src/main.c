@@ -1569,7 +1569,6 @@ VOID _app_initialize ()
 	};
 
 	R_ENVIRONMENT environment;
-	PR_STRING path;
 
 	// set privileges
 	_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
@@ -1603,11 +1602,7 @@ VOID _app_initialize ()
 		_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
 	}
 
-	path = _r_app_getprofiledirectory ();
-
-	profile_info.profile_path = _r_format_string (L"%s\\" XML_PROFILE, path->buffer);
-	profile_info.profile_path_backup = _r_format_string (L"%s\\" XML_PROFILE L".bak", path->buffer);
-	profile_info.profile_internal_path = _r_format_string (L"%s\\" XML_PROFILE_INTERNAL, path->buffer);
+	_app_profile_initialize ();
 
 	config.my_path = _r_obj_createstring (_r_sys_getimagepath ());
 	config.svchost_path = _r_obj_concatstrings (2, _r_sys_getsystemdirectory ()->buffer, PATH_SVCHOST);
