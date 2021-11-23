@@ -1068,7 +1068,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	PR_STRING version_string = NULL;
 	HINSTANCE hlib = NULL;
 	VS_FIXEDFILEINFO *ver_info;
-	PVOID ver_block;
+	R_BYTEREF ver_block;
 	PR_STRING string;
 	ULONG lcid;
 
@@ -1080,17 +1080,15 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	if (!hlib)
 		goto CleanupExit;
 
-	ver_block = _r_res_loadresource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION, NULL);
-
-	if (!ver_block)
+	if (!_r_res_loadresource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION, &ver_block))
 		goto CleanupExit;
 
 	_r_obj_initializestringbuilder (&sb);
 
-	lcid = _r_res_querytranslation (ver_block);
+	lcid = _r_res_querytranslation (ver_block.buffer);
 
 	// get file description
-	string = _r_res_querystring (ver_block, L"FileDescription", lcid);
+	string = _r_res_querystring (ver_block.buffer, L"FileDescription", lcid);
 
 	if (string)
 	{
@@ -1101,7 +1099,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 	}
 
 	// get file version
-	if (_r_res_queryversion (ver_block, &ver_info))
+	if (_r_res_queryversion (ver_block.buffer, &ver_info))
 	{
 		if (_r_obj_isstringempty2 (sb.string))
 		{
@@ -1129,7 +1127,7 @@ VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info)
 		_r_obj_appendstringbuilder (&sb, L"\r\n");
 
 	// get file company
-	string = _r_res_querystring (ver_block, L"CompanyName", lcid);
+	string = _r_res_querystring (ver_block.buffer, L"CompanyName", lcid);
 
 	if (string)
 	{
@@ -3213,13 +3211,10 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 _Ret_maybenull_
 HBITMAP _app_bitmapfrompng (_In_opt_ HINSTANCE hinst, _In_ LPCWSTR name, _In_ INT x, _In_ INT y)
 {
-	PVOID buffer;
-	ULONG buffer_length;
+	R_BYTEREF buffer;
 
-	buffer = _r_res_loadresource (hinst, name, L"PNG", &buffer_length);
-
-	if (!buffer)
+	if (!_r_res_loadresource (hinst, name, L"PNG", &buffer))
 		return NULL;
 
-	return _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer, buffer_length, x, y);
+	return _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, x, y);
 }
