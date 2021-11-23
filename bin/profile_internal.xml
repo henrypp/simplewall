@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!--Internal rules for simplewall-->
 <!--Minimum required version is 3.4-->
-<root timestamp="1632821660" type="4" version="4">
+<root timestamp="1632821660" type="4" version="5">
 	<rules_system>
 		<item name="DHCP" rule="67-68;546-547" rule_local="67-68;546-547" dir="2" protocol="17" apps="Dhcp" is_enabled="true" />
 		<item name="DNS" rule="53" protocol="17" apps="Dnscache" is_enabled="true" />
