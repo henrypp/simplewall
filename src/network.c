@@ -24,6 +24,11 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 	PITEM_NETWORK ptr_network;
 	ULONG_PTR network_hash;
 
+	PMIB_TCPTABLE_OWNER_MODULE tcp4_table;
+	PMIB_TCP6TABLE_OWNER_MODULE tcp6_table;
+	PMIB_UDPTABLE_OWNER_MODULE udp4_table;
+	PMIB_UDP6TABLE_OWNER_MODULE udp6_table;
+
 	PVOID buffer;
 	ULONG allocated_size;
 	ULONG required_size;
@@ -38,7 +43,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 	if (required_size)
 	{
-		PMIB_TCPTABLE_OWNER_MODULE tcp4_table = buffer;
+		tcp4_table = buffer;
 
 		if (GetExtendedTcpTable (tcp4_table, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
@@ -106,7 +111,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 			allocated_size = required_size;
 		}
 
-		PMIB_TCP6TABLE_OWNER_MODULE tcp6_table = buffer;
+		tcp6_table = buffer;
 
 		if (GetExtendedTcpTable (tcp6_table, &required_size, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0) == NO_ERROR)
 		{
@@ -168,7 +173,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 			allocated_size = required_size;
 		}
 
-		PMIB_UDPTABLE_OWNER_MODULE udp4_table = buffer;
+		udp4_table = buffer;
 
 		if (GetExtendedUdpTable (udp4_table, &required_size, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
@@ -225,7 +230,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 			allocated_size = required_size;
 		}
 
-		PMIB_UDP6TABLE_OWNER_MODULE udp6_table = buffer;
+		udp6_table = buffer;
 
 		if (GetExtendedUdpTable (udp6_table, &required_size, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0) == NO_ERROR)
 		{
