@@ -479,7 +479,87 @@ BOOLEAN _app_network_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID add
 	return FALSE;
 }
 
-VOID _app_network_removeitem(_In_ ULONG_PTR network_hash)
+VOID _app_network_printlistviewtable (_In_ HWND hwnd, _In_ PR_HASHTABLE network_ptr, _In_ PR_HASHTABLE checker_map)
+{
+	PITEM_NETWORK ptr_network;
+	PITEM_CONTEXT context;
+	PR_STRING string;
+	ULONG_PTR app_hash;
+	ULONG_PTR network_hash;
+	SIZE_T enum_key;
+	INT item_count;
+	INT item_id;
+	BOOLEAN is_highlight;
+	BOOLEAN is_refresh;
+
+	is_highlight = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors");
+	is_refresh = FALSE;
+
+	enum_key = 0;
+
+	// add new connections into listview
+	while (_r_obj_enumhashtablepointer (network_ptr, &ptr_network, &network_hash, &enum_key))
+	{
+		string = _r_obj_findhashtablepointer (checker_map, network_hash);
+
+		if (!string)
+			continue;
+
+		_r_obj_dereference (string);
+
+		item_id = _r_listview_getitemcount (hwnd, IDC_NETWORK);
+
+		_r_listview_additem_ex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (network_hash));
+
+		if (ptr_network->path && ptr_network->app_hash)
+			_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
+
+		// resolve network address
+		context = _r_freelist_allocateitem (&context_free_list);
+
+		context->hwnd = hwnd;
+		context->listview_id = IDC_NETWORK;
+		context->lparam = network_hash;
+		context->ptr_network = _r_obj_reference (ptr_network);
+
+		_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
+
+		is_refresh = TRUE;
+	}
+
+	// refresh network tab
+	if (is_refresh)
+		_app_updatelistviewbylparam (hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
+
+	// remove closed connections from list
+	item_count = _r_listview_getitemcount (hwnd, IDC_NETWORK);
+
+	if (item_count)
+	{
+		for (INT i = item_count - 1; i != -1; i--)
+		{
+			network_hash = _app_getlistviewitemcontext (hwnd, IDC_NETWORK, i);
+
+			if (_r_obj_findhashtable (checker_map, network_hash))
+				continue;
+
+			_r_listview_deleteitem (hwnd, IDC_NETWORK, i);
+
+			app_hash = _app_network_getappitem (network_hash);
+
+			_app_network_removeitem (network_hash);
+
+			// redraw listview item
+			if (is_highlight)
+			{
+				if (app_hash)
+					_app_setlistviewbylparam (hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
+			}
+		}
+	}
+}
+
+VOID _app_network_removeitem (_In_ ULONG_PTR network_hash)
 {
 	_r_queuedlock_acquireexclusive (&lock_network);
 
@@ -488,99 +568,98 @@ VOID _app_network_removeitem(_In_ ULONG_PTR network_hash)
 	_r_queuedlock_releaseexclusive (&lock_network);
 }
 
-NTSTATUS NTAPI _app_network_threadproc (_In_ PVOID arglist)
+_Ret_maybenull_
+HANDLE _app_network_subscribe ()
 {
-	PR_HASHTABLE checker_map;
-	PITEM_NETWORK ptr_network;
-	PITEM_CONTEXT context;
-	ULONG_PTR network_hash;
-	PR_STRING string;
-	HWND hwnd;
-	ULONG_PTR app_hash;
-	SIZE_T enum_key;
-	INT item_count;
-	INT item_id;
-	BOOLEAN is_highlighting_enabled;
-	BOOLEAN is_refresh;
+	static HANDLE events_handle = NULL;
 
-	hwnd = (HWND)arglist;
-	checker_map = _r_obj_createhashtablepointer (8);
+	HANDLE current_handle;
+	HANDLE new_handle;
 
-	while (TRUE)
+	current_handle = InterlockedCompareExchangePointer (&events_handle, NULL, NULL);
+
+	if (!current_handle)
 	{
-		_app_network_generatetable (network_table, checker_map);
+		FWPM_CONNECTION_SUBSCRIPTION subscribtion;
+		HANDLE engine_handle;
+		ULONG code;
 
-		is_highlighting_enabled = _r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors");
-		is_refresh = FALSE;
-		enum_key = 0;
+		engine_handle = _wfp_getenginehandle ();
 
-		// add new connections into list
-		while (_r_obj_enumhashtablepointer (network_table, &ptr_network, &network_hash, &enum_key))
+		if (engine_handle)
 		{
-			string = _r_obj_findhashtablepointer (checker_map, network_hash);
+			RtlZeroMemory (&subscribtion, sizeof (subscribtion));
 
-			if (!string)
-				continue;
+			code = FwpmConnectionSubscribe (engine_handle, &subscribtion, &_app_network_subscribe_callback, NULL, &new_handle);
 
-			_r_obj_dereference (string);
-
-			item_id = _r_listview_getitemcount (hwnd, IDC_NETWORK);
-
-			_r_listview_additem_ex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (network_hash));
-
-			if (ptr_network->path && ptr_network->app_hash)
-				_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
-
-			// resolve network address
-			context = _r_freelist_allocateitem (&context_free_list);
-
-			context->hwnd = hwnd;
-			context->listview_id = IDC_NETWORK;
-			context->lparam = network_hash;
-			context->ptr_network = _r_obj_reference (ptr_network);
-
-			_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
-
-			is_refresh = TRUE;
-		}
-
-		// refresh network tab as well
-		if (is_refresh)
-			_app_updatelistviewbylparam (hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
-
-		// remove closed connections from list
-		item_count = _r_listview_getitemcount (hwnd, IDC_NETWORK);
-
-		if (item_count)
-		{
-			for (INT i = item_count - 1; i != -1; i--)
+			if (code != ERROR_SUCCESS)
 			{
-				network_hash = _app_getlistviewitemcontext (hwnd, IDC_NETWORK, i);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmConnectionSubscribe", code, NULL);
+			}
+			else
+			{
+				current_handle = InterlockedCompareExchangePointer (&events_handle, new_handle, NULL);
 
-				if (_r_obj_findhashtable (checker_map, network_hash))
-					continue;
-
-				_r_listview_deleteitem (hwnd, IDC_NETWORK, i);
-
-				app_hash = _app_network_getappitem (network_hash);
-
-				_r_queuedlock_acquireexclusive (&lock_network);
-
-				_r_obj_removehashtablepointer (network_table, network_hash);
-
-				_r_queuedlock_releaseexclusive (&lock_network);
-
-				// redraw listview item
-				if (app_hash)
+				if (!current_handle)
 				{
-					if (is_highlighting_enabled)
-						_app_setlistviewbylparam (hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
+					current_handle = new_handle;
+				}
+				else
+				{
+					FwpmConnectionUnsubscribe0 (engine_handle, new_handle);
 				}
 			}
 		}
-
-		WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
 	}
+
+	return current_handle;
+}
+
+VOID CALLBACK _app_network_subscribe_callback (_Inout_opt_ PVOID context, _In_ FWPM_CONNECTION_EVENT_TYPE event_type, _In_ const FWPM_CONNECTION0* connection)
+{
+	switch (event_type)
+	{
+		case FWPM_CONNECTION_EVENT_ADD:
+		{
+			break;
+		}
+
+		case FWPM_CONNECTION_EVENT_DELETE:
+		{
+			break;
+		}
+	}
+}
+
+NTSTATUS NTAPI _app_network_threadproc (_In_ PVOID arglist)
+{
+	PR_HASHTABLE checker_map;
+	HWND hwnd;
+	//HANDLE hconnections;
+
+	hwnd = (HWND)arglist;
+
+	checker_map = _r_obj_createhashtablepointer (8);
+
+	_app_network_generatetable (network_table, checker_map);
+
+	_app_network_printlistviewtable (hwnd, network_table, checker_map);
+
+	//hconnections = _app_network_subscribe ();
+
+	//if (!hconnections)
+	{
+		while (TRUE)
+		{
+			_app_network_generatetable (network_table, checker_map);
+
+			_app_network_printlistviewtable (hwnd, network_table, checker_map);
+
+			WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
+		}
+	}
+
+	_r_obj_dereference (checker_map);
 
 	return STATUS_SUCCESS;
 }
