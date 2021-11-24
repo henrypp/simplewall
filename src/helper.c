@@ -9,14 +9,23 @@ VOID NTAPI _app_dereferenceapp (_In_ PVOID entry)
 
 	ptr_item = entry;
 
-	SAFE_DELETE_REFERENCE (ptr_item->display_name);
-	SAFE_DELETE_REFERENCE (ptr_item->real_path);
-	SAFE_DELETE_REFERENCE (ptr_item->short_name);
-	SAFE_DELETE_REFERENCE (ptr_item->original_path);
+	if (ptr_item->display_name)
+		_r_obj_dereference (ptr_item->display_name);
 
-	SAFE_DELETE_REFERENCE (ptr_item->notification);
+	if (ptr_item->real_path)
+		_r_obj_dereference (ptr_item->real_path);
 
-	SAFE_DELETE_REFERENCE (ptr_item->guids);
+	if (ptr_item->short_name)
+		_r_obj_dereference (ptr_item->short_name);
+
+	if (ptr_item->original_path)
+		_r_obj_dereference (ptr_item->original_path);
+
+	if (ptr_item->notification)
+		_r_obj_dereference (ptr_item->notification);
+
+	if (ptr_item->guids)
+		_r_obj_dereference (ptr_item->guids);
 }
 
 VOID NTAPI _app_dereferenceappinfo (_In_ PVOID entry)
@@ -25,9 +34,14 @@ VOID NTAPI _app_dereferenceappinfo (_In_ PVOID entry)
 
 	ptr_item = entry;
 
-	SAFE_DELETE_REFERENCE (ptr_item->path);
-	SAFE_DELETE_REFERENCE (ptr_item->signature_info);
-	SAFE_DELETE_REFERENCE (ptr_item->version_info);
+	if (ptr_item->path)
+		_r_obj_dereference (ptr_item->path);
+
+	if (ptr_item->signature_info)
+		_r_obj_dereference (ptr_item->signature_info);
+
+	if (ptr_item->version_info)
+		_r_obj_dereference (ptr_item->version_info);
 }
 
 VOID NTAPI _app_dereferenceruleconfig (_In_ PVOID entry)
@@ -36,8 +50,11 @@ VOID NTAPI _app_dereferenceruleconfig (_In_ PVOID entry)
 
 	ptr_item = entry;
 
-	SAFE_DELETE_REFERENCE (ptr_item->name);
-	SAFE_DELETE_REFERENCE (ptr_item->apps);
+	if (ptr_item->name)
+		_r_obj_dereference (ptr_item->name);
+
+	if (ptr_item->apps)
+		_r_obj_dereference (ptr_item->apps);
 }
 
 VOID NTAPI _app_dereferencelog (_In_ PVOID entry)
@@ -46,35 +63,32 @@ VOID NTAPI _app_dereferencelog (_In_ PVOID entry)
 
 	ptr_item = entry;
 
-	SAFE_DELETE_REFERENCE (ptr_item->path);
-	SAFE_DELETE_REFERENCE (ptr_item->filter_name);
-	SAFE_DELETE_REFERENCE (ptr_item->layer_name);
-	SAFE_DELETE_REFERENCE (ptr_item->username);
-	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
+	if (ptr_item->path)
+		_r_obj_dereference (ptr_item->path);
+
+	if (ptr_item->filter_name)
+		_r_obj_dereference (ptr_item->filter_name);
+
+	if (ptr_item->layer_name)
+		_r_obj_dereference (ptr_item->layer_name);
+
+	if (ptr_item->username)
+		_r_obj_dereference (ptr_item->username);
+
+	if (ptr_item->protocol_str)
+		_r_obj_dereference (ptr_item->protocol_str);
 
 	if (ptr_item->local_addr_str)
-	{
 		_r_obj_dereference (ptr_item->local_addr_str);
-		ptr_item->local_addr_str = NULL;
-	}
 
 	if (ptr_item->remote_addr_str)
-	{
 		_r_obj_dereference (ptr_item->remote_addr_str);
-		ptr_item->remote_addr_str = NULL;
-	}
 
 	if (ptr_item->local_host_str)
-	{
 		_r_obj_dereference (ptr_item->local_host_str);
-		ptr_item->local_host_str = NULL;
-	}
 
 	if (ptr_item->remote_host_str)
-	{
 		_r_obj_dereference (ptr_item->remote_host_str);
-		ptr_item->remote_host_str = NULL;
-	}
 }
 
 VOID NTAPI _app_dereferencenetwork (_In_ PVOID entry)
@@ -83,32 +97,23 @@ VOID NTAPI _app_dereferencenetwork (_In_ PVOID entry)
 
 	ptr_item = entry;
 
-	SAFE_DELETE_REFERENCE (ptr_item->path);
-	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
+	if (ptr_item->path)
+		_r_obj_dereference (ptr_item->path);
+
+	if (ptr_item->protocol_str)
+		_r_obj_dereference (ptr_item->protocol_str);
 
 	if (ptr_item->local_addr_str)
-	{
 		_r_obj_dereference (ptr_item->local_addr_str);
-		ptr_item->local_addr_str = NULL;
-	}
 
 	if (ptr_item->remote_addr_str)
-	{
 		_r_obj_dereference (ptr_item->remote_addr_str);
-		ptr_item->remote_addr_str = NULL;
-	}
 
 	if (ptr_item->local_host_str)
-	{
 		_r_obj_dereference (ptr_item->local_host_str);
-		ptr_item->local_host_str = NULL;
-	}
 
 	if (ptr_item->remote_host_str)
-	{
 		_r_obj_dereference (ptr_item->remote_host_str);
-		ptr_item->remote_host_str = NULL;
-	}
 }
 
 VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
@@ -117,14 +122,23 @@ VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
 
 	ptr_item = entry;
 
-	SAFE_DELETE_REFERENCE (ptr_item->apps);
+	if (ptr_item->apps)
+		_r_obj_dereference (ptr_item->apps);
 
-	SAFE_DELETE_REFERENCE (ptr_item->name);
-	SAFE_DELETE_REFERENCE (ptr_item->rule_remote);
-	SAFE_DELETE_REFERENCE (ptr_item->rule_local);
-	SAFE_DELETE_REFERENCE (ptr_item->protocol_str);
+	if (ptr_item->name)
+		_r_obj_dereference (ptr_item->name);
 
-	SAFE_DELETE_REFERENCE (ptr_item->guids);
+	if (ptr_item->rule_remote)
+		_r_obj_dereference (ptr_item->rule_remote);
+
+	if (ptr_item->rule_local)
+		_r_obj_dereference (ptr_item->rule_local);
+
+	if (ptr_item->protocol_str)
+		_r_obj_dereference (ptr_item->protocol_str);
+
+	if (ptr_item->guids)
+		_r_obj_dereference (ptr_item->guids);
 }
 
 VOID _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ ULONG_PTR hash_code, _In_ PR_QUEUED_LOCK spin_lock, _In_opt_ PR_STRING string)
