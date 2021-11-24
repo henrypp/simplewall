@@ -1760,7 +1760,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				WCHAR internal_profile_version[64];
 				_r_str_fromlong64 (internal_profile_version, RTL_NUMBER_OF (internal_profile_version), profile_info.profile_internal_timestamp);
 
-				_r_update_addcomponent (L"Internal rules", L"rules", internal_profile_version, profile_info.profile_internal_path, FALSE);
+				_r_update_addcomponent (L"Internal rules", L"rules", internal_profile_version, profile_info.profile_path_internal, FALSE);
 			}
 
 			_app_network_initialize (hwnd);
@@ -1835,6 +1835,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 			_r_fs_makebackup (profile_info.profile_path->buffer, TRUE);
 
+			_app_profile_initialize ();
 			_app_profile_load (hwnd, NULL);
 
 			_app_changefilters (hwnd, TRUE, FALSE);
@@ -2640,7 +2641,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_IMPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Xml files (*.xml)", L"*.xml;*.xml.bak",
+						L"Profile files (*." XML_PROFILE_EXT L")", L"*." XML_PROFILE_EXT,
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -2682,7 +2683,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_EXPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Xml files (*.xml)", L"*.xml;*.xml.bak",
+						L"Profile files (*." XML_PROFILE_EXT L")", L"*." XML_PROFILE_EXT,
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -3380,6 +3381,7 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 						if (is_temporary)
 							config.is_filterstemporary = TRUE;
 
+						_app_profile_initialize ();
 						_app_profile_load (NULL, NULL);
 
 						if (_wfp_initialize (hengine))
