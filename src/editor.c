@@ -1037,6 +1037,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				{
 					LPNMLISTVIEW lpnmlv;
 					INT listview_id;
+					BOOLEAN is_selected;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -1067,7 +1068,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 							{
 								if (!context->ptr_rule->is_readonly)
 								{
-									BOOLEAN is_selected = (lpnmlv->uNewState & LVIS_SELECTED) != 0;
+									is_selected = (lpnmlv->uNewState & LVIS_SELECTED) != 0;
 
 									if (listview_id == IDC_RULE_REMOTE_ID)
 									{
@@ -1254,9 +1255,9 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				case IDM_CHECK:
 				case IDM_UNCHECK:
 				{
-					BOOLEAN new_val = (ctrl_id == IDM_CHECK);
 					INT listview_id;
-					INT item_id = -1;
+					INT item_id;
+					BOOLEAN new_val;
 
 					if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
 					{
@@ -1270,6 +1271,9 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					{
 						break;
 					}
+
+					new_val = (ctrl_id == IDM_CHECK);
+					item_id = -1;
 
 					_app_setcheckboxlock (hwnd, listview_id, TRUE);
 
