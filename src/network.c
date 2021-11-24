@@ -13,7 +13,7 @@ VOID _app_network_initialize (_In_ HWND hwnd)
 	if (!is_enabled)
 		return;
 
-	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
 	// create network monitor thread
 	_r_sys_createthread (&_app_network_threadproc, hwnd, NULL, &environment);
