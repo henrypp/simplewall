@@ -76,7 +76,7 @@ VOID _app_search_initialize (_In_ HWND hwnd)
 
 	_app_search_initializetheme (context);
 
-	SetWindowLongPtr (context->hwnd, GWLP_USERDATA, (LONG_PTR)context);
+	_r_wnd_setcontext (context->hwnd, SHORT_MAX, context);
 
 	context->def_window_proc = (WNDPROC)GetWindowLongPtr (context->hwnd, GWLP_WNDPROC);
 	SetWindowLongPtr (context->hwnd, GWLP_WNDPROC, (LONG_PTR)_app_search_subclass_proc);
@@ -491,7 +491,7 @@ LRESULT CALLBACK _app_search_subclass_proc (_In_ HWND hwnd, _In_ UINT msg, _In_ 
 	PEDIT_CONTEXT context;
 	WNDPROC old_wnd_proc;
 
-	context = (PEDIT_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = (PEDIT_CONTEXT)_r_wnd_getcontext (hwnd, SHORT_MAX);
 
 	if (!context)
 		return FALSE;
@@ -504,7 +504,7 @@ LRESULT CALLBACK _app_search_subclass_proc (_In_ HWND hwnd, _In_ UINT msg, _In_ 
 		{
 			_app_search_destroytheme (context);
 
-			SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
+			_r_wnd_removecontext (context->hwnd, SHORT_MAX);
 			SetWindowLongPtr (hwnd, GWLP_WNDPROC, (LONG_PTR)old_wnd_proc);
 
 			_r_mem_free (context);

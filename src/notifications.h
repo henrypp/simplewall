@@ -25,6 +25,11 @@ VOID _app_notify_destroywindow ();
 _Ret_maybenull_
 HWND _app_notify_getwindow ();
 
+_Ret_maybenull_
+PNOTIFY_CONTEXT _app_notify_getcontext (_In_ HWND hwnd);
+
+VOID _app_notify_setcontext (_In_ HWND hwnd, _In_opt_ PNOTIFY_CONTEXT context);
+
 BOOLEAN _app_notify_command (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seconds);
 
 BOOLEAN _app_notify_addobject (_In_ PITEM_LOG ptr_log, _In_ PITEM_APP ptr_app);

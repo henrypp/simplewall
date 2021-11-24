@@ -27,14 +27,14 @@ PEDITOR_CONTEXT _app_editor_getcontext (_In_ HWND hwnd)
 {
 	PEDITOR_CONTEXT context;
 
-	context = (PEDITOR_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = _r_wnd_getcontext (hwnd, SHORT_MAX);
 
 	return context;
 }
 
 VOID _app_editor_setcontext (_In_ HWND hwnd, _In_ PEDITOR_CONTEXT context)
 {
-	SetWindowLongPtr (hwnd, GWLP_USERDATA, (LPARAM)context);
+	_r_wnd_setcontext (hwnd, SHORT_MAX, context);
 }
 
 VOID _app_editor_addtabitem (_In_ HWND hwnd, _In_ UINT locale_id, _In_ INT dlg_id, _In_ PEDITOR_CONTEXT context, _Inout_ PINT tabs_count)

@@ -44,6 +44,28 @@ HWND _app_notify_getwindow ()
 	return current_hwnd;
 }
 
+_Ret_maybenull_
+PNOTIFY_CONTEXT _app_notify_getcontext (_In_ HWND hwnd)
+{
+	PNOTIFY_CONTEXT context;
+
+	context = _r_wnd_getcontext (hwnd, SHORT_MAX);
+
+	return context;
+}
+
+VOID _app_notify_setcontext (_In_ HWND hwnd, _In_opt_ PNOTIFY_CONTEXT context)
+{
+	if (context)
+	{
+		_r_wnd_setcontext (hwnd, SHORT_MAX, context);
+	}
+	else
+	{
+		_r_wnd_removecontext (hwnd, SHORT_MAX);
+	}
+}
+
 BOOLEAN _app_notify_command (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 seconds)
 {
 	ULONG_PTR app_hash;
@@ -192,7 +214,7 @@ HICON _app_notify_getapp_icon (_In_ HWND hwnd)
 {
 	PNOTIFY_CONTEXT context;
 
-	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = _app_notify_getcontext (hwnd);
 
 	if (context)
 		return context->hicon;
@@ -204,7 +226,7 @@ ULONG_PTR _app_notify_getapp_id (_In_ HWND hwnd)
 {
 	PNOTIFY_CONTEXT context;
 
-	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = _app_notify_getcontext (hwnd);
 
 	if (context)
 		return context->app_hash;
@@ -219,7 +241,7 @@ ULONG_PTR _app_notify_getnextapp_id (_In_ HWND hwnd)
 	SIZE_T enum_key;
 	ULONG_PTR app_hash;
 
-	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = _app_notify_getcontext (hwnd);
 
 	if (context)
 	{
@@ -265,7 +287,7 @@ VOID _app_notify_setapp_icon (_In_ HWND hwnd, _In_opt_ HICON hicon, _In_ BOOLEAN
 	PNOTIFY_CONTEXT context;
 	HICON hicon_prev;
 
-	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = _app_notify_getcontext (hwnd);
 
 	if (!context)
 		return;
@@ -287,7 +309,7 @@ VOID _app_notify_setapp_id (_In_ HWND hwnd, _In_opt_ ULONG_PTR app_hash)
 {
 	PNOTIFY_CONTEXT context;
 
-	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = _app_notify_getcontext (hwnd);
 
 	if (context)
 		context->app_hash = app_hash;
@@ -601,7 +623,7 @@ VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value)
 	LONG icon_large_x;
 	LONG icon_large_y;
 
-	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = _app_notify_getcontext (hwnd);
 
 	if (!context)
 		return;
@@ -648,12 +670,12 @@ VOID _app_notify_destroy (_In_ HWND hwnd)
 {
 	PNOTIFY_CONTEXT context;
 
-	context = (PNOTIFY_CONTEXT)GetWindowLongPtr (hwnd, GWLP_USERDATA);
+	context = _app_notify_getcontext (hwnd);
 
 	if (!context)
 		return;
 
-	SetWindowLongPtr (hwnd, GWLP_USERDATA, 0);
+	_app_notify_setcontext (hwnd, NULL);
 
 	SAFE_DELETE_ICON (context->hicon);
 
@@ -718,7 +740,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 			// initialize context
 			context = _r_mem_allocatezero (sizeof (NOTIFY_CONTEXT));
 
-			SetWindowLongPtr (hwnd, GWLP_USERDATA, (LONG_PTR)context);
+			_app_notify_setcontext (hwnd, context);
 
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
