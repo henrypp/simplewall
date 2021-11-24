@@ -659,35 +659,35 @@ VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 
 VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ BOOLEAN is_createconfig)
 {
+	PITEM_RULE_CONFIG ptr_config;
+	ULONG_PTR rule_hash;
+
 	ptr_rule->is_enabled = is_enable;
 
-	if (ptr_rule->is_readonly && !_r_obj_isstringempty (ptr_rule->name))
+	if (!ptr_rule->is_readonly || !ptr_rule->name)
+		return;
+
+	rule_hash = _r_str_gethash2 (ptr_rule->name, TRUE);
+
+	if (!rule_hash)
+		return;
+
+	ptr_config = _app_getruleconfigitem (rule_hash);
+
+	if (ptr_config)
 	{
-		PITEM_RULE_CONFIG ptr_config;
-		ULONG_PTR rule_hash;
+		ptr_config->is_enabled = is_enable;
 
-		rule_hash = _r_str_gethash2 (ptr_rule->name, TRUE);
+		return;
+	}
 
-		if (rule_hash)
-		{
-			ptr_config = _app_getruleconfigitem (rule_hash);
+	if (is_createconfig)
+	{
+		_r_queuedlock_acquireexclusive (&lock_rules_config);
 
-			if (ptr_config)
-			{
-				ptr_config->is_enabled = is_enable;
+		ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_createstring2 (ptr_rule->name), is_enable);
 
-				return;
-			}
-
-			if (is_createconfig)
-			{
-				_r_queuedlock_acquireexclusive (&lock_rules_config);
-
-				ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_createstring2 (ptr_rule->name), is_enable);
-
-				_r_queuedlock_releaseexclusive (&lock_rules_config);
-			}
-		}
+		_r_queuedlock_releaseexclusive (&lock_rules_config);
 	}
 }
 
@@ -844,14 +844,14 @@ PR_STRING _app_appexpandrules (_In_ ULONG_PTR app_hash, _In_ LPCWSTR delimeter)
 _Ret_maybenull_
 PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordisplay, _In_ LPCWSTR delimeter)
 {
-	R_STRINGBUILDER buffer;
+	R_STRINGBUILDER sr;
 	R_STRINGREF delimeter_sr;
 	PR_STRING string;
 	PITEM_APP ptr_app;
 	ULONG_PTR hash_code;
-	SIZE_T enum_key = 0;
+	SIZE_T enum_key;
 
-	_r_obj_initializestringbuilder (&buffer);
+	_r_obj_initializestringbuilder (&sr);
 
 	_r_obj_initializestringrefconst (&delimeter_sr, delimeter);
 
@@ -859,10 +859,12 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 	{
 		string = _r_obj_concatstrings (4, PROC_SYSTEM_NAME, delimeter, _r_obj_getstring (config.svchost_path), delimeter);
 
-		_r_obj_appendstringbuilder2 (&buffer, string);
+		_r_obj_appendstringbuilder2 (&sr, string);
 
 		_r_obj_dereference (string);
 	}
+
+	enum_key = 0;
 
 	while (_r_obj_enumhashtable (ptr_rule->apps, NULL, &hash_code, &enum_key))
 	{
@@ -871,38 +873,37 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 		if (!ptr_app)
 			continue;
 
+		string = NULL;
+
 		if (is_fordisplay)
 		{
 			if (ptr_app->type == DATA_APP_UWP)
 			{
 				if (ptr_app->display_name)
-					_r_obj_appendstringbuilder2 (&buffer, ptr_app->display_name);
+					string = ptr_app->display_name;
 			}
-			else
-			{
-				if (ptr_app->original_path)
-					_r_obj_appendstringbuilder2 (&buffer, ptr_app->original_path);
-			}
-		}
-		else
-		{
-			if (ptr_app->original_path)
-				_r_obj_appendstringbuilder2 (&buffer, ptr_app->original_path);
 		}
 
-		_r_obj_appendstringbuilder3 (&buffer, &delimeter_sr);
+		if (!string)
+			string = ptr_app->original_path;
+
+		if (string)
+		{
+			_r_obj_appendstringbuilder2 (&sr, string);
+			_r_obj_appendstringbuilder3 (&sr, &delimeter_sr);
+		}
 
 		_r_obj_dereference (ptr_app);
 	}
 
-	string = _r_obj_finalstringbuilder (&buffer);
+	string = _r_obj_finalstringbuilder (&sr);
 
-	_r_str_trimstring (string, &delimeter_sr, 0);
+	_r_str_trimstring (string, &delimeter_sr, PR_TRIM_END_ONLY);
 
 	if (!_r_obj_isstringempty2 (string))
 		return string;
 
-	_r_obj_deletestringbuilder (&buffer);
+	_r_obj_deletestringbuilder (&sr);
 
 	return NULL;
 }
