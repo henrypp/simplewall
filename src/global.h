@@ -94,6 +94,7 @@ DECLSPEC_SELECTANY const LONG64 timer_array[] =
 #include "messages.h"
 #include "network.h"
 #include "notifications.h"
+#include "profile2.h"
 #include "profile.h"
 #include "search.h"
 #include "security.h"

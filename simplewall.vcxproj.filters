@@ -60,6 +60,9 @@
     <ClCompile Include="src\network.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\profile2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\routine\routine.h">
@@ -123,6 +126,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\profile2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
