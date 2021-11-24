@@ -555,15 +555,15 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 _Ret_maybenull_
 PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ ULONG_PTR lparam)
 {
-	R_STRINGBUILDER buffer;
+	R_STRINGBUILDER sr;
 	PR_STRING string;
 	PR_STRING string_tmp;
 
-	_r_obj_initializestringbuilder (&buffer);
+	_r_obj_initializestringbuilder (&sr);
 
 	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID)
 	{
-		_app_getapptooltipstring (&buffer, lparam, NULL, NULL);
+		_app_getapptooltipstring (&sr, lparam, NULL, NULL);
 	}
 	else if ((listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) || listview_id == IDC_APP_RULES_ID)
 	{
@@ -580,7 +580,7 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 			rule_local_string = _app_rulesexpandrules (ptr_rule->rule_local, L"\r\n" SZ_TAB);
 
 			// rule information
-			_r_obj_appendstringbuilderformat (&buffer, L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
+			_r_obj_appendstringbuilderformat (&sr, L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
 											  _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
 											  lparam,
 											  _r_locale_getstring (IDS_RULE),
@@ -606,7 +606,7 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 				{
 					string_tmp = _r_obj_concatstrings (4, L"\r\n", _r_locale_getstring (IDS_TAB_APPS), L":\r\n" SZ_TAB, string->buffer);
 
-					_r_obj_appendstringbuilder2 (&buffer, string_tmp);
+					_r_obj_appendstringbuilder2 (&sr, string_tmp);
 
 					_r_obj_dereference (string_tmp);
 					_r_obj_dereference (string);
@@ -616,9 +616,9 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 			// rule notes
 			if (ptr_rule->is_readonly && ptr_rule->type == DATA_RULE_USER)
 			{
-				string_tmp = _r_obj_concatstrings (5, SZ_TAB L"\r\n", _r_locale_getstring (IDS_NOTES), L":\r\n" SZ_TAB, SZ_RULE_INTERNAL_TITLE, L"\r\n");
+				string_tmp = _r_obj_concatstrings (4, L"\r\n", _r_locale_getstring (IDS_NOTES), L":\r\n" SZ_TAB, SZ_RULE_INTERNAL_TITLE);
 
-				_r_obj_appendstringbuilder2 (&buffer, string_tmp);
+				_r_obj_appendstringbuilder2 (&sr, string_tmp);
 
 				_r_obj_dereference (string_tmp);
 			}
@@ -634,7 +634,7 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 
 		if (ptr_network)
 		{
-			_app_getapptooltipstring (&buffer, ptr_network->app_hash, ptr_network, NULL);
+			_app_getapptooltipstring (&sr, ptr_network->app_hash, ptr_network, NULL);
 
 			_r_obj_dereference (ptr_network);
 		}
@@ -647,18 +647,18 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 
 		if (ptr_log)
 		{
-			_app_getapptooltipstring (&buffer, ptr_log->app_hash, NULL, ptr_log);
+			_app_getapptooltipstring (&sr, ptr_log->app_hash, NULL, ptr_log);
 
 			_r_obj_dereference (ptr_log);
 		}
 	}
 
-	string = _r_obj_finalstringbuilder (&buffer);
+	string = _r_obj_finalstringbuilder (&sr);
 
 	if (!_r_obj_isstringempty2 (string))
 		return string;
 
-	_r_obj_deletestringbuilder (&buffer);
+	_r_obj_deletestringbuilder (&sr);
 
 	return NULL;
 }
