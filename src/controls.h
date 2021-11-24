@@ -5,13 +5,8 @@
 
 EXTERN_C const IID IID_IImageList2;
 
-INT _app_getlistviewbytab_id (_In_ HWND hwnd, _In_ INT tab_id);
-INT _app_getlistviewbytype_id (_In_ ENUM_TYPE_DATA type);
-
 #define PR_SETITEM_REDRAW  0x0001
 #define PR_SETITEM_UPDATE 0x0002
-
-VOID _app_setlistviewbylparam (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ ULONG flags, _In_ BOOLEAN is_app);
 
 #define PR_UPDATE_TYPE 0x0001
 #define PR_UPDATE_FORCE 0x0002
@@ -20,6 +15,15 @@ VOID _app_setlistviewbylparam (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ ULONG
 #define PR_UPDATE_NORESIZE 0x0010
 #define PR_UPDATE_NOREDRAW 0x0020
 #define PR_UPDATE_NOSETVIEW 0x0040
+
+BOOLEAN _app_ischeckboxlocked (_In_ HWND hwnd, _In_ INT ctrl_id);
+VOID _app_setcheckboxlock (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ BOOLEAN is_lock);
+
+
+INT _app_getlistviewbytab_id (_In_ HWND hwnd, _In_ INT tab_id);
+INT _app_getlistviewbytype_id (_In_ ENUM_TYPE_DATA type);
+
+VOID _app_setlistviewbylparam (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ ULONG flags, _In_ BOOLEAN is_app);
 
 VOID _app_updatelistviewbylparam (_In_ HWND hwnd, _In_ INT lparam, _In_ ULONG flags);
 
@@ -68,53 +72,14 @@ VOID _app_showitembylparam (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ BOOLEAN 
 VOID _app_updateitembyidx (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id);
 VOID _app_updateitembylparam (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ BOOLEAN is_app);
 
-FORCEINLINE LPARAM _app_createlistviewcontext (_In_ ULONG_PTR id_code)
-{
-	PITEM_LISTVIEW_CONTEXT context;
-
-	context = _r_freelist_allocateitem (&listview_free_list);
-
-	context->id_code = id_code;
-
-	return (LPARAM)context;
-}
+LPARAM _app_createlistviewcontext (_In_ ULONG_PTR id_code);
+ULONG_PTR _app_getlistviewparam_id (_In_ LPARAM lparam);
+ULONG_PTR _app_getlistviewitemcontext (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id);
+BOOLEAN _app_islistviewitemhidden (_In_ LPARAM lparam);
 
 FORCEINLINE VOID _app_destroylistviewcontext (_In_ PITEM_LISTVIEW_CONTEXT context)
 {
 	_r_freelist_deleteitem (&listview_free_list, context);
-}
-
-FORCEINLINE ULONG_PTR _app_getlistviewparam_id (_In_ LPARAM lparam)
-{
-	PITEM_LISTVIEW_CONTEXT context;
-
-	context = (PITEM_LISTVIEW_CONTEXT)lparam;
-
-	return context->id_code;
-}
-
-FORCEINLINE ULONG_PTR _app_getlistviewitemcontext (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id)
-{
-	LPARAM lparam;
-
-	lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
-
-	if (!lparam)
-		return 0;
-
-	return _app_getlistviewparam_id (lparam);
-}
-
-FORCEINLINE BOOLEAN _app_islistviewitemhidden (_In_ LPARAM lparam)
-{
-	PITEM_LISTVIEW_CONTEXT context;
-
-	context = (PITEM_LISTVIEW_CONTEXT)lparam;
-
-	if (!context)
-		return FALSE;
-
-	return context->is_hidden;
 }
 
 FORCEINLINE INT _app_getcurrentlistview_id (_In_ HWND hwnd)

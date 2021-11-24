@@ -905,7 +905,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 						{
-							if (_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom))
+							if (_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 								break;
 
 							PITEM_COLOR ptr_clr;
@@ -1645,10 +1645,6 @@ VOID _app_initialize ()
 	if (!apps_table)
 		apps_table = _r_obj_createhashtablepointer (32);
 
-	// initialize context table
-	if (!context_table)
-		context_table = _r_obj_createhashtable (sizeof (SHORT), NULL);
-
 	// initialize rules array object
 	if (!rules_list)
 		rules_list = _r_obj_createlist (&_r_obj_dereference);
@@ -2200,7 +2196,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 
-					if (_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom))
+					if (_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 						break;
 
 					if (!(lpnmlv->uChanged & LVIF_STATE))
@@ -2262,7 +2258,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 						{
-							if (_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom))
+							if (_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 								break;
 
 							ULONG_PTR app_hash;

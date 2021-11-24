@@ -1021,7 +1021,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 						{
 							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
-								if (!_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom) && context->ptr_rule->type != DATA_RULE_USER)
+								if (!_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom) && context->ptr_rule->type != DATA_RULE_USER)
 								{
 									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 									return TRUE;
@@ -1052,7 +1052,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 						{
 							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
-								if (_app_ischeckboxlocked (lpnmlv->hdr.hwndFrom))
+								if (_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 									break;
 
 								_app_editor_settabtitle (hwnd, listview_id);

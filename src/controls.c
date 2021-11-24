@@ -3,6 +3,34 @@
 
 #include "global.h"
 
+BOOLEAN _app_ischeckboxlocked (_In_ HWND hwnd, _In_ INT ctrl_id)
+{
+	ULONG property_id;
+	PVOID context;
+
+	property_id = (USHORT_MAX - ctrl_id);
+
+	context = _r_wnd_getcontext (hwnd, property_id);
+
+	return (context != NULL);
+}
+
+VOID _app_setcheckboxlock (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ BOOLEAN is_lock)
+{
+	ULONG property_id;
+
+	property_id = (USHORT_MAX - ctrl_id);
+
+	if (is_lock)
+	{
+		_r_wnd_setcontext (hwnd, property_id, INVALID_HANDLE_VALUE);
+	}
+	else
+	{
+		_r_wnd_removecontext (hwnd, property_id);
+	}
+}
+
 INT _app_getlistviewbytab_id (_In_ HWND hwnd, _In_ INT tab_id)
 {
 	INT listview_id;
@@ -247,6 +275,50 @@ VOID _app_updateitembylparam (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ BOOLEA
 			}
 		}
 	}
+}
+
+LPARAM _app_createlistviewcontext (_In_ ULONG_PTR id_code)
+{
+	PITEM_LISTVIEW_CONTEXT context;
+
+	context = _r_freelist_allocateitem (&listview_free_list);
+
+	context->id_code = id_code;
+
+	return (LPARAM)context;
+}
+
+ULONG_PTR _app_getlistviewparam_id (_In_ LPARAM lparam)
+{
+	PITEM_LISTVIEW_CONTEXT context;
+
+	context = (PITEM_LISTVIEW_CONTEXT)lparam;
+
+	return context->id_code;
+}
+
+ULONG_PTR _app_getlistviewitemcontext (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id)
+{
+	LPARAM lparam;
+
+	lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+
+	if (!lparam)
+		return 0;
+
+	return _app_getlistviewparam_id (lparam);
+}
+
+BOOLEAN _app_islistviewitemhidden (_In_ LPARAM lparam)
+{
+	PITEM_LISTVIEW_CONTEXT context;
+
+	context = (PITEM_LISTVIEW_CONTEXT)lparam;
+
+	if (!context)
+		return FALSE;
+
+	return context->is_hidden;
 }
 
 VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR app_hash, _In_opt_ PITEM_NETWORK ptr_network, _In_opt_ PITEM_LOG ptr_log)

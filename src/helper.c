@@ -127,48 +127,6 @@ VOID NTAPI _app_dereferencerule (_In_ PVOID entry)
 	SAFE_DELETE_REFERENCE (ptr_item->guids);
 }
 
-BOOLEAN _app_ischeckboxlocked (_In_ HWND hwnd)
-{
-	PVOID context;
-	ULONG hash_code;
-
-	hash_code = _r_math_hashinteger_ptr ((ULONG_PTR)hwnd);
-
-	_r_queuedlock_acquireshared (&lock_context);
-
-	context = _r_obj_findhashtable (context_table, hash_code);
-
-	_r_queuedlock_releaseshared (&lock_context);
-
-	return (context != NULL);
-}
-
-VOID _app_setcheckboxlock (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ BOOLEAN is_lock)
-{
-	HWND hctrl;
-	ULONG hash_code;
-
-	hctrl = GetDlgItem (hwnd, ctrl_id);
-
-	if (!hctrl)
-		return;
-
-	hash_code = _r_math_hashinteger_ptr ((ULONG_PTR)hctrl);
-
-	_r_queuedlock_acquireexclusive (&lock_context);
-
-	if (is_lock)
-	{
-		_r_obj_addhashtableitem (context_table, hash_code, NULL);
-	}
-	else
-	{
-		_r_obj_removehashtableitem (context_table, hash_code);
-	}
-
-	_r_queuedlock_releaseexclusive (&lock_context);
-}
-
 VOID _app_addcachetable (_Inout_ PR_HASHTABLE hashtable, _In_ ULONG_PTR hash_code, _In_ PR_QUEUED_LOCK spin_lock, _In_opt_ PR_STRING string)
 {
 	BOOLEAN is_exceed;
