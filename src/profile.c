@@ -1191,7 +1191,8 @@ VOID _app_profile_initialize ()
 
 	_r_obj_movereference (&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
 	_r_obj_movereference (&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
-	_r_obj_movereference (&profile_info.profile_internal_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
+	_r_obj_movereference (&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
+
 }
 
 VOID _app_profile_load_fallback ()
@@ -1639,6 +1640,8 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 	// load profile
 	_r_xml_initializelibrary (&xml_library, TRUE, NULL);
 
+	//_app_profile2_test ();
+
 	_r_queuedlock_acquireshared (&lock_profile);
 
 	hr = _r_xml_parsefile (&xml_library, path_custom ? path_custom : profile_info.profile_path->buffer);
@@ -1700,7 +1703,7 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	// load internal rules (new!)
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-		_app_profile_load_internal (profile_info.profile_internal_path, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
+		_app_profile_load_internal (profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
 
 	if (hwnd)
 	{

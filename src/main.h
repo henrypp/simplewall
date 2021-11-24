@@ -225,7 +225,7 @@ typedef struct _PROFILE_DATA
 {
 	PR_STRING profile_path;
 	PR_STRING profile_path_backup;
-	PR_STRING profile_internal_path;
+	PR_STRING profile_path_internal;
 
 	LONG64 profile_internal_timestamp;
 } PROFILE_DATA, *PPROFILE_DATA;
