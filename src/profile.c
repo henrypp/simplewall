@@ -307,7 +307,7 @@ PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote
 	ptr_rule->protocol = protocol;
 	ptr_rule->af = af;
 
-	ptr_rule->protocol_str = _app_getprotoname (protocol, af, FALSE);
+	ptr_rule->protocol_str = _app_db_getprotoname (protocol, af, FALSE);
 
 	return ptr_rule;
 }
@@ -1632,15 +1632,13 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	// generate uwp apps list (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-		_app_generate_packages ();
+		_app_package_getpackageslist ();
 
 	// generate services list
-	_app_generate_services ();
+	_app_package_getserviceslist ();
 
 	// load profile
 	_r_xml_initializelibrary (&xml_library, TRUE, NULL);
-
-	//_app_profile2_test ();
 
 	_r_queuedlock_acquireshared (&lock_profile);
 
