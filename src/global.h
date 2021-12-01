@@ -34,7 +34,6 @@ DECLSPEC_SELECTANY PROFILE_DATA profile_info = {0};
 DECLSPEC_SELECTANY PR_HASHTABLE apps_table = NULL;
 DECLSPEC_SELECTANY PR_LIST rules_list = NULL;
 DECLSPEC_SELECTANY PR_HASHTABLE rules_config = NULL;
-DECLSPEC_SELECTANY PR_HASHTABLE network_table = NULL;
 DECLSPEC_SELECTANY PR_HASHTABLE log_table = NULL;
 
 DECLSPEC_SELECTANY PR_HASHTABLE cache_information = NULL;
@@ -49,7 +48,6 @@ DECLSPEC_SELECTANY R_QUEUED_LOCK lock_apply = PR_QUEUED_LOCK_INIT;
 DECLSPEC_SELECTANY R_QUEUED_LOCK lock_rules = PR_QUEUED_LOCK_INIT;
 DECLSPEC_SELECTANY R_QUEUED_LOCK lock_rules_config = PR_QUEUED_LOCK_INIT;
 DECLSPEC_SELECTANY R_QUEUED_LOCK lock_loglist = PR_QUEUED_LOCK_INIT;
-DECLSPEC_SELECTANY R_QUEUED_LOCK lock_network = PR_QUEUED_LOCK_INIT;
 DECLSPEC_SELECTANY R_QUEUED_LOCK lock_profile = PR_QUEUED_LOCK_INIT;
 DECLSPEC_SELECTANY R_QUEUED_LOCK lock_transaction = PR_QUEUED_LOCK_INIT;
 
@@ -88,13 +86,15 @@ DECLSPEC_SELECTANY const LONG64 timer_array[] =
 #endif
 
 #include "controls.h"
+#include "db.h"
 #include "editor.h"
 #include "helper.h"
+#include "icons.h"
 #include "log.h"
 #include "messages.h"
 #include "network.h"
 #include "notifications.h"
-#include "profile2.h"
+#include "packages.h"
 #include "profile.h"
 #include "search.h"
 #include "security.h"

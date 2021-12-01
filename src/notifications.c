@@ -293,7 +293,7 @@ VOID _app_notify_setapp_icon (_In_ HWND hwnd, _In_opt_ HICON hicon, _In_ BOOLEAN
 		return;
 
 	if (!hicon)
-		hicon = _app_getdefaultapphicon ();
+		hicon = _app_icons_getdefaultapp_hicon ();
 
 	hicon_prev = context->hicon;
 	context->hicon = hicon;
@@ -374,7 +374,7 @@ VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_f
 
 	// print direction
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
-	_r_obj_movereference (&string, _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
+	_r_obj_movereference (&string, _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
 
 	_r_ctrl_settablestring (hwnd, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty_sr);
 
@@ -830,7 +830,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 			if (hdc)
 			{
-				_r_dc_drawwindowdefault (hdc, hwnd, TRUE);
+				_r_dc_drawwindow (hdc, hwnd, TRUE);
 
 				EndPaint (hwnd, &ps);
 			}

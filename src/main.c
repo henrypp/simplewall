@@ -558,7 +558,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					LONG icon_id;
 					INT item_id;
 
-					icon_id = _app_getdefaultappicon_id ();
+					icon_id = _app_icons_getdefaultapp_id ();
 
 					_app_setcheckboxlock (hwnd, IDC_COLORS, TRUE);
 
@@ -1635,7 +1635,7 @@ VOID _app_initialize ()
 	_app_generate_credentials ();
 
 	// load default icons
-	_app_getdefaulticons ();
+	_app_icons_getdefault ();
 
 	// initialize global filters array object
 	if (!filter_ids)
@@ -1656,10 +1656,6 @@ VOID _app_initialize ()
 	// initialize log hashtable object
 	if (!log_table)
 		log_table = _r_obj_createhashtablepointer (32);
-
-	// initialize network table
-	if (!network_table)
-		network_table = _r_obj_createhashtablepointer (32);
 
 	// initialize cache table
 	if (!cache_information)
@@ -1916,6 +1912,8 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			HANDLE hengine;
 
 			_r_config_setlong (L"CurrentTab", _app_getcurrentlistview_id (hwnd));
+
+			_app_network_uninitialize ();
 
 			_r_tray_destroy (hwnd, &GUID_TrayIcon);
 
@@ -2461,7 +2459,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						hengine = _wfp_getenginehandle ();
 
 						if (hengine)
+						{
+							_app_network_unsubscribe (hengine);
 							_wfp_logunsubscribe (hengine);
+						}
 					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
@@ -2478,7 +2479,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						hengine = _wfp_getenginehandle ();
 
 						if (hengine)
+						{
+							_app_network_subscribe (hengine);
 							_wfp_logsubscribe (hengine);
+						}
 					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);

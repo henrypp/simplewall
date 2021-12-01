@@ -237,7 +237,7 @@ INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 			if (hdc)
 			{
-				_r_dc_drawwindowdefault (hdc, hwnd, TRUE);
+				_r_dc_drawwindow (hdc, hwnd, TRUE);
 
 				EndPaint (hwnd, &ps);
 			}
@@ -459,7 +459,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				{
 					index += 1;
 
-					string = _app_getprotoname (protos[i], AF_UNSPEC, TRUE);
+					string = _app_db_getprotoname (protos[i], AF_UNSPEC, TRUE);
 
 					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", string->buffer, protos[i]);
 
@@ -475,7 +475,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				// unknown protocol
 				if (_r_combobox_getcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID) == CB_ERR)
 				{
-					string = _app_getprotoname (context->ptr_rule->protocol, AF_UNSPEC, TRUE);
+					string = _app_db_getprotoname (context->ptr_rule->protocol, AF_UNSPEC, TRUE);
 
 					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PR_ULONG) L")", string->buffer, context->ptr_rule->protocol);
 
@@ -643,7 +643,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			// app icon
 			if (GetDlgItem (hwnd, IDC_APP_ICON_ID))
 			{
-				context->hicon = _app_getfileiconsafe (context->ptr_app->app_hash);
+				context->hicon = _app_icons_getsafeapp_hicon (context->ptr_app->app_hash);
 
 				SendDlgItemMessage (hwnd, IDC_APP_ICON_ID, STM_SETICON, (WPARAM)context->hicon, 0);
 			}
@@ -659,8 +659,6 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			// app signature
 			if (GetDlgItem (hwnd, IDC_APP_SIGNATURE_ID))
 			{
-				PR_STRING string;
-
 				string = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_SIGNATURE_STRING);
 
 				_r_ctrl_setstringformat (hwnd, IDC_APP_SIGNATURE_ID, L"%s: %s", _r_locale_getstring (IDS_SIGNATURE), _r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED)));
@@ -956,7 +954,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 
 				case LVN_DELETEITEM:
 				{
-					PITEM_LISTVIEW_CONTEXT context;
+					PITEM_LISTVIEW_CONTEXT listview_context;
 					LPNMLISTVIEW lpnmlv;
 					INT listview_id;
 
@@ -966,12 +964,12 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					if (!(listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID))
 						break;
 
-					context = (PITEM_LISTVIEW_CONTEXT)lpnmlv->lParam;
+					listview_context = (PITEM_LISTVIEW_CONTEXT)lpnmlv->lParam;
 
-					if (!context)
+					if (!listview_context)
 						break;
 
-					_app_destroylistviewcontext (context);
+					_app_destroylistviewcontext (listview_context);
 
 					break;
 				}
@@ -1482,7 +1480,7 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 
 			if (hdc)
 			{
-				_r_dc_drawwindowdefault (hdc, hwnd, FALSE);
+				_r_dc_drawwindow (hdc, hwnd, FALSE);
 
 				EndPaint (hwnd, &ps);
 			}
@@ -1645,7 +1643,7 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 							context->ptr_rule->protocol = (UINT8)_r_combobox_getitemparam (hpage_general, IDC_RULE_PROTOCOL_ID, _r_combobox_getcurrentitem (hpage_general, IDC_RULE_PROTOCOL_ID));
 							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemparam (hpage_general, IDC_RULE_VERSION_ID, _r_combobox_getcurrentitem (hpage_general, IDC_RULE_VERSION_ID));
 
-							string = _app_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af, FALSE);
+							string = _app_db_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af, FALSE);
 							_r_obj_movereference (&context->ptr_rule->protocol_str, string);
 
 							context->ptr_rule->direction = (FWP_DIRECTION)_r_calc_clamp (_r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY) - IDC_RULE_DIRECTION_OUTBOUND, FWP_DIRECTION_OUTBOUND, FWP_DIRECTION_MAX);

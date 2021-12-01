@@ -67,17 +67,6 @@ BOOLEAN _app_isappsigned (_In_ ULONG_PTR app_hash);
 BOOLEAN _app_isappvalidbinary (_In_ ENUM_TYPE_DATA type, _In_ PR_STRING path);
 BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path);
 
-PICON_INFORMATION _app_getdefaulticons ();
-
-_Ret_maybenull_
-HICON _app_getdefaultapphicon ();
-
-LONG _app_getdefaultappicon_id ();
-LONG _app_getdefaultuwpicon_id ();
-
-VOID _app_loadfileicon (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon, _In_ BOOLEAN is_loaddefaults);
-HICON _app_getfileiconsafe (_In_ ULONG_PTR app_hash);
-
 LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened);
 PR_STRING _app_getappname (_In_ PITEM_APP ptr_app);
 
@@ -85,22 +74,8 @@ VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info);
 VOID _app_getfilesignatureinfo (_Inout_ PITEM_APP_INFO ptr_app_info);
 VOID _app_getfileversioninfo (_Inout_ PITEM_APP_INFO ptr_app_info);
 
-_Ret_maybenull_
-LPCWSTR _app_getservicename (_In_ UINT16 port, _In_ UINT8 proto, _In_opt_ LPCWSTR default_value);
-
-PR_STRING _app_getprotoname (_In_ ULONG proto, _In_ ADDRESS_FAMILY af, _In_ BOOLEAN is_notnull);
-
-_Ret_maybenull_
-LPCWSTR _app_getconnectionstatusname (_In_ ULONG state);
-
-_Ret_maybenull_
-PR_STRING _app_getdirectionname (_In_ FWP_DIRECTION direction, _In_ BOOLEAN is_loopback, _In_ BOOLEAN is_localized);
-
 ULONG_PTR _app_addcolor (_In_ UINT locale_id, _In_ LPCWSTR config_name, _In_ BOOLEAN is_enabled, _In_ LPCWSTR config_value, _In_ COLORREF default_clr);
 COLORREF _app_getcolorvalue (_In_ ULONG_PTR color_hash);
-
-VOID _app_generate_packages ();
-VOID _app_generate_services ();
 
 VOID _app_generate_rulescontrol (_In_ HMENU hsubmenu, _In_opt_ ULONG_PTR app_hash);
 VOID _app_generate_timerscontrol (_In_ HMENU hsubmenu, _In_opt_ PITEM_APP ptr_app);

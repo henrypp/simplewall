@@ -777,7 +777,7 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 
 			case 2:
 			{
-				string = _app_getdirectionname (ptr_rule->direction, FALSE, TRUE);
+				string = _app_db_getdirectionname (ptr_rule->direction, FALSE, TRUE);
 
 				if (string)
 				{
@@ -934,7 +934,7 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 
 			case 8:
 			{
-				name = _app_getconnectionstatusname (ptr_network->state);
+				name = _app_db_getconnectionstatename (ptr_network->state);
 
 				if (name)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
@@ -1104,7 +1104,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 
 			case 8:
 			{
-				string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
+				string = _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
 				if (string)
 				{

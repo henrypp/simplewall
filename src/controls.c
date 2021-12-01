@@ -559,6 +559,8 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 	PR_STRING string;
 	PR_STRING string_tmp;
 
+	UNREFERENCED_PARAMETER (hwnd);
+
 	_r_obj_initializestringbuilder (&sr);
 
 	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID)

@@ -60,7 +60,13 @@
     <ClCompile Include="src\network.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\profile2.c">
+    <ClCompile Include="src\packages.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\icons.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\db.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -128,7 +134,13 @@
     <ClInclude Include="src\network.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\profile2.h">
+    <ClInclude Include="src\packages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\icons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\db.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -53,6 +53,8 @@ ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	PR_STRING log_string;
 	ULONG_PTR log_hash;
 
+	UNREFERENCED_PARAMETER (hwnd);
+
 	log_string = _r_format_string (
 		L"log-hash:%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG_PTR) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu16) L"-%" TEXT (PRIu16) L"-%s-%s",
 		ptr_log->af,
@@ -173,7 +175,7 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol);
 	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol);
 
-	direction_string = _app_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
+	direction_string = _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
 	buffer = _r_format_string (
 		SZ_LOG_BODY,
@@ -604,7 +606,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
 	{
 		ptr_log->protocol = log->protocol;
-		ptr_log->protocol_str = _app_getprotoname (ptr_log->protocol, ptr_log->af, FALSE);
+		ptr_log->protocol_str = _app_db_getprotoname (ptr_log->protocol, ptr_log->af, FALSE);
 	}
 
 	// indicates FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW state
@@ -1166,6 +1168,8 @@ VOID CALLBACK _wfp_logcallback0 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 {
 	ITEM_LOG_CALLBACK log;
 
+	UNREFERENCED_PARAMETER (context);
+
 	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_7))
 		_wfp_logcallback (&log);
 }
@@ -1174,6 +1178,8 @@ VOID CALLBACK _wfp_logcallback0 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 VOID CALLBACK _wfp_logcallback1 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT2 *event)
 {
 	ITEM_LOG_CALLBACK log;
+
+	UNREFERENCED_PARAMETER (context);
 
 	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_8))
 		_wfp_logcallback (&log);
@@ -1184,6 +1190,8 @@ VOID CALLBACK _wfp_logcallback2 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 {
 	ITEM_LOG_CALLBACK log;
 
+	UNREFERENCED_PARAMETER (context);
+
 	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1607))
 		_wfp_logcallback (&log);
 }
@@ -1193,6 +1201,8 @@ VOID CALLBACK _wfp_logcallback3 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 {
 	ITEM_LOG_CALLBACK log;
 
+	UNREFERENCED_PARAMETER (context);
+
 	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1803))
 		_wfp_logcallback (&log);
 }
@@ -1201,6 +1211,8 @@ VOID CALLBACK _wfp_logcallback3 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 VOID CALLBACK _wfp_logcallback4 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT5 *event)
 {
 	ITEM_LOG_CALLBACK log;
+
+	UNREFERENCED_PARAMETER (context);
 
 	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1809))
 		_wfp_logcallback (&log);
