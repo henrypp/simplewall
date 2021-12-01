@@ -3,8 +3,28 @@
 
 #include "global.h"
 
+_Ret_maybenull_
+PITEM_NETWORK_CONTEXT _app_network_getcontext ()
+{
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static PITEM_NETWORK_CONTEXT network_context = NULL;
+
+	if (_r_initonce_begin (&init_once))
+	{
+		network_context = _r_mem_allocatezero (sizeof (ITEM_NETWORK_CONTEXT));
+
+		network_context->network_ptr = _r_obj_createhashtablepointer (256);
+		network_context->checker_ptr = _r_obj_createhashtablepointer (256);
+
+		_r_initonce_end (&init_once);
+	}
+
+	return network_context;
+}
+
 VOID _app_network_initialize (_In_ HWND hwnd)
 {
+	PITEM_NETWORK_CONTEXT network_context;
 	R_ENVIRONMENT environment;
 	BOOLEAN is_enabled;
 
@@ -13,13 +33,51 @@ VOID _app_network_initialize (_In_ HWND hwnd)
 	if (!is_enabled)
 		return;
 
-	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+	network_context = _app_network_getcontext ();
+
+	if (!network_context)
+		return;
+
+	network_context->hwnd = hwnd;
+
+	_r_queuedlock_acquireexclusive (&network_context->lock_network);
+	_r_obj_clearhashtable (network_context->network_ptr);
+	_r_queuedlock_releaseexclusive (&network_context->lock_network);
+
+	_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+	_r_obj_clearhashtable (network_context->checker_ptr);
+	_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 
 	// create network monitor thread
-	_r_sys_createthread (&_app_network_threadproc, hwnd, NULL, &environment);
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+	_r_sys_createthread (&_app_network_threadproc, network_context, NULL, &environment);
 }
 
-VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HASHTABLE checker_map)
+VOID _app_network_uninitialize ()
+{
+	PITEM_NETWORK_CONTEXT network_context;
+	HANDLE engine_handle;
+
+	network_context = _app_network_getcontext ();
+
+	if (!network_context)
+		return;
+
+	engine_handle = _wfp_getenginehandle ();
+
+	if (engine_handle)
+		_app_network_unsubscribe (engine_handle);
+
+	_r_queuedlock_acquireexclusive (&network_context->lock_network);
+	_r_obj_clearhashtable (network_context->network_ptr);
+	_r_queuedlock_releaseexclusive (&network_context->lock_network);
+
+	_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+	_r_obj_clearhashtable (network_context->checker_ptr);
+	_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+}
+
+VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 {
 	PITEM_NETWORK ptr_network;
 	ULONG_PTR network_hash;
@@ -33,7 +91,9 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 	ULONG allocated_size;
 	ULONG required_size;
 
-	_r_obj_clearhashtable (checker_map);
+	_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+	_r_obj_clearhashtable (network_context->checker_ptr);
+	_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 
 	required_size = 0;
 	GetExtendedTcpTable (NULL, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
@@ -59,7 +119,10 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				if (_app_network_isitemfound (network_hash))
 				{
-					_r_obj_addhashtablepointer (checker_map, network_hash, NULL);
+					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
+					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+
 					continue;
 				}
 
@@ -73,7 +136,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
-				ptr_network->protocol_str = _app_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
+				ptr_network->protocol_str = _app_db_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
 
 				ptr_network->remote_addr.S_un.S_addr = tcp4_table->table[i].dwRemoteAddr;
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp4_table->table[i].dwRemotePort);
@@ -89,13 +152,13 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 						ptr_network->is_connection = TRUE;
 				}
 
-				_r_queuedlock_acquireexclusive (&lock_network);
+				_r_queuedlock_acquireexclusive (&network_context->lock_network);
+				_r_obj_addhashtablepointer (network_context->network_ptr, network_hash, ptr_network);
+				_r_queuedlock_releaseexclusive (&network_context->lock_network);
 
-				_r_obj_addhashtablepointer (network_ptr, network_hash, ptr_network);
-
-				_r_queuedlock_releaseexclusive (&lock_network);
-
-				_r_obj_addhashtablepointer (checker_map, network_hash, _r_obj_reference (ptr_network->path));
+				_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+				_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, _r_obj_reference (ptr_network->path));
+				_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 			}
 		}
 	}
@@ -121,7 +184,10 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				if (_app_network_isitemfound (network_hash))
 				{
-					_r_obj_addhashtablepointer (checker_map, network_hash, NULL);
+					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
+					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+
 					continue;
 				}
 
@@ -135,7 +201,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
-				ptr_network->protocol_str = _app_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
+				ptr_network->protocol_str = _app_db_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
 
 				RtlCopyMemory (ptr_network->remote_addr6.u.Byte, tcp6_table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp6_table->table[i].dwRemotePort);
@@ -151,13 +217,13 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 						ptr_network->is_connection = TRUE;
 				}
 
-				_r_queuedlock_acquireexclusive (&lock_network);
+				_r_queuedlock_acquireexclusive (&network_context->lock_network);
+				_r_obj_addhashtablepointer (network_context->network_ptr, network_hash, ptr_network);
+				_r_queuedlock_releaseexclusive (&network_context->lock_network);
 
-				_r_obj_addhashtablepointer (network_ptr, network_hash, ptr_network);
-
-				_r_queuedlock_releaseexclusive (&lock_network);
-
-				_r_obj_addhashtablepointer (checker_map, network_hash, _r_obj_reference (ptr_network->path));
+				_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+				_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, _r_obj_reference (ptr_network->path));
+				_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 			}
 		}
 	}
@@ -186,7 +252,10 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				if (_app_network_isitemfound (network_hash))
 				{
-					_r_obj_addhashtablepointer (checker_map, network_hash, NULL);
+					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
+					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+
 					continue;
 				}
 
@@ -200,7 +269,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
-				ptr_network->protocol_str = _app_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
+				ptr_network->protocol_str = _app_db_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
 
 				ptr_network->local_addr.S_un.S_addr = udp4_table->table[i].dwLocalAddr;
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)udp4_table->table[i].dwLocalPort);
@@ -208,13 +277,13 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 				if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
 					ptr_network->is_connection = TRUE;
 
-				_r_queuedlock_acquireexclusive (&lock_network);
+				_r_queuedlock_acquireexclusive (&network_context->lock_network);
+				_r_obj_addhashtablepointer (network_context->network_ptr, network_hash, ptr_network);
+				_r_queuedlock_releaseexclusive (&network_context->lock_network);
 
-				_r_obj_addhashtablepointer (network_ptr, network_hash, ptr_network);
-
-				_r_queuedlock_releaseexclusive (&lock_network);
-
-				_r_obj_addhashtablepointer (checker_map, network_hash, _r_obj_reference (ptr_network->path));
+				_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+				_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, _r_obj_reference (ptr_network->path));
+				_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 			}
 		}
 	}
@@ -240,7 +309,10 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				if (_app_network_isitemfound (network_hash))
 				{
-					_r_obj_addhashtablepointer (checker_map, network_hash, NULL);
+					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
+					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+
 					continue;
 				}
 
@@ -254,7 +326,7 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;
-				ptr_network->protocol_str = _app_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
+				ptr_network->protocol_str = _app_db_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
 
 				RtlCopyMemory (ptr_network->local_addr6.u.Byte, udp6_table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)udp6_table->table[i].dwLocalPort);
@@ -262,13 +334,13 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 				if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
 					ptr_network->is_connection = TRUE;
 
-				_r_queuedlock_acquireexclusive (&lock_network);
+				_r_queuedlock_acquireexclusive (&network_context->lock_network);
+				_r_obj_addhashtablepointer (network_context->network_ptr, network_hash, ptr_network);
+				_r_queuedlock_releaseexclusive (&network_context->lock_network);
 
-				_r_obj_addhashtablepointer (network_ptr, network_hash, ptr_network);
-
-				_r_queuedlock_releaseexclusive (&lock_network);
-
-				_r_obj_addhashtablepointer (checker_map, network_hash, _r_obj_reference (ptr_network->path));
+				_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+				_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, _r_obj_reference (ptr_network->path));
+				_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 			}
 		}
 	}
@@ -280,13 +352,19 @@ VOID _app_network_generatetable (_Inout_ PR_HASHTABLE network_ptr, _Inout_ PR_HA
 _Ret_maybenull_
 PITEM_NETWORK _app_network_getitem (_In_ ULONG_PTR network_hash)
 {
+	PITEM_NETWORK_CONTEXT network_context;
 	PITEM_NETWORK ptr_network;
 
-	_r_queuedlock_acquireshared (&lock_network);
+	network_context = _app_network_getcontext ();
 
-	ptr_network = _r_obj_findhashtablepointer (network_table, network_hash);
+	if (!network_context)
+		return NULL;
 
-	_r_queuedlock_releaseshared (&lock_network);
+	_r_queuedlock_acquireshared (&network_context->lock_network);
+
+	ptr_network = _r_obj_findhashtablepointer (network_context->network_ptr, network_hash);
+
+	_r_queuedlock_releaseshared (&network_context->lock_network);
 
 	return ptr_network;
 }
@@ -415,38 +493,52 @@ BOOLEAN _app_network_getpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_
 
 BOOLEAN _app_network_isapphaveconnection (_In_ ULONG_PTR app_hash)
 {
+	PITEM_NETWORK_CONTEXT network_context;
 	PITEM_NETWORK ptr_network;
-	SIZE_T enum_key = 0;
+	SIZE_T enum_key;
 
-	_r_queuedlock_acquireshared (&lock_network);
+	network_context = _app_network_getcontext ();
 
-	while (_r_obj_enumhashtablepointer (network_table, &ptr_network, NULL, &enum_key))
+	if (!network_context)
+		return FALSE;
+
+	enum_key = 0;
+
+	_r_queuedlock_acquireshared (&network_context->lock_network);
+
+	while (_r_obj_enumhashtablepointer (network_context->network_ptr, &ptr_network, NULL, &enum_key))
 	{
 		if (ptr_network->app_hash == app_hash)
 		{
 			if (ptr_network->is_connection)
 			{
-				_r_queuedlock_releaseshared (&lock_network);
+				_r_queuedlock_releaseshared (&network_context->lock_network);
 
 				return TRUE;
 			}
 		}
 	}
 
-	_r_queuedlock_releaseshared (&lock_network);
+	_r_queuedlock_releaseshared (&network_context->lock_network);
 
 	return FALSE;
 }
 
 BOOLEAN _app_network_isitemfound (_In_ ULONG_PTR network_hash)
 {
+	PITEM_NETWORK_CONTEXT network_context;
 	BOOLEAN is_found;
 
-	_r_queuedlock_acquireshared (&lock_network);
+	network_context = _app_network_getcontext ();
 
-	is_found = (_r_obj_findhashtable (network_table, network_hash) != NULL);
+	if (!network_context)
+		return FALSE;
 
-	_r_queuedlock_releaseshared (&lock_network);
+	_r_queuedlock_acquireshared (&network_context->lock_network);
+
+	is_found = (_r_obj_findhashtable (network_context->network_ptr, network_hash) != NULL);
+
+	_r_queuedlock_releaseshared (&network_context->lock_network);
 
 	return is_found;
 }
@@ -484,7 +576,7 @@ BOOLEAN _app_network_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID add
 	return FALSE;
 }
 
-VOID _app_network_printlistviewtable (_In_ HWND hwnd, _In_ PR_HASHTABLE network_ptr, _In_ PR_HASHTABLE checker_map)
+VOID _app_network_printlistviewtable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 {
 	PITEM_NETWORK ptr_network;
 	PITEM_CONTEXT context;
@@ -503,18 +595,20 @@ VOID _app_network_printlistviewtable (_In_ HWND hwnd, _In_ PR_HASHTABLE network_
 	enum_key = 0;
 
 	// add new connections into listview
-	while (_r_obj_enumhashtablepointer (network_ptr, &ptr_network, &network_hash, &enum_key))
+	_r_queuedlock_acquireshared (&network_context->lock_network);
+
+	while (_r_obj_enumhashtablepointer (network_context->network_ptr, &ptr_network, &network_hash, &enum_key))
 	{
-		string = _r_obj_findhashtablepointer (checker_map, network_hash);
+		string = _r_obj_findhashtablepointer (network_context->checker_ptr, network_hash);
 
 		if (!string)
 			continue;
 
 		_r_obj_dereference (string);
 
-		item_id = _r_listview_getitemcount (hwnd, IDC_NETWORK);
+		item_id = _r_listview_getitemcount (network_context->hwnd, IDC_NETWORK);
 
-		_r_listview_additem_ex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (network_hash));
+		_r_listview_additem_ex (network_context->hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (network_hash));
 
 		if (ptr_network->path && ptr_network->app_hash)
 			_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
@@ -522,7 +616,7 @@ VOID _app_network_printlistviewtable (_In_ HWND hwnd, _In_ PR_HASHTABLE network_
 		// resolve network address
 		context = _r_freelist_allocateitem (&context_free_list);
 
-		context->hwnd = hwnd;
+		context->hwnd = network_context->hwnd;
 		context->listview_id = IDC_NETWORK;
 		context->lparam = network_hash;
 		context->ptr_network = _r_obj_reference (ptr_network);
@@ -532,23 +626,25 @@ VOID _app_network_printlistviewtable (_In_ HWND hwnd, _In_ PR_HASHTABLE network_
 		is_refresh = TRUE;
 	}
 
+	_r_queuedlock_releaseshared (&network_context->lock_network);
+
 	// refresh network tab
 	if (is_refresh)
-		_app_updatelistviewbylparam (hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
+		_app_updatelistviewbylparam (network_context->hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
 
 	// remove closed connections from list
-	item_count = _r_listview_getitemcount (hwnd, IDC_NETWORK);
+	item_count = _r_listview_getitemcount (network_context->hwnd, IDC_NETWORK);
 
 	if (item_count)
 	{
 		for (INT i = item_count - 1; i != -1; i--)
 		{
-			network_hash = _app_getlistviewitemcontext (hwnd, IDC_NETWORK, i);
+			network_hash = _app_getlistviewitemcontext (network_context->hwnd, IDC_NETWORK, i);
 
-			if (_r_obj_findhashtable (checker_map, network_hash))
+			if (_r_obj_findhashtable (network_context->checker_ptr, network_hash))
 				continue;
 
-			_r_listview_deleteitem (hwnd, IDC_NETWORK, i);
+			_r_listview_deleteitem (network_context->hwnd, IDC_NETWORK, i);
 
 			app_hash = _app_network_getappitem (network_hash);
 
@@ -558,7 +654,7 @@ VOID _app_network_printlistviewtable (_In_ HWND hwnd, _In_ PR_HASHTABLE network_
 			if (is_highlight)
 			{
 				if (app_hash)
-					_app_setlistviewbylparam (hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
+					_app_setlistviewbylparam (network_context->hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
 			}
 		}
 	}
@@ -566,53 +662,63 @@ VOID _app_network_printlistviewtable (_In_ HWND hwnd, _In_ PR_HASHTABLE network_
 
 VOID _app_network_removeitem (_In_ ULONG_PTR network_hash)
 {
-	_r_queuedlock_acquireexclusive (&lock_network);
+	PITEM_NETWORK_CONTEXT network_context;
 
-	_r_obj_removehashtablepointer (network_table, network_hash);
+	network_context = _app_network_getcontext ();
 
-	_r_queuedlock_releaseexclusive (&lock_network);
+	if (!network_context)
+		return;
+
+	_r_queuedlock_acquireexclusive (&network_context->lock_network);
+
+	_r_obj_removehashtablepointer (network_context->network_ptr, network_hash);
+
+	_r_queuedlock_releaseexclusive (&network_context->lock_network);
 }
 
 _Ret_maybenull_
-HANDLE _app_network_subscribe ()
+HANDLE _app_network_subscribe (_In_ HANDLE engine_handle)
 {
-	static HANDLE events_handle = NULL;
-
+	PITEM_NETWORK_CONTEXT network_context;
 	HANDLE current_handle;
 	HANDLE new_handle;
 
-	current_handle = InterlockedCompareExchangePointer (&events_handle, NULL, NULL);
+	network_context = _app_network_getcontext ();
+
+	if (!network_context)
+		return NULL;
+
+	current_handle = InterlockedCompareExchangePointer (&network_context->hconnections, NULL, NULL);
 
 	if (!current_handle)
 	{
-		FWPM_CONNECTION_SUBSCRIPTION subscribtion;
-		HANDLE engine_handle;
+		FWPM_CONNECTION_SUBSCRIPTION subscription;
+		FWPM_CONNECTION_ENUM_TEMPLATE enum_template;
 		ULONG code;
 
-		engine_handle = _wfp_getenginehandle ();
+		RtlZeroMemory (&subscription, sizeof (subscription));
+		RtlZeroMemory (&enum_template, sizeof (enum_template));
 
-		if (engine_handle)
+		subscription.enumTemplate = &enum_template;
+
+		code = FwpmConnectionSubscribe (engine_handle, &subscription, &_app_network_subscribe_callback, network_context, &new_handle);
+
+		if (code != ERROR_SUCCESS)
 		{
-			RtlZeroMemory (&subscribtion, sizeof (subscribtion));
+			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmConnectionSubscribe", code, NULL);
+			return NULL;
+		}
+		else
+		{
+			current_handle = InterlockedCompareExchangePointer (&network_context->hconnections, new_handle, NULL);
 
-			code = FwpmConnectionSubscribe (engine_handle, &subscribtion, &_app_network_subscribe_callback, NULL, &new_handle);
-
-			if (code != ERROR_SUCCESS)
+			if (!current_handle)
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmConnectionSubscribe", code, NULL);
+				current_handle = new_handle;
 			}
 			else
 			{
-				current_handle = InterlockedCompareExchangePointer (&events_handle, new_handle, NULL);
-
-				if (!current_handle)
-				{
-					current_handle = new_handle;
-				}
-				else
-				{
-					FwpmConnectionUnsubscribe0 (engine_handle, new_handle);
-				}
+				FwpmConnectionUnsubscribe (engine_handle, new_handle);
 			}
 		}
 	}
@@ -620,17 +726,41 @@ HANDLE _app_network_subscribe ()
 	return current_handle;
 }
 
+VOID _app_network_unsubscribe (_In_ HANDLE engine_handle)
+{
+	PITEM_NETWORK_CONTEXT network_context;
+	HANDLE current_handle;
+
+	network_context = _app_network_getcontext ();
+
+	if (!network_context)
+		return;
+
+	current_handle = InterlockedCompareExchangePointer (&network_context->hconnections, NULL, network_context->hconnections);
+
+	if (current_handle)
+		FwpmConnectionUnsubscribe (engine_handle, current_handle);
+}
+
 VOID CALLBACK _app_network_subscribe_callback (_Inout_opt_ PVOID context, _In_ FWPM_CONNECTION_EVENT_TYPE event_type, _In_ const FWPM_CONNECTION0* connection)
 {
+	PITEM_NETWORK_CONTEXT network_context;
+
+	UNREFERENCED_PARAMETER (connection);
+
 	switch (event_type)
 	{
 		case FWPM_CONNECTION_EVENT_ADD:
-		{
-			break;
-		}
-
 		case FWPM_CONNECTION_EVENT_DELETE:
 		{
+			network_context = context;
+
+			if (network_context)
+			{
+				_app_network_generatetable (network_context);
+				_app_network_printlistviewtable (network_context);
+			}
+
 			break;
 		}
 	}
@@ -638,33 +768,40 @@ VOID CALLBACK _app_network_subscribe_callback (_Inout_opt_ PVOID context, _In_ F
 
 NTSTATUS NTAPI _app_network_threadproc (_In_ PVOID arglist)
 {
-	PR_HASHTABLE checker_map;
-	HWND hwnd;
+	PITEM_NETWORK_CONTEXT network_context;
+	HANDLE engine_handle;
 	//HANDLE hconnections;
 
-	hwnd = (HWND)arglist;
+	network_context = (PITEM_NETWORK_CONTEXT)arglist;
 
-	checker_map = _r_obj_createhashtablepointer (8);
+	engine_handle = _wfp_getenginehandle ();
 
-	_app_network_generatetable (network_table, checker_map);
+	// initialize network table
+	_app_network_generatetable (network_context);
+	_app_network_printlistviewtable (network_context);
 
-	_app_network_printlistviewtable (hwnd, network_table, checker_map);
-
-	//hconnections = _app_network_subscribe ();
+	if (engine_handle)
+	{
+		//hconnections = _app_network_subscribe (engine_handle);
+	}
+	else
+	{
+		//hconnections = NULL;
+	}
 
 	//if (!hconnections)
 	{
 		while (TRUE)
 		{
-			_app_network_generatetable (network_table, checker_map);
-
-			_app_network_printlistviewtable (hwnd, network_table, checker_map);
+			// update network table
+			_app_network_generatetable (network_context);
+			_app_network_printlistviewtable (network_context);
 
 			WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
 		}
-	}
 
-	_r_obj_dereference (checker_map);
+		_app_network_uninitialize ();
+	}
 
 	return STATUS_SUCCESS;
 }

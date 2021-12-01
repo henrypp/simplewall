@@ -123,7 +123,6 @@ typedef enum _ENUM_INFO_DATA2
 #define MAP_CACHE_MAX 900 // limit for caching hashtable
 
 #define TRANSACTION_TIMEOUT 9000
-#define NETWORK_TIMEOUT 3500
 
 // ui
 #define ICONS_MENU 5
