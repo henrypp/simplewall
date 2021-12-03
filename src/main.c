@@ -2669,7 +2669,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 									_r_fs_deletefile (profile_info.profile_path_backup->buffer, TRUE);
 									_app_profile_save ();
 
-									_app_profile_load (hwnd, path->buffer); // load profile
+									_app_profile_load (hwnd, path); // load profile
 
 									_app_changefilters (hwnd, TRUE, FALSE);
 								}
