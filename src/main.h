@@ -443,6 +443,8 @@ typedef struct _ITEM_CONTEXT
 		{
 			union
 			{
+				PVOID base_address;
+
 				PITEM_LOG ptr_log;
 				PITEM_NETWORK ptr_network;
 			} DUMMYUNIONNAME2;
@@ -453,13 +455,6 @@ typedef struct _ITEM_CONTEXT
 		ULONG_PTR is_install;
 	} DUMMYUNIONNAME;
 } ITEM_CONTEXT, *PITEM_CONTEXT;
-
-typedef struct _ITEM_LISTVIEW_CONTEXT
-{
-	ULONG_PTR id_code;
-
-	BOOLEAN is_hidden;
-} ITEM_LISTVIEW_CONTEXT, *PITEM_LISTVIEW_CONTEXT;
 
 typedef struct _ITEM_COLOR
 {
