@@ -1165,12 +1165,12 @@ BOOLEAN _app_setruletoapp (_In_ HWND hwnd, _Inout_ PITEM_RULE ptr_rule, _In_ INT
 
 	if (item_id != -1)
 	{
-		listview_id = _app_getlistviewbytype_id (ptr_rule->type);
+		listview_id = _app_listview_getbytype (ptr_rule->type);
 
-		_app_updateitembylparam (hwnd, _app_getlistviewitemcontext (hwnd, listview_id, item_id), FALSE);
+		_app_listview_updateitemby_param (hwnd, _app_listview_getitemcontext (hwnd, listview_id, item_id), FALSE);
 	}
 
-	_app_updateitembylparam (hwnd, ptr_app->app_hash, TRUE);
+	_app_listview_updateitemby_param (hwnd, ptr_app->app_hash, TRUE);
 
 	return TRUE;
 }
@@ -1538,7 +1538,7 @@ PR_STRING _app_resolveaddress_interlocked (_In_ PVOID volatile *string, _In_ ADD
 	return current_string;
 }
 
-VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type, _In_ INT listview_id)
+VOID _app_queue_fileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type, _In_ INT listview_id)
 {
 	PITEM_APP_INFO ptr_app_info;
 
@@ -1580,6 +1580,20 @@ VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _I
 	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, ptr_app_info);
 }
 
+VOID _app_queue_resolver (_In_ HWND hwnd, _In_ INT listview_id, _In_ ULONG_PTR hash_code, _In_ PVOID base_address)
+{
+	PITEM_CONTEXT context;
+
+	context = _r_freelist_allocateitem (&context_free_list);
+
+	context->hwnd = hwnd;
+	context->listview_id = listview_id;
+	context->lparam = hash_code;
+	context->base_address = _r_obj_reference (base_address);
+
+	_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
+}
+
 VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 {
 	PITEM_APP_INFO ptr_app_info;
@@ -1610,7 +1624,7 @@ VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count)
 	{
 		if (_r_wnd_isvisible (hwnd))
 		{
-			if (ptr_app_info->listview_id == _app_getcurrentlistview_id (hwnd))
+			if (ptr_app_info->listview_id == _app_listview_getcurrent (hwnd))
 				_r_listview_redraw (hwnd, ptr_app_info->listview_id, -1);
 		}
 	}
@@ -1758,7 +1772,7 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 	{
 		if (_r_wnd_isvisible (context->hwnd))
 		{
-			if (_app_getcurrentlistview_id (context->hwnd) == context->listview_id)
+			if (_app_listview_getcurrent (context->hwnd) == context->listview_id)
 				_r_listview_redraw (context->hwnd, context->listview_id, -1);
 		}
 	}

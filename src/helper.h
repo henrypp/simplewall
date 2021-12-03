@@ -96,7 +96,8 @@ PR_STRING _app_resolveaddress (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address);
 
 PR_STRING _app_resolveaddress_interlocked (_In_ PVOID volatile *string, _In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _In_ BOOLEAN is_resolutionenabled);
 
-VOID _app_queryfileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type, _In_ INT listview_id);
+VOID _app_queue_fileinformation (_In_ PR_STRING path, _In_ ULONG_PTR app_hash, _In_ ENUM_TYPE_DATA type, _In_ INT listview_id);
+VOID _app_queue_resolver (_In_ HWND hwnd, _In_ INT listview_id, _In_ ULONG_PTR hash_code, _In_ PVOID base_address);
 
 VOID NTAPI _app_queuefileinformation (_In_ PVOID arglist, _In_ ULONG busy_count);
 VOID NTAPI _app_queuenotifyinformation (_In_ PVOID arglist, _In_ ULONG busy_count);
