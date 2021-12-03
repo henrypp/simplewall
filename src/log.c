@@ -130,7 +130,7 @@ VOID _app_logclear_ui (_In_ HWND hwnd)
 	SendDlgItemMessage (hwnd, IDC_LOG, LVM_DELETEALLITEMS, 0, 0);
 	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, 0, 0);
 
-	_app_listviewresize (hwnd, IDC_LOG, FALSE);
+	_app_listview_resize (hwnd, IDC_LOG);
 
 	_r_queuedlock_acquireexclusive (&lock_loglist);
 
@@ -219,9 +219,8 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 
 VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 {
-	PITEM_CONTEXT context;
-	PITEM_APP ptr_app;
 	ULONG_PTR log_hash;
+	ULONG_PTR hash_code;
 	SIZE_T table_size;
 	INT item_id;
 
@@ -242,46 +241,25 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 
 	if (table_size >= MAP_CACHE_MAX)
 	{
-		ULONG_PTR hash_code;
-
 		item_id = _r_listview_getitemcount (hwnd, IDC_LOG) - 1;
 
-		hash_code = _app_getlistviewitemcontext (hwnd, IDC_LOG, item_id);
+		hash_code = _app_listview_getitemcontext (hwnd, IDC_LOG, item_id);
 		_r_listview_deleteitem (hwnd, IDC_LOG, item_id);
 
 		_r_queuedlock_acquireexclusive (&lock_loglist);
-
 		_r_obj_removehashtablepointer (log_table, hash_code);
-
 		_r_queuedlock_releaseexclusive (&lock_loglist);
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_loglist);
-
 	_r_obj_addhashtablepointer (log_table, log_hash, _r_obj_reference (ptr_log));
-
 	_r_queuedlock_releaseexclusive (&lock_loglist);
 
-	ptr_app = _app_getappitem (ptr_log->app_hash);
+	_app_listview_addlogitem (hwnd, ptr_log, log_hash);
 
-	item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
+	_app_queue_resolver (hwnd, IDC_LOG, log_hash, ptr_log);
 
-	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_createlistviewcontext (log_hash));
-
-	// resolve network address
-	context = _r_freelist_allocateitem (&context_free_list);
-
-	context->hwnd = hwnd;
-	context->listview_id = IDC_LOG;
-	context->lparam = log_hash;
-	context->ptr_log = _r_obj_reference (ptr_log);
-
-	_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
-
-	if (ptr_app)
-		_r_obj_dereference (ptr_app);
-
-	_app_updatelistviewbylparam (hwnd, IDC_LOG, 0);
+	_app_listview_updateby_id (hwnd, IDC_LOG, 0);
 }
 
 VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
@@ -1251,7 +1229,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 			ptr_app = _app_getappitem (ptr_log->app_hash);
 
 			if (ptr_app)
-				_app_updatelistviewbylparam (hwnd, ptr_app->type, PR_UPDATE_TYPE);
+				_app_listview_updateby_id (hwnd, ptr_app->type, PR_UPDATE_TYPE);
 
 			_app_profile_save ();
 		}

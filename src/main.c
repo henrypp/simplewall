@@ -8,9 +8,9 @@ BOOLEAN _app_changefilters (_In_ HWND hwnd, _In_ BOOLEAN is_install, _In_ BOOLEA
 	PITEM_CONTEXT context;
 	INT listview_id;
 
-	listview_id = _app_getcurrentlistview_id (hwnd);
+	listview_id = _app_listview_getcurrent (hwnd);
 
-	_app_listviewsort (hwnd, listview_id, -1, FALSE);
+	_app_listview_sort (hwnd, listview_id);
 
 	if (is_forced || _wfp_isfiltersinstalled ())
 	{
@@ -401,7 +401,7 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_opt_ HWND hsettings, _In_ INT ctrl_i
 				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 				{
 					if (ptr_app->real_path)
-						_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_getlistviewbytype_id (ptr_app->type));
+						_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
 				}
 
 				_r_queuedlock_releaseshared (&lock_apps);
@@ -546,7 +546,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 					// configure listview
 					_r_listview_setstyle (hwnd, IDC_COLORS, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, FALSE);
 
-					_app_listviewsetview (hwnd, IDC_COLORS);
+					_app_listview_setview (hwnd, IDC_COLORS);
 
 					_r_listview_deleteallitems (hwnd, IDC_COLORS);
 					_r_listview_deleteallcolumns (hwnd, IDC_COLORS);
@@ -560,7 +560,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 					icon_id = _app_icons_getdefaultapp_id ();
 
-					_app_setcheckboxlock (hwnd, IDC_COLORS, TRUE);
+					_app_listview_lock (hwnd, IDC_COLORS, TRUE);
 
 					enum_key = 0;
 					item_id = 0;
@@ -575,7 +575,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 						item_id += 1;
 					}
 
-					_app_setcheckboxlock (hwnd, IDC_COLORS, FALSE);
+					_app_listview_lock (hwnd, IDC_COLORS, FALSE);
 
 					break;
 				}
@@ -905,7 +905,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 						{
-							if (_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
+							if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 								break;
 
 							PITEM_COLOR ptr_clr;
@@ -919,7 +919,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 								_r_config_setboolean_ex (_r_obj_getstring (ptr_clr->config_name), is_enabled, L"colors");
 
-								_r_listview_redraw (_r_app_gethwnd (), _app_getcurrentlistview_id (_r_app_gethwnd ()), -1);
+								_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()), -1);
 							}
 						}
 
@@ -984,7 +984,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 								_r_config_setulong_ex (_r_obj_getstring (ptr_clr_current->config_value), cc.rgbResult, L"colors");
 
 								_r_listview_redraw (hwnd, IDC_COLORS, -1);
-								_r_listview_redraw (_r_app_gethwnd (), _app_getcurrentlistview_id (_r_app_gethwnd ()), -1);
+								_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()), -1);
 							}
 						}
 					}
@@ -1476,14 +1476,14 @@ VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 	SetWindowPos (config.hrebar, NULL, 0, 0, rect.right, rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 	SetWindowPos (GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, rect.right, rect.bottom - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 
-	_app_listviewloadfont (dpi_value, TRUE);
+	_app_listview_loadfont (dpi_value, TRUE);
 
 	style = LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_HEADERINALLVIEWS | LVS_EX_HEADERDRAGDROP;
 	tabs_count = _app_addwindowtabs (hwnd);
 
 	for (INT i = 0; i < tabs_count; i++)
 	{
-		listview_id = _app_getlistviewbytab_id (hwnd, i);
+		listview_id = _app_listview_getbytab (hwnd, i);
 		hlistview = GetDlgItem (hwnd, listview_id);
 
 		if (!hlistview)
@@ -1552,7 +1552,7 @@ VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 		// add filter group
 		_r_listview_addgroup (hwnd, listview_id, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED);
 
-		_app_listviewsetfont (hwnd, listview_id);
+		_app_listview_setfont (hwnd, listview_id);
 
 		BringWindowToTop (hlistview); // HACK!!!
 	}
@@ -1615,7 +1615,7 @@ VOID _app_initialize ()
 
 	// initialize free list
 	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);
-	_r_freelist_initialize (&listview_free_list, sizeof (ITEM_LISTVIEW_CONTEXT), 512);
+	_r_freelist_initialize (&listview_free_list, sizeof (ITEM_LISTVIEW_CONTEXT), 2048);
 
 	// initialize colors array
 	if (!colors_table)
@@ -1911,7 +1911,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 		{
 			HANDLE hengine;
 
-			_r_config_setlong (L"CurrentTab", _app_getcurrentlistview_id (hwnd));
+			_r_config_setlong (L"CurrentTab", _app_listview_getcurrent (hwnd));
 
 			_app_network_uninitialize ();
 
@@ -1974,8 +1974,8 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 			if (app_hash)
 			{
-				_app_setlistviewbylparam (hwnd, app_hash, PR_SETITEM_UPDATE, TRUE);
-				_app_showitembylparam (hwnd, app_hash, TRUE);
+				_app_listview_updateby_param (hwnd, app_hash, PR_SETITEM_UPDATE, TRUE);
+				_app_listview_showitemby_param (hwnd, app_hash, TRUE);
 			}
 
 			break;
@@ -1994,9 +1994,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
 			_app_windowloadfont (dpi_value);
-			_app_listviewloadfont (dpi_value, TRUE);
+			_app_listview_loadfont (dpi_value, TRUE);
 
-			_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+			_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 			SendMessage (hwnd, WM_SIZE, 0, 0);
 
@@ -2052,7 +2052,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					HWND hlistview;
 					INT listview_id;
 
-					listview_id = _app_getcurrentlistview_id (hwnd);
+					listview_id = _app_listview_getcurrent (hwnd);
 
 					if (!listview_id)
 						break;
@@ -2072,7 +2072,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					HWND hlistview;
 					INT listview_id;
 
-					listview_id = _app_getcurrentlistview_id (hwnd);
+					listview_id = _app_listview_getcurrent (hwnd);
 
 					if (!listview_id)
 						break;
@@ -2084,14 +2084,14 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 					_app_search_applyfilter (hwnd, listview_id, config.search_string);
 
-					_app_updatelistviewbylparam (hwnd, listview_id, PR_UPDATE_FORCE | PR_UPDATE_NORESIZE);
+					_app_listview_updateby_id (hwnd, listview_id, PR_UPDATE_FORCE | PR_UPDATE_NORESIZE);
 
 					ShowWindow (hlistview, SW_SHOWNA);
 
 					if (_r_wnd_isvisiblefull (hwnd)) // HACK!!!
 						SetFocus (hlistview);
 
-					_app_listviewresize (hwnd, listview_id, FALSE);
+					_app_listview_resize (hwnd, listview_id);
 
 					break;
 				}
@@ -2148,7 +2148,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (!context)
 						break;
 
-					_app_destroylistviewcontext (context);
+					_app_listview_destroycontext (context);
 
 					break;
 				}
@@ -2161,7 +2161,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					ctrl_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					_app_listviewsort (hwnd, ctrl_id, lpnmlv->iSubItem, TRUE);
+					_app_listview_sort_ex (hwnd, ctrl_id, lpnmlv->iSubItem, TRUE);
 
 					break;
 				}
@@ -2175,7 +2175,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					lpnmlv = (LPNMLVGETINFOTIP)lparam;
 					listview_id = (INT)lpnmlv->hdr.idFrom;
 
-					string = _app_gettooltipbylparam (hwnd, listview_id, _app_getlistviewitemcontext (hwnd, listview_id, lpnmlv->iItem));
+					string = _app_gettooltipbylparam (hwnd, listview_id, _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem));
 
 					if (string)
 					{
@@ -2195,7 +2195,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 
-					if (_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
+					if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 						break;
 
 					if (!(lpnmlv->uChanged & LVIF_STATE))
@@ -2208,7 +2208,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 					if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
 					{
-						app_hash = _app_getlistviewparam_id (lpnmlv->lParam);
+						app_hash = _app_listview_getcontextcode (lpnmlv->lParam);
 
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1))
 						{
@@ -2257,7 +2257,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					{
 						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 						{
-							if (_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
+							if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 								break;
 
 							ULONG_PTR app_hash;
@@ -2271,7 +2271,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 							if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 							{
-								app_hash = _app_getlistviewparam_id (lpnmlv->lParam);
+								app_hash = _app_listview_getcontextcode (lpnmlv->lParam);
 								ptr_app = _app_getappitem (app_hash);
 
 								if (!ptr_app)
@@ -2281,9 +2281,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								{
 									ptr_app->is_enabled = is_enabled;
 
-									_app_setcheckboxlock (hwnd, listview_id, TRUE);
+									_app_listview_lock (hwnd, listview_id, TRUE);
 									_app_setappiteminfo (hwnd, listview_id, lpnmlv->iItem, ptr_app);
-									_app_setcheckboxlock (hwnd, listview_id, FALSE);
+									_app_listview_lock (hwnd, listview_id, FALSE);
 
 									if (is_enabled)
 										_app_notify_freeobject (ptr_app);
@@ -2317,7 +2317,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								SIZE_T rule_idx;
 								PITEM_RULE ptr_rule;
 
-								rule_idx = _app_getlistviewparam_id (lpnmlv->lParam);
+								rule_idx = _app_listview_getcontextcode (lpnmlv->lParam);
 								ptr_rule = _app_getrulebyid (rule_idx);
 
 								if (!ptr_rule)
@@ -2325,12 +2325,12 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 								if (ptr_rule->is_enabled != is_enabled)
 								{
-									_app_setcheckboxlock (hwnd, listview_id, TRUE);
+									_app_listview_lock (hwnd, listview_id, TRUE);
 
 									_app_ruleenable (ptr_rule, is_enabled, TRUE);
 									_app_setruleiteminfo (hwnd, listview_id, lpnmlv->iItem, ptr_rule, TRUE);
 
-									_app_setcheckboxlock (hwnd, listview_id, FALSE);
+									_app_listview_lock (hwnd, listview_id, FALSE);
 
 									if (_wfp_isfiltersinstalled ())
 									{
@@ -2356,7 +2356,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 							if (is_changed)
 							{
-								_app_updatelistviewbylparam (hwnd, listview_id, 0);
+								_app_listview_updateby_id (hwnd, listview_id, 0);
 
 								_app_profile_save ();
 							}
@@ -2538,7 +2538,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				if (ctrl_id != IDC_SEARCH)
 					break;
 
-				listview_id = _app_getcurrentlistview_id (hwnd);
+				listview_id = _app_listview_getcurrent (hwnd);
 				string = _r_ctrl_getstring (config.hrebar, IDC_SEARCH);
 
 				_r_obj_swapreference (&config.search_string, string);
@@ -2747,7 +2747,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_config_setboolean (L"AutoSizeColumns", new_val);
 
 					if (new_val)
-						_app_listviewresize (hwnd, _app_getcurrentlistview_id (hwnd), FALSE);
+						_app_listview_resize (hwnd, _app_listview_getcurrent (hwnd));
 
 					break;
 				}
@@ -2762,10 +2762,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					_r_config_setboolean (L"ShowFilenames", new_val);
 
-					listview_id = _app_getcurrentlistview_id (hwnd);
+					listview_id = _app_listview_getcurrent (hwnd);
 
 					_r_listview_redraw (hwnd, listview_id, -1);
-					_app_listviewsort (hwnd, listview_id, -1, FALSE);
+					_app_listview_sort (hwnd, listview_id);
 
 					break;
 				}
@@ -2811,7 +2811,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_menu_checkitem (GetMenu (hwnd), IDM_VIEW_DETAILS, IDM_VIEW_TILE, MF_BYCOMMAND, ctrl_id);
 					_r_config_setlong (L"ViewType", view_type);
 
-					_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
+					_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 					break;
 				}
@@ -2838,7 +2838,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					_r_menu_checkitem (GetMenu (hwnd), IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, MF_BYCOMMAND, ctrl_id);
 					_r_config_setlong (L"IconSize", icon_size);
 
-					_app_updatelistviewbylparam (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
+					_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 					break;
 				}
@@ -2863,7 +2863,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 						{
 							if (ptr_app->real_path)
-								_app_queryfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_getlistviewbytype_id (ptr_app->type));
+								_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
 						}
 
 						_r_queuedlock_releaseshared (&lock_apps);
@@ -3111,8 +3111,8 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 								if (app_hash)
 								{
-									_app_setlistviewbylparam (hwnd, app_hash, PR_SETITEM_UPDATE, TRUE);
-									_app_showitembylparam (hwnd, app_hash, TRUE);
+									_app_listview_updateby_param (hwnd, app_hash, PR_SETITEM_UPDATE, TRUE);
+									_app_listview_showitemby_param (hwnd, app_hash, TRUE);
 
 									_app_profile_save ();
 								}
@@ -3141,18 +3141,23 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				case IDM_EXPLORE:
 				{
+					PITEM_APP ptr_app;
+					PITEM_NETWORK ptr_network;
+					PITEM_LOG ptr_log;
+
 					ULONG_PTR hash_code;
 
-					INT listview_id = _app_getcurrentlistview_id (hwnd);
-					INT item_id = -1;
+					INT listview_id;
+					INT item_id;
+
+					listview_id = _app_listview_getcurrent (hwnd);
+					item_id = -1;
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
-						PITEM_APP ptr_app;
-
 						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
-							hash_code = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
+							hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 							ptr_app = _app_getappitem (hash_code);
 
 							if (ptr_app)
@@ -3169,11 +3174,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					}
 					else if (listview_id == IDC_NETWORK)
 					{
-						PITEM_NETWORK ptr_network;
-
 						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
-							hash_code = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
+							hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 							ptr_network = _app_network_getitem (hash_code);
 
 							if (ptr_network)
@@ -3190,11 +3193,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					}
 					else if (listview_id == IDC_LOG)
 					{
-						PITEM_LOG ptr_log;
-
 						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 						{
-							hash_code = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
+							hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 							ptr_log = _app_getlogitem (hash_code);
 
 							if (ptr_log)
@@ -3254,7 +3255,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				{
 					INT listview_id;
 
-					listview_id = _app_getcurrentlistview_id (hwnd);
+					listview_id = _app_listview_getcurrent (hwnd);
 
 					if (listview_id)
 					{

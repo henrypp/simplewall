@@ -93,7 +93,7 @@ BOOLEAN _app_notify_command (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 sec
 		}
 		else
 		{
-			_app_updateitembylparam (_r_app_gethwnd (), app_hash, TRUE);
+			_app_listview_updateitemby_param (_r_app_gethwnd (), app_hash, TRUE);
 		}
 
 		_r_obj_addlistitem (rules, ptr_app);
@@ -120,7 +120,7 @@ BOOLEAN _app_notify_command (_In_ HWND hwnd, _In_ INT button_id, _In_ LONG64 sec
 		}
 	}
 
-	_app_updatelistviewbylparam (_r_app_gethwnd (), ptr_app->type, PR_UPDATE_TYPE);
+	_app_listview_updateby_id (_r_app_gethwnd (), ptr_app->type, PR_UPDATE_TYPE);
 
 	_r_obj_dereference (ptr_app);
 	_r_obj_dereference (rules);
@@ -1140,8 +1140,8 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 								_app_ruleenable (ptr_rule, TRUE, TRUE);
 							}
 
-							_app_updateitembylparam (_r_app_gethwnd (), ptr_log->app_hash, TRUE);
-							_app_updateitembylparam (_r_app_gethwnd (), rule_idx, FALSE);
+							_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_log->app_hash, TRUE);
+							_app_listview_updateitemby_param (_r_app_gethwnd (), rule_idx, FALSE);
 
 							if (_wfp_isfiltersinstalled ())
 							{
@@ -1159,7 +1159,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 								}
 							}
 
-							_app_updatelistviewbylparam (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
+							_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 							_r_obj_dereference (ptr_app);
 							_r_obj_dereference (ptr_rule);
@@ -1205,7 +1205,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 					if (app_hash)
 					{
-						_app_showitembylparam (_r_app_gethwnd (), app_hash, TRUE);
+						_app_listview_showitemby_param (_r_app_gethwnd (), app_hash, TRUE);
 					}
 
 					break;
@@ -1306,12 +1306,12 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 						_r_queuedlock_releaseexclusive (&lock_rules);
 
 						// set rule information
-						_app_addlistviewrule (_r_app_gethwnd (), ptr_rule, rule_idx, TRUE);
+						_app_listview_addruleitem (_r_app_gethwnd (), ptr_rule, rule_idx, TRUE);
 
 						// update app information
-						_app_updateitembylparam (_r_app_gethwnd (), app_hash, TRUE);
+						_app_listview_updateitemby_param (_r_app_gethwnd (), app_hash, TRUE);
 
-						_app_updatelistviewbylparam (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
+						_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 						_app_profile_save ();
 

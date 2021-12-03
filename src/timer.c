@@ -5,6 +5,11 @@
 
 VOID _app_timer_set (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app, _In_ LONG64 seconds)
 {
+	PTP_TIMER htimer;
+	FILETIME file_time;
+	LONG64 current_time;
+	BOOLEAN is_created;
+
 	if (seconds <= 0)
 	{
 		ptr_app->is_enabled = FALSE;
@@ -13,15 +18,12 @@ VOID _app_timer_set (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app, _In_ LONG64 
 		ptr_app->timer = 0;
 
 		if (_app_istimerset (ptr_app->htimer))
-		{
 			_app_timer_remove (&ptr_app->htimer);
-		}
 	}
 	else
 	{
-		FILETIME file_time;
-		LONG64 current_time = _r_unixtime_now ();
-		BOOLEAN is_created = FALSE;
+		current_time = _r_unixtime_now ();
+		is_created = FALSE;
 
 		_r_unixtime_to_filetime (current_time + seconds, &file_time);
 
@@ -32,12 +34,13 @@ VOID _app_timer_set (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app, _In_ LONG64 
 		}
 		else
 		{
-			PTP_TIMER timer = CreateThreadpoolTimer (&_app_timer_callback, (PVOID)ptr_app->app_hash, NULL);
+			htimer = CreateThreadpoolTimer (&_app_timer_callback, (PVOID)ptr_app->app_hash, NULL);
 
-			if (timer)
+			if (htimer)
 			{
-				SetThreadpoolTimer (timer, &file_time, 0, 0);
-				ptr_app->htimer = timer;
+				SetThreadpoolTimer (htimer, &file_time, 0, 0);
+				ptr_app->htimer = htimer;
+
 				is_created = TRUE;
 			}
 		}
@@ -61,9 +64,7 @@ VOID _app_timer_set (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app, _In_ LONG64 
 	}
 
 	if (hwnd)
-	{
-		_app_updateitembylparam (hwnd, ptr_app->app_hash, TRUE);
-	}
+		_app_listview_updateitemby_param (hwnd, ptr_app->app_hash, TRUE);
 }
 
 VOID _app_timer_reset (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app)
@@ -80,7 +81,7 @@ VOID _app_timer_reset (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app)
 
 	if (hwnd)
 	{
-		_app_updateitembylparam (hwnd, ptr_app->app_hash, TRUE);
+		_app_listview_updateitemby_param (hwnd, ptr_app->app_hash, TRUE);
 	}
 }
 
@@ -147,7 +148,7 @@ VOID CALLBACK _app_timer_callback (_Inout_ PTP_CALLBACK_INSTANCE instance, _Inou
 		_r_obj_dereference (rules);
 	}
 
-	_app_updatelistviewbylparam (hwnd, ptr_app->type, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+	_app_listview_updateby_id (hwnd, ptr_app->type, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 	_r_obj_dereference (ptr_app);
 

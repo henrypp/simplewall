@@ -29,7 +29,7 @@ PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data)
 	}
 	else if (info_data == INFO_LISTVIEW_ID)
 	{
-		return IntToPtr (_app_getlistviewbytype_id (ptr_app->type));
+		return IntToPtr (_app_listview_getbytype (ptr_app->type));
 	}
 	else if (info_data == INFO_IS_ENABLED)
 	{
@@ -93,7 +93,7 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 			ptr_app->is_enabled = TRUE;
 		}
 
-		_app_updateitembylparam (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
+		_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 	}
 	else if (info_data == INFO_IS_SILENT)
 	{
@@ -106,7 +106,7 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 	{
 		ptr_app->is_enabled = (PtrToInt (value) ? TRUE : FALSE);
 
-		_app_updateitembylparam (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
+		_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 	}
 	else if (info_data == INFO_IS_UNDELETABLE)
 	{
@@ -133,7 +133,7 @@ PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
 {
 	if (info_data == INFO_LISTVIEW_ID)
 	{
-		return IntToPtr (_app_getlistviewbytype_id (ptr_rule->type));
+		return IntToPtr (_app_listview_getbytype (ptr_rule->type));
 	}
 	else if (info_data == INFO_IS_READONLY)
 	{
@@ -255,11 +255,11 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 
 	// insert item
 	if (hwnd)
-		_app_addlistviewapp (hwnd, ptr_app);
+		_app_listview_addappitem (hwnd, ptr_app);
 
 	// queue file information
 	if (ptr_app->real_path)
-		_app_queryfileinformation (ptr_app->real_path, app_hash, ptr_app->type, _app_getlistviewbytype_id (ptr_app->type));
+		_app_queue_fileinformation (ptr_app->real_path, app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
 
 	return app_hash;
 }
@@ -535,7 +535,7 @@ VOID _app_freeapplication (_In_ ULONG_PTR app_hash)
 					ptr_rule->is_haveerrors = FALSE;
 				}
 
-				_app_updateitembylparam (_r_app_gethwnd (), i, FALSE);
+				_app_listview_updateitemby_param (_r_app_gethwnd (), i, FALSE);
 			}
 		}
 	}
@@ -549,7 +549,7 @@ VOID _app_getcount (_Out_ PITEM_STATUS status)
 {
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
-	SIZE_T enum_key = 0;
+	SIZE_T enum_key;
 	BOOLEAN is_used;
 
 	status->apps_count = 0;
@@ -559,6 +559,8 @@ VOID _app_getcount (_Out_ PITEM_STATUS status)
 	status->rules_global_count = 0;
 	status->rules_predefined_count = 0;
 	status->rules_user_count = 0;
+
+	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -642,17 +644,19 @@ VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id
 
 VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps)
 {
+	ULONG_PTR hash_code;
+	SIZE_T enum_key;
+
 	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_rule->is_enabled);
 
 	if (include_apps)
 	{
-		ULONG_PTR hash_code;
-		SIZE_T enum_key = 0;
+		enum_key = 0;
 
 		while (_r_obj_enumhashtable (ptr_rule->apps, NULL, &hash_code, &enum_key))
 		{
-			_app_updateitembylparam (hwnd, hash_code, TRUE);
+			_app_listview_updateitemby_param (hwnd, hash_code, TRUE);
 		}
 	}
 }
@@ -762,7 +766,7 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 		changes_count += 1;
 
 		if (hwnd)
-			_app_updateitembylparam (hwnd, i, FALSE);
+			_app_listview_updateitemby_param (hwnd, i, FALSE);
 
 		if (is_instantapply)
 			_r_obj_addlistitem (rules, _r_obj_reference (ptr_rule)); // dereference later!
@@ -773,7 +777,7 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 	if (changes_count)
 	{
 		if (hwnd)
-			_app_updatelistviewbylparam (hwnd, DATA_RULE_BLOCKLIST, PR_UPDATE_TYPE | PR_UPDATE_NORESIZE);
+			_app_listview_updateby_id (hwnd, DATA_RULE_BLOCKLIST, PR_UPDATE_TYPE | PR_UPDATE_NORESIZE);
 
 		if (is_instantapply)
 		{
@@ -963,8 +967,10 @@ BOOLEAN _app_isappfromsystem (_In_opt_ PR_STRING path, _In_ ULONG_PTR app_hash)
 BOOLEAN _app_isapphavedrive (_In_ INT letter)
 {
 	PITEM_APP ptr_app;
-	SIZE_T enum_key = 0;
+	SIZE_T enum_key;
 	INT drive_id;
+
+	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -1588,46 +1594,21 @@ VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name
 	_r_xml_destroylibrary (&xml_resource);
 }
 
-VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
+VOID _app_profile_refresh ()
 {
-	R_XML_LIBRARY xml_library;
-	HRESULT hr;
-
-	INT current_listview_id;
-	INT new_listview_id;
-	INT selected_item;
-	INT scroll_pos;
-
-	// clean listview
-	if (hwnd)
-	{
-		current_listview_id = _app_getcurrentlistview_id (hwnd);
-		selected_item = _r_listview_getnextselected (hwnd, current_listview_id, -1);
-		scroll_pos = GetScrollPos (GetDlgItem (hwnd, current_listview_id), SB_VERT);
-
-		for (INT i = IDC_APPS_PROFILE; i <= IDC_RULES_CUSTOM; i++)
-			_r_listview_deleteallitems (hwnd, i);
-	}
-
 	// clear apps
 	_r_queuedlock_acquireexclusive (&lock_apps);
-
 	_r_obj_clearhashtable (apps_table);
-
 	_r_queuedlock_releaseexclusive (&lock_apps);
 
 	// clear rules
 	_r_queuedlock_acquireexclusive (&lock_rules);
-
 	_r_obj_clearlist (rules_list);
-
 	_r_queuedlock_releaseexclusive (&lock_rules);
 
 	// clear rules config
 	_r_queuedlock_acquireexclusive (&lock_rules_config);
-
 	_r_obj_clearhashtable (rules_config);
-
 	_r_queuedlock_releaseexclusive (&lock_rules_config);
 
 	// generate uwp apps list (win8+)
@@ -1636,6 +1617,35 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	// generate services list
 	_app_package_getserviceslist ();
+}
+
+VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
+{
+	R_XML_LIBRARY xml_library;
+	HRESULT hr;
+
+	LONG version;
+
+	INT listview_id;
+	INT selected_item;
+	INT scroll_pos;
+
+	// clean listview
+	if (hwnd)
+	{
+		// unused
+		listview_id = _app_listview_getcurrent (hwnd);
+
+		if (listview_id)
+		{
+			selected_item = _r_listview_getnextselected (hwnd, listview_id, -1);
+			scroll_pos = GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT);
+		}
+
+		_app_listview_clearitems (hwnd);
+	}
+
+	_app_profile_refresh ();
 
 	// load profile
 	_r_xml_initializelibrary (&xml_library, TRUE, NULL);
@@ -1661,8 +1671,6 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 		{
 			if (_app_isprofilenodevalid (&xml_library, XML_VERSION_3, XML_TYPE_PROFILE))
 			{
-				LONG version;
-
 				version = _r_xml_getattribute_long (&xml_library, L"version");
 
 				// load apps
@@ -1705,46 +1713,15 @@ VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
 
 	if (hwnd)
 	{
-		PITEM_APP ptr_app;
-		PITEM_RULE ptr_rule;
-		SIZE_T enum_key = 0;
-		LONG64 current_time;
+		_app_listview_additems (hwnd);
 
-		current_time = _r_unixtime_now ();
-
-		// add apps
-		_r_queuedlock_acquireshared (&lock_apps);
-
-		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+		if (listview_id)
 		{
-			_app_addlistviewapp (hwnd, ptr_app);
+			_app_listview_updateby_id (hwnd, listview_id, 0);
 
-			// install timer
-			if (ptr_app->timer)
-				_app_timer_set (hwnd, ptr_app, ptr_app->timer - current_time);
+			if (_r_wnd_isvisible (hwnd) && (listview_id == _app_listview_getcurrent (hwnd)))
+				_app_listview_showitemby_id (hwnd, listview_id, selected_item, scroll_pos);
 		}
-
-		_r_queuedlock_releaseshared (&lock_apps);
-
-		// add rules
-		_r_queuedlock_acquireshared (&lock_rules);
-
-		for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
-		{
-			ptr_rule = _r_obj_getlistitem (rules_list, i);
-
-			if (ptr_rule)
-				_app_addlistviewrule (hwnd, ptr_rule, i, FALSE);
-		}
-
-		_r_queuedlock_releaseshared (&lock_rules);
-
-		new_listview_id = _app_getcurrentlistview_id (hwnd);
-
-		_app_updatelistviewbylparam (hwnd, new_listview_id, 0);
-
-		if (_r_wnd_isvisible (hwnd) && (current_listview_id == new_listview_id))
-			_app_showitem (hwnd, current_listview_id, selected_item, scroll_pos);
 	}
 }
 

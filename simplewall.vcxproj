@@ -357,6 +357,7 @@
     <ClCompile Include="src\editor.c" />
     <ClCompile Include="src\helper.c" />
     <ClCompile Include="src\icons.c" />
+    <ClCompile Include="src\listview.c" />
     <ClCompile Include="src\log.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\network.c" />
@@ -382,6 +383,7 @@
     <ClInclude Include="src\global.h" />
     <ClInclude Include="src\helper.h" />
     <ClInclude Include="src\icons.h" />
+    <ClInclude Include="src\listview.h" />
     <ClInclude Include="src\log.h" />
     <ClInclude Include="src\main.h" />
     <ClInclude Include="src\network.h" />

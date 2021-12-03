@@ -230,7 +230,7 @@ BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _
 	}
 
 	if (is_changed)
-		_app_updatelistviewbylparam (hwnd, listview_id, PR_UPDATE_NOSETVIEW | PR_UPDATE_FORCE);
+		_app_listview_updateby_id (hwnd, listview_id, PR_UPDATE_NOSETVIEW | PR_UPDATE_FORCE);
 
 	return is_changed;
 }

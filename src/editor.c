@@ -165,9 +165,9 @@ VOID _app_editor_setrulestolistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ PR_S
 
 		rule_string = _r_obj_createstring3 (&first_part);
 
-		_app_setcheckboxlock (hwnd, ctrl_id, TRUE);
+		_app_listview_lock (hwnd, ctrl_id, TRUE);
 		_r_listview_additem (hwnd, ctrl_id, item_id, rule_string->buffer);
-		_app_setcheckboxlock (hwnd, ctrl_id, FALSE);
+		_app_listview_lock (hwnd, ctrl_id, FALSE);
 
 		item_id += 1;
 
@@ -581,7 +581,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			// apps
 			if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
 			{
-				_app_listviewsetview (hwnd, IDC_RULE_APPS_ID);
+				_app_listview_setview (hwnd, IDC_RULE_APPS_ID);
 
 				_r_listview_setstyle (hwnd, IDC_RULE_APPS_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, TRUE);
 
@@ -606,12 +606,12 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 						// check for services
 						is_enabled = (_r_obj_findhashtable (context->ptr_rule->apps, ptr_app->app_hash)) || (context->ptr_rule->is_forservices && _app_issystemhash (ptr_app->app_hash));
 
-						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, TRUE);
+						_app_listview_lock (hwnd, IDC_RULE_APPS_ID, TRUE);
 
-						_r_listview_additem_ex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (ptr_app->app_hash));
+						_r_listview_additem_ex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (ptr_app->app_hash));
 						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
-						_app_setcheckboxlock (hwnd, IDC_RULE_APPS_ID, FALSE);
+						_app_listview_lock (hwnd, IDC_RULE_APPS_ID, FALSE);
 					}
 
 					_r_queuedlock_releaseshared (&lock_apps);
@@ -622,10 +622,10 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				_r_listview_setcolumn (hwnd, IDC_RULE_APPS_ID, 0, NULL, -100);
 
 				// localize groups
-				_app_refreshgroups (hwnd, IDC_RULE_APPS_ID);
+				_app_listview_refreshgroups (hwnd, IDC_RULE_APPS_ID);
 
 				// sort column
-				_app_listviewsort (hwnd, IDC_RULE_APPS_ID, -1, FALSE);
+				_app_listview_sort (hwnd, IDC_RULE_APPS_ID);
 			}
 
 			// app group
@@ -679,7 +679,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			if (GetDlgItem (hwnd, IDC_APP_RULES_ID))
 			{
 				// configure listview
-				_app_listviewsetview (hwnd, IDC_APP_RULES_ID);
+				_app_listview_setview (hwnd, IDC_APP_RULES_ID);
 
 				_r_listview_setstyle (hwnd, IDC_APP_RULES_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, TRUE);
 
@@ -706,12 +706,12 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					// check for services
 					is_enabled = ((ptr_rule->is_forservices && _app_issystemhash (context->ptr_app->app_hash)) || _r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash));
 
-					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, TRUE);
+					_app_listview_lock (hwnd, IDC_APP_RULES_ID, TRUE);
 
-					_r_listview_additem_ex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (i));
+					_r_listview_additem_ex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (i));
 					_r_listview_setitemcheck (hwnd, IDC_APP_RULES_ID, 0, is_enabled);
 
-					_app_setcheckboxlock (hwnd, IDC_APP_RULES_ID, FALSE);
+					_app_listview_lock (hwnd, IDC_APP_RULES_ID, FALSE);
 				}
 
 				_r_queuedlock_releaseshared (&lock_rules);
@@ -720,10 +720,10 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				_r_listview_setcolumn (hwnd, IDC_APP_RULES_ID, 0, NULL, -100);
 
 				// localize groups
-				_app_refreshgroups (hwnd, IDC_APP_RULES_ID);
+				_app_listview_refreshgroups (hwnd, IDC_APP_RULES_ID);
 
 				// sort column
-				_app_listviewsort (hwnd, IDC_APP_RULES_ID, -1, FALSE);
+				_app_listview_sort (hwnd, IDC_APP_RULES_ID);
 			}
 
 			// hints
@@ -969,7 +969,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					if (!listview_context)
 						break;
 
-					_app_destroylistviewcontext (listview_context);
+					_app_listview_destroycontext (listview_context);
 
 					break;
 				}
@@ -995,7 +995,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					_app_listviewsort (hwnd, listview_id, lpnmlv->iSubItem, TRUE);
+					_app_listview_sort_ex (hwnd, listview_id, lpnmlv->iSubItem, TRUE);
 
 					break;
 				}
@@ -1019,7 +1019,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 						{
 							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
-								if (!_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom) && context->ptr_rule->type != DATA_RULE_USER)
+								if (!_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom) && context->ptr_rule->type != DATA_RULE_USER)
 								{
 									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 									return TRUE;
@@ -1051,13 +1051,13 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 						{
 							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
-								if (_app_ischeckboxlocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
+								if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 									break;
 
 								_app_editor_settabtitle (hwnd, listview_id);
 
-								_app_refreshgroups (hwnd, listview_id);
-								_app_listviewsort (hwnd, listview_id, -1, FALSE);
+								_app_listview_refreshgroups (hwnd, listview_id);
+								_app_listview_sort (hwnd, listview_id);
 							}
 						}
 						else if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
@@ -1098,7 +1098,7 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					if (listview_id != IDC_RULE_APPS_ID && listview_id != IDC_APP_RULES_ID)
 						break;
 
-					string = _app_gettooltipbylparam (hwnd, listview_id, _app_getlistviewitemcontext (hwnd, listview_id, lpnmlv->iItem));
+					string = _app_gettooltipbylparam (hwnd, listview_id, _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem));
 
 					if (string)
 					{
@@ -1273,17 +1273,17 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					new_val = (ctrl_id == IDM_CHECK);
 					item_id = -1;
 
-					_app_setcheckboxlock (hwnd, listview_id, TRUE);
+					_app_listview_lock (hwnd, listview_id, TRUE);
 
 					while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 					{
 						_r_listview_setitemcheck (hwnd, listview_id, item_id, new_val);
 					}
 
-					_app_setcheckboxlock (hwnd, listview_id, FALSE);
+					_app_listview_lock (hwnd, listview_id, FALSE);
 
-					_app_refreshgroups (hwnd, listview_id);
-					_app_listviewsort (hwnd, listview_id, -1, FALSE);
+					_app_listview_refreshgroups (hwnd, listview_id);
+					_app_listview_sort (hwnd, listview_id);
 
 					break;
 				}
@@ -1327,9 +1327,9 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 
 					if (item_id != -1)
 					{
-						index = _app_getlistviewitemcontext (hwnd, listview_id, item_id);
+						index = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 
-						_app_showitembylparam (_r_app_gethwnd (), index, (listview_id == IDC_RULE_APPS_ID));
+						_app_listview_showitemby_param (_r_app_gethwnd (), index, (listview_id == IDC_RULE_APPS_ID));
 					}
 
 					break;
@@ -1673,7 +1673,7 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 								if (!_r_listview_isitemchecked (hpage_apps, IDC_RULE_APPS_ID, i))
 									continue;
 
-								app_hash = _app_getlistviewitemcontext (hpage_apps, IDC_RULE_APPS_ID, i);
+								app_hash = _app_listview_getitemcontext (hpage_apps, IDC_RULE_APPS_ID, i);
 
 								if (context->ptr_rule->is_forservices && _app_issystemhash (app_hash))
 									continue;
@@ -1713,14 +1713,14 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 
 							for (INT i = 0; i < _r_listview_getitemcount (hpage_rule, IDC_APP_RULES_ID); i++)
 							{
-								rule_idx = _app_getlistviewitemcontext (hpage_rule, IDC_APP_RULES_ID, i);
+								rule_idx = _app_listview_getitemcontext (hpage_rule, IDC_APP_RULES_ID, i);
 								ptr_rule = _r_obj_getlistitem (rules_list, rule_idx);
 
 								if (!ptr_rule)
 									continue;
 
-								listview_id = _app_getlistviewbytype_id (ptr_rule->type);
-								item_id = _app_getposition (_r_app_gethwnd (), listview_id, rule_idx);
+								listview_id = _app_listview_getbytype (ptr_rule->type);
+								item_id = _app_listview_finditem (_r_app_gethwnd (), listview_id, rule_idx);
 
 								if (item_id != -1)
 								{

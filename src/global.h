@@ -90,6 +90,7 @@ DECLSPEC_SELECTANY const LONG64 timer_array[] =
 #include "editor.h"
 #include "helper.h"
 #include "icons.h"
+#include "listview.h"
 #include "log.h"
 #include "messages.h"
 #include "network.h"

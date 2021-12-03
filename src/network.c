@@ -579,13 +579,11 @@ BOOLEAN _app_network_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID add
 VOID _app_network_printlistviewtable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 {
 	PITEM_NETWORK ptr_network;
-	PITEM_CONTEXT context;
 	PR_STRING string;
 	ULONG_PTR app_hash;
 	ULONG_PTR network_hash;
 	SIZE_T enum_key;
 	INT item_count;
-	INT item_id;
 	BOOLEAN is_highlight;
 	BOOLEAN is_refresh;
 
@@ -606,22 +604,13 @@ VOID _app_network_printlistviewtable (_Inout_ PITEM_NETWORK_CONTEXT network_cont
 
 		_r_obj_dereference (string);
 
-		item_id = _r_listview_getitemcount (network_context->hwnd, IDC_NETWORK);
-
-		_r_listview_additem_ex (network_context->hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_createlistviewcontext (network_hash));
+		_app_listview_addnetworkitem (network_context->hwnd, ptr_network, network_hash);
 
 		if (ptr_network->path && ptr_network->app_hash)
-			_app_queryfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
+			_app_queue_fileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
 
 		// resolve network address
-		context = _r_freelist_allocateitem (&context_free_list);
-
-		context->hwnd = network_context->hwnd;
-		context->listview_id = IDC_NETWORK;
-		context->lparam = network_hash;
-		context->ptr_network = _r_obj_reference (ptr_network);
-
-		_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
+		_app_queue_resolver (network_context->hwnd, IDC_NETWORK, network_hash, ptr_network);
 
 		is_refresh = TRUE;
 	}
@@ -630,7 +619,7 @@ VOID _app_network_printlistviewtable (_Inout_ PITEM_NETWORK_CONTEXT network_cont
 
 	// refresh network tab
 	if (is_refresh)
-		_app_updatelistviewbylparam (network_context->hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
+		_app_listview_updateby_id (network_context->hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
 
 	// remove closed connections from list
 	item_count = _r_listview_getitemcount (network_context->hwnd, IDC_NETWORK);
@@ -639,7 +628,7 @@ VOID _app_network_printlistviewtable (_Inout_ PITEM_NETWORK_CONTEXT network_cont
 	{
 		for (INT i = item_count - 1; i != -1; i--)
 		{
-			network_hash = _app_getlistviewitemcontext (network_context->hwnd, IDC_NETWORK, i);
+			network_hash = _app_listview_getitemcontext (network_context->hwnd, IDC_NETWORK, i);
 
 			if (_r_obj_findhashtable (network_context->checker_ptr, network_hash))
 				continue;
@@ -654,7 +643,7 @@ VOID _app_network_printlistviewtable (_Inout_ PITEM_NETWORK_CONTEXT network_cont
 			if (is_highlight)
 			{
 				if (app_hash)
-					_app_setlistviewbylparam (network_context->hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
+					_app_listview_updateby_param (network_context->hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
 			}
 		}
 	}

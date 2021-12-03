@@ -69,6 +69,9 @@
     <ClCompile Include="src\db.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\listview.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\routine\routine.h">
@@ -141,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\db.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\listview.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
