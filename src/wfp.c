@@ -80,18 +80,14 @@ ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ()
 
 HANDLE _wfp_getenginehandle ()
 {
+	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static HANDLE engine_handle = NULL;
 
-	HANDLE current_handle;
-	HANDLE new_handle;
-	ULONG code;
-	ULONG attempts;
-
-	current_handle = InterlockedCompareExchangePointer (&engine_handle, NULL, NULL);
-
-	if (!current_handle)
+	if (_r_initonce_begin (&init_once))
 	{
 		FWPM_SESSION session;
+		ULONG code;
+		ULONG attempts;
 
 		attempts = 6;
 
@@ -104,48 +100,39 @@ HANDLE _wfp_getenginehandle ()
 
 			session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
 
-			code = FwpmEngineOpen (NULL, RPC_C_AUTHN_WINNT, NULL, &session, &new_handle);
+			code = FwpmEngineOpen (NULL, RPC_C_AUTHN_WINNT, NULL, &session, &engine_handle);
 
-			// The error say that BFE service is not in the running state, so we wait.
-			if (code == EPT_S_NOT_REGISTERED)
+			if (code == ERROR_SUCCESS)
 			{
-				if (attempts != 1)
-				{
-					_r_sys_sleep (500);
-					continue;
-				}
-			}
-
-			if (code != ERROR_SUCCESS || !new_handle)
-			{
-				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen", code, NULL);
-
-				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", code, NULL);
-
-				RtlExitUserProcess (STATUS_UNSUCCESSFUL);
-
 				break;
 			}
 			else
 			{
-				current_handle = InterlockedCompareExchangePointer (&engine_handle, new_handle, NULL);
+				if (code == EPT_S_NOT_REGISTERED)
+				{
+					// The error say that BFE service is not in the running state, so we wait.
+					if (attempts != 1)
+					{
+						_r_sys_sleep (500);
+						continue;
+					}
+				}
 
-				if (!current_handle)
-				{
-					current_handle = new_handle;
-				}
-				else
-				{
-					FwpmEngineClose (new_handle);
-				}
+				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen", code, NULL);
+
+				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", code, NULL);
+
+				RtlExitUserProcess (code);
 
 				break;
 			}
 		}
 		while (--attempts);
+
+		_r_initonce_end (&init_once);
 	}
 
-	return current_handle;
+	return engine_handle;
 }
 
 PR_STRING _wfp_getlayername (_In_ LPCGUID layer_guid)
