@@ -295,6 +295,7 @@ BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes
 {
 	PIN_ADDR p4addr;
 	PIN6_ADDR p6addr;
+	NTSTATUS status;
 
 	if (af == AF_INET)
 	{
@@ -306,7 +307,14 @@ BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes
 				return FALSE;
 		}
 
-		if (NT_SUCCESS (RtlIpv4AddressToStringEx (p4addr, 0, buffer, &buffer_size)))
+		status = RtlIpv4AddressToStringEx (
+			p4addr,
+			0,
+			buffer,
+			&buffer_size
+		);
+
+		if (status == STATUS_SUCCESS)
 			return TRUE;
 	}
 	else if (af == AF_INET6)
@@ -319,7 +327,15 @@ BOOLEAN _app_formatip (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address, _Out_writes
 				return FALSE;
 		}
 
-		if (NT_SUCCESS (RtlIpv6AddressToStringEx (p6addr, 0, 0, buffer, &buffer_size)))
+		status = RtlIpv6AddressToStringEx (
+			p6addr,
+			0,
+			0,
+			buffer,
+			&buffer_size
+		);
+
+		if (status == STATUS_SUCCESS)
 			return TRUE;
 	}
 
