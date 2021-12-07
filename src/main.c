@@ -2663,7 +2663,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 							if (path)
 							{
-								if (NT_SUCCESS (_app_profile_load (hwnd, path)))
+								if (_app_profile_load (hwnd, path) == STATUS_SUCCESS)
 								{
 									_app_profile_save ();
 
