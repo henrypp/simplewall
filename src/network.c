@@ -56,17 +56,17 @@ VOID _app_network_initialize (_In_ HWND hwnd)
 VOID _app_network_uninitialize ()
 {
 	PITEM_NETWORK_CONTEXT network_context;
-	HANDLE engine_handle;
+	//HANDLE engine_handle;
 
 	network_context = _app_network_getcontext ();
 
 	if (!network_context)
 		return;
 
-	engine_handle = _wfp_getenginehandle ();
+	//engine_handle = _wfp_getenginehandle ();
 
-	if (engine_handle)
-		_app_network_unsubscribe (engine_handle);
+	//if (engine_handle)
+	//	_app_network_unsubscribe (engine_handle);
 
 	_r_queuedlock_acquireexclusive (&network_context->lock_network);
 	_r_obj_clearhashtable (network_context->network_ptr);
