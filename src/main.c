@@ -2663,13 +2663,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 							if (path)
 							{
-								if (_app_isprofilevalid (hwnd, path))
+								if (NT_SUCCESS (_app_profile_load (hwnd, path)))
 								{
-									// made backup
-									_r_fs_deletefile (profile_info.profile_path_backup->buffer, TRUE);
 									_app_profile_save ();
-
-									_app_profile_load (hwnd, path); // load profile
 
 									_app_changefilters (hwnd, TRUE, FALSE);
 								}
