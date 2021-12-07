@@ -41,7 +41,7 @@ VOID _app_package_getpackageinfo (_Inout_ PR_STRING_PTR package_root_folder)
 	if (!is_success)
 		goto CleanupExit;
 
-	hr = _r_xml_initializelibrary (&xml_library, TRUE, NULL);
+	hr = _r_xml_initializelibrary (&xml_library, TRUE);
 
 	if (hr != S_OK)
 		goto CleanupExit;
