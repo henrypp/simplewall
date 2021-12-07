@@ -1722,9 +1722,15 @@ VOID _app_command_idtotimers (_In_ HWND hwnd, _In_ INT ctrl_id)
 
 VOID _app_command_logshow (_In_ HWND hwnd)
 {
+	R_ERROR_INFO error_info;
+	PR_STRING log_path;
+	PR_STRING viewer_path;
+	PR_STRING process_path;
+	HANDLE current_handle;
+	INT item_count;
+
 	if (_r_config_getboolean (L"IsLogUiEnabled", FALSE))
 	{
-		INT item_count;
 
 		item_count = _r_listview_getitemcount (hwnd, IDC_LOG);
 
@@ -1733,17 +1739,10 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 		_app_settab_id (hwnd, IDC_LOG);
 
 		if (item_count)
-		{
 			_r_listview_ensurevisible (hwnd, IDC_LOG, item_count - 1);
-		}
 	}
 	else
 	{
-		PR_STRING log_path;
-		PR_STRING viewer_path;
-		PR_STRING process_path;
-		HANDLE current_handle;
-
 		log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
 
 		if (!log_path)
@@ -1752,6 +1751,7 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 		if (!_r_fs_exists (log_path->buffer))
 		{
 			_r_obj_dereference (log_path);
+
 			return;
 		}
 
@@ -1768,8 +1768,6 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 
 			if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
 			{
-				R_ERROR_INFO error_info;
-
 				_r_error_initialize (&error_info, NULL, viewer_path->buffer);
 
 				_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
