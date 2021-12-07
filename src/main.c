@@ -2460,7 +2460,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						if (hengine)
 						{
-							_app_network_unsubscribe (hengine);
+							//_app_network_unsubscribe (hengine);
 							_wfp_logunsubscribe (hengine);
 						}
 					}
@@ -2480,7 +2480,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 						if (hengine)
 						{
-							_app_network_subscribe (hengine);
+							//_app_network_subscribe (hengine);
 							_wfp_logsubscribe (hengine);
 						}
 					}
@@ -2499,12 +2499,12 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			{
 				case DBT_DEVICEARRIVAL:
 				{
-					if (!_r_config_getboolean (L"IsRefreshDevices", TRUE) || !_wfp_isfiltersinstalled () || _wfp_isfiltersapplying ())
-						break;
-
 					PDEV_BROADCAST_HDR lbhdr;
 					PDEV_BROADCAST_VOLUME lpdbv;
 					BOOLEAN is_appexist;
+
+					if (!_r_config_getboolean (L"IsRefreshDevices", TRUE) || !_wfp_isfiltersinstalled () || _wfp_isfiltersapplying ())
+						break;
 
 					lbhdr = (PDEV_BROADCAST_HDR)lparam;
 
@@ -2645,7 +2645,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_IMPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*." XML_PROFILE_EXT L")", L"*." XML_PROFILE_EXT,
+						L"Profile files (*." XML_PROFILE2_EXT L")", L"*." XML_PROFILE2_EXT,
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -2655,7 +2655,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
-						_r_filedialog_setpath (&file_dialog, XML_PROFILE);
+						_r_filedialog_setpath (&file_dialog, XML_PROFILE2_FILE);
 
 						if (_r_filedialog_show (hwnd, &file_dialog))
 						{
@@ -2687,7 +2687,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_EXPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*." XML_PROFILE_EXT L")", L"*." XML_PROFILE_EXT,
+						L"Profile files (*." XML_PROFILE2_EXT L")", L"*." XML_PROFILE2_EXT,
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -2697,7 +2697,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
-						_r_filedialog_setpath (&file_dialog, XML_PROFILE);
+						_r_filedialog_setpath (&file_dialog, XML_PROFILE2_FILE);
 
 						if (_r_filedialog_show (hwnd, &file_dialog))
 						{
