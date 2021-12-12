@@ -52,6 +52,8 @@ VOID _app_editor_addtabitem (_In_ HWND hwnd, _In_ UINT locale_id, _In_ INT dlg_i
 
 	_r_tab_adjustchild (hwnd, IDC_TAB, htab);
 
+	BringWindowToTop (htab); // HACK!!!
+
 	SendMessage (htab, RM_INITIALIZE, 0, 0);
 }
 
@@ -1170,9 +1172,9 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					INT listview_id;
 					INT item_id;
 
-					listview_id = ((ctrl_id == IDC_RULE_REMOTE_ADD || ctrl_id == IDC_RULE_REMOTE_EDIT) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID);
+					listview_id = (ctrl_id == IDC_RULE_REMOTE_ADD || ctrl_id == IDC_RULE_REMOTE_EDIT) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID;
 
-					if ((ctrl_id == IDC_RULE_REMOTE_EDIT || ctrl_id == IDC_RULE_LOCAL_EDIT))
+					if (ctrl_id == IDC_RULE_REMOTE_EDIT || ctrl_id == IDC_RULE_LOCAL_EDIT)
 					{
 						// edit rule
 						item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
