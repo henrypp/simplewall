@@ -175,11 +175,11 @@ typedef struct _STATIC_DATA
 	PSID pbuiltin_netops_sid;
 	PSID pbuiltin_admins_sid;
 
-	PSID pservice_mpssvc_sid;
-	PSID pservice_nlasvc_sid;
-	PSID pservice_policyagent_sid;
-	PSID pservice_rpcss_sid;
-	PSID pservice_wdiservicehost_sid;
+	PR_BYTE pservice_mpssvc_sid;
+	PR_BYTE pservice_nlasvc_sid;
+	PR_BYTE pservice_policyagent_sid;
+	PR_BYTE pservice_rpcss_sid;
+	PR_BYTE pservice_wdiservicehost_sid;
 
 	HIMAGELIST himg_toolbar;
 	HIMAGELIST himg_rules_small;
@@ -225,6 +225,8 @@ typedef struct _PROFILE_DATA
 	PR_STRING profile_path;
 	PR_STRING profile_path_backup;
 	PR_STRING profile_path_internal;
+
+	PR_STRING profile_path_old; // old
 
 	LONG64 profile_internal_timestamp;
 } PROFILE_DATA, *PPROFILE_DATA;

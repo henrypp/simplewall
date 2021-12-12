@@ -47,13 +47,16 @@ BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
 	TASKDIALOG_BUTTON td_buttons[2] = {0};
 	TASKDIALOG_BUTTON td_radios[2] = {0};
 
+	INT command_id;
+	INT radio_id;
+	BOOL is_flagchecked;
+
 	tdc.cbSize = sizeof (tdc);
 	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_NO_SET_FOREGROUND | TDF_VERIFICATION_FLAG_CHECKED;
 	tdc.hwndParent = hwnd;
 	tdc.pszWindowTitle = _r_app_getname ();
 	tdc.pszMainIcon = is_install ? TD_INFORMATION_ICON : TD_WARNING_ICON;
 	//tdc.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
-	tdc.pszMainInstruction = _r_app_getname ();
 	tdc.pfCallback = &_r_msg_callback;
 	tdc.lpCallbackData = MAKELONG (0, TRUE); // on top
 
@@ -95,10 +98,6 @@ BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
 		_r_str_copy (str_main, RTL_NUMBER_OF (str_main), _r_locale_getstring (IDS_QUESTION_STOP));
 		_r_str_copy (str_flag, RTL_NUMBER_OF (str_flag), _r_locale_getstring (IDS_ENABLEWINDOWSFIREWALL_CHK));
 	}
-
-	INT command_id;
-	INT radio_id;
-	BOOL is_flagchecked;
 
 	tdc.pszMainInstruction = str_main;
 	tdc.pszVerificationText = str_flag;

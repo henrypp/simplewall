@@ -19,11 +19,11 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE engine_handle)
 	{
 		if (ptr_provider)
 		{
-			if ((ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED))
+			if (ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED)
 			{
-				result = INSTALL_DISABLED;
+				//result = INSTALL_DISABLED;
 			}
-			else if ((ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT))
+			else if (ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT)
 			{
 				result = INSTALL_ENABLED;
 			}
@@ -50,7 +50,7 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE engine_handle)
 	{
 		if (ptr_sublayer)
 		{
-			if ((ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT))
+			if (ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT)
 			{
 				result = INSTALL_ENABLED;
 			}
@@ -185,13 +185,17 @@ PR_STRING _wfp_getlayername (_In_ LPCGUID layer_guid)
 
 	C_ASSERT (RTL_NUMBER_OF (layer_guids) == RTL_NUMBER_OF (layer_names));
 
+	PR_STRING string;
+
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (layer_guids); i++)
 	{
 		if (IsEqualGUID (layer_guid, layer_guids[i]))
 			return _r_obj_createstring3 (&layer_names[i]);
 	}
 
-	return _r_str_fromguid (layer_guid, TRUE);
+	_r_str_fromguid (layer_guid, TRUE, &string);
+
+	return string;
 }
 
 BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
@@ -652,7 +656,7 @@ BOOLEAN _wfp_deletefilter (_In_ HANDLE engine_handle, _In_ LPCGUID filter_id)
 	if (code != ERROR_SUCCESS)
 #endif // !DEBUG
 	{
-		string = _r_str_fromguid (filter_id, TRUE);
+		_r_str_fromguid (filter_id, TRUE, &string);
 
 		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey", code, _r_obj_getstringordefault (string, SZ_EMPTY));
 

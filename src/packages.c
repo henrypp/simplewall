@@ -96,9 +96,9 @@ VOID _app_package_getpackageslist ()
 	ULONG key_index;
 	ULONG max_length;
 	ULONG size;
-	LSTATUS code;
+	NTSTATUS status;
 
-	code = RegOpenKeyEx (
+	status = RegOpenKeyEx (
 		HKEY_CURRENT_USER,
 		L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages",
 		0,
@@ -106,7 +106,7 @@ VOID _app_package_getpackageslist ()
 		&hkey
 	);
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 		return;
 
 	max_length = _r_reg_querysubkeylength (hkey);
@@ -125,9 +125,9 @@ VOID _app_package_getpackageslist ()
 
 			_r_obj_trimstringtonullterminator (key_name);
 
-			code = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
+			status = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
 
-			if (code == ERROR_SUCCESS)
+			if (status == ERROR_SUCCESS)
 			{
 				package_sid = _r_reg_querybinary (hsubkey, NULL, L"PackageSid");
 
@@ -135,9 +135,9 @@ VOID _app_package_getpackageslist ()
 				{
 					if (RtlValidSid (package_sid->buffer))
 					{
-						package_sid_string = _r_str_fromsid (package_sid->buffer);
+						status = _r_str_fromsid (package_sid->buffer, &package_sid_string);
 
-						if (package_sid_string)
+						if (status == STATUS_SUCCESS)
 						{
 							if (!_app_isappfound (_r_str_gethash2 (package_sid_string, TRUE)))
 							{
@@ -226,9 +226,9 @@ VOID _app_package_getserviceslist ()
 	R_STRINGREF service_name;
 	LPENUM_SERVICE_STATUS_PROCESS service;
 	LPENUM_SERVICE_STATUS_PROCESS services;
-	PSID service_sid;
 	PVOID service_sd;
 	PR_STRING service_path;
+	PR_BYTE service_sid;
 	LONG64 service_timestamp;
 	ULONG_PTR app_hash;
 	ULONG service_type;
@@ -249,6 +249,8 @@ VOID _app_package_getserviceslist ()
 	ULONG services_returned;
 
 	HKEY hkey;
+
+	NTSTATUS status;
 
 	hsvcmgr = OpenSCManager (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
 
@@ -353,16 +355,16 @@ VOID _app_package_getserviceslist ()
 				service_timestamp = _r_reg_querytimestamp (hkey);
 
 				// query service sid
-				service_sid = _r_sys_getservicesid (&service_name);
+				status = _r_sys_getservicesid (&service_name, &service_sid);
 
-				if (service_sid)
+				if (status == STATUS_SUCCESS)
 				{
 					// When evaluating SECURITY_DESCRIPTOR conditions, the filter engine
 					// checks for FWP_ACTRL_MATCH_FILTER access. If the DACL grants access,
 					// it does not mean that the traffic is allowed; it just means that the
 					// condition evaluates to true. Likewise if it denies access, the
 					// condition evaluates to false.
-					_app_setexplicitaccess (&ea, GRANT_ACCESS, FWP_ACTRL_MATCH_FILTER, NO_INHERITANCE, service_sid);
+					_app_setexplicitaccess (&ea, GRANT_ACCESS, FWP_ACTRL_MATCH_FILTER, NO_INHERITANCE, service_sid->buffer);
 
 					// Security descriptors must be in self-relative form (i.e., contiguous).
 					// The security descriptor returned by BuildSecurityDescriptorW is
@@ -393,7 +395,7 @@ VOID _app_package_getserviceslist ()
 						_r_obj_dereference (name_string);
 					}
 
-					_r_mem_free (service_sid);
+					_r_obj_dereference (service_sid);
 				}
 
 				_r_obj_dereference (service_path);

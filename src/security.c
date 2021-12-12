@@ -46,35 +46,35 @@ VOID _app_generate_credentials ()
 	{
 		_r_obj_initializestringref (&service_name, L"mpssvc");
 
-		config.pservice_mpssvc_sid = _r_sys_getservicesid (&service_name);
+		_r_sys_getservicesid (&service_name, &config.pservice_mpssvc_sid);
 	}
 
 	if (!config.pservice_nlasvc_sid)
 	{
 		_r_obj_initializestringref (&service_name, L"NlaSvc");
 
-		config.pservice_nlasvc_sid = _r_sys_getservicesid (&service_name);
+		_r_sys_getservicesid (&service_name, &config.pservice_nlasvc_sid);
 	}
 
 	if (!config.pservice_policyagent_sid)
 	{
 		_r_obj_initializestringref (&service_name, L"PolicyAgent");
 
-		config.pservice_policyagent_sid = _r_sys_getservicesid (&service_name);
+		_r_sys_getservicesid (&service_name, &config.pservice_policyagent_sid);
 	}
 
 	if (!config.pservice_rpcss_sid)
 	{
 		_r_obj_initializestringref (&service_name, L"RpcSs");
 
-		config.pservice_rpcss_sid = _r_sys_getservicesid (&service_name);
+		_r_sys_getservicesid (&service_name, &config.pservice_rpcss_sid);
 	}
 
 	if (!config.pservice_wdiservicehost_sid)
 	{
 		_r_obj_initializestringref (&service_name, L"WdiServiceHost");
 
-		config.pservice_wdiservicehost_sid = _r_sys_getservicesid (&service_name);
+		_r_sys_getservicesid (&service_name, &config.pservice_wdiservicehost_sid);
 	}
 }
 
@@ -264,32 +264,32 @@ VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 
 				if (config.pservice_mpssvc_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_mpssvc_sid);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_mpssvc_sid);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_mpssvc_sid->buffer);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_mpssvc_sid->buffer);
 				}
 
 				if (config.pservice_nlasvc_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_READ | FWPM_GENERIC_EXECUTE, NO_INHERITANCE, config.pservice_nlasvc_sid);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xA0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_nlasvc_sid);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_READ | FWPM_GENERIC_EXECUTE, NO_INHERITANCE, config.pservice_nlasvc_sid->buffer);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xA0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_nlasvc_sid->buffer);
 				}
 
 				if (config.pservice_policyagent_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_policyagent_sid);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_policyagent_sid);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_policyagent_sid->buffer);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_policyagent_sid->buffer);
 				}
 
 				if (config.pservice_rpcss_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_rpcss_sid);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_rpcss_sid);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_rpcss_sid->buffer);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_rpcss_sid->buffer);
 				}
 
 				if (config.pservice_wdiservicehost_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_READ | FWPM_GENERIC_EXECUTE, NO_INHERITANCE, config.pservice_wdiservicehost_sid);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xA0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_wdiservicehost_sid);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_READ | FWPM_GENERIC_EXECUTE, NO_INHERITANCE, config.pservice_wdiservicehost_sid->buffer);
+					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xA0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_wdiservicehost_sid->buffer);
 				}
 
 				_app_setexplicitaccess (&ea[count++], SET_ACCESS, FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE, &SeEveryoneSid);

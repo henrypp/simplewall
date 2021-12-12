@@ -430,6 +430,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	PR_STRING sid_string;
 	UINT8 filter_weight;
 	BOOLEAN is_myprovider;
+	NTSTATUS status;
 
 	engine_handle = _wfp_getenginehandle ();
 
@@ -498,9 +499,9 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	// get package id (win8+)
 	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && log->package_id)
 	{
-		sid_string = _r_str_fromsid (log->package_id);
+		status = _r_str_fromsid (log->package_id, &sid_string);
 
-		if (sid_string)
+		if (status == STATUS_SUCCESS)
 		{
 			if (!_app_isappfound (_r_str_gethash2 (sid_string, TRUE)))
 				_r_obj_clearreference (&sid_string);
@@ -542,7 +543,7 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 	// get username information
 	if ((log->flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) && log->user_id)
-		ptr_log->username = _r_sys_getusernamefromsid (log->user_id);
+		_r_sys_getusernamefromsid (log->user_id, &ptr_log->username);
 
 	// destination
 	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))

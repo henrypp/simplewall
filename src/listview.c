@@ -829,7 +829,7 @@ INT CALLBACK _app_listview_compare_callback (_In_ LPARAM lparam1, _In_ LPARAM lp
 
 	result = 0;
 
-	if ((_r_listview_getexstyle (hwnd, listview_id) & LVS_EX_CHECKBOXES) != 0)
+	if ((_r_listview_getstyle_ex (hwnd, listview_id) & LVS_EX_CHECKBOXES) != 0)
 	{
 		is_checked1 = _r_listview_isitemchecked (hwnd, listview_id, item_id1);
 		is_checked2 = _r_listview_isitemchecked (hwnd, listview_id, item_id2);
