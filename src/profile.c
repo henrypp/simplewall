@@ -884,7 +884,16 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 			if (ptr_app->type == DATA_APP_UWP)
 			{
 				if (ptr_app->display_name)
-					string = ptr_app->display_name;
+					string = _r_path_compact (ptr_app->display_name, 64);
+			}
+		}
+
+		if (!string)
+		{
+			if (is_fordisplay)
+			{
+				if (ptr_app->original_path)
+					string = _r_path_compact (ptr_app->original_path, 64);
 			}
 		}
 
@@ -1086,56 +1095,6 @@ BOOLEAN _app_issystemhash (_In_ ULONG_PTR app_hash)
 	return (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash);
 }
 
-BOOLEAN _app_isprofilenodevalid (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_VERSION_XML min_version, _In_ ENUM_TYPE_XML type)
-{
-	if (!xml_library->stream)
-		return FALSE;
-
-	if (_r_xml_getattribute_long (xml_library, L"type") != type)
-		return FALSE;
-
-	// min supported is v3
-	if (_r_xml_getattribute_long (xml_library, L"version") >= min_version)
-		return TRUE;
-
-	return FALSE;
-}
-
-BOOLEAN _app_isprofilevalid (_In_opt_ HWND hwnd, _In_ PR_STRING path)
-{
-	R_XML_LIBRARY xml_library;
-	R_ERROR_INFO error_info;
-	BOOLEAN is_success;
-
-	is_success = FALSE;
-
-	if (_r_xml_initializelibrary (&xml_library, TRUE, NULL) == S_OK)
-	{
-		if (_r_xml_parsefile (&xml_library, path->buffer) == S_OK)
-		{
-			if (_r_xml_findchildbytagname (&xml_library, L"root"))
-			{
-				// min supported is v3
-				is_success = _app_isprofilenodevalid (&xml_library, XML_VERSION_3, XML_TYPE_PROFILE);
-			}
-		}
-
-		_r_xml_destroylibrary (&xml_library);
-	}
-
-	if (!is_success)
-	{
-		if (hwnd)
-		{
-			_r_error_initialize (&error_info, NULL, path->buffer);
-
-			_r_show_errormessage (hwnd, NULL, ERROR_INVALID_DATA, &error_info);
-		}
-	}
-
-	return is_success;
-}
-
 BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version)
 {
 	static PR_STRING version_string = NULL;
@@ -1164,32 +1123,13 @@ BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version)
 	return (_r_str_versioncompare (&current_version->sr, os_version) != -1);
 }
 
-BOOLEAN _app_loadpackedresource (_In_ LPCWSTR resource_name, _Out_ PR_BYTE_PTR out_buffer)
-{
-	static R_INITONCE init_once = PR_INITONCE_INIT;
-	static PR_BYTE memory_buffer = NULL;
-
-	if (_r_initonce_begin (&init_once))
-	{
-		R_BYTEREF buffer;
-
-		if (_r_res_loadresource (NULL, resource_name, RT_RCDATA, &buffer))
-			_r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, &buffer, &memory_buffer);
-
-		_r_initonce_end (&init_once);
-	}
-
-	*out_buffer = memory_buffer;
-
-	return (memory_buffer != NULL);
-}
-
 VOID _app_profile_initialize ()
 {
 	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
-	static R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE);
-	static R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE L".bak");
-	static R_STRINGREF profile_internal_sr = PR_STRINGREF_INIT (XML_PROFILE_INTERNAL);
+	static R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE2_FILE);
+	static R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE2_FILE L".bak");
+	static R_STRINGREF profile_internal_sr = PR_STRINGREF_INIT (XML_PROFILE2_INTERNAL);
+	static R_STRINGREF profile_old_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE);
 
 	PR_STRING path;
 
@@ -1199,6 +1139,32 @@ VOID _app_profile_initialize ()
 	_r_obj_movereference (&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
 	_r_obj_movereference (&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
 
+	_r_obj_movereference (&profile_info.profile_path_old, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_old_sr));
+
+}
+
+PDB_INFORMATION _app_profile_load_fromresource (_In_ LPCWSTR resource_name)
+{
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static DB_INFORMATION db_info = {0};
+
+	if (_r_initonce_begin (&init_once))
+	{
+		R_BYTEREF bytes;
+		NTSTATUS status;
+
+		if (_r_res_loadresource (NULL, resource_name, RT_RCDATA, &bytes))
+		{
+			status = _app_db_initialize (&db_info, TRUE);
+
+			if (status == STATUS_SUCCESS)
+				_app_db_openfrombuffer (&db_info, &bytes, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
+		}
+
+		_r_initonce_end (&init_once);
+	}
+
+	return &db_info;
 }
 
 VOID _app_profile_load_fallback ()
@@ -1229,369 +1195,33 @@ VOID _app_profile_load_fallback ()
 	}
 }
 
-VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ ENUM_VERSION_XML version)
+VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Out_opt_ PLONG64 timestamp)
 {
-	if (type == DATA_APP_REGULAR)
-	{
-		PR_STRING string;
-		LONG64 timestamp;
-		LONG64 timer;
-		BOOLEAN is_enabled;
-		BOOLEAN is_silent;
-
-		string = _r_xml_getattribute_string (xml_library, L"path");
-
-		if (!string)
-			return;
-
-		// workaround for native paths
-		// https://github.com/henrypp/simplewall/issues/817
-		if (_r_str_isstartswith2 (&string->sr, L"\\device\\", TRUE))
-		{
-			PR_STRING dos_path;
-
-			dos_path = _r_path_dospathfromnt (string);
-
-			if (dos_path)
-				_r_obj_movereference (&string, dos_path);
-		}
-
-		if (!_r_obj_isstringempty (string))
-		{
-			PITEM_APP ptr_app;
-			ULONG_PTR app_hash;
-
-			app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &string->sr, NULL, NULL);
-
-			if (app_hash)
-			{
-				ptr_app = _app_getappitem (app_hash);
-
-				if (ptr_app)
-				{
-					is_enabled = _r_xml_getattribute_boolean (xml_library, L"is_enabled");
-					is_silent = _r_xml_getattribute_boolean (xml_library, L"is_silent");
-
-					timestamp = _r_xml_getattribute_long64 (xml_library, L"timestamp");
-					timer = _r_xml_getattribute_long64 (xml_library, L"timer");
-
-					if (is_silent)
-						_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (is_silent));
-
-					if (is_enabled)
-						_app_setappinfo (ptr_app, INFO_IS_ENABLED, IntToPtr (is_enabled));
-
-					if (timestamp)
-						_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
-
-					if (timer)
-						_app_setappinfo (ptr_app, INFO_TIMER_PTR, &timer);
-
-					_r_obj_dereference (ptr_app);
-				}
-			}
-		}
-
-		_r_obj_dereference (string);
-	}
-	else if (type == DATA_RULE_BLOCKLIST || type == DATA_RULE_SYSTEM || type == DATA_RULE_SYSTEM_USER || type == DATA_RULE_USER)
-	{
-		PR_STRING rule_name;
-		PR_STRING rule_remote;
-		PR_STRING rule_local;
-		R_STRINGREF os_version;
-		FWP_DIRECTION direction;
-		UINT8 protocol;
-		ADDRESS_FAMILY af;
-		PITEM_RULE ptr_rule;
-		ULONG_PTR rule_hash;
-
-		rule_name = _r_xml_getattribute_string (xml_library, L"name");
-
-		if (!rule_name)
-			return;
-
-		// check support version
-		if (_r_xml_getattribute (xml_library, L"os_version", &os_version))
-		{
-			if (!_app_isrulesupportedbyos (&os_version))
-				return;
-		}
-
-		rule_remote = _r_xml_getattribute_string (xml_library, L"rule");
-		rule_local = _r_xml_getattribute_string (xml_library, L"rule_local");
-		direction = (FWP_DIRECTION)_r_xml_getattribute_long (xml_library, L"dir");
-		protocol = (UINT8)_r_xml_getattribute_long (xml_library, L"protocol");
-		af = (ADDRESS_FAMILY)_r_xml_getattribute_long (xml_library, L"version");
-
-		ptr_rule = _app_addrule (rule_name, rule_remote, rule_local, direction, protocol, af);
-
-		_r_obj_dereference (rule_name);
-
-		if (rule_remote)
-			_r_obj_dereference (rule_remote);
-
-		if (rule_local)
-			_r_obj_dereference (rule_local);
-
-		rule_hash = _r_str_gethash2 (ptr_rule->name, TRUE);
-
-		ptr_rule->type = (type == DATA_RULE_SYSTEM_USER) ? DATA_RULE_USER : type;
-		ptr_rule->action = _r_xml_getattribute_boolean (xml_library, L"is_block") ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
-		ptr_rule->is_forservices = _r_xml_getattribute_boolean (xml_library, L"is_services");
-		ptr_rule->is_readonly = (type != DATA_RULE_USER);
-
-		// calculate rule weight
-		if (type == DATA_RULE_BLOCKLIST)
-		{
-			ptr_rule->weight = FW_WEIGHT_RULE_BLOCKLIST;
-		}
-		else if (type == DATA_RULE_SYSTEM || type == DATA_RULE_SYSTEM_USER)
-		{
-			ptr_rule->weight = FW_WEIGHT_RULE_SYSTEM;
-		}
-		else if (type == DATA_RULE_USER)
-		{
-			ptr_rule->weight = (ptr_rule->action == FWP_ACTION_BLOCK) ? FW_WEIGHT_RULE_USER_BLOCK : FW_WEIGHT_RULE_USER;
-		}
-
-		ptr_rule->is_enabled = _r_xml_getattribute_boolean (xml_library, L"is_enabled");
-
-		if (type == DATA_RULE_BLOCKLIST)
-		{
-			LONG blocklist_spy_state;
-			LONG blocklist_update_state;
-			LONG blocklist_extra_state;
-
-			blocklist_spy_state = _r_calc_clamp32 (_r_config_getlong (L"BlocklistSpyState", 2), 0, 2);
-			blocklist_update_state = _r_calc_clamp32 (_r_config_getlong (L"BlocklistUpdateState", 0), 0, 2);
-			blocklist_extra_state = _r_calc_clamp32 (_r_config_getlong (L"BlocklistExtraState", 0), 0, 2);
-
-			_app_ruleblocklistsetstate (ptr_rule, blocklist_spy_state, blocklist_update_state, blocklist_extra_state);
-		}
-		else
-		{
-			ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
-		}
-
-		// load rules config
-		{
-			PITEM_RULE_CONFIG ptr_config = NULL;
-			BOOLEAN is_internal;
-
-			is_internal = (type == DATA_RULE_BLOCKLIST || type == DATA_RULE_SYSTEM || type == DATA_RULE_SYSTEM_USER);
-
-			if (is_internal)
-			{
-				// internal rules
-				ptr_config = _app_getruleconfigitem (rule_hash);
-
-				if (ptr_config)
-					ptr_rule->is_enabled = ptr_config->is_enabled;
-			}
-
-			// load apps
-			{
-				R_STRINGBUILDER rule_apps;
-				PR_STRING string;
-
-				_r_obj_initializestringbuilder (&rule_apps);
-
-				string = _r_xml_getattribute_string (xml_library, L"apps");
-
-				if (!_r_obj_isstringempty (string))
-				{
-					_r_obj_appendstringbuilder2 (&rule_apps, string);
-
-					_r_obj_dereference (string);
-				}
-
-				if (is_internal && ptr_config && !_r_obj_isstringempty (ptr_config->apps))
-				{
-					if (!_r_obj_isstringempty2 (rule_apps.string))
-						_r_obj_appendstringbuilder (&rule_apps, DIVIDER_APP);
-
-					_r_obj_appendstringbuilder2 (&rule_apps, ptr_config->apps);
-				}
-
-				string = _r_obj_finalstringbuilder (&rule_apps);
-
-				if (!_r_obj_isstringempty2 (string))
-				{
-					if (version < XML_VERSION_3)
-						_r_str_replacechar (&string->sr, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
-
-					R_STRINGREF remaining_part;
-					R_STRINGREF first_part;
-					ULONG_PTR app_hash;
-
-					_r_obj_initializestringref2 (&remaining_part, string);
-
-					while (remaining_part.length != 0)
-					{
-						_r_str_splitatchar (&remaining_part, DIVIDER_APP[0], &first_part, &remaining_part);
-
-						PR_STRING path_string = _r_str_expandenvironmentstring (&first_part);
-
-						if (!path_string)
-							path_string = _r_obj_createstring3 (&first_part);
-
-						app_hash = _r_str_gethash2 (path_string, TRUE);
-
-						if (app_hash)
-						{
-							if (ptr_rule->is_forservices && _app_issystemhash (app_hash))
-							{
-								_r_obj_dereference (path_string);
-								continue;
-							}
-
-							_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
-
-							if (!_app_isappfound (app_hash))
-								app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &path_string->sr, NULL, NULL);
-
-							if (ptr_rule->type == DATA_RULE_SYSTEM)
-								_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
-						}
-
-						_r_obj_dereference (path_string);
-					}
-				}
-
-				_r_obj_deletestringbuilder (&rule_apps);
-			}
-		}
-
-		_r_queuedlock_acquireexclusive (&lock_rules);
-
-		_r_obj_addlistitem (rules_list, ptr_rule);
-
-		_r_queuedlock_releaseexclusive (&lock_rules);
-	}
-	else if (type == DATA_RULE_CONFIG)
-	{
-		PR_STRING rule_name;
-		PITEM_RULE_CONFIG ptr_config;
-		ULONG_PTR rule_hash;
-
-		rule_name = _r_xml_getattribute_string (xml_library, L"name");
-
-		if (!rule_name)
-			return;
-
-		rule_hash = _r_str_gethash2 (rule_name, TRUE);
-
-		if (rule_hash)
-		{
-			ptr_config = _app_getruleconfigitem (rule_hash);
-
-			if (!ptr_config)
-			{
-				_r_queuedlock_acquireexclusive (&lock_rules_config);
-
-				ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_reference (rule_name), _r_xml_getattribute_boolean (xml_library, L"is_enabled"));
-
-				_r_queuedlock_releaseexclusive (&lock_rules_config);
-
-				if (ptr_config)
-				{
-					ptr_config->apps = _r_xml_getattribute_string (xml_library, L"apps");
-
-					if (ptr_config->apps && version < XML_VERSION_3)
-						_r_str_replacechar (&ptr_config->apps->sr, DIVIDER_RULE[0], DIVIDER_APP[0]); // for compat with old profiles
-				}
-			}
-		}
-
-		_r_obj_dereference (rule_name);
-	}
-}
-
-VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp)
-{
-	R_XML_LIBRARY xml_file;
-	R_XML_LIBRARY xml_resource;
-	PR_XML_LIBRARY xml_library;
-	PR_BYTE buffer;
-	LONG64 timestamp_file;
-	LONG64 timestamp_resource;
-	LONG version_file;
-	LONG version_resource;
-	LONG version;
+	DB_INFORMATION db_info_file;
+	PDB_INFORMATION db_info_buffer;
+	PDB_INFORMATION db_info;
 	BOOLEAN is_loadfromresource;
+	NTSTATUS status;
 
-	_r_xml_initializelibrary (&xml_file, TRUE, NULL);
-	_r_xml_initializelibrary (&xml_resource, TRUE, NULL);
+	status = _app_db_initialize (&db_info_file, TRUE);
 
-	timestamp_file = 0;
-	timestamp_resource = 0;
+	if (status == STATUS_SUCCESS)
+		_app_db_openfromfile (&db_info_file, path, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
 
-	version_file = 0;
-	version_resource = 0;
-
-	if (_r_xml_parsefile (&xml_file, path->buffer) == S_OK)
-	{
-		if (_r_xml_findchildbytagname (&xml_file, L"root"))
-		{
-			version_file = _r_xml_getattribute_long (&xml_file, L"version");
-			timestamp_file = _r_xml_getattribute_long64 (&xml_file, L"timestamp");
-		}
-	}
-
-	if (_app_loadpackedresource (resource_name, &buffer))
-	{
-		if (_r_xml_parsestring (&xml_resource, buffer->buffer, (ULONG)buffer->length) == S_OK)
-		{
-			if (_r_xml_findchildbytagname (&xml_resource, L"root"))
-			{
-				version_resource = _r_xml_getattribute_long (&xml_resource, L"version");
-				timestamp_resource = _r_xml_getattribute_long64 (&xml_resource, L"timestamp");
-			}
-		}
-	}
+	db_info_buffer = _app_profile_load_fromresource (resource_name);
 
 	// NOTE: prefer new profile version for 3.4+
-	is_loadfromresource = (version_file < version_resource) || (timestamp_file < timestamp_resource);
+	is_loadfromresource = (db_info_file.version < db_info_buffer->version) || (db_info_file.timestamp < db_info_buffer->timestamp);
 
-	xml_library = is_loadfromresource ? &xml_resource : &xml_file;
-	version = is_loadfromresource ? version_resource : version_file;
+	db_info = is_loadfromresource ? db_info_buffer : &db_info_file;
 
-	if (_app_isprofilenodevalid (xml_library, XML_VERSION_4, XML_TYPE_PROFILE_INTERNAL))
-	{
-		if (timestamp)
-			*timestamp = (timestamp_file > timestamp_resource) ? timestamp_file : timestamp_resource;
+	if (timestamp)
+		*timestamp = db_info->timestamp;
 
-		// load system rules
-		if (_r_xml_findchildbytagname (xml_library, L"rules_system"))
-		{
-			while (_r_xml_enumchilditemsbytagname (xml_library, L"item"))
-			{
-				_app_profile_load_helper (xml_library, DATA_RULE_SYSTEM, version);
-			}
-		}
+	_app_db_parse (db_info, XML_TYPE_PROFILE_INTERNAL);
 
-		// load internal custom rules
-		if (_r_xml_findchildbytagname (xml_library, L"rules_custom"))
-		{
-			while (_r_xml_enumchilditemsbytagname (xml_library, L"item"))
-			{
-				_app_profile_load_helper (xml_library, DATA_RULE_SYSTEM_USER, version);
-			}
-		}
-
-		// load blocklist rules
-		if (_r_xml_findchildbytagname (xml_library, L"rules_blocklist"))
-		{
-			while (_r_xml_enumchilditemsbytagname (xml_library, L"item"))
-			{
-				_app_profile_load_helper (xml_library, DATA_RULE_BLOCKLIST, version);
-			}
-		}
-	}
-
-	_r_xml_destroylibrary (&xml_file);
-	_r_xml_destroylibrary (&xml_resource);
+	_app_db_destroy (&db_info_file);
+	//_app_db_destroy (&db_info_buffer);
 }
 
 VOID _app_profile_refresh ()
@@ -1619,350 +1249,121 @@ VOID _app_profile_refresh ()
 	_app_package_getserviceslist ();
 }
 
-VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom)
+NTSTATUS _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ PR_STRING path_custom)
 {
-	R_XML_LIBRARY xml_library;
-	HRESULT hr;
+	DB_INFORMATION db_info;
+	NTSTATUS status;
 
-	LONG version;
+	status = _app_db_initialize (&db_info, TRUE);
 
-	INT listview_id;
-	INT selected_item;
-	INT scroll_pos;
+	if (status != STATUS_SUCCESS)
+		goto CleanupExit;
 
-	// clean listview
-	if (hwnd)
+	if (path_custom)
 	{
-		// unused
-		listview_id = _app_listview_getcurrent (hwnd);
-
-		if (listview_id)
-		{
-			selected_item = _r_listview_getnextselected (hwnd, listview_id, -1);
-			scroll_pos = GetScrollPos (GetDlgItem (hwnd, listview_id), SB_VERT);
-		}
-
-		_app_listview_clearitems (hwnd);
-	}
-
-	_app_profile_refresh ();
-
-	// load profile
-	_r_xml_initializelibrary (&xml_library, TRUE, NULL);
-
-	_r_queuedlock_acquireshared (&lock_profile);
-
-	hr = _r_xml_parsefile (&xml_library, path_custom ? path_custom : profile_info.profile_path->buffer);
-
-	// load backup
-	if (hr != S_OK && !path_custom)
-		hr = _r_xml_parsefile (&xml_library, profile_info.profile_path_backup->buffer);
-
-	_r_queuedlock_releaseshared (&lock_profile);
-
-	if (hr != S_OK)
-	{
-		if (hr != HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND))
-			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_parsefile", hr, path_custom ? path_custom : profile_info.profile_path->buffer);
+		status = _app_db_openfromfile (&db_info, path_custom, XML_VERSION_3, XML_TYPE_PROFILE);
 	}
 	else
 	{
-		if (_r_xml_findchildbytagname (&xml_library, L"root"))
+		_r_queuedlock_acquireshared (&lock_profile);
+
+		status = _app_db_openfromfile (&db_info, profile_info.profile_path, XML_VERSION_3, XML_TYPE_PROFILE);
+
+		if (status != STATUS_SUCCESS)
 		{
-			if (_app_isprofilenodevalid (&xml_library, XML_VERSION_3, XML_TYPE_PROFILE))
+			status = _app_db_openfromfile (&db_info, profile_info.profile_path_backup, XML_VERSION_3, XML_TYPE_PROFILE);
+
+			if (status != STATUS_SUCCESS)
 			{
-				version = _r_xml_getattribute_long (&xml_library, L"version");
-
-				// load apps
-				if (_r_xml_findchildbytagname (&xml_library, L"apps"))
-				{
-					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
-					{
-						_app_profile_load_helper (&xml_library, DATA_APP_REGULAR, version);
-					}
-				}
-
-				// load rules config
-				if (_r_xml_findchildbytagname (&xml_library, L"rules_config"))
-				{
-					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
-					{
-						_app_profile_load_helper (&xml_library, DATA_RULE_CONFIG, version);
-					}
-				}
-
-				// load user rules
-				if (_r_xml_findchildbytagname (&xml_library, L"rules_custom"))
-				{
-					while (_r_xml_enumchilditemsbytagname (&xml_library, L"item"))
-					{
-						_app_profile_load_helper (&xml_library, DATA_RULE_USER, version);
-					}
-				}
+				// try to load old profile.xml
+				status = _app_db_openfromfile (&db_info, profile_info.profile_path_old, XML_VERSION_3, XML_TYPE_PROFILE);
 			}
 		}
+
+		_r_queuedlock_releaseshared (&lock_profile);
 	}
 
-	_r_xml_destroylibrary (&xml_library);
+CleanupExit:
+
+	if (hwnd)
+		_app_listview_clearitems (hwnd);
+
+	_app_profile_refresh ();
 
 	_app_profile_load_fallback ();
 
-	// load internal rules (new!)
-	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-		_app_profile_load_internal (profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
+	if (status != STATUS_SUCCESS)
+	{
+		if (hwnd)
+			_r_show_errormessage (hwnd, L"Profile loading!", status, NULL);
+
+		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load", status, NULL);
+	}
+	else
+	{
+		_app_db_parse (&db_info, XML_TYPE_PROFILE);
+
+		// load internal rules (new!)
+		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
+			_app_profile_load_internal (profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
+	}
 
 	if (hwnd)
-	{
 		_app_listview_additems (hwnd);
 
-		if (listview_id)
-		{
-			_app_listview_updateby_id (hwnd, listview_id, 0);
+	_app_db_destroy (&db_info);
 
-			if (_r_wnd_isvisible (hwnd) && (listview_id == _app_listview_getcurrent (hwnd)))
-				_app_listview_showitemby_id (hwnd, listview_id, selected_item, scroll_pos);
-		}
-	}
+	return status;
 }
 
-VOID _app_profile_save ()
+NTSTATUS _app_profile_save ()
 {
-	R_XML_LIBRARY xml_library;
-	LONG64 current_time;
+	DB_INFORMATION db_info;
+	LONG64 timestamp;
+	NTSTATUS status;
 	BOOLEAN is_backuprequired;
-	HRESULT hr;
 
-	current_time = _r_unixtime_now ();
-	is_backuprequired = _r_config_getboolean (L"IsBackupProfile", TRUE) && (!_r_fs_exists (profile_info.profile_path_backup->buffer) || ((current_time - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)));
+	status = _app_db_initialize (&db_info, FALSE);
 
-	hr = _r_xml_initializelibrary (&xml_library, FALSE, NULL);
-
-	if (hr != S_OK)
+	if (status != STATUS_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_initializelibrary", hr, NULL);
-		return;
+		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
+
+		return status;
 	}
 
-	hr = _r_xml_createfile (&xml_library, profile_info.profile_path->buffer);
+	timestamp = _r_unixtime_now ();
+	is_backuprequired = FALSE;
 
-	if (hr != S_OK)
+	if (_r_config_getboolean (L"IsBackupProfile", TRUE))
 	{
-		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"_r_xml_createfile", hr, profile_info.profile_path->buffer);
-		return;
+		if (!_r_fs_exists (profile_info.profile_path_backup->buffer))
+			is_backuprequired = TRUE;
+
+		if (!is_backuprequired)
+		{
+			if ((timestamp - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
+				is_backuprequired = TRUE;
+		}
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_profile);
 
-	_r_xml_writestartdocument (&xml_library);
-
-	_r_xml_writestartelement (&xml_library, L"root");
-
-	_r_xml_setattribute_long64 (&xml_library, L"timestamp", current_time);
-	_r_xml_setattribute_long (&xml_library, L"type", XML_TYPE_PROFILE);
-	_r_xml_setattribute_long (&xml_library, L"version", XML_VERSION_CURRENT);
-
-	_r_xml_writewhitespace (&xml_library, L"\n\t");
-
-	_r_xml_writestartelement (&xml_library, L"apps");
-
-	// save apps
-	PITEM_APP ptr_app;
-	PITEM_RULE ptr_rule;
-	PITEM_RULE_CONFIG ptr_config;
-	PR_STRING apps_string = NULL;
-	SIZE_T enum_key;
-	BOOLEAN is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", TRUE);
-	BOOLEAN is_usedapp = FALSE;
-
-	_r_queuedlock_acquireshared (&lock_apps);
-
-	enum_key = 0;
-
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
-	{
-		if (_r_obj_isstringempty (ptr_app->original_path))
-			continue;
-
-		is_usedapp = _app_isappused (ptr_app);
-
-		// do not save unused apps/uwp apps...
-		if (!is_usedapp && (!is_keepunusedapps || (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)))
-			continue;
-
-		_r_xml_writewhitespace (&xml_library, L"\n\t\t");
-
-		_r_xml_writestartelement (&xml_library, L"item");
-
-		_r_xml_setattribute (&xml_library, L"path", ptr_app->original_path->buffer);
-
-		if (ptr_app->timestamp)
-			_r_xml_setattribute_long64 (&xml_library, L"timestamp", ptr_app->timestamp);
-
-		// set timer (if presented)
-		if (ptr_app->timer && _app_istimerset (ptr_app->htimer))
-			_r_xml_setattribute_long64 (&xml_library, L"timer", ptr_app->timer);
-
-		// ffu!
-		if (ptr_app->profile)
-			_r_xml_setattribute_long (&xml_library, L"profile", ptr_app->profile);
-
-		if (ptr_app->is_silent)
-			_r_xml_setattribute_boolean (&xml_library, L"is_silent", !!ptr_app->is_silent);
-
-		if (ptr_app->is_enabled)
-			_r_xml_setattribute_boolean (&xml_library, L"is_enabled", !!ptr_app->is_enabled);
-
-		_r_xml_writeendelement (&xml_library);
-	}
-
-	_r_queuedlock_releaseshared (&lock_apps);
-
-	_r_xml_writewhitespace (&xml_library, L"\n\t");
-
-	_r_xml_writeendelement (&xml_library);
-
-	_r_xml_writewhitespace (&xml_library, L"\n\t");
-
-	// save rules
-	_r_xml_writestartelement (&xml_library, L"rules_custom");
-
-	_r_queuedlock_acquireshared (&lock_rules);
-
-	// save user rules
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
-	{
-		ptr_rule = _r_obj_getlistitem (rules_list, i);
-
-		if (!ptr_rule || ptr_rule->is_readonly || _r_obj_isstringempty (ptr_rule->name))
-			continue;
-
-		_r_xml_writewhitespace (&xml_library, L"\n\t\t");
-
-		_r_xml_writestartelement (&xml_library, L"item");
-
-		_r_xml_setattribute (&xml_library, L"name", ptr_rule->name->buffer);
-
-		if (!_r_obj_isstringempty (ptr_rule->rule_remote))
-			_r_xml_setattribute (&xml_library, L"rule", ptr_rule->rule_remote->buffer);
-
-		if (!_r_obj_isstringempty (ptr_rule->rule_local))
-			_r_xml_setattribute (&xml_library, L"rule_local", ptr_rule->rule_local->buffer);
-
-		// ffu!
-		if (ptr_rule->profile)
-			_r_xml_setattribute_long (&xml_library, L"profile", ptr_rule->profile);
-
-		if (ptr_rule->direction != FWP_DIRECTION_OUTBOUND)
-			_r_xml_setattribute_long (&xml_library, L"dir", ptr_rule->direction);
-
-		if (ptr_rule->protocol != 0)
-			_r_xml_setattribute_long (&xml_library, L"protocol", ptr_rule->protocol);
-
-		if (ptr_rule->af != AF_UNSPEC)
-			_r_xml_setattribute_long (&xml_library, L"version", ptr_rule->af);
-
-		// add apps attribute
-		if (!_r_obj_ishashtableempty (ptr_rule->apps))
-		{
-			apps_string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
-
-			if (apps_string)
-			{
-				_r_xml_setattribute (&xml_library, L"apps", apps_string->buffer);
-				_r_obj_clearreference (&apps_string);
-			}
-		}
-
-		if (ptr_rule->action == FWP_ACTION_BLOCK)
-			_r_xml_setattribute_boolean (&xml_library, L"is_block", TRUE);
-
-		if (ptr_rule->is_enabled)
-			_r_xml_setattribute_boolean (&xml_library, L"is_enabled", !!ptr_rule->is_enabled);
-
-		_r_xml_writeendelement (&xml_library);
-	}
-
-	_r_queuedlock_releaseshared (&lock_rules);
-
-	_r_xml_writewhitespace (&xml_library, L"\n\t");
-
-	_r_xml_writeendelement (&xml_library);
-
-	_r_xml_writewhitespace (&xml_library, L"\n\t");
-
-	// save rules config
-	_r_xml_writestartelement (&xml_library, L"rules_config");
-
-	enum_key = 0;
-
-	_r_queuedlock_acquireshared (&lock_rules_config);
-
-	while (_r_obj_enumhashtable (rules_config, &ptr_config, NULL, &enum_key))
-	{
-		if (_r_obj_isstringempty (ptr_config->name))
-			continue;
-
-		BOOLEAN is_enabled_default;
-		ULONG_PTR rule_hash;
-
-		is_enabled_default = ptr_config->is_enabled;
-		rule_hash = _r_str_gethash2 (ptr_config->name, TRUE);
-
-		ptr_rule = _app_getrulebyhash (rule_hash);
-
-		if (ptr_rule)
-		{
-			is_enabled_default = !!ptr_rule->is_enabled_default;
-
-			if (ptr_rule->type == DATA_RULE_USER && !_r_obj_ishashtableempty (ptr_rule->apps))
-				apps_string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
-
-			_r_obj_dereference (ptr_rule);
-		}
-
-		// skip saving untouched configuration
-		if (ptr_config->is_enabled == is_enabled_default && !apps_string)
-			continue;
-
-		_r_xml_writewhitespace (&xml_library, L"\n\t\t");
-
-		_r_xml_writestartelement (&xml_library, L"item");
-
-		_r_xml_setattribute (&xml_library, L"name", ptr_config->name->buffer);
-
-		if (apps_string)
-		{
-			_r_xml_setattribute (&xml_library, L"apps", apps_string->buffer);
-			_r_obj_clearreference (&apps_string);
-		}
-
-		_r_xml_setattribute_boolean (&xml_library, L"is_enabled", ptr_config->is_enabled);
-
-		_r_xml_writeendelement (&xml_library);
-	}
-
-	_r_queuedlock_releaseshared (&lock_rules_config);
-
-	_r_xml_writewhitespace (&xml_library, L"\n\t");
-
-	_r_xml_writeendelement (&xml_library);
-
-	_r_xml_writewhitespace (&xml_library, L"\n");
-
-	_r_xml_writeendelement (&xml_library);
-
-	_r_xml_writewhitespace (&xml_library, L"\n");
-
-	_r_xml_writeenddocument (&xml_library);
-
-	_r_xml_destroylibrary (&xml_library);
+	status = _app_db_savetofile (&db_info, profile_info.profile_path, XML_VERSION_CURRENT, XML_TYPE_PROFILE, timestamp);
 
 	_r_queuedlock_releaseexclusive (&lock_profile);
+
+	if (status != STATUS_SUCCESS)
+		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_savetofile", status, profile_info.profile_path->buffer);
+
+	_app_db_destroy (&db_info);
 
 	// make backup
 	if (is_backuprequired)
 	{
 		_r_fs_copyfile (profile_info.profile_path->buffer, profile_info.profile_path_backup->buffer, 0);
-		_r_config_setlong64 (L"BackupTimestamp", current_time);
+		_r_config_setlong64 (L"BackupTimestamp", timestamp);
 	}
+
+	return status;
 }

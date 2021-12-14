@@ -84,15 +84,12 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 _Ret_maybenull_
 PR_STRING _app_rulesexpandrules (_In_opt_ PR_STRING rule, _In_ LPCWSTR delimeter);
 
-BOOLEAN _app_isprofilenodevalid (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_VERSION_XML min_version, _In_ ENUM_TYPE_XML type);
-BOOLEAN _app_isprofilevalid (_In_opt_ HWND hwnd, _In_ PR_STRING path);
-
 BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version);
 
 VOID _app_profile_initialize ();
 
+PDB_INFORMATION _app_profile_load_fromresource (_In_ LPCWSTR resource_name);
 VOID _app_profile_load_fallback ();
-VOID _app_profile_load_helper (_Inout_ PR_XML_LIBRARY xml_library, _In_ ENUM_TYPE_DATA type, _In_ ENUM_VERSION_XML version);
-VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Inout_opt_ PLONG64 timestamp);
-VOID _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ LPCWSTR path_custom);
-VOID _app_profile_save ();
+VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Out_opt_ PLONG64 timestamp);
+NTSTATUS _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ PR_STRING path_custom);
+NTSTATUS _app_profile_save ();
