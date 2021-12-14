@@ -372,6 +372,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\routine\ntapi.h" />
+    <ClInclude Include="..\routine\ntrtl.h" />
     <ClInclude Include="..\routine\rapp.h" />
     <ClInclude Include="..\routine\rconfig.h" />
     <ClInclude Include="..\routine\routine.h" />
