@@ -1285,12 +1285,15 @@ NTSTATUS _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ PR_STRING path_custom)
 
 CleanupExit:
 
-	if (hwnd)
-		_app_listview_clearitems (hwnd);
+	if ((path_custom && status == STATUS_SUCCESS) || !path_custom)
+	{
+		if (hwnd)
+			_app_listview_clearitems (hwnd);
 
-	_app_profile_refresh ();
+		_app_profile_refresh ();
 
-	_app_profile_load_fallback ();
+		_app_profile_load_fallback ();
+	}
 
 	if (status != STATUS_SUCCESS)
 	{
@@ -1308,8 +1311,11 @@ CleanupExit:
 			_app_profile_load_internal (profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
 	}
 
-	if (hwnd)
-		_app_listview_additems (hwnd);
+	if ((path_custom && status == STATUS_SUCCESS) || !path_custom)
+	{
+		if (hwnd)
+			_app_listview_additems (hwnd);
+	}
 
 	_app_db_destroy (&db_info);
 
@@ -1342,14 +1348,25 @@ NTSTATUS _app_profile_save ()
 
 		if (!is_backuprequired)
 		{
-			if ((timestamp - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
+			if (
+				(timestamp - _r_config_getlong64 (L"BackupTimestamp", 0)) >=
+				_r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)
+				)
+			{
 				is_backuprequired = TRUE;
+			}
 		}
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_profile);
 
-	status = _app_db_savetofile (&db_info, profile_info.profile_path, XML_VERSION_CURRENT, XML_TYPE_PROFILE, timestamp);
+	status = _app_db_savetofile (
+		&db_info,
+		profile_info.profile_path,
+		XML_VERSION_CURRENT,
+		XML_TYPE_PROFILE,
+		timestamp
+	);
 
 	_r_queuedlock_releaseexclusive (&lock_profile);
 
