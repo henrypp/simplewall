@@ -1224,20 +1224,6 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 				flags,
 				guids
 			);
-
-			// win7+
-			_wfp_createfilter (
-				engine_handle,
-				filter_type,
-				filter_name,
-				fwfc, count,
-				&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
-				NULL,
-				weight,
-				action,
-				flags,
-				guids
-			);
 		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
@@ -1249,21 +1235,6 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 				fwfc,
 				count,
 				&FWPM_LAYER_ALE_AUTH_CONNECT_V6,
-				NULL,
-				weight,
-				action,
-				flags,
-				guids
-			);
-
-			// win7+
-			_wfp_createfilter (
-				engine_handle,
-				filter_type,
-				filter_name,
-				fwfc,
-				count,
-				&FWPM_LAYER_ALE_CONNECT_REDIRECT_V6,
 				NULL,
 				weight,
 				action,
@@ -1292,22 +1263,22 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 				guids
 			);
 
-			if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
-			{
-				_wfp_createfilter (
-					engine_handle,
-					filter_type,
-					filter_name,
-					fwfc,
-					count,
-					&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
-					NULL,
-					weight,
-					FWP_ACTION_PERMIT,
-					flags,
-					guids
-				);
-			}
+			//if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
+			//{
+			//	_wfp_createfilter (
+			//		engine_handle,
+			//		filter_type,
+			//		filter_name,
+			//		fwfc,
+			//		count,
+			//		&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
+			//		NULL,
+			//		weight,
+			//		FWP_ACTION_PERMIT,
+			//		flags,
+			//		guids
+			//	);
+			//}
 		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
@@ -1326,22 +1297,22 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 				guids
 			);
 
-			if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
-			{
-				_wfp_createfilter (
-					engine_handle,
-					filter_type,
-					filter_name,
-					fwfc,
-					count,
-					&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
-					NULL,
-					weight,
-					FWP_ACTION_PERMIT,
-					flags,
-					guids
-				);
-			}
+			//if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
+			//{
+			//	_wfp_createfilter (
+			//		engine_handle,
+			//		filter_type,
+			//		filter_name,
+			//		fwfc,
+			//		count,
+			//		&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
+			//		NULL,
+			//		weight,
+			//		FWP_ACTION_PERMIT,
+			//		flags,
+			//		guids
+			//	);
+			//}
 		}
 	}
 
@@ -1788,35 +1759,6 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 			filter_ids
 		);
 
-		// win7+
-		_wfp_createfilter (
-			engine_handle,
-			DATA_FILTER_GENERAL,
-			FW_NAME_LOOPBACK,
-			fwfc,
-			1,
-			&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
-			NULL,
-			FW_WEIGHT_HIGHEST_IMPORTANT,
-			FWP_ACTION_PERMIT,
-			0,
-			filter_ids
-		);
-
-		_wfp_createfilter (
-			engine_handle,
-			DATA_FILTER_GENERAL,
-			FW_NAME_LOOPBACK,
-			fwfc,
-			1,
-			&FWPM_LAYER_ALE_CONNECT_REDIRECT_V6,
-			NULL,
-			FW_WEIGHT_HIGHEST_IMPORTANT,
-			FWP_ACTION_PERMIT,
-			0,
-			filter_ids
-		);
-
 		_wfp_createfilter (
 			engine_handle,
 			DATA_FILTER_GENERAL,
@@ -1845,33 +1787,33 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 			filter_ids
 		);
 
-		_wfp_createfilter (
-			engine_handle,
-			DATA_FILTER_GENERAL,
-			FW_NAME_LOOPBACK,
-			fwfc,
-			1,
-			&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
-			NULL,
-			FW_WEIGHT_HIGHEST_IMPORTANT,
-			FWP_ACTION_PERMIT,
-			0,
-			filter_ids
-		);
+		//_wfp_createfilter (
+		//	engine_handle,
+		//	DATA_FILTER_GENERAL,
+		//	FW_NAME_LOOPBACK,
+		//	fwfc,
+		//	1,
+		//	&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
+		//	NULL,
+		//	FW_WEIGHT_HIGHEST_IMPORTANT,
+		//	FWP_ACTION_PERMIT,
+		//	0,
+		//	filter_ids
+		//);
 
-		_wfp_createfilter (
-			engine_handle,
-			DATA_FILTER_GENERAL,
-			FW_NAME_LOOPBACK,
-			fwfc,
-			1,
-			&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
-			NULL,
-			FW_WEIGHT_HIGHEST_IMPORTANT,
-			FWP_ACTION_PERMIT,
-			0,
-			filter_ids
-		);
+		//_wfp_createfilter (
+		//	engine_handle,
+		//	DATA_FILTER_GENERAL,
+		//	FW_NAME_LOOPBACK,
+		//	fwfc,
+		//	1,
+		//	&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
+		//	NULL,
+		//	FW_WEIGHT_HIGHEST_IMPORTANT,
+		//	FWP_ACTION_PERMIT,
+		//	0,
+		//	filter_ids
+		//);
 
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (loopback_list); i++)
 		{
@@ -1901,21 +1843,6 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 					filter_ids
 				);
 
-				// win7+
-				_wfp_createfilter (
-					engine_handle,
-					DATA_FILTER_GENERAL,
-					FW_NAME_LOOPBACK,
-					fwfc,
-					2,
-					&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
-					NULL,
-					FW_WEIGHT_HIGHEST_IMPORTANT,
-					FWP_ACTION_PERMIT,
-					0,
-					filter_ids
-				);
-
 				fwfc[1].fieldKey = FWPM_CONDITION_IP_LOCAL_ADDRESS;
 
 				_wfp_createfilter (
@@ -1932,19 +1859,19 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 					filter_ids
 				);
 
-				_wfp_createfilter (
-					engine_handle,
-					DATA_FILTER_GENERAL,
-					FW_NAME_LOOPBACK,
-					fwfc,
-					2,
-					&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
-					NULL,
-					FW_WEIGHT_HIGHEST_IMPORTANT,
-					FWP_ACTION_PERMIT,
-					0,
-					filter_ids
-				);
+				//_wfp_createfilter (
+				//	engine_handle,
+				//	DATA_FILTER_GENERAL,
+				//	FW_NAME_LOOPBACK,
+				//	fwfc,
+				//	2,
+				//	&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
+				//	NULL,
+				//	FW_WEIGHT_HIGHEST_IMPORTANT,
+				//	FWP_ACTION_PERMIT,
+				//	0,
+				//	filter_ids
+				//);
 			}
 			else if (address.format == NET_ADDRESS_IPV6)
 			{
@@ -1960,21 +1887,6 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 					fwfc,
 					2,
 					&FWPM_LAYER_ALE_AUTH_CONNECT_V6,
-					NULL,
-					FW_WEIGHT_HIGHEST_IMPORTANT,
-					FWP_ACTION_PERMIT,
-					0,
-					filter_ids
-				);
-
-				// win7+
-				_wfp_createfilter (
-					engine_handle,
-					DATA_FILTER_GENERAL,
-					FW_NAME_LOOPBACK,
-					fwfc,
-					2,
-					&FWPM_LAYER_ALE_CONNECT_REDIRECT_V6,
 					NULL,
 					FW_WEIGHT_HIGHEST_IMPORTANT,
 					FWP_ACTION_PERMIT,
@@ -1998,19 +1910,19 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 					filter_ids
 				);
 
-				_wfp_createfilter (
-					engine_handle,
-					DATA_FILTER_GENERAL,
-					FW_NAME_LOOPBACK,
-					fwfc,
-					2,
-					&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
-					NULL,
-					FW_WEIGHT_HIGHEST_IMPORTANT,
-					FWP_ACTION_PERMIT,
-					0,
-					filter_ids
-				);
+				//_wfp_createfilter (
+				//	engine_handle,
+				//	DATA_FILTER_GENERAL,
+				//	FW_NAME_LOOPBACK,
+				//	fwfc,
+				//	2,
+				//	&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
+				//	NULL,
+				//	FW_WEIGHT_HIGHEST_IMPORTANT,
+				//	FWP_ACTION_PERMIT,
+				//	0,
+				//	filter_ids
+				//);
 			}
 		}
 	}
@@ -2504,37 +2416,9 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 		filter_ids
 	);
 
-	// block connection redirect
-	_wfp_createfilter (
-		engine_handle,
-		DATA_FILTER_GENERAL,
-		FW_NAME_BLOCK_REDIRECT,
-		NULL,
-		0,
-		&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
-		NULL,
-		FW_WEIGHT_LOWEST,
-		action,
-		0,
-		filter_ids
-	);
-
-	_wfp_createfilter (
-		engine_handle,
-		DATA_FILTER_GENERAL,
-		FW_NAME_BLOCK_REDIRECT,
-		NULL,
-		0,
-		&FWPM_LAYER_ALE_CONNECT_REDIRECT_V6,
-		NULL,
-		FW_WEIGHT_LOWEST,
-		action,
-		0,
-		filter_ids
-	);
-
 	// block inbound connections
-	action = (_r_config_getboolean (L"UseStealthMode", TRUE) || _r_config_getboolean (L"BlockInboundConnections", TRUE)) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+	action = (_r_config_getboolean (L"UseStealthMode", TRUE) ||
+			  _r_config_getboolean (L"BlockInboundConnections", TRUE)) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
 	_wfp_createfilter (
 		engine_handle,

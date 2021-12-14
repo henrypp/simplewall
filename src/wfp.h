@@ -17,7 +17,6 @@ DEFINE_GUID (GUID_WfpListenCallout6_DEPRECATED, 0xa02187ca, 0xe655, 0x4adb, 0xa1
 
 // filter names
 #define FW_NAME_BLOCK_CONNECTION L"BlockConnection"
-#define FW_NAME_BLOCK_REDIRECT L"BlockRedirect"
 #define FW_NAME_BLOCK_RECVACCEPT L"BlockRecvAccept"
 #define FW_NAME_ICMP_ERROR L"BlockIcmpError"
 #define FW_NAME_TCP_RST_ONCLOSE L"BlockTcpRstOnClose"
