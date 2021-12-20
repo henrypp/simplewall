@@ -8,14 +8,20 @@ BOOLEAN _wfp_isfiltersapplying ()
 	return _r_queuedlock_islocked (&lock_apply) || _r_queuedlock_islocked (&lock_transaction);
 }
 
-ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE engine_handle)
+ENUM_INSTALL_TYPE _wfp_isproviderinstalled (
+	_In_ HANDLE engine_handle
+)
 {
 	ENUM_INSTALL_TYPE result;
 	FWPM_PROVIDER *ptr_provider;
 
 	result = INSTALL_DISABLED;
 
-	if (FwpmProviderGetByKey (engine_handle, &GUID_WfpProvider, &ptr_provider) == ERROR_SUCCESS)
+	if (FwpmProviderGetByKey (
+		engine_handle,
+		&GUID_WfpProvider,
+		&ptr_provider
+		) == ERROR_SUCCESS)
 	{
 		if (ptr_provider)
 		{
@@ -39,14 +45,20 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (_In_ HANDLE engine_handle)
 	return result;
 }
 
-ENUM_INSTALL_TYPE _wfp_issublayerinstalled (_In_ HANDLE engine_handle)
+ENUM_INSTALL_TYPE _wfp_issublayerinstalled (
+	_In_ HANDLE engine_handle
+)
 {
 	ENUM_INSTALL_TYPE result;
 	FWPM_SUBLAYER *ptr_sublayer;
 
 	result = INSTALL_DISABLED;
 
-	if (FwpmSubLayerGetByKey (engine_handle, &GUID_WfpSublayer, &ptr_sublayer) == ERROR_SUCCESS)
+	if (FwpmSubLayerGetByKey (
+		engine_handle,
+		&GUID_WfpSublayer,
+		&ptr_sublayer
+		) == ERROR_SUCCESS)
 	{
 		if (ptr_sublayer)
 		{
@@ -135,7 +147,9 @@ HANDLE _wfp_getenginehandle ()
 	return engine_handle;
 }
 
-PR_STRING _wfp_getlayername (_In_ LPCGUID layer_guid)
+PR_STRING _wfp_getlayername (
+	_In_ LPCGUID layer_guid
+)
 {
 	static LPCGUID layer_guids[] = {
 		&FWPM_LAYER_ALE_AUTH_CONNECT_V4,
@@ -198,7 +212,9 @@ PR_STRING _wfp_getlayername (_In_ LPCGUID layer_guid)
 	return string;
 }
 
-BOOLEAN _wfp_initialize (_In_ HANDLE engine_handle)
+BOOLEAN _wfp_initialize (
+	_In_ HANDLE engine_handle
+)
 {
 	FWP_VALUE val;
 
@@ -387,7 +403,10 @@ CleanupExit:
 	return is_success;
 }
 
-VOID _wfp_uninitialize (_In_ HANDLE engine_handle, _In_ BOOLEAN is_full)
+VOID _wfp_uninitialize (
+	_In_ HANDLE engine_handle,
+	_In_ BOOLEAN is_full
+)
 {
 	FWP_VALUE val;
 	ULONG code;
@@ -478,7 +497,9 @@ VOID _wfp_uninitialize (_In_ HANDLE engine_handle, _In_ BOOLEAN is_full)
 	_r_queuedlock_releaseshared (&lock_transaction);
 }
 
-VOID _wfp_installfilters (_In_ HANDLE engine_handle)
+VOID _wfp_installfilters (
+	_In_ HANDLE engine_handle
+)
 {
 	// dump all filters into array
 	PR_ARRAY guids;
@@ -611,31 +632,42 @@ VOID _wfp_installfilters (_In_ HANDLE engine_handle)
 	_r_queuedlock_releaseshared (&lock_transaction);
 }
 
-BOOLEAN _wfp_transact_start (_In_ HANDLE engine_handle, _In_ UINT line)
+BOOLEAN _wfp_transact_start (
+	_In_ HANDLE engine_handle,
+	_In_ UINT line
+)
 {
-	ULONG code = FwpmTransactionBegin (engine_handle, 0);
+	ULONG status;
 
-	//if (code == FWP_E_TXN_IN_PROGRESS)
+	status = FwpmTransactionBegin (engine_handle, 0);
+
+	//if (status == FWP_E_TXN_IN_PROGRESS)
 	//	return FALSE;
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 	{
-		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin", code, L"#%" PRIu32, line);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin", status, L"#%" PRIu32, line);
+
 		return FALSE;
 	}
 
 	return TRUE;
 }
 
-BOOLEAN _wfp_transact_commit (_In_ HANDLE engine_handle, _In_ UINT line)
+BOOLEAN _wfp_transact_commit (
+	_In_ HANDLE engine_handle,
+	_In_ UINT line
+)
 {
-	ULONG code = FwpmTransactionCommit (engine_handle);
+	ULONG status;
 
-	if (code != ERROR_SUCCESS)
+	status = FwpmTransactionCommit (engine_handle);
+
+	if (status != ERROR_SUCCESS)
 	{
 		FwpmTransactionAbort (engine_handle);
 
-		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit", code, L"#%" PRIu32, line);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit", status, L"#%" PRIu32, line);
 		return FALSE;
 
 	}
@@ -643,22 +675,25 @@ BOOLEAN _wfp_transact_commit (_In_ HANDLE engine_handle, _In_ UINT line)
 	return TRUE;
 }
 
-BOOLEAN _wfp_deletefilter (_In_ HANDLE engine_handle, _In_ LPCGUID filter_id)
+BOOLEAN _wfp_deletefilter (
+	_In_ HANDLE engine_handle,
+	_In_ LPCGUID filter_id
+)
 {
 	PR_STRING string;
-	ULONG code;
+	ULONG status;
 
-	code = FwpmFilterDeleteByKey (engine_handle, filter_id);
+	status = FwpmFilterDeleteByKey (engine_handle, filter_id);
 
 #if !defined(_DEBUG)
-	if (code != ERROR_SUCCESS && code != FWP_E_FILTER_NOT_FOUND)
+	if (status != ERROR_SUCCESS && status != FWP_E_FILTER_NOT_FOUND)
 #else
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 #endif // !DEBUG
 	{
 		_r_str_fromguid (filter_id, TRUE, &string);
 
-		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey", code, _r_obj_getstringordefault (string, SZ_EMPTY));
+		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey", status, _r_obj_getstringordefault (string, SZ_EMPTY));
 
 		if (string)
 			_r_obj_dereference (string);
@@ -669,7 +704,9 @@ BOOLEAN _wfp_deletefilter (_In_ HANDLE engine_handle, _In_ LPCGUID filter_id)
 	return TRUE;
 }
 
-FORCEINLINE LPCWSTR _wfp_filtertypetostring (_In_ ENUM_TYPE_DATA filter_type)
+FORCEINLINE LPCWSTR _wfp_filtertypetostring (
+	_In_ ENUM_TYPE_DATA filter_type
+)
 {
 	switch (filter_type)
 	{
@@ -708,7 +745,11 @@ FORCEINLINE LPCWSTR _wfp_filtertypetostring (_In_ ENUM_TYPE_DATA filter_type)
 	return NULL;
 }
 
-ULONG _wfp_createcallout (_In_ HANDLE engine_handle, _In_ LPCGUID layer_key, _In_ LPCGUID callout_key)
+ULONG _wfp_createcallout (
+	_In_ HANDLE engine_handle,
+	_In_ LPCGUID layer_key,
+	_In_ LPCGUID callout_key
+)
 {
 	FWPM_CALLOUT0 callout = {0};
 	ULONG code;
@@ -732,19 +773,31 @@ ULONG _wfp_createcallout (_In_ HANDLE engine_handle, _In_ LPCGUID layer_key, _In
 	return code;
 }
 
-ULONG _wfp_createfilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA type, _In_opt_ LPCWSTR filter_name, _In_reads_ (count) FWPM_FILTER_CONDITION *lpcond, _In_ UINT32 count, _In_ LPCGUID layer_id, _In_opt_ LPCGUID callout_id, _In_ UINT8 weight, _In_ FWP_ACTION_TYPE action, _In_ UINT32 flags, _Inout_opt_ PR_ARRAY guids)
+ULONG _wfp_createfilter (
+	_In_ HANDLE engine_handle,
+	_In_ ENUM_TYPE_DATA type,
+	_In_opt_ LPCWSTR filter_name,
+	_In_reads_ (count) FWPM_FILTER_CONDITION *lpcond,
+	_In_ UINT32 count,
+	_In_ LPCGUID layer_id,
+	_In_opt_ LPCGUID callout_id,
+	_In_ UINT8 weight,
+	_In_ FWP_ACTION_TYPE action,
+	_In_ UINT32 flags,
+	_Inout_opt_ PR_ARRAY guids
+)
 {
 	FWPM_FILTER filter = {0};
 	WCHAR filter_description[128];
 	LPCWSTR filter_type_string;
 	UINT64 filter_id;
-	ULONG code;
+	ULONG status;
 
 	// create filter guid
-	code = _r_math_createguid (&filter.filterKey);
+	status = _r_math_createguid (&filter.filterKey);
 
-	if (code != ERROR_SUCCESS)
-		return code;
+	if (status != ERROR_SUCCESS)
+		return status;
 
 	filter_type_string = _wfp_filtertypetostring (type);
 
@@ -799,9 +852,9 @@ ULONG _wfp_createfilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA type, _I
 	if (callout_id)
 		RtlCopyMemory (&filter.action.calloutKey, callout_id, sizeof (GUID));
 
-	code = FwpmFilterAdd (engine_handle, &filter, NULL, &filter_id);
+	status = FwpmFilterAdd (engine_handle, &filter, NULL, &filter_id);
 
-	if (code == ERROR_SUCCESS)
+	if (status == ERROR_SUCCESS)
 	{
 		if (guids)
 			_r_obj_addarrayitem (guids, &filter.filterKey);
@@ -816,7 +869,7 @@ ULONG _wfp_createfilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA type, _I
 			LOG_LEVEL_ERROR,
 			&GUID_TrayIcon,
 			L"FwpmFilterAdd",
-			code,
+			status,
 			L"%s\\%s",
 			_r_obj_getstring (layer_name),
 			filter.displayData.description
@@ -826,7 +879,7 @@ ULONG _wfp_createfilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA type, _I
 			_r_obj_dereference (layer_name);
 	}
 
-	return code;
+	return status;
 }
 
 VOID _wfp_clearfilter_ids ()
@@ -870,7 +923,9 @@ VOID _wfp_clearfilter_ids ()
 	_r_queuedlock_releaseshared (&lock_rules);
 }
 
-VOID _wfp_destroyfilters (_In_ HANDLE engine_handle)
+VOID _wfp_destroyfilters (
+	_In_ HANDLE engine_handle
+)
 {
 	_wfp_clearfilter_ids ();
 
@@ -891,7 +946,11 @@ VOID _wfp_destroyfilters (_In_ HANDLE engine_handle)
 	_r_queuedlock_releaseshared (&lock_transaction);
 }
 
-BOOLEAN _wfp_destroyfilters_array (_In_ HANDLE engine_handle, _In_ PR_ARRAY guids, _In_ UINT line)
+BOOLEAN _wfp_destroyfilters_array (
+	_In_ HANDLE engine_handle,
+	_In_ PR_ARRAY guids,
+	_In_ UINT line
+)
 {
 	LPCGUID guid;
 	BOOLEAN is_enabled;
@@ -929,7 +988,19 @@ BOOLEAN _wfp_destroyfilters_array (_In_ HANDLE engine_handle, _In_ PR_ARRAY guid
 	return TRUE;
 }
 
-BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA filter_type, _In_opt_ LPCWSTR filter_name, _In_opt_ ULONG_PTR app_hash, _In_opt_ PITEM_FILTER_CONFIG filter_config, _In_opt_ PR_STRINGREF rule_remote, _In_opt_ PR_STRINGREF rule_local, _In_ UINT8 weight, _In_ FWP_ACTION_TYPE action, _In_ UINT32 flags, _Inout_opt_ PR_ARRAY guids)
+BOOLEAN _wfp_createrulefilter (
+	_In_ HANDLE engine_handle,
+	_In_ ENUM_TYPE_DATA filter_type,
+	_In_opt_ LPCWSTR filter_name,
+	_In_opt_ ULONG_PTR app_hash,
+	_In_opt_ PITEM_FILTER_CONFIG filter_config,
+	_In_opt_ PR_STRINGREF rule_remote,
+	_In_opt_ PR_STRINGREF rule_local,
+	_In_ UINT8 weight,
+	_In_ FWP_ACTION_TYPE action,
+	_In_ UINT32 flags,
+	_Inout_opt_ PR_ARRAY guids
+)
 {
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
 	UINT32 count = 0;
@@ -1330,7 +1401,12 @@ CleanupExit:
 	return is_success;
 }
 
-BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In_ UINT line, _In_ BOOLEAN is_intransact)
+BOOLEAN _wfp_create4filters (
+	_In_ HANDLE engine_handle,
+	_In_  PR_LIST rules,
+	_In_ UINT line,
+	_In_ BOOLEAN is_intransact
+)
 {
 	PR_ARRAY guids;
 	LPCGUID guid;
@@ -1474,7 +1550,19 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In
 					if (ptr_rule->is_forservices && _app_issystemhash (hash_code))
 						continue;
 
-					if (!_wfp_createrulefilter (engine_handle, ptr_rule->type, rule_name, hash_code, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
+					if (!_wfp_createrulefilter (
+						engine_handle,
+						ptr_rule->type,
+						rule_name,
+						hash_code,
+						&ptr_rule->config,
+						&rule_remote_part,
+						&rule_local_part,
+						ptr_rule->weight,
+						ptr_rule->action,
+						0,
+						ptr_rule->guids
+						))
 					{
 						ptr_rule->is_haveerrors = TRUE;
 					}
@@ -1482,7 +1570,19 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In
 			}
 			else
 			{
-				if (!_wfp_createrulefilter (engine_handle, ptr_rule->type, rule_name, 0, &ptr_rule->config, &rule_remote_part, &rule_local_part, ptr_rule->weight, ptr_rule->action, 0, ptr_rule->guids))
+				if (!_wfp_createrulefilter (
+					engine_handle,
+					ptr_rule->type,
+					rule_name,
+					0,
+					&ptr_rule->config,
+					&rule_remote_part,
+					&rule_local_part,
+					ptr_rule->weight,
+					ptr_rule->action,
+					0,
+					ptr_rule->guids
+					))
 				{
 					ptr_rule->is_haveerrors = TRUE;
 				}
@@ -1493,12 +1593,22 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In
 
 			if (remote_remaining_part.length != 0)
 			{
-				_r_str_splitatchar (&remote_remaining_part, DIVIDER_RULE[0], &rule_remote_part, &remote_remaining_part);
+				_r_str_splitatchar (
+					&remote_remaining_part,
+					DIVIDER_RULE[0],
+					&rule_remote_part,
+					&remote_remaining_part
+				);
 			}
 
 			if (local_remaining_part.length != 0)
 			{
-				_r_str_splitatchar (&local_remaining_part, DIVIDER_RULE[0], &rule_local_part, &local_remaining_part);
+				_r_str_splitatchar (
+					&local_remaining_part,
+					DIVIDER_RULE[0],
+					&rule_local_part,
+					&local_remaining_part
+				);
 			}
 		}
 	}
@@ -1540,7 +1650,12 @@ BOOLEAN _wfp_create4filters (_In_ HANDLE engine_handle, _In_  PR_LIST rules, _In
 	return TRUE;
 }
 
-BOOLEAN _wfp_create3filters (_In_ HANDLE engine_handle, _In_ PR_LIST rules, _In_ UINT line, _In_ BOOLEAN is_intransact)
+BOOLEAN _wfp_create3filters (
+	_In_ HANDLE engine_handle,
+	_In_ PR_LIST rules,
+	_In_ UINT line,
+	_In_ BOOLEAN is_intransact
+)
 {
 	if (_r_obj_islistempty (rules))
 		return FALSE;
@@ -1596,7 +1711,19 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE engine_handle, _In_ PR_LIST rules, _In_
 
 		if (ptr_app && ptr_app->is_enabled)
 		{
-			if (!_wfp_createrulefilter (engine_handle, ptr_app->type, _app_getappdisplayname (ptr_app, TRUE), ptr_app->app_hash, NULL, NULL, NULL, FW_WEIGHT_APP, FWP_ACTION_PERMIT, 0, ptr_app->guids))
+			if (!_wfp_createrulefilter (
+				engine_handle,
+				ptr_app->type,
+				_app_getappdisplayname (ptr_app, TRUE),
+				ptr_app->app_hash,
+				NULL,
+				NULL,
+				NULL,
+				FW_WEIGHT_APP,
+				FWP_ACTION_PERMIT,
+				0,
+				ptr_app->guids
+				))
 			{
 				ptr_app->is_haveerrors = TRUE;
 			}
@@ -1640,11 +1767,12 @@ BOOLEAN _wfp_create3filters (_In_ HANDLE engine_handle, _In_ PR_LIST rules, _In_
 	return TRUE;
 }
 
-BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOOLEAN is_intransact)
+BOOLEAN _wfp_create2filters (
+	_In_ HANDLE engine_handle,
+	_In_ UINT line,
+	_In_ BOOLEAN is_intransact
+)
 {
-	LPCGUID guid;
-	BOOLEAN is_enabled;
-
 	// ipv4/ipv6 loopback
 	static R_STRINGREF loopback_list[] = {
 		PR_STRINGREF_INIT (L"0.0.0.0/8"),
@@ -1678,6 +1806,9 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 		PR_STRINGREF_INIT (L"[fe80::]/10"),
 		PR_STRINGREF_INIT (L"[ff00::]/8")
 	};
+
+	LPCGUID guid;
+	BOOLEAN is_enabled;
 
 	is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
 
@@ -2478,7 +2609,10 @@ BOOLEAN _wfp_create2filters (_In_ HANDLE engine_handle, _In_ UINT line, _In_ BOO
 }
 
 _Ret_maybenull_
-PR_ARRAY _wfp_dumpfilters (_In_ HANDLE engine_handle, _In_ LPCGUID provider_id)
+PR_ARRAY _wfp_dumpfilters (
+	_In_ HANDLE engine_handle,
+	_In_ LPCGUID provider_id
+)
 {
 	PR_ARRAY guids = NULL;
 	HANDLE enum_handle;
@@ -2525,7 +2659,10 @@ PR_ARRAY _wfp_dumpfilters (_In_ HANDLE engine_handle, _In_ LPCGUID provider_id)
 	return guids;
 }
 
-VOID NTAPI _wfp_applythread (_In_ PVOID arglist, _In_ ULONG busy_count)
+VOID NTAPI _wfp_applythread (
+	_In_ PVOID arglist,
+	_In_ ULONG busy_count
+)
 {
 	PITEM_CONTEXT context;
 	HANDLE engine_handle;
@@ -2570,7 +2707,9 @@ VOID NTAPI _wfp_applythread (_In_ PVOID arglist, _In_ ULONG busy_count)
 	_r_queuedlock_releaseshared (&lock_apply);
 }
 
-VOID _wfp_firewallenable (_In_ BOOLEAN is_enable)
+VOID _wfp_firewallenable (
+	_In_ BOOLEAN is_enable
+)
 {
 	static NET_FW_PROFILE_TYPE2 profile_types[] = {
 		NET_FW_PROFILE2_DOMAIN,
@@ -2581,14 +2720,24 @@ VOID _wfp_firewallenable (_In_ BOOLEAN is_enable)
 	INetFwPolicy2 *INetFwPolicy = NULL;
 	HRESULT hr;
 
-	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
+	hr = CoCreateInstance (
+		&CLSID_NetFwPolicy2,
+		NULL,
+		CLSCTX_INPROC_SERVER,
+		&IID_INetFwPolicy2,
+		&INetFwPolicy
+	);
 
 	if (FAILED (hr))
 		return;
 
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
 	{
-		hr = INetFwPolicy2_put_FirewallEnabled (INetFwPolicy, profile_types[i], is_enable ? VARIANT_TRUE : VARIANT_FALSE);
+		hr = INetFwPolicy2_put_FirewallEnabled (
+			INetFwPolicy,
+			profile_types[i],
+			is_enable ? VARIANT_TRUE : VARIANT_FALSE
+		);
 
 		if (FAILED (hr))
 			_r_log_v (LOG_LEVEL_INFO, NULL, L"INetFwPolicy2_put_FirewallEnabled", hr, L"%d", profile_types[i]);
@@ -2611,13 +2760,23 @@ BOOLEAN _wfp_firewallisenabled ()
 
 	status = VARIANT_FALSE;
 
-	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
+	hr = CoCreateInstance (
+		&CLSID_NetFwPolicy2,
+		NULL,
+		CLSCTX_INPROC_SERVER,
+		&IID_INetFwPolicy2,
+		&INetFwPolicy
+	);
 
 	if (SUCCEEDED (hr))
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
 		{
-			hr = INetFwPolicy2_get_FirewallEnabled (INetFwPolicy, profile_types[i], &status);
+			hr = INetFwPolicy2_get_FirewallEnabled (
+				INetFwPolicy,
+				profile_types[i],
+				&status
+			);
 
 			if (SUCCEEDED (hr))
 			{
@@ -2635,7 +2794,11 @@ BOOLEAN _wfp_firewallisenabled ()
 	return FALSE;
 }
 
-NTSTATUS _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type, _Out_ PVOID_PTR byte_blob)
+NTSTATUS _FwpmGetAppIdFromFileName1 (
+	_In_ PR_STRING path,
+	_In_ ENUM_TYPE_DATA type,
+	_Out_ PVOID_PTR byte_blob
+)
 {
 	PR_STRING original_path;
 	NTSTATUS status;
@@ -2646,7 +2809,11 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA ty
 	{
 		if (_r_str_gethash2 (path, TRUE) == config.ntoskrnl_hash)
 		{
-			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), byte_blob);
+			ByteBlobAlloc (
+				path->buffer,
+				path->length + sizeof (UNICODE_NULL),
+				byte_blob
+			);
 
 			return STATUS_SUCCESS;
 		}
@@ -2703,7 +2870,11 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA ty
 				}
 			}
 
-			ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), byte_blob);
+			ByteBlobAlloc (
+				original_path->buffer,
+				original_path->length + sizeof (UNICODE_NULL),
+				byte_blob
+			);
 
 			_r_obj_dereference (original_path);
 
@@ -2717,7 +2888,11 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA ty
 		if (type == DATA_APP_DEVICE)
 			_r_str_tolower (&original_path->sr); // lower is important!
 
-		ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), byte_blob);
+		ByteBlobAlloc (
+			original_path->buffer,
+			original_path->length + sizeof (UNICODE_NULL),
+			byte_blob
+		);
 
 		_r_obj_dereference (original_path);
 
@@ -2727,7 +2902,11 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA ty
 	return STATUS_FILE_NOT_AVAILABLE;
 }
 
-VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Out_ PVOID_PTR byte_blob)
+VOID ByteBlobAlloc (
+	_In_ LPCVOID data,
+	_In_ SIZE_T bytes_count,
+	_Out_ PVOID_PTR byte_blob
+)
 {
 	FWP_BYTE_BLOB *blob;
 
@@ -2741,7 +2920,9 @@ VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Out_ PVOID_PTR 
 	*byte_blob = blob;
 }
 
-VOID ByteBlobFree (_Inout_ PVOID_PTR byte_blob)
+VOID ByteBlobFree (
+	_Inout_ PVOID_PTR byte_blob
+)
 {
 	FWP_BYTE_BLOB *original_blob;
 
