@@ -1261,22 +1261,42 @@ NTSTATUS _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ PR_STRING path_custom)
 
 	if (path_custom)
 	{
-		status = _app_db_openfromfile (&db_info, path_custom, XML_VERSION_3, XML_TYPE_PROFILE);
+		status = _app_db_openfromfile (
+			&db_info,
+			path_custom,
+			XML_VERSION_MINIMAL,
+			XML_TYPE_PROFILE
+		);
 	}
 	else
 	{
 		_r_queuedlock_acquireshared (&lock_profile);
 
-		status = _app_db_openfromfile (&db_info, profile_info.profile_path, XML_VERSION_3, XML_TYPE_PROFILE);
+		status = _app_db_openfromfile (
+			&db_info,
+			profile_info.profile_path,
+			XML_VERSION_MINIMAL,
+			XML_TYPE_PROFILE
+		);
 
 		if (status != STATUS_SUCCESS)
 		{
-			status = _app_db_openfromfile (&db_info, profile_info.profile_path_backup, XML_VERSION_3, XML_TYPE_PROFILE);
+			status = _app_db_openfromfile (
+				&db_info,
+				profile_info.profile_path_backup,
+				XML_VERSION_MINIMAL,
+				XML_TYPE_PROFILE
+			);
 
 			if (status != STATUS_SUCCESS)
 			{
 				// try to load old profile.xml
-				status = _app_db_openfromfile (&db_info, profile_info.profile_path_old, XML_VERSION_3, XML_TYPE_PROFILE);
+				status = _app_db_openfromfile (
+					&db_info,
+					profile_info.profile_path_old,
+					XML_VERSION_MINIMAL,
+					XML_TYPE_PROFILE
+				);
 			}
 		}
 
