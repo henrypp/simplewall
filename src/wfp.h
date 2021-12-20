@@ -76,7 +76,7 @@ VOID NTAPI _wfp_applythread (_In_ PVOID arglist, _In_ ULONG busy_count);
 VOID _wfp_firewallenable (_In_ BOOLEAN is_enable);
 BOOLEAN _wfp_firewallisenabled ();
 
-ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type, _Out_ PVOID_PTR byte_blob);
+NTSTATUS _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type, _Out_ PVOID_PTR byte_blob);
 
 VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Out_ PVOID_PTR byte_blob);
 VOID ByteBlobFree (_Inout_ PVOID_PTR byte_blob);

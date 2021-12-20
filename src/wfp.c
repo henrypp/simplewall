@@ -946,6 +946,8 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 	UINT8 protocol;
 	ADDRESS_FAMILY af;
 
+	NTSTATUS status;
+
 	if (filter_config)
 	{
 		direction = filter_config->direction;
@@ -1011,9 +1013,9 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 		}
 		else
 		{
-			ULONG code = _FwpmGetAppIdFromFileName1 (ptr_app->original_path, ptr_app->type, &byte_blob);
+			status = _FwpmGetAppIdFromFileName1 (ptr_app->original_path, ptr_app->type, &byte_blob);
 
-			if (code == ERROR_SUCCESS)
+			if (status == STATUS_SUCCESS)
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_APP_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -1025,8 +1027,8 @@ BOOLEAN _wfp_createrulefilter (_In_ HANDLE engine_handle, _In_ ENUM_TYPE_DATA fi
 			else
 			{
 				// do not log file not found to error log
-				if (code != ERROR_FILE_NOT_FOUND && code != ERROR_PATH_NOT_FOUND)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmGetAppIdFromFileName", code, _r_obj_getstring (ptr_app->original_path));
+				if (status != ERROR_FILE_NOT_FOUND && status != ERROR_PATH_NOT_FOUND)
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmGetAppIdFromFileName", status, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
@@ -2633,10 +2635,10 @@ BOOLEAN _wfp_firewallisenabled ()
 	return FALSE;
 }
 
-ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type, _Out_ PVOID_PTR byte_blob)
+NTSTATUS _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type, _Out_ PVOID_PTR byte_blob)
 {
 	PR_STRING original_path;
-	ULONG code;
+	NTSTATUS status;
 
 	*byte_blob = NULL;
 
@@ -2646,25 +2648,24 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 		{
 			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), byte_blob);
 
-			return ERROR_SUCCESS;
+			return STATUS_SUCCESS;
 		}
 		else
 		{
-			original_path = _r_path_ntpathfromdos (path, &code);
+			status = _r_path_ntpathfromdos (path, &original_path);
 
-			if (!original_path)
+			if (status != STATUS_SUCCESS)
 			{
 				// file is inaccessible or not found, maybe low-level driver preventing file access?
 				// try another way!
 				if (
-					code == ERROR_ACCESS_DENIED ||
-					code == ERROR_FILE_NOT_FOUND ||
-					code == ERROR_PATH_NOT_FOUND
+					status == STATUS_ACCESS_DENIED ||
+					status == STATUS_OBJECT_NAME_NOT_FOUND
 					)
 				{
 					if (!_app_isappvalidpath (&path->sr))
 					{
-						return code;
+						return status;
 					}
 					else
 					{
@@ -2680,12 +2681,13 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 						// file path (without root)
 						_r_obj_initializestringref (&path_skip_root, PathSkipRoot (path->buffer));
 
-						original_path = _r_path_ntpathfromdos (path_root, &code);
+						status = _r_path_ntpathfromdos (path_root, &original_path);
 
-						if (!original_path)
+						if (status != STATUS_SUCCESS)
 						{
 							_r_obj_dereference (path_root);
-							return code;
+
+							return status;
 						}
 
 						_r_obj_movereference (&original_path, _r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root));
@@ -2697,7 +2699,7 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 				}
 				else
 				{
-					return code;
+					return status;
 				}
 			}
 
@@ -2705,7 +2707,7 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 
 			_r_obj_dereference (original_path);
 
-			return ERROR_SUCCESS;
+			return STATUS_SUCCESS;
 		}
 	}
 	else if (type == DATA_APP_PICO || type == DATA_APP_DEVICE)
@@ -2719,10 +2721,10 @@ ULONG _FwpmGetAppIdFromFileName1 (_In_ PR_STRING path, _In_ ENUM_TYPE_DATA type,
 
 		_r_obj_dereference (original_path);
 
-		return ERROR_SUCCESS;
+		return STATUS_SUCCESS;
 	}
 
-	return ERROR_UNIDENTIFIED_ERROR;
+	return STATUS_FILE_NOT_AVAILABLE;
 }
 
 VOID ByteBlobAlloc (_In_ LPCVOID data, _In_ SIZE_T bytes_count, _Out_ PVOID_PTR byte_blob)
