@@ -532,8 +532,6 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 				PITEM_COLOR ptr_clr;
 				ULONG_PTR app_hash;
 				ULONG_PTR index;
-				ULONG view_type;
-				BOOLEAN is_tableview;
 				BOOLEAN is_systemapp;
 				BOOLEAN is_validconnection;
 
@@ -547,9 +545,6 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 					return CDRF_DODEFAULT;
 
 				new_clr = 0;
-
-				view_type = _r_listview_getview (hwnd, ctrl_id);
-				is_tableview = (view_type == LV_VIEW_DETAILS || view_type == LV_VIEW_SMALLICON || view_type == LV_VIEW_TILE);
 
 				is_systemapp = FALSE;
 				is_validconnection = FALSE;
@@ -627,8 +622,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 					lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
 					lpnmlv->clrTextBk = new_clr;
 
-					if (is_tableview)
-						_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
+					_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
 
 					return CDRF_NEWFONT;
 				}
