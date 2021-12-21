@@ -646,7 +646,13 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 		{
 			case 0:
 			{
-				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _app_getappdisplayname (ptr_app, FALSE));
+				string = _app_getappdisplayname (ptr_app, FALSE);
+
+				if (string)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+					_r_obj_dereference (string);
+				}
 				break;
 			}
 
@@ -984,7 +990,14 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 			{
 				if (ptr_app)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _app_getappdisplayname (ptr_app, TRUE));
+					string = _app_getappdisplayname (ptr_app, TRUE);
+
+					if (string)
+					{
+						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+						_r_obj_dereference (string);
+					}
+
 				}
 				else if (ptr_log->path)
 				{

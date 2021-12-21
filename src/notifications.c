@@ -325,7 +325,7 @@ VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_f
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	PR_STRING localized_string;
-	R_STRINGREF display_name;
+	PR_STRING display_name;
 	BOOLEAN is_fullscreenmode;
 
 	ptr_app = _app_getappitem (ptr_log->app_hash);
@@ -350,9 +350,9 @@ VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_f
 
 	// print name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
-	_r_obj_initializestringrefconst (&display_name, _app_getappdisplayname (ptr_app, TRUE));
+	display_name = _app_getappdisplayname (ptr_app, TRUE);
 
-	_r_ctrl_settablestring (hwnd, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, &display_name);
+	_r_ctrl_settablestring (hwnd, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, display_name ? &display_name->sr : &empty_sr);
 
 	// print signature
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
@@ -433,6 +433,9 @@ VOID _app_notify_show (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ BOOLEAN is_f
 
 	if (localized_string)
 		_r_obj_dereference (localized_string);
+
+	if (display_name)
+		_r_obj_dereference (display_name);
 
 	_r_obj_dereference (ptr_app);
 }
@@ -1267,7 +1270,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 					if (ptr_app)
 					{
-						rule_name = _r_obj_createstring (_app_getappdisplayname (ptr_app, TRUE));
+						rule_name = _app_getappdisplayname (ptr_app, TRUE);
 					}
 					else
 					{

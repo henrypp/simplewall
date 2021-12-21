@@ -67,7 +67,10 @@ BOOLEAN _app_isappsigned (_In_ ULONG_PTR app_hash);
 BOOLEAN _app_isappvalidbinary (_In_ ENUM_TYPE_DATA type, _In_ PR_STRING path);
 BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path);
 
-LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened);
+_Ret_maybenull_
+PR_STRING _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened);
+
+_Ret_maybenull_
 PR_STRING _app_getappname (_In_ PITEM_APP ptr_app);
 
 VOID _app_getfileicon (_Inout_ PITEM_APP_INFO ptr_app_info);

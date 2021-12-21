@@ -1059,7 +1059,7 @@ BOOLEAN _wfp_createrulefilter (
 			}
 			else
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), 0, _app_getappdisplayname (ptr_app, TRUE));
+				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
@@ -1077,7 +1077,7 @@ BOOLEAN _wfp_createrulefilter (
 			}
 			else
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), 0, _app_getappdisplayname (ptr_app, TRUE));
+				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
@@ -1098,7 +1098,7 @@ BOOLEAN _wfp_createrulefilter (
 			else
 			{
 				// do not log file not found to error log
-				if (status != ERROR_FILE_NOT_FOUND && status != ERROR_PATH_NOT_FOUND)
+				if (status != STATUS_OBJECT_NAME_NOT_FOUND)
 					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmGetAppIdFromFileName", status, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
@@ -1663,6 +1663,7 @@ BOOLEAN _wfp_create3filters (
 	PR_ARRAY guids;
 	LPCGUID guid;
 	PITEM_APP ptr_app;
+	PR_STRING string;
 	BOOLEAN is_enabled;
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
@@ -1711,10 +1712,12 @@ BOOLEAN _wfp_create3filters (
 
 		if (ptr_app && ptr_app->is_enabled)
 		{
+			string = _app_getappdisplayname (ptr_app, TRUE);
+
 			if (!_wfp_createrulefilter (
 				engine_handle,
 				ptr_app->type,
-				_app_getappdisplayname (ptr_app, TRUE),
+				_r_obj_getstring (string),
 				ptr_app->app_hash,
 				NULL,
 				NULL,
@@ -1727,6 +1730,9 @@ BOOLEAN _wfp_create3filters (
 			{
 				ptr_app->is_haveerrors = TRUE;
 			}
+
+			if (string)
+				_r_obj_dereference (string);
 		}
 	}
 

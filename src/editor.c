@@ -653,7 +653,14 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			// app display name
 			if (GetDlgItem (hwnd, IDC_APP_NAME_ID))
 			{
-				_r_ctrl_setstring (hwnd, IDC_APP_NAME_ID, _app_getappdisplayname (context->ptr_app, TRUE));
+				string = _app_getappdisplayname (context->ptr_app, TRUE);
+
+				if (string)
+				{
+					_r_ctrl_setstring (hwnd, IDC_APP_NAME_ID, string->buffer);
+
+					_r_obj_dereference (string);
+				}
 
 				SendDlgItemMessage (hwnd, IDC_APP_NAME_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 			}
@@ -1400,6 +1407,7 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 		case WM_INITDIALOG:
 		{
 			WCHAR title[128];
+			PR_STRING string;
 			INT tabs_count;
 
 			context = (PEDITOR_CONTEXT)lparam;
@@ -1426,7 +1434,13 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 			}
 			else
 			{
-				_r_str_copy (title, RTL_NUMBER_OF (title), _app_getappdisplayname (context->ptr_app, TRUE));
+				string = _app_getappdisplayname (context->ptr_app, TRUE);
+
+				if (string)
+				{
+					_r_str_copy (title, RTL_NUMBER_OF (title), string->buffer);
+					_r_obj_dereference (string);
+				}
 
 				_app_editor_addtabitem (hwnd, IDS_SETTINGS_GENERAL, IDD_EDITOR_APPINFO, context, &tabs_count);
 				_app_editor_addtabitem (hwnd, IDS_TRAY_RULES, IDD_EDITOR_APPRULES, context, &tabs_count);

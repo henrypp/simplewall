@@ -513,40 +513,49 @@ BOOLEAN _app_isappvalidpath (_In_ PR_STRINGREF path)
 	return TRUE;
 }
 
-LPCWSTR _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened)
+_Ret_maybenull_
+PR_STRING _app_getappdisplayname (_In_ PITEM_APP ptr_app, _In_ BOOLEAN is_shortened)
 {
 	if (ptr_app->app_hash == config.ntoskrnl_hash)
 	{
 		if (ptr_app->original_path)
-			return ptr_app->original_path->buffer;
+			return _r_obj_reference (ptr_app->original_path);
 	}
 
 	if (ptr_app->type == DATA_APP_SERVICE)
 	{
 		if (ptr_app->original_path)
-			return ptr_app->original_path->buffer;
+			return _r_obj_reference (ptr_app->original_path);
 	}
 	else if (ptr_app->type == DATA_APP_UWP)
 	{
 		if (ptr_app->display_name)
-			return ptr_app->display_name->buffer;
-
+		{
+			return _r_obj_reference (ptr_app->display_name);
+		}
 		else if (ptr_app->real_path)
-			return ptr_app->real_path->buffer;
-
+		{
+			return _r_obj_reference (ptr_app->real_path);
+		}
 		else if (ptr_app->original_path)
-			return ptr_app->original_path->buffer;
+		{
+			return _r_obj_reference (ptr_app->original_path);
+		}
 	}
 
 	if (is_shortened || _r_config_getboolean (L"ShowFilenames", TRUE))
 	{
 		if (ptr_app->short_name)
-			return ptr_app->short_name->buffer;
+			return _r_obj_reference (ptr_app->short_name);
 	}
 
-	return ptr_app->real_path ? ptr_app->real_path->buffer : NULL;
+	if (ptr_app->real_path)
+		return _r_obj_reference (ptr_app->real_path);
+
+	return NULL;
 }
 
+_Ret_maybenull_
 PR_STRING _app_getappname (_In_ PITEM_APP ptr_app)
 {
 	if (ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE)
