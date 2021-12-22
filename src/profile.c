@@ -163,7 +163,13 @@ PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data)
 	return NULL;
 }
 
-ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In_ PR_STRINGREF path, _In_opt_ PR_STRING display_name, _In_opt_ PR_STRING real_path)
+ULONG_PTR _app_addapplication (
+	_In_opt_ HWND hwnd,
+	_In_ ENUM_TYPE_DATA type,
+	_In_ PR_STRING path,
+	_In_opt_ PR_STRING display_name,
+	_In_opt_ PR_STRING real_path
+)
 {
 	WCHAR path_full[1024];
 	R_STRINGREF path_temp;
@@ -174,10 +180,10 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	if (!path->length)
 		return 0;
 
-	if (_app_isappvalidpath (path) && PathIsDirectory (path->buffer))
+	if (_app_isappvalidpath (&path->sr) && PathIsDirectory (path->buffer))
 		return 0;
 
-	_r_obj_initializestringref3 (&path_temp, path);
+	_r_obj_initializestringref2 (&path_temp, path);
 
 	// prevent possible duplicate apps entries with short path (issue #640)
 	if (_r_str_findchar (&path_temp, L'~', FALSE) != SIZE_MAX)
@@ -264,7 +270,14 @@ ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In
 	return app_hash;
 }
 
-PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote, _In_opt_ PR_STRING rule_local, _In_ FWP_DIRECTION direction, _In_ UINT8 protocol, _In_ ADDRESS_FAMILY af)
+PITEM_RULE _app_addrule (
+	_In_opt_ PR_STRING name,
+	_In_opt_ PR_STRING rule_remote,
+	_In_opt_ PR_STRING rule_local,
+	_In_ FWP_DIRECTION direction,
+	_In_ UINT8 protocol,
+	_In_ ADDRESS_FAMILY af
+)
 {
 	PITEM_RULE ptr_rule;
 
@@ -313,7 +326,12 @@ PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote
 }
 
 _Ret_maybenull_
-PITEM_RULE_CONFIG _app_addruleconfigtable (_In_ PR_HASHTABLE hashtable, _In_ ULONG_PTR rule_hash, _In_opt_ PR_STRING name, _In_ BOOLEAN is_enabled)
+PITEM_RULE_CONFIG _app_addruleconfigtable (
+	_In_ PR_HASHTABLE hashtable,
+	_In_ ULONG_PTR rule_hash,
+	_In_opt_ PR_STRING name,
+	_In_ BOOLEAN is_enabled
+)
 {
 	ITEM_RULE_CONFIG entry = {0};
 
@@ -1173,7 +1191,7 @@ VOID _app_profile_load_fallback ()
 
 	if (!_app_isappfound (config.my_hash))
 	{
-		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, &config.my_path->sr, NULL, NULL);
+		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, config.my_path, NULL, NULL);
 
 		if (app_hash)
 			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
@@ -1185,10 +1203,10 @@ VOID _app_profile_load_fallback ()
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
 		if (!_app_isappfound (config.ntoskrnl_hash) && config.system_path)
-			_app_addapplication (NULL, DATA_UNKNOWN, &config.system_path->sr, NULL, NULL);
+			_app_addapplication (NULL, DATA_UNKNOWN, config.system_path, NULL, NULL);
 
 		if (!_app_isappfound (config.svchost_hash) && config.svchost_path)
-			_app_addapplication (NULL, DATA_UNKNOWN, &config.svchost_path->sr, NULL, NULL);
+			_app_addapplication (NULL, DATA_UNKNOWN, config.svchost_path, NULL, NULL);
 
 		_app_setappinfobyhash (config.ntoskrnl_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
 		_app_setappinfobyhash (config.svchost_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
@@ -1311,8 +1329,6 @@ CleanupExit:
 			_app_listview_clearitems (hwnd);
 
 		_app_profile_refresh ();
-
-		_app_profile_load_fallback ();
 	}
 
 	if (status != STATUS_SUCCESS)
@@ -1330,6 +1346,8 @@ CleanupExit:
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 			_app_profile_load_internal (profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
 	}
+
+	_app_profile_load_fallback ();
 
 	if ((path_custom && status == STATUS_SUCCESS) || !path_custom)
 	{

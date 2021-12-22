@@ -2366,7 +2366,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 				{
 					if (!_app_isappfound (ptr_network->app_hash))
 					{
-						ptr_network->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_network->path->sr, NULL, NULL);
+						ptr_network->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_network->path, NULL, NULL);
 
 						if (ptr_network->app_hash)
 						{
@@ -2411,7 +2411,7 @@ VOID _app_command_openeditor (_In_ HWND hwnd)
 				{
 					if (!_app_isappfound (ptr_log->app_hash))
 					{
-						ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_log->path->sr, NULL, NULL);
+						ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_log->path, NULL, NULL);
 
 						if (ptr_log->app_hash)
 						{
@@ -2547,7 +2547,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		{
 			if (!_app_isappfound (ptr_network->app_hash))
 			{
-				ptr_network->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_network->path->sr, NULL, NULL);
+				ptr_network->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_network->path, NULL, NULL);
 
 				if (ptr_network->app_hash)
 				{
@@ -2580,7 +2580,7 @@ VOID _app_command_properties (_In_ HWND hwnd)
 		{
 			if (!_app_isappfound (ptr_log->app_hash))
 			{
-				ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_log->path->sr, NULL, NULL);
+				ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_log->path, NULL, NULL);
 
 				if (ptr_log->app_hash)
 				{

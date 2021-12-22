@@ -18,12 +18,30 @@ PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
 _Ret_maybenull_
 PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data);
 
-ULONG_PTR _app_addapplication (_In_opt_ HWND hwnd, _In_ ENUM_TYPE_DATA type, _In_ PR_STRINGREF path, _In_opt_ PR_STRING display_name, _In_opt_ PR_STRING real_path);
+ULONG_PTR _app_addapplication (
+	_In_opt_ HWND hwnd,
+	_In_ ENUM_TYPE_DATA type,
+	_In_ PR_STRING path,
+	_In_opt_ PR_STRING display_name,
+	_In_opt_ PR_STRING real_path
+);
 
-PITEM_RULE _app_addrule (_In_opt_ PR_STRING name, _In_opt_ PR_STRING rule_remote, _In_opt_ PR_STRING rule_local, _In_ FWP_DIRECTION direction, _In_ UINT8 protocol, _In_ ADDRESS_FAMILY af);
+PITEM_RULE _app_addrule (
+	_In_opt_ PR_STRING name,
+	_In_opt_ PR_STRING rule_remote,
+	_In_opt_ PR_STRING rule_local,
+	_In_ FWP_DIRECTION direction,
+	_In_ UINT8 protocol,
+	_In_ ADDRESS_FAMILY af
+);
 
 _Ret_maybenull_
-PITEM_RULE_CONFIG _app_addruleconfigtable (_In_ PR_HASHTABLE hashtable, _In_ ULONG_PTR rule_hash, _In_opt_ PR_STRING name, _In_ BOOLEAN is_enabled);
+PITEM_RULE_CONFIG _app_addruleconfigtable (
+	_In_ PR_HASHTABLE hashtable,
+	_In_ ULONG_PTR rule_hash,
+	_In_opt_ PR_STRING name,
+	_In_ BOOLEAN is_enabled
+);
 
 _Ret_maybenull_
 PITEM_APP _app_getappitem (_In_ ULONG_PTR app_hash);

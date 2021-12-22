@@ -1961,7 +1961,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 				if (DragQueryFile (hdrop, i, string->buffer, length + 1))
 				{
-					app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &string->sr, NULL, NULL);
+					app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, string, NULL, NULL);
 				}
 
 				_r_obj_dereference (string);
@@ -3102,7 +3102,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 							if (path)
 							{
-								app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &path->sr, NULL, NULL);
+								app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, path, NULL, NULL);
 
 								if (app_hash)
 								{

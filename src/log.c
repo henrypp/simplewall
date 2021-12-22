@@ -1223,7 +1223,7 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 
 	if (is_notexist)
 	{
-		ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &ptr_log->path->sr, NULL, NULL);
+		ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_log->path, NULL, NULL);
 
 		if (ptr_log->app_hash)
 		{

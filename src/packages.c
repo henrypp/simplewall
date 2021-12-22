@@ -174,7 +174,7 @@ VOID _app_package_getpackageslist ()
 									// load additional info from appx manifest
 									_app_package_getpackageinfo (&real_path);
 
-									app_hash = _app_addapplication (NULL, DATA_APP_UWP, &package_sid_string->sr, display_name, real_path);
+									app_hash = _app_addapplication (NULL, DATA_APP_UWP, package_sid_string, display_name, real_path);
 
 									if (app_hash)
 									{
@@ -223,10 +223,10 @@ VOID _app_package_getserviceslist ()
 
 	WCHAR general_key[256];
 	EXPLICIT_ACCESS ea;
-	R_STRINGREF service_name;
 	LPENUM_SERVICE_STATUS_PROCESS service;
 	LPENUM_SERVICE_STATUS_PROCESS services;
 	PVOID service_sd;
+	PR_STRING service_name;
 	PR_STRING service_path;
 	PR_BYTE service_sid;
 	LONG64 service_timestamp;
@@ -298,17 +298,20 @@ VOID _app_package_getserviceslist ()
 		{
 			service = &services[i];
 
-			_r_obj_initializestringref (&service_name, service->lpServiceName);
-
-			app_hash = _r_str_gethash3 (&service_name, TRUE);
+			app_hash = _r_str_gethash (service->lpServiceName, TRUE);
 
 			if (_app_isappfound (app_hash))
 				continue;
 
 			_r_str_printf (general_key, RTL_NUMBER_OF (general_key), L"System\\CurrentControlSet\\Services\\%s", service->lpServiceName);
 
+			service_name = _r_obj_createstring (service->lpServiceName);
+
 			if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, general_key, 0, KEY_READ, &hkey) != ERROR_SUCCESS)
+			{
+				_r_obj_dereference (service_name);
 				continue;
+			}
 
 			// skip userservice instances service types (win10+)
 			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
@@ -317,7 +320,9 @@ VOID _app_package_getserviceslist ()
 
 				if (!service_type || (service_type & SERVICE_USERSERVICE_INSTANCE) != 0)
 				{
+					_r_obj_dereference (service_name);
 					RegCloseKey (hkey);
+
 					continue;
 				}
 			}
@@ -355,7 +360,7 @@ VOID _app_package_getserviceslist ()
 				service_timestamp = _r_reg_querytimestamp (hkey);
 
 				// query service sid
-				status = _r_sys_getservicesid (&service_name, &service_sid);
+				status = _r_sys_getservicesid (&service_name->sr, &service_sid);
 
 				if (status == STATUS_SUCCESS)
 				{
@@ -375,7 +380,7 @@ VOID _app_package_getserviceslist ()
 					{
 						name_string = _r_obj_createstring (service->lpDisplayName);
 
-						app_hash = _app_addapplication (NULL, DATA_APP_SERVICE, &service_name, name_string, service_path);
+						app_hash = _app_addapplication (NULL, DATA_APP_SERVICE, service_name, name_string, service_path);
 
 						if (app_hash)
 						{
@@ -400,6 +405,8 @@ VOID _app_package_getserviceslist ()
 
 				_r_obj_dereference (service_path);
 			}
+
+			_r_obj_dereference (service_name);
 
 			RegCloseKey (hkey);
 		}
