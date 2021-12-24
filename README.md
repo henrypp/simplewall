@@ -177,13 +177,13 @@ _To specify more than one ip, port and/or host, use semicolon._
 A: Yes. Installed filters are working even if simplewall is terminated.
 
 #### Q: What apps are blocked in default configuration?
-A: By default, simplewall blocks **all** applications, you do not need to create custom rules to block specific application.
+A: By default, simplewall blocks **all** applications. You do not need to create custom rules to block specific applications.
 
 #### Q: Is it safe to use simplewall with Windows Firewall?
-A:  Yes. You do not need to disable Windows Firewall. This two firewall works independently.
+A:  Yes. You do not need to disable Windows Firewall. These two firewalls work independently.
 
 #### Q: How can i disable blocklist entirely?
-A:  Open `Settings` -> `Blocklist` and then click radio buttons labeled `Disable`.
+A:  Open `Settings` -> `Blocklist` and then click the radio buttons labeled `Disable`.
 
 #### Q: Where is blacklist mode?
 A: Blacklist was removed many days ago for uselessness. But if you need it, you can still configure it.
@@ -200,7 +200,7 @@ A: Blacklist was removed many days ago for uselessness. But if you need it, you 
 </details>
 
 #### Q: Why does my network icon have an exclamation mark?
-A: When you are connected to a network, Windows checks for internet connectivity using Active Probing. This feature is named as NCSI (Network Connectivity Status Indicator). You can resolve this by one of this ways:
+A: When you are connected to a network, Windows checks for internet connectivity using Active Probing. This feature is named as NCSI (Network Connectivity Status Indicator). You can resolve this problem in one of the following ways:
 
 <details>
 <summary>Solution 1: Enable NCSI through internal system rule:</summary>
@@ -238,8 +238,8 @@ Windows Registry Editor Version 5.00
 ---
 </details>
 
-#### Q: How can i disable Windows Firewall?
-Start command line _as an administrator_, and enter commands below.
+#### Q: How can I disable Windows Firewall?
+Start the command line _as an administrator_, and enter the commands below.
 
 <details>
 <summary>Disable Windows Firewall profiles:</summary>
@@ -261,8 +261,8 @@ netsh advfirewall set allprofiles state on
 ---
 </details>
 
-#### Q: How can i view all filters information?
-Start command line _as an administrator_, and enter commands below.
+#### Q: How can I view all filters information?
+Start the command line _as an administrator_, and enter the commands below.
 
 <details>
 <summary>Dump filters information saved into a `filters.xml` file:</summary>
