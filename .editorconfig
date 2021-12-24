@@ -7,8 +7,7 @@ trim_trailing_whitespace=true
 insert_final_newline=true
 
 [*.{c,cpp,h,hpp}]
-
-cpp_generate_documentation_comments = xml
+cpp_generate_documentation_comments = doxygen_triple_slash
 
 cpp_indent_braces = false
 cpp_indent_multi_line_relative_to = statement_begin
