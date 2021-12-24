@@ -2230,7 +2230,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 									return TRUE;
 								}
 							}
-							else
+							else if (app_hash != config.my_hash)
 							{
 								if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION_ALLOW), L"ConfirmAllow"))
 								{
