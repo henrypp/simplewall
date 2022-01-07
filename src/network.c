@@ -22,7 +22,9 @@ PITEM_NETWORK_CONTEXT _app_network_getcontext ()
 	return network_context;
 }
 
-VOID _app_network_initialize (_In_ HWND hwnd)
+VOID _app_network_initialize (
+	_In_ HWND hwnd
+)
 {
 	PITEM_NETWORK_CONTEXT network_context;
 	R_ENVIRONMENT environment;
@@ -77,7 +79,9 @@ VOID _app_network_uninitialize ()
 	_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 }
 
-VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
+VOID _app_network_generatetable (
+	_Inout_ PITEM_NETWORK_CONTEXT network_context
+)
 {
 	PITEM_NETWORK ptr_network;
 	ULONG_PTR network_hash;
@@ -115,7 +119,16 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 				remote_addr.S_un.S_addr = tcp4_table->table[i].dwRemoteAddr;
 				local_addr.S_un.S_addr = tcp4_table->table[i].dwLocalAddr;
 
-				network_hash = _app_network_gethash (AF_INET, tcp4_table->table[i].dwOwningPid, &remote_addr, tcp4_table->table[i].dwRemotePort, &local_addr, tcp4_table->table[i].dwLocalPort, IPPROTO_TCP, tcp4_table->table[i].dwState);
+				network_hash = _app_network_gethash (
+					AF_INET,
+					tcp4_table->table[i].dwOwningPid,
+					&remote_addr,
+					tcp4_table->table[i].dwRemotePort,
+					&local_addr,
+					tcp4_table->table[i].dwLocalPort,
+					IPPROTO_TCP,
+					tcp4_table->table[i].dwState
+				);
 
 				if (_app_network_isitemfound (network_hash))
 				{
@@ -128,7 +141,7 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 
 				ptr_network = _r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
 
-				if (!_app_network_getpath (tcp4_table->table[i].dwOwningPid, tcp4_table->table[i].OwningModuleInfo, ptr_network))
+				if (!_app_network_getpath (ptr_network, tcp4_table->table[i].dwOwningPid, tcp4_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
 					continue;
@@ -148,8 +161,13 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 
 				if (tcp4_table->table[i].dwState == MIB_TCP_STATE_ESTAB)
 				{
-					if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) || _app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
+					if (
+						_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) ||
+						_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr)
+						)
+					{
 						ptr_network->is_connection = TRUE;
+					}
 				}
 
 				_r_queuedlock_acquireexclusive (&network_context->lock_network);
@@ -180,7 +198,16 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 		{
 			for (ULONG i = 0; i < tcp6_table->dwNumEntries; i++)
 			{
-				network_hash = _app_network_gethash (AF_INET6, tcp6_table->table[i].dwOwningPid, tcp6_table->table[i].ucRemoteAddr, tcp6_table->table[i].dwRemotePort, tcp6_table->table[i].ucLocalAddr, tcp6_table->table[i].dwLocalPort, IPPROTO_TCP, tcp6_table->table[i].dwState);
+				network_hash = _app_network_gethash (
+					AF_INET6,
+					tcp6_table->table[i].dwOwningPid,
+					tcp6_table->table[i].ucRemoteAddr,
+					tcp6_table->table[i].dwRemotePort,
+					tcp6_table->table[i].ucLocalAddr,
+					tcp6_table->table[i].dwLocalPort,
+					IPPROTO_TCP,
+					tcp6_table->table[i].dwState
+				);
 
 				if (_app_network_isitemfound (network_hash))
 				{
@@ -193,7 +220,7 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 
 				ptr_network = _r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
 
-				if (!_app_network_getpath (tcp6_table->table[i].dwOwningPid, tcp6_table->table[i].OwningModuleInfo, ptr_network))
+				if (!_app_network_getpath (ptr_network, tcp6_table->table[i].dwOwningPid, tcp6_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
 					continue;
@@ -213,8 +240,13 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 
 				if (tcp6_table->table[i].dwState == MIB_TCP_STATE_ESTAB)
 				{
-					if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) || _app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
+					if (
+						_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) ||
+						_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr6)
+						)
+					{
 						ptr_network->is_connection = TRUE;
+					}
 				}
 
 				_r_queuedlock_acquireexclusive (&network_context->lock_network);
@@ -248,7 +280,16 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 				IN_ADDR local_addr = {0};
 				local_addr.S_un.S_addr = udp4_table->table[i].dwLocalAddr;
 
-				network_hash = _app_network_gethash (AF_INET, udp4_table->table[i].dwOwningPid, NULL, 0, &local_addr, udp4_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
+				network_hash = _app_network_gethash (
+					AF_INET,
+					udp4_table->table[i].dwOwningPid,
+					NULL,
+					0,
+					&local_addr,
+					udp4_table->table[i].dwLocalPort,
+					IPPROTO_UDP,
+					0
+				);
 
 				if (_app_network_isitemfound (network_hash))
 				{
@@ -261,7 +302,7 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 
 				ptr_network = _r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
 
-				if (!_app_network_getpath (udp4_table->table[i].dwOwningPid, udp4_table->table[i].OwningModuleInfo, ptr_network))
+				if (!_app_network_getpath (ptr_network, udp4_table->table[i].dwOwningPid, udp4_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
 					continue;
@@ -305,7 +346,16 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 		{
 			for (ULONG i = 0; i < udp6_table->dwNumEntries; i++)
 			{
-				network_hash = _app_network_gethash (AF_INET6, udp6_table->table[i].dwOwningPid, NULL, 0, udp6_table->table[i].ucLocalAddr, udp6_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
+				network_hash = _app_network_gethash (
+					AF_INET6,
+					udp6_table->table[i].dwOwningPid,
+					NULL,
+					0,
+					udp6_table->table[i].ucLocalAddr,
+					udp6_table->table[i].dwLocalPort,
+					IPPROTO_UDP,
+					0
+				);
 
 				if (_app_network_isitemfound (network_hash))
 				{
@@ -318,7 +368,7 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 
 				ptr_network = _r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
 
-				if (!_app_network_getpath (udp6_table->table[i].dwOwningPid, udp6_table->table[i].OwningModuleInfo, ptr_network))
+				if (!_app_network_getpath (ptr_network, udp6_table->table[i].dwOwningPid, udp6_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
 					continue;
@@ -350,7 +400,9 @@ VOID _app_network_generatetable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
 }
 
 _Ret_maybenull_
-PITEM_NETWORK _app_network_getitem (_In_ ULONG_PTR network_hash)
+PITEM_NETWORK _app_network_getitem (
+	_In_ ULONG_PTR network_hash
+)
 {
 	PITEM_NETWORK_CONTEXT network_context;
 	PITEM_NETWORK ptr_network;
@@ -369,7 +421,9 @@ PITEM_NETWORK _app_network_getitem (_In_ ULONG_PTR network_hash)
 	return ptr_network;
 }
 
-ULONG_PTR _app_network_getappitem (_In_ ULONG_PTR network_hash)
+ULONG_PTR _app_network_getappitem (
+	_In_ ULONG_PTR network_hash
+)
 {
 	PITEM_NETWORK ptr_network;
 	ULONG_PTR hash_code;
@@ -388,7 +442,16 @@ ULONG_PTR _app_network_getappitem (_In_ ULONG_PTR network_hash)
 	return 0;
 }
 
-ULONG_PTR _app_network_gethash (_In_ ADDRESS_FAMILY af, _In_ ULONG pid, _In_opt_ LPCVOID remote_addr, _In_opt_ ULONG remote_port, _In_opt_ LPCVOID local_addr, _In_opt_ ULONG local_port, _In_ UINT8 proto, _In_ ULONG state)
+ULONG_PTR _app_network_gethash (
+	_In_ ADDRESS_FAMILY af,
+	_In_ ULONG pid,
+	_In_opt_ LPCVOID remote_addr,
+	_In_opt_ ULONG remote_port,
+	_In_opt_ LPCVOID local_addr,
+	_In_opt_ ULONG local_port,
+	_In_ UINT8 proto,
+	_In_opt_ ULONG state
+)
 {
 	WCHAR remote_address[LEN_IP_MAX] = {0};
 	WCHAR local_address[LEN_IP_MAX] = {0};
@@ -401,15 +464,16 @@ ULONG_PTR _app_network_gethash (_In_ ADDRESS_FAMILY af, _In_ ULONG pid, _In_opt_
 	if (local_addr)
 		_app_formatip (af, local_addr, local_address, RTL_NUMBER_OF (local_address), FALSE);
 
-	network_string = _r_format_string (L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG),
-									   af,
-									   pid,
-									   remote_address,
-									   remote_port,
-									   local_address,
-									   local_port,
-									   proto,
-									   state
+	network_string = _r_format_string (
+		L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG),
+		af,
+		pid,
+		remote_address,
+		remote_port,
+		local_address,
+		local_port,
+		proto,
+		state
 	);
 
 	if (!network_string)
@@ -422,7 +486,11 @@ ULONG_PTR _app_network_gethash (_In_ ADDRESS_FAMILY af, _In_ ULONG pid, _In_opt_
 	return network_hash;
 }
 
-BOOLEAN _app_network_getpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_ PITEM_NETWORK ptr_network)
+BOOLEAN _app_network_getpath (
+	_Inout_ PITEM_NETWORK ptr_network,
+	_In_ ULONG pid,
+	_In_opt_ PULONG64 modules
+)
 {
 	PR_STRING process_name;
 	NTSTATUS status;
@@ -491,7 +559,9 @@ BOOLEAN _app_network_getpath (_In_ ULONG pid, _In_opt_ PULONG64 modules, _Inout_
 	return FALSE;
 }
 
-BOOLEAN _app_network_isapphaveconnection (_In_ ULONG_PTR app_hash)
+BOOLEAN _app_network_isapphaveconnection (
+	_In_ ULONG_PTR app_hash
+)
 {
 	PITEM_NETWORK_CONTEXT network_context;
 	PITEM_NETWORK ptr_network;
@@ -524,7 +594,9 @@ BOOLEAN _app_network_isapphaveconnection (_In_ ULONG_PTR app_hash)
 	return FALSE;
 }
 
-BOOLEAN _app_network_isitemfound (_In_ ULONG_PTR network_hash)
+BOOLEAN _app_network_isitemfound (
+	_In_ ULONG_PTR network_hash
+)
 {
 	PITEM_NETWORK_CONTEXT network_context;
 	BOOLEAN is_found;
@@ -543,7 +615,10 @@ BOOLEAN _app_network_isitemfound (_In_ ULONG_PTR network_hash)
 	return is_found;
 }
 
-BOOLEAN _app_network_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID address)
+BOOLEAN _app_network_isvalidconnection (
+	_In_ ADDRESS_FAMILY af,
+	_In_ LPCVOID address
+)
 {
 	PIN_ADDR p4addr;
 	PIN6_ADDR p6addr;
@@ -576,7 +651,9 @@ BOOLEAN _app_network_isvalidconnection (_In_ ADDRESS_FAMILY af, _In_ LPCVOID add
 	return FALSE;
 }
 
-VOID _app_network_printlistviewtable (_Inout_ PITEM_NETWORK_CONTEXT network_context)
+VOID _app_network_printlistviewtable (
+	_Inout_ PITEM_NETWORK_CONTEXT network_context
+)
 {
 	PITEM_NETWORK ptr_network;
 	PR_STRING string;
@@ -649,7 +726,9 @@ VOID _app_network_printlistviewtable (_Inout_ PITEM_NETWORK_CONTEXT network_cont
 	}
 }
 
-VOID _app_network_removeitem (_In_ ULONG_PTR network_hash)
+VOID _app_network_removeitem (
+	_In_ ULONG_PTR network_hash
+)
 {
 	PITEM_NETWORK_CONTEXT network_context;
 
@@ -665,73 +744,99 @@ VOID _app_network_removeitem (_In_ ULONG_PTR network_hash)
 	_r_queuedlock_releaseexclusive (&network_context->lock_network);
 }
 
-_Ret_maybenull_
-HANDLE _app_network_subscribe (_In_ HANDLE engine_handle)
-{
-	PITEM_NETWORK_CONTEXT network_context;
-	HANDLE current_handle;
-	HANDLE new_handle;
+//_Ret_maybenull_
+//HANDLE _app_network_subscribe (
+//	_In_ HANDLE engine_handle
+//)
+//{
+//	PITEM_NETWORK_CONTEXT network_context;
+//	HANDLE current_handle;
+//	HANDLE new_handle;
+//
+//	network_context = _app_network_getcontext ();
+//
+//	if (!network_context)
+//		return NULL;
+//
+//	current_handle = InterlockedCompareExchangePointer (
+//		&network_context->hconnections,
+//		NULL,
+//		NULL
+//	);
+//
+//	if (!current_handle)
+//	{
+//		FWPM_CONNECTION_SUBSCRIPTION subscription;
+//		FWPM_CONNECTION_ENUM_TEMPLATE enum_template;
+//		ULONG code;
+//
+//		RtlZeroMemory (&subscription, sizeof (subscription));
+//		RtlZeroMemory (&enum_template, sizeof (enum_template));
+//
+//		subscription.enumTemplate = &enum_template;
+//
+//		code = FwpmConnectionSubscribe (
+//			engine_handle,
+//			&subscription,
+//			&_app_network_subscribe_callback,
+//			network_context,
+//			&new_handle
+//		);
+//
+//		if (code != ERROR_SUCCESS)
+//		{
+//			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmConnectionSubscribe", code, NULL);
+//			return NULL;
+//		}
+//		else
+//		{
+//			current_handle = InterlockedCompareExchangePointer (
+//				&network_context->hconnections,
+//				new_handle,
+//				NULL
+//			);
+//
+//			if (!current_handle)
+//			{
+//				current_handle = new_handle;
+//			}
+//			else
+//			{
+//				FwpmConnectionUnsubscribe (engine_handle, new_handle);
+//			}
+//		}
+//	}
+//
+//	return current_handle;
+//}
+//
+//VOID _app_network_unsubscribe (
+//	_In_ HANDLE engine_handle
+//)
+//{
+//	PITEM_NETWORK_CONTEXT network_context;
+//	HANDLE current_handle;
+//
+//	network_context = _app_network_getcontext ();
+//
+//	if (!network_context)
+//		return;
+//
+//	current_handle = InterlockedCompareExchangePointer (
+//		&network_context->hconnections,
+//		NULL,
+//		network_context->hconnections
+//	);
+//
+//	if (current_handle)
+//		FwpmConnectionUnsubscribe (engine_handle, current_handle);
+//}
 
-	network_context = _app_network_getcontext ();
-
-	if (!network_context)
-		return NULL;
-
-	current_handle = InterlockedCompareExchangePointer (&network_context->hconnections, NULL, NULL);
-
-	if (!current_handle)
-	{
-		FWPM_CONNECTION_SUBSCRIPTION subscription;
-		FWPM_CONNECTION_ENUM_TEMPLATE enum_template;
-		ULONG code;
-
-		RtlZeroMemory (&subscription, sizeof (subscription));
-		RtlZeroMemory (&enum_template, sizeof (enum_template));
-
-		subscription.enumTemplate = &enum_template;
-
-		code = FwpmConnectionSubscribe (engine_handle, &subscription, &_app_network_subscribe_callback, network_context, &new_handle);
-
-		if (code != ERROR_SUCCESS)
-		{
-			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmConnectionSubscribe", code, NULL);
-			return NULL;
-		}
-		else
-		{
-			current_handle = InterlockedCompareExchangePointer (&network_context->hconnections, new_handle, NULL);
-
-			if (!current_handle)
-			{
-				current_handle = new_handle;
-			}
-			else
-			{
-				FwpmConnectionUnsubscribe (engine_handle, new_handle);
-			}
-		}
-	}
-
-	return current_handle;
-}
-
-VOID _app_network_unsubscribe (_In_ HANDLE engine_handle)
-{
-	PITEM_NETWORK_CONTEXT network_context;
-	HANDLE current_handle;
-
-	network_context = _app_network_getcontext ();
-
-	if (!network_context)
-		return;
-
-	current_handle = InterlockedCompareExchangePointer (&network_context->hconnections, NULL, network_context->hconnections);
-
-	if (current_handle)
-		FwpmConnectionUnsubscribe (engine_handle, current_handle);
-}
-
-VOID CALLBACK _app_network_subscribe_callback (_Inout_opt_ PVOID context, _In_ FWPM_CONNECTION_EVENT_TYPE event_type, _In_ const FWPM_CONNECTION0* connection)
+VOID CALLBACK _app_network_subscribe_callback (
+	_Inout_opt_ PVOID context,
+	_In_ FWPM_CONNECTION_EVENT_TYPE event_type,
+	_In_ const FWPM_CONNECTION0* connection
+)
 {
 	PITEM_NETWORK_CONTEXT network_context;
 
@@ -755,7 +860,9 @@ VOID CALLBACK _app_network_subscribe_callback (_Inout_opt_ PVOID context, _In_ F
 	}
 }
 
-NTSTATUS NTAPI _app_network_threadproc (_In_ PVOID arglist)
+NTSTATUS NTAPI _app_network_threadproc (
+	_In_ PVOID arglist
+)
 {
 	PITEM_NETWORK_CONTEXT network_context;
 	HANDLE engine_handle;
