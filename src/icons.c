@@ -47,7 +47,10 @@ HICON _app_icons_getdefaultapp_hicon ()
 }
 
 _Ret_maybenull_
-HICON _app_icons_getdefaulttype_hicon (_In_ ENUM_TYPE_DATA type, _In_ PICON_INFORMATION icon_info)
+HICON _app_icons_getdefaulttype_hicon (
+	_In_ ENUM_TYPE_DATA type,
+	_In_ PICON_INFORMATION icon_info
+)
 {
 	if (type == DATA_APP_UWP)
 	{
@@ -79,7 +82,9 @@ LONG _app_icons_getdefaultuwp_id ()
 	return icon_info->uwp_icon_id;
 }
 
-HICON _app_icons_getsafeapp_hicon (_In_ ULONG_PTR app_hash)
+HICON _app_icons_getsafeapp_hicon (
+	_In_ ULONG_PTR app_hash
+)
 {
 	PICON_INFORMATION icon_info;
 	PITEM_APP ptr_app;
@@ -124,7 +129,12 @@ HICON _app_icons_getsafeapp_hicon (_In_ ULONG_PTR app_hash)
 	return hicon;
 }
 
-VOID _app_icons_loadfromfile (_In_ PR_STRING path, _Out_opt_ PLONG icon_id, _Out_opt_ HICON_PTR hicon, _In_ BOOLEAN is_loaddefaults)
+VOID _app_icons_loadfromfile (
+	_In_ PR_STRING path,
+	_Out_opt_ PLONG icon_id,
+	_Out_opt_ HICON_PTR hicon,
+	_In_ BOOLEAN is_loaddefaults
+)
 {
 	SHFILEINFO shfi = {0};
 	PICON_INFORMATION icon_info;
