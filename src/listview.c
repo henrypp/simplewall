@@ -3,7 +3,9 @@
 
 #include "global.h"
 
-INT _app_listview_getcurrent (_In_ HWND hwnd)
+INT _app_listview_getcurrent (
+	_In_ HWND hwnd
+)
 {
 	INT listview_id;
 
@@ -12,7 +14,10 @@ INT _app_listview_getcurrent (_In_ HWND hwnd)
 	return listview_id;
 }
 
-INT _app_listview_getbytab (_In_ HWND hwnd, _In_ INT tab_id)
+INT _app_listview_getbytab (
+	_In_ HWND hwnd,
+	_In_ INT tab_id
+)
 {
 	INT listview_id;
 
@@ -24,7 +29,9 @@ INT _app_listview_getbytab (_In_ HWND hwnd, _In_ INT tab_id)
 	return listview_id;
 }
 
-INT _app_listview_getbytype (_In_ ENUM_TYPE_DATA type)
+INT _app_listview_getbytype (
+	_In_ ENUM_TYPE_DATA type
+)
 {
 	switch (type)
 	{
@@ -66,7 +73,9 @@ INT _app_listview_getbytype (_In_ ENUM_TYPE_DATA type)
 	return 0;
 }
 
-VOID _app_listview_additems (_In_ HWND hwnd)
+VOID _app_listview_additems (
+	_In_ HWND hwnd
+)
 {
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
@@ -105,7 +114,9 @@ VOID _app_listview_additems (_In_ HWND hwnd)
 	_r_queuedlock_releaseshared (&lock_rules);
 }
 
-VOID _app_listview_clearitems (_In_ HWND hwnd)
+VOID _app_listview_clearitems (
+	_In_ HWND hwnd
+)
 {
 	INT listview_id;
 
@@ -118,7 +129,10 @@ VOID _app_listview_clearitems (_In_ HWND hwnd)
 		_r_listview_deleteallitems (hwnd, i);
 }
 
-VOID _app_listview_addappitem (_In_ HWND hwnd, _In_ PITEM_APP ptr_app)
+VOID _app_listview_addappitem (
+	_In_ HWND hwnd,
+	_In_ PITEM_APP ptr_app
+)
 {
 	LPARAM listview_context;
 	INT listview_id;
@@ -135,13 +149,19 @@ VOID _app_listview_addappitem (_In_ HWND hwnd, _In_ PITEM_APP ptr_app)
 		listview_context = _app_listview_createcontext (ptr_app->app_hash);
 
 		_r_listview_additem_ex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
+
 		_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
 
 		_app_listview_lock (hwnd, listview_id, FALSE);
 	}
 }
 
-VOID _app_listview_addruleitem (_In_ HWND hwnd, _In_ PITEM_RULE ptr_rule, _In_ SIZE_T rule_idx, _In_ BOOLEAN is_forapp)
+VOID _app_listview_addruleitem (
+	_In_ HWND hwnd,
+	_In_ PITEM_RULE ptr_rule,
+	_In_ SIZE_T rule_idx,
+	_In_ BOOLEAN is_forapp
+)
 {
 	LPARAM listview_context;
 	INT listview_id;
@@ -158,13 +178,18 @@ VOID _app_listview_addruleitem (_In_ HWND hwnd, _In_ PITEM_RULE ptr_rule, _In_ S
 		listview_context = _app_listview_createcontext (rule_idx);
 
 		_r_listview_additem_ex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
+
 		_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, is_forapp);
 
 		_app_listview_lock (hwnd, listview_id, FALSE);
 	}
 }
 
-VOID _app_listview_addnetworkitem (_In_ HWND hwnd, _In_ PITEM_NETWORK ptr_network, _In_ ULONG_PTR network_hash)
+VOID _app_listview_addnetworkitem (
+	_In_ HWND hwnd,
+	_In_ PITEM_NETWORK ptr_network,
+	_In_ ULONG_PTR network_hash
+)
 {
 	LPARAM listview_context;
 	INT item_id;
@@ -178,7 +203,11 @@ VOID _app_listview_addnetworkitem (_In_ HWND hwnd, _In_ PITEM_NETWORK ptr_networ
 	_r_listview_additem_ex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
 }
 
-VOID _app_listview_addlogitem (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ ULONG_PTR log_hash)
+VOID _app_listview_addlogitem (
+	_In_ HWND hwnd,
+	_In_ PITEM_LOG ptr_log,
+	_In_ ULONG_PTR log_hash
+)
 {
 	LPARAM listview_context;
 	INT item_id;
@@ -192,7 +221,10 @@ VOID _app_listview_addlogitem (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ ULON
 	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, listview_context);
 }
 
-BOOLEAN _app_listview_islocked (_In_ HWND hwnd, _In_ INT ctrl_id)
+BOOLEAN _app_listview_islocked (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id
+)
 {
 	PVOID context;
 	ULONG property_id;
@@ -204,7 +236,11 @@ BOOLEAN _app_listview_islocked (_In_ HWND hwnd, _In_ INT ctrl_id)
 	return (context != NULL);
 }
 
-VOID _app_listview_lock (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ BOOLEAN is_lock)
+VOID _app_listview_lock (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id,
+	_In_ BOOLEAN is_lock
+)
 {
 	ULONG property_id;
 
@@ -220,7 +256,9 @@ VOID _app_listview_lock (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ BOOLEAN is_lock)
 	}
 }
 
-LPARAM _app_listview_createcontext (_In_ ULONG_PTR id_code)
+LPARAM _app_listview_createcontext (
+	_In_ ULONG_PTR id_code
+)
 {
 	PITEM_LISTVIEW_CONTEXT context;
 
@@ -231,12 +269,16 @@ LPARAM _app_listview_createcontext (_In_ ULONG_PTR id_code)
 	return (LPARAM)context;
 }
 
-VOID _app_listview_destroycontext (_In_ PITEM_LISTVIEW_CONTEXT context)
+VOID _app_listview_destroycontext (
+	_In_ PITEM_LISTVIEW_CONTEXT context
+)
 {
 	_r_freelist_deleteitem (&listview_free_list, context);
 }
 
-ULONG_PTR _app_listview_getcontextcode (_In_ LPARAM lparam)
+ULONG_PTR _app_listview_getcontextcode (
+	_In_ LPARAM lparam
+)
 {
 	PITEM_LISTVIEW_CONTEXT context;
 
@@ -245,7 +287,11 @@ ULONG_PTR _app_listview_getcontextcode (_In_ LPARAM lparam)
 	return context->id_code;
 }
 
-ULONG_PTR _app_listview_getitemcontext (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id)
+ULONG_PTR _app_listview_getitemcontext (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id
+)
 {
 	LPARAM lparam;
 
@@ -257,7 +303,9 @@ ULONG_PTR _app_listview_getitemcontext (_In_ HWND hwnd, _In_ INT listview_id, _I
 	return _app_listview_getcontextcode (lparam);
 }
 
-BOOLEAN _app_listview_isitemhidden (_In_ LPARAM lparam)
+BOOLEAN _app_listview_isitemhidden (
+	_In_ LPARAM lparam
+)
 {
 	PITEM_LISTVIEW_CONTEXT context;
 
@@ -270,7 +318,11 @@ BOOLEAN _app_listview_isitemhidden (_In_ LPARAM lparam)
 }
 
 _Success_ (return != -1)
-INT _app_listview_finditem (_In_ HWND hwnd, _In_ INT listview_id, _In_ ULONG_PTR id_code)
+INT _app_listview_finditem (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ ULONG_PTR id_code
+)
 {
 	PITEM_LISTVIEW_CONTEXT context;
 	INT item_count;
@@ -307,7 +359,12 @@ INT _app_listview_finditem (_In_ HWND hwnd, _In_ INT listview_id, _In_ ULONG_PTR
 	return item_id;
 }
 
-VOID _app_listview_showitemby_id (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ INT scroll_pos)
+VOID _app_listview_showitemby_id (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id,
+	_In_ INT scroll_pos
+)
 {
 	INT total_count;
 
@@ -329,7 +386,11 @@ VOID _app_listview_showitemby_id (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT
 		SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)scroll_pos); // restore scroll position
 }
 
-VOID _app_listview_showitemby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ BOOLEAN is_app)
+VOID _app_listview_showitemby_param (
+	_In_ HWND hwnd,
+	_In_ ULONG_PTR lparam,
+	_In_ BOOLEAN is_app
+)
 {
 	INT listview_id;
 	INT item_id;
@@ -361,7 +422,11 @@ VOID _app_listview_showitemby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_
 	}
 }
 
-VOID _app_listview_updateby_id (_In_ HWND hwnd, _In_ INT lparam, _In_ ULONG flags)
+VOID _app_listview_updateby_id (
+	_In_ HWND hwnd,
+	_In_ INT lparam,
+	_In_ ULONG flags
+)
 {
 	INT listview_id;
 	ENUM_TYPE_DATA type;
@@ -408,7 +473,12 @@ VOID _app_listview_updateby_id (_In_ HWND hwnd, _In_ INT lparam, _In_ ULONG flag
 	_app_refreshstatus (hwnd);
 }
 
-VOID _app_listview_updateby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ ULONG flags, _In_ BOOLEAN is_app)
+VOID _app_listview_updateby_param (
+	_In_ HWND hwnd,
+	_In_ ULONG_PTR lparam,
+	_In_ ULONG flags,
+	_In_ BOOLEAN is_app
+)
 {
 	INT listview_id;
 
@@ -434,7 +504,11 @@ VOID _app_listview_updateby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ U
 	}
 }
 
-VOID _app_listview_updateitemby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ BOOLEAN is_app)
+VOID _app_listview_updateitemby_param (
+	_In_ HWND hwnd,
+	_In_ ULONG_PTR lparam,
+	_In_ BOOLEAN is_app
+)
 {
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
@@ -486,12 +560,19 @@ VOID _app_listview_updateitemby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _I
 	}
 }
 
-VOID _app_listview_updateitemby_id (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id)
+VOID _app_listview_updateitemby_id (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id
+)
 {
 	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 }
 
-VOID _app_listview_loadfont (_In_ LONG dpi_value, _In_ BOOLEAN is_forced)
+VOID _app_listview_loadfont (
+	_In_ LONG dpi_value,
+	_In_ BOOLEAN is_forced
+)
 {
 	LOGFONT logfont = {0};
 
@@ -505,7 +586,10 @@ VOID _app_listview_loadfont (_In_ LONG dpi_value, _In_ BOOLEAN is_forced)
 	}
 }
 
-VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
+VOID _app_listview_refreshgroups (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+)
 {
 	WCHAR group1_string[128] = {0};
 	WCHAR group2_string[128] = {0};
@@ -614,17 +698,14 @@ VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 			total_count
 		);
 
-		if (group2_title)
-		{
-			_r_str_printf (
-				group2_string,
-				RTL_NUMBER_OF (group2_string),
-				is_rules ? L"%s (%d/%d) [rule for app]" : L"%s (%d/%d)",
-				_r_locale_getstring (group2_title),
-				group2_count,
-				total_count
-			);
-		}
+		_r_str_printf (
+			group2_string,
+			RTL_NUMBER_OF (group2_string),
+			is_rules ? L"%s (%d/%d) [rule for app]" : L"%s (%d/%d)",
+			_r_locale_getstring (group2_title),
+			group2_count,
+			total_count
+		);
 
 		if (group3_title)
 		{
@@ -661,7 +742,11 @@ VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 		_r_listview_setgroup (hwnd, listview_id, 3, group4_string, 0, 0);
 }
 
-VOID _app_listview_resize_ex (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_forced)
+VOID _app_listview_resize_ex (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ BOOLEAN is_forced
+)
 {
 	PR_STRING column_text;
 	PR_STRING item_text;
@@ -792,13 +877,27 @@ CleanupExit:
 		ReleaseDC (hheader, hdc_header);
 }
 
-VOID _app_listview_setfont (_In_ HWND hwnd, _In_ INT listview_id)
+VOID _app_listview_resize (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+)
+{
+	_app_listview_resize_ex (hwnd, listview_id, FALSE);
+}
+
+VOID _app_listview_setfont (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+)
 {
 	if (config.hfont)
 		SendDlgItemMessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
 }
 
-VOID _app_listview_setview (_In_ HWND hwnd, _In_ INT listview_id)
+VOID _app_listview_setview (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+)
 {
 	HIMAGELIST himg;
 	LONG view_type;
@@ -824,7 +923,11 @@ VOID _app_listview_setview (_In_ HWND hwnd, _In_ INT listview_id)
 	_r_listview_setview (hwnd, listview_id, view_type);
 }
 
-INT CALLBACK _app_listview_compare_callback (_In_ LPARAM lparam1, _In_ LPARAM lparam2, _In_ LPARAM lparam)
+INT CALLBACK _app_listview_compare_callback (
+	_In_ LPARAM lparam1,
+	_In_ LPARAM lparam2,
+	_In_ LPARAM lparam
+)
 {
 	WCHAR config_name[128];
 	HWND hwnd;
@@ -952,7 +1055,12 @@ INT CALLBACK _app_listview_compare_callback (_In_ LPARAM lparam1, _In_ LPARAM lp
 	return is_descend ? -result : result;
 }
 
-VOID _app_listview_sort_ex (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG column_id, _In_ BOOLEAN is_notifycode)
+VOID _app_listview_sort_ex (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ LONG column_id,
+	_In_ BOOLEAN is_notifycode
+)
 {
 	HWND hlistview;
 	INT column_count;
@@ -996,4 +1104,12 @@ VOID _app_listview_sort_ex (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG colu
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
 	SendMessage (hlistview, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
+}
+
+VOID _app_listview_sort (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+)
+{
+	_app_listview_sort_ex (hwnd, listview_id, -1, FALSE);
 }

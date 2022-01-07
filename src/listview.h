@@ -25,54 +25,174 @@ typedef struct _ITEM_LISTVIEW_CONTEXT
 #define PR_UPDATE_NOREDRAW 0x0020
 #define PR_UPDATE_NOSETVIEW 0x0040
 
-INT _app_listview_getcurrent (_In_ HWND hwnd);
-INT _app_listview_getbytab (_In_ HWND hwnd, _In_ INT tab_id);
-INT _app_listview_getbytype (_In_ ENUM_TYPE_DATA type);
+INT _app_listview_getcurrent (
+	_In_ HWND hwnd
+);
 
-VOID _app_listview_additems (_In_ HWND hwnd);
-VOID _app_listview_clearitems (_In_ HWND hwnd);
+INT _app_listview_getbytab (
+	_In_ HWND hwnd,
+	_In_ INT tab_id
+);
 
-VOID _app_listview_addappitem (_In_ HWND hwnd, _In_ PITEM_APP ptr_app);
-VOID _app_listview_addruleitem (_In_ HWND hwnd, _In_ PITEM_RULE ptr_rule, _In_ SIZE_T rule_idx, _In_ BOOLEAN is_forapp);
-VOID _app_listview_addnetworkitem (_In_ HWND hwnd, _In_ PITEM_NETWORK ptr_network, _In_ ULONG_PTR network_hash);
-VOID _app_listview_addlogitem (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log, _In_ ULONG_PTR log_hash);
+INT _app_listview_getbytype (
+	_In_ ENUM_TYPE_DATA type
+);
 
-BOOLEAN _app_listview_islocked (_In_ HWND hwnd, _In_ INT ctrl_id);
-VOID _app_listview_lock (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ BOOLEAN is_lock);
+VOID _app_listview_additems (
+	_In_ HWND hwnd
+);
 
-LPARAM _app_listview_createcontext (_In_ ULONG_PTR id_code);
-VOID _app_listview_destroycontext (_In_ PITEM_LISTVIEW_CONTEXT context);
-ULONG_PTR _app_listview_getcontextcode (_In_ LPARAM lparam);
-ULONG_PTR _app_listview_getitemcontext (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id);
-BOOLEAN _app_listview_isitemhidden (_In_ LPARAM lparam);
+VOID _app_listview_clearitems (
+	_In_ HWND hwnd
+);
+
+VOID _app_listview_addappitem (
+	_In_ HWND hwnd,
+	_In_ PITEM_APP ptr_app
+);
+
+VOID _app_listview_addruleitem (
+	_In_ HWND hwnd,
+	_In_ PITEM_RULE ptr_rule,
+	_In_ SIZE_T rule_idx,
+	_In_ BOOLEAN is_forapp
+);
+
+VOID _app_listview_addnetworkitem (
+	_In_ HWND hwnd,
+	_In_ PITEM_NETWORK ptr_network,
+	_In_ ULONG_PTR network_hash
+);
+
+VOID _app_listview_addlogitem (
+	_In_ HWND hwnd,
+	_In_ PITEM_LOG ptr_log,
+	_In_ ULONG_PTR log_hash
+);
+
+BOOLEAN _app_listview_islocked (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id
+);
+
+VOID _app_listview_lock (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id,
+	_In_ BOOLEAN is_lock
+);
+
+LPARAM _app_listview_createcontext (
+	_In_ ULONG_PTR id_code
+);
+
+VOID _app_listview_destroycontext (
+	_In_ PITEM_LISTVIEW_CONTEXT context
+);
+
+ULONG_PTR _app_listview_getcontextcode (
+	_In_ LPARAM lparam
+);
+
+ULONG_PTR _app_listview_getitemcontext (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id
+);
+
+BOOLEAN _app_listview_isitemhidden (
+	_In_ LPARAM lparam
+);
 
 _Success_ (return != -1)
-INT _app_listview_finditem (_In_ HWND hwnd, _In_ INT listview_id, _In_ ULONG_PTR id_code);
+INT _app_listview_finditem (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ ULONG_PTR id_code
+);
 
-VOID _app_listview_showitemby_id (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ INT scroll_pos);
-VOID _app_listview_showitemby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ BOOLEAN is_app);
+VOID _app_listview_showitemby_id (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id,
+	_In_ INT scroll_pos
+);
 
-VOID _app_listview_updateby_id (_In_ HWND hwnd, _In_ INT lparam, _In_ ULONG flags);
-VOID _app_listview_updateby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ ULONG flags, _In_ BOOLEAN is_app);
+VOID _app_listview_showitemby_param (
+	_In_ HWND hwnd,
+	_In_ ULONG_PTR lparam,
+	_In_ BOOLEAN is_app
+);
 
-VOID _app_listview_updateitemby_param (_In_ HWND hwnd, _In_ ULONG_PTR lparam, _In_ BOOLEAN is_app);
-VOID _app_listview_updateitemby_id (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id);
+VOID _app_listview_updateby_id (
+	_In_ HWND hwnd,
+	_In_ INT lparam,
+	_In_ ULONG flags
+);
 
-VOID _app_listview_loadfont (_In_ LONG dpi_value, _In_ BOOLEAN is_forced);
-VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id);
-VOID _app_listview_resize_ex (_In_ HWND hwnd, _In_ INT listview_id, _In_ BOOLEAN is_forced);
-VOID _app_listview_setfont (_In_ HWND hwnd, _In_ INT listview_id);
-VOID _app_listview_setview (_In_ HWND hwnd, _In_ INT listview_id);
+VOID _app_listview_updateby_param (
+	_In_ HWND hwnd,
+	_In_ ULONG_PTR lparam,
+	_In_ ULONG flags,
+	_In_ BOOLEAN is_app
+);
 
-INT CALLBACK _app_listview_compare_callback (_In_ LPARAM lparam1, _In_ LPARAM lparam2, _In_ LPARAM lparam);
-VOID _app_listview_sort_ex (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG column_id, _In_ BOOLEAN is_notifycode);
+VOID _app_listview_updateitemby_param (
+	_In_ HWND hwnd,
+	_In_ ULONG_PTR lparam,
+	_In_ BOOLEAN is_app
+);
 
-FORCEINLINE VOID _app_listview_resize (_In_ HWND hwnd, _In_ INT listview_id)
-{
-	_app_listview_resize_ex (hwnd, listview_id, FALSE);
-}
+VOID _app_listview_updateitemby_id (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id
+);
 
-FORCEINLINE VOID _app_listview_sort (_In_ HWND hwnd, _In_ INT listview_id)
-{
-	_app_listview_sort_ex (hwnd, listview_id, -1, FALSE);
-}
+VOID _app_listview_loadfont (
+	_In_ LONG dpi_value,
+	_In_ BOOLEAN is_forced
+);
+
+VOID _app_listview_refreshgroups (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+);
+
+VOID _app_listview_resize_ex (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ BOOLEAN is_forced
+);
+
+VOID _app_listview_resize (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+);
+
+VOID _app_listview_setfont (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+);
+
+VOID _app_listview_setview (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+);
+
+INT CALLBACK _app_listview_compare_callback (
+	_In_ LPARAM lparam1,
+	_In_ LPARAM lparam2,
+	_In_ LPARAM lparam
+);
+
+VOID _app_listview_sort_ex (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ LONG column_id,
+	_In_ BOOLEAN is_notifycode
+);
+
+VOID _app_listview_sort (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+);
