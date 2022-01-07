@@ -617,6 +617,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 						_r_obj_dereference (string);
 					}
+
 					UDACCEL ud = {0};
 					ud.nInc = 64; // set step to 64kb
 
