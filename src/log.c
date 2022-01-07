@@ -3,13 +3,19 @@
 
 #include "global.h"
 
-VOID _app_loginit (_In_ BOOLEAN is_install)
+VOID _app_loginit (
+	_In_ BOOLEAN is_install
+)
 {
 	HANDLE current_handle;
 	HANDLE new_handle;
 	PR_STRING log_path;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, config.hlogfile);
+	current_handle = InterlockedCompareExchangePointer (
+		&config.hlogfile,
+		NULL,
+		config.hlogfile
+	);
 
 	// reset log handle
 	if (current_handle)
@@ -23,7 +29,15 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 	if (!log_path)
 		return;
 
-	new_handle = CreateFile (log_path->buffer, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	new_handle = CreateFile (
+		log_path->buffer,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
 
 	if (_r_fs_isvalidhandle (new_handle))
 	{
@@ -39,7 +53,11 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 			_r_fs_setpos (new_handle, 0, FILE_END);
 		}
 
-		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
+		current_handle = InterlockedCompareExchangePointer (
+			&config.hlogfile,
+			new_handle,
+			NULL
+		);
 
 		if (current_handle)
 			CloseHandle (new_handle);
@@ -48,7 +66,10 @@ VOID _app_loginit (_In_ BOOLEAN is_install)
 	_r_obj_dereference (log_path);
 }
 
-ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
+ULONG_PTR _app_getloghash (
+	_In_ HWND hwnd,
+	_In_ PITEM_LOG ptr_log
+)
 {
 	PR_STRING log_string;
 	ULONG_PTR log_hash;
@@ -56,7 +77,7 @@ ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	UNREFERENCED_PARAMETER (hwnd);
 
 	log_string = _r_format_string (
-		L"log-hash:%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG_PTR) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu16) L"-%" TEXT (PRIu16) L"-%s-%s",
+		L"%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG_PTR) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu16) L"-%" TEXT (PRIu16) L"-%s-%s",
 		ptr_log->af,
 		ptr_log->app_hash,
 		ptr_log->protocol,
@@ -74,7 +95,27 @@ ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	return log_hash;
 }
 
-BOOLEAN _app_islogfound (_In_ ULONG_PTR log_hash)
+PR_STRING _app_getlogpath ()
+{
+	PR_STRING path;
+
+	path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
+
+	return path;
+}
+
+PR_STRING _app_getlogviewer ()
+{
+	PR_STRING path;
+
+	path = _r_config_getstringexpand (L"LogViewer", LOG_VIEWER_DEFAULT);
+
+	return path;
+}
+
+BOOLEAN _app_islogfound (
+	_In_ ULONG_PTR log_hash
+)
 {
 	BOOLEAN is_found;
 
@@ -87,7 +128,9 @@ BOOLEAN _app_islogfound (_In_ ULONG_PTR log_hash)
 	return is_found;
 }
 
-BOOLEAN _app_logislimitreached (_In_ HANDLE hfile)
+BOOLEAN _app_logislimitreached (
+	_In_ HANDLE hfile
+)
 {
 	LONG64 limit;
 	LONG64 file_size;
@@ -102,7 +145,9 @@ BOOLEAN _app_logislimitreached (_In_ HANDLE hfile)
 	return (file_size >= (_r_calc_kilobytes2bytes64 (limit)));
 }
 
-VOID _app_logclear (_In_opt_ HANDLE hfile)
+VOID _app_logclear (
+	_In_opt_ HANDLE hfile
+)
 {
 	PR_STRING log_path;
 
@@ -125,7 +170,9 @@ VOID _app_logclear (_In_opt_ HANDLE hfile)
 	}
 }
 
-VOID _app_logclear_ui (_In_ HWND hwnd)
+VOID _app_logclear_ui (
+	_In_ HWND hwnd
+)
 {
 	SendDlgItemMessage (hwnd, IDC_LOG, LVM_DELETEALLITEMS, 0, 0);
 	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, 0, 0);
@@ -139,7 +186,9 @@ VOID _app_logclear_ui (_In_ HWND hwnd)
 	_r_queuedlock_releaseexclusive (&lock_loglist);
 }
 
-VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
+VOID _app_logwrite (
+	_In_ PITEM_LOG ptr_log
+)
 {
 	PR_STRING path;
 	PR_STRING date_string;
@@ -151,7 +200,11 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	HANDLE current_handle;
 	ULONG unused;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+	current_handle = InterlockedCompareExchangePointer (
+		&config.hlogfile,
+		NULL,
+		NULL
+	);
 
 	if (!current_handle)
 		return;
@@ -197,8 +250,9 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	if (_app_logislimitreached (current_handle))
 		_app_logclear (current_handle);
 
+	// adds csv header
 	if (_r_fs_getsize (current_handle) == 2)
-		WriteFile (current_handle, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)), &unused, NULL); // adds csv header
+		WriteFile (current_handle, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)), &unused, NULL);
 
 	WriteFile (current_handle, buffer->buffer, (ULONG)buffer->length, &unused, NULL);
 
@@ -217,7 +271,10 @@ VOID _app_logwrite (_In_ PITEM_LOG ptr_log)
 	_r_obj_dereference (buffer);
 }
 
-VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
+VOID _app_logwrite_ui (
+	_In_ HWND hwnd,
+	_In_ PITEM_LOG ptr_log
+)
 {
 	ULONG_PTR log_hash;
 	ULONG_PTR hash_code;
@@ -262,7 +319,9 @@ VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log)
 	_app_listview_updateby_id (hwnd, IDC_LOG, 0);
 }
 
-VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
+VOID _wfp_logsubscribe (
+	_In_ HANDLE engine_handle
+)
 {
 	FWPMNES4 _FwpmNetEventSubscribe4;
 	FWPMNES3 _FwpmNetEventSubscribe3;
@@ -276,7 +335,11 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	HMODULE hfwpuclnt;
 	ULONG code;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
+	current_handle = InterlockedCompareExchangePointer (
+		&config.hnetevent,
+		NULL,
+		NULL
+	);
 
 	if (current_handle)
 		return; // already subscribed
@@ -296,7 +359,13 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	_FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe1");
 	_FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe0");
 
-	if (!_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
+	if (
+		!_FwpmNetEventSubscribe4 &&
+		!_FwpmNetEventSubscribe3 &&
+		!_FwpmNetEventSubscribe2 &&
+		!_FwpmNetEventSubscribe1 &&
+		!_FwpmNetEventSubscribe0
+		)
 	{
 		_r_log (LOG_LEVEL_WARNING, NULL, L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
 
@@ -311,23 +380,53 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 
 	if (_FwpmNetEventSubscribe4)
 	{
-		code = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
+		code = _FwpmNetEventSubscribe4 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback4,
+			NULL,
+			&new_handle
+		); // win10rs5+
 	}
 	else if (_FwpmNetEventSubscribe3)
 	{
-		code = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
+		code = _FwpmNetEventSubscribe3 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback3,
+			NULL,
+			&new_handle
+		); // win10rs4+
 	}
 	else if (_FwpmNetEventSubscribe2)
 	{
-		code = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
+		code = _FwpmNetEventSubscribe2 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback2,
+			NULL,
+			&new_handle
+		); // win10rs1+
 	}
 	else if (_FwpmNetEventSubscribe1)
 	{
-		code = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle); // win8+
+		code = _FwpmNetEventSubscribe1 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback1,
+			NULL,
+			&new_handle
+		); // win8+
 	}
 	else if (_FwpmNetEventSubscribe0)
 	{
-		code = _FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &new_handle); // win7+
+		code = _FwpmNetEventSubscribe0 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback0,
+			NULL,
+			&new_handle
+		); // win7+
 	}
 	else
 	{
@@ -337,7 +436,11 @@ VOID _wfp_logsubscribe (_In_ HANDLE engine_handle)
 	if (code != ERROR_SUCCESS)
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", code, NULL);
 
-	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
+	current_handle = InterlockedCompareExchangePointer (
+		&config.hnetevent,
+		new_handle,
+		NULL
+	);
 
 	if (current_handle)
 	{
@@ -354,12 +457,18 @@ CleanupExit:
 	FreeLibrary (hfwpuclnt);
 }
 
-VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle)
+VOID _wfp_logunsubscribe (
+	_In_ HANDLE engine_handle
+)
 {
 	HANDLE current_handle;
 	ULONG code;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
+	current_handle = InterlockedCompareExchangePointer (
+		&config.hnetevent,
+		NULL,
+		config.hnetevent
+	);
 
 	if (current_handle)
 	{
@@ -372,7 +481,9 @@ VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle)
 	_app_loginit (FALSE); // destroy log file handle if present
 }
 
-VOID _wfp_logsetoption (_In_ HANDLE engine_handle)
+VOID _wfp_logsetoption (
+	_In_ HANDLE engine_handle
+)
 {
 	FWP_VALUE val;
 	UINT32 mask;
@@ -421,7 +532,9 @@ VOID _wfp_logsetoption (_In_ HANDLE engine_handle)
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
 }
 
-VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
+VOID CALLBACK _wfp_logcallback (
+	_In_ PITEM_LOG_CALLBACK log
+)
 {
 	HANDLE engine_handle;
 	PITEM_LOG ptr_log;
@@ -434,8 +547,15 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 
 	engine_handle = _wfp_getenginehandle ();
 
-	if (!engine_handle || !log->filter_id || !log->layer_id || (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE)))
+	if (
+		!engine_handle ||
+		!log->filter_id ||
+		!log->layer_id ||
+		(log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
+		)
+	{
 		return;
+	}
 
 	FWPM_LAYER *layer_ptr;
 	FWPM_FILTER *filter_ptr;
@@ -444,12 +564,18 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 	if (FwpmLayerGetById (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS || !layer_ptr)
 		return;
 
-	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) || IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
+	if (
+		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) ||
+		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6)
+		)
 	{
 		FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
 		return;
 	}
-	else if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) || IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6))
+	else if (
+		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) ||
+		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6)
+		)
 	{
 		log->direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 	}
@@ -613,7 +739,11 @@ VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log)
 		_r_obj_dereference (sid_string);
 }
 
-FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ PVOID data, _In_ ULONG version)
+FORCEINLINE BOOLEAN log_struct_to_f (
+	_Out_ PITEM_LOG_CALLBACK log,
+	_In_ PVOID data,
+	_In_ ULONG version
+)
 {
 	RtlZeroMemory (log, sizeof (ITEM_LOG_CALLBACK));
 
@@ -1143,7 +1273,10 @@ FORCEINLINE BOOLEAN log_struct_to_f (_Out_ PITEM_LOG_CALLBACK log, _In_ PVOID da
 }
 
 // win7+ callback
-VOID CALLBACK _wfp_logcallback0 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT1 *event)
+VOID CALLBACK _wfp_logcallback0 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT1 *event
+)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1154,7 +1287,10 @@ VOID CALLBACK _wfp_logcallback0 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 }
 
 // win8+ callback
-VOID CALLBACK _wfp_logcallback1 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT2 *event)
+VOID CALLBACK _wfp_logcallback1 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT2 *event
+)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1165,7 +1301,10 @@ VOID CALLBACK _wfp_logcallback1 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 }
 
 // win10rs1+ callback
-VOID CALLBACK _wfp_logcallback2 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT3 *event)
+VOID CALLBACK _wfp_logcallback2 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT3 *event
+)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1176,7 +1315,10 @@ VOID CALLBACK _wfp_logcallback2 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 }
 
 // win10rs4+ callback
-VOID CALLBACK _wfp_logcallback3 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT4 *event)
+VOID CALLBACK _wfp_logcallback3 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT4 *event
+)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1187,7 +1329,10 @@ VOID CALLBACK _wfp_logcallback3 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 }
 
 // win10rs5+ callback
-VOID CALLBACK _wfp_logcallback4 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT5 *event)
+VOID CALLBACK _wfp_logcallback4 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT5 *event
+)
 {
 	ITEM_LOG_CALLBACK log;
 
@@ -1197,7 +1342,10 @@ VOID CALLBACK _wfp_logcallback4 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVE
 		_wfp_logcallback (&log);
 }
 
-VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
+VOID NTAPI _app_logthread (
+	_In_ PVOID arglist,
+	_In_ ULONG busy_count
+)
 {
 	HWND hwnd;
 
@@ -1244,8 +1392,10 @@ VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count)
 	is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
 
 	is_exludeallow = !(ptr_log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE));
-	is_exludeblocklist = !(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE));
 	is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
+
+	is_exludeblocklist = !(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) &&
+		!(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE));
 
 	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth && is_exludeallow)
 	{

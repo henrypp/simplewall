@@ -46,42 +46,88 @@ typedef ULONG (WINAPI *FWPMNES0)(
 	_In_ FWPM_NET_EVENT_CALLBACK0 callback,
 	_In_opt_ PVOID context,
 	_Out_ PHANDLE events_handle
+	);
+
+VOID _app_loginit (
+	_In_ BOOLEAN is_install
 );
 
-_Ret_maybenull_
-FORCEINLINE PR_STRING _app_getlogpath ()
-{
-	return _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
-}
+ULONG_PTR _app_getloghash (
+	_In_ HWND hwnd,
+	_In_ PITEM_LOG ptr_log
+);
 
-_Ret_maybenull_
-FORCEINLINE PR_STRING _app_getlogviewer ()
-{
-	return _r_config_getstringexpand (L"LogViewer", LOG_VIEWER_DEFAULT);
-}
+PR_STRING _app_getlogpath ();
 
-VOID _app_loginit (_In_ BOOLEAN is_install);
-ULONG_PTR _app_getloghash (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log);
-BOOLEAN _app_islogfound (_In_ ULONG_PTR log_hash);
-BOOLEAN _app_logislimitreached (_In_ HANDLE hfile);
+PR_STRING _app_getlogviewer ();
 
-VOID _app_logclear (_In_opt_ HANDLE hfile);
-VOID _app_logclear_ui (_In_ HWND hwnd);
+BOOLEAN _app_islogfound (
+	_In_ ULONG_PTR log_hash
+);
 
-VOID _app_logwrite (_In_ PITEM_LOG ptr_log);
-VOID _app_logwrite_ui (_In_ HWND hwnd, _In_ PITEM_LOG ptr_log);
+BOOLEAN _app_logislimitreached (
+	_In_ HANDLE hfile
+);
 
-VOID _wfp_logsubscribe (_In_ HANDLE engine_handle);
-VOID _wfp_logunsubscribe (_In_ HANDLE engine_handle);
+VOID _app_logclear (
+	_In_opt_ HANDLE hfile
+);
 
-VOID _wfp_logsetoption (_In_ HANDLE engine_handle);
+VOID _app_logclear_ui (
+	_In_ HWND hwnd
+);
 
-VOID CALLBACK _wfp_logcallback (_In_ PITEM_LOG_CALLBACK log);
+VOID _app_logwrite (
+	_In_ PITEM_LOG ptr_log
+);
 
-VOID CALLBACK _wfp_logcallback0 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT1* event);
-VOID CALLBACK _wfp_logcallback1 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT2* event);
-VOID CALLBACK _wfp_logcallback2 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT3* event);
-VOID CALLBACK _wfp_logcallback3 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT4* event);
-VOID CALLBACK _wfp_logcallback4 (_In_opt_ PVOID context, _In_ const FWPM_NET_EVENT5* event);
+VOID _app_logwrite_ui (
+	_In_ HWND hwnd,
+	_In_ PITEM_LOG ptr_log
+);
 
-VOID NTAPI _app_logthread (_In_ PVOID arglist, _In_ ULONG busy_count);
+VOID _wfp_logsubscribe (
+	_In_ HANDLE engine_handle
+);
+
+VOID _wfp_logunsubscribe (
+	_In_ HANDLE engine_handle
+);
+
+VOID _wfp_logsetoption (
+	_In_ HANDLE engine_handle
+);
+
+VOID CALLBACK _wfp_logcallback (
+	_In_ PITEM_LOG_CALLBACK log
+);
+
+VOID CALLBACK _wfp_logcallback0 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT1* event
+);
+
+VOID CALLBACK _wfp_logcallback1 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT2* event
+);
+
+VOID CALLBACK _wfp_logcallback2 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT3* event
+);
+
+VOID CALLBACK _wfp_logcallback3 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT4* event
+);
+
+VOID CALLBACK _wfp_logcallback4 (
+	_In_opt_ PVOID context,
+	_In_ const FWPM_NET_EVENT5* event
+);
+
+VOID NTAPI _app_logthread (
+	_In_ PVOID arglist,
+	_In_ ULONG busy_count
+);
