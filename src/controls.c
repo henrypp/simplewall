@@ -3,7 +3,12 @@
 
 #include "global.h"
 
-VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR app_hash, _In_opt_ PITEM_NETWORK ptr_network, _In_opt_ PITEM_LOG ptr_log)
+VOID _app_getapptooltipstring (
+	_Inout_ PR_STRINGBUILDER buffer,
+	_In_ ULONG_PTR app_hash,
+	_In_opt_ PITEM_NETWORK ptr_network,
+	_In_opt_ PITEM_LOG ptr_log
+)
 {
 	PITEM_APP_INFO ptr_app_info;
 	PITEM_APP ptr_app;
@@ -78,7 +83,11 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 	// compile
 	if (!_r_obj_isstringempty2 (sb.string))
 	{
-		tmp_string1 = _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILE), L":\r\n");
+		tmp_string1 = _r_obj_concatstrings (
+			2,
+			_r_locale_getstring (IDS_FILE),
+			L":\r\n"
+		);
 
 		_r_obj_insertstringbuilder2 (&sb, 0, tmp_string1);
 		_r_obj_appendstringbuilder2 (buffer, sb.string);
@@ -91,7 +100,13 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 	{
 		if (!_r_obj_isstringempty (ptr_app_info->signature_info))
 		{
-			tmp_string1 = _r_obj_concatstrings (4, _r_locale_getstring (IDS_SIGNATURE), L":\r\n" SZ_TAB, ptr_app_info->signature_info->buffer, L"\r\n");
+			tmp_string1 = _r_obj_concatstrings (
+				4,
+				_r_locale_getstring (IDS_SIGNATURE),
+				L":\r\n" SZ_TAB,
+				ptr_app_info->signature_info->buffer,
+				L"\r\n"
+			);
 
 			_r_obj_appendstringbuilder2 (buffer, tmp_string1);
 
@@ -110,7 +125,13 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 
 			if (tmp_string2)
 			{
-				tmp_string1 = _r_obj_concatstrings (4, _r_locale_getstring (IDS_TIMELEFT), L":" SZ_TAB_CRLF, tmp_string2->buffer, L"\r\n");
+				tmp_string1 = _r_obj_concatstrings (
+					4,
+					_r_locale_getstring (IDS_TIMELEFT),
+					L":" SZ_TAB_CRLF,
+					tmp_string2->buffer,
+					L"\r\n"
+				);
 
 				_r_obj_appendstringbuilder2 (buffer, tmp_string1);
 
@@ -125,7 +146,13 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 
 	if (tmp_string2)
 	{
-		tmp_string1 = _r_obj_concatstrings (4, _r_locale_getstring (IDS_RULE), L":" SZ_TAB_CRLF, tmp_string2->buffer, L"\r\n");
+		tmp_string1 = _r_obj_concatstrings (
+			4,
+			_r_locale_getstring (IDS_RULE),
+			L":" SZ_TAB_CRLF,
+			tmp_string2->buffer,
+			L"\r\n"
+		);
 
 		_r_obj_appendstringbuilder2 (buffer, tmp_string1);
 
@@ -235,7 +262,11 @@ VOID _app_getapptooltipstring (_Inout_ PR_STRINGBUILDER buffer, _In_ ULONG_PTR a
 }
 
 _Ret_maybenull_
-PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ ULONG_PTR lparam)
+PR_STRING _app_gettooltipbylparam (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ ULONG_PTR lparam
+)
 {
 	R_STRINGBUILDER sr;
 	PR_STRING string1;
@@ -262,15 +293,16 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 			string2 = _app_rulesexpandrules (ptr_rule->rule_local, L"\r\n" SZ_TAB);
 
 			// rule information
-			_r_obj_appendstringbuilderformat (&sr, L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
-											  _r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
-											  lparam,
-											  _r_locale_getstring (IDS_RULE),
-											  SZ_TAB,
-											  _r_obj_getstringordefault (string1, SZ_EMPTY),
-											  _r_locale_getstring (IDS_RULE),
-											  SZ_TAB,
-											  _r_obj_getstringordefault (string2, SZ_EMPTY)
+			_r_obj_appendstringbuilderformat (
+				&sr, L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
+				_r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
+				lparam,
+				_r_locale_getstring (IDS_RULE),
+				SZ_TAB,
+				_r_obj_getstringordefault (string1, SZ_EMPTY),
+				_r_locale_getstring (IDS_RULE),
+				SZ_TAB,
+				_r_obj_getstringordefault (string2, SZ_EMPTY)
 			);
 
 			if (string1)
@@ -286,7 +318,13 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 
 				if (string1)
 				{
-					string2 = _r_obj_concatstrings (4, L"\r\n", _r_locale_getstring (IDS_TAB_APPS), L":\r\n" SZ_TAB, string1->buffer);
+					string2 = _r_obj_concatstrings (
+						4,
+						L"\r\n",
+						_r_locale_getstring (IDS_TAB_APPS),
+						L":\r\n" SZ_TAB,
+						string1->buffer
+					);
 
 					_r_obj_appendstringbuilder2 (&sr, string2);
 
@@ -298,7 +336,13 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 			// rule notes
 			if (ptr_rule->is_readonly && ptr_rule->type == DATA_RULE_USER)
 			{
-				string2 = _r_obj_concatstrings (4, L"\r\n", _r_locale_getstring (IDS_NOTES), L":\r\n" SZ_TAB, SZ_RULE_INTERNAL_TITLE);
+				string2 = _r_obj_concatstrings (
+					4,
+					L"\r\n",
+					_r_locale_getstring (IDS_NOTES),
+					L":\r\n" SZ_TAB,
+					SZ_RULE_INTERNAL_TITLE
+				);
 
 				_r_obj_appendstringbuilder2 (&sr, string2);
 
@@ -342,7 +386,10 @@ PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ UL
 	return NULL;
 }
 
-VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id)
+VOID _app_settab_id (
+	_In_ HWND hwnd,
+	_In_ INT page_id
+)
 {
 	HWND hctrl;
 	INT item_count;
@@ -376,7 +423,9 @@ VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id)
 		_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
-LPCWSTR _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type)
+LPCWSTR _app_getinterfacestatelocale (
+	_In_ ENUM_INSTALL_TYPE install_type
+)
 {
 	UINT locale_id;
 
@@ -397,7 +446,10 @@ LPCWSTR _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type)
 	return _r_locale_getstring (locale_id);
 }
 
-BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
+BOOLEAN _app_initinterfacestate (
+	_In_ HWND hwnd,
+	_In_ BOOLEAN is_forced
+)
 {
 	if (is_forced || _r_toolbar_isbuttonenabled (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START))
 	{
@@ -412,7 +464,10 @@ BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 	return FALSE;
 }
 
-VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled)
+VOID _app_restoreinterfacestate (
+	_In_ HWND hwnd,
+	_In_ BOOLEAN is_enabled
+)
 {
 	ENUM_INSTALL_TYPE install_type;
 
@@ -427,7 +482,10 @@ VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled)
 	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
 }
 
-VOID _app_setinterfacestate (_In_ HWND hwnd, _In_ LONG dpi_value)
+VOID _app_setinterfacestate (
+	_In_ HWND hwnd,
+	_In_ LONG dpi_value
+)
 {
 	ENUM_INSTALL_TYPE install_type;
 
@@ -467,7 +525,15 @@ VOID _app_setinterfacestate (_In_ HWND hwnd, _In_ LONG dpi_value)
 	if (!_wfp_isfiltersapplying ())
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
 
-	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _r_locale_getstring (string_id), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
+	_r_toolbar_setbutton (
+		config.hrebar,
+		IDC_TOOLBAR,
+		IDM_TRAY_START,
+		_r_locale_getstring (string_id),
+		BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT,
+		0,
+		is_filtersinstalled ? 1 : 0
+	);
 
 	// fix tray icon size
 	dpi_value = _r_dc_gettaskbardpi ();
@@ -480,7 +546,10 @@ VOID _app_setinterfacestate (_In_ HWND hwnd, _In_ LONG dpi_value)
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
 }
 
-VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value)
+VOID _app_imagelist_init (
+	_In_opt_ HWND hwnd,
+	_In_ LONG dpi_value
+)
 {
 	static UINT toolbar_ids[] = {
 		IDP_SHIELD_ENABLE,
@@ -522,7 +591,11 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value)
 	icon_large_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 	icon_large_y = _r_dc_getsystemmetrics (SM_CYICON, dpi_value);
 
-	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small_x, icon_large_x);
+	icon_size_toolbar = _r_calc_clamp (
+		_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value),
+		icon_small_x,
+		icon_large_x
+	);
 
 	config.hbmp_enable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_small_x, icon_small_y);
 	config.hbmp_disable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_small_x, icon_small_y);
@@ -537,7 +610,13 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value)
 	}
 	else
 	{
-		config.himg_toolbar = ImageList_Create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (toolbar_ids), RTL_NUMBER_OF (toolbar_ids));
+		config.himg_toolbar = ImageList_Create (
+			icon_size_toolbar,
+			icon_size_toolbar,
+			ILC_COLOR32 | ILC_HIGHQUALITYSCALE,
+			RTL_NUMBER_OF (toolbar_ids),
+			RTL_NUMBER_OF (toolbar_ids)
+		);
 	}
 
 	if (config.himg_toolbar)
@@ -561,7 +640,13 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value)
 	}
 	else
 	{
-		config.himg_rules_small = ImageList_Create (icon_small_x, icon_small_y, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (rules_ids), RTL_NUMBER_OF (rules_ids));
+		config.himg_rules_small = ImageList_Create (
+			icon_small_x,
+			icon_small_y,
+			ILC_COLOR32 | ILC_HIGHQUALITYSCALE,
+			RTL_NUMBER_OF (rules_ids),
+			RTL_NUMBER_OF (rules_ids)
+		);
 	}
 
 	if (config.himg_rules_small)
@@ -582,7 +667,13 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value)
 	}
 	else
 	{
-		config.himg_rules_large = ImageList_Create (icon_large_x, icon_large_y, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (rules_ids), RTL_NUMBER_OF (rules_ids));
+		config.himg_rules_large = ImageList_Create (
+			icon_large_x,
+			icon_large_y,
+			ILC_COLOR32 | ILC_HIGHQUALITYSCALE,
+			RTL_NUMBER_OF (rules_ids),
+			RTL_NUMBER_OF (rules_ids)
+		);
 	}
 
 	if (config.himg_rules_large)
@@ -597,7 +688,12 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value)
 	}
 }
 
-HFONT _app_createfont (_Inout_ PLOGFONT logfont, _In_ LONG size, _In_ BOOLEAN is_underline, _In_ LONG dpi_value)
+HFONT _app_createfont (
+	_Inout_ PLOGFONT logfont,
+	_In_ LONG size,
+	_In_ BOOLEAN is_underline,
+	_In_ LONG dpi_value
+)
 {
 	if (size)
 		logfont->lfHeight = _r_dc_fontsizetoheight (size, dpi_value);
@@ -609,7 +705,9 @@ HFONT _app_createfont (_Inout_ PLOGFONT logfont, _In_ LONG size, _In_ BOOLEAN is
 	return CreateFontIndirect (logfont);
 }
 
-VOID _app_windowloadfont (_In_ LONG dpi_value)
+VOID _app_windowloadfont (
+	_In_ LONG dpi_value
+)
 {
 	NONCLIENTMETRICS ncm = {0};
 
@@ -623,7 +721,10 @@ VOID _app_windowloadfont (_In_ LONG dpi_value)
 	config.wnd_font = _app_createfont (&ncm.lfMessageFont, 0, FALSE, 0);
 }
 
-VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
+VOID _app_toolbar_init (
+	_In_ HWND hwnd,
+	_In_ LONG dpi_value
+)
 {
 	ULONG button_size;
 	LONG rebar_height;
@@ -729,7 +830,10 @@ VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 	}
 }
 
-VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value)
+VOID _app_toolbar_resize (
+	_In_ HWND hwnd,
+	_In_ LONG dpi_value
+)
 {
 	REBARBANDINFO rbi;
 	SIZE ideal_size = {0};
@@ -795,7 +899,11 @@ VOID _app_toolbar_setfont ()
 		SendMessage (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 }
 
-VOID _app_window_resize (_In_ HWND hwnd, _In_ LPCRECT rect, _In_ LONG dpi_value)
+VOID _app_window_resize (
+	_In_ HWND hwnd,
+	_In_ LPCRECT rect,
+	_In_ LONG dpi_value
+)
 {
 	HDWP hdefer;
 	LONG rebar_height;
@@ -818,8 +926,27 @@ VOID _app_window_resize (_In_ HWND hwnd, _In_ LPCRECT rect, _In_ LONG dpi_value)
 
 	if (hdefer)
 	{
-		hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, rect->right, rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-		hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, rect->right, rect->bottom - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+		hdefer = DeferWindowPos (
+			hdefer,
+			config.hrebar,
+			NULL,
+			0,
+			0,
+			rect->right,
+			rebar_height,
+			SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER
+		);
+
+		hdefer = DeferWindowPos (
+			hdefer,
+			GetDlgItem (hwnd, IDC_TAB),
+			NULL,
+			0,
+			rebar_height,
+			rect->right,
+			rect->bottom - rebar_height - statusbar_height,
+			SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER
+		);
 
 		EndDeferWindowPos (hdefer);
 	}
@@ -842,7 +969,9 @@ VOID _app_window_resize (_In_ HWND hwnd, _In_ LPCRECT rect, _In_ LONG dpi_value)
 	_app_refreshstatus (hwnd);
 }
 
-VOID _app_refreshstatus (_In_ HWND hwnd)
+VOID _app_refreshstatus (
+	_In_ HWND hwnd
+)
 {
 	ITEM_STATUS status;
 	HWND hstatus;
@@ -877,13 +1006,23 @@ VOID _app_refreshstatus (_In_ HWND hwnd)
 		{
 			case 1:
 			{
-				text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), status.apps_unused_count);
+				text[i] = _r_format_string (
+					L"%s: %" TEXT (PR_SIZE_T),
+					_r_locale_getstring (IDS_STATUS_UNUSED_APPS),
+					status.apps_unused_count
+				);
+
 				break;
 			}
 
 			case 2:
 			{
-				text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_TIMER_APPS), status.apps_timer_count);
+				text[i] = _r_format_string (
+					L"%s: %" TEXT (PR_SIZE_T),
+					_r_locale_getstring (IDS_STATUS_TIMER_APPS),
+					status.apps_timer_count
+				);
+
 				break;
 			}
 		}
@@ -898,7 +1037,11 @@ VOID _app_refreshstatus (_In_ HWND hwnd)
 		}
 	}
 
-	parts[0] = _r_ctrl_getwidth (hstatus, 0) - calculated_width - _r_dc_getsystemmetrics (SM_CXVSCROLL, dpi_value) - (_r_dc_getsystemmetrics (SM_CXBORDER, dpi_value) * 4);
+	parts[0] = _r_ctrl_getwidth (hstatus, 0) -
+		calculated_width -
+		_r_dc_getsystemmetrics (SM_CXVSCROLL, dpi_value) -
+		(_r_dc_getsystemmetrics (SM_CXBORDER, dpi_value) * 4);
+
 	parts[1] = parts[0] + size[1];
 	parts[2] = parts[1] + size[2];
 

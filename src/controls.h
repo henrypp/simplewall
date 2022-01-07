@@ -6,24 +6,70 @@
 EXTERN_C const IID IID_IImageList2;
 
 _Ret_maybenull_
-PR_STRING _app_gettooltipbylparam (_In_ HWND hwnd, _In_ INT listview_id, _In_ ULONG_PTR lparam);
+PR_STRING _app_gettooltipbylparam (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ ULONG_PTR lparam
+);
 
-VOID _app_settab_id (_In_ HWND hwnd, _In_ INT page_id);
+VOID _app_settab_id (
+	_In_ HWND hwnd,
+	_In_ INT page_id
+);
 
-LPCWSTR _app_getinterfacestatelocale (_In_ ENUM_INSTALL_TYPE install_type);
-BOOLEAN _app_initinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_forced);
-VOID _app_restoreinterfacestate (_In_ HWND hwnd, _In_ BOOLEAN is_enabled);
-VOID _app_setinterfacestate (_In_ HWND hwnd, _In_ LONG dpi_value);
+LPCWSTR _app_getinterfacestatelocale (
+	_In_ ENUM_INSTALL_TYPE install_type
+);
 
-VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value);
+BOOLEAN _app_initinterfacestate (
+	_In_ HWND hwnd,
+	_In_ BOOLEAN is_forced
+);
 
-HFONT _app_createfont (_Inout_ PLOGFONT logfont, _In_ LONG size, _In_ BOOLEAN is_underline, _In_ LONG dpi_value);
-VOID _app_windowloadfont (_In_ LONG dpi_value);
+VOID _app_restoreinterfacestate (
+	_In_ HWND hwnd,
+	_In_ BOOLEAN is_enabled
+);
 
-VOID _app_toolbar_init (_In_ HWND hwnd, _In_ LONG dpi_value);
-VOID _app_toolbar_resize (_In_ HWND hwnd, _In_ LONG dpi_value);
+VOID _app_setinterfacestate (
+	_In_ HWND hwnd,
+	_In_ LONG dpi_value
+);
+
+VOID _app_imagelist_init (
+	_In_opt_ HWND hwnd,
+	_In_ LONG dpi_value
+);
+
+HFONT _app_createfont (
+	_Inout_ PLOGFONT logfont,
+	_In_ LONG size,
+	_In_ BOOLEAN is_underline,
+	_In_ LONG dpi_value
+);
+
+VOID _app_windowloadfont (
+	_In_ LONG dpi_value
+);
+
+VOID _app_toolbar_init (
+	_In_ HWND hwnd,
+	_In_ LONG dpi_value
+);
+
+VOID _app_toolbar_resize (
+	_In_ HWND hwnd,
+	_In_ LONG dpi_value
+);
+
 VOID _app_toolbar_setfont ();
 
-VOID _app_window_resize (_In_ HWND hwnd, _In_ LPCRECT rect, _In_ LONG dpi_value);
+VOID _app_window_resize (
+	_In_ HWND hwnd,
+	_In_ LPCRECT rect,
+	_In_ LONG dpi_value
+);
 
-VOID _app_refreshstatus (_In_ HWND hwnd);
+VOID _app_refreshstatus (
+	_In_ HWND hwnd
+);
