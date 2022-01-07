@@ -811,8 +811,21 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 			}
 			else
 			{
-
-				lpnmlv->item.iGroupId = ptr_rule->is_enabled ? 0 : 2;
+				if (ptr_rule->is_enabled)
+				{
+					if (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps))
+					{
+						lpnmlv->item.iGroupId = 1;
+					}
+					else
+					{
+						lpnmlv->item.iGroupId = 0;
+					}
+				}
+				else
+				{
+					lpnmlv->item.iGroupId = 2;
+				}
 			}
 		}
 	}
