@@ -29,26 +29,70 @@ typedef struct _EDITOR_CONTEXT
 } EDITOR_CONTEXT, *PEDITOR_CONTEXT;
 
 _Ret_maybenull_
-PEDITOR_CONTEXT _app_editor_createwindow (_In_ HWND hwnd, _In_ PVOID lparam, _In_ INT page_id, _In_ BOOLEAN is_settorules);
+PEDITOR_CONTEXT _app_editor_createwindow (
+	_In_ HWND hwnd,
+	_In_ PVOID lparam,
+	_In_ INT page_id,
+	_In_ BOOLEAN is_settorules
+);
 
-FORCEINLINE VOID _app_editor_deletewindow (_In_ PEDITOR_CONTEXT context)
-{
-	_r_mem_free (context);
-}
-
-_Ret_maybenull_
-PEDITOR_CONTEXT _app_editor_getcontext (_In_ HWND hwnd);
-
-VOID _app_editor_setcontext (_In_ HWND hwnd, _In_ PEDITOR_CONTEXT context);
-
-VOID _app_editor_addtabitem (_In_ HWND hwnd, _In_ UINT locale_id, _In_ INT dlg_id, _In_ PEDITOR_CONTEXT context, _Inout_ PINT tabs_count);
-VOID _app_editor_settabtitle (_In_ HWND hwnd, _In_ INT listview_id);
+VOID _app_editor_deletewindow (
+	_In_ PEDITOR_CONTEXT context
+);
 
 _Ret_maybenull_
-PR_STRING _app_editor_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT exclude_id);
+PEDITOR_CONTEXT _app_editor_getcontext (
+	_In_ HWND hwnd
+);
 
-VOID _app_editor_setrulestolistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ PR_STRING rule);
+VOID _app_editor_setcontext (
+	_In_ HWND hwnd,
+	_In_ PEDITOR_CONTEXT context
+);
 
-INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam);
-INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam);
-INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam);
+VOID _app_editor_addtabitem (
+	_In_ HWND hwnd,
+	_In_ UINT locale_id,
+	_In_ INT dlg_id,
+	_In_ PEDITOR_CONTEXT context,
+	_Inout_ PINT tabs_count
+);
+
+VOID _app_editor_settabtitle (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+);
+
+_Ret_maybenull_
+PR_STRING _app_editor_getrulesfromlistview (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id,
+	_In_ INT exclude_id
+);
+
+VOID _app_editor_setrulestolistview (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id,
+	_In_ PR_STRING rule
+);
+
+INT_PTR CALLBACK EditorRuleProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+);
+
+INT_PTR CALLBACK EditorPagesProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+);
+
+INT_PTR CALLBACK EditorProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+);

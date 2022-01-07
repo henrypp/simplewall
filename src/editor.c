@@ -4,7 +4,12 @@
 #include "global.h"
 
 _Ret_maybenull_
-PEDITOR_CONTEXT _app_editor_createwindow (_In_ HWND hwnd, _In_ PVOID lparam, _In_ INT page_id, _In_ BOOLEAN is_settorules)
+PEDITOR_CONTEXT _app_editor_createwindow (
+	_In_ HWND hwnd,
+	_In_ PVOID lparam,
+	_In_ INT page_id,
+	_In_ BOOLEAN is_settorules
+)
 {
 	PEDITOR_CONTEXT context;
 
@@ -22,8 +27,17 @@ PEDITOR_CONTEXT _app_editor_createwindow (_In_ HWND hwnd, _In_ PVOID lparam, _In
 	return NULL;
 }
 
+VOID _app_editor_deletewindow (
+	_In_ PEDITOR_CONTEXT context
+)
+{
+	_r_mem_free (context);
+}
+
 _Ret_maybenull_
-PEDITOR_CONTEXT _app_editor_getcontext (_In_ HWND hwnd)
+PEDITOR_CONTEXT _app_editor_getcontext (
+	_In_ HWND hwnd
+)
 {
 	PEDITOR_CONTEXT context;
 
@@ -32,12 +46,21 @@ PEDITOR_CONTEXT _app_editor_getcontext (_In_ HWND hwnd)
 	return context;
 }
 
-VOID _app_editor_setcontext (_In_ HWND hwnd, _In_ PEDITOR_CONTEXT context)
+VOID _app_editor_setcontext (
+	_In_ HWND hwnd,
+	_In_ PEDITOR_CONTEXT context
+)
 {
 	_r_wnd_setcontext (hwnd, SHORT_MAX, context);
 }
 
-VOID _app_editor_addtabitem (_In_ HWND hwnd, _In_ UINT locale_id, _In_ INT dlg_id, _In_ PEDITOR_CONTEXT context, _Inout_ PINT tabs_count)
+VOID _app_editor_addtabitem (
+	_In_ HWND hwnd,
+	_In_ UINT locale_id,
+	_In_ INT dlg_id,
+	_In_ PEDITOR_CONTEXT context,
+	_Inout_ PINT tabs_count
+)
 {
 	HWND htab;
 
@@ -57,7 +80,10 @@ VOID _app_editor_addtabitem (_In_ HWND hwnd, _In_ UINT locale_id, _In_ INT dlg_i
 	SendMessage (htab, RM_INITIALIZE, 0, 0);
 }
 
-VOID _app_editor_settabtitle (_In_ HWND hwnd, _In_ INT listview_id)
+VOID _app_editor_settabtitle (
+	_In_ HWND hwnd,
+	_In_ INT listview_id
+)
 {
 	WCHAR buffer[128];
 	HWND hparent;
@@ -87,13 +113,23 @@ VOID _app_editor_settabtitle (_In_ HWND hwnd, _In_ INT listview_id)
 
 	checked_count = _r_listview_getitemcheckedcount (hwnd, listview_id);
 
-	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%d)", _r_locale_getstring (locale_id), checked_count);
+	_r_str_printf (
+		buffer,
+		RTL_NUMBER_OF (buffer),
+		L"%s (%d)",
+		_r_locale_getstring (locale_id),
+		checked_count
+	);
 
 	_r_tab_setitem (hparent, IDC_TAB, tab_id, buffer, I_IMAGENONE, 0);
 }
 
 _Ret_maybenull_
-PR_STRING _app_editor_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ INT exclude_id)
+PR_STRING _app_editor_getrulesfromlistview (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id,
+	_In_ INT exclude_id
+)
 {
 	static R_STRINGREF divider_sr = PR_STRINGREF_INIT (DIVIDER_RULE);
 
@@ -150,7 +186,11 @@ PR_STRING _app_editor_getrulesfromlistview (_In_ HWND hwnd, _In_ INT ctrl_id, _I
 	return string;
 }
 
-VOID _app_editor_setrulestolistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ PR_STRING rule)
+VOID _app_editor_setrulestolistview (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id,
+	_In_ PR_STRING rule
+)
 {
 	PR_STRING rule_string;
 	R_STRINGREF first_part;
@@ -179,7 +219,12 @@ VOID _app_editor_setrulestolistview (_In_ HWND hwnd, _In_ INT ctrl_id, _In_ PR_S
 	_r_listview_setcolumn (hwnd, ctrl_id, 0, NULL, -100);
 }
 
-INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
+INT_PTR CALLBACK EditorRuleProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+)
 {
 	PEDITOR_CONTEXT context;
 
@@ -197,7 +242,12 @@ INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 			// localize window
 			SetWindowText (hwnd, _r_locale_getstring (IDS_RULE));
 
-			_r_edit_settextlimit (hwnd, IDC_RULE_ID, _r_calc_clamp (RULE_RULE_CCH_MAX - (LONG)(context->current_length) - 1, 1, RULE_RULE_CCH_MAX));
+			_r_edit_settextlimit (
+				hwnd,
+				IDC_RULE_ID,
+				_r_calc_clamp (RULE_RULE_CCH_MAX - (LONG)(context->current_length) - 1, 1, RULE_RULE_CCH_MAX)
+			);
+
 			_r_edit_setcuebanner (hwnd, IDC_RULE_ID, L"Example: 192.168.0.1;192.168.0.17");
 
 			if (context->item_id != -1)
@@ -212,7 +262,11 @@ INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 				}
 			}
 
-			_r_ctrl_setstring (hwnd, IDC_RULE_HINT, L"eg. 192.168.0.1\r\neg. [fe80::]\r\neg. 192.168.0.1:443\r\neg. [fe80::]:443\r\neg. 192.168.0.1-192.168.0.255\r\neg. 192.168.0.1-192.168.0.255:443\r\neg. 192.168.0.0/16\r\neg. fe80::/10\r\neg. 80\r\neg. 443\r\neg. 20-21\r\neg. 49152-65534");
+			_r_ctrl_setstring (
+				hwnd,
+				IDC_RULE_HINT,
+				L"eg. 192.168.0.1\r\neg. [fe80::]\r\neg. 192.168.0.1:443\r\neg. [fe80::]:443\r\neg. 192.168.0.1-192.168.0.255\r\neg. 192.168.0.1-192.168.0.255:443\r\neg. 192.168.0.0/16\r\neg. fe80::/10\r\neg. 80\r\neg. 443\r\neg. 20-21\r\neg. 49152-65534"
+			);
 
 			_r_ctrl_setstring (hwnd, IDC_SAVE, _r_locale_getstring (context->item_id != -1 ? IDS_SAVE : IDS_ADD));
 			_r_ctrl_setstring (hwnd, IDC_CLOSE, _r_locale_getstring (IDS_CLOSE));
@@ -279,7 +333,11 @@ INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 				case IDOK: // process Enter key
 				case IDC_SAVE:
 				{
+					WCHAR rule_string[256];
+					R_STRINGREF remaining_part;
+					R_STRINGREF first_part;
 					PR_STRING string;
+					INT item_id;
 
 					if (!_r_ctrl_isenabled (hwnd, IDC_SAVE))
 						return FALSE;
@@ -305,11 +363,6 @@ INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 
 					if (!context)
 						return FALSE;
-
-					WCHAR rule_string[256];
-					R_STRINGREF remaining_part;
-					R_STRINGREF first_part;
-					INT item_id;
 
 					_r_obj_initializestringref2 (&remaining_part, string);
 
@@ -359,7 +412,12 @@ INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 	return FALSE;
 }
 
-INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
+INT_PTR CALLBACK EditorPagesProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+)
 {
 	PEDITOR_CONTEXT context;
 
@@ -527,7 +585,13 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			{
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE, L"%s (" SZ_DIRECTION_REMOTE L"):", _r_locale_getstring (IDS_RULE));
 
-				_r_listview_setstyle (hwnd, IDC_RULE_REMOTE_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP, FALSE);
+				_r_listview_setstyle (
+					hwnd,
+					IDC_RULE_REMOTE_ID,
+					LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP,
+					FALSE
+				);
+
 				_r_listview_addcolumn (hwnd, IDC_RULE_REMOTE_ID, 0, NULL, -100, 0);
 
 				if (!_r_obj_isstringempty (context->ptr_rule->rule_remote))
@@ -551,7 +615,13 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			{
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL, L"%s (" SZ_DIRECTION_LOCAL L"):", _r_locale_getstring (IDS_RULE));
 
-				_r_listview_setstyle (hwnd, IDC_RULE_LOCAL_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP, FALSE);
+				_r_listview_setstyle (
+					hwnd,
+					IDC_RULE_LOCAL_ID,
+					LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP,
+					FALSE
+				);
+
 				_r_listview_addcolumn (hwnd, IDC_RULE_LOCAL_ID, 0, NULL, -100, 0);
 
 				if (!_r_obj_isstringempty (context->ptr_rule->rule_local))
@@ -585,7 +655,12 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			{
 				_app_listview_setview (hwnd, IDC_RULE_APPS_ID);
 
-				_r_listview_setstyle (hwnd, IDC_RULE_APPS_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, TRUE);
+				_r_listview_setstyle (
+					hwnd,
+					IDC_RULE_APPS_ID,
+					LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES,
+					TRUE
+				);
 
 				_r_listview_addcolumn (hwnd, IDC_RULE_APPS_ID, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
 
@@ -593,7 +668,15 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 
-				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED);
+				_r_listview_addgroup (
+					hwnd,
+					IDC_RULE_APPS_ID,
+					LV_HIDDEN_GROUP_ID,
+					L"",
+					0,
+					LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED,
+					LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED
+				);
 
 				// apps (apply to)
 				{
@@ -606,11 +689,23 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 					{
 						// check for services
-						is_enabled = (_r_obj_findhashtable (context->ptr_rule->apps, ptr_app->app_hash)) || (context->ptr_rule->is_forservices && _app_issystemhash (ptr_app->app_hash));
+						is_enabled = (
+							(_r_obj_findhashtable (context->ptr_rule->apps, ptr_app->app_hash)) ||
+							(context->ptr_rule->is_forservices && _app_issystemhash (ptr_app->app_hash))
+							);
 
 						_app_listview_lock (hwnd, IDC_RULE_APPS_ID, TRUE);
 
-						_r_listview_additem_ex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (ptr_app->app_hash));
+						_r_listview_additem_ex (
+							hwnd,
+							IDC_RULE_APPS_ID,
+							0,
+							LPSTR_TEXTCALLBACK,
+							I_IMAGECALLBACK,
+							I_GROUPIDCALLBACK,
+							_app_listview_createcontext (ptr_app->app_hash)
+						);
+
 						_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
 						_app_listview_lock (hwnd, IDC_RULE_APPS_ID, FALSE);
@@ -670,7 +765,13 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 			{
 				string = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_SIGNATURE_STRING);
 
-				_r_ctrl_setstringformat (hwnd, IDC_APP_SIGNATURE_ID, L"%s: %s", _r_locale_getstring (IDS_SIGNATURE), _r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED)));
+				_r_ctrl_setstringformat (
+					hwnd,
+					IDC_APP_SIGNATURE_ID,
+					L"%s: %s",
+					_r_locale_getstring (IDS_SIGNATURE),
+					_r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED))
+				);
 
 				SendDlgItemMessage (hwnd, IDC_APP_SIGNATURE_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 
@@ -690,14 +791,43 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 				// configure listview
 				_app_listview_setview (hwnd, IDC_APP_RULES_ID);
 
-				_r_listview_setstyle (hwnd, IDC_APP_RULES_ID, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, TRUE);
+				_r_listview_setstyle (
+					hwnd,
+					IDC_APP_RULES_ID,
+					LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES,
+					TRUE
+				);
 
 				_r_listview_addcolumn (hwnd, IDC_APP_RULES_ID, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
 
-				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 0, _r_locale_getstring (IDS_TRAY_SYSTEM_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
-				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 1, _r_locale_getstring (IDS_TRAY_USER_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+				_r_listview_addgroup (
+					hwnd,
+					IDC_APP_RULES_ID,
+					0,
+					_r_locale_getstring (IDS_TRAY_SYSTEM_RULES),
+					0,
+					LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE
+				);
 
-				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_COLLAPSED, LVGS_COLLAPSED);
+				_r_listview_addgroup (
+					hwnd,
+					IDC_APP_RULES_ID,
+					1,
+					_r_locale_getstring (IDS_TRAY_USER_RULES),
+					0,
+					LVGS_COLLAPSIBLE,
+					LVGS_COLLAPSIBLE
+				);
+
+				_r_listview_addgroup (
+					hwnd,
+					IDC_APP_RULES_ID,
+					LV_HIDDEN_GROUP_ID,
+					L"",
+					0,
+					LVGS_COLLAPSED,
+					LVGS_COLLAPSED
+				);
 
 				// initialize
 				PITEM_RULE ptr_rule;
@@ -713,11 +843,23 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 						continue;
 
 					// check for services
-					is_enabled = ((ptr_rule->is_forservices && _app_issystemhash (context->ptr_app->app_hash)) || _r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash));
+					is_enabled = (
+						(ptr_rule->is_forservices && _app_issystemhash (context->ptr_app->app_hash)) ||
+						_r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash)
+						);
 
 					_app_listview_lock (hwnd, IDC_APP_RULES_ID, TRUE);
 
-					_r_listview_additem_ex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (i));
+					_r_listview_additem_ex (
+						hwnd,
+						IDC_APP_RULES_ID,
+						0,
+						LPSTR_TEXTCALLBACK,
+						I_IMAGECALLBACK,
+						I_GROUPIDCALLBACK,
+						_app_listview_createcontext (i)
+					);
+
 					_r_listview_setitemcheck (hwnd, IDC_APP_RULES_ID, 0, is_enabled);
 
 					_app_listview_lock (hwnd, IDC_APP_RULES_ID, FALSE);
@@ -1026,9 +1168,15 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					{
 						if (listview_id == IDC_RULE_APPS_ID)
 						{
-							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
+							if (
+								(lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) ||
+								((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2))
+								)
 							{
-								if (!_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom) && context->ptr_rule->type != DATA_RULE_USER)
+								if (
+									!_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom) &&
+									context->ptr_rule->type != DATA_RULE_USER
+									)
 								{
 									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 									return TRUE;
@@ -1058,7 +1206,10 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					{
 						if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
 						{
-							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
+							if (
+								(lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) ||
+								((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2))
+								)
 							{
 								if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 									break;
@@ -1107,7 +1258,11 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					if (listview_id != IDC_RULE_APPS_ID && listview_id != IDC_APP_RULES_ID)
 						break;
 
-					string = _app_gettooltipbylparam (hwnd, listview_id, _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem));
+					string = _app_gettooltipbylparam (
+						hwnd,
+						listview_id,
+						_app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem)
+					);
 
 					if (string)
 					{
@@ -1243,7 +1398,10 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 					listview_id = ((ctrl_id == IDC_RULE_REMOTE_DELETE) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID);
 					selected_count = _r_listview_getselectedcount (hwnd, listview_id);
 
-					if (!selected_count || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_locale_getstring (IDS_QUESTION_DELETE)) != IDYES)
+					if (!selected_count)
+						break;
+
+					if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_locale_getstring (IDS_QUESTION_DELETE)) != IDYES)
 						break;
 
 					item_count = _r_listview_getitemcount (hwnd, listview_id) - 1;
@@ -1398,7 +1556,12 @@ INT_PTR CALLBACK EditorPagesProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpa
 	return FALSE;
 }
 
-INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
+INT_PTR CALLBACK EditorProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+)
 {
 	PEDITOR_CONTEXT context;
 
@@ -1662,7 +1825,11 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 							string = _app_db_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af, FALSE);
 							_r_obj_movereference (&context->ptr_rule->protocol_str, string);
 
-							context->ptr_rule->direction = (FWP_DIRECTION)_r_calc_clamp (_r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY) - IDC_RULE_DIRECTION_OUTBOUND, FWP_DIRECTION_OUTBOUND, FWP_DIRECTION_MAX);
+							context->ptr_rule->direction = (FWP_DIRECTION)_r_calc_clamp (
+								_r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY) - IDC_RULE_DIRECTION_OUTBOUND,
+								FWP_DIRECTION_OUTBOUND,
+								FWP_DIRECTION_MAX
+							);
 
 							if (_r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_ACTION_BLOCK, IDC_RULE_ACTION_ALLOW) == IDC_RULE_ACTION_BLOCK)
 							{
