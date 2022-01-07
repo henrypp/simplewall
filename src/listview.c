@@ -507,6 +507,11 @@ VOID _app_listview_loadfont (_In_ LONG dpi_value, _In_ BOOLEAN is_forced)
 
 VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 {
+	WCHAR group1_string[128] = {0};
+	WCHAR group2_string[128] = {0};
+	WCHAR group3_string[128] = {0};
+	WCHAR group4_string[128] = {0};
+
 	UINT group1_title;
 	UINT group2_title;
 	UINT group3_title;
@@ -521,8 +526,12 @@ VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 
 	INT group_id;
 
+	BOOLEAN is_rules;
+
 	if (!_r_listview_isgroupviewenabled (hwnd, listview_id))
 		return;
+
+	is_rules = (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM);
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
@@ -531,10 +540,10 @@ VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 		group3_title = IDS_GROUP_BLOCKED;
 		group4_title = IDS_GROUP_BLOCKED;
 	}
-	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM)
+	else if (is_rules)
 	{
 		group1_title = IDS_GROUP_ENABLED;
-		group2_title = 0;
+		group2_title = IDS_GROUP_ENABLED;
 		group3_title = IDS_GROUP_DISABLED;
 		group4_title = 0;
 	}
@@ -594,23 +603,52 @@ VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 		}
 	}
 
-	WCHAR group1_string[128] = {0};
-	WCHAR group2_string[128] = {0};
-	WCHAR group3_string[128] = {0};
-	WCHAR group4_string[128] = {0};
-
 	if (total_count)
 	{
-		_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L"%s (%d/%d)", _r_locale_getstring (group1_title), group1_count, total_count);
+		_r_str_printf (
+			group1_string,
+			RTL_NUMBER_OF (group1_string),
+			is_rules ? L"%s (%d/%d) [global rule]" : L"%s (%d/%d)",
+			_r_locale_getstring (group1_title),
+			group1_count,
+			total_count
+		);
 
 		if (group2_title)
-			_r_str_printf (group2_string, RTL_NUMBER_OF (group2_string), L"%s (%d/%d)", _r_locale_getstring (group2_title), group2_count, total_count);
+		{
+			_r_str_printf (
+				group2_string,
+				RTL_NUMBER_OF (group2_string),
+				is_rules ? L"%s (%d/%d) [rule for app]" : L"%s (%d/%d)",
+				_r_locale_getstring (group2_title),
+				group2_count,
+				total_count
+			);
+		}
 
 		if (group3_title)
-			_r_str_printf (group3_string, RTL_NUMBER_OF (group3_string), L"%s (%d/%d)", _r_locale_getstring (group3_title), group3_count, total_count);
+		{
+			_r_str_printf (
+				group3_string,
+				RTL_NUMBER_OF (group3_string),
+				L"%s (%d/%d)",
+				_r_locale_getstring (group3_title),
+				group3_count,
+				total_count
+			);
+		}
 
 		if (group4_title)
-			_r_str_printf (group4_string, RTL_NUMBER_OF (group4_string), L"%s (%d/%d) [silent]", _r_locale_getstring (group4_title), group4_count, total_count);
+		{
+			_r_str_printf (
+				group4_string,
+				RTL_NUMBER_OF (group4_string),
+				L"%s (%d/%d) [silent]",
+				_r_locale_getstring (group4_title),
+				group4_count,
+				total_count
+			);
+		}
 	}
 
 	_r_listview_setgroup (hwnd, listview_id, 0, group1_string, 0, 0);
