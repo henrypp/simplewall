@@ -601,8 +601,7 @@ VOID _app_listview_refreshgroups (_In_ HWND hwnd, _In_ INT listview_id)
 
 	if (total_count)
 	{
-		if (group1_title)
-			_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L"%s (%d/%d)", _r_locale_getstring (group1_title), group1_count, total_count);
+		_r_str_printf (group1_string, RTL_NUMBER_OF (group1_string), L"%s (%d/%d)", _r_locale_getstring (group1_title), group1_count, total_count);
 
 		if (group2_title)
 			_r_str_printf (group2_string, RTL_NUMBER_OF (group2_string), L"%s (%d/%d)", _r_locale_getstring (group2_title), group2_count, total_count);
@@ -769,8 +768,8 @@ VOID _app_listview_setview (_In_ HWND hwnd, _In_ INT listview_id)
 	BOOLEAN is_mainview;
 
 	is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
-	view_type = is_mainview ? _r_calc_clamp32 (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
-	icons_size = is_mainview ? _r_calc_clamp32 (_r_config_getlong (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SMALL;
+	view_type = is_mainview ? _r_calc_clamp (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
+	icons_size = is_mainview ? _r_calc_clamp (_r_config_getlong (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SMALL;
 
 	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
 	{
@@ -945,7 +944,7 @@ VOID _app_listview_sort_ex (_In_ HWND hwnd, _In_ INT listview_id, _In_ LONG colu
 	if (column_id == -1)
 		column_id = _r_config_getlong_ex (L"SortColumn", 0, config_name);
 
-	column_id = _r_calc_clamp32 (column_id, 0, column_count - 1); // set range
+	column_id = _r_calc_clamp (column_id, 0, column_count - 1); // set range
 
 	if (is_notifycode)
 	{

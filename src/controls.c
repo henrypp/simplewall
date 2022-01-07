@@ -522,7 +522,7 @@ VOID _app_imagelist_init (_In_opt_ HWND hwnd, _In_ LONG dpi_value)
 	icon_large_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 	icon_large_y = _r_dc_getsystemmetrics (SM_CYICON, dpi_value);
 
-	icon_size_toolbar = _r_calc_clamp32 (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small_x, icon_large_x);
+	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small_x, icon_large_x);
 
 	config.hbmp_enable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_small_x, icon_small_y);
 	config.hbmp_disable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_small_x, icon_small_y);

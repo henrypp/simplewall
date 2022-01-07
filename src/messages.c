@@ -1276,7 +1276,7 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 			LONG view_type;
 			UINT menu_id;
 
-			view_type = _r_calc_clamp32 (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX);
+			view_type = _r_calc_clamp (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX);
 
 			if (view_type == LV_VIEW_ICON)
 			{
@@ -1298,7 +1298,7 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 			UINT menu_id;
 			LONG icon_size;
 
-			icon_size = _r_calc_clamp32 (_r_config_getlong (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST);
+			icon_size = _r_calc_clamp (_r_config_getlong (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST);
 
 			if (icon_size == SHIL_EXTRALARGE)
 			{
@@ -1332,9 +1332,9 @@ VOID _app_message_initialize (_In_ HWND hwnd)
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 		_r_menu_checkitem (hmenu, IDM_USEREFRESHDEVICES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsRefreshDevices", TRUE));
 
-		_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_SPY_DISABLE + _r_calc_clamp32 (_r_config_getlong (L"BlocklistSpyState", 2), 0, 2));
-		_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_UPDATE_DISABLE + _r_calc_clamp32 (_r_config_getlong (L"BlocklistUpdateState", 0), 0, 2));
-		_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_EXTRA_DISABLE + _r_calc_clamp32 (_r_config_getlong (L"BlocklistExtraState", 0), 0, 2));
+		_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_SPY_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistSpyState", 2), 0, 2));
+		_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_UPDATE_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistUpdateState", 0), 0, 2));
+		_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_EXTRA_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistExtraState", 0), 0, 2));
 	}
 
 	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, NULL, 0, _r_config_getboolean (L"IsNotificationsEnabled", TRUE) ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
@@ -1735,6 +1735,7 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 	PR_STRING process_path;
 	HANDLE current_handle;
 	INT item_count;
+	NTSTATUS status;
 
 	if (_r_config_getboolean (L"IsLogUiEnabled", FALSE))
 	{
@@ -1773,11 +1774,13 @@ VOID _app_command_logshow (_In_ HWND hwnd)
 		{
 			process_path = _r_obj_concatstrings (5, L"\"", viewer_path->buffer, L"\" \"", log_path->buffer, L"\"");
 
-			if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
+			status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
+
+			if (status != STATUS_SUCCESS)
 			{
 				_r_error_initialize (&error_info, NULL, viewer_path->buffer);
 
-				_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
+				_r_show_errormessage (hwnd, NULL, status, &error_info);
 			}
 
 			_r_obj_dereference (process_path);
@@ -1827,6 +1830,8 @@ VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 	PR_STRING viewer_path;
 	PR_STRING process_path;
 	PR_STRING log_path;
+	R_ERROR_INFO error_info;
+	NTSTATUS status;
 
 	log_path = _r_app_getlogpath ();
 
@@ -1838,13 +1843,13 @@ VOID _app_command_logerrshow (_In_opt_ HWND hwnd)
 		{
 			process_path = _r_format_string (L"\"%s\" \"%s\"", viewer_path->buffer, log_path->buffer);
 
-			if (!_r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL))
-			{
-				R_ERROR_INFO error_info;
+			status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
 
+			if (status != STATUS_SUCCESS)
+			{
 				_r_error_initialize (&error_info, NULL, viewer_path->buffer);
 
-				_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
+				_r_show_errormessage (hwnd, NULL, status, &error_info);
 			}
 
 			_r_obj_dereference (process_path);

@@ -197,7 +197,7 @@ INT_PTR CALLBACK EditorRuleProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wpar
 			// localize window
 			SetWindowText (hwnd, _r_locale_getstring (IDS_RULE));
 
-			_r_edit_settextlimit (hwnd, IDC_RULE_ID, _r_calc_clamp32 (RULE_RULE_CCH_MAX - (LONG)(context->current_length) - 1, 1, RULE_RULE_CCH_MAX));
+			_r_edit_settextlimit (hwnd, IDC_RULE_ID, _r_calc_clamp (RULE_RULE_CCH_MAX - (LONG)(context->current_length) - 1, 1, RULE_RULE_CCH_MAX));
 			_r_edit_setcuebanner (hwnd, IDC_RULE_ID, L"Example: 192.168.0.1;192.168.0.17");
 
 			if (context->item_id != -1)
@@ -1406,7 +1406,7 @@ INT_PTR CALLBACK EditorProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, 
 	{
 		case WM_INITDIALOG:
 		{
-			WCHAR title[128];
+			WCHAR title[128] = {0};
 			PR_STRING string;
 			INT tabs_count;
 
