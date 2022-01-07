@@ -98,7 +98,7 @@ HANDLE _wfp_getenginehandle ()
 	if (_r_initonce_begin (&init_once))
 	{
 		FWPM_SESSION session;
-		ULONG code;
+		ULONG status;
 		ULONG attempts;
 
 		attempts = 6;
@@ -112,29 +112,31 @@ HANDLE _wfp_getenginehandle ()
 
 			session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
 
-			code = FwpmEngineOpen (NULL, RPC_C_AUTHN_WINNT, NULL, &session, &engine_handle);
+			status = FwpmEngineOpen (NULL, RPC_C_AUTHN_WINNT, NULL, &session, &engine_handle);
 
-			if (code == ERROR_SUCCESS)
+			if (status == ERROR_SUCCESS)
 			{
 				break;
 			}
 			else
 			{
-				if (code == EPT_S_NOT_REGISTERED)
+				if (status == EPT_S_NOT_REGISTERED)
 				{
 					// The error say that BFE service is not in the running state, so we wait.
-					if (attempts != 1)
+					if (attempts)
 					{
 						_r_sys_sleep (500);
+						attempts -= 1;
+
 						continue;
 					}
 				}
 
-				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen", code, NULL);
+				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen", status, NULL);
 
-				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", code, NULL);
+				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", status, NULL);
 
-				RtlExitUserProcess (code);
+				RtlExitUserProcess (status);
 
 				break;
 			}
@@ -526,8 +528,7 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			if (guid)
-				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, __LINE__);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, __LINE__);
 		}
 	}
 
@@ -540,8 +541,7 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			if (guid)
-				_wfp_deletefilter (engine_handle, guid);
+			_wfp_deletefilter (engine_handle, guid);
 		}
 
 		_r_obj_dereference (guids);
@@ -616,8 +616,7 @@ VOID _wfp_installfilters (
 			{
 				guid = _r_obj_getarrayitem (guids, i);
 
-				if (guid)
-					_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, __LINE__);
+				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, __LINE__);
 			}
 
 			_r_obj_dereference (guids);
@@ -699,7 +698,7 @@ BOOLEAN _wfp_deletefilter (
 			_r_obj_dereference (string);
 
 		return FALSE;
-	}
+}
 
 	return TRUE;
 }
@@ -964,8 +963,7 @@ BOOLEAN _wfp_destroyfilters_array (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		if (guid)
-			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
+		_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
 	}
 
 	is_intransact = _wfp_transact_start (engine_handle, line);
@@ -974,8 +972,7 @@ BOOLEAN _wfp_destroyfilters_array (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		if (guid)
-			_wfp_deletefilter (engine_handle, guid);
+		_wfp_deletefilter (engine_handle, guid);
 	}
 
 	if (is_intransact)
@@ -1443,8 +1440,7 @@ BOOLEAN _wfp_create4filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			if (guid)
-				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
@@ -1455,8 +1451,7 @@ BOOLEAN _wfp_create4filters (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		if (guid)
-			_wfp_deletefilter (engine_handle, guid);
+		_wfp_deletefilter (engine_handle, guid);
 	}
 
 	R_STRINGREF remote_remaining_part;
@@ -1633,8 +1628,7 @@ BOOLEAN _wfp_create4filters (
 					{
 						guid = _r_obj_getarrayitem (ptr_rule->guids, j);
 
-						if (guid)
-							_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
+						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
 					}
 				}
 			}
@@ -1690,8 +1684,7 @@ BOOLEAN _wfp_create3filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			if (guid)
-				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
@@ -1702,8 +1695,7 @@ BOOLEAN _wfp_create3filters (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		if (guid)
-			_wfp_deletefilter (engine_handle, guid);
+		_wfp_deletefilter (engine_handle, guid);
 	}
 
 	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
@@ -1756,8 +1748,7 @@ BOOLEAN _wfp_create3filters (
 					{
 						guid = _r_obj_getarrayitem (ptr_app->guids, j);
 
-						if (guid)
-							_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
+						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
 					}
 				}
 			}
@@ -1829,8 +1820,7 @@ BOOLEAN _wfp_create2filters (
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
-				if (guid)
-					_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
+				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
 			}
 		}
 
@@ -1844,8 +1834,7 @@ BOOLEAN _wfp_create2filters (
 		{
 			guid = _r_obj_getarrayitem (filter_ids, i);
 
-			if (guid)
-				_wfp_deletefilter (engine_handle, guid);
+			_wfp_deletefilter (engine_handle, guid);
 		}
 
 		_r_obj_cleararray (filter_ids);
@@ -2601,8 +2590,7 @@ BOOLEAN _wfp_create2filters (
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
-				if (guid)
-					_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
+				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
 			}
 		}
 
