@@ -477,7 +477,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 				if (SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi) == -1)
 					return CDRF_DODEFAULT;
 
-				if ((tbi.fsState & TBSTATE_ENABLED) != 0)
+				if (tbi.fsState & TBSTATE_ENABLED)
 					return CDRF_DODEFAULT;
 
 				himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
@@ -640,7 +640,7 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 	PR_STRING string;
 
 	// set text
-	if ((lpnmlv->item.mask & LVIF_TEXT))
+	if (lpnmlv->item.mask & LVIF_TEXT)
 	{
 		switch (lpnmlv->item.iSubItem)
 		{
@@ -672,7 +672,7 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 	}
 
 	// set image
-	if ((lpnmlv->item.mask & LVIF_IMAGE))
+	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
 		PVOID ptr = _app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID);
 
@@ -680,7 +680,7 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 	}
 
 	// set group id
-	if ((lpnmlv->item.mask & LVIF_GROUPID))
+	if (lpnmlv->item.mask & LVIF_GROUPID)
 	{
 		if (_app_listview_isitemhidden (lpnmlv->item.lParam))
 		{
@@ -736,7 +736,7 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 	PR_STRING string;
 
 	// set text
-	if ((lpnmlv->item.mask & LVIF_TEXT))
+	if (lpnmlv->item.mask & LVIF_TEXT)
 	{
 		switch (lpnmlv->item.iSubItem)
 		{
@@ -791,13 +791,13 @@ VOID _app_displayinforule_callback (_In_ INT listview_id, _In_ PITEM_RULE ptr_ru
 	}
 
 	// set image
-	if ((lpnmlv->item.mask & LVIF_IMAGE))
+	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
 		lpnmlv->item.iImage = (ptr_rule->action == FWP_ACTION_BLOCK) ? 1 : 0;
 	}
 
 	// set group id
-	if ((lpnmlv->item.mask & LVIF_GROUPID))
+	if (lpnmlv->item.mask & LVIF_GROUPID)
 	{
 		if (_app_listview_isitemhidden (lpnmlv->item.lParam))
 		{
@@ -837,7 +837,7 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 	LPCWSTR name;
 
 	// set text
-	if ((lpnmlv->item.mask & LVIF_TEXT))
+	if (lpnmlv->item.mask & LVIF_TEXT)
 	{
 		switch (lpnmlv->item.iSubItem)
 		{
@@ -958,7 +958,7 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 	}
 
 	// set image
-	if ((lpnmlv->item.mask & LVIF_IMAGE))
+	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
 		PVOID ptr = _app_getappinfoparam2 (ptr_network->app_hash, INFO_ICON_ID);
 
@@ -966,7 +966,7 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 	}
 
 	// set group id
-	if ((lpnmlv->item.mask & LVIF_GROUPID))
+	if (lpnmlv->item.mask & LVIF_GROUPID)
 	{
 		if (_app_listview_isitemhidden (lpnmlv->item.lParam))
 		{
@@ -995,7 +995,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 	PR_STRING string;
 
 	// set text
-	if ((lpnmlv->item.mask & LVIF_TEXT))
+	if (lpnmlv->item.mask & LVIF_TEXT)
 	{
 		switch (lpnmlv->item.iSubItem)
 		{
@@ -1161,7 +1161,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 	}
 
 	// set image
-	if ((lpnmlv->item.mask & LVIF_IMAGE))
+	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
 		PVOID ptr = _app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID);
 
@@ -1169,7 +1169,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 	}
 
 	// set group id
-	if ((lpnmlv->item.mask & LVIF_GROUPID))
+	if (lpnmlv->item.mask & LVIF_GROUPID)
 	{
 		if (_app_listview_isitemhidden (lpnmlv->item.lParam))
 		{
