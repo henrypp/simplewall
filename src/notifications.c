@@ -12,7 +12,7 @@ VOID _app_notify_createwindow ()
 
 	if (!current_hwnd)
 	{
-		hwnd = _r_wnd_createwindow (NULL, MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, NULL);
+		hwnd = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, NULL);
 
 		if (hwnd)
 		{
@@ -638,9 +638,10 @@ VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value)
 	icon_large_y = _r_dc_getsystemmetrics (SM_CYICON, dpi_value);
 
 	// set window icon
-	_r_wnd_seticon (hwnd,
-					_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small_x, icon_small_y),
-					_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large_x, icon_large_y)
+	_r_wnd_seticon (
+		hwnd,
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small_x, icon_small_y),
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large_x, icon_large_y)
 	);
 
 	// load font
