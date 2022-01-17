@@ -254,9 +254,7 @@ ULONG_PTR _app_addapplication (
 
 	// insert object into the table
 	_r_queuedlock_acquireexclusive (&lock_apps);
-
 	_r_obj_addhashtablepointer (apps_table, app_hash, ptr_app);
-
 	_r_queuedlock_releaseexclusive (&lock_apps);
 
 	// insert item
@@ -1329,7 +1327,13 @@ CleanupExit:
 
 		// load internal rules (new!)
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-			_app_profile_load_internal (profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
+		{
+			_app_profile_load_internal (
+				profile_info.profile_path_internal,
+				MAKEINTRESOURCE (IDR_PROFILE_INTERNAL),
+				&profile_info.profile_internal_timestamp
+			);
+		}
 	}
 
 	_app_profile_load_fallback ();
@@ -1371,10 +1375,8 @@ NTSTATUS _app_profile_save ()
 
 		if (!is_backuprequired)
 		{
-			if (
-				(timestamp - _r_config_getlong64 (L"BackupTimestamp", 0)) >=
-				_r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD)
-				)
+			if ((timestamp - _r_config_getlong64 (L"BackupTimestamp", 0)) >=
+				_r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
 			{
 				is_backuprequired = TRUE;
 			}
