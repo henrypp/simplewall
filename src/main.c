@@ -2645,7 +2645,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_IMPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*." XML_PROFILE2_EXT L")", L"*." XML_PROFILE2_EXT,
+						L"Profile files (*." XML_PROFILE_EXT L")", L"*." XML_PROFILE_EXT,
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -2655,7 +2655,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
-						_r_filedialog_setpath (&file_dialog, XML_PROFILE2_FILE);
+						_r_filedialog_setpath (&file_dialog, XML_PROFILE_FILE);
 
 						if (_r_filedialog_show (hwnd, &file_dialog))
 						{
@@ -2683,7 +2683,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				case IDM_EXPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*." XML_PROFILE2_EXT L")", L"*." XML_PROFILE2_EXT,
+						L"Profile files (*." XML_PROFILE_EXT L")", L"*." XML_PROFILE_EXT,
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -2693,7 +2693,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
-						_r_filedialog_setpath (&file_dialog, XML_PROFILE2_FILE);
+						_r_filedialog_setpath (&file_dialog, XML_PROFILE_FILE);
 
 						if (_r_filedialog_show (hwnd, &file_dialog))
 						{

@@ -1143,11 +1143,10 @@ BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version)
 
 VOID _app_profile_initialize ()
 {
-	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
-	static R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE2_FILE);
-	static R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE2_FILE L".bak");
+	static R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE);
+	static R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE L".bak");
 	static R_STRINGREF profile_internal_sr = PR_STRINGREF_INIT (XML_PROFILE2_INTERNAL);
-	static R_STRINGREF profile_old_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE);
+	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
 
 	PR_STRING path;
 
@@ -1156,9 +1155,6 @@ VOID _app_profile_initialize ()
 	_r_obj_movereference (&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
 	_r_obj_movereference (&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
 	_r_obj_movereference (&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
-
-	_r_obj_movereference (&profile_info.profile_path_old, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_old_sr));
-
 }
 
 PDB_INFORMATION _app_profile_load_fromresource (_In_ LPCWSTR resource_name)
@@ -1305,17 +1301,6 @@ NTSTATUS _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ PR_STRING path_custom)
 				XML_VERSION_MINIMAL,
 				XML_TYPE_PROFILE
 			);
-
-			if (status != STATUS_SUCCESS)
-			{
-				// try to load old profile.xml
-				status = _app_db_openfromfile (
-					&db_info,
-					profile_info.profile_path_old,
-					XML_VERSION_MINIMAL,
-					XML_TYPE_PROFILE
-				);
-			}
 		}
 
 		_r_queuedlock_releaseshared (&lock_profile);
