@@ -1401,7 +1401,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!selected_count)
 						break;
 
-					if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_locale_getstring (IDS_QUESTION_DELETE)) != IDYES)
+					if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, _r_locale_getstring (IDS_QUESTION_DELETE)) != IDYES)
 						break;
 
 					item_count = _r_listview_getitemcount (hwnd, listview_id) - 1;

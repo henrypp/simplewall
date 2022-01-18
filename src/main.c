@@ -3333,7 +3333,12 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 
 	if (_r_sys_getopt (cmdline, L"help", NULL))
 	{
-		_r_show_message (NULL, MB_OK | MB_ICONINFORMATION, _r_app_getname (), L"Available options:", L"\"simplewall.exe -install\" - enable filtering.\r\n\"simplewall.exe -install -temp\" - enable filtering until reboot.\r\n\"simplewall.exe -install -silent\" - enable filtering without prompt.\r\n\"simplewall.exe -uninstall\" - remove all installed filters.\r\n\"simplewall.exe -help\" - show this message.");
+		_r_show_message (
+			NULL,
+			MB_OK | MB_ICONINFORMATION,
+			L"Available options:",
+			L"\"simplewall.exe -install\" - enable filtering.\r\n\"simplewall.exe -install -temp\" - enable filtering until reboot.\r\n\"simplewall.exe -install -silent\" - enable filtering without prompt.\r\n\"simplewall.exe -uninstall\" - remove all installed filters.\r\n\"simplewall.exe -help\" - show this message."
+		);
 
 		result = TRUE;
 

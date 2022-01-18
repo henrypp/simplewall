@@ -2135,7 +2135,7 @@ VOID _app_command_delete (_In_ HWND hwnd)
 
 		_r_str_trimstring (string, &crlf, PR_TRIM_END_ONLY);
 
-		if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, string->buffer) != IDYES)
+		if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, string->buffer) != IDYES)
 		{
 			_r_obj_dereference (string);
 			return;
@@ -2701,7 +2701,7 @@ VOID _app_command_purgetimers (_In_ HWND hwnd)
 	PITEM_APP ptr_app;
 	SIZE_T enum_key;
 
-	if (!_app_istimersactive () || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, NULL, _r_locale_getstring (IDS_QUESTION_TIMERS)) != IDYES)
+	if (!_app_istimersactive () || _r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, _r_locale_getstring (IDS_QUESTION_TIMERS)) != IDYES)
 		return;
 
 	rules = _r_obj_createlist (NULL);
