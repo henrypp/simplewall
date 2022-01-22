@@ -4,7 +4,10 @@
 #include "global.h"
 
 _Ret_maybenull_
-PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data)
+PVOID _app_getappinfo (
+	_In_ PITEM_APP ptr_app,
+	_In_ ENUM_INFO_DATA info_data
+)
 {
 	if (info_data == INFO_PATH)
 	{
@@ -48,7 +51,10 @@ PVOID _app_getappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data)
 }
 
 _Ret_maybenull_
-PVOID _app_getappinfobyhash (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA info_data)
+PVOID _app_getappinfobyhash (
+	_In_ ULONG_PTR app_hash,
+	_In_ ENUM_INFO_DATA info_data
+)
 {
 	PITEM_APP ptr_app;
 	PVOID result;
@@ -67,7 +73,11 @@ PVOID _app_getappinfobyhash (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA info_d
 	return NULL;
 }
 
-VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In_ PVOID value)
+VOID _app_setappinfo (
+	_In_ PITEM_APP ptr_app,
+	_In_ ENUM_INFO_DATA info_data,
+	_In_ PVOID value
+)
 {
 	if (info_data == INFO_BYTES_DATA)
 	{
@@ -114,7 +124,11 @@ VOID _app_setappinfo (_In_ PITEM_APP ptr_app, _In_ ENUM_INFO_DATA info_data, _In
 	}
 }
 
-VOID _app_setappinfobyhash (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA info_data, _In_ PVOID value)
+VOID _app_setappinfobyhash (
+	_In_ ULONG_PTR app_hash,
+	_In_ ENUM_INFO_DATA info_data,
+	_In_ PVOID value
+)
 {
 	PITEM_APP ptr_app;
 
@@ -129,7 +143,10 @@ VOID _app_setappinfobyhash (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA info_da
 }
 
 _Ret_maybenull_
-PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
+PVOID _app_getruleinfo (
+	_In_ PITEM_RULE ptr_rule,
+	_In_ ENUM_INFO_DATA info_data
+)
 {
 	if (info_data == INFO_LISTVIEW_ID)
 	{
@@ -144,7 +161,10 @@ PVOID _app_getruleinfo (_In_ PITEM_RULE ptr_rule, _In_ ENUM_INFO_DATA info_data)
 }
 
 _Ret_maybenull_
-PVOID _app_getruleinfobyid (_In_ SIZE_T index, _In_ ENUM_INFO_DATA info_data)
+PVOID _app_getruleinfobyid (
+	_In_ SIZE_T index,
+	_In_ ENUM_INFO_DATA info_data
+)
 {
 	PITEM_RULE ptr_rule;
 	PVOID info;
@@ -340,7 +360,9 @@ PITEM_RULE_CONFIG _app_addruleconfigtable (
 }
 
 _Ret_maybenull_
-PITEM_APP _app_getappitem (_In_ ULONG_PTR app_hash)
+PITEM_APP _app_getappitem (
+	_In_ ULONG_PTR app_hash
+)
 {
 	PITEM_APP ptr_app;
 
@@ -354,7 +376,9 @@ PITEM_APP _app_getappitem (_In_ ULONG_PTR app_hash)
 }
 
 _Ret_maybenull_
-PITEM_RULE _app_getrulebyid (_In_ SIZE_T index)
+PITEM_RULE _app_getrulebyid (
+	_In_ SIZE_T index
+)
 {
 	PITEM_RULE ptr_rule;
 
@@ -375,7 +399,9 @@ PITEM_RULE _app_getrulebyid (_In_ SIZE_T index)
 }
 
 _Ret_maybenull_
-PITEM_RULE _app_getrulebyhash (_In_ ULONG_PTR rule_hash)
+PITEM_RULE _app_getrulebyhash (
+	_In_ ULONG_PTR rule_hash
+)
 {
 	PITEM_RULE ptr_rule;
 
@@ -408,7 +434,9 @@ PITEM_RULE _app_getrulebyhash (_In_ ULONG_PTR rule_hash)
 }
 
 _Ret_maybenull_
-PITEM_RULE_CONFIG _app_getruleconfigitem (_In_ ULONG_PTR rule_hash)
+PITEM_RULE_CONFIG _app_getruleconfigitem (
+	_In_ ULONG_PTR rule_hash
+)
 {
 	PITEM_RULE_CONFIG ptr_rule_config;
 
@@ -422,7 +450,9 @@ PITEM_RULE_CONFIG _app_getruleconfigitem (_In_ ULONG_PTR rule_hash)
 }
 
 _Ret_maybenull_
-PITEM_LOG _app_getlogitem (_In_ ULONG_PTR log_hash)
+PITEM_LOG _app_getlogitem (
+	_In_ ULONG_PTR log_hash
+)
 {
 	PITEM_LOG ptr_log;
 
@@ -435,7 +465,9 @@ PITEM_LOG _app_getlogitem (_In_ ULONG_PTR log_hash)
 	return ptr_log;
 }
 
-ULONG_PTR _app_getlogapp (_In_ SIZE_T index)
+ULONG_PTR _app_getlogapp (
+	_In_ SIZE_T index
+)
 {
 	PITEM_LOG ptr_log;
 	ULONG_PTR app_hash;
@@ -454,7 +486,12 @@ ULONG_PTR _app_getlogapp (_In_ SIZE_T index)
 	return 0;
 }
 
-COLORREF _app_getappcolor (_In_ INT listview_id, _In_ ULONG_PTR app_hash, _In_ BOOLEAN is_systemapp, _In_ BOOLEAN is_validconnection)
+COLORREF _app_getappcolor (
+	_In_ INT listview_id,
+	_In_ ULONG_PTR app_hash,
+	_In_ BOOLEAN is_systemapp,
+	_In_ BOOLEAN is_validconnection
+)
 {
 	PITEM_APP ptr_app;
 	ULONG_PTR color_hash;
@@ -496,7 +533,8 @@ COLORREF _app_getappcolor (_In_ INT listview_id, _In_ ULONG_PTR app_hash, _In_ B
 
 	if (ptr_app)
 	{
-		if (!is_profilelist && (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash, FALSE)))
+		if (!is_profilelist && (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") &&
+			_app_isapphaverule (app_hash, FALSE)))
 		{
 			color_hash = config.color_special;
 			goto CleanupExit;
@@ -526,7 +564,9 @@ CleanupExit:
 	return 0;
 }
 
-VOID _app_freeapplication (_In_ ULONG_PTR app_hash)
+VOID _app_freeapplication (
+	_In_ ULONG_PTR app_hash
+)
 {
 	PITEM_RULE ptr_rule;
 
@@ -561,7 +601,9 @@ VOID _app_freeapplication (_In_ ULONG_PTR app_hash)
 	_r_obj_removehashtablepointer (apps_table, app_hash);
 }
 
-VOID _app_getcount (_Out_ PITEM_STATUS status)
+VOID _app_getcount (
+	_Out_ PITEM_STATUS status
+)
 {
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
@@ -587,8 +629,12 @@ VOID _app_getcount (_Out_ PITEM_STATUS status)
 		if (_app_istimerset (ptr_app->htimer))
 			status->apps_timer_count += 1;
 
-		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
+		if (!ptr_app->is_undeletable &&
+			(!_app_isappexists (ptr_app) || !is_used) &&
+			!(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
+		{
 			status->apps_unused_count += 1;
+		}
 
 		if (is_used)
 			status->apps_count += 1;
@@ -626,7 +672,10 @@ VOID _app_getcount (_Out_ PITEM_STATUS status)
 	_r_queuedlock_releaseshared (&lock_rules);
 }
 
-COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
+COLORREF _app_getrulecolor (
+	_In_ INT listview_id,
+	_In_ SIZE_T rule_idx
+)
 {
 	PITEM_RULE ptr_rule;
 	ULONG_PTR color_hash;
@@ -639,10 +688,14 @@ COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
 	color_hash = 0;
 
 	if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
+	{
 		color_hash = config.color_invalid;
-
-	else if (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps)))
+	}
+	else if (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") &&
+			 (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps)))
+	{
 		color_hash = config.color_special;
+	}
 
 	_r_obj_dereference (ptr_rule);
 
@@ -652,13 +705,24 @@ COLORREF _app_getrulecolor (_In_ INT listview_id, _In_ SIZE_T rule_idx)
 	return 0;
 }
 
-VOID _app_setappiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_APP ptr_app)
+VOID _app_setappiteminfo (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id,
+	_In_ PITEM_APP ptr_app
+)
 {
 	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_app->is_enabled);
 }
 
-VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _In_ PITEM_RULE ptr_rule, _In_ BOOLEAN include_apps)
+VOID _app_setruleiteminfo (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id,
+	_In_ PITEM_RULE ptr_rule,
+	_In_ BOOLEAN include_apps
+)
 {
 	ULONG_PTR hash_code;
 	SIZE_T enum_key;
@@ -677,7 +741,11 @@ VOID _app_setruleiteminfo (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_i
 	}
 }
 
-VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ BOOLEAN is_createconfig)
+VOID _app_ruleenable (
+	_Inout_ PITEM_RULE ptr_rule,
+	_In_ BOOLEAN is_enable,
+	_In_ BOOLEAN is_createconfig
+)
 {
 	PITEM_RULE_CONFIG ptr_config;
 	ULONG_PTR rule_hash;
@@ -711,7 +779,10 @@ VOID _app_ruleenable (_Inout_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_enable, _In_ 
 	}
 }
 
-BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ LONG new_state)
+BOOLEAN _app_ruleblocklistsetchange (
+	_Inout_ PITEM_RULE ptr_rule,
+	_In_ LONG new_state
+)
 {
 	BOOLEAN is_block;
 
@@ -737,7 +808,12 @@ BOOLEAN _app_ruleblocklistsetchange (_Inout_ PITEM_RULE ptr_rule, _In_ LONG new_
 	return TRUE;
 }
 
-BOOLEAN _app_ruleblocklistsetstate (_Inout_ PITEM_RULE ptr_rule, _In_ LONG spy_state, _In_ LONG update_state, _In_ LONG extra_state)
+BOOLEAN _app_ruleblocklistsetstate (
+	_Inout_ PITEM_RULE ptr_rule,
+	_In_ LONG spy_state,
+	_In_ LONG update_state,
+	_In_ LONG extra_state
+)
 {
 	if (ptr_rule->type != DATA_RULE_BLOCKLIST || _r_obj_isstringempty (ptr_rule->name))
 		return FALSE;
@@ -755,7 +831,13 @@ BOOLEAN _app_ruleblocklistsetstate (_Inout_ PITEM_RULE ptr_rule, _In_ LONG spy_s
 	return _app_ruleblocklistsetchange (ptr_rule, 2);
 }
 
-VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT update_state, _In_ INT extra_state, _In_ BOOLEAN is_instantapply)
+VOID _app_ruleblocklistset (
+	_In_opt_ HWND hwnd,
+	_In_ LONG spy_state,
+	_In_ LONG update_state,
+	_In_ LONG extra_state,
+	_In_ BOOLEAN is_instantapply
+)
 {
 	PR_LIST rules;
 	PITEM_RULE ptr_rule;
@@ -816,7 +898,10 @@ VOID _app_ruleblocklistset (_In_opt_ HWND hwnd, _In_ INT spy_state, _In_ INT upd
 }
 
 _Ret_maybenull_
-PR_STRING _app_appexpandrules (_In_ ULONG_PTR app_hash, _In_ LPCWSTR delimeter)
+PR_STRING _app_appexpandrules (
+	_In_ ULONG_PTR app_hash,
+	_In_ LPCWSTR delimeter
+)
 {
 	R_STRINGBUILDER buffer;
 	R_STRINGREF delimeter_sr;
@@ -835,7 +920,9 @@ PR_STRING _app_appexpandrules (_In_ ULONG_PTR app_hash, _In_ LPCWSTR delimeter)
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER && !_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
+		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER &&
+			!_r_obj_isstringempty (ptr_rule->name) &&
+			_r_obj_findhashtable (ptr_rule->apps, app_hash))
 		{
 			_r_obj_appendstringbuilder2 (&buffer, ptr_rule->name);
 
@@ -862,7 +949,11 @@ PR_STRING _app_appexpandrules (_In_ ULONG_PTR app_hash, _In_ LPCWSTR delimeter)
 }
 
 _Ret_maybenull_
-PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordisplay, _In_ LPCWSTR delimeter)
+PR_STRING _app_rulesexpandapps (
+	_In_ PITEM_RULE ptr_rule,
+	_In_ BOOLEAN is_fordisplay,
+	_In_ LPCWSTR delimeter
+)
 {
 	R_STRINGBUILDER sr;
 	R_STRINGREF delimeter_sr;
@@ -938,7 +1029,10 @@ PR_STRING _app_rulesexpandapps (_In_ PITEM_RULE ptr_rule, _In_ BOOLEAN is_fordis
 }
 
 _Ret_maybenull_
-PR_STRING _app_rulesexpandrules (_In_opt_ PR_STRING rule, _In_ LPCWSTR delimeter)
+PR_STRING _app_rulesexpandrules (
+	_In_opt_ PR_STRING rule,
+	_In_ LPCWSTR delimeter
+)
 {
 	R_STRINGBUILDER buffer;
 	R_STRINGREF delimeter_sr;
@@ -975,7 +1069,10 @@ PR_STRING _app_rulesexpandrules (_In_opt_ PR_STRING rule, _In_ LPCWSTR delimeter
 	return NULL;
 }
 
-BOOLEAN _app_isappfromsystem (_In_opt_ PR_STRING path, _In_ ULONG_PTR app_hash)
+BOOLEAN _app_isappfromsystem (
+	_In_opt_ PR_STRING path,
+	_In_ ULONG_PTR app_hash
+)
 {
 	if (_app_issystemhash (app_hash))
 		return TRUE;
@@ -989,7 +1086,9 @@ BOOLEAN _app_isappfromsystem (_In_opt_ PR_STRING path, _In_ ULONG_PTR app_hash)
 	return FALSE;
 }
 
-BOOLEAN _app_isapphavedrive (_In_ INT letter)
+BOOLEAN _app_isapphavedrive (
+	_In_ INT letter
+)
 {
 	PITEM_APP ptr_app;
 	SIZE_T enum_key;
@@ -1029,7 +1128,10 @@ BOOLEAN _app_isapphavedrive (_In_ INT letter)
 	return FALSE;
 }
 
-BOOLEAN _app_isapphaverule (_In_ ULONG_PTR app_hash, _In_ BOOLEAN is_countdisabled)
+BOOLEAN _app_isapphaverule (
+	_In_ ULONG_PTR app_hash,
+	_In_ BOOLEAN is_countdisabled
+)
 {
 	PITEM_RULE ptr_rule;
 
@@ -1058,7 +1160,9 @@ BOOLEAN _app_isapphaverule (_In_ ULONG_PTR app_hash, _In_ BOOLEAN is_countdisabl
 	return FALSE;
 }
 
-BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app)
+BOOLEAN _app_isappexists (
+	_In_ PITEM_APP ptr_app
+)
 {
 	if (ptr_app->is_undeletable)
 		return TRUE;
@@ -1079,7 +1183,9 @@ BOOLEAN _app_isappexists (_In_ PITEM_APP ptr_app)
 	return FALSE;
 }
 
-BOOLEAN _app_isappfound (_In_ ULONG_PTR app_hash)
+BOOLEAN _app_isappfound (
+	_In_ ULONG_PTR app_hash
+)
 {
 	BOOLEAN is_found;
 
@@ -1092,7 +1198,9 @@ BOOLEAN _app_isappfound (_In_ ULONG_PTR app_hash)
 	return is_found;
 }
 
-BOOLEAN _app_isappunused (_In_ PITEM_APP ptr_app)
+BOOLEAN _app_isappunused (
+	_In_ PITEM_APP ptr_app
+)
 {
 	if (!ptr_app->is_undeletable)
 	{
@@ -1106,7 +1214,9 @@ BOOLEAN _app_isappunused (_In_ PITEM_APP ptr_app)
 	return FALSE;
 }
 
-BOOLEAN _app_issystemhash (_In_ ULONG_PTR app_hash)
+BOOLEAN _app_issystemhash (
+	_In_ ULONG_PTR app_hash
+)
 {
 	return (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash);
 }
@@ -1155,7 +1265,9 @@ VOID _app_profile_initialize ()
 	_r_obj_movereference (&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
 }
 
-PDB_INFORMATION _app_profile_load_fromresource (_In_ LPCWSTR resource_name)
+PDB_INFORMATION _app_profile_load_fromresource (
+	_In_ LPCWSTR resource_name
+)
 {
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static DB_INFORMATION db_info = {0};
@@ -1207,7 +1319,11 @@ VOID _app_profile_load_fallback ()
 	}
 }
 
-VOID _app_profile_load_internal (_In_ PR_STRING path, _In_ LPCWSTR resource_name, _Out_opt_ PLONG64 timestamp)
+VOID _app_profile_load_internal (
+	_In_ PR_STRING path,
+	_In_ LPCWSTR resource_name,
+	_Out_opt_ PLONG64 timestamp
+)
 {
 	DB_INFORMATION db_info_file;
 	PDB_INFORMATION db_info_buffer;
@@ -1261,7 +1377,10 @@ VOID _app_profile_refresh ()
 	_app_package_getserviceslist ();
 }
 
-NTSTATUS _app_profile_load (_In_opt_ HWND hwnd, _In_opt_ PR_STRING path_custom)
+NTSTATUS _app_profile_load (
+	_In_opt_ HWND hwnd,
+	_In_opt_ PR_STRING path_custom
+)
 {
 	DB_INFORMATION db_info;
 	NTSTATUS status;
