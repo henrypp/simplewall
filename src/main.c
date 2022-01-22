@@ -1756,7 +1756,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				WCHAR internal_profile_version[64];
 				_r_str_fromlong64 (internal_profile_version, RTL_NUMBER_OF (internal_profile_version), profile_info.profile_internal_timestamp);
 
-				_r_update_addcomponent (L"Internal rules", L"rules", internal_profile_version, profile_info.profile_path_internal, FALSE);
+				_r_update_addcomponent (L"Internal rules", L"rules_internal", internal_profile_version, profile_info.profile_path_internal, FALSE);
 			}
 
 			_app_network_initialize (hwnd);
