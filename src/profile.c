@@ -1435,10 +1435,13 @@ CleanupExit:
 
 	if (status != STATUS_SUCCESS)
 	{
-		if (hwnd)
-			_r_show_errormessage (hwnd, L"Profile loading!", status, NULL);
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
+		{
+			if (hwnd)
+				_r_show_errormessage (hwnd, L"Profile loading!", status, NULL);
 
-		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load", status, NULL);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load", status, NULL);
+		}
 	}
 	else
 	{
