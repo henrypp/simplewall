@@ -1392,33 +1392,16 @@ NTSTATUS _app_profile_load (
 
 	if (path_custom)
 	{
-		status = _app_db_openfromfile (
-			&db_info,
-			path_custom,
-			XML_VERSION_MINIMAL,
-			XML_TYPE_PROFILE
-		);
+		status = _app_db_openfromfile (&db_info, path_custom, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
 	}
 	else
 	{
 		_r_queuedlock_acquireshared (&lock_profile);
 
-		status = _app_db_openfromfile (
-			&db_info,
-			profile_info.profile_path,
-			XML_VERSION_MINIMAL,
-			XML_TYPE_PROFILE
-		);
+		status = _app_db_openfromfile (&db_info, profile_info.profile_path, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
 
 		if (status != STATUS_SUCCESS)
-		{
-			status = _app_db_openfromfile (
-				&db_info,
-				profile_info.profile_path_backup,
-				XML_VERSION_MINIMAL,
-				XML_TYPE_PROFILE
-			);
-		}
+			status = _app_db_openfromfile (&db_info, profile_info.profile_path_backup, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
 
 		_r_queuedlock_releaseshared (&lock_profile);
 	}
