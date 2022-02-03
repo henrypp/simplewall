@@ -1042,7 +1042,7 @@ INT CALLBACK _app_listview_compare_callback (
 
 		if (item_text_1 && item_text_2)
 		{
-			result = _r_str_compare_logical (item_text_1, item_text_2);
+			result = _r_str_compare_logical (item_text_1->buffer, item_text_2->buffer);
 		}
 
 		if (item_text_1)

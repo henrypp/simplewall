@@ -1490,13 +1490,7 @@ NTSTATUS _app_profile_save ()
 
 	_r_queuedlock_acquireexclusive (&lock_profile);
 
-	status = _app_db_savetofile (
-		&db_info,
-		profile_info.profile_path,
-		XML_VERSION_CURRENT,
-		XML_TYPE_PROFILE,
-		timestamp
-	);
+	status = _app_db_savetofile (&db_info, profile_info.profile_path, XML_VERSION_CURRENT, XML_TYPE_PROFILE, timestamp);
 
 	_r_queuedlock_releaseexclusive (&lock_profile);
 
