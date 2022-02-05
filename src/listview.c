@@ -692,7 +692,7 @@ VOID _app_listview_refreshgroups (
 		_r_str_printf (
 			group1_string,
 			RTL_NUMBER_OF (group1_string),
-			is_rules ? L"%s (%d/%d) [global rule]" : L"%s (%d/%d)",
+			is_rules ? L"%s (%d/%d) [for all]" : L"%s (%d/%d)",
 			_r_locale_getstring (group1_title),
 			group1_count,
 			total_count
@@ -701,7 +701,7 @@ VOID _app_listview_refreshgroups (
 		_r_str_printf (
 			group2_string,
 			RTL_NUMBER_OF (group2_string),
-			is_rules ? L"%s (%d/%d) [rule for app]" : L"%s (%d/%d)",
+			is_rules ? L"%s (%d/%d) [for apps]" : L"%s (%d/%d)",
 			_r_locale_getstring (group2_title),
 			group2_count,
 			total_count
@@ -1042,7 +1042,7 @@ INT CALLBACK _app_listview_compare_callback (
 
 		if (item_text_1 && item_text_2)
 		{
-			result = _r_str_compare_logical (item_text_1->buffer, item_text_2->buffer);
+			result = _r_str_compare_logical (item_text_1, item_text_2);
 		}
 
 		if (item_text_1)
