@@ -461,7 +461,7 @@ VOID _app_notify_playsound ()
 
 			if (path)
 			{
-				expanded_string = _r_str_expandenvironmentstring (&path->sr);
+				expanded_string = _r_str_environmentexpandstring (&path->sr);
 
 				if (expanded_string)
 					_r_obj_movereference (&path, expanded_string);
@@ -515,7 +515,7 @@ VOID _app_notify_setposition (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 
 	if (!is_forced && _r_wnd_isvisible (hwnd))
 	{
-		_r_wnd_adjustworkingarea (NULL, &window_rect);
+		_r_wnd_adjustrectangletoworkingarea (&window_rect, NULL);
 
 		SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
 
@@ -569,7 +569,7 @@ VOID _app_notify_setposition (_In_ HWND hwnd, _In_ BOOLEAN is_forced)
 					window_rect.top = (rect->bottom - window_rect.height) - border_x;
 				}
 
-				_r_wnd_adjustworkingarea (NULL, &window_rect);
+				_r_wnd_adjustrectangletoworkingarea (&window_rect, NULL);
 
 				SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
 
@@ -1019,7 +1019,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 							ClientToScreen (nmlp->hwndFrom, (PPOINT)&rect);
 
 							_r_wnd_recttorectangle (&rectangle, &rect);
-							_r_wnd_adjustworkingarea (nmlp->hwndFrom, &rectangle);
+							_r_wnd_adjustrectangletoworkingarea (&rectangle, nmlp->hwndFrom);
 							_r_wnd_rectangletorect (&rect, &rectangle);
 
 							_r_menu_popup (hsubmenu, hwnd, (PPOINT)&rect, TRUE);
