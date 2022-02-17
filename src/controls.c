@@ -294,7 +294,8 @@ PR_STRING _app_gettooltipbylparam (
 
 			// rule information
 			_r_obj_appendstringbuilderformat (
-				&sr, L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
+				&sr,
+				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
 				_r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
 				lparam,
 				_r_locale_getstring (IDS_RULE),
@@ -492,11 +493,8 @@ VOID _app_setinterfacestate (
 	HICON hico_sm;
 	HICON hico_big;
 
-	LONG icon_small_x;
-	LONG icon_small_y;
-
-	LONG icon_large_x;
-	LONG icon_large_y;
+	LONG icon_small;
+	LONG icon_large;
 
 	UINT string_id;
 	UINT icon_id;
@@ -506,17 +504,14 @@ VOID _app_setinterfacestate (
 	install_type = _wfp_isfiltersinstalled ();
 	is_filtersinstalled = (install_type != INSTALL_DISABLED);
 
-	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
-	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
-
-	icon_large_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
-	icon_large_y = _r_dc_getsystemmetrics (SM_CYICON, dpi_value);
+	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	icon_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 
 	string_id = is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START;
 	icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
 
-	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small_x, icon_small_y);
-	hico_big = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large_x, icon_large_y);
+	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
+	hico_big = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large);
 
 	_r_wnd_seticon (hwnd, hico_sm, hico_big);
 
@@ -538,10 +533,9 @@ VOID _app_setinterfacestate (
 	// fix tray icon size
 	dpi_value = _r_dc_gettaskbardpi ();
 
-	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
-	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
+	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 
-	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small_x, icon_small_y);
+	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
 
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
 }
@@ -572,12 +566,8 @@ VOID _app_imagelist_init (
 
 	HBITMAP hbitmap;
 
-	LONG icon_small_x;
-	LONG icon_small_y;
-
-	LONG icon_large_x;
-	LONG icon_large_y;
-
+	LONG icon_small;
+	LONG icon_large;
 	LONG icon_size_toolbar;
 
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
@@ -585,23 +575,20 @@ VOID _app_imagelist_init (
 	SAFE_DELETE_OBJECT (config.hbmp_allow);
 	SAFE_DELETE_OBJECT (config.hbmp_block);
 
-	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
-	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
-
-	icon_large_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
-	icon_large_y = _r_dc_getsystemmetrics (SM_CYICON, dpi_value);
+	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	icon_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 
 	icon_size_toolbar = _r_calc_clamp (
 		_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value),
-		icon_small_x,
-		icon_large_x
+		icon_small,
+		icon_large
 	);
 
-	config.hbmp_enable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_small_x, icon_small_y);
-	config.hbmp_disable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_small_x, icon_small_y);
+	config.hbmp_enable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_small);
+	config.hbmp_disable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_small);
 
-	config.hbmp_allow = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_small_x, icon_small_y);
-	config.hbmp_block = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_small_x, icon_small_y);
+	config.hbmp_allow = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_small);
+	config.hbmp_block = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_small);
 
 	// toolbar imagelist
 	if (config.himg_toolbar)
@@ -623,7 +610,7 @@ VOID _app_imagelist_init (
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (toolbar_ids[i]), icon_size_toolbar, icon_size_toolbar);
+			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (toolbar_ids[i]), icon_size_toolbar);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_toolbar, hbitmap, NULL);
@@ -636,13 +623,13 @@ VOID _app_imagelist_init (
 	// rules imagelist (small)
 	if (config.himg_rules_small)
 	{
-		ImageList_SetIconSize (config.himg_rules_small, icon_small_x, icon_small_y);
+		ImageList_SetIconSize (config.himg_rules_small, icon_small, icon_small);
 	}
 	else
 	{
 		config.himg_rules_small = ImageList_Create (
-			icon_small_x,
-			icon_small_y,
+			icon_small,
+			icon_small,
 			ILC_COLOR32 | ILC_HIGHQUALITYSCALE,
 			RTL_NUMBER_OF (rules_ids),
 			RTL_NUMBER_OF (rules_ids)
@@ -653,7 +640,7 @@ VOID _app_imagelist_init (
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (rules_ids[i]), icon_small_x, icon_small_y);
+			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (rules_ids[i]), icon_small);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_rules_small, hbitmap, NULL);
@@ -663,13 +650,13 @@ VOID _app_imagelist_init (
 	// rules imagelist (large)
 	if (config.himg_rules_large)
 	{
-		ImageList_SetIconSize (config.himg_rules_large, icon_large_x, icon_large_y);
+		ImageList_SetIconSize (config.himg_rules_large, icon_large, icon_large);
 	}
 	else
 	{
 		config.himg_rules_large = ImageList_Create (
-			icon_large_x,
-			icon_large_y,
+			icon_large,
+			icon_large,
 			ILC_COLOR32 | ILC_HIGHQUALITYSCALE,
 			RTL_NUMBER_OF (rules_ids),
 			RTL_NUMBER_OF (rules_ids)
@@ -680,7 +667,7 @@ VOID _app_imagelist_init (
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (rules_ids[i]), icon_large_x, icon_large_y);
+			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (rules_ids[i]), icon_large);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_rules_large, hbitmap, NULL);

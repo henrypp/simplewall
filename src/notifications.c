@@ -620,28 +620,22 @@ VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value)
 {
 	PNOTIFY_CONTEXT context;
 
-	LONG icon_small_x;
-	LONG icon_small_y;
-
-	LONG icon_large_x;
-	LONG icon_large_y;
+	LONG icon_small;
+	LONG icon_large;
 
 	context = _app_notify_getcontext (hwnd);
 
 	if (!context)
 		return;
 
-	icon_small_x = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
-	icon_small_y = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value);
-
-	icon_large_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
-	icon_large_y = _r_dc_getsystemmetrics (SM_CYICON, dpi_value);
+	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	icon_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 
 	// set window icon
 	_r_wnd_seticon (
 		hwnd,
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small_x, icon_small_y),
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large_x, icon_large_y)
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small),
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large)
 	);
 
 	// load font
@@ -653,10 +647,10 @@ VOID _app_notify_initialize (_In_ HWND hwnd, _In_ LONG dpi_value)
 	SAFE_DELETE_OBJECT (context->hbmp_cross);
 	SAFE_DELETE_OBJECT (context->hbmp_rules);
 
-	context->hbmp_allow = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_small_x, icon_small_y);
-	context->hbmp_block = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_small_x, icon_small_y);
-	context->hbmp_cross = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CROSS), icon_small_x, icon_small_y);
-	context->hbmp_rules = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_small_x, icon_small_y);
+	context->hbmp_allow = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_small);
+	context->hbmp_block = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_small);
+	context->hbmp_cross = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CROSS), icon_small);
+	context->hbmp_rules = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_small);
 
 	// set button configuration
 	SendDlgItemMessage (hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
@@ -813,6 +807,8 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 		case WM_DPICHANGED:
 		{
+			_r_wnd_message_dpichanged (hwnd, wparam, lparam);
+
 			_app_notify_initialize (hwnd, LOWORD (wparam));
 			_app_notify_refresh (hwnd, FALSE);
 
@@ -821,7 +817,7 @@ INT_PTR CALLBACK NotificationProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wp
 
 		case WM_SETTINGCHANGE:
 		{
-			_r_wnd_changesettings (hwnd, wparam, lparam);
+			_r_wnd_message_settingchange (hwnd, wparam, lparam);
 			break;
 		}
 

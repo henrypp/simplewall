@@ -1806,12 +1806,12 @@ VOID NTAPI _app_queueresolveinformation (_In_ PVOID arglist, _In_ ULONG busy_cou
 }
 
 _Ret_maybenull_
-HBITMAP _app_bitmapfrompng (_In_opt_ HINSTANCE hinst, _In_ LPCWSTR name, _In_ INT x, _In_ INT y)
+HBITMAP _app_bitmapfrompng (_In_opt_ HINSTANCE hinst, _In_ LPCWSTR name, _In_ LONG width)
 {
 	R_BYTEREF buffer;
 
 	if (!_r_res_loadresource (hinst, name, L"PNG", &buffer))
 		return NULL;
 
-	return _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, x, y);
+	return _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, width, width);
 }

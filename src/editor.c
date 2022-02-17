@@ -306,9 +306,15 @@ INT_PTR CALLBACK EditorRuleProc (
 			return TRUE;
 		}
 
+		case WM_DPICHANGED:
+		{
+			_r_wnd_message_dpichanged (hwnd, wparam, lparam);
+			break;
+		}
+
 		case WM_SETTINGCHANGE:
 		{
-			_r_wnd_changesettings (hwnd, wparam, lparam);
+			_r_wnd_message_settingchange (hwnd, wparam, lparam);
 			break;
 		}
 
@@ -1703,12 +1709,6 @@ INT_PTR CALLBACK EditorProc (
 			break;
 		}
 
-		case WM_SETTINGCHANGE:
-		{
-			_r_wnd_changesettings (hwnd, wparam, lparam);
-			break;
-		}
-
 		case WM_NOTIFY:
 		{
 			LPNMHDR nmlp = (LPNMHDR)lparam;
@@ -1749,6 +1749,18 @@ INT_PTR CALLBACK EditorProc (
 				}
 			}
 
+			break;
+		}
+
+		case WM_DPICHANGED:
+		{
+			_r_wnd_message_dpichanged (hwnd, wparam, lparam);
+			break;
+		}
+
+		case WM_SETTINGCHANGE:
+		{
+			_r_wnd_message_settingchange (hwnd, wparam, lparam);
 			break;
 		}
 
