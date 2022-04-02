@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #include "global.h"
 
@@ -1384,6 +1384,7 @@ NTSTATUS _app_profile_load (
 {
 	DB_INFORMATION db_info;
 	NTSTATUS status;
+	BOOLEAN is_update;
 
 	status = _app_db_initialize (&db_info, TRUE);
 
@@ -1408,7 +1409,9 @@ NTSTATUS _app_profile_load (
 
 CleanupExit:
 
-	if ((path_custom && status == STATUS_SUCCESS) || !path_custom)
+	is_update = ((path_custom && status == STATUS_SUCCESS) || !path_custom);
+
+	if (is_update)
 	{
 		if (hwnd)
 			_app_listview_clearitems (hwnd);
@@ -1416,20 +1419,27 @@ CleanupExit:
 		_app_profile_refresh ();
 	}
 
-	if (status != STATUS_SUCCESS)
+	if (status == STATUS_SUCCESS)
+	{
+		_app_db_parse (&db_info, XML_TYPE_PROFILE);
+	}
+	else
 	{
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
 		{
 			if (hwnd)
-				_r_show_errormessage (hwnd, L"Profile loading!", status, NULL);
-
-			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load", status, NULL);
+			{
+				_r_show_errormessage (hwnd, L"Could not load profile!", status, NULL);
+			}
+			else
+			{
+				_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load", status, NULL);
+			}
 		}
 	}
-	else
-	{
-		_app_db_parse (&db_info, XML_TYPE_PROFILE);
 
+	if (is_update)
+	{
 		// load internal rules (new!)
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 		{
@@ -1439,12 +1449,9 @@ CleanupExit:
 				&profile_info.profile_internal_timestamp
 			);
 		}
-	}
 
-	_app_profile_load_fallback ();
+		_app_profile_load_fallback ();
 
-	if ((path_custom && status == STATUS_SUCCESS) || !path_custom)
-	{
 		if (hwnd)
 			_app_listview_additems (hwnd);
 	}
