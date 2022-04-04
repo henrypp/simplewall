@@ -638,6 +638,7 @@ LONG_PTR _app_message_custdraw (_In_ HWND hwnd, _In_ LPNMLVCUSTOMDRAW lpnmlv)
 VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app, _Inout_ LPNMLVDISPINFOW lpnmlv)
 {
 	PR_STRING string;
+	PVOID ptr;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -653,6 +654,7 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 					_r_obj_dereference (string);
 				}
+
 				break;
 			}
 
@@ -674,7 +676,7 @@ VOID _app_displayinfoapp_callback (_In_ INT listview_id, _In_ PITEM_APP ptr_app,
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		PVOID ptr = _app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID);
+		ptr = _app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID);
 
 		lpnmlv->item.iImage = PtrToInt (ptr);
 	}
@@ -993,6 +995,7 @@ VOID _app_displayinfonetwork_callback (_In_ PITEM_NETWORK ptr_network, _Inout_ L
 VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITEM_APP ptr_app, _In_ PITEM_LOG ptr_log)
 {
 	PR_STRING string;
+	PVOID ptr;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1026,6 +1029,19 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 
 			case 1:
 			{
+				string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+
+				if (string)
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+					_r_obj_dereference (string);
+				}
+
+				break;
+			}
+
+			case 2:
+			{
 				string = InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
 
 				if (string)
@@ -1034,7 +1050,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 				break;
 			}
 
-			case 2:
+			case 3:
 			{
 				string = InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
 
@@ -1050,7 +1066,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 				break;
 			}
 
-			case 3:
+			case 4:
 			{
 				if (ptr_log->local_port)
 				{
@@ -1066,7 +1082,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 				break;
 			}
 
-			case 4:
+			case 5:
 			{
 				string = InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
 
@@ -1076,7 +1092,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 				break;
 			}
 
-			case 5:
+			case 6:
 			{
 				string = InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
 
@@ -1092,7 +1108,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 				break;
 			}
 
-			case 6:
+			case 7:
 			{
 				if (ptr_log->remote_port)
 				{
@@ -1108,7 +1124,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 				break;
 			}
 
-			case 7:
+			case 8:
 			{
 				if (ptr_log->protocol_str)
 				{
@@ -1122,7 +1138,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 				break;
 			}
 
-			case 8:
+			case 9:
 			{
 				string = _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
@@ -1135,25 +1151,12 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 				break;
 			}
 
-			case 9:
+			case 10:
 			{
 				string = _r_obj_concatstrings (2, ptr_log->is_allow ? L"[A] " : L"[B] ", _r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY));
 
 				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 				_r_obj_dereference (string);
-
-				break;
-			}
-
-			case 10:
-			{
-				string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
-
-				if (string)
-				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
-					_r_obj_dereference (string);
-				}
 
 				break;
 			}
@@ -1163,7 +1166,7 @@ VOID _app_displayinfolog_callback (_Inout_ LPNMLVDISPINFOW lpnmlv, _In_opt_ PITE
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		PVOID ptr = _app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID);
+		ptr = _app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID);
 
 		lpnmlv->item.iImage = PtrToInt (ptr);
 	}
@@ -1582,29 +1585,29 @@ VOID _app_message_localize (_In_ HWND hwnd)
 		else if (listview_id == IDC_LOG)
 		{
 			_r_listview_setcolumn (hwnd, listview_id, 0, _r_locale_getstring (IDS_NAME), 0);
+			_r_listview_setcolumn (hwnd, listview_id, 1, _r_locale_getstring (IDS_DATE), 0);
 
 			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_ADDRESS)));
-			_r_listview_setcolumn (hwnd, listview_id, 1, localized_string->buffer, 0);
-
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_HOST)));
 			_r_listview_setcolumn (hwnd, listview_id, 2, localized_string->buffer, 0);
 
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_PORT)));
+			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_HOST)));
 			_r_listview_setcolumn (hwnd, listview_id, 3, localized_string->buffer, 0);
 
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_ADDRESS)));
+			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_LOCAL L")", _r_locale_getstring (IDS_PORT)));
 			_r_listview_setcolumn (hwnd, listview_id, 4, localized_string->buffer, 0);
 
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_HOST)));
+			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_ADDRESS)));
 			_r_listview_setcolumn (hwnd, listview_id, 5, localized_string->buffer, 0);
 
-			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_PORT)));
+			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_HOST)));
 			_r_listview_setcolumn (hwnd, listview_id, 6, localized_string->buffer, 0);
 
-			_r_listview_setcolumn (hwnd, listview_id, 7, _r_locale_getstring (IDS_PROTOCOL), 0);
-			_r_listview_setcolumn (hwnd, listview_id, 8, _r_locale_getstring (IDS_DIRECTION), 0);
-			_r_listview_setcolumn (hwnd, listview_id, 9, _r_locale_getstring (IDS_FILTER), 0);
-			_r_listview_setcolumn (hwnd, listview_id, 10, _r_locale_getstring (IDS_DATE), 0);
+			_r_obj_movereference (&localized_string, _r_format_string (L"%s (" SZ_DIRECTION_REMOTE L")", _r_locale_getstring (IDS_PORT)));
+			_r_listview_setcolumn (hwnd, listview_id, 7, localized_string->buffer, 0);
+
+			_r_listview_setcolumn (hwnd, listview_id, 8, _r_locale_getstring (IDS_PROTOCOL), 0);
+			_r_listview_setcolumn (hwnd, listview_id, 9, _r_locale_getstring (IDS_DIRECTION), 0);
+			_r_listview_setcolumn (hwnd, listview_id, 10, _r_locale_getstring (IDS_FILTER), 0);
 		}
 	}
 
@@ -2621,6 +2624,7 @@ VOID _app_command_purgeunused (_In_ HWND hwnd)
 	SIZE_T enum_key;
 	PR_HASHTABLE apps_list;
 	PR_ARRAY guids;
+	HANDLE hengine;
 	INT listview_id;
 	INT item_id;
 	BOOLEAN is_deleted;
@@ -2666,18 +2670,18 @@ VOID _app_command_purgeunused (_In_ HWND hwnd)
 	{
 		enum_key = 0;
 
+		_r_queuedlock_acquireexclusive (&lock_apps);
+
 		while (_r_obj_enumhashtable (apps_list, NULL, &hash_code, &enum_key))
 		{
-			_r_queuedlock_acquireexclusive (&lock_apps);
-
 			_app_freeapplication (hash_code);
-
-			_r_queuedlock_releaseexclusive (&lock_apps);
 		}
+
+		_r_queuedlock_releaseexclusive (&lock_apps);
 
 		if (!_r_obj_isarrayempty (guids) && _wfp_isfiltersinstalled ())
 		{
-			HANDLE hengine = _wfp_getenginehandle ();
+			hengine = _wfp_getenginehandle ();
 
 			if (hengine)
 				_wfp_destroyfilters_array (hengine, guids, __LINE__);
