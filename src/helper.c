@@ -372,7 +372,9 @@ _Ret_maybenull_
 PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 {
 	PITEM_APP_INFO ptr_app_info;
+	PITEM_APP ptr_app;
 	PVOID result;
+	LONG icon_id;
 
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
@@ -383,7 +385,21 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 		{
 			case INFO_ICON_ID:
 			{
-				return LongToPtr (_app_icons_getdefaultapp_id ());
+				ptr_app = _app_getappitem (app_hash);
+
+				icon_id = _app_icons_getdefaultapp_id ();
+
+				if (ptr_app)
+				{
+					if (ptr_app->type == DATA_APP_UWP)
+					{
+						icon_id = _app_icons_getdefaultuwp_id ();
+					}
+
+					_r_obj_dereference (ptr_app);
+				}
+
+				return LongToPtr (icon_id);
 			}
 		}
 	}
@@ -393,8 +409,6 @@ PVOID _app_getappinfoparam2 (_In_ ULONG_PTR app_hash, _In_ ENUM_INFO_DATA2 info)
 		{
 			case INFO_ICON_ID:
 			{
-				LONG icon_id;
-
 				icon_id = InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0);
 
 				if (icon_id != 0)
