@@ -1537,14 +1537,14 @@ VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 			_r_listview_addcolumn (hwnd, listview_id, 0, L"", -10, LVCFMT_LEFT);
 			_r_listview_addcolumn (hwnd, listview_id, 1, L"", -10, LVCFMT_LEFT);
 			_r_listview_addcolumn (hwnd, listview_id, 2, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 3, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 4, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 3, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 4, L"", -10, LVCFMT_RIGHT);
 			_r_listview_addcolumn (hwnd, listview_id, 5, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 6, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 7, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 8, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 9, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 10, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 6, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 7, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 8, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, listview_id, 9, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, listview_id, 10, L"", -10, LVCFMT_LEFT);
 
 			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_NOHEADER, LVGS_NOHEADER);
 		}
