@@ -788,7 +788,14 @@ INT_PTR CALLBACK EditorPagesProc (
 			// app path
 			if (GetDlgItem (hwnd, IDC_APP_PATH_ID))
 			{
-				_r_ctrl_setstring (hwnd, IDC_APP_PATH_ID, _r_obj_getstring (context->ptr_app->real_path));
+				if (context->ptr_app->real_path)
+				{
+					_r_ctrl_setstring (hwnd, IDC_APP_PATH_ID, context->ptr_app->real_path->buffer);
+				}
+				else
+				{
+					_r_ctrl_enable (hwnd, IDC_APP_EXPLORE_ID, FALSE);
+				}
 			}
 
 			// app rules
