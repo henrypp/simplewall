@@ -599,7 +599,7 @@ VOID CALLBACK _wfp_logcallback (
 
 		if (status == STATUS_SUCCESS)
 		{
-			if (!_app_isappfound (_r_str_gethash2 (sid_string, TRUE)))
+			if (!_app_package_isnotexists (sid_string, 0))
 				_r_obj_clearreference (&sid_string);
 		}
 	}
