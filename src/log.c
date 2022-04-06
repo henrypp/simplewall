@@ -291,9 +291,7 @@ VOID _app_logwrite_ui (
 		return;
 
 	_r_queuedlock_acquireshared (&lock_loglist);
-
 	table_size = _r_obj_gethashtablesize (log_table);
-
 	_r_queuedlock_releaseshared (&lock_loglist);
 
 	if (table_size >= MAP_CACHE_MAX)
@@ -359,13 +357,11 @@ VOID _wfp_logsubscribe (
 	_FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe1");
 	_FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe0");
 
-	if (
-		!_FwpmNetEventSubscribe4 &&
+	if (!_FwpmNetEventSubscribe4 &&
 		!_FwpmNetEventSubscribe3 &&
 		!_FwpmNetEventSubscribe2 &&
 		!_FwpmNetEventSubscribe1 &&
-		!_FwpmNetEventSubscribe0
-		)
+		!_FwpmNetEventSubscribe0)
 	{
 		_r_log (LOG_LEVEL_WARNING, NULL, L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
 
@@ -380,53 +376,23 @@ VOID _wfp_logsubscribe (
 
 	if (_FwpmNetEventSubscribe4)
 	{
-		code = _FwpmNetEventSubscribe4 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback4,
-			NULL,
-			&new_handle
-		); // win10rs5+
+		code = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
 	}
 	else if (_FwpmNetEventSubscribe3)
 	{
-		code = _FwpmNetEventSubscribe3 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback3,
-			NULL,
-			&new_handle
-		); // win10rs4+
+		code = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
 	}
 	else if (_FwpmNetEventSubscribe2)
 	{
-		code = _FwpmNetEventSubscribe2 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback2,
-			NULL,
-			&new_handle
-		); // win10rs1+
+		code = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
 	}
 	else if (_FwpmNetEventSubscribe1)
 	{
-		code = _FwpmNetEventSubscribe1 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback1,
-			NULL,
-			&new_handle
-		); // win8+
+		code = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle); // win8+
 	}
 	else if (_FwpmNetEventSubscribe0)
 	{
-		code = _FwpmNetEventSubscribe0 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback0,
-			NULL,
-			&new_handle
-		); // win7+
+		code = _FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &new_handle); // win7+
 	}
 	else
 	{
@@ -538,44 +504,38 @@ VOID CALLBACK _wfp_logcallback (
 {
 	HANDLE engine_handle;
 	PITEM_LOG ptr_log;
+	PR_STRING path;
+	PR_STRING resolved_path;
 	PR_STRING filter_name;
 	PR_STRING layer_name;
 	PR_STRING sid_string;
+	FWPM_LAYER *layer_ptr;
+	FWPM_FILTER *filter_ptr;
 	UINT8 filter_weight;
 	BOOLEAN is_myprovider;
 	NTSTATUS status;
 
 	engine_handle = _wfp_getenginehandle ();
 
-	if (
-		!engine_handle ||
-		!log->filter_id ||
-		!log->layer_id ||
-		(log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
-		)
-	{
+	if (!engine_handle || !log->filter_id || !log->layer_id)
 		return;
-	}
 
-	FWPM_LAYER *layer_ptr;
-	FWPM_FILTER *filter_ptr;
+	if (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
+		return;
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
 	if (FwpmLayerGetById (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS || !layer_ptr)
 		return;
 
-	if (
-		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) ||
-		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6)
-		)
+	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) ||
+		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
 	{
 		FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
 		return;
 	}
-	else if (
-		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) ||
-		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6)
-		)
+
+	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) ||
+		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6))
 	{
 		log->direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 	}
@@ -622,6 +582,16 @@ VOID CALLBACK _wfp_logcallback (
 	if (log->timestamp)
 		ptr_log->timestamp = _r_unixtime_from_filetime (log->timestamp);
 
+	// check token for null (not an appcontainer) (HACK!!!)
+	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && log->package_id)
+	{
+		if (RtlEqualSid (log->package_id, &SeNobodySid))
+		{
+			log->flags &= ~(FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET);
+			log->package_id = NULL;
+		}
+	}
+
 	// get package id (win8+)
 	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && log->package_id)
 	{
@@ -646,9 +616,6 @@ VOID CALLBACK _wfp_logcallback (
 	}
 	else if ((log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) && log->app_id)
 	{
-		PR_STRING path;
-		PR_STRING resolved_path;
-
 		path = _r_obj_createstring ((LPCWSTR)(log->app_id));
 
 		resolved_path = _r_path_dospathfromnt (path);
@@ -701,10 +668,10 @@ VOID CALLBACK _wfp_logcallback (
 	}
 
 	// ports
-	if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET) && log->local_port)
+	if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET))
 		ptr_log->local_port = log->local_port;
 
-	if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET) && log->remote_port)
+	if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET))
 		ptr_log->remote_port = log->remote_port;
 
 	// protocol
@@ -740,16 +707,14 @@ VOID CALLBACK _wfp_logcallback (
 }
 
 FORCEINLINE BOOLEAN log_struct_to_f (
-	_Out_ PITEM_LOG_CALLBACK log,
-	_In_ PVOID data,
+	_Inout_ PITEM_LOG_CALLBACK log,
+	_In_ PVOID event_data,
 	_In_ ULONG version
 )
 {
-	RtlZeroMemory (log, sizeof (ITEM_LOG_CALLBACK));
-
 	if (version == WINDOWS_7)
 	{
-		FWPM_NET_EVENT1 *event = data;
+		FWPM_NET_EVENT1 *event = event_data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -838,7 +803,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 	}
 	else if (version == WINDOWS_8)
 	{
-		FWPM_NET_EVENT2 *event = data;
+		FWPM_NET_EVENT2 *event = event_data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -946,7 +911,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 	}
 	else if (version == WINDOWS_10_1607)
 	{
-		FWPM_NET_EVENT3 *event = data;
+		FWPM_NET_EVENT3 *event = event_data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -1054,7 +1019,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 	}
 	else if (version == WINDOWS_10_1803)
 	{
-		FWPM_NET_EVENT4 *event = data;
+		FWPM_NET_EVENT4 *event = event_data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -1162,7 +1127,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 	}
 	else if (version == WINDOWS_10_1809)
 	{
-		FWPM_NET_EVENT5 *event = data;
+		FWPM_NET_EVENT5 *event = event_data;
 
 		if (event->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && event->classifyDrop)
 		{
@@ -1275,70 +1240,70 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 // win7+ callback
 VOID CALLBACK _wfp_logcallback0 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT1 *event
+	_In_ const FWPM_NET_EVENT1 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_7))
+	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_7))
 		_wfp_logcallback (&log);
 }
 
 // win8+ callback
 VOID CALLBACK _wfp_logcallback1 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT2 *event
+	_In_ const FWPM_NET_EVENT2 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_8))
+	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_8))
 		_wfp_logcallback (&log);
 }
 
 // win10rs1+ callback
 VOID CALLBACK _wfp_logcallback2 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT3 *event
+	_In_ const FWPM_NET_EVENT3 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1607))
+	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1607))
 		_wfp_logcallback (&log);
 }
 
 // win10rs4+ callback
 VOID CALLBACK _wfp_logcallback3 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT4 *event
+	_In_ const FWPM_NET_EVENT4 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1803))
+	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1803))
 		_wfp_logcallback (&log);
 }
 
 // win10rs5+ callback
 VOID CALLBACK _wfp_logcallback4 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT5 *event
+	_In_ const FWPM_NET_EVENT5 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event, WINDOWS_10_1809))
+	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1809))
 		_wfp_logcallback (&log);
 }
 
