@@ -1,9 +1,66 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #include "global.h"
 
-VOID _app_package_getpackageinfo (_Inout_ PR_STRING_PTR package_root_folder)
+BOOLEAN _app_package_isnotexists (
+	_In_ PR_STRING package_sid,
+	_In_opt_ ULONG_PTR app_hash
+)
+{
+	if (!app_hash)
+		app_hash = _r_str_gethash2 (package_sid, TRUE);
+
+	if (_app_isappfound (app_hash))
+		return TRUE;
+
+	// there we try to found new package (HACK!!!)
+	_app_package_getpackageslist ();
+
+	if (_app_isappfound (app_hash))
+		return TRUE;
+
+	return FALSE;
+}
+
+VOID _app_package_parsedisplayname (
+	_In_ PR_STRING_PTR display_name_ptr,
+	_In_ PR_STRING fallback_name
+)
+{
+	PR_STRING display_name;
+	PR_STRING buffer_string;
+	ULONG buffer_length;
+
+	display_name = *display_name_ptr;
+
+	if (!_r_obj_isstringempty (display_name))
+	{
+		if (display_name->buffer[0] == L'@')
+		{
+			buffer_length = 512;
+			buffer_string = _r_obj_createstring_ex (NULL, buffer_length * sizeof (WCHAR));
+
+			if (SUCCEEDED (SHLoadIndirectString (display_name->buffer, buffer_string->buffer, buffer_length, NULL)))
+			{
+				_r_obj_trimstringtonullterminator (buffer_string);
+
+				_r_obj_movereference (display_name_ptr, buffer_string);
+			}
+			else
+			{
+				_r_obj_dereference (buffer_string);
+			}
+		}
+	}
+
+	if (_r_obj_isstringempty (*display_name_ptr))
+		_r_obj_swapreference (display_name_ptr, fallback_name);
+}
+
+VOID _app_package_parsepath (
+	_Inout_ PR_STRING_PTR package_root_folder
+)
 {
 	static R_STRINGREF appx_names[] = {
 		PR_STRINGREF_INIT (L"AppxManifest.xml"),
@@ -79,28 +136,250 @@ CleanupExit:
 	_r_xml_destroylibrary (&xml_library);
 }
 
-VOID _app_package_getpackageslist ()
+VOID _app_package_getpackagebyname (
+	_In_ HKEY hkey,
+	_In_ PR_STRING key_name
+)
 {
+	//PR_STRING real_path;
+	PR_STRING display_name;
 	PR_BYTE package_sid;
 	PR_STRING package_sid_string;
-	PR_STRING key_name;
-	PR_STRING display_name;
-	PR_STRING localized_name;
-	PR_STRING real_path;
 	PITEM_APP ptr_app;
-	LONG64 timestamp;
 	ULONG_PTR app_hash;
-	UINT localized_length;
-	HKEY hkey;
+	LONG64 timestamp;
 	HKEY hsubkey;
+	LONG status;
+
+	//real_path = NULL;
+	display_name = NULL;
+	package_sid = NULL;
+	package_sid_string = NULL;
+
+	status = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
+
+	if (status != ERROR_SUCCESS)
+		goto CleanupExit;
+
+	package_sid = _r_reg_querybinary (hsubkey, NULL, L"PackageSid");
+
+	if (!package_sid)
+		goto CleanupExit;
+
+	status = _r_str_fromsid (package_sid->buffer, &package_sid_string);
+
+	if (status != STATUS_SUCCESS)
+		goto CleanupExit;
+
+	// already exists (skip)
+	if (_app_isappfound (_r_str_gethash2 (package_sid_string, TRUE)))
+		goto CleanupExit;
+
+	// parse package display name
+	display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
+	_app_package_parsedisplayname (&display_name, key_name);
+
+	// TODO: path is not required to filtering package via WFP, only for
+	// signature checking, but i think there is another way to do this. Not needed by now.
+
+	//// parse package path
+	//real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
+	//_app_package_parsepath (&real_path);
+
+	// TODO: since packages does not obtain paths, we need to query general
+	// information, certificates and icons in another way.
+
+	//_r_queuedlock_acquireexclusive (&lock_apps);
+	app_hash = _app_addapplication (NULL, DATA_APP_UWP, package_sid_string, display_name, NULL);
+	//_r_queuedlock_releaseexclusive (&lock_apps);
+
+	if (app_hash)
+	{
+		ptr_app = _app_getappitem (app_hash);
+
+		if (ptr_app)
+		{
+			timestamp = _r_reg_querytimestamp (hsubkey);
+
+			_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
+			_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_reference (package_sid));
+
+			_r_obj_dereference (ptr_app);
+		}
+	}
+
+CleanupExit:
+
+	//if (real_path)
+	//	_r_obj_dereference (real_path);
+
+	if (display_name)
+		_r_obj_dereference (display_name);
+
+	if (package_sid)
+		_r_obj_dereference (package_sid);
+
+	if (package_sid_string)
+		_r_obj_dereference (package_sid_string);
+
+	if (hsubkey)
+		RegCloseKey (hsubkey);
+}
+
+VOID _app_package_getpackagebysid (
+	_In_ HKEY hkey,
+	_In_ PR_STRING key_name
+)
+{
+	PR_STRING moniker;
+	//PR_STRING real_path;
+	PR_STRING display_name;
+	PR_BYTE package_sid;
+	PITEM_APP ptr_app;
+	ULONG_PTR app_hash;
+	LONG64 timestamp;
+	HKEY hsubkey;
+	LONG status;
+
+	moniker = NULL;
+	//real_path = NULL;
+	display_name = NULL;
+	package_sid = NULL;
+
+	status = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
+
+	if (status != ERROR_SUCCESS)
+		goto CleanupExit;
+
+	package_sid = _r_str_tosid (key_name);
+
+	if (!package_sid)
+		goto CleanupExit;
+
+	// query package moniker
+	moniker = _r_reg_querystring (hsubkey, NULL, L"Moniker");
+
+	if (!moniker)
+		moniker = _r_obj_reference (key_name);
+
+	// TODO: path is not required to filtering package via WFP, only for
+	// signature checking, but i think there is another way to do this. Not needed by now.
+
+	//if (moniker)
+	//{
+	//	// parse package path
+	//	// TODO: there is package full name required.
+	//	status = _r_sys_getpackagepath (moniker, &real_path);
+	//
+	//	if (status == ERROR_SUCCESS)
+	//	{
+	//		_app_package_parsepath (&real_path);
+	//	}
+	//}
+	//else
+	//{
+	//	moniker = _r_obj_reference (key_name);
+	//
+	//	real_path = NULL;
+	//}
+
+	// parse package display name
+	display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
+	_app_package_parsedisplayname (&display_name, moniker);
+
+	// TODO: since packages does not obtain paths, we need to query general
+	// information, certificates and icons in another way.
+
+	//_r_queuedlock_acquireexclusive (&lock_apps);
+	app_hash = _app_addapplication (NULL, DATA_APP_UWP, key_name, display_name, NULL);
+	//_r_queuedlock_releaseexclusive (&lock_apps);
+
+	if (app_hash)
+	{
+		ptr_app = _app_getappitem (app_hash);
+
+		if (ptr_app)
+		{
+			timestamp = _r_reg_querytimestamp (hsubkey);
+
+			_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
+			_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_reference (package_sid));
+
+			_r_obj_dereference (ptr_app);
+		}
+	}
+
+CleanupExit:
+
+	if (moniker)
+		_r_obj_dereference (moniker);
+
+	//if (real_path)
+	//	_r_obj_dereference (real_path);
+
+	if (display_name)
+		_r_obj_dereference (display_name);
+
+	if (package_sid)
+		_r_obj_dereference (package_sid);
+
+	if (hsubkey)
+		RegCloseKey (hsubkey);
+}
+
+VOID _app_package_getpackageslist ()
+{
+	HKEY hkey;
+	PR_STRING key_name;
 	ULONG key_index;
 	ULONG max_length;
 	ULONG size;
-	NTSTATUS status;
+	LONG status;
 
+	// query packages by names
 	status = RegOpenKeyEx (
 		HKEY_CURRENT_USER,
 		L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages",
+		0,
+		KEY_READ,
+		&hkey
+	);
+
+	if (status == ERROR_SUCCESS)
+	{
+		max_length = _r_reg_querysubkeylength (hkey);
+
+		if (max_length)
+		{
+			key_index = 0;
+			key_name = _r_obj_createstring_ex (NULL, max_length * sizeof (WCHAR));
+
+			while (TRUE)
+			{
+				size = max_length + 1;
+
+				if (RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+					break;
+
+				_r_obj_trimstringtonullterminator (key_name);
+
+				// already exists (skip)
+				//if (_app_isappfound (_r_str_gethash2 (key_name, TRUE)))
+				//	continue;
+
+				_app_package_getpackagebyname (hkey, key_name);
+			}
+
+			_r_obj_dereference (key_name);
+		}
+
+		RegCloseKey (hkey);
+	}
+
+	// query packages by sids
+	status = RegOpenKeyEx (
+		HKEY_CURRENT_USER,
+		L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings",
 		0,
 		KEY_READ,
 		&hkey
@@ -125,88 +404,11 @@ VOID _app_package_getpackageslist ()
 
 			_r_obj_trimstringtonullterminator (key_name);
 
-			status = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
+			// already exists (skip)
+			if (_app_isappfound (_r_str_gethash2 (key_name, TRUE)))
+				continue;
 
-			if (status == ERROR_SUCCESS)
-			{
-				package_sid = _r_reg_querybinary (hsubkey, NULL, L"PackageSid");
-
-				if (package_sid)
-				{
-					if (RtlValidSid (package_sid->buffer))
-					{
-						status = _r_str_fromsid (package_sid->buffer, &package_sid_string);
-
-						if (status == STATUS_SUCCESS)
-						{
-							if (!_app_isappfound (_r_str_gethash2 (package_sid_string, TRUE)))
-							{
-								display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
-
-								if (display_name)
-								{
-									if (!_r_obj_isstringempty2 (display_name))
-									{
-										if (display_name->buffer[0] == L'@')
-										{
-											localized_length = 512;
-											localized_name = _r_obj_createstring_ex (NULL, localized_length * sizeof (WCHAR));
-
-											if (SUCCEEDED (SHLoadIndirectString (display_name->buffer, localized_name->buffer, localized_length, NULL)))
-											{
-												_r_obj_trimstringtonullterminator (localized_name);
-
-												_r_obj_movereference (&display_name, localized_name);
-											}
-											else
-											{
-												_r_obj_dereference (localized_name);
-											}
-										}
-									}
-
-									// use registry key name as fallback package name
-									if (_r_obj_isstringempty (display_name))
-										_r_obj_swapreference (&display_name, key_name);
-
-									real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
-
-									// load additional info from appx manifest
-									_app_package_getpackageinfo (&real_path);
-
-									app_hash = _app_addapplication (NULL, DATA_APP_UWP, package_sid_string, display_name, real_path);
-
-									if (app_hash)
-									{
-										ptr_app = _app_getappitem (app_hash);
-
-										if (ptr_app)
-										{
-											timestamp = _r_reg_querytimestamp (hsubkey);
-
-											_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
-											_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_reference (package_sid));
-
-											_r_obj_dereference (ptr_app);
-										}
-									}
-
-									if (real_path)
-										_r_obj_dereference (real_path);
-
-									_r_obj_dereference (display_name);
-								}
-							}
-
-							_r_obj_dereference (package_sid_string);
-						}
-					}
-
-					_r_obj_dereference (package_sid);
-				}
-
-				RegCloseKey (hsubkey);
-			}
+			_app_package_getpackagebysid (hkey, key_name);
 		}
 
 		_r_obj_dereference (key_name);
