@@ -682,6 +682,8 @@ HFONT _app_createfont (
 	_In_ LONG dpi_value
 )
 {
+	HFONT hfont;
+
 	if (size)
 		logfont->lfHeight = _r_dc_fontsizetoheight (size, dpi_value);
 
@@ -689,7 +691,9 @@ HFONT _app_createfont (
 	logfont->lfCharSet = DEFAULT_CHARSET;
 	logfont->lfQuality = DEFAULT_QUALITY;
 
-	return CreateFontIndirect (logfont);
+	hfont = CreateFontIndirect (logfont);
+
+	return hfont;
 }
 
 VOID _app_windowloadfont (
