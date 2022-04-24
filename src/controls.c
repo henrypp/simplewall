@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #include "global.h"
 
@@ -366,7 +366,6 @@ PR_STRING _app_gettooltipbylparam (
 	}
 	else if (listview_id == IDC_LOG)
 	{
-
 		ptr_log = _app_getlogitem (lparam);
 
 		if (ptr_log)
@@ -965,6 +964,11 @@ VOID _app_refreshstatus (
 )
 {
 	ITEM_STATUS status;
+	PR_STRING text[STATUSBAR_PARTS_COUNT] = {0};
+	INT parts[STATUSBAR_PARTS_COUNT] = {0};
+	LONG size[STATUSBAR_PARTS_COUNT] = {0};
+	LONG calculated_width;
+	LONG spacing;
 	HWND hstatus;
 	HDC hdc;
 	LONG dpi_value;
@@ -985,11 +989,8 @@ VOID _app_refreshstatus (
 
 	_r_dc_fixwindowfont (hdc, hstatus); // fix
 
-	PR_STRING text[STATUSBAR_PARTS_COUNT] = {0};
-	INT parts[STATUSBAR_PARTS_COUNT] = {0};
-	LONG size[STATUSBAR_PARTS_COUNT] = {0};
-	LONG calculated_width = 0;
-	LONG spacing = _r_dc_getdpi (16, dpi_value);
+	calculated_width = 0;
+	spacing = _r_dc_getdpi (16, dpi_value);
 
 	for (INT i = 0; i < STATUSBAR_PARTS_COUNT; i++)
 	{
