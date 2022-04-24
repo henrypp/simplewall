@@ -172,7 +172,9 @@ VOID _app_package_getpackagebyname (
 		goto CleanupExit;
 
 	// already exists (skip)
-	if (_app_isappfound (_r_str_gethash2 (package_sid_string, TRUE)))
+	app_hash = _r_str_gethash2 (package_sid_string, TRUE);
+
+	if (_app_isappfound (app_hash))
 		goto CleanupExit;
 
 	// parse package display name
@@ -232,7 +234,6 @@ VOID _app_package_getpackagebysid (
 )
 {
 	PR_STRING moniker;
-	//PR_STRING real_path;
 	PR_STRING display_name;
 	PR_BYTE package_sid;
 	PITEM_APP ptr_app;
@@ -242,9 +243,14 @@ VOID _app_package_getpackagebysid (
 	LONG status;
 
 	moniker = NULL;
-	//real_path = NULL;
 	display_name = NULL;
 	package_sid = NULL;
+
+	// already exists (skip)
+	app_hash = _r_str_gethash2 (key_name, TRUE);
+
+	if (_app_isappfound (app_hash))
+		return;
 
 	status = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
 
@@ -314,9 +320,6 @@ CleanupExit:
 	if (moniker)
 		_r_obj_dereference (moniker);
 
-	//if (real_path)
-	//	_r_obj_dereference (real_path);
-
 	if (display_name)
 		_r_obj_dereference (display_name);
 
@@ -357,15 +360,12 @@ VOID _app_package_getpackageslist ()
 			while (TRUE)
 			{
 				size = max_length + 1;
+				status = RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL);
 
-				if (RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+				if (status != ERROR_SUCCESS)
 					break;
 
-				_r_obj_trimstringtonullterminator (key_name);
-
-				// already exists (skip)
-				//if (_app_isappfound (_r_str_gethash2 (key_name, TRUE)))
-				//	continue;
+				_r_obj_setstringlength_ex (key_name, size * sizeof (WCHAR), max_length * sizeof (WCHAR));
 
 				_app_package_getpackagebyname (hkey, key_name);
 			}
@@ -398,15 +398,12 @@ VOID _app_package_getpackageslist ()
 		while (TRUE)
 		{
 			size = max_length + 1;
+			status = RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL);
 
-			if (RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+			if (status != ERROR_SUCCESS)
 				break;
 
-			_r_obj_trimstringtonullterminator (key_name);
-
-			// already exists (skip)
-			if (_app_isappfound (_r_str_gethash2 (key_name, TRUE)))
-				continue;
+			_r_obj_setstringlength_ex (key_name, size * sizeof (WCHAR), max_length * sizeof (WCHAR));
 
 			_app_package_getpackagebysid (hkey, key_name);
 		}
