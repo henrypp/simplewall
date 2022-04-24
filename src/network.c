@@ -479,9 +479,11 @@ BOOLEAN _app_network_getpath (
 	_In_opt_ PULONG64 modules
 )
 {
+	PTOKEN_APPCONTAINER_INFORMATION app_container;
 	PR_STRING process_name;
+	HANDLE process_handle;
+	HANDLE token_handle;
 	NTSTATUS status;
-	HANDLE hprocess;
 
 	if (pid == PROC_WAITING_PID)
 	{
@@ -512,11 +514,11 @@ BOOLEAN _app_network_getpath (
 
 	if (!process_name)
 	{
-		status = _r_sys_openprocess (UlongToHandle (pid), PROCESS_QUERY_LIMITED_INFORMATION, &hprocess);
+		status = _r_sys_openprocess (UlongToHandle (pid), PROCESS_QUERY_LIMITED_INFORMATION, &process_handle);
 
 		if (NT_SUCCESS (status))
 		{
-			if (_r_sys_isosversiongreaterorequal (WINDOWS_8) && _r_sys_isprocessimmersive (hprocess))
+			if (_r_sys_isosversiongreaterorequal (WINDOWS_8) && _r_sys_isprocessimmersive (process_handle))
 			{
 				ptr_network->type = DATA_APP_UWP;
 			}
@@ -525,13 +527,33 @@ BOOLEAN _app_network_getpath (
 				ptr_network->type = DATA_APP_REGULAR;
 			}
 
-			status = _r_sys_queryprocessstring (hprocess, ProcessImageFileNameWin32, &process_name);
+			if (ptr_network->type == DATA_APP_UWP)
+			{
+				if (OpenProcessToken (process_handle, TOKEN_QUERY, &token_handle))
+				{
+					status = _r_sys_querytokeninformation (token_handle, TokenAppContainerSid, &app_container);
 
-			// fix for WSL processes (issue #606)
-			if (status == STATUS_UNSUCCESSFUL)
-				status = _r_sys_queryprocessstring (hprocess, ProcessImageFileName, &process_name);
+					if (NT_SUCCESS (status))
+					{
+						_r_str_fromsid (app_container->TokenAppContainer, &process_name);
 
-			NtClose (hprocess);
+						_r_mem_free (app_container);
+					}
+
+					NtClose (token_handle);
+				}
+			}
+
+			if (!process_name)
+			{
+				status = _r_sys_queryprocessstring (process_handle, ProcessImageFileNameWin32, &process_name);
+
+				// fix for WSL processes (issue #606)
+				if (status == STATUS_UNSUCCESSFUL)
+					status = _r_sys_queryprocessstring (process_handle, ProcessImageFileName, &process_name);
+			}
+
+			NtClose (process_handle);
 		}
 	}
 
