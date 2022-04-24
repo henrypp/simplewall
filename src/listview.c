@@ -325,39 +325,27 @@ INT _app_listview_finditem (
 	_In_ ULONG_PTR id_code
 )
 {
-	PITEM_LISTVIEW_CONTEXT context;
+	ULONG_PTR current_code;
 	INT item_count;
-	INT item_id;
 
 	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
 	{
-		item_id = -1;
-
 		item_count = _r_listview_getitemcount (hwnd, listview_id);
 
-		if (item_count)
+		for (INT i = 0; i < item_count; i++)
 		{
-			for (INT i = 0; i < item_count; i++)
-			{
-				context = (PITEM_LISTVIEW_CONTEXT)_r_listview_getitemlparam (hwnd, listview_id, i);
+			current_code = _app_listview_getitemcontext (hwnd, listview_id, i);
 
-				if (!context)
-					continue;
-
-				if (context->id_code == id_code)
-				{
-					item_id = i;
-					break;
-				}
-			}
+			if (current_code == id_code)
+				return i;
 		}
 	}
 	else
 	{
-		item_id = _r_listview_finditem (hwnd, listview_id, -1, id_code);
+		return _r_listview_finditem (hwnd, listview_id, -1, id_code);
 	}
 
-	return item_id;
+	return -1;
 }
 
 VOID _app_listview_removeitem (
