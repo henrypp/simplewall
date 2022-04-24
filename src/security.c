@@ -1,10 +1,12 @@
 // simplewall
-// Copyright (c) 2020-2021 Henry++
+// Copyright (c) 2020-2022 Henry++
 
 #include "global.h"
 
 _Ret_maybenull_
-PSID _app_quyerybuiltinsid (_In_ WELL_KNOWN_SID_TYPE sid_type)
+PSID _app_quyerybuiltinsid (
+	_In_ WELL_KNOWN_SID_TYPE sid_type
+)
 {
 	PSID sid;
 	ULONG sid_length;
@@ -79,16 +81,26 @@ VOID _app_generate_credentials ()
 }
 
 _Ret_maybenull_
-PACL _app_createaccesscontrollist (_In_ PACL acl, _In_ BOOLEAN is_secure)
+PACL _app_createaccesscontrollist (
+	_In_ PACL acl,
+	_In_ BOOLEAN is_secure
+)
 {
+	EXPLICIT_ACCESS ea[3] = {0};
+	PACL new_dacl;
+	PACCESS_ALLOWED_ACE ace;
+
 	BOOLEAN is_secured = FALSE;
 
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
 
+	ULONG count;
+	ULONG status;
+
 	for (WORD ace_index = 0; ace_index < acl->AceCount; ace_index++)
 	{
-		PACCESS_ALLOWED_ACE ace = NULL;
+		ace = NULL;
 
 		if (!GetAce (acl, ace_index, &ace))
 			continue;
@@ -130,42 +142,43 @@ PACL _app_createaccesscontrollist (_In_ PACL acl, _In_ BOOLEAN is_secure)
 
 	if (is_openforeveryone || is_currentuserhaverights || is_secured != is_secure)
 	{
-		EXPLICIT_ACCESS ea[3] = {0};
-		PACL new_dacl = NULL;
-		ULONG count = 0;
+		count = 0;
 
 		// revoke current user access rights
 		if (is_currentuserhaverights)
-		{
 			_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, config.pbuiltin_current_sid);
-		}
 
 		// revoke everyone access rights
 		if (is_openforeveryone)
-		{
 			_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, &SeEveryoneSid);
-		}
 
 		// secure filter from deletion
-		_app_setexplicitaccess (&ea[count++],
-								is_secure ? DENY_ACCESS : GRANT_ACCESS,
-								FWPM_ACTRL_WRITE | DELETE | WRITE_DAC | WRITE_OWNER,
-								is_secure ? CONTAINER_INHERIT_ACE | OBJECT_INHERIT_ACE : NO_INHERITANCE,
-								&SeEveryoneSid
+		_app_setexplicitaccess (
+			&ea[count++],
+			is_secure ? DENY_ACCESS : GRANT_ACCESS,
+			FWPM_ACTRL_WRITE | DELETE | WRITE_DAC | WRITE_OWNER,
+			is_secure ? CONTAINER_INHERIT_ACE | OBJECT_INHERIT_ACE : NO_INHERITANCE,
+			&SeEveryoneSid
 		);
 
-		ULONG code = SetEntriesInAcl (count, ea, acl, &new_dacl);
+		status = SetEntriesInAcl (count, ea, acl, &new_dacl);
 
-		if (code == ERROR_SUCCESS)
+		if (status == ERROR_SUCCESS)
 			return new_dacl;
 
-		_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAcl", code, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAcl", status, NULL);
 	}
 
 	return NULL;
 }
 
-VOID _app_setexplicitaccess (_Out_ PEXPLICIT_ACCESS ea, _In_ ACCESS_MODE mode, _In_ ULONG rights, _In_ ULONG inheritance, _In_opt_ PSID sid)
+VOID _app_setexplicitaccess (
+	_Out_ PEXPLICIT_ACCESS ea,
+	_In_ ACCESS_MODE mode,
+	_In_ ULONG rights,
+	_In_ ULONG inheritance,
+	_In_opt_ PSID sid
+)
 {
 	ea->grfAccessMode = mode;
 	ea->grfAccessPermissions = rights;
@@ -176,22 +189,36 @@ VOID _app_setexplicitaccess (_Out_ PEXPLICIT_ACCESS ea, _In_ ACCESS_MODE mode, _
 	BuildTrusteeWithSid (&(ea->Trustee), sid);
 }
 
-VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
+VOID _app_setsecurityinfoforengine (
+	_In_ HANDLE hengine
+)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
+	PACCESS_ALLOWED_ACE ace;
+	EXPLICIT_ACCESS ea[18] = {0};
+	PACL new_dacl;
 	PSID sid_owner;
 	PSID sid_group;
 	PACL dacl;
 	PACL sacl;
-	ULONG code;
+	ULONG count;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
+	ULONG status;
 
-	code = FwpmEngineGetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmEngineGetSecurityInfo (
+		hengine,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineGetSecurityInfo", code, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineGetSecurityInfo", status, NULL);
 		return;
 	}
 
@@ -199,7 +226,7 @@ VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 	{
 		for (WORD ace_index = 0; ace_index < dacl->AceCount; ace_index++)
 		{
-			PACCESS_ALLOWED_ACE ace = NULL;
+			ace = NULL;
 
 			if (!GetAce (dacl, ace_index, &ace))
 				continue;
@@ -233,12 +260,25 @@ VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 
 		if (is_currentuserhaverights || is_openforeveryone)
 		{
-			FwpmEngineSetSecurityInfo (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
-			FwpmNetEventsSetSecurityInfo (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
+			FwpmEngineSetSecurityInfo (
+				hengine,
+				OWNER_SECURITY_INFORMATION,
+				&SeLocalServiceSid,
+				NULL,
+				NULL,
+				NULL
+			);
 
-			EXPLICIT_ACCESS ea[18] = {0};
-			PACL new_dacl = NULL;
-			ULONG count = 0;
+			FwpmNetEventsSetSecurityInfo (
+				hengine,
+				OWNER_SECURITY_INFORMATION,
+				&SeLocalServiceSid,
+				NULL,
+				NULL,
+				NULL
+			);
+
+			count = 0;
 
 			// revoke current user access rights
 			if (is_currentuserhaverights)
@@ -252,66 +292,176 @@ VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 			{
 				if (config.pbuiltin_admins_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER, NO_INHERITANCE, config.pbuiltin_admins_sid);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0x10000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pbuiltin_admins_sid);
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER, NO_INHERITANCE,
+						config.pbuiltin_admins_sid
+					);
+
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						0x10000000,
+						OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE,
+						config.pbuiltin_admins_sid
+					);
 				}
 
 				if (config.pbuiltin_netops_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pbuiltin_netops_sid);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pbuiltin_netops_sid);
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						FWPM_GENERIC_ALL | DELETE,
+						NO_INHERITANCE,
+						config.pbuiltin_netops_sid
+					);
+
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						0xE0000000,
+						OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE,
+						config.pbuiltin_netops_sid
+					);
 				}
 
 				if (config.pservice_mpssvc_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_mpssvc_sid->buffer);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_mpssvc_sid->buffer);
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						FWPM_GENERIC_ALL | DELETE,
+						NO_INHERITANCE,
+						config.pservice_mpssvc_sid->buffer
+					);
+
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						0xE0000000,
+						OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE,
+						config.pservice_mpssvc_sid->buffer
+					);
 				}
 
 				if (config.pservice_nlasvc_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_READ | FWPM_GENERIC_EXECUTE, NO_INHERITANCE, config.pservice_nlasvc_sid->buffer);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xA0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_nlasvc_sid->buffer);
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						FWPM_GENERIC_READ | FWPM_GENERIC_EXECUTE,
+						NO_INHERITANCE,
+						config.pservice_nlasvc_sid->buffer
+					);
+
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						0xA0000000,
+						OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE,
+						config.pservice_nlasvc_sid->buffer
+					);
 				}
 
 				if (config.pservice_policyagent_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_policyagent_sid->buffer);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_policyagent_sid->buffer);
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						FWPM_GENERIC_ALL | DELETE,
+						NO_INHERITANCE,
+						config.pservice_policyagent_sid->buffer
+					);
+
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						0xE0000000,
+						OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE,
+						config.pservice_policyagent_sid->buffer
+					);
 				}
 
 				if (config.pservice_rpcss_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_ALL | DELETE, NO_INHERITANCE, config.pservice_rpcss_sid->buffer);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xE0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_rpcss_sid->buffer);
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						FWPM_GENERIC_ALL | DELETE,
+						NO_INHERITANCE,
+						config.pservice_rpcss_sid->buffer
+					);
+
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						0xE0000000,
+						OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE,
+						config.pservice_rpcss_sid->buffer
+					);
 				}
 
 				if (config.pservice_wdiservicehost_sid)
 				{
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, FWPM_GENERIC_READ | FWPM_GENERIC_EXECUTE, NO_INHERITANCE, config.pservice_wdiservicehost_sid->buffer);
-					_app_setexplicitaccess (&ea[count++], GRANT_ACCESS, 0xA0000000, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, config.pservice_wdiservicehost_sid->buffer);
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						FWPM_GENERIC_READ | FWPM_GENERIC_EXECUTE,
+						NO_INHERITANCE,
+						config.pservice_wdiservicehost_sid->buffer
+					);
+
+					_app_setexplicitaccess (
+						&ea[count++],
+						GRANT_ACCESS,
+						0xA0000000,
+						OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE,
+						config.pservice_wdiservicehost_sid->buffer
+					);
 				}
 
-				_app_setexplicitaccess (&ea[count++], SET_ACCESS, FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE, &SeEveryoneSid);
+				_app_setexplicitaccess (
+					&ea[count++],
+					SET_ACCESS,
+					FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN,
+					OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE,
+					&SeEveryoneSid
+				);
 			}
 
-			code = SetEntriesInAcl (count, ea, dacl, &new_dacl);
+			status = SetEntriesInAcl (count, ea, dacl, &new_dacl);
 
-			if (code != ERROR_SUCCESS)
+			if (status != ERROR_SUCCESS)
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAcl", code, NULL);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAcl", status, NULL);
 			}
 			else
 			{
-				code = FwpmEngineSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
+				status = FwpmEngineSetSecurityInfo (
+					hengine,
+					DACL_SECURITY_INFORMATION,
+					NULL,
+					NULL,
+					new_dacl,
+					NULL
+				);
 
-				if (code != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetSecurityInfo", code, NULL);
+				if (status != ERROR_SUCCESS)
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetSecurityInfo", status, NULL);
 
-				code = FwpmNetEventsSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
+				status = FwpmNetEventsSetSecurityInfo (
+					hengine,
+					DACL_SECURITY_INFORMATION,
+					NULL,
+					NULL,
+					new_dacl,
+					NULL
+				);
 
-				if (code != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmNetEventsSetSecurityInfo", code, NULL);
+				if (status != ERROR_SUCCESS)
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmNetEventsSetSecurityInfo", status, NULL);
 
 				LocalFree (new_dacl);
 			}
@@ -322,7 +472,11 @@ VOID _app_setsecurityinfoforengine (_In_ HANDLE hengine)
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
-VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID provider_guid, _In_ BOOLEAN is_secure)
+VOID _app_setsecurityinfoforprovider (
+	_In_ HANDLE hengine,
+	_In_ LPCGUID provider_guid,
+	_In_ BOOLEAN is_secure
+)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
 	PSID sid_owner;
@@ -330,13 +484,22 @@ VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID provider
 	PACL dacl;
 	PACL sacl;
 	PACL new_dacl;
-	ULONG code;
+	ULONG status;
 
-	code = FwpmProviderGetSecurityInfoByKey (hengine, provider_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmProviderGetSecurityInfoByKey (
+		hengine,
+		provider_guid,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderGetSecurityInfoByKey", code, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderGetSecurityInfoByKey", status, NULL);
 		return;
 	}
 
@@ -346,10 +509,18 @@ VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID provider
 
 		if (new_dacl)
 		{
-			code = FwpmProviderSetSecurityInfoByKey (hengine, provider_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
+			status = FwpmProviderSetSecurityInfoByKey (
+				hengine,
+				provider_guid,
+				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+				(const SID *)config.pbuiltin_admins_sid,
+				NULL,
+				new_dacl,
+				NULL
+			);
 
-			if (code != ERROR_SUCCESS)
-				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey", code, NULL);
+			if (status != ERROR_SUCCESS)
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey", status, NULL);
 
 			LocalFree (new_dacl);
 		}
@@ -359,7 +530,11 @@ VOID _app_setsecurityinfoforprovider (_In_ HANDLE hengine, _In_ LPCGUID provider
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
-VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer_guid, _In_ BOOLEAN is_secure)
+VOID _app_setsecurityinfoforsublayer (
+	_In_ HANDLE hengine,
+	_In_ LPCGUID sublayer_guid,
+	_In_ BOOLEAN is_secure
+)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
 	PSID sid_owner;
@@ -367,13 +542,22 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer
 	PACL dacl;
 	PACL sacl;
 	PACL new_dacl;
-	ULONG code;
+	ULONG status;
 
-	code = FwpmSubLayerGetSecurityInfoByKey (hengine, sublayer_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmSubLayerGetSecurityInfoByKey (
+		hengine,
+		sublayer_guid,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerGetSecurityInfoByKey", code, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerGetSecurityInfoByKey", status, NULL);
 		return;
 	}
 
@@ -383,10 +567,18 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer
 
 		if (new_dacl)
 		{
-			code = FwpmSubLayerSetSecurityInfoByKey (hengine, sublayer_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
+			status = FwpmSubLayerSetSecurityInfoByKey (
+				hengine,
+				sublayer_guid,
+				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+				(const SID *)config.pbuiltin_admins_sid,
+				NULL,
+				new_dacl,
+				NULL
+			);
 
-			if (code != ERROR_SUCCESS)
-				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey", code, NULL);
+			if (status != ERROR_SUCCESS)
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey", status, NULL);
 
 			LocalFree (new_dacl);
 		}
@@ -396,7 +588,11 @@ VOID _app_setsecurityinfoforsublayer (_In_ HANDLE hengine, _In_ LPCGUID sublayer
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
-VOID _app_setsecurityinfoforcallout (_In_ HANDLE hengine, _In_ LPCGUID callout_guid, _In_ BOOLEAN is_secure)
+VOID _app_setsecurityinfoforcallout (
+	_In_ HANDLE hengine,
+	_In_ LPCGUID callout_guid,
+	_In_ BOOLEAN is_secure
+)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
 	PSID sid_owner;
@@ -404,14 +600,23 @@ VOID _app_setsecurityinfoforcallout (_In_ HANDLE hengine, _In_ LPCGUID callout_g
 	PACL dacl;
 	PACL sacl;
 	PACL new_dacl;
-	ULONG code;
+	ULONG status;
 
-	code = FwpmCalloutGetSecurityInfoByKey (hengine, callout_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmCalloutGetSecurityInfoByKey (
+		hengine,
+		callout_guid,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 	{
-		if (code != FWP_E_CALLOUT_NOT_FOUND)
-			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey", code, NULL);
+		if (status != FWP_E_CALLOUT_NOT_FOUND)
+			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey", status, NULL);
 
 		return;
 	}
@@ -422,10 +627,18 @@ VOID _app_setsecurityinfoforcallout (_In_ HANDLE hengine, _In_ LPCGUID callout_g
 
 		if (new_dacl)
 		{
-			code = FwpmCalloutSetSecurityInfoByKey (hengine, callout_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
+			status = FwpmCalloutSetSecurityInfoByKey (
+				hengine,
+				callout_guid,
+				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+				(const SID *)config.pbuiltin_admins_sid,
+				NULL,
+				new_dacl,
+				NULL
+			);
 
-			if (code != ERROR_SUCCESS)
-				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey", code, NULL);
+			if (status != ERROR_SUCCESS)
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey", status, NULL);
 
 			LocalFree (new_dacl);
 		}
@@ -435,7 +648,12 @@ VOID _app_setsecurityinfoforcallout (_In_ HANDLE hengine, _In_ LPCGUID callout_g
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
-VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_guid, _In_ BOOLEAN is_secure, _In_ UINT line)
+VOID _app_setsecurityinfoforfilter (
+	_In_ HANDLE hengine,
+	_In_ LPCGUID filter_guid,
+	_In_ BOOLEAN is_secure,
+	_In_ UINT line
+)
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
 	PSID sid_owner;
@@ -443,17 +661,26 @@ VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_gui
 	PACL dacl;
 	PACL sacl;
 	PACL new_dacl;
-	ULONG code;
+	ULONG status;
 
-	code = FwpmFilterGetSecurityInfoByKey (hengine, filter_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmFilterGetSecurityInfoByKey (
+		hengine,
+		filter_guid,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 	{
 #if !defined(_DEBUG)
-		if (code != FWP_E_FILTER_NOT_FOUND)
+		if (status != FWP_E_FILTER_NOT_FOUND)
 #endif // !DEBUG
 		{
-			_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
+			_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"#%" TEXT (PRIu32), line);
 		}
 
 		return;
@@ -465,10 +692,18 @@ VOID _app_setsecurityinfoforfilter (_In_ HANDLE hengine, _In_ LPCGUID filter_gui
 
 		if (new_dacl)
 		{
-			code = FwpmFilterSetSecurityInfoByKey (hengine, filter_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
+			status = FwpmFilterSetSecurityInfoByKey (
+				hengine,
+				filter_guid,
+				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+				(const SID *)config.pbuiltin_admins_sid,
+				NULL,
+				new_dacl,
+				NULL
+			);
 
-			if (code != ERROR_SUCCESS)
-				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", code, L"#%" TEXT (PRIu32), line);
+			if (status != ERROR_SUCCESS)
+				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"#%" TEXT (PRIu32), line);
 
 			LocalFree (new_dacl);
 		}
