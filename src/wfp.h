@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #pragma once
 
@@ -103,8 +103,8 @@ ULONG _wfp_createfilter (
 );
 
 VOID _wfp_clearfilter_ids ();
-VOID _wfp_destroyfilters (
 
+VOID _wfp_destroyfilters (
 	_In_ HANDLE engine_handle
 );
 
