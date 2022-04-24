@@ -29,6 +29,7 @@ INT _app_listview_getbytab (
 	return listview_id;
 }
 
+_Success_ (return != 0)
 INT _app_listview_getbytype (
 	_In_ ENUM_TYPE_DATA type
 )
@@ -357,6 +358,29 @@ INT _app_listview_finditem (
 	}
 
 	return item_id;
+}
+
+VOID _app_listview_removeitem (
+	_In_ HWND hwnd,
+	_In_ ULONG_PTR id_code,
+	_In_ ENUM_TYPE_DATA type
+)
+{
+	INT listview_id;
+	INT item_id;
+
+	if (!hwnd)
+		return;
+
+	listview_id = _app_listview_getbytype (type);
+
+	if (!listview_id)
+		return;
+
+	item_id = _app_listview_finditem (hwnd, listview_id, id_code);
+
+	if (item_id != -1)
+		_r_listview_deleteitem (hwnd, listview_id, item_id);
 }
 
 VOID _app_listview_showitemby_id (
@@ -1062,6 +1086,7 @@ VOID _app_listview_sort_ex (
 	_In_ BOOLEAN is_notifycode
 )
 {
+	WCHAR config_name[128];
 	HWND hlistview;
 	INT column_count;
 	BOOLEAN is_descend;
@@ -1079,7 +1104,6 @@ VOID _app_listview_sort_ex (
 	if (!column_count)
 		return;
 
-	WCHAR config_name[128];
 	_r_str_printf (config_name, RTL_NUMBER_OF (config_name), L"listview\\%04" TEXT (PRIX32), listview_id);
 
 	is_descend = _r_config_getboolean_ex (L"SortIsDescending", FALSE, config_name);

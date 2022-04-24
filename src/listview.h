@@ -34,6 +34,7 @@ INT _app_listview_getbytab (
 	_In_ INT tab_id
 );
 
+_Success_ (return != 0)
 INT _app_listview_getbytype (
 	_In_ ENUM_TYPE_DATA type
 );
@@ -108,6 +109,12 @@ INT _app_listview_finditem (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
 	_In_ ULONG_PTR id_code
+);
+
+VOID _app_listview_removeitem (
+	_In_ HWND hwnd,
+	_In_ ULONG_PTR id_code,
+	_In_ ENUM_TYPE_DATA type
 );
 
 VOID _app_listview_showitemby_id (
