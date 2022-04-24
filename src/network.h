@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2019-2021 Henry++
+// Copyright (c) 2019-2022 Henry++
 
 #pragma once
 
@@ -33,6 +33,7 @@ PITEM_NETWORK _app_network_getitem (
 	_In_ ULONG_PTR network_hash
 );
 
+_Success_ (return != 0)
 ULONG_PTR _app_network_getappitem (
 	_In_ ULONG_PTR network_hash
 );
@@ -73,21 +74,6 @@ VOID _app_network_printlistviewtable (
 
 VOID _app_network_removeitem (
 	_In_ ULONG_PTR network_hash
-);
-
-_Ret_maybenull_
-HANDLE _app_network_subscribe (
-	_In_ HANDLE engine_handle
-);
-
-VOID _app_network_unsubscribe (
-	_In_ HANDLE engine_handle
-);
-
-VOID CALLBACK _app_network_subscribe_callback (
-	_Inout_opt_ PVOID context,
-	_In_ FWPM_CONNECTION_EVENT_TYPE event_type,
-	_In_ const FWPM_CONNECTION0* connection
 );
 
 NTSTATUS NTAPI _app_network_threadproc (

@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2019-2021 Henry++
+// Copyright (c) 2019-2022 Henry++
 
 #include "global.h"
 
@@ -52,23 +52,18 @@ VOID _app_network_initialize (
 
 	// create network monitor thread
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+
 	_r_sys_createthread (&_app_network_threadproc, network_context, NULL, &environment);
 }
 
 VOID _app_network_uninitialize ()
 {
 	PITEM_NETWORK_CONTEXT network_context;
-	//HANDLE engine_handle;
 
 	network_context = _app_network_getcontext ();
 
 	if (!network_context)
 		return;
-
-	//engine_handle = _wfp_getenginehandle ();
-
-	//if (engine_handle)
-	//	_app_network_unsubscribe (engine_handle);
 
 	_r_queuedlock_acquireexclusive (&network_context->lock_network);
 	_r_obj_clearhashtable (network_context->network_ptr);
@@ -161,10 +156,8 @@ VOID _app_network_generatetable (
 
 				if (tcp4_table->table[i].dwState == MIB_TCP_STATE_ESTAB)
 				{
-					if (
-						_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) ||
-						_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr)
-						)
+					if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) ||
+						_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
 					{
 						ptr_network->is_connection = TRUE;
 					}
@@ -240,10 +233,8 @@ VOID _app_network_generatetable (
 
 				if (tcp6_table->table[i].dwState == MIB_TCP_STATE_ESTAB)
 				{
-					if (
-						_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) ||
-						_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr6)
-						)
+					if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) ||
+						_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
 					{
 						ptr_network->is_connection = TRUE;
 					}
@@ -413,14 +404,13 @@ PITEM_NETWORK _app_network_getitem (
 		return NULL;
 
 	_r_queuedlock_acquireshared (&network_context->lock_network);
-
 	ptr_network = _r_obj_findhashtablepointer (network_context->network_ptr, network_hash);
-
 	_r_queuedlock_releaseshared (&network_context->lock_network);
 
 	return ptr_network;
 }
 
+_Success_ (return != 0)
 ULONG_PTR _app_network_getappitem (
 	_In_ ULONG_PTR network_hash
 )
@@ -475,9 +465,6 @@ ULONG_PTR _app_network_gethash (
 		proto,
 		state
 	);
-
-	if (!network_string)
-		return 0;
 
 	network_hash = _r_str_gethash2 (network_string, TRUE);
 
@@ -607,9 +594,7 @@ BOOLEAN _app_network_isitemfound (
 		return FALSE;
 
 	_r_queuedlock_acquireshared (&network_context->lock_network);
-
 	is_found = (_r_obj_findhashtable (network_context->network_ptr, network_hash) != NULL);
-
 	_r_queuedlock_releaseshared (&network_context->lock_network);
 
 	return is_found;
@@ -632,8 +617,7 @@ BOOLEAN _app_network_isvalidconnection (
 				!IN4_IS_ADDR_LINKLOCAL (p4addr) &&
 				!IN4_IS_ADDR_MULTICAST (p4addr) &&
 				!IN4_IS_ADDR_MC_ADMINLOCAL (p4addr) &&
-				!IN4_IS_ADDR_RFC1918 (p4addr)
-				);
+				!IN4_IS_ADDR_RFC1918 (p4addr));
 	}
 	else if (af == AF_INET6)
 	{
@@ -644,8 +628,7 @@ BOOLEAN _app_network_isvalidconnection (
 				 !IN6_IS_ADDR_LINKLOCAL (p6addr) &&
 				 !IN6_IS_ADDR_MULTICAST (p6addr) &&
 				 !IN6_IS_ADDR_SITELOCAL (p6addr) &&
-				 !IN6_IS_ADDR_ANYCAST (p6addr)
-				 );
+				 !IN6_IS_ADDR_ANYCAST (p6addr));
 	}
 
 	return FALSE;
@@ -738,126 +721,8 @@ VOID _app_network_removeitem (
 		return;
 
 	_r_queuedlock_acquireexclusive (&network_context->lock_network);
-
 	_r_obj_removehashtablepointer (network_context->network_ptr, network_hash);
-
 	_r_queuedlock_releaseexclusive (&network_context->lock_network);
-}
-
-//_Ret_maybenull_
-//HANDLE _app_network_subscribe (
-//	_In_ HANDLE engine_handle
-//)
-//{
-//	PITEM_NETWORK_CONTEXT network_context;
-//	HANDLE current_handle;
-//	HANDLE new_handle;
-//
-//	network_context = _app_network_getcontext ();
-//
-//	if (!network_context)
-//		return NULL;
-//
-//	current_handle = InterlockedCompareExchangePointer (
-//		&network_context->hconnections,
-//		NULL,
-//		NULL
-//	);
-//
-//	if (!current_handle)
-//	{
-//		FWPM_CONNECTION_SUBSCRIPTION subscription;
-//		FWPM_CONNECTION_ENUM_TEMPLATE enum_template;
-//		ULONG code;
-//
-//		RtlZeroMemory (&subscription, sizeof (subscription));
-//		RtlZeroMemory (&enum_template, sizeof (enum_template));
-//
-//		subscription.enumTemplate = &enum_template;
-//
-//		code = FwpmConnectionSubscribe (
-//			engine_handle,
-//			&subscription,
-//			&_app_network_subscribe_callback,
-//			network_context,
-//			&new_handle
-//		);
-//
-//		if (code != ERROR_SUCCESS)
-//		{
-//			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmConnectionSubscribe", code, NULL);
-//			return NULL;
-//		}
-//		else
-//		{
-//			current_handle = InterlockedCompareExchangePointer (
-//				&network_context->hconnections,
-//				new_handle,
-//				NULL
-//			);
-//
-//			if (!current_handle)
-//			{
-//				current_handle = new_handle;
-//			}
-//			else
-//			{
-//				FwpmConnectionUnsubscribe (engine_handle, new_handle);
-//			}
-//		}
-//	}
-//
-//	return current_handle;
-//}
-//
-//VOID _app_network_unsubscribe (
-//	_In_ HANDLE engine_handle
-//)
-//{
-//	PITEM_NETWORK_CONTEXT network_context;
-//	HANDLE current_handle;
-//
-//	network_context = _app_network_getcontext ();
-//
-//	if (!network_context)
-//		return;
-//
-//	current_handle = InterlockedCompareExchangePointer (
-//		&network_context->hconnections,
-//		NULL,
-//		network_context->hconnections
-//	);
-//
-//	if (current_handle)
-//		FwpmConnectionUnsubscribe (engine_handle, current_handle);
-//}
-
-VOID CALLBACK _app_network_subscribe_callback (
-	_Inout_opt_ PVOID context,
-	_In_ FWPM_CONNECTION_EVENT_TYPE event_type,
-	_In_ const FWPM_CONNECTION0* connection
-)
-{
-	PITEM_NETWORK_CONTEXT network_context;
-
-	UNREFERENCED_PARAMETER (connection);
-
-	switch (event_type)
-	{
-		case FWPM_CONNECTION_EVENT_ADD:
-		case FWPM_CONNECTION_EVENT_DELETE:
-		{
-			network_context = context;
-
-			if (network_context)
-			{
-				_app_network_generatetable (network_context);
-				_app_network_printlistviewtable (network_context);
-			}
-
-			break;
-		}
-	}
 }
 
 NTSTATUS NTAPI _app_network_threadproc (
@@ -866,7 +731,6 @@ NTSTATUS NTAPI _app_network_threadproc (
 {
 	PITEM_NETWORK_CONTEXT network_context;
 	HANDLE engine_handle;
-	//HANDLE hconnections;
 
 	network_context = (PITEM_NETWORK_CONTEXT)arglist;
 
@@ -876,28 +740,16 @@ NTSTATUS NTAPI _app_network_threadproc (
 	_app_network_generatetable (network_context);
 	_app_network_printlistviewtable (network_context);
 
-	if (engine_handle)
+	while (TRUE)
 	{
-		//hconnections = _app_network_subscribe (engine_handle);
-	}
-	else
-	{
-		//hconnections = NULL;
+		// update network table
+		_app_network_generatetable (network_context);
+		_app_network_printlistviewtable (network_context);
+
+		WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
 	}
 
-	//if (!hconnections)
-	{
-		while (TRUE)
-		{
-			// update network table
-			_app_network_generatetable (network_context);
-			_app_network_printlistviewtable (network_context);
-
-			WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
-		}
-
-		_app_network_uninitialize ();
-	}
+	_app_network_uninitialize ();
 
 	return STATUS_SUCCESS;
 }
