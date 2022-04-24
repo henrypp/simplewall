@@ -79,6 +79,8 @@ VOID _app_setappinfo (
 	_In_ PVOID value
 )
 {
+	LONG64 timestamp;
+
 	if (info_data == INFO_BYTES_DATA)
 	{
 		_r_obj_movereference (&ptr_app->bytes, value);
@@ -89,7 +91,7 @@ VOID _app_setappinfo (
 	}
 	else if (info_data == INFO_TIMER_PTR)
 	{
-		LONG64 timestamp = *((PLONG64)value);
+		timestamp = *((PLONG64)value);
 
 		// check timer expiration
 		if (timestamp <= _r_unixtime_now ())
@@ -1035,7 +1037,13 @@ PR_STRING _app_rulesexpandapps (
 
 	if (is_fordisplay && ptr_rule->is_forservices)
 	{
-		string = _r_obj_concatstrings (4, PROC_SYSTEM_NAME, delimeter, _r_obj_getstring (config.svchost_path), delimeter);
+		string = _r_obj_concatstrings (
+			4,
+			PROC_SYSTEM_NAME,
+			delimeter,
+			_r_obj_getstring (config.svchost_path),
+			delimeter
+		);
 
 		_r_obj_appendstringbuilder2 (&sr, string);
 
@@ -1301,7 +1309,9 @@ BOOLEAN _app_issystemhash (
 	return (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash);
 }
 
-BOOLEAN _app_isrulesupportedbyos (_In_ PR_STRINGREF os_version)
+BOOLEAN _app_isrulesupportedbyos (
+	_In_ PR_STRINGREF os_version
+)
 {
 	static PR_STRING version_string = NULL;
 
