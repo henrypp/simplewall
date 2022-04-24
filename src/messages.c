@@ -1228,6 +1228,7 @@ VOID _app_displayinfonetwork_callback (
 	_Inout_ LPNMLVDISPINFOW lpnmlv
 )
 {
+	PITEM_APP ptr_app;
 	PR_STRING string;
 	LPCWSTR name;
 	PVOID ptr;
@@ -1239,7 +1240,25 @@ VOID _app_displayinfonetwork_callback (
 		{
 			case 0:
 			{
-				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_network->path->buffer));
+				ptr_app = _app_getappitem (ptr_network->app_hash);
+
+				if (ptr_app)
+				{
+					string = _app_getappdisplayname (ptr_app, TRUE);
+
+					if (string)
+					{
+						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+						_r_obj_dereference (string);
+					}
+
+					_r_obj_dereference (ptr_app);
+				}
+				else
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_network->path->buffer));
+				}
+
 				break;
 			}
 
