@@ -1254,7 +1254,7 @@ VOID _app_displayinfonetwork_callback (
 
 					_r_obj_dereference (ptr_app);
 				}
-				else
+				else if (ptr_network->path)
 				{
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_network->path->buffer));
 				}
@@ -1430,7 +1430,6 @@ VOID _app_displayinfolog_callback (
 						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 						_r_obj_dereference (string);
 					}
-
 				}
 				else if (ptr_log->path)
 				{
