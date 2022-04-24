@@ -39,6 +39,7 @@ PVOID _app_getruleinfobyid (
 	_In_ ENUM_INFO_DATA info_data
 );
 
+_Success_ (return != 0)
 ULONG_PTR _app_addapplication (
 	_In_opt_ HWND hwnd,
 	_In_ ENUM_TYPE_DATA type,
@@ -60,7 +61,7 @@ _Ret_maybenull_
 PITEM_RULE_CONFIG _app_addruleconfigtable (
 	_In_ PR_HASHTABLE hashtable,
 	_In_ ULONG_PTR rule_hash,
-	_In_opt_ PR_STRING name,
+	_In_ PR_STRING rule_name,
 	_In_ BOOLEAN is_enabled
 );
 
@@ -130,19 +131,13 @@ BOOLEAN _app_isappunused (
 	_In_ PITEM_APP ptr_app
 );
 
+BOOLEAN _app_isappused (
+	_In_ PITEM_APP ptr_app
+);
+
 BOOLEAN _app_issystemhash (
 	_In_ ULONG_PTR app_hash
 );
-
-FORCEINLINE BOOLEAN _app_isappused (
-	_In_ PITEM_APP ptr_app
-)
-{
-	if (ptr_app->is_enabled || ptr_app->is_silent || _app_isapphaverule (ptr_app->app_hash, TRUE))
-		return TRUE;
-
-	return FALSE;
-}
 
 VOID _app_getcount (
 	_Out_ PITEM_STATUS status
@@ -172,6 +167,20 @@ VOID _app_ruleenable (
 	_Inout_ PITEM_RULE ptr_rule,
 	_In_ BOOLEAN is_enable,
 	_In_ BOOLEAN is_createconfig
+);
+
+//VOID _app_rulecleanapp (
+//	_In_opt_ HWND hwnd,
+//	_In_ SIZE_T item_id,
+//	_In_ PITEM_RULE ptr_rule,
+//	_In_opt_ ULONG_PTR app_hash
+//);
+
+VOID _app_ruleremoveapp (
+	_In_opt_ HWND hwnd,
+	_In_ SIZE_T item_id,
+	_In_ PITEM_RULE ptr_rule,
+	_In_ ULONG_PTR app_hash
 );
 
 BOOLEAN _app_ruleblocklistsetchange (

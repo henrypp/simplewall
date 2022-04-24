@@ -183,6 +183,7 @@ PVOID _app_getruleinfobyid (
 	return NULL;
 }
 
+_Success_ (return != 0)
 ULONG_PTR _app_addapplication (
 	_In_opt_ HWND hwnd,
 	_In_ ENUM_TYPE_DATA type,
@@ -222,8 +223,11 @@ ULONG_PTR _app_addapplication (
 
 	ptr_app->app_hash = app_hash;
 
-	if (_r_str_isstartswith2 (&path_temp, L"S-1-", TRUE)) // uwp (win8+)
-		type = DATA_APP_UWP;
+	if (type == DATA_UNKNOWN)
+	{
+		if (_r_str_isstartswith2 (&path_temp, L"S-1-", TRUE)) // uwp (win8+)
+			type = DATA_APP_UWP;
+	}
 
 	if (type == DATA_APP_SERVICE || type == DATA_APP_UWP)
 	{
@@ -347,13 +351,13 @@ _Ret_maybenull_
 PITEM_RULE_CONFIG _app_addruleconfigtable (
 	_In_ PR_HASHTABLE hashtable,
 	_In_ ULONG_PTR rule_hash,
-	_In_opt_ PR_STRING name,
+	_In_ PR_STRING rule_name,
 	_In_ BOOLEAN is_enabled
 )
 {
 	ITEM_RULE_CONFIG entry = {0};
 
-	entry.name = name;
+	entry.name = _r_obj_reference (rule_name);
 	entry.is_enabled = is_enabled;
 
 	return _r_obj_addhashtableitem (hashtable, rule_hash, &entry);
@@ -579,21 +583,10 @@ VOID _app_freeapplication (
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->type == DATA_RULE_USER)
-		{
-			if (_r_obj_findhashtable (ptr_rule->apps, app_hash))
-			{
-				_r_obj_removehashtableitem (ptr_rule->apps, app_hash);
+		if (ptr_rule->type != DATA_RULE_USER)
+			continue;
 
-				if (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps))
-				{
-					ptr_rule->is_enabled = FALSE;
-					ptr_rule->is_haveerrors = FALSE;
-				}
-
-				_app_listview_updateitemby_param (_r_app_gethwnd (), i, FALSE);
-			}
-		}
+		_app_ruleremoveapp (_r_app_gethwnd (), i, ptr_rule, app_hash);
 	}
 
 	_r_queuedlock_releaseshared (&lock_rules);
@@ -765,17 +758,91 @@ VOID _app_ruleenable (
 	if (ptr_config)
 	{
 		ptr_config->is_enabled = is_enable;
-
-		return;
 	}
-
-	if (is_createconfig)
+	else
 	{
-		_r_queuedlock_acquireexclusive (&lock_rules_config);
+		if (is_createconfig)
+		{
+			_r_queuedlock_acquireexclusive (&lock_rules_config);
+			ptr_config = _app_addruleconfigtable (rules_config, rule_hash, ptr_rule->name, is_enable);
+			_r_queuedlock_releaseexclusive (&lock_rules_config);
+		}
+	}
+}
 
-		ptr_config = _app_addruleconfigtable (rules_config, rule_hash, _r_obj_createstring2 (ptr_rule->name), is_enable);
+//VOID _app_rulecleanapp (
+//	_In_opt_ HWND hwnd,
+//	_In_ SIZE_T item_id,
+//	_In_ PITEM_RULE ptr_rule,
+//	_In_opt_ ULONG_PTR app_hash
+//)
+//{
+//	PITEM_APP ptr_app;
+//	SIZE_T enum_key;
+//	ULONG_PTR hash_code;
+//	BOOLEAN is_remove;
+//
+//	if (ptr_rule->type != DATA_RULE_USER)
+//		return;
+//
+//	if (_r_obj_ishashtableempty (ptr_rule->apps))
+//		return;
+//
+//	if (app_hash)
+//	{
+//		_app_ruleremoveapp (hwnd, item_id, ptr_rule, app_hash);
+//	}
+//	else
+//	{
+//		enum_key = 0;
+//
+//		while (_r_obj_enumhashtable (ptr_rule->apps, NULL, &hash_code, &enum_key))
+//		{
+//			ptr_app = _app_getappitem (hash_code);
+//			is_remove = FALSE;
+//
+//			if (ptr_app)
+//			{
+//				if (!_app_isappexists (ptr_app))
+//					is_remove = TRUE;
+//
+//				_r_obj_dereference (ptr_app);
+//			}
+//			else
+//			{
+//				// app was not found, so delete iteration!
+//				is_remove = TRUE;
+//			}
+//
+//			if (is_remove)
+//				_app_ruleremoveapp (hwnd, item_id, ptr_rule, hash_code);
+//		}
+//	}
+//}
 
-		_r_queuedlock_releaseexclusive (&lock_rules_config);
+VOID _app_ruleremoveapp (
+	_In_opt_ HWND hwnd,
+	_In_ SIZE_T item_id,
+	_In_ PITEM_RULE ptr_rule,
+	_In_ ULONG_PTR app_hash
+)
+{
+	if (!ptr_rule->apps)
+		return;
+
+	if (!_r_obj_removehashtableitem (ptr_rule->apps, app_hash))
+		return;
+
+	if (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps))
+	{
+		ptr_rule->is_enabled = FALSE;
+		ptr_rule->is_haveerrors = FALSE;
+
+		if (hwnd)
+		{
+			if (item_id != SIZE_MAX)
+				_app_listview_updateitemby_param (hwnd, item_id, FALSE);
+		}
 	}
 }
 
@@ -1202,14 +1269,27 @@ BOOLEAN _app_isappunused (
 	_In_ PITEM_APP ptr_app
 )
 {
-	if (!ptr_app->is_undeletable)
-	{
-		if (!_app_isappexists (ptr_app))
-			return TRUE;
+	if (ptr_app->is_undeletable)
+		return FALSE;
 
-		if (!_app_isappused (ptr_app))
-			return TRUE;
-	}
+	if (!_app_isappexists (ptr_app))
+		return TRUE;
+
+	if (!_app_isappused (ptr_app))
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOLEAN _app_isappused (
+	_In_ PITEM_APP ptr_app
+)
+{
+	if (ptr_app->is_enabled || ptr_app->is_silent)
+		return TRUE;
+
+	if (_app_isapphaverule (ptr_app->app_hash, TRUE))
+		return TRUE;
 
 	return FALSE;
 }
