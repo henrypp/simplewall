@@ -141,7 +141,6 @@ VOID _app_package_getpackagebyname (
 	_In_ PR_STRING key_name
 )
 {
-	//PR_STRING real_path;
 	PR_STRING display_name;
 	PR_BYTE package_sid;
 	PR_STRING package_sid_string;
@@ -151,7 +150,6 @@ VOID _app_package_getpackagebyname (
 	HKEY hsubkey;
 	LONG status;
 
-	//real_path = NULL;
 	display_name = NULL;
 	package_sid = NULL;
 	package_sid_string = NULL;
@@ -211,9 +209,6 @@ VOID _app_package_getpackagebyname (
 	}
 
 CleanupExit:
-
-	//if (real_path)
-	//	_r_obj_dereference (real_path);
 
 	if (display_name)
 		_r_obj_dereference (display_name);
@@ -339,7 +334,7 @@ VOID _app_package_getpackageslist ()
 	ULONG size;
 	LONG status;
 
-	// query packages by names
+	// query packages by name
 	status = RegOpenKeyEx (
 		HKEY_CURRENT_USER,
 		L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages",
@@ -348,7 +343,11 @@ VOID _app_package_getpackageslist ()
 		&hkey
 	);
 
-	if (status == ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
+	{
+		_r_log (LOG_LEVEL_WARNING, NULL, L"RegOpenKeyEx", status, L"Repository\\Packages");
+	}
+	else
 	{
 		max_length = _r_reg_querysubkeylength (hkey);
 
@@ -376,7 +375,7 @@ VOID _app_package_getpackageslist ()
 		RegCloseKey (hkey);
 	}
 
-	// query packages by sids
+	// query packages by sid
 	status = RegOpenKeyEx (
 		HKEY_CURRENT_USER,
 		L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings",
@@ -386,32 +385,36 @@ VOID _app_package_getpackageslist ()
 	);
 
 	if (status != ERROR_SUCCESS)
-		return;
-
-	max_length = _r_reg_querysubkeylength (hkey);
-
-	if (max_length)
 	{
-		key_index = 0;
-		key_name = _r_obj_createstring_ex (NULL, max_length * sizeof (WCHAR));
+		_r_log (LOG_LEVEL_WARNING, NULL, L"RegOpenKeyEx", status, L"AppContainer\\Mappings");
+	}
+	else
+	{
+		max_length = _r_reg_querysubkeylength (hkey);
 
-		while (TRUE)
+		if (max_length)
 		{
-			size = max_length + 1;
-			status = RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL);
+			key_index = 0;
+			key_name = _r_obj_createstring_ex (NULL, max_length * sizeof (WCHAR));
 
-			if (status != ERROR_SUCCESS)
-				break;
+			while (TRUE)
+			{
+				size = max_length + 1;
+				status = RegEnumKeyEx (hkey, key_index++, key_name->buffer, &size, NULL, NULL, NULL, NULL);
 
-			_r_obj_setstringlength_ex (key_name, size * sizeof (WCHAR), max_length * sizeof (WCHAR));
+				if (status != ERROR_SUCCESS)
+					break;
 
-			_app_package_getpackagebysid (hkey, key_name);
+				_r_obj_setstringlength_ex (key_name, size * sizeof (WCHAR), max_length * sizeof (WCHAR));
+
+				_app_package_getpackagebysid (hkey, key_name);
+			}
+
+			_r_obj_dereference (key_name);
 		}
 
-		_r_obj_dereference (key_name);
+		RegCloseKey (hkey);
 	}
-
-	RegCloseKey (hkey);
 }
 
 VOID _app_package_getserviceslist ()
