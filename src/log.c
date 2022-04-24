@@ -19,7 +19,7 @@ VOID _app_loginit (
 
 	// reset log handle
 	if (current_handle)
-		CloseHandle (current_handle);
+		NtClose (current_handle);
 
 	if (!is_install || !_r_config_getboolean (L"IsLogEnabled", FALSE))
 		return; // already closed or not enabled
@@ -60,7 +60,7 @@ VOID _app_loginit (
 		);
 
 		if (current_handle)
-			CloseHandle (new_handle);
+			NtClose (new_handle);
 	}
 
 	_r_obj_dereference (log_path);
