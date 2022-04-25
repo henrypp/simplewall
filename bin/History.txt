@@ -1,5 +1,19 @@
+v3.6.2 (26 April 2022)
+- added autoinstall non-executable updates feature (issue #1122)
+- added clear search with escape button for editor
+- added fallback for font loading when it does not exists
+- improved uwp packages information loading
+- fixed installer launches simplewall without asking user (issue #1119)
+- fixed restore properties window position
+- fixed blank notification (issue #1009)
+- fixed rule tooltip whitespace
+- fixed internal bugs
+- updated network monitor
+- updated locales
+- cosmetic fixes
+
 v3.6.1 (11 November 2021)
-- added clear search on escape button
+- added clear search with escape button
 - fixed crash on delete filters (issue #1084)
 - fixed import profile warning (issue #1086)
 - fixed crash dumps processing
