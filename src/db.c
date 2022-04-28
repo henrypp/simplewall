@@ -960,7 +960,7 @@ VOID _app_db_save_app (
 	BOOLEAN is_keepunusedapps;
 	BOOLEAN is_usedapp;
 
-	is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", FALSE);
+	is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", TRUE);
 
 	enum_key = 0;
 
