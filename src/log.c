@@ -583,7 +583,7 @@ VOID CALLBACK _wfp_logcallback (
 		ptr_log->timestamp = _r_unixtime_from_filetime (log->timestamp);
 
 	// check token for null (not an appcontainer) (HACK!!!)
-	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && log->package_id)
+	if (log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET && log->package_id)
 	{
 		if (RtlEqualSid (log->package_id, &SeNobodySid))
 		{
@@ -593,7 +593,7 @@ VOID CALLBACK _wfp_logcallback (
 	}
 
 	// get package id (win8+)
-	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && log->package_id)
+	if (log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET && log->package_id)
 	{
 		status = _r_str_fromsid (log->package_id, &sid_string);
 
@@ -609,12 +609,12 @@ VOID CALLBACK _wfp_logcallback (
 	}
 
 	// copy converted nt device path into win32
-	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) && sid_string)
+	if (log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET && sid_string)
 	{
 		_r_obj_swapreference (&ptr_log->path, sid_string);
 		ptr_log->app_hash = _r_str_gethash2 (ptr_log->path, TRUE);
 	}
-	else if ((log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET) && log->app_id)
+	else if (log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET && log->app_id)
 	{
 		path = _r_obj_createstring ((LPCWSTR)(log->app_id));
 
@@ -635,47 +635,57 @@ VOID CALLBACK _wfp_logcallback (
 	}
 
 	// get username information
-	if ((log->flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) && log->user_id)
+	if (log->flags & FWPM_NET_EVENT_FLAG_USER_ID_SET && log->user_id)
 		_r_sys_getusernamefromsid (log->user_id, &ptr_log->username);
 
 	// destination
-	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))
+	if (log->flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
 	{
 		if (log->version == FWP_IP_VERSION_V4)
 		{
 			ptr_log->af = AF_INET;
 
 			// remote address
-			if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) && log->remote_addr4)
-				ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong ((ULONG)log->remote_addr4);
+			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
+			{
+				if (ULongLongToULong (log->remote_addr4, &ptr_log->remote_addr.S_un.S_addr) == S_OK)
+				{
+					ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->remote_addr.S_un.S_addr);
+				}
+			}
 
 			// local address
-			if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) && log->local_addr4)
-				ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong ((ULONG)log->local_addr4);
+			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
+			{
+				if (ULongLongToULong (log->local_addr4, &ptr_log->local_addr.S_un.S_addr) == S_OK)
+				{
+					ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->local_addr.S_un.S_addr);
+				}
+			}
 		}
 		else if (log->version == FWP_IP_VERSION_V6)
 		{
 			ptr_log->af = AF_INET6;
 
 			// remote address
-			if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET) && log->remote_addr6)
+			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET && log->remote_addr6)
 				RtlCopyMemory (ptr_log->remote_addr6.u.Byte, log->remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 
 			// local address
-			if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET) && log->local_addr6)
+			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET && log->local_addr6)
 				RtlCopyMemory (ptr_log->local_addr6.u.Byte, log->local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 		}
 	}
 
 	// ports
-	if ((log->flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET))
+	if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET)
 		ptr_log->local_port = log->local_port;
 
-	if ((log->flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET))
+	if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET)
 		ptr_log->remote_port = log->remote_port;
 
 	// protocol
-	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
+	if (log->flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
 	{
 		ptr_log->protocol = log->protocol;
 		ptr_log->protocol_str = _app_db_getprotoname (ptr_log->protocol, ptr_log->af, FALSE);
@@ -760,39 +770,39 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		log->flags = event->header.flags;
 		log->timestamp = &event->header.timeStamp;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = event->header.appId.data;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET)
 			log->user_id = event->header.userId;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
 			log->protocol = event->header.ipProtocol;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET)
 			log->local_port = event->header.localPort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET)
 			log->remote_port = event->header.remotePort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
 		{
 			log->version = event->header.ipVersion;
 
 			if (event->header.ipVersion == FWP_IP_VERSION_V4)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr4 = event->header.localAddrV4;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr4 = event->header.remoteAddrV4;
 			}
 			else if (event->header.ipVersion == FWP_IP_VERSION_V6)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr6 = &event->header.localAddrV6;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr6 = &event->header.remoteAddrV6;
 			}
 		}
@@ -865,42 +875,42 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		log->flags = event->header.flags;
 		log->timestamp = &event->header.timeStamp;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = event->header.appId.data;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET)
 			log->package_id = event->header.packageSid;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET)
 			log->user_id = event->header.userId;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
 			log->protocol = event->header.ipProtocol;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET)
 			log->local_port = event->header.localPort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET)
 			log->remote_port = event->header.remotePort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
 		{
 			log->version = event->header.ipVersion;
 
 			if (event->header.ipVersion == FWP_IP_VERSION_V4)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr4 = event->header.localAddrV4;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr4 = event->header.remoteAddrV4;
 			}
 			else if (event->header.ipVersion == FWP_IP_VERSION_V6)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr6 = &event->header.localAddrV6;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr6 = &event->header.remoteAddrV6;
 			}
 		}
@@ -973,42 +983,42 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		log->flags = event->header.flags;
 		log->timestamp = &event->header.timeStamp;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = event->header.appId.data;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET)
 			log->package_id = event->header.packageSid;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET)
 			log->user_id = event->header.userId;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
 			log->protocol = event->header.ipProtocol;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET)
 			log->local_port = event->header.localPort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET)
 			log->remote_port = event->header.remotePort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
 		{
 			log->version = event->header.ipVersion;
 
 			if (event->header.ipVersion == FWP_IP_VERSION_V4)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr4 = event->header.localAddrV4;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr4 = event->header.remoteAddrV4;
 			}
 			else if (event->header.ipVersion == FWP_IP_VERSION_V6)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr6 = &event->header.localAddrV6;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr6 = &event->header.remoteAddrV6;
 			}
 		}
@@ -1081,42 +1091,42 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		log->flags = event->header.flags;
 		log->timestamp = &event->header.timeStamp;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = event->header.appId.data;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET)
 			log->package_id = event->header.packageSid;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET)
 			log->user_id = event->header.userId;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
 			log->protocol = event->header.ipProtocol;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET)
 			log->local_port = event->header.localPort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET)
 			log->remote_port = event->header.remotePort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
 		{
 			log->version = event->header.ipVersion;
 
 			if (event->header.ipVersion == FWP_IP_VERSION_V4)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr4 = event->header.localAddrV4;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr4 = event->header.remoteAddrV4;
 			}
 			else if (event->header.ipVersion == FWP_IP_VERSION_V6)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr6 = &event->header.localAddrV6;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr6 = &event->header.remoteAddrV6;
 			}
 		}
@@ -1189,42 +1199,42 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		log->flags = event->header.flags;
 		log->timestamp = &event->header.timeStamp;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = event->header.appId.data;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET)
 			log->package_id = event->header.packageSid;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET)
 			log->user_id = event->header.userId;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
 			log->protocol = event->header.ipProtocol;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET)
 			log->local_port = event->header.localPort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET)
 			log->remote_port = event->header.remotePort;
 
-		if ((event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET))
+		if (event->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
 		{
 			log->version = event->header.ipVersion;
 
 			if (event->header.ipVersion == FWP_IP_VERSION_V4)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr4 = event->header.localAddrV4;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr4 = event->header.remoteAddrV4;
 			}
 			else if (event->header.ipVersion == FWP_IP_VERSION_V6)
 			{
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 					log->local_addr6 = &event->header.localAddrV6;
 
-				if ((event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET))
+				if (event->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 					log->remote_addr6 = &event->header.remoteAddrV6;
 			}
 		}
