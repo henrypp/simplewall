@@ -497,14 +497,14 @@ typedef struct _ITEM_LOG_CALLBACK
 {
 	union
 	{
-		ULONG_PTR remote_addr4;
 		const FWP_BYTE_ARRAY16 *remote_addr6;
+		ULONG_PTR remote_addr4;
 	} DUMMYUNIONNAME;
 
 	union
 	{
-		ULONG_PTR local_addr4;
 		const FWP_BYTE_ARRAY16 *local_addr6;
+		ULONG_PTR local_addr4;
 	} DUMMYUNIONNAME2;
 
 	const FILETIME *timestamp;
