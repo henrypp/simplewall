@@ -389,8 +389,9 @@ VOID _app_message_contextmenu (
 	INT listview_id;
 	INT lv_column_current;
 	INT command_id;
+	INT is_checked;
 
-	BOOLEAN is_readonly;
+	INT is_readonly;
 
 	if (lpnmlv->iItem == -1)
 		return;
@@ -404,6 +405,8 @@ VOID _app_message_contextmenu (
 
 	if (!hmenu)
 		return;
+
+	ptr_app = NULL;
 
 	hsubmenu_rules = NULL;
 	hsubmenu_timers = NULL;
@@ -483,9 +486,8 @@ VOID _app_message_contextmenu (
 
 		if (ptr_app)
 		{
-			_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, PtrToInt (_app_getappinfo (ptr_app, INFO_IS_SILENT)) != FALSE);
-
-			_r_obj_dereference (ptr_app);
+			if (_app_getappinfo (ptr_app, INFO_IS_SILENT, (PVOID_PTR)&is_checked) && is_checked)
+				_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, is_checked);
 		}
 
 		if (listview_id != IDC_APPS_PROFILE)
@@ -507,9 +509,7 @@ VOID _app_message_contextmenu (
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DELETE), L"\tDel"));
 			AppendMenu (hmenu, MF_STRING, IDM_DELETE, localized_string->buffer);
 
-			is_readonly = !!(PtrToInt (_app_getruleinfobyid (hash_code, INFO_IS_READONLY)));
-
-			if (is_readonly)
+			if (_app_getruleinfobyid (hash_code, INFO_IS_READONLY, (PVOID_PTR)&is_readonly) && is_readonly)
 				_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
 		}
 
@@ -640,6 +640,9 @@ VOID _app_message_contextmenu (
 
 	if (localized_string)
 		_r_obj_dereference (localized_string);
+
+	if (ptr_app)
+		_r_obj_dereference (ptr_app);
 }
 
 VOID _app_message_contextmenu_columns (
@@ -964,9 +967,7 @@ LONG_PTR _app_message_custdraw (
 						app_hash = index;
 						is_validconnection = _app_network_isapphaveconnection (app_hash);
 
-						real_path = _app_getappinfobyhash (app_hash, INFO_PATH);
-
-						if (real_path)
+						if (_app_getappinfobyhash (app_hash, INFO_PATH, &real_path))
 						{
 							is_systemapp = _app_isappfromsystem (real_path, app_hash);
 
@@ -1019,7 +1020,7 @@ VOID _app_displayinfoapp_callback (
 )
 {
 	PR_STRING string;
-	PVOID ptr;
+	LONG icon_id;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1057,9 +1058,9 @@ VOID _app_displayinfoapp_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		ptr = _app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID);
+		_app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID, (PVOID_PTR)&icon_id);
 
-		lpnmlv->item.iImage = PtrToInt (ptr);
+		lpnmlv->item.iImage = icon_id;
 	}
 
 	// set group id
@@ -1231,7 +1232,7 @@ VOID _app_displayinfonetwork_callback (
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	LPCWSTR name;
-	PVOID ptr;
+	LONG icon_id;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1375,9 +1376,9 @@ VOID _app_displayinfonetwork_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		ptr = _app_getappinfoparam2 (ptr_network->app_hash, INFO_ICON_ID);
+		_app_getappinfoparam2 (ptr_network->app_hash, INFO_ICON_ID, (PVOID_PTR)&icon_id);
 
-		lpnmlv->item.iImage = PtrToInt (ptr);
+		lpnmlv->item.iImage = icon_id;
 	}
 
 	// set group id
@@ -1412,7 +1413,7 @@ VOID _app_displayinfolog_callback (
 )
 {
 	PR_STRING string;
-	PVOID ptr;
+	LONG icon_id;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1582,9 +1583,9 @@ VOID _app_displayinfolog_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		ptr = _app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID);
+		_app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID, (PVOID_PTR)&icon_id);
 
-		lpnmlv->item.iImage = PtrToInt (ptr);
+		lpnmlv->item.iImage = icon_id;
 	}
 
 	// set group id

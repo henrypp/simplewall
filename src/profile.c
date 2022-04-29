@@ -3,74 +3,96 @@
 
 #include "global.h"
 
-_Ret_maybenull_
-PVOID _app_getappinfo (
+_Success_ (return)
+BOOLEAN _app_getappinfo (
 	_In_ PITEM_APP ptr_app,
-	_In_ ENUM_INFO_DATA info_data
+	_In_ ENUM_INFO_DATA info_data,
+	_Out_ PVOID_PTR buffer_ptr
 )
 {
 	if (info_data == INFO_PATH)
 	{
 		if (ptr_app->real_path)
-			return _r_obj_reference (ptr_app->real_path);
+		{
+			*buffer_ptr = _r_obj_reference (ptr_app->real_path);
+			return TRUE;
+		}
 	}
 	else if (info_data == INFO_DISPLAY_NAME)
 	{
 		if (ptr_app->display_name)
-			return _r_obj_reference (ptr_app->display_name);
-
+		{
+			*buffer_ptr = _r_obj_reference (ptr_app->display_name);
+			return TRUE;
+		}
 		else if (ptr_app->original_path)
-			return _r_obj_reference (ptr_app->original_path);
+		{
+			*buffer_ptr = _r_obj_reference (ptr_app->original_path);
+			return TRUE;
+		}
 	}
 	else if (info_data == INFO_TIMESTAMP_PTR)
 	{
-		return &ptr_app->timestamp;
+		*buffer_ptr = (PVOID)(ptr_app->timestamp);
+		return TRUE;
 	}
 	else if (info_data == INFO_TIMER_PTR)
 	{
-		return &ptr_app->timer;
+		*buffer_ptr = (PVOID)(ptr_app->timer);
+		return TRUE;
 	}
 	else if (info_data == INFO_LISTVIEW_ID)
 	{
-		return IntToPtr (_app_listview_getbytype (ptr_app->type));
+		*buffer_ptr = IntToPtr (_app_listview_getbytype (ptr_app->type));
+		return TRUE;
 	}
 	else if (info_data == INFO_IS_ENABLED)
 	{
-		return IntToPtr (ptr_app->is_enabled ? TRUE : FALSE);
+		*buffer_ptr = IntToPtr (ptr_app->is_enabled ? TRUE : FALSE);
+		return TRUE;
 	}
 	else if (info_data == INFO_IS_SILENT)
 	{
-		return IntToPtr (ptr_app->is_silent ? TRUE : FALSE);
+		*buffer_ptr = IntToPtr (ptr_app->is_silent ? TRUE : FALSE);
+		return TRUE;
 	}
 	else if (info_data == INFO_IS_UNDELETABLE)
 	{
-		return IntToPtr (ptr_app->is_undeletable ? TRUE : FALSE);
+		*buffer_ptr = IntToPtr (ptr_app->is_undeletable ? TRUE : FALSE);
+		return TRUE;
 	}
 
-	return NULL;
+	*buffer_ptr = NULL;
+
+	return FALSE;
 }
 
-_Ret_maybenull_
-PVOID _app_getappinfobyhash (
+_Success_ (return)
+BOOLEAN _app_getappinfobyhash (
 	_In_ ULONG_PTR app_hash,
-	_In_ ENUM_INFO_DATA info_data
+	_In_ ENUM_INFO_DATA info_data,
+	_Out_ PVOID_PTR buffer_ptr
 )
 {
 	PITEM_APP ptr_app;
-	PVOID result;
+	BOOLEAN is_success;
 
 	ptr_app = _app_getappitem (app_hash);
 
 	if (ptr_app)
 	{
-		result = _app_getappinfo (ptr_app, info_data);
+		is_success = _app_getappinfo (ptr_app, info_data, buffer_ptr);
 
 		_r_obj_dereference (ptr_app);
+	}
+	else
+	{
+		*buffer_ptr = NULL;
 
-		return result;
+		is_success = FALSE;
 	}
 
-	return NULL;
+	return is_success;
 }
 
 VOID _app_setappinfo (
@@ -144,45 +166,57 @@ VOID _app_setappinfobyhash (
 	}
 }
 
-_Ret_maybenull_
-PVOID _app_getruleinfo (
+_Success_ (return)
+BOOLEAN _app_getruleinfo (
 	_In_ PITEM_RULE ptr_rule,
-	_In_ ENUM_INFO_DATA info_data
+	_In_ ENUM_INFO_DATA info_data,
+	_Out_ PVOID_PTR buffer_ptr
 )
 {
 	if (info_data == INFO_LISTVIEW_ID)
 	{
-		return IntToPtr (_app_listview_getbytype (ptr_rule->type));
+		*buffer_ptr = IntToPtr (_app_listview_getbytype (ptr_rule->type));
+		return TRUE;
 	}
 	else if (info_data == INFO_IS_READONLY)
 	{
-		return IntToPtr (ptr_rule->is_readonly ? TRUE : FALSE);
+		*buffer_ptr = IntToPtr (ptr_rule->is_readonly ? TRUE : FALSE);
+		return TRUE;
 	}
 
-	return NULL;
+	*buffer_ptr = NULL;
+
+	return FALSE;
 }
 
-_Ret_maybenull_
-PVOID _app_getruleinfobyid (
+_Success_ (return)
+BOOLEAN _app_getruleinfobyid (
 	_In_ SIZE_T index,
-	_In_ ENUM_INFO_DATA info_data
+	_In_ ENUM_INFO_DATA info_data,
+	_Out_ PVOID_PTR buffer_ptr
 )
 {
 	PITEM_RULE ptr_rule;
-	PVOID info;
+	BOOLEAN is_success;
 
 	ptr_rule = _app_getrulebyid (index);
 
 	if (ptr_rule)
 	{
-		info = _app_getruleinfo (ptr_rule, info_data);
+		is_success = _app_getruleinfo (ptr_rule, info_data, buffer_ptr);
 
 		_r_obj_dereference (ptr_rule);
 
-		return info;
+		return is_success;
+	}
+	else
+	{
+		*buffer_ptr = NULL;
+
+		is_success = FALSE;
 	}
 
-	return NULL;
+	return is_success;
 }
 
 _Success_ (return != 0)

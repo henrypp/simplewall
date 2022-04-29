@@ -769,7 +769,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			// app signature
 			if (GetDlgItem (hwnd, IDC_APP_SIGNATURE_ID))
 			{
-				string = _app_getappinfoparam2 (context->ptr_app->app_hash, INFO_SIGNATURE_STRING);
+				_app_getappinfoparam2 (context->ptr_app->app_hash, INFO_SIGNATURE_STRING, &string);
 
 				_r_ctrl_setstringformat (
 					hwnd,

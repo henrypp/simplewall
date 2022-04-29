@@ -409,11 +409,11 @@ VOID _app_listview_showitemby_param (
 
 	if (is_app)
 	{
-		listview_id = PtrToInt (_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID));
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
 	}
 	else
 	{
-		listview_id = PtrToInt (_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID));
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
 	}
 
 	if (listview_id)
@@ -496,11 +496,11 @@ VOID _app_listview_updateby_param (
 
 	if (is_app)
 	{
-		listview_id = PtrToInt (_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID));
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
 	}
 	else
 	{
-		listview_id = PtrToInt (_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID));
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
 	}
 
 	if (listview_id)
@@ -529,11 +529,11 @@ VOID _app_listview_updateitemby_param (
 
 	if (is_app)
 	{
-		listview_id = PtrToInt (_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID));
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
 	}
 	else
 	{
-		listview_id = PtrToInt (_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID));
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
 	}
 
 	if (listview_id)
@@ -954,10 +954,10 @@ INT CALLBACK _app_listview_compare_callback (
 	PR_STRING item_text_2;
 	PITEM_LOG ptr_log1;
 	PITEM_LOG ptr_log2;
-	PVOID timer1_ptr;
-	PVOID timer2_ptr;
 	LONG64 timestamp1;
 	LONG64 timestamp2;
+	BOOLEAN is_success1;
+	BOOLEAN is_success2;
 	BOOLEAN is_checked1;
 	BOOLEAN is_checked2;
 
@@ -1004,14 +1004,20 @@ INT CALLBACK _app_listview_compare_callback (
 		// timestamp sorting
 		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
 		{
-			timer1_ptr = _app_getappinfobyhash (_app_listview_getitemcontext (hwnd, listview_id, item_id1), INFO_TIMESTAMP_PTR);
-			timer2_ptr = _app_getappinfobyhash (_app_listview_getitemcontext (hwnd, listview_id, item_id2), INFO_TIMESTAMP_PTR);
+			is_success1 = _app_getappinfobyhash (
+				_app_listview_getitemcontext (hwnd, listview_id, item_id1),
+				INFO_TIMESTAMP_PTR,
+				(PVOID_PTR)&timestamp1
+			);
 
-			if (timer1_ptr && timer2_ptr)
+			is_success2 = _app_getappinfobyhash (
+				_app_listview_getitemcontext (hwnd, listview_id, item_id2),
+				INFO_TIMESTAMP_PTR,
+				(PVOID_PTR)&timestamp2
+			);
+
+			if (is_success1 && is_success2)
 			{
-				timestamp1 = *((PLONG64)timer1_ptr);
-				timestamp2 = *((PLONG64)timer2_ptr);
-
 				if (timestamp1 < timestamp2)
 				{
 					result = -1;

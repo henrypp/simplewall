@@ -3,16 +3,18 @@
 
 #pragma once
 
-_Ret_maybenull_
-PVOID _app_getappinfo (
+_Success_ (return)
+BOOLEAN _app_getappinfo (
 	_In_ PITEM_APP ptr_app,
-	_In_ ENUM_INFO_DATA info_data
+	_In_ ENUM_INFO_DATA info_data,
+	_Out_ PVOID_PTR buffer_ptr
 );
 
-_Ret_maybenull_
-PVOID _app_getappinfobyhash (
+_Success_ (return)
+BOOLEAN _app_getappinfobyhash (
 	_In_ ULONG_PTR app_hash,
-	_In_ ENUM_INFO_DATA info_data
+	_In_ ENUM_INFO_DATA info_data,
+	_Out_ PVOID_PTR buffer_ptr
 );
 
 VOID _app_setappinfo (
@@ -27,16 +29,18 @@ VOID _app_setappinfobyhash (
 	_In_ PVOID value
 );
 
-_Ret_maybenull_
-PVOID _app_getruleinfo (
+_Success_ (return)
+BOOLEAN _app_getruleinfo (
 	_In_ PITEM_RULE ptr_rule,
-	_In_ ENUM_INFO_DATA info_data
+	_In_ ENUM_INFO_DATA info_data,
+	_Out_ PVOID_PTR buffer_ptr
 );
 
-_Ret_maybenull_
-PVOID _app_getruleinfobyid (
+_Success_ (return)
+BOOLEAN _app_getruleinfobyid (
 	_In_ SIZE_T index,
-	_In_ ENUM_INFO_DATA info_data
+	_In_ ENUM_INFO_DATA info_data,
+	_Out_ PVOID_PTR buffer_ptr
 );
 
 _Success_ (return != 0)

@@ -1327,6 +1327,8 @@ VOID NTAPI _app_logthread (
 	PITEM_LOG ptr_log;
 	PITEM_APP ptr_app;
 
+	INT is_silent;
+
 	BOOLEAN is_logenabled;
 	BOOLEAN is_loguienabled;
 	BOOLEAN is_notificationenabled;
@@ -1394,7 +1396,7 @@ VOID NTAPI _app_logthread (
 			{
 				if (is_exludeblocklist)
 				{
-					if (!PtrToInt (_app_getappinfo (ptr_app, INFO_IS_SILENT)))
+					if (_app_getappinfo (ptr_app, INFO_IS_SILENT, (PVOID_PTR)&is_silent) && !is_silent)
 						_app_notify_addobject (_r_obj_reference (ptr_log), ptr_app);
 				}
 			}

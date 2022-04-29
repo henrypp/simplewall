@@ -109,10 +109,11 @@ PITEM_APP_INFO _app_getappinfobyhash2 (
 	_In_ ULONG_PTR app_hash
 );
 
-_Ret_maybenull_
-PVOID _app_getappinfoparam2 (
+_Success_ (return)
+BOOLEAN _app_getappinfoparam2 (
 	_In_ ULONG_PTR app_hash,
-	_In_ ENUM_INFO_DATA2 info
+	_In_ ENUM_INFO_DATA2 info_data,
+	_Out_ PVOID_PTR buffer_ptr
 );
 
 BOOLEAN _app_isappsigned (

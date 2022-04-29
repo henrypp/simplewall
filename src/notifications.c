@@ -1148,6 +1148,7 @@ INT_PTR CALLBACK NotificationProc (
 					PR_STRING string;
 					ULONG_PTR app_hash;
 					INT ctrl_id;
+					INT listview_id;
 
 					lpnmdi = (LPNMTTDISPINFO)lparam;
 
@@ -1159,12 +1160,16 @@ INT_PTR CALLBACK NotificationProc (
 					if (ctrl_id == IDC_FILE_TEXT)
 					{
 						app_hash = _app_notify_getapp_id (hwnd);
-						string = _app_gettooltipbylparam (_r_app_gethwnd (), PtrToInt (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID)), app_hash);
 
-						if (string)
+						if (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id))
 						{
-							_r_str_copy (buffer, RTL_NUMBER_OF (buffer), string->buffer);
-							_r_obj_dereference (string);
+							string = _app_gettooltipbylparam (_r_app_gethwnd (), listview_id, app_hash);
+
+							if (string)
+							{
+								_r_str_copy (buffer, RTL_NUMBER_OF (buffer), string->buffer);
+								_r_obj_dereference (string);
+							}
 						}
 					}
 					else if (ctrl_id == IDC_RULES_BTN)
