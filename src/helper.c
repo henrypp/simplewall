@@ -505,6 +505,8 @@ BOOLEAN _app_getappinfoparam2 (
 					*buffer_ptr = _r_obj_reference (ptr_app_info->signature_info);
 					return TRUE;
 				}
+
+				break;
 			}
 
 			case INFO_VERSION_STRING:
@@ -514,6 +516,8 @@ BOOLEAN _app_getappinfoparam2 (
 					*buffer_ptr = _r_obj_reference (ptr_app_info->version_info);
 					return TRUE;
 				}
+
+				break;
 			}
 		}
 

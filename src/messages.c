@@ -389,8 +389,8 @@ VOID _app_message_contextmenu (
 	INT listview_id;
 	INT lv_column_current;
 	INT command_id;
-	INT is_checked;
 
+	INT is_checked;
 	INT is_readonly;
 
 	if (lpnmlv->iItem == -1)
