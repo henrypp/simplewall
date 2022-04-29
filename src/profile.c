@@ -1533,7 +1533,7 @@ NTSTATUS _app_profile_load (
 
 CleanupExit:
 
-	is_update = ((path_custom && status == STATUS_SUCCESS) || !path_custom);
+	is_update = ((status == STATUS_SUCCESS) || !path_custom);
 
 	if (is_update)
 	{
