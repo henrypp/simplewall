@@ -1563,6 +1563,7 @@ VOID _app_initialize ()
 	static ULONG privileges[] = {
 		SE_SECURITY_PRIVILEGE,
 		SE_TAKE_OWNERSHIP_PRIVILEGE,
+		SE_INC_BASE_PRIORITY_PRIVILEGE,
 		SE_BACKUP_PRIVILEGE,
 		SE_RESTORE_PRIVILEGE,
 		SE_DEBUG_PRIVILEGE,
@@ -1581,17 +1582,20 @@ VOID _app_initialize ()
 	// initialize workqueue
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_LOWEST, IoPriorityVeryLow, MEMORY_PRIORITY_NORMAL);
 
-	_r_workqueue_initialize (&file_queue, 0, 12, 500, &environment);
-	_r_workqueue_initialize (&resolver_queue, 0, 6, 500, &environment);
-	_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 500, &environment);
+	_r_workqueue_initialize (&file_queue, 0, 12, 1400, &environment, L"FileQueue");
+
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityLow, MEMORY_PRIORITY_NORMAL);
+
+	_r_workqueue_initialize (&resolver_queue, 0, 6, 4500, &environment, L"ResolveQueue");
+	_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 4500, &environment, L"NotificationQueue");
 
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
-	_r_workqueue_initialize (&log_queue, 0, 3, 500, &environment);
+	_r_workqueue_initialize (&log_queue, 0, 3, 5000, &environment, L"PacketsQueue");
 
-	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
-	_r_workqueue_initialize (&wfp_queue, 0, 1, 500, &environment);
+	_r_workqueue_initialize (&wfp_queue, 0, 1, 10000, &environment, L"FiltersQueue");
 
 	// static initializer
 	{
