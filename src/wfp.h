@@ -46,9 +46,11 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (
 
 BOOLEAN _wfp_isfiltersapplying ();
 
-ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ();
+BOOLEAN _wfp_isfiltersinstalled ();
 
 HANDLE _wfp_getenginehandle ();
+
+ENUM_INSTALL_TYPE _wfp_getinstalltype ();
 
 PR_STRING _wfp_getlayername (
 	_In_ LPCGUID layer_guid

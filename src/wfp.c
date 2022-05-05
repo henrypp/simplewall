@@ -12,78 +12,77 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (
 	_In_ HANDLE engine_handle
 )
 {
-	ENUM_INSTALL_TYPE result;
 	FWPM_PROVIDER *ptr_provider;
+	ENUM_INSTALL_TYPE install_type;
+	ULONG status;
 
-	result = INSTALL_DISABLED;
+	install_type = INSTALL_DISABLED;
 
-	if (FwpmProviderGetByKey (
-		engine_handle,
-		&GUID_WfpProvider,
-		&ptr_provider
-		) == ERROR_SUCCESS)
+	status = FwpmProviderGetByKey (engine_handle, &GUID_WfpProvider, &ptr_provider);
+
+	if (status == ERROR_SUCCESS)
 	{
 		if (ptr_provider)
 		{
 			if (ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED)
 			{
-				//result = INSTALL_DISABLED;
+				//install_type = INSTALL_DISABLED;
 			}
 			else if (ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT)
 			{
-				result = INSTALL_ENABLED;
+				install_type = INSTALL_ENABLED;
 			}
 			else
 			{
-				result = INSTALL_ENABLED_TEMPORARY;
+				install_type = INSTALL_ENABLED_TEMPORARY;
 			}
 
 			FwpmFreeMemory ((PVOID_PTR)&ptr_provider);
 		}
 	}
 
-	return result;
+	return install_type;
 }
 
 ENUM_INSTALL_TYPE _wfp_issublayerinstalled (
 	_In_ HANDLE engine_handle
 )
 {
-	ENUM_INSTALL_TYPE result;
 	FWPM_SUBLAYER *ptr_sublayer;
+	ENUM_INSTALL_TYPE install_type;
+	ULONG status;
 
-	result = INSTALL_DISABLED;
+	install_type = INSTALL_DISABLED;
 
-	if (FwpmSubLayerGetByKey (engine_handle, &GUID_WfpSublayer, &ptr_sublayer) == ERROR_SUCCESS)
+	status = FwpmSubLayerGetByKey (engine_handle, &GUID_WfpSublayer, &ptr_sublayer);
+
+	if (status == ERROR_SUCCESS)
 	{
 		if (ptr_sublayer)
 		{
 			if (ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT)
 			{
-				result = INSTALL_ENABLED;
+				install_type = INSTALL_ENABLED;
 			}
 			else
 			{
-				result = INSTALL_ENABLED_TEMPORARY;
+				install_type = INSTALL_ENABLED_TEMPORARY;
 			}
 
 			FwpmFreeMemory ((PVOID_PTR)&ptr_sublayer);
 		}
 	}
 
-	return result;
+	return install_type;
 }
 
-ENUM_INSTALL_TYPE _wfp_isfiltersinstalled ()
+BOOLEAN _wfp_isfiltersinstalled ()
 {
-	HANDLE engine_handle;
+	ENUM_INSTALL_TYPE install_type;
 
-	engine_handle = _wfp_getenginehandle ();
+	install_type = _wfp_getinstalltype ();
 
-	if (engine_handle)
-		return _wfp_isproviderinstalled (engine_handle);
-
-	return INSTALL_DISABLED;
+	return (install_type != INSTALL_DISABLED);
 }
 
 HANDLE _wfp_getenginehandle ()
@@ -143,6 +142,28 @@ HANDLE _wfp_getenginehandle ()
 	}
 
 	return engine_handle;
+}
+
+ENUM_INSTALL_TYPE _wfp_getinstalltype ()
+{
+	HANDLE engine_handle;
+	ENUM_INSTALL_TYPE install_type;
+
+	engine_handle = _wfp_getenginehandle ();
+
+	if (engine_handle)
+	{
+		install_type = _wfp_issublayerinstalled (engine_handle);
+
+		if (install_type == INSTALL_DISABLED)
+			return INSTALL_DISABLED;
+
+		install_type = _wfp_isproviderinstalled (engine_handle);
+
+		return install_type;
+	}
+
+	return INSTALL_DISABLED;
 }
 
 PR_STRING _wfp_getlayername (
