@@ -3363,7 +3363,6 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 
 	if (is_install || is_uninstall)
 	{
-
 		// already elevated
 		//if (_r_sys_iselevated ())
 		{
