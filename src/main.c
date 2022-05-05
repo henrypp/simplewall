@@ -1,9 +1,13 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #include "global.h"
 
-BOOLEAN _app_changefilters (_In_ HWND hwnd, _In_ BOOLEAN is_install, _In_ BOOLEAN is_forced)
+BOOLEAN _app_changefilters (
+	_In_ HWND hwnd,
+	_In_ BOOLEAN is_install,
+	_In_ BOOLEAN is_forced
+)
 {
 	PITEM_CONTEXT context;
 	INT listview_id;
@@ -33,7 +37,10 @@ BOOLEAN _app_changefilters (_In_ HWND hwnd, _In_ BOOLEAN is_install, _In_ BOOLEA
 	return FALSE;
 }
 
-BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
+BOOLEAN _app_installmessage (
+	_In_opt_ HWND hwnd,
+	_In_ BOOLEAN is_install
+)
 {
 	WCHAR str_main[256];
 	WCHAR radio_text_1[128];
@@ -128,7 +135,11 @@ BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
 	return FALSE;
 }
 
-VOID _app_config_apply (_In_ HWND hwnd, _In_opt_ HWND hsettings, _In_ INT ctrl_id)
+VOID _app_config_apply (
+	_In_ HWND hwnd,
+	_In_opt_ HWND hsettings,
+	_In_ INT ctrl_id
+)
 {
 	HMENU hmenu;
 	HANDLE hengine;
@@ -450,7 +461,12 @@ VOID _app_config_apply (_In_ HWND hwnd, _In_opt_ HWND hsettings, _In_ INT ctrl_i
 	}
 }
 
-INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
+INT_PTR CALLBACK SettingsProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+)
 {
 	switch (msg)
 	{
@@ -894,6 +910,8 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				{
 					LPNMLISTVIEW lpnmlv;
 					INT listview_id;
+					PITEM_COLOR ptr_clr;
+					BOOLEAN is_enabled;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -903,13 +921,11 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 						if (listview_id != IDC_COLORS)
 							break;
 
-						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
+						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) ||
+							((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 						{
 							if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 								break;
-
-							PITEM_COLOR ptr_clr;
-							BOOLEAN is_enabled;
 
 							ptr_clr = (PITEM_COLOR)lpnmlv->lParam;
 
@@ -942,6 +958,13 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 				{
 					LPNMITEMACTIVATE lpnmlv;
 					INT listview_id;
+					PITEM_COLOR ptr_clr_current;
+					CHOOSECOLOR cc = {0};
+					COLORREF cust[16] = {0};
+
+					PITEM_COLOR ptr_clr;
+					SIZE_T index;
+					SIZE_T enum_key;
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -951,19 +974,11 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 
 					if (listview_id == IDC_COLORS)
 					{
-						PITEM_COLOR ptr_clr_current;
 
 						ptr_clr_current = (PITEM_COLOR)_r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
 
 						if (ptr_clr_current)
 						{
-							CHOOSECOLOR cc = {0};
-							COLORREF cust[16] = {0};
-
-							PITEM_COLOR ptr_clr;
-							SIZE_T index;
-							SIZE_T enum_key;
-
 							index = 0;
 							enum_key = 0;
 
@@ -1218,9 +1233,7 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 						path = _r_ctrl_getstring (hwnd, IDC_LOGPATH);
 
 						if (path)
-						{
 							_r_filedialog_setpath (&file_dialog, path->buffer);
-						}
 
 						if (_r_filedialog_show (hwnd, &file_dialog))
 						{
@@ -1430,7 +1443,9 @@ INT_PTR CALLBACK SettingsProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam
 	return FALSE;
 }
 
-INT _app_addwindowtabs (_In_ HWND hwnd)
+INT _app_addwindowtabs (
+	_In_ HWND hwnd
+)
 {
 	INT tabs_count = 0;
 
@@ -1439,9 +1454,7 @@ INT _app_addwindowtabs (_In_ HWND hwnd)
 
 	// uwp apps (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-	{
 		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_UWP);
-	}
 
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
@@ -1456,7 +1469,10 @@ INT _app_addwindowtabs (_In_ HWND hwnd)
 	return tabs_count;
 }
 
-VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
+VOID _app_tabs_init (
+	_In_ HWND hwnd,
+	_In_ LONG dpi_value
+)
 {
 	RECT rect = {0};
 
@@ -1473,8 +1489,26 @@ VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 
 	GetClientRect (hwnd, &rect);
 
-	SetWindowPos (config.hrebar, NULL, 0, 0, rect.right, rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-	SetWindowPos (GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, rect.right, rect.bottom - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+	SetWindowPos (
+		config.hrebar,
+		NULL,
+		0,
+		0,
+		rect.right,
+		rebar_height,
+		SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER
+	);
+
+	SetWindowPos (
+		GetDlgItem (hwnd, IDC_TAB),
+		NULL
+		,
+		0,
+		rebar_height,
+		rect.right,
+		rect.bottom - rebar_height - statusbar_height,
+		SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER
+	);
 
 	_app_listview_loadfont (dpi_value, TRUE);
 
@@ -1550,7 +1584,15 @@ VOID _app_tabs_init (_In_ HWND hwnd, _In_ LONG dpi_value)
 		}
 
 		// add filter group
-		_r_listview_addgroup (hwnd, listview_id, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED);
+		_r_listview_addgroup (
+			hwnd,
+			listview_id,
+			LV_HIDDEN_GROUP_ID,
+			L"",
+			0,
+			LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED,
+			LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED
+		);
 
 		_app_listview_setfont (hwnd, listview_id);
 
@@ -1669,7 +1711,9 @@ VOID _app_initialize ()
 		cache_resolution = _r_obj_createhashtablepointer (32);
 }
 
-INT FirstDriveFromMask (_In_ ULONG unitmask)
+INT FirstDriveFromMask (
+	_In_ ULONG unitmask
+)
 {
 	INT i;
 
@@ -1684,7 +1728,12 @@ INT FirstDriveFromMask (_In_ ULONG unitmask)
 	return i;
 }
 
-INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
+INT_PTR CALLBACK DlgProc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+)
 {
 	switch (msg)
 	{
@@ -1953,9 +2002,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 				string = _r_obj_createstring_ex (NULL, length * sizeof (WCHAR));
 
 				if (DragQueryFile (hdrop, i, string->buffer, length + 1))
-				{
 					app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, string, NULL, NULL);
-				}
 
 				_r_obj_dereference (string);
 			}
@@ -2252,6 +2299,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 							if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 								break;
 
+							HANDLE hengine;
+							PR_LIST rules;
+
 							ULONG_PTR app_hash;
 							PITEM_APP ptr_app;
 
@@ -2285,11 +2335,11 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 									if (_wfp_isfiltersinstalled ())
 									{
-										HANDLE hengine = _wfp_getenginehandle ();
+										hengine = _wfp_getenginehandle ();
 
 										if (hengine)
 										{
-											PR_LIST rules = _r_obj_createlist (NULL);
+											rules = _r_obj_createlist (NULL);
 
 											_r_obj_addlistitem (rules, ptr_app);
 
@@ -2326,11 +2376,11 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 									if (_wfp_isfiltersinstalled ())
 									{
-										HANDLE hengine = _wfp_getenginehandle ();
+										hengine = _wfp_getenginehandle ();
 
 										if (hengine)
 										{
-											PR_LIST rules = _r_obj_createlist (NULL);
+											rules = _r_obj_createlist (NULL);
 
 											_r_obj_addlistitem (rules, ptr_rule);
 
@@ -2451,10 +2501,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						hengine = _wfp_getenginehandle ();
 
 						if (hengine)
-						{
-							//_app_network_unsubscribe (hengine);
 							_wfp_logunsubscribe (hengine);
-						}
 					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
@@ -2471,10 +2518,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 						hengine = _wfp_getenginehandle ();
 
 						if (hengine)
-						{
-							//_app_network_subscribe (hengine);
 							_wfp_logsubscribe (hengine);
-						}
 					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
@@ -2683,6 +2727,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					};
 
 					R_FILE_DIALOG file_dialog;
+					R_ERROR_INFO error_info;
 					PR_STRING path;
 
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
@@ -2701,8 +2746,6 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 								// added information for export profile failure (issue #707)
 								if (!_r_fs_copyfile (profile_info.profile_path->buffer, path->buffer, 0))
 								{
-									R_ERROR_INFO error_info;
-
 									_r_error_initialize (&error_info, NULL, path->buffer);
 
 									_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
@@ -3307,7 +3350,9 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 	return FALSE;
 }
 
-BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
+BOOLEAN _app_parseargs (
+	_In_ LPCWSTR cmdline
+)
 {
 	WCHAR arguments_mutex_name[32];
 	HANDLE arguments_mutex;
@@ -3411,7 +3456,12 @@ CleanupExit:
 	return result;
 }
 
-INT APIENTRY wWinMain (_In_ HINSTANCE hinst, _In_opt_ HINSTANCE prev_hinst, _In_ LPWSTR cmdline, _In_ INT show_cmd)
+INT APIENTRY wWinMain (
+	_In_ HINSTANCE hinst,
+	_In_opt_ HINSTANCE prev_hinst,
+	_In_ LPWSTR cmdline,
+	_In_ INT show_cmd
+)
 {
 	HWND hwnd;
 
