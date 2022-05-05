@@ -422,8 +422,11 @@ VOID _wfp_uninitialize (
 	_In_ BOOLEAN is_full
 )
 {
+	PR_ARRAY callouts;
+	PR_STRING string;
+	LPCGUID guid;
 	FWP_VALUE val;
-	ULONG code;
+	ULONG status;
 	BOOLEAN is_intransact;
 
 	_r_queuedlock_acquireshared (&lock_transaction);
@@ -456,56 +459,69 @@ VOID _wfp_uninitialize (
 		val.type = FWP_UINT32;
 		val.uint32 = 0;
 
-		code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
+		status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 
-		if (code == ERROR_SUCCESS)
-		{
+		if (status == ERROR_SUCCESS)
 			config.is_neteventset = FALSE;
-		}
 	}
 
 	if (is_full)
 	{
-		static LPCGUID callouts[] = {
-			&GUID_WfpOutboundCallout4_DEPRECATED,
-			&GUID_WfpOutboundCallout6_DEPRECATED,
-			&GUID_WfpInboundCallout4_DEPRECATED,
-			&GUID_WfpInboundCallout6_DEPRECATED,
-			&GUID_WfpListenCallout4_DEPRECATED,
-			&GUID_WfpListenCallout6_DEPRECATED,
-		};
-
 		_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
 		_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
 
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (callouts); i++)
-			_app_setsecurityinfoforcallout (engine_handle, callouts[i], FALSE);
+		status = _wfp_dumpcallouts (engine_handle, &GUID_WfpProvider, &callouts);
+
+		if (callouts)
+		{
+			for (SIZE_T i = 0; i < _r_obj_getarraysize (callouts); i++)
+			{
+				guid = _r_obj_getarrayitem (callouts, i);
+
+				_app_setsecurityinfoforcallout (engine_handle, guid, FALSE);
+			}
+		}
 
 		is_intransact = _wfp_transact_start (engine_handle, DBG_ARG);
 
 		// destroy callouts (deprecated)
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (callouts); i++)
+		if (callouts)
 		{
-			code = FwpmCalloutDeleteByKey (engine_handle, callouts[i]);
+			for (SIZE_T i = 0; i < _r_obj_getarraysize (callouts); i++)
+			{
+				guid = _r_obj_getarrayitem (callouts, i);
 
-			if (code != ERROR_SUCCESS && code != FWP_E_CALLOUT_NOT_FOUND)
-				_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmCalloutDeleteByKey", code, NULL);
+				status = FwpmCalloutDeleteByKey (engine_handle, guid);
+
+				if (status != ERROR_SUCCESS)
+				{
+					_r_str_fromguid (guid, TRUE, &string);
+
+					_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmCalloutDeleteByKey", status, _r_obj_getstring (string));
+
+					if (string)
+						_r_obj_dereference (string);
+				}
+			}
 		}
 
 		// destroy sublayer
-		code = FwpmSubLayerDeleteByKey (engine_handle, &GUID_WfpSublayer);
+		status = FwpmSubLayerDeleteByKey (engine_handle, &GUID_WfpSublayer);
 
-		if (code != ERROR_SUCCESS && code != FWP_E_SUBLAYER_NOT_FOUND)
-			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmSubLayerDeleteByKey", code, NULL);
+		if (status != ERROR_SUCCESS && status != FWP_E_SUBLAYER_NOT_FOUND)
+			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmSubLayerDeleteByKey", status, NULL);
 
 		// destroy provider
-		code = FwpmProviderDeleteByKey (engine_handle, &GUID_WfpProvider);
+		status = FwpmProviderDeleteByKey (engine_handle, &GUID_WfpProvider);
 
-		if (code != ERROR_SUCCESS && code != FWP_E_PROVIDER_NOT_FOUND)
-			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderDeleteByKey", code, NULL);
+		if (status != ERROR_SUCCESS && status != FWP_E_PROVIDER_NOT_FOUND)
+			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderDeleteByKey", status, NULL);
 
 		if (is_intransact)
 			_wfp_transact_commit (engine_handle, DBG_ARG);
+
+		if (callouts)
+			_r_obj_dereference (callouts);
 	}
 
 	_r_queuedlock_releaseshared (&lock_transaction);
@@ -2611,6 +2627,84 @@ BOOLEAN _wfp_create2filters (
 	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
 
 	return TRUE;
+}
+
+_Success_ (return == ERROR_SUCCESS)
+ULONG _wfp_dumpcallouts (
+	_In_ HANDLE engine_handle,
+	_In_ LPCGUID provider_id,
+	_Out_ PR_ARRAY_PTR out_buffer
+)
+{
+	FWPM_CALLOUT **callouts_enum;
+	FWPM_CALLOUT *callout;
+	PR_ARRAY guids;
+	HANDLE enum_handle;
+	ULONG status;
+	UINT32 return_count;
+
+	enum_handle = NULL;
+
+	status = FwpmCalloutCreateEnumHandle (engine_handle, NULL, &enum_handle);
+
+	if (status != ERROR_SUCCESS)
+		return status;
+
+	callouts_enum = NULL;
+	guids = NULL;
+
+	status = FwpmCalloutEnum (engine_handle, enum_handle, UINT32_MAX, &callouts_enum, &return_count);
+
+	if (status != ERROR_SUCCESS)
+		goto CleanupExit;
+
+	if (!callouts_enum)
+	{
+		status = ERROR_NOT_FOUND;
+		goto CleanupExit;
+	}
+
+	guids = _r_obj_createarray_ex (sizeof (GUID), return_count, NULL);
+
+	for (UINT32 i = 0; i < return_count; i++)
+	{
+		callout = callouts_enum[i];
+
+		if (callout)
+		{
+			if (callout->providerKey)
+			{
+				if (IsEqualGUID (callout->providerKey, provider_id))
+					_r_obj_addarrayitem (guids, &callout->calloutKey);
+			}
+		}
+	}
+
+	if (_r_obj_isarrayempty2 (guids))
+	{
+		status = ERROR_NOT_FOUND;
+
+		_r_obj_dereference (guids);
+	}
+
+CleanupExit:
+
+	if (status == ERROR_SUCCESS)
+	{
+		*out_buffer = guids;
+	}
+	else
+	{
+		*out_buffer = NULL;
+	}
+
+	if (enum_handle)
+		FwpmCalloutDestroyEnumHandle (engine_handle, enum_handle);
+
+	if (callouts_enum)
+		FwpmFreeMemory ((PVOID_PTR)&callouts_enum);
+
+	return status;
 }
 
 _Success_ (return == ERROR_SUCCESS)
