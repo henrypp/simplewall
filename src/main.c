@@ -65,7 +65,7 @@ BOOLEAN _app_installmessage (_In_opt_ HWND hwnd, _In_ BOOLEAN is_install)
 
 	tdc.nDefaultButton = IDYES;
 
-	_r_str_copy (str_button_text_1, RTL_NUMBER_OF (str_button_text_1), _r_locale_getstring (is_install ? IDS_TRAY_START : IDS_TRAY_STOP));
+	_r_str_copy (str_button_text_1, RTL_NUMBER_OF (str_button_text_1), _app_getstateaction (is_install ? INSTALL_DISABLED : INSTALL_ENABLED));
 	_r_str_copy (str_button_text_2, RTL_NUMBER_OF (str_button_text_2), _r_locale_getstring (IDS_CLOSE));
 
 	td_buttons[0].nButtonID = IDYES;
@@ -1737,7 +1737,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 			}
 			else
 			{
-				_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
+				_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));
 			}
 
 			// initialize settings
@@ -1791,21 +1791,14 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 
 		case RM_TASKBARCREATED:
 		{
-			HICON hicon;
-			LONG dpi_value;
-			LONG icon_small;
-			UINT icon_id;
+			ENUM_INSTALL_TYPE install_type;
 
-			dpi_value = _r_dc_gettaskbardpi ();
-
-			icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
-
-			icon_id = _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE;
-
-			hicon = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
+			install_type = _wfp_getinstalltype ();
 
 			// refresh tray icon
-			_r_tray_create (hwnd, &GUID_TrayIcon, RM_TRAYICON, hicon, _r_app_getname (), FALSE);
+			_r_tray_create (hwnd, &GUID_TrayIcon, RM_TRAYICON, NULL, NULL, FALSE);
+
+			_app_settrayicon (hwnd, install_type);
 
 			break;
 		}
@@ -2502,7 +2495,10 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					PDEV_BROADCAST_VOLUME lpdbv;
 					BOOLEAN is_appexist;
 
-					if (!_r_config_getboolean (L"IsRefreshDevices", TRUE) || !_wfp_isfiltersinstalled () || _wfp_isfiltersapplying ())
+					if (!_r_config_getboolean (L"IsRefreshDevices", TRUE))
+						break;
+
+					if (_wfp_isfiltersapplying () || !_wfp_isfiltersinstalled ())
 						break;
 
 					lbhdr = (PDEV_BROADCAST_HDR)lparam;
@@ -3073,7 +3069,7 @@ INT_PTR CALLBACK DlgProc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In
 					if (_wfp_isfiltersapplying ())
 						break;
 
-					is_filtersinstalled = !(_wfp_isfiltersinstalled () != INSTALL_DISABLED);
+					is_filtersinstalled = !_wfp_isfiltersinstalled ();
 
 					if (_app_installmessage (hwnd, is_filtersinstalled))
 						_app_changefilters (hwnd, is_filtersinstalled, TRUE);
@@ -3397,7 +3393,7 @@ BOOLEAN _app_parseargs (_In_ LPCWSTR cmdline)
 				}
 				else if (is_uninstall)
 				{
-					if (((_wfp_isfiltersinstalled () != INSTALL_DISABLED) && _app_installmessage (NULL, FALSE)))
+					if (_wfp_isfiltersinstalled () && _app_installmessage (NULL, FALSE))
 					{
 						_wfp_destroyfilters (hengine);
 						_wfp_uninitialize (hengine, TRUE);

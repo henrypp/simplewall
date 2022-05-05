@@ -193,6 +193,7 @@ typedef struct _STATIC_DATA
 	volatile HANDLE hlogfile;
 	volatile HANDLE hnetevent;
 	volatile HWND hnotification;
+	volatile HICON htray_icon;
 
 	HFONT hfont;
 	HFONT wnd_font;

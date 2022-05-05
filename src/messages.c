@@ -7,25 +7,18 @@ VOID _app_message_initialize (
 	_In_ HWND hwnd
 )
 {
-	HICON hicon;
-	HMENU hmenu;
+	ENUM_INSTALL_TYPE install_type;
 
-	LONG dpi_value;
-	LONG icon_small;
+	HMENU hmenu;
 	LONG icon_size;
 	LONG view_type;
 	UINT menu_id;
-	UINT icon_id;
 
-	dpi_value = _r_dc_gettaskbardpi ();
+	install_type = _wfp_getinstalltype ();
 
-	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	_r_tray_create (hwnd, &GUID_TrayIcon, RM_TRAYICON, NULL, NULL, FALSE);
 
-	icon_id = _wfp_isfiltersinstalled () ? IDI_ACTIVE : IDI_INACTIVE;
-
-	hicon = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
-
-	_r_tray_create (hwnd, &GUID_TrayIcon, RM_TRAYICON, hicon, _r_app_getname (), FALSE);
+	_app_settrayicon (hwnd, install_type);
 
 	hmenu = GetMenu (hwnd);
 
@@ -694,9 +687,10 @@ VOID _app_message_traycontextmenu (
 	_In_ HWND hwnd
 )
 {
+	ENUM_INSTALL_TYPE install_type;
+
 	HMENU hmenu;
 	HMENU hsubmenu;
-	BOOLEAN is_filtersinstalled;
 
 	hmenu = LoadMenu (NULL, MAKEINTRESOURCE (IDM_TRAY));
 
@@ -711,13 +705,13 @@ VOID _app_message_traycontextmenu (
 		return;
 	}
 
-	is_filtersinstalled = (_wfp_isfiltersinstalled () != INSTALL_DISABLED);
+	install_type = _wfp_getinstalltype ();
 
-	_r_menu_setitembitmap (hsubmenu, IDM_TRAY_START, FALSE, is_filtersinstalled ? config.hbmp_disable : config.hbmp_enable);
+	_r_menu_setitembitmap (hsubmenu, IDM_TRAY_START, FALSE, _app_getstatebitmap (install_type));
 
 	// localize
 	_r_menu_setitemtext (hsubmenu, IDM_TRAY_SHOW, FALSE, _r_locale_getstring (IDS_TRAY_SHOW));
-	_r_menu_setitemtext (hsubmenu, IDM_TRAY_START, FALSE, _r_locale_getstring (is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START));
+	_r_menu_setitemtext (hsubmenu, IDM_TRAY_START, FALSE, _app_getstateaction (install_type));
 
 	_r_menu_setitemtext (hsubmenu, NOTIFICATIONS_ID, TRUE, _r_locale_getstring (IDS_TITLE_NOTIFICATIONS));
 	_r_menu_setitemtext (hsubmenu, LOGGING_ID, TRUE, _r_locale_getstring (IDS_TITLE_LOGGING));

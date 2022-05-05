@@ -423,24 +423,108 @@ VOID _app_settab_id (
 		_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
-LPCWSTR _app_getinterfacestatelocale (
+LPCWSTR _app_getstateaction (
 	_In_ ENUM_INSTALL_TYPE install_type
 )
 {
 	UINT locale_id;
 
-	if (install_type == INSTALL_ENABLED)
+	switch (install_type)
 	{
-		locale_id = IDS_STATUS_FILTERS_ACTIVE;
+		case INSTALL_ENABLED:
+		case INSTALL_ENABLED_TEMPORARY:
+		{
+			locale_id = IDS_TRAY_STOP;
+			break;
+		}
+
+		case INSTALL_DISABLED:
+		{
+			locale_id = IDS_TRAY_START;
+			break;
+		}
+
+		default:
+		{
+			return NULL;
+		}
 	}
-	else if (install_type == INSTALL_ENABLED_TEMPORARY)
+
+	return _r_locale_getstring (locale_id);
+}
+
+HBITMAP _app_getstatebitmap (
+	_In_ ENUM_INSTALL_TYPE install_type
+)
+{
+	switch (install_type)
 	{
-		locale_id = IDS_STATUS_FILTERS_ACTIVE_TEMP;
+		case INSTALL_ENABLED:
+		case INSTALL_ENABLED_TEMPORARY:
+		{
+			return config.hbmp_disable;
+		}
+
+		case INSTALL_DISABLED:
+		{
+			return config.hbmp_enable;
+		}
+
+		default:
+		{
+			return NULL;
+		}
 	}
-	else
+}
+
+INT _app_getstateicon (
+	_In_ ENUM_INSTALL_TYPE install_type
+)
+{
+	switch (install_type)
 	{
-		// INSTALL_DISABLED
-		locale_id = IDS_STATUS_FILTERS_INACTIVE;
+		case INSTALL_ENABLED:
+		case INSTALL_ENABLED_TEMPORARY:
+		{
+			return IDI_ACTIVE;
+		}
+
+		//case INSTALL_DISABLED:
+		default:
+		{
+			return IDI_INACTIVE;
+		}
+	}
+}
+
+LPCWSTR _app_getstatelocale (
+	_In_ ENUM_INSTALL_TYPE install_type
+)
+{
+	UINT locale_id;
+
+	switch (install_type)
+	{
+		case INSTALL_ENABLED:
+		{
+			locale_id = IDS_STATUS_FILTERS_ACTIVE;
+			break;
+		}
+
+		case INSTALL_ENABLED_TEMPORARY:
+		{
+			locale_id = IDS_STATUS_FILTERS_ACTIVE_TEMP;
+			break;
+		}
+
+		case INSTALL_DISABLED:
+		{
+			locale_id = IDS_STATUS_FILTERS_INACTIVE;
+			break;
+		}
+
+		default:
+			return NULL;
 	}
 
 	return _r_locale_getstring (locale_id);
@@ -474,12 +558,12 @@ VOID _app_restoreinterfacestate (
 	if (!is_enabled)
 		return;
 
-	install_type = _wfp_isfiltersinstalled ();
+	install_type = _wfp_getinstalltype ();
 
 	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, TRUE);
 	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, TRUE);
 
-	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
+	_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));
 }
 
 VOID _app_setinterfacestate (
@@ -495,19 +579,17 @@ VOID _app_setinterfacestate (
 	LONG icon_small;
 	LONG icon_large;
 
-	UINT string_id;
-	UINT icon_id;
+	INT icon_id;
 
 	BOOLEAN is_filtersinstalled;
 
-	install_type = _wfp_isfiltersinstalled ();
+	install_type = _wfp_getinstalltype ();
 	is_filtersinstalled = (install_type != INSTALL_DISABLED);
 
 	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 	icon_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 
-	string_id = is_filtersinstalled ? IDS_TRAY_STOP : IDS_TRAY_START;
-	icon_id = is_filtersinstalled ? IDI_ACTIVE : IDI_INACTIVE;
+	icon_id = _app_getstateicon (install_type);
 
 	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
 	hico_big = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large);
@@ -517,26 +599,59 @@ VOID _app_setinterfacestate (
 	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
-		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getinterfacestatelocale (install_type));
+		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));
 
 	_r_toolbar_setbutton (
 		config.hrebar,
 		IDC_TOOLBAR,
 		IDM_TRAY_START,
-		_r_locale_getstring (string_id),
+		_app_getstateaction (install_type),
 		BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT,
 		0,
 		is_filtersinstalled ? 1 : 0
 	);
 
-	// fix tray icon size
+	_app_settrayicon (hwnd, install_type);
+}
+
+VOID _app_settrayicon (
+	_In_ HWND hwnd,
+	_In_ ENUM_INSTALL_TYPE install_type
+)
+{
+	HICON current_handle;
+	HICON new_handle;
+
+	LONG dpi_value;
+	LONG icon_size;
+
+	INT icon_id;
+
 	dpi_value = _r_dc_gettaskbardpi ();
+	icon_id = _app_getstateicon (install_type);
+	icon_size = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 
-	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	current_handle = InterlockedCompareExchangePointer (
+		&config.htray_icon,
+		NULL,
+		config.htray_icon
+	);
 
-	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
+	if (current_handle)
+		DestroyIcon (current_handle);
 
-	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hico_sm, _r_app_getname ());
+	new_handle = _r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_size);
+
+	_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
+
+	current_handle = InterlockedCompareExchangePointer (
+		&config.htray_icon,
+		new_handle,
+		NULL
+	);
+
+	if (current_handle)
+		DestroyIcon (current_handle);
 }
 
 VOID _app_imagelist_init (

@@ -17,7 +17,19 @@ VOID _app_settab_id (
 	_In_ INT page_id
 );
 
-LPCWSTR _app_getinterfacestatelocale (
+LPCWSTR _app_getstateaction (
+	_In_ ENUM_INSTALL_TYPE install_type
+);
+
+HBITMAP _app_getstatebitmap (
+	_In_ ENUM_INSTALL_TYPE install_type
+);
+
+INT _app_getstateicon (
+	_In_ ENUM_INSTALL_TYPE install_type
+);
+
+LPCWSTR _app_getstatelocale (
 	_In_ ENUM_INSTALL_TYPE install_type
 );
 
@@ -34,6 +46,11 @@ VOID _app_restoreinterfacestate (
 VOID _app_setinterfacestate (
 	_In_ HWND hwnd,
 	_In_ LONG dpi_value
+);
+
+VOID _app_settrayicon (
+	_In_ HWND hwnd,
+	_In_ ENUM_INSTALL_TYPE install_type
 );
 
 VOID _app_imagelist_init (
