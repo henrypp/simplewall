@@ -153,11 +153,6 @@ ENUM_INSTALL_TYPE _wfp_getinstalltype ()
 
 	if (engine_handle)
 	{
-		install_type = _wfp_issublayerinstalled (engine_handle);
-
-		if (install_type == INSTALL_DISABLED)
-			return INSTALL_DISABLED;
-
 		install_type = _wfp_isproviderinstalled (engine_handle);
 
 		return install_type;
