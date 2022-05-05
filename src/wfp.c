@@ -527,6 +527,8 @@ VOID _wfp_installfilters (
 	BOOLEAN is_intransact;
 	BOOLEAN is_secure;
 
+	ULONG status;
+
 	// set security information
 	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
 	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
@@ -535,10 +537,10 @@ VOID _wfp_installfilters (
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
-	guids = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider);
+	status = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider, &guids);
 
 	// restore filters security
-	if (guids)
+	if (status == ERROR_SUCCESS)
 	{
 		for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
@@ -551,7 +553,7 @@ VOID _wfp_installfilters (
 	is_intransact = _wfp_transact_start (engine_handle, DBG_ARG);
 
 	// destroy all filters
-	if (guids)
+	if (status == ERROR_SUCCESS)
 	{
 		for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
@@ -619,9 +621,9 @@ VOID _wfp_installfilters (
 
 	if (is_secure)
 	{
-		guids = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider);
+		status = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider, &guids);
 
-		if (guids)
+		if (status == ERROR_SUCCESS)
 		{
 			for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
 			{
@@ -939,15 +941,16 @@ VOID _wfp_destroyfilters (
 )
 {
 	PR_ARRAY guids;
+	ULONG status;
 
 	_wfp_clearfilter_ids ();
 
 	// destroy all filters
 	_r_queuedlock_acquireshared (&lock_transaction);
 
-	guids = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider);
+	status = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider, &guids);
 
-	if (guids)
+	if (status == ERROR_SUCCESS)
 	{
 		_wfp_destroyfilters_array (engine_handle, guids, DBG_ARG);
 
@@ -2610,55 +2613,82 @@ BOOLEAN _wfp_create2filters (
 	return TRUE;
 }
 
-_Ret_maybenull_
-PR_ARRAY _wfp_dumpfilters (
+_Success_ (return == ERROR_SUCCESS)
+ULONG _wfp_dumpfilters (
 	_In_ HANDLE engine_handle,
-	_In_ LPCGUID provider_id
+	_In_ LPCGUID provider_id,
+	_Out_ PR_ARRAY_PTR out_buffer
 )
 {
-	PR_ARRAY guids = NULL;
+	FWPM_FILTER **filters_enum;
+	FWPM_FILTER *filter;
+	PR_ARRAY guids;
 	HANDLE enum_handle;
-	ULONG code;
+	ULONG status;
 	UINT32 return_count;
 
-	code = FwpmFilterCreateEnumHandle (engine_handle, NULL, &enum_handle);
+	enum_handle = NULL;
 
-	if (code == ERROR_SUCCESS)
+	status = FwpmFilterCreateEnumHandle (engine_handle, NULL, &enum_handle);
+
+	if (status != ERROR_SUCCESS)
+		return status;
+
+	filters_enum = NULL;
+	guids = NULL;
+
+	status = FwpmFilterEnum (engine_handle, enum_handle, UINT32_MAX, &filters_enum, &return_count);
+
+	if (status != ERROR_SUCCESS)
+		goto CleanupExit;
+
+	if (!filters_enum)
 	{
-		FWPM_FILTER **filters_enum;
-
-		code = FwpmFilterEnum (engine_handle, enum_handle, UINT32_MAX, &filters_enum, &return_count);
-
-		if (code == ERROR_SUCCESS)
-		{
-			if (filters_enum)
-			{
-				FWPM_FILTER *filter;
-
-				guids = _r_obj_createarray_ex (sizeof (GUID), return_count, NULL);
-
-				for (UINT32 i = 0; i < return_count; i++)
-				{
-					filter = filters_enum[i];
-
-					if (filter)
-					{
-						if (filter->providerKey && IsEqualGUID (filter->providerKey, provider_id))
-							_r_obj_addarrayitem (guids, &filter->filterKey);
-					}
-				}
-
-				if (_r_obj_isarrayempty2 (guids))
-					_r_obj_clearreference (&guids);
-
-				FwpmFreeMemory ((PVOID_PTR)&filters_enum);
-			}
-		}
-
-		FwpmFilterDestroyEnumHandle (engine_handle, enum_handle);
+		status = ERROR_NOT_FOUND;
+		goto CleanupExit;
 	}
 
-	return guids;
+	guids = _r_obj_createarray_ex (sizeof (GUID), return_count, NULL);
+
+	for (UINT32 i = 0; i < return_count; i++)
+	{
+		filter = filters_enum[i];
+
+		if (filter)
+		{
+			if (filter->providerKey)
+			{
+				if (IsEqualGUID (filter->providerKey, provider_id))
+					_r_obj_addarrayitem (guids, &filter->filterKey);
+			}
+		}
+	}
+
+	if (_r_obj_isarrayempty2 (guids))
+	{
+		status = ERROR_NOT_FOUND;
+
+		_r_obj_dereference (guids);
+	}
+
+CleanupExit:
+
+	if (status == ERROR_SUCCESS)
+	{
+		*out_buffer = guids;
+	}
+	else
+	{
+		*out_buffer = NULL;
+	}
+
+	if (enum_handle)
+		FwpmFilterDestroyEnumHandle (engine_handle, enum_handle);
+
+	if (filters_enum)
+		FwpmFreeMemory ((PVOID_PTR)&filters_enum);
+
+	return status;
 }
 
 VOID NTAPI _wfp_applythread (

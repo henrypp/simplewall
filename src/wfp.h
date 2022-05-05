@@ -156,10 +156,11 @@ BOOLEAN _wfp_create2filters (
 	_In_ BOOLEAN is_intransact
 );
 
-_Ret_maybenull_
-PR_ARRAY _wfp_dumpfilters (
+_Success_ (return == ERROR_SUCCESS)
+ULONG _wfp_dumpfilters (
 	_In_ HANDLE engine_handle,
-	_In_ LPCGUID provider_id
+	_In_ LPCGUID provider_id,
+	_Out_ PR_ARRAY_PTR out_buffer
 );
 
 VOID NTAPI _wfp_applythread (

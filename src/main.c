@@ -347,6 +347,10 @@ VOID _app_config_apply (
 
 		case IDC_SECUREFILTERS_CHK:
 		{
+			PR_ARRAY guids;
+			LPCGUID guid;
+			ULONG status;
+
 			_r_config_setboolean (L"IsSecureFilters", new_val);
 
 			if (_wfp_isfiltersinstalled ())
@@ -355,21 +359,18 @@ VOID _app_config_apply (
 
 				if (hengine)
 				{
-					PR_ARRAY guids;
-
 					_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, new_val);
 					_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, new_val);
 
-					guids = _wfp_dumpfilters (hengine, &GUID_WfpProvider);
+					status = _wfp_dumpfilters (hengine, &GUID_WfpProvider, &guids);
 
-					if (guids)
+					if (status == ERROR_SUCCESS)
 					{
 						for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
 						{
-							LPCGUID guid = _r_obj_getarrayitem (guids, i);
+							guid = _r_obj_getarrayitem (guids, i);
 
-							if (guid)
-								_app_setsecurityinfoforfilter (hengine, guid, new_val, DBG_ARG);
+							_app_setsecurityinfoforfilter (hengine, guid, new_val, DBG_ARG);
 						}
 
 						_r_obj_dereference (guids);
