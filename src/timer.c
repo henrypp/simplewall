@@ -1,9 +1,42 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #include "global.h"
 
-VOID _app_timer_set (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app, _In_ LONG64 seconds)
+BOOLEAN _app_istimersactive ()
+{
+	PITEM_APP ptr_app;
+	SIZE_T enum_key = 0;
+
+	_r_queuedlock_acquireshared (&lock_apps);
+
+	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	{
+		if (_app_istimerset (ptr_app->htimer))
+		{
+			_r_queuedlock_releaseshared (&lock_apps);
+
+			return TRUE;
+		}
+	}
+
+	_r_queuedlock_releaseshared (&lock_apps);
+
+	return FALSE;
+}
+
+BOOLEAN _app_istimerset (
+	_In_ PTP_TIMER timer
+)
+{
+	return timer && IsThreadpoolTimerSet (timer);
+}
+
+VOID _app_timer_set (
+	_In_opt_ HWND hwnd,
+	_Inout_ PITEM_APP ptr_app,
+	_In_ LONG64 seconds
+)
 {
 	PTP_TIMER htimer;
 	FILETIME file_time;
@@ -57,9 +90,7 @@ VOID _app_timer_set (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app, _In_ LONG64 
 			ptr_app->timer = 0;
 
 			if (_app_istimerset (ptr_app->htimer))
-			{
 				_app_timer_remove (&ptr_app->htimer);
-			}
 		}
 	}
 
@@ -67,7 +98,10 @@ VOID _app_timer_set (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app, _In_ LONG64 
 		_app_listview_updateitemby_param (hwnd, ptr_app->app_hash, TRUE);
 }
 
-VOID _app_timer_reset (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app)
+VOID _app_timer_reset (
+	_In_opt_ HWND hwnd,
+	_Inout_ PITEM_APP ptr_app
+)
 {
 	ptr_app->is_enabled = FALSE;
 	ptr_app->is_haveerrors = FALSE;
@@ -75,17 +109,15 @@ VOID _app_timer_reset (_In_opt_ HWND hwnd, _Inout_ PITEM_APP ptr_app)
 	ptr_app->timer = 0;
 
 	if (_app_istimerset (ptr_app->htimer))
-	{
 		_app_timer_remove (&ptr_app->htimer);
-	}
 
 	if (hwnd)
-	{
 		_app_listview_updateitemby_param (hwnd, ptr_app->app_hash, TRUE);
-	}
 }
 
-VOID _app_timer_remove (_Inout_ PTP_TIMER *timer)
+VOID _app_timer_remove (
+	_Inout_ PTP_TIMER *timer
+)
 {
 	PTP_TIMER current_timer = *timer;
 
@@ -94,29 +126,11 @@ VOID _app_timer_remove (_Inout_ PTP_TIMER *timer)
 	CloseThreadpoolTimer (current_timer);
 }
 
-BOOLEAN _app_istimersactive ()
-{
-	PITEM_APP ptr_app;
-	SIZE_T enum_key = 0;
-
-	_r_queuedlock_acquireshared (&lock_apps);
-
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
-	{
-		if (_app_istimerset (ptr_app->htimer))
-		{
-			_r_queuedlock_releaseshared (&lock_apps);
-
-			return TRUE;
-		}
-	}
-
-	_r_queuedlock_releaseshared (&lock_apps);
-
-	return FALSE;
-}
-
-VOID CALLBACK _app_timer_callback (_Inout_ PTP_CALLBACK_INSTANCE instance, _Inout_opt_ PVOID context, _Inout_ PTP_TIMER timer)
+VOID CALLBACK _app_timer_callback (
+	_Inout_ PTP_CALLBACK_INSTANCE instance,
+	_Inout_opt_ PVOID context,
+	_Inout_ PTP_TIMER timer
+)
 {
 	HANDLE hengine;
 	HWND hwnd;
