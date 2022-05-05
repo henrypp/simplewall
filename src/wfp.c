@@ -254,7 +254,7 @@ BOOLEAN _wfp_initialize (
 
 	if (!is_providerexist || !is_sublayerexist)
 	{
-		is_intransact = _wfp_transact_start (engine_handle, __LINE__);
+		is_intransact = _wfp_transact_start (engine_handle, DBG_ARG);
 
 		if (!is_providerexist)
 		{
@@ -327,7 +327,7 @@ BOOLEAN _wfp_initialize (
 
 		if (is_intransact)
 		{
-			if (!_wfp_transact_commit (engine_handle, __LINE__))
+			if (!_wfp_transact_commit (engine_handle, DBG_ARG))
 				is_success = FALSE;
 		}
 	}
@@ -481,7 +481,7 @@ VOID _wfp_uninitialize (
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (callouts); i++)
 			_app_setsecurityinfoforcallout (engine_handle, callouts[i], FALSE);
 
-		is_intransact = _wfp_transact_start (engine_handle, __LINE__);
+		is_intransact = _wfp_transact_start (engine_handle, DBG_ARG);
 
 		// destroy callouts (deprecated)
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (callouts); i++)
@@ -505,7 +505,7 @@ VOID _wfp_uninitialize (
 			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderDeleteByKey", code, NULL);
 
 		if (is_intransact)
-			_wfp_transact_commit (engine_handle, __LINE__);
+			_wfp_transact_commit (engine_handle, DBG_ARG);
 	}
 
 	_r_queuedlock_releaseshared (&lock_transaction);
@@ -544,11 +544,11 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, __LINE__);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG);
 		}
 	}
 
-	is_intransact = _wfp_transact_start (engine_handle, __LINE__);
+	is_intransact = _wfp_transact_start (engine_handle, DBG_ARG);
 
 	// destroy all filters
 	if (guids)
@@ -580,7 +580,7 @@ VOID _wfp_installfilters (
 
 	if (!_r_obj_islistempty2 (rules))
 	{
-		_wfp_create3filters (engine_handle, rules, __LINE__, is_intransact);
+		_wfp_create3filters (engine_handle, rules, DBG_ARG, is_intransact);
 
 		_r_obj_clearlist (rules);
 	}
@@ -603,16 +603,16 @@ VOID _wfp_installfilters (
 
 	if (!_r_obj_islistempty2 (rules))
 	{
-		_wfp_create4filters (engine_handle, rules, __LINE__, is_intransact);
+		_wfp_create4filters (engine_handle, rules, DBG_ARG, is_intransact);
 
 		_r_obj_clearlist (rules);
 	}
 
 	// apply internal rules
-	_wfp_create2filters (engine_handle, __LINE__, is_intransact);
+	_wfp_create2filters (engine_handle, DBG_ARG, is_intransact);
 
 	if (is_intransact)
-		_wfp_transact_commit (engine_handle, __LINE__);
+		_wfp_transact_commit (engine_handle, DBG_ARG);
 
 	// secure filters
 	is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
@@ -627,7 +627,7 @@ VOID _wfp_installfilters (
 			{
 				guid = _r_obj_getarrayitem (guids, i);
 
-				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, __LINE__);
+				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG);
 			}
 
 			_r_obj_dereference (guids);
@@ -644,6 +644,7 @@ VOID _wfp_installfilters (
 
 BOOLEAN _wfp_transact_start (
 	_In_ HANDLE engine_handle,
+	_In_ LPCWSTR file_name,
 	_In_ UINT line
 )
 {
@@ -656,7 +657,7 @@ BOOLEAN _wfp_transact_start (
 
 	if (status != ERROR_SUCCESS)
 	{
-		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin", status, L"#%" PRIu32, line);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
 
 		return FALSE;
 	}
@@ -666,6 +667,7 @@ BOOLEAN _wfp_transact_start (
 
 BOOLEAN _wfp_transact_commit (
 	_In_ HANDLE engine_handle,
+	_In_ LPCWSTR file_name,
 	_In_ UINT line
 )
 {
@@ -677,7 +679,7 @@ BOOLEAN _wfp_transact_commit (
 	{
 		FwpmTransactionAbort (engine_handle);
 
-		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit", status, L"#%" PRIu32, line);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
 		return FALSE;
 
 	}
@@ -947,7 +949,7 @@ VOID _wfp_destroyfilters (
 
 	if (guids)
 	{
-		_wfp_destroyfilters_array (engine_handle, guids, __LINE__);
+		_wfp_destroyfilters_array (engine_handle, guids, DBG_ARG);
 
 		_r_obj_dereference (guids);
 	}
@@ -958,6 +960,7 @@ VOID _wfp_destroyfilters (
 BOOLEAN _wfp_destroyfilters_array (
 	_In_ HANDLE engine_handle,
 	_In_ PR_ARRAY guids,
+	_In_ LPCWSTR file_name,
 	_In_ UINT line
 )
 {
@@ -973,10 +976,10 @@ BOOLEAN _wfp_destroyfilters_array (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
+		_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
 	}
 
-	is_intransact = _wfp_transact_start (engine_handle, line);
+	is_intransact = _wfp_transact_start (engine_handle, DBG_ARG_VAR);
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
@@ -986,7 +989,7 @@ BOOLEAN _wfp_destroyfilters_array (
 	}
 
 	if (is_intransact)
-		_wfp_transact_commit (engine_handle, line);
+		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
 	_r_queuedlock_releaseshared (&lock_transaction);
 
@@ -1411,6 +1414,7 @@ CleanupExit:
 BOOLEAN _wfp_create4filters (
 	_In_ HANDLE engine_handle,
 	_In_  PR_LIST rules,
+	_In_ LPCWSTR file_name,
 	_In_ UINT line,
 	_In_ BOOLEAN is_intransact
 )
@@ -1458,11 +1462,11 @@ BOOLEAN _wfp_create4filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
-		is_intransact = !_wfp_transact_start (engine_handle, line);
+		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
@@ -1617,7 +1621,7 @@ BOOLEAN _wfp_create4filters (
 
 	if (!is_intransact)
 	{
-		_wfp_transact_commit (engine_handle, line);
+		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
 		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
@@ -1633,7 +1637,7 @@ BOOLEAN _wfp_create4filters (
 					{
 						guid = _r_obj_getarrayitem (ptr_rule->guids, j);
 
-						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
+						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
 					}
 				}
 			}
@@ -1652,6 +1656,7 @@ BOOLEAN _wfp_create4filters (
 BOOLEAN _wfp_create3filters (
 	_In_ HANDLE engine_handle,
 	_In_ PR_LIST rules,
+	_In_ LPCWSTR file_name,
 	_In_ UINT line,
 	_In_ BOOLEAN is_intransact
 )
@@ -1690,11 +1695,11 @@ BOOLEAN _wfp_create3filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
-		is_intransact = !_wfp_transact_start (engine_handle, line);
+		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
 	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
@@ -1735,7 +1740,7 @@ BOOLEAN _wfp_create3filters (
 
 	if (!is_intransact)
 	{
-		_wfp_transact_commit (engine_handle, line);
+		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
 		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
@@ -1751,7 +1756,7 @@ BOOLEAN _wfp_create3filters (
 					{
 						guid = _r_obj_getarrayitem (ptr_app->guids, j);
 
-						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
+						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
 					}
 				}
 			}
@@ -1769,6 +1774,7 @@ BOOLEAN _wfp_create3filters (
 
 BOOLEAN _wfp_create2filters (
 	_In_ HANDLE engine_handle,
+	_In_ LPCWSTR file_name,
 	_In_ UINT line,
 	_In_ BOOLEAN is_intransact
 )
@@ -1827,12 +1833,12 @@ BOOLEAN _wfp_create2filters (
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
-				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, line);
+				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
 			}
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
-		is_intransact = !_wfp_transact_start (engine_handle, line);
+		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
 	if (!_r_obj_isarrayempty (filter_ids))
@@ -2582,7 +2588,7 @@ BOOLEAN _wfp_create2filters (
 
 	if (!is_intransact)
 	{
-		_wfp_transact_commit (engine_handle, line);
+		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
 		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
@@ -2592,7 +2598,7 @@ BOOLEAN _wfp_create2filters (
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
-				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, line);
+				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
 			}
 		}
 

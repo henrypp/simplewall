@@ -1947,11 +1947,11 @@ INT_PTR CALLBACK EditorProc (
 							{
 								if (context->is_settorules)
 								{
-									_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+									_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 								}
 								else
 								{
-									_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+									_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 								}
 							}
 						}

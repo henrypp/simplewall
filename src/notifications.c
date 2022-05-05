@@ -148,7 +148,7 @@ BOOLEAN _app_notify_command (
 			hengine = _wfp_getenginehandle ();
 
 			if (hengine)
-				_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+				_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 		}
 	}
 
@@ -1272,7 +1272,7 @@ INT_PTR CALLBACK NotificationProc (
 
 									_r_obj_addlistitem (rules, ptr_rule);
 
-									_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+									_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 
 									_r_obj_dereference (rules);
 								}

@@ -21,6 +21,10 @@
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "wintrust.lib")
 
+// log
+#define DBG_ARG TEXT(__FILE__), __LINE__
+#define DBG_ARG_VAR file_name, line
+
 // guids
 DEFINE_GUID (GUID_TrayIcon, 0xdab4837e, 0xcb0f, 0x47da, 0x92, 0x22, 0x21, 0x20, 0x74, 0x9f, 0x5c, 0x41);
 

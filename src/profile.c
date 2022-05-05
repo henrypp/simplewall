@@ -989,7 +989,7 @@ VOID _app_ruleblocklistset (
 					HANDLE hengine = _wfp_getenginehandle ();
 
 					if (hengine)
-						_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+						_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 				}
 			}
 		}

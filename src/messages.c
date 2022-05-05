@@ -1729,7 +1729,7 @@ VOID _app_command_idtorules (
 		{
 			_r_obj_addlistitem (rules, ptr_rule);
 
-			_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+			_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 		}
 	}
 
@@ -1786,7 +1786,7 @@ VOID _app_command_idtotimers (
 				}
 			}
 
-			_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+			_wfp_create3filters (hengine, rules, TEXT (__FILE__), __LINE__, FALSE);
 
 			_r_obj_dereference (rules);
 		}
@@ -2083,7 +2083,7 @@ VOID _app_command_checkbox (
 				hengine = _wfp_getenginehandle ();
 
 				if (hengine)
-					_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+					_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 			}
 		}
 	}
@@ -2124,7 +2124,7 @@ VOID _app_command_checkbox (
 				hengine = _wfp_getenginehandle ();
 
 				if (hengine)
-					_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+					_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 			}
 		}
 	}
@@ -2333,7 +2333,7 @@ VOID _app_command_delete (
 				hengine = _wfp_getenginehandle ();
 
 				if (hengine)
-					_wfp_destroyfilters_array (hengine, guids, __LINE__);
+					_wfp_destroyfilters_array (hengine, guids, DBG_ARG);
 			}
 		}
 
@@ -2746,7 +2746,7 @@ VOID _app_command_purgeunused (
 			hengine = _wfp_getenginehandle ();
 
 			if (hengine)
-				_wfp_destroyfilters_array (hengine, guids, __LINE__);
+				_wfp_destroyfilters_array (hengine, guids, DBG_ARG);
 		}
 
 		_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
@@ -2799,7 +2799,7 @@ VOID _app_command_purgetimers (
 				hengine = _wfp_getenginehandle ();
 
 				if (hengine)
-					_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+					_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 			}
 		}
 

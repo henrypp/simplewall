@@ -160,7 +160,7 @@ VOID CALLBACK _app_timer_callback (
 
 		_r_obj_addlistitem (rules, ptr_app);
 
-		_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+		_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 
 		_r_obj_dereference (rules);
 	}

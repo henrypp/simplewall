@@ -652,6 +652,7 @@ VOID _app_setsecurityinfoforfilter (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID filter_guid,
 	_In_ BOOLEAN is_secure,
+	_In_ LPCWSTR file_name,
 	_In_ UINT line
 )
 {
@@ -680,7 +681,7 @@ VOID _app_setsecurityinfoforfilter (
 		if (status != FWP_E_FILTER_NOT_FOUND)
 #endif // !DEBUG
 		{
-			_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"#%" TEXT (PRIu32), line);
+			_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
 		}
 
 		return;

@@ -369,7 +369,7 @@ VOID _app_config_apply (
 							LPCGUID guid = _r_obj_getarrayitem (guids, i);
 
 							if (guid)
-								_app_setsecurityinfoforfilter (hengine, guid, new_val, __LINE__);
+								_app_setsecurityinfoforfilter (hengine, guid, new_val, DBG_ARG);
 						}
 
 						_r_obj_dereference (guids);
@@ -457,7 +457,7 @@ VOID _app_config_apply (
 		hengine = _wfp_getenginehandle ();
 
 		if (hengine)
-			_wfp_create2filters (hengine, __LINE__, FALSE);
+			_wfp_create2filters (hengine, DBG_ARG, FALSE);
 	}
 }
 
@@ -2343,7 +2343,7 @@ INT_PTR CALLBACK DlgProc (
 
 											_r_obj_addlistitem (rules, ptr_app);
 
-											_wfp_create3filters (hengine, rules, __LINE__, FALSE);
+											_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 
 											_r_obj_dereference (rules);
 										}
@@ -2384,7 +2384,7 @@ INT_PTR CALLBACK DlgProc (
 
 											_r_obj_addlistitem (rules, ptr_rule);
 
-											_wfp_create4filters (hengine, rules, __LINE__, FALSE);
+											_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 
 											_r_obj_dereference (rules);
 										}

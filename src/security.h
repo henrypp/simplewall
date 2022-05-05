@@ -50,5 +50,6 @@ VOID _app_setsecurityinfoforfilter (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID filter_guid,
 	_In_ BOOLEAN is_secure,
+	_In_ LPCWSTR file_name,
 	_In_ UINT line
 );
