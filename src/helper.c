@@ -1828,6 +1828,7 @@ VOID NTAPI _app_queuenotifyinformation (
 	PR_STRING signature_str;
 	PR_STRING localized_string;
 	HICON hicon;
+	HDWP hdefer;
 	BOOLEAN is_iconset;
 
 	context = arglist;
@@ -1896,7 +1897,16 @@ VOID NTAPI _app_queuenotifyinformation (
 			if (_r_obj_isstringempty (signature_str))
 				_r_obj_movereference (&signature_str, _r_locale_getstring_ex (IDS_SIGN_UNSIGNED));
 
-			_r_ctrl_settablestring (context->hwnd, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
+			hdefer = BeginDeferWindowPos (2);
+
+			_r_ctrl_settablestring (
+				context->hwnd,
+				&hdefer,
+				IDC_SIGNATURE_ID,
+				&localized_string->sr,
+				IDC_SIGNATURE_TEXT,
+				&signature_str->sr
+			);
 
 			// set address string
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
@@ -1904,7 +1914,14 @@ VOID NTAPI _app_queuenotifyinformation (
 			if (_r_obj_isstringempty (address_str))
 				_r_obj_movereference (&address_str, _r_obj_createstring (SZ_EMPTY));
 
-			_r_ctrl_settablestring (context->hwnd, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &address_str->sr);
+			_r_ctrl_settablestring (
+				context->hwnd,
+				&hdefer,
+				IDC_ADDRESS_ID,
+				&localized_string->sr,
+				IDC_ADDRESS_TEXT,
+				&address_str->sr
+			);
 
 			// set host string
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
@@ -1912,9 +1929,19 @@ VOID NTAPI _app_queuenotifyinformation (
 			if (_r_obj_isstringempty (host_str))
 				_r_obj_movereference (&host_str, _r_obj_createstring (SZ_EMPTY));
 
-			_r_ctrl_settablestring (context->hwnd, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
+			_r_ctrl_settablestring (
+				context->hwnd,
+				&hdefer,
+				IDC_HOST_ID,
+				&localized_string->sr,
+				IDC_HOST_TEXT,
+				&host_str->sr
+			);
 
 			_r_obj_dereference (localized_string);
+
+			if (hdefer)
+				EndDeferWindowPos (hdefer);
 		}
 	}
 
