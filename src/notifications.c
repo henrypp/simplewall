@@ -950,18 +950,11 @@ INT_PTR CALLBACK NotificationProc (
 		case WM_DRAWITEM:
 		{
 			LPDRAWITEMSTRUCT draw_info;
-
-			RECT text_rect;
-			RECT icon_rect;
-
+			RECT rect;
 			LONG dpi_value;
-
 			LONG icon_size_x;
 			LONG wnd_spacing;
-			INT bk_mode_prev;
-
 			PR_STRING string;
-			COLORREF clr_prev;
 			HICON hicon;
 
 			draw_info = (LPDRAWITEMSTRUCT)lparam;
@@ -974,70 +967,63 @@ INT_PTR CALLBACK NotificationProc (
 			icon_size_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 			wnd_spacing = _r_dc_getdpi (12, dpi_value);
 
-			bk_mode_prev = SetBkMode (draw_info->hDC, TRANSPARENT); // HACK!!!
-
-			SendMessage (hwnd, WM_ERASEBKGND, (WPARAM)draw_info->hDC, 0);
+			SetBkMode (draw_info->hDC, TRANSPARENT); // HACK!!!
 
 			// draw title gradient
 			_app_notify_drawgradient (draw_info->hDC, &draw_info->rcItem);
-
-			// set rectangles
-			SetRect (
-				&text_rect,
-				wnd_spacing,
-				0,
-				_r_calc_rectwidth (&draw_info->rcItem) - (wnd_spacing * 3) - icon_size_x,
-				_r_calc_rectheight (&draw_info->rcItem)
-			);
-
-			SetRect (
-				&icon_rect,
-				_r_calc_rectwidth (&draw_info->rcItem) - icon_size_x - wnd_spacing,
-				(_r_calc_rectheight (&draw_info->rcItem) / 2) - (icon_size_x / 2),
-				icon_size_x,
-				icon_size_x
-			);
 
 			// draw title text
 			string = _r_locale_getstring_ex (IDS_NOTIFY_HEADER);
 
 			if (string)
 			{
-				clr_prev = SetTextColor (draw_info->hDC, RGB (255, 255, 255));
+				SetTextColor (draw_info->hDC, RGB (255, 255, 255));
+
+				SetRect (
+					&rect,
+					wnd_spacing,
+					0,
+					_r_calc_rectwidth (&draw_info->rcItem) - (wnd_spacing * 3) - icon_size_x,
+					_r_calc_rectheight (&draw_info->rcItem)
+				);
 
 				DrawTextEx (
 					draw_info->hDC,
 					string->buffer,
 					(INT)(INT_PTR)_r_str_getlength2 (string),
-					&text_rect,
+					&rect,
 					DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX,
 					NULL
 				);
 
-				SetTextColor (draw_info->hDC, clr_prev);
-
 				_r_obj_dereference (string);
 			}
 
-			// draw icon
+			// draw title icon
 			hicon = _app_notify_getapp_icon (hwnd);
 
 			if (hicon)
 			{
+				SetRect (
+					&rect,
+					_r_calc_rectwidth (&draw_info->rcItem) - icon_size_x - wnd_spacing,
+					(_r_calc_rectheight (&draw_info->rcItem) / 2) - (icon_size_x / 2),
+					icon_size_x,
+					icon_size_x
+				);
+
 				DrawIconEx (
 					draw_info->hDC,
-					icon_rect.left,
-					icon_rect.top,
+					rect.left,
+					rect.top,
 					hicon,
-					icon_rect.right,
-					icon_rect.bottom,
+					rect.right,
+					rect.bottom,
 					0,
 					NULL,
 					DI_IMAGE | DI_MASK
 				);
 			}
-
-			SetBkMode (draw_info->hDC, bk_mode_prev);
 
 			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 			return TRUE;
