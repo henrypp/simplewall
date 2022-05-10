@@ -1,11 +1,19 @@
+v3.6.3 (10 May 2022)
+- fixed installer launches simplewall without asking user (issue #1119)
+- fixed saving unused apps in profile (issue #1216)
+- fixed app crash on create process (issue ##1224)
+- fixed blank notification (issue #1009)
+- fixed uninstaller delete not all files
+- improved workqueue environment
+- improved threading model
+- fixed internal bugs
+
 v3.6.2 (26 April 2022)
 - added autoinstall non-executable updates feature (issue #1122)
 - added clear search with escape button for editor
 - added fallback for font loading when it does not exists
 - improved uwp packages information loading
-- fixed installer launches simplewall without asking user (issue #1119)
 - fixed restore properties window position
-- fixed blank notification (issue #1009)
 - fixed rule tooltip whitespace
 - fixed internal bugs
 - updated network monitor
