@@ -15,12 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\routine\routine.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\routine\rapp.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -72,21 +66,18 @@
     <ClCompile Include="src\listview.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\routine\src\rapp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\routine\src\routine.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\routine\routine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\routine\rconfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\routine\rapp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\app.h">
@@ -113,9 +104,6 @@
     <ClInclude Include="src\global.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\routine\ntapi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\editor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -126,9 +114,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\messages.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\routine\rtypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\search.h">
@@ -149,7 +134,22 @@
     <ClInclude Include="src\listview.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\routine\ntrtl.h">
+    <ClInclude Include="..\routine\src\rtypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\routine\src\ntapi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\routine\src\ntrtl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\routine\src\rapp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\routine\src\rconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\routine\src\routine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
