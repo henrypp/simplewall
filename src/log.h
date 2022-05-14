@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #pragma once
 
@@ -50,6 +50,10 @@ typedef ULONG (WINAPI *FWPMNES0)(
 
 VOID _app_loginit (
 	_In_ BOOLEAN is_install
+);
+
+VOID _app_loginitfile (
+	_In_ HANDLE hfile
 );
 
 ULONG_PTR _app_getloghash (

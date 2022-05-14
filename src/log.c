@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #include "global.h"
 
@@ -41,17 +41,7 @@ VOID _app_loginit (
 
 	if (_r_fs_isvalidhandle (new_handle))
 	{
-		if (GetLastError () != ERROR_ALREADY_EXISTS)
-		{
-			BYTE bom[] = {0xFF, 0xFE};
-			ULONG unused;
-
-			WriteFile (new_handle, bom, sizeof (bom), &unused, NULL); // write utf-16 le byte order mask
-		}
-		else
-		{
-			_r_fs_setpos (new_handle, 0, FILE_END);
-		}
+		_app_loginitfile (new_handle);
 
 		current_handle = InterlockedCompareExchangePointer (
 			&config.hlogfile,
@@ -64,6 +54,37 @@ VOID _app_loginit (
 	}
 
 	_r_obj_dereference (log_path);
+}
+
+VOID _app_loginitfile (
+	_In_ HANDLE hfile
+)
+{
+	BYTE bom[] = {0xFF, 0xFE};
+	LONG64 file_size;
+	ULONG unused;
+
+	file_size = _r_fs_getsize (hfile);
+
+	if (!file_size)
+	{
+		// write utf-16 le byte order mask
+		WriteFile (hfile, bom, sizeof (bom), &unused, NULL);
+
+		// write csv header
+		WriteFile (
+			hfile,
+			SZ_LOG_TITLE,
+			(ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)),
+			&unused,
+			NULL
+		);
+	}
+	else
+	{
+		// move to eof
+		_r_fs_setpos (hfile, file_size);
+	}
 }
 
 ULONG_PTR _app_getloghash (
@@ -153,11 +174,8 @@ VOID _app_logclear (
 
 	if (_r_fs_isvalidhandle (hfile))
 	{
-		_r_fs_setpos (hfile, 2, FILE_BEGIN);
-
-		SetEndOfFile (hfile);
-
-		FlushFileBuffers (hfile);
+		_r_fs_clearfile (hfile, 0);
+		_app_loginitfile (hfile);
 	}
 
 	log_path = _app_getlogpath ();
@@ -249,10 +267,6 @@ VOID _app_logwrite (
 
 	if (_app_logislimitreached (current_handle))
 		_app_logclear (current_handle);
-
-	// adds csv header
-	if (_r_fs_getsize (current_handle) == 2)
-		WriteFile (current_handle, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)), &unused, NULL);
 
 	WriteFile (current_handle, buffer->buffer, (ULONG)buffer->length, &unused, NULL);
 
