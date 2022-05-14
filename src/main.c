@@ -1871,7 +1871,7 @@ INT_PTR CALLBACK DlgProc (
 
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 
-			_r_fs_makebackup (profile_info.profile_path->buffer, TRUE);
+			_r_path_makebackup (profile_info.profile_path, TRUE);
 
 			_app_profile_initialize ();
 			_app_profile_load (hwnd, NULL);
