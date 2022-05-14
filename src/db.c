@@ -224,7 +224,7 @@ NTSTATUS _app_db_openfromfile (
 	if (db_info->bytes)
 		_r_obj_dereference (db_info->bytes);
 
-	status = _r_fs_mapfile (path->buffer, &db_info->bytes);
+	status = _r_fs_mapfile (path->buffer, NULL, &db_info->bytes);
 
 	if (status != STATUS_SUCCESS)
 		return status;
