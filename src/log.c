@@ -174,7 +174,7 @@ VOID _app_logclear (
 
 	if (_r_fs_isvalidhandle (hfile))
 	{
-		_r_fs_clearfile (hfile, 0);
+		_r_fs_clearfile (hfile);
 		_app_loginitfile (hfile);
 	}
 
