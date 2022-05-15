@@ -70,7 +70,7 @@ static const BYTE profile2_fourcc[] = {
 #define PROFILE2_SHA256_LENGTH 32UL
 #define PROFILE2_HEADER_LENGTH (PROFILE2_FOURCC_LENGTH + PROFILE2_SHA256_LENGTH)
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_initialize (
 	_Out_ PDB_INFORMATION db_info,
 	_In_ BOOLEAN is_reader
@@ -92,7 +92,7 @@ NTSTATUS _app_db_decrypt (
 	_Out_ PR_BYTE_PTR out_buffer
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_gethash (
 	_In_ PR_BYTEREF buffer,
 	_Out_ PR_BYTE_PTR out_buffer
@@ -138,14 +138,14 @@ NTSTATUS _app_db_parser_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_parser_encodebody (
 	_Inout_ PDB_INFORMATION db_info,
 	_Out_ PR_BYTE_PTR out_buffer,
 	_In_ BYTE profile_type
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_parser_generatebody (
 	_In_ BYTE profile_type,
 	_In_ PR_BYTE hash_value,
@@ -176,7 +176,7 @@ VOID _app_db_parse_ruleconfig (
 	_Inout_ PDB_INFORMATION db_info
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_savetofile (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STRING path,
@@ -185,7 +185,7 @@ NTSTATUS _app_db_savetofile (
 	_In_ LONG64 timestamp
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_save_streamtofile (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STRING path

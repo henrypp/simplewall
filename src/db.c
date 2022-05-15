@@ -3,7 +3,7 @@
 
 #include "global.h"
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_initialize (
 	_Out_ PDB_INFORMATION db_info,
 	_In_ BOOLEAN is_reader
@@ -111,7 +111,7 @@ CleanupExit:
 	return status;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_gethash (
 	_In_ PR_BYTEREF buffer,
 	_Out_ PR_BYTE_PTR out_buffer
@@ -122,7 +122,7 @@ NTSTATUS _app_db_gethash (
 
 	status = _r_crypt_createhashcontext (&hash_context, XML_SIGNATURE_ALGO);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 	{
 		*out_buffer = NULL;
 
@@ -131,7 +131,7 @@ NTSTATUS _app_db_gethash (
 
 	status = _r_crypt_hashbuffer (&hash_context, buffer->buffer, (ULONG)buffer->length);
 
-	if (status == STATUS_SUCCESS)
+	if (NT_SUCCESS (status))
 	{
 		status = _r_crypt_finalhashcontext_ex (&hash_context, out_buffer);
 	}
@@ -156,7 +156,7 @@ BOOLEAN _app_db_ishashvalid (
 
 	status = _app_db_gethash (buffer, &bytes);
 
-	if (status == STATUS_SUCCESS)
+	if (NT_SUCCESS (status))
 	{
 		is_matched = RtlEqualMemory (hash_buffer->buffer, bytes->buffer, bytes->length);
 
@@ -196,6 +196,9 @@ NTSTATUS _app_db_openfrombuffer (
 {
 	NTSTATUS status;
 
+	if (db_info->bytes)
+		_r_obj_dereference (db_info->bytes);
+
 	db_info->bytes = _r_obj_createbyte3 (buffer);
 
 	status = _app_db_parser_validatefile (db_info);
@@ -226,7 +229,7 @@ NTSTATUS _app_db_openfromfile (
 
 	status = _r_fs_mapfile (path->buffer, NULL, &db_info->bytes);
 
-	if (status != STATUS_SUCCESS)
+	if (status != ERROR_SUCCESS)
 		return status;
 
 	status = _app_db_parser_validatefile (db_info);
@@ -560,6 +563,9 @@ NTSTATUS _app_db_parser_decodebody (
 	BYTE profile_type;
 	NTSTATUS status;
 
+	if (db_info->bytes->length < PROFILE2_HEADER_LENGTH)
+		return STATUS_SUCCESS;
+
 	if (!RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
 		return STATUS_SUCCESS;
 
@@ -582,7 +588,7 @@ NTSTATUS _app_db_parser_decodebody (
 		// decompress bytes
 		status = _r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, &db_info->bytes->sr, &new_bytes);
 
-		if (status == STATUS_SUCCESS)
+		if (NT_SUCCESS (status))
 		{
 			_r_obj_movereference (&db_info->bytes, new_bytes);
 		}
@@ -607,11 +613,11 @@ NTSTATUS _app_db_parser_decodebody (
 		return STATUS_FILE_NOT_SUPPORTED;
 	}
 
-	if (db_info->bytes->length <= PROFILE2_HEADER_LENGTH)
-		return STATUS_INFO_LENGTH_MISMATCH;
-
-	if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
-		return STATUS_MORE_PROCESSING_REQUIRED;
+	if (db_info->bytes->length > PROFILE2_HEADER_LENGTH)
+	{
+		if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
+			return STATUS_MORE_PROCESSING_REQUIRED;
+	}
 
 	// validate hash
 	if (!_app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr))
@@ -620,7 +626,7 @@ NTSTATUS _app_db_parser_decodebody (
 	return STATUS_SUCCESS;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_parser_encodebody (
 	_Inout_ PDB_INFORMATION db_info,
 	_Out_ PR_BYTE_PTR out_buffer,
@@ -635,7 +641,7 @@ NTSTATUS _app_db_parser_encodebody (
 
 	status = _r_xml_readstream (&db_info->xml_library, &bytes);
 
-	if (status != S_OK)
+	if (FAILED (status))
 	{
 		*out_buffer = NULL;
 
@@ -645,7 +651,7 @@ NTSTATUS _app_db_parser_encodebody (
 	// generate body hash
 	status = _app_db_gethash (&bytes->sr, &hash_value);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 	{
 		*out_buffer = NULL;
 
@@ -661,9 +667,13 @@ NTSTATUS _app_db_parser_encodebody (
 	else if (profile_type == PROFILE2_ID_COMPRESSED)
 	{
 		// compress body
-		status = _r_sys_compressbuffer (COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
+		status = _r_sys_compressbuffer (
+			COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM,
+			&bytes->sr,
+			&new_bytes
+		);
 
-		if (status != STATUS_SUCCESS)
+		if (!NT_SUCCESS (status))
 		{
 			*out_buffer = NULL;
 
@@ -690,7 +700,7 @@ NTSTATUS _app_db_parser_encodebody (
 	return status;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_parser_generatebody (
 	_In_ BYTE profile_type,
 	_In_ PR_BYTE hash_value,
@@ -751,13 +761,9 @@ NTSTATUS _app_db_parser_validatefile (
 {
 	ULONG attempts;
 	NTSTATUS status;
-	HRESULT hr;
 
 	if (!db_info->bytes)
 		return STATUS_BUFFER_ALL_ZEROS;
-
-	if (db_info->bytes->length <= PROFILE2_HEADER_LENGTH)
-		return STATUS_INFO_LENGTH_MISMATCH;
 
 	attempts = 6;
 
@@ -773,10 +779,14 @@ NTSTATUS _app_db_parser_validatefile (
 	if (status != STATUS_SUCCESS)
 		return status;
 
-	hr = _r_xml_parsestring (&db_info->xml_library, db_info->bytes->buffer, (ULONG)db_info->bytes->length);
+	status = _r_xml_parsestring (
+		&db_info->xml_library,
+		db_info->bytes->buffer,
+		(ULONG)db_info->bytes->length
+	);
 
-	if (hr != S_OK)
-		return hr;
+	if (FAILED (status))
+		return status;
 
 	if (!_r_xml_findchildbytagname (&db_info->xml_library, L"root"))
 		return STATUS_DATA_ERROR;
@@ -858,7 +868,7 @@ BOOLEAN _app_db_parse (
 	return TRUE;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_savetofile (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STRING path,
@@ -871,7 +881,7 @@ NTSTATUS _app_db_savetofile (
 
 	status = _r_xml_createstream (&db_info->xml_library, NULL, 1024);
 
-	if (status != S_OK)
+	if (FAILED (status))
 		return status;
 
 	_r_xml_writestartdocument (&db_info->xml_library);
@@ -896,7 +906,7 @@ NTSTATUS _app_db_savetofile (
 	return status;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_save_streamtofile (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STRING path
@@ -922,7 +932,7 @@ NTSTATUS _app_db_save_streamtofile (
 
 	status = _app_db_parser_encodebody (db_info, &bytes, PROFILE2_ID_PLAIN);
 
-	if (status == STATUS_SUCCESS)
+	if (NT_SUCCESS (status))
 	{
 		WriteFile (hfile, bytes->buffer, (ULONG)bytes->length, &unused, NULL);
 
