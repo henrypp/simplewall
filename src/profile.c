@@ -1396,16 +1396,16 @@ PDB_INFORMATION _app_profile_load_fromresource (
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static DB_INFORMATION db_info = {0};
 
+	R_BYTEREF bytes;
+	NTSTATUS status;
+
 	if (_r_initonce_begin (&init_once))
 	{
-		R_BYTEREF bytes;
-		NTSTATUS status;
-
-		if (_r_res_loadresource (NULL, resource_name, RT_RCDATA, &bytes))
+		if (_r_res_loadresource (_r_sys_getimagebase (), resource_name, RT_RCDATA, &bytes))
 		{
 			status = _app_db_initialize (&db_info, TRUE);
 
-			if (status == STATUS_SUCCESS)
+			if (NT_SUCCESS (status))
 				_app_db_openfrombuffer (&db_info, &bytes, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
 		}
 
@@ -1457,7 +1457,7 @@ VOID _app_profile_load_internal (
 
 	status = _app_db_initialize (&db_info_file, TRUE);
 
-	if (status == STATUS_SUCCESS)
+	if (NT_SUCCESS (status))
 		_app_db_openfromfile (&db_info_file, path, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
 
 	db_info_buffer = _app_profile_load_fromresource (resource_name);
@@ -1512,7 +1512,7 @@ NTSTATUS _app_profile_load (
 
 	status = _app_db_initialize (&db_info, TRUE);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
 	if (path_custom)
@@ -1594,7 +1594,7 @@ NTSTATUS _app_profile_save ()
 
 	status = _app_db_initialize (&db_info, FALSE);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 	{
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
 
@@ -1625,7 +1625,7 @@ NTSTATUS _app_profile_save ()
 
 	_r_queuedlock_releaseexclusive (&lock_profile);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_savetofile", status, profile_info.profile_path->buffer);
 
 	_app_db_destroy (&db_info);
