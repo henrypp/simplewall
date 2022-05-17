@@ -1389,15 +1389,16 @@ VOID _app_profile_initialize ()
 	_r_obj_movereference (&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
 }
 
-PDB_INFORMATION _app_profile_load_fromresource (
-	_In_ LPCWSTR resource_name
+NTSTATUS _app_profile_load_fromresource (
+	_In_ LPCWSTR resource_name,
+	_Out_ PDB_INFORMATION * out_buffer
 )
 {
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static DB_INFORMATION db_info = {0};
+	static NTSTATUS status = STATUS_UNSUCCESSFUL;
 
 	R_BYTEREF bytes;
-	NTSTATUS status;
 
 	if (_r_initonce_begin (&init_once))
 	{
@@ -1406,13 +1407,22 @@ PDB_INFORMATION _app_profile_load_fromresource (
 			status = _app_db_initialize (&db_info, TRUE);
 
 			if (NT_SUCCESS (status))
-				_app_db_openfrombuffer (&db_info, &bytes, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
+			{
+				status = _app_db_openfrombuffer (
+					&db_info,
+					&bytes,
+					XML_VERSION_CURRENT,
+					XML_TYPE_PROFILE_INTERNAL
+				);
+			}
 		}
 
 		_r_initonce_end (&init_once);
 	}
 
-	return &db_info;
+	*out_buffer = &db_info;
+
+	return status;
 }
 
 VOID _app_profile_load_fallback ()
@@ -1444,6 +1454,7 @@ VOID _app_profile_load_fallback ()
 }
 
 VOID _app_profile_load_internal (
+	_In_opt_ HWND hwnd,
 	_In_ PR_STRING path,
 	_In_ LPCWSTR resource_name,
 	_Out_opt_ PLONG64 timestamp
@@ -1453,24 +1464,55 @@ VOID _app_profile_load_internal (
 	PDB_INFORMATION db_info_buffer;
 	PDB_INFORMATION db_info;
 	BOOLEAN is_loadfromresource;
+	NTSTATUS status_file;
+	NTSTATUS status_res;
 	NTSTATUS status;
 
-	status = _app_db_initialize (&db_info_file, TRUE);
+	status_file = _app_db_initialize (&db_info_file, TRUE);
 
-	if (NT_SUCCESS (status))
-		_app_db_openfromfile (&db_info_file, path, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
+	if (NT_SUCCESS (status_file))
+	{
+		status_file = _app_db_openfromfile (&db_info_file, path, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
+	}
+	else
+	{
+		RtlZeroMemory (&db_info_file, sizeof (db_info_file));
+	}
 
-	db_info_buffer = _app_profile_load_fromresource (resource_name);
+	status_res = _app_profile_load_fromresource (resource_name, &db_info_buffer);
 
 	// NOTE: prefer new profile version for 3.4+
-	is_loadfromresource = (db_info_file.version < db_info_buffer->version) || (db_info_file.timestamp < db_info_buffer->timestamp);
+	if (status_file != STATUS_SUCCESS)
+	{
+		is_loadfromresource = TRUE;
+	}
+	else
+	{
+		is_loadfromresource = (db_info_file.version < db_info_buffer->version) || (db_info_file.timestamp < db_info_buffer->timestamp);
+	}
 
 	db_info = is_loadfromresource ? db_info_buffer : &db_info_file;
 
-	if (timestamp)
-		*timestamp = db_info->timestamp;
+	status = is_loadfromresource ? status_res : status_file;
 
-	_app_db_parse (db_info, XML_TYPE_PROFILE_INTERNAL);
+	if (timestamp)
+		*timestamp = 0;
+
+	if (status == STATUS_SUCCESS)
+	{
+		if (_app_db_parse (db_info, XML_TYPE_PROFILE_INTERNAL))
+		{
+			if (timestamp)
+				*timestamp = db_info->timestamp;
+		}
+	}
+	else
+	{
+		if (hwnd && status != STATUS_OBJECT_NAME_NOT_FOUND)
+		{
+			_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL);
+		}
+	}
 
 	_app_db_destroy (&db_info_file);
 	//_app_db_destroy (&db_info_buffer);
@@ -1568,6 +1610,7 @@ CleanupExit:
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 		{
 			_app_profile_load_internal (
+				hwnd,
 				profile_info.profile_path_internal,
 				MAKEINTRESOURCE (IDR_PROFILE_INTERNAL),
 				&profile_info.profile_internal_timestamp

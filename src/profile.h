@@ -232,13 +232,15 @@ BOOLEAN _app_isrulesupportedbyos (
 
 VOID _app_profile_initialize ();
 
-PDB_INFORMATION _app_profile_load_fromresource (
-	_In_ LPCWSTR resource_name
+NTSTATUS _app_profile_load_fromresource (
+	_In_ LPCWSTR resource_name,
+	_Out_ PDB_INFORMATION* out_buffer
 );
 
 VOID _app_profile_load_fallback ();
 
 VOID _app_profile_load_internal (
+	_In_opt_ HWND hwnd,
 	_In_ PR_STRING path,
 	_In_ LPCWSTR resource_name,
 	_Out_opt_ PLONG64 timestamp
