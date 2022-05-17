@@ -1508,9 +1508,16 @@ VOID _app_profile_load_internal (
 	}
 	else
 	{
-		if (hwnd && status != STATUS_OBJECT_NAME_NOT_FOUND)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != ERROR_FILE_NOT_FOUND)
 		{
-			_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL);
+			if (hwnd)
+			{
+				_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL);
+			}
+			else
+			{
+				_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load_internal", status, NULL);
+			}
 		}
 	}
 
@@ -1591,7 +1598,7 @@ CleanupExit:
 	}
 	else
 	{
-		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != ERROR_FILE_NOT_FOUND)
 		{
 			if (hwnd)
 			{
