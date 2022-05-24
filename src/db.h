@@ -98,7 +98,8 @@ NTSTATUS _app_db_gethash (
 	_Out_ PR_BYTE_PTR out_buffer
 );
 
-BOOLEAN _app_db_ishashvalid (
+_Success_ (return == STATUS_SUCCESS)
+NTSTATUS _app_db_ishashvalid (
 	_In_ PR_BYTEREF buffer,
 	_In_ PR_BYTEREF hash_buffer
 );

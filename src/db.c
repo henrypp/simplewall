@@ -145,29 +145,26 @@ NTSTATUS _app_db_gethash (
 	return status;
 }
 
-BOOLEAN _app_db_ishashvalid (
+_Success_ (return == STATUS_SUCCESS)
+NTSTATUS _app_db_ishashvalid (
 	_In_ PR_BYTEREF buffer,
 	_In_ PR_BYTEREF hash_buffer
 )
 {
 	PR_BYTE bytes;
-	BOOLEAN is_matched;
 	NTSTATUS status;
 
 	status = _app_db_gethash (buffer, &bytes);
 
 	if (NT_SUCCESS (status))
 	{
-		is_matched = RtlEqualMemory (hash_buffer->buffer, bytes->buffer, bytes->length);
+		if (!RtlEqualMemory (hash_buffer->buffer, bytes->buffer, bytes->length))
+			status = STATUS_HASH_NOT_PRESENT;
 
 		_r_obj_dereference (bytes);
 	}
-	else
-	{
-		is_matched = FALSE;
-	}
 
-	return is_matched;
+	return status;
 }
 
 _Success_ (return == STATUS_SUCCESS)
@@ -620,10 +617,7 @@ NTSTATUS _app_db_parser_decodebody (
 	}
 
 	// validate hash
-	if (!_app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr))
-		return STATUS_HASH_NOT_PRESENT;
-
-	return STATUS_SUCCESS;
+	return _app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr);
 }
 
 _Success_ (NT_SUCCESS (return))
