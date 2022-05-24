@@ -858,23 +858,6 @@ INT_PTR CALLBACK NotificationProc (
 			break;
 		}
 
-		case WM_ACTIVATE:
-		{
-			switch (wparam)
-			{
-				case WA_ACTIVE:
-				case WA_CLICKACTIVE:
-				{
-					_r_wnd_top (hwnd, TRUE);
-					SetActiveWindow (hwnd);
-
-					break;
-				}
-			}
-
-			break;
-		}
-
 		case WM_TIMER:
 		{
 			if (wparam == NOTIFY_TIMER_SAFETY_ID)
