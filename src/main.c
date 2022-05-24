@@ -1355,7 +1355,7 @@ INT_PTR CALLBACK SettingsProc (
 						hctrl = _app_notify_getwindow ();
 
 						if (hctrl)
-							_app_notify_refresh (hctrl, FALSE);
+							_app_notify_refresh (hctrl);
 					}
 
 					break;
@@ -3042,7 +3042,7 @@ INT_PTR CALLBACK DlgProc (
 					hnotify = _app_notify_getwindow ();
 
 					if (hnotify)
-						_app_notify_refresh (hnotify, TRUE);
+						_app_notify_refresh (hnotify);
 
 					break;
 				}
