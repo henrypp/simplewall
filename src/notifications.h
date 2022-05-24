@@ -82,9 +82,7 @@ VOID _app_notify_setapp_id (
 
 VOID _app_notify_show (
 	_In_ HWND hwnd,
-	_In_ PITEM_LOG ptr_log,
-	_In_ BOOLEAN is_forced,
-	_In_ BOOLEAN is_safety
+	_In_ PITEM_LOG ptr_log
 );
 
 VOID _app_notify_hide (
@@ -93,9 +91,13 @@ VOID _app_notify_hide (
 
 VOID _app_notify_playsound ();
 
-VOID _app_notify_refresh (
+VOID _app_notify_queueinfo (
 	_In_ HWND hwnd,
-	_In_ BOOLEAN is_safety
+	_In_ PITEM_LOG ptr_log
+);
+
+VOID _app_notify_refresh (
+	_In_ HWND hwnd
 );
 
 VOID _app_notify_setposition (

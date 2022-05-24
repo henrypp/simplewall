@@ -194,7 +194,7 @@ BOOLEAN _app_notify_addobject (
 	}
 
 	if (!_r_wnd_isundercursor (hnotify))
-		_app_notify_show (hnotify, ptr_log, TRUE, TRUE);
+		_app_notify_show (hnotify, ptr_log);
 
 	return TRUE;
 }
@@ -217,7 +217,7 @@ VOID _app_notify_freeobject (
 
 		if (app_hash)
 		{
-			_app_notify_refresh (hnotify, TRUE);
+			_app_notify_refresh (hnotify);
 		}
 		else
 		{
@@ -369,16 +369,13 @@ VOID _app_notify_setapp_id (
 
 VOID _app_notify_show (
 	_In_ HWND hwnd,
-	_In_ PITEM_LOG ptr_log,
-	_In_ BOOLEAN is_forced,
-	_In_ BOOLEAN is_safety
+	_In_ PITEM_LOG ptr_log
 )
 {
 	static R_STRINGREF loading_sr = PR_STRINGREF_INIT (SZ_LOADING);
 	static R_STRINGREF empty_sr = PR_STRINGREF_INIT (SZ_EMPTY);
 
 	WCHAR window_title[128];
-	PITEM_CONTEXT context;
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	PR_STRING localized_string;
@@ -455,41 +452,27 @@ VOID _app_notify_show (
 	_r_ctrl_setstring (hwnd, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
 	_r_ctrl_setstring (hwnd, IDC_BLOCK_BTN, _r_locale_getstring (IDS_ACTION_BLOCK));
 
-	_r_ctrl_enable (hwnd, IDC_RULES_BTN, !is_safety);
-	_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, !is_safety);
-	_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, !is_safety);
-	_r_ctrl_enable (hwnd, IDC_LATER_BTN, !is_safety);
+	_r_ctrl_enable (hwnd, IDC_RULES_BTN, FALSE);
+	_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, FALSE);
+	_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, FALSE);
+	_r_ctrl_enable (hwnd, IDC_LATER_BTN, FALSE);
 
-	if (is_safety)
-	{
-		SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY_TIMEOUT, NULL);
-	}
-	else
-	{
-		KillTimer (hwnd, NOTIFY_TIMER_SAFETY_ID);
-	}
-
-	_app_notify_setposition (hwnd, FALSE);
+	SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY_TIMEOUT, NULL);
 
 	// prevent fullscreen apps lose focus
 	is_fullscreenmode = _r_wnd_isfullscreenmode ();
 
-	if (is_forced && is_fullscreenmode)
-		is_forced = FALSE;
+	if (!is_fullscreenmode)
+		_r_wnd_top (hwnd, TRUE);
 
-	_r_wnd_top (hwnd, !is_fullscreenmode);
+	_app_notify_setposition (hwnd, FALSE);
 
-	ShowWindow (hwnd, is_forced ? SW_SHOW : SW_SHOWNA);
+	ShowWindow (hwnd, SW_SHOWNOACTIVATE);
 
-	RedrawWindow (hwnd, NULL, NULL, RDW_ALLCHILDREN | RDW_ERASE | RDW_INVALIDATE);
+	InvalidateRect (hwnd, NULL, TRUE);
 
 	// query busy information
-	context = _r_freelist_allocateitem (&context_free_list);
-
-	context->hwnd = hwnd;
-	context->ptr_log = _r_obj_reference (ptr_log);
-
-	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queuenotifyinformation, context);
+	_app_notify_queueinfo (hwnd, ptr_log);
 
 	if (string)
 		_r_obj_dereference (string);
@@ -545,9 +528,23 @@ VOID _app_notify_playsound ()
 		PlaySound (NOTIFY_SOUND_NAME, NULL, SND_ASYNC | SND_NODEFAULT | SND_NOWAIT | SND_SENTRY);
 }
 
-VOID _app_notify_refresh (
+VOID _app_notify_queueinfo (
 	_In_ HWND hwnd,
-	_In_ BOOLEAN is_safety
+	_In_ PITEM_LOG ptr_log
+)
+{
+	PITEM_CONTEXT context;
+
+	context = _r_freelist_allocateitem (&context_free_list);
+
+	context->hwnd = hwnd;
+	context->ptr_log = _r_obj_reference (ptr_log);
+
+	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queuenotifyinformation, context);
+}
+
+VOID _app_notify_refresh (
+	_In_ HWND hwnd
 )
 {
 	PITEM_LOG ptr_log;
@@ -571,7 +568,7 @@ VOID _app_notify_refresh (
 		return;
 	}
 
-	_app_notify_show (hwnd, ptr_log, TRUE, is_safety);
+	_app_notify_show (hwnd, ptr_log);
 
 	_r_obj_dereference (ptr_log);
 }
@@ -878,7 +875,7 @@ INT_PTR CALLBACK NotificationProc (
 			_r_wnd_message_dpichanged (hwnd, wparam, lparam);
 
 			_app_notify_initialize (hwnd, LOWORD (wparam));
-			_app_notify_refresh (hwnd, FALSE);
+			_app_notify_refresh (hwnd);
 
 			break;
 		}
