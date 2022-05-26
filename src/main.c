@@ -2023,7 +2023,10 @@ INT_PTR CALLBACK DlgProc (
 
 		case WM_DPICHANGED:
 		{
+			_r_wnd_message_dpichanged (hwnd, wparam, lparam);
+
 			_app_message_dpichanged (hwnd, LOWORD (wparam));
+
 			break;
 		}
 
