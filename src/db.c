@@ -159,7 +159,13 @@ NTSTATUS _app_db_ishashvalid (
 	if (NT_SUCCESS (status))
 	{
 		if (!RtlEqualMemory (hash_buffer->buffer, bytes->buffer, bytes->length))
+		{
 			status = STATUS_HASH_NOT_PRESENT;
+		}
+		else
+		{
+			status = STATUS_SUCCESS;
+		}
 
 		_r_obj_dereference (bytes);
 	}
