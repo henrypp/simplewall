@@ -33,7 +33,13 @@ VOID _app_notify_createwindow ()
 			);
 
 			if (current_hwnd)
+			{
 				DestroyWindow (hwnd);
+			}
+			else
+			{
+				_app_notify_setposition (hwnd, FALSE);
+			}
 		}
 	}
 }
