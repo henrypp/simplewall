@@ -1,8 +1,13 @@
+v3.6.4 (19 Juny 2022)
+- added focus assistant support (win10rs3+)
+- fixed notification sometimes can lose focus of fullscreen app
+- fixed internal profile loading crash (issue #1228)
+- fixed blank notifications (issue #1009)
+
 v3.6.3 (10 May 2022)
 - fixed installer launches simplewall without asking user (issue #1119)
 - fixed saving unused apps in profile (issue #1216)
 - fixed app crash on create process (issue ##1224)
-- fixed blank notification (issue #1009)
 - fixed uninstaller delete not all files
 - improved workqueue environment
 - improved threading model
@@ -81,7 +86,6 @@ v3.5 (4 October 2021)
 - fixed resolve network addresses can cause crash (issue #1015)
 - fixed notification color issues (issue #1007)
 - fixed update installation (issue #1016)
-- fixed blank notification (issue #1009)
 - fixed version information retrieval
 - fixed workqueue environment
 - fixed internal bugs
