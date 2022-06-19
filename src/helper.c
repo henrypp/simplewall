@@ -1164,7 +1164,6 @@ VOID _app_generate_rulescontrol (
 
 	if (!app_hash || !status.rules_count)
 	{
-		AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
 		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, SZ_EMPTY);
 
 		_r_menu_enableitem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND, FALSE);
@@ -1183,8 +1182,6 @@ VOID _app_generate_rulescontrol (
 				if (!status.rules_user_count)
 					continue;
 			}
-
-			AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
 
 			for (UINT8 loop = 0; loop < 2; loop++)
 			{
@@ -1229,6 +1226,9 @@ VOID _app_generate_rulescontrol (
 
 				_r_queuedlock_releaseshared (&lock_rules);
 			}
+
+			if (!type)
+				AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
 		}
 	}
 

@@ -428,6 +428,7 @@ VOID _app_message_contextmenu (
 			AppendMenu (hmenu, MF_POPUP, (UINT_PTR)hsubmenu_rules, _r_locale_getstring (IDS_TRAY_RULES));
 
 			AppendMenu (hsubmenu_rules, MF_STRING, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
+			AppendMenu (hsubmenu_rules, MF_SEPARATOR, 0, NULL);
 
 			_app_generate_rulescontrol (hsubmenu_rules, hash_code);
 		}
