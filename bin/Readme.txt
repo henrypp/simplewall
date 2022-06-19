@@ -55,4 +55,4 @@ List of arguments for simplewall.exe:
 Website: www.henrypp.org
 Support: support@henrypp.org
 
-(c) 2016-2021 Henry++
+(c) 2016-2022 Henry++
