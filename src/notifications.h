@@ -44,7 +44,7 @@ BOOLEAN _app_notify_command (
 
 BOOLEAN _app_notify_addobject (
 	_In_ PITEM_LOG ptr_log,
-	_In_ PITEM_APP ptr_app
+	_Inout_ PITEM_APP ptr_app
 );
 
 VOID _app_notify_freeobject (

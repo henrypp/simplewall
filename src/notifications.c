@@ -164,7 +164,7 @@ BOOLEAN _app_notify_command (
 
 BOOLEAN _app_notify_addobject (
 	_In_ PITEM_LOG ptr_log,
-	_In_ PITEM_APP ptr_app
+	_Inout_ PITEM_APP ptr_app
 )
 {
 	HWND hnotify;
@@ -596,7 +596,7 @@ VOID _app_notify_setposition (
 	{
 		_r_wnd_adjustrectangletoworkingarea (&window_rect, NULL);
 
-		SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
+		_r_wnd_setposition (hwnd, &window_rect.position, &window_rect.size);
 
 		return;
 	}
@@ -642,7 +642,7 @@ VOID _app_notify_setposition (
 
 				_r_wnd_adjustrectangletoworkingarea (&window_rect, NULL);
 
-				SetWindowPos (hwnd, NULL, window_rect.left, window_rect.top, 0, 0, swp_flags);
+				_r_wnd_setposition (hwnd, &window_rect.position, &window_rect.size);
 
 				return;
 			}
@@ -1065,8 +1065,8 @@ INT_PTR CALLBACK NotificationProc (
 			{
 				case BCN_DROPDOWN:
 				{
-					RECT rect;
 					R_RECTANGLE rectangle;
+					RECT rect;
 					HMENU hsubmenu;
 					INT ctrl_id;
 
@@ -1081,8 +1081,6 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						if (ctrl_id == IDC_RULES_BTN)
 						{
-							AppendMenu (hsubmenu, MF_STRING, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
-
 							_app_generate_rulescontrol (hsubmenu, _app_notify_getapp_id (hwnd));
 						}
 						else //if (ctrl_id == IDC_ALLOW_BTN)
