@@ -113,7 +113,7 @@ CleanupExit:
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_gethash (
-	_In_ PR_BYTEREF buffer,
+	_In_ PR_BYTEREF bytes,
 	_Out_ PR_BYTE_PTR out_buffer
 )
 {
@@ -129,7 +129,7 @@ NTSTATUS _app_db_gethash (
 		return status;
 	}
 
-	status = _r_crypt_hashbuffer (&hash_context, buffer->buffer, (ULONG)buffer->length);
+	status = _r_crypt_hashbuffer (&hash_context, bytes->buffer, (ULONG)bytes->length);
 
 	if (NT_SUCCESS (status))
 	{
@@ -148,26 +148,26 @@ NTSTATUS _app_db_gethash (
 _Success_ (return == STATUS_SUCCESS)
 NTSTATUS _app_db_ishashvalid (
 	_In_ PR_BYTEREF buffer,
-	_In_ PR_BYTEREF hash_buffer
+	_In_ PR_BYTEREF hash_bytes
 )
 {
-	PR_BYTE bytes;
+	PR_BYTE new_hash_bytes;
 	NTSTATUS status;
 
-	status = _app_db_gethash (buffer, &bytes);
+	status = _app_db_gethash (buffer, &new_hash_bytes);
 
 	if (NT_SUCCESS (status))
 	{
-		if (!RtlEqualMemory (hash_buffer->buffer, bytes->buffer, bytes->length))
-		{
-			status = STATUS_HASH_NOT_PRESENT;
-		}
-		else
+		if (RtlEqualMemory (hash_bytes->buffer, new_hash_bytes->buffer, new_hash_bytes->length))
 		{
 			status = STATUS_SUCCESS;
 		}
+		else
+		{
+			status = STATUS_HASH_NOT_PRESENT;
+		}
 
-		_r_obj_dereference (bytes);
+		_r_obj_dereference (new_hash_bytes);
 	}
 
 	return status;
@@ -577,11 +577,11 @@ NTSTATUS _app_db_parser_decodebody (
 	// skip fourcc
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_FOURCC_LENGTH);
 
-	// read hash
-	_r_obj_movereference (
-		&db_info->hash,
-		_r_obj_createbyte_ex (db_info->bytes->buffer, PROFILE2_SHA256_LENGTH)
-	);
+	// read the hash
+	if (db_info->hash)
+		_r_obj_dereference (db_info->hash);
+
+	db_info->hash = _r_obj_createbyte_ex (db_info->bytes->buffer, PROFILE2_SHA256_LENGTH);
 
 	// skip hash
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_SHA256_LENGTH);
@@ -616,7 +616,7 @@ NTSTATUS _app_db_parser_decodebody (
 		return STATUS_FILE_NOT_SUPPORTED;
 	}
 
-	if (db_info->bytes->length > PROFILE2_HEADER_LENGTH)
+	if (db_info->bytes->length >= PROFILE2_HEADER_LENGTH)
 	{
 		if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
 			return STATUS_MORE_PROCESSING_REQUIRED;
@@ -629,8 +629,8 @@ NTSTATUS _app_db_parser_decodebody (
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_parser_encodebody (
 	_Inout_ PDB_INFORMATION db_info,
-	_Out_ PR_BYTE_PTR out_buffer,
-	_In_ BYTE profile_type
+	_In_ BYTE profile_type,
+	_Out_ PR_BYTE_PTR out_buffer
 )
 {
 	PR_BYTE bytes;
@@ -688,7 +688,7 @@ NTSTATUS _app_db_parser_encodebody (
 
 		_r_obj_dereference (bytes);
 
-		return STATUS_UNSUCCESSFUL;
+		return STATUS_FILE_NOT_SUPPORTED;
 	}
 
 	status = _app_db_parser_generatebody (profile_type, hash_value, new_bytes, &body_bytes);
@@ -727,7 +727,7 @@ NTSTATUS _app_db_parser_generatebody (
 		RtlCopyMemory (
 			PTR_ADD_OFFSET (bytes->buffer, sizeof (profile2_fourcc)),
 			&profile_type,
-			sizeof (profile_type)
+			sizeof (BYTE)
 		);
 
 		RtlCopyMemory (
@@ -746,7 +746,7 @@ NTSTATUS _app_db_parser_generatebody (
 	{
 		*out_buffer = NULL;
 
-		return STATUS_UNSUCCESSFUL;
+		return STATUS_FILE_NOT_SUPPORTED;
 	}
 
 	*out_buffer = bytes;
@@ -912,7 +912,7 @@ NTSTATUS _app_db_save_streamtofile (
 	_In_ PR_STRING path
 )
 {
-	PR_BYTE bytes;
+	PR_BYTE new_bytes;
 	HANDLE hfile;
 	ULONG unused;
 	NTSTATUS status;
@@ -930,13 +930,13 @@ NTSTATUS _app_db_save_streamtofile (
 	if (!_r_fs_isvalidhandle (hfile))
 		return RtlGetLastNtStatus ();
 
-	status = _app_db_parser_encodebody (db_info, &bytes, PROFILE2_ID_PLAIN);
+	status = _app_db_parser_encodebody (db_info, PROFILE2_ID_PLAIN, &new_bytes);
 
 	if (NT_SUCCESS (status))
 	{
-		WriteFile (hfile, bytes->buffer, (ULONG)bytes->length, &unused, NULL);
+		WriteFile (hfile, new_bytes->buffer, (ULONG)new_bytes->length, &unused, NULL);
 
-		_r_obj_dereference (bytes);
+		_r_obj_dereference (new_bytes);
 	}
 
 	NtClose (hfile);

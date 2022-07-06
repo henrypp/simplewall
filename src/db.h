@@ -62,7 +62,7 @@ static const BYTE profile2_fourcc[] = {
 #define XML_ENCRYPTION_ALGO BCRYPT_AES_ALGORITHM
 #define XML_SIGNATURE_ALGO BCRYPT_SHA256_ALGORITHM
 
-#define PROFILE2_ID_PLAIN ((BYTE)(0x30b))
+#define PROFILE2_ID_PLAIN ((BYTE)(0x30))
 #define PROFILE2_ID_COMPRESSED ((BYTE)(0x31))
 #define PROFILE2_ID_ENCRYPTED ((BYTE)(0x32))
 
@@ -94,14 +94,14 @@ NTSTATUS _app_db_decrypt (
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_gethash (
-	_In_ PR_BYTEREF buffer,
+	_In_ PR_BYTEREF bytes,
 	_Out_ PR_BYTE_PTR out_buffer
 );
 
 _Success_ (return == STATUS_SUCCESS)
 NTSTATUS _app_db_ishashvalid (
 	_In_ PR_BYTEREF buffer,
-	_In_ PR_BYTEREF hash_buffer
+	_In_ PR_BYTEREF hash_bytes
 );
 
 _Success_ (return == STATUS_SUCCESS)
@@ -142,8 +142,8 @@ NTSTATUS _app_db_parser_decodebody (
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_parser_encodebody (
 	_Inout_ PDB_INFORMATION db_info,
-	_Out_ PR_BYTE_PTR out_buffer,
-	_In_ BYTE profile_type
+	_In_ BYTE profile_type,
+	_Out_ PR_BYTE_PTR out_buffer
 );
 
 _Success_ (NT_SUCCESS (return))
