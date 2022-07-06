@@ -158,12 +158,12 @@ VOID _app_setappinfobyhash (
 
 	ptr_app = _app_getappitem (app_hash);
 
-	if (ptr_app)
-	{
-		_app_setappinfo (ptr_app, info_data, value);
+	if (!ptr_app)
+		return;
 
-		_r_obj_dereference (ptr_app);
-	}
+	_app_setappinfo (ptr_app, info_data, value);
+
+	_r_obj_dereference (ptr_app);
 }
 
 _Success_ (return)
@@ -1376,6 +1376,7 @@ BOOLEAN _app_isrulesupportedbyos (
 VOID _app_profile_initialize ()
 {
 	static R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE);
+	static R_STRINGREF profile2_sr = PR_STRINGREF_INIT (XML_PROFILE2_FILE);
 	static R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE L".bak");
 	static R_STRINGREF profile_internal_sr = PR_STRINGREF_INIT (XML_PROFILE2_INTERNAL);
 	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
@@ -1384,9 +1385,28 @@ VOID _app_profile_initialize ()
 
 	path = _r_app_getprofiledirectory ();
 
-	_r_obj_movereference (&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
-	_r_obj_movereference (&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
-	_r_obj_movereference (&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
+	_r_obj_movereference (
+		&profile_info.profile_path,
+		_r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile2_sr)
+	);
+
+	if (!_r_fs_exists (profile_info.profile_path->buffer))
+	{
+		_r_obj_movereference (
+			&profile_info.profile_path,
+			_r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr)
+		);
+	}
+
+	_r_obj_movereference (
+		&profile_info.profile_path_backup,
+		_r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr)
+	);
+
+	_r_obj_movereference (
+		&profile_info.profile_path_internal,
+		_r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr)
+	);
 }
 
 NTSTATUS _app_profile_load_fromresource (
