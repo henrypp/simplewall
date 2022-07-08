@@ -31,6 +31,8 @@ VOID _app_package_parsedisplayname (
 	PR_STRING display_name;
 	PR_STRING buffer_string;
 	ULONG buffer_length;
+	SIZE_T pos;
+	HRESULT hr;
 
 	display_name = *display_name_ptr;
 
@@ -41,7 +43,9 @@ VOID _app_package_parsedisplayname (
 			buffer_length = 512;
 			buffer_string = _r_obj_createstring_ex (NULL, buffer_length * sizeof (WCHAR));
 
-			if (SUCCEEDED (SHLoadIndirectString (display_name->buffer, buffer_string->buffer, buffer_length, NULL)))
+			hr = SHLoadIndirectString (display_name->buffer, buffer_string->buffer, buffer_length, NULL);
+
+			if (SUCCEEDED (hr))
 			{
 				_r_obj_trimstringtonullterminator (buffer_string);
 
@@ -51,6 +55,17 @@ VOID _app_package_parsedisplayname (
 			{
 				_r_obj_dereference (buffer_string);
 			}
+		}
+		else if (_r_str_isstartswith2 (&display_name->sr, L"ms-resource:", TRUE))
+		{
+			_r_obj_movereference (display_name_ptr, _r_obj_createstring2 (fallback_name));
+
+			display_name = *display_name_ptr;
+
+			pos = _r_str_findchar (&display_name->sr, L'_', FALSE);
+
+			if (pos != SIZE_MAX)
+				_r_obj_setstringlength (display_name, pos * sizeof (WCHAR));
 		}
 	}
 
@@ -144,6 +159,7 @@ VOID _app_package_getpackagebyname (
 	PR_STRING display_name;
 	PR_BYTE package_sid;
 	PR_STRING package_sid_string;
+	PR_STRING real_path;
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
 	LONG64 timestamp;
@@ -153,6 +169,7 @@ VOID _app_package_getpackagebyname (
 	display_name = NULL;
 	package_sid = NULL;
 	package_sid_string = NULL;
+	real_path = NULL;
 
 	status = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
 
@@ -179,18 +196,12 @@ VOID _app_package_getpackagebyname (
 	display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
 	_app_package_parsedisplayname (&display_name, key_name);
 
-	// TODO: path is not required to filtering package via WFP, only for
-	// signature checking, but i think there is another way to do this. Not needed by now.
-
-	//// parse package path
-	//real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
-	//_app_package_parsepath (&real_path);
-
-	// TODO: since packages does not obtain paths, we need to query general
-	// information, certificates and icons in another way.
+	// parse package path
+	real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
+	_app_package_parsepath (&real_path);
 
 	//_r_queuedlock_acquireexclusive (&lock_apps);
-	app_hash = _app_addapplication (NULL, DATA_APP_UWP, package_sid_string, display_name, NULL);
+	app_hash = _app_addapplication (NULL, DATA_APP_UWP, package_sid_string, display_name, real_path);
 	//_r_queuedlock_releaseexclusive (&lock_apps);
 
 	if (app_hash)
@@ -218,6 +229,9 @@ CleanupExit:
 
 	if (package_sid_string)
 		_r_obj_dereference (package_sid_string);
+
+	if (real_path)
+		_r_obj_dereference (real_path);
 
 	if (hsubkey)
 		RegCloseKey (hsubkey);
