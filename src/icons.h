@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #pragma once
 
@@ -14,17 +14,24 @@ HICON _app_icons_getdefaulttype_hicon (
 	_In_ PICON_INFORMATION icon_info
 );
 
-LONG _app_icons_getdefaultapp_id ();
-
-LONG _app_icons_getdefaultuwp_id ();
+LONG _app_icons_getdefaultapp_id (
+	_In_ ENUM_TYPE_DATA type
+);
 
 HICON _app_icons_getsafeapp_hicon (
 	_In_ ULONG_PTR app_hash
 );
 
+VOID _app_icons_loaddefaults (
+	_In_ ENUM_TYPE_DATA type,
+	_Inout_opt_ PLONG icon_id_ptr,
+	_Inout_opt_ HICON_PTR hicon_ptr
+);
+
 VOID _app_icons_loadfromfile (
-	_In_ PR_STRING path,
-	_Out_opt_ PLONG icon_id,
-	_Out_opt_ HICON_PTR hicon,
+	_In_opt_ PR_STRING path,
+	_In_ ENUM_TYPE_DATA type,
+	_Out_opt_ PLONG icon_id_ptr,
+	_Out_opt_ HICON_PTR hicon_ptr,
 	_In_ BOOLEAN is_loaddefaults
 );
