@@ -72,6 +72,9 @@
     <ClCompile Include="..\routine\src\routine.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\uwp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\main.h">
@@ -152,10 +155,16 @@
     <ClInclude Include="..\routine\src\routine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\uwp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="src\resource.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
