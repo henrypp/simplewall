@@ -8,11 +8,6 @@ BOOLEAN _app_package_isnotexists (
 	_In_opt_ ULONG_PTR app_hash
 );
 
-VOID _app_package_parsedisplayname (
-	_In_ PR_STRING_PTR display_name_ptr,
-	_In_ PR_STRING fallback_name
-);
-
 VOID _app_package_parsepath (
 	_Inout_ PR_STRING_PTR package_root_folder
 );

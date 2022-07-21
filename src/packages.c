@@ -23,56 +23,6 @@ BOOLEAN _app_package_isnotexists (
 	return FALSE;
 }
 
-VOID _app_package_parsedisplayname (
-	_In_ PR_STRING_PTR display_name_ptr,
-	_In_ PR_STRING fallback_name
-)
-{
-	PR_STRING display_name;
-	PR_STRING buffer_string;
-	ULONG buffer_length;
-	SIZE_T pos;
-	HRESULT hr;
-
-	display_name = *display_name_ptr;
-
-	if (!_r_obj_isstringempty (display_name))
-	{
-		if (display_name->buffer[0] == L'@')
-		{
-			buffer_length = 512;
-			buffer_string = _r_obj_createstring_ex (NULL, buffer_length * sizeof (WCHAR));
-
-			hr = SHLoadIndirectString (display_name->buffer, buffer_string->buffer, buffer_length, NULL);
-
-			if (SUCCEEDED (hr))
-			{
-				_r_obj_trimstringtonullterminator (buffer_string);
-
-				_r_obj_movereference (display_name_ptr, buffer_string);
-			}
-			else
-			{
-				_r_obj_dereference (buffer_string);
-			}
-		}
-		else if (_r_str_isstartswith2 (&display_name->sr, L"ms-resource:", TRUE))
-		{
-			_r_obj_movereference (display_name_ptr, _r_obj_createstring2 (fallback_name));
-
-			display_name = *display_name_ptr;
-
-			pos = _r_str_findchar (&display_name->sr, L'_', FALSE);
-
-			if (pos != SIZE_MAX)
-				_r_obj_setstringlength (display_name, pos * sizeof (WCHAR));
-		}
-	}
-
-	if (_r_obj_isstringempty (*display_name_ptr))
-		_r_obj_swapreference (display_name_ptr, fallback_name);
-}
-
 VOID _app_package_parsepath (
 	_Inout_ PR_STRING_PTR package_root_folder
 )
@@ -192,13 +142,12 @@ VOID _app_package_getpackagebyname (
 	if (_app_isappfound (app_hash))
 		goto CleanupExit;
 
-	// parse package display name
-	display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
-	_app_package_parsedisplayname (&display_name, key_name);
+	// parse package information
+	if(!_app_package_getpackage_info (key_name, &display_name, &real_path))
+		goto CleanupExit;
 
-	// parse package path
-	real_path = _r_reg_querystring (hsubkey, NULL, L"PackageRootFolder");
-	_app_package_parsepath (&real_path);
+	if (real_path)
+		_app_package_parsepath (&real_path);
 
 	//_r_queuedlock_acquireexclusive (&lock_apps);
 	app_hash = _app_addapplication (NULL, DATA_APP_UWP, package_sid_string, display_name, real_path);
@@ -244,6 +193,7 @@ VOID _app_package_getpackagebysid (
 {
 	PR_STRING moniker;
 	PR_STRING display_name;
+	PR_STRING real_path;
 	PR_BYTE package_sid;
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
@@ -253,6 +203,7 @@ VOID _app_package_getpackagebysid (
 
 	moniker = NULL;
 	display_name = NULL;
+	real_path = NULL;
 	package_sid = NULL;
 
 	// already exists (skip)
@@ -275,35 +226,14 @@ VOID _app_package_getpackagebysid (
 	moniker = _r_reg_querystring (hsubkey, NULL, L"Moniker");
 
 	if (!moniker)
-		moniker = _r_obj_reference (key_name);
+		goto CleanupExit;
 
-	// TODO: path is not required to filtering package via WFP, only for
-	// signature checking, but i think there is another way to do this. Not needed by now.
+	// parse package information
+	if(!_app_package_getpackage_info (moniker, &display_name, &real_path))
+		goto CleanupExit;
 
-	//if (moniker)
-	//{
-	//	// parse package path
-	//	// TODO: there is package full name required.
-	//	status = _r_sys_getpackagepath (moniker, &real_path);
-	//
-	//	if (status == ERROR_SUCCESS)
-	//	{
-	//		_app_package_parsepath (&real_path);
-	//	}
-	//}
-	//else
-	//{
-	//	moniker = _r_obj_reference (key_name);
-	//
-	//	real_path = NULL;
-	//}
-
-	// parse package display name
-	display_name = _r_reg_querystring (hsubkey, NULL, L"DisplayName");
-	_app_package_parsedisplayname (&display_name, moniker);
-
-	// TODO: since packages does not obtain paths, we need to query general
-	// information, certificates and icons in another way.
+	if (real_path)
+		_app_package_parsepath (&real_path);
 
 	//_r_queuedlock_acquireexclusive (&lock_apps);
 	app_hash = _app_addapplication (NULL, DATA_APP_UWP, key_name, display_name, NULL);
@@ -331,6 +261,9 @@ CleanupExit:
 
 	if (display_name)
 		_r_obj_dereference (display_name);
+
+	if (real_path)
+		_r_obj_dereference (real_path);
 
 	if (package_sid)
 		_r_obj_dereference (package_sid);
