@@ -439,6 +439,11 @@ BOOLEAN _app_getappinfoparam2 (
 	PITEM_APP_INFO ptr_app_info;
 	PITEM_APP ptr_app;
 	LONG icon_id;
+	BOOLEAN is_success;
+
+	is_success = FALSE;
+
+	*buffer_ptr = NULL;
 
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
@@ -451,16 +456,15 @@ BOOLEAN _app_getappinfoparam2 (
 			{
 				ptr_app = _app_getappitem (app_hash);
 
-				icon_id = _app_icons_getdefaultapp_id ();
-
 				if (ptr_app)
 				{
-					if (ptr_app->type == DATA_APP_UWP)
-					{
-						icon_id = _app_icons_getdefaultuwp_id ();
-					}
+					icon_id = _app_icons_getdefaultapp_id (ptr_app->type);
 
 					_r_obj_dereference (ptr_app);
+				}
+				else
+				{
+					icon_id = _app_icons_getdefaultapp_id (DATA_APP_REGULAR);
 				}
 
 				*buffer_ptr = LongToPtr (icon_id);
@@ -468,65 +472,51 @@ BOOLEAN _app_getappinfoparam2 (
 				return TRUE;
 			}
 		}
+
+		return FALSE;
 	}
-	else
+
+	switch (info_data)
 	{
-		switch (info_data)
+		case INFO_ICON_ID:
 		{
-			case INFO_ICON_ID:
+			icon_id = InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0);
+
+			if (icon_id)
 			{
-				icon_id = InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0);
-
-				if (icon_id != 0)
-				{
-					*buffer_ptr = LongToPtr (icon_id);
-				}
-				else
-				{
-					if (ptr_app_info->type == DATA_APP_UWP)
-					{
-						icon_id = _app_icons_getdefaultuwp_id ();
-					}
-					else
-					{
-						icon_id = _app_icons_getdefaultapp_id ();
-					}
-
-					*buffer_ptr = LongToPtr (icon_id);
-				}
-
-				return TRUE;
+				*buffer_ptr = LongToPtr (icon_id);
+				is_success = TRUE;
 			}
 
-			case INFO_SIGNATURE_STRING:
-			{
-				if (ptr_app_info->signature_info)
-				{
-					*buffer_ptr = _r_obj_reference (ptr_app_info->signature_info);
-					return TRUE;
-				}
-
-				break;
-			}
-
-			case INFO_VERSION_STRING:
-			{
-				if (ptr_app_info->version_info)
-				{
-					*buffer_ptr = _r_obj_reference (ptr_app_info->version_info);
-					return TRUE;
-				}
-
-				break;
-			}
+			break;
 		}
 
-		_r_obj_dereference (ptr_app_info);
+		case INFO_SIGNATURE_STRING:
+		{
+			if (ptr_app_info->signature_info)
+			{
+				*buffer_ptr = _r_obj_reference (ptr_app_info->signature_info);
+				is_success = TRUE;
+			}
+
+			break;
+		}
+
+		case INFO_VERSION_STRING:
+		{
+			if (ptr_app_info->version_info)
+			{
+				*buffer_ptr = _r_obj_reference (ptr_app_info->version_info);
+				is_success = TRUE;
+			}
+
+			break;
+		}
 	}
 
-	*buffer_ptr = NULL;
+	_r_obj_dereference (ptr_app_info);
 
-	return FALSE;
+	return is_success;
 }
 
 BOOLEAN _app_isappsigned (
@@ -606,17 +596,13 @@ PR_STRING _app_getappdisplayname (
 	else if (ptr_app->type == DATA_APP_UWP)
 	{
 		if (ptr_app->display_name)
-		{
 			return _r_obj_reference (ptr_app->display_name);
-		}
-		else if (ptr_app->real_path)
-		{
+
+		if (ptr_app->real_path)
 			return _r_obj_reference (ptr_app->real_path);
-		}
-		else if (ptr_app->original_path)
-		{
+
+		if (ptr_app->original_path)
 			return _r_obj_reference (ptr_app->original_path);
-		}
 	}
 
 	if (is_shortened || _r_config_getboolean (L"ShowFilenames", TRUE))
@@ -659,27 +645,18 @@ VOID _app_getfileicon (
 )
 {
 	LONG icon_id;
-	LONG default_icon_id;
 	BOOLEAN is_iconshidded;
 
 	icon_id = 0;
-
-	default_icon_id = _app_icons_getdefaultapp_id ();
 	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
 
-	if (!is_iconshidded && _app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
-		_app_icons_loadfromfile (ptr_app_info->path, &icon_id, NULL, TRUE);
-
-	if (!icon_id || (ptr_app_info->type == DATA_APP_UWP && icon_id == default_icon_id))
+	if (is_iconshidded || !_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
-		if (ptr_app_info->type == DATA_APP_UWP)
-		{
-			icon_id = _app_icons_getdefaultuwp_id ();
-		}
-		else
-		{
-			icon_id = default_icon_id;
-		}
+		_app_icons_loadfromfile (NULL, ptr_app_info->type, &icon_id, NULL, TRUE);
+	}
+	else
+	{
+		_app_icons_loadfromfile (ptr_app_info->path, ptr_app_info->type, &icon_id, NULL, TRUE);
 	}
 
 	InterlockedCompareExchange (&ptr_app_info->large_icon_id, icon_id, ptr_app_info->large_icon_id);
