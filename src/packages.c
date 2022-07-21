@@ -51,7 +51,10 @@ VOID _app_package_parsepath (
 
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (appx_names); i++)
 	{
-		_r_obj_movereference (&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
+		_r_obj_movereference (
+			&manifest_path,
+			_r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i])
+		);
 
 		if (_r_fs_exists (manifest_path->buffer))
 		{
@@ -65,28 +68,31 @@ VOID _app_package_parsepath (
 
 	hr = _r_xml_initializelibrary (&xml_library, TRUE);
 
-	if (hr != S_OK)
+	if (FAILED (hr))
 		goto CleanupExit;
 
 	hr = _r_xml_parsefile (&xml_library, manifest_path->buffer);
 
-	if (hr != S_OK)
+	if (FAILED (hr))
 		goto CleanupExit;
 
-	if (!_r_xml_findchildbytagname (&xml_library, L"Applications"))
-		goto CleanupExit;
-
-	while (_r_xml_enumchilditemsbytagname (&xml_library, L"Application"))
+	if (_r_xml_findchildbytagname (&xml_library, L"Applications"))
 	{
-		if (!_r_xml_getattribute (&xml_library, L"Executable", &executable_sr))
-			continue;
-
-		_r_obj_movereference (&result_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr));
-
-		if (_r_fs_exists (result_path->buffer))
+		while (_r_xml_enumchilditemsbytagname (&xml_library, L"Application"))
 		{
-			_r_obj_swapreference (package_root_folder, result_path);
-			break;
+			if (!_r_xml_getattribute (&xml_library, L"Executable", &executable_sr))
+				continue;
+
+			_r_obj_movereference (
+				&result_path,
+				_r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr)
+			);
+
+			if (_r_fs_exists (result_path->buffer))
+			{
+				_r_obj_swapreference (package_root_folder, result_path);
+				break;
+			}
 		}
 	}
 
@@ -143,7 +149,7 @@ VOID _app_package_getpackagebyname (
 		goto CleanupExit;
 
 	// parse package information
-	if(!_app_package_getpackage_info (key_name, &display_name, &real_path))
+	if (!_app_package_getpackage_info (key_name, &display_name, &real_path))
 		goto CleanupExit;
 
 	if (real_path)
@@ -229,7 +235,7 @@ VOID _app_package_getpackagebysid (
 		goto CleanupExit;
 
 	// parse package information
-	if(!_app_package_getpackage_info (moniker, &display_name, &real_path))
+	if (!_app_package_getpackage_info (moniker, &display_name, &real_path))
 		goto CleanupExit;
 
 	if (real_path)
