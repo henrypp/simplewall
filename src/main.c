@@ -559,6 +559,11 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDD_SETTINGS_HIGHLIGHTING:
 				{
+					PITEM_COLOR ptr_clr;
+					SIZE_T enum_key;
+					LONG icon_id;
+					INT item_id;
+
 					// configure listview
 					_r_listview_setstyle (hwnd, IDC_COLORS, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, FALSE);
 
@@ -569,12 +574,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_listview_addcolumn (hwnd, IDC_COLORS, 0, L"", 0, LVCFMT_LEFT);
 
-					PITEM_COLOR ptr_clr;
-					SIZE_T enum_key;
-					LONG icon_id;
-					INT item_id;
-
-					icon_id = _app_icons_getdefaultapp_id ();
+					icon_id = _app_icons_getdefaultapp_id (DATA_APP_REGULAR);
 
 					_app_listview_lock (hwnd, IDC_COLORS, TRUE);
 
