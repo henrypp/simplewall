@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2021 Henry++
+// Copyright (c) 2016-2022 Henry++
 
 #pragma once
 
@@ -100,4 +100,5 @@ DECLSPEC_SELECTANY const LONG64 timer_array[] =
 #include "search.h"
 #include "security.h"
 #include "timer.h"
+#include "uwp.h"
 #include "wfp.h"
