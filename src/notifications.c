@@ -405,7 +405,13 @@ VOID _app_notify_show (
 	_app_notify_setapp_icon (hwnd, NULL, FALSE);
 
 	// set window title
-	_r_str_printf (window_title, RTL_NUMBER_OF (window_title), L"%s - %s", _r_locale_getstring (IDS_NOTIFY_TITLE), _r_app_getname ());
+	_r_str_printf (
+		window_title,
+		RTL_NUMBER_OF (window_title),
+		L"%s - %s",
+		_r_locale_getstring (IDS_NOTIFY_TITLE),
+		_r_app_getname ()
+	);
 
 	SetWindowText (hwnd, window_title);
 
@@ -821,6 +827,7 @@ INT_PTR CALLBACK NotificationProc (
 		{
 			PNOTIFY_CONTEXT context;
 			HWND htip;
+			RECT rect;
 			LONG dpi_value;
 
 			// initialize context
@@ -828,7 +835,9 @@ INT_PTR CALLBACK NotificationProc (
 
 			_app_notify_setcontext (hwnd, context);
 
-			dpi_value = _r_dc_getwindowdpi (hwnd);
+			GetWindowRect (hwnd, &rect);
+
+			dpi_value = _r_dc_getmonitordpi (&rect);
 
 			_app_notify_initialize (hwnd, dpi_value);
 
@@ -954,7 +963,10 @@ INT_PTR CALLBACK NotificationProc (
 			if (draw_info->CtlID != IDC_HEADER_ID)
 				break;
 
-			dpi_value = _r_dc_getwindowdpi (hwnd);
+			if (!GetWindowRect (hwnd, &rect))
+				break;
+
+			dpi_value = _r_dc_getmonitordpi (&rect);
 
 			icon_size_x = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 			wnd_spacing = _r_dc_getdpi (12, dpi_value);
