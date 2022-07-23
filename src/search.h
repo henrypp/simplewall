@@ -1,6 +1,6 @@
 // simplewall
 // Copyright (c) 2012-2021 dmex
-// Copyright (c) 2021 Henry++
+// Copyright (c) 2021, 2022 Henry++
 
 #pragma once
 
@@ -29,18 +29,56 @@ typedef struct _EDIT_CONTEXT
 	INT cx_border;
 } EDIT_CONTEXT, *PEDIT_CONTEXT;
 
-VOID _app_search_initializetheme (_Inout_ PEDIT_CONTEXT context);
-VOID _app_search_destroytheme (_Inout_ PEDIT_CONTEXT context);
+VOID _app_search_initializetheme (
+	_Inout_ PEDIT_CONTEXT context
+);
 
-VOID _app_search_initialize (_In_ HWND hwnd);
+VOID _app_search_destroytheme (
+	_Inout_ PEDIT_CONTEXT context
+);
 
-VOID _app_search_setvisible (_In_ HWND hwnd, _In_ HWND hsearch);
+VOID _app_search_initialize (
+	_In_ HWND hwnd
+);
 
-VOID _app_search_drawbutton (_Inout_ PEDIT_CONTEXT context, _In_ LPCRECT button_rect);
-VOID _app_search_getbuttonrect (_In_ PEDIT_CONTEXT context, _Inout_ PRECT rect);
+VOID _app_search_setvisible (
+	_In_ HWND hwnd,
+	_In_ HWND hsearch
+);
 
-BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING search_string);
-BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _Inout_ PITEM_LISTVIEW_CONTEXT context, _In_opt_ PR_STRING search_string);
-VOID _app_search_applyfilter (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING search_string);
+VOID _app_search_drawbutton (
+	_Inout_ PEDIT_CONTEXT context,
+	_In_ LPCRECT button_rect
+);
 
-LRESULT CALLBACK _app_search_subclass_proc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam);
+VOID _app_search_getbuttonrect (
+	_In_ PEDIT_CONTEXT context,
+	_Inout_ PRECT rect
+);
+
+BOOLEAN _app_search_applyfiltercallback (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_opt_ PR_STRING search_string
+);
+
+BOOLEAN _app_search_applyfilteritem (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id,
+	_Inout_ PITEM_LISTVIEW_CONTEXT context,
+	_In_opt_ PR_STRING search_string
+);
+
+VOID _app_search_applyfilter (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_opt_ PR_STRING search_string
+);
+
+LRESULT CALLBACK _app_search_subclass_proc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+);

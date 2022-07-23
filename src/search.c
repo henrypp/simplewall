@@ -1,16 +1,23 @@
 // simplewall
 // Copyright (c) 2012-2021 dmex
-// Copyright (c) 2021 Henry++
+// Copyright (c) 2021, 2022 Henry++
 
 #include "global.h"
 
-VOID _app_search_initializetheme (_Inout_ PEDIT_CONTEXT context)
+VOID _app_search_initializetheme (
+	_Inout_ PEDIT_CONTEXT context
+)
 {
+	RECT rect;
 	HBITMAP hbitmap;
 	HICON hicon_prev;
+	HTHEME htheme;
 	LONG dpi_value;
+	HRESULT hr;
 
-	dpi_value = _r_dc_getwindowdpi (context->hwnd);
+	GetWindowRect (context->hwnd, &rect);
+
+	dpi_value = _r_dc_getmonitordpi (&rect);
 
 	// initialize borders
 	context->cx_size = _r_dc_getdpi (20, dpi_value);
@@ -18,13 +25,19 @@ VOID _app_search_initializetheme (_Inout_ PEDIT_CONTEXT context)
 
 	if (IsThemeActive ())
 	{
-		HTHEME htheme;
-
 		htheme = OpenThemeData (context->hwnd, VSCLASS_EDIT);
 
 		if (htheme)
 		{
-			if (!SUCCEEDED (GetThemeInt (htheme, EP_EDITBORDER_NOSCROLL, EPSHV_NORMAL, TMT_BORDERSIZE, &context->cx_border)))
+			hr = GetThemeInt (
+				htheme,
+				EP_EDITBORDER_NOSCROLL,
+				EPSHV_NORMAL,
+				TMT_BORDERSIZE,
+				&context->cx_border
+			);
+
+			if (!SUCCEEDED (hr))
 				context->cx_border = 0;
 
 			CloseThemeData (htheme);
@@ -60,12 +73,16 @@ VOID _app_search_initializetheme (_Inout_ PEDIT_CONTEXT context)
 	}
 }
 
-VOID _app_search_destroytheme (_Inout_ PEDIT_CONTEXT context)
+VOID _app_search_destroytheme (
+	_Inout_ PEDIT_CONTEXT context
+)
 {
 	SAFE_DELETE_ICON (context->hicon);
 }
 
-VOID _app_search_initialize (_In_ HWND hwnd)
+VOID _app_search_initialize (
+	_In_ HWND hwnd
+)
 {
 	PEDIT_CONTEXT context;
 	WCHAR buffer[128];
@@ -87,7 +104,10 @@ VOID _app_search_initialize (_In_ HWND hwnd)
 	SendMessage (context->hwnd, WM_THEMECHANGED, 0, 0);
 }
 
-VOID _app_search_setvisible (_In_ HWND hwnd, _In_ HWND hsearch)
+VOID _app_search_setvisible (
+	_In_ HWND hwnd,
+	_In_ HWND hsearch
+)
 {
 	BOOLEAN is_visible;
 
@@ -108,7 +128,10 @@ VOID _app_search_setvisible (_In_ HWND hwnd, _In_ HWND hsearch)
 	}
 }
 
-VOID _app_search_drawbutton (_Inout_ PEDIT_CONTEXT context, _In_ LPCRECT button_rect)
+VOID _app_search_drawbutton (
+	_Inout_ PEDIT_CONTEXT context,
+	_In_ LPCRECT button_rect
+)
 {
 	HDC hdc;
 	HDC buffer_dc;
@@ -153,7 +176,17 @@ VOID _app_search_drawbutton (_Inout_ PEDIT_CONTEXT context, _In_ LPCRECT button_
 		DI_NORMAL
 	);
 
-	BitBlt (hdc, button_rect->left, button_rect->top, button_rect->right, button_rect->bottom, buffer_dc, 0, 0, SRCCOPY);
+	BitBlt (
+		hdc,
+		button_rect->left,
+		button_rect->top,
+		button_rect->right,
+		button_rect->bottom,
+		buffer_dc,
+		0,
+		0,
+		SRCCOPY
+	);
 
 	SelectObject (buffer_dc, old_bitmap);
 	DeleteObject (buffer_bitmap);
@@ -162,7 +195,10 @@ VOID _app_search_drawbutton (_Inout_ PEDIT_CONTEXT context, _In_ LPCRECT button_
 	ReleaseDC (context->hwnd, hdc);
 }
 
-VOID _app_search_getbuttonrect (_In_ PEDIT_CONTEXT context, _Inout_ PRECT rect)
+VOID _app_search_getbuttonrect (
+	_In_ PEDIT_CONTEXT context,
+	_Inout_ PRECT rect
+)
 {
 	rect->left = (rect->right - context->cx_size) - context->cx_border - 1; // offset left border by 1
 	rect->bottom -= context->cx_border;
@@ -170,7 +206,12 @@ VOID _app_search_getbuttonrect (_In_ PEDIT_CONTEXT context, _Inout_ PRECT rect)
 	rect->top += context->cx_border;
 }
 
-BOOLEAN _app_search_isstringfound (_In_opt_ PR_STRING string, _In_ PR_STRING search_string, _Inout_ PITEM_LISTVIEW_CONTEXT context, _Inout_ PBOOLEAN is_changed)
+BOOLEAN _app_search_isstringfound (
+	_In_opt_ PR_STRING string,
+	_In_ PR_STRING search_string,
+	_Inout_ PITEM_LISTVIEW_CONTEXT context,
+	_Inout_ PBOOLEAN is_changed
+)
 {
 	if (!string)
 	{
@@ -205,7 +246,11 @@ BOOLEAN _app_search_isstringfound (_In_opt_ PR_STRING string, _In_ PR_STRING sea
 	return FALSE;
 }
 
-BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING search_string)
+BOOLEAN _app_search_applyfiltercallback (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_opt_ PR_STRING search_string
+)
 {
 	PITEM_LISTVIEW_CONTEXT context;
 	INT item_count;
@@ -235,7 +280,13 @@ BOOLEAN _app_search_applyfiltercallback (_In_ HWND hwnd, _In_ INT listview_id, _
 	return is_changed;
 }
 
-BOOLEAN _app_search_applyfilteritem (_In_ HWND hwnd, _In_ INT listview_id, _In_ INT item_id, _Inout_ PITEM_LISTVIEW_CONTEXT context, _In_opt_ PR_STRING search_string)
+BOOLEAN _app_search_applyfilteritem (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id,
+	_Inout_ PITEM_LISTVIEW_CONTEXT context,
+	_In_opt_ PR_STRING search_string
+)
 {
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
@@ -478,7 +529,11 @@ CleanupExit:
 	return is_changed;
 }
 
-VOID _app_search_applyfilter (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_STRING search_string)
+VOID _app_search_applyfilter (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_opt_ PR_STRING search_string
+)
 {
 	if (!((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID))
 		return;
@@ -486,7 +541,12 @@ VOID _app_search_applyfilter (_In_ HWND hwnd, _In_ INT listview_id, _In_opt_ PR_
 	_app_search_applyfiltercallback (hwnd, listview_id, search_string);
 }
 
-LRESULT CALLBACK _app_search_subclass_proc (_In_ HWND hwnd, _In_ UINT msg, _In_ WPARAM wparam, _In_ LPARAM lparam)
+LRESULT CALLBACK _app_search_subclass_proc (
+	_In_ HWND hwnd,
+	_In_ UINT msg,
+	_In_ WPARAM wparam,
+	_In_ LPARAM lparam
+)
 {
 	PEDIT_CONTEXT context;
 	WNDPROC old_wnd_proc;
@@ -666,7 +726,15 @@ LRESULT CALLBACK _app_search_subclass_proc (_In_ HWND hwnd, _In_ UINT msg, _In_ 
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 
 			// Refresh the non-client area.
-			SetWindowPos (hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
+			SetWindowPos (
+				hwnd,
+				NULL,
+				0,
+				0,
+				0,
+				0,
+				SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER
+			);
 
 			// Force the edit control to update its non-client area.
 			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
