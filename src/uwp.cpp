@@ -19,6 +19,7 @@ BOOLEAN _app_package_getpackage_info (
 )
 {
 	winrt::Windows::ApplicationModel::Package package = NULL;
+	winrt::Windows::ApplicationModel::PackageStatus status = 0;
 	winrt::hstring display_name;
 	winrt::hstring path;
 
@@ -28,6 +29,11 @@ BOOLEAN _app_package_getpackage_info (
 	package = winrt::Windows::Management::Deployment::PackageManager{}.FindPackage (package_name->buffer);
 
 	if (!package)
+		return FALSE;
+
+	status = package.Status ();
+
+	if (status.Disabled () || status.NotAvailable ())
 		return FALSE;
 
 	display_name = package.DisplayName ();
