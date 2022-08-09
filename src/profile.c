@@ -291,7 +291,14 @@ ULONG_PTR _app_addapplication (
 			ptr_app->type = PathIsNetworkPath (path_temp.buffer) ? DATA_APP_NETWORK : DATA_APP_REGULAR;
 		}
 
-		ptr_app->real_path = is_ntoskrnl ? _r_obj_createstring2 (config.ntoskrnl_path) : _r_obj_createstring3 (&path_temp);
+		if (is_ntoskrnl)
+		{
+			ptr_app->real_path = _r_obj_createstring2 (config.ntoskrnl_path);
+		}
+		else
+		{
+			ptr_app->real_path = _r_obj_createstring3 (&path_temp);
+		}
 	}
 
 	ptr_app->original_path = _r_obj_createstring3 (&path_temp);
@@ -303,8 +310,11 @@ ULONG_PTR _app_addapplication (
 		ptr_app->original_path->buffer[0] = _r_str_upper (ptr_app->original_path->buffer[0]);
 	}
 
-	if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK)
+	if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE ||
+		ptr_app->type == DATA_APP_NETWORK)
+	{
 		ptr_app->short_name = _r_path_getbasenamestring (&path_temp);
+	}
 
 	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
@@ -323,7 +333,14 @@ ULONG_PTR _app_addapplication (
 
 	// queue file information
 	if (ptr_app->real_path)
-		_app_queue_fileinformation (ptr_app->real_path, app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
+	{
+		_app_queue_fileinformation (
+			ptr_app->real_path,
+			app_hash,
+			ptr_app->type,
+			_app_listview_getbytype (ptr_app->type)
+		);
+	}
 
 	return app_hash;
 }
@@ -546,26 +563,30 @@ COLORREF _app_getappcolor (
 
 	if (ptr_app && !is_networklist)
 	{
-		if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
+		if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") &&
+			!_app_isappexists (ptr_app))
 		{
 			color_hash = config.color_invalid;
 			goto CleanupExit;
 		}
 
-		if (_r_config_getboolean_ex (L"IsHighlightTimer", TRUE, L"colors") && _app_istimerset (ptr_app->htimer))
+		if (_r_config_getboolean_ex (L"IsHighlightTimer", TRUE, L"colors") &&
+			_app_istimerset (ptr_app->htimer))
 		{
 			color_hash = config.color_timer;
 			goto CleanupExit;
 		}
 	}
 
-	if (_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors") && is_validconnection)
+	if (_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors") &&
+		is_validconnection)
 	{
 		color_hash = config.color_network;
 		goto CleanupExit;
 	}
 
-	if (_r_config_getboolean_ex (L"IsHighlightSigned", TRUE, L"colors") && _app_isappsigned (app_hash))
+	if (_r_config_getboolean_ex (L"IsHighlightSigned", TRUE, L"colors") &&
+		_app_isappsigned (app_hash))
 	{
 		color_hash = config.color_signed;
 		goto CleanupExit;
@@ -580,14 +601,16 @@ COLORREF _app_getappcolor (
 			goto CleanupExit;
 		}
 
-		if (_r_config_getboolean_ex (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DATA_APP_PICO)
+		if (_r_config_getboolean_ex (L"IsHighlightPico", TRUE, L"colors") &&
+			ptr_app->type == DATA_APP_PICO)
 		{
 			color_hash = config.color_pico;
 			goto CleanupExit;
 		}
 	}
 
-	if (_r_config_getboolean_ex (L"IsHighlightSystem", TRUE, L"colors") && is_systemapp)
+	if (_r_config_getboolean_ex (L"IsHighlightSystem", TRUE, L"colors") &&
+		is_systemapp)
 	{
 		color_hash = config.color_system;
 		goto CleanupExit;
@@ -716,7 +739,8 @@ COLORREF _app_getrulecolor (
 
 	color_hash = 0;
 
-	if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
+	if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") &&
+		ptr_rule->is_enabled && ptr_rule->is_haveerrors)
 	{
 		color_hash = config.color_invalid;
 	}
@@ -741,7 +765,17 @@ VOID _app_setappiteminfo (
 	_In_ PITEM_APP ptr_app
 )
 {
-	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitem_ex (
+		hwnd,
+		listview_id,
+		item_id,
+		0,
+		LPSTR_TEXTCALLBACK,
+		I_IMAGECALLBACK,
+		I_GROUPIDCALLBACK,
+		0
+	);
+
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_app->is_enabled);
 }
 
@@ -756,7 +790,17 @@ VOID _app_setruleiteminfo (
 	ULONG_PTR hash_code;
 	SIZE_T enum_key;
 
-	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitem_ex (
+		hwnd,
+		listview_id,
+		item_id,
+		0,
+		LPSTR_TEXTCALLBACK,
+		I_IMAGECALLBACK,
+		I_GROUPIDCALLBACK,
+		0
+	);
+
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_rule->is_enabled);
 
 	if (include_apps)
@@ -1282,8 +1326,11 @@ BOOLEAN _app_isappexists (
 	if (ptr_app->type == DATA_APP_REGULAR)
 		return ptr_app->real_path && _r_fs_exists (ptr_app->real_path->buffer);
 
-	if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK || ptr_app->type == DATA_APP_PICO)
+	if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK ||
+		ptr_app->type == DATA_APP_PICO)
+	{
 		return TRUE;
+	}
 
 	// Service and UWP is already undeletable
 	//if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
@@ -1352,13 +1399,25 @@ BOOLEAN _app_isrulesupportedbyos (
 	PR_STRING current_version;
 	PR_STRING new_version;
 
-	current_version = InterlockedCompareExchangePointer (&version_string, NULL, NULL);
+	current_version = InterlockedCompareExchangePointer (
+		&version_string,
+		NULL,
+		NULL
+	);
 
 	if (!current_version)
 	{
-		new_version = _r_format_string (L"%d.%d", NtCurrentPeb ()->OSMajorVersion, NtCurrentPeb ()->OSMinorVersion);
+		new_version = _r_format_string (
+			L"%d.%d",
+			NtCurrentPeb ()->OSMajorVersion,
+			NtCurrentPeb ()->OSMinorVersion
+		);
 
-		current_version = InterlockedCompareExchangePointer (&version_string, new_version, NULL);
+		current_version = InterlockedCompareExchangePointer (
+			&version_string,
+			new_version,
+			NULL
+		);
 
 		if (!current_version)
 		{
@@ -1492,7 +1551,12 @@ VOID _app_profile_load_internal (
 
 	if (NT_SUCCESS (status_file))
 	{
-		status_file = _app_db_openfromfile (&db_info_file, path, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
+		status_file = _app_db_openfromfile (
+			&db_info_file,
+			path,
+			XML_VERSION_CURRENT,
+			XML_TYPE_PROFILE_INTERNAL
+		);
 	}
 	else
 	{
@@ -1508,7 +1572,8 @@ VOID _app_profile_load_internal (
 	}
 	else
 	{
-		is_loadfromresource = (db_info_file.version < db_info_buffer->version) || (db_info_file.timestamp < db_info_buffer->timestamp);
+		is_loadfromresource = (db_info_file.version < db_info_buffer->version) ||
+			(db_info_file.timestamp < db_info_buffer->timestamp);
 	}
 
 	db_info = is_loadfromresource ? db_info_buffer : &db_info_file;
@@ -1592,10 +1657,22 @@ NTSTATUS _app_profile_load (
 	{
 		_r_queuedlock_acquireshared (&lock_profile);
 
-		status = _app_db_openfromfile (&db_info, profile_info.profile_path, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
+		status = _app_db_openfromfile (
+			&db_info,
+			profile_info.profile_path,
+			XML_VERSION_MINIMAL,
+			XML_TYPE_PROFILE
+		);
 
 		if (status != STATUS_SUCCESS)
-			status = _app_db_openfromfile (&db_info, profile_info.profile_path_backup, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
+		{
+			status = _app_db_openfromfile (
+				&db_info,
+				profile_info.profile_path_backup,
+				XML_VERSION_MINIMAL,
+				XML_TYPE_PROFILE
+			);
+		}
 
 		_r_queuedlock_releaseshared (&lock_profile);
 	}
@@ -1691,7 +1768,13 @@ NTSTATUS _app_profile_save ()
 
 	_r_queuedlock_acquireexclusive (&lock_profile);
 
-	status = _app_db_savetofile (&db_info, profile_info.profile_path, XML_VERSION_CURRENT, XML_TYPE_PROFILE, timestamp);
+	status = _app_db_savetofile (
+		&db_info,
+		profile_info.profile_path,
+		XML_VERSION_CURRENT,
+		XML_TYPE_PROFILE,
+		timestamp
+	);
 
 	_r_queuedlock_releaseexclusive (&lock_profile);
 
