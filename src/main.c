@@ -1352,7 +1352,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					if (!is_postmessage)
 					{
-						hctrl = _app_notify_getwindow ();
+						hctrl = _app_notify_getwindow (NULL);
 
 						if (hctrl)
 							_app_notify_refresh (hctrl);
@@ -1363,8 +1363,11 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_NOTIFICATIONSOUND_CHK:
 				{
-					BOOLEAN is_postmessage = ((INT)lparam == WM_APP);
-					BOOLEAN is_checked = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					BOOLEAN is_postmessage;
+					BOOLEAN is_checked;
+
+					is_postmessage = ((INT)lparam == WM_APP);
+					is_checked = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 
 					CheckDlgButton (hwnd, IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 
@@ -1388,7 +1391,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_config_setboolean (L"IsNotificationsOnTray", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 
-					hnotify = _app_notify_getwindow ();
+					hnotify = _app_notify_getwindow (NULL);
 
 					if (hnotify)
 						_app_notify_setposition (hnotify, TRUE);
@@ -1670,13 +1673,61 @@ VOID _app_initialize ()
 		colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), NULL);
 
 		// initialize colors
-		config.color_timer = _app_addcolor (IDS_HIGHLIGHT_TIMER, L"IsHighlightTimer", TRUE, L"ColorTimer", LV_COLOR_TIMER);
-		config.color_invalid = _app_addcolor (IDS_HIGHLIGHT_INVALID, L"IsHighlightInvalid", TRUE, L"ColorInvalid", LV_COLOR_INVALID);
-		config.color_special = _app_addcolor (IDS_HIGHLIGHT_SPECIAL, L"IsHighlightSpecial", TRUE, L"ColorSpecial", LV_COLOR_SPECIAL);
-		config.color_signed = _app_addcolor (IDS_HIGHLIGHT_SIGNED, L"IsHighlightSigned", TRUE, L"ColorSigned", LV_COLOR_SIGNED);
-		config.color_pico = _app_addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", TRUE, L"ColorPico", LV_COLOR_PICO);
-		config.color_system = _app_addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", TRUE, L"ColorSystem", LV_COLOR_SYSTEM);
-		config.color_network = _app_addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", TRUE, L"ColorConnection", LV_COLOR_CONNECTION);
+		config.color_timer = _app_addcolor (
+			IDS_HIGHLIGHT_TIMER,
+			L"IsHighlightTimer",
+			TRUE,
+			L"ColorTimer",
+			LV_COLOR_TIMER
+		);
+
+		config.color_invalid = _app_addcolor (
+			IDS_HIGHLIGHT_INVALID,
+			L"IsHighlightInvalid",
+			TRUE,
+			L"ColorInvalid",
+			LV_COLOR_INVALID
+		);
+
+		config.color_special = _app_addcolor (
+			IDS_HIGHLIGHT_SPECIAL,
+			L"IsHighlightSpecial",
+			TRUE,
+			L"ColorSpecial",
+			LV_COLOR_SPECIAL
+		);
+
+		config.color_signed = _app_addcolor (
+			IDS_HIGHLIGHT_SIGNED,
+			L"IsHighlightSigned",
+			TRUE,
+			L"ColorSigned",
+			LV_COLOR_SIGNED
+		);
+
+		config.color_pico = _app_addcolor (
+			IDS_HIGHLIGHT_PICO,
+			L"IsHighlightPico",
+			TRUE,
+			L"ColorPico",
+			LV_COLOR_PICO
+		);
+
+		config.color_system = _app_addcolor (
+			IDS_HIGHLIGHT_SYSTEM,
+			L"IsHighlightSystem",
+			TRUE,
+			L"ColorSystem",
+			LV_COLOR_SYSTEM
+		);
+
+		config.color_network = _app_addcolor (
+			IDS_HIGHLIGHT_CONNECTION,
+			L"IsHighlightConnection",
+			TRUE,
+			L"ColorConnection",
+			LV_COLOR_CONNECTION
+		);
 	}
 
 	_app_generate_credentials ();
@@ -1710,6 +1761,8 @@ VOID _app_initialize ()
 
 	if (!cache_resolution)
 		cache_resolution = _r_obj_createhashtablepointer (32);
+
+	config.hnotify_evt = CreateEvent (NULL, FALSE, TRUE, NULL);
 }
 
 INT FirstDriveFromMask (
@@ -1768,9 +1821,6 @@ INT_PTR CALLBACK DlgProc (
 
 			// initialize tabs
 			_app_tabs_init (hwnd, dpi_value);
-
-			// create notification window
-			_app_notify_createwindow ();
 
 			// load profile
 			_app_profile_load (hwnd, NULL);
@@ -1931,6 +1981,25 @@ INT_PTR CALLBACK DlgProc (
 			break;
 		}
 
+		case WM_NOTIFICATION:
+		{
+			PITEM_LOG ptr_log;
+			HWND hnotify;
+
+			if (_r_queuedlock_tryacquireexclusive (&lock_notify))
+			{
+				ptr_log = _r_obj_reference ((PITEM_LOG)lparam);
+				hnotify = _app_notify_getwindow (ptr_log);
+
+				_r_queuedlock_releaseexclusive (&lock_notify);
+
+				SetWindowLongPtr (hwnd, DWLP_MSGRESULT, (LONG_PTR)hnotify);
+				return (INT_PTR)hnotify;
+			}
+
+			break;
+		}
+
 		case WM_CLOSE:
 		{
 			if (_wfp_isfiltersinstalled ())
@@ -1971,8 +2040,6 @@ INT_PTR CALLBACK DlgProc (
 
 			if (hengine)
 				_wfp_uninitialize (hengine, FALSE);
-
-			_app_notify_destroywindow ();
 
 			ImageList_Destroy (config.himg_toolbar);
 			ImageList_Destroy (config.himg_rules_small);
@@ -3042,7 +3109,7 @@ INT_PTR CALLBACK DlgProc (
 					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, NULL, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
 					_r_config_setboolean (L"IsNotificationsEnabled", new_val);
 
-					hnotify = _app_notify_getwindow ();
+					hnotify = _app_notify_getwindow (NULL);
 
 					if (hnotify)
 						_app_notify_refresh (hnotify);
@@ -3077,7 +3144,7 @@ INT_PTR CALLBACK DlgProc (
 
 					_r_config_setboolean (L"IsNotificationsOnTray", new_val);
 
-					hnotify = _app_notify_getwindow ();
+					hnotify = _app_notify_getwindow (NULL);
 
 					if (hnotify)
 						_app_notify_setposition (hnotify, TRUE);
