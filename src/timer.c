@@ -6,7 +6,9 @@
 BOOLEAN _app_istimersactive ()
 {
 	PITEM_APP ptr_app;
-	SIZE_T enum_key = 0;
+	SIZE_T enum_key;
+
+	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -180,7 +182,13 @@ VOID CALLBACK _app_timer_callback (
 
 		string = _app_getappdisplayname (ptr_app, TRUE);
 
-		_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s - %s", _r_app_getname (), _r_obj_getstringorempty (string));
+		_r_str_printf (
+			buffer,
+			RTL_NUMBER_OF (buffer),
+			L"%s - %s",
+			_r_app_getname (),
+			_r_obj_getstringorempty (string)
+		);
 
 		_r_tray_popup (hwnd, &GUID_TrayIcon, icon_id, buffer, _r_locale_getstring (IDS_STATUS_TIMER_DONE));
 
