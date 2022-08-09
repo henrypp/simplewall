@@ -343,7 +343,10 @@ VOID _app_db_parse_rule (
 	if (_r_xml_getattribute (&db_info->xml_library, L"os_version", &sr))
 	{
 		if (!_app_isrulesupportedbyos (&sr))
+		{
+			_r_obj_dereference (rule_name);
 			return;
+		}
 	}
 
 	rule_remote = _r_xml_getattribute_string (&db_info->xml_library, L"rule");
