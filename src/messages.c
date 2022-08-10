@@ -1086,6 +1086,10 @@ VOID _app_displayinfoapp_callback (
 				// apps with special rule
 				if (_app_isapphaverule (ptr_app->app_hash, FALSE))
 				{
+					lpnmlv->item.iGroupId = 2;
+				}
+				else if (_app_istimerset (ptr_app))
+				{
 					lpnmlv->item.iGroupId = 1;
 				}
 				else if (ptr_app->is_enabled)
@@ -1097,11 +1101,11 @@ VOID _app_displayinfoapp_callback (
 					// silent apps without rules and not enabled added into silent group
 					if (ptr_app->is_silent)
 					{
-						lpnmlv->item.iGroupId = 3;
+						lpnmlv->item.iGroupId = 4;
 					}
 					else
 					{
-						lpnmlv->item.iGroupId = 2;
+						lpnmlv->item.iGroupId = 3;
 					}
 				}
 			}
@@ -2793,7 +2797,7 @@ VOID _app_command_purgetimers (
 
 	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 	{
-		if (_app_istimerset (ptr_app->htimer))
+		if (_app_istimerset (ptr_app))
 		{
 			_app_timer_reset (hwnd, ptr_app);
 

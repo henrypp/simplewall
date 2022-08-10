@@ -603,15 +603,13 @@ VOID _app_listview_refreshgroups (
 	_In_ INT listview_id
 )
 {
-	WCHAR group1_string[128] = {0};
-	WCHAR group2_string[128] = {0};
-	WCHAR group3_string[128] = {0};
-	WCHAR group4_string[128] = {0};
+	WCHAR buffer[128];
 
 	UINT group1_title;
 	UINT group2_title;
 	UINT group3_title;
 	UINT group4_title;
+	UINT group5_title;
 
 	INT total_count;
 
@@ -619,6 +617,7 @@ VOID _app_listview_refreshgroups (
 	INT group2_count;
 	INT group3_count;
 	INT group4_count;
+	INT group5_count;
 
 	INT group_id;
 
@@ -632,9 +631,10 @@ VOID _app_listview_refreshgroups (
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
 		group1_title = IDS_GROUP_ALLOWED;
-		group2_title = IDS_GROUP_SPECIAL_APPS;
-		group3_title = IDS_GROUP_BLOCKED;
+		group2_title = IDS_HIGHLIGHT_TIMER;
+		group3_title = IDS_GROUP_SPECIAL_APPS;
 		group4_title = IDS_GROUP_BLOCKED;
+		group5_title = IDS_GROUP_BLOCKED;
 	}
 	else if (is_rules)
 	{
@@ -642,6 +642,7 @@ VOID _app_listview_refreshgroups (
 		group2_title = IDS_GROUP_ENABLED;
 		group3_title = IDS_GROUP_DISABLED;
 		group4_title = 0;
+		group5_title = 0;
 	}
 	else if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_NETWORK)
 	{
@@ -649,6 +650,7 @@ VOID _app_listview_refreshgroups (
 		group2_title = IDS_TAB_SERVICES;
 		group3_title = IDS_TAB_PACKAGES;
 		group4_title = 0;
+		group5_title = 0;
 	}
 	else if (listview_id == IDC_APP_RULES_ID)
 	{
@@ -656,6 +658,7 @@ VOID _app_listview_refreshgroups (
 		group2_title = IDS_TRAY_USER_RULES;
 		group3_title = 0;
 		group4_title = 0;
+		group5_title = 0;
 	}
 	else
 	{
@@ -666,6 +669,7 @@ VOID _app_listview_refreshgroups (
 	group2_count = 0;
 	group3_count = 0;
 	group4_count = 0;
+	group5_count = 0;
 
 	total_count = _r_listview_getitemcount (hwnd, listview_id);
 
@@ -680,7 +684,11 @@ VOID _app_listview_refreshgroups (
 		{
 			group_id = _r_listview_getitemgroup (hwnd, listview_id, i);
 
-			if (group_id == 3)
+			if (group_id == 4)
+			{
+				group5_count += 1;
+			}
+			else if (group_id == 3)
 			{
 				group4_count += 1;
 			}
@@ -701,57 +709,75 @@ VOID _app_listview_refreshgroups (
 
 	if (total_count)
 	{
+		// set group #1 title
 		_r_str_printf (
-			group1_string,
-			RTL_NUMBER_OF (group1_string),
+			buffer,
+			RTL_NUMBER_OF (buffer),
 			is_rules ? L"%s (%d/%d) [for all]" : L"%s (%d/%d)",
 			_r_locale_getstring (group1_title),
 			group1_count,
 			total_count
 		);
 
+		_r_listview_setgroup (hwnd, listview_id, 0, buffer, 0, 0);
+
+		// set group #2 title
 		_r_str_printf (
-			group2_string,
-			RTL_NUMBER_OF (group2_string),
+			buffer,
+			RTL_NUMBER_OF (buffer),
 			is_rules ? L"%s (%d/%d) [for apps]" : L"%s (%d/%d)",
 			_r_locale_getstring (group2_title),
 			group2_count,
 			total_count
 		);
 
+		_r_listview_setgroup (hwnd, listview_id, 1, buffer, 0, 0);
+
+		// set group #3 title
 		if (group3_title)
 		{
 			_r_str_printf (
-				group3_string,
-				RTL_NUMBER_OF (group3_string),
+				buffer,
+				RTL_NUMBER_OF (buffer),
 				L"%s (%d/%d)",
 				_r_locale_getstring (group3_title),
 				group3_count,
 				total_count
 			);
+
+			_r_listview_setgroup (hwnd, listview_id, 2, buffer, 0, 0);
 		}
 
+		// set group #4 title
 		if (group4_title)
 		{
 			_r_str_printf (
-				group4_string,
-				RTL_NUMBER_OF (group4_string),
-				L"%s (%d/%d) [silent]",
+				buffer,
+				RTL_NUMBER_OF (buffer),
+				L"%s (%d/%d)",
 				_r_locale_getstring (group4_title),
 				group4_count,
 				total_count
 			);
+
+			_r_listview_setgroup (hwnd, listview_id, 3, buffer, 0, 0);
+		}
+
+		// set group #5 title
+		if (group5_title)
+		{
+			_r_str_printf (
+				buffer,
+				RTL_NUMBER_OF (buffer),
+				L"%s (%d/%d) [silent]",
+				_r_locale_getstring (group5_title),
+				group5_count,
+				total_count
+			);
+
+			_r_listview_setgroup (hwnd, listview_id, 4, buffer, 0, 0);
 		}
 	}
-
-	_r_listview_setgroup (hwnd, listview_id, 0, group1_string, 0, 0);
-	_r_listview_setgroup (hwnd, listview_id, 1, group2_string, 0, 0);
-
-	if (group3_title)
-		_r_listview_setgroup (hwnd, listview_id, 2, group3_string, 0, 0);
-
-	if (group4_title)
-		_r_listview_setgroup (hwnd, listview_id, 3, group4_string, 0, 0);
 }
 
 VOID _app_listview_resize_ex (

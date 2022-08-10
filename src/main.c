@@ -1549,6 +1549,7 @@ VOID _app_tabs_init (
 			_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 			_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 			_r_listview_addgroup (hwnd, listview_id, 3, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, listview_id, 4, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 		}
 		else if (listview_id == IDC_NETWORK)
 		{
@@ -1616,6 +1617,7 @@ VOID _app_initialize ()
 	};
 
 	R_ENVIRONMENT environment;
+	SIZE_T length;
 
 	// set privileges
 	_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
@@ -1644,13 +1646,9 @@ VOID _app_initialize ()
 	_r_workqueue_initialize (&wfp_queue, 0, 1, 10000, &environment, L"FiltersQueue");
 
 	// static initializer
-	{
-		SIZE_T length;
+	length = GetWindowsDirectory (config.windows_dir_buffer, RTL_NUMBER_OF (config.windows_dir_buffer));
 
-		length = GetWindowsDirectory (config.windows_dir_buffer, RTL_NUMBER_OF (config.windows_dir_buffer));
-
-		_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
-	}
+	_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
 
 	_app_profile_initialize ();
 
