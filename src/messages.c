@@ -441,8 +441,7 @@ VOID _app_message_contextmenu (
 			AppendMenu (hsubmenu_timers, MF_STRING, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
 			AppendMenu (hsubmenu_timers, MF_SEPARATOR, 0, NULL);
 
-			if (ptr_app)
-				_app_generate_timerscontrol (hsubmenu_timers, ptr_app);
+			_app_generate_timerscontrol (hsubmenu_timers, hash_code);
 		}
 
 		AppendMenu (hmenu, MF_SEPARATOR, 0, NULL);

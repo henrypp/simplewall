@@ -1126,7 +1126,7 @@ COLORREF _app_getcolorvalue (
 
 VOID _app_generate_rulescontrol (
 	_In_ HMENU hsubmenu,
-	_In_opt_ ULONG_PTR app_hash
+	_In_ ULONG_PTR app_hash
 )
 {
 	ITEM_STATUS status;
@@ -1139,7 +1139,7 @@ VOID _app_generate_rulescontrol (
 
 	_app_getcount (&status);
 
-	if (!app_hash || !status.rules_count)
+	if (!status.rules_count)
 	{
 		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, SZ_EMPTY);
 
@@ -1215,7 +1215,7 @@ VOID _app_generate_rulescontrol (
 
 VOID _app_generate_timerscontrol (
 	_In_ HMENU hsubmenu,
-	_In_opt_ PITEM_APP ptr_app
+	_In_ ULONG_PTR app_hash
 )
 {
 	LONG64 current_time;
@@ -1223,18 +1223,13 @@ VOID _app_generate_timerscontrol (
 	LONG64 timestamp;
 	PR_STRING interval_string;
 	UINT index;
-	BOOLEAN is_checked = (ptr_app == NULL);
+	BOOLEAN is_checked;
 
 	current_time = _r_unixtime_now ();
 
-	if (ptr_app)
-	{
-		_app_getappinfo (ptr_app, INFO_TIMER_PTR, (PVOID_PTR)&app_time);
-	}
-	else
-	{
-		app_time = 0;
-	}
+	is_checked = FALSE;
+
+	_app_getappinfobyhash (app_hash, INFO_TIMER_PTR, (PVOID_PTR)&app_time);
 
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
 	{
