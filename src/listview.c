@@ -631,7 +631,7 @@ VOID _app_listview_refreshgroups (
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
 		group1_title = IDS_GROUP_ALLOWED;
-		group2_title = IDS_HIGHLIGHT_TIMER;
+		group2_title = IDS_GROUP_TIMER;
 		group3_title = IDS_GROUP_SPECIAL_APPS;
 		group4_title = IDS_GROUP_BLOCKED;
 		group5_title = IDS_GROUP_BLOCKED;
