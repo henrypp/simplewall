@@ -1671,14 +1671,6 @@ VOID _app_initialize ()
 		colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), NULL);
 
 		// initialize colors
-		config.color_timer = _app_addcolor (
-			IDS_HIGHLIGHT_TIMER,
-			L"IsHighlightTimer",
-			TRUE,
-			L"ColorTimer",
-			LV_COLOR_TIMER
-		);
-
 		config.color_invalid = _app_addcolor (
 			IDS_HIGHLIGHT_INVALID,
 			L"IsHighlightInvalid",

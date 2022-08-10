@@ -569,13 +569,6 @@ COLORREF _app_getappcolor (
 			color_hash = config.color_invalid;
 			goto CleanupExit;
 		}
-
-		if (_r_config_getboolean_ex (L"IsHighlightTimer", TRUE, L"colors") &&
-			_app_istimerset (ptr_app))
-		{
-			color_hash = config.color_timer;
-			goto CleanupExit;
-		}
 	}
 
 	if (_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors") &&
