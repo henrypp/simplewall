@@ -1,8 +1,13 @@
+
+v3.6.5 (x August 2022)
+- display long time in packets log date column
+- fixed uwp packages display name parsing
+- fixed blank notifications (issue #1009)
+
 v3.6.4 (19 Juny 2022)
 - added focus assistant support (win10rs3+)
 - fixed notification sometimes can lose focus of fullscreen app
 - fixed internal profile loading crash (issue #1228)
-- fixed blank notifications (issue #1009)
 
 v3.6.3 (10 May 2022)
 - fixed installer launches simplewall without asking user (issue #1119)
