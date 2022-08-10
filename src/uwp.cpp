@@ -31,10 +31,13 @@ BOOLEAN _app_package_getpackage_info (
 	if (!package)
 		return FALSE;
 
-	status = package.Status ();
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1507))
+	{
+		status = package.Status ();
 
-	if (status.Disabled () || status.NotAvailable ())
-		return FALSE;
+		if (status.Disabled () || status.NotAvailable ())
+			return FALSE;
+	}
 
 	display_name = package.DisplayName ();
 	path = package.InstalledLocation ().Path ();
