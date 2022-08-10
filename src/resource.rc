@@ -574,7 +574,7 @@ BEGIN
 	IDS_HIGHLIGHT_SILENT "Disabled notifications"
 	IDS_HIGHLIGHT_SPECIAL "User rules"
 	IDS_HIGHLIGHT_SYSTEM "System app"
-	IDS_HIGHLIGHT_TIMER "Timer app"
+	IDS_GROUP_TIMER "Apps with timer"
 
 	IDS_EDITOR "Rules editor"
 
