@@ -1036,7 +1036,7 @@ VOID _app_displayinfoapp_callback (
 
 			case 1:
 			{
-				string = _r_format_unixtime_ex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
+				string = _r_format_unixtime_ex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
 
 				if (string)
 				{
