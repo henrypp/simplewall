@@ -1,5 +1,6 @@
 
 v3.6.5 (x August 2022)
+- added group for apps with timers
 - display long time in packets log date column
 - fixed uwp packages display name parsing
 - fixed blank notifications (issue #1009)
