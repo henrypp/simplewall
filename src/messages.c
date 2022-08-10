@@ -1689,7 +1689,7 @@ VOID _app_command_idtorules (
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
 	PR_LIST rules;
-	ULONG_PTR hash_code;
+	ULONG_PTR app_hash;
 	SIZE_T rule_idx;
 	INT listview_id;
 	INT item_id;
@@ -1711,27 +1711,25 @@ VOID _app_command_idtorules (
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
-		hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
+		app_hash = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 
-		if (ptr_rule->is_forservices && _app_issystemhash (hash_code))
+		if (ptr_rule->is_forservices && _app_issystemhash (app_hash))
 			continue;
 
-		ptr_app = _app_getappitem (hash_code);
+		ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
 			continue;
 
-		_app_notify_freeobject (ptr_app);
+		_app_notify_freeobject (NULL, ptr_app);
 
 		if (is_remove == -1)
-			is_remove = !!(ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, hash_code));
+			is_remove = !!(ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, app_hash));
 
 		_app_setruletoapp (hwnd, ptr_rule, item_id, ptr_app, !is_remove);
 
 		_r_obj_dereference (ptr_app);
 	}
-
-	rules = _r_obj_createlist (NULL);
 
 	if (_wfp_isfiltersinstalled ())
 	{
@@ -1739,16 +1737,19 @@ VOID _app_command_idtorules (
 
 		if (hengine)
 		{
+			rules = _r_obj_createlist (NULL);
+
 			_r_obj_addlistitem (rules, ptr_rule);
 
 			_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
+
+			_r_obj_dereference (rules);
 		}
 	}
 
 	_app_listview_updateby_id (hwnd, listview_id, 0);
 	_app_listview_updateitemby_param (hwnd, rule_idx, FALSE);
 
-	_r_obj_dereference (rules);
 	_r_obj_dereference (ptr_rule);
 
 	_app_profile_save ();
@@ -2067,7 +2068,7 @@ VOID _app_command_checkbox (
 				}
 				else
 				{
-					_app_notify_freeobject (ptr_app);
+					_app_notify_freeobject (NULL, ptr_app);
 				}
 
 				ptr_app->is_enabled = new_val;
@@ -2255,7 +2256,7 @@ VOID _app_command_delete (
 				_r_listview_deleteitem (hwnd, listview_id, i);
 
 				_app_timer_reset (hwnd, ptr_app);
-				_app_notify_freeobject (ptr_app);
+				_app_notify_freeobject (NULL, ptr_app);
 
 				_r_queuedlock_acquireexclusive (&lock_apps);
 				_app_freeapplication (hash_code);
@@ -2728,7 +2729,7 @@ VOID _app_command_purgeunused (
 		}
 
 		_app_timer_reset (NULL, ptr_app);
-		_app_notify_freeobject (ptr_app);
+		_app_notify_freeobject (NULL, ptr_app);
 
 		if (!_r_obj_isarrayempty (ptr_app->guids))
 			_r_obj_addarrayitems (guids, ptr_app->guids->items, ptr_app->guids->count);

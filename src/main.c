@@ -2399,7 +2399,7 @@ INT_PTR CALLBACK DlgProc (
 									_app_listview_lock (hwnd, listview_id, FALSE);
 
 									if (is_enabled)
-										_app_notify_freeobject (ptr_app);
+										_app_notify_freeobject (NULL, ptr_app);
 
 									if (!is_enabled && _app_istimerset (ptr_app->htimer))
 										_app_timer_reset (hwnd, ptr_app);

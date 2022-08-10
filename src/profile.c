@@ -134,7 +134,7 @@ VOID _app_setappinfo (
 		ptr_app->is_silent = (PtrToInt (value) ? TRUE : FALSE);
 
 		if (ptr_app->is_silent)
-			_app_notify_freeobject (ptr_app);
+			_app_notify_freeobject (NULL, ptr_app);
 	}
 	else if (info_data == INFO_IS_ENABLED)
 	{
