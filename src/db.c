@@ -998,7 +998,7 @@ VOID _app_db_save_app (
 			_r_xml_setattribute_long64 (&db_info->xml_library, L"timestamp", ptr_app->timestamp);
 
 		// set timer (if presented)
-		if (ptr_app->timer && _app_istimerset (ptr_app->htimer))
+		if (ptr_app->timer && _app_istimerset (ptr_app))
 			_r_xml_setattribute_long64 (&db_info->xml_library, L"timer", ptr_app->timer);
 
 		// ffu!

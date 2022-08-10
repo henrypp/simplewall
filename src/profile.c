@@ -571,7 +571,7 @@ COLORREF _app_getappcolor (
 		}
 
 		if (_r_config_getboolean_ex (L"IsHighlightTimer", TRUE, L"colors") &&
-			_app_istimerset (ptr_app->htimer))
+			_app_istimerset (ptr_app))
 		{
 			color_hash = config.color_timer;
 			goto CleanupExit;
@@ -678,7 +678,7 @@ VOID _app_getcount (
 	{
 		is_used = _app_isappused (ptr_app);
 
-		if (_app_istimerset (ptr_app->htimer))
+		if (_app_istimerset (ptr_app))
 			status->apps_timer_count += 1;
 
 		if (!ptr_app->is_undeletable &&

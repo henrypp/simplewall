@@ -119,7 +119,7 @@ VOID _app_getapptooltipstring (
 	// app timer
 	if (ptr_app)
 	{
-		if (_app_istimerset (ptr_app->htimer))
+		if (_app_istimerset (ptr_app))
 		{
 			tmp_string2 = _r_format_interval (ptr_app->timer - _r_unixtime_now (), 3);
 

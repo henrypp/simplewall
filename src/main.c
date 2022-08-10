@@ -2401,7 +2401,7 @@ INT_PTR CALLBACK DlgProc (
 									if (is_enabled)
 										_app_notify_freeobject (NULL, ptr_app);
 
-									if (!is_enabled && _app_istimerset (ptr_app->htimer))
+									if (!is_enabled && _app_istimerset (ptr_app))
 										_app_timer_reset (hwnd, ptr_app);
 
 									if (_wfp_isfiltersinstalled ())
