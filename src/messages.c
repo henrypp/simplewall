@@ -1037,7 +1037,7 @@ VOID _app_displayinfoapp_callback (
 
 			case 1:
 			{
-				string = _r_format_unixtime_ex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+				string = _r_format_unixtime_ex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
 				if (string)
 				{
@@ -1252,7 +1252,11 @@ VOID _app_displayinfonetwork_callback (
 				}
 				else if (ptr_network->path)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_network->path->buffer));
+					_r_str_copy (
+						lpnmlv->item.pszText,
+						lpnmlv->item.cchTextMax,
+						_r_path_getbasename (ptr_network->path->buffer)
+					);
 				}
 
 				break;
@@ -1429,7 +1433,11 @@ VOID _app_displayinfolog_callback (
 				}
 				else if (ptr_log->path)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_log->path->buffer));
+					_r_str_copy (
+						lpnmlv->item.pszText,
+						lpnmlv->item.cchTextMax,
+						_r_path_getbasename (ptr_log->path->buffer)
+					);
 				}
 				else
 				{
@@ -1441,7 +1449,7 @@ VOID _app_displayinfolog_callback (
 
 			case 1:
 			{
-				string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+				string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
 				if (string)
 				{
@@ -1565,7 +1573,11 @@ VOID _app_displayinfolog_callback (
 
 			case 10:
 			{
-				string = _r_obj_concatstrings (2, ptr_log->is_allow ? L"[A] " : L"[B] ", _r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY));
+				string = _r_obj_concatstrings (
+					2,
+					ptr_log->is_allow ? L"[A] " : L"[B] ",
+					_r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY)
+				);
 
 				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 				_r_obj_dereference (string);
