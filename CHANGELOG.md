@@ -1,9 +1,9 @@
 
-v3.6.5 (x August 2022)
+v3.6.5 (11 August 2022)
 - added group for apps with timers
 - display long time in packets log date column
 - fixed uwp packages display name parsing
-- fixed blank notifications (issue #1009)
+- fixed blank notifications (again!) (issue #1009)
 
 v3.6.4 (19 Juny 2022)
 - added focus assistant support (win10rs3+)
