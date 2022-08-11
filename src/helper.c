@@ -1003,7 +1003,11 @@ VOID _app_getfileversioninfo (
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		goto CleanupExit;
 
-	hlib = LoadLibraryEx (ptr_app_info->path->buffer, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
+	hlib = LoadLibraryEx (
+		ptr_app_info->path->buffer,
+		NULL,
+		LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE
+	);
 
 	if (!hlib)
 		goto CleanupExit;
@@ -1038,16 +1042,19 @@ VOID _app_getfileversioninfo (
 			_r_obj_appendstringbuilder (&sb, L" ");
 		}
 
-		_r_obj_appendstringbuilderformat (&sb, L"%d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
+		_r_obj_appendstringbuilderformat (
+			&sb,
+			L"%d.%d",
+			HIWORD (ver_info->dwFileVersionMS),
+			LOWORD (ver_info->dwFileVersionMS)
+		);
 
 		if (HIWORD (ver_info->dwFileVersionLS) || LOWORD (ver_info->dwFileVersionLS))
 		{
 			_r_obj_appendstringbuilderformat (&sb, L".%d", HIWORD (ver_info->dwFileVersionLS));
 
 			if (LOWORD (ver_info->dwFileVersionLS))
-			{
 				_r_obj_appendstringbuilderformat (&sb, L".%d", LOWORD (ver_info->dwFileVersionLS));
-			}
 		}
 	}
 
