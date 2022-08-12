@@ -98,7 +98,8 @@ ULONG_PTR _app_getloghash (
 	UNREFERENCED_PARAMETER (hwnd);
 
 	log_string = _r_format_string (
-		L"%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG_PTR) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu8) L"-%" TEXT (PRIu16) L"-%" TEXT (PRIu16) L"-%s-%s",
+		L"%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG_PTR) L"-%" TEXT (PRIu8) L"-%" \
+		TEXT (PRIu8) L"-%" TEXT (PRIu16) L"-%" TEXT (PRIu16) L"-%s-%s",
 		ptr_log->af,
 		ptr_log->app_hash,
 		ptr_log->protocol,
@@ -268,7 +269,13 @@ VOID _app_logwrite (
 	if (_app_logislimitreached (current_handle))
 		_app_logclear (current_handle);
 
-	WriteFile (current_handle, buffer->buffer, (ULONG)buffer->length, &unused, NULL);
+	WriteFile (
+		current_handle,
+		buffer->buffer,
+		(ULONG)buffer->length,
+		&unused,
+		NULL
+	);
 
 	if (date_string)
 		_r_obj_dereference (date_string);
@@ -390,23 +397,48 @@ VOID _wfp_logsubscribe (
 
 	if (_FwpmNetEventSubscribe4)
 	{
-		code = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
+		code = _FwpmNetEventSubscribe4 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback4,
+			NULL,
+			&new_handle); // win10rs5+
 	}
 	else if (_FwpmNetEventSubscribe3)
 	{
-		code = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
+		code = _FwpmNetEventSubscribe3 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback3,
+			NULL,
+			&new_handle); // win10rs4+
 	}
 	else if (_FwpmNetEventSubscribe2)
 	{
-		code = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
+		code = _FwpmNetEventSubscribe2 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback2,
+			NULL,
+			&new_handle); // win10rs1+
 	}
 	else if (_FwpmNetEventSubscribe1)
 	{
-		code = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle); // win8+
+		code = _FwpmNetEventSubscribe1 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback1,
+			NULL,
+			&new_handle); // win8+
 	}
 	else if (_FwpmNetEventSubscribe0)
 	{
-		code = _FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &new_handle); // win7+
+		code = _FwpmNetEventSubscribe0 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback0,
+			NULL,
+			&new_handle); // win7+
 	}
 	else
 	{
@@ -497,19 +529,44 @@ VOID _wfp_logsetoption (
 	val.type = FWP_UINT32;
 	val.uint32 = mask;
 
-	code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
+	code = FwpmEngineSetOption (
+		engine_handle,
+		FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS,
+		&val
+	);
 
 	if (code != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
+	{
+		_r_log (
+			LOG_LEVEL_WARNING,
+			NULL,
+			L"FwpmEngineSetOption",
+			code,
+			L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS"
+		);
+	}
 
-	// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
+	// enables the connection monitoring feature and starts logging creation and
+	// deletion events (and notifying any subscribers)
 	val.type = FWP_UINT32;
 	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE);
 
-	code = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+	code = FwpmEngineSetOption (
+		engine_handle,
+		FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS,
+		&val
+	);
 
 	if (code != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", code, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
+	{
+		_r_log (
+			LOG_LEVEL_WARNING,
+			NULL,
+			L"FwpmEngineSetOption",
+			code,
+			L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS"
+		);
+	}
 }
 
 VOID CALLBACK _wfp_logcallback (
@@ -538,7 +595,10 @@ VOID CALLBACK _wfp_logcallback (
 		return;
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
-	if (FwpmLayerGetById (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS || !layer_ptr)
+	if (FwpmLayerGetById (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS)
+		return;
+
+	if (!layer_ptr)
 		return;
 
 	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) ||
@@ -683,11 +743,23 @@ VOID CALLBACK _wfp_logcallback (
 
 			// remote address
 			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET && log->remote_addr6)
-				RtlCopyMemory (ptr_log->remote_addr6.u.Byte, log->remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
+			{
+				RtlCopyMemory (
+					ptr_log->remote_addr6.u.Byte,
+					log->remote_addr6->byteArray16,
+					FWP_V6_ADDR_SIZE
+				);
+			}
 
 			// local address
 			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET && log->local_addr6)
-				RtlCopyMemory (ptr_log->local_addr6.u.Byte, log->local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
+			{
+				RtlCopyMemory (
+					ptr_log->local_addr6.u.Byte,
+					log->local_addr6->byteArray16,
+					FWP_V6_ADDR_SIZE
+				);
+			}
 		}
 	}
 
