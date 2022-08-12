@@ -16,7 +16,14 @@ PSID _app_quyerybuiltinsid (
 
 	if (!CreateWellKnownSid (sid_type, NULL, sid, &sid_length))
 	{
-		_r_log_v (LOG_LEVEL_ERROR, NULL, L"CreateWellKnownSid", GetLastError (), L"%" TEXT (PRIu32), sid_type);
+		_r_log_v (
+			LOG_LEVEL_ERROR,
+			NULL,
+			L"CreateWellKnownSid",
+			GetLastError (),
+			L"%" TEXT (PRIu32),
+			sid_type
+		);
 	}
 	else
 	{
@@ -146,11 +153,27 @@ PACL _app_createaccesscontrollist (
 
 		// revoke current user access rights
 		if (is_currentuserhaverights)
-			_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, config.pbuiltin_current_sid);
+		{
+			_app_setexplicitaccess (
+				&ea[count++],
+				REVOKE_ACCESS,
+				0,
+				NO_INHERITANCE,
+				config.pbuiltin_current_sid
+			);
+		}
 
 		// revoke everyone access rights
 		if (is_openforeveryone)
-			_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, &SeEveryoneSid);
+		{
+			_app_setexplicitaccess (
+				&ea[count++],
+				REVOKE_ACCESS,
+				0,
+				NO_INHERITANCE,
+				&SeEveryoneSid
+			);
+		}
 
 		// secure filter from deletion
 		_app_setexplicitaccess (
@@ -284,7 +307,15 @@ VOID _app_setsecurityinfoforengine (
 			if (is_currentuserhaverights)
 			{
 				if (config.pbuiltin_current_sid)
-					_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, config.pbuiltin_current_sid);
+				{
+					_app_setexplicitaccess (
+						&ea[count++],
+						REVOKE_ACCESS,
+						0,
+						NO_INHERITANCE,
+						config.pbuiltin_current_sid
+					);
+				}
 			}
 
 			// reset default engine rights
@@ -681,7 +712,14 @@ VOID _app_setsecurityinfoforfilter (
 		if (status != FWP_E_FILTER_NOT_FOUND)
 #endif // !DEBUG
 		{
-			_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
+			_r_log_v (
+				LOG_LEVEL_ERROR,
+				NULL,
+				L"FwpmFilterSetSecurityInfoByKey",
+				status,
+				L"%s:%" TEXT (PRIu32),
+				DBG_ARG_VAR
+			);
 		}
 
 		return;
@@ -704,7 +742,16 @@ VOID _app_setsecurityinfoforfilter (
 			);
 
 			if (status != ERROR_SUCCESS)
-				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"#%" TEXT (PRIu32), line);
+			{
+				_r_log_v (
+					LOG_LEVEL_ERROR,
+					NULL,
+					L"FwpmFilterSetSecurityInfoByKey",
+					status,
+					L"#%" TEXT (PRIu32),
+					line
+				);
+			}
 
 			LocalFree (new_dacl);
 		}
