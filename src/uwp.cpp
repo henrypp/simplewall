@@ -12,10 +12,11 @@
 
 #include "uwp.h"
 
-BOOLEAN _app_package_getpackage_info (
+_Success_ (return)
+BOOLEAN _app_uwp_loadpackageinfo (
 	_In_ PR_STRING package_name,
-	_Out_ PR_STRING_PTR name_ptr,
-	_Out_ PR_STRING_PTR path_ptr
+	_Inout_ PR_STRING_PTR name_ptr,
+	_Inout_ PR_STRING_PTR path_ptr
 )
 {
 	winrt::Windows::ApplicationModel::Package package = NULL;
@@ -23,10 +24,9 @@ BOOLEAN _app_package_getpackage_info (
 	winrt::hstring display_name;
 	winrt::hstring path;
 
-	*name_ptr = NULL;
-	*path_ptr = NULL;
-
-	package = winrt::Windows::Management::Deployment::PackageManager{}.FindPackage (package_name->buffer);
+	package = winrt::Windows::Management::Deployment::PackageManager{}.FindPackage (
+		package_name->buffer
+	);
 
 	if (!package)
 		return FALSE;
@@ -51,6 +51,9 @@ BOOLEAN _app_package_getpackage_info (
 	}
 	else
 	{
+		if (display_name == L"1527c705-839a-4832-9118-54d4Bd6a0c89")
+			display_name = L"File Picker";// HACK!!!
+
 		*name_ptr = _r_obj_createstring_ex (
 			display_name.c_str (),
 			display_name.size () * sizeof (WCHAR)
@@ -66,4 +69,28 @@ BOOLEAN _app_package_getpackage_info (
 	}
 
 	return TRUE;
+}
+
+_Success_ (return)
+BOOLEAN _app_uwp_getpackageinfo (
+	_In_ PR_STRING package_name,
+	_Out_ PR_STRING_PTR name_ptr,
+	_Out_ PR_STRING_PTR path_ptr
+)
+{
+	BOOLEAN status;
+
+	*name_ptr = NULL;
+	*path_ptr = NULL;
+
+	__try
+	{
+		status = _app_uwp_loadpackageinfo (package_name, name_ptr, path_ptr);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return FALSE;
+	}
+
+	return status;
 }
