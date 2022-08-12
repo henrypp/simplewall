@@ -2263,7 +2263,7 @@ VOID _app_command_delete (
 				_app_notify_freeobject (NULL, ptr_app);
 
 				_r_queuedlock_acquireexclusive (&lock_apps);
-				_app_freeapplication (hash_code);
+				_app_freeapplication (hwnd, hash_code);
 				_r_queuedlock_releaseexclusive (&lock_apps);
 			}
 
@@ -2753,7 +2753,7 @@ VOID _app_command_purgeunused (
 
 		while (_r_obj_enumhashtable (apps_list, NULL, &hash_code, &enum_key))
 		{
-			_app_freeapplication (hash_code);
+			_app_freeapplication (hwnd, hash_code);
 		}
 
 		_r_queuedlock_releaseexclusive (&lock_apps);

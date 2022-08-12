@@ -621,6 +621,7 @@ CleanupExit:
 }
 
 VOID _app_freeapplication (
+	_In_opt_ HWND hwnd,
 	_In_ ULONG_PTR app_hash
 )
 {
@@ -638,7 +639,8 @@ VOID _app_freeapplication (
 		if (ptr_rule->type != DATA_RULE_USER)
 			continue;
 
-		_app_ruleremoveapp (_r_app_gethwnd (), i, ptr_rule, app_hash);
+		if (hwnd)
+			_app_ruleremoveapp (hwnd, i, ptr_rule, app_hash);
 	}
 
 	_r_queuedlock_releaseshared (&lock_rules);
@@ -981,6 +983,7 @@ VOID _app_ruleblocklistset (
 {
 	PR_LIST rules;
 	PITEM_RULE ptr_rule;
+	HANDLE hengine;
 	SIZE_T changes_count = 0;
 
 	rules = _r_obj_createlist (&_r_obj_dereference);
@@ -1023,7 +1026,7 @@ VOID _app_ruleblocklistset (
 			{
 				if (_wfp_isfiltersinstalled ())
 				{
-					HANDLE hengine = _wfp_getenginehandle ();
+					hengine = _wfp_getenginehandle ();
 
 					if (hengine)
 						_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
