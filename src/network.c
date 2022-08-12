@@ -58,25 +58,26 @@ VOID _app_network_initialize (
 		MEMORY_PRIORITY_NORMAL
 	);
 
-	_r_sys_createthread (&_app_network_threadproc, network_context, NULL, &environment, L"NetMonitor");
+	_r_sys_createthread (
+		&_app_network_threadproc,
+		network_context,
+		NULL,
+		&environment,
+		L"NetMonitor"
+	);
 }
 
-VOID _app_network_uninitialize ()
+VOID _app_network_uninitialize (
+	_In_ PITEM_NETWORK_CONTEXT context
+)
 {
-	PITEM_NETWORK_CONTEXT network_context;
+	_r_queuedlock_acquireexclusive (&context->lock_network);
+	_r_obj_clearhashtable (context->network_ptr);
+	_r_queuedlock_releaseexclusive (&context->lock_network);
 
-	network_context = _app_network_getcontext ();
-
-	if (!network_context)
-		return;
-
-	_r_queuedlock_acquireexclusive (&network_context->lock_network);
-	_r_obj_clearhashtable (network_context->network_ptr);
-	_r_queuedlock_releaseexclusive (&network_context->lock_network);
-
-	_r_queuedlock_acquireexclusive (&network_context->lock_checker);
-	_r_obj_clearhashtable (network_context->checker_ptr);
-	_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+	_r_queuedlock_acquireexclusive (&context->lock_checker);
+	_r_obj_clearhashtable (context->checker_ptr);
+	_r_queuedlock_releaseexclusive (&context->lock_checker);
 }
 
 VOID _app_network_generatetable (
@@ -648,7 +649,10 @@ BOOLEAN _app_network_getpath (
 
 	if (modules)
 	{
-		process_name = _r_sys_querytaginformation (UlongToHandle (pid), UlongToPtr (*(PULONG)modules));
+		process_name = _r_sys_querytaginformation (
+			UlongToHandle (pid),
+			UlongToPtr (*(PULONG)modules)
+		);
 
 		if (process_name)
 			ptr_network->type = DATA_APP_SERVICE;
@@ -746,7 +750,11 @@ BOOLEAN _app_network_isapphaveconnection (
 
 	_r_queuedlock_acquireshared (&network_context->lock_network);
 
-	while (_r_obj_enumhashtablepointer (network_context->network_ptr, &ptr_network, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (
+		network_context->network_ptr,
+		&ptr_network,
+		NULL,
+		&enum_key))
 	{
 		if (ptr_network->app_hash == app_hash)
 		{
@@ -840,7 +848,11 @@ VOID _app_network_printlistviewtable (
 	// add new connections into listview
 	_r_queuedlock_acquireshared (&network_context->lock_network);
 
-	while (_r_obj_enumhashtablepointer (network_context->network_ptr, &ptr_network, &network_hash, &enum_key))
+	while (_r_obj_enumhashtablepointer (
+		network_context->network_ptr,
+		&ptr_network,
+		&network_hash,
+		&enum_key))
 	{
 		string = _r_obj_findhashtablepointer (network_context->checker_ptr, network_hash);
 
@@ -849,7 +861,11 @@ VOID _app_network_printlistviewtable (
 
 		_r_obj_dereference (string);
 
-		_app_listview_addnetworkitem (network_context->hwnd, ptr_network, network_hash);
+		_app_listview_addnetworkitem (
+			network_context->hwnd,
+			ptr_network,
+			network_hash
+		);
 
 		if (ptr_network->path && ptr_network->app_hash)
 		{
@@ -862,7 +878,12 @@ VOID _app_network_printlistviewtable (
 		}
 
 		// resolve network address
-		_app_queue_resolver (network_context->hwnd, IDC_NETWORK, network_hash, ptr_network);
+		_app_queue_resolver (
+			network_context->hwnd,
+			IDC_NETWORK,
+			network_hash,
+			ptr_network
+		);
 
 		is_refresh = TRUE;
 	}
@@ -929,15 +950,8 @@ NTSTATUS NTAPI _app_network_threadproc (
 )
 {
 	PITEM_NETWORK_CONTEXT network_context;
-	HANDLE engine_handle;
 
 	network_context = (PITEM_NETWORK_CONTEXT)arglist;
-
-	engine_handle = _wfp_getenginehandle ();
-
-	// initialize network table
-	_app_network_generatetable (network_context);
-	_app_network_printlistviewtable (network_context);
 
 	while (TRUE)
 	{
@@ -948,7 +962,7 @@ NTSTATUS NTAPI _app_network_threadproc (
 		WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
 	}
 
-	_app_network_uninitialize ();
+	_app_network_uninitialize (network_context);
 
 	return STATUS_SUCCESS;
 }

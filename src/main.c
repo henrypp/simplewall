@@ -2011,8 +2011,6 @@ INT_PTR CALLBACK DlgProc (
 
 			_r_config_setlong (L"CurrentTab", _app_listview_getcurrent (hwnd));
 
-			_app_network_uninitialize ();
-
 			_r_tray_destroy (hwnd, &GUID_TrayIcon);
 
 			_app_loginit (FALSE);
