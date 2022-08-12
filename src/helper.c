@@ -245,7 +245,10 @@ PR_STRING _app_formatarpa (
 			);
 		}
 
-		_r_obj_appendstringbuilder (&formatted_address, DNS_IP6_REVERSE_DOMAIN_STRING_W);
+		_r_obj_appendstringbuilder (
+			&formatted_address,
+			DNS_IP6_REVERSE_DOMAIN_STRING_W
+		);
 	}
 
 	return _r_obj_finalstringbuilder (&formatted_address);
@@ -298,7 +301,12 @@ PR_STRING _app_formataddress (
 
 	if (port && !(flags & FMTADDR_USE_PROTOCOL))
 	{
-		_r_obj_appendstringbuilderformat (&formatted_address, is_success ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port);
+		_r_obj_appendstringbuilderformat (
+			&formatted_address,
+			is_success ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16),
+			port
+		);
+
 		is_success = TRUE;
 	}
 
@@ -319,14 +327,22 @@ PR_STRING _app_formataddress_interlocked (
 	PR_STRING current_string;
 	PR_STRING new_string;
 
-	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
+	current_string = InterlockedCompareExchangePointer (
+		string,
+		NULL,
+		NULL
+	);
 
 	if (current_string)
 		return current_string;
 
 	new_string = _app_formataddress (af, 0, address, 0, 0);
 
-	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
+	current_string = InterlockedCompareExchangePointer (
+		string,
+		new_string,
+		NULL
+	);
 
 	if (!current_string)
 	{
@@ -480,7 +496,11 @@ BOOLEAN _app_getappinfoparam2 (
 	{
 		case INFO_ICON_ID:
 		{
-			icon_id = InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0);
+			icon_id = InterlockedCompareExchange (
+				&ptr_app_info->large_icon_id,
+				0,
+				0
+			);
 
 			if (icon_id)
 			{
@@ -652,14 +672,30 @@ VOID _app_getfileicon (
 
 	if (is_iconshidded || !_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
-		_app_icons_loadfromfile (NULL, ptr_app_info->type, &icon_id, NULL, TRUE);
+		_app_icons_loadfromfile (
+			NULL,
+			ptr_app_info->type,
+			&icon_id,
+			NULL,
+			TRUE
+		);
 	}
 	else
 	{
-		_app_icons_loadfromfile (ptr_app_info->path, ptr_app_info->type, &icon_id, NULL, TRUE);
+		_app_icons_loadfromfile (
+			ptr_app_info->path,
+			ptr_app_info->type,
+			&icon_id,
+			NULL,
+			TRUE
+		);
 	}
 
-	InterlockedCompareExchange (&ptr_app_info->large_icon_id, icon_id, ptr_app_info->large_icon_id);
+	InterlockedCompareExchange (
+		&ptr_app_info->large_icon_id,
+		icon_id,
+		ptr_app_info->large_icon_id
+	);
 }
 
 _Success_ (return)
@@ -688,10 +724,17 @@ BOOLEAN _app_calculatefilehash (
 
 		if (hwintrust)
 		{
-			_CryptCATAdminAcquireContext2 = (CCAAC2)GetProcAddress (hwintrust, "CryptCATAdminAcquireContext2");
-			_CryptCATAdminCalcHashFromFileHandle2 = (CCAHFFH2)GetProcAddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2");
+			_CryptCATAdminAcquireContext2 = (CCAAC2)GetProcAddress (
+				hwintrust,
+				"CryptCATAdminAcquireContext2"
+			);
 
-			FreeLibrary (hwintrust);
+			_CryptCATAdminCalcHashFromFileHandle2 = (CCAHFFH2)GetProcAddress (
+				hwintrust,
+				"CryptCATAdminCalcHashFromFileHandle2"
+			);
+
+			//FreeLibrary (hwintrust);
 		}
 
 		_r_initonce_end (&init_once);
@@ -699,8 +742,15 @@ BOOLEAN _app_calculatefilehash (
 
 	if (_CryptCATAdminAcquireContext2)
 	{
-		if (!_CryptCATAdminAcquireContext2 (&hcat_admin, &DriverActionVerify, algorithm_id, NULL, 0))
+		if (!_CryptCATAdminAcquireContext2 (
+			&hcat_admin,
+			&DriverActionVerify,
+			algorithm_id,
+			NULL,
+			0))
+		{
 			return FALSE;
+		}
 	}
 	else
 	{
@@ -713,11 +763,21 @@ BOOLEAN _app_calculatefilehash (
 
 	if (_CryptCATAdminCalcHashFromFileHandle2)
 	{
-		if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
+		if (!_CryptCATAdminCalcHashFromFileHandle2 (
+			hcat_admin,
+			hfile,
+			&file_hash_length,
+			file_hash,
+			0))
 		{
 			file_hash = _r_mem_reallocatezero (file_hash, file_hash_length);
 
-			if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
+			if (!_CryptCATAdminCalcHashFromFileHandle2 (
+				hcat_admin,
+				hfile,
+				&file_hash_length,
+				file_hash,
+				0))
 			{
 				CryptCATAdminReleaseContext (hcat_admin, 0);
 				_r_mem_free (file_hash);
@@ -728,11 +788,19 @@ BOOLEAN _app_calculatefilehash (
 	}
 	else
 	{
-		if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
+		if (!CryptCATAdminCalcHashFromFileHandle (
+			hfile,
+			&file_hash_length,
+			file_hash,
+			0))
 		{
 			file_hash = _r_mem_reallocatezero (file_hash, file_hash_length);
 
-			if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
+			if (!CryptCATAdminCalcHashFromFileHandle (
+				hfile,
+				&file_hash_length,
+				file_hash,
+				0))
 			{
 				CryptCATAdminReleaseContext (hcat_admin, 0);
 				_r_mem_free (file_hash);
@@ -781,13 +849,27 @@ PR_STRING _app_verifygetstring (
 			if (!prov_cert)
 				break;
 
-			length = CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, NULL, 0) - 1;
+			length = CertGetNameString (
+				prov_cert->pCert,
+				CERT_NAME_ATTR_TYPE,
+				0,
+				szOID_COMMON_NAME,
+				NULL,
+				0) - 1;
 
 			if (length > 1)
 			{
 				string = _r_obj_createstring_ex (NULL, length * sizeof (WCHAR));
 
-				CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1);
+				CertGetNameString (
+					prov_cert->pCert,
+					CERT_NAME_ATTR_TYPE,
+					0,
+					szOID_COMMON_NAME,
+					string->buffer,
+					length + 1
+				);
+
 				_r_obj_trimstringtonullterminator (string);
 
 				return string;
@@ -888,9 +970,20 @@ LONG _app_verifyfilefromcatalog (
 	string = NULL;
 	status = TRUST_E_FAIL;
 
-	if (_app_calculatefilehash (hfile, algorithm_id, &file_hash, &file_hash_length, &hcat_admin))
+	if (_app_calculatefilehash (
+		hfile,
+		algorithm_id,
+		&file_hash,
+		&file_hash_length,
+		&hcat_admin))
 	{
-		hcat_info = CryptCATAdminEnumCatalogFromHash (hcat_admin, file_hash, file_hash_length, 0, NULL);
+		hcat_info = CryptCATAdminEnumCatalogFromHash (
+			hcat_admin,
+			file_hash,
+			file_hash_length,
+			0,
+			NULL
+		);
 
 		if (hcat_info)
 		{
@@ -910,7 +1003,13 @@ LONG _app_verifyfilefromcatalog (
 				catalog_info.cbCalculatedFileHash = file_hash_length;
 				catalog_info.hCatAdmin = hcat_admin;
 
-				status = _app_verifyfromfile (WTD_CHOICE_CATALOG, &catalog_info, &DriverActionVerify, &ver_info, &string);
+				status = _app_verifyfromfile (
+					WTD_CHOICE_CATALOG,
+					&catalog_info,
+					&DriverActionVerify,
+					&ver_info,
+					&string
+				);
 
 				if (ver_info.pcSignerCertContext)
 					CertFreeCertificateContext (ver_info.pcSignerCertContext);
@@ -966,17 +1065,33 @@ VOID _app_getfilesignatureinfo (
 	file_info.pcwszFilePath = ptr_app_info->path->buffer;
 	file_info.hFile = hfile;
 
-	status = _app_verifyfromfile (WTD_CHOICE_FILE, &file_info, &WinTrustActionGenericVerifyV2, NULL, &string);
+	status = _app_verifyfromfile (
+		WTD_CHOICE_FILE,
+		&file_info,
+		&WinTrustActionGenericVerifyV2,
+		NULL,
+		&string
+	);
 
 	if (status == TRUST_E_NOSIGNATURE)
 	{
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
-			status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA256_ALGORITHM, &string);
+			status = _app_verifyfilefromcatalog (
+				hfile,
+				ptr_app_info->path->buffer,
+				BCRYPT_SHA256_ALGORITHM,
+				&string
+			);
 		}
 		else
 		{
-			status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, NULL, &string);
+			status = _app_verifyfilefromcatalog (
+				hfile,
+				ptr_app_info->path->buffer,
+				NULL,
+				&string
+			);
 		}
 	}
 
@@ -1181,7 +1296,8 @@ VOID _app_generate_rulescontrol (
 						continue;
 
 					is_global = (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps));
-					is_enabled = is_global || (ptr_rule->is_enabled && (_r_obj_findhashtable (ptr_rule->apps, app_hash)));
+					is_enabled = is_global ||
+						(ptr_rule->is_enabled && (_r_obj_findhashtable (ptr_rule->apps, app_hash)));
 
 					if (ptr_rule->type != DATA_RULE_USER || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)))
 						continue;
@@ -1189,7 +1305,12 @@ VOID _app_generate_rulescontrol (
 					if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
 						continue;
 
-					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_RULE_APPLY_2), _r_obj_getstring (ptr_rule->name));
+					_r_str_printf (
+						buffer,
+						RTL_NUMBER_OF (buffer),
+						_r_locale_getstring (IDS_RULE_APPLY_2),
+						_r_obj_getstring (ptr_rule->name)
+					);
 
 					if (ptr_rule->is_readonly)
 						_r_str_append (buffer, RTL_NUMBER_OF (buffer), SZ_RULE_INTERNAL_MENU);
@@ -1300,7 +1421,11 @@ BOOLEAN _app_setruletoapp (
 	{
 		listview_id = _app_listview_getbytype (ptr_rule->type);
 
-		_app_listview_updateitemby_param (hwnd, _app_listview_getitemcontext (hwnd, listview_id, item_id), FALSE);
+		_app_listview_updateitemby_param (
+			hwnd,
+			_app_listview_getitemcontext (hwnd, listview_id, item_id),
+			FALSE
+		);
 	}
 
 	_app_listview_updateitemby_param (hwnd, ptr_app->app_hash, TRUE);
@@ -1460,7 +1585,12 @@ BOOLEAN _app_preparserulestring (
 	}
 
 	// parse rule range
-	address->is_range = _r_str_splitatchar (rule, DIVIDER_RULE_RANGE, &range_start_part, &range_end_part);
+	address->is_range = _r_str_splitatchar (
+		rule,
+		DIVIDER_RULE_RANGE,
+		&range_start_part,
+		&range_end_part
+	);
 
 	// extract start and end position of rule
 	if (address->is_range)
@@ -1469,8 +1599,17 @@ BOOLEAN _app_preparserulestring (
 		if (_r_obj_isstringempty2 (&range_start_part) || _r_obj_isstringempty2 (&range_end_part))
 			return FALSE;
 
-		_r_str_copystring (address->range_start, RTL_NUMBER_OF (address->range_start), &range_start_part);
-		_r_str_copystring (address->range_end, RTL_NUMBER_OF (address->range_end), &range_end_part);
+		_r_str_copystring (
+			address->range_start,
+			RTL_NUMBER_OF (address->range_start),
+			&range_start_part
+		);
+
+		_r_str_copystring (
+			address->range_end,
+			RTL_NUMBER_OF (address->range_end),
+			&range_end_part
+		);
 	}
 
 	// check rule for port
@@ -1609,7 +1748,11 @@ PR_STRING _app_resolveaddress (
 	arpa_string = _app_formatarpa (af, address);
 	arpa_hash = _r_str_gethash2 (arpa_string, TRUE);
 
-	if (_app_getcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, &string))
+	if (_app_getcachetable (
+		cache_resolution,
+		arpa_hash,
+		&lock_cache_resolution,
+		&string))
 	{
 		_r_obj_dereference (arpa_string);
 		return string;
@@ -1618,7 +1761,14 @@ PR_STRING _app_resolveaddress (
 	dns_records = NULL;
 	string = NULL;
 
-	status = DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+	status = DnsQuery (
+		arpa_string->buffer,
+		DNS_TYPE_PTR,
+		DNS_QUERY_NO_HOSTS_FILE,
+		NULL,
+		&dns_records,
+		NULL
+	);
 
 	if (status == NO_ERROR)
 	{
@@ -1640,7 +1790,12 @@ PR_STRING _app_resolveaddress (
 	if (!string)
 		string = _r_obj_referenceemptystring ();
 
-	_app_addcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, _r_obj_reference (string));
+	_app_addcachetable (
+		cache_resolution,
+		arpa_hash,
+		&lock_cache_resolution,
+		_r_obj_reference (string)
+	);
 
 	_r_obj_dereference (arpa_string);
 
@@ -1657,7 +1812,11 @@ PR_STRING _app_resolveaddress_interlocked (
 	PR_STRING current_string;
 	PR_STRING new_string;
 
-	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
+	current_string = InterlockedCompareExchangePointer (
+		string,
+		NULL,
+		NULL
+	);
 
 	if (current_string)
 		return current_string;
@@ -1674,7 +1833,11 @@ PR_STRING _app_resolveaddress_interlocked (
 		new_string = _r_obj_referenceemptystring ();
 	}
 
-	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
+	current_string = InterlockedCompareExchangePointer (
+		string,
+		new_string,
+		NULL
+	);
 
 	if (!current_string)
 	{
@@ -1708,7 +1871,9 @@ VOID _app_queue_fileinformation (
 		}
 
 		// all information is already set
-		if (ptr_app_info->signature_info && ptr_app_info->version_info && InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0) != 0)
+		if (ptr_app_info->signature_info &&
+			ptr_app_info->version_info &&
+			InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0) != 0)
 		{
 			_r_obj_dereference (ptr_app_info);
 			return;
@@ -1730,7 +1895,11 @@ VOID _app_queue_fileinformation (
 
 	InterlockedIncrement (&ptr_app_info->lock);
 
-	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, ptr_app_info);
+	_r_workqueue_queueitem (
+		&file_queue,
+		&_app_queuefileinformation,
+		ptr_app_info
+	);
 }
 
 VOID _app_queue_resolver (
@@ -1749,7 +1918,11 @@ VOID _app_queue_resolver (
 	context->lparam = hash_code;
 	context->base_address = _r_obj_reference (base_address);
 
-	_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
+	_r_workqueue_queueitem (
+		&resolver_queue,
+		&_app_queueresolveinformation,
+		context
+	);
 }
 
 VOID NTAPI _app_queuefileinformation (
@@ -1869,9 +2042,17 @@ VOID NTAPI _app_queuenotifyinformation (
 			is_iconset = TRUE;
 
 			// set signature information
-			localized_string = _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":");
+			localized_string = _r_obj_concatstrings (
+				2,
+				_r_locale_getstring (IDS_SIGNATURE),
+				L":"
+			);
 
-			_app_getappinfoparam2 (context->ptr_log->app_hash, INFO_SIGNATURE_STRING, &signature_str);
+			_app_getappinfoparam2 (
+				context->ptr_log->app_hash,
+				INFO_SIGNATURE_STRING,
+				&signature_str
+			);
 
 			if (_r_obj_isstringempty (signature_str))
 				_r_obj_movereference (&signature_str, _r_locale_getstring_ex (IDS_SIGN_UNSIGNED));
@@ -1888,7 +2069,10 @@ VOID NTAPI _app_queuenotifyinformation (
 			);
 
 			// set address string
-			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
+			_r_obj_movereference (
+				&localized_string,
+				_r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":")
+			);
 
 			if (_r_obj_isstringempty (address_str))
 				_r_obj_movereference (&address_str, _r_obj_createstring (SZ_EMPTY));
@@ -1903,7 +2087,10 @@ VOID NTAPI _app_queuenotifyinformation (
 			);
 
 			// set host string
-			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
+			_r_obj_movereference (
+				&localized_string,
+				_r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":")
+			);
 
 			if (_r_obj_isstringempty (host_str))
 				_r_obj_movereference (&host_str, _r_obj_createstring (SZ_EMPTY));
@@ -2028,5 +2215,11 @@ HBITMAP _app_bitmapfrompng (
 	if (!_r_res_loadresource (hinst, name, L"PNG", &buffer))
 		return NULL;
 
-	return _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, width, width);
+	return _r_dc_imagetobitmap (
+		&GUID_ContainerFormatPng,
+		buffer.buffer,
+		(ULONG)buffer.length,
+		width,
+		width
+	);
 }
