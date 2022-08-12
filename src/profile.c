@@ -1620,12 +1620,12 @@ VOID _app_profile_refresh ()
 	_r_obj_clearhashtable (rules_config);
 	_r_queuedlock_releaseexclusive (&lock_rules_config);
 
+	// generate services list
+	_app_package_getserviceslist ();
+
 	// generate uwp apps list (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		_app_package_getpackageslist ();
-
-	// generate services list
-	_app_package_getserviceslist ();
 }
 
 NTSTATUS _app_profile_load (
@@ -1644,7 +1644,12 @@ NTSTATUS _app_profile_load (
 
 	if (path_custom)
 	{
-		status = _app_db_openfromfile (&db_info, path_custom, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
+		status = _app_db_openfromfile (
+			&db_info,
+			path_custom,
+			XML_VERSION_MINIMAL,
+			XML_TYPE_PROFILE
+		);
 	}
 	else
 	{
