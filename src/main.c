@@ -1895,7 +1895,6 @@ INT_PTR CALLBACK DlgProc (
 
 		case RM_CONFIG_UPDATE:
 		{
-			_app_profile_save ();
 			_app_profile_load (hwnd, NULL);
 
 			_app_changefilters (hwnd, TRUE, FALSE);
@@ -1906,9 +1905,7 @@ INT_PTR CALLBACK DlgProc (
 		case RM_CONFIG_RESET:
 		{
 			_r_queuedlock_acquireexclusive (&lock_rules_config);
-
 			_r_obj_clearhashtable (rules_config);
-
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 
 			_r_path_makebackup (profile_info.profile_path, TRUE);
