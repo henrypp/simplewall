@@ -1,4 +1,9 @@
 
+v3.6.6 (12 August 2022)
+- fixed editor does not disable save button when rule name is empty
+- fixed network monitor duplicate calls
+- fixed application crash (issue #1272)
+
 v3.6.5 (11 August 2022)
 - added group for apps with timers
 - display long time in packets log date column
