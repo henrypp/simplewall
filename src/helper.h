@@ -6,9 +6,11 @@
 typedef struct _ICON_INFORMATION
 {
 	HICON app_hicon;
+	HICON service_hicon;
 	HICON uwp_hicon;
 
 	LONG app_icon_id;
+	LONG service_icon_id;
 	LONG uwp_icon_id;
 } ICON_INFORMATION, *PICON_INFORMATION;
 
