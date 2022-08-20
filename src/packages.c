@@ -514,17 +514,7 @@ VOID _app_package_getserviceslist ()
 		}
 
 		// query service path
-		service_path = _r_reg_querystring (hkey, L"Parameters", L"ServiceDLL");
-
-		if (!service_path)
-		{
-			// Windows 8 places the ServiceDll for some services in the root key. (dmex)
-			if (_r_sys_isosversionequal (WINDOWS_8) || _r_sys_isosversionequal (WINDOWS_8_1))
-				service_path = _r_reg_querystring (hkey, NULL, L"ServiceDLL");
-
-			if (!service_path)
-				service_path = _r_reg_querystring (hkey, NULL, L"ImagePath");
-		}
+		service_path = _r_reg_querystring (hkey, NULL, L"ImagePath");
 
 		if (service_path)
 		{
