@@ -77,6 +77,7 @@ VOID _app_message_initialize (
 		_r_menu_checkitem (hmenu, IDM_RULE_BLOCKINBOUND, 0, MF_BYCOMMAND, _r_config_getboolean (L"BlockInboundConnections", TRUE));
 		_r_menu_checkitem (hmenu, IDM_RULE_ALLOWLOOPBACK, 0, MF_BYCOMMAND, _r_config_getboolean (L"AllowLoopbackConnections", TRUE));
 		_r_menu_checkitem (hmenu, IDM_RULE_ALLOW6TO4, 0, MF_BYCOMMAND, _r_config_getboolean (L"AllowIPv6", TRUE));
+		_r_menu_checkitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsWUFixEnabled", TRUE));
 
 		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
@@ -169,6 +170,7 @@ VOID _app_message_localize (
 		_r_menu_setitemtext (hmenu, IDM_RULE_BLOCKINBOUND, FALSE, _r_locale_getstring (IDS_RULE_BLOCKINBOUND));
 		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOWLOOPBACK, FALSE, _r_locale_getstring (IDS_RULE_ALLOWLOOPBACK));
 		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOW6TO4, FALSE, _r_locale_getstring (IDS_RULE_ALLOW6TO4));
+		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, FALSE, _r_locale_getstring (IDS_RULE_ALLOWWINDOWSUPDATE));
 
 		_r_menu_setitemtext (hmenu, IDM_USENETWORKRESOLUTION_CHK, FALSE, _r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK));
 		_r_menu_setitemtext (hmenu, IDM_USECERTIFICATES_CHK, FALSE, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
@@ -2174,6 +2176,7 @@ VOID _app_command_delete (
 	ULONG_PTR hash_code;
 	SIZE_T rule_idx;
 	SIZE_T enum_key;
+	LPARAM lparam;
 	INT listview_id;
 	INT selected_count;
 	INT item_count;
@@ -2208,6 +2211,11 @@ VOID _app_command_delete (
 		for (INT i = 0, j = 1; i < item_count; i++)
 		{
 			if (!_r_listview_isitemselected (hwnd, listview_id, i))
+				continue;
+
+			lparam = _r_listview_getitemlparam (hwnd, listview_id, i);
+
+			if (_app_listview_isitemhidden (lparam))
 				continue;
 
 			string = _r_listview_getitemtext (hwnd, listview_id, i, 0);
