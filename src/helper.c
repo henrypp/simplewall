@@ -2349,7 +2349,7 @@ VOID _app_wufixenable (
 	if (is_enable)
 	{
 		if (!_r_fs_exists (buffer2))
-			_r_fs_copyfile (buffer1, buffer2, 0);
+			_r_fs_copyfile (buffer1, buffer2, COPY_FILE_COPY_SYMLINK);
 
 		service_path = _r_obj_createstring (buffer2);
 
