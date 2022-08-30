@@ -344,7 +344,7 @@ INT_PTR CALLBACK EditorRuleProc (
 			if (!hdc)
 				break;
 
-			_r_dc_drawwindow (hdc, hwnd, TRUE);
+			_r_dc_drawwindow (hdc, hwnd, 0, TRUE);
 
 			EndPaint (hwnd, &ps);
 
@@ -2131,7 +2131,7 @@ INT_PTR CALLBACK EditorProc (
 			if (!hdc)
 				break;
 
-			_r_dc_drawwindow (hdc, hwnd, FALSE);
+			_r_dc_drawwindow (hdc, hwnd, 0, FALSE);
 
 			EndPaint (hwnd, &ps);
 
