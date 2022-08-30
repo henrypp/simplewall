@@ -2223,3 +2223,166 @@ HBITMAP _app_bitmapfrompng (
 		width
 	);
 }
+
+VOID _app_wufixhelper (
+	_In_ SC_HANDLE hsvcmgr,
+	_In_ LPCWSTR service_name,
+	_In_ LPCWSTR k_value,
+	_In_ BOOLEAN is_enable
+)
+{
+	WCHAR reg_key[128];
+	WCHAR reg_value[128];
+	SC_HANDLE hsvc;
+	PR_STRING image_path;
+	HKEY hkey;
+	SERVICE_STATUS svc_status;
+	LSTATUS status;
+	BOOLEAN is_enabled;
+
+	_r_str_printf (
+		reg_key,
+		RTL_NUMBER_OF (reg_key),
+		L"SYSTEM\\CurrentControlSet\\Services\\%s",
+		service_name
+	);
+
+	status = RegOpenKeyEx (
+		HKEY_LOCAL_MACHINE,
+		reg_key,
+		0,
+		KEY_READ | KEY_WRITE,
+		&hkey
+	);
+
+	if (status != ERROR_SUCCESS)
+		return;
+
+	// query service path
+	is_enabled = FALSE;
+
+	image_path = _r_reg_querystring (hkey, NULL, L"ImagePath");
+
+	if (image_path)
+	{
+		if (_r_str_isstartswith2 (
+			&image_path->sr,
+			is_enable ? L"%systemroot%\\system32\\wusvc.exe" : L"%systemroot%\\system32\\svchost.exe",
+			TRUE))
+		{
+			is_enabled = TRUE;
+		}
+
+		_r_obj_dereference (image_path);
+	}
+
+	// set new image path
+	_r_str_printf (
+		reg_value,
+		RTL_NUMBER_OF (reg_value),
+		L"%%systemroot%%\\system32\\%s -k %s -p",
+		is_enable ? L"wusvc.exe" : L"svchost.exe",
+		k_value
+	);
+
+	status = RegSetValueEx (
+		hkey,
+		L"ImagePath",
+		0,
+		REG_EXPAND_SZ,
+		(PBYTE)reg_value,
+		(ULONG)(_r_str_getlength (reg_value) * sizeof (WCHAR) + sizeof (UNICODE_NULL))
+	);
+
+	// restart service
+	if (is_enable != is_enabled)
+	{
+		hsvc = OpenService (
+			hsvcmgr,
+			service_name,
+			SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS
+		);
+
+		if (hsvc)
+		{
+			if (QueryServiceStatus (hsvc, &svc_status))
+			{
+				if (svc_status.dwCurrentState != SERVICE_STOPPED)
+				{
+					ControlService (hsvc, SERVICE_CONTROL_STOP, &svc_status);
+					StartService (hsvc, 0, NULL);
+				}
+			}
+
+			CloseServiceHandle (hsvc);
+		}
+	}
+
+	RegCloseKey (hkey);
+}
+
+VOID _app_wufixenable (
+	_In_ HWND hwnd,
+	_In_ BOOLEAN is_enable
+)
+{
+	SC_HANDLE hsvcmgr;
+	PR_STRING service_path;
+	WCHAR buffer1[MAX_PATH];
+	WCHAR buffer2[MAX_PATH];
+	ULONG_PTR app_hash;
+
+	_r_str_printf (
+		buffer1,
+		RTL_NUMBER_OF (buffer1),
+		L"%s\\svchost.exe",
+		_r_sys_getsystemdirectory ()->buffer
+	);
+
+	_r_str_printf (
+		buffer2,
+		RTL_NUMBER_OF (buffer2),
+		L"%s\\wusvc.exe",
+		_r_sys_getsystemdirectory ()->buffer
+	);
+
+	if (is_enable)
+	{
+		if (!_r_fs_exists (buffer2))
+			_r_fs_copyfile (buffer1, buffer2, 0);
+
+		service_path = _r_obj_createstring (buffer2);
+
+		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, service_path, NULL, NULL);
+
+		if (app_hash)
+		{
+			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
+
+			_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+		}
+
+		_r_obj_dereference (service_path);
+	}
+	else
+	{
+		if (_r_fs_exists (buffer2))
+			_r_fs_deletefile (buffer2, TRUE);
+	}
+
+	hsvcmgr = OpenSCManager (
+		NULL,
+		NULL,
+		SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS
+	);
+
+	if (!hsvcmgr)
+		return;
+
+	_r_config_setboolean (L"IsWUFixEnabled", is_enable);
+
+	_app_wufixhelper (hsvcmgr, L"wuauserv", L"netsvcs", is_enable);
+	_app_wufixhelper (hsvcmgr, L"DoSvc", L"NetworkService", is_enable);
+
+	CloseServiceHandle (hsvcmgr);
+}

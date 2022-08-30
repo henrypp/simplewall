@@ -204,6 +204,12 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_RULE_ALLOWWINDOWSUPDATE:
+		{
+			new_val = !_r_config_getboolean (L"IsWUFixEnabled", TRUE);
+			break;
+		}
+
 		case IDC_SECUREFILTERS_CHK:
 		{
 			new_val = !_r_config_getboolean (L"IsSecureFilters", TRUE);
@@ -339,6 +345,14 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_RULE_ALLOWWINDOWSUPDATE:
+		{
+			_r_config_setboolean (L"IsWUFixEnabled", new_val);
+			_r_menu_checkitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
 		case IDC_USESTEALTHMODE_CHK:
 		{
 			_r_config_setboolean (L"UseStealthMode", new_val);
@@ -412,7 +426,14 @@ VOID _app_config_apply (
 				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 				{
 					if (ptr_app->real_path)
-						_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
+					{
+						_app_queue_fileinformation (
+							ptr_app->real_path,
+							ptr_app->app_hash,
+							ptr_app->type,
+							_app_listview_getbytype (ptr_app->type)
+						);
+					}
 				}
 
 				_r_queuedlock_releaseshared (&lock_apps);
@@ -1783,6 +1804,7 @@ INT_PTR CALLBACK DlgProc (
 	{
 		case WM_INITDIALOG:
 		{
+			WCHAR internal_profile_version[64];
 			ENUM_INSTALL_TYPE install_type;
 			LONG dpi_value;
 
@@ -1847,10 +1869,19 @@ INT_PTR CALLBACK DlgProc (
 			// add blocklist to update
 			if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 			{
-				WCHAR internal_profile_version[64];
-				_r_str_fromlong64 (internal_profile_version, RTL_NUMBER_OF (internal_profile_version), profile_info.profile_internal_timestamp);
+				_r_str_fromlong64 (
+					internal_profile_version,
+					RTL_NUMBER_OF (internal_profile_version),
+					profile_info.profile_internal_timestamp
+				);
 
-				_r_update_addcomponent (L"Internal rules", L"rules_internal", internal_profile_version, profile_info.profile_path_internal, FALSE);
+				_r_update_addcomponent (
+					L"Internal rules",
+					L"rules_internal",
+					internal_profile_version,
+					profile_info.profile_path_internal,
+					FALSE
+				);
 			}
 
 			_app_network_initialize (hwnd);
@@ -3002,6 +3033,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_RULE_BLOCKINBOUND:
 				case IDM_RULE_ALLOWLOOPBACK:
 				case IDM_RULE_ALLOW6TO4:
+				case IDM_RULE_ALLOWWINDOWSUPDATE:
 				case IDM_USENETWORKRESOLUTION_CHK:
 				case IDM_USECERTIFICATES_CHK:
 				case IDM_USEREFRESHDEVICES_CHK:

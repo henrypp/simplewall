@@ -3161,6 +3161,7 @@ VOID NTAPI _wfp_applythread (
 	PITEM_CONTEXT context;
 	HANDLE engine_handle;
 	LONG dpi_value;
+	BOOLEAN is_wufixenabled;
 
 	_r_queuedlock_acquireshared (&lock_apply);
 
@@ -3175,11 +3176,17 @@ VOID NTAPI _wfp_applythread (
 
 		if (context->is_install)
 		{
+			is_wufixenabled = _r_config_getboolean (L"IsWUFixEnabled", TRUE);
+
+			_app_wufixenable (context->hwnd, is_wufixenabled);
+
 			if (_wfp_initialize (engine_handle))
 				_wfp_installfilters (engine_handle);
 		}
 		else
 		{
+			_app_wufixenable (context->hwnd, FALSE);
+
 			_wfp_destroyfilters (engine_handle);
 			_wfp_uninitialize (engine_handle, TRUE);
 		}

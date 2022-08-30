@@ -250,3 +250,15 @@ HBITMAP _app_bitmapfrompng (
 	_In_ LPCWSTR name,
 	_In_ LONG width
 );
+
+VOID _app_wufixhelper (
+	_In_ SC_HANDLE hsvcmgr,
+	_In_ LPCWSTR service_name,
+	_In_ LPCWSTR k_value,
+	_In_ BOOLEAN is_enable
+);
+
+VOID _app_wufixenable (
+	_In_ HWND hwnd,
+	_In_ BOOLEAN is_install
+);
