@@ -3176,16 +3176,20 @@ VOID NTAPI _wfp_applythread (
 
 		if (context->is_install)
 		{
-			is_wufixenabled = _r_config_getboolean (L"IsWUFixEnabled", TRUE);
+			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
+			{
+				is_wufixenabled = _r_config_getboolean (L"IsWUFixEnabled", FALSE);
 
-			_app_wufixenable (context->hwnd, is_wufixenabled);
+				_app_wufixenable (context->hwnd, is_wufixenabled);
+			}
 
 			if (_wfp_initialize (engine_handle))
 				_wfp_installfilters (engine_handle);
 		}
 		else
 		{
-			_app_wufixenable (context->hwnd, FALSE);
+			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
+				_app_wufixenable (context->hwnd, FALSE);
 
 			_wfp_destroyfilters (engine_handle);
 			_wfp_uninitialize (engine_handle, TRUE);
