@@ -119,7 +119,7 @@ VOID _app_getapptooltipstring (
 	// app timer
 	if (ptr_app)
 	{
-		if (_app_istimerset (ptr_app->htimer))
+		if (_app_istimerset (ptr_app))
 		{
 			tmp_string2 = _r_format_interval (ptr_app->timer - _r_unixtime_now (), 3);
 
@@ -540,7 +540,13 @@ BOOLEAN _app_initinterfacestate (
 		_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, FALSE);
 		_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, FALSE);
 
-		_r_status_settextformat (hwnd, IDC_STATUSBAR, 0, L"%s...", _r_locale_getstring (IDS_STATUS_FILTERS_PROCESSING));
+		_r_status_settextformat (
+			hwnd,
+			IDC_STATUSBAR,
+			0,
+			L"%s...",
+			_r_locale_getstring (IDS_STATUS_FILTERS_PROCESSING)
+		);
 
 		return TRUE;
 	}
@@ -860,26 +866,124 @@ VOID _app_toolbar_init (
 
 	if (config.htoolbar)
 	{
-		_r_toolbar_setstyle (config.hrebar, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
+		_r_toolbar_setstyle (
+			config.hrebar,
+			IDC_TOOLBAR,
+			TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS
+		);
 
 		SendMessage (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_START,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			I_IMAGENONE
+		);
+
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_OPENRULESEDITOR,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			8
+		);
+
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_ENABLENOTIFICATIONS_CHK,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			4
+		);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_ENABLELOG_CHK,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			5
+		);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_ENABLEUILOG_CHK,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			10
+		);
+
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 2);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 3);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_REFRESH,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			2
+		);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_SETTINGS,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			3
+		);
+
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 6);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 7);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_LOGSHOW,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			6
+		);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_LOGCLEAR,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			7
+		);
+
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_DONATE,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			9
+		);
 
 		_r_toolbar_resize (config.hrebar, IDC_TOOLBAR);
 

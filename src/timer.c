@@ -6,13 +6,15 @@
 BOOLEAN _app_istimersactive ()
 {
 	PITEM_APP ptr_app;
-	SIZE_T enum_key = 0;
+	SIZE_T enum_key;
+
+	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
 	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 	{
-		if (_app_istimerset (ptr_app->htimer))
+		if (_app_istimerset (ptr_app))
 		{
 			_r_queuedlock_releaseshared (&lock_apps);
 
@@ -26,10 +28,13 @@ BOOLEAN _app_istimersactive ()
 }
 
 BOOLEAN _app_istimerset (
-	_In_ PTP_TIMER timer
+	_In_ PITEM_APP ptr_app
 )
 {
-	return timer && IsThreadpoolTimerSet (timer);
+	if (!ptr_app->htimer)
+		return FALSE;
+
+	return !!IsThreadpoolTimerSet (ptr_app->htimer);
 }
 
 VOID _app_timer_set (
@@ -45,13 +50,7 @@ VOID _app_timer_set (
 
 	if (seconds <= 0)
 	{
-		ptr_app->is_enabled = FALSE;
-		ptr_app->is_haveerrors = FALSE;
-
-		ptr_app->timer = 0;
-
-		if (_app_istimerset (ptr_app->htimer))
-			_app_timer_remove (&ptr_app->htimer);
+		_app_timer_reset (NULL, ptr_app);
 	}
 	else
 	{
@@ -60,7 +59,7 @@ VOID _app_timer_set (
 
 		_r_unixtime_to_filetime (current_time + seconds, &file_time);
 
-		if (_app_istimerset (ptr_app->htimer))
+		if (ptr_app->htimer)
 		{
 			SetThreadpoolTimer (ptr_app->htimer, &file_time, 0, 0);
 			is_created = TRUE;
@@ -85,12 +84,7 @@ VOID _app_timer_set (
 		}
 		else
 		{
-			ptr_app->is_enabled = FALSE;
-			ptr_app->is_haveerrors = FALSE;
-			ptr_app->timer = 0;
-
-			if (_app_istimerset (ptr_app->htimer))
-				_app_timer_remove (&ptr_app->htimer);
+			_app_timer_reset (NULL, ptr_app);
 		}
 	}
 
@@ -108,22 +102,25 @@ VOID _app_timer_reset (
 
 	ptr_app->timer = 0;
 
-	if (_app_istimerset (ptr_app->htimer))
-		_app_timer_remove (&ptr_app->htimer);
+	if (_app_istimerset (ptr_app))
+		_app_timer_remove (ptr_app);
 
 	if (hwnd)
 		_app_listview_updateitemby_param (hwnd, ptr_app->app_hash, TRUE);
 }
 
 VOID _app_timer_remove (
-	_Inout_ PTP_TIMER *timer
+	_Inout_ PITEM_APP ptr_app
 )
 {
-	PTP_TIMER current_timer = *timer;
+	PTP_TIMER current_timer;
 
-	*timer = NULL;
+	current_timer = ptr_app->htimer;
 
-	CloseThreadpoolTimer (current_timer);
+	ptr_app->htimer = NULL;
+
+	if (current_timer)
+		CloseThreadpoolTimer (current_timer);
 }
 
 VOID CALLBACK _app_timer_callback (
@@ -180,7 +177,13 @@ VOID CALLBACK _app_timer_callback (
 
 		string = _app_getappdisplayname (ptr_app, TRUE);
 
-		_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s - %s", _r_app_getname (), _r_obj_getstringorempty (string));
+		_r_str_printf (
+			buffer,
+			RTL_NUMBER_OF (buffer),
+			L"%s - %s",
+			_r_app_getname (),
+			_r_obj_getstringorempty (string)
+		);
 
 		_r_tray_popup (hwnd, &GUID_TrayIcon, icon_id, buffer, _r_locale_getstring (IDS_STATUS_TIMER_DONE));
 

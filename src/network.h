@@ -22,7 +22,9 @@ VOID _app_network_initialize (
 	_In_ HWND hwnd
 );
 
-VOID _app_network_uninitialize ();
+VOID _app_network_uninitialize (
+	_In_ PITEM_NETWORK_CONTEXT context
+);
 
 VOID _app_network_generatetable (
 	_Inout_ PITEM_NETWORK_CONTEXT context

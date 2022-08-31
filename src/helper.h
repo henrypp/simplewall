@@ -6,9 +6,11 @@
 typedef struct _ICON_INFORMATION
 {
 	HICON app_hicon;
+	HICON service_hicon;
 	HICON uwp_hicon;
 
 	LONG app_icon_id;
+	LONG service_icon_id;
 	LONG uwp_icon_id;
 } ICON_INFORMATION, *PICON_INFORMATION;
 
@@ -166,12 +168,12 @@ COLORREF _app_getcolorvalue (
 
 VOID _app_generate_rulescontrol (
 	_In_ HMENU hsubmenu,
-	_In_opt_ ULONG_PTR app_hash
+	_In_ ULONG_PTR app_hash
 );
 
 VOID _app_generate_timerscontrol (
 	_In_ HMENU hsubmenu,
-	_In_opt_ PITEM_APP ptr_app
+	_In_ ULONG_PTR app_hash
 );
 
 BOOLEAN _app_setruletoapp (
@@ -247,4 +249,16 @@ HBITMAP _app_bitmapfrompng (
 	_In_opt_ HINSTANCE hinst,
 	_In_ LPCWSTR name,
 	_In_ LONG width
+);
+
+VOID _app_wufixhelper (
+	_In_ SC_HANDLE hsvcmgr,
+	_In_ LPCWSTR service_name,
+	_In_ LPCWSTR k_value,
+	_In_ BOOLEAN is_enable
+);
+
+VOID _app_wufixenable (
+	_In_ HWND hwnd,
+	_In_ BOOLEAN is_install
 );

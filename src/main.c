@@ -204,6 +204,12 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_RULE_ALLOWWINDOWSUPDATE:
+		{
+			new_val = !_r_config_getboolean (L"IsWUFixEnabled", TRUE);
+			break;
+		}
+
 		case IDC_SECUREFILTERS_CHK:
 		{
 			new_val = !_r_config_getboolean (L"IsSecureFilters", TRUE);
@@ -339,6 +345,14 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_RULE_ALLOWWINDOWSUPDATE:
+		{
+			_r_config_setboolean (L"IsWUFixEnabled", new_val);
+			_r_menu_checkitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
 		case IDC_USESTEALTHMODE_CHK:
 		{
 			_r_config_setboolean (L"UseStealthMode", new_val);
@@ -412,7 +426,14 @@ VOID _app_config_apply (
 				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 				{
 					if (ptr_app->real_path)
-						_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
+					{
+						_app_queue_fileinformation (
+							ptr_app->real_path,
+							ptr_app->app_hash,
+							ptr_app->type,
+							_app_listview_getbytype (ptr_app->type)
+						);
+					}
 				}
 
 				_r_queuedlock_releaseshared (&lock_apps);
@@ -1352,7 +1373,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					if (!is_postmessage)
 					{
-						hctrl = _app_notify_getwindow ();
+						hctrl = _app_notify_getwindow (NULL);
 
 						if (hctrl)
 							_app_notify_refresh (hctrl);
@@ -1363,8 +1384,11 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_NOTIFICATIONSOUND_CHK:
 				{
-					BOOLEAN is_postmessage = ((INT)lparam == WM_APP);
-					BOOLEAN is_checked = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
+					BOOLEAN is_postmessage;
+					BOOLEAN is_checked;
+
+					is_postmessage = ((INT)lparam == WM_APP);
+					is_checked = (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED);
 
 					CheckDlgButton (hwnd, IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) ? BST_CHECKED : BST_UNCHECKED);
 
@@ -1388,7 +1412,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_config_setboolean (L"IsNotificationsOnTray", (IsDlgButtonChecked (hwnd, ctrl_id) == BST_CHECKED));
 
-					hnotify = _app_notify_getwindow ();
+					hnotify = _app_notify_getwindow (NULL);
 
 					if (hnotify)
 						_app_notify_setposition (hnotify, TRUE);
@@ -1546,6 +1570,7 @@ VOID _app_tabs_init (
 			_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 			_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 			_r_listview_addgroup (hwnd, listview_id, 3, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, listview_id, 4, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 		}
 		else if (listview_id == IDC_NETWORK)
 		{
@@ -1613,6 +1638,7 @@ VOID _app_initialize ()
 	};
 
 	R_ENVIRONMENT environment;
+	SIZE_T length;
 
 	// set privileges
 	_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
@@ -1641,13 +1667,9 @@ VOID _app_initialize ()
 	_r_workqueue_initialize (&wfp_queue, 0, 1, 10000, &environment, L"FiltersQueue");
 
 	// static initializer
-	{
-		SIZE_T length;
+	length = GetWindowsDirectory (config.windows_dir_buffer, RTL_NUMBER_OF (config.windows_dir_buffer));
 
-		length = GetWindowsDirectory (config.windows_dir_buffer, RTL_NUMBER_OF (config.windows_dir_buffer));
-
-		_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
-	}
+	_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
 
 	_app_profile_initialize ();
 
@@ -1670,13 +1692,53 @@ VOID _app_initialize ()
 		colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), NULL);
 
 		// initialize colors
-		config.color_timer = _app_addcolor (IDS_HIGHLIGHT_TIMER, L"IsHighlightTimer", TRUE, L"ColorTimer", LV_COLOR_TIMER);
-		config.color_invalid = _app_addcolor (IDS_HIGHLIGHT_INVALID, L"IsHighlightInvalid", TRUE, L"ColorInvalid", LV_COLOR_INVALID);
-		config.color_special = _app_addcolor (IDS_HIGHLIGHT_SPECIAL, L"IsHighlightSpecial", TRUE, L"ColorSpecial", LV_COLOR_SPECIAL);
-		config.color_signed = _app_addcolor (IDS_HIGHLIGHT_SIGNED, L"IsHighlightSigned", TRUE, L"ColorSigned", LV_COLOR_SIGNED);
-		config.color_pico = _app_addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", TRUE, L"ColorPico", LV_COLOR_PICO);
-		config.color_system = _app_addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", TRUE, L"ColorSystem", LV_COLOR_SYSTEM);
-		config.color_network = _app_addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", TRUE, L"ColorConnection", LV_COLOR_CONNECTION);
+		config.color_invalid = _app_addcolor (
+			IDS_HIGHLIGHT_INVALID,
+			L"IsHighlightInvalid",
+			TRUE,
+			L"ColorInvalid",
+			LV_COLOR_INVALID
+		);
+
+		config.color_special = _app_addcolor (
+			IDS_HIGHLIGHT_SPECIAL,
+			L"IsHighlightSpecial",
+			TRUE,
+			L"ColorSpecial",
+			LV_COLOR_SPECIAL
+		);
+
+		config.color_signed = _app_addcolor (
+			IDS_HIGHLIGHT_SIGNED,
+			L"IsHighlightSigned",
+			TRUE,
+			L"ColorSigned",
+			LV_COLOR_SIGNED
+		);
+
+		config.color_pico = _app_addcolor (
+			IDS_HIGHLIGHT_PICO,
+			L"IsHighlightPico",
+			TRUE,
+			L"ColorPico",
+			LV_COLOR_PICO
+		);
+
+		config.color_system = _app_addcolor (
+			IDS_HIGHLIGHT_SYSTEM,
+			L"IsHighlightSystem",
+			TRUE,
+			L"ColorSystem",
+			LV_COLOR_SYSTEM
+		);
+
+		config.color_network = _app_addcolor (
+			IDS_HIGHLIGHT_CONNECTION,
+			L"IsHighlightConnection",
+			TRUE,
+			L"ColorConnection",
+			LV_COLOR_CONNECTION
+		);
 	}
 
 	_app_generate_credentials ();
@@ -1710,6 +1772,8 @@ VOID _app_initialize ()
 
 	if (!cache_resolution)
 		cache_resolution = _r_obj_createhashtablepointer (32);
+
+	config.hnotify_evt = CreateEvent (NULL, FALSE, TRUE, NULL);
 }
 
 INT FirstDriveFromMask (
@@ -1740,6 +1804,7 @@ INT_PTR CALLBACK DlgProc (
 	{
 		case WM_INITDIALOG:
 		{
+			WCHAR internal_profile_version[64];
 			ENUM_INSTALL_TYPE install_type;
 			LONG dpi_value;
 
@@ -1768,9 +1833,6 @@ INT_PTR CALLBACK DlgProc (
 
 			// initialize tabs
 			_app_tabs_init (hwnd, dpi_value);
-
-			// create notification window
-			_app_notify_createwindow ();
 
 			// load profile
 			_app_profile_load (hwnd, NULL);
@@ -1807,10 +1869,19 @@ INT_PTR CALLBACK DlgProc (
 			// add blocklist to update
 			if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 			{
-				WCHAR internal_profile_version[64];
-				_r_str_fromlong64 (internal_profile_version, RTL_NUMBER_OF (internal_profile_version), profile_info.profile_internal_timestamp);
+				_r_str_fromlong64 (
+					internal_profile_version,
+					RTL_NUMBER_OF (internal_profile_version),
+					profile_info.profile_internal_timestamp
+				);
 
-				_r_update_addcomponent (L"Internal rules", L"rules_internal", internal_profile_version, profile_info.profile_path_internal, FALSE);
+				_r_update_addcomponent (
+					L"Internal rules",
+					L"rules_internal",
+					internal_profile_version,
+					profile_info.profile_path_internal,
+					FALSE
+				);
 			}
 
 			_app_network_initialize (hwnd);
@@ -1855,7 +1926,6 @@ INT_PTR CALLBACK DlgProc (
 
 		case RM_CONFIG_UPDATE:
 		{
-			_app_profile_save ();
 			_app_profile_load (hwnd, NULL);
 
 			_app_changefilters (hwnd, TRUE, FALSE);
@@ -1866,9 +1936,7 @@ INT_PTR CALLBACK DlgProc (
 		case RM_CONFIG_RESET:
 		{
 			_r_queuedlock_acquireexclusive (&lock_rules_config);
-
 			_r_obj_clearhashtable (rules_config);
-
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 
 			_r_path_makebackup (profile_info.profile_path, TRUE);
@@ -1931,6 +1999,25 @@ INT_PTR CALLBACK DlgProc (
 			break;
 		}
 
+		case WM_NOTIFICATION:
+		{
+			PITEM_LOG ptr_log;
+			HWND hnotify;
+
+			if (_r_queuedlock_tryacquireexclusive (&lock_notify))
+			{
+				ptr_log = _r_obj_reference ((PITEM_LOG)lparam);
+				hnotify = _app_notify_getwindow (ptr_log);
+
+				_r_queuedlock_releaseexclusive (&lock_notify);
+
+				SetWindowLongPtr (hwnd, DWLP_MSGRESULT, (LONG_PTR)hnotify);
+				return (INT_PTR)hnotify;
+			}
+
+			break;
+		}
+
 		case WM_CLOSE:
 		{
 			if (_wfp_isfiltersinstalled ())
@@ -1955,8 +2042,6 @@ INT_PTR CALLBACK DlgProc (
 
 			_r_config_setlong (L"CurrentTab", _app_listview_getcurrent (hwnd));
 
-			_app_network_uninitialize ();
-
 			_r_tray_destroy (hwnd, &GUID_TrayIcon);
 
 			_app_loginit (FALSE);
@@ -1971,8 +2056,6 @@ INT_PTR CALLBACK DlgProc (
 
 			if (hengine)
 				_wfp_uninitialize (hengine, FALSE);
-
-			_app_notify_destroywindow ();
 
 			ImageList_Destroy (config.himg_toolbar);
 			ImageList_Destroy (config.himg_rules_small);
@@ -2332,9 +2415,9 @@ INT_PTR CALLBACK DlgProc (
 									_app_listview_lock (hwnd, listview_id, FALSE);
 
 									if (is_enabled)
-										_app_notify_freeobject (ptr_app);
+										_app_notify_freeobject (NULL, ptr_app);
 
-									if (!is_enabled && _app_istimerset (ptr_app->htimer))
+									if (!is_enabled && _app_istimerset (ptr_app))
 										_app_timer_reset (hwnd, ptr_app);
 
 									if (_wfp_isfiltersinstalled ())
@@ -2950,6 +3033,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_RULE_BLOCKINBOUND:
 				case IDM_RULE_ALLOWLOOPBACK:
 				case IDM_RULE_ALLOW6TO4:
+				case IDM_RULE_ALLOWWINDOWSUPDATE:
 				case IDM_USENETWORKRESOLUTION_CHK:
 				case IDM_USECERTIFICATES_CHK:
 				case IDM_USEREFRESHDEVICES_CHK:
@@ -3042,7 +3126,7 @@ INT_PTR CALLBACK DlgProc (
 					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, NULL, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
 					_r_config_setboolean (L"IsNotificationsEnabled", new_val);
 
-					hnotify = _app_notify_getwindow ();
+					hnotify = _app_notify_getwindow (NULL);
 
 					if (hnotify)
 						_app_notify_refresh (hnotify);
@@ -3077,7 +3161,7 @@ INT_PTR CALLBACK DlgProc (
 
 					_r_config_setboolean (L"IsNotificationsOnTray", new_val);
 
-					hnotify = _app_notify_getwindow ();
+					hnotify = _app_notify_getwindow (NULL);
 
 					if (hnotify)
 						_app_notify_setposition (hnotify, TRUE);

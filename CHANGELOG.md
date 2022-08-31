@@ -1,8 +1,19 @@
+
+v3.6.6 (12 August 2022)
+- fixed editor does not disable save button when rule name is empty
+- fixed network monitor duplicate calls
+- fixed application crash (issue #1272)
+
+v3.6.5 (11 August 2022)
+- added group for apps with timers
+- display long time in packets log date column
+- fixed uwp packages display name parsing
+- fixed blank notifications (again!) (issue #1009)
+
 v3.6.4 (19 Juny 2022)
 - added focus assistant support (win10rs3+)
 - fixed notification sometimes can lose focus of fullscreen app
 - fixed internal profile loading crash (issue #1228)
-- fixed blank notifications (issue #1009)
 
 v3.6.3 (10 May 2022)
 - fixed installer launches simplewall without asking user (issue #1119)

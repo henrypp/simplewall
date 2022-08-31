@@ -334,17 +334,17 @@ VOID _app_db_parse_rule (
 	ULONG_PTR rule_hash;
 	BOOLEAN is_internal;
 
-	rule_name = _r_xml_getattribute_string (&db_info->xml_library, L"name");
-
-	if (!rule_name)
-		return;
-
 	// check support version
 	if (_r_xml_getattribute (&db_info->xml_library, L"os_version", &sr))
 	{
 		if (!_app_isrulesupportedbyos (&sr))
 			return;
 	}
+
+	rule_name = _r_xml_getattribute_string (&db_info->xml_library, L"name");
+
+	if (!rule_name)
+		return;
 
 	rule_remote = _r_xml_getattribute_string (&db_info->xml_library, L"rule");
 	rule_local = _r_xml_getattribute_string (&db_info->xml_library, L"rule_local");
@@ -998,7 +998,7 @@ VOID _app_db_save_app (
 			_r_xml_setattribute_long64 (&db_info->xml_library, L"timestamp", ptr_app->timestamp);
 
 		// set timer (if presented)
-		if (ptr_app->timer && _app_istimerset (ptr_app->htimer))
+		if (ptr_app->timer && _app_istimerset (ptr_app))
 			_r_xml_setattribute_long64 (&db_info->xml_library, L"timer", ptr_app->timer);
 
 		// ffu!

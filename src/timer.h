@@ -6,7 +6,7 @@
 BOOLEAN _app_istimersactive ();
 
 BOOLEAN _app_istimerset (
-	_In_ PTP_TIMER timer
+	_In_ PITEM_APP ptr_app
 );
 
 VOID _app_timer_set (
@@ -21,7 +21,7 @@ VOID _app_timer_reset (
 );
 
 VOID _app_timer_remove (
-	_Inout_ PTP_TIMER* timer
+	_Inout_ PITEM_APP ptr_app
 );
 
 VOID CALLBACK _app_timer_callback (
