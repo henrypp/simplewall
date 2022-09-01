@@ -5,8 +5,6 @@
 
 typedef struct _NOTIFY_CONTEXT
 {
-	HWND hwnd;
-
 	HBITMAP hbmp_allow;
 	HBITMAP hbmp_block;
 	HBITMAP hbmp_cross;
@@ -21,10 +19,12 @@ typedef struct _NOTIFY_CONTEXT
 	ULONG_PTR app_hash;
 } NOTIFY_CONTEXT, *PNOTIFY_CONTEXT;
 
+VOID _app_notify_createwindow ();
+
+VOID _app_notify_destroywindow ();
+
 _Ret_maybenull_
-HWND _app_notify_getwindow (
-	_In_opt_ PITEM_LOG ptr_log
-);
+HWND _app_notify_getwindow ();
 
 _Ret_maybenull_
 PNOTIFY_CONTEXT _app_notify_getcontext (
@@ -39,7 +39,7 @@ VOID _app_notify_setcontext (
 BOOLEAN _app_notify_command (
 	_In_ HWND hwnd,
 	_In_ INT button_id,
-	_In_opt_ LONG64 seconds
+	_In_ LONG64 seconds
 );
 
 BOOLEAN _app_notify_addobject (
@@ -48,7 +48,6 @@ BOOLEAN _app_notify_addobject (
 );
 
 VOID _app_notify_freeobject (
-	_In_opt_ HWND hwnd,
 	_Inout_ PITEM_APP ptr_app
 );
 
@@ -86,6 +85,10 @@ VOID _app_notify_show (
 	_In_ PITEM_LOG ptr_log
 );
 
+VOID _app_notify_hide (
+	_In_ HWND hwnd
+);
+
 VOID _app_notify_playsound ();
 
 VOID _app_notify_queueinfo (
@@ -102,12 +105,14 @@ VOID _app_notify_setposition (
 	_In_ BOOLEAN is_forced
 );
 
-VOID _app_notify_settimeout (
-	_In_ HWND hwnd
+VOID _app_notify_initializefont (
+	_In_ HWND hwnd,
+	_Inout_ PNOTIFY_CONTEXT context,
+	_In_ LONG dpi_value
 );
 
 VOID _app_notify_initialize (
-	_Inout_ PNOTIFY_CONTEXT context,
+	_In_ HWND hwnd,
 	_In_ LONG dpi_value
 );
 

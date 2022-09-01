@@ -153,6 +153,7 @@ typedef enum _ENUM_INFO_DATA2
 #define NOTIFY_SOUND_NAME L"MailBeep"
 
 // default colors
+#define LV_COLOR_TIMER RGB(255, 190, 142)
 #define LV_COLOR_INVALID RGB (255, 125, 148)
 #define LV_COLOR_SPECIAL RGB (255, 255, 170)
 #define LV_COLOR_SIGNED RGB (175, 228, 163)
@@ -197,7 +198,6 @@ typedef struct _STATIC_DATA
 
 	volatile HANDLE hlogfile;
 	volatile HANDLE hnetevent;
-	volatile HANDLE hnotify_evt;
 	volatile HWND hnotification;
 	volatile HICON htray_icon;
 
@@ -208,6 +208,7 @@ typedef struct _STATIC_DATA
 	HWND htoolbar;
 	HWND hsearchbar;
 
+	ULONG_PTR color_timer;
 	ULONG_PTR color_invalid;
 	ULONG_PTR color_special;
 	ULONG_PTR color_signed;

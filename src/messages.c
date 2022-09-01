@@ -77,10 +77,6 @@ VOID _app_message_initialize (
 		_r_menu_checkitem (hmenu, IDM_RULE_BLOCKINBOUND, 0, MF_BYCOMMAND, _r_config_getboolean (L"BlockInboundConnections", TRUE));
 		_r_menu_checkitem (hmenu, IDM_RULE_ALLOWLOOPBACK, 0, MF_BYCOMMAND, _r_config_getboolean (L"AllowLoopbackConnections", TRUE));
 		_r_menu_checkitem (hmenu, IDM_RULE_ALLOW6TO4, 0, MF_BYCOMMAND, _r_config_getboolean (L"AllowIPv6", TRUE));
-		_r_menu_checkitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsWUFixEnabled", TRUE));
-
-		if (!_r_sys_isosversiongreaterorequal (WINDOWS_10))
-			_r_menu_enableitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, MF_BYCOMMAND, FALSE);
 
 		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
@@ -173,7 +169,6 @@ VOID _app_message_localize (
 		_r_menu_setitemtext (hmenu, IDM_RULE_BLOCKINBOUND, FALSE, _r_locale_getstring (IDS_RULE_BLOCKINBOUND));
 		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOWLOOPBACK, FALSE, _r_locale_getstring (IDS_RULE_ALLOWLOOPBACK));
 		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOW6TO4, FALSE, _r_locale_getstring (IDS_RULE_ALLOW6TO4));
-		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, FALSE, _r_locale_getstring (IDS_RULE_ALLOWWINDOWSUPDATE));
 
 		_r_menu_setitemtext (hmenu, IDM_USENETWORKRESOLUTION_CHK, FALSE, _r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK));
 		_r_menu_setitemtext (hmenu, IDM_USECERTIFICATES_CHK, FALSE, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
@@ -446,7 +441,8 @@ VOID _app_message_contextmenu (
 			AppendMenu (hsubmenu_timers, MF_STRING, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
 			AppendMenu (hsubmenu_timers, MF_SEPARATOR, 0, NULL);
 
-			_app_generate_timerscontrol (hsubmenu_timers, hash_code);
+			if (ptr_app)
+				_app_generate_timerscontrol (hsubmenu_timers, ptr_app);
 		}
 
 		AppendMenu (hmenu, MF_SEPARATOR, 0, NULL);
@@ -1091,10 +1087,6 @@ VOID _app_displayinfoapp_callback (
 				// apps with special rule
 				if (_app_isapphaverule (ptr_app->app_hash, FALSE))
 				{
-					lpnmlv->item.iGroupId = 2;
-				}
-				else if (_app_istimerset (ptr_app))
-				{
 					lpnmlv->item.iGroupId = 1;
 				}
 				else if (ptr_app->is_enabled)
@@ -1106,11 +1098,11 @@ VOID _app_displayinfoapp_callback (
 					// silent apps without rules and not enabled added into silent group
 					if (ptr_app->is_silent)
 					{
-						lpnmlv->item.iGroupId = 4;
+						lpnmlv->item.iGroupId = 3;
 					}
 					else
 					{
-						lpnmlv->item.iGroupId = 3;
+						lpnmlv->item.iGroupId = 2;
 					}
 				}
 			}
@@ -1260,11 +1252,7 @@ VOID _app_displayinfonetwork_callback (
 				}
 				else if (ptr_network->path)
 				{
-					_r_str_copy (
-						lpnmlv->item.pszText,
-						lpnmlv->item.cchTextMax,
-						_r_path_getbasename (ptr_network->path->buffer)
-					);
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_network->path->buffer));
 				}
 
 				break;
@@ -1441,11 +1429,7 @@ VOID _app_displayinfolog_callback (
 				}
 				else if (ptr_log->path)
 				{
-					_r_str_copy (
-						lpnmlv->item.pszText,
-						lpnmlv->item.cchTextMax,
-						_r_path_getbasename (ptr_log->path->buffer)
-					);
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_log->path->buffer));
 				}
 				else
 				{
@@ -1457,7 +1441,7 @@ VOID _app_displayinfolog_callback (
 
 			case 1:
 			{
-				string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
+				string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
 
 				if (string)
 				{
@@ -1581,11 +1565,7 @@ VOID _app_displayinfolog_callback (
 
 			case 10:
 			{
-				string = _r_obj_concatstrings (
-					2,
-					ptr_log->is_allow ? L"[A] " : L"[B] ",
-					_r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY)
-				);
+				string = _r_obj_concatstrings (2, ptr_log->is_allow ? L"[A] " : L"[B] ", _r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY));
 
 				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
 				_r_obj_dereference (string);
@@ -1698,7 +1678,7 @@ VOID _app_command_idtorules (
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
 	PR_LIST rules;
-	ULONG_PTR app_hash;
+	ULONG_PTR hash_code;
 	SIZE_T rule_idx;
 	INT listview_id;
 	INT item_id;
@@ -1720,25 +1700,27 @@ VOID _app_command_idtorules (
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
-		app_hash = _app_listview_getitemcontext (hwnd, listview_id, item_id);
+		hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 
-		if (ptr_rule->is_forservices && _app_issystemhash (app_hash))
+		if (ptr_rule->is_forservices && _app_issystemhash (hash_code))
 			continue;
 
-		ptr_app = _app_getappitem (app_hash);
+		ptr_app = _app_getappitem (hash_code);
 
 		if (!ptr_app)
 			continue;
 
-		_app_notify_freeobject (NULL, ptr_app);
+		_app_notify_freeobject (ptr_app);
 
 		if (is_remove == -1)
-			is_remove = !!(ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, app_hash));
+			is_remove = !!(ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, hash_code));
 
 		_app_setruletoapp (hwnd, ptr_rule, item_id, ptr_app, !is_remove);
 
 		_r_obj_dereference (ptr_app);
 	}
+
+	rules = _r_obj_createlist (NULL);
 
 	if (_wfp_isfiltersinstalled ())
 	{
@@ -1746,19 +1728,16 @@ VOID _app_command_idtorules (
 
 		if (hengine)
 		{
-			rules = _r_obj_createlist (NULL);
-
 			_r_obj_addlistitem (rules, ptr_rule);
 
 			_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
-
-			_r_obj_dereference (rules);
 		}
 	}
 
 	_app_listview_updateby_id (hwnd, listview_id, 0);
 	_app_listview_updateitemby_param (hwnd, rule_idx, FALSE);
 
+	_r_obj_dereference (rules);
 	_r_obj_dereference (ptr_rule);
 
 	_app_profile_save ();
@@ -2077,7 +2056,7 @@ VOID _app_command_checkbox (
 				}
 				else
 				{
-					_app_notify_freeobject (NULL, ptr_app);
+					_app_notify_freeobject (ptr_app);
 				}
 
 				ptr_app->is_enabled = new_val;
@@ -2179,7 +2158,6 @@ VOID _app_command_delete (
 	ULONG_PTR hash_code;
 	SIZE_T rule_idx;
 	SIZE_T enum_key;
-	LPARAM lparam;
 	INT listview_id;
 	INT selected_count;
 	INT item_count;
@@ -2214,11 +2192,6 @@ VOID _app_command_delete (
 		for (INT i = 0, j = 1; i < item_count; i++)
 		{
 			if (!_r_listview_isitemselected (hwnd, listview_id, i))
-				continue;
-
-			lparam = _r_listview_getitemlparam (hwnd, listview_id, i);
-
-			if (_app_listview_isitemhidden (lparam))
 				continue;
 
 			string = _r_listview_getitemtext (hwnd, listview_id, i, 0);
@@ -2271,10 +2244,10 @@ VOID _app_command_delete (
 				_r_listview_deleteitem (hwnd, listview_id, i);
 
 				_app_timer_reset (hwnd, ptr_app);
-				_app_notify_freeobject (NULL, ptr_app);
+				_app_notify_freeobject (ptr_app);
 
 				_r_queuedlock_acquireexclusive (&lock_apps);
-				_app_freeapplication (hwnd, hash_code);
+				_app_freeapplication (hash_code);
 				_r_queuedlock_releaseexclusive (&lock_apps);
 			}
 
@@ -2744,7 +2717,7 @@ VOID _app_command_purgeunused (
 		}
 
 		_app_timer_reset (NULL, ptr_app);
-		_app_notify_freeobject (NULL, ptr_app);
+		_app_notify_freeobject (ptr_app);
 
 		if (!_r_obj_isarrayempty (ptr_app->guids))
 			_r_obj_addarrayitems (guids, ptr_app->guids->items, ptr_app->guids->count);
@@ -2764,7 +2737,7 @@ VOID _app_command_purgeunused (
 
 		while (_r_obj_enumhashtable (apps_list, NULL, &hash_code, &enum_key))
 		{
-			_app_freeapplication (hwnd, hash_code);
+			_app_freeapplication (hash_code);
 		}
 
 		_r_queuedlock_releaseexclusive (&lock_apps);
@@ -2808,7 +2781,7 @@ VOID _app_command_purgetimers (
 
 	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 	{
-		if (_app_istimerset (ptr_app))
+		if (_app_istimerset (ptr_app->htimer))
 		{
 			_app_timer_reset (hwnd, ptr_app);
 
