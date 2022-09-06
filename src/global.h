@@ -74,7 +74,9 @@ DECLSPEC_SELECTANY const LONG64 timer_array[] =
 	1 * 3600,
 	2 * 3600,
 	4 * 3600,
-	6 * 3600
+	6 * 3600,
+	12 * 3600,
+	24 * 3600
 };
 
 // dropped events callback subscription (win7+)
