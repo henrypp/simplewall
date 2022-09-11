@@ -804,6 +804,40 @@ INT_PTR CALLBACK EditorPagesProc (
 				_r_ctrl_enable (hwnd, IDC_RULE_VERSION_ID, !context->ptr_rule->is_readonly);
 			}
 
+			// weight
+			if (GetDlgItem (hwnd, IDC_RULE_WEIGHT_ID))
+			{
+				_r_ctrl_setstringformat (
+					hwnd,
+					IDC_RULE_WEIGHT,
+					L"%s:",
+					_r_locale_getstring (IDS_WEIGHT)
+				);
+
+				if (context->ptr_rule->weight > 0)
+				{
+					WCHAR weight_buffer[32];
+					_itow_s (context->ptr_rule->weight, weight_buffer, 32, 10);
+					_r_ctrl_setstring (hwnd, IDC_RULE_WEIGHT_ID, weight_buffer);
+				}
+
+				SendDlgItemMessage (
+					hwnd,
+					IDC_RULE_WEIGHT_ID,
+					EM_LIMITTEXT,
+					RULE_NAME_CCH_MAX - 1,
+					0
+				);
+
+				SendDlgItemMessage (
+					hwnd,
+					IDC_RULE_WEIGHT_ID,
+					EM_SETREADONLY,
+					(WPARAM)context->ptr_rule->is_readonly,
+					0
+				);
+			}
+
 			// rule (remote)
 			if (GetDlgItem (hwnd, IDC_RULE_REMOTE_ID))
 			{
@@ -2356,10 +2390,21 @@ INT_PTR CALLBACK EditorProc (
 								context->ptr_rule->action = FWP_ACTION_PERMIT;
 							}
 
+							// rule weight
 							if (context->ptr_rule->type == DATA_RULE_USER)
 							{
-								context->ptr_rule->weight = ((context->ptr_rule->action == FWP_ACTION_BLOCK) ?
-															 FW_WEIGHT_RULE_USER_BLOCK : FW_WEIGHT_RULE_USER);
+								LONG64 weight = _r_ctrl_getinteger (hpage_general, IDC_RULE_WEIGHT_ID, NULL);
+								if (weight > 0 && weight <= UINT8_MAX)
+								{
+									// set custom rule weight
+									context->ptr_rule->weight = (UINT8) weight;
+								}
+								else
+								{
+									// set default rule weight
+									context->ptr_rule->weight = ((context->ptr_rule->action == FWP_ACTION_BLOCK) ?
+																FW_WEIGHT_RULE_USER_BLOCK : FW_WEIGHT_RULE_USER);
+								}
 							}
 						}
 

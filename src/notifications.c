@@ -1047,7 +1047,7 @@ INT_PTR CALLBACK NotificationProc (
 			if (!hdc)
 				break;
 
-			_r_dc_drawwindow (hdc, hwnd, TRUE);
+			_r_dc_drawwindow (hdc, hwnd, 0, TRUE);
 
 			EndPaint (hwnd, &ps);
 
