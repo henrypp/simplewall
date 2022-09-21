@@ -1,3 +1,13 @@
+v3.6.7 (21 September 2022)
+- added windows update service solution (issue #677, thx @taviso) [win10+]
+- added feature to allow only the requested ip in notification (issue #1265)
+- added 12 and 24 hour timer values (issue #1298)
+- fixed opening editor are overlapped by notification window
+- fixed uwp apps are reset after installing updates (issue #1294)
+- fixed select all with search filter selects everything (issue #1264)
+- fixed loading default icons for services and uwp apps
+- fixed check update option in main menu (issue #1309)
+- fixed port numbers are now verified (issue #1240)
 
 v3.6.6 (12 August 2022)
 - fixed editor does not disable save button when rule name is empty
