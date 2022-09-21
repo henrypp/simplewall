@@ -396,6 +396,7 @@ INT_PTR CALLBACK EditorRuleProc (
 				case IDC_SAVE:
 				{
 					WCHAR rule_string[256];
+					ITEM_ADDRESS address;
 					R_STRINGREF remaining_part;
 					R_STRINGREF first_part;
 					PR_STRING string;
@@ -439,7 +440,7 @@ INT_PTR CALLBACK EditorRuleProc (
 							&remaining_part
 						);
 
-						if (!_app_parserulestring (&first_part, NULL))
+						if (!_app_parserulestring (&first_part, &address))
 						{
 							_r_ctrl_showballoontip (
 								hwnd,

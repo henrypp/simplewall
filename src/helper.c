@@ -1712,12 +1712,27 @@ BOOLEAN _app_parserulestring (
 			address->range.valueHigh.type = FWP_UINT16;
 			address->range.valueHigh.uint16 = (UINT16)_r_str_toulong (&sr);
 
+			if (address->range.valueLow.uint16 < 1)
+				return FALSE;
+
+			if (address->range.valueHigh.uint16 > 65535)
+				return FALSE;
+
+			if (address->range.valueLow.uint16 >= address->range.valueHigh.uint16)
+				return FALSE;
+
 			return TRUE;
 		}
 		else
 		{
 			// ...port
 			address->port = (UINT16)_r_str_toulong (rule);
+
+			if (address->port < 1)
+				return FALSE;
+
+			if (address->port > 65535)
+				return FALSE;
 
 			return TRUE;
 		}
