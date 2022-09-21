@@ -89,7 +89,9 @@ BOOLEAN _app_uwp_getpackageinfo (
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
-		return FALSE;
+		*name_ptr = _r_obj_createstring2 (package_name);
+
+		return TRUE;
 	}
 
 	return status;
