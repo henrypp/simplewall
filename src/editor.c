@@ -2085,6 +2085,8 @@ INT_PTR CALLBACK EditorProc (
 			// initialize layout
 			_r_layout_initializemanager (&context->layout_manager, hwnd);
 
+			_r_wnd_top (hwnd, TRUE);
+
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
 			_r_window_restoreposition (hwnd, L"editor");
