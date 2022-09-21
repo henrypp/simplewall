@@ -199,7 +199,7 @@ BOOLEAN _app_preparserulestring (
 _Success_ (return)
 BOOLEAN _app_parserulestring (
 	_In_opt_ PR_STRINGREF rule,
-	_Out_opt_ PITEM_ADDRESS address
+	_Out_ PITEM_ADDRESS address
 );
 
 _Ret_maybenull_

@@ -1660,42 +1660,20 @@ BOOLEAN _app_preparserulestring (
 _Success_ (return)
 BOOLEAN _app_parserulestring (
 	_In_opt_ PR_STRINGREF rule,
-	_Out_opt_ PITEM_ADDRESS address
+	_Out_ PITEM_ADDRESS address
 )
 {
-	ITEM_ADDRESS address_copy;
 	WCHAR rule_string[256];
 	R_STRINGREF sr;
-	BOOLEAN is_checkonly;
+
+	RtlZeroMemory (address, sizeof (ITEM_ADDRESS));
 
 	if (_r_obj_isstringempty (rule))
-	{
-		if (address)
-			RtlZeroMemory (address, sizeof (ITEM_ADDRESS));
-
 		return TRUE;
-	}
-
-	if (address)
-	{
-		is_checkonly = FALSE;
-	}
-	else
-	{
-		address = &address_copy;
-
-		is_checkonly = TRUE;
-	}
-
-	// clean struct
-	RtlZeroMemory (address, sizeof (ITEM_ADDRESS));
 
 	// parse rule type
 	if (!_app_preparserulestring (rule, address))
 		return FALSE;
-
-	if (is_checkonly)
-		return TRUE;
 
 	if (address->type == DATA_TYPE_PORT)
 	{
