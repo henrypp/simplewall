@@ -2383,7 +2383,7 @@ VOID _app_wufixenable (
 
 	_app_wufixhelper (hsvcmgr, L"wuauserv", L"netsvcs", is_enable);
 	_app_wufixhelper (hsvcmgr, L"DoSvc", L"NetworkService", is_enable);
-	_app_wufixhelper (hsvcmgr, L"UsoSvc", L"netsvcs ", is_enable);
+	_app_wufixhelper (hsvcmgr, L"UsoSvc", L"netsvcs", is_enable);
 
 	CloseServiceHandle (hsvcmgr);
 }
