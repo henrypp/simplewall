@@ -290,8 +290,28 @@ netsh wfp show state
 
 Open it in any text editor and study.
 
+#### Q: How to fix Windows Update internet access?
+<details>
+<summary>Windows 10 and above:</summary>
+
+---
+Open main window menu `Settings` -> `Rules` -> `Allow Windows Update`.
+<br />
+This is working by method described [here](https://github.com/henrypp/simplewall/issues/677).
+
+---
+</details>
+
+<details>
+<summary>Windows 7, Windows 8 and Windows 8.1:</summary>
+
+---
+Open main window, Navigate into `System rules` tab and then enable `Windows Update service` rule.
+
+---
+</details>
+
 #### Q: Other questions:
-- [How to fix Windows Update and Windows Store internet access (temporary solution)](https://github.com/henrypp/simplewall/issues/206#issuecomment-439830634)
 - [Windows Security center integration (impossible)](https://stackoverflow.com/questions/3698285/how-can-i-tell-the-windows-security-center-that-im-an-antivirus/3698375#3698375)
 
 Website: [www.henrypp.org](https://www.henrypp.org)<br />
