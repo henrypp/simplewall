@@ -957,6 +957,9 @@ INT_PTR CALLBACK NotificationProc (
 
 			_app_notify_setcontext (hwnd, context);
 
+			// set correct position
+			_app_notify_setposition (hwnd, FALSE);
+
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
 			_app_notify_initialize (context, dpi_value);
