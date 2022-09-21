@@ -1248,7 +1248,8 @@ COLORREF _app_getcolorvalue (
 
 VOID _app_generate_rulescontrol (
 	_In_ HMENU hsubmenu,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG_PTR app_hash,
+	_In_opt_ PITEM_LOG ptr_log
 )
 {
 	ITEM_STATUS status;
@@ -1256,6 +1257,7 @@ VOID _app_generate_rulescontrol (
 	WCHAR buffer[128];
 	PITEM_RULE ptr_rule;
 	SIZE_T limit_group;
+	SIZE_T i;
 	BOOLEAN is_global;
 	BOOLEAN is_enabled;
 
@@ -1288,7 +1290,7 @@ VOID _app_generate_rulescontrol (
 
 				_r_queuedlock_acquireshared (&lock_rules);
 
-				for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list) && limit_group; i++)
+				for (i = 0; i < _r_obj_getlistsize (rules_list) && limit_group; i++)
 				{
 					ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -1299,8 +1301,14 @@ VOID _app_generate_rulescontrol (
 					is_enabled = is_global ||
 						(ptr_rule->is_enabled && (_r_obj_findhashtable (ptr_rule->apps, app_hash)));
 
-					if (ptr_rule->type != DATA_RULE_USER || (type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)))
+					if (ptr_rule->type != DATA_RULE_USER)
 						continue;
+
+					if ((type == 0 && (!ptr_rule->is_readonly || is_global)) ||
+						(type == 1 && (ptr_rule->is_readonly || is_global)))
+					{
+						continue;
+					}
 
 					if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
 						continue;
@@ -1334,6 +1342,29 @@ VOID _app_generate_rulescontrol (
 
 			if (!type)
 				AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
+		}
+
+		if (ptr_log)
+		{
+			AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
+
+			_r_str_printf (
+				buffer,
+				RTL_NUMBER_OF (buffer),
+				_r_locale_getstring (IDS_RULE_APPLY_2),
+				_r_obj_getstring (ptr_log->remote_addr_str)
+			);
+
+			RtlZeroMemory (&mii, sizeof (mii));
+
+			mii.cbSize = sizeof (mii);
+			mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
+			mii.fType = MFT_STRING;
+			mii.dwTypeData = buffer;
+			mii.fState = MF_UNCHECKED;
+			mii.wID = IDX_RULES_SPECIAL + (UINT)i + 1;
+
+			InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
 		}
 	}
 

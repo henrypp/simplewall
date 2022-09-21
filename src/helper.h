@@ -168,7 +168,8 @@ COLORREF _app_getcolorvalue (
 
 VOID _app_generate_rulescontrol (
 	_In_ HMENU hsubmenu,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG_PTR app_hash,
+	_In_opt_ PITEM_LOG ptr_log
 );
 
 VOID _app_generate_timerscontrol (

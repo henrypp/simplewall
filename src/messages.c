@@ -435,7 +435,7 @@ VOID _app_message_contextmenu (
 			AppendMenu (hsubmenu_rules, MF_STRING, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
 			AppendMenu (hsubmenu_rules, MF_SEPARATOR, 0, NULL);
 
-			_app_generate_rulescontrol (hsubmenu_rules, hash_code);
+			_app_generate_rulescontrol (hsubmenu_rules, hash_code, NULL);
 		}
 
 		// show timers

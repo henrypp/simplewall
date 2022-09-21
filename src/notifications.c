@@ -1226,10 +1226,11 @@ INT_PTR CALLBACK NotificationProc (
 			{
 				case BCN_DROPDOWN:
 				{
+					PNOTIFY_CONTEXT context;
+					PITEM_LOG ptr_log;
 					R_RECTANGLE rectangle;
 					RECT rect;
 					HMENU hsubmenu;
-					ULONG_PTR app_hash;
 					INT ctrl_id;
 
 					ctrl_id = (INT)(INT_PTR)nmlp->idFrom;
@@ -1240,20 +1241,25 @@ INT_PTR CALLBACK NotificationProc (
 					if (ctrl_id != IDC_ALLOW_BTN && ctrl_id != IDC_RULES_BTN)
 						break;
 
+					context = _app_notify_getcontext (hwnd);
+
+					if (!context)
+						break;
+
+					ptr_log = _app_notify_getobject (context->app_hash);
+
 					hsubmenu = CreatePopupMenu ();
 
 					if (!hsubmenu)
 						break;
 
-					app_hash = _app_notify_getapp_id (hwnd);
-
 					if (ctrl_id == IDC_RULES_BTN)
 					{
-						_app_generate_rulescontrol (hsubmenu, app_hash);
+						_app_generate_rulescontrol (hsubmenu, context->app_hash, ptr_log);
 					}
 					else if (ctrl_id == IDC_ALLOW_BTN)
 					{
-						_app_generate_timerscontrol (hsubmenu, app_hash);
+						_app_generate_timerscontrol (hsubmenu, context->app_hash);
 					}
 
 					if (GetClientRect (nmlp->hwndFrom, &rect))
@@ -1364,27 +1370,78 @@ INT_PTR CALLBACK NotificationProc (
 			ctrl_id = LOWORD (wparam);
 
 			if (ctrl_id >= IDX_RULES_SPECIAL &&
-				ctrl_id <= IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list))
+				ctrl_id <= IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list) + 1)
 			{
 				HANDLE hengine;
 				PR_LIST rules;
 				PITEM_RULE ptr_rule;
 				PITEM_APP ptr_app;
+				PITEM_LOG ptr_log;
+				PR_STRING rule;
 				SIZE_T rule_idx;
 				ULONG_PTR app_hash;
 				BOOLEAN is_remove;
-
-				rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
-				ptr_rule = _app_getrulebyid (rule_idx);
-
-				if (!ptr_rule)
-					return FALSE;
 
 				app_hash = _app_notify_getapp_id (hwnd);
 				ptr_app = _app_getappitem (app_hash);
 
 				if (!ptr_app)
 					return FALSE;
+
+				rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
+				ptr_rule = _app_getrulebyid (rule_idx);
+
+				if (!ptr_rule)
+				{
+					ptr_log = _app_notify_getobject (app_hash);
+
+					if (ptr_log)
+					{
+						rule = _app_formataddress (
+							ptr_log->af,
+							0,
+							&ptr_log->remote_addr,
+							ptr_log->remote_port,
+							FMTADDR_AS_RULE
+						);
+
+						ptr_rule = _app_addrule (
+							NULL,
+							NULL,
+							NULL,
+							FWP_DIRECTION_OUTBOUND,
+							ptr_log->protocol,
+							ptr_log->af
+						);
+
+						ptr_rule->name = _r_obj_createstring2 (rule);
+						ptr_rule->rule_remote = _r_obj_createstring2 (rule);
+
+						ptr_rule->action = FWP_ACTION_PERMIT;
+
+						_app_ruleenable (ptr_rule, TRUE, FALSE);
+
+						_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
+
+						_r_obj_dereference (rule);
+
+						_r_queuedlock_acquireexclusive (&lock_rules);
+						_r_obj_addlistitem_ex (rules_list, ptr_rule, &rule_idx);
+						_r_queuedlock_releaseexclusive (&lock_rules);
+
+						if (rule_idx != SIZE_MAX)
+						{
+							_app_listview_addruleitem (_r_app_gethwnd (), ptr_rule, rule_idx, TRUE);
+							_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
+
+							_app_profile_save ();
+						}
+					}
+
+					_app_notify_freeobject (hwnd, ptr_app);
+
+					break;
+				}
 
 				_app_notify_freeobject (hwnd, ptr_app);
 
