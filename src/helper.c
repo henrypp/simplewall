@@ -2370,6 +2370,8 @@ VOID _app_wufixenable (
 			_r_fs_deletefile (buffer2, TRUE);
 	}
 
+	_r_config_setboolean (L"IsWUFixEnabled", is_enable);
+
 	hsvcmgr = OpenSCManager (
 		NULL,
 		NULL,
@@ -2378,8 +2380,6 @@ VOID _app_wufixenable (
 
 	if (!hsvcmgr)
 		return;
-
-	_r_config_setboolean (L"IsWUFixEnabled", is_enable);
 
 	_app_wufixhelper (hsvcmgr, L"wuauserv", L"netsvcs", is_enable);
 	_app_wufixhelper (hsvcmgr, L"DoSvc", L"NetworkService", is_enable);
