@@ -147,6 +147,7 @@ BOOLEAN _app_notify_command (
 }
 
 BOOLEAN _app_notify_addobject (
+	_In_ HWND hwnd,
 	_In_ PITEM_LOG ptr_log,
 	_Inout_ PITEM_APP ptr_app
 )
@@ -165,18 +166,21 @@ BOOLEAN _app_notify_addobject (
 
 	_r_obj_swapreference (&ptr_app->notification, ptr_log);
 
-	SendMessage (_r_app_gethwnd (), WM_NOTIFICATION, 0, (LPARAM)ptr_app->notification);
-
-	if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
+	if (SendMessage (hwnd, WM_NOTIFICATION, 0, (LPARAM)ptr_app->notification))
 	{
-		if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) ||
-			!_r_wnd_isfullscreenmode ())
+		if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
 		{
-			_app_notify_playsound ();
+			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) ||
+				!_r_wnd_isfullscreenmode ())
+			{
+				_app_notify_playsound ();
+			}
 		}
+
+		return TRUE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 VOID _app_notify_freeobject (

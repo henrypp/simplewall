@@ -43,6 +43,7 @@ BOOLEAN _app_notify_command (
 );
 
 BOOLEAN _app_notify_addobject (
+	_In_ HWND hwnd,
 	_In_ PITEM_LOG ptr_log,
 	_Inout_ PITEM_APP ptr_app
 );

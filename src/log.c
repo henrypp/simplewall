@@ -1496,7 +1496,7 @@ VOID NTAPI _app_logthread (
 				if (is_exludeblocklist)
 				{
 					if (_app_getappinfo (ptr_app, INFO_IS_SILENT, (PVOID_PTR)&is_silent) && !is_silent)
-						_app_notify_addobject (ptr_log, ptr_app);
+						_app_notify_addobject (hwnd, ptr_log, ptr_app);
 				}
 			}
 		}
