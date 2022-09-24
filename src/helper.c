@@ -2332,10 +2332,7 @@ VOID _app_wufixhelper (
 			if (QueryServiceStatus (hsvc, &svc_status))
 			{
 				if (svc_status.dwCurrentState != SERVICE_STOPPED)
-				{
 					ControlService (hsvc, SERVICE_CONTROL_STOP, &svc_status);
-					StartService (hsvc, 0, NULL);
-				}
 			}
 
 			CloseServiceHandle (hsvc);
