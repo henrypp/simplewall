@@ -143,7 +143,7 @@ VOID _app_config_apply (
 {
 	HMENU hmenu;
 	HANDLE hengine;
-
+	BOOLEAN is_enabled;
 	BOOLEAN new_val;
 
 	switch (ctrl_id)
@@ -262,8 +262,6 @@ VOID _app_config_apply (
 		case IDC_LOADONSTARTUP_CHK:
 		case IDM_LOADONSTARTUP_CHK:
 		{
-			BOOLEAN is_enabled;
-
 			_r_autorun_enable (hsettings ? hsettings : hwnd, new_val);
 			is_enabled = _r_autorun_isenabled ();
 
@@ -287,8 +285,6 @@ VOID _app_config_apply (
 		case IDC_SKIPUACWARNING_CHK:
 		case IDM_SKIPUACWARNING_CHK:
 		{
-			BOOLEAN is_enabled;
-
 			_r_skipuac_enable (hsettings ? hsettings : hwnd, new_val);
 			is_enabled = _r_skipuac_isenabled ();
 
@@ -475,12 +471,7 @@ VOID _app_config_apply (
 	}
 
 	if (_wfp_isfiltersinstalled ())
-	{
-		hengine = _wfp_getenginehandle ();
-
-		if (hengine)
-			_wfp_create2filters (hengine, DBG_ARG, FALSE);
-	}
+		_app_changefilters (hwnd, TRUE, TRUE);
 }
 
 INT_PTR CALLBACK SettingsProc (
@@ -1139,9 +1130,18 @@ INT_PTR CALLBACK SettingsProc (
 
 					if (ctrl_id >= IDC_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDC_BLOCKLIST_SPY_BLOCK)
 					{
-						new_state = _r_calc_clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (
+							_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE,
+							0,
+							2
+						);
 
-						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_SPY_DISABLE + new_state);
+						_r_menu_checkitem (
+							hmenu, IDM_BLOCKLIST_SPY_DISABLE,
+							IDM_BLOCKLIST_SPY_BLOCK,
+							MF_BYCOMMAND,
+							IDM_BLOCKLIST_SPY_DISABLE + new_state
+						);
 
 						_r_config_setlong (L"BlocklistSpyState", new_state);
 
@@ -1149,9 +1149,19 @@ INT_PTR CALLBACK SettingsProc (
 					}
 					else if (ctrl_id >= IDC_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDC_BLOCKLIST_UPDATE_BLOCK)
 					{
-						new_state = _r_calc_clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (
+							_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE,
+							0,
+							2
+						);
 
-						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_UPDATE_DISABLE + new_state);
+						_r_menu_checkitem (
+							hmenu,
+							IDM_BLOCKLIST_UPDATE_DISABLE,
+							IDM_BLOCKLIST_UPDATE_BLOCK,
+							MF_BYCOMMAND,
+							IDM_BLOCKLIST_UPDATE_DISABLE + new_state
+						);
 
 						_r_config_setlong (L"BlocklistUpdateState", new_state);
 
@@ -1159,9 +1169,19 @@ INT_PTR CALLBACK SettingsProc (
 					}
 					else if (ctrl_id >= IDC_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
 					{
-						new_state = _r_calc_clamp (_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (
+							_r_ctrl_isradiobuttonchecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE,
+							0,
+							2
+						);
 
-						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_EXTRA_DISABLE + new_state);
+						_r_menu_checkitem (
+							hmenu,
+							IDM_BLOCKLIST_EXTRA_DISABLE,
+							IDM_BLOCKLIST_EXTRA_BLOCK,
+							MF_BYCOMMAND,
+							IDM_BLOCKLIST_EXTRA_DISABLE + new_state
+						);
 
 						_r_config_setlong (L"BlocklistExtraState", new_state);
 
@@ -1189,7 +1209,13 @@ INT_PTR CALLBACK SettingsProc (
 						_app_loginit (is_enabled);
 					}
 
-					SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLELOG_CHK, MAKELPARAM (is_enabled, 0));
+					SendDlgItemMessage (
+						config.hrebar,
+						IDC_TOOLBAR,
+						TB_PRESSBUTTON,
+						IDM_TRAY_ENABLELOG_CHK,
+						MAKELPARAM (is_enabled, 0)
+					);
 
 					_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
 					_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
@@ -1211,7 +1237,14 @@ INT_PTR CALLBACK SettingsProc (
 					is_logging_enabled = is_enabled || (IsDlgButtonChecked (hwnd, IDC_ENABLELOG_CHK) == BST_CHECKED);
 
 					_r_config_setboolean (L"IsLogUiEnabled", is_enabled);
-					SendDlgItemMessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLEUILOG_CHK, MAKELPARAM (is_enabled, 0));
+
+					SendDlgItemMessage (
+						config.hrebar,
+						IDC_TOOLBAR,
+						TB_PRESSBUTTON,
+						IDM_TRAY_ENABLEUILOG_CHK,
+						MAKELPARAM (is_enabled, 0)
+					);
 
 					break;
 				}
@@ -1341,8 +1374,14 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_LOGSIZELIMIT_CTRL:
 				{
+					ULONG value;
+
 					if (notify_code == EN_KILLFOCUS)
-						_r_config_setulong (L"LogSizeLimitKb", (ULONG)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0));
+					{
+						value = (ULONG)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0);
+
+						_r_config_setulong (L"LogSizeLimitKb", value);
+					}
 
 					break;
 				}
