@@ -830,6 +830,8 @@ VOID _app_windowloadfont (
 	SAFE_DELETE_OBJECT (config.wnd_font);
 
 	config.wnd_font = _app_createfont (&ncm.lfMessageFont, 0, FALSE, 0);
+
+	_app_toolbar_setfont ();
 }
 
 VOID _app_toolbar_init (
