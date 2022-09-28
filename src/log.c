@@ -575,6 +575,7 @@ VOID CALLBACK _wfp_logcallback (
 {
 	HANDLE engine_handle;
 	PITEM_LOG ptr_log;
+	GUID layer_guid;
 	PR_STRING path;
 	PR_STRING resolved_path;
 	PR_STRING filter_name;
@@ -586,12 +587,15 @@ VOID CALLBACK _wfp_logcallback (
 	BOOLEAN is_myprovider;
 	NTSTATUS status;
 
-	engine_handle = _wfp_getenginehandle ();
-
-	if (!engine_handle || !log->filter_id || !log->layer_id)
+	if (!log->filter_id || !log->layer_id)
 		return;
 
 	if (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
+		return;
+
+	engine_handle = _wfp_getenginehandle ();
+
+	if (!engine_handle)
 		return;
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
@@ -614,16 +618,15 @@ VOID CALLBACK _wfp_logcallback (
 		log->direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
 	}
 
-	layer_name = _wfp_getlayername (&layer_ptr->layerKey);
+	RtlCopyMemory (&layer_guid, &layer_ptr->layerKey, sizeof (GUID));
 
 	FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
 
 	// get filter information
 	if (FwpmFilterGetById (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS || !filter_ptr)
-	{
-		_r_obj_dereference (layer_name);
 		return;
-	}
+
+	layer_name = _wfp_getlayername (&layer_guid);
 
 	filter_name = NULL;
 	is_myprovider = FALSE;
