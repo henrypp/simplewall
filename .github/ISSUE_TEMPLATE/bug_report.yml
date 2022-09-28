@@ -1,5 +1,5 @@
 name: Bug report
-title: [Bug]
+title: "[Bug]"
 description: Let me know about crash or existing functionality not working like it should.
 labels: [ "bug" ]
 body:
