@@ -1408,7 +1408,8 @@ BOOLEAN _wfp_createrulefilter (
 			else
 			{
 				// do not log file not found to error log
-				if (status != STATUS_OBJECT_NAME_NOT_FOUND)
+				if (status != STATUS_OBJECT_NAME_NOT_FOUND &&
+					status != STATUS_OBJECT_PATH_NOT_FOUND)
 				{
 					_r_log (
 						LOG_LEVEL_ERROR,
@@ -3348,7 +3349,8 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 				// file is inaccessible or not found, maybe low-level
 				// driver preventing file access? try another way!
 				if (status == STATUS_ACCESS_DENIED ||
-					status == STATUS_OBJECT_NAME_NOT_FOUND)
+					status == STATUS_OBJECT_NAME_NOT_FOUND ||
+					status == STATUS_OBJECT_PATH_NOT_FOUND)
 				{
 					if (!_app_isappvalidpath (&path->sr))
 					{
