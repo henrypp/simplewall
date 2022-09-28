@@ -19,7 +19,7 @@ body:
     attributes:
       label: App version
       description: What the application version do you use.
-      placeholder: x.y.x
+      placeholder: x.y.z
     validations:
       required: true
   - type: textarea
