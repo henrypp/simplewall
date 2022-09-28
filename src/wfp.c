@@ -2922,9 +2922,15 @@ BOOLEAN _wfp_create2filters (
 	);
 
 	// block inbound connections
-	action = (_r_config_getboolean (L"UseStealthMode", TRUE) ||
-			  _r_config_getboolean (L"BlockInboundConnections", TRUE)) ?
-		FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+	if (_r_config_getboolean (L"UseStealthMode", TRUE) ||
+		_r_config_getboolean (L"BlockInboundConnections", TRUE))
+	{
+		action = FWP_ACTION_BLOCK;
+	}
+	else
+	{
+		action = FWP_ACTION_PERMIT;
+	}
 
 	_wfp_createfilter (
 		engine_handle,

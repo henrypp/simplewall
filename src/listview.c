@@ -985,14 +985,36 @@ VOID _app_listview_setview (
 	BOOLEAN is_mainview;
 
 	is_mainview = (listview_id >= IDC_APPS_PROFILE) && (listview_id <= IDC_RULES_CUSTOM);
-	view_type = is_mainview ? _r_calc_clamp (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX) : LV_VIEW_DETAILS;
-	icons_size = is_mainview ? _r_calc_clamp (_r_config_getlong (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST) : SHIL_SMALL;
 
-	if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM ||
+	if (is_mainview)
+	{
+		view_type = _r_calc_clamp (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX);
+	}
+	else
+	{
+		view_type = LV_VIEW_DETAILS;
+	}
+
+	if (is_mainview)
+	{
+		icons_size = _r_calc_clamp (_r_config_getlong (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST);
+	}
+	else
+	{
+		icons_size = SHIL_SMALL;
+	}
+
+	if ((listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) ||
 		listview_id == IDC_APP_RULES_ID)
 	{
-		himg = (icons_size == SHIL_SMALL || icons_size == SHIL_SYSSMALL) ?
-			config.himg_rules_small : config.himg_rules_large;
+		if (icons_size == SHIL_SMALL || icons_size == SHIL_SYSSMALL)
+		{
+			himg = config.himg_rules_small;
+		}
+		else
+		{
+			himg = config.himg_rules_large;
+		}
 	}
 	else
 	{

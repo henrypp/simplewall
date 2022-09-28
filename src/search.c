@@ -144,7 +144,13 @@ VOID _app_search_drawbutton (
 	if (!hdc)
 		return;
 
-	SetRect (&rect, 0, 0, button_rect->right - button_rect->left, button_rect->bottom - button_rect->top);
+	SetRect (
+		&rect,
+		0,
+		0,
+		button_rect->right - button_rect->left,
+		button_rect->bottom - button_rect->top
+	);
 
 	buffer_dc = CreateCompatibleDC (hdc);
 	buffer_bitmap = CreateCompatibleBitmap (hdc, rect.right, rect.bottom);
@@ -342,7 +348,8 @@ BOOLEAN _app_search_applyfilteritem (
 				goto CleanupExit;
 		}
 	}
-	else if ((listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) || listview_id == IDC_APP_RULES_ID)
+	else if ((listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) ||
+			 listview_id == IDC_APP_RULES_ID)
 	{
 		ptr_rule = _app_getrulebyid (context->id_code);
 
@@ -535,8 +542,12 @@ VOID _app_search_applyfilter (
 	_In_opt_ PR_STRING search_string
 )
 {
-	if (!((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID))
+	if (!((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG) ||
+		listview_id == IDC_RULE_APPS_ID ||
+		listview_id == IDC_APP_RULES_ID))
+	{
 		return;
+	}
 
 	_app_search_applyfiltercallback (hwnd, listview_id, search_string);
 }

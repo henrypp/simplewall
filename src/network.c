@@ -838,8 +838,15 @@ VOID _app_network_printlistviewtable (
 	BOOLEAN is_highlight;
 	BOOLEAN is_refresh;
 
-	is_highlight = _r_config_getboolean (L"IsEnableHighlighting", TRUE) &&
-		_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors");
+	if (_r_config_getboolean (L"IsEnableHighlighting", TRUE) &&
+		_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors"))
+	{
+		is_highlight = TRUE;
+	}
+	else
+	{
+		is_highlight = FALSE;
+	}
 
 	is_refresh = FALSE;
 

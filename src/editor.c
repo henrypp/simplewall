@@ -1417,18 +1417,18 @@ INT_PTR CALLBACK EditorPagesProc (
 							_r_obj_concatstrings (2, _r_locale_getstring (IDS_ADD), L"...")
 						);
 
-						AppendMenu (hsubmenu, MF_STRING, id_add, localized_string->buffer);
+						_r_menu_additem (hsubmenu, id_add, localized_string->buffer);
 
 						_r_obj_movereference (
 							&localized_string,
 							_r_obj_concatstrings (2, _r_locale_getstring (IDS_EDIT2), L"...")
 						);
 
-						AppendMenu (hsubmenu, MF_STRING, id_edit, localized_string->buffer);
+						_r_menu_additem (hsubmenu, id_edit, localized_string->buffer);
 
-						AppendMenu (hsubmenu, MF_STRING, id_delete, _r_locale_getstring (IDS_DELETE));
-						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, _r_locale_getstring (IDS_COPY));
+						_r_menu_additem (hsubmenu, id_delete, _r_locale_getstring (IDS_DELETE));
+						_r_menu_additem (hsubmenu, 0, NULL);
+						_r_menu_additem (hsubmenu, IDM_COPY, _r_locale_getstring (IDS_COPY));
 
 						if (context->ptr_rule->is_readonly)
 						{
@@ -1448,10 +1448,10 @@ INT_PTR CALLBACK EditorPagesProc (
 					}
 					else if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
 					{
-						AppendMenu (hsubmenu, MF_STRING, IDM_CHECK, _r_locale_getstring (IDS_CHECK));
-						AppendMenu (hsubmenu, MF_STRING, IDM_UNCHECK, _r_locale_getstring (IDS_UNCHECK));
-						AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-						AppendMenu (hsubmenu, MF_STRING, IDM_COPY, _r_locale_getstring (IDS_COPY));
+						_r_menu_additem (hsubmenu, IDM_CHECK, _r_locale_getstring (IDS_CHECK));
+						_r_menu_additem (hsubmenu, IDM_UNCHECK, _r_locale_getstring (IDS_UNCHECK));
+						_r_menu_additem (hsubmenu, 0, NULL);
+						_r_menu_additem (hsubmenu, IDM_COPY, _r_locale_getstring (IDS_COPY));
 
 						if (context->is_settorules && context->ptr_rule->type != DATA_RULE_USER)
 						{
@@ -2036,11 +2036,7 @@ INT_PTR CALLBACK EditorProc (
 					_r_locale_getstring (IDS_ENABLE_CHK)
 				);
 
-				CheckDlgButton (
-					hwnd,
-					IDC_ENABLE_CHK,
-					context->ptr_rule->is_enabled ? BST_CHECKED : BST_UNCHECKED
-				);
+				_r_ctrl_checkbutton (hwnd, IDC_ENABLE_CHK, !!(context->ptr_rule->is_enabled));
 			}
 			else
 			{
@@ -2075,11 +2071,7 @@ INT_PTR CALLBACK EditorProc (
 					_r_locale_getstring (IDS_ENABLE_APP_CHK)
 				);
 
-				CheckDlgButton (
-					hwnd,
-					IDC_ENABLE_CHK,
-					context->ptr_app->is_enabled ? BST_CHECKED : BST_UNCHECKED
-				);
+				_r_ctrl_checkbutton (hwnd, IDC_ENABLE_CHK, !!(context->ptr_app->is_enabled));
 			}
 
 			// initialize layout
@@ -2252,6 +2244,7 @@ INT_PTR CALLBACK EditorProc (
 					SIZE_T rule_idx;
 					INT listview_id;
 					INT item_id;
+					INT check_id;
 					BOOLEAN is_enable;
 
 					context = _app_editor_getcontext (hwnd);
@@ -2341,16 +2334,25 @@ INT_PTR CALLBACK EditorProc (
 
 							_r_obj_movereference (&context->ptr_rule->protocol_str, string);
 
+							check_id = _r_ctrl_isradiochecked (
+								hpage_general,
+								IDC_RULE_DIRECTION_OUTBOUND,
+								IDC_RULE_DIRECTION_ANY
+							);
+
 							context->ptr_rule->direction = (FWP_DIRECTION)_r_calc_clamp (
-								_r_ctrl_isradiobuttonchecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY) - IDC_RULE_DIRECTION_OUTBOUND,
+								check_id - IDC_RULE_DIRECTION_OUTBOUND,
 								FWP_DIRECTION_OUTBOUND,
 								FWP_DIRECTION_MAX
 							);
 
-							if (_r_ctrl_isradiobuttonchecked (
+							check_id = _r_ctrl_isradiochecked (
 								hpage_general,
 								IDC_RULE_ACTION_BLOCK,
-								IDC_RULE_ACTION_ALLOW) == IDC_RULE_ACTION_BLOCK)
+								IDC_RULE_ACTION_ALLOW
+							);
+
+							if (check_id == IDC_RULE_ACTION_BLOCK)
 							{
 								context->ptr_rule->action = FWP_ACTION_BLOCK;
 							}
@@ -2361,8 +2363,14 @@ INT_PTR CALLBACK EditorProc (
 
 							if (context->ptr_rule->type == DATA_RULE_USER)
 							{
-								context->ptr_rule->weight = ((context->ptr_rule->action == FWP_ACTION_BLOCK) ?
-															 FW_WEIGHT_RULE_USER_BLOCK : FW_WEIGHT_RULE_USER);
+								if (context->ptr_rule->action == FWP_ACTION_BLOCK)
+								{
+									context->ptr_rule->weight = FW_WEIGHT_RULE_USER_BLOCK;
+								}
+								else
+								{
+									context->ptr_rule->weight = FW_WEIGHT_RULE_USER;
+								}
 							}
 						}
 
@@ -2389,7 +2397,7 @@ INT_PTR CALLBACK EditorProc (
 						// enable rule
 						_app_ruleenable (
 							context->ptr_rule,
-							(IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED),
+							_r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK),
 							TRUE
 						);
 
@@ -2402,7 +2410,7 @@ INT_PTR CALLBACK EditorProc (
 						hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
 
 						context->ptr_app->is_haveerrors = FALSE; // reset errors
-						context->ptr_app->is_enabled = !!(IsDlgButtonChecked (hwnd, IDC_ENABLE_CHK) == BST_CHECKED);
+						context->ptr_app->is_enabled = _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK);
 
 						rules = _r_obj_createlist (NULL);
 

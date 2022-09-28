@@ -1253,7 +1253,6 @@ VOID _app_generate_rulescontrol (
 )
 {
 	ITEM_STATUS status;
-	MENUITEMINFO mii;
 	WCHAR buffer[128];
 	PITEM_RULE ptr_rule;
 	SIZE_T limit_group;
@@ -1265,9 +1264,7 @@ VOID _app_generate_rulescontrol (
 
 	if (!status.rules_count)
 	{
-		AppendMenu (hsubmenu, MF_STRING, IDX_RULES_SPECIAL, SZ_EMPTY);
-
-		_r_menu_enableitem (hsubmenu, IDX_RULES_SPECIAL, MF_BYCOMMAND, FALSE);
+		_r_menu_additem_ex (hsubmenu, IDX_RULES_SPECIAL, SZ_EMPTY, MF_DISABLED);
 	}
 	else
 	{
@@ -1323,16 +1320,12 @@ VOID _app_generate_rulescontrol (
 					if (ptr_rule->is_readonly)
 						_r_str_append (buffer, RTL_NUMBER_OF (buffer), SZ_RULE_INTERNAL_MENU);
 
-					RtlZeroMemory (&mii, sizeof (mii));
-
-					mii.cbSize = sizeof (mii);
-					mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
-					mii.fType = MFT_STRING;
-					mii.dwTypeData = buffer;
-					mii.fState = (is_enabled ? MF_CHECKED : MF_UNCHECKED);
-					mii.wID = IDX_RULES_SPECIAL + (UINT)i;
-
-					InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
+					_r_menu_additem_ex (
+						hsubmenu,
+						IDX_RULES_SPECIAL + (UINT)i,
+						buffer,
+						is_enabled ? MF_CHECKED : MF_UNCHECKED
+					);
 
 					limit_group -= 1;
 				}
@@ -1341,12 +1334,12 @@ VOID _app_generate_rulescontrol (
 			}
 
 			if (!type)
-				AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
+				_r_menu_additem (hsubmenu, 0, NULL);
 		}
 
 		if (ptr_log)
 		{
-			AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
+			_r_menu_additem (hsubmenu, 0, NULL);
 
 			_r_str_printf (
 				buffer,
@@ -1355,21 +1348,12 @@ VOID _app_generate_rulescontrol (
 				_r_obj_getstring (ptr_log->remote_addr_str)
 			);
 
-			RtlZeroMemory (&mii, sizeof (mii));
-
-			mii.cbSize = sizeof (mii);
-			mii.fMask = MIIM_ID | MIIM_FTYPE | MIIM_STATE | MIIM_STRING;
-			mii.fType = MFT_STRING;
-			mii.dwTypeData = buffer;
-			mii.fState = MF_UNCHECKED;
-			mii.wID = IDX_RULES_SPECIAL + (UINT)i + 1;
-
-			InsertMenuItem (hsubmenu, mii.wID, FALSE, &mii);
+			_r_menu_additem (hsubmenu, IDX_RULES_SPECIAL + (UINT)i + 1, buffer);
 		}
 	}
 
-	AppendMenu (hsubmenu, MF_SEPARATOR, 0, NULL);
-	AppendMenu (hsubmenu, MF_STRING, IDM_OPENRULESEDITOR, _r_locale_getstring (IDS_OPENRULESEDITOR));
+	_r_menu_additem (hsubmenu, 0, NULL);
+	_r_menu_additem (hsubmenu, IDM_OPENRULESEDITOR, _r_locale_getstring (IDS_OPENRULESEDITOR));
 }
 
 VOID _app_generate_timerscontrol (
@@ -1401,7 +1385,7 @@ VOID _app_generate_timerscontrol (
 
 		index = IDX_TIMER + (UINT)i;
 
-		AppendMenu (hsubmenu, MF_STRING, index, interval_string->buffer);
+		_r_menu_additem (hsubmenu, index, interval_string->buffer);
 
 		if (!is_checked && (app_time > current_time) && (app_time <= (current_time + timestamp)))
 		{
