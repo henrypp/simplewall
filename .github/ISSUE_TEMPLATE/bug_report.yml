@@ -18,7 +18,7 @@ body:
     id: version
     attributes:
       label: App version
-      description: What's the application version do you use.
+      description: What the application version do you use.
       placeholder: x.y.x
     validations:
       required: true
@@ -26,6 +26,7 @@ body:
     id: windows_version
     attributes:
       label: Windows version
+      description: What Windows version do you use.
     validations:
       required: true
   - type: textarea
