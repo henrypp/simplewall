@@ -57,7 +57,6 @@ VOID _app_loginitfile (
 );
 
 ULONG_PTR _app_getloghash (
-	_In_ HWND hwnd,
 	_In_ PITEM_LOG ptr_log
 );
 

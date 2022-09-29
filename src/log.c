@@ -88,14 +88,11 @@ VOID _app_loginitfile (
 }
 
 ULONG_PTR _app_getloghash (
-	_In_ HWND hwnd,
 	_In_ PITEM_LOG ptr_log
 )
 {
 	PR_STRING log_string;
 	ULONG_PTR log_hash;
-
-	UNREFERENCED_PARAMETER (hwnd);
 
 	log_string = _r_format_string (
 		L"%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG_PTR) L"-%" TEXT (PRIu8) L"-%" \
@@ -302,7 +299,7 @@ VOID _app_logwrite_ui (
 	SIZE_T table_size;
 	INT item_id;
 
-	log_hash = _app_getloghash (hwnd, ptr_log);
+	log_hash = _app_getloghash (ptr_log);
 
 	if (!log_hash)
 		return;
@@ -402,7 +399,8 @@ VOID _wfp_logsubscribe (
 			&subscription,
 			&_wfp_logcallback4,
 			NULL,
-			&new_handle); // win10rs5+
+			&new_handle
+		); // win10rs5+
 	}
 	else if (_FwpmNetEventSubscribe3)
 	{
@@ -411,7 +409,8 @@ VOID _wfp_logsubscribe (
 			&subscription,
 			&_wfp_logcallback3,
 			NULL,
-			&new_handle); // win10rs4+
+			&new_handle
+		); // win10rs4+
 	}
 	else if (_FwpmNetEventSubscribe2)
 	{
@@ -420,7 +419,8 @@ VOID _wfp_logsubscribe (
 			&subscription,
 			&_wfp_logcallback2,
 			NULL,
-			&new_handle); // win10rs1+
+			&new_handle
+		); // win10rs1+
 	}
 	else if (_FwpmNetEventSubscribe1)
 	{
@@ -429,7 +429,8 @@ VOID _wfp_logsubscribe (
 			&subscription,
 			&_wfp_logcallback1,
 			NULL,
-			&new_handle); // win8+
+			&new_handle
+		); // win8+
 	}
 	else if (_FwpmNetEventSubscribe0)
 	{
@@ -438,7 +439,8 @@ VOID _wfp_logsubscribe (
 			&subscription,
 			&_wfp_logcallback0,
 			NULL,
-			&new_handle); // win7+
+			&new_handle
+		); // win7+
 	}
 	else
 	{
@@ -626,6 +628,9 @@ VOID CALLBACK _wfp_logcallback (
 	if (FwpmFilterGetById (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS || !filter_ptr)
 		return;
 
+	if (!filter_ptr)
+		return;
+
 	layer_name = _wfp_getlayername (&layer_guid);
 
 	filter_name = NULL;
@@ -726,18 +731,14 @@ VOID CALLBACK _wfp_logcallback (
 			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 			{
 				if (ULongLongToULong (log->remote_addr4, &ptr_log->remote_addr.S_un.S_addr) == S_OK)
-				{
 					ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->remote_addr.S_un.S_addr);
-				}
 			}
 
 			// local address
 			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 			{
 				if (ULongLongToULong (log->local_addr4, &ptr_log->local_addr.S_un.S_addr) == S_OK)
-				{
 					ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->local_addr.S_un.S_addr);
-				}
 			}
 		}
 		else if (log->version == FWP_IP_VERSION_V6)
@@ -1494,12 +1495,15 @@ VOID NTAPI _app_logthread (
 				_app_logwrite_ui (hwnd, ptr_log);
 
 			// display notification
-			if (is_notificationenabled && ptr_app && !ptr_log->is_allow && is_exludeblocklist)
+			if (is_notificationenabled)
 			{
-				if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_silent, sizeof (is_silent)))
+				if (ptr_app && !ptr_log->is_allow && is_exludeblocklist)
 				{
-					if (!is_silent)
-						_app_notify_addobject (hwnd, ptr_log, ptr_app);
+					if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_silent, sizeof (is_silent)))
+					{
+						if (!is_silent)
+							_app_notify_addobject (hwnd, ptr_log, ptr_app);
+					}
 				}
 			}
 		}
