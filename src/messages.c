@@ -879,7 +879,7 @@ VOID _app_message_contextmenu (
 		// show rules
 		if (hsubmenu_rules)
 		{
-			_r_menu_addsubmenu (hmenu, hsubmenu_rules, _r_locale_getstring (IDS_TRAY_RULES));
+			_r_menu_addsubmenu (hmenu, -1, hsubmenu_rules, _r_locale_getstring (IDS_TRAY_RULES));
 
 			_r_menu_additem (
 				hsubmenu_rules,
@@ -895,7 +895,7 @@ VOID _app_message_contextmenu (
 		// show timers
 		if (hsubmenu_timers)
 		{
-			_r_menu_addsubmenu (hmenu, hsubmenu_timers, _r_locale_getstring (IDS_TIMER));
+			_r_menu_addsubmenu (hmenu, -1, hsubmenu_timers, _r_locale_getstring (IDS_TIMER));
 
 			_r_menu_additem (hsubmenu_timers, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
 			_r_menu_additem (hsubmenu_timers, 0, NULL);
