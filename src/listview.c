@@ -1109,14 +1109,14 @@ INT CALLBACK _app_listview_compare_callback (
 		{
 			is_success1 = _app_getappinfobyhash (
 				_app_listview_getitemcontext (hwnd, listview_id, item_id1),
-				INFO_TIMESTAMP_PTR,
+				INFO_TIMESTAMP,
 				&timestamp1,
 				sizeof (timestamp1)
 			);
 
 			is_success2 = _app_getappinfobyhash (
 				_app_listview_getitemcontext (hwnd, listview_id, item_id2),
-				INFO_TIMESTAMP_PTR,
+				INFO_TIMESTAMP,
 				&timestamp2,
 				sizeof (timestamp2)
 			);

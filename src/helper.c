@@ -1395,7 +1395,7 @@ VOID _app_generate_timerscontrol (
 
 	is_checked = FALSE;
 
-	_app_getappinfobyhash (app_hash, INFO_TIMER_PTR, &app_time, sizeof (app_time));
+	_app_getappinfobyhash (app_hash, INFO_TIMER, &app_time, sizeof (app_time));
 
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
 	{

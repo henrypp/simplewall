@@ -167,7 +167,7 @@ VOID _app_package_getpackagebyname (
 		{
 			timestamp = _r_reg_querytimestamp (hsubkey);
 
-			_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
+			_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
 			_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_reference (package_sid));
 
 			_r_obj_dereference (ptr_app);
@@ -253,7 +253,7 @@ VOID _app_package_getpackagebysid (
 		{
 			timestamp = _r_reg_querytimestamp (hsubkey);
 
-			_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
+			_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
 			_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_reference (package_sid));
 
 			_r_obj_dereference (ptr_app);
@@ -597,7 +597,7 @@ VOID _app_package_getserviceslist ()
 						{
 							_app_setappinfo (
 								ptr_app,
-								INFO_TIMESTAMP_PTR,
+								INFO_TIMESTAMP,
 								&service_timestamp
 							);
 

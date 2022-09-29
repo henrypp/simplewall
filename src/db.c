@@ -296,10 +296,10 @@ VOID _app_db_parse_app (
 					_app_setappinfo (ptr_app, INFO_IS_ENABLED, IntToPtr (is_enabled));
 
 				if (timestamp)
-					_app_setappinfo (ptr_app, INFO_TIMESTAMP_PTR, &timestamp);
+					_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
 
 				if (timer)
-					_app_setappinfo (ptr_app, INFO_TIMER_PTR, &timer);
+					_app_setappinfo (ptr_app, INFO_TIMER, &timer);
 
 				_r_obj_dereference (ptr_app);
 			}
