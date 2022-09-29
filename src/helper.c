@@ -2351,32 +2351,6 @@ VOID _app_wufixenable (
 		_r_sys_getsystemdirectory ()->buffer
 	);
 
-	if (is_enable)
-	{
-		if (!_r_fs_exists (buffer2))
-			_r_fs_copyfile (buffer1, buffer2, COPY_FILE_COPY_SYMLINK);
-
-		service_path = _r_obj_createstring (buffer2);
-
-		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, service_path, NULL, NULL);
-
-		if (app_hash)
-		{
-			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
-
-			_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
-		}
-
-		_r_obj_dereference (service_path);
-	}
-	else
-	{
-		if (_r_fs_exists (buffer2))
-			_r_fs_deletefile (buffer2, TRUE);
-	}
-
-	_r_config_setboolean (L"IsWUFixEnabled", is_enable);
-
 	hsvcmgr = OpenSCManager (
 		NULL,
 		NULL,
@@ -2389,6 +2363,43 @@ VOID _app_wufixenable (
 	_app_wufixhelper (hsvcmgr, L"wuauserv", L"netsvcs", is_enable);
 	_app_wufixhelper (hsvcmgr, L"DoSvc", L"NetworkService", is_enable);
 	_app_wufixhelper (hsvcmgr, L"UsoSvc", L"netsvcs", is_enable);
+
+	if (is_enable)
+	{
+		if (_r_fs_exists (buffer2))
+			_r_fs_deletefile (buffer2, TRUE);
+
+		_r_fs_copyfile (buffer1, buffer2, 0);
+
+		service_path = _r_obj_createstring (buffer2);
+
+		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, service_path, NULL, NULL);
+
+		if (app_hash)
+		{
+			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
+			_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+		}
+
+		_r_obj_dereference (service_path);
+	}
+	else
+	{
+		if (_r_fs_exists (buffer2))
+		{
+			app_hash = _r_str_gethash (buffer2, TRUE);
+
+			if (app_hash)
+			{
+				_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (FALSE));
+				_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (FALSE));
+			}
+
+			_r_fs_deletefile (buffer2, TRUE);
+		}
+	}
+
+	_r_config_setboolean (L"IsWUFixEnabled", is_enable);
 
 	CloseServiceHandle (hsvcmgr);
 }
