@@ -833,8 +833,8 @@ VOID _app_message_contextmenu (
 	INT lv_column_current;
 	INT command_id;
 
-	INT is_checked;
-	INT is_readonly;
+	BOOLEAN is_checked;
+	BOOLEAN is_readonly;
 
 	if (lpnmlv->iItem == -1)
 		return;
@@ -956,8 +956,11 @@ VOID _app_message_contextmenu (
 
 		if (ptr_app)
 		{
-			if (_app_getappinfo (ptr_app, INFO_IS_SILENT, (PVOID_PTR)&is_checked) && is_checked)
-				_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, is_checked);
+			if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_checked, sizeof (is_checked)))
+			{
+				if (is_checked)
+					_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, is_checked);
+			}
 		}
 
 		if (listview_id != IDC_APPS_PROFILE)
@@ -991,8 +994,11 @@ VOID _app_message_contextmenu (
 
 			_r_menu_additem (hmenu, IDM_DELETE, localized_string->buffer);
 
-			if (_app_getruleinfobyid (hash_code, INFO_IS_READONLY, (PVOID_PTR)&is_readonly) && is_readonly)
-				_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
+			if (_app_getruleinfobyid (hash_code, INFO_IS_READONLY, &is_readonly, sizeof (is_readonly)))
+			{
+				if (is_readonly)
+					_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
+			}
 		}
 
 		_r_menu_additem (hmenu, 0, NULL);
@@ -1693,7 +1699,7 @@ LONG_PTR _app_message_custdraw (
 						app_hash = index;
 						is_validconnection = _app_network_isapphaveconnection (app_hash);
 
-						if (_app_getappinfobyhash (app_hash, INFO_PATH, &real_path))
+						if (_app_getappinfobyhash (app_hash, INFO_PATH, &real_path, sizeof (real_path)))
 						{
 							is_systemapp = _app_isappfromsystem (real_path, app_hash);
 

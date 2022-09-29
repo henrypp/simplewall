@@ -1299,7 +1299,7 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						app_hash = _app_notify_getapp_id (hwnd);
 
-						if (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id))
+						if (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id)))
 						{
 							string = _app_gettooltipbylparam (_r_app_gethwnd (), listview_id, app_hash);
 

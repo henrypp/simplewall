@@ -7,62 +7,134 @@ _Success_ (return)
 BOOLEAN _app_getappinfo (
 	_In_ PITEM_APP ptr_app,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_ PVOID_PTR buffer_ptr
+	_Out_writes_bytes_all_ (size) PVOID buffer,
+	_In_ SIZE_T size
 )
 {
-	if (info_data == INFO_PATH)
+	switch (info_data)
 	{
-		if (ptr_app->real_path)
+		case INFO_PATH:
 		{
-			*buffer_ptr = _r_obj_reference (ptr_app->real_path);
-			return TRUE;
-		}
-	}
-	else if (info_data == INFO_DISPLAY_NAME)
-	{
-		if (ptr_app->display_name)
-		{
-			*buffer_ptr = _r_obj_reference (ptr_app->display_name);
-			return TRUE;
-		}
-		else if (ptr_app->original_path)
-		{
-			*buffer_ptr = _r_obj_reference (ptr_app->original_path);
-			return TRUE;
-		}
-	}
-	else if (info_data == INFO_TIMESTAMP_PTR)
-	{
-		*buffer_ptr = (PVOID)(ptr_app->timestamp);
-		return TRUE;
-	}
-	else if (info_data == INFO_TIMER_PTR)
-	{
-		*buffer_ptr = (PVOID)(ptr_app->timer);
-		return TRUE;
-	}
-	else if (info_data == INFO_LISTVIEW_ID)
-	{
-		*buffer_ptr = IntToPtr (_app_listview_getbytype (ptr_app->type));
-		return TRUE;
-	}
-	else if (info_data == INFO_IS_ENABLED)
-	{
-		*buffer_ptr = IntToPtr (ptr_app->is_enabled ? TRUE : FALSE);
-		return TRUE;
-	}
-	else if (info_data == INFO_IS_SILENT)
-	{
-		*buffer_ptr = IntToPtr (ptr_app->is_silent ? TRUE : FALSE);
-		return TRUE;
-	}
-	else if (info_data == INFO_IS_UNDELETABLE)
-	{
-		*buffer_ptr = IntToPtr (ptr_app->is_undeletable ? TRUE : FALSE);
-		return TRUE;
-	}
+			PVOID ptr;
 
-	*buffer_ptr = NULL;
+			if (size != sizeof (PVOID))
+				return FALSE;
+
+			if (ptr_app->real_path)
+			{
+				ptr = _r_obj_reference (ptr_app->real_path);
+
+				RtlCopyMemory (buffer, &ptr, size);
+
+				return TRUE;
+			}
+
+			break;
+		}
+
+		case INFO_DISPLAY_NAME:
+		{
+			PVOID ptr;
+
+			if (size != sizeof (PVOID))
+				return FALSE;
+
+			if (ptr_app->display_name)
+			{
+				ptr = _r_obj_reference (ptr_app->display_name);
+
+				RtlCopyMemory (buffer, &ptr, size);
+
+				return TRUE;
+			}
+			else if (ptr_app->original_path)
+			{
+				ptr = _r_obj_reference (ptr_app->original_path);
+
+				RtlCopyMemory (buffer, &ptr, size);
+
+				return TRUE;
+			}
+
+			break;
+		}
+
+		case INFO_TIMESTAMP_PTR:
+		{
+			if (size != sizeof (LONG64))
+				return FALSE;
+
+			RtlCopyMemory (buffer, &ptr_app->timestamp, size);
+
+			return TRUE;
+		}
+
+		case INFO_TIMER_PTR:
+		{
+			if (size != sizeof (LONG64))
+				return FALSE;
+
+			RtlCopyMemory (buffer, &ptr_app->timer, size);
+
+			return TRUE;
+		}
+
+		case INFO_LISTVIEW_ID:
+		{
+			INT listview_id;
+
+			if (size != sizeof (INT))
+				return FALSE;
+
+			listview_id = _app_listview_getbytype (ptr_app->type);
+
+			RtlCopyMemory (buffer, &listview_id, size);
+
+			return TRUE;
+		}
+
+		case INFO_IS_ENABLED:
+		{
+			BOOLEAN is_enabled;
+
+			if (size != sizeof (BOOLEAN))
+				return FALSE;
+
+			is_enabled = !!ptr_app->is_enabled;
+
+			RtlCopyMemory (buffer, &is_enabled, size);
+
+			return TRUE;
+		}
+
+		case INFO_IS_SILENT:
+		{
+			BOOLEAN is_silent;
+
+			if (size != sizeof (BOOLEAN))
+				return FALSE;
+
+			is_silent = !!ptr_app->is_silent;
+
+			RtlCopyMemory (buffer, &is_silent, size);
+
+			return TRUE;
+		}
+
+		case INFO_IS_UNDELETABLE:
+		{
+			BOOLEAN is_undeletable;
+
+			if (size != sizeof (BOOLEAN))
+				return FALSE;
+
+			is_undeletable = !!ptr_app->is_undeletable;
+
+			RtlCopyMemory (buffer, &is_undeletable, size);
+
+			return TRUE;
+		}
+	}
 
 	return FALSE;
 }
@@ -71,7 +143,8 @@ _Success_ (return)
 BOOLEAN _app_getappinfobyhash (
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_ PVOID_PTR buffer_ptr
+	_Out_writes_bytes_all_ (size) PVOID buffer,
+	_In_ SIZE_T size
 )
 {
 	PITEM_APP ptr_app;
@@ -79,18 +152,12 @@ BOOLEAN _app_getappinfobyhash (
 
 	ptr_app = _app_getappitem (app_hash);
 
-	if (ptr_app)
-	{
-		is_success = _app_getappinfo (ptr_app, info_data, buffer_ptr);
+	if (!ptr_app)
+		return FALSE;
 
-		_r_obj_dereference (ptr_app);
-	}
-	else
-	{
-		*buffer_ptr = NULL;
+	is_success = _app_getappinfo (ptr_app, info_data, buffer, size);
 
-		is_success = FALSE;
-	}
+	_r_obj_dereference (ptr_app);
 
 	return is_success;
 }
@@ -170,21 +237,40 @@ _Success_ (return)
 BOOLEAN _app_getruleinfo (
 	_In_ PITEM_RULE ptr_rule,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_ PVOID_PTR buffer_ptr
+	_Out_writes_bytes_all_ (size) PVOID buffer,
+	_In_ SIZE_T size
 )
 {
-	if (info_data == INFO_LISTVIEW_ID)
+	switch (info_data)
 	{
-		*buffer_ptr = IntToPtr (_app_listview_getbytype (ptr_rule->type));
-		return TRUE;
-	}
-	else if (info_data == INFO_IS_READONLY)
-	{
-		*buffer_ptr = IntToPtr (ptr_rule->is_readonly ? TRUE : FALSE);
-		return TRUE;
-	}
+		case INFO_LISTVIEW_ID:
+		{
+			INT listview_id;
 
-	*buffer_ptr = NULL;
+			if (size != sizeof (INT))
+				return FALSE;
+
+			listview_id = _app_listview_getbytype (ptr_rule->type);
+
+			RtlCopyMemory (buffer, &listview_id, size);
+
+			return TRUE;
+		}
+
+		case INFO_IS_READONLY:
+		{
+			BOOLEAN is_readonly;
+
+			if (size != sizeof (INT))
+				return FALSE;
+
+			is_readonly = !!ptr_rule->is_readonly;
+
+			RtlCopyMemory (buffer, &is_readonly, size);
+
+			return TRUE;
+		}
+	}
 
 	return FALSE;
 }
@@ -193,7 +279,8 @@ _Success_ (return)
 BOOLEAN _app_getruleinfobyid (
 	_In_ SIZE_T index,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_ PVOID_PTR buffer_ptr
+	_Out_writes_bytes_all_ (size) PVOID buffer,
+	_In_ SIZE_T size
 )
 {
 	PITEM_RULE ptr_rule;
@@ -201,20 +288,12 @@ BOOLEAN _app_getruleinfobyid (
 
 	ptr_rule = _app_getrulebyid (index);
 
-	if (ptr_rule)
-	{
-		is_success = _app_getruleinfo (ptr_rule, info_data, buffer_ptr);
+	if (!ptr_rule)
+		return FALSE;
 
-		_r_obj_dereference (ptr_rule);
+	is_success = _app_getruleinfo (ptr_rule, info_data, buffer, size);
 
-		return is_success;
-	}
-	else
-	{
-		*buffer_ptr = NULL;
-
-		is_success = FALSE;
-	}
+	_r_obj_dereference (ptr_rule);
 
 	return is_success;
 }

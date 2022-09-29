@@ -434,30 +434,32 @@ VOID _app_listview_showitemby_param (
 	INT listview_id;
 	INT item_id;
 
+	listview_id = 0;
+
 	if (is_app)
 	{
-		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
 	}
 	else
 	{
-		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
 	}
 
-	if (listview_id)
+	if (!listview_id)
+		return;
+
+	if (listview_id != _app_listview_getcurrent (hwnd))
 	{
-		if (listview_id != _app_listview_getcurrent (hwnd))
-		{
-			_app_listview_sort (hwnd, listview_id);
-			_app_listview_resize (hwnd, listview_id);
-		}
+		_app_listview_sort (hwnd, listview_id);
+		_app_listview_resize (hwnd, listview_id);
+	}
 
-		item_id = _app_listview_finditem (hwnd, listview_id, lparam);
+	item_id = _app_listview_finditem (hwnd, listview_id, lparam);
 
-		if (item_id != -1)
-		{
-			_app_listview_showitemby_id (hwnd, listview_id, item_id, -1);
-			_r_wnd_toggle (hwnd, TRUE);
-		}
+	if (item_id != -1)
+	{
+		_app_listview_showitemby_id (hwnd, listview_id, item_id, -1);
+		_r_wnd_toggle (hwnd, TRUE);
 	}
 }
 
@@ -521,25 +523,27 @@ VOID _app_listview_updateby_param (
 {
 	INT listview_id;
 
+	listview_id = 0;
+
 	if (is_app)
 	{
-		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
 	}
 	else
 	{
-		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
 	}
 
-	if (listview_id)
-	{
-		if ((flags & PR_SETITEM_UPDATE))
-			_app_listview_updateby_id (hwnd, listview_id, 0);
+	if (!listview_id)
+		return;
 
-		if ((flags & PR_SETITEM_REDRAW))
-		{
-			if (listview_id == _app_listview_getcurrent (hwnd))
-				_r_listview_redraw (hwnd, listview_id, -1);
-		}
+	if ((flags & PR_SETITEM_UPDATE))
+		_app_listview_updateby_id (hwnd, listview_id, 0);
+
+	if ((flags & PR_SETITEM_REDRAW))
+	{
+		if (listview_id == _app_listview_getcurrent (hwnd))
+			_r_listview_redraw (hwnd, listview_id, -1);
 	}
 }
 
@@ -554,46 +558,48 @@ VOID _app_listview_updateitemby_param (
 	INT listview_id;
 	INT item_id;
 
+	listview_id = 0;
+
 	if (is_app)
 	{
-		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
 	}
 	else
 	{
-		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, (PVOID_PTR)&listview_id);
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
 	}
 
-	if (listview_id)
+	if (!listview_id)
+		return;
+
+	item_id = _app_listview_finditem (hwnd, listview_id, lparam);
+
+	if (item_id != -1)
 	{
-		item_id = _app_listview_finditem (hwnd, listview_id, lparam);
-
-		if (item_id != -1)
+		if (is_app)
 		{
-			if (is_app)
+			ptr_app = _app_getappitem (lparam);
+
+			if (ptr_app)
 			{
-				ptr_app = _app_getappitem (lparam);
+				_app_listview_lock (hwnd, listview_id, TRUE);
+				_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
+				_app_listview_lock (hwnd, listview_id, FALSE);
 
-				if (ptr_app)
-				{
-					_app_listview_lock (hwnd, listview_id, TRUE);
-					_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
-					_app_listview_lock (hwnd, listview_id, FALSE);
-
-					_r_obj_dereference (ptr_app);
-				}
+				_r_obj_dereference (ptr_app);
 			}
-			else
+		}
+		else
+		{
+			ptr_rule = _app_getrulebyid (lparam);
+
+			if (ptr_rule)
 			{
-				ptr_rule = _app_getrulebyid (lparam);
+				_app_listview_lock (hwnd, listview_id, TRUE);
+				_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, FALSE);
+				_app_listview_lock (hwnd, listview_id, FALSE);
 
-				if (ptr_rule)
-				{
-					_app_listview_lock (hwnd, listview_id, TRUE);
-					_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, FALSE);
-					_app_listview_lock (hwnd, listview_id, FALSE);
-
-					_r_obj_dereference (ptr_rule);
-				}
+				_r_obj_dereference (ptr_rule);
 			}
 		}
 	}
@@ -1104,13 +1110,15 @@ INT CALLBACK _app_listview_compare_callback (
 			is_success1 = _app_getappinfobyhash (
 				_app_listview_getitemcontext (hwnd, listview_id, item_id1),
 				INFO_TIMESTAMP_PTR,
-				(PVOID_PTR)&timestamp1
+				&timestamp1,
+				sizeof (timestamp1)
 			);
 
 			is_success2 = _app_getappinfobyhash (
 				_app_listview_getitemcontext (hwnd, listview_id, item_id2),
 				INFO_TIMESTAMP_PTR,
-				(PVOID_PTR)&timestamp2
+				&timestamp2,
+				sizeof (timestamp2)
 			);
 
 			if (is_success1 && is_success2)

@@ -350,7 +350,8 @@ PR_STRING _app_formataddress_interlocked (
 	}
 	else
 	{
-		_r_obj_dereference (new_string);
+		if (new_string)
+			_r_obj_dereference (new_string);
 	}
 
 	return current_string;
@@ -1370,9 +1371,11 @@ VOID _app_generate_timerscontrol (
 
 	current_time = _r_unixtime_now ();
 
+	app_time = 0;
+
 	is_checked = FALSE;
 
-	_app_getappinfobyhash (app_hash, INFO_TIMER_PTR, (PVOID_PTR)&app_time);
+	_app_getappinfobyhash (app_hash, INFO_TIMER_PTR, &app_time, sizeof (app_time));
 
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
 	{
