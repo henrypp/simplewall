@@ -1790,9 +1790,8 @@ VOID _app_displayinfoapp_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		_app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID, (PVOID_PTR)&icon_id);
-
-		lpnmlv->item.iImage = icon_id;
+		if (_app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+			lpnmlv->item.iImage = icon_id;
 	}
 
 	// set group id
@@ -2132,9 +2131,8 @@ VOID _app_displayinfonetwork_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		_app_getappinfoparam2 (ptr_network->app_hash, INFO_ICON_ID, (PVOID_PTR)&icon_id);
-
-		lpnmlv->item.iImage = icon_id;
+		if (_app_getappinfoparam2 (ptr_network->app_hash, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+			lpnmlv->item.iImage = icon_id;
 	}
 
 	// set group id
@@ -2363,9 +2361,8 @@ VOID _app_displayinfolog_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		_app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID, (PVOID_PTR)&icon_id);
-
-		lpnmlv->item.iImage = icon_id;
+		if (_app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+			lpnmlv->item.iImage = icon_id;
 	}
 
 	// set group id

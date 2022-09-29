@@ -115,7 +115,8 @@ _Success_ (return)
 BOOLEAN _app_getappinfoparam2 (
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_INFO_DATA2 info_data,
-	_Out_ PVOID_PTR buffer_ptr
+	_Out_writes_bytes_all_ (size) PVOID buffer,
+	_In_ SIZE_T size
 );
 
 BOOLEAN _app_isappsigned (

@@ -1094,10 +1094,13 @@ INT_PTR CALLBACK EditorPagesProc (
 			// app signature
 			if (GetDlgItem (hwnd, IDC_APP_SIGNATURE_ID))
 			{
+				string = NULL;
+
 				_app_getappinfoparam2 (
 					context->ptr_app->app_hash,
 					INFO_SIGNATURE_STRING,
-					&string
+					&string,
+					sizeof (string)
 				);
 
 				_r_ctrl_setstringformat (

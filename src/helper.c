@@ -450,26 +450,38 @@ _Success_ (return)
 BOOLEAN _app_getappinfoparam2 (
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_INFO_DATA2 info_data,
-	_Out_ PVOID_PTR buffer_ptr
+	_Out_writes_bytes_all_ (size) PVOID buffer,
+	_In_ SIZE_T size
 )
 {
 	PITEM_APP_INFO ptr_app_info;
-	PITEM_APP ptr_app;
-	LONG icon_id;
 	BOOLEAN is_success;
 
 	is_success = FALSE;
 
-	*buffer_ptr = NULL;
-
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
-	if (!ptr_app_info)
+	switch (info_data)
 	{
-		// fallback
-		switch (info_data)
+		case INFO_ICON_ID:
 		{
-			case INFO_ICON_ID:
+			PITEM_APP ptr_app;
+			LONG icon_id;
+
+			if (size != sizeof (LONG))
+				goto CleanupExit;
+
+			icon_id = 0;
+
+			if (ptr_app_info)
+			{
+				icon_id = InterlockedCompareExchange (
+					&ptr_app_info->large_icon_id,
+					0,
+					0
+				);
+			}
+			else
 			{
 				ptr_app = _app_getappitem (app_hash);
 
@@ -483,29 +495,12 @@ BOOLEAN _app_getappinfoparam2 (
 				{
 					icon_id = _app_icons_getdefaultapp_id (DATA_APP_REGULAR);
 				}
-
-				*buffer_ptr = LongToPtr (icon_id);
-
-				return TRUE;
 			}
-		}
-
-		return FALSE;
-	}
-
-	switch (info_data)
-	{
-		case INFO_ICON_ID:
-		{
-			icon_id = InterlockedCompareExchange (
-				&ptr_app_info->large_icon_id,
-				0,
-				0
-			);
 
 			if (icon_id)
 			{
-				*buffer_ptr = LongToPtr (icon_id);
+				RtlCopyMemory (buffer, &icon_id, size);
+
 				is_success = TRUE;
 			}
 
@@ -514,10 +509,21 @@ BOOLEAN _app_getappinfoparam2 (
 
 		case INFO_SIGNATURE_STRING:
 		{
-			if (ptr_app_info->signature_info)
+			PVOID ptr;
+
+			if (size != sizeof (PVOID))
+				return FALSE;
+
+			if (ptr_app_info)
 			{
-				*buffer_ptr = _r_obj_reference (ptr_app_info->signature_info);
-				is_success = TRUE;
+				if (ptr_app_info->signature_info)
+				{
+					ptr = _r_obj_reference (ptr_app_info->signature_info);
+
+					RtlCopyMemory (buffer, &ptr, size);
+
+					is_success = TRUE;
+				}
 			}
 
 			break;
@@ -525,17 +531,31 @@ BOOLEAN _app_getappinfoparam2 (
 
 		case INFO_VERSION_STRING:
 		{
-			if (ptr_app_info->version_info)
+			PVOID ptr;
+
+			if (size != sizeof (PVOID))
+				return FALSE;
+
+			if (ptr_app_info)
 			{
-				*buffer_ptr = _r_obj_reference (ptr_app_info->version_info);
-				is_success = TRUE;
+				if (ptr_app_info->version_info)
+				{
+					ptr = _r_obj_reference (ptr_app_info->version_info);
+
+					RtlCopyMemory (buffer, &ptr, size);
+
+					is_success = TRUE;
+				}
 			}
 
 			break;
 		}
 	}
 
-	_r_obj_dereference (ptr_app_info);
+CleanupExit:
+
+	if (ptr_app_info)
+		_r_obj_dereference (ptr_app_info);
 
 	return is_success;
 }
@@ -547,7 +567,7 @@ BOOLEAN _app_isappsigned (
 	PR_STRING string;
 	BOOLEAN is_signed;
 
-	if (_app_getappinfoparam2 (app_hash, INFO_SIGNATURE_STRING, &string))
+	if (_app_getappinfoparam2 (app_hash, INFO_SIGNATURE_STRING, &string, sizeof (string)))
 	{
 		is_signed = !_r_obj_isstringempty2 (string);
 
@@ -2062,7 +2082,8 @@ VOID NTAPI _app_queuenotifyinformation (
 			_app_getappinfoparam2 (
 				context->ptr_log->app_hash,
 				INFO_SIGNATURE_STRING,
-				&signature_str
+				&signature_str,
+				sizeof (signature_str)
 			);
 
 			if (_r_obj_isstringempty (signature_str))
