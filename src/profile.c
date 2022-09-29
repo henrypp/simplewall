@@ -59,7 +59,7 @@ BOOLEAN _app_getappinfo (
 			break;
 		}
 
-		case INFO_TIMESTAMP_PTR:
+		case INFO_TIMESTAMP:
 		{
 			if (size != sizeof (LONG64))
 				return FALSE;
@@ -69,7 +69,7 @@ BOOLEAN _app_getappinfo (
 			return TRUE;
 		}
 
-		case INFO_TIMER_PTR:
+		case INFO_TIMER:
 		{
 			if (size != sizeof (LONG64))
 				return FALSE;
@@ -170,48 +170,66 @@ VOID _app_setappinfo (
 {
 	LONG64 timestamp;
 
-	if (info_data == INFO_BYTES_DATA)
+	switch (info_data)
 	{
-		_r_obj_movereference (&ptr_app->bytes, value);
-	}
-	else if (info_data == INFO_TIMESTAMP_PTR)
-	{
-		ptr_app->timestamp = *((PLONG64)value);
-	}
-	else if (info_data == INFO_TIMER_PTR)
-	{
-		timestamp = *((PLONG64)value);
-
-		// check timer expiration
-		if (timestamp <= _r_unixtime_now ())
+		case INFO_BYTES_DATA:
 		{
-			ptr_app->timer = 0;
-			ptr_app->is_enabled = FALSE;
-		}
-		else
-		{
-			ptr_app->timer = timestamp;
-			ptr_app->is_enabled = TRUE;
+			_r_obj_movereference (&ptr_app->bytes, value);
+			break;
 		}
 
-		_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
-	}
-	else if (info_data == INFO_IS_SILENT)
-	{
-		ptr_app->is_silent = (PtrToInt (value) ? TRUE : FALSE);
+		case INFO_TIMESTAMP:
+		{
+			ptr_app->timestamp = *((PLONG64)value);
+			break;
+		}
 
-		if (ptr_app->is_silent)
-			_app_notify_freeobject (NULL, ptr_app);
-	}
-	else if (info_data == INFO_IS_ENABLED)
-	{
-		ptr_app->is_enabled = (PtrToInt (value) ? TRUE : FALSE);
+		case INFO_TIMER:
+		{
+			timestamp = *((PLONG64)value);
 
-		_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
-	}
-	else if (info_data == INFO_IS_UNDELETABLE)
-	{
-		ptr_app->is_undeletable = (PtrToInt (value) ? TRUE : FALSE);
+			// check timer expiration
+			if (timestamp <= _r_unixtime_now ())
+			{
+				ptr_app->timer = 0;
+				ptr_app->is_enabled = FALSE;
+			}
+			else
+			{
+				ptr_app->timer = timestamp;
+				ptr_app->is_enabled = TRUE;
+			}
+
+			_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
+
+			break;
+		}
+
+		case INFO_IS_SILENT:
+		{
+			ptr_app->is_silent = (PtrToInt (value) ? TRUE : FALSE);
+
+			if (ptr_app->is_silent)
+				_app_notify_freeobject (NULL, ptr_app);
+
+			break;
+		}
+
+		case INFO_IS_ENABLED:
+		{
+			ptr_app->is_enabled = (PtrToInt (value) ? TRUE : FALSE);
+
+			_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
+
+			break;
+		}
+
+		case INFO_IS_UNDELETABLE:
+		{
+			ptr_app->is_undeletable = (PtrToInt (value) ? TRUE : FALSE);
+
+			break;
+		}
 	}
 }
 
