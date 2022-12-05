@@ -277,7 +277,7 @@ BOOLEAN _app_getruleinfo (
 
 		case INFO_IS_READONLY:
 		{
-			BOOLEAN is_readonly;
+			INT is_readonly;
 
 			if (size != sizeof (INT))
 				return FALSE;

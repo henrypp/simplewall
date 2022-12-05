@@ -625,7 +625,7 @@ VOID CALLBACK _wfp_logcallback (
 	FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
 
 	// get filter information
-	if (FwpmFilterGetById (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS || !filter_ptr)
+	if (FwpmFilterGetById (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS)
 		return;
 
 	if (!filter_ptr)
