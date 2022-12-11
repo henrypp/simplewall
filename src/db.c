@@ -562,6 +562,7 @@ NTSTATUS _app_db_parser_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
+	SYSTEM_INFO si;
 	PR_BYTE new_bytes;
 	BYTE profile_type;
 	NTSTATUS status;
@@ -621,6 +622,12 @@ NTSTATUS _app_db_parser_decodebody (
 		if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
 			return STATUS_MORE_PROCESSING_REQUIRED;
 	}
+
+	GetSystemInfo (&si);
+
+	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM || si.wProcessorArchitecture ==  PROCESSOR_ARCHITECTURE_ARM64 ||
+	si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
+		return STATUS_SUCCESS;
 
 	// validate hash
 	return _app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr);
