@@ -1,6 +1,6 @@
 // simplewall
 // Copyright (c) 2012-2021 dmex
-// Copyright (c) 2021, 2022 Henry++
+// Copyright (c) 2021-2023 Henry++
 
 #include "global.h"
 
