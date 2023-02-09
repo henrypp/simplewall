@@ -1213,7 +1213,7 @@ VOID _app_refreshstatus (
 	calculated_width = 0;
 	spacing = _r_dc_getdpi (16, dpi_value);
 
-	for (INT i = 0; i < STATUSBAR_PARTS_COUNT; i++)
+	for (INT i = 0; i < RTL_NUMBER_OF (parts); i++)
 	{
 		switch (i)
 		{
@@ -1258,7 +1258,7 @@ VOID _app_refreshstatus (
 	parts[1] = parts[0] + size[1];
 	parts[2] = parts[1] + size[2];
 
-	_r_status_setparts (hwnd, IDC_STATUSBAR, parts, STATUSBAR_PARTS_COUNT);
+	_r_status_setparts (hwnd, IDC_STATUSBAR, parts, RTL_NUMBER_OF (parts));
 
 	for (INT i = 1; i < STATUSBAR_PARTS_COUNT; i++)
 	{
