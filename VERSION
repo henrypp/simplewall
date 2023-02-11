@@ -1,3 +1,3 @@
 simplewall=3.6.7|https://github.com/henrypp/simplewall/releases/download/v.3.6.7/simplewall-3.6.7-setup.exe;
-language=1664434670|https://raw.githubusercontent.com/henrypp/simplewall/master/bin/simplewall.lng;
+language=1676135777|https://raw.githubusercontent.com/henrypp/simplewall/master/bin/simplewall.lng;
 rules_internal=1652781827|https://raw.githubusercontent.com/henrypp/simplewall/master/bin/profile_internal.sp;
