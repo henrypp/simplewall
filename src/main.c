@@ -2730,8 +2730,8 @@ INT_PTR CALLBACK DlgProc (
 
 			minmax = (LPMINMAXINFO)lparam;
 
-			point.cx = 480;
-			point.cy = 220;
+			point.cx = 320;
+			point.cy = 120;
 
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
@@ -2877,7 +2877,7 @@ INT_PTR CALLBACK DlgProc (
 					INT listview_id;
 
 					lpnmlv = (LPNMLVGETINFOTIP)lparam;
-					listview_id = (INT)lpnmlv->hdr.idFrom;
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
 					string = _app_gettooltipbylparam (
 						hwnd,
@@ -2903,7 +2903,9 @@ INT_PTR CALLBACK DlgProc (
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 
-					if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+
+					if (_app_listview_islocked (hwnd, listview_id))
 						break;
 
 					if (!(lpnmlv->uChanged & LVIF_STATE))
@@ -2912,7 +2914,6 @@ INT_PTR CALLBACK DlgProc (
 					if (!lpnmlv->lParam)
 						break;
 
-					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
 					if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
 					{
@@ -3104,21 +3105,21 @@ INT_PTR CALLBACK DlgProc (
 					LPNMITEMACTIVATE lpnmlv;
 					LPNMMOUSE lpmouse;
 					INT command_id;
-					INT ctrl_id;
+					INT listview_id;
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
 
 					if (lpnmlv->iItem == -1)
 						break;
 
-					ctrl_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
+					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 					command_id = 0;
 
-					if (ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_LOG)
+					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG)
 					{
 						command_id = IDM_PROPERTIES;
 					}
-					else if (ctrl_id == IDC_STATUSBAR)
+					else if (listview_id == IDC_STATUSBAR)
 					{
 						lpmouse = (LPNMMOUSE)lparam;
 
@@ -3505,7 +3506,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						_app_search_setvisible (hwnd, config.hsearchbar);
 
-						SendMessage (hwnd, WM_SIZE, 0, 0);
+						PostMessage (hwnd, WM_SIZE, 0, 0);
 					}
 
 					break;
@@ -3611,15 +3612,15 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_FIND:
 				{
-					if (config.hsearchbar)
-					{
-						if (_r_wnd_isvisible (config.hsearchbar))
-						{
-							SetFocus (config.hsearchbar);
+					if (!config.hsearchbar)
+						break;
 
-							SendMessage (config.hsearchbar, EM_SETSEL, 0, (LPARAM)-1);
-						}
-					}
+					if (!_r_wnd_isvisible (config.hsearchbar))
+						break;
+
+					SetFocus (config.hsearchbar);
+
+					SendMessage (config.hsearchbar, EM_SETSEL, 0, (LPARAM)-1);
 
 					break;
 				}
@@ -3929,9 +3930,7 @@ INT_PTR CALLBACK DlgProc (
 					PITEM_APP ptr_app;
 					PITEM_NETWORK ptr_network;
 					PITEM_LOG ptr_log;
-
 					ULONG_PTR hash_code;
-
 					INT listview_id;
 					INT item_id;
 
@@ -4042,11 +4041,11 @@ INT_PTR CALLBACK DlgProc (
 
 					listview_id = _app_listview_getcurrent (hwnd);
 
-					if (listview_id)
-					{
-						if (GetFocus () == GetDlgItem (hwnd, listview_id))
-							_r_listview_setitemstate (hwnd, listview_id, -1, LVIS_SELECTED, LVIS_SELECTED);
-					}
+					if (!listview_id)
+						break;
+
+					if (GetFocus () == GetDlgItem (hwnd, listview_id))
+						_r_listview_setitemstate (hwnd, listview_id, -1, LVIS_SELECTED, LVIS_SELECTED);
 
 					break;
 				}
