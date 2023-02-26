@@ -512,7 +512,7 @@ BOOLEAN _app_getappinfoparam2 (
 			PVOID ptr;
 
 			if (size != sizeof (PVOID))
-				return FALSE;
+				goto CleanupExit;
 
 			if (ptr_app_info)
 			{
@@ -534,7 +534,7 @@ BOOLEAN _app_getappinfoparam2 (
 			PVOID ptr;
 
 			if (size != sizeof (PVOID))
-				return FALSE;
+				goto CleanupExit;
 
 			if (ptr_app_info)
 			{
@@ -1195,7 +1195,7 @@ VOID _app_getfileversioninfo (
 	}
 
 	if (!_r_obj_isstringempty2 (sb.string))
-		_r_obj_appendstringbuilder (&sb, L"\r\n");
+		_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
 	// get file company
 	string = _r_res_querystring (ver_block.buffer, L"CompanyName", lcid);
@@ -1204,14 +1204,14 @@ VOID _app_getfileversioninfo (
 	{
 		_r_obj_appendstringbuilder (&sb, SZ_TAB);
 		_r_obj_appendstringbuilder2 (&sb, string);
-		_r_obj_appendstringbuilder (&sb, L"\r\n");
+		_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
 		_r_obj_dereference (string);
 	}
 
 	version_string = _r_obj_finalstringbuilder (&sb);
 
-	_r_str_trimstring2 (version_string, DIVIDER_TRIM, 0);
+	_r_str_trimstring2 (version_string, SZ_CRLF, 0);
 
 	if (_r_obj_isstringempty2 (version_string))
 		_r_obj_clearreference (&version_string);
