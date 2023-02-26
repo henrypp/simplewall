@@ -2673,11 +2673,11 @@ INT_PTR CALLBACK DlgProc (
 
 			_app_profile_save ();
 
-			if (app_hash)
-			{
-				_app_listview_updateby_param (hwnd, app_hash, PR_SETITEM_UPDATE, TRUE);
-				_app_listview_showitemby_param (hwnd, app_hash, TRUE);
-			}
+			if (!app_hash)
+				break;
+
+			_app_listview_updateby_param (hwnd, app_hash, PR_SETITEM_UPDATE, TRUE);
+			_app_listview_showitemby_param (hwnd, app_hash, TRUE);
 
 			break;
 		}
@@ -2879,18 +2879,16 @@ INT_PTR CALLBACK DlgProc (
 					lpnmlv = (LPNMLVGETINFOTIP)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					string = _app_gettooltipbylparam (
-						hwnd,
-						listview_id,
-						_app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem)
-					);
+					lparam = _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem);
 
-					if (string)
-					{
-						_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, string->buffer);
+					string = _app_gettooltipbylparam (hwnd, listview_id, lparam);
 
-						_r_obj_dereference (string);
-					}
+					if (!string)
+						break;
+
+					_r_str_copy (lpnmlv->pszText, lpnmlv->cchTextMax, string->buffer);
+
+					_r_obj_dereference (string);
 
 					break;
 				}
@@ -2913,7 +2911,6 @@ INT_PTR CALLBACK DlgProc (
 
 					if (!lpnmlv->lParam)
 						break;
-
 
 					if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
 					{
@@ -4133,7 +4130,9 @@ BOOLEAN _app_parseargs (
 			NULL,
 			MB_OK | MB_ICONINFORMATION,
 			L"Available options:",
-			L"\"simplewall.exe -install\" - enable filtering.\r\n\"simplewall.exe -install -temp\" - enable filtering until reboot.\r\n\"simplewall.exe -install -silent\" - enable filtering without prompt.\r\n\"simplewall.exe -uninstall\" - remove all installed filters.\r\n\"simplewall.exe -help\" - show this message."
+			L"\"simplewall.exe -install\" - enable filtering.\r\n\"simplewall.exe -install -temp\" - enable filtering until reboot.\r\n\" \
+			simplewall.exe -install -silent\" - enable filtering without prompt.\r\n\"" \
+			"simplewall.exe -uninstall\" - remove all installed filters.\r\n\"simplewall.exe -help\" - show this message."
 		);
 
 		result = TRUE;
