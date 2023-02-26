@@ -52,7 +52,7 @@ VOID _app_getapptooltipstring (
 	if (tmp_string3)
 	{
 		_r_obj_appendstringbuilder2 (buffer, tmp_string3);
-		_r_obj_appendstringbuilder (buffer, L"\r\n");
+		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 	}
 
 	// file information
@@ -65,7 +65,7 @@ VOID _app_getapptooltipstring (
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder2 (&sb, ptr_app->display_name);
-			_r_obj_appendstringbuilder (&sb, L"\r\n");
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 	}
 
@@ -76,7 +76,7 @@ VOID _app_getapptooltipstring (
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder2 (&sb, ptr_app_info->version_info);
-			_r_obj_appendstringbuilder (&sb, L"\r\n");
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 	}
 
@@ -105,7 +105,7 @@ VOID _app_getapptooltipstring (
 				_r_locale_getstring (IDS_SIGNATURE),
 				L":\r\n" SZ_TAB,
 				ptr_app_info->signature_info->buffer,
-				L"\r\n"
+				SZ_CRLF
 			);
 
 			_r_obj_appendstringbuilder2 (buffer, tmp_string1);
@@ -130,7 +130,7 @@ VOID _app_getapptooltipstring (
 					_r_locale_getstring (IDS_TIMELEFT),
 					L":" SZ_TAB_CRLF,
 					tmp_string2->buffer,
-					L"\r\n"
+					SZ_CRLF
 				);
 
 				_r_obj_appendstringbuilder2 (buffer, tmp_string1);
@@ -151,7 +151,7 @@ VOID _app_getapptooltipstring (
 			_r_locale_getstring (IDS_RULE),
 			L":" SZ_TAB_CRLF,
 			tmp_string2->buffer,
-			L"\r\n"
+			SZ_CRLF
 		);
 
 		_r_obj_appendstringbuilder2 (buffer, tmp_string1);
@@ -170,13 +170,13 @@ VOID _app_getapptooltipstring (
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_NETWORK));
-			_r_obj_appendstringbuilder (&sb, L"\r\n");
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 		else if (ptr_app->type == DATA_APP_PICO)
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_PICO));
-			_r_obj_appendstringbuilder (&sb, L"\r\n");
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 
 		// app settings
@@ -184,28 +184,28 @@ VOID _app_getapptooltipstring (
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_SYSTEM));
-			_r_obj_appendstringbuilder (&sb, L"\r\n");
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 
 		if (_app_network_isapphaveconnection (app_hash))
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_CONNECTION));
-			_r_obj_appendstringbuilder (&sb, L"\r\n");
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 
 		if (ptr_app->is_silent)
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_SILENT));
-			_r_obj_appendstringbuilder (&sb, L"\r\n");
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 
 		if (!_app_isappexists (ptr_app))
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
 			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_HIGHLIGHT_INVALID));
-			_r_obj_appendstringbuilder (&sb, L"\r\n");
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 
 		tmp_string1 = _r_obj_finalstringbuilder (&sb);
@@ -243,7 +243,7 @@ VOID _app_getapptooltipstring (
 			_r_obj_appendstringbuilder (buffer, SZ_EMPTY);
 		}
 
-		_r_obj_appendstringbuilder (buffer, L"\r\n" SZ_TAB);
+		_r_obj_appendstringbuilder (buffer, SZ_CRLF SZ_TAB);
 
 		_r_obj_appendstringbuilder (buffer, _r_locale_getstring (IDS_LAYER));
 		_r_obj_appendstringbuilder (buffer, L": ");
@@ -257,7 +257,7 @@ VOID _app_getapptooltipstring (
 			_r_obj_appendstringbuilder (buffer, SZ_EMPTY);
 		}
 
-		_r_obj_appendstringbuilder (buffer, L"\r\n");
+		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 	}
 }
 
@@ -289,8 +289,8 @@ PR_STRING _app_gettooltipbylparam (
 
 		if (ptr_rule)
 		{
-			string1 = _app_rulesexpandrules (ptr_rule->rule_remote, L"\r\n" SZ_TAB);
-			string2 = _app_rulesexpandrules (ptr_rule->rule_local, L"\r\n" SZ_TAB);
+			string1 = _app_rulesexpandrules (ptr_rule->rule_remote, SZ_CRLF SZ_TAB);
+			string2 = _app_rulesexpandrules (ptr_rule->rule_local, SZ_CRLF SZ_TAB);
 
 			// rule information
 			_r_obj_appendstringbuilderformat (
@@ -321,7 +321,7 @@ PR_STRING _app_gettooltipbylparam (
 				{
 					string2 = _r_obj_concatstrings (
 						4,
-						L"\r\n",
+						SZ_CRLF,
 						_r_locale_getstring (IDS_TAB_APPS),
 						L":\r\n" SZ_TAB,
 						string1->buffer
@@ -339,7 +339,7 @@ PR_STRING _app_gettooltipbylparam (
 			{
 				string2 = _r_obj_concatstrings (
 					4,
-					L"\r\n",
+					SZ_CRLF,
 					_r_locale_getstring (IDS_NOTES),
 					L":\r\n" SZ_TAB,
 					SZ_RULE_INTERNAL_TITLE

@@ -2804,7 +2804,7 @@ VOID _app_command_copy (
 			}
 		}
 
-		_r_obj_appendstringbuilder (&buffer, L"\r\n");
+		_r_obj_appendstringbuilder (&buffer, SZ_CRLF);
 	}
 
 	string = _r_obj_finalstringbuilder (&buffer);
@@ -2945,7 +2945,7 @@ VOID _app_command_delete (
 	_In_ HWND hwnd
 )
 {
-	static R_STRINGREF crlf = PR_STRINGREF_INIT (L"\r\n");
+	static R_STRINGREF crlf = PR_STRINGREF_INIT (SZ_CRLF);
 
 	HANDLE hengine;
 	R_STRINGBUILDER sb;

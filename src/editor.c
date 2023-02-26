@@ -1942,7 +1942,7 @@ INT_PTR CALLBACK EditorPagesProc (
 						if (string)
 						{
 							_r_obj_appendstringbuilder2 (&sb, string);
-							_r_obj_appendstringbuilder (&sb, L"\r\n");
+							_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
 							_r_obj_dereference (string);
 						}

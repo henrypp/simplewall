@@ -95,14 +95,9 @@ typedef enum _ENUM_INFO_DATA2
 
 #define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
 
-#define DIVIDER_COPY L", "
-#define DIVIDER_APP L"|"
-#define DIVIDER_RULE L";"
-#define DIVIDER_RULE_RANGE L'-'
-#define DIVIDER_TRIM L"\r\n "
-
-#define SZ_TAB L"   "
-#define SZ_TAB_CRLF L"\r\n" SZ_TAB
+#define SZ_TAB L"    "
+#define SZ_CRLF L"\r\n"
+#define SZ_TAB_CRLF SZ_CRLF SZ_TAB
 #define SZ_EMPTY L"<empty>"
 #define SZ_RULE_INTERNAL_MENU L"*"
 #define SZ_RULE_INTERNAL_TITLE L"Internal rule"
@@ -122,20 +117,26 @@ typedef enum _ENUM_INFO_DATA2
 
 #define SZ_LOG_TITLE L"Date,Username,Path,Address (" SZ_DIRECTION_LOCAL L")," \
 	L"Port (" SZ_DIRECTION_LOCAL L"),Address (" SZ_DIRECTION_REMOTE L"),Port (" SZ_DIRECTION_REMOTE L")," \
-	L"Protocol,Layer,Filter name,Filter ID,Direction,State\r\n"
+	L"Protocol,Layer,Filter name,Filter ID,Direction,State" SZ_CRLF
 
 #define SZ_LOG_BODY L"\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"," \
-	L"\"%s\",\"%s\",\"#%" TEXT (PRIu64) L"\",\"%s\",\"%s\"\r\n"
+	L"\"%s\",\"%s\",\"#%" TEXT (PRIu64) L"\",\"%s\",\"%s\"" SZ_CRLF
 
 #define SZ_WARNING_ME L"If you disallow this, you cannot use resolve network addresses option. Continue?"
 #define SZ_WARNING_SVCHOST L"Be careful, through service host (svchost.exe)" \
 	L"internet traffic can let out through unexpected ways. Continue?"
 
-#define SZ_HELP L"\"simplewall.exe -install\" - enable filtering.\r\n" \
-	L"\"simplewall.exe -install -temp\" - enable filtering until reboot.\r\n" \
-	L"\"simplewall.exe -install -silent\" - enable filtering without prompt.\r\n" \
-	L"\"simplewall.exe -uninstall\" - remove all installed filters.\r\n" \
-	L"\"simplewall.exe -help\" - show this message."
+#define SZ_HELP L"\"simplewall.exe -install\" - enable filtering." SZ_CRLF \
+	L"\"simplewall.exe -install -temp\" - enable filtering until reboot." SZ_CRLF \
+	L"\"simplewall.exe -install -silent\" - enable filtering without prompt." SZ_CRLF \
+	L"\"simplewall.exe -uninstall\" - remove all installed filters." SZ_CRLF \
+	L"\"simlewall.exe -help\" - show this message."
+
+#define DIVIDER_COPY L", "
+#define DIVIDER_APP L"|"
+#define DIVIDER_RULE L";"
+#define DIVIDER_RULE_RANGE L'-'
+#define DIVIDER_TRIM SZ_CRLF L" "
 
 #define BACKUP_HOURS_PERIOD _r_calc_hours2seconds (4) // make backup every X hour(s) (default)
 
