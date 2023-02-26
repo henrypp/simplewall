@@ -219,6 +219,8 @@ BOOLEAN _app_search_isstringfound (
 	_Inout_ PBOOLEAN is_changed
 )
 {
+	*is_changed = FALSE;
+
 	if (!string)
 	{
 		if (context->is_hidden)
