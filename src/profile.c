@@ -660,23 +660,20 @@ COLORREF _app_getappcolor (
 
 	if (ptr_app && !is_networklist)
 	{
-		if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") &&
-			!_app_isappexists (ptr_app))
+		if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
 		{
 			color_hash = config.color_invalid;
 			goto CleanupExit;
 		}
 	}
 
-	if (_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors") &&
-		is_validconnection)
+	if (_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors") && is_validconnection)
 	{
 		color_hash = config.color_network;
 		goto CleanupExit;
 	}
 
-	if (_r_config_getboolean_ex (L"IsHighlightSigned", TRUE, L"colors") &&
-		_app_isappsigned (app_hash))
+	if (_r_config_getboolean_ex (L"IsHighlightSigned", TRUE, L"colors") && _app_isappsigned (app_hash))
 	{
 		color_hash = config.color_signed;
 		goto CleanupExit;
@@ -691,16 +688,14 @@ COLORREF _app_getappcolor (
 			goto CleanupExit;
 		}
 
-		if (_r_config_getboolean_ex (L"IsHighlightPico", TRUE, L"colors") &&
-			ptr_app->type == DATA_APP_PICO)
+		if (_r_config_getboolean_ex (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DATA_APP_PICO)
 		{
 			color_hash = config.color_pico;
 			goto CleanupExit;
 		}
 	}
 
-	if (_r_config_getboolean_ex (L"IsHighlightSystem", TRUE, L"colors") &&
-		is_systemapp)
+	if (_r_config_getboolean_ex (L"IsHighlightSystem", TRUE, L"colors") && is_systemapp)
 	{
 		color_hash = config.color_system;
 		goto CleanupExit;

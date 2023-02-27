@@ -1246,7 +1246,7 @@ ULONG_PTR _app_addcolor (
 	ptr_clr.locale_id = locale_id;
 	ptr_clr.is_enabled = is_enabled;
 
-	hash_code = _r_str_gethash2 (ptr_clr.config_value, TRUE);
+	hash_code = _r_str_gethash2 (ptr_clr.config_name, TRUE);
 
 	_r_obj_addhashtableitem (colors_table, hash_code, &ptr_clr);
 
@@ -1316,8 +1316,7 @@ VOID _app_generate_rulescontrol (
 						continue;
 
 					is_global = (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps));
-					is_enabled = is_global ||
-						(ptr_rule->is_enabled && (_r_obj_findhashtable (ptr_rule->apps, app_hash)));
+					is_enabled = is_global || (ptr_rule->is_enabled && (_r_obj_findhashtable (ptr_rule->apps, app_hash)));
 
 					if (ptr_rule->type != DATA_RULE_USER)
 						continue;

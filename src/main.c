@@ -1434,40 +1434,40 @@ INT_PTR CALLBACK SettingsProc (
 					{
 						ptr_clr_crnt = (PITEM_COLOR)_r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
 
-						if (ptr_clr_crnt)
+						if (!ptr_clr_crnt)
+							break;
+
+						index = 0;
+						enum_key = 0;
+
+						while (_r_obj_enumhashtable (colors_table, &ptr_clr, NULL, &enum_key))
 						{
-							index = 0;
-							enum_key = 0;
+							cust[index++] = ptr_clr->default_clr;
+						}
 
-							while (_r_obj_enumhashtable (colors_table, &ptr_clr, NULL, &enum_key))
-							{
-								cust[index++] = ptr_clr->default_clr;
-							}
+						cc.lStructSize = sizeof (cc);
+						cc.Flags = CC_RGBINIT | CC_FULLOPEN;
+						cc.hwndOwner = hwnd;
+						cc.lpCustColors = cust;
+						cc.rgbResult = ptr_clr_crnt->new_clr;
 
-							cc.lStructSize = sizeof (cc);
-							cc.Flags = CC_RGBINIT | CC_FULLOPEN;
-							cc.hwndOwner = hwnd;
-							cc.lpCustColors = cust;
-							cc.rgbResult = ptr_clr_crnt->new_clr;
+						if (ChooseColor (&cc))
+						{
+							ptr_clr_crnt->new_clr = cc.rgbResult;
 
-							if (ChooseColor (&cc))
-							{
-								ptr_clr_crnt->new_clr = cc.rgbResult;
+							_r_config_setulong_ex (
+								ptr_clr_crnt->config_value->buffer,
+								cc.rgbResult,
+								L"colors"
+							);
 
-								_r_config_setulong_ex (
-									ptr_clr_crnt->config_value->buffer,
-									cc.rgbResult,
-									L"colors"
-								);
+							_r_listview_redraw (hwnd, IDC_COLORS, -1);
 
-								_r_listview_redraw (hwnd, IDC_COLORS, -1);
-
-								_r_listview_redraw (
-									_r_app_gethwnd (),
-									_app_listview_getcurrent (_r_app_gethwnd ()),
-									-1
-								);
-							}
+							_r_listview_redraw (
+								_r_app_gethwnd (),
+								_app_listview_getcurrent (_r_app_gethwnd ()),
+								-1
+							);
 						}
 					}
 
