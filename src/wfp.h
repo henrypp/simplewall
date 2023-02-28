@@ -105,7 +105,7 @@ VOID _wfp_destroyfilters (
 	_In_ HANDLE engine_handle
 );
 
-BOOLEAN _wfp_destroyfilters_array (
+VOID _wfp_destroyfilters_array (
 	_In_ HANDLE engine_handle,
 	_In_ PR_ARRAY guids,
 	_In_ LPCWSTR file_name,

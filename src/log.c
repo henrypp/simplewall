@@ -11,6 +11,9 @@ VOID _app_loginit (
 	HANDLE new_handle;
 	PR_STRING log_path;
 
+	if (!config.hnotify_evt)
+		return;
+
 	current_handle = InterlockedCompareExchangePointer (
 		&config.hlogfile,
 		NULL,
@@ -190,16 +193,13 @@ VOID _app_logclear_ui (
 	_In_ HWND hwnd
 )
 {
-	SendDlgItemMessage (hwnd, IDC_LOG, LVM_DELETEALLITEMS, 0, 0);
-	//SendDlgItemMessage (hwnd, IDC_LOG, LVM_SETITEMCOUNT, 0, 0);
+	_r_queuedlock_acquireexclusive (&lock_loglist);
+	_r_obj_clearhashtable (log_table);
+	_r_queuedlock_releaseexclusive (&lock_loglist);
+
+	_r_listview_deleteallitems (hwnd, IDC_LOG);
 
 	_app_listview_resize (hwnd, IDC_LOG);
-
-	_r_queuedlock_acquireexclusive (&lock_loglist);
-
-	_r_obj_clearhashtable (log_table);
-
-	_r_queuedlock_releaseexclusive (&lock_loglist);
 }
 
 VOID _app_logwrite (
@@ -215,6 +215,9 @@ VOID _app_logwrite (
 	PITEM_APP ptr_app;
 	HANDLE current_handle;
 	ULONG unused;
+
+	if (!config.hnotify_evt)
+		return;
 
 	current_handle = InterlockedCompareExchangePointer (
 		&config.hlogfile,
@@ -299,6 +302,9 @@ VOID _app_logwrite_ui (
 	SIZE_T table_size;
 	INT item_id;
 
+	if (!config.hnotify_evt)
+		return;
+
 	log_hash = _app_getloghash (ptr_log);
 
 	if (!log_hash)
@@ -336,6 +342,7 @@ VOID _app_logwrite_ui (
 }
 
 VOID _wfp_logsubscribe (
+	_In_opt_ HWND hwnd,
 	_In_ HANDLE engine_handle
 )
 {
@@ -349,7 +356,7 @@ VOID _wfp_logsubscribe (
 	HANDLE current_handle;
 	HANDLE new_handle;
 	HMODULE hfwpuclnt;
-	ULONG code;
+	ULONG status;
 
 	current_handle = InterlockedCompareExchangePointer (
 		&config.hnetevent,
@@ -394,7 +401,7 @@ VOID _wfp_logsubscribe (
 
 	if (_FwpmNetEventSubscribe4)
 	{
-		code = _FwpmNetEventSubscribe4 (
+		status = _FwpmNetEventSubscribe4 (
 			engine_handle,
 			&subscription,
 			&_wfp_logcallback4,
@@ -404,7 +411,7 @@ VOID _wfp_logsubscribe (
 	}
 	else if (_FwpmNetEventSubscribe3)
 	{
-		code = _FwpmNetEventSubscribe3 (
+		status = _FwpmNetEventSubscribe3 (
 			engine_handle,
 			&subscription,
 			&_wfp_logcallback3,
@@ -414,7 +421,7 @@ VOID _wfp_logsubscribe (
 	}
 	else if (_FwpmNetEventSubscribe2)
 	{
-		code = _FwpmNetEventSubscribe2 (
+		status = _FwpmNetEventSubscribe2 (
 			engine_handle,
 			&subscription,
 			&_wfp_logcallback2,
@@ -424,7 +431,7 @@ VOID _wfp_logsubscribe (
 	}
 	else if (_FwpmNetEventSubscribe1)
 	{
-		code = _FwpmNetEventSubscribe1 (
+		status = _FwpmNetEventSubscribe1 (
 			engine_handle,
 			&subscription,
 			&_wfp_logcallback1,
@@ -434,7 +441,7 @@ VOID _wfp_logsubscribe (
 	}
 	else if (_FwpmNetEventSubscribe0)
 	{
-		code = _FwpmNetEventSubscribe0 (
+		status = _FwpmNetEventSubscribe0 (
 			engine_handle,
 			&subscription,
 			&_wfp_logcallback0,
@@ -447,8 +454,13 @@ VOID _wfp_logsubscribe (
 		goto CleanupExit;
 	}
 
-	if (code != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", code, NULL);
+	if (status != ERROR_SUCCESS)
+	{
+		if (hwnd)
+			_r_show_errormessage (hwnd, L"Log subscribe failed", status, NULL);
+
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
+	}
 
 	current_handle = InterlockedCompareExchangePointer (
 		&config.hnetevent,
@@ -501,7 +513,7 @@ VOID _wfp_logsetoption (
 {
 	FWP_VALUE val;
 	UINT32 mask;
-	ULONG code;
+	ULONG status;
 
 	if (!config.is_neteventset)
 		return;
@@ -531,19 +543,19 @@ VOID _wfp_logsetoption (
 	val.type = FWP_UINT32;
 	val.uint32 = mask;
 
-	code = FwpmEngineSetOption (
+	status = FwpmEngineSetOption (
 		engine_handle,
 		FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS,
 		&val
 	);
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 	{
 		_r_log (
 			LOG_LEVEL_WARNING,
 			NULL,
 			L"FwpmEngineSetOption",
-			code,
+			status,
 			L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS"
 		);
 	}
@@ -553,19 +565,19 @@ VOID _wfp_logsetoption (
 	val.type = FWP_UINT32;
 	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE);
 
-	code = FwpmEngineSetOption (
+	status = FwpmEngineSetOption (
 		engine_handle,
 		FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS,
 		&val
 	);
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 	{
 		_r_log (
 			LOG_LEVEL_WARNING,
 			NULL,
 			L"FwpmEngineSetOption",
-			code,
+			status,
 			L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS"
 		);
 	}

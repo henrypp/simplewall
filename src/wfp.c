@@ -18,11 +18,7 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (
 
 	install_type = INSTALL_DISABLED;
 
-	status = FwpmProviderGetByKey (
-		engine_handle,
-		&GUID_WfpProvider,
-		&ptr_provider
-	);
+	status = FwpmProviderGetByKey (engine_handle, &GUID_WfpProvider, &ptr_provider);
 
 	if (status == ERROR_SUCCESS)
 	{
@@ -58,11 +54,7 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (
 
 	install_type = INSTALL_DISABLED;
 
-	status = FwpmSubLayerGetByKey (
-		engine_handle,
-		&GUID_WfpSublayer,
-		&ptr_sublayer
-	);
+	status = FwpmSubLayerGetByKey (engine_handle, &GUID_WfpSublayer, &ptr_sublayer);
 
 	if (status == ERROR_SUCCESS)
 	{
@@ -111,18 +103,12 @@ HANDLE _wfp_getenginehandle ()
 		{
 			RtlZeroMemory (&session, sizeof (session));
 
-			session.displayData.name = APP_NAME;
-			session.displayData.description = APP_NAME;
+			session.displayData.name = _r_app_getname ();
+			session.displayData.description = _r_app_getname ();
 
 			session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
 
-			status = FwpmEngineOpen (
-				NULL,
-				RPC_C_AUTHN_WINNT,
-				NULL,
-				&session,
-				&engine_handle
-			);
+			status = FwpmEngineOpen (NULL, RPC_C_AUTHN_WINNT, NULL, &session, &engine_handle);
 
 			if (status == ERROR_SUCCESS)
 			{
@@ -260,9 +246,7 @@ BOOLEAN _wfp_initialize (
 	FWPM_SUBLAYER sublayer;
 	FWP_VALUE val;
 	FWP_VALUE0* fwp_query;
-
-	ULONG code;
-
+	ULONG status;
 	BOOLEAN is_success;
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
@@ -290,21 +274,17 @@ BOOLEAN _wfp_initialize (
 			// create provider
 			RtlZeroMemory (&provider, sizeof (provider));
 
-			provider.displayData.name = APP_NAME;
-			provider.displayData.description = APP_NAME;
+			provider.displayData.name = _r_app_getname ();
+			provider.displayData.description = _r_app_getname ();
 
 			provider.providerKey = GUID_WfpProvider;
 
 			if (!config.is_filterstemporary)
 				provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
 
-			code = FwpmProviderAdd (
-				engine_handle,
-				&provider,
-				NULL
-			);
+			status = FwpmProviderAdd (engine_handle, &provider, NULL);
 
-			if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
+			if (status != ERROR_SUCCESS && status != FWP_E_ALREADY_EXISTS)
 			{
 				if (is_intransact)
 				{
@@ -316,7 +296,7 @@ BOOLEAN _wfp_initialize (
 					LOG_LEVEL_ERROR,
 					&GUID_TrayIcon,
 					L"FwpmProviderAdd",
-					code,
+					status,
 					NULL
 				);
 
@@ -335,8 +315,8 @@ BOOLEAN _wfp_initialize (
 			// create sublayer
 			RtlZeroMemory (&sublayer, sizeof (sublayer));
 
-			sublayer.displayData.name = APP_NAME;
-			sublayer.displayData.description = APP_NAME;
+			sublayer.displayData.name = _r_app_getname ();
+			sublayer.displayData.description = _r_app_getname ();
 
 			sublayer.providerKey = (LPGUID)&GUID_WfpProvider;
 			sublayer.subLayerKey = GUID_WfpSublayer;
@@ -347,13 +327,9 @@ BOOLEAN _wfp_initialize (
 			if (!config.is_filterstemporary)
 				sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
 
-			code = FwpmSubLayerAdd (
-				engine_handle,
-				&sublayer,
-				NULL
-			);
+			status = FwpmSubLayerAdd (engine_handle, &sublayer, NULL);
 
-			if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
+			if (status != ERROR_SUCCESS && status != FWP_E_ALREADY_EXISTS)
 			{
 				if (is_intransact)
 				{
@@ -365,7 +341,7 @@ BOOLEAN _wfp_initialize (
 					LOG_LEVEL_ERROR,
 					&GUID_TrayIcon,
 					L"FwpmSubLayerAdd",
-					code,
+					status,
 					NULL
 				);
 
@@ -387,18 +363,10 @@ BOOLEAN _wfp_initialize (
 	}
 
 	// set provider security information
-	_app_setsecurityinfoforprovider (
-		engine_handle,
-		&GUID_WfpProvider,
-		is_secure
-	);
+	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, is_secure);
 
 	// set sublayer security information
-	_app_setsecurityinfoforsublayer (
-		engine_handle,
-		&GUID_WfpSublayer,
-		is_secure
-	);
+	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, is_secure);
 
 	// set engine options
 	RtlZeroMemory (&val, sizeof (val));
@@ -411,13 +379,9 @@ BOOLEAN _wfp_initialize (
 		// query net events state
 		config.is_neteventenabled = FALSE;
 
-		code = FwpmEngineGetOption (
-			engine_handle,
-			FWPM_ENGINE_COLLECT_NET_EVENTS,
-			&fwp_query
-		);
+		status = FwpmEngineGetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &fwp_query);
 
-		if (code == ERROR_SUCCESS)
+		if (status == ERROR_SUCCESS)
 		{
 			if (fwp_query)
 			{
@@ -437,19 +401,15 @@ BOOLEAN _wfp_initialize (
 			val.type = FWP_UINT32;
 			val.uint32 = 1;
 
-			code = FwpmEngineSetOption (
-				engine_handle,
-				FWPM_ENGINE_COLLECT_NET_EVENTS,
-				&val
-			);
+			status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 
-			if (code != ERROR_SUCCESS)
+			if (status != ERROR_SUCCESS)
 			{
 				_r_log (
 					LOG_LEVEL_ERROR,
 					NULL,
 					L"FwpmEngineSetOption",
-					code,
+					status,
 					L"FWPM_ENGINE_COLLECT_NET_EVENTS"
 				);
 			}
@@ -479,19 +439,15 @@ BOOLEAN _wfp_initialize (
 			val.type = FWP_UINT32;
 			val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
 
-			code = FwpmEngineSetOption (
-				engine_handle,
-				FWPM_ENGINE_PACKET_QUEUING,
-				&val
-			);
+			status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
 
-			if (code != ERROR_SUCCESS)
+			if (status != ERROR_SUCCESS)
 			{
 				_r_log (
 					LOG_LEVEL_WARNING,
 					NULL,
 					L"FwpmEngineSetOption",
-					code,
+					status,
 					L"FWPM_ENGINE_PACKET_QUEUING"
 				);
 			}
@@ -530,11 +486,7 @@ VOID _wfp_uninitialize (
 		val.type = FWP_UINT32;
 		val.uint32 = 0;
 
-		status = FwpmEngineSetOption (
-			engine_handle,
-			FWPM_ENGINE_COLLECT_NET_EVENTS,
-			&val
-		);
+		status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 
 		if (status == ERROR_SUCCESS)
 			config.is_neteventset = FALSE;
@@ -542,23 +494,11 @@ VOID _wfp_uninitialize (
 
 	if (is_full)
 	{
-		_app_setsecurityinfoforprovider (
-			engine_handle,
-			&GUID_WfpProvider,
-			FALSE
-		);
+		_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
 
-		_app_setsecurityinfoforsublayer (
-			engine_handle,
-			&GUID_WfpSublayer,
-			FALSE
-		);
+		_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
 
-		status = _wfp_dumpcallouts (
-			engine_handle,
-			&GUID_WfpProvider,
-			&callouts
-		);
+		status = _wfp_dumpcallouts (engine_handle, &GUID_WfpProvider, &callouts);
 
 		if (callouts)
 		{
@@ -566,11 +506,7 @@ VOID _wfp_uninitialize (
 			{
 				guid = _r_obj_getarrayitem (callouts, i);
 
-				_app_setsecurityinfoforcallout (
-					engine_handle,
-					guid,
-					FALSE
-				);
+				_app_setsecurityinfoforcallout (engine_handle, guid, FALSE);
 			}
 		}
 
@@ -583,10 +519,7 @@ VOID _wfp_uninitialize (
 			{
 				guid = _r_obj_getarrayitem (callouts, i);
 
-				status = FwpmCalloutDeleteByKey (
-					engine_handle,
-					guid
-				);
+				status = FwpmCalloutDeleteByKey (engine_handle, guid);
 
 				if (status != ERROR_SUCCESS)
 				{
@@ -607,10 +540,7 @@ VOID _wfp_uninitialize (
 		}
 
 		// destroy sublayer
-		status = FwpmSubLayerDeleteByKey (
-			engine_handle,
-			&GUID_WfpSublayer
-		);
+		status = FwpmSubLayerDeleteByKey (engine_handle, &GUID_WfpSublayer);
 
 		if (status != ERROR_SUCCESS && status != FWP_E_SUBLAYER_NOT_FOUND)
 		{
@@ -624,10 +554,7 @@ VOID _wfp_uninitialize (
 		}
 
 		// destroy provider
-		status = FwpmProviderDeleteByKey (
-			engine_handle,
-			&GUID_WfpProvider
-		);
+		status = FwpmProviderDeleteByKey (engine_handle, &GUID_WfpProvider);
 
 		if (status != ERROR_SUCCESS && status != FWP_E_PROVIDER_NOT_FOUND)
 		{
@@ -658,38 +585,22 @@ VOID _wfp_installfilters (
 	PR_ARRAY guids;
 	PR_LIST rules;
 	LPCGUID guid;
-
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
 	SIZE_T enum_key;
-
 	BOOLEAN is_intransact;
 	BOOLEAN is_secure;
-
 	ULONG status;
 
 	// set security information
-	_app_setsecurityinfoforprovider (
-		engine_handle,
-		&GUID_WfpProvider,
-		FALSE
-	);
-
-	_app_setsecurityinfoforsublayer (
-		engine_handle,
-		&GUID_WfpSublayer,
-		FALSE
-	);
+	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
+	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
 
 	_wfp_clearfilter_ids ();
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
-	status = _wfp_dumpfilters (
-		engine_handle,
-		&GUID_WfpProvider,
-		&guids
-	);
+	status = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider, &guids);
 
 	// restore filters security
 	if (status == ERROR_SUCCESS)
@@ -698,12 +609,7 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (
-				engine_handle,
-				guid,
-				FALSE,
-				DBG_ARG
-			);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG);
 		}
 	}
 
@@ -739,12 +645,7 @@ VOID _wfp_installfilters (
 
 	if (!_r_obj_islistempty2 (rules))
 	{
-		_wfp_create3filters (
-			engine_handle,
-			rules,
-			DBG_ARG,
-			is_intransact
-		);
+		_wfp_create3filters (engine_handle, rules, DBG_ARG, is_intransact);
 
 		_r_obj_clearlist (rules);
 	}
@@ -767,22 +668,13 @@ VOID _wfp_installfilters (
 
 	if (!_r_obj_islistempty2 (rules))
 	{
-		_wfp_create4filters (
-			engine_handle,
-			rules,
-			DBG_ARG,
-			is_intransact
-		);
+		_wfp_create4filters (engine_handle, rules, DBG_ARG, is_intransact);
 
 		_r_obj_clearlist (rules);
 	}
 
 	// apply internal rules
-	_wfp_create2filters (
-		engine_handle,
-		DBG_ARG,
-		is_intransact
-	);
+	_wfp_create2filters (engine_handle, DBG_ARG, is_intransact);
 
 	if (is_intransact)
 		_wfp_transact_commit (engine_handle, DBG_ARG);
@@ -792,11 +684,7 @@ VOID _wfp_installfilters (
 
 	if (is_secure)
 	{
-		status = _wfp_dumpfilters (
-			engine_handle,
-			&GUID_WfpProvider,
-			&guids
-		);
+		status = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider, &guids);
 
 		if (status == ERROR_SUCCESS)
 		{
@@ -804,29 +692,15 @@ VOID _wfp_installfilters (
 			{
 				guid = _r_obj_getarrayitem (guids, i);
 
-				_app_setsecurityinfoforfilter (
-					engine_handle,
-					guid,
-					is_secure,
-					DBG_ARG
-				);
+				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG);
 			}
 
 			_r_obj_dereference (guids);
 		}
 	}
 
-	_app_setsecurityinfoforprovider (
-		engine_handle,
-		&GUID_WfpProvider,
-		is_secure
-	);
-
-	_app_setsecurityinfoforsublayer (
-		engine_handle,
-		&GUID_WfpSublayer,
-		is_secure
-	);
+	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, is_secure);
+	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, is_secure);
 
 	_r_queuedlock_releaseshared (&lock_transaction);
 
@@ -900,10 +774,7 @@ BOOLEAN _wfp_deletefilter (
 	PR_STRING string;
 	ULONG status;
 
-	status = FwpmFilterDeleteByKey (
-		engine_handle,
-		filter_id
-	);
+	status = FwpmFilterDeleteByKey (engine_handle, filter_id);
 
 #if !defined(_DEBUG)
 	if (status != ERROR_SUCCESS && status != FWP_E_FILTER_NOT_FOUND)
@@ -980,8 +851,8 @@ ULONG _wfp_createcallout (
 	FWPM_CALLOUT0 callout = {0};
 	ULONG code;
 
-	callout.displayData.name = APP_NAME;
-	callout.displayData.description = APP_NAME;
+	callout.displayData.name = _r_app_getname ();
+	callout.displayData.description = _r_app_getname ();
 
 	if (!config.is_filterstemporary)
 		callout.flags = FWPM_CALLOUT_FLAG_PERSISTENT;
@@ -991,12 +862,7 @@ ULONG _wfp_createcallout (
 	RtlCopyMemory (&callout.calloutKey, callout_key, sizeof (GUID));
 	RtlCopyMemory (&callout.applicableLayer, layer_key, sizeof (GUID));
 
-	code = FwpmCalloutAdd (
-		engine_handle,
-		&callout,
-		NULL,
-		NULL
-	);
+	code = FwpmCalloutAdd (engine_handle, &callout, NULL, NULL);
 
 	if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
 	{
@@ -1053,19 +919,11 @@ ULONG _wfp_createfilter (
 	}
 	else if (filter_name)
 	{
-		_r_str_copy (
-			filter_description,
-			RTL_NUMBER_OF (filter_description),
-			filter_name
-		);
+		_r_str_copy (filter_description, RTL_NUMBER_OF (filter_description), filter_name);
 	}
 	else
 	{
-		_r_str_copy (
-			filter_description,
-			RTL_NUMBER_OF (filter_description),
-			SZ_EMPTY
-		);
+		_r_str_copy (filter_description, RTL_NUMBER_OF (filter_description), SZ_EMPTY);
 	}
 
 	// reset action rights
@@ -1090,11 +948,16 @@ ULONG _wfp_createfilter (
 	if (flags)
 		filter.flags |= flags;
 
-	filter.displayData.name = APP_NAME;
+	filter.displayData.name = _r_app_getname ();
 	filter.displayData.description = filter_description;
 
+	RtlCopyMemory (&filter.subLayerKey, &GUID_WfpSublayer, sizeof (GUID));
+	RtlCopyMemory (&filter.layerKey, layer_id, sizeof (GUID));
+
+	if (callout_id)
+		RtlCopyMemory (&filter.action.calloutKey, callout_id, sizeof (GUID));
+
 	filter.providerKey = (LPGUID)&GUID_WfpProvider;
-	filter.subLayerKey = GUID_WfpSublayer;
 	filter.weight.type = FWP_UINT8;
 	filter.weight.uint8 = weight;
 	filter.action.type = action;
@@ -1105,17 +968,7 @@ ULONG _wfp_createfilter (
 		filter.filterCondition = lpcond;
 	}
 
-	RtlCopyMemory (&filter.layerKey, layer_id, sizeof (GUID));
-
-	if (callout_id)
-		RtlCopyMemory (&filter.action.calloutKey, callout_id, sizeof (GUID));
-
-	status = FwpmFilterAdd (
-		engine_handle,
-		&filter,
-		NULL,
-		&filter_id
-	);
+	status = FwpmFilterAdd (engine_handle, &filter, NULL, &filter_id);
 
 	if (status == ERROR_SUCCESS)
 	{
@@ -1196,23 +1049,19 @@ VOID _wfp_destroyfilters (
 	// destroy all filters
 	_r_queuedlock_acquireshared (&lock_transaction);
 
-	status = _wfp_dumpfilters (
-		engine_handle,
-		&GUID_WfpProvider,
-		&guids
-	);
-
-	if (status == ERROR_SUCCESS)
-	{
-		_wfp_destroyfilters_array (engine_handle, guids, DBG_ARG);
-
-		_r_obj_dereference (guids);
-	}
+	status = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider, &guids);
 
 	_r_queuedlock_releaseshared (&lock_transaction);
+
+	if (status != ERROR_SUCCESS)
+		return;
+
+	_wfp_destroyfilters_array (engine_handle, guids, DBG_ARG);
+
+	_r_obj_dereference (guids);
 }
 
-BOOLEAN _wfp_destroyfilters_array (
+VOID _wfp_destroyfilters_array (
 	_In_ HANDLE engine_handle,
 	_In_ PR_ARRAY guids,
 	_In_ LPCWSTR file_name,
@@ -1231,12 +1080,7 @@ BOOLEAN _wfp_destroyfilters_array (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		_app_setsecurityinfoforfilter (
-			engine_handle,
-			guid,
-			FALSE,
-			DBG_ARG_VAR
-		);
+		_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
 	}
 
 	is_intransact = _wfp_transact_start (engine_handle, DBG_ARG_VAR);
@@ -1254,8 +1098,6 @@ BOOLEAN _wfp_destroyfilters_array (
 	_r_queuedlock_releaseshared (&lock_transaction);
 
 	_app_restoreinterfacestate (_r_app_gethwnd (), is_enabled);
-
-	return TRUE;
 }
 
 BOOLEAN _wfp_createrulefilter (
@@ -1391,11 +1233,7 @@ BOOLEAN _wfp_createrulefilter (
 		}
 		else
 		{
-			status = _FwpmGetAppIdFromFileName1 (
-				ptr_app->original_path,
-				ptr_app->type,
-				&byte_blob
-			);
+			status = _FwpmGetAppIdFromFileName1 (ptr_app->original_path, ptr_app->type, &byte_blob);
 
 			if (status == STATUS_SUCCESS)
 			{
@@ -1738,7 +1576,8 @@ CleanupExit:
 	if (ptr_app)
 		_r_obj_dereference (ptr_app);
 
-	ByteBlobFree (&byte_blob);
+	if (byte_blob)
+		ByteBlobFree (&byte_blob);
 
 	return is_success;
 }
@@ -1794,12 +1633,7 @@ BOOLEAN _wfp_create4filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (
-				engine_handle,
-				guid,
-				FALSE,
-				DBG_ARG_VAR
-			);
+			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
@@ -1830,12 +1664,7 @@ BOOLEAN _wfp_create4filters (
 
 		if (!_r_obj_isstringempty (ptr_rule->rule_remote))
 		{
-			_r_str_splitatchar (
-				&ptr_rule->rule_remote->sr,
-				DIVIDER_RULE[0],
-				&rule_remote_part,
-				&remote_remaining_part
-			);
+			_r_str_splitatchar (&ptr_rule->rule_remote->sr, DIVIDER_RULE[0], &rule_remote_part, &remote_remaining_part);
 		}
 		else
 		{
@@ -1845,12 +1674,7 @@ BOOLEAN _wfp_create4filters (
 
 		if (!_r_obj_isstringempty (ptr_rule->rule_local))
 		{
-			_r_str_splitatchar (
-				&ptr_rule->rule_local->sr,
-				DIVIDER_RULE[0],
-				&rule_local_part,
-				&local_remaining_part
-			);
+			_r_str_splitatchar (&ptr_rule->rule_local->sr, DIVIDER_RULE[0], &rule_local_part, &local_remaining_part);
 		}
 		else
 		{
@@ -1946,22 +1770,12 @@ BOOLEAN _wfp_create4filters (
 
 			if (remote_remaining_part.length != 0)
 			{
-				_r_str_splitatchar (
-					&remote_remaining_part,
-					DIVIDER_RULE[0],
-					&rule_remote_part,
-					&remote_remaining_part
-				);
+				_r_str_splitatchar (&remote_remaining_part, DIVIDER_RULE[0], rule_remote_part, &remote_remaining_part);
 			}
 
 			if (local_remaining_part.length != 0)
 			{
-				_r_str_splitatchar (
-					&local_remaining_part,
-					DIVIDER_RULE[0],
-					&rule_local_part,
-					&local_remaining_part
-				);
+				_r_str_splitatchar (&local_remaining_part, DIVIDER_RULE[0], &rule_local_part, &local_remaining_part);
 			}
 		}
 	}
@@ -1984,12 +1798,7 @@ BOOLEAN _wfp_create4filters (
 					{
 						guid = _r_obj_getarrayitem (ptr_rule->guids, j);
 
-						_app_setsecurityinfoforfilter (
-							engine_handle,
-							guid,
-							is_secure,
-							DBG_ARG_VAR
-						);
+						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
 					}
 				}
 			}
@@ -2108,12 +1917,7 @@ BOOLEAN _wfp_create3filters (
 					{
 						guid = _r_obj_getarrayitem (ptr_app->guids, j);
 
-						_app_setsecurityinfoforfilter (
-							engine_handle,
-							guid,
-							is_secure,
-							DBG_ARG_VAR
-						);
+						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
 					}
 				}
 			}
@@ -2190,12 +1994,7 @@ BOOLEAN _wfp_create2filters (
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
-				_app_setsecurityinfoforfilter (
-					engine_handle,
-					guid,
-					FALSE,
-					DBG_ARG_VAR
-				);
+				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
 			}
 		}
 
@@ -2974,12 +2773,7 @@ BOOLEAN _wfp_create2filters (
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
-				_app_setsecurityinfoforfilter (
-					engine_handle,
-					guid,
-					is_secure,
-					DBG_ARG_VAR
-				);
+				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
 			}
 		}
 
@@ -3007,11 +2801,7 @@ ULONG _wfp_dumpcallouts (
 
 	enum_handle = NULL;
 
-	status = FwpmCalloutCreateEnumHandle (
-		engine_handle,
-		NULL,
-		&enum_handle
-	);
+	status = FwpmCalloutCreateEnumHandle (engine_handle, NULL, &enum_handle);
 
 	if (status != ERROR_SUCCESS)
 		return status;
@@ -3092,11 +2882,7 @@ ULONG _wfp_dumpfilters (
 
 	enum_handle = NULL;
 
-	status = FwpmFilterCreateEnumHandle (
-		engine_handle,
-		NULL,
-		&enum_handle
-	);
+	status = FwpmFilterCreateEnumHandle (engine_handle, NULL, &enum_handle);
 
 	if (status != ERROR_SUCCESS)
 		return status;
@@ -3104,13 +2890,7 @@ ULONG _wfp_dumpfilters (
 	filters_enum = NULL;
 	guids = NULL;
 
-	status = FwpmFilterEnum (
-		engine_handle,
-		enum_handle,
-		UINT32_MAX,
-		&filters_enum,
-		&return_count
-	);
+	status = FwpmFilterEnum (engine_handle, enum_handle, UINT32_MAX, &filters_enum, &return_count);
 
 	if (status != ERROR_SUCCESS)
 		goto CleanupExit;
@@ -3205,7 +2985,7 @@ VOID NTAPI _wfp_applythread (
 
 		// dropped packets logging (win7+)
 		if (config.is_neteventset)
-			_wfp_logsubscribe (engine_handle);
+			_wfp_logsubscribe (context->hwnd, engine_handle);
 	}
 
 	dpi_value = _r_dc_getwindowdpi (context->hwnd);
@@ -3233,13 +3013,7 @@ VOID _wfp_firewallenable (
 	INetFwPolicy2 *INetFwPolicy = NULL;
 	HRESULT hr;
 
-	hr = CoCreateInstance (
-		&CLSID_NetFwPolicy2,
-		NULL,
-		CLSCTX_INPROC_SERVER,
-		&IID_INetFwPolicy2,
-		&INetFwPolicy
-	);
+	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolic);
 
 	if (FAILED (hr))
 		return;
@@ -3282,13 +3056,7 @@ BOOLEAN _wfp_firewallisenabled ()
 
 	status = VARIANT_FALSE;
 
-	hr = CoCreateInstance (
-		&CLSID_NetFwPolicy2,
-		NULL,
-		CLSCTX_INPROC_SERVER,
-		&IID_INetFwPolicy2,
-		&INetFwPolicy
-	);
+	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
 
 	if (SUCCEEDED (hr))
 	{
@@ -3333,11 +3101,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 	{
 		if (_r_str_gethash2 (path, TRUE) == config.ntoskrnl_hash)
 		{
-			ByteBlobAlloc (
-				path->buffer,
-				path->length + sizeof (UNICODE_NULL),
-				byte_blob
-			);
+			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), byte_blob);
 
 			return STATUS_SUCCESS;
 		}
@@ -3393,11 +3157,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 				}
 			}
 
-			ByteBlobAlloc (
-				original_path->buffer,
-				original_path->length + sizeof (UNICODE_NULL),
-				byte_blob
-			);
+			ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), byte_blob);
 
 			_r_obj_dereference (original_path);
 
@@ -3411,11 +3171,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 		if (type == DATA_APP_DEVICE)
 			_r_str_tolower (&original_path->sr); // lower is important!
 
-		ByteBlobAlloc (
-			original_path->buffer,
-			original_path->length + sizeof (UNICODE_NULL),
-			byte_blob
-		);
+		ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), byte_blob);
 
 		_r_obj_dereference (original_path);
 

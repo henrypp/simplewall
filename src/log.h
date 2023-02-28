@@ -90,6 +90,7 @@ VOID _app_logwrite_ui (
 );
 
 VOID _wfp_logsubscribe (
+	_In_opt_ HWND hwnd,
 	_In_ HANDLE engine_handle
 );
 
