@@ -2074,18 +2074,12 @@ VOID NTAPI _app_queuenotifyinformation (
 				L":"
 			);
 
-			_app_getappinfoparam2 (
-				ptr_log->app_hash,
-				INFO_SIGNATURE_STRING,
-				&signature_str,
-				sizeof (signature_str)
-			);
-
-			if (_r_obj_isstringempty (signature_str))
+			if (!_app_getappinfoparam2 (ptr_log->app_hash, INFO_SIGNATURE_STRING, &signature_str, sizeof (signature_str)))
 				_r_obj_movereference (&signature_str, _r_locale_getstring_ex (IDS_SIGN_UNSIGNED));
 
 			hdefer = BeginDeferWindowPos (2);
 
+			// set signature string
 			_r_ctrl_settablestring (
 				context->hwnd,
 				&hdefer,
