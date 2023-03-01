@@ -16,30 +16,25 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (
 	ENUM_INSTALL_TYPE install_type;
 	ULONG status;
 
-	install_type = INSTALL_DISABLED;
-
 	status = FwpmProviderGetByKey (engine_handle, &GUID_WfpProvider, &ptr_provider);
 
-	if (status == ERROR_SUCCESS)
-	{
-		if (ptr_provider)
-		{
-			if (ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED)
-			{
-				//install_type = INSTALL_DISABLED;
-			}
-			else if (ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT)
-			{
-				install_type = INSTALL_ENABLED;
-			}
-			else
-			{
-				install_type = INSTALL_ENABLED_TEMPORARY;
-			}
+	if (status != ERROR_SUCCESS || !ptr_provider)
+		return INSTALL_DISABLED;
 
-			FwpmFreeMemory ((PVOID_PTR)&ptr_provider);
-		}
+	if (ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED)
+	{
+		install_type = INSTALL_DISABLED;
 	}
+	else if (ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT)
+	{
+		install_type = INSTALL_ENABLED;
+	}
+	else
+	{
+		install_type = INSTALL_ENABLED_TEMPORARY;
+	}
+
+	FwpmFreeMemory ((PVOID_PTR)&ptr_provider);
 
 	return install_type;
 }
@@ -52,26 +47,21 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (
 	ENUM_INSTALL_TYPE install_type;
 	ULONG status;
 
-	install_type = INSTALL_DISABLED;
-
 	status = FwpmSubLayerGetByKey (engine_handle, &GUID_WfpSublayer, &ptr_sublayer);
 
-	if (status == ERROR_SUCCESS)
-	{
-		if (ptr_sublayer)
-		{
-			if (ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT)
-			{
-				install_type = INSTALL_ENABLED;
-			}
-			else
-			{
-				install_type = INSTALL_ENABLED_TEMPORARY;
-			}
+	if (status != ERROR_SUCCESS || !ptr_sublayer)
+		return INSTALL_DISABLED;
 
-			FwpmFreeMemory ((PVOID_PTR)&ptr_sublayer);
-		}
+	if (ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT)
+	{
+		install_type = INSTALL_ENABLED;
 	}
+	else
+	{
+		install_type = INSTALL_ENABLED_TEMPORARY;
+	}
+
+	FwpmFreeMemory ((PVOID_PTR)&ptr_sublayer);
 
 	return install_type;
 }
@@ -239,6 +229,7 @@ PR_STRING _wfp_getlayername (
 }
 
 BOOLEAN _wfp_initialize (
+	_In_opt_ HWND hwnd,
 	_In_ HANDLE engine_handle
 )
 {
@@ -381,14 +372,11 @@ BOOLEAN _wfp_initialize (
 
 		status = FwpmEngineGetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &fwp_query);
 
-		if (status == ERROR_SUCCESS)
+		if (status == ERROR_SUCCESS && fwp_query)
 		{
-			if (fwp_query)
-			{
-				config.is_neteventenabled = (fwp_query->type == FWP_UINT32) && (!!fwp_query->uint32);
+			config.is_neteventenabled = (fwp_query->type == FWP_UINT32) && (!!fwp_query->uint32);
 
-				FwpmFreeMemory ((PVOID_PTR)&fwp_query);
-			}
+			FwpmFreeMemory ((PVOID_PTR)&fwp_query);
 		}
 
 		// enable net events (if it is disabled)
@@ -399,7 +387,7 @@ BOOLEAN _wfp_initialize (
 		else
 		{
 			val.type = FWP_UINT32;
-			val.uint32 = 1;
+			val.uint32 = TRUE;
 
 			status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 
@@ -423,7 +411,7 @@ BOOLEAN _wfp_initialize (
 		{
 			_wfp_logsetoption (engine_handle);
 
-			_wfp_logsubscribe (engine_handle);
+			_wfp_logsubscribe (hwnd, engine_handle);
 		}
 	}
 
@@ -484,7 +472,7 @@ VOID _wfp_uninitialize (
 		RtlZeroMemory (&val, sizeof (val));
 
 		val.type = FWP_UINT32;
-		val.uint32 = 0;
+		val.uint32 = FALSE;
 
 		status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_COLLECT_NET_EVENTS, &val);
 
@@ -1770,7 +1758,7 @@ BOOLEAN _wfp_create4filters (
 
 			if (remote_remaining_part.length != 0)
 			{
-				_r_str_splitatchar (&remote_remaining_part, DIVIDER_RULE[0], rule_remote_part, &remote_remaining_part);
+				_r_str_splitatchar (&remote_remaining_part, DIVIDER_RULE[0], &rule_remote_part, &remote_remaining_part);
 			}
 
 			if (local_remaining_part.length != 0)
@@ -2971,7 +2959,7 @@ VOID NTAPI _wfp_applythread (
 				_app_wufixenable (context->hwnd, is_wufixenabled);
 			}
 
-			if (_wfp_initialize (engine_handle))
+			if (_wfp_initialize (context->hwnd, engine_handle))
 				_wfp_installfilters (engine_handle);
 		}
 		else
@@ -3013,7 +3001,7 @@ VOID _wfp_firewallenable (
 	INetFwPolicy2 *INetFwPolicy = NULL;
 	HRESULT hr;
 
-	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolic);
+	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
 
 	if (FAILED (hr))
 		return;

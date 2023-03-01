@@ -1925,11 +1925,7 @@ VOID _app_queue_fileinformation (
 
 	InterlockedIncrement (&ptr_app_info->lock);
 
-	_r_workqueue_queueitem (
-		&file_queue,
-		&_app_queuefileinformation,
-		ptr_app_info
-	);
+	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, ptr_app_info);
 }
 
 VOID _app_queue_resolver (
@@ -1948,11 +1944,7 @@ VOID _app_queue_resolver (
 	context->lparam = hash_code;
 	context->base_address = _r_obj_reference (base_address);
 
-	_r_workqueue_queueitem (
-		&resolver_queue,
-		&_app_queueresolveinformation,
-		context
-	);
+	_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
 }
 
 VOID NTAPI _app_queuefileinformation (
@@ -1979,9 +1971,7 @@ VOID NTAPI _app_queuefileinformation (
 
 	// query version info
 	if (!ptr_app_info->version_info)
-	{
 		_app_getfileversioninfo (ptr_app_info);
-	}
 
 	// redraw listview
 	if (!(busy_count % 4)) // lol, hack!!!
@@ -2005,6 +1995,7 @@ VOID NTAPI _app_queuenotifyinformation (
 {
 	PITEM_CONTEXT context;
 	PITEM_APP_INFO ptr_app_info;
+	PITEM_LOG ptr_log;
 	PR_STRING address_str;
 	PR_STRING host_str;
 	PR_STRING signature_str;
@@ -2016,15 +2007,16 @@ VOID NTAPI _app_queuenotifyinformation (
 	context = arglist;
 
 	signature_str = NULL;
-	host_str = NULL;
 
 	is_iconset = FALSE;
 
+	ptr_log = context->base_address;
+
 	// query address string
 	address_str = _app_formataddress (
-		context->ptr_log->af,
-		context->ptr_log->protocol,
-		&context->ptr_log->remote_addr,
+		ptr_log->af,
+		ptr_log->protocol,
+		&ptr_log->remote_addr,
 		0,
 		FMTADDR_USE_PROTOCOL
 	);
@@ -2033,20 +2025,24 @@ VOID NTAPI _app_queuenotifyinformation (
 	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 	{
 		host_str = _app_resolveaddress_interlocked (
-			&context->ptr_log->remote_host_str,
-			context->ptr_log->af,
-			&context->ptr_log->remote_addr,
+			&ptr_log->remote_host_str,
+			ptr_log->af,
+			&ptr_log->remote_addr,
 			TRUE
 		);
 
-		if (host_str)
-			host_str = _r_obj_reference (host_str);
+		//if (host_str)
+		//	host_str = _r_obj_reference (host_str);
+	}
+	else
+	{
+		host_str = NULL;
 	}
 
 	// query signature
 	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
 	{
-		ptr_app_info = _app_getappinfobyhash2 (context->ptr_log->app_hash);
+		ptr_app_info = _app_getappinfobyhash2 (ptr_log->app_hash);
 
 		if (ptr_app_info)
 		{
@@ -2061,11 +2057,11 @@ VOID NTAPI _app_queuenotifyinformation (
 	}
 
 	// query file icon
-	hicon = _app_icons_getsafeapp_hicon (context->ptr_log->app_hash);
+	hicon = _app_icons_getsafeapp_hicon (ptr_log->app_hash);
 
 	if (_r_wnd_isvisible (context->hwnd))
 	{
-		if (context->ptr_log->app_hash == _app_notify_getapp_id (context->hwnd))
+		if (ptr_log->app_hash == _app_notify_getapp_id (context->hwnd))
 		{
 			// set file icon
 			_app_notify_setapp_icon (context->hwnd, hicon, TRUE);
@@ -2079,7 +2075,7 @@ VOID NTAPI _app_queuenotifyinformation (
 			);
 
 			_app_getappinfoparam2 (
-				context->ptr_log->app_hash,
+				ptr_log->app_hash,
 				INFO_SIGNATURE_STRING,
 				&signature_str,
 				sizeof (signature_str)
@@ -2154,7 +2150,7 @@ VOID NTAPI _app_queuenotifyinformation (
 	if (host_str)
 		_r_obj_dereference (host_str);
 
-	_r_obj_dereference (context->ptr_log);
+	_r_obj_dereference (ptr_log);
 
 	_r_freelist_deleteitem (&context_free_list, context);
 }
@@ -2165,6 +2161,8 @@ VOID NTAPI _app_queueresolveinformation (
 )
 {
 	PITEM_CONTEXT context;
+	PITEM_NETWORK ptr_network;
+	PITEM_LOG ptr_log;
 	BOOLEAN is_resolutionenabled;
 
 	context = arglist;
@@ -2173,52 +2171,51 @@ VOID NTAPI _app_queueresolveinformation (
 
 	if (context->listview_id == IDC_LOG)
 	{
+		ptr_log = context->base_address;
+
 		_app_resolveaddress_interlocked (
-			&context->ptr_log->local_host_str,
-			context->ptr_log->af,
-			&context->ptr_log->local_addr,
+			&ptr_log->local_host_str,
+			ptr_log->af,
+			&ptr_log->local_addr,
 			is_resolutionenabled
 		);
 
 		_app_resolveaddress_interlocked (
-			&context->ptr_log->remote_host_str,
-			context->ptr_log->af,
-			&context->ptr_log->remote_addr,
+			&ptr_log->remote_host_str,
+			ptr_log->af,
+			&ptr_log->remote_addr,
 			is_resolutionenabled
 		);
-
-		_r_obj_dereference (context->ptr_log);
 	}
 	else if (context->listview_id == IDC_NETWORK)
 	{
-		// query address information
+		ptr_network = context->base_address;
+
 		_app_formataddress_interlocked (
-			&context->ptr_network->local_addr_str,
-			context->ptr_network->af,
-			&context->ptr_network->local_addr
+			&ptr_network->local_addr_str,
+			ptr_network->af,
+			&ptr_network->local_addr
 		);
 
 		_app_formataddress_interlocked (
-			&context->ptr_network->remote_addr_str,
-			context->ptr_network->af,
-			&context->ptr_network->remote_addr
+			&ptr_network->remote_addr_str,
+			ptr_network->af,
+			&ptr_network->remote_addr
 		);
 
 		_app_resolveaddress_interlocked (
-			&context->ptr_network->local_host_str,
-			context->ptr_network->af,
-			&context->ptr_network->local_addr,
+			&ptr_network->local_host_str,
+			ptr_network->af,
+			&ptr_network->local_addr,
 			is_resolutionenabled
 		);
 
 		_app_resolveaddress_interlocked (
-			&context->ptr_network->remote_host_str,
-			context->ptr_network->af,
-			&context->ptr_network->remote_addr,
+			&ptr_network->remote_host_str,
+			ptr_network->af,
+			&ptr_network->remote_addr,
 			is_resolutionenabled
 		);
-
-		_r_obj_dereference (context->ptr_network);
 	}
 
 	// redraw listview
@@ -2230,6 +2227,8 @@ VOID NTAPI _app_queueresolveinformation (
 				_r_listview_redraw (context->hwnd, context->listview_id, -1);
 		}
 	}
+
+	_r_obj_dereference (context->base_address);
 
 	_r_freelist_deleteitem (&context_free_list, context);
 }

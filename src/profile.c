@@ -331,7 +331,7 @@ ULONG_PTR _app_addapplication (
 	ULONG_PTR app_hash;
 	BOOLEAN is_ntoskrnl;
 
-	if (!path->length)
+	if (_r_obj_isstringempty2 (path))
 		return 0;
 
 	if (_app_isappvalidpath (&path->sr) && PathIsDirectory (path->buffer))
@@ -407,8 +407,7 @@ ULONG_PTR _app_addapplication (
 		ptr_app->original_path->buffer[0] = _r_str_upper (ptr_app->original_path->buffer[0]);
 	}
 
-	if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE ||
-		ptr_app->type == DATA_APP_NETWORK)
+	if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK)
 	{
 		ptr_app->short_name = _r_path_getbasenamestring (&path_temp);
 	}

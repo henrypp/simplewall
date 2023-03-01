@@ -462,14 +462,7 @@ typedef struct _ITEM_CONTEXT
 	{
 		struct
 		{
-			union
-			{
-				PVOID base_address;
-
-				PITEM_LOG ptr_log;
-				PITEM_NETWORK ptr_network;
-			} DUMMYUNIONNAME2;
-
+			PVOID base_address;
 			LPARAM lparam;
 		} DUMMYSTRUCTNAME;
 
@@ -528,7 +521,7 @@ typedef struct _ITEM_LOG_CALLBACK
 		ULONG_PTR local_addr4;
 	} DUMMYUNIONNAME2;
 
-	const FILETIME *timestamp;
+	FILETIME timestamp;
 	PUINT8 app_id;
 	PSID package_id;
 	PSID user_id;

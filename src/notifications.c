@@ -170,11 +170,8 @@ BOOLEAN _app_notify_addobject (
 	{
 		if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
 		{
-			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) ||
-				!_r_wnd_isfullscreenmode ())
-			{
+			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) || !_r_wnd_isfullscreenmode ())
 				_app_notify_playsound ();
-			}
 		}
 
 		return TRUE;
@@ -635,7 +632,7 @@ VOID _app_notify_queueinfo (
 	context = _r_freelist_allocateitem (&context_free_list);
 
 	context->hwnd = hwnd;
-	context->ptr_log = _r_obj_reference (ptr_log);
+	context->base_address = _r_obj_reference (ptr_log);
 
 	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queuenotifyinformation, context);
 }

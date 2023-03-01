@@ -3196,8 +3196,10 @@ INT_PTR CALLBACK DlgProc (
 					{
 						hengine = _wfp_getenginehandle ();
 
-						if (hengine)
-							_wfp_logsubscribe (hengine);
+						if (!hengine)
+							break;
+
+						_wfp_logsubscribe (hwnd, hengine);
 					}
 
 					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
@@ -4167,31 +4169,31 @@ BOOLEAN _app_parseargs (
 
 		hengine = _wfp_getenginehandle ();
 
-		if (hengine)
+		if (!hengine)
+			goto CleanupExit;
+
+		if (is_install)
 		{
-			if (is_install)
+			if (is_silent || _app_installmessage (NULL, TRUE))
 			{
-				if (is_silent || _app_installmessage (NULL, TRUE))
-				{
-					if (is_temporary)
-						config.is_filterstemporary = TRUE;
+				if (is_temporary)
+					config.is_filterstemporary = TRUE;
 
-					_app_profile_initialize ();
-					_app_profile_load (NULL, NULL);
+				_app_profile_initialize ();
+				_app_profile_load (NULL, NULL);
 
-					if (_wfp_initialize (hengine))
-						_wfp_installfilters (hengine);
+				if (_wfp_initialize (NULL, hengine))
+					_wfp_installfilters (hengine);
 
-					_wfp_uninitialize (hengine, FALSE);
-				}
+				_wfp_uninitialize (hengine, FALSE);
 			}
-			else if (is_uninstall)
+		}
+		else if (is_uninstall)
+		{
+			if (_wfp_isfiltersinstalled () && _app_installmessage (NULL, FALSE))
 			{
-				if (_wfp_isfiltersinstalled () && _app_installmessage (NULL, FALSE))
-				{
-					_wfp_destroyfilters (hengine);
-					_wfp_uninitialize (hengine, TRUE);
-				}
+				_wfp_destroyfilters (hengine);
+				_wfp_uninitialize (hengine, TRUE);
 			}
 		}
 

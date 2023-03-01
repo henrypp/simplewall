@@ -50,6 +50,7 @@ PR_STRING _wfp_getlayername (
 );
 
 BOOLEAN _wfp_initialize (
+	_In_opt_ HWND hwnd,
 	_In_ HANDLE engine_handle
 );
 

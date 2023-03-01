@@ -11,9 +11,6 @@ VOID _app_loginit (
 	HANDLE new_handle;
 	PR_STRING log_path;
 
-	if (!config.hnotify_evt)
-		return;
-
 	current_handle = InterlockedCompareExchangePointer (
 		&config.hlogfile,
 		NULL,
@@ -63,7 +60,7 @@ VOID _app_loginitfile (
 	_In_ HANDLE hfile
 )
 {
-	BYTE bom[] = {0xFF, 0xFE};
+	static BYTE bom[] = {0xFF, 0xFE};
 	LONG64 file_size;
 	ULONG unused;
 
@@ -181,12 +178,12 @@ VOID _app_logclear (
 
 	log_path = _app_getlogpath ();
 
-	if (log_path)
-	{
-		_r_fs_deletefile (log_path->buffer, TRUE);
+	if (!log_path)
+		return;
 
-		_r_obj_dereference (log_path);
-	}
+	_r_fs_deletefile (log_path->buffer, TRUE);
+
+	_r_obj_dereference (log_path);
 }
 
 VOID _app_logclear_ui (
@@ -216,16 +213,13 @@ VOID _app_logwrite (
 	HANDLE current_handle;
 	ULONG unused;
 
-	if (!config.hnotify_evt)
-		return;
-
 	current_handle = InterlockedCompareExchangePointer (
 		&config.hlogfile,
 		NULL,
 		NULL
 	);
 
-	if (!current_handle)
+	if (!_r_fs_isvalidhandle (current_handle))
 		return;
 
 	// parse path
@@ -302,9 +296,6 @@ VOID _app_logwrite_ui (
 	SIZE_T table_size;
 	INT item_id;
 
-	if (!config.hnotify_evt)
-		return;
-
 	log_hash = _app_getloghash (ptr_log);
 
 	if (!log_hash)
@@ -352,7 +343,6 @@ VOID _wfp_logsubscribe (
 	FWPMNES1 _FwpmNetEventSubscribe1;
 	FWPMNES0 _FwpmNetEventSubscribe0;
 	FWPM_NET_EVENT_SUBSCRIPTION subscription;
-	FWPM_NET_EVENT_ENUM_TEMPLATE enum_template;
 	HANDLE current_handle;
 	HANDLE new_handle;
 	HMODULE hfwpuclnt;
@@ -394,9 +384,7 @@ VOID _wfp_logsubscribe (
 	}
 
 	RtlZeroMemory (&subscription, sizeof (subscription));
-	RtlZeroMemory (&enum_template, sizeof (enum_template));
 
-	subscription.enumTemplate = &enum_template;
 	new_handle = NULL;
 
 	if (_FwpmNetEventSubscribe4)
@@ -457,9 +445,11 @@ VOID _wfp_logsubscribe (
 	if (status != ERROR_SUCCESS)
 	{
 		if (hwnd)
-			_r_show_errormessage (hwnd, L"Log subscribe failed", status, NULL);
+			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later.", status, NULL);
 
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
+
+		goto CleanupExit;
 	}
 
 	current_handle = InterlockedCompareExchangePointer (
@@ -488,7 +478,9 @@ VOID _wfp_logunsubscribe (
 )
 {
 	HANDLE current_handle;
-	ULONG code;
+	ULONG status;
+
+	_app_loginit (FALSE); // destroy log file handle if present
 
 	current_handle = InterlockedCompareExchangePointer (
 		&config.hnetevent,
@@ -498,13 +490,11 @@ VOID _wfp_logunsubscribe (
 
 	if (current_handle)
 	{
-		code = FwpmNetEventUnsubscribe (engine_handle, current_handle);
+		status = FwpmNetEventUnsubscribe (engine_handle, current_handle);
 
-		if (code != ERROR_SUCCESS)
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", code, NULL);
+		if (status != ERROR_SUCCESS)
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", status, NULL);
 	}
-
-	_app_loginit (FALSE); // destroy log file handle if present
 }
 
 VOID _wfp_logsetoption (
@@ -543,11 +533,7 @@ VOID _wfp_logsetoption (
 	val.type = FWP_UINT32;
 	val.uint32 = mask;
 
-	status = FwpmEngineSetOption (
-		engine_handle,
-		FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS,
-		&val
-	);
+	status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
 	if (status != ERROR_SUCCESS)
 	{
@@ -565,11 +551,7 @@ VOID _wfp_logsetoption (
 	val.type = FWP_UINT32;
 	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE);
 
-	status = FwpmEngineSetOption (
-		engine_handle,
-		FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS,
-		&val
-	);
+	status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 	if (status != ERROR_SUCCESS)
 	{
@@ -673,8 +655,7 @@ VOID CALLBACK _wfp_logcallback (
 	ptr_log = _r_obj_allocate (sizeof (ITEM_LOG), &_app_dereferencelog);
 
 	// copy date and time
-	if (log->timestamp)
-		ptr_log->timestamp = _r_unixtime_from_filetime (log->timestamp);
+	ptr_log->timestamp = _r_unixtime_from_filetime (&log->timestamp);
 
 	// check token for null (not an appcontainer) (HACK!!!)
 	if (log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET && log->package_id)
@@ -760,21 +741,13 @@ VOID CALLBACK _wfp_logcallback (
 			// remote address
 			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET && log->remote_addr6)
 			{
-				RtlCopyMemory (
-					ptr_log->remote_addr6.u.Byte,
-					log->remote_addr6->byteArray16,
-					FWP_V6_ADDR_SIZE
-				);
+				RtlCopyMemory (ptr_log->remote_addr6.u.Byte, log->remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 			}
 
 			// local address
 			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET && log->local_addr6)
 			{
-				RtlCopyMemory (
-					ptr_log->local_addr6.u.Byte,
-					log->local_addr6->byteArray16,
-					FWP_V6_ADDR_SIZE
-				);
+				RtlCopyMemory (ptr_log->local_addr6.u.Byte, log->local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
 			}
 		}
 	}
@@ -870,7 +843,8 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		}
 
 		log->flags = evt->header.flags;
-		log->timestamp = &evt->header.timeStamp;
+
+		RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
 
 		if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = evt->header.appId.data;
@@ -975,7 +949,8 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		}
 
 		log->flags = evt->header.flags;
-		log->timestamp = &evt->header.timeStamp;
+
+		RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
 
 		if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = evt->header.appId.data;
@@ -1083,7 +1058,8 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		}
 
 		log->flags = evt->header.flags;
-		log->timestamp = &evt->header.timeStamp;
+
+		RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
 
 		if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = evt->header.appId.data;
@@ -1191,7 +1167,8 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		}
 
 		log->flags = evt->header.flags;
-		log->timestamp = &evt->header.timeStamp;
+
+		RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
 
 		if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = evt->header.appId.data;
@@ -1299,7 +1276,8 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 		}
 
 		log->flags = evt->header.flags;
-		log->timestamp = &evt->header.timeStamp;
+
+		RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
 
 		if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 			log->app_id = evt->header.appId.data;
@@ -1355,9 +1333,11 @@ VOID CALLBACK _wfp_logcallback0 (
 	_In_ const FWPM_NET_EVENT1 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
 	UNREFERENCED_PARAMETER (context);
+
+	ZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_7))
 		_wfp_logcallback (&log);
@@ -1369,9 +1349,11 @@ VOID CALLBACK _wfp_logcallback1 (
 	_In_ const FWPM_NET_EVENT2 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
 	UNREFERENCED_PARAMETER (context);
+
+	ZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_8))
 		_wfp_logcallback (&log);
@@ -1383,9 +1365,11 @@ VOID CALLBACK _wfp_logcallback2 (
 	_In_ const FWPM_NET_EVENT3 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
 	UNREFERENCED_PARAMETER (context);
+
+	ZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1607))
 		_wfp_logcallback (&log);
@@ -1397,9 +1381,11 @@ VOID CALLBACK _wfp_logcallback3 (
 	_In_ const FWPM_NET_EVENT4 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
 	UNREFERENCED_PARAMETER (context);
+
+	ZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1803))
 		_wfp_logcallback (&log);
@@ -1411,9 +1397,11 @@ VOID CALLBACK _wfp_logcallback4 (
 	_In_ const FWPM_NET_EVENT5 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
 	UNREFERENCED_PARAMETER (context);
+
+	ZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1809))
 		_wfp_logcallback (&log);
@@ -1425,16 +1413,12 @@ VOID NTAPI _app_logthread (
 )
 {
 	HWND hwnd;
-
 	PITEM_LOG ptr_log;
 	PITEM_APP ptr_app;
-
 	BOOLEAN is_silent;
-
 	BOOLEAN is_logenabled;
 	BOOLEAN is_loguienabled;
 	BOOLEAN is_notificationenabled;
-
 	BOOLEAN is_exludeallow;
 	BOOLEAN is_exludeblocklist;
 	BOOLEAN is_exludestealth;
