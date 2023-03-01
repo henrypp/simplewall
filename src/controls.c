@@ -524,7 +524,9 @@ LPCWSTR _app_getstatelocale (
 		}
 
 		default:
+		{
 			return NULL;
+		}
 	}
 
 	return _r_locale_getstring (locale_id);
@@ -578,15 +580,11 @@ VOID _app_setinterfacestate (
 )
 {
 	ENUM_INSTALL_TYPE install_type;
-
 	HICON hico_sm;
 	HICON hico_big;
-
 	LONG icon_small;
 	LONG icon_large;
-
 	INT icon_id;
-
 	BOOLEAN is_filtersinstalled;
 
 	install_type = _wfp_getinstalltype ();
@@ -627,21 +625,15 @@ VOID _app_settrayicon (
 {
 	HICON current_handle;
 	HICON new_handle;
-
 	LONG dpi_value;
 	LONG icon_size;
-
 	INT icon_id;
 
 	dpi_value = _r_dc_gettaskbardpi ();
 	icon_id = _app_getstateicon (install_type);
 	icon_size = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 
-	current_handle = InterlockedCompareExchangePointer (
-		&config.htray_icon,
-		NULL,
-		config.htray_icon
-	);
+	current_handle = InterlockedCompareExchangePointer (&config.htray_icon, NULL, config.htray_icon);
 
 	if (current_handle)
 		DestroyIcon (current_handle);
@@ -650,11 +642,7 @@ VOID _app_settrayicon (
 
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
 
-	current_handle = InterlockedCompareExchangePointer (
-		&config.htray_icon,
-		new_handle,
-		NULL
-	);
+	current_handle = InterlockedCompareExchangePointer (&config.htray_icon, new_handle, NULL);
 
 	if (current_handle)
 		DestroyIcon (current_handle);
@@ -685,7 +673,6 @@ VOID _app_imagelist_init (
 	};
 
 	HBITMAP hbitmap;
-
 	LONG icon_small;
 	LONG icon_large;
 	LONG icon_size_toolbar;

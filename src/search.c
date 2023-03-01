@@ -53,24 +53,24 @@ VOID _app_search_initializetheme (
 
 	hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SEARCH), context->image_width);
 
-	if (hbitmap)
+	if (!hbitmap)
+		return;
+
+	if (context->hicon)
 	{
-		if (context->hicon)
-		{
-			hicon_prev = context->hicon;
-		}
-		else
-		{
-			hicon_prev = NULL;
-		}
-
-		context->hicon = _r_dc_bitmaptoicon (hbitmap, context->image_width, context->image_height);
-
-		if (hicon_prev)
-			DestroyIcon (hicon_prev);
-
-		DeleteObject (hbitmap);
+		hicon_prev = context->hicon;
 	}
+	else
+	{
+		hicon_prev = NULL;
+	}
+
+	context->hicon = _r_dc_bitmaptoicon (hbitmap, context->image_width, context->image_height);
+
+	if (hicon_prev)
+		DestroyIcon (hicon_prev);
+
+	DeleteObject (hbitmap);
 }
 
 VOID _app_search_destroytheme (
@@ -757,6 +757,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 		case WM_NCMOUSEMOVE:
 		{
+			TRACKMOUSEEVENT tme;
 			POINT point;
 			RECT rect;
 
@@ -774,7 +775,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			// Check that the mouse is within the inserted button.
 			if (PtInRect (&rect, point) && !context->is_hot)
 			{
-				TRACKMOUSEEVENT tme = {0};
+				ZeroMemory (&tme, sizeof (tme));
 
 				tme.cbSize = sizeof (tme);
 				tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
@@ -793,11 +794,11 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 		case WM_NCMOUSELEAVE:
 		{
-			if (context->is_hot)
-			{
+			if (!context->is_hot)
+						break;
+
 				context->is_hot = FALSE;
 				RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-			}
 
 			break;
 		}
