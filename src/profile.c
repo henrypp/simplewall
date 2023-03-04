@@ -408,9 +408,7 @@ ULONG_PTR _app_addapplication (
 	}
 
 	if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK)
-	{
 		ptr_app->short_name = _r_path_getbasenamestring (&path_temp);
-	}
 
 	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
@@ -429,14 +427,7 @@ ULONG_PTR _app_addapplication (
 
 	// queue file information
 	if (ptr_app->real_path)
-	{
-		_app_queue_fileinformation (
-			ptr_app->real_path,
-			app_hash,
-			ptr_app->type,
-			_app_listview_getbytype (ptr_app->type)
-		);
-	}
+		_app_queue_fileinformation (ptr_app->real_path, app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
 
 	return app_hash;
 }
@@ -618,6 +609,7 @@ PITEM_LOG _app_getlogitem (
 	return ptr_log;
 }
 
+_Success_ (return != 0)
 ULONG_PTR _app_getlogapp (
 	_In_ SIZE_T index
 )
@@ -627,16 +619,14 @@ ULONG_PTR _app_getlogapp (
 
 	ptr_log = _app_getlogitem (index);
 
-	if (ptr_log)
-	{
-		app_hash = ptr_log->app_hash;
+	if (!ptr_log)
+		return 0;
 
-		_r_obj_dereference (ptr_log);
+	app_hash = ptr_log->app_hash;
 
-		return app_hash;
-	}
+	_r_obj_dereference (ptr_log);
 
-	return 0;
+	return app_hash;
 }
 
 COLORREF _app_getappcolor (
@@ -767,12 +757,8 @@ VOID _app_getcount (
 		if (_app_istimerset (ptr_app))
 			status->apps_timer_count += 1;
 
-		if (!ptr_app->is_undeletable &&
-			(!_app_isappexists (ptr_app) || !is_used) &&
-			!(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
-		{
+		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
 			status->apps_unused_count += 1;
-		}
 
 		if (is_used)
 			status->apps_count += 1;
@@ -851,16 +837,7 @@ VOID _app_setappiteminfo (
 	_In_ PITEM_APP ptr_app
 )
 {
-	_r_listview_setitem_ex (
-		hwnd,
-		listview_id,
-		item_id,
-		0,
-		LPSTR_TEXTCALLBACK,
-		I_IMAGECALLBACK,
-		I_GROUPIDCALLBACK,
-		0
-	);
+	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_app->is_enabled);
 }
@@ -876,27 +853,18 @@ VOID _app_setruleiteminfo (
 	ULONG_PTR hash_code;
 	SIZE_T enum_key;
 
-	_r_listview_setitem_ex (
-		hwnd,
-		listview_id,
-		item_id,
-		0,
-		LPSTR_TEXTCALLBACK,
-		I_IMAGECALLBACK,
-		I_GROUPIDCALLBACK,
-		0
-	);
+	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_rule->is_enabled);
 
-	if (include_apps)
-	{
-		enum_key = 0;
+	if (!include_apps)
+		return;
 
-		while (_r_obj_enumhashtable (ptr_rule->apps, NULL, &hash_code, &enum_key))
-		{
-			_app_listview_updateitemby_param (hwnd, hash_code, TRUE);
-		}
+	enum_key = 0;
+
+	while (_r_obj_enumhashtable (ptr_rule->apps, NULL, &hash_code, &enum_key))
+	{
+		_app_listview_updateitemby_param (hwnd, hash_code, TRUE);
 	}
 }
 
@@ -1154,9 +1122,7 @@ PR_STRING _app_appexpandrules (
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER &&
-			!_r_obj_isstringempty (ptr_rule->name) &&
-			_r_obj_findhashtable (ptr_rule->apps, app_hash))
+		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER && !_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
 		{
 			_r_obj_appendstringbuilder2 (&buffer, ptr_rule->name);
 
@@ -1274,7 +1240,7 @@ PR_STRING _app_rulesexpandrules (
 	_In_ LPCWSTR delimeter
 )
 {
-	R_STRINGBUILDER buffer;
+	R_STRINGBUILDER sb;
 	R_STRINGREF delimeter_sr;
 	R_STRINGREF remaining_part;
 	R_STRINGREF first_part;
@@ -1283,7 +1249,7 @@ PR_STRING _app_rulesexpandrules (
 	if (_r_obj_isstringempty (rule))
 		return NULL;
 
-	_r_obj_initializestringbuilder (&buffer);
+	_r_obj_initializestringbuilder (&sb);
 
 	_r_obj_initializestringrefconst (&delimeter_sr, delimeter);
 
@@ -1293,18 +1259,18 @@ PR_STRING _app_rulesexpandrules (
 	{
 		_r_str_splitatchar (&remaining_part, DIVIDER_RULE[0], &first_part, &remaining_part);
 
-		_r_obj_appendstringbuilder3 (&buffer, &first_part);
-		_r_obj_appendstringbuilder3 (&buffer, &delimeter_sr);
+		_r_obj_appendstringbuilder3 (&sb, &first_part);
+		_r_obj_appendstringbuilder3 (&sb, &delimeter_sr);
 	}
 
-	string = _r_obj_finalstringbuilder (&buffer);
+	string = _r_obj_finalstringbuilder (&sb);
 
 	_r_str_trimstring (string, &delimeter_sr, 0);
 
 	if (!_r_obj_isstringempty2 (string))
 		return string;
 
-	_r_obj_deletestringbuilder (&buffer);
+	_r_obj_deletestringbuilder (&sb);
 
 	return NULL;
 }
@@ -1486,25 +1452,13 @@ BOOLEAN _app_isrulesupportedbyos (
 	PR_STRING current_version;
 	PR_STRING new_version;
 
-	current_version = InterlockedCompareExchangePointer (
-		&version_string,
-		NULL,
-		NULL
-	);
+	current_version = InterlockedCompareExchangePointer (&version_string, NULL, NULL);
 
 	if (!current_version)
 	{
-		new_version = _r_format_string (
-			L"%d.%d",
-			NtCurrentPeb ()->OSMajorVersion,
-			NtCurrentPeb ()->OSMinorVersion
-		);
+		new_version = _r_format_string (L"%d.%d", NtCurrentPeb ()->OSMajorVersion, NtCurrentPeb ()->OSMinorVersion);
 
-		current_version = InterlockedCompareExchangePointer (
-			&version_string,
-			new_version,
-			NULL
-		);
+		current_version = InterlockedCompareExchangePointer (&version_string, new_version, NULL);
 
 		if (!current_version)
 		{
@@ -1531,28 +1485,14 @@ VOID _app_profile_initialize ()
 
 	path = _r_app_getprofiledirectory ();
 
-	_r_obj_movereference (
-		&profile_info.profile_path,
-		_r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile2_sr)
-	);
+	_r_obj_movereference (&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile2_sr));
 
 	if (!_r_fs_exists (profile_info.profile_path->buffer))
-	{
-		_r_obj_movereference (
-			&profile_info.profile_path,
-			_r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr)
-		);
-	}
+		_r_obj_movereference (&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
 
-	_r_obj_movereference (
-		&profile_info.profile_path_backup,
-		_r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr)
-	);
+	_r_obj_movereference (&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
 
-	_r_obj_movereference (
-		&profile_info.profile_path_internal,
-		_r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr)
-	);
+	_r_obj_movereference (&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
 }
 
 NTSTATUS _app_profile_load_fromresource (
@@ -1573,14 +1513,7 @@ NTSTATUS _app_profile_load_fromresource (
 			status = _app_db_initialize (&db_info, TRUE);
 
 			if (NT_SUCCESS (status))
-			{
-				status = _app_db_openfrombuffer (
-					&db_info,
-					&bytes,
-					XML_VERSION_CURRENT,
-					XML_TYPE_PROFILE_INTERNAL
-				);
-			}
+				status = _app_db_openfrombuffer (&db_info, &bytes, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
 		}
 
 		_r_initonce_end (&init_once);
@@ -1638,12 +1571,7 @@ VOID _app_profile_load_internal (
 
 	if (NT_SUCCESS (status_file))
 	{
-		status_file = _app_db_openfromfile (
-			&db_info_file,
-			path,
-			XML_VERSION_CURRENT,
-			XML_TYPE_PROFILE_INTERNAL
-		);
+		status_file = _app_db_openfromfile (&db_info_file, path, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
 	}
 	else
 	{
@@ -1659,8 +1587,7 @@ VOID _app_profile_load_internal (
 	}
 	else
 	{
-		is_loadfromresource = (db_info_file.version < db_info_buffer->version) ||
-			(db_info_file.timestamp < db_info_buffer->timestamp);
+		is_loadfromresource = (db_info_file.version < db_info_buffer->version) || (db_info_file.timestamp < db_info_buffer->timestamp);
 	}
 
 	db_info = is_loadfromresource ? db_info_buffer : &db_info_file;
@@ -1683,13 +1610,9 @@ VOID _app_profile_load_internal (
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != ERROR_FILE_NOT_FOUND)
 		{
 			if (hwnd)
-			{
 				_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL);
-			}
-			else
-			{
-				_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load_internal", status, NULL);
-			}
+
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load_internal", status, NULL);
 		}
 	}
 
@@ -1738,33 +1661,16 @@ NTSTATUS _app_profile_load (
 
 	if (path_custom)
 	{
-		status = _app_db_openfromfile (
-			&db_info,
-			path_custom,
-			XML_VERSION_MINIMAL,
-			XML_TYPE_PROFILE
-		);
+		status = _app_db_openfromfile (&db_info, path_custom, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
 	}
 	else
 	{
 		_r_queuedlock_acquireshared (&lock_profile);
 
-		status = _app_db_openfromfile (
-			&db_info,
-			profile_info.profile_path,
-			XML_VERSION_MINIMAL,
-			XML_TYPE_PROFILE
-		);
+		status = _app_db_openfromfile (&db_info, profile_info.profile_path, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
 
 		if (status != STATUS_SUCCESS)
-		{
-			status = _app_db_openfromfile (
-				&db_info,
-				profile_info.profile_path_backup,
-				XML_VERSION_MINIMAL,
-				XML_TYPE_PROFILE
-			);
-		}
+			status = _app_db_openfromfile (&db_info, profile_info.profile_path_backup, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
 
 		_r_queuedlock_releaseshared (&lock_profile);
 	}
@@ -1790,13 +1696,9 @@ CleanupExit:
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != ERROR_FILE_NOT_FOUND)
 		{
 			if (hwnd)
-			{
 				_r_show_errormessage (hwnd, L"Could not load profile!", status, NULL);
-			}
-			else
-			{
-				_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load", status, NULL);
-			}
+
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load", status, NULL);
 		}
 	}
 
@@ -1804,14 +1706,7 @@ CleanupExit:
 	{
 		// load internal rules (new!)
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-		{
-			_app_profile_load_internal (
-				hwnd,
-				profile_info.profile_path_internal,
-				MAKEINTRESOURCE (IDR_PROFILE_INTERNAL),
-				&profile_info.profile_internal_timestamp
-			);
-		}
+			_app_profile_load_internal (hwnd, profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
 
 		_app_profile_load_fallback ();
 
@@ -1850,23 +1745,14 @@ NTSTATUS _app_profile_save ()
 
 		if (!is_backuprequired)
 		{
-			if ((timestamp - _r_config_getlong64 (L"BackupTimestamp", 0)) >=
-				_r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
-			{
+			if ((timestamp - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
 				is_backuprequired = TRUE;
-			}
 		}
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_profile);
 
-	status = _app_db_savetofile (
-		&db_info,
-		profile_info.profile_path,
-		XML_VERSION_CURRENT,
-		XML_TYPE_PROFILE,
-		timestamp
-	);
+	status = _app_db_savetofile (&db_info, profile_info.profile_path, XML_VERSION_CURRENT, XML_TYPE_PROFILE, timestamp);
 
 	_r_queuedlock_releaseexclusive (&lock_profile);
 

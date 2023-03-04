@@ -698,22 +698,10 @@ VOID _app_network_printlistviewtable (
 		_app_listview_addnetworkitem (network_context->hwnd, ptr_network, network_hash);
 
 		if (ptr_network->path && ptr_network->app_hash)
-		{
-			_app_queue_fileinformation (
-				ptr_network->path,
-				ptr_network->app_hash,
-				ptr_network->type,
-				IDC_NETWORK
-			);
-		}
+			_app_queue_fileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
 
 		// resolve network address
-		_app_queue_resolver (
-			network_context->hwnd,
-			IDC_NETWORK,
-			network_hash,
-			ptr_network
-		);
+		_app_queue_resolver (network_context->hwnd, IDC_NETWORK, network_hash, ptr_network);
 
 		is_refresh = TRUE;
 	}

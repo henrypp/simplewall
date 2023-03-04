@@ -11,11 +11,7 @@ VOID _app_loginit (
 	HANDLE new_handle;
 	PR_STRING log_path;
 
-	current_handle = InterlockedCompareExchangePointer (
-		&config.hlogfile,
-		NULL,
-		config.hlogfile
-	);
+	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, config.hlogfile);
 
 	// reset log handle
 	if (current_handle)
@@ -29,25 +25,13 @@ VOID _app_loginit (
 	if (!log_path)
 		return;
 
-	new_handle = CreateFile (
-		log_path->buffer,
-		GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_ALWAYS,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL
-	);
+	new_handle = CreateFile (log_path->buffer, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (_r_fs_isvalidhandle (new_handle))
 	{
 		_app_loginitfile (new_handle);
 
-		current_handle = InterlockedCompareExchangePointer (
-			&config.hlogfile,
-			new_handle,
-			NULL
-		);
+		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
 
 		if (current_handle)
 			NtClose (new_handle);
@@ -213,11 +197,7 @@ VOID _app_logwrite (
 	HANDLE current_handle;
 	ULONG unused;
 
-	current_handle = InterlockedCompareExchangePointer (
-		&config.hlogfile,
-		NULL,
-		NULL
-	);
+	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 	if (!_r_fs_isvalidhandle (current_handle))
 		return;
@@ -263,13 +243,7 @@ VOID _app_logwrite (
 	if (_app_logislimitreached (current_handle))
 		_app_logclear (current_handle);
 
-	WriteFile (
-		current_handle,
-		buffer->buffer,
-		(ULONG)buffer->length,
-		&unused,
-		NULL
-	);
+	WriteFile (current_handle, buffer->buffer, (ULONG)buffer->length, &unused, NULL);
 
 	if (date_string)
 		_r_obj_dereference (date_string);
@@ -348,11 +322,7 @@ VOID _wfp_logsubscribe (
 	HMODULE hfwpuclnt;
 	ULONG status;
 
-	current_handle = InterlockedCompareExchangePointer (
-		&config.hnetevent,
-		NULL,
-		NULL
-	);
+	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
 
 	if (current_handle)
 		return; // already subscribed
@@ -389,53 +359,23 @@ VOID _wfp_logsubscribe (
 
 	if (_FwpmNetEventSubscribe4)
 	{
-		status = _FwpmNetEventSubscribe4 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback4,
-			NULL,
-			&new_handle
-		); // win10rs5+
+		status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
 	}
 	else if (_FwpmNetEventSubscribe3)
 	{
-		status = _FwpmNetEventSubscribe3 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback3,
-			NULL,
-			&new_handle
-		); // win10rs4+
+		status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
 	}
 	else if (_FwpmNetEventSubscribe2)
 	{
-		status = _FwpmNetEventSubscribe2 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback2,
-			NULL,
-			&new_handle
-		); // win10rs1+
+		status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
 	}
 	else if (_FwpmNetEventSubscribe1)
 	{
-		status = _FwpmNetEventSubscribe1 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback1,
-			NULL,
-			&new_handle
-		); // win8+
+		status = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle); // win8+
 	}
 	else if (_FwpmNetEventSubscribe0)
 	{
-		status = _FwpmNetEventSubscribe0 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback0,
-			NULL,
-			&new_handle
-		); // win7+
+		status = _FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &new_handle); // win7+
 	}
 	else
 	{
@@ -452,11 +392,7 @@ VOID _wfp_logsubscribe (
 		goto CleanupExit;
 	}
 
-	current_handle = InterlockedCompareExchangePointer (
-		&config.hnetevent,
-		new_handle,
-		NULL
-	);
+	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
 
 	if (current_handle)
 	{
@@ -482,19 +418,15 @@ VOID _wfp_logunsubscribe (
 
 	_app_loginit (FALSE); // destroy log file handle if present
 
-	current_handle = InterlockedCompareExchangePointer (
-		&config.hnetevent,
-		NULL,
-		config.hnetevent
-	);
+	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
 
-	if (current_handle)
-	{
-		status = FwpmNetEventUnsubscribe (engine_handle, current_handle);
+	if (!current_handle)
+		return;
 
-		if (status != ERROR_SUCCESS)
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", status, NULL);
-	}
+	status = FwpmNetEventUnsubscribe (engine_handle, current_handle);
+
+	if (status != ERROR_SUCCESS)
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", status, NULL);
 }
 
 VOID _wfp_logsetoption (
@@ -504,9 +436,6 @@ VOID _wfp_logsetoption (
 	FWP_VALUE val;
 	UINT32 mask;
 	ULONG status;
-
-	if (!config.is_neteventset)
-		return;
 
 	// configure dropped packets logging (win8+)
 	if (!_r_sys_isosversiongreaterorequal (WINDOWS_8))
@@ -1337,7 +1266,7 @@ VOID CALLBACK _wfp_logcallback0 (
 
 	UNREFERENCED_PARAMETER (context);
 
-	ZeroMemory (&log, sizeof (log));
+	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_7))
 		_wfp_logcallback (&log);
@@ -1353,7 +1282,7 @@ VOID CALLBACK _wfp_logcallback1 (
 
 	UNREFERENCED_PARAMETER (context);
 
-	ZeroMemory (&log, sizeof (log));
+	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_8))
 		_wfp_logcallback (&log);
@@ -1369,7 +1298,7 @@ VOID CALLBACK _wfp_logcallback2 (
 
 	UNREFERENCED_PARAMETER (context);
 
-	ZeroMemory (&log, sizeof (log));
+	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1607))
 		_wfp_logcallback (&log);
@@ -1385,7 +1314,7 @@ VOID CALLBACK _wfp_logcallback3 (
 
 	UNREFERENCED_PARAMETER (context);
 
-	ZeroMemory (&log, sizeof (log));
+	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1803))
 		_wfp_logcallback (&log);
@@ -1401,7 +1330,7 @@ VOID CALLBACK _wfp_logcallback4 (
 
 	UNREFERENCED_PARAMETER (context);
 
-	ZeroMemory (&log, sizeof (log));
+	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1809))
 		_wfp_logcallback (&log);
@@ -1463,21 +1392,8 @@ VOID NTAPI _app_logthread (
 	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth && is_exludeallow)
 	{
 		// get network string
-		ptr_log->remote_addr_str = _app_formataddress (
-			ptr_log->af,
-			ptr_log->protocol,
-			&ptr_log->remote_addr,
-			0,
-			0
-		);
-
-		ptr_log->local_addr_str = _app_formataddress (
-			ptr_log->af,
-			ptr_log->protocol,
-			&ptr_log->local_addr,
-			0,
-			0
-		);
+		ptr_log->remote_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, 0);
+		ptr_log->local_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, 0);
 
 		// write log to a file
 		if (is_logenabled)

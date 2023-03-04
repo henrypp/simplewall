@@ -268,7 +268,7 @@ PR_STRING _app_gettooltipbylparam (
 	_In_ ULONG_PTR lparam
 )
 {
-	R_STRINGBUILDER sr;
+	R_STRINGBUILDER sb;
 	PR_STRING string1;
 	PR_STRING string2;
 	PITEM_RULE ptr_rule;
@@ -277,11 +277,11 @@ PR_STRING _app_gettooltipbylparam (
 
 	UNREFERENCED_PARAMETER (hwnd);
 
-	_r_obj_initializestringbuilder (&sr);
+	_r_obj_initializestringbuilder (&sb);
 
 	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID)
 	{
-		_app_getapptooltipstring (&sr, lparam, NULL, NULL);
+		_app_getapptooltipstring (&sb, lparam, NULL, NULL);
 	}
 	else if ((listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) || listview_id == IDC_APP_RULES_ID)
 	{
@@ -294,7 +294,7 @@ PR_STRING _app_gettooltipbylparam (
 
 			// rule information
 			_r_obj_appendstringbuilderformat (
-				&sr,
+				&sb,
 				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
 				_r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
 				lparam,
@@ -327,7 +327,7 @@ PR_STRING _app_gettooltipbylparam (
 						string1->buffer
 					);
 
-					_r_obj_appendstringbuilder2 (&sr, string2);
+					_r_obj_appendstringbuilder2 (&sb, string2);
 
 					_r_obj_dereference (string1);
 					_r_obj_dereference (string2);
@@ -345,7 +345,7 @@ PR_STRING _app_gettooltipbylparam (
 					SZ_RULE_INTERNAL_TITLE
 				);
 
-				_r_obj_appendstringbuilder2 (&sr, string2);
+				_r_obj_appendstringbuilder2 (&sb, string2);
 
 				_r_obj_dereference (string2);
 			}
@@ -359,7 +359,7 @@ PR_STRING _app_gettooltipbylparam (
 
 		if (ptr_network)
 		{
-			_app_getapptooltipstring (&sr, ptr_network->app_hash, ptr_network, NULL);
+			_app_getapptooltipstring (&sb, ptr_network->app_hash, ptr_network, NULL);
 
 			_r_obj_dereference (ptr_network);
 		}
@@ -370,18 +370,18 @@ PR_STRING _app_gettooltipbylparam (
 
 		if (ptr_log)
 		{
-			_app_getapptooltipstring (&sr, ptr_log->app_hash, NULL, ptr_log);
+			_app_getapptooltipstring (&sb, ptr_log->app_hash, NULL, ptr_log);
 
 			_r_obj_dereference (ptr_log);
 		}
 	}
 
-	string1 = _r_obj_finalstringbuilder (&sr);
+	string1 = _r_obj_finalstringbuilder (&sb);
 
 	if (!_r_obj_isstringempty2 (string1))
 		return string1;
 
-	_r_obj_deletestringbuilder (&sr);
+	_r_obj_deletestringbuilder (&sb);
 
 	return NULL;
 }
@@ -864,15 +864,7 @@ VOID _app_toolbar_init (
 		SendMessage (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_START,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			I_IMAGENONE
-		);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
@@ -888,91 +880,23 @@ VOID _app_toolbar_init (
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_ENABLENOTIFICATIONS_CHK,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			4
-		);
-
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_ENABLELOG_CHK,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			5
-		);
-
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_ENABLEUILOG_CHK,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			10
-		);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_REFRESH,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			2
-		);
-
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_SETTINGS,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			3
-		);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 2);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 3);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_LOGSHOW,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			6
-		);
-
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_LOGCLEAR,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			7
-		);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 6);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 7);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_DONATE,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			9
-		);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
 
 		_r_toolbar_resize (config.hrebar, IDC_TOOLBAR);
 
@@ -1006,26 +930,26 @@ VOID _app_toolbar_init (
 		NULL
 	);
 
-	if (config.hsearchbar)
-	{
-		SendMessage (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+	if (!config.hsearchbar)
+		return;
 
-		_app_search_initialize (config.hsearchbar);
+	SendMessage (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 
-		rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
+	_app_search_initialize (config.hsearchbar);
 
-		_r_rebar_insertband (
-			hwnd,
-			IDC_REBAR,
-			REBAR_SEARCH_ID,
-			config.hsearchbar,
-			RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON,
-			_r_dc_getdpi (180, dpi_value),
-			20
-		);
+	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 
-		_app_search_setvisible (hwnd, config.hsearchbar);
-	}
+	_r_rebar_insertband (
+		hwnd,
+		IDC_REBAR,
+		REBAR_SEARCH_ID,
+		config.hsearchbar,
+		RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON,
+		_r_dc_getdpi (180, dpi_value),
+		20
+	);
+
+	_app_search_setvisible (hwnd, config.hsearchbar);
 }
 
 VOID _app_toolbar_resize (

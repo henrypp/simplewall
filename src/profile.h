@@ -98,6 +98,7 @@ PITEM_LOG _app_getlogitem (
 	_In_ ULONG_PTR log_hash
 );
 
+_Success_ (return != 0)
 ULONG_PTR _app_getlogapp (
 	_In_ SIZE_T index
 );
