@@ -3839,6 +3839,7 @@ INT_PTR CALLBACK DlgProc (
 				}
 
 				case IDM_TRAY_LOGCLEAR:
+				case IDM_LOGCLEAR:
 				{
 					_app_command_logclear (hwnd);
 					break;

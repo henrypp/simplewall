@@ -342,6 +342,14 @@ VOID _app_message_localize (
 
 		_r_menu_setitemtextformat (
 			hmenu,
+			IDM_LOGCLEAR,
+			FALSE,
+			L"%s\tCtrl+X",
+			_r_locale_getstring (IDS_LOGCLEAR)
+		);
+
+		_r_menu_setitemtextformat (
+			hmenu,
 			IDM_REFRESH,
 			FALSE,
 			L"%s\tF5",
@@ -2663,11 +2671,7 @@ VOID _app_command_logclear (
 
 	log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
 
-	current_handle = InterlockedCompareExchangePointer (
-		&config.hlogfile,
-		NULL,
-		NULL
-	);
+	current_handle = InterlockedCompareExchangePointer (&config.hlogfile,NULL,NULL);
 
 	is_valid = (current_handle && _r_fs_getsize (current_handle) > 2) || (log_path && _r_fs_exists (log_path->buffer));
 
