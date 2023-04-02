@@ -8,7 +8,6 @@ VOID _app_message_initialize (
 )
 {
 	ENUM_INSTALL_TYPE install_type;
-
 	HMENU hmenu;
 	LONG icon_size;
 	LONG view_type;
@@ -828,21 +827,19 @@ VOID _app_message_contextmenu (
 	HMENU hmenu;
 	HMENU hsubmenu_rules;
 	HMENU hsubmenu_timers;
-
 	PITEM_APP ptr_app;
 	PITEM_NETWORK ptr_network;
-
 	PR_STRING localized_string;
 	PR_STRING column_text;
-
 	ULONG_PTR hash_code;
-
 	INT listview_id;
 	INT lv_column_current;
 	INT command_id;
-
 	BOOLEAN is_checked;
 	BOOLEAN is_readonly;
+
+	is_checked = FALSE;
+	is_readonly = FALSE;
 
 	if (lpnmlv->iItem == -1)
 		return;
@@ -1246,7 +1243,6 @@ VOID _app_message_traycontextmenu (
 )
 {
 	ENUM_INSTALL_TYPE install_type;
-
 	HMENU hmenu;
 	HMENU hsubmenu;
 
@@ -1631,12 +1627,7 @@ LONG_PTR _app_message_custdraw (
 				// draw text
 				if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
 				{
-					SendMessage (
-						lpnmlv->nmcd.hdr.hwndFrom,
-						TB_GETBUTTONTEXT,
-						(WPARAM)lpnmlv->nmcd.dwItemSpec,
-						(LPARAM)text
-					);
+					SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
 
 					if (tbi.iImage != I_IMAGENONE)
 						lpnmlv->nmcd.rc.left += icon_size_x;
@@ -1761,6 +1752,8 @@ VOID _app_displayinfoapp_callback (
 {
 	PR_STRING string;
 	LONG icon_id;
+
+	icon_id = 0;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1928,9 +1921,7 @@ VOID _app_displayinforule_callback (
 
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
-	{
 		lpnmlv->item.iImage = (ptr_rule->action == FWP_ACTION_BLOCK) ? 1 : 0;
-	}
 
 	// set group id
 	if (lpnmlv->item.mask & LVIF_GROUPID)
@@ -1977,6 +1968,8 @@ VOID _app_displayinfonetwork_callback (
 	LPCWSTR name;
 	LONG icon_id;
 
+	icon_id = 0;
+
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
 	{
@@ -2012,11 +2005,7 @@ VOID _app_displayinfonetwork_callback (
 
 			case 1:
 			{
-				string = InterlockedCompareExchangePointer (
-					&ptr_network->local_addr_str,
-					NULL,
-					NULL
-				);
+				string = InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
 
 				if (string)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
@@ -2026,11 +2015,7 @@ VOID _app_displayinfonetwork_callback (
 
 			case 2:
 			{
-				string = InterlockedCompareExchangePointer (
-					&ptr_network->local_host_str,
-					NULL,
-					NULL
-				);
+				string = InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
 
 				if (string)
 				{
@@ -2062,11 +2047,7 @@ VOID _app_displayinfonetwork_callback (
 
 			case 4:
 			{
-				string = InterlockedCompareExchangePointer (
-					&ptr_network->remote_addr_str,
-					NULL,
-					NULL
-				);
+				string = InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
 
 				if (string)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
@@ -2076,11 +2057,7 @@ VOID _app_displayinfonetwork_callback (
 
 			case 5:
 			{
-				string = InterlockedCompareExchangePointer (
-					&ptr_network->remote_host_str,
-					NULL,
-					NULL
-				);
+				string = InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
 
 				if (string)
 				{
@@ -2177,6 +2154,8 @@ VOID _app_displayinfolog_callback (
 	PR_STRING string;
 	LONG icon_id;
 
+	icon_id = 0;
+
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
 	{
@@ -2225,11 +2204,7 @@ VOID _app_displayinfolog_callback (
 
 			case 2:
 			{
-				string = InterlockedCompareExchangePointer (
-					&ptr_log->local_addr_str,
-					NULL,
-					NULL
-				);
+				string = InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
 
 				if (string)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
@@ -2239,11 +2214,7 @@ VOID _app_displayinfolog_callback (
 
 			case 3:
 			{
-				string = InterlockedCompareExchangePointer (
-					&ptr_log->local_host_str,
-					NULL,
-					NULL
-				);
+				string = InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
 
 				if (string)
 				{
@@ -2275,11 +2246,7 @@ VOID _app_displayinfolog_callback (
 
 			case 5:
 			{
-				string = InterlockedCompareExchangePointer (
-					&ptr_log->remote_addr_str,
-					NULL,
-					NULL
-				);
+				string = InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
 
 				if (string)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
@@ -2289,11 +2256,7 @@ VOID _app_displayinfolog_callback (
 
 			case 6:
 			{
-				string = InterlockedCompareExchangePointer (
-					&ptr_log->remote_host_str,
-					NULL,
-					NULL
-				);
+				string = InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
 
 				if (string)
 				{
@@ -2413,7 +2376,8 @@ BOOLEAN _app_message_displayinfo (
 			return TRUE;
 		}
 	}
-	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
+	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM ||
+			 listview_id == IDC_APP_RULES_ID)
 	{
 		ptr_rule = _app_getrulebyid (index);
 
@@ -2671,7 +2635,7 @@ VOID _app_command_logclear (
 
 	log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
 
-	current_handle = InterlockedCompareExchangePointer (&config.hlogfile,NULL,NULL);
+	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 	is_valid = (current_handle && _r_fs_getsize (current_handle) > 2) || (log_path && _r_fs_exists (log_path->buffer));
 
@@ -3077,9 +3041,7 @@ VOID _app_command_delete (
 				apps_checker = _r_obj_createhashtable (sizeof (SHORT), NULL);
 
 				if (!_r_obj_isarrayempty (ptr_rule->guids))
-				{
 					_r_obj_addarrayitems (guids, ptr_rule->guids->items, ptr_rule->guids->count);
-				}
 
 				enum_key = 0;
 
@@ -3259,13 +3221,7 @@ VOID _app_command_openeditor (
 				{
 					if (!_app_isappfound (ptr_network->app_hash))
 					{
-						ptr_network->app_hash = _app_addapplication (
-							hwnd,
-							DATA_UNKNOWN,
-							ptr_network->path,
-							NULL,
-							NULL
-						);
+						ptr_network->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_network->path, NULL, NULL);
 
 						if (ptr_network->app_hash)
 						{
@@ -3322,13 +3278,7 @@ VOID _app_command_openeditor (
 				{
 					if (!_app_isappfound (ptr_log->app_hash))
 					{
-						ptr_log->app_hash = _app_addapplication (
-							hwnd,
-							DATA_UNKNOWN,
-							ptr_log->path,
-							NULL,
-							NULL
-						);
+						ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_log->path, NULL, NULL);
 
 						if (ptr_log->app_hash)
 						{
@@ -3472,13 +3422,7 @@ VOID _app_command_properties (
 		{
 			if (!_app_isappfound (ptr_network->app_hash))
 			{
-				ptr_network->app_hash = _app_addapplication (
-					hwnd,
-					DATA_UNKNOWN,
-					ptr_network->path,
-					NULL,
-					NULL
-				);
+				ptr_network->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_network->path, NULL, NULL);
 
 				if (ptr_network->app_hash)
 				{
@@ -3506,13 +3450,7 @@ VOID _app_command_properties (
 		{
 			if (!_app_isappfound (ptr_log->app_hash))
 			{
-				ptr_log->app_hash = _app_addapplication (
-					hwnd,
-					DATA_UNKNOWN,
-					ptr_log->path,
-					NULL,
-					NULL
-				);
+				ptr_log->app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, ptr_log->path, NULL, NULL);
 
 				if (ptr_log->app_hash)
 				{

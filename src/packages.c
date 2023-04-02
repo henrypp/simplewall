@@ -375,7 +375,6 @@ VOID _app_package_getserviceslist ()
 	static ULONG initial_buffer_size = 0x8000;
 
 	SC_HANDLE hsvcmgr;
-
 	WCHAR general_key[256];
 	EXPLICIT_ACCESS ea;
 	LPENUM_SERVICE_STATUS_PROCESS service;
@@ -389,22 +388,16 @@ VOID _app_package_getserviceslist ()
 	ULONG service_type;
 	ULONG service_state;
 	ULONG sd_length;
-
 	PR_STRING name_string;
 	PITEM_APP ptr_app;
-
 	R_STRINGREF dummy_filename;
 	R_STRINGREF dummy_argument;
 	PR_STRING converted_path;
-
 	PVOID buffer;
 	ULONG buffer_size;
-
 	ULONG return_length;
 	ULONG services_returned;
-
 	HKEY hkey;
-
 	NTSTATUS status;
 
 	hsvcmgr = OpenSCManager (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
@@ -518,12 +511,7 @@ VOID _app_package_getserviceslist ()
 
 		if (service_path)
 		{
-			_r_path_parsecommandlinefuzzy (
-				&service_path->sr,
-				&dummy_filename,
-				&dummy_argument,
-				&converted_path
-			);
+			_r_path_parsecommandlinefuzzy (&service_path->sr, &dummy_filename, &dummy_argument, &converted_path);
 
 			if (converted_path)
 			{
@@ -551,13 +539,7 @@ VOID _app_package_getserviceslist ()
 				// condition evaluates to true. Likewise if it denies access, the
 				// condition evaluates to false.
 
-				_app_setexplicitaccess (
-					&ea,
-					GRANT_ACCESS,
-					FWP_ACTRL_MATCH_FILTER,
-					NO_INHERITANCE,
-					service_sid->buffer
-				);
+				_app_setexplicitaccess (&ea, GRANT_ACCESS, FWP_ACTRL_MATCH_FILTER, NO_INHERITANCE, service_sid->buffer);
 
 				// Security descriptors must be in self-relative form (i.e., contiguous).
 				// The security descriptor returned by BuildSecurityDescriptorW is
@@ -581,13 +563,7 @@ VOID _app_package_getserviceslist ()
 				{
 					name_string = _r_obj_createstring (service->lpDisplayName);
 
-					app_hash = _app_addapplication (
-						NULL,
-						DATA_APP_SERVICE,
-						service_name,
-						name_string,
-						service_path
-					);
+					app_hash = _app_addapplication (NULL, DATA_APP_SERVICE, service_name, name_string, service_path);
 
 					if (app_hash)
 					{
@@ -595,17 +571,8 @@ VOID _app_package_getserviceslist ()
 
 						if (ptr_app)
 						{
-							_app_setappinfo (
-								ptr_app,
-								INFO_TIMESTAMP,
-								&service_timestamp
-							);
-
-							_app_setappinfo (
-								ptr_app,
-								INFO_BYTES_DATA,
-								_r_obj_createbyte_ex (service_sd, sd_length)
-							);
+							_app_setappinfo (ptr_app, INFO_TIMESTAMP, &service_timestamp);
+							_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_createbyte_ex (service_sd, sd_length));
 
 							_r_obj_dereference (ptr_app);
 						}

@@ -1104,33 +1104,25 @@ BOOLEAN _wfp_createrulefilter (
 {
 	FWPM_FILTER_CONDITION fwfc[8] = {0};
 	UINT32 count = 0;
-
 	ITEM_ADDRESS address;
-
 	FWP_V4_ADDR_AND_MASK fwp_addr4_and_mask1;
 	FWP_V4_ADDR_AND_MASK fwp_addr4_and_mask2;
-
 	FWP_V6_ADDR_AND_MASK fwp_addr6_and_mask1;
 	FWP_V6_ADDR_AND_MASK fwp_addr6_and_mask2;
-
 	FWP_RANGE fwp_range1;
 	FWP_RANGE fwp_range2;
-
 	FWP_BYTE_BLOB *byte_blob = NULL;
 	PITEM_APP ptr_app = NULL;
 	BOOLEAN is_remoteaddr_set = FALSE;
 	BOOLEAN is_remoteport_set = FALSE;
 	BOOLEAN is_success = FALSE;
-
 	FWP_DIRECTION direction;
 	UINT8 protocol;
 	ADDRESS_FAMILY af;
-
 	PR_STRINGREF rules[] = {
 		rule_remote,
 		rule_local
 	};
-
 	NTSTATUS status;
 
 	if (filter_config)
@@ -1810,8 +1802,6 @@ BOOLEAN _wfp_create3filters (
 	_In_ BOOLEAN is_intransact
 )
 {
-	if (_r_obj_islistempty (rules))
-		return FALSE;
 
 	PR_ARRAY guids;
 	LPCGUID guid;
@@ -1819,6 +1809,9 @@ BOOLEAN _wfp_create3filters (
 	PR_STRING string;
 	BOOLEAN is_enabled;
 	BOOLEAN is_secure;
+
+	if (_r_obj_islistempty (rules))
+		return FALSE;
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = TRUE;
@@ -2797,13 +2790,7 @@ ULONG _wfp_dumpcallouts (
 	callouts_enum = NULL;
 	guids = NULL;
 
-	status = FwpmCalloutEnum (
-		engine_handle,
-		enum_handle,
-		UINT32_MAX,
-		&callouts_enum,
-		&return_count
-	);
+	status = FwpmCalloutEnum (engine_handle, enum_handle, UINT32_MAX, &callouts_enum, &return_count);
 
 	if (status != ERROR_SUCCESS)
 		goto CleanupExit;

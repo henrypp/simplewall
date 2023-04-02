@@ -25,7 +25,15 @@ VOID _app_loginit (
 	if (!log_path)
 		return;
 
-	new_handle = CreateFile (log_path->buffer, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	new_handle = CreateFile (
+		log_path->buffer,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
 
 	if (_r_fs_isvalidhandle (new_handle))
 	{
@@ -45,6 +53,7 @@ VOID _app_loginitfile (
 )
 {
 	static BYTE bom[] = {0xFF, 0xFE};
+
 	LONG64 file_size;
 	ULONG unused;
 
@@ -669,15 +678,11 @@ VOID CALLBACK _wfp_logcallback (
 
 			// remote address
 			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET && log->remote_addr6)
-			{
 				RtlCopyMemory (ptr_log->remote_addr6.u.Byte, log->remote_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-			}
 
 			// local address
 			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET && log->local_addr6)
-			{
 				RtlCopyMemory (ptr_log->local_addr6.u.Byte, log->local_addr6->byteArray16, FWP_V6_ADDR_SIZE);
-			}
 		}
 	}
 

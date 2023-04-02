@@ -625,9 +625,12 @@ NTSTATUS _app_db_parser_decodebody (
 
 	GetSystemInfo (&si);
 
-	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM || si.wProcessorArchitecture ==  PROCESSOR_ARCHITECTURE_ARM64 ||
-	si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
+	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM ||
+		si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 ||
+		si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
+	{
 		return STATUS_SUCCESS;
+	}
 
 	// validate hash
 	return _app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr);
@@ -716,6 +719,7 @@ NTSTATUS _app_db_parser_generatebody (
 )
 {
 	PR_BYTE bytes;
+	PVOID ptr;
 
 	if (profile_type == PROFILE2_ID_PLAIN)
 	{
@@ -725,29 +729,16 @@ NTSTATUS _app_db_parser_generatebody (
 	{
 		bytes = _r_obj_createbyte_ex (NULL, PROFILE2_HEADER_LENGTH + body_value->length);
 
-		RtlCopyMemory (
-			bytes->buffer,
-			profile2_fourcc,
-			sizeof (profile2_fourcc)
-		);
+		RtlCopyMemory (bytes->buffer,profile2_fourcc,sizeof (profile2_fourcc));
 
-		RtlCopyMemory (
-			PTR_ADD_OFFSET (bytes->buffer, sizeof (profile2_fourcc)),
-			&profile_type,
-			sizeof (BYTE)
-		);
+		ptr = PTR_ADD_OFFSET (bytes->buffer, sizeof (profile2_fourcc));
+		RtlCopyMemory (ptr, &profile_type, sizeof (BYTE));
 
-		RtlCopyMemory (
-			PTR_ADD_OFFSET (bytes->buffer, PROFILE2_FOURCC_LENGTH),
-			hash_value->buffer,
-			hash_value->length
-		);
+		ptr = PTR_ADD_OFFSET (bytes->buffer, PROFILE2_FOURCC_LENGTH);
+		RtlCopyMemory (ptr, hash_value->buffer, hash_value->length);
 
-		RtlCopyMemory (
-			PTR_ADD_OFFSET (bytes->buffer, PROFILE2_HEADER_LENGTH),
-			body_value->buffer,
-			body_value->length
-		);
+		ptr = PTR_ADD_OFFSET (bytes->buffer, PROFILE2_HEADER_LENGTH);
+		RtlCopyMemory (ptr, body_value->buffer, body_value->length);
 	}
 	else
 	{
@@ -786,11 +777,7 @@ NTSTATUS _app_db_parser_validatefile (
 	if (status != STATUS_SUCCESS)
 		return status;
 
-	status = _r_xml_parsestring (
-		&db_info->xml_library,
-		db_info->bytes->buffer,
-		(ULONG)db_info->bytes->length
-	);
+	status = _r_xml_parsestring (&db_info->xml_library,db_info->bytes->buffer,(ULONG)db_info->bytes->length);
 
 	if (FAILED (status))
 		return status;
@@ -1256,6 +1243,7 @@ PR_STRING _app_db_getdirectionname (
 	return _r_obj_createstring (text);
 }
 
+_Ret_maybenull_
 PR_STRING _app_db_getprotoname (
 	_In_ ULONG proto,
 	_In_ ADDRESS_FAMILY af,

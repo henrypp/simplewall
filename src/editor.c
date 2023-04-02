@@ -19,12 +19,7 @@ PEDITOR_CONTEXT _app_editor_createwindow (
 	context->page_id = page_id;
 	context->is_settorules = is_settorules;
 
-	if (_r_wnd_createmodalwindow (
-		_r_sys_getimagebase (),
-		MAKEINTRESOURCE (IDD_EDITOR),
-		hwnd,
-		&EditorProc,
-		context))
+	if (_r_wnd_createmodalwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, context))
 	{
 		return context;
 	}
@@ -71,25 +66,12 @@ VOID _app_editor_addtabitem (
 {
 	HWND htab;
 
-	htab = _r_wnd_createwindow (
-		_r_sys_getimagebase (),
-		MAKEINTRESOURCE (dlg_id),
-		hwnd,
-		&EditorPagesProc,
-		context
-	);
+	htab = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (dlg_id), hwnd, &EditorPagesProc, context);
 
 	if (!htab)
 		return;
 
-	_r_tab_additem (
-		hwnd,
-		IDC_TAB,
-		*tabs_count,
-		_r_locale_getstring (locale_id),
-		I_IMAGENONE,
-		(LPARAM)htab
-	);
+	_r_tab_additem (hwnd, IDC_TAB, *tabs_count, _r_locale_getstring (locale_id), I_IMAGENONE, (LPARAM)htab);
 
 	*tabs_count += 1;
 
@@ -434,9 +416,7 @@ INT_PTR CALLBACK EditorRuleProc (
 					}
 
 					if (context->item_id != -1)
-					{
 						_r_listview_deleteitem (context->hwnd, context->listview_id, context->item_id);
-					}
 
 					_r_listview_setcolumn (context->hwnd, context->listview_id, 0, NULL, -100);
 
@@ -513,21 +493,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_ctrl_enable (GetParent (hwnd), IDC_SAVE, FALSE);
 				}
 
-				SendDlgItemMessage (
-					hwnd,
-					IDC_RULE_NAME_ID,
-					EM_LIMITTEXT,
-					RULE_NAME_CCH_MAX - 1,
-					0
-				);
-
-				SendDlgItemMessage (
-					hwnd,
-					IDC_RULE_NAME_ID,
-					EM_SETREADONLY,
-					(WPARAM)context->ptr_rule->is_readonly,
-					0
-				);
+				_r_ctrl_setreadonly (hwnd, IDC_RULE_NAME_ID, RULE_NAME_CCH_MAX - 1, !!context->ptr_rule->is_readonly);
 			}
 
 			// direction
@@ -712,6 +678,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			if (GetDlgItem (hwnd, IDC_RULE_LOCAL_ID))
 			{
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL, L"%s (" SZ_DIRECTION_LOCAL L"):", _r_locale_getstring (IDS_RULE));
+
 				_r_listview_setstyle (
 					hwnd,
 					IDC_RULE_LOCAL_ID,
@@ -744,15 +711,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			{
 				_app_search_initialize (hctrl);
 
-				SetWindowPos (
-					hctrl,
-					HWND_BOTTOM,
-					0,
-					0,
-					0,
-					0,
-					SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED
-				); // HACK!!!
+				SetWindowPos (hctrl, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED); // HACK!!!
 			}
 
 			// apps
@@ -898,6 +857,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				);
 
 				_r_listview_addcolumn (hwnd, IDC_APP_RULES_ID, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
+
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 0, _r_locale_getstring (IDS_TRAY_SYSTEM_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 1, _r_locale_getstring (IDS_TRAY_USER_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, LV_HIDDEN_GROUP_ID, L"", 2, LVGS_COLLAPSED, LVGS_COLLAPSED);
@@ -1121,7 +1081,6 @@ INT_PTR CALLBACK EditorPagesProc (
 						);
 
 						_r_menu_additem (hsubmenu, id_edit, localized_string->buffer);
-
 						_r_menu_additem (hsubmenu, id_delete, _r_locale_getstring (IDS_DELETE));
 						_r_menu_additem (hsubmenu, 0, NULL);
 						_r_menu_additem (hsubmenu, IDM_COPY, _r_locale_getstring (IDS_COPY));
@@ -1222,6 +1181,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				{
 					LPNMLISTVIEW lpnmlv;
 					INT listview_id;
+					BOOLEAN is_locked;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -1238,7 +1198,9 @@ INT_PTR CALLBACK EditorPagesProc (
 							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) ||
 								((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
-								if (!_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom) && context->ptr_rule->type != DATA_RULE_USER)
+								is_locked = _app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom);
+
+								if (!is_locked && context->ptr_rule->type != DATA_RULE_USER)
 								{
 									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
 									return TRUE;
@@ -1403,7 +1365,8 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!_r_ctrl_isenabled (hwnd, ctrl_id))
 						break;
 
-					listview_id = (ctrl_id == IDC_RULE_REMOTE_ADD || ctrl_id == IDC_RULE_REMOTE_EDIT) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID;
+					listview_id = (ctrl_id == IDC_RULE_REMOTE_ADD ||
+								   ctrl_id == IDC_RULE_REMOTE_EDIT) ? IDC_RULE_REMOTE_ID : IDC_RULE_LOCAL_ID;
 
 					if (ctrl_id == IDC_RULE_REMOTE_EDIT || ctrl_id == IDC_RULE_LOCAL_EDIT)
 					{
@@ -1452,7 +1415,13 @@ INT_PTR CALLBACK EditorPagesProc (
 					context->item_id = item_id;
 					context->current_length = current_length;
 
-					_r_wnd_createmodalwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_EDITOR_ADDRULE), hwnd, &EditorRuleProc, context);
+					_r_wnd_createmodalwindow (
+						_r_sys_getimagebase (),
+						MAKEINTRESOURCE (IDD_EDITOR_ADDRULE),
+						hwnd,
+						&EditorRuleProc,
+						context
+					);
 
 					break;
 				}
@@ -1471,7 +1440,11 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!selected_count)
 						break;
 
-					if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, _r_locale_getstring (IDS_QUESTION_DELETE)) != IDYES)
+					if (_r_show_message (
+						hwnd,
+						MB_YESNO | MB_ICONEXCLAMATION,
+						NULL,
+						_r_locale_getstring (IDS_QUESTION_DELETE)) != IDYES)
 					{
 						break;
 					}
@@ -1814,13 +1787,13 @@ INT_PTR CALLBACK EditorProc (
 					item_id = _r_tab_getcurrentitem (hwnd, IDC_TAB);
 					hpage = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, item_id);
 
-					if (hpage)
-					{
-						_r_tab_adjustchild (hwnd, IDC_TAB, hpage);
+					if (!hpage)
+						break;
 
-						ShowWindow (hpage, SW_SHOWNA);
-						SetFocus (NULL);
-					}
+					_r_tab_adjustchild (hwnd, IDC_TAB, hpage);
+
+					ShowWindow (hpage, SW_SHOWNA);
+					SetFocus (NULL);
 
 					break;
 				}
@@ -2022,13 +1995,7 @@ INT_PTR CALLBACK EditorProc (
 								{
 									is_enable = _r_listview_isitemchecked (hpage_rule, IDC_APP_RULES_ID, i);
 
-									_app_setruletoapp (
-										_r_app_gethwnd (),
-										ptr_rule,
-										item_id,
-										context->ptr_app,
-										is_enable
-									);
+									_app_setruletoapp (_r_app_gethwnd (), ptr_rule, item_id, context->ptr_app, is_enable);
 								}
 							}
 

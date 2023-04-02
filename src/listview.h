@@ -67,7 +67,7 @@ VOID _app_listview_addnetworkitem (
 
 VOID _app_listview_addlogitem (
 	_In_ HWND hwnd,
-	_In_ PITEM_LOG ptr_log,
+	_In_opt_ PITEM_LOG ptr_log,
 	_In_ ULONG_PTR log_hash
 );
 

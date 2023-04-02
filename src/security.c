@@ -96,12 +96,9 @@ PACL _app_createaccesscontrollist (
 	EXPLICIT_ACCESS ea[3] = {0};
 	PACL new_dacl;
 	PACCESS_ALLOWED_ACE ace;
-
 	BOOLEAN is_secured = FALSE;
-
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
-
 	ULONG count;
 	ULONG status;
 
@@ -153,27 +150,11 @@ PACL _app_createaccesscontrollist (
 
 		// revoke current user access rights
 		if (is_currentuserhaverights)
-		{
-			_app_setexplicitaccess (
-				&ea[count++],
-				REVOKE_ACCESS,
-				0,
-				NO_INHERITANCE,
-				config.pbuiltin_current_sid
-			);
-		}
+			_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, config.pbuiltin_current_sid);
 
 		// revoke everyone access rights
 		if (is_openforeveryone)
-		{
-			_app_setexplicitaccess (
-				&ea[count++],
-				REVOKE_ACCESS,
-				0,
-				NO_INHERITANCE,
-				&SeEveryoneSid
-			);
-		}
+			_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, &SeEveryoneSid);
 
 		// secure filter from deletion
 		_app_setexplicitaccess (
@@ -307,15 +288,7 @@ VOID _app_setsecurityinfoforengine (
 			if (is_currentuserhaverights)
 			{
 				if (config.pbuiltin_current_sid)
-				{
-					_app_setexplicitaccess (
-						&ea[count++],
-						REVOKE_ACCESS,
-						0,
-						NO_INHERITANCE,
-						config.pbuiltin_current_sid
-					);
-				}
+					_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, config.pbuiltin_current_sid);
 			}
 
 			// reset default engine rights

@@ -757,8 +757,12 @@ VOID _app_getcount (
 		if (_app_istimerset (ptr_app))
 			status->apps_timer_count += 1;
 
-		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
+		if (!ptr_app->is_undeletable &&
+			(!_app_isappexists (ptr_app) || !is_used) &&
+			!(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
+		{
 			status->apps_unused_count += 1;
+		}
 
 		if (is_used)
 			status->apps_count += 1;
@@ -1122,7 +1126,8 @@ PR_STRING _app_appexpandrules (
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER && !_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
+		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER &&
+			!_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
 		{
 			_r_obj_appendstringbuilder2 (&buffer, ptr_rule->name);
 
@@ -1587,7 +1592,8 @@ VOID _app_profile_load_internal (
 	}
 	else
 	{
-		is_loadfromresource = (db_info_file.version < db_info_buffer->version) || (db_info_file.timestamp < db_info_buffer->timestamp);
+		is_loadfromresource = (db_info_file.version < db_info_buffer->version) ||
+			(db_info_file.timestamp < db_info_buffer->timestamp);
 	}
 
 	db_info = is_loadfromresource ? db_info_buffer : &db_info_file;
@@ -1706,7 +1712,14 @@ CleanupExit:
 	{
 		// load internal rules (new!)
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-			_app_profile_load_internal (hwnd, profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
+		{
+			_app_profile_load_internal (
+				hwnd,
+				profile_info.profile_path_internal,
+				MAKEINTRESOURCE (IDR_PROFILE_INTERNAL),
+				&profile_info.profile_internal_timestamp
+			);
+		}
 
 		_app_profile_load_fallback ();
 
@@ -1745,8 +1758,12 @@ NTSTATUS _app_profile_save ()
 
 		if (!is_backuprequired)
 		{
-			if ((timestamp - _r_config_getlong64 (L"BackupTimestamp", 0)) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
+			if ((timestamp - _r_config_getlong64 (
+				L"BackupTimestamp", 0)) >=
+				_r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
+			{
 				is_backuprequired = TRUE;
+			}
 		}
 	}
 

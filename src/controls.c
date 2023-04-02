@@ -864,7 +864,15 @@ VOID _app_toolbar_init (
 		SendMessage (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_START,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			I_IMAGENONE
+		);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
@@ -880,9 +888,34 @@ VOID _app_toolbar_init (
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_ENABLENOTIFICATIONS_CHK,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			4
+		);
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_ENABLELOG_CHK,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			5
+		);
+
+		_r_toolbar_addbutton (
+			config.hrebar,
+			IDC_TOOLBAR,
+			IDM_TRAY_ENABLEUILOG_CHK,
+			0,
+			BTNS_BUTTON | BTNS_AUTOSIZE,
+			TBSTATE_ENABLED,
+			10
+		);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 

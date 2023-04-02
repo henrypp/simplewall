@@ -11,11 +11,7 @@ HWND _app_notify_getwindow (
 	HWND current_hwnd;
 	HWND new_hwnd;
 
-	current_hwnd = InterlockedCompareExchangePointer (
-		&config.hnotification,
-		NULL,
-		NULL
-	);
+	current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
 
 	if (current_hwnd)
 	{
@@ -38,11 +34,7 @@ HWND _app_notify_getwindow (
 
 	WaitForSingleObjectEx (config.hnotify_evt, 2000, FALSE);
 
-	current_hwnd = InterlockedCompareExchangePointer (
-		&config.hnotification,
-		NULL,
-		NULL
-	);
+	current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
 
 	return current_hwnd;
 }
@@ -170,8 +162,11 @@ BOOLEAN _app_notify_addobject (
 	{
 		if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
 		{
-			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) || !_r_wnd_isfullscreenmode ())
+			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) ||
+				!_r_wnd_isfullscreenmode ())
+			{
 				_app_notify_playsound ();
+			}
 		}
 
 		return TRUE;
@@ -575,11 +570,7 @@ VOID _app_notify_playsound ()
 	ULONG flags;
 	LSTATUS status;
 
-	current_path = InterlockedCompareExchangePointer (
-		&cached_path,
-		NULL,
-		NULL
-	);
+	current_path = InterlockedCompareExchangePointer (&cached_path, NULL, NULL);
 
 	if (!current_path || !_r_fs_exists (current_path->buffer))
 	{
@@ -602,11 +593,7 @@ VOID _app_notify_playsound ()
 				if (expanded_string)
 					_r_obj_movereference (&new_path, expanded_string);
 
-				current_path = InterlockedCompareExchangePointer (
-					&cached_path,
-					new_path,
-					current_path
-				);
+				current_path = InterlockedCompareExchangePointer (&cached_path, new_path, current_path);
 
 				if (current_path)
 					_r_obj_dereference (new_path);
@@ -819,37 +806,10 @@ VOID _app_notify_initialize (
 	context->hbmp_rules = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_small);
 
 	// set button configuration
-	SendDlgItemMessage (
-		context->hwnd,
-		IDC_RULES_BTN,
-		BM_SETIMAGE,
-		IMAGE_BITMAP,
-		(LPARAM)context->hbmp_rules
-	);
-
-	SendDlgItemMessage (
-		context->hwnd,
-		IDC_ALLOW_BTN,
-		BM_SETIMAGE,
-		IMAGE_BITMAP,
-		(LPARAM)context->hbmp_allow
-	);
-
-	SendDlgItemMessage (
-		context->hwnd,
-		IDC_BLOCK_BTN,
-		BM_SETIMAGE,
-		IMAGE_BITMAP,
-		(LPARAM)context->hbmp_block
-	);
-
-	SendDlgItemMessage (
-		context->hwnd,
-		IDC_LATER_BTN,
-		BM_SETIMAGE,
-		IMAGE_BITMAP,
-		(LPARAM)context->hbmp_cross
-	);
+	SendDlgItemMessage (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
+	SendDlgItemMessage (context->hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_allow);
+	SendDlgItemMessage (context->hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
+	SendDlgItemMessage (context->hwnd, IDC_LATER_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
 
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_RULES_BTN, dpi_value);
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_ALLOW_BTN, dpi_value);
@@ -940,11 +900,7 @@ INT_PTR CALLBACK NotificationProc (
 			HWND htip;
 			LONG dpi_value;
 
-			current_hwnd = InterlockedCompareExchangePointer (
-				&config.hnotification,
-				hwnd,
-				config.hnotification
-			);
+			current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, hwnd, config.hnotification);
 
 			if (current_hwnd)
 				DestroyWindow (current_hwnd);
@@ -993,11 +949,7 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_NCDESTROY:
 		{
-			InterlockedCompareExchangePointer (
-				&config.hnotification,
-				NULL,
-				config.hnotification
-			);
+			InterlockedCompareExchangePointer (&config.hnotification, NULL, config.hnotification);
 
 			_app_notify_destroy (hwnd);
 
@@ -1480,11 +1432,7 @@ INT_PTR CALLBACK NotificationProc (
 						}
 					}
 
-					_app_listview_updateby_id (
-						_r_app_gethwnd (),
-						DATA_LISTVIEW_CURRENT,
-						PR_UPDATE_TYPE
-					);
+					_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 					_r_obj_dereference (ptr_app);
 					_r_obj_dereference (ptr_rule);

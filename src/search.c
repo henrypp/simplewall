@@ -29,13 +29,7 @@ VOID _app_search_initializetheme (
 
 		if (htheme)
 		{
-			hr = GetThemeInt (
-				htheme,
-				EP_EDITBORDER_NOSCROLL,
-				EPSHV_NORMAL,
-				TMT_BORDERSIZE,
-				&context->cx_border
-			);
+			hr = GetThemeInt (htheme, EP_EDITBORDER_NOSCROLL, EPSHV_NORMAL, TMT_BORDERSIZE, &context->cx_border);
 
 			if (!SUCCEEDED (hr))
 				context->cx_border = 0;
@@ -170,29 +164,9 @@ VOID _app_search_drawbutton (
 		_r_dc_fillrect (buffer_dc, &rect, GetSysColor (COLOR_WINDOW));
 	}
 
-	DrawIconEx (
-		buffer_dc,
-		rect.left + 1,
-		rect.top,
-		context->hicon,
-		context->image_width,
-		context->image_height,
-		0,
-		NULL,
-		DI_NORMAL
-	);
+	DrawIconEx (buffer_dc, rect.left + 1, rect.top, context->hicon, context->image_width, context->image_height, 0, NULL, DI_NORMAL);
 
-	BitBlt (
-		hdc,
-		button_rect->left,
-		button_rect->top,
-		button_rect->right,
-		button_rect->bottom,
-		buffer_dc,
-		0,
-		0,
-		SRCCOPY
-	);
+	BitBlt (hdc, button_rect->left, button_rect->top, button_rect->right, button_rect->bottom, buffer_dc, 0, 0, SRCCOPY);
 
 	SelectObject (buffer_dc, old_bitmap);
 	DeleteObject (buffer_bitmap);
@@ -667,14 +641,14 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			_app_search_getbuttonrect (context, &rect);
 
 			// Check that the mouse is within the inserted button.
-			if (PtInRect (&rect, point))
-			{
-				context->is_pushed = TRUE;
+			if (!PtInRect (&rect, point))
+				break;
 
-				SetCapture (hwnd);
+			context->is_pushed = TRUE;
 
-				RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-			}
+			SetCapture (hwnd);
+
+			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 
 			break;
 		}
@@ -771,21 +745,21 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			_app_search_getbuttonrect (context, &rect);
 
 			// Check that the mouse is within the inserted button.
-			if (PtInRect (&rect, point) && !context->is_hot)
-			{
-				ZeroMemory (&tme, sizeof (tme));
+			if (!PtInRect (&rect, point) && !context->is_hot)
+				break;
 
-				tme.cbSize = sizeof (tme);
-				tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
-				tme.hwndTrack = hwnd;
-				tme.dwHoverTime = 0;
+			RtlZeroMemory (&tme, sizeof (tme));
 
-				context->is_hot = TRUE;
+			tme.cbSize = sizeof (tme);
+			tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
+			tme.hwndTrack = hwnd;
+			tme.dwHoverTime = 0;
 
-				RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+			context->is_hot = TRUE;
 
-				TrackMouseEvent (&tme);
-			}
+			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+
+			TrackMouseEvent (&tme);
 
 			break;
 		}
@@ -793,10 +767,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		case WM_NCMOUSELEAVE:
 		{
 			if (!context->is_hot)
-						break;
+				break;
 
-				context->is_hot = FALSE;
-				RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+			context->is_hot = FALSE;
+			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 
 			break;
 		}
@@ -806,24 +780,24 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			POINT point;
 			RECT rect;
 
-			if ((wparam & MK_LBUTTON) && GetCapture () == hwnd)
-			{
-				// Get the screen coordinates of the mouse.
-				if (!GetCursorPos (&point))
-					break;
+			if (!(wparam & MK_LBUTTON) && GetCapture () != hwnd)
+				break;
 
-				// Get the screen coordinates of the window.
-				if (!GetWindowRect (hwnd, &rect))
-					break;
+			// Get the screen coordinates of the mouse.
+			if (!GetCursorPos (&point))
+				break;
 
-				// Get the position of the inserted button.
-				_app_search_getbuttonrect (context, &rect);
+			// Get the screen coordinates of the window.
+			if (!GetWindowRect (hwnd, &rect))
+				break;
 
-				// Check that the mouse is within the inserted button.
-				context->is_pushed = PtInRect (&rect, point);
+			// Get the position of the inserted button.
+			_app_search_getbuttonrect (context, &rect);
 
-				RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-			}
+			// Check that the mouse is within the inserted button.
+			context->is_pushed = PtInRect (&rect, point);
+
+			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 
 			break;
 		}

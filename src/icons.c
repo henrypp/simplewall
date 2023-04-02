@@ -19,13 +19,7 @@ PICON_INFORMATION _app_icons_getdefault ()
 			L"\\svchost.exe"
 		);
 
-		_app_icons_loadfromfile (
-			path,
-			0,
-			&icon_info.app_icon_id,
-			&icon_info.app_hicon,
-			FALSE
-		);
+		_app_icons_loadfromfile (path, 0, &icon_info.app_icon_id, &icon_info.app_hicon, FALSE);
 
 		// load default service icons
 		_r_obj_dereference (path);
@@ -36,13 +30,7 @@ PICON_INFORMATION _app_icons_getdefault ()
 			L"\\shell32.dll"
 		);
 
-		_app_icons_loadfromfile (
-			path,
-			0,
-			&icon_info.service_icon_id,
-			&icon_info.service_hicon,
-			FALSE
-		);
+		_app_icons_loadfromfile (path, 0, &icon_info.service_icon_id, &icon_info.service_hicon, FALSE);
 
 		// load uwp icons
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
@@ -55,13 +43,7 @@ PICON_INFORMATION _app_icons_getdefault ()
 				L"\\wsreset.exe"
 			);
 
-			_app_icons_loadfromfile (
-				path,
-				0,
-				&icon_info.uwp_icon_id,
-				&icon_info.uwp_hicon,
-				FALSE
-			);
+			_app_icons_loadfromfile (path, 0, &icon_info.uwp_icon_id, &icon_info.uwp_hicon, FALSE);
 		}
 
 		_r_obj_dereference (path);
@@ -160,13 +142,7 @@ HICON _app_icons_getsafeapp_hicon (
 		return hicon;
 	}
 
-	_app_icons_loadfromfile (
-		ptr_app->real_path,
-		ptr_app->type,
-		&icon_id,
-		&hicon,
-		TRUE
-	);
+	_app_icons_loadfromfile (ptr_app->real_path, ptr_app->type, &icon_id, &hicon, TRUE);
 
 	if (!icon_id ||
 		((ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE) && icon_id == icon_info->app_icon_id))

@@ -327,22 +327,14 @@ PR_STRING _app_formataddress_interlocked (
 	PR_STRING current_string;
 	PR_STRING new_string;
 
-	current_string = InterlockedCompareExchangePointer (
-		string,
-		NULL,
-		NULL
-	);
+	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
 
 	if (current_string)
 		return current_string;
 
 	new_string = _app_formataddress (af, 0, address, 0, 0);
 
-	current_string = InterlockedCompareExchangePointer (
-		string,
-		new_string,
-		NULL
-	);
+	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
 
 	if (!current_string)
 	{
@@ -380,12 +372,7 @@ BOOLEAN _app_formatip (
 				return FALSE;
 		}
 
-		status = RtlIpv4AddressToStringEx (
-			p4addr,
-			0,
-			buffer,
-			&buffer_size
-		);
+		status = RtlIpv4AddressToStringEx (p4addr, 0, buffer, &buffer_size);
 
 		if (status == STATUS_SUCCESS)
 			return TRUE;
@@ -400,13 +387,7 @@ BOOLEAN _app_formatip (
 				return FALSE;
 		}
 
-		status = RtlIpv6AddressToStringEx (
-			p6addr,
-			0,
-			0,
-			buffer,
-			&buffer_size
-		);
+		status = RtlIpv6AddressToStringEx (p6addr, 0, 0, buffer, &buffer_size);
 
 		if (status == STATUS_SUCCESS)
 			return TRUE;
@@ -475,11 +456,7 @@ BOOLEAN _app_getappinfoparam2 (
 
 			if (ptr_app_info)
 			{
-				icon_id = InterlockedCompareExchange (
-					&ptr_app_info->large_icon_id,
-					0,
-					0
-				);
+				icon_id = InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0);
 			}
 			else
 			{
@@ -566,6 +543,8 @@ BOOLEAN _app_isappsigned (
 {
 	PR_STRING string;
 	BOOLEAN is_signed;
+
+	string = NULL;
 
 	if (_app_getappinfoparam2 (app_hash, INFO_SIGNATURE_STRING, &string, sizeof (string)))
 	{
@@ -693,23 +672,11 @@ VOID _app_getfileicon (
 
 	if (is_iconshidded || !_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
-		_app_icons_loadfromfile (
-			NULL,
-			ptr_app_info->type,
-			&icon_id,
-			NULL,
-			TRUE
-		);
+		_app_icons_loadfromfile (NULL, ptr_app_info->type, &icon_id, NULL, TRUE);
 	}
 	else
 	{
-		_app_icons_loadfromfile (
-			ptr_app_info->path,
-			ptr_app_info->type,
-			&icon_id,
-			NULL,
-			TRUE
-		);
+		_app_icons_loadfromfile (ptr_app_info->path, ptr_app_info->type, &icon_id, NULL, TRUE);
 	}
 
 	InterlockedCompareExchange (
@@ -730,7 +697,6 @@ BOOLEAN _app_calculatefilehash (
 {
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
-
 	static CCAAC2 _CryptCATAdminAcquireContext2 = NULL;
 	static CCAHFFH2 _CryptCATAdminCalcHashFromFileHandle2 = NULL;
 
@@ -745,15 +711,8 @@ BOOLEAN _app_calculatefilehash (
 
 		if (hwintrust)
 		{
-			_CryptCATAdminAcquireContext2 = (CCAAC2)GetProcAddress (
-				hwintrust,
-				"CryptCATAdminAcquireContext2"
-			);
-
-			_CryptCATAdminCalcHashFromFileHandle2 = (CCAHFFH2)GetProcAddress (
-				hwintrust,
-				"CryptCATAdminCalcHashFromFileHandle2"
-			);
+			_CryptCATAdminAcquireContext2 = (CCAAC2)GetProcAddress (hwintrust, "CryptCATAdminAcquireContext2");
+			_CryptCATAdminCalcHashFromFileHandle2 = (CCAHFFH2)GetProcAddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2");
 
 			//FreeLibrary (hwintrust);
 		}
@@ -763,15 +722,8 @@ BOOLEAN _app_calculatefilehash (
 
 	if (_CryptCATAdminAcquireContext2)
 	{
-		if (!_CryptCATAdminAcquireContext2 (
-			&hcat_admin,
-			&DriverActionVerify,
-			algorithm_id,
-			NULL,
-			0))
-		{
+		if (!_CryptCATAdminAcquireContext2 (&hcat_admin, &DriverActionVerify, algorithm_id, NULL, 0))
 			return FALSE;
-		}
 	}
 	else
 	{
@@ -784,21 +736,11 @@ BOOLEAN _app_calculatefilehash (
 
 	if (_CryptCATAdminCalcHashFromFileHandle2)
 	{
-		if (!_CryptCATAdminCalcHashFromFileHandle2 (
-			hcat_admin,
-			hfile,
-			&file_hash_length,
-			file_hash,
-			0))
+		if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
 		{
 			file_hash = _r_mem_reallocatezero (file_hash, file_hash_length);
 
-			if (!_CryptCATAdminCalcHashFromFileHandle2 (
-				hcat_admin,
-				hfile,
-				&file_hash_length,
-				file_hash,
-				0))
+			if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
 			{
 				CryptCATAdminReleaseContext (hcat_admin, 0);
 				_r_mem_free (file_hash);
@@ -809,19 +751,11 @@ BOOLEAN _app_calculatefilehash (
 	}
 	else
 	{
-		if (!CryptCATAdminCalcHashFromFileHandle (
-			hfile,
-			&file_hash_length,
-			file_hash,
-			0))
+		if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
 		{
 			file_hash = _r_mem_reallocatezero (file_hash, file_hash_length);
 
-			if (!CryptCATAdminCalcHashFromFileHandle (
-				hfile,
-				&file_hash_length,
-				file_hash,
-				0))
+			if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
 			{
 				CryptCATAdminReleaseContext (hcat_admin, 0);
 				_r_mem_free (file_hash);
@@ -846,10 +780,8 @@ PR_STRING _app_verifygetstring (
 	PCRYPT_PROVIDER_DATA prov_data;
 	PCRYPT_PROVIDER_SGNR prov_signer;
 	PCRYPT_PROVIDER_CERT prov_cert;
-
 	PR_STRING string;
 	ULONG length;
-
 	ULONG idx;
 
 	prov_data = WTHelperProvDataFromStateData (state_data);
@@ -870,26 +802,13 @@ PR_STRING _app_verifygetstring (
 			if (!prov_cert)
 				break;
 
-			length = CertGetNameString (
-				prov_cert->pCert,
-				CERT_NAME_ATTR_TYPE,
-				0,
-				szOID_COMMON_NAME,
-				NULL,
-				0) - 1;
+			length = CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, NULL, 0) - 1;
 
 			if (length > 1)
 			{
 				string = _r_obj_createstring_ex (NULL, length * sizeof (WCHAR));
 
-				CertGetNameString (
-					prov_cert->pCert,
-					CERT_NAME_ATTR_TYPE,
-					0,
-					szOID_COMMON_NAME,
-					string->buffer,
-					length + 1
-				);
+				CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1);
 
 				_r_obj_trimstringtonullterminator (string);
 
@@ -991,20 +910,9 @@ LONG _app_verifyfilefromcatalog (
 	string = NULL;
 	status = TRUST_E_FAIL;
 
-	if (_app_calculatefilehash (
-		hfile,
-		algorithm_id,
-		&file_hash,
-		&file_hash_length,
-		&hcat_admin))
+	if (_app_calculatefilehash (hfile, algorithm_id, &file_hash, &file_hash_length, &hcat_admin))
 	{
-		hcat_info = CryptCATAdminEnumCatalogFromHash (
-			hcat_admin,
-			file_hash,
-			file_hash_length,
-			0,
-			NULL
-		);
+		hcat_info = CryptCATAdminEnumCatalogFromHash (hcat_admin, file_hash, file_hash_length, 0, NULL);
 
 		if (hcat_info)
 		{
@@ -1024,13 +932,7 @@ LONG _app_verifyfilefromcatalog (
 				catalog_info.cbCalculatedFileHash = file_hash_length;
 				catalog_info.hCatAdmin = hcat_admin;
 
-				status = _app_verifyfromfile (
-					WTD_CHOICE_CATALOG,
-					&catalog_info,
-					&DriverActionVerify,
-					&ver_info,
-					&string
-				);
+				status = _app_verifyfromfile (WTD_CHOICE_CATALOG, &catalog_info, &DriverActionVerify, &ver_info, &string);
 
 				if (ver_info.pcSignerCertContext)
 					CertFreeCertificateContext (ver_info.pcSignerCertContext);
@@ -1058,7 +960,6 @@ VOID _app_getfilesignatureinfo (
 	static GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
 	WINTRUST_FILE_INFO file_info = {0};
-
 	HANDLE hfile;
 	PR_STRING string;
 	LONG status;
@@ -1086,33 +987,17 @@ VOID _app_getfilesignatureinfo (
 	file_info.pcwszFilePath = ptr_app_info->path->buffer;
 	file_info.hFile = hfile;
 
-	status = _app_verifyfromfile (
-		WTD_CHOICE_FILE,
-		&file_info,
-		&WinTrustActionGenericVerifyV2,
-		NULL,
-		&string
-	);
+	status = _app_verifyfromfile (WTD_CHOICE_FILE, &file_info, &WinTrustActionGenericVerifyV2, NULL, &string);
 
 	if (status == TRUST_E_NOSIGNATURE)
 	{
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
-			status = _app_verifyfilefromcatalog (
-				hfile,
-				ptr_app_info->path->buffer,
-				BCRYPT_SHA256_ALGORITHM,
-				&string
-			);
+			status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA256_ALGORITHM, &string);
 		}
 		else
 		{
-			status = _app_verifyfilefromcatalog (
-				hfile,
-				ptr_app_info->path->buffer,
-				NULL,
-				&string
-			);
+			status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, NULL, &string);
 		}
 	}
 
@@ -1139,11 +1024,7 @@ VOID _app_getfileversioninfo (
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		goto CleanupExit;
 
-	hlib = LoadLibraryEx (
-		ptr_app_info->path->buffer,
-		NULL,
-		LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE
-	);
+	hlib = LoadLibraryEx (ptr_app_info->path->buffer, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
 
 	if (!hlib)
 		goto CleanupExit;
@@ -1458,11 +1339,7 @@ BOOLEAN _app_setruletoapp (
 	{
 		listview_id = _app_listview_getbytype (ptr_rule->type);
 
-		_app_listview_updateitemby_param (
-			hwnd,
-			_app_listview_getitemcontext (hwnd, listview_id, item_id),
-			FALSE
-		);
+		_app_listview_updateitemby_param (hwnd, _app_listview_getitemcontext (hwnd, listview_id, item_id), FALSE);
 	}
 
 	_app_listview_updateitemby_param (hwnd, ptr_app->app_hash, TRUE);
@@ -1480,7 +1357,7 @@ BOOLEAN _app_parsenetworkstring (
 	NET_ADDRESS_INFO ni_end;
 	ULONG mask;
 	ULONG types;
-	ULONG code;
+	ULONG status;
 	USHORT range_port1;
 	USHORT range_port2;
 	USHORT port;
@@ -1494,12 +1371,12 @@ BOOLEAN _app_parsenetworkstring (
 		range_port1 = 0;
 		range_port2 = 0;
 
-		code = ParseNetworkString (address->range_start, types, &ni, &range_port1, NULL);
+		status = ParseNetworkString (address->range_start, types, &ni, &range_port1, NULL);
 
-		if (code != ERROR_SUCCESS)
+		if (status != ERROR_SUCCESS)
 			goto CleanupExit;
 
-		code = ParseNetworkString (address->range_end, types, &ni_end, &range_port2, NULL);
+		status = ParseNetworkString (address->range_end, types, &ni_end, &range_port2, NULL);
 
 		if (range_port2)
 		{
@@ -1516,10 +1393,10 @@ BOOLEAN _app_parsenetworkstring (
 	}
 	else
 	{
-		code = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
+		status = ParseNetworkString (network_string, types, &ni, &port, &prefix_length);
 	}
 
-	if (code != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS)
 		goto CleanupExit;
 
 	address->format = ni.Format;
@@ -1571,7 +1448,7 @@ BOOLEAN _app_parsenetworkstring (
 
 CleanupExit:
 
-	_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", code, network_string);
+	_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", status, network_string);
 
 	return FALSE;
 }
@@ -1622,12 +1499,7 @@ BOOLEAN _app_preparserulestring (
 	}
 
 	// parse rule range
-	address->is_range = _r_str_splitatchar (
-		rule,
-		DIVIDER_RULE_RANGE,
-		&range_start_part,
-		&range_end_part
-	);
+	address->is_range = _r_str_splitatchar (rule, DIVIDER_RULE_RANGE, &range_start_part, &range_end_part);
 
 	// extract start and end position of rule
 	if (address->is_range)
@@ -1778,11 +1650,7 @@ PR_STRING _app_resolveaddress (
 	arpa_string = _app_formatarpa (af, address);
 	arpa_hash = _r_str_gethash2 (arpa_string, TRUE);
 
-	if (_app_getcachetable (
-		cache_resolution,
-		arpa_hash,
-		&lock_cache_resolution,
-		&string))
+	if (_app_getcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, &string))
 	{
 		_r_obj_dereference (arpa_string);
 		return string;
@@ -1791,14 +1659,7 @@ PR_STRING _app_resolveaddress (
 	dns_records = NULL;
 	string = NULL;
 
-	status = DnsQuery (
-		arpa_string->buffer,
-		DNS_TYPE_PTR,
-		DNS_QUERY_NO_HOSTS_FILE,
-		NULL,
-		&dns_records,
-		NULL
-	);
+	status = DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
 
 	if (status == NO_ERROR)
 	{
@@ -1820,12 +1681,7 @@ PR_STRING _app_resolveaddress (
 	if (!string)
 		string = _r_obj_referenceemptystring ();
 
-	_app_addcachetable (
-		cache_resolution,
-		arpa_hash,
-		&lock_cache_resolution,
-		_r_obj_reference (string)
-	);
+	_app_addcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, _r_obj_reference (string));
 
 	_r_obj_dereference (arpa_string);
 
@@ -1842,11 +1698,7 @@ PR_STRING _app_resolveaddress_interlocked (
 	PR_STRING current_string;
 	PR_STRING new_string;
 
-	current_string = InterlockedCompareExchangePointer (
-		string,
-		NULL,
-		NULL
-	);
+	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
 
 	if (current_string)
 		return current_string;
@@ -1863,11 +1715,7 @@ PR_STRING _app_resolveaddress_interlocked (
 		new_string = _r_obj_referenceemptystring ();
 	}
 
-	current_string = InterlockedCompareExchangePointer (
-		string,
-		new_string,
-		NULL
-	);
+	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
 
 	if (!current_string)
 	{
@@ -1919,7 +1767,9 @@ VOID _app_queue_fileinformation (
 		ptr_app_info->listview_id = listview_id;
 
 		_r_queuedlock_acquireexclusive (&lock_cache_information);
+
 		_r_obj_addhashtablepointer (cache_information, app_hash, _r_obj_reference (ptr_app_info));
+
 		_r_queuedlock_releaseexclusive (&lock_cache_information);
 	}
 
@@ -2013,23 +1863,12 @@ VOID NTAPI _app_queuenotifyinformation (
 	ptr_log = context->base_address;
 
 	// query address string
-	address_str = _app_formataddress (
-		ptr_log->af,
-		ptr_log->protocol,
-		&ptr_log->remote_addr,
-		0,
-		FMTADDR_USE_PROTOCOL
-	);
+	address_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_USE_PROTOCOL);
 
 	// query notification host name
 	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
 	{
-		host_str = _app_resolveaddress_interlocked (
-			&ptr_log->remote_host_str,
-			ptr_log->af,
-			&ptr_log->remote_addr,
-			TRUE
-		);
+		host_str = _app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, TRUE);
 
 		//if (host_str)
 		//	host_str = _r_obj_reference (host_str);
@@ -2167,35 +2006,16 @@ VOID NTAPI _app_queueresolveinformation (
 	{
 		ptr_log = context->base_address;
 
-		_app_resolveaddress_interlocked (
-			&ptr_log->local_host_str,
-			ptr_log->af,
-			&ptr_log->local_addr,
-			is_resolutionenabled
-		);
+		_app_resolveaddress_interlocked (&ptr_log->local_host_str, ptr_log->af, &ptr_log->local_addr, is_resolutionenabled);
 
-		_app_resolveaddress_interlocked (
-			&ptr_log->remote_host_str,
-			ptr_log->af,
-			&ptr_log->remote_addr,
-			is_resolutionenabled
-		);
+		_app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, is_resolutionenabled);
 	}
 	else if (context->listview_id == IDC_NETWORK)
 	{
 		ptr_network = context->base_address;
 
-		_app_formataddress_interlocked (
-			&ptr_network->local_addr_str,
-			ptr_network->af,
-			&ptr_network->local_addr
-		);
-
-		_app_formataddress_interlocked (
-			&ptr_network->remote_addr_str,
-			ptr_network->af,
-			&ptr_network->remote_addr
-		);
+		_app_formataddress_interlocked (&ptr_network->local_addr_str, ptr_network->af, &ptr_network->local_addr);
+		_app_formataddress_interlocked (&ptr_network->remote_addr_str, ptr_network->af, &ptr_network->remote_addr);
 
 		_app_resolveaddress_interlocked (
 			&ptr_network->local_host_str,
@@ -2205,8 +2025,7 @@ VOID NTAPI _app_queueresolveinformation (
 		);
 
 		_app_resolveaddress_interlocked (
-			&ptr_network->remote_host_str,
-			ptr_network->af,
+			&ptr_network->remote_host_str, ptr_network->af,
 			&ptr_network->remote_addr,
 			is_resolutionenabled
 		);
@@ -2239,13 +2058,7 @@ HBITMAP _app_bitmapfrompng (
 	if (!_r_res_loadresource (hinst, name, L"PNG", &buffer))
 		return NULL;
 
-	return _r_dc_imagetobitmap (
-		&GUID_ContainerFormatPng,
-		buffer.buffer,
-		(ULONG)buffer.length,
-		width,
-		width
-	);
+	return _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, width, width);
 }
 
 VOID _app_wufixhelper (
@@ -2271,13 +2084,7 @@ VOID _app_wufixhelper (
 		service_name
 	);
 
-	status = RegOpenKeyEx (
-		HKEY_LOCAL_MACHINE,
-		reg_key,
-		0,
-		KEY_READ | KEY_WRITE,
-		&hkey
-	);
+	status = RegOpenKeyEx (HKEY_LOCAL_MACHINE, reg_key, 0, KEY_READ | KEY_WRITE, &hkey);
 
 	if (status != ERROR_SUCCESS)
 		return;
@@ -2321,11 +2128,7 @@ VOID _app_wufixhelper (
 	// restart service
 	if (is_enable != is_enabled)
 	{
-		hsvc = OpenService (
-			hsvcmgr,
-			service_name,
-			SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS
-		);
+		hsvc = OpenService (hsvcmgr, service_name, SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
 
 		if (hsvc)
 		{
@@ -2367,11 +2170,7 @@ VOID _app_wufixenable (
 		_r_sys_getsystemdirectory ()->buffer
 	);
 
-	hsvcmgr = OpenSCManager (
-		NULL,
-		NULL,
-		SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS
-	);
+	hsvcmgr = OpenSCManager (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
 
 	if (!hsvcmgr)
 		return;

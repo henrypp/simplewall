@@ -223,7 +223,7 @@ VOID _app_listview_addnetworkitem (
 
 VOID _app_listview_addlogitem (
 	_In_ HWND hwnd,
-	_In_ PITEM_LOG ptr_log,
+	_In_opt_ PITEM_LOG ptr_log,
 	_In_ ULONG_PTR log_hash
 )
 {
@@ -245,6 +245,8 @@ VOID _app_listview_addlogitem (
 		0,
 		listview_context
 	);
+
+	_r_listview_ensurevisible (hwnd, IDC_LOG, item_id);
 }
 
 BOOLEAN _app_listview_islocked (
@@ -646,23 +648,18 @@ VOID _app_listview_refreshgroups (
 )
 {
 	WCHAR buffer[128];
-
 	UINT group1_title;
 	UINT group2_title;
 	UINT group3_title;
 	UINT group4_title;
 	UINT group5_title;
-
 	INT total_count;
-
 	INT group1_count;
 	INT group2_count;
 	INT group3_count;
 	INT group4_count;
 	INT group5_count;
-
 	INT group_id;
-
 	BOOLEAN is_rules;
 
 	if (!_r_listview_isgroupviewenabled (hwnd, listview_id))
@@ -918,22 +915,22 @@ VOID _app_listview_resize_ex (
 				{
 					item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
 
-					if (item_text)
+					if (!item_text)
+						continue;
+
+					text_width = _r_dc_getfontwidth (hdc_listview, &item_text->sr) + spacing;
+
+					_r_obj_dereference (item_text);
+
+					// do not continue reaching higher and higher values for performance reason!
+					if (text_width >= max_width)
 					{
-						text_width = _r_dc_getfontwidth (hdc_listview, &item_text->sr) + spacing;
-
-						_r_obj_dereference (item_text);
-
-						// do not continue reaching higher and higher values for performance reason!
-						if (text_width >= max_width)
-						{
-							column_width = max_width;
-							break;
-						}
-
-						if (text_width > column_width)
-							column_width = text_width;
+						column_width = max_width;
+						break;
 					}
+
+					if (text_width > column_width)
+						column_width = text_width;
 				}
 			}
 		}
@@ -1041,13 +1038,13 @@ INT CALLBACK _app_listview_compare_callback (
 {
 	WCHAR config_name[128];
 	HWND hwnd;
+	ULONG_PTR context1;
+	ULONG_PTR context2;
 	LONG column_id;
 	INT listview_id;
 	INT result;
 	INT item_id1;
 	INT item_id2;
-	BOOLEAN is_descend;
-
 	PR_STRING item_text_1;
 	PR_STRING item_text_2;
 	PITEM_LOG ptr_log1;
@@ -1058,6 +1055,7 @@ INT CALLBACK _app_listview_compare_callback (
 	BOOLEAN is_success2;
 	BOOLEAN is_checked1;
 	BOOLEAN is_checked2;
+	BOOLEAN is_descend;
 
 	hwnd = GetParent ((HWND)lparam);
 
@@ -1102,24 +1100,16 @@ INT CALLBACK _app_listview_compare_callback (
 		}
 	}
 
+	context1 = _app_listview_getitemcontext (hwnd, listview_id, item_id1);
+	context2 = _app_listview_getitemcontext (hwnd, listview_id, item_id2);
+
 	if (!result)
 	{
 		// timestamp sorting
 		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
 		{
-			is_success1 = _app_getappinfobyhash (
-				_app_listview_getitemcontext (hwnd, listview_id, item_id1),
-				INFO_TIMESTAMP,
-				&timestamp1,
-				sizeof (timestamp1)
-			);
-
-			is_success2 = _app_getappinfobyhash (
-				_app_listview_getitemcontext (hwnd, listview_id, item_id2),
-				INFO_TIMESTAMP,
-				&timestamp2,
-				sizeof (timestamp2)
-			);
+			is_success1 = _app_getappinfobyhash (context1, INFO_TIMESTAMP, &timestamp1, sizeof (timestamp1));
+			is_success2 = _app_getappinfobyhash (context2, INFO_TIMESTAMP, &timestamp2, sizeof (timestamp2));
 
 			if (is_success1 && is_success2)
 			{
@@ -1135,8 +1125,8 @@ INT CALLBACK _app_listview_compare_callback (
 		}
 		else if (listview_id == IDC_LOG && column_id == 11)
 		{
-			ptr_log1 = _app_getlogitem (_app_listview_getitemcontext (hwnd, listview_id, item_id1));
-			ptr_log2 = _app_getlogitem (_app_listview_getitemcontext (hwnd, listview_id, item_id2));
+			ptr_log1 = _app_getlogitem (context1);
+			ptr_log2 = _app_getlogitem (context2);
 
 			if (ptr_log1 && ptr_log2)
 			{
@@ -1231,12 +1221,7 @@ VOID _app_listview_sort_ex (
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
-	SendMessage (
-		hlistview,
-		LVM_SORTITEMSEX,
-		(WPARAM)hlistview,
-		(LPARAM)&_app_listview_compare_callback
-	);
+	SendMessage (hlistview, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
 }
 
 VOID _app_listview_sort (
