@@ -493,7 +493,8 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_ctrl_enable (GetParent (hwnd), IDC_SAVE, FALSE);
 				}
 
-				_r_ctrl_setreadonly (hwnd, IDC_RULE_NAME_ID, RULE_NAME_CCH_MAX - 1, !!context->ptr_rule->is_readonly);
+				_r_ctrl_setreadonly (hwnd, IDC_RULE_NAME_ID, !!context->ptr_rule->is_readonly);
+				_r_ctrl_settextlimit (hwnd, IDC_RULE_NAME_ID, RULE_NAME_CCH_MAX - 1);
 			}
 
 			// direction
@@ -1313,6 +1314,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			}
 			else if (notify_code == EN_CHANGE)
 			{
+				PITEM_SEARCH ptr_search;
 				PR_STRING string;
 				INT listview_id;
 
@@ -1342,7 +1344,13 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				string = _r_ctrl_getstring (hwnd, IDC_SEARCH);
 
-				_app_search_applyfilter (hwnd, listview_id, string);
+				ptr_search = _r_mem_allocatezero (sizeof(ITEM_SEARCH));
+
+				ptr_search->hwnd = hwnd;
+				ptr_search->listview_id = listview_id;
+				ptr_search->search_string = string;
+
+				_r_workqueue_queueitem (&search_queue, &_app_search_applyfilter, ptr_search);
 
 				if (string)
 					_r_obj_dereference (string);

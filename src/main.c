@@ -2159,72 +2159,36 @@ VOID _app_initialize ()
 	SIZE_T length;
 
 	// set privileges
-	_r_sys_setprocessprivilege (
-		NtCurrentProcess (),
-		privileges,
-		RTL_NUMBER_OF (privileges),
-		TRUE
-	);
+	_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
 
 	// set process priority
-	_r_sys_setenvironment (
-		&environment,
-		PROCESS_PRIORITY_CLASS_HIGH,
-		IoPriorityNormal,
-		MEMORY_PRIORITY_NORMAL
-	);
+	_r_sys_setenvironment (&environment, PROCESS_PRIORITY_CLASS_HIGH, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
 	_r_sys_setprocessenvironment (NtCurrentProcess (), &environment);
 
 	// initialize workqueue
-	_r_sys_setenvironment (
-		&environment,
-		THREAD_PRIORITY_LOWEST,
-		IoPriorityVeryLow,
-		MEMORY_PRIORITY_NORMAL
-	);
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_LOWEST, IoPriorityVeryLow, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&file_queue, 0, 12, 5000, &environment, L"FileInfoQueue");
 
-	_r_sys_setenvironment (
-		&environment,
-		THREAD_PRIORITY_BELOW_NORMAL,
-		IoPriorityLow,
-		MEMORY_PRIORITY_NORMAL
-	);
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityLow, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&resolver_queue, 0, 6, 5000, &environment, L"ResolverQueue");
 	_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 5000, &environment, L"NotificationQueue");
 
-	_r_sys_setenvironment (
-		&environment,
-		THREAD_PRIORITY_ABOVE_NORMAL,
-		IoPriorityNormal,
-		MEMORY_PRIORITY_NORMAL
-	);
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&log_queue, 0, 3, 5000, &environment, L"PacketsQueue");
+	_r_workqueue_initialize (&search_queue, 0, 1, 5000, &environment, L"SearchThread");
 
-	_r_sys_setenvironment (
-		&environment,
-		THREAD_PRIORITY_HIGHEST,
-		IoPriorityHigh,
-		MEMORY_PRIORITY_NORMAL
-	);
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&wfp_queue, 0, 1, 10000, &environment, L"FiltersQueue");
 
 	// static initializer
-	length = GetWindowsDirectory (
-		config.windows_dir_buffer,
-		RTL_NUMBER_OF (config.windows_dir_buffer)
-	);
+	length = GetWindowsDirectory (config.windows_dir_buffer, RTL_NUMBER_OF (config.windows_dir_buffer));
 
-	_r_obj_initializestringref_ex (
-		&config.windows_dir,
-		config.windows_dir_buffer,
-		length * sizeof (WCHAR)
-	);
+	_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
 
 	_app_profile_initialize ();
 
@@ -2258,53 +2222,12 @@ VOID _app_initialize ()
 		colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), NULL);
 
 		// initialize colors
-		config.color_invalid = _app_addcolor (
-			IDS_HIGHLIGHT_INVALID,
-			L"IsHighlightInvalid",
-			TRUE,
-			L"ColorInvalid",
-			LV_COLOR_INVALID
-		);
-
-		config.color_special = _app_addcolor (
-			IDS_HIGHLIGHT_SPECIAL,
-			L"IsHighlightSpecial",
-			TRUE,
-			L"ColorSpecial",
-			LV_COLOR_SPECIAL
-		);
-
-		config.color_signed = _app_addcolor (
-			IDS_HIGHLIGHT_SIGNED,
-			L"IsHighlightSigned",
-			TRUE,
-			L"ColorSigned",
-			LV_COLOR_SIGNED
-		);
-
-		config.color_pico = _app_addcolor (
-			IDS_HIGHLIGHT_PICO,
-			L"IsHighlightPico",
-			TRUE,
-			L"ColorPico",
-			LV_COLOR_PICO
-		);
-
-		config.color_system = _app_addcolor (
-			IDS_HIGHLIGHT_SYSTEM,
-			L"IsHighlightSystem",
-			TRUE,
-			L"ColorSystem",
-			LV_COLOR_SYSTEM
-		);
-
-		config.color_network = _app_addcolor (
-			IDS_HIGHLIGHT_CONNECTION,
-			L"IsHighlightConnection",
-			TRUE,
-			L"ColorConnection",
-			LV_COLOR_CONNECTION
-		);
+		config.color_invalid = _app_addcolor (IDS_HIGHLIGHT_INVALID, L"IsHighlightInvalid", TRUE, L"ColorInvalid", LV_COLOR_INVALID);
+		config.color_special = _app_addcolor (IDS_HIGHLIGHT_SPECIAL, L"IsHighlightSpecial", TRUE, L"ColorSpecial", LV_COLOR_SPECIAL);
+		config.color_signed = _app_addcolor (IDS_HIGHLIGHT_SIGNED, L"IsHighlightSigned", TRUE, L"ColorSigned", LV_COLOR_SIGNED);
+		config.color_pico = _app_addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", TRUE, L"ColorPico", LV_COLOR_PICO);
+		config.color_system = _app_addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", TRUE, L"ColorSystem", LV_COLOR_SYSTEM);
+		config.color_network = _app_addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", TRUE, L"ColorConnection", LV_COLOR_CONNECTION);
 	}
 
 	_app_generate_credentials ();
@@ -2773,6 +2696,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case TCN_SELCHANGE:
 				{
+					PITEM_SEARCH ptr_search;
 					HWND hlistview;
 					INT listview_id;
 
@@ -2786,7 +2710,13 @@ INT_PTR CALLBACK DlgProc (
 					if (!hlistview)
 						break;
 
-					_app_search_applyfilter (hwnd, listview_id, config.search_string);
+					ptr_search = _r_mem_allocatezero (sizeof (ITEM_SEARCH));
+
+					ptr_search->hwnd = hwnd;
+					ptr_search->listview_id = listview_id;
+					ptr_search->search_string = config.search_string;
+
+					_r_workqueue_queueitem (&search_queue, &_app_search_applyfilter, ptr_search);
 
 					_app_listview_updateby_id (hwnd, listview_id, PR_UPDATE_FORCE | PR_UPDATE_NORESIZE);
 
@@ -3252,6 +3182,7 @@ INT_PTR CALLBACK DlgProc (
 
 			if (notify_code == EN_CHANGE)
 			{
+				PITEM_SEARCH ptr_search;
 				PR_STRING string;
 				INT listview_id;
 
@@ -3263,7 +3194,13 @@ INT_PTR CALLBACK DlgProc (
 
 				_r_obj_movereference (&config.search_string, string);
 
-				_app_search_applyfilter (hwnd, listview_id, string);
+				ptr_search = _r_mem_allocatezero (sizeof (ITEM_SEARCH));
+
+				ptr_search->hwnd = hwnd;
+				ptr_search->listview_id = listview_id;
+				ptr_search->search_string = string;
+
+				_r_workqueue_queueitem (&search_queue, &_app_search_applyfilter, ptr_search);
 
 				return FALSE;
 			}

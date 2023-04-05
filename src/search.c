@@ -510,20 +510,27 @@ CleanupExit:
 	return is_changed;
 }
 
-VOID _app_search_applyfilter (
-	_In_ HWND hwnd,
-	_In_ INT listview_id,
-	_In_opt_ PR_STRING search_string
+VOID NTAPI _app_search_applyfilter (
+	_In_ PVOID arglist,
+	_In_ ULONG busy_count
 )
 {
-	if (!((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG) ||
-		listview_id == IDC_RULE_APPS_ID ||
-		listview_id == IDC_APP_RULES_ID))
+	PITEM_SEARCH ptr_search;
+
+	ptr_search = arglist;
+
+	if (!((ptr_search->listview_id >= IDC_APPS_PROFILE && ptr_search->listview_id <= IDC_LOG) ||
+		ptr_search->listview_id == IDC_RULE_APPS_ID ||
+		ptr_search->listview_id == IDC_APP_RULES_ID))
 	{
+		_r_mem_free (ptr_search);
+
 		return;
 	}
 
-	_app_search_applyfiltercallback (hwnd, listview_id, search_string);
+	_app_search_applyfiltercallback (ptr_search->hwnd, ptr_search->listview_id, ptr_search->search_string);
+
+	_r_mem_free (ptr_search);
 }
 
 LRESULT CALLBACK _app_search_subclass_proc (
