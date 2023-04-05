@@ -3261,12 +3261,9 @@ INT_PTR CALLBACK DlgProc (
 				listview_id = _app_listview_getcurrent (hwnd);
 				string = _r_ctrl_getstring (config.hrebar, IDC_SEARCH);
 
-				_r_obj_swapreference (&config.search_string, string);
+				_r_obj_movereference (&config.search_string, string);
 
 				_app_search_applyfilter (hwnd, listview_id, string);
-
-				if (string)
-					_r_obj_dereference (string);
 
 				return FALSE;
 			}
