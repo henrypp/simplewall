@@ -183,13 +183,13 @@ VOID _app_logclear_ui (
 	_In_ HWND hwnd
 )
 {
-	_r_queuedlock_acquireexclusive (&lock_loglist);
-	_r_obj_clearhashtable (log_table);
-	_r_queuedlock_releaseexclusive (&lock_loglist);
-
 	_r_listview_deleteallitems (hwnd, IDC_LOG);
 
 	_app_listview_resize (hwnd, IDC_LOG);
+
+	_r_queuedlock_acquireexclusive (&lock_loglist);
+	_r_obj_clearhashtable (log_table);
+	_r_queuedlock_releaseexclusive (&lock_loglist);
 }
 
 VOID _app_logwrite (
