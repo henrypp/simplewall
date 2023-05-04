@@ -474,15 +474,7 @@ VOID _wfp_logsetoption (
 	status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
 	if (status != ERROR_SUCCESS)
-	{
-		_r_log (
-			LOG_LEVEL_WARNING,
-			NULL,
-			L"FwpmEngineSetOption",
-			status,
-			L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS"
-		);
-	}
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", status, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
 
 	// enables the connection monitoring feature and starts logging creation and
 	// deletion events (and notifying any subscribers)
@@ -492,15 +484,7 @@ VOID _wfp_logsetoption (
 	status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 	if (status != ERROR_SUCCESS)
-	{
-		_r_log (
-			LOG_LEVEL_WARNING,
-			NULL,
-			L"FwpmEngineSetOption",
-			status,
-			L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS"
-		);
-	}
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", status, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
 }
 
 VOID CALLBACK _wfp_logcallback (
@@ -1267,11 +1251,9 @@ VOID CALLBACK _wfp_logcallback0 (
 	_In_ const FWPM_NET_EVENT1 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
-
-	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_7))
 		_wfp_logcallback (&log);
@@ -1283,11 +1265,9 @@ VOID CALLBACK _wfp_logcallback1 (
 	_In_ const FWPM_NET_EVENT2 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
-
-	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_8))
 		_wfp_logcallback (&log);
@@ -1299,11 +1279,9 @@ VOID CALLBACK _wfp_logcallback2 (
 	_In_ const FWPM_NET_EVENT3 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
-
-	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1607))
 		_wfp_logcallback (&log);
@@ -1315,11 +1293,9 @@ VOID CALLBACK _wfp_logcallback3 (
 	_In_ const FWPM_NET_EVENT4 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
-
-	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1803))
 		_wfp_logcallback (&log);
@@ -1331,11 +1307,9 @@ VOID CALLBACK _wfp_logcallback4 (
 	_In_ const FWPM_NET_EVENT5 *event_data
 )
 {
-	ITEM_LOG_CALLBACK log;
+	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
-
-	RtlZeroMemory (&log, sizeof (log));
 
 	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1809))
 		_wfp_logcallback (&log);

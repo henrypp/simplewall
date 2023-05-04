@@ -118,20 +118,9 @@ HANDLE _wfp_getenginehandle ()
 					}
 				}
 
-				_r_log (
-					LOG_LEVEL_CRITICAL,
-					NULL,
-					L"FwpmEngineOpen",
-					status,
-					NULL
-				);
+				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen", status, NULL);
 
-				_r_show_errormessage (
-					_r_app_gethwnd (),
-					L"WFP engine initialization failed! Try again later.",
-					status,
-					NULL
-				);
+				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", status, NULL);
 
 				RtlExitUserProcess (status);
 
@@ -283,13 +272,7 @@ BOOLEAN _wfp_initialize (
 					is_intransact = FALSE;
 				}
 
-				_r_log (
-					LOG_LEVEL_ERROR,
-					&GUID_TrayIcon,
-					L"FwpmProviderAdd",
-					status,
-					NULL
-				);
+				_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderAdd", status, NULL);
 
 				is_success = FALSE;
 
@@ -328,13 +311,7 @@ BOOLEAN _wfp_initialize (
 					is_intransact = FALSE;
 				}
 
-				_r_log (
-					LOG_LEVEL_ERROR,
-					&GUID_TrayIcon,
-					L"FwpmSubLayerAdd",
-					status,
-					NULL
-				);
+				_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmSubLayerAdd", status, NULL);
 
 				is_success = FALSE;
 
@@ -393,13 +370,7 @@ BOOLEAN _wfp_initialize (
 
 			if (status != ERROR_SUCCESS)
 			{
-				_r_log (
-					LOG_LEVEL_ERROR,
-					NULL,
-					L"FwpmEngineSetOption",
-					status,
-					L"FWPM_ENGINE_COLLECT_NET_EVENTS"
-				);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetOption", status, L"FWPM_ENGINE_COLLECT_NET_EVENTS");
 			}
 			else
 			{
@@ -430,15 +401,7 @@ BOOLEAN _wfp_initialize (
 			status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
 
 			if (status != ERROR_SUCCESS)
-			{
-				_r_log (
-					LOG_LEVEL_WARNING,
-					NULL,
-					L"FwpmEngineSetOption",
-					status,
-					L"FWPM_ENGINE_PACKET_QUEUING"
-				);
-			}
+				_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", status, L"FWPM_ENGINE_PACKET_QUEUING");
 		}
 	}
 
@@ -512,13 +475,7 @@ VOID _wfp_uninitialize (
 				{
 					_r_str_fromguid (guid, TRUE, &string);
 
-					_r_log (
-						LOG_LEVEL_ERROR,
-						&GUID_TrayIcon,
-						L"FwpmCalloutDeleteByKey",
-						status,
-						_r_obj_getstring (string)
-					);
+					_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmCalloutDeleteByKey", status, _r_obj_getstring (string));
 
 					if (string)
 						_r_obj_dereference (string);
@@ -531,13 +488,7 @@ VOID _wfp_uninitialize (
 
 		if (status != ERROR_SUCCESS && status != FWP_E_SUBLAYER_NOT_FOUND)
 		{
-			_r_log (
-				LOG_LEVEL_ERROR,
-				&GUID_TrayIcon,
-				L"FwpmSubLayerDeleteByKey",
-				status,
-				NULL
-			);
+			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmSubLayerDeleteByKey", status, NULL);
 		}
 
 		// destroy provider
@@ -545,13 +496,7 @@ VOID _wfp_uninitialize (
 
 		if (status != ERROR_SUCCESS && status != FWP_E_PROVIDER_NOT_FOUND)
 		{
-			_r_log (
-				LOG_LEVEL_ERROR,
-				&GUID_TrayIcon,
-				L"FwpmProviderDeleteByKey",
-				status,
-				NULL
-			);
+			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderDeleteByKey", status, NULL);
 		}
 
 		if (is_intransact)
@@ -709,14 +654,7 @@ BOOLEAN _wfp_transact_start (
 
 	if (status != ERROR_SUCCESS)
 	{
-		_r_log_v (
-			LOG_LEVEL_ERROR,
-			&GUID_TrayIcon,
-			L"FwpmTransactionBegin",
-			status,
-			L"%s:%" TEXT (PRIu32),
-			DBG_ARG_VAR
-		);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
 
 		return FALSE;
 	}
@@ -738,14 +676,7 @@ BOOLEAN _wfp_transact_commit (
 	{
 		FwpmTransactionAbort (engine_handle);
 
-		_r_log_v (
-			LOG_LEVEL_ERROR,
-			&GUID_TrayIcon,
-			L"FwpmTransactionCommit",
-			status,
-			L"%s:%" TEXT (PRIu32),
-			DBG_ARG_VAR
-		);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
 
 		return FALSE;
 	}
@@ -771,13 +702,7 @@ BOOLEAN _wfp_deletefilter (
 	{
 		_r_str_fromguid (filter_id, TRUE, &string);
 
-		_r_log (
-			LOG_LEVEL_ERROR,
-			&GUID_TrayIcon,
-			L"FwpmFilterDeleteByKey",
-			status,
-			_r_obj_getstringordefault (string, SZ_EMPTY)
-		);
+		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey", status, _r_obj_getstringordefault (string, SZ_EMPTY));
 
 		if (string)
 			_r_obj_dereference (string);
@@ -836,7 +761,7 @@ ULONG _wfp_createcallout (
 )
 {
 	FWPM_CALLOUT0 callout = {0};
-	ULONG code;
+	ULONG status;
 
 	callout.displayData.name = _r_app_getname ();
 	callout.displayData.description = _r_app_getname ();
@@ -849,20 +774,12 @@ ULONG _wfp_createcallout (
 	RtlCopyMemory (&callout.calloutKey, callout_key, sizeof (GUID));
 	RtlCopyMemory (&callout.applicableLayer, layer_key, sizeof (GUID));
 
-	code = FwpmCalloutAdd (engine_handle, &callout, NULL, NULL);
+	status = FwpmCalloutAdd (engine_handle, &callout, NULL, NULL);
 
-	if (code != ERROR_SUCCESS && code != FWP_E_ALREADY_EXISTS)
-	{
-		_r_log (
-			LOG_LEVEL_ERROR,
-			&GUID_TrayIcon,
-			L"FwpmCalloutAdd",
-			code,
-			NULL
-		);
-	}
+	if (status != ERROR_SUCCESS && status != FWP_E_ALREADY_EXISTS)
+		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmCalloutAdd", status, NULL);
 
-	return code;
+	return status;
 }
 
 ULONG _wfp_createfilter (
@@ -896,13 +813,7 @@ ULONG _wfp_createfilter (
 
 	if (filter_type_string && filter_name)
 	{
-		_r_str_printf (
-			filter_description,
-			RTL_NUMBER_OF (filter_description),
-			L"%s\\%s",
-			filter_type_string,
-			filter_name
-		);
+		_r_str_printf (filter_description, RTL_NUMBER_OF (filter_description), L"%s\\%s", filter_type_string, filter_name);
 	}
 	else if (filter_name)
 	{
@@ -966,15 +877,7 @@ ULONG _wfp_createfilter (
 	{
 		layer_name = _wfp_getlayername (layer_id);
 
-		_r_log_v (
-			LOG_LEVEL_ERROR,
-			&GUID_TrayIcon,
-			L"FwpmFilterAdd",
-			status,
-			L"%s\\%s",
-			_r_obj_getstring (layer_name),
-			filter.displayData.description
-		);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterAdd", status, L"%s\\%s", _r_obj_getstring (layer_name), filter.displayData.description);
 
 		if (layer_name)
 			_r_obj_dereference (layer_name);
@@ -1144,14 +1047,7 @@ BOOLEAN _wfp_createrulefilter (
 
 		if (!ptr_app)
 		{
-			_r_log_v (
-				LOG_LEVEL_WARNING,
-				NULL,
-				TEXT (__FUNCTION__),
-				0,
-				L"App \"%" TEXT (PR_ULONG_PTR) L"\" not found!",
-				app_hash
-			);
+			_r_log_v (LOG_LEVEL_WARNING, NULL, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_ULONG_PTR) L"\" not found!", app_hash);
 
 			goto CleanupExit;
 		}
@@ -1160,11 +1056,7 @@ BOOLEAN _wfp_createrulefilter (
 		{
 			if (ptr_app->bytes)
 			{
-				ByteBlobAlloc (
-					ptr_app->bytes->buffer,
-					RtlLengthSecurityDescriptor (ptr_app->bytes->buffer),
-					&byte_blob
-				);
+				ByteBlobAlloc (ptr_app->bytes->buffer, RtlLengthSecurityDescriptor (ptr_app->bytes->buffer), &byte_blob);
 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -1175,13 +1067,7 @@ BOOLEAN _wfp_createrulefilter (
 			}
 			else
 			{
-				_r_log (
-					LOG_LEVEL_ERROR,
-					NULL,
-					TEXT (__FUNCTION__),
-					0,
-					_r_obj_getstring (ptr_app->original_path)
-				);
+				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
@@ -1199,13 +1085,7 @@ BOOLEAN _wfp_createrulefilter (
 			}
 			else
 			{
-				_r_log (
-					LOG_LEVEL_ERROR,
-					NULL,
-					TEXT (__FUNCTION__),
-					0,
-					_r_obj_getstring (ptr_app->original_path)
-				);
+				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
@@ -1226,17 +1106,8 @@ BOOLEAN _wfp_createrulefilter (
 			else
 			{
 				// do not log file not found to error log
-				if (status != STATUS_OBJECT_NAME_NOT_FOUND &&
-					status != STATUS_OBJECT_PATH_NOT_FOUND)
-				{
-					_r_log (
-						LOG_LEVEL_ERROR,
-						NULL,
-						L"FwpmGetAppIdFromFileName",
-						status,
-						_r_obj_getstring (ptr_app->original_path)
-					);
-				}
+				if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_OBJECT_PATH_NOT_FOUND)
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmGetAppIdFromFileName", status, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
@@ -1748,14 +1619,10 @@ BOOLEAN _wfp_create4filters (
 				break;
 
 			if (remote_remaining_part.length != 0)
-			{
 				_r_str_splitatchar (&remote_remaining_part, DIVIDER_RULE[0], &rule_remote_part, &remote_remaining_part);
-			}
 
 			if (local_remaining_part.length != 0)
-			{
 				_r_str_splitatchar (&local_remaining_part, DIVIDER_RULE[0], &rule_local_part, &local_remaining_part);
-			}
 		}
 	}
 
@@ -2769,7 +2636,7 @@ _Success_ (return == ERROR_SUCCESS)
 ULONG _wfp_dumpcallouts (
 	_In_ HANDLE engine_handle,
 	_In_ LPCGUID provider_id,
-	_Out_ PR_ARRAY_PTR out_buffer
+	_Outptr_ PR_ARRAY_PTR out_buffer
 )
 {
 	FWPM_CALLOUT **callouts_enum;
@@ -2844,7 +2711,7 @@ _Success_ (return == ERROR_SUCCESS)
 ULONG _wfp_dumpfilters (
 	_In_ HANDLE engine_handle,
 	_In_ LPCGUID provider_id,
-	_Out_ PR_ARRAY_PTR out_buffer
+	_Outptr_ PR_ARRAY_PTR out_buffer
 )
 {
 	FWPM_FILTER **filters_enum;
@@ -2985,32 +2852,19 @@ VOID _wfp_firewallenable (
 	};
 
 	INetFwPolicy2 *INetFwPolicy = NULL;
-	HRESULT hr;
+	HRESULT status;
 
-	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
+	status = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
 
-	if (FAILED (hr))
+	if (FAILED (status))
 		return;
 
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
 	{
-		hr = INetFwPolicy2_put_FirewallEnabled (
-			INetFwPolicy,
-			profile_types[i],
-			is_enable ? VARIANT_TRUE : VARIANT_FALSE
-		);
+		status = INetFwPolicy2_put_FirewallEnabled (INetFwPolicy, profile_types[i], is_enable ? VARIANT_TRUE : VARIANT_FALSE);
 
-		if (FAILED (hr))
-		{
-			_r_log_v (
-				LOG_LEVEL_INFO,
-				NULL,
-				L"INetFwPolicy2_put_FirewallEnabled",
-				hr,
-				L"%d",
-				profile_types[i]
-			);
-		}
+		if (FAILED (status))
+			_r_log_v (LOG_LEVEL_INFO, NULL, L"INetFwPolicy2_put_FirewallEnabled", status, L"%d", profile_types[i]);
 	}
 
 	INetFwPolicy2_Release (INetFwPolicy);
@@ -3025,26 +2879,22 @@ BOOLEAN _wfp_firewallisenabled ()
 	};
 
 	INetFwPolicy2 *INetFwPolicy;
-	VARIANT_BOOL status;
-	HRESULT hr;
+	VARIANT_BOOL result;
+	HRESULT status;
 
-	status = VARIANT_FALSE;
+	result = VARIANT_FALSE;
 
-	hr = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
+	status = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
 
-	if (SUCCEEDED (hr))
+	if (SUCCEEDED (status))
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
 		{
-			hr = INetFwPolicy2_get_FirewallEnabled (
-				INetFwPolicy,
-				profile_types[i],
-				&status
-			);
+			status = INetFwPolicy2_get_FirewallEnabled (INetFwPolicy, profile_types[i], &result);
 
-			if (SUCCEEDED (hr))
+			if (SUCCEEDED (status))
 			{
-				if (status == VARIANT_TRUE)
+				if (result == VARIANT_TRUE)
 					break;
 			}
 		}
@@ -3052,7 +2902,7 @@ BOOLEAN _wfp_firewallisenabled ()
 		INetFwPolicy2_Release (INetFwPolicy);
 	}
 
-	if (status == VARIANT_TRUE)
+	if (result == VARIANT_TRUE)
 		return TRUE;
 
 	return FALSE;
@@ -3061,7 +2911,7 @@ BOOLEAN _wfp_firewallisenabled ()
 NTSTATUS _FwpmGetAppIdFromFileName1 (
 	_In_ PR_STRING path,
 	_In_ ENUM_TYPE_DATA type,
-	_Out_ PVOID_PTR byte_blob
+	_Outptr_ PVOID_PTR byte_blob
 )
 {
 	PR_STRING original_path;
@@ -3115,10 +2965,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 							return status;
 						}
 
-						_r_obj_movereference (
-							&original_path,
-							_r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root)
-						);
+						_r_obj_movereference (&original_path, _r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root));
 
 						_r_str_tolower (&original_path->sr); // lower is important!
 
