@@ -483,7 +483,6 @@ VOID _wfp_uninitialize (
 	if (is_full)
 	{
 		_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
-
 		_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
 
 		status = _wfp_dumpcallouts (engine_handle, &GUID_WfpProvider, &callouts);
