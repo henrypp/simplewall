@@ -16,23 +16,14 @@ PSID _app_quyerybuiltinsid (
 
 	if (!CreateWellKnownSid (sid_type, NULL, sid, &sid_length))
 	{
-		_r_log_v (
-			LOG_LEVEL_ERROR,
-			NULL,
-			L"CreateWellKnownSid",
-			GetLastError (),
-			L"%" TEXT (PRIu32),
-			sid_type
-		);
-	}
-	else
-	{
-		return sid;
-	}
+		_r_log_v (LOG_LEVEL_ERROR, NULL, L"CreateWellKnownSid", GetLastError (), L"%" TEXT (PRIu32), sid_type);
 
-	_r_mem_free (sid);
+		_r_mem_free (sid);
 
-	return NULL;
+		return NULL;
+
+	}
+	return sid;
 }
 
 VOID _app_generate_credentials ()
@@ -210,19 +201,12 @@ VOID _app_setsecurityinfoforengine (
 	BOOLEAN is_openforeveryone = FALSE;
 	ULONG status;
 
-	status = FwpmEngineGetSecurityInfo (
-		hengine,
-		DACL_SECURITY_INFORMATION,
-		&sid_owner,
-		&sid_group,
-		&dacl,
-		&sacl,
-		&security_descriptor
-	);
+	status = FwpmEngineGetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
 	if (status != ERROR_SUCCESS)
 	{
 		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineGetSecurityInfo", status, NULL);
+
 		return;
 	}
 
@@ -264,23 +248,9 @@ VOID _app_setsecurityinfoforengine (
 
 		if (is_currentuserhaverights || is_openforeveryone)
 		{
-			FwpmEngineSetSecurityInfo (
-				hengine,
-				OWNER_SECURITY_INFORMATION,
-				&SeLocalServiceSid,
-				NULL,
-				NULL,
-				NULL
-			);
+			FwpmEngineSetSecurityInfo (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
 
-			FwpmNetEventsSetSecurityInfo (
-				hengine,
-				OWNER_SECURITY_INFORMATION,
-				&SeLocalServiceSid,
-				NULL,
-				NULL,
-				NULL
-			);
+			FwpmNetEventsSetSecurityInfo (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
 
 			count = 0;
 
@@ -443,26 +413,12 @@ VOID _app_setsecurityinfoforengine (
 			}
 			else
 			{
-				status = FwpmEngineSetSecurityInfo (
-					hengine,
-					DACL_SECURITY_INFORMATION,
-					NULL,
-					NULL,
-					new_dacl,
-					NULL
-				);
+				status = FwpmEngineSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
 					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetSecurityInfo", status, NULL);
 
-				status = FwpmNetEventsSetSecurityInfo (
-					hengine,
-					DACL_SECURITY_INFORMATION,
-					NULL,
-					NULL,
-					new_dacl,
-					NULL
-				);
+				status = FwpmNetEventsSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
 					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmNetEventsSetSecurityInfo", status, NULL);
@@ -490,20 +446,12 @@ VOID _app_setsecurityinfoforprovider (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmProviderGetSecurityInfoByKey (
-		hengine,
-		provider_guid,
-		DACL_SECURITY_INFORMATION,
-		&sid_owner,
-		&sid_group,
-		&dacl,
-		&sacl,
-		&security_descriptor
-	);
+	status = FwpmProviderGetSecurityInfoByKey (hengine, provider_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
 	if (status != ERROR_SUCCESS)
 	{
 		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderGetSecurityInfoByKey", status, NULL);
+
 		return;
 	}
 
@@ -513,15 +461,7 @@ VOID _app_setsecurityinfoforprovider (
 
 		if (new_dacl)
 		{
-			status = FwpmProviderSetSecurityInfoByKey (
-				hengine,
-				provider_guid,
-				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const SID *)config.pbuiltin_admins_sid,
-				NULL,
-				new_dacl,
-				NULL
-			);
+			status = FwpmProviderSetSecurityInfoByKey (hengine, provider_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
 
 			if (status != ERROR_SUCCESS)
 				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey", status, NULL);
@@ -548,20 +488,12 @@ VOID _app_setsecurityinfoforsublayer (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmSubLayerGetSecurityInfoByKey (
-		hengine,
-		sublayer_guid,
-		DACL_SECURITY_INFORMATION,
-		&sid_owner,
-		&sid_group,
-		&dacl,
-		&sacl,
-		&security_descriptor
-	);
+	status = FwpmSubLayerGetSecurityInfoByKey (hengine, sublayer_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
 	if (status != ERROR_SUCCESS)
 	{
 		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerGetSecurityInfoByKey", status, NULL);
+
 		return;
 	}
 
@@ -571,15 +503,7 @@ VOID _app_setsecurityinfoforsublayer (
 
 		if (new_dacl)
 		{
-			status = FwpmSubLayerSetSecurityInfoByKey (
-				hengine,
-				sublayer_guid,
-				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const SID *)config.pbuiltin_admins_sid,
-				NULL,
-				new_dacl,
-				NULL
-			);
+			status = FwpmSubLayerSetSecurityInfoByKey (hengine, sublayer_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
 
 			if (status != ERROR_SUCCESS)
 				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey", status, NULL);
@@ -606,16 +530,7 @@ VOID _app_setsecurityinfoforcallout (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmCalloutGetSecurityInfoByKey (
-		hengine,
-		callout_guid,
-		DACL_SECURITY_INFORMATION,
-		&sid_owner,
-		&sid_group,
-		&dacl,
-		&sacl,
-		&security_descriptor
-	);
+	status = FwpmCalloutGetSecurityInfoByKey (hengine, callout_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
 	if (status != ERROR_SUCCESS)
 	{
@@ -631,15 +546,7 @@ VOID _app_setsecurityinfoforcallout (
 
 		if (new_dacl)
 		{
-			status = FwpmCalloutSetSecurityInfoByKey (
-				hengine,
-				callout_guid,
-				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const SID *)config.pbuiltin_admins_sid,
-				NULL,
-				new_dacl,
-				NULL
-			);
+			status = FwpmCalloutSetSecurityInfoByKey (hengine, callout_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
 
 			if (status != ERROR_SUCCESS)
 				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey", status, NULL);
@@ -668,32 +575,12 @@ VOID _app_setsecurityinfoforfilter (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmFilterGetSecurityInfoByKey (
-		hengine,
-		filter_guid,
-		DACL_SECURITY_INFORMATION,
-		&sid_owner,
-		&sid_group,
-		&dacl,
-		&sacl,
-		&security_descriptor
-	);
+	status = FwpmFilterGetSecurityInfoByKey (hengine, filter_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
 	if (status != ERROR_SUCCESS)
 	{
-#if !defined(_DEBUG)
-		if (status != FWP_E_FILTER_NOT_FOUND)
-#endif // !DEBUG
-		{
-			_r_log_v (
-				LOG_LEVEL_ERROR,
-				NULL,
-				L"FwpmFilterSetSecurityInfoByKey",
-				status,
-				L"%s:%" TEXT (PRIu32),
-				DBG_ARG_VAR
-			);
-		}
+		// FWP_E_FILTER_NOT_FOUND
+		_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
 
 		return;
 	}
@@ -704,27 +591,10 @@ VOID _app_setsecurityinfoforfilter (
 
 		if (new_dacl)
 		{
-			status = FwpmFilterSetSecurityInfoByKey (
-				hengine,
-				filter_guid,
-				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const SID *)config.pbuiltin_admins_sid,
-				NULL,
-				new_dacl,
-				NULL
-			);
+			status = FwpmFilterSetSecurityInfoByKey (hengine, filter_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.pbuiltin_admins_sid, NULL, new_dacl, NULL);
 
 			if (status != ERROR_SUCCESS)
-			{
-				_r_log_v (
-					LOG_LEVEL_ERROR,
-					NULL,
-					L"FwpmFilterSetSecurityInfoByKey",
-					status,
-					L"#%" TEXT (PRIu32),
-					line
-				);
-			}
+				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"#%" TEXT (PRIu32), line);
 
 			LocalFree (new_dacl);
 		}

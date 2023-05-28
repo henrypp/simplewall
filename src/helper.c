@@ -1015,8 +1015,8 @@ VOID _app_getfileversioninfo (
 {
 	R_STRINGBUILDER sb;
 	PR_STRING version_string = NULL;
-	HINSTANCE hlib = NULL;
-	VS_FIXEDFILEINFO *ver_info;
+	HINSTANCE hlib;
+	VS_FIXEDFILEINFO *ver_info = NULL;
 	R_BYTEREF ver_block;
 	PR_STRING string;
 	ULONG lcid;
