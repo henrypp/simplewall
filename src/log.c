@@ -442,7 +442,7 @@ VOID _wfp_logsetoption (
 	_In_ HANDLE engine_handle
 )
 {
-	FWP_VALUE val;
+	FWP_VALUE val = {0};
 	UINT32 mask;
 	ULONG status;
 
