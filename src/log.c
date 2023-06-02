@@ -1336,6 +1336,7 @@ VOID NTAPI _app_logthread (
 
 	ptr_log = arglist;
 	ptr_app = NULL;
+	is_silent = FALSE;
 
 	// apps collector
 	is_notexist = ptr_log->app_hash && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);

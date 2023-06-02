@@ -704,13 +704,7 @@ VOID _app_imagelist_init (
 	}
 	else
 	{
-		config.himg_toolbar = ImageList_Create (
-			icon_size_toolbar,
-			icon_size_toolbar,
-			ILC_COLOR32 | ILC_HIGHQUALITYSCALE,
-			RTL_NUMBER_OF (toolbar_ids),
-			RTL_NUMBER_OF (toolbar_ids)
-		);
+		config.himg_toolbar = ImageList_Create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (toolbar_ids), RTL_NUMBER_OF (toolbar_ids));
 	}
 
 	if (config.himg_toolbar)
@@ -734,13 +728,7 @@ VOID _app_imagelist_init (
 	}
 	else
 	{
-		config.himg_rules_small = ImageList_Create (
-			icon_small,
-			icon_small,
-			ILC_COLOR32 | ILC_HIGHQUALITYSCALE,
-			RTL_NUMBER_OF (rules_ids),
-			RTL_NUMBER_OF (rules_ids)
-		);
+		config.himg_rules_small = ImageList_Create (icon_small, icon_small, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (rules_ids), RTL_NUMBER_OF (rules_ids));
 	}
 
 	if (config.himg_rules_small)
@@ -761,13 +749,7 @@ VOID _app_imagelist_init (
 	}
 	else
 	{
-		config.himg_rules_large = ImageList_Create (
-			icon_large,
-			icon_large,
-			ILC_COLOR32 | ILC_HIGHQUALITYSCALE,
-			RTL_NUMBER_OF (rules_ids),
-			RTL_NUMBER_OF (rules_ids)
-		);
+		config.himg_rules_large = ImageList_Create (icon_large, icon_large, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (rules_ids), RTL_NUMBER_OF (rules_ids));
 	}
 
 	if (config.himg_rules_large)
@@ -1163,22 +1145,14 @@ VOID _app_refreshstatus (
 		{
 			case 1:
 			{
-				text[i] = _r_format_string (
-					L"%s: %" TEXT (PR_SIZE_T),
-					_r_locale_getstring (IDS_STATUS_UNUSED_APPS),
-					status.apps_unused_count
-				);
+				text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), status.apps_unused_count);
 
 				break;
 			}
 
 			case 2:
 			{
-				text[i] = _r_format_string (
-					L"%s: %" TEXT (PR_SIZE_T),
-					_r_locale_getstring (IDS_STATUS_TIMER_APPS),
-					status.apps_timer_count
-				);
+				text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_TIMER_APPS), status.apps_timer_count);
 
 				break;
 			}
@@ -1194,10 +1168,7 @@ VOID _app_refreshstatus (
 		}
 	}
 
-	parts[0] = _r_ctrl_getwidth (hstatus, 0) -
-		calculated_width -
-		_r_dc_getsystemmetrics (SM_CXVSCROLL, dpi_value) -
-		(_r_dc_getsystemmetrics (SM_CXBORDER, dpi_value) * 4);
+	parts[0] = _r_ctrl_getwidth (hstatus, 0) - calculated_width - _r_dc_getsystemmetrics (SM_CXVSCROLL, dpi_value) - (_r_dc_getsystemmetrics (SM_CXBORDER, dpi_value) * 4);
 
 	parts[1] = parts[0] + size[1];
 	parts[2] = parts[1] + size[2];

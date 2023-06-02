@@ -1301,7 +1301,7 @@ BOOLEAN _app_isapphavedrive (
 	_In_ INT letter
 )
 {
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	SIZE_T enum_key;
 	INT drive_id;
 

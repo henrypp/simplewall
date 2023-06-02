@@ -515,15 +515,7 @@ VOID _app_db_parse_ruleconfig (
 	if (!ptr_config)
 	{
 		_r_queuedlock_acquireexclusive (&lock_rules_config);
-
-		ptr_config = _app_addruleconfigtable (
-			rules_config,
-			rule_hash,
-			rule_name,
-			_r_xml_getattribute_boolean (&db_info->xml_library,
-			L"is_enabled")
-		);
-
+		ptr_config = _app_addruleconfigtable (rules_config, rule_hash, rule_name, _r_xml_getattribute_boolean (&db_info->xml_library, L"is_enabled"));
 		_r_queuedlock_releaseexclusive (&lock_rules_config);
 
 		if (ptr_config)
@@ -625,12 +617,9 @@ NTSTATUS _app_db_parser_decodebody (
 
 	GetSystemInfo (&si);
 
-	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM ||
-		si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 ||
-		si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
-	{
+	// fix arm64 crash (issue #1228)
+	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM || si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 || si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
 		return STATUS_SUCCESS;
-	}
 
 	// validate hash
 	return _app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr);
@@ -677,11 +666,7 @@ NTSTATUS _app_db_parser_encodebody (
 	else if (profile_type == PROFILE2_ID_COMPRESSED)
 	{
 		// compress body
-		status = _r_sys_compressbuffer (
-			COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM,
-			&bytes->sr,
-			&new_bytes
-		);
+		status = _r_sys_compressbuffer (COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
 
 		if (!NT_SUCCESS (status))
 		{
@@ -729,7 +714,7 @@ NTSTATUS _app_db_parser_generatebody (
 	{
 		bytes = _r_obj_createbyte_ex (NULL, PROFILE2_HEADER_LENGTH + body_value->length);
 
-		RtlCopyMemory (bytes->buffer,profile2_fourcc,sizeof (profile2_fourcc));
+		RtlCopyMemory (bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc));
 
 		ptr = PTR_ADD_OFFSET (bytes->buffer, sizeof (profile2_fourcc));
 		RtlCopyMemory (ptr, &profile_type, sizeof (BYTE));
@@ -777,7 +762,7 @@ NTSTATUS _app_db_parser_validatefile (
 	if (status != STATUS_SUCCESS)
 		return status;
 
-	status = _r_xml_parsestring (&db_info->xml_library,db_info->bytes->buffer,(ULONG)db_info->bytes->length);
+	status = _r_xml_parsestring (&db_info->xml_library, db_info->bytes->buffer, (ULONG)db_info->bytes->length);
 
 	if (FAILED (status))
 		return status;
@@ -911,15 +896,7 @@ NTSTATUS _app_db_save_streamtofile (
 	ULONG unused;
 	NTSTATUS status;
 
-	hfile = CreateFile (
-		path->buffer,
-		GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_DELETE,
-		NULL,
-		CREATE_ALWAYS,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL
-	);
+	hfile = CreateFile (path->buffer, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (!_r_fs_isvalidhandle (hfile))
 		return RtlGetLastNtStatus ();
@@ -1086,16 +1063,14 @@ VOID _app_db_save_ruleconfig (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
-	PITEM_RULE_CONFIG ptr_config;
+	PITEM_RULE_CONFIG ptr_config = NULL;
 	PITEM_RULE ptr_rule;
 	PR_STRING apps_string;
 	ULONG_PTR rule_hash;
-	SIZE_T enum_key;
+	SIZE_T enum_key = 0;
 	BOOLEAN is_enabled_default;
 
 	_app_db_writeelementstart (db_info, L"rules_config");
-
-	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_rules_config);
 

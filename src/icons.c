@@ -144,8 +144,7 @@ HICON _app_icons_getsafeapp_hicon (
 
 	_app_icons_loadfromfile (ptr_app->real_path, ptr_app->type, &icon_id, &hicon, TRUE);
 
-	if (!icon_id ||
-		((ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE) && icon_id == icon_info->app_icon_id))
+	if (!icon_id || ((ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE) && icon_id == icon_info->app_icon_id))
 	{
 		if (hicon)
 			DestroyIcon (hicon);
@@ -170,9 +169,7 @@ VOID _app_icons_loaddefaults (
 
 	if (icon_id_ptr)
 	{
-		if (*icon_id_ptr == 0 ||
-			(type == DATA_APP_UWP && *icon_id_ptr == icon_info->app_icon_id) ||
-			(type == DATA_APP_SERVICE && *icon_id_ptr == icon_info->app_icon_id))
+		if (*icon_id_ptr == 0 || (type == DATA_APP_UWP && *icon_id_ptr == icon_info->app_icon_id) || (type == DATA_APP_SERVICE && *icon_id_ptr == icon_info->app_icon_id))
 		{
 			if (type == DATA_APP_UWP)
 			{

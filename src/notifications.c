@@ -24,13 +24,7 @@ HWND _app_notify_getwindow (
 	if (!ptr_log)
 		return NULL;
 
-	new_hwnd = _r_wnd_createwindow (
-		_r_sys_getimagebase (),
-		MAKEINTRESOURCE (IDD_NOTIFICATION),
-		NULL,
-		&NotificationProc,
-		ptr_log
-	);
+	new_hwnd = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, ptr_log);
 
 	WaitForSingleObjectEx (config.hnotify_evt, 2000, FALSE);
 
@@ -162,11 +156,8 @@ BOOLEAN _app_notify_addobject (
 	{
 		if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
 		{
-			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) ||
-				!_r_wnd_isfullscreenmode ())
-			{
+			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) || !_r_wnd_isfullscreenmode ())
 				_app_notify_playsound ();
-			}
 		}
 
 		return TRUE;
@@ -360,6 +351,7 @@ VOID _app_notify_show (
 	if (!ptr_app)
 	{
 		DestroyWindow (hwnd);
+
 		return;
 	}
 
@@ -384,10 +376,7 @@ VOID _app_notify_show (
 	hdefer = BeginDeferWindowPos (2);
 
 	// print name
-	_r_obj_movereference (
-		&localized_string,
-		_r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":")
-	);
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
 
 	display_name = _app_getappdisplayname (ptr_app, TRUE);
 
@@ -401,10 +390,7 @@ VOID _app_notify_show (
 	);
 
 	// print signature
-	_r_obj_movereference (
-		&localized_string,
-		_r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":")
-	);
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
 
 	_r_ctrl_settablestring (
 		hwnd,
@@ -416,10 +402,7 @@ VOID _app_notify_show (
 	);
 
 	// print address
-	_r_obj_movereference (
-		&localized_string,
-		_r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":")
-	);
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
 
 	_r_ctrl_settablestring (
 		hwnd,
@@ -431,10 +414,7 @@ VOID _app_notify_show (
 	);
 
 	// print host
-	_r_obj_movereference (
-		&localized_string,
-		_r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":")
-	);
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 
 	_r_ctrl_settablestring (
 		hwnd,
@@ -446,15 +426,9 @@ VOID _app_notify_show (
 	);
 
 	// print port
-	_r_obj_movereference (
-		&localized_string,
-		_r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":")
-	);
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
 
-	_r_obj_movereference (
-		&string,
-		_app_formatport (ptr_log->remote_port, ptr_log->protocol)
-	);
+	_r_obj_movereference (&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
 
 	_r_ctrl_settablestring (
 		hwnd,
@@ -466,15 +440,9 @@ VOID _app_notify_show (
 	);
 
 	// print direction
-	_r_obj_movereference (
-		&localized_string,
-		_r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":")
-	);
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
 
-	_r_obj_movereference (
-		&string,
-		_app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE)
-	);
+	_r_obj_movereference (&string, _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
 
 	_r_ctrl_settablestring (
 		hwnd,
@@ -486,10 +454,7 @@ VOID _app_notify_show (
 	);
 
 	// print filter name
-	_r_obj_movereference (
-		&localized_string,
-		_r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":")
-	);
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":"));
 
 	_r_ctrl_settablestring (
 		hwnd,
@@ -501,15 +466,9 @@ VOID _app_notify_show (
 	);
 
 	// print date
-	_r_obj_movereference (
-		&localized_string,
-		_r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":")
-	);
+	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
 
-	_r_obj_movereference (
-		&string,
-		_r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME)
-	);
+	_r_obj_movereference (&string, _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
 	_r_ctrl_settablestring (
 		hwnd,
@@ -523,7 +482,7 @@ VOID _app_notify_show (
 	if (hdefer)
 		EndDeferWindowPos (hdefer);
 
-	_r_ctrl_setstring (hwnd, IDC_RULES_BTN, _r_locale_getstring (IDS_TRAY_RULES));
+	//_r_ctrl_setstring (hwnd, IDC_RULES_BTN, _r_locale_getstring (IDS_TRAY_RULES));
 	_r_ctrl_setstring (hwnd, IDC_ALLOW_BTN, _r_locale_getstring (IDS_ACTION_ALLOW));
 	_r_ctrl_setstring (hwnd, IDC_BLOCK_BTN, _r_locale_getstring (IDS_ACTION_BLOCK));
 
@@ -634,12 +593,14 @@ VOID _app_notify_refresh (
 	if (!_r_wnd_isvisible (hwnd))
 	{
 		DestroyWindow (hwnd);
+
 		return;
 	}
 
 	if (!_r_config_getboolean (L"IsNotificationsEnabled", TRUE))
 	{
 		DestroyWindow (hwnd);
+
 		return;
 	}
 
@@ -649,6 +610,7 @@ VOID _app_notify_refresh (
 	if (!ptr_log)
 	{
 		DestroyWindow (hwnd);
+
 		return;
 	}
 
@@ -1261,35 +1223,19 @@ INT_PTR CALLBACK NotificationProc (
 					}
 					else if (ctrl_id == IDC_RULES_BTN)
 					{
-						_r_str_copy (
-							buffer,
-							RTL_NUMBER_OF (buffer),
-							_r_locale_getstring (IDS_NOTIFY_TOOLTIP)
-						);
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_NOTIFY_TOOLTIP));
 					}
 					else if (ctrl_id == IDC_ALLOW_BTN)
 					{
-						_r_str_copy (
-							buffer,
-							RTL_NUMBER_OF (buffer),
-							_r_locale_getstring (IDS_ACTION_ALLOW_HINT)
-						);
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_ALLOW_HINT));
 					}
 					else if (ctrl_id == IDC_BLOCK_BTN)
 					{
-						_r_str_copy (
-							buffer,
-							RTL_NUMBER_OF (buffer),
-							_r_locale_getstring (IDS_ACTION_BLOCK_HINT)
-						);
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_BLOCK_HINT));
 					}
 					else if (ctrl_id == IDC_LATER_BTN)
 					{
-						_r_str_copy (
-							buffer,
-							RTL_NUMBER_OF (buffer),
-							_r_locale_getstring (IDS_ACTION_LATER_HINT)
-						);
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_LATER_HINT));
 					}
 					else
 					{
@@ -1318,8 +1264,7 @@ INT_PTR CALLBACK NotificationProc (
 
 			ctrl_id = LOWORD (wparam);
 
-			if (ctrl_id >= IDX_RULES_SPECIAL &&
-				ctrl_id <= IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list) + 1)
+			if (ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list) + 1)
 			{
 				HANDLE hengine;
 				PR_LIST rules;
@@ -1354,14 +1299,7 @@ INT_PTR CALLBACK NotificationProc (
 							FMTADDR_AS_RULE
 						);
 
-						ptr_rule = _app_addrule (
-							NULL,
-							NULL,
-							NULL,
-							FWP_DIRECTION_OUTBOUND,
-							ptr_log->protocol,
-							ptr_log->af
-						);
+						ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, ptr_log->protocol, ptr_log->af);
 
 						ptr_rule->name = _r_obj_createstring2 (rule);
 						ptr_rule->rule_remote = _r_obj_createstring2 (rule);
@@ -1542,28 +1480,11 @@ INT_PTR CALLBACK NotificationProc (
 
 					app_name = _app_getappdisplayname (ptr_app, TRUE);
 
-					rule_string = _app_formataddress (
-						ptr_log->af,
-						0,
-						&ptr_log->remote_addr,
-						ptr_log->remote_port,
-						FMTADDR_AS_RULE
-					);
+					rule_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, FMTADDR_AS_RULE);
 
-					rule_name = _r_format_string (
-						L"%s - %s",
-						_r_obj_getstring (app_name),
-						_r_obj_getstring (rule_string)
-					);
+					rule_name = _r_format_string (L"%s - %s", _r_obj_getstring (app_name), _r_obj_getstring (rule_string));
 
-					ptr_rule = _app_addrule (
-						rule_name,
-						rule_string,
-						NULL,
-						ptr_log->direction,
-						ptr_log->protocol,
-						ptr_log->af
-					);
+					ptr_rule = _app_addrule (rule_name, rule_string, NULL, ptr_log->direction, ptr_log->protocol, ptr_log->af);
 
 					_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
 

@@ -138,13 +138,7 @@ VOID _app_search_drawbutton (
 	if (!hdc)
 		return;
 
-	SetRect (
-		&rect,
-		0,
-		0,
-		button_rect->right - button_rect->left,
-		button_rect->bottom - button_rect->top
-	);
+	SetRect (&rect, 0, 0, button_rect->right - button_rect->left, button_rect->bottom - button_rect->top);
 
 	buffer_dc = CreateCompatibleDC (hdc);
 	buffer_bitmap = CreateCompatibleBitmap (hdc, rect.right, rect.bottom);
@@ -198,6 +192,7 @@ BOOLEAN _app_search_isstringfound (
 		if (context->is_hidden)
 		{
 			context->is_hidden = FALSE;
+
 			*is_changed = TRUE;
 		}
 
@@ -209,6 +204,7 @@ BOOLEAN _app_search_isstringfound (
 		if (context->is_hidden)
 		{
 			context->is_hidden = FALSE;
+
 			*is_changed = TRUE;
 		}
 
@@ -219,6 +215,7 @@ BOOLEAN _app_search_isstringfound (
 		if (!context->is_hidden)
 		{
 			context->is_hidden = TRUE;
+
 			*is_changed = TRUE;
 		}
 	}
