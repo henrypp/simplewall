@@ -164,18 +164,14 @@ VOID _app_addcachetable (
 
 	// check overflow and do nothing
 	_r_queuedlock_acquireshared (spin_lock);
-
 	is_exceed = (_r_obj_gethashtablesize (hashtable) >= MAP_CACHE_MAX);
-
 	_r_queuedlock_releaseshared (spin_lock);
 
 	if (is_exceed)
 		return;
 
 	_r_queuedlock_acquireexclusive (spin_lock);
-
 	_r_obj_addhashtablepointer (hashtable, hash_code, string);
-
 	_r_queuedlock_releaseexclusive (spin_lock);
 }
 
@@ -189,9 +185,7 @@ BOOLEAN _app_getcachetable (
 	PR_OBJECT_POINTER object_ptr;
 
 	_r_queuedlock_acquireshared (spin_lock);
-
 	object_ptr = _r_obj_findhashtable (cache_table, hash_code);
-
 	_r_queuedlock_releaseshared (spin_lock);
 
 	if (object_ptr)
@@ -245,10 +239,7 @@ PR_STRING _app_formatarpa (
 			);
 		}
 
-		_r_obj_appendstringbuilder (
-			&formatted_address,
-			DNS_IP6_REVERSE_DOMAIN_STRING_W
-		);
+		_r_obj_appendstringbuilder (&formatted_address, DNS_IP6_REVERSE_DOMAIN_STRING_W);
 	}
 
 	return _r_obj_finalstringbuilder (&formatted_address);
@@ -272,7 +263,7 @@ PR_STRING _app_formataddress (
 
 	is_success = FALSE;
 
-	if ((flags & FMTADDR_USE_PROTOCOL))
+	if (flags & FMTADDR_USE_PROTOCOL)
 	{
 		string = _app_db_getprotoname (proto, af, FALSE);
 
@@ -419,9 +410,7 @@ PITEM_APP_INFO _app_getappinfobyhash2 (
 	PITEM_APP_INFO ptr_app_info;
 
 	_r_queuedlock_acquireshared (&lock_cache_information);
-
 	ptr_app_info = _r_obj_findhashtablepointer (cache_information, app_hash);
-
 	_r_queuedlock_releaseshared (&lock_cache_information);
 
 	return ptr_app_info;
@@ -456,7 +445,7 @@ BOOLEAN _app_getappinfoparam2 (
 
 			if (ptr_app_info)
 			{
-				icon_id = InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0);
+				icon_id = ptr_app_info->large_icon_id;
 			}
 			else
 			{
@@ -679,11 +668,7 @@ VOID _app_getfileicon (
 		_app_icons_loadfromfile (ptr_app_info->path, ptr_app_info->type, &icon_id, NULL, TRUE);
 	}
 
-	InterlockedCompareExchange (
-		&ptr_app_info->large_icon_id,
-		icon_id,
-		ptr_app_info->large_icon_id
-	);
+	ptr_app_info->large_icon_id = icon_id;
 }
 
 _Success_ (return)
@@ -954,34 +939,15 @@ LONG _app_verifyfilefromcatalog (
 }
 
 VOID _app_getfilesignatureinfo (
+	_In_ HANDLE hfile,
 	_Inout_ PITEM_APP_INFO ptr_app_info
 )
 {
 	static GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
 	WINTRUST_FILE_INFO file_info = {0};
-	HANDLE hfile;
 	PR_STRING string;
 	LONG status;
-
-	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
-	{
-		_r_obj_movereference (&ptr_app_info->signature_info, _r_obj_referenceemptystring ());
-		return;
-	}
-
-	hfile = CreateFile (
-		ptr_app_info->path->buffer,
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_DELETE,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL
-	);
-
-	if (!_r_fs_isvalidhandle (hfile))
-		return;
 
 	file_info.cbStruct = sizeof (file_info);
 	file_info.pcwszFilePath = ptr_app_info->path->buffer;
@@ -1005,8 +971,6 @@ VOID _app_getfilesignatureinfo (
 		string = _r_obj_referenceemptystring ();
 
 	_r_obj_movereference (&ptr_app_info->signature_info, string);
-
-	NtClose (hfile);
 }
 
 VOID _app_getfileversioninfo (
@@ -1015,14 +979,11 @@ VOID _app_getfileversioninfo (
 {
 	R_STRINGBUILDER sb;
 	PR_STRING version_string = NULL;
-	HINSTANCE hlib;
+	HINSTANCE hlib = NULL;
 	VS_FIXEDFILEINFO *ver_info = NULL;
 	R_BYTEREF ver_block;
 	PR_STRING string;
 	ULONG lcid;
-
-	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
-		goto CleanupExit;
 
 	hlib = LoadLibraryEx (ptr_app_info->path->buffer, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
 
@@ -1059,12 +1020,7 @@ VOID _app_getfileversioninfo (
 			_r_obj_appendstringbuilder (&sb, L" ");
 		}
 
-		_r_obj_appendstringbuilderformat (
-			&sb,
-			L"%d.%d",
-			HIWORD (ver_info->dwFileVersionMS),
-			LOWORD (ver_info->dwFileVersionMS)
-		);
+		_r_obj_appendstringbuilderformat (&sb, L"%d.%d", HIWORD (ver_info->dwFileVersionMS), LOWORD (ver_info->dwFileVersionMS));
 
 		if (HIWORD (ver_info->dwFileVersionLS) || LOWORD (ver_info->dwFileVersionLS))
 		{
@@ -1158,7 +1114,7 @@ VOID _app_generate_rulescontrol (
 	WCHAR buffer[128];
 	PITEM_RULE ptr_rule;
 	SIZE_T limit_group;
-	SIZE_T i;
+	UINT i;
 	BOOLEAN is_global;
 	BOOLEAN is_enabled;
 
@@ -1189,7 +1145,7 @@ VOID _app_generate_rulescontrol (
 
 				_r_queuedlock_acquireshared (&lock_rules);
 
-				for (i = 0; i < _r_obj_getlistsize (rules_list) && limit_group; i++)
+				for (i = 0; i < (UINT)_r_obj_getlistsize (rules_list) && limit_group; i++)
 				{
 					ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -1202,31 +1158,18 @@ VOID _app_generate_rulescontrol (
 					if (ptr_rule->type != DATA_RULE_USER)
 						continue;
 
-					if ((type == 0 && (!ptr_rule->is_readonly || is_global)) ||
-						(type == 1 && (ptr_rule->is_readonly || is_global)))
-					{
+					if ((type == 0 && (!ptr_rule->is_readonly || is_global)) || (type == 1 && (ptr_rule->is_readonly || is_global)))
 						continue;
-					}
 
 					if ((loop == 0 && !is_enabled) || (loop == 1 && is_enabled))
 						continue;
 
-					_r_str_printf (
-						buffer,
-						RTL_NUMBER_OF (buffer),
-						_r_locale_getstring (IDS_RULE_APPLY_2),
-						_r_obj_getstring (ptr_rule->name)
-					);
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_RULE_APPLY_2), _r_obj_getstring (ptr_rule->name));
 
 					if (ptr_rule->is_readonly)
 						_r_str_append (buffer, RTL_NUMBER_OF (buffer), SZ_RULE_INTERNAL_MENU);
 
-					_r_menu_additem_ex (
-						hsubmenu,
-						IDX_RULES_SPECIAL + (UINT)i,
-						buffer,
-						is_enabled ? MF_CHECKED : MF_UNCHECKED
-					);
+					_r_menu_additem_ex (hsubmenu, IDX_RULES_SPECIAL + i, buffer, is_enabled ? MF_CHECKED : MF_UNCHECKED);
 
 					limit_group -= 1;
 				}
@@ -1242,14 +1185,9 @@ VOID _app_generate_rulescontrol (
 		{
 			_r_menu_additem (hsubmenu, 0, NULL);
 
-			_r_str_printf (
-				buffer,
-				RTL_NUMBER_OF (buffer),
-				_r_locale_getstring (IDS_RULE_APPLY_2),
-				_r_obj_getstring (ptr_log->remote_addr_str)
-			);
+			_r_str_printf (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_RULE_APPLY_2), _r_obj_getstring (ptr_log->remote_addr_str));
 
-			_r_menu_additem (hsubmenu, IDX_RULES_SPECIAL + (UINT)i + 1, buffer);
+			_r_menu_additem (hsubmenu, IDX_RULES_SPECIAL + i + 1, buffer);
 		}
 	}
 
@@ -1330,9 +1268,7 @@ BOOLEAN _app_setruletoapp (
 		_r_obj_removehashtableitem (ptr_rule->apps, ptr_app->app_hash);
 
 		if (_r_obj_ishashtableempty (ptr_rule->apps))
-		{
 			_app_ruleenable (ptr_rule, FALSE, TRUE);
-		}
 	}
 
 	if (item_id != -1)
@@ -1363,8 +1299,7 @@ BOOLEAN _app_parsenetworkstring (
 	USHORT port;
 	BYTE prefix_length;
 
-	types = NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK |
-		NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_ADDRESS;
+	types = NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_ADDRESS;
 
 	if (address->is_range)
 	{
@@ -1430,10 +1365,12 @@ BOOLEAN _app_parsenetworkstring (
 		if (address->is_range)
 		{
 			address->range.valueLow.type = FWP_BYTE_ARRAY16_TYPE;
+
 			RtlCopyMemory (address->addr6_low, ni.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
 			address->range.valueLow.byteArray16 = (FWP_BYTE_ARRAY16 *)address->addr6_low;
 
 			address->range.valueHigh.type = FWP_BYTE_ARRAY16_TYPE;
+
 			RtlCopyMemory (address->addr6_high, ni_end.Ipv6Address.sin6_addr.u.Byte, FWP_V6_ADDR_SIZE);
 			address->range.valueHigh.byteArray16 = (FWP_BYTE_ARRAY16 *)address->addr6_high;
 		}
@@ -1508,17 +1445,8 @@ BOOLEAN _app_preparserulestring (
 		if (_r_obj_isstringempty2 (&range_start_part) || _r_obj_isstringempty2 (&range_end_part))
 			return FALSE;
 
-		_r_str_copystring (
-			address->range_start,
-			RTL_NUMBER_OF (address->range_start),
-			&range_start_part
-		);
-
-		_r_str_copystring (
-			address->range_end,
-			RTL_NUMBER_OF (address->range_end),
-			&range_end_part
-		);
+		_r_str_copystring (address->range_start, RTL_NUMBER_OF (address->range_start), &range_start_part);
+		_r_str_copystring (address->range_end, RTL_NUMBER_OF (address->range_end), &range_end_part);
 	}
 
 	// check rule for port
@@ -1541,8 +1469,7 @@ BOOLEAN _app_preparserulestring (
 
 	_r_str_copystring (rule_string, RTL_NUMBER_OF (rule_string), rule);
 
-	types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK |
-		NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
+	types = NET_STRING_IP_ADDRESS | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE_NO_SCOPE;
 
 	// check rule for ip address
 	if (address->is_range)
@@ -1653,6 +1580,7 @@ PR_STRING _app_resolveaddress (
 	if (_app_getcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, &string))
 	{
 		_r_obj_dereference (arpa_string);
+
 		return string;
 	}
 
@@ -1742,18 +1670,11 @@ VOID _app_queue_fileinformation (
 
 	if (ptr_app_info)
 	{
-		if (InterlockedCompareExchange (&ptr_app_info->lock, 0, 0) != 0)
-		{
-			_r_obj_dereference (ptr_app_info);
-			return;
-		}
-
 		// all information is already set
-		if (ptr_app_info->signature_info &&
-			ptr_app_info->version_info &&
-			InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0) != 0)
+		if (ptr_app_info->is_loaded)
 		{
 			_r_obj_dereference (ptr_app_info);
+
 			return;
 		}
 	}
@@ -1767,13 +1688,9 @@ VOID _app_queue_fileinformation (
 		ptr_app_info->listview_id = listview_id;
 
 		_r_queuedlock_acquireexclusive (&lock_cache_information);
-
 		_r_obj_addhashtablepointer (cache_information, app_hash, _r_obj_reference (ptr_app_info));
-
 		_r_queuedlock_releaseexclusive (&lock_cache_information);
 	}
-
-	InterlockedIncrement (&ptr_app_info->lock);
 
 	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, ptr_app_info);
 }
@@ -1803,25 +1720,54 @@ VOID NTAPI _app_queuefileinformation (
 )
 {
 	PITEM_APP_INFO ptr_app_info;
+	HANDLE hfile;
 	HWND hwnd;
+	ULONG status;
 
 	ptr_app_info = arglist;
 	hwnd = _r_app_gethwnd ();
 
-	// query app icon
-	if (InterlockedCompareExchange (&ptr_app_info->large_icon_id, 0, 0) == 0)
-		_app_getfileicon (ptr_app_info);
-
-	// query certificate information
-	if (!ptr_app_info->signature_info)
+	// check for binary path is valid
+	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 	{
-		if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
-			_app_getfilesignatureinfo (ptr_app_info);
+		_r_obj_movereference (&ptr_app_info->signature_info, _r_obj_referenceemptystring ());
+		_r_obj_movereference (&ptr_app_info->version_info, _r_obj_referenceemptystring ());
+
+		return;
 	}
 
+	hfile = CreateFile (
+		ptr_app_info->path->buffer,
+		GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_DELETE,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
+
+	if (!_r_fs_isvalidhandle (hfile))
+	{
+		status = GetLastError ();
+
+		if (status != ERROR_ACCESS_DENIED)
+			_r_log (LOG_LEVEL_INFO, NULL, L"CreateFile", GetLastError (), ptr_app_info->path->buffer);
+
+		return;
+	}
+
+	// query app icon
+	_app_getfileicon (ptr_app_info);
+
+	// query certificate information
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+		_app_getfilesignatureinfo (hfile, ptr_app_info);
+
 	// query version info
-	if (!ptr_app_info->version_info)
-		_app_getfileversioninfo (ptr_app_info);
+	_app_getfileversioninfo (ptr_app_info);
+
+	// query sha256 info
+	_app_getfilehashinfo (hfile, ptr_app_info);
 
 	// redraw listview
 	if (!(busy_count % 4)) // lol, hack!!!
@@ -1833,9 +1779,11 @@ VOID NTAPI _app_queuefileinformation (
 		}
 	}
 
-	InterlockedDecrement (&ptr_app_info->lock);
+	ptr_app_info->is_loaded = TRUE;
 
 	_r_obj_dereference (ptr_app_info);
+
+	CloseHandle (hfile);
 }
 
 VOID NTAPI _app_queuenotifyinformation (
@@ -1847,18 +1795,15 @@ VOID NTAPI _app_queuenotifyinformation (
 	PITEM_APP_INFO ptr_app_info;
 	PITEM_LOG ptr_log;
 	PR_STRING address_str;
-	PR_STRING host_str;
-	PR_STRING signature_str;
+	PR_STRING host_str = NULL;
+	PR_STRING signature_str = NULL;
 	PR_STRING localized_string;
+	HANDLE hfile;
 	HICON hicon;
 	HDWP hdefer;
-	BOOLEAN is_iconset;
+	BOOLEAN is_iconset = FALSE;
 
 	context = arglist;
-
-	signature_str = NULL;
-
-	is_iconset = FALSE;
 
 	ptr_log = context->base_address;
 
@@ -1870,12 +1815,8 @@ VOID NTAPI _app_queuenotifyinformation (
 	{
 		host_str = _app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, TRUE);
 
-		//if (host_str)
-		//	host_str = _r_obj_reference (host_str);
-	}
-	else
-	{
-		host_str = NULL;
+		if (host_str)
+			host_str = _r_obj_reference (host_str);
 	}
 
 	// query signature
@@ -1885,10 +1826,25 @@ VOID NTAPI _app_queuenotifyinformation (
 
 		if (ptr_app_info)
 		{
-			if (InterlockedCompareExchange (&ptr_app_info->lock, 0, 0) == 0)
+			if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path->buffer))
 			{
-				if (!ptr_app_info->signature_info)
-					_app_getfilesignatureinfo (ptr_app_info);
+				hfile = CreateFile (
+					ptr_app_info->path->buffer,
+					GENERIC_READ,
+					FILE_SHARE_READ | FILE_SHARE_DELETE,
+					NULL,
+					OPEN_EXISTING,
+					FILE_ATTRIBUTE_NORMAL,
+					NULL
+				);
+
+				if (_r_fs_isvalidhandle (hfile))
+				{
+					if (!ptr_app_info->is_loaded)
+						_app_getfilesignatureinfo (hfile, ptr_app_info);
+
+					CloseHandle (hfile);
+				}
 			}
 
 			_r_obj_dereference (ptr_app_info);
@@ -1929,10 +1885,7 @@ VOID NTAPI _app_queuenotifyinformation (
 			);
 
 			// set address string
-			_r_obj_movereference (
-				&localized_string,
-				_r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":")
-			);
+			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
 
 			if (_r_obj_isstringempty (address_str))
 				_r_obj_movereference (&address_str, _r_obj_createstring (SZ_EMPTY));
@@ -1947,10 +1900,7 @@ VOID NTAPI _app_queuenotifyinformation (
 			);
 
 			// set host string
-			_r_obj_movereference (
-				&localized_string,
-				_r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":")
-			);
+			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 
 			if (_r_obj_isstringempty (host_str))
 				_r_obj_movereference (&host_str, _r_obj_createstring (SZ_EMPTY));
@@ -1971,6 +1921,8 @@ VOID NTAPI _app_queuenotifyinformation (
 		}
 	}
 
+	_r_freelist_deleteitem (&context_free_list, context);
+
 	if (!is_iconset && hicon)
 		DestroyIcon (hicon);
 
@@ -1984,8 +1936,6 @@ VOID NTAPI _app_queuenotifyinformation (
 		_r_obj_dereference (host_str);
 
 	_r_obj_dereference (ptr_log);
-
-	_r_freelist_deleteitem (&context_free_list, context);
 }
 
 VOID NTAPI _app_queueresolveinformation (
@@ -2007,7 +1957,6 @@ VOID NTAPI _app_queueresolveinformation (
 		ptr_log = context->base_address;
 
 		_app_resolveaddress_interlocked (&ptr_log->local_host_str, ptr_log->af, &ptr_log->local_addr, is_resolutionenabled);
-
 		_app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, is_resolutionenabled);
 	}
 	else if (context->listview_id == IDC_NETWORK)
@@ -2017,18 +1966,8 @@ VOID NTAPI _app_queueresolveinformation (
 		_app_formataddress_interlocked (&ptr_network->local_addr_str, ptr_network->af, &ptr_network->local_addr);
 		_app_formataddress_interlocked (&ptr_network->remote_addr_str, ptr_network->af, &ptr_network->remote_addr);
 
-		_app_resolveaddress_interlocked (
-			&ptr_network->local_host_str,
-			ptr_network->af,
-			&ptr_network->local_addr,
-			is_resolutionenabled
-		);
-
-		_app_resolveaddress_interlocked (
-			&ptr_network->remote_host_str, ptr_network->af,
-			&ptr_network->remote_addr,
-			is_resolutionenabled
-		);
+		_app_resolveaddress_interlocked (&ptr_network->local_host_str, ptr_network->af, &ptr_network->local_addr, is_resolutionenabled);
+		_app_resolveaddress_interlocked (&ptr_network->remote_host_str, ptr_network->af, &ptr_network->remote_addr, is_resolutionenabled);
 	}
 
 	// redraw listview
