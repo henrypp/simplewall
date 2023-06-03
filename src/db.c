@@ -199,10 +199,7 @@ NTSTATUS _app_db_openfrombuffer (
 {
 	NTSTATUS status;
 
-	if (db_info->bytes)
-		_r_obj_dereference (db_info->bytes);
-
-	db_info->bytes = _r_obj_createbyte3 (buffer);
+	_r_obj_movereference (&db_info->bytes, _r_obj_createbyte3 (buffer));
 
 	status = _app_db_parser_validatefile (db_info);
 
@@ -554,6 +551,12 @@ NTSTATUS _app_db_parser_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
+	static comp_algo[] = {
+		COMPRESSION_FORMAT_XPRESS_HUFF,
+		COMPRESSION_FORMAT_XPRESS,
+		COMPRESSION_FORMAT_LZNT1
+	};
+
 	SYSTEM_INFO si;
 	PR_BYTE new_bytes;
 	BYTE profile_type;
@@ -571,10 +574,7 @@ NTSTATUS _app_db_parser_decodebody (
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_FOURCC_LENGTH);
 
 	// read the hash
-	if (db_info->hash)
-		_r_obj_dereference (db_info->hash);
-
-	db_info->hash = _r_obj_createbyte_ex (db_info->bytes->buffer, PROFILE2_SHA256_LENGTH);
+	_r_obj_movereference (&db_info->hash, _r_obj_createbyte_ex (db_info->bytes->buffer, PROFILE2_SHA256_LENGTH));
 
 	// skip hash
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_SHA256_LENGTH);
@@ -582,15 +582,19 @@ NTSTATUS _app_db_parser_decodebody (
 	if (profile_type == PROFILE2_ID_COMPRESSED)
 	{
 		// decompress bytes
-		status = _r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, &db_info->bytes->sr, &new_bytes);
+		for (SIZE_T i = 0; i < RTL_NUMBER_OF (comp_algo); i++)
+		{
+			status = _r_sys_decompressbuffer (comp_algo[i], &db_info->bytes->sr, &new_bytes);
 
-		if (NT_SUCCESS (status))
-		{
-			_r_obj_movereference (&db_info->bytes, new_bytes);
-		}
-		else
-		{
-			return status;
+			if (NT_SUCCESS (status))
+			{
+				_r_obj_movereference (&db_info->bytes, new_bytes);
+				break;
+			}
+			//else
+			//{
+			//	return status;
+			//}
 		}
 	}
 	//else if (profile_type == PROFILE2_ID_ENCRYPTED)
@@ -666,7 +670,7 @@ NTSTATUS _app_db_parser_encodebody (
 	else if (profile_type == PROFILE2_ID_COMPRESSED)
 	{
 		// compress body
-		status = _r_sys_compressbuffer (COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
+		status = _r_sys_compressbuffer (COMPRESSION_FORMAT_XPRESS_HUFF | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
 
 		if (!NT_SUCCESS (status))
 		{
