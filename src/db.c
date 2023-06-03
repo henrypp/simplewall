@@ -901,7 +901,7 @@ NTSTATUS _app_db_save_streamtofile (
 	if (!_r_fs_isvalidhandle (hfile))
 		return RtlGetLastNtStatus ();
 
-	status = _app_db_parser_encodebody (db_info, PROFILE2_ID_PLAIN, &new_bytes);
+	status = _app_db_parser_encodebody (db_info, PROFILE2_ID_COMPRESSED, &new_bytes);
 
 	if (NT_SUCCESS (status))
 	{
