@@ -19,8 +19,8 @@ typedef enum _ENUM_VERSION_XML
 	// v3.4: added "rules_custom" into internal profile and "os_version" for rule attributes
 	XML_VERSION_4 = 4,
 
-	// v3.x: added profiles support, use encrypted file format
-	//XML_VERSION_5 = 5,
+	// v3.7: added hashes support, use encrypted file format
+	XML_VERSION_5 = 5,
 } ENUM_VERSION_XML;
 
 typedef struct _DB_INFORMATION
