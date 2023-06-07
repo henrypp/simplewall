@@ -249,7 +249,7 @@ VOID _app_profile_load_internal (
 	_In_opt_ HWND hwnd,
 	_In_ PR_STRING path,
 	_In_ LPCWSTR resource_name,
-	_Out_opt_ PLONG64 timestamp
+	_Out_ PLONG64 timestamp
 );
 
 NTSTATUS _app_profile_load (

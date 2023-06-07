@@ -511,9 +511,7 @@ PITEM_APP _app_getappitem (
 	PITEM_APP ptr_app;
 
 	_r_queuedlock_acquireshared (&lock_apps);
-
 	ptr_app = _r_obj_findhashtablepointer (apps_table, app_hash);
-
 	_r_queuedlock_releaseshared (&lock_apps);
 
 	return ptr_app;
@@ -733,7 +731,7 @@ VOID _app_getcount (
 	_Out_ PITEM_STATUS status
 )
 {
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
 	SIZE_T enum_key;
 	BOOLEAN is_used;
@@ -1561,7 +1559,7 @@ VOID _app_profile_load_internal (
 	_In_opt_ HWND hwnd,
 	_In_ PR_STRING path,
 	_In_ LPCWSTR resource_name,
-	_Out_opt_ PLONG64 timestamp
+	_Out_ PLONG64 timestamp
 )
 {
 	DB_INFORMATION db_info_file;
@@ -1571,6 +1569,8 @@ VOID _app_profile_load_internal (
 	NTSTATUS status_file;
 	NTSTATUS status_res;
 	NTSTATUS status;
+
+	*timestamp = 0;
 
 	status_file = _app_db_initialize (&db_info_file, TRUE);
 
@@ -1592,24 +1592,17 @@ VOID _app_profile_load_internal (
 	}
 	else
 	{
-		is_loadfromresource = (db_info_file.version < db_info_buffer->version) ||
-			(db_info_file.timestamp < db_info_buffer->timestamp);
+		is_loadfromresource = (db_info_file.version < db_info_buffer->version) || (db_info_file.timestamp < db_info_buffer->timestamp);
 	}
 
 	db_info = is_loadfromresource ? db_info_buffer : &db_info_file;
 
 	status = is_loadfromresource ? status_res : status_file;
 
-	if (timestamp)
-		*timestamp = 0;
-
 	if (status == STATUS_SUCCESS)
 	{
 		if (_app_db_parse (db_info, XML_TYPE_PROFILE_INTERNAL))
-		{
-			if (timestamp)
-				*timestamp = db_info->timestamp;
-		}
+			*timestamp = db_info->timestamp;
 	}
 	else
 	{
@@ -1712,14 +1705,7 @@ CleanupExit:
 	{
 		// load internal rules (new!)
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-		{
-			_app_profile_load_internal (
-				hwnd,
-				profile_info.profile_path_internal,
-				MAKEINTRESOURCE (IDR_PROFILE_INTERNAL),
-				&profile_info.profile_internal_timestamp
-			);
-		}
+			_app_profile_load_internal (hwnd, profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
 
 		_app_profile_load_fallback ();
 
@@ -1758,19 +1744,13 @@ NTSTATUS _app_profile_save ()
 
 		if (!is_backuprequired)
 		{
-			if ((timestamp - _r_config_getlong64 (
-				L"BackupTimestamp", 0)) >=
-				_r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
-			{
+			if (timestamp - _r_config_getlong64 (L"BackupTimestamp", 0) >= _r_config_getlong64 (L"BackupPeriod", BACKUP_HOURS_PERIOD))
 				is_backuprequired = TRUE;
-			}
 		}
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_profile);
-
 	status = _app_db_savetofile (&db_info, profile_info.profile_path, XML_VERSION_CURRENT, XML_TYPE_PROFILE, timestamp);
-
 	_r_queuedlock_releaseexclusive (&lock_profile);
 
 	if (!NT_SUCCESS (status))
