@@ -173,7 +173,7 @@ NTSTATUS _app_db_istypevalid (
 	if (db_info->version >= min_version)
 		return STATUS_SUCCESS;
 
-	return RPC_NT_WRONG_ES_VERSION;
+	return STATUS_FILE_NOT_SUPPORTED;
 }
 
 _Success_ (return == STATUS_SUCCESS)
@@ -195,10 +195,7 @@ NTSTATUS _app_db_openfrombuffer (
 
 	status = _app_db_istypevalid (db_info, min_version, type);
 
-	if (status != STATUS_SUCCESS)
-		return status;
-
-	return STATUS_SUCCESS;
+	return status;
 }
 
 _Success_ (return == STATUS_SUCCESS)
