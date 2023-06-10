@@ -542,13 +542,7 @@ BOOLEAN _app_initinterfacestate (
 		_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, FALSE);
 		_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, FALSE);
 
-		_r_status_settextformat (
-			hwnd,
-			IDC_STATUSBAR,
-			0,
-			L"%s...",
-			_r_locale_getstring (IDS_STATUS_FILTERS_PROCESSING)
-		);
+		_r_status_settextformat (hwnd, IDC_STATUSBAR, 0, L"%s...", _r_locale_getstring (IDS_STATUS_FILTERS_PROCESSING));
 
 		return TRUE;
 	}
@@ -837,67 +831,22 @@ VOID _app_toolbar_init (
 
 	if (config.htoolbar)
 	{
-		_r_toolbar_setstyle (
-			config.hrebar,
-			IDC_TOOLBAR,
-			TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS
-		);
+		_r_toolbar_setstyle (config.hrebar, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
 
 		SendMessage (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_START,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			I_IMAGENONE
-		);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_OPENRULESEDITOR,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			8
-		);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_ENABLENOTIFICATIONS_CHK,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			4
-		);
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_ENABLELOG_CHK,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			5
-		);
-
-		_r_toolbar_addbutton (
-			config.hrebar,
-			IDC_TOOLBAR,
-			IDM_TRAY_ENABLEUILOG_CHK,
-			0,
-			BTNS_BUTTON | BTNS_AUTOSIZE,
-			TBSTATE_ENABLED,
-			10
-		);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
@@ -918,15 +867,7 @@ VOID _app_toolbar_init (
 		// insert toolbar
 		button_size = _r_toolbar_getbuttonsize (config.hrebar, IDC_TOOLBAR);
 
-		_r_rebar_insertband (
-			hwnd,
-			IDC_REBAR,
-			REBAR_TOOLBAR_ID,
-			config.htoolbar,
-			RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON,
-			LOWORD (button_size),
-			HIWORD (button_size)
-		);
+		_r_rebar_insertband (hwnd, IDC_REBAR, REBAR_TOOLBAR_ID, config.htoolbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, LOWORD (button_size), HIWORD (button_size));
 	}
 
 	// insert searchbar
@@ -954,15 +895,7 @@ VOID _app_toolbar_init (
 
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 
-	_r_rebar_insertband (
-		hwnd,
-		IDC_REBAR,
-		REBAR_SEARCH_ID,
-		config.hsearchbar,
-		RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON,
-		_r_dc_getdpi (180, dpi_value),
-		20
-	);
+	_r_rebar_insertband (hwnd, IDC_REBAR, REBAR_SEARCH_ID, config.hsearchbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, _r_dc_getdpi (180, dpi_value), 20);
 
 	_app_search_setvisible (hwnd, config.hsearchbar);
 }
@@ -1163,6 +1096,7 @@ VOID _app_refreshstatus (
 			if (text[i])
 			{
 				size[i] = _r_dc_getfontwidth (hdc, &text[i]->sr) + spacing;
+
 				calculated_width += size[i];
 			}
 		}

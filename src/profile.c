@@ -1497,23 +1497,16 @@ NTSTATUS _app_profile_load_fromresource (
 	_Out_ PDB_INFORMATION * out_buffer
 )
 {
-	static R_INITONCE init_once = PR_INITONCE_INIT;
-	static DB_INFORMATION db_info = {0};
-	static NTSTATUS status = STATUS_UNSUCCESSFUL;
-
+	DB_INFORMATION db_info = {0};
 	R_BYTEREF bytes;
+	NTSTATUS status;
 
-	if (_r_initonce_begin (&init_once))
+	status = _app_db_initialize (&db_info, TRUE);
+
+	if (NT_SUCCESS (status))
 	{
 		if (_r_res_loadresource (_r_sys_getimagebase (), resource_name, RT_RCDATA, &bytes))
-		{
-			status = _app_db_initialize (&db_info, TRUE);
-
-			if (NT_SUCCESS (status))
-				status = _app_db_openfrombuffer (&db_info, &bytes, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
-		}
-
-		_r_initonce_end (&init_once);
+			status = _app_db_openfrombuffer (&db_info, &bytes, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
 	}
 
 	*out_buffer = &db_info;
@@ -1610,7 +1603,7 @@ VOID _app_profile_load_internal (
 	}
 
 	_app_db_destroy (&db_info_file);
-	//_app_db_destroy (&db_info_buffer);
+	_app_db_destroy (db_info_buffer);
 }
 
 VOID _app_profile_refresh ()

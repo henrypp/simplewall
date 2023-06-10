@@ -38,25 +38,19 @@ NTSTATUS _app_db_encrypt (
 	R_BYTEREF key;
 	NTSTATUS status;
 
+	*out_buffer = NULL;
+
 	status = _r_crypt_createcryptcontext (&crypt_context, XML_ENCRYPTION_ALGO);
 
 	if (status != STATUS_SUCCESS)
-	{
-		*out_buffer = NULL;
-
 		return status;
-	}
 
 	_r_obj_initializebyterefempty (&key);
 
 	status = _r_crypt_generatekey (&crypt_context, &key);
 
 	if (status != STATUS_SUCCESS)
-	{
-		*out_buffer = NULL;
-
 		goto CleanupExit;
-	}
 
 	status = _r_crypt_encryptbuffer (&crypt_context, bytes->buffer, (ULONG)bytes->length, out_buffer);
 
@@ -77,25 +71,19 @@ NTSTATUS _app_db_decrypt (
 	R_BYTEREF key;
 	NTSTATUS status;
 
+		*out_buffer = NULL;
+
 	status = _r_crypt_createcryptcontext (&crypt_context, XML_ENCRYPTION_ALGO);
 
 	if (status != STATUS_SUCCESS)
-	{
-		*out_buffer = NULL;
-
 		return status;
-	}
 
 	_r_obj_initializebyterefempty (&key);
 
 	status = _r_crypt_generatekey (&crypt_context, &key);
 
 	if (status != STATUS_SUCCESS)
-	{
-		*out_buffer = NULL;
-
 		goto CleanupExit;
-	}
 
 	status = _r_crypt_decryptbuffer (&crypt_context, bytes->buffer, (ULONG)bytes->length, out_buffer);
 
@@ -163,12 +151,12 @@ NTSTATUS _app_db_ishashvalid (
 _Success_ (return == STATUS_SUCCESS)
 NTSTATUS _app_db_istypevalid (
 	_In_ PDB_INFORMATION db_info,
-	_In_ ENUM_VERSION_XML min_version,
-	_In_ ENUM_TYPE_XML type
+	_In_ ENUM_TYPE_XML type,
+	_In_ ENUM_VERSION_XML min_version
 )
 {
 	if (db_info->type != type)
-		return STATUS_OBJECT_TYPE_MISMATCH;
+		return STATUS_NDIS_INVALID_DATA;
 
 	if (db_info->version >= min_version)
 		return STATUS_SUCCESS;
@@ -188,12 +176,12 @@ NTSTATUS _app_db_openfrombuffer (
 
 	_r_obj_movereference (&db_info->bytes, _r_obj_createbyte3 (buffer));
 
-	status = _app_db_parser_validatefile (db_info);
+	status = _app_db_decodebuffer (db_info);
 
 	if (status != STATUS_SUCCESS)
 		return status;
 
-	status = _app_db_istypevalid (db_info, min_version, type);
+	status = _app_db_istypevalid (db_info, type, min_version);
 
 	return status;
 }
@@ -216,12 +204,12 @@ NTSTATUS _app_db_openfromfile (
 	if (status != ERROR_SUCCESS)
 		return status;
 
-	status = _app_db_parser_validatefile (db_info);
+	status = _app_db_decodebuffer (db_info);
 
 	if (status != STATUS_SUCCESS)
 		return status;
 
-	status = _app_db_istypevalid (db_info, min_version, type);
+	status = _app_db_istypevalid (db_info, type, min_version);
 
 	return status;
 }
@@ -513,30 +501,11 @@ VOID _app_db_parse_ruleconfig (
 }
 
 _Success_ (return == STATUS_SUCCESS)
-NTSTATUS _app_db_parser_init (
-	_In_ PDB_INFORMATION db_info,
-	_In_ ENUM_VERSION_XML min_version,
-	_In_ ENUM_TYPE_XML type
-)
-{
-	NTSTATUS status;
-
-	status = _app_db_parser_validatefile (db_info);
-
-	if (status != STATUS_SUCCESS)
-		return status;
-
-	status = _app_db_istypevalid (db_info, min_version, type);
-
-	return status;
-}
-
-_Success_ (return == STATUS_SUCCESS)
-NTSTATUS _app_db_parser_decodebody (
+NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
-	static comp_algo[] = {
+	static USHORT comp_algo[] = {
 		COMPRESSION_FORMAT_XPRESS_HUFF,
 		COMPRESSION_FORMAT_XPRESS,
 		COMPRESSION_FORMAT_LZNT1
@@ -578,11 +547,9 @@ NTSTATUS _app_db_parser_decodebody (
 					_r_obj_movereference (&db_info->bytes, new_bytes);
 					break;
 				}
-				//else
-				//{
-				//	return status;
-				//}
 			}
+
+			break;
 		}
 
 		case PROFILE2_ID_ENCRYPTED:
@@ -600,11 +567,8 @@ NTSTATUS _app_db_parser_decodebody (
 		}
 	}
 
-	if (db_info->bytes->length >= PROFILE2_HEADER_LENGTH)
-	{
-		if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
-			return STATUS_MORE_PROCESSING_REQUIRED;
-	}
+	if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
+		return STATUS_MORE_PROCESSING_REQUIRED;
 
 	GetSystemInfo (&si);
 
@@ -613,11 +577,14 @@ NTSTATUS _app_db_parser_decodebody (
 		return STATUS_SUCCESS;
 
 	// validate hash
-	return _app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr);
+	if (db_info->hash)
+		status = _app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr);
+
+	return status;
 }
 
 _Success_ (NT_SUCCESS (return))
-NTSTATUS _app_db_parser_encodebody (
+NTSTATUS _app_db_encodebody (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ BYTE profile_type,
 	_Out_ PR_BYTE_PTR out_buffer
@@ -679,7 +646,7 @@ NTSTATUS _app_db_parser_encodebody (
 
 	if (new_bytes)
 	{
-		status = _app_db_parser_generatebody (profile_type, hash_value, new_bytes, &body_bytes);
+		status = _app_db_generatebody (profile_type, hash_value, new_bytes, &body_bytes);
 
 		*out_buffer = body_bytes;
 	}
@@ -695,7 +662,7 @@ NTSTATUS _app_db_parser_encodebody (
 }
 
 _Success_ (NT_SUCCESS (return))
-NTSTATUS _app_db_parser_generatebody (
+NTSTATUS _app_db_generatebody (
 	_In_ BYTE profile_type,
 	_In_ PR_BYTE hash_value,
 	_In_ PR_BYTE body_value,
@@ -745,7 +712,7 @@ NTSTATUS _app_db_parser_generatebody (
 }
 
 _Success_ (return == STATUS_SUCCESS)
-NTSTATUS _app_db_parser_validatefile (
+NTSTATUS _app_db_decodebuffer (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
@@ -757,7 +724,7 @@ NTSTATUS _app_db_parser_validatefile (
 
 	do
 	{
-		status = _app_db_parser_decodebody (db_info);
+		status = _app_db_decodebody (db_info);
 
 		if (status != STATUS_MORE_PROCESSING_REQUIRED)
 			break;
@@ -906,7 +873,7 @@ NTSTATUS _app_db_save_streamtofile (
 	if (!_r_fs_isvalidhandle (hfile))
 		return RtlGetLastNtStatus ();
 
-	status = _app_db_parser_encodebody (db_info, PROFILE2_ID_COMPRESSED, &new_bytes);
+	status = _app_db_encodebody (db_info, PROFILE2_ID_COMPRESSED, &new_bytes);
 
 	if (NT_SUCCESS (status))
 		WriteFile (hfile, new_bytes->buffer, (ULONG)new_bytes->length, &unused, NULL);

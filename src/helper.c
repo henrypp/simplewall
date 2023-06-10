@@ -257,11 +257,9 @@ PR_STRING _app_formataddress (
 	WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH];
 	R_STRINGBUILDER formatted_address;
 	PR_STRING string;
-	BOOLEAN is_success;
+	BOOLEAN is_success = FALSE;
 
 	_r_obj_initializestringbuilder (&formatted_address);
-
-	is_success = FALSE;
 
 	if (flags & FMTADDR_USE_PROTOCOL)
 	{
@@ -292,11 +290,7 @@ PR_STRING _app_formataddress (
 
 	if (port && !(flags & FMTADDR_USE_PROTOCOL))
 	{
-		_r_obj_appendstringbuilderformat (
-			&formatted_address,
-			is_success ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16),
-			port
-		);
+		_r_obj_appendstringbuilderformat (&formatted_address, is_success ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port);
 
 		is_success = TRUE;
 	}
@@ -425,9 +419,7 @@ BOOLEAN _app_getappinfoparam2 (
 )
 {
 	PITEM_APP_INFO ptr_app_info;
-	BOOLEAN is_success;
-
-	is_success = FALSE;
+	BOOLEAN is_success = FALSE;
 
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
@@ -530,10 +522,8 @@ BOOLEAN _app_isappsigned (
 	_In_ ULONG_PTR app_hash
 )
 {
-	PR_STRING string;
+	PR_STRING string = NULL;
 	BOOLEAN is_signed;
-
-	string = NULL;
 
 	if (_app_getappinfoparam2 (app_hash, INFO_SIGNATURE_STRING, &string, sizeof (string)))
 	{
@@ -653,10 +643,9 @@ VOID _app_getfileicon (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 )
 {
-	LONG icon_id;
+	LONG icon_id = 0;
 	BOOLEAN is_iconshidded;
 
-	icon_id = 0;
 	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
 
 	if (is_iconshidded || !_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
@@ -979,7 +968,7 @@ VOID _app_getfileversioninfo (
 {
 	R_STRINGBUILDER sb;
 	PR_STRING version_string = NULL;
-	HINSTANCE hlib = NULL;
+	HINSTANCE hlib;
 	VS_FIXEDFILEINFO *ver_info = NULL;
 	R_BYTEREF ver_block;
 	PR_STRING string;
@@ -1201,15 +1190,13 @@ VOID _app_generate_timerscontrol (
 )
 {
 	LONG64 current_time;
-	LONG64 app_time;
+	LONG64 app_time = 0;
 	LONG64 timestamp;
 	PR_STRING interval_string;
 	UINT index;
 	BOOLEAN is_checked;
 
 	current_time = _r_unixtime_now ();
-
-	app_time = 0;
 
 	is_checked = FALSE;
 
@@ -1568,9 +1555,9 @@ PR_STRING _app_resolveaddress (
 	_In_ LPCVOID address
 )
 {
-	PDNS_RECORD dns_records;
+	PDNS_RECORD dns_records = NULL;
 	PR_STRING arpa_string;
-	PR_STRING string;
+	PR_STRING string = NULL;
 	ULONG_PTR arpa_hash;
 	DNS_STATUS status;
 
@@ -1583,9 +1570,6 @@ PR_STRING _app_resolveaddress (
 
 		return string;
 	}
-
-	dns_records = NULL;
-	string = NULL;
 
 	status = DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
 
@@ -1736,22 +1720,14 @@ VOID NTAPI _app_queuefileinformation (
 		return;
 	}
 
-	hfile = CreateFile (
-		ptr_app_info->path->buffer,
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_DELETE,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL
-	);
+	hfile = CreateFile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (!_r_fs_isvalidhandle (hfile))
 	{
 		status = GetLastError ();
 
 		if (status != ERROR_ACCESS_DENIED)
-			_r_log (LOG_LEVEL_INFO, NULL, L"CreateFile", GetLastError (), ptr_app_info->path->buffer);
+			_r_log (LOG_LEVEL_INFO, NULL, L"CreateFile", status, ptr_app_info->path->buffer);
 
 		return;
 	}
@@ -1826,17 +1802,9 @@ VOID NTAPI _app_queuenotifyinformation (
 
 		if (ptr_app_info)
 		{
-			if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path->buffer))
+			if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 			{
-				hfile = CreateFile (
-					ptr_app_info->path->buffer,
-					GENERIC_READ,
-					FILE_SHARE_READ | FILE_SHARE_DELETE,
-					NULL,
-					OPEN_EXISTING,
-					FILE_ATTRIBUTE_NORMAL,
-					NULL
-				);
+				hfile = CreateFile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 				if (_r_fs_isvalidhandle (hfile))
 				{
@@ -1875,14 +1843,7 @@ VOID NTAPI _app_queuenotifyinformation (
 			hdefer = BeginDeferWindowPos (2);
 
 			// set signature string
-			_r_ctrl_settablestring (
-				context->hwnd,
-				&hdefer,
-				IDC_SIGNATURE_ID,
-				&localized_string->sr,
-				IDC_SIGNATURE_TEXT,
-				&signature_str->sr
-			);
+			_r_ctrl_settablestring (context->hwnd, &hdefer, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
 
 			// set address string
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
@@ -1890,14 +1851,7 @@ VOID NTAPI _app_queuenotifyinformation (
 			if (_r_obj_isstringempty (address_str))
 				_r_obj_movereference (&address_str, _r_obj_createstring (SZ_EMPTY));
 
-			_r_ctrl_settablestring (
-				context->hwnd,
-				&hdefer,
-				IDC_ADDRESS_ID,
-				&localized_string->sr,
-				IDC_ADDRESS_TEXT,
-				&address_str->sr
-			);
+			_r_ctrl_settablestring (context->hwnd, &hdefer, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &address_str->sr);
 
 			// set host string
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
@@ -1905,14 +1859,7 @@ VOID NTAPI _app_queuenotifyinformation (
 			if (_r_obj_isstringempty (host_str))
 				_r_obj_movereference (&host_str, _r_obj_createstring (SZ_EMPTY));
 
-			_r_ctrl_settablestring (
-				context->hwnd,
-				&hdefer,
-				IDC_HOST_ID,
-				&localized_string->sr,
-				IDC_HOST_TEXT,
-				&host_str->sr
-			);
+			_r_ctrl_settablestring (context->hwnd, &hdefer, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
 
 			_r_obj_dereference (localized_string);
 
@@ -2035,25 +1982,14 @@ VOID _app_wufixhelper (
 
 	if (image_path)
 	{
-		if (_r_str_isstartswith2 (
-			&image_path->sr,
-			is_enable ? L"%systemroot%\\system32\\wusvc.exe" : L"%systemroot%\\system32\\svchost.exe",
-			TRUE))
-		{
+		if (_r_str_isstartswith2 (&image_path->sr, is_enable ? L"%systemroot%\\system32\\wusvc.exe" : L"%systemroot%\\system32\\svchost.exe", TRUE))
 			is_enabled = TRUE;
-		}
 
 		_r_obj_dereference (image_path);
 	}
 
 	// set new image path
-	_r_str_printf (
-		reg_value,
-		RTL_NUMBER_OF (reg_value),
-		L"%%systemroot%%\\system32\\%s -k %s -p",
-		is_enable ? L"wusvc.exe" : L"svchost.exe",
-		k_value
-	);
+	_r_str_printf (reg_value, RTL_NUMBER_OF (reg_value), L"%%systemroot%%\\system32\\%s -k %s -p", is_enable ? L"wusvc.exe" : L"svchost.exe", k_value);
 
 	status = RegSetValueEx (
 		hkey,
@@ -2095,19 +2031,8 @@ VOID _app_wufixenable (
 	WCHAR buffer2[MAX_PATH];
 	ULONG_PTR app_hash;
 
-	_r_str_printf (
-		buffer1,
-		RTL_NUMBER_OF (buffer1),
-		L"%s\\svchost.exe",
-		_r_sys_getsystemdirectory ()->buffer
-	);
-
-	_r_str_printf (
-		buffer2,
-		RTL_NUMBER_OF (buffer2),
-		L"%s\\wusvc.exe",
-		_r_sys_getsystemdirectory ()->buffer
-	);
+	_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s\\svchost.exe", _r_sys_getsystemdirectory ()->buffer);
+	_r_str_printf (buffer2, RTL_NUMBER_OF (buffer2), L"%s\\wusvc.exe", _r_sys_getsystemdirectory ()->buffer);
 
 	hsvcmgr = OpenSCManager (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
 

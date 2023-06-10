@@ -417,7 +417,7 @@ VOID _app_config_apply (
 		case IDC_USECERTIFICATES_CHK:
 		case IDM_USECERTIFICATES_CHK:
 		{
-			PITEM_APP ptr_app;
+			PITEM_APP ptr_app = NULL;
 			SIZE_T enum_key;
 			INT listview_id;
 
@@ -1951,7 +1951,7 @@ VOID _app_tabs_init (
 		}
 
 		// add filter group
-		_r_listview_addgroup (hwnd,listview_id,LV_HIDDEN_GROUP_ID,L"",0,LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED,LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED);
+		_r_listview_addgroup (hwnd, listview_id, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED);
 
 		_app_listview_setfont (hwnd, listview_id);
 

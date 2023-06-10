@@ -24,9 +24,7 @@ BOOLEAN _app_uwp_loadpackageinfo (
 	winrt::hstring display_name;
 	winrt::hstring path;
 
-	package = winrt::Windows::Management::Deployment::PackageManager{}.FindPackage (
-		package_name->buffer
-	);
+	package = winrt::Windows::Management::Deployment::PackageManager{}.FindPackage (package_name->buffer);
 
 	if (!package)
 		return FALSE;
@@ -52,21 +50,13 @@ BOOLEAN _app_uwp_loadpackageinfo (
 	else
 	{
 		if (display_name == L"1527c705-839a-4832-9118-54d4Bd6a0c89")
-			display_name = L"File Picker";// HACK!!!
+			display_name = L"File Picker"; // HACK!!!
 
-		*name_ptr = _r_obj_createstring_ex (
-			display_name.c_str (),
-			display_name.size () * sizeof (WCHAR)
-		);
+		*name_ptr = _r_obj_createstring_ex (display_name.c_str (), display_name.size () * sizeof (WCHAR));
 	}
 
 	if (!path.empty ())
-	{
-		*path_ptr = _r_obj_createstring_ex (
-			path.c_str (),
-			path.size () * sizeof (WCHAR)
-		);
-	}
+		*path_ptr = _r_obj_createstring_ex (path.c_str (), path.size () * sizeof (WCHAR));
 
 	return TRUE;
 }

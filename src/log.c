@@ -166,6 +166,7 @@ VOID _app_logclear (
 	if (_r_fs_isvalidhandle (hfile))
 	{
 		_r_fs_clearfile (hfile);
+
 		_app_loginitfile (hfile);
 	}
 
@@ -351,11 +352,7 @@ VOID _wfp_logsubscribe (
 	_FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe1");
 	_FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe0");
 
-	if (!_FwpmNetEventSubscribe4 &&
-		!_FwpmNetEventSubscribe3 &&
-		!_FwpmNetEventSubscribe2 &&
-		!_FwpmNetEventSubscribe1 &&
-		!_FwpmNetEventSubscribe0)
+	if (!_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
 	{
 		_r_log (LOG_LEVEL_WARNING, NULL, L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
 
@@ -609,6 +606,7 @@ VOID CALLBACK _wfp_logcallback (
 	if (log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET && sid_string)
 	{
 		_r_obj_swapreference (&ptr_log->path, sid_string);
+
 		ptr_log->app_hash = _r_str_gethash2 (ptr_log->path, TRUE);
 	}
 	else if (log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET && log->app_id)
@@ -681,6 +679,7 @@ VOID CALLBACK _wfp_logcallback (
 	if (log->flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
 	{
 		ptr_log->protocol = log->protocol;
+
 		ptr_log->protocol_str = _app_db_getprotoname (ptr_log->protocol, ptr_log->af, FALSE);
 	}
 
@@ -1322,8 +1321,8 @@ VOID NTAPI _app_logthread (
 {
 	HWND hwnd;
 	PITEM_LOG ptr_log;
-	PITEM_APP ptr_app;
-	BOOLEAN is_silent;
+	PITEM_APP ptr_app = NULL;
+	BOOLEAN is_silent = FALSE;
 	BOOLEAN is_logenabled;
 	BOOLEAN is_loguienabled;
 	BOOLEAN is_notificationenabled;
@@ -1335,8 +1334,6 @@ VOID NTAPI _app_logthread (
 	hwnd = _r_app_gethwnd ();
 
 	ptr_log = arglist;
-	ptr_app = NULL;
-	is_silent = FALSE;
 
 	// apps collector
 	is_notexist = ptr_log->app_hash && !ptr_log->is_allow && !_app_isappfound (ptr_log->app_hash);

@@ -35,26 +35,18 @@ VOID _app_package_parsepath (
 	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
 
 	R_XML_LIBRARY xml_library = {0};
-	PR_STRING manifest_path;
-	PR_STRING result_path;
+	PR_STRING manifest_path = NULL;
+	PR_STRING result_path = NULL;
 	PR_STRING path_string;
 	R_STRINGREF executable_sr;
 	HRESULT hr;
-	BOOLEAN is_success;
+	BOOLEAN is_success = FALSE;
 
 	path_string = *package_root_folder;
 
-	manifest_path = NULL;
-	result_path = NULL;
-
-	is_success = FALSE;
-
 	for (SIZE_T i = 0; i < RTL_NUMBER_OF (appx_names); i++)
 	{
-		_r_obj_movereference (
-			&manifest_path,
-			_r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i])
-		);
+		_r_obj_movereference (&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
 
 		if (_r_fs_exists (manifest_path->buffer))
 		{
@@ -83,10 +75,7 @@ VOID _app_package_parsepath (
 			if (!_r_xml_getattribute (&xml_library, L"Executable", &executable_sr))
 				continue;
 
-			_r_obj_movereference (
-				&result_path,
-				_r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr)
-			);
+			_r_obj_movereference (&result_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr));
 
 			if (_r_fs_exists (result_path->buffer))
 			{
@@ -197,20 +186,15 @@ VOID _app_package_getpackagebysid (
 	_In_ PR_STRING key_name
 )
 {
-	PR_STRING moniker;
-	PR_STRING display_name;
-	PR_STRING real_path;
-	PR_BYTE package_sid;
+	PR_STRING moniker = NULL;
+	PR_STRING display_name = NULL;
+	PR_STRING real_path = NULL;
+	PR_BYTE package_sid = NULL;
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
 	LONG64 timestamp;
 	HKEY hsubkey;
 	LONG status;
-
-	moniker = NULL;
-	display_name = NULL;
-	real_path = NULL;
-	package_sid = NULL;
 
 	// already exists (skip)
 	app_hash = _r_str_gethash2 (key_name, TRUE);
@@ -415,17 +399,7 @@ VOID _app_package_getserviceslist ()
 	buffer_size = initial_buffer_size;
 	buffer = _r_mem_allocatezero (buffer_size);
 
-	if (!EnumServicesStatusEx (
-		hsvcmgr,
-		SC_ENUM_PROCESS_INFO,
-		service_type,
-		service_state,
-		buffer,
-		buffer_size,
-		&return_length,
-		&services_returned,
-		NULL,
-		NULL))
+	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 	{
 		if (GetLastError () == ERROR_MORE_DATA)
 		{
@@ -434,17 +408,7 @@ VOID _app_package_getserviceslist ()
 			buffer = _r_mem_reallocatezero (buffer, buffer_size);
 
 			// Now query again for services
-			if (!EnumServicesStatusEx (
-				hsvcmgr,
-				SC_ENUM_PROCESS_INFO,
-				service_type,
-				service_state,
-				buffer,
-				buffer_size,
-				&return_length,
-				&services_returned,
-				NULL,
-				NULL))
+			if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 			{
 				_r_mem_free (buffer);
 				buffer = NULL;
@@ -547,17 +511,7 @@ VOID _app_package_getserviceslist ()
 				// the descriptor, you may have to convert it. See MakeSelfRelativeSD for
 				// details.
 
-				status = BuildSecurityDescriptor (
-					NULL,
-					NULL,
-					1,
-					&ea,
-					0,
-					NULL,
-					NULL,
-					&sd_length,
-					&service_sd
-				);
+				status = BuildSecurityDescriptor (NULL, NULL, 1, &ea, 0, NULL, NULL, &sd_length, &service_sd);
 
 				if (status == ERROR_SUCCESS && service_sd)
 				{

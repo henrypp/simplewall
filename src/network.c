@@ -153,11 +153,8 @@ VOID _app_network_generatetable (
 
 				if (tcp4_table->table[i].dwState == MIB_TCP_STATE_ESTAB)
 				{
-					if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) ||
-						_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
-					{
+					if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr) || _app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr))
 						ptr_network->is_connection = TRUE;
-					}
 				}
 
 				_r_queuedlock_acquireexclusive (&network_context->lock_network);
@@ -231,11 +228,8 @@ VOID _app_network_generatetable (
 
 				if (tcp6_table->table[i].dwState == MIB_TCP_STATE_ESTAB)
 				{
-					if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) ||
-						_app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
-					{
+					if (_app_network_isvalidconnection (ptr_network->af, &ptr_network->remote_addr6) || _app_network_isvalidconnection (ptr_network->af, &ptr_network->local_addr6))
 						ptr_network->is_connection = TRUE;
-					}
 				}
 
 				_r_queuedlock_acquireexclusive (&network_context->lock_network);
@@ -573,7 +567,7 @@ BOOLEAN _app_network_isapphaveconnection (
 )
 {
 	PITEM_NETWORK_CONTEXT network_context;
-	PITEM_NETWORK ptr_network;
+	PITEM_NETWORK ptr_network = NULL;
 	SIZE_T enum_key;
 
 	network_context = _app_network_getcontext ();
@@ -669,8 +663,7 @@ VOID _app_network_printlistviewtable (
 	BOOLEAN is_highlight;
 	BOOLEAN is_refresh;
 
-	if (_r_config_getboolean (L"IsEnableHighlighting", TRUE) &&
-		_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors"))
+	if (_r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors"))
 	{
 		is_highlight = TRUE;
 	}

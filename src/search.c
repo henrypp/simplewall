@@ -265,17 +265,12 @@ BOOLEAN _app_search_applyfilteritem (
 	_In_opt_ PR_STRING search_string
 )
 {
-	PITEM_APP ptr_app;
-	PITEM_RULE ptr_rule;
-	PITEM_NETWORK ptr_network;
-	PITEM_LOG ptr_log;
+	PITEM_APP ptr_app = NULL;
+	PITEM_RULE ptr_rule = NULL;
+	PITEM_NETWORK ptr_network = NULL;
+	PITEM_LOG ptr_log = NULL;
 	PR_STRING string;
 	BOOLEAN is_changed;
-
-	ptr_app = NULL;
-	ptr_rule = NULL;
-	ptr_network = NULL;
-	ptr_log = NULL;
 
 	// reset hidden state
 	if (context->is_hidden)
@@ -516,9 +511,7 @@ VOID NTAPI _app_search_applyfilter (
 
 	ptr_search = arglist;
 
-	if (!((ptr_search->listview_id >= IDC_APPS_PROFILE && ptr_search->listview_id <= IDC_LOG) ||
-		ptr_search->listview_id == IDC_RULE_APPS_ID ||
-		ptr_search->listview_id == IDC_APP_RULES_ID))
+	if (!((ptr_search->listview_id >= IDC_APPS_PROFILE && ptr_search->listview_id <= IDC_LOG) || ptr_search->listview_id == IDC_RULE_APPS_ID || ptr_search->listview_id == IDC_APP_RULES_ID))
 	{
 		_r_mem_free (ptr_search);
 

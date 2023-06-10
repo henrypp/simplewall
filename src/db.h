@@ -54,9 +54,7 @@ static const BYTE profile2_fourcc[] = {
 #define XML_PROFILE_EXT L"xml"
 
 #define XML_PROFILE_FILE L"profile." XML_PROFILE_EXT
-#define XML_PROFILE2_FILE L"profile." XML_PROFILE_EXT
-
-#define XML_PROFILE2_INTERNAL L"profile_internal." XML_PROFILE_EXT
+#define XML_PROFILE_INTERNAL L"profile_internal." XML_PROFILE_EXT
 
 #define XML_ENCRYPTION_ALGO BCRYPT_AES_ALGORITHM
 #define XML_SIGNATURE_ALGO BCRYPT_SHA256_ALGORITHM
@@ -106,8 +104,8 @@ NTSTATUS _app_db_ishashvalid (
 _Success_ (return == STATUS_SUCCESS)
 NTSTATUS _app_db_istypevalid (
 	_In_ PDB_INFORMATION db_info,
-	_In_ ENUM_VERSION_XML min_version,
-	_In_ ENUM_TYPE_XML type
+	_In_ ENUM_TYPE_XML type,
+	_In_ ENUM_VERSION_XML min_version
 );
 
 _Success_ (return == STATUS_SUCCESS)
@@ -127,26 +125,19 @@ NTSTATUS _app_db_openfromfile (
 );
 
 _Success_ (return == STATUS_SUCCESS)
-NTSTATUS _app_db_parser_init (
-	_In_ PDB_INFORMATION db_info,
-	_In_ ENUM_VERSION_XML min_version,
-	_In_ ENUM_TYPE_XML type
-);
-
-_Success_ (return == STATUS_SUCCESS)
-NTSTATUS _app_db_parser_decodebody (
+NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 );
 
 _Success_ (NT_SUCCESS (return))
-NTSTATUS _app_db_parser_encodebody (
+NTSTATUS _app_db_encodebody (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ BYTE profile_type,
 	_Out_ PR_BYTE_PTR out_buffer
 );
 
 _Success_ (NT_SUCCESS (return))
-NTSTATUS _app_db_parser_generatebody (
+NTSTATUS _app_db_generatebody (
 	_In_ BYTE profile_type,
 	_In_ PR_BYTE hash_value,
 	_In_ PR_BYTE body_value,
@@ -154,7 +145,7 @@ NTSTATUS _app_db_parser_generatebody (
 );
 
 _Success_ (return == STATUS_SUCCESS)
-NTSTATUS _app_db_parser_validatefile (
+NTSTATUS _app_db_decodebuffer (
 	_Inout_ PDB_INFORMATION db_info
 );
 

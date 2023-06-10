@@ -81,11 +81,9 @@ VOID _app_listview_additems (
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
 	LONG64 current_time;
-	SIZE_T enum_key;
+	SIZE_T enum_key = 0;
 
 	current_time = _r_unixtime_now ();
-
-	enum_key = 0;
 
 	// add apps
 	_r_queuedlock_acquireshared (&lock_apps);
@@ -142,15 +140,7 @@ VOID _app_listview_addappitem (
 
 		listview_context = _app_listview_createcontext (ptr_app->app_hash);
 
-		_r_listview_additem_ex (
-			hwnd,
-			listview_id,
-			item_id,
-			LPSTR_TEXTCALLBACK,
-			I_IMAGECALLBACK,
-			I_GROUPIDCALLBACK,
-			listview_context
-		);
+		_r_listview_additem_ex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
 
 		_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
 
@@ -180,15 +170,7 @@ VOID _app_listview_addruleitem (
 
 	listview_context = _app_listview_createcontext (rule_idx);
 
-	_r_listview_additem_ex (
-		hwnd,
-		listview_id,
-		item_id,
-		LPSTR_TEXTCALLBACK,
-		I_IMAGECALLBACK,
-		I_GROUPIDCALLBACK,
-		listview_context
-	);
+	_r_listview_additem_ex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
 
 	_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, is_forapp);
 
@@ -483,6 +465,7 @@ VOID _app_listview_updateby_id (
 		if (!(flags & PR_UPDATE_NOSETVIEW))
 		{
 			_app_listview_setfont (hwnd, listview_id);
+
 			_app_listview_setview (hwnd, listview_id);
 		}
 
@@ -506,9 +489,7 @@ VOID _app_listview_updateby_param (
 	_In_ BOOLEAN is_app
 )
 {
-	INT listview_id;
-
-	listview_id = 0;
+	INT listview_id = 0;
 
 	if (is_app)
 	{
@@ -540,10 +521,8 @@ VOID _app_listview_updateitemby_param (
 {
 	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
-	INT listview_id;
+	INT listview_id = 0;
 	INT item_id;
-
-	listview_id = 0;
 
 	if (is_app)
 	{

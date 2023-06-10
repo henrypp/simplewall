@@ -1290,18 +1290,18 @@ LONG_PTR _app_message_custdraw (
 	PITEM_NETWORK ptr_network;
 	PITEM_LOG ptr_log;
 	PITEM_COLOR ptr_clr;
-	PR_STRING real_path;
-	ULONG_PTR app_hash;
+	PR_STRING real_path = NULL;
+	ULONG_PTR app_hash = 0;
 	ULONG_PTR index;
-	COLORREF new_clr;
+	COLORREF new_clr = 0;
 	ULONG padding;
 	ULONG button_size;
 	INT icon_size_x;
 	INT icon_size_y;
 	INT ctrl_id;
 	LRESULT result;
-	BOOLEAN is_systemapp;
-	BOOLEAN is_validconnection;
+	BOOLEAN is_systemapp = FALSE;
+	BOOLEAN is_validconnection = FALSE;
 
 	switch (lpnmlv->nmcd.dwDrawStage)
 	{
@@ -1393,14 +1393,8 @@ LONG_PTR _app_message_custdraw (
 				if (!_r_config_getboolean (L"IsEnableHighlighting", TRUE))
 					return CDRF_DODEFAULT;
 
-				new_clr = 0;
-
-				is_systemapp = FALSE;
-				is_validconnection = FALSE;
-
 				if ((ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP) || ctrl_id == IDC_RULE_APPS_ID || ctrl_id == IDC_NETWORK || ctrl_id == IDC_LOG)
 				{
-					app_hash = 0;
 					index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
 
 					if (ctrl_id == IDC_NETWORK)
@@ -1486,9 +1480,7 @@ VOID _app_displayinfoapp_callback (
 )
 {
 	PR_STRING string;
-	LONG icon_id;
-
-	icon_id = 0;
+	LONG icon_id = 0;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1641,6 +1633,7 @@ VOID _app_displayinforule_callback (
 				if (string)
 				{
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 					_r_obj_dereference (string);
 				}
 
@@ -1716,6 +1709,7 @@ VOID _app_displayinfonetwork_callback (
 					if (string)
 					{
 						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 						_r_obj_dereference (string);
 					}
 
@@ -1764,6 +1758,7 @@ VOID _app_displayinfonetwork_callback (
 					if (string)
 					{
 						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 						_r_obj_dereference (string);
 					}
 				}
@@ -1806,6 +1801,7 @@ VOID _app_displayinfonetwork_callback (
 					if (string)
 					{
 						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 						_r_obj_dereference (string);
 					}
 				}
@@ -1878,9 +1874,7 @@ VOID _app_displayinfolog_callback (
 )
 {
 	PR_STRING string;
-	LONG icon_id;
-
-	icon_id = 0;
+	LONG icon_id = 0;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1896,6 +1890,7 @@ VOID _app_displayinfolog_callback (
 					if (string)
 					{
 						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 						_r_obj_dereference (string);
 					}
 				}
@@ -1918,6 +1913,7 @@ VOID _app_displayinfolog_callback (
 				if (string)
 				{
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 					_r_obj_dereference (string);
 				}
 
@@ -1959,6 +1955,7 @@ VOID _app_displayinfolog_callback (
 					if (string)
 					{
 						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 						_r_obj_dereference (string);
 					}
 				}
@@ -2001,6 +1998,7 @@ VOID _app_displayinfolog_callback (
 					if (string)
 					{
 						_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 						_r_obj_dereference (string);
 					}
 				}
@@ -2029,6 +2027,7 @@ VOID _app_displayinfolog_callback (
 				if (string)
 				{
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 					_r_obj_dereference (string);
 				}
 
@@ -2098,8 +2097,7 @@ BOOLEAN _app_message_displayinfo (
 			return TRUE;
 		}
 	}
-	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM ||
-			 listview_id == IDC_APP_RULES_ID)
+	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
 	{
 		ptr_rule = _app_getrulebyid (index);
 
@@ -2373,6 +2371,7 @@ VOID _app_command_logclear (
 		if (_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
 		{
 			_app_logclear (current_handle);
+
 			_app_logclear_ui (hwnd);
 		}
 	}
@@ -2448,18 +2447,16 @@ VOID _app_command_copy (
 {
 	static R_STRINGREF divider_sr = PR_STRINGREF_INIT (DIVIDER_COPY);
 
-	R_STRINGBUILDER buffer;
+	R_STRINGBUILDER sb;
 	PR_STRING string;
 	INT listview_id;
 	INT column_count;
-	INT item_id;
+	INT item_id = -1;
 
 	listview_id = _app_listview_getcurrent (hwnd);
-	item_id = -1;
-
 	column_count = _r_listview_getcolumncount (hwnd, listview_id);
 
-	_r_obj_initializestringbuilder (&buffer);
+	_r_obj_initializestringbuilder (&sb);
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
@@ -2471,14 +2468,14 @@ VOID _app_command_copy (
 
 				if (string)
 				{
-					_r_obj_appendstringbuilder2 (&buffer, string);
-					_r_obj_appendstringbuilder3 (&buffer, &divider_sr);
+					_r_obj_appendstringbuilder2 (&sb, string);
+					_r_obj_appendstringbuilder3 (&sb, &divider_sr);
 
 					_r_obj_dereference (string);
 				}
 			}
 
-			string = _r_obj_finalstringbuilder (&buffer);
+			string = _r_obj_finalstringbuilder (&sb);
 
 			_r_str_trimstring (string, &divider_sr, 0);
 		}
@@ -2488,22 +2485,22 @@ VOID _app_command_copy (
 
 			if (string)
 			{
-				_r_obj_appendstringbuilder2 (&buffer, string);
+				_r_obj_appendstringbuilder2 (&sb, string);
 
 				_r_obj_dereference (string);
 			}
 		}
 
-		_r_obj_appendstringbuilder (&buffer, SZ_CRLF);
+		_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 	}
 
-	string = _r_obj_finalstringbuilder (&buffer);
+	string = _r_obj_finalstringbuilder (&sb);
 
 	_r_str_trimstring2 (string, DIVIDER_TRIM, 0);
 
 	_r_clipboard_set (hwnd, &string->sr);
 
-	_r_obj_deletestringbuilder (&buffer);
+	_r_obj_deletestringbuilder (&sb);
 }
 
 VOID _app_command_checkbox (
@@ -2517,17 +2514,12 @@ VOID _app_command_checkbox (
 	PR_LIST rules;
 	ULONG_PTR hash_code;
 	INT listview_id;
-	INT item_id;
-	BOOLEAN new_val;
-	BOOLEAN is_changed;
+	INT item_id = -1;
+	BOOLEAN new_val = (ctrl_id == IDM_CHECK);
+	BOOLEAN is_changed = FALSE;
 
 	rules = _r_obj_createlist_ex (8, &_r_obj_dereference);
-
 	listview_id = _app_listview_getcurrent (hwnd);
-	item_id = -1;
-
-	new_val = (ctrl_id == IDM_CHECK);
-	is_changed = FALSE;
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
@@ -3166,22 +3158,18 @@ VOID _app_command_purgeunused (
 	_In_ HWND hwnd
 )
 {
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	ULONG_PTR hash_code;
-	SIZE_T enum_key;
+	SIZE_T enum_key = 0;
 	PR_HASHTABLE apps_list;
 	PR_ARRAY guids;
 	HANDLE hengine;
 	INT listview_id;
 	INT item_id;
-	BOOLEAN is_deleted;
+	BOOLEAN is_deleted = FALSE;
 
 	apps_list = _r_obj_createhashtable (sizeof (SHORT), NULL);
 	guids = _r_obj_createarray (sizeof (GUID), NULL);
-
-	is_deleted = FALSE;
-
-	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -3248,7 +3236,7 @@ VOID _app_command_purgetimers (
 {
 	HANDLE hengine;
 	PR_LIST rules;
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	SIZE_T enum_key;
 
 	if (!_app_istimersactive ())

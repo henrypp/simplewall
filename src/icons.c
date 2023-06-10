@@ -223,12 +223,14 @@ VOID _app_icons_loadfromfile (
 	if (icon_id_ptr)
 	{
 		flags |= SHGFI_SYSICONINDEX;
+
 		*icon_id_ptr = 0;
 	}
 
 	if (hicon_ptr)
 	{
 		flags |= SHGFI_ICON;
+
 		*hicon_ptr = NULL;
 	}
 
