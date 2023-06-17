@@ -3010,7 +3010,7 @@ VOID ByteBlobAlloc (
 {
 	FWP_BYTE_BLOB *blob;
 
-	blob = _r_mem_allocatezero (sizeof (FWP_BYTE_BLOB) + bytes_count);
+	blob = _r_mem_allocate (sizeof (FWP_BYTE_BLOB) + bytes_count);
 
 	blob->size = (UINT)(UINT_PTR)bytes_count;
 	blob->data = PTR_ADD_OFFSET (blob, sizeof (FWP_BYTE_BLOB));

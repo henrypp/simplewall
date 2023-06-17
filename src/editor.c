@@ -13,7 +13,7 @@ PEDITOR_CONTEXT _app_editor_createwindow (
 {
 	PEDITOR_CONTEXT context;
 
-	context = _r_mem_allocatezero (sizeof (EDITOR_CONTEXT));
+	context = _r_mem_allocate (sizeof (EDITOR_CONTEXT));
 
 	context->ptr_app = lparam;
 	context->page_id = page_id;
@@ -1281,7 +1281,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				string = _r_ctrl_getstring (hwnd, IDC_SEARCH);
 
-				ptr_search = _r_mem_allocatezero (sizeof (ITEM_SEARCH));
+				ptr_search = _r_mem_allocate (sizeof (ITEM_SEARCH));
 
 				ptr_search->hwnd = hwnd;
 				ptr_search->listview_id = listview_id;

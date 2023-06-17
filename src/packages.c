@@ -397,7 +397,7 @@ VOID _app_package_getserviceslist ()
 		service_type |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE;
 
 	buffer_size = initial_buffer_size;
-	buffer = _r_mem_allocatezero (buffer_size);
+	buffer = _r_mem_allocate (buffer_size);
 
 	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 	{
@@ -405,7 +405,7 @@ VOID _app_package_getserviceslist ()
 		{
 			// Set the buffer
 			buffer_size += return_length;
-			buffer = _r_mem_reallocatezero (buffer, buffer_size);
+			buffer = _r_mem_reallocate (buffer, buffer_size);
 
 			// Now query again for services
 			if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))

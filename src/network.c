@@ -11,7 +11,7 @@ PITEM_NETWORK_CONTEXT _app_network_getcontext ()
 
 	if (_r_initonce_begin (&init_once))
 	{
-		network_context = _r_mem_allocatezero (sizeof (ITEM_NETWORK_CONTEXT));
+		network_context = _r_mem_allocate (sizeof (ITEM_NETWORK_CONTEXT));
 
 		network_context->network_ptr = _r_obj_createhashtablepointer (256);
 		network_context->checker_ptr = _r_obj_createhashtablepointer (256);
@@ -94,7 +94,7 @@ VOID _app_network_generatetable (
 	GetExtendedTcpTable (NULL, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
 	allocated_size = required_size;
-	buffer = _r_mem_allocatezero (allocated_size);
+	buffer = _r_mem_allocate (allocated_size);
 
 	if (required_size)
 	{
@@ -175,7 +175,7 @@ VOID _app_network_generatetable (
 	{
 		if (allocated_size < required_size)
 		{
-			buffer = _r_mem_reallocatezero (buffer, required_size);
+			buffer = _r_mem_reallocate (buffer, required_size);
 			allocated_size = required_size;
 		}
 
@@ -250,7 +250,7 @@ VOID _app_network_generatetable (
 	{
 		if (allocated_size < required_size)
 		{
-			buffer = _r_mem_reallocatezero (buffer, required_size);
+			buffer = _r_mem_reallocate (buffer, required_size);
 			allocated_size = required_size;
 		}
 
@@ -321,7 +321,7 @@ VOID _app_network_generatetable (
 	{
 		if (allocated_size < required_size)
 		{
-			buffer = _r_mem_reallocatezero (buffer, required_size);
+			buffer = _r_mem_reallocate (buffer, required_size);
 			allocated_size = required_size;
 		}
 
@@ -473,7 +473,7 @@ BOOLEAN _app_network_getpath (
 	_In_opt_ PULONG64 modules
 )
 {
-	PTOKEN_APPCONTAINER_INFORMATION app_container;
+	PTOKEN_APPCONTAINER_INFORMATION app_container = NULL;
 	PR_STRING process_name;
 	HANDLE process_handle;
 	HANDLE token_handle;
@@ -654,7 +654,7 @@ VOID _app_network_printlistviewtable (
 	_Inout_ PITEM_NETWORK_CONTEXT network_context
 )
 {
-	PITEM_NETWORK ptr_network;
+	PITEM_NETWORK ptr_network = NULL;
 	PR_STRING string;
 	ULONG_PTR app_hash;
 	ULONG_PTR network_hash;

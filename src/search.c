@@ -81,7 +81,7 @@ VOID _app_search_initialize (
 	PEDIT_CONTEXT context;
 	WCHAR buffer[128];
 
-	context = _r_mem_allocatezero (sizeof (EDIT_CONTEXT));
+	context = _r_mem_allocate (sizeof (EDIT_CONTEXT));
 
 	context->hwnd = hwnd;
 

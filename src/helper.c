@@ -706,13 +706,13 @@ BOOLEAN _app_calculatefilehash (
 	}
 
 	file_hash_length = 32;
-	file_hash = _r_mem_allocatezero (file_hash_length);
+	file_hash = _r_mem_allocate (file_hash_length);
 
 	if (_CryptCATAdminCalcHashFromFileHandle2)
 	{
 		if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
 		{
-			file_hash = _r_mem_reallocatezero (file_hash, file_hash_length);
+			file_hash = _r_mem_reallocate (file_hash, file_hash_length);
 
 			if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
 			{
@@ -727,7 +727,7 @@ BOOLEAN _app_calculatefilehash (
 	{
 		if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
 		{
-			file_hash = _r_mem_reallocatezero (file_hash, file_hash_length);
+			file_hash = _r_mem_reallocate (file_hash, file_hash_length);
 
 			if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
 			{

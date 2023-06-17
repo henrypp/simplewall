@@ -12,7 +12,7 @@ PSID _app_quyerybuiltinsid (
 	ULONG sid_length;
 
 	sid_length = SECURITY_MAX_SID_SIZE;
-	sid = _r_mem_allocatezero (sid_length);
+	sid = _r_mem_allocate (sid_length);
 
 	if (!CreateWellKnownSid (sid_type, NULL, sid, &sid_length))
 	{
