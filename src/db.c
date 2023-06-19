@@ -40,7 +40,7 @@ NTSTATUS _app_db_encrypt (
 
 	*out_buffer = NULL;
 
-	status = _r_crypt_createcryptcontext (&crypt_context, XML_ENCRYPTION_ALGO);
+	status = _r_crypt_createcryptcontext (&crypt_context, BCRYPT_AES_ALGORITHM);
 
 	if (status != STATUS_SUCCESS)
 		return status;
@@ -71,9 +71,9 @@ NTSTATUS _app_db_decrypt (
 	R_BYTEREF key;
 	NTSTATUS status;
 
-		*out_buffer = NULL;
+	*out_buffer = NULL;
 
-	status = _r_crypt_createcryptcontext (&crypt_context, XML_ENCRYPTION_ALGO);
+	status = _r_crypt_createcryptcontext (&crypt_context, BCRYPT_AES_ALGORITHM);
 
 	if (status != STATUS_SUCCESS)
 		return status;
@@ -105,7 +105,7 @@ NTSTATUS _app_db_gethash (
 
 	*out_buffer = NULL;
 
-	status = _r_crypt_createhashcontext (&hash_context, XML_SIGNATURE_ALGO);
+	status = _r_crypt_createhashcontext (&hash_context, BCRYPT_SHA256_ALGORITHM);
 
 	if (!NT_SUCCESS (status))
 		return status;
@@ -113,7 +113,7 @@ NTSTATUS _app_db_gethash (
 	status = _r_crypt_hashbuffer (&hash_context, bytes->buffer, (ULONG)bytes->length);
 
 	if (NT_SUCCESS (status))
-		status = _r_crypt_finalhashcontext_ex (&hash_context, out_buffer);
+		status = _r_crypt_finalhashcontext (&hash_context, NULL, out_buffer);
 
 	_r_crypt_destroycryptcontext (&hash_context);
 
@@ -505,13 +505,7 @@ NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
-	static USHORT comp_algo[] = {
-		COMPRESSION_FORMAT_XPRESS_HUFF,
-		COMPRESSION_FORMAT_XPRESS,
-		COMPRESSION_FORMAT_LZNT1
-	};
-
-	SYSTEM_INFO si;
+	SYSTEM_PROCESSOR_INFORMATION cpu_info = {0};
 	PR_BYTE new_bytes;
 	BYTE profile_type;
 	NTSTATUS status;
@@ -538,15 +532,12 @@ NTSTATUS _app_db_decodebody (
 		case PROFILE2_ID_COMPRESSED:
 		{
 			// decompress bytes
-			for (SIZE_T i = 0; i < RTL_NUMBER_OF (comp_algo); i++)
-			{
-				status = _r_sys_decompressbuffer (comp_algo[i], &db_info->bytes->sr, &new_bytes);
+			status = _r_sys_decompressbuffer (COMPRESSION_FORMAT_XPRESS_HUFF, &db_info->bytes->sr, &new_bytes);
 
-				if (NT_SUCCESS (status))
-				{
-					_r_obj_movereference (&db_info->bytes, new_bytes);
-					break;
-				}
+			if (NT_SUCCESS (status))
+			{
+				_r_obj_movereference (&db_info->bytes, new_bytes);
+				break;
 			}
 
 			break;
@@ -554,8 +545,6 @@ NTSTATUS _app_db_decodebody (
 
 		case PROFILE2_ID_ENCRYPTED:
 		{
-			//status = _app_password_prompt (db_info->hash);
-			//
 			//status = _app_db_decrypt (&db_info->bytes->sr, &new_bytes);
 			//
 			//if (status != STATUS_SUCCESS)
@@ -570,11 +559,17 @@ NTSTATUS _app_db_decodebody (
 	if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
 		return STATUS_MORE_PROCESSING_REQUIRED;
 
-	GetSystemInfo (&si);
+	// fix arm64 crash that was introduced by Micro$oft (issue #1228)
+	if (NT_SUCCESS (NtQuerySystemInformation (SystemProcessorInformation, &cpu_info, sizeof (cpu_info), NULL)))
+	{
 
-	// fix arm64 crash (issue #1228)
-	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM || si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 || si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
-		return STATUS_SUCCESS;
+		if (cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM ||
+			cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 ||
+			cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
+		{
+			return STATUS_SUCCESS;
+		}
+	}
 
 	// validate hash
 	if (db_info->hash)
