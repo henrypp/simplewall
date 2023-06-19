@@ -1982,7 +1982,7 @@ VOID _app_initialize ()
 	_r_sys_setprocessenvironment (NtCurrentProcess (), &environment);
 
 	// initialize workqueue
-	_r_sys_setenvironment (&environment, THREAD_PRIORITY_LOWEST, IoPriorityVeryLow, MEMORY_PRIORITY_NORMAL);
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&file_queue, 0, 12, 5000, &environment, L"FileInfoQueue");
 
