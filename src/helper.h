@@ -156,6 +156,16 @@ VOID _app_getfileversioninfo (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 );
 
+VOID _app_getfilehashinfo (
+	_In_ HANDLE hfile,
+	_Inout_ PITEM_APP_INFO ptr_app_info
+);
+
+_Ret_maybenull_
+PR_STRING _app_getfilehash (
+	_In_ HANDLE hfile
+);
+
 ULONG_PTR _app_addcolor (
 	_In_ UINT locale_id,
 	_In_ LPCWSTR config_name,

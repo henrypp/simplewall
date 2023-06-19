@@ -1053,6 +1053,73 @@ CleanupExit:
 		FreeLibrary (hlib);
 }
 
+VOID _app_getfilehashinfo (
+	_In_ HANDLE hfile,
+	_Inout_ PITEM_APP_INFO ptr_app_info
+)
+{
+	PITEM_APP ptr_app;
+	PR_STRING string;
+
+	ptr_app = _app_getappitem (ptr_app_info->app_hash);
+
+	if (!ptr_app)
+		return;
+
+	string = _app_getfilehash (hfile);
+
+	_r_obj_movereference (&ptr_app->hash, string);
+}
+
+_Ret_maybenull_
+PR_STRING _app_getfilehash (
+	_In_ HANDLE hfile
+)
+{
+	R_CRYPT_CONTEXT hash_context;
+	IO_STATUS_BLOCK isb;
+	BYTE buffer[8192] = {0};
+	PR_STRING string;
+	NTSTATUS status;
+
+	status = _r_crypt_createhashcontext (&hash_context, BCRYPT_SHA256_ALGORITHM);
+
+	if (!NT_SUCCESS (status))
+		return NULL;
+
+	while (TRUE)
+	{
+		status = NtReadFile (
+			hfile,
+			NULL,
+			NULL,
+			NULL,
+			&isb,
+			buffer,
+			sizeof (buffer),
+			NULL,
+			NULL
+		);
+
+		if (!NT_SUCCESS (status))
+			break;
+
+		if (isb.Information == 0)
+			break;
+
+		status = _r_crypt_hashbuffer (&hash_context, buffer, (ULONG)isb.Information);
+
+		if (!NT_SUCCESS (status))
+			break;
+	}
+
+	_r_crypt_finalhashcontext (&hash_context, &string, NULL);
+
+	_r_crypt_destroycryptcontext (&hash_context);
+
+	return string;
+}
+
 ULONG_PTR _app_addcolor (
 	_In_ UINT locale_id,
 	_In_ LPCWSTR config_name,

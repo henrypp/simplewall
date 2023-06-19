@@ -928,6 +928,9 @@ VOID _app_db_save_app (
 
 		_r_xml_setattribute (&db_info->xml_library, L"path", ptr_app->original_path->buffer);
 
+		if (ptr_app->hash)
+			_r_xml_setattribute (&db_info->xml_library, L"hash", ptr_app->hash->buffer);
+
 		if (ptr_app->timestamp)
 			_r_xml_setattribute_long64 (&db_info->xml_library, L"timestamp", ptr_app->timestamp);
 
