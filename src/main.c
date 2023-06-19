@@ -2119,60 +2119,6 @@ INT_PTR CALLBACK DlgProc (
 
 			_app_initialize ();
 
-			//HANDLE hfile = CreateFile (L"profile_internal.xml", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-			//PR_BYTE byte;
-			//
-			//if (_r_fs_isvalidhandle (hfile))
-			//{
-			//	byte = _r_obj_createbyte_ex (NULL, 99536);
-			//	ULONG df = 0;
-			//
-			//	if (ReadFile (hfile, byte->buffer, (ULONG)byte->length, &df, NULL))
-			//	{
-			//		PR_BYTE hash_value;
-			//		PR_BYTE body_bytes;
-			//		PR_BYTE new_bytes;
-			//		LONG status;
-			//
-			//		_r_obj_setbytelength (byte, df);
-			//
-			//		// generate body hash
-			//		status = _app_db_gethash (&byte->sr, &hash_value);
-			//
-			//		if (NT_SUCCESS (status))
-			//		{
-			//			// compress body
-			//			status = _r_sys_compressbuffer (COMPRESSION_FORMAT_XP10 | COMPRESSION_ENGINE_MAXIMUM, &byte->sr, &new_bytes);
-			//
-			//			if (NT_SUCCESS (status))
-			//			{
-			//				status = _app_db_generatebody (PROFILE2_ID_COMPRESSED, hash_value, new_bytes, &body_bytes);
-			//
-			//				if (NT_SUCCESS (status))
-			//				{
-			//					//_app_db_encodebody (&db, PROFILE2_ID_COMPRESSED, &bsd);
-			//
-			//					HANDLE hfile2 = CreateFile (L"dsf.xml", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			//
-			//					if (!_r_fs_isvalidhandle (hfile2))
-			//					{
-			//						RDBG2 (L"CreateFile %d", GetLastError ());
-			//					}
-			//					else
-			//					{
-			//						WriteFile (hfile2, body_bytes->buffer, (ULONG)body_bytes->length, NULL, NULL);
-			//
-			//						CloseHandle (hfile2);
-			//					}
-			//				}
-			//			}
-			//		}
-			//	}
-			//
-			//
-			//	CloseHandle (hfile);
-			//}
-
 			// init buffered paint
 			BufferedPaintInit ();
 

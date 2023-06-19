@@ -473,7 +473,7 @@ BOOLEAN _app_network_getpath (
 	_In_opt_ PULONG64 modules
 )
 {
-	PTOKEN_APPCONTAINER_INFORMATION app_container = NULL;
+	PTOKEN_APPCONTAINER_INFORMATION app_container;
 	PR_STRING process_name;
 	HANDLE process_handle;
 	HANDLE token_handle;
@@ -654,7 +654,7 @@ VOID _app_network_printlistviewtable (
 	_Inout_ PITEM_NETWORK_CONTEXT network_context
 )
 {
-	PITEM_NETWORK ptr_network = NULL;
+	PITEM_NETWORK ptr_network;
 	PR_STRING string;
 	ULONG_PTR app_hash;
 	ULONG_PTR network_hash;
