@@ -1603,7 +1603,7 @@ VOID _app_profile_load_internal (
 	}
 
 	_app_db_destroy (&db_info_file);
-	_app_db_destroy (db_info_buffer);
+	//_app_db_destroy (db_info_buffer);
 }
 
 VOID _app_profile_refresh ()
