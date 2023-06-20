@@ -248,7 +248,7 @@ ULONG_PTR _app_notify_getnextapp_id (
 )
 {
 	PNOTIFY_CONTEXT context;
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	SIZE_T enum_key;
 	ULONG_PTR app_hash;
 
@@ -583,6 +583,75 @@ VOID _app_notify_queueinfo (
 	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queuenotifyinformation, context);
 }
 
+VOID _app_notify_killprocess (
+	_In_ HWND hwnd
+)
+{
+	PSYSTEM_PROCESS_INFORMATION spi;
+	PSYSTEM_PROCESS_INFORMATION process;
+	PNOTIFY_CONTEXT context;
+	HANDLE process_handle;
+	PITEM_APP ptr_app;
+	PR_STRING path;
+	NTSTATUS status;
+
+	context = _app_notify_getcontext (hwnd);
+
+	if (!context)
+		return;
+
+	ptr_app = _app_getappitem (context->app_hash);
+
+	if (!ptr_app)
+		return;
+
+	status = _r_sys_enumprocesses (&spi);
+
+	if (!NT_SUCCESS (status))
+	{
+		_r_log (LOG_LEVEL_ERROR, NULL, L"_r_sys_enumprocesses", status, NULL);
+
+		return;
+	}
+
+
+	process = PR_FIRST_PROCESS (spi);
+
+	do
+	{
+		if (process->ImageName.Buffer)
+		{
+			if (_r_str_compare (process->ImageName.Buffer, ptr_app->short_name->buffer) == 0)
+			{
+				status = _r_sys_getprocessimagepath (process->UniqueProcessId, &path, TRUE);
+
+				if (NT_SUCCESS (status))
+				{
+					if (_r_str_compare (path->buffer, ptr_app->real_path->buffer) == 0)
+					{
+						status = _r_sys_openprocess (process->UniqueProcessId, PROCESS_TERMINATE, &process_handle);
+
+						if (NT_SUCCESS (status))
+						{
+							status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
+
+							//if (NT_SUCCESS (status))
+							//	_app_notify_freeobject (hwnd, ptr_app);
+
+							NtClose (process_handle);
+						}
+					}
+
+					_r_obj_dereference (path);
+				}
+			}
+		}
+	}
+	while (process = PR_NEXT_PROCESS (process));
+
+	_r_mem_free (spi);
+}
+
 VOID _app_notify_refresh (
 	_In_ HWND hwnd
 )
@@ -868,7 +937,7 @@ INT_PTR CALLBACK NotificationProc (
 				DestroyWindow (current_hwnd);
 
 			// initialize window context
-			context = _r_mem_allocatezero (sizeof (NOTIFY_CONTEXT));
+			context = _r_mem_allocate (sizeof (NOTIFY_CONTEXT));
 
 			_app_notify_setcontext (hwnd, context);
 
@@ -1197,7 +1266,7 @@ INT_PTR CALLBACK NotificationProc (
 					PR_STRING string;
 					ULONG_PTR app_hash;
 					INT ctrl_id;
-					INT listview_id;
+					INT listview_id = 0;
 
 					lpnmdi = (LPNMTTDISPINFO)lparam;
 
@@ -1380,8 +1449,7 @@ INT_PTR CALLBACK NotificationProc (
 
 				return FALSE;
 			}
-			else if (ctrl_id >= IDX_TIMER &&
-					 ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
+			else if (ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
 			{
 				SIZE_T timer_idx;
 				LONG64 seconds;
@@ -1437,6 +1505,15 @@ INT_PTR CALLBACK NotificationProc (
 					_app_notify_freeobject (hwnd, ptr_app);
 
 					_r_obj_dereference (ptr_app);
+
+					break;
+				}
+
+				case IDC_KILLPROCESS_BTN:
+				{
+					_app_notify_killprocess (hwnd);
+
+					_r_ctrl_enable (hwnd, ctrl_id, FALSE);
 
 					break;
 				}
