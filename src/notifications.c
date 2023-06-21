@@ -100,10 +100,6 @@ BOOLEAN _app_notify_command (
 
 		_r_obj_addlistitem (rules, ptr_app);
 	}
-	else if (button_id == IDC_LATER_BTN)
-	{
-		// NOTHING!
-	}
 	else if (button_id == IDM_DISABLENOTIFICATIONS)
 	{
 		ptr_app->is_silent = TRUE;
@@ -340,8 +336,8 @@ VOID _app_notify_show (
 
 	WCHAR window_title[128];
 	PITEM_APP ptr_app;
-	PR_STRING string;
-	PR_STRING localized_string;
+	PR_STRING string = NULL;
+	PR_STRING localized_string = NULL;
 	PR_STRING display_name;
 	HDWP hdefer;
 	BOOLEAN is_fullscreenmode;
@@ -354,9 +350,6 @@ VOID _app_notify_show (
 
 		return;
 	}
-
-	string = NULL;
-	localized_string = NULL;
 
 	// set notification information
 	_app_notify_setapp_id (hwnd, ptr_log->app_hash);
@@ -775,7 +768,7 @@ VOID _app_notify_settimeout (
 	_r_ctrl_enable (hwnd, IDC_RULES_BTN, FALSE);
 	_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, FALSE);
 	_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, FALSE);
-	_r_ctrl_enable (hwnd, IDC_LATER_BTN, FALSE);
+	_r_ctrl_enable (hwnd, IDC_KILLPROCESS_BTN, FALSE);
 
 	SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY_TIMEOUT, NULL);
 }
@@ -826,7 +819,7 @@ VOID _app_notify_initialize (
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_DATE_TEXT; i++)
 			SendDlgItemMessage (context->hwnd, i, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 
-		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_LATER_BTN; i++)
+		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_KILLPROCESS_BTN; i++)
 			SendDlgItemMessage (context->hwnd, i, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
 	}
 
@@ -840,12 +833,12 @@ VOID _app_notify_initialize (
 	SendDlgItemMessage (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
 	SendDlgItemMessage (context->hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_allow);
 	SendDlgItemMessage (context->hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
-	SendDlgItemMessage (context->hwnd, IDC_LATER_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
+	SendDlgItemMessage (context->hwnd, IDC_KILLPROCESS_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
 
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_RULES_BTN, dpi_value);
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_ALLOW_BTN, dpi_value);
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_BLOCK_BTN, dpi_value);
-	_r_ctrl_setbuttonmargins (context->hwnd, IDC_LATER_BTN, dpi_value);
+	_r_ctrl_setbuttonmargins (context->hwnd, IDC_KILLPROCESS_BTN, dpi_value);
 }
 
 VOID _app_notify_destroy (
@@ -957,7 +950,7 @@ INT_PTR CALLBACK NotificationProc (
 				_r_ctrl_settiptext (htip, hwnd, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_ALLOW_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_BLOCK_BTN, LPSTR_TEXTCALLBACK);
-				_r_ctrl_settiptext (htip, hwnd, IDC_LATER_BTN, LPSTR_TEXTCALLBACK);
+				_r_ctrl_settiptext (htip, hwnd, IDC_KILLPROCESS_BTN, LPSTR_TEXTCALLBACK);
 			}
 
 			// display log information
@@ -997,7 +990,7 @@ INT_PTR CALLBACK NotificationProc (
 			_r_ctrl_enable (hwnd, IDC_RULES_BTN, TRUE);
 			_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, TRUE);
 			_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, TRUE);
-			_r_ctrl_enable (hwnd, IDC_LATER_BTN, TRUE);
+			_r_ctrl_enable (hwnd, IDC_KILLPROCESS_BTN, TRUE);
 
 			break;
 		}
@@ -1302,9 +1295,9 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_BLOCK_HINT));
 					}
-					else if (ctrl_id == IDC_LATER_BTN)
+					else if (ctrl_id == IDC_KILLPROCESS_BTN)
 					{
-						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_LATER_HINT));
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_TERMINATE_HINT));
 					}
 					else
 					{
@@ -1509,21 +1502,20 @@ INT_PTR CALLBACK NotificationProc (
 					break;
 				}
 
+				case IDC_ALLOW_BTN:
+				case IDC_BLOCK_BTN:
+				{
+					if (_r_ctrl_isenabled (hwnd, ctrl_id))
+						_app_notify_command (hwnd, ctrl_id, 0);
+
+					break;
+				}
+
 				case IDC_KILLPROCESS_BTN:
 				{
 					_app_notify_killprocess (hwnd);
 
 					_r_ctrl_enable (hwnd, ctrl_id, FALSE);
-
-					break;
-				}
-
-				case IDC_ALLOW_BTN:
-				case IDC_BLOCK_BTN:
-				case IDC_LATER_BTN:
-				{
-					if (_r_ctrl_isenabled (hwnd, ctrl_id))
-						_app_notify_command (hwnd, ctrl_id, 0);
 
 					break;
 				}
