@@ -1089,17 +1089,7 @@ PR_STRING _app_getfilehash (
 
 	while (TRUE)
 	{
-		status = NtReadFile (
-			hfile,
-			NULL,
-			NULL,
-			NULL,
-			&isb,
-			buffer,
-			sizeof (buffer),
-			NULL,
-			NULL
-		);
+		status = NtReadFile (hfile, NULL, NULL, NULL, &isb, buffer, sizeof (buffer), NULL, NULL);
 
 		if (!NT_SUCCESS (status))
 			break;

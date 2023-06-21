@@ -42,25 +42,21 @@ BOOLEAN _app_installmessage (
 	_In_ BOOLEAN is_install
 )
 {
+	TASKDIALOGCONFIG tdc = {0};
 	WCHAR str_main[256];
 	WCHAR radio_text_1[128];
 	WCHAR radio_text_2[128];
 	WCHAR str_flag[128];
 	WCHAR str_button_text_1[64];
 	WCHAR str_button_text_2[64];
-
-	TASKDIALOGCONFIG tdc = {0};
-
 	TASKDIALOG_BUTTON td_buttons[2] = {0};
 	TASKDIALOG_BUTTON td_radios[2] = {0};
-
 	INT command_id;
 	INT radio_id;
 	BOOL is_flagchecked;
 
 	tdc.cbSize = sizeof (tdc);
-	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION |
-		TDF_NO_SET_FOREGROUND | TDF_VERIFICATION_FLAG_CHECKED;
+	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_NO_SET_FOREGROUND | TDF_VERIFICATION_FLAG_CHECKED;
 	tdc.hwndParent = hwnd;
 	tdc.pszWindowTitle = _r_app_getname ();
 	tdc.pszMainIcon = is_install ? TD_INFORMATION_ICON : TD_WARNING_ICON;
@@ -2173,19 +2169,9 @@ INT_PTR CALLBACK DlgProc (
 			// add blocklist to update
 			if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 			{
-				_r_str_fromlong64 (
-					internal_profile_version,
-					RTL_NUMBER_OF (internal_profile_version),
-					profile_info.profile_internal_timestamp
-				);
+				_r_str_fromlong64 (internal_profile_version, RTL_NUMBER_OF (internal_profile_version), profile_info.profile_internal_timestamp);
 
-				_r_update_addcomponent (
-					L"Internal rules",
-					L"rules_internal",
-					internal_profile_version,
-					profile_info.profile_path_internal,
-					FALSE
-				);
+				_r_update_addcomponent (L"Internal rules", L"rules_internal", internal_profile_version, profile_info.profile_path_internal, FALSE);
 			}
 
 			_app_network_initialize (hwnd);
