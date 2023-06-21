@@ -554,7 +554,15 @@ NTSTATUS _app_db_decodebody (
 
 			return STATUS_FILE_NOT_SUPPORTED;
 		}
+
+		default:
+		{
+			return STATUS_INVALID_IMAGE_FORMAT;
+		}
 	}
+
+	if (!NT_SUCCESS (status))
+		return status;
 
 	if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
 		return STATUS_MORE_PROCESSING_REQUIRED;
