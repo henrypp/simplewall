@@ -10,6 +10,7 @@ typedef struct _NOTIFY_CONTEXT
 	HBITMAP hbmp_allow;
 	HBITMAP hbmp_block;
 	HBITMAP hbmp_cross;
+	HBITMAP hbmp_next;
 	HBITMAP hbmp_rules;
 
 	HFONT hfont_title;
