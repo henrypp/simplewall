@@ -505,6 +505,8 @@ NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
+	static USHORT format[] = {COMPRESSION_FORMAT_LZNT1, COMPRESSION_FORMAT_XPRESS};
+
 	SYSTEM_PROCESSOR_INFORMATION cpu_info = {0};
 	PR_BYTE new_bytes;
 	BYTE profile_type;
@@ -532,12 +534,15 @@ NTSTATUS _app_db_decodebody (
 		case PROFILE2_ID_COMPRESSED:
 		{
 			// decompress bytes
-			status = _r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, &db_info->bytes->sr, &new_bytes);
-
-			if (NT_SUCCESS (status))
+			for (SIZE_T i = 0; i < RTL_NUMBER_OF (format); i++)
 			{
-				_r_obj_movereference (&db_info->bytes, new_bytes);
-				break;
+				status = _r_sys_decompressbuffer (format[i], &db_info->bytes->sr, &new_bytes);
+
+				if (NT_SUCCESS (status))
+				{
+					_r_obj_movereference (&db_info->bytes, new_bytes);
+					break;
+				}
 			}
 
 			break;
