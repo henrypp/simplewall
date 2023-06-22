@@ -649,7 +649,11 @@ NTSTATUS _app_db_encodebody (
 			status = _app_db_encrypt (&bytes->sr, &new_bytes);
 
 			if (!NT_SUCCESS (status))
+			{
+				_r_obj_dereference (bytes);
+
 				return status;
+			}
 
 			break;
 		}
@@ -660,12 +664,13 @@ NTSTATUS _app_db_encodebody (
 		}
 	}
 
-	status = _app_db_generatebody (profile_type, hash_value, new_bytes, &body_bytes);
+	_r_obj_movereference (&bytes, new_bytes);
+
+	status = _app_db_generatebody (profile_type, hash_value, bytes, &body_bytes);
 
 	*out_buffer = body_bytes;
 
 	_r_obj_dereference (hash_value);
-	_r_obj_dereference (new_bytes);
 	_r_obj_dereference (bytes);
 
 	return status;
@@ -675,11 +680,11 @@ _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_generatebody (
 	_In_ BYTE profile_type,
 	_In_ PR_BYTE hash_value,
-	_In_ PR_BYTE body_value,
+	_In_ PR_BYTE buffer,
 	_Out_ PR_BYTE_PTR out_buffer
 )
 {
-	PR_BYTE bytes = NULL;
+	PR_BYTE bytes;
 	PVOID ptr;
 
 	*out_buffer = NULL;
@@ -688,14 +693,14 @@ NTSTATUS _app_db_generatebody (
 	{
 		case PROFILE2_ID_PLAIN:
 		{
-			bytes = _r_obj_reference (body_value);
+			bytes = _r_obj_reference (buffer);
 			break;
 		}
 
 		case PROFILE2_ID_COMPRESSED:
 		case PROFILE2_ID_ENCRYPTED:
 		{
-			bytes = _r_obj_createbyte_ex (NULL, PROFILE2_HEADER_LENGTH + body_value->length);
+			bytes = _r_obj_createbyte_ex (NULL, PROFILE2_HEADER_LENGTH + buffer->length);
 
 			RtlCopyMemory (bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc));
 
@@ -706,7 +711,7 @@ NTSTATUS _app_db_generatebody (
 			RtlCopyMemory (ptr, hash_value->buffer, hash_value->length);
 
 			ptr = PTR_ADD_OFFSET (bytes->buffer, PROFILE2_HEADER_LENGTH);
-			RtlCopyMemory (ptr, body_value->buffer, body_value->length);
+			RtlCopyMemory (ptr, buffer->buffer, buffer->length);
 
 			break;
 		}
