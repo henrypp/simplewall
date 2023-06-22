@@ -60,6 +60,8 @@ static const BYTE profile2_fourcc[] = {
 #define PROFILE2_ID_COMPRESSED ((BYTE)(0x31))
 #define PROFILE2_ID_ENCRYPTED ((BYTE)(0x32))
 
+#define PROFILE2_KEY "Gc(j1EptodnKP?{ZT!SlMVip[fJIs&Ci3fOqjATfp@h,q0(]QVaGs5Iht3)/b:Ll"
+
 #define PROFILE2_FOURCC_LENGTH sizeof (profile2_fourcc) + sizeof (BYTE)
 #define PROFILE2_SHA256_LENGTH 32UL
 #define PROFILE2_HEADER_LENGTH (PROFILE2_FOURCC_LENGTH + PROFILE2_SHA256_LENGTH)
@@ -74,13 +76,13 @@ VOID _app_db_destroy (
 	_Inout_ PDB_INFORMATION db_info
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_encrypt (
 	_In_ PR_BYTEREF bytes,
 	_Out_ PR_BYTE_PTR out_buffer
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decrypt (
 	_In_ PR_BYTEREF buffer,
 	_Out_ PR_BYTE_PTR out_buffer

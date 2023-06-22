@@ -28,7 +28,7 @@ VOID _app_db_destroy (
 	_r_xml_destroylibrary (&db_info->xml_library);
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_encrypt (
 	_In_ PR_BYTEREF bytes,
 	_Out_ PR_BYTE_PTR out_buffer
@@ -42,14 +42,14 @@ NTSTATUS _app_db_encrypt (
 
 	status = _r_crypt_createcryptcontext (&crypt_context, BCRYPT_AES_ALGORITHM);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		return status;
 
-	_r_obj_initializebyterefempty (&key);
+	_r_obj_initializebyteref (&key, PROFILE2_KEY);
 
 	status = _r_crypt_generatekey (&crypt_context, &key);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
 	status = _r_crypt_encryptbuffer (&crypt_context, bytes->buffer, (ULONG)bytes->length, out_buffer);
@@ -61,7 +61,7 @@ CleanupExit:
 	return status;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decrypt (
 	_In_ PR_BYTEREF bytes,
 	_Out_ PR_BYTE_PTR out_buffer
@@ -75,14 +75,14 @@ NTSTATUS _app_db_decrypt (
 
 	status = _r_crypt_createcryptcontext (&crypt_context, BCRYPT_AES_ALGORITHM);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		return status;
 
-	_r_obj_initializebyterefempty (&key);
+	_r_obj_initializebyteref (&key, PROFILE2_KEY);
 
 	status = _r_crypt_generatekey (&crypt_context, &key);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
 	status = _r_crypt_decryptbuffer (&crypt_context, bytes->buffer, (ULONG)bytes->length, out_buffer);
@@ -532,7 +532,7 @@ NTSTATUS _app_db_decodebody (
 		case PROFILE2_ID_COMPRESSED:
 		{
 			// decompress bytes
-			status = _r_sys_decompressbuffer (COMPRESSION_FORMAT_XPRESS_HUFF, &db_info->bytes->sr, &new_bytes);
+			status = _r_sys_decompressbuffer (COMPRESSION_FORMAT_LZNT1, &db_info->bytes->sr, &new_bytes);
 
 			if (NT_SUCCESS (status))
 			{
@@ -545,19 +545,19 @@ NTSTATUS _app_db_decodebody (
 
 		case PROFILE2_ID_ENCRYPTED:
 		{
-			//status = _app_db_decrypt (&db_info->bytes->sr, &new_bytes);
-			//
-			//if (status != STATUS_SUCCESS)
-			//	return status;
-			//
-			//_r_obj_movereference (&db_info->bytes, new_bytes);
+			status = _app_db_decrypt (&db_info->bytes->sr, &new_bytes);
 
-			return STATUS_FILE_NOT_SUPPORTED;
+			if (!NT_SUCCESS (status))
+				return status;
+
+			_r_obj_movereference (&db_info->bytes, new_bytes);
+
+			break;
 		}
 
 		default:
 		{
-			return STATUS_INVALID_IMAGE_FORMAT;
+			return STATUS_FILE_NOT_SUPPORTED;
 		}
 	}
 
@@ -594,7 +594,7 @@ NTSTATUS _app_db_encodebody (
 )
 {
 	PR_BYTE bytes;
-	PR_BYTE new_bytes = NULL;
+	PR_BYTE new_bytes;
 	PR_BYTE body_bytes;
 	PR_BYTE hash_value;
 	NTSTATUS status;
@@ -620,14 +620,14 @@ NTSTATUS _app_db_encodebody (
 	{
 		case PROFILE2_ID_PLAIN:
 		{
-			new_bytes = _r_obj_reference (bytes);
+			new_bytes = bytes;
 			break;
 		}
 
 		case PROFILE2_ID_COMPRESSED:
 		{
 			// compress body
-			status = _r_sys_compressbuffer (COMPRESSION_FORMAT_XPRESS_HUFF | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
+			status = _r_sys_compressbuffer (COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
 
 			if (!NT_SUCCESS (status))
 			{
@@ -641,24 +641,26 @@ NTSTATUS _app_db_encodebody (
 
 		case PROFILE2_ID_ENCRYPTED:
 		{
-			_r_obj_dereference (bytes);
+			status = _app_db_encrypt (&bytes->sr, &new_bytes);
 
+			if (!NT_SUCCESS (status))
+				return status;
+
+			break;
+		}
+
+		default:
+		{
 			return STATUS_FILE_NOT_SUPPORTED;
 		}
 	}
 
-	if (new_bytes)
-	{
-		status = _app_db_generatebody (profile_type, hash_value, new_bytes, &body_bytes);
+	status = _app_db_generatebody (profile_type, hash_value, new_bytes, &body_bytes);
 
-		*out_buffer = body_bytes;
-	}
+	*out_buffer = body_bytes;
 
 	_r_obj_dereference (hash_value);
-
-	if (new_bytes)
-		_r_obj_dereference (new_bytes);
-
+	_r_obj_dereference (new_bytes);
 	_r_obj_dereference (bytes);
 
 	return status;
@@ -686,6 +688,7 @@ NTSTATUS _app_db_generatebody (
 		}
 
 		case PROFILE2_ID_COMPRESSED:
+		case PROFILE2_ID_ENCRYPTED:
 		{
 			bytes = _r_obj_createbyte_ex (NULL, PROFILE2_HEADER_LENGTH + body_value->length);
 
@@ -703,7 +706,7 @@ NTSTATUS _app_db_generatebody (
 			break;
 		}
 
-		case PROFILE2_ID_ENCRYPTED:
+		default:
 		{
 			return STATUS_FILE_NOT_SUPPORTED;
 		}
@@ -876,7 +879,7 @@ NTSTATUS _app_db_save_streamtofile (
 	if (!_r_fs_isvalidhandle (hfile))
 		return RtlGetLastNtStatus ();
 
-	status = _app_db_encodebody (db_info, PROFILE2_ID_COMPRESSED, &new_bytes);
+	status = _app_db_encodebody (db_info, PROFILE2_ID_ENCRYPTED, &new_bytes);
 
 	if (NT_SUCCESS (status))
 		WriteFile (hfile, new_bytes->buffer, (ULONG)new_bytes->length, &unused, NULL);
