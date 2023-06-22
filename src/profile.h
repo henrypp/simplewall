@@ -240,7 +240,7 @@ VOID _app_profile_initialize ();
 
 NTSTATUS _app_profile_load_fromresource (
 	_In_ LPCWSTR resource_name,
-	_Out_ PDB_INFORMATION * out_buffer
+	_Out_ PDB_INFORMATION out_buffer
 );
 
 VOID _app_profile_load_fallback ();
