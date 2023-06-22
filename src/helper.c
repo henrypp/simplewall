@@ -1784,7 +1784,7 @@ VOID NTAPI _app_queuefileinformation (
 		status = GetLastError ();
 
 		if (status != ERROR_PATH_NOT_FOUND && status != ERROR_ACCESS_DENIED)
-			_r_log (LOG_LEVEL_INFO, NULL, L"CreateFile", status, ptr_app_info->path->buffer);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"CreateFile", status, ptr_app_info->path->buffer);
 
 		return;
 	}
