@@ -1382,13 +1382,10 @@ BOOLEAN _app_isappexists (
 	if (ptr_app->type == DATA_APP_REGULAR)
 		return ptr_app->real_path && _r_fs_exists (ptr_app->real_path->buffer);
 
-	if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK ||
-		ptr_app->type == DATA_APP_PICO)
-	{
+	if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK || ptr_app->type == DATA_APP_PICO)
 		return TRUE;
-	}
 
-	// Service and UWP is already undeletable
+	// Services and UWP are undeletable
 	//if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
 	//	return TRUE;
 
@@ -1430,6 +1427,9 @@ BOOLEAN _app_isappused (
 	_In_ PITEM_APP ptr_app
 )
 {
+	if (ptr_app->is_undeletable)
+		return TRUE;
+
 	if (ptr_app->is_enabled || ptr_app->is_silent)
 		return TRUE;
 

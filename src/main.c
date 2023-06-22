@@ -2047,31 +2047,24 @@ VOID _app_initialize ()
 	_app_icons_getdefault ();
 
 	// initialize global filters array object
-	if (!filter_ids)
-		filter_ids = _r_obj_createarray (sizeof (GUID), NULL);
+	filter_ids = _r_obj_createarray (sizeof (GUID), NULL);
 
 	// initialize apps table
-	if (!apps_table)
-		apps_table = _r_obj_createhashtablepointer (32);
+	apps_table = _r_obj_createhashtablepointer (32);
 
 	// initialize rules array object
-	if (!rules_list)
-		rules_list = _r_obj_createlist (&_r_obj_dereference);
+	rules_list = _r_obj_createlist (&_r_obj_dereference);
 
 	// initialize rules configuration table
-	if (!rules_config)
-		rules_config = _r_obj_createhashtable (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
+	rules_config = _r_obj_createhashtable (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
 
 	// initialize log hashtable object
-	if (!log_table)
-		log_table = _r_obj_createhashtablepointer (32);
+	log_table = _r_obj_createhashtablepointer (32);
 
 	// initialize cache table
-	if (!cache_information)
-		cache_information = _r_obj_createhashtablepointer (32);
+	cache_information = _r_obj_createhashtablepointer (32);
 
-	if (!cache_resolution)
-		cache_resolution = _r_obj_createhashtablepointer (32);
+	cache_resolution = _r_obj_createhashtablepointer (32);
 
 	config.hnotify_evt = CreateEvent (NULL, FALSE, TRUE, NULL);
 }
@@ -2906,7 +2899,7 @@ INT_PTR CALLBACK DlgProc (
 
 					_app_logclear_ui (hwnd);
 
-					if (config.netevent_status == ERROR_SUCCESS)
+					if (config.is_neteventset)
 					{
 						hengine = _wfp_getenginehandle ();
 
@@ -2923,7 +2916,7 @@ INT_PTR CALLBACK DlgProc (
 				{
 					HANDLE hengine;
 
-					if (config.netevent_status == ERROR_SUCCESS)
+					if (config.is_neteventset)
 					{
 						hengine = _wfp_getenginehandle ();
 
@@ -3007,8 +3000,7 @@ INT_PTR CALLBACK DlgProc (
 			}
 			else if (notify_code == 0)
 			{
-				if (ctrl_id >= IDX_LANGUAGE &&
-					ctrl_id <= IDX_LANGUAGE + (INT)(INT_PTR)_r_locale_getcount () + 1)
+				if (ctrl_id >= IDX_LANGUAGE && ctrl_id <= IDX_LANGUAGE + (INT)(INT_PTR)_r_locale_getcount () + 1)
 				{
 					HMENU hmenu;
 					HMENU hsubmenu;
@@ -3025,14 +3017,12 @@ INT_PTR CALLBACK DlgProc (
 
 					return FALSE;
 				}
-				else if (ctrl_id >= IDX_RULES_SPECIAL &&
-						 ctrl_id <= (IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list)))
+				else if (ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= (IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list)))
 				{
 					_app_command_idtorules (hwnd, ctrl_id);
 					return FALSE;
 				}
-				else if (ctrl_id >= IDX_TIMER &&
-						 ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
+				else if (ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
 				{
 					_app_command_idtotimers (hwnd, ctrl_id);
 					return FALSE;
@@ -3103,7 +3093,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_IMPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*." XML_PROFILE_EXT L")", L"*." XML_PROFILE_EXT,
+						L"Profile files (*.sp, *xml)", L"*.sp, *xml",
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -3141,7 +3131,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_EXPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*." XML_PROFILE_EXT L")", L"*." XML_PROFILE_EXT,
+						L"Profile files (*.sp, *xml)", L"*.sp, *xml",
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -3942,6 +3932,7 @@ INT APIENTRY wWinMain (
 )
 {
 	HWND hwnd;
+	ULONG result;
 
 	if (!_r_app_initialize ())
 		return ERROR_APP_INIT_FAILURE;
@@ -3959,5 +3950,7 @@ INT APIENTRY wWinMain (
 	if (!hwnd)
 		return ERROR_APP_INIT_FAILURE;
 
-	return _r_wnd_message_callback (hwnd, MAKEINTRESOURCE (IDA_MAIN));
+	result = _r_wnd_message_callback (hwnd, MAKEINTRESOURCE (IDA_MAIN));
+
+	return result;
 }

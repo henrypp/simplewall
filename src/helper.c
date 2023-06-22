@@ -433,8 +433,6 @@ BOOLEAN _app_getappinfoparam2 (
 			if (size != sizeof (LONG))
 				goto CleanupExit;
 
-			icon_id = 0;
-
 			if (ptr_app_info)
 			{
 				icon_id = ptr_app_info->large_icon_id;
@@ -474,7 +472,7 @@ BOOLEAN _app_getappinfoparam2 (
 
 			if (ptr_app_info)
 			{
-				if (ptr_app_info->signature_info)
+				if (!_r_obj_isstringempty (ptr_app_info->signature_info))
 				{
 					ptr = _r_obj_reference (ptr_app_info->signature_info);
 
@@ -496,7 +494,7 @@ BOOLEAN _app_getappinfoparam2 (
 
 			if (ptr_app_info)
 			{
-				if (ptr_app_info->version_info)
+				if (!_r_obj_isstringempty (ptr_app_info->version_info))
 				{
 					ptr = _r_obj_reference (ptr_app_info->version_info);
 
@@ -866,23 +864,18 @@ LONG _app_verifyfilefromcatalog (
 	HCATADMIN hcat_admin;
 	HCATINFO hcat_info;
 	LONG64 file_size;
-	PR_STRING string;
+	PR_STRING string = NULL;
 	PR_STRING file_hash_tag;
 	PVOID file_hash;
 	ULONG file_hash_length;
-	LONG status;
+	LONG status = TRUST_E_FAIL;
+
+	*signature_string = NULL;
 
 	file_size = _r_fs_getsize (hfile);
 
 	if (!file_size || file_size > _r_calc_megabytes2bytes64 (32))
-	{
-		*signature_string = NULL;
-
 		return TRUST_E_NOSIGNATURE;
-	}
-
-	string = NULL;
-	status = TRUST_E_FAIL;
 
 	if (_app_calculatefilehash (hfile, algorithm_id, &file_hash, &file_hash_length, &hcat_admin))
 	{

@@ -550,6 +550,7 @@ NTSTATUS _app_db_decodebody (
 
 		case PROFILE2_ID_ENCRYPTED:
 		{
+			// decrypt bytes
 			status = _app_db_decrypt (&db_info->bytes->sr, &new_bytes);
 
 			if (!NT_SUCCESS (status))
@@ -575,7 +576,6 @@ NTSTATUS _app_db_decodebody (
 	// fix arm64 crash that was introduced by Micro$oft (issue #1228)
 	if (NT_SUCCESS (NtQuerySystemInformation (SystemProcessorInformation, &cpu_info, sizeof (cpu_info), NULL)))
 	{
-
 		if (cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM ||
 			cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 ||
 			cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
