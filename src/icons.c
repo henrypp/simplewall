@@ -32,11 +32,11 @@ PICON_INFORMATION _app_icons_getdefault ()
 
 		_app_icons_loadfromfile (path, 0, &icon_info.service_icon_id, &icon_info.service_hicon, FALSE);
 
+		_r_obj_dereference (path);
+
 		// load uwp icons
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
-			_r_obj_dereference (path);
-
 			path = _r_obj_concatstrings (
 				2,
 				_r_sys_getsystemdirectory ()->buffer,
@@ -44,9 +44,9 @@ PICON_INFORMATION _app_icons_getdefault ()
 			);
 
 			_app_icons_loadfromfile (path, 0, &icon_info.uwp_icon_id, &icon_info.uwp_hicon, FALSE);
-		}
 
-		_r_obj_dereference (path);
+			_r_obj_dereference (path);
+		}
 
 		_r_initonce_end (&init_once);
 	}
