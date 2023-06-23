@@ -949,9 +949,6 @@ VOID _app_getfilesignatureinfo (
 		}
 	}
 
-	if (!string)
-		string = _r_obj_referenceemptystring ();
-
 	_r_obj_movereference (&ptr_app_info->signature_info, string);
 }
 
@@ -1763,12 +1760,7 @@ VOID NTAPI _app_queuefileinformation (
 
 	// check for binary path is valid
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
-	{
-		_r_obj_movereference (&ptr_app_info->signature_info, _r_obj_referenceemptystring ());
-		_r_obj_movereference (&ptr_app_info->version_info, _r_obj_referenceemptystring ());
-
 		return;
-	}
 
 	hfile = CreateFile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
