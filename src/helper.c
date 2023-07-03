@@ -1050,20 +1050,23 @@ VOID _app_getfilehashinfo (
 {
 	PITEM_APP ptr_app;
 	PR_STRING string;
+	NTSTATUS status;
 
 	ptr_app = _app_getappitem (ptr_app_info->app_hash);
 
 	if (!ptr_app)
 		return;
 
-	string = _app_getfilehash (hfile);
+	status = _app_getfilehash (hfile, &string);
 
-	_r_obj_movereference (&ptr_app->hash, string);
+	if (NT_SUCCESS (status))
+		_r_obj_movereference (&ptr_app->hash, string);
 }
 
-_Ret_maybenull_
-PR_STRING _app_getfilehash (
-	_In_ HANDLE hfile
+_Success_ (NT_SUCCESS (return))
+NTSTATUS _app_getfilehash (
+	_In_ HANDLE hfile,
+	_Outptr_ PR_STRING_PTR out_buffer
 )
 {
 	R_CRYPT_CONTEXT hash_context;
@@ -1072,10 +1075,12 @@ PR_STRING _app_getfilehash (
 	PR_STRING string;
 	NTSTATUS status;
 
+	*out_buffer = NULL;
+
 	status = _r_crypt_createhashcontext (&hash_context, BCRYPT_SHA256_ALGORITHM);
 
 	if (!NT_SUCCESS (status))
-		return NULL;
+		return status;
 
 	while (TRUE)
 	{
@@ -1093,11 +1098,13 @@ PR_STRING _app_getfilehash (
 			break;
 	}
 
-	_r_crypt_finalhashcontext (&hash_context, &string, NULL);
+	status = _r_crypt_finalhashcontext (&hash_context, &string, NULL);
 
 	_r_crypt_destroycryptcontext (&hash_context);
 
-	return string;
+	*out_buffer = string;
+
+	return status;
 }
 
 ULONG_PTR _app_addcolor (

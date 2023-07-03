@@ -161,9 +161,10 @@ VOID _app_getfilehashinfo (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 );
 
-_Ret_maybenull_
-PR_STRING _app_getfilehash (
-	_In_ HANDLE hfile
+_Success_ (NT_SUCCESS (return))
+NTSTATUS _app_getfilehash (
+	_In_ HANDLE hfile,
+	_Outptr_ PR_STRING_PTR out_buffer
 );
 
 ULONG_PTR _app_addcolor (
