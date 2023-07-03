@@ -120,6 +120,28 @@ NTSTATUS _app_db_gethash (
 	return status;
 }
 
+BYTE _app_getprofiletype ()
+{
+	LONG profile_type;
+
+	profile_type = _r_config_getlong (L"ProfileType", 0);
+
+	switch (profile_type)
+	{
+		case 1:
+		{
+			return PROFILE2_ID_COMPRESSED;
+		}
+
+		case 2:
+		{
+			return PROFILE2_ID_ENCRYPTED;
+		}
+	}
+
+	return PROFILE2_ID_PLAIN;
+}
+
 _Success_ (return == STATUS_SUCCESS)
 NTSTATUS _app_db_ishashvalid (
 	_In_ PR_BYTEREF buffer,
@@ -880,28 +902,6 @@ NTSTATUS _app_db_savetofile (
 	status = _app_db_save_streamtofile (db_info, path);
 
 	return status;
-}
-
-FORCEINLINE BYTE _app_getprofiletype ()
-{
-	LONG profile_type;
-
-	profile_type = _r_config_getlong (L"ProfileType", 0);
-
-	switch (profile_type)
-	{
-		case 1:
-		{
-			return PROFILE2_ID_COMPRESSED;
-		}
-
-		case 2:
-		{
-			return PROFILE2_ID_ENCRYPTED;
-		}
-	}
-
-	return PROFILE2_ID_PLAIN;
 }
 
 _Success_ (NT_SUCCESS (return))

@@ -94,6 +94,8 @@ NTSTATUS _app_db_gethash (
 	_Out_ PR_BYTE_PTR out_buffer
 );
 
+BYTE _app_getprofiletype ();
+
 _Success_ (return == STATUS_SUCCESS)
 NTSTATUS _app_db_ishashvalid (
 	_In_ PR_BYTEREF buffer,
