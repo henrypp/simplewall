@@ -808,6 +808,10 @@ INT_PTR CALLBACK EditorPagesProc (
 				}
 			}
 
+			// app hash
+			if (GetDlgItem (hwnd, IDC_APP_HASH_ID))
+				_r_ctrl_setstring (hwnd, IDC_APP_HASH_ID, _r_obj_getstringordefault (context->ptr_app->hash, L"<empty)>"));
+
 			// app rules
 			if (GetDlgItem (hwnd, IDC_APP_RULES_ID))
 			{
