@@ -51,9 +51,7 @@ static const BYTE profile2_fourcc[] = {
 #define XML_VERSION_CURRENT XML_VERSION_4
 #define XML_VERSION_MAXIMUM XML_VERSION_5
 
-#define XML_PROFILE_FILE L"profile.sp"
-#define XML_PROFILE_FILE_OLD L"profile.xml"
-
+#define XML_PROFILE_FILE L"profile.xml"
 #define XML_PROFILE_INTERNAL L"profile_internal.xml"
 
 #define PROFILE2_ID_PLAIN ((BYTE)(0x30))
