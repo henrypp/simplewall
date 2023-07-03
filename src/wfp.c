@@ -517,7 +517,7 @@ VOID _wfp_installfilters (
 	PR_ARRAY guids;
 	PR_LIST rules;
 	LPCGUID guid;
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
 	SIZE_T enum_key;
 	BOOLEAN is_intransact;
@@ -694,11 +694,7 @@ BOOLEAN _wfp_deletefilter (
 
 	status = FwpmFilterDeleteByKey (engine_handle, filter_id);
 
-#if !defined(_DEBUG)
 	if (status != ERROR_SUCCESS && status != FWP_E_FILTER_NOT_FOUND)
-#else
-	if (status != ERROR_SUCCESS)
-#endif // !DEBUG
 	{
 		_r_str_fromguid (filter_id, TRUE, &string);
 
@@ -799,7 +795,7 @@ ULONG _wfp_createfilter (
 	FWPM_FILTER filter = {0};
 	WCHAR filter_description[128];
 	PR_STRING layer_name;
-	LPCWSTR filter_type_string;
+	LPCWSTR filter_type;
 	UINT64 filter_id;
 	ULONG status;
 
@@ -809,11 +805,11 @@ ULONG _wfp_createfilter (
 	if (status != ERROR_SUCCESS)
 		return status;
 
-	filter_type_string = _wfp_filtertypetostring (type);
+	filter_type = _wfp_filtertypetostring (type);
 
-	if (filter_type_string && filter_name)
+	if (filter_type && filter_name)
 	{
-		_r_str_printf (filter_description, RTL_NUMBER_OF (filter_description), L"%s\\%s", filter_type_string, filter_name);
+		_r_str_printf (filter_description, RTL_NUMBER_OF (filter_description), L"%s\\%s", filter_type, filter_name);
 	}
 	else if (filter_name)
 	{
@@ -825,12 +821,8 @@ ULONG _wfp_createfilter (
 	}
 
 	// reset action rights
-	if (weight == FW_WEIGHT_HIGHEST_IMPORTANT ||
-		action == FWP_ACTION_BLOCK ||
-		action == FWP_ACTION_CALLOUT_TERMINATING)
-	{
+	if (weight == FW_WEIGHT_HIGHEST_IMPORTANT || action == FWP_ACTION_BLOCK || action == FWP_ACTION_CALLOUT_TERMINATING)
 		filter.flags = FWPM_FILTER_FLAG_CLEAR_ACTION_RIGHT;
-	}
 
 	// set filter flags
 	if ((flags & FWPM_FILTER_FLAG_BOOTTIME) == 0)
@@ -888,7 +880,7 @@ ULONG _wfp_createfilter (
 
 VOID _wfp_clearfilter_ids ()
 {
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
 	SIZE_T enum_key;
 
@@ -1365,23 +1357,6 @@ BOOLEAN _wfp_createrulefilter (
 				flags,
 				guids
 			);
-
-			//if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
-			//{
-			//	_wfp_createfilter (
-			//		engine_handle,
-			//		filter_type,
-			//		filter_name,
-			//		fwfc,
-			//		count,
-			//		&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
-			//		NULL,
-			//		weight,
-			//		FWP_ACTION_PERMIT,
-			//		flags,
-			//		guids
-			//	);
-			//}
 		}
 
 		if (af == AF_INET6 || af == AF_UNSPEC)
@@ -1399,23 +1374,6 @@ BOOLEAN _wfp_createrulefilter (
 				flags,
 				guids
 			);
-
-			//if (action == FWP_ACTION_BLOCK && (!is_remoteaddr_set && !is_remoteport_set))
-			//{
-			//	_wfp_createfilter (
-			//		engine_handle,
-			//		filter_type,
-			//		filter_name,
-			//		fwfc,
-			//		count,
-			//		&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
-			//		NULL,
-			//		weight,
-			//		FWP_ACTION_PERMIT,
-			//		flags,
-			//		guids
-			//	);
-			//}
 		}
 	}
 
@@ -1475,6 +1433,7 @@ BOOLEAN _wfp_create4filters (
 			if (!_r_obj_isarrayempty (ptr_rule->guids))
 			{
 				_r_obj_addarrayitems (guids, ptr_rule->guids->items, ptr_rule->guids->count);
+
 				_r_obj_cleararray (ptr_rule->guids);
 			}
 		}
@@ -1487,6 +1446,7 @@ BOOLEAN _wfp_create4filters (
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
+
 		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
@@ -1505,6 +1465,7 @@ BOOLEAN _wfp_create4filters (
 			continue;
 
 		ptr_rule->is_haveerrors = FALSE;
+
 		_r_obj_cleararray (ptr_rule->guids);
 
 		if (!ptr_rule->is_enabled)
@@ -1695,6 +1656,7 @@ BOOLEAN _wfp_create3filters (
 			if (ptr_app && !_r_obj_isarrayempty (ptr_app->guids))
 			{
 				_r_obj_addarrayitems (guids, ptr_app->guids->items, ptr_app->guids->count);
+
 				_r_obj_cleararray (ptr_app->guids);
 			}
 		}
@@ -1707,6 +1669,7 @@ BOOLEAN _wfp_create3filters (
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
+
 		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
@@ -1846,6 +1809,7 @@ BOOLEAN _wfp_create2filters (
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
+
 		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
@@ -1933,34 +1897,6 @@ BOOLEAN _wfp_create2filters (
 			filter_ids
 		);
 
-		//_wfp_createfilter (
-		//	engine_handle,
-		//	DATA_FILTER_GENERAL,
-		//	FW_NAME_LOOPBACK,
-		//	fwfc,
-		//	1,
-		//	&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
-		//	NULL,
-		//	FW_WEIGHT_HIGHEST_IMPORTANT,
-		//	FWP_ACTION_PERMIT,
-		//	0,
-		//	filter_ids
-		//);
-
-		//_wfp_createfilter (
-		//	engine_handle,
-		//	DATA_FILTER_GENERAL,
-		//	FW_NAME_LOOPBACK,
-		//	fwfc,
-		//	1,
-		//	&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
-		//	NULL,
-		//	FW_WEIGHT_HIGHEST_IMPORTANT,
-		//	FWP_ACTION_PERMIT,
-		//	0,
-		//	filter_ids
-		//);
-
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (loopback_list); i++)
 		{
 			if (!_app_parserulestring (&loopback_list[i], &address))
@@ -2004,20 +1940,6 @@ BOOLEAN _wfp_create2filters (
 					0,
 					filter_ids
 				);
-
-				//_wfp_createfilter (
-				//	engine_handle,
-				//	DATA_FILTER_GENERAL,
-				//	FW_NAME_LOOPBACK,
-				//	fwfc,
-				//	2,
-				//	&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4,
-				//	NULL,
-				//	FW_WEIGHT_HIGHEST_IMPORTANT,
-				//	FWP_ACTION_PERMIT,
-				//	0,
-				//	filter_ids
-				//);
 			}
 			else if (address.format == NET_ADDRESS_IPV6)
 			{
@@ -2055,20 +1977,6 @@ BOOLEAN _wfp_create2filters (
 					0,
 					filter_ids
 				);
-
-				//_wfp_createfilter (
-				//	engine_handle,
-				//	DATA_FILTER_GENERAL,
-				//	FW_NAME_LOOPBACK,
-				//	fwfc,
-				//	2,
-				//	&FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6,
-				//	NULL,
-				//	FW_WEIGHT_HIGHEST_IMPORTANT,
-				//	FWP_ACTION_PERMIT,
-				//	0,
-				//	filter_ids
-				//);
 			}
 		}
 	}
@@ -2501,8 +2409,7 @@ BOOLEAN _wfp_create2filters (
 		);
 	}
 
-	action = _r_config_getboolean (L"BlockOutboundConnections", TRUE) ?
-		FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+	action = _r_config_getboolean (L"BlockOutboundConnections", TRUE) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
 	// block outbound connection
 	if (action == FWP_ACTION_BLOCK)
@@ -2570,8 +2477,7 @@ BOOLEAN _wfp_create2filters (
 	);
 
 	// block inbound connections
-	if (_r_config_getboolean (L"UseStealthMode", TRUE) ||
-		_r_config_getboolean (L"BlockInboundConnections", TRUE))
+	if (_r_config_getboolean (L"UseStealthMode", TRUE) || _r_config_getboolean (L"BlockInboundConnections", TRUE))
 	{
 		action = FWP_ACTION_BLOCK;
 	}
@@ -2642,11 +2548,11 @@ ULONG _wfp_dumpcallouts (
 	FWPM_CALLOUT **callouts_enum;
 	FWPM_CALLOUT *callout;
 	PR_ARRAY guids;
-	HANDLE enum_handle;
+	HANDLE enum_handle = NULL;
 	ULONG status;
 	UINT32 return_count;
 
-	enum_handle = NULL;
+	*out_buffer = NULL;
 
 	status = FwpmCalloutCreateEnumHandle (engine_handle, NULL, &enum_handle);
 
@@ -2664,6 +2570,7 @@ ULONG _wfp_dumpcallouts (
 	if (!callouts_enum)
 	{
 		status = ERROR_NOT_FOUND;
+
 		goto CleanupExit;
 	}
 
@@ -2690,13 +2597,7 @@ ULONG _wfp_dumpcallouts (
 CleanupExit:
 
 	if (status == ERROR_SUCCESS)
-	{
 		*out_buffer = guids;
-	}
-	else
-	{
-		*out_buffer = NULL;
-	}
 
 	if (enum_handle)
 		FwpmCalloutDestroyEnumHandle (engine_handle, enum_handle);
@@ -2714,22 +2615,19 @@ ULONG _wfp_dumpfilters (
 	_Outptr_ PR_ARRAY_PTR out_buffer
 )
 {
-	FWPM_FILTER **filters_enum;
+	FWPM_FILTER **filters_enum = NULL;
 	FWPM_FILTER *filter;
-	PR_ARRAY guids;
-	HANDLE enum_handle;
+	PR_ARRAY guids = NULL;
+	HANDLE enum_handle = NULL;
 	ULONG status;
 	UINT32 return_count;
 
-	enum_handle = NULL;
+	*out_buffer = NULL;
 
 	status = FwpmFilterCreateEnumHandle (engine_handle, NULL, &enum_handle);
 
 	if (status != ERROR_SUCCESS)
 		return status;
-
-	filters_enum = NULL;
-	guids = NULL;
 
 	status = FwpmFilterEnum (engine_handle, enum_handle, UINT32_MAX, &filters_enum, &return_count);
 
@@ -2765,13 +2663,7 @@ ULONG _wfp_dumpfilters (
 CleanupExit:
 
 	if (status == ERROR_SUCCESS)
-	{
 		*out_buffer = guids;
-	}
-	else
-	{
-		*out_buffer = NULL;
-	}
 
 	if (enum_handle)
 		FwpmFilterDestroyEnumHandle (engine_handle, enum_handle);
@@ -2878,11 +2770,9 @@ BOOLEAN _wfp_firewallisenabled ()
 		NET_FW_PROFILE2_PUBLIC
 	};
 
-	INetFwPolicy2 *INetFwPolicy;
-	VARIANT_BOOL result;
+	INetFwPolicy2 *INetFwPolicy = NULL;
+	VARIANT_BOOL result = VARIANT_FALSE;
 	HRESULT status;
-
-	result = VARIANT_FALSE;
 
 	status = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
 
@@ -2911,7 +2801,7 @@ BOOLEAN _wfp_firewallisenabled ()
 NTSTATUS _FwpmGetAppIdFromFileName1 (
 	_In_ PR_STRING path,
 	_In_ ENUM_TYPE_DATA type,
-	_Outptr_ PVOID_PTR byte_blob
+	_Out_ PVOID_PTR byte_blob
 )
 {
 	PR_STRING original_path;
@@ -2937,9 +2827,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 			{
 				// file is inaccessible or not found, maybe low-level
 				// driver preventing file access? try another way!
-				if (status == STATUS_ACCESS_DENIED ||
-					status == STATUS_OBJECT_NAME_NOT_FOUND ||
-					status == STATUS_OBJECT_PATH_NOT_FOUND)
+				if (status == STATUS_ACCESS_DENIED || status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_OBJECT_PATH_NOT_FOUND)
 				{
 					if (!_app_isappvalidpath (&path->sr))
 					{
@@ -2949,6 +2837,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 					{
 						// file path (without root)
 						path_root = _r_obj_createstring2 (path);
+
 						PathStripToRoot (path_root->buffer);
 
 						_r_obj_trimstringtonullterminator (path_root);

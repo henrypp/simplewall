@@ -154,14 +154,14 @@ _Success_ (return == ERROR_SUCCESS)
 ULONG _wfp_dumpcallouts (
 	_In_ HANDLE engine_handle,
 	_In_ LPCGUID provider_id,
-	_Out_ PR_ARRAY_PTR out_buffer
+	_Outptr_ PR_ARRAY_PTR out_buffer
 );
 
 _Success_ (return == ERROR_SUCCESS)
 ULONG _wfp_dumpfilters (
 	_In_ HANDLE engine_handle,
 	_In_ LPCGUID provider_id,
-	_Out_ PR_ARRAY_PTR out_buffer
+	_Outptr_ PR_ARRAY_PTR out_buffer
 );
 
 VOID NTAPI _wfp_applythread (
