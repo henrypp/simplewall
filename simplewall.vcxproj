@@ -172,6 +172,7 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalOptions>/DEPENDENTLOADFLAG:0x800 /BREPRO %(AdditionalOptions)</AdditionalOptions>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
+      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -275,6 +276,7 @@
       <AdditionalOptions>/DEPENDENTLOADFLAG:0x800 /BREPRO %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
+      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_UNICODE;UNICODE;_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
