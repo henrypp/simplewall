@@ -251,6 +251,13 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_PROFILETYPE_PLAIN:
+		case IDM_PROFILETYPE_COMPRESSED:
+		case IDM_PROFILETYPE_ENCRYPTED:
+		{
+			break;
+		}
+
 		default:
 		{
 			return;
@@ -258,6 +265,9 @@ VOID _app_config_apply (
 	}
 
 	hmenu = GetMenu (hwnd);
+
+	if (!hmenu)
+		return;
 
 	switch (ctrl_id)
 	{
@@ -280,6 +290,7 @@ VOID _app_config_apply (
 		case IDM_STARTMINIMIZED_CHK:
 		{
 			_r_config_setboolean (L"IsStartMinimized", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_STARTMINIMIZED_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -304,6 +315,7 @@ VOID _app_config_apply (
 		case IDM_CHECKUPDATES_CHK:
 		{
 			_r_update_enable (new_val);
+
 			_r_menu_checkitem (hmenu, IDM_CHECKUPDATES_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -313,6 +325,7 @@ VOID _app_config_apply (
 		case IDM_RULE_BLOCKOUTBOUND:
 		{
 			_r_config_setboolean (L"BlockOutboundConnections", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_RULE_BLOCKOUTBOUND, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -322,6 +335,7 @@ VOID _app_config_apply (
 		case IDM_RULE_BLOCKINBOUND:
 		{
 			_r_config_setboolean (L"BlockInboundConnections", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_RULE_BLOCKINBOUND, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -331,6 +345,7 @@ VOID _app_config_apply (
 		case IDM_RULE_ALLOWLOOPBACK:
 		{
 			_r_config_setboolean (L"AllowLoopbackConnections", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_RULE_ALLOWLOOPBACK, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -340,6 +355,7 @@ VOID _app_config_apply (
 		case IDM_RULE_ALLOW6TO4:
 		{
 			_r_config_setboolean (L"AllowIPv6", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_RULE_ALLOW6TO4, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -348,7 +364,35 @@ VOID _app_config_apply (
 		case IDM_RULE_ALLOWWINDOWSUPDATE:
 		{
 			_r_config_setboolean (L"IsWUFixEnabled", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
+		case IDM_PROFILETYPE_PLAIN:
+		{
+			_r_config_setlong (L"ProfileType", 0);
+
+			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN);
+
+			break;
+		}
+
+		case IDM_PROFILETYPE_COMPRESSED:
+		{
+			_r_config_setlong (L"ProfileType", 1);
+
+			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_COMPRESSED);
+
+			break;
+		}
+
+		case IDM_PROFILETYPE_ENCRYPTED:
+		{
+			_r_config_setlong (L"ProfileType", 2);
+
+			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_ENCRYPTED);
 
 			break;
 		}
@@ -405,6 +449,7 @@ VOID _app_config_apply (
 		case IDM_USENETWORKRESOLUTION_CHK:
 		{
 			_r_config_setboolean (L"IsNetworkResolutionsEnabled", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -418,6 +463,7 @@ VOID _app_config_apply (
 			INT listview_id;
 
 			_r_config_setboolean (L"IsCertificatesEnabled", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, new_val);
 
 			if (new_val)
@@ -446,6 +492,7 @@ VOID _app_config_apply (
 		case IDM_USEREFRESHDEVICES_CHK:
 		{
 			_r_config_setboolean (L"IsRefreshDevices", new_val);
+
 			_r_menu_checkitem (hmenu, IDM_USEREFRESHDEVICES_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
@@ -2086,6 +2133,60 @@ INT FirstDriveFromMask (
 	return i;
 }
 
+VOID gosex ()
+{
+	HANDLE hfile = CreateFile (L"profile_internal.xml", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	PR_BYTE byte;
+
+	if (_r_fs_isvalidhandle (hfile))
+	{
+		byte = _r_obj_createbyte_ex (NULL, 99536);
+		ULONG df = 0;
+
+		if (ReadFile (hfile, byte->buffer, (ULONG)byte->length, &df, NULL))
+		{
+			PR_BYTE hash_value;
+			PR_BYTE body_bytes;
+			PR_BYTE new_bytes;
+			LONG status;
+
+			_r_obj_setbytelength (byte, df);
+
+			// generate body hash
+			status = _app_db_gethash (&byte->sr, &hash_value);
+
+			if (NT_SUCCESS (status))
+			{
+				// compress body
+				status = _r_sys_compressbuffer (COMPRESSION_FORMAT_XPRESS | COMPRESSION_ENGINE_MAXIMUM, &byte->sr, &new_bytes);
+
+				if (NT_SUCCESS (status))
+				{
+					status = _app_db_generatebody (PROFILE2_ID_COMPRESSED, hash_value, new_bytes, &body_bytes);
+
+					if (NT_SUCCESS (status))
+					{
+						//_app_db_encodebody (&db, PROFILE2_ID_COMPRESSED, &bsd);
+
+						HANDLE hfile2 = CreateFile (L"dsf.xml", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+						//HANDLE hfile3 = CreateFile (L"origin.xml", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+						if (_r_fs_isvalidhandle (hfile2))
+						{
+							WriteFile (hfile2, body_bytes->buffer, (ULONG)body_bytes->length, NULL, NULL);
+
+							CloseHandle (hfile2);
+						}
+					}
+				}
+			}
+		}
+
+
+		CloseHandle (hfile);
+	}
+}
+
 INT_PTR CALLBACK DlgProc (
 	_In_ HWND hwnd,
 	_In_ UINT msg,
@@ -2171,6 +2272,8 @@ INT_PTR CALLBACK DlgProc (
 
 			// initialize tab
 			_app_settab_id (hwnd, _r_config_getlong (L"CurrentTab", IDC_APPS_PROFILE));
+
+			//gosex ();
 
 			break;
 		}
@@ -3362,6 +3465,9 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_RULE_ALLOWLOOPBACK:
 				case IDM_RULE_ALLOW6TO4:
 				case IDM_RULE_ALLOWWINDOWSUPDATE:
+				case IDM_PROFILETYPE_PLAIN:
+				case IDM_PROFILETYPE_COMPRESSED:
+				case IDM_PROFILETYPE_ENCRYPTED:
 				case IDM_USENETWORKRESOLUTION_CHK:
 				case IDM_USECERTIFICATES_CHK:
 				case IDM_USEREFRESHDEVICES_CHK:
@@ -3390,13 +3496,7 @@ INT_PTR CALLBACK DlgProc (
 
 					if (ctrl_id >= IDM_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDM_BLOCKLIST_SPY_BLOCK)
 					{
-						_r_menu_checkitem (
-							hmenu,
-							IDM_BLOCKLIST_SPY_DISABLE,
-							IDM_BLOCKLIST_SPY_BLOCK,
-							MF_BYCOMMAND,
-							ctrl_id
-						);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, ctrl_id);
 
 						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_SPY_DISABLE, 0, 2);
 
@@ -3406,13 +3506,7 @@ INT_PTR CALLBACK DlgProc (
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDM_BLOCKLIST_UPDATE_BLOCK)
 					{
-						_r_menu_checkitem (
-							hmenu,
-							IDM_BLOCKLIST_UPDATE_DISABLE,
-							IDM_BLOCKLIST_UPDATE_BLOCK,
-							MF_BYCOMMAND,
-							ctrl_id
-						);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, ctrl_id);
 
 						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_UPDATE_DISABLE, 0, 2);
 
@@ -3422,13 +3516,7 @@ INT_PTR CALLBACK DlgProc (
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDM_BLOCKLIST_EXTRA_BLOCK)
 					{
-						_r_menu_checkitem (
-							hmenu,
-							IDM_BLOCKLIST_EXTRA_DISABLE,
-							IDM_BLOCKLIST_EXTRA_BLOCK,
-							MF_BYCOMMAND,
-							ctrl_id
-						);
+						_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, ctrl_id);
 
 						new_state = _r_calc_clamp (ctrl_id - IDM_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 

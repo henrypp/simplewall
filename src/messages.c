@@ -78,6 +78,8 @@ VOID _app_message_initialize (
 		if (!_r_sys_isosversiongreaterorequal (WINDOWS_10))
 			_r_menu_enableitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, MF_BYCOMMAND, FALSE);
 
+		_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN + _r_calc_clamp (_r_config_getlong (L"ProfileType", 0), 0, 2));
+
 		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 		_r_menu_checkitem (hmenu, IDM_USEREFRESHDEVICES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsRefreshDevices", TRUE));
@@ -283,53 +285,27 @@ VOID _app_message_localize (
 		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOWLOOPBACK, FALSE, _r_locale_getstring (IDS_RULE_ALLOWLOOPBACK));
 		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOW6TO4, FALSE, _r_locale_getstring (IDS_RULE_ALLOW6TO4));
 
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_RULE_ALLOWWINDOWSUPDATE,
-			FALSE,
-			_r_locale_getstring (IDS_RULE_ALLOWWINDOWSUPDATE)
-		);
+		_r_menu_setitemtext (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, FALSE, _r_locale_getstring (IDS_RULE_ALLOWWINDOWSUPDATE));
 
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_USENETWORKRESOLUTION_CHK,
-			FALSE,
-			_r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK)
-		);
+		_r_menu_setitemtext (hmenu, IDM_PROFILETYPE_PLAIN, FALSE, L"Plain");
+		_r_menu_setitemtext (hmenu, IDM_PROFILETYPE_COMPRESSED, FALSE, L"Compressed");
+		_r_menu_setitemtext (hmenu, IDM_PROFILETYPE_ENCRYPTED, FALSE, L"Encrypted");
 
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_USECERTIFICATES_CHK,
-			FALSE,
-			_r_locale_getstring (IDS_USECERTIFICATES_CHK)
-		);
-
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_USEREFRESHDEVICES_CHK,
-			FALSE,
-			_r_locale_getstring (IDS_USEREFRESHDEVICES_CHK)
-		);
+		_r_menu_setitemtext (hmenu, IDM_USENETWORKRESOLUTION_CHK, FALSE, _r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK));
+		_r_menu_setitemtext (hmenu, IDM_USECERTIFICATES_CHK, FALSE, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
+		_r_menu_setitemtext (hmenu, IDM_USEREFRESHDEVICES_CHK, FALSE, _r_locale_getstring (IDS_USEREFRESHDEVICES_CHK));
 
 		hsubmenu = GetSubMenu (hmenu, 3);
 
 		if (hsubmenu)
+		{
 			_r_menu_setitemtext (hsubmenu, 5, TRUE, _r_locale_getstring (IDS_TRAY_RULES));
+			_r_menu_setitemtext (hsubmenu, 6, TRUE, _r_locale_getstring (IDS_PROFILE_TYPE));
+		}
 
 		// blocklist submenu
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_BLOCKLIST_SPY_DISABLE,
-			FALSE,
-			_r_locale_getstring (IDS_DISABLE)
-		);
-
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_BLOCKLIST_SPY_ALLOW,
-			FALSE,
-			_r_locale_getstring (IDS_ACTION_ALLOW)
-		);
+		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_DISABLE, FALSE, _r_locale_getstring (IDS_DISABLE));
+		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_SPY_ALLOW, FALSE, _r_locale_getstring (IDS_ACTION_ALLOW));
 
 		_r_menu_setitemtextformat (
 			hmenu,
@@ -349,19 +325,8 @@ VOID _app_message_localize (
 			recommended_string
 		);
 
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_BLOCKLIST_UPDATE_ALLOW,
-			FALSE,
-			_r_locale_getstring (IDS_ACTION_ALLOW)
-		);
-
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_BLOCKLIST_UPDATE_BLOCK,
-			FALSE,
-			_r_locale_getstring (IDS_ACTION_BLOCK)
-		);
+		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_ALLOW, FALSE, _r_locale_getstring (IDS_ACTION_ALLOW));
+		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_UPDATE_BLOCK, FALSE, _r_locale_getstring (IDS_ACTION_BLOCK));
 
 		_r_menu_setitemtextformat (
 			hmenu,
@@ -372,19 +337,8 @@ VOID _app_message_localize (
 			recommended_string
 		);
 
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_BLOCKLIST_EXTRA_ALLOW,
-			FALSE,
-			_r_locale_getstring (IDS_ACTION_ALLOW)
-		);
-
-		_r_menu_setitemtext (
-			hmenu,
-			IDM_BLOCKLIST_EXTRA_BLOCK,
-			FALSE,
-			_r_locale_getstring (IDS_ACTION_BLOCK)
-		);
+		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_ALLOW, FALSE, _r_locale_getstring (IDS_ACTION_ALLOW));
+		_r_menu_setitemtext (hmenu, IDM_BLOCKLIST_EXTRA_BLOCK, FALSE, _r_locale_getstring (IDS_ACTION_BLOCK));
 
 		hsubmenu = GetSubMenu (hmenu, 4);
 
