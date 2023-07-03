@@ -473,7 +473,7 @@ BOOLEAN _app_network_getpath (
 	_In_opt_ PULONG64 modules
 )
 {
-	PTOKEN_APPCONTAINER_INFORMATION app_container;
+	PTOKEN_APPCONTAINER_INFORMATION app_container = NULL;
 	PR_STRING process_name;
 	HANDLE process_handle;
 	HANDLE token_handle;
@@ -654,7 +654,7 @@ VOID _app_network_printlistviewtable (
 	_Inout_ PITEM_NETWORK_CONTEXT network_context
 )
 {
-	PITEM_NETWORK ptr_network;
+	PITEM_NETWORK ptr_network = NULL;
 	PR_STRING string;
 	ULONG_PTR app_hash;
 	ULONG_PTR network_hash;
@@ -686,8 +686,6 @@ VOID _app_network_printlistviewtable (
 		if (!string)
 			continue;
 
-		_r_obj_dereference (string);
-
 		_app_listview_addnetworkitem (network_context->hwnd, ptr_network, network_hash);
 
 		if (ptr_network->path && ptr_network->app_hash)
@@ -695,6 +693,8 @@ VOID _app_network_printlistviewtable (
 
 		// resolve network address
 		_app_queue_resolver (network_context->hwnd, IDC_NETWORK, network_hash, ptr_network);
+
+		_r_obj_dereference (string);
 
 		is_refresh = TRUE;
 	}

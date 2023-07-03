@@ -1762,7 +1762,15 @@ VOID NTAPI _app_queuefileinformation (
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		return;
 
-	hfile = CreateFile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	hfile = CreateFile (
+		ptr_app_info->path->buffer,
+		GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_DELETE,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
 
 	if (!_r_fs_isvalidhandle (hfile))
 	{

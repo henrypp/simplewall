@@ -9,8 +9,6 @@ typedef struct _ITEM_NETWORK_CONTEXT
 {
 	HWND hwnd;
 
-	//volatile HANDLE hconnections;
-
 	R_QUEUED_LOCK lock_network;
 	R_QUEUED_LOCK lock_checker;
 
