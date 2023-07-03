@@ -221,6 +221,7 @@ VOID _app_db_parse_app (
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
 	PR_STRING string;
+	PR_STRING hash;
 	PR_STRING dos_path;
 	LONG64 timestamp;
 	LONG64 timer;
@@ -257,6 +258,11 @@ VOID _app_db_parse_app (
 
 				timestamp = _r_xml_getattribute_long64 (&db_info->xml_library, L"timestamp");
 				timer = _r_xml_getattribute_long64 (&db_info->xml_library, L"timer");
+
+				hash = _r_xml_getattribute_string (&db_info->xml_library, L"hash");
+
+				if (hash)
+					_app_setappinfo (ptr_app, INFO_HASH, hash);
 
 				if (is_silent)
 					_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (is_silent));
@@ -616,6 +622,7 @@ NTSTATUS _app_db_encodebody (
 
 	if (!NT_SUCCESS (status))
 	{
+		_r_obj_dereference (hash_value);
 		_r_obj_dereference (bytes);
 
 		return status;
@@ -625,17 +632,18 @@ NTSTATUS _app_db_encodebody (
 	{
 		case PROFILE2_ID_PLAIN:
 		{
-			new_bytes = bytes;
+			new_bytes = _r_obj_reference (bytes);
 			break;
 		}
 
 		case PROFILE2_ID_COMPRESSED:
 		{
 			// compress body
-			status = _r_sys_compressbuffer (COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
+			status = _r_sys_compressbuffer (COMPRESSION_FORMAT_XPRESS | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
 
 			if (!NT_SUCCESS (status))
 			{
+				_r_obj_dereference (hash_value);
 				_r_obj_dereference (bytes);
 
 				return status;
@@ -650,6 +658,7 @@ NTSTATUS _app_db_encodebody (
 
 			if (!NT_SUCCESS (status))
 			{
+				_r_obj_dereference (hash_value);
 				_r_obj_dereference (bytes);
 
 				return status;
@@ -873,6 +882,28 @@ NTSTATUS _app_db_savetofile (
 	return status;
 }
 
+FORCEINLINE BYTE _app_getprofiletype ()
+{
+	LONG profile_type;
+
+	profile_type = _r_config_getlong (L"ProfileType", 0);
+
+	switch (profile_type)
+	{
+		case 1:
+		{
+			return PROFILE2_ID_COMPRESSED;
+		}
+
+		case 2:
+		{
+			return PROFILE2_ID_ENCRYPTED;
+		}
+	}
+
+	return PROFILE2_ID_PLAIN;
+}
+
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_save_streamtofile (
 	_Inout_ PDB_INFORMATION db_info,
@@ -882,6 +913,7 @@ NTSTATUS _app_db_save_streamtofile (
 	PR_BYTE new_bytes;
 	HANDLE hfile;
 	ULONG unused;
+	BYTE profile_type;
 	NTSTATUS status;
 
 	hfile = CreateFile (path->buffer, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -889,7 +921,9 @@ NTSTATUS _app_db_save_streamtofile (
 	if (!_r_fs_isvalidhandle (hfile))
 		return RtlGetLastNtStatus ();
 
-	status = _app_db_encodebody (db_info, PROFILE2_ID_ENCRYPTED, &new_bytes);
+	profile_type = _app_getprofiletype ();
+
+	status = _app_db_encodebody (db_info, profile_type, &new_bytes);
 
 	if (NT_SUCCESS (status))
 		WriteFile (hfile, new_bytes->buffer, (ULONG)new_bytes->length, &unused, NULL);
