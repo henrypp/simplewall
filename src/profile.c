@@ -11,6 +11,8 @@ BOOLEAN _app_getappinfo (
 	_In_ SIZE_T size
 )
 {
+	RtlZeroMemory (buffer, size);
+
 	switch (info_data)
 	{
 		case INFO_PATH:
@@ -50,6 +52,25 @@ BOOLEAN _app_getappinfo (
 			else if (ptr_app->original_path)
 			{
 				ptr = _r_obj_reference (ptr_app->original_path);
+
+				RtlCopyMemory (buffer, &ptr, size);
+
+				return TRUE;
+			}
+
+			break;
+		}
+
+		case INFO_HASH:
+		{
+			PVOID ptr;
+
+			if (size != sizeof (PVOID))
+				return FALSE;
+
+			if (ptr_app->hash)
+			{
+				ptr = _r_obj_reference (ptr_app->hash);
 
 				RtlCopyMemory (buffer, &ptr, size);
 
@@ -175,6 +196,12 @@ VOID _app_setappinfo (
 		case INFO_BYTES_DATA:
 		{
 			_r_obj_movereference (&ptr_app->bytes, value);
+			break;
+		}
+
+		case INFO_HASH:
+		{
+			_r_obj_movereference (&ptr_app->hash, value);
 			break;
 		}
 
@@ -668,8 +695,7 @@ COLORREF _app_getappcolor (
 
 	if (ptr_app)
 	{
-		if (!is_profilelist && (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") &&
-			_app_isapphaverule (app_hash, FALSE)))
+		if (!is_profilelist && (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash, FALSE)))
 		{
 			color_hash = config.color_special;
 			goto CleanupExit;
