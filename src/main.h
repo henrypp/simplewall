@@ -63,6 +63,7 @@ typedef enum _ENUM_INFO_DATA
 	INFO_PATH = 1,
 	INFO_BYTES_DATA,
 	INFO_DISPLAY_NAME,
+	INFO_HASH,
 	INFO_TIMESTAMP,
 	INFO_TIMER,
 	INFO_LISTVIEW_ID,
@@ -258,6 +259,7 @@ typedef struct _ITEM_APP
 	PR_STRING display_name;
 	PR_STRING short_name;
 	PR_STRING real_path;
+	PR_STRING hash;
 
 	PVOID notification; // PITEM_LOG
 	PR_BYTE bytes; // service - PSECURITY_DESCRIPTOR / uwp - PSID (win8+)
@@ -291,14 +293,15 @@ typedef struct _ITEM_APP_INFO
 	PR_STRING signature_info;
 	PR_STRING version_info;
 
-	volatile LONG large_icon_id;
-	volatile LONG lock;
-
 	ULONG_PTR app_hash;
+
+	LONG large_icon_id;
 
 	ENUM_TYPE_DATA type;
 
 	INT listview_id;
+
+	BOOLEAN is_loaded;
 } ITEM_APP_INFO, *PITEM_APP_INFO;
 
 typedef struct _ITEM_FILTER_CONFIG
