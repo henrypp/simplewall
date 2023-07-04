@@ -1378,7 +1378,7 @@ BOOLEAN _app_isapphaverule (
 
 		if (ptr_rule)
 		{
-			if (ptr_rule->type == DATA_RULE_USER && (is_countdisabled || (ptr_rule->is_enabled)))
+			if (ptr_rule->type == DATA_RULE_USER && (is_countdisabled || ptr_rule->is_enabled))
 			{
 				if (_r_obj_findhashtable (ptr_rule->apps, app_hash))
 				{

@@ -569,6 +569,7 @@ NTSTATUS _app_db_decodebody (
 				if (NT_SUCCESS (status))
 				{
 					_r_obj_movereference (&db_info->bytes, new_bytes);
+
 					break;
 				}
 			}
@@ -604,12 +605,8 @@ NTSTATUS _app_db_decodebody (
 	// fix arm64 crash that was introduced by Micro$oft (issue #1228)
 	if (NT_SUCCESS (NtQuerySystemInformation (SystemProcessorInformation, &cpu_info, sizeof (cpu_info), NULL)))
 	{
-		if (cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM ||
-			cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 ||
-			cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
-		{
+		if (cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM || cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64)
 			return STATUS_SUCCESS;
-		}
 	}
 
 	// validate hash
@@ -712,13 +709,11 @@ NTSTATUS _app_db_generatebody (
 	_In_ BYTE profile_type,
 	_In_ PR_BYTE hash_value,
 	_In_ PR_BYTE buffer,
-	_Out_ PR_BYTE_PTR out_buffer
+	_Outptr_ PR_BYTE_PTR out_buffer
 )
 {
 	PR_BYTE bytes;
 	PVOID ptr;
-
-	*out_buffer = NULL;
 
 	switch (profile_type)
 	{
@@ -749,6 +744,8 @@ NTSTATUS _app_db_generatebody (
 
 		default:
 		{
+			*out_buffer = NULL;
+
 			return STATUS_FILE_NOT_SUPPORTED;
 		}
 	}
@@ -804,62 +801,70 @@ BOOLEAN _app_db_parse (
 	if (!_r_xml_findchildbytagname (&db_info->xml_library, L"root"))
 		return FALSE;
 
-	if (type == XML_TYPE_PROFILE)
+	switch (type)
 	{
-		// load apps
-		if (_r_xml_findchildbytagname (&db_info->xml_library, L"apps"))
+		case XML_TYPE_PROFILE:
 		{
-			while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+			// load apps
+			if (_r_xml_findchildbytagname (&db_info->xml_library, L"apps"))
 			{
-				_app_db_parse_app (db_info);
+				while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+				{
+					_app_db_parse_app (db_info);
+				}
 			}
+
+			// load rules config
+			if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_config"))
+			{
+				while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+				{
+					_app_db_parse_ruleconfig (db_info);
+				}
+			}
+
+			// load user rules
+			if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_custom"))
+			{
+				while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+				{
+					_app_db_parse_rule (db_info, DATA_RULE_USER);
+				}
+			}
+
+			break;
 		}
 
-		// load rules config
-		if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_config"))
+		case XML_TYPE_PROFILE_INTERNAL:
 		{
-			while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+			// load system rules
+			if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_system"))
 			{
-				_app_db_parse_ruleconfig (db_info);
+				while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+				{
+					_app_db_parse_rule (db_info, DATA_RULE_SYSTEM);
+				}
 			}
-		}
 
-		// load user rules
-		if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_custom"))
-		{
-			while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+			// load internal custom rules
+			if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_custom"))
 			{
-				_app_db_parse_rule (db_info, DATA_RULE_USER);
+				while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+				{
+					_app_db_parse_rule (db_info, DATA_RULE_SYSTEM_USER);
+				}
 			}
-		}
-	}
-	else if (type == XML_TYPE_PROFILE_INTERNAL)
-	{
-		// load system rules
-		if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_system"))
-		{
-			while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
-			{
-				_app_db_parse_rule (db_info, DATA_RULE_SYSTEM);
-			}
-		}
 
-		// load internal custom rules
-		if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_custom"))
-		{
-			while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+			// load blocklist rules
+			if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_blocklist"))
 			{
-				_app_db_parse_rule (db_info, DATA_RULE_SYSTEM_USER);
+				while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+				{
+					_app_db_parse_rule (db_info, DATA_RULE_BLOCKLIST);
+				}
 			}
-		}
 
-		// load blocklist rules
-		if (_r_xml_findchildbytagname (&db_info->xml_library, L"rules_blocklist"))
-		{
-			while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
-			{
-				_app_db_parse_rule (db_info, DATA_RULE_BLOCKLIST);
-			}
+			break;
 		}
 	}
 
@@ -928,7 +933,8 @@ NTSTATUS _app_db_save_streamtofile (
 	if (NT_SUCCESS (status))
 		WriteFile (hfile, new_bytes->buffer, (ULONG)new_bytes->length, &unused, NULL);
 
-	_r_obj_dereference (new_bytes);
+	if (new_bytes)
+		_r_obj_dereference (new_bytes);
 
 	NtClose (hfile);
 
@@ -975,7 +981,7 @@ VOID _app_db_save_app (
 		is_usedapp = _app_isappused (ptr_app);
 
 		// do not save unused apps/uwp apps...
-		if (!is_usedapp && (!is_keepunusedapps || (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)))
+		if (!is_usedapp && !is_keepunusedapps)
 			continue;
 
 		_r_xml_writewhitespace (&db_info->xml_library, L"\n\t\t");
