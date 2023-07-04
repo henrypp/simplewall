@@ -753,8 +753,11 @@ NTSTATUS NTAPI _app_network_threadproc (
 )
 {
 	PITEM_NETWORK_CONTEXT network_context;
+	LARGE_INTEGER timeout;
 
 	network_context = (PITEM_NETWORK_CONTEXT)arglist;
+
+	_r_calc_millisecondstolargeinteger (&timeout, NETWORK_TIMEOUT);
 
 	while (TRUE)
 	{
@@ -762,7 +765,7 @@ NTSTATUS NTAPI _app_network_threadproc (
 		_app_network_generatetable (network_context);
 		_app_network_printlistviewtable (network_context);
 
-		WaitForSingleObjectEx (NtCurrentThread (), NETWORK_TIMEOUT, FALSE);
+		NtWaitForSingleObject (NtCurrentThread (), FALSE, &timeout);
 	}
 
 	_app_network_uninitialize (network_context);

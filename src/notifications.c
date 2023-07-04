@@ -8,6 +8,7 @@ HWND _app_notify_getwindow (
 	_In_opt_ PITEM_LOG ptr_log
 )
 {
+	LARGE_INTEGER timeout;
 	HWND current_hwnd;
 	HWND new_hwnd;
 
@@ -26,7 +27,9 @@ HWND _app_notify_getwindow (
 
 	new_hwnd = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, ptr_log);
 
-	WaitForSingleObjectEx (config.hnotify_evt, 2000, FALSE);
+	_r_calc_millisecondstolargeinteger (&timeout, 2000);
+
+	NtWaitForSingleObject (config.hnotify_evt, FALSE, &timeout);
 
 	current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
 
