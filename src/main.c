@@ -376,6 +376,8 @@ VOID _app_config_apply (
 
 			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN);
 
+			_app_profile_save ();
+
 			break;
 		}
 
@@ -385,6 +387,8 @@ VOID _app_config_apply (
 
 			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_COMPRESSED);
 
+			_app_profile_save ();
+
 			break;
 		}
 
@@ -393,6 +397,8 @@ VOID _app_config_apply (
 			_r_config_setlong (L"ProfileType", 2);
 
 			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_ENCRYPTED);
+
+			_app_profile_save ();
 
 			break;
 		}
@@ -509,6 +515,9 @@ VOID _app_config_apply (
 		case IDC_SKIPUACWARNING_CHK:
 		case IDM_CHECKUPDATES_CHK:
 		case IDC_CHECKUPDATES_CHK:
+		case IDM_PROFILETYPE_PLAIN:
+		case IDM_PROFILETYPE_COMPRESSED:
+		case IDM_PROFILETYPE_ENCRYPTED:
 		case IDC_SECUREFILTERS_CHK:
 		case IDC_USENETWORKRESOLUTION_CHK:
 		case IDM_USENETWORKRESOLUTION_CHK:
