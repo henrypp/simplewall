@@ -2023,7 +2023,6 @@ VOID _app_initialize ()
 	};
 
 	R_ENVIRONMENT environment;
-	SIZE_T length;
 
 	// set privileges
 	_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
@@ -2053,9 +2052,7 @@ VOID _app_initialize ()
 	_r_workqueue_initialize (&wfp_queue, 0, 1, 10000, &environment, L"FiltersQueue");
 
 	// static initializer
-	length = GetWindowsDirectory (config.windows_dir_buffer, RTL_NUMBER_OF (config.windows_dir_buffer));
-
-	_r_obj_initializestringref_ex (&config.windows_dir, config.windows_dir_buffer, length * sizeof (WCHAR));
+	_r_sys_getsystemroot (&config.windows_dir);
 
 	_app_profile_initialize ();
 
