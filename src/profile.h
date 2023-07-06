@@ -142,7 +142,8 @@ BOOLEAN _app_isappunused (
 );
 
 BOOLEAN _app_isappused (
-	_In_ PITEM_APP ptr_app
+	_In_ PITEM_APP ptr_app,
+	_In_ BOOLEAN is_checkall
 );
 
 BOOLEAN _app_issystemhash (
