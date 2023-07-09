@@ -192,15 +192,15 @@ typedef struct _STATIC_DATA
 	PR_STRING svchost_path;
 	PR_STRING system_path;
 
-	PSID pbuiltin_current_sid;
-	PSID pbuiltin_netops_sid;
-	PSID pbuiltin_admins_sid;
+	PSID builtin_current_sid;
+	PSID builtin_netops_sid;
+	PSID builtin_admins_sid;
 
-	PR_BYTE pservice_mpssvc_sid;
-	PR_BYTE pservice_nlasvc_sid;
-	PR_BYTE pservice_policyagent_sid;
-	PR_BYTE pservice_rpcss_sid;
-	PR_BYTE pservice_wdiservicehost_sid;
+	PR_BYTE service_mpssvc_sid;
+	PR_BYTE service_nlasvc_sid;
+	PR_BYTE service_policyagent_sid;
+	PR_BYTE service_rpcss_sid;
+	PR_BYTE service_wdiservicehost_sid;
 
 	HIMAGELIST himg_toolbar;
 	HIMAGELIST himg_rules_small;

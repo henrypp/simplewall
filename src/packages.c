@@ -101,20 +101,15 @@ VOID _app_package_getpackagebyname (
 	_In_ PR_STRING key_name
 )
 {
-	PR_STRING display_name;
-	PR_BYTE package_sid;
-	PR_STRING package_sid_string;
-	PR_STRING real_path;
+	PR_STRING display_name = NULL;
+	PR_BYTE package_sid = NULL;
+	PR_STRING package_sid_string = NULL;
+	PR_STRING real_path = NULL;
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
 	LONG64 timestamp;
 	HKEY hsubkey;
-	LONG status;
-
-	display_name = NULL;
-	package_sid = NULL;
-	package_sid_string = NULL;
-	real_path = NULL;
+	NTSTATUS status;
 
 	status = RegOpenKeyEx (hkey, key_name->buffer, 0, KEY_READ, &hsubkey);
 
@@ -128,7 +123,7 @@ VOID _app_package_getpackagebyname (
 
 	status = _r_str_fromsid (package_sid->buffer, &package_sid_string);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
 	// already exists (skip)
@@ -154,9 +149,11 @@ VOID _app_package_getpackagebyname (
 
 		if (ptr_app)
 		{
-			timestamp = _r_reg_querytimestamp (hsubkey);
+			status = _r_reg_querytimestamp (hsubkey, &timestamp);
 
-			_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
+			if (NT_SUCCESS (status))
+				_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
+
 			_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_reference (package_sid));
 
 			_r_obj_dereference (ptr_app);
@@ -192,9 +189,9 @@ VOID _app_package_getpackagebysid (
 	PR_BYTE package_sid = NULL;
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
-	LONG64 timestamp;
+	LONG64 timestamp = 0;
 	HKEY hsubkey;
-	LONG status;
+	NTSTATUS status;
 
 	// already exists (skip)
 	app_hash = _r_str_gethash2 (key_name, TRUE);
@@ -235,9 +232,11 @@ VOID _app_package_getpackagebysid (
 
 		if (ptr_app)
 		{
-			timestamp = _r_reg_querytimestamp (hsubkey);
+			status = _r_reg_querytimestamp (hsubkey, &timestamp);
 
-			_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
+			if (NT_SUCCESS (status))
+				_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
+
 			_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_reference (package_sid));
 
 			_r_obj_dereference (ptr_app);
@@ -489,13 +488,10 @@ VOID _app_package_getserviceslist ()
 					_r_obj_movereference (&service_path, converted_path);
 			}
 
-			// query service timestamp
-			service_timestamp = _r_reg_querytimestamp (hkey);
-
 			// query service sid
-			status = _r_sys_getservicesid (&service_name->sr, &service_sid);
+			status = _r_sys_getservicesid (service->lpServiceName, &service_sid);
 
-			if (status == STATUS_SUCCESS)
+			if (NT_SUCCESS (status))
 			{
 				// When evaluating SECURITY_DESCRIPTOR conditions, the filter engine
 				// checks for FWP_ACTRL_MATCH_FILTER access. If the DACL grants access,
@@ -525,7 +521,12 @@ VOID _app_package_getserviceslist ()
 
 						if (ptr_app)
 						{
-							_app_setappinfo (ptr_app, INFO_TIMESTAMP, &service_timestamp);
+							// query service timestamp
+							status = _r_reg_querytimestamp (hkey, &service_timestamp);
+
+							if (NT_SUCCESS (status))
+								_app_setappinfo (ptr_app, INFO_TIMESTAMP, &service_timestamp);
+
 							_app_setappinfo (ptr_app, INFO_BYTES_DATA, _r_obj_createbyte_ex (service_sd, sd_length));
 
 							_r_obj_dereference (ptr_app);
