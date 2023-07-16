@@ -525,31 +525,25 @@ VOID _app_notify_playsound ()
 	PR_STRING current_path;
 	PR_STRING new_path;
 	PR_STRING expanded_string;
-	HKEY hkey;
+	HANDLE hkey;
 	ULONG flags;
-	LSTATUS status;
+	NTSTATUS status;
 
 	current_path = InterlockedCompareExchangePointer (&cached_path, NULL, NULL);
 
 	if (!current_path || !_r_fs_exists (current_path->buffer))
 	{
-		status = RegOpenKeyEx (
-			HKEY_CURRENT_USER,
-			L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default",
-			0,
-			KEY_READ,
-			&hkey
-		);
+		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", KEY_READ, &hkey);
 
-		if (status == ERROR_SUCCESS)
+		if (NT_SUCCESS (status))
 		{
-			new_path = _r_reg_querystring (hkey, NULL, NULL);
+			status = _r_reg_querystring (hkey, NULL, &new_path);
 
-			if (new_path)
+			if (NT_SUCCESS (status))
 			{
-				expanded_string = _r_str_environmentexpandstring (&new_path->sr);
+				status = _r_str_environmentexpandstring (&new_path->sr, &expanded_string);
 
-				if (expanded_string)
+				if (NT_SUCCESS (status))
 					_r_obj_movereference (&new_path, expanded_string);
 
 				current_path = InterlockedCompareExchangePointer (&cached_path, new_path, current_path);
@@ -558,7 +552,7 @@ VOID _app_notify_playsound ()
 					_r_obj_dereference (new_path);
 			}
 
-			RegCloseKey (hkey);
+			NtClose (hkey);
 		}
 	}
 

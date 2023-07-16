@@ -13,12 +13,14 @@ VOID _app_package_parsepath (
 );
 
 VOID _app_package_getpackagebyname (
-	_In_ HKEY hkey,
+	_In_ HANDLE hroot,
+	_In_ LPCWSTR path,
 	_In_ PR_STRING key_name
 );
 
 VOID _app_package_getpackagebysid (
-	_In_ HKEY hkey,
+	_In_ HANDLE hroot,
+	_In_ LPCWSTR path,
 	_In_ PR_STRING key_name
 );
 

@@ -428,7 +428,7 @@ BOOLEAN _app_getappinfoparam2 (
 		case INFO_ICON_ID:
 		{
 			PITEM_APP ptr_app;
-			LONG icon_id;
+			LONG icon_id = 0;
 
 			if (size != sizeof (LONG))
 				goto CleanupExit;
@@ -447,11 +447,10 @@ BOOLEAN _app_getappinfoparam2 (
 
 					_r_obj_dereference (ptr_app);
 				}
-				else
-				{
-					icon_id = _app_icons_getdefaultapp_id (DATA_APP_REGULAR);
-				}
 			}
+
+			if (!icon_id)
+				icon_id = _app_icons_getdefaultapp_id (DATA_APP_REGULAR);
 
 			if (icon_id)
 			{
@@ -2011,13 +2010,13 @@ VOID _app_wufixhelper (
 	_In_ BOOLEAN is_enable
 )
 {
+	SERVICE_STATUS svc_status;
 	WCHAR reg_key[128];
 	WCHAR reg_value[128];
 	SC_HANDLE hsvc;
 	PR_STRING image_path;
-	HKEY hkey;
-	SERVICE_STATUS svc_status;
-	LSTATUS status;
+	HANDLE hkey;
+	NTSTATUS status;
 	BOOLEAN is_enabled;
 
 	_r_str_printf (
@@ -2027,7 +2026,7 @@ VOID _app_wufixhelper (
 		service_name
 	);
 
-	status = RegOpenKeyEx (HKEY_LOCAL_MACHINE, reg_key, 0, KEY_READ | KEY_WRITE, &hkey);
+	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, reg_key, KEY_READ | KEY_WRITE, &hkey);
 
 	if (status != ERROR_SUCCESS)
 		return;
@@ -2035,9 +2034,9 @@ VOID _app_wufixhelper (
 	// query service path
 	is_enabled = FALSE;
 
-	image_path = _r_reg_querystring (hkey, NULL, L"ImagePath");
+	status = _r_reg_querystring (hkey, L"ImagePath", &image_path);
 
-	if (image_path)
+	if (NT_SUCCESS (status))
 	{
 		if (_r_str_isstartswith2 (&image_path->sr, is_enable ? L"%systemroot%\\system32\\wusvc.exe" : L"%systemroot%\\system32\\svchost.exe", TRUE))
 			is_enabled = TRUE;
@@ -2048,12 +2047,11 @@ VOID _app_wufixhelper (
 	// set new image path
 	_r_str_printf (reg_value, RTL_NUMBER_OF (reg_value), L"%%systemroot%%\\system32\\%s -k %s -p", is_enable ? L"wusvc.exe" : L"svchost.exe", k_value);
 
-	status = RegSetValueEx (
+	status = _r_reg_setvalue (
 		hkey,
 		L"ImagePath",
-		0,
 		REG_EXPAND_SZ,
-		(PBYTE)reg_value,
+		reg_value,
 		(ULONG)(_r_str_getlength (reg_value) * sizeof (WCHAR) + sizeof (UNICODE_NULL))
 	);
 
@@ -2074,7 +2072,7 @@ VOID _app_wufixhelper (
 		}
 	}
 
-	RegCloseKey (hkey);
+	NtClose (hkey);
 }
 
 VOID _app_wufixenable (

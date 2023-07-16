@@ -330,6 +330,7 @@ VOID _app_db_parse_rule (
 	PITEM_RULE ptr_rule;
 	ULONG_PTR rule_hash;
 	BOOLEAN is_internal;
+	NTSTATUS status;
 
 	// check support version
 	if (_r_xml_getattribute (&db_info->xml_library, L"os_version", &sr))
@@ -441,9 +442,9 @@ VOID _app_db_parse_rule (
 		{
 			_r_str_splitatchar (&sr, DIVIDER_APP[0], &first_part, &sr);
 
-			path_string = _r_str_environmentexpandstring (&first_part);
+			status = _r_str_environmentexpandstring (&first_part, &path_string);
 
-			if (!path_string)
+			if (!NT_SUCCESS (status))
 				path_string = _r_obj_createstring3 (&first_part);
 
 			app_hash = _r_str_gethash2 (path_string, TRUE);
@@ -453,6 +454,7 @@ VOID _app_db_parse_rule (
 				if (ptr_rule->is_forservices && _app_issystemhash (app_hash))
 				{
 					_r_obj_dereference (path_string);
+
 					continue;
 				}
 
