@@ -129,6 +129,10 @@ BOOLEAN _app_isapphaverule (
 	_In_ BOOLEAN is_countdisabled
 );
 
+BOOLEAN _app_isappfileexists (
+	_In_ LPCWSTR path
+);
+
 BOOLEAN _app_isappexists (
 	_In_ PITEM_APP ptr_app
 );

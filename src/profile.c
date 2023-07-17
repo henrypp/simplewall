@@ -431,6 +431,7 @@ ULONG_PTR _app_addapplication (
 	if (is_ntoskrnl)
 	{
 		_r_str_tolower (&ptr_app->original_path->sr);
+
 		ptr_app->original_path->buffer[0] = _r_str_upper (ptr_app->original_path->buffer[0]);
 	}
 
@@ -1395,6 +1396,31 @@ BOOLEAN _app_isapphaverule (
 	return FALSE;
 }
 
+BOOLEAN _app_isappfileexists (
+	_In_ LPCWSTR path
+)
+{
+	PITEM_APP ptr_app = NULL;
+	SIZE_T enum_key = 0;
+	BOOLEAN is_found = FALSE;
+
+	_r_queuedlock_acquireshared (&lock_apps);
+
+	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	{
+		if (_r_str_compare (path, ptr_app->real_path->buffer) == 0)
+		{
+			is_found = TRUE;
+
+			break;
+		}
+	}
+
+	_r_queuedlock_releaseshared (&lock_apps);
+
+	return FALSE;
+}
+
 BOOLEAN _app_isappexists (
 	_In_ PITEM_APP ptr_app
 )
@@ -1411,7 +1437,7 @@ BOOLEAN _app_isappexists (
 	if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK || ptr_app->type == DATA_APP_PICO)
 		return TRUE;
 
-	// Services and UWP are undeletable
+	// Services and UWP are already undeletable
 	//if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
 	//	return TRUE;
 
