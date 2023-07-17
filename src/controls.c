@@ -415,6 +415,7 @@ VOID _app_settab_id (
 		if (listview_id == page_id)
 		{
 			_r_tab_selectitem (hwnd, IDC_TAB, i);
+
 			return;
 		}
 	}
