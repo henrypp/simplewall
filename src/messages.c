@@ -1472,7 +1472,7 @@ VOID _app_displayinfoapp_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		if (_app_getappinfoparam2 (ptr_app->app_hash, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+		if (_app_getappinfoparam2 (ptr_app->app_hash, listview_id, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
 			lpnmlv->item.iImage = icon_id;
 	}
 
@@ -1643,9 +1643,7 @@ VOID _app_displayinfonetwork_callback (
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	LPCWSTR name;
-	LONG icon_id;
-
-	icon_id = 0;
+	LONG icon_id = 0;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1792,7 +1790,7 @@ VOID _app_displayinfonetwork_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		if (_app_getappinfoparam2 (ptr_network->app_hash, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+		if (_app_getappinfoparam2 (ptr_network->app_hash, 0, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
 			lpnmlv->item.iImage = icon_id;
 	}
 
@@ -2007,7 +2005,7 @@ VOID _app_displayinfolog_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		if (_app_getappinfoparam2 (ptr_log->app_hash, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+		if (_app_getappinfoparam2 (ptr_log->app_hash, 0, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
 			lpnmlv->item.iImage = icon_id;
 	}
 

@@ -413,6 +413,7 @@ PITEM_APP_INFO _app_getappinfobyhash2 (
 _Success_ (return)
 BOOLEAN _app_getappinfoparam2 (
 	_In_ ULONG_PTR app_hash,
+	_In_opt_ INT listview_id,
 	_In_ ENUM_INFO_DATA2 info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
 	_In_ SIZE_T size
@@ -450,7 +451,7 @@ BOOLEAN _app_getappinfoparam2 (
 			}
 
 			if (!icon_id)
-				icon_id = _app_icons_getdefaultapp_id (DATA_APP_REGULAR);
+				icon_id = _app_icons_getdefaultapp_id ((listview_id == IDC_APPS_UWP) ? DATA_APP_UWP : DATA_APP_REGULAR);
 
 			if (icon_id)
 			{
@@ -522,7 +523,7 @@ BOOLEAN _app_isappsigned (
 	PR_STRING string = NULL;
 	BOOLEAN is_signed;
 
-	if (_app_getappinfoparam2 (app_hash, INFO_SIGNATURE_STRING, &string, sizeof (string)))
+	if (_app_getappinfoparam2 (app_hash, 0, INFO_SIGNATURE_STRING, &string, sizeof (string)))
 	{
 		is_signed = !_r_obj_isstringempty2 (string);
 
@@ -1893,7 +1894,7 @@ VOID NTAPI _app_queuenotifyinformation (
 				L":"
 			);
 
-			if (!_app_getappinfoparam2 (ptr_log->app_hash, INFO_SIGNATURE_STRING, &signature_str, sizeof (signature_str)))
+			if (!_app_getappinfoparam2 (ptr_log->app_hash, 0, INFO_SIGNATURE_STRING, &signature_str, sizeof (signature_str)))
 				_r_obj_movereference (&signature_str, _r_locale_getstring_ex (IDS_SIGN_UNSIGNED));
 
 			hdefer = BeginDeferWindowPos (2);

@@ -779,7 +779,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			{
 				string = NULL;
 
-				_app_getappinfoparam2 (context->ptr_app->app_hash, INFO_SIGNATURE_STRING, &string, sizeof (string));
+				_app_getappinfoparam2 (context->ptr_app->app_hash, 0, INFO_SIGNATURE_STRING, &string, sizeof (string));
 
 				_r_ctrl_setstringformat (
 					hwnd,
