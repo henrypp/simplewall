@@ -537,8 +537,8 @@ NTSTATUS _app_db_decodebody (
 {
 	static USHORT format[] = {COMPRESSION_FORMAT_LZNT1, COMPRESSION_FORMAT_XPRESS};
 
-	SYSTEM_PROCESSOR_INFORMATION cpu_info = {0};
 	PR_BYTE new_bytes;
+	USHORT architecture;
 	BYTE profile_type;
 	NTSTATUS status;
 
@@ -605,9 +605,9 @@ NTSTATUS _app_db_decodebody (
 		return STATUS_MORE_PROCESSING_REQUIRED;
 
 	// fix arm64 crash that was introduced by Micro$oft (issue #1228)
-	if (NT_SUCCESS (NtQuerySystemInformation (SystemProcessorInformation, &cpu_info, sizeof (cpu_info), NULL)))
+	if (NT_SUCCESS (_r_sys_getprocessorinformation (&architecture, NULL, NULL)))
 	{
-		if (cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM || cpu_info.ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64)
+		if (architecture == PROCESSOR_ARCHITECTURE_ARM || architecture == PROCESSOR_ARCHITECTURE_ARM64)
 			return STATUS_SUCCESS;
 	}
 
