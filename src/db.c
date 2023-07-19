@@ -933,10 +933,11 @@ NTSTATUS _app_db_save_streamtofile (
 	status = _app_db_encodebody (db_info, profile_type, &new_bytes);
 
 	if (NT_SUCCESS (status))
+	{
 		WriteFile (hfile, new_bytes->buffer, (ULONG)new_bytes->length, &unused, NULL);
 
-	if (new_bytes)
 		_r_obj_dereference (new_bytes);
+	}
 
 	NtClose (hfile);
 
