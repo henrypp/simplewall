@@ -439,10 +439,10 @@ INT_PTR CALLBACK EditorPagesProc (
 		case WM_INITDIALOG:
 		{
 			WCHAR buffer[256];
-			HWND hctrl;
-			PR_STRING string;
-			PITEM_APP ptr_app;
 			PITEM_RULE ptr_rule;
+			PITEM_APP ptr_app = NULL;
+			PR_STRING string;
+			HWND hctrl;
 			SIZE_T enum_key;
 			UINT style;
 			INT index;

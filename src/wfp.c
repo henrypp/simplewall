@@ -231,11 +231,8 @@ BOOLEAN _wfp_initialize (
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
 	BOOLEAN is_intransact;
-	BOOLEAN is_secure;
 
 	is_success = TRUE; // already initialized
-
-	is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
@@ -331,10 +328,10 @@ BOOLEAN _wfp_initialize (
 	}
 
 	// set provider security information
-	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, is_secure);
+	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, TRUE);
 
 	// set sublayer security information
-	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, is_secure);
+	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, TRUE);
 
 	// set engine options
 	RtlZeroMemory (&val, sizeof (val));
@@ -521,7 +518,6 @@ VOID _wfp_installfilters (
 	PITEM_RULE ptr_rule;
 	SIZE_T enum_key;
 	BOOLEAN is_intransact;
-	BOOLEAN is_secure;
 	ULONG status;
 
 	// set security information
@@ -612,27 +608,22 @@ VOID _wfp_installfilters (
 		_wfp_transact_commit (engine_handle, DBG_ARG);
 
 	// secure filters
-	is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
+	status = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider, &guids);
 
-	if (is_secure)
+	if (status == ERROR_SUCCESS)
 	{
-		status = _wfp_dumpfilters (engine_handle, &GUID_WfpProvider, &guids);
-
-		if (status == ERROR_SUCCESS)
+		for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
-			for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
-			{
-				guid = _r_obj_getarrayitem (guids, i);
+			guid = _r_obj_getarrayitem (guids, i);
 
-				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG);
-			}
-
-			_r_obj_dereference (guids);
+			_app_setsecurityinfoforfilter (engine_handle, guid, TRUE, DBG_ARG);
 		}
+
+		_r_obj_dereference (guids);
 	}
 
-	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, is_secure);
-	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, is_secure);
+	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, TRUE);
+	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, TRUE);
 
 	_r_queuedlock_releaseshared (&lock_transaction);
 
@@ -1409,7 +1400,6 @@ BOOLEAN _wfp_create4filters (
 	ULONG_PTR hash_code;
 	SIZE_T enum_key;
 	BOOLEAN is_enabled;
-	BOOLEAN is_secure;
 
 	if (_r_obj_islistempty (rules))
 		return FALSE;
@@ -1591,22 +1581,17 @@ BOOLEAN _wfp_create4filters (
 	{
 		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
-		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
-
-		if (is_secure)
+		for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
 		{
-			for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
+			ptr_rule = _r_obj_getlistitem (rules, i);
+
+			if (ptr_rule && ptr_rule->is_enabled)
 			{
-				ptr_rule = _r_obj_getlistitem (rules, i);
-
-				if (ptr_rule && ptr_rule->is_enabled)
+				for (SIZE_T j = 0; j < _r_obj_getarraysize (ptr_rule->guids); j++)
 				{
-					for (SIZE_T j = 0; j < _r_obj_getarraysize (ptr_rule->guids); j++)
-					{
-						guid = _r_obj_getarrayitem (ptr_rule->guids, j);
+					guid = _r_obj_getarrayitem (ptr_rule->guids, j);
 
-						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
-					}
+					_app_setsecurityinfoforfilter (engine_handle, guid, TRUE, DBG_ARG_VAR);
 				}
 			}
 		}
@@ -1635,7 +1620,6 @@ BOOLEAN _wfp_create3filters (
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	BOOLEAN is_enabled;
-	BOOLEAN is_secure;
 
 	if (_r_obj_islistempty (rules))
 		return FALSE;
@@ -1713,22 +1697,17 @@ BOOLEAN _wfp_create3filters (
 	{
 		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
-		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
-
-		if (is_secure)
+		for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
 		{
-			for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
+			ptr_app = _r_obj_getlistitem (rules, i);
+
+			if (ptr_app)
 			{
-				ptr_app = _r_obj_getlistitem (rules, i);
-
-				if (ptr_app)
+				for (SIZE_T j = 0; j < _r_obj_getarraysize (ptr_app->guids); j++)
 				{
-					for (SIZE_T j = 0; j < _r_obj_getarraysize (ptr_app->guids); j++)
-					{
-						guid = _r_obj_getarrayitem (ptr_app->guids, j);
+					guid = _r_obj_getarrayitem (ptr_app->guids, j);
 
-						_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
-					}
+					_app_setsecurityinfoforfilter (engine_handle, guid, TRUE, DBG_ARG_VAR);
 				}
 			}
 		}
@@ -1788,7 +1767,6 @@ BOOLEAN _wfp_create2filters (
 	ITEM_ADDRESS address;
 	LPCGUID guid;
 	FWP_ACTION_TYPE action;
-	BOOLEAN is_secure;
 	BOOLEAN is_enabled;
 
 	is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
@@ -2518,16 +2496,11 @@ BOOLEAN _wfp_create2filters (
 	{
 		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
-		is_secure = _r_config_getboolean (L"IsSecureFilters", TRUE);
-
-		if (is_secure)
+		for (SIZE_T i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 		{
-			for (SIZE_T i = 0; i < _r_obj_getarraysize (filter_ids); i++)
-			{
-				guid = _r_obj_getarrayitem (filter_ids, i);
+			guid = _r_obj_getarrayitem (filter_ids, i);
 
-				_app_setsecurityinfoforfilter (engine_handle, guid, is_secure, DBG_ARG_VAR);
-			}
+			_app_setsecurityinfoforfilter (engine_handle, guid, TRUE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_releaseshared (&lock_transaction);

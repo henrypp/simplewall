@@ -144,7 +144,6 @@ VOID _app_config_apply (
 )
 {
 	HMENU hmenu;
-	HANDLE hengine;
 	BOOLEAN is_enabled;
 	BOOLEAN new_val;
 
@@ -212,12 +211,6 @@ VOID _app_config_apply (
 			break;
 		}
 
-		case IDC_SECUREFILTERS_CHK:
-		{
-			new_val = !_r_config_getboolean (L"IsSecureFilters", TRUE);
-			break;
-		}
-
 		case IDC_USESTEALTHMODE_CHK:
 		{
 			new_val = !_r_config_getboolean (L"UseStealthMode", TRUE);
@@ -234,13 +227,6 @@ VOID _app_config_apply (
 		case IDM_USENETWORKRESOLUTION_CHK:
 		{
 			new_val = !_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE);
-			break;
-		}
-
-		case IDC_USECERTIFICATES_CHK:
-		case IDM_USECERTIFICATES_CHK:
-		{
-			new_val = !_r_config_getboolean (L"IsCertificatesEnabled", TRUE);
 			break;
 		}
 
@@ -409,42 +395,6 @@ VOID _app_config_apply (
 			break;
 		}
 
-		case IDC_SECUREFILTERS_CHK:
-		{
-			PR_ARRAY guids;
-			LPCGUID guid;
-			ULONG status;
-
-			_r_config_setboolean (L"IsSecureFilters", new_val);
-
-			if (_wfp_isfiltersinstalled ())
-			{
-				hengine = _wfp_getenginehandle ();
-
-				if (hengine)
-				{
-					_app_setsecurityinfoforprovider (hengine, &GUID_WfpProvider, new_val);
-					_app_setsecurityinfoforsublayer (hengine, &GUID_WfpSublayer, new_val);
-
-					status = _wfp_dumpfilters (hengine, &GUID_WfpProvider, &guids);
-
-					if (status == ERROR_SUCCESS)
-					{
-						for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
-						{
-							guid = _r_obj_getarrayitem (guids, i);
-
-							_app_setsecurityinfoforfilter (hengine, guid, new_val, DBG_ARG);
-						}
-
-						_r_obj_dereference (guids);
-					}
-				}
-			}
-
-			break;
-		}
-
 		case IDC_INSTALLBOOTTIMEFILTERS_CHK:
 		{
 			_r_config_setboolean (L"InstallBoottimeFilters", new_val);
@@ -457,39 +407,6 @@ VOID _app_config_apply (
 			_r_config_setboolean (L"IsNetworkResolutionsEnabled", new_val);
 
 			_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, new_val);
-
-			break;
-		}
-
-		case IDC_USECERTIFICATES_CHK:
-		case IDM_USECERTIFICATES_CHK:
-		{
-			PITEM_APP ptr_app = NULL;
-			SIZE_T enum_key;
-			INT listview_id;
-
-			_r_config_setboolean (L"IsCertificatesEnabled", new_val);
-
-			_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, new_val);
-
-			if (new_val)
-			{
-				enum_key = 0;
-
-				_r_queuedlock_acquireshared (&lock_apps);
-
-				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
-				{
-					if (!ptr_app->real_path)
-						continue;
-
-					listview_id = _app_listview_getbytype (ptr_app->type);
-
-					_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, listview_id);
-				}
-
-				_r_queuedlock_releaseshared (&lock_apps);
-			}
 
 			break;
 		}
@@ -518,11 +435,8 @@ VOID _app_config_apply (
 		case IDM_PROFILETYPE_PLAIN:
 		case IDM_PROFILETYPE_COMPRESSED:
 		case IDM_PROFILETYPE_ENCRYPTED:
-		case IDC_SECUREFILTERS_CHK:
 		case IDC_USENETWORKRESOLUTION_CHK:
 		case IDM_USENETWORKRESOLUTION_CHK:
-		case IDC_USECERTIFICATES_CHK:
-		case IDM_USECERTIFICATES_CHK:
 		case IDC_USEREFRESHDEVICES_CHK:
 		case IDM_USEREFRESHDEVICES_CHK:
 		{
@@ -578,10 +492,8 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_checkbutton (hwnd, IDC_RULE_BLOCKINBOUND, _r_config_getboolean (L"BlockInboundConnections", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_RULE_ALLOWLOOPBACK, _r_config_getboolean (L"AllowLoopbackConnections", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_RULE_ALLOW6TO4, _r_config_getboolean (L"AllowIPv6", TRUE));
-					_r_ctrl_checkbutton (hwnd, IDC_SECUREFILTERS_CHK, _r_config_getboolean (L"IsSecureFilters", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_USESTEALTHMODE_CHK, _r_config_getboolean (L"UseStealthMode", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, _r_config_getboolean (L"InstallBoottimeFilters", TRUE));
-					_r_ctrl_checkbutton (hwnd, IDC_USECERTIFICATES_CHK, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 					_r_ctrl_checkbutton (hwnd, IDC_USEREFRESHDEVICES_CHK, _r_config_getboolean (L"IsRefreshDevices", TRUE));
 
@@ -597,7 +509,6 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_ctrl_settiptext (htip, hwnd, IDC_USESTEALTHMODE_CHK, LPSTR_TEXTCALLBACK);
 					_r_ctrl_settiptext (htip, hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settiptext (htip, hwnd, IDC_SECUREFILTERS_CHK, LPSTR_TEXTCALLBACK);
 
 					break;
 				}
@@ -965,14 +876,6 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_ctrl_setstringformat (
 						hwnd,
-						IDC_SECUREFILTERS_CHK,
-						L"%s (%s)",
-						_r_locale_getstring (IDS_SECUREFILTERS_CHK),
-						recommended_string
-					);
-
-					_r_ctrl_setstringformat (
-						hwnd,
 						IDC_USESTEALTHMODE_CHK,
 						L"%s (%s)",
 						_r_locale_getstring (IDS_USESTEALTHMODE_CHK),
@@ -991,12 +894,6 @@ INT_PTR CALLBACK SettingsProc (
 						hwnd,
 						IDC_USENETWORKRESOLUTION_CHK,
 						_r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK)
-					);
-
-					_r_ctrl_setstring (
-						hwnd,
-						IDC_USECERTIFICATES_CHK,
-						_r_locale_getstring (IDS_USECERTIFICATES_CHK)
 					);
 
 					_r_ctrl_setstringformat (
@@ -1253,25 +1150,30 @@ INT_PTR CALLBACK SettingsProc (
 					ctrl_id = GetDlgCtrlID ((HWND)(lpnmdi->hdr.idFrom));
 
 					if (ctrl_id == IDC_RULE_BLOCKOUTBOUND)
+					{
 						locale_id = IDS_RULE_BLOCKOUTBOUND;
-
+					}
 					else if (ctrl_id == IDC_RULE_BLOCKINBOUND)
+					{
 						locale_id = IDS_RULE_BLOCKINBOUND;
-
+					}
 					else if (ctrl_id == IDC_RULE_ALLOWLOOPBACK)
+					{
 						locale_id = IDS_RULE_ALLOWLOOPBACK_HINT;
-
+					}
 					else if (ctrl_id == IDC_USESTEALTHMODE_CHK)
+					{
 						locale_id = IDS_USESTEALTHMODE_HINT;
-
+					}
 					else if (ctrl_id == IDC_INSTALLBOOTTIMEFILTERS_CHK)
+					{
 						locale_id = IDS_INSTALLBOOTTIMEFILTERS_HINT;
 
-					else if (ctrl_id == IDC_SECUREFILTERS_CHK)
-						locale_id = IDS_SECUREFILTERS_HINT;
-
+					}
 					else
+					{
 						break;
+					}
 
 					_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (locale_id));
 
@@ -1463,8 +1365,7 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_RULE_ALLOW6TO4:
 				case IDC_USESTEALTHMODE_CHK:
 				case IDC_INSTALLBOOTTIMEFILTERS_CHK:
-				case IDC_SECUREFILTERS_CHK:
-				case IDC_USECERTIFICATES_CHK:
+
 				case IDC_USENETWORKRESOLUTION_CHK:
 				case IDC_USEREFRESHDEVICES_CHK:
 				{
@@ -3419,7 +3320,6 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_PROFILETYPE_COMPRESSED:
 				case IDM_PROFILETYPE_ENCRYPTED:
 				case IDM_USENETWORKRESOLUTION_CHK:
-				case IDM_USECERTIFICATES_CHK:
 				case IDM_USEREFRESHDEVICES_CHK:
 				{
 					_app_config_apply (hwnd, NULL, ctrl_id);

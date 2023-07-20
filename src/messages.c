@@ -80,7 +80,6 @@ VOID _app_message_initialize (
 
 		_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN + _r_calc_clamp (_r_config_getlong (L"ProfileType", 0), 0, 2));
 
-		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 		_r_menu_checkitem (hmenu, IDM_USEREFRESHDEVICES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsRefreshDevices", TRUE));
 		_r_menu_checkitem (
@@ -292,7 +291,6 @@ VOID _app_message_localize (
 		_r_menu_setitemtext (hmenu, IDM_PROFILETYPE_ENCRYPTED, FALSE, L"Encrypted");
 
 		_r_menu_setitemtext (hmenu, IDM_USENETWORKRESOLUTION_CHK, FALSE, _r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK));
-		_r_menu_setitemtext (hmenu, IDM_USECERTIFICATES_CHK, FALSE, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
 		_r_menu_setitemtext (hmenu, IDM_USEREFRESHDEVICES_CHK, FALSE, _r_locale_getstring (IDS_USEREFRESHDEVICES_CHK));
 
 		hsubmenu = GetSubMenu (hmenu, 3);

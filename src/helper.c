@@ -1793,8 +1793,7 @@ VOID NTAPI _app_queuefileinformation (
 	_app_getfileicon (ptr_app_info);
 
 	// query certificate information
-	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
-		_app_getfilesignatureinfo (hfile, ptr_app_info);
+	_app_getfilesignatureinfo (hfile, ptr_app_info);
 
 	// query version info
 	_app_getfileversioninfo (ptr_app_info);
@@ -1853,27 +1852,24 @@ VOID NTAPI _app_queuenotifyinformation (
 	}
 
 	// query signature
-	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+	ptr_app_info = _app_getappinfobyhash2 (ptr_log->app_hash);
+
+	if (ptr_app_info)
 	{
-		ptr_app_info = _app_getappinfobyhash2 (ptr_log->app_hash);
-
-		if (ptr_app_info)
+		if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		{
-			if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
+			hfile = CreateFile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+			if (_r_fs_isvalidhandle (hfile))
 			{
-				hfile = CreateFile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				if (!ptr_app_info->is_loaded)
+					_app_getfilesignatureinfo (hfile, ptr_app_info);
 
-				if (_r_fs_isvalidhandle (hfile))
-				{
-					if (!ptr_app_info->is_loaded)
-						_app_getfilesignatureinfo (hfile, ptr_app_info);
-
-					CloseHandle (hfile);
-				}
+				CloseHandle (hfile);
 			}
-
-			_r_obj_dereference (ptr_app_info);
 		}
+
+		_r_obj_dereference (ptr_app_info);
 	}
 
 	// query file icon
