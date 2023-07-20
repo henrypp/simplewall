@@ -1483,7 +1483,7 @@ BOOLEAN _app_isappused (
 	if (is_checkall && ptr_app->is_undeletable)
 		return TRUE;
 
-	if (ptr_app->is_enabled || ptr_app->is_silent)
+	if (ptr_app->is_enabled || (is_checkall && ptr_app->is_silent))
 		return TRUE;
 
 	if (_app_isapphaverule (ptr_app->app_hash, TRUE))
