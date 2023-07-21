@@ -232,12 +232,17 @@ VOID _app_setappinfo (
 			break;
 		}
 
-		case INFO_IS_SILENT:
+		case INFO_DISABLE:
 		{
-			ptr_app->is_silent = (PtrToInt (value) ? TRUE : FALSE);
+			HANDLE engine_handle;
 
-			if (ptr_app->is_silent)
-				_app_notify_freeobject (NULL, ptr_app);
+			ptr_app->is_enabled = FALSE;
+
+			engine_handle = _wfp_getenginehandle ();
+
+			_wfp_destroyfilters_array (engine_handle, ptr_app->guids, DBG_ARG);
+
+			_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 
 			break;
 		}
@@ -247,6 +252,16 @@ VOID _app_setappinfo (
 			ptr_app->is_enabled = (PtrToInt (value) ? TRUE : FALSE);
 
 			_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
+
+			break;
+		}
+
+		case INFO_IS_SILENT:
+		{
+			ptr_app->is_silent = (PtrToInt (value) ? TRUE : FALSE);
+
+			if (ptr_app->is_silent)
+				_app_notify_freeobject (NULL, ptr_app);
 
 			break;
 		}
