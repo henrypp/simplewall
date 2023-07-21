@@ -24,29 +24,29 @@ VOID _app_setexplicitaccess (
 	_In_opt_ PSID sid
 );
 
-VOID _app_setsecurityinfoforengine (
+VOID _app_setenginesecurity (
 	_In_ HANDLE hengine
 );
 
-VOID _app_setsecurityinfoforprovider (
+VOID _app_setprovidersecurity (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID provider_guid,
 	_In_ BOOLEAN is_secure
 );
 
-VOID _app_setsecurityinfoforsublayer (
+VOID _app_setsublayersecurity (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID sublayer_guid,
 	_In_ BOOLEAN is_secure
 );
 
-VOID _app_setsecurityinfoforcallout (
+VOID _app_setcalloutsecurity (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID callout_guid,
 	_In_ BOOLEAN is_secure
 );
 
-VOID _app_setsecurityinfoforfilter (
+VOID _app_setfiltersecurity (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID filter_guid,
 	_In_ BOOLEAN is_secure,

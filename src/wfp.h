@@ -40,7 +40,6 @@ BOOLEAN _wfp_isfiltersapplying ();
 
 BOOLEAN _wfp_isfiltersinstalled ();
 
-_Ret_maybenull_
 HANDLE _wfp_getenginehandle ();
 
 ENUM_INSTALL_TYPE _wfp_getinstalltype ();

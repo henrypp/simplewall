@@ -75,7 +75,6 @@ BOOLEAN _wfp_isfiltersinstalled ()
 	return (install_type != INSTALL_DISABLED);
 }
 
-_Ret_maybenull_
 HANDLE _wfp_getenginehandle ()
 {
 	static R_INITONCE init_once = PR_INITONCE_INIT;
@@ -83,12 +82,10 @@ HANDLE _wfp_getenginehandle ()
 
 	FWPM_SESSION session;
 	ULONG status;
-	ULONG attempts;
+	ULONG attempts = 6;
 
 	if (_r_initonce_begin (&init_once))
 	{
-		attempts = 6;
-
 		do
 		{
 			RtlZeroMemory (&session, sizeof (session));
@@ -236,7 +233,7 @@ BOOLEAN _wfp_initialize (
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
-	_app_setsecurityinfoforengine (engine_handle);
+	_app_setenginesecurity (engine_handle);
 
 	// install engine provider and it's sublayer
 	is_providerexist = (_wfp_isproviderinstalled (engine_handle) != INSTALL_DISABLED);
@@ -328,10 +325,10 @@ BOOLEAN _wfp_initialize (
 	}
 
 	// set provider security information
-	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, TRUE);
+	_app_setprovidersecurity (engine_handle, &GUID_WfpProvider, TRUE);
 
 	// set sublayer security information
-	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, TRUE);
+	_app_setsublayersecurity (engine_handle, &GUID_WfpSublayer, TRUE);
 
 	// set engine options
 	RtlZeroMemory (&val, sizeof (val));
@@ -442,8 +439,8 @@ VOID _wfp_uninitialize (
 
 	if (is_full)
 	{
-		_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
-		_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
+		_app_setprovidersecurity (engine_handle, &GUID_WfpProvider, FALSE);
+		_app_setsublayersecurity (engine_handle, &GUID_WfpSublayer, FALSE);
 
 		status = _wfp_dumpcallouts (engine_handle, &GUID_WfpProvider, &callouts);
 
@@ -453,7 +450,7 @@ VOID _wfp_uninitialize (
 			{
 				guid = _r_obj_getarrayitem (callouts, i);
 
-				_app_setsecurityinfoforcallout (engine_handle, guid, FALSE);
+				_app_setcalloutsecurity (engine_handle, guid, FALSE);
 			}
 		}
 
@@ -521,8 +518,8 @@ VOID _wfp_installfilters (
 	ULONG status;
 
 	// set security information
-	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, FALSE);
-	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, FALSE);
+	_app_setprovidersecurity (engine_handle, &GUID_WfpProvider, FALSE);
+	_app_setsublayersecurity (engine_handle, &GUID_WfpSublayer, FALSE);
 
 	_wfp_clearfilter_ids ();
 
@@ -537,7 +534,7 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG);
+			_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG);
 		}
 	}
 
@@ -616,14 +613,14 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (engine_handle, guid, TRUE, DBG_ARG);
+			_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG);
 		}
 
 		_r_obj_dereference (guids);
 	}
 
-	_app_setsecurityinfoforprovider (engine_handle, &GUID_WfpProvider, TRUE);
-	_app_setsecurityinfoforsublayer (engine_handle, &GUID_WfpSublayer, TRUE);
+	_app_setprovidersecurity (engine_handle, &GUID_WfpProvider, TRUE);
+	_app_setsublayersecurity (engine_handle, &GUID_WfpSublayer, TRUE);
 
 	_r_queuedlock_releaseshared (&lock_transaction);
 
@@ -640,8 +637,8 @@ BOOLEAN _wfp_transact_start (
 
 	status = FwpmTransactionBegin (engine_handle, 0);
 
-	//if (status == FWP_E_TXN_IN_PROGRESS)
-	//	return FALSE;
+	if (status == FWP_E_TXN_IN_PROGRESS)
+		return FALSE;
 
 	if (status != ERROR_SUCCESS)
 	{
@@ -953,7 +950,7 @@ VOID _wfp_destroyfilters_array (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
+		_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
 	}
 
 	is_intransact = _wfp_transact_start (engine_handle, DBG_ARG_VAR);
@@ -1432,7 +1429,7 @@ BOOLEAN _wfp_create4filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
+			_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
@@ -1591,7 +1588,7 @@ BOOLEAN _wfp_create4filters (
 				{
 					guid = _r_obj_getarrayitem (ptr_rule->guids, j);
 
-					_app_setsecurityinfoforfilter (engine_handle, guid, TRUE, DBG_ARG_VAR);
+					_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
 				}
 			}
 		}
@@ -1649,7 +1646,7 @@ BOOLEAN _wfp_create3filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
+			_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
@@ -1707,7 +1704,7 @@ BOOLEAN _wfp_create3filters (
 				{
 					guid = _r_obj_getarrayitem (ptr_app->guids, j);
 
-					_app_setsecurityinfoforfilter (engine_handle, guid, TRUE, DBG_ARG_VAR);
+					_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
 				}
 			}
 		}
@@ -1782,7 +1779,7 @@ BOOLEAN _wfp_create2filters (
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
-				_app_setsecurityinfoforfilter (engine_handle, guid, FALSE, DBG_ARG_VAR);
+				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
 			}
 		}
 
@@ -2500,7 +2497,7 @@ BOOLEAN _wfp_create2filters (
 		{
 			guid = _r_obj_getarrayitem (filter_ids, i);
 
-			_app_setsecurityinfoforfilter (engine_handle, guid, TRUE, DBG_ARG_VAR);
+			_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_releaseshared (&lock_transaction);

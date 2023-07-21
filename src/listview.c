@@ -538,34 +538,34 @@ VOID _app_listview_updateitemby_param (
 
 	item_id = _app_listview_finditem (hwnd, listview_id, lparam);
 
-	if (item_id != -1)
+	if (item_id == -1)
+		return;
+
+	if (is_app)
 	{
-		if (is_app)
-		{
-			ptr_app = _app_getappitem (lparam);
+		ptr_app = _app_getappitem (lparam);
 
-			if (ptr_app)
-			{
-				_app_listview_lock (hwnd, listview_id, TRUE);
-				_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
-				_app_listview_lock (hwnd, listview_id, FALSE);
+		if (!ptr_app)
+			return;
 
-				_r_obj_dereference (ptr_app);
-			}
-		}
-		else
-		{
-			ptr_rule = _app_getrulebyid (lparam);
+		_app_listview_lock (hwnd, listview_id, TRUE);
+		_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
+		_app_listview_lock (hwnd, listview_id, FALSE);
 
-			if (ptr_rule)
-			{
-				_app_listview_lock (hwnd, listview_id, TRUE);
-				_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, FALSE);
-				_app_listview_lock (hwnd, listview_id, FALSE);
+		_r_obj_dereference (ptr_app);
+	}
+	else
+	{
+		ptr_rule = _app_getrulebyid (lparam);
 
-				_r_obj_dereference (ptr_rule);
-			}
-		}
+		if (!ptr_rule)
+			return;
+
+		_app_listview_lock (hwnd, listview_id, TRUE);
+		_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, FALSE);
+		_app_listview_lock (hwnd, listview_id, FALSE);
+
+		_r_obj_dereference (ptr_rule);
 	}
 }
 

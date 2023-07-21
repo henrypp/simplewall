@@ -150,7 +150,7 @@ VOID _app_setexplicitaccess (
 	BuildTrusteeWithSid (&(ea->Trustee), sid);
 }
 
-VOID _app_setsecurityinfoforengine (
+VOID _app_setenginesecurity (
 	_In_ HANDLE hengine
 )
 {
@@ -398,7 +398,7 @@ VOID _app_setsecurityinfoforengine (
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
-VOID _app_setsecurityinfoforprovider (
+VOID _app_setprovidersecurity (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID provider_guid,
 	_In_ BOOLEAN is_secure
@@ -412,7 +412,16 @@ VOID _app_setsecurityinfoforprovider (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmProviderGetSecurityInfoByKey (hengine, provider_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmProviderGetSecurityInfoByKey (
+		hengine,
+		provider_guid,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
 	if (status != ERROR_SUCCESS)
 	{
@@ -427,7 +436,15 @@ VOID _app_setsecurityinfoforprovider (
 
 		if (new_dacl)
 		{
-			status = FwpmProviderSetSecurityInfoByKey (hengine, provider_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.builtin_admins_sid, NULL, new_dacl, NULL);
+			status = FwpmProviderSetSecurityInfoByKey (
+				hengine,
+				provider_guid,
+				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+				(const SID *)config.builtin_admins_sid,
+				NULL,
+				new_dacl,
+				NULL
+			);
 
 			if (status != ERROR_SUCCESS)
 				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey", status, NULL);
@@ -440,7 +457,7 @@ VOID _app_setsecurityinfoforprovider (
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
-VOID _app_setsecurityinfoforsublayer (
+VOID _app_setsublayersecurity (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID sublayer_guid,
 	_In_ BOOLEAN is_secure
@@ -454,7 +471,16 @@ VOID _app_setsecurityinfoforsublayer (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmSubLayerGetSecurityInfoByKey (hengine, sublayer_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmSubLayerGetSecurityInfoByKey (
+		hengine,
+		sublayer_guid,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
 	if (status != ERROR_SUCCESS)
 	{
@@ -469,7 +495,15 @@ VOID _app_setsecurityinfoforsublayer (
 
 		if (new_dacl)
 		{
-			status = FwpmSubLayerSetSecurityInfoByKey (hengine, sublayer_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.builtin_admins_sid, NULL, new_dacl, NULL);
+			status = FwpmSubLayerSetSecurityInfoByKey (
+				hengine,
+				sublayer_guid,
+				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+				(const SID *)config.builtin_admins_sid,
+				NULL,
+				new_dacl,
+				NULL
+			);
 
 			if (status != ERROR_SUCCESS)
 				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey", status, NULL);
@@ -482,7 +516,7 @@ VOID _app_setsecurityinfoforsublayer (
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
-VOID _app_setsecurityinfoforcallout (
+VOID _app_setcalloutsecurity (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID callout_guid,
 	_In_ BOOLEAN is_secure
@@ -496,7 +530,16 @@ VOID _app_setsecurityinfoforcallout (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmCalloutGetSecurityInfoByKey (hengine, callout_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmCalloutGetSecurityInfoByKey (
+		hengine,
+		callout_guid,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
 	if (status != ERROR_SUCCESS)
 	{
@@ -512,7 +555,15 @@ VOID _app_setsecurityinfoforcallout (
 
 		if (new_dacl)
 		{
-			status = FwpmCalloutSetSecurityInfoByKey (hengine, callout_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.builtin_admins_sid, NULL, new_dacl, NULL);
+			status = FwpmCalloutSetSecurityInfoByKey (
+				hengine,
+				callout_guid,
+				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+				(const SID *)config.builtin_admins_sid,
+				NULL,
+				new_dacl,
+				NULL
+			);
 
 			if (status != ERROR_SUCCESS)
 				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey", status, NULL);
@@ -525,7 +576,7 @@ VOID _app_setsecurityinfoforcallout (
 		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
 }
 
-VOID _app_setsecurityinfoforfilter (
+VOID _app_setfiltersecurity (
 	_In_ HANDLE hengine,
 	_In_ LPCGUID filter_guid,
 	_In_ BOOLEAN is_secure,
@@ -541,7 +592,16 @@ VOID _app_setsecurityinfoforfilter (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmFilterGetSecurityInfoByKey (hengine, filter_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmFilterGetSecurityInfoByKey (
+		hengine,
+		filter_guid,
+		DACL_SECURITY_INFORMATION,
+		&sid_owner,
+		&sid_group,
+		&dacl,
+		&sacl,
+		&security_descriptor
+	);
 
 	if (status != ERROR_SUCCESS)
 	{
@@ -557,7 +617,15 @@ VOID _app_setsecurityinfoforfilter (
 
 		if (new_dacl)
 		{
-			status = FwpmFilterSetSecurityInfoByKey (hengine, filter_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (const SID *)config.builtin_admins_sid, NULL, new_dacl, NULL);
+			status = FwpmFilterSetSecurityInfoByKey (
+				hengine,
+				filter_guid,
+				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+				(const SID *)config.builtin_admins_sid,
+				NULL,
+				new_dacl,
+				NULL
+			);
 
 			if (status != ERROR_SUCCESS)
 				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"#%" TEXT (PRIu32), line);
