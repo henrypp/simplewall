@@ -917,9 +917,9 @@ NTSTATUS _app_db_save_streamtofile (
 	_In_ PR_STRING path
 )
 {
+	IO_STATUS_BLOCK isb;
 	PR_BYTE new_bytes;
 	HANDLE hfile;
-	ULONG unused;
 	BYTE profile_type;
 	NTSTATUS status;
 
@@ -934,7 +934,7 @@ NTSTATUS _app_db_save_streamtofile (
 
 	if (NT_SUCCESS (status))
 	{
-		WriteFile (hfile, new_bytes->buffer, (ULONG)new_bytes->length, &unused, NULL);
+		NtWriteFile (hfile, NULL, NULL, NULL, &isb, new_bytes->buffer, (ULONG)new_bytes->length, NULL, NULL);
 
 		_r_obj_dereference (new_bytes);
 	}

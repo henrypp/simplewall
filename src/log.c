@@ -54,24 +54,18 @@ VOID _app_loginitfile (
 {
 	static BYTE bom[] = {0xFF, 0xFE};
 
+	IO_STATUS_BLOCK isb;
 	LONG64 file_size;
-	ULONG unused;
 
 	file_size = _r_fs_getsize (hfile);
 
 	if (!file_size)
 	{
 		// write utf-16 le byte order mask
-		WriteFile (hfile, bom, sizeof (bom), &unused, NULL);
+		NtWriteFile (hfile, NULL, NULL, NULL, &isb, bom, sizeof (bom), NULL, NULL);
 
 		// write csv header
-		WriteFile (
-			hfile,
-			SZ_LOG_TITLE,
-			(ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)),
-			&unused,
-			NULL
-		);
+		NtWriteFile (hfile, NULL, NULL, NULL, &isb, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)), NULL, NULL);
 	}
 	else
 	{
@@ -197,15 +191,15 @@ VOID _app_logwrite (
 	_In_ PITEM_LOG ptr_log
 )
 {
-	PR_STRING path;
+	IO_STATUS_BLOCK isb;
 	PR_STRING date_string;
 	PR_STRING local_port_string;
 	PR_STRING remote_port_string;
 	PR_STRING direction_string;
+	PR_STRING path;
 	PR_STRING buffer;
 	PITEM_APP ptr_app;
 	HANDLE current_handle;
-	ULONG unused;
 
 	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
@@ -253,7 +247,7 @@ VOID _app_logwrite (
 	if (_app_logislimitreached (current_handle))
 		_app_logclear (current_handle);
 
-	WriteFile (current_handle, buffer->buffer, (ULONG)buffer->length, &unused, NULL);
+	NtWriteFile (current_handle, NULL, NULL, NULL, &isb, buffer->buffer, (ULONG)buffer->length, NULL, NULL);
 
 	if (date_string)
 		_r_obj_dereference (date_string);
