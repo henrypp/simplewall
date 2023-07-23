@@ -1695,6 +1695,83 @@ PR_STRING _app_resolveaddress_interlocked (
 	return current_string;
 }
 
+VOID _app_fileloggingenable ()
+{
+	_r_sys_createthread (&_app_timercallback, NULL, NULL, NULL, L"FileMonitor");
+}
+
+NTSTATUS _app_timercallback (
+	_In_ PVOID context
+)
+{
+	LARGE_INTEGER timeout;
+	PITEM_APP ptr_app = NULL;
+	PR_STRING hash;
+	HANDLE hfile;
+	SIZE_T enum_key;
+	NTSTATUS status;
+
+	_r_calc_millisecondstolargeinteger (&timeout, _r_calc_minutes2milliseconds (10));
+
+	while (TRUE)
+	{
+		NtWaitForSingleObject (NtCurrentThread (), FALSE, &timeout);
+
+		_r_queuedlock_acquireshared (&lock_apps);
+
+		enum_key = 0;
+
+		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+		{
+			if (!ptr_app->hash || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
+				continue;
+
+			if (!_app_isappused (ptr_app, FALSE))
+				continue;
+
+			hfile = CreateFile (
+				ptr_app->real_path->buffer,
+				GENERIC_READ,
+				FILE_SHARE_READ | FILE_SHARE_DELETE,
+				NULL,
+				OPEN_EXISTING,
+				FILE_ATTRIBUTE_NORMAL,
+				NULL
+			);
+
+			if (!_r_fs_isvalidhandle (hfile))
+				continue;
+
+			status = _app_getfilehash (hfile, &hash);
+
+			if (NT_SUCCESS (status))
+			{
+				if (!_r_str_isequal (&ptr_app->hash->sr, &hash->sr, TRUE))
+				{
+					_r_obj_movereference (&ptr_app->hash, hash);
+
+					if (_r_config_getboolean (L"IsEnableAppMonitor", FALSE))
+					{
+						_app_setappinfo (ptr_app, INFO_DISABLE, NULL);
+
+						_r_obj_cleararray (ptr_app->guids);
+					}
+				}
+				else
+				{
+					_r_obj_dereference (hash);
+				}
+			}
+
+			CloseHandle (hfile);
+		}
+
+		_r_queuedlock_releaseshared (&lock_apps);
+	}
+
+	return STATUS_SUCCESS;
+}
+
 VOID _app_queue_fileinformation (
 	_In_ PR_STRING path,
 	_In_ ULONG_PTR app_hash,

@@ -230,6 +230,12 @@ PR_STRING _app_resolveaddress_interlocked (
 	_In_ BOOLEAN is_resolutionenabled
 );
 
+VOID _app_fileloggingenable ();
+
+NTSTATUS _app_timercallback (
+	_In_ PVOID context
+);
+
 VOID _app_queue_fileinformation (
 	_In_ PR_STRING path,
 	_In_ ULONG_PTR app_hash,
