@@ -523,7 +523,9 @@ BOOLEAN _app_network_getpath (
 
 			if (ptr_network->type == DATA_APP_UWP)
 			{
-				if (OpenProcessToken (process_handle, TOKEN_QUERY, &token_handle))
+				status = NtOpenProcessToken (process_handle, TOKEN_QUERY, &token_handle);
+
+				if (NT_SUCCESS (status))
 				{
 					status = _r_sys_querytokeninformation (token_handle, TokenAppContainerSid, &app_container);
 
