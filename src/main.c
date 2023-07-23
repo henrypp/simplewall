@@ -230,10 +230,9 @@ VOID _app_config_apply (
 			break;
 		}
 
-		case IDC_USEREFRESHDEVICES_CHK:
-		case IDM_USEREFRESHDEVICES_CHK:
+		case IDM_USEAPPMONITOR_CHK:
 		{
-			new_val = !_r_config_getboolean (L"IsRefreshDevices", TRUE);
+			new_val = !_r_config_getboolean (L"IsEnableAppMonitor", FALSE);
 			break;
 		}
 
@@ -411,12 +410,11 @@ VOID _app_config_apply (
 			break;
 		}
 
-		case IDC_USEREFRESHDEVICES_CHK:
-		case IDM_USEREFRESHDEVICES_CHK:
+		case IDM_USEAPPMONITOR_CHK:
 		{
-			_r_config_setboolean (L"IsRefreshDevices", new_val);
+			_r_config_setboolean (L"IsEnableAppMonitor", new_val);
 
-			_r_menu_checkitem (hmenu, IDM_USEREFRESHDEVICES_CHK, 0, MF_BYCOMMAND, new_val);
+			_r_menu_checkitem (hmenu, IDM_USEAPPMONITOR_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -437,8 +435,7 @@ VOID _app_config_apply (
 		case IDM_PROFILETYPE_ENCRYPTED:
 		case IDC_USENETWORKRESOLUTION_CHK:
 		case IDM_USENETWORKRESOLUTION_CHK:
-		case IDC_USEREFRESHDEVICES_CHK:
-		case IDM_USEREFRESHDEVICES_CHK:
+		case IDM_USEAPPMONITOR_CHK:
 		{
 			return;
 		}
@@ -495,7 +492,6 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_checkbutton (hwnd, IDC_USESTEALTHMODE_CHK, _r_config_getboolean (L"UseStealthMode", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, _r_config_getboolean (L"InstallBoottimeFilters", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
-					_r_ctrl_checkbutton (hwnd, IDC_USEREFRESHDEVICES_CHK, _r_config_getboolean (L"IsRefreshDevices", TRUE));
 
 					htip = _r_ctrl_createtip (hwnd);
 
@@ -896,14 +892,6 @@ INT_PTR CALLBACK SettingsProc (
 						_r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK)
 					);
 
-					_r_ctrl_setstringformat (
-						hwnd,
-						IDC_USEREFRESHDEVICES_CHK,
-						L"%s (%s)",
-						_r_locale_getstring (IDS_USEREFRESHDEVICES_CHK),
-						recommended_string
-					);
-
 					break;
 				}
 
@@ -1168,7 +1156,6 @@ INT_PTR CALLBACK SettingsProc (
 					else if (ctrl_id == IDC_INSTALLBOOTTIMEFILTERS_CHK)
 					{
 						locale_id = IDS_INSTALLBOOTTIMEFILTERS_HINT;
-
 					}
 					else
 					{
@@ -1365,9 +1352,7 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_RULE_ALLOW6TO4:
 				case IDC_USESTEALTHMODE_CHK:
 				case IDC_INSTALLBOOTTIMEFILTERS_CHK:
-
 				case IDC_USENETWORKRESOLUTION_CHK:
-				case IDC_USEREFRESHDEVICES_CHK:
 				{
 					_app_config_apply (_r_app_gethwnd (), hwnd, ctrl_id);
 					break;
@@ -2125,6 +2110,8 @@ INT_PTR CALLBACK DlgProc (
 
 			// initialize tab
 			_app_settab_id (hwnd, _r_config_getlong (L"CurrentTab", IDC_APPS_PROFILE));
+
+			_app_fileloggingenable ();
 
 			break;
 		}
@@ -2898,9 +2885,6 @@ INT_PTR CALLBACK DlgProc (
 					PDEV_BROADCAST_VOLUME lpdbv;
 					BOOLEAN is_appexist;
 
-					if (!_r_config_getboolean (L"IsRefreshDevices", TRUE))
-						break;
-
 					if (_wfp_isfiltersapplying () || !_wfp_isfiltersinstalled ())
 						break;
 
@@ -3320,7 +3304,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_PROFILETYPE_COMPRESSED:
 				case IDM_PROFILETYPE_ENCRYPTED:
 				case IDM_USENETWORKRESOLUTION_CHK:
-				case IDM_USEREFRESHDEVICES_CHK:
+				case IDM_USEAPPMONITOR_CHK:
 				{
 					_app_config_apply (hwnd, NULL, ctrl_id);
 					break;
