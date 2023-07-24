@@ -315,14 +315,14 @@ VOID _wfp_logsubscribe (
 	_In_ HANDLE engine_handle
 )
 {
+	FWPM_NET_EVENT_SUBSCRIPTION subscription = {0};
 	FWPMNES4 _FwpmNetEventSubscribe4;
 	FWPMNES3 _FwpmNetEventSubscribe3;
 	FWPMNES2 _FwpmNetEventSubscribe2;
 	FWPMNES1 _FwpmNetEventSubscribe1;
 	FWPMNES0 _FwpmNetEventSubscribe0;
-	FWPM_NET_EVENT_SUBSCRIPTION subscription;
 	HANDLE current_handle;
-	HANDLE new_handle;
+	HANDLE new_handle = NULL;
 	HMODULE hfwpuclnt;
 	ULONG status;
 
@@ -352,10 +352,6 @@ VOID _wfp_logsubscribe (
 
 		goto CleanupExit; // there is no function to call
 	}
-
-	RtlZeroMemory (&subscription, sizeof (subscription));
-
-	new_handle = NULL;
 
 	if (_FwpmNetEventSubscribe4)
 	{
@@ -434,14 +430,12 @@ VOID _wfp_logsetoption (
 )
 {
 	FWP_VALUE val = {0};
-	UINT32 mask;
+	UINT32 mask = 0;
 	ULONG status;
 
 	// configure dropped packets logging (win8+)
 	if (!_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		return;
-
-	mask = 0;
 
 	// add allowed connections monitor
 	if (!_r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
@@ -487,13 +481,13 @@ VOID CALLBACK _wfp_logcallback (
 	GUID layer_guid;
 	PR_STRING path;
 	PR_STRING resolved_path;
-	PR_STRING filter_name;
+	PR_STRING filter_name = NULL;
 	PR_STRING layer_name;
 	PR_STRING sid_string;
 	FWPM_LAYER *layer_ptr;
 	FWPM_FILTER *filter_ptr;
-	UINT8 filter_weight;
-	BOOLEAN is_myprovider;
+	UINT8 filter_weight = 0;
+	BOOLEAN is_myprovider = FALSE;
 	NTSTATUS status;
 
 	if (!log->filter_id || !log->layer_id)
@@ -514,18 +508,15 @@ VOID CALLBACK _wfp_logcallback (
 	if (!layer_ptr)
 		return;
 
-	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) ||
-		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
+	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) || IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
 	{
 		FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
+
 		return;
 	}
 
-	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) ||
-		IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6))
-	{
+	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4) || IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6))
 		log->direction = FWP_DIRECTION_INBOUND; // HACK!!! (issue #581)
-	}
 
 	RtlCopyMemory (&layer_guid, &layer_ptr->layerKey, sizeof (GUID));
 
@@ -539,10 +530,6 @@ VOID CALLBACK _wfp_logcallback (
 		return;
 
 	layer_name = _wfp_getlayername (&layer_guid);
-
-	filter_name = NULL;
-	is_myprovider = FALSE;
-	filter_weight = 0;
 
 	if (!_r_str_isempty (filter_ptr->displayData.description))
 	{
@@ -585,7 +572,7 @@ VOID CALLBACK _wfp_logcallback (
 	{
 		status = _r_str_fromsid (log->package_id, &sid_string);
 
-		if (status == STATUS_SUCCESS)
+		if (NT_SUCCESS (status))
 		{
 			if (!_app_package_isnotexists (sid_string, 0))
 				_r_obj_clearreference (&sid_string);
@@ -615,6 +602,7 @@ VOID CALLBACK _wfp_logcallback (
 		if (path)
 		{
 			_r_obj_movereference (&ptr_log->path, path);
+
 			ptr_log->app_hash = _r_str_gethash2 (ptr_log->path, TRUE);
 		}
 	}
