@@ -212,7 +212,7 @@ VOID _app_listview_addlogitem (
 
 	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, listview_context);
 
-	_r_listview_ensurevisible (hwnd, IDC_LOG, item_id);
+	//_r_listview_ensurevisible (hwnd, IDC_LOG, item_id);
 }
 
 BOOLEAN _app_listview_islocked (
