@@ -78,7 +78,7 @@ VOID _app_listview_additems (
 	_In_ HWND hwnd
 )
 {
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
 	LONG64 current_time;
 	SIZE_T enum_key = 0;
