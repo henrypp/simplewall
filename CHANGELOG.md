@@ -1,3 +1,20 @@
+v3.7 (27 July 2023)
+- added profile encryption [oldest versions cannot open new profile] (issue #599)
+- added terminate process into notification window (issue #1398)
+- added checksum calculation for the apps (issue #394)
+- added error message for log subscription
+- improved search performance (issue #1383)
+- fixed timer and apps timestamp displays incorrect information (32-bit only)
+- fixed sometimes application displays incrorrect icons
+- fixed possible crash when clearing log
+- fixed silent uninstaller do not worked
+- fixed arm64 build crash (issue #1228)
+- fixed internal bugs
+- fixed memory leaks
+- updated nuget package
+- updated project sdk
+- updated locale
+
 v3.6.7 (21 September 2022)
 - added windows update service solution (issue #677, thx @taviso) [win10+]
 - added feature to allow only the requested ip in notification (issue #1265)
