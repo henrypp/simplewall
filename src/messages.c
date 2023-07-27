@@ -2299,6 +2299,7 @@ VOID _app_command_logclear (
 	_In_ HWND hwnd
 )
 {
+	LARGE_INTEGER file_size;
 	PR_STRING log_path;
 	HANDLE current_handle;
 	BOOLEAN is_valid;
@@ -2307,12 +2308,17 @@ VOID _app_command_logclear (
 
 	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
-	is_valid = (current_handle && _r_fs_getsize (current_handle) > 2) || (log_path && _r_fs_exists (log_path->buffer));
+	if (current_handle)
+		_r_fs_getsize (current_handle, &file_size);
+
+	is_valid = (current_handle && file_size.QuadPart > 2) || (log_path && _r_fs_exists (log_path->buffer));
 
 	if (!is_valid)
 	{
 		_r_queuedlock_acquireshared (&lock_loglist);
+
 		is_valid = !_r_obj_ishashtableempty (log_table);
+
 		_r_queuedlock_releaseshared (&lock_loglist);
 	}
 

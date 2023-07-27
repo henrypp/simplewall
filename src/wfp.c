@@ -2793,7 +2793,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 		{
 			status = _r_path_ntpathfromdos (path, &original_path);
 
-			if (status != STATUS_SUCCESS)
+			if (!NT_SUCCESS (status))
 			{
 				// file is inaccessible or not found, maybe low-level
 				// driver preventing file access? try another way!
@@ -2817,7 +2817,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 						status = _r_path_ntpathfromdos (path_root, &original_path);
 
-						if (status != STATUS_SUCCESS)
+						if (!NT_SUCCESS (status))
 						{
 							_r_obj_dereference (path_root);
 

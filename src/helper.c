@@ -860,10 +860,10 @@ LONG _app_verifyfilefromcatalog (
 
 	WINTRUST_CATALOG_INFO catalog_info = {0};
 	DRIVER_VER_INFO ver_info = {0};
+	LARGE_INTEGER file_size;
 	CATALOG_INFO ci = {0};
 	HCATADMIN hcat_admin;
 	HCATINFO hcat_info;
-	LONG64 file_size;
 	PR_STRING string = NULL;
 	PR_STRING file_hash_tag;
 	PVOID file_hash;
@@ -872,9 +872,12 @@ LONG _app_verifyfilefromcatalog (
 
 	*signature_string = NULL;
 
-	file_size = _r_fs_getsize (hfile);
+	status = _r_fs_getsize (hfile, &file_size);
 
-	if (!file_size || file_size > _r_calc_megabytes2bytes64 (32))
+	if (!NT_SUCCESS (status))
+		return status;
+
+	if (!file_size.QuadPart || file_size.QuadPart > _r_calc_megabytes2bytes64 (32))
 		return TRUST_E_NOSIGNATURE;
 
 	if (_app_calculatefilehash (hfile, algorithm_id, &file_hash, &file_hash_length, &hcat_admin))

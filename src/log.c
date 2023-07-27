@@ -54,12 +54,12 @@ VOID _app_loginitfile (
 {
 	static BYTE bom[] = {0xFF, 0xFE};
 
+	LARGE_INTEGER file_size;
 	IO_STATUS_BLOCK isb;
-	LONG64 file_size;
 
-	file_size = _r_fs_getsize (hfile);
+	_r_fs_getsize (hfile, &file_size);
 
-	if (!file_size)
+	if (!file_size.QuadPart)
 	{
 		// write utf-16 le byte order mask
 		NtWriteFile (hfile, NULL, NULL, NULL, &isb, bom, sizeof (bom), NULL, NULL);
@@ -70,7 +70,7 @@ VOID _app_loginitfile (
 	else
 	{
 		// move to eof
-		_r_fs_setpos (hfile, file_size);
+		_r_fs_setpos (hfile, &file_size);
 	}
 }
 
@@ -138,17 +138,17 @@ BOOLEAN _app_logislimitreached (
 	_In_ HANDLE hfile
 )
 {
+	LARGE_INTEGER file_size;
 	LONG64 limit;
-	LONG64 file_size;
 
 	limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
 
 	if (!limit)
 		return FALSE;
 
-	file_size = _r_fs_getsize (hfile);
+	_r_fs_getsize (hfile, &file_size);
 
-	return (file_size >= (_r_calc_kilobytes2bytes64 (limit)));
+	return (file_size.QuadPart >= (_r_calc_kilobytes2bytes64 (limit)));
 }
 
 VOID _app_logclear (
