@@ -10,6 +10,7 @@ VOID _app_loginit (
 	HANDLE current_handle;
 	HANDLE new_handle;
 	PR_STRING log_path;
+	NTSTATUS status;
 
 	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, config.hlogfile);
 
@@ -25,17 +26,9 @@ VOID _app_loginit (
 	if (!log_path)
 		return;
 
-	new_handle = CreateFile (
-		log_path->buffer,
-		GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_ALWAYS,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL
-	);
+	status = _r_fs_createfile (log_path->buffer, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, FILE_OPEN_IF, FILE_ATTRIBUTE_NORMAL, 0, NULL, &new_handle);
 
-	if (_r_fs_isvalidhandle (new_handle))
+	if (NT_SUCCESS (status))
 	{
 		_app_loginitfile (new_handle);
 

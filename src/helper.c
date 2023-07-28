@@ -1732,17 +1732,9 @@ NTSTATUS _app_timercallback (
 			if (!_app_isappused (ptr_app, FALSE))
 				continue;
 
-			hfile = CreateFile (
-				ptr_app->real_path->buffer,
-				GENERIC_READ,
-				FILE_SHARE_READ | FILE_SHARE_DELETE,
-				NULL,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				NULL
-			);
+			status = _r_fs_createfile (ptr_app->real_path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_OPEN, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
 
-			if (!_r_fs_isvalidhandle (hfile))
+			if (!NT_SUCCESS (status))
 				continue;
 
 			status = _app_getfilehash (hfile, &hash);
@@ -1755,7 +1747,7 @@ NTSTATUS _app_timercallback (
 
 					if (_r_config_getboolean (L"IsEnableAppMonitor", FALSE))
 					{
-						_app_setappinfo (ptr_app, INFO_DISABLE, NULL);
+						_app_setappinfo (ptr_app, INFO_DISABLE, IntToPtr (0));
 
 						_r_obj_cleararray (ptr_app->guids);
 					}
@@ -1766,7 +1758,7 @@ NTSTATUS _app_timercallback (
 				}
 			}
 
-			CloseHandle (hfile);
+			NtClose (hfile);
 		}
 
 		_r_queuedlock_releaseshared (&lock_apps);
@@ -1840,7 +1832,7 @@ VOID NTAPI _app_queuefileinformation (
 	PITEM_APP_INFO ptr_app_info;
 	HANDLE hfile;
 	HWND hwnd;
-	ULONG status;
+	NTSTATUS status;
 
 	ptr_app_info = arglist;
 	hwnd = _r_app_gethwnd ();
@@ -1849,22 +1841,12 @@ VOID NTAPI _app_queuefileinformation (
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		return;
 
-	hfile = CreateFile (
-		ptr_app_info->path->buffer,
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_DELETE,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL
-	);
+	status = _r_fs_createfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_OPEN, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
 
-	if (!_r_fs_isvalidhandle (hfile))
+	if (!NT_SUCCESS (status))
 	{
-		status = GetLastError ();
-
-		if (status != ERROR_PATH_NOT_FOUND && status != ERROR_ACCESS_DENIED)
-			_r_log (LOG_LEVEL_ERROR, NULL, L"CreateFile", status, ptr_app_info->path->buffer);
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_ACCESS_DENIED)
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_r_fs_createfile", status, ptr_app_info->path->buffer);
 
 		return;
 	}
@@ -1895,7 +1877,7 @@ VOID NTAPI _app_queuefileinformation (
 
 	_r_obj_dereference (ptr_app_info);
 
-	CloseHandle (hfile);
+	NtClose (hfile);
 }
 
 VOID NTAPI _app_queuenotifyinformation (
@@ -1914,6 +1896,7 @@ VOID NTAPI _app_queuenotifyinformation (
 	HICON hicon;
 	HDWP hdefer;
 	BOOLEAN is_iconset = FALSE;
+	NTSTATUS status;
 
 	context = arglist;
 
@@ -1938,14 +1921,14 @@ VOID NTAPI _app_queuenotifyinformation (
 	{
 		if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		{
-			hfile = CreateFile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			status = _r_fs_createfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_OPEN, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
 
-			if (_r_fs_isvalidhandle (hfile))
+			if (NT_SUCCESS (status))
 			{
 				if (!ptr_app_info->is_loaded)
 					_app_getfilesignatureinfo (hfile, ptr_app_info);
 
-				CloseHandle (hfile);
+				NtClose (hfile);
 			}
 		}
 

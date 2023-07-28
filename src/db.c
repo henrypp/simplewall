@@ -923,10 +923,10 @@ NTSTATUS _app_db_save_streamtofile (
 	BYTE profile_type;
 	NTSTATUS status;
 
-	hfile = CreateFile (path->buffer, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	status = _r_fs_createfile (path->buffer, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_OVERWRITE_IF, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
 
-	if (!_r_fs_isvalidhandle (hfile))
-		return RtlGetLastNtStatus ();
+	if (!NT_SUCCESS (status))
+		return status;
 
 	profile_type = _app_getprofiletype ();
 
