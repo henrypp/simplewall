@@ -1726,7 +1726,7 @@ NTSTATUS _app_timercallback (
 
 		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 		{
-			if (!ptr_app->hash || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
+			if (!ptr_app->hash || !ptr_app->real_path || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
 				continue;
 
 			if (!_app_isappused (ptr_app, FALSE))
