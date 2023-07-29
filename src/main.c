@@ -3031,7 +3031,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_IMPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*.sp, *xml)", L"*.sp, *xml",
+						L"Profile files (*.xml)", L"*.xml",
 						L"All files (*.*)", L"*.*",
 					};
 
@@ -3069,7 +3069,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_EXPORT:
 				{
 					static COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*.sp, *xml)", L"*.sp, *xml",
+						L"Profile files (*.xml)", L"*.xml",
 						L"All files (*.*)", L"*.*",
 					};
 
