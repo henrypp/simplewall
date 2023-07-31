@@ -1,5 +1,5 @@
 v3.7.1 (31 July 2023)
-- fixed import not cerrecly worked (issue #1466)
+- fixed import not correcly worked (issue #1466)
 - fixed crash when checking files (issue #1455)
 - updated project sdk
 
