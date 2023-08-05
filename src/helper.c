@@ -1732,7 +1732,7 @@ NTSTATUS _app_timercallback (
 			if (!_app_isappused (ptr_app, FALSE))
 				continue;
 
-			status = _r_fs_createfile (ptr_app->real_path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_OPEN, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+			status = _r_fs_createfile (ptr_app->real_path->buffer, FILE_OPEN, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
 
 			if (!NT_SUCCESS (status))
 				continue;
@@ -1841,7 +1841,7 @@ VOID NTAPI _app_queuefileinformation (
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		return;
 
-	status = _r_fs_createfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_OPEN, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+	status = _r_fs_createfile (ptr_app_info->path->buffer, FILE_OPEN, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -1921,7 +1921,7 @@ VOID NTAPI _app_queuenotifyinformation (
 	{
 		if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		{
-			status = _r_fs_createfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_OPEN, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+			status = _r_fs_createfile (ptr_app_info->path->buffer, FILE_OPEN, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
 
 			if (NT_SUCCESS (status))
 			{

@@ -26,7 +26,7 @@ VOID _app_loginit (
 	if (!log_path)
 		return;
 
-	status = _r_fs_createfile (log_path->buffer, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, FILE_OPEN_IF, FILE_ATTRIBUTE_NORMAL, 0, NULL, &new_handle);
+	status = _r_fs_createfile (log_path->buffer, FILE_OPEN_IF, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, 0, NULL, &new_handle);
 
 	if (NT_SUCCESS (status))
 	{
