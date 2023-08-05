@@ -111,7 +111,7 @@ BOOLEAN _app_installmessage (
 	tdc.pszMainInstruction = str_main;
 	tdc.pszVerificationText = str_flag;
 
-	if (_r_msg_taskdialog (&tdc, &command_id, &radio_id, &is_flagchecked))
+	if (SUCCEEDED (_r_msg_taskdialog (&tdc, &command_id, &radio_id, &is_flagchecked)))
 	{
 		if (command_id == IDYES)
 		{
