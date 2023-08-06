@@ -1823,7 +1823,7 @@ NTSTATUS _app_profile_save ()
 	// make backup
 	if (is_backuprequired)
 	{
-		_r_fs_copyfile (profile_info.profile_path->buffer, profile_info.profile_path_backup->buffer, 0);
+		_r_fs_copyfile (profile_info.profile_path->buffer, profile_info.profile_path_backup->buffer);
 		_r_config_setlong64 (L"BackupTimestamp", timestamp);
 	}
 

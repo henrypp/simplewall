@@ -2163,7 +2163,7 @@ VOID _app_wufixenable (
 		if (_r_fs_exists (buffer2))
 			_r_fs_deletefile (buffer2, TRUE);
 
-		_r_fs_copyfile (buffer1, buffer2, 0);
+		_r_fs_copyfile (buffer1, buffer2);
 
 		service_path = _r_obj_createstring (buffer2);
 

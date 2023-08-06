@@ -3076,6 +3076,7 @@ INT_PTR CALLBACK DlgProc (
 					R_FILE_DIALOG file_dialog;
 					R_ERROR_INFO error_info;
 					PR_STRING path;
+					NTSTATUS status;
 
 					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
 					{
@@ -3091,11 +3092,13 @@ INT_PTR CALLBACK DlgProc (
 								_app_profile_save ();
 
 								// added information for export profile failure (issue #707)
-								if (!_r_fs_copyfile (profile_info.profile_path->buffer, path->buffer, 0))
+								status = _r_fs_copyfile (profile_info.profile_path->buffer, path->buffer);
+
+								if (!NT_SUCCESS (status))
 								{
 									_r_error_initialize (&error_info, NULL, path->buffer);
 
-									_r_show_errormessage (hwnd, NULL, GetLastError (), &error_info);
+									_r_show_errormessage (hwnd, NULL, status, &error_info);
 								}
 
 								_r_obj_dereference (path);
