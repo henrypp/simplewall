@@ -208,7 +208,7 @@ NTSTATUS _app_db_openfrombuffer (
 	return status;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfromfile (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STRING path,
@@ -223,12 +223,12 @@ NTSTATUS _app_db_openfromfile (
 
 	status = _r_fs_mapfile (path->buffer, NULL, &db_info->bytes);
 
-	if (status != ERROR_SUCCESS)
+	if (!NT_SUCCESS (status))
 		return status;
 
 	status = _app_db_decodebuffer (db_info);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		return status;
 
 	status = _app_db_istypevalid (db_info, type, min_version);

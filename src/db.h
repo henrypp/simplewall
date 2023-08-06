@@ -115,7 +115,7 @@ NTSTATUS _app_db_openfrombuffer (
 	_In_ ENUM_TYPE_XML type
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfromfile (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STRING path,
