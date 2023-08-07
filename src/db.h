@@ -94,20 +94,20 @@ NTSTATUS _app_db_gethash (
 
 BYTE _app_getprofiletype ();
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_ishashvalid (
 	_In_ PR_BYTEREF buffer,
 	_In_ PR_BYTEREF hash_bytes
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_istypevalid (
 	_In_ PDB_INFORMATION db_info,
 	_In_ ENUM_TYPE_XML type,
 	_In_ ENUM_VERSION_XML min_version
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfrombuffer (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_BYTEREF buffer,
@@ -123,7 +123,7 @@ NTSTATUS _app_db_openfromfile (
 	_In_ ENUM_TYPE_XML type
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 );
@@ -143,7 +143,7 @@ NTSTATUS _app_db_generatebody (
 	_Outptr_ PR_BYTE_PTR out_buffer
 );
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebuffer (
 	_Inout_ PDB_INFORMATION db_info
 );

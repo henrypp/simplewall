@@ -142,7 +142,7 @@ BYTE _app_getprofiletype ()
 	return PROFILE2_ID_PLAIN;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_ishashvalid (
 	_In_ PR_BYTEREF buffer,
 	_In_ PR_BYTEREF hash_bytes
@@ -170,7 +170,7 @@ NTSTATUS _app_db_ishashvalid (
 	return status;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_istypevalid (
 	_In_ PDB_INFORMATION db_info,
 	_In_ ENUM_TYPE_XML type,
@@ -180,13 +180,13 @@ NTSTATUS _app_db_istypevalid (
 	if (db_info->type != type)
 		return STATUS_NDIS_INVALID_DATA;
 
-	if (db_info->version >= min_version)
-		return STATUS_SUCCESS;
+	if (db_info->version < min_version)
+		return STATUS_FILE_NOT_SUPPORTED;
 
-	return STATUS_FILE_NOT_SUPPORTED;
+	return STATUS_SUCCESS;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfrombuffer (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_BYTEREF buffer,
@@ -200,7 +200,7 @@ NTSTATUS _app_db_openfrombuffer (
 
 	status = _app_db_decodebuffer (db_info);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		return status;
 
 	status = _app_db_istypevalid (db_info, type, min_version);
@@ -216,22 +216,28 @@ NTSTATUS _app_db_openfromfile (
 	_In_ ENUM_TYPE_XML type
 )
 {
+	HANDLE hfile;
 	NTSTATUS status;
 
 	if (db_info->bytes)
 		_r_obj_dereference (db_info->bytes);
 
-	status = _r_fs_mapfile (path->buffer, NULL, &db_info->bytes);
+	status = _r_fs_createfile (path->buffer, FILE_OPEN, FILE_GENERIC_READ, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+
+	if (!NT_SUCCESS (status))
+		return status;
+
+	status = _r_fs_readfile (hfile, &db_info->bytes);
 
 	if (!NT_SUCCESS (status))
 		return status;
 
 	status = _app_db_decodebuffer (db_info);
 
-	if (!NT_SUCCESS (status))
-		return status;
+	if (NT_SUCCESS (status))
+		status = _app_db_istypevalid (db_info, type, min_version);
 
-	status = _app_db_istypevalid (db_info, type, min_version);
+	NtClose (hfile);
 
 	return status;
 }
@@ -530,7 +536,7 @@ VOID _app_db_parse_ruleconfig (
 	_r_obj_dereference (rule_name);
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 )
@@ -757,7 +763,7 @@ NTSTATUS _app_db_generatebody (
 	return STATUS_SUCCESS;
 }
 
-_Success_ (return == STATUS_SUCCESS)
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebuffer (
 	_Inout_ PDB_INFORMATION db_info
 )
@@ -777,7 +783,7 @@ NTSTATUS _app_db_decodebuffer (
 	}
 	while (--attempts);
 
-	if (status != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status))
 		return status;
 
 	status = _r_xml_parsestring (&db_info->xml_library, db_info->bytes->buffer, (ULONG)db_info->bytes->length);
