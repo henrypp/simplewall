@@ -1702,8 +1702,7 @@ VOID _app_profile_refresh ()
 	_app_package_getserviceslist ();
 
 	// generate uwp apps list (win8+)
-	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-		_app_package_getpackageslist ();
+	_app_package_getpackageslist ();
 }
 
 NTSTATUS _app_profile_load (
@@ -1730,7 +1729,7 @@ NTSTATUS _app_profile_load (
 
 		status = _app_db_openfromfile (&db_info, profile_info.profile_path, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
 
-		if (status != STATUS_SUCCESS)
+		if (!NT_SUCCESS (status))
 			status = _app_db_openfromfile (&db_info, profile_info.profile_path_backup, XML_VERSION_MINIMAL, XML_TYPE_PROFILE);
 
 		_r_queuedlock_releaseshared (&lock_profile);
@@ -1738,7 +1737,7 @@ NTSTATUS _app_profile_load (
 
 CleanupExit:
 
-	is_update = ((status == STATUS_SUCCESS) || !path_custom);
+	is_update = (NT_SUCCESS (status) || !path_custom);
 
 	if (is_update)
 	{
@@ -1748,13 +1747,13 @@ CleanupExit:
 		_app_profile_refresh ();
 	}
 
-	if (status == STATUS_SUCCESS)
+	if (NT_SUCCESS (status))
 	{
 		_app_db_parse (&db_info, XML_TYPE_PROFILE);
 	}
 	else
 	{
-		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != ERROR_FILE_NOT_FOUND)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
 		{
 			if (hwnd)
 				_r_show_errormessage (hwnd, L"Could not load profile!", status, NULL);
@@ -1785,7 +1784,7 @@ NTSTATUS _app_profile_save ()
 	DB_INFORMATION db_info;
 	LONG64 timestamp;
 	NTSTATUS status;
-	BOOLEAN is_backuprequired;
+	BOOLEAN is_backuprequired = FALSE;
 
 	status = _app_db_initialize (&db_info, FALSE);
 
@@ -1797,7 +1796,6 @@ NTSTATUS _app_profile_save ()
 	}
 
 	timestamp = _r_unixtime_now ();
-	is_backuprequired = FALSE;
 
 	if (_r_config_getboolean (L"IsBackupProfile", TRUE))
 	{
@@ -1824,6 +1822,7 @@ NTSTATUS _app_profile_save ()
 	if (is_backuprequired)
 	{
 		_r_fs_copyfile (profile_info.profile_path->buffer, profile_info.profile_path_backup->buffer);
+
 		_r_config_setlong64 (L"BackupTimestamp", timestamp);
 	}
 

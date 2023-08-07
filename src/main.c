@@ -696,8 +696,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE));
 
 					// win8+
-					if (!_r_sys_isosversiongreaterorequal (WINDOWS_8))
-						_r_ctrl_enable (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, FALSE);
+					_r_ctrl_enable (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, FALSE);
 
 					break;
 				}
@@ -1757,8 +1756,7 @@ INT _app_addwindowtabs (
 	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_SERVICE);
 
 	// uwp apps (win8+)
-	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_UWP);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_UWP);
 
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{

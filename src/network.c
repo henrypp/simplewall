@@ -512,7 +512,7 @@ BOOLEAN _app_network_getpath (
 
 		if (NT_SUCCESS (status))
 		{
-			if (_r_sys_isosversiongreaterorequal (WINDOWS_8) && _r_sys_isprocessimmersive (process_handle))
+			if (_r_sys_isprocessimmersive (process_handle))
 			{
 				ptr_network->type = DATA_APP_UWP;
 			}

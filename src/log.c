@@ -407,10 +407,6 @@ VOID _wfp_logsetoption (
 	UINT32 mask = 0;
 	ULONG status;
 
-	// configure dropped packets logging (win8+)
-	if (!_r_sys_isosversiongreaterorequal (WINDOWS_8))
-		return;
-
 	// add allowed connections monitor
 	if (!_r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
 		mask |= FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW;
@@ -670,97 +666,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 	_In_ ULONG version
 )
 {
-	if (version == WINDOWS_7)
-	{
-		FWPM_NET_EVENT1 *evt = event_data;
-
-		if (evt->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && evt->classifyDrop)
-		{
-			log->layer_id = evt->classifyDrop->layerId;
-			log->filter_id = evt->classifyDrop->filterId;
-			log->direction = evt->classifyDrop->msFwpDirection;
-			log->is_loopback = !!evt->classifyDrop->isLoopback;
-		}
-		else if (evt->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && evt->ipsecDrop)
-		{
-			log->layer_id = evt->ipsecDrop->layerId;
-			log->filter_id = evt->ipsecDrop->filterId;
-			log->direction = evt->ipsecDrop->direction;
-		}
-		else
-		{
-			return FALSE;
-		}
-
-		// indicates the direction of the packet transmission and set valid directions
-		switch (log->direction)
-		{
-			case FWP_DIRECTION_IN:
-			case FWP_DIRECTION_INBOUND:
-			{
-				log->direction = FWP_DIRECTION_INBOUND;
-				break;
-			}
-
-			case FWP_DIRECTION_OUT:
-			case FWP_DIRECTION_OUTBOUND:
-			{
-				log->direction = FWP_DIRECTION_OUTBOUND;
-				break;
-			}
-
-			default:
-			{
-				return FALSE;
-			}
-		}
-
-		log->flags = evt->header.flags;
-
-		RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
-
-		if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
-			log->app_id = evt->header.appId.data;
-
-		if (evt->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET)
-			log->user_id = evt->header.userId;
-
-		if (evt->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
-			log->protocol = evt->header.ipProtocol;
-
-		if (evt->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET)
-			log->local_port = evt->header.localPort;
-
-		if (evt->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET)
-			log->remote_port = evt->header.remotePort;
-
-		if (evt->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
-		{
-			log->version = evt->header.ipVersion;
-
-			if (evt->header.ipVersion == FWP_IP_VERSION_V4)
-			{
-				if (evt->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
-					log->local_addr4 = evt->header.localAddrV4;
-
-				if (evt->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
-					log->remote_addr4 = evt->header.remoteAddrV4;
-			}
-			else if (evt->header.ipVersion == FWP_IP_VERSION_V6)
-			{
-				if (evt->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
-					log->local_addr6 = &evt->header.localAddrV6;
-
-				if (evt->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
-					log->remote_addr6 = &evt->header.remoteAddrV6;
-			}
-		}
-		else
-		{
-			log->version = FWP_IP_VERSION_NONE;
-		}
-	}
-	else if (version == WINDOWS_8)
+	if (version == WINDOWS_8)
 	{
 		FWPM_NET_EVENT2 *evt = event_data;
 
@@ -1198,20 +1104,6 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 	}
 
 	return TRUE;
-}
-
-// win7+ callback
-VOID CALLBACK _wfp_logcallback0 (
-	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT1 *event_data
-)
-{
-	ITEM_LOG_CALLBACK log = {0};
-
-	UNREFERENCED_PARAMETER (context);
-
-	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_7))
-		_wfp_logcallback (&log);
 }
 
 // win8+ callback
