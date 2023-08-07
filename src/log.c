@@ -312,8 +312,6 @@ VOID _wfp_logsubscribe (
 	FWPMNES4 _FwpmNetEventSubscribe4;
 	FWPMNES3 _FwpmNetEventSubscribe3;
 	FWPMNES2 _FwpmNetEventSubscribe2;
-	FWPMNES1 _FwpmNetEventSubscribe1;
-	FWPMNES0 _FwpmNetEventSubscribe0;
 	HANDLE current_handle;
 	HANDLE new_handle = NULL;
 	HMODULE hfwpuclnt;
@@ -336,39 +334,22 @@ VOID _wfp_logsubscribe (
 	_FwpmNetEventSubscribe4 = (FWPMNES4)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe4");
 	_FwpmNetEventSubscribe3 = (FWPMNES3)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe3");
 	_FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe2");
-	_FwpmNetEventSubscribe1 = (FWPMNES1)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe1");
-	_FwpmNetEventSubscribe0 = (FWPMNES0)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe0");
 
-	if (!_FwpmNetEventSubscribe4 && !_FwpmNetEventSubscribe3 && !_FwpmNetEventSubscribe2 && !_FwpmNetEventSubscribe1 && !_FwpmNetEventSubscribe0)
-	{
-		_r_log (LOG_LEVEL_WARNING, NULL, L"GetProcAddress", GetLastError (), L"FwpmNetEventSubscribe");
-
-		goto CleanupExit; // there is no function to call
-	}
-
-	if (_FwpmNetEventSubscribe4)
+	if (_r_sys_isosversiongreaterorequal(WINDOWS_10_1809))
 	{
 		status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
 	}
-	else if (_FwpmNetEventSubscribe3)
+	else if (_r_sys_isosversiongreaterorequal(WINDOWS_10_1803))
 	{
 		status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
 	}
-	else if (_FwpmNetEventSubscribe2)
+	else if (_r_sys_isosversiongreaterorequal(WINDOWS_10_1607))
 	{
 		status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
 	}
-	else if (_FwpmNetEventSubscribe1)
-	{
-		status = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle); // win8+
-	}
-	else if (_FwpmNetEventSubscribe0)
-	{
-		status = _FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &new_handle); // win7+
-	}
 	else
 	{
-		goto CleanupExit;
+		status = FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle); // win8+
 	}
 
 	if (status != ERROR_SUCCESS)
