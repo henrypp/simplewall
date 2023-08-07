@@ -88,12 +88,6 @@ VOID CALLBACK _wfp_logcallback (
 	_In_ PITEM_LOG_CALLBACK log
 );
 
-// win7+ callback
-VOID CALLBACK _wfp_logcallback0 (
-	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT1* event_data
-);
-
 // win8+ callback
 VOID CALLBACK _wfp_logcallback1 (
 	_In_opt_ PVOID context,
