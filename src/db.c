@@ -222,7 +222,7 @@ NTSTATUS _app_db_openfromfile (
 	if (db_info->bytes)
 		_r_obj_dereference (db_info->bytes);
 
-	status = _r_fs_createfile (path->buffer, FILE_OPEN, FILE_GENERIC_READ, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+	status = _r_fs_createfile (path->buffer, FILE_OPEN, FILE_GENERIC_READ, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, 0, FALSE, NULL, &hfile);
 
 	if (!NT_SUCCESS (status))
 		return status;
@@ -929,7 +929,17 @@ NTSTATUS _app_db_save_streamtofile (
 	BYTE profile_type;
 	NTSTATUS status;
 
-	status = _r_fs_createfile (path->buffer, FILE_OVERWRITE_IF, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+	status = _r_fs_createfile (
+		path->buffer,
+		FILE_OVERWRITE_IF,
+		GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_DELETE,
+		FILE_ATTRIBUTE_NORMAL,
+		0,
+		FALSE,
+		NULL,
+		&hfile
+	);
 
 	if (!NT_SUCCESS (status))
 		return status;

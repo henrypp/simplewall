@@ -26,7 +26,17 @@ VOID _app_loginit (
 	if (!log_path)
 		return;
 
-	status = _r_fs_createfile (log_path->buffer, FILE_OPEN_IF, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, 0, NULL, &new_handle);
+	status = _r_fs_createfile (
+		log_path->buffer,
+		FILE_OPEN_IF,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ,
+		FILE_ATTRIBUTE_NORMAL,
+		0,
+		FALSE,
+		NULL,
+		&new_handle
+	);
 
 	if (NT_SUCCESS (status))
 	{
@@ -309,43 +319,48 @@ VOID _wfp_logsubscribe (
 )
 {
 	FWPM_NET_EVENT_SUBSCRIPTION subscription = {0};
-	FWPMNES4 _FwpmNetEventSubscribe4;
-	FWPMNES3 _FwpmNetEventSubscribe3;
-	FWPMNES2 _FwpmNetEventSubscribe2;
+	FWPMNES4 _FwpmNetEventSubscribe4 = NULL;
+	FWPMNES3 _FwpmNetEventSubscribe3 = NULL;
+	FWPMNES2 _FwpmNetEventSubscribe2 = NULL;
 	HANDLE current_handle;
 	HANDLE new_handle = NULL;
-	HMODULE hfwpuclnt;
-	ULONG status;
+	PVOID hfwpuclnt;
+	NTSTATUS status;
 
 	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
 
 	if (current_handle)
 		return; // already subscribed
 
-	hfwpuclnt = _r_sys_loadlibrary (L"fwpuclnt.dll");
+	status = _r_sys_loadlibrary (L"fwpuclnt.dll", &hfwpuclnt);
 
-	if (!hfwpuclnt)
+	if (!NT_SUCCESS (status))
 	{
-		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", GetLastError (), L"fwpuclnt.dll");
+		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
 
 		return;
 	}
 
-	_FwpmNetEventSubscribe4 = (FWPMNES4)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe4");
-	_FwpmNetEventSubscribe3 = (FWPMNES3)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe3");
-	_FwpmNetEventSubscribe2 = (FWPMNES2)GetProcAddress (hfwpuclnt, "FwpmNetEventSubscribe2");
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1809))
+	{
+		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", (PVOID_PTR)&_FwpmNetEventSubscribe4);
 
-	if (_r_sys_isosversiongreaterorequal(WINDOWS_10_1809))
-	{
-		status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
+		if (NT_SUCCESS (status))
+			status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
 	}
-	else if (_r_sys_isosversiongreaterorequal(WINDOWS_10_1803))
+	else if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1803))
 	{
-		status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
+		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe3", (PVOID_PTR)&_FwpmNetEventSubscribe3);
+
+		if (NT_SUCCESS (status))
+			status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
 	}
-	else if (_r_sys_isosversiongreaterorequal(WINDOWS_10_1607))
+	else if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1607))
 	{
-		status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
+		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", (PVOID_PTR)&_FwpmNetEventSubscribe2);
+
+		if (NT_SUCCESS (status))
+			status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
 	}
 	else
 	{

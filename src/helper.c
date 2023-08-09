@@ -673,18 +673,19 @@ BOOLEAN _app_calculatefilehash (
 	static CCAHFFH2 _CryptCATAdminCalcHashFromFileHandle2 = NULL;
 
 	HCATADMIN hcat_admin;
-	HMODULE hwintrust;
+	PVOID hwintrust;
 	PBYTE file_hash;
 	ULONG file_hash_length;
+	NTSTATUS status;
 
 	if (_r_initonce_begin (&init_once))
 	{
-		hwintrust = _r_sys_loadlibrary (L"wintrust.dll");
+		status = _r_sys_loadlibrary (L"wintrust.dll", &hwintrust);
 
-		if (hwintrust)
+		if (NT_SUCCESS (status))
 		{
-			_CryptCATAdminAcquireContext2 = (CCAAC2)GetProcAddress (hwintrust, "CryptCATAdminAcquireContext2");
-			_CryptCATAdminCalcHashFromFileHandle2 = (CCAHFFH2)GetProcAddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2");
+			_r_sys_getprocaddress (hwintrust, "CryptCATAdminAcquireContext2", (PVOID_PTR)&_CryptCATAdminAcquireContext2);
+			_r_sys_getprocaddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2", (PVOID_PTR)&_CryptCATAdminCalcHashFromFileHandle2);
 
 			//FreeLibrary (hwintrust);
 		}
@@ -1723,7 +1724,17 @@ NTSTATUS _app_timercallback (
 			if (!_app_isappused (ptr_app, FALSE))
 				continue;
 
-			status = _r_fs_createfile (ptr_app->real_path->buffer, FILE_OPEN, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+			status = _r_fs_createfile (
+				ptr_app->real_path->buffer,
+				FILE_OPEN,
+				GENERIC_READ,
+				FILE_SHARE_READ | FILE_SHARE_DELETE,
+				FILE_ATTRIBUTE_NORMAL,
+				0,
+				FALSE,
+				NULL,
+				&hfile
+			);
 
 			if (!NT_SUCCESS (status))
 				continue;
@@ -1832,7 +1843,17 @@ VOID NTAPI _app_queuefileinformation (
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		return;
 
-	status = _r_fs_createfile (ptr_app_info->path->buffer, FILE_OPEN, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+	status = _r_fs_createfile (
+		ptr_app_info->path->buffer,
+		FILE_OPEN,
+		GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_DELETE,
+		FILE_ATTRIBUTE_NORMAL,
+		0,
+		FALSE,
+		NULL,
+		&hfile
+	);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -1912,7 +1933,17 @@ VOID NTAPI _app_queuenotifyinformation (
 	{
 		if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		{
-			status = _r_fs_createfile (ptr_app_info->path->buffer, FILE_OPEN, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, NULL, &hfile);
+			status = _r_fs_createfile (
+				ptr_app_info->path->buffer,
+				FILE_OPEN,
+				GENERIC_READ,
+				FILE_SHARE_READ | FILE_SHARE_DELETE,
+				FILE_ATTRIBUTE_NORMAL,
+				0,
+				FALSE,
+				NULL,
+				&hfile
+			);
 
 			if (NT_SUCCESS (status))
 			{
