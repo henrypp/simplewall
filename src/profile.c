@@ -1632,13 +1632,7 @@ VOID _app_profile_load_internal (
 	if (_r_fs_exists (path->buffer))
 	{
 		if (NT_SUCCESS (status_file))
-		{
 			status_file = _app_db_openfromfile (&db_info_file, path, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
-		}
-		else
-		{
-			RtlZeroMemory (&db_info_file, sizeof (db_info_file));
-		}
 	}
 	else
 	{
@@ -1648,7 +1642,7 @@ VOID _app_profile_load_internal (
 	status_res = _app_profile_load_fromresource (resource_name, &db_info_buffer);
 
 	// NOTE: prefer new profile version for 3.4+
-	if (status_file != STATUS_SUCCESS)
+	if (!NT_SUCCESS (status_file))
 	{
 		is_loadfromresource = TRUE;
 	}
