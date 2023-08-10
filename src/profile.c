@@ -797,12 +797,8 @@ VOID _app_getcount (
 		if (_app_istimerset (ptr_app))
 			status->apps_timer_count += 1;
 
-		if (!ptr_app->is_undeletable &&
-			(!_app_isappexists (ptr_app) || !is_used) &&
-			!(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
-		{
+		if (!ptr_app->is_undeletable && (!_app_isappexists (ptr_app) || !is_used) && !(ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP))
 			status->apps_unused_count += 1;
-		}
 
 		if (is_used)
 			status->apps_count += 1;
