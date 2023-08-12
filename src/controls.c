@@ -633,7 +633,7 @@ VOID _app_settrayicon (
 	if (current_handle)
 		DestroyIcon (current_handle);
 
-	new_handle = _r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_size);
+	_r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_size, &new_handle);
 
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
 
