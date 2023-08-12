@@ -695,9 +695,6 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDESTEALTH_CHK, _r_config_getboolean (L"IsExcludeStealth", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE));
 
-					// win8+
-					_r_ctrl_enable (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, FALSE);
-
 					break;
 				}
 
@@ -1064,7 +1061,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_setstringformat (
 						hwnd,
 						IDC_EXCLUDECLASSIFYALLOW_CHK,
-						L"%s %s [win8+]",
+						L"%s %s",
 						_r_locale_getstring (IDS_TITLE_EXCLUDE),
 						_r_locale_getstring (IDS_EXCLUDECLASSIFYALLOW_CHK)
 					);
