@@ -3739,17 +3739,13 @@ INT_PTR CALLBACK DlgProc (
 }
 
 BOOLEAN _app_parseargs (
-	_In_ LPCWSTR cmdline
+	_In_ R_CMDLINE_INFO_CLASS info_class
 )
 {
 	WCHAR arguments_mutex_name[32];
 	HANDLE arguments_mutex;
 	HANDLE hengine;
-	BOOLEAN is_install;
-	BOOLEAN is_uninstall;
-	BOOLEAN is_silent;
-	BOOLEAN is_temporary;
-	BOOLEAN result;
+	BOOLEAN result = FALSE;
 
 	_r_str_printf (arguments_mutex_name, RTL_NUMBER_OF (arguments_mutex_name), L"%sCmd", _r_app_getnameshort ());
 
@@ -3757,63 +3753,39 @@ BOOLEAN _app_parseargs (
 	if (_r_mutex_isexists (arguments_mutex_name))
 		return TRUE;
 
-	is_install = FALSE;
-	is_uninstall = FALSE;
-	is_silent = FALSE;
-	is_temporary = FALSE;
-	result = FALSE;
-
 	_r_mutex_create (arguments_mutex_name, &arguments_mutex);
 
-	if (_r_sys_getopt (cmdline, L"help", NULL))
-	{
-		_r_show_message (
-			NULL,
-			MB_OK | MB_ICONINFORMATION,
-			L"Available options:",
-			L"\"simplewall.exe -install\" - enable filtering.\r\n" \
-			"\"simplewall.exe -install -temp\" - enable filtering until reboot.\r\n\" \
-			\"simplewall.exe -install -silent\" - enable filtering without prompt.\r\n\"" \
-			"\"simplewall.exe -uninstall\" - remove all installed filters.\r\n"
-			"\"simplewall.exe -help\" - show this message."
-		);
+	_app_initialize ();
 
-		result = TRUE;
+	hengine = _wfp_getenginehandle ();
 
+	if (!hengine)
 		goto CleanupExit;
-	}
-	else if (_r_sys_getopt (cmdline, L"install", NULL))
+
+	switch (info_class)
 	{
-		is_install = TRUE;
-	}
-	else if (_r_sys_getopt (cmdline, L"uninstall", NULL))
-	{
-		is_uninstall = TRUE;
-	}
-
-	if (is_install)
-	{
-		if (_r_sys_getopt (cmdline, L"silent", NULL))
-			is_silent = TRUE;
-
-		if (_r_sys_getopt (cmdline, L"temp", NULL))
-			is_temporary = TRUE;
-	}
-
-	if (is_install || is_uninstall)
-	{
-		_app_initialize ();
-
-		hengine = _wfp_getenginehandle ();
-
-		if (!hengine)
-			goto CleanupExit;
-
-		if (is_install)
+		case CmdlineHelp:
 		{
-			if (is_silent || _app_installmessage (NULL, TRUE))
+			_r_show_message (
+				NULL,
+				MB_OK | MB_ICONINFORMATION,
+				L"Available options:",
+				L"simplewall.exe -install - enable filtering.\r\n"
+				L"simplewall.exe -install -temp - enable filtering until reboot.\r\n"
+				L"simplewall.exe -install -silent - enable filtering without prompt.\r\n"
+				L"simplewall.exe -uninstall - remove all installed filters.\r\n"
+				L"simplewall.exe -help - show this message."
+			);
+
+			result = TRUE;
+
+			break;
+		}
+		case CmdlineInstall:
+		{
+			if (_r_sys_getopt (_r_sys_getimagecommandline (), L"silent", NULL) || _app_installmessage (NULL, TRUE))
 			{
-				if (is_temporary)
+				if (_r_sys_getopt (_r_sys_getimagecommandline (), L"temp", NULL))
 					config.is_filterstemporary = TRUE;
 
 				_app_profile_initialize ();
@@ -3824,17 +3796,23 @@ BOOLEAN _app_parseargs (
 
 				_wfp_uninitialize (hengine, FALSE);
 			}
+
+			result = TRUE;
+
+			break;
 		}
-		else if (is_uninstall)
+		case CmdlineUninstall:
 		{
 			if (_wfp_isfiltersinstalled () && _app_installmessage (NULL, FALSE))
 			{
 				_wfp_destroyfilters (hengine);
 				_wfp_uninitialize (hengine, TRUE);
 			}
-		}
 
-		result = TRUE;
+			result = TRUE;
+
+			break;
+		}
 	}
 
 CleanupExit:
@@ -3854,18 +3832,10 @@ INT APIENTRY wWinMain (
 	HWND hwnd;
 	ULONG result;
 
-	if (!_r_app_initialize ())
+	if (!_r_app_initialize (&_app_parseargs))
 		return ERROR_APP_INIT_FAILURE;
 
-	if (_app_parseargs (cmdline))
-		return ERROR_SUCCESS;
-
-	hwnd = _r_app_createwindow (
-		hinst,
-		MAKEINTRESOURCE (IDD_MAIN),
-		MAKEINTRESOURCE (IDI_MAIN),
-		&DlgProc
-	);
+	hwnd = _r_app_createwindow (hinst, MAKEINTRESOURCE (IDD_MAIN), MAKEINTRESOURCE (IDI_MAIN), &DlgProc);
 
 	if (!hwnd)
 		return ERROR_APP_INIT_FAILURE;
