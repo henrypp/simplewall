@@ -1292,7 +1292,7 @@ LONG_PTR _app_message_custdraw (
 				if (!ImageList_GetIconSize (himglist, &icon_size_x, &icon_size_y))
 					return CDRF_DODEFAULT;
 
-				_r_dc_fixwindowfont (lpnmlv->nmcd.hdc, lpnmlv->nmcd.hdr.hwndFrom); // fix
+				_r_dc_fixfont (lpnmlv->nmcd.hdc, lpnmlv->nmcd.hdr.hwndFrom, 0); // fix
 
 				SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
 				SetTextColor (lpnmlv->nmcd.hdc, GetSysColor (COLOR_GRAYTEXT));

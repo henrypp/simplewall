@@ -29,7 +29,7 @@ PSID _app_quyerybuiltinsid (
 VOID _app_generate_credentials ()
 {
 	// For revoke current user (v3.0.5 Beta and lower)
-	config.builtin_current_sid = _r_sys_getcurrenttoken ().token_sid;
+	config.builtin_current_sid = _r_sys_getcurrenttoken ()->token_sid;
 
 	// S-1-5-32-544 (BUILTIN\Administrators)
 	config.builtin_admins_sid = _app_quyerybuiltinsid (WinBuiltinAdministratorsSid);

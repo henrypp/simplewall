@@ -1068,7 +1068,7 @@ VOID _app_refreshstatus (
 
 	dpi_value = _r_dc_getwindowdpi (hwnd);
 
-	_r_dc_fixwindowfont (hdc, hstatus); // fix
+	_r_dc_fixfont (hdc, hstatus, 0); // fix
 
 	calculated_width = 0;
 	spacing = _r_dc_getdpi (16, dpi_value);

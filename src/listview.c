@@ -812,8 +812,8 @@ VOID _app_listview_resize_ex (
 	if (!hdc_header)
 		goto CleanupExit;
 
-	_r_dc_fixwindowfont (hdc_listview, hlistview); // fix
-	_r_dc_fixwindowfont (hdc_header, hheader); // fix
+	_r_dc_fixfont (hdc_listview, hlistview, 0); // fix
+	_r_dc_fixfont (hdc_header, hheader, 0); // fix
 
 	calculated_width = 0;
 	column_general_id = 0; // set general column id
