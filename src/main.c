@@ -3742,25 +3742,14 @@ BOOLEAN _app_parseargs (
 	_In_ R_CMDLINE_INFO_CLASS info_class
 )
 {
-	WCHAR arguments_mutex_name[32];
-	HANDLE arguments_mutex;
 	HANDLE hengine;
-	BOOLEAN result = FALSE;
-
-	_r_str_printf (arguments_mutex_name, RTL_NUMBER_OF (arguments_mutex_name), L"%sCmd", _r_app_getnameshort ());
-
-	// parse arguments
-	if (_r_mutex_isexists (arguments_mutex_name))
-		return TRUE;
-
-	_r_mutex_create (arguments_mutex_name, &arguments_mutex);
 
 	_app_initialize ();
 
 	hengine = _wfp_getenginehandle ();
 
 	if (!hengine)
-		goto CleanupExit;
+		return FALSE;
 
 	switch (info_class)
 	{
@@ -3777,9 +3766,7 @@ BOOLEAN _app_parseargs (
 				L"simplewall.exe -help - show this message."
 			);
 
-			result = TRUE;
-
-			break;
+			return TRUE;
 		}
 		case CmdlineInstall:
 		{
@@ -3797,10 +3784,9 @@ BOOLEAN _app_parseargs (
 				_wfp_uninitialize (hengine, FALSE);
 			}
 
-			result = TRUE;
-
-			break;
+			return TRUE;
 		}
+
 		case CmdlineUninstall:
 		{
 			if (_wfp_isfiltersinstalled () && _app_installmessage (NULL, FALSE))
@@ -3809,17 +3795,11 @@ BOOLEAN _app_parseargs (
 				_wfp_uninitialize (hengine, TRUE);
 			}
 
-			result = TRUE;
-
-			break;
+			return TRUE;
 		}
 	}
 
-CleanupExit:
-
-	_r_mutex_destroy (&arguments_mutex);
-
-	return result;
+	return FALSE;
 }
 
 INT APIENTRY wWinMain (
