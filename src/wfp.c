@@ -1070,7 +1070,7 @@ BOOLEAN _wfp_createrulefilter (
 		{
 			status = _FwpmGetAppIdFromFileName1 (ptr_app->original_path, ptr_app->type, &byte_blob);
 
-			if (status == STATUS_SUCCESS)
+			if (NT_SUCCESS (status))
 			{
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_APP_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -2746,6 +2746,7 @@ BOOLEAN _wfp_firewallisenabled ()
 	return FALSE;
 }
 
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _FwpmGetAppIdFromFileName1 (
 	_In_ PR_STRING path,
 	_In_ ENUM_TYPE_DATA type,

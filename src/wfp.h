@@ -174,6 +174,7 @@ VOID _wfp_firewallenable (
 
 BOOLEAN _wfp_firewallisenabled ();
 
+_Success_ (NT_SUCCESS (return))
 NTSTATUS _FwpmGetAppIdFromFileName1 (
 	_In_ PR_STRING path,
 	_In_ ENUM_TYPE_DATA type,
