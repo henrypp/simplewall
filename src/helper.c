@@ -680,7 +680,7 @@ BOOLEAN _app_calculatefilehash (
 
 	if (_r_initonce_begin (&init_once))
 	{
-		status = _r_sys_loadlibrary (L"wintrust.dll", &hwintrust);
+		status = _r_sys_loadlibrary (L"wintrust.dll", 0, &hwintrust);
 
 		if (NT_SUCCESS (status))
 		{
@@ -951,17 +951,18 @@ VOID _app_getfileversioninfo (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 )
 {
-	R_STRINGBUILDER sb;
-	PR_STRING version_string = NULL;
-	HINSTANCE hlib;
 	VS_FIXEDFILEINFO *ver_info = NULL;
+	PR_STRING version_string = NULL;
+	R_STRINGBUILDER sb;
 	R_BYTEREF ver_block;
 	PR_STRING string;
+	PVOID hlib;
 	ULONG lcid;
+	NTSTATUS status;
 
-	hlib = LoadLibraryEx (ptr_app_info->path->buffer, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
+	status = _r_sys_loadlibrary (ptr_app_info->path->buffer, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE, &hlib);
 
-	if (!hlib)
+	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
 	if (!_r_res_loadresource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION, &ver_block))
@@ -2072,7 +2073,7 @@ VOID NTAPI _app_queueresolveinformation (
 
 _Ret_maybenull_
 HBITMAP _app_bitmapfrompng (
-	_In_opt_ HINSTANCE hinst,
+	_In_opt_ PVOID hinst,
 	_In_ LPCWSTR name,
 	_In_ LONG width
 )

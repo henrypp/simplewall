@@ -332,7 +332,7 @@ VOID _wfp_logsubscribe (
 	if (current_handle)
 		return; // already subscribed
 
-	status = _r_sys_loadlibrary (L"fwpuclnt.dll", &hfwpuclnt);
+	status = _r_sys_loadlibrary (L"fwpuclnt.dll", 0, &hfwpuclnt);
 
 	if (!NT_SUCCESS (status))
 	{

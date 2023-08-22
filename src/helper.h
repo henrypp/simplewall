@@ -267,7 +267,7 @@ VOID NTAPI _app_queueresolveinformation (
 
 _Ret_maybenull_
 HBITMAP _app_bitmapfrompng (
-	_In_opt_ HINSTANCE hinst,
+	_In_opt_ PVOID hinst,
 	_In_ LPCWSTR name,
 	_In_ LONG width
 );
