@@ -45,7 +45,7 @@ VOID _app_search_initializetheme (
 	context->image_width = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value) + 4;
 	context->image_height = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value) + 4;
 
-	hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SEARCH), context->image_width);
+	hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SEARCH), context->image_width);
 
 	if (!hbitmap)
 		return;

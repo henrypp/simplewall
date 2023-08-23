@@ -1150,7 +1150,7 @@ PR_STRING _app_appexpandrules (
 	PR_STRING string;
 	PITEM_RULE ptr_rule;
 
-	_r_obj_initializestringbuilder (&buffer);
+	_r_obj_initializestringbuilder (&buffer, 256);
 	_r_obj_initializestringrefconst (&delimeter_sr, delimeter);
 
 	_r_queuedlock_acquireshared (&lock_rules);
@@ -1203,7 +1203,7 @@ PR_STRING _app_rulesexpandapps (
 	ULONG_PTR hash_code;
 	SIZE_T enum_key;
 
-	_r_obj_initializestringbuilder (&sr);
+	_r_obj_initializestringbuilder (&sr, 256);
 
 	_r_obj_initializestringrefconst (&delimeter_sr, delimeter);
 
@@ -1290,7 +1290,7 @@ PR_STRING _app_rulesexpandrules (
 	if (_r_obj_isstringempty (rule))
 		return NULL;
 
-	_r_obj_initializestringbuilder (&sb);
+	_r_obj_initializestringbuilder (&sb, 256);
 
 	_r_obj_initializestringrefconst (&delimeter_sr, delimeter);
 
@@ -1562,7 +1562,7 @@ NTSTATUS _app_profile_load_fromresource (
 )
 {
 	PDB_INFORMATION db_info;
-	R_BYTEREF bytes;
+	R_STORAGE bytes;
 	NTSTATUS status;
 
 	db_info = out_buffer;
@@ -1571,7 +1571,9 @@ NTSTATUS _app_profile_load_fromresource (
 
 	if (NT_SUCCESS (status))
 	{
-		if (_r_res_loadresource (_r_sys_getimagebase (), resource_name, RT_RCDATA, &bytes))
+		status = _r_res_loadresource (_r_sys_getimagebase (), RT_RCDATA, resource_name, &bytes);
+
+		if (NT_SUCCESS (status))
 			status = _app_db_openfrombuffer (db_info, &bytes, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
 	}
 

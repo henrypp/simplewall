@@ -56,7 +56,7 @@ VOID _app_getapptooltipstring (
 	}
 
 	// file information
-	_r_obj_initializestringbuilder (&sb);
+	_r_obj_initializestringbuilder (&sb, 512);
 
 	// file display name
 	if (ptr_app)
@@ -163,7 +163,7 @@ VOID _app_getapptooltipstring (
 	// app notes
 	if (ptr_app)
 	{
-		_r_obj_initializestringbuilder (&sb);
+		_r_obj_initializestringbuilder (&sb, 512);
 
 		// app type
 		if (ptr_app->type == DATA_APP_NETWORK)
@@ -277,7 +277,7 @@ PR_STRING _app_gettooltipbylparam (
 
 	UNREFERENCED_PARAMETER (hwnd);
 
-	_r_obj_initializestringbuilder (&sb);
+	_r_obj_initializestringbuilder (&sb, 512);
 
 	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID)
 	{
@@ -623,6 +623,7 @@ VOID _app_settrayicon (
 	LONG dpi_value;
 	LONG icon_size;
 	INT icon_id;
+	HRESULT status;
 
 	dpi_value = _r_dc_gettaskbardpi ();
 	icon_id = _app_getstateicon (install_type);
@@ -633,14 +634,17 @@ VOID _app_settrayicon (
 	if (current_handle)
 		DestroyIcon (current_handle);
 
-	_r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_size, &new_handle);
+	status = _r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_size, &new_handle);
 
-	_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
+	if (SUCCEEDED (status))
+	{
+		_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
 
-	current_handle = InterlockedCompareExchangePointer (&config.htray_icon, new_handle, NULL);
+		current_handle = InterlockedCompareExchangePointer (&config.htray_icon, new_handle, NULL);
 
-	if (current_handle)
-		DestroyIcon (current_handle);
+		if (current_handle)
+			DestroyIcon (current_handle);
+	}
 }
 
 VOID _app_imagelist_init (
@@ -686,11 +690,11 @@ VOID _app_imagelist_init (
 		icon_large
 	);
 
-	config.hbmp_enable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_small);
-	config.hbmp_disable = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_small);
+	config.hbmp_enable = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_small);
+	config.hbmp_disable = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_small);
 
-	config.hbmp_allow = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_small);
-	config.hbmp_block = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_small);
+	config.hbmp_allow = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_ALLOW), icon_small);
+	config.hbmp_block = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_BLOCK), icon_small);
 
 	// toolbar imagelist
 	if (config.himg_toolbar)
@@ -706,7 +710,7 @@ VOID _app_imagelist_init (
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (toolbar_ids[i]), icon_size_toolbar);
+			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (toolbar_ids[i]), icon_size_toolbar);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_toolbar, hbitmap, NULL);
@@ -730,7 +734,7 @@ VOID _app_imagelist_init (
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (rules_ids[i]), icon_small);
+			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (rules_ids[i]), icon_small);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_rules_small, hbitmap, NULL);
@@ -751,7 +755,7 @@ VOID _app_imagelist_init (
 	{
 		for (SIZE_T i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (rules_ids[i]), icon_large);
+			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (rules_ids[i]), icon_large);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_rules_large, hbitmap, NULL);

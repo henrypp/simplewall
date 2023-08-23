@@ -827,11 +827,11 @@ VOID _app_notify_initialize (
 	}
 
 	// load images
-	context->hbmp_rules = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_SETTINGS), icon_small);
-	context->hbmp_allow = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_ALLOW), icon_small);
-	context->hbmp_block = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_BLOCK), icon_small);
-	context->hbmp_cross = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_CROSS), icon_small);
-	context->hbmp_next = _app_bitmapfrompng (NULL, MAKEINTRESOURCE (IDP_NEXT), icon_small);
+	context->hbmp_rules = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SETTINGS), icon_small);
+	context->hbmp_allow = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_ALLOW), icon_small);
+	context->hbmp_block = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_BLOCK), icon_small);
+	context->hbmp_cross = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_CROSS), icon_small);
+	context->hbmp_next = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_NEXT), icon_small);
 
 	// set button configuration
 	SendDlgItemMessage (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);

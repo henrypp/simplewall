@@ -136,7 +136,7 @@ PR_STRING _app_editor_getrulesfromlistview (
 	if (!item_count)
 		return NULL;
 
-	_r_obj_initializestringbuilder (&sb);
+	_r_obj_initializestringbuilder (&sb, 512);
 
 	for (INT i = 0; i < item_count; i++)
 	{
@@ -1501,7 +1501,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!listview_id || !_r_listview_getitemcount (hwnd, listview_id))
 						break;
 
-					_r_obj_initializestringbuilder (&sb);
+					_r_obj_initializestringbuilder (&sb, 512);
 
 					item_id = -1;
 

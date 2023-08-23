@@ -209,7 +209,7 @@ PR_STRING _app_formatarpa (
 	PIN_ADDR p4addr;
 	PIN6_ADDR p6addr;
 
-	_r_obj_initializestringbuilder (&formatted_address);
+	_r_obj_initializestringbuilder (&formatted_address, 256);
 
 	if (af == AF_INET)
 	{
@@ -259,7 +259,7 @@ PR_STRING _app_formataddress (
 	PR_STRING string;
 	BOOLEAN is_success = FALSE;
 
-	_r_obj_initializestringbuilder (&formatted_address);
+	_r_obj_initializestringbuilder (&formatted_address, 256);
 
 	if (flags & FMTADDR_USE_PROTOCOL)
 	{
@@ -954,7 +954,7 @@ VOID _app_getfileversioninfo (
 	VS_FIXEDFILEINFO *ver_info = NULL;
 	PR_STRING version_string = NULL;
 	R_STRINGBUILDER sb;
-	R_BYTEREF ver_block;
+	R_STORAGE ver_block;
 	PR_STRING string;
 	PVOID hlib;
 	ULONG lcid;
@@ -965,10 +965,12 @@ VOID _app_getfileversioninfo (
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
-	if (!_r_res_loadresource (hlib, MAKEINTRESOURCE (VS_VERSION_INFO), RT_VERSION, &ver_block))
+	status = _r_res_loadresource (hlib, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), &ver_block);
+
+	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
-	_r_obj_initializestringbuilder (&sb);
+	_r_obj_initializestringbuilder (&sb, 256);
 
 	lcid = _r_res_querytranslation (ver_block.buffer);
 
@@ -1053,54 +1055,10 @@ VOID _app_getfilehashinfo (
 	if (!ptr_app)
 		return;
 
-	status = _app_getfilehash (hfile, &string);
+	status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, NULL, hfile, &string);
 
 	if (NT_SUCCESS (status))
 		_r_obj_movereference (&ptr_app->hash, string);
-}
-
-_Success_ (NT_SUCCESS (return))
-NTSTATUS _app_getfilehash (
-	_In_ HANDLE hfile,
-	_Outptr_ PR_STRING_PTR out_buffer
-)
-{
-	R_CRYPT_CONTEXT hash_context;
-	IO_STATUS_BLOCK isb;
-	BYTE buffer[8192] = {0};
-	PR_STRING string;
-	NTSTATUS status;
-
-	*out_buffer = NULL;
-
-	status = _r_crypt_createhashcontext (&hash_context, BCRYPT_SHA256_ALGORITHM);
-
-	if (!NT_SUCCESS (status))
-		return status;
-
-	while (TRUE)
-	{
-		status = NtReadFile (hfile, NULL, NULL, NULL, &isb, buffer, sizeof (buffer), NULL, NULL);
-
-		if (!NT_SUCCESS (status))
-			break;
-
-		if (isb.Information == 0)
-			break;
-
-		status = _r_crypt_hashbuffer (&hash_context, buffer, (ULONG)isb.Information);
-
-		if (!NT_SUCCESS (status))
-			break;
-	}
-
-	status = _r_crypt_finalhashcontext (&hash_context, &string, NULL);
-
-	_r_crypt_destroycryptcontext (&hash_context);
-
-	*out_buffer = string;
-
-	return status;
 }
 
 ULONG_PTR _app_addcolor (
@@ -1703,7 +1661,6 @@ NTSTATUS _app_timercallback (
 	LARGE_INTEGER timeout;
 	PITEM_APP ptr_app = NULL;
 	PR_STRING hash;
-	HANDLE hfile;
 	SIZE_T enum_key;
 	NTSTATUS status;
 
@@ -1725,22 +1682,7 @@ NTSTATUS _app_timercallback (
 			if (!_app_isappused (ptr_app, FALSE))
 				continue;
 
-			status = _r_fs_createfile (
-				ptr_app->real_path->buffer,
-				FILE_OPEN,
-				GENERIC_READ,
-				FILE_SHARE_READ | FILE_SHARE_DELETE,
-				FILE_ATTRIBUTE_NORMAL,
-				0,
-				FALSE,
-				NULL,
-				&hfile
-			);
-
-			if (!NT_SUCCESS (status))
-				continue;
-
-			status = _app_getfilehash (hfile, &hash);
+			status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, ptr_app->real_path->buffer, NULL, &hash);
 
 			if (NT_SUCCESS (status))
 			{
@@ -1760,8 +1702,6 @@ NTSTATUS _app_timercallback (
 					_r_obj_dereference (hash);
 				}
 			}
-
-			NtClose (hfile);
 		}
 
 		_r_queuedlock_releaseshared (&lock_apps);
@@ -2073,17 +2013,28 @@ VOID NTAPI _app_queueresolveinformation (
 
 _Ret_maybenull_
 HBITMAP _app_bitmapfrompng (
-	_In_opt_ PVOID hinst,
+	_In_ PVOID hinst,
 	_In_ LPCWSTR name,
 	_In_ LONG width
 )
 {
-	R_BYTEREF buffer;
+	R_STORAGE buffer;
+	HBITMAP result;
+	NTSTATUS status;
 
-	if (!_r_res_loadresource (hinst, name, L"PNG", &buffer))
+	status = _r_res_loadresource (hinst, L"PNG", name, &buffer);
+
+	if (!NT_SUCCESS (status))
 		return NULL;
 
-	return _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, width, width);
+	status = _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, width, width, &result);
+
+	if (SUCCEEDED (status))
+	{
+		return result;
+	}
+
+	return NULL;
 }
 
 VOID _app_wufixhelper (

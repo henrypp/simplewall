@@ -3091,7 +3091,7 @@ INT_PTR CALLBACK DlgProc (
 
 								if (!NT_SUCCESS (status))
 								{
-									_r_error_initialize (&error_info, NULL, path->buffer);
+									_r_error_initialize (&error_info, NULL, path->buffer, NULL);
 
 									_r_show_errormessage (hwnd, NULL, status, &error_info);
 								}

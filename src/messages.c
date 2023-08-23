@@ -2282,7 +2282,7 @@ VOID _app_command_logshow (
 
 			if (status != STATUS_SUCCESS)
 			{
-				_r_error_initialize (&error_info, NULL, viewer_path->buffer);
+				_r_error_initialize (&error_info, NULL, viewer_path->buffer, NULL);
 
 				_r_show_errormessage (hwnd, NULL, status, &error_info);
 			}
@@ -2367,7 +2367,7 @@ VOID _app_command_logerrshow (
 
 			if (status != STATUS_SUCCESS)
 			{
-				_r_error_initialize (&error_info, NULL, viewer_path->buffer);
+				_r_error_initialize (&error_info, NULL, viewer_path->buffer, NULL);
 
 				_r_show_errormessage (hwnd, NULL, status, &error_info);
 			}
@@ -2412,7 +2412,7 @@ VOID _app_command_copy (
 	listview_id = _app_listview_getcurrent (hwnd);
 	column_count = _r_listview_getcolumncount (hwnd, listview_id);
 
-	_r_obj_initializestringbuilder (&sb);
+	_r_obj_initializestringbuilder (&sb, 512);
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
@@ -2616,7 +2616,7 @@ VOID _app_command_delete (
 
 	if (listview_id != IDC_NETWORK)
 	{
-		_r_obj_initializestringbuilder (&sb);
+		_r_obj_initializestringbuilder (&sb, 256);
 
 		string = _r_locale_getstring_ex (IDS_QUESTION_DELETE);
 

@@ -110,7 +110,7 @@ NTSTATUS _app_db_istypevalid (
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfrombuffer (
 	_Inout_ PDB_INFORMATION db_info,
-	_In_ PR_BYTEREF buffer,
+	_In_ PR_STORAGE buffer,
 	_In_ ENUM_VERSION_XML min_version,
 	_In_ ENUM_TYPE_XML type
 );

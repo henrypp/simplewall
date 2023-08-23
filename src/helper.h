@@ -162,12 +162,6 @@ VOID _app_getfilehashinfo (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 );
 
-_Success_ (NT_SUCCESS (return))
-NTSTATUS _app_getfilehash (
-	_In_ HANDLE hfile,
-	_Outptr_ PR_STRING_PTR out_buffer
-);
-
 ULONG_PTR _app_addcolor (
 	_In_ UINT locale_id,
 	_In_ LPCWSTR config_name,
@@ -267,7 +261,7 @@ VOID NTAPI _app_queueresolveinformation (
 
 _Ret_maybenull_
 HBITMAP _app_bitmapfrompng (
-	_In_opt_ PVOID hinst,
+	_In_ PVOID hinst,
 	_In_ LPCWSTR name,
 	_In_ LONG width
 );

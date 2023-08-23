@@ -189,14 +189,14 @@ NTSTATUS _app_db_istypevalid (
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfrombuffer (
 	_Inout_ PDB_INFORMATION db_info,
-	_In_ PR_BYTEREF buffer,
+	_In_ PR_STORAGE buffer,
 	_In_ ENUM_VERSION_XML min_version,
 	_In_ ENUM_TYPE_XML type
 )
 {
 	NTSTATUS status;
 
-	_r_obj_movereference (&db_info->bytes, _r_obj_createbyte3 (buffer));
+	_r_obj_movereference (&db_info->bytes, _r_obj_createbyte4 (buffer));
 
 	status = _app_db_decodebuffer (db_info);
 
@@ -416,7 +416,7 @@ VOID _app_db_parse_rule (
 	}
 
 	// load apps
-	_r_obj_initializestringbuilder (&sb);
+	_r_obj_initializestringbuilder (&sb, 256);
 
 	string = _r_xml_getattribute_string (&db_info->xml_library, L"apps");
 
