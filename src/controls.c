@@ -1052,7 +1052,7 @@ VOID _app_refreshstatus (
 	PR_STRING text[STATUSBAR_PARTS_COUNT] = {0};
 	INT parts[STATUSBAR_PARTS_COUNT] = {0};
 	LONG size[STATUSBAR_PARTS_COUNT] = {0};
-	LONG calculated_width;
+	LONG calculated_width = 0;
 	LONG spacing;
 	HWND hstatus;
 	HDC hdc;
@@ -1074,7 +1074,6 @@ VOID _app_refreshstatus (
 
 	_r_dc_fixfont (hdc, hstatus, 0); // fix
 
-	calculated_width = 0;
 	spacing = _r_dc_getdpi (16, dpi_value);
 
 	for (INT i = 0; i < RTL_NUMBER_OF (parts); i++)

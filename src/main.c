@@ -3000,7 +3000,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_WEBSITE:
 				case IDM_TRAY_WEBSITE:
 				{
-					_r_shell_opendefault (_r_app_getwebsite_url ());
+					_r_shell_opendefault (_r_app_getsources_url ());
 					break;
 				}
 
@@ -3570,10 +3570,9 @@ INT_PTR CALLBACK DlgProc (
 					PITEM_LOG ptr_log;
 					ULONG_PTR hash_code;
 					INT listview_id;
-					INT item_id;
+					INT item_id = -1;
 
 					listview_id = _app_listview_getcurrent (hwnd);
-					item_id = -1;
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
