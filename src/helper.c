@@ -944,7 +944,12 @@ VOID _app_getfilesignatureinfo (
 	status = _app_verifyfromfile (WTD_CHOICE_FILE, &file_info, &WinTrustActionGenericVerifyV2, NULL, &string);
 
 	if (status == TRUST_E_NOSIGNATURE)
+	{
 		status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA256_ALGORITHM, &string);
+
+		if (status == TRUST_E_NOSIGNATURE)
+			_app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA1_ALGORITHM, &string);
+	}
 
 	_r_obj_movereference (&ptr_app_info->signature_info, string);
 }
