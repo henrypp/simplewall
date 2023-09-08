@@ -422,35 +422,26 @@ BOOLEAN _app_getappinfoparam2 (
 )
 {
 	PITEM_APP_INFO ptr_app_info;
-	BOOLEAN is_success = FALSE;
 
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
+
+	if (!ptr_app_info)
+		return FALSE;
 
 	switch (info_data)
 	{
 		case INFO_ICON_ID:
 		{
-			PITEM_APP ptr_app;
 			LONG icon_id = 0;
 
 			if (size != sizeof (LONG))
-				goto CleanupExit;
-
-			if (ptr_app_info)
 			{
-				icon_id = ptr_app_info->large_icon_id;
-			}
-			else
-			{
-				ptr_app = _app_getappitem (app_hash);
+				_r_obj_dereference (ptr_app_info);
 
-				if (ptr_app)
-				{
-					icon_id = _app_icons_getdefaultapp_id (ptr_app->type);
-
-					_r_obj_dereference (ptr_app);
-				}
+				return FALSE;
 			}
+
+			icon_id = ptr_app_info->large_icon_id;
 
 			if (!icon_id)
 				icon_id = _app_icons_getdefaultapp_id ((listview_id == IDC_APPS_UWP) ? DATA_APP_UWP : DATA_APP_REGULAR);
@@ -459,7 +450,9 @@ BOOLEAN _app_getappinfoparam2 (
 			{
 				RtlCopyMemory (buffer, &icon_id, size);
 
-				is_success = TRUE;
+				_r_obj_dereference (ptr_app_info);
+
+				return TRUE;
 			}
 
 			break;
@@ -470,18 +463,21 @@ BOOLEAN _app_getappinfoparam2 (
 			PVOID ptr;
 
 			if (size != sizeof (PVOID))
-				goto CleanupExit;
-
-			if (ptr_app_info)
 			{
-				if (!_r_obj_isstringempty (ptr_app_info->signature_info))
-				{
-					ptr = _r_obj_reference (ptr_app_info->signature_info);
+				_r_obj_dereference (ptr_app_info);
 
-					RtlCopyMemory (buffer, &ptr, size);
+				return FALSE;
+			}
 
-					is_success = TRUE;
-				}
+			if (!_r_obj_isstringempty (ptr_app_info->signature_info))
+			{
+				ptr = _r_obj_reference (ptr_app_info->signature_info);
+
+				RtlCopyMemory (buffer, &ptr, size);
+
+				_r_obj_dereference (ptr_app_info);
+
+				return TRUE;
 			}
 
 			break;
@@ -492,30 +488,30 @@ BOOLEAN _app_getappinfoparam2 (
 			PVOID ptr;
 
 			if (size != sizeof (PVOID))
-				goto CleanupExit;
-
-			if (ptr_app_info)
 			{
-				if (!_r_obj_isstringempty (ptr_app_info->version_info))
-				{
-					ptr = _r_obj_reference (ptr_app_info->version_info);
+				_r_obj_dereference (ptr_app_info);
 
-					RtlCopyMemory (buffer, &ptr, size);
+				return FALSE;
+			}
 
-					is_success = TRUE;
-				}
+			if (!_r_obj_isstringempty (ptr_app_info->version_info))
+			{
+				ptr = _r_obj_reference (ptr_app_info->version_info);
+
+				RtlCopyMemory (buffer, &ptr, size);
+
+				_r_obj_dereference (ptr_app_info);
+
+				return TRUE;
 			}
 
 			break;
 		}
 	}
 
-CleanupExit:
+	_r_obj_dereference (ptr_app_info);
 
-	if (ptr_app_info)
-		_r_obj_dereference (ptr_app_info);
-
-	return is_success;
+	return FALSE;
 }
 
 BOOLEAN _app_isappsigned (
@@ -1038,9 +1034,6 @@ VOID _app_getfileversioninfo (
 		_r_obj_clearreference (&version_string);
 
 CleanupExit:
-
-	if (!version_string)
-		version_string = _r_obj_referenceemptystring ();
 
 	_r_obj_movereference (&ptr_app_info->version_info, version_string);
 
