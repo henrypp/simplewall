@@ -1819,7 +1819,7 @@ VOID NTAPI _app_queuefileinformation (
 
 	if (!NT_SUCCESS (status))
 	{
-		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_FILE_IS_A_DIRECTORY)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_FILE_IS_A_DIRECTORY && status != STATUS_ACCESS_DENIED)
 			_r_log (LOG_LEVEL_ERROR, NULL, L"_r_fs_createfile", status, ptr_app_info->path->buffer);
 
 		return;

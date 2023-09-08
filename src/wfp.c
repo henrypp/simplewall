@@ -2776,7 +2776,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 			{
 				// file is inaccessible or not found, maybe low-level
 				// driver preventing file access? try another way!
-				if (status == STATUS_ACCESS_DENIED || status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_OBJECT_PATH_NOT_FOUND)
+				if (status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_FILE_IS_A_DIRECTORY || status == STATUS_ACCESS_DENIED)
 				{
 					if (!_app_isappvalidpath (&path->sr))
 					{
@@ -2791,9 +2791,6 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 						_r_obj_trimstringtonullterminator (path_root);
 
-						// file path (without root)
-						_r_obj_initializestringref (&path_skip_root, PathSkipRoot (path->buffer));
-
 						status = _r_path_ntpathfromdos (path_root, &original_path);
 
 						if (!NT_SUCCESS (status))
@@ -2802,6 +2799,9 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 							return status;
 						}
+
+						// file path (without root)
+						_r_obj_initializestringref (&path_skip_root, PathSkipRoot (path->buffer));
 
 						_r_obj_movereference (&original_path, _r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root));
 
