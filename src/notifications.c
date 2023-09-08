@@ -1552,6 +1552,7 @@ INT_PTR CALLBACK NotificationProc (
 					if (!ptr_app)
 					{
 						_r_obj_dereference (ptr_log);
+
 						break;
 					}
 
