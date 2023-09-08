@@ -230,7 +230,11 @@ NTSTATUS _app_db_openfromfile (
 	status = _r_fs_readfile (hfile, &db_info->bytes);
 
 	if (!NT_SUCCESS (status))
+	{
+		NtClose (hfile);
+
 		return status;
+	}
 
 	status = _app_db_decodebuffer (db_info);
 
