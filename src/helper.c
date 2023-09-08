@@ -537,25 +537,22 @@ BOOLEAN _app_isappsigned (
 
 BOOLEAN _app_isappvalidbinary (
 	_In_ ENUM_TYPE_DATA type,
-	_In_ PR_STRING path
+	_In_opt_ PR_STRING path
 )
 {
-	static R_STRINGREF valid_exts[] = {
-		PR_STRINGREF_INIT (L".exe"),
-		PR_STRINGREF_INIT (L".dll"),
-	};
+	static R_STRINGREF valid_exts = PR_STRINGREF_INIT (L".exe");
 
 	if (type != DATA_APP_REGULAR && type != DATA_APP_SERVICE && type != DATA_APP_UWP)
+		return FALSE;
+
+	if (!path)
 		return FALSE;
 
 	if (!_app_isappvalidpath (&path->sr))
 		return FALSE;
 
-	for (SIZE_T i = 0; i < RTL_NUMBER_OF (valid_exts); i++)
-	{
-		if (_r_str_isendsswith (&path->sr, &valid_exts[i], TRUE))
-			return TRUE;
-	}
+	if (_r_str_isendsswith (&path->sr, &valid_exts, TRUE))
+		return TRUE;
 
 	return FALSE;
 }
@@ -1697,7 +1694,7 @@ NTSTATUS _app_timercallback (
 
 		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 		{
-			if (!ptr_app->hash || !ptr_app->real_path || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
+			if (!ptr_app->hash || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
 				continue;
 
 			if (!_app_isappused (ptr_app, FALSE))
@@ -1819,7 +1816,7 @@ VOID NTAPI _app_queuefileinformation (
 
 	if (!NT_SUCCESS (status))
 	{
-		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_FILE_IS_A_DIRECTORY && status != STATUS_ACCESS_DENIED)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_OBJECT_PATH_NOT_FOUND && status != STATUS_ACCESS_DENIED)
 			_r_log (LOG_LEVEL_ERROR, NULL, L"_r_fs_createfile", status, ptr_app_info->path->buffer);
 
 		return;
