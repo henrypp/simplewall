@@ -775,7 +775,7 @@ VOID _app_getcount (
 {
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
-	SIZE_T enum_key;
+	SIZE_T enum_key = 0;
 	BOOLEAN is_used;
 
 	status->apps_count = 0;
@@ -785,8 +785,6 @@ VOID _app_getcount (
 	status->rules_global_count = 0;
 	status->rules_predefined_count = 0;
 	status->rules_user_count = 0;
-
-	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -1439,18 +1437,24 @@ BOOLEAN _app_isappexists (
 	if (ptr_app->is_undeletable)
 		return TRUE;
 
-	if (ptr_app->is_enabled && ptr_app->is_haveerrors)
+	if (ptr_app->is_haveerrors)
 		return FALSE;
 
-	if (ptr_app->type == DATA_APP_REGULAR)
-		return ptr_app->real_path && _r_fs_exists (ptr_app->real_path->buffer);
+	switch (ptr_app->type)
+	{
+		case DATA_APP_REGULAR:
+		{
+			return ptr_app->real_path && _r_fs_exists (ptr_app->real_path->buffer);
+		}
 
-	if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK || ptr_app->type == DATA_APP_PICO)
-		return TRUE;
-
-	// Services and UWP are already undeletable
-	//if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
-	//	return TRUE;
+		case DATA_APP_DEVICE:
+		case DATA_APP_NETWORK:
+		case DATA_APP_PICO:
+		{
+			if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK || ptr_app->type == DATA_APP_PICO)
+				return TRUE;
+		}
+	}
 
 	return FALSE;
 }
@@ -1653,14 +1657,14 @@ VOID _app_profile_load_internal (
 
 	status = is_loadfromresource ? status_res : status_file;
 
-	if (status == STATUS_SUCCESS)
+	if (NT_SUCCESS (status))
 	{
 		if (_app_db_parse (db_info, XML_TYPE_PROFILE_INTERNAL))
 			*timestamp = db_info->timestamp;
 	}
 	else
 	{
-		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != ERROR_FILE_NOT_FOUND)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
 		{
 			if (hwnd)
 				_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL);
