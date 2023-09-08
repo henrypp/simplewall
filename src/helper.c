@@ -1999,22 +1999,30 @@ VOID NTAPI _app_queueresolveinformation (
 
 	is_resolutionenabled = _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE);
 
-	if (context->listview_id == IDC_LOG)
+	switch (context->listview_id)
 	{
-		ptr_log = context->base_address;
+		case IDC_LOG:
+		{
+			ptr_log = context->base_address;
 
-		_app_resolveaddress_interlocked (&ptr_log->local_host_str, ptr_log->af, &ptr_log->local_addr, is_resolutionenabled);
-		_app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, is_resolutionenabled);
-	}
-	else if (context->listview_id == IDC_NETWORK)
-	{
-		ptr_network = context->base_address;
+			_app_resolveaddress_interlocked (&ptr_log->local_host_str, ptr_log->af, &ptr_log->local_addr, is_resolutionenabled);
+			_app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, is_resolutionenabled);
 
-		_app_formataddress_interlocked (&ptr_network->local_addr_str, ptr_network->af, &ptr_network->local_addr);
-		_app_formataddress_interlocked (&ptr_network->remote_addr_str, ptr_network->af, &ptr_network->remote_addr);
+			break;
+		}
 
-		_app_resolveaddress_interlocked (&ptr_network->local_host_str, ptr_network->af, &ptr_network->local_addr, is_resolutionenabled);
-		_app_resolveaddress_interlocked (&ptr_network->remote_host_str, ptr_network->af, &ptr_network->remote_addr, is_resolutionenabled);
+		case IDC_NETWORK:
+		{
+			ptr_network = context->base_address;
+
+			_app_formataddress_interlocked (&ptr_network->local_addr_str, ptr_network->af, &ptr_network->local_addr);
+			_app_formataddress_interlocked (&ptr_network->remote_addr_str, ptr_network->af, &ptr_network->remote_addr);
+
+			_app_resolveaddress_interlocked (&ptr_network->local_host_str, ptr_network->af, &ptr_network->local_addr, is_resolutionenabled);
+			_app_resolveaddress_interlocked (&ptr_network->remote_host_str, ptr_network->af, &ptr_network->remote_addr, is_resolutionenabled);
+
+			break;
+		}
 	}
 
 	// redraw listview
