@@ -1651,7 +1651,28 @@ PR_STRING _app_resolveaddress_interlocked (
 
 VOID _app_fileloggingenable ()
 {
-	_r_sys_createthread (&_app_timercallback, NULL, NULL, NULL, L"FileMonitor");
+	BOOLEAN is_enable;
+	NTSTATUS status;
+
+	is_enable = _r_config_getboolean (L"IsEnableAppMonitor", FALSE);
+
+	if (is_enable)
+	{
+		status = _r_sys_createthread (&_app_timercallback, NULL, &config.hmonitor_thread, NULL, L"FileMonitor");
+
+		if (NT_SUCCESS (status))
+			NtResumeThread (config.hmonitor_thread, NULL);
+	}
+	else
+	{
+		if (config.hmonitor_thread)
+		{
+			NtTerminateThread (config.hmonitor_thread, 0);
+			NtClose (config.hmonitor_thread);
+
+			config.hmonitor_thread = NULL;
+		}
+	}
 }
 
 NTSTATUS _app_timercallback (
@@ -1798,7 +1819,7 @@ VOID NTAPI _app_queuefileinformation (
 
 	if (!NT_SUCCESS (status))
 	{
-		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_ACCESS_DENIED)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_FILE_IS_A_DIRECTORY)
 			_r_log (LOG_LEVEL_ERROR, NULL, L"_r_fs_createfile", status, ptr_app_info->path->buffer);
 
 		return;

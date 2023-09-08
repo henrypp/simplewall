@@ -416,6 +416,8 @@ VOID _app_config_apply (
 
 			_r_menu_checkitem (hmenu, IDM_USEAPPMONITOR_CHK, 0, MF_BYCOMMAND, new_val);
 
+			_app_fileloggingenable ();
+
 			break;
 		}
 	}

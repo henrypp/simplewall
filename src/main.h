@@ -212,6 +212,8 @@ typedef struct _STATIC_DATA
 	HBITMAP hbmp_allow;
 	HBITMAP hbmp_block;
 
+	HANDLE hmonitor_thread;
+
 	volatile HANDLE hlogfile;
 	volatile HANDLE hnetevent;
 	volatile HANDLE hnotify_evt;
