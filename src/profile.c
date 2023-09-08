@@ -376,7 +376,7 @@ ULONG_PTR _app_addapplication (
 	if (_r_obj_isstringempty2 (path))
 		return 0;
 
-	if (_app_isappvalidpath (&path->sr) && PathIsDirectory (path->buffer))
+	if (_app_isappvalidpath (path) && PathIsDirectory (path->buffer))
 		return 0;
 
 	_r_obj_initializestringref2 (&path_temp, path);

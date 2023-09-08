@@ -2778,7 +2778,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 				// driver preventing file access? try another way!
 				if (status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_FILE_IS_A_DIRECTORY || status == STATUS_ACCESS_DENIED)
 				{
-					if (!_app_isappvalidpath (&path->sr))
+					if (!_app_isappvalidpath (path))
 					{
 						return status;
 					}

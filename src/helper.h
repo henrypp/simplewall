@@ -126,11 +126,11 @@ BOOLEAN _app_isappsigned (
 
 BOOLEAN _app_isappvalidbinary (
 	_In_ ENUM_TYPE_DATA type,
-	_In_ PR_STRING path
+	_In_opt_ PR_STRING path
 );
 
 BOOLEAN _app_isappvalidpath (
-	_In_ PR_STRINGREF path
+	_In_opt_ PR_STRING path
 );
 
 _Ret_maybenull_

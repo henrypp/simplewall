@@ -3587,7 +3587,7 @@ INT_PTR CALLBACK DlgProc (
 							{
 								if (ptr_app->real_path)
 								{
-									if (_app_isappvalidpath (&ptr_app->real_path->sr))
+									if (_app_isappvalidpath (ptr_app->real_path))
 										_r_shell_showfile (ptr_app->real_path->buffer);
 								}
 
@@ -3606,7 +3606,7 @@ INT_PTR CALLBACK DlgProc (
 							{
 								if (ptr_network->path)
 								{
-									if (_app_isappvalidpath (&ptr_network->path->sr))
+									if (_app_isappvalidpath (ptr_network->path))
 										_r_shell_showfile (ptr_network->path->buffer);
 								}
 
@@ -3625,7 +3625,7 @@ INT_PTR CALLBACK DlgProc (
 							{
 								if (ptr_log->path)
 								{
-									if (_app_isappvalidpath (&ptr_log->path->sr))
+									if (_app_isappvalidpath (ptr_log->path))
 										_r_shell_showfile (ptr_log->path->buffer);
 								}
 

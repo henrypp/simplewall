@@ -1446,7 +1446,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!context->ptr_app->real_path)
 						break;
 
-					if (_app_isappvalidpath (&context->ptr_app->real_path->sr))
+					if (_app_isappvalidpath (context->ptr_app->real_path))
 						_r_shell_showfile (context->ptr_app->real_path->buffer);
 
 					break;
