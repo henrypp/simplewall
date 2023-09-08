@@ -92,12 +92,12 @@ PR_STRING _app_formataddress_interlocked (
 	_In_ LPCVOID address
 );
 
-_Success_ (return)
-BOOLEAN _app_formatip (
+_Success_ (NT_SUCCESS (return))
+NTSTATUS _app_formatip (
 	_In_ ADDRESS_FAMILY af,
 	_In_ LPCVOID address,
-	_Out_writes_to_ (buffer_size, buffer_size) LPWSTR buffer,
-	_In_ ULONG buffer_size,
+	_Out_writes_to_ (buffer_length, buffer_size) LPWSTR buffer,
+	_In_ ULONG buffer_length,
 	_In_ BOOLEAN is_checkempty
 );
 

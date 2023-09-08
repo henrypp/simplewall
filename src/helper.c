@@ -257,7 +257,7 @@ PR_STRING _app_formataddress (
 	WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH];
 	R_STRINGBUILDER formatted_address;
 	PR_STRING string;
-	BOOLEAN is_success = FALSE;
+	NTSTATUS status;
 
 	_r_obj_initializestringbuilder (&formatted_address, 256);
 
@@ -274,7 +274,9 @@ PR_STRING _app_formataddress (
 		}
 	}
 
-	if (_app_formatip (af, address, addr_str, RTL_NUMBER_OF (addr_str), !!(flags & FMTADDR_AS_RULE)))
+	status = _app_formatip (af, address, addr_str, RTL_NUMBER_OF (addr_str), !!(flags & FMTADDR_AS_RULE));
+
+	if (NT_SUCCESS (status))
 	{
 		if (af == AF_INET6 && port)
 		{
@@ -284,18 +286,16 @@ PR_STRING _app_formataddress (
 		{
 			_r_obj_appendstringbuilder (&formatted_address, addr_str);
 		}
-
-		is_success = TRUE;
 	}
 
 	if (port && !(flags & FMTADDR_USE_PROTOCOL))
 	{
-		_r_obj_appendstringbuilderformat (&formatted_address, is_success ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port);
+		_r_obj_appendstringbuilderformat (&formatted_address, NT_SUCCESS (status) ? L":%" TEXT (PRIu16) : L"%" TEXT (PRIu16), port);
 
-		is_success = TRUE;
+		status = STATUS_SUCCESS;
 	}
 
-	if (is_success)
+	if (NT_SUCCESS (status))
 		return _r_obj_finalstringbuilder (&formatted_address);
 
 	_r_obj_deletestringbuilder (&formatted_address);
@@ -334,12 +334,12 @@ PR_STRING _app_formataddress_interlocked (
 	return current_string;
 }
 
-_Success_ (return)
-BOOLEAN _app_formatip (
+_Success_ (NT_SUCCESS (return))
+NTSTATUS _app_formatip (
 	_In_ ADDRESS_FAMILY af,
 	_In_ LPCVOID address,
-	_Out_writes_to_ (buffer_size, buffer_size) LPWSTR buffer,
-	_In_ ULONG buffer_size,
+	_Out_writes_to_ (buffer_length, buffer_size) LPWSTR buffer,
+	_In_ ULONG buffer_length,
 	_In_ BOOLEAN is_checkempty
 )
 {
@@ -347,38 +347,40 @@ BOOLEAN _app_formatip (
 	PIN6_ADDR p6addr;
 	NTSTATUS status;
 
-	if (af == AF_INET)
+	switch (af)
 	{
-		p4addr = (PIN_ADDR)address;
-
-		if (is_checkempty)
+		case  AF_INET:
 		{
-			if (IN4_IS_ADDR_UNSPECIFIED (p4addr))
-				return FALSE;
+			p4addr = (PIN_ADDR)address;
+
+			if (is_checkempty)
+			{
+				if (IN4_IS_ADDR_UNSPECIFIED (p4addr))
+					return STATUS_INVALID_ADDRESS_COMPONENT;
+			}
+
+			status = RtlIpv4AddressToStringEx (p4addr, 0, buffer, &buffer_length);
+
+			return status;
 		}
 
-		status = RtlIpv4AddressToStringEx (p4addr, 0, buffer, &buffer_size);
-
-		if (status == STATUS_SUCCESS)
-			return TRUE;
-	}
-	else if (af == AF_INET6)
-	{
-		p6addr = (PIN6_ADDR)address;
-
-		if (is_checkempty)
+		case AF_INET6:
 		{
-			if (IN6_IS_ADDR_UNSPECIFIED (p6addr))
-				return FALSE;
+			p6addr = (PIN6_ADDR)address;
+
+			if (is_checkempty)
+			{
+				if (IN6_IS_ADDR_UNSPECIFIED (p6addr))
+					return STATUS_INVALID_ADDRESS_COMPONENT;
+			}
+
+			status = RtlIpv6AddressToStringEx (p6addr, 0, 0, buffer, &buffer_length);
+
+			return status;
 		}
-
-		status = RtlIpv6AddressToStringEx (p6addr, 0, 0, buffer, &buffer_size);
-
-		if (status == STATUS_SUCCESS)
-			return TRUE;
 	}
 
-	return FALSE;
+	return STATUS_INVALID_PARAMETER;
 }
 
 PR_STRING _app_formatport (
