@@ -629,10 +629,14 @@ VOID _app_notify_killprocess (
 						{
 							status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
 
-							//if (NT_SUCCESS (status))
-							//	_app_notify_freeobject (hwnd, ptr_app);
+							if (!NT_SUCCESS (status))
+								_r_show_errormessage (hwnd, L"Terminate process!", status, NULL);
 
 							NtClose (process_handle);
+						}
+						else
+						{
+							_r_show_errormessage (hwnd, L"Open process!", status, NULL);
 						}
 					}
 
