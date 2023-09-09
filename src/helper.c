@@ -338,7 +338,7 @@ _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_formatip (
 	_In_ ADDRESS_FAMILY af,
 	_In_ LPCVOID address,
-	_Out_writes_to_ (buffer_length, buffer_size) LPWSTR buffer,
+	_Out_writes_to_ (buffer_length, buffer_length) LPWSTR buffer,
 	_In_ ULONG buffer_length,
 	_In_ BOOLEAN is_checkempty
 )
