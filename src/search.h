@@ -4,7 +4,7 @@
 
 #pragma once
 
-typedef struct _EDIT_CONTEXT
+typedef struct _SEARCH_CONTEXT
 {
 	HWND hwnd;
 	HICON hicon;
@@ -25,16 +25,16 @@ typedef struct _EDIT_CONTEXT
 	LONG image_width;
 	LONG image_height;
 
-	INT cx_size;
+	INT cx_width;
 	INT cx_border;
-} EDIT_CONTEXT, *PEDIT_CONTEXT;
+} SEARCH_CONTEXT, *PSEARCH_CONTEXT;
 
 VOID _app_search_initializetheme (
-	_Inout_ PEDIT_CONTEXT context
+	_Inout_ PSEARCH_CONTEXT context
 );
 
 VOID _app_search_destroytheme (
-	_Inout_ PEDIT_CONTEXT context
+	_Inout_ PSEARCH_CONTEXT context
 );
 
 VOID _app_search_initialize (
@@ -47,12 +47,12 @@ VOID _app_search_setvisible (
 );
 
 VOID _app_search_drawbutton (
-	_Inout_ PEDIT_CONTEXT context,
+	_Inout_ PSEARCH_CONTEXT context,
 	_In_ LPCRECT button_rect
 );
 
 VOID _app_search_getbuttonrect (
-	_In_ PEDIT_CONTEXT context,
+	_In_ PSEARCH_CONTEXT context,
 	_Inout_ PRECT rect
 );
 

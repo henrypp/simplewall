@@ -5,7 +5,7 @@
 #include "global.h"
 
 VOID _app_search_initializetheme (
-	_Inout_ PEDIT_CONTEXT context
+	_Inout_ PSEARCH_CONTEXT context
 )
 {
 	RECT rect;
@@ -13,14 +13,14 @@ VOID _app_search_initializetheme (
 	HICON hicon_prev;
 	HTHEME htheme;
 	LONG dpi_value;
-	HRESULT hr;
+	HRESULT status;
 
 	GetWindowRect (context->hwnd, &rect);
 
 	dpi_value = _r_dc_getmonitordpi (&rect);
 
 	// initialize borders
-	context->cx_size = _r_dc_getdpi (20, dpi_value);
+	context->cx_width = _r_dc_getdpi (20, dpi_value);
 	context->cx_border = 0;
 
 	if (IsThemeActive ())
@@ -29,9 +29,9 @@ VOID _app_search_initializetheme (
 
 		if (htheme)
 		{
-			hr = GetThemeInt (htheme, EP_EDITBORDER_NOSCROLL, EPSHV_NORMAL, TMT_BORDERSIZE, &context->cx_border);
+			status = GetThemeInt (htheme, 0, 0, TMT_BORDERSIZE, &context->cx_border);
 
-			if (!SUCCEEDED (hr))
+			if (FAILED (status))
 				context->cx_border = 0;
 
 			CloseThemeData (htheme);
@@ -42,22 +42,15 @@ VOID _app_search_initializetheme (
 		context->cx_border = _r_dc_getsystemmetrics (SM_CXBORDER, dpi_value) * 2;
 
 	// initialize icons
-	context->image_width = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value) + 4;
-	context->image_height = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value) + 4;
+	context->image_width = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value) + _r_dc_getdpi (4, dpi_value);
+	context->image_height = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value) + _r_dc_getdpi (4, dpi_value);
 
 	hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SEARCH), context->image_width);
 
 	if (!hbitmap)
 		return;
 
-	if (context->hicon)
-	{
-		hicon_prev = context->hicon;
-	}
-	else
-	{
-		hicon_prev = NULL;
-	}
+	hicon_prev = context->hicon;
 
 	context->hicon = _r_dc_bitmaptoicon (hbitmap, context->image_width, context->image_height);
 
@@ -68,7 +61,7 @@ VOID _app_search_initializetheme (
 }
 
 VOID _app_search_destroytheme (
-	_Inout_ PEDIT_CONTEXT context
+	_Inout_ PSEARCH_CONTEXT context
 )
 {
 	SAFE_DELETE_ICON (context->hicon);
@@ -78,10 +71,10 @@ VOID _app_search_initialize (
 	_In_ HWND hwnd
 )
 {
-	PEDIT_CONTEXT context;
+	PSEARCH_CONTEXT context;
 	WCHAR buffer[128];
 
-	context = _r_mem_allocate (sizeof (EDIT_CONTEXT));
+	context = _r_mem_allocate (sizeof (SEARCH_CONTEXT));
 
 	context->hwnd = hwnd;
 
@@ -123,7 +116,7 @@ VOID _app_search_setvisible (
 }
 
 VOID _app_search_drawbutton (
-	_Inout_ PEDIT_CONTEXT context,
+	_Inout_ PSEARCH_CONTEXT context,
 	_In_ LPCRECT button_rect
 )
 {
@@ -170,14 +163,14 @@ VOID _app_search_drawbutton (
 }
 
 VOID _app_search_getbuttonrect (
-	_In_ PEDIT_CONTEXT context,
+	_In_ PSEARCH_CONTEXT context,
 	_Inout_ PRECT rect
 )
 {
-	rect->left = (rect->right - context->cx_size) - context->cx_border - 1; // offset left border by 1
-	rect->bottom -= context->cx_border;
-	rect->right -= context->cx_border;
+	rect->left = (rect->right - context->cx_width) - (context->cx_border + 1);
 	rect->top += context->cx_border;
+	rect->right -= context->cx_border;
+	rect->bottom -= context->cx_border;
 }
 
 BOOLEAN _app_search_isstringfound (
@@ -530,10 +523,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 	_In_ LPARAM lparam
 )
 {
-	PEDIT_CONTEXT context;
+	PSEARCH_CONTEXT context;
 	WNDPROC old_wnd_proc;
 
-	context = (PEDIT_CONTEXT)_r_wnd_getcontext (hwnd, SHORT_MAX);
+	context = (PSEARCH_CONTEXT)_r_wnd_getcontext (hwnd, SHORT_MAX);
 
 	if (!context)
 		return FALSE;
@@ -570,7 +563,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			CallWindowProc (old_wnd_proc, hwnd, msg, wparam, lparam);
 
 			// Deflate the client area to accommodate the custom button.
-			calc_size->rgrc[0].right -= context->cx_size;
+			calc_size->rgrc[0].right -= context->cx_width;
 
 			return FALSE;
 		}
@@ -670,12 +663,14 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			if (PtInRect (&rect, point))
 			{
 				SetFocus (hwnd);
-				SetWindowText (hwnd, L"");
+
+				_r_ctrl_setstring (hwnd, 0, L"");
 			}
 
 			if (GetCapture () == hwnd)
 			{
 				context->is_pushed = FALSE;
+
 				ReleaseCapture ();
 			}
 
@@ -696,10 +691,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			break;
 		}
 
-		case WM_DPICHANGED:
 		case WM_SETTINGCHANGE:
 		case WM_SYSCOLORCHANGE:
 		case WM_THEMECHANGED:
+		case WM_DPICHANGED_AFTERPARENT:
 		{
 			_app_search_destroytheme (context);
 			_app_search_initializetheme (context);
@@ -708,15 +703,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 
 			// Refresh the non-client area.
-			SetWindowPos (
-				hwnd,
-				NULL,
-				0,
-				0,
-				0,
-				0,
-				SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER
-			);
+			SetWindowPos (hwnd, NULL, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 
 			// Force the edit control to update its non-client area.
 			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
@@ -724,9 +711,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			break;
 		}
 
+		case WM_MOUSEMOVE:
 		case WM_NCMOUSEMOVE:
 		{
-			TRACKMOUSEEVENT tme;
+			TRACKMOUSEEVENT tme = {0};
 			POINT point;
 			RECT rect;
 
@@ -742,57 +730,31 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			_app_search_getbuttonrect (context, &rect);
 
 			// Check that the mouse is within the inserted button.
-			if (!PtInRect (&rect, point) && !context->is_hot)
-				break;
+			if ((wparam & MK_LBUTTON) && GetCapture () == hwnd)
+				context->is_pushed = PtInRect (&rect, point);
 
-			RtlZeroMemory (&tme, sizeof (tme));
+			// Check that the mouse is within the inserted button.
+			if (!context->is_hot)
+			{
+				tme.cbSize = sizeof (tme);
+				tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
+				tme.hwndTrack = hwnd;
+				tme.dwHoverTime = 0;
 
-			tme.cbSize = sizeof (tme);
-			tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
-			tme.hwndTrack = hwnd;
-			tme.dwHoverTime = 0;
+				context->is_hot = TRUE;
 
-			context->is_hot = TRUE;
+				TrackMouseEvent (&tme);
+			}
 
 			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-
-			TrackMouseEvent (&tme);
 
 			break;
 		}
 
+		case WM_MOUSELEAVE:
 		case WM_NCMOUSELEAVE:
 		{
-			if (!context->is_hot)
-				break;
-
 			context->is_hot = FALSE;
-			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-
-			break;
-		}
-
-		case WM_MOUSEMOVE:
-		{
-			POINT point;
-			RECT rect;
-
-			if (!(wparam & MK_LBUTTON) && GetCapture () != hwnd)
-				break;
-
-			// Get the screen coordinates of the mouse.
-			if (!GetCursorPos (&point))
-				break;
-
-			// Get the screen coordinates of the window.
-			if (!GetWindowRect (hwnd, &rect))
-				break;
-
-			// Get the position of the inserted button.
-			_app_search_getbuttonrect (context, &rect);
-
-			// Check that the mouse is within the inserted button.
-			context->is_pushed = PtInRect (&rect, point);
 
 			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 
