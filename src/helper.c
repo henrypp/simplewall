@@ -211,35 +211,43 @@ PR_STRING _app_formatarpa (
 
 	_r_obj_initializestringbuilder (&formatted_address, 256);
 
-	if (af == AF_INET)
+	switch (af)
 	{
-		p4addr = (PIN_ADDR)address;
-
-		_r_obj_appendstringbuilderformat (
-			&formatted_address,
-			L"%hhu.%hhu.%hhu.%hhu.%s",
-			p4addr->s_impno,
-			p4addr->s_lh,
-			p4addr->s_host,
-			p4addr->s_net,
-			DNS_IP4_REVERSE_DOMAIN_STRING_W
-		);
-	}
-	else if (af == AF_INET6)
-	{
-		p6addr = (PIN6_ADDR)address;
-
-		for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
+		case AF_INET:
 		{
+			p4addr = (PIN_ADDR)address;
+
 			_r_obj_appendstringbuilderformat (
 				&formatted_address,
-				L"%hhx.%hhx.",
-				p6addr->s6_addr[i] & 0xF,
-				(p6addr->s6_addr[i] >> 4) & 0xF
+				L"%hhu.%hhu.%hhu.%hhu.%s",
+				p4addr->s_impno,
+				p4addr->s_lh,
+				p4addr->s_host,
+				p4addr->s_net,
+				DNS_IP4_REVERSE_DOMAIN_STRING_W
 			);
+
+			break;
 		}
 
-		_r_obj_appendstringbuilder (&formatted_address, DNS_IP6_REVERSE_DOMAIN_STRING_W);
+		case AF_INET6:
+		{
+			p6addr = (PIN6_ADDR)address;
+
+			for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
+			{
+				_r_obj_appendstringbuilderformat (
+					&formatted_address,
+					L"%hhx.%hhx.",
+					p6addr->s6_addr[i] & 0xF,
+					(p6addr->s6_addr[i] >> 4) & 0xF
+				);
+			}
+
+			_r_obj_appendstringbuilder (&formatted_address, DNS_IP6_REVERSE_DOMAIN_STRING_W);
+
+			break;
+		}
 	}
 
 	return _r_obj_finalstringbuilder (&formatted_address);
@@ -1579,9 +1587,9 @@ PR_STRING _app_resolveaddress (
 		return string;
 	}
 
-	status = DnsQuery (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+	status = DnsQuery_W (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
 
-	if (status == NO_ERROR)
+	if (status == ERROR_SUCCESS)
 	{
 		if (dns_records)
 		{
@@ -1590,6 +1598,7 @@ PR_STRING _app_resolveaddress (
 				if (dns_record->wType == DNS_TYPE_PTR)
 				{
 					string = _r_obj_createstring (dns_record->Data.PTR.pNameHost);
+
 					break;
 				}
 			}
@@ -1598,10 +1607,7 @@ PR_STRING _app_resolveaddress (
 		}
 	}
 
-	if (!string)
-		string = _r_obj_referenceemptystring ();
-
-	_app_addcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, _r_obj_reference (string));
+	_app_addcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, _r_obj_referencesafe (string));
 
 	_r_obj_dereference (arpa_string);
 
@@ -2164,7 +2170,7 @@ VOID _app_wufixenable (
 	if (is_enable)
 	{
 		if (_r_fs_exists (buffer2))
-			_r_fs_deletefile (buffer2, TRUE);
+			_r_fs_deletefile (buffer2);
 
 		_r_fs_copyfile (buffer1, buffer2);
 
@@ -2192,7 +2198,7 @@ VOID _app_wufixenable (
 				_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (FALSE));
 			}
 
-			_r_fs_deletefile (buffer2, TRUE);
+			_r_fs_deletefile (buffer2);
 		}
 	}
 

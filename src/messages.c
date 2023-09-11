@@ -2228,7 +2228,7 @@ VOID _app_command_logshow (
 )
 {
 	R_ERROR_INFO error_info;
-	PR_STRING log_path;
+	PR_STRING path;
 	PR_STRING viewer_path;
 	PR_STRING process_path;
 	HANDLE current_handle;
@@ -2248,17 +2248,13 @@ VOID _app_command_logshow (
 	}
 	else
 	{
-		log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
+		path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
 
-		if (!log_path)
+		if (!path)
 			return;
 
-		if (!_r_fs_exists (log_path->buffer))
-		{
-			_r_obj_dereference (log_path);
-
+		if (!_r_fs_exists (path->buffer))
 			return;
-		}
 
 		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
@@ -2267,31 +2263,29 @@ VOID _app_command_logshow (
 
 		viewer_path = _app_getlogviewer ();
 
-		if (viewer_path)
+		if (!viewer_path)
+			return;
+
+		process_path = _r_obj_concatstrings (
+			5,
+			L"\"",
+			viewer_path->buffer,
+			L"\" \"",
+			path->buffer,
+			L"\""
+		);
+
+		status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
+
+		if (!NT_SUCCESS (status))
 		{
-			process_path = _r_obj_concatstrings (
-				5,
-				L"\"",
-				viewer_path->buffer,
-				L"\" \"",
-				log_path->buffer,
-				L"\""
-			);
+			_r_error_initialize (&error_info, NULL, viewer_path->buffer, NULL);
 
-			status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
-
-			if (status != STATUS_SUCCESS)
-			{
-				_r_error_initialize (&error_info, NULL, viewer_path->buffer, NULL);
-
-				_r_show_errormessage (hwnd, NULL, status, &error_info);
-			}
-
-			_r_obj_dereference (process_path);
-			_r_obj_dereference (viewer_path);
+			_r_show_errormessage (hwnd, NULL, status, &error_info);
 		}
 
-		_r_obj_dereference (log_path);
+		_r_obj_dereference (process_path);
+		_r_obj_dereference (viewer_path);
 	}
 }
 
@@ -2340,42 +2334,42 @@ VOID _app_command_logerrshow (
 	_In_opt_ HWND hwnd
 )
 {
+	R_ERROR_INFO error_info;
 	PR_STRING viewer_path;
 	PR_STRING process_path;
-	PR_STRING log_path;
-	R_ERROR_INFO error_info;
+	PR_STRING path;
 	NTSTATUS status;
 
-	log_path = _r_app_getlogpath ();
+	path = _r_app_getlogpath ();
 
-	if (_r_fs_exists (log_path->buffer))
+	if (!_r_fs_exists (path->buffer))
+		return;
+
+	viewer_path = _app_getlogviewer ();
+
+	if (!viewer_path)
+		return;
+
+	process_path = _r_obj_concatstrings (
+		5,
+		L"\"",
+		viewer_path->buffer,
+		L"\" \"",
+		path->buffer,
+		L"\""
+	);
+
+	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
+
+	if (!NT_SUCCESS (status))
 	{
-		viewer_path = _app_getlogviewer ();
+		_r_error_initialize (&error_info, NULL, viewer_path->buffer, NULL);
 
-		if (viewer_path)
-		{
-			process_path = _r_obj_concatstrings (
-				5,
-				L"\"",
-				viewer_path->buffer,
-				L"\" \"",
-				log_path->buffer,
-				L"\""
-			);
-
-			status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
-
-			if (status != STATUS_SUCCESS)
-			{
-				_r_error_initialize (&error_info, NULL, viewer_path->buffer, NULL);
-
-				_r_show_errormessage (hwnd, NULL, status, &error_info);
-			}
-
-			_r_obj_dereference (process_path);
-			_r_obj_dereference (viewer_path);
-		}
+		_r_show_errormessage (hwnd, NULL, status, &error_info);
 	}
+
+	_r_obj_dereference (process_path);
+	_r_obj_dereference (viewer_path);
 }
 
 VOID _app_command_logerrclear (
@@ -2392,7 +2386,7 @@ VOID _app_command_logerrclear (
 	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
 		return;
 
-	_r_fs_deletefile (path->buffer, TRUE);
+	_r_fs_deletefile (path->buffer);
 }
 
 VOID _app_command_copy (

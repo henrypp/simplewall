@@ -12,46 +12,42 @@ VOID _app_getapptooltipstring (
 {
 	PITEM_APP_INFO ptr_app_info;
 	PITEM_APP ptr_app;
-	PR_STRING tmp_string1;
-	PR_STRING tmp_string2;
-	PR_STRING tmp_string3;
+	PR_STRING string;
+	PR_STRING value;
+	PR_STRING path = NULL;
 	R_STRINGBUILDER sb;
 
 	ptr_app = _app_getappitem (app_hash);
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
 	// file path
-	tmp_string3 = NULL;
-
 	if (ptr_app)
 	{
 		if (ptr_app->real_path)
 		{
-			tmp_string3 = ptr_app->real_path;
+			path = ptr_app->real_path;
 		}
 		else if (ptr_app->display_name)
 		{
-			tmp_string3 = ptr_app->display_name;
+			path = ptr_app->display_name;
 		}
 		else
 		{
-			tmp_string3 = ptr_app->original_path;
+			path = ptr_app->original_path;
 		}
 	}
 	else if (ptr_network)
 	{
-		if (ptr_network->path)
-			tmp_string3 = ptr_network->path;
+		path = ptr_network->path;
 	}
 	else if (ptr_log)
 	{
-		if (ptr_log->path)
-			tmp_string3 = ptr_log->path;
+		path = ptr_log->path;
 	}
 
-	if (tmp_string3)
+	if (path)
 	{
-		_r_obj_appendstringbuilder2 (buffer, tmp_string3);
+		_r_obj_appendstringbuilder2 (buffer, path);
 		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 	}
 
@@ -83,16 +79,16 @@ VOID _app_getapptooltipstring (
 	// compile
 	if (!_r_obj_isstringempty2 (sb.string))
 	{
-		tmp_string1 = _r_obj_concatstrings (
+		string = _r_obj_concatstrings (
 			2,
 			_r_locale_getstring (IDS_FILE),
 			L":\r\n"
 		);
 
-		_r_obj_insertstringbuilder2 (&sb, 0, tmp_string1);
+		_r_obj_insertstringbuilder2 (&sb, 0, string);
 		_r_obj_appendstringbuilder2 (buffer, sb.string);
 
-		_r_obj_dereference (tmp_string1);
+		_r_obj_dereference (string);
 	}
 
 	// file signature
@@ -100,7 +96,7 @@ VOID _app_getapptooltipstring (
 	{
 		if (!_r_obj_isstringempty (ptr_app_info->signature_info))
 		{
-			tmp_string1 = _r_obj_concatstrings (
+			string = _r_obj_concatstrings (
 				4,
 				_r_locale_getstring (IDS_SIGNATURE),
 				L":\r\n" SZ_TAB,
@@ -108,9 +104,9 @@ VOID _app_getapptooltipstring (
 				SZ_CRLF
 			);
 
-			_r_obj_appendstringbuilder2 (buffer, tmp_string1);
+			_r_obj_appendstringbuilder2 (buffer, string);
 
-			_r_obj_dereference (tmp_string1);
+			_r_obj_dereference (string);
 		}
 	}
 
@@ -121,43 +117,43 @@ VOID _app_getapptooltipstring (
 	{
 		if (_app_istimerset (ptr_app))
 		{
-			tmp_string2 = _r_format_interval (ptr_app->timer - _r_unixtime_now (), 3);
+			value = _r_format_interval (ptr_app->timer - _r_unixtime_now (), 3);
 
-			if (tmp_string2)
+			if (value)
 			{
-				tmp_string1 = _r_obj_concatstrings (
+				string = _r_obj_concatstrings (
 					4,
 					_r_locale_getstring (IDS_TIMELEFT),
 					L":" SZ_TAB_CRLF,
-					tmp_string2->buffer,
+					value->buffer,
 					SZ_CRLF
 				);
 
-				_r_obj_appendstringbuilder2 (buffer, tmp_string1);
+				_r_obj_appendstringbuilder2 (buffer, string);
 
-				_r_obj_dereference (tmp_string2);
-				_r_obj_dereference (tmp_string1);
+				_r_obj_dereference (string);
+				_r_obj_dereference (value);
 			}
 		}
 	}
 
 	// app rules
-	tmp_string2 = _app_appexpandrules (app_hash, SZ_TAB_CRLF);
+	value = _app_appexpandrules (app_hash, SZ_TAB_CRLF);
 
-	if (tmp_string2)
+	if (value)
 	{
-		tmp_string1 = _r_obj_concatstrings (
+		string = _r_obj_concatstrings (
 			4,
 			_r_locale_getstring (IDS_RULE),
 			L":" SZ_TAB_CRLF,
-			tmp_string2->buffer,
+			value->buffer,
 			SZ_CRLF
 		);
 
-		_r_obj_appendstringbuilder2 (buffer, tmp_string1);
+		_r_obj_appendstringbuilder2 (buffer, string);
 
-		_r_obj_dereference (tmp_string2);
-		_r_obj_dereference (tmp_string1);
+		_r_obj_dereference (string);
+		_r_obj_dereference (value);
 	}
 
 	// app notes
@@ -208,14 +204,14 @@ VOID _app_getapptooltipstring (
 			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 
-		tmp_string1 = _r_obj_finalstringbuilder (&sb);
+		string = _r_obj_finalstringbuilder (&sb);
 
-		if (!_r_obj_isstringempty2 (tmp_string1))
+		if (!_r_obj_isstringempty2 (string))
 		{
 			_r_obj_insertstringbuilder (&sb, 0, L":\r\n");
 			_r_obj_insertstringbuilder (&sb, 0, _r_locale_getstring (IDS_NOTES));
 
-			_r_obj_appendstringbuilder2 (buffer, tmp_string1);
+			_r_obj_appendstringbuilder2 (buffer, string);
 		}
 
 		_r_obj_deletestringbuilder (&sb);

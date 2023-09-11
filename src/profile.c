@@ -1140,7 +1140,7 @@ VOID _app_ruleblocklistset (
 _Ret_maybenull_
 PR_STRING _app_appexpandrules (
 	_In_ ULONG_PTR app_hash,
-	_In_ LPCWSTR delimeter
+	_In_ LPWSTR delimeter
 )
 {
 	R_STRINGBUILDER buffer;
@@ -1149,7 +1149,8 @@ PR_STRING _app_appexpandrules (
 	PITEM_RULE ptr_rule;
 
 	_r_obj_initializestringbuilder (&buffer, 256);
-	_r_obj_initializestringrefconst (&delimeter_sr, delimeter);
+
+	_r_obj_initializestringref (&delimeter_sr, delimeter);
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
@@ -1191,7 +1192,7 @@ _Ret_maybenull_
 PR_STRING _app_rulesexpandapps (
 	_In_ PITEM_RULE ptr_rule,
 	_In_ BOOLEAN is_fordisplay,
-	_In_ LPCWSTR delimeter
+	_In_ LPWSTR delimeter
 )
 {
 	R_STRINGBUILDER sr;
@@ -1203,7 +1204,7 @@ PR_STRING _app_rulesexpandapps (
 
 	_r_obj_initializestringbuilder (&sr, 256);
 
-	_r_obj_initializestringrefconst (&delimeter_sr, delimeter);
+	_r_obj_initializestringref (&delimeter_sr, delimeter);
 
 	if (is_fordisplay && ptr_rule->is_forservices)
 	{
@@ -1276,7 +1277,7 @@ PR_STRING _app_rulesexpandapps (
 _Ret_maybenull_
 PR_STRING _app_rulesexpandrules (
 	_In_opt_ PR_STRING rule,
-	_In_ LPCWSTR delimeter
+	_In_ LPWSTR delimeter
 )
 {
 	R_STRINGBUILDER sb;
@@ -1290,7 +1291,7 @@ PR_STRING _app_rulesexpandrules (
 
 	_r_obj_initializestringbuilder (&sb, 256);
 
-	_r_obj_initializestringrefconst (&delimeter_sr, delimeter);
+	_r_obj_initializestringref (&delimeter_sr, delimeter);
 
 	_r_obj_initializestringref2 (&remaining_part, rule);
 
@@ -1417,7 +1418,7 @@ BOOLEAN _app_isappfileexists (
 
 	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 	{
-		if (_r_str_compare (path, ptr_app->real_path->buffer) == 0)
+		if (_r_str_compare (path, 0, ptr_app->real_path->buffer, 0) == 0)
 		{
 			is_found = TRUE;
 

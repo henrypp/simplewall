@@ -551,10 +551,10 @@ INT_PTR CALLBACK SettingsProc (
 				case IDD_SETTINGS_HIGHLIGHTING:
 				{
 					PITEM_COLOR ptr_clr = NULL;
-					SIZE_T enum_key;
+					SIZE_T enum_key = 0;
 					BOOLEAN val;
 					LONG icon_id;
-					INT item_id;
+					INT item_id = 0;
 
 					// configure listview
 					_r_listview_setstyle (
@@ -574,9 +574,6 @@ INT_PTR CALLBACK SettingsProc (
 					icon_id = _app_icons_getdefaultapp_id (DATA_APP_REGULAR);
 
 					_app_listview_lock (hwnd, IDC_COLORS, TRUE);
-
-					enum_key = 0;
-					item_id = 0;
 
 					while (_r_obj_enumhashtable (colors_table, &ptr_clr, NULL, &enum_key))
 					{
@@ -1082,11 +1079,11 @@ INT_PTR CALLBACK SettingsProc (
 
 			hlistview = GetDlgItem (hwnd, IDC_COLORS);
 
-			if (hlistview)
-			{
-				if (GetClientRect (hlistview, &rect))
-					_r_listview_setcolumn (hwnd, IDC_COLORS, 0, NULL, rect.right);
-			}
+			if (!hlistview)
+				break;
+
+			if (GetClientRect (hlistview, &rect))
+				_r_listview_setcolumn (hwnd, IDC_COLORS, 0, NULL, rect.right);
 
 			break;
 		}
@@ -1177,29 +1174,27 @@ INT_PTR CALLBACK SettingsProc (
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					if ((lpnmlv->uChanged & LVIF_STATE) != 0)
+					if ((lpnmlv->uChanged & LVIF_STATE) == 0)
+						break;
+
+					if (listview_id != IDC_COLORS)
+						break;
+
+					if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 					{
-						if (listview_id != IDC_COLORS)
+						if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 							break;
 
-						if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) ||
-							((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
+						ptr_clr = (PITEM_COLOR)lpnmlv->lParam;
+
+						if (ptr_clr)
 						{
-							if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
-								break;
+							is_enabled = (lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2);
 
-							ptr_clr = (PITEM_COLOR)lpnmlv->lParam;
+							_r_config_setboolean_ex (ptr_clr->config_name->buffer, is_enabled, L"colors");
 
-							if (ptr_clr)
-							{
-								is_enabled = (lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2);
-
-								_r_config_setboolean_ex (ptr_clr->config_name->buffer, is_enabled, L"colors");
-
-								_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()), -1);
-							}
+							_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()), -1);
 						}
-
 					}
 
 					break;
@@ -1223,8 +1218,8 @@ INT_PTR CALLBACK SettingsProc (
 					CHOOSECOLOR cc = {0};
 					COLORREF cust[16] = {0};
 					PITEM_COLOR ptr_clr = NULL;
-					SIZE_T index;
-					SIZE_T enum_key;
+					SIZE_T enum_key = 0;
+					SIZE_T index = 0;
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -1232,37 +1227,34 @@ INT_PTR CALLBACK SettingsProc (
 					if (lpnmlv->iItem == -1)
 						break;
 
-					if (listview_id == IDC_COLORS)
+					if (listview_id != IDC_COLORS)
+						break;
+
+					ptr_clr_crnt = (PITEM_COLOR)_r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+
+					if (!ptr_clr_crnt)
+						break;
+
+					while (_r_obj_enumhashtable (colors_table, &ptr_clr, NULL, &enum_key))
 					{
-						ptr_clr_crnt = (PITEM_COLOR)_r_listview_getitemlparam (hwnd, listview_id, lpnmlv->iItem);
+						cust[index++] = ptr_clr->default_clr;
+					}
 
-						if (!ptr_clr_crnt)
-							break;
+					cc.lStructSize = sizeof (cc);
+					cc.Flags = CC_RGBINIT | CC_FULLOPEN;
+					cc.hwndOwner = hwnd;
+					cc.lpCustColors = cust;
+					cc.rgbResult = ptr_clr_crnt->new_clr;
 
-						index = 0;
-						enum_key = 0;
+					if (ChooseColor (&cc))
+					{
+						ptr_clr_crnt->new_clr = cc.rgbResult;
 
-						while (_r_obj_enumhashtable (colors_table, &ptr_clr, NULL, &enum_key))
-						{
-							cust[index++] = ptr_clr->default_clr;
-						}
+						_r_config_setulong_ex (ptr_clr_crnt->config_value->buffer, cc.rgbResult, L"colors");
 
-						cc.lStructSize = sizeof (cc);
-						cc.Flags = CC_RGBINIT | CC_FULLOPEN;
-						cc.hwndOwner = hwnd;
-						cc.lpCustColors = cust;
-						cc.rgbResult = ptr_clr_crnt->new_clr;
+						_r_listview_redraw (hwnd, IDC_COLORS, -1);
 
-						if (ChooseColor (&cc))
-						{
-							ptr_clr_crnt->new_clr = cc.rgbResult;
-
-							_r_config_setulong_ex (ptr_clr_crnt->config_value->buffer, cc.rgbResult, L"colors");
-
-							_r_listview_redraw (hwnd, IDC_COLORS, -1);
-
-							_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()), -1);
-						}
+						_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()), -1);
 					}
 
 					break;
@@ -1294,7 +1286,9 @@ INT_PTR CALLBACK SettingsProc (
 			{
 				case IDC_ALWAYSONTOP_CHK:
 				{
-					BOOLEAN is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
+					BOOLEAN is_enabled;
+
+					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
 
 					_r_config_setboolean (L"AlwaysOnTop", is_enabled);
 					_r_menu_checkitem (GetMenu (_r_app_gethwnd ()), IDM_ALWAYSONTOP_CHK, 0, MF_BYCOMMAND, is_enabled);
@@ -1304,8 +1298,10 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_LANGUAGE:
 				{
-					if (notify_code == CBN_SELCHANGE)
-						_r_locale_apply (hwnd, ctrl_id, 0);
+					if (notify_code != CBN_SELCHANGE)
+						break;
+
+					_r_locale_apply (hwnd, ctrl_id, 0);
 
 					break;
 				}
@@ -1313,30 +1309,35 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_CONFIRMEXIT_CHK:
 				{
 					_r_config_setboolean (L"ConfirmExit2", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
+
 					break;
 				}
 
 				case IDC_CONFIRMEXITTIMER_CHK:
 				{
 					_r_config_setboolean (L"ConfirmExitTimer", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
+
 					break;
 				}
 
 				case IDC_CONFIRMLOGCLEAR_CHK:
 				{
 					_r_config_setboolean (L"ConfirmLogClear", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
+
 					break;
 				}
 
 				case IDC_CONFIRMALLOW_CHK:
 				{
 					_r_config_setboolean (L"ConfirmAllow", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
+
 					break;
 				}
 
 				case IDC_TRAYICONSINGLECLICK_CHK:
 				{
 					_r_config_setboolean (L"IsTrayIconSingleClick", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
+
 					break;
 				}
 
@@ -1542,17 +1543,17 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					PR_STRING log_viewer;
 
-					if (notify_code == EN_KILLFOCUS)
-					{
-						log_viewer = _r_ctrl_getstring (hwnd, ctrl_id);
+					if (notify_code != EN_KILLFOCUS)
+						break;
 
-						if (log_viewer)
-						{
-							_r_config_setstringexpand (L"LogViewer", log_viewer->buffer);
+					log_viewer = _r_ctrl_getstring (hwnd, ctrl_id);
 
-							_r_obj_dereference (log_viewer);
-						}
-					}
+					if (!log_viewer)
+						break;
+
+					_r_config_setstringexpand (L"LogViewer", log_viewer->buffer);
+
+					_r_obj_dereference (log_viewer);
 
 					break;
 				}
@@ -1574,9 +1575,7 @@ INT_PTR CALLBACK SettingsProc (
 						path = _r_ctrl_getstring (hwnd, IDC_LOGVIEWER);
 
 						if (path)
-						{
 							_r_filedialog_setpath (&file_dialog, path->buffer);
-						}
 
 						if (_r_filedialog_show (hwnd, &file_dialog))
 						{
@@ -1602,12 +1601,12 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					ULONG value;
 
-					if (notify_code == EN_KILLFOCUS)
-					{
-						value = (ULONG)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0);
+					if (notify_code != EN_KILLFOCUS)
+						break;
 
-						_r_config_setulong (L"LogSizeLimitKb", value);
-					}
+					value = (ULONG)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0);
+
+					_r_config_setulong (L"LogSizeLimitKb", value);
 
 					break;
 				}
@@ -1642,13 +1641,13 @@ INT_PTR CALLBACK SettingsProc (
 
 					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_NOTIFICATIONSOUND_CHK, 0), WM_APP);
 
-					if (!is_postmessage)
-					{
-						hctrl = _app_notify_getwindow (NULL);
+					if (is_postmessage)
+						break;
 
-						if (hctrl)
-							_app_notify_refresh (hctrl);
-					}
+					hctrl = _app_notify_getwindow (NULL);
+
+					if (hctrl)
+						_app_notify_refresh (hctrl);
 
 					break;
 				}
@@ -1696,10 +1695,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					if (notify_code == EN_KILLFOCUS)
 					{
-						_r_config_setulong (
-							L"NotificationsTimeout",
-							(ULONG)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETPOS32, 0, 0)
-						);
+						_r_config_setulong (L"NotificationsTimeout", (ULONG)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETPOS32, 0, 0));
 					}
 
 					break;
@@ -1708,6 +1704,7 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_EXCLUDESTEALTH_CHK:
 				{
 					_r_config_setboolean (L"IsExcludeStealth", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
+
 					break;
 				}
 

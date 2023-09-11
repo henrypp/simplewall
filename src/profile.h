@@ -221,20 +221,20 @@ VOID _app_ruleblocklistset (
 _Ret_maybenull_
 PR_STRING _app_appexpandrules (
 	_In_ ULONG_PTR app_hash,
-	_In_ LPCWSTR delimeter
+	_In_ LPWSTR delimeter
 );
 
 _Ret_maybenull_
 PR_STRING _app_rulesexpandapps (
 	_In_ PITEM_RULE ptr_rule,
 	_In_ BOOLEAN is_fordisplay,
-	_In_ LPCWSTR delimeter
+	_In_ LPWSTR delimeter
 );
 
 _Ret_maybenull_
 PR_STRING _app_rulesexpandrules (
 	_In_opt_ PR_STRING rule,
-	_In_ LPCWSTR delimeter
+	_In_ LPWSTR delimeter
 );
 
 BOOLEAN _app_isrulesupportedbyos (
