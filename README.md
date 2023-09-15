@@ -24,6 +24,10 @@ Simple tool to configure [Windows Filtering Platform (WFP)](https://docs.microso
 The lightweight application is less than a megabyte, and it is compatible with Windows 8.1 and higher operating systems.
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
+### System requirements:
+- Windows 8.1 and above operating system.
+- [Visual C++ 2022 Redistributable package](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
+
 ### GPG Signature:
 Binaries have GPG signature simplewall.exe.sig in application folder.
 
