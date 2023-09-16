@@ -45,8 +45,10 @@ VOID _app_timer_set (
 {
 	PTP_TIMER htimer;
 	FILETIME file_time;
+	LARGE_INTEGER li;
 	LONG64 current_time;
-	BOOLEAN is_created;
+	BOOLEAN is_created = FALSE;
+	NTSTATUS status;
 
 	if (seconds <= 0)
 	{
@@ -55,22 +57,27 @@ VOID _app_timer_set (
 	else
 	{
 		current_time = _r_unixtime_now ();
-		is_created = FALSE;
 
 		_r_unixtime_to_filetime (current_time + seconds, &file_time);
 
 		if (ptr_app->htimer)
 		{
-			SetThreadpoolTimer (ptr_app->htimer, &file_time, 0, 0);
+			_r_calc_filetime2largeinteger (&file_time, &li);
+
+			TpSetTimerEx (ptr_app->htimer, &li, 0, 0);
+
 			is_created = TRUE;
 		}
 		else
 		{
-			htimer = CreateThreadpoolTimer (&_app_timer_callback, (PVOID)ptr_app->app_hash, NULL);
+			status = TpAllocTimer (&htimer, &_app_timer_callback, (PVOID)ptr_app->app_hash, NULL);
 
-			if (htimer)
+			if (NT_SUCCESS (status))
 			{
-				SetThreadpoolTimer (htimer, &file_time, 0, 0);
+				_r_calc_filetime2largeinteger (&file_time, &li);
+
+				TpSetTimerEx (htimer, &li, 0, 0);
+
 				ptr_app->htimer = htimer;
 
 				is_created = TRUE;
@@ -120,7 +127,7 @@ VOID _app_timer_remove (
 	ptr_app->htimer = NULL;
 
 	if (current_timer)
-		CloseThreadpoolTimer (current_timer);
+		TpReleaseTimer (current_timer);
 }
 
 VOID CALLBACK _app_timer_callback (
@@ -136,14 +143,14 @@ VOID CALLBACK _app_timer_callback (
 	PR_STRING string;
 	WCHAR buffer[256];
 	ULONG icon_id;
-	HRESULT hr;
+	HRESULT status;
 
 	ptr_app = _app_getappitem ((ULONG_PTR)context);
 
 	if (!ptr_app)
 		return;
 
-	hr = CoInitializeEx (NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	status = CoInitializeEx (NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	hwnd = _r_app_gethwnd ();
 
@@ -191,6 +198,6 @@ VOID CALLBACK _app_timer_callback (
 			_r_obj_dereference (string);
 	}
 
-	if (hr == S_OK || hr == S_FALSE)
+	if (status == S_OK || status == S_FALSE)
 		CoUninitialize ();
 }
