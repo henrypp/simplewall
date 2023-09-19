@@ -70,9 +70,10 @@ BOOLEAN _app_search_applyfilteritem (
 	_In_opt_ PR_STRING search_string
 );
 
-VOID NTAPI _app_search_applyfilter (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+VOID _app_search_applyfilter (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_opt_ PR_STRING search_string
 );
 
 LRESULT CALLBACK _app_search_subclass_proc (

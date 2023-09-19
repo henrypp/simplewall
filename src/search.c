@@ -224,14 +224,12 @@ BOOLEAN _app_search_applyfiltercallback (
 {
 	PITEM_LISTVIEW_CONTEXT context;
 	INT item_count;
-	BOOLEAN is_changed;
+	BOOLEAN is_changed = FALSE;
 
 	item_count = _r_listview_getitemcount (hwnd, listview_id);
 
 	if (!item_count)
 		return FALSE;
-
-	is_changed = FALSE;
 
 	for (INT i = 0; i < item_count; i++)
 	{
@@ -263,215 +261,231 @@ BOOLEAN _app_search_applyfilteritem (
 	PITEM_NETWORK ptr_network = NULL;
 	PITEM_LOG ptr_log = NULL;
 	PR_STRING string;
-	BOOLEAN is_changed;
+	BOOLEAN is_changed = FALSE;
 
 	// reset hidden state
 	if (context->is_hidden)
 	{
 		context->is_hidden = FALSE;
+
 		is_changed = TRUE;
-	}
-	else
-	{
-		is_changed = FALSE;
 	}
 
 	if (!search_string)
 		goto CleanupExit;
 
-	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID)
+	switch (listview_id)
 	{
-		ptr_app = _app_getappitem (context->id_code);
-
-		if (!ptr_app)
-			goto CleanupExit;
-
-		// display name
-		if (ptr_app->display_name)
+		case IDC_APPS_PROFILE:
+		case IDC_APPS_SERVICE:
+		case IDC_APPS_UWP:
+		case IDC_RULE_APPS_ID:
 		{
-			if (_app_search_isstringfound (ptr_app->display_name, search_string, context, &is_changed))
+			ptr_app = _app_getappitem (context->id_code);
+
+			if (!ptr_app)
 				goto CleanupExit;
+
+			// display name
+			if (ptr_app->display_name)
+			{
+				if (_app_search_isstringfound (ptr_app->display_name, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			// real path
+			if (ptr_app->real_path)
+			{
+				if (_app_search_isstringfound (ptr_app->real_path, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			// original path
+			if (ptr_app->original_path)
+			{
+				if (_app_search_isstringfound (ptr_app->original_path, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			break;
 		}
 
-		// real path
-		if (ptr_app->real_path)
+		case IDC_RULES_BLOCKLIST:
+		case IDC_RULES_SYSTEM:
+		case IDC_RULES_CUSTOM:
+		case IDC_APP_RULES_ID:
 		{
-			if (_app_search_isstringfound (ptr_app->real_path, search_string, context, &is_changed))
+			ptr_rule = _app_getrulebyid (context->id_code);
+
+			if (!ptr_rule)
 				goto CleanupExit;
+
+			if (ptr_rule->name)
+			{
+				if (_app_search_isstringfound (ptr_rule->name, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_rule->rule_remote)
+			{
+				if (_app_search_isstringfound (ptr_rule->rule_remote, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_rule->rule_local)
+			{
+				if (_app_search_isstringfound (ptr_rule->rule_local, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			if (ptr_rule->protocol_str)
+			{
+				if (_app_search_isstringfound (ptr_rule->protocol_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			break;
 		}
 
-		// original path
-		if (ptr_app->original_path)
+		case IDC_NETWORK:
 		{
-			if (_app_search_isstringfound (ptr_app->original_path, search_string, context, &is_changed))
+			ptr_network = _app_network_getitem (context->id_code);
+
+			if (!ptr_network)
 				goto CleanupExit;
-		}
-	}
-	else if ((listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) ||
-			 listview_id == IDC_APP_RULES_ID)
-	{
-		ptr_rule = _app_getrulebyid (context->id_code);
 
-		if (!ptr_rule)
-			goto CleanupExit;
+			// path
+			if (ptr_network->path)
+			{
+				if (_app_search_isstringfound (ptr_network->path, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		if (ptr_rule->name)
-		{
-			if (_app_search_isstringfound (ptr_rule->name, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			// local address
+			string = InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
 
-		if (ptr_rule->rule_remote)
-		{
-			if (_app_search_isstringfound (ptr_rule->rule_remote, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			if (string)
+			{
+				if (_app_search_isstringfound (string, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		if (ptr_rule->rule_local)
-		{
-			if (_app_search_isstringfound (ptr_rule->rule_local, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			// local host
+			string = InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
 
-		if (ptr_rule->protocol_str)
-		{
-			if (_app_search_isstringfound (ptr_rule->protocol_str, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
-	}
-	else if (listview_id == IDC_NETWORK)
-	{
-		ptr_network = _app_network_getitem (context->id_code);
+			if (string)
+			{
+				if (_app_search_isstringfound (string, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		if (!ptr_network)
-			goto CleanupExit;
+			// remote address
+			string = InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
 
-		// path
-		if (ptr_network->path)
-		{
-			if (_app_search_isstringfound (ptr_network->path, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			if (string)
+			{
+				if (_app_search_isstringfound (string, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		// local address
-		string = InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
+			// remote host
+			string = InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
 
-		if (string)
-		{
-			if (_app_search_isstringfound (string, search_string, context, &is_changed))
-				goto CleanupExit;
+			if (string)
+			{
+				if (_app_search_isstringfound (string, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			// protocol
+			if (ptr_network->protocol_str)
+			{
+				if (_app_search_isstringfound (ptr_network->protocol_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			break;
 		}
 
-		// local host
-		string = InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
-
-		if (string)
+		case IDC_LOG:
 		{
-			if (_app_search_isstringfound (string, search_string, context, &is_changed))
+			ptr_log = _app_getlogitem (context->id_code);
+
+			if (!ptr_log)
 				goto CleanupExit;
-		}
 
-		// remote address
-		string = InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
+			// path
+			if (ptr_log->path)
+			{
+				if (_app_search_isstringfound (ptr_log->path, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		if (string)
-		{
-			if (_app_search_isstringfound (string, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			// filter name
+			if (ptr_log->filter_name)
+			{
+				if (_app_search_isstringfound (ptr_log->filter_name, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		// remote host
-		string = InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
+			// layer name
+			if (ptr_log->layer_name)
+			{
+				if (_app_search_isstringfound (ptr_log->layer_name, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		if (string)
-		{
-			if (_app_search_isstringfound (string, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			// user name
+			if (ptr_log->username)
+			{
+				if (_app_search_isstringfound (ptr_log->username, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		// protocol
-		if (ptr_network->protocol_str)
-		{
-			if (_app_search_isstringfound (ptr_network->protocol_str, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
-	}
-	else if (listview_id == IDC_LOG)
-	{
-		ptr_log = _app_getlogitem (context->id_code);
+			// local address
+			string = InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
 
-		if (!ptr_log)
-			goto CleanupExit;
+			if (string)
+			{
+				if (_app_search_isstringfound (string, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		// path
-		if (ptr_log->path)
-		{
-			if (_app_search_isstringfound (ptr_log->path, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			// local host
+			string = InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
 
-		// filter name
-		if (ptr_log->filter_name)
-		{
-			if (_app_search_isstringfound (ptr_log->filter_name, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			if (string)
+			{
+				if (_app_search_isstringfound (string, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		// layer name
-		if (ptr_log->layer_name)
-		{
-			if (_app_search_isstringfound (ptr_log->layer_name, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			// remote address
+			string = InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
 
-		// user name
-		if (ptr_log->username)
-		{
-			if (_app_search_isstringfound (ptr_log->username, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			if (string)
+			{
+				if (_app_search_isstringfound (string, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		// local address
-		string = InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
+			// remote host
+			string = InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
 
-		if (string)
-		{
-			if (_app_search_isstringfound (string, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
+			if (string)
+			{
+				if (_app_search_isstringfound (string, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		// local host
-		string = InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
+			// protocol
+			if (ptr_log->protocol_str)
+			{
+				if (_app_search_isstringfound (ptr_log->protocol_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
 
-		if (string)
-		{
-			if (_app_search_isstringfound (string, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
-
-		// remote address
-		string = InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
-
-		if (string)
-		{
-			if (_app_search_isstringfound (string, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
-
-		// remote host
-		string = InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
-
-		if (string)
-		{
-			if (_app_search_isstringfound (string, search_string, context, &is_changed))
-				goto CleanupExit;
-		}
-
-		// protocol
-		if (ptr_log->protocol_str)
-		{
-			if (_app_search_isstringfound (ptr_log->protocol_str, search_string, context, &is_changed))
-				goto CleanupExit;
+			break;
 		}
 	}
 
@@ -495,25 +509,16 @@ CleanupExit:
 	return is_changed;
 }
 
-VOID NTAPI _app_search_applyfilter (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+VOID _app_search_applyfilter (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_opt_ PR_STRING search_string
 )
 {
-	PITEM_SEARCH ptr_search;
-
-	ptr_search = arglist;
-
-	if (!((ptr_search->listview_id >= IDC_APPS_PROFILE && ptr_search->listview_id <= IDC_LOG) || ptr_search->listview_id == IDC_RULE_APPS_ID || ptr_search->listview_id == IDC_APP_RULES_ID))
-	{
-		_r_mem_free (ptr_search);
-
+	if (!((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG) || listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID))
 		return;
-	}
 
-	_app_search_applyfiltercallback (ptr_search->hwnd, ptr_search->listview_id, ptr_search->search_string);
-
-	_r_mem_free (ptr_search);
+	_app_search_applyfiltercallback (hwnd, listview_id, search_string);
 }
 
 LRESULT CALLBACK _app_search_subclass_proc (

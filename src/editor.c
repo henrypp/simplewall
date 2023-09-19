@@ -1251,11 +1251,11 @@ INT_PTR CALLBACK EditorPagesProc (
 			if (notify_code == EN_MAXTEXT)
 			{
 				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, SZ_MAXTEXT);
+
 				return FALSE;
 			}
 			else if (notify_code == EN_CHANGE)
 			{
-				PITEM_SEARCH ptr_search;
 				PR_STRING string;
 				INT listview_id;
 
@@ -1285,13 +1285,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				string = _r_ctrl_getstring (hwnd, IDC_SEARCH);
 
-				ptr_search = _r_mem_allocate (sizeof (ITEM_SEARCH));
-
-				ptr_search->hwnd = hwnd;
-				ptr_search->listview_id = listview_id;
-				ptr_search->search_string = string;
-
-				_r_workqueue_queueitem (&search_queue, &_app_search_applyfilter, ptr_search);
+				_app_search_applyfilter (hwnd, listview_id, string);
 
 				if (string)
 					_r_obj_dereference (string);

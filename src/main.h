@@ -547,11 +547,3 @@ typedef struct _ITEM_LOG_CALLBACK
 	BOOLEAN is_allow;
 	BOOLEAN is_loopback;
 } ITEM_LOG_CALLBACK, *PITEM_LOG_CALLBACK;
-
-typedef struct _ITEM_SEARCH
-{
-	HWND hwnd;
-	INT listview_id;
-
-	PR_STRING search_string;
-} ITEM_SEARCH, *PITEM_SEARCH;

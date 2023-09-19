@@ -1925,7 +1925,6 @@ VOID _app_initialize ()
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&log_queue, 0, 3, 5000, &environment, L"PacketsQueue");
-	_r_workqueue_initialize (&search_queue, 0, 1, 5000, &environment, L"SearchThread");
 
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
@@ -2425,7 +2424,6 @@ INT_PTR CALLBACK DlgProc (
 
 				case TCN_SELCHANGE:
 				{
-					PITEM_SEARCH ptr_search;
 					HWND hlistview;
 					INT listview_id;
 
@@ -2439,13 +2437,7 @@ INT_PTR CALLBACK DlgProc (
 					if (!hlistview)
 						break;
 
-					ptr_search = _r_mem_allocate (sizeof (ITEM_SEARCH));
-
-					ptr_search->hwnd = hwnd;
-					ptr_search->listview_id = listview_id;
-					ptr_search->search_string = config.search_string;
-
-					_r_workqueue_queueitem (&search_queue, &_app_search_applyfilter, ptr_search);
+					_app_search_applyfilter (hwnd, listview_id, config.search_string);
 
 					_app_listview_updateby_id (hwnd, listview_id, PR_UPDATE_FORCE | PR_UPDATE_NORESIZE);
 
@@ -2908,7 +2900,6 @@ INT_PTR CALLBACK DlgProc (
 
 			if (notify_code == EN_CHANGE)
 			{
-				PITEM_SEARCH ptr_search;
 				PR_STRING string;
 				INT listview_id;
 
@@ -2920,13 +2911,7 @@ INT_PTR CALLBACK DlgProc (
 
 				_r_obj_movereference (&config.search_string, string);
 
-				ptr_search = _r_mem_allocate (sizeof (ITEM_SEARCH));
-
-				ptr_search->hwnd = hwnd;
-				ptr_search->listview_id = listview_id;
-				ptr_search->search_string = string;
-
-				_r_workqueue_queueitem (&search_queue, &_app_search_applyfilter, ptr_search);
+				_app_search_applyfilter (hwnd, listview_id, string);
 
 				return FALSE;
 			}
