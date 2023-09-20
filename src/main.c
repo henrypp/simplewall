@@ -2952,7 +2952,7 @@ INT_PTR CALLBACK DlgProc (
 				{
 					if (GetFocus () == config.hsearchbar)
 					{
-						SetWindowText (config.hsearchbar, L"");
+						_r_ctrl_setstring (config.hsearchbar, 0, L"");
 						SetFocus (hwnd);
 
 						break;

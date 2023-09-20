@@ -371,7 +371,7 @@ VOID _app_notify_show (
 		_r_app_getname ()
 	);
 
-	SetWindowText (hwnd, window_title);
+	_r_ctrl_setstring (hwnd, 0, window_title);
 
 	hdefer = BeginDeferWindowPos (2);
 

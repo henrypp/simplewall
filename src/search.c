@@ -109,7 +109,7 @@ VOID _app_search_setvisible (
 	}
 	else
 	{
-		SetWindowText (hsearch, L"");
+		_r_ctrl_setstring (hsearch, 0, L"");
 
 		ShowWindow (hsearch, SW_HIDE);
 	}

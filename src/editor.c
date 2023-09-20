@@ -234,7 +234,7 @@ INT_PTR CALLBACK EditorRuleProc (
 			_r_wnd_center (hwnd, GetParent (hwnd));
 
 			// localize window
-			SetWindowText (hwnd, _r_locale_getstring (IDS_RULE));
+			_r_ctrl_setstring (hwnd, 0, _r_locale_getstring (IDS_RULE));
 
 			_r_edit_settextlimit (
 				hwnd,
@@ -1600,7 +1600,7 @@ INT_PTR CALLBACK EditorProc (
 			_r_window_restoreposition (hwnd, L"editor");
 
 			// set window title
-			SetWindowText (hwnd, title);
+			_r_ctrl_setstring (hwnd, 0, title);
 
 			_r_ctrl_setstring (hwnd, IDC_SAVE, _r_locale_getstring (IDS_SAVE));
 			_r_ctrl_setstring (hwnd, IDC_CLOSE, _r_locale_getstring (IDS_CLOSE));
@@ -1957,7 +1957,7 @@ INT_PTR CALLBACK EditorProc (
 						{
 							if (GetFocus () == hsearch)
 							{
-								SetWindowText (hsearch, L"");
+								_r_ctrl_setstring (hsearch, 0, L"");
 								SetFocus (hwnd);
 
 								break;
