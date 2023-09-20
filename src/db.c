@@ -171,22 +171,6 @@ NTSTATUS _app_db_ishashvalid (
 }
 
 _Success_ (NT_SUCCESS (return))
-NTSTATUS _app_db_istypevalid (
-	_In_ PDB_INFORMATION db_info,
-	_In_ ENUM_TYPE_XML type,
-	_In_ ENUM_VERSION_XML min_version
-)
-{
-	if (db_info->type != type)
-		return STATUS_NDIS_INVALID_DATA;
-
-	if (db_info->version < min_version)
-		return STATUS_FILE_NOT_SUPPORTED;
-
-	return STATUS_SUCCESS;
-}
-
-_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfrombuffer (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STORAGE buffer,
@@ -198,12 +182,7 @@ NTSTATUS _app_db_openfrombuffer (
 
 	_r_obj_movereference (&db_info->bytes, _r_obj_createbyte4 (buffer));
 
-	status = _app_db_decodebuffer (db_info);
-
-	if (!NT_SUCCESS (status))
-		return status;
-
-	status = _app_db_istypevalid (db_info, type, min_version);
+	status = _app_db_decodebuffer (db_info, type, min_version);
 
 	return status;
 }
@@ -220,7 +199,7 @@ NTSTATUS _app_db_openfromfile (
 	NTSTATUS status;
 
 	if (db_info->bytes)
-		_r_obj_dereference (db_info->bytes);
+		_r_obj_clearreference (&db_info->bytes);
 
 	status = _r_fs_createfile (path->buffer, FILE_OPEN, FILE_GENERIC_READ, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, 0, FALSE, NULL, &hfile);
 
@@ -236,10 +215,7 @@ NTSTATUS _app_db_openfromfile (
 		return status;
 	}
 
-	status = _app_db_decodebuffer (db_info);
-
-	if (NT_SUCCESS (status))
-		status = _app_db_istypevalid (db_info, type, min_version);
+	status = _app_db_decodebuffer (db_info, type, min_version);
 
 	NtClose (hfile);
 
@@ -769,7 +745,9 @@ NTSTATUS _app_db_generatebody (
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebuffer (
-	_Inout_ PDB_INFORMATION db_info
+	_Inout_ PDB_INFORMATION db_info,
+	_In_ ENUM_TYPE_XML type,
+	_In_ ENUM_VERSION_XML min_version
 )
 {
 	ULONG attempts = 6;
@@ -801,6 +779,12 @@ NTSTATUS _app_db_decodebuffer (
 	db_info->timestamp = _r_xml_getattribute_long64 (&db_info->xml_library, L"timestamp");
 	db_info->type = _r_xml_getattribute_long (&db_info->xml_library, L"type");
 	db_info->version = _r_xml_getattribute_long (&db_info->xml_library, L"version");
+
+	if (db_info->type != type)
+		return STATUS_NDIS_INVALID_DATA;
+
+	if (db_info->version < min_version)
+		return STATUS_FILE_NOT_SUPPORTED;
 
 	return STATUS_SUCCESS;
 }

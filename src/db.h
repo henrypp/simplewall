@@ -101,13 +101,6 @@ NTSTATUS _app_db_ishashvalid (
 );
 
 _Success_ (NT_SUCCESS (return))
-NTSTATUS _app_db_istypevalid (
-	_In_ PDB_INFORMATION db_info,
-	_In_ ENUM_TYPE_XML type,
-	_In_ ENUM_VERSION_XML min_version
-);
-
-_Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfrombuffer (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STORAGE buffer,
@@ -145,7 +138,9 @@ NTSTATUS _app_db_generatebody (
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebuffer (
-	_Inout_ PDB_INFORMATION db_info
+	_Inout_ PDB_INFORMATION db_info,
+	_In_ ENUM_TYPE_XML type,
+	_In_ ENUM_VERSION_XML min_version
 );
 
 BOOLEAN _app_db_parse (
