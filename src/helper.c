@@ -1000,7 +1000,7 @@ CleanupExit:
 	_r_obj_movereference (&ptr_app_info->version_info, version_string);
 
 	if (hlib)
-		FreeLibrary (hlib);
+		LdrUnloadDll (hlib);
 }
 
 VOID _app_getfilehashinfo (

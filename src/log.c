@@ -391,7 +391,7 @@ VOID _wfp_logsubscribe (
 
 CleanupExit:
 
-	FreeLibrary (hfwpuclnt);
+	LdrUnloadDll (hfwpuclnt);
 }
 
 VOID _wfp_logunsubscribe (
