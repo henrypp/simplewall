@@ -990,7 +990,7 @@ VOID _app_db_save_app (
 	BOOLEAN is_keepunusedapps;
 	BOOLEAN is_usedapp;
 
-	is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", TRUE);
+	is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", FALSE);
 
 	_app_db_writeelementstart (db_info, L"apps");
 
@@ -1001,7 +1001,7 @@ VOID _app_db_save_app (
 		if (_r_obj_isstringempty (ptr_app->original_path))
 			continue;
 
-		is_usedapp = _app_isappused (ptr_app, TRUE);
+		is_usedapp = _app_isappused (ptr_app, FALSE);
 
 		// do not save unused apps/uwp apps...
 		if (!is_usedapp && !is_keepunusedapps)
