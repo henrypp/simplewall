@@ -1908,27 +1908,21 @@ VOID _app_initialize ()
 	_r_sys_setprocessprivilege (NtCurrentProcess (), privileges, RTL_NUMBER_OF (privileges), TRUE);
 
 	// set process priority
-	_r_sys_setenvironment (&environment, PROCESS_PRIORITY_CLASS_HIGH, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
+	_r_sys_setenvironment (&environment, PROCESS_PRIORITY_CLASS_HIGH, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
 	_r_sys_setprocessenvironment (NtCurrentProcess (), &environment);
 
 	// initialize workqueue
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
-	_r_workqueue_initialize (&file_queue, 0, 12, 5000, &environment, L"FileInfoQueue");
-
-	_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityLow, MEMORY_PRIORITY_NORMAL);
-
-	_r_workqueue_initialize (&resolver_queue, 0, 6, 5000, &environment, L"ResolverQueue");
-	_r_workqueue_initialize (&resolve_notify_queue, 0, 2, 5000, &environment, L"NotificationQueue");
-
-	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
-
-	_r_workqueue_initialize (&log_queue, 0, 3, 5000, &environment, L"PacketsQueue");
+	_r_workqueue_initialize (&file_queue, 12, &environment, L"FilesQueue");
+	_r_workqueue_initialize (&log_queue, 6, &environment, L"PacketsQueue");
+	_r_workqueue_initialize (&resolver_queue, 6, &environment, L"ResolverQueue");
+	_r_workqueue_initialize (&resolve_notify_queue, 2, &environment, L"NotificationQueue");
 
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
-	_r_workqueue_initialize (&wfp_queue, 0, 1, 10000, &environment, L"FiltersQueue");
+	_r_workqueue_initialize (&wfp_queue, 1, &environment, L"FiltersQueue");
 
 	// static initializer
 	_r_sys_getsystemroot (&config.windows_dir);
