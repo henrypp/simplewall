@@ -14,24 +14,6 @@ typedef struct _ICON_INFORMATION
 	LONG uwp_icon_id;
 } ICON_INFORMATION, *PICON_INFORMATION;
 
-// CryptCATAdminAcquireContext2 (win8+)
-typedef BOOL (WINAPI *CCAAC2)(
-	_Out_ PHANDLE hcat_admin,
-	_In_opt_ LPCGUID subsystem,
-	_In_opt_ LPCWSTR hash_algorithm,
-	_In_opt_ PCCERT_STRONG_SIGN_PARA strong_hash_policy,
-	_Reserved_ ULONG flags
-	);
-
-// CryptCATAdminCalcHashFromFileHandle2 (win8+)
-typedef BOOL (WINAPI *CCAHFFH2)(
-	_In_ HCATADMIN hcat_admin,
-	_In_ HANDLE hfile,
-	_Inout_ PULONG hash_length,
-	_Out_writes_bytes_to_opt_ (*hash_length, *hash_length) PBYTE hash_buffer,
-	_Reserved_ ULONG flags
-	);
-
 #define FMTADDR_AS_RULE 0x0001
 #define FMTADDR_USE_PROTOCOL 0x0002
 
