@@ -12,7 +12,7 @@ VOID _app_loginit (
 	PR_STRING log_path;
 	NTSTATUS status;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, config.hlogfile);
+	current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, config.hlogfile);
 
 	// reset log handle
 	if (current_handle)
@@ -42,7 +42,7 @@ VOID _app_loginit (
 	{
 		_app_loginitfile (new_handle);
 
-		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
+		current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
 
 		if (current_handle)
 			NtClose (new_handle);
@@ -204,7 +204,7 @@ VOID _app_logwrite (
 	PITEM_APP ptr_app;
 	HANDLE current_handle;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+	current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 	if (!_r_fs_isvalidhandle (current_handle))
 		return;
@@ -327,7 +327,7 @@ VOID _wfp_logsubscribe (
 	PVOID hfwpuclnt;
 	NTSTATUS status;
 
-	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
+	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
 
 	if (current_handle)
 		return; // already subscribed
@@ -377,7 +377,7 @@ VOID _wfp_logsubscribe (
 		goto CleanupExit;
 	}
 
-	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
+	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
 
 	if (current_handle)
 	{
@@ -403,7 +403,7 @@ VOID _wfp_logunsubscribe (
 
 	_app_loginit (FALSE); // destroy log file handle if present
 
-	current_handle = InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
+	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
 
 	if (!current_handle)
 		return;

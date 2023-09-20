@@ -625,7 +625,7 @@ VOID _app_settrayicon (
 	icon_id = _app_getstateicon (install_type);
 	icon_size = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 
-	current_handle = InterlockedCompareExchangePointer (&config.htray_icon, NULL, config.htray_icon);
+	current_handle = _InterlockedCompareExchangePointer (&config.htray_icon, NULL, config.htray_icon);
 
 	if (current_handle)
 		DestroyIcon (current_handle);
@@ -636,7 +636,7 @@ VOID _app_settrayicon (
 	{
 		_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
 
-		current_handle = InterlockedCompareExchangePointer (&config.htray_icon, new_handle, NULL);
+		current_handle = _InterlockedCompareExchangePointer (&config.htray_icon, new_handle, NULL);
 
 		if (current_handle)
 			DestroyIcon (current_handle);

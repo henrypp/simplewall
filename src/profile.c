@@ -1524,13 +1524,13 @@ BOOLEAN _app_isrulesupportedbyos (
 	PR_STRING current_version;
 	PR_STRING new_version;
 
-	current_version = InterlockedCompareExchangePointer (&version_string, NULL, NULL);
+	current_version = _InterlockedCompareExchangePointer (&version_string, NULL, NULL);
 
 	if (!current_version)
 	{
 		new_version = _r_format_string (L"%d.%d", NtCurrentPeb ()->OSMajorVersion, NtCurrentPeb ()->OSMinorVersion);
 
-		current_version = InterlockedCompareExchangePointer (&version_string, new_version, NULL);
+		current_version = _InterlockedCompareExchangePointer (&version_string, new_version, NULL);
 
 		if (!current_version)
 		{

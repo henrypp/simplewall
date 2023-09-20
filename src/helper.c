@@ -320,14 +320,14 @@ PR_STRING _app_formataddress_interlocked (
 	PR_STRING current_string;
 	PR_STRING new_string;
 
-	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
+	current_string = _InterlockedCompareExchangePointer (string, NULL, NULL);
 
 	if (current_string)
 		return current_string;
 
 	new_string = _app_formataddress (af, 0, address, 0, 0);
 
-	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
+	current_string = _InterlockedCompareExchangePointer (string, new_string, NULL);
 
 	if (!current_string)
 	{
@@ -1578,7 +1578,7 @@ PR_STRING _app_resolveaddress_interlocked (
 	PR_STRING current_string;
 	PR_STRING new_string;
 
-	current_string = InterlockedCompareExchangePointer (string, NULL, NULL);
+	current_string = _InterlockedCompareExchangePointer (string, NULL, NULL);
 
 	if (current_string)
 		return current_string;
@@ -1595,7 +1595,7 @@ PR_STRING _app_resolveaddress_interlocked (
 		new_string = _r_obj_referenceemptystring ();
 	}
 
-	current_string = InterlockedCompareExchangePointer (string, new_string, NULL);
+	current_string = _InterlockedCompareExchangePointer (string, new_string, NULL);
 
 	if (!current_string)
 	{

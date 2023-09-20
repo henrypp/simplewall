@@ -362,7 +362,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local address
-			string = InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -371,7 +371,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local host
-			string = InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -380,7 +380,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote address
-			string = InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -389,7 +389,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote host
-			string = InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -443,7 +443,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local address
-			string = InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -452,7 +452,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local host
-			string = InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -461,7 +461,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote address
-			string = InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -470,7 +470,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote host
-			string = InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
 
 			if (string)
 			{

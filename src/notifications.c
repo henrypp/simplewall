@@ -12,7 +12,7 @@ HWND _app_notify_getwindow (
 	HWND current_hwnd;
 	HWND new_hwnd;
 
-	current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
+	current_hwnd = _InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
 
 	if (current_hwnd)
 	{
@@ -31,7 +31,7 @@ HWND _app_notify_getwindow (
 
 	NtWaitForSingleObject (config.hnotify_evt, FALSE, &timeout);
 
-	current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
+	current_hwnd = _InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
 
 	return current_hwnd;
 }
@@ -529,7 +529,7 @@ VOID _app_notify_playsound ()
 	ULONG flags;
 	NTSTATUS status;
 
-	current_path = InterlockedCompareExchangePointer (&cached_path, NULL, NULL);
+	current_path = _InterlockedCompareExchangePointer (&cached_path, NULL, NULL);
 
 	if (!current_path || !_r_fs_exists (current_path->buffer))
 	{
@@ -546,7 +546,7 @@ VOID _app_notify_playsound ()
 				if (NT_SUCCESS (status))
 					_r_obj_movereference (&new_path, expanded_string);
 
-				current_path = InterlockedCompareExchangePointer (&cached_path, new_path, current_path);
+				current_path = _InterlockedCompareExchangePointer (&cached_path, new_path, current_path);
 
 				if (current_path)
 					_r_obj_dereference (new_path);
@@ -934,7 +934,7 @@ INT_PTR CALLBACK NotificationProc (
 			HWND htip;
 			LONG dpi_value;
 
-			current_hwnd = InterlockedCompareExchangePointer (&config.hnotification, hwnd, config.hnotification);
+			current_hwnd = _InterlockedCompareExchangePointer (&config.hnotification, hwnd, config.hnotification);
 
 			if (current_hwnd)
 				DestroyWindow (current_hwnd);
@@ -983,7 +983,7 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_NCDESTROY:
 		{
-			InterlockedCompareExchangePointer (&config.hnotification, NULL, config.hnotification);
+			_InterlockedCompareExchangePointer (&config.hnotification, NULL, config.hnotification);
 
 			_app_notify_destroy (hwnd);
 

@@ -1675,7 +1675,7 @@ VOID _app_displayinfonetwork_callback (
 
 			case 1:
 			{
-				string = InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
+				string = _InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
 
 				if (string)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
@@ -1685,7 +1685,7 @@ VOID _app_displayinfonetwork_callback (
 
 			case 2:
 			{
-				string = InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
+				string = _InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
 
 				if (string)
 				{
@@ -1718,7 +1718,7 @@ VOID _app_displayinfonetwork_callback (
 
 			case 4:
 			{
-				string = InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
+				string = _InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
 
 				if (string)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
@@ -1728,7 +1728,7 @@ VOID _app_displayinfonetwork_callback (
 
 			case 5:
 			{
-				string = InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
+				string = _InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
 
 				if (string)
 				{
@@ -1872,7 +1872,7 @@ VOID _app_displayinfolog_callback (
 
 			case 2:
 			{
-				string = InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
+				string = _InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
 
 				if (string)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
@@ -1882,7 +1882,7 @@ VOID _app_displayinfolog_callback (
 
 			case 3:
 			{
-				string = InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
+				string = _InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
 
 				if (string)
 				{
@@ -1915,7 +1915,7 @@ VOID _app_displayinfolog_callback (
 
 			case 5:
 			{
-				string = InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
+				string = _InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
 
 				if (string)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
@@ -1925,7 +1925,7 @@ VOID _app_displayinfolog_callback (
 
 			case 6:
 			{
-				string = InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
+				string = _InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
 
 				if (string)
 				{
@@ -2256,7 +2256,7 @@ VOID _app_command_logshow (
 		if (!_r_fs_exists (path->buffer))
 			return;
 
-		current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+		current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 		if (current_handle)
 			FlushFileBuffers (current_handle);
@@ -2300,7 +2300,7 @@ VOID _app_command_logclear (
 
 	log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
 
-	current_handle = InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+	current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 	if (current_handle)
 		_r_fs_getsize (current_handle, &file_size);
