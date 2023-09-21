@@ -22,13 +22,13 @@ BOOLEAN _app_getappinfobyhash (
 VOID _app_setappinfo (
 	_In_ PITEM_APP ptr_app,
 	_In_ ENUM_INFO_DATA info_data,
-	_In_ PVOID value
+	_In_opt_ PVOID value
 );
 
 VOID _app_setappinfobyhash (
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_INFO_DATA info_data,
-	_In_ PVOID value
+	_In_opt_ PVOID value
 );
 
 _Success_ (return)
