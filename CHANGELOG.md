@@ -1,3 +1,18 @@
+v3.7.2 (21 September 2023)
+- dropped windows 7 and windows 8 support
+- fixed launch of several copies of the application (issue #1547)
+- fixed create filters for inaccessible apps (issue #1528)
+- fixed displaying update dialog at startup (issue #1511)
+- fixed retrieving version information for some files
+- fixed slow apps search (issue #1477)
+- fixed periodicaly crashing (issue #1486)
+- fixed retrieving some apps icons
+- fixed saving input on settings
+- fixed saving unused apps
+- fixed process creation
+- improved signature checking
+- updated project sdk
+
 v3.7.1 (31 July 2023)
 - fixed import not correcly worked (issue #1466)
 - fixed crash when checking files (issue #1455)
