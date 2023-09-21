@@ -449,7 +449,7 @@ BOOLEAN _app_getappinfoparam2 (
 				return FALSE;
 			}
 
-			icon_id = ptr_app_info->large_icon_id;
+			icon_id = ptr_app_info->icon_id;
 
 			if (!icon_id)
 				icon_id = _app_icons_getdefaultapp_id ((listview_id == IDC_APPS_UWP) ? DATA_APP_UWP : DATA_APP_REGULAR);
@@ -661,7 +661,7 @@ VOID _app_getfileicon (
 		_app_icons_loadfromfile (ptr_app_info->path, ptr_app_info->type, &icon_id, NULL, TRUE);
 	}
 
-	ptr_app_info->large_icon_id = icon_id;
+	ptr_app_info->icon_id = icon_id;
 }
 
 _Success_ (return)
@@ -715,14 +715,12 @@ PR_STRING _app_verifygetstring (
 	PCRYPT_PROVIDER_CERT prov_cert;
 	PR_STRING string;
 	ULONG length;
-	ULONG idx;
+	ULONG idx = 0;
 
 	prov_data = WTHelperProvDataFromStateData (state_data);
 
 	if (prov_data)
 	{
-		idx = 0;
-
 		while (TRUE)
 		{
 			prov_signer = WTHelperGetProvSignerFromChain (prov_data, idx, FALSE, 0);
@@ -839,7 +837,7 @@ LONG _app_verifyfilefromcatalog (
 		return status;
 
 	if (!file_size.QuadPart || file_size.QuadPart > _r_calc_megabytes2bytes64 (32))
-		return TRUST_E_NOSIGNATURE;
+		return STATUS_FILE_TOO_LARGE;
 
 	if (_app_calculatefilehash (hfile, algorithm_id, &file_hash, &file_hash_length, &hcat_admin))
 	{
@@ -925,9 +923,9 @@ VOID _app_getfileversioninfo (
 	ULONG lcid;
 	NTSTATUS status;
 
-	status = _r_sys_loadlibrary (ptr_app_info->path->buffer, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE, &hlib);
+	hlib = LoadLibraryEx (ptr_app_info->path->buffer, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
 
-	if (!NT_SUCCESS (status))
+	if (!hlib)
 		goto CleanupExit;
 
 	status = _r_res_loadresource (hlib, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), &ver_block);
@@ -1000,7 +998,7 @@ CleanupExit:
 	_r_obj_movereference (&ptr_app_info->version_info, version_string);
 
 	if (hlib)
-		LdrUnloadDll (hlib);
+		FreeLibrary (hlib);
 }
 
 VOID _app_getfilehashinfo (
@@ -1715,6 +1713,8 @@ VOID _app_queue_fileinformation (
 	else
 	{
 		ptr_app_info = _r_obj_allocate (sizeof (ITEM_APP_INFO), &_app_dereferenceappinfo);
+
+		RtlSecureZeroMemory (ptr_app_info, sizeof (ITEM_APP_INFO));
 
 		ptr_app_info->path = _r_obj_reference (path);
 		ptr_app_info->app_hash = app_hash;
