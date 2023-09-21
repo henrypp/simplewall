@@ -183,7 +183,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 VOID ByteBlobAlloc (
 	_In_ LPCVOID data,
-	_In_ SIZE_T bytes_count,
+	_In_ ULONG_PTR bytes_count,
 	_Out_ PVOID_PTR byte_blob
 );
 

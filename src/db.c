@@ -550,7 +550,7 @@ NTSTATUS _app_db_decodebody (
 		case PROFILE2_ID_COMPRESSED:
 		{
 			// decompress bytes
-			for (SIZE_T i = 0; i < RTL_NUMBER_OF (format); i++)
+			for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (format); i++)
 			{
 				status = _r_sys_decompressbuffer (format[i], &db_info->bytes->sr, &new_bytes);
 
@@ -970,7 +970,7 @@ VOID _app_db_save_app (
 )
 {
 	PITEM_APP ptr_app = NULL;
-	SIZE_T enum_key = 0;
+	ULONG_PTR enum_key = 0;
 	BOOLEAN is_keepunusedapps;
 	BOOLEAN is_usedapp;
 
@@ -1035,7 +1035,7 @@ VOID _app_db_save_rule (
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -1102,7 +1102,7 @@ VOID _app_db_save_ruleconfig (
 	PITEM_RULE ptr_rule;
 	PR_STRING apps_string;
 	ULONG_PTR rule_hash;
-	SIZE_T enum_key = 0;
+	ULONG_PTR enum_key = 0;
 	BOOLEAN is_enabled_default;
 
 	_app_db_writeelementstart (db_info, L"rules_config");

@@ -18,7 +18,7 @@ typedef struct _EDITOR_CONTEXT
 
 	struct
 	{
-		SIZE_T current_length;
+		ULONG_PTR current_length;
 		INT listview_id;
 		INT item_id;
 	};

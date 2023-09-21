@@ -99,7 +99,7 @@ BOOLEAN _app_getappinfoparam2 (
 	_In_opt_ INT listview_id,
 	_In_ ENUM_INFO_DATA2 info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 );
 
 BOOLEAN _app_isappsigned (

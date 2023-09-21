@@ -136,6 +136,7 @@ VOID _app_network_generatetable (
 				if (!_app_network_getpath (ptr_network, tcp4_table->table[i].dwOwningPid, tcp4_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
+
 					continue;
 				}
 
@@ -176,6 +177,7 @@ VOID _app_network_generatetable (
 		if (allocated_size < required_size)
 		{
 			buffer = _r_mem_reallocate (buffer, required_size);
+
 			allocated_size = required_size;
 		}
 
@@ -211,6 +213,7 @@ VOID _app_network_generatetable (
 				if (!_app_network_getpath (ptr_network, tcp6_table->table[i].dwOwningPid, tcp6_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
+
 					continue;
 				}
 
@@ -290,6 +293,7 @@ VOID _app_network_generatetable (
 				if (!_app_network_getpath (ptr_network, udp4_table->table[i].dwOwningPid, udp4_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
+
 					continue;
 				}
 
@@ -357,6 +361,7 @@ VOID _app_network_generatetable (
 				if (!_app_network_getpath (ptr_network, udp6_table->table[i].dwOwningPid, udp6_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
+
 					continue;
 				}
 
@@ -474,7 +479,7 @@ BOOLEAN _app_network_getpath (
 )
 {
 	PTOKEN_APPCONTAINER_INFORMATION app_container = NULL;
-	PR_STRING process_name;
+	PR_STRING process_name = NULL;
 	HANDLE hprocess;
 	HANDLE htoken;
 	NTSTATUS status;
@@ -495,8 +500,6 @@ BOOLEAN _app_network_getpath (
 
 		return TRUE;
 	}
-
-	process_name = NULL;
 
 	if (modules)
 	{
@@ -570,14 +573,12 @@ BOOLEAN _app_network_isapphaveconnection (
 {
 	PITEM_NETWORK_CONTEXT network_context;
 	PITEM_NETWORK ptr_network = NULL;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key = 0;
 
 	network_context = _app_network_getcontext ();
 
 	if (!network_context)
 		return FALSE;
-
-	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&network_context->lock_network);
 
@@ -626,27 +627,31 @@ BOOLEAN _app_network_isvalidconnection (
 	PIN_ADDR p4addr;
 	PIN6_ADDR p6addr;
 
-	if (af == AF_INET)
+	switch (af)
 	{
-		p4addr = (PIN_ADDR)address;
+		case AF_INET:
+		{
+			p4addr = (PIN_ADDR)address;
 
-		return (!IN4_IS_ADDR_UNSPECIFIED (p4addr) &&
-				!IN4_IS_ADDR_LOOPBACK (p4addr) &&
-				!IN4_IS_ADDR_LINKLOCAL (p4addr) &&
-				!IN4_IS_ADDR_MULTICAST (p4addr) &&
-				!IN4_IS_ADDR_MC_ADMINLOCAL (p4addr) &&
-				!IN4_IS_ADDR_RFC1918 (p4addr));
-	}
-	else if (af == AF_INET6)
-	{
-		p6addr = (PIN6_ADDR)address;
+			return (!IN4_IS_ADDR_UNSPECIFIED (p4addr) &&
+					!IN4_IS_ADDR_LOOPBACK (p4addr) &&
+					!IN4_IS_ADDR_LINKLOCAL (p4addr) &&
+					!IN4_IS_ADDR_MULTICAST (p4addr) &&
+					!IN4_IS_ADDR_MC_ADMINLOCAL (p4addr) &&
+					!IN4_IS_ADDR_RFC1918 (p4addr));
+		}
 
-		return  (!IN6_IS_ADDR_UNSPECIFIED (p6addr) &&
-				 !IN6_IS_ADDR_LOOPBACK (p6addr) &&
-				 !IN6_IS_ADDR_LINKLOCAL (p6addr) &&
-				 !IN6_IS_ADDR_MULTICAST (p6addr) &&
-				 !IN6_IS_ADDR_SITELOCAL (p6addr) &&
-				 !IN6_IS_ADDR_ANYCAST (p6addr));
+		case AF_INET6:
+		{
+			p6addr = (PIN6_ADDR)address;
+
+			return  (!IN6_IS_ADDR_UNSPECIFIED (p6addr) &&
+					 !IN6_IS_ADDR_LOOPBACK (p6addr) &&
+					 !IN6_IS_ADDR_LINKLOCAL (p6addr) &&
+					 !IN6_IS_ADDR_MULTICAST (p6addr) &&
+					 !IN6_IS_ADDR_SITELOCAL (p6addr) &&
+					 !IN6_IS_ADDR_ANYCAST (p6addr));
+		}
 	}
 
 	return FALSE;
@@ -660,23 +665,13 @@ VOID _app_network_printlistviewtable (
 	PR_STRING string;
 	ULONG_PTR app_hash;
 	ULONG_PTR network_hash;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key = 0;
 	INT item_count;
-	BOOLEAN is_highlight;
-	BOOLEAN is_refresh;
+	BOOLEAN is_highlight = FALSE;
+	BOOLEAN is_refresh = FALSE;
 
 	if (_r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors"))
-	{
 		is_highlight = TRUE;
-	}
-	else
-	{
-		is_highlight = FALSE;
-	}
-
-	is_refresh = FALSE;
-
-	enum_key = 0;
 
 	// add new connections into listview
 	_r_queuedlock_acquireshared (&network_context->lock_network);

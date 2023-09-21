@@ -39,12 +39,12 @@ VOID _app_package_parsepath (
 	PR_STRING result_path = NULL;
 	PR_STRING path_string;
 	R_STRINGREF executable_sr;
-	HRESULT hr;
+	HRESULT status;
 	BOOLEAN is_success = FALSE;
 
 	path_string = *package_root_folder;
 
-	for (SIZE_T i = 0; i < RTL_NUMBER_OF (appx_names); i++)
+	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (appx_names); i++)
 	{
 		_r_obj_movereference (&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
 
@@ -58,14 +58,14 @@ VOID _app_package_parsepath (
 	if (!is_success)
 		goto CleanupExit;
 
-	hr = _r_xml_initializelibrary (&xml_library, TRUE);
+	status = _r_xml_initializelibrary (&xml_library, TRUE);
 
-	if (FAILED (hr))
+	if (FAILED (status))
 		goto CleanupExit;
 
-	hr = _r_xml_parsefile (&xml_library, manifest_path->buffer);
+	status = _r_xml_parsefile (&xml_library, manifest_path->buffer);
 
-	if (FAILED (hr))
+	if (FAILED (status))
 		goto CleanupExit;
 
 	if (_r_xml_findchildbytagname (&xml_library, L"Applications"))
@@ -80,6 +80,7 @@ VOID _app_package_parsepath (
 			if (_r_fs_exists (result_path->buffer))
 			{
 				_r_obj_swapreference (package_root_folder, result_path);
+
 				break;
 			}
 		}

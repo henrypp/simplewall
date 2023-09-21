@@ -2103,7 +2103,7 @@ VOID _app_command_idtorules (
 	PITEM_RULE ptr_rule;
 	PR_LIST rules;
 	ULONG_PTR app_hash;
-	SIZE_T rule_idx;
+	ULONG_PTR rule_idx;
 	INT listview_id;
 	INT item_id;
 	BOOL is_remove;
@@ -2113,7 +2113,7 @@ VOID _app_command_idtorules (
 	if (!_r_listview_getselectedcount (hwnd, listview_id))
 		return;
 
-	rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
+	rule_idx = (ULONG_PTR)ctrl_id - IDX_RULES_SPECIAL;
 	ptr_rule = _app_getrulebyid (rule_idx);
 
 	if (!ptr_rule)
@@ -2177,7 +2177,7 @@ VOID _app_command_idtotimers (
 	PR_LIST rules;
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
-	SIZE_T timer_idx;
+	ULONG_PTR timer_idx;
 	LONG64 seconds;
 	INT listview_id;
 	INT item_id;
@@ -2187,7 +2187,7 @@ VOID _app_command_idtotimers (
 	if (!listview_id || !_r_listview_getselectedcount (hwnd, listview_id))
 		return;
 
-	timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
+	timer_idx = (ULONG_PTR)ctrl_id - IDX_TIMER;
 	seconds = timer_array[timer_idx];
 	item_id = -1;
 
@@ -2589,8 +2589,8 @@ VOID _app_command_delete (
 	PITEM_NETWORK ptr_network;
 	PR_HASHTABLE apps_checker;
 	ULONG_PTR hash_code;
-	SIZE_T rule_idx;
-	SIZE_T enum_key;
+	ULONG_PTR rule_idx;
+	ULONG_PTR enum_key;
 	LPARAM lparam;
 	INT listview_id;
 	INT selected_count;
@@ -2843,7 +2843,7 @@ VOID _app_command_openeditor (
 	PITEM_LOG ptr_log;
 	PR_STRING string;
 	ULONG_PTR hash_code;
-	SIZE_T id_code;
+	ULONG_PTR id_code;
 	INT listview_id;
 	INT item_id;
 
@@ -3110,7 +3110,7 @@ VOID _app_command_purgeunused (
 {
 	PITEM_APP ptr_app = NULL;
 	ULONG_PTR hash_code;
-	SIZE_T enum_key = 0;
+	ULONG_PTR enum_key = 0;
 	PR_HASHTABLE apps_list;
 	PR_ARRAY guids;
 	HANDLE hengine;
@@ -3187,7 +3187,7 @@ VOID _app_command_purgetimers (
 	HANDLE hengine;
 	PR_LIST rules;
 	PITEM_APP ptr_app = NULL;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key;
 
 	if (!_app_istimersactive ())
 		return;

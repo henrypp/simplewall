@@ -203,7 +203,7 @@ PR_STRING _wfp_getlayername (
 
 	PR_STRING string;
 
-	for (SIZE_T i = 0; i < RTL_NUMBER_OF (layer_guids); i++)
+	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (layer_guids); i++)
 	{
 		if (IsEqualGUID (layer_guid, layer_guids[i]))
 			return _r_obj_createstring3 (&layer_names[i]);
@@ -443,7 +443,7 @@ VOID _wfp_uninitialize (
 
 		if (callouts)
 		{
-			for (SIZE_T i = 0; i < _r_obj_getarraysize (callouts); i++)
+			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (callouts); i++)
 			{
 				guid = _r_obj_getarrayitem (callouts, i);
 
@@ -456,7 +456,7 @@ VOID _wfp_uninitialize (
 		// destroy callouts (deprecated)
 		if (callouts)
 		{
-			for (SIZE_T i = 0; i < _r_obj_getarraysize (callouts); i++)
+			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (callouts); i++)
 			{
 				guid = _r_obj_getarrayitem (callouts, i);
 
@@ -510,7 +510,7 @@ VOID _wfp_installfilters (
 	LPCGUID guid;
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key;
 	BOOLEAN is_intransact;
 	ULONG status;
 
@@ -527,7 +527,7 @@ VOID _wfp_installfilters (
 	// restore filters security
 	if (status == ERROR_SUCCESS)
 	{
-		for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
@@ -540,7 +540,7 @@ VOID _wfp_installfilters (
 	// destroy all filters
 	if (status == ERROR_SUCCESS)
 	{
-		for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
@@ -575,7 +575,7 @@ VOID _wfp_installfilters (
 	// apply blocklist/system/user rules
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -606,7 +606,7 @@ VOID _wfp_installfilters (
 
 	if (status == ERROR_SUCCESS)
 	{
-		for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
@@ -866,7 +866,7 @@ VOID _wfp_clearfilter_ids ()
 {
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key;
 
 	// clear common filters
 	_r_obj_cleararray (filter_ids);
@@ -888,7 +888,7 @@ VOID _wfp_clearfilter_ids ()
 	// clear rules filters
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -942,7 +942,7 @@ VOID _wfp_destroyfilters_array (
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
-	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
@@ -951,7 +951,7 @@ VOID _wfp_destroyfilters_array (
 
 	is_intransact = _wfp_transact_start (engine_handle, DBG_ARG_VAR);
 
-	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
@@ -1091,7 +1091,7 @@ BOOLEAN _wfp_createrulefilter (
 	}
 
 	// set ip/port condition
-	for (SIZE_T i = 0; i < RTL_NUMBER_OF (rules); i++)
+	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules); i++)
 	{
 		if (_r_obj_isstringempty (rules[i]))
 			continue;
@@ -1391,7 +1391,7 @@ BOOLEAN _wfp_create4filters (
 	LPCGUID guid;
 	PITEM_RULE ptr_rule;
 	ULONG_PTR hash_code;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key;
 	BOOLEAN is_enabled;
 
 	if (_r_obj_islistempty (rules))
@@ -1406,7 +1406,7 @@ BOOLEAN _wfp_create4filters (
 
 	if (!is_intransact)
 	{
-		for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
 		{
 			ptr_rule = _r_obj_getlistitem (rules, i);
 
@@ -1421,7 +1421,7 @@ BOOLEAN _wfp_create4filters (
 			}
 		}
 
-		for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
@@ -1433,14 +1433,14 @@ BOOLEAN _wfp_create4filters (
 		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
-	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
 		_wfp_deletefilter (engine_handle, guid);
 	}
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules, i);
 
@@ -1574,13 +1574,13 @@ BOOLEAN _wfp_create4filters (
 	{
 		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
-		for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
 		{
 			ptr_rule = _r_obj_getlistitem (rules, i);
 
 			if (ptr_rule && ptr_rule->is_enabled)
 			{
-				for (SIZE_T j = 0; j < _r_obj_getarraysize (ptr_rule->guids); j++)
+				for (ULONG_PTR j = 0; j < _r_obj_getarraysize (ptr_rule->guids); j++)
 				{
 					guid = _r_obj_getarrayitem (ptr_rule->guids, j);
 
@@ -1626,7 +1626,7 @@ BOOLEAN _wfp_create3filters (
 
 	if (!is_intransact)
 	{
-		for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
 		{
 			ptr_app = _r_obj_getlistitem (rules, i);
 
@@ -1638,7 +1638,7 @@ BOOLEAN _wfp_create3filters (
 			}
 		}
 
-		for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
@@ -1650,14 +1650,14 @@ BOOLEAN _wfp_create3filters (
 		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
-	for (SIZE_T i = 0; i < _r_obj_getarraysize (guids); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
 		_wfp_deletefilter (engine_handle, guid);
 	}
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
 	{
 		ptr_app = _r_obj_getlistitem (rules, i);
 
@@ -1690,13 +1690,13 @@ BOOLEAN _wfp_create3filters (
 	{
 		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
-		for (SIZE_T i = 0; i < _r_obj_getlistsize (rules); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
 		{
 			ptr_app = _r_obj_getlistitem (rules, i);
 
 			if (ptr_app)
 			{
-				for (SIZE_T j = 0; j < _r_obj_getarraysize (ptr_app->guids); j++)
+				for (ULONG_PTR j = 0; j < _r_obj_getarraysize (ptr_app->guids); j++)
 				{
 					guid = _r_obj_getarrayitem (ptr_app->guids, j);
 
@@ -1771,7 +1771,7 @@ BOOLEAN _wfp_create2filters (
 	{
 		if (!_r_obj_isarrayempty (filter_ids))
 		{
-			for (SIZE_T i = 0; i < _r_obj_getarraysize (filter_ids); i++)
+			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
@@ -1786,7 +1786,7 @@ BOOLEAN _wfp_create2filters (
 
 	if (!_r_obj_isarrayempty (filter_ids))
 	{
-		for (SIZE_T i = 0; i < _r_obj_getarraysize (filter_ids); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 		{
 			guid = _r_obj_getarrayitem (filter_ids, i);
 
@@ -1863,7 +1863,7 @@ BOOLEAN _wfp_create2filters (
 			filter_ids
 		);
 
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (loopback_list); i++)
+		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (loopback_list); i++)
 		{
 			if (!_app_parserulestring (&loopback_list[i], &address))
 				continue;
@@ -2471,7 +2471,7 @@ BOOLEAN _wfp_create2filters (
 	{
 		_wfp_transact_commit (engine_handle, DBG_ARG_VAR);
 
-		for (SIZE_T i = 0; i < _r_obj_getarraysize (filter_ids); i++)
+		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 		{
 			guid = _r_obj_getarrayitem (filter_ids, i);
 
@@ -2699,7 +2699,7 @@ VOID _wfp_firewallenable (
 	if (FAILED (status))
 		return;
 
-	for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
+	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (profile_types); i++)
 	{
 		status = INetFwPolicy2_put_FirewallEnabled (INetFwPolicy, profile_types[i], is_enable ? VARIANT_TRUE : VARIANT_FALSE);
 
@@ -2726,7 +2726,7 @@ BOOLEAN _wfp_firewallisenabled ()
 
 	if (SUCCEEDED (status))
 	{
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (profile_types); i++)
+		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (profile_types); i++)
 		{
 			status = INetFwPolicy2_get_FirewallEnabled (INetFwPolicy, profile_types[i], &result);
 
@@ -2842,7 +2842,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 VOID ByteBlobAlloc (
 	_In_ LPCVOID data,
-	_In_ SIZE_T bytes_count,
+	_In_ ULONG_PTR bytes_count,
 	_Out_ PVOID_PTR byte_blob
 )
 {

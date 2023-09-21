@@ -252,21 +252,13 @@ ULONG_PTR _app_notify_getnextapp_id (
 {
 	PNOTIFY_CONTEXT context;
 	PITEM_APP ptr_app = NULL;
-	SIZE_T enum_key;
-	ULONG_PTR app_hash;
+	ULONG_PTR enum_key = 0;
+	ULONG_PTR app_hash = 0;
 
 	context = _app_notify_getcontext (hwnd);
 
 	if (context)
-	{
 		app_hash = context->app_hash;
-	}
-	else
-	{
-		app_hash = 0;
-	}
-
-	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -1345,7 +1337,7 @@ INT_PTR CALLBACK NotificationProc (
 				PITEM_APP ptr_app;
 				PITEM_LOG ptr_log;
 				PR_STRING rule;
-				SIZE_T rule_idx;
+				ULONG_PTR rule_idx;
 				ULONG_PTR app_hash;
 				BOOLEAN is_remove;
 
@@ -1355,7 +1347,7 @@ INT_PTR CALLBACK NotificationProc (
 				if (!ptr_app)
 					return FALSE;
 
-				rule_idx = (SIZE_T)ctrl_id - IDX_RULES_SPECIAL;
+				rule_idx = (ULONG_PTR)ctrl_id - IDX_RULES_SPECIAL;
 				ptr_rule = _app_getrulebyid (rule_idx);
 
 				if (!ptr_rule)
@@ -1455,13 +1447,13 @@ INT_PTR CALLBACK NotificationProc (
 			}
 			else if (ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
 			{
-				SIZE_T timer_idx;
+				ULONG_PTR timer_idx;
 				LONG64 seconds;
 
 				if (!_r_ctrl_isenabled (hwnd, IDC_ALLOW_BTN))
 					return FALSE;
 
-				timer_idx = (SIZE_T)ctrl_id - IDX_TIMER;
+				timer_idx = (ULONG_PTR)ctrl_id - IDX_TIMER;
 				seconds = timer_array[timer_idx];
 
 				_app_notify_command (hwnd, IDC_ALLOW_BTN, seconds);
@@ -1542,7 +1534,7 @@ INT_PTR CALLBACK NotificationProc (
 					PR_STRING rule_name;
 					PR_STRING rule_string;
 					ULONG_PTR app_hash;
-					SIZE_T rule_idx;
+					ULONG_PTR rule_idx;
 
 					app_hash = _app_notify_getapp_id (hwnd);
 					ptr_log = _app_notify_getobject (app_hash);

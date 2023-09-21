@@ -668,9 +668,9 @@ VOID _app_imagelist_init (
 	};
 
 	HBITMAP hbitmap;
+	LONG icon_size_toolbar;
 	LONG icon_small;
 	LONG icon_large;
-	LONG icon_size_toolbar;
 
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
@@ -704,7 +704,7 @@ VOID _app_imagelist_init (
 
 	if (config.himg_toolbar)
 	{
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
+		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
 		{
 			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (toolbar_ids[i]), icon_size_toolbar);
 
@@ -728,7 +728,7 @@ VOID _app_imagelist_init (
 
 	if (config.himg_rules_small)
 	{
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
+		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
 			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (rules_ids[i]), icon_small);
 
@@ -749,7 +749,7 @@ VOID _app_imagelist_init (
 
 	if (config.himg_rules_large)
 	{
-		for (SIZE_T i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
+		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
 			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (rules_ids[i]), icon_large);
 
@@ -1078,14 +1078,14 @@ VOID _app_refreshstatus (
 		{
 			case 1:
 			{
-				text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), status.apps_unused_count);
+				text[i] = _r_format_string (L"%s: %" TEXT (PR_ULONG_PTR), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), status.apps_unused_count);
 
 				break;
 			}
 
 			case 2:
 			{
-				text[i] = _r_format_string (L"%s: %" TEXT (PR_SIZE_T), _r_locale_getstring (IDS_STATUS_TIMER_APPS), status.apps_timer_count);
+				text[i] = _r_format_string (L"%s: %" TEXT (PR_ULONG_PTR), _r_locale_getstring (IDS_STATUS_TIMER_APPS), status.apps_timer_count);
 
 				break;
 			}

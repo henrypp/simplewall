@@ -8,7 +8,7 @@ BOOLEAN _app_getappinfo (
 	_In_ PITEM_APP ptr_app,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 );
 
 _Success_ (return)
@@ -16,7 +16,7 @@ BOOLEAN _app_getappinfobyhash (
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 );
 
 VOID _app_setappinfo (
@@ -36,15 +36,15 @@ BOOLEAN _app_getruleinfo (
 	_In_ PITEM_RULE ptr_rule,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 );
 
 _Success_ (return)
 BOOLEAN _app_getruleinfobyid (
-	_In_ SIZE_T index,
+	_In_ ULONG_PTR index,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 );
 
 _Success_ (return != 0)
@@ -80,7 +80,7 @@ PITEM_APP _app_getappitem (
 
 _Ret_maybenull_
 PITEM_RULE _app_getrulebyid (
-	_In_ SIZE_T index
+	_In_ ULONG_PTR index
 );
 
 _Ret_maybenull_
@@ -100,7 +100,7 @@ PITEM_LOG _app_getlogitem (
 
 _Success_ (return != 0)
 ULONG_PTR _app_getlogapp (
-	_In_ SIZE_T index
+	_In_ ULONG_PTR index
 );
 
 COLORREF _app_getappcolor (
@@ -160,7 +160,7 @@ VOID _app_getcount (
 
 COLORREF _app_getrulecolor (
 	_In_ INT listview_id,
-	_In_ SIZE_T rule_idx
+	_In_ ULONG_PTR rule_idx
 );
 
 VOID _app_setappiteminfo (
@@ -186,14 +186,14 @@ VOID _app_ruleenable (
 
 //VOID _app_rulecleanapp (
 //	_In_opt_ HWND hwnd,
-//	_In_ SIZE_T item_id,
+//	_In_ ULONG_PTR item_id,
 //	_In_ PITEM_RULE ptr_rule,
 //	_In_opt_ ULONG_PTR app_hash
 //);
 
 VOID _app_ruleremoveapp (
 	_In_opt_ HWND hwnd,
-	_In_ SIZE_T item_id,
+	_In_ ULONG_PTR item_id,
 	_In_ PITEM_RULE ptr_rule,
 	_In_ ULONG_PTR app_hash
 );

@@ -298,7 +298,7 @@ typedef struct _ITEM_APP_INFO
 
 	ULONG_PTR app_hash;
 
-	LONG large_icon_id;
+	LONG icon_id;
 
 	ENUM_TYPE_DATA type;
 
@@ -450,13 +450,13 @@ typedef struct _ITEM_LOG
 
 typedef struct _ITEM_STATUS
 {
-	SIZE_T apps_count;
-	SIZE_T apps_timer_count;
-	SIZE_T apps_unused_count;
-	SIZE_T rules_count;
-	SIZE_T rules_global_count;
-	SIZE_T rules_predefined_count;
-	SIZE_T rules_user_count;
+	ULONG_PTR apps_count;
+	ULONG_PTR apps_timer_count;
+	ULONG_PTR apps_unused_count;
+	ULONG_PTR rules_count;
+	ULONG_PTR rules_global_count;
+	ULONG_PTR rules_predefined_count;
+	ULONG_PTR rules_user_count;
 } ITEM_STATUS, *PITEM_STATUS;
 
 typedef struct _ITEM_CONTEXT

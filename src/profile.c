@@ -8,7 +8,7 @@ BOOLEAN _app_getappinfo (
 	_In_ PITEM_APP ptr_app,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 )
 {
 	RtlZeroMemory (buffer, size);
@@ -165,7 +165,7 @@ BOOLEAN _app_getappinfobyhash (
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 )
 {
 	PITEM_APP ptr_app;
@@ -298,7 +298,7 @@ BOOLEAN _app_getruleinfo (
 	_In_ PITEM_RULE ptr_rule,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 )
 {
 	switch (info_data)
@@ -337,10 +337,10 @@ BOOLEAN _app_getruleinfo (
 
 _Success_ (return)
 BOOLEAN _app_getruleinfobyid (
-	_In_ SIZE_T index,
+	_In_ ULONG_PTR index,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 )
 {
 	PITEM_RULE ptr_rule;
@@ -562,7 +562,7 @@ PITEM_APP _app_getappitem (
 
 _Ret_maybenull_
 PITEM_RULE _app_getrulebyid (
-	_In_ SIZE_T index
+	_In_ ULONG_PTR index
 )
 {
 	PITEM_RULE ptr_rule;
@@ -595,7 +595,7 @@ PITEM_RULE _app_getrulebyhash (
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -652,7 +652,7 @@ PITEM_LOG _app_getlogitem (
 
 _Success_ (return != 0)
 ULONG_PTR _app_getlogapp (
-	_In_ SIZE_T index
+	_In_ ULONG_PTR index
 )
 {
 	PITEM_LOG ptr_log;
@@ -750,7 +750,7 @@ VOID _app_freeapplication (
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -775,7 +775,7 @@ VOID _app_getcount (
 {
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
-	SIZE_T enum_key = 0;
+	ULONG_PTR enum_key = 0;
 	BOOLEAN is_used;
 
 	status->apps_count = 0;
@@ -806,7 +806,7 @@ VOID _app_getcount (
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -836,7 +836,7 @@ VOID _app_getcount (
 
 COLORREF _app_getrulecolor (
 	_In_ INT listview_id,
-	_In_ SIZE_T rule_idx
+	_In_ ULONG_PTR rule_idx
 )
 {
 	PITEM_RULE ptr_rule;
@@ -889,7 +889,7 @@ VOID _app_setruleiteminfo (
 )
 {
 	ULONG_PTR hash_code;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key;
 
 	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 
@@ -944,13 +944,13 @@ VOID _app_ruleenable (
 
 //VOID _app_rulecleanapp (
 //	_In_opt_ HWND hwnd,
-//	_In_ SIZE_T item_id,
+//	_In_ ULONG_PTR item_id,
 //	_In_ PITEM_RULE ptr_rule,
 //	_In_opt_ ULONG_PTR app_hash
 //)
 //{
 //	PITEM_APP ptr_app;
-//	SIZE_T enum_key;
+//	ULONG_PTR enum_key;
 //	ULONG_PTR hash_code;
 //	BOOLEAN is_remove;
 //
@@ -994,7 +994,7 @@ VOID _app_ruleenable (
 
 VOID _app_ruleremoveapp (
 	_In_opt_ HWND hwnd,
-	_In_ SIZE_T item_id,
+	_In_ ULONG_PTR item_id,
 	_In_ PITEM_RULE ptr_rule,
 	_In_ ULONG_PTR app_hash
 )
@@ -1081,13 +1081,13 @@ VOID _app_ruleblocklistset (
 	PR_LIST rules;
 	PITEM_RULE ptr_rule;
 	HANDLE hengine;
-	SIZE_T changes_count = 0;
+	ULONG_PTR changes_count = 0;
 
 	rules = _r_obj_createlist (&_r_obj_dereference);
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -1154,7 +1154,7 @@ PR_STRING _app_appexpandrules (
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -1200,7 +1200,7 @@ PR_STRING _app_rulesexpandapps (
 	PR_STRING string;
 	PITEM_APP ptr_app;
 	ULONG_PTR hash_code;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key;
 
 	_r_obj_initializestringbuilder (&sr, 256);
 
@@ -1337,7 +1337,7 @@ BOOLEAN _app_isapphavedrive (
 )
 {
 	PITEM_APP ptr_app = NULL;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key;
 	INT drive_id;
 
 	enum_key = 0;
@@ -1383,7 +1383,7 @@ BOOLEAN _app_isapphaverule (
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -1411,7 +1411,7 @@ BOOLEAN _app_isappfileexists (
 )
 {
 	PITEM_APP ptr_app = NULL;
-	SIZE_T enum_key = 0;
+	ULONG_PTR enum_key = 0;
 	BOOLEAN is_found = FALSE;
 
 	_r_queuedlock_acquireshared (&lock_apps);

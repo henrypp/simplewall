@@ -443,7 +443,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			PITEM_APP ptr_app = NULL;
 			PR_STRING string;
 			HWND hctrl;
-			SIZE_T enum_key;
+			ULONG_PTR enum_key;
 			UINT style;
 			INT index;
 			BOOLEAN is_enabled;
@@ -553,7 +553,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				if (context->ptr_rule->protocol == 0)
 					_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
 
-				for (SIZE_T i = 0; i < RTL_NUMBER_OF (protos); i++)
+				for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (protos); i++)
 				{
 					index += 1;
 
@@ -834,7 +834,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				// initialize
 				_r_queuedlock_acquireshared (&lock_rules);
 
-				for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+				for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 				{
 					ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -923,7 +923,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 			HWND hlistview;
 
-			for (SIZE_T i = 0; i < RTL_NUMBER_OF (listview_ids); i++)
+			for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (listview_ids); i++)
 			{
 				hlistview = GetDlgItem (hwnd, listview_ids[i]);
 
@@ -1301,7 +1301,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				case IDC_RULE_LOCAL_EDIT:
 				{
 					PR_STRING string;
-					SIZE_T current_length;
+					ULONG_PTR current_length;
 					INT listview_id;
 					INT item_id;
 
@@ -1753,7 +1753,7 @@ INT_PTR CALLBACK EditorProc (
 					HANDLE hengine;
 					ULONG_PTR app_hash;
 					PITEM_RULE ptr_rule;
-					SIZE_T rule_idx;
+					ULONG_PTR rule_idx;
 					INT listview_id;
 					INT item_id;
 					INT check_id;

@@ -426,7 +426,7 @@ BOOLEAN _app_getappinfoparam2 (
 	_In_opt_ INT listview_id,
 	_In_ ENUM_INFO_DATA2 info_data,
 	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ SIZE_T size
+	_In_ ULONG_PTR size
 )
 {
 	PITEM_APP_INFO ptr_app_info;
@@ -1070,7 +1070,7 @@ VOID _app_generate_rulescontrol (
 	ITEM_STATUS status;
 	WCHAR buffer[128];
 	PITEM_RULE ptr_rule;
-	SIZE_T limit_group;
+	ULONG_PTR limit_group;
 	UINT i;
 	BOOLEAN is_global;
 	BOOLEAN is_enabled;
@@ -1170,7 +1170,7 @@ VOID _app_generate_timerscontrol (
 
 	_app_getappinfobyhash (app_hash, INFO_TIMER, &app_time, sizeof (app_time));
 
-	for (SIZE_T i = 0; i < RTL_NUMBER_OF (timer_array); i++)
+	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (timer_array); i++)
 	{
 		timestamp = timer_array[i];
 
@@ -1364,20 +1364,20 @@ BOOLEAN _app_preparserulestring (
 	R_STRINGREF range_start_part;
 	R_STRINGREF range_end_part;
 	WCHAR rule_string[256];
-	SIZE_T length;
+	ULONG_PTR length;
 	ULONG types;
 	BOOLEAN is_valid;
 
 	length = _r_str_getlength3 (rule);
 
-	for (SIZE_T i = 0; i < length; i++)
+	for (ULONG_PTR i = 0; i < length; i++)
 	{
 		if (IsCharAlphaNumeric (rule->buffer[i]))
 			continue;
 
 		is_valid = FALSE;
 
-		for (SIZE_T j = 0; j < RTL_NUMBER_OF (valid_chars); j++)
+		for (ULONG_PTR j = 0; j < RTL_NUMBER_OF (valid_chars); j++)
 		{
 			if (rule->buffer[i] == valid_chars[j])
 			{
@@ -1409,7 +1409,7 @@ BOOLEAN _app_preparserulestring (
 	{
 		address->type = DATA_TYPE_PORT;
 
-		for (SIZE_T i = 0; i < length; i++)
+		for (ULONG_PTR i = 0; i < length; i++)
 		{
 			if (!_r_str_isdigit (rule->buffer[i]) && rule->buffer[i] != DIVIDER_RULE_RANGE)
 			{
@@ -1640,7 +1640,7 @@ NTSTATUS _app_timercallback (
 	LARGE_INTEGER timeout;
 	PITEM_APP ptr_app = NULL;
 	PR_STRING hash;
-	SIZE_T enum_key;
+	ULONG_PTR enum_key;
 	NTSTATUS status;
 
 	_r_calc_millisecondstolargeinteger (&timeout, _r_calc_minutes2milliseconds (10));

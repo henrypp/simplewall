@@ -129,9 +129,7 @@ BOOLEAN _app_islogfound (
 	BOOLEAN is_found;
 
 	_r_queuedlock_acquireshared (&lock_loglist);
-
 	is_found = (_r_obj_findhashtable (log_table, log_hash) != NULL);
-
 	_r_queuedlock_releaseshared (&lock_loglist);
 
 	return is_found;
@@ -272,9 +270,9 @@ VOID _app_logwrite_ui (
 	_In_ PITEM_LOG ptr_log
 )
 {
-	ULONG_PTR log_hash;
+	ULONG_PTR table_size;
 	ULONG_PTR hash_code;
-	SIZE_T table_size;
+	ULONG_PTR log_hash;
 	INT item_id;
 
 	log_hash = _app_getloghash (ptr_log);
@@ -469,8 +467,8 @@ VOID CALLBACK _wfp_logcallback (
 	PR_STRING filter_name = NULL;
 	PR_STRING layer_name;
 	PR_STRING sid_string;
-	FWPM_LAYER *layer_ptr;
-	FWPM_FILTER *filter_ptr;
+	FWPM_LAYER0 *layer_ptr;
+	FWPM_FILTER0 *filter_ptr;
 	UINT8 filter_weight = 0;
 	BOOLEAN is_myprovider = FALSE;
 	NTSTATUS status;
@@ -610,14 +608,18 @@ VOID CALLBACK _wfp_logcallback (
 			// remote address
 			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 			{
-				if (ULongLongToULong (log->remote_addr4, &ptr_log->remote_addr.S_un.S_addr) == S_OK)
+				status = ULongLongToULong (log->remote_addr4, &ptr_log->remote_addr.S_un.S_addr);
+
+				if (SUCCEEDED (status))
 					ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->remote_addr.S_un.S_addr);
 			}
 
 			// local address
 			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 			{
-				if (ULongLongToULong (log->local_addr4, &ptr_log->local_addr.S_un.S_addr) == S_OK)
+				status = ULongLongToULong (log->local_addr4, &ptr_log->local_addr.S_un.S_addr);
+
+				if (SUCCEEDED (status))
 					ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->local_addr.S_un.S_addr);
 			}
 		}
@@ -676,9 +678,9 @@ VOID CALLBACK _wfp_logcallback (
 }
 
 FORCEINLINE BOOLEAN log_struct_to_f (
+	_In_ ULONG version,
 	_Inout_ PITEM_LOG_CALLBACK log,
-	_In_ PVOID event_data,
-	_In_ ULONG version
+	_In_ PVOID event_data
 )
 {
 	switch (version)
@@ -1144,56 +1146,56 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 // win8+ callback
 VOID CALLBACK _wfp_logcallback1 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT2 * event_data
+	_In_ const FWPM_NET_EVENT2* event_data
 )
 {
 	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_8_1))
+	if (log_struct_to_f (WINDOWS_8_1, &log, (PVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
 // win10rs1+ callback
 VOID CALLBACK _wfp_logcallback2 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT3 * event_data
+	_In_ const FWPM_NET_EVENT3* event_data
 )
 {
 	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1607))
+	if (log_struct_to_f (WINDOWS_10_1607, &log, (PVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
 // win10rs4+ callback
 VOID CALLBACK _wfp_logcallback3 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT4 * event_data
+	_In_ const FWPM_NET_EVENT4* event_data
 )
 {
 	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1803))
+	if (log_struct_to_f (WINDOWS_10_1803, &log, (PVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
 // win10rs5+ callback
 VOID CALLBACK _wfp_logcallback4 (
 	_In_opt_ PVOID context,
-	_In_ const FWPM_NET_EVENT5 * event_data
+	_In_ const FWPM_NET_EVENT5* event_data
 )
 {
 	ITEM_LOG_CALLBACK log = {0};
 
 	UNREFERENCED_PARAMETER (context);
 
-	if (log_struct_to_f (&log, (PVOID)event_data, WINDOWS_10_1809))
+	if (log_struct_to_f (WINDOWS_10_1809, &log, (PVOID)event_data))
 		_wfp_logcallback (&log);
 }
 

@@ -551,7 +551,7 @@ INT_PTR CALLBACK SettingsProc (
 				case IDD_SETTINGS_HIGHLIGHTING:
 				{
 					PITEM_COLOR ptr_clr = NULL;
-					SIZE_T enum_key = 0;
+					ULONG_PTR enum_key = 0;
 					BOOLEAN val;
 					LONG icon_id;
 					INT item_id = 0;
@@ -1218,8 +1218,8 @@ INT_PTR CALLBACK SettingsProc (
 					CHOOSECOLOR cc = {0};
 					COLORREF cust[16] = {0};
 					PITEM_COLOR ptr_clr = NULL;
-					SIZE_T enum_key = 0;
-					SIZE_T index = 0;
+					ULONG_PTR enum_key = 0;
+					ULONG_PTR index = 0;
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -2616,7 +2616,7 @@ INT_PTR CALLBACK DlgProc (
 					PITEM_APP ptr_app;
 					PITEM_RULE ptr_rule;
 					ULONG_PTR app_hash;
-					SIZE_T rule_idx;
+					ULONG_PTR rule_idx;
 					INT listview_id;
 					BOOLEAN is_changed;
 					BOOLEAN is_enabled;
@@ -3209,7 +3209,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_ICONSISHIDDEN:
 				{
 					PITEM_APP ptr_app = NULL;
-					SIZE_T enum_key;
+					ULONG_PTR enum_key;
 					BOOLEAN new_val;
 
 					new_val = !_r_config_getboolean (L"IsIconsHidden", FALSE);

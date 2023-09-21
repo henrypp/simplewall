@@ -55,7 +55,7 @@ VOID _app_listview_addappitem (
 VOID _app_listview_addruleitem (
 	_In_ HWND hwnd,
 	_In_ PITEM_RULE ptr_rule,
-	_In_ SIZE_T rule_idx,
+	_In_ ULONG_PTR rule_idx,
 	_In_ BOOLEAN is_forapp
 );
 

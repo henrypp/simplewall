@@ -81,7 +81,7 @@ VOID _app_listview_additems (
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
 	LONG64 current_time;
-	SIZE_T enum_key = 0;
+	ULONG_PTR enum_key = 0;
 
 	current_time = _r_unixtime_now ();
 
@@ -102,7 +102,7 @@ VOID _app_listview_additems (
 	// add rules
 	_r_queuedlock_acquireshared (&lock_rules);
 
-	for (SIZE_T i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
 		ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -151,7 +151,7 @@ VOID _app_listview_addappitem (
 VOID _app_listview_addruleitem (
 	_In_ HWND hwnd,
 	_In_ PITEM_RULE ptr_rule,
-	_In_ SIZE_T rule_idx,
+	_In_ ULONG_PTR rule_idx,
 	_In_ BOOLEAN is_forapp
 )
 {

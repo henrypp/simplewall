@@ -6,9 +6,7 @@
 BOOLEAN _app_istimersactive ()
 {
 	PITEM_APP ptr_app;
-	SIZE_T enum_key;
-
-	enum_key = 0;
+	ULONG_PTR enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
