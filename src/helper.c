@@ -1636,7 +1636,7 @@ VOID _app_fileloggingenable ()
 	}
 }
 
-NTSTATUS _app_timercallback (
+NTSTATUS NTAPI _app_timercallback (
 	_In_ PVOID context
 )
 {

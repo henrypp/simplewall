@@ -3715,7 +3715,7 @@ INT_PTR CALLBACK DlgProc (
 	return FALSE;
 }
 
-BOOLEAN _app_parseargs (
+BOOLEAN NTAPI _app_parseargs (
 	_In_ R_CMDLINE_INFO_CLASS info_class
 )
 {
