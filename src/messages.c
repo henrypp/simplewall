@@ -1426,7 +1426,6 @@ LONG_PTR _app_message_custdraw (
 }
 
 VOID _app_displayinfoapp_callback (
-	_In_ INT listview_id,
 	_In_ PITEM_APP ptr_app,
 	_Inout_ LPNMLVDISPINFOW lpnmlv
 )
@@ -1470,7 +1469,7 @@ VOID _app_displayinfoapp_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		if (_app_getappinfoparam2 (ptr_app->app_hash, listview_id, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+		if (_app_getappinfoparam2 (ptr_app->app_hash, (INT)lpnmlv->hdr.idFrom, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
 			lpnmlv->item.iImage = icon_id;
 	}
 
@@ -1483,7 +1482,7 @@ VOID _app_displayinfoapp_callback (
 		}
 		else
 		{
-			if (listview_id == IDC_RULE_APPS_ID)
+			if (lpnmlv->hdr.idFrom == IDC_RULE_APPS_ID)
 			{
 				if (ptr_app->type == DATA_APP_UWP)
 				{
@@ -1788,7 +1787,7 @@ VOID _app_displayinfonetwork_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		if (_app_getappinfoparam2 (ptr_network->app_hash, 0, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+		if (_app_getappinfoparam2 (ptr_network->app_hash, (INT)lpnmlv->hdr.idFrom, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
 			lpnmlv->item.iImage = icon_id;
 	}
 
@@ -2003,7 +2002,7 @@ VOID _app_displayinfolog_callback (
 	// set image
 	if (lpnmlv->item.mask & LVIF_IMAGE)
 	{
-		if (_app_getappinfoparam2 (ptr_log->app_hash, 0, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
+		if (_app_getappinfoparam2 (ptr_log->app_hash, (INT)lpnmlv->hdr.idFrom, INFO_ICON_ID, &icon_id, sizeof (icon_id)))
 			lpnmlv->item.iImage = icon_id;
 	}
 
@@ -2041,7 +2040,7 @@ BOOLEAN _app_message_displayinfo (
 
 		if (ptr_app)
 		{
-			_app_displayinfoapp_callback (listview_id, ptr_app, lpnmlv);
+			_app_displayinfoapp_callback (ptr_app, lpnmlv);
 			_r_obj_dereference (ptr_app);
 
 			return TRUE;
