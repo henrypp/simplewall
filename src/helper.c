@@ -433,9 +433,6 @@ BOOLEAN _app_getappinfoparam2 (
 
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
-	if (!ptr_app_info)
-		return FALSE;
-
 	switch (info_data)
 	{
 		case INFO_ICON_ID:
@@ -444,12 +441,14 @@ BOOLEAN _app_getappinfoparam2 (
 
 			if (size != sizeof (LONG))
 			{
-				_r_obj_dereference (ptr_app_info);
+				if (ptr_app_info)
+					_r_obj_dereference (ptr_app_info);
 
 				return FALSE;
 			}
 
-			icon_id = ptr_app_info->icon_id;
+			if (ptr_app_info)
+				icon_id = ptr_app_info->icon_id;
 
 			if (!icon_id)
 				icon_id = _app_icons_getdefaultapp_id ((listview_id == IDC_APPS_UWP) ? DATA_APP_UWP : DATA_APP_REGULAR);
@@ -458,7 +457,8 @@ BOOLEAN _app_getappinfoparam2 (
 			{
 				RtlCopyMemory (buffer, &icon_id, size);
 
-				_r_obj_dereference (ptr_app_info);
+				if (ptr_app_info)
+					_r_obj_dereference (ptr_app_info);
 
 				return TRUE;
 			}
@@ -472,12 +472,13 @@ BOOLEAN _app_getappinfoparam2 (
 
 			if (size != sizeof (PVOID))
 			{
-				_r_obj_dereference (ptr_app_info);
+				if (ptr_app_info)
+					_r_obj_dereference (ptr_app_info);
 
 				return FALSE;
 			}
 
-			if (!_r_obj_isstringempty (ptr_app_info->signature_info))
+			if (ptr_app_info && !_r_obj_isstringempty (ptr_app_info->signature_info))
 			{
 				ptr = _r_obj_reference (ptr_app_info->signature_info);
 
@@ -497,12 +498,13 @@ BOOLEAN _app_getappinfoparam2 (
 
 			if (size != sizeof (PVOID))
 			{
-				_r_obj_dereference (ptr_app_info);
+				if (ptr_app_info)
+					_r_obj_dereference (ptr_app_info);
 
 				return FALSE;
 			}
 
-			if (!_r_obj_isstringempty (ptr_app_info->version_info))
+			if (ptr_app_info && !_r_obj_isstringempty (ptr_app_info->version_info))
 			{
 				ptr = _r_obj_reference (ptr_app_info->version_info);
 
@@ -517,7 +519,8 @@ BOOLEAN _app_getappinfoparam2 (
 		}
 	}
 
-	_r_obj_dereference (ptr_app_info);
+	if (ptr_app_info)
+		_r_obj_dereference (ptr_app_info);
 
 	return FALSE;
 }
