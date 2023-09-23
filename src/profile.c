@@ -1750,7 +1750,7 @@ CleanupExit:
 	}
 	else
 	{
-		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_OBJECT_PATH_NOT_FOUND)
 		{
 			if (hwnd)
 				_r_show_errormessage (hwnd, L"Could not load profile!", status, NULL);
