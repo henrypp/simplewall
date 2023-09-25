@@ -28,6 +28,12 @@ You can download either the installer or portable version. For correct working y
 - Windows 8.1 and above operating system.
 - [Visual C++ 2022 Redistributable package](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
 
+### Donate:
+- [Bitcoin](https://www.blockchain.com/btc/address/1LrRTXPsvHcQWCNZotA9RcwjsGcRghG96c) (BTC)
+- [Ethereum](https://www.blockchain.com/explorer/addresses/eth/0xe2C84A62eb2a4EF154b19bec0c1c106734B95960) (ETC)
+- [Paypal](https://paypal.me/henrypp) (USD)
+- [Yandex Money](https://yoomoney.ru/to/4100115776040583) (RUB)
+
 ### GPG Signature:
 Binaries have GPG signature simplewall.exe.sig in application folder.
 
@@ -327,7 +333,7 @@ Open main window, Navigate into `System rules` tab and then enable `Windows Upda
 #### Q: Other questions:
 - [Windows Security center integration (impossible)](https://stackoverflow.com/questions/3698285/how-can-i-tell-the-windows-security-center-that-im-an-antivirus/3698375#3698375)
 
-Website: [www.henrypp.org](https://www.henrypp.org)<br />
-Support: support@henrypp.org<br />
+Website: [github.com/henrypp](https://github.com/henrypp)<br />
+Support: sforce5@mail.ru<br />
 <br />
 (c) 2016-2023 Henry++
