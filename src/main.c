@@ -2978,7 +2978,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_WEBSITE:
 				case IDM_TRAY_WEBSITE:
 				{
-					_r_shell_opendefault (_r_app_getsources_url ());
+					_r_shell_opendefault (_r_app_getwebsite_url ());
 					break;
 				}
 
