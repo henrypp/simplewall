@@ -1792,7 +1792,8 @@ VOID NTAPI _app_queuefileinformation (
 	_app_getfileicon (ptr_app_info);
 
 	// query certificate information
-	_app_getfilesignatureinfo (hfile, ptr_app_info);
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+		_app_getfilesignatureinfo (hfile, ptr_app_info);
 
 	// query version info
 	_app_getfileversioninfo (ptr_app_info);
@@ -1852,34 +1853,37 @@ VOID NTAPI _app_queuenotifyinformation (
 	}
 
 	// query signature
-	ptr_app_info = _app_getappinfobyhash2 (ptr_log->app_hash);
-
-	if (ptr_app_info)
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
 	{
-		if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
+		ptr_app_info = _app_getappinfobyhash2 (ptr_log->app_hash);
+
+		if (ptr_app_info)
 		{
-			status = _r_fs_createfile (
-				ptr_app_info->path->buffer,
-				FILE_OPEN,
-				GENERIC_READ,
-				FILE_SHARE_READ | FILE_SHARE_DELETE,
-				FILE_ATTRIBUTE_NORMAL,
-				0,
-				FALSE,
-				NULL,
-				&hfile
-			);
-
-			if (NT_SUCCESS (status))
+			if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 			{
-				if (!ptr_app_info->is_loaded)
-					_app_getfilesignatureinfo (hfile, ptr_app_info);
+				status = _r_fs_createfile (
+					ptr_app_info->path->buffer,
+					FILE_OPEN,
+					GENERIC_READ,
+					FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+					FILE_ATTRIBUTE_NORMAL,
+					0,
+					FALSE,
+					NULL,
+					&hfile
+				);
 
-				NtClose (hfile);
+				if (NT_SUCCESS (status))
+				{
+					if (!ptr_app_info->is_loaded)
+						_app_getfilesignatureinfo (hfile, ptr_app_info);
+
+					NtClose (hfile);
+				}
 			}
-		}
 
-		_r_obj_dereference (ptr_app_info);
+			_r_obj_dereference (ptr_app_info);
+		}
 	}
 
 	// query file icon

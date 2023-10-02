@@ -217,6 +217,13 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDC_USECERTIFICATES_CHK:
+		case IDM_USECERTIFICATES_CHK:
+		{
+			new_val = !_r_config_getboolean (L"IsCertificatesEnabled", TRUE);
+			break;
+		}
+
 		case IDC_INSTALLBOOTTIMEFILTERS_CHK:
 		{
 			new_val = !_r_config_getboolean (L"InstallBoottimeFilters", TRUE);
@@ -400,6 +407,37 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDC_USECERTIFICATES_CHK:
+		case IDM_USECERTIFICATES_CHK:
+		{
+			PITEM_APP ptr_app = NULL;
+			ULONG_PTR enum_key = 0;
+			INT listview_id;
+
+			_r_config_setboolean (L"IsCertificatesEnabled", new_val);
+
+			_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, new_val);
+
+			if (new_val)
+			{
+				_r_queuedlock_acquireshared (&lock_apps);
+
+				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+				{
+					if (!ptr_app->real_path)
+						continue;
+
+					listview_id = _app_listview_getbytype (ptr_app->type);
+
+					_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, listview_id);
+				}
+
+				_r_queuedlock_releaseshared (&lock_apps);
+			}
+
+			break;
+		}
+
 		case IDC_USENETWORKRESOLUTION_CHK:
 		case IDM_USENETWORKRESOLUTION_CHK:
 		{
@@ -437,6 +475,8 @@ VOID _app_config_apply (
 		case IDM_PROFILETYPE_ENCRYPTED:
 		case IDC_USENETWORKRESOLUTION_CHK:
 		case IDM_USENETWORKRESOLUTION_CHK:
+		case IDC_USECERTIFICATES_CHK:
+		case IDM_USECERTIFICATES_CHK:
 		case IDM_USEAPPMONITOR_CHK:
 		{
 			return;
@@ -493,6 +533,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_checkbutton (hwnd, IDC_RULE_ALLOW6TO4, _r_config_getboolean (L"AllowIPv6", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_USESTEALTHMODE_CHK, _r_config_getboolean (L"UseStealthMode", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, _r_config_getboolean (L"InstallBoottimeFilters", TRUE));
+					_r_ctrl_checkbutton (hwnd, IDC_USECERTIFICATES_CHK, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 
 					htip = _r_ctrl_createtip (hwnd);
@@ -880,6 +921,8 @@ INT_PTR CALLBACK SettingsProc (
 						_r_locale_getstring (IDS_INSTALLBOOTTIMEFILTERS_CHK),
 						recommended_string
 					);
+
+					_r_ctrl_setstring (hwnd, IDC_USECERTIFICATES_CHK, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
 
 					_r_ctrl_setstring (
 						hwnd,
@@ -1351,6 +1394,7 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_RULE_ALLOW6TO4:
 				case IDC_USESTEALTHMODE_CHK:
 				case IDC_INSTALLBOOTTIMEFILTERS_CHK:
+				case IDC_USECERTIFICATES_CHK:
 				case IDC_USENETWORKRESOLUTION_CHK:
 				{
 					_app_config_apply (_r_app_gethwnd (), hwnd, ctrl_id);
@@ -3280,6 +3324,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_PROFILETYPE_COMPRESSED:
 				case IDM_PROFILETYPE_ENCRYPTED:
 				case IDM_USENETWORKRESOLUTION_CHK:
+				case IDM_USECERTIFICATES_CHK:
 				case IDM_USEAPPMONITOR_CHK:
 				{
 					_app_config_apply (hwnd, NULL, ctrl_id);
