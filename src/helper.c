@@ -926,9 +926,9 @@ VOID _app_getfileversioninfo (
 	ULONG lcid;
 	NTSTATUS status;
 
-	hlib = LoadLibraryEx (ptr_app_info->path->buffer, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
+	status = _r_sys_loadlibraryasresource (ptr_app_info->path->buffer, &hlib);
 
-	if (!hlib)
+	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
 	status = _r_res_loadresource (hlib, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), &ver_block);
@@ -1001,7 +1001,7 @@ CleanupExit:
 	_r_obj_movereference (&ptr_app_info->version_info, version_string);
 
 	if (hlib)
-		FreeLibrary (hlib);
+		_r_sys_freelibrary (hlib, TRUE);
 }
 
 VOID _app_getfilehashinfo (

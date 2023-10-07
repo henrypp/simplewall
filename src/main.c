@@ -1562,25 +1562,28 @@ INT_PTR CALLBACK SettingsProc (
 						path = _r_ctrl_getstring (hwnd, IDC_LOGPATH);
 
 						if (path)
+						{
 							_r_filedialog_setpath (&file_dialog, path->buffer);
+
+							_r_obj_dereference (path);
+						}
 
 						status = _r_filedialog_show (hwnd, &file_dialog);
 
 						if (SUCCEEDED (status))
 						{
-							_r_obj_movereference (&path, _r_filedialog_getpath (&file_dialog));
+							status = _r_filedialog_getpath (&file_dialog, &path);
 
-							if (path)
+							if (SUCCEEDED (status))
 							{
 								_r_config_setstringexpand (L"LogPath", path->buffer);
 								_r_ctrl_setstring (hwnd, IDC_LOGPATH, path->buffer);
 
 								_app_loginit (_r_config_getboolean (L"IsLogEnabled", FALSE));
+
+								_r_obj_dereference (path);
 							}
 						}
-
-						if (path)
-							_r_obj_dereference (path);
 
 						_r_filedialog_destroy (&file_dialog);
 					}
@@ -1627,23 +1630,26 @@ INT_PTR CALLBACK SettingsProc (
 						path = _r_ctrl_getstring (hwnd, IDC_LOGVIEWER);
 
 						if (path)
+						{
 							_r_filedialog_setpath (&file_dialog, path->buffer);
+
+							_r_obj_dereference (path);
+						}
 
 						status = _r_filedialog_show (hwnd, &file_dialog);
 
 						if (SUCCEEDED (status))
 						{
-							_r_obj_movereference (&path, _r_filedialog_getpath (&file_dialog));
+							status = _r_filedialog_getpath (&file_dialog, &path);
 
-							if (path)
+							if (SUCCEEDED (status))
 							{
 								_r_config_setstringexpand (L"LogViewer", path->buffer);
 								_r_ctrl_setstring (hwnd, IDC_LOGVIEWER, path->buffer);
+
+								_r_obj_dereference (path);
 							}
 						}
-
-						if (path)
-							_r_obj_dereference (path);
 
 						_r_filedialog_destroy (&file_dialog);
 					}
@@ -3077,11 +3083,13 @@ INT_PTR CALLBACK DlgProc (
 
 						if (SUCCEEDED (status))
 						{
-							path = _r_filedialog_getpath (&file_dialog);
+							status = _r_filedialog_getpath (&file_dialog, &path);
 
-							if (path)
+							if (SUCCEEDED (status))
 							{
-								if (_app_profile_load (hwnd, path) == STATUS_SUCCESS)
+								status = _app_profile_load (hwnd, path);
+
+								if (NT_SUCCESS (status))
 								{
 									_app_profile_save ();
 
@@ -3121,9 +3129,9 @@ INT_PTR CALLBACK DlgProc (
 
 						if (SUCCEEDED (status))
 						{
-							path = _r_filedialog_getpath (&file_dialog);
+							status = _r_filedialog_getpath (&file_dialog, &path);
 
-							if (path)
+							if (SUCCEEDED (status))
 							{
 								_app_profile_save ();
 
@@ -3274,7 +3282,6 @@ INT_PTR CALLBACK DlgProc (
 					PITEM_APP ptr_app = NULL;
 					ULONG_PTR enum_key = 0;
 					INT listview_id;
-
 					BOOLEAN new_val;
 
 					new_val = !_r_config_getboolean (L"IsIconsHidden", FALSE);
@@ -3575,9 +3582,9 @@ INT_PTR CALLBACK DlgProc (
 
 						if (SUCCEEDED (status))
 						{
-							path = _r_filedialog_getpath (&file_dialog);
+							status = _r_filedialog_getpath (&file_dialog, &path);
 
-							if (path)
+							if (SUCCEEDED (status))
 							{
 								app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, path, NULL, NULL);
 
@@ -3588,6 +3595,8 @@ INT_PTR CALLBACK DlgProc (
 
 									_app_profile_save ();
 								}
+
+								_r_obj_dereference (path);
 							}
 						}
 
