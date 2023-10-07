@@ -18,7 +18,6 @@ VOID _app_getapptooltipstring (
 	R_STRINGBUILDER sb;
 
 	ptr_app = _app_getappitem (app_hash);
-	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
 	// file path
 	if (ptr_app)
@@ -66,6 +65,8 @@ VOID _app_getapptooltipstring (
 	}
 
 	// file version
+	ptr_app_info = _app_getappinfobyhash2 (app_hash);
+
 	if (ptr_app_info)
 	{
 		if (!_r_obj_isstringempty (ptr_app_info->version_info))

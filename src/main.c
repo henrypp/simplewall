@@ -3253,7 +3253,9 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_ICONSISHIDDEN:
 				{
 					PITEM_APP ptr_app = NULL;
-					ULONG_PTR enum_key;
+					ULONG_PTR enum_key = 0;
+					INT listview_id;
+
 					BOOLEAN new_val;
 
 					new_val = !_r_config_getboolean (L"IsIconsHidden", FALSE);
@@ -3265,12 +3267,14 @@ INT_PTR CALLBACK DlgProc (
 					{
 						_r_queuedlock_acquireshared (&lock_apps);
 
-						enum_key = 0;
-
 						while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 						{
-							if (ptr_app->real_path)
-								_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
+							if (!ptr_app->real_path)
+								continue;
+
+							listview_id = _app_listview_getbytype (ptr_app->type);
+
+							_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, listview_id);
 						}
 
 						_r_queuedlock_releaseshared (&lock_apps);
@@ -3287,10 +3291,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_FIND:
 				{
-					if (!config.hsearchbar)
-						break;
-
-					if (!_r_wnd_isvisible (config.hsearchbar))
+					if (!config.hsearchbar || !_r_wnd_isvisible (config.hsearchbar))
 						break;
 
 					SetFocus (config.hsearchbar);
@@ -3790,6 +3791,7 @@ BOOLEAN NTAPI _app_parseargs (
 
 			return TRUE;
 		}
+
 		case CmdlineInstall:
 		{
 			if (_r_sys_getopt (_r_sys_getimagecommandline (), L"silent", NULL) || _app_installmessage (NULL, TRUE))
