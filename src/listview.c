@@ -460,7 +460,7 @@ VOID _app_listview_updateby_id (
 	if ((flags & PR_UPDATE_FORCE) || (listview_id == _app_listview_getcurrent (hwnd)))
 	{
 		if (!(flags & PR_UPDATE_NOREDRAW))
-			_r_listview_redraw (hwnd, listview_id, -1);
+			_r_listview_redraw (hwnd, listview_id);
 
 		if (!(flags & PR_UPDATE_NOSETVIEW))
 		{
@@ -509,7 +509,7 @@ VOID _app_listview_updateby_param (
 	if ((flags & PR_SETITEM_REDRAW))
 	{
 		if (listview_id == _app_listview_getcurrent (hwnd))
-			_r_listview_redraw (hwnd, listview_id, -1);
+			_r_listview_redraw (hwnd, listview_id);
 	}
 }
 

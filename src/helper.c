@@ -1717,8 +1717,6 @@ VOID _app_queue_fileinformation (
 	{
 		ptr_app_info = _r_obj_allocate (sizeof (ITEM_APP_INFO), &_app_dereferenceappinfo);
 
-		RtlSecureZeroMemory (ptr_app_info, sizeof (ITEM_APP_INFO));
-
 		ptr_app_info->path = _r_obj_reference (path);
 		ptr_app_info->app_hash = app_hash;
 		ptr_app_info->type = type;
@@ -1764,6 +1762,9 @@ VOID NTAPI _app_queuefileinformation (
 	ptr_app_info = arglist;
 	hwnd = _r_app_gethwnd ();
 
+	if (ptr_app_info->is_loaded)
+		return;
+
 	// check for binary path is valid
 	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
 		return;
@@ -1807,7 +1808,7 @@ VOID NTAPI _app_queuefileinformation (
 		if (_r_wnd_isvisible (hwnd))
 		{
 			if (ptr_app_info->listview_id == _app_listview_getcurrent (hwnd))
-				_r_listview_redraw (hwnd, ptr_app_info->listview_id, -1);
+				_r_listview_redraw (hwnd, ptr_app_info->listview_id);
 		}
 	}
 
@@ -1998,7 +1999,7 @@ VOID NTAPI _app_queueresolveinformation (
 		if (_r_wnd_isvisible (context->hwnd))
 		{
 			if (_app_listview_getcurrent (context->hwnd) == context->listview_id)
-				_r_listview_redraw (context->hwnd, context->listview_id, -1);
+				_r_listview_redraw (context->hwnd, context->listview_id);
 		}
 	}
 

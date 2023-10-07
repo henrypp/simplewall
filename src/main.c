@@ -30,7 +30,7 @@ BOOLEAN _app_changefilters (
 		return TRUE;
 	}
 
-	_r_listview_redraw (hwnd, listview_id, -1);
+	_r_listview_redraw (hwnd, listview_id);
 
 	_app_profile_save ();
 
@@ -1236,7 +1236,7 @@ INT_PTR CALLBACK SettingsProc (
 
 							_r_config_setboolean_ex (ptr_clr->config_name->buffer, is_enabled, L"colors");
 
-							_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()), -1);
+							_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()));
 						}
 					}
 
@@ -1295,9 +1295,9 @@ INT_PTR CALLBACK SettingsProc (
 
 						_r_config_setulong_ex (ptr_clr_crnt->config_value->buffer, cc.rgbResult, L"colors");
 
-						_r_listview_redraw (hwnd, IDC_COLORS, -1);
+						_r_listview_redraw (hwnd, IDC_COLORS);
 
-						_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()), -1);
+						_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()));
 					}
 
 					break;
@@ -1551,8 +1551,11 @@ INT_PTR CALLBACK SettingsProc (
 
 					R_FILE_DIALOG file_dialog;
 					PR_STRING path;
+					HRESULT status;
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
+					status = _r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE);
+
+					if (SUCCEEDED (status))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 
@@ -1561,7 +1564,9 @@ INT_PTR CALLBACK SettingsProc (
 						if (path)
 							_r_filedialog_setpath (&file_dialog, path->buffer);
 
-						if (_r_filedialog_show (hwnd, &file_dialog))
+						status = _r_filedialog_show (hwnd, &file_dialog);
+
+						if (SUCCEEDED (status))
 						{
 							_r_obj_movereference (&path, _r_filedialog_getpath (&file_dialog));
 
@@ -1611,8 +1616,11 @@ INT_PTR CALLBACK SettingsProc (
 
 					R_FILE_DIALOG file_dialog;
 					PR_STRING path;
+					HRESULT status;
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
+					status = _r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE);
+
+					if (SUCCEEDED (status))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 
@@ -1621,7 +1629,9 @@ INT_PTR CALLBACK SettingsProc (
 						if (path)
 							_r_filedialog_setpath (&file_dialog, path->buffer);
 
-						if (_r_filedialog_show (hwnd, &file_dialog))
+						status = _r_filedialog_show (hwnd, &file_dialog);
+
+						if (SUCCEEDED (status))
 						{
 							_r_obj_movereference (&path, _r_filedialog_getpath (&file_dialog));
 
@@ -3054,13 +3064,18 @@ INT_PTR CALLBACK DlgProc (
 
 					R_FILE_DIALOG file_dialog;
 					PR_STRING path;
+					HRESULT status;
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
+					status = _r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE);
+
+					if (SUCCEEDED (status))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 						_r_filedialog_setpath (&file_dialog, XML_PROFILE_FILE);
 
-						if (_r_filedialog_show (hwnd, &file_dialog))
+						status = _r_filedialog_show (hwnd, &file_dialog);
+
+						if (SUCCEEDED (status))
 						{
 							path = _r_filedialog_getpath (&file_dialog);
 
@@ -3095,12 +3110,16 @@ INT_PTR CALLBACK DlgProc (
 					PR_STRING path;
 					NTSTATUS status;
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE))
+					status = _r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_SAVEFILE);
+
+					if (SUCCEEDED (status))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 						_r_filedialog_setpath (&file_dialog, XML_PROFILE_FILE);
 
-						if (_r_filedialog_show (hwnd, &file_dialog))
+						status = _r_filedialog_show (hwnd, &file_dialog);
+
+						if (SUCCEEDED (status))
 						{
 							path = _r_filedialog_getpath (&file_dialog);
 
@@ -3169,7 +3188,7 @@ INT_PTR CALLBACK DlgProc (
 
 					listview_id = _app_listview_getcurrent (hwnd);
 
-					_r_listview_redraw (hwnd, listview_id, -1);
+					_r_listview_redraw (hwnd, listview_id);
 					_app_listview_sort (hwnd, listview_id);
 
 					break;
@@ -3544,12 +3563,17 @@ INT_PTR CALLBACK DlgProc (
 					R_FILE_DIALOG file_dialog;
 					PR_STRING path;
 					ULONG_PTR app_hash;
+					HRESULT status;
 
-					if (_r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE))
+					status = _r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE);
+
+					if (SUCCEEDED (status))
 					{
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
 
-						if (_r_filedialog_show (hwnd, &file_dialog))
+						status = _r_filedialog_show (hwnd, &file_dialog);
+
+						if (SUCCEEDED (status))
 						{
 							path = _r_filedialog_getpath (&file_dialog);
 
