@@ -57,13 +57,15 @@ PACL _app_createaccesscontrollist (
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
 	ULONG count;
-	ULONG status;
+	NTSTATUS status;
 
 	for (WORD ace_index = 0; ace_index < acl->AceCount; ace_index++)
 	{
 		ace = NULL;
 
-		if (!GetAce (acl, ace_index, &ace))
+		status = RtlGetAce (acl, ace_index, &ace);
+
+		if (!NT_SUCCESS (status))
 			continue;
 
 		if (ace->Header.AceType == ACCESS_ALLOWED_ACE_TYPE)
@@ -165,7 +167,7 @@ VOID _app_setenginesecurity (
 	ULONG count;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
-	ULONG status;
+	NTSTATUS status;
 
 	status = FwpmEngineGetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
@@ -182,7 +184,9 @@ VOID _app_setenginesecurity (
 		{
 			ace = NULL;
 
-			if (!GetAce (dacl, ace_index, &ace))
+			status = RtlGetAce (dacl, ace_index, &ace);
+
+			if (!NT_SUCCESS (status))
 				continue;
 
 			if (ace->Header.AceType != ACCESS_ALLOWED_ACE_TYPE)
