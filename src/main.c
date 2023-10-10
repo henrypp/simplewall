@@ -1976,6 +1976,9 @@ VOID _app_initialize ()
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&file_queue, 12, &environment, L"FilesQueue");
+
+	_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityLow, MEMORY_PRIORITY_NORMAL);
+
 	_r_workqueue_initialize (&log_queue, 6, &environment, L"PacketsQueue");
 	_r_workqueue_initialize (&resolver_queue, 6, &environment, L"ResolverQueue");
 	_r_workqueue_initialize (&resolve_notify_queue, 2, &environment, L"NotificationQueue");
@@ -2014,18 +2017,15 @@ VOID _app_initialize ()
 	_r_freelist_initialize (&listview_free_list, sizeof (ITEM_LISTVIEW_CONTEXT), 2048);
 
 	// initialize colors array
-	if (!colors_table)
-	{
-		colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), NULL);
+	colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), NULL);
 
-		// initialize colors
-		config.color_invalid = _app_addcolor (IDS_HIGHLIGHT_INVALID, L"IsHighlightInvalid", TRUE, L"ColorInvalid", LV_COLOR_INVALID);
-		config.color_special = _app_addcolor (IDS_HIGHLIGHT_SPECIAL, L"IsHighlightSpecial", TRUE, L"ColorSpecial", LV_COLOR_SPECIAL);
-		config.color_signed = _app_addcolor (IDS_HIGHLIGHT_SIGNED, L"IsHighlightSigned", TRUE, L"ColorSigned", LV_COLOR_SIGNED);
-		config.color_pico = _app_addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", TRUE, L"ColorPico", LV_COLOR_PICO);
-		config.color_system = _app_addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", TRUE, L"ColorSystem", LV_COLOR_SYSTEM);
-		config.color_network = _app_addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", TRUE, L"ColorConnection", LV_COLOR_CONNECTION);
-	}
+	// initialize colors
+	config.color_invalid = _app_addcolor (IDS_HIGHLIGHT_INVALID, L"IsHighlightInvalid", TRUE, L"ColorInvalid", LV_COLOR_INVALID);
+	config.color_special = _app_addcolor (IDS_HIGHLIGHT_SPECIAL, L"IsHighlightSpecial", TRUE, L"ColorSpecial", LV_COLOR_SPECIAL);
+	config.color_signed = _app_addcolor (IDS_HIGHLIGHT_SIGNED, L"IsHighlightSigned", TRUE, L"ColorSigned", LV_COLOR_SIGNED);
+	config.color_pico = _app_addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", TRUE, L"ColorPico", LV_COLOR_PICO);
+	config.color_system = _app_addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", TRUE, L"ColorSystem", LV_COLOR_SYSTEM);
+	config.color_network = _app_addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", TRUE, L"ColorConnection", LV_COLOR_CONNECTION);
 
 	_app_generate_credentials ();
 
