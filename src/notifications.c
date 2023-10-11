@@ -130,7 +130,7 @@ BOOLEAN _app_notify_command (
 	_r_obj_dereference (ptr_app);
 	_r_obj_dereference (rules);
 
-	_app_profile_save ();
+	_app_profile_save (hwnd);
 
 	return TRUE;
 }
@@ -1386,7 +1386,7 @@ INT_PTR CALLBACK NotificationProc (
 							_app_listview_addruleitem (_r_app_gethwnd (), ptr_rule, rule_idx, TRUE);
 							_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
-							_app_profile_save ();
+							_app_profile_save (hwnd);
 						}
 					}
 
@@ -1440,7 +1440,7 @@ INT_PTR CALLBACK NotificationProc (
 					_r_obj_dereference (ptr_app);
 					_r_obj_dereference (ptr_rule);
 
-					_app_profile_save ();
+					_app_profile_save (hwnd);
 				}
 
 				return FALSE;
@@ -1580,7 +1580,7 @@ INT_PTR CALLBACK NotificationProc (
 
 						_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
-						_app_profile_save ();
+						_app_profile_save (hwnd);
 
 						_app_editor_deletewindow (context);
 					}

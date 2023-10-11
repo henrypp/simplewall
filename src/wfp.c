@@ -2676,7 +2676,7 @@ VOID NTAPI _wfp_applythread (
 
 	_r_freelist_deleteitem (&context_free_list, context);
 
-	_app_profile_save ();
+	_app_profile_save (context->hwnd);
 
 	_r_queuedlock_releaseshared (&lock_apply);
 }

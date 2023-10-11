@@ -1045,7 +1045,7 @@ VOID _app_refreshstatus (
 	_In_ HWND hwnd
 )
 {
-	ITEM_STATUS status;
+	ITEM_STATUS status = {0};
 	PR_STRING text[STATUSBAR_PARTS_COUNT] = {0};
 	INT parts[STATUSBAR_PARTS_COUNT] = {0};
 	LONG size[STATUSBAR_PARTS_COUNT] = {0};

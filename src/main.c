@@ -32,7 +32,7 @@ BOOLEAN _app_changefilters (
 
 	_r_listview_redraw (hwnd, listview_id);
 
-	_app_profile_save ();
+	_app_profile_save (hwnd);
 
 	return FALSE;
 }
@@ -368,7 +368,7 @@ VOID _app_config_apply (
 
 			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN);
 
-			_app_profile_save ();
+			_app_profile_save (hwnd);
 
 			break;
 		}
@@ -379,7 +379,7 @@ VOID _app_config_apply (
 
 			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_COMPRESSED);
 
-			_app_profile_save ();
+			_app_profile_save (hwnd);
 
 			break;
 		}
@@ -390,7 +390,7 @@ VOID _app_config_apply (
 
 			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_ENCRYPTED);
 
-			_app_profile_save ();
+			_app_profile_save (hwnd);
 
 			break;
 		}
@@ -2376,7 +2376,7 @@ INT_PTR CALLBACK DlgProc (
 
 			DragFinish (hdrop);
 
-			_app_profile_save ();
+			_app_profile_save (hwnd);
 
 			if (!app_hash)
 				break;
@@ -2782,7 +2782,7 @@ INT_PTR CALLBACK DlgProc (
 						{
 							_app_listview_updateby_id (hwnd, listview_id, 0);
 
-							_app_profile_save ();
+							_app_profile_save (hwnd);
 						}
 					}
 
@@ -3091,7 +3091,7 @@ INT_PTR CALLBACK DlgProc (
 
 								if (NT_SUCCESS (status))
 								{
-									_app_profile_save ();
+									_app_profile_save (hwnd);
 
 									_app_changefilters (hwnd, TRUE, FALSE);
 								}
@@ -3133,7 +3133,7 @@ INT_PTR CALLBACK DlgProc (
 
 							if (SUCCEEDED (status))
 							{
-								_app_profile_save ();
+								_app_profile_save (hwnd);
 
 								// added information for export profile failure (issue #707)
 								status = _r_fs_copyfile (profile_info.profile_path->buffer, path->buffer);
@@ -3593,7 +3593,7 @@ INT_PTR CALLBACK DlgProc (
 									_app_listview_updateby_param (hwnd, app_hash, PR_SETITEM_UPDATE, TRUE);
 									_app_listview_showitemby_param (hwnd, app_hash, TRUE);
 
-									_app_profile_save ();
+									_app_profile_save (hwnd);
 								}
 
 								_r_obj_dereference (path);

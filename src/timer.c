@@ -171,7 +171,7 @@ VOID CALLBACK _app_timer_callback (
 
 	_r_obj_dereference (ptr_app);
 
-	_app_profile_save ();
+	_app_profile_save (hwnd);
 
 	if (_r_config_getboolean (L"IsNotificationsTimer", TRUE))
 	{

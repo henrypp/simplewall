@@ -1234,7 +1234,7 @@ VOID NTAPI _app_logthread (
 			if (ptr_app)
 				_app_listview_updateby_id (hwnd, ptr_app->type, PR_UPDATE_TYPE);
 
-			_app_profile_save ();
+			_app_profile_save (hwnd);
 		}
 	}
 

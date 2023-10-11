@@ -2167,7 +2167,7 @@ VOID _app_command_idtorules (
 
 	_r_obj_dereference (ptr_rule);
 
-	_app_profile_save ();
+	_app_profile_save (hwnd);
 }
 
 VOID _app_command_idtotimers (
@@ -2222,7 +2222,7 @@ VOID _app_command_idtotimers (
 
 	_app_listview_updateby_id (hwnd, listview_id, PR_UPDATE_FORCE);
 
-	_app_profile_save ();
+	_app_profile_save (hwnd);
 }
 
 VOID _app_command_logshow (
@@ -2571,7 +2571,7 @@ VOID _app_command_checkbox (
 	{
 		_app_listview_updateby_id (hwnd, listview_id, PR_UPDATE_FORCE);
 
-		_app_profile_save ();
+		_app_profile_save (hwnd);
 	}
 }
 
@@ -2782,7 +2782,7 @@ VOID _app_command_delete (
 
 	_app_listview_updateby_id (hwnd, listview_id, 0);
 
-	_app_profile_save ();
+	_app_profile_save (hwnd);
 }
 
 VOID _app_command_disable (
@@ -2832,7 +2832,7 @@ VOID _app_command_disable (
 
 	_app_listview_updateby_id (hwnd, listview_id, 0);
 
-	_app_profile_save ();
+	_app_profile_save (hwnd);
 }
 
 VOID _app_command_openeditor (
@@ -2893,7 +2893,7 @@ VOID _app_command_openeditor (
 						{
 							_app_listview_updateby_param (hwnd, ptr_network->app_hash, PR_SETITEM_UPDATE, TRUE);
 
-							_app_profile_save ();
+							_app_profile_save (hwnd);
 						}
 					}
 
@@ -2936,7 +2936,7 @@ VOID _app_command_openeditor (
 						{
 							_app_listview_updateby_param (hwnd, ptr_log->app_hash, PR_SETITEM_UPDATE, TRUE);
 
-							_app_profile_save ();
+							_app_profile_save (hwnd);
 						}
 					}
 
@@ -2970,7 +2970,7 @@ VOID _app_command_openeditor (
 			_app_listview_addruleitem (hwnd, ptr_rule, id_code, TRUE);
 			_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
-			_app_profile_save ();
+			_app_profile_save (hwnd);
 		}
 
 		_app_editor_deletewindow (context);
@@ -3016,7 +3016,7 @@ VOID _app_command_properties (
 
 			_app_listview_updateby_id (hwnd, listview_id, 0);
 
-			_app_profile_save ();
+			_app_profile_save (hwnd);
 
 			_app_editor_deletewindow (context);
 		}
@@ -3041,7 +3041,7 @@ VOID _app_command_properties (
 
 			_app_listview_updateby_id (hwnd, listview_id, 0);
 
-			_app_profile_save ();
+			_app_profile_save (hwnd);
 
 			_app_editor_deletewindow (context);
 		}
@@ -3066,7 +3066,7 @@ VOID _app_command_properties (
 				{
 					_app_listview_updateby_param (hwnd, ptr_network->app_hash, PR_SETITEM_UPDATE, TRUE);
 
-					_app_profile_save ();
+					_app_profile_save (hwnd);
 				}
 			}
 
@@ -3094,7 +3094,7 @@ VOID _app_command_properties (
 				{
 					_app_listview_updateby_param (hwnd, ptr_log->app_hash, PR_SETITEM_UPDATE, TRUE);
 
-					_app_profile_save ();
+					_app_profile_save (hwnd);
 				}
 			}
 
@@ -3175,7 +3175,8 @@ VOID _app_command_purgeunused (
 		}
 
 		_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
-		_app_profile_save ();
+
+		_app_profile_save (hwnd);
 	}
 
 	_r_obj_dereference (guids);
@@ -3233,7 +3234,7 @@ VOID _app_command_purgetimers (
 
 	_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
-	_app_profile_save ();
+	_app_profile_save (hwnd);
 }
 
 VOID _app_command_selectfont (
