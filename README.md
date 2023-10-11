@@ -332,7 +332,7 @@ Open main window, Navigate into `System rules` tab and then enable `Windows Upda
 
 #### Q: Other questions:
 - [Windows Security center integration (impossible)](https://stackoverflow.com/questions/3698285/how-can-i-tell-the-windows-security-center-that-im-an-antivirus/3698375#3698375)
-
+---
 - Website: [github.com/henrypp](https://github.com/henrypp)
 - Support: sforce5@mail.ru
 

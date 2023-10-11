@@ -54,7 +54,7 @@ Command line:
 -install -silent - enable filtering without prompt.
 -uninstall - remove all installed filters.
 
-Website: [github.com/henrypp](https://github.com/henrypp)<br />
-Support: sforce5@mail.ru<br />
+Website: https://github.com/henrypp
+Support: sforce5@mail.ru
 
 (c) 2016-2023 Henry++
