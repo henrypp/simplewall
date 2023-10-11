@@ -1354,7 +1354,8 @@ BOOLEAN _app_preparserulestring (
 		L':',
 		L'[',
 		L']',
-		L'-'
+		L'-',
+		L'/',
 	};
 
 	R_STRINGREF range_start_part;
