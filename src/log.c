@@ -304,7 +304,7 @@ VOID _app_logwrite_ui (
 	_r_obj_addhashtablepointer (log_table, log_hash, _r_obj_reference (ptr_log));
 	_r_queuedlock_releaseexclusive (&lock_loglist);
 
-	_app_listview_addlogitem (hwnd, ptr_log, log_hash);
+	_app_listview_addlogitem (hwnd, log_hash);
 
 	_app_queue_resolver (hwnd, IDC_LOG, log_hash, ptr_log);
 
@@ -1143,7 +1143,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 	return TRUE;
 }
 
-// win8+ callback
+// win81+ callback
 VOID CALLBACK _wfp_logcallback1 (
 	_In_opt_ PVOID context,
 	_In_ const FWPM_NET_EVENT2* event_data
@@ -1248,8 +1248,7 @@ VOID NTAPI _app_logthread (
 	is_exludeallow = !(ptr_log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE));
 	is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
 
-	is_exludeblocklist = !(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) &&
-		!(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE));
+	is_exludeblocklist = !(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE));
 
 	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth && is_exludeallow)
 	{

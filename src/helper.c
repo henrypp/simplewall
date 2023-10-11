@@ -1111,7 +1111,7 @@ VOID _app_generate_rulescontrol (
 					if (!ptr_rule)
 						continue;
 
-					is_global = (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps));
+					is_global = (ptr_rule->is_enabled && _r_obj_isempty (ptr_rule->apps));
 					is_enabled = is_global || (ptr_rule->is_enabled && (_r_obj_findhashtable (ptr_rule->apps, app_hash)));
 
 					if (ptr_rule->type != DATA_RULE_USER)
@@ -1223,7 +1223,7 @@ BOOLEAN _app_setruletoapp (
 	{
 		_r_obj_removehashtableitem (ptr_rule->apps, ptr_app->app_hash);
 
-		if (_r_obj_ishashtableempty (ptr_rule->apps))
+		if (_r_obj_isempty (ptr_rule->apps))
 			_app_ruleenable (ptr_rule, FALSE, TRUE);
 	}
 

@@ -5,7 +5,7 @@
 
 BOOLEAN _app_istimersactive ()
 {
-	PITEM_APP ptr_app;
+	PITEM_APP ptr_app = NULL;
 	ULONG_PTR enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
@@ -58,10 +58,10 @@ VOID _app_timer_set (
 
 		_r_unixtime_to_filetime (current_time + seconds, &file_time);
 
+		_r_calc_filetime2largeinteger (&file_time, &li);
+
 		if (ptr_app->htimer)
 		{
-			_r_calc_filetime2largeinteger (&file_time, &li);
-
 			TpSetTimerEx (ptr_app->htimer, &li, 0, 0);
 
 			is_created = TRUE;
@@ -72,8 +72,6 @@ VOID _app_timer_set (
 
 			if (NT_SUCCESS (status))
 			{
-				_r_calc_filetime2largeinteger (&file_time, &li);
-
 				TpSetTimerEx (htimer, &li, 0, 0);
 
 				ptr_app->htimer = htimer;

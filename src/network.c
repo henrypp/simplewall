@@ -683,7 +683,7 @@ VOID _app_network_printlistviewtable (
 		if (!string)
 			continue;
 
-		_app_listview_addnetworkitem (network_context->hwnd, ptr_network, network_hash);
+		_app_listview_addnetworkitem (network_context->hwnd, network_hash);
 
 		if (ptr_network->path && ptr_network->app_hash)
 			_app_queue_fileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);

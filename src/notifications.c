@@ -1406,7 +1406,7 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						_r_obj_removehashtableitem (ptr_rule->apps, app_hash);
 
-						if (_r_obj_ishashtableempty (ptr_rule->apps))
+						if (_r_obj_isempty (ptr_rule->apps))
 							_app_ruleenable (ptr_rule, FALSE, TRUE);
 					}
 					else

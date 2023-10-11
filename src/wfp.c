@@ -222,14 +222,12 @@ BOOLEAN _wfp_initialize (
 	FWPM_PROVIDER provider;
 	FWPM_SUBLAYER sublayer;
 	FWP_VALUE val;
-	FWP_VALUE0* fwp_query;
+	FWP_VALUE0* fwp_query = NULL;
 	ULONG status;
-	BOOLEAN is_success;
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
 	BOOLEAN is_intransact;
-
-	is_success = TRUE; // already initialized
+	BOOLEAN is_success = TRUE; // already initialized
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
@@ -263,6 +261,7 @@ BOOLEAN _wfp_initialize (
 				if (is_intransact)
 				{
 					FwpmTransactionAbort (engine_handle);
+
 					is_intransact = FALSE;
 				}
 
@@ -302,6 +301,7 @@ BOOLEAN _wfp_initialize (
 				if (is_intransact)
 				{
 					FwpmTransactionAbort (engine_handle);
+
 					is_intransact = FALSE;
 				}
 
@@ -336,8 +336,6 @@ BOOLEAN _wfp_initialize (
 	// dropped packets logging (win7+)
 	if (!config.is_neteventset)
 	{
-		fwp_query = NULL;
-
 		// query net events state
 		config.is_neteventenabled = FALSE;
 
@@ -411,9 +409,9 @@ VOID _wfp_uninitialize (
 	PR_ARRAY callouts;
 	PR_STRING string;
 	LPCGUID guid;
-	FWP_VALUE val;
-	ULONG status;
+	FWP_VALUE val = {0};
 	BOOLEAN is_intransact;
+	ULONG status;
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
@@ -423,8 +421,6 @@ VOID _wfp_uninitialize (
 
 	if (!config.is_neteventenabled && config.is_neteventset)
 	{
-		RtlZeroMemory (&val, sizeof (val));
-
 		val.type = FWP_UINT32;
 		val.uint32 = FALSE;
 
@@ -478,17 +474,13 @@ VOID _wfp_uninitialize (
 		status = FwpmSubLayerDeleteByKey (engine_handle, &GUID_WfpSublayer);
 
 		if (status != ERROR_SUCCESS && status != FWP_E_SUBLAYER_NOT_FOUND)
-		{
 			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmSubLayerDeleteByKey", status, NULL);
-		}
 
 		// destroy provider
 		status = FwpmProviderDeleteByKey (engine_handle, &GUID_WfpProvider);
 
 		if (status != ERROR_SUCCESS && status != FWP_E_PROVIDER_NOT_FOUND)
-		{
 			_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmProviderDeleteByKey", status, NULL);
-		}
 
 		if (is_intransact)
 			_wfp_transact_commit (engine_handle, DBG_ARG);
@@ -565,7 +557,7 @@ VOID _wfp_installfilters (
 
 	_r_queuedlock_releaseshared (&lock_apps);
 
-	if (!_r_obj_islistempty2 (rules))
+	if (!_r_obj_isempty2 (rules))
 	{
 		_wfp_create3filters (engine_handle, rules, DBG_ARG, is_intransact);
 
@@ -588,7 +580,7 @@ VOID _wfp_installfilters (
 
 	_r_queuedlock_releaseshared (&lock_rules);
 
-	if (!_r_obj_islistempty2 (rules))
+	if (!_r_obj_isempty2 (rules))
 	{
 		_wfp_create4filters (engine_handle, rules, DBG_ARG, is_intransact);
 
@@ -1394,7 +1386,7 @@ BOOLEAN _wfp_create4filters (
 	ULONG_PTR enum_key;
 	BOOLEAN is_enabled;
 
-	if (_r_obj_islistempty (rules))
+	if (_r_obj_isempty (rules))
 		return FALSE;
 
 	is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
@@ -1413,7 +1405,7 @@ BOOLEAN _wfp_create4filters (
 			if (!ptr_rule)
 				continue;
 
-			if (!_r_obj_isarrayempty (ptr_rule->guids))
+			if (!_r_obj_isempty (ptr_rule->guids))
 			{
 				_r_obj_addarrayitems (guids, ptr_rule->guids->items, ptr_rule->guids->count);
 
@@ -1514,7 +1506,7 @@ BOOLEAN _wfp_create4filters (
 				}
 			}
 
-			if (!_r_obj_ishashtableempty (ptr_rule->apps))
+			if (!_r_obj_isempty (ptr_rule->apps))
 			{
 				enum_key = 0;
 
@@ -1614,7 +1606,7 @@ BOOLEAN _wfp_create3filters (
 	PR_STRING string;
 	BOOLEAN is_enabled;
 
-	if (_r_obj_islistempty (rules))
+	if (_r_obj_isempty (rules))
 		return FALSE;
 
 	if (!is_intransact && _wfp_isfiltersapplying ())
@@ -1630,7 +1622,7 @@ BOOLEAN _wfp_create3filters (
 		{
 			ptr_app = _r_obj_getlistitem (rules, i);
 
-			if (ptr_app && !_r_obj_isarrayempty (ptr_app->guids))
+			if (ptr_app && !_r_obj_isempty (ptr_app->guids))
 			{
 				_r_obj_addarrayitems (guids, ptr_app->guids->items, ptr_app->guids->count);
 
@@ -1769,7 +1761,7 @@ BOOLEAN _wfp_create2filters (
 
 	if (!is_intransact)
 	{
-		if (!_r_obj_isarrayempty (filter_ids))
+		if (!_r_obj_isempty (filter_ids))
 		{
 			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 			{
@@ -1784,7 +1776,7 @@ BOOLEAN _wfp_create2filters (
 		is_intransact = !_wfp_transact_start (engine_handle, DBG_ARG_VAR);
 	}
 
-	if (!_r_obj_isarrayempty (filter_ids))
+	if (!_r_obj_isempty (filter_ids))
 	{
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 		{
@@ -2333,8 +2325,7 @@ BOOLEAN _wfp_create2filters (
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
 		fwfc[0].matchType = FWP_MATCH_FLAGS_NONE_SET;
 		fwfc[0].conditionValue.type = FWP_UINT32;
-		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_OUTBOUND_PASS_THRU |
-			FWP_CONDITION_FLAG_IS_INBOUND_PASS_THRU;
+		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_OUTBOUND_PASS_THRU | FWP_CONDITION_FLAG_IS_INBOUND_PASS_THRU;
 
 		_wfp_createfilter (
 			engine_handle,
@@ -2493,9 +2484,9 @@ ULONG _wfp_dumpcallouts (
 	_Outptr_ PR_ARRAY_PTR out_buffer
 )
 {
-	FWPM_CALLOUT **callouts_enum;
+	FWPM_CALLOUT **callouts_enum = NULL;
 	FWPM_CALLOUT *callout;
-	PR_ARRAY guids;
+	PR_ARRAY guids = NULL;
 	HANDLE enum_handle = NULL;
 	ULONG status;
 	UINT32 return_count;
@@ -2506,9 +2497,6 @@ ULONG _wfp_dumpcallouts (
 
 	if (status != ERROR_SUCCESS)
 		return status;
-
-	callouts_enum = NULL;
-	guids = NULL;
 
 	status = FwpmCalloutEnum (engine_handle, enum_handle, UINT32_MAX, &callouts_enum, &return_count);
 
@@ -2535,7 +2523,7 @@ ULONG _wfp_dumpcallouts (
 			_r_obj_addarrayitem (guids, &callout->calloutKey);
 	}
 
-	if (_r_obj_isarrayempty2 (guids))
+	if (_r_obj_isempty2 (guids))
 	{
 		status = ERROR_NOT_FOUND;
 
@@ -2585,6 +2573,7 @@ ULONG _wfp_dumpfilters (
 	if (!filters_enum)
 	{
 		status = ERROR_NOT_FOUND;
+
 		goto CleanupExit;
 	}
 
@@ -2601,7 +2590,7 @@ ULONG _wfp_dumpfilters (
 			_r_obj_addarrayitem (guids, &filter->filterKey);
 	}
 
-	if (_r_obj_isarrayempty2 (guids))
+	if (_r_obj_isempty2 (guids))
 	{
 		status = ERROR_NOT_FOUND;
 

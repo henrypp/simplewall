@@ -132,20 +132,20 @@ VOID _app_listview_addappitem (
 
 	listview_id = _app_listview_getbytype (ptr_app->type);
 
-	if (listview_id)
-	{
-		item_id = _r_listview_getitemcount (hwnd, listview_id);
+	if (!listview_id)
+		return;
 
-		_app_listview_lock (hwnd, listview_id, TRUE);
+	item_id = _r_listview_getitemcount (hwnd, listview_id);
 
-		listview_context = _app_listview_createcontext (ptr_app->app_hash);
+	_app_listview_lock (hwnd, listview_id, TRUE);
 
-		_r_listview_additem_ex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
+	listview_context = _app_listview_createcontext (ptr_app->app_hash);
 
-		_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
+	_r_listview_additem_ex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
 
-		_app_listview_lock (hwnd, listview_id, FALSE);
-	}
+	_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
+
+	_app_listview_lock (hwnd, listview_id, FALSE);
 }
 
 VOID _app_listview_addruleitem (
@@ -179,14 +179,11 @@ VOID _app_listview_addruleitem (
 
 VOID _app_listview_addnetworkitem (
 	_In_ HWND hwnd,
-	_In_ PITEM_NETWORK ptr_network,
 	_In_ ULONG_PTR network_hash
 )
 {
 	LPARAM listview_context;
 	INT item_id;
-
-	UNREFERENCED_PARAMETER (ptr_network);
 
 	item_id = _r_listview_getitemcount (hwnd, IDC_NETWORK);
 
@@ -197,14 +194,11 @@ VOID _app_listview_addnetworkitem (
 
 VOID _app_listview_addlogitem (
 	_In_ HWND hwnd,
-	_In_opt_ PITEM_LOG ptr_log,
 	_In_ ULONG_PTR log_hash
 )
 {
 	LPARAM listview_context;
 	INT item_id;
-
-	UNREFERENCED_PARAMETER (ptr_log);
 
 	item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
 
@@ -398,10 +392,8 @@ VOID _app_listview_showitemby_param (
 	_In_ BOOLEAN is_app
 )
 {
-	INT listview_id;
+	INT listview_id = 0;
 	INT item_id;
-
-	listview_id = 0;
 
 	if (is_app)
 	{
@@ -418,6 +410,7 @@ VOID _app_listview_showitemby_param (
 	if (listview_id != _app_listview_getcurrent (hwnd))
 	{
 		_app_listview_sort (hwnd, listview_id);
+
 		_app_listview_resize (hwnd, listview_id);
 	}
 
@@ -426,6 +419,7 @@ VOID _app_listview_showitemby_param (
 	if (item_id != -1)
 	{
 		_app_listview_showitemby_id (hwnd, listview_id, item_id, -1);
+
 		_r_wnd_toggle (hwnd, TRUE);
 	}
 }
@@ -607,11 +601,11 @@ VOID _app_listview_refreshgroups (
 	UINT group4_title;
 	UINT group5_title;
 	INT total_count;
-	INT group1_count;
-	INT group2_count;
-	INT group3_count;
-	INT group4_count;
-	INT group5_count;
+	INT group1_count = 0;
+	INT group2_count = 0;
+	INT group3_count = 0;
+	INT group4_count = 0;
+	INT group5_count = 0;
 	INT group_id;
 	BOOLEAN is_rules;
 
@@ -656,12 +650,6 @@ VOID _app_listview_refreshgroups (
 	{
 		return;
 	}
-
-	group1_count = 0;
-	group2_count = 0;
-	group3_count = 0;
-	group4_count = 0;
-	group5_count = 0;
 
 	total_count = _r_listview_getitemcount (hwnd, listview_id);
 
@@ -767,16 +755,16 @@ VOID _app_listview_resize_ex (
 	PR_STRING column_text;
 	PR_STRING item_text;
 	HWND hlistview;
-	HWND hheader;
-	HDC hdc_listview;
-	HDC hdc_header;
+	HWND hheader = NULL;
+	HDC hdc_listview = NULL;
+	HDC hdc_header = NULL;
 	LONG dpi_value;
 	INT column_count;
 	INT item_count;
 	INT column_width;
 	INT text_width;
-	INT calculated_width;
-	INT column_general_id;
+	INT calculated_width = 0;
+	INT column_general_id = 0; // set general column id
 	INT total_width;
 	INT max_width;
 	INT spacing;
@@ -784,10 +772,6 @@ VOID _app_listview_resize_ex (
 
 	if (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE))
 		return;
-
-	hheader = NULL;
-	hdc_listview = NULL;
-	hdc_header = NULL;
 
 	hlistview = GetDlgItem (hwnd, listview_id);
 
@@ -814,9 +798,6 @@ VOID _app_listview_resize_ex (
 
 	_r_dc_fixfont (hdc_listview, hlistview, 0); // fix
 	_r_dc_fixfont (hdc_header, hheader, 0); // fix
-
-	calculated_width = 0;
-	column_general_id = 0; // set general column id
 
 	is_tableview = (_r_listview_getview (hwnd, listview_id) == LV_VIEW_DETAILS);
 
@@ -865,6 +846,7 @@ VOID _app_listview_resize_ex (
 					if (text_width >= max_width)
 					{
 						column_width = max_width;
+
 						break;
 					}
 
@@ -974,7 +956,7 @@ INT CALLBACK _app_listview_compare_callback (
 	ULONG_PTR context2;
 	LONG column_id;
 	INT listview_id;
-	INT result;
+	INT result = 0;
 	INT item_id1;
 	INT item_id2;
 	PR_STRING item_text_1;
@@ -1006,8 +988,6 @@ INT CALLBACK _app_listview_compare_callback (
 
 	column_id = _r_config_getlong_ex (L"SortColumn", 0, config_name);
 	is_descend = _r_config_getboolean_ex (L"SortIsDescending", FALSE, config_name);
-
-	result = 0;
 
 	if ((_r_listview_getstyle_ex (hwnd, listview_id) & LVS_EX_CHECKBOXES) != 0)
 	{

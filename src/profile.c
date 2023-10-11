@@ -825,7 +825,7 @@ VOID _app_getcount (
 
 		if (ptr_rule->type == DATA_RULE_USER)
 		{
-			if (ptr_rule->is_enabled && !_r_obj_ishashtableempty (ptr_rule->apps))
+			if (ptr_rule->is_enabled && !_r_obj_isempty (ptr_rule->apps))
 				status->rules_global_count += 1;
 
 			if (ptr_rule->is_readonly)
@@ -863,7 +863,7 @@ COLORREF _app_getrulecolor (
 	{
 		color_hash = config.color_invalid;
 	}
-	else if (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps)))
+	else if (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && (ptr_rule->is_forservices || !_r_obj_isempty (ptr_rule->apps)))
 	{
 		color_hash = config.color_special;
 	}
@@ -961,7 +961,7 @@ VOID _app_ruleremoveapp (
 	if (!_r_obj_removehashtableitem (ptr_rule->apps, app_hash))
 		return;
 
-	if (ptr_rule->is_enabled && _r_obj_ishashtableempty (ptr_rule->apps))
+	if (ptr_rule->is_enabled && _r_obj_isempty (ptr_rule->apps))
 	{
 		ptr_rule->is_enabled = FALSE;
 		ptr_rule->is_haveerrors = FALSE;

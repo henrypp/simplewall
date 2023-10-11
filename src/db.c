@@ -162,7 +162,7 @@ NTSTATUS _app_db_ishashvalid (
 	}
 	else
 	{
-		status = STATUS_HASH_NOT_PRESENT;
+		status = STATUS_INVALID_IMAGE_HASH;
 	}
 
 	_r_obj_dereference (new_hash_bytes);
@@ -306,7 +306,7 @@ VOID _app_db_parse_rule (
 	PR_STRING rule_local;
 	PR_STRING path_string;
 	PR_STRING string;
-	PITEM_RULE_CONFIG ptr_config;
+	PITEM_RULE_CONFIG ptr_config = NULL;
 	LONG blocklist_spy_state;
 	LONG blocklist_update_state;
 	LONG blocklist_extra_state;
@@ -382,8 +382,6 @@ VOID _app_db_parse_rule (
 	}
 
 	// load rules config
-	ptr_config = NULL;
-
 	is_internal = (type == DATA_RULE_BLOCKLIST || type == DATA_RULE_SYSTEM || type == DATA_RULE_SYSTEM_USER);
 
 	if (is_internal)
@@ -462,7 +460,7 @@ VOID _app_db_parse_rule (
 		// Check if no app is added into rule, then disable it!
 		if (ptr_rule->is_enabled)
 		{
-			if (_r_obj_ishashtableempty (ptr_rule->apps))
+			if (_r_obj_isempty (ptr_rule->apps))
 				ptr_rule->is_enabled = FALSE;
 		}
 	}
@@ -954,6 +952,7 @@ FORCEINLINE VOID _app_db_writeelementstart (
 )
 {
 	_r_xml_writewhitespace (&db_info->xml_library, L"\n\t");
+
 	_r_xml_writestartelement (&db_info->xml_library, name);
 }
 
@@ -962,6 +961,7 @@ FORCEINLINE VOID _app_db_writeelementend (
 )
 {
 	_r_xml_writewhitespace (&db_info->xml_library, L"\n\t");
+
 	_r_xml_writeendelement (&db_info->xml_library);
 }
 
@@ -1068,7 +1068,7 @@ VOID _app_db_save_rule (
 			_r_xml_setattribute_long (&db_info->xml_library, L"version", ptr_rule->af);
 
 		// add apps attribute
-		if (!_r_obj_ishashtableempty (ptr_rule->apps))
+		if (!_r_obj_isempty (ptr_rule->apps))
 		{
 			apps_string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
 
@@ -1125,7 +1125,7 @@ VOID _app_db_save_ruleconfig (
 		{
 			is_enabled_default = !!ptr_rule->is_enabled_default;
 
-			if (ptr_rule->type == DATA_RULE_USER && !_r_obj_ishashtableempty (ptr_rule->apps))
+			if (ptr_rule->type == DATA_RULE_USER && !_r_obj_isempty (ptr_rule->apps))
 				apps_string = _app_rulesexpandapps (ptr_rule, FALSE, DIVIDER_APP);
 
 			_r_obj_dereference (ptr_rule);

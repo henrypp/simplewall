@@ -276,16 +276,28 @@ PR_STRING _app_gettooltipbylparam (
 
 	_r_obj_initializestringbuilder (&sb, 512);
 
-	if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) || listview_id == IDC_RULE_APPS_ID)
+	switch (listview_id)
 	{
-		_app_getapptooltipstring (&sb, lparam, NULL, NULL);
-	}
-	else if ((listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM) || listview_id == IDC_APP_RULES_ID)
-	{
-		ptr_rule = _app_getrulebyid (lparam);
-
-		if (ptr_rule)
+		case IDC_APPS_PROFILE:
+		case IDC_APPS_SERVICE:
+		case IDC_APPS_UWP:
+		case IDC_RULE_APPS_ID:
 		{
+			_app_getapptooltipstring (&sb, lparam, NULL, NULL);
+
+			break;
+		}
+
+		case  IDC_RULES_BLOCKLIST:
+		case  IDC_RULES_SYSTEM:
+		case  IDC_RULES_CUSTOM:
+		case  IDC_APP_RULES_ID:
+		{
+			ptr_rule = _app_getrulebyid (lparam);
+
+			if (!ptr_rule)
+				break;
+
 			string1 = _app_rulesexpandrules (ptr_rule->rule_remote, SZ_CRLF SZ_TAB);
 			string2 = _app_rulesexpandrules (ptr_rule->rule_local, SZ_CRLF SZ_TAB);
 
@@ -310,7 +322,7 @@ PR_STRING _app_gettooltipbylparam (
 				_r_obj_dereference (string2);
 
 			// rule apps
-			if (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps))
+			if (ptr_rule->is_forservices || !_r_obj_isempty (ptr_rule->apps))
 			{
 				string1 = _app_rulesexpandapps (ptr_rule, TRUE, SZ_TAB_CRLF);
 
@@ -348,28 +360,36 @@ PR_STRING _app_gettooltipbylparam (
 			}
 
 			_r_obj_dereference (ptr_rule);
-		}
-	}
-	else if (listview_id == IDC_NETWORK)
-	{
-		ptr_network = _app_network_getitem (lparam);
 
-		if (ptr_network)
+			break;
+		}
+
+		case IDC_NETWORK:
 		{
+			ptr_network = _app_network_getitem (lparam);
+
+			if (!ptr_network)
+				break;
+
 			_app_getapptooltipstring (&sb, ptr_network->app_hash, ptr_network, NULL);
 
 			_r_obj_dereference (ptr_network);
-		}
-	}
-	else if (listview_id == IDC_LOG)
-	{
-		ptr_log = _app_getlogitem (lparam);
 
-		if (ptr_log)
+			break;
+		}
+
+		case IDC_LOG:
 		{
+			ptr_log = _app_getlogitem (lparam);
+
+			if (!ptr_log)
+				break;
+
 			_app_getapptooltipstring (&sb, ptr_log->app_hash, NULL, ptr_log);
 
 			_r_obj_dereference (ptr_log);
+
+			break;
 		}
 	}
 
@@ -467,12 +487,9 @@ HBITMAP _app_getstatebitmap (
 		{
 			return config.hbmp_enable;
 		}
-
-		default:
-		{
-			return NULL;
-		}
 	}
+
+	return NULL;
 }
 
 INT _app_getstateicon (
@@ -486,13 +503,9 @@ INT _app_getstateicon (
 		{
 			return IDI_ACTIVE;
 		}
-
-		//case INSTALL_DISABLED:
-		default:
-		{
-			return IDI_INACTIVE;
-		}
 	}
+
+	return IDI_INACTIVE;
 }
 
 LPCWSTR _app_getstatelocale (

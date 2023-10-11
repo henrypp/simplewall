@@ -1915,7 +1915,7 @@ INT_PTR CALLBACK EditorProc (
 					// apply filter
 					if (rules)
 					{
-						if (!_r_obj_islistempty2 (rules) && _wfp_isfiltersinstalled ())
+						if (!_r_obj_isempty2 (rules) && _wfp_isfiltersinstalled ())
 						{
 							hengine = _wfp_getenginehandle ();
 
