@@ -830,7 +830,7 @@ LONG _app_verifyfilefromcatalog (
 	PR_STRING file_hash_tag;
 	PVOID file_hash;
 	ULONG file_hash_length;
-	LONG status = TRUST_E_FAIL;
+	LONG status;
 
 	*signature_string = NULL;
 
@@ -1020,8 +1020,7 @@ VOID _app_getfilehashinfo (
 
 	status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, NULL, hfile, &string);
 
-	if (NT_SUCCESS (status))
-		_r_obj_movereference (&ptr_app->hash, string);
+	_r_obj_movereference (&ptr_app->hash, string);
 }
 
 ULONG_PTR _app_addcolor (
@@ -1070,7 +1069,7 @@ VOID _app_generate_rulescontrol (
 	_In_opt_ PITEM_LOG ptr_log
 )
 {
-	ITEM_STATUS status;
+	ITEM_STATUS status = {0};
 	WCHAR buffer[128];
 	PITEM_RULE ptr_rule;
 	ULONG_PTR limit_group;
@@ -1165,11 +1164,9 @@ VOID _app_generate_timerscontrol (
 	LONG64 timestamp;
 	PR_STRING interval_string;
 	UINT index;
-	BOOLEAN is_checked;
+	BOOLEAN is_checked = FALSE;
 
 	current_time = _r_unixtime_now ();
-
-	is_checked = FALSE;
 
 	_app_getappinfobyhash (app_hash, INFO_TIMER, &app_time, sizeof (app_time));
 
@@ -1189,6 +1186,7 @@ VOID _app_generate_timerscontrol (
 		if (!is_checked && (app_time > current_time) && (app_time <= (current_time + timestamp)))
 		{
 			_r_menu_checkitem (hsubmenu, IDX_TIMER, index, MF_BYCOMMAND, index);
+
 			is_checked = TRUE;
 		}
 
@@ -1252,8 +1250,8 @@ BOOLEAN _app_parsenetworkstring (
 	ULONG mask;
 	ULONG types;
 	ULONG status;
-	USHORT range_port1;
-	USHORT range_port2;
+	USHORT range_port1 = 0;
+	USHORT range_port2 = 0;
 	USHORT port;
 	BYTE prefix_length;
 
@@ -1261,9 +1259,6 @@ BOOLEAN _app_parsenetworkstring (
 
 	if (address->is_range)
 	{
-		range_port1 = 0;
-		range_port2 = 0;
-
 		status = ParseNetworkString (address->range_start, types, &ni, &range_port1, NULL);
 
 		if (status != ERROR_SUCCESS)
@@ -1359,9 +1354,7 @@ BOOLEAN _app_preparserulestring (
 		L':',
 		L'[',
 		L']',
-		L'/',
-		L'-',
-		L'_',
+		L'-'
 	};
 
 	R_STRINGREF range_start_part;
@@ -1385,6 +1378,7 @@ BOOLEAN _app_preparserulestring (
 			if (rule->buffer[i] == valid_chars[j])
 			{
 				is_valid = TRUE;
+
 				break;
 			}
 		}
@@ -1417,6 +1411,7 @@ BOOLEAN _app_preparserulestring (
 			if (!_r_str_isdigit (rule->buffer[i]) && rule->buffer[i] != DIVIDER_RULE_RANGE)
 			{
 				address->type = DATA_UNKNOWN;
+
 				break;
 			}
 		}
@@ -1436,6 +1431,7 @@ BOOLEAN _app_preparserulestring (
 			ParseNetworkString (address->range_end, types, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
 			address->type = DATA_TYPE_IP;
+
 			return TRUE;
 		}
 	}
@@ -1444,6 +1440,7 @@ BOOLEAN _app_preparserulestring (
 		if (ParseNetworkString (rule_string, types, NULL, NULL, NULL) == ERROR_SUCCESS)
 		{
 			address->type = DATA_TYPE_IP;
+
 			return TRUE;
 		}
 	}
@@ -1673,11 +1670,7 @@ NTSTATUS NTAPI _app_timercallback (
 					_r_obj_movereference (&ptr_app->hash, hash);
 
 					if (_r_config_getboolean (L"IsEnableAppMonitor", FALSE))
-					{
-						_app_setappinfo (ptr_app, INFO_DISABLE, IntToPtr (0));
-
-						_r_obj_cleararray (ptr_app->guids);
-					}
+						_app_setappinfo (ptr_app, INFO_DISABLE, NULL);
 				}
 				else
 				{
@@ -1896,6 +1889,7 @@ VOID NTAPI _app_queuenotifyinformation (
 		{
 			// set file icon
 			_app_notify_setapp_icon (context->hwnd, hicon, TRUE);
+
 			is_iconset = TRUE;
 
 			// set signature information
@@ -2027,9 +2021,7 @@ HBITMAP _app_bitmapfrompng (
 	status = _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, width, width, &result);
 
 	if (SUCCEEDED (status))
-	{
 		return result;
-	}
 
 	return NULL;
 }
@@ -2047,8 +2039,8 @@ VOID _app_wufixhelper (
 	SC_HANDLE hsvc;
 	PR_STRING image_path;
 	HANDLE hkey;
+	BOOLEAN is_enabled = FALSE;
 	NTSTATUS status;
-	BOOLEAN is_enabled;
 
 	_r_str_printf (
 		reg_key,
@@ -2059,12 +2051,10 @@ VOID _app_wufixhelper (
 
 	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, reg_key, KEY_READ | KEY_WRITE, &hkey);
 
-	if (status != ERROR_SUCCESS)
+	if (!NT_SUCCESS (status))
 		return;
 
 	// query service path
-	is_enabled = FALSE;
-
 	status = _r_reg_querystring (hkey, L"ImagePath", &image_path);
 
 	if (NT_SUCCESS (status))
