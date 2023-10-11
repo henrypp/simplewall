@@ -1,3 +1,11 @@
+v3.7.3 (11 October 2023)
+- added error message for saving profile
+- removed redistributable package requirement (issue #1587)
+- fixed profile was not found message (issue #1557)
+- fixed crash on reading version information
+- revert back certificates checking option
+- updated project sdk
+
 v3.7.2 (21 September 2023)
 - dropped windows 7 and windows 8 support
 - fixed launch of several copies of the application (issue #1547)
