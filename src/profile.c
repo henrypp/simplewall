@@ -7,11 +7,11 @@ _Success_ (return)
 BOOLEAN _app_getappinfo (
 	_In_ PITEM_APP ptr_app,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 )
 {
-	RtlZeroMemory (buffer, size);
+	RtlZeroMemory (buffer, length);
 
 	switch (info_data)
 	{
@@ -19,14 +19,14 @@ BOOLEAN _app_getappinfo (
 		{
 			PVOID ptr;
 
-			if (size != sizeof (PVOID))
+			if (length != sizeof (PVOID))
 				return FALSE;
 
 			if (ptr_app->real_path)
 			{
 				ptr = _r_obj_reference (ptr_app->real_path);
 
-				RtlCopyMemory (buffer, &ptr, size);
+				RtlCopyMemory (buffer, &ptr, length);
 
 				return TRUE;
 			}
@@ -38,14 +38,14 @@ BOOLEAN _app_getappinfo (
 		{
 			PVOID ptr;
 
-			if (size != sizeof (PVOID))
+			if (length != sizeof (PVOID))
 				return FALSE;
 
 			if (ptr_app->display_name)
 			{
 				ptr = _r_obj_reference (ptr_app->display_name);
 
-				RtlCopyMemory (buffer, &ptr, size);
+				RtlCopyMemory (buffer, &ptr, length);
 
 				return TRUE;
 			}
@@ -53,7 +53,7 @@ BOOLEAN _app_getappinfo (
 			{
 				ptr = _r_obj_reference (ptr_app->original_path);
 
-				RtlCopyMemory (buffer, &ptr, size);
+				RtlCopyMemory (buffer, &ptr, length);
 
 				return TRUE;
 			}
@@ -65,14 +65,14 @@ BOOLEAN _app_getappinfo (
 		{
 			PVOID ptr;
 
-			if (size != sizeof (PVOID))
+			if (length != sizeof (PVOID))
 				return FALSE;
 
 			if (ptr_app->hash)
 			{
 				ptr = _r_obj_reference (ptr_app->hash);
 
-				RtlCopyMemory (buffer, &ptr, size);
+				RtlCopyMemory (buffer, &ptr, length);
 
 				return TRUE;
 			}
@@ -82,20 +82,20 @@ BOOLEAN _app_getappinfo (
 
 		case INFO_TIMESTAMP:
 		{
-			if (size != sizeof (LONG64))
+			if (length != sizeof (LONG64))
 				return FALSE;
 
-			RtlCopyMemory (buffer, &ptr_app->timestamp, size);
+			RtlCopyMemory (buffer, &ptr_app->timestamp, length);
 
 			return TRUE;
 		}
 
 		case INFO_TIMER:
 		{
-			if (size != sizeof (LONG64))
+			if (length != sizeof (LONG64))
 				return FALSE;
 
-			RtlCopyMemory (buffer, &ptr_app->timer, size);
+			RtlCopyMemory (buffer, &ptr_app->timer, length);
 
 			return TRUE;
 		}
@@ -104,12 +104,12 @@ BOOLEAN _app_getappinfo (
 		{
 			INT listview_id;
 
-			if (size != sizeof (INT))
+			if (length != sizeof (INT))
 				return FALSE;
 
 			listview_id = _app_listview_getbytype (ptr_app->type);
 
-			RtlCopyMemory (buffer, &listview_id, size);
+			RtlCopyMemory (buffer, &listview_id, length);
 
 			return TRUE;
 		}
@@ -118,12 +118,12 @@ BOOLEAN _app_getappinfo (
 		{
 			BOOLEAN is_enabled;
 
-			if (size != sizeof (BOOLEAN))
+			if (length != sizeof (BOOLEAN))
 				return FALSE;
 
 			is_enabled = !!ptr_app->is_enabled;
 
-			RtlCopyMemory (buffer, &is_enabled, size);
+			RtlCopyMemory (buffer, &is_enabled, length);
 
 			return TRUE;
 		}
@@ -132,12 +132,12 @@ BOOLEAN _app_getappinfo (
 		{
 			BOOLEAN is_silent;
 
-			if (size != sizeof (BOOLEAN))
+			if (length != sizeof (BOOLEAN))
 				return FALSE;
 
 			is_silent = !!ptr_app->is_silent;
 
-			RtlCopyMemory (buffer, &is_silent, size);
+			RtlCopyMemory (buffer, &is_silent, length);
 
 			return TRUE;
 		}
@@ -146,12 +146,12 @@ BOOLEAN _app_getappinfo (
 		{
 			BOOLEAN is_undeletable;
 
-			if (size != sizeof (BOOLEAN))
+			if (length != sizeof (BOOLEAN))
 				return FALSE;
 
 			is_undeletable = !!ptr_app->is_undeletable;
 
-			RtlCopyMemory (buffer, &is_undeletable, size);
+			RtlCopyMemory (buffer, &is_undeletable, length);
 
 			return TRUE;
 		}
@@ -164,19 +164,21 @@ _Success_ (return)
 BOOLEAN _app_getappinfobyhash (
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 )
 {
 	PITEM_APP ptr_app;
 	BOOLEAN is_success;
+
+	RtlZeroMemory (buffer, length);
 
 	ptr_app = _app_getappitem (app_hash);
 
 	if (!ptr_app)
 		return FALSE;
 
-	is_success = _app_getappinfo (ptr_app, info_data, buffer, size);
+	is_success = _app_getappinfo (ptr_app, info_data, buffer, length);
 
 	_r_obj_dereference (ptr_app);
 
@@ -189,8 +191,6 @@ VOID _app_setappinfo (
 	_In_opt_ PVOID value
 )
 {
-	LONG64 timestamp;
-
 	switch (info_data)
 	{
 		case INFO_BYTES_DATA:
@@ -213,6 +213,8 @@ VOID _app_setappinfo (
 
 		case INFO_TIMER:
 		{
+			LONG64 timestamp;
+
 			timestamp = *((PLONG64)value);
 
 			// check timer expiration
@@ -241,6 +243,8 @@ VOID _app_setappinfo (
 			engine_handle = _wfp_getenginehandle ();
 
 			_wfp_destroyfilters_array (engine_handle, ptr_app->guids, DBG_ARG);
+
+			_r_obj_cleararray (ptr_app->guids);
 
 			_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 
@@ -297,22 +301,24 @@ _Success_ (return)
 BOOLEAN _app_getruleinfo (
 	_In_ PITEM_RULE ptr_rule,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 )
 {
+	RtlZeroMemory (buffer, length);
+
 	switch (info_data)
 	{
 		case INFO_LISTVIEW_ID:
 		{
 			INT listview_id;
 
-			if (size != sizeof (INT))
+			if (length != sizeof (INT))
 				return FALSE;
 
 			listview_id = _app_listview_getbytype (ptr_rule->type);
 
-			RtlCopyMemory (buffer, &listview_id, size);
+			RtlCopyMemory (buffer, &listview_id, length);
 
 			return TRUE;
 		}
@@ -321,12 +327,12 @@ BOOLEAN _app_getruleinfo (
 		{
 			INT is_readonly;
 
-			if (size != sizeof (INT))
+			if (length != sizeof (INT))
 				return FALSE;
 
 			is_readonly = !!ptr_rule->is_readonly;
 
-			RtlCopyMemory (buffer, &is_readonly, size);
+			RtlCopyMemory (buffer, &is_readonly, length);
 
 			return TRUE;
 		}
@@ -339,8 +345,8 @@ _Success_ (return)
 BOOLEAN _app_getruleinfobyid (
 	_In_ ULONG_PTR index,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 )
 {
 	PITEM_RULE ptr_rule;
@@ -351,7 +357,7 @@ BOOLEAN _app_getruleinfobyid (
 	if (!ptr_rule)
 		return FALSE;
 
-	is_success = _app_getruleinfo (ptr_rule, info_data, buffer, size);
+	is_success = _app_getruleinfo (ptr_rule, info_data, buffer, length);
 
 	_r_obj_dereference (ptr_rule);
 
@@ -580,7 +586,10 @@ PITEM_RULE _app_getrulebyid (
 
 	_r_queuedlock_releaseshared (&lock_rules);
 
-	return _r_obj_referencesafe (ptr_rule);
+	if (ptr_rule)
+		return _r_obj_reference (ptr_rule);
+
+	return NULL;
 }
 
 _Ret_maybenull_
@@ -626,9 +635,7 @@ PITEM_RULE_CONFIG _app_getruleconfigitem (
 	PITEM_RULE_CONFIG ptr_rule_config;
 
 	_r_queuedlock_acquireshared (&lock_rules_config);
-
 	ptr_rule_config = _r_obj_findhashtable (rules_config, rule_hash);
-
 	_r_queuedlock_releaseshared (&lock_rules_config);
 
 	return ptr_rule_config;
@@ -642,9 +649,7 @@ PITEM_LOG _app_getlogitem (
 	PITEM_LOG ptr_log;
 
 	_r_queuedlock_acquireshared (&lock_loglist);
-
 	ptr_log = _r_obj_findhashtablepointer (log_table, log_hash);
-
 	_r_queuedlock_releaseshared (&lock_loglist);
 
 	return ptr_log;
@@ -678,12 +683,11 @@ COLORREF _app_getappcolor (
 )
 {
 	PITEM_APP ptr_app;
-	ULONG_PTR color_hash;
+	ULONG_PTR color_hash = 0;
 	BOOLEAN is_profilelist;
 	BOOLEAN is_networklist;
 
 	ptr_app = _app_getappitem (app_hash);
-	color_hash = 0;
 
 	is_profilelist = (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM);
 	is_networklist = (listview_id == IDC_NETWORK || listview_id == IDC_LOG);
@@ -693,6 +697,7 @@ COLORREF _app_getappcolor (
 		if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && !_app_isappexists (ptr_app))
 		{
 			color_hash = config.color_invalid;
+
 			goto CleanupExit;
 		}
 	}
@@ -700,12 +705,14 @@ COLORREF _app_getappcolor (
 	if (_r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors") && is_validconnection)
 	{
 		color_hash = config.color_network;
+
 		goto CleanupExit;
 	}
 
 	if (_r_config_getboolean_ex (L"IsHighlightSigned", TRUE, L"colors") && _app_isappsigned (app_hash))
 	{
 		color_hash = config.color_signed;
+
 		goto CleanupExit;
 	}
 
@@ -714,12 +721,14 @@ COLORREF _app_getappcolor (
 		if (!is_profilelist && (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && _app_isapphaverule (app_hash, FALSE)))
 		{
 			color_hash = config.color_special;
+
 			goto CleanupExit;
 		}
 
 		if (_r_config_getboolean_ex (L"IsHighlightPico", TRUE, L"colors") && ptr_app->type == DATA_APP_PICO)
 		{
 			color_hash = config.color_pico;
+
 			goto CleanupExit;
 		}
 	}
@@ -727,6 +736,7 @@ COLORREF _app_getappcolor (
 	if (_r_config_getboolean_ex (L"IsHighlightSystem", TRUE, L"colors") && is_systemapp)
 	{
 		color_hash = config.color_system;
+
 		goto CleanupExit;
 	}
 
@@ -849,13 +859,11 @@ COLORREF _app_getrulecolor (
 
 	color_hash = 0;
 
-	if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") &&
-		ptr_rule->is_enabled && ptr_rule->is_haveerrors)
+	if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
 	{
 		color_hash = config.color_invalid;
 	}
-	else if (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") &&
-			 (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps)))
+	else if (_r_config_getboolean_ex (L"IsHighlightSpecial", TRUE, L"colors") && (ptr_rule->is_forservices || !_r_obj_ishashtableempty (ptr_rule->apps)))
 	{
 		color_hash = config.color_special;
 	}
@@ -888,8 +896,8 @@ VOID _app_setruleiteminfo (
 	_In_ BOOLEAN include_apps
 )
 {
+	ULONG_PTR enum_key = 0;
 	ULONG_PTR hash_code;
-	ULONG_PTR enum_key;
 
 	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
 
@@ -897,8 +905,6 @@ VOID _app_setruleiteminfo (
 
 	if (!include_apps)
 		return;
-
-	enum_key = 0;
 
 	while (_r_obj_enumhashtable (ptr_rule->apps, NULL, &hash_code, &enum_key))
 	{
@@ -941,56 +947,6 @@ VOID _app_ruleenable (
 		}
 	}
 }
-
-//VOID _app_rulecleanapp (
-//	_In_opt_ HWND hwnd,
-//	_In_ ULONG_PTR item_id,
-//	_In_ PITEM_RULE ptr_rule,
-//	_In_opt_ ULONG_PTR app_hash
-//)
-//{
-//	PITEM_APP ptr_app;
-//	ULONG_PTR enum_key;
-//	ULONG_PTR hash_code;
-//	BOOLEAN is_remove;
-//
-//	if (ptr_rule->type != DATA_RULE_USER)
-//		return;
-//
-//	if (_r_obj_ishashtableempty (ptr_rule->apps))
-//		return;
-//
-//	if (app_hash)
-//	{
-//		_app_ruleremoveapp (hwnd, item_id, ptr_rule, app_hash);
-//	}
-//	else
-//	{
-//		enum_key = 0;
-//
-//		while (_r_obj_enumhashtable (ptr_rule->apps, NULL, &hash_code, &enum_key))
-//		{
-//			ptr_app = _app_getappitem (hash_code);
-//			is_remove = FALSE;
-//
-//			if (ptr_app)
-//			{
-//				if (!_app_isappexists (ptr_app))
-//					is_remove = TRUE;
-//
-//				_r_obj_dereference (ptr_app);
-//			}
-//			else
-//			{
-//				// app was not found, so delete iteration!
-//				is_remove = TRUE;
-//			}
-//
-//			if (is_remove)
-//				_app_ruleremoveapp (hwnd, item_id, ptr_rule, hash_code);
-//		}
-//	}
-//}
 
 VOID _app_ruleremoveapp (
 	_In_opt_ HWND hwnd,
@@ -1101,6 +1057,7 @@ VOID _app_ruleblocklistset (
 			continue;
 
 		_app_ruleenable (ptr_rule, !!ptr_rule->is_enabled, FALSE);
+
 		changes_count += 1;
 
 		if (hwnd)
@@ -1131,7 +1088,7 @@ VOID _app_ruleblocklistset (
 			}
 		}
 
-		_app_profile_save (); // required!
+		_app_profile_save (hwnd); // required!
 	}
 
 	_r_obj_dereference (rules);
@@ -1200,7 +1157,7 @@ PR_STRING _app_rulesexpandapps (
 	PR_STRING string;
 	PITEM_APP ptr_app;
 	ULONG_PTR hash_code;
-	ULONG_PTR enum_key;
+	ULONG_PTR enum_key = 0;
 
 	_r_obj_initializestringbuilder (&sr, 256);
 
@@ -1220,8 +1177,6 @@ PR_STRING _app_rulesexpandapps (
 
 		_r_obj_dereference (string);
 	}
-
-	enum_key = 0;
 
 	while (_r_obj_enumhashtable (ptr_rule->apps, NULL, &hash_code, &enum_key))
 	{
@@ -1337,10 +1292,8 @@ BOOLEAN _app_isapphavedrive (
 )
 {
 	PITEM_APP ptr_app = NULL;
-	ULONG_PTR enum_key;
+	ULONG_PTR enum_key = 0;
 	INT drive_id;
-
-	enum_key = 0;
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -1467,9 +1420,7 @@ BOOLEAN _app_isappfound (
 	BOOLEAN is_found;
 
 	_r_queuedlock_acquireshared (&lock_apps);
-
 	is_found = (_r_obj_findhashtable (apps_table, app_hash) != NULL);
-
 	_r_queuedlock_releaseshared (&lock_apps);
 
 	return is_found;
@@ -1617,18 +1568,17 @@ VOID _app_profile_load_internal (
 	_In_opt_ HWND hwnd,
 	_In_ PR_STRING path,
 	_In_ LPCWSTR resource_name,
-	_Out_ PLONG64 timestamp
+	_Out_ PLONG64 out_timestamp
 )
 {
 	DB_INFORMATION db_info_file;
 	DB_INFORMATION db_info_buffer;
 	PDB_INFORMATION db_info;
 	BOOLEAN is_loadfromresource;
+	LONG64 timestamp = 0;
 	NTSTATUS status_file;
 	NTSTATUS status_res;
 	NTSTATUS status;
-
-	*timestamp = 0;
 
 	status_file = _app_db_initialize (&db_info_file, TRUE);
 
@@ -1661,7 +1611,7 @@ VOID _app_profile_load_internal (
 	if (NT_SUCCESS (status))
 	{
 		if (_app_db_parse (db_info, XML_TYPE_PROFILE_INTERNAL))
-			*timestamp = db_info->timestamp;
+			timestamp = db_info->timestamp;
 	}
 	else
 	{
@@ -1673,6 +1623,8 @@ VOID _app_profile_load_internal (
 			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load_internal", status, NULL);
 		}
 	}
+
+	*out_timestamp = timestamp;
 
 	_app_db_destroy (&db_info_file);
 	_app_db_destroy (&db_info_buffer);
@@ -1776,7 +1728,9 @@ CleanupExit:
 	return status;
 }
 
-NTSTATUS _app_profile_save ()
+NTSTATUS _app_profile_save (
+	_In_opt_ HWND hwnd
+)
 {
 	DB_INFORMATION db_info;
 	LONG64 timestamp;
@@ -1787,6 +1741,9 @@ NTSTATUS _app_profile_save ()
 
 	if (!NT_SUCCESS (status))
 	{
+		if (hwnd)
+			_r_show_errormessage (hwnd, L"Could not save profile!", status, NULL);
+
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
 
 		return status;
@@ -1811,7 +1768,12 @@ NTSTATUS _app_profile_save ()
 	_r_queuedlock_releaseexclusive (&lock_profile);
 
 	if (!NT_SUCCESS (status))
+	{
+		if (hwnd)
+			_r_show_errormessage (hwnd, L"Could not save profile!", status, NULL);
+
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_savetofile", status, profile_info.profile_path->buffer);
+	}
 
 	_app_db_destroy (&db_info);
 

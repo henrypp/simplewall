@@ -7,16 +7,16 @@ _Success_ (return)
 BOOLEAN _app_getappinfo (
 	_In_ PITEM_APP ptr_app,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 );
 
 _Success_ (return)
 BOOLEAN _app_getappinfobyhash (
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 );
 
 VOID _app_setappinfo (
@@ -35,16 +35,16 @@ _Success_ (return)
 BOOLEAN _app_getruleinfo (
 	_In_ PITEM_RULE ptr_rule,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 );
 
 _Success_ (return)
 BOOLEAN _app_getruleinfobyid (
 	_In_ ULONG_PTR index,
 	_In_ ENUM_INFO_DATA info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 );
 
 _Success_ (return != 0)
@@ -254,7 +254,7 @@ VOID _app_profile_load_internal (
 	_In_opt_ HWND hwnd,
 	_In_ PR_STRING path,
 	_In_ LPCWSTR resource_name,
-	_Out_ PLONG64 timestamp
+	_Out_ PLONG64 out_timestamp
 );
 
 NTSTATUS _app_profile_load (
@@ -262,4 +262,6 @@ NTSTATUS _app_profile_load (
 	_In_opt_ PR_STRING path_custom
 );
 
-NTSTATUS _app_profile_save ();
+NTSTATUS _app_profile_save (
+	_In_opt_ HWND hwnd
+);
