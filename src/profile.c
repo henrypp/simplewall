@@ -207,13 +207,20 @@ VOID _app_setappinfo (
 
 		case INFO_TIMESTAMP:
 		{
+			if (!value)
+				break;
+
 			ptr_app->timestamp = *((PLONG64)value);
+
 			break;
 		}
 
 		case INFO_TIMER:
 		{
 			LONG64 timestamp;
+
+			if (!value)
+				break;
 
 			timestamp = *((PLONG64)value);
 
@@ -1615,7 +1622,7 @@ VOID _app_profile_load_internal (
 	}
 	else
 	{
-		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_OBJECT_PATH_NOT_FOUND)
 		{
 			if (hwnd)
 				_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL);
