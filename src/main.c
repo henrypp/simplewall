@@ -2417,12 +2417,12 @@ INT_PTR CALLBACK DlgProc (
 			RECT rect;
 			LONG dpi_value;
 
-			if (GetClientRect (hwnd, &rect))
-			{
-				dpi_value = _r_dc_getwindowdpi (hwnd);
+			if (!GetClientRect (hwnd, &rect))
+				break;
 
-				_app_window_resize (hwnd, &rect, dpi_value);
-			}
+			dpi_value = _r_dc_getwindowdpi (hwnd);
+
+			_app_window_resize (hwnd, &rect, dpi_value);
 
 			break;
 		}
