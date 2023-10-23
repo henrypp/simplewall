@@ -2052,7 +2052,7 @@ VOID _app_initialize ()
 
 	cache_resolution = _r_obj_createhashtablepointer (32);
 
-	config.hnotify_evt = CreateEvent (NULL, FALSE, TRUE, NULL);
+	NtCreateEvent (&config.hnotify_evt, EVENT_ALL_ACCESS, NULL, NotificationEvent, TRUE);
 }
 
 INT FirstDriveFromMask (

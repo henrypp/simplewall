@@ -285,8 +285,7 @@ ULONG_PTR _app_notify_getnextapp_id (
 
 VOID _app_notify_setapp_icon (
 	_In_ HWND hwnd,
-	_In_opt_ HICON hicon,
-	_In_ BOOLEAN is_redraw
+	_In_opt_ HICON hicon
 )
 {
 	PNOTIFY_CONTEXT context;
@@ -303,8 +302,7 @@ VOID _app_notify_setapp_icon (
 	hicon_prev = context->hicon;
 	context->hicon = hicon;
 
-	if (is_redraw)
-		RedrawWindow (hwnd, NULL, NULL, RDW_ALLCHILDREN | RDW_ERASE | RDW_INVALIDATE);
+	RedrawWindow (hwnd, NULL, NULL, RDW_ALLCHILDREN | RDW_ERASE | RDW_INVALIDATE);
 
 	if (hicon_prev)
 		DestroyIcon (hicon_prev);
@@ -335,9 +333,8 @@ VOID _app_notify_show (
 
 	WCHAR window_title[128];
 	PITEM_APP ptr_app;
-	PR_STRING string = NULL;
 	PR_STRING localized_string = NULL;
-	PR_STRING display_name;
+	PR_STRING string = NULL;
 	HDWP hdefer;
 	BOOLEAN is_fullscreenmode;
 
@@ -352,7 +349,7 @@ VOID _app_notify_show (
 
 	// set notification information
 	_app_notify_setapp_id (hwnd, ptr_log->app_hash);
-	_app_notify_setapp_icon (hwnd, NULL, FALSE);
+	_app_notify_setapp_icon (hwnd, NULL);
 
 	// set window title
 	_r_str_printf (
@@ -369,107 +366,43 @@ VOID _app_notify_show (
 
 	// print name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
+	_r_obj_movereference (&string, _app_getappdisplayname (ptr_app, TRUE));
 
-	display_name = _app_getappdisplayname (ptr_app, TRUE);
-
-	_r_ctrl_settablestring (
-		hwnd,
-		&hdefer,
-		IDC_FILE_ID,
-		&localized_string->sr,
-		IDC_FILE_TEXT,
-		display_name ? &display_name->sr : &empty_sr
-	);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, string ? &string->sr : &empty_sr);
 
 	// print signature
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
-
-	_r_ctrl_settablestring (
-		hwnd,
-		&hdefer,
-		IDC_SIGNATURE_ID,
-		&localized_string->sr,
-		IDC_SIGNATURE_TEXT,
-		&loading_sr
-	);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading_sr);
 
 	// print address
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
-
-	_r_ctrl_settablestring (
-		hwnd,
-		&hdefer,
-		IDC_ADDRESS_ID,
-		&localized_string->sr,
-		IDC_ADDRESS_TEXT,
-		&loading_sr
-	);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &loading_sr);
 
 	// print host
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
-
-	_r_ctrl_settablestring (
-		hwnd,
-		&hdefer,
-		IDC_HOST_ID,
-		&localized_string->sr,
-		IDC_HOST_TEXT,
-		&loading_sr
-	);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading_sr);
 
 	// print port
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
-
 	_r_obj_movereference (&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
 
-	_r_ctrl_settablestring (
-		hwnd,
-		&hdefer,
-		IDC_PORT_ID,
-		&localized_string->sr,
-		IDC_PORT_TEXT,
-		string ? &string->sr : &empty_sr
-	);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty_sr);
 
 	// print direction
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
-
 	_r_obj_movereference (&string, _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
 
-	_r_ctrl_settablestring (
-		hwnd,
-		&hdefer,
-		IDC_DIRECTION_ID,
-		&localized_string->sr,
-		IDC_DIRECTION_TEXT,
-		string ? &string->sr : &empty_sr
-	);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty_sr);
 
 	// print filter name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":"));
-
-	_r_ctrl_settablestring (
-		hwnd,
-		&hdefer,
-		IDC_FILTER_ID,
-		&localized_string->sr,
-		IDC_FILTER_TEXT,
-		ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty_sr
-	);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty_sr);
 
 	// print date
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
-
 	_r_obj_movereference (&string, _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
-	_r_ctrl_settablestring (
-		hwnd,
-		&hdefer,
-		IDC_DATE_ID,
-		&localized_string->sr,
-		IDC_DATE_TEXT,
-		string ? &string->sr : &empty_sr
-	);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_sr);
 
 	if (hdefer)
 		EndDeferWindowPos (hdefer);
@@ -502,9 +435,6 @@ VOID _app_notify_show (
 
 	if (localized_string)
 		_r_obj_dereference (localized_string);
-
-	if (display_name)
-		_r_obj_dereference (display_name);
 
 	_r_obj_dereference (ptr_app);
 }
@@ -595,11 +525,12 @@ VOID _app_notify_killprocess (
 
 	if (!NT_SUCCESS (status))
 	{
+		_r_show_errormessage (hwnd, L"Cannot enumerate processes!", status, NULL);
+
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_r_sys_enumprocesses", status, NULL);
 
 		return;
 	}
-
 
 	process = PR_FIRST_PROCESS (spi);
 
@@ -683,8 +614,8 @@ VOID _app_notify_setposition (
 	_In_ BOOLEAN is_forced
 )
 {
-	MONITORINFO monitor_info;
-	APPBARDATA taskbar_rect;
+	MONITORINFO monitor_info = {0};
+	APPBARDATA taskbar_rect = {0};
 	R_RECTANGLE window_rect;
 	HMONITOR hmonitor;
 	PRECT rect;
@@ -706,16 +637,12 @@ VOID _app_notify_setposition (
 
 	if (is_intray)
 	{
-		RtlZeroMemory (&monitor_info, sizeof (monitor_info));
-
 		monitor_info.cbSize = sizeof (monitor_info);
 
 		hmonitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONEAREST);
 
 		if (GetMonitorInfo (hmonitor, &monitor_info))
 		{
-			RtlZeroMemory (&taskbar_rect, sizeof (taskbar_rect));
-
 			taskbar_rect.cbSize = sizeof (taskbar_rect);
 
 			if (SHAppBarMessage (ABM_GETTASKBARPOS, &taskbar_rect))
@@ -960,7 +887,7 @@ INT_PTR CALLBACK NotificationProc (
 
 			_app_notify_show (hwnd, ptr_log);
 
-			SetEvent (config.hnotify_evt);
+			NtSetEvent (config.hnotify_evt, NULL);
 
 			_r_obj_dereference (ptr_log);
 

@@ -74,8 +74,7 @@ ULONG_PTR _app_notify_getnextapp_id (
 
 VOID _app_notify_setapp_icon (
 	_In_ HWND hwnd,
-	_In_opt_ HICON hicon,
-	_In_ BOOLEAN is_redraw
+	_In_opt_ HICON hicon
 );
 
 VOID _app_notify_setapp_id (
