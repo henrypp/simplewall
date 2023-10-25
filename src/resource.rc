@@ -790,6 +790,8 @@ BEGIN
 	IDS_PROFILE_TYPE "Profile type"
 
 	IDS_USEAPPMONITOR_CHK "Monitor apps changing"
+
+	IDS_DISABLEREMOVAL "Disable removal"
 END
 
 //
