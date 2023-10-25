@@ -233,6 +233,7 @@ VOID _app_db_parse_app (
 	PR_STRING dos_path;
 	LONG64 timestamp;
 	LONG64 timer;
+	BOOLEAN is_undeletable;
 	BOOLEAN is_enabled;
 	BOOLEAN is_silent;
 
@@ -263,6 +264,7 @@ VOID _app_db_parse_app (
 			{
 				is_enabled = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_enabled");
 				is_silent = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_silent");
+				is_undeletable = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_undeletable");
 
 				timestamp = _r_xml_getattribute_long64 (&db_info->xml_library, L"timestamp");
 				timer = _r_xml_getattribute_long64 (&db_info->xml_library, L"timer");
@@ -277,6 +279,9 @@ VOID _app_db_parse_app (
 
 				if (is_enabled)
 					_app_setappinfo (ptr_app, INFO_IS_ENABLED, IntToPtr (is_enabled));
+
+				if (is_undeletable)
+					_app_setappinfo (ptr_app, INFO_IS_UNDELETABLE, IntToPtr (is_undeletable));
 
 				if (timestamp)
 					_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
@@ -1009,6 +1014,9 @@ VOID _app_db_save_app (
 		// ffu!
 		if (ptr_app->profile)
 			_r_xml_setattribute_long (&db_info->xml_library, L"profile", ptr_app->profile);
+
+		if (ptr_app->is_undeletable)
+			_r_xml_setattribute_boolean (&db_info->xml_library, L"is_undeletable", !!ptr_app->is_undeletable);
 
 		if (ptr_app->is_silent)
 			_r_xml_setattribute_boolean (&db_info->xml_library, L"is_silent", !!ptr_app->is_silent);

@@ -688,6 +688,7 @@ VOID _app_message_contextmenu (
 				_r_menu_addsubmenu (hmenu, -1, hsubmenu_rules, _r_locale_getstring (IDS_TRAY_RULES));
 
 				_r_menu_additem (hsubmenu_rules, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
+				_r_menu_additem (hsubmenu_rules, IDM_DISABLEREMOVAL, _r_locale_getstring (IDS_DISABLEREMOVAL));
 
 				_r_menu_additem (hsubmenu_rules, 0, NULL);
 
@@ -742,6 +743,12 @@ VOID _app_message_contextmenu (
 				{
 					if (is_checked)
 						_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, is_checked);
+				}
+
+				if (_app_getappinfo (ptr_app, INFO_IS_UNDELETABLE, &is_checked, sizeof (is_checked)))
+				{
+					if (is_checked)
+						_r_menu_checkitem (hmenu, IDM_DISABLEREMOVAL, 0, MF_BYCOMMAND, is_checked);
 				}
 			}
 
@@ -2824,6 +2831,13 @@ VOID _app_command_disable (
 				new_val = !ptr_app->is_silent;
 
 			_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (new_val));
+		}
+		else if (ctrl_id == IDM_DISABLEREMOVAL)
+		{
+			if (new_val == -1)
+				new_val = !ptr_app->is_undeletable;
+
+			_app_setappinfo (ptr_app, INFO_IS_UNDELETABLE, IntToPtr (new_val));
 		}
 		else if (ctrl_id == IDM_DISABLETIMER)
 		{

@@ -3607,6 +3607,7 @@ INT_PTR CALLBACK DlgProc (
 				}
 
 				case IDM_DISABLENOTIFICATIONS:
+				case IDM_DISABLEREMOVAL:
 				case IDM_DISABLETIMER:
 				{
 					_app_command_disable (hwnd, ctrl_id);
