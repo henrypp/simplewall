@@ -673,7 +673,7 @@ BOOLEAN _app_calculatefilehash (
 	_In_opt_ LPCWSTR algorithm_id,
 	_Out_ PVOID_PTR file_hash_ptr,
 	_Out_ PULONG file_hash_length_ptr,
-	_Out_ HCATADMIN * hcat_admin_ptr
+	_Out_ HCATADMIN_PTR hcat_admin_ptr
 )
 {
 	const GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
@@ -832,15 +832,21 @@ LONG _app_verifyfilefromcatalog (
 	ULONG file_hash_length;
 	LONG status;
 
-	*signature_string = NULL;
-
 	status = _r_fs_getsize (hfile, &file_size);
 
 	if (!NT_SUCCESS (status))
+	{
+		*signature_string = NULL;
+
 		return status;
+	}
 
 	if (!file_size.QuadPart || file_size.QuadPart > _r_calc_megabytes2bytes64 (32))
+	{
+		*signature_string = NULL;
+
 		return STATUS_FILE_TOO_LARGE;
+	}
 
 	if (_app_calculatefilehash (hfile, algorithm_id, &file_hash, &file_hash_length, &hcat_admin))
 	{
@@ -896,6 +902,9 @@ VOID _app_getfilesignatureinfo (
 	PR_STRING string;
 	LONG status;
 
+	if (ptr_app_info->signature_info)
+		_r_obj_clearreference (&ptr_app_info->signature_info);
+
 	file_info.cbStruct = sizeof (file_info);
 	file_info.pcwszFilePath = ptr_app_info->path->buffer;
 	file_info.hFile = hfile;
@@ -910,7 +919,7 @@ VOID _app_getfilesignatureinfo (
 			_app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA1_ALGORITHM, &string);
 	}
 
-	_r_obj_movereference (&ptr_app_info->signature_info, string);
+	ptr_app_info->signature_info = string;
 }
 
 VOID _app_getfileversioninfo (
@@ -925,6 +934,9 @@ VOID _app_getfileversioninfo (
 	PVOID hlib;
 	ULONG lcid;
 	NTSTATUS status;
+
+	if (ptr_app_info->version_info)
+		_r_obj_clearreference (&ptr_app_info->version_info);
 
 	status = _r_sys_loadlibraryasresource (ptr_app_info->path->buffer, &hlib);
 
@@ -998,7 +1010,7 @@ VOID _app_getfileversioninfo (
 
 CleanupExit:
 
-	_r_obj_movereference (&ptr_app_info->version_info, version_string);
+	ptr_app_info->version_info = version_string;
 
 	if (hlib)
 		_r_sys_freelibrary (hlib, TRUE);
@@ -1889,7 +1901,7 @@ VOID NTAPI _app_queuenotifyinformation (
 		if (ptr_log->app_hash == _app_notify_getapp_id (context->hwnd))
 		{
 			// set file icon
-			_app_notify_setapp_icon (context->hwnd, hicon, TRUE);
+			_app_notify_setapp_icon (context->hwnd, hicon);
 
 			is_iconset = TRUE;
 
