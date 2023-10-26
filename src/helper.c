@@ -1671,7 +1671,7 @@ NTSTATUS NTAPI _app_timercallback (
 			if (!ptr_app->hash || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
 				continue;
 
-			if (!_app_isappused (ptr_app, FALSE))
+			if (!_app_isappused (ptr_app))
 				continue;
 
 			status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, ptr_app->real_path->buffer, NULL, &hash);

@@ -807,7 +807,7 @@ VOID _app_getcount (
 
 	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 	{
-		is_used = _app_isappused (ptr_app, TRUE);
+		is_used = _app_isappused (ptr_app);
 
 		if (_app_istimerset (ptr_app))
 			status->apps_timer_count += 1;
@@ -1443,18 +1443,17 @@ BOOLEAN _app_isappunused (
 	if (!_app_isappexists (ptr_app))
 		return TRUE;
 
-	if (!_app_isappused (ptr_app, TRUE))
+	if (!_app_isappused (ptr_app))
 		return TRUE;
 
 	return FALSE;
 }
 
 BOOLEAN _app_isappused (
-	_In_ PITEM_APP ptr_app,
-	_In_ BOOLEAN is_checkall
+	_In_ PITEM_APP ptr_app
 )
 {
-	if (is_checkall && ptr_app->is_undeletable)
+	if (ptr_app->is_undeletable)
 		return TRUE;
 
 	if (ptr_app->is_enabled || ptr_app->is_silent)

@@ -990,7 +990,7 @@ VOID _app_db_save_app (
 		if (_r_obj_isstringempty (ptr_app->original_path))
 			continue;
 
-		is_usedapp = _app_isappused (ptr_app, FALSE);
+		is_usedapp = _app_isappused (ptr_app);
 
 		// do not save unused apps/uwp apps...
 		if (!is_usedapp && !is_keepunusedapps)
