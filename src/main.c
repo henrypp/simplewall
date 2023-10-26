@@ -2678,7 +2678,7 @@ INT_PTR CALLBACK DlgProc (
 					ULONG_PTR app_hash;
 					ULONG_PTR rule_idx;
 					INT listview_id;
-					BOOLEAN is_changed;
+					BOOLEAN is_changed = FALSE;
 					BOOLEAN is_enabled;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
@@ -2687,13 +2687,11 @@ INT_PTR CALLBACK DlgProc (
 					if ((lpnmlv->uChanged & LVIF_STATE) == 0)
 						break;
 
-					if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) ||
-						((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
+					if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 					{
 						if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 							break;
 
-						is_changed = FALSE;
 						is_enabled = (lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2);
 
 						if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
