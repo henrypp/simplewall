@@ -1453,6 +1453,9 @@ BOOLEAN _app_isappused (
 	_In_ PITEM_APP ptr_app
 )
 {
+	if ((ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP) && (!ptr_app->is_enabled || !ptr_app->is_silent))
+		return FALSE;
+
 	if (ptr_app->is_undeletable)
 		return TRUE;
 
