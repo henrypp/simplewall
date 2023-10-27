@@ -1,3 +1,10 @@
+v3.7.4 (27 October 2023)
+- added set option to disable apps removal from profile (issue #1155)
+- fixed cannot save itself as unchecked (issue #1609)
+- fixed could not save profile (issue #1594)
+- fixed crash (issue #1582)
+- updated project sdk
+
 v3.7.3 (11 October 2023)
 - added error message for saving profile
 - removed redistributable package requirement (issue #1587)
