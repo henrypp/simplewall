@@ -72,7 +72,7 @@ VOID _app_package_parsepath (
 	{
 		while (_r_xml_enumchilditemsbytagname (&xml_library, L"Application"))
 		{
-			if (!_r_xml_getattribute (&xml_library, L"Executable", &executable_sr))
+			if (FAILED (_r_xml_getattribute (&xml_library, L"Executable", &executable_sr)))
 				continue;
 
 			_r_obj_movereference (&result_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr));

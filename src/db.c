@@ -324,7 +324,9 @@ VOID _app_db_parse_rule (
 	NTSTATUS status;
 
 	// check support version
-	if (_r_xml_getattribute (&db_info->xml_library, L"os_version", &sr))
+	status = _r_xml_getattribute (&db_info->xml_library, L"os_version", &sr);
+
+	if (SUCCEEDED (status))
 	{
 		if (!_app_isrulesupportedbyos (&sr))
 			return;
