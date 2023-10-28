@@ -3139,14 +3139,14 @@ VOID _app_command_purgeunused (
 	INT item_id;
 	BOOLEAN is_deleted = FALSE;
 
-	apps_list = _r_obj_createhashtable (sizeof (SHORT), NULL);
+	apps_list = _r_obj_createhashtable (sizeof (ULONG_PTR), NULL);
 	guids = _r_obj_createarray (sizeof (GUID), NULL);
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
 	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, &hash_code, &enum_key))
 	{
-		if (!_app_isappunused (ptr_app))
+		if (_app_isappused (ptr_app) || ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
 			continue;
 
 		listview_id = _app_listview_getbytype (ptr_app->type);
@@ -3160,6 +3160,7 @@ VOID _app_command_purgeunused (
 		}
 
 		_app_timer_reset (NULL, ptr_app);
+
 		_app_notify_freeobject (NULL, ptr_app);
 
 		if (!_r_obj_isempty (ptr_app->guids))

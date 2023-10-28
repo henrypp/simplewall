@@ -469,9 +469,6 @@ ULONG_PTR _app_addapplication (
 	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
 
-	if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
-		ptr_app->is_undeletable = TRUE;
-
 	// insert object into the table
 	_r_queuedlock_acquireexclusive (&lock_apps);
 	_r_obj_addhashtablepointer (apps_table, app_hash, ptr_app);
@@ -1366,31 +1363,6 @@ BOOLEAN _app_isapphaverule (
 	return FALSE;
 }
 
-BOOLEAN _app_isappfileexists (
-	_In_ LPCWSTR path
-)
-{
-	PITEM_APP ptr_app = NULL;
-	ULONG_PTR enum_key = 0;
-	BOOLEAN is_found = FALSE;
-
-	_r_queuedlock_acquireshared (&lock_apps);
-
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
-	{
-		if (_r_str_compare (path, 0, ptr_app->real_path->buffer, 0) == 0)
-		{
-			is_found = TRUE;
-
-			break;
-		}
-	}
-
-	_r_queuedlock_releaseshared (&lock_apps);
-
-	return FALSE;
-}
-
 BOOLEAN _app_isappexists (
 	_In_ PITEM_APP ptr_app
 )
@@ -1404,6 +1376,8 @@ BOOLEAN _app_isappexists (
 	switch (ptr_app->type)
 	{
 		case DATA_APP_REGULAR:
+		case DATA_APP_SERVICE:
+		case DATA_APP_UWP:
 		{
 			return ptr_app->real_path && _r_fs_exists (ptr_app->real_path->buffer);
 		}
@@ -1433,34 +1407,18 @@ BOOLEAN _app_isappfound (
 	return is_found;
 }
 
-BOOLEAN _app_isappunused (
-	_In_ PITEM_APP ptr_app
-)
-{
-	if (ptr_app->is_undeletable)
-		return FALSE;
-
-	if (!_app_isappexists (ptr_app))
-		return TRUE;
-
-	if (!_app_isappused (ptr_app))
-		return TRUE;
-
-	return FALSE;
-}
-
 BOOLEAN _app_isappused (
 	_In_ PITEM_APP ptr_app
 )
 {
-	if ((ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP) && (!ptr_app->is_enabled || !ptr_app->is_silent))
-		return FALSE;
-
 	if (ptr_app->is_undeletable)
 		return TRUE;
 
 	if (ptr_app->is_enabled || ptr_app->is_silent)
 		return TRUE;
+
+	if (!_app_isappexists (ptr_app))
+		return FALSE;
 
 	if (_app_isapphaverule (ptr_app->app_hash, TRUE))
 		return TRUE;
