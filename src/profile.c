@@ -1377,17 +1377,16 @@ BOOLEAN _app_isappexists (
 	{
 		case DATA_APP_REGULAR:
 		case DATA_APP_SERVICE:
-		case DATA_APP_UWP:
 		{
 			return ptr_app->real_path && _r_fs_exists (ptr_app->real_path->buffer);
 		}
 
 		case DATA_APP_DEVICE:
 		case DATA_APP_NETWORK:
+		case DATA_APP_UWP:
 		case DATA_APP_PICO:
 		{
-			if (ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK || ptr_app->type == DATA_APP_PICO)
-				return TRUE;
+			return TRUE;
 		}
 	}
 
