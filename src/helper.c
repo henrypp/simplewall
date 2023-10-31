@@ -1660,8 +1660,6 @@ NTSTATUS NTAPI _app_timercallback (
 
 	while (TRUE)
 	{
-		NtWaitForSingleObject (NtCurrentThread (), FALSE, &timeout);
-
 		_r_queuedlock_acquireshared (&lock_apps);
 
 		enum_key = 0;
@@ -1682,8 +1680,7 @@ NTSTATUS NTAPI _app_timercallback (
 				{
 					_r_obj_movereference (&ptr_app->hash, hash);
 
-					if (_r_config_getboolean (L"IsEnableAppMonitor", FALSE))
-						_app_setappinfo (ptr_app, INFO_DISABLE, NULL);
+					_app_setappinfo (ptr_app, INFO_DISABLE, NULL);
 				}
 				else
 				{
@@ -1693,6 +1690,8 @@ NTSTATUS NTAPI _app_timercallback (
 		}
 
 		_r_queuedlock_releaseshared (&lock_apps);
+
+		NtWaitForSingleObject (NtCurrentThread (), FALSE, &timeout);
 	}
 
 	return STATUS_SUCCESS;
