@@ -1393,6 +1393,7 @@ INT_PTR CALLBACK NotificationProc (
 				case IDCANCEL: // process Esc key
 				{
 					DestroyWindow (hwnd);
+
 					break;
 				}
 
