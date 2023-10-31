@@ -792,13 +792,7 @@ VOID _app_getcount (
 	ULONG_PTR enum_key = 0;
 	BOOLEAN is_used;
 
-	status->apps_count = 0;
-	status->apps_timer_count = 0;
-	status->apps_unused_count = 0;
-	status->rules_count = 0;
-	status->rules_global_count = 0;
-	status->rules_predefined_count = 0;
-	status->rules_user_count = 0;
+	RtlZeroMemory (status, sizeof (ITEM_STATUS));
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
