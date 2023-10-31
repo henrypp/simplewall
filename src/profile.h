@@ -137,6 +137,10 @@ BOOLEAN _app_isappfound (
 	_In_ ULONG_PTR app_hash
 );
 
+BOOLEAN _app_isappunused (
+	_In_ PITEM_APP ptr_app
+);
+
 BOOLEAN _app_isappused (
 	_In_ PITEM_APP ptr_app
 );

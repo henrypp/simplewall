@@ -1406,6 +1406,22 @@ BOOLEAN _app_isappfound (
 	return is_found;
 }
 
+BOOLEAN _app_isappunused (
+	_In_ PITEM_APP ptr_app
+)
+{
+	if (ptr_app->is_undeletable)
+		return FALSE;
+
+	if (!_app_isappexists (ptr_app))
+		return TRUE;
+
+	if (!_app_isappused (ptr_app))
+		return TRUE;
+
+	return FALSE;
+}
+
 BOOLEAN _app_isappused (
 	_In_ PITEM_APP ptr_app
 )

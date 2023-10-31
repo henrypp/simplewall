@@ -3146,7 +3146,7 @@ VOID _app_command_purgeunused (
 
 	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, &hash_code, &enum_key))
 	{
-		if (_app_isappused (ptr_app) || ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
+		if (!_app_isappunused (ptr_app) || ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
 			continue;
 
 		listview_id = _app_listview_getbytype (ptr_app->type);
