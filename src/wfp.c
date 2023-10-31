@@ -2619,7 +2619,6 @@ VOID NTAPI _wfp_applythread (
 	PITEM_CONTEXT context;
 	HANDLE engine_handle;
 	LONG dpi_value;
-	BOOLEAN is_wufixenabled;
 
 	_r_queuedlock_acquireshared (&lock_apply);
 
@@ -2635,11 +2634,7 @@ VOID NTAPI _wfp_applythread (
 		if (context->is_install)
 		{
 			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-			{
-				is_wufixenabled = _r_config_getboolean (L"IsWUFixEnabled", FALSE);
-
-				_app_wufixenable (context->hwnd, is_wufixenabled);
-			}
+				_app_wufixenable (context->hwnd, _app_wufixenabled ());
 
 			if (_wfp_initialize (context->hwnd, engine_handle))
 				_wfp_installfilters (engine_handle);

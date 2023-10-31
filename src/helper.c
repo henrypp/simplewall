@@ -2039,6 +2039,21 @@ HBITMAP _app_bitmapfrompng (
 	return NULL;
 }
 
+BOOLEAN _app_wufixenabled ()
+{
+	WCHAR file_path[MAX_PATH];
+	BOOLEAN is_enabled;
+
+	_r_str_printf (file_path, RTL_NUMBER_OF (file_path), L"%s\\wusvc.exe", _r_sys_getsystemdirectory ()->buffer);
+
+	is_enabled = _r_config_getboolean (L"IsWUFixEnabled", FALSE);
+
+	if (is_enabled)
+		is_enabled = _r_fs_exists (file_path);
+
+	return is_enabled;
+}
+
 VOID _app_wufixhelper (
 	_In_ SC_HANDLE hsvcmgr,
 	_In_ LPCWSTR service_name,

@@ -207,7 +207,7 @@ VOID _app_config_apply (
 
 		case IDM_RULE_ALLOWWINDOWSUPDATE:
 		{
-			new_val = !_r_config_getboolean (L"IsWUFixEnabled", FALSE);
+			new_val = !_app_wufixenabled ();
 			break;
 		}
 
