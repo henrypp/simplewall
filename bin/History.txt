@@ -1,3 +1,10 @@
+v3.7.5 (1 November 2023)
+- fixed saving services and uwp apps (issue #1616)
+- fixed file locked by simplewall (issue #1621)
+- fixed removing unused apps
+- fixed process creation
+- updated project sdk
+
 v3.7.4 (27 October 2023)
 - added set option to disable apps removal from profile (issue #1155)
 - fixed cannot save itself as unchecked (issue #1609)
