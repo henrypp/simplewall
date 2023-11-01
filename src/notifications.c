@@ -509,6 +509,7 @@ VOID _app_notify_killprocess (
 	HANDLE process_handle;
 	PITEM_APP ptr_app;
 	PR_STRING path;
+	PR_STRING file_name;
 	NTSTATUS status;
 
 	context = _app_notify_getcontext (hwnd);
@@ -532,13 +533,15 @@ VOID _app_notify_killprocess (
 		return;
 	}
 
+	file_name = _r_path_getbasenamestring (&ptr_app->real_path->sr);
+
 	process = PR_FIRST_PROCESS (spi);
 
 	do
 	{
 		if (process->ImageName.Buffer)
 		{
-			if (_r_str_compare (process->ImageName.Buffer, 0, ptr_app->short_name->buffer, 0) == 0)
+			if (_r_str_compare (process->ImageName.Buffer, 0, file_name->buffer, 0) == 0)
 			{
 				status = _r_sys_getprocessimagepath (process->UniqueProcessId, TRUE, &path);
 
@@ -569,6 +572,8 @@ VOID _app_notify_killprocess (
 		}
 	}
 	while (process = PR_NEXT_PROCESS (process));
+
+	_r_obj_dereference (file_name);
 
 	_r_mem_free (spi);
 }
