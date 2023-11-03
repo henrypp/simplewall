@@ -48,8 +48,8 @@ applications. Windows Filtering Platform is a development technology and not a f
 
 ### Features:
 - Simple interface without annoying pop ups
-- [Rules editor](https://github.com/henrypp/simplewall/wiki/Rules-editor) (create your own rules)
-- [Internal blocklist](https://github.com/crazy-max/WindowsSpyBlocker/wiki/dataSimplewall) (block Windows spy / telemetry)
+- [Rules editor](https://github.com/henrypp/simplewall#rules-editor) (create your own rules)
+- [Internal blocklist](https://crazymax.dev/WindowsSpyBlocker/blocking-rules/simplewall/) (block Windows spy / telemetry)
 - Dropped packets information with notification and logging to a file feature (win7+)
 - Allowed packets information with logging to a file feature (win8+)
 - Windows Subsystem for Linux (WSL) support
