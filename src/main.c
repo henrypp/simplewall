@@ -3112,7 +3112,6 @@ INT_PTR CALLBACK DlgProc (
 					};
 
 					R_FILE_DIALOG file_dialog;
-					R_ERROR_INFO error_info;
 					PR_STRING path;
 					NTSTATUS status;
 
@@ -3137,11 +3136,7 @@ INT_PTR CALLBACK DlgProc (
 								status = _r_fs_copyfile (profile_info.profile_path->buffer, path->buffer);
 
 								if (!NT_SUCCESS (status))
-								{
-									_r_error_initialize (&error_info, NULL, path->buffer, NULL);
-
-									_r_show_errormessage (hwnd, NULL, status, &error_info);
-								}
+									_r_show_errormessage (hwnd, NULL, status, path->buffer, NULL, NULL);
 
 								_r_obj_dereference (path);
 							}

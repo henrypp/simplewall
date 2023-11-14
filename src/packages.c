@@ -380,7 +380,7 @@ VOID _app_package_getserviceslist ()
 
 	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 	{
-		if (GetLastError () == ERROR_MORE_DATA)
+		if (PebLastError () == ERROR_MORE_DATA)
 		{
 			// Set the buffer
 			buffer_size += return_length;

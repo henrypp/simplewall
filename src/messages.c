@@ -2246,7 +2246,6 @@ VOID _app_command_logshow (
 	_In_ HWND hwnd
 )
 {
-	R_ERROR_INFO error_info;
 	PR_STRING path;
 	PR_STRING viewer_path;
 	PR_STRING process_path;
@@ -2294,14 +2293,10 @@ VOID _app_command_logshow (
 			L"\""
 		);
 
-		status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
+		status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL, NULL);
 
 		if (!NT_SUCCESS (status))
-		{
-			_r_error_initialize (&error_info, NULL, viewer_path->buffer, NULL);
-
-			_r_show_errormessage (hwnd, NULL, status, &error_info);
-		}
+			_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, NULL, NULL);
 
 		_r_obj_dereference (process_path);
 		_r_obj_dereference (viewer_path);
@@ -2351,7 +2346,6 @@ VOID _app_command_logerrshow (
 	_In_opt_ HWND hwnd
 )
 {
-	R_ERROR_INFO error_info;
 	PR_STRING viewer_path;
 	PR_STRING process_path;
 	PR_STRING path;
@@ -2376,14 +2370,10 @@ VOID _app_command_logerrshow (
 		L"\""
 	);
 
-	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
+	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL, NULL);
 
 	if (!NT_SUCCESS (status))
-	{
-		_r_error_initialize (&error_info, NULL, viewer_path->buffer, NULL);
-
-		_r_show_errormessage (hwnd, NULL, status, &error_info);
-	}
+		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, NULL, NULL);
 
 	_r_obj_dereference (process_path);
 	_r_obj_dereference (viewer_path);
