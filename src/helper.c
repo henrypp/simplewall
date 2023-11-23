@@ -822,17 +822,17 @@ LONG _app_verifyfilefromcatalog (
 
 	WINTRUST_CATALOG_INFO catalog_info = {0};
 	DRIVER_VER_INFO ver_info = {0};
-	LARGE_INTEGER file_size;
 	CATALOG_INFO ci = {0};
 	HCATADMIN hcat_admin;
 	HCATINFO hcat_info;
 	PR_STRING string = NULL;
 	PR_STRING file_hash_tag;
 	PVOID file_hash;
+	LONG64 file_size;
 	ULONG file_hash_length;
 	LONG status;
 
-	status = _r_fs_getsize (hfile, &file_size);
+	status = _r_fs_getsize2 (hfile, NULL, &file_size);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -841,7 +841,7 @@ LONG _app_verifyfilefromcatalog (
 		return status;
 	}
 
-	if (!file_size.QuadPart || file_size.QuadPart > _r_calc_megabytes2bytes64 (32))
+	if (!file_size || file_size > _r_calc_megabytes2bytes64 (32))
 	{
 		*signature_string = NULL;
 
@@ -2040,7 +2040,7 @@ HBITMAP _app_bitmapfrompng (
 
 BOOLEAN _app_wufixenabled ()
 {
-	WCHAR file_path[MAX_PATH];
+	WCHAR file_path[256];
 	BOOLEAN is_enabled;
 
 	_r_str_printf (file_path, RTL_NUMBER_OF (file_path), L"%s\\wusvc.exe", _r_sys_getsystemdirectory ()->buffer);
@@ -2130,8 +2130,8 @@ VOID _app_wufixenable (
 {
 	SC_HANDLE hsvcmgr;
 	PR_STRING service_path;
-	WCHAR buffer1[MAX_PATH];
-	WCHAR buffer2[MAX_PATH];
+	WCHAR buffer1[256];
+	WCHAR buffer2[256];
 	ULONG_PTR app_hash;
 
 	_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s\\svchost.exe", _r_sys_getsystemdirectory ()->buffer);

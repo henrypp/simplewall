@@ -60,7 +60,7 @@ VOID _app_loginitfile (
 	LARGE_INTEGER file_size;
 	IO_STATUS_BLOCK isb;
 
-	_r_fs_getsize (hfile, &file_size);
+	_r_fs_getsize (hfile, NULL, &file_size);
 
 	if (!file_size.QuadPart)
 	{
@@ -139,7 +139,7 @@ BOOLEAN _app_logislimitreached (
 	_In_ HANDLE hfile
 )
 {
-	LARGE_INTEGER file_size;
+	LONG64 file_size;
 	LONG64 limit;
 
 	limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
@@ -147,9 +147,9 @@ BOOLEAN _app_logislimitreached (
 	if (!limit)
 		return FALSE;
 
-	_r_fs_getsize (hfile, &file_size);
+	_r_fs_getsize2 (hfile, NULL, &file_size);
 
-	return (file_size.QuadPart >= (_r_calc_kilobytes2bytes64 (limit)));
+	return (file_size >= (_r_calc_kilobytes2bytes64 (limit)));
 }
 
 VOID _app_logclear (
@@ -158,7 +158,7 @@ VOID _app_logclear (
 {
 	PR_STRING log_path;
 
-	if (_r_fs_isvalidhandle (hfile))
+	if (hfile)
 	{
 		_r_fs_clearfile (hfile);
 
@@ -221,7 +221,7 @@ VOID _app_logwrite (
 		path = NULL;
 	}
 
-	date_string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
+	date_string = _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
 	local_port_string = _app_formatport (ptr_log->local_port, ptr_log->protocol);
 	remote_port_string = _app_formatport (ptr_log->remote_port, ptr_log->protocol);

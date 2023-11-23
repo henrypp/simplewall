@@ -183,7 +183,7 @@ typedef enum _ENUM_INFO_DATA2
 
 typedef struct _STATIC_DATA
 {
-	WCHAR windows_dir_buffer[MAX_PATH];
+	WCHAR windows_dir_buffer[256];
 	R_STRINGREF windows_dir;
 
 	PR_STRING search_string;

@@ -441,7 +441,7 @@ VOID _app_settab_id (
 		_app_settab_id (hwnd, IDC_APPS_PROFILE);
 }
 
-LPCWSTR _app_getstateaction (
+LPWSTR _app_getstateaction (
 	_In_ ENUM_INSTALL_TYPE install_type
 )
 {

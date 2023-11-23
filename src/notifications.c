@@ -400,7 +400,7 @@ VOID _app_notify_show (
 
 	// print date
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
-	_r_obj_movereference (&string, _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
+	_r_obj_movereference (&string, _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_sr);
 

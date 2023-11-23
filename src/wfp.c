@@ -150,7 +150,7 @@ ENUM_INSTALL_TYPE _wfp_getinstalltype ()
 }
 
 PR_STRING _wfp_getlayername (
-	_In_ LPCGUID layer_guid
+	_In_ LPGUID layer_guid
 )
 {
 	static LPCGUID layer_guids[] = {
@@ -408,7 +408,7 @@ VOID _wfp_uninitialize (
 {
 	PR_ARRAY callouts;
 	PR_STRING string;
-	LPCGUID guid;
+	LPGUID guid;
 	FWP_VALUE val = {0};
 	BOOLEAN is_intransact;
 	ULONG status;
@@ -499,7 +499,7 @@ VOID _wfp_installfilters (
 	// dump all filters into array
 	PR_ARRAY guids;
 	PR_LIST rules;
-	LPCGUID guid;
+	LPGUID guid;
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
 	ULONG_PTR enum_key;
@@ -663,7 +663,7 @@ BOOLEAN _wfp_transact_commit (
 
 BOOLEAN _wfp_deletefilter (
 	_In_ HANDLE engine_handle,
-	_In_ LPCGUID filter_id
+	_In_ LPGUID filter_id
 )
 {
 	PR_STRING string;
@@ -843,7 +843,7 @@ ULONG _wfp_createfilter (
 	}
 	else
 	{
-		layer_name = _wfp_getlayername (layer_id);
+		layer_name = _wfp_getlayername ((LPGUID)layer_id);
 
 		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterAdd", status, L"%s\\%s", _r_obj_getstring (layer_name), filter.displayData.description);
 
@@ -926,7 +926,7 @@ VOID _wfp_destroyfilters_array (
 	_In_ UINT line
 )
 {
-	LPCGUID guid;
+	LPGUID guid;
 	BOOLEAN is_enabled;
 	BOOLEAN is_intransact;
 
@@ -1380,7 +1380,7 @@ BOOLEAN _wfp_create4filters (
 	R_STRINGREF rule_local_part;
 	LPCWSTR rule_name;
 	PR_ARRAY guids;
-	LPCGUID guid;
+	LPGUID guid;
 	PITEM_RULE ptr_rule;
 	ULONG_PTR hash_code;
 	ULONG_PTR enum_key;
@@ -1601,7 +1601,7 @@ BOOLEAN _wfp_create3filters (
 {
 
 	PR_ARRAY guids;
-	LPCGUID guid;
+	LPGUID guid;
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	BOOLEAN is_enabled;
@@ -1750,7 +1750,7 @@ BOOLEAN _wfp_create2filters (
 
 	FWPM_FILTER_CONDITION fwfc[3] = {0};
 	ITEM_ADDRESS address;
-	LPCGUID guid;
+	LPGUID guid;
 	FWP_ACTION_TYPE action;
 	BOOLEAN is_enabled;
 

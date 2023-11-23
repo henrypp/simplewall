@@ -45,7 +45,7 @@ HANDLE _wfp_getenginehandle ();
 ENUM_INSTALL_TYPE _wfp_getinstalltype ();
 
 PR_STRING _wfp_getlayername (
-	_In_ LPCGUID layer_guid
+	_In_ LPGUID layer_guid
 );
 
 BOOLEAN _wfp_initialize (
@@ -82,7 +82,7 @@ ULONG _wfp_createcallout (
 
 BOOLEAN _wfp_deletefilter (
 	_In_ HANDLE engine_handle,
-	_In_ LPCGUID filter_id
+	_In_ LPGUID filter_id
 );
 
 ULONG _wfp_createfilter (

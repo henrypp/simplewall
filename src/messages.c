@@ -1477,7 +1477,7 @@ VOID _app_displayinfoapp_callback (
 
 			case 1:
 			{
-				string = _r_format_unixtime_ex (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
+				string = _r_format_unixtime (ptr_app->timestamp, FDTF_SHORTDATE | FDTF_SHORTTIME);
 
 				if (string)
 				{
@@ -1881,7 +1881,7 @@ VOID _app_displayinfolog_callback (
 
 			case 1:
 			{
-				string = _r_format_unixtime_ex (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
+				string = _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
 				if (string)
 				{
@@ -2293,7 +2293,7 @@ VOID _app_command_logshow (
 			L"\""
 		);
 
-		status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL, NULL);
+		status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
 
 		if (!NT_SUCCESS (status))
 			_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, NULL, NULL);
@@ -2307,8 +2307,8 @@ VOID _app_command_logclear (
 	_In_ HWND hwnd
 )
 {
-	LARGE_INTEGER file_size;
 	PR_STRING log_path;
+	LONG64 file_size;
 	HANDLE current_handle;
 	BOOLEAN is_valid;
 
@@ -2317,9 +2317,9 @@ VOID _app_command_logclear (
 	current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 	if (current_handle)
-		_r_fs_getsize (current_handle, &file_size);
+		_r_fs_getsize2 (current_handle, NULL, &file_size);
 
-	is_valid = (current_handle && file_size.QuadPart > 2) || (log_path && _r_fs_exists (log_path->buffer));
+	is_valid = (current_handle && file_size > 2) || (log_path && _r_fs_exists (log_path->buffer));
 
 	if (!is_valid)
 	{
@@ -2370,7 +2370,7 @@ VOID _app_command_logerrshow (
 		L"\""
 	);
 
-	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL, NULL);
+	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
 
 	if (!NT_SUCCESS (status))
 		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, NULL, NULL);

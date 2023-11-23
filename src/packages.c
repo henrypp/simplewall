@@ -272,8 +272,8 @@ CleanupExit:
 
 VOID _app_package_getpackageslist ()
 {
-	static LPCWSTR reg_byname = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
-	static LPCWSTR reg_bysid = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings";
+	static LPWSTR reg_byname = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
+	static LPWSTR reg_bysid = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings";
 
 	HANDLE hkey;
 	PR_STRING key_name;
