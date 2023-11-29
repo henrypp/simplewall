@@ -2041,16 +2041,16 @@ HBITMAP _app_bitmapfrompng (
 BOOLEAN _app_wufixenabled ()
 {
 	WCHAR file_path[256];
-	BOOLEAN is_enabled;
+
+	if (!_r_config_getboolean (L"IsWUFixEnabled", FALSE))
+		return FALSE;
 
 	_r_str_printf (file_path, RTL_NUMBER_OF (file_path), L"%s\\wusvc.exe", _r_sys_getsystemdirectory ()->buffer);
 
-	is_enabled = _r_config_getboolean (L"IsWUFixEnabled", FALSE);
+	if (_r_fs_exists (file_path))
+		return TRUE;
 
-	if (is_enabled)
-		is_enabled = _r_fs_exists (file_path);
-
-	return is_enabled;
+	return FALSE;
 }
 
 VOID _app_wufixhelper (
@@ -2069,12 +2069,7 @@ VOID _app_wufixhelper (
 	BOOLEAN is_enabled = FALSE;
 	NTSTATUS status;
 
-	_r_str_printf (
-		reg_key,
-		RTL_NUMBER_OF (reg_key),
-		L"SYSTEM\\CurrentControlSet\\Services\\%s",
-		service_name
-	);
+	_r_str_printf (reg_key, RTL_NUMBER_OF (reg_key), L"SYSTEM\\CurrentControlSet\\Services\\%s", service_name);
 
 	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, reg_key, KEY_READ | KEY_WRITE, &hkey);
 
@@ -2106,7 +2101,7 @@ VOID _app_wufixhelper (
 	// restart service
 	if (is_enable != is_enabled)
 	{
-		hsvc = OpenService (hsvcmgr, service_name, SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
+		hsvc = OpenServiceW (hsvcmgr, service_name, SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
 
 		if (hsvc)
 		{
@@ -2137,7 +2132,7 @@ VOID _app_wufixenable (
 	_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s\\svchost.exe", _r_sys_getsystemdirectory ()->buffer);
 	_r_str_printf (buffer2, RTL_NUMBER_OF (buffer2), L"%s\\wusvc.exe", _r_sys_getsystemdirectory ()->buffer);
 
-	hsvcmgr = OpenSCManager (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
+	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
 
 	if (!hsvcmgr)
 		return;

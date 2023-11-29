@@ -2634,7 +2634,7 @@ VOID NTAPI _wfp_applythread (
 		if (context->is_install)
 		{
 			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-				_app_wufixenable (context->hwnd, _app_wufixenabled ());
+				_app_wufixenable (context->hwnd, _r_config_getboolean (L"IsWUFixEnabled", FALSE));
 
 			if (_wfp_initialize (context->hwnd, engine_handle))
 				_wfp_installfilters (engine_handle);
