@@ -953,7 +953,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				case NM_DBLCLK:
 				{
 					LPNMITEMACTIVATE lpnmlv;
-					INT command_id;
+					INT command_id = 0;
 					INT listview_id;
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
@@ -961,7 +961,6 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (lpnmlv->iItem == -1)
 						break;
 
-					command_id = 0;
 					listview_id = (INT)(INT_PTR)(lpnmlv->hdr.idFrom);
 
 					if (listview_id == IDC_RULE_REMOTE_ID)
