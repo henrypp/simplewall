@@ -1,3 +1,8 @@
+v3.7.6 (30 November 2023)
+- fixed configuration of windows update (issue #1648)
+- fixed auto update fails to install (issue #1565)
+- updated project sdk
+
 v3.7.5 (1 November 2023)
 - fixed saving services and uwp apps (issue #1616)
 - fixed file locked by simplewall (issue #1621)
