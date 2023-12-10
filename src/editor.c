@@ -77,7 +77,7 @@ VOID _app_editor_addtabitem (
 
 	BringWindowToTop (htab); // HACK!!!
 
-	SendMessage (htab, RM_INITIALIZE, 0, 0);
+	SendMessageW (htab, RM_INITIALIZE, 0, 0);
 }
 
 VOID _app_editor_settabtitle (
@@ -336,6 +336,7 @@ INT_PTR CALLBACK EditorRuleProc (
 			else if (notify_code == EN_MAXTEXT)
 			{
 				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, SZ_MAXTEXT);
+
 				return FALSE;
 			}
 
@@ -344,10 +345,10 @@ INT_PTR CALLBACK EditorRuleProc (
 				case IDOK: // process Enter key
 				case IDC_SAVE:
 				{
-					WCHAR rule_string[256];
 					ITEM_ADDRESS address;
 					R_STRINGREF remaining_part;
 					R_STRINGREF first_part;
+					WCHAR rule_string[256];
 					PR_STRING string;
 					INT item_id;
 
@@ -756,7 +757,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			{
 				context->hicon = _app_icons_getsafeapp_hicon (context->ptr_app->app_hash);
 
-				SendDlgItemMessage (hwnd, IDC_APP_ICON_ID, STM_SETICON, (WPARAM)context->hicon, 0);
+				SendDlgItemMessageW (hwnd, IDC_APP_ICON_ID, STM_SETICON, (WPARAM)context->hicon, 0);
 			}
 
 			// app display name
@@ -771,7 +772,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_dereference (string);
 				}
 
-				SendDlgItemMessage (hwnd, IDC_APP_NAME_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
+				SendDlgItemMessageW (hwnd, IDC_APP_NAME_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 			}
 
 			// app signature
@@ -789,7 +790,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED))
 				);
 
-				SendDlgItemMessage (hwnd, IDC_APP_SIGNATURE_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
+				SendDlgItemMessageW (hwnd, IDC_APP_SIGNATURE_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 
 				if (string)
 					_r_obj_dereference (string);
@@ -946,7 +947,8 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					result = _app_message_custdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
 
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
+					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, result);
+
 					return result;
 				}
 
@@ -977,7 +979,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					}
 
 					if (command_id)
-						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
+						PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
 
 					break;
 				}
@@ -1023,12 +1025,11 @@ INT_PTR CALLBACK EditorPagesProc (
 						id_delete = is_remote ? IDC_RULE_REMOTE_DELETE : IDC_RULE_LOCAL_DELETE;
 
 						_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADD), L"..."));
-
 						_r_menu_additem (hsubmenu, id_add, localized_string->buffer);
 
 						_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_EDIT2), L"..."));
-
 						_r_menu_additem (hsubmenu, id_edit, localized_string->buffer);
+
 						_r_menu_additem (hsubmenu, id_delete, _r_locale_getstring (IDS_DELETE));
 						_r_menu_additem (hsubmenu, 0, NULL);
 						_r_menu_additem (hsubmenu, IDM_COPY, _r_locale_getstring (IDS_COPY));
@@ -1149,7 +1150,8 @@ INT_PTR CALLBACK EditorPagesProc (
 
 								if (!is_locked && context->ptr_rule->type != DATA_RULE_USER)
 								{
-									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 									return TRUE;
 								}
 							}
@@ -1216,11 +1218,11 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				case LVN_GETINFOTIP:
 				{
-					LPNMLVGETINFOTIP lpnmlv;
+					LPNMLVGETINFOTIPW lpnmlv;
 					PR_STRING string;
 					INT listview_id;
 
-					lpnmlv = (LPNMLVGETINFOTIP)lparam;
+					lpnmlv = (LPNMLVGETINFOTIPW)lparam;
 					listview_id = (INT)lpnmlv->hdr.idFrom;
 
 					if (listview_id != IDC_RULE_APPS_ID && listview_id != IDC_APP_RULES_ID)
@@ -1395,7 +1397,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				case IDM_UNCHECK:
 				{
 					INT listview_id;
-					INT item_id;
+					INT item_id = -1;
 					BOOLEAN new_val;
 
 					if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
@@ -1412,7 +1414,6 @@ INT_PTR CALLBACK EditorPagesProc (
 					}
 
 					new_val = (ctrl_id == IDM_CHECK);
-					item_id = -1;
 
 					_app_listview_lock (hwnd, listview_id, TRUE);
 
@@ -1482,7 +1483,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					PR_STRING string;
 					HWND hlistview;
 					INT listview_id;
-					INT item_id;
+					INT item_id = -1;
 
 					hlistview = GetFocus ();
 
@@ -1495,8 +1496,6 @@ INT_PTR CALLBACK EditorPagesProc (
 						break;
 
 					_r_obj_initializestringbuilder (&sb, 512);
-
-					item_id = -1;
 
 					while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 					{
@@ -1577,6 +1576,7 @@ INT_PTR CALLBACK EditorProc (
 				if (string)
 				{
 					_r_str_copy (title, RTL_NUMBER_OF (title), string->buffer);
+
 					_r_obj_dereference (string);
 				}
 
@@ -1748,7 +1748,7 @@ INT_PTR CALLBACK EditorProc (
 					HWND hpage_rule;
 					HWND hpage_apps;
 					PR_STRING string;
-					PR_LIST rules;
+					PR_LIST rules = NULL;
 					HANDLE hengine;
 					ULONG_PTR app_hash;
 					PITEM_RULE ptr_rule;
@@ -1762,8 +1762,6 @@ INT_PTR CALLBACK EditorProc (
 
 					if (!context)
 						break;
-
-					rules = NULL;
 
 					if (context->is_settorules)
 					{
@@ -1970,6 +1968,7 @@ INT_PTR CALLBACK EditorProc (
 				case IDC_CLOSE:
 				{
 					EndDialog (hwnd, FALSE);
+
 					break;
 				}
 			}

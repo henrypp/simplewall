@@ -605,7 +605,7 @@ VOID _app_setinterfacestate (
 
 	_r_wnd_seticon (hwnd, hico_sm, hico_big);
 
-	//SendDlgItemMessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
+	//SendDlgItemMessageW (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));
@@ -728,7 +728,7 @@ VOID _app_imagelist_init (
 	}
 
 	if (config.htoolbar)
-		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+		SendMessageW (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
 	// rules imagelist (small)
 	if (config.himg_rules_small)
@@ -789,7 +789,7 @@ HFONT _app_createfont (
 	logfont->lfCharSet = DEFAULT_CHARSET;
 	logfont->lfQuality = DEFAULT_QUALITY;
 
-	hfont = CreateFontIndirect (logfont);
+	hfont = CreateFontIndirectW (logfont);
 
 	return hfont;
 }
@@ -824,12 +824,12 @@ VOID _app_toolbar_init (
 
 	_app_windowloadfont (dpi_value);
 
-	SendMessage (config.hrebar, RB_SETBARINFO, 0, (LPARAM)(&(REBARINFO)
+	SendMessageW (config.hrebar, RB_SETBARINFO, 0, (LPARAM)(&(REBARINFO)
 	{
 		sizeof (REBARINFO)
 	}));
 
-	config.htoolbar = CreateWindowEx (
+	config.htoolbar = CreateWindowExW (
 		0,
 		TOOLBARCLASSNAME,
 		NULL,
@@ -848,8 +848,8 @@ VOID _app_toolbar_init (
 	{
 		_r_toolbar_setstyle (config.hrebar, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
 
-		SendMessage (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
-		SendMessage (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+		SendMessageW (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		SendMessageW (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
 		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
 
@@ -886,7 +886,7 @@ VOID _app_toolbar_init (
 	}
 
 	// insert searchbar
-	config.hsearchbar = CreateWindowEx (
+	config.hsearchbar = CreateWindowExW (
 		WS_EX_CLIENTEDGE,
 		WC_EDIT,
 		NULL,
@@ -904,7 +904,7 @@ VOID _app_toolbar_init (
 	if (!config.hsearchbar)
 		return;
 
-	SendMessage (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+	SendMessageW (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 
 	_app_search_initialize (config.hsearchbar);
 
@@ -920,16 +920,16 @@ VOID _app_toolbar_resize (
 	_In_ LONG dpi_value
 )
 {
-	REBARBANDINFO rbi;
+	REBARBANDINFOW rbi;
 	SIZE ideal_size = {0};
 	ULONG button_size;
 	UINT rebar_count;
 
 	_app_toolbar_setfont ();
 
-	SendMessage (config.htoolbar, TB_AUTOSIZE, 0, 0);
+	SendMessageW (config.htoolbar, TB_AUTOSIZE, 0, 0);
 
-	rebar_count = (UINT)SendMessage (config.hrebar, RB_GETBANDCOUNT, 0, 0);
+	rebar_count = (UINT)SendMessageW (config.hrebar, RB_GETBANDCOUNT, 0, 0);
 
 	for (UINT i = 0; i < rebar_count; i++)
 	{
@@ -938,12 +938,12 @@ VOID _app_toolbar_resize (
 		rbi.cbSize = sizeof (rbi);
 		rbi.fMask = RBBIM_ID | RBBIM_CHILD | RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
 
-		if (!SendMessage (config.hrebar, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rbi))
+		if (!SendMessageW (config.hrebar, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rbi))
 			continue;
 
 		if (rbi.wID == REBAR_TOOLBAR_ID)
 		{
-			if (!SendMessage (config.htoolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
+			if (!SendMessageW (config.htoolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
 				continue;
 
 			button_size = _r_toolbar_getbuttonsize (config.hrebar, IDC_TOOLBAR);
@@ -971,17 +971,17 @@ VOID _app_toolbar_resize (
 			continue;
 		}
 
-		SendMessage (config.hrebar, RB_SETBANDINFO, (WPARAM)i, (LPARAM)&rbi);
+		SendMessageW (config.hrebar, RB_SETBANDINFO, (WPARAM)i, (LPARAM)&rbi);
 	}
 }
 
 VOID _app_toolbar_setfont ()
 {
 	if (config.htoolbar)
-		SendMessage (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		SendMessageW (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 
 	if (config.hsearchbar)
-		SendMessage (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		SendMessageW (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 }
 
 VOID _app_window_resize (
@@ -999,8 +999,8 @@ VOID _app_window_resize (
 
 	_app_toolbar_resize (hwnd, dpi_value);
 
-	SendMessage (config.hrebar, WM_SIZE, 0, 0);
-	SendDlgItemMessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
+	SendMessageW (config.hrebar, WM_SIZE, 0, 0);
+	SendDlgItemMessageW (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
 	current_listview_id = _app_listview_getbytab (hwnd, -1);
 
@@ -1093,14 +1093,12 @@ VOID _app_refreshstatus (
 			case 1:
 			{
 				text[i] = _r_format_string (L"%s: %" TEXT (PR_ULONG_PTR), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), status.apps_unused_count);
-
 				break;
 			}
 
 			case 2:
 			{
 				text[i] = _r_format_string (L"%s: %" TEXT (PR_ULONG_PTR), _r_locale_getstring (IDS_STATUS_TIMER_APPS), status.apps_timer_count);
-
 				break;
 			}
 		}

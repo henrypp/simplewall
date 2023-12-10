@@ -118,7 +118,9 @@ VOID _app_listview_clearitems (
 )
 {
 	for (INT i = IDC_APPS_PROFILE; i <= IDC_RULES_CUSTOM; i++)
+	{
 		_r_listview_deleteallitems (hwnd, i);
+	}
 }
 
 VOID _app_listview_addappitem (
@@ -383,7 +385,7 @@ VOID _app_listview_showitemby_id (
 
 	// restore scroll position
 	if (scroll_pos > 0)
-		SendDlgItemMessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)scroll_pos);
+		SendDlgItemMessageW (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)scroll_pos);
 }
 
 VOID _app_listview_showitemby_param (
@@ -513,8 +515,8 @@ VOID _app_listview_updateitemby_param (
 	_In_ BOOLEAN is_app
 )
 {
-	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
+	PITEM_APP ptr_app;
 	INT listview_id = 0;
 	INT item_id;
 
@@ -789,7 +791,7 @@ VOID _app_listview_resize_ex (
 	if (!hdc_listview)
 		goto CleanupExit;
 
-	hheader = (HWND)SendMessage (hlistview, LVM_GETHEADER, 0, 0);
+	hheader = (HWND)SendMessageW (hlistview, LVM_GETHEADER, 0, 0);
 
 	hdc_header = GetDC (hheader);
 
@@ -889,7 +891,7 @@ VOID _app_listview_setfont (
 )
 {
 	if (config.hfont)
-		SendDlgItemMessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
+		SendDlgItemMessageW (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
 }
 
 VOID _app_listview_setview (
@@ -1090,7 +1092,7 @@ VOID _app_listview_sort_ex (
 	if (!hlistview)
 		return;
 
-	if ((GetWindowLongPtr (hlistview, GWL_STYLE) & (LVS_NOSORTHEADER | LVS_OWNERDATA)) != 0)
+	if ((GetWindowLongPtrW (hlistview, GWL_STYLE) & (LVS_NOSORTHEADER | LVS_OWNERDATA)) != 0)
 		return;
 
 	column_count = _r_listview_getcolumncount (hwnd, listview_id);
@@ -1121,7 +1123,7 @@ VOID _app_listview_sort_ex (
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
-	SendMessage (hlistview, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
+	SendMessageW (hlistview, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
 }
 
 VOID _app_listview_sort (

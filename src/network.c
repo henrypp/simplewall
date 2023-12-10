@@ -511,7 +511,7 @@ BOOLEAN _app_network_getpath (
 
 	if (!process_name)
 	{
-		status = _r_sys_openprocess (UlongToHandle (pid), PROCESS_QUERY_LIMITED_INFORMATION, &hprocess);
+		status = _r_sys_openprocess (ULongToHandle (pid), PROCESS_QUERY_LIMITED_INFORMATION, &hprocess);
 
 		if (NT_SUCCESS (status))
 		{
@@ -686,7 +686,7 @@ VOID _app_network_printlistviewtable (
 		_app_listview_addnetworkitem (network_context->hwnd, network_hash);
 
 		if (ptr_network->path && ptr_network->app_hash)
-			_app_queue_fileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
+			_app_getfileinformation (ptr_network->path, ptr_network->app_hash, ptr_network->type, IDC_NETWORK);
 
 		// resolve network address
 		_app_queue_resolver (network_context->hwnd, IDC_NETWORK, network_hash, ptr_network);

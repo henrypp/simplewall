@@ -144,10 +144,10 @@ VOID _app_message_localize (
 	_In_ HWND hwnd
 )
 {
+	PR_STRING localized_string = NULL;
+	LPCWSTR recommended_string;
 	HMENU hmenu;
 	HMENU hsubmenu;
-	LPCWSTR recommended_string;
-	PR_STRING localized_string = NULL;
 	LONG dpi_value;
 	INT listview_id;
 	UINT locale_id;
@@ -732,7 +732,7 @@ VOID _app_message_contextmenu (
 			if (column_text)
 			{
 				_r_obj_movereference (&localized_string, _r_obj_concatstrings (4, _r_locale_getstring (IDS_COPY), L" \"", column_text->buffer, L"\""));
-				_r_menu_additem (hmenu, IDM_COPY2, localized_string->buffer);
+				_r_menu_additem (hmenu, IDM_COPY_VALUE, localized_string->buffer);
 
 				_r_obj_dereference (column_text);
 			}
@@ -774,7 +774,6 @@ VOID _app_message_contextmenu (
 			if (listview_id == IDC_RULES_CUSTOM)
 			{
 				_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DELETE), L"\tDel"));
-
 				_r_menu_additem (hmenu, IDM_DELETE, localized_string->buffer);
 
 				if (_app_getruleinfobyid (hash_code, INFO_IS_READONLY, &is_readonly, sizeof (is_readonly)))
@@ -804,7 +803,7 @@ VOID _app_message_contextmenu (
 			{
 				_r_obj_movereference (&localized_string, _r_obj_concatstrings (4, _r_locale_getstring (IDS_COPY), L" \"", column_text->buffer, L"\""));
 
-				_r_menu_additem (hmenu, IDM_COPY2, localized_string->buffer);
+				_r_menu_additem (hmenu, IDM_COPY_VALUE, localized_string->buffer);
 
 				_r_obj_dereference (column_text);
 			}
@@ -842,7 +841,7 @@ VOID _app_message_contextmenu (
 			{
 				_r_obj_movereference (&localized_string, _r_obj_concatstrings (4, _r_locale_getstring (IDS_COPY), L" \"", column_text->buffer, L"\""));
 
-				_r_menu_additem (hmenu, IDM_COPY2, localized_string->buffer);
+				_r_menu_additem (hmenu, IDM_COPY_VALUE, localized_string->buffer);
 
 				_r_obj_dereference (column_text);
 			}
@@ -891,7 +890,7 @@ VOID _app_message_contextmenu (
 			if (column_text)
 			{
 				_r_obj_movereference (&localized_string, _r_obj_concatstrings (4, _r_locale_getstring (IDS_COPY), L" \"", column_text->buffer, L"\""));
-				_r_menu_additem (hmenu, IDM_COPY2, localized_string->buffer);
+				_r_menu_additem (hmenu, IDM_COPY_VALUE, localized_string->buffer);
 
 				_r_obj_dereference (column_text);
 			}
@@ -903,7 +902,7 @@ VOID _app_message_contextmenu (
 	command_id = _r_menu_popup (hmenu, hwnd, NULL, FALSE);
 
 	if (command_id)
-		PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), (LPARAM)lv_column_current);
+		PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), (LPARAM)lv_column_current);
 
 	if (hsubmenu_rules)
 		DestroyMenu (hsubmenu_rules);
@@ -973,7 +972,7 @@ VOID _app_message_traycontextmenu (
 	HMENU hmenu;
 	HMENU hsubmenu;
 
-	hmenu = LoadMenu (NULL, MAKEINTRESOURCE (IDM_TRAY));
+	hmenu = LoadMenuW (NULL, MAKEINTRESOURCE (IDM_TRAY));
 
 	if (!hmenu)
 		return;
@@ -1250,7 +1249,7 @@ VOID _app_message_dpichanged (
 	_app_listview_loadfont (dpi_value, TRUE);
 	_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
-	SendMessage (hwnd, WM_SIZE, 0, 0);
+	SendMessageW (hwnd, WM_SIZE, 0, 0);
 
 	_r_obj_dereference (localized_string);
 }
@@ -1260,7 +1259,7 @@ LONG_PTR _app_message_custdraw (
 	_In_ LPNMLVCUSTOMDRAW lpnmlv
 )
 {
-	TBBUTTONINFO tbi = {0};
+	TBBUTTONINFOW tbi = {0};
 	WCHAR text[128] = {0};
 	HIMAGELIST himglist;
 	PITEM_NETWORK ptr_network;
@@ -1300,7 +1299,7 @@ LONG_PTR _app_message_custdraw (
 				tbi.cbSize = sizeof (tbi);
 				tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
 
-				result = SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi);
+				result = SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi);
 
 				if (result == -1)
 					return CDRF_DODEFAULT;
@@ -1308,7 +1307,7 @@ LONG_PTR _app_message_custdraw (
 				if (tbi.fsState & TBSTATE_ENABLED)
 					return CDRF_DODEFAULT;
 
-				himglist = (HIMAGELIST)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
+				himglist = (HIMAGELIST)SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
 
 				if (!himglist)
 					return CDRF_DODEFAULT;
@@ -1324,8 +1323,8 @@ LONG_PTR _app_message_custdraw (
 				// draw image
 				if (tbi.iImage != I_IMAGENONE)
 				{
-					padding = (ULONG)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
-					button_size = (ULONG)SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONSIZE, 0, 0);
+					padding = (ULONG)SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
+					button_size = (ULONG)SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONSIZE, 0, 0);
 
 					_r_dc_drawimagelisticon (
 						lpnmlv->nmcd.hdc,
@@ -1341,12 +1340,12 @@ LONG_PTR _app_message_custdraw (
 				// draw text
 				if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
 				{
-					SendMessage (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
+					SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
 
 					if (tbi.iImage != I_IMAGENONE)
 						lpnmlv->nmcd.rc.left += icon_size_x;
 
-					DrawTextEx (
+					DrawTextExW (
 						lpnmlv->nmcd.hdc,
 						text,
 						(INT)_r_str_getlength (text),
@@ -1469,6 +1468,7 @@ VOID _app_displayinfoapp_callback (
 				if (string)
 				{
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 					_r_obj_dereference (string);
 				}
 
@@ -1482,6 +1482,7 @@ VOID _app_displayinfoapp_callback (
 				if (string)
 				{
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 					_r_obj_dereference (string);
 				}
 
@@ -2016,6 +2017,7 @@ VOID _app_displayinfolog_callback (
 				);
 
 				_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, string->buffer);
+
 				_r_obj_dereference (string);
 
 				break;
@@ -2277,7 +2279,7 @@ VOID _app_command_logshow (
 		current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 		if (current_handle)
-			FlushFileBuffers (current_handle);
+			_r_fs_flushfile (current_handle);
 
 		viewer_path = _app_getlogviewer ();
 
@@ -2661,6 +2663,7 @@ VOID _app_command_delete (
 		if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, string->buffer) != IDYES)
 		{
 			_r_obj_dereference (string);
+
 			return;
 		}
 
@@ -2856,7 +2859,7 @@ VOID _app_command_openeditor (
 	ULONG_PTR hash_code;
 	ULONG_PTR id_code;
 	INT listview_id;
-	INT item_id;
+	INT item_id = -1;
 
 	ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, 0, 0);
 
@@ -2866,8 +2869,6 @@ VOID _app_command_openeditor (
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
-		item_id = -1;
-
 		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
 			hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
@@ -3252,6 +3253,7 @@ VOID _app_command_selectfont (
 	CHOOSEFONT cf = {0};
 	LOGFONT lf = {0};
 	LONG dpi_value;
+	UINT flags;
 
 	cf.lStructSize = sizeof (cf);
 	cf.hwndOwner = hwnd;
@@ -3264,18 +3266,15 @@ VOID _app_command_selectfont (
 
 	_r_config_getfont (L"Font", &lf, dpi_value);
 
-	if (ChooseFont (&cf))
-	{
-		_r_config_setfont (L"Font", &lf, dpi_value);
+	if (!ChooseFontW (&cf))
+		return;
 
-		_app_listview_loadfont (dpi_value, TRUE);
-		_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+	_r_config_setfont (L"Font", &lf, dpi_value);
 
-		RedrawWindow (
-			hwnd,
-			NULL,
-			NULL,
-			RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN
-		);
-	}
+	_app_listview_loadfont (dpi_value, TRUE);
+	_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+
+	flags = RDW_NOFRAME | RDW_NOINTERNALPAINT | RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN;
+
+	RedrawWindow (hwnd, NULL, NULL, flags);
 }

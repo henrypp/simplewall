@@ -209,10 +209,10 @@ PR_STRING _app_resolveaddress_interlocked (
 VOID _app_fileloggingenable ();
 
 NTSTATUS NTAPI _app_timercallback (
-	_In_ PVOID context
+	_In_opt_ PVOID context
 );
 
-VOID _app_queue_fileinformation (
+VOID _app_getfileinformation (
 	_In_ PR_STRING path,
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_TYPE_DATA type,
@@ -226,17 +226,17 @@ VOID _app_queue_resolver (
 	_In_ PVOID base_address
 );
 
-VOID NTAPI _app_queuefileinformation (
+VOID NTAPI _app_queue_fileinformation (
 	_In_ PVOID arglist,
 	_In_ ULONG busy_count
 );
 
-VOID NTAPI _app_queuenotifyinformation (
+VOID NTAPI _app_queue_notifyinformation (
 	_In_ PVOID arglist,
 	_In_ ULONG busy_count
 );
 
-VOID NTAPI _app_queueresolveinformation (
+VOID NTAPI _app_queue_resolveinformation (
 	_In_ PVOID arglist,
 	_In_ ULONG busy_count
 );

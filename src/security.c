@@ -124,12 +124,12 @@ PACL _app_createaccesscontrollist (
 			&SeEveryoneSid
 		);
 
-		status = SetEntriesInAcl (count, ea, acl, &new_dacl);
+		status = SetEntriesInAclW (count, ea, acl, &new_dacl);
 
 		if (status == ERROR_SUCCESS)
 			return new_dacl;
 
-		_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAcl", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAclW", status, NULL);
 	}
 
 	return NULL;
@@ -149,7 +149,7 @@ VOID _app_setexplicitaccess (
 
 	RtlZeroMemory (&(ea->Trustee), sizeof (ea->Trustee));
 
-	BuildTrusteeWithSid (&(ea->Trustee), sid);
+	BuildTrusteeWithSidW (&(ea->Trustee), sid);
 }
 
 VOID _app_setenginesecurity (
@@ -169,11 +169,11 @@ VOID _app_setenginesecurity (
 	BOOLEAN is_openforeveryone = FALSE;
 	NTSTATUS status;
 
-	status = FwpmEngineGetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
+	status = FwpmEngineGetSecurityInfo0 (hengine, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
 	if (status != ERROR_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineGetSecurityInfo", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineGetSecurityInfo0", status, NULL);
 
 		return;
 	}
@@ -218,9 +218,9 @@ VOID _app_setenginesecurity (
 
 		if (is_currentuserhaverights || is_openforeveryone)
 		{
-			FwpmEngineSetSecurityInfo (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
+			FwpmEngineSetSecurityInfo0 (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
 
-			FwpmNetEventsSetSecurityInfo (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
+			FwpmNetEventsSetSecurityInfo0 (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
 
 			count = 0;
 
@@ -375,23 +375,23 @@ VOID _app_setenginesecurity (
 				);
 			}
 
-			status = SetEntriesInAcl (count, ea, dacl, &new_dacl);
+			status = SetEntriesInAclW (count, ea, dacl, &new_dacl);
 
 			if (status != ERROR_SUCCESS)
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAcl", status, NULL);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAclW", status, NULL);
 			}
 			else
 			{
-				status = FwpmEngineSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
+				status = FwpmEngineSetSecurityInfo0 (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetSecurityInfo", status, NULL);
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetSecurityInfo0", status, NULL);
 
-				status = FwpmNetEventsSetSecurityInfo (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
+				status = FwpmNetEventsSetSecurityInfo0 (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmNetEventsSetSecurityInfo", status, NULL);
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmNetEventsSetSecurityInfo0", status, NULL);
 
 				LocalFree (new_dacl);
 			}
@@ -399,7 +399,7 @@ VOID _app_setenginesecurity (
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
+		FwpmFreeMemory0 ((PVOID_PTR)&security_descriptor);
 }
 
 VOID _app_setprovidersecurity (
@@ -416,7 +416,7 @@ VOID _app_setprovidersecurity (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmProviderGetSecurityInfoByKey (
+	status = FwpmProviderGetSecurityInfoByKey0 (
 		hengine,
 		provider_guid,
 		DACL_SECURITY_INFORMATION,
@@ -429,7 +429,7 @@ VOID _app_setprovidersecurity (
 
 	if (status != ERROR_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderGetSecurityInfoByKey", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderGetSecurityInfoByKey0", status, NULL);
 
 		return;
 	}
@@ -440,7 +440,7 @@ VOID _app_setprovidersecurity (
 
 		if (new_dacl)
 		{
-			status = FwpmProviderSetSecurityInfoByKey (
+			status = FwpmProviderSetSecurityInfoByKey0 (
 				hengine,
 				provider_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
@@ -451,14 +451,14 @@ VOID _app_setprovidersecurity (
 			);
 
 			if (status != ERROR_SUCCESS)
-				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey", status, NULL);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey0", status, NULL);
 
 			LocalFree (new_dacl);
 		}
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
+		FwpmFreeMemory0 ((PVOID_PTR)&security_descriptor);
 }
 
 VOID _app_setsublayersecurity (
@@ -475,7 +475,7 @@ VOID _app_setsublayersecurity (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmSubLayerGetSecurityInfoByKey (
+	status = FwpmSubLayerGetSecurityInfoByKey0 (
 		hengine,
 		sublayer_guid,
 		DACL_SECURITY_INFORMATION,
@@ -488,7 +488,7 @@ VOID _app_setsublayersecurity (
 
 	if (status != ERROR_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerGetSecurityInfoByKey", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerGetSecurityInfoByKey0", status, NULL);
 
 		return;
 	}
@@ -499,7 +499,7 @@ VOID _app_setsublayersecurity (
 
 		if (new_dacl)
 		{
-			status = FwpmSubLayerSetSecurityInfoByKey (
+			status = FwpmSubLayerSetSecurityInfoByKey0 (
 				hengine,
 				sublayer_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
@@ -510,14 +510,14 @@ VOID _app_setsublayersecurity (
 			);
 
 			if (status != ERROR_SUCCESS)
-				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey", status, NULL);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey0", status, NULL);
 
 			LocalFree (new_dacl);
 		}
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
+		FwpmFreeMemory0 ((PVOID_PTR)&security_descriptor);
 }
 
 VOID _app_setcalloutsecurity (
@@ -534,7 +534,7 @@ VOID _app_setcalloutsecurity (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmCalloutGetSecurityInfoByKey (
+	status = FwpmCalloutGetSecurityInfoByKey0 (
 		hengine,
 		callout_guid,
 		DACL_SECURITY_INFORMATION,
@@ -548,7 +548,7 @@ VOID _app_setcalloutsecurity (
 	if (status != ERROR_SUCCESS)
 	{
 		if (status != FWP_E_CALLOUT_NOT_FOUND)
-			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey", status, NULL);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey0", status, NULL);
 
 		return;
 	}
@@ -559,7 +559,7 @@ VOID _app_setcalloutsecurity (
 
 		if (new_dacl)
 		{
-			status = FwpmCalloutSetSecurityInfoByKey (
+			status = FwpmCalloutSetSecurityInfoByKey0 (
 				hengine,
 				callout_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
@@ -570,14 +570,14 @@ VOID _app_setcalloutsecurity (
 			);
 
 			if (status != ERROR_SUCCESS)
-				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey", status, NULL);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey0", status, NULL);
 
 			LocalFree (new_dacl);
 		}
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
+		FwpmFreeMemory0 ((PVOID_PTR)&security_descriptor);
 }
 
 VOID _app_setfiltersecurity (
@@ -596,7 +596,7 @@ VOID _app_setfiltersecurity (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmFilterGetSecurityInfoByKey (
+	status = FwpmFilterGetSecurityInfoByKey0 (
 		hengine,
 		filter_guid,
 		DACL_SECURITY_INFORMATION,
@@ -610,7 +610,7 @@ VOID _app_setfiltersecurity (
 	if (status != ERROR_SUCCESS)
 	{
 		// FWP_E_FILTER_NOT_FOUND
-		_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
+		_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterGetSecurityInfoByKey0", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
 
 		return;
 	}
@@ -621,7 +621,7 @@ VOID _app_setfiltersecurity (
 
 		if (new_dacl)
 		{
-			status = FwpmFilterSetSecurityInfoByKey (
+			status = FwpmFilterSetSecurityInfoByKey0 (
 				hengine,
 				filter_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
@@ -632,12 +632,12 @@ VOID _app_setfiltersecurity (
 			);
 
 			if (status != ERROR_SUCCESS)
-				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey", status, L"#%" TEXT (PRIu32), line);
+				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey0", status, L"#%" TEXT (PRIu32), line);
 
 			LocalFree (new_dacl);
 		}
 	}
 
 	if (security_descriptor)
-		FwpmFreeMemory ((PVOID_PTR)&security_descriptor);
+		FwpmFreeMemory0 ((PVOID_PTR)&security_descriptor);
 }

@@ -367,7 +367,7 @@ NTSTATUS _app_formatip (
 					return STATUS_INVALID_ADDRESS_COMPONENT;
 			}
 
-			status = RtlIpv4AddressToStringEx (p4addr, 0, buffer, &buffer_length);
+			status = RtlIpv4AddressToStringExW (p4addr, 0, buffer, &buffer_length);
 
 			return status;
 		}
@@ -382,7 +382,7 @@ NTSTATUS _app_formatip (
 					return STATUS_INVALID_ADDRESS_COMPONENT;
 			}
 
-			status = RtlIpv6AddressToStringEx (p6addr, 0, 0, buffer, &buffer_length);
+			status = RtlIpv6AddressToStringExW (p6addr, 0, 0, buffer, &buffer_length);
 
 			return status;
 		}
@@ -736,13 +736,13 @@ PR_STRING _app_verifygetstring (
 			if (!prov_cert)
 				break;
 
-			length = CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, NULL, 0) - 1;
+			length = CertGetNameStringW (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, NULL, 0) - 1;
 
 			if (length > 1)
 			{
 				string = _r_obj_createstring_ex (NULL, length * sizeof (WCHAR));
 
-				CertGetNameString (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1);
+				CertGetNameStringW (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1);
 
 				_r_obj_trimstringtonullterminator (string);
 
@@ -811,7 +811,7 @@ LONG _app_verifyfromfile (
 	return status;
 }
 
-LONG _app_verifyfilefromcatalog (
+NTSTATUS _app_verifyfilefromcatalog (
 	_In_ HANDLE hfile,
 	_In_ LPCWSTR file_path,
 	_In_opt_ LPCWSTR algorithm_id,
@@ -830,7 +830,7 @@ LONG _app_verifyfilefromcatalog (
 	PVOID file_hash;
 	LONG64 file_size;
 	ULONG file_hash_length;
-	LONG status;
+	NTSTATUS status;
 
 	status = _r_fs_getsize2 (hfile, NULL, &file_size);
 
@@ -1381,7 +1381,7 @@ BOOLEAN _app_preparserulestring (
 
 	for (ULONG_PTR i = 0; i < length; i++)
 	{
-		if (IsCharAlphaNumeric (rule->buffer[i]))
+		if (IsCharAlphaNumericW (rule->buffer[i]))
 			continue;
 
 		is_valid = FALSE;
@@ -1568,7 +1568,7 @@ PR_STRING _app_resolveaddress (
 				}
 			}
 
-			DnsRecordListFree (dns_records, DnsFreeRecordList);
+			DnsFree (dns_records, DnsFreeRecordList);
 		}
 	}
 
@@ -1647,7 +1647,7 @@ VOID _app_fileloggingenable ()
 }
 
 NTSTATUS NTAPI _app_timercallback (
-	_In_ PVOID context
+	_In_opt_ PVOID context
 )
 {
 	LARGE_INTEGER timeout;
@@ -1697,7 +1697,7 @@ NTSTATUS NTAPI _app_timercallback (
 	return STATUS_SUCCESS;
 }
 
-VOID _app_queue_fileinformation (
+VOID _app_getfileinformation (
 	_In_ PR_STRING path,
 	_In_ ULONG_PTR app_hash,
 	_In_ ENUM_TYPE_DATA type,
@@ -1732,7 +1732,7 @@ VOID _app_queue_fileinformation (
 		_r_queuedlock_releaseexclusive (&lock_cache_information);
 	}
 
-	_r_workqueue_queueitem (&file_queue, &_app_queuefileinformation, ptr_app_info);
+	_r_workqueue_queueitem (&file_queue, &_app_queue_fileinformation, ptr_app_info);
 }
 
 VOID _app_queue_resolver (
@@ -1751,10 +1751,10 @@ VOID _app_queue_resolver (
 	context->lparam = hash_code;
 	context->base_address = _r_obj_reference (base_address);
 
-	_r_workqueue_queueitem (&resolver_queue, &_app_queueresolveinformation, context);
+	_r_workqueue_queueitem (&resolver_queue, &_app_queue_resolveinformation, context);
 }
 
-VOID NTAPI _app_queuefileinformation (
+VOID NTAPI _app_queue_fileinformation (
 	_In_ PVOID arglist,
 	_In_ ULONG busy_count
 )
@@ -1824,7 +1824,7 @@ VOID NTAPI _app_queuefileinformation (
 	NtClose (hfile);
 }
 
-VOID NTAPI _app_queuenotifyinformation (
+VOID NTAPI _app_queue_notifyinformation (
 	_In_ PVOID arglist,
 	_In_ ULONG busy_count
 )
@@ -1959,7 +1959,7 @@ VOID NTAPI _app_queuenotifyinformation (
 	_r_obj_dereference (ptr_log);
 }
 
-VOID NTAPI _app_queueresolveinformation (
+VOID NTAPI _app_queue_resolveinformation (
 	_In_ PVOID arglist,
 	_In_ ULONG busy_count
 )

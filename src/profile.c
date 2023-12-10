@@ -280,7 +280,6 @@ VOID _app_setappinfo (
 		case INFO_IS_UNDELETABLE:
 		{
 			ptr_app->is_undeletable = (PtrToInt (value) ? TRUE : FALSE);
-
 			break;
 		}
 	}
@@ -389,7 +388,7 @@ ULONG_PTR _app_addapplication (
 	if (_r_obj_isstringempty2 (path))
 		return 0;
 
-	if (_app_isappvalidpath (path) && PathIsDirectory (path->buffer))
+	if (_app_isappvalidpath (path) && PathIsDirectoryW (path->buffer))
 		return 0;
 
 	_r_obj_initializestringref2 (&path_temp, path);
@@ -397,7 +396,7 @@ ULONG_PTR _app_addapplication (
 	// prevent possible duplicate apps entries with short path (issue #640)
 	if (_r_str_findchar (&path_temp, L'~', FALSE) != SIZE_MAX)
 	{
-		if (GetLongPathName (path_temp.buffer, path_full, RTL_NUMBER_OF (path_full)))
+		if (GetLongPathNameW (path_temp.buffer, path_full, RTL_NUMBER_OF (path_full)))
 			_r_obj_initializestringref (&path_temp, path_full);
 	}
 
@@ -440,7 +439,7 @@ ULONG_PTR _app_addapplication (
 		}
 		else
 		{
-			ptr_app->type = PathIsNetworkPath (path_temp.buffer) ? DATA_APP_NETWORK : DATA_APP_REGULAR;
+			ptr_app->type = PathIsNetworkPathW (path_temp.buffer) ? DATA_APP_NETWORK : DATA_APP_REGULAR;
 		}
 
 		if (is_ntoskrnl)
@@ -480,7 +479,7 @@ ULONG_PTR _app_addapplication (
 
 	// queue file information
 	if (ptr_app->real_path)
-		_app_queue_fileinformation (ptr_app->real_path, app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
+		_app_getfileinformation (ptr_app->real_path, app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
 
 	return app_hash;
 }
@@ -848,14 +847,12 @@ COLORREF _app_getrulecolor (
 )
 {
 	PITEM_RULE ptr_rule;
-	ULONG_PTR color_hash;
+	ULONG_PTR color_hash = 0;
 
 	ptr_rule = _app_getrulebyid (rule_idx);
 
 	if (!ptr_rule)
 		return 0;
-
-	color_hash = 0;
 
 	if (_r_config_getboolean_ex (L"IsHighlightInvalid", TRUE, L"colors") && ptr_rule->is_enabled && ptr_rule->is_haveerrors)
 	{
@@ -1116,8 +1113,7 @@ PR_STRING _app_appexpandrules (
 		if (!ptr_rule)
 			continue;
 
-		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER &&
-			!_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
+		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER && !_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
 		{
 			_r_obj_appendstringbuilder2 (&buffer, ptr_rule->name);
 
@@ -1204,12 +1200,14 @@ PR_STRING _app_rulesexpandapps (
 		}
 
 		if (!string)
-			string = ptr_app->original_path;
+			string = _r_obj_reference (ptr_app->original_path);
 
 		if (string)
 		{
 			_r_obj_appendstringbuilder2 (&sr, string);
 			_r_obj_appendstringbuilder3 (&sr, &delimeter_sr);
+
+			_r_obj_dereference (string);
 		}
 
 		_r_obj_dereference (ptr_app);
@@ -1302,7 +1300,7 @@ BOOLEAN _app_isapphavedrive (
 
 		if (ptr_app->type == DATA_APP_REGULAR)
 		{
-			drive_id = PathGetDriveNumber (ptr_app->original_path->buffer);
+			drive_id = PathGetDriveNumberW (ptr_app->original_path->buffer);
 		}
 		else
 		{

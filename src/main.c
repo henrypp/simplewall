@@ -429,7 +429,7 @@ VOID _app_config_apply (
 
 					listview_id = _app_listview_getbytype (ptr_app->type);
 
-					_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, listview_id);
+					_app_getfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, listview_id);
 				}
 
 				_r_queuedlock_releaseshared (&lock_apps);
@@ -649,7 +649,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_checkbutton (hwnd, IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_NOTIFICATIONONTRAY_CHK, _r_config_getboolean (L"IsNotificationsOnTray", FALSE));
 
-					SendDlgItemMessage (
+					SendDlgItemMessageW (
 						hwnd,
 						IDC_NOTIFICATIONTIMEOUT,
 						UDM_SETRANGE32,
@@ -657,7 +657,7 @@ INT_PTR CALLBACK SettingsProc (
 						(LPARAM)_r_calc_days2seconds (7)
 					);
 
-					SendDlgItemMessage (
+					SendDlgItemMessageW (
 						hwnd,
 						IDC_NOTIFICATIONTIMEOUT,
 						UDM_SETPOS32,
@@ -665,7 +665,7 @@ INT_PTR CALLBACK SettingsProc (
 						(LPARAM)_r_config_getulong (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT)
 					);
 
-					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ENABLENOTIFICATIONS_CHK, 0), WM_APP);
+					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ENABLENOTIFICATIONS_CHK, 0), WM_APP);
 
 					break;
 				}
@@ -697,7 +697,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					ud.nInc = 64; // set step to 64kb
 
-					SendDlgItemMessage (
+					SendDlgItemMessageW (
 						hwnd,
 						IDC_LOGSIZELIMIT,
 						UDM_SETACCEL,
@@ -705,7 +705,7 @@ INT_PTR CALLBACK SettingsProc (
 						(LPARAM)&ud
 					);
 
-					SendDlgItemMessage (
+					SendDlgItemMessageW (
 						hwnd,
 						IDC_LOGSIZELIMIT,
 						UDM_SETRANGE32,
@@ -713,7 +713,7 @@ INT_PTR CALLBACK SettingsProc (
 						(LPARAM)_r_calc_kilobytes2bytes (512)
 					);
 
-					SendDlgItemMessage (
+					SendDlgItemMessageW (
 						hwnd,
 						IDC_LOGSIZELIMIT,
 						UDM_SETPOS32,
@@ -723,7 +723,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_ctrl_checkbutton (hwnd, IDC_ENABLEUILOG_CHK, _r_config_getboolean (L"IsLogUiEnabled", FALSE));
 
-					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ENABLELOG_CHK, 0), WM_APP);
+					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ENABLELOG_CHK, 0), WM_APP);
 
 					break;
 				}
@@ -1141,13 +1141,13 @@ INT_PTR CALLBACK SettingsProc (
 
 			if (ctrl_id == IDC_LOGSIZELIMIT)
 			{
-				value = (ULONG)SendDlgItemMessage (hwnd, ctrl_id, UDM_GETPOS32, 0, 0);
+				value = (ULONG)SendDlgItemMessageW (hwnd, ctrl_id, UDM_GETPOS32, 0, 0);
 
 				_r_config_setulong (L"LogSizeLimitKb", value);
 			}
 			else if (ctrl_id == IDC_NOTIFICATIONTIMEOUT)
 			{
-				value = (ULONG)SendDlgItemMessage (hwnd, ctrl_id, UDM_GETPOS32, 0, 0);
+				value = (ULONG)SendDlgItemMessageW (hwnd, ctrl_id, UDM_GETPOS32, 0, 0);
 
 				_r_config_setulong (L"NotificationsTimeout", value);
 			}
@@ -1165,7 +1165,7 @@ INT_PTR CALLBACK SettingsProc (
 			{
 				case TTN_GETDISPINFO:
 				{
-					LPNMTTDISPINFO lpnmdi = (LPNMTTDISPINFO)lparam;
+					LPNMTTDISPINFOW lpnmdi = (LPNMTTDISPINFOW)lparam;
 					WCHAR buffer[1024] = {0};
 					INT locale_id;
 					INT ctrl_id;
@@ -1249,7 +1249,8 @@ INT_PTR CALLBACK SettingsProc (
 
 					result = _app_message_custdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
 
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
+					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, result);
+
 					return result;
 				}
 
@@ -1289,7 +1290,7 @@ INT_PTR CALLBACK SettingsProc (
 					cc.lpCustColors = cust;
 					cc.rgbResult = ptr_clr_crnt->new_clr;
 
-					if (ChooseColor (&cc))
+					if (ChooseColorW (&cc))
 					{
 						ptr_clr_crnt->new_clr = cc.rgbResult;
 
@@ -1352,35 +1353,30 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_CONFIRMEXIT_CHK:
 				{
 					_r_config_setboolean (L"ConfirmExit2", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
-
 					break;
 				}
 
 				case IDC_CONFIRMEXITTIMER_CHK:
 				{
 					_r_config_setboolean (L"ConfirmExitTimer", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
-
 					break;
 				}
 
 				case IDC_CONFIRMLOGCLEAR_CHK:
 				{
 					_r_config_setboolean (L"ConfirmLogClear", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
-
 					break;
 				}
 
 				case IDC_CONFIRMALLOW_CHK:
 				{
 					_r_config_setboolean (L"ConfirmAllow", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
-
 					break;
 				}
 
 				case IDC_TRAYICONSINGLECLICK_CHK:
 				{
 					_r_config_setboolean (L"IsTrayIconSingleClick", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
-
 					break;
 				}
 
@@ -1480,7 +1476,7 @@ INT_PTR CALLBACK SettingsProc (
 						_app_loginit (is_enabled);
 					}
 
-					SendDlgItemMessage (
+					SendDlgItemMessageW (
 						config.hrebar,
 						IDC_TOOLBAR,
 						TB_PRESSBUTTON,
@@ -1491,7 +1487,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
 					_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
 
-					hctrl = (HWND)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0);
+					hctrl = (HWND)SendDlgItemMessageW (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0);
 
 					if (hctrl)
 						_r_ctrl_enable (hctrl, 0, is_enabled);
@@ -1509,7 +1505,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_config_setboolean (L"IsLogUiEnabled", is_enabled);
 
-					SendDlgItemMessage (
+					SendDlgItemMessageW (
 						config.hrebar,
 						IDC_TOOLBAR,
 						TB_PRESSBUTTON,
@@ -1664,7 +1660,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (notify_code != EN_KILLFOCUS)
 						break;
 
-					value = (ULONG)SendDlgItemMessage (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0);
+					value = (ULONG)SendDlgItemMessageW (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0);
 
 					_r_config_setulong (L"LogSizeLimitKb", value);
 
@@ -1683,7 +1679,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (!is_postmessage)
 						_r_config_setboolean (L"IsNotificationsEnabled", is_enabled);
 
-					SendDlgItemMessage (
+					SendDlgItemMessageW (
 						config.hrebar,
 						IDC_TOOLBAR,
 						TB_PRESSBUTTON,
@@ -1694,12 +1690,12 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONSOUND_CHK, is_enabled);
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONONTRAY_CHK, is_enabled);
 
-					hctrl = (HWND)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0);
+					hctrl = (HWND)SendDlgItemMessageW (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0);
 
 					if (hctrl)
 						_r_ctrl_enable (hctrl, 0, is_enabled);
 
-					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDC_NOTIFICATIONSOUND_CHK, 0), WM_APP);
+					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_NOTIFICATIONSOUND_CHK, 0), WM_APP);
 
 					if (is_postmessage)
 						break;
@@ -1733,7 +1729,6 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK:
 				{
 					_r_config_setboolean (L"IsNotificationsFullscreenSilentMode", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
-
 					break;
 				}
 
@@ -1755,7 +1750,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					if (notify_code == EN_KILLFOCUS)
 					{
-						_r_config_setulong (L"NotificationsTimeout", (ULONG)SendDlgItemMessage (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETPOS32, 0, 0));
+						_r_config_setulong (L"NotificationsTimeout", (ULONG)SendDlgItemMessageW (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETPOS32, 0, 0));
 					}
 
 					break;
@@ -1764,7 +1759,6 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_EXCLUDESTEALTH_CHK:
 				{
 					_r_config_setboolean (L"IsExcludeStealth", _r_ctrl_isbuttonchecked (hwnd, ctrl_id));
-
 					break;
 				}
 
@@ -1868,8 +1862,7 @@ VOID _app_tabs_init (
 
 	_app_listview_loadfont (dpi_value, TRUE);
 
-	style = LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP |
-		LVS_EX_HEADERINALLVIEWS | LVS_EX_HEADERDRAGDROP;
+	style = LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_HEADERINALLVIEWS | LVS_EX_HEADERDRAGDROP;
 
 	tabs_count = _app_addwindowtabs (hwnd);
 
@@ -2234,7 +2227,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case WM_MBUTTONUP:
 				{
-					PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (IDM_TRAY_LOGSHOW, 0), 0);
+					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDM_TRAY_LOGSHOW, 0), 0);
 					break;
 				}
 
@@ -2282,7 +2275,8 @@ INT_PTR CALLBACK DlgProc (
 
 				_r_queuedlock_releaseexclusive (&lock_notify);
 
-				SetWindowLongPtr (hwnd, DWLP_MSGRESULT, (LONG_PTR)hnotify);
+				SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, (LONG_PTR)hnotify);
+
 				return (INT_PTR)hnotify;
 			}
 
@@ -2309,7 +2303,8 @@ INT_PTR CALLBACK DlgProc (
 
 				if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (locale_id), cfg_name))
 				{
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 					return TRUE;
 				}
 			}
@@ -2360,15 +2355,15 @@ INT_PTR CALLBACK DlgProc (
 			ULONG length;
 
 			hdrop = (HDROP)wparam;
-			numfiles = DragQueryFile (hdrop, UINT32_MAX, NULL, 0);
+			numfiles = DragQueryFileW (hdrop, UINT32_MAX, NULL, 0);
 			app_hash = 0;
 
 			for (ULONG i = 0; i < numfiles; i++)
 			{
-				length = DragQueryFile (hdrop, i, NULL, 0);
+				length = DragQueryFileW (hdrop, i, NULL, 0);
 				string = _r_obj_createstring_ex (NULL, length * sizeof (WCHAR));
 
-				if (DragQueryFile (hdrop, i, string->buffer, length + 1))
+				if (DragQueryFileW (hdrop, i, string->buffer, length + 1))
 					app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, string, NULL, NULL);
 
 				_r_obj_dereference (string);
@@ -2407,7 +2402,7 @@ INT_PTR CALLBACK DlgProc (
 
 			_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
-			SendMessage (hwnd, WM_SIZE, 0, 0);
+			SendMessageW (hwnd, WM_SIZE, 0, 0);
 
 			break;
 		}
@@ -2511,7 +2506,7 @@ INT_PTR CALLBACK DlgProc (
 
 					result = _app_message_custdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
 
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, result);
+					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, result);
 					return result;
 				}
 
@@ -2577,11 +2572,11 @@ INT_PTR CALLBACK DlgProc (
 
 				case LVN_GETINFOTIP:
 				{
-					LPNMLVGETINFOTIP lpnmlv;
+					LPNMLVGETINFOTIPW lpnmlv;
 					PR_STRING string;
 					INT listview_id;
 
-					lpnmlv = (LPNMLVGETINFOTIP)lparam;
+					lpnmlv = (LPNMLVGETINFOTIPW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
 					lparam = _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem);
@@ -2631,7 +2626,7 @@ INT_PTR CALLBACK DlgProc (
 									SZ_WARNING_ME,
 									NULL))
 								{
-									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 									return TRUE;
 								}
 							}
@@ -2646,7 +2641,8 @@ INT_PTR CALLBACK DlgProc (
 									SZ_WARNING_SVCHOST,
 									NULL))
 								{
-									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 									return TRUE;
 								}
 							}
@@ -2658,7 +2654,8 @@ INT_PTR CALLBACK DlgProc (
 									_r_locale_getstring (IDS_QUESTION_ALLOW),
 									L"ConfirmAllow"))
 								{
-									SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 									return TRUE;
 								}
 							}
@@ -2838,7 +2835,7 @@ INT_PTR CALLBACK DlgProc (
 					}
 
 					if (command_id)
-						PostMessage (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
+						PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
 
 					break;
 				}
@@ -2886,7 +2883,8 @@ INT_PTR CALLBACK DlgProc (
 							_wfp_logunsubscribe (hengine);
 					}
 
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 					return TRUE;
 				}
 
@@ -2905,7 +2903,8 @@ INT_PTR CALLBACK DlgProc (
 						_wfp_logsubscribe (hwnd, hengine);
 					}
 
-					SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 					return TRUE;
 				}
 			}
@@ -2989,11 +2988,13 @@ INT_PTR CALLBACK DlgProc (
 				else if (ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= (IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list)))
 				{
 					_app_command_idtorules (hwnd, ctrl_id);
+
 					return FALSE;
 				}
 				else if (ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
 				{
 					_app_command_idtotimers (hwnd, ctrl_id);
+
 					return FALSE;
 				}
 			}
@@ -3029,7 +3030,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_EXIT:
 				case IDM_TRAY_EXIT:
 				{
-					PostMessage (hwnd, WM_CLOSE, 0, 0);
+					PostMessageW (hwnd, WM_CLOSE, 0, 0);
 					break;
 				}
 
@@ -3208,7 +3209,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						_app_search_setvisible (hwnd, config.hsearchbar);
 
-						PostMessage (hwnd, WM_SIZE, 0, 0);
+						PostMessageW (hwnd, WM_SIZE, 0, 0);
 					}
 
 					break;
@@ -3293,7 +3294,7 @@ INT_PTR CALLBACK DlgProc (
 
 							listview_id = _app_listview_getbytype (ptr_app->type);
 
-							_app_queue_fileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, listview_id);
+							_app_getfileinformation (ptr_app->real_path, ptr_app->app_hash, ptr_app->type, listview_id);
 						}
 
 						_r_queuedlock_releaseshared (&lock_apps);
@@ -3315,7 +3316,7 @@ INT_PTR CALLBACK DlgProc (
 
 					SetFocus (config.hsearchbar);
 
-					SendMessage (config.hsearchbar, EM_SETSEL, 0, (LPARAM)-1);
+					SendMessageW (config.hsearchbar, EM_SETSEL, 0, (LPARAM)-1);
 
 					break;
 				}
@@ -3608,7 +3609,7 @@ INT_PTR CALLBACK DlgProc (
 				}
 
 				case IDM_COPY:
-				case IDM_COPY2:
+				case IDM_COPY_VALUE:
 				{
 					_app_command_copy (hwnd, ctrl_id, (INT)lparam);
 					break;

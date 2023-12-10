@@ -155,7 +155,7 @@ BOOLEAN _app_notify_addobject (
 
 	_r_obj_swapreference (&ptr_app->notification, ptr_log);
 
-	if (SendMessage (hwnd, WM_NOTIFICATION, 0, (LPARAM)ptr_app->notification))
+	if (SendMessageW (hwnd, WM_NOTIFICATION, 0, (LPARAM)ptr_app->notification))
 	{
 		if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
 		{
@@ -480,8 +480,8 @@ VOID _app_notify_playsound ()
 
 	flags = SND_ASYNC | SND_NODEFAULT | SND_NOWAIT | SND_SENTRY;
 
-	if (_r_obj_isstringempty (current_path) || !PlaySound (current_path->buffer, NULL, flags | SND_FILENAME))
-		PlaySound (NOTIFY_SOUND_NAME, NULL, flags);
+	if (_r_obj_isstringempty (current_path) || !PlaySoundW (current_path->buffer, NULL, flags | SND_FILENAME))
+		PlaySoundW (NOTIFY_SOUND_NAME, NULL, flags);
 }
 
 VOID _app_notify_queueinfo (
@@ -496,7 +496,7 @@ VOID _app_notify_queueinfo (
 	context->hwnd = hwnd;
 	context->base_address = _r_obj_reference (ptr_log);
 
-	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queuenotifyinformation, context);
+	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queue_notifyinformation, context);
 }
 
 VOID _app_notify_killprocess (
@@ -646,7 +646,7 @@ VOID _app_notify_setposition (
 
 		hmonitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONEAREST);
 
-		if (GetMonitorInfo (hmonitor, &monitor_info))
+		if (GetMonitorInfoW (hmonitor, &monitor_info))
 		{
 			taskbar_rect.cbSize = sizeof (taskbar_rect);
 
@@ -742,16 +742,16 @@ VOID _app_notify_initialize (
 		context->hfont_link = _app_createfont (&ncm.lfMessageFont, 9, TRUE, dpi_value);
 		context->hfont_text = _app_createfont (&ncm.lfMessageFont, 9, FALSE, dpi_value);
 
-		SendMessage (context->hwnd, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
+		SendMessageW (context->hwnd, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
 
-		SendDlgItemMessage (context->hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)context->hfont_title, TRUE);
-		SendDlgItemMessage (context->hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)context->hfont_link, TRUE);
+		SendDlgItemMessageW (context->hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)context->hfont_title, TRUE);
+		SendDlgItemMessageW (context->hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)context->hfont_link, TRUE);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_DATE_TEXT; i++)
-			SendDlgItemMessage (context->hwnd, i, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
+			SendDlgItemMessageW (context->hwnd, i, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_NEXT_BTN; i++)
-			SendDlgItemMessage (context->hwnd, i, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
+			SendDlgItemMessageW (context->hwnd, i, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
 	}
 
 	// load images
@@ -762,11 +762,11 @@ VOID _app_notify_initialize (
 	context->hbmp_next = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_NEXT), icon_small);
 
 	// set button configuration
-	SendDlgItemMessage (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
-	SendDlgItemMessage (context->hwnd, IDC_KILLPROCESS_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
-	SendDlgItemMessage (context->hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_allow);
-	SendDlgItemMessage (context->hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
-	SendDlgItemMessage (context->hwnd, IDC_NEXT_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_next);
+	SendDlgItemMessageW (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
+	SendDlgItemMessageW (context->hwnd, IDC_KILLPROCESS_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
+	SendDlgItemMessageW (context->hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_allow);
+	SendDlgItemMessageW (context->hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
+	SendDlgItemMessageW (context->hwnd, IDC_NEXT_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_next);
 
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_RULES_BTN, dpi_value);
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_KILLPROCESS_BTN, dpi_value);
@@ -1039,7 +1039,7 @@ INT_PTR CALLBACK NotificationProc (
 					_r_calc_rectheight (&draw_info->rcItem)
 				);
 
-				DrawTextEx (
+				DrawTextExW (
 					draw_info->hDC,
 					string->buffer,
 					(INT)(INT_PTR)_r_str_getlength2 (string),
@@ -1077,7 +1077,8 @@ INT_PTR CALLBACK NotificationProc (
 				);
 			}
 
-			SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+			SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 			return TRUE;
 		}
 
@@ -1091,7 +1092,7 @@ INT_PTR CALLBACK NotificationProc (
 			{
 				SetCursor (LoadCursor (NULL, IDC_HAND));
 
-				SetWindowLongPtr (hwnd, DWLP_MSGRESULT, TRUE);
+				SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 				return TRUE;
 			}
 
@@ -1100,7 +1101,7 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_LBUTTONDOWN:
 		{
-			PostMessage (hwnd, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, 0);
+			PostMessageW (hwnd, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, 0);
 			break;
 		}
 
@@ -1188,15 +1189,14 @@ INT_PTR CALLBACK NotificationProc (
 
 				case TTN_GETDISPINFO:
 				{
-					LPNMTTDISPINFO lpnmdi;
-
+					LPNMTTDISPINFOW lpnmdi;
 					WCHAR buffer[1024] = {0};
 					PR_STRING string;
 					ULONG_PTR app_hash;
 					INT ctrl_id;
 					INT listview_id = 0;
 
-					lpnmdi = (LPNMTTDISPINFO)lparam;
+					lpnmdi = (LPNMTTDISPINFOW)lparam;
 
 					if ((lpnmdi->uFlags & TTF_IDISHWND) == 0)
 						break;
@@ -1214,6 +1214,7 @@ INT_PTR CALLBACK NotificationProc (
 							if (string)
 							{
 								_r_str_copy (buffer, RTL_NUMBER_OF (buffer), string->buffer);
+
 								_r_obj_dereference (string);
 							}
 						}
@@ -1241,6 +1242,7 @@ INT_PTR CALLBACK NotificationProc (
 						if (string)
 						{
 							_r_str_copy (buffer, RTL_NUMBER_OF (buffer), string->buffer);
+
 							_r_obj_dereference (string);
 						}
 					}
@@ -1331,8 +1333,7 @@ INT_PTR CALLBACK NotificationProc (
 
 				if (!(ptr_rule->is_forservices && _app_issystemhash (app_hash)))
 				{
-					is_remove = ptr_rule->is_enabled &&
-						_r_obj_findhashtable (ptr_rule->apps, app_hash);
+					is_remove = ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, app_hash);
 
 					if (is_remove)
 					{
@@ -1398,7 +1399,6 @@ INT_PTR CALLBACK NotificationProc (
 				case IDCANCEL: // process Esc key
 				{
 					DestroyWindow (hwnd);
-
 					break;
 				}
 
@@ -1545,7 +1545,7 @@ INT_PTR CALLBACK NotificationProc (
 					if (!hedit)
 						break;
 
-					if (!GetClassName (hedit, class_name, RTL_NUMBER_OF (class_name)))
+					if (!GetClassNameW (hedit, class_name, RTL_NUMBER_OF (class_name)))
 						break;
 
 					if (_r_str_compare (class_name, 0, WC_EDIT, 0) != 0)
@@ -1554,12 +1554,12 @@ INT_PTR CALLBACK NotificationProc (
 					// edit control hotkey for "ctrl+c" (issue #597)
 					if (ctrl_id == IDM_COPY)
 					{
-						SendMessage (hedit, WM_COPY, 0, 0);
+						SendMessageW (hedit, WM_COPY, 0, 0);
 					}
 					// edit control hotkey for "ctrl+a"
 					else if (ctrl_id == IDM_SELECT_ALL)
 					{
-						SendMessage (hedit, EM_SETSEL, 0, (LPARAM)-1);
+						SendMessageW (hedit, EM_SETSEL, 0, (LPARAM)-1);
 					}
 
 					break;

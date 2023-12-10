@@ -82,13 +82,13 @@ VOID _app_search_initialize (
 
 	_r_wnd_setcontext (context->hwnd, SHORT_MAX, context);
 
-	context->def_window_proc = (WNDPROC)GetWindowLongPtr (context->hwnd, GWLP_WNDPROC);
-	SetWindowLongPtr (context->hwnd, GWLP_WNDPROC, (LONG_PTR)_app_search_subclass_proc);
+	context->def_window_proc = (WNDPROC)GetWindowLongPtrW (context->hwnd, GWLP_WNDPROC);
+	SetWindowLongPtrW (context->hwnd, GWLP_WNDPROC, (LONG_PTR)_app_search_subclass_proc);
 
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s...", _r_locale_getstring (IDS_FIND));
-	SendMessage (context->hwnd, EM_SETCUEBANNER, FALSE, (LPARAM)buffer);
+	SendMessageW (context->hwnd, EM_SETCUEBANNER, FALSE, (LPARAM)buffer);
 
-	SendMessage (context->hwnd, WM_THEMECHANGED, 0, 0);
+	SendMessageW (context->hwnd, WM_THEMECHANGED, 0, 0);
 }
 
 VOID _app_search_setvisible (
@@ -120,10 +120,10 @@ VOID _app_search_drawbutton (
 	_In_ LPCRECT button_rect
 )
 {
-	HDC hdc;
-	HDC buffer_dc;
 	HBITMAP buffer_bitmap;
 	HBITMAP old_bitmap;
+	HDC buffer_dc;
+	HDC hdc;
 	RECT rect;
 
 	hdc = GetWindowDC (context->hwnd);
@@ -545,7 +545,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			_app_search_destroytheme (context);
 
 			_r_wnd_removecontext (context->hwnd, SHORT_MAX);
-			SetWindowLongPtr (hwnd, GWLP_WNDPROC, (LONG_PTR)old_wnd_proc);
+			SetWindowLongPtrW (hwnd, GWLP_WNDPROC, (LONG_PTR)old_wnd_proc);
 
 			_r_mem_free (context);
 			context = NULL;
@@ -565,7 +565,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			calc_size = (LPNCCALCSIZE_PARAMS)lparam;
 
 			// Let Windows handle the non-client defaults.
-			CallWindowProc (old_wnd_proc, hwnd, msg, wparam, lparam);
+			CallWindowProcW (old_wnd_proc, hwnd, msg, wparam, lparam);
 
 			// Deflate the client area to accommodate the custom button.
 			calc_size->rgrc[0].right -= context->cx_width;
@@ -578,7 +578,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			RECT rect;
 
 			// Let Windows handle the non-client defaults.
-			CallWindowProc (old_wnd_proc, hwnd, msg, wparam, lparam);
+			CallWindowProcW (old_wnd_proc, hwnd, msg, wparam, lparam);
 
 			// Get the screen coordinates of the window.
 			if (!GetWindowRect (hwnd, &rect))
@@ -705,7 +705,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			_app_search_initializetheme (context);
 
 			// Reset the client area margins.
-			SendMessage (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+			SendMessageW (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
 
 			// Refresh the non-client area.
 			SetWindowPos (hwnd, NULL, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
@@ -767,5 +767,5 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		}
 	}
 
-	return CallWindowProc (old_wnd_proc, hwnd, msg, wparam, lparam);
+	return CallWindowProcW (old_wnd_proc, hwnd, msg, wparam, lparam);
 }

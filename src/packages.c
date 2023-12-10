@@ -363,7 +363,7 @@ VOID _app_package_getserviceslist ()
 	ULONG services_returned;
 	NTSTATUS status;
 
-	hsvcmgr = OpenSCManager (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
+	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
 
 	if (!hsvcmgr)
 		return;
@@ -378,7 +378,7 @@ VOID _app_package_getserviceslist ()
 	buffer_size = initial_buffer_size;
 	buffer = _r_mem_allocate (buffer_size);
 
-	if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
+	if (!EnumServicesStatusExW (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 	{
 		if (PebLastError () == ERROR_MORE_DATA)
 		{
@@ -387,15 +387,17 @@ VOID _app_package_getserviceslist ()
 			buffer = _r_mem_reallocate (buffer, buffer_size);
 
 			// Now query again for services
-			if (!EnumServicesStatusEx (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
+			if (!EnumServicesStatusExW (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 			{
 				_r_mem_free (buffer);
+
 				buffer = NULL;
 			}
 		}
 		else
 		{
 			_r_mem_free (buffer);
+
 			buffer = NULL;
 		}
 	}
@@ -484,7 +486,7 @@ VOID _app_package_getserviceslist ()
 				// the descriptor, you may have to convert it. See MakeSelfRelativeSD for
 				// details.
 
-				status = BuildSecurityDescriptor (NULL, NULL, 1, &ea, 0, NULL, NULL, &sd_length, &service_sd);
+				status = BuildSecurityDescriptorW (NULL, NULL, 1, &ea, 0, NULL, NULL, &sd_length, &service_sd);
 
 				if (status == ERROR_SUCCESS && service_sd)
 				{

@@ -406,7 +406,7 @@ VOID _wfp_logunsubscribe (
 	if (!current_handle)
 		return;
 
-	status = FwpmNetEventUnsubscribe (engine_handle, current_handle);
+	status = FwpmNetEventUnsubscribe0 (engine_handle, current_handle);
 
 	if (status != ERROR_SUCCESS)
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", status, NULL);
@@ -439,20 +439,20 @@ VOID _wfp_logsetoption (
 	val.type = FWP_UINT32;
 	val.uint32 = mask;
 
-	status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
+	status = FwpmEngineSetOption0 (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
 	if (status != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", status, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", status, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
 
 	// enables the connection monitoring feature and starts logging creation and
 	// deletion events (and notifying any subscribers)
 	val.type = FWP_UINT32;
 	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE);
 
-	status = FwpmEngineSetOption (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
+	status = FwpmEngineSetOption0 (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 	if (status != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption", status, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", status, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
 }
 
 VOID CALLBACK _wfp_logcallback (
@@ -485,7 +485,7 @@ VOID CALLBACK _wfp_logcallback (
 		return;
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
-	if (FwpmLayerGetById (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS)
+	if (FwpmLayerGetById0 (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS)
 		return;
 
 	if (!layer_ptr)
@@ -493,7 +493,7 @@ VOID CALLBACK _wfp_logcallback (
 
 	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) || IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
 	{
-		FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
+		FwpmFreeMemory0 ((PVOID_PTR)&layer_ptr);
 
 		return;
 	}
@@ -503,10 +503,10 @@ VOID CALLBACK _wfp_logcallback (
 
 	RtlCopyMemory (&layer_guid, &layer_ptr->layerKey, sizeof (GUID));
 
-	FwpmFreeMemory ((PVOID_PTR)&layer_ptr);
+	FwpmFreeMemory0 ((PVOID_PTR)&layer_ptr);
 
 	// get filter information
-	if (FwpmFilterGetById (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS)
+	if (FwpmFilterGetById0 (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS)
 		return;
 
 	if (!filter_ptr)
@@ -532,7 +532,7 @@ VOID CALLBACK _wfp_logcallback (
 			is_myprovider = TRUE;
 	}
 
-	FwpmFreeMemory ((PVOID_PTR)&filter_ptr);
+	FwpmFreeMemory0 ((PVOID_PTR)&filter_ptr);
 
 	// allocate log object
 	ptr_log = _r_obj_allocate (sizeof (ITEM_LOG), &_app_dereferencelog);
@@ -1204,9 +1204,9 @@ VOID NTAPI _app_logthread (
 	_In_ ULONG busy_count
 )
 {
-	HWND hwnd;
 	PITEM_LOG ptr_log;
 	PITEM_APP ptr_app = NULL;
+	HWND hwnd;
 	BOOLEAN is_silent = FALSE;
 	BOOLEAN is_logenabled;
 	BOOLEAN is_loguienabled;
