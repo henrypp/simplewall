@@ -210,6 +210,5 @@ PR_STRING _app_db_getprotoname (
 _Ret_maybenull_
 LPCWSTR _app_db_getservicename (
 	_In_ UINT16 port,
-	_In_ UINT8 proto,
-	_In_opt_ LPCWSTR default_value
+	_In_ UINT8 proto
 );

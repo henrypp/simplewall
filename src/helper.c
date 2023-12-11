@@ -398,7 +398,7 @@ PR_STRING _app_formatport (
 {
 	LPCWSTR service_string;
 
-	service_string = _app_db_getservicename (port, proto, NULL);
+	service_string = _app_db_getservicename (port, proto);
 
 	if (service_string)
 		return _r_format_string (L"%" TEXT (PRIu16) L" (%s)", port, service_string);

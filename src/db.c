@@ -15,6 +15,7 @@ NTSTATUS _app_db_initialize (
 
 	status = _r_xml_initializelibrary (&db_info->xml_library, is_reader);
 
+
 	return status;
 }
 
@@ -1353,8 +1354,7 @@ PR_STRING _app_db_getprotoname (
 _Ret_maybenull_
 LPCWSTR _app_db_getservicename (
 	_In_ UINT16 port,
-	_In_ UINT8 proto,
-	_In_opt_ LPCWSTR default_value
+	_In_ UINT8 proto
 )
 {
 	switch (port)
@@ -1698,7 +1698,12 @@ LPCWSTR _app_db_getservicename (
 			return L"rsync";
 
 		case 853:
-			return L"domain-s";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"domain-s";
+
+			break;
+		}
 
 		case 989:
 			return L"ftps-data";
@@ -2016,7 +2021,12 @@ LPCWSTR _app_db_getservicename (
 			return L"quake";
 
 		case 27015:
-			return L"halflife";
+		{
+			if (proto == IPPROTO_UDP)
+				return L"halflife";
+
+			break;
+		}
 
 		case 27017:
 		case 27018:
@@ -2040,5 +2050,5 @@ LPCWSTR _app_db_getservicename (
 			return L"traceroute";
 	}
 
-	return default_value;
+	return NULL;
 }
