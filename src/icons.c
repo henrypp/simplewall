@@ -233,7 +233,7 @@ VOID _app_icons_loadfromfile (
 
 	if (path)
 	{
-		if (SHGetFileInfo (path->buffer, 0, &shfi, sizeof (shfi), flags))
+		if (SHGetFileInfoW (path->buffer, 0, &shfi, sizeof (shfi), flags))
 		{
 			if (icon_id_ptr)
 				*icon_id_ptr = shfi.iIcon;

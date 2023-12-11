@@ -813,7 +813,7 @@ LONG _app_verifyfromfile (
 
 NTSTATUS _app_verifyfilefromcatalog (
 	_In_ HANDLE hfile,
-	_In_ LPCWSTR file_path,
+	_In_ LPCWSTR path,
 	_In_opt_ LPCWSTR algorithm_id,
 	_Out_ PR_STRING_PTR signature_string
 )
@@ -863,7 +863,7 @@ NTSTATUS _app_verifyfilefromcatalog (
 
 				catalog_info.cbStruct = sizeof (catalog_info);
 				catalog_info.pcwszCatalogFilePath = ci.wszCatalogFile;
-				catalog_info.pcwszMemberFilePath = file_path;
+				catalog_info.pcwszMemberFilePath = path;
 				catalog_info.hMemberFile = hfile;
 				catalog_info.pcwszMemberTag = file_hash_tag->buffer;
 				catalog_info.pbCalculatedFileHash = file_hash;
