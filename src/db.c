@@ -1499,6 +1499,9 @@ LPCWSTR _app_db_getservicename (
 		case 129:
 			return L"pwdgen";
 
+		case 133:
+			return L"statsrv";
+
 		case 135:
 			return L"msrpc";
 
@@ -1547,6 +1550,9 @@ LPCWSTR _app_db_getservicename (
 		case 169:
 			return L"send";
 
+		case 170:
+			return L"print-srv";
+
 		case 174:
 			return L"mailq";
 
@@ -1565,6 +1571,9 @@ LPCWSTR _app_db_getservicename (
 		case 186:
 			return L"kis";
 
+		case 189:
+			return L"qft";
+
 		case 194:
 		case 529:
 			return L"irc";
@@ -1578,8 +1587,14 @@ LPCWSTR _app_db_getservicename (
 		case 197:
 			return L"dls";
 
+		case 198:
+			return L"dls-mon";
+
 		case 199:
 			return L"smux";
+
+		case 200:
+			return L"src";
 
 		case 209:
 			return L"qmtp";
@@ -1723,14 +1738,46 @@ LPCWSTR _app_db_getservicename (
 		case 995:
 			return L"pop3s";
 
+		case 1001:
+			return L"webpush";
+
+		case 1002:
+			return L"windows-icfw";
+
 		case 1025:
 			return L"NFS-or-IIS";
+
+		case 1026:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"win-rpc";
+
+			break;
+		}
 
 		case 1027:
 			return L"IIS";
 
+		case 1028:
 		case 1029:
 			return L"ms-lsa";
+			
+		case 1033:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"netinfo-local";
+
+			return L"netinfo";
+		}
+
+		case 1080:
+			return L"socks";
+			
+		case 1085:
+			return L"webobjects";
+
+		case 1100:
+			return L"mctp";
 
 		case 1110:
 			return L"nfsd";
@@ -1751,6 +1798,12 @@ LPCWSTR _app_db_getservicename (
 
 		case 1123:
 			return L"murray";
+			
+		case 1138:
+			return L"encrypted_admin";
+
+		case 1155:
+			return L"nfa";
 
 		case 1194:
 			return L"openvpn";
@@ -1760,7 +1813,7 @@ LPCWSTR _app_db_getservicename (
 
 		case 1433:
 			return L"ms-sql-s";
-
+			
 		case 1688:
 			return L"nsjtp-data";
 
