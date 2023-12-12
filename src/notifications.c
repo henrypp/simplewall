@@ -1093,6 +1093,7 @@ INT_PTR CALLBACK NotificationProc (
 				SetCursor (LoadCursor (NULL, IDC_HAND));
 
 				SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 				return TRUE;
 			}
 
@@ -1370,8 +1371,8 @@ INT_PTR CALLBACK NotificationProc (
 
 					_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
-					_r_obj_dereference (ptr_app);
 					_r_obj_dereference (ptr_rule);
+					_r_obj_dereference (ptr_app);
 
 					_app_profile_save (hwnd);
 				}

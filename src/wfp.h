@@ -65,13 +65,13 @@ VOID _wfp_installfilters (
 BOOLEAN _wfp_transact_start (
 	_In_ HANDLE engine_handle,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line
+	_In_ ULONG line
 );
 
 BOOLEAN _wfp_transact_commit (
 	_In_ HANDLE engine_handle,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line
+	_In_ ULONG line
 );
 
 ULONG _wfp_createcallout (
@@ -109,7 +109,7 @@ VOID _wfp_destroyfilters_array (
 	_In_ HANDLE engine_handle,
 	_In_ PR_ARRAY guids,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line
+	_In_ ULONG line
 );
 
 BOOLEAN _wfp_createrulefilter (
@@ -130,7 +130,7 @@ BOOLEAN _wfp_create4filters (
 	_In_ HANDLE engine_handle,
 	_In_  PR_LIST rules,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line,
+	_In_ ULONG line,
 	_In_ BOOLEAN is_intransact
 );
 
@@ -138,14 +138,14 @@ BOOLEAN _wfp_create3filters (
 	_In_ HANDLE engine_handle,
 	_In_ PR_LIST rules,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line,
+	_In_ ULONG line,
 	_In_ BOOLEAN is_intransact
 );
 
 BOOLEAN _wfp_create2filters (
 	_In_ HANDLE engine_handle,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line,
+	_In_ ULONG line,
 	_In_ BOOLEAN is_intransact
 );
 

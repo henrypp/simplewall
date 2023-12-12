@@ -109,6 +109,7 @@ HANDLE _wfp_getenginehandle ()
 					if (attempts)
 					{
 						_r_sys_sleep (500);
+
 						attempts -= 1;
 
 						continue;
@@ -619,7 +620,7 @@ VOID _wfp_installfilters (
 BOOLEAN _wfp_transact_start (
 	_In_ HANDLE engine_handle,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line
+	_In_ ULONG line
 )
 {
 	ULONG status;
@@ -631,7 +632,7 @@ BOOLEAN _wfp_transact_start (
 
 	if (status != ERROR_SUCCESS)
 	{
-		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin0", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin0", status, L"%s:%" TEXT (PR_ULONG), DBG_ARG_VAR);
 
 		return FALSE;
 	}
@@ -642,7 +643,7 @@ BOOLEAN _wfp_transact_start (
 BOOLEAN _wfp_transact_commit (
 	_In_ HANDLE engine_handle,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line
+	_In_ ULONG line
 )
 {
 	ULONG status;
@@ -653,7 +654,7 @@ BOOLEAN _wfp_transact_commit (
 	{
 		FwpmTransactionAbort0 (engine_handle);
 
-		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit0", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit0", status, L"%s:%" TEXT (PR_ULONG), DBG_ARG_VAR);
 
 		return FALSE;
 	}
@@ -920,7 +921,7 @@ VOID _wfp_destroyfilters_array (
 	_In_ HANDLE engine_handle,
 	_In_ PR_ARRAY guids,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line
+	_In_ ULONG line
 )
 {
 	LPGUID guid;
@@ -1367,7 +1368,7 @@ BOOLEAN _wfp_create4filters (
 	_In_ HANDLE engine_handle,
 	_In_  PR_LIST rules,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line,
+	_In_ ULONG line,
 	_In_ BOOLEAN is_intransact
 )
 {
@@ -1592,7 +1593,7 @@ BOOLEAN _wfp_create3filters (
 	_In_ HANDLE engine_handle,
 	_In_ PR_LIST rules,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line,
+	_In_ ULONG line,
 	_In_ BOOLEAN is_intransact
 )
 {
@@ -1707,7 +1708,7 @@ BOOLEAN _wfp_create3filters (
 BOOLEAN _wfp_create2filters (
 	_In_ HANDLE engine_handle,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line,
+	_In_ ULONG line,
 	_In_ BOOLEAN is_intransact
 )
 {
@@ -2768,7 +2769,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 						// file path (without root)
 						path_root = _r_obj_createstring2 (path);
 
-						PathStripToRoot (path_root->buffer);
+						PathStripToRootW (path_root->buffer);
 
 						_r_obj_trimstringtonullterminator (path_root);
 
@@ -2782,7 +2783,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 						}
 
 						// file path (without root)
-						_r_obj_initializestringref (&path_skip_root, PathSkipRoot (path->buffer));
+						_r_obj_initializestringref (&path_skip_root, PathSkipRootW (path->buffer));
 
 						_r_obj_movereference (&original_path, _r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root));
 
