@@ -799,7 +799,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			// app path
 			if (GetDlgItem (hwnd, IDC_APP_PATH_ID))
 			{
-				if (context->ptr_app->real_path)
+				if (_app_isappvalidpath (context->ptr_app->real_path))
 				{
 					_r_ctrl_setstring (hwnd, IDC_APP_PATH_ID, context->ptr_app->real_path->buffer);
 				}
@@ -811,7 +811,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 			// app hash
 			if (GetDlgItem (hwnd, IDC_APP_HASH_ID))
-				_r_ctrl_setstring (hwnd, IDC_APP_HASH_ID, _r_obj_getstringordefault (context->ptr_app->hash, L"<empty)>"));
+				_r_ctrl_setstring (hwnd, IDC_APP_HASH_ID, _r_obj_getstringordefault (context->ptr_app->hash, L"<empty>"));
 
 			// app rules
 			if (GetDlgItem (hwnd, IDC_APP_RULES_ID))
@@ -1437,11 +1437,42 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!context)
 						break;
 
-					if (!context->ptr_app->real_path)
-						break;
-
 					if (_app_isappvalidpath (context->ptr_app->real_path))
 						_r_shell_showfile (context->ptr_app->real_path->buffer);
+
+					break;
+				}
+
+				case IDC_APP_HASH_RECHECK_ID:
+				{
+					PR_STRING string;
+					HANDLE hfile;
+					NTSTATUS status;
+
+					context = _app_editor_getcontext (hwnd);
+
+					if (!context)
+						break;
+
+					if (!_app_isappvalidpath (context->ptr_app->real_path))
+						break;
+
+					status = _r_fs_openfile (
+						context->ptr_app->real_path->buffer,
+						GENERIC_READ,
+						FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+						FALSE,
+						&hfile
+					);
+
+					if (NT_SUCCESS (status))
+					{
+						string = _app_getfilehashinfo (hfile, context->ptr_app->app_hash);
+
+						_r_ctrl_setstring (hwnd, IDC_APP_HASH_ID, _r_obj_getstringordefault (string, L"<empty>"));
+
+						NtClose (hfile);
+					}
 
 					break;
 				}

@@ -107,7 +107,6 @@ BOOLEAN _app_isappsigned (
 );
 
 BOOLEAN _app_isappvalidbinary (
-	_In_ ENUM_TYPE_DATA type,
 	_In_opt_ PR_STRING path
 );
 
@@ -139,9 +138,9 @@ VOID _app_getfileversioninfo (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 );
 
-VOID _app_getfilehashinfo (
+PR_STRING _app_getfilehashinfo (
 	_In_ HANDLE hfile,
-	_Inout_ PITEM_APP_INFO ptr_app_info
+	_In_ ULONG_PTR app_hash
 );
 
 ULONG_PTR _app_addcolor (

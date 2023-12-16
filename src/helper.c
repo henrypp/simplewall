@@ -545,14 +545,10 @@ BOOLEAN _app_isappsigned (
 }
 
 BOOLEAN _app_isappvalidbinary (
-	_In_ ENUM_TYPE_DATA type,
 	_In_opt_ PR_STRING path
 )
 {
 	static R_STRINGREF valid_exts = PR_STRINGREF_INIT (L".exe");
-
-	if (type != DATA_APP_REGULAR && type != DATA_APP_SERVICE && type != DATA_APP_UWP)
-		return FALSE;
 
 	if (!path)
 		return FALSE;
@@ -655,7 +651,7 @@ VOID _app_getfileicon (
 
 	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
 
-	if (is_iconshidded || !_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
+	if (is_iconshidded || !_app_isappvalidbinary (ptr_app_info->path))
 	{
 		_app_icons_loadfromfile (NULL, ptr_app_info->type, &icon_id, NULL, TRUE);
 	}
@@ -1016,23 +1012,25 @@ CleanupExit:
 		_r_sys_freelibrary (hlib, TRUE);
 }
 
-VOID _app_getfilehashinfo (
+PR_STRING _app_getfilehashinfo (
 	_In_ HANDLE hfile,
-	_Inout_ PITEM_APP_INFO ptr_app_info
+	_In_ ULONG_PTR app_hash
 )
 {
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	NTSTATUS status;
 
-	ptr_app = _app_getappitem (ptr_app_info->app_hash);
+	ptr_app = _app_getappitem (app_hash);
 
 	if (!ptr_app)
-		return;
+		return NULL;
 
 	status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, NULL, hfile, &string);
 
 	_r_obj_movereference (&ptr_app->hash, string);
+
+	return ptr_app->hash;
 }
 
 ULONG_PTR _app_addcolor (
@@ -1666,7 +1664,7 @@ NTSTATUS NTAPI _app_timercallback (
 
 		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 		{
-			if (!ptr_app->hash || !_app_isappvalidbinary (ptr_app->type, ptr_app->real_path))
+			if (!ptr_app->hash || !_app_isappvalidbinary (ptr_app->real_path))
 				continue;
 
 			if (!_app_isappused (ptr_app))
@@ -1771,25 +1769,21 @@ VOID NTAPI _app_queue_fileinformation (
 		return;
 
 	// check for binary path is valid
-	if (!_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
+	if (!_app_isappvalidbinary (ptr_app_info->path))
 		return;
 
-	status = _r_fs_createfile (
+	status = _r_fs_openfile (
 		ptr_app_info->path->buffer,
-		FILE_OPEN,
 		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_DELETE,
-		FILE_ATTRIBUTE_NORMAL,
-		0,
+		FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
 		FALSE,
-		NULL,
 		&hfile
 	);
 
 	if (!NT_SUCCESS (status))
 	{
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_OBJECT_PATH_NOT_FOUND && status != STATUS_ACCESS_DENIED)
-			_r_log (LOG_LEVEL_ERROR, NULL, L"_r_fs_createfile", status, ptr_app_info->path->buffer);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_r_fs_openfile", status, ptr_app_info->path->buffer);
 
 		return;
 	}
@@ -1806,7 +1800,7 @@ VOID NTAPI _app_queue_fileinformation (
 
 	// query sha256 info
 	if (_r_config_getboolean (L"IsHashesEnabled", TRUE))
-		_app_getfilehashinfo (hfile, ptr_app_info);
+		_app_getfilehashinfo (hfile, ptr_app_info->app_hash);
 
 	// redraw listview
 	if (!(busy_count % 4)) // lol, hack!!!
@@ -1866,17 +1860,13 @@ VOID NTAPI _app_queue_notifyinformation (
 
 		if (ptr_app_info)
 		{
-			if (_app_isappvalidbinary (ptr_app_info->type, ptr_app_info->path))
+			if (_app_isappvalidbinary (ptr_app_info->path))
 			{
-				status = _r_fs_createfile (
+				status = _r_fs_openfile (
 					ptr_app_info->path->buffer,
-					FILE_OPEN,
 					GENERIC_READ,
 					FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
-					FILE_ATTRIBUTE_NORMAL,
-					0,
 					FALSE,
-					NULL,
 					&hfile
 				);
 
