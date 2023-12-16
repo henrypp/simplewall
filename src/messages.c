@@ -12,6 +12,7 @@ VOID _app_message_initialize (
 	LONG icon_size;
 	LONG view_type;
 	UINT menu_id;
+	BOOLEAN is_enabled;
 
 	install_type = _wfp_getinstalltype ();
 
@@ -80,10 +81,14 @@ VOID _app_message_initialize (
 
 		_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN + _r_calc_clamp (_r_config_getlong (L"ProfileType", 0), 0, 2));
 
+		is_enabled = _r_config_getboolean (L"IsHashesEnabled", TRUE);
+
 		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
-		_r_menu_checkitem (hmenu, IDM_USEHASHES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsHashesEnabled", TRUE));
+		_r_menu_checkitem (hmenu, IDM_USEHASHES_CHK, 0, MF_BYCOMMAND, is_enabled);
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 		_r_menu_checkitem (hmenu, IDM_USEAPPMONITOR_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsEnableAppMonitor", FALSE));
+
+		_r_menu_enableitem (hmenu, IDM_USEAPPMONITOR_CHK, MF_BYCOMMAND, is_enabled);
 
 		_r_menu_checkitem (
 			hmenu,
