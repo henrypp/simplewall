@@ -1805,7 +1805,8 @@ VOID NTAPI _app_queue_fileinformation (
 	_app_getfileversioninfo (ptr_app_info);
 
 	// query sha256 info
-	_app_getfilehashinfo (hfile, ptr_app_info);
+	if (_r_config_getboolean (L"IsHashesEnabled", TRUE))
+		_app_getfilehashinfo (hfile, ptr_app_info);
 
 	// redraw listview
 	if (!(busy_count % 4)) // lol, hack!!!
