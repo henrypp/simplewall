@@ -202,7 +202,7 @@ NTSTATUS _app_db_openfromfile (
 	if (db_info->bytes)
 		_r_obj_clearreference (&db_info->bytes);
 
-	status = _r_fs_createfile (path->buffer, FILE_OPEN, FILE_GENERIC_READ, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, 0, FALSE, NULL, &hfile);
+	status = _r_fs_openfile (path->buffer, GENERIC_READ, FILE_SHARE_READ, FALSE, &hfile);
 
 	if (!NT_SUCCESS (status))
 		return status;
@@ -1761,7 +1761,7 @@ LPCWSTR _app_db_getservicename (
 		case 1028:
 		case 1029:
 			return L"ms-lsa";
-			
+
 		case 1033:
 		{
 			if (proto == IPPROTO_UDP)
@@ -1772,7 +1772,7 @@ LPCWSTR _app_db_getservicename (
 
 		case 1080:
 			return L"socks";
-			
+
 		case 1085:
 			return L"webobjects";
 
@@ -1798,7 +1798,7 @@ LPCWSTR _app_db_getservicename (
 
 		case 1123:
 			return L"murray";
-			
+
 		case 1138:
 			return L"encrypted_admin";
 
@@ -1813,7 +1813,7 @@ LPCWSTR _app_db_getservicename (
 
 		case 1433:
 			return L"ms-sql-s";
-			
+
 		case 1688:
 			return L"nsjtp-data";
 

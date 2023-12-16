@@ -1772,13 +1772,7 @@ VOID NTAPI _app_queue_fileinformation (
 	if (!_app_isappvalidbinary (ptr_app_info->path))
 		return;
 
-	status = _r_fs_openfile (
-		ptr_app_info->path->buffer,
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
-		FALSE,
-		&hfile
-	);
+	status = _r_fs_openfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, FALSE, &hfile);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -1862,13 +1856,7 @@ VOID NTAPI _app_queue_notifyinformation (
 		{
 			if (_app_isappvalidbinary (ptr_app_info->path))
 			{
-				status = _r_fs_openfile (
-					ptr_app_info->path->buffer,
-					GENERIC_READ,
-					FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
-					FALSE,
-					&hfile
-				);
+				status = _r_fs_openfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, FALSE, &hfile);
 
 				if (NT_SUCCESS (status))
 				{
