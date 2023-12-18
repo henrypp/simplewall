@@ -170,7 +170,7 @@ VOID _app_logclear (
 	if (!log_path)
 		return;
 
-	_r_fs_deletefile (log_path->buffer);
+	_r_fs_deletefile (log_path->buffer, NULL);
 
 	_r_obj_dereference (log_path);
 }
@@ -316,13 +316,14 @@ VOID _wfp_logsubscribe (
 	_In_ HANDLE engine_handle
 )
 {
-	FWPM_NET_EVENT_SUBSCRIPTION subscription = {0};
+	FWPM_NET_EVENT_SUBSCRIPTION0 subscription = {0};
 	FWPMNES4 _FwpmNetEventSubscribe4 = NULL;
 	FWPMNES3 _FwpmNetEventSubscribe3 = NULL;
 	FWPMNES2 _FwpmNetEventSubscribe2 = NULL;
 	HANDLE current_handle;
 	HANDLE new_handle = NULL;
 	PVOID hfwpuclnt;
+	BOOLEAN is_subscribed = FALSE;
 	NTSTATUS status;
 
 	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
@@ -339,40 +340,84 @@ VOID _wfp_logsubscribe (
 		return;
 	}
 
-	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1809))
-	{
-		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", (PVOID_PTR)&_FwpmNetEventSubscribe4);
+	status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", (PVOID_PTR)&_FwpmNetEventSubscribe4);
 
-		if (NT_SUCCESS (status))
-			status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle); // win10rs5+
+	if (NT_SUCCESS (status))
+	{
+		status = _FwpmNetEventSubscribe4 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback4,
+			ULongToPtr (WINDOWS_10_RS5),
+			&new_handle
+		); // win10rs5+
+
+		if (status == ERROR_SUCCESS)
+			is_subscribed = TRUE;
 	}
-	else if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1803))
+
+	if (!is_subscribed)
 	{
 		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe3", (PVOID_PTR)&_FwpmNetEventSubscribe3);
 
 		if (NT_SUCCESS (status))
-			status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle); // win10rs4+
+		{
+			status = _FwpmNetEventSubscribe3 (
+				engine_handle,
+				&subscription,
+				&_wfp_logcallback3,
+				ULongToPtr (WINDOWS_10_RS4),
+				&new_handle
+			); // win10rs4+
+
+			if (status == STATUS_SUCCESS)
+				is_subscribed = TRUE;
+		}
 	}
-	else if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1607))
+
+	if (!is_subscribed)
 	{
 		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", (PVOID_PTR)&_FwpmNetEventSubscribe2);
 
 		if (NT_SUCCESS (status))
-			status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle); // win10rs1+
-	}
-	else
-	{
-		status = FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle); // win8+
+		{
+			status = _FwpmNetEventSubscribe2 (
+				engine_handle,
+				&subscription,
+				&_wfp_logcallback2,
+				ULongToPtr (WINDOWS_10_RS1),
+				&new_handle
+			); // win10rs1+
+
+			if (status == STATUS_SUCCESS)
+				is_subscribed = TRUE;
+		}
 	}
 
-	if (status != ERROR_SUCCESS)
+	if (!is_subscribed)
+	{
+		status = FwpmNetEventSubscribe1 (
+			engine_handle,
+			&subscription,
+			&_wfp_logcallback1,
+			ULongToPtr (WINDOWS_8_1),
+			&new_handle
+		); // win8+
+
+		if (status == STATUS_SUCCESS)
+			is_subscribed = TRUE;
+	}
+
+	if (!is_subscribed)
 	{
 		if (hwnd)
 			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later.", status, NULL, NULL, NULL);
 
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
 
-		goto CleanupExit;
+		_r_sys_freelibrary (hfwpuclnt, FALSE);
+
+		return;
 	}
 
 	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
@@ -380,16 +425,14 @@ VOID _wfp_logsubscribe (
 	if (current_handle)
 	{
 		if (new_handle)
-			FwpmNetEventUnsubscribe (engine_handle, new_handle);
+			FwpmNetEventUnsubscribe0 (engine_handle, new_handle);
 	}
 
 	// initialize log file
 	if (_r_config_getboolean (L"IsLogEnabled", FALSE))
 		_app_loginit (TRUE);
 
-CleanupExit:
-
-	LdrUnloadDll (hfwpuclnt);
+	_r_sys_freelibrary (hfwpuclnt, FALSE);
 }
 
 VOID _wfp_logunsubscribe (
@@ -428,8 +471,8 @@ VOID _wfp_logsetoption (
 	if (!_r_config_getboolean (L"IsExcludeInbound", FALSE))
 		mask |= FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST | FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
 
-	// add port scanning drop connections monitor (1903+)
-	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1903))
+	// add port scanning drop connections monitor (19H1+)
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_19H1))
 	{
 		if (!_r_config_getboolean (L"IsExcludePortScanningDrop", FALSE))
 			mask |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
@@ -677,17 +720,19 @@ VOID CALLBACK _wfp_logcallback (
 		_r_obj_dereference (sid_string);
 }
 
-FORCEINLINE BOOLEAN log_struct_to_f (
+BOOLEAN log_struct_to_f (
 	_In_ ULONG version,
-	_Inout_ PITEM_LOG_CALLBACK log,
-	_In_ PVOID event_data
+	_Out_ PITEM_LOG_CALLBACK log,
+	_In_ const PVOID event_data
 )
 {
+	RtlSecureZeroMemory (log, sizeof (ITEM_LOG_CALLBACK));
+
 	switch (version)
 	{
-		case WINDOWS_10_1809:
+		case WINDOWS_10_RS5:
 		{
-			FWPM_NET_EVENT5 *evt = event_data;
+			const FWPM_NET_EVENT5 *evt = event_data;
 
 			if (evt->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && evt->classifyDrop)
 			{
@@ -797,9 +842,9 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 			break;
 		}
 
-		case WINDOWS_10_1803:
+		case WINDOWS_10_RS4:
 		{
-			FWPM_NET_EVENT4 *evt = event_data;
+			const FWPM_NET_EVENT4 *evt = (const FWPM_NET_EVENT4*)event_data;
 
 			if (evt->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && evt->classifyDrop)
 			{
@@ -909,9 +954,9 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 			break;
 		}
 
-		case WINDOWS_10_1607:
+		case WINDOWS_10_RS1:
 		{
-			FWPM_NET_EVENT3 *evt = event_data;
+			const FWPM_NET_EVENT3 *evt = event_data;
 
 			if (evt->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && evt->classifyDrop)
 			{
@@ -1023,7 +1068,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 
 		case WINDOWS_8_1:
 		{
-			FWPM_NET_EVENT2 *evt = event_data;
+			const FWPM_NET_EVENT2 *evt = event_data;
 
 			if (evt->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && evt->classifyDrop)
 			{
@@ -1145,57 +1190,49 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 
 // win81+ callback
 VOID CALLBACK _wfp_logcallback1 (
-	_In_opt_ PVOID context,
+	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT2* event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
-	UNREFERENCED_PARAMETER (context);
-
-	if (log_struct_to_f (WINDOWS_8_1, &log, (PVOID)event_data))
+	if (log_struct_to_f (PtrToUlong (context), &log, (const PVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
 // win10rs1+ callback
 VOID CALLBACK _wfp_logcallback2 (
-	_In_opt_ PVOID context,
+	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT3* event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
-	UNREFERENCED_PARAMETER (context);
-
-	if (log_struct_to_f (WINDOWS_10_1607, &log, (PVOID)event_data))
+	if (log_struct_to_f (PtrToUlong (context), &log, (const PVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
 // win10rs4+ callback
 VOID CALLBACK _wfp_logcallback3 (
-	_In_opt_ PVOID context,
+	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT4* event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
-	UNREFERENCED_PARAMETER (context);
-
-	if (log_struct_to_f (WINDOWS_10_1803, &log, (PVOID)event_data))
+	if (log_struct_to_f (PtrToUlong (context), &log, (const PVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
 // win10rs5+ callback
 VOID CALLBACK _wfp_logcallback4 (
-	_In_opt_ PVOID context,
+	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT5* event_data
 )
 {
-	ITEM_LOG_CALLBACK log = {0};
+	ITEM_LOG_CALLBACK log;
 
-	UNREFERENCED_PARAMETER (context);
-
-	if (log_struct_to_f (WINDOWS_10_1809, &log, (PVOID)event_data))
+	if (log_struct_to_f (PtrToUlong (context), &log, (const PVOID)event_data))
 		_wfp_logcallback (&log);
 }
 

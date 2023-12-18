@@ -29,7 +29,7 @@ BOOLEAN _app_uwp_loadpackageinfo (
 	if (!package)
 		return FALSE;
 
-	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_1507))
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
 	{
 		status = package.Status ();
 

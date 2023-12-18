@@ -442,6 +442,7 @@ VOID _app_package_getserviceslist ()
 			if (!NT_SUCCESS (status) || (service_type & SERVICE_USERSERVICE_INSTANCE) != 0)
 			{
 				_r_obj_dereference (service_name);
+
 				NtClose (hkey);
 
 				continue;

@@ -2123,7 +2123,7 @@ VOID _app_wufixenable (
 	if (is_enable)
 	{
 		if (_r_fs_exists (buffer2))
-			_r_fs_deletefile (buffer2);
+			_r_fs_deletefile (buffer2, NULL);
 
 		_r_fs_copyfile (buffer1, buffer2);
 
@@ -2151,7 +2151,7 @@ VOID _app_wufixenable (
 				_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (FALSE));
 			}
 
-			_r_fs_deletefile (buffer2);
+			_r_fs_deletefile (buffer2, NULL);
 		}
 	}
 

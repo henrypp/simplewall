@@ -90,25 +90,25 @@ VOID CALLBACK _wfp_logcallback (
 
 // win8+ callback
 VOID CALLBACK _wfp_logcallback1 (
-	_In_opt_ PVOID context,
+	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT2* event_data
 );
 
 // win10rs1+ callback
 VOID CALLBACK _wfp_logcallback2 (
-	_In_opt_ PVOID context,
+	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT3* event_data
 );
 
 // win10rs4+ callback
 VOID CALLBACK _wfp_logcallback3 (
-	_In_opt_ PVOID context,
+	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT4* event_data
 );
 
 // win10rs5+ callback
 VOID CALLBACK _wfp_logcallback4 (
-	_In_opt_ PVOID context,
+	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT5* event_data
 );
 

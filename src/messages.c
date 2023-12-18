@@ -2402,7 +2402,7 @@ VOID _app_command_logerrclear (
 	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
 		return;
 
-	_r_fs_deletefile (path->buffer);
+	_r_fs_deletefile (path->buffer, NULL);
 }
 
 VOID _app_command_copy (
