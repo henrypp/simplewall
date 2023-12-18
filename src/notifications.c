@@ -1291,13 +1291,7 @@ INT_PTR CALLBACK NotificationProc (
 
 					if (ptr_log)
 					{
-						rule = _app_formataddress (
-							ptr_log->af,
-							0,
-							&ptr_log->remote_addr,
-							ptr_log->remote_port,
-							FMTADDR_AS_RULE
-						);
+						rule = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, FMTADDR_AS_RULE);
 
 						ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, ptr_log->protocol, ptr_log->af);
 
