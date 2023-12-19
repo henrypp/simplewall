@@ -778,7 +778,7 @@ ULONG _wfp_createfilter (
 	ULONG status;
 
 	// create filter guid
-	_r_math_createguid (&filter.filterKey);
+	_r_math_generateguid (&filter.filterKey);
 
 	filter_type = _wfp_filtertypetostring (type);
 
