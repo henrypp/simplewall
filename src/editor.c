@@ -444,9 +444,8 @@ INT_PTR CALLBACK EditorPagesProc (
 			PITEM_APP ptr_app = NULL;
 			PR_STRING string;
 			HWND hctrl;
+			INT i;
 			ULONG_PTR enum_key;
-			UINT style;
-			INT index;
 			BOOLEAN is_enabled;
 
 			context = (PEDITOR_CONTEXT)lparam;
@@ -471,60 +470,49 @@ INT_PTR CALLBACK EditorPagesProc (
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_NAME, L"%s:", _r_locale_getstring (IDS_NAME));
 
 				if (!_r_obj_isstringempty (context->ptr_rule->name))
-				{
 					_r_ctrl_setstring (hwnd, IDC_RULE_NAME_ID, context->ptr_rule->name->buffer);
-				}
-				else
-				{
-					_r_ctrl_enable (GetParent (hwnd), IDC_SAVE, FALSE);
-				}
 
 				_r_ctrl_setreadonly (hwnd, IDC_RULE_NAME_ID, !!context->ptr_rule->is_readonly);
 				_r_ctrl_settextlimit (hwnd, IDC_RULE_NAME_ID, RULE_NAME_CCH_MAX - 1);
+			}
+
+			// comment
+			if (GetDlgItem (hwnd, IDC_RULE_COMMENT_ID))
+			{
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_COMMENT, L"%s:", _r_locale_getstring (IDS_COMMENT));
+
+				if (!_r_obj_isstringempty (context->ptr_rule->comment))
+					_r_ctrl_setstring (hwnd, IDC_RULE_COMMENT_ID, context->ptr_rule->comment->buffer);
+
+				_r_ctrl_enable (hwnd, IDC_RULE_COMMENT_ID, !context->ptr_rule->is_readonly);
+				_r_ctrl_settextlimit (hwnd, IDC_RULE_COMMENT_ID, RULE_RULE_CCH_MAX - 1);
 			}
 
 			// direction
 			if (GetDlgItem (hwnd, IDC_RULE_DIRECTION))
 			{
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_DIRECTION, L"%s:", _r_locale_getstring (IDS_DIRECTION));
-				_r_ctrl_setstring (hwnd, IDC_RULE_DIRECTION_OUTBOUND, _r_locale_getstring (IDS_DIRECTION_1));
-				_r_ctrl_setstring (hwnd, IDC_RULE_DIRECTION_INBOUND, _r_locale_getstring (IDS_DIRECTION_2));
-				_r_ctrl_setstring (hwnd, IDC_RULE_DIRECTION_ANY, _r_locale_getstring (IDS_ANY));
 
-				if (context->ptr_rule->direction == FWP_DIRECTION_OUTBOUND)
-				{
-					CheckRadioButton (hwnd, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY, IDC_RULE_DIRECTION_OUTBOUND);
-				}
-				else if (context->ptr_rule->direction == FWP_DIRECTION_INBOUND)
-				{
-					CheckRadioButton (hwnd, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY, IDC_RULE_DIRECTION_INBOUND);
-				}
-				else if (context->ptr_rule->direction == FWP_DIRECTION_MAX)
-				{
-					CheckRadioButton (hwnd, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY, IDC_RULE_DIRECTION_ANY);
-				}
+				_r_combobox_insertitem (hwnd, IDC_RULE_DIRECTION_ID, 0, _r_locale_getstring (IDS_DIRECTION_1), (LPARAM)FWP_DIRECTION_OUTBOUND);
+				_r_combobox_insertitem (hwnd, IDC_RULE_DIRECTION_ID, 1, _r_locale_getstring (IDS_DIRECTION_2), (LPARAM)FWP_DIRECTION_INBOUND);
+				_r_combobox_insertitem (hwnd, IDC_RULE_DIRECTION_ID, 2, _r_locale_getstring (IDS_ANY), (LPARAM)FWP_DIRECTION_MAX);
 
-				_r_ctrl_enable (hwnd, IDC_RULE_DIRECTION_OUTBOUND, !context->ptr_rule->is_readonly);
-				_r_ctrl_enable (hwnd, IDC_RULE_DIRECTION_INBOUND, !context->ptr_rule->is_readonly);
-				_r_ctrl_enable (hwnd, IDC_RULE_DIRECTION_ANY, !context->ptr_rule->is_readonly);
+				_r_combobox_setcurrentitembyparam (hwnd, IDC_RULE_DIRECTION_ID, (LPARAM)context->ptr_rule->direction);
+
+				_r_ctrl_enable (hwnd, IDC_RULE_DIRECTION_ID, !context->ptr_rule->is_readonly);
 			}
 
 			// action
 			if (GetDlgItem (hwnd, IDC_RULE_ACTION))
 			{
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_ACTION, L"%s:", _r_locale_getstring (IDS_ACTION));
-				_r_ctrl_setstring (hwnd, IDC_RULE_ACTION_BLOCK, _r_locale_getstring (IDS_ACTION_BLOCK));
-				_r_ctrl_setstring (hwnd, IDC_RULE_ACTION_ALLOW, _r_locale_getstring (IDS_ACTION_ALLOW));
 
-				CheckRadioButton (
-					hwnd,
-					IDC_RULE_ACTION_BLOCK,
-					IDC_RULE_ACTION_ALLOW,
-					(context->ptr_rule->action == FWP_ACTION_BLOCK) ? IDC_RULE_ACTION_BLOCK : IDC_RULE_ACTION_ALLOW
-				);
+				_r_combobox_insertitem (hwnd, IDC_RULE_ACTION_ID, 0, _r_locale_getstring (IDS_ACTION_BLOCK), (LPARAM)FWP_ACTION_BLOCK);
+				_r_combobox_insertitem (hwnd, IDC_RULE_ACTION_ID, 1, _r_locale_getstring (IDS_ACTION_ALLOW), (LPARAM)FWP_ACTION_PERMIT);
 
-				_r_ctrl_enable (hwnd, IDC_RULE_ACTION_ALLOW, !context->ptr_rule->is_readonly);
-				_r_ctrl_enable (hwnd, IDC_RULE_ACTION_BLOCK, !context->ptr_rule->is_readonly);
+				_r_combobox_setcurrentitembyparam (hwnd, IDC_RULE_ACTION_ID, (LPARAM)context->ptr_rule->action);
+
+				_r_ctrl_enable (hwnd, IDC_RULE_ACTION_ID, !context->ptr_rule->is_readonly);
 			}
 
 			// protocols
@@ -543,30 +531,17 @@ INT_PTR CALLBACK EditorPagesProc (
 					IPPROTO_SCTP,
 				};
 
-				index = 0;
-
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_PROTOCOL, L"%s:", _r_locale_getstring (IDS_PROTOCOL));
 
-				_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, _r_locale_getstring (IDS_ANY));
+				_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, 0, _r_locale_getstring (IDS_ANY), 0);
 
-				_r_combobox_setitemparam (hwnd, IDC_RULE_PROTOCOL_ID, index, 0);
-
-				if (context->ptr_rule->protocol == 0)
-					_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
-
-				for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (protos); i++)
+				for (i = 0; i < RTL_NUMBER_OF (protos); i++)
 				{
-					index += 1;
-
 					string = _app_db_getprotoname (protos[i], AF_UNSPEC, TRUE);
 
 					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", string->buffer, protos[i]);
 
-					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, buffer);
-					_r_combobox_setitemparam (hwnd, IDC_RULE_PROTOCOL_ID, index, (LPARAM)protos[i]);
-
-					if (context->ptr_rule->protocol == protos[i])
-						_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
+					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, i + 1, buffer, (LPARAM)protos[i]);
 
 					_r_obj_dereference (string);
 				}
@@ -576,15 +551,14 @@ INT_PTR CALLBACK EditorPagesProc (
 				{
 					string = _app_db_getprotoname (context->ptr_rule->protocol, AF_UNSPEC, TRUE);
 
-					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PR_ULONG) L")", string->buffer, context->ptr_rule->protocol);
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", string->buffer, context->ptr_rule->protocol);
 
-					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, index, buffer);
-					_r_combobox_setitemparam (hwnd, IDC_RULE_PROTOCOL_ID, index, (LPARAM)context->ptr_rule->protocol);
-
-					_r_combobox_setcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID, index);
+					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, i + 1, buffer, (LPARAM)context->ptr_rule->protocol);
 
 					_r_obj_dereference (string);
 				}
+
+				_r_combobox_setcurrentitembyparam (hwnd, IDC_RULE_PROTOCOL_ID, (LPARAM)context->ptr_rule->protocol);
 
 				_r_ctrl_enable (hwnd, IDC_RULE_PROTOCOL_ID, !context->ptr_rule->is_readonly);
 			}
@@ -594,27 +568,11 @@ INT_PTR CALLBACK EditorPagesProc (
 			{
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_VERSION, L"%s:", _r_locale_getstring (IDS_PORTVERSION));
 
-				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 0, _r_locale_getstring (IDS_ANY));
-				_r_combobox_setitemparam (hwnd, IDC_RULE_VERSION_ID, 0, (LPARAM)AF_UNSPEC);
+				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 0, _r_locale_getstring (IDS_ANY), (LPARAM)AF_UNSPEC);
+				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 1, L"IPv4", (LPARAM)AF_INET);
+				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 2, L"IPv6", (LPARAM)AF_INET6);
 
-				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 1, L"IPv4");
-				_r_combobox_setitemparam (hwnd, IDC_RULE_VERSION_ID, 1, (LPARAM)AF_INET);
-
-				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 2, L"IPv6");
-				_r_combobox_setitemparam (hwnd, IDC_RULE_VERSION_ID, 2, (LPARAM)AF_INET6);
-
-				if (context->ptr_rule->af == AF_INET)
-				{
-					_r_combobox_setcurrentitem (hwnd, IDC_RULE_VERSION_ID, 1);
-				}
-				else if (context->ptr_rule->af == AF_INET6)
-				{
-					_r_combobox_setcurrentitem (hwnd, IDC_RULE_VERSION_ID, 2);
-				}
-				else
-				{
-					_r_combobox_setcurrentitem (hwnd, IDC_RULE_VERSION_ID, 0);
-				}
+				_r_combobox_setcurrentitembyparam (hwnd, IDC_RULE_VERSION_ID, (LPARAM)context->ptr_rule->af);
 
 				_r_ctrl_enable (hwnd, IDC_RULE_VERSION_ID, !context->ptr_rule->is_readonly);
 			}
@@ -642,7 +600,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE_ADD, L"%s...", _r_locale_getstring (IDS_ADD));
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE_EDIT, L"%s...", _r_locale_getstring (IDS_EDIT2));
-				_r_ctrl_setstring (hwnd, IDC_RULE_REMOTE_DELETE, _r_locale_getstring (IDS_DELETE));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE_DELETE, L"%s...", _r_locale_getstring (IDS_DELETE));
 
 				_r_ctrl_enable (hwnd, IDC_RULE_REMOTE_ADD, !context->ptr_rule->is_readonly);
 				_r_ctrl_enable (hwnd, IDC_RULE_REMOTE_EDIT, FALSE);
@@ -672,7 +630,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL_ADD, L"%s...", _r_locale_getstring (IDS_ADD));
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL_EDIT, L"%s...", _r_locale_getstring (IDS_EDIT2));
-				_r_ctrl_setstring (hwnd, IDC_RULE_LOCAL_DELETE, _r_locale_getstring (IDS_DELETE));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL_DELETE, L"%s...", _r_locale_getstring (IDS_DELETE));
 
 				_r_ctrl_enable (hwnd, IDC_RULE_LOCAL_ADD, !context->ptr_rule->is_readonly);
 				_r_ctrl_enable (hwnd, IDC_RULE_LOCAL_EDIT, FALSE);
@@ -703,15 +661,11 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				_r_listview_addcolumn (hwnd, IDC_RULE_APPS_ID, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
 
-				style = LVGS_COLLAPSIBLE;
+				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 
-				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 0, L"", 0, style, style);
-				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 1, L"", 0, style, style);
-				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 2, L"", 0, style, style);
-
-				style = LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED;
-
-				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, LV_HIDDEN_GROUP_ID, L"", 3, style, style);
+				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, LV_HIDDEN_GROUP_ID, L"", 3, LVGS_HIDDEN, LVGS_HIDDEN);
 
 				// apps (apply to)
 				enum_key = 0;
@@ -752,6 +706,10 @@ INT_PTR CALLBACK EditorPagesProc (
 			if (GetDlgItem (hwnd, IDC_APP_PATH))
 				_r_ctrl_setstringformat (hwnd, IDC_APP_PATH, L"%s:", _r_locale_getstring (IDS_FILEPATH));
 
+			// app comment
+			if (GetDlgItem (hwnd, IDC_APP_COMMENT))
+				_r_ctrl_setstringformat (hwnd, IDC_APP_COMMENT, L"%s:", _r_locale_getstring (IDS_COMMENT));
+
 			// app icon
 			if (GetDlgItem (hwnd, IDC_APP_ICON_ID))
 			{
@@ -772,7 +730,15 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_dereference (string);
 				}
 
-				SendDlgItemMessageW (hwnd, IDC_APP_NAME_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
+				_r_ctrl_settextmargin (hwnd, IDC_APP_NAME_ID);
+			}
+
+			// app comment
+			if (GetDlgItem (hwnd, IDC_APP_COMMENT_ID))
+			{
+				_r_ctrl_setstring (hwnd, IDC_APP_COMMENT_ID, _r_obj_getstring (context->ptr_app->comment));
+
+				_r_ctrl_settextmargin (hwnd, IDC_APP_COMMENT_ID);
 			}
 
 			// app signature
@@ -790,7 +756,9 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED))
 				);
 
-				SendDlgItemMessageW (hwnd, IDC_APP_SIGNATURE_ID, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
+				_r_ctrl_settextmargin (hwnd, IDC_APP_NAME_ID);
+
+				_r_ctrl_settextmargin (hwnd, IDC_APP_SIGNATURE_ID);
 
 				if (string)
 					_r_obj_dereference (string);
@@ -1144,7 +1112,8 @@ INT_PTR CALLBACK EditorPagesProc (
 					{
 						if (listview_id == IDC_RULE_APPS_ID)
 						{
-							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
+							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) ||
+								((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
 								is_locked = _app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom);
 
@@ -1179,7 +1148,8 @@ INT_PTR CALLBACK EditorPagesProc (
 					{
 						if (listview_id == IDC_RULE_APPS_ID || listview_id == IDC_APP_RULES_ID)
 						{
-							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
+							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) ||
+								((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
 								if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
 									break;
@@ -1220,6 +1190,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				{
 					LPNMLVGETINFOTIPW lpnmlv;
 					PR_STRING string;
+					ULONG_PTR context;
 					INT listview_id;
 
 					lpnmlv = (LPNMLVGETINFOTIPW)lparam;
@@ -1228,7 +1199,9 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (listview_id != IDC_RULE_APPS_ID && listview_id != IDC_APP_RULES_ID)
 						break;
 
-					string = _app_gettooltipbylparam (hwnd, listview_id, _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem));
+					context = _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem);
+
+					string = _app_gettooltipbylparam (hwnd, listview_id, context);
 
 					if (!string)
 						break;
@@ -1262,9 +1235,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				if (ctrl_id == IDC_RULE_NAME_ID)
 				{
-					// enable apply button
-					_r_ctrl_enable (GetParent (hwnd), IDC_SAVE, _r_ctrl_getstringlength (hwnd, ctrl_id) != 0);
-
+					_r_ctrl_enable (GetParent (hwnd), IDC_SAVE, _r_ctrl_getstringlength (hwnd, ctrl_id) != 0); // // enable apply button
 					break;
 				}
 
@@ -1680,6 +1651,18 @@ INT_PTR CALLBACK EditorProc (
 			return TRUE;
 		}
 
+		case WM_DPICHANGED:
+		{
+			_r_wnd_message_dpichanged (hwnd, wparam, lparam);
+			break;
+		}
+
+		case WM_SETTINGCHANGE:
+		{
+			_r_wnd_message_settingchange (hwnd, wparam, lparam);
+			break;
+		}
+
 		case WM_SIZE:
 		{
 			HWND hpage;
@@ -1705,8 +1688,10 @@ INT_PTR CALLBACK EditorProc (
 		{
 			context = _app_editor_getcontext (hwnd);
 
-			if (context)
-				_r_layout_resizeminimumsize (&context->layout_manager, lparam);
+			if (!context)
+				break;
+
+			_r_layout_resizeminimumsize (&context->layout_manager, lparam);
 
 			break;
 		}
@@ -1754,18 +1739,6 @@ INT_PTR CALLBACK EditorProc (
 			break;
 		}
 
-		case WM_DPICHANGED:
-		{
-			_r_wnd_message_dpichanged (hwnd, wparam, lparam);
-			break;
-		}
-
-		case WM_SETTINGCHANGE:
-		{
-			_r_wnd_message_settingchange (hwnd, wparam, lparam);
-			break;
-		}
-
 		case WM_COMMAND:
 		{
 			INT ctrl_id = LOWORD (wparam);
@@ -1786,7 +1759,6 @@ INT_PTR CALLBACK EditorProc (
 					ULONG_PTR rule_idx;
 					INT listview_id;
 					INT item_id;
-					INT check_id;
 					BOOLEAN is_enable;
 
 					context = _app_editor_getcontext (hwnd);
@@ -1794,10 +1766,11 @@ INT_PTR CALLBACK EditorProc (
 					if (!context)
 						break;
 
+					hpage_general = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 0);
+					hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
+
 					if (context->is_settorules)
 					{
-						hpage_general = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 0);
-						hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
 						hpage_apps = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 2);
 
 						if (!hpage_general || !_r_ctrl_getstringlength (hpage_general, IDC_RULE_NAME_ID))
@@ -1827,6 +1800,14 @@ INT_PTR CALLBACK EditorProc (
 
 							_r_obj_movereference (&context->ptr_rule->name, string);
 
+							// comment
+							string = _r_ctrl_getstring (hpage_general, IDC_RULE_COMMENT_ID);
+
+							if (string)
+								_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
+
+							_r_obj_movereference (&context->ptr_rule->comment, string);
+
 							if (hpage_rule)
 							{
 								// rule (remote)
@@ -1840,27 +1821,33 @@ INT_PTR CALLBACK EditorProc (
 								_r_obj_movereference (&context->ptr_rule->rule_local, string);
 							}
 
-							context->ptr_rule->protocol = (UINT8)_r_combobox_getitemparam (hpage_general, IDC_RULE_PROTOCOL_ID, _r_combobox_getcurrentitem (hpage_general, IDC_RULE_PROTOCOL_ID));
-							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemparam (hpage_general, IDC_RULE_VERSION_ID, _r_combobox_getcurrentitem (hpage_general, IDC_RULE_VERSION_ID));
+							context->ptr_rule->protocol = (UINT8)_r_combobox_getitemparam (
+								hpage_general,
+								IDC_RULE_PROTOCOL_ID,
+								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_PROTOCOL_ID)
+							);
+
+							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemparam (
+								hpage_general,
+								IDC_RULE_VERSION_ID,
+								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_VERSION_ID)
+							);
 
 							string = _app_db_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af, FALSE);
 
 							_r_obj_movereference (&context->ptr_rule->protocol_str, string);
 
-							check_id = _r_ctrl_isradiochecked (hpage_general, IDC_RULE_DIRECTION_OUTBOUND, IDC_RULE_DIRECTION_ANY);
+							context->ptr_rule->direction = (FWP_DIRECTION)_r_combobox_getitemparam (
+								hpage_general,
+								IDC_RULE_DIRECTION_ID,
+								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_DIRECTION_ID)
+							);
 
-							context->ptr_rule->direction = (FWP_DIRECTION)_r_calc_clamp (check_id - IDC_RULE_DIRECTION_OUTBOUND, FWP_DIRECTION_OUTBOUND, FWP_DIRECTION_MAX);
-
-							check_id = _r_ctrl_isradiochecked (hpage_general, IDC_RULE_ACTION_BLOCK, IDC_RULE_ACTION_ALLOW);
-
-							if (check_id == IDC_RULE_ACTION_BLOCK)
-							{
-								context->ptr_rule->action = FWP_ACTION_BLOCK;
-							}
-							else
-							{
-								context->ptr_rule->action = FWP_ACTION_PERMIT;
-							}
+							context->ptr_rule->action = (FWP_ACTION_TYPE)_r_combobox_getitemparam (
+								hpage_general,
+								IDC_RULE_ACTION_ID,
+								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_ACTION_ID)
+							);
 
 							if (context->ptr_rule->type == DATA_RULE_USER)
 							{
@@ -1904,14 +1891,20 @@ INT_PTR CALLBACK EditorProc (
 					}
 					else
 					{
-						hpage_rule = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, 1);
-
 						context->ptr_app->is_haveerrors = FALSE; // reset errors
 						context->ptr_app->is_enabled = _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK);
 
 						rules = _r_obj_createlist (NULL);
 
 						_r_obj_addlistitem (rules, context->ptr_app);
+
+						// comment
+						string = _r_ctrl_getstring (hpage_general, IDC_APP_COMMENT_ID);
+
+						if (string)
+							_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
+
+						_r_obj_movereference (&context->ptr_app->comment, string);
 
 						if (hpage_rule)
 						{
