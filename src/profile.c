@@ -199,6 +199,12 @@ VOID _app_setappinfo (
 			break;
 		}
 
+		case INFO_COMMENT:
+		{
+			_r_obj_movereference (&ptr_app->comment, value);
+			break;
+		}
+
 		case INFO_HASH:
 		{
 			_r_obj_movereference (&ptr_app->hash, value);
@@ -1370,7 +1376,10 @@ BOOLEAN _app_isappexists (
 		case DATA_APP_REGULAR:
 		case DATA_APP_SERVICE:
 		{
-			return ptr_app->real_path && _r_fs_exists (ptr_app->real_path->buffer);
+			if (ptr_app->real_path && !_r_fs_exists (ptr_app->real_path->buffer))
+				return FALSE;
+
+			return TRUE;
 		}
 
 		case DATA_APP_DEVICE:
