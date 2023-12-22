@@ -230,7 +230,7 @@ VOID _app_db_parse_app (
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
 	PR_STRING string;
-	PR_STRING hash;
+	PR_STRING path;
 	PR_STRING dos_path;
 	LONG64 timestamp;
 	LONG64 timer;
@@ -238,24 +238,24 @@ VOID _app_db_parse_app (
 	BOOLEAN is_enabled;
 	BOOLEAN is_silent;
 
-	string = _r_xml_getattribute_string (&db_info->xml_library, L"path");
+	path = _r_xml_getattribute_string (&db_info->xml_library, L"path");
 
-	if (!string)
+	if (!path)
 		return;
 
 	// workaround for native paths
 	// https://github.com/henrypp/simplewall/issues/817
-	if (_r_str_isstartswith2 (&string->sr, L"\\device\\", TRUE))
+	if (_r_str_isstartswith2 (&path->sr, L"\\device\\", TRUE))
 	{
-		dos_path = _r_path_dospathfromnt (string);
+		dos_path = _r_path_dospathfromnt (path);
 
 		if (dos_path)
-			_r_obj_movereference (&string, dos_path);
+			_r_obj_movereference (&path, dos_path);
 	}
 
-	if (!_r_obj_isstringempty2 (string))
+	if (!_r_obj_isstringempty2 (path))
 	{
-		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, string, NULL, NULL);
+		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, path, NULL, NULL);
 
 		if (app_hash)
 		{
@@ -270,10 +270,27 @@ VOID _app_db_parse_app (
 				timestamp = _r_xml_getattribute_long64 (&db_info->xml_library, L"timestamp");
 				timer = _r_xml_getattribute_long64 (&db_info->xml_library, L"timer");
 
-				hash = _r_xml_getattribute_string (&db_info->xml_library, L"hash");
+				string = _r_xml_getattribute_string (&db_info->xml_library, L"hash");
 
-				if (hash)
-					_app_setappinfo (ptr_app, INFO_HASH, hash);
+				if (!_r_obj_isstringempty (string))
+				{
+					_app_setappinfo (ptr_app, INFO_HASH, string);
+				}
+				else
+				{
+					_r_obj_dereference (string);
+				}
+
+				string = _r_xml_getattribute_string (&db_info->xml_library, L"comment");
+
+				if (!_r_obj_isstringempty (string))
+				{
+					_app_setappinfo (ptr_app, INFO_COMMENT, string);
+				}
+				else
+				{
+					_r_obj_dereference (string);
+				}
 
 				if (is_silent)
 					_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (is_silent));
@@ -295,7 +312,7 @@ VOID _app_db_parse_app (
 		}
 	}
 
-	_r_obj_dereference (string);
+	_r_obj_dereference (path);
 }
 
 VOID _app_db_parse_rule (
@@ -303,16 +320,17 @@ VOID _app_db_parse_rule (
 	_In_ ENUM_TYPE_DATA type
 )
 {
+	PITEM_RULE_CONFIG ptr_config = NULL;
+	R_STRINGREF first_part;
 	R_STRINGBUILDER sb;
 	R_STRINGREF sr;
-	R_STRINGREF first_part;
 	ULONG_PTR app_hash;
 	PR_STRING rule_name;
 	PR_STRING rule_remote;
 	PR_STRING rule_local;
 	PR_STRING path_string;
+	PR_STRING comment;
 	PR_STRING string;
-	PITEM_RULE_CONFIG ptr_config = NULL;
 	LONG blocklist_spy_state;
 	LONG blocklist_update_state;
 	LONG blocklist_extra_state;
@@ -340,6 +358,7 @@ VOID _app_db_parse_rule (
 
 	rule_remote = _r_xml_getattribute_string (&db_info->xml_library, L"rule");
 	rule_local = _r_xml_getattribute_string (&db_info->xml_library, L"rule_local");
+	comment = _r_xml_getattribute_string (&db_info->xml_library, L"comment");
 	direction = (FWP_DIRECTION)_r_xml_getattribute_long (&db_info->xml_library, L"dir");
 	protocol = (UINT8)_r_xml_getattribute_long (&db_info->xml_library, L"protocol");
 	af = (ADDRESS_FAMILY)_r_xml_getattribute_long (&db_info->xml_library, L"version");
@@ -355,6 +374,16 @@ VOID _app_db_parse_rule (
 		_r_obj_dereference (rule_local);
 
 	rule_hash = _r_str_gethash2 (ptr_rule->name, TRUE);
+
+	if (!_r_obj_isstringempty (comment))
+	{
+		_r_obj_movereference (&ptr_rule->comment, comment);
+	}
+	else
+	{
+		if (comment)
+			_r_obj_dereference (comment);
+	}
 
 	ptr_rule->type = (type == DATA_RULE_SYSTEM_USER) ? DATA_RULE_USER : type;
 	ptr_rule->action = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_block") ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
@@ -465,7 +494,7 @@ VOID _app_db_parse_rule (
 			_r_obj_dereference (path_string);
 		}
 
-		// Check if no app is added into rule, then disable it!
+		// check if no app is added into rule, then disable it!
 		if (ptr_rule->is_enabled)
 		{
 			if (_r_obj_isempty (ptr_rule->apps))
@@ -484,8 +513,8 @@ VOID _app_db_parse_ruleconfig (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
-	PR_STRING rule_name;
 	PITEM_RULE_CONFIG ptr_config;
+	PR_STRING rule_name;
 	ULONG_PTR rule_hash;
 
 	rule_name = _r_xml_getattribute_string (&db_info->xml_library, L"name");
@@ -1004,8 +1033,11 @@ VOID _app_db_save_app (
 
 		_r_xml_setattribute (&db_info->xml_library, L"path", ptr_app->original_path->buffer);
 
-		if (ptr_app->hash)
+		if (!_r_obj_isstringempty (ptr_app->hash))
 			_r_xml_setattribute (&db_info->xml_library, L"hash", ptr_app->hash->buffer);
+
+		if (!_r_obj_isstringempty (ptr_app->comment))
+			_r_xml_setattribute (&db_info->xml_library, L"comment", ptr_app->comment->buffer);
 
 		if (ptr_app->timestamp)
 			_r_xml_setattribute_long64 (&db_info->xml_library, L"timestamp", ptr_app->timestamp);
