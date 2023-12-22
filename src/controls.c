@@ -47,6 +47,7 @@ VOID _app_getapptooltipstring (
 	if (path)
 	{
 		_r_obj_appendstringbuilder2 (buffer, path);
+
 		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 	}
 
@@ -88,6 +89,24 @@ VOID _app_getapptooltipstring (
 
 		_r_obj_insertstringbuilder2 (&sb, 0, string);
 		_r_obj_appendstringbuilder2 (buffer, sb.string);
+
+		_r_obj_dereference (string);
+	}
+
+	// comment
+	if (!_r_obj_isstringempty (ptr_app->comment))
+	{
+		string = _r_obj_concatstrings (
+			2,
+			_r_locale_getstring (IDS_COMMENT),
+			L":\r\n"
+		);
+
+		_r_obj_appendstringbuilder2 (buffer, string);
+
+		_r_obj_appendstringbuilder (buffer, SZ_TAB);
+		_r_obj_appendstringbuilder2 (buffer, ptr_app->comment);
+		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 
 		_r_obj_dereference (string);
 	}
@@ -284,7 +303,6 @@ PR_STRING _app_gettooltipbylparam (
 		case IDC_RULE_APPS_ID:
 		{
 			_app_getapptooltipstring (&sb, lparam, NULL, NULL);
-
 			break;
 		}
 
@@ -298,13 +316,13 @@ PR_STRING _app_gettooltipbylparam (
 			if (!ptr_rule)
 				break;
 
+			// rule address
 			string1 = _app_rulesexpandrules (ptr_rule->rule_remote, SZ_CRLF SZ_TAB);
 			string2 = _app_rulesexpandrules (ptr_rule->rule_local, SZ_CRLF SZ_TAB);
 
-			// rule information
 			_r_obj_appendstringbuilderformat (
 				&sb,
-				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
+				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s\r\n",
 				_r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
 				lparam,
 				_r_locale_getstring (IDS_RULE),
@@ -337,10 +355,29 @@ PR_STRING _app_gettooltipbylparam (
 					);
 
 					_r_obj_appendstringbuilder2 (&sb, string2);
+					_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
 					_r_obj_dereference (string1);
 					_r_obj_dereference (string2);
 				}
+			}
+
+			// comment
+			if (!_r_obj_isstringempty (ptr_rule->comment))
+			{
+				string1 = _r_obj_concatstrings (
+					2,
+					_r_locale_getstring (IDS_COMMENT),
+					L":\r\n"
+				);
+
+				_r_obj_appendstringbuilder2 (&sb, string1);
+
+				_r_obj_appendstringbuilder (&sb, SZ_TAB);
+				_r_obj_appendstringbuilder2 (&sb, ptr_rule->comment);
+				_r_obj_appendstringbuilder (&sb, SZ_CRLF);
+
+				_r_obj_dereference (string1);
 			}
 
 			// rule notes
