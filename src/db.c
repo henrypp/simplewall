@@ -1097,6 +1097,9 @@ VOID _app_db_save_rule (
 		if (!_r_obj_isstringempty (ptr_rule->rule_local))
 			_r_xml_setattribute (&db_info->xml_library, L"rule_local", ptr_rule->rule_local->buffer);
 
+		if (!_r_obj_isstringempty (ptr_rule->comment))
+			_r_xml_setattribute (&db_info->xml_library, L"comment", ptr_rule->comment->buffer);
+
 		// ffu!
 		if (ptr_rule->profile)
 			_r_xml_setattribute_long (&db_info->xml_library, L"profile", ptr_rule->profile);
