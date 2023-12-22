@@ -63,6 +63,7 @@ typedef enum _ENUM_INFO_DATA
 	INFO_PATH = 1,
 	INFO_BYTES_DATA,
 	INFO_DISPLAY_NAME,
+	INFO_COMMENT,
 	INFO_HASH,
 	INFO_TIMESTAMP,
 	INFO_TIMER,
@@ -262,6 +263,7 @@ typedef struct _ITEM_APP
 	PR_STRING display_name;
 	PR_STRING short_name;
 	PR_STRING real_path;
+	PR_STRING comment;
 	PR_STRING hash;
 
 	PVOID notification; // PITEM_LOG
@@ -320,6 +322,7 @@ typedef struct _ITEM_RULE
 	PR_ARRAY guids;
 
 	PR_STRING name;
+	PR_STRING comment;
 	PR_STRING rule_remote;
 	PR_STRING rule_local;
 	PR_STRING protocol_str;
