@@ -748,7 +748,7 @@ VOID _app_notify_initialize (
 		SendDlgItemMessageW (context->hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)context->hfont_link, TRUE);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_DATE_TEXT; i++)
-			SendDlgItemMessageW (context->hwnd, i, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, 0);
+				_r_ctrl_settextmargin (context->hwnd, i);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_NEXT_BTN; i++)
 			SendDlgItemMessageW (context->hwnd, i, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
