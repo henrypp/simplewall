@@ -497,7 +497,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				_r_combobox_insertitem (hwnd, IDC_RULE_DIRECTION_ID, 1, _r_locale_getstring (IDS_DIRECTION_2), (LPARAM)FWP_DIRECTION_INBOUND);
 				_r_combobox_insertitem (hwnd, IDC_RULE_DIRECTION_ID, 2, _r_locale_getstring (IDS_ANY), (LPARAM)FWP_DIRECTION_MAX);
 
-				_r_combobox_setcurrentitembyparam (hwnd, IDC_RULE_DIRECTION_ID, (LPARAM)context->ptr_rule->direction);
+				_r_combobox_setcurrentitembylparam (hwnd, IDC_RULE_DIRECTION_ID, (LPARAM)context->ptr_rule->direction);
 
 				_r_ctrl_enable (hwnd, IDC_RULE_DIRECTION_ID, !context->ptr_rule->is_readonly);
 			}
@@ -510,7 +510,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				_r_combobox_insertitem (hwnd, IDC_RULE_ACTION_ID, 0, _r_locale_getstring (IDS_ACTION_BLOCK), (LPARAM)FWP_ACTION_BLOCK);
 				_r_combobox_insertitem (hwnd, IDC_RULE_ACTION_ID, 1, _r_locale_getstring (IDS_ACTION_ALLOW), (LPARAM)FWP_ACTION_PERMIT);
 
-				_r_combobox_setcurrentitembyparam (hwnd, IDC_RULE_ACTION_ID, (LPARAM)context->ptr_rule->action);
+				_r_combobox_setcurrentitembylparam (hwnd, IDC_RULE_ACTION_ID, (LPARAM)context->ptr_rule->action);
 
 				_r_ctrl_enable (hwnd, IDC_RULE_ACTION_ID, !context->ptr_rule->is_readonly);
 			}
@@ -558,7 +558,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_dereference (string);
 				}
 
-				_r_combobox_setcurrentitembyparam (hwnd, IDC_RULE_PROTOCOL_ID, (LPARAM)context->ptr_rule->protocol);
+				_r_combobox_setcurrentitembylparam (hwnd, IDC_RULE_PROTOCOL_ID, (LPARAM)context->ptr_rule->protocol);
 
 				_r_ctrl_enable (hwnd, IDC_RULE_PROTOCOL_ID, !context->ptr_rule->is_readonly);
 			}
@@ -572,7 +572,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 1, L"IPv4", (LPARAM)AF_INET);
 				_r_combobox_insertitem (hwnd, IDC_RULE_VERSION_ID, 2, L"IPv6", (LPARAM)AF_INET6);
 
-				_r_combobox_setcurrentitembyparam (hwnd, IDC_RULE_VERSION_ID, (LPARAM)context->ptr_rule->af);
+				_r_combobox_setcurrentitembylparam (hwnd, IDC_RULE_VERSION_ID, (LPARAM)context->ptr_rule->af);
 
 				_r_ctrl_enable (hwnd, IDC_RULE_VERSION_ID, !context->ptr_rule->is_readonly);
 			}
@@ -1821,13 +1821,13 @@ INT_PTR CALLBACK EditorProc (
 								_r_obj_movereference (&context->ptr_rule->rule_local, string);
 							}
 
-							context->ptr_rule->protocol = (UINT8)_r_combobox_getitemparam (
+							context->ptr_rule->protocol = (UINT8)_r_combobox_getitemlparam (
 								hpage_general,
 								IDC_RULE_PROTOCOL_ID,
 								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_PROTOCOL_ID)
 							);
 
-							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemparam (
+							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemlparam (
 								hpage_general,
 								IDC_RULE_VERSION_ID,
 								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_VERSION_ID)
@@ -1837,13 +1837,13 @@ INT_PTR CALLBACK EditorProc (
 
 							_r_obj_movereference (&context->ptr_rule->protocol_str, string);
 
-							context->ptr_rule->direction = (FWP_DIRECTION)_r_combobox_getitemparam (
+							context->ptr_rule->direction = (FWP_DIRECTION)_r_combobox_getitemlparam (
 								hpage_general,
 								IDC_RULE_DIRECTION_ID,
 								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_DIRECTION_ID)
 							);
 
-							context->ptr_rule->action = (FWP_ACTION_TYPE)_r_combobox_getitemparam (
+							context->ptr_rule->action = (FWP_ACTION_TYPE)_r_combobox_getitemlparam (
 								hpage_general,
 								IDC_RULE_ACTION_ID,
 								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_ACTION_ID)
