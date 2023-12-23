@@ -322,7 +322,7 @@ PR_STRING _app_gettooltipbylparam (
 
 			_r_obj_appendstringbuilderformat (
 				&sb,
-				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s\r\n",
+				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
 				_r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
 				lparam,
 				_r_locale_getstring (IDS_RULE),
@@ -366,16 +366,15 @@ PR_STRING _app_gettooltipbylparam (
 			if (!_r_obj_isstringempty (ptr_rule->comment))
 			{
 				string1 = _r_obj_concatstrings (
-					2,
+					3,
+					SZ_CRLF,
 					_r_locale_getstring (IDS_COMMENT),
-					L":\r\n"
+					L":\r\n" SZ_TAB
 				);
 
 				_r_obj_appendstringbuilder2 (&sb, string1);
 
-				_r_obj_appendstringbuilder (&sb, SZ_TAB);
 				_r_obj_appendstringbuilder2 (&sb, ptr_rule->comment);
-				_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
 				_r_obj_dereference (string1);
 			}
