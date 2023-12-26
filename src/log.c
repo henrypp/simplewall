@@ -411,7 +411,7 @@ VOID _wfp_logsubscribe (
 	if (!is_subscribed)
 	{
 		if (hwnd)
-			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later.", status, NULL, NULL, NULL);
+			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later.", status, NULL, FALSE);
 
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
 

@@ -270,14 +270,46 @@ CleanupExit:
 		NtClose (hsubkey);
 }
 
+BOOLEAN _app_parse_callback (
+	_In_ HANDLE hroot,
+	_In_ PVOID buffer,
+	_In_opt_ PVOID context
+)
+{
+	PKEY_BASIC_INFORMATION basic_info;
+	PPACKAGE_CONTEXT mycntx;
+	PR_STRING key_name;
+
+	basic_info = buffer;
+
+	if (!context)
+		return FALSE;
+
+	mycntx = context;
+
+	key_name = _r_obj_createstring_ex (basic_info->Name, basic_info->NameLength);
+
+	if (mycntx->is_byname)
+	{
+		_app_package_getpackagebyname (HKEY_CURRENT_USER, mycntx->path, key_name);
+	}
+	else
+	{
+		_app_package_getpackagebysid (HKEY_CURRENT_USER, mycntx->path, key_name);
+	}
+
+	_r_obj_dereference (key_name);
+
+	return TRUE;
+}
+
 VOID _app_package_getpackageslist ()
 {
 	static LPWSTR reg_byname = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
 	static LPWSTR reg_bysid = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings";
 
+	PACKAGE_CONTEXT context = {0};
 	HANDLE hkey;
-	PR_STRING key_name;
-	ULONG key_index;
 	NTSTATUS status;
 
 	// query packages by name
@@ -285,23 +317,17 @@ VOID _app_package_getpackageslist ()
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, L"Repository\\Packages");
+		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, reg_byname);
 	}
 	else
 	{
-		key_index = 0;
+		_r_str_copy (context.path, RTL_NUMBER_OF (context.path), reg_byname);
+		context.is_byname = TRUE;
 
-		while (TRUE)
-		{
-			status = _r_reg_enumkey (hkey, key_index++, &key_name, NULL);
+		status = _r_reg_enumkey (hkey, KeyBasicInformation, &_app_parse_callback, &context);
 
-			if (!NT_SUCCESS (status))
-				break;
-
-			_app_package_getpackagebyname (HKEY_CURRENT_USER, reg_byname, key_name);
-
-			_r_obj_dereference (key_name);
-		}
+		if (!NT_SUCCESS (status))
+			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_enumkey", status, reg_byname);
 
 		NtClose (hkey);
 	}
@@ -311,23 +337,17 @@ VOID _app_package_getpackageslist ()
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, L"AppContainer\\Mappings");
+		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, reg_bysid);
 	}
 	else
 	{
-		key_index = 0;
+		_r_str_copy (context.path, RTL_NUMBER_OF (context.path), reg_bysid);
+		context.is_byname = FALSE;
 
-		while (TRUE)
-		{
-			status = _r_reg_enumkey (hkey, key_index++, &key_name, NULL);
+		status = _r_reg_enumkey (hkey, KeyBasicInformation, &_app_parse_callback, &context);
 
-			if (!NT_SUCCESS (status))
-				break;
-
-			_app_package_getpackagebysid (HKEY_CURRENT_USER, reg_bysid, key_name);
-
-			_r_obj_dereference (key_name);
-		}
+		if (!NT_SUCCESS (status))
+			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_enumkey", status, reg_bysid);
 
 		NtClose (hkey);
 	}

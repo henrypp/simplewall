@@ -1601,7 +1601,7 @@ VOID _app_profile_load_internal (
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_OBJECT_PATH_NOT_FOUND)
 		{
 			if (hwnd)
-				_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL, NULL, NULL);
+				_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL, TRUE);
 
 			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load_internal", status, NULL);
 		}
@@ -1688,7 +1688,7 @@ CleanupExit:
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_OBJECT_PATH_NOT_FOUND)
 		{
 			if (hwnd)
-				_r_show_errormessage (hwnd, L"Could not load profile!", status, NULL, NULL, NULL);
+				_r_show_errormessage (hwnd, L"Could not load profile!", status, NULL, TRUE);
 
 			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load", status, NULL);
 		}
@@ -1725,7 +1725,7 @@ NTSTATUS _app_profile_save (
 	if (!NT_SUCCESS (status))
 	{
 		if (hwnd)
-			_r_show_errormessage (hwnd, L"Could not save profile!", status, NULL, NULL, NULL);
+			_r_show_errormessage (hwnd, L"Could not save profile!", status, NULL, TRUE);
 
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
 
@@ -1753,7 +1753,7 @@ NTSTATUS _app_profile_save (
 	if (!NT_SUCCESS (status))
 	{
 		if (hwnd)
-			_r_show_errormessage (hwnd, L"Could not save profile!", status, NULL, NULL, NULL);
+			_r_show_errormessage (hwnd, L"Could not save profile!", status, NULL, TRUE);
 
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_savetofile", status, profile_info.profile_path->buffer);
 	}

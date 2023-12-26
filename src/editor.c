@@ -1313,7 +1313,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					{
 						if (current_length >= RULE_RULE_CCH_MAX)
 						{
-							_r_show_errormessage (hwnd, NULL, STATUS_IMPLEMENTATION_LIMIT, NULL, NULL, NULL);
+							_r_show_errormessage (hwnd, NULL, STATUS_IMPLEMENTATION_LIMIT, NULL, TRUE);
 
 							return FALSE;
 						}

@@ -2305,7 +2305,7 @@ VOID _app_command_logshow (
 		status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
 
 		if (!NT_SUCCESS (status))
-			_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, NULL, NULL);
+			_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, TRUE);
 
 		_r_obj_dereference (process_path);
 		_r_obj_dereference (viewer_path);
@@ -2382,7 +2382,7 @@ VOID _app_command_logerrshow (
 	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
 
 	if (!NT_SUCCESS (status))
-		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, NULL, NULL);
+		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, TRUE);
 
 	_r_obj_dereference (process_path);
 	_r_obj_dereference (viewer_path);

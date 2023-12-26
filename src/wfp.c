@@ -118,7 +118,7 @@ HANDLE _wfp_getenginehandle ()
 
 				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen0", status, NULL);
 
-				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", status, NULL, NULL, NULL);
+				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", status, NULL, FALSE);
 
 				RtlExitUserProcess (status);
 

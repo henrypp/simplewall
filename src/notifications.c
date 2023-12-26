@@ -526,7 +526,7 @@ VOID _app_notify_killprocess (
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_show_errormessage (hwnd, L"Cannot enumerate processes!", status, NULL, NULL, NULL);
+		_r_show_errormessage (hwnd, L"Cannot enumerate processes!", status, NULL, TRUE);
 
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_r_sys_enumprocesses", status, NULL);
 
@@ -556,13 +556,13 @@ VOID _app_notify_killprocess (
 							status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
 
 							if (!NT_SUCCESS (status))
-								_r_show_errormessage (hwnd, L"Cannot terminate process!", status, NULL, NULL, NULL);
+								_r_show_errormessage (hwnd, L"Cannot terminate process!", status, path->buffer, TRUE);
 
 							NtClose (process_handle);
 						}
 						else
 						{
-							_r_show_errormessage (hwnd, L"Cannot open process!", status, NULL, NULL, NULL);
+							_r_show_errormessage (hwnd, L"Cannot open process!", status, path->buffer, TRUE);
 						}
 					}
 
