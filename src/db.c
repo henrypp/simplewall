@@ -15,7 +15,6 @@ NTSTATUS _app_db_initialize (
 
 	status = _r_xml_initializelibrary (&db_info->xml_library, is_reader);
 
-
 	return status;
 }
 
@@ -272,24 +271,30 @@ VOID _app_db_parse_app (
 
 				string = _r_xml_getattribute_string (&db_info->xml_library, L"hash");
 
-				if (!_r_obj_isstringempty (string))
+				if (string)
 				{
-					_app_setappinfo (ptr_app, INFO_HASH, string);
-				}
-				else
-				{
-					_r_obj_dereference (string);
+					if (!_r_obj_isstringempty2 (string))
+					{
+						_app_setappinfo (ptr_app, INFO_HASH, string);
+					}
+					else
+					{
+						_r_obj_dereference (string);
+					}
 				}
 
 				string = _r_xml_getattribute_string (&db_info->xml_library, L"comment");
 
-				if (!_r_obj_isstringempty (string))
+				if (string)
 				{
-					_app_setappinfo (ptr_app, INFO_COMMENT, string);
-				}
-				else
-				{
-					_r_obj_dereference (string);
+					if (!_r_obj_isstringempty2 (string))
+					{
+						_app_setappinfo (ptr_app, INFO_COMMENT, string);
+					}
+					else
+					{
+						_r_obj_dereference (string);
+					}
 				}
 
 				if (is_silent)
