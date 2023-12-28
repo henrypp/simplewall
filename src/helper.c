@@ -2000,21 +2000,15 @@ HBITMAP _app_bitmapfrompng (
 	_In_ LONG width
 )
 {
-	R_STORAGE buffer;
-	HBITMAP result;
+	HBITMAP hbitmap;
 	NTSTATUS status;
 
-	status = _r_res_loadresource (hinst, L"PNG", name, &buffer);
+	status = _r_res_loadimage (hinst, L"PNG", name, &GUID_ContainerFormatPng, width, width, &hbitmap);
 
 	if (!NT_SUCCESS (status))
 		return NULL;
 
-	status = _r_dc_imagetobitmap (&GUID_ContainerFormatPng, buffer.buffer, (ULONG)buffer.length, width, width, &result);
-
-	if (SUCCEEDED (status))
-		return result;
-
-	return NULL;
+	return hbitmap;
 }
 
 BOOLEAN _app_wufixenabled ()
