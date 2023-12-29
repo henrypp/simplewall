@@ -290,16 +290,10 @@ BOOLEAN _app_search_applyfilteritem (
 			if (!ptr_app)
 				goto CleanupExit;
 
-			// display name
-			string = _app_getappdisplayname (ptr_app, FALSE);
-
-			if (string)
+			// path
+			if (ptr_app->real_path)
 			{
-				_app_search_isstringfound (ptr_app->display_name, search_string, context, &is_changed);
-
-				_r_obj_dereference (string);
-
-				if (is_changed)
+				if (_app_search_isstringfound (ptr_app->real_path, search_string, context, &is_changed))
 					goto CleanupExit;
 			}
 
