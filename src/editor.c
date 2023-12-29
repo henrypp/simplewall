@@ -730,7 +730,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_dereference (string);
 				}
 
-				_r_ctrl_settextmargin (hwnd, IDC_APP_NAME_ID);
+				_r_ctrl_settextmargin (hwnd, IDC_APP_NAME_ID, 0, 0);
 			}
 
 			// app comment
@@ -738,7 +738,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			{
 				_r_ctrl_setstring (hwnd, IDC_APP_COMMENT_ID, _r_obj_getstring (context->ptr_app->comment));
 
-				_r_ctrl_settextmargin (hwnd, IDC_APP_COMMENT_ID);
+				_r_ctrl_settextmargin (hwnd, IDC_APP_COMMENT_ID, 0, 0);
 			}
 
 			// app signature
@@ -756,9 +756,9 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED))
 				);
 
-				_r_ctrl_settextmargin (hwnd, IDC_APP_NAME_ID);
+				_r_ctrl_settextmargin (hwnd, IDC_APP_NAME_ID, 0, 0);
 
-				_r_ctrl_settextmargin (hwnd, IDC_APP_SIGNATURE_ID);
+				_r_ctrl_settextmargin (hwnd, IDC_APP_SIGNATURE_ID, 0, 0);
 
 				if (string)
 					_r_obj_dereference (string);
