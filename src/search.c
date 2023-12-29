@@ -45,19 +45,22 @@ VOID _app_search_initializetheme (
 	context->image_width = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value) + _r_dc_getdpi (4, dpi_value);
 	context->image_height = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value) + _r_dc_getdpi (4, dpi_value);
 
-	hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SEARCH), context->image_width);
+	status = _r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SEARCH), &GUID_ContainerFormatPng, context->image_width, context->image_height, &hbitmap);
 
-	if (!hbitmap)
-		return;
+	if (NT_SUCCESS (status))
+	{
+		hicon_prev = context->hicon;
 
-	hicon_prev = context->hicon;
+		context->hicon = _r_dc_bitmaptoicon (hbitmap, context->image_width, context->image_height);
 
-	context->hicon = _r_dc_bitmaptoicon (hbitmap, context->image_width, context->image_height);
+		if (context->hicon)
+		{
+			if (hicon_prev)
+				DestroyIcon (hicon_prev);
+		}
 
-	if (hicon_prev)
-		DestroyIcon (hicon_prev);
-
-	DeleteObject (hbitmap);
+		DeleteObject (hbitmap);
+	}
 }
 
 VOID _app_search_destroytheme (
@@ -86,7 +89,8 @@ VOID _app_search_initialize (
 	SetWindowLongPtrW (context->hwnd, GWLP_WNDPROC, (LONG_PTR)_app_search_subclass_proc);
 
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s...", _r_locale_getstring (IDS_FIND));
-	SendMessageW (context->hwnd, EM_SETCUEBANNER, FALSE, (LPARAM)buffer);
+
+	_r_edit_setcuebanner (context->hwnd, 0, buffer);
 
 	SendMessageW (context->hwnd, WM_THEMECHANGED, 0, 0);
 }
@@ -167,7 +171,7 @@ VOID _app_search_getbuttonrect (
 	_Inout_ PRECT rect
 )
 {
-	rect->left = (rect->right - context->cx_width) - (context->cx_border + 1);
+	rect->left = (rect->right - context->cx_width) - context->cx_border - 1;
 	rect->top += context->cx_border;
 	rect->right -= context->cx_border;
 	rect->bottom -= context->cx_border;
@@ -287,23 +291,22 @@ BOOLEAN _app_search_applyfilteritem (
 				goto CleanupExit;
 
 			// display name
-			if (ptr_app->display_name)
+			string = _app_getappdisplayname (ptr_app, FALSE);
+
+			if (string)
 			{
-				if (_app_search_isstringfound (ptr_app->display_name, search_string, context, &is_changed))
+				_app_search_isstringfound (ptr_app->display_name, search_string, context, &is_changed);
+
+				_r_obj_dereference (string);
+
+				if (is_changed)
 					goto CleanupExit;
 			}
 
-			// real path
-			if (ptr_app->real_path)
+			// comment
+			if (!_r_obj_isstringempty (ptr_app->comment))
 			{
-				if (_app_search_isstringfound (ptr_app->real_path, search_string, context, &is_changed))
-					goto CleanupExit;
-			}
-
-			// original path
-			if (ptr_app->original_path)
-			{
-				if (_app_search_isstringfound (ptr_app->original_path, search_string, context, &is_changed))
+				if (_app_search_isstringfound (ptr_app->comment, search_string, context, &is_changed))
 					goto CleanupExit;
 			}
 
@@ -341,6 +344,13 @@ BOOLEAN _app_search_applyfilteritem (
 			if (ptr_rule->protocol_str)
 			{
 				if (_app_search_isstringfound (ptr_rule->protocol_str, search_string, context, &is_changed))
+					goto CleanupExit;
+			}
+
+			// comment
+			if (!_r_obj_isstringempty (ptr_rule->comment))
+			{
+				if (_app_search_isstringfound (ptr_rule->comment, search_string, context, &is_changed))
 					goto CleanupExit;
 			}
 
@@ -705,7 +715,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			_app_search_initializetheme (context);
 
 			// Reset the client area margins.
-			SendMessageW (hwnd, EM_SETMARGINS, EC_LEFTMARGIN, 0);
+			_r_ctrl_settextmargin (hwnd, 0, 0, 0);
 
 			// Refresh the non-client area.
 			SetWindowPos (hwnd, NULL, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
