@@ -314,6 +314,7 @@ VOID _app_logwrite_ui (
 VOID _wfp_logsubscribe (
 	_In_opt_ HWND hwnd,
 	_In_ HANDLE engine_handle
+
 )
 {
 	FWPM_NET_EVENT_SUBSCRIPTION0 subscription = {0};
@@ -323,7 +324,6 @@ VOID _wfp_logsubscribe (
 	HANDLE current_handle;
 	HANDLE new_handle = NULL;
 	PVOID hfwpuclnt;
-	BOOLEAN is_subscribed = FALSE;
 	NTSTATUS status;
 
 	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
@@ -335,80 +335,41 @@ VOID _wfp_logsubscribe (
 
 	if (!NT_SUCCESS (status))
 	{
+		if (hwnd)
+			_r_show_errormessage (hwnd, L"Could not load \"fwpuclnt.dll\" library.", status, NULL, TRUE);
+
 		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
 
 		return;
 	}
 
-	status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", (PVOID_PTR)&_FwpmNetEventSubscribe4);
-
-	if (NT_SUCCESS (status))
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_RS5))
 	{
-		status = _FwpmNetEventSubscribe4 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback4,
-			ULongToPtr (WINDOWS_10_RS5),
-			&new_handle
-		); // win10rs5+
+		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", (PVOID_PTR)&_FwpmNetEventSubscribe4);
 
-		if (status == ERROR_SUCCESS)
-			is_subscribed = TRUE;
+		if (NT_SUCCESS (status))
+			status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, ULongToPtr (WINDOWS_10_RS5), &new_handle); // win10rs5+
 	}
-
-	if (!is_subscribed)
+	else if (_r_sys_isosversiongreaterorequal (WINDOWS_10_RS4))
 	{
 		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe3", (PVOID_PTR)&_FwpmNetEventSubscribe3);
 
 		if (NT_SUCCESS (status))
-		{
-			status = _FwpmNetEventSubscribe3 (
-				engine_handle,
-				&subscription,
-				&_wfp_logcallback3,
-				ULongToPtr (WINDOWS_10_RS4),
-				&new_handle
-			); // win10rs4+
-
-			if (status == STATUS_SUCCESS)
-				is_subscribed = TRUE;
-		}
+			status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, ULongToPtr (WINDOWS_10_RS4), &new_handle); // win10rs4+
 	}
-
-	if (!is_subscribed)
+	else if (_r_sys_isosversiongreaterorequal (WINDOWS_10_RS1))
 	{
 		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", (PVOID_PTR)&_FwpmNetEventSubscribe2);
 
 		if (NT_SUCCESS (status))
-		{
-			status = _FwpmNetEventSubscribe2 (
-				engine_handle,
-				&subscription,
-				&_wfp_logcallback2,
-				ULongToPtr (WINDOWS_10_RS1),
-				&new_handle
-			); // win10rs1+
-
-			if (status == STATUS_SUCCESS)
-				is_subscribed = TRUE;
-		}
+			status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, ULongToPtr (WINDOWS_10_RS1), &new_handle); // win10rs1+
 	}
-
-	if (!is_subscribed)
+	else
 	{
-		status = FwpmNetEventSubscribe1 (
-			engine_handle,
-			&subscription,
-			&_wfp_logcallback1,
-			ULongToPtr (WINDOWS_8_1),
-			&new_handle
-		); // win8+
-
-		if (status == STATUS_SUCCESS)
-			is_subscribed = TRUE;
+		status = FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, ULongToPtr (WINDOWS_8_1), &new_handle); // win8+
 	}
 
-	if (!is_subscribed)
+	if (status != STATUS_SUCCESS)
 	{
 		if (hwnd)
 			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later.", status, NULL, FALSE);
