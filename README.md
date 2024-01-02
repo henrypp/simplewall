@@ -15,7 +15,7 @@
 -------
 
 <p align="center">
-	<img src="https://www.henrypp.org/images/simplewall.png?cachefix" />
+	<img src="/images/simplewall.png?cache" />
 </p>
 
 ### Description:
@@ -87,7 +87,7 @@ simplewall have two types of custom user rules rules:
 - **Global rules:** rule applied for all applications.
 - **Special rules:** rule applied only for specified applications.
 
-<img src="https://www.henrypp.org/images/simplewall_rule3.png" />
+<img src="/images/simplewall_rules.png?cache" />
 
 _To set rule applications, open rule and then navigate to "Apps" tab._
 
