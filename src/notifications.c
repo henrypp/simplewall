@@ -543,7 +543,7 @@ VOID _app_notify_killprocess (
 		{
 			if (_r_str_compare (process->ImageName.Buffer, 0, file_name->buffer, 0) == 0)
 			{
-				status = _r_sys_getprocessimagepath (process->UniqueProcessId, TRUE, &path);
+				status = _r_sys_getprocessimagepathbyid (process->UniqueProcessId, TRUE, &path);
 
 				if (NT_SUCCESS (status))
 				{
@@ -556,17 +556,21 @@ VOID _app_notify_killprocess (
 							status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
 
 							if (!NT_SUCCESS (status))
-								_r_show_errormessage (hwnd, L"Cannot terminate process!", status, path->buffer, TRUE);
+								_r_show_errormessage (hwnd, L"Cannot terminate process!", status, process->ImageName.Buffer, TRUE);
 
 							NtClose (process_handle);
 						}
 						else
 						{
-							_r_show_errormessage (hwnd, L"Cannot open process!", status, path->buffer, TRUE);
+							_r_show_errormessage (hwnd, L"Cannot open process!", status, process->ImageName.Buffer, TRUE);
 						}
 					}
 
 					_r_obj_dereference (path);
+				}
+				else
+				{
+					_r_show_errormessage (hwnd, L"Cannot get process path!", status, process->ImageName.Buffer, TRUE);
 				}
 			}
 		}
