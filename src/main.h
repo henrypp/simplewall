@@ -177,6 +177,7 @@ typedef enum _ENUM_INFO_DATA2
 #define LV_COLOR_PICO RGB (51, 153, 255)
 #define LV_COLOR_SYSTEM RGB(151, 196, 251)
 #define LV_COLOR_CONNECTION RGB(255, 168, 242)
+#define LV_COLOR_UNDELETE RGB(211, 211, 211)
 
 // memory limitation for 1 rule
 #define RULE_NAME_CCH_MAX 64
@@ -234,6 +235,7 @@ typedef struct _STATIC_DATA
 	ULONG_PTR color_pico;
 	ULONG_PTR color_system;
 	ULONG_PTR color_network;
+	ULONG_PTR color_nonremovable;
 
 	ULONG_PTR ntoskrnl_hash;
 	ULONG_PTR svchost_hash;

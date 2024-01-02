@@ -2064,6 +2064,7 @@ VOID _app_initialize ()
 	config.color_pico = _app_addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", TRUE, L"ColorPico", LV_COLOR_PICO);
 	config.color_system = _app_addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", TRUE, L"ColorSystem", LV_COLOR_SYSTEM);
 	config.color_network = _app_addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", TRUE, L"ColorConnection", LV_COLOR_CONNECTION);
+	config.color_nonremovable = _app_addcolor (IDS_DISABLEREMOVAL, L"IsHighlightUndelete", TRUE, L"ColorUndelete", LV_COLOR_UNDELETE);
 
 	_app_generate_credentials ();
 

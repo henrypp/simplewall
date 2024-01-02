@@ -740,6 +740,13 @@ COLORREF _app_getappcolor (
 
 			goto CleanupExit;
 		}
+
+		if (_r_config_getboolean_ex (L"IsHighlightUndelete", TRUE, L"colors") && ptr_app->is_undeletable)
+		{
+			color_hash = config.color_nonremovable;
+
+			goto CleanupExit;
+		}
 	}
 
 	if (_r_config_getboolean_ex (L"IsHighlightSystem", TRUE, L"colors") && is_systemapp)

@@ -217,6 +217,13 @@ VOID _app_getapptooltipstring (
 			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 
+		if (ptr_app->is_undeletable)
+		{
+			_r_obj_appendstringbuilder (&sb, SZ_TAB);
+			_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_DISABLEREMOVAL));
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
+		}
+
 		if (!_app_isappexists (ptr_app))
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
