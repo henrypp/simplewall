@@ -94,21 +94,24 @@ VOID _app_getapptooltipstring (
 	}
 
 	// comment
-	if (!_r_obj_isstringempty (ptr_app->comment))
+	if (ptr_app)
 	{
-		string = _r_obj_concatstrings (
-			2,
-			_r_locale_getstring (IDS_COMMENT),
-			L":\r\n"
-		);
+		if (!_r_obj_isstringempty (ptr_app->comment))
+		{
+			string = _r_obj_concatstrings (
+				2,
+				_r_locale_getstring (IDS_COMMENT),
+				L":\r\n"
+			);
 
-		_r_obj_appendstringbuilder2 (buffer, string);
+			_r_obj_appendstringbuilder2 (buffer, string);
 
-		_r_obj_appendstringbuilder (buffer, SZ_TAB);
-		_r_obj_appendstringbuilder2 (buffer, ptr_app->comment);
-		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
+			_r_obj_appendstringbuilder (buffer, SZ_TAB);
+			_r_obj_appendstringbuilder2 (buffer, ptr_app->comment);
+			_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 
-		_r_obj_dereference (string);
+			_r_obj_dereference (string);
+		}
 	}
 
 	// file signature
