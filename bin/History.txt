@@ -1,3 +1,12 @@
+v3.7.7 (3 January 2024)
+- added error message when loading library on subscribe
+- added comment item for apps/rules (issue #1664)
+- added recheck app hash in properies dialog
+- added highlighting of undelatable apps
+- fixed displaying incorrect error messages
+- fixed high disk usage (issue #1665)
+- updated ports list
+
 v3.7.6 (30 November 2023)
 - fixed configuration of windows update (issue #1648)
 - fixed auto update fails to install (issue #1565)
