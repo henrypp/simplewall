@@ -1432,6 +1432,7 @@ INT_PTR CALLBACK EditorPagesProc (
 						context->ptr_app->real_path->buffer,
 						GENERIC_READ,
 						FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+						0,
 						FALSE,
 						&hfile
 					);

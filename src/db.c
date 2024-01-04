@@ -201,7 +201,7 @@ NTSTATUS _app_db_openfromfile (
 	if (db_info->bytes)
 		_r_obj_clearreference (&db_info->bytes);
 
-	status = _r_fs_openfile (path->buffer, GENERIC_READ, FILE_SHARE_READ, FALSE, &hfile);
+	status = _r_fs_openfile (path->buffer, GENERIC_READ, FILE_SHARE_READ, 0, FALSE, &hfile);
 
 	if (!NT_SUCCESS (status))
 		return status;
