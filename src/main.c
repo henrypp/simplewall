@@ -2673,6 +2673,7 @@ INT_PTR CALLBACK DlgProc (
 									NULL))
 								{
 									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
 									return TRUE;
 								}
 							}

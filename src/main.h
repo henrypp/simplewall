@@ -22,7 +22,7 @@
 #pragma comment(lib, "wintrust.lib")
 
 // log
-#define __FILENAME__ (PathFindFileName (TEXT (__FILE__)))
+#define __FILENAME__ (_r_path_getbasename (TEXT (__FILE__)))
 
 #define DBG_ARG __FILENAME__, __LINE__
 #define DBG_ARG_VAR file_name, line
