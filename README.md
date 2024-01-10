@@ -63,11 +63,17 @@ applications. Windows Filtering Platform is a development technology and not a f
 To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
 ```
 
+### Reviews of idiots:
+[<img src="/images/idiot_n1.png" />](https://alternativeto.net/software/simplewall-firewall/about/)
+
+Look at them, he does not know about [.gitmodules](https://github.com/henrypp/simplewall/blob/master/.gitmodules) and how to use, lol.
+
+PS: Without idiots we are not to be fun, yeah!
+
 ### Installation:
 When install rules, you can choose two modes:
 - Permanent rules - rules are working until you <a href="#uninstall">disable it manually</a>.
 - Temporary rules - rules are reset after the next reboot.
-
 
 ### Uninstall:
 When you uninstall simplewall, all previously configured filters stay alive in system.
