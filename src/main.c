@@ -692,21 +692,9 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_checkbutton (hwnd, IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_NOTIFICATIONONTRAY_CHK, _r_config_getboolean (L"IsNotificationsOnTray", FALSE));
 
-					SendDlgItemMessageW (
-						hwnd,
-						IDC_NOTIFICATIONTIMEOUT,
-						UDM_SETRANGE32,
-						0,
-						(LPARAM)_r_calc_days2seconds (7)
-					);
+					_r_updown_setrange (hwnd, IDC_NOTIFICATIONTIMEOUT, 0, _r_calc_days2seconds (7));
 
-					SendDlgItemMessageW (
-						hwnd,
-						IDC_NOTIFICATIONTIMEOUT,
-						UDM_SETPOS32,
-						0,
-						(LPARAM)_r_config_getulong (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT)
-					);
+					_r_updown_setvalue (hwnd, IDC_NOTIFICATIONTIMEOUT, _r_config_getulong (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT));
 
 					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ENABLENOTIFICATIONS_CHK, 0), WM_APP);
 
@@ -715,7 +703,6 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDD_SETTINGS_LOGGING:
 				{
-					UDACCEL ud = {0};
 					PR_STRING string;
 
 					_r_ctrl_checkbutton (hwnd, IDC_ENABLELOG_CHK, _r_config_getboolean (L"IsLogEnabled", FALSE));
@@ -738,31 +725,11 @@ INT_PTR CALLBACK SettingsProc (
 						_r_obj_dereference (string);
 					}
 
-					ud.nInc = 64; // set step to 64kb
+					_r_ctrl_setacceleration (hwnd, IDC_LOGSIZELIMIT, 64); // set step to 64kb
 
-					SendDlgItemMessageW (
-						hwnd,
-						IDC_LOGSIZELIMIT,
-						UDM_SETACCEL,
-						1,
-						(LPARAM)&ud
-					);
+					_r_updown_setrange (hwnd, IDC_LOGSIZELIMIT, 64, _r_calc_kilobytes2bytes (512));
 
-					SendDlgItemMessageW (
-						hwnd,
-						IDC_LOGSIZELIMIT,
-						UDM_SETRANGE32,
-						(WPARAM)64,
-						(LPARAM)_r_calc_kilobytes2bytes (512)
-					);
-
-					SendDlgItemMessageW (
-						hwnd,
-						IDC_LOGSIZELIMIT,
-						UDM_SETPOS32,
-						0,
-						(LPARAM)_r_config_getulong (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT)
-					);
+					_r_updown_setvalue (hwnd, IDC_LOGSIZELIMIT, _r_config_getulong (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT));
 
 					_r_ctrl_checkbutton (hwnd, IDC_ENABLEUILOG_CHK, _r_config_getboolean (L"IsLogUiEnabled", FALSE));
 
@@ -1185,13 +1152,13 @@ INT_PTR CALLBACK SettingsProc (
 
 			if (ctrl_id == IDC_LOGSIZELIMIT)
 			{
-				value = (ULONG)SendDlgItemMessageW (hwnd, ctrl_id, UDM_GETPOS32, 0, 0);
+				value = _r_updown_getvalue (hwnd, ctrl_id);
 
 				_r_config_setulong (L"LogSizeLimitKb", value);
 			}
 			else if (ctrl_id == IDC_NOTIFICATIONTIMEOUT)
 			{
-				value = (ULONG)SendDlgItemMessageW (hwnd, ctrl_id, UDM_GETPOS32, 0, 0);
+				value = _r_updown_getvalue (hwnd, ctrl_id);
 
 				_r_config_setulong (L"NotificationsTimeout", value);
 			}
@@ -1532,7 +1499,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
 					_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
 
-					hctrl = (HWND)SendDlgItemMessageW (hwnd, IDC_LOGSIZELIMIT, UDM_GETBUDDY, 0, 0);
+					hctrl = _r_updown_getbuddy (hwnd, IDC_LOGSIZELIMIT);
 
 					if (hctrl)
 						_r_ctrl_enable (hctrl, 0, is_enabled);
@@ -1705,7 +1672,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (notify_code != EN_KILLFOCUS)
 						break;
 
-					value = (ULONG)SendDlgItemMessageW (hwnd, IDC_LOGSIZELIMIT, UDM_GETPOS32, 0, 0);
+					value = _r_updown_getvalue (hwnd, IDC_LOGSIZELIMIT);
 
 					_r_config_setulong (L"LogSizeLimitKb", value);
 
@@ -1735,7 +1702,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONSOUND_CHK, is_enabled);
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONONTRAY_CHK, is_enabled);
 
-					hctrl = (HWND)SendDlgItemMessageW (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETBUDDY, 0, 0);
+					hctrl = _r_updown_getbuddy (hwnd, IDC_NOTIFICATIONTIMEOUT);
 
 					if (hctrl)
 						_r_ctrl_enable (hctrl, 0, is_enabled);
@@ -1795,7 +1762,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					if (notify_code == EN_KILLFOCUS)
 					{
-						_r_config_setulong (L"NotificationsTimeout", (ULONG)SendDlgItemMessageW (hwnd, IDC_NOTIFICATIONTIMEOUT, UDM_GETPOS32, 0, 0));
+						_r_config_setulong (L"NotificationsTimeout", _r_updown_getvalue (hwnd, IDC_NOTIFICATIONTIMEOUT));
 					}
 
 					break;
@@ -3363,7 +3330,7 @@ INT_PTR CALLBACK DlgProc (
 
 					SetFocus (config.hsearchbar);
 
-					SendMessageW (config.hsearchbar, EM_SETSEL, 0, (LPARAM)-1);
+					_r_ctrl_setselection (config.hsearchbar, 0, MAKELPARAM (0, -1));
 
 					break;
 				}

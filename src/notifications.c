@@ -1550,15 +1550,13 @@ INT_PTR CALLBACK NotificationProc (
 					if (_r_str_compare (class_name, 0, WC_EDIT, 0) != 0)
 						break;
 
-					// edit control hotkey for "ctrl+c" (issue #597)
 					if (ctrl_id == IDM_COPY)
 					{
-						SendMessageW (hedit, WM_COPY, 0, 0);
+						SendMessageW (hedit, WM_COPY, 0, 0); // edit control hotkey for "ctrl+c" (issue #597)
 					}
-					// edit control hotkey for "ctrl+a"
 					else if (ctrl_id == IDM_SELECT_ALL)
 					{
-						SendMessageW (hedit, EM_SETSEL, 0, (LPARAM)-1);
+						_r_ctrl_setselection (hedit, 0, MAKELPARAM (0, -1)); // edit control hotkey for "ctrl+a"
 					}
 
 					break;
