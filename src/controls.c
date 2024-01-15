@@ -316,10 +316,10 @@ PR_STRING _app_gettooltipbylparam (
 			break;
 		}
 
-		case  IDC_RULES_BLOCKLIST:
-		case  IDC_RULES_SYSTEM:
-		case  IDC_RULES_CUSTOM:
-		case  IDC_APP_RULES_ID:
+		case IDC_RULES_BLOCKLIST:
+		case IDC_RULES_SYSTEM:
+		case IDC_RULES_CUSTOM:
+		case IDC_APP_RULES_ID:
 		{
 			ptr_rule = _app_getrulebyid (lparam);
 

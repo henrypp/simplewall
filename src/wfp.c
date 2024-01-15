@@ -1366,7 +1366,7 @@ CleanupExit:
 
 BOOLEAN _wfp_create4filters (
 	_In_ HANDLE engine_handle,
-	_In_  PR_LIST rules,
+	_In_ PR_LIST rules,
 	_In_ LPCWSTR file_name,
 	_In_ ULONG line,
 	_In_ BOOLEAN is_intransact

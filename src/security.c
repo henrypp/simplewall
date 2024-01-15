@@ -51,8 +51,8 @@ PACL _app_createaccesscontrollist (
 )
 {
 	EXPLICIT_ACCESS ea[3] = {0};
-	PACL new_dacl;
 	PACCESS_ALLOWED_ACE ace;
+	PACL new_dacl;
 	BOOLEAN is_secured = FALSE;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
@@ -61,8 +61,6 @@ PACL _app_createaccesscontrollist (
 
 	for (WORD ace_index = 0; ace_index < acl->AceCount; ace_index++)
 	{
-		ace = NULL;
-
 		status = RtlGetAce (acl, ace_index, &ace);
 
 		if (!NT_SUCCESS (status))
@@ -159,9 +157,9 @@ VOID _app_setenginesecurity (
 	PSECURITY_DESCRIPTOR security_descriptor;
 	PACCESS_ALLOWED_ACE ace;
 	EXPLICIT_ACCESS ea[18] = {0};
-	PACL new_dacl;
 	PSID sid_owner;
 	PSID sid_group;
+	PACL new_dacl;
 	PACL dacl;
 	PACL sacl;
 	ULONG count;
@@ -182,8 +180,6 @@ VOID _app_setenginesecurity (
 	{
 		for (WORD ace_index = 0; ace_index < dacl->AceCount; ace_index++)
 		{
-			ace = NULL;
-
 			status = RtlGetAce (dacl, ace_index, &ace);
 
 			if (!NT_SUCCESS (status))
@@ -444,7 +440,7 @@ VOID _app_setprovidersecurity (
 				hengine,
 				provider_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const SID *)config.builtin_admins_sid,
+				(const PSID)config.builtin_admins_sid,
 				NULL,
 				new_dacl,
 				NULL
@@ -503,7 +499,7 @@ VOID _app_setsublayersecurity (
 				hengine,
 				sublayer_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const SID *)config.builtin_admins_sid,
+				(const PSID)config.builtin_admins_sid,
 				NULL,
 				new_dacl,
 				NULL
@@ -563,7 +559,7 @@ VOID _app_setcalloutsecurity (
 				hengine,
 				callout_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const SID *)config.builtin_admins_sid,
+				(const PSID)config.builtin_admins_sid,
 				NULL,
 				new_dacl,
 				NULL
@@ -625,7 +621,7 @@ VOID _app_setfiltersecurity (
 				hengine,
 				filter_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const SID *)config.builtin_admins_sid,
+				(const PSID)config.builtin_admins_sid,
 				NULL,
 				new_dacl,
 				NULL

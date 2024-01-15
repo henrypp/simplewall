@@ -357,7 +357,7 @@ NTSTATUS _app_formatip (
 
 	switch (af)
 	{
-		case  AF_INET:
+		case AF_INET:
 		{
 			p4addr = (PIN_ADDR)address;
 

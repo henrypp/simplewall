@@ -645,7 +645,7 @@ BOOLEAN _app_network_isvalidconnection (
 		{
 			p6addr = (PIN6_ADDR)address;
 
-			return  (!IN6_IS_ADDR_UNSPECIFIED (p6addr) &&
+			return (!IN6_IS_ADDR_UNSPECIFIED (p6addr) &&
 					 !IN6_IS_ADDR_LOOPBACK (p6addr) &&
 					 !IN6_IS_ADDR_LINKLOCAL (p6addr) &&
 					 !IN6_IS_ADDR_MULTICAST (p6addr) &&

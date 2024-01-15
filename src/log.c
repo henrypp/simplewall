@@ -204,7 +204,7 @@ VOID _app_logwrite (
 
 	current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
-	if (!_r_fs_isvalidhandle (current_handle))
+	if (!current_handle)
 		return;
 
 	// parse path
