@@ -886,6 +886,7 @@ INT_PTR CALLBACK NotificationProc (
 				_r_ctrl_settiptext (htip, hwnd, IDC_KILLPROCESS_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_ALLOW_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_BLOCK_BTN, LPSTR_TEXTCALLBACK);
+				_r_ctrl_settiptext (htip, hwnd, IDC_NEXT_BTN, L"NEXT!");
 			}
 
 			// display log information
