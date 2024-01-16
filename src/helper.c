@@ -1648,13 +1648,10 @@ NTSTATUS NTAPI _app_timercallback (
 	_In_opt_ PVOID context
 )
 {
-	LARGE_INTEGER timeout;
 	PITEM_APP ptr_app = NULL;
 	PR_STRING hash;
 	ULONG_PTR enum_key;
 	NTSTATUS status;
-
-	_r_calc_millisecondstolargeinteger (&timeout, _r_calc_minutes2milliseconds (10));
 
 	while (TRUE)
 	{
@@ -1689,7 +1686,7 @@ NTSTATUS NTAPI _app_timercallback (
 
 		_r_queuedlock_releaseshared (&lock_apps);
 
-		NtWaitForSingleObject (NtCurrentThread (), FALSE, &timeout);
+		_r_sys_waitforsingleobject (NtCurrentThread (), _r_calc_minutes2milliseconds (10));
 	}
 
 	return STATUS_SUCCESS;
