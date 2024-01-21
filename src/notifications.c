@@ -152,7 +152,7 @@ BOOLEAN _app_notify_addobject (
 
 	_r_obj_swapreference (&ptr_app->notification, ptr_log);
 
-	if (SendMessageW (hwnd, WM_NOTIFICATION, 0, (LPARAM)ptr_app->notification))
+	if (_r_wnd_sendmessage (hwnd, 0, WM_NOTIFICATION, 0, (LPARAM)ptr_app->notification))
 	{
 		if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
 		{
@@ -743,16 +743,16 @@ VOID _app_notify_initialize (
 		context->hfont_link = _app_createfont (&ncm.lfMessageFont, 9, TRUE, dpi_value);
 		context->hfont_text = _app_createfont (&ncm.lfMessageFont, 9, FALSE, dpi_value);
 
-		SendMessageW (context->hwnd, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
+		_r_wnd_sendmessage (context->hwnd, 0, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
 
-		SendDlgItemMessageW (context->hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)context->hfont_title, TRUE);
-		SendDlgItemMessageW (context->hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)context->hfont_link, TRUE);
+		_r_wnd_sendmessage (context->hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)context->hfont_title, TRUE);
+		_r_wnd_sendmessage (context->hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)context->hfont_link, TRUE);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_DATE_TEXT; i++)
 			_r_ctrl_settextmargin (context->hwnd, i, 0, 0);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_NEXT_BTN; i++)
-			SendDlgItemMessageW (context->hwnd, i, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
+			_r_wnd_sendmessage (context->hwnd, i, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
 	}
 
 	// load images
@@ -763,11 +763,11 @@ VOID _app_notify_initialize (
 	context->hbmp_next = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_NEXT), icon_small);
 
 	// set button configuration
-	SendDlgItemMessageW (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
-	SendDlgItemMessageW (context->hwnd, IDC_KILLPROCESS_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
-	SendDlgItemMessageW (context->hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_allow);
-	SendDlgItemMessageW (context->hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
-	SendDlgItemMessageW (context->hwnd, IDC_NEXT_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_next);
+	_r_wnd_sendmessage (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
+	_r_wnd_sendmessage (context->hwnd, IDC_KILLPROCESS_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
+	_r_wnd_sendmessage (context->hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_allow);
+	_r_wnd_sendmessage (context->hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
+	_r_wnd_sendmessage (context->hwnd, IDC_NEXT_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_next);
 
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_RULES_BTN, dpi_value);
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_KILLPROCESS_BTN, dpi_value);
@@ -1550,7 +1550,7 @@ INT_PTR CALLBACK NotificationProc (
 
 					if (ctrl_id == IDM_COPY)
 					{
-						SendMessageW (hedit, WM_COPY, 0, 0); // edit control hotkey for "ctrl+c" (issue #597)
+						_r_wnd_sendmessage (hedit, 0, WM_COPY, 0, 0); // edit control hotkey for "ctrl+c" (issue #597)
 					}
 					else if (ctrl_id == IDM_SELECT_ALL)
 					{

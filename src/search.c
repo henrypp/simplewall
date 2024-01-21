@@ -92,7 +92,7 @@ VOID _app_search_initialize (
 
 	_r_edit_setcuebanner (context->hwnd, 0, buffer);
 
-	SendMessageW (context->hwnd, WM_THEMECHANGED, 0, 0);
+	_r_wnd_sendmessage (context->hwnd, 0, WM_THEMECHANGED, 0, 0);
 }
 
 VOID _app_search_setvisible (

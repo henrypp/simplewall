@@ -77,7 +77,7 @@ VOID _app_editor_addtabitem (
 
 	BringWindowToTop (htab); // HACK!!!
 
-	SendMessageW (htab, RM_INITIALIZE, 0, 0);
+	_r_wnd_sendmessage (htab, 0, RM_INITIALIZE, 0, 0);
 }
 
 VOID _app_editor_settabtitle (
@@ -715,7 +715,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			{
 				context->hicon = _app_icons_getsafeapp_hicon (context->ptr_app->app_hash);
 
-				SendDlgItemMessageW (hwnd, IDC_APP_ICON_ID, STM_SETICON, (WPARAM)context->hicon, 0);
+				_r_wnd_sendmessage (hwnd, IDC_APP_ICON_ID, STM_SETICON, (WPARAM)context->hicon, 0);
 			}
 
 			// app display name

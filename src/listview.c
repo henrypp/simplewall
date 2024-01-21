@@ -385,7 +385,7 @@ VOID _app_listview_showitemby_id (
 
 	// restore scroll position
 	if (scroll_pos > 0)
-		SendDlgItemMessageW (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)scroll_pos);
+		_r_wnd_sendmessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)scroll_pos);
 }
 
 VOID _app_listview_showitemby_param (
@@ -791,7 +791,7 @@ VOID _app_listview_resize_ex (
 	if (!hdc_listview)
 		goto CleanupExit;
 
-	hheader = (HWND)SendMessageW (hlistview, LVM_GETHEADER, 0, 0);
+	hheader = (HWND)_r_wnd_sendmessage (hlistview, 0, LVM_GETHEADER, 0, 0);
 
 	hdc_header = GetDC (hheader);
 
@@ -891,7 +891,7 @@ VOID _app_listview_setfont (
 )
 {
 	if (config.hfont)
-		SendDlgItemMessageW (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
+		_r_wnd_sendmessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
 }
 
 VOID _app_listview_setview (
@@ -1123,7 +1123,7 @@ VOID _app_listview_sort_ex (
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
-	SendMessageW (hlistview, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
+	_r_wnd_sendmessage (hwnd, listview_id, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
 }
 
 VOID _app_listview_sort (

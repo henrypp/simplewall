@@ -1256,7 +1256,7 @@ VOID _app_message_dpichanged (
 	_app_listview_loadfont (dpi_value, TRUE);
 	_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
-	SendMessageW (hwnd, WM_SIZE, 0, 0);
+	_r_wnd_sendmessage (hwnd, 0, WM_SIZE, 0, 0);
 
 	_r_obj_dereference (localized_string);
 }
@@ -1306,7 +1306,7 @@ LONG_PTR _app_message_custdraw (
 				tbi.cbSize = sizeof (tbi);
 				tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
 
-				result = SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi);
+				result = _r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi);
 
 				if (result == -1)
 					return CDRF_DODEFAULT;
@@ -1314,7 +1314,7 @@ LONG_PTR _app_message_custdraw (
 				if (tbi.fsState & TBSTATE_ENABLED)
 					return CDRF_DODEFAULT;
 
-				himglist = (HIMAGELIST)SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETIMAGELIST, 0, 0);
+				himglist = (HIMAGELIST)_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETIMAGELIST, 0, 0);
 
 				if (!himglist)
 					return CDRF_DODEFAULT;
@@ -1330,8 +1330,8 @@ LONG_PTR _app_message_custdraw (
 				// draw image
 				if (tbi.iImage != I_IMAGENONE)
 				{
-					padding = (ULONG)SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETPADDING, 0, 0);
-					button_size = (ULONG)SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONSIZE, 0, 0);
+					padding = (ULONG)_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETPADDING, 0, 0);
+					button_size = (ULONG)_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETBUTTONSIZE, 0, 0);
 
 					_r_dc_drawimagelisticon (
 						lpnmlv->nmcd.hdc,
@@ -1347,7 +1347,7 @@ LONG_PTR _app_message_custdraw (
 				// draw text
 				if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
 				{
-					SendMessageW (lpnmlv->nmcd.hdr.hwndFrom, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
+					_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
 
 					if (tbi.iImage != I_IMAGENONE)
 						lpnmlv->nmcd.rc.left += icon_size_x;

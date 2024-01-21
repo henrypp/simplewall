@@ -774,7 +774,7 @@ VOID _app_imagelist_init (
 	}
 
 	if (config.htoolbar)
-		SendMessageW (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+		_r_wnd_sendmessage (config.htoolbar, 0, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
 	// rules imagelist (small)
 	if (config.himg_rules_small)
@@ -870,7 +870,7 @@ VOID _app_toolbar_init (
 
 	_app_windowloadfont (dpi_value);
 
-	SendMessageW (config.hrebar, RB_SETBARINFO, 0, (LPARAM)(&(REBARINFO)
+	_r_wnd_sendmessage (config.hrebar, 0, RB_SETBARINFO, 0, (LPARAM)(&(REBARINFO)
 	{
 		sizeof (REBARINFO)
 	}));
@@ -894,8 +894,8 @@ VOID _app_toolbar_init (
 	{
 		_r_toolbar_setstyle (config.hrebar, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
 
-		SendMessageW (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
-		SendMessageW (config.htoolbar, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+		_r_wnd_sendmessage (config.htoolbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		_r_wnd_sendmessage (config.htoolbar, 0, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
 
 		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
 
@@ -950,7 +950,7 @@ VOID _app_toolbar_init (
 	if (!config.hsearchbar)
 		return;
 
-	SendMessageW (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+	_r_wnd_sendmessage (config.hsearchbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 
 	_app_search_initialize (config.hsearchbar);
 
@@ -973,9 +973,9 @@ VOID _app_toolbar_resize (
 
 	_app_toolbar_setfont ();
 
-	SendMessageW (config.htoolbar, TB_AUTOSIZE, 0, 0);
+	_r_wnd_sendmessage (config.htoolbar, 0, TB_AUTOSIZE, 0, 0);
 
-	rebar_count = (UINT)SendMessageW (config.hrebar, RB_GETBANDCOUNT, 0, 0);
+	rebar_count = (UINT)_r_wnd_sendmessage (config.hrebar, 0, RB_GETBANDCOUNT, 0, 0);
 
 	for (UINT i = 0; i < rebar_count; i++)
 	{
@@ -984,12 +984,12 @@ VOID _app_toolbar_resize (
 		rbi.cbSize = sizeof (rbi);
 		rbi.fMask = RBBIM_ID | RBBIM_CHILD | RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
 
-		if (!SendMessageW (config.hrebar, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rbi))
+		if (!_r_wnd_sendmessage (config.hrebar, 0, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rbi))
 			continue;
 
 		if (rbi.wID == REBAR_TOOLBAR_ID)
 		{
-			if (!SendMessageW (config.htoolbar, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
+			if (!_r_wnd_sendmessage (config.htoolbar, 0, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
 				continue;
 
 			button_size = _r_toolbar_getbuttonsize (config.hrebar, IDC_TOOLBAR);
@@ -1017,17 +1017,17 @@ VOID _app_toolbar_resize (
 			continue;
 		}
 
-		SendMessageW (config.hrebar, RB_SETBANDINFO, (WPARAM)i, (LPARAM)&rbi);
+		_r_wnd_sendmessage (config.hrebar, 0, RB_SETBANDINFO, (WPARAM)i, (LPARAM)&rbi);
 	}
 }
 
 VOID _app_toolbar_setfont ()
 {
 	if (config.htoolbar)
-		SendMessageW (config.htoolbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		_r_wnd_sendmessage (config.htoolbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 
 	if (config.hsearchbar)
-		SendMessageW (config.hsearchbar, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		_r_wnd_sendmessage (config.hsearchbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 }
 
 VOID _app_window_resize (
@@ -1045,8 +1045,8 @@ VOID _app_window_resize (
 
 	_app_toolbar_resize (hwnd, dpi_value);
 
-	SendMessageW (config.hrebar, WM_SIZE, 0, 0);
-	SendDlgItemMessageW (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
+	_r_wnd_sendmessage (config.hrebar, 0, WM_SIZE, 0, 0);
+	_r_wnd_sendmessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
 	current_listview_id = _app_listview_getbytab (hwnd, -1);
 

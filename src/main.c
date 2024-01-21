@@ -1488,7 +1488,7 @@ INT_PTR CALLBACK SettingsProc (
 						_app_loginit (is_enabled);
 					}
 
-					SendDlgItemMessageW (
+					_r_wnd_sendmessage (
 						config.hrebar,
 						IDC_TOOLBAR,
 						TB_PRESSBUTTON,
@@ -1517,7 +1517,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_config_setboolean (L"IsLogUiEnabled", is_enabled);
 
-					SendDlgItemMessageW (
+					_r_wnd_sendmessage (
 						config.hrebar,
 						IDC_TOOLBAR,
 						TB_PRESSBUTTON,
@@ -1691,7 +1691,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (!is_postmessage)
 						_r_config_setboolean (L"IsNotificationsEnabled", is_enabled);
 
-					SendDlgItemMessageW (
+					_r_wnd_sendmessage (
 						config.hrebar,
 						IDC_TOOLBAR,
 						TB_PRESSBUTTON,
@@ -2415,7 +2415,7 @@ INT_PTR CALLBACK DlgProc (
 
 			_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
-			SendMessageW (hwnd, WM_SIZE, 0, 0);
+			_r_wnd_sendmessage (hwnd, 0, WM_SIZE, 0, 0);
 
 			break;
 		}
