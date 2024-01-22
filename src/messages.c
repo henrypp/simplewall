@@ -909,7 +909,7 @@ VOID _app_message_contextmenu (
 	command_id = _r_menu_popup (hmenu, hwnd, NULL, FALSE);
 
 	if (command_id)
-		PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), (LPARAM)lv_column_current);
+		_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (command_id, 0), (LPARAM)lv_column_current);
 
 	if (hsubmenu_rules)
 		DestroyMenu (hsubmenu_rules);

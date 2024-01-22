@@ -1104,7 +1104,7 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_LBUTTONDOWN:
 		{
-			PostMessageW (hwnd, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, 0);
+			_r_wnd_sendmessage (hwnd, 0, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, 0);
 			break;
 		}
 

@@ -947,7 +947,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					}
 
 					if (command_id)
-						PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
+						_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
 
 					break;
 				}

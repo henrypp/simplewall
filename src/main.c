@@ -696,7 +696,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_updown_setvalue (hwnd, IDC_NOTIFICATIONTIMEOUT, _r_config_getulong (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT));
 
-					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ENABLENOTIFICATIONS_CHK, 0), WM_APP);
+					_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (IDC_ENABLENOTIFICATIONS_CHK, 0), WM_APP);
 
 					break;
 				}
@@ -733,7 +733,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_ctrl_checkbutton (hwnd, IDC_ENABLEUILOG_CHK, _r_config_getboolean (L"IsLogUiEnabled", FALSE));
 
-					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_ENABLELOG_CHK, 0), WM_APP);
+					_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (IDC_ENABLELOG_CHK, 0), WM_APP);
 
 					break;
 				}
@@ -1707,7 +1707,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (hctrl)
 						_r_ctrl_enable (hctrl, 0, is_enabled);
 
-					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDC_NOTIFICATIONSOUND_CHK, 0), WM_APP);
+					_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (IDC_NOTIFICATIONSOUND_CHK, 0), WM_APP);
 
 					if (is_postmessage)
 						break;
@@ -2240,7 +2240,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case WM_MBUTTONUP:
 				{
-					PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (IDM_TRAY_LOGSHOW, 0), 0);
+					_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (IDM_TRAY_LOGSHOW, 0), 0);
 					break;
 				}
 
@@ -2849,7 +2849,7 @@ INT_PTR CALLBACK DlgProc (
 					}
 
 					if (command_id)
-						PostMessageW (hwnd, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
+						_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
 
 					break;
 				}
@@ -3044,7 +3044,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_EXIT:
 				case IDM_TRAY_EXIT:
 				{
-					PostMessageW (hwnd, WM_CLOSE, 0, 0);
+					_r_wnd_sendmessage (hwnd, 0, WM_CLOSE, 0, 0);
 					break;
 				}
 
@@ -3223,7 +3223,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						_app_search_setvisible (hwnd, config.hsearchbar);
 
-						PostMessageW (hwnd, WM_SIZE, 0, 0);
+						_r_wnd_sendmessage (hwnd, 0, WM_SIZE, 0, 0);
 					}
 
 					break;
