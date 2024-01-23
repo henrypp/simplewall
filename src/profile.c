@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2023 Henry++
+// Copyright (c) 2016-2024 Henry++
 
 #include "global.h"
 
@@ -1705,7 +1705,7 @@ CleanupExit:
 	{
 		// load internal rules (new!)
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-			_app_profile_load_internal (hwnd, profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
+			_app_profile_load_internal (hwnd, profile_info.profile_path_internal, MAKEINTRESOURCEW (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
 
 		_app_profile_load_fallback ();
 

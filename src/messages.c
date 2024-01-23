@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2021-2023 Henry++
+// Copyright (c) 2021-2024 Henry++
 
 #include "global.h"
 
@@ -1025,7 +1025,7 @@ VOID _app_message_traycontextmenu (
 	HMENU hmenu;
 	HMENU hsubmenu;
 
-	hmenu = LoadMenuW (NULL, MAKEINTRESOURCE (IDM_TRAY));
+	hmenu = LoadMenuW (NULL, MAKEINTRESOURCEW (IDM_TRAY));
 
 	if (!hmenu)
 		return;

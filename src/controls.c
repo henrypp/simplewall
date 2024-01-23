@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2023 Henry++
+// Copyright (c) 2016-2024 Henry++
 
 #include "global.h"
 
@@ -646,12 +646,12 @@ VOID _app_setinterfacestate (
 
 	icon_id = _app_getstateicon (install_type);
 
-	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
-	hico_big = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large);
+	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (icon_id), icon_small);
+	hico_big = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (icon_id), icon_large);
 
 	_r_wnd_seticon (hwnd, hico_sm, hico_big);
 
-	//SendDlgItemMessageW (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
+	//_r_wnd_sendmessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));
@@ -690,7 +690,7 @@ VOID _app_settrayicon (
 	if (current_handle)
 		DestroyIcon (current_handle);
 
-	status = _r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_size, &new_handle);
+	status = _r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (icon_id), icon_size, &new_handle);
 
 	if (SUCCEEDED (status))
 	{
@@ -742,11 +742,11 @@ VOID _app_imagelist_init (
 
 	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small, icon_large);
 
-	config.hbmp_enable = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SHIELD_ENABLE), icon_small);
-	config.hbmp_disable = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SHIELD_DISABLE), icon_small);
+	config.hbmp_enable = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_SHIELD_ENABLE), icon_small);
+	config.hbmp_disable = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_SHIELD_DISABLE), icon_small);
 
-	config.hbmp_allow = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_ALLOW), icon_small);
-	config.hbmp_block = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_BLOCK), icon_small);
+	config.hbmp_allow = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_ALLOW), icon_small);
+	config.hbmp_block = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_BLOCK), icon_small);
 
 	// toolbar imagelist
 	if (config.himg_toolbar)
@@ -762,7 +762,7 @@ VOID _app_imagelist_init (
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (toolbar_ids[i]), icon_size_toolbar);
+			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (toolbar_ids[i]), icon_size_toolbar);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_toolbar, hbitmap, NULL);
@@ -786,7 +786,7 @@ VOID _app_imagelist_init (
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (rules_ids[i]), icon_small);
+			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (rules_ids[i]), icon_small);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_rules_small, hbitmap, NULL);
@@ -807,7 +807,7 @@ VOID _app_imagelist_init (
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (rules_ids[i]), icon_large);
+			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (rules_ids[i]), icon_large);
 
 			if (hbitmap)
 				ImageList_Add (config.himg_rules_large, hbitmap, NULL);

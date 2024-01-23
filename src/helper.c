@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2023 Henry++
+// Copyright (c) 2016-2024 Henry++
 
 #include "global.h"
 
@@ -939,7 +939,7 @@ VOID _app_getfileversioninfo (
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
-	status = _r_res_loadresource (hlib, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), 0, &ver_block);
+	status = _r_res_loadresource (hlib, RT_VERSION, MAKEINTRESOURCEW (VS_VERSION_INFO), 0, &ver_block);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;

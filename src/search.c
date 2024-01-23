@@ -1,6 +1,6 @@
 // simplewall
 // Copyright (c) 2012-2021 dmex
-// Copyright (c) 2021-2023 Henry++
+// Copyright (c) 2021-2024 Henry++
 
 #include "global.h"
 
@@ -45,7 +45,7 @@ VOID _app_search_initializetheme (
 	context->image_width = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value) + _r_dc_getdpi (4, dpi_value);
 	context->image_height = _r_dc_getsystemmetrics (SM_CYSMICON, dpi_value) + _r_dc_getdpi (4, dpi_value);
 
-	status = _r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SEARCH), &GUID_ContainerFormatPng, context->image_width, context->image_height, &hbitmap);
+	status = _r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SEARCH), &GUID_ContainerFormatPng, context->image_width, context->image_height, &hbitmap);
 
 	if (NT_SUCCESS (status))
 	{

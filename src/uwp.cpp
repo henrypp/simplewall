@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2022,2023 Henry++
+// Copyright (c) 2022-2024 Henry++
 
 #include "routine.h"
 

@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2023 Henry++
+// Copyright (c) 2016-2024 Henry++
 
 #include "global.h"
 
@@ -19,7 +19,7 @@ PEDITOR_CONTEXT _app_editor_createwindow (
 	context->page_id = page_id;
 	context->is_settorules = is_settorules;
 
-	if (_r_wnd_createmodalwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_EDITOR), hwnd, &EditorProc, context))
+	if (_r_wnd_createmodalwindow (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDD_EDITOR), hwnd, &EditorProc, context))
 		return context;
 
 	_app_editor_deletewindow (context);
@@ -64,7 +64,7 @@ VOID _app_editor_addtabitem (
 {
 	HWND htab;
 
-	htab = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (dlg_id), hwnd, &EditorPagesProc, context);
+	htab = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCEW (dlg_id), hwnd, &EditorPagesProc, context);
 
 	if (!htab)
 		return;
@@ -1329,7 +1329,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					context->item_id = item_id;
 					context->current_length = current_length;
 
-					_r_wnd_createmodalwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_EDITOR_ADDRULE), hwnd, &EditorRuleProc, context);
+					_r_wnd_createmodalwindow (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDD_EDITOR_ADDRULE), hwnd, &EditorRuleProc, context);
 
 					break;
 				}

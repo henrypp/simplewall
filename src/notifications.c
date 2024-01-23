@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2023 Henry++
+// Copyright (c) 2016-2024 Henry++
 
 #include "global.h"
 
@@ -24,7 +24,7 @@ HWND _app_notify_getwindow (
 	if (!ptr_log)
 		return NULL;
 
-	new_hwnd = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, ptr_log);
+	new_hwnd = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDD_NOTIFICATION), NULL, &NotificationProc, ptr_log);
 
 	_r_sys_waitforsingleobject (config.hnotify_evt, 2000);
 
@@ -730,8 +730,8 @@ VOID _app_notify_initialize (
 	// set window icon
 	_r_wnd_seticon (
 		context->hwnd,
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small),
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large)
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_small),
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_large)
 	);
 
 	// set window font
@@ -756,11 +756,11 @@ VOID _app_notify_initialize (
 	}
 
 	// load images
-	context->hbmp_rules = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_SETTINGS), icon_small);
-	context->hbmp_allow = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_ALLOW), icon_small);
-	context->hbmp_block = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_BLOCK), icon_small);
-	context->hbmp_cross = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_CROSS), icon_small);
-	context->hbmp_next = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCE (IDP_NEXT), icon_small);
+	context->hbmp_rules = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_SETTINGS), icon_small);
+	context->hbmp_allow = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_ALLOW), icon_small);
+	context->hbmp_block = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_BLOCK), icon_small);
+	context->hbmp_cross = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_CROSS), icon_small);
+	context->hbmp_next = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_NEXT), icon_small);
 
 	// set button configuration
 	_r_wnd_sendmessage (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
