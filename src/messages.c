@@ -642,16 +642,16 @@ VOID _app_message_contextmenu (
 	_In_ LPNMITEMACTIVATE lpnmlv
 )
 {
-	HMENU hmenu;
-	HMENU hsubmenu_rules = NULL;
-	HMENU hsubmenu_timers = NULL;
-	PITEM_APP ptr_app = NULL;
-	PITEM_NETWORK ptr_network;
 	PR_STRING localized_string = NULL;
 	PR_STRING column_text = NULL;
+	HMENU hsubmenu_rules = NULL;
+	HMENU hsubmenu_timers = NULL;
+	HMENU hmenu;
+	PITEM_NETWORK ptr_network;
+	PITEM_APP ptr_app = NULL;
 	ULONG_PTR hash_code;
+	ULONG_PTR app_hash;
 	INT listview_id;
-	INT lv_column_current;
 	INT command_id;
 	BOOLEAN is_checked = FALSE;
 	BOOLEAN is_readonly = FALSE;
@@ -670,7 +670,7 @@ VOID _app_message_contextmenu (
 		return;
 
 	hash_code = _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem);
-	lv_column_current = lpnmlv->iSubItem;
+	app_hash = _app_listview_getappcontext (hwnd, listview_id, lpnmlv->iItem);
 
 	switch (listview_id)
 	{
@@ -681,7 +681,7 @@ VOID _app_message_contextmenu (
 			hsubmenu_rules = CreatePopupMenu ();
 			hsubmenu_timers = CreatePopupMenu ();
 
-			ptr_app = _app_getappitem (hash_code);
+			ptr_app = _app_getappitem (app_hash);
 
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_EDIT2), L"...\tEnter"));
 
@@ -699,7 +699,7 @@ VOID _app_message_contextmenu (
 
 				_r_menu_additem (hsubmenu_rules, 0, NULL);
 
-				_app_generate_rulescontrol (hsubmenu_rules, hash_code, NULL);
+				_app_generate_rulescontrol (hsubmenu_rules, app_hash, NULL);
 			}
 
 			// show timers
@@ -710,7 +710,7 @@ VOID _app_message_contextmenu (
 				_r_menu_additem (hsubmenu_timers, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
 				_r_menu_additem (hsubmenu_timers, 0, NULL);
 
-				_app_generate_timerscontrol (hsubmenu_timers, hash_code);
+				_app_generate_timerscontrol (hsubmenu_timers, app_hash);
 			}
 
 			_r_menu_additem (hmenu, 0, NULL);
@@ -734,7 +734,7 @@ VOID _app_message_contextmenu (
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_COPY), L"\tCtrl+C"));
 			_r_menu_additem (hmenu, IDM_COPY, localized_string->buffer);
 
-			column_text = _r_listview_getcolumntext (hwnd, listview_id, lv_column_current);
+			column_text = _r_listview_getcolumntext (hwnd, listview_id, lpnmlv->iSubItem);
 
 			if (column_text)
 			{
@@ -804,7 +804,7 @@ VOID _app_message_contextmenu (
 
 			_r_menu_additem (hmenu, IDM_COPY, localized_string->buffer);
 
-			column_text = _r_listview_getcolumntext (hwnd, listview_id, lv_column_current);
+			column_text = _r_listview_getcolumntext (hwnd, listview_id, lpnmlv->iSubItem);
 
 			if (column_text)
 			{
@@ -842,7 +842,7 @@ VOID _app_message_contextmenu (
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_COPY), L"\tCtrl+C"));
 			_r_menu_additem (hmenu, IDM_COPY, localized_string->buffer);
 
-			column_text = _r_listview_getcolumntext (hwnd, listview_id, lv_column_current);
+			column_text = _r_listview_getcolumntext (hwnd, listview_id, lpnmlv->iSubItem);
 
 			if (column_text)
 			{
@@ -868,11 +868,40 @@ VOID _app_message_contextmenu (
 
 		case IDC_LOG:
 		{
+			hsubmenu_rules = CreatePopupMenu ();
+			hsubmenu_timers = CreatePopupMenu ();
+
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SHOWINLIST), L"\tEnter"));
 			_r_menu_additem_ex (hmenu, IDM_PROPERTIES, localized_string->buffer, MF_DEFAULT);
 
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_OPENRULESEDITOR), L"..."));
 			_r_menu_additem (hmenu, IDM_OPENRULESEDITOR, localized_string->buffer);
+
+			_r_menu_additem (hmenu, 0, NULL);
+
+			// show rules
+			if (hsubmenu_rules)
+			{
+				_r_menu_addsubmenu (hmenu, -1, hsubmenu_rules, _r_locale_getstring (IDS_TRAY_RULES));
+
+				_r_menu_additem (hsubmenu_rules, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
+				_r_menu_additem (hsubmenu_rules, IDM_DISABLEREMOVAL, _r_locale_getstring (IDS_DISABLEREMOVAL));
+
+				_r_menu_additem (hsubmenu_rules, 0, NULL);
+
+				_app_generate_rulescontrol (hsubmenu_rules, app_hash, NULL);
+			}
+
+			// show timers
+			if (hsubmenu_timers)
+			{
+				_r_menu_addsubmenu (hmenu, -1, hsubmenu_timers, _r_locale_getstring (IDS_TIMER));
+
+				_r_menu_additem (hsubmenu_timers, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
+				_r_menu_additem (hsubmenu_timers, 0, NULL);
+
+				_app_generate_timerscontrol (hsubmenu_timers, app_hash);
+			}
 
 			_r_menu_additem (hmenu, 0, NULL);
 
@@ -892,7 +921,7 @@ VOID _app_message_contextmenu (
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_COPY), L"\tCtrl+C"));
 			_r_menu_additem (hmenu, IDM_COPY, localized_string->buffer);
 
-			column_text = _r_listview_getcolumntext (hwnd, listview_id, lv_column_current);
+			column_text = _r_listview_getcolumntext (hwnd, listview_id, lpnmlv->iSubItem);
 
 			if (column_text)
 			{
@@ -902,6 +931,23 @@ VOID _app_message_contextmenu (
 				_r_obj_dereference (column_text);
 			}
 
+			ptr_app = _app_getappitem (app_hash);
+
+			if (ptr_app)
+			{
+				if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_checked, sizeof (is_checked)))
+				{
+					if (is_checked)
+						_r_menu_checkitem (hmenu, IDM_DISABLENOTIFICATIONS, 0, MF_BYCOMMAND, is_checked);
+				}
+
+				if (_app_getappinfo (ptr_app, INFO_IS_UNDELETABLE, &is_checked, sizeof (is_checked)))
+				{
+					if (is_checked)
+						_r_menu_checkitem (hmenu, IDM_DISABLEREMOVAL, 0, MF_BYCOMMAND, is_checked);
+				}
+			}
+
 			break;
 		}
 	}
@@ -909,7 +955,7 @@ VOID _app_message_contextmenu (
 	command_id = _r_menu_popup (hmenu, hwnd, NULL, FALSE);
 
 	if (command_id)
-		_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (command_id, 0), (LPARAM)lv_column_current);
+		_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (command_id, 0), (LPARAM)lpnmlv->iSubItem);
 
 	if (hsubmenu_rules)
 		DestroyMenu (hsubmenu_rules);
@@ -2153,7 +2199,7 @@ VOID _app_command_idtorules (
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
-		app_hash = _app_listview_getitemcontext (hwnd, listview_id, item_id);
+		app_hash = _app_listview_getappcontext (hwnd, listview_id, item_id);
 
 		if (ptr_rule->is_forservices && _app_issystemhash (app_hash))
 			continue;
@@ -2229,7 +2275,7 @@ VOID _app_command_idtotimers (
 
 			while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 			{
-				app_hash = _app_listview_getitemcontext (hwnd, listview_id, item_id);
+				app_hash = _app_listview_getappcontext (hwnd, listview_id, item_id);
 				ptr_app = _app_getappitem (app_hash);
 
 				if (ptr_app)
@@ -2814,12 +2860,13 @@ VOID _app_command_disable (
 	listview_id = _app_listview_getcurrent (hwnd);
 
 	// note: these commands only for apps...
-	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
+	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && listview_id != IDC_LOG)
 		return;
 
 	while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 	{
-		app_hash = _app_listview_getitemcontext (hwnd, listview_id, item_id);
+		app_hash = _app_listview_getappcontext (hwnd, listview_id, item_id);
+
 		ptr_app = _app_getappitem (app_hash);
 
 		if (!ptr_app)
