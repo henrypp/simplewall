@@ -92,6 +92,12 @@ ULONG_PTR _app_listview_getcontextcode (
 	_In_ LPARAM lparam
 );
 
+ULONG_PTR _app_listview_getappcontext (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id
+);
+
 ULONG_PTR _app_listview_getitemcontext (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,

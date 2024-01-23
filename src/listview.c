@@ -277,6 +277,53 @@ ULONG_PTR _app_listview_getcontextcode (
 	return context->id_code;
 }
 
+ULONG_PTR _app_listview_getappcontext (
+	_In_ HWND hwnd,
+	_In_ INT listview_id,
+	_In_ INT item_id
+)
+{
+	PITEM_NETWORK ptr_network;
+	PITEM_LOG ptr_log;
+	LPARAM lparam;
+
+	lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+
+	if (!lparam)
+		return 0;
+
+	lparam = _app_listview_getcontextcode (lparam);
+
+	if (listview_id == IDC_NETWORK)
+	{
+		ptr_network = _app_network_getitem (lparam);
+
+		if (ptr_network)
+		{
+			lparam = ptr_network->app_hash;
+
+			_r_obj_dereference (ptr_network);
+
+			return lparam;
+		}
+	}
+	else if (listview_id == IDC_LOG)
+	{
+		ptr_log = _app_getlogitem (lparam);
+
+		if (ptr_log)
+		{
+			lparam = ptr_log->app_hash;
+
+			_r_obj_dereference (ptr_log);
+
+			return lparam;
+		}
+	}
+
+	return lparam;
+}
+
 ULONG_PTR _app_listview_getitemcontext (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
