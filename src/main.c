@@ -54,15 +54,19 @@ BOOLEAN _app_installmessage (
 	INT command_id;
 	INT radio_id;
 	BOOL is_flagchecked;
+	HRESULT status;
 
 	tdc.cbSize = sizeof (tdc);
-	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_NO_SET_FOREGROUND | TDF_VERIFICATION_FLAG_CHECKED;
+	tdc.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION | TDF_NO_SET_FOREGROUND;
 	tdc.hwndParent = hwnd;
 	tdc.pszWindowTitle = _r_app_getname ();
 	tdc.pszMainIcon = is_install ? TD_INFORMATION_ICON : TD_WARNING_ICON;
 	//tdc.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
 	tdc.pfCallback = &_r_msg_callback;
 	tdc.lpCallbackData = MAKELONG (0, TRUE); // on top
+
+	if (_r_config_getboolean (L"WF_State", TRUE))
+		tdc.dwFlags |= TDF_VERIFICATION_FLAG_CHECKED;
 
 	tdc.pButtons = td_buttons;
 	tdc.cButtons = RTL_NUMBER_OF (td_buttons);
@@ -111,8 +115,12 @@ BOOLEAN _app_installmessage (
 	tdc.pszMainInstruction = str_main;
 	tdc.pszVerificationText = str_flag;
 
-	if (SUCCEEDED (_r_msg_taskdialog (&tdc, &command_id, &radio_id, &is_flagchecked)))
+	status = _r_msg_taskdialog (&tdc, &command_id, &radio_id, &is_flagchecked);
+
+	if (SUCCEEDED (status))
 	{
+		_r_config_setboolean (L"WF_State", is_flagchecked);
+
 		if (command_id == IDYES)
 		{
 			if (is_install)
@@ -3852,12 +3860,12 @@ INT APIENTRY wWinMain (
 	if (!_r_app_initialize (&_app_parseargs))
 		return ERROR_APP_INIT_FAILURE;
 
-	hwnd = _r_app_createwindow (hinst, MAKEINTRESOURCE (IDD_MAIN), MAKEINTRESOURCE (IDI_MAIN), &DlgProc);
+	hwnd = _r_app_createwindow (hinst, MAKEINTRESOURCEW (IDD_MAIN), MAKEINTRESOURCEW (IDI_MAIN), &DlgProc);
 
 	if (!hwnd)
 		return ERROR_APP_INIT_FAILURE;
 
-	result = _r_wnd_message_callback (hwnd, MAKEINTRESOURCE (IDA_MAIN));
+	result = _r_wnd_message_callback (hwnd, MAKEINTRESOURCEW (IDA_MAIN));
 
 	return result;
 }
