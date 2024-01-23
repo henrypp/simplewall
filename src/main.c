@@ -1145,7 +1145,7 @@ INT_PTR CALLBACK SettingsProc (
 		case WM_VSCROLL:
 		case WM_HSCROLL:
 		{
-			ULONG value;
+			LONG value;
 			INT ctrl_id;
 
 			ctrl_id = GetDlgCtrlID ((HWND)lparam);
@@ -1154,13 +1154,13 @@ INT_PTR CALLBACK SettingsProc (
 			{
 				value = _r_updown_getvalue (hwnd, ctrl_id);
 
-				_r_config_setulong (L"LogSizeLimitKb", value);
+				_r_config_setlong (L"LogSizeLimitKb", value);
 			}
 			else if (ctrl_id == IDC_NOTIFICATIONTIMEOUT)
 			{
 				value = _r_updown_getvalue (hwnd, ctrl_id);
 
-				_r_config_setulong (L"NotificationsTimeout", value);
+				_r_config_setlong (L"NotificationsTimeout", value);
 			}
 
 			break;
@@ -1268,13 +1268,13 @@ INT_PTR CALLBACK SettingsProc (
 				case NM_DBLCLK:
 				{
 					LPNMITEMACTIVATE lpnmlv;
-					INT listview_id;
 					PITEM_COLOR ptr_clr_crnt;
+					PITEM_COLOR ptr_clr = NULL;
 					CHOOSECOLOR cc = {0};
 					COLORREF cust[16] = {0};
-					PITEM_COLOR ptr_clr = NULL;
 					ULONG_PTR enum_key = 0;
 					ULONG_PTR index = 0;
+					INT listview_id;
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -1488,13 +1488,7 @@ INT_PTR CALLBACK SettingsProc (
 						_app_loginit (is_enabled);
 					}
 
-					_r_wnd_sendmessage (
-						config.hrebar,
-						IDC_TOOLBAR,
-						TB_PRESSBUTTON,
-						IDM_TRAY_ENABLELOG_CHK,
-						MAKELPARAM (is_enabled, 0)
-					);
+					_r_wnd_sendmessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLELOG_CHK, MAKELPARAM (is_enabled, 0));
 
 					_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
 					_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
@@ -1517,13 +1511,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_config_setboolean (L"IsLogUiEnabled", is_enabled);
 
-					_r_wnd_sendmessage (
-						config.hrebar,
-						IDC_TOOLBAR,
-						TB_PRESSBUTTON,
-						IDM_TRAY_ENABLEUILOG_CHK,
-						MAKELPARAM (is_enabled, 0)
-					);
+					_r_wnd_sendmessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLEUILOG_CHK, MAKELPARAM (is_enabled, 0));
 
 					break;
 				}
@@ -1667,14 +1655,14 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_LOGSIZELIMIT_CTRL:
 				{
-					ULONG value;
+					LONG value;
 
 					if (notify_code != EN_KILLFOCUS)
 						break;
 
 					value = _r_updown_getvalue (hwnd, IDC_LOGSIZELIMIT);
 
-					_r_config_setulong (L"LogSizeLimitKb", value);
+					_r_config_setlong (L"LogSizeLimitKb", value);
 
 					break;
 				}
@@ -1691,13 +1679,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (!is_postmessage)
 						_r_config_setboolean (L"IsNotificationsEnabled", is_enabled);
 
-					_r_wnd_sendmessage (
-						config.hrebar,
-						IDC_TOOLBAR,
-						TB_PRESSBUTTON,
-						IDM_TRAY_ENABLENOTIFICATIONS_CHK,
-						MAKELPARAM (is_enabled, 0)
-					);
+					_r_wnd_sendmessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MAKELPARAM (is_enabled, 0));
 
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONSOUND_CHK, is_enabled);
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONONTRAY_CHK, is_enabled);
@@ -1761,9 +1743,7 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_NOTIFICATIONTIMEOUT_CTRL:
 				{
 					if (notify_code == EN_KILLFOCUS)
-					{
-						_r_config_setulong (L"NotificationsTimeout", _r_updown_getvalue (hwnd, IDC_NOTIFICATIONTIMEOUT));
-					}
+						_r_config_setlong (L"NotificationsTimeout", _r_updown_getvalue (hwnd, IDC_NOTIFICATIONTIMEOUT));
 
 					break;
 				}
@@ -2520,6 +2500,7 @@ INT_PTR CALLBACK DlgProc (
 					result = _app_message_custdraw (hwnd, (LPNMLVCUSTOMDRAW)lparam);
 
 					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, result);
+
 					return result;
 				}
 
@@ -2633,11 +2614,7 @@ INT_PTR CALLBACK DlgProc (
 						{
 							if (app_hash == config.my_hash)
 							{
-								if (!_r_show_confirmmessage (
-									hwnd,
-									L"WARNING!",
-									SZ_WARNING_ME,
-									NULL))
+								if (!_r_show_confirmmessage (hwnd, L"WARNING!", SZ_WARNING_ME, NULL))
 								{
 									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 
@@ -2649,11 +2626,7 @@ INT_PTR CALLBACK DlgProc (
 						{
 							if (app_hash == config.svchost_hash)
 							{
-								if (!_r_show_confirmmessage (
-									hwnd,
-									L"WARNING!",
-									SZ_WARNING_SVCHOST,
-									NULL))
+								if (!_r_show_confirmmessage (hwnd, L"WARNING!", SZ_WARNING_SVCHOST, NULL))
 								{
 									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 
@@ -2662,11 +2635,7 @@ INT_PTR CALLBACK DlgProc (
 							}
 							else if (app_hash != config.my_hash)
 							{
-								if (!_r_show_confirmmessage (
-									hwnd,
-									NULL,
-									_r_locale_getstring (IDS_QUESTION_ALLOW),
-									L"ConfirmAllow"))
+								if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION_ALLOW), L"ConfirmAllow"))
 								{
 									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 
@@ -3020,6 +2989,7 @@ INT_PTR CALLBACK DlgProc (
 					if (GetFocus () == config.hsearchbar)
 					{
 						_r_ctrl_setstring (config.hsearchbar, 0, L"");
+
 						SetFocus (hwnd);
 
 						break;
@@ -3632,8 +3602,8 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_EXPLORE:
 				{
-					PITEM_APP ptr_app;
 					PITEM_NETWORK ptr_network;
+					PITEM_APP ptr_app;
 					PITEM_LOG ptr_log;
 					ULONG_PTR hash_code;
 					INT listview_id;
