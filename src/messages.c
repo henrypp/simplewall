@@ -697,6 +697,9 @@ VOID _app_message_contextmenu (
 				_r_menu_additem (hsubmenu_rules, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
 				_r_menu_additem (hsubmenu_rules, IDM_DISABLEREMOVAL, _r_locale_getstring (IDS_DISABLEREMOVAL));
 
+				if (_app_isdisabledremoval (app_hash))
+					_r_menu_enableitem (hsubmenu_rules, IDM_DISABLEREMOVAL, MF_BYCOMMAND, FALSE);
+
 				_r_menu_additem (hsubmenu_rules, 0, NULL);
 
 				_app_generate_rulescontrol (hsubmenu_rules, app_hash, NULL);
@@ -2881,6 +2884,9 @@ VOID _app_command_disable (
 		}
 		else if (ctrl_id == IDM_DISABLEREMOVAL)
 		{
+			if (_app_isdisabledremoval (app_hash))
+				continue;
+
 			if (new_val == -1)
 				new_val = !ptr_app->is_undeletable;
 
