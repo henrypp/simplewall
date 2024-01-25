@@ -458,7 +458,7 @@ VOID _app_listview_showitemby_param (
 
 	if (listview_id != _app_listview_getcurrent (hwnd))
 	{
-		_app_listview_sort (hwnd, listview_id);
+		_app_listview_sort (hwnd, listview_id, -1, FALSE);
 
 		_app_listview_resize (hwnd, listview_id, FALSE);
 	}
@@ -516,7 +516,7 @@ VOID _app_listview_updateby_id (
 			_app_listview_refreshgroups (hwnd, listview_id);
 
 		if (!(flags & PR_UPDATE_NOSORT))
-			_app_listview_sort (hwnd, listview_id);
+			_app_listview_sort (hwnd, listview_id, -1, FALSE);
 
 		if (!(flags & PR_UPDATE_NORESIZE))
 			_app_listview_resize (hwnd, listview_id, FALSE);
@@ -1114,7 +1114,7 @@ INT CALLBACK _app_listview_compare_callback (
 	return is_descend ? -result : result;
 }
 
-VOID _app_listview_sort_ex (
+VOID _app_listview_sort (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
 	_In_ LONG column_id,
@@ -1163,12 +1163,4 @@ VOID _app_listview_sort_ex (
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
 	_r_wnd_sendmessage (hwnd, listview_id, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
-}
-
-VOID _app_listview_sort (
-	_In_ HWND hwnd,
-	_In_ INT listview_id
-)
-{
-	_app_listview_sort_ex (hwnd, listview_id, -1, FALSE);
 }

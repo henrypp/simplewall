@@ -14,7 +14,7 @@ BOOLEAN _app_changefilters (
 
 	listview_id = _app_listview_getcurrent (hwnd);
 
-	_app_listview_sort (hwnd, listview_id);
+	_app_listview_sort (hwnd, listview_id, -1, FALSE);
 
 	if (is_forced || _wfp_isfiltersinstalled ())
 	{
@@ -2567,7 +2567,7 @@ INT_PTR CALLBACK DlgProc (
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					ctrl_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					_app_listview_sort_ex (hwnd, ctrl_id, lpnmlv->iSubItem, TRUE);
+					_app_listview_sort (hwnd, ctrl_id, lpnmlv->iSubItem, TRUE);
 
 					break;
 				}
@@ -3183,7 +3183,7 @@ INT_PTR CALLBACK DlgProc (
 					listview_id = _app_listview_getcurrent (hwnd);
 
 					_r_listview_redraw (hwnd, listview_id);
-					_app_listview_sort (hwnd, listview_id);
+					_app_listview_sort (hwnd, listview_id, -1, FALSE);
 
 					break;
 				}

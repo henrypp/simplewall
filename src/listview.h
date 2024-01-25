@@ -191,14 +191,9 @@ INT CALLBACK _app_listview_compare_callback (
 	_In_ LPARAM lparam
 );
 
-VOID _app_listview_sort_ex (
+VOID _app_listview_sort (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
 	_In_ LONG column_id,
 	_In_ BOOLEAN is_notifycode
-);
-
-VOID _app_listview_sort (
-	_In_ HWND hwnd,
-	_In_ INT listview_id
 );

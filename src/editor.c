@@ -695,7 +695,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				_app_listview_refreshgroups (hwnd, IDC_RULE_APPS_ID);
 
 				// sort column
-				_app_listview_sort (hwnd, IDC_RULE_APPS_ID);
+				_app_listview_sort (hwnd, IDC_RULE_APPS_ID, -1, FALSE);
 			}
 
 			// app group
@@ -831,7 +831,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				_app_listview_refreshgroups (hwnd, IDC_APP_RULES_ID);
 
 				// sort column
-				_app_listview_sort (hwnd, IDC_APP_RULES_ID);
+				_app_listview_sort (hwnd, IDC_APP_RULES_ID, -1, FALSE);
 			}
 
 			// hints
@@ -1089,7 +1089,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					_app_listview_sort_ex (hwnd, listview_id, lpnmlv->iSubItem, TRUE);
+					_app_listview_sort (hwnd, listview_id, lpnmlv->iSubItem, TRUE);
 
 					break;
 				}
@@ -1157,7 +1157,7 @@ INT_PTR CALLBACK EditorPagesProc (
 								_app_editor_settabtitle (hwnd, listview_id);
 
 								_app_listview_refreshgroups (hwnd, listview_id);
-								_app_listview_sort (hwnd, listview_id);
+								_app_listview_sort (hwnd, listview_id, -1, FALSE);
 							}
 						}
 						else if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
@@ -1396,7 +1396,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_app_listview_lock (hwnd, listview_id, FALSE);
 
 					_app_listview_refreshgroups (hwnd, listview_id);
-					_app_listview_sort (hwnd, listview_id);
+					_app_listview_sort (hwnd, listview_id, -1, FALSE);
 
 					break;
 				}
