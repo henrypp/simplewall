@@ -2496,7 +2496,7 @@ INT_PTR CALLBACK DlgProc (
 					if (_r_wnd_isvisible_ex (hwnd)) // HACK!!!
 						SetFocus (hlistview);
 
-					_app_listview_resize (hwnd, listview_id);
+					_app_listview_resize (hwnd, listview_id, FALSE);
 
 					break;
 				}
@@ -3165,7 +3165,7 @@ INT_PTR CALLBACK DlgProc (
 					_r_config_setboolean (L"AutoSizeColumns", new_val);
 
 					if (new_val)
-						_app_listview_resize (hwnd, _app_listview_getcurrent (hwnd));
+						_app_listview_resize (hwnd, _app_listview_getcurrent (hwnd), FALSE);
 
 					break;
 				}

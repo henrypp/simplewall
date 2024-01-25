@@ -460,7 +460,7 @@ VOID _app_listview_showitemby_param (
 	{
 		_app_listview_sort (hwnd, listview_id);
 
-		_app_listview_resize (hwnd, listview_id);
+		_app_listview_resize (hwnd, listview_id, FALSE);
 	}
 
 	item_id = _app_listview_finditem (hwnd, listview_id, lparam);
@@ -519,7 +519,7 @@ VOID _app_listview_updateby_id (
 			_app_listview_sort (hwnd, listview_id);
 
 		if (!(flags & PR_UPDATE_NORESIZE))
-			_app_listview_resize (hwnd, listview_id);
+			_app_listview_resize (hwnd, listview_id, FALSE);
 	}
 
 	_app_refreshstatus (hwnd);
@@ -795,7 +795,7 @@ VOID _app_listview_refreshgroups (
 	}
 }
 
-VOID _app_listview_resize_ex (
+VOID _app_listview_resize (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
 	_In_ BOOLEAN is_forced
@@ -922,14 +922,6 @@ CleanupExit:
 
 	if (hdc_header)
 		ReleaseDC (hheader, hdc_header);
-}
-
-VOID _app_listview_resize (
-	_In_ HWND hwnd,
-	_In_ INT listview_id
-)
-{
-	_app_listview_resize_ex (hwnd, listview_id, FALSE);
 }
 
 VOID _app_listview_setfont (

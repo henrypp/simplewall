@@ -181,7 +181,7 @@ VOID _app_logclear_ui (
 {
 	_r_listview_deleteallitems (hwnd, IDC_LOG);
 
-	_app_listview_resize (hwnd, IDC_LOG);
+	_app_listview_resize (hwnd, IDC_LOG, FALSE);
 
 	_r_queuedlock_acquireexclusive (&lock_loglist);
 	_r_obj_clearhashtable (log_table);

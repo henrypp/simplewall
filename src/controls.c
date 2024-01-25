@@ -1089,7 +1089,7 @@ VOID _app_window_resize (
 			_r_tab_adjustchild (hwnd, IDC_TAB, GetDlgItem (hwnd, listview_id));
 
 			if (listview_id == current_listview_id)
-				_app_listview_resize (hwnd, listview_id);
+				_app_listview_resize (hwnd, listview_id, FALSE);
 		}
 	}
 

@@ -169,15 +169,10 @@ VOID _app_listview_refreshgroups (
 	_In_ INT listview_id
 );
 
-VOID _app_listview_resize_ex (
+VOID _app_listview_resize (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
 	_In_ BOOLEAN is_forced
-);
-
-VOID _app_listview_resize (
-	_In_ HWND hwnd,
-	_In_ INT listview_id
 );
 
 VOID _app_listview_setfont (
