@@ -215,7 +215,7 @@ PR_STRING _app_formatarpa (
 	{
 		case AF_INET:
 		{
-			p4addr = (PIN_ADDR)address;
+			p4addr = (const PIN_ADDR)address;
 
 			_r_obj_appendstringbuilderformat (
 				&formatted_address,
@@ -232,7 +232,7 @@ PR_STRING _app_formatarpa (
 
 		case AF_INET6:
 		{
-			p6addr = (PIN6_ADDR)address;
+			p6addr = (const PIN6_ADDR)address;
 
 			for (INT i = sizeof (IN6_ADDR) - 1; i >= 0; i--)
 			{

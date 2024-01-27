@@ -119,7 +119,7 @@ BOOLEAN _app_installmessage (
 
 	if (SUCCEEDED (status))
 	{
-		_r_config_setboolean (L"WF_State", is_flagchecked);
+		_r_config_setboolean (L"WF_State", is_flagchecked ? TRUE : FALSE);
 
 		if (command_id == IDYES)
 		{

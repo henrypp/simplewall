@@ -23,6 +23,7 @@ PSID _app_quyerybuiltinsid (
 		return NULL;
 
 	}
+
 	return sid;
 }
 
@@ -50,13 +51,13 @@ PACL _app_createaccesscontrollist (
 	_In_ BOOLEAN is_secure
 )
 {
+	PACCESS_ALLOWED_ACE ace = NULL;
 	EXPLICIT_ACCESS ea[3] = {0};
-	PACCESS_ALLOWED_ACE ace;
 	PACL new_dacl;
-	BOOLEAN is_secured = FALSE;
+	ULONG count = 0;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
-	ULONG count;
+	BOOLEAN is_secured = FALSE;
 	NTSTATUS status;
 
 	for (WORD ace_index = 0; ace_index < acl->AceCount; ace_index++)
@@ -103,8 +104,6 @@ PACL _app_createaccesscontrollist (
 
 	if (is_openforeveryone || is_currentuserhaverights || is_secured != is_secure)
 	{
-		count = 0;
-
 		// revoke current user access rights
 		if (is_currentuserhaverights)
 			_app_setexplicitaccess (&ea[count++], REVOKE_ACCESS, 0, NO_INHERITANCE, config.builtin_current_sid);
@@ -155,14 +154,14 @@ VOID _app_setenginesecurity (
 )
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
-	PACCESS_ALLOWED_ACE ace;
+	PACCESS_ALLOWED_ACE ace = NULL;
 	EXPLICIT_ACCESS ea[18] = {0};
 	PSID sid_owner;
 	PSID sid_group;
 	PACL new_dacl;
 	PACL dacl;
 	PACL sacl;
-	ULONG count;
+	ULONG count = 0;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
 	NTSTATUS status;
@@ -217,8 +216,6 @@ VOID _app_setenginesecurity (
 			FwpmEngineSetSecurityInfo0 (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
 
 			FwpmNetEventsSetSecurityInfo0 (hengine, OWNER_SECURITY_INFORMATION, &SeLocalServiceSid, NULL, NULL, NULL);
-
-			count = 0;
 
 			// revoke current user access rights
 			if (is_currentuserhaverights)

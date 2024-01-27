@@ -336,9 +336,13 @@ VOID _wfp_logsubscribe (
 	if (!NT_SUCCESS (status))
 	{
 		if (hwnd)
+		{
 			_r_show_errormessage (hwnd, L"Could not load \"fwpuclnt.dll\" library.", status, NULL, TRUE);
-
-		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
+		}
+		else
+		{
+			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
+		}
 
 		return;
 	}
@@ -372,9 +376,13 @@ VOID _wfp_logsubscribe (
 	if (status != STATUS_SUCCESS)
 	{
 		if (hwnd)
+		{
 			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later.", status, NULL, FALSE);
-
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
+		}
+		else
+		{
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
+		}
 
 		_r_sys_freelibrary (hfwpuclnt, FALSE);
 
@@ -420,7 +428,7 @@ VOID _wfp_logsetoption (
 	_In_ HANDLE engine_handle
 )
 {
-	FWP_VALUE val = {0};
+	FWP_VALUE0 val = {0};
 	UINT32 mask = 0;
 	ULONG status;
 
@@ -684,7 +692,7 @@ VOID CALLBACK _wfp_logcallback (
 BOOLEAN log_struct_to_f (
 	_In_ ULONG version,
 	_Out_ PITEM_LOG_CALLBACK log,
-	_In_ const PVOID event_data
+	_In_ LPCVOID event_data
 )
 {
 	RtlSecureZeroMemory (log, sizeof (ITEM_LOG_CALLBACK));
@@ -1157,7 +1165,7 @@ VOID CALLBACK _wfp_logcallback1 (
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (PtrToUlong (context), &log, (const PVOID)event_data))
+	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
@@ -1169,7 +1177,7 @@ VOID CALLBACK _wfp_logcallback2 (
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (PtrToUlong (context), &log, (const PVOID)event_data))
+	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
@@ -1181,7 +1189,7 @@ VOID CALLBACK _wfp_logcallback3 (
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (PtrToUlong (context), &log, (const PVOID)event_data))
+	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
 		_wfp_logcallback (&log);
 }
 
@@ -1193,7 +1201,7 @@ VOID CALLBACK _wfp_logcallback4 (
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (PtrToUlong (context), &log, (const PVOID)event_data))
+	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
 		_wfp_logcallback (&log);
 }
 

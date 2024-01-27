@@ -479,8 +479,8 @@ VOID _app_listview_updateby_id (
 	_In_ ULONG flags
 )
 {
-	INT listview_id;
 	ENUM_TYPE_DATA type;
+	INT listview_id;
 
 	if (flags & PR_UPDATE_TYPE)
 	{
