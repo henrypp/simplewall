@@ -1,3 +1,10 @@
+v3.7.8 (28 January 2024)
+- added saving flag state for install/uninstall filters
+- fixed crash on tooltip (issue #1686)
+- fixed apps disabled removal menu
+- updated dropped packets (ui) listview context menu
+- updated project sdk
+
 v3.7.7 (3 January 2024)
 - added error message when loading library on subscribe
 - added comment item for apps/rules (issue #1664)
