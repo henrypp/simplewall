@@ -637,6 +637,45 @@ VOID _app_message_uninitialize (
 	_r_tray_destroy (hwnd, &GUID_TrayIcon);
 }
 
+VOID _app_generate_appmenu (
+	_In_ HMENU hmenu,
+	_In_ HMENU hsubmenu_rules,
+	_In_ HMENU hsubmenu_timers,
+	_In_ ULONG_PTR app_hash
+)
+{
+	_r_menu_additem (hmenu, 0, NULL);
+
+	// show rules
+	if (hsubmenu_rules)
+	{
+		_r_menu_addsubmenu (hmenu, -1, hsubmenu_rules, _r_locale_getstring (IDS_TRAY_RULES));
+
+		_r_menu_additem (hsubmenu_rules, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
+		_r_menu_additem (hsubmenu_rules, IDM_DISABLEREMOVAL, _r_locale_getstring (IDS_DISABLEREMOVAL));
+
+		if (_app_isdisabledremoval (app_hash))
+			_r_menu_enableitem (hsubmenu_rules, IDM_DISABLEREMOVAL, MF_BYCOMMAND, FALSE);
+
+		_r_menu_additem (hsubmenu_rules, 0, NULL);
+
+		_app_generate_rulescontrol (hsubmenu_rules, app_hash, NULL);
+	}
+
+	// show timers
+	if (hsubmenu_timers)
+	{
+		_r_menu_addsubmenu (hmenu, -1, hsubmenu_timers, _r_locale_getstring (IDS_TIMER));
+
+		_r_menu_additem (hsubmenu_timers, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
+		_r_menu_additem (hsubmenu_timers, 0, NULL);
+
+		_app_generate_timerscontrol (hsubmenu_timers, app_hash);
+	}
+
+	_r_menu_additem (hmenu, 0, NULL);
+}
+
 VOID _app_message_contextmenu (
 	_In_ HWND hwnd,
 	_In_ LPNMITEMACTIVATE lpnmlv
@@ -644,8 +683,8 @@ VOID _app_message_contextmenu (
 {
 	PR_STRING localized_string = NULL;
 	PR_STRING column_text = NULL;
-	HMENU hsubmenu_rules = NULL;
 	HMENU hsubmenu_timers = NULL;
+	HMENU hsubmenu_rules = NULL;
 	HMENU hmenu;
 	PITEM_NETWORK ptr_network;
 	PITEM_APP ptr_app = NULL;
@@ -678,45 +717,16 @@ VOID _app_message_contextmenu (
 		case IDC_APPS_SERVICE:
 		case IDC_APPS_UWP:
 		{
-			hsubmenu_rules = CreatePopupMenu ();
-			hsubmenu_timers = CreatePopupMenu ();
-
 			ptr_app = _app_getappitem (app_hash);
 
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_EDIT2), L"...\tEnter"));
 
 			_r_menu_additem_ex (hmenu, IDM_PROPERTIES, localized_string->buffer, MF_DEFAULT);
 
-			_r_menu_additem (hmenu, 0, NULL);
+			hsubmenu_rules = CreatePopupMenu ();
+			hsubmenu_timers = CreatePopupMenu ();
 
-			// show rules
-			if (hsubmenu_rules)
-			{
-				_r_menu_addsubmenu (hmenu, -1, hsubmenu_rules, _r_locale_getstring (IDS_TRAY_RULES));
-
-				_r_menu_additem (hsubmenu_rules, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
-				_r_menu_additem (hsubmenu_rules, IDM_DISABLEREMOVAL, _r_locale_getstring (IDS_DISABLEREMOVAL));
-
-				if (_app_isdisabledremoval (app_hash))
-					_r_menu_enableitem (hsubmenu_rules, IDM_DISABLEREMOVAL, MF_BYCOMMAND, FALSE);
-
-				_r_menu_additem (hsubmenu_rules, 0, NULL);
-
-				_app_generate_rulescontrol (hsubmenu_rules, app_hash, NULL);
-			}
-
-			// show timers
-			if (hsubmenu_timers)
-			{
-				_r_menu_addsubmenu (hmenu, -1, hsubmenu_timers, _r_locale_getstring (IDS_TIMER));
-
-				_r_menu_additem (hsubmenu_timers, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
-				_r_menu_additem (hsubmenu_timers, 0, NULL);
-
-				_app_generate_timerscontrol (hsubmenu_timers, app_hash);
-			}
-
-			_r_menu_additem (hmenu, 0, NULL);
+			_app_generate_appmenu (hmenu, hsubmenu_rules, hsubmenu_timers, app_hash);
 
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_EXPLORE), L"\tCtrl+E"));
 			_r_menu_additem (hmenu, IDM_EXPLORE, localized_string->buffer);
@@ -871,42 +881,16 @@ VOID _app_message_contextmenu (
 
 		case IDC_LOG:
 		{
-			hsubmenu_rules = CreatePopupMenu ();
-			hsubmenu_timers = CreatePopupMenu ();
-
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SHOWINLIST), L"\tEnter"));
 			_r_menu_additem_ex (hmenu, IDM_PROPERTIES, localized_string->buffer, MF_DEFAULT);
 
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_OPENRULESEDITOR), L"..."));
 			_r_menu_additem (hmenu, IDM_OPENRULESEDITOR, localized_string->buffer);
 
-			_r_menu_additem (hmenu, 0, NULL);
+			hsubmenu_rules = CreatePopupMenu ();
+			hsubmenu_timers = CreatePopupMenu ();
 
-			// show rules
-			if (hsubmenu_rules)
-			{
-				_r_menu_addsubmenu (hmenu, -1, hsubmenu_rules, _r_locale_getstring (IDS_TRAY_RULES));
-
-				_r_menu_additem (hsubmenu_rules, IDM_DISABLENOTIFICATIONS, _r_locale_getstring (IDS_DISABLENOTIFICATIONS));
-				_r_menu_additem (hsubmenu_rules, IDM_DISABLEREMOVAL, _r_locale_getstring (IDS_DISABLEREMOVAL));
-
-				_r_menu_additem (hsubmenu_rules, 0, NULL);
-
-				_app_generate_rulescontrol (hsubmenu_rules, app_hash, NULL);
-			}
-
-			// show timers
-			if (hsubmenu_timers)
-			{
-				_r_menu_addsubmenu (hmenu, -1, hsubmenu_timers, _r_locale_getstring (IDS_TIMER));
-
-				_r_menu_additem (hsubmenu_timers, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
-				_r_menu_additem (hsubmenu_timers, 0, NULL);
-
-				_app_generate_timerscontrol (hsubmenu_timers, app_hash);
-			}
-
-			_r_menu_additem (hmenu, 0, NULL);
+			_app_generate_appmenu (hmenu, hsubmenu_rules, hsubmenu_timers, app_hash);
 
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_EXPLORE), L"\tCtrl+E"));
 			_r_menu_additem (hmenu, IDM_EXPLORE, localized_string->buffer);

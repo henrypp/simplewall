@@ -15,6 +15,13 @@ VOID _app_message_uninitialize (
 	_In_ HWND hwnd
 );
 
+VOID _app_generate_appmenu (
+	_In_ HMENU hmenu,
+	_In_ HMENU hsubmenu_rules,
+	_In_ HMENU hsubmenu_timers,
+	_In_ ULONG_PTR app_hash
+);
+
 VOID _app_message_contextmenu (
 	_In_ HWND hwnd,
 	_In_ LPNMITEMACTIVATE lpnmlv
