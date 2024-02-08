@@ -2771,7 +2771,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 						PathStripToRootW (path_root->buffer);
 
-						_r_obj_trimstringtonullterminator (path_root);
+						_r_obj_trimstringtonullterminator (&path_root->sr);
 
 						status = _r_path_ntpathfromdos (path_root, &original_path);
 

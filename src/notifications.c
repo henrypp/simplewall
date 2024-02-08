@@ -538,13 +538,13 @@ VOID _app_notify_killprocess (
 	{
 		if (process->ImageName.Buffer)
 		{
-			if (_r_str_compare (process->ImageName.Buffer, 0, file_name->buffer, 0) == 0)
+			if (_r_str_compare (process->ImageName.Buffer, file_name->buffer, 0) == 0)
 			{
 				status = _r_sys_getprocessimagepathbyid (process->UniqueProcessId, TRUE, &path);
 
 				if (NT_SUCCESS (status))
 				{
-					if (_r_str_compare (path->buffer, 0, ptr_app->real_path->buffer, 0) == 0)
+					if (_r_str_compare (path->buffer, ptr_app->real_path->buffer, 0) == 0)
 					{
 						status = _r_sys_openprocess (process->UniqueProcessId, PROCESS_TERMINATE, &process_handle);
 
@@ -1545,7 +1545,7 @@ INT_PTR CALLBACK NotificationProc (
 					if (!GetClassNameW (hedit, class_name, RTL_NUMBER_OF (class_name)))
 						break;
 
-					if (_r_str_compare (class_name, 0, WC_EDIT, 0) != 0)
+					if (_r_str_compare (class_name, WC_EDIT, 0) != 0)
 						break;
 
 					if (ctrl_id == IDM_COPY)

@@ -741,7 +741,7 @@ VOID _app_network_removeitem (
 		return;
 
 	_r_queuedlock_acquireexclusive (&network_context->lock_network);
-	_r_obj_removehashtablepointer (network_context->network_ptr, network_hash);
+	_r_obj_removehashtableitem (network_context->network_ptr, network_hash);
 	_r_queuedlock_releaseexclusive (&network_context->lock_network);
 }
 

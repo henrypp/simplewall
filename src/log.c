@@ -296,7 +296,7 @@ VOID _app_logwrite_ui (
 		_r_listview_deleteitem (hwnd, IDC_LOG, item_id);
 
 		_r_queuedlock_acquireexclusive (&lock_loglist);
-		_r_obj_removehashtablepointer (log_table, hash_code);
+		_r_obj_removehashtableitem (log_table, hash_code);
 		_r_queuedlock_releaseexclusive (&lock_loglist);
 	}
 

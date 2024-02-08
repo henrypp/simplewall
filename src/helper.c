@@ -740,7 +740,7 @@ PR_STRING _app_verifygetstring (
 
 				CertGetNameStringW (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1);
 
-				_r_obj_trimstringtonullterminator (string);
+				_r_obj_trimstringtonullterminator (&string->sr);
 
 				return string;
 			}

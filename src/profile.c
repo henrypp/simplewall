@@ -514,7 +514,7 @@ PITEM_RULE _app_addrule (
 		ptr_rule->name = _r_obj_reference (name);
 
 		if (_r_str_getlength2 (ptr_rule->name) > RULE_NAME_CCH_MAX)
-			_r_obj_setstringlength (ptr_rule->name, RULE_NAME_CCH_MAX * sizeof (WCHAR));
+			_r_obj_setstringlength (&ptr_rule->name->sr, RULE_NAME_CCH_MAX * sizeof (WCHAR));
 	}
 
 	// set rule destination
@@ -523,7 +523,7 @@ PITEM_RULE _app_addrule (
 		ptr_rule->rule_remote = _r_obj_reference (rule_remote);
 
 		if (_r_str_getlength2 (ptr_rule->rule_remote) > RULE_RULE_CCH_MAX)
-			_r_obj_setstringlength (ptr_rule->rule_remote, RULE_RULE_CCH_MAX * sizeof (WCHAR));
+			_r_obj_setstringlength (&ptr_rule->rule_remote->sr, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 	}
 
 	// set rule source
@@ -532,7 +532,7 @@ PITEM_RULE _app_addrule (
 		ptr_rule->rule_local = _r_obj_reference (rule_local);
 
 		if (_r_str_getlength2 (ptr_rule->rule_local) > RULE_RULE_CCH_MAX)
-			_r_obj_setstringlength (ptr_rule->rule_local, RULE_RULE_CCH_MAX * sizeof (WCHAR));
+			_r_obj_setstringlength (&ptr_rule->rule_local->sr, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 	}
 
 	// set configuration
@@ -792,7 +792,7 @@ VOID _app_freeapplication (
 
 	_r_queuedlock_releaseshared (&lock_rules);
 
-	_r_obj_removehashtablepointer (apps_table, app_hash);
+	_r_obj_removehashtableitem (apps_table, app_hash);
 }
 
 VOID _app_getcount (
