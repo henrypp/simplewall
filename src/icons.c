@@ -16,7 +16,7 @@ PICON_INFORMATION _app_icons_getdefault ()
 		path = _r_obj_concatstrings (
 			2,
 			_r_sys_getsystemdirectory ()->buffer,
-			L"\\svchost.exe"
+			PATH_SVCHOST
 		);
 
 		_app_icons_loadfromfile (path, 0, &icon_info.app_icon_id, &icon_info.app_hicon, FALSE);

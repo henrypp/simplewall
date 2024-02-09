@@ -2058,7 +2058,7 @@ VOID _app_wufixhelper (
 	}
 
 	// set new image path
-	_r_str_printf (reg_value, RTL_NUMBER_OF (reg_value), L"%%systemroot%%\\system32\\%s -k %s -p", is_enable ? L"wusvc.exe" : L"svchost.exe", k_value);
+	_r_str_printf (reg_value, RTL_NUMBER_OF (reg_value), L"%%systemroot%%\\system32%s -k %s -p", is_enable ? PATH_WUSVC : PATH_SVCHOST, k_value);
 
 	status = _r_reg_setvalue (
 		hkey,
@@ -2095,12 +2095,7 @@ VOID _app_wufixenable (
 {
 	SC_HANDLE hsvcmgr;
 	PR_STRING service_path;
-	WCHAR buffer1[256];
-	WCHAR buffer2[256];
 	ULONG_PTR app_hash;
-
-	_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s\\svchost.exe", _r_sys_getsystemdirectory ()->buffer);
-	_r_str_printf (buffer2, RTL_NUMBER_OF (buffer2), L"%s\\wusvc.exe", _r_sys_getsystemdirectory ()->buffer);
 
 	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
 
@@ -2113,12 +2108,12 @@ VOID _app_wufixenable (
 
 	if (is_enable)
 	{
-		if (_r_fs_exists (buffer2))
-			_r_fs_deletefile (buffer2, NULL);
+		if (_r_fs_exists (config.wusvc_path->buffer))
+			_r_fs_deletefile (config.wusvc_path->buffer, NULL);
 
-		_r_fs_copyfile (buffer1, buffer2);
+		_r_fs_copyfile (config.svchost_path->buffer, config.wusvc_path->buffer);
 
-		service_path = _r_obj_createstring (buffer2);
+		service_path = _r_obj_createstring (config.wusvc_path->buffer);
 
 		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, service_path, NULL, NULL);
 
@@ -2132,9 +2127,9 @@ VOID _app_wufixenable (
 	}
 	else
 	{
-		if (_r_fs_exists (buffer2))
+		if (_r_fs_exists (config.wusvc_path->buffer))
 		{
-			app_hash = _r_str_gethash (buffer2, TRUE);
+			app_hash = _r_str_gethash (config.wusvc_path->buffer, TRUE);
 
 			if (app_hash)
 			{
@@ -2142,7 +2137,7 @@ VOID _app_wufixenable (
 				_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (FALSE));
 			}
 
-			_r_fs_deletefile (buffer2, NULL);
+			_r_fs_deletefile (config.wusvc_path->buffer, NULL);
 		}
 	}
 

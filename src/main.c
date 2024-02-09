@@ -1993,6 +1993,12 @@ VOID _app_initialize ()
 		PATH_SVCHOST
 	);
 
+	config.wusvc_path = _r_obj_concatstrings (
+		2,
+		_r_sys_getsystemdirectory ()->buffer,
+		PATH_WUSVC
+	);
+
 	config.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
 
 	config.ntoskrnl_path = _r_obj_concatstrings (
@@ -2004,6 +2010,7 @@ VOID _app_initialize ()
 	config.my_hash = _r_str_gethash2 (config.my_path, TRUE);
 	config.ntoskrnl_hash = _r_str_gethash2 (config.system_path, TRUE);
 	config.svchost_hash = _r_str_gethash2 (config.svchost_path, TRUE);
+	config.wusvc_hash = _r_str_gethash2 (config.wusvc_path, TRUE);
 
 	// initialize free list
 	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);

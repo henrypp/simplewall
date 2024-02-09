@@ -95,6 +95,7 @@ typedef enum _ENUM_INFO_DATA2
 
 #define PATH_NTOSKRNL L"\\ntoskrnl.exe"
 #define PATH_SVCHOST L"\\svchost.exe"
+#define PATH_WUSVC L"\\wusvc.exe"
 
 #define WINDOWSSPYBLOCKER_URL L"https://github.com/crazy-max/WindowsSpyBlocker"
 
@@ -193,6 +194,7 @@ typedef struct _STATIC_DATA
 	PR_STRING my_path;
 	PR_STRING ntoskrnl_path;
 	PR_STRING svchost_path;
+	PR_STRING wusvc_path;
 	PR_STRING system_path;
 
 	PSID builtin_current_sid;
@@ -239,6 +241,7 @@ typedef struct _STATIC_DATA
 
 	ULONG_PTR ntoskrnl_hash;
 	ULONG_PTR svchost_hash;
+	ULONG_PTR wusvc_hash;
 	ULONG_PTR my_hash;
 
 	BOOLEAN is_notifytimeout;

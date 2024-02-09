@@ -240,7 +240,7 @@ FORCEINLINE BOOLEAN _app_isdisabledremoval (
 	_In_ ULONG_PTR app_hash
 )
 {
-	if (app_hash == config.my_hash || app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash)
+	if (app_hash == config.my_hash || app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash || app_hash == config.wusvc_hash)
 		return TRUE;
 
 	return FALSE;
