@@ -2111,7 +2111,7 @@ VOID _app_wufixenable (
 		if (_r_fs_exists (config.wusvc_path->buffer))
 			_r_fs_deletefile (config.wusvc_path->buffer, NULL);
 
-		_r_fs_copyfile (config.svchost_path->buffer, config.wusvc_path->buffer);
+		_r_fs_copyfile (config.svchost_path->buffer, config.wusvc_path->buffer, FALSE);
 
 		service_path = _r_obj_createstring (config.wusvc_path->buffer);
 

@@ -3133,7 +3133,7 @@ INT_PTR CALLBACK DlgProc (
 								_app_profile_save (hwnd);
 
 								// added information for export profile failure (issue #707)
-								status = _r_fs_copyfile (profile_info.profile_path->buffer, path->buffer);
+								status = _r_fs_copyfile (profile_info.profile_path->buffer, path->buffer, FALSE);
 
 								if (!NT_SUCCESS (status))
 									_r_show_errormessage (hwnd, NULL, status, path->buffer, TRUE);
