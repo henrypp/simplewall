@@ -349,21 +349,21 @@ VOID _wfp_logsubscribe (
 
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_RS5))
 	{
-		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", (PVOID_PTR)&_FwpmNetEventSubscribe4);
+		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", 0, (PVOID_PTR)&_FwpmNetEventSubscribe4);
 
 		if (NT_SUCCESS (status))
 			status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, ULongToPtr (WINDOWS_10_RS5), &new_handle); // win10rs5+
 	}
 	else if (_r_sys_isosversiongreaterorequal (WINDOWS_10_RS4))
 	{
-		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe3", (PVOID_PTR)&_FwpmNetEventSubscribe3);
+		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe3", 0, (PVOID_PTR)&_FwpmNetEventSubscribe3);
 
 		if (NT_SUCCESS (status))
 			status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, ULongToPtr (WINDOWS_10_RS4), &new_handle); // win10rs4+
 	}
 	else if (_r_sys_isosversiongreaterorequal (WINDOWS_10_RS1))
 	{
-		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", (PVOID_PTR)&_FwpmNetEventSubscribe2);
+		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", 0, (PVOID_PTR)&_FwpmNetEventSubscribe2);
 
 		if (NT_SUCCESS (status))
 			status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, ULongToPtr (WINDOWS_10_RS1), &new_handle); // win10rs1+
