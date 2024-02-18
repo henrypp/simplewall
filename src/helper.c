@@ -1990,24 +1990,6 @@ VOID NTAPI _app_queue_resolveinformation (
 	_r_freelist_deleteitem (&context_free_list, context);
 }
 
-_Ret_maybenull_
-HBITMAP _app_bitmapfrompng (
-	_In_ PVOID hinst,
-	_In_ LPCWSTR name,
-	_In_ LONG width
-)
-{
-	HBITMAP hbitmap;
-	NTSTATUS status;
-
-	status = _r_res_loadimage (hinst, L"PNG", name, &GUID_ContainerFormatPng, width, width, &hbitmap);
-
-	if (!NT_SUCCESS (status))
-		return NULL;
-
-	return hbitmap;
-}
-
 BOOLEAN _app_wufixenabled ()
 {
 	WCHAR file_path[256];

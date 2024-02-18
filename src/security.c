@@ -16,7 +16,7 @@ PSID _app_quyerybuiltinsid (
 
 	if (!CreateWellKnownSid (sid_type, NULL, sid, &sid_length))
 	{
-		_r_log_v (LOG_LEVEL_ERROR, NULL, L"CreateWellKnownSid", PebLastError (), L"%" TEXT (PRIu32), sid_type);
+		_r_log_v (LOG_LEVEL_ERROR, NULL, L"CreateWellKnownSid", NtLastError (), L"%" TEXT (PRIu32), sid_type);
 
 		_r_mem_free (sid);
 

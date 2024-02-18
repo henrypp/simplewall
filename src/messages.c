@@ -1301,6 +1301,7 @@ LONG_PTR _app_message_custdraw (
 {
 	TBBUTTONINFOW tbi = {0};
 	WCHAR text[128] = {0};
+	R_STRINGREF sr;
 	HIMAGELIST himglist;
 	PITEM_NETWORK ptr_network;
 	PITEM_LOG ptr_log;
@@ -1339,9 +1340,9 @@ LONG_PTR _app_message_custdraw (
 				tbi.cbSize = sizeof (tbi);
 				tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
 
-				result = _r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETBUTTONINFO, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)&tbi);
+				result = _r_toolbar_getinfo (lpnmlv->nmcd.hdr.hwndFrom, 0, (UINT)lpnmlv->nmcd.dwItemSpec, &tbi);
 
-				if (result == -1)
+				if (result == INT_ERROR)
 					return CDRF_DODEFAULT;
 
 				if (tbi.fsState & TBSTATE_ENABLED)
@@ -1385,14 +1386,9 @@ LONG_PTR _app_message_custdraw (
 					if (tbi.iImage != I_IMAGENONE)
 						lpnmlv->nmcd.rc.left += icon_size_x;
 
-					DrawTextExW (
-						lpnmlv->nmcd.hdc,
-						text,
-						(INT)_r_str_getlength (text),
-						&lpnmlv->nmcd.rc,
-						DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX,
-						NULL
-					);
+					_r_obj_initializestringref (&sr, text);
+
+					_r_dc_drawtext (lpnmlv->nmcd.hdc, &sr, &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX);
 				}
 
 				return CDRF_SKIPDEFAULT;

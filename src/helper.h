@@ -240,13 +240,6 @@ VOID NTAPI _app_queue_resolveinformation (
 	_In_ ULONG busy_count
 );
 
-_Ret_maybenull_
-HBITMAP _app_bitmapfrompng (
-	_In_ PVOID hinst,
-	_In_ LPCWSTR name,
-	_In_ LONG width
-);
-
 BOOLEAN _app_wufixenabled ();
 
 VOID _app_wufixhelper (

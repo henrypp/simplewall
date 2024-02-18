@@ -642,7 +642,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 			if (hctrl)
 			{
-				_app_search_initialize (hctrl);
+				_app_search_create (hctrl);
 
 				SetWindowPos (hctrl, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED); // HACK!!!
 			}

@@ -400,7 +400,7 @@ VOID _app_package_getserviceslist ()
 
 	if (!EnumServicesStatusExW (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 	{
-		if (PebLastError () == ERROR_MORE_DATA)
+		if (NtLastError () == ERROR_MORE_DATA)
 		{
 			// Set the buffer
 			buffer_size += return_length;

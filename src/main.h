@@ -218,9 +218,10 @@ typedef struct _STATIC_DATA
 
 	HANDLE hmonitor_thread;
 
+	HANDLE hnotify_evt;
+
 	volatile HANDLE hlogfile;
 	volatile HANDLE hnetevent;
-	HANDLE hnotify_evt;
 	volatile HWND hnotification;
 	volatile HICON htray_icon;
 

@@ -756,11 +756,11 @@ VOID _app_notify_initialize (
 	}
 
 	// load images
-	context->hbmp_rules = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_SETTINGS), icon_small);
-	context->hbmp_allow = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_ALLOW), icon_small);
-	context->hbmp_block = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_BLOCK), icon_small);
-	context->hbmp_cross = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_CROSS), icon_small);
-	context->hbmp_next = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_NEXT), icon_small);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SETTINGS), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_rules);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_allow);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_block);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_CROSS), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_cross);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_NEXT), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_next);
 
 	// set button configuration
 	_r_wnd_sendmessage (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
@@ -1041,14 +1041,7 @@ INT_PTR CALLBACK NotificationProc (
 					_r_calc_rectheight (&draw_info->rcItem)
 				);
 
-				DrawTextExW (
-					draw_info->hDC,
-					string->buffer,
-					(INT)(INT_PTR)_r_str_getlength2 (string),
-					&rect,
-					DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX,
-					NULL
-				);
+				_r_dc_drawtext (draw_info->hDC, &string->sr, &rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX);
 
 				_r_obj_dereference (string);
 			}
@@ -1118,9 +1111,9 @@ INT_PTR CALLBACK NotificationProc (
 			exstyle = _r_wnd_getstyle_ex (hwnd);
 
 			if (!(exstyle & WS_EX_LAYERED))
-				_r_wnd_setstyle_ex (hwnd, exstyle | WS_EX_LAYERED);
+				_r_wnd_setstyle_ex (hwnd, WS_EX_LAYERED, WS_EX_LAYERED);
 
-			hcursor = LoadCursor (NULL, (msg == WM_ENTERSIZEMOVE) ? IDC_SIZEALL : IDC_ARROW);
+			hcursor = LoadCursorW (NULL, (msg == WM_ENTERSIZEMOVE) ? IDC_SIZEALL : IDC_ARROW);
 
 			SetLayeredWindowAttributes (hwnd, 0, (msg == WM_ENTERSIZEMOVE) ? 150 : 255, LWA_ALPHA);
 			SetCursor (hcursor);

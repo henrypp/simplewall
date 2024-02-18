@@ -594,7 +594,7 @@ BOOLEAN _app_initinterfacestate (
 	_In_ BOOLEAN is_forced
 )
 {
-	if (is_forced || _r_toolbar_isbuttonenabled (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START))
+	if (is_forced || _r_toolbar_isenabled (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START))
 	{
 		_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, FALSE);
 		_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, FALSE);
@@ -731,6 +731,7 @@ VOID _app_imagelist_init (
 	LONG icon_size_toolbar;
 	LONG icon_small;
 	LONG icon_large;
+	INT32 index;
 
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
@@ -742,30 +743,30 @@ VOID _app_imagelist_init (
 
 	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small, icon_large);
 
-	config.hbmp_enable = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_SHIELD_ENABLE), icon_small);
-	config.hbmp_disable = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_SHIELD_DISABLE), icon_small);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SHIELD_ENABLE), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_enable);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SHIELD_DISABLE), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_disable);
 
-	config.hbmp_allow = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_ALLOW), icon_small);
-	config.hbmp_block = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDP_BLOCK), icon_small);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_allow);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_block);
 
 	// toolbar imagelist
 	if (config.himg_toolbar)
 	{
-		ImageList_SetIconSize (config.himg_toolbar, icon_size_toolbar, icon_size_toolbar);
+		IImageList2_SetIconSize ((IImageList2*)config.himg_toolbar, icon_size_toolbar, icon_size_toolbar);
 	}
 	else
 	{
-		config.himg_toolbar = ImageList_Create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (toolbar_ids), RTL_NUMBER_OF (toolbar_ids));
+		_r_imagelist_create (icon_size_toolbar, icon_size_toolbar, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (toolbar_ids), RTL_NUMBER_OF (toolbar_ids), &config.himg_toolbar);
 	}
 
 	if (config.himg_toolbar)
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (toolbar_ids[i]), icon_size_toolbar);
+			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (toolbar_ids[i]), &GUID_ContainerFormatPng, icon_size_toolbar, icon_size_toolbar, &hbitmap);
 
 			if (hbitmap)
-				ImageList_Add (config.himg_toolbar, hbitmap, NULL);
+				IImageList2_Add ((IImageList2*)config.himg_toolbar, hbitmap, NULL, &index);
 		}
 	}
 
@@ -775,42 +776,42 @@ VOID _app_imagelist_init (
 	// rules imagelist (small)
 	if (config.himg_rules_small)
 	{
-		ImageList_SetIconSize (config.himg_rules_small, icon_small, icon_small);
+		IImageList2_SetIconSize ((IImageList2*)config.himg_rules_small, icon_small, icon_small);
 	}
 	else
 	{
-		config.himg_rules_small = ImageList_Create (icon_small, icon_small, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (rules_ids), RTL_NUMBER_OF (rules_ids));
+		_r_imagelist_create (icon_small, icon_small, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (rules_ids), RTL_NUMBER_OF (rules_ids), &config.himg_rules_small);
 	}
 
 	if (config.himg_rules_small)
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (rules_ids[i]), icon_small);
+			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (rules_ids[i]), &GUID_ContainerFormatPng, icon_small, icon_small, &hbitmap);
 
 			if (hbitmap)
-				ImageList_Add (config.himg_rules_small, hbitmap, NULL);
+				IImageList2_Add ((IImageList2*)config.himg_rules_small, hbitmap, NULL, &index);
 		}
 	}
 
 	// rules imagelist (large)
 	if (config.himg_rules_large)
 	{
-		ImageList_SetIconSize (config.himg_rules_large, icon_large, icon_large);
+		IImageList2_SetIconSize ((IImageList2*)config.himg_rules_large, icon_large, icon_large);
 	}
 	else
 	{
-		config.himg_rules_large = ImageList_Create (icon_large, icon_large, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (rules_ids), RTL_NUMBER_OF (rules_ids));
+		_r_imagelist_create (icon_large, icon_large, ILC_COLOR32 | ILC_HIGHQUALITYSCALE, RTL_NUMBER_OF (rules_ids), RTL_NUMBER_OF (rules_ids), &config.himg_rules_large);
 	}
 
 	if (config.himg_rules_large)
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			hbitmap = _app_bitmapfrompng (_r_sys_getimagebase (), MAKEINTRESOURCEW (rules_ids[i]), icon_large);
+			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (rules_ids[i]), &GUID_ContainerFormatPng, icon_large, icon_large, &hbitmap);
 
 			if (hbitmap)
-				ImageList_Add (config.himg_rules_large, hbitmap, NULL);
+				IImageList2_Add ((IImageList2*)config.himg_rules_large, hbitmap, NULL, &index);
 		}
 	}
 }
@@ -948,7 +949,7 @@ VOID _app_toolbar_init (
 
 	_r_wnd_sendmessage (config.hsearchbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
 
-	_app_search_initialize (config.hsearchbar);
+	_app_search_create (config.hsearchbar);
 
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 
@@ -1149,7 +1150,7 @@ VOID _app_refreshstatus (
 		{
 			if (text[i])
 			{
-				size[i] = _r_dc_getfontwidth (hdc, &text[i]->sr) + spacing;
+				size[i] = _r_dc_getfontwidth (hdc, &text[i]->sr, NULL) + spacing;
 
 				calculated_width += size[i];
 			}

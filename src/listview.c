@@ -869,7 +869,7 @@ VOID _app_listview_resize (
 		if (!column_text)
 			continue;
 
-		column_width = _r_dc_getfontwidth (hdc_header, &column_text->sr) + spacing;
+		column_width = _r_dc_getfontwidth (hdc_header, &column_text->sr, NULL) + spacing;
 
 		if (column_width >= max_width)
 		{
@@ -887,7 +887,7 @@ VOID _app_listview_resize (
 					if (!item_text)
 						continue;
 
-					text_width = _r_dc_getfontwidth (hdc_listview, &item_text->sr) + spacing;
+					text_width = _r_dc_getfontwidth (hdc_listview, &item_text->sr, NULL) + spacing;
 
 					_r_obj_dereference (item_text);
 
