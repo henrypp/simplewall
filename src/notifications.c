@@ -1106,11 +1106,11 @@ INT_PTR CALLBACK NotificationProc (
 		case WM_CAPTURECHANGED:
 		{
 			HCURSOR hcursor;
-			LONG_PTR exstyle;
+			LONG_PTR ex_style;
 
-			exstyle = _r_wnd_getstyle_ex (hwnd);
+			ex_style = _r_wnd_getstyle_ex (hwnd);
 
-			if (!(exstyle & WS_EX_LAYERED))
+			if (!(ex_style & WS_EX_LAYERED))
 				_r_wnd_setstyle_ex (hwnd, WS_EX_LAYERED, WS_EX_LAYERED);
 
 			hcursor = LoadCursorW (NULL, (msg == WM_ENTERSIZEMOVE) ? IDC_SIZEALL : IDC_ARROW);
@@ -1527,7 +1527,9 @@ INT_PTR CALLBACK NotificationProc (
 				case IDM_COPY: // ctrl+c
 				case IDM_SELECT_ALL: // ctrl+a
 				{
-					WCHAR class_name[128];
+					static R_STRINGREF sr = PR_STRINGREF_INIT (WC_EDITW);
+
+					PR_STRING class_name;
 					HWND hedit;
 
 					hedit = GetFocus ();
@@ -1535,20 +1537,24 @@ INT_PTR CALLBACK NotificationProc (
 					if (!hedit)
 						break;
 
-					if (!GetClassNameW (hedit, class_name, RTL_NUMBER_OF (class_name)))
+					class_name = _r_wnd_getclassname (hedit);
+
+					if (!class_name)
 						break;
 
-					if (_r_str_compare (class_name, WC_EDIT, 0) != 0)
-						break;
+					if (_r_str_isequal (&class_name->sr, &sr, TRUE))
+					{
+						if (ctrl_id == IDM_COPY)
+						{
+							_r_wnd_sendmessage (hedit, 0, WM_COPY, 0, 0); // edit control hotkey for "ctrl+c" (issue #597)
+						}
+						else if (ctrl_id == IDM_SELECT_ALL)
+						{
+							_r_ctrl_setselection (hedit, 0, MAKELPARAM (0, -1)); // edit control hotkey for "ctrl+a"
+						}
+					}
 
-					if (ctrl_id == IDM_COPY)
-					{
-						_r_wnd_sendmessage (hedit, 0, WM_COPY, 0, 0); // edit control hotkey for "ctrl+c" (issue #597)
-					}
-					else if (ctrl_id == IDM_SELECT_ALL)
-					{
-						_r_ctrl_setselection (hedit, 0, MAKELPARAM (0, -1)); // edit control hotkey for "ctrl+a"
-					}
+					_r_obj_dereference (class_name);
 
 					break;
 				}
