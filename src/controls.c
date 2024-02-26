@@ -860,6 +860,7 @@ VOID _app_toolbar_init (
 	_In_ LONG dpi_value
 )
 {
+	REBARINFO ri = {0};
 	ULONG button_size;
 	LONG rebar_height;
 
@@ -867,10 +868,9 @@ VOID _app_toolbar_init (
 
 	_app_windowloadfont (dpi_value);
 
-	_r_wnd_sendmessage (config.hrebar, 0, RB_SETBARINFO, 0, (LPARAM)(&(REBARINFO)
-	{
-		sizeof (REBARINFO)
-	}));
+	ri.cbSize = sizeof (REBARINFO);
+
+	_r_wnd_sendmessage (config.hrebar, 0, RB_SETBARINFO, 0, (LPARAM)&ri);
 
 	config.htoolbar = CreateWindowExW (
 		0,
