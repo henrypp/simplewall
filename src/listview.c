@@ -807,16 +807,16 @@ VOID _app_listview_resize (
 	HWND hheader = NULL;
 	HDC hdc_listview = NULL;
 	HDC hdc_header = NULL;
+	LONG column_general_id = 0; // set general column id
+	LONG calculated_width = 0;
+	LONG column_count;
+	LONG column_width;
+	LONG total_width;
+	LONG item_count;
+	LONG text_width;
 	LONG dpi_value;
-	INT column_count;
-	INT item_count;
-	INT column_width;
-	INT text_width;
-	INT calculated_width = 0;
-	INT column_general_id = 0; // set general column id
-	INT total_width;
-	INT max_width;
-	INT spacing;
+	LONG max_width;
+	LONG spacing;
 	BOOLEAN is_tableview;
 
 	if (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE))
@@ -838,14 +838,14 @@ VOID _app_listview_resize (
 	if (!hdc_listview)
 		goto CleanupExit;
 
-	hheader = (HWND)_r_wnd_sendmessage (hlistview, 0, LVM_GETHEADER, 0, 0);
+	hheader = (HWND)_r_wnd_sendmessage (hwnd, listview_id, LVM_GETHEADER, 0, 0);
 
 	hdc_header = GetDC (hheader);
 
 	if (!hdc_header)
 		goto CleanupExit;
 
-	_r_dc_fixfont (hdc_listview, hlistview, 0); // fix
+	_r_dc_fixfont (hdc_listview, hwnd, listview_id); // fix
 	_r_dc_fixfont (hdc_header, hheader, 0); // fix
 
 	is_tableview = (_r_listview_getview (hwnd, listview_id) == LV_VIEW_DETAILS);
@@ -858,7 +858,7 @@ VOID _app_listview_resize (
 	total_width = _r_ctrl_getwidth (hwnd, listview_id);
 	item_count = _r_listview_getitemcount (hwnd, listview_id);
 
-	for (INT i = 0; i < column_count; i++)
+	for (LONG i = 0; i < column_count; i++)
 	{
 		if (i == column_general_id)
 			continue;

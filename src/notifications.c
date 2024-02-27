@@ -1041,7 +1041,7 @@ INT_PTR CALLBACK NotificationProc (
 					_r_calc_rectheight (&draw_info->rcItem)
 				);
 
-				_r_dc_drawtext (draw_info->hDC, &string->sr, &rect, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX);
+				_r_dc_drawtext (NULL, draw_info->hDC, &string->sr, &rect, 0, 0, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, 0);
 
 				_r_obj_dereference (string);
 			}

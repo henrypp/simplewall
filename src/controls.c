@@ -1102,8 +1102,8 @@ VOID _app_refreshstatus (
 )
 {
 	ITEM_STATUS status = {0};
-	PR_STRING text[STATUSBAR_PARTS_COUNT] = {0};
-	INT parts[STATUSBAR_PARTS_COUNT] = {0};
+	PR_STRING string[STATUSBAR_PARTS_COUNT] = {0};
+	LONG parts[STATUSBAR_PARTS_COUNT] = {0};
 	LONG size[STATUSBAR_PARTS_COUNT] = {0};
 	LONG calculated_width = 0;
 	LONG spacing;
@@ -1125,52 +1125,52 @@ VOID _app_refreshstatus (
 
 	dpi_value = _r_dc_getwindowdpi (hwnd);
 
-	_r_dc_fixfont (hdc, hstatus, 0); // fix
+	_r_dc_fixfont (hdc, hwnd, IDC_STATUSBAR); // fix
 
 	spacing = _r_dc_getdpi (16, dpi_value);
 
-	for (INT i = 0; i < RTL_NUMBER_OF (parts); i++)
+	for (LONG i = 0; i < RTL_NUMBER_OF (parts); i++)
 	{
 		switch (i)
 		{
 			case 1:
 			{
-				text[i] = _r_format_string (L"%s: %" TEXT (PR_ULONG_PTR), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), status.apps_unused_count);
+				string[i] = _r_format_string (L"%s: %" TEXT (PR_ULONG_PTR), _r_locale_getstring (IDS_STATUS_UNUSED_APPS), status.apps_unused_count);
 				break;
 			}
 
 			case 2:
 			{
-				text[i] = _r_format_string (L"%s: %" TEXT (PR_ULONG_PTR), _r_locale_getstring (IDS_STATUS_TIMER_APPS), status.apps_timer_count);
+				string[i] = _r_format_string (L"%s: %" TEXT (PR_ULONG_PTR), _r_locale_getstring (IDS_STATUS_TIMER_APPS), status.apps_timer_count);
 				break;
 			}
 		}
 
 		if (i)
 		{
-			if (text[i])
+			if (string[i])
 			{
-				size[i] = _r_dc_getfontwidth (hdc, &text[i]->sr, NULL) + spacing;
+				size[i] = _r_dc_getfontwidth (hdc, &string[i]->sr, NULL) + spacing;
 
 				calculated_width += size[i];
 			}
 		}
 	}
 
-	parts[0] = _r_ctrl_getwidth (hstatus, 0) - calculated_width - _r_dc_getsystemmetrics (SM_CXVSCROLL, dpi_value) - (_r_dc_getsystemmetrics (SM_CXBORDER, dpi_value) * 4);
+	parts[0] = _r_ctrl_getwidth (hwnd, IDC_STATUSBAR) - calculated_width - _r_dc_getsystemmetrics (SM_CXVSCROLL, dpi_value) - (_r_dc_getsystemmetrics (SM_CXBORDER, dpi_value) * 4);
 
 	parts[1] = parts[0] + size[1];
 	parts[2] = parts[1] + size[2];
 
 	_r_status_setparts (hwnd, IDC_STATUSBAR, parts, RTL_NUMBER_OF (parts));
 
-	for (INT i = 1; i < STATUSBAR_PARTS_COUNT; i++)
+	for (LONG i = 1; i < STATUSBAR_PARTS_COUNT; i++)
 	{
-		if (text[i])
+		if (string[i])
 		{
-			_r_status_settext (hwnd, IDC_STATUSBAR, i, text[i]->buffer);
+			_r_status_settext (hwnd, IDC_STATUSBAR, i, string[i]->buffer);
 
-			_r_obj_dereference (text[i]);
+			_r_obj_dereference (string[i]);
 		}
 	}
 

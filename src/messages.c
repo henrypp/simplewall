@@ -1367,14 +1367,17 @@ LONG_PTR _app_message_custdraw (
 					padding = (ULONG)_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETPADDING, 0, 0);
 					button_size = (ULONG)_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETBUTTONSIZE, 0, 0);
 
-					_r_dc_drawimagelisticon (
-						lpnmlv->nmcd.hdc,
+					_r_imagelist_draw (
 						himglist,
 						tbi.iImage,
+						lpnmlv->nmcd.hdc,
 						lpnmlv->nmcd.rc.left + (LOWORD (padding) / 2),
 						(HIWORD (button_size) / 2) - (icon_size_y / 2),
-						ILS_SATURATE, // grayscale
-						ILD_NORMAL | ILD_ASYNC
+						0,
+						0,
+						//ILS_SATURATE, // grayscale
+						ILD_NORMAL | ILD_ASYNC,
+						TRUE
 					);
 				}
 
@@ -1388,7 +1391,7 @@ LONG_PTR _app_message_custdraw (
 
 					_r_obj_initializestringref (&sr, text);
 
-					_r_dc_drawtext (lpnmlv->nmcd.hdc, &sr, &lpnmlv->nmcd.rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX);
+					_r_dc_drawtext (NULL, lpnmlv->nmcd.hdc, &sr, &lpnmlv->nmcd.rc, 0, 0, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, 0);
 				}
 
 				return CDRF_SKIPDEFAULT;
