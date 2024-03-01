@@ -2904,7 +2904,7 @@ VOID _app_command_openeditor (
 	INT listview_id;
 	INT item_id = -1;
 
-	ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, 0, 0);
+	ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, FWP_ACTION_PERMIT, 0, 0);
 
 	_app_ruleenable (ptr_rule, TRUE, FALSE);
 

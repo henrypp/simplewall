@@ -61,6 +61,7 @@ PITEM_RULE _app_addrule (
 	_In_opt_ PR_STRING rule_remote,
 	_In_opt_ PR_STRING rule_local,
 	_In_ FWP_DIRECTION direction,
+	_In_ FWP_ACTION_TYPE action,
 	_In_ UINT8 protocol,
 	_In_ ADDRESS_FAMILY af
 );

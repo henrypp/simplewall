@@ -1288,12 +1288,10 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						rule = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, FMTADDR_AS_RULE);
 
-						ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, ptr_log->protocol, ptr_log->af);
+						ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, FWP_ACTION_PERMIT, ptr_log->protocol, ptr_log->af);
 
 						ptr_rule->name = _r_obj_createstring2 (rule);
 						ptr_rule->rule_remote = _r_obj_createstring2 (rule);
-
-						ptr_rule->action = FWP_ACTION_PERMIT;
 
 						_app_ruleenable (ptr_rule, TRUE, FALSE);
 
@@ -1481,7 +1479,7 @@ INT_PTR CALLBACK NotificationProc (
 
 					rule_name = _r_format_string (L"%s - %s", _r_obj_getstring (app_name), _r_obj_getstring (rule_string));
 
-					ptr_rule = _app_addrule (rule_name, rule_string, NULL, ptr_log->direction, ptr_log->protocol, ptr_log->af);
+					ptr_rule = _app_addrule (rule_name, rule_string, NULL, ptr_log->direction, FWP_ACTION_PERMIT, ptr_log->protocol, ptr_log->af);
 
 					_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
 
