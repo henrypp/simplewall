@@ -2343,9 +2343,9 @@ INT_PTR CALLBACK DlgProc (
 			if (hengine)
 				_wfp_uninitialize (hengine, FALSE);
 
-			ImageList_Destroy (config.himg_toolbar);
-			ImageList_Destroy (config.himg_rules_small);
-			ImageList_Destroy (config.himg_rules_large);
+			_r_imagelist_destroy (config.himg_rules_small);
+			_r_imagelist_destroy (config.himg_rules_large);
+			_r_imagelist_destroy (config.himg_toolbar);
 
 			BufferedPaintUnInit ();
 
