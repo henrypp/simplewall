@@ -340,6 +340,7 @@ VOID _app_db_parse_rule (
 	LONG blocklist_update_state;
 	LONG blocklist_extra_state;
 	FWP_DIRECTION direction;
+	FWP_ACTION_TYPE action;
 	UINT8 protocol;
 	ADDRESS_FAMILY af;
 	PITEM_RULE ptr_rule;
@@ -365,10 +366,11 @@ VOID _app_db_parse_rule (
 	rule_local = _r_xml_getattribute_string (&db_info->xml_library, L"rule_local");
 	comment = _r_xml_getattribute_string (&db_info->xml_library, L"comment");
 	direction = (FWP_DIRECTION)_r_xml_getattribute_long (&db_info->xml_library, L"dir");
+	action = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_block") ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 	protocol = (UINT8)_r_xml_getattribute_long (&db_info->xml_library, L"protocol");
 	af = (ADDRESS_FAMILY)_r_xml_getattribute_long (&db_info->xml_library, L"version");
 
-	ptr_rule = _app_addrule (rule_name, rule_remote, rule_local, direction, protocol, af);
+	ptr_rule = _app_addrule (rule_name, rule_remote, rule_local, direction, action, protocol, af);
 
 	_r_obj_dereference (rule_name);
 
@@ -391,7 +393,6 @@ VOID _app_db_parse_rule (
 	}
 
 	ptr_rule->type = (type == DATA_RULE_SYSTEM_USER) ? DATA_RULE_USER : type;
-	ptr_rule->action = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_block") ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 	ptr_rule->is_forservices = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_services");
 	ptr_rule->is_readonly = (type != DATA_RULE_USER);
 	ptr_rule->is_enabled = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_enabled");
