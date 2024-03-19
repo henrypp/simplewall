@@ -898,6 +898,8 @@ INT_PTR CALLBACK NotificationProc (
 
 			_r_obj_dereference (ptr_log);
 
+			_r_theme_initialize (hwnd, _r_theme_isenabled ());
+
 			break;
 		}
 
@@ -964,16 +966,11 @@ INT_PTR CALLBACK NotificationProc (
 			if (!hdc)
 				break;
 
-			_r_dc_drawwindow (hdc, hwnd, 0, TRUE);
+			_r_dc_drawwindow (hdc, hwnd, TRUE);
 
 			EndPaint (hwnd, &ps);
 
 			break;
-		}
-
-		case WM_ERASEBKGND:
-		{
-			return TRUE;
 		}
 
 		case WM_CTLCOLORDLG:

@@ -66,6 +66,7 @@ VOID _app_message_initialize (
 
 		_r_menu_checkitem (hmenu, IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, MF_BYCOMMAND, menu_id);
 		_r_menu_checkitem (hmenu, IDM_ICONSISHIDDEN, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsIconsHidden", FALSE));
+		_r_menu_checkitem (hmenu, IDM_USEDARKTHEME_CHK, 0, MF_BYCOMMAND, _r_theme_isenabled ());
 		_r_menu_checkitem (hmenu, IDM_LOADONSTARTUP_CHK, 0, MF_BYCOMMAND, _r_autorun_isenabled ());
 		_r_menu_checkitem (hmenu, IDM_STARTMINIMIZED_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsStartMinimized", FALSE));
 		_r_menu_checkitem (hmenu, IDM_SKIPUACWARNING_CHK, 0, MF_BYCOMMAND, _r_skipuac_isenabled ());
@@ -259,6 +260,8 @@ VOID _app_message_localize (
 		_r_menu_setitemtext (hmenu, IDM_VIEW_TILE, FALSE, _r_locale_getstring (IDS_VIEW_TILE));
 
 		_r_menu_setitemtext (hmenu, IDM_ICONSISHIDDEN, FALSE, _r_locale_getstring (IDS_ICONSISHIDDEN));
+
+		_r_menu_setitemtext (hmenu, IDM_USEDARKTHEME_CHK, FALSE, _r_locale_getstring (IDS_USEDARKTHEME));
 
 		hsubmenu = GetSubMenu (hmenu, 2);
 
@@ -1301,8 +1304,6 @@ LONG_PTR _app_message_custdraw (
 {
 	TBBUTTONINFOW tbi = {0};
 	WCHAR text[128] = {0};
-	R_STRINGREF sr;
-	HIMAGELIST himglist;
 	PITEM_NETWORK ptr_network;
 	PITEM_LOG ptr_log;
 	PITEM_COLOR ptr_clr;
@@ -1310,12 +1311,7 @@ LONG_PTR _app_message_custdraw (
 	ULONG_PTR app_hash = 0;
 	ULONG_PTR index;
 	COLORREF new_clr = 0;
-	ULONG padding;
-	ULONG button_size;
-	INT icon_size_x;
-	INT icon_size_y;
 	INT ctrl_id;
-	LRESULT result;
 	BOOLEAN is_systemapp = FALSE;
 	BOOLEAN is_validconnection = FALSE;
 
@@ -1323,11 +1319,6 @@ LONG_PTR _app_message_custdraw (
 	{
 		case CDDS_PREPAINT:
 		{
-			ctrl_id = (INT)(INT_PTR)lpnmlv->nmcd.hdr.idFrom;
-
-			if (ctrl_id == IDC_TOOLBAR)
-				return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
-
 			return CDRF_NOTIFYITEMDRAW;
 		}
 
@@ -1335,149 +1326,85 @@ LONG_PTR _app_message_custdraw (
 		{
 			ctrl_id = (INT)(INT_PTR)lpnmlv->nmcd.hdr.idFrom;
 
-			if (ctrl_id == IDC_TOOLBAR)
+			if (lpnmlv->dwItemType != LVCDI_ITEM)
+				return CDRF_DODEFAULT;
+
+			if (!lpnmlv->nmcd.lItemlParam)
+				return CDRF_DODEFAULT;
+
+			if (!_r_config_getboolean (L"IsEnableHighlighting", TRUE))
+				return CDRF_DODEFAULT;
+
+			if ((ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP) || ctrl_id == IDC_RULE_APPS_ID || ctrl_id == IDC_NETWORK || ctrl_id == IDC_LOG)
 			{
-				tbi.cbSize = sizeof (tbi);
-				tbi.dwMask = TBIF_STYLE | TBIF_STATE | TBIF_IMAGE;
+				index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
 
-				result = _r_toolbar_getinfo (lpnmlv->nmcd.hdr.hwndFrom, 0, (UINT)lpnmlv->nmcd.dwItemSpec, &tbi);
-
-				if (result == INT_ERROR)
-					return CDRF_DODEFAULT;
-
-				if (tbi.fsState & TBSTATE_ENABLED)
-					return CDRF_DODEFAULT;
-
-				himglist = (HIMAGELIST)_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETIMAGELIST, 0, 0);
-
-				if (!himglist)
-					return CDRF_DODEFAULT;
-
-				if (!ImageList_GetIconSize (himglist, &icon_size_x, &icon_size_y))
-					return CDRF_DODEFAULT;
-
-				_r_dc_fixfont (lpnmlv->nmcd.hdc, lpnmlv->nmcd.hdr.hwndFrom, 0); // fix
-
-				SetBkMode (lpnmlv->nmcd.hdc, TRANSPARENT);
-				SetTextColor (lpnmlv->nmcd.hdc, GetSysColor (COLOR_GRAYTEXT));
-
-				// draw image
-				if (tbi.iImage != I_IMAGENONE)
+				if (ctrl_id == IDC_NETWORK)
 				{
-					padding = (ULONG)_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETPADDING, 0, 0);
-					button_size = (ULONG)_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETBUTTONSIZE, 0, 0);
+					ptr_network = _app_network_getitem (index);
 
-					_r_imagelist_draw (
-						himglist,
-						tbi.iImage,
-						lpnmlv->nmcd.hdc,
-						lpnmlv->nmcd.rc.left + (LOWORD (padding) / 2),
-						(HIWORD (button_size) / 2) - (icon_size_y / 2),
-						0,
-						0,
-						//ILS_SATURATE, // grayscale
-						ILD_NORMAL | ILD_ASYNC,
-						TRUE
-					);
-				}
-
-				// draw text
-				if ((tbi.fsStyle & BTNS_SHOWTEXT) == BTNS_SHOWTEXT)
-				{
-					_r_wnd_sendmessage (lpnmlv->nmcd.hdr.hwndFrom, 0, TB_GETBUTTONTEXT, (WPARAM)lpnmlv->nmcd.dwItemSpec, (LPARAM)text);
-
-					if (tbi.iImage != I_IMAGENONE)
-						lpnmlv->nmcd.rc.left += icon_size_x;
-
-					_r_obj_initializestringref (&sr, text);
-
-					_r_dc_drawtext (NULL, lpnmlv->nmcd.hdc, &sr, &lpnmlv->nmcd.rc, 0, 0, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_HIDEPREFIX, 0);
-				}
-
-				return CDRF_SKIPDEFAULT;
-			}
-			else
-			{
-				if (lpnmlv->dwItemType != LVCDI_ITEM)
-					return CDRF_DODEFAULT;
-
-				if (!lpnmlv->nmcd.lItemlParam)
-					return CDRF_DODEFAULT;
-
-				if (!_r_config_getboolean (L"IsEnableHighlighting", TRUE))
-					return CDRF_DODEFAULT;
-
-				if ((ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP) || ctrl_id == IDC_RULE_APPS_ID || ctrl_id == IDC_NETWORK || ctrl_id == IDC_LOG)
-				{
-					index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
-
-					if (ctrl_id == IDC_NETWORK)
+					if (ptr_network)
 					{
-						ptr_network = _app_network_getitem (index);
+						app_hash = ptr_network->app_hash;
+						is_systemapp = _app_isappfromsystem (ptr_network->path, app_hash);
+						is_validconnection = ptr_network->is_connection;
 
-						if (ptr_network)
-						{
-							app_hash = ptr_network->app_hash;
-							is_systemapp = _app_isappfromsystem (ptr_network->path, app_hash);
-							is_validconnection = ptr_network->is_connection;
-
-							_r_obj_dereference (ptr_network);
-						}
+						_r_obj_dereference (ptr_network);
 					}
-					else if (ctrl_id == IDC_LOG)
-					{
-						ptr_log = _app_getlogitem (index);
-
-						if (ptr_log)
-						{
-							app_hash = _app_getlogapp (index);
-							is_systemapp = _app_isappfromsystem (ptr_log->path, app_hash);
-
-							_r_obj_dereference (ptr_log);
-						}
-					}
-					else
-					{
-						app_hash = index;
-						is_validconnection = _app_network_isapphaveconnection (app_hash);
-
-						if (_app_getappinfobyhash (app_hash, INFO_PATH, &real_path, sizeof (real_path)))
-						{
-							is_systemapp = _app_isappfromsystem (real_path, app_hash);
-
-							_r_obj_dereference (real_path);
-						}
-					}
-
-					if (app_hash)
-						new_clr = _app_getappcolor (ctrl_id, app_hash, is_systemapp, is_validconnection);
 				}
-				else if ((ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_RULES_CUSTOM) || ctrl_id == IDC_APP_RULES_ID)
+				else if (ctrl_id == IDC_LOG)
 				{
-					index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
+					ptr_log = _app_getlogitem (index);
 
-					new_clr = _app_getrulecolor (ctrl_id, index);
-				}
-				else if (ctrl_id == IDC_COLORS)
-				{
-					ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
+					if (ptr_log)
+					{
+						app_hash = _app_getlogapp (index);
+						is_systemapp = _app_isappfromsystem (ptr_log->path, app_hash);
 
-					new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
+						_r_obj_dereference (ptr_log);
+					}
 				}
 				else
 				{
-					break;
+					app_hash = index;
+					is_validconnection = _app_network_isapphaveconnection (app_hash);
+
+					if (_app_getappinfobyhash (app_hash, INFO_PATH, &real_path, sizeof (real_path)))
+					{
+						is_systemapp = _app_isappfromsystem (real_path, app_hash);
+
+						_r_obj_dereference (real_path);
+					}
 				}
 
-				if (new_clr)
-				{
-					lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
-					lpnmlv->clrTextBk = new_clr;
+				if (app_hash)
+					new_clr = _app_getappcolor (ctrl_id, app_hash, is_systemapp, is_validconnection);
+			}
+			else if ((ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_RULES_CUSTOM) || ctrl_id == IDC_APP_RULES_ID)
+			{
+				index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
 
-					_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
+				new_clr = _app_getrulecolor (ctrl_id, index);
+			}
+			else if (ctrl_id == IDC_COLORS)
+			{
+				ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
 
-					return CDRF_NEWFONT;
-				}
+				new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
+			}
+			else
+			{
+				break;
+			}
+
+			if (new_clr)
+			{
+				lpnmlv->clrText = _r_dc_getcolorbrightness (new_clr);
+				lpnmlv->clrTextBk = new_clr;
+
+				_r_dc_fillrect (lpnmlv->nmcd.hdc, &lpnmlv->nmcd.rc, new_clr);
+
+				return CDRF_NEWFONT;
 			}
 
 			break;

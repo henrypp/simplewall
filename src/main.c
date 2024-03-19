@@ -258,6 +258,12 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_USEDARKTHEME_CHK:
+		{
+			new_val = !_r_theme_isenabled ();
+			break;
+		}
+
 		case IDM_PROFILETYPE_PLAIN:
 		case IDM_PROFILETYPE_COMPRESSED:
 		case IDM_PROFILETYPE_ENCRYPTED:
@@ -506,6 +512,15 @@ VOID _app_config_apply (
 
 			break;
 		}
+
+		case IDM_USEDARKTHEME_CHK:
+		{
+			_r_menu_checkitem (hmenu, IDM_USEDARKTHEME_CHK, 0, MF_BYCOMMAND, new_val);
+
+			_r_theme_enable (hwnd, new_val);
+
+			break;
+		}
 	}
 
 	switch (ctrl_id)
@@ -528,6 +543,7 @@ VOID _app_config_apply (
 		case IDC_USEHASHES_CHK:
 		case IDM_USEHASHES_CHK:
 		case IDM_USEAPPMONITOR_CHK:
+		case IDM_USEDARKTHEME_CHK:
 		{
 			return;
 		}
@@ -1496,7 +1512,7 @@ INT_PTR CALLBACK SettingsProc (
 						_app_loginit (is_enabled);
 					}
 
-					_r_wnd_sendmessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLELOG_CHK, MAKELPARAM (is_enabled, 0));
+					_r_toolbar_pressbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, is_enabled);
 
 					_r_ctrl_enable (hwnd, IDC_LOGPATH, is_enabled); // input
 					_r_ctrl_enable (hwnd, IDC_LOGPATH_BTN, is_enabled); // button
@@ -1519,7 +1535,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_config_setboolean (L"IsLogUiEnabled", is_enabled);
 
-					_r_wnd_sendmessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLEUILOG_CHK, MAKELPARAM (is_enabled, 0));
+					_r_toolbar_pressbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, is_enabled);
 
 					break;
 				}
@@ -1687,7 +1703,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (!is_postmessage)
 						_r_config_setboolean (L"IsNotificationsEnabled", is_enabled);
 
-					_r_wnd_sendmessage (config.hrebar, IDC_TOOLBAR, TB_PRESSBUTTON, IDM_TRAY_ENABLENOTIFICATIONS_CHK, MAKELPARAM (is_enabled, 0));
+					_r_toolbar_pressbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, is_enabled);
 
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONSOUND_CHK, is_enabled);
 					_r_ctrl_enable (hwnd, IDC_NOTIFICATIONONTRAY_CHK, is_enabled);
@@ -3347,6 +3363,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_USECERTIFICATES_CHK:
 				case IDM_USEHASHES_CHK:
 				case IDM_USEAPPMONITOR_CHK:
+				case IDM_USEDARKTHEME_CHK:
 				{
 					_app_config_apply (hwnd, NULL, ctrl_id);
 					break;

@@ -276,6 +276,8 @@ INT_PTR CALLBACK EditorRuleProc (
 			// enable save button
 			_r_ctrl_enable (hwnd, IDC_SAVE, _r_ctrl_getstringlength (hwnd, IDC_RULE_ID) != 0);
 
+			_r_theme_initialize (hwnd, _r_theme_isenabled ());
+
 			SetFocus (NULL);
 
 			break;
@@ -297,16 +299,11 @@ INT_PTR CALLBACK EditorRuleProc (
 			if (!hdc)
 				break;
 
-			_r_dc_drawwindow (hdc, hwnd, 0, TRUE);
+			_r_dc_drawwindow (hdc, hwnd, TRUE);
 
 			EndPaint (hwnd, &ps);
 
 			break;
-		}
-
-		case WM_ERASEBKGND:
-		{
-			return TRUE;
 		}
 
 		case WM_DPICHANGED:
@@ -1609,6 +1606,8 @@ INT_PTR CALLBACK EditorProc (
 
 			_r_tab_selectitem (hwnd, IDC_TAB, _r_calc_clamp (context->page_id, 0, _r_tab_getitemcount (hwnd, IDC_TAB)));
 
+			_r_theme_initialize (hwnd, _r_theme_isenabled ());
+
 			break;
 		}
 
@@ -1640,16 +1639,11 @@ INT_PTR CALLBACK EditorProc (
 			if (!hdc)
 				break;
 
-			_r_dc_drawwindow (hdc, hwnd, 0, FALSE);
+			_r_dc_drawwindow (hdc, hwnd, FALSE);
 
 			EndPaint (hwnd, &ps);
 
 			break;
-		}
-
-		case WM_ERASEBKGND:
-		{
-			return TRUE;
 		}
 
 		case WM_DPICHANGED:

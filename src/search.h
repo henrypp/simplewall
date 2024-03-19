@@ -6,21 +6,31 @@
 
 typedef struct _SEARCH_CONTEXT
 {
+	RECT rect;
+	HICON hicon_light;
+	HICON hicon_dark;
+	HBITMAP old_bitmap;
+	HBITMAP hbitmap;
+	HBRUSH dc_brush;
 	HWND hwnd;
-	HICON hicon;
+	HDC hdc;
 
-	WNDPROC def_window_proc;
+	WNDPROC wnd_proc;
 
 	union
 	{
 		ULONG flags;
+
 		struct
 		{
 			ULONG is_hot : 1;
 			ULONG is_pushed : 1;
-			ULONG spare_bits : 30;
+			ULONG is_mouseactive : 1;
+			ULONG spare_bits : 29;
 		};
 	};
+
+	LONG dpi_value;
 
 	LONG image_width;
 	LONG image_height;
@@ -29,16 +39,22 @@ typedef struct _SEARCH_CONTEXT
 	INT cx_border;
 } SEARCH_CONTEXT, *PSEARCH_CONTEXT;
 
-VOID _app_search_initializetheme (
-	_Inout_ PSEARCH_CONTEXT context
-);
-
-VOID _app_search_destroytheme (
-	_Inout_ PSEARCH_CONTEXT context
-);
-
 VOID _app_search_initialize (
+	_Inout_ PSEARCH_CONTEXT context
+);
+
+VOID _app_search_create (
 	_In_ HWND hwnd
+);
+
+VOID _app_search_initializeimages (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd
+);
+
+VOID _app_search_themechanged (
+	_In_ HWND hwnd,
+	_In_ PSEARCH_CONTEXT context
 );
 
 VOID _app_search_setvisible (
@@ -46,14 +62,21 @@ VOID _app_search_setvisible (
 	_In_ HWND hsearch
 );
 
+VOID _app_search_drawwindow (
+	_Inout_ PSEARCH_CONTEXT context,
+	_In_ LPCRECT wnd_rect
+);
+
 VOID _app_search_drawbutton (
 	_Inout_ PSEARCH_CONTEXT context,
-	_In_ LPCRECT button_rect
+	_In_ HWND hwnd,
+	_In_ LPCRECT wnd_rect
 );
 
 VOID _app_search_getbuttonrect (
 	_In_ PSEARCH_CONTEXT context,
-	_Inout_ PRECT rect
+	_In_ LPCRECT wnd_rect,
+	_Out_ PRECT btn_rect
 );
 
 BOOLEAN _app_search_applyfiltercallback (

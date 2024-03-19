@@ -150,8 +150,8 @@ typedef enum _ENUM_INFO_DATA2
 #define TRANSACTION_TIMEOUT 9000
 
 // ui
-#define ICONS_MENU 5
-#define LANG_MENU 6
+#define ICONS_MENU 6
+#define LANG_MENU 7
 #define NOTIFICATIONS_ID 4
 #define LOGGING_ID 5
 #define ERRLOG_ID 6
