@@ -804,7 +804,7 @@ VOID _app_listview_resize (
 	PR_STRING column_text;
 	PR_STRING item_text;
 	HWND hlistview;
-	HWND hheader = NULL;
+	HWND hhdr = NULL;
 	HDC hdc_listview = NULL;
 	HDC hdc_header = NULL;
 	LONG column_general_id = 0; // set general column id
@@ -838,15 +838,18 @@ VOID _app_listview_resize (
 	if (!hdc_listview)
 		goto CleanupExit;
 
-	hheader = (HWND)_r_wnd_sendmessage (hwnd, listview_id, LVM_GETHEADER, 0, 0);
+	hhdr = _r_listview_getheader (hwnd, listview_id);
 
-	hdc_header = GetDC (hheader);
+	if (!hhdr)
+		goto CleanupExit;
+
+	hdc_header = GetDC (hhdr);
 
 	if (!hdc_header)
 		goto CleanupExit;
 
 	_r_dc_fixfont (hdc_listview, hwnd, listview_id); // fix
-	_r_dc_fixfont (hdc_header, hheader, 0); // fix
+	_r_dc_fixfont (hdc_header, hhdr, 0); // fix
 
 	is_tableview = (_r_listview_getview (hwnd, listview_id) == LV_VIEW_DETAILS);
 
@@ -921,7 +924,7 @@ CleanupExit:
 		ReleaseDC (hlistview, hdc_listview);
 
 	if (hdc_header)
-		ReleaseDC (hheader, hdc_header);
+		ReleaseDC (hhdr, hdc_header);
 }
 
 VOID _app_listview_setfont (
