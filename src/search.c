@@ -15,8 +15,6 @@ VOID _app_search_initialize (
 
 	GetWindowRect (context->hwnd, &rect);
 
-	context->dpi_value = _r_dc_getmonitordpi (&rect);
-
 	cx_border = _r_dc_getsystemmetrics (SM_CXBORDER, context->dpi_value);
 
 	// initialize borders
@@ -50,11 +48,13 @@ VOID _app_search_create (
 	context = _r_mem_allocate (sizeof (SEARCH_CONTEXT));
 
 	context->hwnd = hwnd;
+	context->dpi_value = _r_dc_getwindowdpi (hwnd);
 
 	_app_search_initialize (context);
 
 	_r_wnd_setcontext (context->hwnd, SHORT_MAX, context);
 
+	// Subclass the Edit control window procedure.
 	context->wnd_proc = (WNDPROC)GetWindowLongPtrW (context->hwnd, GWLP_WNDPROC);
 	SetWindowLongPtrW (context->hwnd, GWLP_WNDPROC, (LONG_PTR)_app_search_subclass_proc);
 
@@ -62,6 +62,7 @@ VOID _app_search_create (
 
 	_r_edit_setcuebanner (context->hwnd, 0, buffer);
 
+	// Initialize the theme parameters.
 	_app_search_themechanged (hwnd, context);
 }
 
@@ -870,9 +871,9 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		case WM_SETTINGCHANGE:
 		case WM_SYSCOLORCHANGE:
 		case WM_THEMECHANGED:
-		case WM_DPICHANGED_AFTERPARENT:
+		case WM_DPICHANGED:
 		{
-			if (msg == WM_DPICHANGED_AFTERPARENT)
+			if (msg == WM_DPICHANGED)
 				context->dpi_value = _r_dc_getwindowdpi (context->hwnd);
 
 			_app_search_themechanged (hwnd, context);
