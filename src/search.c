@@ -906,7 +906,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			if (!context->is_mouseactive)
 			{
 				tme.cbSize = sizeof (tme);
-				tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
+				tme.dwFlags = TME_LEAVE;
 				tme.hwndTrack = hwnd;
 				tme.dwHoverTime = HOVER_DEFAULT;
 
@@ -923,11 +923,22 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		case WM_MOUSELEAVE:
 		case WM_NCMOUSELEAVE:
 		{
+			TRACKMOUSEEVENT tme = {0};
 			RECT wnd_rect;
 			RECT btn_rect;
 			POINT point;
 
-			context->is_mouseactive = FALSE;
+			if (context->is_mouseactive)
+			{
+				tme.cbSize = sizeof (TRACKMOUSEEVENT);
+				tme.dwFlags = TME_LEAVE | TME_CANCEL;
+				tme.hwndTrack = hwnd;
+				tme.dwHoverTime = HOVER_DEFAULT;
+
+				TrackMouseEvent (&tme);
+
+				context->is_mouseactive = FALSE;
+			}
 
 			// Get the screen coordinates of the mouse.
 			if (!GetCursorPos (&point))
