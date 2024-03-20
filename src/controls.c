@@ -1121,15 +1121,15 @@ VOID _app_refreshstatus (
 	if (!hdc)
 		return;
 
+	_r_dc_fixfont (hdc, hwnd, IDC_STATUSBAR); // fix
+
 	_app_getcount (&status);
 
 	dpi_value = _r_dc_getwindowdpi (hwnd);
 
-	_r_dc_fixfont (hdc, hwnd, IDC_STATUSBAR); // fix
-
 	spacing = _r_dc_getdpi (16, dpi_value);
 
-	for (LONG i = 0; i < RTL_NUMBER_OF (parts); i++)
+	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (parts); i++)
 	{
 		switch (i)
 		{
@@ -1164,11 +1164,11 @@ VOID _app_refreshstatus (
 
 	_r_status_setparts (hwnd, IDC_STATUSBAR, parts, RTL_NUMBER_OF (parts));
 
-	for (LONG i = 1; i < STATUSBAR_PARTS_COUNT; i++)
+	for (ULONG_PTR i = 1; i < STATUSBAR_PARTS_COUNT; i++)
 	{
 		if (string[i])
 		{
-			_r_status_settext (hwnd, IDC_STATUSBAR, i, string[i]->buffer);
+			_r_status_settext (hwnd, IDC_STATUSBAR, (LONG)i, string[i]->buffer);
 
 			_r_obj_dereference (string[i]);
 		}
