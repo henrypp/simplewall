@@ -235,7 +235,7 @@ VOID _app_search_getbuttonrect (
 	_Out_ PRECT btn_rect
 )
 {
-	CopyRect (btn_rect, wnd_rect);
+	*btn_rect = *wnd_rect;
 
 	btn_rect->left = ((btn_rect->right - context->cx_width) - context->cx_border - 1);
 	btn_rect->top += context->cx_border;
