@@ -2516,7 +2516,7 @@ INT_PTR CALLBACK DlgProc (
 
 					ShowWindow (hlistview, SW_SHOWNA);
 
-					if (_r_wnd_isvisible_ex (hwnd)) // HACK!!!
+					if (_r_wnd_isvisible (hwnd, TRUE)) // HACK!!!
 						SetFocus (hlistview);
 
 					_app_listview_resize (hwnd, listview_id, FALSE);
@@ -3326,7 +3326,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_FIND:
 				{
-					if (!config.hsearchbar || !_r_wnd_isvisible (config.hsearchbar))
+					if (!config.hsearchbar || !_r_wnd_isvisible (config.hsearchbar, FALSE))
 						break;
 
 					SetFocus (config.hsearchbar);

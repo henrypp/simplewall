@@ -1796,7 +1796,7 @@ VOID NTAPI _app_queue_fileinformation (
 	// redraw listview
 	if (!(busy_count % 4)) // lol, hack!!!
 	{
-		if (_r_wnd_isvisible (hwnd))
+		if (_r_wnd_isvisible (hwnd, FALSE))
 		{
 			if (ptr_app_info->listview_id == _app_listview_getcurrent (hwnd))
 				_r_listview_redraw (hwnd, ptr_app_info->listview_id);
@@ -1871,7 +1871,7 @@ VOID NTAPI _app_queue_notifyinformation (
 	// query file icon
 	hicon = _app_icons_getsafeapp_hicon (ptr_log->app_hash);
 
-	if (_r_wnd_isvisible (context->hwnd))
+	if (_r_wnd_isvisible (context->hwnd, FALSE))
 	{
 		if (ptr_log->app_hash == _app_notify_getapp_id (context->hwnd))
 		{
@@ -1978,7 +1978,7 @@ VOID NTAPI _app_queue_resolveinformation (
 	// redraw listview
 	if (!(busy_count % 4)) // lol, hack!!!
 	{
-		if (_r_wnd_isvisible (context->hwnd))
+		if (_r_wnd_isvisible (context->hwnd, FALSE))
 		{
 			if (_app_listview_getcurrent (context->hwnd) == context->listview_id)
 				_r_listview_redraw (context->hwnd, context->listview_id);

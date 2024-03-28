@@ -933,7 +933,7 @@ VOID _app_listview_setfont (
 )
 {
 	if (config.hfont)
-		_r_wnd_sendmessage (hwnd, listview_id, WM_SETFONT, (WPARAM)config.hfont, TRUE);
+		_r_ctrl_setfont (hwnd, listview_id, config.hfont);
 }
 
 VOID _app_listview_setview (

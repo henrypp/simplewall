@@ -463,7 +463,7 @@ VOID _app_settab_id (
 
 	hctrl = GetDlgItem (hwnd, page_id);
 
-	if (!hctrl || (_app_listview_getcurrent (hwnd) == page_id && _r_wnd_isvisible (hctrl)))
+	if (!hctrl || (_app_listview_getcurrent (hwnd) == page_id && _r_wnd_isvisible (hctrl, FALSE)))
 		return;
 
 	item_count = _r_tab_getitemcount (hwnd, IDC_TAB);
@@ -731,7 +731,6 @@ VOID _app_imagelist_init (
 	LONG icon_size_toolbar;
 	LONG icon_small;
 	LONG icon_large;
-	INT32 index;
 
 	SAFE_DELETE_OBJECT (config.hbmp_enable);
 	SAFE_DELETE_OBJECT (config.hbmp_disable);
@@ -752,7 +751,7 @@ VOID _app_imagelist_init (
 	// toolbar imagelist
 	if (config.himg_toolbar)
 	{
-		IImageList2_SetIconSize ((IImageList2*)config.himg_toolbar, icon_size_toolbar, icon_size_toolbar);
+		_r_imagelist_setsize (config.himg_toolbar,  icon_size_toolbar);
 	}
 	else
 	{
@@ -766,17 +765,17 @@ VOID _app_imagelist_init (
 			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (toolbar_ids[i]), &GUID_ContainerFormatPng, icon_size_toolbar, icon_size_toolbar, &hbitmap);
 
 			if (hbitmap)
-				IImageList2_Add ((IImageList2*)config.himg_toolbar, hbitmap, NULL, &index);
+				_r_imagelist_add (config.himg_toolbar, hbitmap, NULL, NULL);
 		}
 	}
 
 	if (config.htoolbar)
-		_r_wnd_sendmessage (config.htoolbar, 0, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+		_r_toolbar_setimagelist (config.htoolbar, 0, config.himg_toolbar);
 
 	// rules imagelist (small)
 	if (config.himg_rules_small)
 	{
-		IImageList2_SetIconSize ((IImageList2*)config.himg_rules_small, icon_small, icon_small);
+		_r_imagelist_setsize (config.himg_rules_small, icon_small);
 	}
 	else
 	{
@@ -790,14 +789,14 @@ VOID _app_imagelist_init (
 			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (rules_ids[i]), &GUID_ContainerFormatPng, icon_small, icon_small, &hbitmap);
 
 			if (hbitmap)
-				IImageList2_Add ((IImageList2*)config.himg_rules_small, hbitmap, NULL, &index);
+				_r_imagelist_add (config.himg_rules_small, hbitmap, NULL, NULL);
 		}
 	}
 
 	// rules imagelist (large)
 	if (config.himg_rules_large)
 	{
-		IImageList2_SetIconSize ((IImageList2*)config.himg_rules_large, icon_large, icon_large);
+		_r_imagelist_setsize (config.himg_rules_large, icon_large);
 	}
 	else
 	{
@@ -811,7 +810,7 @@ VOID _app_imagelist_init (
 			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (rules_ids[i]), &GUID_ContainerFormatPng, icon_large, icon_large, &hbitmap);
 
 			if (hbitmap)
-				IImageList2_Add ((IImageList2*)config.himg_rules_large, hbitmap, NULL, &index);
+				_r_imagelist_add (config.himg_rules_large, hbitmap, NULL, NULL);
 		}
 	}
 }
@@ -891,8 +890,8 @@ VOID _app_toolbar_init (
 	{
 		_r_toolbar_setstyle (config.hrebar, IDC_TOOLBAR, TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
 
-		_r_wnd_sendmessage (config.htoolbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
-		_r_wnd_sendmessage (config.htoolbar, 0, TB_SETIMAGELIST, 0, (LPARAM)config.himg_toolbar);
+		_r_ctrl_setfont (config.htoolbar, 0, config.wnd_font); // fix font
+		_r_toolbar_setimagelist (config.htoolbar, 0, config.himg_toolbar);
 
 		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
 
@@ -947,7 +946,7 @@ VOID _app_toolbar_init (
 	if (!config.hsearchbar)
 		return;
 
-	_r_wnd_sendmessage (config.hsearchbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+	_r_ctrl_setfont (config.hsearchbar, 0, config.wnd_font); // fix font
 
 	_app_search_create (config.hsearchbar);
 
@@ -997,7 +996,7 @@ VOID _app_toolbar_resize (
 		}
 		else if (rbi.wID == REBAR_SEARCH_ID)
 		{
-			if (_r_wnd_isvisible (rbi.hwndChild))
+			if (_r_wnd_isvisible (rbi.hwndChild, FALSE))
 			{
 				rbi.cxIdeal = (UINT)_r_dc_getdpi (180, dpi_value);
 			}
@@ -1021,10 +1020,10 @@ VOID _app_toolbar_resize (
 VOID _app_toolbar_setfont ()
 {
 	if (config.htoolbar)
-		_r_wnd_sendmessage (config.htoolbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		_r_ctrl_setfont (config.htoolbar, 0, config.wnd_font); // fix font
 
 	if (config.hsearchbar)
-		_r_wnd_sendmessage (config.hsearchbar, 0, WM_SETFONT, (WPARAM)config.wnd_font, TRUE); // fix font
+		_r_ctrl_setfont (config.hsearchbar, 0, config.wnd_font); // fix font
 }
 
 VOID _app_window_resize (

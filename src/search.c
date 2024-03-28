@@ -155,7 +155,7 @@ VOID _app_search_setvisible (
 	{
 		ShowWindow (hsearch, SW_SHOWNA);
 
-		if (_r_wnd_isvisible (hwnd))
+		if (_r_wnd_isvisible (hwnd, FALSE))
 			SetFocus (hsearch);
 	}
 	else

@@ -586,7 +586,7 @@ VOID _app_notify_refresh (
 	PITEM_LOG ptr_log;
 	ULONG_PTR app_hash;
 
-	if (!_r_wnd_isvisible (hwnd))
+	if (!_r_wnd_isvisible (hwnd, TRUE))
 	{
 		DestroyWindow (hwnd);
 
@@ -631,7 +631,7 @@ VOID _app_notify_setposition (
 
 	_r_wnd_getposition (hwnd, &window_rect);
 
-	if (!is_forced && _r_wnd_isvisible (hwnd))
+	if (!is_forced && _r_wnd_isvisible (hwnd, FALSE))
 	{
 		_r_wnd_adjustrectangletoworkingarea (&window_rect, NULL);
 		_r_wnd_setposition (hwnd, &window_rect.position, NULL);
@@ -743,16 +743,16 @@ VOID _app_notify_initialize (
 		context->hfont_link = _app_createfont (&ncm.lfMessageFont, 9, TRUE, dpi_value);
 		context->hfont_text = _app_createfont (&ncm.lfMessageFont, 9, FALSE, dpi_value);
 
-		_r_wnd_sendmessage (context->hwnd, 0, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
+		_r_ctrl_setfont (context->hwnd, 0, context->hfont_text);
 
-		_r_wnd_sendmessage (context->hwnd, IDC_HEADER_ID, WM_SETFONT, (WPARAM)context->hfont_title, TRUE);
-		_r_wnd_sendmessage (context->hwnd, IDC_FILE_TEXT, WM_SETFONT, (WPARAM)context->hfont_link, TRUE);
+		_r_ctrl_setfont (context->hwnd, IDC_HEADER_ID, context->hfont_title);
+		_r_ctrl_setfont (context->hwnd, IDC_FILE_TEXT, context->hfont_link);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_DATE_TEXT; i++)
 			_r_ctrl_settextmargin (context->hwnd, i, 0, 0);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_NEXT_BTN; i++)
-			_r_wnd_sendmessage (context->hwnd, i, WM_SETFONT, (WPARAM)context->hfont_text, TRUE);
+			_r_ctrl_setfont (context->hwnd, i, context->hfont_text);
 	}
 
 	// load images
