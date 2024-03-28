@@ -684,7 +684,6 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			HRGN hrgn;
 			HDC hdc;
 			ULONG flags = DCX_WINDOW | DCX_LOCKWINDOWUPDATE | DCX_USESTYLE;
-			BOOLEAN is_hot;
 
 			hrgn = (HRGN)wparam;
 
@@ -728,22 +727,9 @@ LRESULT CALLBACK _app_search_subclass_proc (
 					break;
 				}
 
-				GetCursorPos (&pt);
-				ScreenToClient (hwnd, &pt);
-
-				is_hot = PtInRect (&wnd_rect, pt);
-
-				if ((context->is_mouseactive && is_hot) || GetFocus () == hwnd)
+				if ((context->is_mouseactive && context->is_hot) || GetFocus () == hwnd)
 				{
 					_r_dc_framerect (context->hdc, &wnd_rect, GetSysColor (COLOR_HOTLIGHT));
-
-					InflateRect (&wnd_rect, -1, -1);
-
-					_r_dc_framerect (context->hdc, &wnd_rect, GetSysColor (COLOR_WINDOW));
-				}
-				else if (context->is_hot)
-				{
-					_r_dc_framerect (context->hdc, &wnd_rect, _r_theme_isenabled () ? RGB (0x8F, 0x8F, 0x8F) : RGB (0x02A, 0x02A, 0x02A));
 
 					InflateRect (&wnd_rect, -1, -1);
 
