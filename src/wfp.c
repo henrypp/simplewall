@@ -2631,9 +2631,6 @@ VOID NTAPI _wfp_applythread (
 
 		if (context->is_install)
 		{
-			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-				_app_wufixenable (context->hwnd, _r_config_getboolean (L"IsWUFixEnabled", FALSE));
-
 			if (_wfp_initialize (context->hwnd, engine_handle))
 				_wfp_installfilters (engine_handle);
 		}
@@ -2649,6 +2646,9 @@ VOID NTAPI _wfp_applythread (
 		// dropped packets logging (win7+)
 		if (config.is_neteventset)
 			_wfp_logsubscribe (context->hwnd, engine_handle);
+
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
+			_app_wufixenable (context->hwnd, _r_config_getboolean (L"IsWUFixEnabled", FALSE));
 	}
 
 	dpi_value = _r_dc_getwindowdpi (context->hwnd);
