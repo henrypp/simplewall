@@ -1,3 +1,10 @@
+v3.8 (1 April 2024)
+- added mitigations (win10+) (issue #611)
+- added dark theme support (issue #248)
+- fixed displaying same context menu on apps and packets log
+- updated search engine
+- updated project sdk
+
 v3.7.8 (28 January 2024)
 - added saving flag state for install/uninstall filters
 - fixed crash on tooltip (issue #1686)
