@@ -620,7 +620,7 @@ VOID CALLBACK _wfp_logcallback (
 			// remote address
 			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 			{
-				status = ULongLongToULong (log->remote_addr4, &ptr_log->remote_addr.S_un.S_addr);
+				status = ULongPtrToULong (log->remote_addr4, &ptr_log->remote_addr.S_un.S_addr);
 
 				if (SUCCEEDED (status))
 					ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->remote_addr.S_un.S_addr);
@@ -629,7 +629,7 @@ VOID CALLBACK _wfp_logcallback (
 			// local address
 			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 			{
-				status = ULongLongToULong (log->local_addr4, &ptr_log->local_addr.S_un.S_addr);
+				status = ULongPtrToULong (log->local_addr4, &ptr_log->local_addr.S_un.S_addr);
 
 				if (SUCCEEDED (status))
 					ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->local_addr.S_un.S_addr);
