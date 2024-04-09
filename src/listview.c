@@ -199,14 +199,14 @@ VOID _app_listview_addlogitem (
 	_In_ ULONG_PTR log_hash
 )
 {
-	LPARAM listview_context;
+	LPARAM context;
 	INT item_id;
 
 	item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
 
-	listview_context = _app_listview_createcontext (log_hash);
+	context = _app_listview_createcontext (log_hash);
 
-	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, listview_context);
+	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, context);
 
 	//_r_listview_ensurevisible (hwnd, IDC_LOG, item_id);
 }

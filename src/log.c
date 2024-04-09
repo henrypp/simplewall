@@ -293,11 +293,15 @@ VOID _app_logwrite_ui (
 		item_id = _r_listview_getitemcount (hwnd, IDC_LOG) - 1;
 
 		hash_code = _app_listview_getitemcontext (hwnd, IDC_LOG, item_id);
+
 		_r_listview_deleteitem (hwnd, IDC_LOG, item_id);
 
-		_r_queuedlock_acquireexclusive (&lock_loglist);
-		_r_obj_removehashtableitem (log_table, hash_code);
-		_r_queuedlock_releaseexclusive (&lock_loglist);
+		if (hash_code)
+		{
+			_r_queuedlock_acquireexclusive (&lock_loglist);
+			_r_obj_removehashtableitem (log_table, hash_code);
+			_r_queuedlock_releaseexclusive (&lock_loglist);
+		}
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_loglist);
@@ -474,11 +478,11 @@ VOID CALLBACK _wfp_logcallback (
 	HANDLE engine_handle;
 	PITEM_LOG ptr_log;
 	GUID layer_guid;
-	PR_STRING path;
 	PR_STRING resolved_path;
 	PR_STRING filter_name = NULL;
 	PR_STRING layer_name;
 	PR_STRING sid_string;
+	PR_STRING path;
 	FWPM_LAYER0 *layer_ptr;
 	FWPM_FILTER0 *filter_ptr;
 	UINT8 filter_weight = 0;
@@ -1153,7 +1157,6 @@ BOOLEAN log_struct_to_f (
 		}
 	}
 
-
 	return TRUE;
 }
 
@@ -1213,13 +1216,13 @@ VOID NTAPI _app_logthread (
 	PITEM_LOG ptr_log;
 	PITEM_APP ptr_app = NULL;
 	HWND hwnd;
-	BOOLEAN is_silent = FALSE;
-	BOOLEAN is_logenabled;
-	BOOLEAN is_loguienabled;
 	BOOLEAN is_notificationenabled;
-	BOOLEAN is_exludeallow;
 	BOOLEAN is_exludeblocklist;
 	BOOLEAN is_exludestealth;
+	BOOLEAN is_loguienabled;
+	BOOLEAN is_exludeallow;
+	BOOLEAN is_silent = FALSE;
+	BOOLEAN is_logenabled;
 	BOOLEAN is_notexist;
 
 	hwnd = _r_app_gethwnd ();
