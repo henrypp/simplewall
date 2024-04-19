@@ -999,7 +999,7 @@ VOID _app_getfileversioninfo (
 
 	version_string = _r_obj_finalstringbuilder (&sb);
 
-	_r_str_trimstring2 (version_string, DIVIDER_TRIM, 0);
+	_r_str_trimstring2 (&version_string->sr, DIVIDER_TRIM, 0);
 
 	if (_r_obj_isstringempty2 (version_string))
 		_r_obj_clearreference (&version_string);

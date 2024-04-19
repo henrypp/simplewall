@@ -147,7 +147,7 @@ PR_STRING _app_editor_getrulesfromlistview (
 
 		if (string)
 		{
-			_r_str_trimstring2 (string, DIVIDER_RULE DIVIDER_TRIM, 0);
+			_r_str_trimstring2 (&string->sr, DIVIDER_RULE DIVIDER_TRIM, 0);
 
 			if (!_r_obj_isstringempty2 (string))
 			{
@@ -169,7 +169,7 @@ PR_STRING _app_editor_getrulesfromlistview (
 
 	string = _r_obj_finalstringbuilder (&sb);
 
-	_r_str_trimstring (string, &divider_sr, PR_TRIM_END_ONLY);
+	_r_str_trimstring (&string->sr, &divider_sr, PR_TRIM_END_ONLY);
 
 	if (_r_obj_isstringempty2 (string))
 	{
@@ -357,7 +357,7 @@ INT_PTR CALLBACK EditorRuleProc (
 					if (!string)
 						return FALSE;
 
-					_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
+					_r_str_trimstring2 (&string->sr, DIVIDER_TRIM DIVIDER_RULE, 0);
 
 					if (_r_obj_isstringempty2 (string))
 					{
@@ -1310,7 +1310,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					{
 						if (current_length >= RULE_RULE_CCH_MAX)
 						{
-							_r_show_errormessage (hwnd, NULL, STATUS_IMPLEMENTATION_LIMIT, NULL, TRUE);
+							_r_show_errormessage (hwnd, NULL, STATUS_IMPLEMENTATION_LIMIT, NULL, ET_NATIVE);
 
 							return FALSE;
 						}
@@ -1512,7 +1512,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					string = _r_obj_finalstringbuilder (&sb);
 
-					_r_str_trimstring2 (string, DIVIDER_TRIM, 0);
+					_r_str_trimstring2 (&string->sr, DIVIDER_TRIM, 0);
 
 					_r_clipboard_set (hwnd, &string->sr);
 
@@ -1782,7 +1782,7 @@ INT_PTR CALLBACK EditorProc (
 							if (!string)
 								return FALSE;
 
-							_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
+							_r_str_trimstring2 (&string->sr, DIVIDER_TRIM DIVIDER_RULE, 0);
 
 							if (_r_obj_isstringempty2 (string))
 							{
@@ -1799,7 +1799,7 @@ INT_PTR CALLBACK EditorProc (
 							string = _r_ctrl_getstring (hpage_general, IDC_RULE_COMMENT_ID);
 
 							if (string)
-								_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
+								_r_str_trimstring2 (&string->sr, DIVIDER_TRIM DIVIDER_RULE, 0);
 
 							_r_obj_movereference (&context->ptr_rule->comment, string);
 
@@ -1897,7 +1897,7 @@ INT_PTR CALLBACK EditorProc (
 						string = _r_ctrl_getstring (hpage_general, IDC_APP_COMMENT_ID);
 
 						if (string)
-							_r_str_trimstring2 (string, DIVIDER_TRIM DIVIDER_RULE, 0);
+							_r_str_trimstring2 (&string->sr, DIVIDER_TRIM DIVIDER_RULE, 0);
 
 						_r_obj_movereference (&context->ptr_app->comment, string);
 

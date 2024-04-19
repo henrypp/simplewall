@@ -2264,7 +2264,7 @@ VOID _app_command_logshow (
 		status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
 
 		if (!NT_SUCCESS (status))
-			_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, TRUE);
+			_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, ET_NATIVE);
 
 		_r_obj_dereference (process_path);
 		_r_obj_dereference (viewer_path);
@@ -2341,7 +2341,7 @@ VOID _app_command_logerrshow (
 	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
 
 	if (!NT_SUCCESS (status))
-		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, TRUE);
+		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, ET_NATIVE);
 
 	_r_obj_dereference (process_path);
 	_r_obj_dereference (viewer_path);
@@ -2402,7 +2402,7 @@ VOID _app_command_copy (
 
 			string = _r_obj_finalstringbuilder (&sb);
 
-			_r_str_trimstring (string, &divider_sr, 0);
+			_r_str_trimstring (&string->sr, &divider_sr, 0);
 		}
 		else
 		{
@@ -2421,7 +2421,7 @@ VOID _app_command_copy (
 
 	string = _r_obj_finalstringbuilder (&sb);
 
-	_r_str_trimstring2 (string, DIVIDER_TRIM, 0);
+	_r_str_trimstring2 (&string->sr, DIVIDER_TRIM, 0);
 
 	_r_clipboard_set (hwnd, &string->sr);
 
@@ -2624,7 +2624,7 @@ VOID _app_command_delete (
 
 		string = _r_obj_finalstringbuilder (&sb);
 
-		_r_str_trimstring (string, &crlf, PR_TRIM_END_ONLY);
+		_r_str_trimstring (&string->sr, &crlf, PR_TRIM_END_ONLY);
 
 		if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, string->buffer) != IDYES)
 		{

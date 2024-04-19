@@ -523,7 +523,7 @@ VOID _app_notify_killprocess (
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_show_errormessage (hwnd, L"Cannot enumerate processes!", status, NULL, TRUE);
+		_r_show_errormessage (hwnd, L"Cannot enumerate processes!", status, NULL, ET_NATIVE);
 
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_r_sys_enumprocesses", status, NULL);
 
@@ -553,13 +553,13 @@ VOID _app_notify_killprocess (
 							status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
 
 							if (!NT_SUCCESS (status))
-								_r_show_errormessage (hwnd, L"Cannot terminate process!", status, process->ImageName.Buffer, TRUE);
+								_r_show_errormessage (hwnd, L"Cannot terminate process!", status, process->ImageName.Buffer, ET_NATIVE);
 
 							NtClose (process_handle);
 						}
 						else
 						{
-							_r_show_errormessage (hwnd, L"Cannot open process!", status, process->ImageName.Buffer, TRUE);
+							_r_show_errormessage (hwnd, L"Cannot open process!", status, process->ImageName.Buffer, ET_NATIVE);
 						}
 					}
 
@@ -567,7 +567,7 @@ VOID _app_notify_killprocess (
 				}
 				else
 				{
-					_r_show_errormessage (hwnd, L"Cannot get process path!", status, process->ImageName.Buffer, TRUE);
+					_r_show_errormessage (hwnd, L"Cannot get process path!", status, process->ImageName.Buffer, ET_NATIVE);
 				}
 			}
 		}

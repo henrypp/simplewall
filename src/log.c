@@ -341,7 +341,7 @@ VOID _wfp_logsubscribe (
 	{
 		if (hwnd)
 		{
-			_r_show_errormessage (hwnd, L"Could not load \"fwpuclnt.dll\" library.", status, NULL, TRUE);
+			_r_show_errormessage (hwnd, L"Could not load \"fwpuclnt.dll\" library.", status, NULL, ET_NATIVE);
 		}
 		else
 		{
@@ -381,7 +381,7 @@ VOID _wfp_logsubscribe (
 	{
 		if (hwnd)
 		{
-			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later.", status, NULL, FALSE);
+			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later.", status, NULL, ET_WINDOWS);
 		}
 		else
 		{

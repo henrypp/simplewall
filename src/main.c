@@ -3152,7 +3152,7 @@ INT_PTR CALLBACK DlgProc (
 								status = _r_fs_copyfile (profile_info.profile_path->buffer, path->buffer, FALSE);
 
 								if (!NT_SUCCESS (status))
-									_r_show_errormessage (hwnd, NULL, status, path->buffer, TRUE);
+									_r_show_errormessage (hwnd, NULL, status, path->buffer, ET_NATIVE);
 
 								_r_obj_dereference (path);
 							}
