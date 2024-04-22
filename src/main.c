@@ -621,25 +621,19 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDD_SETTINGS_BLOCKLIST:
 				{
-					for (INT i = IDC_BLOCKLIST_SPY_DISABLE; i <= IDC_BLOCKLIST_EXTRA_BLOCK; i++)
-						_r_ctrl_checkbutton (hwnd, i, FALSE); // HACK!!! reset button checkboxes!
-
-					_r_ctrl_checkbutton (
+					_r_ctrl_checkradio (
 						hwnd,
-						IDC_BLOCKLIST_SPY_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistSpyState", 2), 0, 2),
-						TRUE
+						IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK, IDC_BLOCKLIST_SPY_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistSpyState", 2), 0, 2)
 					);
 
-					_r_ctrl_checkbutton (
+					_r_ctrl_checkradio (
 						hwnd,
-						IDC_BLOCKLIST_UPDATE_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistUpdateState", 0), 0, 2),
-						TRUE
+						IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK, IDC_BLOCKLIST_UPDATE_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistUpdateState", 0), 0, 2)
 					);
 
-					_r_ctrl_checkbutton (
+					_r_ctrl_checkradio (
 						hwnd,
-						IDC_BLOCKLIST_EXTRA_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistExtraState", 0), 0, 2),
-						TRUE
+						IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK, IDC_BLOCKLIST_EXTRA_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistExtraState", 0), 0, 2)
 					);
 
 					break;
