@@ -380,7 +380,7 @@ VOID _app_db_parse_rule (
 	if (rule_local)
 		_r_obj_dereference (rule_local);
 
-	rule_hash = _r_str_gethash2 (ptr_rule->name, TRUE);
+	rule_hash = _r_str_gethash2 (&ptr_rule->name->sr, TRUE);
 
 	if (!_r_obj_isstringempty (comment))
 	{
@@ -443,7 +443,7 @@ VOID _app_db_parse_rule (
 
 	if (!_r_obj_isstringempty (string))
 	{
-		_r_obj_appendstringbuilder2 (&sb, string);
+		_r_obj_appendstringbuilder2 (&sb, &string->sr);
 
 		_r_obj_dereference (string);
 	}
@@ -453,7 +453,7 @@ VOID _app_db_parse_rule (
 		if (!_r_obj_isstringempty2 (sb.string))
 			_r_obj_appendstringbuilder (&sb, DIVIDER_APP);
 
-		_r_obj_appendstringbuilder2 (&sb, ptr_config->apps);
+		_r_obj_appendstringbuilder2 (&sb, &ptr_config->apps->sr);
 	}
 
 	string = _r_obj_finalstringbuilder (&sb);
@@ -463,7 +463,7 @@ VOID _app_db_parse_rule (
 		if (db_info->version < XML_VERSION_3)
 			_r_str_replacechar (&string->sr, DIVIDER_RULE[0], DIVIDER_APP[0]);
 
-		_r_obj_initializestringref2 (&sr, string);
+		_r_obj_initializestringref2 (&sr, &string->sr);
 
 		while (sr.length != 0)
 		{
@@ -472,9 +472,9 @@ VOID _app_db_parse_rule (
 			status = _r_str_environmentexpandstring (&first_part, &path_string);
 
 			if (!NT_SUCCESS (status))
-				path_string = _r_obj_createstring3 (&first_part);
+				path_string = _r_obj_createstring2 (&first_part);
 
-			app_hash = _r_str_gethash2 (path_string, TRUE);
+			app_hash = _r_str_gethash2 (&path_string->sr, TRUE);
 
 			if (app_hash)
 			{
@@ -528,7 +528,7 @@ VOID _app_db_parse_ruleconfig (
 	if (!rule_name)
 		return;
 
-	rule_hash = _r_str_gethash2 (rule_name, TRUE);
+	rule_hash = _r_str_gethash2 (&rule_name->sr, TRUE);
 
 	if (!rule_hash)
 	{
@@ -1167,7 +1167,7 @@ VOID _app_db_save_ruleconfig (
 			continue;
 
 		is_enabled_default = ptr_config->is_enabled;
-		rule_hash = _r_str_gethash2 (ptr_config->name, TRUE);
+		rule_hash = _r_str_gethash2 (&ptr_config->name->sr, TRUE);
 
 		ptr_rule = _app_getrulebyhash (rule_hash);
 

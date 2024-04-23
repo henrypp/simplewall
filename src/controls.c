@@ -46,7 +46,7 @@ VOID _app_getapptooltipstring (
 
 	if (path)
 	{
-		_r_obj_appendstringbuilder2 (buffer, path);
+		_r_obj_appendstringbuilder2 (buffer, &path->sr);
 
 		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 	}
@@ -60,7 +60,7 @@ VOID _app_getapptooltipstring (
 		if (ptr_app->display_name)
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
-			_r_obj_appendstringbuilder2 (&sb, ptr_app->display_name);
+			_r_obj_appendstringbuilder2 (&sb, &ptr_app->display_name->sr);
 			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 	}
@@ -73,7 +73,7 @@ VOID _app_getapptooltipstring (
 		if (!_r_obj_isstringempty (ptr_app_info->version_info))
 		{
 			_r_obj_appendstringbuilder (&sb, SZ_TAB);
-			_r_obj_appendstringbuilder2 (&sb, ptr_app_info->version_info);
+			_r_obj_appendstringbuilder2 (&sb, &ptr_app_info->version_info->sr);
 			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 		}
 	}
@@ -88,7 +88,7 @@ VOID _app_getapptooltipstring (
 		);
 
 		_r_obj_insertstringbuilder2 (&sb, 0, string);
-		_r_obj_appendstringbuilder2 (buffer, sb.string);
+		_r_obj_appendstringbuilder2 (buffer, &sb.string->sr);
 
 		_r_obj_dereference (string);
 	}
@@ -104,10 +104,10 @@ VOID _app_getapptooltipstring (
 				L":\r\n"
 			);
 
-			_r_obj_appendstringbuilder2 (buffer, string);
+			_r_obj_appendstringbuilder2 (buffer, &string->sr);
 
 			_r_obj_appendstringbuilder (buffer, SZ_TAB);
-			_r_obj_appendstringbuilder2 (buffer, ptr_app->comment);
+			_r_obj_appendstringbuilder2 (buffer, &ptr_app->comment->sr);
 			_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 
 			_r_obj_dereference (string);
@@ -127,7 +127,7 @@ VOID _app_getapptooltipstring (
 				SZ_CRLF
 			);
 
-			_r_obj_appendstringbuilder2 (buffer, string);
+			_r_obj_appendstringbuilder2 (buffer, &string->sr);
 
 			_r_obj_dereference (string);
 		}
@@ -152,7 +152,7 @@ VOID _app_getapptooltipstring (
 					SZ_CRLF
 				);
 
-				_r_obj_appendstringbuilder2 (buffer, string);
+				_r_obj_appendstringbuilder2 (buffer, &string->sr);
 
 				_r_obj_dereference (string);
 				_r_obj_dereference (value);
@@ -173,7 +173,7 @@ VOID _app_getapptooltipstring (
 			SZ_CRLF
 		);
 
-		_r_obj_appendstringbuilder2 (buffer, string);
+		_r_obj_appendstringbuilder2 (buffer, &string->sr);
 
 		_r_obj_dereference (string);
 		_r_obj_dereference (value);
@@ -241,7 +241,7 @@ VOID _app_getapptooltipstring (
 			_r_obj_insertstringbuilder (&sb, 0, L":\r\n");
 			_r_obj_insertstringbuilder (&sb, 0, _r_locale_getstring (IDS_NOTES));
 
-			_r_obj_appendstringbuilder2 (buffer, string);
+			_r_obj_appendstringbuilder2 (buffer, &string->sr);
 		}
 
 		_r_obj_deletestringbuilder (&sb);
@@ -262,7 +262,7 @@ VOID _app_getapptooltipstring (
 
 		if (ptr_log->filter_name)
 		{
-			_r_obj_appendstringbuilder2 (buffer, ptr_log->filter_name);
+			_r_obj_appendstringbuilder2 (buffer, &ptr_log->filter_name->sr);
 		}
 		else
 		{
@@ -276,7 +276,7 @@ VOID _app_getapptooltipstring (
 
 		if (ptr_log->layer_name)
 		{
-			_r_obj_appendstringbuilder2 (buffer, ptr_log->layer_name);
+			_r_obj_appendstringbuilder2 (buffer, &ptr_log->layer_name->sr);
 		}
 		else
 		{
@@ -364,7 +364,7 @@ PR_STRING _app_gettooltipbylparam (
 						string1->buffer
 					);
 
-					_r_obj_appendstringbuilder2 (&sb, string2);
+					_r_obj_appendstringbuilder2 (&sb, &string2->sr);
 					_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
 					_r_obj_dereference (string1);
@@ -382,9 +382,9 @@ PR_STRING _app_gettooltipbylparam (
 					L":\r\n" SZ_TAB
 				);
 
-				_r_obj_appendstringbuilder2 (&sb, string1);
+				_r_obj_appendstringbuilder2 (&sb, &string1->sr);
 
-				_r_obj_appendstringbuilder2 (&sb, ptr_rule->comment);
+				_r_obj_appendstringbuilder2 (&sb, &ptr_rule->comment->sr);
 
 				_r_obj_dereference (string1);
 			}
@@ -400,7 +400,7 @@ PR_STRING _app_gettooltipbylparam (
 					SZ_RULE_INTERNAL_TITLE
 				);
 
-				_r_obj_appendstringbuilder2 (&sb, string2);
+				_r_obj_appendstringbuilder2 (&sb, &string2->sr);
 
 				_r_obj_dereference (string2);
 			}

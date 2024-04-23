@@ -45,7 +45,7 @@ BOOLEAN _app_uwp_loadpackageinfo (
 
 	if (display_name.empty ())
 	{
-		*name_ptr = _r_obj_createstring2 (package_name);
+		*name_ptr = _r_obj_createstring2 (&package_name->sr);
 	}
 	else
 	{
@@ -68,7 +68,7 @@ BOOLEAN _app_uwp_getpackageinfo (
 	_Out_ PR_STRING_PTR path_ptr
 )
 {
-	BOOLEAN status;
+	BOOLEAN status = FALSE;
 
 	*name_ptr = NULL;
 	*path_ptr = NULL;
@@ -79,7 +79,7 @@ BOOLEAN _app_uwp_getpackageinfo (
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
-		*name_ptr = _r_obj_createstring2 (package_name);
+		*name_ptr = _r_obj_createstring2 (&package_name->sr);
 
 		return TRUE;
 	}

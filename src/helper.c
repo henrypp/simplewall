@@ -275,7 +275,7 @@ PR_STRING _app_formataddress (
 
 		if (string)
 		{
-			_r_obj_appendstringbuilder2 (&formatted_address, string);
+			_r_obj_appendstringbuilder2 (&formatted_address, &string->sr);
 			_r_obj_appendstringbuilder (&formatted_address, L"://");
 
 			_r_obj_dereference (string);
@@ -954,7 +954,7 @@ VOID _app_getfileversioninfo (
 	if (string)
 	{
 		_r_obj_appendstringbuilder (&sb, SZ_TAB);
-		_r_obj_appendstringbuilder2 (&sb, string);
+		_r_obj_appendstringbuilder2 (&sb, &string->sr);
 
 		_r_obj_dereference (string);
 	}
@@ -991,7 +991,7 @@ VOID _app_getfileversioninfo (
 	if (string)
 	{
 		_r_obj_appendstringbuilder (&sb, SZ_TAB);
-		_r_obj_appendstringbuilder2 (&sb, string);
+		_r_obj_appendstringbuilder2 (&sb, &string->sr);
 		_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
 		_r_obj_dereference (string);
@@ -1052,7 +1052,7 @@ ULONG_PTR _app_addcolor (
 	ptr_clr.locale_id = locale_id;
 	ptr_clr.is_enabled = is_enabled;
 
-	hash_code = _r_str_gethash2 (ptr_clr.config_name, TRUE);
+	hash_code = _r_str_gethash2 (&ptr_clr.config_name->sr, TRUE);
 
 	_r_obj_addhashtableitem (colors_table, hash_code, &ptr_clr);
 
@@ -1375,7 +1375,7 @@ BOOLEAN _app_preparserulestring (
 	ULONG types;
 	BOOLEAN is_valid;
 
-	length = _r_str_getlength3 (rule);
+	length = _r_str_getlength2 (rule);
 
 	for (ULONG_PTR i = 0; i < length; i++)
 	{
@@ -1541,7 +1541,7 @@ PR_STRING _app_resolveaddress (
 	DNS_STATUS status;
 
 	arpa_string = _app_formatarpa (af, address);
-	arpa_hash = _r_str_gethash2 (arpa_string, TRUE);
+	arpa_hash = _r_str_gethash2 (&arpa_string->sr, TRUE);
 
 	if (_app_getcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, &string))
 	{

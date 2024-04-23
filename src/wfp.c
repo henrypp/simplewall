@@ -207,7 +207,7 @@ PR_STRING _wfp_getlayername (
 	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (layer_guids); i++)
 	{
 		if (IsEqualGUID (layer_guid, layer_guids[i]))
-			return _r_obj_createstring3 (&layer_names[i]);
+			return _r_obj_createstring2 (&layer_names[i]);
 	}
 
 	_r_str_fromguid (layer_guid, TRUE, &string);
@@ -2744,7 +2744,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 	if (type == DATA_APP_REGULAR || type == DATA_APP_NETWORK || type == DATA_APP_SERVICE)
 	{
-		if (_r_str_gethash2 (path, TRUE) == config.ntoskrnl_hash)
+		if (_r_str_gethash2 (&path->sr, TRUE) == config.ntoskrnl_hash)
 		{
 			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), byte_blob);
 
@@ -2767,7 +2767,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 					else
 					{
 						// file path (without root)
-						path_root = _r_obj_createstring2 (path);
+						path_root = _r_obj_createstring2 (&path->sr);
 
 						PathStripToRootW (path_root->buffer);
 
@@ -2807,7 +2807,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 	}
 	else if (type == DATA_APP_PICO || type == DATA_APP_DEVICE)
 	{
-		original_path = _r_obj_createstring2 (path);
+		original_path = _r_obj_createstring2 (&path->sr);
 
 		if (type == DATA_APP_DEVICE)
 			_r_str_tolower (&original_path->sr); // lower is important!

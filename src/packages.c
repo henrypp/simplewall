@@ -9,7 +9,7 @@ BOOLEAN _app_package_isnotexists (
 )
 {
 	if (!app_hash)
-		app_hash = _r_str_gethash2 (package_sid, TRUE);
+		app_hash = _r_str_gethash2 (&package_sid->sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return TRUE;
@@ -132,7 +132,7 @@ VOID _app_package_getpackagebyname (
 		goto CleanupExit;
 
 	// already exists (skip)
-	app_hash = _r_str_gethash2 (package_sid_string, TRUE);
+	app_hash = _r_str_gethash2 (&package_sid_string->sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		goto CleanupExit;
@@ -201,7 +201,7 @@ VOID _app_package_getpackagebysid (
 	NTSTATUS status;
 
 	// already exists (skip)
-	app_hash = _r_str_gethash2 (key_name, TRUE);
+	app_hash = _r_str_gethash2 (&key_name->sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return;

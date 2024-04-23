@@ -97,7 +97,7 @@ ULONG_PTR _app_getloghash (
 		_r_obj_getstring (ptr_log->remote_addr_str)
 	);
 
-	log_hash = _r_str_gethash2 (log_string, TRUE);
+	log_hash = _r_str_gethash2 (&log_string->sr, TRUE);
 
 	_r_obj_dereference (log_string);
 
@@ -587,7 +587,7 @@ VOID CALLBACK _wfp_logcallback (
 	{
 		_r_obj_swapreference (&ptr_log->path, sid_string);
 
-		ptr_log->app_hash = _r_str_gethash2 (ptr_log->path, TRUE);
+		ptr_log->app_hash = _r_str_gethash2 (&ptr_log->path->sr, TRUE);
 	}
 	else if (log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET && log->app_id)
 	{
@@ -602,7 +602,7 @@ VOID CALLBACK _wfp_logcallback (
 		{
 			_r_obj_movereference (&ptr_log->path, path);
 
-			ptr_log->app_hash = _r_str_gethash2 (ptr_log->path, TRUE);
+			ptr_log->app_hash = _r_str_gethash2 (&ptr_log->path->sr, TRUE);
 		}
 	}
 	else

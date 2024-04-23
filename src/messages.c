@@ -2393,8 +2393,8 @@ VOID _app_command_copy (
 
 				if (string)
 				{
-					_r_obj_appendstringbuilder2 (&sb, string);
-					_r_obj_appendstringbuilder3 (&sb, &divider_sr);
+					_r_obj_appendstringbuilder2 (&sb, &string->sr);
+					_r_obj_appendstringbuilder2 (&sb, &divider_sr);
 
 					_r_obj_dereference (string);
 				}
@@ -2410,7 +2410,7 @@ VOID _app_command_copy (
 
 			if (string)
 			{
-				_r_obj_appendstringbuilder2 (&sb, string);
+				_r_obj_appendstringbuilder2 (&sb, &string->sr);
 
 				_r_obj_dereference (string);
 			}
@@ -2591,9 +2591,9 @@ VOID _app_command_delete (
 
 		if (string)
 		{
-			_r_obj_appendstringbuilder2 (&sb, string);
-			_r_obj_appendstringbuilder3 (&sb, &crlf);
-			_r_obj_appendstringbuilder3 (&sb, &crlf);
+			_r_obj_appendstringbuilder2 (&sb, &string->sr);
+			_r_obj_appendstringbuilder2 (&sb, &crlf);
+			_r_obj_appendstringbuilder2 (&sb, &crlf);
 
 			_r_obj_dereference (string);
 		}
@@ -2613,8 +2613,8 @@ VOID _app_command_delete (
 			if (string)
 			{
 				_r_obj_appendstringbuilderformat (&sb, L"%" TEXT (PRId32) ") ", j);
-				_r_obj_appendstringbuilder2 (&sb, string);
-				_r_obj_appendstringbuilder3 (&sb, &crlf);
+				_r_obj_appendstringbuilder2 (&sb, &string->sr);
+				_r_obj_appendstringbuilder2 (&sb, &crlf);
 
 				_r_obj_dereference (string);
 			}

@@ -397,7 +397,7 @@ ULONG_PTR _app_addapplication (
 	if (_app_isappvalidpath (path) && PathIsDirectoryW (path->buffer))
 		return 0;
 
-	_r_obj_initializestringref2 (&path_temp, path);
+	_r_obj_initializestringref2 (&path_temp, &path->sr);
 
 	// prevent possible duplicate apps entries with short path (issue #640)
 	if (_r_str_findchar (&path_temp, L'~', FALSE) != SIZE_MAX)
@@ -406,7 +406,7 @@ ULONG_PTR _app_addapplication (
 			_r_obj_initializestringref (&path_temp, path_full);
 	}
 
-	app_hash = _r_str_gethash3 (&path_temp, TRUE);
+	app_hash = _r_str_gethash2 (&path_temp, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return app_hash; // already exists
@@ -435,7 +435,7 @@ ULONG_PTR _app_addapplication (
 	else if (_r_str_isstartswith2 (&path_temp, L"\\device\\", TRUE)) // device path
 	{
 		ptr_app->type = DATA_APP_DEVICE;
-		ptr_app->real_path = _r_obj_createstring3 (&path_temp);
+		ptr_app->real_path = _r_obj_createstring2 (&path_temp);
 	}
 	else
 	{
@@ -450,15 +450,15 @@ ULONG_PTR _app_addapplication (
 
 		if (is_ntoskrnl)
 		{
-			ptr_app->real_path = _r_obj_createstring2 (config.ntoskrnl_path);
+			ptr_app->real_path = _r_obj_createstring2 (&config.ntoskrnl_path->sr);
 		}
 		else
 		{
-			ptr_app->real_path = _r_obj_createstring3 (&path_temp);
+			ptr_app->real_path = _r_obj_createstring2 (&path_temp);
 		}
 	}
 
-	ptr_app->original_path = _r_obj_createstring3 (&path_temp);
+	ptr_app->original_path = _r_obj_createstring2 (&path_temp);
 
 	// fix "System" lowercase
 	if (is_ntoskrnl)
@@ -514,7 +514,7 @@ PITEM_RULE _app_addrule (
 	{
 		ptr_rule->name = _r_obj_reference (name);
 
-		if (_r_str_getlength2 (ptr_rule->name) > RULE_NAME_CCH_MAX)
+		if (_r_str_getlength2 (&ptr_rule->name->sr) > RULE_NAME_CCH_MAX)
 			_r_obj_setstringlength (&ptr_rule->name->sr, RULE_NAME_CCH_MAX * sizeof (WCHAR));
 	}
 
@@ -523,7 +523,7 @@ PITEM_RULE _app_addrule (
 	{
 		ptr_rule->rule_remote = _r_obj_reference (rule_remote);
 
-		if (_r_str_getlength2 (ptr_rule->rule_remote) > RULE_RULE_CCH_MAX)
+		if (_r_str_getlength2 (&ptr_rule->rule_remote->sr) > RULE_RULE_CCH_MAX)
 			_r_obj_setstringlength (&ptr_rule->rule_remote->sr, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 	}
 
@@ -532,7 +532,7 @@ PITEM_RULE _app_addrule (
 	{
 		ptr_rule->rule_local = _r_obj_reference (rule_local);
 
-		if (_r_str_getlength2 (ptr_rule->rule_local) > RULE_RULE_CCH_MAX)
+		if (_r_str_getlength2 (&ptr_rule->rule_local->sr) > RULE_RULE_CCH_MAX)
 			_r_obj_setstringlength (&ptr_rule->rule_local->sr, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 	}
 
@@ -623,7 +623,7 @@ PITEM_RULE _app_getrulebyhash (
 		{
 			if (ptr_rule->is_readonly)
 			{
-				if (_r_str_gethash2 (ptr_rule->name, TRUE) == rule_hash)
+				if (_r_str_gethash2 (&ptr_rule->name->sr, TRUE) == rule_hash)
 				{
 					_r_queuedlock_releaseshared (&lock_rules);
 
@@ -936,7 +936,7 @@ VOID _app_ruleenable (
 	if (!ptr_rule->is_readonly || !ptr_rule->name)
 		return;
 
-	rule_hash = _r_str_gethash2 (ptr_rule->name, TRUE);
+	rule_hash = _r_str_gethash2 (&ptr_rule->name->sr, TRUE);
 
 	if (!rule_hash)
 		return;
@@ -1130,12 +1130,12 @@ PR_STRING _app_appexpandrules (
 
 		if (ptr_rule->is_enabled && ptr_rule->type == DATA_RULE_USER && !_r_obj_isstringempty (ptr_rule->name) && _r_obj_findhashtable (ptr_rule->apps, app_hash))
 		{
-			_r_obj_appendstringbuilder2 (&buffer, ptr_rule->name);
+			_r_obj_appendstringbuilder2 (&buffer, &ptr_rule->name->sr);
 
 			if (ptr_rule->is_readonly)
 				_r_obj_appendstringbuilder (&buffer, SZ_RULE_INTERNAL_MENU);
 
-			_r_obj_appendstringbuilder3 (&buffer, &delimeter_sr);
+			_r_obj_appendstringbuilder2 (&buffer, &delimeter_sr);
 		}
 	}
 
@@ -1182,7 +1182,7 @@ PR_STRING _app_rulesexpandapps (
 			delimeter
 		);
 
-		_r_obj_appendstringbuilder2 (&sr, string);
+		_r_obj_appendstringbuilder2 (&sr, &string->sr);
 
 		_r_obj_dereference (string);
 	}
@@ -1219,8 +1219,8 @@ PR_STRING _app_rulesexpandapps (
 
 		if (string)
 		{
-			_r_obj_appendstringbuilder2 (&sr, string);
-			_r_obj_appendstringbuilder3 (&sr, &delimeter_sr);
+			_r_obj_appendstringbuilder2 (&sr, &string->sr);
+			_r_obj_appendstringbuilder2 (&sr, &delimeter_sr);
 
 			_r_obj_dereference (string);
 		}
@@ -1259,14 +1259,14 @@ PR_STRING _app_rulesexpandrules (
 
 	_r_obj_initializestringref (&delimeter_sr, delimeter);
 
-	_r_obj_initializestringref2 (&remaining_part, rule);
+	_r_obj_initializestringref2 (&remaining_part, &rule->sr);
 
 	while (remaining_part.length != 0)
 	{
 		_r_str_splitatchar (&remaining_part, DIVIDER_RULE[0], &first_part, &remaining_part);
 
-		_r_obj_appendstringbuilder3 (&sb, &first_part);
-		_r_obj_appendstringbuilder3 (&sb, &delimeter_sr);
+		_r_obj_appendstringbuilder2 (&sb, &first_part);
+		_r_obj_appendstringbuilder2 (&sb, &delimeter_sr);
 	}
 
 	string = _r_obj_finalstringbuilder (&sb);

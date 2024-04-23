@@ -2017,10 +2017,10 @@ VOID _app_initialize ()
 		PATH_NTOSKRNL
 	);
 
-	config.my_hash = _r_str_gethash2 (config.my_path, TRUE);
-	config.ntoskrnl_hash = _r_str_gethash2 (config.system_path, TRUE);
-	config.svchost_hash = _r_str_gethash2 (config.svchost_path, TRUE);
-	config.wusvc_hash = _r_str_gethash2 (config.wusvc_path, TRUE);
+	config.my_hash = _r_str_gethash2 (&config.my_path->sr, TRUE);
+	config.ntoskrnl_hash = _r_str_gethash2 (&config.system_path->sr, TRUE);
+	config.svchost_hash = _r_str_gethash2 (&config.svchost_path->sr, TRUE);
+	config.wusvc_hash = _r_str_gethash2 (&config.wusvc_path->sr, TRUE);
 
 	// initialize free list
 	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);

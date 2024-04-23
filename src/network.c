@@ -465,7 +465,7 @@ ULONG_PTR _app_network_gethash (
 		state
 	);
 
-	network_hash = _r_str_gethash2 (network_string, TRUE);
+	network_hash = _r_str_gethash2 (&network_string->sr, TRUE);
 
 	_r_obj_dereference (network_string);
 
@@ -558,7 +558,7 @@ BOOLEAN _app_network_getpath (
 
 	if (process_name)
 	{
-		ptr_network->app_hash = _r_str_gethash2 (process_name, TRUE);
+		ptr_network->app_hash = _r_str_gethash2 (&process_name->sr, TRUE);
 		ptr_network->path = process_name;
 
 		return TRUE;

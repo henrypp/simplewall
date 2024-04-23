@@ -1287,8 +1287,8 @@ INT_PTR CALLBACK NotificationProc (
 
 						ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, FWP_ACTION_PERMIT, ptr_log->protocol, ptr_log->af);
 
-						ptr_rule->name = _r_obj_createstring2 (rule);
-						ptr_rule->rule_remote = _r_obj_createstring2 (rule);
+						ptr_rule->name = _r_obj_createstring2 (&rule->sr);
+						ptr_rule->rule_remote = _r_obj_createstring2 (&rule->sr);
 
 						_app_ruleenable (ptr_rule, TRUE, FALSE);
 

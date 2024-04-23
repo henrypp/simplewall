@@ -152,15 +152,15 @@ PR_STRING _app_editor_getrulesfromlistview (
 			if (!_r_obj_isstringempty2 (string))
 			{
 				// check maximum length of one rule
-				if ((_r_str_getlength2 (sb.string) + _r_str_getlength2 (string)) > RULE_RULE_CCH_MAX)
+				if ((_r_str_getlength2 (&sb.string->sr) + _r_str_getlength2 (&string->sr)) > RULE_RULE_CCH_MAX)
 				{
 					_r_obj_dereference (string);
 
 					break;
 				}
 
-				_r_obj_appendstringbuilder2 (&sb, string);
-				_r_obj_appendstringbuilder3 (&sb, &divider_sr);
+				_r_obj_appendstringbuilder2 (&sb, &string->sr);
+				_r_obj_appendstringbuilder2 (&sb, &divider_sr);
 			}
 
 			_r_obj_dereference (string);
@@ -192,13 +192,13 @@ VOID _app_editor_setrulestolistview (
 	R_STRINGREF remaining_part;
 	INT item_id = 0;
 
-	_r_obj_initializestringref2 (&remaining_part, rule);
+	_r_obj_initializestringref2 (&remaining_part, &rule->sr);
 
 	while (remaining_part.length != 0)
 	{
 		_r_str_splitatchar (&remaining_part, DIVIDER_RULE[0], &first_part, &remaining_part);
 
-		rule_string = _r_obj_createstring3 (&first_part);
+		rule_string = _r_obj_createstring2 (&first_part);
 
 		_app_listview_lock (hwnd, ctrl_id, TRUE);
 		_r_listview_additem (hwnd, ctrl_id, item_id, rule_string->buffer);
@@ -374,7 +374,7 @@ INT_PTR CALLBACK EditorRuleProc (
 					if (!context)
 						return FALSE;
 
-					_r_obj_initializestringref2 (&remaining_part, string);
+					_r_obj_initializestringref2 (&remaining_part, &string->sr);
 
 					item_id = _r_listview_getitemcount (context->hwnd, context->listview_id);
 
@@ -1297,7 +1297,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					if (string)
 					{
-						current_length = _r_str_getlength2 (string);
+						current_length = _r_str_getlength2 (&string->sr);
 
 						_r_obj_dereference (string);
 					}
@@ -1503,7 +1503,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 						if (string)
 						{
-							_r_obj_appendstringbuilder2 (&sb, string);
+							_r_obj_appendstringbuilder2 (&sb, &string->sr);
 							_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
 							_r_obj_dereference (string);
