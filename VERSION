@@ -1,3 +1,3 @@
 simplewall=3.8|https://github.com/henrypp/simplewall/releases/download/v.3.8/simplewall-3.8-setup.exe;
-language=1712417779|https://raw.githubusercontent.com/henrypp/simplewall/master/bin/simplewall.lng;
+language=1714029003|https://raw.githubusercontent.com/henrypp/simplewall/master/bin/simplewall.lng;
 rules_internal=1652781827|https://raw.githubusercontent.com/henrypp/simplewall/master/bin/profile_internal.xml;
