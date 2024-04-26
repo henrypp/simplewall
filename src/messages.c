@@ -3090,18 +3090,24 @@ VOID _app_command_purgeunused (
 	_In_ HWND hwnd
 )
 {
+	R_STRINGBUILDER sb;
 	PITEM_APP ptr_app = NULL;
-	ULONG_PTR hash_code;
-	ULONG_PTR enum_key = 0;
 	PR_HASHTABLE apps_list;
+	PR_STRING string = NULL;
 	PR_ARRAY guids;
 	HANDLE hengine;
+	ULONG_PTR enum_key = 0;
+	ULONG_PTR hash_code;
 	INT listview_id;
 	INT item_id;
-	BOOLEAN is_deleted = FALSE;
 
 	apps_list = _r_obj_createhashtable (sizeof (ULONG_PTR), NULL);
 	guids = _r_obj_createarray (sizeof (GUID), NULL);
+
+	_r_obj_initializestringbuilder (&sb, 256);
+
+	_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_PURGE_UNUSED));
+	_r_obj_appendstringbuilder (&sb, SZ_CRLF SZ_CRLF);
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -3129,39 +3135,56 @@ VOID _app_command_purgeunused (
 
 		_r_obj_addhashtableitem (apps_list, hash_code, NULL);
 
-		is_deleted = TRUE;
+		string = _app_getappdisplayname (ptr_app, FALSE);
+
+		if (string)
+		{
+			_r_obj_appendstringbuilder2 (&sb, &string->sr);
+			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
+
+			_r_obj_dereference (string);
+		}
 	}
 
 	_r_queuedlock_releaseshared (&lock_apps);
 
-	if (is_deleted)
+	if (_r_obj_gethashtablesize (apps_list))
 	{
 		enum_key = 0;
 
-		_r_queuedlock_acquireexclusive (&lock_apps);
+		string = _r_obj_finalstringbuilder (&sb);
 
-		while (_r_obj_enumhashtable (apps_list, NULL, &hash_code, &enum_key))
+		_r_str_trimstring2 (&string->sr, SZ_CRLF, PR_TRIM_END_ONLY);
+
+		if (_r_show_confirmmessage (hwnd, NULL, string->buffer, L"ConfirmUnused"))
 		{
-			_app_freeapplication (hwnd, hash_code);
+			_r_queuedlock_acquireexclusive (&lock_apps);
+
+			while (_r_obj_enumhashtable (apps_list, NULL, &hash_code, &enum_key))
+			{
+				_app_freeapplication (hwnd, hash_code);
+			}
+
+			_r_queuedlock_releaseexclusive (&lock_apps);
+
+			if (!_r_obj_isempty2 (guids) && _wfp_isfiltersinstalled ())
+			{
+				hengine = _wfp_getenginehandle ();
+
+				if (hengine)
+					_wfp_destroyfilters_array (hengine, guids, DBG_ARG);
+			}
+
+			_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+
+			_app_profile_save (hwnd);
 		}
-
-		_r_queuedlock_releaseexclusive (&lock_apps);
-
-		if (!_r_obj_isempty (guids) && _wfp_isfiltersinstalled ())
-		{
-			hengine = _wfp_getenginehandle ();
-
-			if (hengine)
-				_wfp_destroyfilters_array (hengine, guids, DBG_ARG);
-		}
-
-		_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
-
-		_app_profile_save (hwnd);
 	}
 
-	_r_obj_dereference (guids);
+	_r_obj_deletestringbuilder (&sb);
+
 	_r_obj_dereference (apps_list);
+	_r_obj_dereference (guids);
 }
 
 VOID _app_command_purgetimers (
