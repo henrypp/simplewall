@@ -3176,7 +3176,7 @@ VOID _app_command_purgetimers (
 	if (!_app_istimersactive ())
 		return;
 
-	if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, _r_locale_getstring (IDS_QUESTION_TIMERS)) != IDYES)
+	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION_TIMERS), L"ConfirmTimers"))
 		return;
 
 	rules = _r_obj_createlist (NULL);
