@@ -1,3 +1,11 @@
+v3.8.1 (27 April 2024)
+- fixed lacks search context (issue #1760)
+- fixed incorrect log ui listview item counting
+- updated confirm message for timers cleanup
+- updated confirm message for unused cleanup
+- updated cppwinrt package
+- updated project sdk
+
 v3.8 (1 April 2024)
 - added mitigations (win10+) (issue #611)
 - added dark theme support (issue #248)
