@@ -501,10 +501,7 @@ VOID CALLBACK _wfp_logcallback (
 		return;
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
-	if (FwpmLayerGetById0 (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS)
-		return;
-
-	if (!layer_ptr)
+	if (FwpmLayerGetById0 (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS || !layer_ptr)
 		return;
 
 	if (IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4) || IsEqualGUID (&layer_ptr->layerKey, &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6))
@@ -522,10 +519,7 @@ VOID CALLBACK _wfp_logcallback (
 	FwpmFreeMemory0 ((PVOID_PTR)&layer_ptr);
 
 	// get filter information
-	if (FwpmFilterGetById0 (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS)
-		return;
-
-	if (!filter_ptr)
+	if (FwpmFilterGetById0 (engine_handle, log->filter_id, &filter_ptr) != ERROR_SUCCESS || !filter_ptr)
 		return;
 
 	layer_name = _wfp_getlayername (&layer_guid);
