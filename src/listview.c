@@ -200,15 +200,10 @@ VOID _app_listview_addlogitem (
 )
 {
 	LPARAM context;
-	INT item_id;
-
-	item_id = _r_listview_getitemcount (hwnd, IDC_LOG);
 
 	context = _app_listview_createcontext (log_hash);
 
-	_r_listview_additem_ex (hwnd, IDC_LOG, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, context);
-
-	//_r_listview_ensurevisible (hwnd, IDC_LOG, item_id);
+	_r_listview_additem_ex (hwnd, IDC_LOG, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, context);
 }
 
 BOOLEAN _app_listview_islocked (
