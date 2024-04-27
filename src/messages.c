@@ -3191,7 +3191,9 @@ VOID _app_command_purgetimers (
 	_In_ HWND hwnd
 )
 {
+	R_STRINGBUILDER sb;
 	HANDLE hengine;
+	PR_STRING string;
 	PR_LIST rules;
 	PITEM_APP ptr_app = NULL;
 	ULONG_PTR enum_key = 0;
@@ -3199,10 +3201,12 @@ VOID _app_command_purgetimers (
 	if (!_app_istimersactive ())
 		return;
 
-	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION_TIMERS), L"ConfirmTimers"))
-		return;
-
 	rules = _r_obj_createlist (NULL);
+
+	_r_obj_initializestringbuilder (&sb, 256);
+
+	_r_obj_appendstringbuilder (&sb, _r_locale_getstring (IDS_QUESTION_TIMERS));
+	_r_obj_appendstringbuilder (&sb, SZ_CRLF SZ_CRLF);
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
@@ -3210,17 +3214,29 @@ VOID _app_command_purgetimers (
 	{
 		if (_app_istimerset (ptr_app))
 		{
-			_app_timer_reset (hwnd, ptr_app);
-
 			_r_obj_addlistitem (rules, ptr_app);
+
+			string = _app_getappdisplayname (ptr_app, FALSE);
+
+			if (string)
+			{
+				_r_obj_appendstringbuilder2 (&sb, &string->sr);
+				_r_obj_appendstringbuilder (&sb, SZ_CRLF);
+
+				_r_obj_dereference (string);
+			}
 		}
 	}
 
 	_r_queuedlock_releaseshared (&lock_apps);
 
-	if (rules)
+	if (!_r_obj_isempty2 (rules))
 	{
-		if (!_r_obj_isempty (rules))
+		string = _r_obj_finalstringbuilder (&sb);
+
+		_r_str_trimstring2 (&string->sr, SZ_CRLF, PR_TRIM_END_ONLY);
+
+		if (_r_show_confirmmessage (hwnd, NULL, string->buffer, L"ConfirmTimers"))
 		{
 			if (_wfp_isfiltersinstalled ())
 			{
@@ -3229,14 +3245,24 @@ VOID _app_command_purgetimers (
 				if (hengine)
 					_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 			}
-		}
 
-		_r_obj_dereference (rules);
+			for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
+			{
+				ptr_app = _r_obj_getlistitem (rules, i);
+
+				if (ptr_app)
+					_app_timer_reset (hwnd, ptr_app);
+			}
+
+			_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+
+			_app_profile_save (hwnd);
+		}
 	}
 
-	_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
+	_r_obj_deletestringbuilder (&sb);
 
-	_app_profile_save (hwnd);
+	_r_obj_dereference (rules);
 }
 
 VOID _app_command_selectfont (
