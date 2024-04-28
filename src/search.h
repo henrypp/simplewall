@@ -59,7 +59,8 @@ VOID _app_search_themechanged (
 
 VOID _app_search_setvisible (
 	_In_ HWND hwnd,
-	_In_ HWND hsearch
+	_In_ HWND hsearch,
+	_In_ LONG dpi_value
 );
 
 VOID _app_search_drawwindow (

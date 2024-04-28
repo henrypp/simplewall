@@ -3212,14 +3212,11 @@ INT_PTR CALLBACK DlgProc (
 					new_val = !_r_config_getboolean (L"IsShowSearchBar", TRUE);
 
 					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
+
 					_r_config_setboolean (L"IsShowSearchBar", new_val);
 
 					if (config.hsearchbar)
-					{
-						_app_search_setvisible (hwnd, config.hsearchbar);
-
-						_r_wnd_sendmessage (hwnd, 0, WM_SIZE, 0, 0);
-					}
+						_app_search_setvisible (hwnd, config.hsearchbar, _r_dc_getwindowdpi (hwnd));
 
 					break;
 				}

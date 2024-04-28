@@ -144,7 +144,8 @@ VOID _app_search_themechanged (
 
 VOID _app_search_setvisible (
 	_In_ HWND hwnd,
-	_In_ HWND hsearch
+	_In_ HWND hsearch,
+	_In_ LONG dpi_value
 )
 {
 	BOOLEAN is_visible;
@@ -153,13 +154,21 @@ VOID _app_search_setvisible (
 
 	if (is_visible)
 	{
+		if(!_r_rebar_isbandexists(hwnd, IDC_REBAR, REBAR_SEARCH_ID))
+			_r_rebar_insertband (hwnd, IDC_REBAR, REBAR_SEARCH_ID, config.hsearchbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, _r_dc_getdpi (180, dpi_value), 20);
+
 		ShowWindow (hsearch, SW_SHOWNA);
+
+		_r_wnd_sendmessage (hsearch, 0, WM_SIZE, 0, 0);
 
 		if (_r_wnd_isvisible (hwnd, FALSE))
 			SetFocus (hsearch);
 	}
 	else
 	{
+		if (_r_rebar_isbandexists (hwnd, IDC_REBAR, REBAR_SEARCH_ID))
+			_r_rebar_deleteband (hwnd, IDC_REBAR, REBAR_SEARCH_ID);
+
 		_r_ctrl_setstring (hsearch, 0, L"");
 
 		ShowWindow (hsearch, SW_HIDE);

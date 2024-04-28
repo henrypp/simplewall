@@ -873,7 +873,7 @@ VOID _app_toolbar_init (
 
 	config.htoolbar = CreateWindowExW (
 		0,
-		TOOLBARCLASSNAME,
+		TOOLBARCLASSNAMEW,
 		NULL,
 		WS_CHILD | WS_VISIBLE | CCS_NOPARENTALIGN | CCS_NODIVIDER | TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TRANSPARENT | TBSTYLE_TOOLTIPS | TBSTYLE_AUTOSIZE,
 		CW_USEDEFAULT,
@@ -930,9 +930,9 @@ VOID _app_toolbar_init (
 	// insert searchbar
 	config.hsearchbar = CreateWindowExW (
 		WS_EX_CLIENTEDGE,
-		WC_EDIT,
+		WC_EDITW,
 		NULL,
-		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | ES_AUTOHSCROLL,
+		WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | ES_LEFT | ES_AUTOHSCROLL,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -952,9 +952,7 @@ VOID _app_toolbar_init (
 
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 
-	_r_rebar_insertband (hwnd, IDC_REBAR, REBAR_SEARCH_ID, config.hsearchbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, _r_dc_getdpi (180, dpi_value), 20);
-
-	_app_search_setvisible (hwnd, config.hsearchbar);
+	_app_search_setvisible (hwnd, config.hsearchbar, dpi_value);
 }
 
 VOID _app_toolbar_resize (
