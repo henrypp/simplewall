@@ -184,14 +184,11 @@ VOID _app_listview_addnetworkitem (
 	_In_ ULONG_PTR network_hash
 )
 {
-	LPARAM listview_context;
-	INT item_id;
+	LPARAM context;
 
-	item_id = _r_listview_getitemcount (hwnd, IDC_NETWORK);
+	context = _app_listview_createcontext (network_hash);
 
-	listview_context = _app_listview_createcontext (network_hash);
-
-	_r_listview_additem_ex (hwnd, IDC_NETWORK, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
+	_r_listview_additem_ex (hwnd, IDC_NETWORK, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, context);
 }
 
 VOID _app_listview_addlogitem (
