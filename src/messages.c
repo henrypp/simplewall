@@ -2216,7 +2216,6 @@ VOID _app_command_logshow (
 {
 	PR_STRING path;
 	PR_STRING viewer_path;
-	PR_STRING process_path;
 	HANDLE current_handle;
 	INT item_count;
 	NTSTATUS status;
@@ -2252,21 +2251,11 @@ VOID _app_command_logshow (
 		if (!viewer_path)
 			return;
 
-		process_path = _r_obj_concatstrings (
-			5,
-			L"\"",
-			viewer_path->buffer,
-			L"\" \"",
-			path->buffer,
-			L"\""
-		);
-
-		status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
+		status = _r_sys_createprocess (viewer_path->buffer, path->buffer, NULL);
 
 		if (!NT_SUCCESS (status))
 			_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, ET_NATIVE);
 
-		_r_obj_dereference (process_path);
 		_r_obj_dereference (viewer_path);
 	}
 }
