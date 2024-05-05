@@ -672,28 +672,75 @@ BOOLEAN _app_calculatefilehash (
 	_Out_ HCATADMIN_PTR hcat_admin_ptr
 )
 {
+	static R_INITONCE init_once = PR_INITONCE_INIT;
+	static CCAHFFH2 _CryptCATAdminCalcHashFromFileHandle2 = NULL;
+	static CCAAC2 _CryptCATAdminAcquireContext2 = NULL;
+
 	const GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
 
 	HCATADMIN hcat_admin;
+	PVOID hwintrust;
 	PBYTE file_hash;
 	ULONG file_hash_length;
+	NTSTATUS status;
 
-	if (!CryptCATAdminAcquireContext2 (&hcat_admin, &DriverActionVerify, algorithm_id, NULL, 0))
-		return FALSE;
+	if (_r_initonce_begin (&init_once))
+	{
+		status = _r_sys_loadlibrary (L"wintrust.dll", 0, &hwintrust);
+
+		if (hwintrust)
+		{
+			_r_sys_getprocaddress (hwintrust, "CryptCATAdminAcquireContext2", 0, (PVOID_PTR)&_CryptCATAdminAcquireContext2);
+			_r_sys_getprocaddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2", 0, (PVOID_PTR)&_CryptCATAdminCalcHashFromFileHandle2);
+
+			// _r_sys_freelibrary (hwintrust, FALSE);
+		}
+
+		_r_initonce_end (&init_once);
+	}
+
+	if (_CryptCATAdminAcquireContext2)
+	{
+		if (!_CryptCATAdminAcquireContext2 (&hcat_admin, &DriverActionVerify, algorithm_id, NULL, 0))
+			return FALSE;
+	}
+	else
+	{
+		if (!CryptCATAdminAcquireContext (&hcat_admin, &DriverActionVerify, 0))
+			return FALSE;
+	}
 
 	file_hash_length = 32;
 	file_hash = _r_mem_allocate (file_hash_length);
 
-	if (!CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
+	if (_CryptCATAdminCalcHashFromFileHandle2)
 	{
-		file_hash = _r_mem_reallocate (file_hash, file_hash_length);
-
-		if (!CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
+		if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
 		{
-			CryptCATAdminReleaseContext (hcat_admin, 0);
-			_r_mem_free (file_hash);
+			file_hash = _r_mem_reallocate (file_hash, file_hash_length);
 
-			return FALSE;
+			if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
+			{
+				CryptCATAdminReleaseContext (hcat_admin, 0);
+				_r_mem_free (file_hash);
+
+				return FALSE;
+			}
+		}
+	}
+	else
+	{
+		if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
+		{
+			file_hash = _r_mem_reallocate (file_hash, file_hash_length);
+
+			if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
+			{
+				CryptCATAdminReleaseContext (hcat_admin, 0);
+				_r_mem_free (file_hash);
+
+				return FALSE;
+			}
 		}
 	}
 

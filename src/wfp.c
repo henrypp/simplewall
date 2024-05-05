@@ -380,19 +380,22 @@ BOOLEAN _wfp_initialize (
 	}
 
 	// packet queuing (win8+)
-	if (_r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 	{
-		// Enables inbound or forward packet queuing independently.
-		// when enabled, the system is able to evenly distribute cpu load
-		// to multiple cpus for site-to-site ipsec tunnel scenarios.
+		if (_r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
+		{
+			// Enables inbound or forward packet queuing independently.
+			// when enabled, the system is able to evenly distribute cpu load
+			// to multiple cpus for site-to-site ipsec tunnel scenarios.
 
-		val.type = FWP_UINT32;
-		val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
+			val.type = FWP_UINT32;
+			val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
 
-		status = FwpmEngineSetOption0 (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
+			status = FwpmEngineSetOption0 (engine_handle, FWPM_ENGINE_PACKET_QUEUING, &val);
 
-		if (status != ERROR_SUCCESS)
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", status, L"FWPM_ENGINE_PACKET_QUEUING");
+			if (status != ERROR_SUCCESS)
+				_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", status, L"FWPM_ENGINE_PACKET_QUEUING");
+		}
 	}
 
 CleanupExit:
@@ -806,7 +809,8 @@ ULONG _wfp_createfilter (
 			filter.flags |= FWPM_FILTER_FLAG_PERSISTENT;
 
 		// filter is indexed to help enable faster lookup during classification (win8+)
-		filter.flags |= FWPM_FILTER_FLAG_INDEXED;
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+			filter.flags |= FWPM_FILTER_FLAG_INDEXED;
 	}
 
 	if (flags)

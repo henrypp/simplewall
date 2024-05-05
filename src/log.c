@@ -325,6 +325,7 @@ VOID _wfp_logsubscribe (
 	FWPMNES4 _FwpmNetEventSubscribe4 = NULL;
 	FWPMNES3 _FwpmNetEventSubscribe3 = NULL;
 	FWPMNES2 _FwpmNetEventSubscribe2 = NULL;
+	FWPMNES1 _FwpmNetEventSubscribe1 = NULL;
 	HANDLE current_handle;
 	HANDLE new_handle = NULL;
 	PVOID hfwpuclnt;
@@ -372,9 +373,16 @@ VOID _wfp_logsubscribe (
 		if (NT_SUCCESS (status))
 			status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, ULongToPtr (WINDOWS_10_RS1), &new_handle); // win10rs1+
 	}
+	else if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+	{
+		status = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe1", 0, (PVOID_PTR)&_FwpmNetEventSubscribe1);
+
+		if (NT_SUCCESS (status))
+			status = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, ULongToPtr (WINDOWS_8), &new_handle); // win8+
+	}
 	else
 	{
-		status = FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, ULongToPtr (WINDOWS_8_1), &new_handle); // win8+
+		status = FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, ULongToPtr (WINDOWS_7), &new_handle); // win7+
 	}
 
 	if (status != STATUS_SUCCESS)
@@ -435,6 +443,10 @@ VOID _wfp_logsetoption (
 	FWP_VALUE0 val = {0};
 	UINT32 mask = 0;
 	ULONG status;
+
+	// configure dropped packets logging (win8+)
+	if (!_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		return;
 
 	// add allowed connections monitor
 	if (!_r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
@@ -1033,7 +1045,7 @@ BOOLEAN log_struct_to_f (
 			break;
 		}
 
-		case WINDOWS_8_1:
+		case WINDOWS_8:
 		{
 			const FWPM_NET_EVENT2 *evt = event_data;
 
@@ -1145,6 +1157,97 @@ BOOLEAN log_struct_to_f (
 			break;
 		}
 
+		case WINDOWS_7:
+		{
+			const FWPM_NET_EVENT1 *evt = event_data;
+
+			if (evt->type == FWPM_NET_EVENT_TYPE_CLASSIFY_DROP && evt->classifyDrop)
+			{
+				log->layer_id = evt->classifyDrop->layerId;
+				log->filter_id = evt->classifyDrop->filterId;
+				log->direction = evt->classifyDrop->msFwpDirection;
+				log->is_loopback = !!evt->classifyDrop->isLoopback;
+			}
+			else if (evt->type == FWPM_NET_EVENT_TYPE_IPSEC_KERNEL_DROP && evt->ipsecDrop)
+			{
+				log->layer_id = evt->ipsecDrop->layerId;
+				log->filter_id = evt->ipsecDrop->filterId;
+				log->direction = evt->ipsecDrop->direction;
+			}
+			else
+			{
+				return FALSE;
+			}
+
+			// indicates the direction of the packet transmission and set valid directions
+			switch (log->direction)
+			{
+				case FWP_DIRECTION_IN:
+				case FWP_DIRECTION_INBOUND:
+				{
+					log->direction = FWP_DIRECTION_INBOUND;
+					break;
+				}
+
+				case FWP_DIRECTION_OUT:
+				case FWP_DIRECTION_OUTBOUND:
+				{
+					log->direction = FWP_DIRECTION_OUTBOUND;
+					break;
+				}
+
+				default:
+				{
+					return FALSE;
+				}
+			}
+
+			log->flags = evt->header.flags;
+
+			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
+
+			if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
+				log->app_id = evt->header.appId.data;
+
+			if (evt->header.flags & FWPM_NET_EVENT_FLAG_USER_ID_SET)
+				log->user_id = evt->header.userId;
+
+			if (evt->header.flags & FWPM_NET_EVENT_FLAG_IP_PROTOCOL_SET)
+				log->protocol = evt->header.ipProtocol;
+
+			if (evt->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_PORT_SET)
+				log->local_port = evt->header.localPort;
+
+			if (evt->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_PORT_SET)
+				log->remote_port = evt->header.remotePort;
+
+			if (evt->header.flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
+			{
+				log->version = evt->header.ipVersion;
+
+				if (evt->header.ipVersion == FWP_IP_VERSION_V4)
+				{
+					if (evt->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
+						log->local_addr4 = evt->header.localAddrV4;
+
+					if (evt->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
+						log->remote_addr4 = evt->header.remoteAddrV4;
+				}
+				else if (evt->header.ipVersion == FWP_IP_VERSION_V6)
+				{
+					if (evt->header.flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
+						log->local_addr6 = &evt->header.localAddrV6;
+
+					if (evt->header.flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
+						log->remote_addr6 = &evt->header.remoteAddrV6;
+				}
+			}
+			else
+			{
+				log->version = FWP_IP_VERSION_NONE;
+			}
+		}
+
 		default:
 		{
 			return FALSE;
@@ -1154,10 +1257,22 @@ BOOLEAN log_struct_to_f (
 	return TRUE;
 }
 
-// win81+ callback
+// win8+ callback
 VOID CALLBACK _wfp_logcallback1 (
 	_In_ PVOID context,
 	_In_ const FWPM_NET_EVENT2* event_data
+)
+{
+	ITEM_LOG_CALLBACK log;
+
+	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
+		_wfp_logcallback (&log);
+}
+
+// win7+ callback
+VOID CALLBACK _wfp_logcallback0 (
+	_In_ PVOID context,
+	_In_ const FWPM_NET_EVENT1* event_data
 )
 {
 	ITEM_LOG_CALLBACK log;

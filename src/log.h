@@ -30,6 +30,15 @@ typedef ULONG (WINAPI *FWPMNES2)(
 	_Out_ PHANDLE events_handle
 	);
 
+// FwpmNetEventSubscribe1 (win8+)
+typedef ULONG (WINAPI *FWPMNES1)(
+	_In_ HANDLE engine_handle,
+	_In_ const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription,
+	_In_ FWPM_NET_EVENT_CALLBACK1 callback,
+	_In_opt_ PVOID context,
+	_Out_ PHANDLE events_handle
+	);
+
 VOID _app_loginit (
 	_In_ BOOLEAN is_install
 );
@@ -86,6 +95,12 @@ VOID _wfp_logsetoption (
 
 VOID CALLBACK _wfp_logcallback (
 	_In_ PITEM_LOG_CALLBACK log
+);
+
+// win7+ callback
+VOID CALLBACK _wfp_logcallback0 (
+	_In_ PVOID context,
+	_In_ const FWPM_NET_EVENT1* event_data
 );
 
 // win8+ callback

@@ -317,7 +317,8 @@ VOID _app_package_getpackageslist ()
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, reg_byname);
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
+			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, reg_byname);
 	}
 	else
 	{
@@ -337,7 +338,8 @@ VOID _app_package_getpackageslist ()
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, reg_bysid);
+		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
+			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, reg_bysid);
 	}
 	else
 	{

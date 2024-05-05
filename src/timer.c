@@ -62,7 +62,7 @@ VOID _app_timer_set (
 
 		if (ptr_app->htimer)
 		{
-			TpSetTimerEx (ptr_app->htimer, &li, 0, 0);
+			TpSetTimer (ptr_app->htimer, &li, 0, 0);
 
 			is_created = TRUE;
 		}
@@ -72,7 +72,7 @@ VOID _app_timer_set (
 
 			if (NT_SUCCESS (status))
 			{
-				TpSetTimerEx (htimer, &li, 0, 0);
+				TpSetTimer (htimer, &li, 0, 0);
 
 				ptr_app->htimer = htimer;
 
