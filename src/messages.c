@@ -2214,8 +2214,9 @@ VOID _app_command_logshow (
 	_In_ HWND hwnd
 )
 {
-	PR_STRING path;
 	PR_STRING viewer_path;
+	PR_STRING log_path;
+	PR_STRING cmdline;
 	HANDLE current_handle;
 	INT item_count;
 	NTSTATUS status;
@@ -2233,12 +2234,12 @@ VOID _app_command_logshow (
 	}
 	else
 	{
-		path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
+		log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
 
-		if (!path)
+		if (!log_path)
 			return;
 
-		if (!_r_fs_exists (path->buffer))
+		if (!_r_fs_exists (log_path->buffer))
 			return;
 
 		current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
@@ -2251,12 +2252,21 @@ VOID _app_command_logshow (
 		if (!viewer_path)
 			return;
 
-		status = _r_sys_createprocess (viewer_path->buffer, path->buffer, NULL);
+		cmdline = _r_obj_concatstrings (
+			4,
+			L"\"",
+			viewer_path->buffer,
+			L"\" ",
+			log_path->buffer
+		);
+
+		status = _r_sys_createprocess (viewer_path->buffer, cmdline->buffer, NULL);
 
 		if (!NT_SUCCESS (status))
-			_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, ET_NATIVE);
+			_r_show_errormessage (hwnd, NULL, status, cmdline->buffer, ET_NATIVE);
 
 		_r_obj_dereference (viewer_path);
+		_r_obj_dereference (cmdline);
 	}
 }
 

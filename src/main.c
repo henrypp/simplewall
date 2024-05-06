@@ -1526,10 +1526,8 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_ENABLEUILOG_CHK:
 				{
 					BOOLEAN is_enabled;
-					BOOLEAN is_logging_enabled;
 
 					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
-					is_logging_enabled = is_enabled || _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLELOG_CHK);
 
 					_r_config_setboolean (L"IsLogUiEnabled", is_enabled);
 
