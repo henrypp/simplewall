@@ -154,7 +154,7 @@ VOID _app_search_setvisible (
 
 	if (is_visible)
 	{
-		if(!_r_rebar_isbandexists(hwnd, IDC_REBAR, REBAR_SEARCH_ID))
+		if (!_r_rebar_isbandexists (hwnd, IDC_REBAR, REBAR_SEARCH_ID))
 			_r_rebar_insertband (hwnd, IDC_REBAR, REBAR_SEARCH_ID, config.hsearchbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, _r_dc_getdpi (180, dpi_value), 20);
 
 		ShowWindow (hsearch, SW_SHOWNA);
@@ -738,7 +738,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 				if ((context->is_mouseactive && context->is_hot) || GetFocus () == hwnd)
 				{
-					_r_dc_framerect (context->hdc, &wnd_rect, GetSysColor (COLOR_HOTLIGHT));
+					_r_dc_framerect (context->hdc, &wnd_rect, _r_theme_isenabled () ? WND_BORDER_CLR : GetSysColor (COLOR_HOTLIGHT));
 
 					InflateRect (&wnd_rect, -1, -1);
 
