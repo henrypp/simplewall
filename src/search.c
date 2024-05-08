@@ -738,7 +738,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 				if ((context->is_mouseactive && context->is_hot) || GetFocus () == hwnd)
 				{
-					_r_dc_framerect (context->hdc, &wnd_rect, _r_theme_isenabled () ? WND_BORDER_CLR : GetSysColor (COLOR_HOTLIGHT));
+					_r_dc_framerect (context->hdc, &wnd_rect, _r_theme_isenabled () ? WND_HOT_CLR : GetSysColor (COLOR_HOTLIGHT));
 
 					InflateRect (&wnd_rect, -1, -1);
 
