@@ -1,3 +1,10 @@
+v3.8.2 (9 May 2024)
+- revert back windows 7 & windows 8 support
+- improved dark theme support
+- improved log subscription
+- fixed show log button does not work as expected (issue #1757)
+- fixed search visibility
+
 v3.8.1 (27 April 2024)
 - fixed lacks search context (issue #1760)
 - fixed incorrect log ui listview item counting
