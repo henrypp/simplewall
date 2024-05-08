@@ -638,7 +638,7 @@ VOID CALLBACK _wfp_logcallback (
 
 	// get username information
 	if (log->flags & FWPM_NET_EVENT_FLAG_USER_ID_SET && log->user_id)
-		_r_sys_getusernamefromsid (log->user_id, &ptr_log->username);
+		_r_sys_getusername (log->user_id, TRUE, &ptr_log->username);
 
 	// destination
 	if (log->flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET)
