@@ -1643,7 +1643,8 @@ VOID _app_profile_refresh ()
 	_app_package_getserviceslist ();
 
 	// generate uwp apps list (win8+)
-	_app_package_getpackageslist ();
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		_app_package_getpackageslist ();
 }
 
 NTSTATUS _app_profile_load (
