@@ -1797,9 +1797,16 @@ BOOLEAN _wfp_create2filters (
 		// tests if the network traffic is (non-)app container loopback traffic (win8+)
 
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
-		fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
+		fwfc[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
 		fwfc[0].conditionValue.type = FWP_UINT32;
-		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK | FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
+		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
+
+		// tests if the network traffic is (non-)app container loopback traffic (win8+)
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		{
+			fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
+			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
+		}
 
 		_wfp_createfilter (
 			engine_handle,
@@ -2364,33 +2371,36 @@ BOOLEAN _wfp_create2filters (
 	if (action == FWP_ACTION_BLOCK)
 	{
 		// workaround #689
-		_wfp_createfilter (
-			engine_handle,
-			DATA_FILTER_GENERAL,
-			FW_NAME_BLOCK_CONNECTION,
-			NULL,
-			0,
-			&FWPM_LAYER_ALE_AUTH_CONNECT_V4,
-			&FWPM_CALLOUT_TCP_TEMPLATES_CONNECT_LAYER_V4,
-			FW_WEIGHT_LOWEST,
-			FWP_ACTION_CALLOUT_TERMINATING,
-			0,
-			filter_ids
-		);
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		{
+			_wfp_createfilter (
+				engine_handle,
+				DATA_FILTER_GENERAL,
+				FW_NAME_BLOCK_CONNECTION,
+				NULL,
+				0,
+				&FWPM_LAYER_ALE_AUTH_CONNECT_V4,
+				&FWPM_CALLOUT_TCP_TEMPLATES_CONNECT_LAYER_V4,
+				FW_WEIGHT_LOWEST,
+				FWP_ACTION_CALLOUT_TERMINATING,
+				0,
+				filter_ids
+			);
 
-		_wfp_createfilter (
-			engine_handle,
-			DATA_FILTER_GENERAL,
-			FW_NAME_BLOCK_CONNECTION,
-			NULL,
-			0,
-			&FWPM_LAYER_ALE_AUTH_CONNECT_V6,
-			&FWPM_CALLOUT_TCP_TEMPLATES_CONNECT_LAYER_V6,
-			FW_WEIGHT_LOWEST,
-			FWP_ACTION_CALLOUT_TERMINATING,
-			0,
-			filter_ids
-		);
+			_wfp_createfilter (
+				engine_handle,
+				DATA_FILTER_GENERAL,
+				FW_NAME_BLOCK_CONNECTION,
+				NULL,
+				0,
+				&FWPM_LAYER_ALE_AUTH_CONNECT_V6,
+				&FWPM_CALLOUT_TCP_TEMPLATES_CONNECT_LAYER_V6,
+				FW_WEIGHT_LOWEST,
+				FWP_ACTION_CALLOUT_TERMINATING,
+				0,
+				filter_ids
+			);
+		}
 	}
 
 	// fallback
