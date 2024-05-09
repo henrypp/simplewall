@@ -372,7 +372,7 @@ VOID _wfp_logsubscribe (
 	// win10rs5+
 	if (_FwpmNetEventSubscribe4 && !is_success)
 	{
-		status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, ULongToPtr (WINDOWS_10_RS5), &new_handle);
+		status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle);
 
 		is_success = (status == STATUS_SUCCESS);
 	}
@@ -380,7 +380,7 @@ VOID _wfp_logsubscribe (
 	// win10rs4+
 	if (_FwpmNetEventSubscribe3 && !is_success)
 	{
-		status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, ULongToPtr (WINDOWS_10_RS4), &new_handle);
+		status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle);
 
 		is_success = (status == STATUS_SUCCESS);
 	}
@@ -388,7 +388,7 @@ VOID _wfp_logsubscribe (
 	// win10rs1+
 	if (_FwpmNetEventSubscribe2 && !is_success)
 	{
-		status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, ULongToPtr (WINDOWS_10_RS1), &new_handle);
+		status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle);
 
 		is_success = (status == STATUS_SUCCESS);
 	}
@@ -396,7 +396,7 @@ VOID _wfp_logsubscribe (
 	// win8+
 	if (_FwpmNetEventSubscribe1 && !is_success)
 	{
-		status = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, ULongToPtr (WINDOWS_8), &new_handle);
+		status = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle);
 
 		is_success = (status == STATUS_SUCCESS);
 	}
@@ -404,7 +404,7 @@ VOID _wfp_logsubscribe (
 	// win7+
 	if (!is_success)
 	{
-		status = FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, ULongToPtr (WINDOWS_7), &new_handle);
+		status = FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &new_handle);
 
 		//is_success = (status == STATUS_SUCCESS); // no more checks!
 	}
@@ -720,8 +720,8 @@ VOID CALLBACK _wfp_logcallback (
 }
 
 BOOLEAN log_struct_to_f (
-	_In_ ULONG version,
 	_Out_ PITEM_LOG_CALLBACK log,
+	_In_ ULONG version,
 	_In_ LPCVOID event_data
 )
 {
@@ -1266,6 +1266,8 @@ BOOLEAN log_struct_to_f (
 			{
 				log->version = FWP_IP_VERSION_NONE;
 			}
+
+			break;
 		}
 
 		default:
@@ -1277,18 +1279,6 @@ BOOLEAN log_struct_to_f (
 	return TRUE;
 }
 
-// win8+ callback
-VOID CALLBACK _wfp_logcallback1 (
-	_In_ PVOID context,
-	_In_ const FWPM_NET_EVENT2* event_data
-)
-{
-	ITEM_LOG_CALLBACK log;
-
-	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
-		_wfp_logcallback (&log);
-}
-
 // win7+ callback
 VOID CALLBACK _wfp_logcallback0 (
 	_In_ PVOID context,
@@ -1297,7 +1287,19 @@ VOID CALLBACK _wfp_logcallback0 (
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
+	if (log_struct_to_f (&log, WINDOWS_7, event_data))
+		_wfp_logcallback (&log);
+}
+
+// win8+ callback
+VOID CALLBACK _wfp_logcallback1 (
+	_In_ PVOID context,
+	_In_ const FWPM_NET_EVENT2* event_data
+)
+{
+	ITEM_LOG_CALLBACK log;
+
+	if (log_struct_to_f (&log, WINDOWS_8, event_data))
 		_wfp_logcallback (&log);
 }
 
@@ -1309,7 +1311,7 @@ VOID CALLBACK _wfp_logcallback2 (
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
+	if (log_struct_to_f (&log, WINDOWS_10_RS1, event_data))
 		_wfp_logcallback (&log);
 }
 
@@ -1321,7 +1323,7 @@ VOID CALLBACK _wfp_logcallback3 (
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
+	if (log_struct_to_f (&log, WINDOWS_10_RS4, event_data))
 		_wfp_logcallback (&log);
 }
 
@@ -1333,7 +1335,7 @@ VOID CALLBACK _wfp_logcallback4 (
 {
 	ITEM_LOG_CALLBACK log;
 
-	if (log_struct_to_f (PtrToUlong (context), &log, (LPCVOID)event_data))
+	if (log_struct_to_f (&log, WINDOWS_10_RS5, event_data))
 		_wfp_logcallback (&log);
 }
 
