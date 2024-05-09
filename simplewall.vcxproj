@@ -170,7 +170,6 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalOptions>/DEPENDENTLOADFLAG:0x800 /BREPRO %(AdditionalOptions)</AdditionalOptions>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <ResourceCompile>
@@ -274,7 +273,6 @@
       <AdditionalOptions>/DEPENDENTLOADFLAG:0x800 /BREPRO %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <MinimumRequiredVersion>6.1</MinimumRequiredVersion>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <ResourceCompile>
