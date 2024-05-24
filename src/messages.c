@@ -85,7 +85,7 @@ VOID _app_message_initialize (
 		is_enabled = _r_config_getboolean (L"IsHashesEnabled", TRUE);
 
 		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
-		_r_menu_checkitem (hmenu, IDM_KEEPUNUSED_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsKeepUnusedApps", FALSE));
+		_r_menu_checkitem (hmenu, IDM_KEEPUNUSED_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsKeepUnusedApps", TRUE));
 		_r_menu_checkitem (hmenu, IDM_USEHASHES_CHK, 0, MF_BYCOMMAND, is_enabled);
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 		_r_menu_checkitem (hmenu, IDM_USEAPPMONITOR_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsEnableAppMonitor", FALSE));
@@ -3099,8 +3099,6 @@ VOID _app_command_purgeunused (
 	HANDLE hengine;
 	ULONG_PTR enum_key = 0;
 	ULONG_PTR hash_code;
-	INT listview_id;
-	INT item_id;
 
 	apps_list = _r_obj_createhashtable (sizeof (ULONG_PTR), NULL);
 	guids = _r_obj_createarray (sizeof (GUID), NULL);
@@ -3117,15 +3115,7 @@ VOID _app_command_purgeunused (
 		if (!_app_isappunused (ptr_app) || ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
 			continue;
 
-		listview_id = _app_listview_getbytype (ptr_app->type);
-
-		if (listview_id)
-		{
-			item_id = _app_listview_finditem (hwnd, listview_id, hash_code);
-
-			if (item_id != -1)
-				_r_listview_deleteitem (hwnd, listview_id, item_id);
-		}
+		_app_deleteappitem (hwnd, ptr_app->type, hash_code);
 
 		_app_timer_reset (NULL, ptr_app);
 

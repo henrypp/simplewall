@@ -1017,7 +1017,7 @@ VOID _app_db_save_app (
 	BOOLEAN is_keepunusedapps;
 	BOOLEAN is_usedapp;
 
-	is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", FALSE);
+	is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", TRUE);
 
 	_app_db_writeelementstart (db_info, L"apps");
 
@@ -1032,7 +1032,11 @@ VOID _app_db_save_app (
 
 		// do not save unused apps/uwp apps...
 		if (!is_usedapp && !is_keepunusedapps)
+		{
+			_app_deleteappitem (_r_app_gethwnd (), ptr_app->type, ptr_app->app_hash);
+
 			continue;
+		}
 
 		_r_xml_writewhitespace (&db_info->xml_library, L"\n\t\t");
 		_r_xml_writestartelement (&db_info->xml_library, L"item");

@@ -234,7 +234,7 @@ VOID _app_config_apply (
 
 		case IDM_KEEPUNUSED_CHK:
 		{
-			new_val = !_r_config_getboolean (L"IsKeepUnusedApps", FALSE);
+			new_val = !_r_config_getboolean (L"IsKeepUnusedApps", TRUE);
 			break;
 		}
 
