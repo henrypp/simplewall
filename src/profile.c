@@ -1659,7 +1659,14 @@ NTSTATUS _app_profile_load (
 	status = _app_db_initialize (&db_info, TRUE);
 
 	if (!NT_SUCCESS (status))
-		goto CleanupExit;
+	{
+		if (hwnd)
+			_r_show_errormessage (hwnd, L"Could not intitialize profile!", status, NULL, ET_WINDOWS);
+
+		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
+
+		return status;
+	}
 
 	if (path_custom)
 	{
@@ -1735,7 +1742,7 @@ NTSTATUS _app_profile_save (
 	if (!NT_SUCCESS (status))
 	{
 		if (hwnd)
-			_r_show_errormessage (hwnd, L"Could not save profile!", status, NULL, ET_NATIVE);
+			_r_show_errormessage (hwnd, L"Could not intitialize profile!", status, NULL, ET_WINDOWS);
 
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
 
