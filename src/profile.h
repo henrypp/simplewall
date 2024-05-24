@@ -111,6 +111,12 @@ COLORREF _app_getappcolor (
 	_In_ BOOLEAN is_validconnection
 );
 
+VOID _app_deleteappitem (
+	_In_ HWND hwnd,
+	_In_ ENUM_TYPE_DATA type,
+	_In_ ULONG_PTR id_code
+);
+
 VOID _app_freeapplication (
 	_In_opt_ HWND hwnd,
 	_In_ ULONG_PTR app_hash

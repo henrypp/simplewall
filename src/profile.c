@@ -769,6 +769,26 @@ CleanupExit:
 	return 0;
 }
 
+VOID _app_deleteappitem (
+	_In_ HWND hwnd,
+	_In_ ENUM_TYPE_DATA type,
+	_In_ ULONG_PTR id_code
+)
+{
+	INT listview_id;
+	INT item_id;
+
+	listview_id = _app_listview_getbytype (type);
+
+	if (!listview_id)
+		return;
+
+	item_id = _app_listview_finditem (hwnd, listview_id, id_code);
+
+	if (item_id != -1)
+		_r_listview_deleteitem (hwnd, listview_id, item_id);
+}
+
 VOID _app_freeapplication (
 	_In_opt_ HWND hwnd,
 	_In_ ULONG_PTR app_hash
