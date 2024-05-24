@@ -1665,7 +1665,7 @@ NTSTATUS _app_profile_load (
 
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
 
-		return status;
+		goto CleanupExit;
 	}
 
 	if (path_custom)
