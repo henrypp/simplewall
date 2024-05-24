@@ -232,6 +232,12 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_KEEPUNUSED_CHK:
+		{
+			new_val = !_r_config_getboolean (L"IsKeepUnusedApps", FALSE);
+			break;
+		}
+
 		case IDC_USEHASHES_CHK:
 		case IDM_USEHASHES_CHK:
 		{
@@ -459,6 +465,15 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_KEEPUNUSED_CHK:
+		{
+			_r_config_setboolean (L"IsKeepUnusedApps", new_val);
+
+			_r_menu_checkitem (hmenu, IDM_KEEPUNUSED_CHK, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
 		case IDC_USEHASHES_CHK:
 		case IDM_USEHASHES_CHK:
 		{
@@ -540,6 +555,7 @@ VOID _app_config_apply (
 		case IDM_USENETWORKRESOLUTION_CHK:
 		case IDC_USECERTIFICATES_CHK:
 		case IDM_USECERTIFICATES_CHK:
+		case IDM_KEEPUNUSED_CHK:
 		case IDC_USEHASHES_CHK:
 		case IDM_USEHASHES_CHK:
 		case IDM_USEAPPMONITOR_CHK:
@@ -3354,6 +3370,7 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_PROFILETYPE_ENCRYPTED:
 				case IDM_USENETWORKRESOLUTION_CHK:
 				case IDM_USECERTIFICATES_CHK:
+				case IDM_KEEPUNUSED_CHK:
 				case IDM_USEHASHES_CHK:
 				case IDM_USEAPPMONITOR_CHK:
 				case IDM_USEDARKTHEME_CHK:
