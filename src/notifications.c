@@ -710,6 +710,11 @@ VOID _app_notify_initialize (
 )
 {
 	NONCLIENTMETRICS ncm = {0};
+	HBITMAP hbmp_allow;
+	HBITMAP hbmp_block;
+	HBITMAP hbmp_cross;
+	HBITMAP hbmp_next;
+	HBITMAP hbmp_rules;
 	LONG icon_small;
 	LONG icon_large;
 
@@ -718,11 +723,11 @@ VOID _app_notify_initialize (
 	SAFE_DELETE_OBJECT (context->hfont_link);
 	SAFE_DELETE_OBJECT (context->hfont_text);
 
-	SAFE_DELETE_OBJECT (context->hbmp_allow);
-	SAFE_DELETE_OBJECT (context->hbmp_block);
-	SAFE_DELETE_OBJECT (context->hbmp_cross);
-	SAFE_DELETE_OBJECT (context->hbmp_next);
-	SAFE_DELETE_OBJECT (context->hbmp_rules);
+	SAFE_DELETE_ICON (context->hico_allow);
+	SAFE_DELETE_ICON (context->hico_block);
+	SAFE_DELETE_ICON (context->hico_cross);
+	SAFE_DELETE_ICON (context->hico_next);
+	SAFE_DELETE_ICON (context->hico_rules);
 
 	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 	icon_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
@@ -730,8 +735,8 @@ VOID _app_notify_initialize (
 	// set window icon
 	_r_wnd_seticon (
 		context->hwnd,
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_small),
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_large)
+		_r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_small),
+		_r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_large)
 	);
 
 	// set window font
@@ -756,18 +761,53 @@ VOID _app_notify_initialize (
 	}
 
 	// load images
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SETTINGS), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_rules);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_allow);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_block);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_CROSS), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_cross);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_NEXT), &GUID_ContainerFormatPng, icon_small, icon_small, &context->hbmp_next);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SETTINGS), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_rules);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_allow);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_block);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_CROSS), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_cross);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_NEXT), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_next);
 
 	// set button configuration
-	_r_wnd_sendmessage (context->hwnd, IDC_RULES_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_rules);
-	_r_wnd_sendmessage (context->hwnd, IDC_KILLPROCESS_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_cross);
-	_r_wnd_sendmessage (context->hwnd, IDC_ALLOW_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_allow);
-	_r_wnd_sendmessage (context->hwnd, IDC_BLOCK_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_block);
-	_r_wnd_sendmessage (context->hwnd, IDC_NEXT_BTN, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)context->hbmp_next);
+	if (hbmp_rules)
+	{
+		context->hico_rules = _r_dc_bitmaptoicon (hbmp_rules, icon_small, icon_small);
+
+		DeleteObject (hbmp_rules);
+	}
+
+	if (hbmp_cross)
+	{
+		context->hico_cross = _r_dc_bitmaptoicon (hbmp_cross, icon_small, icon_small);
+
+		DeleteObject (hbmp_cross);
+	}
+
+	if (hbmp_allow)
+	{
+		context->hico_allow = _r_dc_bitmaptoicon (hbmp_allow, icon_small, icon_small);
+
+		DeleteObject (hbmp_allow);
+	}
+
+	if (hbmp_block)
+	{
+		context->hico_block = _r_dc_bitmaptoicon (hbmp_block, icon_small, icon_small);
+
+		DeleteObject (hbmp_block);
+	}
+
+	if (hbmp_next)
+	{
+		context->hico_next = _r_dc_bitmaptoicon (hbmp_next, icon_small, icon_small);
+
+		DeleteObject (hbmp_next);
+	}
+
+	_r_ctrl_seticon (context->hwnd, IDC_RULES_BTN, context->hico_rules);
+	_r_ctrl_seticon (context->hwnd, IDC_KILLPROCESS_BTN, context->hico_cross);
+	_r_ctrl_seticon (context->hwnd, IDC_ALLOW_BTN, context->hico_allow);
+	_r_ctrl_seticon (context->hwnd, IDC_BLOCK_BTN, context->hico_block);
+	_r_ctrl_seticon (context->hwnd, IDC_NEXT_BTN, context->hico_next);
 
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_RULES_BTN, dpi_value);
 	_r_ctrl_setbuttonmargins (context->hwnd, IDC_KILLPROCESS_BTN, dpi_value);
@@ -795,10 +835,10 @@ VOID _app_notify_destroy (
 	SAFE_DELETE_OBJECT (context->hfont_link);
 	SAFE_DELETE_OBJECT (context->hfont_text);
 
-	SAFE_DELETE_OBJECT (context->hbmp_allow);
-	SAFE_DELETE_OBJECT (context->hbmp_block);
-	SAFE_DELETE_OBJECT (context->hbmp_cross);
-	SAFE_DELETE_OBJECT (context->hbmp_rules);
+	SAFE_DELETE_ICON (context->hico_allow);
+	SAFE_DELETE_ICON (context->hico_block);
+	SAFE_DELETE_ICON (context->hico_cross);
+	SAFE_DELETE_ICON (context->hico_rules);
 
 	_r_mem_free (context);
 }

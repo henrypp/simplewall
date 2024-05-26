@@ -7,11 +7,11 @@ typedef struct _NOTIFY_CONTEXT
 {
 	HWND hwnd;
 
-	HBITMAP hbmp_allow;
-	HBITMAP hbmp_block;
-	HBITMAP hbmp_cross;
-	HBITMAP hbmp_next;
-	HBITMAP hbmp_rules;
+	HICON hico_allow;
+	HICON hico_block;
+	HICON hico_cross;
+	HICON hico_next;
+	HICON hico_rules;
 
 	HFONT hfont_title;
 	HFONT hfont_link;
