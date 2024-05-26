@@ -633,7 +633,7 @@ VOID _app_notify_setposition (
 
 	if (!is_forced && _r_wnd_isvisible (hwnd, FALSE))
 	{
-		_r_wnd_adjustrectangletoworkingarea (&window_rect, NULL);
+		_r_wnd_adjustrectangletoworkingarea (&window_rect, hwnd);
 		_r_wnd_setposition (hwnd, &window_rect.position, NULL);
 
 		return;
@@ -861,7 +861,7 @@ VOID _app_notify_drawgradient (
 	gradient_rect.LowerRight = 1;
 	//gradient_rect.UpperLeft = 0;
 
-	for (ULONG i = 0; i < RTL_NUMBER_OF (trivertx); i++)
+	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (trivertx); i++)
 	{
 		trivertx[i].Red = GetRValue (gradient_arr[i]) << 8;
 		trivertx[i].Green = GetGValue (gradient_arr[i]) << 8;
@@ -912,6 +912,8 @@ INT_PTR CALLBACK NotificationProc (
 			// set correct position
 			_app_notify_setposition (hwnd, FALSE);
 
+			_r_window_restoreposition (hwnd, L"notification");
+
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
 			_app_notify_initialize (context, dpi_value);
@@ -946,6 +948,12 @@ INT_PTR CALLBACK NotificationProc (
 		case WM_CLOSE:
 		{
 			DestroyWindow (hwnd);
+			break;
+		}
+
+		case WM_DESTROY:
+		{
+			_r_window_saveposition (hwnd, L"notification");
 			break;
 		}
 
@@ -1122,7 +1130,7 @@ INT_PTR CALLBACK NotificationProc (
 
 			if (ctrl_id == IDC_FILE_TEXT)
 			{
-				SetCursor (LoadCursor (NULL, IDC_HAND));
+				SetCursor (LoadCursorW (NULL, IDC_HAND));
 
 				SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 
