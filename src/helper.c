@@ -1231,7 +1231,7 @@ VOID _app_generate_timerscontrol (
 	{
 		timestamp = timer_array[i];
 
-		interval_string = _r_format_interval (timestamp);
+		interval_string = _r_format_interval (timestamp, FALSE);
 
 		if (!interval_string)
 			continue;

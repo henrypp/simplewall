@@ -140,7 +140,7 @@ VOID _app_getapptooltipstring (
 	{
 		if (_app_istimerset (ptr_app))
 		{
-			value = _r_format_interval (ptr_app->timer - _r_unixtime_now ());
+			value = _r_format_interval (ptr_app->timer - _r_unixtime_now (), TRUE);
 
 			if (value)
 			{
