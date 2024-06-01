@@ -51,6 +51,7 @@ VOID _app_package_parsepath (
 		if (_r_fs_exists (manifest_path->buffer))
 		{
 			is_success = TRUE;
+
 			break;
 		}
 	}
@@ -323,6 +324,7 @@ VOID _app_package_getpackageslist ()
 	else
 	{
 		_r_str_copy (context.path, RTL_NUMBER_OF (context.path), reg_byname);
+
 		context.is_byname = TRUE;
 
 		status = _r_reg_enumkey (hkey, KeyBasicInformation, &_app_parse_callback, &context);
@@ -344,6 +346,7 @@ VOID _app_package_getpackageslist ()
 	else
 	{
 		_r_str_copy (context.path, RTL_NUMBER_OF (context.path), reg_bysid);
+
 		context.is_byname = FALSE;
 
 		status = _r_reg_enumkey (hkey, KeyBasicInformation, &_app_parse_callback, &context);
@@ -370,8 +373,8 @@ VOID _app_package_getserviceslist ()
 	PR_BYTE service_sid;
 	LONG64 service_timestamp;
 	ULONG_PTR app_hash;
-	ULONG service_type;
-	ULONG service_state;
+	ULONG service_type = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
+	ULONG service_state = SERVICE_STATE_ALL;
 	ULONG sd_length;
 	PR_STRING name_string;
 	PITEM_APP ptr_app;
@@ -389,9 +392,6 @@ VOID _app_package_getserviceslist ()
 
 	if (!hsvcmgr)
 		return;
-
-	service_type = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
-	service_state = SERVICE_STATE_ALL;
 
 	// win10+
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
