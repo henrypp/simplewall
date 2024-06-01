@@ -469,7 +469,7 @@ VOID _app_db_parse_rule (
 		{
 			_r_str_splitatchar (&sr, DIVIDER_APP[0], &first_part, &sr);
 
-			status = _r_str_environmentexpandstring (&first_part, &path_string);
+			status = _r_str_environmentexpandstring (NULL, &first_part, &path_string);
 
 			if (!NT_SUCCESS (status))
 				path_string = _r_obj_createstring2 (&first_part);

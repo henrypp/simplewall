@@ -460,7 +460,7 @@ VOID _app_notify_playsound ()
 
 			if (NT_SUCCESS (status))
 			{
-				status = _r_str_environmentexpandstring (&new_path->sr, &expanded_string);
+				status = _r_str_environmentexpandstring (NULL, &new_path->sr, &expanded_string);
 
 				if (NT_SUCCESS (status))
 					_r_obj_movereference (&new_path, expanded_string);
