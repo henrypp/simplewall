@@ -53,7 +53,7 @@ VOID _app_network_initialize (
 	// create network monitor thread
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
-	_r_sys_createthread (&_app_network_threadproc, network_context, NULL, &environment, L"NetMonitor");
+	_r_sys_createthread (NtCurrentProcess (), &_app_network_threadproc, network_context, NULL, &environment, L"NetMonitor");
 }
 
 VOID _app_network_uninitialize (
@@ -646,11 +646,11 @@ BOOLEAN _app_network_isvalidconnection (
 			p6addr = (PIN6_ADDR)address;
 
 			return (!IN6_IS_ADDR_UNSPECIFIED (p6addr) &&
-					 !IN6_IS_ADDR_LOOPBACK (p6addr) &&
-					 !IN6_IS_ADDR_LINKLOCAL (p6addr) &&
-					 !IN6_IS_ADDR_MULTICAST (p6addr) &&
-					 !IN6_IS_ADDR_SITELOCAL (p6addr) &&
-					 !IN6_IS_ADDR_ANYCAST (p6addr));
+					!IN6_IS_ADDR_LOOPBACK (p6addr) &&
+					!IN6_IS_ADDR_LINKLOCAL (p6addr) &&
+					!IN6_IS_ADDR_MULTICAST (p6addr) &&
+					!IN6_IS_ADDR_SITELOCAL (p6addr) &&
+					!IN6_IS_ADDR_ANYCAST (p6addr));
 		}
 	}
 
