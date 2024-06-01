@@ -2749,9 +2749,9 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 	_Out_ PVOID_PTR byte_blob
 )
 {
-	PR_STRING original_path;
-	PR_STRING path_root;
 	R_STRINGREF path_skip_root;
+	R_STRINGREF path_root;
+	PR_STRING original_path;
 	NTSTATUS status;
 
 	*byte_blob = NULL;
@@ -2766,7 +2766,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 		}
 		else
 		{
-			status = _r_path_ntpathfromdos (path, &original_path);
+			status = _r_path_ntpathfromdos (&path->sr, TRUE, &original_path);
 
 			if (!NT_SUCCESS (status))
 			{
@@ -2781,20 +2781,16 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 					else
 					{
 						// file path (without root)
-						path_root = _r_obj_createstring2 (&path->sr);
+						_r_obj_initializestringref2 (&path_root, &path->sr);
 
-						PathStripToRootW (path_root->buffer);
+						PathStripToRootW (path_root.buffer);
 
-						_r_obj_trimstringtonullterminator (&path_root->sr);
+						_r_obj_trimstringtonullterminator (&path_root);
 
-						status = _r_path_ntpathfromdos (path_root, &original_path);
+						status = _r_path_ntpathfromdos (&path_root, FALSE, &original_path);
 
 						if (!NT_SUCCESS (status))
-						{
-							_r_obj_dereference (path_root);
-
 							return status;
-						}
 
 						// file path (without root)
 						_r_obj_initializestringref (&path_skip_root, PathSkipRootW (path->buffer));
@@ -2802,8 +2798,6 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 						_r_obj_movereference (&original_path, _r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root));
 
 						_r_str_tolower (&original_path->sr); // lower is important!
-
-						_r_obj_dereference (path_root);
 					}
 				}
 				else
