@@ -690,8 +690,8 @@ BOOLEAN _app_calculatefilehash (
 
 		if (hwintrust)
 		{
-			_r_sys_getprocaddress (hwintrust, "CryptCATAdminAcquireContext2", 0, (PVOID_PTR)&_CryptCATAdminAcquireContext2);
-			_r_sys_getprocaddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2", 0, (PVOID_PTR)&_CryptCATAdminCalcHashFromFileHandle2);
+			_CryptCATAdminAcquireContext2 = _r_sys_getprocaddress (hwintrust, "CryptCATAdminAcquireContext2", 0);
+			_CryptCATAdminCalcHashFromFileHandle2 = _r_sys_getprocaddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2", 0);
 
 			// _r_sys_freelibrary (hwintrust, FALSE);
 		}
