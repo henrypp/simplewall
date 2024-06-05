@@ -813,7 +813,7 @@ END
 //
 // RC data
 //
-IDR_PROFILE_INTERNAL RCDATA		"..\\bin\\profile_internal.xml"
+IDR_PROFILE_INTERNAL RCDATA		"..\\bin\\profile_internal.sp"
 
 //
 // PNG resources
