@@ -355,19 +355,15 @@ VOID _wfp_logsubscribe (
 		else
 		{
 			if (hwnd)
-			{
 				_r_show_errormessage (hwnd, L"Could not load \"fwpuclnt.dll\" library!", status, NULL, ET_NATIVE);
-			}
-			else
-			{
-				_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
-			}
+
+			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
 		}
+
+		status = STATUS_FWP_INVALID_PARAMETER; // reset status code!
 
 		_r_initonce_end (&init_once);
 	}
-
-	status = STATUS_FWP_INVALID_PARAMETER; // reset status code!
 
 	// win10rs5+
 	if (_FwpmNetEventSubscribe4 && !is_success)
@@ -406,19 +402,15 @@ VOID _wfp_logsubscribe (
 	{
 		status = FwpmNetEventSubscribe0 (engine_handle, &subscription, &_wfp_logcallback0, NULL, &new_handle);
 
-		//is_success = (status == STATUS_SUCCESS); // no more checks!
+		is_success = (status == STATUS_SUCCESS);
 	}
 
-	if (status != STATUS_SUCCESS)
+	if (!is_success)
 	{
 		if (hwnd)
-		{
 			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later!", status, NULL, ET_WINDOWS);
-		}
-		else
-		{
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
-		}
+
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
 
 		return;
 	}
