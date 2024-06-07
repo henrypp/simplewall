@@ -1097,7 +1097,7 @@ INT CALLBACK _app_listview_compare_callback (
 		item_text_2 = _r_listview_getitemtext (hwnd, listview_id, item_id2, column_id);
 
 		if (item_text_1 && item_text_2)
-			result = _r_str_compare_logical (item_text_1, item_text_2);
+			result = _r_str_compare_logical (&item_text_1->sr, &item_text_2->sr);
 
 		if (item_text_1)
 			_r_obj_dereference (item_text_1);
