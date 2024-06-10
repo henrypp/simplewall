@@ -735,8 +735,8 @@ VOID _app_notify_initialize (
 	// set window icon
 	_r_wnd_seticon (
 		context->hwnd,
-		_r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_small),
-		_r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_large)
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_small),
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_large)
 	);
 
 	// set window font
