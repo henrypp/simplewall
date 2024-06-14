@@ -110,6 +110,7 @@ LONG _app_icons_getdefaultapp_id (
 	return icon_info->app_icon_id;
 }
 
+_Ret_maybenull_
 HICON _app_icons_getsafeapp_hicon (
 	_In_ ULONG_PTR app_hash
 )
@@ -212,39 +213,17 @@ VOID _app_icons_loadfromfile (
 	_In_ BOOLEAN is_loaddefaults
 )
 {
-	SHFILEINFO shfi = {0};
-	UINT flags;
-
 	if (!icon_id_ptr && !hicon_ptr)
 		return;
 
-	flags = SHGFI_LARGEICON;
-
 	if (icon_id_ptr)
-	{
-		flags |= SHGFI_SYSICONINDEX;
-
 		*icon_id_ptr = 0;
-	}
 
 	if (hicon_ptr)
-	{
-		flags |= SHGFI_ICON;
-
 		*hicon_ptr = NULL;
-	}
 
 	if (path)
-	{
-		if (SHGetFileInfoW (path->buffer, 0, &shfi, sizeof (shfi), flags))
-		{
-			if (icon_id_ptr)
-				*icon_id_ptr = shfi.iIcon;
-
-			if (hicon_ptr)
-				*hicon_ptr = shfi.hIcon;
-		}
-	}
+		_r_path_geticon (path->buffer, icon_id_ptr, hicon_ptr);
 
 	if (is_loaddefaults)
 		_app_icons_loaddefaults (type, icon_id_ptr, hicon_ptr);

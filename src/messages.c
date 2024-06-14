@@ -1659,7 +1659,7 @@ VOID _app_displayinfonetwork_callback (
 				}
 				else if (ptr_network->path)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_network->path->buffer));
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (&ptr_network->path->sr));
 				}
 
 				break;
@@ -1838,7 +1838,7 @@ VOID _app_displayinfolog_callback (
 				}
 				else if (ptr_log->path)
 				{
-					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (ptr_log->path->buffer));
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, _r_path_getbasename (&ptr_log->path->sr));
 				}
 				else
 				{

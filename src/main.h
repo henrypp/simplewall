@@ -22,13 +22,11 @@
 #pragma comment(lib, "wintrust.lib")
 
 // log
-#define __FILENAME__ (_r_path_getbasename (TEXT (__FILE__)))
-
-#define DBG_ARG __FILENAME__, __LINE__
+#define DBG_ARG TEXT (__FILE__), __LINE__
 #define DBG_ARG_VAR file_name, line
 
 // guids
-DEFINE_GUID (GUID_TrayIcon, 0xdab4837e, 0xcb0f, 0x47da, 0x92, 0x22, 0x21, 0x20, 0x74, 0x9f, 0x5c, 0x41);
+DEFINE_GUID (GUID_TrayIcon, 0xDAB4837E, 0xCB0F, 0x47DA, 0x92, 0x22, 0x21, 0x20, 0x74, 0x9F, 0x5C, 0x41);
 
 // enums
 typedef enum _ENUM_TYPE_DATA

@@ -1674,7 +1674,7 @@ VOID _app_fileloggingenable ()
 
 	if (is_enable)
 	{
-		status = _r_sys_createthread (NtCurrentProcess (), &_app_timercallback, NULL, &config.hmonitor_thread, NULL, L"FileMonitor");
+		status = _r_sys_createthread (&config.hmonitor_thread, NtCurrentProcess (), &_app_timercallback, NULL, NULL, L"FileMonitor");
 
 		if (NT_SUCCESS (status))
 			NtResumeThread (config.hmonitor_thread, NULL);

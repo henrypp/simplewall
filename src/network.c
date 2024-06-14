@@ -53,7 +53,7 @@ VOID _app_network_initialize (
 	// create network monitor thread
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
-	_r_sys_createthread (NtCurrentProcess (), &_app_network_threadproc, network_context, NULL, &environment, L"NetMonitor");
+	_r_sys_createthread (NULL, NtCurrentProcess (), &_app_network_threadproc, network_context, &environment, L"NetMonitor");
 }
 
 VOID _app_network_uninitialize (
