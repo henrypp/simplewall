@@ -41,7 +41,8 @@ VOID _app_getapptooltipstring (
 	}
 	else if (ptr_log)
 	{
-		path = ptr_log->path;
+		if (ptr_log->path)
+			path = ptr_log->path;
 	}
 
 	if (path)
@@ -751,7 +752,7 @@ VOID _app_imagelist_init (
 	// toolbar imagelist
 	if (config.himg_toolbar)
 	{
-		_r_imagelist_setsize (config.himg_toolbar,  icon_size_toolbar);
+		_r_imagelist_setsize (config.himg_toolbar, icon_size_toolbar);
 	}
 	else
 	{

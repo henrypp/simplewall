@@ -530,18 +530,16 @@ BOOLEAN _app_isappsigned (
 )
 {
 	PR_STRING string = NULL;
-	BOOLEAN is_signed;
+	BOOLEAN is_signed = FALSE;
 
 	if (_app_getappinfoparam2 (app_hash, 0, INFO_SIGNATURE_STRING, &string, sizeof (string)))
 	{
 		is_signed = !_r_obj_isstringempty2 (string);
 
 		_r_obj_dereference (string);
-
-		return is_signed;
 	}
 
-	return FALSE;
+	return is_signed;
 }
 
 BOOLEAN _app_isappvalidbinary (
@@ -675,7 +673,6 @@ BOOLEAN _app_calculatefilehash (
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static CCAHFFH2 _CryptCATAdminCalcHashFromFileHandle2 = NULL;
 	static CCAAC2 _CryptCATAdminAcquireContext2 = NULL;
-
 	const GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
 
 	HCATADMIN hcat_admin;
@@ -924,12 +921,18 @@ NTSTATUS _app_verifyfilefromcatalog (
 			_r_obj_dereference (file_hash_tag);
 		}
 
+		*signature_string = string;
+
 		CryptCATAdminReleaseContext (hcat_admin, 0);
 
 		_r_mem_free (file_hash);
 	}
+	else
+	{
+		*signature_string = NULL;
 
-	*signature_string = string;
+		status = TRUST_E_SUBJECT_FORM_UNKNOWN;
+	}
 
 	return status;
 }
@@ -942,7 +945,7 @@ VOID _app_getfilesignatureinfo (
 	static GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
 	WINTRUST_FILE_INFO file_info = {0};
-	PR_STRING string;
+	PR_STRING string = NULL;
 	LONG status;
 
 	if (ptr_app_info->signature_info)
@@ -956,13 +959,20 @@ VOID _app_getfilesignatureinfo (
 
 	if (status == TRUST_E_NOSIGNATURE)
 	{
-		status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA256_ALGORITHM, &string);
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		{
+			status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA256_ALGORITHM, &string);
+		}
+		else
+		{
+			status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, NULL, &string);
+		}
 
 		if (status == TRUST_E_NOSIGNATURE)
 			_app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA1_ALGORITHM, &string);
 	}
 
-	ptr_app_info->signature_info = string;
+	_r_obj_movereference (&ptr_app_info->signature_info, string);
 }
 
 VOID _app_getfileversioninfo (
@@ -1306,11 +1316,11 @@ BOOLEAN _app_parsenetworkstring (
 	NET_ADDRESS_INFO ni_end;
 	ULONG mask;
 	ULONG types;
-	ULONG status;
 	USHORT range_port1 = 0;
 	USHORT range_port2 = 0;
 	USHORT port;
 	BYTE prefix_length;
+	ULONG status;
 
 	types = NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_SERVICE | NET_STRING_IP_NETWORK | NET_STRING_IP_ADDRESS_NO_SCOPE | NET_STRING_IP_ADDRESS;
 
@@ -1412,6 +1422,7 @@ BOOLEAN _app_preparserulestring (
 		L'[',
 		L']',
 		L'-',
+		L'_',
 		L'/',
 	};
 
@@ -2131,10 +2142,6 @@ VOID _app_wufixenable (
 	if (!hsvcmgr)
 		return;
 
-	_app_wufixhelper (hsvcmgr, L"wuauserv", L"netsvcs", is_enable);
-	_app_wufixhelper (hsvcmgr, L"DoSvc", L"NetworkService", is_enable);
-	_app_wufixhelper (hsvcmgr, L"UsoSvc", L"netsvcs", is_enable);
-
 	if (is_enable)
 	{
 		if (_r_fs_exists (config.wusvc_path->buffer))
@@ -2169,6 +2176,10 @@ VOID _app_wufixenable (
 			_r_fs_deletefile (config.wusvc_path->buffer, NULL);
 		}
 	}
+
+	_app_wufixhelper (hsvcmgr, L"wuauserv", L"netsvcs", is_enable);
+	_app_wufixhelper (hsvcmgr, L"DoSvc", L"NetworkService", is_enable);
+	_app_wufixhelper (hsvcmgr, L"UsoSvc", L"netsvcs", is_enable);
 
 	_r_config_setboolean (L"IsWUFixEnabled", is_enable);
 

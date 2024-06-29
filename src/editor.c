@@ -405,7 +405,7 @@ INT_PTR CALLBACK EditorRuleProc (
 
 					_r_obj_dereference (string);
 
-					// fall through
+					FALLTHROUGH;
 				}
 
 				case IDCANCEL: // process Esc key
@@ -1981,7 +1981,7 @@ INT_PTR CALLBACK EditorProc (
 						}
 					}
 
-					// fall through
+					FALLTHROUGH;
 				}
 
 				case IDC_CLOSE:
