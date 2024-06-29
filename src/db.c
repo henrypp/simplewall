@@ -687,7 +687,7 @@ NTSTATUS _app_db_encodebody (
 		case PROFILE2_ID_COMPRESSED:
 		{
 			// compress body
-			status = _r_sys_compressbuffer (COMPRESSION_FORMAT_XPRESS | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
+			status = _r_sys_compressbuffer (COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
 
 			if (!NT_SUCCESS (status))
 			{
