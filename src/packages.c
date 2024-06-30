@@ -358,46 +358,51 @@ VOID _app_package_getpackageslist ()
 	}
 }
 
-VOID _app_package_getserviceslist ()
+VOID _app_package_getserviceslist (
+	_In_ HWND hwnd
+)
 {
-	static ULONG initial_buffer_size = 0x8000;
-
-	SC_HANDLE hsvcmgr;
 	WCHAR general_key[256];
-	EXPLICIT_ACCESS ea;
-	LPENUM_SERVICE_STATUS_PROCESS service;
 	LPENUM_SERVICE_STATUS_PROCESS services;
-	PVOID service_sd;
+	LPENUM_SERVICE_STATUS_PROCESS service;
+	SERVICE_NOTIFY notify_context = {0};
+	EXPLICIT_ACCESS ea;
+	PR_STRING name_string;
 	PR_STRING service_name;
 	PR_STRING service_path;
 	PR_BYTE service_sid;
+	SC_HANDLE hsvcmgr;
+	PITEM_APP ptr_app;
+	PVOID service_sd;
+	PVOID buffer;
+	HANDLE hkey;
 	LONG64 service_timestamp;
 	ULONG_PTR app_hash;
 	ULONG service_type = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
 	ULONG service_state = SERVICE_STATE_ALL;
 	ULONG sd_length;
-	PR_STRING name_string;
-	PITEM_APP ptr_app;
 	R_STRINGREF dummy_filename;
 	R_STRINGREF dummy_argument;
 	PR_STRING converted_path;
-	PVOID buffer;
-	HANDLE hkey;
-	ULONG buffer_size;
-	ULONG return_length;
 	ULONG services_returned;
+	ULONG return_length;
+	ULONG buffer_size;
 	NTSTATUS status;
 
 	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
 
 	if (!hsvcmgr)
+	{
+		_r_show_errormessage (hwnd, NULL, NtLastError (), L"OpenSCManagerW", ET_WINDOWS);
+
 		return;
+	}
 
 	// win10+
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-		service_type |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE;
+		service_type |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
 
-	buffer_size = initial_buffer_size;
+	buffer_size = PR_SIZE_BUFFER;
 	buffer = _r_mem_allocate (buffer_size);
 
 	if (!EnumServicesStatusExW (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))

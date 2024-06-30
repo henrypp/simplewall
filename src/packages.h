@@ -25,4 +25,7 @@ VOID _app_package_getpackagebysid (
 );
 
 VOID _app_package_getpackageslist ();
-VOID _app_package_getserviceslist ();
+
+VOID _app_package_getserviceslist (
+	_In_ HWND hwnd
+);

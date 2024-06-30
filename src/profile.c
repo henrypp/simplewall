@@ -1642,7 +1642,9 @@ VOID _app_profile_load_internal (
 	_app_db_destroy (&db_info_buffer);
 }
 
-VOID _app_profile_refresh ()
+VOID _app_profile_refresh (
+	_In_ HWND hwnd
+)
 {
 	// clear apps
 	_r_queuedlock_acquireexclusive (&lock_apps);
@@ -1660,7 +1662,7 @@ VOID _app_profile_refresh ()
 	_r_queuedlock_releaseexclusive (&lock_rules_config);
 
 	// generate services list
-	_app_package_getserviceslist ();
+	_app_package_getserviceslist (hwnd);
 
 	// generate uwp apps list (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
@@ -1713,7 +1715,7 @@ CleanupExit:
 		if (hwnd)
 			_app_listview_clearitems (hwnd);
 
-		_app_profile_refresh ();
+		_app_profile_refresh (hwnd);
 	}
 
 	if (NT_SUCCESS (status))
