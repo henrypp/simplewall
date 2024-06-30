@@ -1043,7 +1043,7 @@ VOID _app_db_save_app (
 
 		_r_xml_setattribute (&db_info->xml_library, L"path", ptr_app->original_path->buffer);
 
-		if (!_r_obj_isstringempty (ptr_app->hash))
+		if (_r_config_getboolean (L"IsHashesEnabled", TRUE) && !_r_obj_isstringempty (ptr_app->hash))
 			_r_xml_setattribute (&db_info->xml_library, L"hash", ptr_app->hash->buffer);
 
 		if (!_r_obj_isstringempty (ptr_app->comment))
