@@ -37,3 +37,5 @@ desktop.ini
 *.obj
 *.res
 *.tlog
+
+*PVS-Studio*
