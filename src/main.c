@@ -1997,12 +1997,12 @@ VOID _app_initialize ()
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&file_queue, 12, &environment, L"FilesQueue");
+	_r_workqueue_initialize (&resolve_notify_queue, 2, &environment, L"NotificationQueue");
 
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_BELOW_NORMAL, IoPriorityLow, MEMORY_PRIORITY_NORMAL);
 
 	_r_workqueue_initialize (&log_queue, 6, &environment, L"PacketsQueue");
 	_r_workqueue_initialize (&resolver_queue, 6, &environment, L"ResolverQueue");
-	_r_workqueue_initialize (&resolve_notify_queue, 2, &environment, L"NotificationQueue");
 
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_HIGHEST, IoPriorityHigh, MEMORY_PRIORITY_NORMAL);
 
