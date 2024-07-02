@@ -223,6 +223,7 @@ VOID _app_setappinfo (
 
 		case INFO_TIMER:
 		{
+			HANDLE engine_handle;
 			LONG64 timestamp;
 
 			if (!value)
@@ -233,6 +234,12 @@ VOID _app_setappinfo (
 			// check timer expiration
 			if (timestamp <= _r_unixtime_now ())
 			{
+				engine_handle = _wfp_getenginehandle ();
+
+				_wfp_destroyfilters_array (engine_handle, ptr_app->guids, DBG_ARG);
+
+				_r_obj_cleararray (ptr_app->guids);
+
 				ptr_app->timer = 0;
 				ptr_app->is_enabled = FALSE;
 			}
