@@ -1410,7 +1410,6 @@ BOOLEAN _app_isappexists (
 	switch (ptr_app->type)
 	{
 		case DATA_APP_REGULAR:
-		case DATA_APP_SERVICE:
 		{
 			if (ptr_app->real_path && !_r_fs_exists (ptr_app->real_path->buffer))
 				return FALSE;
@@ -1420,6 +1419,7 @@ BOOLEAN _app_isappexists (
 
 		case DATA_APP_DEVICE:
 		case DATA_APP_NETWORK:
+		case DATA_APP_SERVICE:
 		case DATA_APP_UWP:
 		case DATA_APP_PICO:
 		{
@@ -1463,14 +1463,8 @@ BOOLEAN _app_isappused (
 	_In_ PITEM_APP ptr_app
 )
 {
-	if (ptr_app->is_undeletable)
-		return TRUE;
-
 	if (ptr_app->is_enabled || ptr_app->is_silent)
 		return TRUE;
-
-	if (!_app_isappexists (ptr_app))
-		return FALSE;
 
 	if (_app_isapphaverule (ptr_app->app_hash, TRUE))
 		return TRUE;
