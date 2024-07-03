@@ -15,7 +15,7 @@ BOOLEAN _app_package_isnotexists (
 		return TRUE;
 
 	// there we try to found new package (HACK!!!)
-	_app_package_getpackageslist ();
+	_app_package_getpackageslist (_r_app_gethwnd ());
 
 	if (_app_isappfound (app_hash))
 		return TRUE;
@@ -304,7 +304,118 @@ BOOLEAN _app_parse_callback (
 	return TRUE;
 }
 
-VOID _app_package_getpackageslist ()
+NTSTATUS NTAPI _app_package_threadproc (
+	_In_ PVOID arglist
+)
+{
+	IO_STATUS_BLOCK isb;
+	HANDLE hservices_key = NULL;
+	HANDLE hpackages_key = NULL;
+	HANDLE event_handle = NULL;
+	PITEM_APP ptr_app = NULL;
+	HWND hwnd;
+	LONG64 current_time;
+	ULONG_PTR enum_key = 0;
+	ULONG flags = REG_NOTIFY_CHANGE_NAME;
+	NTSTATUS status;
+
+	hwnd = arglist;
+
+	status = NtCreateEvent (&event_handle, EVENT_ALL_ACCESS, NULL, NotificationEvent, FALSE);
+
+	if (!NT_SUCCESS (status))
+	{
+		_r_show_errormessage (hwnd, NULL, status, L"NtCreateEvent", ET_NATIVE);
+
+		return status;
+	}
+
+	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, L"System\\CurrentControlSet\\Services", KEY_NOTIFY, &hservices_key);
+
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+	{
+		flags |= REG_NOTIFY_THREAD_AGNOSTIC;
+
+		_r_reg_openkey (
+			HKEY_CURRENT_USER,
+			L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages",
+			KEY_NOTIFY,
+			&hpackages_key
+		);
+	}
+
+	if (NT_SUCCESS (status))
+	{
+		NtNotifyChangeKey (hservices_key, event_handle, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
+
+		if (hpackages_key)
+			NtNotifyChangeKey (hpackages_key, event_handle, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
+
+		while (TRUE)
+		{
+			status = _r_sys_waitforsingleobject (event_handle, INFINITE);
+
+			if (status == STATUS_WAIT_0)
+			{
+				_r_listview_deleteallitems (hwnd, IDC_APPS_SERVICE);
+
+				_app_package_getserviceslist (hwnd);
+
+				if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+				{
+					_r_listview_deleteallitems (hwnd, IDC_APPS_UWP);
+
+					_app_package_getpackageslist (hwnd);
+				}
+
+				// add apps
+				current_time = _r_unixtime_now ();
+
+				enum_key = 0;
+
+				_r_queuedlock_acquireshared (&lock_apps);
+
+				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+				{
+					if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
+					{
+						_app_listview_addappitem (hwnd, ptr_app);
+
+						// install timer
+						if (ptr_app->timer)
+							_app_timer_set (hwnd, ptr_app, ptr_app->timer - current_time);
+					}
+				}
+
+				_r_queuedlock_releaseshared (&lock_apps);
+
+				// reset
+				NtNotifyChangeKey (hservices_key, event_handle, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
+
+				if (hpackages_key)
+					NtNotifyChangeKey (hpackages_key, event_handle, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
+	if (hservices_key)
+		NtClose (hservices_key);
+
+	if (hpackages_key)
+		NtClose (hpackages_key);
+
+	NtClose (event_handle);
+
+	return STATUS_SUCCESS;
+}
+
+VOID _app_package_getpackageslist (
+	_In_ HWND hwnd
+)
 {
 	static LPWSTR reg_byname = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
 	static LPWSTR reg_bysid = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings";
@@ -319,7 +430,7 @@ VOID _app_package_getpackageslist ()
 	if (!NT_SUCCESS (status))
 	{
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
-			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, reg_byname);
+			_r_show_errormessage (hwnd, NULL, status, reg_byname, ET_NATIVE);
 	}
 	else
 	{
@@ -341,7 +452,7 @@ VOID _app_package_getpackageslist ()
 	if (!NT_SUCCESS (status))
 	{
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND)
-			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_openkey", status, reg_bysid);
+			_r_show_errormessage (hwnd, NULL, status, reg_bysid, ET_NATIVE);
 	}
 	else
 	{
@@ -400,7 +511,7 @@ VOID _app_package_getserviceslist (
 
 	// win10+
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-		service_type |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
+		service_type |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE;
 
 	buffer_size = PR_SIZE_BUFFER;
 	buffer = _r_mem_allocate (buffer_size);

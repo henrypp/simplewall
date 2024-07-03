@@ -1834,7 +1834,8 @@ INT _app_addwindowtabs (
 	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_SERVICE);
 
 	// uwp apps (win8+)
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_UWP);
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_UWP);
 
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
@@ -1972,9 +1973,11 @@ VOID _app_tabs_init (
 	}
 }
 
-VOID _app_initialize ()
+VOID _app_initialize (
+	_In_opt_ HWND hwnd
+)
 {
-	static ULONG privileges[] = {
+	ULONG privileges[] = {
 		SE_SECURITY_PRIVILEGE,
 		SE_TAKE_OWNERSHIP_PRIVILEGE,
 		SE_INC_BASE_PRIORITY_PRIVILEGE,
@@ -2082,6 +2085,9 @@ VOID _app_initialize ()
 	cache_resolution = _r_obj_createhashtablepointer (32);
 
 	NtCreateEvent (&config.hnotify_evt, EVENT_ALL_ACCESS, NULL, NotificationEvent, TRUE);
+
+	if (hwnd)
+		_r_sys_createthread (NULL, NtCurrentProcess (), &_app_package_threadproc, hwnd, &environment, L"ServicesMonitor");
 }
 
 INT FirstDriveFromMask (
@@ -2121,7 +2127,7 @@ INT_PTR CALLBACK DlgProc (
 
 			_r_app_sethwnd (hwnd); // HACK!!!
 
-			_app_initialize ();
+			_app_initialize (hwnd);
 
 			// init buffered paint
 			BufferedPaintInit ();
@@ -3822,7 +3828,7 @@ BOOLEAN NTAPI _app_parseargs (
 {
 	HANDLE hengine;
 
-	_app_initialize ();
+	_app_initialize (NULL);
 
 	hengine = _wfp_getenginehandle ();
 
