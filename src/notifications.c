@@ -689,6 +689,8 @@ VOID _app_notify_setposition (
 
 	// display window on center (depends on error, config etc...)
 	_r_wnd_center (hwnd, NULL);
+
+	_r_window_restoreposition (hwnd, L"notification");
 }
 
 VOID _app_notify_settimeout (
@@ -911,8 +913,6 @@ INT_PTR CALLBACK NotificationProc (
 
 			// set correct position
 			_app_notify_setposition (hwnd, FALSE);
-
-			_r_window_restoreposition (hwnd, L"notification");
 
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
@@ -1153,10 +1153,10 @@ INT_PTR CALLBACK NotificationProc (
 			HCURSOR hcursor;
 			LONG_PTR ex_style;
 
-			ex_style = _r_wnd_getstyle_ex (hwnd);
+			ex_style = _r_wnd_getstyle (hwnd, GWL_EXSTYLE);
 
 			if (!(ex_style & WS_EX_LAYERED))
-				_r_wnd_setstyle_ex (hwnd, WS_EX_LAYERED, WS_EX_LAYERED);
+				_r_wnd_setstyle (hwnd, WS_EX_LAYERED, WS_EX_LAYERED, GWL_EXSTYLE);
 
 			hcursor = LoadCursorW (NULL, (msg == WM_ENTERSIZEMOVE) ? IDC_SIZEALL : IDC_ARROW);
 
