@@ -309,9 +309,11 @@ NTSTATUS NTAPI _app_package_threadproc (
 )
 {
 	IO_STATUS_BLOCK isb;
+	HANDLE hevents[2] = {0};
 	HANDLE hservices_key = NULL;
 	HANDLE hpackages_key = NULL;
-	HANDLE event_handle = NULL;
+	HANDLE event_handle1 = NULL;
+	HANDLE event_handle2 = NULL;
 	PITEM_APP ptr_app = NULL;
 	HWND hwnd;
 	LONG64 current_time;
@@ -321,7 +323,7 @@ NTSTATUS NTAPI _app_package_threadproc (
 
 	hwnd = arglist;
 
-	status = NtCreateEvent (&event_handle, EVENT_ALL_ACCESS, NULL, NotificationEvent, FALSE);
+	status = NtCreateEvent (&event_handle1, EVENT_ALL_ACCESS, NULL, NotificationEvent, FALSE);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -329,6 +331,18 @@ NTSTATUS NTAPI _app_package_threadproc (
 
 		return status;
 	}
+
+	status = NtCreateEvent (&event_handle2, EVENT_ALL_ACCESS, NULL, NotificationEvent, FALSE);
+
+	if (!NT_SUCCESS (status))
+	{
+		_r_show_errormessage (hwnd, NULL, status, L"NtCreateEvent", ET_NATIVE);
+
+		return status;
+	}
+
+	hevents[0] = event_handle1;
+	hevents[1] = event_handle2;
 
 	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, L"System\\CurrentControlSet\\Services", KEY_NOTIFY, &hservices_key);
 
@@ -346,27 +360,20 @@ NTSTATUS NTAPI _app_package_threadproc (
 
 	if (NT_SUCCESS (status))
 	{
-		NtNotifyChangeKey (hservices_key, event_handle, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
+		NtNotifyChangeKey (hservices_key, event_handle1, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
 
 		if (hpackages_key)
-			NtNotifyChangeKey (hpackages_key, event_handle, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
+			NtNotifyChangeKey (hpackages_key, event_handle2, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
 
 		while (TRUE)
 		{
-			status = _r_sys_waitforsingleobject (event_handle, INFINITE);
+			status = _r_sys_waitformultipleobjects (RTL_NUMBER_OF (hevents), hevents, INFINITE, FALSE);
 
 			if (status == STATUS_WAIT_0)
 			{
 				_r_listview_deleteallitems (hwnd, IDC_APPS_SERVICE);
 
 				_app_package_getserviceslist (hwnd);
-
-				if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-				{
-					_r_listview_deleteallitems (hwnd, IDC_APPS_UWP);
-
-					_app_package_getpackageslist (hwnd);
-				}
 
 				// add apps
 				current_time = _r_unixtime_now ();
@@ -377,7 +384,7 @@ NTSTATUS NTAPI _app_package_threadproc (
 
 				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 				{
-					if (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)
+					if (ptr_app->type == DATA_APP_SERVICE)
 					{
 						_app_listview_addappitem (hwnd, ptr_app);
 
@@ -389,11 +396,37 @@ NTSTATUS NTAPI _app_package_threadproc (
 
 				_r_queuedlock_releaseshared (&lock_apps);
 
-				// reset
-				NtNotifyChangeKey (hservices_key, event_handle, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
+				NtNotifyChangeKey (hservices_key, event_handle1, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE); // reset
+			}
+			else if (status == STATUS_WAIT_1)
+			{
+				_r_listview_deleteallitems (hwnd, IDC_APPS_UWP);
+
+				_app_package_getpackageslist (hwnd);
+
+				// add apps
+				current_time = _r_unixtime_now ();
+
+				enum_key = 0;
+
+				_r_queuedlock_acquireshared (&lock_apps);
+
+				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+				{
+					if (ptr_app->type == DATA_APP_UWP)
+					{
+						_app_listview_addappitem (hwnd, ptr_app);
+
+						// install timer
+						if (ptr_app->timer)
+							_app_timer_set (hwnd, ptr_app, ptr_app->timer - current_time);
+					}
+				}
+
+				_r_queuedlock_releaseshared (&lock_apps);
 
 				if (hpackages_key)
-					NtNotifyChangeKey (hpackages_key, event_handle, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE);
+					NtNotifyChangeKey (hpackages_key, event_handle2, NULL, NULL, &isb, flags, TRUE, NULL, 0, TRUE); // reset
 			}
 			else
 			{
@@ -408,7 +441,8 @@ NTSTATUS NTAPI _app_package_threadproc (
 	if (hpackages_key)
 		NtClose (hpackages_key);
 
-	NtClose (event_handle);
+	NtClose (event_handle1);
+	NtClose (event_handle2);
 
 	return STATUS_SUCCESS;
 }
