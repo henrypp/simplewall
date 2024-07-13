@@ -968,9 +968,9 @@ VOID _app_toolbar_resize (
 
 	_app_toolbar_setfont ();
 
-	_r_wnd_sendmessage (config.htoolbar, 0, TB_AUTOSIZE, 0, 0);
+	_r_toolbar_resize (config.htoolbar, 0);
 
-	rebar_count = (UINT)_r_wnd_sendmessage (config.hrebar, 0, RB_GETBANDCOUNT, 0, 0);
+	rebar_count = _r_rebar_getcount (config.hrebar, 0);
 
 	for (UINT i = 0; i < rebar_count; i++)
 	{

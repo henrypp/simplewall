@@ -685,7 +685,7 @@ BOOLEAN _app_calculatefilehash (
 	{
 		status = _r_sys_loadlibrary (L"wintrust.dll", 0, &hwintrust);
 
-		if (hwintrust)
+		if (NT_SUCCESS (status))
 		{
 			_CryptCATAdminAcquireContext2 = _r_sys_getprocaddress (hwintrust, "CryptCATAdminAcquireContext2", 0);
 			_CryptCATAdminCalcHashFromFileHandle2 = _r_sys_getprocaddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2", 0);
