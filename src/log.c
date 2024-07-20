@@ -350,7 +350,7 @@ VOID _wfp_logsubscribe (
 			_FwpmNetEventSubscribe2 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", 0);
 			_FwpmNetEventSubscribe1 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe1", 0);
 
-			_r_sys_freelibrary (hfwpuclnt, FALSE);
+			_r_sys_freelibrary (hfwpuclnt);
 		}
 		else
 		{

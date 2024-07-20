@@ -1066,7 +1066,7 @@ CleanupExit:
 	ptr_app_info->version_info = version_string;
 
 	if (hlib)
-		_r_sys_freelibrary (hlib, TRUE);
+		_r_sys_freelibrary (hlib);
 }
 
 PR_STRING _app_getfilehashinfo (
