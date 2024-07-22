@@ -95,7 +95,10 @@ simplewall have two types of custom user rules rules:
 
 <img src="/images/simplewall_rules.png?cache" />
 
-_To set rule applications, open rule and then navigate to "Apps" tab._
+### Rule syntax format:
+
+
+To set rule applications, open rule and then navigate to "Apps" tab.
 
 <details>
 <summary>Rule syntax format:</summary>
