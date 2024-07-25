@@ -97,7 +97,6 @@ simplewall have two types of custom user rules rules:
 
 ### Rule syntax format:
 
-
 To set rule applications, open rule and then navigate to "Apps" tab.
 
 <details>
