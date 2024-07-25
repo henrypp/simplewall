@@ -117,7 +117,7 @@ VOID _app_package_getpackagebyname (
 
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s\\%s", path, key_name->buffer);
 
-	status = _r_reg_openkey (hroot, buffer, KEY_READ, &hsubkey);
+	status = _r_reg_openkey (hroot, buffer, KEY_READ, 0, &hsubkey);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
@@ -209,7 +209,7 @@ VOID _app_package_getpackagebysid (
 
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s\\%s", path, key_name->buffer);
 
-	status = _r_reg_openkey (hroot, buffer, KEY_READ, &hsubkey);
+	status = _r_reg_openkey (hroot, buffer, KEY_READ, 0, &hsubkey);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
@@ -344,7 +344,7 @@ NTSTATUS NTAPI _app_package_threadproc (
 	hevents[0] = event_handle1;
 	hevents[1] = event_handle2;
 
-	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, L"System\\CurrentControlSet\\Services", KEY_NOTIFY, &hservices_key);
+	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, L"System\\CurrentControlSet\\Services", KEY_NOTIFY, 0, &hservices_key);
 
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 	{
@@ -354,6 +354,7 @@ NTSTATUS NTAPI _app_package_threadproc (
 			HKEY_CURRENT_USER,
 			L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages",
 			KEY_NOTIFY,
+			0,
 			&hpackages_key
 		);
 	}
@@ -459,7 +460,7 @@ VOID _app_package_getpackageslist (
 	NTSTATUS status;
 
 	// query packages by name
-	status = _r_reg_openkey (HKEY_CURRENT_USER, reg_byname, KEY_READ, &hkey);
+	status = _r_reg_openkey (HKEY_CURRENT_USER, reg_byname, KEY_READ, 0, &hkey);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -481,7 +482,7 @@ VOID _app_package_getpackageslist (
 	}
 
 	// query packages by sid
-	status = _r_reg_openkey (HKEY_CURRENT_USER, reg_bysid, KEY_READ, &hkey);
+	status = _r_reg_openkey (HKEY_CURRENT_USER, reg_bysid, KEY_READ, 0, &hkey);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -597,7 +598,7 @@ VOID _app_package_getserviceslist (
 
 		service_name = _r_obj_createstring (service->lpServiceName);
 
-		status = _r_reg_openkey (HKEY_LOCAL_MACHINE, general_key, KEY_READ, &hkey);
+		status = _r_reg_openkey (HKEY_LOCAL_MACHINE, general_key, KEY_READ, 0, &hkey);
 
 		if (!NT_SUCCESS (status))
 		{

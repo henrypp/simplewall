@@ -55,20 +55,18 @@ VOID _app_loginitfile (
 	_In_ HANDLE hfile
 )
 {
-	static BYTE bom[] = {0xFF, 0xFE};
-
+	BYTE bom[] = {0xFF, 0xFE};
 	LARGE_INTEGER file_size;
-	IO_STATUS_BLOCK isb;
 
 	_r_fs_getsize (hfile, NULL, &file_size);
 
 	if (!file_size.QuadPart)
 	{
 		// write utf-16 le byte order mask
-		NtWriteFile (hfile, NULL, NULL, NULL, &isb, bom, sizeof (bom), NULL, NULL);
+		_r_fs_writefile (hfile, bom, sizeof (bom));
 
 		// write csv header
-		NtWriteFile (hfile, NULL, NULL, NULL, &isb, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)), NULL, NULL);
+		_r_fs_writefile (hfile, SZ_LOG_TITLE, (ULONG)(_r_str_getlength (SZ_LOG_TITLE) * sizeof (WCHAR)));
 	}
 	else
 	{
@@ -192,13 +190,12 @@ VOID _app_logwrite (
 	_In_ PITEM_LOG ptr_log
 )
 {
-	IO_STATUS_BLOCK isb;
-	PR_STRING date_string;
-	PR_STRING local_port_string;
 	PR_STRING remote_port_string;
+	PR_STRING local_port_string;
 	PR_STRING direction_string;
-	PR_STRING path;
+	PR_STRING date_string;
 	PR_STRING buffer;
+	PR_STRING path;
 	PITEM_APP ptr_app;
 	HANDLE current_handle;
 
@@ -248,7 +245,7 @@ VOID _app_logwrite (
 	if (_app_logislimitreached (current_handle))
 		_app_logclear (current_handle);
 
-	NtWriteFile (current_handle, NULL, NULL, NULL, &isb, buffer->buffer, (ULONG)buffer->length, NULL, NULL);
+	_r_fs_writefile (current_handle, buffer->buffer, (ULONG)buffer->length);
 
 	if (date_string)
 		_r_obj_dereference (date_string);

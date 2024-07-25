@@ -206,7 +206,7 @@ NTSTATUS _app_db_openfromfile (
 	if (!NT_SUCCESS (status))
 		return status;
 
-	status = _r_fs_readfile (hfile, &db_info->bytes);
+	status = _r_fs_readfilebytes (hfile, &db_info->bytes);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -952,7 +952,6 @@ NTSTATUS _app_db_save_streamtofile (
 	_In_ PR_STRING path
 )
 {
-	IO_STATUS_BLOCK isb;
 	PR_BYTE new_bytes;
 	HANDLE hfile;
 	BYTE profile_type;
@@ -979,7 +978,7 @@ NTSTATUS _app_db_save_streamtofile (
 
 	if (NT_SUCCESS (status))
 	{
-		NtWriteFile (hfile, NULL, NULL, NULL, &isb, new_bytes->buffer, (ULONG)new_bytes->length, NULL, NULL);
+		_r_fs_writefile (hfile, new_bytes->buffer, (ULONG)new_bytes->length);
 
 		_r_obj_dereference (new_bytes);
 	}
