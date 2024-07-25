@@ -25,8 +25,8 @@ The lightweight application is less than a megabyte, and it is compatible with W
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
 ### System requirements:
-- Windows 7SP1 and above operating system.
-- [Visual C++ 2022 Redistributable package](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
+- Windows 7 SP1 and above operating system.
+- <s>KB2533623</s> KB3063858 update for Windows 7 was required [[x64](https://www.microsoft.com/en-us/download/details.aspx?id=47442) / [x32](https://www.microsoft.com/en-us/download/details.aspx?id=47409)]
 
 ### Donate:
 - [Bitcoin](https://www.blockchain.com/btc/address/1LrRTXPsvHcQWCNZotA9RcwjsGcRghG96c) (BTC)
