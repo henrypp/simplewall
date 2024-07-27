@@ -11,9 +11,6 @@ BOOLEAN _app_package_isnotexists (
 	if (!app_hash)
 		app_hash = _r_str_gethash2 (&package_sid->sr, TRUE);
 
-	if (_app_isappfound (app_hash))
-		return TRUE;
-
 	// there we try to found new package (HACK!!!)
 	_app_package_getpackageslist (_r_app_gethwnd ());
 
