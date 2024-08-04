@@ -268,39 +268,6 @@ CleanupExit:
 		NtClose (hsubkey);
 }
 
-BOOLEAN _app_parse_callback (
-	_In_ HANDLE hroot,
-	_In_ PVOID buffer,
-	_In_opt_ PVOID context
-)
-{
-	PKEY_BASIC_INFORMATION basic_info;
-	PPACKAGE_CONTEXT mycntx;
-	PR_STRING key_name;
-
-	basic_info = buffer;
-
-	if (!context)
-		return FALSE;
-
-	mycntx = context;
-
-	key_name = _r_obj_createstring_ex (basic_info->Name, basic_info->NameLength);
-
-	if (mycntx->is_byname)
-	{
-		_app_package_getpackagebyname (HKEY_CURRENT_USER, mycntx->path, key_name);
-	}
-	else
-	{
-		_app_package_getpackagebysid (HKEY_CURRENT_USER, mycntx->path, key_name);
-	}
-
-	_r_obj_dereference (key_name);
-
-	return TRUE;
-}
-
 NTSTATUS NTAPI _app_package_threadproc (
 	_In_ PVOID arglist
 )
@@ -452,8 +419,9 @@ VOID _app_package_getpackageslist (
 	static LPWSTR reg_byname = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
 	static LPWSTR reg_bysid = L"Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppContainer\\Mappings";
 
-	PACKAGE_CONTEXT context = {0};
+	PR_STRING name;
 	HANDLE hkey;
+	ULONG index = 0;
 	NTSTATUS status;
 
 	// query packages by name
@@ -466,14 +434,19 @@ VOID _app_package_getpackageslist (
 	}
 	else
 	{
-		_r_str_copy (context.path, RTL_NUMBER_OF (context.path), reg_byname);
+		while (TRUE)
+		{
+			status = _r_reg_enumkey (hkey, index, &name, NULL);
 
-		context.is_byname = TRUE;
+			if (!NT_SUCCESS (status))
+				break;
 
-		status = _r_reg_enumkey (hkey, KeyBasicInformation, &_app_parse_callback, &context);
+			_app_package_getpackagebyname (HKEY_CURRENT_USER, reg_byname, name);
 
-		if (!NT_SUCCESS (status))
-			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_enumkey", status, reg_byname);
+			_r_obj_dereference (name);
+
+			index += 1;
+		}
 
 		NtClose (hkey);
 	}
@@ -488,14 +461,21 @@ VOID _app_package_getpackageslist (
 	}
 	else
 	{
-		_r_str_copy (context.path, RTL_NUMBER_OF (context.path), reg_bysid);
+		index = 0;
 
-		context.is_byname = FALSE;
+		while (TRUE)
+		{
+			status = _r_reg_enumkey (hkey, index, &name, NULL);
 
-		status = _r_reg_enumkey (hkey, KeyBasicInformation, &_app_parse_callback, &context);
+			if (!NT_SUCCESS (status))
+				break;
 
-		if (!NT_SUCCESS (status))
-			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_reg_enumkey", status, reg_bysid);
+			_app_package_getpackagebysid (HKEY_CURRENT_USER, reg_bysid, name);
+
+			_r_obj_dereference (name);
+
+			index += 1;
+		}
 
 		NtClose (hkey);
 	}
@@ -552,11 +532,11 @@ VOID _app_package_getserviceslist (
 	{
 		if (NtLastError () == ERROR_MORE_DATA)
 		{
-			// Set the buffer
+			// set the buffer
 			buffer_size += return_length;
 			buffer = _r_mem_reallocate (buffer, buffer_size);
 
-			// Now query again for services
+			// now query again for services
 			if (!EnumServicesStatusExW (hsvcmgr, SC_ENUM_PROCESS_INFO, service_type, service_state, buffer, buffer_size, &return_length, &services_returned, NULL, NULL))
 			{
 				_r_mem_free (buffer);

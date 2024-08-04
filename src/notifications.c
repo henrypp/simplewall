@@ -442,40 +442,32 @@ VOID _app_notify_playsound ()
 	static volatile PR_STRING cached_path = NULL;
 
 	PR_STRING current_path;
-	PR_STRING new_path;
-	PR_STRING expanded_string;
+	PR_STRING path;
 	HANDLE hkey;
-	ULONG flags;
+	ULONG flags = SND_ASYNC | SND_NODEFAULT | SND_NOWAIT | SND_SENTRY;
 	NTSTATUS status;
 
 	current_path = _InterlockedCompareExchangePointer (&cached_path, NULL, NULL);
 
 	if (!current_path || !_r_fs_exists (current_path->buffer))
 	{
-		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", KEY_READ, &hkey);
+		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", KEY_READ, 0, &hkey);
 
 		if (NT_SUCCESS (status))
 		{
-			status = _r_reg_querystring (hkey, NULL, &new_path);
+			status = _r_reg_querystring (hkey, NULL, &path);
 
 			if (NT_SUCCESS (status))
 			{
-				status = _r_str_environmentexpandstring (NULL, &new_path->sr, &expanded_string);
-
-				if (NT_SUCCESS (status))
-					_r_obj_movereference (&new_path, expanded_string);
-
-				current_path = _InterlockedCompareExchangePointer (&cached_path, new_path, current_path);
+				current_path = _InterlockedCompareExchangePointer (&cached_path, path, current_path);
 
 				if (current_path)
-					_r_obj_dereference (new_path);
+					_r_obj_dereference (path);
 			}
 
 			NtClose (hkey);
 		}
 	}
-
-	flags = SND_ASYNC | SND_NODEFAULT | SND_NOWAIT | SND_SENTRY;
 
 	if (_r_obj_isstringempty (current_path) || !PlaySoundW (current_path->buffer, NULL, flags | SND_FILENAME))
 		PlaySoundW (NOTIFY_SOUND_NAME, NULL, flags);
