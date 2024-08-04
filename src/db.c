@@ -1030,7 +1030,7 @@ VOID _app_db_save_app (
 		is_usedapp = _app_isappused (ptr_app);
 
 		// do not save unused apps/uwp apps...
-		if (!is_usedapp && !is_keepunusedapps)
+		if (!is_usedapp && (!is_keepunusedapps || (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)))
 		{
 			//_app_deleteappitem (_r_app_gethwnd (), ptr_app->type, ptr_app->app_hash);
 
