@@ -241,7 +241,7 @@ VOID _app_config_apply (
 		case IDC_USEHASHES_CHK:
 		case IDM_USEHASHES_CHK:
 		{
-			new_val = !_r_config_getboolean (L"IsHashesEnabled", TRUE);
+			new_val = !_r_config_getboolean (L"IsHashesEnabled", FALSE);
 			break;
 		}
 
@@ -616,7 +616,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_checkbutton (hwnd, IDC_USESTEALTHMODE_CHK, _r_config_getboolean (L"UseStealthMode", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, _r_config_getboolean (L"InstallBoottimeFilters", TRUE));
 					_r_ctrl_checkbutton (hwnd, IDC_USECERTIFICATES_CHK, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
-					_r_ctrl_checkbutton (hwnd, IDC_USEHASHES_CHK, _r_config_getboolean (L"IsHashesEnabled", TRUE));
+					_r_ctrl_checkbutton (hwnd, IDC_USEHASHES_CHK, _r_config_getboolean (L"IsHashesEnabled", FALSE));
 					_r_ctrl_checkbutton (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 
 					htip = _r_ctrl_createtip (hwnd);
@@ -675,12 +675,7 @@ INT_PTR CALLBACK SettingsProc (
 					INT item_id = 0;
 
 					// configure listview
-					_r_listview_setstyle (
-						hwnd,
-						IDC_COLORS,
-						LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES,
-						FALSE
-					);
+					_r_listview_setstyle (hwnd, IDC_COLORS, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_CHECKBOXES, FALSE);
 
 					_app_listview_setview (hwnd, IDC_COLORS);
 

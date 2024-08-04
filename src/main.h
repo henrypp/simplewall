@@ -483,12 +483,6 @@ typedef struct _ITEM_CONTEXT
 	} DUMMYUNIONNAME;
 } ITEM_CONTEXT, *PITEM_CONTEXT;
 
-typedef struct _PACKAGE_CONTEXT
-{
-	WCHAR path[128];
-	BOOLEAN is_byname;
-} PACKAGE_CONTEXT, *PPACKAGE_CONTEXT;
-
 typedef struct _ITEM_COLOR
 {
 	PR_STRING config_name;

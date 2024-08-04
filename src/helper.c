@@ -1848,7 +1848,7 @@ VOID NTAPI _app_queue_fileinformation (
 	_app_getfileversioninfo (ptr_app_info);
 
 	// query sha256 info
-	if (_r_config_getboolean (L"IsHashesEnabled", TRUE))
+	if (_r_config_getboolean (L"IsHashesEnabled", FALSE))
 		_app_getfilehashinfo (hfile, ptr_app_info->app_hash);
 
 	// redraw listview

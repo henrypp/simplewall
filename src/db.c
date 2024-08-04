@@ -936,9 +936,9 @@ NTSTATUS _app_db_savetofile (
 	_app_db_save_rule (db_info);
 	_app_db_save_ruleconfig (db_info);
 
-	_r_xml_writewhitespace (&db_info->xml_library, L"\n");
+	_r_xml_writewhitespace (&db_info->xml_library, L"\r\n");
 	_r_xml_writeendelement (&db_info->xml_library);
-	_r_xml_writewhitespace (&db_info->xml_library, L"\n");
+	_r_xml_writewhitespace (&db_info->xml_library, L"\r\n");
 	_r_xml_writeenddocument (&db_info->xml_library);
 
 	status = _app_db_save_streamtofile (db_info, path);
@@ -993,7 +993,7 @@ FORCEINLINE VOID _app_db_writeelementstart (
 	_In_ LPCWSTR name
 )
 {
-	_r_xml_writewhitespace (&db_info->xml_library, L"\n\t");
+	_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t");
 
 	_r_xml_writestartelement (&db_info->xml_library, name);
 }
@@ -1002,7 +1002,7 @@ FORCEINLINE VOID _app_db_writeelementend (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
-	_r_xml_writewhitespace (&db_info->xml_library, L"\n\t");
+	_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t");
 
 	_r_xml_writeendelement (&db_info->xml_library);
 }
@@ -1032,17 +1032,17 @@ VOID _app_db_save_app (
 		// do not save unused apps/uwp apps...
 		if (!is_usedapp && !is_keepunusedapps)
 		{
-			_app_deleteappitem (_r_app_gethwnd (), ptr_app->type, ptr_app->app_hash);
+			//_app_deleteappitem (_r_app_gethwnd (), ptr_app->type, ptr_app->app_hash);
 
 			continue;
 		}
 
-		_r_xml_writewhitespace (&db_info->xml_library, L"\n\t\t");
+		_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t\t");
 		_r_xml_writestartelement (&db_info->xml_library, L"item");
 
 		_r_xml_setattribute (&db_info->xml_library, L"path", ptr_app->original_path->buffer);
 
-		if (_r_config_getboolean (L"IsHashesEnabled", TRUE) && !_r_obj_isstringempty (ptr_app->hash))
+		if (_r_config_getboolean (L"IsHashesEnabled", FALSE) && !_r_obj_isstringempty (ptr_app->hash))
 			_r_xml_setattribute (&db_info->xml_library, L"hash", ptr_app->hash->buffer);
 
 		if (!_r_obj_isstringempty (ptr_app->comment))
@@ -1094,7 +1094,7 @@ VOID _app_db_save_rule (
 		if (!ptr_rule || ptr_rule->is_readonly || _r_obj_isstringempty (ptr_rule->name))
 			continue;
 
-		_r_xml_writewhitespace (&db_info->xml_library, L"\n\t\t");
+		_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t\t");
 
 		_r_xml_writestartelement (&db_info->xml_library, L"item");
 
@@ -1190,7 +1190,7 @@ VOID _app_db_save_ruleconfig (
 		if (ptr_config->is_enabled == is_enabled_default && !apps_string)
 			continue;
 
-		_r_xml_writewhitespace (&db_info->xml_library, L"\n\t\t");
+		_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t\t");
 
 		_r_xml_writestartelement (&db_info->xml_library, L"item");
 
