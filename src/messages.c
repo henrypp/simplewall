@@ -82,7 +82,7 @@ VOID _app_message_initialize (
 
 		_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN + _r_calc_clamp (_r_config_getlong (L"ProfileType", 0), 0, 2));
 
-		is_enabled = _r_config_getboolean (L"IsHashesEnabled", TRUE);
+		is_enabled = _r_config_getboolean (L"IsHashesEnabled", FALSE);
 
 		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE));
 		_r_menu_checkitem (hmenu, IDM_KEEPUNUSED_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsKeepUnusedApps", TRUE));
@@ -3185,6 +3185,7 @@ VOID _app_command_purgetimers (
 	R_STRINGBUILDER sb;
 	HANDLE hengine;
 	PR_STRING string;
+	PR_STRING path;
 	PR_LIST rules;
 	PITEM_APP ptr_app = NULL;
 	ULONG_PTR enum_key = 0;
@@ -3207,14 +3208,26 @@ VOID _app_command_purgetimers (
 		{
 			_r_obj_addlistitem (rules, ptr_app);
 
-			string = _app_getappdisplayname (ptr_app, FALSE);
+			path = _app_getappdisplayname (ptr_app, FALSE);
 
-			if (string)
+			if (path)
 			{
-				_r_obj_appendstringbuilder2 (&sb, &string->sr);
+				_r_obj_appendstringbuilder2 (&sb, &path->sr);
+
+				string = _r_format_interval (ptr_app->timer - _r_unixtime_now (), TRUE);
+
+				if (string)
+				{
+					_r_obj_appendstringbuilder (&sb, L" (");
+					_r_obj_appendstringbuilder2 (&sb, &string->sr);
+					_r_obj_appendstringbuilder (&sb, L")");
+
+					_r_obj_dereference (path);
+				}
+
 				_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
-				_r_obj_dereference (string);
+				_r_obj_dereference (path);
 			}
 		}
 	}
