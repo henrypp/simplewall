@@ -657,15 +657,7 @@ VOID _app_setinterfacestate (
 	if (!_wfp_isfiltersapplying ())
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));
 
-	_r_toolbar_setbutton (
-		config.hrebar,
-		IDC_TOOLBAR,
-		IDM_TRAY_START,
-		_app_getstateaction (install_type),
-		BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT,
-		0,
-		is_filtersinstalled ? 1 : 0
-	);
+	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _app_getstateaction (install_type), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
 
 	_app_settrayicon (hwnd, install_type);
 }

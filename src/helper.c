@@ -2081,7 +2081,7 @@ VOID _app_wufixhelper (
 
 	_r_str_printf (reg_key, RTL_NUMBER_OF (reg_key), L"SYSTEM\\CurrentControlSet\\Services\\%s", service_name);
 
-	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, reg_key, KEY_READ | KEY_WRITE, 0, &hkey);
+	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, reg_key, 0, KEY_READ | KEY_WRITE, &hkey);
 
 	if (!NT_SUCCESS (status))
 		return;

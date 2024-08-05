@@ -451,7 +451,7 @@ VOID _app_notify_playsound ()
 
 	if (!current_path || !_r_fs_exists (current_path->buffer))
 	{
-		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", KEY_READ, 0, &hkey);
+		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", 0, KEY_READ, &hkey);
 
 		if (NT_SUCCESS (status))
 		{

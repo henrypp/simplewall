@@ -133,7 +133,7 @@ NTSTATUS _app_db_generatebody (
 	_In_ BYTE profile_type,
 	_In_ PR_BYTE hash_value,
 	_In_ PR_BYTE buffer,
-	_Outptr_ PR_BYTE_PTR out_buffer
+	_Out_ PR_BYTE_PTR out_buffer
 );
 
 _Success_ (NT_SUCCESS (return))

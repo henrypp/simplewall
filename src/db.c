@@ -326,8 +326,8 @@ VOID _app_db_parse_rule (
 )
 {
 	PITEM_RULE_CONFIG ptr_config = NULL;
-	R_STRINGREF first_part;
 	R_STRINGBUILDER sb;
+	R_STRINGREF first_part;
 	R_STRINGREF sr;
 	ULONG_PTR app_hash;
 	PR_STRING rule_name;
@@ -542,7 +542,9 @@ VOID _app_db_parse_ruleconfig (
 	if (!ptr_config)
 	{
 		_r_queuedlock_acquireexclusive (&lock_rules_config);
+
 		ptr_config = _app_addruleconfigtable (rules_config, rule_hash, rule_name, _r_xml_getattribute_boolean (&db_info->xml_library, L"is_enabled"));
+
 		_r_queuedlock_releaseexclusive (&lock_rules_config);
 
 		if (ptr_config)
@@ -652,10 +654,10 @@ NTSTATUS _app_db_encodebody (
 	_Out_ PR_BYTE_PTR out_buffer
 )
 {
-	PR_BYTE bytes;
-	PR_BYTE new_bytes;
 	PR_BYTE body_bytes;
 	PR_BYTE hash_value;
+	PR_BYTE new_bytes;
+	PR_BYTE bytes;
 	NTSTATUS status;
 
 	*out_buffer = NULL;
@@ -738,7 +740,7 @@ NTSTATUS _app_db_generatebody (
 	_In_ BYTE profile_type,
 	_In_ PR_BYTE hash_value,
 	_In_ PR_BYTE buffer,
-	_Outptr_ PR_BYTE_PTR out_buffer
+	_Out_ PR_BYTE_PTR out_buffer
 )
 {
 	PR_BYTE bytes;
@@ -1042,7 +1044,7 @@ VOID _app_db_save_app (
 
 		_r_xml_setattribute (&db_info->xml_library, L"path", ptr_app->original_path->buffer);
 
-		if (_r_config_getboolean (L"IsHashesEnabled", FALSE) && !_r_obj_isstringempty (ptr_app->hash))
+		if (!_r_obj_isstringempty (ptr_app->hash) && _r_config_getboolean (L"IsHashesEnabled", FALSE))
 			_r_xml_setattribute (&db_info->xml_library, L"hash", ptr_app->hash->buffer);
 
 		if (!_r_obj_isstringempty (ptr_app->comment))
@@ -1156,8 +1158,8 @@ VOID _app_db_save_ruleconfig (
 	PITEM_RULE_CONFIG ptr_config = NULL;
 	PITEM_RULE ptr_rule;
 	PR_STRING apps_string;
-	ULONG_PTR rule_hash;
 	ULONG_PTR enum_key = 0;
+	ULONG_PTR rule_hash;
 	BOOLEAN is_enabled_default;
 
 	_app_db_writeelementstart (db_info, L"rules_config");
@@ -1271,32 +1273,54 @@ PR_STRING _app_db_getdirectionname (
 
 	if (is_localized)
 	{
-		if (direction == FWP_DIRECTION_OUTBOUND)
+		switch (direction)
 		{
-			text = _r_locale_getstring (IDS_DIRECTION_1);
-		}
-		else if (direction == FWP_DIRECTION_INBOUND)
-		{
-			text = _r_locale_getstring (IDS_DIRECTION_2);
-		}
-		else if (direction == FWP_DIRECTION_MAX)
-		{
-			text = _r_locale_getstring (IDS_ANY);
+			case FWP_DIRECTION_OUTBOUND:
+			{
+				text = _r_locale_getstring (IDS_DIRECTION_1);
+
+				break;
+			}
+
+			case FWP_DIRECTION_INBOUND:
+			{
+				text = _r_locale_getstring (IDS_DIRECTION_2);
+
+				break;
+			}
+
+			case FWP_DIRECTION_MAX:
+			{
+				text = _r_locale_getstring (IDS_ANY);
+
+				break;
+			}
 		}
 	}
 	else
 	{
-		if (direction == FWP_DIRECTION_OUTBOUND)
+		switch (direction)
 		{
-			text = SZ_DIRECTION_OUT;
-		}
-		else if (direction == FWP_DIRECTION_INBOUND)
-		{
-			text = SZ_DIRECTION_IN;
-		}
-		else if (direction == FWP_DIRECTION_MAX)
-		{
-			text = SZ_DIRECTION_ANY;
+			case FWP_DIRECTION_OUTBOUND:
+			{
+				text = SZ_DIRECTION_OUT;
+
+				break;
+			}
+
+			case FWP_DIRECTION_INBOUND:
+			{
+				text = SZ_DIRECTION_IN;
+
+				break;
+			}
+
+			case FWP_DIRECTION_MAX:
+			{
+				text = SZ_DIRECTION_ANY;
+
+				break;
+			}
 		}
 	}
 

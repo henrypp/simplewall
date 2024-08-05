@@ -483,7 +483,9 @@ ULONG_PTR _app_addapplication (
 
 	// insert object into the table
 	_r_queuedlock_acquireexclusive (&lock_apps);
+
 	_r_obj_addhashtablepointer (apps_table, app_hash, ptr_app);
+
 	_r_queuedlock_releaseexclusive (&lock_apps);
 
 	// insert item
@@ -578,7 +580,9 @@ PITEM_APP _app_getappitem (
 	PITEM_APP ptr_app;
 
 	_r_queuedlock_acquireshared (&lock_apps);
+
 	ptr_app = _r_obj_findhashtablepointer (apps_table, app_hash);
+
 	_r_queuedlock_releaseshared (&lock_apps);
 
 	return ptr_app;
@@ -653,7 +657,9 @@ PITEM_RULE_CONFIG _app_getruleconfigitem (
 	PITEM_RULE_CONFIG ptr_rule_config;
 
 	_r_queuedlock_acquireshared (&lock_rules_config);
+
 	ptr_rule_config = _r_obj_findhashtable (rules_config, rule_hash);
+
 	_r_queuedlock_releaseshared (&lock_rules_config);
 
 	return ptr_rule_config;
@@ -667,7 +673,9 @@ PITEM_LOG _app_getlogitem (
 	PITEM_LOG ptr_log;
 
 	_r_queuedlock_acquireshared (&lock_loglist);
+
 	ptr_log = _r_obj_findhashtablepointer (log_table, log_hash);
+
 	_r_queuedlock_releaseshared (&lock_loglist);
 
 	return ptr_log;
@@ -683,14 +691,16 @@ ULONG_PTR _app_getlogapp (
 
 	ptr_log = _app_getlogitem (index);
 
-	if (!ptr_log)
-		return 0;
+	if (ptr_log)
+	{
+		app_hash = ptr_log->app_hash;
 
-	app_hash = ptr_log->app_hash;
+		_r_obj_dereference (ptr_log);
 
-	_r_obj_dereference (ptr_log);
+		return app_hash;
+	}
 
-	return app_hash;
+	return 0;
 }
 
 COLORREF _app_getappcolor (
@@ -979,7 +989,9 @@ VOID _app_ruleenable (
 		if (is_createconfig)
 		{
 			_r_queuedlock_acquireexclusive (&lock_rules_config);
+
 			ptr_config = _app_addruleconfigtable (rules_config, rule_hash, ptr_rule->name, is_enable);
+
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 		}
 	}
@@ -1034,8 +1046,8 @@ BOOLEAN _app_ruleblocklistsetchange (
 
 	ptr_rule->action = (new_state != 1) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
-	ptr_rule->is_enabled = (new_state != 0);
 	ptr_rule->is_enabled_default = ptr_rule->is_enabled; // set default value for rule
+	ptr_rule->is_enabled = (new_state != 0);
 
 	return TRUE;
 }
@@ -1404,7 +1416,7 @@ BOOLEAN _app_isappexists (
 	if (ptr_app->is_undeletable)
 		return TRUE;
 
-	if (ptr_app->is_haveerrors)
+	if (ptr_app->is_enabled && ptr_app->is_haveerrors)
 		return FALSE;
 
 	switch (ptr_app->type)
@@ -1423,7 +1435,7 @@ BOOLEAN _app_isappexists (
 		case DATA_APP_UWP:
 		case DATA_APP_PICO:
 		{
-			return TRUE;
+			return TRUE; // service and UWP is already undeletable
 		}
 	}
 
@@ -1437,7 +1449,9 @@ BOOLEAN _app_isappfound (
 	BOOLEAN is_found;
 
 	_r_queuedlock_acquireshared (&lock_apps);
+
 	is_found = (_r_obj_findhashtable (apps_table, app_hash) != NULL);
+
 	_r_queuedlock_releaseshared (&lock_apps);
 
 	return is_found;
@@ -1463,7 +1477,7 @@ BOOLEAN _app_isappused (
 	_In_ PITEM_APP ptr_app
 )
 {
-	if (ptr_app->is_enabled || ptr_app->is_silent)
+	if (ptr_app->is_enabled || ptr_app->is_silent || ptr_app->is_undeletable)
 		return TRUE;
 
 	if (_app_isapphaverule (ptr_app->app_hash, TRUE))
@@ -1543,7 +1557,7 @@ NTSTATUS _app_profile_load_fromresource (
 		status = _r_res_loadresource (_r_sys_getimagebase (), RT_RCDATA, resource_name, 0, &bytes);
 
 		if (NT_SUCCESS (status))
-			status = _app_db_openfrombuffer (db_info, &bytes, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
+			status = _app_db_openfrombuffer (db_info, &bytes, XML_VERSION_MAXIMUM, XML_TYPE_PROFILE_INTERNAL);
 	}
 
 	return status;
@@ -1584,8 +1598,8 @@ VOID _app_profile_load_internal (
 	_Out_ PLONG64 out_timestamp
 )
 {
-	DB_INFORMATION db_info_file;
 	DB_INFORMATION db_info_buffer;
+	DB_INFORMATION db_info_file;
 	PDB_INFORMATION db_info;
 	BOOLEAN is_loadfromresource;
 	LONG64 timestamp = 0;
@@ -1598,7 +1612,7 @@ VOID _app_profile_load_internal (
 	if (_r_fs_exists (path->buffer))
 	{
 		if (NT_SUCCESS (status_file))
-			status_file = _app_db_openfromfile (&db_info_file, path, XML_VERSION_CURRENT, XML_TYPE_PROFILE_INTERNAL);
+			status_file = _app_db_openfromfile (&db_info_file, path, XML_VERSION_MAXIMUM, XML_TYPE_PROFILE_INTERNAL);
 	}
 	else
 	{
@@ -1639,12 +1653,12 @@ VOID _app_profile_load_internal (
 
 	*out_timestamp = timestamp;
 
-	_app_db_destroy (&db_info_file);
 	_app_db_destroy (&db_info_buffer);
+	_app_db_destroy (&db_info_file);
 }
 
 VOID _app_profile_refresh (
-	_In_ HWND hwnd
+	_In_opt_ HWND hwnd
 )
 {
 	// clear apps
@@ -1661,6 +1675,9 @@ VOID _app_profile_refresh (
 	_r_queuedlock_acquireexclusive (&lock_rules_config);
 	_r_obj_clearhashtable (rules_config);
 	_r_queuedlock_releaseexclusive (&lock_rules_config);
+
+	if (!hwnd)
+		hwnd = _r_app_gethwnd ();
 
 	// generate services list
 	_app_package_getserviceslist (hwnd);
@@ -1787,7 +1804,9 @@ NTSTATUS _app_profile_save (
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_profile);
-	status = _app_db_savetofile (&db_info, profile_info.profile_path, XML_VERSION_CURRENT, XML_TYPE_PROFILE, timestamp);
+
+	status = _app_db_savetofile (&db_info, profile_info.profile_path, XML_VERSION_MAXIMUM, XML_TYPE_PROFILE, timestamp);
+
 	_r_queuedlock_releaseexclusive (&lock_profile);
 
 	if (!NT_SUCCESS (status))

@@ -275,11 +275,11 @@ typedef struct _ITEM_APP
 
 	PTP_TIMER htimer;
 
+	ULONG_PTR app_hash;
+
 	LONG64 timestamp;
 	LONG64 timer;
 	LONG64 last_notify;
-
-	ULONG_PTR app_hash;
 
 	ENUM_TYPE_DATA type;
 
@@ -297,10 +297,10 @@ typedef struct _ITEM_APP
 
 typedef struct _ITEM_APP_INFO
 {
-	PR_STRING path;
-
 	PR_STRING signature_info;
 	PR_STRING version_info;
+
+	PR_STRING path;
 
 	ULONG_PTR app_hash;
 

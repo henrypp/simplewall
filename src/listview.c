@@ -277,43 +277,47 @@ ULONG_PTR _app_listview_getappcontext (
 {
 	PITEM_NETWORK ptr_network;
 	PITEM_LOG ptr_log;
-	LPARAM lparam;
+	LPARAM context;
 
-	lparam = _r_listview_getitemlparam (hwnd, listview_id, item_id);
+	context = _r_listview_getitemlparam (hwnd, listview_id, item_id);
 
-	if (!lparam)
+	if (!context)
 		return 0;
 
-	lparam = _app_listview_getcontextcode (lparam);
+	context = _app_listview_getcontextcode (context);
 
-	if (listview_id == IDC_NETWORK)
+	switch (listview_id)
 	{
-		ptr_network = _app_network_getitem (lparam);
-
-		if (ptr_network)
+		case IDC_NETWORK:
 		{
-			lparam = ptr_network->app_hash;
+			ptr_network = _app_network_getitem (context);
 
-			_r_obj_dereference (ptr_network);
+			if (ptr_network)
+			{
+				context = ptr_network->app_hash;
 
-			return lparam;
+				_r_obj_dereference (ptr_network);
+			}
+
+			break;
+		}
+
+		case IDC_LOG:
+		{
+			ptr_log = _app_getlogitem (context);
+
+			if (ptr_log)
+			{
+				context = ptr_log->app_hash;
+
+				_r_obj_dereference (ptr_log);
+			}
+
+			break;
 		}
 	}
-	else if (listview_id == IDC_LOG)
-	{
-		ptr_log = _app_getlogitem (lparam);
 
-		if (ptr_log)
-		{
-			lparam = ptr_log->app_hash;
-
-			_r_obj_dereference (ptr_log);
-
-			return lparam;
-		}
-	}
-
-	return lparam;
+	return context;
 }
 
 ULONG_PTR _app_listview_getitemcontext (
@@ -933,7 +937,7 @@ VOID _app_listview_setview (
 	_In_ INT listview_id
 )
 {
-	HIMAGELIST himg;
+	HIMAGELIST himg = NULL;
 	LONG view_type;
 	LONG icons_size;
 	BOOLEAN is_mainview;
@@ -986,12 +990,12 @@ INT CALLBACK _app_listview_compare_callback (
 	_In_ LPARAM lparam
 )
 {
-	WCHAR config_name[128];
+	WCHAR section_name[128];
 	HWND hwnd;
 	ULONG_PTR context1;
 	ULONG_PTR context2;
-	LONG column_id;
 	INT listview_id;
+	LONG column_id;
 	INT result = 0;
 	INT item_id1;
 	INT item_id2;
@@ -1020,10 +1024,10 @@ INT CALLBACK _app_listview_compare_callback (
 	item_id1 = (INT)(INT_PTR)lparam1;
 	item_id2 = (INT)(INT_PTR)lparam2;
 
-	_r_str_printf (config_name, RTL_NUMBER_OF (config_name), L"listview\\%04" TEXT (PRIX32), listview_id);
+	_r_str_printf (section_name, RTL_NUMBER_OF (section_name), L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	column_id = _r_config_getlong_ex (L"SortColumn", 0, config_name);
-	is_descend = _r_config_getboolean_ex (L"SortIsDescending", FALSE, config_name);
+	column_id = _r_config_getlong_ex (L"SortColumn", 0, section_name);
+	is_descend = _r_config_getboolean_ex (L"SortIsDescending", FALSE, section_name);
 
 	if ((_r_listview_getstyle_ex (hwnd, listview_id) & LVS_EX_CHECKBOXES) != 0)
 	{
@@ -1066,7 +1070,7 @@ INT CALLBACK _app_listview_compare_callback (
 				}
 			}
 		}
-		else if (listview_id == IDC_LOG && column_id == 11)
+		else if (listview_id == IDC_LOG && column_id == 1)
 		{
 			ptr_log1 = _app_getlogitem (context1);
 			ptr_log2 = _app_getlogitem (context2);

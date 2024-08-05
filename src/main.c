@@ -3438,15 +3438,7 @@ INT_PTR CALLBACK DlgProc (
 
 					new_val = !_r_config_getboolean (L"IsLogEnabled", FALSE);
 
-					_r_toolbar_setbutton (
-						config.hrebar,
-						IDC_TOOLBAR,
-						ctrl_id,
-						NULL,
-						0,
-						new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED,
-						I_IMAGENONE
-					);
+					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, NULL, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
 
 					_r_config_setboolean (L"IsLogEnabled", new_val);
 
@@ -3461,15 +3453,7 @@ INT_PTR CALLBACK DlgProc (
 
 					new_val = !_r_config_getboolean (L"IsLogUiEnabled", FALSE);
 
-					_r_toolbar_setbutton (
-						config.hrebar,
-						IDC_TOOLBAR,
-						ctrl_id,
-						NULL,
-						0,
-						new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED,
-						I_IMAGENONE
-					);
+					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, NULL, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
 
 					_r_config_setboolean (L"IsLogUiEnabled", new_val);
 
@@ -3483,15 +3467,7 @@ INT_PTR CALLBACK DlgProc (
 
 					new_val = !_r_config_getboolean (L"IsNotificationsEnabled", TRUE);
 
-					_r_toolbar_setbutton (
-						config.hrebar,
-						IDC_TOOLBAR,
-						ctrl_id,
-						NULL,
-						0,
-						new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED,
-						I_IMAGENONE
-					);
+					_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, ctrl_id, NULL, 0, new_val ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED, I_IMAGENONE);
 
 					_r_config_setboolean (L"IsNotificationsEnabled", new_val);
 
