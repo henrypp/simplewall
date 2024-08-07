@@ -1,3 +1,19 @@
+v3.8.3 (8 August 2024)
+- added remember last position of notification window (issue #1659)
+- added watch services & uwp apps for install/uninstall
+- added displays long time for apps
+- improved windows 7 compatibility
+- improved arm64 compatibility
+- improved dark theme support
+- fixed show log button does not work as expected (issue #1757, again!)
+- fixed apps sometimes delete themselves (issue #1794, not fixed)
+- fixed duplicate process at startup (issue #1769)
+- fixed do not save hash when it is not enabled
+- fixed row colors for dark mode (issue #1767)
+- fixed log listview sorting by date
+- fixed displaying timer tooltip
+- updated project sdk
+
 v3.8.2 (9 May 2024)
 - revert back windows 7 & windows 8 support
 - improved dark theme support
