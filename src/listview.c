@@ -975,7 +975,7 @@ VOID _app_listview_setview (
 	}
 	else
 	{
-		SHGetImageList (icons_size, &IID_IImageList2, &himg);
+		_r_imagelist_getsystem (icons_size, &himg);
 	}
 
 	if (himg)
