@@ -81,8 +81,8 @@ HANDLE _wfp_getenginehandle ()
 	static HANDLE engine_handle = NULL;
 
 	FWPM_SESSION0 session;
-	ULONG status;
 	ULONG attempts = 6;
+	ULONG status;
 
 	if (_r_initonce_begin (&init_once))
 	{
@@ -116,9 +116,9 @@ HANDLE _wfp_getenginehandle ()
 					}
 				}
 
-				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen0", status, NULL);
-
 				_r_show_errormessage (_r_app_gethwnd (), L"WFP engine initialization failed! Try again later.", status, NULL, ET_WINDOWS);
+
+				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen0", status, NULL);
 
 				RtlExitUserProcess (status);
 
@@ -140,14 +140,9 @@ ENUM_INSTALL_TYPE _wfp_getinstalltype ()
 
 	engine_handle = _wfp_getenginehandle ();
 
-	if (engine_handle)
-	{
-		install_type = _wfp_isproviderinstalled (engine_handle);
+	install_type = _wfp_isproviderinstalled (engine_handle);
 
-		return install_type;
-	}
-
-	return INSTALL_DISABLED;
+	return install_type;
 }
 
 PR_STRING _wfp_getlayername (
@@ -2637,34 +2632,30 @@ VOID NTAPI _wfp_applythread (
 	context = (PITEM_CONTEXT)arglist;
 	engine_handle = _wfp_getenginehandle ();
 
-	if (engine_handle)
+	// dropped packets logging (win7+)
+	if (config.is_neteventset)
+		_wfp_logunsubscribe (engine_handle);
+
+	if (context->is_install)
 	{
-		// dropped packets logging (win7+)
-		if (config.is_neteventset)
-			_wfp_logunsubscribe (engine_handle);
-
-		if (context->is_install)
-		{
-			if (_wfp_initialize (context->hwnd, engine_handle))
-				_wfp_installfilters (engine_handle);
-		}
-		else
-		{
-			if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-				_app_wufixenable (context->hwnd, FALSE);
-
-			_wfp_destroyfilters (engine_handle);
-			_wfp_uninitialize (engine_handle, TRUE);
-		}
-
-		// dropped packets logging (win7+)
-		if (config.is_neteventset)
-			_wfp_logsubscribe (context->hwnd, engine_handle);
-
+		if (_wfp_initialize (context->hwnd, engine_handle))
+			_wfp_installfilters (engine_handle);
+	}
+	else
+	{
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-			_app_wufixenable (context->hwnd, _r_config_getboolean (L"IsWUFixEnabled", FALSE));
+			_app_wufixenable (context->hwnd, FALSE);
+
+		_wfp_destroyfilters (engine_handle);
+		_wfp_uninitialize (engine_handle, TRUE);
 	}
 
+	// dropped packets logging (win7+)
+	if (config.is_neteventset)
+		_wfp_logsubscribe (context->hwnd, engine_handle);
+
+	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
+		_app_wufixenable (context->hwnd, _r_config_getboolean (L"IsWUFixEnabled", FALSE));
 	dpi_value = _r_dc_getwindowdpi (context->hwnd);
 
 	_app_restoreinterfacestate (context->hwnd, TRUE);

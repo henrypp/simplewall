@@ -154,16 +154,13 @@ VOID CALLBACK _app_timer_callback (
 
 	hengine = _wfp_getenginehandle ();
 
-	if (hengine)
-	{
-		rules = _r_obj_createlist (NULL);
+	rules = _r_obj_createlist (NULL);
 
-		_r_obj_addlistitem (rules, ptr_app);
+	_r_obj_addlistitem (rules, ptr_app);
 
-		_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
+	_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 
-		_r_obj_dereference (rules);
-	}
+	_r_obj_dereference (rules);
 
 	_app_listview_updateby_id (hwnd, ptr_app->type, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 

@@ -499,13 +499,13 @@ VOID CALLBACK _wfp_logcallback (
 	HANDLE engine_handle;
 	PITEM_LOG ptr_log;
 	GUID layer_guid;
-	PR_STRING resolved_path;
 	PR_STRING filter_name = NULL;
+	PR_STRING resolved_path;
 	PR_STRING layer_name;
 	PR_STRING sid_string;
 	PR_STRING path;
-	FWPM_LAYER0 *layer_ptr;
 	FWPM_FILTER0 *filter_ptr;
+	FWPM_LAYER0 *layer_ptr;
 	UINT8 filter_weight = 0;
 	BOOLEAN is_myprovider = FALSE;
 	NTSTATUS status;
@@ -517,9 +517,6 @@ VOID CALLBACK _wfp_logcallback (
 		return;
 
 	engine_handle = _wfp_getenginehandle ();
-
-	if (!engine_handle)
-		return;
 
 	// do not parse when tcp connection has been established, or when non-tcp traffic has been authorized
 	if (FwpmLayerGetById0 (engine_handle, log->layer_id, &layer_ptr) != ERROR_SUCCESS || !layer_ptr)
@@ -1333,8 +1330,8 @@ VOID NTAPI _app_logthread (
 	_In_ ULONG busy_count
 )
 {
-	PITEM_LOG ptr_log;
 	PITEM_APP ptr_app = NULL;
+	PITEM_LOG ptr_log;
 	HWND hwnd;
 	BOOLEAN is_notificationenabled;
 	BOOLEAN is_exludeblocklist;

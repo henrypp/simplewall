@@ -867,9 +867,9 @@ VOID _app_message_contextmenu_columns (
 	_In_ LPNMHDR nmlp
 )
 {
+	PR_STRING column_text;
 	HWND hlistview;
 	HMENU hmenu;
-	PR_STRING column_text;
 	INT listview_id;
 
 	hlistview = GetParent (nmlp->hwndFrom);
@@ -912,8 +912,8 @@ VOID _app_message_traycontextmenu (
 )
 {
 	ENUM_INSTALL_TYPE install_type;
-	HMENU hmenu;
 	HMENU hsubmenu;
+	HMENU hmenu;
 
 	hmenu = LoadMenuW (NULL, MAKEINTRESOURCEW (IDM_TRAY));
 
@@ -1039,16 +1039,16 @@ LONG_PTR _app_message_custdraw (
 {
 	TBBUTTONINFOW tbi = {0};
 	WCHAR text[128] = {0};
+	PR_STRING real_path = NULL;
 	PITEM_NETWORK ptr_network;
 	PITEM_LOG ptr_log;
 	PITEM_COLOR ptr_clr;
-	PR_STRING real_path = NULL;
 	ULONG_PTR app_hash = 0;
 	ULONG_PTR index;
 	COLORREF new_clr = 0;
 	INT ctrl_id;
-	BOOLEAN is_systemapp = FALSE;
 	BOOLEAN is_validconnection = FALSE;
+	BOOLEAN is_systemapp = FALSE;
 
 	switch (lpnmlv->nmcd.dwDrawStage)
 	{
@@ -1825,8 +1825,8 @@ VOID _app_command_idtorules (
 )
 {
 	HANDLE hengine;
-	PITEM_APP ptr_app;
 	PITEM_RULE ptr_rule;
+	PITEM_APP ptr_app;
 	PR_LIST rules;
 	ULONG_PTR app_hash;
 	ULONG_PTR rule_idx;
@@ -1871,16 +1871,13 @@ VOID _app_command_idtorules (
 	{
 		hengine = _wfp_getenginehandle ();
 
-		if (hengine)
-		{
-			rules = _r_obj_createlist (NULL);
+		rules = _r_obj_createlist (NULL);
 
-			_r_obj_addlistitem (rules, ptr_rule);
+		_r_obj_addlistitem (rules, ptr_rule);
 
-			_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
+		_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 
-			_r_obj_dereference (rules);
-		}
+		_r_obj_dereference (rules);
 	}
 
 	_app_listview_updateby_id (hwnd, listview_id, 0);
@@ -1917,27 +1914,24 @@ VOID _app_command_idtotimers (
 	{
 		hengine = _wfp_getenginehandle ();
 
-		if (hengine)
+		rules = _r_obj_createlist_ex (8, &_r_obj_dereference);
+
+		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
-			rules = _r_obj_createlist_ex (8, &_r_obj_dereference);
+			app_hash = _app_listview_getappcontext (hwnd, listview_id, item_id);
+			ptr_app = _app_getappitem (app_hash);
 
-			while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
+			if (ptr_app)
 			{
-				app_hash = _app_listview_getappcontext (hwnd, listview_id, item_id);
-				ptr_app = _app_getappitem (app_hash);
+				_app_timer_set (hwnd, ptr_app, seconds);
 
-				if (ptr_app)
-				{
-					_app_timer_set (hwnd, ptr_app, seconds);
-
-					_r_obj_addlistitem (rules, ptr_app);
-				}
+				_r_obj_addlistitem (rules, ptr_app);
 			}
-
-			_wfp_create3filters (hengine, rules, TEXT (__FILE__), __LINE__, FALSE);
-
-			_r_obj_dereference (rules);
 		}
+
+		_wfp_create3filters (hengine, rules, TEXT (__FILE__), __LINE__, FALSE);
+
+		_r_obj_dereference (rules);
 	}
 
 	_app_listview_updateby_id (hwnd, listview_id, PR_UPDATE_FORCE);
@@ -2009,9 +2003,9 @@ VOID _app_command_logclear (
 	_In_ HWND hwnd
 )
 {
+	HANDLE current_handle;
 	PR_STRING log_path;
 	LONG64 file_size;
-	HANDLE current_handle;
 	BOOLEAN is_valid;
 
 	log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
@@ -2225,8 +2219,7 @@ VOID _app_command_checkbox (
 			{
 				hengine = _wfp_getenginehandle ();
 
-				if (hengine)
-					_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
+				_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 			}
 		}
 	}
@@ -2266,8 +2259,7 @@ VOID _app_command_checkbox (
 			{
 				hengine = _wfp_getenginehandle ();
 
-				if (hengine)
-					_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
+				_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 			}
 		}
 	}
@@ -2479,8 +2471,7 @@ VOID _app_command_delete (
 			{
 				hengine = _wfp_getenginehandle ();
 
-				if (hengine)
-					_wfp_destroyfilters_array (hengine, guids, DBG_ARG);
+				_wfp_destroyfilters_array (hengine, guids, DBG_ARG);
 			}
 		}
 
@@ -2924,8 +2915,7 @@ VOID _app_command_purgeunused (
 			{
 				hengine = _wfp_getenginehandle ();
 
-				if (hengine)
-					_wfp_destroyfilters_array (hengine, guids, DBG_ARG);
+				_wfp_destroyfilters_array (hengine, guids, DBG_ARG);
 			}
 
 			_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
@@ -3008,8 +2998,7 @@ VOID _app_command_purgetimers (
 			{
 				hengine = _wfp_getenginehandle ();
 
-				if (hengine)
-					_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
+				_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 			}
 
 			for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)

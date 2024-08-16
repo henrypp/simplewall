@@ -1793,8 +1793,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					hengine = _wfp_getenginehandle ();
 
-					if (hengine)
-						_wfp_logsetoption (hengine);
+					_wfp_logsetoption (hengine);
 
 					break;
 				}
@@ -2369,8 +2368,7 @@ INT_PTR CALLBACK DlgProc (
 
 			hengine = _wfp_getenginehandle ();
 
-			if (hengine)
-				_wfp_uninitialize (hengine, FALSE);
+			_wfp_uninitialize (hengine, FALSE);
 
 			_r_imagelist_destroy (config.himg_rules_small);
 			_r_imagelist_destroy (config.himg_rules_large);
@@ -2387,13 +2385,12 @@ INT_PTR CALLBACK DlgProc (
 		{
 			PR_STRING string;
 			HDROP hdrop;
-			ULONG_PTR app_hash;
+			ULONG_PTR app_hash = 0;
 			ULONG numfiles;
 			ULONG length;
 
 			hdrop = (HDROP)wparam;
 			numfiles = DragQueryFileW (hdrop, UINT32_MAX, NULL, 0);
-			app_hash = 0;
 
 			for (ULONG i = 0; i < numfiles; i++)
 			{
@@ -2744,16 +2741,13 @@ INT_PTR CALLBACK DlgProc (
 								{
 									hengine = _wfp_getenginehandle ();
 
-									if (hengine)
-									{
-										rules = _r_obj_createlist (NULL);
+									rules = _r_obj_createlist (NULL);
 
-										_r_obj_addlistitem (rules, ptr_app);
+									_r_obj_addlistitem (rules, ptr_app);
 
-										_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
+									_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 
-										_r_obj_dereference (rules);
-									}
+									_r_obj_dereference (rules);
 								}
 
 								is_changed = TRUE;
@@ -2782,16 +2776,13 @@ INT_PTR CALLBACK DlgProc (
 								{
 									hengine = _wfp_getenginehandle ();
 
-									if (hengine)
-									{
-										rules = _r_obj_createlist (NULL);
+									rules = _r_obj_createlist (NULL);
 
-										_r_obj_addlistitem (rules, ptr_rule);
+									_r_obj_addlistitem (rules, ptr_rule);
 
-										_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
+									_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 
-										_r_obj_dereference (rules);
-									}
+									_r_obj_dereference (rules);
 								}
 
 								is_changed = TRUE;
@@ -2828,7 +2819,7 @@ INT_PTR CALLBACK DlgProc (
 				{
 					LPNMITEMACTIVATE lpnmlv;
 					LPNMMOUSE lpmouse;
-					INT command_id;
+					INT command_id = 0;
 					INT listview_id;
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
@@ -2837,7 +2828,6 @@ INT_PTR CALLBACK DlgProc (
 						break;
 
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
-					command_id = 0;
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_LOG)
 					{
@@ -2906,8 +2896,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						hengine = _wfp_getenginehandle ();
 
-						if (hengine)
-							_wfp_logunsubscribe (hengine);
+						_wfp_logunsubscribe (hengine);
 					}
 
 					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
@@ -2923,9 +2912,6 @@ INT_PTR CALLBACK DlgProc (
 					if (config.is_neteventset)
 					{
 						hengine = _wfp_getenginehandle ();
-
-						if (!hengine)
-							break;
 
 						_wfp_logsubscribe (hwnd, hengine);
 					}
@@ -3802,9 +3788,6 @@ BOOLEAN NTAPI _app_parseargs (
 	_app_initialize (NULL);
 
 	hengine = _wfp_getenginehandle ();
-
-	if (!hengine)
-		return FALSE;
 
 	switch (info_class)
 	{

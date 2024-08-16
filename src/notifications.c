@@ -117,8 +117,7 @@ BOOLEAN _app_notify_command (
 		{
 			hengine = _wfp_getenginehandle ();
 
-			if (hengine)
-				_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
+			_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 		}
 	}
 
@@ -1381,16 +1380,13 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						hengine = _wfp_getenginehandle ();
 
-						if (hengine)
-						{
-							rules = _r_obj_createlist (NULL);
+						rules = _r_obj_createlist (NULL);
 
-							_r_obj_addlistitem (rules, ptr_rule);
+						_r_obj_addlistitem (rules, ptr_rule);
 
-							_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
+						_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 
-							_r_obj_dereference (rules);
-						}
+						_r_obj_dereference (rules);
 					}
 
 					_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);

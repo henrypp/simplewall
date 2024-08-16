@@ -1935,16 +1935,13 @@ INT_PTR CALLBACK EditorProc (
 						{
 							hengine = _wfp_getenginehandle ();
 
-							if (hengine)
+							if (context->is_settorules)
 							{
-								if (context->is_settorules)
-								{
-									_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
-								}
-								else
-								{
-									_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
-								}
+								_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
+							}
+							else
+							{
+								_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 							}
 						}
 
