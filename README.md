@@ -21,7 +21,7 @@
 ### Description:
 Simple tool to configure [Windows Filtering Platform (WFP)](https://docs.microsoft.com/en-us/windows/win32/fwp/windows-filtering-platform-start-page) which can configure network activity on your computer.
 
-The lightweight application is less than a megabyte, and it is compatible with Windows 8.1 and higher operating systems.
+The lightweight application is less than a megabyte, and it is compatible with Windows 7 SP1 and higher operating systems.
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
 ### System requirements:
