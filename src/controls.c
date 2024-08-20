@@ -672,28 +672,24 @@ VOID _app_settrayicon (
 	LONG dpi_value;
 	LONG icon_size;
 	INT icon_id;
-	HRESULT status;
 
 	dpi_value = _r_dc_gettaskbardpi ();
-	icon_id = _app_getstateicon (install_type);
 	icon_size = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
+	icon_id = _app_getstateicon (install_type);
 
 	current_handle = _InterlockedCompareExchangePointer (&config.htray_icon, NULL, config.htray_icon);
 
 	if (current_handle)
 		DestroyIcon (current_handle);
 
-	status = _r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (icon_id), icon_size, &new_handle);
+	_r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (icon_id), icon_size, &new_handle);
 
-	if (SUCCEEDED (status))
-	{
-		_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
+	_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
 
-		current_handle = _InterlockedCompareExchangePointer (&config.htray_icon, new_handle, NULL);
+	current_handle = _InterlockedCompareExchangePointer (&config.htray_icon, new_handle, NULL);
 
-		if (current_handle)
-			DestroyIcon (current_handle);
-	}
+	if (current_handle)
+		DestroyIcon (current_handle);
 }
 
 VOID _app_imagelist_init (

@@ -482,11 +482,10 @@ ULONG_PTR _app_addapplication (
 	ptr_app->timestamp = _r_unixtime_now ();
 
 	// insert object into the table
-	_r_queuedlock_acquireexclusive (&lock_apps);
-
+	//
+	//_r_queuedlock_acquireexclusive (&lock_apps);
 	_r_obj_addhashtablepointer (apps_table, app_hash, ptr_app);
-
-	_r_queuedlock_releaseexclusive (&lock_apps);
+	//_r_queuedlock_releaseexclusive (&lock_apps);
 
 	// insert item
 	if (hwnd)
@@ -1131,8 +1130,7 @@ VOID _app_ruleblocklistset (
 				{
 					hengine = _wfp_getenginehandle ();
 
-					if (hengine)
-						_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
+					_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 				}
 			}
 		}
