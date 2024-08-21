@@ -51,8 +51,10 @@ ULONG_PTR _app_getloghash (
 	_In_ PITEM_LOG ptr_log
 );
 
+_Ret_maybenull_
 PR_STRING _app_getlogpath ();
 
+_Ret_maybenull_
 PR_STRING _app_getlogviewer ();
 
 BOOLEAN _app_islogfound (

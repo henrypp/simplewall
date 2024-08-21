@@ -102,6 +102,7 @@ ULONG_PTR _app_getloghash (
 	return log_hash;
 }
 
+_Ret_maybenull_
 PR_STRING _app_getlogpath ()
 {
 	PR_STRING path;
@@ -111,6 +112,7 @@ PR_STRING _app_getlogpath ()
 	return path;
 }
 
+_Ret_maybenull_
 PR_STRING _app_getlogviewer ()
 {
 	PR_STRING path;
