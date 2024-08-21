@@ -584,34 +584,34 @@ PR_STRING _app_getappdisplayname (
 {
 	if (ptr_app->app_hash == config.ntoskrnl_hash)
 	{
-		if (ptr_app->original_path)
+		if (!_r_obj_isstringempty (ptr_app->original_path))
 			return _r_obj_reference (ptr_app->original_path);
 	}
 
 	if (ptr_app->type == DATA_APP_SERVICE)
 	{
-		if (ptr_app->original_path)
+		if (!_r_obj_isstringempty (ptr_app->original_path))
 			return _r_obj_reference (ptr_app->original_path);
 	}
 	else if (ptr_app->type == DATA_APP_UWP)
 	{
-		if (ptr_app->display_name)
+		if (!_r_obj_isstringempty (ptr_app->display_name))
 			return _r_obj_reference (ptr_app->display_name);
 
-		if (ptr_app->real_path)
+		if (!_r_obj_isstringempty (ptr_app->real_path))
 			return _r_obj_reference (ptr_app->real_path);
 
-		if (ptr_app->original_path)
+		if (!_r_obj_isstringempty (ptr_app->original_path))
 			return _r_obj_reference (ptr_app->original_path);
 	}
 
 	if (is_shortened || _r_config_getboolean (L"ShowFilenames", TRUE))
 	{
-		if (ptr_app->short_name)
+		if (!_r_obj_isstringempty (ptr_app->short_name))
 			return _r_obj_reference (ptr_app->short_name);
 	}
 
-	if (ptr_app->real_path)
+	if (!_r_obj_isstringempty (ptr_app->real_path))
 		return _r_obj_reference (ptr_app->real_path);
 
 	return NULL;
