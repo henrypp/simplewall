@@ -1943,10 +1943,10 @@ VOID _app_command_logshow (
 	_In_ HWND hwnd
 )
 {
+	HANDLE current_handle;
 	PR_STRING viewer_path;
 	PR_STRING log_path;
 	PR_STRING cmdline;
-	HANDLE current_handle;
 	INT item_count;
 	NTSTATUS status;
 
@@ -1965,21 +1965,25 @@ VOID _app_command_logshow (
 	{
 		log_path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
 
-		if (!log_path)
-			return;
+		viewer_path = _app_getlogviewer ();
 
-		if (!_r_fs_exists (log_path->buffer))
+		if (!log_path || !_r_fs_exists (log_path->buffer) || !viewer_path || !_r_fs_exists (viewer_path->buffer))
+		{
+			if (log_path)
+				_r_obj_dereference (log_path);
+
+			if (viewer_path)
+				_r_obj_dereference (viewer_path);
+
+			_r_wnd_toggle (hwnd, TRUE);
+
 			return;
+		}
 
 		current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 		if (current_handle)
 			_r_fs_flushfile (current_handle);
-
-		viewer_path = _app_getlogviewer ();
-
-		if (!viewer_path)
-			return;
 
 		cmdline = _r_obj_concatstrings (
 			4,
@@ -1995,6 +1999,7 @@ VOID _app_command_logshow (
 			_r_show_errormessage (hwnd, NULL, status, cmdline->buffer, ET_NATIVE);
 
 		_r_obj_dereference (viewer_path);
+		_r_obj_dereference (log_path);
 		_r_obj_dereference (cmdline);
 	}
 }
