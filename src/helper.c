@@ -1608,7 +1608,7 @@ PR_STRING _app_resolveaddress (
 		return string;
 	}
 
-	status = DnsQuery_W (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+	status = DnsQuery_W (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_BYPASS_CACHE | DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
 
 	if (status == ERROR_SUCCESS)
 	{
