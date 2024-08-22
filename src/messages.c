@@ -2851,8 +2851,8 @@ VOID _app_command_purgeunused (
 {
 	R_STRINGBUILDER sb;
 	PITEM_APP ptr_app = NULL;
-	PR_HASHTABLE apps_list;
 	PR_STRING string = NULL;
+	PR_HASHTABLE apps_list;
 	PR_ARRAY guids;
 	HANDLE hengine;
 	ULONG_PTR enum_key = 0;
@@ -2888,6 +2888,8 @@ VOID _app_command_purgeunused (
 
 		if (string)
 		{
+			_r_obj_appendstringbuilder (&sb, L"- ");
+
 			_r_obj_appendstringbuilder2 (&sb, &string->sr);
 			_r_obj_appendstringbuilder (&sb, SZ_CRLF);
 
@@ -2969,6 +2971,8 @@ VOID _app_command_purgetimers (
 
 			if (path)
 			{
+				_r_obj_appendstringbuilder (&sb, L"- ");
+
 				_r_obj_appendstringbuilder2 (&sb, &path->sr);
 
 				string = _r_format_interval (ptr_app->timer - _r_unixtime_now (), TRUE);
