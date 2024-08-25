@@ -1993,7 +1993,7 @@ VOID _app_command_logshow (
 			log_path->buffer
 		);
 
-		status = _r_sys_createprocess (viewer_path->buffer, cmdline->buffer, NULL);
+		status = _r_sys_createprocess (viewer_path->buffer, cmdline->buffer, NULL, NULL);
 
 		if (status != STATUS_SUCCESS)
 			_r_show_errormessage (hwnd, NULL, status, cmdline->buffer, ET_NATIVE);
@@ -2071,7 +2071,7 @@ VOID _app_command_logerrshow (
 		L"\""
 	);
 
-	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL);
+	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL, NULL);
 
 	if (status != STATUS_SUCCESS)
 		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, ET_NATIVE);

@@ -1998,8 +1998,8 @@ VOID NTAPI _app_queue_resolveinformation (
 	_In_ ULONG busy_count
 )
 {
-	PITEM_CONTEXT context;
 	PITEM_NETWORK ptr_network;
+	PITEM_CONTEXT context;
 	PITEM_LOG ptr_log;
 	BOOLEAN is_resolutionenabled;
 
