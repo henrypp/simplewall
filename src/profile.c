@@ -393,7 +393,7 @@ ULONG_PTR _app_addapplication (
 )
 {
 	WCHAR path_full[1024];
-	R_STRINGREF path_temp;
+	R_STRINGREF path_sr;
 	PITEM_APP ptr_app;
 	ULONG_PTR app_hash;
 	BOOLEAN is_ntoskrnl;
@@ -401,19 +401,19 @@ ULONG_PTR _app_addapplication (
 	if (_r_obj_isstringempty2 (path))
 		return 0;
 
-	if (_app_isappvalidpath (path) && PathIsDirectoryW (path->buffer))
+	if (_app_isappvalidpath (path) && _r_fs_isdirectory (path->buffer))
 		return 0;
 
-	_r_obj_initializestringref2 (&path_temp, &path->sr);
+	_r_obj_initializestringref2 (&path_sr, &path->sr);
 
 	// prevent possible duplicate apps entries with short path (issue #640)
-	if (_r_str_findchar (&path_temp, L'~', FALSE) != SIZE_MAX)
+	if (_r_str_findchar (&path_sr, L'~', FALSE) != SIZE_MAX)
 	{
-		if (GetLongPathNameW (path_temp.buffer, path_full, RTL_NUMBER_OF (path_full)))
-			_r_obj_initializestringref (&path_temp, path_full);
+		if (GetLongPathNameW (path_sr.buffer, path_full, RTL_NUMBER_OF (path_full)))
+			_r_obj_initializestringref (&path_sr, path_full);
 	}
 
-	app_hash = _r_str_gethash2 (&path_temp, TRUE);
+	app_hash = _r_str_gethash2 (&path_sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return app_hash; // already exists
@@ -425,7 +425,7 @@ ULONG_PTR _app_addapplication (
 
 	if (type == DATA_UNKNOWN)
 	{
-		if (_r_str_isstartswith2 (&path_temp, L"S-1-", TRUE)) // uwp (win8+)
+		if (_r_str_isstartswith2 (&path_sr, L"S-1-", TRUE)) // uwp (win8+)
 			type = DATA_APP_UWP;
 	}
 
@@ -439,20 +439,20 @@ ULONG_PTR _app_addapplication (
 		if (real_path)
 			ptr_app->real_path = _r_obj_reference (real_path);
 	}
-	else if (_r_str_isstartswith2 (&path_temp, L"\\device\\", TRUE)) // device path
+	else if (_r_str_isstartswith2 (&path_sr, L"\\device\\", TRUE)) // device path
 	{
 		ptr_app->type = DATA_APP_DEVICE;
-		ptr_app->real_path = _r_obj_createstring2 (&path_temp);
+		ptr_app->real_path = _r_obj_createstring2 (&path_sr);
 	}
 	else
 	{
-		if (!is_ntoskrnl && _r_str_findchar (&path_temp, OBJ_NAME_PATH_SEPARATOR, FALSE) == SIZE_MAX)
+		if (!is_ntoskrnl && _r_str_findchar (&path_sr, OBJ_NAME_PATH_SEPARATOR, FALSE) == SIZE_MAX)
 		{
 			ptr_app->type = DATA_APP_PICO;
 		}
 		else
 		{
-			ptr_app->type = PathIsNetworkPathW (path_temp.buffer) ? DATA_APP_NETWORK : DATA_APP_REGULAR;
+			ptr_app->type = PathIsNetworkPathW (path_sr.buffer) ? DATA_APP_NETWORK : DATA_APP_REGULAR;
 		}
 
 		if (is_ntoskrnl)
@@ -461,11 +461,11 @@ ULONG_PTR _app_addapplication (
 		}
 		else
 		{
-			ptr_app->real_path = _r_obj_createstring2 (&path_temp);
+			ptr_app->real_path = _r_obj_createstring2 (&path_sr);
 		}
 	}
 
-	ptr_app->original_path = _r_obj_createstring2 (&path_temp);
+	ptr_app->original_path = _r_obj_createstring2 (&path_sr);
 
 	// fix "System" lowercase
 	if (is_ntoskrnl)
@@ -475,8 +475,10 @@ ULONG_PTR _app_addapplication (
 		ptr_app->original_path->buffer[0] = _r_str_upper (ptr_app->original_path->buffer[0]);
 	}
 
-	if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK)
-		ptr_app->short_name = _r_path_getbasenamestring (&path_temp);
+	//if (ptr_app->type == DATA_APP_REGULAR || ptr_app->type == DATA_APP_DEVICE || ptr_app->type == DATA_APP_NETWORK)
+	{
+		ptr_app->short_name = _r_path_getbasenamestring (&path_sr);
+	}
 
 	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
@@ -1198,12 +1200,12 @@ PR_STRING _app_rulesexpandapps (
 	_In_ LPWSTR delimeter
 )
 {
-	R_STRINGBUILDER sr;
 	R_STRINGREF delimeter_sr;
-	PR_STRING string;
+	R_STRINGBUILDER sr;
 	PITEM_APP ptr_app;
-	ULONG_PTR hash_code;
+	PR_STRING string;
 	ULONG_PTR enum_key = 0;
+	ULONG_PTR hash_code;
 
 	_r_obj_initializestringbuilder (&sr, 256);
 

@@ -1993,7 +1993,7 @@ VOID _app_command_logshow (
 			log_path->buffer
 		);
 
-		status = _r_sys_createprocess (viewer_path->buffer, cmdline->buffer, NULL, NULL);
+		status = _r_sys_createprocess (viewer_path->buffer, cmdline->buffer, NULL, FALSE);
 
 		if (status != STATUS_SUCCESS)
 			_r_show_errormessage (hwnd, NULL, status, cmdline->buffer, ET_NATIVE);
@@ -2071,7 +2071,7 @@ VOID _app_command_logerrshow (
 		L"\""
 	);
 
-	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL, NULL);
+	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL, FALSE);
 
 	if (status != STATUS_SUCCESS)
 		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, ET_NATIVE);
@@ -2941,12 +2941,12 @@ VOID _app_command_purgetimers (
 	_In_ HWND hwnd
 )
 {
+	PITEM_APP ptr_app = NULL;
 	R_STRINGBUILDER sb;
 	PR_STRING string;
 	PR_STRING path;
 	HANDLE hengine;
 	PR_LIST rules;
-	PITEM_APP ptr_app = NULL;
 	ULONG_PTR enum_key = 0;
 
 	if (!_app_istimersactive ())

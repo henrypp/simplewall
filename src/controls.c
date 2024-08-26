@@ -11,11 +11,11 @@ VOID _app_getapptooltipstring (
 )
 {
 	PITEM_APP_INFO ptr_app_info;
+	R_STRINGBUILDER sb;
+	PR_STRING path = NULL;
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	PR_STRING value;
-	PR_STRING path = NULL;
-	R_STRINGBUILDER sb;
 
 	ptr_app = _app_getappitem (app_hash);
 
