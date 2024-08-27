@@ -2983,7 +2983,7 @@ VOID _app_command_purgetimers (
 					_r_obj_appendstringbuilder2 (&sb, &string->sr);
 					_r_obj_appendstringbuilder (&sb, L")");
 
-					_r_obj_dereference (path);
+					_r_obj_dereference (string);
 				}
 
 				_r_obj_appendstringbuilder (&sb, SZ_CRLF);
