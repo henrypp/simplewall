@@ -25,8 +25,8 @@ The lightweight application is less than a megabyte, and it is compatible with W
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
 ### System requirements:
-- Windows 7 SP1 and above operating system.
-- Processor with SSE2 support.
+- Windows 7, 8, 8.1, 10, 11 32-bit/64-bit/ARM64
+- An SSE2-capable CPU
 - <s>KB2533623</s> KB3063858 update for Windows 7 was required [[x64](https://www.microsoft.com/en-us/download/details.aspx?id=47442) / [x32](https://www.microsoft.com/en-us/download/details.aspx?id=47409)]
 
 ### Donate:
@@ -120,41 +120,41 @@ _To specify more than one ip, port and/or host, use semicolon._
 <summary>IPv4 CIDR blocks:</summary>
 
 ---
-|Address format|Mask|
-|---|---|
-|a.b.c.d/32|255.255.255.255|
-|a.b.c.d/31|255.255.255.254|
-|a.b.c.d/30|255.255.255.252|
-|a.b.c.d/29|255.255.255.248|
-|a.b.c.d/28|255.255.255.240|
-|a.b.c.d/27|255.255.255.224|
-|a.b.c.d/26|255.255.255.192|
-|a.b.c.d/25|255.255.255.128|
-|a.b.c.0/24|255.255.255.0|
-|a.b.c.0/23|255.255.254.0|
-|a.b.c.0/22|255.255.252.0|
-|a.b.c.0/21|255.255.248.0|
-|a.b.c.0/20|255.255.240.0|
-|a.b.c.0/19|255.255.224.0|
-|a.b.c.0/18|255.255.192.0|
-|a.b.c.0/17|255.255.128.0|
-|a.b.0.0/16|255.255.0.0|
-|a.b.0.0/15|255.254.0.0|
-|a.b.0.0/14|255.252.0.0|
-|a.b.0.0/13|255.248.0.0|
-|a.b.0.0/12|255.240.0.0|
-|a.b.0.0/11|255.224.0.0|
-|a.b.0.0/10|255.192.0.0|
-|a.b.0.0/9|255.128.0.0|
-|a.0.0.0/8|255.0.0.0|
-|a.0.0.0/7|254.0.0.0|
-|a.0.0.0/6|252.0.0.0|
-|a.0.0.0/5|248.0.0.0|
-|a.0.0.0/4|240.0.0.0|
-|a.0.0.0/3|224.0.0.0|
-|a.0.0.0/2|192.0.0.0|
-|a.0.0.0/1|128.0.0.0|
-|0.0.0.0/0|0.0.0.0|
+| Address format | Mask |
+| -------- | ------- |
+| a.b.c.d/32 | 255.255.255.255 |
+| a.b.c.d/31 | 255.255.255.254 |
+| a.b.c.d/30 | 255.255.255.252 |
+| a.b.c.d/29 | 255.255.255.248 |
+| a.b.c.d/28 | 255.255.255.240 |
+| a.b.c.d/27 | 255.255.255.224 |
+| a.b.c.d/26 | 255.255.255.192 |
+| a.b.c.d/25 | 255.255.255.128 |
+| a.b.c.0/24 | 255.255.255.0|
+| a.b.c.0/23 | 255.255.254.0|
+| a.b.c.0/22 | 255.255.252.0|
+| a.b.c.0/21 | 255.255.248.0|
+| a.b.c.0/20 | 255.255.240.0|
+| a.b.c.0/19 | 255.255.224.0|
+| a.b.c.0/18 | 255.255.192.0|
+| a.b.c.0/17 | 255.255.128.0|
+| a.b.0.0/16 | 255.255.0.0|
+| a.b.0.0/15 | 255.254.0.0|
+| a.b.0.0/14 | 255.252.0.0|
+| a.b.0.0/13 | 255.248.0.0|
+| a.b.0.0/12 | 255.240.0.0|
+| a.b.0.0/11 | 255.224.0.0|
+| a.b.0.0/10 | 255.192.0.0|
+| a.b.0.0/9 | 255.128.0.0|
+| a.0.0.0/8 | 255.0.0.0|
+| a.0.0.0/7 | 254.0.0.0|
+| a.0.0.0/6 | 252.0.0.0|
+| a.0.0.0/5 | 248.0.0.0|
+| a.0.0.0/4 | 240.0.0.0|
+| a.0.0.0/3 | 224.0.0.0|
+| a.0.0.0/2 | 192.0.0.0|
+| a.0.0.0/1 | 128.0.0.0|
+| 0.0.0.0/0 | 0.0.0.0|
 ---
 </details>
 
@@ -162,41 +162,7 @@ _To specify more than one ip, port and/or host, use semicolon._
 <summary>IPv6 CIDR blocks:</summary>
 
 ---
-`2001:0db8:0123:4567:89ab:cdef:1234:5678` <br>
-`|||| |||| |||| |||| |||| |||| |||| ||||` <br>
-`|||| |||| |||| |||| |||| |||| |||| |||128	Single end-points and loopback` <br>
-`|||| |||| |||| |||| |||| |||| |||| |||127	Point-to-point links (inter-router)` <br>
-`|||| |||| |||| |||| |||| |||| |||| ||124` <br>
-`|||| |||| |||| |||| |||| |||| |||| |120` <br>
-`|||| |||| |||| |||| |||| |||| |||| 116` <br>
-`|||| |||| |||| |||| |||| |||| |||112` <br>
-`|||| |||| |||| |||| |||| |||| ||108` <br>
-`|||| |||| |||| |||| |||| |||| |104` <br>
-`|||| |||| |||| |||| |||| |||| 100` <br>
-`|||| |||| |||| |||| |||| |||96` <br>
-`|||| |||| |||| |||| |||| ||92` <br>
-`|||| |||| |||| |||| |||| |88` <br>
-`|||| |||| |||| |||| |||| 84` <br>
-`|||| |||| |||| |||| |||80` <br>
-`|||| |||| |||| |||| ||76` <br>
-`|||| |||| |||| |||| |72` <br>
-`|||| |||| |||| |||| 68` <br>
-`|||| |||| |||| |||64	Single LAN (default prefix size for SLAAC)` <br>
-`|||| |||| |||| ||60	Some (very limited) 6rd deployments (/60 = 16 /64)` <br>
-`|||| |||| |||| |56	Minimal end sites assignment[12] (e.g. Home network) (/56 = 256 /64)` <br>
-`|||| |||| |||| 52	(/52 = 4096 /64)` <br>
-`|||| |||| |||48	Typical assignment for larger sites (/48 = 65536 /64) - Many ISP also do for residential` <br>
-`|||| |||| ||44` <br>
-`|||| |||| |40` <br>
-`|||| |||| 36	possible future Local Internet registry extra-small allocations` <br>
-`|||| |||32	Local Internet registry minimum allocations` <br>
-`|||| ||28	Local Internet registry medium allocations` <br>
-`|||| |24	Local Internet registry large allocations` <br>
-`|||| 20	Local Internet registry extra large allocations` <br>
-`|||16` <br>
-`||12	Regional Internet Registry allocations from IANA[15]` <br>
-`|8` <br>
-`4` <br>
+[IPv6 CIDR blocks](https://www.mediawiki.org/wiki/Help:Range_blocks/IPv6)
 ---
 </details>
 

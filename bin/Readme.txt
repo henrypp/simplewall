@@ -7,8 +7,8 @@ The lightweight application is less than a megabyte, and it is compatible with W
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
 System requirements:
-- Windows 7SP1 and above operating system.
-- Processor with SSE2 support.
+- Windows 7, 8, 8.1, 10, 11 32-bit/64-bit/ARM64
+- An SSE2-capable CPU
 
 Nota bene:
 Keep in mind, simplewall is not a control UI over Windows Firewall, and does not interact in any level with Windows Firewall. It works
