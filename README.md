@@ -26,6 +26,7 @@ You can download either the installer or portable version. For correct working y
 
 ### System requirements:
 - Windows 7 SP1 and above operating system.
+- Processor with SSE2 support.
 - <s>KB2533623</s> KB3063858 update for Windows 7 was required [[x64](https://www.microsoft.com/en-us/download/details.aspx?id=47442) / [x32](https://www.microsoft.com/en-us/download/details.aspx?id=47409)]
 
 ### Donate:
@@ -207,10 +208,10 @@ A: Yes. Installed filters are working even if simplewall is terminated.
 A: By default, simplewall blocks **all** applications. You do not need to create custom rules to block specific applications.
 
 #### Q: Is it safe to use simplewall with Windows Firewall?
-A:  Yes. You do not need to disable Windows Firewall. These two firewalls work independently.
+A: Yes. You do not need to disable Windows Firewall. These two firewalls work independently.
 
 #### Q: How can i disable blocklist entirely?
-A:  Open `Settings` -> `Blocklist` and then click the radio buttons labeled `Disable`.
+A: Open `Settings` -> `Blocklist` and then click the radio buttons labeled `Disable`.
 
 #### Q: Where is blacklist mode?
 A: Blacklist was removed many days ago for uselessness. But if you need it, you can still configure it.

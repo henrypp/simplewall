@@ -8,7 +8,7 @@ You can download either the installer or portable version. For correct working y
 
 System requirements:
 - Windows 7SP1 and above operating system.
-- Visual C++ 2022 Redistributable package (https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
+- Processor with SSE2 support.
 
 Nota bene:
 Keep in mind, simplewall is not a control UI over Windows Firewall, and does not interact in any level with Windows Firewall. It works
