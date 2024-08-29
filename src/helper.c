@@ -872,7 +872,7 @@ NTSTATUS _app_verifyfilefromcatalog (
 	ULONG file_hash_length;
 	NTSTATUS status;
 
-	status = _r_fs_getsize2 (hfile, NULL, &file_size);
+	status = _r_fs_getsize2 (NULL, hfile, &file_size);
 
 	if (!NT_SUCCESS (status))
 	{

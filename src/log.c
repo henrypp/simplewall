@@ -58,7 +58,7 @@ VOID _app_loginitfile (
 	BYTE bom[] = {0xFF, 0xFE};
 	LARGE_INTEGER file_size;
 
-	_r_fs_getsize (hfile, NULL, &file_size);
+	_r_fs_getsize (NULL, hfile, &file_size);
 
 	if (!file_size.QuadPart)
 	{
@@ -147,7 +147,7 @@ BOOLEAN _app_logislimitreached (
 	if (!limit)
 		return FALSE;
 
-	_r_fs_getsize2 (hfile, NULL, &file_size);
+	_r_fs_getsize2 (NULL, hfile, &file_size);
 
 	return (file_size >= (_r_calc_kilobytes2bytes64 (limit)));
 }

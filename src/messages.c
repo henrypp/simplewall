@@ -2018,7 +2018,7 @@ VOID _app_command_logclear (
 	current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
 
 	if (current_handle)
-		_r_fs_getsize2 (current_handle, NULL, &file_size);
+		_r_fs_getsize2 (NULL, current_handle, &file_size);
 
 	is_valid = (current_handle && file_size > 2) || (log_path && _r_fs_exists (log_path->buffer));
 
