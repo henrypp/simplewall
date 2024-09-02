@@ -3613,6 +3613,7 @@ INT_PTR CALLBACK DlgProc (
 					ULONG_PTR hash_code;
 					INT listview_id;
 					INT item_id = -1;
+					HRESULT status;
 
 					listview_id = _app_listview_getcurrent (hwnd);
 
@@ -3628,7 +3629,12 @@ INT_PTR CALLBACK DlgProc (
 								if (ptr_app->real_path)
 								{
 									if (_app_isappvalidpath (ptr_app->real_path))
-										_r_shell_showfile (ptr_app->real_path->buffer);
+									{
+										status = _r_shell_showfile (ptr_app->real_path->buffer);
+
+										if (FAILED (status))
+											_r_show_errormessage (hwnd, L"Shell open file", status, ptr_app->real_path->buffer, ET_WINDOWS);
+									}
 								}
 
 								_r_obj_dereference (ptr_app);
@@ -3647,7 +3653,12 @@ INT_PTR CALLBACK DlgProc (
 								if (ptr_network->path)
 								{
 									if (_app_isappvalidpath (ptr_network->path))
-										_r_shell_showfile (ptr_network->path->buffer);
+									{
+										status = _r_shell_showfile (ptr_network->path->buffer);
+
+										if (FAILED (status))
+											_r_show_errormessage (hwnd, L"Shell open file", status, ptr_network->path->buffer, ET_WINDOWS);
+									}
 								}
 
 								_r_obj_dereference (ptr_network);
@@ -3666,7 +3677,12 @@ INT_PTR CALLBACK DlgProc (
 								if (ptr_log->path)
 								{
 									if (_app_isappvalidpath (ptr_log->path))
-										_r_shell_showfile (ptr_log->path->buffer);
+									{
+										status = _r_shell_showfile (ptr_log->path->buffer);
+
+										if (FAILED (status))
+											_r_show_errormessage (hwnd, L"Shell open file", status, ptr_log->path->buffer, ET_WINDOWS);
+									}
 								}
 
 								_r_obj_dereference (ptr_log);
