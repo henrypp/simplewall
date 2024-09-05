@@ -1046,7 +1046,7 @@ LONG_PTR _app_message_custdraw (
 	ULONG_PTR app_hash = 0;
 	ULONG_PTR index;
 	COLORREF new_clr = 0;
-	INT ctrl_id;
+	INT listview_id;
 	BOOLEAN is_validconnection = FALSE;
 	BOOLEAN is_systemapp = FALSE;
 
@@ -1059,7 +1059,7 @@ LONG_PTR _app_message_custdraw (
 
 		case CDDS_ITEMPREPAINT:
 		{
-			ctrl_id = (INT)(INT_PTR)lpnmlv->nmcd.hdr.idFrom;
+			listview_id = (INT)(INT_PTR)lpnmlv->nmcd.hdr.idFrom;
 
 			if (lpnmlv->dwItemType != LVCDI_ITEM)
 				return CDRF_DODEFAULT;
@@ -1070,66 +1070,86 @@ LONG_PTR _app_message_custdraw (
 			if (!_r_config_getboolean (L"IsEnableHighlighting", TRUE))
 				return CDRF_DODEFAULT;
 
-			if ((ctrl_id >= IDC_APPS_PROFILE && ctrl_id <= IDC_APPS_UWP) || ctrl_id == IDC_RULE_APPS_ID || ctrl_id == IDC_NETWORK || ctrl_id == IDC_LOG)
+			switch (listview_id)
 			{
-				index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
-
-				if (ctrl_id == IDC_NETWORK)
+				case IDC_APPS_PROFILE:
+				case IDC_APPS_SERVICE:
+				case IDC_APPS_UWP:
+				case IDC_RULE_APPS_ID:
+				case IDC_NETWORK:
+				case IDC_LOG:
 				{
-					ptr_network = _app_network_getitem (index);
+					index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
 
-					if (ptr_network)
+					if (listview_id == IDC_NETWORK)
 					{
-						app_hash = ptr_network->app_hash;
-						is_systemapp = _app_isappfromsystem (ptr_network->path, app_hash);
-						is_validconnection = ptr_network->is_connection;
+						ptr_network = _app_network_getitem (index);
 
-						_r_obj_dereference (ptr_network);
+						if (ptr_network)
+						{
+							app_hash = ptr_network->app_hash;
+							is_systemapp = _app_isappfromsystem (ptr_network->path, app_hash);
+							is_validconnection = ptr_network->is_connection;
+
+							_r_obj_dereference (ptr_network);
+						}
 					}
+					else if (listview_id == IDC_LOG)
+					{
+						ptr_log = _app_getlogitem (index);
+
+						if (ptr_log)
+						{
+							app_hash = _app_getlogapp (index);
+							is_systemapp = _app_isappfromsystem (ptr_log->path, app_hash);
+
+							_r_obj_dereference (ptr_log);
+						}
+					}
+					else
+					{
+						app_hash = index;
+						is_validconnection = _app_network_isapphaveconnection (app_hash);
+
+						if (_app_getappinfobyhash (app_hash, INFO_PATH, &real_path, sizeof (real_path)))
+						{
+							is_systemapp = _app_isappfromsystem (real_path, app_hash);
+
+							_r_obj_dereference (real_path);
+						}
+					}
+
+					if (app_hash)
+						new_clr = _app_getappcolor (listview_id, app_hash, is_systemapp, is_validconnection);
+
+					break;
 				}
-				else if (ctrl_id == IDC_LOG)
+
+				case IDC_RULES_BLOCKLIST:
+				case IDC_RULES_SYSTEM:
+				case IDC_RULES_CUSTOM:
+				case IDC_APP_RULES_ID:
 				{
-					ptr_log = _app_getlogitem (index);
+					index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
 
-					if (ptr_log)
-					{
-						app_hash = _app_getlogapp (index);
-						is_systemapp = _app_isappfromsystem (ptr_log->path, app_hash);
+					new_clr = _app_getrulecolor (listview_id, index);
 
-						_r_obj_dereference (ptr_log);
-					}
+					break;
 				}
-				else
+
+				case IDC_COLORS:
 				{
-					app_hash = index;
-					is_validconnection = _app_network_isapphaveconnection (app_hash);
+					ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
 
-					if (_app_getappinfobyhash (app_hash, INFO_PATH, &real_path, sizeof (real_path)))
-					{
-						is_systemapp = _app_isappfromsystem (real_path, app_hash);
+					new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
 
-						_r_obj_dereference (real_path);
-					}
+					break;
 				}
 
-				if (app_hash)
-					new_clr = _app_getappcolor (ctrl_id, app_hash, is_systemapp, is_validconnection);
-			}
-			else if ((ctrl_id >= IDC_RULES_BLOCKLIST && ctrl_id <= IDC_RULES_CUSTOM) || ctrl_id == IDC_APP_RULES_ID)
-			{
-				index = _app_listview_getcontextcode (lpnmlv->nmcd.lItemlParam);
-
-				new_clr = _app_getrulecolor (ctrl_id, index);
-			}
-			else if (ctrl_id == IDC_COLORS)
-			{
-				ptr_clr = (PITEM_COLOR)lpnmlv->nmcd.lItemlParam;
-
-				new_clr = ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;
-			}
-			else
-			{
-				break;
+				default:
+				{
+					return CDRF_DODEFAULT;
+				}
 			}
 
 			if (new_clr)
