@@ -2815,6 +2815,19 @@ INT_PTR CALLBACK DlgProc (
 					break;
 				}
 
+				case LVN_GETEMPTYMARKUP:
+				{
+					NMLVEMPTYMARKUP* lpnmlv = (NMLVEMPTYMARKUP*)lparam;
+
+					lpnmlv->dwFlags = EMF_CENTERED;
+
+					_r_str_copy (lpnmlv->szMarkup, RTL_NUMBER_OF (lpnmlv->szMarkup), _r_locale_getstring (IDS_STATUS_EMPTY));
+
+					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
+
+					return TRUE;
+				}
+
 				case NM_DBLCLK:
 				{
 					LPNMITEMACTIVATE lpnmlv;
