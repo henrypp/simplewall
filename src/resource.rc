@@ -701,7 +701,7 @@ BEGIN
 	IDS_STATUS_UNUSED_APPS "Unused apps"
 	IDS_STATUS_TIMER_APPS "Apps with timer"
 
-	IDS_STATUS_EMPTY ""
+	IDS_STATUS_EMPTY "Empty."
 	IDS_STATUS_ERROR ""
 
 	IDS_STATUS_SYNTAX_ERROR "Syntax error in rule!"
