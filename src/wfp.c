@@ -86,12 +86,16 @@ HANDLE _wfp_getenginehandle ()
 
 	if (_r_initonce_begin (&init_once))
 	{
+		_r_math_generateguid (&config.session_key);
+
 		do
 		{
 			RtlZeroMemory (&session, sizeof (session));
 
 			session.displayData.name = _r_app_getname ();
 			session.displayData.description = _r_app_getname ();
+
+			session.sessionKey = config.session_key;
 
 			session.txnWaitTimeoutInMSec = TRANSACTION_TIMEOUT;
 
@@ -217,13 +221,13 @@ BOOLEAN _wfp_initialize (
 {
 	FWPM_PROVIDER0 provider;
 	FWPM_SUBLAYER0 sublayer;
-	FWP_VALUE0 val;
 	FWP_VALUE0* fwp_query = NULL;
-	ULONG status;
+	FWP_VALUE0 val;
+	BOOLEAN is_success = TRUE; // already initialized
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
 	BOOLEAN is_intransact;
-	BOOLEAN is_success = TRUE; // already initialized
+	ULONG status;
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
@@ -326,9 +330,6 @@ BOOLEAN _wfp_initialize (
 	// set sublayer security information
 	_app_setsublayersecurity (engine_handle, &GUID_WfpSublayer, TRUE);
 
-	// set engine options
-	RtlZeroMemory (&val, sizeof (val));
-
 	// dropped packets logging (win7+)
 	if (!config.is_neteventset)
 	{
@@ -351,6 +352,8 @@ BOOLEAN _wfp_initialize (
 		}
 		else
 		{
+			RtlZeroMemory (&val, sizeof (val));
+
 			val.type = FWP_UINT32;
 			val.uint32 = TRUE;
 
@@ -383,6 +386,8 @@ BOOLEAN _wfp_initialize (
 			// when enabled, the system is able to evenly distribute cpu load
 			// to multiple cpus for site-to-site ipsec tunnel scenarios.
 
+			RtlZeroMemory (&val, sizeof (val));
+
 			val.type = FWP_UINT32;
 			val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
 
@@ -408,7 +413,7 @@ VOID _wfp_uninitialize (
 	PR_ARRAY callouts;
 	PR_STRING string;
 	LPGUID guid;
-	FWP_VALUE0 val = {0};
+	FWP_VALUE0 val;
 	BOOLEAN is_intransact;
 	ULONG status;
 
@@ -420,6 +425,8 @@ VOID _wfp_uninitialize (
 
 	if (!config.is_neteventenabled && config.is_neteventset)
 	{
+		RtlZeroMemory (&val, sizeof (val));
+
 		val.type = FWP_UINT32;
 		val.uint32 = FALSE;
 
@@ -2495,8 +2502,8 @@ ULONG _wfp_dumpcallouts (
 	FWPM_CALLOUT0 *callout;
 	PR_ARRAY guids = NULL;
 	HANDLE enum_handle = NULL;
-	ULONG status;
 	UINT32 return_count;
+	ULONG status;
 
 	*out_buffer = NULL;
 
@@ -2656,6 +2663,7 @@ VOID NTAPI _wfp_applythread (
 
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
 		_app_wufixenable (context->hwnd, _r_config_getboolean (L"IsWUFixEnabled", FALSE));
+
 	dpi_value = _r_dc_getwindowdpi (context->hwnd);
 
 	_app_restoreinterfacestate (context->hwnd, TRUE);
@@ -2672,7 +2680,7 @@ VOID _wfp_firewallenable (
 	_In_ BOOLEAN is_enable
 )
 {
-	static NET_FW_PROFILE_TYPE2 profile_types[] = {
+	NET_FW_PROFILE_TYPE2 profile_types[] = {
 		NET_FW_PROFILE2_DOMAIN,
 		NET_FW_PROFILE2_PRIVATE,
 		NET_FW_PROFILE2_PUBLIC

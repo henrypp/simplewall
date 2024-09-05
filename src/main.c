@@ -2316,7 +2316,7 @@ INT_PTR CALLBACK DlgProc (
 				return (INT_PTR)hnotify;
 			}
 
-			break;
+			return 0;
 		}
 
 		case WM_CLOSE:
@@ -2901,15 +2901,15 @@ INT_PTR CALLBACK DlgProc (
 			{
 				case PBT_APMSUSPEND:
 				{
-					HANDLE hengine;
+					HANDLE engine_handle;
 
 					_app_logclear_ui (hwnd);
 
 					if (config.is_neteventset)
 					{
-						hengine = _wfp_getenginehandle ();
+						engine_handle = _wfp_getenginehandle ();
 
-						_wfp_logunsubscribe (hengine);
+						_wfp_logunsubscribe (engine_handle);
 					}
 
 					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
@@ -2920,13 +2920,13 @@ INT_PTR CALLBACK DlgProc (
 				case PBT_APMRESUMECRITICAL:
 				case PBT_APMRESUMESUSPEND:
 				{
-					HANDLE hengine;
+					HANDLE engine_handle;
 
 					if (config.is_neteventset)
 					{
-						hengine = _wfp_getenginehandle ();
+						engine_handle = _wfp_getenginehandle ();
 
-						_wfp_logsubscribe (hwnd, hengine);
+						_wfp_logsubscribe (hwnd, engine_handle);
 					}
 
 					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);

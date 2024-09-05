@@ -187,6 +187,8 @@ typedef struct _STATIC_DATA
 	WCHAR windows_dir_buffer[256];
 	R_STRINGREF windows_dir;
 
+	GUID session_key;
+
 	PR_STRING search_string;
 
 	PR_STRING my_path;

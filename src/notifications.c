@@ -348,13 +348,7 @@ VOID _app_notify_show (
 	_app_notify_setapp_icon (hwnd, NULL);
 
 	// set window title
-	_r_str_printf (
-		window_title,
-		RTL_NUMBER_OF (window_title),
-		L"%s - %s",
-		_r_locale_getstring (IDS_NOTIFY_TITLE),
-		_r_app_getname ()
-	);
+	_r_str_printf (window_title, RTL_NUMBER_OF (window_title), L"%s - %s", _r_locale_getstring (IDS_NOTIFY_TITLE), _r_app_getname ());
 
 	_r_ctrl_setstring (hwnd, 0, window_title);
 
@@ -448,7 +442,7 @@ VOID _app_notify_playsound ()
 
 	current_path = _InterlockedCompareExchangePointer (&cached_path, NULL, NULL);
 
-	if (!current_path || !_r_fs_exists (current_path->buffer))
+	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (current_path->buffer))
 	{
 		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", 0, KEY_READ, &hkey);
 
@@ -468,7 +462,7 @@ VOID _app_notify_playsound ()
 		}
 	}
 
-	if (_r_obj_isstringempty (current_path) || !PlaySoundW (current_path->buffer, NULL, flags | SND_FILENAME))
+	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (current_path->buffer) || !PlaySoundW (current_path->buffer, NULL, flags | SND_FILENAME))
 		PlaySoundW (NOTIFY_SOUND_NAME, NULL, flags);
 }
 

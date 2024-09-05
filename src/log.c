@@ -326,9 +326,10 @@ VOID _wfp_logsubscribe (
 	static FWPMNES2 _FwpmNetEventSubscribe2 = NULL;
 	static FWPMNES1 _FwpmNetEventSubscribe1 = NULL;
 
+	FWPM_NET_EVENT_ENUM_TEMPLATE0 enum_template = {0};
 	FWPM_NET_EVENT_SUBSCRIPTION0 subscription = {0};
-	HANDLE current_handle;
 	HANDLE new_handle = NULL;
+	HANDLE current_handle;
 	PVOID hfwpuclnt;
 	BOOLEAN is_success = FALSE;
 	NTSTATUS status;
@@ -349,23 +350,28 @@ VOID _wfp_logsubscribe (
 			_FwpmNetEventSubscribe2 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", 0);
 			_FwpmNetEventSubscribe1 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe1", 0);
 
-			_r_sys_freelibrary (hfwpuclnt);
+			//_r_sys_freelibrary (hfwpuclnt);
 		}
 		else
 		{
 			if (hwnd)
+			{
 				_r_show_errormessage (hwnd, L"Could not load \"fwpuclnt.dll\" library!", status, NULL, ET_NATIVE);
-
-			_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
+			}
+			else
+			{
+				_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
+			}
 		}
-
-		status = STATUS_FWP_INVALID_PARAMETER; // reset status code!
 
 		_r_initonce_end (&init_once);
 	}
 
+	subscription.enumTemplate = &enum_template;
+	subscription.sessionKey = config.session_key;
+
 	// win10rs5+
-	if (_FwpmNetEventSubscribe4 && !is_success)
+	if (!is_success && _FwpmNetEventSubscribe4)
 	{
 		status = _FwpmNetEventSubscribe4 (engine_handle, &subscription, &_wfp_logcallback4, NULL, &new_handle);
 
@@ -373,7 +379,7 @@ VOID _wfp_logsubscribe (
 	}
 
 	// win10rs4+
-	if (_FwpmNetEventSubscribe3 && !is_success)
+	if (!is_success && _FwpmNetEventSubscribe3)
 	{
 		status = _FwpmNetEventSubscribe3 (engine_handle, &subscription, &_wfp_logcallback3, NULL, &new_handle);
 
@@ -381,7 +387,7 @@ VOID _wfp_logsubscribe (
 	}
 
 	// win10rs1+
-	if (_FwpmNetEventSubscribe2 && !is_success)
+	if (!is_success && _FwpmNetEventSubscribe2)
 	{
 		status = _FwpmNetEventSubscribe2 (engine_handle, &subscription, &_wfp_logcallback2, NULL, &new_handle);
 
@@ -389,7 +395,7 @@ VOID _wfp_logsubscribe (
 	}
 
 	// win8+
-	if (_FwpmNetEventSubscribe1 && !is_success)
+	if (!is_success && _FwpmNetEventSubscribe1)
 	{
 		status = _FwpmNetEventSubscribe1 (engine_handle, &subscription, &_wfp_logcallback1, NULL, &new_handle);
 
@@ -407,11 +413,13 @@ VOID _wfp_logsubscribe (
 	if (!is_success)
 	{
 		if (hwnd)
+		{
 			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later!", status, NULL, ET_WINDOWS);
-
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
-
-		return;
+		}
+		else
+		{
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
+		}
 	}
 
 	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
@@ -451,7 +459,7 @@ VOID _wfp_logsetoption (
 	_In_ HANDLE engine_handle
 )
 {
-	FWP_VALUE0 val = {0};
+	FWP_VALUE0 val;
 	UINT32 mask = 0;
 	ULONG status;
 
@@ -475,6 +483,8 @@ VOID _wfp_logsetoption (
 	}
 
 	// the filter engine will collect wfp network events that match any supplied key words
+	RtlZeroMemory (&val, sizeof (val));
+
 	val.type = FWP_UINT32;
 	val.uint32 = mask;
 
@@ -483,8 +493,9 @@ VOID _wfp_logsetoption (
 	if (status != ERROR_SUCCESS)
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", status, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
 
-	// enables the connection monitoring feature and starts logging creation and
-	// deletion events (and notifying any subscribers)
+	// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
+	RtlZeroMemory (&val, sizeof (val));
+
 	val.type = FWP_UINT32;
 	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE);
 

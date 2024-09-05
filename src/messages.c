@@ -1090,6 +1090,7 @@ LONG_PTR _app_message_custdraw (
 							app_hash = ptr_network->app_hash;
 							is_systemapp = _app_isappfromsystem (ptr_network->path, app_hash);
 							is_validconnection = ptr_network->is_connection;
+							//is_validconnection = FALSE; // do not highlight connections
 
 							_r_obj_dereference (ptr_network);
 						}
