@@ -244,18 +244,15 @@ VOID _app_queue_resolver (
 );
 
 VOID NTAPI _app_queue_fileinformation (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 );
 
 VOID NTAPI _app_queue_notifyinformation (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 );
 
 VOID NTAPI _app_queue_resolveinformation (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 );
 
 BOOLEAN _app_wufixenabled ();

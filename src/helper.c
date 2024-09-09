@@ -546,7 +546,7 @@ BOOLEAN _app_isappvalidbinary (
 	_In_opt_ PR_STRING path
 )
 {
-	static R_STRINGREF valid_exts = PR_STRINGREF_INIT (L".exe");
+	R_STRINGREF valid_exts = PR_STRINGREF_INIT (L".exe");
 
 	if (!path)
 		return FALSE;
@@ -809,17 +809,16 @@ LONG _app_verifyfromfile (
 
 	trust_data.cbStruct = sizeof (trust_data);
 	trust_data.dwUIChoice = WTD_UI_NONE;
+	trust_data.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
 	trust_data.pPolicyCallbackData = policy_callback;
 	trust_data.dwUnionChoice = union_choice;
+	trust_data.dwStateAction = WTD_STATEACTION_VERIFY;
+	trust_data.dwProvFlags = WTD_SAFER_FLAG | WTD_DISABLE_MD2_MD4;
+
+	trust_data.pFile = union_data;
 
 	if (union_choice == WTD_CHOICE_CATALOG)
-	{
 		trust_data.pCatalog = union_data;
-	}
-	else
-	{
-		trust_data.pFile = union_data;
-	}
 
 	if (_r_config_getboolean (L"IsOCSPEnabled", FALSE))
 	{
@@ -858,8 +857,7 @@ NTSTATUS _app_verifyfilefromcatalog (
 	_Out_ PR_STRING_PTR signature_string
 )
 {
-	static GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
-
+	GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
 	WINTRUST_CATALOG_INFO catalog_info = {0};
 	DRIVER_VER_INFO ver_info = {0};
 	CATALOG_INFO ci = {0};
@@ -942,8 +940,7 @@ VOID _app_getfilesignatureinfo (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 )
 {
-	static GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-
+	GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 	WINTRUST_FILE_INFO file_info = {0};
 	PR_STRING string = NULL;
 	LONG status;
@@ -1785,7 +1782,9 @@ VOID _app_getfileinformation (
 		_r_queuedlock_releaseexclusive (&lock_cache_information);
 	}
 
-	_r_workqueue_queueitem (&file_queue, &_app_queue_fileinformation, ptr_app_info);
+	// check for binary path is valid
+	if (_app_isappvalidbinary (path))
+		_r_workqueue_queueitem (&file_queue, &_app_queue_fileinformation, ptr_app_info);
 }
 
 VOID _app_queue_resolver (
@@ -1808,8 +1807,7 @@ VOID _app_queue_resolver (
 }
 
 VOID NTAPI _app_queue_fileinformation (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 )
 {
 	PITEM_APP_INFO ptr_app_info;
@@ -1821,10 +1819,6 @@ VOID NTAPI _app_queue_fileinformation (
 	hwnd = _r_app_gethwnd ();
 
 	if (ptr_app_info->is_loaded)
-		return;
-
-	// check for binary path is valid
-	if (!_app_isappvalidbinary (ptr_app_info->path))
 		return;
 
 	status = _r_fs_openfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE, &hfile);
@@ -1852,13 +1846,10 @@ VOID NTAPI _app_queue_fileinformation (
 		_app_getfilehashinfo (hfile, ptr_app_info->app_hash);
 
 	// redraw listview
-	if (!(busy_count % 4)) // lol, hack!!!
+	if (_r_wnd_isvisible (hwnd, FALSE))
 	{
-		if (_r_wnd_isvisible (hwnd, FALSE))
-		{
-			if (ptr_app_info->listview_id == _app_listview_getcurrent (hwnd))
-				_r_listview_redraw (hwnd, ptr_app_info->listview_id);
-		}
+		if (ptr_app_info->listview_id == _app_listview_getcurrent (hwnd))
+			_r_listview_redraw (hwnd, ptr_app_info->listview_id);
 	}
 
 	ptr_app_info->is_loaded = TRUE;
@@ -1869,20 +1860,20 @@ VOID NTAPI _app_queue_fileinformation (
 }
 
 VOID NTAPI _app_queue_notifyinformation (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 )
 {
-	PITEM_CONTEXT context;
 	PITEM_APP_INFO ptr_app_info;
+	PITEM_CONTEXT context;
 	PITEM_LOG ptr_log;
-	PR_STRING address_str;
-	PR_STRING host_str = NULL;
 	PR_STRING signature_str = NULL;
+	PR_STRING host_str = NULL;
 	PR_STRING localized_string;
+	PR_STRING address_str;
 	HANDLE hfile;
 	HICON hicon;
 	HDWP hdefer;
+	ULONG attempts = 6;
 	BOOLEAN is_iconset = FALSE;
 	NTSTATUS status;
 
@@ -1915,8 +1906,7 @@ VOID NTAPI _app_queue_notifyinformation (
 
 				if (NT_SUCCESS (status))
 				{
-					if (!ptr_app_info->is_loaded)
-						_app_getfilesignatureinfo (hfile, ptr_app_info);
+					_app_getfilesignatureinfo (hfile, ptr_app_info);
 
 					NtClose (hfile);
 				}
@@ -1945,7 +1935,20 @@ VOID NTAPI _app_queue_notifyinformation (
 				L":"
 			);
 
-			if (!_app_getappinfoparam2 (ptr_log->app_hash, 0, INFO_SIGNATURE_STRING, &signature_str, sizeof (signature_str)))
+			do
+			{
+				if (!_app_getappinfoparam2 (ptr_log->app_hash, 0, INFO_SIGNATURE_STRING, &signature_str, sizeof (signature_str)))
+				{
+					_r_sys_sleep (250);
+				}
+				else
+				{
+					break;
+				}
+			}
+			while (--attempts);
+
+			if (!signature_str)
 				_r_obj_movereference (&signature_str, _r_locale_getstring_ex (IDS_SIGN_UNSIGNED));
 
 			hdefer = BeginDeferWindowPos (2);
@@ -1994,8 +1997,7 @@ VOID NTAPI _app_queue_notifyinformation (
 }
 
 VOID NTAPI _app_queue_resolveinformation (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 )
 {
 	PITEM_NETWORK ptr_network;
@@ -2034,13 +2036,10 @@ VOID NTAPI _app_queue_resolveinformation (
 	}
 
 	// redraw listview
-	if (!(busy_count % 4)) // lol, hack!!!
+	if (_r_wnd_isvisible (context->hwnd, FALSE))
 	{
-		if (_r_wnd_isvisible (context->hwnd, FALSE))
-		{
-			if (_app_listview_getcurrent (context->hwnd) == context->listview_id)
-				_r_listview_redraw (context->hwnd, context->listview_id);
-		}
+		if (_app_listview_getcurrent (context->hwnd) == context->listview_id)
+			_r_listview_redraw (context->hwnd, context->listview_id);
 	}
 
 	_r_obj_dereference (context->base_address);
