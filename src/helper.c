@@ -673,12 +673,12 @@ BOOLEAN _app_calculatefilehash (
 	static R_INITONCE init_once = PR_INITONCE_INIT;
 	static CCAHFFH2 _CryptCATAdminCalcHashFromFileHandle2 = NULL;
 	static CCAAC2 _CryptCATAdminAcquireContext2 = NULL;
-	const GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
 
+	GUID DriverActionVerify = DRIVER_ACTION_VERIFY;
 	HCATADMIN hcat_admin;
 	PVOID hwintrust;
 	PBYTE file_hash;
-	ULONG file_hash_length;
+	ULONG file_hash_length = 32;
 	NTSTATUS status;
 
 	if (_r_initonce_begin (&init_once))
@@ -707,7 +707,6 @@ BOOLEAN _app_calculatefilehash (
 			return FALSE;
 	}
 
-	file_hash_length = 32;
 	file_hash = _r_mem_allocate (file_hash_length);
 
 	if (_CryptCATAdminCalcHashFromFileHandle2)
@@ -719,6 +718,7 @@ BOOLEAN _app_calculatefilehash (
 			if (!_CryptCATAdminCalcHashFromFileHandle2 (hcat_admin, hfile, &file_hash_length, file_hash, 0))
 			{
 				CryptCATAdminReleaseContext (hcat_admin, 0);
+
 				_r_mem_free (file_hash);
 
 				return FALSE;
@@ -734,6 +734,7 @@ BOOLEAN _app_calculatefilehash (
 			if (!CryptCATAdminCalcHashFromFileHandle (hfile, &file_hash_length, file_hash, 0))
 			{
 				CryptCATAdminReleaseContext (hcat_admin, 0);
+
 				_r_mem_free (file_hash);
 
 				return FALSE;

@@ -89,7 +89,7 @@ ULONG _wfp_createfilter (
 	_In_ HANDLE engine_handle,
 	_In_ ENUM_TYPE_DATA type,
 	_In_opt_ LPCWSTR filter_name,
-	_In_reads_ (count) FWPM_FILTER_CONDITION *lpcond,
+	_In_reads_ (count) FWPM_FILTER_CONDITION0 *lpcond,
 	_In_ UINT32 count,
 	_In_ LPCGUID layer_id,
 	_In_opt_ LPCGUID callout_id,
@@ -164,8 +164,7 @@ ULONG _wfp_dumpfilters (
 );
 
 VOID NTAPI _wfp_applythread (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 );
 
 VOID _wfp_firewallenable (

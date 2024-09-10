@@ -2626,8 +2626,7 @@ CleanupExit:
 }
 
 VOID NTAPI _wfp_applythread (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 )
 {
 	PITEM_CONTEXT context;

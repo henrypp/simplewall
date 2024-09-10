@@ -130,6 +130,5 @@ VOID CALLBACK _wfp_logcallback4 (
 );
 
 VOID NTAPI _app_logthread (
-	_In_ PVOID arglist,
-	_In_ ULONG busy_count
+	_In_ PVOID arglist
 );
