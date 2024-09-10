@@ -412,7 +412,7 @@ VOID _wfp_logsubscribe (
 
 	if (!is_success)
 	{
-		if (hwnd)
+		if (hwnd && status != ERROR_PATH_NOT_FOUND)
 		{
 			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later!", status, NULL, ET_WINDOWS);
 		}
