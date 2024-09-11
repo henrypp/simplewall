@@ -1,3 +1,14 @@
+v3.8.4 (11 September 2024)
+- added listview empty markup
+- fixed tray icon middle click not worked when log ui is disabled
+- fixed notification displays invalid signature (issue #1871)
+- fixed does not show up tray icon (issue #1844)
+- fixed crash when cleanup timers (issue #1860)
+- fixed possible memory leak
+- updated project sdk
+- updated rule hint
+- cosmetic fixes
+
 v3.8.3 (8 August 2024)
 - added remember last position of notification window (issue #1659)
 - added watch services & uwp apps for install/uninstall
