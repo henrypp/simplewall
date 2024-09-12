@@ -24,6 +24,28 @@ Simple tool to configure [Windows Filtering Platform (WFP)](https://docs.microso
 The lightweight application is less than a megabyte, and it is compatible with Windows 7 SP1 and higher operating systems.
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
+### Features:
+- Simple interface without annoying pop ups
+- [Rules editor](https://github.com/henrypp/simplewall#rules-editor) (create your own rules)
+- [Internal blocklist](https://crazymax.dev/WindowsSpyBlocker/blocking-rules/simplewall/) (block Windows spy / telemetry)
+- Dropped packets information with notification and logging to a file feature (win7+)
+- Allowed packets information with logging to a file feature (win8+)
+- Windows Subsystem for Linux (WSL) support
+- Windows services support
+- Windows Store support
+- Free and open source
+- Localization support
+- IPv6 support
+
+```
+To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
+```
+
+### Nota bene:
+Keep in mind, simplewall is not a control UI over Windows Firewall, and does not interact in any level with Windows Firewall. It works
+over Windows Filtering Platform (WFP) which is a set of internal API and system services that provide a platform for creating network filtering
+applications. Windows Filtering Platform is a development technology and not a firewall itself, but simplewall is the tool that uses this technology.
+
 ### System requirements:
 - Windows 7, 8, 8.1, 10, 11 32-bit/64-bit/ARM64
 - An SSE2-capable CPU
@@ -41,28 +63,6 @@ Binaries have GPG signature `simplewall.exe.sig` in application folder.
 - Public key: [pubkey.asc](https://raw.githubusercontent.com/henrypp/builder/master/pubkey.asc) ([pgpkeys.eu](https://pgpkeys.eu/pks/lookup?op=index&fingerprint=on&search=0x5635B5FD))
 - Key ID: 0x5635B5FD
 - Fingerprint: D985 2361 1524 AB29 BE73 30AC 2881 20A7 5635 B5FD
-
-### Nota bene:
-Keep in mind, simplewall is not a control UI over Windows Firewall, and does not interact in any level with Windows Firewall. It works
-over Windows Filtering Platform (WFP) which is a set of internal API and system services that provide a platform for creating network filtering
-applications. Windows Filtering Platform is a development technology and not a firewall itself, but simplewall is the tool that uses this technology.
-
-### Features:
-- Simple interface without annoying pop ups
-- [Rules editor](https://github.com/henrypp/simplewall#rules-editor) (create your own rules)
-- [Internal blocklist](https://crazymax.dev/WindowsSpyBlocker/blocking-rules/simplewall/) (block Windows spy / telemetry)
-- Dropped packets information with notification and logging to a file feature (win7+)
-- Allowed packets information with logging to a file feature (win8+)
-- Windows Subsystem for Linux (WSL) support
-- Windows services support
-- Windows Store support
-- Free and open source
-- Localization support
-- IPv6 support
-
-```
-To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
-```
 
 ### Reviews of idiots:
 [<img src="/images/idiot_n1.png" />](https://alternativeto.net/software/simplewall-firewall/about/)
@@ -94,7 +94,7 @@ simplewall have two types of custom user rules rules:
 - **Global rules:** rule applied for all applications.
 - **Special rules:** rule applied only for specified applications.
 
-<img src="/images/simplewall_rules.png?cache" />
+<img src="/images/simplewall_rules.png?cache2" />
 
 ### Rule syntax format:
 
