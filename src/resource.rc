@@ -527,6 +527,14 @@ END
 //
 STRINGTABLE
 BEGIN
+	IDS_UPDATE_NO "No updates available."
+	IDS_UPDATE_YES "Update available. Download and install now?"
+	IDS_UPDATE_DOWNLOAD "Downloading update..."
+	IDS_UPDATE_DONE "Downloading update finished."
+	IDS_UPDATE_ERROR "Update server connection error."
+	IDS_UPDATE_INIT "Checking for new releases..."
+	IDS_UPDATE_INSTALL "Update available. Do you want to install it now?"
+
 	IDS_FILE "File"
 	IDS_SETTINGS "Settings"
 	IDS_EXIT "Exit"
