@@ -1001,16 +1001,16 @@ INT_PTR CALLBACK EditorPagesProc (
 
 						if (context->ptr_rule->is_readonly)
 						{
-							_r_menu_enableitem (hsubmenu, id_add, MF_BYCOMMAND, FALSE);
-							_r_menu_enableitem (hsubmenu, id_edit, MF_BYCOMMAND, FALSE);
-							_r_menu_enableitem (hsubmenu, id_delete, MF_BYCOMMAND, FALSE);
+							_r_menu_enableitem (hsubmenu, id_add, FALSE, FALSE);
+							_r_menu_enableitem (hsubmenu, id_edit, FALSE, FALSE);
+							_r_menu_enableitem (hsubmenu, id_delete, FALSE, FALSE);
 						}
 
 						if (!is_selected)
 						{
-							_r_menu_enableitem (hsubmenu, id_edit, MF_BYCOMMAND, FALSE);
-							_r_menu_enableitem (hsubmenu, id_delete, MF_BYCOMMAND, FALSE);
-							_r_menu_enableitem (hsubmenu, IDM_COPY, MF_BYCOMMAND, FALSE);
+							_r_menu_enableitem (hsubmenu, id_edit, FALSE, FALSE);
+							_r_menu_enableitem (hsubmenu, id_delete, FALSE, FALSE);
+							_r_menu_enableitem (hsubmenu, IDM_COPY, FALSE, FALSE);
 						}
 
 						_r_obj_dereference (localized_string);
@@ -1024,15 +1024,15 @@ INT_PTR CALLBACK EditorPagesProc (
 
 						if (context->is_settorules && context->ptr_rule->type != DATA_RULE_USER)
 						{
-							_r_menu_enableitem (hsubmenu, IDM_CHECK, MF_BYCOMMAND, FALSE);
-							_r_menu_enableitem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND, FALSE);
+							_r_menu_enableitem (hsubmenu, IDM_CHECK, FALSE, FALSE);
+							_r_menu_enableitem (hsubmenu, IDM_UNCHECK, FALSE, FALSE);
 						}
 
 						if (!is_selected)
 						{
-							_r_menu_enableitem (hsubmenu, IDM_CHECK, MF_BYCOMMAND, FALSE);
-							_r_menu_enableitem (hsubmenu, IDM_UNCHECK, MF_BYCOMMAND, FALSE);
-							_r_menu_enableitem (hsubmenu, IDM_COPY, MF_BYCOMMAND, FALSE);
+							_r_menu_enableitem (hsubmenu, IDM_CHECK, FALSE, FALSE);
+							_r_menu_enableitem (hsubmenu, IDM_UNCHECK, FALSE, FALSE);
+							_r_menu_enableitem (hsubmenu, IDM_COPY, FALSE, FALSE);
 						}
 					}
 

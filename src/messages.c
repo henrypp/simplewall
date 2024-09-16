@@ -25,7 +25,7 @@ VOID _app_message_initialize (
 	if (hmenu)
 	{
 		if (_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-			_r_menu_enableitem (hmenu, 4, MF_BYPOSITION, FALSE);
+			_r_menu_enableitem (hmenu, 4, FALSE, FALSE);
 
 		_r_menu_checkitem (hmenu, IDM_ALWAYSONTOP_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"AlwaysOnTop", FALSE));
 		_r_menu_checkitem (hmenu, IDM_AUTOSIZECOLUMNS_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"AutoSizeColumns", TRUE));
@@ -78,7 +78,7 @@ VOID _app_message_initialize (
 		_r_menu_checkitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, 0, MF_BYCOMMAND, _app_wufixenabled ());
 
 		if (!_r_sys_isosversiongreaterorequal (WINDOWS_10))
-			_r_menu_enableitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, MF_BYCOMMAND, FALSE);
+			_r_menu_enableitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, FALSE, FALSE);
 
 		_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN + _r_calc_clamp (_r_config_getlong (L"ProfileType", 0), 0, 2));
 
@@ -90,7 +90,7 @@ VOID _app_message_initialize (
 		_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE));
 		_r_menu_checkitem (hmenu, IDM_USEAPPMONITOR_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsEnableAppMonitor", FALSE));
 
-		_r_menu_enableitem (hmenu, IDM_USEAPPMONITOR_CHK, MF_BYCOMMAND, is_enabled);
+		_r_menu_enableitem (hmenu, IDM_USEAPPMONITOR_CHK, FALSE, is_enabled);
 
 		_r_menu_checkitem (
 			hmenu,
@@ -558,7 +558,7 @@ VOID _app_generate_appmenu (
 		_r_menu_additem (hsubmenu_rules, IDM_DISABLEREMOVAL, _r_locale_getstring (IDS_DISABLEREMOVAL));
 
 		if (_app_isdisabledremoval (app_hash))
-			_r_menu_enableitem (hsubmenu_rules, IDM_DISABLEREMOVAL, MF_BYCOMMAND, FALSE);
+			_r_menu_enableitem (hsubmenu_rules, IDM_DISABLEREMOVAL, FALSE, FALSE);
 
 		_r_menu_additem (hsubmenu_rules, 0, NULL);
 
@@ -671,12 +671,13 @@ VOID _app_message_contextmenu (
 				if (_app_getappinfo (ptr_app, INFO_IS_UNDELETABLE, &is_checked, sizeof (is_checked)))
 				{
 					if (is_checked)
+					{
 						_r_menu_checkitem (hmenu, IDM_DISABLEREMOVAL, 0, MF_BYCOMMAND, is_checked);
+
+						_r_menu_enableitem (hmenu, IDM_DELETE, FALSE, FALSE);
+					}
 				}
 			}
-
-			if (listview_id != IDC_APPS_PROFILE)
-				_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
 
 			break;
 		}
@@ -702,7 +703,7 @@ VOID _app_message_contextmenu (
 				if (_app_getruleinfobyid (hash_code, INFO_IS_READONLY, &is_readonly, sizeof (is_readonly)))
 				{
 					if (is_readonly)
-						_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
+						_r_menu_enableitem (hmenu, IDM_DELETE, FALSE, FALSE);
 				}
 			}
 
@@ -774,7 +775,7 @@ VOID _app_message_contextmenu (
 			if (ptr_network)
 			{
 				if (ptr_network->af != AF_INET || ptr_network->state != MIB_TCP_STATE_ESTAB)
-					_r_menu_enableitem (hmenu, IDM_DELETE, MF_BYCOMMAND, FALSE);
+					_r_menu_enableitem (hmenu, IDM_DELETE, FALSE, FALSE);
 
 				_r_obj_dereference (ptr_network);
 			}
@@ -973,17 +974,17 @@ VOID _app_message_traycontextmenu (
 
 	if (!_r_config_getboolean (L"IsNotificationsEnabled", TRUE))
 	{
-		_r_menu_enableitem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, MF_BYCOMMAND, FALSE);
-		_r_menu_enableitem (hsubmenu, IDM_TRAY_NOTIFICATIONFULLSCREENSILENTMODE_CHK, MF_BYCOMMAND, FALSE);
-		_r_menu_enableitem (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, MF_BYCOMMAND, FALSE);
+		_r_menu_enableitem (hsubmenu, IDM_TRAY_ENABLENOTIFICATIONSSOUND_CHK, FALSE, FALSE);
+		_r_menu_enableitem (hsubmenu, IDM_TRAY_NOTIFICATIONFULLSCREENSILENTMODE_CHK, FALSE, FALSE);
+		_r_menu_enableitem (hsubmenu, IDM_TRAY_NOTIFICATIONONTRAY_CHK, FALSE, FALSE);
 	}
 	else if (!_r_config_getboolean (L"IsNotificationsSound", TRUE))
 	{
-		_r_menu_enableitem (hsubmenu, IDM_TRAY_NOTIFICATIONFULLSCREENSILENTMODE_CHK, MF_BYCOMMAND, FALSE);
+		_r_menu_enableitem (hsubmenu, IDM_TRAY_NOTIFICATIONFULLSCREENSILENTMODE_CHK, FALSE, FALSE);
 	}
 
 	if (_wfp_isfiltersapplying ())
-		_r_menu_enableitem (hsubmenu, IDM_TRAY_START, MF_BYCOMMAND, FALSE);
+		_r_menu_enableitem (hsubmenu, IDM_TRAY_START, FALSE, FALSE);
 
 	SetForegroundWindow (hwnd); // don't touch
 

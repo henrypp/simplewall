@@ -485,7 +485,7 @@ VOID _app_config_apply (
 
 			_r_menu_checkitem (hmenu, IDM_USEHASHES_CHK, 0, MF_BYCOMMAND, new_val);
 
-			_r_menu_enableitem (hmenu, IDM_USEAPPMONITOR_CHK, MF_BYCOMMAND, new_val);
+			_r_menu_enableitem (hmenu, IDM_USEAPPMONITOR_CHK, FALSE, new_val);
 
 			if (new_val)
 			{
