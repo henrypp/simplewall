@@ -2621,7 +2621,7 @@ VOID _app_command_openeditor (
 					if (!ptr_rule->name)
 						ptr_rule->name = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 
-					if (ptr_network->app_hash && ptr_network->path)
+					if (ptr_network->app_hash && !_r_obj_isstringempty (ptr_network->path))
 					{
 						if (!_app_isappfound (ptr_network->app_hash))
 						{
@@ -2667,7 +2667,7 @@ VOID _app_command_openeditor (
 					if (!ptr_rule->name)
 						ptr_rule->name = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 
-					if (ptr_log->app_hash && ptr_log->path)
+					if (ptr_log->app_hash && !_r_obj_isstringempty (ptr_log->path))
 					{
 						if (!_app_isappfound (ptr_log->app_hash))
 						{
@@ -2811,7 +2811,7 @@ VOID _app_command_properties (
 			if (!ptr_network)
 				return;
 
-			if (ptr_network->app_hash && ptr_network->path)
+			if (ptr_network->app_hash && !_r_obj_isstringempty (ptr_network->path))
 			{
 				if (!_app_isappfound (ptr_network->app_hash))
 				{
@@ -2842,7 +2842,7 @@ VOID _app_command_properties (
 			if (!ptr_log)
 				return;
 
-			if (ptr_log->app_hash && ptr_log->path)
+			if (ptr_log->app_hash && !_r_obj_isstringempty (ptr_log->path))
 			{
 				if (!_app_isappfound (ptr_log->app_hash))
 				{

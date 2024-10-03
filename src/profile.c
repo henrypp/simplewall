@@ -1580,10 +1580,10 @@ VOID _app_profile_load_fallback ()
 	// disable deletion for this shit ;)
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
-		if (!_app_isappfound (config.ntoskrnl_hash) && config.system_path)
+		if (!_app_isappfound (config.ntoskrnl_hash) && !_r_obj_isstringempty (config.system_path))
 			_app_addapplication (NULL, DATA_UNKNOWN, config.system_path, NULL, NULL);
 
-		if (!_app_isappfound (config.svchost_hash) && config.svchost_path)
+		if (!_app_isappfound (config.svchost_hash) && !_r_obj_isstringempty (config.svchost_path))
 			_app_addapplication (NULL, DATA_UNKNOWN, config.svchost_path, NULL, NULL);
 
 		_app_setappinfobyhash (config.ntoskrnl_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));

@@ -425,8 +425,8 @@ BOOLEAN _app_getappinfoparam2 (
 	_In_ ULONG_PTR app_hash,
 	_In_opt_ INT listview_id,
 	_In_ ENUM_INFO_DATA2 info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 )
 {
 	PITEM_APP_INFO ptr_app_info;
@@ -439,7 +439,7 @@ BOOLEAN _app_getappinfoparam2 (
 		{
 			LONG icon_id = 0;
 
-			if (size != sizeof (LONG))
+			if (length != sizeof (LONG))
 			{
 				if (ptr_app_info)
 					_r_obj_dereference (ptr_app_info);
@@ -455,7 +455,7 @@ BOOLEAN _app_getappinfoparam2 (
 
 			if (icon_id)
 			{
-				RtlCopyMemory (buffer, &icon_id, size);
+				RtlCopyMemory (buffer, &icon_id, length);
 
 				if (ptr_app_info)
 					_r_obj_dereference (ptr_app_info);
@@ -470,7 +470,7 @@ BOOLEAN _app_getappinfoparam2 (
 		{
 			PVOID ptr;
 
-			if (size != sizeof (PVOID))
+			if (length != sizeof (PVOID))
 			{
 				if (ptr_app_info)
 					_r_obj_dereference (ptr_app_info);
@@ -482,7 +482,7 @@ BOOLEAN _app_getappinfoparam2 (
 			{
 				ptr = _r_obj_reference (ptr_app_info->signature_info);
 
-				RtlCopyMemory (buffer, &ptr, size);
+				RtlCopyMemory (buffer, &ptr, length);
 
 				_r_obj_dereference (ptr_app_info);
 
@@ -496,7 +496,7 @@ BOOLEAN _app_getappinfoparam2 (
 		{
 			PVOID ptr;
 
-			if (size != sizeof (PVOID))
+			if (length != sizeof (PVOID))
 			{
 				if (ptr_app_info)
 					_r_obj_dereference (ptr_app_info);
@@ -508,7 +508,7 @@ BOOLEAN _app_getappinfoparam2 (
 			{
 				ptr = _r_obj_reference (ptr_app_info->version_info);
 
-				RtlCopyMemory (buffer, &ptr, size);
+				RtlCopyMemory (buffer, &ptr, length);
 
 				_r_obj_dereference (ptr_app_info);
 
@@ -2071,10 +2071,10 @@ VOID _app_wufixhelper (
 )
 {
 	SERVICE_STATUS svc_status;
-	WCHAR reg_key[128];
 	WCHAR reg_value[128];
-	SC_HANDLE hsvc;
+	WCHAR reg_key[128];
 	PR_STRING image_path;
+	SC_HANDLE hsvc;
 	HANDLE hkey;
 	BOOLEAN is_enabled = FALSE;
 	NTSTATUS status;
@@ -2133,8 +2133,8 @@ VOID _app_wufixenable (
 	_In_ BOOLEAN is_enable
 )
 {
-	SC_HANDLE hsvcmgr;
 	PR_STRING service_path;
+	SC_HANDLE hsvcmgr;
 	ULONG_PTR app_hash;
 
 	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
@@ -2149,7 +2149,7 @@ VOID _app_wufixenable (
 
 		_r_fs_copyfile (config.svchost_path->buffer, config.wusvc_path->buffer, FALSE);
 
-		service_path = _r_obj_createstring (config.wusvc_path->buffer);
+		service_path = _r_obj_createstring2 (&config.wusvc_path->sr);
 
 		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, service_path, NULL, NULL);
 
@@ -2165,12 +2165,12 @@ VOID _app_wufixenable (
 	{
 		if (_r_fs_exists (config.wusvc_path->buffer))
 		{
-			app_hash = _r_str_gethash (config.wusvc_path->buffer, TRUE);
+			app_hash = _r_str_gethash2 (&config.wusvc_path->sr, TRUE);
 
 			if (app_hash)
 			{
 				_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (FALSE));
-				_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (FALSE));
+				//_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (FALSE));
 			}
 
 			_r_fs_deletefile (config.wusvc_path->buffer, NULL);

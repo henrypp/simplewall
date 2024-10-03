@@ -116,8 +116,8 @@ BOOLEAN _app_getappinfoparam2 (
 	_In_ ULONG_PTR app_hash,
 	_In_opt_ INT listview_id,
 	_In_ ENUM_INFO_DATA2 info_data,
-	_Out_writes_bytes_all_ (size) PVOID buffer,
-	_In_ ULONG_PTR size
+	_Out_writes_bytes_all_ (length) PVOID buffer,
+	_In_ ULONG_PTR length
 );
 
 BOOLEAN _app_isappsigned (
