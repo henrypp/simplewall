@@ -88,7 +88,7 @@ VOID _app_getapptooltipstring (
 			L":\r\n"
 		);
 
-		_r_obj_insertstringbuilder2 (&sb, 0, string);
+		_r_obj_insertstringbuilder2 (&sb, 0, &string->sr);
 		_r_obj_appendstringbuilder2 (buffer, &sb.string->sr);
 
 		_r_obj_dereference (string);
@@ -292,14 +292,14 @@ _Ret_maybenull_
 PR_STRING _app_gettooltipbylparam (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
-	_In_ ULONG_PTR lparam
+	_In_ LONG_PTR lparam
 )
 {
 	R_STRINGBUILDER sb;
+	PITEM_NETWORK ptr_network;
+	PITEM_RULE ptr_rule;
 	PR_STRING string1;
 	PR_STRING string2;
-	PITEM_RULE ptr_rule;
-	PITEM_NETWORK ptr_network;
 	PITEM_LOG ptr_log;
 
 	UNREFERENCED_PARAMETER (hwnd);
@@ -697,7 +697,7 @@ VOID _app_imagelist_init (
 	_In_ LONG dpi_value
 )
 {
-	static UINT toolbar_ids[] = {
+	UINT toolbar_ids[] = {
 		IDP_SHIELD_ENABLE,
 		IDP_SHIELD_DISABLE,
 		IDP_REFRESH,
@@ -711,7 +711,7 @@ VOID _app_imagelist_init (
 		IDP_LOGUI,
 	};
 
-	static UINT rules_ids[] = {
+	UINT rules_ids[] = {
 		IDP_ALLOW,
 		IDP_BLOCK
 	};
@@ -882,31 +882,31 @@ VOID _app_toolbar_init (
 		_r_ctrl_setfont (config.htoolbar, 0, config.wnd_font); // fix font
 		_r_toolbar_setimagelist (config.htoolbar, 0, config.himg_toolbar);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, I_IMAGENONE);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, I_IMAGENONE);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 8);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_OPENRULESEDITOR, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 8);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 4);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 5);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 10);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 4);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 5);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 10);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 2);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 3);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_REFRESH, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 2);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_SETTINGS, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 3);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 6);
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 7);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGSHOW, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 6);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_LOGCLEAR, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 7);
 
 		_r_toolbar_addseparator (config.hrebar, IDC_TOOLBAR);
 
-		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, 0, BTNS_BUTTON | BTNS_AUTOSIZE, TBSTATE_ENABLED, 9);
+		_r_toolbar_addbutton (config.hrebar, IDC_TOOLBAR, IDM_DONATE, BTNS_BUTTON | BTNS_AUTOSIZE, NULL, TBSTATE_ENABLED, 9);
 
 		_r_toolbar_resize (config.hrebar, IDC_TOOLBAR);
 

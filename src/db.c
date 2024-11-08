@@ -239,7 +239,7 @@ VOID _app_db_parse_app (
 
 	path = _r_xml_getattribute_string (&db_info->xml_library, L"path");
 
-	if (!path)
+	if (_r_obj_isstringempty (path))
 		return;
 
 	// workaround for native paths
@@ -471,7 +471,7 @@ VOID _app_db_parse_rule (
 
 			status = _r_str_environmentexpandstring (NULL, &first_part, &path_string);
 
-			if (!NT_SUCCESS (status))
+			if (status != STATUS_SUCCESS)
 				path_string = _r_obj_createstring2 (&first_part);
 
 			app_hash = _r_str_gethash2 (&path_string->sr, TRUE);

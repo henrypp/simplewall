@@ -521,39 +521,39 @@ VOID _app_notify_killprocess (
 
 	do
 	{
-		if (process->ImageName.Buffer)
+		if (!process->ImageName.Buffer)
+			continue;
+
+		if (_r_str_compare (process->ImageName.Buffer, file_name->buffer, TRUE) == 0)
 		{
-			if (_r_str_compare (process->ImageName.Buffer, file_name->buffer, 0) == 0)
+			status = _r_sys_getprocessimagepathbyid (process->UniqueProcessId, TRUE, &path);
+
+			if (NT_SUCCESS (status))
 			{
-				status = _r_sys_getprocessimagepathbyid (process->UniqueProcessId, TRUE, &path);
-
-				if (NT_SUCCESS (status))
+				if (_r_str_isequal (&path->sr, &ptr_app->real_path->sr, TRUE))
 				{
-					if (_r_str_compare (path->buffer, ptr_app->real_path->buffer, 0) == 0)
+					status = _r_sys_openprocess (process->UniqueProcessId, PROCESS_TERMINATE, &process_handle);
+
+					if (NT_SUCCESS (status))
 					{
-						status = _r_sys_openprocess (process->UniqueProcessId, PROCESS_TERMINATE, &process_handle);
+						status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
 
-						if (NT_SUCCESS (status))
-						{
-							status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
+						if (!NT_SUCCESS (status))
+							_r_show_errormessage (hwnd, L"Cannot terminate process!", status, process->ImageName.Buffer, ET_NATIVE);
 
-							if (!NT_SUCCESS (status))
-								_r_show_errormessage (hwnd, L"Cannot terminate process!", status, process->ImageName.Buffer, ET_NATIVE);
-
-							NtClose (process_handle);
-						}
-						else
-						{
-							_r_show_errormessage (hwnd, L"Cannot open process!", status, process->ImageName.Buffer, ET_NATIVE);
-						}
+						NtClose (process_handle);
 					}
+					else
+					{
+						_r_show_errormessage (hwnd, L"Cannot open process!", status, process->ImageName.Buffer, ET_NATIVE);
+					}
+				}
 
-					_r_obj_dereference (path);
-				}
-				else
-				{
-					_r_show_errormessage (hwnd, L"Cannot get process path!", status, process->ImageName.Buffer, ET_NATIVE);
-				}
+				_r_obj_dereference (path);
+			}
+			else
+			{
+				_r_show_errormessage (hwnd, L"Cannot get process path!", status, process->ImageName.Buffer, ET_NATIVE);
 			}
 		}
 	}

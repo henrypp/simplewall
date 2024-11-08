@@ -9,7 +9,7 @@ _Ret_maybenull_
 PR_STRING _app_gettooltipbylparam (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
-	_In_ ULONG_PTR lparam
+	_In_ LONG_PTR lparam
 );
 
 VOID _app_settab_id (
