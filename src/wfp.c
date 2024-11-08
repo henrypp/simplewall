@@ -153,7 +153,7 @@ PR_STRING _wfp_getlayername (
 	_In_ LPGUID layer_guid
 )
 {
-	static LPCGUID layer_guids[] = {
+	LPCGUID layer_guids[] = {
 		&FWPM_LAYER_ALE_AUTH_CONNECT_V4,
 		&FWPM_LAYER_ALE_AUTH_CONNECT_V6,
 		&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
@@ -176,7 +176,7 @@ PR_STRING _wfp_getlayername (
 		&FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6,
 	};
 
-	static R_STRINGREF layer_names[] = {
+	R_STRINGREF layer_names[] = {
 		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_CONNECT_V4"),
 		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_AUTH_CONNECT_V6"),
 		PR_STRINGREF_INIT (L"FWPM_LAYER_ALE_CONNECT_REDIRECT_V4"),
@@ -1719,7 +1719,7 @@ BOOLEAN _wfp_create2filters (
 )
 {
 	// ipv4/ipv6 loopback
-	static R_STRINGREF loopback_list[] = {
+	R_STRINGREF loopback_list[] = {
 		PR_STRINGREF_INIT (L"0.0.0.0/8"),
 		PR_STRINGREF_INIT (L"10.0.0.0/8"),
 		PR_STRINGREF_INIT (L"100.64.0.0/10"),
@@ -2056,11 +2056,14 @@ BOOLEAN _wfp_create2filters (
 	if (_r_config_getboolean (L"UseStealthMode", TRUE))
 	{
 		// blocks udp port scanners
-		// tests if the network traffic is (non-)app container loopback traffic (win8+)
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
 		fwfc[0].matchType = FWP_MATCH_FLAGS_NONE_SET;
 		fwfc[0].conditionValue.type = FWP_UINT32;
-		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK | FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
+		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
+
+		// tests if the network traffic is (non-)app container loopback traffic (win8+)
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 
 		fwfc[1].fieldKey = FWPM_CONDITION_ICMP_TYPE;
 		fwfc[1].matchType = FWP_MATCH_EQUAL;
@@ -2132,9 +2135,16 @@ BOOLEAN _wfp_create2filters (
 	if (_r_config_getboolean (L"InstallBoottimeFilters", TRUE) && !config.is_filterstemporary)
 	{
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
-		fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
+		fwfc[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
 		fwfc[0].conditionValue.type = FWP_UINT32;
-		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK | FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
+		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
+
+		// tests if the network traffic is (non-)app container loopback traffic (win8+)
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
+		{
+			fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
+			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
+		}
 
 		_wfp_createfilter (
 			engine_handle,
@@ -2706,7 +2716,7 @@ VOID _wfp_firewallenable (
 
 BOOLEAN _wfp_firewallisenabled ()
 {
-	static NET_FW_PROFILE_TYPE2 profile_types[] = {
+	NET_FW_PROFILE_TYPE2 profile_types[] = {
 		NET_FW_PROFILE2_DOMAIN,
 		NET_FW_PROFILE2_PRIVATE,
 		NET_FW_PROFILE2_PUBLIC
