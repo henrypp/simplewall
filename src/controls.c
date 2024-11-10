@@ -848,17 +848,12 @@ VOID _app_toolbar_init (
 	_In_ LONG dpi_value
 )
 {
-	REBARINFO ri = {0};
 	ULONG button_size;
 	LONG rebar_height;
 
 	config.hrebar = GetDlgItem (hwnd, IDC_REBAR);
 
 	_app_windowloadfont (dpi_value);
-
-	ri.cbSize = sizeof (REBARINFO);
-
-	_r_wnd_sendmessage (config.hrebar, 0, RB_SETBARINFO, 0, (LPARAM)&ri);
 
 	config.htoolbar = CreateWindowExW (
 		0,
