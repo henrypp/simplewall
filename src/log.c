@@ -718,7 +718,7 @@ VOID CALLBACK _wfp_logcallback (
 		_r_obj_dereference (sid_string);
 }
 
-BOOLEAN log_struct_to_f (
+FORCEINLINE BOOLEAN log_struct_to_f (
 	_Out_ PITEM_LOG_CALLBACK log,
 	_In_ ULONG version,
 	_In_ LPCVOID event_data
