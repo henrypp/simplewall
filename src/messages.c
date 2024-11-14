@@ -949,7 +949,7 @@ VOID _app_message_traycontextmenu (
 	_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGSHOW, FALSE, _r_locale_getstring (IDS_LOGSHOW));
 	_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGCLEAR, FALSE, _r_locale_getstring (IDS_LOGCLEAR));
 
-	if (_r_fs_exists (_r_app_getlogpath ()->buffer))
+	if (_r_fs_exists (&_r_app_getlogpath ()->sr))
 	{
 		_r_menu_setitemtext (hsubmenu, ERRLOG_ID, TRUE, _r_locale_getstring (IDS_TRAY_LOGERR));
 
@@ -1989,7 +1989,7 @@ VOID _app_command_logshow (
 
 		viewer_path = _app_getlogviewer ();
 
-		if (!log_path || !_r_fs_exists (log_path->buffer) || !viewer_path || !_r_fs_exists (viewer_path->buffer))
+		if (!log_path || !_r_fs_exists (&log_path->sr) || !viewer_path || !_r_fs_exists (&viewer_path->sr))
 		{
 			if (log_path)
 				_r_obj_dereference (log_path);
@@ -2042,7 +2042,7 @@ VOID _app_command_logclear (
 	if (current_handle)
 		_r_fs_getsize2 (NULL, current_handle, &file_size);
 
-	is_valid = (current_handle && file_size > 2) || (log_path && _r_fs_exists (log_path->buffer));
+	is_valid = (current_handle && file_size > 2) || (log_path && _r_fs_exists (&log_path->sr));
 
 	if (!is_valid)
 	{
@@ -2076,7 +2076,7 @@ VOID _app_command_logerrshow (
 
 	path = _r_app_getlogpath ();
 
-	if (!_r_fs_exists (path->buffer))
+	if (!_r_fs_exists (&path->sr))
 		return;
 
 	viewer_path = _app_getlogviewer ();
@@ -2110,7 +2110,7 @@ VOID _app_command_logerrclear (
 
 	path = _r_app_getlogpath ();
 
-	if (!_r_fs_exists (path->buffer))
+	if (!_r_fs_exists (&path->sr))
 		return;
 
 	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))

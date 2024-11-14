@@ -1215,8 +1215,9 @@ VOID _app_generate_rulescontrol (
 		}
 	}
 
-	_r_menu_additem (hsubmenu, 0, NULL);
-	_r_menu_additem (hsubmenu, IDM_OPENRULESEDITOR, _r_locale_getstring (IDS_OPENRULESEDITOR));
+	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s...", _r_locale_getstring (IDS_OPENRULESEDITOR));
+
+	_r_menu_additem (hsubmenu, IDM_OPENRULESEDITOR, buffer);
 }
 
 VOID _app_generate_timerscontrol (
@@ -2051,13 +2052,16 @@ VOID NTAPI _app_queue_resolveinformation (
 BOOLEAN _app_wufixenabled ()
 {
 	WCHAR file_path[256];
+	R_STRINGREF sr;
 
 	if (!_r_config_getboolean (L"IsWUFixEnabled", FALSE))
 		return FALSE;
 
 	_r_str_printf (file_path, RTL_NUMBER_OF (file_path), L"%s\\wusvc.exe", _r_sys_getsystemdirectory ()->buffer);
 
-	if (_r_fs_exists (file_path))
+	_r_obj_initializestringref (&sr, file_path);
+
+	if (_r_fs_exists (&sr))
 		return TRUE;
 
 	return FALSE;
@@ -2144,7 +2148,7 @@ VOID _app_wufixenable (
 
 	if (is_enable)
 	{
-		if (_r_fs_exists (config.wusvc_path->buffer))
+		if (_r_fs_exists (&config.wusvc_path->sr))
 			_r_fs_deletefile (config.wusvc_path->buffer, NULL);
 
 		_r_fs_copyfile (config.svchost_path->buffer, config.wusvc_path->buffer, FALSE);
@@ -2163,7 +2167,7 @@ VOID _app_wufixenable (
 	}
 	else
 	{
-		if (_r_fs_exists (config.wusvc_path->buffer))
+		if (_r_fs_exists (&config.wusvc_path->sr))
 		{
 			app_hash = _r_str_gethash2 (&config.wusvc_path->sr, TRUE);
 

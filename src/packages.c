@@ -48,7 +48,7 @@ VOID _app_package_parsepath (
 	{
 		_r_obj_movereference (&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
 
-		if (_r_fs_exists (manifest_path->buffer))
+		if (_r_fs_exists (&manifest_path->sr))
 		{
 			is_success = TRUE;
 
@@ -78,7 +78,7 @@ VOID _app_package_parsepath (
 
 			_r_obj_movereference (&result_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr));
 
-			if (_r_fs_exists (result_path->buffer))
+			if (_r_fs_exists (&result_path->sr))
 			{
 				_r_obj_swapreference (package_root_folder, result_path);
 

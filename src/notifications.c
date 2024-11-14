@@ -442,7 +442,7 @@ VOID _app_notify_playsound ()
 
 	current_path = _InterlockedCompareExchangePointer (&cached_path, NULL, NULL);
 
-	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (current_path->buffer))
+	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (&current_path->sr))
 	{
 		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", 0, KEY_READ, &hkey);
 
@@ -462,7 +462,7 @@ VOID _app_notify_playsound ()
 		}
 	}
 
-	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (current_path->buffer) || !PlaySoundW (current_path->buffer, NULL, flags | SND_FILENAME))
+	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (&current_path->sr) || !PlaySoundW (current_path->buffer, NULL, flags | SND_FILENAME))
 		PlaySoundW (NOTIFY_SOUND_NAME, NULL, flags);
 }
 
