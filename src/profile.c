@@ -1682,7 +1682,7 @@ VOID _app_profile_refresh (
 	// generate services list
 	_app_package_getserviceslist (hwnd);
 
-	// generate uwp apps list (win8+)
+	// generate uwp packages list (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		_app_package_getpackageslist (hwnd);
 }
@@ -1755,7 +1755,7 @@ CleanupExit:
 	{
 		// load internal rules (new!)
 		if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
-			_app_profile_load_internal (hwnd, profile_info.profile_path_internal, MAKEINTRESOURCEW (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
+			_app_profile_load_internal (hwnd, profile_info.profile_path_internal, MAKEINTRESOURCE (IDR_PROFILE_INTERNAL), &profile_info.profile_internal_timestamp);
 
 		_app_profile_load_fallback ();
 
@@ -1822,7 +1822,7 @@ NTSTATUS _app_profile_save (
 	// make backup
 	if (is_backuprequired)
 	{
-		_r_fs_copyfile (profile_info.profile_path->buffer, profile_info.profile_path_backup->buffer, FALSE);
+		_r_fs_copyfile (&profile_info.profile_path->sr, &profile_info.profile_path_backup->sr, FALSE);
 
 		_r_config_setlong64 (L"BackupTimestamp", timestamp);
 	}

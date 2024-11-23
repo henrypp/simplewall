@@ -82,7 +82,7 @@ VOID _app_search_initializeimages (
 	status = _r_res_loadimage (
 		_r_sys_getimagebase (),
 		L"PNG",
-		MAKEINTRESOURCEW (IDP_SEARCH_LIGHT),
+		MAKEINTRESOURCE (IDP_SEARCH_LIGHT),
 		&GUID_ContainerFormatPng,
 		context->image_width,
 		context->image_height,
@@ -104,7 +104,7 @@ VOID _app_search_initializeimages (
 	status = _r_res_loadimage (
 		_r_sys_getimagebase (),
 		L"PNG",
-		MAKEINTRESOURCEW (IDP_SEARCH_DARK),
+		MAKEINTRESOURCE (IDP_SEARCH_DARK),
 		&GUID_ContainerFormatPng,
 		context->image_width,
 		context->image_height,

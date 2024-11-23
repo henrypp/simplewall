@@ -683,7 +683,7 @@ BOOLEAN _app_calculatefilehash (
 
 	if (_r_initonce_begin (&init_once))
 	{
-		status = _r_sys_loadlibrary (L"wintrust.dll", 0, &hwintrust);
+		status = _r_sys_loadlibrary2 (L"wintrust.dll", 0, &hwintrust);
 
 		if (NT_SUCCESS (status))
 		{
@@ -989,12 +989,12 @@ VOID _app_getfileversioninfo (
 	if (ptr_app_info->version_info)
 		_r_obj_clearreference (&ptr_app_info->version_info);
 
-	status = _r_sys_loadlibraryasresource (ptr_app_info->path->buffer, &hlib);
+	status = _r_sys_loadlibraryasresource (&ptr_app_info->path->sr, &hlib);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
-	status = _r_res_loadresource (hlib, RT_VERSION, MAKEINTRESOURCEW (VS_VERSION_INFO), 0, &ver_block);
+	status = _r_res_loadresource (hlib, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), 0, &ver_block);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
@@ -1724,7 +1724,7 @@ NTSTATUS NTAPI _app_timercallback (
 			if (!_app_isappused (ptr_app))
 				continue;
 
-			status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, ptr_app->real_path->buffer, NULL, &hash);
+			status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, &ptr_app->real_path->sr, NULL, &hash);
 
 			if (NT_SUCCESS (status))
 			{
@@ -1823,7 +1823,7 @@ VOID NTAPI _app_queue_fileinformation (
 	if (ptr_app_info->is_loaded)
 		return;
 
-	status = _r_fs_openfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE, &hfile);
+	status = _r_fs_openfile (&ptr_app_info->path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE, &hfile);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -1904,7 +1904,7 @@ VOID NTAPI _app_queue_notifyinformation (
 		{
 			if (_app_isappvalidbinary (ptr_app_info->path))
 			{
-				status = _r_fs_openfile (ptr_app_info->path->buffer, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE, &hfile);
+				status = _r_fs_openfile (&ptr_app_info->path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE, &hfile);
 
 				if (NT_SUCCESS (status))
 				{
@@ -2091,7 +2091,7 @@ VOID _app_wufixhelper (
 		return;
 
 	// query service path
-	status = _r_reg_querystring (hkey, L"ImagePath", &image_path);
+	status = _r_reg_querystring (hkey, L"ImagePath", TRUE, &image_path);
 
 	if (NT_SUCCESS (status))
 	{
@@ -2149,9 +2149,9 @@ VOID _app_wufixenable (
 	if (is_enable)
 	{
 		if (_r_fs_exists (&config.wusvc_path->sr))
-			_r_fs_deletefile (config.wusvc_path->buffer, NULL);
+			_r_fs_deletefile (&config.wusvc_path->sr, NULL);
 
-		_r_fs_copyfile (config.svchost_path->buffer, config.wusvc_path->buffer, FALSE);
+		_r_fs_copyfile (&config.svchost_path->sr, &config.wusvc_path->sr, FALSE);
 
 		service_path = _r_obj_createstring2 (&config.wusvc_path->sr);
 
@@ -2177,7 +2177,7 @@ VOID _app_wufixenable (
 				//_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (FALSE));
 			}
 
-			_r_fs_deletefile (config.wusvc_path->buffer, NULL);
+			_r_fs_deletefile (&config.wusvc_path->sr, NULL);
 		}
 	}
 

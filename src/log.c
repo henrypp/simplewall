@@ -27,7 +27,7 @@ VOID _app_loginit (
 		return;
 
 	status = _r_fs_createfile (
-		log_path->buffer,
+		&log_path->sr,
 		FILE_OPEN_IF,
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ,
@@ -170,7 +170,7 @@ VOID _app_logclear (
 	if (!log_path)
 		return;
 
-	_r_fs_deletefile (log_path->buffer, NULL);
+	_r_fs_deletefile (&log_path->sr, NULL);
 
 	_r_obj_dereference (log_path);
 }
@@ -341,7 +341,7 @@ VOID _wfp_logsubscribe (
 
 	if (_r_initonce_begin (&init_once))
 	{
-		status = _r_sys_loadlibrary (L"fwpuclnt.dll", 0, &hfwpuclnt);
+		status = _r_sys_loadlibrary2 (L"fwpuclnt.dll", 0, &hfwpuclnt);
 
 		if (NT_SUCCESS (status))
 		{

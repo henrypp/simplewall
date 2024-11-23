@@ -916,7 +916,7 @@ VOID _app_message_traycontextmenu (
 	HMENU hsubmenu;
 	HMENU hmenu;
 
-	hmenu = LoadMenuW (NULL, MAKEINTRESOURCEW (IDM_TRAY));
+	hmenu = LoadMenuW (NULL, MAKEINTRESOURCE (IDM_TRAY));
 
 	if (!hmenu)
 		return;
@@ -2116,7 +2116,7 @@ VOID _app_command_logerrclear (
 	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
 		return;
 
-	_r_fs_deletefile (path->buffer, NULL);
+	_r_fs_deletefile (&path->sr, NULL);
 }
 
 VOID _app_command_copy (

@@ -24,7 +24,7 @@ HWND _app_notify_getwindow (
 	if (!ptr_log)
 		return NULL;
 
-	new_hwnd = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCEW (IDD_NOTIFICATION), NULL, &NotificationProc, ptr_log);
+	new_hwnd = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, ptr_log);
 
 	_r_sys_waitforsingleobject (config.hnotify_evt, 2000);
 
@@ -448,7 +448,7 @@ VOID _app_notify_playsound ()
 
 		if (NT_SUCCESS (status))
 		{
-			status = _r_reg_querystring (hkey, NULL, &path);
+			status = _r_reg_querystring (hkey, NULL, TRUE, &path);
 
 			if (NT_SUCCESS (status))
 			{
@@ -722,8 +722,8 @@ VOID _app_notify_initialize (
 	// set window icon
 	_r_wnd_seticon (
 		context->hwnd,
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_small),
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCEW (SIH_EXCLAMATION), icon_large)
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small),
+		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large)
 	);
 
 	// set window font
@@ -748,11 +748,11 @@ VOID _app_notify_initialize (
 	}
 
 	// load images
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SETTINGS), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_rules);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_allow);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_block);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_CROSS), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_cross);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_NEXT), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_next);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SETTINGS), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_rules);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_allow);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_block);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_CROSS), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_cross);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_NEXT), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_next);
 
 	// set button configuration
 	if (hbmp_rules)

@@ -647,8 +647,8 @@ VOID _app_setinterfacestate (
 
 	icon_id = _app_getstateicon (install_type);
 
-	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (icon_id), icon_small);
-	hico_big = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (icon_id), icon_large);
+	hico_sm = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
+	hico_big = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large);
 
 	_r_wnd_seticon (hwnd, hico_sm, hico_big);
 
@@ -682,7 +682,7 @@ VOID _app_settrayicon (
 	if (current_handle)
 		DestroyIcon (current_handle);
 
-	_r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCEW (icon_id), icon_size, &new_handle);
+	_r_sys_loadicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_size, &new_handle);
 
 	_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
 
@@ -731,11 +731,11 @@ VOID _app_imagelist_init (
 
 	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small, icon_large);
 
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SHIELD_ENABLE), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_enable);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_SHIELD_DISABLE), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_disable);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SHIELD_ENABLE), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_enable);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SHIELD_DISABLE), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_disable);
 
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_allow);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_block);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_allow);
+	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_block);
 
 	// toolbar imagelist
 	if (config.himg_toolbar)
@@ -751,7 +751,7 @@ VOID _app_imagelist_init (
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
 		{
-			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (toolbar_ids[i]), &GUID_ContainerFormatPng, icon_size_toolbar, icon_size_toolbar, &hbitmap);
+			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (toolbar_ids[i]), &GUID_ContainerFormatPng, icon_size_toolbar, icon_size_toolbar, &hbitmap);
 
 			if (hbitmap)
 				_r_imagelist_add (config.himg_toolbar, hbitmap, NULL, NULL);
@@ -775,7 +775,7 @@ VOID _app_imagelist_init (
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (rules_ids[i]), &GUID_ContainerFormatPng, icon_small, icon_small, &hbitmap);
+			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (rules_ids[i]), &GUID_ContainerFormatPng, icon_small, icon_small, &hbitmap);
 
 			if (hbitmap)
 				_r_imagelist_add (config.himg_rules_small, hbitmap, NULL, NULL);
@@ -796,7 +796,7 @@ VOID _app_imagelist_init (
 	{
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
-			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCEW (rules_ids[i]), &GUID_ContainerFormatPng, icon_large, icon_large, &hbitmap);
+			_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (rules_ids[i]), &GUID_ContainerFormatPng, icon_large, icon_large, &hbitmap);
 
 			if (hbitmap)
 				_r_imagelist_add (config.himg_rules_large, hbitmap, NULL, NULL);
