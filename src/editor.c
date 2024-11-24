@@ -920,7 +920,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				case NM_DBLCLK:
 				{
 					LPNMITEMACTIVATE lpnmlv;
-					INT command_id = 0;
+					ULONG command_id = 0;
 					INT listview_id;
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
@@ -944,7 +944,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					}
 
 					if (command_id)
-						_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
+						_r_ctrl_sendcommand (hwnd, command_id, 0);
 
 					break;
 				}

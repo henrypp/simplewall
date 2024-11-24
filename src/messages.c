@@ -846,7 +846,7 @@ VOID _app_message_contextmenu (
 	command_id = _r_menu_popup (hmenu, hwnd, NULL, FALSE);
 
 	if (command_id)
-		_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (command_id, 0), (LPARAM)lpnmlv->iSubItem);
+		_r_ctrl_sendcommand (hwnd, command_id, (LPARAM)lpnmlv->iSubItem);
 
 	if (hsubmenu_rules)
 		DestroyMenu (hsubmenu_rules);

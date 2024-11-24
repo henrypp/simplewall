@@ -725,7 +725,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_updown_setvalue (hwnd, IDC_NOTIFICATIONTIMEOUT, _r_config_getulong (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT));
 
-					_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (IDC_ENABLENOTIFICATIONS_CHK, 0), WM_APP);
+					_r_ctrl_sendcommand (hwnd, IDC_ENABLENOTIFICATIONS_CHK,WM_APP);
 
 					break;
 				}
@@ -762,7 +762,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_ctrl_checkbutton (hwnd, IDC_ENABLEUILOG_CHK, _r_config_getboolean (L"IsLogUiEnabled", FALSE));
 
-					_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (IDC_ENABLELOG_CHK, 0), WM_APP);
+					_r_ctrl_sendcommand (hwnd, IDC_ENABLELOG_CHK, WM_APP);
 
 					break;
 				}
@@ -1720,7 +1720,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (hctrl)
 						_r_ctrl_enable (hctrl, 0, is_enabled);
 
-					_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (IDC_NOTIFICATIONSOUND_CHK, 0), WM_APP);
+					_r_ctrl_sendcommand (hwnd, IDC_NOTIFICATIONSOUND_CHK, WM_APP);
 
 					if (is_postmessage)
 						break;
@@ -2262,7 +2262,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case WM_MBUTTONUP:
 				{
-					_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (IDM_TRAY_LOGSHOW, 0), 0);
+					_r_ctrl_sendcommand (hwnd, IDM_TRAY_LOGSHOW, 0);
 					break;
 				}
 
@@ -2868,7 +2868,7 @@ INT_PTR CALLBACK DlgProc (
 					}
 
 					if (command_id)
-						_r_wnd_sendmessage (hwnd, 0, WM_COMMAND, MAKEWPARAM (command_id, 0), 0);
+						_r_ctrl_sendcommand (hwnd, command_id, 0);
 
 					break;
 				}
