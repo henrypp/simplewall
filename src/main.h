@@ -91,7 +91,6 @@ typedef enum _ENUM_INFO_DATA2
 #define PROC_SYSTEM_PID 4
 #define PROC_SYSTEM_NAME L"System"
 
-#define PATH_NTOSKRNL L"\\ntoskrnl.exe"
 #define PATH_SVCHOST L"\\svchost.exe"
 #define PATH_WUSVC L"\\wusvc.exe"
 

@@ -1254,17 +1254,17 @@ INT_PTR CALLBACK SettingsProc (
 				case LVN_ITEMCHANGED:
 				{
 					LPNMLISTVIEW lpnmlv;
-					INT listview_id;
 					PITEM_COLOR ptr_clr;
+					INT listview_id;
 					BOOLEAN is_enabled;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					if ((lpnmlv->uChanged & LVIF_STATE) == 0)
+					if (listview_id != IDC_COLORS)
 						break;
 
-					if (listview_id != IDC_COLORS)
+					if ((lpnmlv->uChanged & LVIF_STATE) == 0)
 						break;
 
 					if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
@@ -2010,7 +2010,7 @@ VOID _app_initialize (
 
 	_app_profile_initialize ();
 
-	config.my_path = _r_obj_createstring (_r_sys_getimagepath ());
+	config.my_path = _r_obj_createstring3 (&NtCurrentPeb ()->ProcessParameters->ImagePathName);
 
 	config.svchost_path = _r_obj_concatstrings (
 		2,
@@ -2026,11 +2026,10 @@ VOID _app_initialize (
 
 	config.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
 
-	config.ntoskrnl_path = _r_obj_concatstrings (
-		2,
-		_r_sys_getsystemdirectory ()->buffer,
-		PATH_NTOSKRNL
-	);
+	config.ntoskrnl_path = _r_sys_getkernelfilename (TRUE);
+
+	if (!config.ntoskrnl_path)
+		config.ntoskrnl_path = _r_obj_referenceemptystring ();
 
 	config.my_hash = _r_str_gethash2 (&config.my_path->sr, TRUE);
 	config.ntoskrnl_hash = _r_str_gethash2 (&config.system_path->sr, TRUE);
@@ -2398,7 +2397,11 @@ INT_PTR CALLBACK DlgProc (
 				string = _r_obj_createstring_ex (NULL, length * sizeof (WCHAR));
 
 				if (DragQueryFileW (hdrop, i, string->buffer, length + 1))
+				{
+					_r_obj_trimstringtonullterminator (&string->sr);
+
 					app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, string, NULL, NULL);
+				}
 
 				_r_obj_dereference (string);
 			}
@@ -2710,7 +2713,7 @@ INT_PTR CALLBACK DlgProc (
 
 					if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 					{
-						if (_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom))
+						if (_app_listview_islocked (hwnd, listview_id))
 							break;
 
 						is_enabled = (lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2);
@@ -3161,7 +3164,7 @@ INT_PTR CALLBACK DlgProc (
 								_app_profile_save (hwnd);
 
 								// added information for export profile failure (issue #707)
-								status = _r_fs_copyfile (profile_info.profile_path->buffer, path->buffer, FALSE);
+								status = _r_fs_copyfile (&profile_info.profile_path->sr, &path->sr, FALSE);
 
 								if (!NT_SUCCESS (status))
 									_r_show_errormessage (hwnd, NULL, status, path->buffer, ET_NATIVE);
@@ -3643,7 +3646,7 @@ INT_PTR CALLBACK DlgProc (
 								{
 									if (_app_isappvalidpath (ptr_app->real_path))
 									{
-										status = _r_shell_showfile (ptr_app->real_path->buffer);
+										status = _r_shell_showfile (&ptr_app->real_path->sr);
 
 										if (FAILED (status))
 											_r_show_errormessage (hwnd, L"Shell open file", status, ptr_app->real_path->buffer, ET_WINDOWS);
@@ -3667,7 +3670,7 @@ INT_PTR CALLBACK DlgProc (
 								{
 									if (_app_isappvalidpath (ptr_network->path))
 									{
-										status = _r_shell_showfile (ptr_network->path->buffer);
+										status = _r_shell_showfile (&ptr_network->path->sr);
 
 										if (FAILED (status))
 											_r_show_errormessage (hwnd, L"Shell open file", status, ptr_network->path->buffer, ET_WINDOWS);
@@ -3691,7 +3694,7 @@ INT_PTR CALLBACK DlgProc (
 								{
 									if (_app_isappvalidpath (ptr_log->path))
 									{
-										status = _r_shell_showfile (ptr_log->path->buffer);
+										status = _r_shell_showfile (&ptr_log->path->sr);
 
 										if (FAILED (status))
 											_r_show_errormessage (hwnd, L"Shell open file", status, ptr_log->path->buffer, ET_WINDOWS);
@@ -3883,12 +3886,12 @@ INT APIENTRY wWinMain (
 	if (!_r_app_initialize (&_app_parseargs))
 		return ERROR_APP_INIT_FAILURE;
 
-	hwnd = _r_app_createwindow (hinst, MAKEINTRESOURCEW (IDD_MAIN), MAKEINTRESOURCEW (IDI_MAIN), &DlgProc);
+	hwnd = _r_app_createwindow (hinst, MAKEINTRESOURCE (IDD_MAIN), MAKEINTRESOURCE (IDI_MAIN), &DlgProc);
 
 	if (!hwnd)
 		return ERROR_APP_INIT_FAILURE;
 
-	result = _r_wnd_message_callback (hwnd, MAKEINTRESOURCEW (IDA_MAIN));
+	result = _r_wnd_message_callback (hwnd, MAKEINTRESOURCE (IDA_MAIN));
 
 	return result;
 }
