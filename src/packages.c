@@ -27,13 +27,12 @@ VOID _app_package_parsepath (
 	_Inout_ PR_STRING_PTR package_root_folder
 )
 {
-	static R_STRINGREF appx_names[] = {
+	R_STRINGREF appx_names[] = {
 		PR_STRINGREF_INIT (L"AppxManifest.xml"),
 		PR_STRINGREF_INIT (L"VSAppxManifest.xml"),
 	};
 
-	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
-
+	R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
 	R_XML_LIBRARY xml_library = {0};
 	PR_STRING manifest_path = NULL;
 	PR_STRING result_path = NULL;
@@ -220,7 +219,7 @@ VOID _app_package_getpackagebysid (
 		goto CleanupExit;
 
 	// query package moniker
-	status = _r_reg_querystring (hsubkey, L"Moniker", &moniker);
+	status = _r_reg_querystring (hsubkey, L"Moniker", TRUE, &moniker);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
@@ -596,7 +595,7 @@ VOID _app_package_getserviceslist (
 		}
 
 		// query service path
-		status = _r_reg_querystring (hkey, L"ImagePath", &service_path);
+		status = _r_reg_querystring (hkey, L"ImagePath", TRUE, &service_path);
 
 		if (NT_SUCCESS (status))
 		{
