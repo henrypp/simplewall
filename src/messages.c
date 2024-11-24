@@ -2008,11 +2008,12 @@ VOID _app_command_logshow (
 			_r_fs_flushfile (current_handle);
 
 		cmdline = _r_obj_concatstrings (
-			4,
+			5,
 			L"\"",
 			viewer_path->buffer,
-			L"\" ",
-			log_path->buffer
+			L"\" \"",
+			log_path->buffer,
+			L"\""
 		);
 
 		status = _r_sys_createprocess (viewer_path->buffer, cmdline->buffer, NULL, FALSE);
