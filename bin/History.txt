@@ -1,3 +1,10 @@
+v3.8.5 (27 November 2024)
+- fixed adding apps with drive letters instead of specific apps (issue #1887)
+- fixed creating rules for inaccessible paths (issue #1891)
+- fixed opening log with spaces path (issue #1912)
+- fixed windows 7 loopback rules
+- cosmetic fixes
+
 v3.8.4 (11 September 2024)
 - added listview empty markup
 - fixed tray icon middle click not worked when log ui is disabled
