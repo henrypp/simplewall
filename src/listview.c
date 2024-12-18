@@ -128,7 +128,6 @@ VOID _app_listview_addappitem (
 	_In_ PITEM_APP ptr_app
 )
 {
-	LPARAM listview_context;
 	INT listview_id;
 	INT item_id;
 
@@ -141,9 +140,7 @@ VOID _app_listview_addappitem (
 
 	_app_listview_lock (hwnd, listview_id, TRUE);
 
-	listview_context = _app_listview_createcontext (ptr_app->app_hash);
-
-	_r_listview_additem_ex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
+	_r_listview_additem (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (ptr_app->app_hash));
 
 	_app_setappiteminfo (hwnd, listview_id, item_id, ptr_app);
 
@@ -157,7 +154,6 @@ VOID _app_listview_addruleitem (
 	_In_ BOOLEAN is_forapp
 )
 {
-	LPARAM listview_context;
 	INT listview_id;
 	INT item_id;
 
@@ -170,9 +166,7 @@ VOID _app_listview_addruleitem (
 
 	_app_listview_lock (hwnd, listview_id, TRUE);
 
-	listview_context = _app_listview_createcontext (rule_idx);
-
-	_r_listview_additem_ex (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, listview_context);
+	_r_listview_additem (hwnd, listview_id, item_id, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (rule_idx));
 
 	_app_setruleiteminfo (hwnd, listview_id, item_id, ptr_rule, is_forapp);
 
@@ -184,11 +178,7 @@ VOID _app_listview_addnetworkitem (
 	_In_ ULONG_PTR network_hash
 )
 {
-	LPARAM context;
-
-	context = _app_listview_createcontext (network_hash);
-
-	_r_listview_additem_ex (hwnd, IDC_NETWORK, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, context);
+	_r_listview_additem (hwnd, IDC_NETWORK, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (network_hash));
 }
 
 VOID _app_listview_addlogitem (
@@ -196,11 +186,7 @@ VOID _app_listview_addlogitem (
 	_In_ ULONG_PTR log_hash
 )
 {
-	LPARAM context;
-
-	context = _app_listview_createcontext (log_hash);
-
-	_r_listview_additem_ex (hwnd, IDC_LOG, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, context);
+	_r_listview_additem (hwnd, IDC_LOG, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_listview_createcontext (log_hash));
 }
 
 BOOLEAN _app_listview_islocked (
@@ -614,7 +600,7 @@ VOID _app_listview_updateitemby_id (
 	_In_ INT item_id
 )
 {
-	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitem (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, I_DEFAULT);
 }
 
 VOID _app_listview_loadfont (
@@ -1161,5 +1147,5 @@ VOID _app_listview_sort (
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
-	_r_wnd_sendmessage (hwnd, listview_id, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
+	_r_listview_sort (hwnd, listview_id, &_app_listview_compare_callback, (WPARAM)hlistview);
 }

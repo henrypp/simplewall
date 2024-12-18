@@ -480,7 +480,7 @@ ULONG_PTR _app_addapplication (
 		ptr_app->short_name = _r_path_getbasenamestring (&path_sr);
 	}
 
-	ptr_app->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
+	ptr_app->guids = _r_obj_createarray (sizeof (GUID), 4, NULL); // initialize array
 	ptr_app->timestamp = _r_unixtime_now ();
 
 	// insert object into the table
@@ -494,7 +494,7 @@ ULONG_PTR _app_addapplication (
 		_app_listview_addappitem (hwnd, ptr_app);
 
 	// queue file information
-	if (ptr_app->real_path)
+	if (!_r_obj_isstringempty (ptr_app->real_path))
 		_app_getfileinformation (ptr_app->real_path, app_hash, ptr_app->type, _app_listview_getbytype (ptr_app->type));
 
 	return app_hash;
@@ -514,8 +514,8 @@ PITEM_RULE _app_addrule (
 
 	ptr_rule = _r_obj_allocate (sizeof (ITEM_RULE), &_app_dereferencerule);
 
-	ptr_rule->apps = _r_obj_createhashtable (sizeof (SHORT), NULL); // initialize hashtable
-	ptr_rule->guids = _r_obj_createarray (sizeof (GUID), NULL); // initialize array
+	ptr_rule->apps = _r_obj_createhashtable (sizeof (SHORT), 4, NULL); // initialize hashtable
+	ptr_rule->guids = _r_obj_createarray (sizeof (GUID), 4, NULL); // initialize array
 
 	ptr_rule->type = DATA_RULE_USER;
 
@@ -525,7 +525,7 @@ PITEM_RULE _app_addrule (
 		ptr_rule->name = _r_obj_reference (name);
 
 		if (_r_str_getlength2 (&ptr_rule->name->sr) > RULE_NAME_CCH_MAX)
-			_r_obj_setstringlength (&ptr_rule->name->sr, RULE_NAME_CCH_MAX * sizeof (WCHAR));
+			_r_str_setlength (&ptr_rule->name->sr, RULE_NAME_CCH_MAX * sizeof (WCHAR));
 	}
 
 	// set rule destination
@@ -534,7 +534,7 @@ PITEM_RULE _app_addrule (
 		ptr_rule->rule_remote = _r_obj_reference (rule_remote);
 
 		if (_r_str_getlength2 (&ptr_rule->rule_remote->sr) > RULE_RULE_CCH_MAX)
-			_r_obj_setstringlength (&ptr_rule->rule_remote->sr, RULE_RULE_CCH_MAX * sizeof (WCHAR));
+			_r_str_setlength (&ptr_rule->rule_remote->sr, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 	}
 
 	// set rule source
@@ -543,7 +543,7 @@ PITEM_RULE _app_addrule (
 		ptr_rule->rule_local = _r_obj_reference (rule_local);
 
 		if (_r_str_getlength2 (&ptr_rule->rule_local->sr) > RULE_RULE_CCH_MAX)
-			_r_obj_setstringlength (&ptr_rule->rule_local->sr, RULE_RULE_CCH_MAX * sizeof (WCHAR));
+			_r_str_setlength (&ptr_rule->rule_local->sr, RULE_RULE_CCH_MAX * sizeof (WCHAR));
 	}
 
 	// set configuration
@@ -931,7 +931,7 @@ VOID _app_setappiteminfo (
 	_In_ PITEM_APP ptr_app
 )
 {
-	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitem (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, I_DEFAULT);
 
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_app->is_enabled);
 }
@@ -947,7 +947,7 @@ VOID _app_setruleiteminfo (
 	ULONG_PTR enum_key = 0;
 	ULONG_PTR hash_code;
 
-	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitem (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, I_DEFAULT);
 
 	_r_listview_setitemcheck (hwnd, listview_id, item_id, !!ptr_rule->is_enabled);
 
@@ -1089,7 +1089,7 @@ VOID _app_ruleblocklistset (
 	HANDLE hengine;
 	ULONG_PTR changes_count = 0;
 
-	rules = _r_obj_createlist (&_r_obj_dereference);
+	rules = _r_obj_createlist (6, &_r_obj_dereference);
 
 	_r_queuedlock_acquireshared (&lock_rules);
 
@@ -1240,7 +1240,7 @@ PR_STRING _app_rulesexpandapps (
 			if (ptr_app->type == DATA_APP_UWP)
 			{
 				if (ptr_app->display_name)
-					string = _r_path_compact (ptr_app->display_name, 64);
+					string = _r_path_compact (&ptr_app->display_name->sr, 64);
 			}
 		}
 
@@ -1249,12 +1249,12 @@ PR_STRING _app_rulesexpandapps (
 			if (is_fordisplay)
 			{
 				if (ptr_app->original_path)
-					string = _r_path_compact (ptr_app->original_path, 64);
+					string = _r_path_compact (&ptr_app->original_path->sr, 64);
 			}
 		}
 
 		if (!string)
-			string = _r_obj_reference (ptr_app->original_path);
+			string = _r_obj_referencesafe (ptr_app->original_path);
 
 		if (string)
 		{

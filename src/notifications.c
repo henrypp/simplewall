@@ -82,7 +82,7 @@ BOOLEAN _app_notify_command (
 
 	_app_notify_freeobject (hwnd, ptr_app);
 
-	rules = _r_obj_createlist (NULL);
+	rules = _r_obj_createlist (4, NULL);
 
 	if (button_id == IDC_ALLOW_BTN || button_id == IDC_BLOCK_BTN)
 	{
@@ -448,7 +448,7 @@ VOID _app_notify_playsound ()
 
 		if (NT_SUCCESS (status))
 		{
-			status = _r_reg_querystring (hkey, NULL, TRUE, &path);
+			status = _r_reg_querystring (hkey, NULL, &path, NULL);
 
 			if (NT_SUCCESS (status))
 			{
@@ -485,8 +485,8 @@ VOID _app_notify_killprocess (
 	_In_ HWND hwnd
 )
 {
-	PSYSTEM_PROCESS_INFORMATION spi;
 	PSYSTEM_PROCESS_INFORMATION process;
+	PSYSTEM_PROCESS_INFORMATION spi;
 	PNOTIFY_CONTEXT context;
 	HANDLE process_handle;
 	PITEM_APP ptr_app;
@@ -1374,7 +1374,7 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						hengine = _wfp_getenginehandle ();
 
-						rules = _r_obj_createlist (NULL);
+						rules = _r_obj_createlist (1, NULL);
 
 						_r_obj_addlistitem (rules, ptr_rule);
 

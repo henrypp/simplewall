@@ -350,7 +350,7 @@ VOID _wfp_logsubscribe (
 			_FwpmNetEventSubscribe2 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", 0);
 			_FwpmNetEventSubscribe1 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe1", 0);
 
-			//_r_sys_freelibrary (hfwpuclnt);
+			_r_sys_freelibrary (hfwpuclnt);
 		}
 		else
 		{
@@ -618,7 +618,7 @@ VOID CALLBACK _wfp_logcallback (
 	{
 		path = _r_obj_createstring ((LPCWSTR)(log->app_id));
 
-		resolved_path = _r_path_dospathfromnt (path);
+		resolved_path = _r_path_dospathfromnt (&path->sr);
 
 		if (resolved_path)
 			_r_obj_movereference (&path, resolved_path);

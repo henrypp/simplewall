@@ -1893,7 +1893,7 @@ VOID _app_command_idtorules (
 	{
 		hengine = _wfp_getenginehandle ();
 
-		rules = _r_obj_createlist (NULL);
+		rules = _r_obj_createlist (10, NULL);
 
 		_r_obj_addlistitem (rules, ptr_rule);
 
@@ -1936,7 +1936,7 @@ VOID _app_command_idtotimers (
 	{
 		hengine = _wfp_getenginehandle ();
 
-		rules = _r_obj_createlist_ex (8, &_r_obj_dereference);
+		rules = _r_obj_createlist (8, &_r_obj_dereference);
 
 		while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
 		{
@@ -2199,7 +2199,7 @@ VOID _app_command_checkbox (
 	BOOLEAN new_val = (ctrl_id == IDM_CHECK);
 	BOOLEAN is_changed = FALSE;
 
-	rules = _r_obj_createlist_ex (8, &_r_obj_dereference);
+	rules = _r_obj_createlist (8, &_r_obj_dereference);
 	listview_id = _app_listview_getcurrent (hwnd);
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
@@ -2386,7 +2386,7 @@ VOID _app_command_delete (
 			return;
 		}
 
-		guids = _r_obj_createarray (sizeof (GUID), NULL);
+		guids = _r_obj_createarray (sizeof (GUID), 10, NULL);
 
 		_r_obj_dereference (string);
 	}
@@ -2431,7 +2431,7 @@ VOID _app_command_delete (
 
 			if (!ptr_rule->is_readonly) // skip "read-only" rules
 			{
-				apps_checker = _r_obj_createhashtable (sizeof (SHORT), NULL);
+				apps_checker = _r_obj_createhashtable (sizeof (SHORT), 6, NULL);
 
 				if (!_r_obj_isempty (ptr_rule->guids))
 					_r_obj_addarrayitems (guids, ptr_rule->guids->items, ptr_rule->guids->count);
@@ -2881,8 +2881,8 @@ VOID _app_command_purgeunused (
 	ULONG_PTR enum_key = 0;
 	ULONG_PTR hash_code;
 
-	apps_list = _r_obj_createhashtable (sizeof (ULONG_PTR), NULL);
-	guids = _r_obj_createarray (sizeof (GUID), NULL);
+	apps_list = _r_obj_createhashtable (sizeof (ULONG_PTR), 8, NULL);
+	guids = _r_obj_createarray (sizeof (GUID), 10, NULL);
 
 	_r_obj_initializestringbuilder (&sb, 256);
 
@@ -2975,7 +2975,7 @@ VOID _app_command_purgetimers (
 	if (!_app_istimersactive ())
 		return;
 
-	rules = _r_obj_createlist (NULL);
+	rules = _r_obj_createlist (10, NULL);
 
 	_r_obj_initializestringbuilder (&sb, 256);
 

@@ -201,7 +201,7 @@ VOID _app_editor_setrulestolistview (
 		rule_string = _r_obj_createstring2 (&first_part);
 
 		_app_listview_lock (hwnd, ctrl_id, TRUE);
-		_r_listview_additem (hwnd, ctrl_id, item_id, rule_string->buffer);
+		_r_listview_additem (hwnd, ctrl_id, item_id, rule_string->buffer, I_DEFAULT, I_DEFAULT, I_DEFAULT);
 		_app_listview_lock (hwnd, ctrl_id, FALSE);
 
 		item_id += 1;
@@ -393,7 +393,7 @@ INT_PTR CALLBACK EditorRuleProc (
 
 						_r_str_copystring (rule_string, RTL_NUMBER_OF (rule_string), &first_part);
 
-						_r_listview_additem (context->hwnd, context->listview_id, item_id, rule_string);
+						_r_listview_additem (context->hwnd, context->listview_id, item_id, rule_string, I_DEFAULT, I_DEFAULT, I_DEFAULT);
 
 						item_id += 1;
 					}
@@ -676,7 +676,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					_app_listview_lock (hwnd, IDC_RULE_APPS_ID, TRUE);
 
-					_r_listview_additem_ex (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (ptr_app->app_hash));
+					_r_listview_additem (hwnd, IDC_RULE_APPS_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (ptr_app->app_hash));
 
 					_r_listview_setitemcheck (hwnd, IDC_RULE_APPS_ID, 0, is_enabled);
 
@@ -812,7 +812,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					_app_listview_lock (hwnd, IDC_APP_RULES_ID, TRUE);
 
-					_r_listview_additem_ex (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (i));
+					_r_listview_additem (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (i));
 
 					_r_listview_setitemcheck (hwnd, IDC_APP_RULES_ID, 0, is_enabled);
 
@@ -1891,7 +1891,7 @@ INT_PTR CALLBACK EditorProc (
 						// enable rule
 						_app_ruleenable (context->ptr_rule, _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK), TRUE);
 
-						rules = _r_obj_createlist (NULL);
+						rules = _r_obj_createlist (1, NULL);
 
 						_r_obj_addlistitem (rules, context->ptr_rule);
 					}
@@ -1900,7 +1900,7 @@ INT_PTR CALLBACK EditorProc (
 						context->ptr_app->is_haveerrors = FALSE; // reset errors
 						context->ptr_app->is_enabled = _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK);
 
-						rules = _r_obj_createlist (NULL);
+						rules = _r_obj_createlist (1, NULL);
 
 						_r_obj_addlistitem (rules, context->ptr_app);
 

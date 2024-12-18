@@ -222,8 +222,8 @@ VOID _app_icons_loadfromfile (
 	if (hicon_ptr)
 		*hicon_ptr = NULL;
 
-	if (path)
-		_r_path_geticon (path->buffer, icon_id_ptr, hicon_ptr);
+	if (!_r_obj_isstringempty (path))
+		_r_path_geticon (&path->sr, icon_id_ptr, hicon_ptr);
 
 	if (is_loaddefaults)
 		_app_icons_loaddefaults (type, icon_id_ptr, hicon_ptr);

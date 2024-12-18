@@ -785,7 +785,7 @@ PR_STRING _app_verifygetstring (
 
 				CertGetNameStringW (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1);
 
-				_r_obj_trimstringtonullterminator (&string->sr);
+				_r_str_trimtonullterminator (&string->sr);
 
 				return string;
 			}
@@ -1760,6 +1760,9 @@ VOID _app_getfileinformation (
 
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
+	if (_r_obj_isstringempty (path))
+		return;
+
 	if (ptr_app_info)
 	{
 		// all information is already set
@@ -2091,7 +2094,7 @@ VOID _app_wufixhelper (
 		return;
 
 	// query service path
-	status = _r_reg_querystring (hkey, L"ImagePath", TRUE, &image_path);
+	status = _r_reg_querystring (hkey, L"ImagePath", &image_path, NULL);
 
 	if (NT_SUCCESS (status))
 	{

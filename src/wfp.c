@@ -548,7 +548,7 @@ VOID _wfp_installfilters (
 		_r_obj_dereference (guids);
 	}
 
-	rules = _r_obj_createlist (&_r_obj_dereference);
+	rules = _r_obj_createlist (10, &_r_obj_dereference);
 
 	// apply apps rules
 	enum_key = 0;
@@ -843,7 +843,7 @@ ULONG _wfp_createfilter (
 	if (status == ERROR_SUCCESS)
 	{
 		if (guids)
-			_r_obj_addarrayitem (guids, &filter.filterKey);
+			_r_obj_addarrayitem (guids, &filter.filterKey, NULL);
 	}
 	else
 	{
@@ -1398,7 +1398,7 @@ BOOLEAN _wfp_create4filters (
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = TRUE;
 
-	guids = _r_obj_createarray (sizeof (GUID), NULL);
+	guids = _r_obj_createarray (sizeof (GUID), 10, NULL);
 
 	if (!is_intransact)
 	{
@@ -1616,7 +1616,7 @@ BOOLEAN _wfp_create3filters (
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = TRUE;
 
-	guids = _r_obj_createarray (sizeof (GUID), NULL);
+	guids = _r_obj_createarray (sizeof (GUID), 10, NULL);
 
 	is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
 
@@ -2534,7 +2534,7 @@ ULONG _wfp_dumpcallouts (
 		goto CleanupExit;
 	}
 
-	guids = _r_obj_createarray_ex (sizeof (GUID), return_count, NULL);
+	guids = _r_obj_createarray (sizeof (GUID), return_count, NULL);
 
 	for (UINT32 i = 0; i < return_count; i++)
 	{
@@ -2544,7 +2544,7 @@ ULONG _wfp_dumpcallouts (
 			continue;
 
 		if (IsEqualGUID (callout->providerKey, provider_id))
-			_r_obj_addarrayitem (guids, &callout->calloutKey);
+			_r_obj_addarrayitem (guids, &callout->calloutKey, NULL);
 	}
 
 	if (_r_obj_isempty2 (guids))
@@ -2601,7 +2601,7 @@ ULONG _wfp_dumpfilters (
 		goto CleanupExit;
 	}
 
-	guids = _r_obj_createarray_ex (sizeof (GUID), return_count, NULL);
+	guids = _r_obj_createarray (sizeof (GUID), return_count, NULL);
 
 	for (UINT32 i = 0; i < return_count; i++)
 	{
@@ -2611,7 +2611,7 @@ ULONG _wfp_dumpfilters (
 			continue;
 
 		if (IsEqualGUID (filter->providerKey, provider_id))
-			_r_obj_addarrayitem (guids, &filter->filterKey);
+			_r_obj_addarrayitem (guids, &filter->filterKey, NULL);
 	}
 
 	if (_r_obj_isempty2 (guids))
@@ -2793,7 +2793,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 						PathStripToRootW (path_root->buffer);
 
-						_r_obj_trimstringtonullterminator (&path_root->sr);
+						_r_str_trimtonullterminator (&path_root->sr);
 
 						status = _r_path_ntpathfromdos (&path_root->sr, FALSE, &original_path);
 

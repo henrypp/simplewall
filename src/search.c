@@ -583,7 +583,7 @@ CleanupExit:
 		_r_obj_dereference (ptr_log);
 
 	if (is_changed)
-		_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, NULL, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+		_r_listview_setitem (hwnd, listview_id, item_id, 0, NULL, I_IMAGECALLBACK, I_GROUPIDCALLBACK, I_DEFAULT);
 
 	return is_changed;
 }

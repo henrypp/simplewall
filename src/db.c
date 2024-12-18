@@ -206,7 +206,7 @@ NTSTATUS _app_db_openfromfile (
 	if (!NT_SUCCESS (status))
 		return status;
 
-	status = _r_fs_readfilebytes (hfile, &db_info->bytes);
+	status = _r_fs_readbytes (hfile, &db_info->bytes);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -246,7 +246,7 @@ VOID _app_db_parse_app (
 	// https://github.com/henrypp/simplewall/issues/817
 	if (_r_str_isstartswith2 (&path->sr, L"\\device\\", TRUE))
 	{
-		dos_path = _r_path_dospathfromnt (path);
+		dos_path = _r_path_dospathfromnt (&path->sr);
 
 		if (dos_path)
 			_r_obj_movereference (&path, dos_path);
