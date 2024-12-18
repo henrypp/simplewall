@@ -125,11 +125,11 @@ BOOLEAN _app_isappsigned (
 );
 
 BOOLEAN _app_isappvalidbinary (
-	_In_opt_ PR_STRING path
+	_In_opt_ PR_STRINGREF path
 );
 
 BOOLEAN _app_isappvalidpath (
-	_In_opt_ PR_STRING path
+	_In_opt_ PR_STRINGREF path
 );
 
 _Ret_maybenull_

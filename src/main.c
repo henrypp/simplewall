@@ -2041,7 +2041,7 @@ VOID _app_initialize (
 	_r_freelist_initialize (&listview_free_list, sizeof (ITEM_LISTVIEW_CONTEXT), 2048);
 
 	// initialize colors array
-	colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), NULL);
+	colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), 8, NULL);
 
 	// initialize colors
 	config.color_invalid = _app_addcolor (IDS_HIGHLIGHT_INVALID, L"IsHighlightInvalid", TRUE, L"ColorInvalid", LV_COLOR_INVALID);
@@ -2058,16 +2058,16 @@ VOID _app_initialize (
 	_app_icons_getdefault ();
 
 	// initialize global filters array object
-	filter_ids = _r_obj_createarray (sizeof (GUID), NULL);
+	filter_ids = _r_obj_createarray (sizeof (GUID), 10, NULL);
 
 	// initialize apps table
 	apps_table = _r_obj_createhashtablepointer (32);
 
 	// initialize rules array object
-	rules_list = _r_obj_createlist (&_r_obj_dereference);
+	rules_list = _r_obj_createlist (10 , &_r_obj_dereference);
 
 	// initialize rules configuration table
-	rules_config = _r_obj_createhashtable (sizeof (ITEM_RULE_CONFIG), &_app_dereferenceruleconfig);
+	rules_config = _r_obj_createhashtable (sizeof (ITEM_RULE_CONFIG), 8, &_app_dereferenceruleconfig);
 
 	// initialize log hashtable object
 	log_table = _r_obj_createhashtablepointer (32);
@@ -2398,9 +2398,9 @@ INT_PTR CALLBACK DlgProc (
 
 				if (DragQueryFileW (hdrop, i, string->buffer, length + 1))
 				{
-					_r_obj_trimstringtonullterminator (&string->sr);
+					_r_str_trimtonullterminator (&string->sr);
 
-					app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, string, NULL, NULL);
+					app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &string->sr, NULL, NULL);
 				}
 
 				_r_obj_dereference (string);
@@ -2744,7 +2744,7 @@ INT_PTR CALLBACK DlgProc (
 								{
 									hengine = _wfp_getenginehandle ();
 
-									rules = _r_obj_createlist (NULL);
+									rules = _r_obj_createlist (1, NULL);
 
 									_r_obj_addlistitem (rules, ptr_app);
 
@@ -2779,7 +2779,7 @@ INT_PTR CALLBACK DlgProc (
 								{
 									hengine = _wfp_getenginehandle ();
 
-									rules = _r_obj_createlist (NULL);
+									rules = _r_obj_createlist (1, NULL);
 
 									_r_obj_addlistitem (rules, ptr_rule);
 
@@ -3586,7 +3586,7 @@ INT_PTR CALLBACK DlgProc (
 
 							if (SUCCEEDED (status))
 							{
-								app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, path, NULL, NULL);
+								app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &path->sr, NULL, NULL);
 
 								if (app_hash)
 								{
@@ -3644,7 +3644,7 @@ INT_PTR CALLBACK DlgProc (
 							{
 								if (ptr_app->real_path)
 								{
-									if (_app_isappvalidpath (ptr_app->real_path))
+									if (_app_isappvalidpath (&ptr_app->real_path->sr))
 									{
 										status = _r_shell_showfile (&ptr_app->real_path->sr);
 
@@ -3668,7 +3668,7 @@ INT_PTR CALLBACK DlgProc (
 							{
 								if (ptr_network->path)
 								{
-									if (_app_isappvalidpath (ptr_network->path))
+									if (_app_isappvalidpath (&ptr_network->path->sr))
 									{
 										status = _r_shell_showfile (&ptr_network->path->sr);
 
@@ -3692,7 +3692,7 @@ INT_PTR CALLBACK DlgProc (
 							{
 								if (ptr_log->path)
 								{
-									if (_app_isappvalidpath (ptr_log->path))
+									if (_app_isappvalidpath (&ptr_log->path->sr))
 									{
 										status = _r_shell_showfile (&ptr_log->path->sr);
 

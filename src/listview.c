@@ -614,7 +614,7 @@ VOID _app_listview_updateitemby_id (
 	_In_ INT item_id
 )
 {
-	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, 0);
+	_r_listview_setitem_ex (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, LONG_PTR_ERROR);
 }
 
 VOID _app_listview_loadfont (
@@ -1161,5 +1161,5 @@ VOID _app_listview_sort (
 
 	_r_listview_setcolumnsortindex (hwnd, listview_id, column_id, is_descend ? -1 : 1);
 
-	_r_wnd_sendmessage (hwnd, listview_id, LVM_SORTITEMSEX, (WPARAM)hlistview, (LPARAM)&_app_listview_compare_callback);
+	_r_listview_sort (hwnd, listview_id, &_app_listview_compare_callback, (WPARAM)hlistview);
 }

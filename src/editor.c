@@ -764,7 +764,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			// app path
 			if (GetDlgItem (hwnd, IDC_APP_PATH_ID))
 			{
-				if (_app_isappvalidpath (context->ptr_app->real_path))
+				if (_app_isappvalidpath (&context->ptr_app->real_path->sr))
 				{
 					_r_ctrl_setstring (hwnd, IDC_APP_PATH_ID, context->ptr_app->real_path->buffer);
 				}
@@ -1416,7 +1416,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!context)
 						break;
 
-					if (_app_isappvalidpath (context->ptr_app->real_path))
+					if (_app_isappvalidpath (&context->ptr_app->real_path->sr))
 						_r_shell_showfile (&context->ptr_app->real_path->sr);
 
 					break;
@@ -1433,7 +1433,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!context)
 						break;
 
-					if (!_app_isappvalidpath (context->ptr_app->real_path))
+					if (!_app_isappvalidpath (&context->ptr_app->real_path->sr))
 						break;
 
 					status = _r_fs_openfile (
@@ -1891,7 +1891,7 @@ INT_PTR CALLBACK EditorProc (
 						// enable rule
 						_app_ruleenable (context->ptr_rule, _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK), TRUE);
 
-						rules = _r_obj_createlist (NULL);
+						rules = _r_obj_createlist (1, NULL);
 
 						_r_obj_addlistitem (rules, context->ptr_rule);
 					}
@@ -1900,7 +1900,7 @@ INT_PTR CALLBACK EditorProc (
 						context->ptr_app->is_haveerrors = FALSE; // reset errors
 						context->ptr_app->is_enabled = _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK);
 
-						rules = _r_obj_createlist (NULL);
+						rules = _r_obj_createlist (1, NULL);
 
 						_r_obj_addlistitem (rules, context->ptr_app);
 

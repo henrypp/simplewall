@@ -51,7 +51,7 @@ _Success_ (return != 0)
 ULONG_PTR _app_addapplication (
 	_In_opt_ HWND hwnd,
 	_In_ ENUM_TYPE_DATA type,
-	_In_ PR_STRING path,
+	_In_ PR_STRINGREF path,
 	_In_opt_ PR_STRING display_name,
 	_In_opt_ PR_STRING real_path
 );

@@ -134,7 +134,7 @@ HICON _app_icons_getsafeapp_hicon (
 
 	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
 
-	if (is_iconshidded || !_app_isappvalidbinary (ptr_app->real_path))
+	if (is_iconshidded || !_app_isappvalidbinary (&ptr_app->real_path->sr))
 	{
 		hicon = _app_icons_getdefaulttype_hicon (ptr_app->type, icon_info);
 
@@ -222,8 +222,8 @@ VOID _app_icons_loadfromfile (
 	if (hicon_ptr)
 		*hicon_ptr = NULL;
 
-	if (path)
-		_r_path_geticon (path->buffer, icon_id_ptr, hicon_ptr);
+	if (!_r_obj_isstringempty (path))
+		_r_path_geticon (&path->sr, icon_id_ptr, hicon_ptr);
 
 	if (is_loaddefaults)
 		_app_icons_loaddefaults (type, icon_id_ptr, hicon_ptr);

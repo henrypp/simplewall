@@ -543,7 +543,7 @@ BOOLEAN _app_isappsigned (
 }
 
 BOOLEAN _app_isappvalidbinary (
-	_In_opt_ PR_STRING path
+	_In_opt_ PR_STRINGREF path
 )
 {
 	R_STRINGREF valid_exts = PR_STRINGREF_INIT (L".exe");
@@ -554,14 +554,14 @@ BOOLEAN _app_isappvalidbinary (
 	if (!_app_isappvalidpath (path))
 		return FALSE;
 
-	if (_r_str_isendsswith (&path->sr, &valid_exts, TRUE))
+	if (_r_str_isendsswith (path, &valid_exts, TRUE))
 		return TRUE;
 
 	return FALSE;
 }
 
 BOOLEAN _app_isappvalidpath (
-	_In_opt_ PR_STRING path
+	_In_opt_ PR_STRINGREF path
 )
 {
 	if (!path)
@@ -649,7 +649,7 @@ VOID _app_getfileicon (
 
 	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
 
-	if (is_iconshidded || !_app_isappvalidbinary (ptr_app_info->path))
+	if (is_iconshidded || !_app_isappvalidbinary (&ptr_app_info->path->sr))
 	{
 		_app_icons_loadfromfile (NULL, ptr_app_info->type, &icon_id, NULL, TRUE);
 	}
@@ -785,7 +785,7 @@ PR_STRING _app_verifygetstring (
 
 				CertGetNameStringW (prov_cert->pCert, CERT_NAME_ATTR_TYPE, 0, szOID_COMMON_NAME, string->buffer, length + 1);
 
-				_r_obj_trimstringtonullterminator (&string->sr);
+				_r_str_trimtonullterminator (&string->sr);
 
 				return string;
 			}
@@ -1718,7 +1718,7 @@ NTSTATUS NTAPI _app_timercallback (
 
 		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 		{
-			if (!ptr_app->hash || !_app_isappvalidbinary (ptr_app->real_path))
+			if (!ptr_app->hash || !_app_isappvalidbinary (&ptr_app->real_path->sr))
 				continue;
 
 			if (!_app_isappused (ptr_app))
@@ -1760,6 +1760,9 @@ VOID _app_getfileinformation (
 
 	ptr_app_info = _app_getappinfobyhash2 (app_hash);
 
+	if (_r_obj_isstringempty (path))
+		return;
+
 	if (ptr_app_info)
 	{
 		// all information is already set
@@ -1785,7 +1788,7 @@ VOID _app_getfileinformation (
 	}
 
 	// check for binary path is valid
-	if (_app_isappvalidbinary (path))
+	if (_app_isappvalidbinary (&path->sr))
 		_r_workqueue_queueitem (&file_queue, &_app_queue_fileinformation, ptr_app_info);
 }
 
@@ -1902,7 +1905,7 @@ VOID NTAPI _app_queue_notifyinformation (
 
 		if (ptr_app_info)
 		{
-			if (_app_isappvalidbinary (ptr_app_info->path))
+			if (_app_isappvalidbinary (&ptr_app_info->path->sr))
 			{
 				status = _r_fs_openfile (&ptr_app_info->path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE, &hfile);
 
@@ -2091,7 +2094,7 @@ VOID _app_wufixhelper (
 		return;
 
 	// query service path
-	status = _r_reg_querystring (hkey, L"ImagePath", TRUE, &image_path);
+	status = _r_reg_querystring (hkey, L"ImagePath", &image_path, NULL);
 
 	if (NT_SUCCESS (status))
 	{
@@ -2155,7 +2158,7 @@ VOID _app_wufixenable (
 
 		service_path = _r_obj_createstring2 (&config.wusvc_path->sr);
 
-		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, service_path, NULL, NULL);
+		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, &service_path->sr, NULL, NULL);
 
 		if (app_hash)
 		{

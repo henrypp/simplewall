@@ -154,7 +154,7 @@ VOID CALLBACK _app_timer_callback (
 
 	hengine = _wfp_getenginehandle ();
 
-	rules = _r_obj_createlist (NULL);
+	rules = _r_obj_createlist (2, NULL);
 
 	_r_obj_addlistitem (rules, ptr_app);
 

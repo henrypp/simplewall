@@ -145,7 +145,7 @@ VOID _app_package_getpackagebyname (
 		_app_package_parsepath (&real_path);
 
 	//_r_queuedlock_acquireexclusive (&lock_apps);
-	app_hash = _app_addapplication (NULL, DATA_APP_UWP, package_sid_string, display_name, real_path);
+	app_hash = _app_addapplication (NULL, DATA_APP_UWP, &package_sid_string->sr, display_name, real_path);
 	//_r_queuedlock_releaseexclusive (&lock_apps);
 
 	if (app_hash)
@@ -219,7 +219,7 @@ VOID _app_package_getpackagebysid (
 		goto CleanupExit;
 
 	// query package moniker
-	status = _r_reg_querystring (hsubkey, L"Moniker", TRUE, &moniker);
+	status = _r_reg_querystring (hsubkey, L"Moniker", &moniker, NULL);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
@@ -232,7 +232,7 @@ VOID _app_package_getpackagebysid (
 		_app_package_parsepath (&real_path);
 
 	//_r_queuedlock_acquireexclusive (&lock_apps);
-	app_hash = _app_addapplication (NULL, DATA_APP_UWP, key_name, display_name, NULL);
+	app_hash = _app_addapplication (NULL, DATA_APP_UWP, &key_name->sr, display_name, NULL);
 	//_r_queuedlock_releaseexclusive (&lock_apps);
 
 	if (app_hash)
@@ -485,6 +485,8 @@ VOID _app_package_getserviceslist (
 	LPENUM_SERVICE_STATUS_PROCESS service;
 	SERVICE_NOTIFY notify_context = {0};
 	EXPLICIT_ACCESS ea;
+	R_STRINGREF dummy_filename;
+	PR_STRING converted_path;
 	PR_STRING name_string;
 	PR_STRING service_name;
 	PR_STRING service_path;
@@ -498,13 +500,10 @@ VOID _app_package_getserviceslist (
 	ULONG_PTR app_hash;
 	ULONG service_type = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
 	ULONG service_state = SERVICE_STATE_ALL;
-	ULONG sd_length;
-	R_STRINGREF dummy_filename;
-	R_STRINGREF dummy_argument;
-	PR_STRING converted_path;
 	ULONG services_returned;
 	ULONG return_length;
 	ULONG buffer_size;
+	ULONG sd_length;
 	NTSTATUS status;
 
 	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
@@ -595,11 +594,11 @@ VOID _app_package_getserviceslist (
 		}
 
 		// query service path
-		status = _r_reg_querystring (hkey, L"ImagePath", TRUE, &service_path);
+		status = _r_reg_querystring (hkey, L"ImagePath", &service_path, NULL);
 
 		if (NT_SUCCESS (status))
 		{
-			_r_path_parsecommandlinefuzzy (&service_path->sr, &dummy_filename, &dummy_argument, &converted_path);
+			_r_path_parsecommandlinefuzzy (&service_path->sr, &dummy_filename, NULL, &converted_path);
 
 			if (converted_path)
 			{
@@ -607,7 +606,7 @@ VOID _app_package_getserviceslist (
 			}
 			else
 			{
-				converted_path = _r_path_dospathfromnt (service_path);
+				converted_path = _r_path_dospathfromnt (&service_path->sr);
 
 				if (converted_path)
 					_r_obj_movereference (&service_path, converted_path);
@@ -638,7 +637,7 @@ VOID _app_package_getserviceslist (
 				{
 					name_string = _r_obj_createstring (service->lpDisplayName);
 
-					app_hash = _app_addapplication (NULL, DATA_APP_SERVICE, service_name, name_string, service_path);
+					app_hash = _app_addapplication (NULL, DATA_APP_SERVICE, &service_name->sr, name_string, service_path);
 
 					if (app_hash)
 					{
