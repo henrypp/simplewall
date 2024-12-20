@@ -69,7 +69,7 @@ VOID _app_editor_addtabitem (
 	if (!htab)
 		return;
 
-	_r_tab_additem (hwnd, IDC_TAB, *tabs_count, _r_locale_getstring (locale_id), I_IMAGENONE, (LPARAM)htab);
+	_r_tab_additem (hwnd, IDC_TAB, *tabs_count, _r_locale_getstring (locale_id), I_DEFAULT, (LPARAM)htab);
 
 	*tabs_count += 1;
 
@@ -115,7 +115,7 @@ VOID _app_editor_settabtitle (
 
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%d)", _r_locale_getstring (locale_id), checked_count);
 
-	_r_tab_setitem (hparent, IDC_TAB, tab_id, buffer, I_IMAGENONE, 0);
+	_r_tab_setitem (hparent, IDC_TAB, tab_id, buffer, I_DEFAULT, I_DEFAULT);
 }
 
 _Ret_maybenull_

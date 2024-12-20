@@ -725,7 +725,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_r_updown_setvalue (hwnd, IDC_NOTIFICATIONTIMEOUT, _r_config_getulong (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT));
 
-					_r_ctrl_sendcommand (hwnd, IDC_ENABLENOTIFICATIONS_CHK,WM_APP);
+					_r_ctrl_sendcommand (hwnd, IDC_ENABLENOTIFICATIONS_CHK, WM_APP);
 
 					break;
 				}
@@ -1824,22 +1824,22 @@ INT _app_addwindowtabs (
 {
 	INT tabs_count = 0;
 
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_PROFILE);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_SERVICE);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_APPS_PROFILE);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_APPS_SERVICE);
 
 	// uwp apps (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_APPS_UWP);
+		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_APPS_UWP);
 
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
-		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_RULES_BLOCKLIST);
-		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_RULES_SYSTEM);
+		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_RULES_BLOCKLIST);
+		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_RULES_SYSTEM);
 	}
 
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_RULES_CUSTOM);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_NETWORK);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_IMAGENONE, (LPARAM)IDC_LOG);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_RULES_CUSTOM);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_NETWORK);
+	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_LOG);
 
 	return tabs_count;
 }
@@ -2064,7 +2064,7 @@ VOID _app_initialize (
 	apps_table = _r_obj_createhashtablepointer (32);
 
 	// initialize rules array object
-	rules_list = _r_obj_createlist (10 , &_r_obj_dereference);
+	rules_list = _r_obj_createlist (10, &_r_obj_dereference);
 
 	// initialize rules configuration table
 	rules_config = _r_obj_createhashtable (sizeof (ITEM_RULE_CONFIG), 8, &_app_dereferenceruleconfig);
@@ -2336,7 +2336,7 @@ INT_PTR CALLBACK DlgProc (
 					locale_id = IDS_QUESTION_EXIT;
 				}
 
-				if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (locale_id), cfg_name))
+				if (!_r_show_confirmmessage (hwnd, _r_locale_getstring (locale_id), NULL, cfg_name, FALSE))
 				{
 					SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 
@@ -2658,7 +2658,7 @@ INT_PTR CALLBACK DlgProc (
 						{
 							if (app_hash == config.my_hash)
 							{
-								if (!_r_show_confirmmessage (hwnd, L"WARNING!", SZ_WARNING_ME, NULL))
+								if (!_r_show_confirmmessage (hwnd, L"WARNING!", SZ_WARNING_ME, NULL, FALSE))
 								{
 									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 
@@ -2670,7 +2670,7 @@ INT_PTR CALLBACK DlgProc (
 						{
 							if (app_hash == config.svchost_hash)
 							{
-								if (!_r_show_confirmmessage (hwnd, L"WARNING!", SZ_WARNING_SVCHOST, NULL))
+								if (!_r_show_confirmmessage (hwnd, L"WARNING!", SZ_WARNING_SVCHOST, NULL, FALSE))
 								{
 									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 
@@ -2679,7 +2679,7 @@ INT_PTR CALLBACK DlgProc (
 							}
 							else if (app_hash != config.my_hash)
 							{
-								if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION_ALLOW), L"ConfirmAllow"))
+								if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION_ALLOW), L"ConfirmAllow", FALSE))
 								{
 									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 

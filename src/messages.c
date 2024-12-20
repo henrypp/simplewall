@@ -442,7 +442,7 @@ VOID _app_message_localize (
 			}
 		}
 
-		_r_tab_setitem (hwnd, IDC_TAB, i, _r_locale_getstring (locale_id), I_IMAGENONE, 0);
+		_r_tab_setitem (hwnd, IDC_TAB, i, _r_locale_getstring (locale_id), I_DEFAULT, I_DEFAULT);
 
 		switch (listview_id)
 		{
@@ -2054,7 +2054,7 @@ VOID _app_command_logclear (
 
 	if (is_valid)
 	{
-		if (_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
+		if (_r_show_confirmmessage (hwnd, _r_locale_getstring (IDS_QUESTION), NULL, L"ConfirmLogClear", FALSE))
 		{
 			_app_logclear (current_handle);
 
@@ -2114,7 +2114,7 @@ VOID _app_command_logerrclear (
 	if (!_r_fs_exists (&path->sr))
 		return;
 
-	if (!_r_show_confirmmessage (hwnd, NULL, _r_locale_getstring (IDS_QUESTION), L"ConfirmLogClear"))
+	if (!_r_show_confirmmessage (hwnd, _r_locale_getstring (IDS_QUESTION), NULL, L"ConfirmLogClear", FALSE))
 		return;
 
 	_r_fs_deletefile (&path->sr, NULL);
@@ -2930,7 +2930,7 @@ VOID _app_command_purgeunused (
 
 		_r_str_trimstring2 (&string->sr, SZ_CRLF, PR_TRIM_END_ONLY);
 
-		if (_r_show_confirmmessage (hwnd, NULL, string->buffer, L"ConfirmUnused"))
+		if (_r_show_confirmmessage (hwnd, string->buffer, NULL, L"ConfirmUnused", FALSE))
 		{
 			_r_queuedlock_acquireexclusive (&lock_apps);
 
@@ -3024,7 +3024,7 @@ VOID _app_command_purgetimers (
 
 		_r_str_trimstring2 (&string->sr, SZ_CRLF, PR_TRIM_END_ONLY);
 
-		if (_r_show_confirmmessage (hwnd, NULL, string->buffer, L"ConfirmTimers"))
+		if (_r_show_confirmmessage (hwnd, string->buffer, NULL, L"ConfirmTimers", FALSE))
 		{
 			if (_wfp_isfiltersinstalled ())
 			{
