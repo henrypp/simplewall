@@ -455,9 +455,8 @@ VOID _app_settab_id (
 	_In_ INT page_id
 )
 {
+	PITEM_TAB_CONTEXT context;
 	HWND hctrl;
-	INT item_count;
-	INT listview_id;
 
 	if (!page_id)
 		return;
@@ -467,16 +466,11 @@ VOID _app_settab_id (
 	if (!hctrl || (_app_listview_getcurrent (hwnd) == page_id && _r_wnd_isvisible (hctrl, FALSE)))
 		return;
 
-	item_count = _r_tab_getitemcount (hwnd, IDC_TAB);
-
-	if (!item_count)
-		return;
-
-	for (INT i = 0; i < item_count; i++)
+	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
 	{
-		listview_id = _app_listview_getbytab (hwnd, i);
+		context = _app_listview_getbytab (hwnd, i);
 
-		if (listview_id == page_id)
+		if (context->listview_id == page_id)
 		{
 			_r_tab_selectitem (hwnd, IDC_TAB, i);
 
@@ -1014,19 +1008,18 @@ VOID _app_window_resize (
 	_In_ LONG dpi_value
 )
 {
+	PITEM_TAB_CONTEXT new_context;
+	PITEM_TAB_CONTEXT context;
 	HDWP hdefer;
-	LONG rebar_height;
 	LONG statusbar_height;
-	INT current_listview_id;
-	INT listview_id;
-	INT tab_count;
+	LONG rebar_height;
 
 	_app_toolbar_resize (hwnd, dpi_value);
 
 	_r_wnd_sendmessage (config.hrebar, 0, WM_SIZE, 0, 0);
 	_r_wnd_sendmessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
-	current_listview_id = _app_listview_getbytab (hwnd, -1);
+	context = _app_listview_getbytab (hwnd, INT_ERROR);
 
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
@@ -1060,19 +1053,14 @@ VOID _app_window_resize (
 		EndDeferWindowPos (hdefer);
 	}
 
-	tab_count = _r_tab_getitemcount (hwnd, IDC_TAB);
-
-	for (INT i = 0; i < tab_count; i++)
+	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
 	{
-		listview_id = _app_listview_getbytab (hwnd, i);
+		new_context = _app_listview_getbytab (hwnd, i);
 
-		if (listview_id)
-		{
-			_r_tab_adjustchild (hwnd, IDC_TAB, GetDlgItem (hwnd, listview_id));
+		_r_tab_adjustchild (hwnd, IDC_TAB, GetDlgItem (hwnd, new_context->listview_id));
 
-			if (listview_id == current_listview_id)
-				_app_listview_resize (hwnd, listview_id, FALSE);
-		}
+		if (new_context->listview_id == context->listview_id)
+			_app_listview_resize (hwnd, new_context->listview_id, FALSE);
 	}
 
 	_app_refreshstatus (hwnd);

@@ -125,8 +125,7 @@ PR_STRING _app_editor_getrulesfromlistview (
 	_In_ INT exclude_id
 )
 {
-	static R_STRINGREF divider_sr = PR_STRINGREF_INIT (DIVIDER_RULE);
-
+	R_STRINGREF divider_sr = PR_STRINGREF_INIT (DIVIDER_RULE);
 	R_STRINGBUILDER sb;
 	PR_STRING string;
 	INT item_count;
@@ -244,7 +243,7 @@ INT_PTR CALLBACK EditorRuleProc (
 
 			_r_edit_setcuebanner (hwnd, IDC_RULE_ID, L"Example: 192.168.0.1;192.168.0.17");
 
-			if (context->item_id != -1)
+			if (context->item_id != INT_ERROR)
 			{
 				string = _r_listview_getitemtext (context->hwnd, context->listview_id, context->item_id, 0);
 
@@ -268,7 +267,7 @@ INT_PTR CALLBACK EditorRuleProc (
 			_r_ctrl_setstring (
 				hwnd,
 				IDC_SAVE,
-				_r_locale_getstring (context->item_id != -1 ? IDS_SAVE : IDS_ADD)
+				_r_locale_getstring (context->item_id != INT_ERROR ? IDS_SAVE : IDS_ADD)
 			);
 
 			_r_ctrl_setstring (hwnd, IDC_CLOSE, _r_locale_getstring (IDS_CLOSE));
@@ -398,7 +397,7 @@ INT_PTR CALLBACK EditorRuleProc (
 						item_id += 1;
 					}
 
-					if (context->item_id != -1)
+					if (context->item_id != INT_ERROR)
 						_r_listview_deleteitem (context->hwnd, context->listview_id, context->item_id);
 
 					_r_listview_setcolumn (context->hwnd, context->listview_id, 0, NULL, -100);
@@ -692,7 +691,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				_app_listview_refreshgroups (hwnd, IDC_RULE_APPS_ID);
 
 				// sort column
-				_app_listview_sort (hwnd, IDC_RULE_APPS_ID, -1, FALSE);
+				_app_listview_sort (hwnd, IDC_RULE_APPS_ID, INT_ERROR, FALSE);
 			}
 
 			// app group
@@ -828,7 +827,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				_app_listview_refreshgroups (hwnd, IDC_APP_RULES_ID);
 
 				// sort column
-				_app_listview_sort (hwnd, IDC_APP_RULES_ID, -1, FALSE);
+				_app_listview_sort (hwnd, IDC_APP_RULES_ID, INT_ERROR, FALSE);
 			}
 
 			// hints
@@ -925,7 +924,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					if (lpnmlv->iItem == -1)
+					if (lpnmlv->iItem == INT_ERROR)
 						break;
 
 					listview_id = (INT)(INT_PTR)(lpnmlv->hdr.idFrom);
@@ -1152,7 +1151,7 @@ INT_PTR CALLBACK EditorPagesProc (
 								_app_editor_settabtitle (hwnd, listview_id);
 
 								_app_listview_refreshgroups (hwnd, listview_id);
-								_app_listview_sort (hwnd, listview_id, -1, FALSE);
+								_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
 							}
 						}
 						else if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
@@ -1293,15 +1292,15 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (ctrl_id == IDC_RULE_REMOTE_EDIT || ctrl_id == IDC_RULE_LOCAL_EDIT)
 					{
 						// edit rule
-						item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
+						item_id = _r_listview_getnextselected (hwnd, listview_id, INT_ERROR);
 
-						if (item_id == -1)
+						if (item_id == INT_ERROR)
 							break;
 					}
 					else
 					{
 						// create new rule
-						item_id = -1;
+						item_id = INT_ERROR;
 					}
 
 					string = _app_editor_getrulesfromlistview (hwnd, listview_id, item_id);
@@ -1361,7 +1360,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					item_count = _r_listview_getitemcount (hwnd, listview_id) - 1;
 
-					for (INT i = item_count; i != -1; i--)
+					for (INT i = item_count; i != INT_ERROR; i--)
 					{
 						if (_r_listview_isitemselected (hwnd, listview_id, i))
 							_r_listview_deleteitem (hwnd, listview_id, i);
@@ -1376,7 +1375,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				case IDM_UNCHECK:
 				{
 					INT listview_id;
-					INT item_id = -1;
+					INT item_id = INT_ERROR;
 					BOOLEAN new_val;
 
 					if (GetDlgItem (hwnd, IDC_RULE_APPS_ID))
@@ -1396,7 +1395,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					_app_listview_lock (hwnd, listview_id, TRUE);
 
-					while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
+					while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != INT_ERROR)
 					{
 						_r_listview_setitemcheck (hwnd, listview_id, item_id, new_val);
 					}
@@ -1404,7 +1403,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_app_listview_lock (hwnd, listview_id, FALSE);
 
 					_app_listview_refreshgroups (hwnd, listview_id);
-					_app_listview_sort (hwnd, listview_id, -1, FALSE);
+					_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
 
 					break;
 				}
@@ -1476,9 +1475,9 @@ INT_PTR CALLBACK EditorPagesProc (
 						break;
 					}
 
-					item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
+					item_id = _r_listview_getnextselected (hwnd, listview_id, INT_ERROR);
 
-					if (item_id != -1)
+					if (item_id != INT_ERROR)
 					{
 						index = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 
@@ -1494,7 +1493,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					PR_STRING string;
 					HWND hlistview;
 					INT listview_id;
-					INT item_id = -1;
+					INT item_id = INT_ERROR;
 
 					hlistview = GetFocus ();
 
@@ -1508,7 +1507,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					_r_obj_initializestringbuilder (&sb, 512);
 
-					while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
+					while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != INT_ERROR)
 					{
 						string = _r_listview_getitemtext (hwnd, listview_id, item_id, 0);
 
@@ -1817,12 +1816,12 @@ INT_PTR CALLBACK EditorProc (
 							if (hpage_rule)
 							{
 								// rule (remote)
-								string = _app_editor_getrulesfromlistview (hpage_rule, IDC_RULE_REMOTE_ID, -1);
+								string = _app_editor_getrulesfromlistview (hpage_rule, IDC_RULE_REMOTE_ID, INT_ERROR);
 
 								_r_obj_movereference (&context->ptr_rule->rule_remote, string);
 
 								// rule (local)
-								string = _app_editor_getrulesfromlistview (hpage_rule, IDC_RULE_LOCAL_ID, -1);
+								string = _app_editor_getrulesfromlistview (hpage_rule, IDC_RULE_LOCAL_ID, INT_ERROR);
 
 								_r_obj_movereference (&context->ptr_rule->rule_local, string);
 							}
@@ -1927,7 +1926,7 @@ INT_PTR CALLBACK EditorProc (
 								listview_id = _app_listview_getbytype (ptr_rule->type);
 								item_id = _app_listview_finditem (_r_app_gethwnd (), listview_id, rule_idx);
 
-								if (item_id != -1)
+								if (item_id != INT_ERROR)
 								{
 									is_enable = _r_listview_isitemchecked (hpage_rule, IDC_APP_RULES_ID, i);
 

@@ -708,7 +708,7 @@ VOID _app_network_printlistviewtable (
 	if (!item_count)
 		return;
 
-	for (INT i = item_count - 1; i != -1; i--)
+	for (INT i = item_count - 1; i != INT_ERROR; i--)
 	{
 		network_hash = _app_listview_getitemcontext (network_context->hwnd, IDC_NETWORK, i);
 

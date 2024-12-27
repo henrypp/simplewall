@@ -803,7 +803,7 @@ VOID _app_deleteappitem (
 
 	item_id = _app_listview_finditem (hwnd, listview_id, id_code);
 
-	if (item_id != -1)
+	if (item_id != INT_ERROR)
 		_r_listview_deleteitem (hwnd, listview_id, item_id);
 }
 
@@ -1031,7 +1031,7 @@ BOOLEAN _app_ruleblocklistsetchange (
 {
 	BOOLEAN is_block;
 
-	if (new_state == -1)
+	if (new_state == INT_ERROR)
 		return FALSE; // don't change
 
 	if (new_state == 0 && !ptr_rule->is_enabled)
@@ -1064,13 +1064,17 @@ BOOLEAN _app_ruleblocklistsetstate (
 		return FALSE;
 
 	if (_r_str_isstartswith2 (&ptr_rule->name->sr, L"spy_", TRUE))
+	{
 		return _app_ruleblocklistsetchange (ptr_rule, spy_state);
-
+	}
 	else if (_r_str_isstartswith2 (&ptr_rule->name->sr, L"update_", TRUE))
+	{
 		return _app_ruleblocklistsetchange (ptr_rule, update_state);
-
+	}
 	else if (_r_str_isstartswith2 (&ptr_rule->name->sr, L"extra_", TRUE))
+	{
 		return _app_ruleblocklistsetchange (ptr_rule, extra_state);
+	}
 
 	// fallback: block rules with other names by default!
 	return _app_ruleblocklistsetchange (ptr_rule, 2);
@@ -1358,10 +1362,10 @@ BOOLEAN _app_isapphavedrive (
 		}
 		else
 		{
-			drive_id = -1;
+			drive_id = INT_ERROR;
 		}
 
-		if (ptr_app->type == DATA_APP_DEVICE || (drive_id != -1 && drive_id == letter))
+		if (ptr_app->type == DATA_APP_DEVICE || (drive_id != INT_ERROR && drive_id == letter))
 		{
 			if (ptr_app->is_enabled || _app_isapphaverule (ptr_app->app_hash, FALSE))
 			{
@@ -1520,16 +1524,15 @@ BOOLEAN _app_isrulesupportedbyos (
 		}
 	}
 
-	return (_r_str_versioncompare (&current_version->sr, os_version) != -1);
+	return (_r_str_versioncompare (&current_version->sr, os_version) != INT_ERROR);
 }
 
 VOID _app_profile_initialize ()
 {
-	static R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE);
-	static R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE L".bak");
-	static R_STRINGREF profile_internal_sr = PR_STRINGREF_INIT (XML_PROFILE_INTERNAL);
-	static R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
-
+	R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE);
+	R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE L".bak");
+	R_STRINGREF profile_internal_sr = PR_STRINGREF_INIT (XML_PROFILE_INTERNAL);
+	R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
 	PR_STRING path;
 
 	path = _r_app_getprofiledirectory ();

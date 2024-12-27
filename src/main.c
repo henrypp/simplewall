@@ -14,7 +14,7 @@ BOOLEAN _app_changefilters (
 
 	listview_id = _app_listview_getcurrent (hwnd);
 
-	_app_listview_sort (hwnd, listview_id, -1, FALSE);
+	_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
 
 	if (is_forced || _wfp_isfiltersinstalled ())
 	{
@@ -1312,7 +1312,7 @@ INT_PTR CALLBACK SettingsProc (
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
 
-					if (lpnmlv->iItem == -1)
+					if (lpnmlv->iItem == INT_ERROR)
 						break;
 
 					if (listview_id != IDC_COLORS)
@@ -1469,7 +1469,7 @@ INT_PTR CALLBACK SettingsProc (
 
 						_r_config_setlong (L"BlocklistSpyState", new_state);
 
-						_app_ruleblocklistset (_r_app_gethwnd (), new_state, -1, -1, TRUE);
+						_app_ruleblocklistset (_r_app_gethwnd (), new_state, INT_ERROR, INT_ERROR, TRUE);
 					}
 					else if (ctrl_id >= IDC_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDC_BLOCKLIST_UPDATE_BLOCK)
 					{
@@ -1483,7 +1483,7 @@ INT_PTR CALLBACK SettingsProc (
 
 						_r_config_setlong (L"BlocklistUpdateState", new_state);
 
-						_app_ruleblocklistset (_r_app_gethwnd (), -1, new_state, -1, TRUE);
+						_app_ruleblocklistset (_r_app_gethwnd (), INT_ERROR, new_state, INT_ERROR, TRUE);
 					}
 					else if (ctrl_id >= IDC_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
 					{
@@ -1497,7 +1497,7 @@ INT_PTR CALLBACK SettingsProc (
 
 						_r_config_setlong (L"BlocklistExtraState", new_state);
 
-						_app_ruleblocklistset (_r_app_gethwnd (), -1, -1, new_state, TRUE);
+						_app_ruleblocklistset (_r_app_gethwnd (), INT_ERROR, INT_ERROR, new_state, TRUE);
 					}
 
 					break;
@@ -1818,30 +1818,83 @@ INT_PTR CALLBACK SettingsProc (
 	return FALSE;
 }
 
-INT _app_addwindowtabs (
+VOID _app_addwindowtabs (
 	_In_ HWND hwnd
 )
 {
-	INT tabs_count = 0;
+	PITEM_TAB_CONTEXT context;
 
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_APPS_PROFILE);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_APPS_SERVICE);
+	// apps profile tab
+	context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
+
+	context->listview_id = IDC_APPS_PROFILE;
+	context->locale_id = IDS_TAB_APPS;
+
+	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
+
+	// apps services tab
+	context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
+
+	context->listview_id = IDC_APPS_SERVICE;
+	context->locale_id = IDS_TAB_SERVICES;
+
+	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
 
 	// uwp apps (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_APPS_UWP);
+	{
+		context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
+
+		context->listview_id = IDC_APPS_UWP;
+		context->locale_id = IDS_TAB_PACKAGES;
+
+		_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
+	}
 
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE))
 	{
-		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_RULES_BLOCKLIST);
-		_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_RULES_SYSTEM);
+		// rules blocklist tab
+		context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
+
+		context->listview_id = IDC_RULES_BLOCKLIST;
+		context->locale_id = IDS_TRAY_BLOCKLIST_RULES;
+
+		_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
+
+		// rules system tab
+		context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
+
+		context->listview_id = IDC_RULES_SYSTEM;
+		context->locale_id = IDS_TRAY_SYSTEM_RULES;
+
+		_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
 	}
 
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_RULES_CUSTOM);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_NETWORK);
-	_r_tab_additem (hwnd, IDC_TAB, tabs_count++, L"", I_DEFAULT, (LPARAM)IDC_LOG);
+	// rules user tab
+	context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
 
-	return tabs_count;
+	context->listview_id = IDC_RULES_CUSTOM;
+	context->locale_id = IDS_TRAY_USER_RULES;
+
+	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
+
+	// network tab
+	context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
+
+	context->listview_id = IDC_NETWORK;
+	context->locale_id = IDS_TAB_NETWORK;
+
+	// log tab
+	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
+
+	context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
+
+	context->listview_id = IDC_LOG;
+	context->locale_id = IDS_TITLE_LOGGING;
+
+	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
+
+	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)IDC_LOG);
 }
 
 VOID _app_tabs_init (
@@ -1849,13 +1902,12 @@ VOID _app_tabs_init (
 	_In_ LONG dpi_value
 )
 {
+	PITEM_TAB_CONTEXT context;
 	RECT rect = {0};
 	LONG statusbar_height;
 	LONG rebar_height;
 	ULONG style;
 	HWND hlistview;
-	INT listview_id;
-	INT tabs_count;
 
 	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
@@ -1887,81 +1939,82 @@ VOID _app_tabs_init (
 
 	style = LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP | LVS_EX_LABELTIP | LVS_EX_HEADERINALLVIEWS | LVS_EX_HEADERDRAGDROP;
 
-	tabs_count = _app_addwindowtabs (hwnd);
+	_app_addwindowtabs (hwnd);
 
-	for (INT i = 0; i < tabs_count; i++)
+	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
 	{
-		listview_id = _app_listview_getbytab (hwnd, i);
-		hlistview = GetDlgItem (hwnd, listview_id);
+		context = _app_listview_getbytab (hwnd, i);
+
+		hlistview = GetDlgItem (hwnd, context->listview_id);
 
 		if (!hlistview)
 			continue;
 
 		_r_tab_adjustchild (hwnd, IDC_TAB, hlistview);
 
-		if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_RULES_CUSTOM)
+		if (context->listview_id >= IDC_APPS_PROFILE && context->listview_id <= IDC_RULES_CUSTOM)
 		{
-			_r_listview_setstyle (hwnd, listview_id, style | LVS_EX_CHECKBOXES, TRUE); // with checkboxes
+			_r_listview_setstyle (hwnd, context->listview_id, style | LVS_EX_CHECKBOXES, TRUE); // with checkboxes
 
-			if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
+			if (context->listview_id >= IDC_APPS_PROFILE && context->listview_id <= IDC_APPS_UWP)
 			{
-				_r_listview_addcolumn (hwnd, listview_id, 0, L"", -80, LVCFMT_LEFT);
-				_r_listview_addcolumn (hwnd, listview_id, 1, L"", -20, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, context->listview_id, 0, L"", -80, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, context->listview_id, 1, L"", -20, LVCFMT_RIGHT);
 			}
 			else
 			{
-				_r_listview_addcolumn (hwnd, listview_id, 0, L"", -80, LVCFMT_LEFT);
-				_r_listview_addcolumn (hwnd, listview_id, 1, L"", -10, LVCFMT_RIGHT);
-				_r_listview_addcolumn (hwnd, listview_id, 2, L"", -10, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, context->listview_id, 0, L"", -80, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, context->listview_id, 1, L"", -10, LVCFMT_RIGHT);
+				_r_listview_addcolumn (hwnd, context->listview_id, 2, L"", -10, LVCFMT_RIGHT);
 			}
 
-			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
-			_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
-			_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
-			_r_listview_addgroup (hwnd, listview_id, 3, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
-			_r_listview_addgroup (hwnd, listview_id, 4, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, context->listview_id, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, context->listview_id, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, context->listview_id, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, context->listview_id, 3, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, context->listview_id, 4, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 		}
-		else if (listview_id == IDC_NETWORK)
+		else if (context->listview_id == IDC_NETWORK)
 		{
-			_r_listview_setstyle (hwnd, listview_id, style, TRUE);
+			_r_listview_setstyle (hwnd, context->listview_id, style, TRUE);
 
-			_r_listview_addcolumn (hwnd, listview_id, 0, L"", -20, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 1, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 2, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 3, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 4, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 5, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 6, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 7, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 8, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 0, L"", -20, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 1, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 2, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 3, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 4, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 5, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 6, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 7, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 8, L"", -10, LVCFMT_RIGHT);
 
-			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
-			_r_listview_addgroup (hwnd, listview_id, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
-			_r_listview_addgroup (hwnd, listview_id, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, context->listview_id, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, context->listview_id, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
+			_r_listview_addgroup (hwnd, context->listview_id, 2, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 		}
-		else if (listview_id == IDC_LOG)
+		else if (context->listview_id == IDC_LOG)
 		{
-			_r_listview_setstyle (hwnd, listview_id, style, TRUE);
+			_r_listview_setstyle (hwnd, context->listview_id, style, TRUE);
 
-			_r_listview_addcolumn (hwnd, listview_id, 0, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 1, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 2, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 3, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 4, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 5, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 6, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 7, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 8, L"", -10, LVCFMT_LEFT);
-			_r_listview_addcolumn (hwnd, listview_id, 9, L"", -10, LVCFMT_RIGHT);
-			_r_listview_addcolumn (hwnd, listview_id, 10, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 0, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 1, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 2, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 3, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 4, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 5, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 6, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 7, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 8, L"", -10, LVCFMT_LEFT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 9, L"", -10, LVCFMT_RIGHT);
+			_r_listview_addcolumn (hwnd, context->listview_id, 10, L"", -10, LVCFMT_LEFT);
 
-			_r_listview_addgroup (hwnd, listview_id, 0, L"", 0, LVGS_NOHEADER, LVGS_NOHEADER);
+			_r_listview_addgroup (hwnd, context->listview_id, 0, L"", 0, LVGS_NOHEADER, LVGS_NOHEADER);
 		}
 
 		// add filter group
-		_r_listview_addgroup (hwnd, listview_id, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED);
+		_r_listview_addgroup (hwnd, context->listview_id, LV_HIDDEN_GROUP_ID, L"", 0, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED, LVGS_HIDDEN | LVGS_NOHEADER | LVGS_COLLAPSED);
 
-		_app_listview_setfont (hwnd, listview_id);
+		_app_listview_setfont (hwnd, context->listview_id);
 
 		BringWindowToTop (hlistview); // HACK!!!
 	}
@@ -2467,8 +2520,8 @@ INT_PTR CALLBACK DlgProc (
 
 			minmax = (LPMINMAXINFO)lparam;
 
-			point.cx = 320;
-			point.cy = 120;
+			point.cx = 500;
+			point.cy = 220;
 
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
@@ -2840,7 +2893,7 @@ INT_PTR CALLBACK DlgProc (
 
 					lpnmlv = (LPNMITEMACTIVATE)lparam;
 
-					if (lpnmlv->iItem == -1)
+					if (lpnmlv->iItem == INT_ERROR)
 						break;
 
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -3221,7 +3274,7 @@ INT_PTR CALLBACK DlgProc (
 					listview_id = _app_listview_getcurrent (hwnd);
 
 					_r_listview_redraw (hwnd, listview_id);
-					_app_listview_sort (hwnd, listview_id, -1, FALSE);
+					_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
 
 					break;
 				}
@@ -3408,7 +3461,7 @@ INT_PTR CALLBACK DlgProc (
 
 						_r_config_setlong (L"BlocklistSpyState", new_state);
 
-						_app_ruleblocklistset (hwnd, new_state, -1, -1, TRUE);
+						_app_ruleblocklistset (hwnd, new_state, INT_ERROR, INT_ERROR, TRUE);
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDM_BLOCKLIST_UPDATE_BLOCK)
 					{
@@ -3418,7 +3471,7 @@ INT_PTR CALLBACK DlgProc (
 
 						_r_config_setlong (L"BlocklistUpdateState", new_state);
 
-						_app_ruleblocklistset (hwnd, -1, new_state, -1, TRUE);
+						_app_ruleblocklistset (hwnd, INT_ERROR, new_state, INT_ERROR, TRUE);
 					}
 					else if (ctrl_id >= IDM_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDM_BLOCKLIST_EXTRA_BLOCK)
 					{
@@ -3428,7 +3481,7 @@ INT_PTR CALLBACK DlgProc (
 
 						_r_config_setlong (L"BlocklistExtraState", new_state);
 
-						_app_ruleblocklistset (hwnd, -1, -1, new_state, TRUE);
+						_app_ruleblocklistset (hwnd, INT_ERROR, INT_ERROR, new_state, TRUE);
 					}
 
 					break;
@@ -3628,14 +3681,14 @@ INT_PTR CALLBACK DlgProc (
 					PITEM_LOG ptr_log;
 					ULONG_PTR hash_code;
 					INT listview_id;
-					INT item_id = -1;
+					INT item_id = INT_ERROR;
 					HRESULT status;
 
 					listview_id = _app_listview_getcurrent (hwnd);
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
-						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
+						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != INT_ERROR)
 						{
 							hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 							ptr_app = _app_getappitem (hash_code);
@@ -3659,7 +3712,7 @@ INT_PTR CALLBACK DlgProc (
 					}
 					else if (listview_id == IDC_NETWORK)
 					{
-						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
+						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != INT_ERROR)
 						{
 							hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 							ptr_network = _app_network_getitem (hash_code);
@@ -3683,7 +3736,7 @@ INT_PTR CALLBACK DlgProc (
 					}
 					else if (listview_id == IDC_LOG)
 					{
-						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != -1)
+						while ((item_id = _r_listview_getnextselected (hwnd, listview_id, item_id)) != INT_ERROR)
 						{
 							hash_code = _app_listview_getitemcontext (hwnd, listview_id, item_id);
 							ptr_log = _app_getlogitem (hash_code);
@@ -3756,7 +3809,7 @@ INT_PTR CALLBACK DlgProc (
 						break;
 
 					if (GetFocus () == GetDlgItem (hwnd, listview_id))
-						_r_listview_setitemstate (hwnd, listview_id, -1, LVIS_SELECTED, LVIS_SELECTED);
+						_r_listview_setitemstate (hwnd, listview_id, INT_ERROR, LVIS_SELECTED, LVIS_SELECTED);
 
 					break;
 				}
@@ -3780,7 +3833,7 @@ INT_PTR CALLBACK DlgProc (
 
 					item_id = _r_tab_getcurrentitem (hwnd, IDC_TAB);
 
-					if (item_id == -1)
+					if (item_id == INT_ERROR)
 						break;
 
 					if (ctrl_id == IDM_TAB_NEXT)
@@ -3794,7 +3847,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						item_id -= 1;
 
-						if (item_id == -1)
+						if (item_id == INT_ERROR)
 							item_id = tabs_count - 1;
 					}
 

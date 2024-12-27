@@ -1293,7 +1293,7 @@ BOOLEAN _app_setruletoapp (
 			_app_ruleenable (ptr_rule, FALSE, TRUE);
 	}
 
-	if (item_id != -1)
+	if (item_id != INT_ERROR)
 	{
 		listview_id = _app_listview_getbytype (ptr_rule->type);
 

@@ -7,26 +7,26 @@ INT _app_listview_getcurrent (
 	_In_ HWND hwnd
 )
 {
-	INT listview_id;
+	PITEM_TAB_CONTEXT context;
 
-	listview_id = _app_listview_getbytab (hwnd, -1);
+	context = _app_listview_getbytab (hwnd, INT_ERROR);
 
-	return listview_id;
+	return context->listview_id;
 }
 
-INT _app_listview_getbytab (
+PITEM_TAB_CONTEXT _app_listview_getbytab (
 	_In_ HWND hwnd,
 	_In_ INT tab_id
 )
 {
-	INT listview_id;
+	PITEM_TAB_CONTEXT context;
 
-	if (tab_id == -1)
+	if (tab_id == INT_ERROR)
 		tab_id = _r_tab_getcurrentitem (hwnd, IDC_TAB);
 
-	listview_id = (INT)_r_tab_getitemlparam (hwnd, IDC_TAB, tab_id);
+	context = (PITEM_TAB_CONTEXT)_r_tab_getitemlparam (hwnd, IDC_TAB, tab_id);
 
-	return listview_id;
+	return context;
 }
 
 _Success_ (return != 0)
@@ -336,7 +336,7 @@ BOOLEAN _app_listview_isitemhidden (
 	return !!context->is_hidden;
 }
 
-_Success_ (return != -1)
+_Success_ (return != INT_ERROR)
 INT _app_listview_finditem (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
@@ -360,10 +360,10 @@ INT _app_listview_finditem (
 	}
 	else
 	{
-		return _r_listview_finditem (hwnd, listview_id, -1, id_code);
+		return _r_listview_finditem (hwnd, listview_id, INT_ERROR, id_code);
 	}
 
-	return -1;
+	return INT_ERROR;
 }
 
 VOID _app_listview_removeitem (
@@ -385,7 +385,7 @@ VOID _app_listview_removeitem (
 
 	item_id = _app_listview_finditem (hwnd, listview_id, id_code);
 
-	if (item_id != -1)
+	if (item_id != INT_ERROR)
 		_r_listview_deleteitem (hwnd, listview_id, item_id);
 }
 
@@ -405,7 +405,7 @@ VOID _app_listview_showitemby_id (
 	if (!total_count)
 		return;
 
-	if (item_id != -1)
+	if (item_id != INT_ERROR)
 	{
 		item_id = _r_calc_clamp (item_id, 0, total_count - 1);
 
@@ -440,16 +440,16 @@ VOID _app_listview_showitemby_param (
 
 	if (listview_id != _app_listview_getcurrent (hwnd))
 	{
-		_app_listview_sort (hwnd, listview_id, -1, FALSE);
+		_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
 
 		_app_listview_resize (hwnd, listview_id, FALSE);
 	}
 
 	item_id = _app_listview_finditem (hwnd, listview_id, lparam);
 
-	if (item_id != -1)
+	if (item_id != INT_ERROR)
 	{
-		_app_listview_showitemby_id (hwnd, listview_id, item_id, -1);
+		_app_listview_showitemby_id (hwnd, listview_id, item_id, INT_ERROR);
 
 		_r_wnd_toggle (hwnd, TRUE);
 	}
@@ -498,7 +498,7 @@ VOID _app_listview_updateby_id (
 			_app_listview_refreshgroups (hwnd, listview_id);
 
 		if (!(flags & PR_UPDATE_NOSORT))
-			_app_listview_sort (hwnd, listview_id, -1, FALSE);
+			_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
 
 		if (!(flags & PR_UPDATE_NORESIZE))
 			_app_listview_resize (hwnd, listview_id, FALSE);
@@ -563,7 +563,7 @@ VOID _app_listview_updateitemby_param (
 
 	item_id = _app_listview_finditem (hwnd, listview_id, lparam);
 
-	if (item_id == -1)
+	if (item_id == INT_ERROR)
 		return;
 
 	if (is_app)
@@ -1131,7 +1131,7 @@ VOID _app_listview_sort (
 	if (is_notifycode)
 		is_descend = !is_descend;
 
-	if (column_id == -1)
+	if (column_id == INT_ERROR)
 		column_id = _r_config_getlong_ex (L"SortColumn", 0, config_name);
 
 	column_id = _r_calc_clamp (column_id, 0, column_count - 1); // set range

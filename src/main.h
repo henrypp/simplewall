@@ -555,3 +555,9 @@ typedef struct _ITEM_LOG_CALLBACK
 	BOOLEAN is_allow;
 	BOOLEAN is_loopback;
 } ITEM_LOG_CALLBACK, *PITEM_LOG_CALLBACK;
+
+typedef struct _ITEM_TAB_CONTEXT
+{
+	INT listview_id;
+	INT locale_id;
+} ITEM_TAB_CONTEXT, *PITEM_TAB_CONTEXT;

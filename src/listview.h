@@ -29,7 +29,7 @@ INT _app_listview_getcurrent (
 	_In_ HWND hwnd
 );
 
-INT _app_listview_getbytab (
+PITEM_TAB_CONTEXT _app_listview_getbytab (
 	_In_ HWND hwnd,
 	_In_ INT tab_id
 );
@@ -108,7 +108,7 @@ BOOLEAN _app_listview_isitemhidden (
 	_In_ LPARAM lparam
 );
 
-_Success_ (return != -1)
+_Success_ (return != INT_ERROR)
 INT _app_listview_finditem (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
