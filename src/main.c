@@ -3897,8 +3897,19 @@ BOOLEAN NTAPI _app_parseargs (
 				if (_r_sys_getopt (_r_sys_getcommandline (), L"temp", NULL))
 					config.is_filterstemporary = TRUE;
 
+				PR_STRING import_path = _r_sys_getopt (_r_sys_getcommandline (), L"import", NULL);
+
 				_app_profile_initialize ();
-				_app_profile_load (NULL, NULL);
+
+				if (import_path)
+				{
+					_app_profile_load (NULL, import_path);
+					_r_obj_dereference (import_path);
+				}
+				else
+				{
+					_app_profile_load (NULL, NULL);
+				}
 
 				if (_wfp_initialize (NULL, hengine))
 					_wfp_installfilters (hengine);
