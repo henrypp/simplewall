@@ -87,6 +87,7 @@ To remove all filters created by simplewall, start simplewall and press "Disable
 -install -temp - enable filtering until next reboot.
 -install -silent - enable filtering without prompt.
 -uninstall - remove all installed filters.
+-import <path> - import profile from specified path.
 ~~~
 
 ### Rules editor:

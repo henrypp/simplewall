@@ -1,6 +1,3 @@
-// simplewall
-// Copyright (c) 2016-2024 Henry++
-
 #include "global.h"
 
 BOOLEAN _app_changefilters (
@@ -3886,6 +3883,7 @@ BOOLEAN NTAPI _app_parseargs (
 				L"simplewall.exe -install -temp - enable filtering until reboot.\r\n"
 				L"simplewall.exe -install -silent - enable filtering without prompt.\r\n"
 				L"simplewall.exe -uninstall - remove all installed filters.\r\n"
+				L"simplewall.exe -import <path> - import profile from specified path.\r\n"
 				L"simplewall.exe -help - show this message."
 			);
 
@@ -3917,6 +3915,29 @@ BOOLEAN NTAPI _app_parseargs (
 			{
 				_wfp_destroyfilters (hengine);
 				_wfp_uninitialize (hengine, TRUE);
+			}
+
+			return TRUE;
+		}
+
+		case CmdlineImport:
+		{
+			PR_STRING path;
+			NTSTATUS status;
+
+			path = _r_sys_getopt (_r_sys_getcommandline (), L"import", NULL);
+
+			if (path)
+			{
+				status = _app_profile_load (NULL, path);
+
+				if (NT_SUCCESS (status))
+				{
+					_app_profile_save (NULL);
+					_app_changefilters (NULL, TRUE, FALSE);
+				}
+
+				_r_obj_dereference (path);
 			}
 
 			return TRUE;
