@@ -1,3 +1,6 @@
+// simplewall
+// Copyright (c) 2016-2025 Henry++
+
 #include "global.h"
 
 BOOLEAN _app_changefilters (
@@ -9,7 +12,7 @@ BOOLEAN _app_changefilters (
 	PITEM_CONTEXT context;
 	INT listview_id;
 
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 	_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
 
@@ -1277,7 +1280,7 @@ INT_PTR CALLBACK SettingsProc (
 
 							_r_config_setboolean_ex (ptr_clr->config_name->buffer, is_enabled, L"colors");
 
-							_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()));
+							_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcontext (_r_app_gethwnd (), INT_ERROR)->listview_id);
 						}
 					}
 
@@ -1339,7 +1342,7 @@ INT_PTR CALLBACK SettingsProc (
 
 						_r_listview_redraw (hwnd, IDC_COLORS);
 
-						_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcurrent (_r_app_gethwnd ()));
+						_r_listview_redraw (_r_app_gethwnd (), _app_listview_getcontext (_r_app_gethwnd (), INT_ERROR)->listview_id);
 					}
 
 					break;
@@ -1940,7 +1943,7 @@ VOID _app_tabs_init (
 
 	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
 	{
-		context = _app_listview_getbytab (hwnd, i);
+		context = _app_listview_getcontext (hwnd, i);
 
 		hlistview = GetDlgItem (hwnd, context->listview_id);
 
@@ -2405,8 +2408,6 @@ INT_PTR CALLBACK DlgProc (
 
 			_app_loginit (FALSE);
 
-			_r_config_setlong (L"CurrentTab", _app_listview_getcurrent (hwnd));
-
 			if (_r_queuedlock_islocked (&lock_apply))
 			{
 				_r_workqueue_waitforfinish (&wfp_queue);
@@ -2543,7 +2544,7 @@ INT_PTR CALLBACK DlgProc (
 					HWND hlistview;
 					INT listview_id;
 
-					listview_id = _app_listview_getcurrent (hwnd);
+					listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 					if (!listview_id)
 						break;
@@ -2563,7 +2564,7 @@ INT_PTR CALLBACK DlgProc (
 					HWND hlistview;
 					INT listview_id;
 
-					listview_id = _app_listview_getcurrent (hwnd);
+					listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 					if (!listview_id)
 						break;
@@ -2584,6 +2585,8 @@ INT_PTR CALLBACK DlgProc (
 
 					_app_listview_resize (hwnd, listview_id, FALSE);
 
+					_r_config_setlong (L"CurrentTab", listview_id);
+
 					break;
 				}
 
@@ -2600,8 +2603,8 @@ INT_PTR CALLBACK DlgProc (
 
 				case LVN_INSERTITEM:
 				{
-					LPNMLISTVIEW lpnmlv;
 					PITEM_LISTVIEW_CONTEXT context;
+					LPNMLISTVIEW lpnmlv;
 					INT listview_id;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
@@ -2625,8 +2628,8 @@ INT_PTR CALLBACK DlgProc (
 
 				case LVN_DELETEITEM:
 				{
-					LPNMLISTVIEW lpnmlv;
 					PITEM_LISTVIEW_CONTEXT context;
+					LPNMLISTVIEW lpnmlv;
 					INT listview_id;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
@@ -3036,7 +3039,7 @@ INT_PTR CALLBACK DlgProc (
 				if (ctrl_id != IDC_SEARCH)
 					break;
 
-				listview_id = _app_listview_getcurrent (hwnd);
+				listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 				string = _r_ctrl_getstring (config.hrebar, IDC_SEARCH);
 
 				_r_obj_movereference (&config.search_string, string);
@@ -3253,7 +3256,7 @@ INT_PTR CALLBACK DlgProc (
 					_r_config_setboolean (L"AutoSizeColumns", new_val);
 
 					if (new_val)
-						_app_listview_resize (hwnd, _app_listview_getcurrent (hwnd), FALSE);
+						_app_listview_resize (hwnd, _app_listview_getcontext (hwnd, INT_ERROR)->listview_id, FALSE);
 
 					break;
 				}
@@ -3268,7 +3271,7 @@ INT_PTR CALLBACK DlgProc (
 					_r_menu_checkitem (GetMenu (hwnd), ctrl_id, 0, MF_BYCOMMAND, new_val);
 					_r_config_setboolean (L"ShowFilenames", new_val);
 
-					listview_id = _app_listview_getcurrent (hwnd);
+					listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 					_r_listview_redraw (hwnd, listview_id);
 					_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
@@ -3681,7 +3684,7 @@ INT_PTR CALLBACK DlgProc (
 					INT item_id = INT_ERROR;
 					HRESULT status;
 
-					listview_id = _app_listview_getcurrent (hwnd);
+					listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 					if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 					{
@@ -3800,7 +3803,7 @@ INT_PTR CALLBACK DlgProc (
 				{
 					INT listview_id;
 
-					listview_id = _app_listview_getcurrent (hwnd);
+					listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 					if (!listview_id)
 						break;
@@ -3883,7 +3886,6 @@ BOOLEAN NTAPI _app_parseargs (
 				L"simplewall.exe -install -temp - enable filtering until reboot.\r\n"
 				L"simplewall.exe -install -silent - enable filtering without prompt.\r\n"
 				L"simplewall.exe -uninstall - remove all installed filters.\r\n"
-				L"simplewall.exe -import <path> - import profile from specified path.\r\n"
 				L"simplewall.exe -help - show this message."
 			);
 
@@ -3897,19 +3899,8 @@ BOOLEAN NTAPI _app_parseargs (
 				if (_r_sys_getopt (_r_sys_getcommandline (), L"temp", NULL))
 					config.is_filterstemporary = TRUE;
 
-				PR_STRING import_path = _r_sys_getopt (_r_sys_getcommandline (), L"import", NULL);
-
 				_app_profile_initialize ();
-
-				if (import_path)
-				{
-					_app_profile_load (NULL, import_path);
-					_r_obj_dereference (import_path);
-				}
-				else
-				{
-					_app_profile_load (NULL, NULL);
-				}
+				_app_profile_load (NULL, NULL);
 
 				if (_wfp_initialize (NULL, hengine))
 					_wfp_installfilters (hengine);
@@ -3926,29 +3917,6 @@ BOOLEAN NTAPI _app_parseargs (
 			{
 				_wfp_destroyfilters (hengine);
 				_wfp_uninitialize (hengine, TRUE);
-			}
-
-			return TRUE;
-		}
-
-		case CmdlineImport:
-		{
-			PR_STRING path;
-			NTSTATUS status;
-
-			path = _r_sys_getopt (_r_sys_getcommandline (), L"import", NULL);
-
-			if (path)
-			{
-				status = _app_profile_load (NULL, path);
-
-				if (NT_SUCCESS (status))
-				{
-					_app_profile_save (NULL);
-					_app_changefilters (NULL, TRUE, FALSE);
-				}
-
-				_r_obj_dereference (path);
 			}
 
 			return TRUE;

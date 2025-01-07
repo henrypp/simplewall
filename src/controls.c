@@ -463,12 +463,12 @@ VOID _app_settab_id (
 
 	hctrl = GetDlgItem (hwnd, page_id);
 
-	if (!hctrl || (_app_listview_getcurrent (hwnd) == page_id && _r_wnd_isvisible (hctrl, FALSE)))
+	if (!hctrl || (_app_listview_getcontext (hwnd, INT_ERROR)->listview_id == page_id && _r_wnd_isvisible (hctrl, FALSE)))
 		return;
 
 	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
 	{
-		context = _app_listview_getbytab (hwnd, i);
+		context = _app_listview_getcontext (hwnd, i);
 
 		if (context->listview_id == page_id)
 		{
@@ -1019,7 +1019,7 @@ VOID _app_window_resize (
 	_r_wnd_sendmessage (config.hrebar, 0, WM_SIZE, 0, 0);
 	_r_wnd_sendmessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
-	context = _app_listview_getbytab (hwnd, INT_ERROR);
+	context = _app_listview_getcontext (hwnd, INT_ERROR);
 
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
@@ -1055,7 +1055,7 @@ VOID _app_window_resize (
 
 	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
 	{
-		new_context = _app_listview_getbytab (hwnd, i);
+		new_context = _app_listview_getcontext (hwnd, i);
 
 		_r_tab_adjustchild (hwnd, IDC_TAB, GetDlgItem (hwnd, new_context->listview_id));
 

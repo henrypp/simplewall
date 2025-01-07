@@ -25,11 +25,7 @@ typedef struct _ITEM_LISTVIEW_CONTEXT
 #define PR_UPDATE_NOREDRAW 0x0020
 #define PR_UPDATE_NOSETVIEW 0x0040
 
-INT _app_listview_getcurrent (
-	_In_ HWND hwnd
-);
-
-PITEM_TAB_CONTEXT _app_listview_getbytab (
+PITEM_TAB_CONTEXT _app_listview_getcontext (
 	_In_ HWND hwnd,
 	_In_ INT tab_id
 );

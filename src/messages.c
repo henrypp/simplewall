@@ -375,7 +375,7 @@ VOID _app_message_localize (
 	// localize tabs
 	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
 	{
-		context = _app_listview_getbytab (hwnd, i);
+		context = _app_listview_getcontext (hwnd, i);
 
 		_r_tab_setitem (hwnd, IDC_TAB, i, _r_locale_getstring (context->locale_id), I_DEFAULT, I_DEFAULT);
 
@@ -1718,58 +1718,78 @@ BOOLEAN _app_message_displayinfo (
 
 	index = _app_listview_getitemcontext (hwnd, listview_id, lpnmlv->item.iItem);
 
-	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP || listview_id == IDC_RULE_APPS_ID)
+	switch (listview_id)
 	{
-		ptr_app = _app_getappitem (index);
-
-		if (ptr_app)
+		case IDC_APPS_PROFILE:
+		case IDC_APPS_SERVICE:
+		case IDC_APPS_UWP:
+		case IDC_RULE_APPS_ID:
 		{
-			_app_displayinfoapp_callback (ptr_app, lpnmlv);
-			_r_obj_dereference (ptr_app);
-
-			return TRUE;
-		}
-	}
-	else if (listview_id >= IDC_RULES_BLOCKLIST && listview_id <= IDC_RULES_CUSTOM || listview_id == IDC_APP_RULES_ID)
-	{
-		ptr_rule = _app_getrulebyid (index);
-
-		if (ptr_rule)
-		{
-			_app_displayinforule_callback (listview_id, ptr_rule, lpnmlv);
-			_r_obj_dereference (ptr_rule);
-
-			return TRUE;
-		}
-	}
-	else if (listview_id == IDC_NETWORK)
-	{
-		ptr_network = _app_network_getitem (index);
-
-		if (ptr_network)
-		{
-			_app_displayinfonetwork_callback (ptr_network, lpnmlv);
-			_r_obj_dereference (ptr_network);
-
-			return TRUE;
-		}
-	}
-	else if (listview_id == IDC_LOG)
-	{
-		ptr_log = _app_getlogitem (index);
-
-		if (ptr_log)
-		{
-			ptr_app = _app_getappitem (ptr_log->app_hash);
-
-			_app_displayinfolog_callback (lpnmlv, ptr_app, ptr_log);
+			ptr_app = _app_getappitem (index);
 
 			if (ptr_app)
+			{
+				_app_displayinfoapp_callback (ptr_app, lpnmlv);
 				_r_obj_dereference (ptr_app);
 
-			_r_obj_dereference (ptr_log);
+				return TRUE;
+			}
 
-			return TRUE;
+			break;
+		}
+
+		case IDC_RULES_BLOCKLIST:
+		case IDC_RULES_SYSTEM:
+		case IDC_RULES_CUSTOM:
+		case IDC_APP_RULES_ID:
+		{
+			ptr_rule = _app_getrulebyid (index);
+
+			if (ptr_rule)
+			{
+				_app_displayinforule_callback (listview_id, ptr_rule, lpnmlv);
+				_r_obj_dereference (ptr_rule);
+
+				return TRUE;
+			}
+
+			break;
+		}
+
+		case IDC_NETWORK:
+		{
+			ptr_network = _app_network_getitem (index);
+
+			if (ptr_network)
+			{
+				_app_displayinfonetwork_callback (ptr_network, lpnmlv);
+				_r_obj_dereference (ptr_network);
+
+				return TRUE;
+			}
+
+			break;
+		}
+
+		case IDC_LOG:
+		{
+			ptr_log = _app_getlogitem (index);
+
+			if (ptr_log)
+			{
+				ptr_app = _app_getappitem (ptr_log->app_hash);
+
+				_app_displayinfolog_callback (lpnmlv, ptr_app, ptr_log);
+
+				if (ptr_app)
+					_r_obj_dereference (ptr_app);
+
+				_r_obj_dereference (ptr_log);
+
+				return TRUE;
+			}
+
+			break;
 		}
 	}
 
@@ -1791,7 +1811,7 @@ VOID _app_command_idtorules (
 	INT item_id = INT_ERROR;
 	BOOL is_remove = INT_ERROR;
 
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 	if (!_r_listview_getselectedcount (hwnd, listview_id))
 		return;
@@ -1859,7 +1879,7 @@ VOID _app_command_idtotimers (
 	INT listview_id;
 	INT item_id = INT_ERROR;
 
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 	if (!listview_id || !_r_listview_getselectedcount (hwnd, listview_id))
 		return;
@@ -2068,7 +2088,7 @@ VOID _app_command_copy (
 	INT column_count;
 	INT item_id = INT_ERROR;
 
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 	column_count = _r_listview_getcolumncount (hwnd, listview_id);
 
 	_r_obj_initializestringbuilder (&sb, 512);
@@ -2134,7 +2154,7 @@ VOID _app_command_checkbox (
 	BOOLEAN is_changed = FALSE;
 
 	rules = _r_obj_createlist (8, &_r_obj_dereference);
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 	if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 	{
@@ -2258,7 +2278,7 @@ VOID _app_command_delete (
 	INT listview_id;
 	INT item_count;
 
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 	if (listview_id != IDC_APPS_PROFILE && listview_id != IDC_RULES_CUSTOM && listview_id != IDC_NETWORK)
 		return;
@@ -2456,7 +2476,7 @@ VOID _app_command_disable (
 	INT item_id = INT_ERROR;
 	BOOL new_val = INT_ERROR;
 
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 	// note: these commands only for apps...
 	if (!(listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && listview_id != IDC_LOG)
@@ -2521,7 +2541,7 @@ VOID _app_command_openeditor (
 
 	_app_ruleenable (ptr_rule, TRUE, FALSE);
 
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 
 	switch (listview_id)
 	{
@@ -2671,7 +2691,7 @@ VOID _app_command_properties (
 	INT listview_id;
 	INT item_id;
 
-	listview_id = _app_listview_getcurrent (hwnd);
+	listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 	item_id = _r_listview_getnextselected (hwnd, listview_id, -1);
 
 	if (item_id == -1)

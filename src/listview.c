@@ -3,18 +3,7 @@
 
 #include "global.h"
 
-INT _app_listview_getcurrent (
-	_In_ HWND hwnd
-)
-{
-	PITEM_TAB_CONTEXT context;
-
-	context = _app_listview_getbytab (hwnd, INT_ERROR);
-
-	return context->listview_id;
-}
-
-PITEM_TAB_CONTEXT _app_listview_getbytab (
+PITEM_TAB_CONTEXT _app_listview_getcontext (
 	_In_ HWND hwnd,
 	_In_ INT tab_id
 )
@@ -438,7 +427,7 @@ VOID _app_listview_showitemby_param (
 	if (!listview_id)
 		return;
 
-	if (listview_id != _app_listview_getcurrent (hwnd))
+	if (listview_id != _app_listview_getcontext (hwnd, INT_ERROR)->listview_id)
 	{
 		_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
 
@@ -461,8 +450,11 @@ VOID _app_listview_updateby_id (
 	_In_ ULONG flags
 )
 {
+	PITEM_TAB_CONTEXT context;
 	ENUM_TYPE_DATA type;
 	INT listview_id;
+
+	context = _app_listview_getcontext (hwnd, INT_ERROR);
 
 	if (flags & PR_UPDATE_TYPE)
 	{
@@ -470,7 +462,7 @@ VOID _app_listview_updateby_id (
 
 		if (type == DATA_LISTVIEW_CURRENT)
 		{
-			listview_id = _app_listview_getcurrent (hwnd);
+			listview_id = context->listview_id;
 		}
 		else
 		{
@@ -482,7 +474,7 @@ VOID _app_listview_updateby_id (
 		listview_id = lparam;
 	}
 
-	if ((flags & PR_UPDATE_FORCE) || (listview_id == _app_listview_getcurrent (hwnd)))
+	if ((flags & PR_UPDATE_FORCE) || (listview_id == context->listview_id))
 	{
 		if (!(flags & PR_UPDATE_NOREDRAW))
 			_r_listview_redraw (hwnd, listview_id);
@@ -533,7 +525,7 @@ VOID _app_listview_updateby_param (
 
 	if ((flags & PR_SETITEM_REDRAW))
 	{
-		if (listview_id == _app_listview_getcurrent (hwnd))
+		if (listview_id == _app_listview_getcontext (hwnd, INT_ERROR)->listview_id)
 			_r_listview_redraw (hwnd, listview_id);
 	}
 }

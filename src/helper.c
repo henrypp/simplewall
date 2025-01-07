@@ -1853,7 +1853,7 @@ VOID NTAPI _app_queue_fileinformation (
 	// redraw listview
 	if (_r_wnd_isvisible (hwnd, FALSE))
 	{
-		if (ptr_app_info->listview_id == _app_listview_getcurrent (hwnd))
+		if (ptr_app_info->listview_id == _app_listview_getcontext (hwnd, INT_ERROR)->listview_id)
 			_r_listview_redraw (hwnd, ptr_app_info->listview_id);
 	}
 
@@ -2043,7 +2043,7 @@ VOID NTAPI _app_queue_resolveinformation (
 	// redraw listview
 	if (_r_wnd_isvisible (context->hwnd, FALSE))
 	{
-		if (_app_listview_getcurrent (context->hwnd) == context->listview_id)
+		if (_app_listview_getcontext (context->hwnd, INT_ERROR)->listview_id == context->listview_id)
 			_r_listview_redraw (context->hwnd, context->listview_id);
 	}
 
