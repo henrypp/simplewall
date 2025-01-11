@@ -167,7 +167,7 @@ VOID _app_listview_addnetworkitem (
 	_In_ ULONG_PTR network_hash
 )
 {
-	_r_listview_additem (hwnd, IDC_NETWORK, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (network_hash));
+	_r_listview_additem (hwnd, IDC_NETWORK, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (network_hash));
 }
 
 VOID _app_listview_addlogitem (
@@ -175,7 +175,7 @@ VOID _app_listview_addlogitem (
 	_In_ ULONG_PTR log_hash
 )
 {
-	_r_listview_additem (hwnd, IDC_LOG, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_listview_createcontext (log_hash));
+	_r_listview_additem (hwnd, IDC_LOG, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_listview_createcontext (log_hash));
 }
 
 BOOLEAN _app_listview_islocked (
