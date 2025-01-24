@@ -466,7 +466,7 @@ VOID _app_settab_id (
 	if (!hctrl || (_app_listview_getcontext (hwnd, INT_ERROR)->listview_id == page_id && _r_wnd_isvisible (hctrl, FALSE)))
 		return;
 
-	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
+	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB); i++)
 	{
 		context = _app_listview_getcontext (hwnd, i);
 
@@ -1053,7 +1053,7 @@ VOID _app_window_resize (
 		EndDeferWindowPos (hdefer);
 	}
 
-	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
+	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB); i++)
 	{
 		new_context = _app_listview_getcontext (hwnd, i);
 

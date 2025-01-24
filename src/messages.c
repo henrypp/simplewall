@@ -373,7 +373,7 @@ VOID _app_message_localize (
 	_app_toolbar_resize (hwnd, dpi_value);
 
 	// localize tabs
-	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
+	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB); i++)
 	{
 		context = _app_listview_getcontext (hwnd, i);
 

@@ -1893,8 +1893,6 @@ VOID _app_addwindowtabs (
 	context->locale_id = IDS_TITLE_LOGGING;
 
 	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
-
-	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)IDC_LOG);
 }
 
 VOID _app_tabs_init (
@@ -1941,7 +1939,7 @@ VOID _app_tabs_init (
 
 	_app_addwindowtabs (hwnd);
 
-	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB) - 1; i++)
+	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB); i++)
 	{
 		context = _app_listview_getcontext (hwnd, i);
 
