@@ -58,8 +58,7 @@ VOID _app_editor_addtabitem (
 	_In_ HWND hwnd,
 	_In_ UINT locale_id,
 	_In_ INT dlg_id,
-	_In_ PEDITOR_CONTEXT context,
-	_Inout_ PINT tabs_count
+	_In_ PEDITOR_CONTEXT context
 )
 {
 	HWND htab;
@@ -69,9 +68,7 @@ VOID _app_editor_addtabitem (
 	if (!htab)
 		return;
 
-	_r_tab_additem (hwnd, IDC_TAB, *tabs_count, _r_locale_getstring (locale_id), I_DEFAULT, (LPARAM)htab);
-
-	*tabs_count += 1;
+	_r_tab_additem (hwnd, IDC_TAB, INT_ERROR, _r_locale_getstring (locale_id), I_DEFAULT, (LPARAM)htab);
 
 	_r_tab_adjustchild (hwnd, IDC_TAB, htab);
 
@@ -1554,14 +1551,12 @@ INT_PTR CALLBACK EditorProc (
 		{
 			WCHAR title[128] = {0};
 			PR_STRING string;
-			INT tabs_count;
 
 			context = (PEDITOR_CONTEXT)lparam;
 
 			_app_editor_setcontext (hwnd, context);
 
 			// configure tabs
-			tabs_count = 0;
 
 			if (context->is_settorules)
 			{
@@ -1570,9 +1565,9 @@ INT_PTR CALLBACK EditorProc (
 				if (context->ptr_rule->is_readonly)
 					_r_str_appendformat (title, RTL_NUMBER_OF (title), L" (%s)", SZ_RULE_INTERNAL_TITLE);
 
-				_app_editor_addtabitem (hwnd, IDS_SETTINGS_GENERAL, IDD_EDITOR_GENERAL, context, &tabs_count);
-				_app_editor_addtabitem (hwnd, IDS_RULE, IDD_EDITOR_RULE, context, &tabs_count);
-				_app_editor_addtabitem (hwnd, IDS_TAB_APPS, IDD_EDITOR_APPS, context, &tabs_count);
+				_app_editor_addtabitem (hwnd, IDS_SETTINGS_GENERAL, IDD_EDITOR_GENERAL, context);
+				_app_editor_addtabitem (hwnd, IDS_RULE, IDD_EDITOR_RULE, context);
+				_app_editor_addtabitem (hwnd, IDS_TAB_APPS, IDD_EDITOR_APPS, context);
 
 				// set state
 				_r_ctrl_setstring (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_CHK));
@@ -1590,8 +1585,8 @@ INT_PTR CALLBACK EditorProc (
 					_r_obj_dereference (string);
 				}
 
-				_app_editor_addtabitem (hwnd, IDS_SETTINGS_GENERAL, IDD_EDITOR_APPINFO, context, &tabs_count);
-				_app_editor_addtabitem (hwnd, IDS_TRAY_RULES, IDD_EDITOR_APPRULES, context, &tabs_count);
+				_app_editor_addtabitem (hwnd, IDS_SETTINGS_GENERAL, IDD_EDITOR_APPINFO, context);
+				_app_editor_addtabitem (hwnd, IDS_TRAY_RULES, IDD_EDITOR_APPRULES, context);
 
 				// show state
 				_r_ctrl_setstring (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_APP_CHK));

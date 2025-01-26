@@ -54,8 +54,7 @@ VOID _app_editor_addtabitem (
 	_In_ HWND hwnd,
 	_In_ UINT locale_id,
 	_In_ INT dlg_id,
-	_In_ PEDITOR_CONTEXT context,
-	_Inout_ PINT tabs_count
+	_In_ PEDITOR_CONTEXT context
 );
 
 VOID _app_editor_settabtitle (

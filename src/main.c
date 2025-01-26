@@ -1884,9 +1884,9 @@ VOID _app_addwindowtabs (
 	context->listview_id = IDC_NETWORK;
 	context->locale_id = IDS_TAB_NETWORK;
 
-	// log tab
 	_r_tab_additem (hwnd, IDC_TAB, INT_MAX, L"", I_DEFAULT, (LPARAM)context);
 
+	// log tab
 	context = _r_mem_allocate (sizeof (ITEM_TAB_CONTEXT));
 
 	context->listview_id = IDC_LOG;
