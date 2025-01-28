@@ -1,6 +1,6 @@
 // simplewall
 // Copyright (c) 2012-2021 dmex
-// Copyright (c) 2021-2024 Henry++
+// Copyright (c) 2021-2025 Henry++
 
 #include "global.h"
 
@@ -746,7 +746,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 				}
 				else
 				{
-					_r_dc_framerect (context->hdc, &wnd_rect, GetSysColor (COLOR_WINDOWFRAME));
+					_r_dc_framerect (context->hdc, &wnd_rect, _r_theme_isenabled () ? WND_BACKGROUND2_CLR : GetSysColor (COLOR_WINDOWFRAME));
 
 					InflateRect (&wnd_rect, -1, -1);
 

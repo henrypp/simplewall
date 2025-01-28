@@ -1,6 +1,6 @@
 // simplewall
 // Copyright (c) 2012-2021 dmex
-// Copyright (c) 2021-2024 Henry++
+// Copyright (c) 2021-2025 Henry++
 
 #pragma once
 
