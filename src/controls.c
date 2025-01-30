@@ -843,7 +843,6 @@ VOID _app_toolbar_init (
 )
 {
 	ULONG button_size;
-	LONG rebar_height;
 
 	config.hrebar = GetDlgItem (hwnd, IDC_REBAR);
 
@@ -927,8 +926,6 @@ VOID _app_toolbar_init (
 	_r_ctrl_setfont (config.hsearchbar, 0, config.wnd_font); // fix font
 
 	_app_search_create (config.hsearchbar);
-
-	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 
 	_app_search_setvisible (hwnd, config.hsearchbar, dpi_value);
 }
