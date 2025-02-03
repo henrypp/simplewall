@@ -31,8 +31,8 @@ You can download either the installer or portable version. For correct working y
 - Dropped packets information with notification and logging to a file feature (win7+)
 - Allowed packets information with logging to a file feature (win8+)
 - Windows Subsystem for Linux (WSL) support
+- Windows Store support (win8+)
 - Windows services support
-- Windows Store support
 - Free and open source
 - Localization support
 - IPv6 support
@@ -311,4 +311,4 @@ Open main window, Navigate into `System rules` tab and then enable `Windows Upda
 - Website: [github.com/henrypp](https://github.com/henrypp)
 - Support: sforce5@mail.ru
 ---
-(c) 2016-2024 Henry++
+(c) 2016-2025 Henry++
