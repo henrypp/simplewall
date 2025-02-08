@@ -80,8 +80,7 @@ typedef enum _ENUM_INFO_DATA2
 	INFO_VERSION_STRING, // dereference required
 } ENUM_INFO_DATA2;
 
-#define LOG_PATH_EXT L"log"
-#define LOG_PATH_DEFAULT L"%USERPROFILE%\\" APP_NAME_SHORT L"." LOG_PATH_EXT
+#define LOG_PATH_DEFAULT L"%USERPROFILE%\\" APP_NAME_SHORT L".log"
 #define LOG_VIEWER_DEFAULT L"%SystemRoot%\\notepad.exe"
 #define LOG_SIZE_LIMIT_DEFAULT _r_calc_kilobytes2bytes (1)
 
