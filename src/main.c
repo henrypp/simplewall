@@ -732,26 +732,26 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDD_SETTINGS_LOGGING:
 				{
-					PR_STRING string;
+					PR_STRING path;
 
 					_r_ctrl_checkbutton (hwnd, IDC_ENABLELOG_CHK, _r_config_getboolean (L"IsLogEnabled", FALSE));
 
-					string = _app_getlogpath ();
+					path = _app_getlogpath ();
 
-					if (string)
+					if (path)
 					{
-						_r_ctrl_setstring (hwnd, IDC_LOGPATH, string->buffer);
+						_r_ctrl_setstring (hwnd, IDC_LOGPATH, path->buffer);
 
-						_r_obj_dereference (string);
+						_r_obj_dereference (path);
 					}
 
-					string = _app_getlogviewer ();
+					path = _r_config_getstringexpand (L"LogViewer", LOG_VIEWER_DEFAULT);
 
-					if (string)
+					if (path)
 					{
-						_r_ctrl_setstring (hwnd, IDC_LOGVIEWER, string->buffer);
+						_r_ctrl_setstring (hwnd, IDC_LOGVIEWER, path->buffer);
 
-						_r_obj_dereference (string);
+						_r_obj_dereference (path);
 					}
 
 					_r_ctrl_setacceleration (hwnd, IDC_LOGSIZELIMIT, 64); // set step to 64kb

@@ -115,9 +115,20 @@ PR_STRING _app_getlogpath ()
 _Ret_maybenull_
 PR_STRING _app_getlogviewer ()
 {
+	R_STRINGREF sr;
 	PR_STRING path;
 
 	path = _r_config_getstringexpand (L"LogViewer", LOG_VIEWER_DEFAULT);
+
+	if (!path || !_r_fs_exists (&path->sr))
+	{
+		if (path)
+			_r_obj_dereference (path);
+
+		_r_obj_initializestringref (&sr, LOG_VIEWER_DEFAULT);
+
+		_r_str_environmentexpandstring (NULL, &sr, &path);
+	}
 
 	return path;
 }
