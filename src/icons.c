@@ -132,7 +132,7 @@ HICON _app_icons_getsafeapp_hicon (
 		return NULL;
 	}
 
-	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
+	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE, NULL);
 
 	if (is_iconshidded || !_app_isappvalidbinary (ptr_app->real_path))
 	{

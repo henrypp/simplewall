@@ -168,11 +168,11 @@ VOID CALLBACK _app_timer_callback (
 
 	_app_profile_save (hwnd);
 
-	if (_r_config_getboolean (L"IsNotificationsTimer", TRUE))
+	if (_r_config_getboolean (L"IsNotificationsTimer", TRUE, NULL))
 	{
 		icon_id = NIIF_INFO;
 
-		if (!_r_config_getboolean (L"IsNotificationsSound", TRUE))
+		if (!_r_config_getboolean (L"IsNotificationsSound", TRUE, NULL))
 			icon_id |= NIIF_NOSOUND;
 
 		string = _app_getappdisplayname (ptr_app, TRUE);

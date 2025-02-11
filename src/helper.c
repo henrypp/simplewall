@@ -605,7 +605,7 @@ PR_STRING _app_getappdisplayname (
 			return _r_obj_reference (ptr_app->original_path);
 	}
 
-	if (is_shortened || _r_config_getboolean (L"ShowFilenames", TRUE))
+	if (is_shortened || _r_config_getboolean (L"ShowFilenames", TRUE, NULL))
 	{
 		if (!_r_obj_isstringempty (ptr_app->short_name))
 			return _r_obj_reference (ptr_app->short_name);
@@ -647,7 +647,7 @@ VOID _app_getfileicon (
 	LONG icon_id = 0;
 	BOOLEAN is_iconshidded;
 
-	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE);
+	is_iconshidded = _r_config_getboolean (L"IsIconsHidden", FALSE, NULL);
 
 	if (is_iconshidded || !_app_isappvalidbinary (ptr_app_info->path))
 	{
@@ -821,7 +821,7 @@ LONG _app_verifyfromfile (
 	if (union_choice == WTD_CHOICE_CATALOG)
 		trust_data.pCatalog = union_data;
 
-	if (_r_config_getboolean (L"IsOCSPEnabled", FALSE))
+	if (_r_config_getboolean (L"IsOCSPEnabled", FALSE, NULL))
 	{
 		trust_data.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
 		trust_data.dwProvFlags = WTD_SAFER_FLAG;
@@ -1101,7 +1101,7 @@ ULONG_PTR _app_addcolor (
 
 	ptr_clr.config_name = _r_obj_createstring (config_name);
 	ptr_clr.config_value = _r_obj_createstring (config_value);
-	ptr_clr.new_clr = _r_config_getulong_ex (config_value, default_clr, L"colors");
+	ptr_clr.new_clr = _r_config_getulong (config_value, default_clr, L"colors");
 
 	ptr_clr.default_clr = default_clr;
 	ptr_clr.locale_id = locale_id;
@@ -1680,7 +1680,7 @@ VOID _app_fileloggingenable ()
 	BOOLEAN is_enable;
 	NTSTATUS status;
 
-	is_enable = _r_config_getboolean (L"IsEnableAppMonitor", FALSE);
+	is_enable = _r_config_getboolean (L"IsEnableAppMonitor", FALSE, NULL);
 
 	if (is_enable)
 	{
@@ -1840,14 +1840,14 @@ VOID NTAPI _app_queue_fileinformation (
 	_app_getfileicon (ptr_app_info);
 
 	// query certificate information
-	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE, NULL))
 		_app_getfilesignatureinfo (hfile, ptr_app_info);
 
 	// query version info
 	_app_getfileversioninfo (ptr_app_info);
 
 	// query sha256 info
-	if (_r_config_getboolean (L"IsHashesEnabled", FALSE))
+	if (_r_config_getboolean (L"IsHashesEnabled", FALSE, NULL))
 		_app_getfilehashinfo (hfile, ptr_app_info->app_hash);
 
 	// redraw listview
@@ -1890,7 +1890,7 @@ VOID NTAPI _app_queue_notifyinformation (
 	address_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, FMTADDR_USE_PROTOCOL);
 
 	// query notification host name
-	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE))
+	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE, NULL))
 	{
 		host_str = _app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, TRUE);
 
@@ -1899,7 +1899,7 @@ VOID NTAPI _app_queue_notifyinformation (
 	}
 
 	// query signature
-	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE))
+	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE, NULL))
 	{
 		ptr_app_info = _app_getappinfobyhash2 (ptr_log->app_hash);
 
@@ -2012,7 +2012,7 @@ VOID NTAPI _app_queue_resolveinformation (
 
 	context = arglist;
 
-	is_resolutionenabled = _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE);
+	is_resolutionenabled = _r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE, NULL);
 
 	switch (context->listview_id)
 	{
@@ -2057,7 +2057,7 @@ BOOLEAN _app_wufixenabled ()
 	WCHAR file_path[256];
 	R_STRINGREF sr;
 
-	if (!_r_config_getboolean (L"IsWUFixEnabled", FALSE))
+	if (!_r_config_getboolean (L"IsWUFixEnabled", FALSE, NULL))
 		return FALSE;
 
 	_r_str_printf (file_path, RTL_NUMBER_OF (file_path), L"%s\\wusvc.exe", _r_sys_getsystemdirectory ()->buffer);
@@ -2188,7 +2188,7 @@ VOID _app_wufixenable (
 	_app_wufixhelper (hsvcmgr, L"DoSvc", L"NetworkService", is_enable);
 	_app_wufixhelper (hsvcmgr, L"UsoSvc", L"netsvcs", is_enable);
 
-	_r_config_setboolean (L"IsWUFixEnabled", is_enable);
+	_r_config_setboolean (L"IsWUFixEnabled", is_enable, NULL);
 
 	CloseServiceHandle (hsvcmgr);
 }

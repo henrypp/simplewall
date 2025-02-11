@@ -30,7 +30,7 @@ VOID _app_network_initialize (
 	R_ENVIRONMENT environment;
 	BOOLEAN is_enabled;
 
-	is_enabled = _r_config_getboolean (L"IsNetworkMonitorEnabled", TRUE);
+	is_enabled = _r_config_getboolean (L"IsNetworkMonitorEnabled", TRUE, NULL);
 
 	if (!is_enabled)
 		return;
@@ -670,7 +670,7 @@ VOID _app_network_printlistviewtable (
 	BOOLEAN is_highlight = FALSE;
 	BOOLEAN is_refresh = FALSE;
 
-	if (_r_config_getboolean (L"IsEnableHighlighting", TRUE) && _r_config_getboolean_ex (L"IsHighlightConnection", TRUE, L"colors"))
+	if (_r_config_getboolean (L"IsEnableHighlighting", TRUE, NULL) && _r_config_getboolean (L"IsHighlightConnection", TRUE, L"colors"))
 		is_highlight = TRUE;
 
 	// add new connections into listview

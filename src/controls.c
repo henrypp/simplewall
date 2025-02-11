@@ -723,7 +723,7 @@ VOID _app_imagelist_init (
 	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 	icon_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 
-	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT), dpi_value), icon_small, icon_large);
+	icon_size_toolbar = _r_calc_clamp (_r_dc_getdpi (_r_config_getlong (L"ToolbarSize", PR_SIZE_ITEMHEIGHT, NULL), dpi_value), icon_small, icon_large);
 
 	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SHIELD_ENABLE), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_enable);
 	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SHIELD_DISABLE), &GUID_ContainerFormatPng, icon_small, icon_small, &config.hbmp_disable);

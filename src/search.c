@@ -150,7 +150,7 @@ VOID _app_search_setvisible (
 {
 	BOOLEAN is_visible;
 
-	is_visible = _r_config_getboolean (L"IsShowSearchBar", TRUE);
+	is_visible = _r_config_getboolean (L"IsShowSearchBar", TRUE, NULL);
 
 	if (is_visible)
 	{

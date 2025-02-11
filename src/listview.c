@@ -611,7 +611,7 @@ VOID _app_listview_loadfont (
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		_r_config_getfont (L"Font", &logfont, dpi_value);
+		_r_config_getfont (L"Font", &logfont, dpi_value, NULL);
 
 		config.hfont = _app_createfont (&logfont, 0, FALSE, 0);
 	}
@@ -798,7 +798,7 @@ VOID _app_listview_resize (
 	LONG spacing;
 	BOOLEAN is_tableview;
 
-	if (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE))
+	if (!is_forced && !_r_config_getboolean (L"AutoSizeColumns", TRUE, NULL))
 		return;
 
 	hlistview = GetDlgItem (hwnd, listview_id);
@@ -929,7 +929,7 @@ VOID _app_listview_setview (
 
 	if (is_mainview)
 	{
-		view_type = _r_calc_clamp (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS), LV_VIEW_ICON, LV_VIEW_MAX);
+		view_type = _r_calc_clamp (_r_config_getlong (L"ViewType", LV_VIEW_DETAILS, NULL), LV_VIEW_ICON, LV_VIEW_MAX);
 	}
 	else
 	{
@@ -938,7 +938,7 @@ VOID _app_listview_setview (
 
 	if (is_mainview)
 	{
-		icons_size = _r_calc_clamp (_r_config_getlong (L"IconSize", SHIL_SMALL), SHIL_LARGE, SHIL_LAST);
+		icons_size = _r_calc_clamp (_r_config_getlong (L"IconSize", SHIL_SMALL, NULL), SHIL_LARGE, SHIL_LAST);
 	}
 	else
 	{
@@ -1009,8 +1009,8 @@ INT CALLBACK _app_listview_compare_callback (
 
 	_r_str_printf (section_name, RTL_NUMBER_OF (section_name), L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	column_id = _r_config_getlong_ex (L"SortColumn", 0, section_name);
-	is_descend = _r_config_getboolean_ex (L"SortIsDescending", FALSE, section_name);
+	column_id = _r_config_getlong (L"SortColumn", 0, section_name);
+	is_descend = _r_config_getboolean (L"SortIsDescending", FALSE, section_name);
 
 	if ((_r_listview_getstyle_ex (hwnd, listview_id) & LVS_EX_CHECKBOXES) != 0)
 	{
@@ -1123,20 +1123,20 @@ VOID _app_listview_sort (
 
 	_r_str_printf (config_name, RTL_NUMBER_OF (config_name), L"listview\\%04" TEXT (PRIX32), listview_id);
 
-	is_descend = _r_config_getboolean_ex (L"SortIsDescending", FALSE, config_name);
+	is_descend = _r_config_getboolean (L"SortIsDescending", FALSE, config_name);
 
 	if (is_notifycode)
 		is_descend = !is_descend;
 
 	if (column_id == INT_ERROR)
-		column_id = _r_config_getlong_ex (L"SortColumn", 0, config_name);
+		column_id = _r_config_getlong (L"SortColumn", 0, config_name);
 
 	column_id = _r_calc_clamp (column_id, 0, column_count - 1); // set range
 
 	if (is_notifycode)
 	{
-		_r_config_setboolean_ex (L"SortIsDescending", is_descend, config_name);
-		_r_config_setlong_ex (L"SortColumn", column_id, config_name);
+		_r_config_setboolean (L"SortIsDescending", is_descend, config_name);
+		_r_config_setlong (L"SortColumn", column_id, config_name);
 	}
 
 	for (INT i = 0; i < column_count; i++)

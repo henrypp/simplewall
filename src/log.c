@@ -18,7 +18,7 @@ VOID _app_loginit (
 	if (current_handle)
 		NtClose (current_handle);
 
-	if (!is_install || !_r_config_getboolean (L"IsLogEnabled", FALSE))
+	if (!is_install || !_r_config_getboolean (L"IsLogEnabled", FALSE, NULL))
 		return; // already closed or not enabled
 
 	log_path = _app_getlogpath ();
@@ -107,7 +107,7 @@ PR_STRING _app_getlogpath ()
 {
 	PR_STRING path;
 
-	path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT);
+	path = _r_config_getstringexpand (L"LogPath", LOG_PATH_DEFAULT, NULL);
 
 	return path;
 }
@@ -118,7 +118,7 @@ PR_STRING _app_getlogviewer ()
 	R_STRINGREF sr;
 	PR_STRING path;
 
-	path = _r_config_getstringexpand (L"LogViewer", LOG_VIEWER_DEFAULT);
+	path = _r_config_getstringexpand (L"LogViewer", LOG_VIEWER_DEFAULT, NULL);
 
 	if (!path || !_r_fs_exists (&path->sr))
 	{
@@ -153,7 +153,7 @@ BOOLEAN _app_logislimitreached (
 	LONG64 file_size;
 	LONG64 limit;
 
-	limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT);
+	limit = _r_config_getlong64 (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT, NULL);
 
 	if (!limit)
 		return FALSE;
@@ -441,7 +441,7 @@ VOID _wfp_logsubscribe (
 	}
 
 	// initialize log file
-	if (_r_config_getboolean (L"IsLogEnabled", FALSE))
+	if (_r_config_getboolean (L"IsLogEnabled", FALSE, NULL))
 		_app_loginit (TRUE);
 }
 
@@ -478,17 +478,17 @@ VOID _wfp_logsetoption (
 		return;
 
 	// add allowed connections monitor
-	if (!_r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
+	if (!_r_config_getboolean (L"IsExcludeClassifyAllow", TRUE, NULL))
 		mask |= FWPM_NET_EVENT_KEYWORD_CLASSIFY_ALLOW;
 
 	// add inbound multicast and broadcast connections monitor
-	if (!_r_config_getboolean (L"IsExcludeInbound", FALSE))
+	if (!_r_config_getboolean (L"IsExcludeInbound", FALSE, NULL))
 		mask |= FWPM_NET_EVENT_KEYWORD_INBOUND_MCAST | FWPM_NET_EVENT_KEYWORD_INBOUND_BCAST;
 
 	// add port scanning drop connections monitor (19H1+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10_19H1))
 	{
-		if (!_r_config_getboolean (L"IsExcludePortScanningDrop", FALSE))
+		if (!_r_config_getboolean (L"IsExcludePortScanningDrop", FALSE, NULL))
 			mask |= FWPM_NET_EVENT_KEYWORD_PORT_SCANNING_DROP;
 	}
 
@@ -507,7 +507,7 @@ VOID _wfp_logsetoption (
 	RtlZeroMemory (&val, sizeof (val));
 
 	val.type = FWP_UINT32;
-	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE);
+	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE, NULL);
 
 	status = FwpmEngineSetOption0 (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
@@ -536,7 +536,7 @@ VOID CALLBACK _wfp_logcallback (
 	if (!log->filter_id || !log->layer_id)
 		return;
 
-	if (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE))
+	if (log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE, NULL))
 		return;
 
 	engine_handle = _wfp_getenginehandle ();
@@ -1389,14 +1389,14 @@ VOID NTAPI _app_logthread (
 	if (!ptr_app)
 		ptr_app = _app_getappitem (ptr_log->app_hash);
 
-	is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE);
-	is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE);
-	is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE);
+	is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE, NULL);
+	is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE, NULL);
+	is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE, NULL);
 
-	is_exludeallow = !(ptr_log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE));
-	is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE));
+	is_exludeallow = !(ptr_log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE, NULL));
+	is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE, NULL));
 
-	is_exludeblocklist = !(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE));
+	is_exludeblocklist = !(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE, NULL)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE, NULL));
 
 	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth && is_exludeallow)
 	{

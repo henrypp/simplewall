@@ -141,7 +141,7 @@ BOOLEAN _app_notify_addobject (
 	LONG64 notification_timeout;
 
 	current_time = _r_unixtime_now ();
-	notification_timeout = _r_config_getlong64 (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT);
+	notification_timeout = _r_config_getlong64 (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT, NULL);
 
 	// check for last display time
 	if (notification_timeout && ((current_time - ptr_app->last_notify) <= notification_timeout))
@@ -153,9 +153,9 @@ BOOLEAN _app_notify_addobject (
 
 	if (_r_wnd_sendmessage (hwnd, 0, WM_NOTIFICATION, 0, (LPARAM)ptr_app->notification))
 	{
-		if (_r_config_getboolean (L"IsNotificationsSound", TRUE))
+		if (_r_config_getboolean (L"IsNotificationsSound", TRUE, NULL))
 		{
-			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE) || !_r_wnd_isfullscreenmode ())
+			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE, NULL) || !_r_wnd_isfullscreenmode ())
 				_app_notify_playsound ();
 		}
 
@@ -578,7 +578,7 @@ VOID _app_notify_refresh (
 		return;
 	}
 
-	if (!_r_config_getboolean (L"IsNotificationsEnabled", TRUE))
+	if (!_r_config_getboolean (L"IsNotificationsEnabled", TRUE, NULL))
 	{
 		DestroyWindow (hwnd);
 
@@ -624,7 +624,7 @@ VOID _app_notify_setposition (
 		return;
 	}
 
-	is_intray = _r_config_getboolean (L"IsNotificationsOnTray", FALSE);
+	is_intray = _r_config_getboolean (L"IsNotificationsOnTray", FALSE, NULL);
 
 	if (is_intray)
 	{

@@ -289,7 +289,7 @@ BOOLEAN _wfp_initialize (
 			sublayer.subLayerKey = GUID_WfpSublayer;
 
 			// highest weight for UINT16
-			sublayer.weight = (UINT16)_r_config_getlong (L"SublayerWeight", FW_SUBLAYER_WEIGHT);
+			sublayer.weight = (UINT16)_r_config_getlong (L"SublayerWeight", FW_SUBLAYER_WEIGHT, NULL);
 
 			if (!config.is_filterstemporary)
 				sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
@@ -380,7 +380,7 @@ BOOLEAN _wfp_initialize (
 	// packet queuing (win8+)
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 	{
-		if (_r_config_getboolean (L"IsPacketQueuingEnabled", TRUE))
+		if (_r_config_getboolean (L"IsPacketQueuingEnabled", TRUE, NULL))
 		{
 			// Enables inbound or forward packet queuing independently.
 			// when enabled, the system is able to evenly distribute cpu load
@@ -1793,7 +1793,7 @@ BOOLEAN _wfp_create2filters (
 	}
 
 	// add loopback connections permission
-	if (_r_config_getboolean (L"AllowLoopbackConnections", TRUE))
+	if (_r_config_getboolean (L"AllowLoopbackConnections", TRUE, NULL))
 	{
 		// match all loopback (localhost) data
 		// tests if the network traffic is (non-)app container loopback traffic (win8+)
@@ -1952,7 +1952,7 @@ BOOLEAN _wfp_create2filters (
 
 	// firewall service rules
 	// https://msdn.microsoft.com/en-us/library/gg462153.aspx
-	if (_r_config_getboolean (L"AllowIPv6", TRUE))
+	if (_r_config_getboolean (L"AllowIPv6", TRUE, NULL))
 	{
 		// allows 6to4 tunneling, which enables ipv6 to run over an ipv4 network
 		fwfc[0].fieldKey = FWPM_CONDITION_IP_PROTOCOL;
@@ -2053,7 +2053,7 @@ BOOLEAN _wfp_create2filters (
 
 	// prevent port scanning using stealth discards and silent drops
 	// https://docs.microsoft.com/ru-ru/windows/desktop/FWP/preventing-port-scanning
-	if (_r_config_getboolean (L"UseStealthMode", TRUE))
+	if (_r_config_getboolean (L"UseStealthMode", TRUE, NULL))
 	{
 		// blocks udp port scanners
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
@@ -2132,7 +2132,7 @@ BOOLEAN _wfp_create2filters (
 
 	// install boot-time filters (enforced at boot-time,
 	// even before "base filtering engine" service starts)
-	if (_r_config_getboolean (L"InstallBoottimeFilters", TRUE) && !config.is_filterstemporary)
+	if (_r_config_getboolean (L"InstallBoottimeFilters", TRUE, NULL) && !config.is_filterstemporary)
 	{
 		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
 		fwfc[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
@@ -2377,7 +2377,7 @@ BOOLEAN _wfp_create2filters (
 		);
 	}
 
-	action = _r_config_getboolean (L"BlockOutboundConnections", TRUE) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
+	action = _r_config_getboolean (L"BlockOutboundConnections", TRUE, NULL) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
 
 	// block outbound connection
 	if (action == FWP_ACTION_BLOCK)
@@ -2445,7 +2445,7 @@ BOOLEAN _wfp_create2filters (
 	);
 
 	// block inbound connections
-	if (_r_config_getboolean (L"UseStealthMode", TRUE) || _r_config_getboolean (L"BlockInboundConnections", TRUE))
+	if (_r_config_getboolean (L"UseStealthMode", TRUE, NULL) || _r_config_getboolean (L"BlockInboundConnections", TRUE, NULL))
 	{
 		action = FWP_ACTION_BLOCK;
 	}
@@ -2671,7 +2671,7 @@ VOID NTAPI _wfp_applythread (
 		_wfp_logsubscribe (context->hwnd, engine_handle);
 
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-		_app_wufixenable (context->hwnd, _r_config_getboolean (L"IsWUFixEnabled", FALSE));
+		_app_wufixenable (context->hwnd, _r_config_getboolean (L"IsWUFixEnabled", FALSE, NULL));
 
 	dpi_value = _r_dc_getwindowdpi (context->hwnd);
 
