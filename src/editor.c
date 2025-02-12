@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
@@ -433,8 +433,8 @@ INT_PTR CALLBACK EditorPagesProc (
 		case WM_INITDIALOG:
 		{
 			WCHAR buffer[256];
-			PITEM_RULE ptr_rule;
 			PITEM_APP ptr_app = NULL;
+			PITEM_RULE ptr_rule;
 			PR_STRING string;
 			HWND hctrl;
 			INT i;
@@ -511,7 +511,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			// protocols
 			if (GetDlgItem (hwnd, IDC_RULE_PROTOCOL_ID))
 			{
-				static UINT8 protos[] = {
+				UINT8 protos[] = {
 					IPPROTO_ICMP,
 					IPPROTO_IGMP,
 					IPPROTO_IPV4,
@@ -612,7 +612,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					FALSE
 				);
 
-				_r_listview_addcolumn (hwnd, IDC_RULE_LOCAL_ID, 0, NULL, -100, 0);
+				_r_listview_addcolumn (hwnd, IDC_RULE_LOCAL_ID, 0, NULL, 100, 0);
 
 				if (!_r_obj_isstringempty (context->ptr_rule->rule_local))
 				{
@@ -652,7 +652,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					TRUE
 				);
 
-				_r_listview_addcolumn (hwnd, IDC_RULE_APPS_ID, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, IDC_RULE_APPS_ID, 0, _r_locale_getstring (IDS_NAME), 100, LVCFMT_LEFT);
 
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 0, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_RULE_APPS_ID, 1, L"", 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
@@ -787,7 +787,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					TRUE
 				);
 
-				_r_listview_addcolumn (hwnd, IDC_APP_RULES_ID, 0, _r_locale_getstring (IDS_NAME), 0, LVCFMT_LEFT);
+				_r_listview_addcolumn (hwnd, IDC_APP_RULES_ID, 0, _r_locale_getstring (IDS_NAME), 100, LVCFMT_LEFT);
 
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 0, _r_locale_getstring (IDS_TRAY_SYSTEM_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
 				_r_listview_addgroup (hwnd, IDC_APP_RULES_ID, 1, _r_locale_getstring (IDS_TRAY_USER_RULES), 0, LVGS_COLLAPSIBLE, LVGS_COLLAPSIBLE);
@@ -876,7 +876,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 		case WM_SIZE:
 		{
-			static INT listview_ids[] = {
+			INT listview_ids[] = {
 				IDC_RULE_APPS_ID,
 				IDC_APP_RULES_ID,
 				IDC_RULE_REMOTE_ID,
@@ -949,7 +949,7 @@ INT_PTR CALLBACK EditorPagesProc (
 				{
 					LPNMITEMACTIVATE lpnmlv;
 					HMENU hsubmenu;
-					PR_STRING localized_string;
+					PR_STRING localized_string = NULL;
 					UINT id_add;
 					UINT id_edit;
 					UINT id_delete;
@@ -977,8 +977,6 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					if (listview_id == IDC_RULE_REMOTE_ID || listview_id == IDC_RULE_LOCAL_ID)
 					{
-						localized_string = NULL;
-
 						is_remote = (listview_id == IDC_RULE_REMOTE_ID);
 
 						id_add = is_remote ? IDC_RULE_REMOTE_ADD : IDC_RULE_LOCAL_ADD;
@@ -1091,7 +1089,6 @@ INT_PTR CALLBACK EditorPagesProc (
 				{
 					LPNMLISTVIEW lpnmlv;
 					INT listview_id;
-					BOOLEAN is_locked;
 
 					lpnmlv = (LPNMLISTVIEW)lparam;
 					listview_id = (INT)(INT_PTR)lpnmlv->hdr.idFrom;
@@ -1107,9 +1104,7 @@ INT_PTR CALLBACK EditorPagesProc (
 						{
 							if ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (1) || ((lpnmlv->uNewState & LVIS_STATEIMAGEMASK) == INDEXTOSTATEIMAGEMASK (2)))
 							{
-								is_locked = _app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom);
-
-								if (!is_locked && context->ptr_rule->type != DATA_RULE_USER)
+								if (!_app_listview_islocked (hwnd, (INT)(INT_PTR)lpnmlv->hdr.idFrom) && context->ptr_rule->type != DATA_RULE_USER)
 								{
 									SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
 
@@ -1557,7 +1552,6 @@ INT_PTR CALLBACK EditorProc (
 			_app_editor_setcontext (hwnd, context);
 
 			// configure tabs
-
 			if (context->is_settorules)
 			{
 				_r_str_copy (title, RTL_NUMBER_OF (title), _r_obj_getstringordefault (context->ptr_rule->name, SZ_RULE_NEW_TITLE));
@@ -1821,33 +1815,25 @@ INT_PTR CALLBACK EditorProc (
 								_r_obj_movereference (&context->ptr_rule->rule_local, string);
 							}
 
-							context->ptr_rule->protocol = (UINT8)_r_combobox_getitemlparam (
-								hpage_general,
-								IDC_RULE_PROTOCOL_ID,
-								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_PROTOCOL_ID)
-							);
+							item_id = _r_combobox_getcurrentitem (hpage_general, IDC_RULE_PROTOCOL_ID);
 
-							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemlparam (
-								hpage_general,
-								IDC_RULE_VERSION_ID,
-								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_VERSION_ID)
-							);
+							context->ptr_rule->protocol = (UINT8)_r_combobox_getitemlparam (hpage_general, IDC_RULE_PROTOCOL_ID, item_id);
+
+							item_id = _r_combobox_getcurrentitem (hpage_general, IDC_RULE_VERSION_ID);
+
+							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemlparam (hpage_general, IDC_RULE_VERSION_ID, item_id);
 
 							string = _app_db_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af, FALSE);
 
 							_r_obj_movereference (&context->ptr_rule->protocol_str, string);
 
-							context->ptr_rule->direction = (FWP_DIRECTION)_r_combobox_getitemlparam (
-								hpage_general,
-								IDC_RULE_DIRECTION_ID,
-								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_DIRECTION_ID)
-							);
+							item_id = _r_combobox_getcurrentitem (hpage_general, IDC_RULE_DIRECTION_ID);
 
-							context->ptr_rule->action = (FWP_ACTION_TYPE)_r_combobox_getitemlparam (
-								hpage_general,
-								IDC_RULE_ACTION_ID,
-								_r_combobox_getcurrentitem (hpage_general, IDC_RULE_ACTION_ID)
-							);
+							context->ptr_rule->direction = (FWP_DIRECTION)_r_combobox_getitemlparam (hpage_general, IDC_RULE_DIRECTION_ID, item_id);
+
+							item_id = _r_combobox_getcurrentitem (hpage_general, IDC_RULE_ACTION_ID);
+
+							context->ptr_rule->action = (FWP_ACTION_TYPE)_r_combobox_getitemlparam (hpage_general, IDC_RULE_ACTION_ID, item_id);
 
 							if (context->ptr_rule->type == DATA_RULE_USER)
 							{
@@ -1989,7 +1975,6 @@ INT_PTR CALLBACK EditorProc (
 				case IDC_CLOSE:
 				{
 					EndDialog (hwnd, FALSE);
-
 					break;
 				}
 			}
