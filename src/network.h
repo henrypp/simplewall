@@ -76,6 +76,6 @@ VOID _app_network_removeitem (
 	_In_ ULONG_PTR network_hash
 );
 
-NTSTATUS NTAPI _app_network_threadproc (
+VOID NTAPI _app_network_threadproc (
 	_In_ PVOID arglist
 );

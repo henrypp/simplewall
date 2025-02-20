@@ -225,7 +225,7 @@ PR_STRING _app_resolveaddress_interlocked (
 
 VOID _app_fileloggingenable ();
 
-NTSTATUS NTAPI _app_timercallback (
+VOID NTAPI _app_timercallback (
 	_In_opt_ PVOID context
 );
 

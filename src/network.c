@@ -745,7 +745,7 @@ VOID _app_network_removeitem (
 	_r_queuedlock_releaseexclusive (&network_context->lock_network);
 }
 
-NTSTATUS NTAPI _app_network_threadproc (
+VOID NTAPI _app_network_threadproc (
 	_In_ PVOID arglist
 )
 {
@@ -763,6 +763,4 @@ NTSTATUS NTAPI _app_network_threadproc (
 	}
 
 	_app_network_uninitialize (network_context);
-
-	return STATUS_SUCCESS;
 }

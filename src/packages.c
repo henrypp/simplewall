@@ -270,7 +270,7 @@ CleanupExit:
 		NtClose (hsubkey);
 }
 
-NTSTATUS NTAPI _app_package_threadproc (
+VOID NTAPI _app_package_threadproc (
 	_In_ PVOID arglist
 )
 {
@@ -295,7 +295,7 @@ NTSTATUS NTAPI _app_package_threadproc (
 	{
 		_r_show_errormessage (hwnd, NULL, status, L"NtCreateEvent", ET_NATIVE);
 
-		return status;
+		return;
 	}
 
 	status = NtCreateEvent (&event_handle2, EVENT_ALL_ACCESS, NULL, NotificationEvent, FALSE);
@@ -304,7 +304,7 @@ NTSTATUS NTAPI _app_package_threadproc (
 	{
 		_r_show_errormessage (hwnd, NULL, status, L"NtCreateEvent", ET_NATIVE);
 
-		return status;
+		return;
 	}
 
 	hevents[0] = event_handle1;
@@ -404,8 +404,6 @@ NTSTATUS NTAPI _app_package_threadproc (
 
 	NtClose (event_handle1);
 	NtClose (event_handle2);
-
-	return STATUS_SUCCESS;
 }
 
 VOID _app_package_getpackageslist (

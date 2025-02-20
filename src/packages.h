@@ -24,7 +24,7 @@ VOID _app_package_getpackagebysid (
 	_In_ PR_STRING key_name
 );
 
-NTSTATUS NTAPI _app_package_threadproc (
+VOID NTAPI _app_package_threadproc (
 	_In_ PVOID arglist
 );
 

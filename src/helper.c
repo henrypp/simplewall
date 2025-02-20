@@ -1701,7 +1701,7 @@ VOID _app_fileloggingenable ()
 	}
 }
 
-NTSTATUS NTAPI _app_timercallback (
+VOID NTAPI _app_timercallback (
 	_In_opt_ PVOID context
 )
 {
@@ -1745,8 +1745,6 @@ NTSTATUS NTAPI _app_timercallback (
 
 		_r_sys_waitforsingleobject (NtCurrentThread (), _r_calc_minutes2milliseconds (10));
 	}
-
-	return STATUS_SUCCESS;
 }
 
 VOID _app_getfileinformation (
