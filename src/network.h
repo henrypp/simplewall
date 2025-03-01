@@ -1,9 +1,7 @@
 // simplewall
-// Copyright (c) 2019-2024 Henry++
+// Copyright (c) 2019-2025 Henry++
 
 #pragma once
-
-#define NETWORK_TIMEOUT 3500
 
 typedef struct _ITEM_NETWORK_CONTEXT
 {

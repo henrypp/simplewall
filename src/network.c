@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2019-2024 Henry++
+// Copyright (c) 2019-2025 Henry++
 
 #include "global.h"
 
@@ -53,7 +53,7 @@ VOID _app_network_initialize (
 	// create network monitor thread
 	_r_sys_setenvironment (&environment, THREAD_PRIORITY_ABOVE_NORMAL, IoPriorityNormal, MEMORY_PRIORITY_NORMAL);
 
-	_r_sys_createthread (NULL, NtCurrentProcess (), &_app_network_threadproc, network_context, &environment, L"NetMonitor");
+	_r_sys_createthread (NULL, NtCurrentProcess (), &_app_network_threadproc, network_context, &environment, L"NetworkMonitor");
 }
 
 VOID _app_network_uninitialize (
@@ -73,13 +73,13 @@ VOID _app_network_generatetable (
 	_Inout_ PITEM_NETWORK_CONTEXT network_context
 )
 {
-	PITEM_NETWORK ptr_network;
-	IN_ADDR remote_addr;
-	IN_ADDR local_addr;
 	PMIB_TCPTABLE_OWNER_MODULE tcp4_table;
 	PMIB_TCP6TABLE_OWNER_MODULE tcp6_table;
 	PMIB_UDPTABLE_OWNER_MODULE udp4_table;
 	PMIB_UDP6TABLE_OWNER_MODULE udp6_table;
+	PITEM_NETWORK ptr_network;
+	IN_ADDR remote_addr;
+	IN_ADDR local_addr;
 	ULONG_PTR network_hash;
 	PVOID buffer;
 	ULONG allocated_size;
@@ -503,7 +503,7 @@ BOOLEAN _app_network_getpath (
 
 	if (modules)
 	{
-		process_name = _r_sys_querytaginformation (UlongToHandle (pid), UlongToPtr (*(PULONG)modules));
+		process_name = _r_sys_querytaginformation (pid, ULongToPtr (*(PULONG)modules));
 
 		if (process_name)
 			ptr_network->type = DATA_APP_SERVICE;
@@ -511,7 +511,7 @@ BOOLEAN _app_network_getpath (
 
 	if (!process_name)
 	{
-		status = _r_sys_openprocess (ULongToHandle (pid), PROCESS_QUERY_LIMITED_INFORMATION, &hprocess);
+		status = _r_sys_openprocess (pid, PROCESS_QUERY_LIMITED_INFORMATION, &hprocess);
 
 		if (NT_SUCCESS (status))
 		{
@@ -663,9 +663,9 @@ VOID _app_network_printlistviewtable (
 {
 	PITEM_NETWORK ptr_network = NULL;
 	PR_STRING string;
-	ULONG_PTR app_hash;
 	ULONG_PTR network_hash;
 	ULONG_PTR enum_key = 0;
+	ULONG_PTR app_hash;
 	INT item_count;
 	BOOLEAN is_highlight = FALSE;
 	BOOLEAN is_refresh = FALSE;
@@ -759,7 +759,7 @@ VOID NTAPI _app_network_threadproc (
 		_app_network_generatetable (network_context);
 		_app_network_printlistviewtable (network_context);
 
-		_r_sys_waitforsingleobject (NtCurrentThread (), NETWORK_TIMEOUT);
+		_r_sys_waitforsingleobject (NtCurrentThread (), 3000);
 	}
 
 	_app_network_uninitialize (network_context);
