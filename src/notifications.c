@@ -925,7 +925,7 @@ INT_PTR CALLBACK NotificationProc (
 
 			_r_obj_dereference (ptr_log);
 
-			_r_theme_initialize (hwnd, _r_theme_isenabled ());
+			_r_theme_initialize (hwnd);
 
 			break;
 		}

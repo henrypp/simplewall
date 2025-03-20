@@ -453,8 +453,7 @@ ULONG_PTR _app_network_gethash (
 		_app_formatip (af, local_addr, local_address, RTL_NUMBER_OF (local_address), FALSE);
 
 	network_string = _r_format_string (
-		L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) \
-		L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG),
+		L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG),
 		af,
 		pid,
 		remote_address,

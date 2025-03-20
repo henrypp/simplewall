@@ -272,7 +272,7 @@ INT_PTR CALLBACK EditorRuleProc (
 			// enable save button
 			_r_ctrl_enable (hwnd, IDC_SAVE, _r_ctrl_getstringlength (hwnd, IDC_RULE_ID) != 0);
 
-			_r_theme_initialize (hwnd, _r_theme_isenabled ());
+			_r_theme_initialize (hwnd);
 
 			SetFocus (NULL);
 
@@ -1218,8 +1218,8 @@ INT_PTR CALLBACK EditorPagesProc (
 
 		case WM_COMMAND:
 		{
-			INT ctrl_id = LOWORD (wparam);
 			INT notify_code = HIWORD (wparam);
+			INT ctrl_id = LOWORD (wparam);
 
 			if (notify_code == EN_MAXTEXT)
 			{
@@ -1234,7 +1234,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				if (ctrl_id == IDC_RULE_NAME_ID)
 				{
-					_r_ctrl_enable (GetParent (hwnd), IDC_SAVE, _r_ctrl_getstringlength (hwnd, ctrl_id) != 0); // // enable apply button
+					_r_ctrl_enable (GetParent (hwnd), IDC_SAVE, _r_ctrl_getstringlength (hwnd, ctrl_id) != 0); // enable apply button
 					break;
 				}
 
@@ -1605,7 +1605,7 @@ INT_PTR CALLBACK EditorProc (
 
 			_r_tab_selectitem (hwnd, IDC_TAB, _r_calc_clamp (context->page_id, 0, _r_tab_getitemcount (hwnd, IDC_TAB)));
 
-			_r_theme_initialize (hwnd, _r_theme_isenabled ());
+			_r_theme_initialize (hwnd);
 
 			break;
 		}

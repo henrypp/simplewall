@@ -1571,7 +1571,7 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_LOGPATH_BTN:
 				{
-					static COMDLG_FILTERSPEC filters[] = {
+					COMDLG_FILTERSPEC filters[] = {
 						L"Log files (*.log, *.csv)", L"*.log;*.csv",
 						L"All files (*.*)", L"*.*",
 					};
@@ -1590,7 +1590,7 @@ INT_PTR CALLBACK SettingsProc (
 
 						if (path)
 						{
-							_r_filedialog_setpath (&file_dialog, path->buffer);
+							_r_filedialog_setpath (&file_dialog, &path->sr);
 
 							_r_obj_dereference (path);
 						}
@@ -1658,7 +1658,7 @@ INT_PTR CALLBACK SettingsProc (
 
 						if (path)
 						{
-							_r_filedialog_setpath (&file_dialog, path->buffer);
+							_r_filedialog_setpath (&file_dialog, &path->sr);
 
 							_r_obj_dereference (path);
 						}
@@ -3143,12 +3143,13 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_IMPORT:
 				{
-					static COMDLG_FILTERSPEC filters[] = {
+					COMDLG_FILTERSPEC filters[] = {
 						L"Profile files (*.xml)", L"*.xml",
 						L"All files (*.*)", L"*.*",
 					};
 
 					R_FILE_DIALOG file_dialog;
+					R_STRINGREF sr;
 					PR_STRING path;
 					HRESULT status;
 
@@ -3156,8 +3157,10 @@ INT_PTR CALLBACK DlgProc (
 
 					if (SUCCEEDED (status))
 					{
+						_r_obj_initializestringref (&sr, XML_PROFILE_FILE);
+
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
-						_r_filedialog_setpath (&file_dialog, XML_PROFILE_FILE);
+						_r_filedialog_setpath (&file_dialog, &sr);
 
 						status = _r_filedialog_show (hwnd, &file_dialog);
 
@@ -3188,12 +3191,13 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_EXPORT:
 				{
-					static COMDLG_FILTERSPEC filters[] = {
+					COMDLG_FILTERSPEC filters[] = {
 						L"Profile files (*.xml)", L"*.xml",
 						L"All files (*.*)", L"*.*",
 					};
 
 					R_FILE_DIALOG file_dialog;
+					R_STRINGREF sr;
 					PR_STRING path;
 					NTSTATUS status;
 
@@ -3201,8 +3205,10 @@ INT_PTR CALLBACK DlgProc (
 
 					if (SUCCEEDED (status))
 					{
+						_r_obj_initializestringref (&sr, XML_PROFILE_FILE);
+
 						_r_filedialog_setfilter (&file_dialog, filters, RTL_NUMBER_OF (filters));
-						_r_filedialog_setpath (&file_dialog, XML_PROFILE_FILE);
+						_r_filedialog_setpath (&file_dialog, &sr);
 
 						status = _r_filedialog_show (hwnd, &file_dialog);
 
@@ -3613,7 +3619,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_ADD_FILE:
 				{
-					static COMDLG_FILTERSPEC filters[] = {
+					COMDLG_FILTERSPEC filters[] = {
 						L"Executable files (*.exe)", L"*.exe",
 						L"All files (*.*)", L"*.*",
 					};
