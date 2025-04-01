@@ -1,3 +1,9 @@
+v3.8.6 (1 April 2025)
+- fixed check for update, does not bring up popup (issue #1923)
+- fixed memory heap error (issue #1945)
+- fixed possible crash
+- improved dark theme support
+
 v3.8.5 (27 November 2024)
 - fixed adding apps with drive letters instead of specific apps (issue #1887)
 - fixed creating rules for inaccessible paths (issue #1891)
