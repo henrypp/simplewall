@@ -816,6 +816,8 @@ BEGIN
 	IDS_USEDARKTHEME "Use dark theme"
 
 	IDS_KEEPUNUSED_CHK "Keep unused apps"
+
+	IDS_UPDATE_SPEED "Speed"
 END
 
 //
