@@ -54,7 +54,7 @@ VOID _app_search_initializeimages (
 
 VOID _app_search_themechanged (
 	_In_ HWND hwnd,
-	_In_ PSEARCH_CONTEXT context
+	_Inout_ PSEARCH_CONTEXT context
 );
 
 VOID _app_search_setvisible (

@@ -56,7 +56,7 @@ VOID _app_search_create (
 
 	// Subclass the Edit control window procedure.
 	context->wnd_proc = (WNDPROC)GetWindowLongPtrW (context->hwnd, GWLP_WNDPROC);
-	SetWindowLongPtrW (context->hwnd, GWLP_WNDPROC, (LONG_PTR)_app_search_subclass_proc);
+	SetWindowLongPtrW (context->hwnd, GWLP_WNDPROC, (LONG_PTR)&_app_search_subclass_proc);
 
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s...", _r_locale_getstring (IDS_FIND));
 
@@ -126,7 +126,7 @@ VOID _app_search_initializeimages (
 
 VOID _app_search_themechanged (
 	_In_ HWND hwnd,
-	_In_ PSEARCH_CONTEXT context
+	_Inout_ PSEARCH_CONTEXT context
 )
 {
 	_app_search_initialize (context);
@@ -643,7 +643,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 	context = _r_wnd_getcontext (hwnd, SHORT_MAX);
 
 	if (!context)
-		return FALSE;
+		return 0;
 
 	wnd_proc = context->wnd_proc;
 
@@ -866,9 +866,9 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		case WM_SETTINGCHANGE:
 		case WM_SYSCOLORCHANGE:
 		case WM_THEMECHANGED:
-		case WM_DPICHANGED:
+		case WM_DPICHANGED_AFTERPARENT:
 		{
-			if (msg == WM_DPICHANGED)
+			if (msg == WM_DPICHANGED_AFTERPARENT)
 				context->dpi_value = _r_dc_getwindowdpi (context->hwnd);
 
 			_app_search_themechanged (hwnd, context);
@@ -900,10 +900,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			// Check that the mouse is within the inserted button.
 			if (!context->is_mouseactive)
 			{
-				tme.cbSize = sizeof (tme);
+				tme.cbSize = sizeof (TRACKMOUSEEVENT);
 				tme.dwFlags = TME_LEAVE;
 				tme.hwndTrack = hwnd;
-				tme.dwHoverTime = HOVER_DEFAULT;
+				tme.dwHoverTime = 0;
 
 				context->is_mouseactive = TRUE;
 
@@ -928,7 +928,7 @@ LRESULT CALLBACK _app_search_subclass_proc (
 				tme.cbSize = sizeof (TRACKMOUSEEVENT);
 				tme.dwFlags = TME_LEAVE | TME_CANCEL;
 				tme.hwndTrack = hwnd;
-				tme.dwHoverTime = HOVER_DEFAULT;
+				tme.dwHoverTime = 0;
 
 				TrackMouseEvent (&tme);
 

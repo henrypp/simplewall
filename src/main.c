@@ -3037,6 +3037,14 @@ INT_PTR CALLBACK DlgProc (
 				if (ctrl_id != IDC_SEARCH)
 					break;
 
+				if (!config.hrebar)
+				{
+					config.hrebar = GetDlgItem (hwnd, IDC_REBAR);
+
+					if (!config.hrebar)
+						return FALSE;
+				}
+
 				listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 				string = _r_ctrl_getstring (config.hrebar, IDC_SEARCH);
 
