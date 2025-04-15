@@ -1529,9 +1529,9 @@ BOOLEAN _app_isrulesupportedbyos (
 
 VOID _app_profile_initialize ()
 {
-	R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE);
-	R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE L".bak");
 	R_STRINGREF profile_internal_sr = PR_STRINGREF_INIT (XML_PROFILE_INTERNAL);
+	R_STRINGREF profile_bak_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE L".bak");
+	R_STRINGREF profile_sr = PR_STRINGREF_INIT (XML_PROFILE_FILE);
 	R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
 	PR_STRING path;
 

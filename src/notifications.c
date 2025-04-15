@@ -324,13 +324,12 @@ VOID _app_notify_show (
 	_In_ PITEM_LOG ptr_log
 )
 {
-	static R_STRINGREF loading_sr = PR_STRINGREF_INIT (SZ_LOADING);
-	static R_STRINGREF empty_sr = PR_STRINGREF_INIT (SZ_EMPTY);
-
-	WCHAR window_title[128];
-	PITEM_APP ptr_app;
+	R_STRINGREF loading_sr = PR_STRINGREF_INIT (SZ_LOADING);
+	R_STRINGREF empty_sr = PR_STRINGREF_INIT (SZ_EMPTY);
 	PR_STRING localized_string = NULL;
 	PR_STRING string = NULL;
+	WCHAR window_title[128];
+	PITEM_APP ptr_app;
 	HDWP hdefer;
 	BOOLEAN is_fullscreenmode;
 

@@ -546,15 +546,13 @@ BOOLEAN _app_isappvalidbinary (
 	_In_opt_ PR_STRING path
 )
 {
-	R_STRINGREF valid_exts = PR_STRINGREF_INIT (L".exe");
-
 	if (!path)
 		return FALSE;
 
 	if (!_app_isappvalidpath (path))
 		return FALSE;
 
-	if (_r_str_isendsswith (&path->sr, &valid_exts, TRUE))
+	if (_r_str_isendsswith2 (&path->sr, L".exe", TRUE))
 		return TRUE;
 
 	return FALSE;
