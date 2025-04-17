@@ -8,8 +8,6 @@ PITEM_TAB_CONTEXT _app_listview_getcontext (
 	_In_ INT tab_id
 )
 {
-	PITEM_TAB_CONTEXT context;
-
 	if (tab_id == INT_ERROR)
 	{
 		tab_id = _r_tab_getcurrentitem (hwnd, IDC_TAB);
@@ -18,9 +16,7 @@ PITEM_TAB_CONTEXT _app_listview_getcontext (
 			tab_id = 0;
 	}
 
-	context = (PITEM_TAB_CONTEXT)_r_tab_getitemlparam (hwnd, IDC_TAB, tab_id);
-
-	return context;
+	return (PITEM_TAB_CONTEXT)_r_tab_getitemlparam (hwnd, IDC_TAB, tab_id);;
 }
 
 _Success_ (return != 0)
