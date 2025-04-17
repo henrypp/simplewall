@@ -3031,35 +3031,31 @@ INT_PTR CALLBACK DlgProc (
 
 			if (notify_code == EN_CHANGE)
 			{
+				PITEM_TAB_CONTEXT context;
 				PR_STRING string;
-				INT listview_id;
 
 				if (ctrl_id != IDC_SEARCH)
 					break;
 
-				if (!config.hrebar)
-				{
-					config.hrebar = GetDlgItem (hwnd, IDC_REBAR);
+				context = _app_listview_getcontext (hwnd, INT_ERROR);
 
-					if (!config.hrebar)
-						return FALSE;
-				}
+				if (!context)
+					return 0;
 
-				listview_id = _app_listview_getcontext (hwnd, INT_ERROR)->listview_id;
 				string = _r_ctrl_getstring (config.hrebar, IDC_SEARCH);
 
 				_r_obj_movereference (&config.search_string, string);
 
-				_app_search_applyfilter (hwnd, listview_id, string);
+				_app_search_applyfilter (hwnd, context->listview_id, string);
 
-				return FALSE;
+				return 0;
 			}
 			else if (notify_code == 0)
 			{
 				if (ctrl_id >= IDX_LANGUAGE && ctrl_id <= IDX_LANGUAGE + (INT)(INT_PTR)_r_locale_getcount () + 1)
 				{
-					HMENU hmenu;
 					HMENU hsubmenu;
+					HMENU hmenu;
 
 					hmenu = GetMenu (hwnd);
 
@@ -3071,19 +3067,19 @@ INT_PTR CALLBACK DlgProc (
 							_r_locale_apply (hsubmenu, ctrl_id, IDX_LANGUAGE);
 					}
 
-					return FALSE;
+					return 0;
 				}
 				else if (ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= (IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list)))
 				{
 					_app_command_idtorules (hwnd, ctrl_id);
 
-					return FALSE;
+					return 0;
 				}
 				else if (ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
 				{
 					_app_command_idtotimers (hwnd, ctrl_id);
 
-					return FALSE;
+					return 0;
 				}
 			}
 
