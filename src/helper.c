@@ -532,7 +532,7 @@ BOOLEAN _app_isappsigned (
 	PR_STRING string = NULL;
 	BOOLEAN is_signed = FALSE;
 
-	if (_app_getappinfoparam2 (app_hash, 0, INFO_SIGNATURE_STRING, &string, sizeof (string)))
+	if (_app_getappinfoparam2 (app_hash, 0, INFO_SIGNATURE_STRING, &string, sizeof (PR_STRING)))
 	{
 		is_signed = !_r_obj_isstringempty2 (string);
 
@@ -1232,7 +1232,7 @@ VOID _app_generate_timerscontrol (
 
 	current_time = _r_unixtime_now ();
 
-	_app_getappinfobyhash (app_hash, INFO_TIMER, &app_time, sizeof (app_time));
+	_app_getappinfobyhash (app_hash, INFO_TIMER, &app_time, sizeof (LONG64));
 
 	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (timer_array); i++)
 	{
@@ -1848,10 +1848,7 @@ VOID NTAPI _app_queue_fileinformation (
 
 	// redraw listview
 	if (_r_wnd_isvisible (hwnd, FALSE))
-	{
-		if (ptr_app_info->listview_id == _app_listview_getcontext (hwnd, INT_ERROR)->listview_id)
-			_r_listview_redraw (hwnd, ptr_app_info->listview_id);
-	}
+		_r_listview_redraw (hwnd, ptr_app_info->listview_id);
 
 	ptr_app_info->is_loaded = TRUE;
 
@@ -2038,10 +2035,7 @@ VOID NTAPI _app_queue_resolveinformation (
 
 	// redraw listview
 	if (_r_wnd_isvisible (context->hwnd, FALSE))
-	{
-		if (_app_listview_getcontext (context->hwnd, INT_ERROR)->listview_id == context->listview_id)
-			_r_listview_redraw (context->hwnd, context->listview_id);
-	}
+		_r_listview_redraw (context->hwnd, context->listview_id);
 
 	_r_obj_dereference (context->base_address);
 

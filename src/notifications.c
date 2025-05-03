@@ -627,13 +627,13 @@ VOID _app_notify_setposition (
 
 	if (is_intray)
 	{
-		monitor_info.cbSize = sizeof (monitor_info);
+		monitor_info.cbSize = sizeof (MONITORINFO);
 
 		hmonitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONEAREST);
 
 		if (GetMonitorInfoW (hmonitor, &monitor_info))
 		{
-			taskbar_rect.cbSize = sizeof (taskbar_rect);
+			taskbar_rect.cbSize = sizeof (APPBARDATA);
 
 			if (SHAppBarMessage (ABM_GETTASKBARPOS, &taskbar_rect))
 			{
@@ -1232,7 +1232,7 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						app_hash = _app_notify_getapp_id (hwnd);
 
-						if (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id)))
+						if (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID, &listview_id, sizeof (INT)))
 						{
 							string = _app_gettooltipbylparam (_r_app_gethwnd (), listview_id, app_hash);
 

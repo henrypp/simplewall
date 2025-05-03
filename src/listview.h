@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #pragma once
 
@@ -25,6 +25,7 @@ typedef struct _ITEM_LISTVIEW_CONTEXT
 #define PR_UPDATE_NOREDRAW 0x0020
 #define PR_UPDATE_NOSETVIEW 0x0040
 
+_Ret_maybenull_
 PITEM_TAB_CONTEXT _app_listview_getcontext (
 	_In_ HWND hwnd,
 	_In_ INT tab_id

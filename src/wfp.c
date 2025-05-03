@@ -90,7 +90,7 @@ HANDLE _wfp_getenginehandle ()
 
 		do
 		{
-			RtlZeroMemory (&session, sizeof (session));
+			RtlZeroMemory (&session, sizeof (FWPM_SESSION0));
 
 			session.displayData.name = _r_app_getname ();
 			session.displayData.description = _r_app_getname ();
@@ -244,7 +244,7 @@ BOOLEAN _wfp_initialize (
 		if (!is_providerexist)
 		{
 			// create provider
-			RtlZeroMemory (&provider, sizeof (provider));
+			RtlZeroMemory (&provider, sizeof (FWPM_PROVIDER0));
 
 			provider.displayData.name = _r_app_getname ();
 			provider.displayData.description = _r_app_getname ();
@@ -280,7 +280,7 @@ BOOLEAN _wfp_initialize (
 		if (!is_sublayerexist)
 		{
 			// create sublayer
-			RtlZeroMemory (&sublayer, sizeof (sublayer));
+			RtlZeroMemory (&sublayer, sizeof (FWPM_SUBLAYER0));
 
 			sublayer.displayData.name = _r_app_getname ();
 			sublayer.displayData.description = _r_app_getname ();
@@ -352,7 +352,7 @@ BOOLEAN _wfp_initialize (
 		}
 		else
 		{
-			RtlZeroMemory (&val, sizeof (val));
+			RtlZeroMemory (&val, sizeof (FWP_VALUE0));
 
 			val.type = FWP_UINT32;
 			val.uint32 = TRUE;
@@ -386,7 +386,7 @@ BOOLEAN _wfp_initialize (
 			// when enabled, the system is able to evenly distribute cpu load
 			// to multiple cpus for site-to-site ipsec tunnel scenarios.
 
-			RtlZeroMemory (&val, sizeof (val));
+			RtlZeroMemory (&val, sizeof (FWP_VALUE0));
 
 			val.type = FWP_UINT32;
 			val.uint32 = FWPM_ENGINE_OPTION_PACKET_QUEUE_INBOUND | FWPM_ENGINE_OPTION_PACKET_QUEUE_FORWARD;
@@ -425,7 +425,7 @@ VOID _wfp_uninitialize (
 
 	if (!config.is_neteventenabled && config.is_neteventset)
 	{
-		RtlZeroMemory (&val, sizeof (val));
+		RtlZeroMemory (&val, sizeof (FWP_VALUE0));
 
 		val.type = FWP_UINT32;
 		val.uint32 = FALSE;

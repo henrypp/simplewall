@@ -455,7 +455,7 @@ VOID _app_settab_id (
 	_In_ INT page_id
 )
 {
-	PITEM_TAB_CONTEXT context;
+	PITEM_TAB_CONTEXT tab_context;
 	HWND hctrl;
 
 	if (!page_id)
@@ -463,14 +463,19 @@ VOID _app_settab_id (
 
 	hctrl = GetDlgItem (hwnd, page_id);
 
-	if (!hctrl || (_app_listview_getcontext (hwnd, INT_ERROR)->listview_id == page_id && _r_wnd_isvisible (hctrl, FALSE)))
+	if (!hctrl)
+		return;
+
+	tab_context = _app_listview_getcontext (hwnd, INT_ERROR);
+
+	if (!tab_context || (tab_context->listview_id == page_id && _r_wnd_isvisible (hctrl, FALSE)))
 		return;
 
 	for (INT i = 0; i < _r_tab_getitemcount (hwnd, IDC_TAB); i++)
 	{
-		context = _app_listview_getcontext (hwnd, i);
+		tab_context = _app_listview_getcontext (hwnd, i);
 
-		if (context->listview_id == page_id)
+		if (tab_context && tab_context->listview_id == page_id)
 		{
 			_r_tab_selectitem (hwnd, IDC_TAB, i);
 
@@ -825,7 +830,7 @@ VOID _app_windowloadfont (
 {
 	NONCLIENTMETRICS ncm = {0};
 
-	ncm.cbSize = sizeof (ncm);
+	ncm.cbSize = sizeof (NONCLIENTMETRICS);
 
 	if (!_r_dc_getsystemparametersinfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, dpi_value))
 		return;
@@ -948,9 +953,9 @@ VOID _app_toolbar_resize (
 
 	for (UINT i = 0; i < rebar_count; i++)
 	{
-		RtlZeroMemory (&rbi, sizeof (rbi));
+		RtlZeroMemory (&rbi, sizeof (REBARBANDINFOW));
 
-		rbi.cbSize = sizeof (rbi);
+		rbi.cbSize = sizeof (REBARBANDINFOW);
 		rbi.fMask = RBBIM_ID | RBBIM_CHILD | RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
 
 		if (!_r_wnd_sendmessage (config.hrebar, 0, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rbi))
@@ -1006,7 +1011,7 @@ VOID _app_window_resize (
 )
 {
 	PITEM_TAB_CONTEXT new_context;
-	PITEM_TAB_CONTEXT context;
+	PITEM_TAB_CONTEXT tab_context;
 	HDWP hdefer;
 	LONG statusbar_height;
 	LONG rebar_height;
@@ -1016,7 +1021,10 @@ VOID _app_window_resize (
 	_r_wnd_sendmessage (config.hrebar, 0, WM_SIZE, 0, 0);
 	_r_wnd_sendmessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
-	context = _app_listview_getcontext (hwnd, INT_ERROR);
+	tab_context = _app_listview_getcontext (hwnd, INT_ERROR);
+
+	if (!tab_context)
+		return;
 
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
 	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
@@ -1054,9 +1062,12 @@ VOID _app_window_resize (
 	{
 		new_context = _app_listview_getcontext (hwnd, i);
 
+		if (!new_context)
+			continue;
+
 		_r_tab_adjustchild (hwnd, IDC_TAB, GetDlgItem (hwnd, new_context->listview_id));
 
-		if (new_context->listview_id == context->listview_id)
+		if (new_context->listview_id == tab_context->listview_id)
 			_app_listview_resize (hwnd, new_context->listview_id, FALSE);
 	}
 

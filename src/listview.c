@@ -1,8 +1,9 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
+_Ret_maybenull_
 PITEM_TAB_CONTEXT _app_listview_getcontext (
 	_In_ HWND hwnd,
 	_In_ INT tab_id
@@ -413,26 +414,32 @@ VOID _app_listview_showitemby_param (
 	_In_ BOOLEAN is_app
 )
 {
+	PITEM_TAB_CONTEXT tab_context;
 	INT listview_id = 0;
 	INT item_id;
 
 	if (is_app)
 	{
-		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (INT));
 	}
 	else
 	{
-		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (INT));
 	}
 
 	if (!listview_id)
 		return;
 
-	if (listview_id != _app_listview_getcontext (hwnd, INT_ERROR)->listview_id)
-	{
-		_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
+	tab_context = _app_listview_getcontext (hwnd, INT_ERROR);
 
-		_app_listview_resize (hwnd, listview_id, FALSE);
+	if (tab_context)
+	{
+		if (listview_id != tab_context->listview_id)
+		{
+			_app_listview_sort (hwnd, listview_id, INT_ERROR, FALSE);
+
+			_app_listview_resize (hwnd, listview_id, FALSE);
+		}
 	}
 
 	item_id = _app_listview_finditem (hwnd, listview_id, lparam);
@@ -451,11 +458,14 @@ VOID _app_listview_updateby_id (
 	_In_ ULONG flags
 )
 {
-	PITEM_TAB_CONTEXT context;
+	PITEM_TAB_CONTEXT tab_context;
 	ENUM_TYPE_DATA type;
 	INT listview_id;
 
-	context = _app_listview_getcontext (hwnd, INT_ERROR);
+	tab_context = _app_listview_getcontext (hwnd, INT_ERROR);
+
+	if (!tab_context)
+		return;
 
 	if (flags & PR_UPDATE_TYPE)
 	{
@@ -463,7 +473,7 @@ VOID _app_listview_updateby_id (
 
 		if (type == DATA_LISTVIEW_CURRENT)
 		{
-			listview_id = context->listview_id;
+			listview_id = tab_context->listview_id;
 		}
 		else
 		{
@@ -475,7 +485,7 @@ VOID _app_listview_updateby_id (
 		listview_id = lparam;
 	}
 
-	if ((flags & PR_UPDATE_FORCE) || (listview_id == context->listview_id))
+	if ((flags & PR_UPDATE_FORCE) || (listview_id == tab_context->listview_id))
 	{
 		if (!(flags & PR_UPDATE_NOREDRAW))
 			_r_listview_redraw (hwnd, listview_id);
@@ -507,15 +517,16 @@ VOID _app_listview_updateby_param (
 	_In_ BOOLEAN is_app
 )
 {
+	PITEM_TAB_CONTEXT tab_context;
 	INT listview_id = 0;
 
 	if (is_app)
 	{
-		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (INT));
 	}
 	else
 	{
-		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (INT));
 	}
 
 	if (!listview_id)
@@ -526,8 +537,13 @@ VOID _app_listview_updateby_param (
 
 	if ((flags & PR_SETITEM_REDRAW))
 	{
-		if (listview_id == _app_listview_getcontext (hwnd, INT_ERROR)->listview_id)
-			_r_listview_redraw (hwnd, listview_id);
+		tab_context = _app_listview_getcontext (hwnd, INT_ERROR);
+
+		if (tab_context)
+		{
+			if (listview_id == tab_context->listview_id)
+				_r_listview_redraw (hwnd, listview_id);
+		}
 	}
 }
 
@@ -544,11 +560,11 @@ VOID _app_listview_updateitemby_param (
 
 	if (is_app)
 	{
-		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
+		_app_getappinfobyhash (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (INT));
 	}
 	else
 	{
-		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (listview_id));
+		_app_getruleinfobyid (lparam, INFO_LISTVIEW_ID, &listview_id, sizeof (INT));
 	}
 
 	if (!listview_id)
@@ -1034,8 +1050,8 @@ INT CALLBACK _app_listview_compare_callback (
 		// timestamp sorting
 		if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP) && column_id == 1)
 		{
-			is_success1 = _app_getappinfobyhash (context1, INFO_TIMESTAMP, &timestamp1, sizeof (timestamp1));
-			is_success2 = _app_getappinfobyhash (context2, INFO_TIMESTAMP, &timestamp2, sizeof (timestamp2));
+			is_success1 = _app_getappinfobyhash (context1, INFO_TIMESTAMP, &timestamp1, sizeof (LONG64));
+			is_success2 = _app_getappinfobyhash (context2, INFO_TIMESTAMP, &timestamp2, sizeof (LONG64));
 
 			if (is_success1 && is_success2)
 			{

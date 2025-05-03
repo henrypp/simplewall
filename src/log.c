@@ -493,7 +493,7 @@ VOID _wfp_logsetoption (
 	}
 
 	// the filter engine will collect wfp network events that match any supplied key words
-	RtlZeroMemory (&val, sizeof (val));
+	RtlZeroMemory (&val, sizeof (FWP_VALUE0));
 
 	val.type = FWP_UINT32;
 	val.uint32 = mask;
@@ -504,7 +504,7 @@ VOID _wfp_logsetoption (
 		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", status, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
 
 	// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
-	RtlZeroMemory (&val, sizeof (val));
+	RtlZeroMemory (&val, sizeof (FWP_VALUE0));
 
 	val.type = FWP_UINT32;
 	val.uint32 = !_r_config_getboolean (L"IsExcludeIPSecConnections", FALSE, NULL);
@@ -801,7 +801,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 
 			log->flags = evt->header.flags;
 
-			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
+			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (FILETIME));
 
 			if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 				log->app_id = evt->header.appId.data;
@@ -913,7 +913,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 
 			log->flags = evt->header.flags;
 
-			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
+			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (FILETIME));
 
 			if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 				log->app_id = evt->header.appId.data;
@@ -1025,7 +1025,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 
 			log->flags = evt->header.flags;
 
-			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
+			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (FILETIME));
 
 			if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 				log->app_id = evt->header.appId.data;
@@ -1137,7 +1137,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 
 			log->flags = evt->header.flags;
 
-			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
+			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (FILETIME));
 
 			if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 				log->app_id = evt->header.appId.data;
@@ -1233,7 +1233,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 
 			log->flags = evt->header.flags;
 
-			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (log->timestamp));
+			RtlCopyMemory (&log->timestamp, &evt->header.timeStamp, sizeof (FILETIME));
 
 			if (evt->header.flags & FWPM_NET_EVENT_FLAG_APP_ID_SET)
 				log->app_id = evt->header.appId.data;
@@ -1420,7 +1420,7 @@ VOID NTAPI _app_logthread (
 			{
 				if (ptr_app && !ptr_log->is_allow && is_exludeblocklist)
 				{
-					if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_silent, sizeof (is_silent)))
+					if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_silent, sizeof (BOOLEAN)))
 					{
 						if (!is_silent)
 							_app_notify_addobject (hwnd, ptr_log, ptr_app);
