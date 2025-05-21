@@ -1,3 +1,8 @@
+v3.8.6.1 (21 May 2025)
+- fixed "open containing folder" error (issue #1977)
+- fixed crash at startup (issue #1979)
+- fixed crash dump (issue #1958)
+
 v3.8.6 (1 April 2025)
 - fixed check for update, does not bring up popup (issue #1923)
 - fixed memory heap error (issue #1945)
