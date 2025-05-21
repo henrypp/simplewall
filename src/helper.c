@@ -1054,8 +1054,14 @@ VOID _app_getfileversioninfo (
 
 	_r_str_trimstring2 (&version_string->sr, DIVIDER_TRIM, 0);
 
-	if (_r_obj_isstringempty2 (version_string))
-		_r_obj_clearreference (&version_string);
+	__try
+	{
+		if (_r_obj_isstringempty2 (version_string))
+			_r_obj_clearreference (&version_string);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+	}
 
 CleanupExit:
 
