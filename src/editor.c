@@ -808,7 +808,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 					_app_listview_lock (hwnd, IDC_APP_RULES_ID, TRUE);
 
-					_r_listview_additem (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (i));
+					_r_listview_additem (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext ((ULONG)i));
 
 					_r_listview_setitemcheck (hwnd, IDC_APP_RULES_ID, 0, is_enabled);
 
@@ -1748,9 +1748,9 @@ INT_PTR CALLBACK EditorProc (
 					PR_STRING string;
 					PR_LIST rules = NULL;
 					HANDLE hengine;
-					ULONG_PTR app_hash;
 					PITEM_RULE ptr_rule;
 					ULONG_PTR rule_idx;
+					ULONG app_hash;
 					INT listview_id;
 					INT item_id;
 					BOOLEAN is_enable;
@@ -1858,7 +1858,7 @@ INT_PTR CALLBACK EditorProc (
 								if (!_r_listview_isitemchecked (hpage_apps, IDC_RULE_APPS_ID, i))
 									continue;
 
-								app_hash = _app_listview_getitemcontext (hpage_apps, IDC_RULE_APPS_ID, i);
+								app_hash = (ULONG)_app_listview_getitemcontext (hpage_apps, IDC_RULE_APPS_ID, i);
 
 								if (context->ptr_rule->is_forservices && _app_issystemhash (app_hash))
 									continue;
@@ -1873,7 +1873,7 @@ INT_PTR CALLBACK EditorProc (
 
 						rules = _r_obj_createlist (1, NULL);
 
-						_r_obj_addlistitem (rules, context->ptr_rule);
+						_r_obj_addlistitem (rules, context->ptr_rule, NULL);
 					}
 					else
 					{
@@ -1882,7 +1882,7 @@ INT_PTR CALLBACK EditorProc (
 
 						rules = _r_obj_createlist (1, NULL);
 
-						_r_obj_addlistitem (rules, context->ptr_app);
+						_r_obj_addlistitem (rules, context->ptr_app, NULL);
 
 						// comment
 						string = _r_ctrl_getstring (hpage_general, IDC_APP_COMMENT_ID);

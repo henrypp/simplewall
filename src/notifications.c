@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
@@ -72,7 +72,7 @@ BOOLEAN _app_notify_command (
 	PITEM_APP ptr_app;
 	PR_LIST rules;
 	HANDLE hengine;
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 
 	app_hash = _app_notify_getapp_id (hwnd);
 	ptr_app = _app_getappitem (app_hash);
@@ -98,7 +98,7 @@ BOOLEAN _app_notify_command (
 			_app_listview_updateitemby_param (_r_app_gethwnd (), app_hash, TRUE);
 		}
 
-		_r_obj_addlistitem (rules, ptr_app);
+		_r_obj_addlistitem (rules, ptr_app, NULL);
 	}
 	else if (button_id == IDC_NEXT_BTN)
 	{
@@ -195,7 +195,7 @@ VOID _app_notify_freeobject (
 
 _Ret_maybenull_
 PITEM_LOG _app_notify_getobject (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	PITEM_APP ptr_app;
@@ -228,7 +228,7 @@ HICON _app_notify_getapp_icon (
 	return context->hicon;
 }
 
-ULONG_PTR _app_notify_getapp_id (
+ULONG _app_notify_getapp_id (
 	_In_ HWND hwnd
 )
 {
@@ -242,14 +242,14 @@ ULONG_PTR _app_notify_getapp_id (
 	return context->app_hash;
 }
 
-ULONG_PTR _app_notify_getnextapp_id (
+ULONG _app_notify_getnextapp_id (
 	_In_ HWND hwnd
 )
 {
 	PNOTIFY_CONTEXT context;
 	PITEM_APP ptr_app = NULL;
 	ULONG_PTR enum_key = 0;
-	ULONG_PTR app_hash = 0;
+	ULONG app_hash = 0;
 
 	context = _app_notify_getcontext (hwnd);
 
@@ -306,7 +306,7 @@ VOID _app_notify_setapp_icon (
 
 VOID _app_notify_setapp_id (
 	_In_ HWND hwnd,
-	_In_opt_ ULONG_PTR app_hash
+	_In_opt_ ULONG app_hash
 )
 {
 	PNOTIFY_CONTEXT context;
@@ -535,7 +535,7 @@ VOID _app_notify_killprocess (
 
 					if (NT_SUCCESS (status))
 					{
-						status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
+						status = _r_sys_terminateprocess (process_handle, STATUS_SUCCESS);
 
 						if (!NT_SUCCESS (status))
 							_r_show_errormessage (hwnd, L"Cannot terminate process!", status, process->ImageName.Buffer, ET_NATIVE);
@@ -568,7 +568,7 @@ VOID _app_notify_refresh (
 )
 {
 	PITEM_LOG ptr_log;
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 
 	if (!_r_wnd_isvisible (hwnd, TRUE))
 	{
@@ -1217,7 +1217,7 @@ INT_PTR CALLBACK NotificationProc (
 					LPNMTTDISPINFOW lpnmdi;
 					WCHAR buffer[1024] = {0};
 					PR_STRING string;
-					ULONG_PTR app_hash;
+					ULONG app_hash;
 					INT ctrl_id;
 					INT listview_id = 0;
 
@@ -1297,7 +1297,7 @@ INT_PTR CALLBACK NotificationProc (
 				PITEM_LOG ptr_log;
 				PR_STRING rule;
 				ULONG_PTR rule_idx;
-				ULONG_PTR app_hash;
+				ULONG app_hash;
 				BOOLEAN is_remove;
 
 				app_hash = _app_notify_getapp_id (hwnd);
@@ -1329,12 +1329,12 @@ INT_PTR CALLBACK NotificationProc (
 						_r_obj_dereference (rule);
 
 						_r_queuedlock_acquireexclusive (&lock_rules);
-						_r_obj_addlistitem_ex (rules_list, ptr_rule, &rule_idx);
+						_r_obj_addlistitem (rules_list, ptr_rule, &rule_idx);
 						_r_queuedlock_releaseexclusive (&lock_rules);
 
 						if (rule_idx != SIZE_MAX)
 						{
-							_app_listview_addruleitem (_r_app_gethwnd (), ptr_rule, rule_idx, TRUE);
+							_app_listview_addruleitem (_r_app_gethwnd (), ptr_rule, (ULONG)rule_idx, TRUE);
 							_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 							_app_profile_save (hwnd);
@@ -1375,7 +1375,7 @@ INT_PTR CALLBACK NotificationProc (
 
 						rules = _r_obj_createlist (1, NULL);
 
-						_r_obj_addlistitem (rules, ptr_rule);
+						_r_obj_addlistitem (rules, ptr_rule, NULL);
 
 						_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 
@@ -1418,7 +1418,7 @@ INT_PTR CALLBACK NotificationProc (
 
 				case IDC_FILE_TEXT:
 				{
-					ULONG_PTR app_hash;
+					ULONG app_hash;
 
 					app_hash = _app_notify_getapp_id (hwnd);
 
@@ -1432,7 +1432,7 @@ INT_PTR CALLBACK NotificationProc (
 				{
 					PEDITOR_CONTEXT context;
 					PITEM_APP ptr_app;
-					ULONG_PTR app_hash;
+					ULONG app_hash;
 
 					app_hash = _app_notify_getapp_id (hwnd);
 					ptr_app = _app_getappitem (app_hash);
@@ -1480,8 +1480,8 @@ INT_PTR CALLBACK NotificationProc (
 					PR_STRING app_name;
 					PR_STRING rule_name;
 					PR_STRING rule_string;
-					ULONG_PTR app_hash;
 					ULONG_PTR rule_idx;
+					ULONG app_hash;
 
 					app_hash = _app_notify_getapp_id (hwnd);
 					ptr_log = _app_notify_getobject (app_hash);
@@ -1516,7 +1516,7 @@ INT_PTR CALLBACK NotificationProc (
 					if (context)
 					{
 						_r_queuedlock_acquireexclusive (&lock_rules);
-						_r_obj_addlistitem_ex (rules_list, _r_obj_reference (ptr_rule), &rule_idx);
+						_r_obj_addlistitem (rules_list, _r_obj_reference (ptr_rule), &rule_idx);
 						_r_queuedlock_releaseexclusive (&lock_rules);
 
 						// set rule information

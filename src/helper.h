@@ -60,14 +60,14 @@ VOID NTAPI _app_dereferencerule (
 
 VOID _app_addcachetable (
 	_Inout_ PR_HASHTABLE hashtable,
-	_In_ ULONG_PTR hash_code,
+	_In_ ULONG hash_code,
 	_In_ PR_QUEUED_LOCK spin_lock,
 	_In_opt_ PR_STRING string
 );
 
 BOOLEAN _app_getcachetable (
 	_Inout_ PR_HASHTABLE cache_table,
-	_In_ ULONG_PTR hash_code,
+	_In_ ULONG hash_code,
 	_In_ PR_QUEUED_LOCK spin_lock,
 	_Out_ PR_STRING_PTR string
 );
@@ -108,12 +108,12 @@ PR_STRING _app_formatport (
 
 _Ret_maybenull_
 PITEM_APP_INFO _app_getappinfobyhash2 (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 _Success_ (return)
 BOOLEAN _app_getappinfoparam2 (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_opt_ INT listview_id,
 	_In_ ENUM_INFO_DATA2 info_data,
 	_Out_writes_bytes_all_ (length) PVOID buffer,
@@ -121,7 +121,7 @@ BOOLEAN _app_getappinfoparam2 (
 );
 
 BOOLEAN _app_isappsigned (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 BOOLEAN _app_isappvalidbinary (
@@ -156,32 +156,33 @@ VOID _app_getfileversioninfo (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 );
 
+_Ret_maybenull_
 PR_STRING _app_getfilehashinfo (
 	_In_ HANDLE hfile,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
-ULONG_PTR _app_addcolor (
-	_In_ UINT locale_id,
+ULONG _app_addcolor (
+	_In_ ULONG locale_id,
 	_In_ LPCWSTR config_name,
-	_In_ BOOLEAN is_enabled,
 	_In_ LPCWSTR config_value,
-	_In_ COLORREF default_clr
+	_In_ COLORREF default_clr,
+	_In_ BOOLEAN is_enabled
 );
 
 COLORREF _app_getcolorvalue (
-	_In_ ULONG_PTR color_hash
+	_In_ ULONG color_hash
 );
 
 VOID _app_generate_rulescontrol (
 	_In_ HMENU hsubmenu,
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_opt_ PITEM_LOG ptr_log
 );
 
 VOID _app_generate_timerscontrol (
 	_In_ HMENU hsubmenu,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 BOOLEAN _app_setruletoapp (
@@ -231,7 +232,7 @@ VOID NTAPI _app_timercallback (
 
 VOID _app_getfileinformation (
 	_In_ PR_STRING path,
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ ENUM_TYPE_DATA type,
 	_In_ INT listview_id
 );

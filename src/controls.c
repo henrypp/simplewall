@@ -1,11 +1,11 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
 VOID _app_getapptooltipstring (
 	_Inout_ PR_STRINGBUILDER buffer,
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_opt_ PITEM_NETWORK ptr_network,
 	_In_opt_ PITEM_LOG ptr_log
 )
@@ -313,7 +313,7 @@ PR_STRING _app_gettooltipbylparam (
 		case IDC_APPS_UWP:
 		case IDC_RULE_APPS_ID:
 		{
-			_app_getapptooltipstring (&sb, lparam, NULL, NULL);
+			_app_getapptooltipstring (&sb, (ULONG)lparam, NULL, NULL);
 			break;
 		}
 
@@ -413,7 +413,7 @@ PR_STRING _app_gettooltipbylparam (
 
 		case IDC_NETWORK:
 		{
-			ptr_network = _app_network_getitem (lparam);
+			ptr_network = _app_network_getitem ((ULONG)lparam);
 
 			if (!ptr_network)
 				break;
@@ -427,7 +427,7 @@ PR_STRING _app_gettooltipbylparam (
 
 		case IDC_LOG:
 		{
-			ptr_log = _app_getlogitem (lparam);
+			ptr_log = _app_getlogitem ((ULONG)lparam);
 
 			if (!ptr_log)
 				break;

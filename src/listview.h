@@ -58,12 +58,12 @@ VOID _app_listview_addruleitem (
 
 VOID _app_listview_addnetworkitem (
 	_In_ HWND hwnd,
-	_In_ ULONG_PTR network_hash
+	_In_ ULONG network_hash
 );
 
 VOID _app_listview_addlogitem (
 	_In_ HWND hwnd,
-	_In_ ULONG_PTR log_hash
+	_In_ ULONG log_hash
 );
 
 BOOLEAN _app_listview_islocked (
@@ -77,7 +77,7 @@ VOID _app_listview_lock (
 	_In_ BOOLEAN is_lock
 );
 
-LPARAM _app_listview_createcontext (
+LONG_PTR _app_listview_createcontext (
 	_In_ ULONG_PTR id_code
 );
 
@@ -86,10 +86,11 @@ VOID _app_listview_destroycontext (
 );
 
 ULONG_PTR _app_listview_getcontextcode (
-	_In_ LPARAM lparam
+	_In_ LONG_PTR lparam
 );
 
-ULONG_PTR _app_listview_getappcontext (
+_Success_ (return != 0)
+ULONG _app_listview_getappcontext (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
 	_In_ INT item_id

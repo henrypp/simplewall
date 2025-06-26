@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
@@ -124,7 +124,7 @@ HANDLE _wfp_getenginehandle ()
 
 				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen0", status, NULL);
 
-				RtlExitUserProcess (status);
+				_r_sys_terminateprocess (NtCurrentProcess (), status);
 
 				break;
 			}
@@ -558,7 +558,7 @@ VOID _wfp_installfilters (
 	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
 	{
 		if (ptr_app->is_enabled)
-			_r_obj_addlistitem (rules, _r_obj_reference (ptr_app));
+			_r_obj_addlistitem (rules, _r_obj_reference (ptr_app), NULL);
 	}
 
 	_r_queuedlock_releaseshared (&lock_apps);
@@ -580,7 +580,7 @@ VOID _wfp_installfilters (
 		if (ptr_rule)
 		{
 			if (ptr_rule->is_enabled)
-				_r_obj_addlistitem (rules, _r_obj_reference (ptr_rule));
+				_r_obj_addlistitem (rules, _r_obj_reference (ptr_rule), NULL);
 		}
 	}
 
@@ -966,7 +966,7 @@ BOOLEAN _wfp_createrulefilter (
 	_In_ HANDLE engine_handle,
 	_In_ ENUM_TYPE_DATA filter_type,
 	_In_opt_ LPCWSTR filter_name,
-	_In_opt_ ULONG_PTR app_hash,
+	_In_opt_ ULONG app_hash,
 	_In_opt_ PITEM_FILTER_CONFIG filter_config,
 	_In_opt_ PR_STRINGREF rule_remote,
 	_In_opt_ PR_STRINGREF rule_local,
@@ -1019,7 +1019,7 @@ BOOLEAN _wfp_createrulefilter (
 
 		if (!ptr_app)
 		{
-			_r_log_v (LOG_LEVEL_WARNING, NULL, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_ULONG_PTR) L"\" not found!", app_hash);
+			_r_log_v (LOG_LEVEL_WARNING, NULL, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_ULONG) L"\" was not found!", app_hash);
 
 			goto CleanupExit;
 		}
@@ -1386,8 +1386,8 @@ BOOLEAN _wfp_create4filters (
 	PR_ARRAY guids;
 	LPGUID guid;
 	PITEM_RULE ptr_rule;
-	ULONG_PTR hash_code;
 	ULONG_PTR enum_key;
+	ULONG hash_code;
 	BOOLEAN is_enabled;
 
 	if (_r_obj_isempty (rules))
@@ -2766,7 +2766,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 
 	if (type == DATA_APP_REGULAR || type == DATA_APP_NETWORK || type == DATA_APP_SERVICE)
 	{
-		if (_r_str_gethash2 (&path->sr, TRUE) == config.ntoskrnl_hash)
+		if (_r_str_gethash (&path->sr, TRUE) == config.ntoskrnl_hash)
 		{
 			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), byte_blob);
 

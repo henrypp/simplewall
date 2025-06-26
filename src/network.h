@@ -28,15 +28,15 @@ VOID _app_network_generatetable (
 
 _Ret_maybenull_
 PITEM_NETWORK _app_network_getitem (
-	_In_ ULONG_PTR network_hash
+	_In_ ULONG network_hash
 );
 
 _Success_ (return != 0)
-ULONG_PTR _app_network_getappitem (
-	_In_ ULONG_PTR network_hash
+ULONG _app_network_getappitem (
+	_In_ ULONG network_hash
 );
 
-ULONG_PTR _app_network_gethash (
+ULONG _app_network_gethash (
 	_In_ ADDRESS_FAMILY af,
 	_In_ ULONG pid,
 	_In_opt_ LPCVOID remote_addr,
@@ -54,11 +54,11 @@ BOOLEAN _app_network_getpath (
 );
 
 BOOLEAN _app_network_isapphaveconnection (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 BOOLEAN _app_network_isitemfound (
-	_In_ ULONG_PTR network_hash
+	_In_ ULONG network_hash
 );
 
 BOOLEAN _app_network_isvalidconnection (
@@ -71,7 +71,7 @@ VOID _app_network_printlistviewtable (
 );
 
 VOID _app_network_removeitem (
-	_In_ ULONG_PTR network_hash
+	_In_ ULONG network_hash
 );
 
 VOID NTAPI _app_network_threadproc (

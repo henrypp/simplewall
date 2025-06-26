@@ -2096,26 +2096,26 @@ VOID _app_initialize (
 	if (!config.ntoskrnl_path)
 		config.ntoskrnl_path = _r_obj_referenceemptystring ();
 
-	config.my_hash = _r_str_gethash2 (&config.my_path->sr, TRUE);
-	config.ntoskrnl_hash = _r_str_gethash2 (&config.system_path->sr, TRUE);
-	config.svchost_hash = _r_str_gethash2 (&config.svchost_path->sr, TRUE);
-	config.wusvc_hash = _r_str_gethash2 (&config.wusvc_path->sr, TRUE);
+	config.my_hash = _r_str_gethash (&config.my_path->sr, TRUE);
+	config.ntoskrnl_hash = _r_str_gethash (&config.system_path->sr, TRUE);
+	config.svchost_hash = _r_str_gethash (&config.svchost_path->sr, TRUE);
+	config.wusvc_hash = _r_str_gethash (&config.wusvc_path->sr, TRUE);
 
 	// initialize free list
-	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 32);
-	_r_freelist_initialize (&listview_free_list, sizeof (ITEM_LISTVIEW_CONTEXT), 2048);
+	_r_freelist_initialize (&context_free_list, sizeof (ITEM_CONTEXT), 0x20);
+	_r_freelist_initialize (&listview_free_list, sizeof (ITEM_LISTVIEW_CONTEXT), 0x800);
 
 	// initialize colors array
-	colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), 8, NULL);
+	colors_table = _r_obj_createhashtable (sizeof (ITEM_COLOR), 0x08, NULL);
 
 	// initialize colors
-	config.color_invalid = _app_addcolor (IDS_HIGHLIGHT_INVALID, L"IsHighlightInvalid", TRUE, L"ColorInvalid", LV_COLOR_INVALID);
-	config.color_special = _app_addcolor (IDS_HIGHLIGHT_SPECIAL, L"IsHighlightSpecial", TRUE, L"ColorSpecial", LV_COLOR_SPECIAL);
-	config.color_signed = _app_addcolor (IDS_HIGHLIGHT_SIGNED, L"IsHighlightSigned", TRUE, L"ColorSigned", LV_COLOR_SIGNED);
-	config.color_pico = _app_addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", TRUE, L"ColorPico", LV_COLOR_PICO);
-	config.color_system = _app_addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", TRUE, L"ColorSystem", LV_COLOR_SYSTEM);
-	config.color_network = _app_addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", TRUE, L"ColorConnection", LV_COLOR_CONNECTION);
-	config.color_nonremovable = _app_addcolor (IDS_DISABLEREMOVAL, L"IsHighlightUndelete", TRUE, L"ColorUndelete", LV_COLOR_UNDELETE);
+	config.color_invalid = _app_addcolor (IDS_HIGHLIGHT_INVALID, L"IsHighlightInvalid", L"ColorInvalid", LV_COLOR_INVALID, TRUE);
+	config.color_special = _app_addcolor (IDS_HIGHLIGHT_SPECIAL, L"IsHighlightSpecial", L"ColorSpecial", LV_COLOR_SPECIAL, TRUE);
+	config.color_signed = _app_addcolor (IDS_HIGHLIGHT_SIGNED, L"IsHighlightSigned", L"ColorSigned", LV_COLOR_SIGNED, TRUE);
+	config.color_pico = _app_addcolor (IDS_HIGHLIGHT_PICO, L"IsHighlightPico", L"ColorPico", LV_COLOR_PICO, TRUE);
+	config.color_system = _app_addcolor (IDS_HIGHLIGHT_SYSTEM, L"IsHighlightSystem", L"ColorSystem", LV_COLOR_SYSTEM, TRUE);
+	config.color_network = _app_addcolor (IDS_HIGHLIGHT_CONNECTION, L"IsHighlightConnection", L"ColorConnection", LV_COLOR_CONNECTION, TRUE);
+	config.color_nonremovable = _app_addcolor (IDS_DISABLEREMOVAL, L"IsHighlightUndelete", L"ColorUndelete", LV_COLOR_UNDELETE, TRUE);
 
 	_app_generate_credentials ();
 
@@ -2123,24 +2123,24 @@ VOID _app_initialize (
 	_app_icons_getdefault ();
 
 	// initialize global filters array object
-	filter_ids = _r_obj_createarray (sizeof (GUID), 10, NULL);
+	filter_ids = _r_obj_createarray (sizeof (GUID), 0x0A, NULL);
 
 	// initialize apps table
-	apps_table = _r_obj_createhashtablepointer (32);
+	apps_table = _r_obj_createhashtablepointer (0x20);
 
 	// initialize rules array object
-	rules_list = _r_obj_createlist (10, &_r_obj_dereference);
+	rules_list = _r_obj_createlist (0x0A, &_r_obj_dereference);
 
 	// initialize rules configuration table
 	rules_config = _r_obj_createhashtable (sizeof (ITEM_RULE_CONFIG), 8, &_app_dereferenceruleconfig);
 
 	// initialize log hashtable object
-	log_table = _r_obj_createhashtablepointer (32);
+	log_table = _r_obj_createhashtablepointer (0x20);
 
 	// initialize cache table
-	cache_information = _r_obj_createhashtablepointer (32);
+	cache_information = _r_obj_createhashtablepointer (0x20);
 
-	cache_resolution = _r_obj_createhashtablepointer (32);
+	cache_resolution = _r_obj_createhashtablepointer (0x20);
 
 	NtCreateEvent (&config.hnotify_evt, EVENT_ALL_ACCESS, NULL, NotificationEvent, TRUE);
 
@@ -2447,7 +2447,7 @@ INT_PTR CALLBACK DlgProc (
 		{
 			PR_STRING path;
 			HDROP hdrop;
-			ULONG_PTR app_hash = 0;
+			ULONG app_hash = 0;
 			ULONG numfiles;
 			ULONG length;
 
@@ -2764,8 +2764,8 @@ INT_PTR CALLBACK DlgProc (
 					PR_LIST rules;
 					PITEM_APP ptr_app;
 					PITEM_RULE ptr_rule;
-					ULONG_PTR app_hash;
 					ULONG_PTR rule_idx;
+					ULONG app_hash;
 					INT listview_id;
 					BOOLEAN is_changed = FALSE;
 					BOOLEAN is_enabled;
@@ -2785,7 +2785,7 @@ INT_PTR CALLBACK DlgProc (
 
 						if (listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP)
 						{
-							app_hash = _app_listview_getcontextcode (lpnmlv->lParam);
+							app_hash = (ULONG)_app_listview_getcontextcode (lpnmlv->lParam);
 							ptr_app = _app_getappitem (app_hash);
 
 							if (!ptr_app)
@@ -2811,7 +2811,7 @@ INT_PTR CALLBACK DlgProc (
 
 									rules = _r_obj_createlist (1, NULL);
 
-									_r_obj_addlistitem (rules, ptr_app);
+									_r_obj_addlistitem (rules, ptr_app, NULL);
 
 									_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
 
@@ -2846,7 +2846,7 @@ INT_PTR CALLBACK DlgProc (
 
 									rules = _r_obj_createlist (1, NULL);
 
-									_r_obj_addlistitem (rules, ptr_rule);
+									_r_obj_addlistitem (rules, ptr_rule, NULL);
 
 									_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
 
@@ -3711,7 +3711,7 @@ INT_PTR CALLBACK DlgProc (
 					PITEM_NETWORK ptr_network;
 					PITEM_APP ptr_app;
 					PITEM_LOG ptr_log;
-					ULONG_PTR hash_code;
+					ULONG hash_code;
 					INT item_id = INT_ERROR;
 					HRESULT status;
 
@@ -3724,7 +3724,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						while ((item_id = _r_listview_getnextselected (hwnd, tab_context->listview_id, item_id)) != INT_ERROR)
 						{
-							hash_code = _app_listview_getitemcontext (hwnd, tab_context->listview_id, item_id);
+							hash_code = (ULONG)_app_listview_getitemcontext (hwnd, tab_context->listview_id, item_id);
 							ptr_app = _app_getappitem (hash_code);
 
 							if (ptr_app)
@@ -3748,7 +3748,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						while ((item_id = _r_listview_getnextselected (hwnd, tab_context->listview_id, item_id)) != INT_ERROR)
 						{
-							hash_code = _app_listview_getitemcontext (hwnd, tab_context->listview_id, item_id);
+							hash_code = (ULONG)_app_listview_getitemcontext (hwnd, tab_context->listview_id, item_id);
 							ptr_network = _app_network_getitem (hash_code);
 
 							if (ptr_network)
@@ -3772,7 +3772,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						while ((item_id = _r_listview_getnextselected (hwnd, tab_context->listview_id, item_id)) != INT_ERROR)
 						{
-							hash_code = _app_listview_getitemcontext (hwnd, tab_context->listview_id, item_id);
+							hash_code = (ULONG)_app_listview_getitemcontext (hwnd, tab_context->listview_id, item_id);
 							ptr_log = _app_getlogitem (hash_code);
 
 							if (ptr_log)

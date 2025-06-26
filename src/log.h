@@ -47,7 +47,7 @@ VOID _app_loginitfile (
 	_In_ HANDLE hfile
 );
 
-ULONG_PTR _app_getloghash (
+ULONG _app_getloghash (
 	_In_ PITEM_LOG ptr_log
 );
 
@@ -58,7 +58,7 @@ _Ret_maybenull_
 PR_STRING _app_getlogviewer ();
 
 BOOLEAN _app_islogfound (
-	_In_ ULONG_PTR log_hash
+	_In_ ULONG log_hash
 );
 
 BOOLEAN _app_logislimitreached (

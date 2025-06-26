@@ -80,8 +80,8 @@ VOID _app_network_generatetable (
 	PITEM_NETWORK ptr_network;
 	IN_ADDR remote_addr;
 	IN_ADDR local_addr;
-	ULONG_PTR network_hash;
 	PVOID buffer;
+	ULONG network_hash;
 	ULONG allocated_size;
 	ULONG required_size;
 	ULONG status;
@@ -125,7 +125,9 @@ VOID _app_network_generatetable (
 				if (_app_network_isitemfound (network_hash))
 				{
 					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
+
 					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
+
 					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 
 					continue;
@@ -392,7 +394,7 @@ VOID _app_network_generatetable (
 
 _Ret_maybenull_
 PITEM_NETWORK _app_network_getitem (
-	_In_ ULONG_PTR network_hash
+	_In_ ULONG network_hash
 )
 {
 	PITEM_NETWORK_CONTEXT network_context;
@@ -411,12 +413,12 @@ PITEM_NETWORK _app_network_getitem (
 }
 
 _Success_ (return != 0)
-ULONG_PTR _app_network_getappitem (
-	_In_ ULONG_PTR network_hash
+ULONG _app_network_getappitem (
+	_In_ ULONG network_hash
 )
 {
 	PITEM_NETWORK ptr_network;
-	ULONG_PTR hash_code;
+	ULONG hash_code;
 
 	ptr_network = _app_network_getitem (network_hash);
 
@@ -430,7 +432,7 @@ ULONG_PTR _app_network_getappitem (
 	return hash_code;
 }
 
-ULONG_PTR _app_network_gethash (
+ULONG _app_network_gethash (
 	_In_ ADDRESS_FAMILY af,
 	_In_ ULONG pid,
 	_In_opt_ LPCVOID remote_addr,
@@ -444,7 +446,7 @@ ULONG_PTR _app_network_gethash (
 	WCHAR remote_address[LEN_IP_MAX] = {0};
 	WCHAR local_address[LEN_IP_MAX] = {0};
 	PR_STRING network_string;
-	ULONG_PTR network_hash;
+	ULONG network_hash;
 
 	if (remote_addr)
 		_app_formatip (af, remote_addr, remote_address, RTL_NUMBER_OF (remote_address), FALSE);
@@ -464,7 +466,7 @@ ULONG_PTR _app_network_gethash (
 		state
 	);
 
-	network_hash = _r_str_gethash2 (&network_string->sr, TRUE);
+	network_hash = _r_str_gethash (&network_string->sr, TRUE);
 
 	_r_obj_dereference (network_string);
 
@@ -557,7 +559,7 @@ BOOLEAN _app_network_getpath (
 
 	if (process_name)
 	{
-		ptr_network->app_hash = _r_str_gethash2 (&process_name->sr, TRUE);
+		ptr_network->app_hash = _r_str_gethash (&process_name->sr, TRUE);
 		ptr_network->path = process_name;
 
 		return TRUE;
@@ -567,7 +569,7 @@ BOOLEAN _app_network_getpath (
 }
 
 BOOLEAN _app_network_isapphaveconnection (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	PITEM_NETWORK_CONTEXT network_context;
@@ -600,7 +602,7 @@ BOOLEAN _app_network_isapphaveconnection (
 }
 
 BOOLEAN _app_network_isitemfound (
-	_In_ ULONG_PTR network_hash
+	_In_ ULONG network_hash
 )
 {
 	PITEM_NETWORK_CONTEXT network_context;
@@ -662,9 +664,9 @@ VOID _app_network_printlistviewtable (
 {
 	PITEM_NETWORK ptr_network = NULL;
 	PR_STRING string;
-	ULONG_PTR network_hash;
 	ULONG_PTR enum_key = 0;
 	ULONG_PTR app_hash;
+	ULONG network_hash;
 	INT item_count;
 	BOOLEAN is_highlight = FALSE;
 	BOOLEAN is_refresh = FALSE;
@@ -709,7 +711,7 @@ VOID _app_network_printlistviewtable (
 
 	for (INT i = item_count - 1; i != INT_ERROR; i--)
 	{
-		network_hash = _app_listview_getitemcontext (network_context->hwnd, IDC_NETWORK, i);
+		network_hash = (ULONG)_app_listview_getitemcontext (network_context->hwnd, IDC_NETWORK, i);
 
 		if (_r_obj_findhashtable (network_context->checker_ptr, network_hash))
 			continue;
@@ -729,7 +731,7 @@ VOID _app_network_printlistviewtable (
 }
 
 VOID _app_network_removeitem (
-	_In_ ULONG_PTR network_hash
+	_In_ ULONG network_hash
 )
 {
 	PITEM_NETWORK_CONTEXT network_context;

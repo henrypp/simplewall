@@ -1,15 +1,15 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
 BOOLEAN _app_package_isnotexists (
 	_In_ PR_STRING package_sid,
-	_In_opt_ ULONG_PTR app_hash
+	_In_opt_ ULONG app_hash
 )
 {
 	if (!app_hash)
-		app_hash = _r_str_gethash2 (&package_sid->sr, TRUE);
+		app_hash = _r_str_gethash (&package_sid->sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return TRUE;
@@ -110,8 +110,8 @@ VOID _app_package_getpackagebyname (
 	PR_BYTE package_sid = NULL;
 	PITEM_APP ptr_app;
 	HANDLE hsubkey;
-	ULONG_PTR app_hash;
 	LONG64 timestamp;
+	ULONG app_hash;
 	NTSTATUS status;
 
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s\\%s", path, key_name->buffer);
@@ -132,7 +132,7 @@ VOID _app_package_getpackagebyname (
 		goto CleanupExit;
 
 	// already exists (skip)
-	app_hash = _r_str_gethash2 (&package_sid_string->sr, TRUE);
+	app_hash = _r_str_gethash (&package_sid_string->sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		goto CleanupExit;
@@ -196,12 +196,12 @@ VOID _app_package_getpackagebysid (
 	PR_STRING moniker = NULL;
 	PITEM_APP ptr_app;
 	HANDLE hsubkey;
-	ULONG_PTR app_hash;
 	LONG64 timestamp = 0;
+	ULONG app_hash;
 	NTSTATUS status;
 
 	// already exists (skip)
-	app_hash = _r_str_gethash2 (&key_name->sr, TRUE);
+	app_hash = _r_str_gethash (&key_name->sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return;
@@ -495,13 +495,13 @@ VOID _app_package_getserviceslist (
 	PVOID buffer;
 	HANDLE hkey;
 	LONG64 service_timestamp;
-	ULONG_PTR app_hash;
 	ULONG service_type = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
 	ULONG service_state = SERVICE_STATE_ALL;
 	ULONG services_returned;
 	ULONG return_length;
 	ULONG buffer_size;
 	ULONG sd_length;
+	ULONG app_hash;
 	NTSTATUS status;
 
 	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
@@ -558,7 +558,7 @@ VOID _app_package_getserviceslist (
 	{
 		service = &services[i];
 
-		app_hash = _r_str_gethash (service->lpServiceName, TRUE);
+		app_hash = _r_str_gethash2 (service->lpServiceName, TRUE);
 
 		if (_app_isappfound (app_hash))
 			continue;

@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #pragma once
 
@@ -13,7 +13,7 @@ BOOLEAN _app_getappinfo (
 
 _Success_ (return)
 BOOLEAN _app_getappinfobyhash (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (length) PVOID buffer,
 	_In_ ULONG_PTR length
@@ -26,7 +26,7 @@ VOID _app_setappinfo (
 );
 
 VOID _app_setappinfobyhash (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ ENUM_INFO_DATA info_data,
 	_In_opt_ PVOID value
 );
@@ -48,7 +48,7 @@ BOOLEAN _app_getruleinfobyid (
 );
 
 _Success_ (return != 0)
-ULONG_PTR _app_addapplication (
+ULONG _app_addapplication (
 	_In_opt_ HWND hwnd,
 	_In_ ENUM_TYPE_DATA type,
 	_In_ PR_STRING path,
@@ -69,14 +69,14 @@ PITEM_RULE _app_addrule (
 _Ret_maybenull_
 PITEM_RULE_CONFIG _app_addruleconfigtable (
 	_In_ PR_HASHTABLE hashtable,
-	_In_ ULONG_PTR rule_hash,
+	_In_ ULONG rule_hash,
 	_In_ PR_STRING rule_name,
 	_In_ BOOLEAN is_enabled
 );
 
 _Ret_maybenull_
 PITEM_APP _app_getappitem (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 _Ret_maybenull_
@@ -91,22 +91,22 @@ PITEM_RULE _app_getrulebyhash (
 
 _Ret_maybenull_
 PITEM_RULE_CONFIG _app_getruleconfigitem (
-	_In_ ULONG_PTR rule_hash
+	_In_ ULONG rule_hash
 );
 
 _Ret_maybenull_
 PITEM_LOG _app_getlogitem (
-	_In_ ULONG_PTR log_hash
+	_In_ ULONG log_hash
 );
 
 _Success_ (return != 0)
-ULONG_PTR _app_getlogapp (
-	_In_ ULONG_PTR index
+ULONG _app_getlogapp (
+	_In_ ULONG index
 );
 
 COLORREF _app_getappcolor (
 	_In_ INT listview_id,
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ BOOLEAN is_systemapp,
 	_In_ BOOLEAN is_validconnection
 );
@@ -119,12 +119,12 @@ VOID _app_deleteappitem (
 
 VOID _app_freeapplication (
 	_In_opt_ HWND hwnd,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 BOOLEAN _app_isappfromsystem (
 	_In_opt_ PR_STRING path,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 BOOLEAN _app_isapphavedrive (
@@ -132,7 +132,7 @@ BOOLEAN _app_isapphavedrive (
 );
 
 BOOLEAN _app_isapphaverule (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ BOOLEAN is_countdisabled
 );
 
@@ -141,7 +141,7 @@ BOOLEAN _app_isappexists (
 );
 
 BOOLEAN _app_isappfound (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 BOOLEAN _app_isappunused (
@@ -153,7 +153,7 @@ BOOLEAN _app_isappused (
 );
 
 BOOLEAN _app_issystemhash (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 VOID _app_getcount (
@@ -197,7 +197,7 @@ VOID _app_ruleremoveapp (
 	_In_opt_ HWND hwnd,
 	_In_ ULONG_PTR item_id,
 	_In_ PITEM_RULE ptr_rule,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 BOOLEAN _app_ruleblocklistsetchange (
@@ -222,7 +222,7 @@ VOID _app_ruleblocklistset (
 
 _Ret_maybenull_
 PR_STRING _app_appexpandrules (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ LPWSTR delimeter
 );
 
@@ -244,7 +244,7 @@ BOOLEAN _app_isrulesupportedbyos (
 );
 
 FORCEINLINE BOOLEAN _app_isdisabledremoval (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	if (app_hash == config.my_hash || app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash || app_hash == config.wusvc_hash)

@@ -1,11 +1,11 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #pragma once
 
 BOOLEAN _app_package_isnotexists (
 	_In_ PR_STRING package_sid,
-	_In_opt_ ULONG_PTR app_hash
+	_In_opt_ ULONG app_hash
 );
 
 VOID _app_package_parsepath (

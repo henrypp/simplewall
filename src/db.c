@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2019-2024 Henry++
+// Copyright (c) 2019-2025 Henry++
 
 #include "global.h"
 
@@ -227,12 +227,12 @@ VOID _app_db_parse_app (
 )
 {
 	PITEM_APP ptr_app;
-	ULONG_PTR app_hash;
 	PR_STRING string;
 	PR_STRING path;
 	PR_STRING dos_path;
 	LONG64 timestamp;
 	LONG64 timer;
+	ULONG app_hash;
 	BOOLEAN is_undeletable;
 	BOOLEAN is_enabled;
 	BOOLEAN is_silent;
@@ -329,7 +329,6 @@ VOID _app_db_parse_rule (
 	R_STRINGBUILDER sb;
 	R_STRINGREF first_part;
 	R_STRINGREF sr;
-	ULONG_PTR app_hash;
 	PR_STRING rule_name;
 	PR_STRING rule_remote;
 	PR_STRING rule_local;
@@ -344,7 +343,8 @@ VOID _app_db_parse_rule (
 	UINT8 protocol;
 	ADDRESS_FAMILY af;
 	PITEM_RULE ptr_rule;
-	ULONG_PTR rule_hash;
+	ULONG rule_hash;
+	ULONG app_hash;
 	BOOLEAN is_internal;
 	NTSTATUS status;
 
@@ -380,7 +380,7 @@ VOID _app_db_parse_rule (
 	if (rule_local)
 		_r_obj_dereference (rule_local);
 
-	rule_hash = _r_str_gethash2 (&ptr_rule->name->sr, TRUE);
+	rule_hash = _r_str_gethash (&ptr_rule->name->sr, TRUE);
 
 	if (!_r_obj_isstringempty (comment))
 	{
@@ -474,7 +474,7 @@ VOID _app_db_parse_rule (
 			if (status != STATUS_SUCCESS)
 				path_string = _r_obj_createstring2 (&first_part);
 
-			app_hash = _r_str_gethash2 (&path_string->sr, TRUE);
+			app_hash = _r_str_gethash (&path_string->sr, TRUE);
 
 			if (app_hash)
 			{
@@ -509,7 +509,7 @@ VOID _app_db_parse_rule (
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_rules);
-	_r_obj_addlistitem (rules_list, ptr_rule);
+	_r_obj_addlistitem (rules_list, ptr_rule, NULL);
 	_r_queuedlock_releaseexclusive (&lock_rules);
 
 	_r_obj_deletestringbuilder (&sb);
@@ -521,14 +521,14 @@ VOID _app_db_parse_ruleconfig (
 {
 	PITEM_RULE_CONFIG ptr_config;
 	PR_STRING rule_name;
-	ULONG_PTR rule_hash;
+	ULONG rule_hash;
 
 	rule_name = _r_xml_getattribute_string (&db_info->xml_library, L"name");
 
 	if (!rule_name)
 		return;
 
-	rule_hash = _r_str_gethash2 (&rule_name->sr, TRUE);
+	rule_hash = _r_str_gethash (&rule_name->sr, TRUE);
 
 	if (!rule_hash)
 	{
@@ -542,9 +542,7 @@ VOID _app_db_parse_ruleconfig (
 	if (!ptr_config)
 	{
 		_r_queuedlock_acquireexclusive (&lock_rules_config);
-
 		ptr_config = _app_addruleconfigtable (rules_config, rule_hash, rule_name, _r_xml_getattribute_boolean (&db_info->xml_library, L"is_enabled"));
-
 		_r_queuedlock_releaseexclusive (&lock_rules_config);
 
 		if (ptr_config)
@@ -1172,7 +1170,7 @@ VOID _app_db_save_ruleconfig (
 			continue;
 
 		is_enabled_default = ptr_config->is_enabled;
-		rule_hash = _r_str_gethash2 (&ptr_config->name->sr, TRUE);
+		rule_hash = _r_str_gethash (&ptr_config->name->sr, TRUE);
 
 		ptr_rule = _app_getrulebyhash (rule_hash);
 

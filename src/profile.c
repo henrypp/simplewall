@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
@@ -162,7 +162,7 @@ BOOLEAN _app_getappinfo (
 
 _Success_ (return)
 BOOLEAN _app_getappinfobyhash (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ ENUM_INFO_DATA info_data,
 	_Out_writes_bytes_all_ (length) PVOID buffer,
 	_In_ ULONG_PTR length
@@ -299,7 +299,7 @@ VOID _app_setappinfo (
 }
 
 VOID _app_setappinfobyhash (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ ENUM_INFO_DATA info_data,
 	_In_opt_ PVOID value
 )
@@ -384,7 +384,7 @@ BOOLEAN _app_getruleinfobyid (
 }
 
 _Success_ (return != 0)
-ULONG_PTR _app_addapplication (
+ULONG _app_addapplication (
 	_In_opt_ HWND hwnd,
 	_In_ ENUM_TYPE_DATA type,
 	_In_ PR_STRING path,
@@ -395,7 +395,7 @@ ULONG_PTR _app_addapplication (
 	WCHAR path_full[1024];
 	R_STRINGREF path_sr;
 	PITEM_APP ptr_app;
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 	BOOLEAN is_ntoskrnl;
 
 	if (_r_obj_isstringempty2 (path))
@@ -413,7 +413,7 @@ ULONG_PTR _app_addapplication (
 			_r_obj_initializestringref (&path_sr, path_full);
 	}
 
-	app_hash = _r_str_gethash2 (&path_sr, TRUE);
+	app_hash = _r_str_gethash (&path_sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return app_hash; // already exists
@@ -560,7 +560,7 @@ PITEM_RULE _app_addrule (
 _Ret_maybenull_
 PITEM_RULE_CONFIG _app_addruleconfigtable (
 	_In_ PR_HASHTABLE hashtable,
-	_In_ ULONG_PTR rule_hash,
+	_In_ ULONG rule_hash,
 	_In_ PR_STRING rule_name,
 	_In_ BOOLEAN is_enabled
 )
@@ -575,15 +575,13 @@ PITEM_RULE_CONFIG _app_addruleconfigtable (
 
 _Ret_maybenull_
 PITEM_APP _app_getappitem (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	PITEM_APP ptr_app;
 
 	_r_queuedlock_acquireshared (&lock_apps);
-
 	ptr_app = _r_obj_findhashtablepointer (apps_table, app_hash);
-
 	_r_queuedlock_releaseshared (&lock_apps);
 
 	return ptr_app;
@@ -635,7 +633,7 @@ PITEM_RULE _app_getrulebyhash (
 		{
 			if (ptr_rule->is_readonly)
 			{
-				if (_r_str_gethash2 (&ptr_rule->name->sr, TRUE) == rule_hash)
+				if (_r_str_gethash (&ptr_rule->name->sr, TRUE) == rule_hash)
 				{
 					_r_queuedlock_releaseshared (&lock_rules);
 
@@ -652,15 +650,13 @@ PITEM_RULE _app_getrulebyhash (
 
 _Ret_maybenull_
 PITEM_RULE_CONFIG _app_getruleconfigitem (
-	_In_ ULONG_PTR rule_hash
+	_In_ ULONG rule_hash
 )
 {
 	PITEM_RULE_CONFIG ptr_rule_config;
 
 	_r_queuedlock_acquireshared (&lock_rules_config);
-
 	ptr_rule_config = _r_obj_findhashtable (rules_config, rule_hash);
-
 	_r_queuedlock_releaseshared (&lock_rules_config);
 
 	return ptr_rule_config;
@@ -668,27 +664,25 @@ PITEM_RULE_CONFIG _app_getruleconfigitem (
 
 _Ret_maybenull_
 PITEM_LOG _app_getlogitem (
-	_In_ ULONG_PTR log_hash
+	_In_ ULONG log_hash
 )
 {
 	PITEM_LOG ptr_log;
 
 	_r_queuedlock_acquireshared (&lock_loglist);
-
 	ptr_log = _r_obj_findhashtablepointer (log_table, log_hash);
-
 	_r_queuedlock_releaseshared (&lock_loglist);
 
 	return ptr_log;
 }
 
 _Success_ (return != 0)
-ULONG_PTR _app_getlogapp (
-	_In_ ULONG_PTR index
+ULONG _app_getlogapp (
+	_In_ ULONG index
 )
 {
 	PITEM_LOG ptr_log;
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 
 	ptr_log = _app_getlogitem (index);
 
@@ -706,13 +700,13 @@ ULONG_PTR _app_getlogapp (
 
 COLORREF _app_getappcolor (
 	_In_ INT listview_id,
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ BOOLEAN is_systemapp,
 	_In_ BOOLEAN is_validconnection
 )
 {
 	PITEM_APP ptr_app;
-	ULONG_PTR color_hash = 0;
+	ULONG color_hash = 0;
 	BOOLEAN is_profilelist;
 	BOOLEAN is_networklist;
 
@@ -809,7 +803,7 @@ VOID _app_deleteappitem (
 
 VOID _app_freeapplication (
 	_In_opt_ HWND hwnd,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	PITEM_RULE ptr_rule;
@@ -900,7 +894,7 @@ COLORREF _app_getrulecolor (
 )
 {
 	PITEM_RULE ptr_rule;
-	ULONG_PTR color_hash = 0;
+	ULONG color_hash = 0;
 
 	ptr_rule = _app_getrulebyid (rule_idx);
 
@@ -945,7 +939,7 @@ VOID _app_setruleiteminfo (
 )
 {
 	ULONG_PTR enum_key = 0;
-	ULONG_PTR hash_code;
+	ULONG hash_code;
 
 	_r_listview_setitem (hwnd, listview_id, item_id, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, I_DEFAULT);
 
@@ -967,14 +961,14 @@ VOID _app_ruleenable (
 )
 {
 	PITEM_RULE_CONFIG ptr_config;
-	ULONG_PTR rule_hash;
+	ULONG rule_hash;
 
 	ptr_rule->is_enabled = is_enable;
 
 	if (!ptr_rule->is_readonly || !ptr_rule->name)
 		return;
 
-	rule_hash = _r_str_gethash2 (&ptr_rule->name->sr, TRUE);
+	rule_hash = _r_str_gethash (&ptr_rule->name->sr, TRUE);
 
 	if (!rule_hash)
 		return;
@@ -990,9 +984,7 @@ VOID _app_ruleenable (
 		if (is_createconfig)
 		{
 			_r_queuedlock_acquireexclusive (&lock_rules_config);
-
 			ptr_config = _app_addruleconfigtable (rules_config, rule_hash, ptr_rule->name, is_enable);
-
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 		}
 	}
@@ -1002,7 +994,7 @@ VOID _app_ruleremoveapp (
 	_In_opt_ HWND hwnd,
 	_In_ ULONG_PTR item_id,
 	_In_ PITEM_RULE ptr_rule,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	if (!ptr_rule->apps)
@@ -1118,7 +1110,7 @@ VOID _app_ruleblocklistset (
 			_app_listview_updateitemby_param (hwnd, i, FALSE);
 
 		if (is_instantapply)
-			_r_obj_addlistitem (rules, _r_obj_reference (ptr_rule)); // dereference later!
+			_r_obj_addlistitem (rules, _r_obj_reference (ptr_rule), NULL); // dereference later!
 	}
 
 	_r_queuedlock_releaseshared (&lock_rules);
@@ -1149,7 +1141,7 @@ VOID _app_ruleblocklistset (
 
 _Ret_maybenull_
 PR_STRING _app_appexpandrules (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ LPWSTR delimeter
 )
 {
@@ -1209,7 +1201,7 @@ PR_STRING _app_rulesexpandapps (
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	ULONG_PTR enum_key = 0;
-	ULONG_PTR hash_code;
+	ULONG hash_code;
 
 	_r_obj_initializestringbuilder (&sr, 256);
 
@@ -1326,7 +1318,7 @@ PR_STRING _app_rulesexpandrules (
 
 BOOLEAN _app_isappfromsystem (
 	_In_opt_ PR_STRING path,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	if (_app_issystemhash (app_hash))
@@ -1382,7 +1374,7 @@ BOOLEAN _app_isapphavedrive (
 }
 
 BOOLEAN _app_isapphaverule (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ BOOLEAN is_countdisabled
 )
 {
@@ -1447,15 +1439,13 @@ BOOLEAN _app_isappexists (
 }
 
 BOOLEAN _app_isappfound (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	BOOLEAN is_found;
 
 	_r_queuedlock_acquireshared (&lock_apps);
-
 	is_found = (_r_obj_findhashtable (apps_table, app_hash) != NULL);
-
 	_r_queuedlock_releaseshared (&lock_apps);
 
 	return is_found;
@@ -1491,7 +1481,7 @@ BOOLEAN _app_isappused (
 }
 
 BOOLEAN _app_issystemhash (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	return (app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash);
@@ -1568,7 +1558,7 @@ NTSTATUS _app_profile_load_fromresource (
 
 VOID _app_profile_load_fallback ()
 {
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 
 	if (!_app_isappfound (config.my_hash))
 	{

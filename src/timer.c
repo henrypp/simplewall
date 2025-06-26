@@ -68,7 +68,7 @@ VOID _app_timer_set (
 		}
 		else
 		{
-			status = TpAllocTimer (&htimer, &_app_timer_callback, (PVOID)ptr_app->app_hash, NULL);
+			status = TpAllocTimer (&htimer, &_app_timer_callback, ULongToPtr (ptr_app->app_hash), NULL);
 
 			if (NT_SUCCESS (status))
 			{
@@ -141,7 +141,7 @@ VOID CALLBACK _app_timer_callback (
 	ULONG icon_id;
 	HRESULT status;
 
-	ptr_app = _app_getappitem ((ULONG_PTR)context);
+	ptr_app = _app_getappitem (PtrToUlong (context));
 
 	if (!ptr_app)
 		return;
@@ -156,15 +156,14 @@ VOID CALLBACK _app_timer_callback (
 
 	rules = _r_obj_createlist (2, NULL);
 
-	_r_obj_addlistitem (rules, ptr_app);
+	_r_obj_addlistitem (rules, ptr_app, NULL);
 
 	_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
-
-	_r_obj_dereference (rules);
 
 	_app_listview_updateby_id (hwnd, ptr_app->type, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
 
 	_r_obj_dereference (ptr_app);
+	_r_obj_dereference (rules);
 
 	_app_profile_save (hwnd);
 

@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #pragma once
 
@@ -19,7 +19,7 @@ typedef struct _NOTIFY_CONTEXT
 
 	HICON hicon;
 
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 } NOTIFY_CONTEXT, *PNOTIFY_CONTEXT;
 
 _Ret_maybenull_
@@ -61,14 +61,14 @@ HICON _app_notify_getapp_icon (
 
 _Ret_maybenull_
 PITEM_LOG _app_notify_getobject (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
-ULONG_PTR _app_notify_getapp_id (
+ULONG _app_notify_getapp_id (
 	_In_ HWND hwnd
 );
 
-ULONG_PTR _app_notify_getnextapp_id (
+ULONG _app_notify_getnextapp_id (
 	_In_ HWND hwnd
 );
 
@@ -79,7 +79,7 @@ VOID _app_notify_setapp_icon (
 
 VOID _app_notify_setapp_id (
 	_In_ HWND hwnd,
-	_In_opt_ ULONG_PTR app_hash
+	_In_opt_ ULONG app_hash
 );
 
 VOID _app_notify_show (

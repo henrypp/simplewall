@@ -155,7 +155,7 @@ VOID NTAPI _app_dereferencerule (
 
 VOID _app_addcachetable (
 	_Inout_ PR_HASHTABLE hashtable,
-	_In_ ULONG_PTR hash_code,
+	_In_ ULONG hash_code,
 	_In_ PR_QUEUED_LOCK spin_lock,
 	_In_opt_ PR_STRING string
 )
@@ -177,7 +177,7 @@ VOID _app_addcachetable (
 
 BOOLEAN _app_getcachetable (
 	_Inout_ PR_HASHTABLE cache_table,
-	_In_ ULONG_PTR hash_code,
+	_In_ ULONG hash_code,
 	_In_ PR_QUEUED_LOCK spin_lock,
 	_Out_ PR_STRING_PTR string
 )
@@ -408,7 +408,7 @@ PR_STRING _app_formatport (
 
 _Ret_maybenull_
 PITEM_APP_INFO _app_getappinfobyhash2 (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	PITEM_APP_INFO ptr_app_info;
@@ -422,7 +422,7 @@ PITEM_APP_INFO _app_getappinfobyhash2 (
 
 _Success_ (return)
 BOOLEAN _app_getappinfoparam2 (
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_opt_ INT listview_id,
 	_In_ ENUM_INFO_DATA2 info_data,
 	_Out_writes_bytes_all_ (length) PVOID buffer,
@@ -526,7 +526,7 @@ BOOLEAN _app_getappinfoparam2 (
 }
 
 BOOLEAN _app_isappsigned (
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	PR_STRING string = NULL;
@@ -1071,9 +1071,10 @@ CleanupExit:
 		_r_sys_freelibrary (hlib);
 }
 
+_Ret_maybenull_
 PR_STRING _app_getfilehashinfo (
 	_In_ HANDLE hfile,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	PITEM_APP ptr_app;
@@ -1092,12 +1093,12 @@ PR_STRING _app_getfilehashinfo (
 	return ptr_app->hash;
 }
 
-ULONG_PTR _app_addcolor (
-	_In_ UINT locale_id,
+ULONG _app_addcolor (
+	_In_ ULONG locale_id,
 	_In_ LPCWSTR config_name,
-	_In_ BOOLEAN is_enabled,
 	_In_ LPCWSTR config_value,
-	_In_ COLORREF default_clr
+	_In_ COLORREF default_clr,
+	_In_ BOOLEAN is_enabled
 )
 {
 	ITEM_COLOR ptr_clr = {0};
@@ -1111,7 +1112,7 @@ ULONG_PTR _app_addcolor (
 	ptr_clr.locale_id = locale_id;
 	ptr_clr.is_enabled = is_enabled;
 
-	hash_code = _r_str_gethash2 (&ptr_clr.config_name->sr, TRUE);
+	hash_code = _r_str_gethash (&ptr_clr.config_name->sr, TRUE);
 
 	_r_obj_addhashtableitem (colors_table, hash_code, &ptr_clr);
 
@@ -1119,7 +1120,7 @@ ULONG_PTR _app_addcolor (
 }
 
 COLORREF _app_getcolorvalue (
-	_In_ ULONG_PTR color_hash
+	_In_ ULONG color_hash
 )
 {
 	PITEM_COLOR ptr_clr;
@@ -1134,7 +1135,7 @@ COLORREF _app_getcolorvalue (
 
 VOID _app_generate_rulescontrol (
 	_In_ HMENU hsubmenu,
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_opt_ PITEM_LOG ptr_log
 )
 {
@@ -1142,7 +1143,7 @@ VOID _app_generate_rulescontrol (
 	WCHAR buffer[128];
 	PITEM_RULE ptr_rule;
 	ULONG_PTR limit_group;
-	UINT i;
+	ULONG i;
 	BOOLEAN is_global;
 	BOOLEAN is_enabled;
 
@@ -1173,7 +1174,7 @@ VOID _app_generate_rulescontrol (
 
 				_r_queuedlock_acquireshared (&lock_rules);
 
-				for (i = 0; i < (UINT)_r_obj_getlistsize (rules_list) && limit_group; i++)
+				for (i = 0; i < (ULONG)_r_obj_getlistsize (rules_list) && limit_group; i++)
 				{
 					ptr_rule = _r_obj_getlistitem (rules_list, i);
 
@@ -1226,14 +1227,14 @@ VOID _app_generate_rulescontrol (
 
 VOID _app_generate_timerscontrol (
 	_In_ HMENU hsubmenu,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 )
 {
 	LONG64 current_time;
 	LONG64 app_time = 0;
 	LONG64 timestamp;
-	PR_STRING interval_string;
-	UINT index;
+	PR_STRING string;
+	ULONG index;
 	BOOLEAN is_checked = FALSE;
 
 	current_time = _r_unixtime_now ();
@@ -1244,14 +1245,14 @@ VOID _app_generate_timerscontrol (
 	{
 		timestamp = timer_array[i];
 
-		interval_string = _r_format_interval (timestamp, FALSE);
+		string = _r_format_interval (timestamp, FALSE);
 
-		if (!interval_string)
+		if (!string)
 			continue;
 
-		index = IDX_TIMER + (UINT)i;
+		index = IDX_TIMER + (ULONG)i;
 
-		_r_menu_additem (hsubmenu, index, interval_string->buffer);
+		_r_menu_additem (hsubmenu, index, string->buffer);
 
 		if (!is_checked && (app_time > current_time) && (app_time <= (current_time + timestamp)))
 		{
@@ -1260,7 +1261,7 @@ VOID _app_generate_timerscontrol (
 			is_checked = TRUE;
 		}
 
-		_r_obj_dereference (interval_string);
+		_r_obj_dereference (string);
 	}
 
 	if (!is_checked)
@@ -1598,11 +1599,11 @@ PR_STRING _app_resolveaddress (
 	PDNS_RECORD dns_records = NULL;
 	PR_STRING arpa_string;
 	PR_STRING string = NULL;
-	ULONG_PTR arpa_hash;
 	DNS_STATUS status;
+	ULONG arpa_hash;
 
 	arpa_string = _app_formatarpa (af, address);
-	arpa_hash = _r_str_gethash2 (&arpa_string->sr, TRUE);
+	arpa_hash = _r_str_gethash (&arpa_string->sr, TRUE);
 
 	if (_app_getcachetable (cache_resolution, arpa_hash, &lock_cache_resolution, &string))
 	{
@@ -1753,7 +1754,7 @@ VOID NTAPI _app_timercallback (
 
 VOID _app_getfileinformation (
 	_In_ PR_STRING path,
-	_In_ ULONG_PTR app_hash,
+	_In_ ULONG app_hash,
 	_In_ ENUM_TYPE_DATA type,
 	_In_ INT listview_id
 )
@@ -2138,7 +2139,7 @@ VOID _app_wufixenable (
 {
 	PR_STRING service_path;
 	SC_HANDLE hsvcmgr;
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 
 	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
 
@@ -2168,7 +2169,7 @@ VOID _app_wufixenable (
 	{
 		if (_r_fs_exists (&config.wusvc_path->sr))
 		{
-			app_hash = _r_str_gethash2 (&config.wusvc_path->sr, TRUE);
+			app_hash = _r_str_gethash (&config.wusvc_path->sr, TRUE);
 
 			if (app_hash)
 			{

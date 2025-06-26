@@ -75,15 +75,15 @@ VOID _app_loginitfile (
 	}
 }
 
-ULONG_PTR _app_getloghash (
+ULONG _app_getloghash (
 	_In_ PITEM_LOG ptr_log
 )
 {
-	PR_STRING log_string;
-	ULONG_PTR log_hash;
+	PR_STRING string;
+	ULONG log_hash;
 
-	log_string = _r_format_string (
-		L"%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG_PTR) L"-%" TEXT (PRIu8) L"-%" \
+	string = _r_format_string (
+		L"%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG) L"-%" TEXT (PRIu8) L"-%" \
 		TEXT (PRIu8) L"-%" TEXT (PRIu16) L"-%" TEXT (PRIu16) L"-%s-%s",
 		ptr_log->af,
 		ptr_log->app_hash,
@@ -95,9 +95,9 @@ ULONG_PTR _app_getloghash (
 		_r_obj_getstring (ptr_log->remote_addr_str)
 	);
 
-	log_hash = _r_str_gethash2 (&log_string->sr, TRUE);
+	log_hash = _r_str_gethash (&string->sr, TRUE);
 
-	_r_obj_dereference (log_string);
+	_r_obj_dereference (string);
 
 	return log_hash;
 }
@@ -134,7 +134,7 @@ PR_STRING _app_getlogviewer ()
 }
 
 BOOLEAN _app_islogfound (
-	_In_ ULONG_PTR log_hash
+	_In_ ULONG log_hash
 )
 {
 	BOOLEAN is_found;
@@ -281,8 +281,8 @@ VOID _app_logwrite_ui (
 )
 {
 	ULONG_PTR table_size;
-	ULONG_PTR hash_code;
-	ULONG_PTR log_hash;
+	ULONG log_hash;
+	ULONG hash_code;
 	INT item_id;
 
 	log_hash = _app_getloghash (ptr_log);
@@ -302,7 +302,7 @@ VOID _app_logwrite_ui (
 	{
 		item_id = _r_listview_getitemcount (hwnd, IDC_LOG) - 1;
 
-		hash_code = _app_listview_getitemcontext (hwnd, IDC_LOG, item_id);
+		hash_code = (ULONG)_app_listview_getitemcontext (hwnd, IDC_LOG, item_id);
 
 		_r_listview_deleteitem (hwnd, IDC_LOG, item_id);
 
@@ -622,7 +622,7 @@ VOID CALLBACK _wfp_logcallback (
 	{
 		_r_obj_swapreference (&ptr_log->path, sid_string);
 
-		ptr_log->app_hash = _r_str_gethash2 (&ptr_log->path->sr, TRUE);
+		ptr_log->app_hash = _r_str_gethash (&ptr_log->path->sr, TRUE);
 	}
 	else if (log->flags & FWPM_NET_EVENT_FLAG_APP_ID_SET && log->app_id)
 	{
@@ -637,7 +637,7 @@ VOID CALLBACK _wfp_logcallback (
 		{
 			_r_obj_movereference (&ptr_log->path, path);
 
-			ptr_log->app_hash = _r_str_gethash2 (&ptr_log->path->sr, TRUE);
+			ptr_log->app_hash = _r_str_gethash (&ptr_log->path->sr, TRUE);
 		}
 	}
 	else

@@ -360,7 +360,7 @@ BOOLEAN _app_search_applyfilteritem (
 		case IDC_APPS_UWP:
 		case IDC_RULE_APPS_ID:
 		{
-			ptr_app = _app_getappitem (context->id_code);
+			ptr_app = _app_getappitem ((ULONG)context->id_code);
 
 			if (!ptr_app)
 				goto CleanupExit;
@@ -428,7 +428,7 @@ BOOLEAN _app_search_applyfilteritem (
 
 		case IDC_NETWORK:
 		{
-			ptr_network = _app_network_getitem (context->id_code);
+			ptr_network = _app_network_getitem ((ULONG)context->id_code);
 
 			if (!ptr_network)
 				goto CleanupExit;
@@ -488,7 +488,7 @@ BOOLEAN _app_search_applyfilteritem (
 
 		case IDC_LOG:
 		{
-			ptr_log = _app_getlogitem (context->id_code);
+			ptr_log = _app_getlogitem ((ULONG)context->id_code);
 
 			if (!ptr_log)
 				goto CleanupExit;
