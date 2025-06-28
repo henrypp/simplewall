@@ -636,7 +636,8 @@ VOID _app_listview_refreshgroups (
 	_In_ INT listview_id
 )
 {
-	WCHAR buffer[128];
+	WCHAR buffer1[128];
+	WCHAR buffer2[128];
 	UINT group1_title;
 	UINT group2_title;
 	UINT group3_title;
@@ -731,59 +732,41 @@ VOID _app_listview_refreshgroups (
 
 	if (total_count)
 	{
-		// set group #1 title
-		_r_str_printf (
-			buffer,
-			RTL_NUMBER_OF (buffer),
-			is_rules ? L"%s (%d/%d) [for all]" : L"%s (%d/%d)",
-			_r_locale_getstring (group1_title),
-			group1_count,
-			total_count
-		);
-
-		_r_listview_setgroup (hwnd, listview_id, 0, buffer, 0, 0);
-
-		// set group #2 title
-		_r_str_printf (
-			buffer,
-			RTL_NUMBER_OF (buffer),
-			is_rules ? L"%s (%d/%d) [for apps]" : L"%s (%d/%d)",
-			_r_locale_getstring (group2_title),
-			group2_count,
-			total_count
-		);
-
-		_r_listview_setgroup (hwnd, listview_id, 1, buffer, 0, 0);
-
-		// set group #3 title
-		if (group3_title)
+		// set group titles
+		if (is_rules)
 		{
-			_r_str_printf (
-				buffer,
-				RTL_NUMBER_OF (buffer),
-				L"%s (%d/%d)",
-				_r_locale_getstring (group3_title),
-				group3_count,
-				total_count
-			);
-
-			_r_listview_setgroup (hwnd, listview_id, 2, buffer, 0, 0);
+			_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s (%d/%d) [%s]", _r_locale_getstring (group1_title), group1_count, total_count, _r_locale_getstring (IDS_RULE_FOR_ALL));
+			_r_str_printf (buffer2, RTL_NUMBER_OF (buffer2), L"%s (%d/%d) [%s]", _r_locale_getstring (group2_title), group2_count, total_count, _r_locale_getstring (IDS_RULE_FOR_ALL));
+		}
+		else
+		{
+			_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s (%d/%d)", _r_locale_getstring (group1_title), group1_count, total_count);
+			_r_str_printf (buffer2, RTL_NUMBER_OF (buffer2), L"%s (%d/%d)", _r_locale_getstring (group2_title), group2_count, total_count);
 		}
 
-		// set group #4 title
+		_r_listview_setgroup (hwnd, listview_id, 0, buffer1, 0, 0);
+		_r_listview_setgroup (hwnd, listview_id, 1, buffer2, 0, 0);
+
+		if (group3_title)
+		{
+			_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s (%d/%d)", _r_locale_getstring (group3_title), group3_count, total_count);
+
+			_r_listview_setgroup (hwnd, listview_id, 2, buffer1, 0, 0);
+		}
+
 		if (group4_title)
 		{
-			_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%d/%d)", _r_locale_getstring (group4_title), group4_count, total_count);
+			_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s (%d/%d)", _r_locale_getstring (group4_title), group4_count, total_count);
 
-			_r_listview_setgroup (hwnd, listview_id, 3, buffer, 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 3, buffer1, 0, 0);
 		}
 
 		// set group #5 title
 		if (group5_title)
 		{
-			_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%d/%d) [silent]", _r_locale_getstring (group5_title), group5_count, total_count);
+			_r_str_printf (buffer1, RTL_NUMBER_OF (buffer1), L"%s (%d/%d) [silent]", _r_locale_getstring (group5_title), group5_count, total_count);
 
-			_r_listview_setgroup (hwnd, listview_id, 4, buffer, 0, 0);
+			_r_listview_setgroup (hwnd, listview_id, 4, buffer1, 0, 0);
 		}
 	}
 }

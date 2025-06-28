@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
@@ -1151,7 +1151,7 @@ VOID _app_generate_rulescontrol (
 
 	if (!status.rules_count)
 	{
-		_r_menu_additem_ex (hsubmenu, IDX_RULES_SPECIAL, SZ_EMPTY, MF_DISABLED);
+		_r_menu_additem_ex (hsubmenu, IDX_RULES_SPECIAL, _r_locale_getstring (IDS_STATUS_EMPTY), MF_DISABLED);
 	}
 	else
 	{
@@ -1965,7 +1965,7 @@ VOID NTAPI _app_queue_notifyinformation (
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
 
 			if (_r_obj_isstringempty (address_str))
-				_r_obj_movereference (&address_str, _r_obj_createstring (SZ_EMPTY));
+				_r_obj_movereference (&address_str, _r_locale_getstring_ex (IDS_STATUS_EMPTY));
 
 			_r_ctrl_settablestring (context->hwnd, &hdefer, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &address_str->sr);
 
@@ -1973,7 +1973,7 @@ VOID NTAPI _app_queue_notifyinformation (
 			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 
 			if (_r_obj_isstringempty (host_str))
-				_r_obj_movereference (&host_str, _r_obj_createstring (SZ_EMPTY));
+				_r_obj_movereference (&host_str, _r_locale_getstring_ex (IDS_STATUS_EMPTY));
 
 			_r_ctrl_settablestring (context->hwnd, &hdefer, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
 

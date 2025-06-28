@@ -681,7 +681,7 @@ BOOLEAN _wfp_deletefilter (
 	{
 		_r_str_fromguid (filter_id, TRUE, &string);
 
-		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey0", status, _r_obj_getstringordefault (string, SZ_EMPTY));
+		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey0", status, _r_obj_getstringordefault (string, L"<no data>"));
 
 		if (string)
 			_r_obj_dereference (string);
@@ -797,7 +797,7 @@ ULONG _wfp_createfilter (
 	}
 	else
 	{
-		_r_str_copy (filter_description, RTL_NUMBER_OF (filter_description), SZ_EMPTY);
+		_r_str_copy (filter_description, RTL_NUMBER_OF (filter_description), _r_locale_getstring (IDS_STATUS_EMPTY));
 	}
 
 	// reset action rights

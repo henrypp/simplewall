@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2021-2024 Henry++
+// Copyright (c) 2021-2025 Henry++
 
 #pragma once
 
@@ -19,7 +19,7 @@ VOID _app_generate_appmenu (
 	_In_ HMENU hmenu,
 	_In_ HMENU hsubmenu_rules,
 	_In_ HMENU hsubmenu_timers,
-	_In_ ULONG_PTR app_hash
+	_In_ ULONG app_hash
 );
 
 VOID _app_message_contextmenu (

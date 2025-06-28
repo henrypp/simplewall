@@ -324,10 +324,10 @@ VOID _app_notify_show (
 	_In_ PITEM_LOG ptr_log
 )
 {
-	R_STRINGREF loading_sr = PR_STRINGREF_INIT (SZ_LOADING);
-	R_STRINGREF empty_sr = PR_STRINGREF_INIT (SZ_EMPTY);
 	PR_STRING localized_string = NULL;
 	PR_STRING string = NULL;
+	PR_STRING loading;
+	PR_STRING empty;
 	WCHAR window_title[128];
 	PITEM_APP ptr_app;
 	HDWP hdefer;
@@ -353,45 +353,55 @@ VOID _app_notify_show (
 
 	hdefer = BeginDeferWindowPos (2);
 
+	empty = _r_locale_getstring_ex (IDS_STATUS_EMPTY);
+
+	if (_r_obj_isstringempty (empty))
+		_r_obj_movereference (&empty, _r_obj_createstring (L"Empty..."));
+
 	// print name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
 	_r_obj_movereference (&string, _app_getappdisplayname (ptr_app, TRUE));
 
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, string ? &string->sr : &empty_sr);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, string ? &string->sr : &empty->sr);
+
+	loading = _r_locale_getstring_ex (IDS_LOADING);
+
+	if (_r_obj_isstringempty (loading))
+		_r_obj_movereference (&loading, _r_obj_createstring (L"Loading..."));
 
 	// print signature
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading_sr);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading->sr);
 
 	// print address
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &loading_sr);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &loading->sr);
 
 	// print host
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading_sr);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading->sr);
 
 	// print port
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
 	_r_obj_movereference (&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
 
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty_sr);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty->sr);
 
 	// print direction
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
 	_r_obj_movereference (&string, _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
 
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty_sr);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty->sr);
 
 	// print filter name
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":"));
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty_sr);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty->sr);
 
 	// print date
 	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
 	_r_obj_movereference (&string, _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty_sr);
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty->sr);
 
 	if (hdefer)
 		EndDeferWindowPos (hdefer);
@@ -422,8 +432,8 @@ VOID _app_notify_show (
 	if (string)
 		_r_obj_dereference (string);
 
-	if (localized_string)
-		_r_obj_dereference (localized_string);
+	_r_obj_dereference (loading);
+	_r_obj_dereference (empty);
 
 	_r_obj_dereference (ptr_app);
 }

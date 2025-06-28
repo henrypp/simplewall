@@ -267,7 +267,7 @@ VOID _app_getapptooltipstring (
 		}
 		else
 		{
-			_r_obj_appendstringbuilder (buffer, SZ_EMPTY);
+			_r_obj_appendstringbuilder (buffer, _r_locale_getstring (IDS_STATUS_EMPTY));
 		}
 
 		_r_obj_appendstringbuilder (buffer, SZ_CRLF SZ_TAB);
@@ -281,7 +281,7 @@ VOID _app_getapptooltipstring (
 		}
 		else
 		{
-			_r_obj_appendstringbuilder (buffer, SZ_EMPTY);
+			_r_obj_appendstringbuilder (buffer, _r_locale_getstring (IDS_STATUS_EMPTY));
 		}
 
 		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
@@ -333,15 +333,17 @@ PR_STRING _app_gettooltipbylparam (
 
 			_r_obj_appendstringbuilderformat (
 				&sb,
-				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (" SZ_DIRECTION_REMOTE L"):\r\n%s%s\r\n%s (" SZ_DIRECTION_LOCAL L"):\r\n%s%s",
-				_r_obj_getstringordefault (ptr_rule->name, SZ_EMPTY),
+				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (%s):\r\n%s%s\r\n%s (%s):\r\n%s%s",
+				_r_obj_getstringordefault (ptr_rule->name, _r_locale_getstring (IDS_STATUS_EMPTY)),
 				lparam,
 				_r_locale_getstring (IDS_RULE),
+				_r_locale_getstring (IDS_DIRECTION_REMOTE),
 				SZ_TAB,
-				_r_obj_getstringordefault (string1, SZ_EMPTY),
+				_r_obj_getstringordefault (string1, _r_locale_getstring (IDS_STATUS_EMPTY)),
 				_r_locale_getstring (IDS_RULE),
+				_r_locale_getstring (IDS_DIRECTION_LOCAL),
 				SZ_TAB,
-				_r_obj_getstringordefault (string2, SZ_EMPTY)
+				_r_obj_getstringordefault (string2, _r_locale_getstring (IDS_STATUS_EMPTY))
 			);
 
 			if (string1)
@@ -398,7 +400,7 @@ PR_STRING _app_gettooltipbylparam (
 					SZ_CRLF,
 					_r_locale_getstring (IDS_NOTES),
 					L":\r\n" SZ_TAB,
-					SZ_RULE_INTERNAL_TITLE
+					_r_locale_getstring (IDS_INTERNAL_RULE)
 				);
 
 				_r_obj_appendstringbuilder2 (&sb, &string2->sr);

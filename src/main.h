@@ -98,16 +98,8 @@ typedef enum _ENUM_INFO_DATA2
 #define SZ_TAB L"    "
 #define SZ_CRLF L"\r\n"
 #define SZ_TAB_CRLF SZ_CRLF SZ_TAB
-#define SZ_EMPTY L"<empty>"
 #define SZ_RULE_INTERNAL_MENU L"*"
-#define SZ_RULE_INTERNAL_TITLE L"Internal rule"
-#define SZ_RULE_NEW_TITLE L"<new rule>"
-#define SZ_UNKNOWN L"unknown"
-#define SZ_LOADING L"Loading..."
-#define SZ_MAXTEXT L"Limit reached."
 
-#define SZ_DIRECTION_REMOTE L"Remote"
-#define SZ_DIRECTION_LOCAL L"Local"
 #define SZ_STATE_ALLOW L"Allowed"
 #define SZ_STATE_BLOCK L"Blocked"
 #define SZ_DIRECTION_IN L"Inbound"
@@ -115,8 +107,8 @@ typedef enum _ENUM_INFO_DATA2
 #define SZ_DIRECTION_ANY L"Any"
 #define SZ_DIRECTION_LOOPBACK L"Loopback"
 
-#define SZ_LOG_TITLE L"Date,Username,Path,Address (" SZ_DIRECTION_LOCAL L")," \
-	L"Port (" SZ_DIRECTION_LOCAL L"),Address (" SZ_DIRECTION_REMOTE L"),Port (" SZ_DIRECTION_REMOTE L")," \
+#define SZ_LOG_TITLE L"Date,Username,Path,Address (Local)," \
+	L"Port (Local),Address (Remote),Port (Remote)," \
 	L"Protocol,Layer,Filter name,Filter ID,Direction,State" SZ_CRLF
 
 #define SZ_LOG_BODY L"\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"," \
@@ -199,18 +191,18 @@ typedef struct _STATIC_DATA
 	PSID builtin_netops_sid;
 	PSID builtin_admins_sid;
 
+	PR_BYTE service_wdiservicehost_sid;
+	PR_BYTE service_policyagent_sid;
 	PR_BYTE service_mpssvc_sid;
 	PR_BYTE service_nlasvc_sid;
-	PR_BYTE service_policyagent_sid;
 	PR_BYTE service_rpcss_sid;
-	PR_BYTE service_wdiservicehost_sid;
 
-	HIMAGELIST himg_toolbar;
 	HIMAGELIST himg_rules_small;
 	HIMAGELIST himg_rules_large;
+	HIMAGELIST himg_toolbar;
 
-	HBITMAP hbmp_enable;
 	HBITMAP hbmp_disable;
+	HBITMAP hbmp_enable;
 	HBITMAP hbmp_allow;
 	HBITMAP hbmp_block;
 
@@ -230,31 +222,31 @@ typedef struct _STATIC_DATA
 	HWND htoolbar;
 	HWND hsearchbar;
 
-	ULONG_PTR color_invalid;
-	ULONG_PTR color_special;
-	ULONG_PTR color_signed;
-	ULONG_PTR color_pico;
-	ULONG_PTR color_system;
-	ULONG_PTR color_network;
-	ULONG_PTR color_nonremovable;
+	ULONG color_nonremovable;
+	ULONG color_network;
+	ULONG color_invalid;
+	ULONG color_special;
+	ULONG color_signed;
+	ULONG color_system;
+	ULONG color_pico;
 
-	ULONG_PTR ntoskrnl_hash;
-	ULONG_PTR svchost_hash;
-	ULONG_PTR wusvc_hash;
-	ULONG_PTR my_hash;
+	ULONG ntoskrnl_hash;
+	ULONG svchost_hash;
+	ULONG wusvc_hash;
+	ULONG my_hash;
 
+	BOOLEAN is_filterstemporary;
+	BOOLEAN is_neteventenabled;
 	BOOLEAN is_notifytimeout;
 	BOOLEAN is_notifymouse;
-	BOOLEAN is_neteventenabled;
 	BOOLEAN is_neteventset;
-	BOOLEAN is_filterstemporary;
 } STATIC_DATA, *PSTATIC_DATA;
 
 typedef struct _PROFILE_DATA
 {
-	PR_STRING profile_path;
-	PR_STRING profile_path_backup;
 	PR_STRING profile_path_internal;
+	PR_STRING profile_path_backup;
+	PR_STRING profile_path;
 
 	LONG64 profile_internal_timestamp;
 } PROFILE_DATA, *PPROFILE_DATA;
@@ -275,11 +267,11 @@ typedef struct _ITEM_APP
 
 	PTP_TIMER htimer;
 
-	ULONG_PTR app_hash;
-
+	LONG64 last_notify;
 	LONG64 timestamp;
 	LONG64 timer;
-	LONG64 last_notify;
+
+	ULONG app_hash;
 
 	ENUM_TYPE_DATA type;
 
@@ -287,10 +279,10 @@ typedef struct _ITEM_APP
 
 	struct
 	{
-		ULONG is_enabled : 1;
-		ULONG is_haveerrors : 1;
-		ULONG is_silent : 1;
 		ULONG is_undeletable : 1;
+		ULONG is_haveerrors : 1;
+		ULONG is_enabled : 1;
+		ULONG is_silent : 1;
 		ULONG spare_bits : 28;
 	} DUMMYSTRUCTNAME;
 } ITEM_APP, *PITEM_APP;
@@ -302,7 +294,7 @@ typedef struct _ITEM_APP_INFO
 
 	PR_STRING path;
 
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 
 	LONG icon_id;
 
@@ -333,11 +325,11 @@ typedef struct _ITEM_RULE
 
 	struct
 	{
-		ULONG is_enabled : 1;
-		ULONG is_haveerrors : 1;
-		ULONG is_forservices : 1;
-		ULONG is_readonly : 1;
 		ULONG is_enabled_default : 1;
+		ULONG is_forservices : 1;
+		ULONG is_haveerrors : 1;
+		ULONG is_readonly : 1;
+		ULONG is_enabled : 1;
 		ULONG spare_bits : 27;
 	} DUMMYSTRUCTNAME;
 
@@ -354,7 +346,9 @@ typedef struct _ITEM_RULE
 	} DUMMYUNIONNAME;
 
 	ENUM_TYPE_DATA type;
+
 	FWP_ACTION_TYPE action;
+
 	UINT8 profile; // reserved ffu!
 	UINT8 weight;
 } ITEM_RULE, *PITEM_RULE;
@@ -391,7 +385,7 @@ typedef struct _ITEM_NETWORK
 
 	PR_STRING protocol_str;
 
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 	ULONG state;
 
 	FWP_DIRECTION direction;
@@ -436,7 +430,7 @@ typedef struct _ITEM_LOG
 
 	UINT64 filter_id;
 
-	ULONG_PTR app_hash;
+	ULONG app_hash;
 
 	FWP_DIRECTION direction;
 
@@ -489,7 +483,7 @@ typedef struct _ITEM_COLOR
 	PR_STRING config_value;
 	COLORREF default_clr;
 	COLORREF new_clr;
-	UINT locale_id;
+	ULONG locale_id;
 	BOOLEAN is_enabled;
 } ITEM_COLOR, *PITEM_COLOR;
 

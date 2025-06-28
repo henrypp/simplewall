@@ -818,6 +818,23 @@ BEGIN
 	IDS_KEEPUNUSED_CHK "Keep unused apps"
 
 	IDS_UPDATE_SPEED "Speed"
+
+	IDS_RULE_FOR_ALL "for all"
+	IDS_RULE_FOR_APPS "for apps"
+
+	IDS_PROFILE_TYPE_PLAIN "Plain"
+	IDS_PROFILE_TYPE_COMPRESSED "Compressed"
+	IDS_PROFILE_TYPE_ENCRYPTED "Encrypted"
+
+	IDS_SESSION_ONLY "session only"
+
+	IDS_LIMIT_REACHED "Limit reached."
+	IDS_INTERNAL_RULE "Internal rule"
+
+	IDS_LOADING "Loading..."
+
+	IDS_DIRECTION_REMOTE "Remote"
+	IDS_DIRECTION_LOCAL "Local"
 END
 
 //

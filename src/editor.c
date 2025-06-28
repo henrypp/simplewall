@@ -328,7 +328,7 @@ INT_PTR CALLBACK EditorRuleProc (
 			}
 			else if (notify_code == EN_MAXTEXT)
 			{
-				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, SZ_MAXTEXT);
+				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, _r_locale_getstring (IDS_LIMIT_REACHED));
 
 				return FALSE;
 			}
@@ -357,7 +357,7 @@ INT_PTR CALLBACK EditorRuleProc (
 
 					if (_r_obj_isstringempty2 (string))
 					{
-						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, SZ_EMPTY);
+						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
 						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
 
 						_r_obj_dereference (string);
@@ -573,7 +573,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			// rule (remote)
 			if (GetDlgItem (hwnd, IDC_RULE_REMOTE_ID))
 			{
-				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE, L"%s (" SZ_DIRECTION_REMOTE L"):", _r_locale_getstring (IDS_RULE));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_REMOTE, L"%s (%s):", _r_locale_getstring (IDS_RULE), _r_locale_getstring (IDS_DIRECTION_REMOTE));
 
 				_r_listview_setstyle (
 					hwnd,
@@ -603,7 +603,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			// rule (local)
 			if (GetDlgItem (hwnd, IDC_RULE_LOCAL_ID))
 			{
-				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL, L"%s (" SZ_DIRECTION_LOCAL L"):", _r_locale_getstring (IDS_RULE));
+				_r_ctrl_setstringformat (hwnd, IDC_RULE_LOCAL, L"%s (%s):", _r_locale_getstring (IDS_RULE), _r_locale_getstring (IDS_DIRECTION_LOCAL));
 
 				_r_listview_setstyle (
 					hwnd,
@@ -1223,7 +1223,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 			if (notify_code == EN_MAXTEXT)
 			{
-				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, SZ_MAXTEXT);
+				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, _r_locale_getstring (IDS_LIMIT_REACHED));
 
 				return FALSE;
 			}
@@ -1554,10 +1554,10 @@ INT_PTR CALLBACK EditorProc (
 			// configure tabs
 			if (context->is_settorules)
 			{
-				_r_str_copy (title, RTL_NUMBER_OF (title), _r_obj_getstringordefault (context->ptr_rule->name, SZ_RULE_NEW_TITLE));
+				_r_str_copy (title, RTL_NUMBER_OF (title), _r_obj_getstringorempty (context->ptr_rule->name));
 
 				if (context->ptr_rule->is_readonly)
-					_r_str_appendformat (title, RTL_NUMBER_OF (title), L" (%s)", SZ_RULE_INTERNAL_TITLE);
+					_r_str_appendformat (title, RTL_NUMBER_OF (title), L" (%s)", _r_locale_getstring (IDS_INTERNAL_RULE));
 
 				_app_editor_addtabitem (hwnd, IDS_SETTINGS_GENERAL, IDD_EDITOR_GENERAL, context);
 				_app_editor_addtabitem (hwnd, IDS_RULE, IDD_EDITOR_RULE, context);
@@ -1785,7 +1785,7 @@ INT_PTR CALLBACK EditorProc (
 
 							if (_r_obj_isstringempty2 (string))
 							{
-								_r_ctrl_showballoontip (hpage_general, IDC_RULE_NAME_ID, 0, NULL, SZ_EMPTY);
+								_r_ctrl_showballoontip (hpage_general, IDC_RULE_NAME_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
 
 								_r_obj_dereference (string);
 

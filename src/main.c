@@ -1114,8 +1114,9 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_setstringformat (
 						hwnd,
 						IDC_ENABLEUILOG_CHK,
-						L"%s (session only)",
-						_r_locale_getstring (IDS_ENABLEUILOG_CHK)
+						L"%s (%s)",
+						_r_locale_getstring (IDS_ENABLEUILOG_CHK),
+						_r_locale_getstring (IDS_SESSION_ONLY)
 					);
 
 					break;

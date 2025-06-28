@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
@@ -240,18 +240,18 @@ VOID _app_logwrite (
 
 	buffer = _r_format_string (
 		SZ_LOG_BODY,
-		_r_obj_getstringordefault (date_string, SZ_EMPTY),
-		_r_obj_getstringordefault (ptr_log->username, SZ_EMPTY),
-		_r_obj_getstringordefault (path, SZ_EMPTY),
-		_r_obj_getstringordefault (ptr_log->local_addr_str, SZ_EMPTY),
+		_r_obj_getstringordefault (date_string, _r_locale_getstring (IDS_STATUS_EMPTY)),
+		_r_obj_getstringordefault (ptr_log->username, _r_locale_getstring (IDS_STATUS_EMPTY)),
+		_r_obj_getstringordefault (path, _r_locale_getstring (IDS_STATUS_EMPTY)),
+		_r_obj_getstringordefault (ptr_log->local_addr_str, _r_locale_getstring (IDS_STATUS_EMPTY)),
 		local_port_string->buffer,
-		_r_obj_getstringordefault (ptr_log->remote_addr_str, SZ_EMPTY),
+		_r_obj_getstringordefault (ptr_log->remote_addr_str, _r_locale_getstring (IDS_STATUS_EMPTY)),
 		remote_port_string->buffer,
 		_r_obj_getstringordefault (ptr_log->protocol_str, SZ_DIRECTION_ANY),
-		_r_obj_getstringordefault (ptr_log->layer_name, SZ_EMPTY),
-		_r_obj_getstringordefault (ptr_log->filter_name, SZ_EMPTY),
+		_r_obj_getstringordefault (ptr_log->layer_name, _r_locale_getstring (IDS_STATUS_EMPTY)),
+		_r_obj_getstringordefault (ptr_log->filter_name, _r_locale_getstring (IDS_STATUS_EMPTY)),
 		ptr_log->filter_id,
-		_r_obj_getstringordefault (direction_string, SZ_EMPTY),
+		_r_obj_getstringordefault (direction_string, _r_locale_getstring (IDS_STATUS_EMPTY)),
 		(ptr_log->is_allow ? SZ_STATE_ALLOW : SZ_STATE_BLOCK)
 	);
 
