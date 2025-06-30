@@ -16,7 +16,7 @@
 
 	<compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
 		<application>
-			<maxversiontested Id="10.0.26100.0" />
+			<maxversiontested Id="10.0.26200.0" />
 			<supportedOS Id="{35138B9A-5D96-4FBD-8E2D-A2440225F93A}" /> <!-- win7 -->
 			<supportedOS Id="{4A2F28E3-53B9-4441-BA9C-D69D4A4A6E38}" /> <!-- win8 -->
 			<supportedOS Id="{1F676C76-80E1-4239-95BB-83D0F6D0DA78}" /> <!-- win8.1 -->
