@@ -548,13 +548,13 @@ VOID _app_notify_killprocess (
 						status = _r_sys_terminateprocess (process_handle, STATUS_SUCCESS);
 
 						if (!NT_SUCCESS (status))
-							_r_show_errormessage (hwnd, L"Cannot terminate process!", status, process->ImageName.Buffer, ET_NATIVE);
+							_r_show_errormessage (hwnd, L"Cannot terminate process!", status, file_name->buffer, ET_NATIVE);
 
 						NtClose (process_handle);
 					}
 					else
 					{
-						_r_show_errormessage (hwnd, L"Cannot open process!", status, process->ImageName.Buffer, ET_NATIVE);
+						_r_show_errormessage (hwnd, L"Cannot open process!", status, file_name->buffer, ET_NATIVE);
 					}
 				}
 
@@ -562,7 +562,7 @@ VOID _app_notify_killprocess (
 			}
 			else
 			{
-				_r_show_errormessage (hwnd, L"Cannot get process path!", status, process->ImageName.Buffer, ET_NATIVE);
+				_r_show_errormessage (hwnd, L"Cannot get process path!", status, file_name->buffer, ET_NATIVE);
 			}
 		}
 	}
