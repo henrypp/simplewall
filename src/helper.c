@@ -944,8 +944,15 @@ VOID _app_getfilesignatureinfo (
 	PR_STRING string = NULL;
 	LONG status;
 
-	if (ptr_app_info->signature_info)
-		_r_obj_clearreference (&ptr_app_info->signature_info);
+	__try
+	{
+		if (ptr_app_info->signature_info)
+			_r_obj_clearreference (&ptr_app_info->signature_info);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		NOTHING;
+	}
 
 	file_info.cbStruct = sizeof (file_info);
 	file_info.pcwszFilePath = ptr_app_info->path->buffer;
@@ -968,7 +975,14 @@ VOID _app_getfilesignatureinfo (
 			_app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA1_ALGORITHM, &string);
 	}
 
-	_r_obj_movereference (&ptr_app_info->signature_info, string);
+	__try
+	{
+		_r_obj_movereference (&ptr_app_info->signature_info, string);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		NOTHING;
+	}
 }
 
 VOID _app_getfileversioninfo (
@@ -984,8 +998,15 @@ VOID _app_getfileversioninfo (
 	ULONG lcid;
 	NTSTATUS status;
 
-	if (ptr_app_info->version_info)
-		_r_obj_clearreference (&ptr_app_info->version_info);
+	__try
+	{
+		if (ptr_app_info->version_info)
+			_r_obj_clearreference (&ptr_app_info->version_info);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		NOTHING;
+	}
 
 	status = _r_sys_loadlibraryasresource (&ptr_app_info->path->sr, &hlib);
 
@@ -1061,6 +1082,7 @@ VOID _app_getfileversioninfo (
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
+		NOTHING;
 	}
 
 CleanupExit:
