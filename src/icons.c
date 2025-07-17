@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #include "global.h"
 
@@ -73,17 +73,16 @@ HICON _app_icons_getdefaulttype_hicon (
 	_In_ PICON_INFORMATION icon_info
 )
 {
-	if (type == DATA_APP_UWP)
-	{
-		if (icon_info->uwp_hicon)
-			return CopyIcon (icon_info->uwp_hicon);
-	}
-	else if (type == DATA_APP_SERVICE)
+	if (type == DATA_APP_SERVICE)
 	{
 		if (icon_info->service_hicon)
 			return CopyIcon (icon_info->service_hicon);
 	}
-
+	else if (type == DATA_APP_UWP)
+	{
+		if (icon_info->uwp_hicon)
+			return CopyIcon (icon_info->uwp_hicon);
+	}
 	if (icon_info->app_hicon)
 		return CopyIcon (icon_info->app_hicon);
 
@@ -98,13 +97,13 @@ LONG _app_icons_getdefaultapp_id (
 
 	icon_info = _app_icons_getdefault ();
 
-	if (type == DATA_APP_UWP)
-	{
-		return icon_info->uwp_icon_id;
-	}
-	else if (type == DATA_APP_SERVICE)
+	if (type == DATA_APP_SERVICE)
 	{
 		return icon_info->service_icon_id;
+	}
+	else if (type == DATA_APP_UWP)
+	{
+		return icon_info->uwp_icon_id;
 	}
 
 	return icon_info->app_icon_id;

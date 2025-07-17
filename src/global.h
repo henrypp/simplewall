@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2025 Henry++
 
 #pragma once
 
@@ -67,16 +67,16 @@ DECLSPEC_SELECTANY R_FREE_LIST listview_free_list = {0};
 // timers array
 DECLSPEC_SELECTANY const LONG64 timer_array[] =
 {
-	2 * 60,
-	5 * 60,
-	10 * 60,
-	30 * 60,
-	1 * 3600,
-	2 * 3600,
-	4 * 3600,
-	6 * 3600,
-	12 * 3600,
-	24 * 3600
+	2 * 60LL, // 2 min
+	5 * 60LL, // 5 min
+	10 * 60LL, // 10 min
+	30 * 60LL, // 30 min
+	1 * 3600LL, // 1 hour
+	2 * 3600LL, // 2 hour
+	4 * 3600LL, // 4 hour
+	6 * 3600LL, // 6 hour
+	12 * 3600LL, // 12 hour
+	24 * 3600LL // 24 hour
 };
 
 // dropped events callback subscription (win7+)

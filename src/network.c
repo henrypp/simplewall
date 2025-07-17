@@ -531,7 +531,7 @@ BOOLEAN _app_network_getpath (
 
 				if (NT_SUCCESS (status))
 				{
-					status = _r_sys_querytokeninformation (htoken, TokenAppContainerSid, &app_container);
+					status = _r_sys_querytokeninformation (htoken, TokenAppContainerSid, (PVOID_PTR)&app_container);
 
 					if (NT_SUCCESS (status))
 					{
@@ -583,7 +583,7 @@ BOOLEAN _app_network_isapphaveconnection (
 
 	_r_queuedlock_acquireshared (&network_context->lock_network);
 
-	while (_r_obj_enumhashtablepointer (network_context->network_ptr, &ptr_network, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (network_context->network_ptr, (PVOID_PTR)&ptr_network, NULL, &enum_key))
 	{
 		if (ptr_network->app_hash != app_hash)
 			continue;
@@ -677,7 +677,7 @@ VOID _app_network_printlistviewtable (
 	// add new connections into listview
 	_r_queuedlock_acquireshared (&network_context->lock_network);
 
-	while (_r_obj_enumhashtablepointer (network_context->network_ptr, &ptr_network, &network_hash, &enum_key))
+	while (_r_obj_enumhashtablepointer (network_context->network_ptr, (PVOID_PTR)&ptr_network, &network_hash, &enum_key))
 	{
 		string = _r_obj_findhashtablepointer (network_context->checker_ptr, network_hash);
 

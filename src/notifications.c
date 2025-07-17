@@ -8,29 +8,26 @@ HWND _app_notify_getwindow (
 	_In_opt_ PITEM_LOG ptr_log
 )
 {
-	HWND current_hwnd;
-	HWND new_hwnd;
+	HWND hwnd;
 
-	current_hwnd = _InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
+	hwnd = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, NULL);
 
-	if (current_hwnd)
+	if (hwnd)
 	{
 		if (ptr_log)
-			_app_notify_show (current_hwnd, ptr_log);
+			_app_notify_show (hwnd, ptr_log);
 
-		return current_hwnd;
+		return hwnd;
 	}
 
 	if (!ptr_log)
 		return NULL;
 
-	new_hwnd = _r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, ptr_log);
+	_r_wnd_createwindow (_r_sys_getimagebase (), MAKEINTRESOURCE (IDD_NOTIFICATION), NULL, &NotificationProc, ptr_log);
 
 	_r_sys_waitforsingleobject (config.hnotify_evt, 2000);
 
-	current_hwnd = _InterlockedCompareExchangePointer (&config.hnotification, NULL, NULL);
-
-	return current_hwnd;
+	return _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, NULL);
 }
 
 _Ret_maybenull_
@@ -258,7 +255,7 @@ ULONG _app_notify_getnextapp_id (
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
 		if (!ptr_app->notification)
 			continue;
@@ -356,50 +353,50 @@ VOID _app_notify_show (
 	empty = _r_locale_getstring_ex (IDS_STATUS_EMPTY);
 
 	if (_r_obj_isstringempty (empty))
-		_r_obj_movereference (&empty, _r_obj_createstring (L"Empty..."));
+		_r_obj_movereference ((PVOID_PTR)&empty, _r_obj_createstring (L"Empty..."));
 
 	// print name
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
-	_r_obj_movereference (&string, _app_getappdisplayname (ptr_app, TRUE));
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
+	_r_obj_movereference ((PVOID_PTR)&string, _app_getappdisplayname (ptr_app, TRUE));
 
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, string ? &string->sr : &empty->sr);
 
 	loading = _r_locale_getstring_ex (IDS_LOADING);
 
 	if (_r_obj_isstringempty (loading))
-		_r_obj_movereference (&loading, _r_obj_createstring (L"Loading..."));
+		_r_obj_movereference ((PVOID_PTR)&loading, _r_obj_createstring (L"Loading..."));
 
 	// print signature
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &loading->sr);
 
 	// print address
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &loading->sr);
 
 	// print host
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &loading->sr);
 
 	// print port
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
-	_r_obj_movereference (&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
+	_r_obj_movereference ((PVOID_PTR)&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
 
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty->sr);
 
 	// print direction
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
-	_r_obj_movereference (&string, _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
+	_r_obj_movereference ((PVOID_PTR)&string, _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
 
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty->sr);
 
 	// print filter name
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":"));
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_FILTER), L":"));
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILTER_ID, &localized_string->sr, IDC_FILTER_TEXT, ptr_log->filter_name ? &ptr_log->filter_name->sr : &empty->sr);
 
 	// print date
-	_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
-	_r_obj_movereference (&string, _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
+	_r_obj_movereference ((PVOID_PTR)&string, _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
 
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty->sr);
 
@@ -449,7 +446,7 @@ VOID _app_notify_playsound ()
 	ULONG flags = SND_ASYNC | SND_NODEFAULT | SND_NOWAIT | SND_SENTRY;
 	NTSTATUS status;
 
-	current_path = _InterlockedCompareExchangePointer (&cached_path, NULL, NULL);
+	current_path = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&cached_path, NULL, NULL);
 
 	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (&current_path->sr))
 	{
@@ -461,7 +458,7 @@ VOID _app_notify_playsound ()
 
 			if (NT_SUCCESS (status))
 			{
-				current_path = _InterlockedCompareExchangePointer (&cached_path, path, current_path);
+				current_path = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&cached_path, path, current_path);
 
 				if (current_path)
 					_r_obj_dereference (path);
@@ -566,7 +563,7 @@ VOID _app_notify_killprocess (
 			}
 		}
 	}
-	while (process = PR_NEXT_PROCESS (process));
+	while ((process = PR_NEXT_PROCESS (process)));
 
 	_r_obj_dereference (file_name);
 
@@ -844,11 +841,10 @@ VOID _app_notify_drawgradient (
 	_In_ LPCRECT rect
 )
 {
-	static COLORREF gradient_arr[] = {
+	COLORREF gradient_arr[] = {
 		RGB (0, 68, 112),
 		RGB (7, 111, 95),
 	};
-
 	GRADIENT_RECT gradient_rect = {0};
 	TRIVERTEX trivertx[2] = {0};
 
@@ -895,7 +891,7 @@ INT_PTR CALLBACK NotificationProc (
 			HWND htip;
 			LONG dpi_value;
 
-			current_hwnd = _InterlockedCompareExchangePointer (&config.hnotification, hwnd, config.hnotification);
+			current_hwnd = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, hwnd, config.hnotification);
 
 			if (current_hwnd)
 				DestroyWindow (current_hwnd);
@@ -953,7 +949,7 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_NCDESTROY:
 		{
-			_InterlockedCompareExchangePointer (&config.hnotification, NULL, config.hnotification);
+			_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, config.hnotification);
 
 			_app_notify_destroy (hwnd);
 

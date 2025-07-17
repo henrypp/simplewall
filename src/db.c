@@ -23,7 +23,7 @@ VOID _app_db_destroy (
 )
 {
 	if (db_info->bytes)
-		_r_obj_clearreference (&db_info->bytes);
+		_r_obj_clearreference ((PVOID_PTR)&db_info->bytes);
 
 	_r_xml_destroylibrary (&db_info->xml_library);
 }
@@ -180,7 +180,7 @@ NTSTATUS _app_db_openfrombuffer (
 {
 	NTSTATUS status;
 
-	_r_obj_movereference (&db_info->bytes, _r_obj_createbyte4 (buffer));
+	_r_obj_movereference ((PVOID_PTR)&db_info->bytes, _r_obj_createbyte4 (buffer));
 
 	status = _app_db_decodebuffer (db_info, type, min_version);
 
@@ -199,7 +199,7 @@ NTSTATUS _app_db_openfromfile (
 	NTSTATUS status;
 
 	if (db_info->bytes)
-		_r_obj_clearreference (&db_info->bytes);
+		_r_obj_clearreference ((PVOID_PTR)&db_info->bytes);
 
 	status = _r_fs_openfile (&path->sr, GENERIC_READ, FILE_SHARE_READ, 0, FALSE, &hfile);
 
@@ -249,7 +249,7 @@ VOID _app_db_parse_app (
 		dos_path = _r_path_dospathfromnt (&path->sr);
 
 		if (dos_path)
-			_r_obj_movereference (&path, dos_path);
+			_r_obj_movereference ((PVOID_PTR)&path, dos_path);
 	}
 
 	if (!_r_obj_isstringempty2 (path))
@@ -384,7 +384,7 @@ VOID _app_db_parse_rule (
 
 	if (!_r_obj_isstringempty (comment))
 	{
-		_r_obj_movereference (&ptr_rule->comment, comment);
+		_r_obj_movereference ((PVOID_PTR)&ptr_rule->comment, comment);
 	}
 	else
 	{
@@ -581,7 +581,7 @@ NTSTATUS _app_db_decodebody (
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_FOURCC_LENGTH);
 
 	// read the hash
-	_r_obj_movereference (&db_info->hash, _r_obj_createbyte_ex (db_info->bytes->buffer, PROFILE2_SHA256_LENGTH));
+	_r_obj_movereference ((PVOID_PTR)db_info->hash, _r_obj_createbyte_ex (db_info->bytes->buffer, PROFILE2_SHA256_LENGTH));
 
 	// skip hash
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_SHA256_LENGTH);
@@ -597,7 +597,7 @@ NTSTATUS _app_db_decodebody (
 
 				if (NT_SUCCESS (status))
 				{
-					_r_obj_movereference (&db_info->bytes, new_bytes);
+					_r_obj_movereference ((PVOID_PTR)&db_info->bytes, new_bytes);
 
 					break;
 				}
@@ -614,7 +614,7 @@ NTSTATUS _app_db_decodebody (
 			if (!NT_SUCCESS (status))
 				return status;
 
-			_r_obj_movereference (&db_info->bytes, new_bytes);
+			_r_obj_movereference ((PVOID_PTR)&db_info->bytes, new_bytes);
 
 			break;
 		}
@@ -721,7 +721,7 @@ NTSTATUS _app_db_encodebody (
 		}
 	}
 
-	_r_obj_movereference (&bytes, new_bytes);
+	_r_obj_movereference ((PVOID_PTR)&bytes, new_bytes);
 
 	status = _app_db_generatebody (profile_type, hash_value, bytes, &body_bytes);
 
@@ -1022,7 +1022,7 @@ VOID _app_db_save_app (
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
 		if (_r_obj_isstringempty (ptr_app->original_path))
 			continue;
@@ -1164,7 +1164,7 @@ VOID _app_db_save_ruleconfig (
 
 	_r_queuedlock_acquireshared (&lock_rules_config);
 
-	while (_r_obj_enumhashtable (rules_config, &ptr_config, NULL, &enum_key))
+	while (_r_obj_enumhashtable (rules_config, (PVOID_PTR)&ptr_config, NULL, &enum_key))
 	{
 		if (_r_obj_isstringempty (ptr_config->name))
 			continue;
@@ -1200,7 +1200,7 @@ VOID _app_db_save_ruleconfig (
 		{
 			_r_xml_setattribute (&db_info->xml_library, L"apps", apps_string->buffer);
 
-			_r_obj_clearreference (&apps_string);
+			_r_obj_clearreference ((PVOID_PTR)&apps_string);
 		}
 
 		_r_xml_setattribute_boolean (&db_info->xml_library, L"is_enabled", ptr_config->is_enabled);

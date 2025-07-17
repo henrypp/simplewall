@@ -62,7 +62,7 @@ PACL _app_createaccesscontrollist (
 
 	for (WORD ace_index = 0; ace_index < acl->AceCount; ace_index++)
 	{
-		status = RtlGetAce (acl, ace_index, &ace);
+		status = RtlGetAce (acl, ace_index, (PVOID_PTR)&ace);
 
 		if (!NT_SUCCESS (status))
 			continue;
@@ -96,7 +96,7 @@ PACL _app_createaccesscontrollist (
 		{
 			if (RtlEqualSid (&ace->SidStart, &SeEveryoneSid))
 			{
-				if ((ace->Mask == (FWPM_ACTRL_WRITE | DELETE | WRITE_DAC | WRITE_OWNER)))
+				if (ace->Mask == (FWPM_ACTRL_WRITE | DELETE | WRITE_DAC | WRITE_OWNER))
 					is_secured = TRUE;
 			}
 		}
@@ -179,7 +179,7 @@ VOID _app_setenginesecurity (
 	{
 		for (WORD ace_index = 0; ace_index < dacl->AceCount; ace_index++)
 		{
-			status = RtlGetAce (dacl, ace_index, &ace);
+			status = RtlGetAce (dacl, ace_index, (PVOID_PTR)&ace);
 
 			if (!NT_SUCCESS (status))
 				continue;
@@ -195,7 +195,7 @@ VOID _app_setenginesecurity (
 			// src: https://github.com/henrypp/simplewall/blob/v.3.0.5/src/wfp.cpp#L96
 			if (RtlEqualSid (&ace->SidStart, config.builtin_current_sid))
 			{
-				if ((ace->Mask == (FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER)))
+				if (ace->Mask == (FWPM_GENERIC_ALL | DELETE | WRITE_DAC | WRITE_OWNER))
 					is_currentuserhaverights = TRUE;
 			}
 

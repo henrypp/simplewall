@@ -60,6 +60,11 @@ INT _app_listview_getbytype (
 		{
 			return IDC_RULES_CUSTOM;
 		}
+
+		default:
+		{
+			FALLTHROUGH;
+		}
 	}
 
 	return 0;
@@ -79,7 +84,7 @@ VOID _app_listview_additems (
 	// add apps
 	_r_queuedlock_acquireshared (&lock_apps);
 
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
 		_app_listview_addappitem (hwnd, ptr_app);
 

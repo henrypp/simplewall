@@ -665,7 +665,7 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				_r_queuedlock_acquireshared (&lock_apps);
 
-				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+				while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 				{
 					// check for services
 					is_enabled = ((_r_obj_findhashtable (context->ptr_rule->apps, ptr_app->app_hash)) || (context->ptr_rule->is_forservices && _app_issystemhash (ptr_app->app_hash)));
@@ -983,10 +983,10 @@ INT_PTR CALLBACK EditorPagesProc (
 						id_edit = is_remote ? IDC_RULE_REMOTE_EDIT : IDC_RULE_LOCAL_EDIT;
 						id_delete = is_remote ? IDC_RULE_REMOTE_DELETE : IDC_RULE_LOCAL_DELETE;
 
-						_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADD), L"..."));
+						_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADD), L"..."));
 						_r_menu_additem (hsubmenu, id_add, localized_string->buffer);
 
-						_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_EDIT2), L"..."));
+						_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_EDIT2), L"..."));
 						_r_menu_additem (hsubmenu, id_edit, localized_string->buffer);
 
 						_r_menu_additem (hsubmenu, id_delete, _r_locale_getstring (IDS_DELETE));
@@ -1792,7 +1792,7 @@ INT_PTR CALLBACK EditorProc (
 								return FALSE;
 							}
 
-							_r_obj_movereference (&context->ptr_rule->name, string);
+							_r_obj_movereference ((PVOID_PTR)&context->ptr_rule->name, string);
 
 							// comment
 							string = _r_ctrl_getstring (hpage_general, IDC_RULE_COMMENT_ID);
@@ -1800,19 +1800,19 @@ INT_PTR CALLBACK EditorProc (
 							if (string)
 								_r_str_trimstring2 (&string->sr, DIVIDER_TRIM DIVIDER_RULE, 0);
 
-							_r_obj_movereference (&context->ptr_rule->comment, string);
+							_r_obj_movereference ((PVOID_PTR)&context->ptr_rule->comment, string);
 
 							if (hpage_rule)
 							{
 								// rule (remote)
 								string = _app_editor_getrulesfromlistview (hpage_rule, IDC_RULE_REMOTE_ID, INT_ERROR);
 
-								_r_obj_movereference (&context->ptr_rule->rule_remote, string);
+								_r_obj_movereference ((PVOID_PTR)&context->ptr_rule->rule_remote, string);
 
 								// rule (local)
 								string = _app_editor_getrulesfromlistview (hpage_rule, IDC_RULE_LOCAL_ID, INT_ERROR);
 
-								_r_obj_movereference (&context->ptr_rule->rule_local, string);
+								_r_obj_movereference ((PVOID_PTR)&context->ptr_rule->rule_local, string);
 							}
 
 							item_id = _r_combobox_getcurrentitem (hpage_general, IDC_RULE_PROTOCOL_ID);
@@ -1825,7 +1825,7 @@ INT_PTR CALLBACK EditorProc (
 
 							string = _app_db_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af, FALSE);
 
-							_r_obj_movereference (&context->ptr_rule->protocol_str, string);
+							_r_obj_movereference ((PVOID_PTR)&context->ptr_rule->protocol_str, string);
 
 							item_id = _r_combobox_getcurrentitem (hpage_general, IDC_RULE_DIRECTION_ID);
 
@@ -1890,7 +1890,7 @@ INT_PTR CALLBACK EditorProc (
 						if (string)
 							_r_str_trimstring2 (&string->sr, DIVIDER_TRIM DIVIDER_RULE, 0);
 
-						_r_obj_movereference (&context->ptr_app->comment, string);
+						_r_obj_movereference ((PVOID_PTR)&context->ptr_app->comment, string);
 
 						if (hpage_rule)
 						{

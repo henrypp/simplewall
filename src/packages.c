@@ -45,7 +45,7 @@ VOID _app_package_parsepath (
 
 	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (appx_names); i++)
 	{
-		_r_obj_movereference (&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
+		_r_obj_movereference ((PVOID_PTR)&manifest_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &appx_names[i]));
 
 		if (_r_fs_exists (&manifest_path->sr))
 		{
@@ -75,11 +75,11 @@ VOID _app_package_parsepath (
 			if (FAILED (_r_xml_getattribute (&xml_library, L"Executable", &executable_sr)))
 				continue;
 
-			_r_obj_movereference (&result_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr));
+			_r_obj_movereference ((PVOID_PTR)&result_path, _r_obj_concatstringrefs (3, &path_string->sr, &separator_sr, &executable_sr));
 
 			if (_r_fs_exists (&result_path->sr))
 			{
-				_r_obj_swapreference (package_root_folder, result_path);
+				_r_obj_swapreference ((PVOID_PTR)package_root_folder, result_path);
 
 				break;
 			}
@@ -343,7 +343,7 @@ VOID NTAPI _app_package_threadproc (
 
 				_r_queuedlock_acquireshared (&lock_apps);
 
-				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+				while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 				{
 					if (ptr_app->type == DATA_APP_SERVICE)
 					{
@@ -372,7 +372,7 @@ VOID NTAPI _app_package_threadproc (
 
 				_r_queuedlock_acquireshared (&lock_apps);
 
-				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+				while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 				{
 					if (ptr_app->type == DATA_APP_UWP)
 					{
@@ -481,7 +481,6 @@ VOID _app_package_getserviceslist (
 	WCHAR general_key[256];
 	LPENUM_SERVICE_STATUS_PROCESS services;
 	LPENUM_SERVICE_STATUS_PROCESS service;
-	SERVICE_NOTIFY notify_context = {0};
 	EXPLICIT_ACCESS ea;
 	R_STRINGREF dummy_filename;
 	PR_STRING converted_path;
@@ -600,14 +599,14 @@ VOID _app_package_getserviceslist (
 
 			if (converted_path)
 			{
-				_r_obj_movereference (&service_path, converted_path);
+				_r_obj_movereference ((PVOID_PTR)&service_path, converted_path);
 			}
 			else
 			{
 				converted_path = _r_path_dospathfromnt (&service_path->sr);
 
 				if (converted_path)
-					_r_obj_movereference (&service_path, converted_path);
+					_r_obj_movereference ((PVOID_PTR)&service_path, converted_path);
 			}
 
 			// query service sid

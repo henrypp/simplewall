@@ -443,7 +443,7 @@ VOID _wfp_uninitialize (
 
 		status = _wfp_dumpcallouts (engine_handle, &GUID_WfpProvider, &callouts);
 
-		if (callouts)
+		if (status == ERROR_SUCCESS && callouts)
 		{
 			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (callouts); i++)
 			{
@@ -555,7 +555,7 @@ VOID _wfp_installfilters (
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
 		if (ptr_app->is_enabled)
 			_r_obj_addlistitem (rules, _r_obj_reference (ptr_app), NULL);
@@ -728,6 +728,11 @@ FORCEINLINE LPCWSTR _wfp_filtertypetostring (
 		{
 			return L"Internal";
 		}
+
+		default:
+		{
+			FALLTHROUGH;
+		}
 	}
 
 	return NULL;
@@ -872,7 +877,7 @@ VOID _wfp_clearfilter_ids ()
 
 	enum_key = 0;
 
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
 		ptr_app->is_haveerrors = FALSE;
 
@@ -987,9 +992,6 @@ BOOLEAN _wfp_createrulefilter (
 	FWP_RANGE0 fwp_range2;
 	FWP_BYTE_BLOB *byte_blob = NULL;
 	PITEM_APP ptr_app = NULL;
-	BOOLEAN is_remoteaddr_set = FALSE;
-	BOOLEAN is_remoteport_set = FALSE;
-	BOOLEAN is_success = FALSE;
 	FWP_DIRECTION direction;
 	UINT8 protocol;
 	ADDRESS_FAMILY af;
@@ -997,6 +999,9 @@ BOOLEAN _wfp_createrulefilter (
 		rule_remote,
 		rule_local
 	};
+	//BOOLEAN is_remoteaddr_set = FALSE;
+	//BOOLEAN is_remoteport_set = FALSE;
+	BOOLEAN is_success = FALSE;
 	NTSTATUS status;
 
 	if (filter_config)
@@ -1028,7 +1033,7 @@ BOOLEAN _wfp_createrulefilter (
 		{
 			if (ptr_app->bytes)
 			{
-				ByteBlobAlloc (ptr_app->bytes->buffer, RtlLengthSecurityDescriptor (ptr_app->bytes->buffer), &byte_blob);
+				ByteBlobAlloc (ptr_app->bytes->buffer, RtlLengthSecurityDescriptor (ptr_app->bytes->buffer), (PVOID_PTR)&byte_blob);
 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -1064,7 +1069,7 @@ BOOLEAN _wfp_createrulefilter (
 		}
 		else
 		{
-			status = _FwpmGetAppIdFromFileName1 (ptr_app->original_path, ptr_app->type, &byte_blob);
+			status = _FwpmGetAppIdFromFileName1 (ptr_app->original_path, ptr_app->type, (PVOID_PTR)&byte_blob);
 
 			if (NT_SUCCESS (status))
 			{
@@ -1099,11 +1104,11 @@ BOOLEAN _wfp_createrulefilter (
 		{
 			if (address.type == DATA_TYPE_PORT)
 			{
-				is_remoteport_set = TRUE;
+				//is_remoteport_set = TRUE;
 			}
 			else if (address.type == DATA_TYPE_IP)
 			{
-				is_remoteaddr_set = TRUE;
+				//is_remoteaddr_set = TRUE;
 			}
 		}
 
@@ -1365,7 +1370,7 @@ CleanupExit:
 		_r_obj_dereference (ptr_app);
 
 	if (byte_blob)
-		ByteBlobFree (&byte_blob);
+		ByteBlobFree ((PVOID_PTR)&byte_blob);
 
 	return is_success;
 }
@@ -2698,7 +2703,7 @@ VOID _wfp_firewallenable (
 	INetFwPolicy2 *INetFwPolicy = NULL;
 	HRESULT status;
 
-	status = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
+	status = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, (PVOID_PTR)&INetFwPolicy);
 
 	if (FAILED (status))
 		return;
@@ -2726,7 +2731,7 @@ BOOLEAN _wfp_firewallisenabled ()
 	VARIANT_BOOL result = VARIANT_FALSE;
 	HRESULT status;
 
-	status = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, &INetFwPolicy);
+	status = CoCreateInstance (&CLSID_NetFwPolicy2, NULL, CLSCTX_INPROC_SERVER, &IID_INetFwPolicy2, (PVOID_PTR)&INetFwPolicy);
 
 	if (SUCCEEDED (status))
 	{
@@ -2807,7 +2812,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 						// file path (without root)
 						_r_obj_initializestringref (&path_skip_root, PathSkipRootW (path->buffer));
 
-						_r_obj_movereference (&original_path, _r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root));
+						_r_obj_movereference ((PVOID_PTR)&original_path, _r_obj_concatstringrefs (2, &original_path->sr, &path_skip_root));
 
 						_r_str_tolower (&original_path->sr); // lower is important!
 

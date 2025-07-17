@@ -155,6 +155,11 @@ BOOLEAN _app_getappinfo (
 
 			return TRUE;
 		}
+
+		default:
+		{
+			FALLTHROUGH;
+		}
 	}
 
 	return FALSE;
@@ -195,19 +200,19 @@ VOID _app_setappinfo (
 	{
 		case INFO_BYTES_DATA:
 		{
-			_r_obj_movereference (&ptr_app->bytes, value);
+			_r_obj_movereference ((PVOID_PTR)&ptr_app->bytes, value);
 			break;
 		}
 
 		case INFO_COMMENT:
 		{
-			_r_obj_movereference (&ptr_app->comment, value);
+			_r_obj_movereference ((PVOID_PTR)&ptr_app->comment, value);
 			break;
 		}
 
 		case INFO_HASH:
 		{
-			_r_obj_movereference (&ptr_app->hash, value);
+			_r_obj_movereference ((PVOID_PTR)&ptr_app->hash, value);
 			break;
 		}
 
@@ -295,6 +300,11 @@ VOID _app_setappinfo (
 			ptr_app->is_undeletable = (PtrToInt (value) ? TRUE : FALSE);
 			break;
 		}
+
+		default:
+		{
+			FALLTHROUGH;
+		}
 	}
 }
 
@@ -354,6 +364,11 @@ BOOLEAN _app_getruleinfo (
 			RtlCopyMemory (buffer, &is_readonly, length);
 
 			return TRUE;
+		}
+
+		default:
+		{
+			FALLTHROUGH;
 		}
 	}
 
@@ -842,7 +857,7 @@ VOID _app_getcount (
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
 		is_used = _app_isappused (ptr_app);
 
@@ -986,6 +1001,8 @@ VOID _app_ruleenable (
 			_r_queuedlock_acquireexclusive (&lock_rules_config);
 			ptr_config = _app_addruleconfigtable (rules_config, rule_hash, ptr_rule->name, is_enable);
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
+
+			ptr_config->is_enabled = is_enable;
 		}
 	}
 }
@@ -1343,7 +1360,7 @@ BOOLEAN _app_isapphavedrive (
 
 	_r_queuedlock_acquireshared (&lock_apps);
 
-	while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
 		if (_r_obj_isstringempty (ptr_app->original_path))
 			continue;
@@ -1433,6 +1450,11 @@ BOOLEAN _app_isappexists (
 		{
 			return TRUE; // service and UWP is already undeletable
 		}
+
+		default:
+		{
+			FALLTHROUGH;
+		}
 	}
 
 	return FALSE;
@@ -1496,13 +1518,13 @@ BOOLEAN _app_isrulesupportedbyos (
 	PR_STRING current_version;
 	PR_STRING new_version;
 
-	current_version = _InterlockedCompareExchangePointer (&version_string, NULL, NULL);
+	current_version = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&version_string, NULL, NULL);
 
 	if (!current_version)
 	{
 		new_version = _r_format_string (L"%d.%d", NtCurrentPeb ()->OSMajorVersion, NtCurrentPeb ()->OSMinorVersion);
 
-		current_version = _InterlockedCompareExchangePointer (&version_string, new_version, NULL);
+		current_version = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&version_string, new_version, NULL);
 
 		if (!current_version)
 		{
@@ -1527,9 +1549,9 @@ VOID _app_profile_initialize ()
 
 	path = _r_app_getprofiledirectory ();
 
-	_r_obj_movereference (&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
-	_r_obj_movereference (&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
-	_r_obj_movereference (&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
+	_r_obj_movereference ((PVOID_PTR)&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
+	_r_obj_movereference ((PVOID_PTR)&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
+	_r_obj_movereference ((PVOID_PTR)&profile_info.profile_path_internal, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_internal_sr));
 }
 
 NTSTATUS _app_profile_load_fromresource (

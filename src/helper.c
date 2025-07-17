@@ -947,7 +947,7 @@ VOID _app_getfilesignatureinfo (
 	__try
 	{
 		if (ptr_app_info->signature_info)
-			_r_obj_clearreference (&ptr_app_info->signature_info);
+			_r_obj_clearreference ((PVOID_PTR)&ptr_app_info->signature_info);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -977,7 +977,7 @@ VOID _app_getfilesignatureinfo (
 
 	__try
 	{
-		_r_obj_movereference (&ptr_app_info->signature_info, string);
+		_r_obj_movereference ((PVOID_PTR)&ptr_app_info->signature_info, string);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -1001,7 +1001,7 @@ VOID _app_getfileversioninfo (
 	__try
 	{
 		if (ptr_app_info->version_info)
-			_r_obj_clearreference (&ptr_app_info->version_info);
+			_r_obj_clearreference ((PVOID_PTR)&ptr_app_info->version_info);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -1034,7 +1034,7 @@ VOID _app_getfileversioninfo (
 	}
 
 	// get file version
-	if (_r_res_queryversion (ver_block.buffer, &ver_info))
+	if (_r_res_queryversion (ver_block.buffer, (PVOID_PTR)&ver_info))
 	{
 		if (_r_obj_isstringempty2 (sb.string))
 		{
@@ -1078,7 +1078,7 @@ VOID _app_getfileversioninfo (
 	__try
 	{
 		if (_r_obj_isstringempty2 (version_string))
-			_r_obj_clearreference (&version_string);
+			_r_obj_clearreference ((PVOID_PTR)&version_string);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -1101,16 +1101,15 @@ PR_STRING _app_getfilehashinfo (
 {
 	PITEM_APP ptr_app;
 	PR_STRING string;
-	NTSTATUS status;
 
 	ptr_app = _app_getappitem (app_hash);
 
 	if (!ptr_app)
 		return NULL;
 
-	status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, NULL, hfile, &string);
+	_r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, NULL, hfile, &string);
 
-	_r_obj_movereference (&ptr_app->hash, string);
+	_r_obj_movereference ((PVOID_PTR)&ptr_app->hash, string);
 
 	return ptr_app->hash;
 }
@@ -1238,7 +1237,7 @@ VOID _app_generate_rulescontrol (
 
 			_r_str_printf (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_RULE_APPLY_2), _r_obj_getstring (ptr_log->remote_addr_str));
 
-			_r_menu_additem (hsubmenu, IDX_RULES_SPECIAL + i + 1, buffer);
+			_r_menu_additem (hsubmenu, (IDX_RULES_SPECIAL + i) + 1, buffer);
 		}
 	}
 
@@ -1743,7 +1742,7 @@ VOID NTAPI _app_timercallback (
 
 		enum_key = 0;
 
-		while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+		while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 		{
 			if (!ptr_app->hash || !_app_isappvalidbinary (ptr_app->real_path))
 				continue;
@@ -1757,7 +1756,7 @@ VOID NTAPI _app_timercallback (
 			{
 				if (!_r_str_isequal (&ptr_app->hash->sr, &hash->sr, TRUE))
 				{
-					_r_obj_movereference (&ptr_app->hash, hash);
+					_r_obj_movereference ((PVOID_PTR)&ptr_app->hash, hash);
 
 					_app_setappinfo (ptr_app, INFO_DISABLE, NULL);
 				}
@@ -1808,7 +1807,9 @@ VOID _app_getfileinformation (
 		ptr_app_info->listview_id = listview_id;
 
 		_r_queuedlock_acquireexclusive (&lock_cache_information);
+
 		_r_obj_addhashtablepointer (cache_information, app_hash, _r_obj_reference (ptr_app_info));
+
 		_r_queuedlock_releaseexclusive (&lock_cache_information);
 	}
 
@@ -1914,7 +1915,7 @@ VOID NTAPI _app_queue_notifyinformation (
 	// query notification host name
 	if (_r_config_getboolean (L"IsNetworkResolutionsEnabled", FALSE, NULL))
 	{
-		host_str = _app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, TRUE);
+		host_str = _app_resolveaddress_interlocked ((volatile PVOID_PTR)&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, TRUE);
 
 		if (host_str)
 			host_str = _r_obj_reference (host_str);
@@ -1976,7 +1977,7 @@ VOID NTAPI _app_queue_notifyinformation (
 			while (--attempts);
 
 			if (!signature_str)
-				_r_obj_movereference (&signature_str, _r_locale_getstring_ex (IDS_SIGN_UNSIGNED));
+				_r_obj_movereference ((PVOID_PTR)&signature_str, _r_locale_getstring_ex (IDS_SIGN_UNSIGNED));
 
 			hdefer = BeginDeferWindowPos (2);
 
@@ -1984,18 +1985,18 @@ VOID NTAPI _app_queue_notifyinformation (
 			_r_ctrl_settablestring (context->hwnd, &hdefer, IDC_SIGNATURE_ID, &localized_string->sr, IDC_SIGNATURE_TEXT, &signature_str->sr);
 
 			// set address string
-			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
+			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_ADDRESS), L":"));
 
 			if (_r_obj_isstringempty (address_str))
-				_r_obj_movereference (&address_str, _r_locale_getstring_ex (IDS_STATUS_EMPTY));
+				_r_obj_movereference ((PVOID_PTR)&address_str, _r_locale_getstring_ex (IDS_STATUS_EMPTY));
 
 			_r_ctrl_settablestring (context->hwnd, &hdefer, IDC_ADDRESS_ID, &localized_string->sr, IDC_ADDRESS_TEXT, &address_str->sr);
 
 			// set host string
-			_r_obj_movereference (&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
+			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_HOST), L":"));
 
 			if (_r_obj_isstringempty (host_str))
-				_r_obj_movereference (&host_str, _r_locale_getstring_ex (IDS_STATUS_EMPTY));
+				_r_obj_movereference ((PVOID_PTR)&host_str, _r_locale_getstring_ex (IDS_STATUS_EMPTY));
 
 			_r_ctrl_settablestring (context->hwnd, &hdefer, IDC_HOST_ID, &localized_string->sr, IDC_HOST_TEXT, &host_str->sr);
 
@@ -2042,8 +2043,8 @@ VOID NTAPI _app_queue_resolveinformation (
 		{
 			ptr_log = context->base_address;
 
-			_app_resolveaddress_interlocked (&ptr_log->local_host_str, ptr_log->af, &ptr_log->local_addr, is_resolutionenabled);
-			_app_resolveaddress_interlocked (&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, is_resolutionenabled);
+			_app_resolveaddress_interlocked ((volatile PVOID_PTR)&ptr_log->local_host_str, ptr_log->af, &ptr_log->local_addr, is_resolutionenabled);
+			_app_resolveaddress_interlocked ((volatile PVOID_PTR)&ptr_log->remote_host_str, ptr_log->af, &ptr_log->remote_addr, is_resolutionenabled);
 
 			break;
 		}
@@ -2052,11 +2053,11 @@ VOID NTAPI _app_queue_resolveinformation (
 		{
 			ptr_network = context->base_address;
 
-			_app_formataddress_interlocked (&ptr_network->local_addr_str, ptr_network->af, &ptr_network->local_addr);
-			_app_formataddress_interlocked (&ptr_network->remote_addr_str, ptr_network->af, &ptr_network->remote_addr);
+			_app_formataddress_interlocked ((volatile PVOID_PTR)&ptr_network->local_addr_str, ptr_network->af, &ptr_network->local_addr);
+			_app_formataddress_interlocked ((volatile PVOID_PTR)&ptr_network->remote_addr_str, ptr_network->af, &ptr_network->remote_addr);
 
-			_app_resolveaddress_interlocked (&ptr_network->local_host_str, ptr_network->af, &ptr_network->local_addr, is_resolutionenabled);
-			_app_resolveaddress_interlocked (&ptr_network->remote_host_str, ptr_network->af, &ptr_network->remote_addr, is_resolutionenabled);
+			_app_resolveaddress_interlocked ((volatile PVOID_PTR)&ptr_network->local_host_str, ptr_network->af, &ptr_network->local_addr, is_resolutionenabled);
+			_app_resolveaddress_interlocked ((volatile PVOID_PTR)&ptr_network->remote_host_str, ptr_network->af, &ptr_network->remote_addr, is_resolutionenabled);
 
 			break;
 		}
@@ -2126,13 +2127,7 @@ VOID _app_wufixhelper (
 	// set new image path
 	_r_str_printf (reg_value, RTL_NUMBER_OF (reg_value), L"%%systemroot%%\\system32%s -k %s -p", is_enable ? PATH_WUSVC : PATH_SVCHOST, k_value);
 
-	status = _r_reg_setvalue (
-		hkey,
-		L"ImagePath",
-		REG_EXPAND_SZ,
-		reg_value,
-		(ULONG)(_r_str_getlength (reg_value) * sizeof (WCHAR) + sizeof (UNICODE_NULL))
-	);
+	_r_reg_setvalue (hkey, L"ImagePath", REG_EXPAND_SZ, reg_value, (ULONG)(_r_str_getlength (reg_value) * sizeof (WCHAR) + sizeof (UNICODE_NULL)));
 
 	// restart service
 	if (is_enable != is_enabled)

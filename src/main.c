@@ -452,7 +452,7 @@ VOID _app_config_apply (
 			{
 				_r_queuedlock_acquireshared (&lock_apps);
 
-				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+				while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 				{
 					if (!ptr_app->real_path)
 						continue;
@@ -494,7 +494,7 @@ VOID _app_config_apply (
 			{
 				_r_queuedlock_acquireshared (&lock_apps);
 
-				while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+				while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 				{
 					if (!ptr_app->real_path)
 						continue;
@@ -691,7 +691,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					_app_listview_lock (hwnd, IDC_COLORS, TRUE);
 
-					while (_r_obj_enumhashtable (colors_table, &ptr_clr, NULL, &enum_key))
+					while (_r_obj_enumhashtable (colors_table, (PVOID_PTR)&ptr_clr, NULL, &enum_key))
 					{
 						ptr_clr->new_clr = _r_config_getulong (ptr_clr->config_value->buffer, ptr_clr->default_clr, L"colors");
 
@@ -1332,7 +1332,7 @@ INT_PTR CALLBACK SettingsProc (
 					if (!ptr_clr_crnt)
 						break;
 
-					while (_r_obj_enumhashtable (colors_table, &ptr_clr, NULL, &enum_key))
+					while (_r_obj_enumhashtable (colors_table, (PVOID_PTR)&ptr_clr, NULL, &enum_key))
 					{
 						cust[index++] = ptr_clr->default_clr;
 					}
@@ -1520,11 +1520,11 @@ INT_PTR CALLBACK SettingsProc (
 					HWND hctrl;
 					BOOLEAN is_postmessage;
 					BOOLEAN is_enabled;
-					BOOLEAN is_logging_enabled;
+					//BOOLEAN is_logging_enabled;
 
 					is_postmessage = ((INT)lparam == WM_APP);
 					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
-					is_logging_enabled = is_enabled || _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLEUILOG_CHK);
+					//is_logging_enabled = is_enabled || _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLEUILOG_CHK);
 
 					if (!is_postmessage)
 					{
@@ -1584,8 +1584,8 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_LOGPATH_BTN:
 				{
 					COMDLG_FILTERSPEC filters[] = {
-						L"Log files (*.log, *.csv)", L"*.log;*.csv",
-						L"All files (*.*)", L"*.*",
+						{L"Log files (*.log, *.csv)", L"*.log;*.csv"},
+						{L"All files (*.*)", L"*.*"},
 					};
 
 					R_FILE_DIALOG file_dialog;
@@ -1652,8 +1652,8 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_LOGVIEWER_BTN:
 				{
 					COMDLG_FILTERSPEC filters[] = {
-						L"Executable files (*.exe)", L"*.exe",
-						L"All files (*.*)", L"*.*",
+						{L"Executable files (*.exe)", L"*.exe"},
+						{L"All files (*.*)", L"*.*"},
 					};
 
 					R_FILE_DIALOG file_dialog;
@@ -3059,7 +3059,7 @@ INT_PTR CALLBACK DlgProc (
 
 				string = _r_ctrl_getstring (config.hrebar, IDC_SEARCH);
 
-				_r_obj_movereference (&config.search_string, string);
+				_r_obj_movereference ((PVOID_PTR)&config.search_string, string);
 
 				_app_search_applyfilter (hwnd, tab_context->listview_id, string);
 
@@ -3163,8 +3163,8 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_IMPORT:
 				{
 					COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*.xml)", L"*.xml",
-						L"All files (*.*)", L"*.*",
+						{L"Profile files (*.xml)", L"*.xml"},
+						{L"All files (*.*)", L"*.*"},
 					};
 
 					R_FILE_DIALOG file_dialog;
@@ -3211,8 +3211,8 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_EXPORT:
 				{
 					COMDLG_FILTERSPEC filters[] = {
-						L"Profile files (*.xml)", L"*.xml",
-						L"All files (*.*)", L"*.*",
+						{L"Profile files (*.xml)", L"*.xml"},
+						{L"All files (*.*)", L"*.*"},
 					};
 
 					R_FILE_DIALOG file_dialog;
@@ -3399,7 +3399,7 @@ INT_PTR CALLBACK DlgProc (
 					{
 						_r_queuedlock_acquireshared (&lock_apps);
 
-						while (_r_obj_enumhashtablepointer (apps_table, &ptr_app, NULL, &enum_key))
+						while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 						{
 							if (!ptr_app->real_path)
 								continue;
@@ -3648,8 +3648,8 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_ADD_FILE:
 				{
 					COMDLG_FILTERSPEC filters[] = {
-						L"Executable files (*.exe)", L"*.exe",
-						L"All files (*.*)", L"*.*",
+						{L"Executable files (*.exe)", L"*.exe"},
+						{L"All files (*.*)", L"*.*"},
 					};
 
 					R_FILE_DIALOG file_dialog;
@@ -3955,6 +3955,11 @@ BOOLEAN NTAPI _app_parseargs (
 			}
 
 			return TRUE;
+		}
+
+		default:
+		{
+			FALLTHROUGH;
 		}
 	}
 

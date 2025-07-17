@@ -441,7 +441,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local address
-			string = _InterlockedCompareExchangePointer (&ptr_network->local_addr_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->local_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -450,7 +450,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local host
-			string = _InterlockedCompareExchangePointer (&ptr_network->local_host_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->local_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -459,7 +459,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote address
-			string = _InterlockedCompareExchangePointer (&ptr_network->remote_addr_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->remote_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -468,7 +468,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote host
-			string = _InterlockedCompareExchangePointer (&ptr_network->remote_host_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->remote_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -522,7 +522,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local address
-			string = _InterlockedCompareExchangePointer (&ptr_log->local_addr_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->local_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -531,7 +531,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local host
-			string = _InterlockedCompareExchangePointer (&ptr_log->local_host_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->local_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -540,7 +540,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote address
-			string = _InterlockedCompareExchangePointer (&ptr_log->remote_addr_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->remote_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -549,7 +549,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote host
-			string = _InterlockedCompareExchangePointer (&ptr_log->remote_host_str, NULL, NULL);
+			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->remote_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -689,7 +689,6 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		{
 			RECT wnd_rect;
 			RECT buf_rect;
-			POINT pt = {0};
 			HRGN hrgn;
 			HDC hdc;
 			ULONG flags = DCX_WINDOW | DCX_LOCKWINDOWUPDATE | DCX_USESTYLE;

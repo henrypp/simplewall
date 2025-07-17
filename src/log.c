@@ -12,7 +12,7 @@ VOID _app_loginit (
 	PR_STRING log_path;
 	NTSTATUS status;
 
-	current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, config.hlogfile);
+	current_handle = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hlogfile, NULL, config.hlogfile);
 
 	// reset log handle
 	if (current_handle)
@@ -42,7 +42,7 @@ VOID _app_loginit (
 	{
 		_app_loginitfile (new_handle);
 
-		current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, new_handle, NULL);
+		current_handle = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hlogfile, new_handle, NULL);
 
 		if (current_handle)
 			NtClose (new_handle);
@@ -212,7 +212,7 @@ VOID _app_logwrite (
 	PITEM_APP ptr_app;
 	HANDLE current_handle;
 
-	current_handle = _InterlockedCompareExchangePointer (&config.hlogfile, NULL, NULL);
+	current_handle = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hlogfile, NULL, NULL);
 
 	if (!current_handle)
 		return;
@@ -344,7 +344,7 @@ VOID _wfp_logsubscribe (
 	BOOLEAN is_success = FALSE;
 	NTSTATUS status;
 
-	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, NULL, NULL);
+	current_handle = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnetevent, NULL, NULL);
 
 	if (current_handle)
 		return; // already subscribed
@@ -432,7 +432,7 @@ VOID _wfp_logsubscribe (
 		}
 	}
 
-	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, new_handle, NULL);
+	current_handle = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnetevent, new_handle, NULL);
 
 	if (current_handle)
 	{
@@ -454,7 +454,7 @@ VOID _wfp_logunsubscribe (
 
 	_app_loginit (FALSE); // destroy log file handle if present
 
-	current_handle = _InterlockedCompareExchangePointer (&config.hnetevent, NULL, config.hnetevent);
+	current_handle = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnetevent, NULL, config.hnetevent);
 
 	if (!current_handle)
 		return;
@@ -609,7 +609,7 @@ VOID CALLBACK _wfp_logcallback (
 		if (NT_SUCCESS (status))
 		{
 			if (!_app_package_isnotexists (sid_string, 0))
-				_r_obj_clearreference (&sid_string);
+				_r_obj_clearreference ((PVOID_PTR)&sid_string);
 		}
 	}
 	else
@@ -620,7 +620,7 @@ VOID CALLBACK _wfp_logcallback (
 	// copy converted nt device path into win32
 	if (log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET && sid_string)
 	{
-		_r_obj_swapreference (&ptr_log->path, sid_string);
+		_r_obj_swapreference ((PVOID_PTR)&ptr_log->path, sid_string);
 
 		ptr_log->app_hash = _r_str_gethash (&ptr_log->path->sr, TRUE);
 	}
@@ -631,11 +631,11 @@ VOID CALLBACK _wfp_logcallback (
 		resolved_path = _r_path_dospathfromnt (&path->sr);
 
 		if (resolved_path)
-			_r_obj_movereference (&path, resolved_path);
+			_r_obj_movereference ((PVOID_PTR)&path, resolved_path);
 
 		if (path)
 		{
-			_r_obj_movereference (&ptr_log->path, path);
+			_r_obj_movereference ((PVOID_PTR)&ptr_log->path, path);
 
 			ptr_log->app_hash = _r_str_gethash (&ptr_log->path->sr, TRUE);
 		}
@@ -659,19 +659,17 @@ VOID CALLBACK _wfp_logcallback (
 			// remote address
 			if (log->flags & FWPM_NET_EVENT_FLAG_REMOTE_ADDR_SET)
 			{
-				status = ULongPtrToULong (log->remote_addr4, &ptr_log->remote_addr.S_un.S_addr);
+				ptr_log->remote_addr.S_un.S_addr = (ULONG)log->remote_addr4;
 
-				if (SUCCEEDED (status))
-					ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->remote_addr.S_un.S_addr);
+				ptr_log->remote_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->remote_addr.S_un.S_addr);
 			}
 
 			// local address
 			if (log->flags & FWPM_NET_EVENT_FLAG_LOCAL_ADDR_SET)
 			{
-				status = ULongPtrToULong (log->local_addr4, &ptr_log->local_addr.S_un.S_addr);
+				ptr_log->local_addr.S_un.S_addr = (ULONG)log->local_addr4;
 
-				if (SUCCEEDED (status))
-					ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->local_addr.S_un.S_addr);
+				ptr_log->local_addr.S_un.S_addr = _r_byteswap_ulong (ptr_log->local_addr.S_un.S_addr);
 			}
 		}
 		else if (log->version == FWP_IP_VERSION_V6)

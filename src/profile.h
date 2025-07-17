@@ -3,6 +3,16 @@
 
 #pragma once
 
+FORCEINLINE BOOLEAN _app_isdisabledremoval (
+	_In_ ULONG app_hash
+)
+{
+	if (app_hash == config.my_hash || app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash || app_hash == config.wusvc_hash)
+		return TRUE;
+
+	return FALSE;
+}
+
 _Success_ (return)
 BOOLEAN _app_getappinfo (
 	_In_ PITEM_APP ptr_app,
@@ -242,16 +252,6 @@ PR_STRING _app_rulesexpandrules (
 BOOLEAN _app_isrulesupportedbyos (
 	_In_ PR_STRINGREF os_version
 );
-
-FORCEINLINE BOOLEAN _app_isdisabledremoval (
-	_In_ ULONG app_hash
-)
-{
-	if (app_hash == config.my_hash || app_hash == config.ntoskrnl_hash || app_hash == config.svchost_hash || app_hash == config.wusvc_hash)
-		return TRUE;
-
-	return FALSE;
-}
 
 VOID _app_profile_initialize ();
 
