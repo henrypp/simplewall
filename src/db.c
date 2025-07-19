@@ -562,10 +562,9 @@ NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
-	static USHORT format[] = {COMPRESSION_FORMAT_LZNT1, COMPRESSION_FORMAT_XPRESS};
-
-	PR_BYTE new_bytes;
+	USHORT format[] = {COMPRESSION_FORMAT_LZNT1, COMPRESSION_FORMAT_XPRESS};
 	USHORT architecture;
+	PR_BYTE new_bytes;
 	BYTE profile_type;
 	NTSTATUS status;
 
@@ -581,7 +580,7 @@ NTSTATUS _app_db_decodebody (
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_FOURCC_LENGTH);
 
 	// read the hash
-	_r_obj_movereference ((PVOID_PTR)db_info->hash, _r_obj_createbyte_ex (db_info->bytes->buffer, PROFILE2_SHA256_LENGTH));
+	_r_obj_movereference ((PVOID_PTR)&db_info->hash, _r_obj_createbyte_ex (db_info->bytes->buffer, PROFILE2_SHA256_LENGTH));
 
 	// skip hash
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_SHA256_LENGTH);
