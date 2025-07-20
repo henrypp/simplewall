@@ -571,7 +571,7 @@ NTSTATUS _app_db_decodebody (
 	if (db_info->bytes->length < PROFILE2_HEADER_LENGTH)
 		return STATUS_SUCCESS;
 
-	if (!RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
+	if (!RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)) || !RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc_old)))
 		return STATUS_SUCCESS;
 
 	profile_type = db_info->bytes->buffer[sizeof (profile2_fourcc)];
@@ -627,7 +627,7 @@ NTSTATUS _app_db_decodebody (
 	if (!NT_SUCCESS (status))
 		return status;
 
-	if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
+	if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)) || RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc_old, sizeof (profile2_fourcc_old)))
 		return STATUS_MORE_PROCESSING_REQUIRED;
 
 	// fix arm64 crash that was introduced by Micro$oft (issue #1228)

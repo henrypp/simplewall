@@ -27,8 +27,8 @@ typedef struct _DB_INFORMATION
 {
 	R_XML_LIBRARY xml_library;
 
-	PR_BYTE hash;
 	PR_BYTE bytes;
+	PR_BYTE hash;
 
 	LONG64 timestamp;
 
@@ -38,12 +38,16 @@ typedef struct _DB_INFORMATION
 
 // Offset	Length	Description
 // ------------------------------------------
-// 0		3		FOURCC string 'swc'
+// 0		3		FOURCC string 'SWC'
 // 4		1		Body information flag
 // 36		32		SHA256 checksum of the decrypted bytes
 // 68		whole	Body contained specified data
 
 static const BYTE profile2_fourcc[] = {
+	0x53, 0x57, 0x43, // 'S', 'W', 'C'
+};
+
+static const BYTE profile2_fourcc_old[] = {
 	0x73, 0x77, 0x63, // 's', 'w', 'c'
 };
 
