@@ -298,13 +298,13 @@ VOID _app_db_parse_app (
 				}
 
 				if (is_silent)
-					_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (is_silent));
+					_app_setappinfo (ptr_app, INFO_IS_SILENT, LongToPtr (is_silent));
 
 				if (is_enabled)
-					_app_setappinfo (ptr_app, INFO_IS_ENABLED, IntToPtr (is_enabled));
+					_app_setappinfo (ptr_app, INFO_IS_ENABLED, LongToPtr (is_enabled));
 
 				if (is_undeletable)
-					_app_setappinfo (ptr_app, INFO_IS_UNDELETABLE, IntToPtr (is_undeletable));
+					_app_setappinfo (ptr_app, INFO_IS_UNDELETABLE, LongToPtr (is_undeletable));
 
 				if (timestamp)
 					_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
@@ -493,7 +493,7 @@ VOID _app_db_parse_rule (
 					_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
 
 					if (ptr_rule->type == DATA_RULE_SYSTEM)
-						_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+						_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, LongToPtr (TRUE));
 				}
 			}
 

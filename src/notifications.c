@@ -624,7 +624,7 @@ VOID _app_notify_setposition (
 
 	if (!is_forced && _r_wnd_isvisible (hwnd, FALSE))
 	{
-		_r_wnd_adjustrectangletoworkingarea (&window_rect, hwnd);
+		_r_wnd_adjustrectangletoworkingarea (hwnd, &window_rect);
 		_r_wnd_setposition (hwnd, &window_rect.position, NULL);
 
 		return;
@@ -670,7 +670,7 @@ VOID _app_notify_setposition (
 					window_rect.top = (rect->bottom - window_rect.height) - border_x;
 				}
 
-				_r_wnd_adjustrectangletoworkingarea (&window_rect, NULL);
+				_r_wnd_adjustrectangletoworkingarea (NULL, &window_rect);
 				_r_wnd_setposition (hwnd, &window_rect.position, NULL);
 
 				return;
@@ -1207,7 +1207,7 @@ INT_PTR CALLBACK NotificationProc (
 						ClientToScreen (nmlp->hwndFrom, (PPOINT)&rect);
 
 						_r_wnd_recttorectangle (&rectangle, &rect);
-						_r_wnd_adjustrectangletoworkingarea (&rectangle, nmlp->hwndFrom);
+						_r_wnd_adjustrectangletoworkingarea (nmlp->hwndFrom, &rectangle);
 						_r_wnd_rectangletorect (&rect, &rectangle);
 
 						_r_menu_popup (hsubmenu, hwnd, (PPOINT)&rect, TRUE);
@@ -1580,7 +1580,7 @@ INT_PTR CALLBACK NotificationProc (
 						}
 						else if (ctrl_id == IDM_SELECT_ALL)
 						{
-							_r_ctrl_setselection (hedit, 0, MAKELPARAM (0, -1)); // edit control hotkey for "ctrl+a"
+							_r_ctrl_setselection (hedit, 0, 0, -1); // edit control hotkey for "ctrl+a"
 						}
 					}
 

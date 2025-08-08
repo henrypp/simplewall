@@ -990,7 +990,7 @@ INT_PTR CALLBACK EditorPagesProc (
 						_r_menu_additem (hsubmenu, id_edit, localized_string->buffer);
 
 						_r_menu_additem (hsubmenu, id_delete, _r_locale_getstring (IDS_DELETE));
-						_r_menu_additem (hsubmenu, 0, NULL);
+						_r_menu_addseparator (hsubmenu);
 						_r_menu_additem (hsubmenu, IDM_COPY, _r_locale_getstring (IDS_COPY));
 
 						if (context->ptr_rule->is_readonly)
@@ -1013,7 +1013,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					{
 						_r_menu_additem (hsubmenu, IDM_CHECK, _r_locale_getstring (IDS_CHECK));
 						_r_menu_additem (hsubmenu, IDM_UNCHECK, _r_locale_getstring (IDS_UNCHECK));
-						_r_menu_additem (hsubmenu, 0, NULL);
+						_r_menu_addseparator (hsubmenu);
 						_r_menu_additem (hsubmenu, IDM_COPY, _r_locale_getstring (IDS_COPY));
 
 						if (context->is_settorules && context->ptr_rule->type != DATA_RULE_USER)

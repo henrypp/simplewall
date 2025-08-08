@@ -17,8 +17,8 @@ VOID _app_message_uninitialize (
 
 VOID _app_generate_appmenu (
 	_In_ HMENU hmenu,
-	_In_ HMENU hsubmenu_rules,
-	_In_ HMENU hsubmenu_timers,
+	_In_opt_ HMENU hsubmenu_rules,
+	_In_opt_ HMENU hsubmenu_timers,
 	_In_ ULONG app_hash
 );
 

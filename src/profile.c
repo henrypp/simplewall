@@ -121,7 +121,7 @@ BOOLEAN _app_getappinfo (
 			if (length != sizeof (BOOLEAN))
 				return FALSE;
 
-			is_enabled = !!ptr_app->is_enabled;
+			is_enabled = (ptr_app->is_enabled != 0);
 
 			RtlCopyMemory (buffer, &is_enabled, length);
 
@@ -135,7 +135,7 @@ BOOLEAN _app_getappinfo (
 			if (length != sizeof (BOOLEAN))
 				return FALSE;
 
-			is_silent = !!ptr_app->is_silent;
+			is_silent = (ptr_app->is_silent != 0);
 
 			RtlCopyMemory (buffer, &is_silent, length);
 
@@ -149,7 +149,7 @@ BOOLEAN _app_getappinfo (
 			if (length != sizeof (BOOLEAN))
 				return FALSE;
 
-			is_undeletable = !!ptr_app->is_undeletable;
+			is_undeletable = (ptr_app->is_undeletable != 0);
 
 			RtlCopyMemory (buffer, &is_undeletable, length);
 
@@ -278,7 +278,7 @@ VOID _app_setappinfo (
 
 		case INFO_IS_ENABLED:
 		{
-			ptr_app->is_enabled = (PtrToInt (value) ? TRUE : FALSE);
+			ptr_app->is_enabled = (PtrToLong (value) ? TRUE : FALSE);
 
 			_app_listview_updateitemby_param (_r_app_gethwnd (), ptr_app->app_hash, TRUE);
 
@@ -287,7 +287,7 @@ VOID _app_setappinfo (
 
 		case INFO_IS_SILENT:
 		{
-			ptr_app->is_silent = (PtrToInt (value) ? TRUE : FALSE);
+			ptr_app->is_silent = (PtrToLong (value) ? TRUE : FALSE);
 
 			if (ptr_app->is_silent)
 				_app_notify_freeobject (NULL, ptr_app);
@@ -297,7 +297,7 @@ VOID _app_setappinfo (
 
 		case INFO_IS_UNDELETABLE:
 		{
-			ptr_app->is_undeletable = (PtrToInt (value) ? TRUE : FALSE);
+			ptr_app->is_undeletable = (PtrToLong (value) ? TRUE : FALSE);
 			break;
 		}
 
@@ -1002,7 +1002,8 @@ VOID _app_ruleenable (
 			ptr_config = _app_addruleconfigtable (rules_config, rule_hash, ptr_rule->name, is_enable);
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 
-			ptr_config->is_enabled = is_enable;
+			if (ptr_config)
+				ptr_config->is_enabled = is_enable;
 		}
 	}
 }
@@ -1587,10 +1588,10 @@ VOID _app_profile_load_fallback ()
 		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, config.my_path, NULL, NULL);
 
 		if (app_hash)
-			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
+			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, LongToPtr (TRUE));
 	}
 
-	_app_setappinfobyhash (config.my_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+	_app_setappinfobyhash (config.my_hash, INFO_IS_UNDELETABLE, LongToPtr (TRUE));
 
 	// disable deletion for this shit ;)
 	if (!_r_config_getboolean (L"IsInternalRulesDisabled", FALSE, NULL))
@@ -1601,8 +1602,8 @@ VOID _app_profile_load_fallback ()
 		if (!_app_isappfound (config.svchost_hash) && !_r_obj_isstringempty (config.svchost_path))
 			_app_addapplication (NULL, DATA_UNKNOWN, config.svchost_path, NULL, NULL);
 
-		_app_setappinfobyhash (config.ntoskrnl_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
-		_app_setappinfobyhash (config.svchost_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+		_app_setappinfobyhash (config.ntoskrnl_hash, INFO_IS_UNDELETABLE, LongToPtr (TRUE));
+		_app_setappinfobyhash (config.svchost_hash, INFO_IS_UNDELETABLE, LongToPtr (TRUE));
 	}
 }
 

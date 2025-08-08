@@ -187,10 +187,6 @@ typedef struct _STATIC_DATA
 	PR_STRING wusvc_path;
 	PR_STRING system_path;
 
-	PSID builtin_current_sid;
-	PSID builtin_netops_sid;
-	PSID builtin_admins_sid;
-
 	PR_BYTE service_wdiservicehost_sid;
 	PR_BYTE service_policyagent_sid;
 	PR_BYTE service_mpssvc_sid;
@@ -207,20 +203,23 @@ typedef struct _STATIC_DATA
 	HBITMAP hbmp_block;
 
 	HANDLE hmonitor_thread;
-
 	HANDLE hnotify_evt;
 
-	volatile HANDLE hlogfile;
-	volatile HANDLE hnetevent;
+	HFONT wnd_font;
+	HFONT hfont;
+
+	HWND hsearchbar;
+	HWND htoolbar;
+	HWND hrebar;
+
+	PSID builtin_current_sid;
+	PSID builtin_netops_sid;
+	PSID builtin_admins_sid;
+
 	volatile HWND hnotification;
 	volatile HICON htray_icon;
-
-	HFONT hfont;
-	HFONT wnd_font;
-
-	HWND hrebar;
-	HWND htoolbar;
-	HWND hsearchbar;
+	volatile HANDLE hnetevent;
+	volatile HANDLE hlogfile;
 
 	ULONG color_nonremovable;
 	ULONG color_network;

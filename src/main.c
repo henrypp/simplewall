@@ -2710,10 +2710,7 @@ INT_PTR CALLBACK DlgProc (
 					if (_app_listview_islocked (hwnd, listview_id))
 						break;
 
-					if (!(lpnmlv->uChanged & LVIF_STATE))
-						break;
-
-					if (!lpnmlv->lParam)
+					if (!(lpnmlv->uChanged & LVIF_STATE) || !lpnmlv->lParam)
 						break;
 
 					if ((listview_id >= IDC_APPS_PROFILE && listview_id <= IDC_APPS_UWP))
@@ -3428,7 +3425,7 @@ INT_PTR CALLBACK DlgProc (
 
 					SetFocus (config.hsearchbar);
 
-					_r_ctrl_setselection (config.hsearchbar, 0, MAKELPARAM (0, -1));
+					_r_ctrl_setselection (config.hsearchbar, 0, 0, -1);
 
 					break;
 				}

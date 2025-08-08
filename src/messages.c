@@ -480,12 +480,12 @@ VOID _app_message_uninitialize (
 
 VOID _app_generate_appmenu (
 	_In_ HMENU hmenu,
-	_In_ HMENU hsubmenu_rules,
-	_In_ HMENU hsubmenu_timers,
+	_In_opt_ HMENU hsubmenu_rules,
+	_In_opt_ HMENU hsubmenu_timers,
 	_In_ ULONG app_hash
 )
 {
-	_r_menu_additem (hmenu, 0, NULL);
+	_r_menu_addseparator (hmenu);
 
 	// show rules
 	if (hsubmenu_rules)
@@ -498,7 +498,7 @@ VOID _app_generate_appmenu (
 		if (_app_isdisabledremoval (app_hash))
 			_r_menu_enableitem (hsubmenu_rules, IDM_DISABLEREMOVAL, FALSE, FALSE);
 
-		_r_menu_additem (hsubmenu_rules, 0, NULL);
+		_r_menu_addseparator (hsubmenu_rules);
 
 		_app_generate_rulescontrol (hsubmenu_rules, app_hash, NULL);
 	}
@@ -509,12 +509,12 @@ VOID _app_generate_appmenu (
 		_r_menu_addsubmenu (hmenu, INT_ERROR, hsubmenu_timers, _r_locale_getstring (IDS_TIMER));
 
 		_r_menu_additem (hsubmenu_timers, IDM_DISABLETIMER, _r_locale_getstring (IDS_DISABLETIMER));
-		_r_menu_additem (hsubmenu_timers, 0, NULL);
+		_r_menu_addseparator (hsubmenu_timers);
 
 		_app_generate_timerscontrol (hsubmenu_timers, app_hash);
 	}
 
-	_r_menu_additem (hmenu, 0, NULL);
+	_r_menu_addseparator (hmenu);
 }
 
 VOID _app_message_contextmenu (
@@ -533,8 +533,8 @@ VOID _app_message_contextmenu (
 	ULONG app_hash;
 	INT listview_id;
 	INT command_id;
-	BOOLEAN is_checked = FALSE;
 	BOOLEAN is_readonly = FALSE;
+	BOOLEAN is_checked = FALSE;
 
 	if (lpnmlv->iItem == INT_ERROR)
 		return;
@@ -549,7 +549,6 @@ VOID _app_message_contextmenu (
 	if (!hmenu)
 		return;
 
-	hash_code = (ULONG)_app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem);
 	app_hash = _app_listview_getappcontext (hwnd, listview_id, lpnmlv->iItem);
 
 	switch (listview_id)
@@ -575,15 +574,15 @@ VOID _app_message_contextmenu (
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DELETE), L"\tDel"));
 			_r_menu_additem (hmenu, IDM_DELETE, localized_string->buffer);
 
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 			_r_menu_additem (hmenu, IDM_CHECK, _r_locale_getstring (IDS_CHECK));
 			_r_menu_additem (hmenu, IDM_UNCHECK, _r_locale_getstring (IDS_UNCHECK));
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SELECT_ALL), L"\tCtrl+A"));
 			_r_menu_additem (hmenu, IDM_SELECT_ALL, localized_string->buffer);
 
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_COPY), L"\tCtrl+C"));
 			_r_menu_additem (hmenu, IDM_COPY, localized_string->buffer);
@@ -638,6 +637,8 @@ VOID _app_message_contextmenu (
 				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DELETE), L"\tDel"));
 				_r_menu_additem (hmenu, IDM_DELETE, localized_string->buffer);
 
+				hash_code = (ULONG)_app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem);
+
 				if (_app_getruleinfobyid (hash_code, INFO_IS_READONLY, &is_readonly, sizeof (BOOLEAN)))
 				{
 					if (is_readonly)
@@ -645,15 +646,15 @@ VOID _app_message_contextmenu (
 				}
 			}
 
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 			_r_menu_additem (hmenu, IDM_CHECK, _r_locale_getstring (IDS_CHECK));
 			_r_menu_additem (hmenu, IDM_UNCHECK, _r_locale_getstring (IDS_UNCHECK));
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SELECT_ALL), L"\tCtrl+A"));
 
 			_r_menu_additem (hmenu, IDM_SELECT_ALL, localized_string->buffer);
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_COPY), L"\tCtrl+C"));
 
@@ -681,18 +682,18 @@ VOID _app_message_contextmenu (
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_OPENRULESEDITOR), L"..."));
 			_r_menu_additem (hmenu, IDM_OPENRULESEDITOR, localized_string->buffer);
 
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_EXPLORE), L"\tCtrl+E"));
 			_r_menu_additem (hmenu, IDM_EXPLORE, localized_string->buffer);
 
 			_r_menu_additem (hmenu, IDM_DELETE, _r_locale_getstring (IDS_NETWORK_CLOSE));
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SELECT_ALL), L"\tCtrl+A"));
 			_r_menu_additem (hmenu, IDM_SELECT_ALL, localized_string->buffer);
 
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_COPY), L"\tCtrl+C"));
 			_r_menu_additem (hmenu, IDM_COPY, localized_string->buffer);
@@ -707,6 +708,8 @@ VOID _app_message_contextmenu (
 
 				_r_obj_dereference (column_text);
 			}
+
+			hash_code = (ULONG)_app_listview_getitemcontext (hwnd, listview_id, lpnmlv->iItem);
 
 			ptr_network = _app_network_getitem (hash_code);
 
@@ -740,12 +743,12 @@ VOID _app_message_contextmenu (
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_LOGCLEAR), L"\tCtrl+X"));
 			_r_menu_additem (hmenu, IDM_TRAY_LOGCLEAR, localized_string->buffer);
 
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SELECT_ALL), L"\tCtrl+A"));
 			_r_menu_additem (hmenu, IDM_SELECT_ALL, localized_string->buffer);
 
-			_r_menu_additem (hmenu, 0, NULL);
+			_r_menu_addseparator (hmenu);
 
 			_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_COPY), L"\tCtrl+C"));
 			_r_menu_additem (hmenu, IDM_COPY, localized_string->buffer);
@@ -2485,8 +2488,8 @@ VOID _app_command_disable (
 	PITEM_TAB_CONTEXT tab_context;
 	PITEM_APP ptr_app;
 	ULONG app_hash;
+	LONG new_val = INT_ERROR;
 	INT item_id = INT_ERROR;
-	BOOL new_val = INT_ERROR;
 
 	tab_context = _app_listview_getcontext (hwnd, INT_ERROR);
 
@@ -2508,7 +2511,7 @@ VOID _app_command_disable (
 			if (new_val == INT_ERROR)
 				new_val = !ptr_app->is_silent;
 
-			_app_setappinfo (ptr_app, INFO_IS_SILENT, IntToPtr (new_val));
+			_app_setappinfo (ptr_app, INFO_IS_SILENT, LongToPtr (new_val));
 		}
 		else if (ctrl_id == IDM_DISABLEREMOVAL)
 		{
@@ -2518,7 +2521,7 @@ VOID _app_command_disable (
 			if (new_val == INT_ERROR)
 				new_val = !ptr_app->is_undeletable;
 
-			_app_setappinfo (ptr_app, INFO_IS_UNDELETABLE, IntToPtr (new_val));
+			_app_setappinfo (ptr_app, INFO_IS_UNDELETABLE, LongToPtr (new_val));
 		}
 		else if (ctrl_id == IDM_DISABLETIMER)
 		{

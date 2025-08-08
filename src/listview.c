@@ -260,7 +260,7 @@ ULONG _app_listview_getappcontext (
 {
 	PITEM_NETWORK ptr_network;
 	PITEM_LOG ptr_log;
-	LPARAM context;
+	LONG_PTR context;
 	ULONG app_hash = 0;
 
 	context = _r_listview_getitemlparam (hwnd, listview_id, item_id);
@@ -297,6 +297,12 @@ ULONG _app_listview_getappcontext (
 				_r_obj_dereference (ptr_log);
 			}
 
+			break;
+		}
+
+		default:
+		{
+			app_hash = (ULONG)context;
 			break;
 		}
 	}

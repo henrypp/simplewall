@@ -998,6 +998,7 @@ VOID _app_getfileversioninfo (
 	ULONG lcid;
 	NTSTATUS status;
 
+	// clean value
 	__try
 	{
 		if (ptr_app_info->version_info)
@@ -1074,16 +1075,6 @@ VOID _app_getfileversioninfo (
 	version_string = _r_obj_finalstringbuilder (&sb);
 
 	_r_str_trimstring2 (&version_string->sr, DIVIDER_TRIM, 0);
-
-	__try
-	{
-		if (_r_obj_isstringempty2 (version_string))
-			_r_obj_clearreference ((PVOID_PTR)&version_string);
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		NOTHING;
-	}
 
 CleanupExit:
 
@@ -1228,12 +1219,12 @@ VOID _app_generate_rulescontrol (
 			}
 
 			if (!type)
-				_r_menu_additem (hsubmenu, 0, NULL);
+				_r_menu_addseparator (hsubmenu);
 		}
 
 		if (ptr_log)
 		{
-			_r_menu_additem (hsubmenu, 0, NULL);
+			_r_menu_addseparator (hsubmenu);
 
 			_r_str_printf (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_RULE_APPLY_2), _r_obj_getstring (ptr_log->remote_addr_str));
 
@@ -2176,8 +2167,8 @@ VOID _app_wufixenable (
 
 		if (app_hash)
 		{
-			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (TRUE));
-			_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (TRUE));
+			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, LongToPtr (TRUE));
+			_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, LongToPtr (TRUE));
 		}
 
 		_r_obj_dereference (service_path);
@@ -2190,8 +2181,8 @@ VOID _app_wufixenable (
 
 			if (app_hash)
 			{
-				_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, IntToPtr (FALSE));
-				//_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, IntToPtr (FALSE));
+				_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, LongToPtr (FALSE));
+				_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, LongToPtr (FALSE));
 			}
 
 			_r_fs_deletefile (&config.wusvc_path->sr, NULL);
