@@ -1,3 +1,10 @@
+v3.8.7 (8 August 2025)
+- fixed not logical crash (issue #2012)
+- fixed context menu performance
+- updated locale (issue #1984)
+- updated project sdk
+- cosmetic fixes
+
 v3.8.6.1 (21 May 2025)
 - fixed "open containing folder" error (issue #1977)
 - fixed crash at startup (issue #1979)
