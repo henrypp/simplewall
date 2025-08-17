@@ -1962,6 +1962,7 @@ INT_PTR CALLBACK EditorProc (
 							if (GetFocus () == hsearch)
 							{
 								_r_ctrl_setstring (hsearch, 0, L"");
+
 								SetFocus (hwnd);
 
 								break;
