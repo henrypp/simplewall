@@ -159,8 +159,8 @@ HICON _app_icons_getsafeapp_hicon (
 
 VOID _app_icons_loaddefaults (
 	_In_ ENUM_TYPE_DATA type,
-	_Inout_opt_ PLONG icon_id_ptr,
-	_Inout_opt_ HICON_PTR hicon_ptr
+	_Inout_opt_ HICON_PTR hicon_ptr,
+	_Inout_opt_ PLONG icon_id_ptr
 )
 {
 	PICON_INFORMATION icon_info;
@@ -222,8 +222,8 @@ VOID _app_icons_loadfromfile (
 		*hicon_ptr = NULL;
 
 	if (!_r_obj_isstringempty (path))
-		_r_path_geticon (&path->sr, icon_id_ptr, hicon_ptr);
+		_r_path_geticon (&path->sr, hicon_ptr, icon_id_ptr);
 
 	if (is_loaddefaults)
-		_app_icons_loaddefaults (type, icon_id_ptr, hicon_ptr);
+		_app_icons_loaddefaults (type, hicon_ptr, icon_id_ptr);
 }
