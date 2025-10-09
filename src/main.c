@@ -1522,7 +1522,7 @@ INT_PTR CALLBACK SettingsProc (
 					BOOLEAN is_enabled;
 					//BOOLEAN is_logging_enabled;
 
-					is_postmessage = ((INT)lparam == WM_APP);
+					is_postmessage = (lparam == WM_APP);
 					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
 					//is_logging_enabled = is_enabled || _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLEUILOG_CHK);
 
@@ -2552,6 +2552,13 @@ INT_PTR CALLBACK DlgProc (
 
 			switch (nmlp->code)
 			{
+				case RBN_HEIGHTCHANGE:
+				{
+					_r_wnd_sendmessage (hwnd, 0, WM_SIZE, 0, 0);
+
+					break;
+				}
+
 				case TCN_SELCHANGING:
 				{
 					PITEM_TAB_CONTEXT tab_context;
