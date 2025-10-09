@@ -586,21 +586,29 @@ PR_STRING _app_getappdisplayname (
 			return _r_obj_reference (ptr_app->original_path);
 	}
 
-	if (ptr_app->type == DATA_APP_SERVICE)
+	switch (ptr_app->type)
 	{
-		if (!_r_obj_isstringempty (ptr_app->original_path))
-			return _r_obj_reference (ptr_app->original_path);
-	}
-	else if (ptr_app->type == DATA_APP_UWP)
-	{
-		if (!_r_obj_isstringempty (ptr_app->display_name))
-			return _r_obj_reference (ptr_app->display_name);
+		case DATA_APP_SERVICE:
+		{
+			if (!_r_obj_isstringempty (ptr_app->original_path))
+				return _r_obj_reference (ptr_app->original_path);
 
-		if (!_r_obj_isstringempty (ptr_app->real_path))
-			return _r_obj_reference (ptr_app->real_path);
+			break;
+		}
 
-		if (!_r_obj_isstringempty (ptr_app->original_path))
-			return _r_obj_reference (ptr_app->original_path);
+		case DATA_APP_UWP:
+		{
+			if (!_r_obj_isstringempty (ptr_app->display_name))
+				return _r_obj_reference (ptr_app->display_name);
+
+			if (!_r_obj_isstringempty (ptr_app->real_path))
+				return _r_obj_reference (ptr_app->real_path);
+
+			if (!_r_obj_isstringempty (ptr_app->original_path))
+				return _r_obj_reference (ptr_app->original_path);
+
+			break;
+		}
 	}
 
 	if (is_shortened || _r_config_getboolean (L"ShowFilenames", TRUE, NULL))
@@ -616,26 +624,39 @@ PR_STRING _app_getappdisplayname (
 }
 
 _Ret_maybenull_
-PR_STRING _app_getappname (
-	_In_ PITEM_APP ptr_app
+PR_STRING _app_getapppath (
+	_In_ PITEM_APP ptr_app,
+	_In_ BOOLEAN is_returnshort
 )
 {
+	PR_STRING path = NULL;
+	PR_STRING  string;
+
 	if (ptr_app->type == DATA_APP_UWP || ptr_app->type == DATA_APP_SERVICE)
 	{
 		if (ptr_app->real_path)
-			return _r_obj_reference (ptr_app->real_path);
+			path = _r_obj_reference (ptr_app->real_path);
 
 		if (ptr_app->display_name)
-			return _r_obj_reference (ptr_app->display_name);
+			path = _r_obj_reference (ptr_app->display_name);
 	}
 
 	if (ptr_app->original_path)
-		return _r_obj_reference (ptr_app->original_path);
+		path = _r_obj_reference (ptr_app->original_path);
 
 	if (ptr_app->real_path)
-		return _r_obj_reference (ptr_app->real_path);
+		path = _r_obj_reference (ptr_app->real_path);
 
-	return NULL;
+	if (is_returnshort && path)
+	{
+		string = _r_str_environmentunexpandstring (&path->sr);
+
+		_r_obj_movereference ((PVOID_PTR)&path, _r_path_compact (&string->sr, 128));
+
+		_r_obj_dereference (string);
+	}
+
+	return path;
 }
 
 VOID _app_getfileicon (

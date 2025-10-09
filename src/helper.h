@@ -139,8 +139,9 @@ PR_STRING _app_getappdisplayname (
 );
 
 _Ret_maybenull_
-PR_STRING _app_getappname (
-	_In_ PITEM_APP ptr_app
+PR_STRING _app_getapppath (
+	_In_ PITEM_APP ptr_app,
+	_In_ BOOLEAN is_returnshort
 );
 
 VOID _app_getfileicon (

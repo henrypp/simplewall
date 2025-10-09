@@ -2880,7 +2880,7 @@ VOID _app_command_purgeunused (
 
 		_r_obj_addhashtableitem (apps_list, hash_code, NULL);
 
-		string = _app_getappdisplayname (ptr_app, FALSE);
+		string = _app_getapppath (ptr_app, _r_config_getboolean (L"IsShortPath", TRUE, NULL));
 
 		if (string)
 		{
