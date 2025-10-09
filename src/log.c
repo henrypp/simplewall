@@ -207,8 +207,8 @@ VOID _app_logwrite (
 	PR_STRING local_port_string;
 	PR_STRING direction_string;
 	PR_STRING date_string;
+	PR_STRING path = NULL;
 	PR_STRING buffer;
-	PR_STRING path;
 	PITEM_APP ptr_app;
 	HANDLE current_handle;
 
@@ -222,13 +222,9 @@ VOID _app_logwrite (
 
 	if (ptr_app)
 	{
-		path = _app_getappname (ptr_app);
+		path = _app_getapppath (ptr_app, _r_config_getboolean (L"IsShortPath", TRUE, NULL));
 
 		_r_obj_dereference (ptr_app);
-	}
-	else
-	{
-		path = NULL;
 	}
 
 	date_string = _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
