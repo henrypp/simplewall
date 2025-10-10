@@ -220,6 +220,7 @@ typedef struct _STATIC_DATA
 	volatile HICON htray_icon;
 	volatile HANDLE hnetevent;
 	volatile HANDLE hlogfile;
+	volatile LONG log_id;
 
 	ULONG color_nonremovable;
 	ULONG color_network;
@@ -430,6 +431,8 @@ typedef struct _ITEM_LOG
 	UINT64 filter_id;
 
 	ULONG app_hash;
+
+	volatile LONG log_id;
 
 	FWP_DIRECTION direction;
 

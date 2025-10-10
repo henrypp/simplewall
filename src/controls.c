@@ -45,6 +45,9 @@ VOID _app_getapptooltipstring (
 			path = ptr_log->path;
 	}
 
+	if (ptr_log)
+		_r_obj_appendstringbuilderformat (buffer, L"#%d - ", _InterlockedCompareExchange (&ptr_log->log_id, 0, 0));
+
 	if (path)
 	{
 		_r_obj_appendstringbuilder2 (buffer, &path->sr);

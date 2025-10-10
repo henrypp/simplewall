@@ -788,10 +788,9 @@ VOID _app_listview_resize (
 	_In_ BOOLEAN is_forced
 )
 {
-	PR_STRING column_text;
-	PR_STRING item_text;
+	PR_STRING string;
 	HWND hlistview;
-	HWND hhdr = NULL;
+	HWND header = NULL;
 	HDC hdc_listview = NULL;
 	HDC hdc_header = NULL;
 	LONG column_general_id = 0; // set general column id
@@ -819,24 +818,24 @@ VOID _app_listview_resize (
 	if (!column_count)
 		return;
 
-	// get device context and fix font set
+	// get device context
 	hdc_listview = GetDC (hlistview);
 
 	if (!hdc_listview)
 		goto CleanupExit;
 
-	hhdr = _r_listview_getheader (hwnd, listview_id);
+	header = _r_listview_getheader (hwnd, listview_id);
 
-	if (!hhdr)
+	if (!header)
 		goto CleanupExit;
 
-	hdc_header = GetDC (hhdr);
+	hdc_header = GetDC (header);
 
 	if (!hdc_header)
 		goto CleanupExit;
 
-	_r_dc_fixfont (hdc_listview, hwnd, listview_id); // fix
-	_r_dc_fixfont (hdc_header, hhdr, 0); // fix
+	_r_dc_fixfont (hdc_listview, hwnd, listview_id); // fix font set
+	_r_dc_fixfont (hdc_header, header, 0); // fix font set
 
 	is_tableview = (_r_listview_getview (hwnd, listview_id) == LV_VIEW_DETAILS);
 
@@ -848,18 +847,23 @@ VOID _app_listview_resize (
 	total_width = _r_ctrl_getwidth (hwnd, listview_id);
 	item_count = _r_listview_getitemcount (hwnd, listview_id);
 
+	if (listview_id == IDC_LOG)
+		column_general_id = 1;
+
 	for (LONG i = 0; i < column_count; i++)
 	{
 		if (i == column_general_id)
 			continue;
 
 		// get column text width
-		column_text = _r_listview_getcolumntext (hwnd, listview_id, i);
+		string = _r_listview_getcolumntext (hwnd, listview_id, i);
 
-		if (!column_text)
+		if (!string)
 			continue;
 
-		column_width = _r_dc_getfontwidth (hdc_header, &column_text->sr, NULL) + spacing;
+		column_width = _r_dc_getfontwidth (hdc_header, &string->sr, NULL) + spacing;
+
+		_r_obj_dereference (string);
 
 		if (column_width >= max_width)
 		{
@@ -872,14 +876,22 @@ VOID _app_listview_resize (
 			{
 				for (INT j = 0; j < item_count; j++)
 				{
-					item_text = _r_listview_getitemtext (hwnd, listview_id, j, i);
+					// check for number column
+					if ((i == 0) && (listview_id == IDC_LOG))
+					{
+						text_width = _r_dc_getdpi (50, dpi_value);
+					}
+					else
+					{
+						string = _r_listview_getitemtext (hwnd, listview_id, j, i);
 
-					if (!item_text)
-						continue;
+						if (!string)
+							continue;
 
-					text_width = _r_dc_getfontwidth (hdc_listview, &item_text->sr, NULL) + spacing;
+						text_width = _r_dc_getfontwidth (hdc_listview, &string->sr, NULL) + spacing;
 
-					_r_obj_dereference (item_text);
+						_r_obj_dereference (string);
+					}
 
 					// do not continue reaching higher and higher values for performance reason!
 					if (text_width >= max_width)
@@ -898,8 +910,6 @@ VOID _app_listview_resize (
 		_r_listview_setcolumn (hwnd, listview_id, i, NULL, column_width);
 
 		calculated_width += column_width;
-
-		_r_obj_dereference (column_text);
 	}
 
 	// set general column width
@@ -911,7 +921,7 @@ CleanupExit:
 		ReleaseDC (hlistview, hdc_listview);
 
 	if (hdc_header)
-		ReleaseDC (hhdr, hdc_header);
+		ReleaseDC (header, hdc_header);
 }
 
 VOID _app_listview_setfont (

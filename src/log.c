@@ -83,8 +83,8 @@ ULONG _app_getloghash (
 	ULONG log_hash;
 
 	string = _r_format_string (
-		L"%" TEXT (PRIu8) L"-%" TEXT (PR_ULONG) L"-%" TEXT (PRIu8) L"-%" \
-		TEXT (PRIu8) L"-%" TEXT (PRIu16) L"-%" TEXT (PRIu16) L"-%s-%s",
+		L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" \
+		TEXT (PRIu8) L"_%" TEXT (PRIu16) L"_%" TEXT (PRIu16) L"_%s_%s_IJAHudm4*^(uaokUH_!&%#!",
 		ptr_log->af,
 		ptr_log->app_hash,
 		ptr_log->protocol,
@@ -190,6 +190,8 @@ VOID _app_logclear_ui (
 	_In_ HWND hwnd
 )
 {
+	_InterlockedExchange (&config.log_id, 0);
+
 	_r_listview_deleteallitems (hwnd, IDC_LOG);
 
 	_app_listview_resize (hwnd, IDC_LOG, FALSE);
@@ -1407,7 +1409,15 @@ VOID NTAPI _app_logthread (
 		{
 			// write log to a ui
 			if (is_loguienabled)
+			{
+				// increment value
+				_InterlockedIncrement (&config.log_id);
+
+				ptr_log->log_id = _InterlockedCompareExchange (&config.log_id, 0, 0);
+
+				// write to a ui
 				_app_logwrite_ui (hwnd, ptr_log);
+			}
 
 			// display notification
 			if (is_notificationenabled)

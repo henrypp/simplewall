@@ -435,30 +435,30 @@ VOID _app_message_localize (
 
 			case IDC_LOG:
 			{
-				_r_listview_setcolumn (hwnd, tab_context->listview_id, 0, _r_locale_getstring (IDS_NAME), 0);
-				_r_listview_setcolumn (hwnd, tab_context->listview_id, 1, _r_locale_getstring (IDS_DATE), 0);
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 1, _r_locale_getstring (IDS_NAME), 0);
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 2, _r_locale_getstring (IDS_DATE), 0);
 
 				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_ADDRESS), _r_locale_getstring (IDS_DIRECTION_LOCAL)));
-				_r_listview_setcolumn (hwnd, tab_context->listview_id, 2, localized_string->buffer, 0);
-
-				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_HOST), _r_locale_getstring (IDS_DIRECTION_LOCAL)));
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 3, localized_string->buffer, 0);
 
-				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_PORT), _r_locale_getstring (IDS_DIRECTION_LOCAL)));
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_HOST), _r_locale_getstring (IDS_DIRECTION_LOCAL)));
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 4, localized_string->buffer, 0);
 
-				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_ADDRESS), _r_locale_getstring (IDS_DIRECTION_REMOTE)));
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_PORT), _r_locale_getstring (IDS_DIRECTION_LOCAL)));
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 5, localized_string->buffer, 0);
 
-				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_HOST), _r_locale_getstring (IDS_DIRECTION_REMOTE)));
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_ADDRESS), _r_locale_getstring (IDS_DIRECTION_REMOTE)));
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 6, localized_string->buffer, 0);
 
-				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_PORT), _r_locale_getstring (IDS_DIRECTION_REMOTE)));
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_HOST), _r_locale_getstring (IDS_DIRECTION_REMOTE)));
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 7, localized_string->buffer, 0);
 
-				_r_listview_setcolumn (hwnd, tab_context->listview_id, 8, _r_locale_getstring (IDS_PROTOCOL), 0);
-				_r_listview_setcolumn (hwnd, tab_context->listview_id, 9, _r_locale_getstring (IDS_DIRECTION), 0);
-				_r_listview_setcolumn (hwnd, tab_context->listview_id, 10, _r_locale_getstring (IDS_FILTER), 0);
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"%s (%s)", _r_locale_getstring (IDS_PORT), _r_locale_getstring (IDS_DIRECTION_REMOTE)));
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 8, localized_string->buffer, 0);
+
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 9, _r_locale_getstring (IDS_PROTOCOL), 0);
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 10, _r_locale_getstring (IDS_DIRECTION), 0);
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 11, _r_locale_getstring (IDS_FILTER), 0);
 
 				break;
 			}
@@ -1519,6 +1519,12 @@ VOID _app_displayinfolog_callback (
 		{
 			case 0:
 			{
+				_r_str_printf (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, L"%d", _InterlockedCompareExchange (&ptr_log->log_id, 0, 0));
+				break;
+			}
+
+			case 1:
+			{
 				if (ptr_app)
 				{
 					string = _app_getappdisplayname (ptr_app, TRUE);
@@ -1542,7 +1548,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 1:
+			case 2:
 			{
 				string = _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME);
 
@@ -1556,7 +1562,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 2:
+			case 3:
 			{
 				string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->local_addr_str, NULL, NULL);
 
@@ -1566,7 +1572,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 3:
+			case 4:
 			{
 				string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->local_host_str, NULL, NULL);
 
@@ -1582,7 +1588,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 4:
+			case 5:
 			{
 				if (ptr_log->local_port)
 				{
@@ -1599,7 +1605,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 5:
+			case 6:
 			{
 				string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->remote_addr_str, NULL, NULL);
 
@@ -1609,7 +1615,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 6:
+			case 7:
 			{
 				string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->remote_host_str, NULL, NULL);
 
@@ -1625,7 +1631,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 7:
+			case 8:
 			{
 				if (ptr_log->remote_port)
 				{
@@ -1642,7 +1648,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 8:
+			case 9:
 			{
 				if (ptr_log->protocol_str)
 				{
@@ -1656,7 +1662,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 9:
+			case 10:
 			{
 				string = _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, FALSE);
 
@@ -1670,7 +1676,7 @@ VOID _app_displayinfolog_callback (
 				break;
 			}
 
-			case 10:
+			case 11:
 			{
 				string = _r_obj_concatstrings (
 					2,
