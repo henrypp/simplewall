@@ -2966,7 +2966,7 @@ VOID _app_command_purgetimers (
 		{
 			_r_obj_addlistitem (rules, ptr_app, NULL);
 
-			path = _app_getappdisplayname (ptr_app, FALSE);
+			path = _app_getapppath (ptr_app, _r_config_getboolean (L"IsShortPath", TRUE, NULL));
 
 			if (path)
 			{
