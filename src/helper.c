@@ -651,7 +651,7 @@ PR_STRING _app_getapppath (
 	{
 		string = _r_str_environmentunexpandstring (&path->sr);
 
-		_r_obj_movereference ((PVOID_PTR)&path, _r_path_compact (&string->sr, 128));
+		_r_obj_movereference ((PVOID_PTR)&path, _r_path_compact (&string->sr, 64));
 
 		_r_obj_dereference (string);
 	}
