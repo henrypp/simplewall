@@ -124,7 +124,7 @@ HANDLE _wfp_getenginehandle ()
 
 				_r_log (LOG_LEVEL_CRITICAL, NULL, L"FwpmEngineOpen0", status, NULL);
 
-				_r_sys_terminateprocess (NtCurrentProcess (), status);
+				NtTerminateProcess (NtCurrentProcess (), status);
 
 				break;
 			}
