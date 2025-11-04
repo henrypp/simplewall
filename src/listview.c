@@ -418,7 +418,7 @@ VOID _app_listview_showitemby_id (
 
 	// restore scroll position
 	if (scroll_pos > 0)
-		_r_wnd_sendmessage (hwnd, listview_id, LVM_SCROLL, 0, (LPARAM)scroll_pos);
+		_r_listview_scroll (hwnd, listview_id, scroll_pos);
 }
 
 VOID _app_listview_showitemby_param (

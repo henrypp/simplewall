@@ -968,12 +968,12 @@ VOID _app_toolbar_resize (
 		rbi.cbSize = sizeof (REBARBANDINFOW);
 		rbi.fMask = RBBIM_ID | RBBIM_CHILD | RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
 
-		if (!_r_wnd_sendmessage (config.hrebar, 0, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rbi))
+		if (!_r_rebar_getinfo (config.hrebar, 0, i, &rbi))
 			continue;
 
 		if (rbi.wID == REBAR_TOOLBAR_ID)
 		{
-			if (!_r_wnd_sendmessage (config.htoolbar, 0, TB_GETIDEALSIZE, FALSE, (LPARAM)&ideal_size))
+			if (!_r_toolbar_getidealsize (config.htoolbar, 0, FALSE, &ideal_size))
 				continue;
 
 			button_size = _r_toolbar_getbuttonsize (config.hrebar, IDC_TOOLBAR);
@@ -1001,7 +1001,7 @@ VOID _app_toolbar_resize (
 			continue;
 		}
 
-		_r_wnd_sendmessage (config.hrebar, 0, RB_SETBANDINFO, (WPARAM)i, (LPARAM)&rbi);
+		_r_rebar_setinfo (config.hrebar, 0, i, &rbi);
 	}
 }
 
