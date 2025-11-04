@@ -532,7 +532,7 @@ VOID _app_notify_killprocess (
 
 		if (_r_str_compare (process->ImageName.Buffer, file_name->buffer, TRUE) == 0)
 		{
-			status = _r_sys_getprocessimagepathbyid (process->UniqueProcessId, TRUE, &path);
+			status = _r_sys_getprocessimagepathbyid (HandleToULong (process->UniqueProcessId), TRUE, &path);
 
 			if (NT_SUCCESS (status))
 			{
