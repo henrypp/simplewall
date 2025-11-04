@@ -1400,6 +1400,19 @@ VOID NTAPI _app_logthread (
 		ptr_log->remote_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->remote_addr, 0, 0);
 		ptr_log->local_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, 0);
 
+		// display notification
+		if (is_notificationenabled)
+		{
+			if (ptr_app && !ptr_log->is_allow && is_exludeblocklist)
+			{
+				if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_silent, sizeof (BOOLEAN)))
+				{
+					if (!is_silent)
+						_app_notify_addobject (hwnd, ptr_log, ptr_app);
+				}
+			}
+		}
+
 		// write log to a file
 		if (is_logenabled)
 			_app_logwrite (ptr_log);
@@ -1417,19 +1430,6 @@ VOID NTAPI _app_logthread (
 
 				// write to a ui
 				_app_logwrite_ui (hwnd, ptr_log);
-			}
-
-			// display notification
-			if (is_notificationenabled)
-			{
-				if (ptr_app && !ptr_log->is_allow && is_exludeblocklist)
-				{
-					if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_silent, sizeof (BOOLEAN)))
-					{
-						if (!is_silent)
-							_app_notify_addobject (hwnd, ptr_log, ptr_app);
-					}
-				}
 			}
 		}
 	}
