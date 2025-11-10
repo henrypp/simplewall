@@ -3934,9 +3934,9 @@ BOOLEAN NTAPI _app_parseargs (
 
 		case CmdlineInstall:
 		{
-			if (_r_sys_getopt (_r_sys_getcommandline (), L"silent", NULL) || _app_installmessage (NULL, TRUE))
+			if (_r_sys_getopt (_r_sys_getcommandline ()->buffer, L"silent", NULL) || _app_installmessage (NULL, TRUE))
 			{
-				if (_r_sys_getopt (_r_sys_getcommandline (), L"temp", NULL))
+				if (_r_sys_getopt (_r_sys_getcommandline ()->buffer, L"temp", NULL))
 					config.is_filterstemporary = TRUE;
 
 				_app_profile_initialize ();
