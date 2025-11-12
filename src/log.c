@@ -316,7 +316,7 @@ VOID _app_logwrite_ui (
 	_r_obj_addhashtablepointer (log_table, log_hash, _r_obj_reference (ptr_log));
 	_r_queuedlock_releaseexclusive (&lock_loglist);
 
-	_app_listview_addlogitem (hwnd, log_hash);
+	_app_listview_addlogitem (hwnd, ptr_log, log_hash);
 
 	_app_queue_resolver (hwnd, IDC_LOG, log_hash, ptr_log);
 
@@ -1422,15 +1422,7 @@ VOID NTAPI _app_logthread (
 		{
 			// write log to a ui
 			if (is_loguienabled)
-			{
-				// increment value
-				_InterlockedIncrement (&config.log_id);
-
-				ptr_log->log_id = _InterlockedCompareExchange (&config.log_id, 0, 0);
-
-				// write to a ui
-				_app_logwrite_ui (hwnd, ptr_log);
-			}
+				_app_logwrite_ui (hwnd, ptr_log); // write to a ui
 		}
 	}
 

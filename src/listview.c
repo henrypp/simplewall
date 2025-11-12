@@ -179,9 +179,15 @@ VOID _app_listview_addnetworkitem (
 
 VOID _app_listview_addlogitem (
 	_In_ HWND hwnd,
+	_In_ PITEM_LOG ptr_log,
 	_In_ ULONG log_hash
 )
 {
+	// increment value
+	_InterlockedIncrement (&config.log_id);
+
+	ptr_log->log_id = _InterlockedCompareExchange (&config.log_id, 0, 0);
+
 	_r_listview_additem (hwnd, IDC_LOG, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_listview_createcontext (log_hash));
 }
 
