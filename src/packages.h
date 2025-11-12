@@ -4,8 +4,7 @@
 #pragma once
 
 BOOLEAN _app_package_isnotexists (
-	_In_ PR_STRING package_sid,
-	_In_opt_ ULONG app_hash
+	_In_ PR_STRING package_sid
 );
 
 VOID _app_package_parsepath (

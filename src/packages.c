@@ -4,23 +4,20 @@
 #include "global.h"
 
 BOOLEAN _app_package_isnotexists (
-	_In_ PR_STRING package_sid,
-	_In_opt_ ULONG app_hash
+	_In_ PR_STRING package_sid
 )
 {
-	if (!app_hash)
-		app_hash = _r_str_gethash (&package_sid->sr, TRUE);
+	ULONG app_hash;
+
+	app_hash = _r_str_gethash (&package_sid->sr, TRUE);
 
 	if (_app_isappfound (app_hash))
 		return TRUE;
 
-	// there we try to found new package (HACK!!!)
+	// there we try to found new packages (HACK!!!)
 	_app_package_getpackageslist (_r_app_gethwnd ());
 
-	if (_app_isappfound (app_hash))
-		return TRUE;
-
-	return FALSE;
+	return _app_isappfound (app_hash);
 }
 
 VOID _app_package_parsepath (
