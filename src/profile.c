@@ -1548,7 +1548,7 @@ VOID _app_profile_initialize ()
 	R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
 	PR_STRING path;
 
-	path = _r_app_getprofiledirectory ();
+	path = _r_app_getprofiledirectory (TRUE);
 
 	_r_obj_movereference ((PVOID_PTR)&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
 	_r_obj_movereference ((PVOID_PTR)&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
