@@ -1423,6 +1423,13 @@ LPCWSTR _app_db_getservicename (
 		case 1:
 			return L"tcpmux";
 
+		case 2:
+		case 3:
+			return L"compressnet";
+
+		case 5:
+			return L"rje";
+
 		case 7:
 			return L"echo";
 
@@ -1434,6 +1441,20 @@ LPCWSTR _app_db_getservicename (
 
 		case 13:
 			return L"daytime";
+
+		case 15:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"netstat";
+
+			break;
+		}
+
+		case 17:
+			return L"qotd";
+
+		case 18:
+			return L"msp";
 
 		case 20:
 			return L"ftp-data";
@@ -1447,39 +1468,124 @@ LPCWSTR _app_db_getservicename (
 		case 23:
 			return L"telnet";
 
+		case 24:
+			return L"priv-mail";
+
 		case 25:
 			return L"smtp";
 
 		case 26:
-			return L"rsftp";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"rsftp";
+
+			break;
+		}
+
+		case 27:
+			return L"nsw-fe";
+
+		case 29:
+			return L"msg-icp";
+
+		case 31:
+			return L"msg-auth";
+
+		case 33:
+			return L"dsp";
+
+		case 35:
+			return L"priv-print";
 
 		case 37:
 			return L"time";
 
+		case 38:
+			return L"rap";
+
 		case 39:
 			return L"rlp";
+
+		case 41:
+			return L"graphics";
 
 		case 42:
 			return L"nameserver";
 
 		case 43:
-			return L"nicname";
+			return L"whois";
+
+		case 47:
+			return L"ni-ftp";
 
 		case 48:
 			return L"auditd";
 
+		case 49:
+			return L"tacacs";
+
+		case 50:
+			return L"re-mail-ck";
+
+		case 52:
+			return L"xns-time";
+
 		case 53:
 			return L"domain";
 
+		case 54:
+			return L"xns-ch";
+
+		case 55:
+			return L"isi-gl";
+
+		case 57:
+			return L"priv-term";
+
+		case 58:
+			return L"xns-mail";
+
+		case 59:
+			return L"priv-file";
+
+		case 61:
+			return L"ni-mail";
+
+		case 62:
+			return L"acas";
+
 		case 63:
-			return L"whois++";
+			return L"via-ftp"; // whoispp
+
+		case 64:
+			return L"covia";
+
+		case 65:
+			return L"tacacs-ds";
+
+		case 66:
+			return L"sqlnet";
 
 		case 67:
+			return L"dhcps";
+
 		case 68:
-			return L"dhcp";
+			return L"dhcpc";
 
 		case 69:
 			return L"tftp";
+
+		case 70:
+			return L"gopher";
+
+		case 75:
+			return L"priv-dial";
+
+		case 76:
+			return L"deos";
+
+		case 77:
+			return L"priv-rje"; // netjrs
 
 		case 78:
 			return L"vettcp";
@@ -1494,14 +1600,40 @@ LPCWSTR _app_db_getservicename (
 		case 81:
 			return L"hosts2-ns";
 
+		case 82:
+			return L"xfer";
+
+		case 83:
+			return L"mit-ml-dev";
+
 		case 84:
 			return L"ctf";
+
+		case 85:
+			return L"mit-ml-dev";
+
+		case 86:
+			return L"mfcobol";
+
+		case 87:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"priv-term-l";
+
+			break;
+		}
 
 		case 88:
 			return L"kerberos-sec";
 
+		case 89:
+			return L"su-mit-tg";
+
 		case 90:
 			return L"dnsix";
+
+		case 91:
+			return L"mit-dov";
 
 		case 92:
 			return L"npp";
@@ -1515,17 +1647,42 @@ LPCWSTR _app_db_getservicename (
 		case 95:
 			return L"supdup";
 
+		case 96:
+			return L"dixie";
+
+		case 97:
+			return L"swift-rvf";
+
+		case 98:
+			return L"metagram";
+
+		case 100:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"newacct";
+
+			break;
+		}
+
 		case 101:
 			return L"hostname";
 
 		case 105:
-			return L"cso";
+			return L"csnet-ns";
 
 		case 106:
-			return L"pop3pw";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"pop3pw";
+
+			break;
+		}
 
 		case 107:
 			return L"rtelnet";
+
+		case 108:
+			return L"snagas";
 
 		case 109:
 			return L"pop2";
@@ -1540,10 +1697,30 @@ LPCWSTR _app_db_getservicename (
 			return L"mcidas";
 
 		case 113:
-			return L"auth";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"ident";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"auth";
+			}
+
+			break;
+		}
+
+		case 114:
+			return L"audionews";
 
 		case 115:
 			return L"sftp";
+
+		case 116:
+			return L"ansanotify";
+
+		case 117:
+			return L"uucp-path";
 
 		case 118:
 			return L"sqlserv";
@@ -1551,17 +1728,41 @@ LPCWSTR _app_db_getservicename (
 		case 119:
 			return L"nntp";
 
+		case 121:
+			return L"erpc";
+
 		case 123:
 			return L"ntp";
 
+		case 125:
+			return L"locus-map";
+
 		case 126:
-			return L"nxedit";
+			return L"unitary";
+
+		case 127:
+			return L"locus-con";
+
+		case 128:
+			return L"gss-xlicen";
 
 		case 129:
 			return L"pwdgen";
 
+		case 130:
+			return L"cisco-fna";
+
+		case 131:
+			return L"cisco-tna";
+
+		case 132:
+			return L"cisco-sys";
+
 		case 133:
 			return L"statsrv";
+
+		case 134:
+			return L"ingres-net";
 
 		case 135:
 			return L"msrpc";
@@ -1578,6 +1779,15 @@ LPCWSTR _app_db_getservicename (
 		case 139:
 			return L"netbios-ssn";
 
+		case 140:
+			return L"emfis-data";
+
+		case 141:
+			return L"emfis-cntl";
+
+		case 142:
+			return L"bl-idm";
+
 		case 143:
 			return L"imap";
 
@@ -1587,11 +1797,26 @@ LPCWSTR _app_db_getservicename (
 		case 145:
 			return L"uaac";
 
+		case 148:
+			return L"cronus";
+
+		case 149:
+			return L"aed-512";
+
 		case 150:
 			return L"sql-net";
 
 		case 152:
 			return L"bftp";
+
+		case 153:
+			return L"sgmp";
+
+		case 154:
+			return L"netsc-prod";
+
+		case 155:
+			return L"netsc-dev";
 
 		case 156:
 			return L"sqlsrv";
@@ -1608,11 +1833,38 @@ LPCWSTR _app_db_getservicename (
 		case 162:
 			return L"snmptrap";
 
+		case 163:
+			return L"cmip-man";
+
+		case 164:
+			return L"cmip-agent";
+
+		case 165:
+			return L"xns-courier";
+
+		case 166:
+			return L"s-net";
+
+		case 167:
+			return L"namp";
+
+		case 168:
+			return L"rsvd";
+
 		case 169:
 			return L"send";
 
 		case 170:
 			return L"print-srv";
+
+		case 171:
+			return L"multiplex";
+
+		case 172:
+			return L"cl-1";
+
+		case 173:
+			return L"xyplex-mux";
 
 		case 174:
 			return L"mailq";
@@ -1620,11 +1872,32 @@ LPCWSTR _app_db_getservicename (
 		case 175:
 			return L"vmnet";
 
+		case 176:
+			return L"genrad-mux";
+
+		case 177:
+			return L"xdmcp";
+
+		case 178:
+			return L"nextstep";
+
 		case 179:
 			return L"bgp";
 
+		case 180:
+			return L"ris";
+
+		case 181:
+			return L"unify";
+
 		case 182:
 			return L"audit";
+
+		case 183:
+			return L"ocbinder";
+
+		case 184:
+			return L"ocserver";
 
 		case 185:
 			return L"remote-kis";
@@ -1632,8 +1905,37 @@ LPCWSTR _app_db_getservicename (
 		case 186:
 			return L"kis";
 
+		case 187:
+			return L"aci";
+
+		case 188:
+			return L"mumps";
+
 		case 189:
 			return L"qft";
+
+		case 190:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"gacp";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"cacp";
+			}
+
+			break;
+		}
+
+		case 191:
+			return L"prospero";
+
+		case 192:
+			return L"osu-nms";
+
+		case 193:
+			return L"srmp";
 
 		case 194:
 		case 529:
@@ -1657,33 +1959,467 @@ LPCWSTR _app_db_getservicename (
 		case 200:
 			return L"src";
 
+		case 201:
+			return L"at-rtmp";
+
+		case 202:
+			return L"at-nbp";
+
+		case 203:
+			return L"at-3";
+
+		case 204:
+			return L"at-echo";
+
+		case 205:
+			return L"at-5";
+
+		case 206:
+			return L"at-zis";
+
+		case 207:
+			return L"at-7";
+
+		case 208:
+			return L"at-8";
+
 		case 209:
-			return L"qmtp";
+			return L"tam"; // qmtp
+
+		case 212:
+			return L"anet";
+
+		case 213:
+			return L"ipx";
+
+		case 214:
+			return L"vmpwscs";
+
+		case 215:
+			return L"softpc";
+
+		case 216:
+			return L"atls";
+
+		case 217:
+			return L"dbase";
+
+		case 218:
+			return L"mpp";
+
+		case 219:
+			return L"uarps";
+
+		case 220:
+			return L"imap3";
+
+		case 221:
+		case 222:
+			return L"rsh-spx";
+
+		case 223:
+			return L"cdc";
+
+		case 224:
+			return L"masqdialer";
+
+		case 242:
+			return L"direct";
+
+		case 243:
+			return L"sur-meas";
+
+		case 244:
+			return L"dayna";
 
 		case 245:
 			return L"link";
 
+		case 246:
+			return L"dsp3270";
+
+		case 247:
+			return L"subntbcst_tftp";
+
+		case 248:
+			return L"bhfhs";
+
+		case 256:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"fw1-secureremote";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"rap";
+			}
+
+			break;
+		}
+
+		case 257:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"fw1-mc-fwmodule";
+
+			break;
+		}
+
+		case 258:
+			return L"yak-chat";
+
+		case 259:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"esro-gen";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"firewall1-rdp";
+			}
+
+			break;
+		}
+
+		case 260:
+			return L"openport";
+
+		case 261:
+			return L"nsiiops";
+
+		case 262:
+			return L"arcisdms";
+
+		case 264:
+			return L"fw1-or-bgmp";
+
+		case 265:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"maybe-fw1";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"x-bone-ctl";
+			}
+
+			break;
+		}
+
+		case 266:
+			return L"sst";
+
+		case 267:
+			return L"td-service";
+
+		case 268:
+			return L"td-replica";
+
+		case 269:
+			return L"manet";
+
+		case 270:
+			return L"gist";
+
+		case 271:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"pt-tls";
+
+			break;
+		}
+
 		case 280:
 			return L"http-mgmt";
+
+		case 281:
+			return L"personal-link";
+
+		case 282:
+			return L"cableport-ax";
+
+		case 283:
+			return L"rescap";
+
+		case 284:
+			return L"corerjd";
+
+		case 286:
+			return L"fxp";
+
+		case 287:
+			return L"k-block";
+
+		case 308:
+			return L"novastorbakcup";
+
+		case 309:
+			return L"entrusttime";
+
+		case 310:
+			return L"bhmds";
+
+		case 311:
+			return L"asip-webadmin";
+
+		case 312:
+			return L"vslmp";
+
+		case 313:
+			return L"magenta-logic";
+
+		case 314:
+			return L"opalis-robot";
+
+		case 318:
+			return L"pkix-timestamp";
+
+		case 319:
+			return L"ptp-event";
+
+		case 320:
+			return L"ptp-general";
+
+		case 321:
+			return L"pip";
 
 		case 322:
 			return L"rtsps";
 
+		case 323:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"rpki-rtr";
+
+			break;
+		}
+
+		case 324:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"rpki-rtr-tls";
+
+			break;
+		}
+
+		case 333:
+			return L"texar";
+
+		case 344:
+			return L"pdap";
+
+		case 345:
+			return L"pawserv";
+
+		case 346:
+			return L"zserv";
+
+		case 347:
+			return L"fatserv";
+
+		case 348:
+			return L"csi-sgwp";
+
 		case 349:
 			return L"mftp";
+
+		case 353:
+			return L"ndsauth";
+
+		case 355:
+			return L"datex-asn";
+
+		case 358:
+			return L"shrinkwrap";
+
+		case 359:
+			return L"tenebris_nts";
+
+		case 362:
+			return L"srssend";
+
+		case 363:
+			return L"rsvp_tunnel";
+
+		case 364:
+			return L"aurora-cmgr";
+
+		case 365:
+			return L"dtk";
+
+		case 367:
+			return L"mortgageware";
+
+		case 369:
+			return L"rpc2portmap";
+
+		case 370:
+			return L"codaauth2";
+
+		case 375:
+			return L"hassle";
+
+		case 376:
+			return L"nip";
+
+		case 377:
+			return L"tnETOS";
+
+		case 378:
+			return L"dsETOS";
+
+		case 381:
+			return L"hp-collector";
+
+		case 382:
+			return L"hp-managed-node";
+
+		case 383:
+			return L"hp-alarm-mgr";
+
+		case 384:
+			return L"arns";
+
+		case 386:
+			return L"asa";
+
+		case 387:
+			return L"aurp";
+
+		case 388:
+			return L"unidata-ldm";
 
 		case 389:
 			return L"ldap";
 
+		case 391:
+			return L"synotics-relay";
+
+		case 392:
+			return L"synotics-broker";
+
+		case 393:
+			return L"dis";
+
+		case 398:
+			return L"kryptolan";
+
+		case 399:
+			return L"iso-tsap-c2";
+
+		case 401:
+			return L"ups";
+
+		case 402:
+			return L"genie";
+
+		case 403:
+			return L"decap";
+
+		case 404:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"nced";
+
+			break;
+		}
+
+		case 405:
+			return L"ncld";
+
+		case 406:
+			return L"imsp";
+
+		case 407:
+			return L"timbuktu";
+
+		case 410:
+			return L"decladebug";
+
+		case 411:
+			return L"rmt";
+
+		case 412:
+			return L"synoptics-trap";
+
+		case 413:
+			return L"smsp";
+
+		case 414:
+			return L"infoseek";
+
+		case 415:
+			return L"bnet";
+
+		case 417:
+			return L"onmux";
+
+		case 418:
+			return L"hyper-g";
+
+		case 419:
+			return L"ariel1";
+
+		case 420:
+			return L"smpte";
+
+		case 421:
+			return L"ariel2";
+
+		case 422:
+			return L"ariel3";
+
+		case 423:
+			return L"opc-job-start";
+
+		case 424:
+			return L"opc-job-track";
+
 		case 427:
 			return L"svrloc";
 
+		case 428:
+			return L"ocs_cmu";
+
+		case 429:
+			return L"ocs_amu";
+
+		case 430:
+			return L"utmpsd";
+
+		case 431:
+			return L"utmpcd";
+
+		case 433:
+			return L"nnsp";
+
+		case 434:
+			return L"mobileip-agent";
+
+		case 435:
+			return L"mobilip-mn";
+
+		case 437:
+			return L"comscm";
+
+		case 442:
+			return L"cvc_hostd";
+
 		case 443:
 		{
-			if (proto == IPPROTO_UDP)
+			if (proto == IPPROTO_TCP)
+			{
+				return L"https";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
 				return L"quic";
+			}
 
-			return L"https";
+			break;
 		}
 
 		case 444:
@@ -1692,35 +2428,237 @@ LPCWSTR _app_db_getservicename (
 		case 445:
 			return L"microsoft-ds";
 
+		case 450:
+			return L"tserver";
+
+		case 456:
+			return L"macon";
+
+		case 458:
+			return L"appleqtc";
+
 		case 464:
-			return L"kerberos";
+			return L"kpasswd5"; // kerberos
 
 		case 465:
 			return L"smtps";
 
+		case 469:
+			return L"rcp";
+
+		case 470:
+			return L"scx-proxy";
+
+		case 471:
+			return L"mondex";
+
+		case 473:
+			return L"hybrid-pop";
+
+		case 475:
+			return L"tcpnethaspsrv";
+
+		case 482:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"xlog";
+
+			break;
+		}
+
+		case 485:
+			return L"powerburst";
+
+		case 486:
+		{
+			if (proto == IPPROTO_UDP)
+			{
+				return L"sstats";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"avian";
+			}
+
+			break;
+		}
+
+		case 488:
+			return L"gss-http";
+
+		case 489:
+			return L"nest-protocol";
+
+		case 490:
+			return L"micom-pfs";
+
+		case 491:
+			return L"go-login";
+
+		case 494:
+			return L"pov-ray";
+
+		case 495:
+			return L"intecourier";
+
+		case 496:
+			return L"pim-rp-disc";
+
+		case 497:
+			return L"retrospect";
+
+		case 499:
+			return L"iso-ill";
+
 		case 500:
 			return L"isakmp";
 
+		case 501:
+			return L"stmf";
+
+		case 502:
+			return L"mbap";
+
+		case 503:
+			return L"intrinsa";
+
+		case 505:
+			return L"mailbox-lm";
+
+		case 509:
+			return L"snare";
+
+		case 510:
+			return L"fcp";
+
+		case 511:
+			return L"passgo";
+
+		case 512:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"exec";
+			}
+			else if (proto == IPPROTO_TCP)
+			{
+				return L"biff";
+			}
+
+			break;
+		}
+
 		case 513:
-			return L"login";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"login";
+			}
+			else if (proto == IPPROTO_TCP)
+			{
+				return L"who";
+			}
+
+			break;
+		}
 
 		case 514:
-			return L"shell";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"shell";
+			}
+			else if (proto == IPPROTO_TCP)
+			{
+				return L"syslog";
+			}
+
+			break;
+		}
 
 		case 515:
 			return L"printer";
 
+		case 517:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"talk";
+			}
+			else if (proto == IPPROTO_TCP)
+			{
+				return L"talk";
+			}
+
+			break;
+		}
+
+		case 518:
+			return L"ntalk";
+
+		case 519:
+			return L"utime";
+
+		case 520:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"efs";
+			}
+			else if (proto == IPPROTO_TCP)
+			{
+				return L"route";
+			}
+
+			break;
+		}
+
+		case 521:
+			return L"ripng";
+
 		case 524:
 			return L"ncp";
 
+		case 525:
+			return L"timed";
+
+		case 526:
+			return L"tempo";
+
 		case 530:
-			return L"rpc";
+			return L"courier"; // rpc
+
+		case 531:
+			return L"conference";
+
+		case 532:
+			return L"netnews";
+
+		case 533:
+			return L"netwall";
+
+		case 537:
+			return L"nmsp";
+
+		case 540:
+			return L"uucp";
+
+		case 541:
+			return L"uucp-rlogin";
 
 		case 543:
 			return L"klogin";
 
 		case 544:
 			return L"kshell";
+
+		case 545:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"ekshell";
+
+			break;
+		}
 
 		case 546:
 			return L"dhcpv6-client";
@@ -1731,14 +2669,53 @@ LPCWSTR _app_db_getservicename (
 		case 548:
 			return L"afp";
 
+		case 550:
+			return L"new-rwho";
+
 		case 554:
 			return L"rtsp";
+
+		case 555:
+			return L"dsf";
+
+		case 556:
+			return L"remotefs";
+
+		case 558:
+			return L"sdnskmp";
+
+		case 560:
+			return L"rmonitor";
+
+		case 561:
+			return L"monitor";
+
+		case 562:
+			return L"chshell";
+
+		case 563:
+			return L"snews";
 
 		case 565:
 			return L"whoami";
 
-		case 558:
-			return L"sdnskmp";
+		case 568:
+			return L"ms-shuttle";
+
+		case 569:
+			return L"ms-rome";
+
+		case 574:
+			return L"ftp-agent";
+
+		case 580:
+			return L"sntp-heartbeat";
+
+		case 582:
+			return L"scc-security";
+
+		case 584:
+			return L"keyserver";
 
 		case 585:
 			return L"imap4-ssl";
@@ -1746,11 +2723,81 @@ LPCWSTR _app_db_getservicename (
 		case 587:
 			return L"submission";
 
+		case 591:
+		case 8000:
+		case 8008:
+		case 8080:
+			return L"http-alt";
+
+		case 593:
+			return L"http-rpc-epmap";
+
+		case 609:
+			return L"npmp-trap";
+
+		case 610:
+			return L"npmp-local";
+
+		case 611:
+			return L"npmp-gui";
+
+		case 614:
+			return L"sshell";
+
+		case 620:
+			return L"sco-websrvrmgr";
+
+		case 624:
+			return L"cryptoadmin";
+
+		case 625:
+			return L"apple-xsrvr-admin";
+
+		case 626:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"apple-imap-admin";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"serialnumberd";
+			}
+
+			break;
+		}
+
+		case 628:
+			return L"qmqp";
+
+		case 629:
+			return L"3com-amp3";
+
+		case 630:
+			return L"rda";
+
 		case 631:
 			return L"ipp";
 
+		case 633:
+			return L"servstat";
+
 		case 636:
-			return L"ldaps";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"ldapssl";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"ldaps";
+			}
+
+			break;
+		}
+
+		case 639:
+			return L"msdp";
 
 		case 646:
 			return L"ldp";
@@ -1758,11 +2805,229 @@ LPCWSTR _app_db_getservicename (
 		case 647:
 			return L"dhcp-failover";
 
+		case 648:
+			return L"rrp";
+
+		case 651:
+			return L"ieee-mms";
+
+		case 652:
+			return L"hello-port";
+
+		case 653:
+			return L"repscmd";
+
+		case 656:
+			return L"spmp";
+
+		case 658:
+			return L"tenfold";
+
+		case 660:
+			return L"mac-srvr-admin";
+
+		case 662:
+			return L"pftp";
+
+		case 663:
+			return L"purenoise";
+
 		case 666:
 			return L"doom"; // khe-khe-khe!
 
+		case 667:
+			return L"disclose";
+
+		case 674:
+			return L"acapc"; // stalker
+
+		case 678:
+			return L"ggf-ncp";
+
+		case 687:
+			return L"asipregistry";
+
+		case 691:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"msexch-routing";
+
+			break;
+		}
+
+		case 697:
+			return L"msexch-routing";
+
+		case 699:
+			return L"accessnetwork";
+
+		case 701:
+			return L"lmp";
+
+		case 707:
+			return L"borland-dsj";
+
+		case 709:
+			return L"entrustmanager";
+
+		case 710:
+			return L"entrust-ash";
+
+		case 711:
+			return L"cisco-tdp";
+
+		case 713:
+			return L"iris-xpc";
+
+		case 714:
+			return L"iris-xpcs";
+
+		case 716:
+			return L"pana";
+
+		case 740:
+			return L"netcp";
+
+		case 741:
+			return L"netgw";
+
+		case 742:
+			return L"netrcs";
+
+		case 747:
+			return L"fujitsu-dev";
+
+		case 751:
+			return L"kadmin";
+
+		case 754:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"krb_prop";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"tell";
+			}
+
+			break;
+		}
+
+		case 758:
+			return L"nlogin";
+
+		case 761:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"kpasswd";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"rxe";
+			}
+
+			break;
+		}
+
+		case 767:
+			return L"phonebook";
+
+		case 773:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"submit";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"notify";
+			}
+
+			break;
+		}
+
+		case 777:
+			return L"multiling-http";
+
+		case 783:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"spamassassin";
+
+			break;
+		}
+
+		case 799:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"controlit";
+
+			break;
+		}
+
+		case 800:
+			return L"mdbs_daemon";
+
+		case 802:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"mbap-s";
+
+			break;
+		}
+
+		case 808:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"ccproxy-http";
+
+			break;
+		}
+
+		case 810:
+			return L"fcp-udp";
+
+		case 828:
+			return L"itm-mcell-s";
+
+		case 829:
+			return L"pkix-3-ca-ra";
+
+		case 830:
+			return L"netconf-ssh";
+
+		case 831:
+			return L"netconf-beep";
+
+		case 832:
+			return L"netconfsoaphttp";
+
+		case 833:
+			return L"netconfsoapbeep";
+
 		case 847:
 			return L"dhcp-failover2";
+
+		case 853:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"domain-s";
+
+			break;
+		}
+
+		case 854:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"dlep";
+
+			break;
+		}
+
+		case 860:
+			return L"iscsi";
 
 		case 861:
 			return L"owamp-control";
@@ -1773,10 +3038,24 @@ LPCWSTR _app_db_getservicename (
 		case 873:
 			return L"rsync";
 
-		case 853:
+		case 888:
+			return L"accessbuilder";
+
+		case 901:
 		{
 			if (proto == IPPROTO_TCP)
-				return L"domain-s";
+				return L"samba-swat";
+
+			break;
+		}
+
+		case 910:
+			return L"kink";
+
+		case 950:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"oftep-rpc";
 
 			break;
 		}
@@ -1786,6 +3065,9 @@ LPCWSTR _app_db_getservicename (
 
 		case 990:
 			return L"ftps";
+
+		case 991:
+			return L"nas";
 
 		case 992:
 			return L"telnets";
@@ -1803,10 +3085,26 @@ LPCWSTR _app_db_getservicename (
 			return L"webpush";
 
 		case 1002:
-			return L"windows-icfw";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"windows-icfw";
+
+			break;
+		}
 
 		case 1025:
-			return L"NFS-or-IIS";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"NFS-or-IIS";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"blackjack";
+			}
+
+			break;
+		}
 
 		case 1026:
 		{
@@ -1817,18 +3115,69 @@ LPCWSTR _app_db_getservicename (
 		}
 
 		case 1027:
-			return L"IIS";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"IIS";
+
+			break;
+		}
 
 		case 1028:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"ms-lsa";
+
+			break;
+		}
+
 		case 1029:
-			return L"ms-lsa";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"ms-lsa";
+
+			break;
+		}
 
 		case 1033:
 		{
-			if (proto == IPPROTO_UDP)
+			if (proto == IPPROTO_TCP)
+			{
+				return L"netinfo";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
 				return L"netinfo-local";
+			}
 
-			return L"netinfo";
+			break;
+		}
+
+		case 1035:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"multidropper";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"mxxrlogin";
+			}
+
+			break;
+		}
+
+		case 1050:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"java-or-OTGfileshare";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"cma";
+			}
+
+			break;
 		}
 
 		case 1080:
@@ -1837,8 +3186,25 @@ LPCWSTR _app_db_getservicename (
 		case 1085:
 			return L"webobjects";
 
+		case 1096:
+			return L"cnrprotocol";
+
+		case 1098:
+			return L"rmiactivation";
+
+		case 1099:
+			return L"rmiregistry";
+
 		case 1100:
 			return L"mctp";
+
+		case 1109:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"kpop"; // kerberos
+
+			break;
+		}
 
 		case 1110:
 			return L"nfsd";
@@ -1847,6 +3213,19 @@ LPCWSTR _app_db_getservicename (
 			return L"lmsocialserver";
 
 		case 1112:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"msql";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"icp";
+			}
+
+			break;
+		}
+
 		case 1114:
 		case 4333:
 			return L"mini-sql";
@@ -1857,45 +3236,422 @@ LPCWSTR _app_db_getservicename (
 		case 1120:
 			return L"bnetfile";
 
+		case 1121:
+			return L"rmpp";
+
 		case 1123:
 			return L"murray";
+
+		case 1130:
+			return L"casp";
+
+		case 1131:
+			return L"caspssl";
 
 		case 1138:
 			return L"encrypted_admin";
 
+		case 1147:
+			return L"capioverlan";
+
+		case 1150:
+			return L"blaze";
+
+		case 1153:
+			return L"c1222-acse";
+
 		case 1155:
 			return L"nfa";
+
+		case 1159:
+			return L"oracle-oms";
+
+		case 1164:
+			return L"qsm-proxy";
+
+		case 1165:
+			return L"qsm-gui";
+
+		case 1166:
+			return L"qsm-remote";
+
+		case 1168:
+			return L"vchat";
+
+		case 1183:
+			return L"llsurfup-http";
+
+		case 1184:
+			return L"llsurfup-https";
+
+		case 1186:
+			return L"mysql-cluster";
+
+		case 1187:
+			return L"alias";
+
+		case 1188:
+			return L"hp-webadmin";
 
 		case 1194:
 			return L"openvpn";
 
+		case 1214:
+			return L"fasttrack"; // kazaa
+
+		case 1220:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"quicktime";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"qt-serveradmin";
+			}
+
+			break;
+		}
+
+		case 1234:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"hotline";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"search-agent";
+			}
+
+			break;
+		}
+
+		case 1257:
+			return L"shockwave2";
+
+		case 1258:
+			return L"opennl";
+
+		case 1259:
+			return L"opennl-voice";
+
+		case 1270:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"ssserver";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"opsmgr"; // Microsoft Operations Manager
+			}
+
+			break;
+		}
+
+		case 1273:
+			return L"emc-gateway";
+
+		case 1307:
+			return L"pacmand";
+
+		case 1311:
+			return L"rxmon";
+
+		case 1318:
+			return L"krb5gatekeeper";
+
+		case 1321:
+			return L"pip";
+
+		case 1333:
+			return L"passwrd-policy";
+
+		case 1336:
+			return L"ischat";
+
 		case 1337:
-			return L"menandmice-dns";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"waste";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"menandmice-dns";
+			}
+
+			break;
+		}
+
+		case 1368:
+			return L"screencast";
+
+		case 1380:
+			return L"telesis-licman";
+
+		case 1381:
+			return L"apple-licman";
+
+		case 1384:
+			return L"os-licman";
 
 		case 1433:
 			return L"ms-sql-s";
 
+		case 1434:
+			return L"ms-sql-m";
+
+		case 1462:
+			return L"world-lm";
+
+		case 1498:
+			return L"watcom-sql";
+
+		case 1525:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"orasrv";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"oracle";
+			}
+
+			break;
+		}
+
+		case 1529:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"support";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"coauthor";
+			}
+
+			break;
+		}
+
+		case 1590:
+			return L"gemini-lm";
+
+		case 1630:
+			return L"oraclenet8cman";
+
+		case 1687:
+			return L"nsjtp-ctrl";
+
 		case 1688:
 			return L"nsjtp-data";
 
+		case 1689:
+			return L"firefox";
+
 		case 1701:
-			return L"l2tp";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"l2f";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"L2TP";
+			}
+
+			break;
+		}
+
+		case 1702:
+			return L"deskshare";
 
 		case 1720:
-			return L"h323q931";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"h323q931";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"h323q931";
+			}
+
+			break;
+		}
 
 		case 1723:
 			return L"pptp";
 
+		case 1726:
+			return L"iberiagames";
+
+		case 1733:
+			return L"siipat";
+
+		case 1745:
+			return L"remote-winsock";
+
+		case 1748:
+			return L"oracle-em1";
+
+		case 1750:
+			return L"sslp";
+
+		case 1755:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"wms";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"ms-streaming";
+			}
+
+			break;
+		}
+
+		case 1758:
+			return L"tftp-mcast";
+
+		case 1761:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"landesk-rc";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"cft-0";
+			}
+
+			break;
+		}
+
+		case 1762:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"landesk-rc";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"cft-1";
+			}
+
+			break;
+		}
+
+		case 1763:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"landesk-rc";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"cft-2";
+			}
+
+			break;
+		}
+
+		case 1764:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"landesk-rc";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"cft-3";
+			}
+
+			break;
+		}
+
+		case 1789:
+			return L"hello";
+
+		case 1793:
+			return L"rsc-robot";
+
+		case 1795:
+			return L"dpi-proxy";
+
+		case 1801:
+			return L"msmq"; // Microsoft Message Queuing
+
+		case 1833:
+			return L"udpradio";
+
+		case 1850:
+			return L"gsi";
+
+		case 1862:
+			return L"mysql-cm-agent";
+
 		case 1863:
-			return L"msnp";
+			return L"msnp"; // MSN Messenger
 
 		case 1900:
 		case 5000:
 			return L"upnp";
 
+		case 1931:
+			return L"amdsched";
+
+		case 1981:
+			return L"p2pq";
+
 		case 2000:
 			return L"cisco-sccp";
+
+		case 2001:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"dc";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"wizard";
+			}
+
+			break;
+		}
+
+		case 2009:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"news";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"whosockami";
+			}
+
+			break;
+		}
+
+		case 2019:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"whosockami";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"about";
+			}
+
+			break;
+		}
 
 		case 2054:
 			return L"weblogin";
@@ -1903,62 +3659,247 @@ LPCWSTR _app_db_getservicename (
 		case 2086:
 			return L"gnunet";
 
-		case 2001:
-			return L"dc";
+		case 2105:
+			return L"eklogin"; // kerberos
+
+		case 2106:
+			return L"ekshell"; // kerberos
+
+		case 2115:
+			return L"kdm"; // Key Distribution Manager
 
 		case 2121:
-			return L"ccproxy-ftp";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"ccproxy-ftp";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"scientia-ssdb";
+			}
+
+			break;
+		}
+
+		case 2129:
+			return L"cs-live";
+
+		case 2137:
+			return L"connect";
+
+		case 2142:
+			return L"tdmoip";
+
+		case 2159:
+			return L"gdbremote";
 
 		case 2164:
-			return L"ddns-v3";
+			return L"ddns-v3"; // Dynamic DNS Version 3
 
 		case 2167:
-			return L"raw-serial";
+			return L"raw-serial"; // Raw Async Serial Link
 
 		case 2171:
-			return L"msfw-storage";
+			return L"msfw-storage"; // MS Firewall Storage
 
 		case 2172:
-			return L"msfw-s-storage";
+			return L"msfw-s-storage"; // MS Firewall SecureStorage
 
 		case 2173:
-			return L"msfw-replica";
+			return L"msfw-replica"; // MS Firewall Replication
 
 		case 2174:
-			return L"msfw-array";
+			return L"msfw-array"; // MS Firewall Intra Array
 
-		case 2371:
-			return L"worldwire";
+		case 2175:
+			return L"ms-airsync"; // Microsoft Desktop AirSync Protocol
+
+		case 2179:
+			return L"ms-vmrdp"; // Microsoft RDP for virtual machines
+
+		case 2191:
+			return L"tvbus";
+
+		case 2193:
+			return L"drwcs"; // Dr.Web Enterprise Management Service
+
+		case 2213:
+			return L"kali";
+
+		case 2273:
+			return L"mysql-im"; // MySQL Instance Manager
+
+		case 2311:
+			return L"messageservice"; // Message Service
+
+		case 2169:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"bif-p2p";
+
+			break;
+		}
+
+		case 2374:
+			return L"hydra";
+
+		case 2375:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"docker";
+
+			break;
+		}
+
+		case 2376:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"docker";
+
+			break;
+		}
+
+		case 2377:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"swarm";
+
+			break;
+		}
+
+		case 2382:
+			return L"ms-olap3"; // Microsoft OLAP
+
+		case 2383:
+			return L"ms-olap4"; // Microsoft OLAP
+
+		case 2525:
+			return L"ms-v-worlds"; // MS V-Worlds
+
+		case 2679:
+			return L"syncserverssl";
+
+		case 2710:
+			return L"sso-service";
+
+		case 2711:
+			return L"sso-control";
 
 		case 2717:
 			return L"pn-requester";
 
+		case 2718:
+			return L"pn-requester2";
+
+		case 2723:
+			return L"watchdog-nt";
+
+		case 2725:
+			return L"msolap-ptp2";
+
+		case 2775:
+			return L"smpp";
+
+		case 2784:
+			return L"www-dev";
+
 		case 2869:
 			return L"icslap";
 
+		case 2948:
+			return L"wap-push";
+
+		case 2949:
+			return L"wap-pushsecure";
+
+		case 2947:
+			return L"symantec-av";
+
+		case 2979:
+			return L"h263-video";
+
 		case 3000:
-			return L"ppp";
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"ppp";
+			}
+			if (proto == IPPROTO_UDP)
+			{
+				return L"hbci";
+			}
+
+			break;
+		}
 
 		case 3074:
 			return L"xbox";
 
 		case 3128:
-			return L"squid-http";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"squid-http";
+
+			break;
+		}
+
+		case 3224:
+			return L"aes-discovery";
+
+		case 3260:
+			return L"iscsi";
+
+		case 3295:
+			return L"dyniplookup";
 
 		case 3306:
 			return L"mysql";
 
+		case 3326:
+			return L"sftu"; // ;)
+
+		case 3343:
+			return L"ms-cluster-net";
+
+		case 3352:
+			return L"ssql"; // Scalable SQL
+
 		case 3389:
-			return L"ms-wbt-server";
+			return L"ms-wbt-server"; // Microsoft Remote Display Protocol (aka ms-term-serv, microsoft-rdp)
 
 		case 3407:
 			return L"ldap-admin";
 
+		case 3476:
+			return L"nppmp"; // NVIDIA Mgmt Protocol
+
+		case 3500:
+			return L"rtmp-port";
+
+		case 3535:
+			return L"ms-la";
+
 		case 3540:
 			return L"pnrp-port";
 
+		case 3544:
+			return L"teredo";
+
+		case 3547:
+			return L"symantec-sim";
+
+		case 3550:
+			return L"ssmpp"; // Secure SMPP
+
 		case 3558:
-			return L"mcp-port";
+			return L"mcp-port"; // MCP user port
+
+		case 3559:
+			return L"cctv-port"; // CCTV control port
+
+		case 3563:
+			return L"watcomdebug";
 
 		case 3587:
 			return L"p2pgroup";
@@ -1969,17 +3910,42 @@ LPCWSTR _app_db_getservicename (
 		case 3713:
 			return L"tftps";
 
+		case 3721:
+			return L"xsync";
+
 		case 3724:
 			return L"blizwow";
 
+		case 4041:
+			return L"ltp"; // Location Tracking Protocol
+
+		case 4180:
+			return L"httpx";
+
+		case 4317:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"opentelemetry";
+
+			break;
+		}
+
+		case 4321:
+			return L"rwhois"; // Remote Who Is
+
 		case 4500:
-			return L"ipsec-nat-t";
+		{
+			if (proto == IPPROTO_UDP)
+				return L"nat-t-ike";
+
+			break;
+		}
 
 		case 4554:
-			return L"msfrs";
+			return L"msfrs"; // MS FRS Replication
 
 		case 4687:
-			return L"nst";
+			return L"nst"; // Network Scanner Tool FTP
 
 		case 4876:
 			return L"tritium-can";
@@ -2005,7 +3971,13 @@ LPCWSTR _app_db_getservicename (
 		case 5101:
 			return L"admdog";
 
+		case 5145:
+			return L"rmonitor_secure";
+
 		case 5190:
+		case 5191:
+		case 5192:
+		case 5193:
 			return L"aol";
 
 		case 5350:
@@ -2032,8 +4004,17 @@ LPCWSTR _app_db_getservicename (
 		case 5358:
 			return L"wsdapi-s";
 
+		case 5359:
+			return L"ms-alerter";
+
+		case 5360:
+			return L"ms-sideshow";
+
+		case 5361:
+			return L"ms-s-sideshow";
+
 		case 5362:
-			return L"serverwsd2";
+			return L"serverwsd2"; // Microsoft Windows Server WSD2 Service
 
 		case 5432:
 			return L"postgresql";
@@ -2041,26 +4022,158 @@ LPCWSTR _app_db_getservicename (
 		case 5631:
 			return L"pcanywheredata";
 
+		case 5632:
+			return L"pcanywherestat";
+
 		case 5666:
-			return L"nrpe";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"nrpe"; // Nagios Remote Plugin Executor
+
+			break;
+		}
 
 		case 5687:
-			return L"gog-multiplayer";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"gog-multiplayer";
+
+			break;
+		}
+
+		case 5741:
+			return L"ida-discover1";
+
+		case 5742:
+			return L"ida-discover2";
 
 		case 5800:
-			return L"vnc-http";
+		case 5801:
+		case 5802:
+		case 5803:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"vnc-http";
+
+			break;
+		}
 
 		case 5900:
-			return L"vnc";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"vnc";
+
+			break;
+		}
+
+		case 5901:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"vnc-1";
+
+			break;
+		}
+
+		case 5902:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"vnc-2";
+
+			break;
+		}
+
+		case 5903:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"vnc-3";
+
+			break;
+		}
 
 		case 5938:
-			return L"teamviewer";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"teamviewer";
+
+			break;
+		}
 
 		case 6000:
 		case 6001:
 		case 6002:
 		case 6003:
+		case 6004:
+		case 6005:
+		case 6006:
+		case 6007:
+		case 6008:
+		case 6009:
+		case 6010:
+		case 6011:
+		case 6012:
+		case 6013:
+		case 6014:
+		case 6015:
+		case 6016:
+		case 6017:
+		case 6018:
+		case 6019:
+		case 6020:
+		case 6021:
+		case 6022:
+		case 6023:
+		case 6024:
+		case 6025:
+		case 6026:
+		case 6027:
+		case 6028:
+		case 6029:
+		case 6030:
+		case 6031:
+		case 6032:
+		case 6033:
+		case 6034:
+		case 6035:
+		case 6036:
+		case 6037:
+		case 6038:
+		case 6039:
+		case 6040:
+		case 6041:
+		case 6042:
+		case 6043:
+		case 6044:
+		case 6045:
+		case 6046:
+		case 6047:
+		case 6048:
+		case 6049:
+		case 6050:
+		case 6051:
+		case 6052:
+		case 6053:
+		case 6054:
+		case 6055:
+		case 6056:
+		case 6057:
+		case 6058:
+		case 6059:
+		case 6060:
+		case 6061:
+		case 6062:
+		case 6063:
 			return L"x11";
+
+		case 6074:
+			return L"max"; // Microsoft Max
+
+		case 6076:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"msft-dpm-cert"; // Microsoft DPM WCF Certificates
+
+			break;
+		}
 
 		case 6222:
 		case 6662: // deprecated!
@@ -2072,6 +4185,12 @@ LPCWSTR _app_db_getservicename (
 		case 6347:
 			return L"gnutella2";
 
+		case 6620:
+			return L"kftp-data"; // Kerberos V5 FTP Data
+
+		case 6621:
+			return L"kftp"; // Kerberos V5 FTP Control
+
 		case 6622:
 			return L"mcftp";
 
@@ -2080,33 +4199,79 @@ LPCWSTR _app_db_getservicename (
 		case 6667:
 		case 6668:
 		case 6669:
-			return L"ircu";
+		case 6670:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"irc";
+			}
+			if (proto == IPPROTO_UDP)
+			{
+				return L"ircu";
+			}
+
+			break;
+		}
+
 
 		case 6881:
-			return L"bittorrent-tracker";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"bittorrent-tracker";
+
+			break;
+		}
 
 		case 7070:
-			return L"realserver";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"realserver";
+
+			break;
+		}
 
 		case 7235:
-			return L"aspcoordination";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"aspcoordination";
 
-		case 8443:
-			return L"https-alt";
+			break;
+		}
 
 		case 8021:
-			return L"ftp-proxy";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"ftp-proxy";
+
+			break;
+		}
 
 		case 8333:
 		case 18333:
-			return L"bitcoin";
+		{
+			if (proto == IPPROTO_TCP)
+				return L"bitcoin";
 
-		case 591:
-		case 8000:
-		case 8008:
-		case 8080:
+			break;
+		}
+
+		case 8443:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"https-alt";
+
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"pcsync-https";
+			}
+
+			break;
+		}
+
 		case 8444:
-			return L"http-alt";
+			return L"pcsync-http";
 
 		case 8999:
 			return L"bctp";
@@ -2115,21 +4280,33 @@ LPCWSTR _app_db_getservicename (
 			return L"git";
 
 		case 9800:
-			return L"webdav";
+			return L"davsrc"; // WebDav Source Port
 
 		case 10107:
 			return L"bctp-server";
 
 		case 11371:
 		{
-			if (proto == IPPROTO_UDP)
-				return L"hkp";
+			if (proto == IPPROTO_TCP)
+			{
+				return L"pksd";
 
-			return L"pksd";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"hkp";
+			}
+
+			break;
 		}
 
 		case 25565:
+		{
+			if (proto == IPPROTO_TCP)
 			return L"minecraft";
+
+			break;
+		}
 
 		case 26000:
 			return L"quake";
@@ -2146,16 +4323,36 @@ LPCWSTR _app_db_getservicename (
 		case 27018:
 		case 27019:
 		case 28017:
+		{
+			if (proto == IPPROTO_TCP)
 			return L"mongod";
 
+			break;
+		}
+
 		case 27500:
+		{
+			if (proto == IPPROTO_UDP)
 			return L"quakeworld";
 
+			break;
+		}
+
 		case 27910:
-			return L"quake2";
+		{
+			if (proto == IPPROTO_UDP)
+				return L"quake2";
+
+			break;
+		}
 
 		case 27960:
-			return L"quake3";
+		{
+			if (proto == IPPROTO_UDP)
+				return L"quake3";
+
+			break;
+		}
 
 		case 28240:
 			return L"siemensgsm";
