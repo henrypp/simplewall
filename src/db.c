@@ -3,19 +3,15 @@
 
 #include "global.h"
 
-_Success_ (NT_SUCCESS (return))
-NTSTATUS _app_db_initialize (
+_Success_ (SUCCEEDED (return))
+HRESULT _app_db_initialize (
 	_Out_ PDB_INFORMATION db_info,
 	_In_ BOOLEAN is_reader
 )
 {
-	NTSTATUS status;
-
 	RtlZeroMemory (db_info, sizeof (DB_INFORMATION));
 
-	status = _r_xml_initializelibrary (&db_info->xml_library, is_reader);
-
-	return status;
+	return _r_xml_initializelibrary (&db_info->xml_library, is_reader);
 }
 
 VOID _app_db_destroy (

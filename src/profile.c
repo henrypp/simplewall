@@ -1709,8 +1709,8 @@ NTSTATUS _app_profile_load (
 )
 {
 	DB_INFORMATION db_info;
-	NTSTATUS status;
 	BOOLEAN is_update;
+	NTSTATUS status;
 
 	status = _app_db_initialize (&db_info, TRUE);
 
@@ -1790,8 +1790,8 @@ NTSTATUS _app_profile_save (
 {
 	DB_INFORMATION db_info;
 	LONG64 timestamp;
-	NTSTATUS status;
 	BOOLEAN is_backuprequired = FALSE;
+	NTSTATUS status;
 
 	status = _app_db_initialize (&db_info, FALSE);
 

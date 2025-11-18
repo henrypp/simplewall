@@ -68,8 +68,8 @@ static const BYTE profile2_fourcc_old[] = {
 #define PROFILE2_SHA256_LENGTH 32UL
 #define PROFILE2_HEADER_LENGTH (PROFILE2_FOURCC_LENGTH + PROFILE2_SHA256_LENGTH)
 
-_Success_ (NT_SUCCESS (return))
-NTSTATUS _app_db_initialize (
+_Success_ (SUCCEEDED (return))
+HRESULT _app_db_initialize (
 	_Out_ PDB_INFORMATION db_info,
 	_In_ BOOLEAN is_reader
 );
