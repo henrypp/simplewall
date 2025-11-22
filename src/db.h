@@ -204,11 +204,9 @@ PR_STRING _app_db_getdirectionname (
 	_In_ BOOLEAN is_localized
 );
 
-_Ret_maybenull_
-PR_STRING _app_db_getprotoname (
+LPCWSTR _app_db_getprotoname (
 	_In_ ULONG proto,
-	_In_ ADDRESS_FAMILY af,
-	_In_ BOOLEAN is_notnull
+	_In_ ADDRESS_FAMILY af
 );
 
 _Ret_maybenull_

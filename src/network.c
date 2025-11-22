@@ -144,7 +144,7 @@ VOID _app_network_generatetable (
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
-				ptr_network->protocol_str = _app_db_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
+				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af));
 
 				ptr_network->remote_addr.S_un.S_addr = tcp4_table->table[i].dwRemoteAddr;
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp4_table->table[i].dwRemotePort);
@@ -221,7 +221,7 @@ VOID _app_network_generatetable (
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
-				ptr_network->protocol_str = _app_db_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
+				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af));
 
 				RtlCopyMemory (ptr_network->remote_addr6.u.Byte, tcp6_table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp6_table->table[i].dwRemotePort);
@@ -301,7 +301,7 @@ VOID _app_network_generatetable (
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
-				ptr_network->protocol_str = _app_db_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
+				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af));
 
 				ptr_network->local_addr.S_un.S_addr = udp4_table->table[i].dwLocalAddr;
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)udp4_table->table[i].dwLocalPort);
@@ -369,7 +369,7 @@ VOID _app_network_generatetable (
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;
-				ptr_network->protocol_str = _app_db_getprotoname (ptr_network->protocol, ptr_network->af, FALSE);
+				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af));
 
 				RtlCopyMemory (ptr_network->local_addr6.u.Byte, udp6_table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)udp6_table->table[i].dwLocalPort);

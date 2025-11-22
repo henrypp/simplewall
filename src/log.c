@@ -685,7 +685,7 @@ VOID CALLBACK _wfp_logcallback (
 	{
 		ptr_log->protocol = log->protocol;
 
-		ptr_log->protocol_str = _app_db_getprotoname (ptr_log->protocol, ptr_log->af, FALSE);
+		ptr_log->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_log->protocol, ptr_log->af));
 	}
 
 	// indicates FWPM_NET_EVENT_TYPE_CLASSIFY_ALLOW state

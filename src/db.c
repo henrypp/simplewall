@@ -936,9 +936,7 @@ NTSTATUS _app_db_savetofile (
 	_r_xml_writewhitespace (&db_info->xml_library, L"\r\n");
 	_r_xml_writeenddocument (&db_info->xml_library);
 
-	status = _app_db_save_streamtofile (db_info, path);
-
-	return status;
+	return _app_db_save_streamtofile (db_info, path);
 }
 
 _Success_ (NT_SUCCESS (return))
@@ -949,7 +947,6 @@ NTSTATUS _app_db_save_streamtofile (
 {
 	PR_BYTE new_bytes;
 	HANDLE hfile;
-	BYTE profile_type;
 	NTSTATUS status;
 
 	status = _r_fs_createfile (
@@ -967,9 +964,7 @@ NTSTATUS _app_db_save_streamtofile (
 	if (!NT_SUCCESS (status))
 		return status;
 
-	profile_type = _app_getprofiletype ();
-
-	status = _app_db_encodebody (db_info, profile_type, &new_bytes);
+	status = _app_db_encodebody (db_info, _app_getprofiletype (), &new_bytes);
 
 	if (NT_SUCCESS (status))
 	{
@@ -1326,11 +1321,9 @@ PR_STRING _app_db_getdirectionname (
 	return _r_obj_createstring (text);
 }
 
-_Ret_maybenull_
-PR_STRING _app_db_getprotoname (
+LPCWSTR _app_db_getprotoname (
 	_In_ ULONG proto,
-	_In_ ADDRESS_FAMILY af,
-	_In_ BOOLEAN is_notnull
+	_In_ ADDRESS_FAMILY af
 )
 {
 	switch (proto)
@@ -1340,76 +1333,76 @@ PR_STRING _app_db_getprotoname (
 			break;
 
 		case IPPROTO_ICMP:
-			return _r_obj_createstring (L"icmp");
+			return L"icmp";
 
 		case IPPROTO_IGMP:
-			return _r_obj_createstring (L"igmp");
+			return L"igmp";
 
 		case IPPROTO_GGP:
-			return _r_obj_createstring (L"ggp");
+			return L"ggp";
 
 		case IPPROTO_IPV4:
-			return _r_obj_createstring (L"ipv4");
+			return L"ipv4";
 
 		case IPPROTO_ST:
-			return _r_obj_createstring (L"st");
+			return L"st";
 
 		case IPPROTO_TCP:
-			return _r_obj_createstring (((af == AF_INET6) ? L"tcp6" : L"tcp"));
+			return ((af == AF_INET6) ? L"tcp6" : L"tcp");
 
 		case IPPROTO_CBT:
-			return _r_obj_createstring (L"cbt");
+			return L"cbt";
 
 		case IPPROTO_EGP:
-			return _r_obj_createstring (L"egp");
+			return L"egp";
 
 		case IPPROTO_IGP:
-			return _r_obj_createstring (L"igp");
+			return L"igp";
 
 		case IPPROTO_PUP:
-			return _r_obj_createstring (L"pup");
+			return L"pup";
 
 		case IPPROTO_UDP:
-			return _r_obj_createstring (((af == AF_INET6) ? L"udp6" : L"udp"));
+			return ((af == AF_INET6) ? L"udp6" : L"udp");
 
 		case IPPROTO_IDP:
-			return _r_obj_createstring (L"xns-idp");
+			return L"xns-idp";
 
 		case IPPROTO_RDP:
-			return _r_obj_createstring (L"rdp");
+			return L"rdp";
 
 		case IPPROTO_IPV6:
-			return _r_obj_createstring (L"ipv6");
+			return L"ipv6";
 
 		case IPPROTO_ROUTING:
-			return _r_obj_createstring (L"ipv6-route");
+			return L"ipv6-route";
 
 		case IPPROTO_FRAGMENT:
-			return _r_obj_createstring (L"ipv6-frag");
+			return L"ipv6-frag";
 
 		case IPPROTO_ESP:
-			return _r_obj_createstring (L"esp");
+			return L"esp";
 
 		case IPPROTO_AH:
-			return _r_obj_createstring (L"ah");
+			return L"ah";
 
 		case IPPROTO_ICMPV6:
-			return _r_obj_createstring (L"ipv6-icmp");
+			return L"ipv6-icmp";
 
 		case IPPROTO_DSTOPTS:
-			return _r_obj_createstring (L"ipv6-opts");
+			return L"ipv6-opts";
 
 		case IPPROTO_L2TP:
-			return _r_obj_createstring (L"l2tp");
+			return L"l2tp";
 
 		case IPPROTO_SCTP:
-			return _r_obj_createstring (L"sctp");
+			return L"sctp";
+
+		case IPPROTO_RAW:
+			return L"raw";
 	}
 
-	if (is_notnull)
-		return _r_format_string (L"Protocol #%" TEXT (PR_ULONG), proto);
-
-	return NULL;
+	return L"n/a";
 }
 
 _Ret_maybenull_
@@ -4303,7 +4296,7 @@ LPCWSTR _app_db_getservicename (
 		case 25565:
 		{
 			if (proto == IPPROTO_TCP)
-			return L"minecraft";
+				return L"minecraft";
 
 			break;
 		}
@@ -4325,7 +4318,7 @@ LPCWSTR _app_db_getservicename (
 		case 28017:
 		{
 			if (proto == IPPROTO_TCP)
-			return L"mongod";
+				return L"mongod";
 
 			break;
 		}
@@ -4333,7 +4326,7 @@ LPCWSTR _app_db_getservicename (
 		case 27500:
 		{
 			if (proto == IPPROTO_UDP)
-			return L"quakeworld";
+				return L"quakeworld";
 
 			break;
 		}

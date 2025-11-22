@@ -522,6 +522,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					IPPROTO_ICMPV6,
 					IPPROTO_L2TP,
 					IPPROTO_SCTP,
+					IPPROTO_RAW,
 				};
 
 				_r_ctrl_setstringformat (hwnd, IDC_RULE_PROTOCOL, L"%s:", _r_locale_getstring (IDS_PROTOCOL));
@@ -530,25 +531,17 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				for (i = 0; i < RTL_NUMBER_OF (protos); i++)
 				{
-					string = _app_db_getprotoname (protos[i], AF_UNSPEC, TRUE);
-
-					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", string->buffer, protos[i]);
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", _app_db_getprotoname (protos[i], AF_UNSPEC), protos[i]);
 
 					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, i + 1, buffer, (LPARAM)protos[i]);
-
-					_r_obj_dereference (string);
 				}
 
 				// unknown protocol
-				if (_r_combobox_getcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID) == CB_ERR)
+				if (_r_combobox_getcurrentitem (hwnd, IDC_RULE_PROTOCOL_ID) == CB_ERR && context->ptr_rule->protocol != 0)
 				{
-					string = _app_db_getprotoname (context->ptr_rule->protocol, AF_UNSPEC, TRUE);
-
-					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", string->buffer, context->ptr_rule->protocol);
+					_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s (%" TEXT (PRIu8) L")", _app_db_getprotoname (context->ptr_rule->protocol, AF_UNSPEC), context->ptr_rule->protocol);
 
 					_r_combobox_insertitem (hwnd, IDC_RULE_PROTOCOL_ID, i + 1, buffer, (LPARAM)context->ptr_rule->protocol);
-
-					_r_obj_dereference (string);
 				}
 
 				_r_combobox_setcurrentitembylparam (hwnd, IDC_RULE_PROTOCOL_ID, (LPARAM)context->ptr_rule->protocol);
@@ -1747,8 +1740,8 @@ INT_PTR CALLBACK EditorProc (
 					HWND hpage_apps;
 					PR_STRING string;
 					PR_LIST rules = NULL;
-					HANDLE hengine;
 					PITEM_RULE ptr_rule;
+					HANDLE hengine;
 					ULONG_PTR rule_idx;
 					ULONG app_hash;
 					INT listview_id;
@@ -1823,9 +1816,7 @@ INT_PTR CALLBACK EditorProc (
 
 							context->ptr_rule->af = (ADDRESS_FAMILY)_r_combobox_getitemlparam (hpage_general, IDC_RULE_VERSION_ID, item_id);
 
-							string = _app_db_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af, FALSE);
-
-							_r_obj_movereference ((PVOID_PTR)&context->ptr_rule->protocol_str, string);
+							_r_obj_movereference ((PVOID_PTR)&context->ptr_rule->protocol_str, _r_obj_createstring (_app_db_getprotoname (context->ptr_rule->protocol, context->ptr_rule->af)));
 
 							item_id = _r_combobox_getcurrentitem (hpage_general, IDC_RULE_DIRECTION_ID);
 

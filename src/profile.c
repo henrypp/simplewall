@@ -567,7 +567,7 @@ PITEM_RULE _app_addrule (
 	ptr_rule->protocol = protocol;
 	ptr_rule->af = af;
 
-	ptr_rule->protocol_str = _app_db_getprotoname (protocol, af, FALSE);
+	ptr_rule->protocol_str = _r_obj_createstring (_app_db_getprotoname (protocol, af));
 
 	return ptr_rule;
 }

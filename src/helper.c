@@ -264,21 +264,19 @@ PR_STRING _app_formataddress (
 {
 	WCHAR addr_str[DNS_MAX_NAME_BUFFER_LENGTH];
 	R_STRINGBUILDER formatted_address;
-	PR_STRING string;
+	LPCWSTR string;
 	NTSTATUS status;
 
-	_r_obj_initializestringbuilder (&formatted_address, 256);
+	_r_obj_initializestringbuilder (&formatted_address, 0x100);
 
 	if (flags & FMTADDR_USE_PROTOCOL)
 	{
-		string = _app_db_getprotoname (proto, af, FALSE);
+		string = _app_db_getprotoname (proto, af);
 
-		if (string)
+		if (_r_str_compare (string, L"n/a", FALSE) != 0)
 		{
-			_r_obj_appendstringbuilder2 (&formatted_address, &string->sr);
+			_r_obj_appendstringbuilder (&formatted_address, string);
 			_r_obj_appendstringbuilder (&formatted_address, L"://");
-
-			_r_obj_dereference (string);
 		}
 	}
 
