@@ -2245,7 +2245,7 @@ INT_PTR CALLBACK DlgProc (
 			{
 				_r_str_fromlong64 (internal_profile_version, RTL_NUMBER_OF (internal_profile_version), profile_info.profile_internal_timestamp);
 
-				_r_update_addcomponent (L"Internal rules", L"rules_internal", internal_profile_version, profile_info.profile_path_internal, FALSE);
+				_r_update_addcomponent (L"Internal rules", L"rules_internal", internal_profile_version, &profile_info.profile_path_internal->sr, FALSE);
 			}
 
 			_app_network_initialize (hwnd);
