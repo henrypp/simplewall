@@ -449,7 +449,8 @@ VOID _wfp_uninitialize (
 			{
 				guid = _r_obj_getarrayitem (callouts, i);
 
-				_app_setcalloutsecurity (engine_handle, guid, FALSE);
+				if (guid)
+					_app_setcalloutsecurity (engine_handle, guid, FALSE);
 			}
 		}
 
@@ -461,6 +462,9 @@ VOID _wfp_uninitialize (
 			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (callouts); i++)
 			{
 				guid = _r_obj_getarrayitem (callouts, i);
+
+				if (!guid)
+					continue;
 
 				status = FwpmCalloutDeleteByKey0 (engine_handle, guid);
 
@@ -508,7 +512,7 @@ VOID _wfp_installfilters (
 	LPGUID guid;
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
-	ULONG_PTR enum_key;
+	ULONG_PTR enum_key = 0;
 	BOOLEAN is_intransact;
 	ULONG status;
 
@@ -529,7 +533,8 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG);
+			if (guid)
+				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG);
 		}
 	}
 
@@ -542,7 +547,8 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_wfp_deletefilter (engine_handle, guid);
+			if (guid)
+				_wfp_deletefilter (engine_handle, guid);
 		}
 
 		_r_obj_dereference (guids);
@@ -551,8 +557,6 @@ VOID _wfp_installfilters (
 	rules = _r_obj_createlist (10, &_r_obj_dereference);
 
 	// apply apps rules
-	enum_key = 0;
-
 	_r_queuedlock_acquireshared (&lock_apps);
 
 	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
@@ -608,7 +612,8 @@ VOID _wfp_installfilters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG);
+			if (guid)
+				_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG);
 		}
 
 		_r_obj_dereference (guids);
@@ -637,7 +642,7 @@ BOOLEAN _wfp_transact_start (
 
 	if (status != ERROR_SUCCESS)
 	{
-		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin0", status, L"%s:%" TEXT (PR_ULONG), DBG_ARG_VAR);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionBegin0", status, L"%s:%d", DBG_ARG_VAR);
 
 		return FALSE;
 	}
@@ -659,7 +664,7 @@ BOOLEAN _wfp_transact_commit (
 	{
 		FwpmTransactionAbort0 (engine_handle);
 
-		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit0", status, L"%s:%" TEXT (PR_ULONG), DBG_ARG_VAR);
+		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit0", status, L"%s:%d", DBG_ARG_VAR);
 
 		return FALSE;
 	}
@@ -867,7 +872,7 @@ VOID _wfp_clearfilter_ids ()
 {
 	PITEM_APP ptr_app = NULL;
 	PITEM_RULE ptr_rule;
-	ULONG_PTR enum_key;
+	ULONG_PTR enum_key = 0;
 
 	// clear common filters
 	_r_obj_cleararray (filter_ids);
@@ -875,13 +880,12 @@ VOID _wfp_clearfilter_ids ()
 	// clear apps filters
 	_r_queuedlock_acquireshared (&lock_apps);
 
-	enum_key = 0;
-
 	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
 		ptr_app->is_haveerrors = FALSE;
 
-		_r_obj_cleararray (ptr_app->guids);
+		if (ptr_app->guids)
+			_r_obj_cleararray (ptr_app->guids);
 	}
 
 	_r_queuedlock_releaseshared (&lock_apps);
@@ -947,7 +951,8 @@ VOID _wfp_destroyfilters_array (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
+		if (guid)
+			_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
 	}
 
 	is_intransact = _wfp_transact_start (engine_handle, DBG_ARG_VAR);
@@ -956,7 +961,8 @@ VOID _wfp_destroyfilters_array (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		_wfp_deletefilter (engine_handle, guid);
+		if (guid)
+			_wfp_deletefilter (engine_handle, guid);
 	}
 
 	if (is_intransact)
@@ -1426,7 +1432,8 @@ BOOLEAN _wfp_create4filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
+			if (guid)
+				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
@@ -1438,7 +1445,8 @@ BOOLEAN _wfp_create4filters (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		_wfp_deletefilter (engine_handle, guid);
+		if (guid)
+			_wfp_deletefilter (engine_handle, guid);
 	}
 
 	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
@@ -1585,7 +1593,8 @@ BOOLEAN _wfp_create4filters (
 				{
 					guid = _r_obj_getarrayitem (ptr_rule->guids, j);
 
-					_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
+					if (guid)
+						_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
 				}
 			}
 		}
@@ -1643,7 +1652,8 @@ BOOLEAN _wfp_create3filters (
 		{
 			guid = _r_obj_getarrayitem (guids, i);
 
-			_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
+			if (guid)
+				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_acquireshared (&lock_transaction);
@@ -1655,7 +1665,8 @@ BOOLEAN _wfp_create3filters (
 	{
 		guid = _r_obj_getarrayitem (guids, i);
 
-		_wfp_deletefilter (engine_handle, guid);
+		if (guid)
+			_wfp_deletefilter (engine_handle, guid);
 	}
 
 	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules); i++)
@@ -1701,7 +1712,8 @@ BOOLEAN _wfp_create3filters (
 				{
 					guid = _r_obj_getarrayitem (ptr_app->guids, j);
 
-					_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
+					if (guid)
+						_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
 				}
 			}
 		}
@@ -1776,7 +1788,8 @@ BOOLEAN _wfp_create2filters (
 			{
 				guid = _r_obj_getarrayitem (filter_ids, i);
 
-				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
+				if (guid)
+					_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
 			}
 		}
 
@@ -1791,7 +1804,8 @@ BOOLEAN _wfp_create2filters (
 		{
 			guid = _r_obj_getarrayitem (filter_ids, i);
 
-			_wfp_deletefilter (engine_handle, guid);
+			if (guid)
+				_wfp_deletefilter (engine_handle, guid);
 		}
 
 		_r_obj_cleararray (filter_ids);
@@ -2495,7 +2509,8 @@ BOOLEAN _wfp_create2filters (
 		{
 			guid = _r_obj_getarrayitem (filter_ids, i);
 
-			_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
+			if (guid)
+				_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
 		}
 
 		_r_queuedlock_releaseshared (&lock_transaction);
@@ -2584,8 +2599,8 @@ ULONG _wfp_dumpfilters (
 	FWPM_FILTER0 *filter;
 	PR_ARRAY guids = NULL;
 	HANDLE enum_handle = NULL;
-	ULONG status;
 	UINT32 return_count;
+	ULONG status;
 
 	*out_buffer = NULL;
 

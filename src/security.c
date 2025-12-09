@@ -123,10 +123,10 @@ PACL _app_createaccesscontrollist (
 
 		status = SetEntriesInAclW (count, ea, acl, &new_dacl);
 
-		if (status == ERROR_SUCCESS)
-			return new_dacl;
+		if (status != ERROR_SUCCESS)
+			_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAclW", status, NULL);
 
-		_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAclW", status, NULL);
+		return new_dacl;
 	}
 
 	return NULL;
@@ -437,7 +437,7 @@ VOID _app_setprovidersecurity (
 				hengine,
 				provider_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const PSID)config.builtin_admins_sid,
+				(PCSID)config.builtin_admins_sid,
 				NULL,
 				new_dacl,
 				NULL
@@ -496,7 +496,7 @@ VOID _app_setsublayersecurity (
 				hengine,
 				sublayer_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const PSID)config.builtin_admins_sid,
+				(PCSID)config.builtin_admins_sid,
 				NULL,
 				new_dacl,
 				NULL
@@ -556,7 +556,7 @@ VOID _app_setcalloutsecurity (
 				hengine,
 				callout_guid,
 				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const PSID)config.builtin_admins_sid,
+				(PCSID)config.builtin_admins_sid,
 				NULL,
 				new_dacl,
 				NULL
@@ -578,7 +578,7 @@ VOID _app_setfiltersecurity (
 	_In_ LPCGUID filter_guid,
 	_In_ BOOLEAN is_secure,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line
+	_In_ ULONG line
 )
 {
 	PSECURITY_DESCRIPTOR security_descriptor;
@@ -589,46 +589,29 @@ VOID _app_setfiltersecurity (
 	PACL new_dacl;
 	ULONG status;
 
-	status = FwpmFilterGetSecurityInfoByKey0 (
-		hengine,
-		filter_guid,
-		DACL_SECURITY_INFORMATION,
-		&sid_owner,
-		&sid_group,
-		&dacl,
-		&sacl,
-		&security_descriptor
-	);
+	status = FwpmFilterGetSecurityInfoByKey0 (hengine, filter_guid, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
-	if (status != ERROR_SUCCESS)
+	if (status == ERROR_SUCCESS)
 	{
-		// FWP_E_FILTER_NOT_FOUND
-		_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterGetSecurityInfoByKey0", status, L"%s:%" TEXT (PRIu32), DBG_ARG_VAR);
-
-		return;
-	}
-
-	if (dacl)
-	{
-		new_dacl = _app_createaccesscontrollist (dacl, is_secure);
-
-		if (new_dacl)
+		if (dacl)
 		{
-			status = FwpmFilterSetSecurityInfoByKey0 (
-				hengine,
-				filter_guid,
-				OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-				(const PSID)config.builtin_admins_sid,
-				NULL,
-				new_dacl,
-				NULL
-			);
+			new_dacl = _app_createaccesscontrollist (dacl, is_secure);
 
-			if (status != ERROR_SUCCESS)
-				_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey0", status, L"#%" TEXT (PRIu32), line);
+			if (new_dacl)
+			{
+				status = FwpmFilterSetSecurityInfoByKey0 (hengine, filter_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (PCSID)config.builtin_admins_sid, NULL, new_dacl, NULL);
 
-			LocalFree (new_dacl);
+				if (status != ERROR_SUCCESS)
+					_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterSetSecurityInfoByKey0", status, L"#%d", line);
+
+				LocalFree (new_dacl);
+			}
 		}
+	}
+	else
+	{
+		//if (status != FWP_E_FILTER_NOT_FOUND)
+		_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterGetSecurityInfoByKey0", status, L"%s:%d", DBG_ARG_VAR);
 	}
 
 	if (security_descriptor)

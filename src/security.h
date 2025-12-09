@@ -51,5 +51,5 @@ VOID _app_setfiltersecurity (
 	_In_ LPCGUID filter_guid,
 	_In_ BOOLEAN is_secure,
 	_In_ LPCWSTR file_name,
-	_In_ UINT line
+	_In_ ULONG line
 );

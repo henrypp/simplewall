@@ -336,7 +336,7 @@ PR_STRING _app_gettooltipbylparam (
 
 			_r_obj_appendstringbuilderformat (
 				&sb,
-				L"%s (#%" TEXT (PR_ULONG_PTR) L")\r\n%s (%s):\r\n%s%s\r\n%s (%s):\r\n%s%s",
+				L"%s (#%" TEXT (PR_LONG_PTR) L")\r\n%s (%s):\r\n%s%s\r\n%s (%s):\r\n%s%s",
 				_r_obj_getstringordefault (ptr_rule->name, _r_locale_getstring (IDS_STATUS_EMPTY)),
 				lparam,
 				_r_locale_getstring (IDS_RULE),
@@ -661,7 +661,7 @@ VOID _app_setinterfacestate (
 
 	_r_wnd_seticon (hwnd, hico_sm, hico_big);
 
-	//_r_wnd_sendmessage (hwnd, IDC_STATUSBAR, SB_SETICON, 0, (LPARAM)hico_sm);
+	//_r_status_seticon (hwnd, IDC_STATUSBAR, 0, hico_sm);
 
 	if (!_wfp_isfiltersapplying ())
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));
