@@ -206,8 +206,8 @@ PR_STRING _app_formatarpa (
 )
 {
 	R_STRINGBUILDER formatted_address;
-	PIN_ADDR p4addr;
 	PIN6_ADDR p6addr;
+	PIN_ADDR p4addr;
 
 	_r_obj_initializestringbuilder (&formatted_address, 256);
 
@@ -1621,8 +1621,8 @@ PR_STRING _app_resolveaddress (
 )
 {
 	PDNS_RECORD dns_records = NULL;
-	PR_STRING arpa_string;
 	PR_STRING string = NULL;
+	PR_STRING arpa_string;
 	DNS_STATUS status;
 	ULONG arpa_hash;
 
@@ -1636,7 +1636,7 @@ PR_STRING _app_resolveaddress (
 		return string;
 	}
 
-	status = DnsQuery_W (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_BYPASS_CACHE | DNS_QUERY_NO_HOSTS_FILE, NULL, &dns_records, NULL);
+	status = DnsQuery_W (arpa_string->buffer, DNS_TYPE_PTR, DNS_QUERY_BYPASS_CACHE | DNS_QUERY_NO_HOSTS_FILE | DNS_QUERY_NO_MULTICAST, NULL, &dns_records, NULL);
 
 	if (status == ERROR_SUCCESS)
 	{
