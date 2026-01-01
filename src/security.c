@@ -53,7 +53,7 @@ PACL _app_createaccesscontrollist (
 {
 	PACCESS_ALLOWED_ACE ace = NULL;
 	EXPLICIT_ACCESS ea[3] = {0};
-	PACL new_dacl;
+	PACL new_dacl = NULL;
 	ULONG count = 0;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
@@ -144,7 +144,7 @@ VOID _app_setexplicitaccess (
 	ea->grfAccessPermissions = rights;
 	ea->grfInheritance = inheritance;
 
-	RtlZeroMemory (&(ea->Trustee), sizeof (ea->Trustee));
+	RtlZeroMemory (&(ea->Trustee), sizeof (TRUSTEE_W));
 
 	BuildTrusteeWithSidW (&(ea->Trustee), sid);
 }
