@@ -311,4 +311,4 @@ Open main window, Navigate into `System rules` tab and then enable `Windows Upda
 - Website: [github.com/henrypp](https://github.com/henrypp)
 - Support: sforce5@mail.ru
 ---
-(c) 2016-2025 Henry++
+(c) 2016-2026 Henry++
