@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #include "global.h"
 
@@ -429,6 +429,10 @@ VOID _wfp_logsubscribe (
 			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
 		}
 	}
+
+	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLENOTIFICATIONS_CHK, is_success);
+	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLELOG_CHK, is_success);
+	_r_toolbar_enablebutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_ENABLEUILOG_CHK, is_success);
 
 	current_handle = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnetevent, new_handle, NULL);
 
