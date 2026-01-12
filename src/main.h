@@ -169,8 +169,8 @@ typedef enum _ENUM_INFO_DATA2
 #define LV_COLOR_UNDELETE RGB(211, 211, 211)
 
 // memory limitation for 1 rule
-#define RULE_NAME_CCH_MAX 64
-#define RULE_RULE_CCH_MAX 256
+#define RULE_NAME_CCH_MAX 0x0040 // 64
+#define RULE_RULE_CCH_MAX 0x0400 // 1024
 
 typedef struct _STATIC_DATA
 {
