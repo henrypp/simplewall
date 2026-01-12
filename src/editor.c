@@ -1214,13 +1214,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			INT notify_code = HIWORD (wparam);
 			INT ctrl_id = LOWORD (wparam);
 
-			if (notify_code == EN_MAXTEXT)
-			{
-				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, _r_locale_getstring (IDS_LIMIT_REACHED));
-
-				return FALSE;
-			}
-			else if (notify_code == EN_CHANGE)
+			if (notify_code == EN_CHANGE)
 			{
 				PR_STRING string;
 				INT listview_id;
@@ -1253,6 +1247,12 @@ INT_PTR CALLBACK EditorPagesProc (
 
 				if (string)
 					_r_obj_dereference (string);
+
+				return FALSE;
+			}
+			else if (notify_code == EN_MAXTEXT)
+			{
+				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, _r_locale_getstring (IDS_LIMIT_REACHED));
 
 				return FALSE;
 			}
