@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #include "global.h"
 
@@ -21,11 +21,11 @@ ENUM_INSTALL_TYPE _wfp_isproviderinstalled (
 	if (status != ERROR_SUCCESS || !ptr_provider)
 		return INSTALL_DISABLED;
 
-	if (ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED)
+	if ((ptr_provider->flags & FWPM_PROVIDER_FLAG_DISABLED) == FWPM_PROVIDER_FLAG_DISABLED)
 	{
 		install_type = INSTALL_DISABLED;
 	}
-	else if (ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT)
+	else if ((ptr_provider->flags & FWPM_PROVIDER_FLAG_PERSISTENT) == FWPM_PROVIDER_FLAG_PERSISTENT)
 	{
 		install_type = INSTALL_ENABLED;
 	}
@@ -52,7 +52,7 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (
 	if (status != ERROR_SUCCESS || !ptr_sublayer)
 		return INSTALL_DISABLED;
 
-	if (ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT)
+	if ((ptr_sublayer->flags & FWPM_SUBLAYER_FLAG_PERSISTENT) == FWPM_SUBLAYER_FLAG_PERSISTENT)
 	{
 		install_type = INSTALL_ENABLED;
 	}
@@ -139,14 +139,7 @@ HANDLE _wfp_getenginehandle ()
 
 ENUM_INSTALL_TYPE _wfp_getinstalltype ()
 {
-	HANDLE engine_handle;
-	ENUM_INSTALL_TYPE install_type;
-
-	engine_handle = _wfp_getenginehandle ();
-
-	install_type = _wfp_isproviderinstalled (engine_handle);
-
-	return install_type;
+	return _wfp_isproviderinstalled (_wfp_getenginehandle ());
 }
 
 PR_STRING _wfp_getlayername (
@@ -227,7 +220,7 @@ BOOLEAN _wfp_initialize (
 	BOOLEAN is_providerexist;
 	BOOLEAN is_sublayerexist;
 	BOOLEAN is_intransact;
-	ULONG status;
+	LONG status;
 
 	_r_queuedlock_acquireshared (&lock_transaction);
 
@@ -447,7 +440,7 @@ VOID _wfp_uninitialize (
 		{
 			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (callouts); i++)
 			{
-				guid = _r_obj_getarrayitem (callouts, i);
+				guid = (LPGUID)_r_obj_getarrayitem (callouts, i);
 
 				if (guid)
 					_app_setcalloutsecurity (engine_handle, guid, FALSE);
@@ -461,7 +454,7 @@ VOID _wfp_uninitialize (
 		{
 			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (callouts); i++)
 			{
-				guid = _r_obj_getarrayitem (callouts, i);
+				guid = (LPGUID)_r_obj_getarrayitem (callouts, i);
 
 				if (!guid)
 					continue;
@@ -531,7 +524,7 @@ VOID _wfp_installfilters (
 	{
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
-			guid = _r_obj_getarrayitem (guids, i);
+			guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 			if (guid)
 				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG);
@@ -545,7 +538,7 @@ VOID _wfp_installfilters (
 	{
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
-			guid = _r_obj_getarrayitem (guids, i);
+			guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 			if (guid)
 				_wfp_deletefilter (engine_handle, guid);
@@ -610,7 +603,7 @@ VOID _wfp_installfilters (
 	{
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
-			guid = _r_obj_getarrayitem (guids, i);
+			guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 			if (guid)
 				_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG);
@@ -662,9 +655,9 @@ BOOLEAN _wfp_transact_commit (
 
 	if (status != ERROR_SUCCESS)
 	{
-		FwpmTransactionAbort0 (engine_handle);
-
 		_r_log_v (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmTransactionCommit0", status, L"%s:%d", DBG_ARG_VAR);
+
+		FwpmTransactionAbort0 (engine_handle);
 
 		return FALSE;
 	}
@@ -949,7 +942,7 @@ VOID _wfp_destroyfilters_array (
 
 	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
-		guid = _r_obj_getarrayitem (guids, i);
+		guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 		if (guid)
 			_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
@@ -959,7 +952,7 @@ VOID _wfp_destroyfilters_array (
 
 	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
-		guid = _r_obj_getarrayitem (guids, i);
+		guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 		if (guid)
 			_wfp_deletefilter (engine_handle, guid);
@@ -1430,7 +1423,7 @@ BOOLEAN _wfp_create4filters (
 
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
-			guid = _r_obj_getarrayitem (guids, i);
+			guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 			if (guid)
 				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
@@ -1443,7 +1436,7 @@ BOOLEAN _wfp_create4filters (
 
 	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
-		guid = _r_obj_getarrayitem (guids, i);
+		guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 		if (guid)
 			_wfp_deletefilter (engine_handle, guid);
@@ -1591,7 +1584,7 @@ BOOLEAN _wfp_create4filters (
 			{
 				for (ULONG_PTR j = 0; j < _r_obj_getarraysize (ptr_rule->guids); j++)
 				{
-					guid = _r_obj_getarrayitem (ptr_rule->guids, j);
+					guid = (LPGUID)_r_obj_getarrayitem (ptr_rule->guids, j);
 
 					if (guid)
 						_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
@@ -1650,7 +1643,7 @@ BOOLEAN _wfp_create3filters (
 
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
-			guid = _r_obj_getarrayitem (guids, i);
+			guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 			if (guid)
 				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
@@ -1663,7 +1656,7 @@ BOOLEAN _wfp_create3filters (
 
 	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
-		guid = _r_obj_getarrayitem (guids, i);
+		guid = (LPGUID)_r_obj_getarrayitem (guids, i);
 
 		if (guid)
 			_wfp_deletefilter (engine_handle, guid);
@@ -1710,7 +1703,7 @@ BOOLEAN _wfp_create3filters (
 			{
 				for (ULONG_PTR j = 0; j < _r_obj_getarraysize (ptr_app->guids); j++)
 				{
-					guid = _r_obj_getarrayitem (ptr_app->guids, j);
+					guid = (LPGUID)_r_obj_getarrayitem (ptr_app->guids, j);
 
 					if (guid)
 						_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
@@ -1786,7 +1779,7 @@ BOOLEAN _wfp_create2filters (
 		{
 			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 			{
-				guid = _r_obj_getarrayitem (filter_ids, i);
+				guid = (LPGUID)_r_obj_getarrayitem (filter_ids, i);
 
 				if (guid)
 					_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
@@ -1802,7 +1795,7 @@ BOOLEAN _wfp_create2filters (
 	{
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 		{
-			guid = _r_obj_getarrayitem (filter_ids, i);
+			guid = (LPGUID)_r_obj_getarrayitem (filter_ids, i);
 
 			if (guid)
 				_wfp_deletefilter (engine_handle, guid);
@@ -2507,7 +2500,7 @@ BOOLEAN _wfp_create2filters (
 
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (filter_ids); i++)
 		{
-			guid = _r_obj_getarrayitem (filter_ids, i);
+			guid = (LPGUID)_r_obj_getarrayitem (filter_ids, i);
 
 			if (guid)
 				_app_setfiltersecurity (engine_handle, guid, TRUE, DBG_ARG_VAR);
@@ -2568,16 +2561,19 @@ ULONG _wfp_dumpcallouts (
 	}
 
 	if (_r_obj_isempty2 (guids))
-	{
 		status = ERROR_NOT_FOUND;
-
-		_r_obj_dereference (guids);
-	}
 
 CleanupExit:
 
 	if (status == ERROR_SUCCESS)
+	{
 		*out_buffer = guids;
+	}
+	else
+	{
+		if (guids)
+			_r_obj_dereference (guids);
+	}
 
 	if (enum_handle)
 		FwpmCalloutDestroyEnumHandle0 (engine_handle, enum_handle);
