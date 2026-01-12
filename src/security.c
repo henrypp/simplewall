@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2020-2024 Henry++
+// Copyright (c) 2020-2026 Henry++
 
 #include "global.h"
 
@@ -16,7 +16,7 @@ PSID _app_quyerybuiltinsid (
 
 	if (!CreateWellKnownSid (sid_type, NULL, sid, &sid_length))
 	{
-		_r_log_v (LOG_LEVEL_ERROR, NULL, L"CreateWellKnownSid", NtLastError (), L"%" TEXT (PRIu32), sid_type);
+		_r_log_v (LOG_LEVEL_ERROR, NULL, L"CreateWellKnownSid", NtLastError (), L"%d", sid_type);
 
 		_r_mem_free (sid);
 
@@ -65,7 +65,11 @@ PACL _app_createaccesscontrollist (
 		status = RtlGetAce (acl, ace_index, (PVOID_PTR)&ace);
 
 		if (!NT_SUCCESS (status))
+		{
+			_r_log_v (LOG_LEVEL_ERROR, NULL, L"RtlGetAce", status, L"%d", ace_index);
+
 			continue;
+		}
 
 		if (ace->Header.AceType == ACCESS_ALLOWED_ACE_TYPE)
 		{
@@ -140,11 +144,11 @@ VOID _app_setexplicitaccess (
 	_In_opt_ PSID sid
 )
 {
+	RtlSecureZeroMemory (ea, sizeof (EXPLICIT_ACCESS));
+
 	ea->grfAccessMode = mode;
 	ea->grfAccessPermissions = rights;
 	ea->grfInheritance = inheritance;
-
-	RtlZeroMemory (&(ea->Trustee), sizeof (TRUSTEE_W));
 
 	BuildTrusteeWithSidW (&(ea->Trustee), sid);
 }
@@ -153,18 +157,18 @@ VOID _app_setenginesecurity (
 	_In_ HANDLE hengine
 )
 {
-	PSECURITY_DESCRIPTOR security_descriptor;
+	PSECURITY_DESCRIPTOR security_descriptor = NULL;
 	PACCESS_ALLOWED_ACE ace = NULL;
 	EXPLICIT_ACCESS ea[18] = {0};
-	PSID sid_owner;
-	PSID sid_group;
-	PACL new_dacl;
-	PACL dacl;
-	PACL sacl;
+	PSID sid_owner = NULL;
+	PSID sid_group = NULL;
+	PACL new_dacl = NULL;
+	PACL dacl = NULL;
+	PACL sacl = NULL;
 	ULONG count = 0;
 	BOOLEAN is_currentuserhaverights = FALSE;
 	BOOLEAN is_openforeveryone = FALSE;
-	NTSTATUS status;
+	LONG status;
 
 	status = FwpmEngineGetSecurityInfo0 (hengine, DACL_SECURITY_INFORMATION, &sid_owner, &sid_group, &dacl, &sacl, &security_descriptor);
 
@@ -182,7 +186,11 @@ VOID _app_setenginesecurity (
 			status = RtlGetAce (dacl, ace_index, (PVOID_PTR)&ace);
 
 			if (!NT_SUCCESS (status))
+			{
+				_r_log_v (LOG_LEVEL_ERROR, NULL, L"RtlGetAce", status, L"%d", ace_index);
+
 				continue;
+			}
 
 			if (ace->Header.AceType != ACCESS_ALLOWED_ACE_TYPE)
 				continue;
