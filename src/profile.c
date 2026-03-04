@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #include "global.h"
 
@@ -1437,7 +1437,7 @@ BOOLEAN _app_isappexists (
 	{
 		case DATA_APP_REGULAR:
 		{
-			if (ptr_app->real_path && !_r_fs_exists (&ptr_app->real_path->sr))
+			if (ptr_app->real_path && !_r_fs_isexists (&ptr_app->real_path->sr))
 				return FALSE;
 
 			return TRUE;
@@ -1625,7 +1625,7 @@ VOID _app_profile_load_internal (
 
 	status_file = _app_db_initialize (&db_info_file, TRUE);
 
-	if (_r_fs_exists (&path->sr))
+	if (_r_fs_isexists (&path->sr))
 	{
 		if (NT_SUCCESS (status_file))
 			status_file = _app_db_openfromfile (&db_info_file, path, XML_VERSION_MAXIMUM, XML_TYPE_PROFILE_INTERNAL);
@@ -1809,7 +1809,7 @@ NTSTATUS _app_profile_save (
 
 	if (_r_config_getboolean (L"IsBackupProfile", TRUE, NULL))
 	{
-		if (!_r_fs_exists (&profile_info.profile_path_backup->sr))
+		if (!_r_fs_isexists (&profile_info.profile_path_backup->sr))
 			is_backuprequired = TRUE;
 
 		if (!is_backuprequired)

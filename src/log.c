@@ -120,7 +120,7 @@ PR_STRING _app_getlogviewer ()
 
 	path = _r_config_getstringexpand (L"LogViewer", LOG_VIEWER_DEFAULT, NULL);
 
-	if (!path || !_r_fs_exists (&path->sr))
+	if (!path || !_r_fs_isexists (&path->sr))
 	{
 		if (path)
 			_r_obj_dereference (path);

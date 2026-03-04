@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #include "global.h"
 
@@ -1269,7 +1269,7 @@ VOID _app_generate_timerscontrol (
 	{
 		timestamp = timer_array[i];
 
-		string = _r_format_interval (timestamp, FALSE);
+		string = _r_format_interval (timestamp);
 
 		if (!string)
 			continue;
@@ -2087,7 +2087,7 @@ BOOLEAN _app_wufixenabled ()
 
 	_r_obj_initializestringref (&sr, file_path);
 
-	if (_r_fs_exists (&sr))
+	if (_r_fs_isexists (&sr))
 		return TRUE;
 
 	return FALSE;
@@ -2168,7 +2168,7 @@ VOID _app_wufixenable (
 
 	if (is_enable)
 	{
-		if (_r_fs_exists (&config.wusvc_path->sr))
+		if (_r_fs_isexists (&config.wusvc_path->sr))
 			_r_fs_deletefile (&config.wusvc_path->sr, NULL);
 
 		_r_fs_copyfile (&config.svchost_path->sr, &config.wusvc_path->sr, FALSE);
@@ -2187,7 +2187,7 @@ VOID _app_wufixenable (
 	}
 	else
 	{
-		if (_r_fs_exists (&config.wusvc_path->sr))
+		if (_r_fs_isexists (&config.wusvc_path->sr))
 		{
 			app_hash = _r_str_gethash (&config.wusvc_path->sr, TRUE);
 

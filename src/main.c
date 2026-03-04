@@ -2305,7 +2305,7 @@ INT_PTR CALLBACK DlgProc (
 			_r_obj_clearhashtable (rules_config);
 			_r_queuedlock_releaseexclusive (&lock_rules_config);
 
-			_r_path_makebackup (profile_info.profile_path, TRUE);
+			_r_path_makebackup (&profile_info.profile_path->sr, TRUE);
 
 			_app_profile_initialize ();
 			_app_profile_load (hwnd, NULL);

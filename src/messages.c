@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2021-2025 Henry++
+// Copyright (c) 2021-2026 Henry++
 
 #include "global.h"
 
@@ -890,7 +890,7 @@ VOID _app_message_traycontextmenu (
 	_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGSHOW, FALSE, _r_locale_getstring (IDS_LOGSHOW));
 	_r_menu_setitemtext (hsubmenu, IDM_TRAY_LOGCLEAR, FALSE, _r_locale_getstring (IDS_LOGCLEAR));
 
-	if (_r_fs_exists (&_r_app_getlogpath ()->sr))
+	if (_r_fs_isexists (&_r_app_getlogpath ()->sr))
 	{
 		_r_menu_setitemtext (hsubmenu, ERRLOG_ID, TRUE, _r_locale_getstring (IDS_TRAY_LOGERR));
 
@@ -1957,7 +1957,7 @@ VOID _app_command_logshow (
 
 		viewer_path = _app_getlogviewer ();
 
-		if (!log_path || !_r_fs_exists (&log_path->sr) || !viewer_path || !_r_fs_exists (&viewer_path->sr))
+		if (!log_path || !_r_fs_isexists (&log_path->sr) || !viewer_path || !_r_fs_isexists (&viewer_path->sr))
 		{
 			if (log_path)
 				_r_obj_dereference (log_path);
@@ -1984,7 +1984,7 @@ VOID _app_command_logshow (
 			L"\""
 		);
 
-		status = _r_sys_createprocess (viewer_path->buffer, cmdline->buffer, NULL, FALSE);
+		status = _r_sys_createprocess (&viewer_path->sr, &cmdline->sr, NULL, FALSE);
 
 		if (status != STATUS_SUCCESS)
 			_r_show_errormessage (hwnd, NULL, status, cmdline->buffer, ET_NATIVE);
@@ -2011,7 +2011,7 @@ VOID _app_command_logclear (
 	if (current_handle)
 		_r_fs_getsize2 (NULL, current_handle, &file_size);
 
-	is_valid = (current_handle && file_size > 2) || (log_path && _r_fs_exists (&log_path->sr));
+	is_valid = (current_handle && file_size > 2) || (log_path && _r_fs_isexists (&log_path->sr));
 
 	if (!is_valid)
 	{
@@ -2045,7 +2045,7 @@ VOID _app_command_logerrshow (
 
 	path = _r_app_getlogpath ();
 
-	if (!_r_fs_exists (&path->sr))
+	if (!_r_fs_isexists (&path->sr))
 		return;
 
 	viewer_path = _app_getlogviewer ();
@@ -2062,7 +2062,7 @@ VOID _app_command_logerrshow (
 		L"\""
 	);
 
-	status = _r_sys_createprocess (viewer_path->buffer, process_path->buffer, NULL, FALSE);
+	status = _r_sys_createprocess (&viewer_path->sr, &process_path->sr, NULL, FALSE);
 
 	if (status != STATUS_SUCCESS)
 		_r_show_errormessage (hwnd, NULL, status, viewer_path->buffer, ET_NATIVE);
@@ -2079,7 +2079,7 @@ VOID _app_command_logerrclear (
 
 	path = _r_app_getlogpath ();
 
-	if (!_r_fs_exists (&path->sr))
+	if (!_r_fs_isexists (&path->sr))
 		return;
 
 	if (!_r_show_confirmmessage (hwnd, _r_locale_getstring (IDS_QUESTION), NULL, L"ConfirmLogClear", FALSE))
@@ -2974,7 +2974,7 @@ VOID _app_command_purgetimers (
 
 				_r_obj_appendstringbuilder2 (&sb, &path->sr);
 
-				string = _r_format_interval (ptr_app->timer - _r_unixtime_now (), TRUE);
+				string = _r_format_interval (ptr_app->timer - _r_unixtime_now ());
 
 				if (string)
 				{

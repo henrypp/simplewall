@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2021-2025 Henry++
+// Copyright (c) 2021-2026 Henry++
 
 #pragma once
 

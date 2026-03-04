@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #include "global.h"
 
@@ -448,7 +448,7 @@ VOID _app_notify_playsound ()
 
 	current_path = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&cached_path, NULL, NULL);
 
-	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (&current_path->sr))
+	if (_r_obj_isstringempty (current_path) || !_r_fs_isexists (&current_path->sr))
 	{
 		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", 0, KEY_READ, &hkey);
 
@@ -468,7 +468,7 @@ VOID _app_notify_playsound ()
 		}
 	}
 
-	if (_r_obj_isstringempty (current_path) || !_r_fs_exists (&current_path->sr) || !PlaySoundW (current_path->buffer, NULL, flags | SND_FILENAME))
+	if (_r_obj_isstringempty (current_path) || !_r_fs_isexists (&current_path->sr) || !PlaySoundW (current_path->buffer, NULL, flags | SND_FILENAME))
 		PlaySoundW (NOTIFY_SOUND_NAME, NULL, flags);
 }
 

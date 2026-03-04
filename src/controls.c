@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #include "global.h"
 
@@ -144,7 +144,7 @@ VOID _app_getapptooltipstring (
 	{
 		if (_app_istimerset (ptr_app))
 		{
-			value = _r_format_interval (ptr_app->timer - _r_unixtime_now (), TRUE);
+			value = _r_format_interval (ptr_app->timer - _r_unixtime_now ());
 
 			if (value)
 			{
