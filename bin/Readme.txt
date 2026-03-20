@@ -7,7 +7,7 @@ The lightweight application is less than a megabyte, and it is compatible with W
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
 System requirements:
-- Windows 7, 8, 8.1, 10, 11 32-bit/64-bit/ARM64
+- Windows 7, 8, 8.1, 10, 11 64-bit/ARM64
 - An SSE2-capable CPU
 
 Nota bene:

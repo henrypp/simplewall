@@ -24,6 +24,11 @@ Simple tool to configure [Windows Filtering Platform (WFP)](https://docs.microso
 The lightweight application is less than a megabyte, and it is compatible with Windows 7 SP1 and higher operating systems.
 You can download either the installer or portable version. For correct working you are require administrator rights.
 
+### Nota bene:
+Keep in mind, simplewall is not a control UI over Windows Firewall, and does not interact in any level with Windows Firewall. It works
+over Windows Filtering Platform (WFP) which is a set of internal API and system services that provide a platform for creating network filtering
+applications. Windows Filtering Platform is a development technology and not a firewall itself, but simplewall is the tool that uses this technology.
+
 ### Features:
 - Simple interface without annoying pop ups
 - [Rules editor](https://github.com/henrypp/simplewall#rules-editor) (create your own rules)
@@ -41,11 +46,6 @@ You can download either the installer or portable version. For correct working y
 To activate portable mode, create "simplewall.ini" in application folder, or move it from "%APPDATA%\Henry++\simplewall".
 ```
 
-### Nota bene:
-Keep in mind, simplewall is not a control UI over Windows Firewall, and does not interact in any level with Windows Firewall. It works
-over Windows Filtering Platform (WFP) which is a set of internal API and system services that provide a platform for creating network filtering
-applications. Windows Filtering Platform is a development technology and not a firewall itself, but simplewall is the tool that uses this technology.
-
 ### System requirements:
 - Windows 7, 8, 8.1, 10, 11 64-bit/ARM64
 - An SSE2-capable CPU
@@ -53,9 +53,9 @@ applications. Windows Filtering Platform is a development technology and not a f
 
 ### Donate:
 - [Bitcoin](https://www.blockchain.com/btc/address/1LrRTXPsvHcQWCNZotA9RcwjsGcRghG96c) (BTC)
-- [Ethereum](https://www.blockchain.com/explorer/addresses/eth/0xe2C84A62eb2a4EF154b19bec0c1c106734B95960) (ETC)
-- [Paypal](https://paypal.me/henrypp) (USD)
+- [Ethereum](https://www.blockchain.com/explorer/addresses/eth/0xe2C84A62eb2a4EF154b19bec0c1c106734B95960) (ETH)
 - [Yandex Money](https://yoomoney.ru/to/4100115776040583) (RUB)
+- [Paypal](https://paypal.me/henrypp) (USD)
 
 ### GPG Signature:
 Binaries have GPG signature `simplewall.exe.sig` in application folder.
