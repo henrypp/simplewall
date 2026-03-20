@@ -407,7 +407,7 @@ ULONG _app_addapplication (
 	_In_opt_ PR_STRING real_path
 )
 {
-	WCHAR path_full[1024];
+	WCHAR path_full[0x400];
 	R_STRINGREF path_sr;
 	PITEM_APP ptr_app;
 	ULONG app_hash;
@@ -495,7 +495,7 @@ ULONG _app_addapplication (
 		ptr_app->short_name = _r_path_getbasenamestring (&path_sr);
 	}
 
-	ptr_app->guids = _r_obj_createarray (sizeof (GUID), 4, NULL); // initialize array
+	ptr_app->guids = _r_obj_createarray (sizeof (GUID), 0x04, NULL); // initialize guids array
 	ptr_app->timestamp = _r_unixtime_now ();
 
 	// insert object into the table
