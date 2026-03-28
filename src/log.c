@@ -353,10 +353,10 @@ VOID _wfp_logsubscribe (
 
 		if (NT_SUCCESS (status))
 		{
-			_FwpmNetEventSubscribe4 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", 0);
-			_FwpmNetEventSubscribe3 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe3", 0);
-			_FwpmNetEventSubscribe2 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", 0);
-			_FwpmNetEventSubscribe1 = _r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe1", 0);
+			_FwpmNetEventSubscribe4 = (FWPMNES4)_r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe4", 0);
+			_FwpmNetEventSubscribe3 = (FWPMNES3)_r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe3", 0);
+			_FwpmNetEventSubscribe2 = (FWPMNES2)_r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe2", 0);
+			_FwpmNetEventSubscribe1 = (FWPMNES1)_r_sys_getprocaddress (hfwpuclnt, "FwpmNetEventSubscribe1", 0);
 
 			_r_sys_freelibrary (hfwpuclnt);
 		}

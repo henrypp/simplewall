@@ -531,7 +531,7 @@ BOOLEAN _app_network_getpath (
 
 				if (NT_SUCCESS (status))
 				{
-					status = _r_sys_querytokeninformation (htoken, TokenAppContainerSid, (PVOID_PTR)&app_container);
+					status = _r_sys_querytokeninformation ((PVOID_PTR)&app_container, htoken, TokenAppContainerSid);
 
 					if (NT_SUCCESS (status))
 					{
