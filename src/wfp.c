@@ -729,11 +729,9 @@ FORCEINLINE LPCWSTR _wfp_filtertypetostring (
 
 		default:
 		{
-			FALLTHROUGH;
+			return NULL;
 		}
 	}
-
-	return NULL;
 }
 
 ULONG _wfp_createcallout (
@@ -1762,7 +1760,7 @@ BOOLEAN _wfp_create2filters (
 		PR_STRINGREF_INIT (L"[ff00::]/8")
 	};
 
-	FWPM_FILTER_CONDITION0 fwfc[3] = {0};
+	FWPM_FILTER_CONDITION0 fwfc[4] = {0};
 	ITEM_ADDRESS address;
 	LPGUID guid;
 	FWP_ACTION_TYPE action;

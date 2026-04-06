@@ -63,11 +63,9 @@ INT _app_listview_getbytype (
 
 		default:
 		{
-			FALLTHROUGH;
+			return 0;
 		}
 	}
-
-	return 0;
 }
 
 VOID _app_listview_additems (

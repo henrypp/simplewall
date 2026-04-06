@@ -158,7 +158,7 @@ BOOLEAN _app_getappinfo (
 
 		default:
 		{
-			FALLTHROUGH;
+			break;
 		}
 	}
 
@@ -303,7 +303,7 @@ VOID _app_setappinfo (
 
 		default:
 		{
-			FALLTHROUGH;
+			break;
 		}
 	}
 }
@@ -368,11 +368,9 @@ BOOLEAN _app_getruleinfo (
 
 		default:
 		{
-			FALLTHROUGH;
+			return FALSE;
 		}
 	}
-
-	return FALSE;
 }
 
 _Success_ (return)
@@ -1454,11 +1452,9 @@ BOOLEAN _app_isappexists (
 
 		default:
 		{
-			FALLTHROUGH;
+			return FALSE;
 		}
 	}
-
-	return FALSE;
 }
 
 BOOLEAN _app_isappfound (
@@ -1548,7 +1544,7 @@ VOID _app_profile_initialize ()
 	R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
 	PR_STRING path;
 
-	path = _r_app_getprofiledirectory (TRUE);
+	path = _r_app_getprofiledirectory ();
 
 	_r_obj_movereference ((PVOID_PTR)&profile_info.profile_path, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_sr));
 	_r_obj_movereference ((PVOID_PTR)&profile_info.profile_path_backup, _r_obj_concatstringrefs (3, &path->sr, &separator_sr, &profile_bak_sr));
@@ -1556,8 +1552,8 @@ VOID _app_profile_initialize ()
 }
 
 NTSTATUS _app_profile_load_fromresource (
-	_In_ LPCWSTR resource_name,
-	_Out_ PDB_INFORMATION out_buffer
+	_Out_ PDB_INFORMATION out_buffer,
+	_In_ LPCWSTR resource_name
 )
 {
 	PDB_INFORMATION db_info;
@@ -1635,7 +1631,7 @@ VOID _app_profile_load_internal (
 		status_file = STATUS_OBJECT_PATH_NOT_FOUND;
 	}
 
-	status_res = _app_profile_load_fromresource (resource_name, &db_info_buffer);
+	status_res = _app_profile_load_fromresource (&db_info_buffer, resource_name);
 
 	// NOTE: prefer new profile version for 3.4+
 	if (!NT_SUCCESS (status_file))

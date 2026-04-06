@@ -67,34 +67,34 @@ DECLSPEC_SELECTANY R_FREE_LIST listview_free_list = {0};
 // timers array
 DECLSPEC_SELECTANY const LONG64 timer_array[] =
 {
-	2 * 60LL, // 2 min
-	5 * 60LL, // 5 min
-	10 * 60LL, // 10 min
-	30 * 60LL, // 30 min
-	1 * 3600LL, // 1 hour
-	2 * 3600LL, // 2 hour
-	4 * 3600LL, // 4 hour
-	6 * 3600LL, // 6 hour
-	12 * 3600LL, // 12 hour
-	24 * 3600LL // 24 hour
+	2LL * 60LL, // 2 min
+	5LL * 60LL, // 5 min
+	10LL * 60LL, // 10 min
+	30LL * 60LL, // 30 min
+	1LL * 3600LL, // 1 hour
+	2LL * 3600LL, // 2 hour
+	4LL * 3600LL, // 4 hour
+	6LL * 3600LL, // 6 hour
+	12LL * 3600LL, // 12 hour
+	24LL * 3600LL // 24 hour
 };
 
 // dropped events callback subscription (win7+)
-#ifndef FWP_DIRECTION_IN
+#if !defined(FWP_DIRECTION_IN)
 #define FWP_DIRECTION_IN 0x00003900L
-#endif
+#endif // !FWP_DIRECTION_IN
 
-#ifndef FWP_DIRECTION_OUT
+#if !defined(FWP_DIRECTION_OUT)
 #define FWP_DIRECTION_OUT 0x00003901L
-#endif
+#endif // !FWP_DIRECTION_OUT
 
-#ifndef FWP_DIRECTION_FORWARD
+#if !defined(FWP_DIRECTION_FORWARD)
 #define FWP_DIRECTION_FORWARD 0x00003902L
-#endif
+#endif // !FWP_DIRECTION_FORWARD
 
-#ifndef FWP_DIRECTION_FORWARD2
+#if !defined(FWP_DIRECTION_FORWARD2)
 #define FWP_DIRECTION_FORWARD2 0x00003903L
-#endif
+#endif // !FWP_DIRECTION_FORWARD2
 
 #define WM_NOTIFICATION (WM_APP + 21)
 

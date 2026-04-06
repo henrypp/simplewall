@@ -48,7 +48,7 @@ NTSTATUS _app_db_encrypt (
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
-	status = _r_crypt_encryptbuffer (&crypt_context, bytes->buffer, (ULONG)bytes->length, out_buffer);
+	status = _r_crypt_encryptbuffer (&crypt_context, (PUCHAR)bytes->buffer, (ULONG)bytes->length, out_buffer);
 
 CleanupExit:
 

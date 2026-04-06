@@ -557,11 +557,9 @@ INT _app_getstateicon (
 
 		default:
 		{
-			FALLTHROUGH;
+			return IDI_INACTIVE;
 		}
 	}
-
-	return IDI_INACTIVE;
 }
 
 LPCWSTR _app_getstatelocale (
@@ -720,7 +718,7 @@ VOID _app_imagelist_init (
 		IDP_LOGUI,
 	};
 
-	UINT rules_ids[] = {
+	ULONG rules_ids[] = {
 		IDP_ALLOW,
 		IDP_BLOCK
 	};

@@ -848,7 +848,7 @@ VOID _app_notify_drawgradient (
 	GRADIENT_RECT gradient_rect = {0};
 	TRIVERTEX trivertx[2] = {0};
 
-	C_ASSERT (RTL_NUMBER_OF (gradient_arr) == RTL_NUMBER_OF (trivertx));
+	static_assert (RTL_NUMBER_OF (gradient_arr) == RTL_NUMBER_OF (trivertx), "Invalid array size!");
 
 	gradient_rect.LowerRight = 1;
 	//gradient_rect.UpperLeft = 0;
