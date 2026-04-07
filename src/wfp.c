@@ -667,7 +667,7 @@ BOOLEAN _wfp_transact_commit (
 
 BOOLEAN _wfp_deletefilter (
 	_In_ HANDLE engine_handle,
-	_In_ LPGUID filter_id
+	_In_ LPCGUID filter_id
 )
 {
 	PR_STRING string;
@@ -1021,7 +1021,7 @@ BOOLEAN _wfp_createrulefilter (
 
 		if (!ptr_app)
 		{
-			_r_log_v (LOG_LEVEL_WARNING, NULL, TEXT (__FUNCTION__), 0, L"App \"%" TEXT (PR_ULONG) L"\" was not found!", app_hash);
+			_r_log_v (LOG_LEVEL_WARNING, NULL, TEXT (__FUNCTION__), STATUS_OBJECT_PATH_NOT_FOUND, L"App \"%" TEXT (PR_ULONG) L"\" was not found!", app_hash);
 
 			goto CleanupExit;
 		}
@@ -1030,7 +1030,7 @@ BOOLEAN _wfp_createrulefilter (
 		{
 			if (ptr_app->bytes)
 			{
-				ByteBlobAlloc (ptr_app->bytes->buffer, RtlLengthSecurityDescriptor (ptr_app->bytes->buffer), (PVOID_PTR)&byte_blob);
+				ByteBlobAlloc ((PVOID_PTR)&byte_blob, ptr_app->bytes->buffer, RtlLengthSecurityDescriptor (ptr_app->bytes->buffer));
 
 				fwfc[count].fieldKey = FWPM_CONDITION_ALE_USER_ID;
 				fwfc[count].matchType = FWP_MATCH_EQUAL;
@@ -1041,7 +1041,7 @@ BOOLEAN _wfp_createrulefilter (
 			}
 			else
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->original_path));
+				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), STATUS_OBJECT_PATH_NOT_FOUND, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
@@ -1059,14 +1059,14 @@ BOOLEAN _wfp_createrulefilter (
 			}
 			else
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), 0, _r_obj_getstring (ptr_app->original_path));
+				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), STATUS_OBJECT_PATH_NOT_FOUND, _r_obj_getstring (ptr_app->original_path));
 
 				goto CleanupExit;
 			}
 		}
 		else
 		{
-			status = _FwpmGetAppIdFromFileName1 (ptr_app->original_path, ptr_app->type, (PVOID_PTR)&byte_blob);
+			status = _FwpmGetAppIdFromFileName1 ((PVOID_PTR)&byte_blob, ptr_app->original_path, ptr_app->type);
 
 			if (NT_SUCCESS (status))
 			{
@@ -1384,15 +1384,15 @@ BOOLEAN _wfp_create4filters (
 	R_STRINGREF local_remaining_part;
 	R_STRINGREF rule_remote_part;
 	R_STRINGREF rule_local_part;
+	PITEM_RULE ptr_rule;
 	LPCWSTR rule_name;
 	PR_ARRAY guids;
-	LPGUID guid;
-	PITEM_RULE ptr_rule;
+	LPCGUID guid;
 	ULONG_PTR enum_key;
 	ULONG hash_code;
 	BOOLEAN is_enabled;
 
-	if (_r_obj_isempty (rules))
+	if (_r_obj_isempty2 (rules))
 		return FALSE;
 
 	is_enabled = _app_initinterfacestate (_r_app_gethwnd (), FALSE);
@@ -1400,7 +1400,7 @@ BOOLEAN _wfp_create4filters (
 	if (!is_intransact && _wfp_isfiltersapplying ())
 		is_intransact = TRUE;
 
-	guids = _r_obj_createarray (sizeof (GUID), 10, NULL);
+	guids = _r_obj_createarray (sizeof (GUID), 0x10, NULL);
 
 	if (!is_intransact)
 	{
@@ -1421,7 +1421,7 @@ BOOLEAN _wfp_create4filters (
 
 		for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 		{
-			guid = (LPGUID)_r_obj_getarrayitem (guids, i);
+			guid = (LPCGUID)_r_obj_getarrayitem (guids, i);
 
 			if (guid)
 				_app_setfiltersecurity (engine_handle, guid, FALSE, DBG_ARG_VAR);
@@ -1434,7 +1434,7 @@ BOOLEAN _wfp_create4filters (
 
 	for (ULONG_PTR i = 0; i < _r_obj_getarraysize (guids); i++)
 	{
-		guid = (LPGUID)_r_obj_getarrayitem (guids, i);
+		guid = (LPCGUID)_r_obj_getarrayitem (guids, i);
 
 		if (guid)
 			_wfp_deletefilter (engine_handle, guid);
@@ -2766,9 +2766,9 @@ BOOLEAN _wfp_firewallisenabled ()
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _FwpmGetAppIdFromFileName1 (
+	_Out_ PVOID_PTR byte_blob,
 	_In_ PR_STRING path,
-	_In_ ENUM_TYPE_DATA type,
-	_Out_ PVOID_PTR byte_blob
+	_In_ ENUM_TYPE_DATA type
 )
 {
 	R_STRINGREF path_skip_root;
@@ -2782,7 +2782,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 	{
 		if (_r_str_gethash (&path->sr, TRUE) == config.ntoskrnl_hash)
 		{
-			ByteBlobAlloc (path->buffer, path->length + sizeof (UNICODE_NULL), byte_blob);
+			ByteBlobAlloc (byte_blob, path->buffer, path->length + sizeof (UNICODE_NULL));
 
 			return STATUS_SUCCESS;
 		}
@@ -2834,7 +2834,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 				}
 			}
 
-			ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), byte_blob);
+			ByteBlobAlloc (byte_blob, original_path->buffer, original_path->length + sizeof (UNICODE_NULL));
 
 			_r_obj_dereference (original_path);
 
@@ -2848,7 +2848,7 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 		if (type == DATA_APP_DEVICE)
 			_r_str_tolower (&original_path->sr); // lower is important!
 
-		ByteBlobAlloc (original_path->buffer, original_path->length + sizeof (UNICODE_NULL), byte_blob);
+		ByteBlobAlloc (byte_blob, original_path->buffer, original_path->length + sizeof (UNICODE_NULL));
 
 		_r_obj_dereference (original_path);
 
@@ -2859,16 +2859,16 @@ NTSTATUS _FwpmGetAppIdFromFileName1 (
 }
 
 VOID ByteBlobAlloc (
+	_Out_ PVOID_PTR byte_blob,
 	_In_ LPCVOID data,
-	_In_ ULONG_PTR bytes_count,
-	_Out_ PVOID_PTR byte_blob
+	_In_ ULONG_PTR bytes_count
 )
 {
 	FWP_BYTE_BLOB *blob;
 
 	blob = _r_mem_allocate (sizeof (FWP_BYTE_BLOB) + bytes_count);
 
-	blob->size = (UINT)(UINT_PTR)bytes_count;
+	blob->size = (UINT32)(UINT_PTR)bytes_count;
 	blob->data = PTR_ADD_OFFSET (blob, sizeof (FWP_BYTE_BLOB));
 
 	RtlCopyMemory (blob->data, data, bytes_count);

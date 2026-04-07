@@ -82,7 +82,7 @@ ULONG _wfp_createcallout (
 
 BOOLEAN _wfp_deletefilter (
 	_In_ HANDLE engine_handle,
-	_In_ LPGUID filter_id
+	_In_ LPCGUID filter_id
 );
 
 ULONG _wfp_createfilter (
@@ -175,15 +175,15 @@ BOOLEAN _wfp_firewallisenabled ();
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _FwpmGetAppIdFromFileName1 (
+	_Out_ PVOID_PTR byte_blob,
 	_In_ PR_STRING path,
-	_In_ ENUM_TYPE_DATA type,
-	_Out_ PVOID_PTR byte_blob
+	_In_ ENUM_TYPE_DATA type
 );
 
 VOID ByteBlobAlloc (
+	_Out_ PVOID_PTR byte_blob,
 	_In_ LPCVOID data,
-	_In_ ULONG_PTR bytes_count,
-	_Out_ PVOID_PTR byte_blob
+	_In_ ULONG_PTR bytes_count
 );
 
 VOID ByteBlobFree (
