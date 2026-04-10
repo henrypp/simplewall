@@ -607,6 +607,9 @@ PR_STRING _app_getappdisplayname (
 
 			break;
 		}
+
+		default:
+			break;
 	}
 
 	if (is_shortened || _r_config_getboolean (L"ShowFilenames", TRUE, NULL))
@@ -704,8 +707,8 @@ BOOLEAN _app_calculatefilehash (
 
 		if (NT_SUCCESS (status))
 		{
-			_CryptCATAdminAcquireContext2 = _r_sys_getprocaddress (hwintrust, "CryptCATAdminAcquireContext2", 0);
-			_CryptCATAdminCalcHashFromFileHandle2 = _r_sys_getprocaddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2", 0);
+			_CryptCATAdminCalcHashFromFileHandle2 = (CCAHFFH2)_r_sys_getprocaddress (hwintrust, "CryptCATAdminCalcHashFromFileHandle2", 0);
+			_CryptCATAdminAcquireContext2 = (CCAAC2)_r_sys_getprocaddress (hwintrust, "CryptCATAdminAcquireContext2", 0);
 
 			// _r_sys_freelibrary (hwintrust, FALSE);
 		}
@@ -2141,7 +2144,7 @@ VOID _app_wufixhelper (
 		{
 			if (QueryServiceStatus (hsvc, &svc_status))
 			{
-				if (svc_status.dwCurrentState != SERVICE_STOPPED)
+				if (svc_status.dwCurrentState != SERVICE_STOPPED && svc_status.dwCurrentState != SERVICE_STOP_PENDING)
 					ControlService (hsvc, SERVICE_CONTROL_STOP, &svc_status);
 			}
 
@@ -2157,11 +2160,11 @@ VOID _app_wufixenable (
 	_In_ BOOLEAN is_enable
 )
 {
-	PR_STRING service_path;
 	SC_HANDLE hsvcmgr;
 	ULONG app_hash;
+	NTSTATUS status;
 
-	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_START | SERVICE_STOP | SERVICE_QUERY_STATUS);
+	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SERVICE_QUERY_STATUS | SERVICE_START | SERVICE_STOP);
 
 	if (!hsvcmgr)
 		return;
@@ -2169,21 +2172,20 @@ VOID _app_wufixenable (
 	if (is_enable)
 	{
 		if (_r_fs_isexists (&config.wusvc_path->sr))
-			_r_fs_deletefile (&config.wusvc_path->sr, NULL);
+			_r_fs_deleterecycle (&config.wusvc_path->sr);
 
-		_r_fs_copyfile (&config.svchost_path->sr, &config.wusvc_path->sr, FALSE);
+		status = _r_fs_createhardlink (&config.svchost_path->sr, &config.wusvc_path->sr);
 
-		service_path = _r_obj_createstring2 (&config.wusvc_path->sr);
+		if (!NT_SUCCESS (status))
+			_r_fs_copyfile (&config.svchost_path->sr, &config.wusvc_path->sr, FALSE);
 
-		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, service_path, NULL, NULL);
+		app_hash = _app_addapplication (hwnd, DATA_UNKNOWN, config.wusvc_path, NULL, NULL);
 
 		if (app_hash)
 		{
 			_app_setappinfobyhash (app_hash, INFO_IS_ENABLED, LongToPtr (TRUE));
 			_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, LongToPtr (TRUE));
 		}
-
-		_r_obj_dereference (service_path);
 	}
 	else
 	{
@@ -2197,7 +2199,7 @@ VOID _app_wufixenable (
 				_app_setappinfobyhash (app_hash, INFO_IS_UNDELETABLE, LongToPtr (FALSE));
 			}
 
-			_r_fs_deletefile (&config.wusvc_path->sr, NULL);
+			_r_fs_deleterecycle (&config.wusvc_path->sr);
 		}
 	}
 

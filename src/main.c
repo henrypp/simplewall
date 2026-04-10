@@ -2047,6 +2047,8 @@ VOID _app_initialize (
 		SE_DEBUG_PRIVILEGE,
 	};
 
+	R_STRINGREF svchost_sr = PR_STRINGREF_INIT (PATH_SVCHOST);
+	R_STRINGREF wusvc_sr = PR_STRINGREF_INIT (PATH_WUSVC);
 	R_ENVIRONMENT environment;
 
 	// set privileges
@@ -2077,18 +2079,18 @@ VOID _app_initialize (
 
 	_app_profile_initialize ();
 
-	config.my_path = _r_obj_createstring3 (&NtCurrentPeb ()->ProcessParameters->ImagePathName);
+	config.my_path = _r_obj_createstring2 (_r_sys_getimagepath());
 
-	config.svchost_path = _r_obj_concatstrings (
+	config.svchost_path = _r_obj_concatstringrefs (
 		2,
-		_r_sys_getsystemdirectory ()->buffer,
-		PATH_SVCHOST
+		&_r_sys_getsystemdirectory ()->sr,
+		&svchost_sr
 	);
 
-	config.wusvc_path = _r_obj_concatstrings (
+	config.wusvc_path = _r_obj_concatstringrefs (
 		2,
-		_r_sys_getsystemdirectory ()->buffer,
-		PATH_WUSVC
+		&_r_sys_getsystemdirectory ()->sr,
+		&wusvc_sr
 	);
 
 	config.system_path = _r_obj_createstring (PROC_SYSTEM_NAME);
@@ -2125,13 +2127,13 @@ VOID _app_initialize (
 	_app_icons_getdefault ();
 
 	// initialize global filters array object
-	filter_ids = _r_obj_createarray (sizeof (GUID), 0x0A, NULL);
+	filter_ids = _r_obj_createarray (sizeof (GUID), 0x0C, NULL);
 
 	// initialize apps table
 	apps_table = _r_obj_createhashtablepointer (0x20);
 
 	// initialize rules array object
-	rules_list = _r_obj_createlist (0x0A, &_r_obj_dereference);
+	rules_list = _r_obj_createlist (0x0C, &_r_obj_dereference);
 
 	// initialize rules configuration table
 	rules_config = _r_obj_createhashtable (sizeof (ITEM_RULE_CONFIG), 8, &_app_dereferenceruleconfig);
@@ -3964,11 +3966,9 @@ BOOLEAN NTAPI _app_parseargs (
 
 		default:
 		{
-			FALLTHROUGH;
+			return FALSE;
 		}
 	}
-
-	return FALSE;
 }
 
 INT APIENTRY wWinMain (
