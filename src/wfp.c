@@ -690,7 +690,7 @@ BOOLEAN _wfp_deletefilter (
 	return TRUE;
 }
 
-FORCEINLINE LPCWSTR _wfp_filtertypetostring (
+FORCEINLINE static LPCWSTR _wfp_filtertypetostring (
 	_In_ ENUM_TYPE_DATA filter_type
 )
 {
