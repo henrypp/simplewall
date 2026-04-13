@@ -202,7 +202,7 @@ PR_STRING _wfp_getlayername (
 			return _r_obj_createstring2 (&layer_names[i]);
 	}
 
-	_r_str_fromguid (layer_guid, TRUE, &string);
+	_r_str_fromguid (&string, layer_guid, TRUE);
 
 	return string;
 }
@@ -463,7 +463,7 @@ VOID _wfp_uninitialize (
 
 				if (status != ERROR_SUCCESS)
 				{
-					_r_str_fromguid (guid, TRUE, &string);
+					_r_str_fromguid (&string, guid, TRUE);
 
 					_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmCalloutDeleteByKey0", status, _r_obj_getstring (string));
 
@@ -677,7 +677,7 @@ BOOLEAN _wfp_deletefilter (
 
 	if (status != ERROR_SUCCESS && status != FWP_E_FILTER_NOT_FOUND)
 	{
-		_r_str_fromguid (filter_id, TRUE, &string);
+		_r_str_fromguid (&string, filter_id, TRUE);
 
 		_r_log (LOG_LEVEL_ERROR, &GUID_TrayIcon, L"FwpmFilterDeleteByKey0", status, _r_obj_getstringordefault (string, L"<no data>"));
 

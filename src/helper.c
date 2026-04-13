@@ -703,7 +703,7 @@ BOOLEAN _app_calculatefilehash (
 
 	if (_r_initonce_begin (&init_once))
 	{
-		status = _r_sys_loadlibrary2 (L"wintrust.dll", 0, &hwintrust);
+		status = _r_sys_loadlibrary2 (&hwintrust, L"wintrust.dll", 0);
 
 		if (NT_SUCCESS (status))
 		{
@@ -891,7 +891,7 @@ NTSTATUS _app_verifyfilefromcatalog (
 	ULONG file_hash_length;
 	NTSTATUS status;
 
-	status = _r_fs_getsize2 (NULL, hfile, &file_size);
+	status = _r_fs_getsize2 (&file_size, NULL, hfile);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -957,8 +957,8 @@ NTSTATUS _app_verifyfilefromcatalog (
 }
 
 VOID _app_getfilesignatureinfo (
-	_In_ HANDLE hfile,
-	_Inout_ PITEM_APP_INFO ptr_app_info
+	_Inout_ PITEM_APP_INFO ptr_app_info,
+	_In_ HANDLE hfile
 )
 {
 	GUID WinTrustActionGenericVerifyV2 = WINTRUST_ACTION_GENERIC_VERIFY_V2;
@@ -1031,17 +1031,17 @@ VOID _app_getfileversioninfo (
 		NOTHING;
 	}
 
-	status = _r_sys_loadlibraryasresource (&ptr_app_info->path->sr, &hlib);
+	status = _r_sys_loadlibraryasresource (&hlib, &ptr_app_info->path->sr);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
-	status = _r_res_loadresource (hlib, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), 0, &ver_block);
+	status = _r_res_loadresource (&ver_block, hlib, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), 0);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
-	_r_obj_initializestringbuilder (&sb, 256);
+	_r_obj_initializestringbuilder (&sb, 0x100);
 
 	lcid = _r_res_querytranslation (ver_block.buffer);
 
@@ -1057,7 +1057,7 @@ VOID _app_getfileversioninfo (
 	}
 
 	// get file version
-	if (_r_res_queryversion (ver_block.buffer, (PVOID_PTR)&ver_info))
+	if (_r_res_queryversion ((PVOID_PTR)&ver_info, ver_block.buffer))
 	{
 		_r_obj_appendstringbuilder (&sb, _r_obj_isstringempty2 (sb.string) ? SZ_TAB : L" ");
 
@@ -1113,7 +1113,7 @@ PR_STRING _app_getfilehashinfo (
 	if (!ptr_app)
 		return NULL;
 
-	_r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, NULL, hfile, &string);
+	_r_crypt_getfilehash (&string, BCRYPT_SHA256_ALGORITHM, NULL, hfile);
 
 	_r_obj_movereference ((PVOID_PTR)&ptr_app->hash, string);
 
@@ -1756,7 +1756,7 @@ VOID NTAPI _app_timercallback (
 			if (!_app_isappused (ptr_app))
 				continue;
 
-			status = _r_crypt_getfilehash (BCRYPT_SHA256_ALGORITHM, &ptr_app->real_path->sr, NULL, &hash);
+			status = _r_crypt_getfilehash (&hash, BCRYPT_SHA256_ALGORITHM, &ptr_app->real_path->sr, NULL);
 
 			if (NT_SUCCESS (status))
 			{
@@ -1858,7 +1858,7 @@ VOID NTAPI _app_queue_fileinformation (
 	if (ptr_app_info->is_loaded)
 		return;
 
-	status = _r_fs_openfile (&ptr_app_info->path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE, &hfile);
+	status = _r_fs_openfile (&hfile, &ptr_app_info->path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE);
 
 	if (!NT_SUCCESS (status))
 	{
@@ -1873,7 +1873,7 @@ VOID NTAPI _app_queue_fileinformation (
 
 	// query certificate information
 	if (_r_config_getboolean (L"IsCertificatesEnabled", TRUE, NULL))
-		_app_getfilesignatureinfo (hfile, ptr_app_info);
+		_app_getfilesignatureinfo (ptr_app_info, hfile);
 
 	// query version info
 	_app_getfileversioninfo (ptr_app_info);
@@ -1936,11 +1936,11 @@ VOID NTAPI _app_queue_notifyinformation (
 		{
 			if (_app_isappvalidbinary (ptr_app_info->path))
 			{
-				status = _r_fs_openfile (&ptr_app_info->path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE, &hfile);
+				status = _r_fs_openfile (&hfile, &ptr_app_info->path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE);
 
 				if (NT_SUCCESS (status))
 				{
-					_app_getfilesignatureinfo (hfile, ptr_app_info);
+					_app_getfilesignatureinfo (ptr_app_info, hfile);
 
 					NtClose (hfile);
 				}
@@ -2114,7 +2114,7 @@ VOID _app_wufixhelper (
 
 	_r_str_printf (reg_key, RTL_NUMBER_OF (reg_key), L"SYSTEM\\CurrentControlSet\\Services\\%s", service_name);
 
-	status = _r_reg_openkey (HKEY_LOCAL_MACHINE, reg_key, 0, KEY_READ | KEY_WRITE, &hkey);
+	status = _r_reg_openkey (&hkey, HKEY_LOCAL_MACHINE, reg_key, 0, KEY_READ | KEY_WRITE);
 
 	if (!NT_SUCCESS (status))
 		return;

@@ -450,7 +450,7 @@ VOID _app_notify_playsound ()
 
 	if (_r_obj_isstringempty (current_path) || !_r_fs_isexists (&current_path->sr))
 	{
-		status = _r_reg_openkey (HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", 0, KEY_READ, &hkey);
+		status = _r_reg_openkey (&hkey, HKEY_CURRENT_USER, L"AppEvents\\Schemes\\Apps\\.Default\\" NOTIFY_SOUND_NAME L"\\.Default", 0, KEY_READ);
 
 		if (NT_SUCCESS (status))
 		{
@@ -532,13 +532,13 @@ VOID _app_notify_killprocess (
 
 		if (_r_str_compare (process->ImageName.Buffer, file_name->buffer, TRUE) == 0)
 		{
-			status = _r_sys_getprocessimagepathbyid (HandleToULong (process->UniqueProcessId), TRUE, &path);
+			status = _r_sys_getprocessimagepathbyid (&path, HandleToULong (process->UniqueProcessId), TRUE);
 
 			if (NT_SUCCESS (status))
 			{
 				if (_r_str_isequal (&path->sr, &ptr_app->real_path->sr, TRUE))
 				{
-					status = _r_sys_openprocess (HandleToULong (process->UniqueProcessId), PROCESS_TERMINATE, &process_handle);
+					status = _r_sys_openprocess (&process_handle, HandleToULong (process->UniqueProcessId), PROCESS_TERMINATE);
 
 					if (NT_SUCCESS (status))
 					{
@@ -620,7 +620,7 @@ VOID _app_notify_setposition (
 	LONG border_x;
 	BOOLEAN is_intray;
 
-	_r_wnd_getposition (hwnd, &window_rect);
+	_r_wnd_getposition (&window_rect, hwnd);
 
 	if (!is_forced && _r_wnd_isvisible (hwnd, FALSE))
 	{
@@ -754,11 +754,11 @@ VOID _app_notify_initialize (
 	}
 
 	// load images
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SETTINGS), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_rules);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_allow);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_block);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_CROSS), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_cross);
-	_r_res_loadimage (_r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_NEXT), &GUID_ContainerFormatPng, icon_small, icon_small, &hbmp_next);
+	_r_res_loadimage (&hbmp_rules, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SETTINGS), &GUID_ContainerFormatPng, icon_small, icon_small);
+	_r_res_loadimage (&hbmp_allow, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_ALLOW), &GUID_ContainerFormatPng, icon_small, icon_small);
+	_r_res_loadimage (&hbmp_block, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_BLOCK), &GUID_ContainerFormatPng, icon_small, icon_small);
+	_r_res_loadimage (&hbmp_cross, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_CROSS), &GUID_ContainerFormatPng, icon_small, icon_small);
+	_r_res_loadimage (&hbmp_next, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_NEXT), &GUID_ContainerFormatPng, icon_small, icon_small);
 
 	// set button configuration
 	if (hbmp_rules)

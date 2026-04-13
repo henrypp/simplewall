@@ -58,7 +58,7 @@ VOID _app_timer_set (
 
 		_r_unixtime_to_filetime (&file_time, current_time + seconds);
 
-		_r_calc_filetime2largeinteger (&file_time, &li);
+		_r_calc_filetime2largeinteger (&li, &file_time);
 
 		if (ptr_app->htimer)
 		{

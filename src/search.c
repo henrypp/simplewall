@@ -79,15 +79,7 @@ VOID _app_search_initializeimages (
 	context->image_width = _r_dc_getsystemmetrics (SM_CXSMICON, context->dpi_value) + _r_dc_getdpi (4, context->dpi_value);
 	context->image_height = _r_dc_getsystemmetrics (SM_CYSMICON, context->dpi_value) + _r_dc_getdpi (4, context->dpi_value);
 
-	status = _r_res_loadimage (
-		_r_sys_getimagebase (),
-		L"PNG",
-		MAKEINTRESOURCE (IDP_SEARCH_LIGHT),
-		&GUID_ContainerFormatPng,
-		context->image_width,
-		context->image_height,
-		&hbitmap
-	);
+	status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SEARCH_LIGHT), &GUID_ContainerFormatPng, context->image_width, context->image_height);
 
 	if (NT_SUCCESS (status))
 	{
@@ -101,15 +93,7 @@ VOID _app_search_initializeimages (
 		DeleteObject (hbitmap);
 	}
 
-	status = _r_res_loadimage (
-		_r_sys_getimagebase (),
-		L"PNG",
-		MAKEINTRESOURCE (IDP_SEARCH_DARK),
-		&GUID_ContainerFormatPng,
-		context->image_width,
-		context->image_height,
-		&hbitmap
-	);
+	status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SEARCH_DARK), &GUID_ContainerFormatPng, context->image_width, context->image_height);
 
 	if (NT_SUCCESS (status))
 	{

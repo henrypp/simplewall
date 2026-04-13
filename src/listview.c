@@ -980,7 +980,7 @@ VOID _app_listview_setview (
 	}
 	else
 	{
-		_r_imagelist_getsystem (icons_size, &himg);
+		_r_imagelist_getsystem (&himg, icons_size);
 	}
 
 	if (himg)

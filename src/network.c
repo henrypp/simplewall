@@ -512,7 +512,7 @@ BOOLEAN _app_network_getpath (
 
 	if (!process_name)
 	{
-		status = _r_sys_openprocess (pid, PROCESS_QUERY_LIMITED_INFORMATION, &hprocess);
+		status = _r_sys_openprocess (&hprocess, pid, PROCESS_QUERY_LIMITED_INFORMATION);
 
 		if (NT_SUCCESS (status))
 		{
@@ -535,7 +535,7 @@ BOOLEAN _app_network_getpath (
 
 					if (NT_SUCCESS (status))
 					{
-						_r_str_fromsid (app_container->TokenAppContainer, &process_name);
+						_r_str_fromsid (&process_name, app_container->TokenAppContainer);
 
 						_r_mem_free (app_container);
 					}
@@ -546,11 +546,11 @@ BOOLEAN _app_network_getpath (
 
 			if (!process_name)
 			{
-				status = _r_sys_queryprocessstring (hprocess, ProcessImageFileNameWin32, &process_name);
+				status = _r_sys_queryprocessstring (&process_name, hprocess, ProcessImageFileNameWin32);
 
 				// fix for WSL processes (issue #606)
 				if (status == STATUS_UNSUCCESSFUL)
-					status = _r_sys_queryprocessstring (hprocess, ProcessImageFileName, &process_name);
+					status = _r_sys_queryprocessstring (&process_name, hprocess, ProcessImageFileName);
 			}
 
 			NtClose (hprocess);

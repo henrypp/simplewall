@@ -1420,14 +1420,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					if (!_app_isappvalidpath (context->ptr_app->real_path))
 						break;
 
-					status = _r_fs_openfile (
-						&context->ptr_app->real_path->sr,
-						GENERIC_READ,
-						FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
-						0,
-						FALSE,
-						&hfile
-					);
+					status = _r_fs_openfile (&hfile, &context->ptr_app->real_path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, FALSE);
 
 					if (NT_SUCCESS (status))
 					{

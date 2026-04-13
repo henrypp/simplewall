@@ -131,8 +131,8 @@ VOID _app_getfileicon (
 );
 
 VOID _app_getfilesignatureinfo (
-	_In_ HANDLE hfile,
-	_Inout_ PITEM_APP_INFO ptr_app_info
+	_Inout_ PITEM_APP_INFO ptr_app_info,
+	_In_ HANDLE hfile
 );
 
 VOID _app_getfileversioninfo (

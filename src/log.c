@@ -26,17 +26,7 @@ VOID _app_loginit (
 	if (!log_path)
 		return;
 
-	status = _r_fs_createfile (
-		&log_path->sr,
-		FILE_OPEN_IF,
-		GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ,
-		FILE_ATTRIBUTE_NORMAL,
-		0,
-		FALSE,
-		NULL,
-		&new_handle
-	);
+	status = _r_fs_createfile (&new_handle, &log_path->sr, FILE_OPEN_IF, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, FILE_ATTRIBUTE_NORMAL, 0, FALSE, NULL);
 
 	if (NT_SUCCESS (status))
 	{
@@ -58,7 +48,7 @@ VOID _app_loginitfile (
 	BYTE bom[] = {0xFF, 0xFE};
 	LARGE_INTEGER file_size;
 
-	_r_fs_getsize (NULL, hfile, &file_size);
+	_r_fs_getsize (&file_size, NULL, hfile);
 
 	if (!file_size.QuadPart)
 	{
@@ -158,7 +148,7 @@ BOOLEAN _app_logislimitreached (
 	if (!limit)
 		return FALSE;
 
-	_r_fs_getsize2 (NULL, hfile, &file_size);
+	_r_fs_getsize2 (&file_size, NULL, hfile);
 
 	return (file_size >= (_r_calc_kilobytes2bytes64 (limit)));
 }
@@ -349,7 +339,7 @@ VOID _wfp_logsubscribe (
 
 	if (_r_initonce_begin (&init_once))
 	{
-		status = _r_sys_loadlibrary2 (L"fwpuclnt.dll", 0, &hfwpuclnt);
+		status = _r_sys_loadlibrary2 (&hfwpuclnt, L"fwpuclnt.dll", 0);
 
 		if (NT_SUCCESS (status))
 		{
@@ -606,7 +596,7 @@ VOID CALLBACK _wfp_logcallback (
 	// get package id (win8+)
 	if ((log->flags & FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET) == FWPM_NET_EVENT_FLAG_PACKAGE_ID_SET && log->package_id)
 	{
-		status = _r_str_fromsid (log->package_id, &sid_string);
+		status = _r_str_fromsid (&sid_string, log->package_id);
 
 		if (NT_SUCCESS (status))
 		{
@@ -645,7 +635,7 @@ VOID CALLBACK _wfp_logcallback (
 
 	// get username information
 	if ((log->flags & FWPM_NET_EVENT_FLAG_USER_ID_SET) == FWPM_NET_EVENT_FLAG_USER_ID_SET && log->user_id)
-		_r_sys_getusername (log->user_id, TRUE, &ptr_log->username);
+		_r_sys_getusername (&ptr_log->username, log->user_id, TRUE);
 
 	// destination
 	if ((log->flags & FWPM_NET_EVENT_FLAG_IP_VERSION_SET) == FWPM_NET_EVENT_FLAG_IP_VERSION_SET)

@@ -197,7 +197,7 @@ NTSTATUS _app_db_openfromfile (
 	if (db_info->bytes)
 		_r_obj_clearreference ((PVOID_PTR)&db_info->bytes);
 
-	status = _r_fs_openfile (&path->sr, GENERIC_READ, FILE_SHARE_READ, 0, FALSE, &hfile);
+	status = _r_fs_openfile (&hfile, &path->sr, GENERIC_READ, FILE_SHARE_READ, 0, FALSE);
 
 	if (!NT_SUCCESS (status))
 		return status;
@@ -588,7 +588,7 @@ NTSTATUS _app_db_decodebody (
 			// decompress bytes
 			for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (format); i++)
 			{
-				status = _r_sys_decompressbuffer (format[i], &db_info->bytes->sr, &new_bytes);
+				status = _r_sys_decompressbuffer (&new_bytes, format[i], &db_info->bytes->sr);
 
 				if (NT_SUCCESS (status))
 				{
@@ -682,7 +682,7 @@ NTSTATUS _app_db_encodebody (
 		case PROFILE2_ID_COMPRESSED:
 		{
 			// compress body
-			status = _r_sys_compressbuffer (COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr, &new_bytes);
+			status = _r_sys_compressbuffer (&new_bytes, COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr);
 
 			if (!NT_SUCCESS (status))
 			{
@@ -949,17 +949,7 @@ NTSTATUS _app_db_save_streamtofile (
 	HANDLE hfile;
 	NTSTATUS status;
 
-	status = _r_fs_createfile (
-		&path->sr,
-		FILE_OVERWRITE_IF,
-		GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-		FILE_ATTRIBUTE_NORMAL,
-		0,
-		FALSE,
-		NULL,
-		&hfile
-	);
+	status = _r_fs_createfile (&hfile, &path->sr, FILE_OVERWRITE_IF, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, FALSE, NULL);
 
 	if (!NT_SUCCESS (status))
 		return status;

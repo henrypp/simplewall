@@ -38,11 +38,11 @@ VOID _app_generate_credentials ()
 	// S-1-5-32-556 (BUILTIN\Network Configuration Operators)
 	config.builtin_netops_sid = _app_quyerybuiltinsid (WinBuiltinNetworkConfigurationOperatorsSid);
 
-	_r_sys_getservicesid (L"mpssvc", &config.service_mpssvc_sid);
-	_r_sys_getservicesid (L"NlaSvc", &config.service_nlasvc_sid);
-	_r_sys_getservicesid (L"PolicyAgent", &config.service_policyagent_sid);
-	_r_sys_getservicesid (L"RpcSs", &config.service_rpcss_sid);
-	_r_sys_getservicesid (L"WdiServiceHost", &config.service_wdiservicehost_sid);
+	_r_sys_getservicesid (&config.service_mpssvc_sid, L"mpssvc");
+	_r_sys_getservicesid (&config.service_nlasvc_sid, L"NlaSvc");
+	_r_sys_getservicesid (&config.service_policyagent_sid, L"PolicyAgent");
+	_r_sys_getservicesid (&config.service_rpcss_sid, L"RpcSs");
+	_r_sys_getservicesid (&config.service_wdiservicehost_sid, L"WdiServiceHost");
 }
 
 _Ret_maybenull_
