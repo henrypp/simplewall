@@ -494,7 +494,7 @@ VOID _app_notify_killprocess (
 	PSYSTEM_PROCESS_INFORMATION process;
 	PSYSTEM_PROCESS_INFORMATION spi;
 	PNOTIFY_CONTEXT context;
-	HANDLE process_handle;
+	HANDLE hprocess;
 	PITEM_APP ptr_app;
 	PR_STRING path;
 	PR_STRING file_name;
@@ -538,16 +538,16 @@ VOID _app_notify_killprocess (
 			{
 				if (_r_str_isequal (&path->sr, &ptr_app->real_path->sr, TRUE))
 				{
-					status = _r_sys_openprocess (&process_handle, HandleToULong (process->UniqueProcessId), PROCESS_TERMINATE);
+					status = _r_sys_openprocess (&hprocess, HandleToULong (process->UniqueProcessId), PROCESS_TERMINATE);
 
 					if (NT_SUCCESS (status))
 					{
-						status = NtTerminateProcess (process_handle, STATUS_SUCCESS);
+						status = NtTerminateProcess (hprocess, STATUS_SUCCESS);
 
 						if (!NT_SUCCESS (status))
 							_r_show_errormessage (hwnd, L"Cannot terminate process!", status, file_name->buffer, ET_NATIVE);
 
-						NtClose (process_handle);
+						NtClose (hprocess);
 					}
 					else
 					{

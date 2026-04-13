@@ -1016,7 +1016,7 @@ VOID _app_getfileversioninfo (
 	R_STRINGBUILDER sb;
 	R_STORAGE ver_block;
 	PR_STRING string;
-	PVOID hlib;
+	PVOID hlibrary;
 	ULONG lcid;
 	NTSTATUS status;
 
@@ -1031,12 +1031,12 @@ VOID _app_getfileversioninfo (
 		NOTHING;
 	}
 
-	status = _r_sys_loadlibraryasresource (&hlib, &ptr_app_info->path->sr);
+	status = _r_sys_loadlibraryasresource (&hlibrary, &ptr_app_info->path->sr);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
 
-	status = _r_res_loadresource (&ver_block, hlib, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), 0);
+	status = _r_res_loadresource (&ver_block, hlibrary, RT_VERSION, MAKEINTRESOURCE (VS_VERSION_INFO), 0);
 
 	if (!NT_SUCCESS (status))
 		goto CleanupExit;
@@ -1095,8 +1095,8 @@ CleanupExit:
 
 	ptr_app_info->version_info = version_string;
 
-	if (hlib)
-		_r_sys_freelibrary (hlib);
+	if (hlibrary)
+		_r_sys_freelibrary (hlibrary);
 }
 
 _Ret_maybenull_
@@ -1738,7 +1738,7 @@ VOID NTAPI _app_timercallback (
 )
 {
 	PITEM_APP ptr_app = NULL;
-	PR_STRING hash;
+	PR_STRING string;
 	ULONG_PTR enum_key;
 	NTSTATUS status;
 
@@ -1756,19 +1756,19 @@ VOID NTAPI _app_timercallback (
 			if (!_app_isappused (ptr_app))
 				continue;
 
-			status = _r_crypt_getfilehash (&hash, BCRYPT_SHA256_ALGORITHM, &ptr_app->real_path->sr, NULL);
+			status = _r_crypt_getfilehash (&string, BCRYPT_SHA256_ALGORITHM, &ptr_app->real_path->sr, NULL);
 
 			if (NT_SUCCESS (status))
 			{
-				if (!_r_str_isequal (&ptr_app->hash->sr, &hash->sr, TRUE))
+				if (!_r_str_isequal (&ptr_app->hash->sr, &string->sr, TRUE))
 				{
-					_r_obj_movereference ((PVOID_PTR)&ptr_app->hash, hash);
+					_r_obj_movereference ((PVOID_PTR)&ptr_app->hash, string);
 
 					_app_setappinfo (ptr_app, INFO_DISABLE, NULL);
 				}
 				else
 				{
-					_r_obj_dereference (hash);
+					_r_obj_dereference (string);
 				}
 			}
 		}

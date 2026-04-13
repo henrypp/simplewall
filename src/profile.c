@@ -1557,7 +1557,7 @@ NTSTATUS _app_profile_load_fromresource (
 )
 {
 	PDB_INFORMATION db_info;
-	R_STORAGE bytes;
+	R_STORAGE buffer;
 	NTSTATUS status;
 
 	db_info = out_buffer;
@@ -1566,10 +1566,10 @@ NTSTATUS _app_profile_load_fromresource (
 
 	if (NT_SUCCESS (status))
 	{
-		status = _r_res_loadresource (&bytes, _r_sys_getimagebase (), RT_RCDATA, resource_name, 0);
+		status = _r_res_loadresource (&buffer, _r_sys_getimagebase (), RT_RCDATA, resource_name, 0);
 
 		if (NT_SUCCESS (status))
-			status = _app_db_openfrombuffer (db_info, &bytes, XML_VERSION_MAXIMUM, XML_TYPE_PROFILE_INTERNAL);
+			status = _app_db_openfrombuffer (db_info, &buffer, XML_VERSION_MAXIMUM, XML_TYPE_PROFILE_INTERNAL);
 	}
 
 	return status;

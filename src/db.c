@@ -675,6 +675,7 @@ NTSTATUS _app_db_encodebody (
 	{
 		case PROFILE2_ID_PLAIN:
 		{
+			// plain text
 			new_bytes = _r_obj_reference (bytes);
 			break;
 		}
@@ -697,6 +698,7 @@ NTSTATUS _app_db_encodebody (
 
 		case PROFILE2_ID_ENCRYPTED:
 		{
+			// encrypt data
 			status = _app_db_encrypt (&bytes->sr, &new_bytes);
 
 			if (!NT_SUCCESS (status))

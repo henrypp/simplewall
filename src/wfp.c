@@ -405,7 +405,7 @@ VOID _wfp_uninitialize (
 {
 	PR_ARRAY callouts;
 	PR_STRING string;
-	LPGUID guid;
+	LPCGUID guid;
 	FWP_VALUE0 val;
 	BOOLEAN is_intransact;
 	ULONG status;
@@ -440,7 +440,7 @@ VOID _wfp_uninitialize (
 		{
 			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (callouts); i++)
 			{
-				guid = (LPGUID)_r_obj_getarrayitem (callouts, i);
+				guid = (LPCGUID)_r_obj_getarrayitem (callouts, i);
 
 				if (guid)
 					_app_setcalloutsecurity (engine_handle, guid, FALSE);
@@ -454,7 +454,7 @@ VOID _wfp_uninitialize (
 		{
 			for (ULONG_PTR i = 0; i < _r_obj_getarraysize (callouts); i++)
 			{
-				guid = (LPGUID)_r_obj_getarrayitem (callouts, i);
+				guid = (LPCGUID)_r_obj_getarrayitem (callouts, i);
 
 				if (!guid)
 					continue;
