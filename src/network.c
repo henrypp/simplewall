@@ -13,7 +13,7 @@ static VOID _app_network_update_stats_values (
 	ULONG64 bytes_delta;
 	ULONG64 current_tick;
 
-	current_tick = GetTickCount64 ();
+	current_tick = _r_sys_gettickcount64 ();
 
 	if (!ptr_network->is_stats_initialized)
 	{

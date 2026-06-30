@@ -172,7 +172,7 @@ VOID _app_listview_addnetworkitem (
 	_In_ ULONG network_hash
 )
 {
-	_r_listview_additem (hwnd, IDC_NETWORK, INT_MAX, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (network_hash));
+	_r_listview_additem (hwnd, IDC_NETWORK, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (network_hash));
 }
 
 VOID _app_listview_addlogitem (
