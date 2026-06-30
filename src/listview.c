@@ -172,7 +172,7 @@ VOID _app_listview_addnetworkitem (
 	_In_ ULONG network_hash
 )
 {
-	_r_listview_additem (hwnd, IDC_NETWORK, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (network_hash));
+	_r_listview_additem (hwnd, IDC_NETWORK, INT_MAX, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (network_hash));
 }
 
 VOID _app_listview_addlogitem (
@@ -999,10 +999,14 @@ INT CALLBACK _app_listview_compare_callback (
 	PR_STRING item_text_2;
 	PITEM_LOG ptr_log1;
 	PITEM_LOG ptr_log2;
+	PITEM_NETWORK ptr_network1;
+	PITEM_NETWORK ptr_network2;
 	WCHAR section_name[128];
 	HWND hwnd;
 	LONG64 timestamp1 = 0;
 	LONG64 timestamp2 = 0;
+	LONG64 value1 = 0;
+	LONG64 value2 = 0;
 	ULONG context1;
 	ULONG context2;
 	LONG column_id;
@@ -1097,6 +1101,41 @@ INT CALLBACK _app_listview_compare_callback (
 
 			if (ptr_log2)
 				_r_obj_dereference (ptr_log2);
+		}
+		else if (listview_id == IDC_NETWORK && column_id >= 9 && column_id <= 11)
+		{
+			ptr_network1 = _app_network_getitem (context1);
+			ptr_network2 = _app_network_getitem (context2);
+
+			if (ptr_network1 && ptr_network2)
+			{
+				if (column_id == 9)
+				{
+					value1 = _InterlockedCompareExchange64 (&ptr_network1->download_speed, 0, 0);
+					value2 = _InterlockedCompareExchange64 (&ptr_network2->download_speed, 0, 0);
+				}
+				else if (column_id == 10)
+				{
+					value1 = _InterlockedCompareExchange64 (&ptr_network1->upload_speed, 0, 0);
+					value2 = _InterlockedCompareExchange64 (&ptr_network2->upload_speed, 0, 0);
+				}
+				else
+				{
+					value1 = _InterlockedCompareExchange64 (&ptr_network1->download_total, 0, 0) + _InterlockedCompareExchange64 (&ptr_network1->upload_total, 0, 0);
+					value2 = _InterlockedCompareExchange64 (&ptr_network2->download_total, 0, 0) + _InterlockedCompareExchange64 (&ptr_network2->upload_total, 0, 0);
+				}
+
+				if (value1 < value2)
+					result = -1;
+				else if (value1 > value2)
+					result = 1;
+			}
+
+			if (ptr_network1)
+				_r_obj_dereference (ptr_network1);
+
+			if (ptr_network2)
+				_r_obj_dereference (ptr_network2);
 		}
 	}
 
