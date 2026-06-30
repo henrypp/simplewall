@@ -11,6 +11,7 @@
 #include <windns.h>
 #include <mstcpip.h>
 #include <iphlpapi.h>
+#include <tcpestats.h>
 #include <aclapi.h>
 #include <dbt.h>
 #include <fwpmu.h>

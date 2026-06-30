@@ -3,6 +3,118 @@
 
 #include "global.h"
 
+static VOID _app_network_update_stats_values (
+	_Inout_ PITEM_NETWORK ptr_network,
+	_In_ ULONG64 bytes_in,
+	_In_ ULONG64 bytes_out
+)
+{
+	ULONG64 elapsed;
+	ULONG64 bytes_delta;
+	ULONG64 current_tick;
+
+	current_tick = _r_sys_gettickcount64 ();
+
+	if (!ptr_network->is_stats_initialized)
+	{
+		ptr_network->last_bytes_in = bytes_in;
+		ptr_network->last_bytes_out = bytes_out;
+		ptr_network->last_stats_tick = current_tick;
+		ptr_network->is_stats_initialized = TRUE;
+
+		return;
+	}
+
+	elapsed = current_tick - ptr_network->last_stats_tick;
+
+	if (!elapsed)
+		return;
+
+	bytes_delta = bytes_in >= ptr_network->last_bytes_in ? bytes_in - ptr_network->last_bytes_in : 0;
+
+	_InterlockedExchangeAdd64 (&ptr_network->download_total, bytes_delta);
+	_InterlockedExchange64 (&ptr_network->download_speed, (bytes_delta * 1000) / elapsed);
+
+	bytes_delta = bytes_out >= ptr_network->last_bytes_out ? bytes_out - ptr_network->last_bytes_out : 0;
+
+	_InterlockedExchangeAdd64 (&ptr_network->upload_total, bytes_delta);
+	_InterlockedExchange64 (&ptr_network->upload_speed, (bytes_delta * 1000) / elapsed);
+
+	ptr_network->last_bytes_in = bytes_in;
+	ptr_network->last_bytes_out = bytes_out;
+	ptr_network->last_stats_tick = current_tick;
+}
+
+static VOID _app_network_update_tcp4_stats (
+	_Inout_ PITEM_NETWORK ptr_network,
+	_In_ PMIB_TCPROW_OWNER_MODULE row
+)
+{
+	TCP_ESTATS_DATA_ROD_v0 data_rod = {0};
+	TCP_ESTATS_DATA_RW_v0 data_rw = {0};
+	MIB_TCPROW tcp_row = {0};
+	ULONG status;
+
+	tcp_row.dwState = row->dwState;
+	tcp_row.dwLocalAddr = row->dwLocalAddr;
+	tcp_row.dwLocalPort = row->dwLocalPort;
+	tcp_row.dwRemoteAddr = row->dwRemoteAddr;
+	tcp_row.dwRemotePort = row->dwRemotePort;
+
+	if (!ptr_network->is_stats_enabled)
+	{
+		data_rw.EnableCollection = TRUE;
+
+		status = SetPerTcpConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), 0);
+
+		if (status != NO_ERROR)
+			return;
+
+		ptr_network->is_stats_enabled = TRUE;
+	}
+
+	status = GetPerTcpConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), NULL, 0, 0, (PUCHAR)&data_rod, 0, sizeof (data_rod));
+
+	if (status == NO_ERROR && data_rw.EnableCollection)
+		_app_network_update_stats_values (ptr_network, data_rod.DataBytesIn, data_rod.DataBytesOut);
+}
+
+static VOID _app_network_update_tcp6_stats (
+	_Inout_ PITEM_NETWORK ptr_network,
+	_In_ PMIB_TCP6ROW_OWNER_MODULE row
+)
+{
+	TCP_ESTATS_DATA_ROD_v0 data_rod = {0};
+	TCP_ESTATS_DATA_RW_v0 data_rw = {0};
+	MIB_TCP6ROW tcp_row = {0};
+	ULONG status;
+
+	RtlCopyMemory (&tcp_row.LocalAddr, row->ucLocalAddr, sizeof (tcp_row.LocalAddr));
+	tcp_row.dwLocalScopeId = row->dwLocalScopeId;
+	tcp_row.dwLocalPort = row->dwLocalPort;
+	RtlCopyMemory (&tcp_row.RemoteAddr, row->ucRemoteAddr, sizeof (tcp_row.RemoteAddr));
+	tcp_row.dwRemoteScopeId = row->dwRemoteScopeId;
+	tcp_row.dwRemotePort = row->dwRemotePort;
+	tcp_row.State = row->dwState;
+
+	if (!ptr_network->is_stats_enabled)
+	{
+		data_rw.EnableCollection = TRUE;
+
+		status = SetPerTcp6ConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), 0);
+
+		if (status != NO_ERROR)
+			return;
+
+		ptr_network->is_stats_enabled = TRUE;
+	}
+
+	status = GetPerTcp6ConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), NULL, 0, 0, (PUCHAR)&data_rod, 0, sizeof (data_rod));
+
+	if (status == NO_ERROR && data_rw.EnableCollection)
+		_app_network_update_stats_values (ptr_network, data_rod.DataBytesIn, data_rod.DataBytesOut);
+}
+
 _Ret_maybenull_
 PITEM_NETWORK_CONTEXT _app_network_getcontext ()
 {
@@ -122,13 +234,18 @@ VOID _app_network_generatetable (
 					tcp4_table->table[i].dwState
 				);
 
-				if (_app_network_isitemfound (network_hash))
+				ptr_network = _app_network_getitem (network_hash);
+
+				if (ptr_network)
 				{
+					_app_network_update_tcp4_stats (ptr_network, &tcp4_table->table[i]);
+
 					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
 
 					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
 
 					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+					_r_obj_dereference (ptr_network);
 
 					continue;
 				}
@@ -153,6 +270,8 @@ VOID _app_network_generatetable (
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)tcp4_table->table[i].dwLocalPort);
 
 				ptr_network->state = tcp4_table->table[i].dwState;
+
+				_app_network_update_tcp4_stats (ptr_network, &tcp4_table->table[i]);
 
 				if (tcp4_table->table[i].dwState == MIB_TCP_STATE_ESTAB)
 				{
@@ -201,11 +320,16 @@ VOID _app_network_generatetable (
 					tcp6_table->table[i].dwState
 				);
 
-				if (_app_network_isitemfound (network_hash))
+				ptr_network = _app_network_getitem (network_hash);
+
+				if (ptr_network)
 				{
+					_app_network_update_tcp6_stats (ptr_network, &tcp6_table->table[i]);
+
 					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
 					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
 					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+					_r_obj_dereference (ptr_network);
 
 					continue;
 				}
@@ -230,6 +354,8 @@ VOID _app_network_generatetable (
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)tcp6_table->table[i].dwLocalPort);
 
 				ptr_network->state = tcp6_table->table[i].dwState;
+
+				_app_network_update_tcp6_stats (ptr_network, &tcp6_table->table[i]);
 
 				if (tcp6_table->table[i].dwState == MIB_TCP_STATE_ESTAB)
 				{
@@ -693,15 +819,22 @@ VOID _app_network_printlistviewtable (
 		_app_queue_resolver (network_context->hwnd, IDC_NETWORK, network_hash, ptr_network);
 
 		_r_obj_dereference (string);
-
 		is_refresh = TRUE;
+
 	}
 
 	_r_queuedlock_releaseshared (&network_context->lock_network);
 
-	// refresh network tab
+	// refresh network tab (traffic counters change on every pass)
 	if (is_refresh)
+	{
 		_app_listview_updateby_id (network_context->hwnd, IDC_NETWORK, PR_UPDATE_NORESIZE);
+	}
+	else
+	{
+		_r_listview_redraw (network_context->hwnd, IDC_NETWORK);
+		_app_listview_sort (network_context->hwnd, IDC_NETWORK, INT_ERROR, FALSE);
+	}
 
 	// remove closed connections from list
 	item_count = _r_listview_getitemcount (network_context->hwnd, IDC_NETWORK);

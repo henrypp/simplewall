@@ -429,6 +429,13 @@ VOID _app_message_localize (
 
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 7, _r_locale_getstring (IDS_PROTOCOL), 0);
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 8, _r_locale_getstring (IDS_STATE), 0);
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"\u2193 %s", _r_locale_getstring (IDS_UPDATE_SPEED)));
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 9, localized_string->buffer, 0);
+
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"\u2191 %s", _r_locale_getstring (IDS_UPDATE_SPEED)));
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 10, localized_string->buffer, 0);
+
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 11, _r_locale_getstring (IDS_TOTAL), 0);
 
 				break;
 			}
@@ -1328,6 +1335,11 @@ VOID _app_displayinfonetwork_callback (
 	PR_STRING string;
 	LPCWSTR name;
 	LONG icon_id = 0;
+	LONG64 bytes_value;
+	ULONG64 divisor;
+	ULONG64 decimal;
+	ULONG64 whole;
+	LPCWSTR suffix;
 
 	// set text
 	if (lpnmlv->item.mask & LVIF_TEXT)
@@ -1465,6 +1477,61 @@ VOID _app_displayinfonetwork_callback (
 
 				if (name)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
+
+				break;
+			}
+
+			case 9:
+			case 10:
+			case 11:
+			{
+				if (!ptr_network->is_stats_initialized)
+					break;
+
+				if (lpnmlv->item.iSubItem == 9)
+				{
+					bytes_value = _InterlockedCompareExchange64 (&ptr_network->download_speed, 0, 0);
+				}
+				else if (lpnmlv->item.iSubItem == 10)
+				{
+					bytes_value = _InterlockedCompareExchange64 (&ptr_network->upload_speed, 0, 0);
+				}
+				else
+				{
+					bytes_value = _InterlockedCompareExchange64 (&ptr_network->download_total, 0, 0) + _InterlockedCompareExchange64 (&ptr_network->upload_total, 0, 0);
+				}
+
+				if ((ULONG64)bytes_value < 1024)
+				{
+					_r_str_printf (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, L"%" TEXT (PRIu64) L" B%s", (ULONG64)bytes_value, lpnmlv->item.iSubItem == 11 ? L"" : L"/s");
+					break;
+				}
+
+				if ((ULONG64)bytes_value < (1ULL << 20))
+				{
+					divisor = 1ULL << 10;
+					suffix = L"KB";
+				}
+				else if ((ULONG64)bytes_value < (1ULL << 30))
+				{
+					divisor = 1ULL << 20;
+					suffix = L"MB";
+				}
+				else if ((ULONG64)bytes_value < (1ULL << 40))
+				{
+					divisor = 1ULL << 30;
+					suffix = L"GB";
+				}
+				else
+				{
+					divisor = 1ULL << 40;
+					suffix = L"TB";
+				}
+
+				whole = (ULONG64)bytes_value / divisor;
+				decimal = (((ULONG64)bytes_value % divisor) * 10) / divisor;
+
+				_r_str_printf (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, L"%" TEXT (PRIu64) L".%" TEXT (PRIu64) L" %s%s", whole, decimal, suffix, lpnmlv->item.iSubItem == 11 ? L"" : L"/s");
 
 				break;
 			}

@@ -398,6 +398,17 @@ typedef struct _ITEM_NETWORK
 	UINT8 protocol;
 
 	BOOLEAN is_connection;
+	BOOLEAN is_stats_enabled;
+	BOOLEAN is_stats_initialized;
+
+	volatile LONG64 download_speed;
+	volatile LONG64 upload_speed;
+	volatile LONG64 download_total;
+	volatile LONG64 upload_total;
+
+	ULONG64 last_bytes_in;
+	ULONG64 last_bytes_out;
+	ULONG64 last_stats_tick;
 } ITEM_NETWORK, *PITEM_NETWORK;
 
 typedef struct _ITEM_LOG
