@@ -1,11 +1,11 @@
 <?xml version="1.0" ?>
-<!--Internal rules for simplewall-->
-<!--Minimum required version is 3.8-->
-<root timestamp="1717635779" type="4" version="5">
+<!-- Internal rules for simplewall -->
+<!-- Minimum required version is 4.0 -->
+<root timestamp="1783526109" type="4" version="6">
 	<rules_system>
 		<item name="Cryptographic service" apps="CryptSvc" is_enabled="true" />
-		<item name="DHCP" rule="67-68;546-547" rule_local="67-68;546-547" dir="2" protocol="17" apps="Dhcp" is_enabled="true" />
-		<item name="DNS" rule="53" protocol="17" apps="Dnscache" is_enabled="true" />
+		<item name="DHCP" rule="67-68;546-547" rule_local="67-68;546-547" dir="2" protocol="17" is_services="true" is_enabled="true" />
+		<item name="DNS" rule="53" protocol="17" is_services="true" is_enabled="true" />
 		<item name="IGMP" rule="224.0.0.0/4" protocol="2" is_services="true" is_enabled="true" />
 		<item name="IKEv2/IPSEC/L2TP" rule="500;1701;4500" protocol="17" is_services="true" />
 		<item name="KMS service" rule="1688" protocol="6" apps="%systemroot%\system32\SppExtComObj.exe" os_version="6.2" is_enabled="true" />
@@ -33,7 +33,7 @@
 	</rules_system>
 	<rules_custom>
 		<item name="DNS protocol" rule="53" protocol="17" />
-		<item name="FTP" rule="20-21;49152-65534" protocol="6" />
+		<item name="FTP" rule="20-21" protocol="6" />
 		<item name="HTTP" rule="80;443;8000;8008;8080;8443-8444" protocol="6" />
 		<item name="ICMPv4" dir="2" protocol="1" />
 		<item name="ICMPv6" dir="2" protocol="58" />
