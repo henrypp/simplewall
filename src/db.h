@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2019-2025 Henry++
+// Copyright (c) 2019-2026 Henry++
 
 #pragma once
 
@@ -21,6 +21,9 @@ typedef enum _ENUM_VERSION_XML
 
 	// v3.7: added hashes support, use encrypted file format and added comments for apps/rules
 	XML_VERSION_5 = 5,
+
+	// v4.0: added file rules support, added correct encryption with password, store path with environment variables, now rules for services and drivers are separated
+	XML_VERSION_6 = 6,
 } ENUM_VERSION_XML;
 
 typedef struct _DB_INFORMATION
@@ -39,21 +42,16 @@ typedef struct _DB_INFORMATION
 // Offset	Length	Description
 // ------------------------------------------
 // 0		3		FOURCC string 'SWC'
-// 4		1		Body information flag
+// 4		1		Body information flag (PROFILE2_ID_PLAIN, PROFILE2_ID_COMPRESSED or PROFILE2_ID_ENCRYPTED)
 // 36		32		SHA256 checksum of the decrypted bytes
-// 68		whole	Body contained specified data
-
+// 68		<body>	Body contained specified data
 static const BYTE profile2_fourcc[] = {
 	0x53, 0x57, 0x43, // 'S', 'W', 'C'
 };
 
-static const BYTE profile2_fourcc_old[] = {
-	0x73, 0x77, 0x63, // 's', 'w', 'c'
-};
-
 #define XML_VERSION_MINIMAL XML_VERSION_3
-#define XML_VERSION_CURRENT XML_VERSION_4
-#define XML_VERSION_MAXIMUM XML_VERSION_5
+#define XML_VERSION_CURRENT XML_VERSION_5
+#define XML_VERSION_MAXIMUM XML_VERSION_6
 
 #define XML_PROFILE_FILE L"profile.xml"
 #define XML_PROFILE_INTERNAL L"profile_internal.xml"
@@ -62,9 +60,10 @@ static const BYTE profile2_fourcc_old[] = {
 #define PROFILE2_ID_COMPRESSED ((BYTE)(0x31))
 #define PROFILE2_ID_ENCRYPTED ((BYTE)(0x32))
 
-#define PROFILE2_KEY "Gc(j1EptodnKP?{ZT!SlMVip[fJIs&Ci3fOqjATfp@h,q0(]QVaGs5Iht3)/b:Ll"
+#define PROFILE2_KEY_DEPRECATED "Gc(j1EptodnKP?{ZT!SlMVip[fJIs&Ci3fOqjATfp@h,q0(]QVaGs5Iht3)/b:Ll"
 
-#define PROFILE2_FOURCC_LENGTH sizeof (profile2_fourcc) + sizeof (BYTE)
+#define PROFILE2_FOURCC sizeof (profile2_fourcc)
+#define PROFILE2_FOURCC_LENGTH PROFILE2_FOURCC + sizeof (BYTE)
 #define PROFILE2_SHA256_LENGTH 32UL
 #define PROFILE2_HEADER_LENGTH (PROFILE2_FOURCC_LENGTH + PROFILE2_SHA256_LENGTH)
 
@@ -86,7 +85,7 @@ NTSTATUS _app_db_encrypt (
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decrypt (
-	_In_ PR_BYTEREF buffer,
+	_In_ PR_BYTEREF bytes,
 	_Out_ PR_BYTE_PTR out_buffer
 );
 
@@ -107,8 +106,7 @@ NTSTATUS _app_db_ishashvalid (
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfrombuffer (
 	_Inout_ PDB_INFORMATION db_info,
-	_In_ PR_STORAGE buffer,
-	_In_ ENUM_VERSION_XML min_version,
+	_In_ PR_STORAGE storage,
 	_In_ ENUM_TYPE_XML type
 );
 
@@ -116,7 +114,6 @@ _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfromfile (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STRING path,
-	_In_ ENUM_VERSION_XML min_version,
 	_In_ ENUM_TYPE_XML type
 );
 
@@ -143,8 +140,7 @@ NTSTATUS _app_db_generatebody (
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebuffer (
 	_Inout_ PDB_INFORMATION db_info,
-	_In_ ENUM_TYPE_XML type,
-	_In_ ENUM_VERSION_XML min_version
+	_In_ ENUM_TYPE_XML type
 );
 
 BOOLEAN _app_db_parse (
@@ -203,10 +199,10 @@ PR_STRING _app_db_getdirectionname (
 	_In_ BOOLEAN is_loopback,
 	_In_ BOOLEAN is_localized
 );
-
 LPCWSTR _app_db_getprotoname (
 	_In_ ULONG proto,
-	_In_ ADDRESS_FAMILY af
+	_In_ ADDRESS_FAMILY af,
+	_In_opt_ LPCWSTR default_value
 );
 
 _Ret_maybenull_

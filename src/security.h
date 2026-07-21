@@ -18,9 +18,9 @@ PACL _app_createaccesscontrollist (
 
 VOID _app_setexplicitaccess (
 	_Out_ PEXPLICIT_ACCESS ea,
+	_In_ ULONG inheritance,
 	_In_ ACCESS_MODE mode,
 	_In_ ULONG rights,
-	_In_ ULONG inheritance,
 	_In_opt_ PSID sid
 );
 

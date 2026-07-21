@@ -12,12 +12,12 @@ PR_STRING _app_gettooltipbylparam (
 	_In_ LONG_PTR lparam
 );
 
-VOID _app_settab_id (
+BOOLEAN _app_settab_id (
 	_In_ HWND hwnd,
 	_In_ INT page_id
 );
 
-LPWSTR _app_getstateaction (
+LPCWSTR _app_getstateaction (
 	_In_ ENUM_INSTALL_TYPE install_type
 );
 
@@ -25,7 +25,7 @@ HBITMAP _app_getstatebitmap (
 	_In_ ENUM_INSTALL_TYPE install_type
 );
 
-INT _app_getstateicon (
+LONG _app_getstateicon (
 	_In_ ENUM_INSTALL_TYPE install_type
 );
 
@@ -34,12 +34,12 @@ LPCWSTR _app_getstatelocale (
 );
 
 BOOLEAN _app_initinterfacestate (
-	_In_ HWND hwnd,
+	_In_opt_ HWND hwnd,
 	_In_ BOOLEAN is_forced
 );
 
 VOID _app_restoreinterfacestate (
-	_In_ HWND hwnd,
+	_In_opt_ HWND hwnd,
 	_In_ BOOLEAN is_enabled
 );
 
@@ -60,7 +60,7 @@ VOID _app_imagelist_init (
 
 HFONT _app_createfont (
 	_Inout_ PLOGFONT logfont,
-	_In_ LONG size,
+	_In_opt_ LONG size,
 	_In_ BOOLEAN is_underline,
 	_In_ LONG dpi_value
 );

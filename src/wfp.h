@@ -8,25 +8,29 @@ DEFINE_GUID (GUID_WfpProvider, 0xB0D553E2, 0xC6A0, 0x4A9A, 0xAE, 0xB8, 0xC7, 0x5
 DEFINE_GUID (GUID_WfpSublayer, 0x9FEE6F59, 0xB951, 0x4F9A, 0xB5, 0x2F, 0x13, 0x3D, 0xCF, 0x7A, 0x42, 0x79);
 
 // filter names
-#define FW_NAME_BLOCK_CONNECTION L"BlockConnection"
-#define FW_NAME_BLOCK_RECVACCEPT L"BlockRecvAccept"
-#define FW_NAME_ICMP_ERROR L"BlockIcmpError"
-#define FW_NAME_TCP_RST_ONCLOSE L"BlockTcpRstOnClose"
-#define FW_NAME_BOOTTIME L"BlockBoottime"
-#define FW_NAME_LOOPBACK L"AllowLoopback"
+#define FWN_BLOCK_CONNECTION L"BlockConnection"
+#define FWN_BLOCK_RECVACCEPT L"BlockRecvAccept"
+#define FWN_ICMP_ERROR L"BlockIcmpError"
+#define FWN_TCP_RST_ONCLOSE L"BlockTcpRstOnClose"
+#define FWN_BOOTTIME L"BlockBoottime"
+#define FWN_LOOPBACK L"AllowLoopback"
 
 // sublayer weight
-#define FW_SUBLAYER_WEIGHT 0xFFFF
+#define FWW_SUBLAYER 0xFFFF // highest weight for UINT16
 
 // filter weights
-#define FW_WEIGHT_HIGHEST_IMPORTANT 0x0F
-#define FW_WEIGHT_HIGHEST 0x0E
-#define FW_WEIGHT_RULE_BLOCKLIST 0x0D
-#define FW_WEIGHT_RULE_USER_BLOCK 0x0C
-#define FW_WEIGHT_RULE_USER 0x0B
-#define FW_WEIGHT_RULE_SYSTEM 0x0A
-#define FW_WEIGHT_APP 0x09
-#define FW_WEIGHT_LOWEST 0x08
+#define FWW_IMPORTANT 0x0F
+#define FWW_HIGHEST 0x0E
+#define FWW_RULE_BLOCKLIST 0x0D
+#define FWW_RULE_USER_BLOCK 0x0C
+#define FWW_RULE_USER 0x0B
+#define FWW_RULE_SYSTEM 0x0A
+#define FWW_APP 0x09
+#define FWW_LOWEST 0x08
+
+HANDLE _wfp_getenginehandle ();
+
+BOOLEAN _wfp_isfiltersapplying ();
 
 ENUM_INSTALL_TYPE _wfp_isproviderinstalled (
 	_In_ HANDLE engine_handle
@@ -36,16 +40,13 @@ ENUM_INSTALL_TYPE _wfp_issublayerinstalled (
 	_In_ HANDLE engine_handle
 );
 
-BOOLEAN _wfp_isfiltersapplying ();
-
 BOOLEAN _wfp_isfiltersinstalled ();
-
-HANDLE _wfp_getenginehandle ();
 
 ENUM_INSTALL_TYPE _wfp_getinstalltype ();
 
+_Ret_maybenull_
 PR_STRING _wfp_getlayername (
-	_In_ LPGUID layer_guid
+	_In_ LPCGUID layer_guid
 );
 
 BOOLEAN _wfp_initialize (
@@ -74,22 +75,18 @@ BOOLEAN _wfp_transact_commit (
 	_In_ ULONG line
 );
 
-ULONG _wfp_createcallout (
-	_In_ HANDLE engine_handle,
-	_In_ LPCGUID layer_key,
-	_In_ LPCGUID callout_key
-);
-
 BOOLEAN _wfp_deletefilter (
 	_In_ HANDLE engine_handle,
-	_In_ LPCGUID filter_id
+	_In_ LPCGUID filter_id,
+	_In_ LPCWSTR file_name,
+	_In_ ULONG line
 );
 
 ULONG _wfp_createfilter (
 	_In_ HANDLE engine_handle,
 	_In_ ENUM_TYPE_DATA type,
 	_In_opt_ LPCWSTR filter_name,
-	_In_reads_ (count) FWPM_FILTER_CONDITION0 *lpcond,
+	_In_reads_opt_ (count) FWPM_FILTER_CONDITION0 *lpcond,
 	_In_ UINT32 count,
 	_In_ LPCGUID layer_id,
 	_In_opt_ LPCGUID callout_id,
@@ -107,7 +104,7 @@ VOID _wfp_destroyfilters (
 
 VOID _wfp_destroyfilters_array (
 	_In_ HANDLE engine_handle,
-	_In_ PR_ARRAY guids,
+	_Inout_ PR_ARRAY guids,
 	_In_ LPCWSTR file_name,
 	_In_ ULONG line
 );
@@ -118,15 +115,15 @@ BOOLEAN _wfp_createrulefilter (
 	_In_opt_ LPCWSTR filter_name,
 	_In_opt_ ULONG app_hash,
 	_In_opt_ PITEM_FILTER_CONFIG filter_config,
-	_In_opt_ PR_STRINGREF rule_remote,
-	_In_opt_ PR_STRINGREF rule_local,
+	_In_opt_ PCR_STRINGREF rule_remote,
+	_In_opt_ PCR_STRINGREF rule_local,
 	_In_ UINT8 weight,
 	_In_ FWP_ACTION_TYPE action,
 	_In_ UINT32 flags,
 	_Inout_opt_ PR_ARRAY guids
 );
 
-BOOLEAN _wfp_create4filters (
+BOOLEAN _wfp_createrulefilters (
 	_In_ HANDLE engine_handle,
 	_In_ PR_LIST rules,
 	_In_ LPCWSTR file_name,
@@ -134,7 +131,7 @@ BOOLEAN _wfp_create4filters (
 	_In_ BOOLEAN is_intransact
 );
 
-BOOLEAN _wfp_create3filters (
+BOOLEAN _wfp_createappfilters (
 	_In_ HANDLE engine_handle,
 	_In_ PR_LIST rules,
 	_In_ LPCWSTR file_name,
@@ -142,7 +139,7 @@ BOOLEAN _wfp_create3filters (
 	_In_ BOOLEAN is_intransact
 );
 
-BOOLEAN _wfp_create2filters (
+BOOLEAN _wfp_createglobalfilters (
 	_In_ HANDLE engine_handle,
 	_In_ LPCWSTR file_name,
 	_In_ ULONG line,

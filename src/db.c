@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2019-2025 Henry++
+// Copyright (c) 2019-2026 Henry++
 
 #include "global.h"
 
@@ -41,7 +41,7 @@ NTSTATUS _app_db_encrypt (
 	if (!NT_SUCCESS (status))
 		return status;
 
-	_r_obj_initializebyteref (&key, PROFILE2_KEY);
+	_r_obj_initializebyteref (&key, PROFILE2_KEY_DEPRECATED);
 
 	status = _r_crypt_generatekey (&crypt_context, &key);
 
@@ -74,7 +74,7 @@ NTSTATUS _app_db_decrypt (
 	if (!NT_SUCCESS (status))
 		return status;
 
-	_r_obj_initializebyteref (&key, PROFILE2_KEY);
+	_r_obj_initializebyteref (&key, PROFILE2_KEY_DEPRECATED);
 
 	status = _r_crypt_generatekey (&crypt_context, &key);
 
@@ -133,9 +133,12 @@ BYTE _app_getprofiletype ()
 		{
 			return PROFILE2_ID_ENCRYPTED;
 		}
-	}
 
-	return PROFILE2_ID_PLAIN;
+		default:
+		{
+			return PROFILE2_ID_PLAIN;
+		}
+	}
 }
 
 _Success_ (NT_SUCCESS (return))
@@ -152,14 +155,7 @@ NTSTATUS _app_db_ishashvalid (
 	if (!NT_SUCCESS (status))
 		return status;
 
-	if (RtlEqualMemory (hash_bytes->buffer, new_hash_bytes->buffer, new_hash_bytes->length))
-	{
-		status = STATUS_SUCCESS;
-	}
-	else
-	{
-		status = STATUS_INVALID_IMAGE_HASH;
-	}
+	status = RtlEqualMemory (hash_bytes->buffer, new_hash_bytes->buffer, min (hash_bytes->length, new_hash_bytes->length)) ? STATUS_SUCCESS : STATUS_INVALID_IMAGE_HASH;
 
 	_r_obj_dereference (new_hash_bytes);
 
@@ -169,25 +165,19 @@ NTSTATUS _app_db_ishashvalid (
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfrombuffer (
 	_Inout_ PDB_INFORMATION db_info,
-	_In_ PR_STORAGE buffer,
-	_In_ ENUM_VERSION_XML min_version,
+	_In_ PR_STORAGE storage,
 	_In_ ENUM_TYPE_XML type
 )
 {
-	NTSTATUS status;
+	_r_obj_movereference ((PVOID_PTR)&db_info->bytes, _r_obj_createbyte4 (storage));
 
-	_r_obj_movereference ((PVOID_PTR)&db_info->bytes, _r_obj_createbyte4 (buffer));
-
-	status = _app_db_decodebuffer (db_info, type, min_version);
-
-	return status;
+	return _app_db_decodebuffer (db_info, type);
 }
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_openfromfile (
 	_Inout_ PDB_INFORMATION db_info,
 	_In_ PR_STRING path,
-	_In_ ENUM_VERSION_XML min_version,
 	_In_ ENUM_TYPE_XML type
 )
 {
@@ -197,21 +187,15 @@ NTSTATUS _app_db_openfromfile (
 	if (db_info->bytes)
 		_r_obj_clearreference ((PVOID_PTR)&db_info->bytes);
 
-	status = _r_fs_openfile (&hfile, &path->sr, GENERIC_READ, FILE_SHARE_READ, 0, FALSE);
+	status = _r_fs_openfile (&hfile, &path->sr, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, FALSE);
 
 	if (!NT_SUCCESS (status))
 		return status;
 
 	status = _r_fs_readbytes (hfile, &db_info->bytes);
 
-	if (!NT_SUCCESS (status))
-	{
-		NtClose (hfile);
-
-		return status;
-	}
-
-	status = _app_db_decodebuffer (db_info, type, min_version);
+	if (NT_SUCCESS (status))
+		status = _app_db_decodebuffer (db_info, type);
 
 	NtClose (hfile);
 
@@ -223,47 +207,47 @@ VOID _app_db_parse_app (
 )
 {
 	PITEM_APP ptr_app;
-	PR_STRING string;
-	PR_STRING path;
-	PR_STRING dos_path;
-	LONG64 timestamp;
-	LONG64 timer;
-	ULONG app_hash;
-	BOOLEAN is_undeletable;
-	BOOLEAN is_enabled;
-	BOOLEAN is_silent;
+	PR_STRING path, string;
+	LONG64 timer, timestamp;
+	NTSTATUS status;
 
 	path = _r_xml_getattribute_string (&db_info->xml_library, L"path");
 
 	if (_r_obj_isstringempty (path))
 		return;
 
-	// workaround for native paths
-	// https://github.com/henrypp/simplewall/issues/817
-	if (_r_str_isstartswith2 (&path->sr, L"\\device\\", TRUE))
+	if (_r_str_findchar (&path->sr, L'%', FALSE) != SIZE_MAX)
 	{
-		dos_path = _r_path_dospathfromnt (&path->sr);
+		status = _r_str_environmentexpandstring (&string, NULL, &path->sr);
 
-		if (dos_path)
-			_r_obj_movereference ((PVOID_PTR)&path, dos_path);
+		if (NT_SUCCESS (status))
+			_r_obj_movereference ((PVOID_PTR)&path, string);
 	}
+
+	// workaround for native paths (#817)
+	if (_r_str_isstartswith2 (&path->sr, L"\\device\\", TRUE))
+		_r_obj_movereference ((PVOID_PTR)&path, _r_path_dospathfromnt (&path->sr));
 
 	if (!_r_obj_isstringempty2 (path))
 	{
-		app_hash = _app_addapplication (NULL, DATA_UNKNOWN, path, NULL, NULL);
+		ptr_app = _app_addapplication (NULL, DATA_UNKNOWN, path, NULL, NULL);
 
-		if (app_hash)
+		if (ptr_app)
 		{
-			ptr_app = _app_getappitem (app_hash);
-
-			if (ptr_app)
 			{
-				is_enabled = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_enabled");
-				is_silent = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_silent");
-				is_undeletable = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_undeletable");
+				_app_setappinfo (ptr_app, INFO_IS_ENABLED, LongToPtr (_r_xml_getattribute_boolean (&db_info->xml_library, L"is_enabled")));
+				_app_setappinfo (ptr_app, INFO_IS_SILENT, LongToPtr (_r_xml_getattribute_boolean (&db_info->xml_library, L"is_silent")));
+				_app_setappinfo (ptr_app, INFO_IS_UNDELETABLE, LongToPtr (_r_xml_getattribute_boolean (&db_info->xml_library, L"is_undeletable")));
 
 				timestamp = _r_xml_getattribute_long64 (&db_info->xml_library, L"timestamp");
+
+				if (timestamp)
+					_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
+
 				timer = _r_xml_getattribute_long64 (&db_info->xml_library, L"timer");
+
+				if (timer)
+					_app_setappinfo (ptr_app, INFO_TIMER, &timer);
 
 				string = _r_xml_getattribute_string (&db_info->xml_library, L"hash");
 
@@ -293,21 +277,6 @@ VOID _app_db_parse_app (
 					}
 				}
 
-				if (is_silent)
-					_app_setappinfo (ptr_app, INFO_IS_SILENT, LongToPtr (is_silent));
-
-				if (is_enabled)
-					_app_setappinfo (ptr_app, INFO_IS_ENABLED, LongToPtr (is_enabled));
-
-				if (is_undeletable)
-					_app_setappinfo (ptr_app, INFO_IS_UNDELETABLE, LongToPtr (is_undeletable));
-
-				if (timestamp)
-					_app_setappinfo (ptr_app, INFO_TIMESTAMP, &timestamp);
-
-				if (timer)
-					_app_setappinfo (ptr_app, INFO_TIMER, &timer);
-
 				_r_obj_dereference (ptr_app);
 			}
 		}
@@ -321,37 +290,26 @@ VOID _app_db_parse_rule (
 	_In_ ENUM_TYPE_DATA type
 )
 {
+	PR_STRING comment, path_string = NULL, rule_name, rule_local, rule_remote, string;
 	PITEM_RULE_CONFIG ptr_config = NULL;
+	R_STRINGREF first_part, sr;
 	R_STRINGBUILDER sb;
-	R_STRINGREF first_part;
-	R_STRINGREF sr;
-	PR_STRING rule_name;
-	PR_STRING rule_remote;
-	PR_STRING rule_local;
-	PR_STRING path_string;
-	PR_STRING comment;
-	PR_STRING string;
-	LONG blocklist_spy_state;
-	LONG blocklist_update_state;
-	LONG blocklist_extra_state;
+	PITEM_RULE ptr_rule;
+	PITEM_APP ptr_app;
+	LONG blocklist_extra_state, blocklist_spy_state, blocklist_update_state;
+	ULONG app_hash;
 	FWP_DIRECTION direction;
 	FWP_ACTION_TYPE action;
-	UINT8 protocol;
 	ADDRESS_FAMILY af;
-	PITEM_RULE ptr_rule;
-	ULONG rule_hash;
-	ULONG app_hash;
+	UINT8 protocol;
 	BOOLEAN is_internal;
 	NTSTATUS status;
 
 	// check support version
 	status = _r_xml_getattribute (&db_info->xml_library, L"os_version", &sr);
 
-	if (SUCCEEDED (status))
-	{
-		if (!_app_isrulesupportedbyos (&sr))
-			return;
-	}
+	if (SUCCEEDED (status) && !_app_isrulesupportedbyos (&sr))
+		return;
 
 	rule_name = _r_xml_getattribute_string (&db_info->xml_library, L"name");
 
@@ -368,16 +326,6 @@ VOID _app_db_parse_rule (
 
 	ptr_rule = _app_addrule (rule_name, rule_remote, rule_local, direction, action, protocol, af);
 
-	_r_obj_dereference (rule_name);
-
-	if (rule_remote)
-		_r_obj_dereference (rule_remote);
-
-	if (rule_local)
-		_r_obj_dereference (rule_local);
-
-	rule_hash = _r_str_gethash (&ptr_rule->name->sr, TRUE);
-
 	if (!_r_obj_isstringempty (comment))
 	{
 		_r_obj_movereference ((PVOID_PTR)&ptr_rule->comment, comment);
@@ -388,30 +336,31 @@ VOID _app_db_parse_rule (
 			_r_obj_dereference (comment);
 	}
 
-	ptr_rule->type = (type == DATA_RULE_SYSTEM_USER) ? DATA_RULE_USER : type;
-	ptr_rule->is_forservices = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_services");
-	ptr_rule->is_readonly = (type != DATA_RULE_USER);
+	ptr_rule->is_forservice = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_services");
+	ptr_rule->is_fordriver = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_kernel");
 	ptr_rule->is_enabled = _r_xml_getattribute_boolean (&db_info->xml_library, L"is_enabled");
+	ptr_rule->type = (type == DATA_RULE_SYSTEM_USER) ? DATA_RULE_USER : type;
+	ptr_rule->is_readonly = (type != DATA_RULE_USER);
 
 	// calculate rule weight
 	if (type == DATA_RULE_BLOCKLIST)
 	{
-		ptr_rule->weight = FW_WEIGHT_RULE_BLOCKLIST;
+		ptr_rule->weight = FWW_RULE_BLOCKLIST;
 	}
 	else if (type == DATA_RULE_SYSTEM || type == DATA_RULE_SYSTEM_USER)
 	{
-		ptr_rule->weight = FW_WEIGHT_RULE_SYSTEM;
+		ptr_rule->weight = FWW_RULE_SYSTEM;
 	}
 	else if (type == DATA_RULE_USER)
 	{
-		ptr_rule->weight = (ptr_rule->action == FWP_ACTION_BLOCK) ? FW_WEIGHT_RULE_USER_BLOCK : FW_WEIGHT_RULE_USER;
+		ptr_rule->weight = (ptr_rule->action == FWP_ACTION_BLOCK) ? FWW_RULE_USER_BLOCK : FWW_RULE_USER;
 	}
 
 	if (type == DATA_RULE_BLOCKLIST)
 	{
-		blocklist_spy_state = _r_calc_clamp (_r_config_getlong (L"BlocklistSpyState", 2, NULL), 0, 2);
 		blocklist_update_state = _r_calc_clamp (_r_config_getlong (L"BlocklistUpdateState", 0, NULL), 0, 2);
 		blocklist_extra_state = _r_calc_clamp (_r_config_getlong (L"BlocklistExtraState", 0, NULL), 0, 2);
+		blocklist_spy_state = _r_calc_clamp (_r_config_getlong (L"BlocklistSpyState", 2, NULL), 0, 2);
 
 		_app_ruleblocklistsetstate (ptr_rule, blocklist_spy_state, blocklist_update_state, blocklist_extra_state);
 	}
@@ -426,14 +375,14 @@ VOID _app_db_parse_rule (
 	if (is_internal)
 	{
 		// internal rules
-		ptr_config = _app_getruleconfigitem (rule_hash);
+		ptr_config = _app_getruleconfigitem (ptr_rule->rule_hash);
 
 		if (ptr_config)
 			ptr_rule->is_enabled = ptr_config->is_enabled;
 	}
 
 	// load apps
-	_r_obj_initializestringbuilder (&sb, 256);
+	_r_obj_initializestringbuilder (&sb, 0);
 
 	string = _r_xml_getattribute_string (&db_info->xml_library, L"apps");
 
@@ -457,7 +406,7 @@ VOID _app_db_parse_rule (
 	if (!_r_obj_isstringempty2 (string))
 	{
 		if (db_info->version < XML_VERSION_3)
-			_r_str_replacechar (&string->sr, DIVIDER_RULE[0], DIVIDER_APP[0]);
+			_r_str_replacechar (&string->sr, DIVIDER_RULE[0], DIVIDER_APP[0]); // replace old profile divider ; to |
 
 		_r_obj_initializestringref2 (&sr, &string->sr);
 
@@ -465,24 +414,32 @@ VOID _app_db_parse_rule (
 		{
 			_r_str_splitatchar (&sr, DIVIDER_APP[0], &first_part, &sr);
 
-			status = _r_str_environmentexpandstring (NULL, &first_part, &path_string);
+			status = _r_str_environmentexpandstring (&path_string, NULL, &first_part);
 
 			if (status != STATUS_SUCCESS)
-				path_string = _r_obj_createstring2 (&first_part);
+				_r_obj_movereference ((PVOID_PTR)&path_string, _r_obj_createstring2 (&first_part));
 
 			app_hash = _r_str_gethash (&path_string->sr, TRUE);
 
 			if (app_hash)
 			{
-				if (ptr_rule->is_forservices && _app_issystemhash (app_hash))
+				if ((ptr_rule->is_fordriver || ptr_rule->is_forservice) && _app_issystemhash (app_hash))
 				{
 					_r_obj_dereference (path_string);
-
 					continue;
 				}
 
 				if (!_app_isappfound (app_hash))
-					app_hash = _app_addapplication (NULL, DATA_UNKNOWN, path_string, NULL, NULL);
+				{
+					ptr_app = _app_addapplication (NULL, DATA_UNKNOWN, path_string, NULL, NULL);
+
+					if (ptr_app)
+					{
+						app_hash = ptr_app->app_hash;
+
+						_r_obj_dereference (ptr_app);
+					}
+				}
 
 				if (app_hash)
 				{
@@ -497,11 +454,8 @@ VOID _app_db_parse_rule (
 		}
 
 		// check if no app is added into rule, then disable it!
-		if (ptr_rule->is_enabled)
-		{
-			if (_r_obj_isempty (ptr_rule->apps))
-				ptr_rule->is_enabled = FALSE;
-		}
+		if (ptr_rule->is_enabled && _r_obj_isempty (ptr_rule->apps))
+			ptr_rule->is_enabled = FALSE;
 	}
 
 	_r_queuedlock_acquireexclusive (&lock_rules);
@@ -509,6 +463,14 @@ VOID _app_db_parse_rule (
 	_r_queuedlock_releaseexclusive (&lock_rules);
 
 	_r_obj_deletestringbuilder (&sb);
+
+	if (rule_remote)
+		_r_obj_dereference (rule_remote);
+
+	if (rule_local)
+		_r_obj_dereference (rule_local);
+
+	_r_obj_dereference (rule_name);
 }
 
 VOID _app_db_parse_ruleconfig (
@@ -546,7 +508,7 @@ VOID _app_db_parse_ruleconfig (
 			ptr_config->apps = _r_xml_getattribute_string (&db_info->xml_library, L"apps");
 
 			if (ptr_config->apps && db_info->version < XML_VERSION_3)
-				_r_str_replacechar (&ptr_config->apps->sr, DIVIDER_RULE[0], DIVIDER_APP[0]);
+				_r_str_replacechar (&ptr_config->apps->sr, DIVIDER_RULE[0], DIVIDER_APP[0]); // replace old profile divider ; to |
 		}
 	}
 
@@ -558,8 +520,7 @@ NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
-	USHORT format[] = {COMPRESSION_FORMAT_LZNT1, COMPRESSION_FORMAT_XPRESS};
-	USHORT architecture;
+	USHORT architecture, format[] = {COMPRESSION_FORMAT_LZNT1, COMPRESSION_FORMAT_XPRESS};
 	PR_BYTE new_bytes;
 	BYTE profile_type;
 	NTSTATUS status;
@@ -567,10 +528,10 @@ NTSTATUS _app_db_decodebody (
 	if (db_info->bytes->length < PROFILE2_HEADER_LENGTH)
 		return STATUS_SUCCESS;
 
-	if (!RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)) || !RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc_old)))
+	if (!RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
 		return STATUS_SUCCESS;
 
-	profile_type = db_info->bytes->buffer[sizeof (profile2_fourcc)];
+	profile_type = db_info->bytes->buffer[PROFILE2_FOURCC];
 
 	// skip fourcc
 	_r_obj_skipbytelength (&db_info->bytes->sr, PROFILE2_FOURCC_LENGTH);
@@ -593,7 +554,6 @@ NTSTATUS _app_db_decodebody (
 				if (NT_SUCCESS (status))
 				{
 					_r_obj_movereference ((PVOID_PTR)&db_info->bytes, new_bytes);
-
 					break;
 				}
 			}
@@ -606,10 +566,8 @@ NTSTATUS _app_db_decodebody (
 			// decrypt bytes
 			status = _app_db_decrypt (&db_info->bytes->sr, &new_bytes);
 
-			if (!NT_SUCCESS (status))
-				return status;
-
-			_r_obj_movereference ((PVOID_PTR)&db_info->bytes, new_bytes);
+			if (NT_SUCCESS (status))
+				_r_obj_movereference ((PVOID_PTR)&db_info->bytes, new_bytes);
 
 			break;
 		}
@@ -623,10 +581,10 @@ NTSTATUS _app_db_decodebody (
 	if (!NT_SUCCESS (status))
 		return status;
 
-	if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)) || RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc_old, sizeof (profile2_fourcc_old)))
+	if (RtlEqualMemory (db_info->bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc)))
 		return STATUS_MORE_PROCESSING_REQUIRED;
 
-	// fix arm64 crash that was introduced by Micro$oft (issue #1228)
+	// fix ARM64 crash that was introduced by M$ (issue #1228)
 	if (NT_SUCCESS (_r_sys_getprocessorinformation (&architecture, NULL, NULL)))
 	{
 		if (architecture == PROCESSOR_ARCHITECTURE_ARM || architecture == PROCESSOR_ARCHITECTURE_ARM64)
@@ -635,7 +593,7 @@ NTSTATUS _app_db_decodebody (
 
 	// validate hash
 	if (db_info->hash)
-		status = _app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr);
+		return _app_db_ishashvalid (&db_info->bytes->sr, &db_info->hash->sr);
 
 	return status;
 }
@@ -647,10 +605,7 @@ NTSTATUS _app_db_encodebody (
 	_Out_ PR_BYTE_PTR out_buffer
 )
 {
-	PR_BYTE body_bytes;
-	PR_BYTE hash_value;
-	PR_BYTE new_bytes;
-	PR_BYTE bytes;
+	PR_BYTE body_bytes, bytes, hash_value, new_bytes = NULL;
 	NTSTATUS status;
 
 	*out_buffer = NULL;
@@ -664,12 +619,7 @@ NTSTATUS _app_db_encodebody (
 	status = _app_db_gethash (&bytes->sr, &hash_value);
 
 	if (!NT_SUCCESS (status))
-	{
-		_r_obj_dereference (hash_value);
-		_r_obj_dereference (bytes);
-
-		return status;
-	}
+		goto CleanupExit;
 
 	switch (profile_type)
 	{
@@ -686,12 +636,7 @@ NTSTATUS _app_db_encodebody (
 			status = _r_sys_compressbuffer (&new_bytes, COMPRESSION_FORMAT_LZNT1 | COMPRESSION_ENGINE_MAXIMUM, &bytes->sr);
 
 			if (!NT_SUCCESS (status))
-			{
-				_r_obj_dereference (hash_value);
-				_r_obj_dereference (bytes);
-
-				return status;
-			}
+				goto CleanupExit;
 
 			break;
 		}
@@ -702,19 +647,16 @@ NTSTATUS _app_db_encodebody (
 			status = _app_db_encrypt (&bytes->sr, &new_bytes);
 
 			if (!NT_SUCCESS (status))
-			{
-				_r_obj_dereference (hash_value);
-				_r_obj_dereference (bytes);
-
-				return status;
-			}
+				goto CleanupExit;
 
 			break;
 		}
 
 		default:
 		{
-			return STATUS_FILE_NOT_SUPPORTED;
+			status = STATUS_FILE_NOT_SUPPORTED;
+
+			goto CleanupExit;
 		}
 	}
 
@@ -723,6 +665,8 @@ NTSTATUS _app_db_encodebody (
 	status = _app_db_generatebody (profile_type, hash_value, bytes, &body_bytes);
 
 	*out_buffer = body_bytes;
+
+CleanupExit:
 
 	_r_obj_dereference (hash_value);
 	_r_obj_dereference (bytes);
@@ -754,9 +698,9 @@ NTSTATUS _app_db_generatebody (
 		{
 			bytes = _r_obj_createbyte_ex (NULL, PROFILE2_HEADER_LENGTH + buffer->length);
 
-			RtlCopyMemory (bytes->buffer, profile2_fourcc, sizeof (profile2_fourcc));
+			RtlCopyMemory (bytes->buffer, profile2_fourcc, PROFILE2_FOURCC);
 
-			ptr = PTR_ADD_OFFSET (bytes->buffer, sizeof (profile2_fourcc));
+			ptr = PTR_ADD_OFFSET (bytes->buffer, PROFILE2_FOURCC);
 			RtlCopyMemory (ptr, &profile_type, sizeof (BYTE));
 
 			ptr = PTR_ADD_OFFSET (bytes->buffer, PROFILE2_FOURCC_LENGTH);
@@ -784,15 +728,18 @@ NTSTATUS _app_db_generatebody (
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebuffer (
 	_Inout_ PDB_INFORMATION db_info,
-	_In_ ENUM_TYPE_XML type,
-	_In_ ENUM_VERSION_XML min_version
+	_In_ ENUM_TYPE_XML type
 )
 {
 	ULONG attempts = 6;
 	NTSTATUS status;
 
-	if (!db_info->bytes)
-		return STATUS_BUFFER_ALL_ZEROS;
+	if (_r_obj_isbyteempty (db_info->bytes))
+		return STATUS_NO_DATA_DETECTED;
+
+	// check for large buffer size
+	if (db_info->bytes->length >= PR_SIZE_BUFFER_MINIMUM)
+		return STATUS_BUFFER_OVERFLOW; // STATUS_FILE_TOO_LARGE
 
 	do
 	{
@@ -814,14 +761,16 @@ NTSTATUS _app_db_decodebuffer (
 	if (!_r_xml_findchildbytagname (&db_info->xml_library, L"root"))
 		return STATUS_DATA_ERROR;
 
+	db_info->version = (ENUM_VERSION_XML)_r_xml_getattribute_long (&db_info->xml_library, L"version");
+	db_info->type = (ENUM_TYPE_XML)_r_xml_getattribute_long (&db_info->xml_library, L"type");
 	db_info->timestamp = _r_xml_getattribute_long64 (&db_info->xml_library, L"timestamp");
-	db_info->type = _r_xml_getattribute_long (&db_info->xml_library, L"type");
-	db_info->version = _r_xml_getattribute_long (&db_info->xml_library, L"version");
 
+	// validate type
 	if (db_info->type != type)
-		return STATUS_NDIS_INVALID_DATA;
+		return STATUS_OBJECT_TYPE_MISMATCH;
 
-	if (db_info->version < min_version)
+	// validate version range
+	if (db_info->version < XML_VERSION_MINIMAL && db_info->version > XML_VERSION_MAXIMUM)
 		return STATUS_FILE_NOT_SUPPORTED;
 
 	return STATUS_SUCCESS;
@@ -916,13 +865,12 @@ NTSTATUS _app_db_savetofile (
 {
 	NTSTATUS status;
 
-	status = _r_xml_createstream (&db_info->xml_library, NULL, 1024);
+	status = _r_xml_createstream (&db_info->xml_library, NULL, 0x400);
 
 	if (FAILED (status))
 		return status;
 
 	_r_xml_writestartdocument (&db_info->xml_library);
-
 	_r_xml_writestartelement (&db_info->xml_library, L"root");
 
 	_r_xml_setattribute_long (&db_info->xml_library, L"version", version);
@@ -949,7 +897,17 @@ NTSTATUS _app_db_save_streamtofile (
 {
 	PR_BYTE new_bytes;
 	HANDLE hfile;
+	ULONG attributes;
 	NTSTATUS status;
+
+	// HACK!!! remove read-only attribute to fix STATUS_ACCESS_DENIED (issue #2048) [thx @jekesx]
+	if (_r_fs_isexists (&path->sr))
+	{
+		_r_fs_getattributes (&path->sr, &attributes);
+
+		if ((attributes & FILE_ATTRIBUTE_READONLY) == FILE_ATTRIBUTE_READONLY)
+			_r_fs_setattributes (&path->sr, NULL, attributes & ~FILE_ATTRIBUTE_READONLY);
+	}
 
 	status = _r_fs_createfile (&hfile, &path->sr, FILE_OVERWRITE_IF, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_ATTRIBUTE_NORMAL, 0, FALSE, NULL);
 
@@ -976,7 +934,6 @@ FORCEINLINE VOID _app_db_writeelementstart (
 )
 {
 	_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t");
-
 	_r_xml_writestartelement (&db_info->xml_library, name);
 }
 
@@ -985,7 +942,6 @@ FORCEINLINE VOID _app_db_writeelementend (
 )
 {
 	_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t");
-
 	_r_xml_writeendelement (&db_info->xml_library);
 }
 
@@ -994,9 +950,9 @@ VOID _app_db_save_app (
 )
 {
 	PITEM_APP ptr_app = NULL;
+	PR_STRING expanded_path;
 	ULONG_PTR enum_key = 0;
 	BOOLEAN is_keepunusedapps;
-	BOOLEAN is_usedapp;
 
 	is_keepunusedapps = _r_config_getboolean (L"IsKeepUnusedApps", TRUE, NULL);
 
@@ -1009,20 +965,28 @@ VOID _app_db_save_app (
 		if (_r_obj_isstringempty (ptr_app->original_path))
 			continue;
 
-		is_usedapp = _app_isappused (ptr_app);
-
 		// do not save unused apps/uwp apps...
-		if (!is_usedapp && (!is_keepunusedapps || (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)))
+		if (!_app_isappused (ptr_app) && (!is_keepunusedapps || (ptr_app->type == DATA_APP_SERVICE || ptr_app->type == DATA_APP_UWP)))
 		{
 			//_app_deleteappitem (_r_app_gethwnd (), ptr_app->type, ptr_app->app_hash);
-
 			continue;
 		}
 
 		_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t\t");
 		_r_xml_writestartelement (&db_info->xml_library, L"item");
 
-		_r_xml_setattribute (&db_info->xml_library, L"path", ptr_app->original_path->buffer);
+		if (_r_config_getboolean (L"IsSaveAppsWithEnvironment", TRUE, NULL))
+		{
+			expanded_path = _r_str_environmentunexpandstring (&ptr_app->original_path->sr);
+
+			_r_xml_setattribute (&db_info->xml_library, L"path", expanded_path->buffer);
+
+			_r_obj_dereference (expanded_path);
+		}
+		else
+		{
+			_r_xml_setattribute (&db_info->xml_library, L"path", ptr_app->original_path->buffer);
+		}
 
 		if (!_r_obj_isstringempty (ptr_app->hash) && _r_config_getboolean (L"IsHashesEnabled", FALSE, NULL))
 			_r_xml_setattribute (&db_info->xml_library, L"hash", ptr_app->hash->buffer);
@@ -1071,13 +1035,12 @@ VOID _app_db_save_rule (
 
 	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
 	{
-		ptr_rule = _r_obj_getlistitem (rules_list, i);
+		ptr_rule = (PITEM_RULE)_r_obj_getlistitem (rules_list, i);
 
-		if (!ptr_rule || ptr_rule->is_readonly || _r_obj_isstringempty (ptr_rule->name))
+		if (!ptr_rule || ptr_rule->is_readonly)
 			continue;
 
 		_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t\t");
-
 		_r_xml_writestartelement (&db_info->xml_library, L"item");
 
 		_r_xml_setattribute (&db_info->xml_library, L"name", ptr_rule->name->buffer);
@@ -1139,7 +1102,7 @@ VOID _app_db_save_ruleconfig (
 	PITEM_RULE ptr_rule;
 	PR_STRING apps_string;
 	ULONG_PTR enum_key = 0;
-	ULONG_PTR rule_hash;
+	ULONG rule_hash;
 	BOOLEAN is_enabled_default;
 
 	_app_db_writeelementstart (db_info, L"rules_config");
@@ -1173,7 +1136,6 @@ VOID _app_db_save_ruleconfig (
 			continue;
 
 		_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t\t");
-
 		_r_xml_writestartelement (&db_info->xml_library, L"item");
 
 		_r_xml_setattribute (&db_info->xml_library, L"name", ptr_config->name->buffer);
@@ -1182,7 +1144,7 @@ VOID _app_db_save_ruleconfig (
 		{
 			_r_xml_setattribute (&db_info->xml_library, L"apps", apps_string->buffer);
 
-			_r_obj_clearreference ((PVOID_PTR)&apps_string);
+			_r_obj_dereference (apps_string);
 		}
 
 		_r_xml_setattribute_boolean (&db_info->xml_library, L"is_enabled", ptr_config->is_enabled);
@@ -1237,9 +1199,10 @@ LPCWSTR _app_db_getconnectionstatename (
 
 		case MIB_TCP_STATE_DELETE_TCB:
 			return L"Delete TCB";
-	}
 
-	return NULL;
+		default:
+			return NULL;
+	}
 }
 
 _Ret_maybenull_
@@ -1251,56 +1214,29 @@ PR_STRING _app_db_getdirectionname (
 {
 	LPCWSTR text = NULL;
 
-	if (is_localized)
+	switch (direction)
 	{
-		switch (direction)
+		case FWP_DIRECTION_OUTBOUND:
 		{
-			case FWP_DIRECTION_OUTBOUND:
-			{
-				text = _r_locale_getstring (IDS_DIRECTION_1);
-
-				break;
-			}
-
-			case FWP_DIRECTION_INBOUND:
-			{
-				text = _r_locale_getstring (IDS_DIRECTION_2);
-
-				break;
-			}
-
-			case FWP_DIRECTION_MAX:
-			{
-				text = _r_locale_getstring (IDS_ANY);
-
-				break;
-			}
+			text = is_localized ? _r_locale_getstring (IDS_DIRECTION_1) : SZ_DIRECTION_OUT;
+			break;
 		}
-	}
-	else
-	{
-		switch (direction)
+
+		case FWP_DIRECTION_INBOUND:
 		{
-			case FWP_DIRECTION_OUTBOUND:
-			{
-				text = SZ_DIRECTION_OUT;
+			text = is_localized ? _r_locale_getstring (IDS_DIRECTION_2) : SZ_DIRECTION_IN;
+			break;
+		}
 
-				break;
-			}
+		case FWP_DIRECTION_MAX:
+		{
+			text = is_localized ? _r_locale_getstring (IDS_ANY) : SZ_DIRECTION_ANY;
+			break;
+		}
 
-			case FWP_DIRECTION_INBOUND:
-			{
-				text = SZ_DIRECTION_IN;
-
-				break;
-			}
-
-			case FWP_DIRECTION_MAX:
-			{
-				text = SZ_DIRECTION_ANY;
-
-				break;
-			}
+		default:
+		{
+			return NULL; // unknown direction
 		}
 	}
 
@@ -1315,7 +1251,8 @@ PR_STRING _app_db_getdirectionname (
 
 LPCWSTR _app_db_getprotoname (
 	_In_ ULONG proto,
-	_In_ ADDRESS_FAMILY af
+	_In_ ADDRESS_FAMILY af,
+	_In_opt_ LPCWSTR default_value
 )
 {
 	switch (proto)
@@ -1384,6 +1321,18 @@ LPCWSTR _app_db_getprotoname (
 		case IPPROTO_DSTOPTS:
 			return L"ipv6-opts";
 
+		case IPPROTO_ND:
+			return L"nd";
+
+		case IPPROTO_ICLFXBM:
+			return L"wideband-monitoring";
+
+		case IPPROTO_PIM:
+			return L"pim";
+
+		case IPPROTO_PGM:
+			return L"pgm";
+
 		case IPPROTO_L2TP:
 			return L"l2tp";
 
@@ -1394,9 +1343,10 @@ LPCWSTR _app_db_getprotoname (
 			return L"raw";
 	}
 
-	return L"n/a";
+	return default_value;
 }
 
+// source: https://github.com/nmap/nmap/blob/master/nmap-services
 _Ret_maybenull_
 LPCWSTR _app_db_getservicename (
 	_In_ UINT16 port,
@@ -3329,7 +3279,7 @@ LPCWSTR _app_db_getservicename (
 			}
 			else if (proto == IPPROTO_UDP)
 			{
-				return L"opsmgr"; // Microsoft Operations Manager
+				return L"opsmgr"; // M$ Operations Manager
 			}
 
 			break;
@@ -3569,7 +3519,7 @@ LPCWSTR _app_db_getservicename (
 			return L"dpi-proxy";
 
 		case 1801:
-			return L"msmq"; // Microsoft Message Queuing
+			return L"msmq"; // M$ Message Queuing
 
 		case 1833:
 			return L"udpradio";
@@ -3686,22 +3636,22 @@ LPCWSTR _app_db_getservicename (
 			return L"raw-serial"; // Raw Async Serial Link
 
 		case 2171:
-			return L"msfw-storage"; // MS Firewall Storage
+			return L"msfw-storage"; // M$ Firewall Storage
 
 		case 2172:
-			return L"msfw-s-storage"; // MS Firewall SecureStorage
+			return L"msfw-s-storage"; // M$ Firewall SecureStorage
 
 		case 2173:
-			return L"msfw-replica"; // MS Firewall Replication
+			return L"msfw-replica"; // M$ Firewall Replication
 
 		case 2174:
-			return L"msfw-array"; // MS Firewall Intra Array
+			return L"msfw-array"; // M$ Firewall Intra Array
 
 		case 2175:
-			return L"ms-airsync"; // Microsoft Desktop AirSync Protocol
+			return L"ms-airsync"; // M$ Desktop AirSync Protocol
 
 		case 2179:
-			return L"ms-vmrdp"; // Microsoft RDP for virtual machines
+			return L"ms-vmrdp"; // M$ RDP for virtual machines
 
 		case 2191:
 			return L"tvbus";
@@ -3754,13 +3704,13 @@ LPCWSTR _app_db_getservicename (
 		}
 
 		case 2382:
-			return L"ms-olap3"; // Microsoft OLAP
+			return L"ms-olap3"; // M$ OLAP
 
 		case 2383:
-			return L"ms-olap4"; // Microsoft OLAP
+			return L"ms-olap4"; // M$ OLAP
 
 		case 2525:
-			return L"ms-v-worlds"; // MS V-Worlds
+			return L"ms-v-worlds"; // M$ V-Worlds
 
 		case 2679:
 			return L"syncserverssl";
@@ -3851,7 +3801,7 @@ LPCWSTR _app_db_getservicename (
 			return L"ssql"; // Scalable SQL
 
 		case 3389:
-			return L"ms-wbt-server"; // Microsoft Remote Display Protocol (aka ms-term-serv, microsoft-rdp)
+			return L"ms-wbt-server"; // M$ Remote Display Protocol (aka ms-term-serv, microsoft-rdp)
 
 		case 3407:
 			return L"ldap-admin";
@@ -3927,7 +3877,7 @@ LPCWSTR _app_db_getservicename (
 		}
 
 		case 4554:
-			return L"msfrs"; // MS FRS Replication
+			return L"msfrs"; // M$ FRS Replication
 
 		case 4687:
 			return L"nst"; // Network Scanner Tool FTP
@@ -3999,7 +3949,7 @@ LPCWSTR _app_db_getservicename (
 			return L"ms-s-sideshow";
 
 		case 5362:
-			return L"serverwsd2"; // Microsoft Windows Server WSD2 Service
+			return L"serverwsd2"; // M$ Windows Server WSD2 Service
 
 		case 5432:
 			return L"postgresql";
@@ -4150,12 +4100,12 @@ LPCWSTR _app_db_getservicename (
 			return L"x11";
 
 		case 6074:
-			return L"max"; // Microsoft Max
+			return L"max"; // M$ Max
 
 		case 6076:
 		{
 			if (proto == IPPROTO_TCP)
-				return L"msft-dpm-cert"; // Microsoft DPM WCF Certificates
+				return L"msft-dpm-cert"; // M$ DPM WCF Certificates
 
 			break;
 		}
@@ -4197,7 +4147,6 @@ LPCWSTR _app_db_getservicename (
 
 			break;
 		}
-
 
 		case 6881:
 		{

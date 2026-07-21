@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2022-2024 Henry++
+// Copyright (c) 2022-2026 Henry++
 
 #include "routine.h"
 
@@ -15,14 +15,13 @@
 _Success_ (return)
 BOOLEAN _app_uwp_loadpackageinfo (
 	_In_ PR_STRING package_name,
-	_Inout_ PR_STRING_PTR name_ptr,
-	_Inout_ PR_STRING_PTR path_ptr
+	_Inout_ PR_STRING_PTR out_name,
+	_Inout_ PR_STRING_PTR out_path
 )
 {
+	winrt::Windows::ApplicationModel::PackageStatus package_status = 0;
 	winrt::Windows::ApplicationModel::Package package = NULL;
-	winrt::Windows::ApplicationModel::PackageStatus status = 0;
-	winrt::hstring display_name;
-	winrt::hstring path;
+	winrt::hstring display_name, path;
 
 	package = winrt::Windows::Management::Deployment::PackageManager{}.FindPackage (package_name->buffer);
 
@@ -31,9 +30,9 @@ BOOLEAN _app_uwp_loadpackageinfo (
 
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
 	{
-		status = package.Status ();
+		package_status = package.Status ();
 
-		if (status.Disabled () || status.NotAvailable ())
+		if (package_status.Disabled () || package_status.NotAvailable ())
 			return FALSE;
 	}
 
@@ -45,18 +44,18 @@ BOOLEAN _app_uwp_loadpackageinfo (
 
 	if (display_name.empty ())
 	{
-		*name_ptr = _r_obj_createstring2 (&package_name->sr);
+		*out_name = _r_obj_createstring2 (&package_name->sr);
 	}
 	else
 	{
-		if (display_name == L"1527c705-839a-4832-9118-54d4Bd6a0c89")
+		if (_r_str_compare (display_name.c_str (), L"1527C705-839A-4832-9118-54D4BD6A0C89", TRUE) == 0)
 			display_name = L"File Picker"; // HACK!!!
 
-		*name_ptr = _r_obj_createstring_ex (display_name.c_str (), display_name.size () * sizeof (WCHAR));
+		*out_name = _r_obj_createstring_ex (display_name.c_str (), display_name.size () * sizeof (WCHAR));
 	}
 
 	if (!path.empty ())
-		*path_ptr = _r_obj_createstring_ex (path.c_str (), path.size () * sizeof (WCHAR));
+		*out_path = _r_obj_createstring_ex (path.c_str (), path.size () * sizeof (WCHAR));
 
 	return TRUE;
 }
@@ -64,25 +63,21 @@ BOOLEAN _app_uwp_loadpackageinfo (
 _Success_ (return)
 BOOLEAN _app_uwp_getpackageinfo (
 	_In_ PR_STRING package_name,
-	_Out_ PR_STRING_PTR name_ptr,
-	_Out_ PR_STRING_PTR path_ptr
+	_Out_ PR_STRING_PTR out_name,
+	_Out_ PR_STRING_PTR out_path
 )
 {
-	BOOLEAN status = FALSE;
-
-	*name_ptr = NULL;
-	*path_ptr = NULL;
+	*out_name = NULL;
+	*out_path = NULL;
 
 	__try
 	{
-		status = _app_uwp_loadpackageinfo (package_name, name_ptr, path_ptr);
+		return _app_uwp_loadpackageinfo (package_name, out_name, out_path);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
-		*name_ptr = _r_obj_createstring2 (&package_name->sr);
+		*out_name = _r_obj_createstring2 (&package_name->sr);
 
 		return TRUE;
 	}
-
-	return status;
 }

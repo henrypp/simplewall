@@ -36,6 +36,7 @@ VOID NTAPI _app_dereferencenetwork (
 VOID NTAPI _app_dereferencelog (
 	_In_ PVOID entry
 );
+
 VOID NTAPI _app_dereferencerule (
 	_In_ PVOID entry
 );
@@ -44,7 +45,12 @@ VOID _app_addcachetable (
 	_Inout_ PR_HASHTABLE hashtable,
 	_In_ ULONG hash_code,
 	_In_ PR_QUEUED_LOCK spin_lock,
-	_In_opt_ PR_STRING string
+	_In_opt_ PVOID string
+);
+
+BOOLEAN _app_checkipisnotlocal (
+	_In_ ADDRESS_FAMILY af,
+	_In_ LPCVOID address
 );
 
 BOOLEAN _app_getcachetable (
@@ -69,17 +75,17 @@ PR_STRING _app_formataddress (
 );
 
 PR_STRING _app_formataddress_interlocked (
-	_In_ PVOID volatile *string,
+	_In_ volatile PVOID_PTR string,
 	_In_ ADDRESS_FAMILY af,
 	_In_ LPCVOID address
 );
 
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_formatip (
-	_In_ ADDRESS_FAMILY af,
-	_In_ LPCVOID address,
 	_Out_writes_to_ (buffer_length, buffer_length) LPWSTR buffer,
 	_In_ ULONG buffer_length,
+	_In_ ADDRESS_FAMILY af,
+	_In_ LPCVOID address,
 	_In_ BOOLEAN is_checkempty
 );
 
@@ -122,8 +128,7 @@ PR_STRING _app_getappdisplayname (
 
 _Ret_maybenull_
 PR_STRING _app_getapppath (
-	_In_ PITEM_APP ptr_app,
-	_In_ BOOLEAN is_returnshort
+	_In_ PITEM_APP ptr_app
 );
 
 VOID _app_getfileicon (
@@ -153,19 +158,9 @@ ULONG _app_addcolor (
 	_In_ BOOLEAN is_enabled
 );
 
+_Success_ (return != 0)
 COLORREF _app_getcolorvalue (
 	_In_ ULONG color_hash
-);
-
-VOID _app_generate_rulescontrol (
-	_In_ HMENU hsubmenu,
-	_In_ ULONG app_hash,
-	_In_opt_ PITEM_LOG ptr_log
-);
-
-VOID _app_generate_timerscontrol (
-	_In_ HMENU hsubmenu,
-	_In_ ULONG app_hash
 );
 
 BOOLEAN _app_setruletoapp (
@@ -178,19 +173,13 @@ BOOLEAN _app_setruletoapp (
 
 _Success_ (return)
 BOOLEAN _app_parsenetworkstring (
-	_In_ LPCWSTR network_string,
+	_In_ PCR_STRINGREF network_string,
 	_Inout_ PITEM_ADDRESS address
 );
 
 _Success_ (return)
-BOOLEAN _app_preparserulestring (
-	_In_ PR_STRINGREF rule,
-	_Out_ PITEM_ADDRESS address
-);
-
-_Success_ (return)
 BOOLEAN _app_parserulestring (
-	_In_opt_ PR_STRINGREF rule,
+	_In_opt_ PCR_STRINGREF rule,
 	_Out_ PITEM_ADDRESS address
 );
 
@@ -201,7 +190,7 @@ PR_STRING _app_resolveaddress (
 );
 
 PR_STRING _app_resolveaddress_interlocked (
-	_In_ PVOID volatile *string,
+	_In_ volatile PVOID_PTR string,
 	_In_ ADDRESS_FAMILY af,
 	_In_ LPCVOID address,
 	_In_ BOOLEAN is_resolutionenabled
@@ -223,7 +212,7 @@ VOID _app_getfileinformation (
 VOID _app_queue_resolver (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
-	_In_ ULONG_PTR hash_code,
+	_In_ ULONG hash_code,
 	_In_ PVOID base_address
 );
 

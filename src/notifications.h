@@ -34,7 +34,7 @@ PNOTIFY_CONTEXT _app_notify_getcontext (
 
 VOID _app_notify_setcontext (
 	_In_ HWND hwnd,
-	_In_opt_ PNOTIFY_CONTEXT context
+	_Inout_opt_ PNOTIFY_CONTEXT context
 );
 
 BOOLEAN _app_notify_command (
@@ -64,10 +64,12 @@ PITEM_LOG _app_notify_getobject (
 	_In_ ULONG app_hash
 );
 
+_Success_ (return != 0)
 ULONG _app_notify_getapp_id (
 	_In_ HWND hwnd
 );
 
+_Success_ (return != 0)
 ULONG _app_notify_getnextapp_id (
 	_In_ HWND hwnd
 );

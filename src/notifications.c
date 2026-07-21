@@ -8,9 +8,7 @@ HWND _app_notify_getwindow (
 	_In_opt_ PITEM_LOG ptr_log
 )
 {
-	HWND hwnd;
-
-	hwnd = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, NULL);
+	HWND hwnd = (HWND)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, NULL);
 
 	if (hwnd)
 	{
@@ -27,7 +25,7 @@ HWND _app_notify_getwindow (
 
 	_r_sys_waitforsingleobject (config.hnotify_evt, 2000);
 
-	return _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, NULL);
+	return (HWND)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, NULL);
 }
 
 _Ret_maybenull_
@@ -35,23 +33,18 @@ PNOTIFY_CONTEXT _app_notify_getcontext (
 	_In_ HWND hwnd
 )
 {
-	PNOTIFY_CONTEXT context;
-
-	context = _r_wnd_getcontext (hwnd, SHORT_MAX);
-
-	return context;
+	return (PNOTIFY_CONTEXT)_r_wnd_getcontext (hwnd, SHORT_MAX);
 }
 
 VOID _app_notify_setcontext (
 	_In_ HWND hwnd,
-	_In_opt_ PNOTIFY_CONTEXT context
+	_Inout_opt_ PNOTIFY_CONTEXT context
 )
 {
 	if (context)
+	{
 		context->hwnd = hwnd;
 
-	if (context)
-	{
 		_r_wnd_setcontext (hwnd, SHORT_MAX, context);
 	}
 	else
@@ -68,7 +61,7 @@ BOOLEAN _app_notify_command (
 {
 	PITEM_APP ptr_app;
 	PR_LIST rules;
-	HANDLE hengine;
+	HWND hmain;
 	ULONG app_hash;
 
 	app_hash = _app_notify_getapp_id (hwnd);
@@ -77,48 +70,45 @@ BOOLEAN _app_notify_command (
 	if (!ptr_app)
 		return FALSE;
 
+	hmain = _r_app_gethwnd ();
+
 	_app_notify_freeobject (hwnd, ptr_app);
 
-	rules = _r_obj_createlist (4, NULL);
+	rules = _r_obj_createlist (0x02, NULL);
 
 	if (button_id == IDC_ALLOW_BTN || button_id == IDC_BLOCK_BTN)
 	{
 		ptr_app->is_enabled = (button_id == IDC_ALLOW_BTN);
 		ptr_app->is_silent = (button_id == IDC_BLOCK_BTN);
 
-		if (ptr_app->is_enabled && seconds)
+		if (ptr_app->is_enabled && seconds > 0)
 		{
-			_app_timer_set (_r_app_gethwnd (), ptr_app, seconds);
+			_app_timer_set (hmain, ptr_app, seconds);
 		}
 		else
 		{
-			_app_listview_updateitemby_param (_r_app_gethwnd (), app_hash, TRUE);
+			if (hmain)
+				_app_listview_updateitemby_param (hmain, app_hash, TRUE);
 		}
 
 		_r_obj_addlistitem (rules, ptr_app, NULL);
 	}
 	else if (button_id == IDC_NEXT_BTN)
 	{
-		// NOTHING!
+		NOTHING;
 	}
 	else if (button_id == IDM_DISABLENOTIFICATIONS)
 	{
 		ptr_app->is_silent = TRUE;
 	}
 
-	ptr_app->last_notify = _r_unixtime_now ();
+	ptr_app->last_notify = _r_unixtime_now (); // store last display time
 
-	if (rules->count)
-	{
-		if (_wfp_isfiltersinstalled ())
-		{
-			hengine = _wfp_getenginehandle ();
+	if (!_r_obj_isempty2 (rules) && _wfp_isfiltersinstalled ())
+		_wfp_createappfilters (_wfp_getenginehandle (), rules, DBG_ARG, FALSE);
 
-			_wfp_create3filters (hengine, rules, DBG_ARG, FALSE);
-		}
-	}
-
-	_app_listview_updateby_id (_r_app_gethwnd (), ptr_app->type, PR_UPDATE_TYPE);
+	if (hmain)
+		_app_listview_updateby_id (hmain, ptr_app->type, PR_UPDATE_TYPE);
 
 	_r_obj_dereference (ptr_app);
 	_r_obj_dereference (rules);
@@ -134,27 +124,23 @@ BOOLEAN _app_notify_addobject (
 	_Inout_ PITEM_APP ptr_app
 )
 {
-	LONG64 current_time;
-	LONG64 notification_timeout;
+	LONG64 current_time, notification_timeout;
 
-	current_time = _r_unixtime_now ();
 	notification_timeout = _r_config_getlong64 (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT, NULL);
+	current_time = _r_unixtime_now ();
 
 	// check for last display time
-	if (notification_timeout && ((current_time - ptr_app->last_notify) <= notification_timeout))
+	if (notification_timeout > 0 && ((current_time - ptr_app->last_notify) <= notification_timeout))
 		return FALSE;
 
 	ptr_app->last_notify = current_time;
 
-	_r_obj_swapreference (&ptr_app->notification, ptr_log);
+	_r_obj_swapreference ((PVOID_PTR)&ptr_app->notification, ptr_log);
 
 	if (_r_wnd_sendmessage (hwnd, 0, WM_NOTIFICATION, 0, (LPARAM)ptr_app->notification))
 	{
-		if (_r_config_getboolean (L"IsNotificationsSound", TRUE, NULL))
-		{
-			if (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE, NULL) || !_r_wnd_isfullscreenmode ())
-				_app_notify_playsound ();
-		}
+		if (_r_config_getboolean (L"IsNotificationsSound", TRUE, NULL) && (!_r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE, NULL) || !_r_wnd_isfullscreenmode ()))
+			_app_notify_playsound ();
 
 		return TRUE;
 	}
@@ -167,26 +153,22 @@ VOID _app_notify_freeobject (
 	_Inout_ PITEM_APP ptr_app
 )
 {
-	ULONG_PTR app_hash;
-
 	if (!hwnd)
 		hwnd = _app_notify_getwindow (NULL);
 
 	if (ptr_app->notification)
-		_r_obj_clearreference (&ptr_app->notification);
+		_r_obj_clearreference ((PVOID_PTR)&ptr_app->notification);
 
-	if (!hwnd)
-		return;
-
-	app_hash = _app_notify_getnextapp_id (hwnd);
-
-	if (app_hash)
+	if (hwnd)
 	{
-		_app_notify_refresh (hwnd);
-	}
-	else
-	{
-		DestroyWindow (hwnd);
+		if (_app_notify_getnextapp_id (hwnd) != 0)
+		{
+			_app_notify_refresh (hwnd);
+		}
+		else
+		{
+			DestroyWindow (hwnd);
+		}
 	}
 }
 
@@ -203,7 +185,7 @@ PITEM_LOG _app_notify_getobject (
 	if (!ptr_app)
 		return NULL;
 
-	ptr_log = _r_obj_referencesafe (ptr_app->notification);
+	ptr_log = (PITEM_LOG)_r_obj_referencesafe (ptr_app->notification);
 
 	_r_obj_dereference (ptr_app);
 
@@ -215,30 +197,22 @@ HICON _app_notify_getapp_icon (
 	_In_ HWND hwnd
 )
 {
-	PNOTIFY_CONTEXT context;
+	PNOTIFY_CONTEXT context = _app_notify_getcontext (hwnd);
 
-	context = _app_notify_getcontext (hwnd);
-
-	if (!context)
-		return NULL;
-
-	return context->hicon;
+	return context ? context->hicon : NULL;
 }
 
+_Success_ (return != 0)
 ULONG _app_notify_getapp_id (
 	_In_ HWND hwnd
 )
 {
-	PNOTIFY_CONTEXT context;
+	PNOTIFY_CONTEXT context = _app_notify_getcontext (hwnd);
 
-	context = _app_notify_getcontext (hwnd);
-
-	if (!context)
-		return 0;
-
-	return context->app_hash;
+	return context ? context->app_hash : 0;
 }
 
+_Success_ (return != 0)
 ULONG _app_notify_getnextapp_id (
 	_In_ HWND hwnd
 )
@@ -265,6 +239,7 @@ ULONG _app_notify_getnextapp_id (
 			continue;
 
 		app_hash = ptr_app->app_hash;
+
 		break;
 	}
 
@@ -306,14 +281,10 @@ VOID _app_notify_setapp_id (
 	_In_opt_ ULONG app_hash
 )
 {
-	PNOTIFY_CONTEXT context;
+	PNOTIFY_CONTEXT context = _app_notify_getcontext (hwnd);
 
-	context = _app_notify_getcontext (hwnd);
-
-	if (!context)
-		return;
-
-	context->app_hash = app_hash;
+	if (context)
+		context->app_hash = app_hash;
 }
 
 VOID _app_notify_show (
@@ -321,11 +292,8 @@ VOID _app_notify_show (
 	_In_ PITEM_LOG ptr_log
 )
 {
-	PR_STRING localized_string = NULL;
-	PR_STRING string = NULL;
-	PR_STRING loading;
-	PR_STRING empty;
-	WCHAR window_title[128];
+	PR_STRING empty, loading, localized_string = NULL, string = NULL;
+	WCHAR window_title[0x80];
 	PITEM_APP ptr_app;
 	HDWP hdefer;
 	BOOLEAN is_fullscreenmode;
@@ -335,7 +303,6 @@ VOID _app_notify_show (
 	if (!ptr_app)
 	{
 		DestroyWindow (hwnd);
-
 		return;
 	}
 
@@ -355,16 +322,15 @@ VOID _app_notify_show (
 	if (_r_obj_isstringempty (empty))
 		_r_obj_movereference ((PVOID_PTR)&empty, _r_obj_createstring (L"Empty..."));
 
-	// print name
-	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
-	_r_obj_movereference ((PVOID_PTR)&string, _app_getappdisplayname (ptr_app, TRUE));
-
-	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, string ? &string->sr : &empty->sr);
-
 	loading = _r_locale_getstring_ex (IDS_LOADING);
 
 	if (_r_obj_isstringempty (loading))
 		_r_obj_movereference ((PVOID_PTR)&loading, _r_obj_createstring (L"Loading..."));
+
+	// print name
+	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_NAME), L":"));
+	_r_obj_movereference ((PVOID_PTR)&string, _app_getappdisplayname (ptr_app, TRUE));
+	_r_ctrl_settablestring (hwnd, &hdefer, IDC_FILE_ID, &localized_string->sr, IDC_FILE_TEXT, string ? &string->sr : &empty->sr);
 
 	// print signature
 	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_SIGNATURE), L":"));
@@ -381,13 +347,11 @@ VOID _app_notify_show (
 	// print port
 	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_PORT), L":"));
 	_r_obj_movereference ((PVOID_PTR)&string, _app_formatport (ptr_log->remote_port, ptr_log->protocol));
-
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_PORT_ID, &localized_string->sr, IDC_PORT_TEXT, string ? &string->sr : &empty->sr);
 
 	// print direction
 	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DIRECTION), L":"));
 	_r_obj_movereference ((PVOID_PTR)&string, _app_db_getdirectionname (ptr_log->direction, ptr_log->is_loopback, TRUE));
-
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DIRECTION_ID, &localized_string->sr, IDC_DIRECTION_TEXT, string ? &string->sr : &empty->sr);
 
 	// print filter name
@@ -397,7 +361,6 @@ VOID _app_notify_show (
 	// print date
 	_r_obj_movereference ((PVOID_PTR)&localized_string, _r_obj_concatstrings (2, _r_locale_getstring (IDS_DATE), L":"));
 	_r_obj_movereference ((PVOID_PTR)&string, _r_format_unixtime (ptr_log->timestamp, FDTF_SHORTDATE | FDTF_LONGTIME));
-
 	_r_ctrl_settablestring (hwnd, &hdefer, IDC_DATE_ID, &localized_string->sr, IDC_DATE_TEXT, string ? &string->sr : &empty->sr);
 
 	if (hdefer)
@@ -419,7 +382,7 @@ VOID _app_notify_show (
 	// set correct position
 	_app_notify_setposition (hwnd, FALSE);
 
-	ShowWindow (hwnd, SW_SHOWNOACTIVATE);
+	ShowWindow (hwnd, SW_SHOWNA);
 
 	InvalidateRect (hwnd, NULL, TRUE);
 
@@ -429,24 +392,22 @@ VOID _app_notify_show (
 	if (string)
 		_r_obj_dereference (string);
 
+	_r_obj_dereference (ptr_app);
 	_r_obj_dereference (loading);
 	_r_obj_dereference (empty);
-
-	_r_obj_dereference (ptr_app);
 }
 
-// Play notification sound even if system have "nosound" mode
+// play notification sound even when system have "nosound" mode
 VOID _app_notify_playsound ()
 {
 	static volatile PR_STRING cached_path = NULL;
 
-	PR_STRING current_path;
-	PR_STRING path;
+	PR_STRING current_path, path;
 	HANDLE hkey;
 	ULONG flags = SND_ASYNC | SND_NODEFAULT | SND_NOWAIT | SND_SENTRY;
 	NTSTATUS status;
 
-	current_path = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&cached_path, NULL, NULL);
+	current_path = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&cached_path, NULL, NULL);
 
 	if (_r_obj_isstringempty (current_path) || !_r_fs_isexists (&current_path->sr))
 	{
@@ -458,7 +419,7 @@ VOID _app_notify_playsound ()
 
 			if (NT_SUCCESS (status))
 			{
-				current_path = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&cached_path, path, current_path);
+				current_path = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&cached_path, path, current_path);
 
 				if (current_path)
 					_r_obj_dereference (path);
@@ -479,7 +440,7 @@ VOID _app_notify_queueinfo (
 {
 	PITEM_CONTEXT context;
 
-	context = _r_freelist_allocateitem (&context_free_list);
+	context = (PITEM_CONTEXT)_r_freelist_allocateitem (&context_free_list);
 
 	context->hwnd = hwnd;
 	context->base_address = _r_obj_reference (ptr_log);
@@ -487,28 +448,26 @@ VOID _app_notify_queueinfo (
 	_r_workqueue_queueitem (&resolve_notify_queue, &_app_queue_notifyinformation, context);
 }
 
-VOID _app_notify_killprocess (
+BOOLEAN _app_notify_killprocess (
 	_In_ HWND hwnd
 )
 {
-	PSYSTEM_PROCESS_INFORMATION process;
-	PSYSTEM_PROCESS_INFORMATION spi;
+	PSYSTEM_PROCESS_INFORMATION process, spi;
 	PNOTIFY_CONTEXT context;
-	HANDLE hprocess;
 	PITEM_APP ptr_app;
-	PR_STRING path;
-	PR_STRING file_name;
+	PR_STRING file_name, path;
+	HANDLE hprocess;
 	NTSTATUS status;
 
 	context = _app_notify_getcontext (hwnd);
 
 	if (!context)
-		return;
+		return FALSE;
 
 	ptr_app = _app_getappitem (context->app_hash);
 
 	if (!ptr_app)
-		return;
+		return FALSE;
 
 	status = _r_sys_enumprocesses (&spi);
 
@@ -518,7 +477,7 @@ VOID _app_notify_killprocess (
 
 		_r_log (LOG_LEVEL_ERROR, NULL, L"_r_sys_enumprocesses", status, NULL);
 
-		return;
+		return FALSE;
 	}
 
 	file_name = _r_path_getbasenamestring (&ptr_app->real_path->sr);
@@ -527,10 +486,10 @@ VOID _app_notify_killprocess (
 
 	do
 	{
-		if (!process->ImageName.Buffer)
+		if (!process->ImageName.Buffer || process->ImageName.Length == 0)
 			continue;
 
-		if (_r_str_compare (process->ImageName.Buffer, file_name->buffer, TRUE) == 0)
+		if (_r_str_isequal2 (&file_name->sr, process->ImageName.Buffer, TRUE))
 		{
 			status = _r_sys_getprocessimagepathbyid (&path, HandleToULong (process->UniqueProcessId), TRUE);
 
@@ -551,7 +510,7 @@ VOID _app_notify_killprocess (
 					}
 					else
 					{
-						_r_show_errormessage (hwnd, L"Cannot open process!", status, file_name->buffer, ET_NATIVE);
+						_r_show_errormessage (hwnd, L"Cannot open process for termination!", status, file_name->buffer, ET_NATIVE);
 					}
 				}
 
@@ -568,6 +527,8 @@ VOID _app_notify_killprocess (
 	_r_obj_dereference (file_name);
 
 	_r_mem_free (spi);
+
+	return NT_SUCCESS (status);
 }
 
 VOID _app_notify_refresh (
@@ -575,29 +536,18 @@ VOID _app_notify_refresh (
 )
 {
 	PITEM_LOG ptr_log;
-	ULONG app_hash;
 
-	if (!_r_wnd_isvisible (hwnd, TRUE))
+	if (!_r_wnd_isvisible (hwnd, TRUE) || !_r_config_getboolean (L"IsNotificationsEnabled", TRUE, NULL))
 	{
 		DestroyWindow (hwnd);
-
 		return;
 	}
 
-	if (!_r_config_getboolean (L"IsNotificationsEnabled", TRUE, NULL))
-	{
-		DestroyWindow (hwnd);
-
-		return;
-	}
-
-	app_hash = _app_notify_getapp_id (hwnd);
-	ptr_log = _app_notify_getobject (app_hash);
+	ptr_log = _app_notify_getobject (_app_notify_getapp_id (hwnd));
 
 	if (!ptr_log)
 	{
 		DestroyWindow (hwnd);
-
 		return;
 	}
 
@@ -616,11 +566,10 @@ VOID _app_notify_setposition (
 	R_RECTANGLE window_rect;
 	HMONITOR hmonitor;
 	PRECT rect;
-	LONG dpi_value;
 	LONG border_x;
-	BOOLEAN is_intray;
 
-	_r_wnd_getposition (hwnd, &window_rect);
+	if (!_r_wnd_getposition (hwnd, &window_rect))
+		return;
 
 	if (!is_forced && _r_wnd_isvisible (hwnd, FALSE))
 	{
@@ -630,9 +579,7 @@ VOID _app_notify_setposition (
 		return;
 	}
 
-	is_intray = _r_config_getboolean (L"IsNotificationsOnTray", FALSE, NULL);
-
-	if (is_intray)
+	if (_r_config_getboolean (L"IsNotificationsOnTray", FALSE, NULL))
 	{
 		monitor_info.cbSize = sizeof (MONITORINFO);
 
@@ -644,9 +591,7 @@ VOID _app_notify_setposition (
 
 			if (SHAppBarMessage (ABM_GETTASKBARPOS, &taskbar_rect))
 			{
-				dpi_value = _r_dc_getwindowdpi (hwnd);
-
-				border_x = _r_dc_getsystemmetrics (SM_CXBORDER, dpi_value);
+				border_x = _r_dc_getsystemmetrics (SM_CXBORDER, _r_dc_getwindowdpi (hwnd));
 				rect = &monitor_info.rcWork;
 
 				if (taskbar_rect.uEdge == ABE_LEFT)
@@ -688,13 +633,13 @@ VOID _app_notify_settimeout (
 	_In_ HWND hwnd
 )
 {
-	_r_ctrl_enable (hwnd, IDC_RULES_BTN, FALSE);
 	_r_ctrl_enable (hwnd, IDC_KILLPROCESS_BTN, FALSE);
+	_r_ctrl_enable (hwnd, IDC_RULES_BTN, FALSE);
 	_r_ctrl_enable (hwnd, IDC_ALLOW_BTN, FALSE);
 	_r_ctrl_enable (hwnd, IDC_BLOCK_BTN, FALSE);
 	_r_ctrl_enable (hwnd, IDC_NEXT_BTN, FALSE);
 
-	SetTimer (hwnd, NOTIFY_TIMER_SAFETY_ID, NOTIFY_TIMER_SAFETY_TIMEOUT, NULL);
+	_r_sys_settimer (hwnd, GENERAL_ID, NOTIFY_TIMER_SAFETY_TIMEOUT, NULL);
 }
 
 VOID _app_notify_initialize (
@@ -703,19 +648,13 @@ VOID _app_notify_initialize (
 )
 {
 	NONCLIENTMETRICS ncm = {0};
-	HBITMAP hbmp_allow;
-	HBITMAP hbmp_block;
-	HBITMAP hbmp_cross;
-	HBITMAP hbmp_next;
-	HBITMAP hbmp_rules;
-	LONG icon_small;
-	LONG icon_large;
+	HBITMAP hbmp_allow, hbmp_block, hbmp_cross, hbmp_next, hbmp_rules;
+	LONG icon_large, icon_small;
 
 	// destroy previous resources
 	SAFE_DELETE_OBJECT (context->hfont_title);
 	SAFE_DELETE_OBJECT (context->hfont_link);
 	SAFE_DELETE_OBJECT (context->hfont_text);
-
 	SAFE_DELETE_ICON (context->hico_allow);
 	SAFE_DELETE_ICON (context->hico_block);
 	SAFE_DELETE_ICON (context->hico_cross);
@@ -726,14 +665,10 @@ VOID _app_notify_initialize (
 	icon_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
 
 	// set window icon
-	_r_wnd_seticon (
-		context->hwnd,
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small),
-		_r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large)
-	);
+	_r_wnd_seticon (context->hwnd, _r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_small), _r_sys_loadsharedicon (NULL, MAKEINTRESOURCE (SIH_EXCLAMATION), icon_large));
 
 	// set window font
-	ncm.cbSize = sizeof (ncm);
+	ncm.cbSize = sizeof (NONCLIENTMETRICS);
 
 	if (_r_dc_getsystemparametersinfo (SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, dpi_value))
 	{
@@ -815,25 +750,26 @@ VOID _app_notify_destroy (
 {
 	PNOTIFY_CONTEXT context;
 
+	_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, config.hnotification);
+
 	context = _app_notify_getcontext (hwnd);
 
 	if (!context)
 		return;
 
+	// remove context
 	_app_notify_setcontext (hwnd, NULL);
-
-	SAFE_DELETE_ICON (context->hicon);
 
 	SAFE_DELETE_OBJECT (context->hfont_title);
 	SAFE_DELETE_OBJECT (context->hfont_link);
 	SAFE_DELETE_OBJECT (context->hfont_text);
-
 	SAFE_DELETE_ICON (context->hico_allow);
 	SAFE_DELETE_ICON (context->hico_block);
 	SAFE_DELETE_ICON (context->hico_cross);
 	SAFE_DELETE_ICON (context->hico_rules);
+	SAFE_DELETE_ICON (context->hicon);
 
-	_r_mem_free (context);
+	_r_mem_free (context); // cleanup!
 }
 
 VOID _app_notify_drawgradient (
@@ -841,17 +777,14 @@ VOID _app_notify_drawgradient (
 	_In_ LPCRECT rect
 )
 {
-	COLORREF gradient_arr[] = {
-		RGB (0, 68, 112),
-		RGB (7, 111, 95),
-	};
+	COLORREF gradient_arr[] = {RGB (0, 68, 112), RGB (7, 111, 95)};
 	GRADIENT_RECT gradient_rect = {0};
 	TRIVERTEX trivertx[2] = {0};
 
 	static_assert (RTL_NUMBER_OF (gradient_arr) == RTL_NUMBER_OF (trivertx), "Invalid array size!");
 
 	gradient_rect.LowerRight = 1;
-	//gradient_rect.UpperLeft = 0;
+	gradient_rect.UpperLeft = 0;
 
 	for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (trivertx); i++)
 	{
@@ -887,26 +820,22 @@ INT_PTR CALLBACK NotificationProc (
 		{
 			PNOTIFY_CONTEXT context;
 			PITEM_LOG ptr_log;
-			HWND current_hwnd;
-			HWND htip;
-			LONG dpi_value;
+			HWND current_hwnd, htip;
 
-			current_hwnd = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, hwnd, config.hnotification);
+			current_hwnd = (HWND)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, hwnd, config.hnotification);
 
 			if (current_hwnd)
 				DestroyWindow (current_hwnd);
 
 			// initialize window context
-			context = _r_mem_allocate (sizeof (NOTIFY_CONTEXT));
+			context = (PNOTIFY_CONTEXT)_r_mem_allocate (sizeof (NOTIFY_CONTEXT));
 
 			_app_notify_setcontext (hwnd, context);
 
 			// set correct position
 			_app_notify_setposition (hwnd, FALSE);
 
-			dpi_value = _r_dc_getwindowdpi (hwnd);
-
-			_app_notify_initialize (context, dpi_value);
+			_app_notify_initialize (context, _r_dc_getwindowdpi (hwnd));
 
 			// initialize tips
 			htip = _r_ctrl_createtip (hwnd);
@@ -918,7 +847,7 @@ INT_PTR CALLBACK NotificationProc (
 				_r_ctrl_settiptext (htip, hwnd, IDC_KILLPROCESS_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_ALLOW_BTN, LPSTR_TEXTCALLBACK);
 				_r_ctrl_settiptext (htip, hwnd, IDC_BLOCK_BTN, LPSTR_TEXTCALLBACK);
-				_r_ctrl_settiptext (htip, hwnd, IDC_NEXT_BTN, L"NEXT!");
+				_r_ctrl_settiptext (htip, hwnd, IDC_NEXT_BTN, LPSTR_TEXTCALLBACK);
 			}
 
 			// display log information
@@ -949,10 +878,7 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_NCDESTROY:
 		{
-			_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.hnotification, NULL, config.hnotification);
-
 			_app_notify_destroy (hwnd);
-
 			break;
 		}
 
@@ -960,7 +886,7 @@ INT_PTR CALLBACK NotificationProc (
 		{
 			KillTimer (hwnd, wparam);
 
-			if (wparam != NOTIFY_TIMER_SAFETY_ID)
+			if (wparam != GENERAL_ID)
 				break;
 
 			_r_ctrl_enable (hwnd, IDC_RULES_BTN, TRUE);
@@ -974,9 +900,7 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_DPICHANGED:
 		{
-			PNOTIFY_CONTEXT context;
-
-			context = _app_notify_getcontext (hwnd);
+			PNOTIFY_CONTEXT context = _app_notify_getcontext (hwnd);
 
 			_r_wnd_message_dpichanged (hwnd, wparam, lparam);
 
@@ -1014,19 +938,8 @@ INT_PTR CALLBACK NotificationProc (
 		case WM_CTLCOLORDLG:
 		case WM_CTLCOLORSTATIC:
 		{
-			HDC hdc;
-			INT text_clr;
-
-			hdc = (HDC)wparam;
-
-			if (msg == WM_CTLCOLORSTATIC && (GetDlgCtrlID ((HWND)lparam) == IDC_FILE_TEXT))
-			{
-				text_clr = COLOR_HIGHLIGHT;
-			}
-			else
-			{
-				text_clr = COLOR_WINDOWTEXT;
-			}
+			HDC hdc = (HDC)wparam;
+			INT text_clr = (msg == WM_CTLCOLORSTATIC && GetDlgCtrlID ((HWND)lparam) == IDC_FILE_TEXT) ? COLOR_HIGHLIGHT : COLOR_WINDOWTEXT;
 
 			SetBkMode (hdc, TRANSPARENT); // HACK!!!
 
@@ -1038,15 +951,11 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_DRAWITEM:
 		{
-			LPDRAWITEMSTRUCT draw_info;
-			RECT rect;
-			LONG dpi_value;
-			LONG icon_size_x;
-			LONG wnd_spacing;
+			LPDRAWITEMSTRUCT draw_info = (LPDRAWITEMSTRUCT)lparam;
 			PR_STRING string;
 			HICON hicon;
-
-			draw_info = (LPDRAWITEMSTRUCT)lparam;
+			RECT rect;
+			LONG dpi_value, icon_size_x, wnd_spacing;
 
 			if (draw_info->CtlID != IDC_HEADER_ID)
 				break;
@@ -1067,14 +976,7 @@ INT_PTR CALLBACK NotificationProc (
 			if (string)
 			{
 				SetTextColor (draw_info->hDC, RGB (255, 255, 255));
-
-				SetRect (
-					&rect,
-					wnd_spacing,
-					0,
-					_r_calc_rectwidth (&draw_info->rcItem) - (wnd_spacing * 3) - icon_size_x,
-					_r_calc_rectheight (&draw_info->rcItem)
-				);
+				SetRect (&rect, wnd_spacing, 0, _r_calc_rectwidth (&draw_info->rcItem) - (wnd_spacing * 3) - icon_size_x, _r_calc_rectheight (&draw_info->rcItem));
 
 				_r_dc_drawtext (NULL, draw_info->hDC, &string->sr, &rect, 0, 0, DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOCLIP | DT_NOPREFIX, 0);
 
@@ -1086,25 +988,9 @@ INT_PTR CALLBACK NotificationProc (
 
 			if (hicon)
 			{
-				SetRect (
-					&rect,
-					_r_calc_rectwidth (&draw_info->rcItem) - icon_size_x - wnd_spacing,
-					(_r_calc_rectheight (&draw_info->rcItem) / 2) - (icon_size_x / 2),
-					icon_size_x,
-					icon_size_x
-				);
+				SetRect (&rect, _r_calc_rectwidth (&draw_info->rcItem) - icon_size_x - wnd_spacing, (_r_calc_rectheight (&draw_info->rcItem) / 2) - (icon_size_x / 2), icon_size_x, icon_size_x);
 
-				DrawIconEx (
-					draw_info->hDC,
-					rect.left,
-					rect.top,
-					hicon,
-					rect.right,
-					rect.bottom,
-					0,
-					NULL,
-					DI_IMAGE | DI_MASK
-				);
+				DrawIconEx (draw_info->hDC, rect.left, rect.top, hicon, rect.right, rect.bottom, 0, NULL, DI_IMAGE | DI_MASK);
 			}
 
 			SetWindowLongPtrW (hwnd, DWLP_MSGRESULT, TRUE);
@@ -1114,11 +1000,7 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_SETCURSOR:
 		{
-			INT ctrl_id;
-
-			ctrl_id = GetDlgCtrlID ((HWND)wparam);
-
-			if (ctrl_id == IDC_FILE_TEXT)
+			if (GetDlgCtrlID ((HWND)wparam) == IDC_FILE_TEXT)
 			{
 				SetCursor (LoadCursorW (NULL, IDC_HAND));
 
@@ -1140,50 +1022,37 @@ INT_PTR CALLBACK NotificationProc (
 		case WM_EXITSIZEMOVE:
 		case WM_CAPTURECHANGED:
 		{
-			HCURSOR hcursor;
-			LONG_PTR ex_style;
-
-			ex_style = _r_wnd_getstyle (hwnd, GWL_EXSTYLE);
+			LONG_PTR ex_style = _r_wnd_getstyle (hwnd, GWL_EXSTYLE);
 
 			if (!(ex_style & WS_EX_LAYERED))
 				_r_wnd_setstyle (hwnd, WS_EX_LAYERED, WS_EX_LAYERED, GWL_EXSTYLE);
 
-			hcursor = LoadCursorW (NULL, (msg == WM_ENTERSIZEMOVE) ? IDC_SIZEALL : IDC_ARROW);
-
 			SetLayeredWindowAttributes (hwnd, 0, (msg == WM_ENTERSIZEMOVE) ? 150 : 255, LWA_ALPHA);
-			SetCursor (hcursor);
+			SetCursor (LoadCursorW (NULL, (msg == WM_ENTERSIZEMOVE) ? IDC_SIZEALL : IDC_ARROW));
 
 			break;
 		}
 
 		case WM_NOTIFY:
 		{
-			LPNMHDR nmlp;
-
-			nmlp = (LPNMHDR)lparam;
+			LPNMHDR nmlp = (LPNMHDR)lparam;
 
 			switch (nmlp->code)
 			{
 				case BCN_DROPDOWN:
 				{
 					PNOTIFY_CONTEXT context;
-					PITEM_LOG ptr_log;
 					R_RECTANGLE rectangle;
+					PITEM_LOG ptr_log;
 					RECT rect;
 					HMENU hsubmenu;
-					INT ctrl_id;
-
-					ctrl_id = (INT)(INT_PTR)nmlp->idFrom;
-
-					if (!_r_ctrl_isenabled (hwnd, ctrl_id))
-						break;
-
-					if (ctrl_id != IDC_ALLOW_BTN && ctrl_id != IDC_RULES_BTN)
-						break;
 
 					context = _app_notify_getcontext (hwnd);
 
-					if (!context)
+					if (!context || !_r_ctrl_isenabled (hwnd, (INT)(INT_PTR)nmlp->idFrom))
+						break;
+
+					if (nmlp->idFrom != IDC_ALLOW_BTN && nmlp->idFrom != IDC_RULES_BTN)
 						break;
 
 					ptr_log = _app_notify_getobject (context->app_hash);
@@ -1193,11 +1062,11 @@ INT_PTR CALLBACK NotificationProc (
 					if (!hsubmenu)
 						break;
 
-					if (ctrl_id == IDC_RULES_BTN)
+					if (nmlp->idFrom == IDC_RULES_BTN)
 					{
 						_app_generate_rulescontrol (hsubmenu, context->app_hash, ptr_log);
 					}
-					else if (ctrl_id == IDC_ALLOW_BTN)
+					else if (nmlp->idFrom == IDC_ALLOW_BTN)
 					{
 						_app_generate_timerscontrol (hsubmenu, context->app_hash);
 					}
@@ -1210,7 +1079,7 @@ INT_PTR CALLBACK NotificationProc (
 						_r_wnd_adjustrectangletoworkingarea (&rectangle, nmlp->hwndFrom);
 						_r_wnd_rectangletorect (&rect, &rectangle);
 
-						_r_menu_popup (hsubmenu, hwnd, (PPOINT)&rect, TRUE);
+						_r_menu_popup (hsubmenu, hwnd, (PPOINT)&rect, 0);
 					}
 
 					DestroyMenu (hsubmenu);
@@ -1220,14 +1089,12 @@ INT_PTR CALLBACK NotificationProc (
 
 				case TTN_GETDISPINFO:
 				{
-					LPNMTTDISPINFOW lpnmdi;
-					WCHAR buffer[1024] = {0};
+					LPNMTTDISPINFOW lpnmdi = (LPNMTTDISPINFOW)lparam;
+					WCHAR buffer[0x200] = {0};
 					PR_STRING string;
+					HWND hmain;
 					ULONG app_hash;
-					INT ctrl_id;
-					INT listview_id = 0;
-
-					lpnmdi = (LPNMTTDISPINFOW)lparam;
+					INT ctrl_id, listview_id = 0;
 
 					if ((lpnmdi->uFlags & TTF_IDISHWND) == 0)
 						break;
@@ -1238,15 +1105,20 @@ INT_PTR CALLBACK NotificationProc (
 					{
 						app_hash = _app_notify_getapp_id (hwnd);
 
-						if (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID, &listview_id, sizeof (INT)))
+						hmain = _r_app_gethwnd ();
+
+						if (hmain)
 						{
-							string = _app_gettooltipbylparam (_r_app_gethwnd (), listview_id, app_hash);
-
-							if (string)
+							if (_app_getappinfobyhash (app_hash, INFO_LISTVIEW_ID, &listview_id, sizeof (INT)))
 							{
-								_r_str_copy (buffer, RTL_NUMBER_OF (buffer), string->buffer);
+								string = _app_gettooltipbylparam (hmain, listview_id, app_hash);
 
-								_r_obj_dereference (string);
+								if (string)
+								{
+									_r_str_copy (buffer, RTL_NUMBER_OF (buffer), string->buffer);
+
+									_r_obj_dereference (string);
+								}
 							}
 						}
 					}
@@ -1265,6 +1137,10 @@ INT_PTR CALLBACK NotificationProc (
 					else if (ctrl_id == IDC_KILLPROCESS_BTN)
 					{
 						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), _r_locale_getstring (IDS_ACTION_TERMINATE_HINT));
+					}
+					else if (ctrl_id == IDC_NEXT_BTN)
+					{
+						_r_str_copy (buffer, RTL_NUMBER_OF (buffer), L"NEXT!");
 					}
 					else
 					{
@@ -1290,18 +1166,16 @@ INT_PTR CALLBACK NotificationProc (
 
 		case WM_COMMAND:
 		{
-			INT ctrl_id;
-
-			ctrl_id = LOWORD (wparam);
+			INT ctrl_id = LOWORD (wparam);
 
 			if (ctrl_id >= IDX_RULES_SPECIAL && ctrl_id <= IDX_RULES_SPECIAL + (INT)(INT_PTR)_r_obj_getlistsize (rules_list) + 1)
 			{
-				HANDLE hengine;
-				PR_LIST rules;
 				PITEM_RULE ptr_rule;
 				PITEM_APP ptr_app;
 				PITEM_LOG ptr_log;
 				PR_STRING rule;
+				PR_LIST rules;
+				HWND hmain;
 				ULONG_PTR rule_idx;
 				ULONG app_hash;
 				BOOLEAN is_remove;
@@ -1312,8 +1186,10 @@ INT_PTR CALLBACK NotificationProc (
 				if (!ptr_app)
 					return FALSE;
 
-				rule_idx = (ULONG_PTR)ctrl_id - IDX_RULES_SPECIAL;
+				rule_idx = (ULONG_PTR)(ctrl_id - IDX_RULES_SPECIAL);
 				ptr_rule = _app_getrulebyid (rule_idx);
+
+				hmain = _r_app_gethwnd ();
 
 				if (!ptr_rule)
 				{
@@ -1325,26 +1201,26 @@ INT_PTR CALLBACK NotificationProc (
 
 						ptr_rule = _app_addrule (NULL, NULL, NULL, FWP_DIRECTION_OUTBOUND, FWP_ACTION_PERMIT, ptr_log->protocol, ptr_log->af);
 
-						ptr_rule->name = _r_obj_createstring2 (&rule->sr);
-						ptr_rule->rule_remote = _r_obj_createstring2 (&rule->sr);
+						_r_obj_movereference ((PVOID_PTR)&ptr_rule->name, _r_obj_createstring2 (&rule->sr));
+						_r_obj_movereference ((PVOID_PTR)&ptr_rule->rule_remote, _r_obj_createstring2 (&rule->sr));
 
 						_app_ruleenable (ptr_rule, TRUE, FALSE);
 
 						_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
 
-						_r_obj_dereference (rule);
-
 						_r_queuedlock_acquireexclusive (&lock_rules);
 						_r_obj_addlistitem (rules_list, ptr_rule, &rule_idx);
 						_r_queuedlock_releaseexclusive (&lock_rules);
 
-						if (rule_idx != SIZE_MAX)
+						if (hmain)
 						{
-							_app_listview_addruleitem (_r_app_gethwnd (), ptr_rule, (ULONG)rule_idx, TRUE);
-							_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
-
-							_app_profile_save (hwnd);
+							_app_listview_addruleitem (hmain, ptr_rule, rule_idx, TRUE);
+							_app_listview_updateby_id (hmain, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 						}
+
+						_app_profile_save (hwnd);
+
+						_r_obj_dereference (rule);
 					}
 
 					_app_notify_freeobject (hwnd, ptr_app);
@@ -1354,7 +1230,7 @@ INT_PTR CALLBACK NotificationProc (
 
 				_app_notify_freeobject (hwnd, ptr_app);
 
-				if (!(ptr_rule->is_forservices && _app_issystemhash (app_hash)))
+				if (!((ptr_rule->is_fordriver || ptr_rule->is_forservice) && _app_issystemhash (app_hash)))
 				{
 					is_remove = ptr_rule->is_enabled && _r_obj_findhashtable (ptr_rule->apps, app_hash);
 
@@ -1372,23 +1248,25 @@ INT_PTR CALLBACK NotificationProc (
 						_app_ruleenable (ptr_rule, TRUE, TRUE);
 					}
 
-					_app_listview_updateitemby_param (_r_app_gethwnd (), app_hash, TRUE);
-					_app_listview_updateitemby_param (_r_app_gethwnd (), rule_idx, FALSE);
+					if (hmain)
+					{
+						_app_listview_updateitemby_param (hmain, app_hash, TRUE);
+						_app_listview_updateitemby_param (hmain, rule_idx, FALSE);
+					}
 
 					if (_wfp_isfiltersinstalled ())
 					{
-						hengine = _wfp_getenginehandle ();
-
-						rules = _r_obj_createlist (1, NULL);
+						rules = _r_obj_createlist (0x02, NULL);
 
 						_r_obj_addlistitem (rules, ptr_rule, NULL);
 
-						_wfp_create4filters (hengine, rules, DBG_ARG, FALSE);
+						_wfp_createrulefilters (_wfp_getenginehandle (), rules, DBG_ARG, FALSE);
 
 						_r_obj_dereference (rules);
 					}
 
-					_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
+					if (hmain)
+						_app_listview_updateby_id (hmain, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
 
 					_r_obj_dereference (ptr_rule);
 					_r_obj_dereference (ptr_app);
@@ -1401,15 +1279,13 @@ INT_PTR CALLBACK NotificationProc (
 			else if (ctrl_id >= IDX_TIMER && ctrl_id <= (IDX_TIMER + (RTL_NUMBER_OF (timer_array) - 1)))
 			{
 				ULONG_PTR timer_idx;
-				LONG64 seconds;
 
 				if (!_r_ctrl_isenabled (hwnd, IDC_ALLOW_BTN))
 					return FALSE;
 
-				timer_idx = (ULONG_PTR)ctrl_id - IDX_TIMER;
-				seconds = timer_array[timer_idx];
+				timer_idx = (ULONG_PTR)(ctrl_id - IDX_TIMER);
 
-				_app_notify_command (hwnd, IDC_ALLOW_BTN, seconds);
+				_app_notify_command (hwnd, IDC_ALLOW_BTN, timer_array[timer_idx]);
 
 				return FALSE;
 			}
@@ -1426,6 +1302,9 @@ INT_PTR CALLBACK NotificationProc (
 				{
 					ULONG app_hash;
 
+					if (!_r_app_gethwnd ())
+						break;
+
 					app_hash = _app_notify_getapp_id (hwnd);
 
 					if (app_hash)
@@ -1438,10 +1317,8 @@ INT_PTR CALLBACK NotificationProc (
 				{
 					PEDITOR_CONTEXT context;
 					PITEM_APP ptr_app;
-					ULONG app_hash;
 
-					app_hash = _app_notify_getapp_id (hwnd);
-					ptr_app = _app_getappitem (app_hash);
+					ptr_app = _app_getappitem (_app_notify_getapp_id (hwnd));
 
 					if (!ptr_app)
 						break;
@@ -1470,50 +1347,42 @@ INT_PTR CALLBACK NotificationProc (
 
 				case IDC_KILLPROCESS_BTN:
 				{
-					_app_notify_killprocess (hwnd);
-
-					_r_ctrl_enable (hwnd, ctrl_id, FALSE);
+					if (_app_notify_killprocess (hwnd))
+						_r_ctrl_enable (hwnd, ctrl_id, FALSE);
 
 					break;
 				}
 
 				case IDM_OPENRULESEDITOR:
 				{
+					PR_STRING app_name, rule_name, rule_string;
 					PEDITOR_CONTEXT context;
-					PITEM_APP ptr_app;
 					PITEM_RULE ptr_rule;
+					PITEM_APP ptr_app;
 					PITEM_LOG ptr_log;
-					PR_STRING app_name;
-					PR_STRING rule_name;
-					PR_STRING rule_string;
+					HWND hmain;
 					ULONG_PTR rule_idx;
-					ULONG app_hash;
 
-					app_hash = _app_notify_getapp_id (hwnd);
-					ptr_log = _app_notify_getobject (app_hash);
+					ptr_log = _app_notify_getobject (_app_notify_getapp_id (hwnd));
 
 					if (!ptr_log)
 						break;
 
-					app_hash = ptr_log->app_hash;
-					ptr_app = _app_getappitem (app_hash);
+					ptr_app = _app_getappitem (ptr_log->app_hash);
 
 					if (!ptr_app)
 					{
 						_r_obj_dereference (ptr_log);
-
 						break;
 					}
 
 					app_name = _app_getappdisplayname (ptr_app, TRUE);
-
 					rule_string = _app_formataddress (ptr_log->af, 0, &ptr_log->remote_addr, ptr_log->remote_port, FMTADDR_AS_RULE);
-
 					rule_name = _r_format_string (L"%s - %s", _r_obj_getstring (app_name), _r_obj_getstring (rule_string));
 
 					ptr_rule = _app_addrule (rule_name, rule_string, NULL, ptr_log->direction, FWP_ACTION_PERMIT, ptr_log->protocol, ptr_log->af);
 
-					_r_obj_addhashtableitem (ptr_rule->apps, app_hash, NULL);
+					_r_obj_addhashtableitem (ptr_rule->apps, ptr_log->app_hash, NULL);
 
 					_app_ruleenable (ptr_rule, TRUE, TRUE);
 
@@ -1525,13 +1394,18 @@ INT_PTR CALLBACK NotificationProc (
 						_r_obj_addlistitem (rules_list, _r_obj_reference (ptr_rule), &rule_idx);
 						_r_queuedlock_releaseexclusive (&lock_rules);
 
+						hmain = _r_app_gethwnd ();
+
 						// set rule information
-						_app_listview_addruleitem (_r_app_gethwnd (), ptr_rule, rule_idx, TRUE);
+						if (hmain)
+						{
+							_app_listview_addruleitem (hmain, ptr_rule, rule_idx, TRUE);
 
-						// update app information
-						_app_listview_updateitemby_param (_r_app_gethwnd (), app_hash, TRUE);
+							// update app information
+							_app_listview_updateitemby_param (hmain, ptr_log->app_hash, TRUE);
 
-						_app_listview_updateby_id (_r_app_gethwnd (), DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
+							_app_listview_updateby_id (hmain, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE);
+						}
 
 						_app_profile_save (hwnd);
 
@@ -1540,11 +1414,11 @@ INT_PTR CALLBACK NotificationProc (
 
 					_app_notify_freeobject (hwnd, ptr_app);
 
-					if (app_name)
-						_r_obj_dereference (app_name);
-
 					if (rule_string)
 						_r_obj_dereference (rule_string);
+
+					if (app_name)
+						_r_obj_dereference (app_name);
 
 					_r_obj_dereference (rule_name);
 					_r_obj_dereference (ptr_rule);
@@ -1557,8 +1431,7 @@ INT_PTR CALLBACK NotificationProc (
 				case IDM_COPY: // ctrl+c
 				case IDM_SELECT_ALL: // ctrl+a
 				{
-					static R_STRINGREF sr = PR_STRINGREF_INIT (WC_EDITW);
-
+					R_STRINGREF sr = PR_STRINGREF_INIT (WC_EDIT);
 					PR_STRING class_name;
 					HWND hedit;
 

@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #pragma once
 
@@ -40,10 +40,6 @@ VOID _app_listview_additems (
 	_In_ HWND hwnd
 );
 
-VOID _app_listview_clearitems (
-	_In_ HWND hwnd
-);
-
 VOID _app_listview_addappitem (
 	_In_ HWND hwnd,
 	_In_ PITEM_APP ptr_app
@@ -67,15 +63,23 @@ VOID _app_listview_addlogitem (
 	_In_ ULONG log_hash
 );
 
+VOID _app_listview_clearitems (
+	_In_ HWND hwnd
+);
+
 BOOLEAN _app_listview_islocked (
 	_In_ HWND hwnd,
 	_In_ INT ctrl_id
 );
 
-VOID _app_listview_lock (
+BOOLEAN _app_listview_lock (
 	_In_ HWND hwnd,
-	_In_ INT ctrl_id,
-	_In_ BOOLEAN is_lock
+	_In_ INT ctrl_id
+);
+
+BOOLEAN _app_listview_unlock (
+	_In_ HWND hwnd,
+	_In_ INT ctrl_id
 );
 
 LONG_PTR _app_listview_createcontext (
@@ -97,6 +101,7 @@ ULONG _app_listview_getappcontext (
 	_In_ INT item_id
 );
 
+_Success_ (return != 0)
 ULONG_PTR _app_listview_getitemcontext (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
@@ -114,17 +119,11 @@ INT _app_listview_finditem (
 	_In_ ULONG_PTR id_code
 );
 
-VOID _app_listview_removeitem (
-	_In_ HWND hwnd,
-	_In_ ULONG_PTR id_code,
-	_In_ ENUM_TYPE_DATA type
-);
-
 VOID _app_listview_showitemby_id (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
 	_In_ INT item_id,
-	_In_ INT scroll_pos
+	_In_opt_ LONG scroll_pos
 );
 
 VOID _app_listview_showitemby_param (

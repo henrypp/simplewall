@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2019-2025 Henry++
+// Copyright (c) 2019-2026 Henry++
 
 #include "global.h"
 
@@ -11,10 +11,10 @@ PITEM_NETWORK_CONTEXT _app_network_getcontext ()
 
 	if (_r_initonce_begin (&init_once))
 	{
-		network_context = _r_mem_allocate (sizeof (ITEM_NETWORK_CONTEXT));
+		network_context = (PITEM_NETWORK_CONTEXT)_r_mem_allocate (sizeof (ITEM_NETWORK_CONTEXT));
 
-		network_context->network_ptr = _r_obj_createhashtablepointer (256);
-		network_context->checker_ptr = _r_obj_createhashtablepointer (256);
+		network_context->network_ptr = _r_obj_createhashtablepointer (0x100);
+		network_context->checker_ptr = _r_obj_createhashtablepointer (0x100);
 
 		_r_initonce_end (&init_once);
 	}
@@ -28,11 +28,8 @@ VOID _app_network_initialize (
 {
 	PITEM_NETWORK_CONTEXT network_context;
 	R_ENVIRONMENT environment;
-	BOOLEAN is_enabled;
 
-	is_enabled = _r_config_getboolean (L"IsNetworkMonitorEnabled", TRUE, NULL);
-
-	if (!is_enabled)
+	if (!_r_config_getboolean (L"IsNetworkMonitorEnabled", TRUE, NULL))
 		return;
 
 	network_context = _app_network_getcontext ();
@@ -73,24 +70,21 @@ VOID _app_network_generatetable (
 	_Inout_ PITEM_NETWORK_CONTEXT network_context
 )
 {
-	PMIB_TCPTABLE_OWNER_MODULE tcp4_table;
 	PMIB_TCP6TABLE_OWNER_MODULE tcp6_table;
-	PMIB_UDPTABLE_OWNER_MODULE udp4_table;
 	PMIB_UDP6TABLE_OWNER_MODULE udp6_table;
+	PMIB_TCPTABLE_OWNER_MODULE tcp4_table;
+	PMIB_UDPTABLE_OWNER_MODULE udp4_table;
 	PITEM_NETWORK ptr_network;
-	IN_ADDR remote_addr;
-	IN_ADDR local_addr;
+	IN_ADDR local_addr, remote_addr;
 	PVOID buffer;
-	ULONG network_hash;
-	ULONG allocated_size;
-	ULONG required_size;
+	ULONG allocated_size, network_hash, required_size = 0;
 	ULONG status;
 
 	_r_queuedlock_acquireexclusive (&network_context->lock_checker);
 	_r_obj_clearhashtable (network_context->checker_ptr);
 	_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 
-	required_size = 0;
+	// TCP IPv4
 	GetExtendedTcpTable (NULL, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
 	allocated_size = required_size;
@@ -98,15 +92,15 @@ VOID _app_network_generatetable (
 
 	if (required_size)
 	{
-		tcp4_table = buffer;
+		tcp4_table = (PMIB_TCPTABLE_OWNER_MODULE)buffer;
 		status = GetExtendedTcpTable (tcp4_table, &required_size, FALSE, AF_INET, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
 		if (status == NO_ERROR)
 		{
 			for (ULONG i = 0; i < tcp4_table->dwNumEntries; i++)
 			{
-				RtlZeroMemory (&remote_addr, sizeof (remote_addr));
-				RtlZeroMemory (&local_addr, sizeof (local_addr));
+				RtlZeroMemory (&remote_addr, sizeof (IN_ADDR));
+				RtlZeroMemory (&local_addr, sizeof (IN_ADDR));
 
 				remote_addr.S_un.S_addr = tcp4_table->table[i].dwRemoteAddr;
 				local_addr.S_un.S_addr = tcp4_table->table[i].dwLocalAddr;
@@ -125,26 +119,23 @@ VOID _app_network_generatetable (
 				if (_app_network_isitemfound (network_hash))
 				{
 					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
-
 					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
-
 					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
 
 					continue;
 				}
 
-				ptr_network = _r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
+				ptr_network = (PITEM_NETWORK)_r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
 
 				if (!_app_network_getpath (ptr_network, tcp4_table->table[i].dwOwningPid, tcp4_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
-
 					continue;
 				}
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_TCP;
-				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af));
+				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af, L"<unknown protocol>"));
 
 				ptr_network->remote_addr.S_un.S_addr = tcp4_table->table[i].dwRemoteAddr;
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp4_table->table[i].dwRemotePort);
@@ -171,6 +162,7 @@ VOID _app_network_generatetable (
 		}
 	}
 
+	// TCP IPv6
 	required_size = 0;
 	GetExtendedTcpTable (NULL, &required_size, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
@@ -183,7 +175,7 @@ VOID _app_network_generatetable (
 			allocated_size = required_size;
 		}
 
-		tcp6_table = buffer;
+		tcp6_table = (PMIB_TCP6TABLE_OWNER_MODULE)buffer;
 		status = GetExtendedTcpTable (tcp6_table, &required_size, FALSE, AF_INET6, TCP_TABLE_OWNER_MODULE_ALL, 0);
 
 		if (status == NO_ERROR)
@@ -210,18 +202,17 @@ VOID _app_network_generatetable (
 					continue;
 				}
 
-				ptr_network = _r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
+				ptr_network = (PITEM_NETWORK)_r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
 
 				if (!_app_network_getpath (ptr_network, tcp6_table->table[i].dwOwningPid, tcp6_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
-
 					continue;
 				}
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_TCP;
-				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af));
+				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af, L"<unknown protocol>"));
 
 				RtlCopyMemory (ptr_network->remote_addr6.u.Byte, tcp6_table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp6_table->table[i].dwRemotePort);
@@ -248,6 +239,7 @@ VOID _app_network_generatetable (
 		}
 	}
 
+	// UDP IPv4
 	required_size = 0;
 	GetExtendedUdpTable (NULL, &required_size, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0);
 
@@ -259,27 +251,18 @@ VOID _app_network_generatetable (
 			allocated_size = required_size;
 		}
 
-		udp4_table = buffer;
+		udp4_table = (PMIB_UDPTABLE_OWNER_MODULE)buffer;
 		status = GetExtendedUdpTable (udp4_table, &required_size, FALSE, AF_INET, UDP_TABLE_OWNER_MODULE, 0);
 
 		if (status == NO_ERROR)
 		{
 			for (ULONG i = 0; i < udp4_table->dwNumEntries; i++)
 			{
-				RtlZeroMemory (&local_addr, sizeof (local_addr));
+				RtlZeroMemory (&local_addr, sizeof (IN_ADDR));
 
 				local_addr.S_un.S_addr = udp4_table->table[i].dwLocalAddr;
 
-				network_hash = _app_network_gethash (
-					AF_INET,
-					udp4_table->table[i].dwOwningPid,
-					NULL,
-					0,
-					&local_addr,
-					udp4_table->table[i].dwLocalPort,
-					IPPROTO_UDP,
-					0
-				);
+				network_hash = _app_network_gethash (AF_INET, udp4_table->table[i].dwOwningPid, NULL, 0, &local_addr, udp4_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
 				if (_app_network_isitemfound (network_hash))
 				{
@@ -290,18 +273,17 @@ VOID _app_network_generatetable (
 					continue;
 				}
 
-				ptr_network = _r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
+				ptr_network = (PITEM_NETWORK)_r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
 
 				if (!_app_network_getpath (ptr_network, udp4_table->table[i].dwOwningPid, udp4_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
-
 					continue;
 				}
 
 				ptr_network->af = AF_INET;
 				ptr_network->protocol = IPPROTO_UDP;
-				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af));
+				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af, L"<unknown protocol>"));
 
 				ptr_network->local_addr.S_un.S_addr = udp4_table->table[i].dwLocalAddr;
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)udp4_table->table[i].dwLocalPort);
@@ -320,6 +302,7 @@ VOID _app_network_generatetable (
 		}
 	}
 
+	// UDP IPv6
 	required_size = 0;
 	GetExtendedUdpTable (NULL, &required_size, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0);
 
@@ -331,23 +314,14 @@ VOID _app_network_generatetable (
 			allocated_size = required_size;
 		}
 
-		udp6_table = buffer;
+		udp6_table = (PMIB_UDP6TABLE_OWNER_MODULE)buffer;
 		status = GetExtendedUdpTable (udp6_table, &required_size, FALSE, AF_INET6, UDP_TABLE_OWNER_MODULE, 0);
 
 		if (status == NO_ERROR)
 		{
 			for (ULONG i = 0; i < udp6_table->dwNumEntries; i++)
 			{
-				network_hash = _app_network_gethash (
-					AF_INET6,
-					udp6_table->table[i].dwOwningPid,
-					NULL,
-					0,
-					udp6_table->table[i].ucLocalAddr,
-					udp6_table->table[i].dwLocalPort,
-					IPPROTO_UDP,
-					0
-				);
+				network_hash = _app_network_gethash (AF_INET6, udp6_table->table[i].dwOwningPid, NULL, 0, udp6_table->table[i].ucLocalAddr, udp6_table->table[i].dwLocalPort, IPPROTO_UDP, 0);
 
 				if (_app_network_isitemfound (network_hash))
 				{
@@ -358,18 +332,17 @@ VOID _app_network_generatetable (
 					continue;
 				}
 
-				ptr_network = _r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
+				ptr_network = (PITEM_NETWORK)_r_obj_allocate (sizeof (ITEM_NETWORK), &_app_dereferencenetwork);
 
 				if (!_app_network_getpath (ptr_network, udp6_table->table[i].dwOwningPid, udp6_table->table[i].OwningModuleInfo))
 				{
 					_r_obj_dereference (ptr_network);
-
 					continue;
 				}
 
 				ptr_network->af = AF_INET6;
 				ptr_network->protocol = IPPROTO_UDP;
-				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af));
+				ptr_network->protocol_str = _r_obj_createstring (_app_db_getprotoname (ptr_network->protocol, ptr_network->af, L"<unknown protocol>"));
 
 				RtlCopyMemory (ptr_network->local_addr6.u.Byte, udp6_table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)udp6_table->table[i].dwLocalPort);
@@ -406,7 +379,7 @@ PITEM_NETWORK _app_network_getitem (
 		return NULL;
 
 	_r_queuedlock_acquireshared (&network_context->lock_network);
-	ptr_network = _r_obj_findhashtablepointer (network_context->network_ptr, network_hash);
+	ptr_network = (PITEM_NETWORK)_r_obj_findhashtablepointer (network_context->network_ptr, network_hash);
 	_r_queuedlock_releaseshared (&network_context->lock_network);
 
 	return ptr_network;
@@ -443,18 +416,17 @@ ULONG _app_network_gethash (
 	_In_opt_ ULONG state
 )
 {
-	WCHAR remote_address[LEN_IP_MAX] = {0};
-	WCHAR local_address[LEN_IP_MAX] = {0};
-	PR_STRING network_string;
-	ULONG network_hash;
+	WCHAR local_address[LEN_IP_MAX] = {0}, remote_address[LEN_IP_MAX] = {0}, network_string[0x100];
 
 	if (remote_addr)
-		_app_formatip (af, remote_addr, remote_address, RTL_NUMBER_OF (remote_address), FALSE);
+		_app_formatip (remote_address, RTL_NUMBER_OF (remote_address), af, remote_addr, FALSE);
 
 	if (local_addr)
-		_app_formatip (af, local_addr, local_address, RTL_NUMBER_OF (local_address), FALSE);
+		_app_formatip (local_address, RTL_NUMBER_OF (local_address), af, local_addr, FALSE);
 
-	network_string = _r_format_string (
+	_r_str_printf (
+		network_string,
+		RTL_NUMBER_OF (network_string),
 		L"%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%s_%" TEXT (PR_ULONG) L"_%" TEXT (PRIu8) L"_%" TEXT (PR_ULONG),
 		af,
 		pid,
@@ -466,11 +438,7 @@ ULONG _app_network_gethash (
 		state
 	);
 
-	network_hash = _r_str_gethash (&network_string->sr, TRUE);
-
-	_r_obj_dereference (network_string);
-
-	return network_hash;
+	return _r_str_gethash2 (network_string, TRUE);
 }
 
 BOOLEAN _app_network_getpath (
@@ -481,8 +449,7 @@ BOOLEAN _app_network_getpath (
 {
 	PTOKEN_APPCONTAINER_INFORMATION app_container = NULL;
 	PR_STRING process_name = NULL;
-	HANDLE hprocess;
-	HANDLE htoken;
+	HANDLE hprocess, htoken;
 	NTSTATUS status;
 
 	if (pid == PROC_WAITING_PID)
@@ -516,14 +483,7 @@ BOOLEAN _app_network_getpath (
 
 		if (NT_SUCCESS (status))
 		{
-			if (_r_sys_isprocessimmersive (hprocess))
-			{
-				ptr_network->type = DATA_APP_UWP;
-			}
-			else
-			{
-				ptr_network->type = DATA_APP_REGULAR;
-			}
+			ptr_network->type = _r_sys_isprocessimmersive (hprocess) ? DATA_APP_UWP : DATA_APP_REGULAR;
 
 			if (ptr_network->type == DATA_APP_UWP)
 			{
@@ -625,14 +585,14 @@ BOOLEAN _app_network_isvalidconnection (
 	_In_ LPCVOID address
 )
 {
-	PIN_ADDR p4addr;
 	PIN6_ADDR p6addr;
+	PIN_ADDR p4addr;
 
 	switch (af)
 	{
 		case AF_INET:
 		{
-			p4addr = (PIN_ADDR)address;
+			p4addr = (const PIN_ADDR)address;
 
 			return (!IN4_IS_ADDR_UNSPECIFIED (p4addr) &&
 					!IN4_IS_ADDR_LOOPBACK (p4addr) &&
@@ -644,18 +604,21 @@ BOOLEAN _app_network_isvalidconnection (
 
 		case AF_INET6:
 		{
-			p6addr = (PIN6_ADDR)address;
+			p6addr = (const PIN6_ADDR)address;
 
 			return (!IN6_IS_ADDR_UNSPECIFIED (p6addr) &&
 					!IN6_IS_ADDR_LOOPBACK (p6addr) &&
+					!IN6_IS_ADDR_ANYCAST (p6addr) &&
 					!IN6_IS_ADDR_LINKLOCAL (p6addr) &&
 					!IN6_IS_ADDR_MULTICAST (p6addr) &&
-					!IN6_IS_ADDR_SITELOCAL (p6addr) &&
-					!IN6_IS_ADDR_ANYCAST (p6addr));
+					!IN6_IS_ADDR_SITELOCAL (p6addr));
+		}
+
+		default:
+		{
+			return FALSE; // unknown address family
 		}
 	}
-
-	return FALSE;
 }
 
 VOID _app_network_printlistviewtable (
@@ -665,11 +628,9 @@ VOID _app_network_printlistviewtable (
 	PITEM_NETWORK ptr_network = NULL;
 	PR_STRING string;
 	ULONG_PTR enum_key = 0;
-	ULONG_PTR app_hash;
-	ULONG network_hash;
+	ULONG app_hash, network_hash;
 	INT item_count;
-	BOOLEAN is_highlight = FALSE;
-	BOOLEAN is_refresh = FALSE;
+	BOOLEAN is_highlight = FALSE, is_refresh = FALSE;
 
 	if (_r_config_getboolean (L"IsEnableHighlighting", TRUE, NULL) && _r_config_getboolean (L"IsHighlightConnection", TRUE, L"colors"))
 		is_highlight = TRUE;
@@ -679,7 +640,7 @@ VOID _app_network_printlistviewtable (
 
 	while (_r_obj_enumhashtablepointer (network_context->network_ptr, (PVOID_PTR)&ptr_network, &network_hash, &enum_key))
 	{
-		string = _r_obj_findhashtablepointer (network_context->checker_ptr, network_hash);
+		string = (PR_STRING)_r_obj_findhashtablepointer (network_context->checker_ptr, network_hash);
 
 		if (!string)
 			continue;
@@ -722,11 +683,8 @@ VOID _app_network_printlistviewtable (
 
 		_app_network_removeitem (network_hash);
 
-		// redraw listview item
-		if (!is_highlight || !app_hash)
-			continue;
-
-		_app_listview_updateby_param (network_context->hwnd, app_hash, PR_SETITEM_REDRAW, TRUE);
+		if (app_hash && is_highlight)
+			_app_listview_updateby_param (network_context->hwnd, app_hash, PR_SETITEM_REDRAW, TRUE); // redraw listview item
 	}
 }
 
@@ -760,7 +718,7 @@ VOID NTAPI _app_network_threadproc (
 		_app_network_generatetable (network_context);
 		_app_network_printlistviewtable (network_context);
 
-		_r_sys_waitforsingleobject (NtCurrentThread (), 3000);
+		_r_sys_waitforsingleobject (NtCurrentThread (), 2000);
 	}
 
 	_app_network_uninitialize (network_context);

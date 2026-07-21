@@ -1,6 +1,6 @@
 // simplewall
-// Copyright (c) 2012-2021 dmex
-// Copyright (c) 2021-2025 Henry++
+// Copyright (c) 2012-2026 dmex
+// Copyright (c) 2021-2026 Henry++
 
 #include "global.h"
 
@@ -13,14 +13,15 @@ VOID _app_search_initialize (
 	LONG cx_border;
 	HRESULT status;
 
-	GetWindowRect (context->hwnd, &rect);
+	if (!GetWindowRect (context->hwnd, &rect))
+		return;
 
 	cx_border = _r_dc_getsystemmetrics (SM_CXBORDER, context->dpi_value);
 
 	// initialize borders
 	context->cx_width = _r_dc_getdpi (20, context->dpi_value);
 	context->cx_border = cx_border;
-	context->dc_brush = GetStockObject (DC_BRUSH);
+	context->dc_brush = (HBRUSH)GetStockObject (DC_BRUSH);
 
 	if (IsThemeActive ())
 	{
@@ -43,9 +44,11 @@ VOID _app_search_create (
 )
 {
 	PSEARCH_CONTEXT context;
-	WCHAR buffer[128];
+	WCHAR buffer[0x80];
 
-	context = _r_mem_allocate (sizeof (SEARCH_CONTEXT));
+	context = (PSEARCH_CONTEXT)_r_mem_allocate (sizeof (SEARCH_CONTEXT));
+
+	BringWindowToTop (hwnd); // HACK!!!
 
 	context->hwnd = hwnd;
 	context->dpi_value = _r_dc_getwindowdpi (hwnd);
@@ -54,16 +57,17 @@ VOID _app_search_create (
 
 	_r_wnd_setcontext (context->hwnd, SHORT_MAX, context);
 
-	// Subclass the Edit control window procedure.
+	// subclass the edit control window procedure
 	context->wnd_proc = (WNDPROC)GetWindowLongPtrW (context->hwnd, GWLP_WNDPROC);
 	SetWindowLongPtrW (context->hwnd, GWLP_WNDPROC, (LONG_PTR)&_app_search_subclass_proc);
 
+	// set cue banner
 	_r_str_printf (buffer, RTL_NUMBER_OF (buffer), L"%s...", _r_locale_getstring (IDS_FIND));
 
 	_r_edit_setcuebanner (context->hwnd, 0, buffer);
 
-	// Initialize the theme parameters.
-	_app_search_themechanged (hwnd, context);
+	// initialize the theme parameters
+	_app_search_themechanged (context->hwnd, context);
 }
 
 VOID _app_search_initializeimages (
@@ -116,13 +120,13 @@ VOID _app_search_themechanged (
 	_app_search_initialize (context);
 	_app_search_initializeimages (context, hwnd);
 
-	// Reset the client area margins.
-	_r_ctrl_settextmargin (hwnd, 0, 0, 0);
+	// reset the client area margins
+	CallWindowProcW (context->wnd_proc, hwnd, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELPARAM (0, 0));
 
-	// Refresh the non-client area.
+	// refresh the non-client area
 	SetWindowPos (hwnd, NULL, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 
-	// Force the edit control to update its non-client area.
+	// force the edit control to update its non-client area
 	RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 }
 
@@ -132,11 +136,7 @@ VOID _app_search_setvisible (
 	_In_ LONG dpi_value
 )
 {
-	BOOLEAN is_visible;
-
-	is_visible = _r_config_getboolean (L"IsShowSearchBar", TRUE, NULL);
-
-	if (is_visible)
+	if (_r_config_getboolean (L"IsShowSearchBar", TRUE, NULL))
 	{
 		if (!_r_rebar_isbandexists (hwnd, IDC_REBAR, REBAR_SEARCH_ID))
 			_r_rebar_insertband (hwnd, IDC_REBAR, REBAR_SEARCH_ID, config.hsearchbar, RBBS_VARIABLEHEIGHT | RBBS_NOGRIPPER | RBBS_USECHEVRON, _r_dc_getdpi (180, dpi_value), 20);
@@ -176,6 +176,11 @@ VOID _app_search_drawwindow (
 	PatBlt (context->hdc, wnd_rect->left, wnd_rect->top, wnd_rect->right - wnd_rect->left, 1, PATCOPY);
 	PatBlt (context->hdc, wnd_rect->left, wnd_rect->bottom - 1, wnd_rect->right - wnd_rect->left, 1, PATCOPY);
 
+	PatBlt (context->hdc, wnd_rect->left, wnd_rect->top, 1, wnd_rect->bottom - wnd_rect->top, PATCOPY);
+	PatBlt (context->hdc, wnd_rect->right - 1, wnd_rect->top, 1, wnd_rect->bottom - wnd_rect->top, PATCOPY);
+	PatBlt (context->hdc, wnd_rect->left, wnd_rect->top, wnd_rect->right - wnd_rect->left, 1, PATCOPY);
+	PatBlt (context->hdc, wnd_rect->left, wnd_rect->bottom - 1, wnd_rect->right - wnd_rect->left, 1, PATCOPY);
+
 	SetDCBrushColor (context->hdc, RGB (60, 60, 60));
 
 	SelectObject (context->hdc, context->dc_brush);
@@ -193,6 +198,7 @@ VOID _app_search_drawbutton (
 )
 {
 	RECT btn_rect;
+	HICON hicon;
 
 	_app_search_getbuttonrect (context, wnd_rect, &btn_rect);
 
@@ -209,17 +215,9 @@ VOID _app_search_drawbutton (
 		_r_dc_fillrect (context->hdc, &btn_rect, _r_theme_isenabled () ? RGB (60, 60, 60) : GetSysColor (COLOR_WINDOW));
 	}
 
-	DrawIconEx (
-		context->hdc,
-		btn_rect.left + 1,
-		btn_rect.top,
-		_r_theme_isenabled () ? context->hicon_light : context->hicon_dark,
-		context->image_width,
-		context->image_height,
-		0,
-		NULL,
-		DI_NORMAL
-	);
+	hicon = _r_theme_isenabled () ? context->hicon_light : context->hicon_dark;
+
+	DrawIconEx (context->hdc, btn_rect.left + 1, btn_rect.top, hicon, context->image_width, context->image_height, 0, NULL, DI_NORMAL);
 }
 
 VOID _app_search_getbuttonrect (
@@ -228,12 +226,16 @@ VOID _app_search_getbuttonrect (
 	_Out_ PRECT btn_rect
 )
 {
-	*btn_rect = *wnd_rect;
+	CopyRect (btn_rect, wnd_rect);
 
 	btn_rect->left = ((btn_rect->right - context->cx_width) - context->cx_border - 1);
 	btn_rect->top += context->cx_border;
 	btn_rect->right -= context->cx_border;
 	btn_rect->bottom -= context->cx_border;
+
+	// shift the button rect to the left based on the button index
+	//btn_rect->left -= (context->cx_width + context->cx_border - 1);
+	//btn_rect->right -= (context->cx_width + context->cx_border - 1);
 }
 
 BOOLEAN _app_search_isstringfound (
@@ -243,7 +245,7 @@ BOOLEAN _app_search_isstringfound (
 	_Inout_ PBOOLEAN is_changed
 )
 {
-	if (!string)
+	if (_r_obj_isstringempty (string))
 	{
 		if (context->is_hidden)
 		{
@@ -319,9 +321,9 @@ BOOLEAN _app_search_applyfilteritem (
 	_In_opt_ PR_STRING search_string
 )
 {
-	PITEM_APP ptr_app = NULL;
-	PITEM_RULE ptr_rule = NULL;
 	PITEM_NETWORK ptr_network = NULL;
+	PITEM_RULE ptr_rule = NULL;
+	PITEM_APP ptr_app = NULL;
 	PITEM_LOG ptr_log = NULL;
 	PR_STRING string;
 	BOOLEAN is_changed = FALSE;
@@ -334,7 +336,7 @@ BOOLEAN _app_search_applyfilteritem (
 		is_changed = TRUE;
 	}
 
-	if (!search_string)
+	if (_r_obj_isstringempty (search_string))
 		goto CleanupExit;
 
 	switch (listview_id)
@@ -350,18 +352,12 @@ BOOLEAN _app_search_applyfilteritem (
 				goto CleanupExit;
 
 			// path
-			if (ptr_app->real_path)
-			{
-				if (_app_search_isstringfound (&ptr_app->real_path->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_app->real_path && _app_search_isstringfound (&ptr_app->real_path->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			// comment
-			if (!_r_obj_isstringempty (ptr_app->comment))
-			{
-				if (_app_search_isstringfound (&ptr_app->comment->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (!_r_obj_isstringempty (ptr_app->comment) && _app_search_isstringfound (&ptr_app->comment->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			break;
 		}
@@ -376,36 +372,21 @@ BOOLEAN _app_search_applyfilteritem (
 			if (!ptr_rule)
 				goto CleanupExit;
 
-			if (ptr_rule->name)
-			{
-				if (_app_search_isstringfound (&ptr_rule->name->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_rule->name && _app_search_isstringfound (&ptr_rule->name->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
-			if (ptr_rule->rule_remote)
-			{
-				if (_app_search_isstringfound (&ptr_rule->rule_remote->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_rule->rule_remote && _app_search_isstringfound (&ptr_rule->rule_remote->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
-			if (ptr_rule->rule_local)
-			{
-				if (_app_search_isstringfound (&ptr_rule->rule_local->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_rule->rule_local && _app_search_isstringfound (&ptr_rule->rule_local->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
-			if (ptr_rule->protocol_str)
-			{
-				if (_app_search_isstringfound (&ptr_rule->protocol_str->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_rule->protocol_str && _app_search_isstringfound (&ptr_rule->protocol_str->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			// comment
-			if (!_r_obj_isstringempty (ptr_rule->comment))
-			{
-				if (_app_search_isstringfound (&ptr_rule->comment->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (!_r_obj_isstringempty (ptr_rule->comment) && _app_search_isstringfound (&ptr_rule->comment->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			break;
 		}
@@ -418,14 +399,11 @@ BOOLEAN _app_search_applyfilteritem (
 				goto CleanupExit;
 
 			// path
-			if (ptr_network->path)
-			{
-				if (_app_search_isstringfound (&ptr_network->path->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_network->path && _app_search_isstringfound (&ptr_network->path->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			// local address
-			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->local_addr_str, NULL, NULL);
+			string = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->local_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -434,7 +412,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local host
-			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->local_host_str, NULL, NULL);
+			string = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->local_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -443,7 +421,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote address
-			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->remote_addr_str, NULL, NULL);
+			string = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->remote_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -452,7 +430,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote host
-			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->remote_host_str, NULL, NULL);
+			string = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_network->remote_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -461,11 +439,8 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// protocol
-			if (ptr_network->protocol_str)
-			{
-				if (_app_search_isstringfound (&ptr_network->protocol_str->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_network->protocol_str && _app_search_isstringfound (&ptr_network->protocol_str->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			break;
 		}
@@ -478,35 +453,23 @@ BOOLEAN _app_search_applyfilteritem (
 				goto CleanupExit;
 
 			// path
-			if (ptr_log->path)
-			{
-				if (_app_search_isstringfound (&ptr_log->path->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_log->path && _app_search_isstringfound (&ptr_log->path->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			// filter name
-			if (ptr_log->filter_name)
-			{
-				if (_app_search_isstringfound (&ptr_log->filter_name->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_log->filter_name && _app_search_isstringfound (&ptr_log->filter_name->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			// layer name
-			if (ptr_log->layer_name)
-			{
-				if (_app_search_isstringfound (&ptr_log->layer_name->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_log->layer_name && _app_search_isstringfound (&ptr_log->layer_name->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			// user name
-			if (ptr_log->username)
-			{
-				if (_app_search_isstringfound (&ptr_log->username->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_log->username && _app_search_isstringfound (&ptr_log->username->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			// local address
-			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->local_addr_str, NULL, NULL);
+			string = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->local_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -515,7 +478,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// local host
-			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->local_host_str, NULL, NULL);
+			string = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->local_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -524,7 +487,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote address
-			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->remote_addr_str, NULL, NULL);
+			string = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->remote_addr_str, NULL, NULL);
 
 			if (string)
 			{
@@ -533,7 +496,7 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// remote host
-			string = _InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->remote_host_str, NULL, NULL);
+			string = (PR_STRING)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&ptr_log->remote_host_str, NULL, NULL);
 
 			if (string)
 			{
@@ -542,11 +505,8 @@ BOOLEAN _app_search_applyfilteritem (
 			}
 
 			// protocol
-			if (ptr_log->protocol_str)
-			{
-				if (_app_search_isstringfound (&ptr_log->protocol_str->sr, &search_string->sr, context, &is_changed))
-					goto CleanupExit;
-			}
+			if (ptr_log->protocol_str && _app_search_isstringfound (&ptr_log->protocol_str->sr, &search_string->sr, context, &is_changed))
+				goto CleanupExit;
 
 			break;
 		}
@@ -554,20 +514,20 @@ BOOLEAN _app_search_applyfilteritem (
 
 CleanupExit:
 
-	if (ptr_app)
-		_r_obj_dereference (ptr_app);
-
-	if (ptr_rule)
-		_r_obj_dereference (ptr_rule);
+	if (is_changed)
+		_r_listview_setitem (hwnd, listview_id, item_id, 0, NULL, I_IMAGECALLBACK, I_GROUPIDCALLBACK, I_DEFAULT);
 
 	if (ptr_network)
 		_r_obj_dereference (ptr_network);
 
+	if (ptr_rule)
+		_r_obj_dereference (ptr_rule);
+
+	if (ptr_app)
+		_r_obj_dereference (ptr_app);
+
 	if (ptr_log)
 		_r_obj_dereference (ptr_log);
-
-	if (is_changed)
-		_r_listview_setitem (hwnd, listview_id, item_id, 0, NULL, I_IMAGECALLBACK, I_GROUPIDCALLBACK, I_DEFAULT);
 
 	return is_changed;
 }
@@ -599,7 +559,7 @@ VOID _app_search_createbufferedcontext (
 
 	context->hbitmap = CreateCompatibleBitmap (hdc, context->rect.right, context->rect.bottom);
 
-	context->old_bitmap = SelectObject (context->hdc, context->hbitmap);
+	context->old_bitmap = (HBITMAP)SelectObject (context->hdc, context->hbitmap);
 }
 
 VOID _app_search_destroybufferedcontext (
@@ -624,10 +584,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 	PSEARCH_CONTEXT context;
 	WNDPROC wnd_proc;
 
-	context = _r_wnd_getcontext (hwnd, SHORT_MAX);
+	context = (PSEARCH_CONTEXT)_r_wnd_getcontext (hwnd, SHORT_MAX);
 
 	if (!context)
-		return 0;
+		return DefWindowProcW (hwnd, msg, wparam, lparam);
 
 	wnd_proc = context->wnd_proc;
 
@@ -660,10 +620,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 			calc_size = (LPNCCALCSIZE_PARAMS)lparam;
 
-			// Let Windows handle the non-client defaults.
+			// let Windows handle the non-client defaults
 			CallWindowProcW (wnd_proc, hwnd, msg, wparam, lparam);
 
-			// Deflate the client area to accommodate the custom button.
+			// deflate the client area to accommodate the custom button
 			calc_size->rgrc[0].right -= context->cx_width;
 
 			return 0;
@@ -671,11 +631,21 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 		case WM_NCPAINT:
 		{
-			RECT wnd_rect;
-			RECT buf_rect;
+			RECT buf_rect, wnd_rect;
 			HRGN hrgn;
 			HDC hdc;
-			ULONG flags = DCX_WINDOW | DCX_LOCKWINDOWUPDATE | DCX_USESTYLE;
+			ULONG flags = DCX_WINDOW | DCX_CACHE | DCX_USESTYLE;
+			LONG height, width;
+
+			// get the screen coordinates of the window
+			if (!GetWindowRect (hwnd, &wnd_rect))
+				break;
+
+			width = _r_calc_rectwidth (&wnd_rect);
+			height = _r_calc_rectheight (&wnd_rect);
+
+			if (height <= 0 || width <= 0)
+				break;
 
 			hrgn = (HRGN)wparam;
 
@@ -689,22 +659,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 			if (hdc)
 			{
-				// Get the screen coordinates of the window.
-				GetWindowRect (hwnd, &wnd_rect);
-
-				// Adjust the coordinates (start from 0,0).
+				// normalize window coordinates (start from 0,0)
 				OffsetRect (&wnd_rect, -wnd_rect.left, -wnd_rect.top);
 
-				// Exclude client area.
-				ExcludeClipRect (
-					hdc,
-					wnd_rect.left + context->cx_border + 1,
-					wnd_rect.top + context->cx_border + 1,
-					wnd_rect.right - context->cx_width - (context->cx_border + 1),
-					wnd_rect.bottom - (context->cx_border + 1)
-				);
-
-				SetRect (&buf_rect, 0, 0, _r_calc_rectwidth (&wnd_rect), _r_calc_rectheight (&wnd_rect));
+				SetRect (&buf_rect, 0, 0, width, height);
 
 				if (context->hdc && (context->rect.right < buf_rect.right || context->rect.bottom < buf_rect.bottom))
 					_app_search_destroybufferedcontext (context);
@@ -719,6 +677,16 @@ LRESULT CALLBACK _app_search_subclass_proc (
 					break;
 				}
 
+				// exclude client area from NC drawing
+				ExcludeClipRect (
+					hdc,
+					wnd_rect.left + context->cx_border + 1,
+					wnd_rect.top + context->cx_border + 1,
+					wnd_rect.right - context->cx_width - (context->cx_border + 1),
+					wnd_rect.bottom - (context->cx_border + 1)
+				);
+
+				// NC frame
 				if ((context->is_mouseactive && context->is_hot) || GetFocus () == hwnd)
 				{
 					_r_dc_framerect (context->hdc, &wnd_rect, _r_theme_isenabled () ? WND_HOT_CLR : GetSysColor (COLOR_HOTLIGHT));
@@ -739,7 +707,8 @@ LRESULT CALLBACK _app_search_subclass_proc (
 				_app_search_drawwindow (context, &wnd_rect);
 				_app_search_drawbutton (context, hwnd, &wnd_rect);
 
-				BitBlt (hdc, buf_rect.left, buf_rect.top, buf_rect.right, buf_rect.bottom, context->hdc, 0, 0, SRCCOPY);
+				// commit to the target DC
+				BitBlt (hdc, 0, 0, buf_rect.right, buf_rect.bottom, context->hdc, 0, 0, SRCCOPY);
 
 				ReleaseDC (hwnd, hdc);
 			}
@@ -749,22 +718,21 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 		case WM_NCHITTEST:
 		{
-			RECT wnd_rect;
-			RECT btn_rect;
-			POINT point;
+			RECT btn_rect, wnd_rect;
+			POINT point = {0};
 
-			// Get the screen coordinates of the mouse.
-			if (!GetCursorPos (&point))
-				break;
+			// get the screen coordinates of the mouse
+			point.x = GET_X_LPARAM (lparam);
+			point.y = GET_Y_LPARAM (lparam);
 
-			// Get the screen coordinates of the window.
+			// get the screen coordinates of the window
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
-			// Get the position of the inserted button.
+			// get the position of the inserted button
 			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
 
-			// Check that the mouse is within the inserted button.
+			// check that the mouse is within the inserted button
 			if (PtInRect (&btn_rect, point))
 				return HTBORDER;
 
@@ -773,19 +741,18 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 		case WM_NCLBUTTONDOWN:
 		{
-			RECT wnd_rect;
-			RECT btn_rect;
-			POINT point;
+			RECT btn_rect, wnd_rect;
+			POINT point = {0};
 
-			// Get the screen coordinates of the mouse.
-			if (!GetCursorPos (&point))
-				break;
+			// get the screen coordinates of the mouse
+			point.x = GET_X_LPARAM (lparam);
+			point.y = GET_Y_LPARAM (lparam);
 
-			// Get the screen coordinates of the window.
+			// get the screen coordinates of the window
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
-			// Get the position of the inserted button.
+			// get the position of the inserted button
 			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
 
 			context->is_pushed = PtInRect (&btn_rect, point);
@@ -799,22 +766,24 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 		case WM_LBUTTONUP:
 		{
-			RECT wnd_rect;
-			RECT btn_rect;
-			POINT point;
+			RECT btn_rect, wnd_rect;
+			POINT point = {0};
+			ULONG position;
 
-			// Get the screen coordinates of the mouse.
-			if (!GetCursorPos (&point))
-				break;
+			// get the screen coordinates of the mouse
+			position = GetMessagePos ();
 
-			// Get the screen coordinates of the window.
+			point.x = GET_X_LPARAM (position);
+			point.y = GET_Y_LPARAM (position);
+
+			// get the screen coordinates of the window
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
-			// Get the position of the inserted button.
+			// get the position of the inserted button
 			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
 
-			// Check that the mouse is within the inserted button.
+			// check that the mouse is within the inserted button
 			if (PtInRect (&btn_rect, point))
 			{
 				SetFocus (hwnd);
@@ -840,10 +809,12 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		case WM_UNDO:
 		case WM_KEYUP:
 		case WM_SETTEXT:
-		case WM_KILLFOCUS:
 		{
+			LRESULT result = CallWindowProcW (wnd_proc, hwnd, msg, wparam, lparam);
+
 			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
-			break;
+
+			return result;
 		}
 
 		case WM_SETTINGCHANGE:
@@ -863,28 +834,30 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		case WM_NCMOUSEMOVE:
 		{
 			TRACKMOUSEEVENT tme = {0};
-			RECT wnd_rect;
-			RECT btn_rect;
-			POINT pt;
+			RECT btn_rect, wnd_rect;
+			POINT point = {0};
+			ULONG position;
 
-			// Get the screen coordinates of the mouse.
-			if (!GetCursorPos (&pt))
-				break;
+			// get the screen coordinates of the mouse
+			position = GetMessagePos ();
 
-			// Get the screen coordinates of the window.
+			point.x = GET_X_LPARAM (position);
+			point.y = GET_Y_LPARAM (position);
+
+			// get the screen coordinates of the window
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
-			context->is_hot = PtInRect (&wnd_rect, pt);
+			context->is_hot = PtInRect (&wnd_rect, point);
 
-			// Get the position of the inserted button.
+			// get the position of the inserted button
 			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
 
-			// Check that the mouse is within the inserted button.
+			// check that the mouse is within the inserted button
 			if (!context->is_mouseactive)
 			{
 				tme.cbSize = sizeof (TRACKMOUSEEVENT);
-				tme.dwFlags = TME_LEAVE;
+				tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
 				tme.hwndTrack = hwnd;
 				tme.dwHoverTime = 0;
 
@@ -902,27 +875,16 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		case WM_NCMOUSELEAVE:
 		{
 			TRACKMOUSEEVENT tme = {0};
-			RECT wnd_rect;
-			RECT btn_rect;
+			RECT btn_rect, wnd_rect;
 			POINT point;
 
-			if (context->is_mouseactive)
-			{
-				tme.cbSize = sizeof (TRACKMOUSEEVENT);
-				tme.dwFlags = TME_LEAVE | TME_CANCEL;
-				tme.hwndTrack = hwnd;
-				tme.dwHoverTime = 0;
+			context->is_mouseactive = FALSE;
 
-				TrackMouseEvent (&tme);
-
-				context->is_mouseactive = FALSE;
-			}
-
-			// Get the screen coordinates of the mouse.
+			// get the screen coordinates of the mouse
 			if (!GetCursorPos (&point))
 				break;
 
-			// Get the screen coordinates of the window.
+			// get the screen coordinates of the window
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
@@ -931,6 +893,24 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			context->is_hot = PtInRect (&btn_rect, point);
 
 			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+
+			break;
+		}
+
+		case WM_CHAR:
+		{
+			// delete previous word for ctrl+backspace (dmex)
+			if (wparam == VK_F16 && GetAsyncKeyState (VK_CONTROL) < 0)
+				return 1;
+
+			break;
+		}
+
+		case WM_GETDLGCODE:
+		{
+			// intercept esc key (otherwise it would get sent to parent window)
+			if (wparam == VK_ESCAPE && ((MSG*)lparam)->message == WM_KEYDOWN)
+				return DLGC_WANTMESSAGE;
 
 			break;
 		}

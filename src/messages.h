@@ -7,11 +7,14 @@ VOID _app_message_initialize (
 	_In_ HWND hwnd
 );
 
-VOID _app_message_localize (
+FORCEINLINE VOID _app_message_uninitialize (
 	_In_ HWND hwnd
-);
+)
+{
+	_r_tray_destroy (hwnd, &GUID_TrayIcon);
+}
 
-VOID _app_message_uninitialize (
+VOID _app_message_localize (
 	_In_ HWND hwnd
 );
 
@@ -19,6 +22,17 @@ VOID _app_generate_appmenu (
 	_In_ HMENU hmenu,
 	_In_opt_ HMENU hsubmenu_rules,
 	_In_opt_ HMENU hsubmenu_timers,
+	_In_ ULONG app_hash
+);
+
+VOID _app_generate_rulescontrol (
+	_In_ HMENU hsubmenu,
+	_In_ ULONG app_hash,
+	_In_opt_ PITEM_LOG ptr_log
+);
+
+VOID _app_generate_timerscontrol (
+	_In_ HMENU hsubmenu,
 	_In_ ULONG app_hash
 );
 

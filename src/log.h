@@ -21,7 +21,7 @@ typedef ULONG (WINAPI *FWPMNES3)(
 	_Out_ PHANDLE events_handle
 	);
 
-// FwpmNetEventSubscribe2 (win10rs1+)
+// FwpmNetEventSubscribe2 (win10th1+)
 typedef ULONG (WINAPI *FWPMNES2)(
 	_In_ HANDLE engine_handle,
 	_In_ const FWPM_NET_EVENT_SUBSCRIPTION0 *subscription,
@@ -117,7 +117,7 @@ VOID CALLBACK _wfp_logcallback2 (
 	_In_ const FWPM_NET_EVENT3* event_data
 );
 
-// win10rs4+ callback
+// win10rs2+ callback
 VOID CALLBACK _wfp_logcallback3 (
 	_Inout_ PVOID context,
 	_In_ const FWPM_NET_EVENT4* event_data

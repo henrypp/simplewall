@@ -29,13 +29,15 @@ BOOLEAN _app_getappinfobyhash (
 	_In_ ULONG_PTR length
 );
 
-VOID _app_setappinfo (
+_Success_ (return)
+BOOLEAN _app_setappinfo (
 	_In_ PITEM_APP ptr_app,
 	_In_ ENUM_INFO_DATA info_data,
 	_In_opt_ PVOID value
 );
 
-VOID _app_setappinfobyhash (
+_Success_ (return)
+BOOLEAN _app_setappinfobyhash (
 	_In_ ULONG app_hash,
 	_In_ ENUM_INFO_DATA info_data,
 	_In_opt_ PVOID value
@@ -57,8 +59,8 @@ BOOLEAN _app_getruleinfobyid (
 	_In_ ULONG_PTR length
 );
 
-_Success_ (return != 0)
-ULONG _app_addapplication (
+_Ret_maybenull_
+PITEM_APP _app_addapplication (
 	_In_opt_ HWND hwnd,
 	_In_ ENUM_TYPE_DATA type,
 	_In_ PR_STRING path,
@@ -96,7 +98,7 @@ PITEM_RULE _app_getrulebyid (
 
 _Ret_maybenull_
 PITEM_RULE _app_getrulebyhash (
-	_In_ ULONG_PTR rule_hash
+	_In_ ULONG rule_hash
 );
 
 _Ret_maybenull_
@@ -114,6 +116,7 @@ ULONG _app_getlogapp (
 	_In_ ULONG index
 );
 
+_Success_ (return != 0)
 COLORREF _app_getappcolor (
 	_In_ INT listview_id,
 	_In_ ULONG app_hash,
@@ -170,6 +173,7 @@ VOID _app_getcount (
 	_Out_ PITEM_STATUS status
 );
 
+_Success_ (return != 0)
 COLORREF _app_getrulecolor (
 	_In_ INT listview_id,
 	_In_ ULONG_PTR rule_idx
@@ -195,13 +199,6 @@ VOID _app_ruleenable (
 	_In_ BOOLEAN is_enable,
 	_In_ BOOLEAN is_createconfig
 );
-
-//VOID _app_rulecleanapp (
-//	_In_opt_ HWND hwnd,
-//	_In_ ULONG_PTR item_id,
-//	_In_ PITEM_RULE ptr_rule,
-//	_In_opt_ ULONG_PTR app_hash
-//);
 
 VOID _app_ruleremoveapp (
 	_In_opt_ HWND hwnd,
@@ -233,30 +230,29 @@ VOID _app_ruleblocklistset (
 _Ret_maybenull_
 PR_STRING _app_appexpandrules (
 	_In_ ULONG app_hash,
-	_In_ LPWSTR delimeter
+	_In_ LPCWSTR delimeter
 );
 
 _Ret_maybenull_
 PR_STRING _app_rulesexpandapps (
 	_In_ PITEM_RULE ptr_rule,
 	_In_ BOOLEAN is_fordisplay,
-	_In_ LPWSTR delimeter
+	_In_ LPCWSTR delimeter
 );
 
 _Ret_maybenull_
 PR_STRING _app_rulesexpandrules (
-	_In_opt_ PR_STRING rule,
-	_In_ LPWSTR delimeter
+	_In_opt_ PR_STRING rule
 );
 
 BOOLEAN _app_isrulesupportedbyos (
-	_In_ PR_STRINGREF os_version
+	_In_ PCR_STRINGREF os_version
 );
 
 VOID _app_profile_initialize ();
 
 NTSTATUS _app_profile_load_fromresource (
-	_Out_ PDB_INFORMATION out_buffer,
+	_Out_ PDB_INFORMATION db_info,
 	_In_ LPCWSTR resource_name
 );
 

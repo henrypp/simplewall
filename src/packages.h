@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #pragma once
 
@@ -28,9 +28,9 @@ VOID NTAPI _app_package_threadproc (
 );
 
 VOID _app_package_getpackageslist (
-	_In_ HWND hwnd
+	_In_opt_ HWND hwnd
 );
 
 VOID _app_package_getserviceslist (
-	_In_ HWND hwnd
+	_In_opt_ HWND hwnd
 );

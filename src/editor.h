@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2025 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #pragma once
 
@@ -12,8 +12,8 @@ typedef struct _EDITOR_CONTEXT
 
 	union
 	{
-		PITEM_APP ptr_app;
 		PITEM_RULE ptr_rule;
+		PITEM_APP ptr_app;
 	};
 
 	struct
@@ -28,16 +28,19 @@ typedef struct _EDITOR_CONTEXT
 	BOOLEAN is_settorules;
 } EDITOR_CONTEXT, *PEDITOR_CONTEXT;
 
+FORCEINLINE VOID _app_editor_deletewindow (
+	_In_ _Frees_ptr_ _Post_invalid_ PEDITOR_CONTEXT context
+)
+{
+	_r_mem_free (context);
+}
+
 _Ret_maybenull_
 PEDITOR_CONTEXT _app_editor_createwindow (
-	_In_ HWND hwnd,
+	_In_opt_ HWND hwnd,
 	_In_ PVOID lparam,
 	_In_ INT page_id,
 	_In_ BOOLEAN is_settorules
-);
-
-VOID _app_editor_deletewindow (
-	_In_ PEDITOR_CONTEXT context
 );
 
 _Ret_maybenull_
@@ -72,7 +75,7 @@ PR_STRING _app_editor_getrulesfromlistview (
 VOID _app_editor_setrulestolistview (
 	_In_ HWND hwnd,
 	_In_ INT ctrl_id,
-	_In_ PR_STRING rule
+	_In_opt_ PR_STRING rule
 );
 
 INT_PTR CALLBACK EditorRuleProc (

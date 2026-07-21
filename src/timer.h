@@ -1,5 +1,5 @@
 // simplewall
-// Copyright (c) 2016-2024 Henry++
+// Copyright (c) 2016-2026 Henry++
 
 #pragma once
 
@@ -24,7 +24,7 @@ VOID _app_timer_remove (
 	_Inout_ PITEM_APP ptr_app
 );
 
-VOID CALLBACK _app_timer_callback (
+VOID NTAPI _app_timer_callback (
 	_Inout_ PTP_CALLBACK_INSTANCE instance,
 	_Inout_opt_ PVOID context,
 	_Inout_ PTP_TIMER timer
