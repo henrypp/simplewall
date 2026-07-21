@@ -719,8 +719,8 @@ BEGIN
 	IDS_ADDRESS_REMOTE "Destination"
 
 	IDS_ICONSEXTRALARGE "Extra large"
-	IDS_SECUREFILTERS_CHK "Enable protection of installed filters" //removed
-	IDS_SECUREFILTERS_HINT "Prevent unauthorized applications from accessing the installed filters." //removed
+	IDS_SECUREFILTERS_CHK "Enable protection of installed filters" // removed
+	IDS_SECUREFILTERS_HINT "Prevent unauthorized applications from accessing the installed filters." // removed
 	IDS_USEREFRESHDEVICES_CHK "Refresh filters when (storage) devices are connected"
 
 	IDS_RULE_ALLOW6TO4 "Allow IPv6 redirections (6to4) for all"
@@ -835,6 +835,9 @@ BEGIN
 
 	IDS_DIRECTION_REMOTE "Remote"
 	IDS_DIRECTION_LOCAL "Local"
+
+	IDS_WARNING_UNEXPECTED L"Be careful, through service/driver host (svchost.exe/System) internet traffic can let out through unexpected ways. Continue?"
+	IDS_WARNING_ME "If you disallow main process, you cannot use resolve network addresses option. Continue?"
 END
 
 //
