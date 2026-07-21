@@ -1,3 +1,21 @@
+v3.9 Beta (21 July 2026)
+- changed messages with displays unused apps and timers (it displays full paths)
+- now creating rules from network/log listviews do not use local IP addressess
+- mark toolbar log icons as disabled when log subsription failed
+- changed option resolve network address to enabled by default
+- now profile saved paths with environment variables
+- increased rules limit to 1024 symbols (issue #809)
+- improved loopback filters
+- improved memory usage
+- improved dark theme
+- improved security
+- fixed saving profile when it have read-only attribute (issue #2048) [thx @jekesx]
+- fixed log subscription sometimes returns access denied (issue #1710)
+- fixed crash when loading notification dialog (issue #2070)
+- fixed searchbox dissapear (issue #1790)
+- fixed possible memory leaks
+- updated port services lists
+
 v3.8.7 (8 August 2025)
 - fixed not logical crash (issue #2012)
 - fixed context menu performance
