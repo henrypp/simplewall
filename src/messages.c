@@ -1279,9 +1279,9 @@ VOID _app_displayinfonetwork_callback (
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	LPCWSTR name;
-	WCHAR bytes_string[64];
-	LONG icon_id = 0;
+	WCHAR bytes_string[0x40];
 	LONG64 bytes_value;
+	LONG icon_id = 0;
 
 	// set text
 	if ((lpnmlv->item.mask & LVIF_TEXT) == LVIF_TEXT)

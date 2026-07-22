@@ -9,9 +9,7 @@ static VOID _app_network_update_stats_values (
 	_In_ ULONG64 bytes_out
 )
 {
-	ULONG64 elapsed;
-	ULONG64 bytes_delta;
-	ULONG64 current_tick;
+	ULONG64 bytes_delta, current_tick, elapsed;
 
 	current_tick = _r_sys_gettickcount64 ();
 
@@ -65,7 +63,7 @@ static VOID _app_network_update_tcp4_stats (
 	{
 		data_rw.EnableCollection = TRUE;
 
-		status = SetPerTcpConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), 0);
+		status = SetPerTcpConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (TCP_ESTATS_DATA_RW_v0), 0);
 
 		if (status != NO_ERROR)
 			return;
@@ -73,7 +71,7 @@ static VOID _app_network_update_tcp4_stats (
 		ptr_network->is_stats_enabled = TRUE;
 	}
 
-	status = GetPerTcpConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), NULL, 0, 0, (PUCHAR)&data_rod, 0, sizeof (data_rod));
+	status = GetPerTcpConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), NULL, 0, 0, (PUCHAR)&data_rod, 0, sizeof (TCP_ESTATS_DATA_ROD_v0));
 
 	if (status == NO_ERROR && data_rw.EnableCollection)
 		_app_network_update_stats_values (ptr_network, data_rod.DataBytesIn, data_rod.DataBytesOut);
@@ -89,10 +87,10 @@ static VOID _app_network_update_tcp6_stats (
 	MIB_TCP6ROW tcp_row = {0};
 	ULONG status;
 
-	RtlCopyMemory (&tcp_row.LocalAddr, row->ucLocalAddr, sizeof (tcp_row.LocalAddr));
+	RtlCopyMemory (&tcp_row.LocalAddr, row->ucLocalAddr, sizeof (IN6_ADDR));
 	tcp_row.dwLocalScopeId = row->dwLocalScopeId;
 	tcp_row.dwLocalPort = row->dwLocalPort;
-	RtlCopyMemory (&tcp_row.RemoteAddr, row->ucRemoteAddr, sizeof (tcp_row.RemoteAddr));
+	RtlCopyMemory (&tcp_row.RemoteAddr, row->ucRemoteAddr, sizeof (IN6_ADDR));
 	tcp_row.dwRemoteScopeId = row->dwRemoteScopeId;
 	tcp_row.dwRemotePort = row->dwRemotePort;
 	tcp_row.State = row->dwState;
@@ -101,7 +99,7 @@ static VOID _app_network_update_tcp6_stats (
 	{
 		data_rw.EnableCollection = TRUE;
 
-		status = SetPerTcp6ConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), 0);
+		status = SetPerTcp6ConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (TCP_ESTATS_DATA_RW_v0), 0);
 
 		if (status != NO_ERROR)
 			return;
@@ -109,7 +107,7 @@ static VOID _app_network_update_tcp6_stats (
 		ptr_network->is_stats_enabled = TRUE;
 	}
 
-	status = GetPerTcp6ConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (data_rw), NULL, 0, 0, (PUCHAR)&data_rod, 0, sizeof (data_rod));
+	status = GetPerTcp6ConnectionEStats (&tcp_row, TcpConnectionEstatsData, (PUCHAR)&data_rw, 0, sizeof (TCP_ESTATS_DATA_RW_v0), NULL, 0, 0, (PUCHAR)&data_rod, 0, sizeof (TCP_ESTATS_DATA_ROD_v0));
 
 	if (status == NO_ERROR && data_rw.EnableCollection)
 		_app_network_update_stats_values (ptr_network, data_rod.DataBytesIn, data_rod.DataBytesOut);
@@ -237,6 +235,7 @@ VOID _app_network_generatetable (
 					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
 					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
 					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+
 					_r_obj_dereference (ptr_network);
 
 					continue;
@@ -256,7 +255,6 @@ VOID _app_network_generatetable (
 
 				ptr_network->remote_addr.S_un.S_addr = tcp4_table->table[i].dwRemoteAddr;
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp4_table->table[i].dwRemotePort);
-
 				ptr_network->local_addr.S_un.S_addr = tcp4_table->table[i].dwLocalAddr;
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)tcp4_table->table[i].dwLocalPort);
 
@@ -321,6 +319,7 @@ VOID _app_network_generatetable (
 					_r_queuedlock_acquireexclusive (&network_context->lock_checker);
 					_r_obj_addhashtablepointer (network_context->checker_ptr, network_hash, NULL);
 					_r_queuedlock_releaseexclusive (&network_context->lock_checker);
+
 					_r_obj_dereference (ptr_network);
 
 					continue;
@@ -340,7 +339,6 @@ VOID _app_network_generatetable (
 
 				RtlCopyMemory (ptr_network->remote_addr6.u.Byte, tcp6_table->table[i].ucRemoteAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->remote_port = _r_byteswap_ushort ((USHORT)tcp6_table->table[i].dwRemotePort);
-
 				RtlCopyMemory (ptr_network->local_addr6.u.Byte, tcp6_table->table[i].ucLocalAddr, FWP_V6_ADDR_SIZE);
 				ptr_network->local_port = _r_byteswap_ushort ((USHORT)tcp6_table->table[i].dwLocalPort);
 
@@ -374,6 +372,7 @@ VOID _app_network_generatetable (
 		if (allocated_size < required_size)
 		{
 			buffer = _r_mem_reallocate (buffer, required_size);
+
 			allocated_size = required_size;
 		}
 
@@ -780,8 +779,8 @@ VOID _app_network_printlistviewtable (
 		_app_queue_resolver (network_context->hwnd, IDC_NETWORK, network_hash, ptr_network);
 
 		_r_obj_dereference (string);
-		is_refresh = TRUE;
 
+		is_refresh = TRUE;
 	}
 
 	_r_queuedlock_releaseshared (&network_context->lock_network);
