@@ -1359,10 +1359,8 @@ VOID NTAPI _app_logthread (
 	is_notificationenabled = _r_config_getboolean (L"IsNotificationsEnabled", TRUE, NULL);
 	is_loguienabled = _r_config_getboolean (L"IsLogUiEnabled", FALSE, NULL);
 	is_logenabled = _r_config_getboolean (L"IsLogEnabled", FALSE, NULL);
-
 	is_exludeallow = !(ptr_log->is_allow && _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE, NULL));
 	is_exludestealth = !(ptr_log->is_system && _r_config_getboolean (L"IsExcludeStealth", TRUE, NULL));
-
 	is_exludeblocklist = !(ptr_log->is_blocklist && _r_config_getboolean (L"IsExcludeBlocklist", TRUE, NULL)) && !(ptr_log->is_custom && _r_config_getboolean (L"IsExcludeCustomRules", TRUE, NULL));
 
 	if ((is_logenabled || is_loguienabled || is_notificationenabled) && is_exludestealth && is_exludeallow)
@@ -1372,7 +1370,7 @@ VOID NTAPI _app_logthread (
 		ptr_log->local_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, 0);
 
 		// display notification
-		if (is_notificationenabled && ptr_app && !ptr_log->is_allow && is_exludeblocklist)
+		if (ptr_log->is_myprovider && !ptr_log->is_allow && is_notificationenabled && ptr_app && is_exludeblocklist)
 		{
 			if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_silent, sizeof (BOOLEAN)) && !is_silent)
 				_app_notify_addobject (hwnd, ptr_log, ptr_app);
