@@ -1601,7 +1601,7 @@ BOOLEAN _wfp_createglobalfilters (
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
 			fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
-			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK | FWP_CONDITION_FLAG_IS_NON_APPCONTAINER_LOOPBACK;
+			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 		}
 
 		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FWN_LOOPBACK, fwfc, 1, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, NULL, FWW_IMPORTANT, FWP_ACTION_PERMIT, 0, filter_ids);
@@ -1698,7 +1698,7 @@ BOOLEAN _wfp_createglobalfilters (
 
 		// tests if the network traffic is (non-)app container loopback traffic (win8+)
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
-			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK | FWP_CONDITION_FLAG_IS_NON_APPCONTAINER_LOOPBACK;
+			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 
 		fwfc[1].fieldKey = FWPM_CONDITION_ICMP_TYPE;
 		fwfc[1].matchType = FWP_MATCH_EQUAL;
@@ -1752,7 +1752,7 @@ BOOLEAN _wfp_createglobalfilters (
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
 			fwfc[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
-			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK | FWP_CONDITION_FLAG_IS_NON_APPCONTAINER_LOOPBACK;
+			fwfc[0].conditionValue.uint32 |= FWP_CONDITION_FLAG_IS_APPCONTAINER_LOOPBACK;
 		}
 
 		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FWN_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V4, NULL, FWW_IMPORTANT, FWP_ACTION_PERMIT, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
