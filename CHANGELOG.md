@@ -1,3 +1,9 @@
+v3.9.1 Beta (22 July 2026)
+- added network statistics to watch info about speed (issue #2100) [thx @Tarkiin]
+- added option to exclude inbound blocked packets (#2111)
+- fixed repeatedly notifications (issue #2107)
+- updated igmp rule (issue #2111)
+
 v3.9 Beta (21 July 2026)
 - changed messages with displays unused apps and timers (it displays full paths)
 - now creating rules from network/log listviews do not use local IP addressess
