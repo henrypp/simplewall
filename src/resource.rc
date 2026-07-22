@@ -838,6 +838,7 @@ BEGIN
 
 	IDS_WARNING_UNEXPECTED L"Be careful, through service/driver host (svchost.exe/System) internet traffic can let out through unexpected ways. Continue?"
 	IDS_WARNING_ME "If you disallow main process, you cannot use resolve network addresses option. Continue?"
+	IDS_TOTAL "Total"
 END
 
 //

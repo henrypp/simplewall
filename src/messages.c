@@ -319,6 +319,13 @@ VOID _app_message_localize (
 
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 7, _r_locale_getstring (IDS_PROTOCOL), 0);
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 8, _r_locale_getstring (IDS_STATE), 0);
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"\u2193 %s", _r_locale_getstring (IDS_UPDATE_SPEED)));
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 9, localized_string->buffer, 0);
+
+				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"\u2191 %s", _r_locale_getstring (IDS_UPDATE_SPEED)));
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 10, localized_string->buffer, 0);
+
+				_r_listview_setcolumn (hwnd, tab_context->listview_id, 11, _r_locale_getstring (IDS_TOTAL), 0);
 
 				break;
 			}
@@ -1272,7 +1279,9 @@ VOID _app_displayinfonetwork_callback (
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	LPCWSTR name;
+	WCHAR bytes_string[64];
 	LONG icon_id = 0;
+	LONG64 bytes_value;
 
 	// set text
 	if ((lpnmlv->item.mask & LVIF_TEXT) == LVIF_TEXT)
@@ -1388,6 +1397,32 @@ VOID _app_displayinfonetwork_callback (
 
 				if (name)
 					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, name);
+
+				break;
+			}
+
+			case 9:
+			case 10:
+			case 11:
+			{
+				if (!ptr_network->is_stats_initialized)
+					break;
+
+				if (lpnmlv->item.iSubItem == 9)
+				{
+					bytes_value = _InterlockedCompareExchange64 (&ptr_network->download_speed, 0, 0);
+				}
+				else if (lpnmlv->item.iSubItem == 10)
+				{
+					bytes_value = _InterlockedCompareExchange64 (&ptr_network->upload_speed, 0, 0);
+				}
+				else
+				{
+					bytes_value = _InterlockedCompareExchange64 (&ptr_network->download_total, 0, 0) + _InterlockedCompareExchange64 (&ptr_network->upload_total, 0, 0);
+				}
+
+				if (SUCCEEDED (_r_format_bytesize64 (bytes_string, RTL_NUMBER_OF (bytes_string), (ULONG64)bytes_value)))
+					_r_str_printf (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, L"%s%s", bytes_string, lpnmlv->item.iSubItem == 11 ? L"" : L"/s");
 
 				break;
 			}
