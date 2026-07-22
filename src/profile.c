@@ -1172,11 +1172,7 @@ PR_STRING _app_rulesexpandapps (
 	{
 		if (ptr_rule->is_fordriver)
 		{
-			string = _r_obj_concatstrings (
-				2,
-				PROC_SYSTEM_NAME,
-				delimeter
-			);
+			string = _r_obj_concatstrings (2, PROC_SYSTEM_NAME, delimeter);
 
 			_r_obj_appendstringbuilder2 (&sb, &string->sr);
 
@@ -1185,11 +1181,7 @@ PR_STRING _app_rulesexpandapps (
 
 		if (ptr_rule->is_forservice)
 		{
-			string = _r_obj_concatstrings (
-				2,
-				_r_obj_getstring (config.svchost_path),
-				delimeter
-			);
+			string = _r_obj_concatstrings (2, _r_obj_getstring (config.svchost_path), delimeter);
 
 			_r_obj_appendstringbuilder2 (&sb, &string->sr);
 
@@ -1213,7 +1205,7 @@ PR_STRING _app_rulesexpandapps (
 			string = _r_path_compact (&ptr_app->original_path->sr, 0x40);
 
 		if (!string)
-			string = (PR_STRING)_r_obj_referencesafe (ptr_app->original_path);
+			string = _r_obj_referencesafe (ptr_app->original_path);
 
 		if (string)
 		{
