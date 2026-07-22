@@ -738,12 +738,16 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, _r_config_getboolean (L"IsExcludeBlocklist", TRUE, NULL));
 					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDECUSTOM_CHK, _r_config_getboolean (L"IsExcludeCustomRules", TRUE, NULL));
+					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDEINBOUND_CHK, _r_config_getboolean (L"IsExcludeInbound", FALSE, NULL));
 					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDESTEALTH_CHK, _r_config_getboolean (L"IsExcludeStealth", TRUE, NULL));
 					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE, NULL));
 
 					// win8+
 					if (_r_sys_isosversionlower (WINDOWS_8))
+					{
+						_r_ctrl_enable (hwnd, IDC_EXCLUDEINBOUND_CHK, FALSE);
 						_r_ctrl_enable (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, FALSE);
+					}
 
 					break;
 				}
@@ -888,6 +892,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					_r_ctrl_setstringformat (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, L"%s %s", _r_locale_getstring (IDS_TITLE_EXCLUDE), _r_locale_getstring (IDS_EXCLUDEBLOCKLIST_CHK));
 					_r_ctrl_setstringformat (hwnd, IDC_EXCLUDECUSTOM_CHK, L"%s %s", _r_locale_getstring (IDS_TITLE_EXCLUDE), _r_locale_getstring (IDS_EXCLUDECUSTOM_CHK));
+					_r_ctrl_setstringformat (hwnd, IDC_EXCLUDEINBOUND_CHK, L"%s %s [win8+]", _r_locale_getstring (IDS_TITLE_EXCLUDE), _r_locale_getstring (IDS_EXCLUDEINBOUND_CHK));
 					_r_ctrl_setstringformat (hwnd, IDC_EXCLUDESTEALTH_CHK, L"%s %s", _r_locale_getstring (IDS_TITLE_EXCLUDE), _r_locale_getstring (IDS_EXCLUDESTEALTH_CHK));
 					_r_ctrl_setstringformat (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, L"%s %s [win8+]", _r_locale_getstring (IDS_TITLE_EXCLUDE), _r_locale_getstring (IDS_EXCLUDECLASSIFYALLOW_CHK));
 
@@ -1522,6 +1527,12 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_EXCLUDECUSTOM_CHK:
 				{
 					_r_config_setboolean (L"IsExcludeCustomRules", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					break;
+				}
+
+				case IDC_EXCLUDEINBOUND_CHK:
+				{
+					_r_config_setboolean (L"IsExcludeInbound", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 			}
