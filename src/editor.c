@@ -1477,7 +1477,7 @@ INT_PTR CALLBACK EditorProc (
 				// set state
 				_r_ctrl_setstring (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_CHK));
 
-				_r_ctrl_checkbutton (hwnd, IDC_ENABLE_CHK, !!(context->ptr_rule->is_enabled));
+				_r_button_setcheck (hwnd, IDC_ENABLE_CHK, !!(context->ptr_rule->is_enabled));
 			}
 			else
 			{
@@ -1494,7 +1494,7 @@ INT_PTR CALLBACK EditorProc (
 				// show state
 				_r_ctrl_setstring (hwnd, IDC_ENABLE_CHK, _r_locale_getstring (IDS_ENABLE_APP_CHK));
 
-				_r_ctrl_checkbutton (hwnd, IDC_ENABLE_CHK, !!(context->ptr_app->is_enabled));
+				_r_button_setcheck (hwnd, IDC_ENABLE_CHK, !!(context->ptr_app->is_enabled));
 			}
 
 			// initialize layout
@@ -1764,7 +1764,7 @@ INT_PTR CALLBACK EditorProc (
 						}
 
 						// enable rule
-						_app_ruleenable (context->ptr_rule, _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK), TRUE);
+						_app_ruleenable (context->ptr_rule, _r_button_ischecked (hwnd, IDC_ENABLE_CHK), TRUE);
 
 						rules = _r_obj_createlist (1, NULL);
 
@@ -1773,7 +1773,7 @@ INT_PTR CALLBACK EditorProc (
 					else
 					{
 						context->ptr_app->is_haveerrors = FALSE; // reset errors
-						context->ptr_app->is_enabled = _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLE_CHK);
+						context->ptr_app->is_enabled = _r_button_ischecked (hwnd, IDC_ENABLE_CHK);
 
 						rules = _r_obj_createlist (1, NULL);
 

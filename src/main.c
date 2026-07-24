@@ -289,7 +289,7 @@ VOID _app_config_apply (
 			_r_menu_checkitem (hmenu, IDM_LOADONSTARTUP_CHK, 0, MF_BYCOMMAND, is_enabled);
 
 			if (hsettings)
-				_r_ctrl_checkbutton (hsettings, IDC_LOADONSTARTUP_CHK, is_enabled);
+				_r_button_setcheck (hsettings, IDC_LOADONSTARTUP_CHK, is_enabled);
 
 			break;
 		}
@@ -314,7 +314,7 @@ VOID _app_config_apply (
 			_r_menu_checkitem (hmenu, IDM_SKIPUACWARNING_CHK, 0, MF_BYCOMMAND, is_enabled);
 
 			if (hsettings)
-				_r_ctrl_checkbutton (hsettings, IDC_SKIPUACWARNING_CHK, is_enabled);
+				_r_button_setcheck (hsettings, IDC_SKIPUACWARNING_CHK, is_enabled);
 
 			break;
 		}
@@ -567,19 +567,19 @@ INT_PTR CALLBACK SettingsProc (
 			{
 				case IDD_SETTINGS_GENERAL:
 				{
-					_r_ctrl_checkbutton (hwnd, IDC_ALWAYSONTOP_CHK, _r_config_getboolean (L"AlwaysOnTop", FALSE, NULL));
+					_r_button_setcheck (hwnd, IDC_ALWAYSONTOP_CHK, _r_config_getboolean (L"AlwaysOnTop", FALSE, NULL));
 
 #if defined(APP_HAVE_AUTORUN)
-					_r_ctrl_checkbutton (hwnd, IDC_LOADONSTARTUP_CHK, _r_autorun_isenabled ());
+					_r_button_setcheck (hwnd, IDC_LOADONSTARTUP_CHK, _r_autorun_isenabled ());
 #endif // APP_HAVE_AUTORUN
 
-					_r_ctrl_checkbutton (hwnd, IDC_STARTMINIMIZED_CHK, _r_config_getboolean (L"IsStartMinimized", FALSE, NULL));
+					_r_button_setcheck (hwnd, IDC_STARTMINIMIZED_CHK, _r_config_getboolean (L"IsStartMinimized", FALSE, NULL));
 
 #if defined(APP_HAVE_SKIPUAC)
-					_r_ctrl_checkbutton (hwnd, IDC_SKIPUACWARNING_CHK, _r_skipuac_isenabled ());
+					_r_button_setcheck (hwnd, IDC_SKIPUACWARNING_CHK, _r_skipuac_isenabled ());
 #endif // APP_HAVE_SKIPUAC
 
-					_r_ctrl_checkbutton (hwnd, IDC_CHECKUPDATES_CHK, _r_update_isenabled (FALSE));
+					_r_button_setcheck (hwnd, IDC_CHECKUPDATES_CHK, _r_update_isenabled (FALSE));
 
 					_r_locale_enum (hwnd, IDC_LANGUAGE, 0);
 
@@ -590,15 +590,15 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					HWND htip;
 
-					_r_ctrl_checkbutton (hwnd, IDC_RULE_BLOCKOUTBOUND, _r_config_getboolean (L"BlockOutboundConnections", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_RULE_BLOCKINBOUND, _r_config_getboolean (L"BlockInboundConnections", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_RULE_ALLOWLOOPBACK, _r_config_getboolean (L"AllowLoopbackConnections", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_RULE_ALLOW6TO4, _r_config_getboolean (L"AllowIPv6", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_USESTEALTHMODE_CHK, _r_config_getboolean (L"UseStealthMode", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, _r_config_getboolean (L"InstallBoottimeFilters", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_USECERTIFICATES_CHK, _r_config_getboolean (L"IsCertificatesEnabled", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_USEHASHES_CHK, _r_config_getboolean (L"IsHashesEnabled", FALSE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_RULE_BLOCKOUTBOUND, _r_config_getboolean (L"BlockOutboundConnections", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_RULE_BLOCKINBOUND, _r_config_getboolean (L"BlockInboundConnections", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_RULE_ALLOWLOOPBACK, _r_config_getboolean (L"AllowLoopbackConnections", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_RULE_ALLOW6TO4, _r_config_getboolean (L"AllowIPv6", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_USESTEALTHMODE_CHK, _r_config_getboolean (L"UseStealthMode", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, _r_config_getboolean (L"InstallBoottimeFilters", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_USECERTIFICATES_CHK, _r_config_getboolean (L"IsCertificatesEnabled", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_USEHASHES_CHK, _r_config_getboolean (L"IsHashesEnabled", FALSE, NULL));
+					_r_button_setcheck (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", TRUE, NULL));
 
 					htip = _r_ctrl_createtip (hwnd);
 
@@ -638,11 +638,11 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDD_SETTINGS_INTERFACE:
 				{
-					_r_ctrl_checkbutton (hwnd, IDC_CONFIRMEXIT_CHK, _r_config_getboolean (L"ConfirmExit2", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_CONFIRMEXITTIMER_CHK, _r_config_getboolean (L"ConfirmExitTimer", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_CONFIRMLOGCLEAR_CHK, _r_config_getboolean (L"ConfirmLogClear", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_CONFIRMALLOW_CHK, _r_config_getboolean (L"ConfirmAllow", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_TRAYICONSINGLECLICK_CHK, _r_config_getboolean (L"IsTrayIconSingleClick", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_CONFIRMEXIT_CHK, _r_config_getboolean (L"ConfirmExit2", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_CONFIRMEXITTIMER_CHK, _r_config_getboolean (L"ConfirmExitTimer", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_CONFIRMLOGCLEAR_CHK, _r_config_getboolean (L"ConfirmLogClear", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_CONFIRMALLOW_CHK, _r_config_getboolean (L"ConfirmAllow", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_TRAYICONSINGLECLICK_CHK, _r_config_getboolean (L"IsTrayIconSingleClick", TRUE, NULL));
 
 					break;
 				}
@@ -685,10 +685,10 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDD_SETTINGS_NOTIFICATIONS:
 				{
-					_r_ctrl_checkbutton (hwnd, IDC_ENABLENOTIFICATIONS_CHK, _r_config_getboolean (L"IsNotificationsEnabled", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_NOTIFICATIONSOUND_CHK, _r_config_getboolean (L"IsNotificationsSound", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_NOTIFICATIONONTRAY_CHK, _r_config_getboolean (L"IsNotificationsOnTray", FALSE, NULL));
+					_r_button_setcheck (hwnd, IDC_ENABLENOTIFICATIONS_CHK, _r_config_getboolean (L"IsNotificationsEnabled", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_NOTIFICATIONSOUND_CHK, _r_config_getboolean (L"IsNotificationsSound", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_NOTIFICATIONONTRAY_CHK, _r_config_getboolean (L"IsNotificationsOnTray", FALSE, NULL));
 
 					_r_updown_setrange (hwnd, IDC_NOTIFICATIONTIMEOUT, 0, _r_calc_days2seconds (7));
 					_r_updown_setvalue (hwnd, IDC_NOTIFICATIONTIMEOUT, _r_config_getulong (L"NotificationsTimeout", NOTIFY_TIMEOUT_DEFAULT, NULL));
@@ -702,7 +702,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					PR_STRING path;
 
-					_r_ctrl_checkbutton (hwnd, IDC_ENABLELOG_CHK, _r_config_getboolean (L"IsLogEnabled", FALSE, NULL));
+					_r_button_setcheck (hwnd, IDC_ENABLELOG_CHK, _r_config_getboolean (L"IsLogEnabled", FALSE, NULL));
 
 					path = _app_getlogpath ();
 
@@ -727,7 +727,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_updown_setrange (hwnd, IDC_LOGSIZELIMIT, 64, _r_calc_kilobytes2bytes (512));
 					_r_updown_setvalue (hwnd, IDC_LOGSIZELIMIT, _r_config_getulong (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT, NULL));
 
-					_r_ctrl_checkbutton (hwnd, IDC_ENABLEUILOG_CHK, _r_config_getboolean (L"IsLogUiEnabled", FALSE, NULL));
+					_r_button_setcheck (hwnd, IDC_ENABLEUILOG_CHK, _r_config_getboolean (L"IsLogUiEnabled", FALSE, NULL));
 
 					_r_wnd_sendcommand (hwnd, IDC_ENABLELOG_CHK, WM_APP);
 
@@ -736,11 +736,11 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDD_SETTINGS_EXCLUDE:
 				{
-					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, _r_config_getboolean (L"IsExcludeBlocklist", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDECUSTOM_CHK, _r_config_getboolean (L"IsExcludeCustomRules", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDEINBOUND_CHK, _r_config_getboolean (L"IsExcludeInbound", FALSE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDESTEALTH_CHK, _r_config_getboolean (L"IsExcludeStealth", TRUE, NULL));
-					_r_ctrl_checkbutton (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_EXCLUDEBLOCKLIST_CHK, _r_config_getboolean (L"IsExcludeBlocklist", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_EXCLUDECUSTOM_CHK, _r_config_getboolean (L"IsExcludeCustomRules", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_EXCLUDEINBOUND_CHK, _r_config_getboolean (L"IsExcludeInbound", FALSE, NULL));
+					_r_button_setcheck (hwnd, IDC_EXCLUDESTEALTH_CHK, _r_config_getboolean (L"IsExcludeStealth", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_EXCLUDECLASSIFYALLOW_CHK, _r_config_getboolean (L"IsExcludeClassifyAllow", TRUE, NULL));
 
 					// win8+
 					if (_r_sys_isosversionlower (WINDOWS_8))
@@ -1114,7 +1114,7 @@ INT_PTR CALLBACK SettingsProc (
 					HWND hmain;
 					BOOLEAN is_enabled;
 
-					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
+					is_enabled = _r_button_ischecked (hwnd, ctrl_id);
 
 					_r_config_setboolean (L"AlwaysOnTop", is_enabled, NULL);
 
@@ -1138,31 +1138,31 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_CONFIRMEXIT_CHK:
 				{
-					_r_config_setboolean (L"ConfirmExit2", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"ConfirmExit2", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
 				case IDC_CONFIRMEXITTIMER_CHK:
 				{
-					_r_config_setboolean (L"ConfirmExitTimer", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"ConfirmExitTimer", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
 				case IDC_CONFIRMLOGCLEAR_CHK:
 				{
-					_r_config_setboolean (L"ConfirmLogClear", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"ConfirmLogClear", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
 				case IDC_CONFIRMALLOW_CHK:
 				{
-					_r_config_setboolean (L"ConfirmAllow", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"ConfirmAllow", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
 				case IDC_TRAYICONSINGLECLICK_CHK:
 				{
-					_r_config_setboolean (L"IsTrayIconSingleClick", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"IsTrayIconSingleClick", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
@@ -1209,7 +1209,7 @@ INT_PTR CALLBACK SettingsProc (
 
 					if (ctrl_id >= IDC_BLOCKLIST_SPY_DISABLE && ctrl_id <= IDC_BLOCKLIST_SPY_BLOCK)
 					{
-						new_state = _r_calc_clamp (_r_ctrl_isradiochecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (_r_button_isradiochecked (hwnd, IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK) - IDC_BLOCKLIST_SPY_DISABLE, 0, 2);
 
 						if (hmenu)
 							_r_menu_checkitem (hmenu, IDM_BLOCKLIST_SPY_DISABLE, IDM_BLOCKLIST_SPY_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_SPY_DISABLE + new_state);
@@ -1220,7 +1220,7 @@ INT_PTR CALLBACK SettingsProc (
 					}
 					else if (ctrl_id >= IDC_BLOCKLIST_UPDATE_DISABLE && ctrl_id <= IDC_BLOCKLIST_UPDATE_BLOCK)
 					{
-						new_state = _r_calc_clamp (_r_ctrl_isradiochecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (_r_button_isradiochecked (hwnd, IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK) - IDC_BLOCKLIST_UPDATE_DISABLE, 0, 2);
 
 						if (hmenu)
 							_r_menu_checkitem (hmenu, IDM_BLOCKLIST_UPDATE_DISABLE, IDM_BLOCKLIST_UPDATE_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_UPDATE_DISABLE + new_state);
@@ -1231,7 +1231,7 @@ INT_PTR CALLBACK SettingsProc (
 					}
 					else if (ctrl_id >= IDC_BLOCKLIST_EXTRA_DISABLE && ctrl_id <= IDC_BLOCKLIST_EXTRA_BLOCK)
 					{
-						new_state = _r_calc_clamp (_r_ctrl_isradiochecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
+						new_state = _r_calc_clamp (_r_button_isradiochecked (hwnd, IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK) - IDC_BLOCKLIST_EXTRA_DISABLE, 0, 2);
 
 						if (hmenu)
 							_r_menu_checkitem (hmenu, IDM_BLOCKLIST_EXTRA_DISABLE, IDM_BLOCKLIST_EXTRA_BLOCK, MF_BYCOMMAND, IDM_BLOCKLIST_EXTRA_DISABLE + new_state);
@@ -1251,8 +1251,8 @@ INT_PTR CALLBACK SettingsProc (
 					//BOOLEAN is_logging_enabled;
 
 					is_postmessage = (lparam == WM_APP);
-					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
-					//is_logging_enabled = is_enabled || _r_ctrl_isbuttonchecked (hwnd, IDC_ENABLEUILOG_CHK);
+					is_enabled = _r_button_ischecked (hwnd, ctrl_id);
+					//is_logging_enabled = is_enabled || _r_button_ischecked (hwnd, IDC_ENABLEUILOG_CHK);
 
 					if (!is_postmessage)
 					{
@@ -1276,7 +1276,7 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_ENABLEUILOG_CHK:
 				{
-					BOOLEAN is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
+					BOOLEAN is_enabled = _r_button_ischecked (hwnd, ctrl_id);
 
 					_r_config_setboolean (L"IsLogUiEnabled", is_enabled, NULL);
 
@@ -1430,7 +1430,7 @@ INT_PTR CALLBACK SettingsProc (
 					BOOLEAN is_enabled, is_postmessage;
 
 					is_postmessage = (lparam == WM_APP);
-					is_enabled = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
+					is_enabled = _r_button_ischecked (hwnd, ctrl_id);
 
 					if (!is_postmessage)
 						_r_config_setboolean (L"IsNotificationsEnabled", is_enabled, NULL);
@@ -1463,9 +1463,9 @@ INT_PTR CALLBACK SettingsProc (
 					BOOLEAN is_checked, is_postmessage;
 
 					is_postmessage = (lparam == WM_APP);
-					is_checked = _r_ctrl_isbuttonchecked (hwnd, ctrl_id);
+					is_checked = _r_button_ischecked (hwnd, ctrl_id);
 
-					_r_ctrl_checkbutton (hwnd, IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK, _r_config_getboolean (L"IsNotificationsFullscreenSilentMode", TRUE, NULL));
 
 					if (!is_postmessage)
 						_r_config_setboolean (L"IsNotificationsSound", is_checked, NULL);
@@ -1477,7 +1477,7 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_NOTIFICATIONFULLSCREENSILENTMODE_CHK:
 				{
-					_r_config_setboolean (L"IsNotificationsFullscreenSilentMode", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"IsNotificationsFullscreenSilentMode", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
@@ -1485,7 +1485,7 @@ INT_PTR CALLBACK SettingsProc (
 				{
 					HWND hnotify;
 
-					_r_config_setboolean (L"IsNotificationsOnTray", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"IsNotificationsOnTray", _r_button_ischecked (hwnd, ctrl_id), NULL);
 
 					hnotify = _app_notify_getwindow (NULL);
 
@@ -1505,13 +1505,13 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_EXCLUDESTEALTH_CHK:
 				{
-					_r_config_setboolean (L"IsExcludeStealth", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"IsExcludeStealth", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
 				case IDC_EXCLUDECLASSIFYALLOW_CHK:
 				{
-					_r_config_setboolean (L"IsExcludeClassifyAllow", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"IsExcludeClassifyAllow", _r_button_ischecked (hwnd, ctrl_id), NULL);
 
 					_wfp_logsetoption (_wfp_getenginehandle ());
 
@@ -1520,19 +1520,19 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_EXCLUDEBLOCKLIST_CHK:
 				{
-					_r_config_setboolean (L"IsExcludeBlocklist", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"IsExcludeBlocklist", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
 				case IDC_EXCLUDECUSTOM_CHK:
 				{
-					_r_config_setboolean (L"IsExcludeCustomRules", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"IsExcludeCustomRules", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 
 				case IDC_EXCLUDEINBOUND_CHK:
 				{
-					_r_config_setboolean (L"IsExcludeInbound", _r_ctrl_isbuttonchecked (hwnd, ctrl_id), NULL);
+					_r_config_setboolean (L"IsExcludeInbound", _r_button_ischecked (hwnd, ctrl_id), NULL);
 					break;
 				}
 			}

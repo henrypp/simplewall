@@ -731,17 +731,17 @@ VOID _app_notify_initialize (
 		DeleteObject (hbmp_next);
 	}
 
-	_r_ctrl_seticon (context->hwnd, IDC_RULES_BTN, context->hico_rules);
-	_r_ctrl_seticon (context->hwnd, IDC_KILLPROCESS_BTN, context->hico_cross);
-	_r_ctrl_seticon (context->hwnd, IDC_ALLOW_BTN, context->hico_allow);
-	_r_ctrl_seticon (context->hwnd, IDC_BLOCK_BTN, context->hico_block);
-	_r_ctrl_seticon (context->hwnd, IDC_NEXT_BTN, context->hico_next);
+	_r_button_seticon (context->hwnd, IDC_RULES_BTN, context->hico_rules);
+	_r_button_seticon (context->hwnd, IDC_KILLPROCESS_BTN, context->hico_cross);
+	_r_button_seticon (context->hwnd, IDC_ALLOW_BTN, context->hico_allow);
+	_r_button_seticon (context->hwnd, IDC_BLOCK_BTN, context->hico_block);
+	_r_button_seticon (context->hwnd, IDC_NEXT_BTN, context->hico_next);
 
-	_r_ctrl_setbuttonmargins (context->hwnd, IDC_RULES_BTN, dpi_value);
-	_r_ctrl_setbuttonmargins (context->hwnd, IDC_KILLPROCESS_BTN, dpi_value);
-	_r_ctrl_setbuttonmargins (context->hwnd, IDC_ALLOW_BTN, dpi_value);
-	_r_ctrl_setbuttonmargins (context->hwnd, IDC_BLOCK_BTN, dpi_value);
-	_r_ctrl_setbuttonmargins (context->hwnd, IDC_NEXT_BTN, dpi_value);
+	_r_button_setmargins (context->hwnd, IDC_RULES_BTN, dpi_value);
+	_r_button_setmargins (context->hwnd, IDC_KILLPROCESS_BTN, dpi_value);
+	_r_button_setmargins (context->hwnd, IDC_ALLOW_BTN, dpi_value);
+	_r_button_setmargins (context->hwnd, IDC_BLOCK_BTN, dpi_value);
+	_r_button_setmargins (context->hwnd, IDC_NEXT_BTN, dpi_value);
 }
 
 VOID _app_notify_destroy (
