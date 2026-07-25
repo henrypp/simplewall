@@ -600,35 +600,35 @@ INT_PTR CALLBACK SettingsProc (
 					_r_button_setcheck (hwnd, IDC_USEHASHES_CHK, _r_config_getboolean (L"IsHashesEnabled", FALSE, NULL));
 					_r_button_setcheck (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", TRUE, NULL));
 
-					htip = _r_ctrl_createtip (hwnd);
+					htip = _r_tooltip_create (hwnd);
 
 					if (!htip)
 						break;
 
-					_r_ctrl_settiptext (htip, hwnd, IDC_RULE_BLOCKOUTBOUND, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settiptext (htip, hwnd, IDC_RULE_BLOCKINBOUND, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settiptext (htip, hwnd, IDC_RULE_ALLOWLOOPBACK, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settiptext (htip, hwnd, IDC_RULE_ALLOW6TO4, LPSTR_TEXTCALLBACK);
+					_r_tooltip_settext (htip, hwnd, IDC_RULE_BLOCKOUTBOUND, LPSTR_TEXTCALLBACK);
+					_r_tooltip_settext (htip, hwnd, IDC_RULE_BLOCKINBOUND, LPSTR_TEXTCALLBACK);
+					_r_tooltip_settext (htip, hwnd, IDC_RULE_ALLOWLOOPBACK, LPSTR_TEXTCALLBACK);
+					_r_tooltip_settext (htip, hwnd, IDC_RULE_ALLOW6TO4, LPSTR_TEXTCALLBACK);
 
-					_r_ctrl_settiptext (htip, hwnd, IDC_USESTEALTHMODE_CHK, LPSTR_TEXTCALLBACK);
-					_r_ctrl_settiptext (htip, hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, LPSTR_TEXTCALLBACK);
+					_r_tooltip_settext (htip, hwnd, IDC_USESTEALTHMODE_CHK, LPSTR_TEXTCALLBACK);
+					_r_tooltip_settext (htip, hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, LPSTR_TEXTCALLBACK);
 
 					break;
 				}
 
 				case IDD_SETTINGS_BLOCKLIST:
 				{
-					_r_ctrl_checkradio (
+					_r_button_checkradio (
 						hwnd,
 						IDC_BLOCKLIST_SPY_DISABLE, IDC_BLOCKLIST_SPY_BLOCK, IDC_BLOCKLIST_SPY_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistSpyState", 2, NULL), 0, 2)
 					);
 
-					_r_ctrl_checkradio (
+					_r_button_checkradio (
 						hwnd,
 						IDC_BLOCKLIST_UPDATE_DISABLE, IDC_BLOCKLIST_UPDATE_BLOCK, IDC_BLOCKLIST_UPDATE_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistUpdateState", 0, NULL), 0, 2)
 					);
 
-					_r_ctrl_checkradio (
+					_r_button_checkradio (
 						hwnd,
 						IDC_BLOCKLIST_EXTRA_DISABLE, IDC_BLOCKLIST_EXTRA_BLOCK, IDC_BLOCKLIST_EXTRA_DISABLE + _r_calc_clamp (_r_config_getlong (L"BlocklistExtraState", 0, NULL), 0, 2)
 					);
@@ -722,7 +722,7 @@ INT_PTR CALLBACK SettingsProc (
 						_r_obj_dereference (path);
 					}
 
-					_r_ctrl_setacceleration (hwnd, IDC_LOGSIZELIMIT, 64); // set step to 64kb
+					_r_updown_setacceleration (hwnd, IDC_LOGSIZELIMIT, 64); // set step to 64kb
 
 					_r_updown_setrange (hwnd, IDC_LOGSIZELIMIT, 64, _r_calc_kilobytes2bytes (512));
 					_r_updown_setvalue (hwnd, IDC_LOGSIZELIMIT, _r_config_getulong (L"LogSizeLimitKb", LOG_SIZE_LIMIT_DEFAULT, NULL));
@@ -1628,7 +1628,7 @@ VOID _app_tabs_init (
 {
 	PITEM_TAB_CONTEXT tab_context;
 	RECT rect = {0};
-	LONG rebar_height, statusbar_height;
+	ULONG rebar_height, statusbar_height;
 	LONG_PTR style;
 	HWND hlistview;
 
@@ -3039,7 +3039,7 @@ INT_PTR CALLBACK DlgProc (
 
 					SetFocus (config.hsearchbar);
 
-					_r_ctrl_setselection (config.hsearchbar, 0, 0, -1);
+					_r_edit_setselection (config.hsearchbar, 0, 0, -1);
 
 					break;
 				}

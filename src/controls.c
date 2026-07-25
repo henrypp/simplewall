@@ -959,7 +959,7 @@ VOID _app_window_resize (
 	PITEM_TAB_CONTEXT tab_context;
 	HDWP hdefer;
 	LONG statusbar_height;
-	LONG rebar_height;
+	ULONG rebar_height;
 
 	_app_toolbar_resize (hwnd, dpi_value);
 

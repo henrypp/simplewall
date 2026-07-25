@@ -329,7 +329,7 @@ INT_PTR CALLBACK EditorRuleProc (
 			else if (notify_code == EN_MAXTEXT)
 			{
 				// show limit was reached ballon tip
-				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, _r_locale_getstring (IDS_LIMIT_REACHED));
+				_r_edit_showballoontip (hwnd, ctrl_id, 0, NULL, _r_locale_getstring (IDS_LIMIT_REACHED));
 
 				return FALSE;
 			}
@@ -357,7 +357,7 @@ INT_PTR CALLBACK EditorRuleProc (
 
 					if (_r_obj_isstringempty2 (string))
 					{
-						_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
+						_r_edit_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
 						_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
 
 						_r_obj_dereference (string);
@@ -380,7 +380,7 @@ INT_PTR CALLBACK EditorRuleProc (
 
 						if (!_app_parserulestring (&first_part, &address))
 						{
-							_r_ctrl_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_SYNTAX_ERROR));
+							_r_edit_showballoontip (hwnd, IDC_RULE_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_SYNTAX_ERROR));
 							_r_ctrl_enable (hwnd, IDC_SAVE, FALSE);
 
 							return FALSE;
@@ -455,8 +455,8 @@ INT_PTR CALLBACK EditorPagesProc (
 				if (!_r_obj_isstringempty (context->ptr_rule->name))
 					_r_ctrl_setstringlength (hwnd, IDC_RULE_NAME_ID, &context->ptr_rule->name->sr);
 
-				_r_ctrl_setreadonly (hwnd, IDC_RULE_NAME_ID, !!context->ptr_rule->is_readonly);
-				_r_ctrl_settextlimit (hwnd, IDC_RULE_NAME_ID, RULE_NAME_CCH_MAX - 1);
+				_r_edit_setreadonly (hwnd, IDC_RULE_NAME_ID, !!context->ptr_rule->is_readonly);
+				_r_edit_settextlimit (hwnd, IDC_RULE_NAME_ID, RULE_NAME_CCH_MAX - 1);
 			}
 
 			// comment
@@ -468,7 +468,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_ctrl_setstringlength (hwnd, IDC_RULE_COMMENT_ID, &context->ptr_rule->comment->sr);
 
 				_r_ctrl_enable (hwnd, IDC_RULE_COMMENT_ID, !context->ptr_rule->is_readonly);
-				_r_ctrl_settextlimit (hwnd, IDC_RULE_COMMENT_ID, RULE_RULE_CCH_MAX - 1);
+				_r_edit_settextlimit (hwnd, IDC_RULE_COMMENT_ID, RULE_RULE_CCH_MAX - 1);
 			}
 
 			// direction
@@ -689,7 +689,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			{
 				context->hicon = _app_icons_getsafeapp_hicon (context->ptr_app->app_hash);
 
-				_r_ctrl_seticon2 (hwnd, IDC_APP_ICON_ID, context->hicon);
+				_r_ctrl_seticon (hwnd, IDC_APP_ICON_ID, context->hicon);
 			}
 
 			// app display name
@@ -704,7 +704,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_dereference (string);
 				}
 
-				_r_ctrl_settextmargin (hwnd, IDC_APP_NAME_ID, 0, 0);
+				_r_edit_setmargin (hwnd, IDC_APP_NAME_ID, 0, 0);
 			}
 
 			// app comment
@@ -712,7 +712,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			{
 				_r_ctrl_setstring (hwnd, IDC_APP_COMMENT_ID, _r_obj_getstring (context->ptr_app->comment));
 
-				_r_ctrl_settextmargin (hwnd, IDC_APP_COMMENT_ID, 0, 0);
+				_r_edit_setmargin (hwnd, IDC_APP_COMMENT_ID, 0, 0);
 			}
 
 			// app signature
@@ -730,8 +730,8 @@ INT_PTR CALLBACK EditorPagesProc (
 					_r_obj_getstringordefault (string, _r_locale_getstring (IDS_SIGN_UNSIGNED))
 				);
 
-				_r_ctrl_settextmargin (hwnd, IDC_APP_NAME_ID, 0, 0);
-				_r_ctrl_settextmargin (hwnd, IDC_APP_SIGNATURE_ID, 0, 0);
+				_r_edit_setmargin (hwnd, IDC_APP_NAME_ID, 0, 0);
+				_r_edit_setmargin (hwnd, IDC_APP_SIGNATURE_ID, 0, 0);
 
 				if (string)
 					_r_obj_dereference (string);
@@ -1184,7 +1184,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			}
 			else if (notify_code == EN_MAXTEXT)
 			{
-				_r_ctrl_showballoontip (hwnd, ctrl_id, 0, NULL, _r_locale_getstring (IDS_LIMIT_REACHED));
+				_r_edit_showballoontip (hwnd, ctrl_id, 0, NULL, _r_locale_getstring (IDS_LIMIT_REACHED));
 
 				return FALSE;
 			}
@@ -1691,7 +1691,7 @@ INT_PTR CALLBACK EditorProc (
 
 							if (_r_obj_isstringempty2 (string))
 							{
-								_r_ctrl_showballoontip (hpage_general, IDC_RULE_NAME_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
+								_r_edit_showballoontip (hpage_general, IDC_RULE_NAME_ID, 0, NULL, _r_locale_getstring (IDS_STATUS_EMPTY));
 
 								_r_obj_dereference (string);
 

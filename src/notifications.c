@@ -682,7 +682,7 @@ VOID _app_notify_initialize (
 		_r_ctrl_setfont (context->hwnd, IDC_FILE_TEXT, context->hfont_link);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_DATE_TEXT; i++)
-			_r_ctrl_settextmargin (context->hwnd, i, 0, 0);
+			_r_edit_setmargin (context->hwnd, i, 0, 0);
 
 		for (INT i = IDC_SIGNATURE_TEXT; i <= IDC_NEXT_BTN; i++)
 			_r_ctrl_setfont (context->hwnd, i, context->hfont_text);
@@ -838,16 +838,16 @@ INT_PTR CALLBACK NotificationProc (
 			_app_notify_initialize (context, _r_dc_getwindowdpi (hwnd));
 
 			// initialize tips
-			htip = _r_ctrl_createtip (hwnd);
+			htip = _r_tooltip_create (hwnd);
 
 			if (htip)
 			{
-				_r_ctrl_settiptext (htip, hwnd, IDC_FILE_TEXT, LPSTR_TEXTCALLBACK);
-				_r_ctrl_settiptext (htip, hwnd, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
-				_r_ctrl_settiptext (htip, hwnd, IDC_KILLPROCESS_BTN, LPSTR_TEXTCALLBACK);
-				_r_ctrl_settiptext (htip, hwnd, IDC_ALLOW_BTN, LPSTR_TEXTCALLBACK);
-				_r_ctrl_settiptext (htip, hwnd, IDC_BLOCK_BTN, LPSTR_TEXTCALLBACK);
-				_r_ctrl_settiptext (htip, hwnd, IDC_NEXT_BTN, LPSTR_TEXTCALLBACK);
+				_r_tooltip_settext (htip, hwnd, IDC_FILE_TEXT, LPSTR_TEXTCALLBACK);
+				_r_tooltip_settext (htip, hwnd, IDC_RULES_BTN, LPSTR_TEXTCALLBACK);
+				_r_tooltip_settext (htip, hwnd, IDC_KILLPROCESS_BTN, LPSTR_TEXTCALLBACK);
+				_r_tooltip_settext (htip, hwnd, IDC_ALLOW_BTN, LPSTR_TEXTCALLBACK);
+				_r_tooltip_settext (htip, hwnd, IDC_BLOCK_BTN, LPSTR_TEXTCALLBACK);
+				_r_tooltip_settext (htip, hwnd, IDC_NEXT_BTN, LPSTR_TEXTCALLBACK);
 			}
 
 			// display log information
@@ -1453,7 +1453,7 @@ INT_PTR CALLBACK NotificationProc (
 						}
 						else if (ctrl_id == IDM_SELECT_ALL)
 						{
-							_r_ctrl_setselection (hedit, 0, 0, -1); // edit control hotkey for "ctrl+a"
+							_r_edit_setselection (hedit, 0, 0, -1); // edit control hotkey for "ctrl+a"
 						}
 					}
 
