@@ -655,6 +655,7 @@ VOID _app_notify_initialize (
 	SAFE_DELETE_OBJECT (context->hfont_title);
 	SAFE_DELETE_OBJECT (context->hfont_link);
 	SAFE_DELETE_OBJECT (context->hfont_text);
+
 	SAFE_DELETE_ICON (context->hico_allow);
 	SAFE_DELETE_ICON (context->hico_block);
 	SAFE_DELETE_ICON (context->hico_cross);
