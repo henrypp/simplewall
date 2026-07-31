@@ -15,7 +15,7 @@ PICON_INFORMATION _app_icons_getdefault ()
 		// load default app icon
 		_app_icons_loadfromfile (config.svchost_path, DATA_UNKNOWN, &icon_info.app_icon_id, &icon_info.app_hicon, FALSE);
 
-		// load service icon
+		// load default service icon
 		path = _r_obj_concatstrings (
 			2,
 			_r_sys_getsystemdirectory ()->buffer,
@@ -26,7 +26,7 @@ PICON_INFORMATION _app_icons_getdefault ()
 
 		_r_obj_dereference (path);
 
-		// load uwp icon
+		// load default uwp icon
 		if (_r_sys_isosversiongreaterorequal (WINDOWS_8))
 		{
 			path = _r_obj_concatstrings (
@@ -49,9 +49,7 @@ PICON_INFORMATION _app_icons_getdefault ()
 _Ret_maybenull_
 HICON _app_icons_getdefaultapp_hicon ()
 {
-	PICON_INFORMATION icon_info;
-
-	icon_info = _app_icons_getdefault ();
+	PICON_INFORMATION icon_info = _app_icons_getdefault ();
 
 	return icon_info->app_hicon ? CopyIcon (icon_info->app_hicon) : NULL;
 }
@@ -80,9 +78,7 @@ LONG _app_icons_getdefaultapp_id (
 	_In_ ENUM_TYPE_DATA type
 )
 {
-	PICON_INFORMATION icon_info;
-
-	icon_info = _app_icons_getdefault ();
+	PICON_INFORMATION icon_info = _app_icons_getdefault ();
 
 	if (type == DATA_APP_SERVICE)
 	{
@@ -195,7 +191,7 @@ VOID _app_icons_loadfromfile (
 )
 {
 	if (!out_icon_id && !out_hicon)
-		return;
+		return; // STATUS_INVALID_PARAMETER_MIX
 
 	if (out_icon_id)
 		*out_icon_id = 0;

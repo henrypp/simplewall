@@ -24,12 +24,7 @@ VOID _app_package_parsepath (
 	_Inout_ PR_STRING_PTR package_root_folder
 )
 {
-	R_STRINGREF appx_names[] = {
-		PR_STRINGREF_INIT (L"AppxManifest.xml"),
-		PR_STRINGREF_INIT (L"VSAppxManifest.xml"),
-	};
-
-	R_STRINGREF separator_sr = PR_STRINGREF_INIT (L"\\");
+	R_STRINGREF appx_names[] = {PR_STRINGREF_INIT (L"AppxManifest.xml"), PR_STRINGREF_INIT (L"VSAppxManifest.xml")}, separator_sr = PR_STRINGREF_INIT (L"\\");
 	R_XML_LIBRARY xml_library = {0};
 	PR_STRING manifest_path = NULL, path_string, result_path = NULL;
 	R_STRINGREF executable_sr;

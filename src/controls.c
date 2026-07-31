@@ -626,7 +626,7 @@ VOID _app_setinterfacestate (
 )
 {
 	ENUM_INSTALL_TYPE install_type;
-	HICON hico_big, hico_small;
+	HICON hicon_large, hicon_small;
 	LONG icon_id, icon_large, icon_small;
 	BOOLEAN is_filtersinstalled;
 
@@ -638,12 +638,12 @@ VOID _app_setinterfacestate (
 
 	icon_id = _app_getstateicon (install_type);
 
-	hico_small = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
-	hico_big = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large);
+	hicon_small = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
+	hicon_large = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large);
 
-	_r_wnd_seticon (hwnd, hico_small, hico_big);
+	_r_wnd_seticon (hwnd, hicon_small, hicon_large);
 
-	//_r_status_seticon (hwnd, IDC_STATUSBAR, 0, hico_small);
+	//_r_status_seticon (hwnd, IDC_STATUSBAR, 0, hicon_small);
 
 	if (!_wfp_isfiltersapplying ())
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));

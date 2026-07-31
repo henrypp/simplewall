@@ -1155,9 +1155,7 @@ COLORREF _app_getcolorvalue (
 	_In_ ULONG color_hash
 )
 {
-	PITEM_COLOR ptr_clr;
-
-	ptr_clr = (PITEM_COLOR)_r_obj_findhashtable (colors_table, color_hash);
+	PITEM_COLOR ptr_clr = (PITEM_COLOR)_r_obj_findhashtable (colors_table, color_hash);
 
 	if (ptr_clr)
 		return ptr_clr->new_clr ? ptr_clr->new_clr : ptr_clr->default_clr;

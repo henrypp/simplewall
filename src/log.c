@@ -1370,7 +1370,7 @@ VOID NTAPI _app_logthread (
 		ptr_log->local_addr_str = _app_formataddress (ptr_log->af, ptr_log->protocol, &ptr_log->local_addr, 0, 0);
 
 		// display notification
-		if (ptr_log->is_myprovider && !ptr_log->is_allow && is_notificationenabled && ptr_app && is_exludeblocklist)
+		if (is_notificationenabled && ptr_app && ptr_log->is_myprovider && !ptr_log->is_allow && is_exludeblocklist)
 		{
 			if (_app_getappinfo (ptr_app, INFO_IS_SILENT, &is_silent, sizeof (BOOLEAN)) && !is_silent)
 				_app_notify_addobject (hwnd, ptr_log, ptr_app);
