@@ -483,7 +483,12 @@ VOID _app_package_getserviceslist (
 
 	// win10+
 	if (_r_sys_isosversiongreaterorequal (WINDOWS_10))
-		service_type |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE | SERVICE_USERSERVICE_INSTANCE;
+	{
+		service_type |= SERVICE_INTERACTIVE_PROCESS | SERVICE_USER_SERVICE;
+
+		if (_r_config_getboolean (L"IsCollectUserServiceInstance", FALSE, NULL))
+			service_type |= SERVICE_USERSERVICE_INSTANCE;
+	}
 
 	buffer_size = PR_SIZE_BUFFER;
 	buffer = _r_mem_allocate (buffer_size);
@@ -515,7 +520,6 @@ VOID _app_package_getserviceslist (
 	if (!buffer)
 	{
 		CloseServiceHandle (hsvcmgr);
-
 		return;
 	}
 
@@ -535,6 +539,18 @@ VOID _app_package_getserviceslist (
 
 		if (!NT_SUCCESS (status))
 			continue;
+
+		// skip userservice instances service types (win10+)
+		if (_r_sys_isosversiongreaterorequal (WINDOWS_10) && !_r_config_getboolean (L"IsCollectUserServiceInstance", FALSE, NULL))
+		{
+			status = _r_reg_queryulong (hkey, L"Type", &service_type);
+
+			if (!NT_SUCCESS (status) || (service_type & SERVICE_USERSERVICE_INSTANCE) != 0)
+			{
+				NtClose (hkey);
+				continue;
+			}
+		}
 
 		// query service path
 		status = _r_reg_querystring (hkey, L"ImagePath", &service_path, NULL);
