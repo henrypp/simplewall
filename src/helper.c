@@ -1955,6 +1955,25 @@ VOID NTAPI _app_queue_resolveinformation (
 	_r_freelist_deleteitem (&context_free_list, context);
 }
 
+VOID _app_theme_apply (
+	_In_ HWND hwnd
+)
+{
+	LONG theme_mode;
+	BOOLEAN is_enabled;
+
+	theme_mode = _r_calc_clamp (_r_config_getlong (L"ThemeMode", 0, NULL), 0, 2);
+
+	if (theme_mode == 1) // dark
+		is_enabled = TRUE;
+	else if (theme_mode == 2) // follow system setting
+		is_enabled = _r_wnd_isdarkmodeenabled ();
+	else // light
+		is_enabled = FALSE;
+
+	_r_theme_enable (hwnd, is_enabled);
+}
+
 BOOLEAN _app_wufixenabled ()
 {
 	if (!_r_config_getboolean (L"IsWUFixEnabled", FALSE, NULL))

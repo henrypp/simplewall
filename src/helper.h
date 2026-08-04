@@ -228,6 +228,10 @@ VOID NTAPI _app_queue_resolveinformation (
 	_In_ PVOID arglist
 );
 
+VOID _app_theme_apply (
+	_In_ HWND hwnd
+);
+
 BOOLEAN _app_wufixenabled ();
 
 VOID _app_wufixhelper (

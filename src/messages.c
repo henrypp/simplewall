@@ -62,7 +62,7 @@ VOID _app_message_initialize (
 
 		_r_menu_checkitem (hmenu, IDM_SIZE_SMALL, IDM_SIZE_EXTRALARGE, MF_BYCOMMAND, menu_id);
 		_r_menu_checkitem (hmenu, IDM_ICONSISHIDDEN, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsIconsHidden", FALSE, NULL));
-		_r_menu_checkitem (hmenu, IDM_USEDARKTHEME_CHK, 0, MF_BYCOMMAND, _r_theme_isenabled ());
+		_r_menu_checkitem (hmenu, IDM_THEME_LIGHT, IDM_THEME_SYSTEM, MF_BYCOMMAND, IDM_THEME_LIGHT + _r_calc_clamp (_r_config_getlong (L"ThemeMode", 0, NULL), 0, 2));
 		_r_menu_checkitem (hmenu, IDM_LOADONSTARTUP_CHK, 0, MF_BYCOMMAND, _r_autorun_isenabled ());
 		_r_menu_checkitem (hmenu, IDM_STARTMINIMIZED_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsStartMinimized", FALSE, NULL));
 		_r_menu_checkitem (hmenu, IDM_SKIPUACWARNING_CHK, 0, MF_BYCOMMAND, _r_skipuac_isenabled ());
@@ -156,12 +156,15 @@ VOID _app_message_localize (
 
 		_r_menu_setitemtext (hmenu, IDM_ICONSISHIDDEN, FALSE, _r_locale_getstring (IDS_ICONSISHIDDEN));
 
-		_r_menu_setitemtext (hmenu, IDM_USEDARKTHEME_CHK, FALSE, _r_locale_getstring (IDS_USEDARKTHEME));
+		_r_menu_setitemtext (hmenu, IDM_THEME_LIGHT, FALSE, _r_locale_getstring (IDS_THEME_LIGHT));
+		_r_menu_setitemtext (hmenu, IDM_THEME_DARK, FALSE, _r_locale_getstring (IDS_THEME_DARK));
+		_r_menu_setitemtext (hmenu, IDM_THEME_SYSTEM, FALSE, _r_locale_getstring (IDS_THEME_SYSTEM));
 
 		hsubmenu = GetSubMenu (hmenu, 2);
 
 		if (hsubmenu)
 		{
+			_r_menu_setitemtext (hsubmenu, 1, TRUE, _r_locale_getstring (IDS_USEDARKTHEME));
 			_r_menu_setitemtext (hsubmenu, ICONS_MENU, TRUE, _r_locale_getstring (IDS_ICONS));
 			_r_menu_setitemtextformat (hsubmenu, LANG_MENU, TRUE, L"%s (Language)", _r_locale_getstring (IDS_LANGUAGE));
 

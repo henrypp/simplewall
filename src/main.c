@@ -253,9 +253,10 @@ VOID _app_config_apply (
 			break;
 		}
 
-		case IDM_USEDARKTHEME_CHK:
+		case IDM_THEME_LIGHT:
+		case IDM_THEME_DARK:
+		case IDM_THEME_SYSTEM:
 		{
-			new_val = !_r_theme_isenabled ();
 			break;
 		}
 
@@ -504,11 +505,35 @@ VOID _app_config_apply (
 			break;
 		}
 
-		case IDM_USEDARKTHEME_CHK:
+		case IDM_THEME_LIGHT:
 		{
-			_r_menu_checkitem (hmenu, IDM_USEDARKTHEME_CHK, 0, MF_BYCOMMAND, new_val);
+			_r_config_setlong (L"ThemeMode", 0, NULL);
 
-			_r_theme_enable (hwnd, new_val);
+			_r_menu_checkitem (hmenu, IDM_THEME_LIGHT, IDM_THEME_SYSTEM, MF_BYCOMMAND, IDM_THEME_LIGHT);
+
+			_app_theme_apply (hwnd);
+
+			break;
+		}
+
+		case IDM_THEME_DARK:
+		{
+			_r_config_setlong (L"ThemeMode", 1, NULL);
+
+			_r_menu_checkitem (hmenu, IDM_THEME_LIGHT, IDM_THEME_SYSTEM, MF_BYCOMMAND, IDM_THEME_DARK);
+
+			_app_theme_apply (hwnd);
+
+			break;
+		}
+
+		case IDM_THEME_SYSTEM:
+		{
+			_r_config_setlong (L"ThemeMode", 2, NULL);
+
+			_r_menu_checkitem (hmenu, IDM_THEME_LIGHT, IDM_THEME_SYSTEM, MF_BYCOMMAND, IDM_THEME_SYSTEM);
+
+			_app_theme_apply (hwnd);
 
 			break;
 		}
@@ -535,7 +560,9 @@ VOID _app_config_apply (
 		case IDC_USEHASHES_CHK:
 		case IDM_USEHASHES_CHK:
 		case IDM_USEAPPMONITOR_CHK:
-		case IDM_USEDARKTHEME_CHK:
+		case IDM_THEME_LIGHT:
+		case IDM_THEME_DARK:
+		case IDM_THEME_SYSTEM:
 		{
 			return;
 		}
@@ -1959,6 +1986,9 @@ INT_PTR CALLBACK DlgProc (
 		case RM_INITIALIZE:
 		{
 			_app_message_initialize (hwnd);
+
+			_app_theme_apply (hwnd);
+
 			break;
 		}
 
@@ -2187,9 +2217,26 @@ INT_PTR CALLBACK DlgProc (
 			break;
 		}
 
+		case WM_SETTINGCHANGE:
+		{
+			R_STRINGREF sr;
+
+			if (lparam)
+			{
+				_r_obj_initializestringref (&sr, (LPWSTR)lparam);
+
+				if (_r_str_isequal2 (&sr, L"ImmersiveColorSet", TRUE))
+					_app_theme_apply (hwnd);
+			}
+
+			break;
+		}
+
 		case WM_THEMECHANGED:
 		{
 			LONG dpi_value;
+
+			_app_theme_apply (hwnd);
 
 			dpi_value = _r_dc_getwindowdpi (hwnd);
 
@@ -3072,7 +3119,9 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_KEEPUNUSED_CHK:
 				case IDM_USEHASHES_CHK:
 				case IDM_USEAPPMONITOR_CHK:
-				case IDM_USEDARKTHEME_CHK:
+				case IDM_THEME_LIGHT:
+				case IDM_THEME_DARK:
+				case IDM_THEME_SYSTEM:
 				{
 					_app_config_apply (hwnd, NULL, ctrl_id);
 					break;
