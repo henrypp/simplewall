@@ -238,9 +238,8 @@ VOID _app_logwrite (
 	if (path)
 		_r_obj_dereference (path);
 
-	_r_obj_dereference (local_port_string);
 	_r_obj_dereference (remote_port_string);
-
+	_r_obj_dereference (local_port_string);
 	_r_obj_dereference (buffer);
 }
 

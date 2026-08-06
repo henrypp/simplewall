@@ -468,7 +468,7 @@ VOID _app_package_getserviceslist (
 	SC_HANDLE hsvcmgr;
 	HANDLE hkey;
 	LONG64 service_timestamp;
-	ULONG buffer_size, return_length, services_returned, service_type = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS, sd_length;
+	ULONG buffer_size, return_length, sd_length, services_returned, service_type = SERVICE_WIN32_OWN_PROCESS | SERVICE_WIN32_SHARE_PROCESS;
 	NTSTATUS status;
 
 	hsvcmgr = OpenSCManagerW (NULL, NULL, SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE);
