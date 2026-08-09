@@ -437,7 +437,7 @@ INT_PTR CALLBACK EditorPagesProc (
 			HWND hctrl;
 			ULONG_PTR enum_key;
 			INT i;
-			BOOLEAN is_enabled;
+			BOOLEAN is_enabled, is_forservices;
 
 			context = (PEDITOR_CONTEXT)lparam;
 
@@ -781,7 +781,9 @@ INT_PTR CALLBACK EditorPagesProc (
 						continue;
 
 					// check for services
-					is_enabled = (((ptr_rule->is_fordriver || ptr_rule->is_forservice) && _app_issystemhash (context->ptr_app->app_hash)) || _r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash));
+					is_forservices = (ptr_rule->is_fordriver || ptr_rule->is_forservice) && _app_issystemhash (context->ptr_app->app_hash);
+
+					is_enabled = is_forservices || _r_obj_findhashtable (ptr_rule->apps, context->ptr_app->app_hash);
 
 					_r_listview_additem (hwnd, IDC_APP_RULES_ID, 0, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext ((ULONG)i));
 					_r_listview_setitemcheck (hwnd, IDC_APP_RULES_ID, 0, is_enabled);
