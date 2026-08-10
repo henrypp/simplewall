@@ -173,7 +173,6 @@ typedef struct _STATIC_DATA
 	GUID session_key;
 
 	PR_STRING search_string;
-
 	PR_STRING ntoskrnl_path;
 	PR_STRING svchost_path;
 	PR_STRING system_path;
