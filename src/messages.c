@@ -1276,10 +1276,10 @@ VOID _app_displayinfonetwork_callback (
 	_Inout_ LPNMLVDISPINFOW lpnmlv
 )
 {
+	WCHAR bytes_string[0x40];
 	PITEM_APP ptr_app;
 	PR_STRING string;
 	LPCWSTR name;
-	WCHAR bytes_string[0x40];
 	LONG64 bytes_value;
 	LONG icon_id = 0;
 
