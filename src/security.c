@@ -453,8 +453,8 @@ VOID _app_setfiltersecurity (
 	}
 	else
 	{
-		//if (status != FWP_E_FILTER_NOT_FOUND)
-		_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterGetSecurityInfoByKey0", status, L"%s:%d", DBG_ARG_VAR);
+		if (status != FWP_E_FILTER_NOT_FOUND)
+			_r_log_v (LOG_LEVEL_ERROR, NULL, L"FwpmFilterGetSecurityInfoByKey0", status, L"%s:%d", DBG_ARG_VAR);
 	}
 
 	if (security_descriptor)
