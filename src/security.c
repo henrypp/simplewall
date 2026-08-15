@@ -263,7 +263,13 @@ VOID _app_setenginesecurity (
 					_app_setexplicitaccess (&ea[count++], OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE, GRANT_ACCESS, 0xA0000000, (PSID)config.service_wdiservicehost_sid->buffer);
 				}
 
-				_app_setexplicitaccess (&ea[count++], OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE, SET_ACCESS, FWPM_ACTRL_BEGIN_READ_TXN | FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN | FWPM_ACTRL_SUBSCRIBE, &SeEveryoneSid);
+				_app_setexplicitaccess (
+					&ea[count++],
+					OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE,
+					SET_ACCESS,
+					FWPM_ACTRL_BEGIN_READ_TXN | FWPM_ACTRL_CLASSIFY | FWPM_ACTRL_OPEN | FWPM_ACTRL_SUBSCRIBE,
+					&SeEveryoneSid
+				);
 			}
 
 			status = SetEntriesInAclW (count, ea, dacl, &new_dacl);
