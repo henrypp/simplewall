@@ -797,20 +797,22 @@ VOID _app_freeapplication (
 {
 	PITEM_RULE ptr_rule;
 
-	_r_queuedlock_acquireshared (&lock_rules);
-
-	for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
+	if (hwnd)
 	{
-		ptr_rule = (PITEM_RULE)_r_obj_getlistitem (rules_list, i);
+		_r_queuedlock_acquireshared (&lock_rules);
 
-		if (!ptr_rule || ptr_rule->type != DATA_RULE_USER)
-			continue;
+		for (ULONG_PTR i = 0; i < _r_obj_getlistsize (rules_list); i++)
+		{
+			ptr_rule = (PITEM_RULE)_r_obj_getlistitem (rules_list, i);
 
-		if (hwnd)
+			if (!ptr_rule || ptr_rule->type != DATA_RULE_USER)
+				continue;
+
 			_app_ruleremoveapp (hwnd, i, ptr_rule, app_hash);
-	}
+		}
 
-	_r_queuedlock_releaseshared (&lock_rules);
+		_r_queuedlock_releaseshared (&lock_rules);
+	}
 
 	_r_obj_removehashtableitem (apps_table, app_hash);
 }
@@ -982,7 +984,7 @@ VOID _app_ruleremoveapp (
 	if (!ptr_rule->apps || !_r_obj_removehashtableitem (ptr_rule->apps, app_hash))
 		return;
 
-	if (ptr_rule->is_enabled && _r_obj_isempty (ptr_rule->apps))
+	if (ptr_rule->is_enabled && _r_obj_isempty2 (ptr_rule->apps))
 	{
 		ptr_rule->is_enabled = FALSE;
 		ptr_rule->is_haveerrors = FALSE;

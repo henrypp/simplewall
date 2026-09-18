@@ -393,6 +393,7 @@
     <ClCompile Include="src\search.c" />
     <ClCompile Include="src\security.c" />
     <ClCompile Include="src\timer.c" />
+    <ClCompile Include="src\udpstats.c" />
     <ClCompile Include="src\uwp.cpp" />
     <ClCompile Include="src\wfp.c" />
     <ClCompile Include="src\messages.c" />
@@ -422,6 +423,7 @@
     <ClInclude Include="src\search.h" />
     <ClInclude Include="src\security.h" />
     <ClInclude Include="src\timer.h" />
+    <ClInclude Include="src\udpstats.h" />
     <ClInclude Include="src\uwp.h" />
     <ClInclude Include="src\wfp.h" />
     <ClInclude Include="src\messages.h" />

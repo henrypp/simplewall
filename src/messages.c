@@ -78,6 +78,10 @@ VOID _app_message_initialize (
 
 		_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN + _r_calc_clamp (_r_config_getlong (L"ProfileType", 0, NULL), 0, 2));
 
+		_r_menu_checkitem (hmenu, IDM_CONNECTIONS_ENABLE, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkMonitorEnabled", TRUE, NULL));
+		_r_menu_checkitem (hmenu, IDM_CONNECTIONS_SHOWAITCONNECTIONS, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsNetworkShowWaitConnections", TRUE, NULL));
+		_r_menu_checkitem (hmenu, IDM_CONNECTIONS_MEASUREUDPTRAFFIC, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsUdpTrafficEnabled", FALSE, NULL));
+
 		is_enabled = _r_config_getboolean (L"IsHashesEnabled", FALSE, NULL);
 
 		_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, _r_config_getboolean (L"IsCertificatesEnabled", TRUE, NULL));
@@ -187,6 +191,10 @@ VOID _app_message_localize (
 		_r_menu_setitemtext (hmenu, IDM_PROFILETYPE_COMPRESSED, FALSE, _r_locale_getstring (IDS_PROFILE_TYPE_COMPRESSED));
 		_r_menu_setitemtext (hmenu, IDM_PROFILETYPE_ENCRYPTED, FALSE, _r_locale_getstring (IDS_PROFILE_TYPE_ENCRYPTED));
 
+		_r_menu_setitemtext (hmenu, IDM_CONNECTIONS_ENABLE, FALSE, _r_locale_getstring (IDS_CONNECTIONS_ENABLE));
+		_r_menu_setitemtext (hmenu, IDM_CONNECTIONS_SHOWAITCONNECTIONS, FALSE, _r_locale_getstring (IDS_CONNECTIONS_SHOWAITCONNECTIONS));
+		_r_menu_setitemtext (hmenu, IDM_CONNECTIONS_MEASUREUDPTRAFFIC, FALSE, _r_locale_getstring (IDS_CONNECTIONS_MEASUREUDPTRAFFIC));
+
 		_r_menu_setitemtext (hmenu, IDM_USENETWORKRESOLUTION_CHK, FALSE, _r_locale_getstring (IDS_USENETWORKRESOLUTION_CHK));
 		_r_menu_setitemtext (hmenu, IDM_USECERTIFICATES_CHK, FALSE, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
 		_r_menu_setitemtext (hmenu, IDM_KEEPUNUSED_CHK, FALSE, _r_locale_getstring (IDS_KEEPUNUSED_CHK));
@@ -199,6 +207,7 @@ VOID _app_message_localize (
 		{
 			_r_menu_setitemtext (hsubmenu, 5, TRUE, _r_locale_getstring (IDS_TRAY_RULES));
 			_r_menu_setitemtext (hsubmenu, 6, TRUE, _r_locale_getstring (IDS_PROFILE_TYPE));
+			_r_menu_setitemtext (hsubmenu, 7, TRUE, _r_locale_getstring (IDS_TAB_NETWORK));
 		}
 
 		recommended_string = _r_locale_getstring (IDS_RECOMMENDED);
@@ -1405,6 +1414,12 @@ VOID _app_displayinfonetwork_callback (
 			case 10:
 			case 11:
 			{
+				if (ptr_network->protocol == IPPROTO_UDP && _InterlockedCompareExchange (&ptr_network->traffic_error, 0, 0))
+				{
+					_r_str_copy (lpnmlv->item.pszText, lpnmlv->item.cchTextMax, L"\x2014");
+					break;
+				}
+
 				if (!ptr_network->is_stats_initialized)
 					break;
 

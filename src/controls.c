@@ -15,6 +15,7 @@ VOID _app_getapptooltipstring (
 	PR_STRING path = NULL;
 	PITEM_APP ptr_app;
 	PR_STRING string, value;
+	LONG traffic_error;
 
 	ptr_app = _app_getappitem (app_hash);
 
@@ -50,6 +51,19 @@ VOID _app_getapptooltipstring (
 	if (path)
 	{
 		_r_obj_appendstringbuilder2 (buffer, &path->sr);
+		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
+	}
+
+	// UDP accounting status
+	if (ptr_network && ptr_network->protocol == IPPROTO_UDP && (ptr_network->is_stats_initialized || _InterlockedCompareExchange (&ptr_network->traffic_error, 0, 0)))
+	{
+		traffic_error = _InterlockedCompareExchange (&ptr_network->traffic_error, 0, 0);
+
+		_r_obj_appendstringbuilder (buffer, _r_locale_getstring (traffic_error == ERROR_NOT_READY ? IDS_UDP_PENDING : (traffic_error ? IDS_UDP_UNAVAILABLE : IDS_UDP_ACCOUNTING)));
+
+		if (traffic_error && traffic_error != ERROR_NOT_READY)
+			_r_obj_appendstringbuilderformat (buffer, L" (%lu)", (ULONG)traffic_error);
+
 		_r_obj_appendstringbuilder (buffer, SZ_CRLF);
 	}
 
@@ -552,7 +566,7 @@ LONG _app_getstateicon (
 
 		default:
 		{
-			return IDI_INACTIVE;
+			return IDI_INACTIVE; // never match!
 		}
 	}
 }
@@ -658,25 +672,14 @@ VOID _app_settrayicon (
 	_In_ ENUM_INSTALL_TYPE install_type
 )
 {
-	HICON current_handle, new_handle;
-	LONG icon_id, icon_size;
+	HICON hicon;
+	LONG icon_size;
 
 	icon_size = _r_dc_getsystemmetrics (SM_CXSMICON, _r_dc_gettaskbardpi ());
-	icon_id = _app_getstateicon (install_type);
 
-	current_handle = (HICON)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.htray_icon, NULL, config.htray_icon);
+	hicon = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (_app_getstateicon (install_type)), icon_size);
 
-	if (current_handle)
-		DestroyIcon (current_handle);
-
-	_r_sys_loadicon (&new_handle, _r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_size);
-
-	_r_tray_setinfo (hwnd, &GUID_TrayIcon, new_handle, _r_app_getname ());
-
-	current_handle = (HICON)_InterlockedCompareExchangePointer ((volatile PVOID_PTR)&config.htray_icon, new_handle, NULL);
-
-	if (current_handle)
-		DestroyIcon (current_handle);
+	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hicon, _r_app_getname ());
 }
 
 VOID _app_imagelist_init (

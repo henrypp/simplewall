@@ -266,6 +266,24 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_CONNECTIONS_ENABLE:
+		{
+			new_val = !_r_config_getboolean (L"IsNetworkMonitorEnabled", TRUE, NULL);
+			break;
+		}
+
+		case IDM_CONNECTIONS_SHOWAITCONNECTIONS:
+		{
+			new_val = !_r_config_getboolean (L"IsNetworkShowWaitConnections", TRUE, NULL);
+			break;
+		}
+
+		case IDM_CONNECTIONS_MEASUREUDPTRAFFIC:
+		{
+			new_val = !_r_config_getboolean (L"IsUdpTrafficEnabled", FALSE, NULL);
+			break;
+		}
+
 		default:
 		{
 			return;
@@ -411,6 +429,33 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDM_CONNECTIONS_ENABLE:
+		{
+			_r_config_setboolean (L"IsNetworkMonitorEnabled", new_val, NULL);
+
+			_r_menu_checkitem (hmenu, IDM_CONNECTIONS_ENABLE, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
+		case IDM_CONNECTIONS_SHOWAITCONNECTIONS:
+		{
+			_r_config_setboolean (L"IsNetworkShowWaitConnections", new_val, NULL);
+
+			_r_menu_checkitem (hmenu, IDM_CONNECTIONS_SHOWAITCONNECTIONS, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
+		case IDM_CONNECTIONS_MEASUREUDPTRAFFIC:
+		{
+			_r_config_setboolean (L"IsUdpTrafficEnabled", new_val, NULL);
+
+			_r_menu_checkitem (hmenu, IDM_CONNECTIONS_MEASUREUDPTRAFFIC, 0, MF_BYCOMMAND, new_val);
+
+			break;
+		}
+
 		case IDC_USESTEALTHMODE_CHK:
 		{
 			_r_config_setboolean (L"UseStealthMode", new_val, NULL);
@@ -527,6 +572,7 @@ VOID _app_config_apply (
 		case IDM_PROFILETYPE_PLAIN:
 		case IDM_PROFILETYPE_COMPRESSED:
 		case IDM_PROFILETYPE_ENCRYPTED:
+		case IDM_CONNECTIONS_MEASUREUDPTRAFFIC:
 		case IDC_USENETWORKRESOLUTION_CHK:
 		case IDM_USENETWORKRESOLUTION_CHK:
 		case IDC_USECERTIFICATES_CHK:
@@ -2109,6 +2155,7 @@ INT_PTR CALLBACK DlgProc (
 
 		case WM_DESTROY:
 		{
+			_app_network_stop ();
 			_app_loginit (FALSE);
 
 			if (_r_queuedlock_islocked (&lock_apply))
@@ -3066,6 +3113,9 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_PROFILETYPE_PLAIN:
 				case IDM_PROFILETYPE_COMPRESSED:
 				case IDM_PROFILETYPE_ENCRYPTED:
+				case IDM_CONNECTIONS_ENABLE:
+				case IDM_CONNECTIONS_SHOWAITCONNECTIONS:
+				case IDM_CONNECTIONS_MEASUREUDPTRAFFIC:
 				case IDM_USENETWORKRESOLUTION_CHK:
 				case IDM_USECERTIFICATES_CHK:
 				case IDM_KEEPUNUSED_CHK:

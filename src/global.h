@@ -22,6 +22,8 @@
 #include <softpub.h>
 #include <subauth.h>
 #include <mscat.h>
+#include <evntrace.h>
+#include <evntcons.h>
 
 #include "app.h"
 #include "rapp.h"
@@ -114,5 +116,6 @@ DECLSPEC_SELECTANY const LONG64 timer_array[] =
 #include "search.h"
 #include "security.h"
 #include "timer.h"
+#include "udpstats.h"
 #include "uwp.h"
 #include "wfp.h"

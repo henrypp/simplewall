@@ -209,7 +209,6 @@ typedef struct _STATIC_DATA
 	PSID builtin_admins_sid;
 
 	volatile HWND hnotification;
-	volatile HICON htray_icon;
 	volatile HANDLE hnetevent;
 	volatile HANDLE hlogfile;
 	volatile LONG log_id;
@@ -269,7 +268,6 @@ typedef struct _ITEM_LOG
 	volatile PR_STRING local_host_str;
 
 	LONG64 timestamp;
-
 	UINT64 filter_id;
 
 	ULONG app_hash;
@@ -429,12 +427,11 @@ typedef struct _ITEM_NETWORK
 
 	UINT16 remote_port;
 	UINT16 local_port;
-
 	UINT8 protocol;
 
-	BOOLEAN is_connection;
-	BOOLEAN is_stats_enabled;
 	BOOLEAN is_stats_initialized;
+	BOOLEAN is_stats_enabled;
+	BOOLEAN is_connection;
 
 	volatile LONG64 download_speed;
 	volatile LONG64 upload_speed;
@@ -444,6 +441,9 @@ typedef struct _ITEM_NETWORK
 	ULONG64 last_bytes_in;
 	ULONG64 last_bytes_out;
 	ULONG64 last_stats_tick;
+	ULONG64 udp_created;
+
+	volatile LONG traffic_error;
 } ITEM_NETWORK, *PITEM_NETWORK;
 
 typedef struct _ITEM_STATUS
@@ -550,3 +550,70 @@ typedef struct _ITEM_TAB_CONTEXT
 	INT listview_id;
 	INT locale_id;
 } ITEM_TAB_CONTEXT, *PITEM_TAB_CONTEXT;
+
+typedef struct _UDP_ENDPOINT
+{
+	BYTE address[0x10];
+	ULONG64 created; // UDP owner table bind timestamp, in FILETIME units
+	ULONG scope_id;
+	ULONG pid;
+	ADDRESS_FAMILY af;
+	USHORT port; // host byte order
+} UDP_ENDPOINT, *PUDP_ENDPOINT;
+
+typedef struct UDP_ENTRY
+{
+	struct UDP_ENTRY *next;
+	UDP_ENDPOINT endpoint;
+	ULONG64 since;
+	ULONG64 received;
+	ULONG64 sent;
+	ULONG error_code;
+	ULONG epoch;
+	BOOLEAN is_observed;
+} UDP_ENTRY, *PUDP_ENTRY;
+
+typedef struct UDP_AFD_SOCKET
+{
+	struct UDP_AFD_SOCKET *next;
+	UDP_ENDPOINT endpoint;
+	ULONG64 handle;
+	BOOLEAN is_bound;
+	BOOLEAN is_unsupported;
+} UDP_AFD_SOCKET, *PUDP_AFD_SOCKET;
+
+typedef struct _UDP_TRACE_PROPERTIES
+{
+	EVENT_TRACE_PROPERTIES properties;
+	WCHAR name[0x40];
+} UDP_TRACE_PROPERTIES, *PUDP_TRACE_PROPERTIES;
+
+#define UDP_SESSION_SEMAPHORE L"Global\\simplewall-UDP-owner"
+#define UDP_SESSION_NAME L"simplewall-UDP"
+#define UDP_MAX_ENDPOINTS 0x2000
+#define UDP_BUCKETS 0x100
+
+typedef struct _SW_UDP_STATS
+{
+	RTL_SRWLOCK control_lock;
+	RTL_SRWLOCK lock;
+	UDP_ENTRY *buckets[UDP_BUCKETS];
+	UDP_AFD_SOCKET *sockets[UDP_BUCKETS]; // owned by the ETW consumer thread
+	HANDLE hthread;
+	HANDLE hguard;
+	TRACEHANDLE hsession;
+	TRACEHANDLE hconsumer;
+	ULONG socket_count;
+	ULONG count;
+	ULONG epoch;
+	volatile LONG error_code;
+	volatile LONG stopping;
+	BOOLEAN is_owns_guard;
+} SW_UDP_STATS, *PSW_UDP_STATS;
+
+typedef struct _UDP_SNAPSHOT
+{
+	ULONG64 received;
+	ULONG64 sent;
+	ULONG error_code; // nonzero means totals must not be presented as complete
+} UDP_SNAPSHOT, *PUDP_SNAPSHOT;
