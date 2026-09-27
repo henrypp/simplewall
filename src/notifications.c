@@ -473,9 +473,9 @@ BOOLEAN _app_notify_killprocess (
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_show_errormessage (hwnd, L"Cannot enumerate processes!", status, NULL, ET_NATIVE);
+		_r_show_errormessage (hwnd, L"Could not enumerate processes!", NULL, status, ET_NATIVE);
 
-		_r_log (LOG_LEVEL_ERROR, NULL, L"_r_sys_enumprocesses", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"_r_sys_enumprocesses", NULL, status);
 
 		return FALSE;
 	}
@@ -504,13 +504,13 @@ BOOLEAN _app_notify_killprocess (
 						status = NtTerminateProcess (hprocess, STATUS_SUCCESS);
 
 						if (!NT_SUCCESS (status))
-							_r_show_errormessage (hwnd, L"Cannot terminate process!", status, file_name->buffer, ET_NATIVE);
+							_r_show_errormessage (hwnd, L"Cannot terminate process!", file_name->buffer, status, ET_NATIVE);
 
 						NtClose (hprocess);
 					}
 					else
 					{
-						_r_show_errormessage (hwnd, L"Cannot open process for termination!", status, file_name->buffer, ET_NATIVE);
+						_r_show_errormessage (hwnd, L"Cannot open process for termination!", file_name->buffer, status, ET_NATIVE);
 					}
 				}
 
@@ -518,7 +518,7 @@ BOOLEAN _app_notify_killprocess (
 			}
 			else
 			{
-				_r_show_errormessage (hwnd, L"Cannot get process path!", status, file_name->buffer, ET_NATIVE);
+				_r_show_errormessage (hwnd, L"Cannot get process path!", file_name->buffer, status, ET_NATIVE);
 			}
 		}
 	}

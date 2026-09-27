@@ -162,7 +162,7 @@ VOID _app_message_localize (
 
 		_r_menu_setitemtext (hmenu, IDM_USEDARKTHEME_CHK, FALSE, _r_locale_getstring (IDS_USEDARKTHEME));
 
-		hsubmenu = GetSubMenu (hmenu, 2);
+		hsubmenu = GetSubMenu (hmenu, LANG_SUBMENU);
 
 		if (hsubmenu)
 		{
@@ -1906,7 +1906,7 @@ VOID _app_command_logshow (
 		status = _r_sys_createprocess (&viewer_path->sr, &cmdline->sr, NULL, FALSE);
 
 		if (status != STATUS_SUCCESS)
-			_r_show_errormessage (hwnd, L"Could not create process!", status, cmdline->buffer, ET_NATIVE);
+			_r_show_errormessage (hwnd, L"Could not create process!", cmdline->buffer, status, ET_NATIVE);
 
 		_r_obj_dereference (viewer_path);
 		_r_obj_dereference (log_path);
@@ -1982,7 +1982,7 @@ VOID _app_command_logerrshow (
 	status = _r_sys_createprocess (&viewer_path->sr, &process_path->sr, NULL, FALSE);
 
 	if (status != STATUS_SUCCESS)
-		_r_show_errormessage (hwnd, L"Could not create process!", status, viewer_path->buffer, ET_NATIVE);
+		_r_show_errormessage (hwnd, L"Could not create process!", viewer_path->buffer, status, ET_NATIVE);
 
 	_r_obj_dereference (process_path);
 	_r_obj_dereference (viewer_path);
@@ -2003,7 +2003,7 @@ VOID _app_command_logerrclear (
 	status = _r_fs_deletefile (&path->sr, NULL);
 
 	if (!NT_SUCCESS (status))
-		_r_show_errormessage (hwnd, L"Could not delete file!", status, path->buffer, ET_NATIVE);
+		_r_show_errormessage (hwnd, L"Could not delete file!", path->buffer, status, ET_NATIVE);
 }
 
 VOID _app_command_copy (

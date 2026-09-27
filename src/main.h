@@ -136,6 +136,7 @@ typedef enum _ENUM_INFO_DATA2
 
 // ui
 #define ICONS_MENU 6
+#define LANG_SUBMENU 2
 #define LANG_MENU 7
 #define NOTIFICATIONS_ID 4
 #define LOGGING_ID 5

@@ -82,11 +82,11 @@ VOID _app_timer_set (
 			{
 				if (hwnd)
 				{
-					_r_show_errormessage (hwnd, L"Could not allocate timer!", status, NULL, ET_NATIVE);
+					_r_show_errormessage (hwnd, L"Could not allocate timer!", NULL, status, ET_NATIVE);
 				}
 				else
 				{
-					_r_log (LOG_LEVEL_ERROR, NULL, L"TpAllocTimer", status, NULL);
+					_r_log (LOG_LEVEL_ERROR, NULL, L"TpAllocTimer", NULL, status);
 				}
 			}
 		}

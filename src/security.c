@@ -63,7 +63,6 @@ PACL _app_createaccesscontrollist (
 		if (!NT_SUCCESS (status))
 		{
 			_r_log_v (LOG_LEVEL_ERROR, NULL, L"RtlGetAce", status, L"%d", ace_index);
-
 			continue;
 		}
 
@@ -124,7 +123,7 @@ PACL _app_createaccesscontrollist (
 		status = SetEntriesInAclW (count, ea, acl, &new_dacl);
 
 		if (status != ERROR_SUCCESS)
-			_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAclW", status, NULL);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAclW", NULL, status);
 
 		return new_dacl;
 	}
@@ -166,7 +165,7 @@ VOID _app_setenginesecurity (
 
 	if (status != ERROR_SUCCESS)
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineGetSecurityInfo0", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineGetSecurityInfo0", NULL, status);
 		return;
 	}
 
@@ -276,19 +275,19 @@ VOID _app_setenginesecurity (
 
 			if (status != ERROR_SUCCESS)
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAclW", status, NULL);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"SetEntriesInAclW", NULL, status);
 			}
 			else
 			{
 				status = FwpmEngineSetSecurityInfo0 (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetSecurityInfo0", status, NULL);
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmEngineSetSecurityInfo0", NULL, status);
 
 				status = FwpmNetEventsSetSecurityInfo0 (hengine, DACL_SECURITY_INFORMATION, NULL, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmNetEventsSetSecurityInfo0", status, NULL);
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmNetEventsSetSecurityInfo0", NULL, status);
 
 				LocalFree (new_dacl);
 			}
@@ -323,7 +322,7 @@ VOID _app_setprovidersecurity (
 				status = FwpmProviderSetSecurityInfoByKey0 (hengine, provider_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (PCSID)config.builtin_admins_sid, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey0", status, NULL);
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderSetSecurityInfoByKey0", NULL, status);
 
 				LocalFree (new_dacl);
 			}
@@ -332,7 +331,7 @@ VOID _app_setprovidersecurity (
 	else
 	{
 		//if (status != FWP_E_PROVIDER_NOT_FOUND)
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderGetSecurityInfoByKey0", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmProviderGetSecurityInfoByKey0", NULL, status);
 	}
 
 	if (security_descriptor)
@@ -363,7 +362,7 @@ VOID _app_setsublayersecurity (
 				status = FwpmSubLayerSetSecurityInfoByKey0 (hengine, sublayer_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (PCSID)config.builtin_admins_sid, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey0", status, NULL);
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerSetSecurityInfoByKey0", NULL, status);
 
 				LocalFree (new_dacl);
 			}
@@ -372,7 +371,7 @@ VOID _app_setsublayersecurity (
 	else
 	{
 		//if (status != FWP_E_SUBLAYER_NOT_FOUND)
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerGetSecurityInfoByKey0", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmSubLayerGetSecurityInfoByKey0", NULL, status);
 	}
 
 	if (security_descriptor)
@@ -403,7 +402,7 @@ VOID _app_setcalloutsecurity (
 				status = FwpmCalloutSetSecurityInfoByKey0 (hengine, callout_guid, OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION, (PCSID)config.builtin_admins_sid, NULL, new_dacl, NULL);
 
 				if (status != ERROR_SUCCESS)
-					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey0", status, NULL);
+					_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutSetSecurityInfoByKey0", NULL, status);
 
 				LocalFree (new_dacl);
 			}
@@ -412,7 +411,7 @@ VOID _app_setcalloutsecurity (
 	else
 	{
 		//if (status != FWP_E_CALLOUT_NOT_FOUND)
-		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey0", status, NULL);
+		_r_log (LOG_LEVEL_ERROR, NULL, L"FwpmCalloutGetSecurityInfoByKey0", NULL, status);
 	}
 
 	if (security_descriptor)

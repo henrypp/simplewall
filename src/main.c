@@ -841,9 +841,7 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDD_SETTINGS_RULES:
 				{
-					LPCWSTR recommended_string;
-
-					recommended_string = _r_locale_getstring (IDS_RECOMMENDED);
+					LPCWSTR recommended_string = _r_locale_getstring (IDS_RECOMMENDED);
 
 					_r_ctrl_setstringformat (hwnd, IDC_RULE_BLOCKOUTBOUND, L"%s (%s)", _r_locale_getstring (IDS_RULE_BLOCKOUTBOUND), recommended_string);
 					_r_ctrl_setstringformat (hwnd, IDC_RULE_BLOCKINBOUND, L"%s (%s)", _r_locale_getstring (IDS_RULE_BLOCKINBOUND), recommended_string);
@@ -2252,14 +2250,11 @@ INT_PTR CALLBACK DlgProc (
 		case WM_SIZE:
 		{
 			RECT rect;
-			LONG dpi_value;
 
 			if (!GetClientRect (hwnd, &rect))
 				break;
 
-			dpi_value = _r_dc_getwindowdpi (hwnd);
-
-			_app_window_resize (hwnd, &rect, dpi_value);
+			_app_window_resize (hwnd, &rect, _r_dc_getwindowdpi (hwnd));
 
 			break;
 		}
@@ -2268,16 +2263,13 @@ INT_PTR CALLBACK DlgProc (
 		{
 			LPMINMAXINFO minmax;
 			R_SIZE point = {0};
-			LONG dpi_value;
 
 			minmax = (LPMINMAXINFO)lparam;
 
 			point.cx = 500;
 			point.cy = 220;
 
-			dpi_value = _r_dc_getwindowdpi (hwnd);
-
-			_r_dc_getsizedpivalue (&point, dpi_value, TRUE);
+			_r_dc_getsizedpivalue (&point, _r_dc_getwindowdpi (hwnd), TRUE);
 
 			minmax->ptMinTrackSize.x = point.cx;
 			minmax->ptMinTrackSize.y = point.cy;
@@ -2287,9 +2279,7 @@ INT_PTR CALLBACK DlgProc (
 
 		case WM_NOTIFY:
 		{
-			LPNMHDR nmlp;
-
-			nmlp = (LPNMHDR)lparam;
+			LPNMHDR nmlp = (LPNMHDR)lparam;
 
 			switch (nmlp->code)
 			{
@@ -2764,7 +2754,7 @@ INT_PTR CALLBACK DlgProc (
 
 					if (hmenu)
 					{
-						hsubmenu = GetSubMenu (GetSubMenu (hmenu, 2), LANG_MENU);
+						hsubmenu = GetSubMenu (GetSubMenu (hmenu, LANG_SUBMENU), LANG_MENU);
 
 						if (hsubmenu)
 							_r_locale_apply (hsubmenu, ctrl_id, IDX_LANGUAGE);
@@ -2923,7 +2913,7 @@ INT_PTR CALLBACK DlgProc (
 
 								// display message for export profile failure (issue #707)
 								if (!NT_SUCCESS (status))
-									_r_show_errormessage (hwnd, L"Could not create file copy!", status, path->buffer, ET_NATIVE);
+									_r_show_errormessage (hwnd, L"Could not create file copy!", path->buffer, status, ET_NATIVE);
 
 								_r_obj_dereference (path);
 							}
@@ -3370,7 +3360,7 @@ INT_PTR CALLBACK DlgProc (
 										status = _r_shell_showfile (&ptr_app->real_path->sr);
 
 										if (FAILED (status))
-											_r_show_errormessage (hwnd, L"Cannot explore file!", status, ptr_app->real_path->buffer, ET_WINDOWS);
+											_r_show_errormessage (hwnd, L"Cannot explore file!", ptr_app->real_path->buffer, status, ET_WINDOWS);
 									}
 								}
 
@@ -3394,7 +3384,7 @@ INT_PTR CALLBACK DlgProc (
 										status = _r_shell_showfile (&ptr_network->path->sr);
 
 										if (FAILED (status))
-											_r_show_errormessage (hwnd, L"Cannot explore file!", status, ptr_network->path->buffer, ET_WINDOWS);
+											_r_show_errormessage (hwnd, L"Cannot explore file!", ptr_network->path->buffer, status, ET_WINDOWS);
 									}
 								}
 
@@ -3418,7 +3408,7 @@ INT_PTR CALLBACK DlgProc (
 										status = _r_shell_showfile (&ptr_log->path->sr);
 
 										if (FAILED (status))
-											_r_show_errormessage (hwnd, L"Cannot explore file!", status, ptr_log->path->buffer, ET_WINDOWS);
+											_r_show_errormessage (hwnd, L"Cannot explore file!", ptr_log->path->buffer, status, ET_WINDOWS);
 									}
 								}
 

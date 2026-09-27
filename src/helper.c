@@ -1227,7 +1227,7 @@ BOOLEAN _app_parsenetworkstring (
 
 		if (status != ERROR_SUCCESS)
 		{
-			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", status, address->range_start);
+			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", address->range_start, status);
 
 			return FALSE;
 		}
@@ -1236,7 +1236,7 @@ BOOLEAN _app_parsenetworkstring (
 
 		if (status != ERROR_SUCCESS)
 		{
-			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", status, address->range_end);
+			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", address->range_end, status);
 
 			return FALSE;
 		}
@@ -1262,7 +1262,7 @@ BOOLEAN _app_parsenetworkstring (
 
 		if (status != ERROR_SUCCESS)
 		{
-			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", status, rule_string);
+			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", rule_string, status);
 
 			return FALSE;
 		}
@@ -1410,7 +1410,7 @@ BOOLEAN _app_preparserulestring (
 
 		if (status != ERROR_SUCCESS)
 		{
-			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", status, address->range_start);
+			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", address->range_start, status);
 
 			return FALSE;
 		}
@@ -1419,7 +1419,7 @@ BOOLEAN _app_preparserulestring (
 
 		if (status != ERROR_SUCCESS)
 		{
-			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", status, address->range_end);
+			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", address->range_end, status);
 
 			return FALSE;
 		}
@@ -1442,7 +1442,7 @@ BOOLEAN _app_preparserulestring (
 		}
 		else
 		{
-			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", status, rule_string);
+			_r_log (LOG_LEVEL_INFO, NULL, L"ParseNetworkString", rule_string, status);
 		}
 	}
 
@@ -1746,7 +1746,7 @@ VOID NTAPI _app_queue_fileinformation (
 	if (!NT_SUCCESS (status))
 	{
 		if (status != STATUS_OBJECT_NAME_NOT_FOUND && status != STATUS_OBJECT_PATH_NOT_FOUND && status != STATUS_ACCESS_DENIED)
-			_r_log (LOG_LEVEL_ERROR, NULL, L"_r_fs_openfile", status, ptr_app_info->path->buffer);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_r_fs_openfile", ptr_app_info->path->buffer, status);
 
 		return;
 	}
@@ -1984,7 +1984,7 @@ VOID _app_wufixhelper (
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_log (LOG_LEVEL_INFO, NULL, L"_r_reg_openkey", status, reg_key);
+		_r_log (LOG_LEVEL_INFO, NULL, L"_r_reg_openkey", reg_key, status);
 		return;
 	}
 

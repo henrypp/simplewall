@@ -1234,7 +1234,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					{
 						if (current_length >= RULE_RULE_CCH_MAX)
 						{
-							_r_show_errormessage (hwnd, NULL, STATUS_IMPLEMENTATION_LIMIT, NULL, ET_NATIVE);
+							_r_show_errormessage (hwnd, L"Buffer overflow!", NULL, STATUS_IMPLEMENTATION_LIMIT, ET_NATIVE);
 
 							return FALSE;
 						}
@@ -1353,7 +1353,7 @@ INT_PTR CALLBACK EditorPagesProc (
 					}
 					else
 					{
-						_r_show_errormessage (hwnd, L"Could not open file!", status, context->ptr_app->real_path->buffer, ET_NATIVE);
+						_r_show_errormessage (hwnd, L"Could not open file!", context->ptr_app->real_path->buffer, status, ET_NATIVE);
 					}
 
 					break;

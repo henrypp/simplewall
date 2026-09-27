@@ -1571,11 +1571,11 @@ VOID _app_profile_load_internal (
 		{
 			if (hwnd)
 			{
-				_r_show_errormessage (hwnd, L"Could not load internal profile!", status, NULL, ET_NATIVE);
+				_r_show_errormessage (hwnd, L"Could not load internal profile!", NULL, status, ET_NATIVE);
 			}
 			else
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load_internal", status, NULL);
+				_r_log (LOG_LEVEL_ERROR, NULL, L"_app_profile_load_internal", NULL, status);
 			}
 		}
 	}
@@ -1631,11 +1631,11 @@ NTSTATUS _app_profile_load (
 	{
 		if (hwnd)
 		{
-			_r_show_errormessage (hwnd, L"Could not intitialize XML library!", status, NULL, ET_WINDOWS);
+			_r_show_errormessage (hwnd, L"Could not intitialize XML library!", NULL, status, ET_WINDOWS);
 		}
 		else
 		{
-			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", NULL, status);
 		}
 
 		goto CleanupExit;
@@ -1679,11 +1679,11 @@ CleanupExit:
 		{
 			if (hwnd)
 			{
-				_r_show_errormessage (hwnd, L"Could not load profile!", status, NULL, ET_NATIVE);
+				_r_show_errormessage (hwnd, L"Could not load profile!", NULL, status, ET_NATIVE);
 			}
 			else
 			{
-				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), status, NULL);
+				_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), NULL, status);
 			}
 		}
 	}
@@ -1720,11 +1720,11 @@ NTSTATUS _app_profile_save (
 	{
 		if (hwnd)
 		{
-			_r_show_errormessage (hwnd, L"Could not intitialize XML library!", status, NULL, ET_WINDOWS);
+			_r_show_errormessage (hwnd, L"Could not intitialize XML library!", NULL, status, ET_WINDOWS);
 		}
 		else
 		{
-			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", status, NULL);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_initialize", NULL, status);
 		}
 
 		return status;
@@ -1749,11 +1749,11 @@ NTSTATUS _app_profile_save (
 	{
 		if (hwnd)
 		{
-			_r_show_errormessage (hwnd, L"Could not save profile!", status, profile_info.profile_path->buffer, ET_NATIVE);
+			_r_show_errormessage (hwnd, L"Could not save profile!", profile_info.profile_path->buffer, status, ET_NATIVE);
 		}
 		else
 		{
-			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_savetofile", status, profile_info.profile_path->buffer);
+			_r_log (LOG_LEVEL_ERROR, NULL, L"_app_db_savetofile", profile_info.profile_path->buffer, status);
 		}
 	}
 

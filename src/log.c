@@ -331,11 +331,11 @@ VOID _wfp_logsubscribe (
 		{
 			if (hwnd)
 			{
-				_r_show_errormessage (hwnd, L"Could not load \"fwpuclnt.dll\" library!", status, NULL, ET_NATIVE);
+				_r_show_errormessage (hwnd, L"Could not load \"fwpuclnt.dll\" library!", NULL, status, ET_NATIVE);
 			}
 			else
 			{
-				_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", status, L"fwpuclnt.dll");
+				_r_log (LOG_LEVEL_WARNING, NULL, L"_r_sys_loadlibrary", L"fwpuclnt.dll", status);
 			}
 		}
 
@@ -371,11 +371,11 @@ VOID _wfp_logsubscribe (
 	{
 		if (hwnd)
 		{
-			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later!", status, NULL, ET_WINDOWS);
+			_r_show_errormessage (hwnd, L"Log subscribe failed. Try again later!", NULL, status, ET_WINDOWS);
 		}
 		else
 		{
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", status, NULL);
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventSubscribe", NULL, status);
 		}
 	}
 
@@ -413,7 +413,7 @@ VOID _wfp_logunsubscribe (
 	status = FwpmNetEventUnsubscribe0 (engine_handle, current_handle);
 
 	if (status != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", status, NULL);
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmNetEventUnsubscribe", NULL, status);
 }
 
 VOID _wfp_logsetoption (
@@ -449,7 +449,7 @@ VOID _wfp_logsetoption (
 	status = FwpmEngineSetOption0 (engine_handle, FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS, &val);
 
 	if (status != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", status, L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS");
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", L"FWPM_ENGINE_NET_EVENT_MATCH_ANY_KEYWORDS", status);
 
 	// enables the connection monitoring feature and starts logging creation and deletion events (and notifying any subscribers)
 	RtlZeroMemory (&val, sizeof (FWP_VALUE0));
@@ -460,7 +460,7 @@ VOID _wfp_logsetoption (
 	status = FwpmEngineSetOption0 (engine_handle, FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS, &val);
 
 	if (status != ERROR_SUCCESS)
-		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", status, L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS");
+		_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmEngineSetOption0", L"FWPM_ENGINE_MONITOR_IPSEC_CONNECTIONS", status);
 }
 
 VOID CALLBACK _wfp_logcallback (
@@ -488,7 +488,7 @@ VOID CALLBACK _wfp_logcallback (
 	if (status != ERROR_SUCCESS || !layer_ptr)
 	{
 		if (status != ERROR_SUCCESS && status != FWP_E_LAYER_NOT_FOUND)
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmLayerGetById0", status, NULL);
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmLayerGetById0", NULL, status);
 
 		return;
 	}
@@ -513,7 +513,7 @@ VOID CALLBACK _wfp_logcallback (
 	if (status != ERROR_SUCCESS || !filter_ptr) // stupid M$ returns NULL filter_ptr when status is ERROR_SUCCESS (LOGIC over 9999)! without Billy they lose everything, stupid fucking cunts!
 	{
 		if (status != ERROR_SUCCESS && status != FWP_E_FILTER_NOT_FOUND)
-			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmFilterGetById0", status, NULL);
+			_r_log (LOG_LEVEL_WARNING, NULL, L"FwpmFilterGetById0", NULL, status);
 
 		return;
 	}
@@ -1254,7 +1254,7 @@ FORCEINLINE BOOLEAN log_struct_to_f (
 
 		default:
 		{
-			_r_log (LOG_LEVEL_INFO, NULL, TEXT (__FUNCTION__), STATUS_UNKNOWN_REVISION, NULL);
+			_r_log (LOG_LEVEL_INFO, NULL, TEXT (__FUNCTION__), NULL, STATUS_UNKNOWN_REVISION);
 
 			return FALSE;
 		}

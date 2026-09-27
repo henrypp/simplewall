@@ -106,7 +106,7 @@ VOID _app_package_getpackagebyname (
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), status, buffer);
+		_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), buffer, status);
 
 		goto CleanupExit;
 	}
@@ -195,7 +195,7 @@ VOID _app_package_getpackagebysid (
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), status, buffer);
+		_r_log (LOG_LEVEL_ERROR, NULL, TEXT (__FUNCTION__), buffer, status);
 
 		goto CleanupExit;
 	}
@@ -271,7 +271,8 @@ VOID NTAPI _app_package_threadproc (
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_show_errormessage (hwnd, NULL, status, L"NtCreateEvent", ET_NATIVE);
+		_r_show_errormessage (hwnd, L"Could not create event!", NULL, status, ET_NATIVE);
+
 		return;
 	}
 
@@ -279,7 +280,7 @@ VOID NTAPI _app_package_threadproc (
 
 	if (!NT_SUCCESS (status))
 	{
-		_r_show_errormessage (hwnd, NULL, status, L"NtCreateEvent", ET_NATIVE);
+		_r_show_errormessage (hwnd, L"Could not create event!", NULL, status, ET_NATIVE);
 
 		NtClose (event_handle1); // do not left handle opened!
 
@@ -402,7 +403,7 @@ VOID _app_package_getpackageslist (
 	if (!NT_SUCCESS (status))
 	{
 		if (hwnd && status != STATUS_OBJECT_NAME_NOT_FOUND)
-			_r_show_errormessage (hwnd, L"Could not query packages by name!", status, reg_byname, ET_NATIVE);
+			_r_show_errormessage (hwnd, L"Could not query packages by name!", reg_byname, status, ET_NATIVE);
 	}
 	else
 	{
@@ -429,7 +430,7 @@ VOID _app_package_getpackageslist (
 	if (!NT_SUCCESS (status))
 	{
 		if (hwnd && status != STATUS_OBJECT_NAME_NOT_FOUND)
-			_r_show_errormessage (hwnd, L"Could not query packages by sid!", status, reg_bysid, ET_NATIVE);
+			_r_show_errormessage (hwnd, L"Could not query packages by sid!", reg_bysid, status, ET_NATIVE);
 	}
 	else
 	{
@@ -476,7 +477,13 @@ VOID _app_package_getserviceslist (
 	if (!hsvcmgr)
 	{
 		if (hwnd)
-			_r_show_errormessage (hwnd, NULL, NtLastError (), L"OpenSCManagerW", ET_WINDOWS);
+		{
+			_r_show_errormessage (hwnd, L"Could not open service manager!", NULL, NtLastError (), ET_WINDOWS);
+		}
+		else
+		{
+			_r_log (LOG_LEVEL_ERROR, NULL, L"OpenSCManagerW", NULL, NtLastError ());
+		}
 
 		return;
 	}
