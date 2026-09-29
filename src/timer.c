@@ -111,6 +111,8 @@ VOID _app_timer_reset (
 	_Inout_ PITEM_APP ptr_app
 )
 {
+	_wfp_destroyfilters_array (_wfp_getenginehandle (), ptr_app->guids, DBG_ARG);
+
 	ptr_app->is_enabled = FALSE;
 	ptr_app->is_haveerrors = FALSE;
 
@@ -146,7 +148,6 @@ VOID NTAPI _app_timer_callback (
 	WCHAR buffer[0x100];
 	PR_STRING display_name;
 	PITEM_APP ptr_app;
-	PR_LIST rules;
 	HWND hwnd;
 	ULONG icon_id = NIIF_INFO;
 	HRESULT status;
@@ -161,12 +162,6 @@ VOID NTAPI _app_timer_callback (
 	hwnd = _r_app_gethwnd ();
 
 	_app_timer_reset (hwnd, ptr_app);
-
-	rules = _r_obj_createlist (0x01, NULL);
-
-	_r_obj_addlistitem (rules, ptr_app, NULL);
-
-	_wfp_createappfilters (_wfp_getenginehandle (), rules, DBG_ARG, FALSE);
 
 	if (hwnd)
 		_app_listview_updateby_id (hwnd, ptr_app->type, PR_UPDATE_TYPE | PR_UPDATE_FORCE);
@@ -192,5 +187,4 @@ VOID NTAPI _app_timer_callback (
 		CoUninitialize ();
 
 	_r_obj_dereference (ptr_app);
-	_r_obj_dereference (rules);
 }
