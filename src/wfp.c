@@ -532,7 +532,7 @@ VOID _wfp_installfilters (
 
 	while (_r_obj_enumhashtablepointer (apps_table, (PVOID_PTR)&ptr_app, NULL, &enum_key))
 	{
-		if (ptr_app->is_enabled)
+		if (!!ptr_app->is_enabled)
 			_r_obj_addlistitem (rules, _r_obj_reference (ptr_app), NULL);
 	}
 
@@ -552,7 +552,7 @@ VOID _wfp_installfilters (
 	{
 		ptr_rule = (PITEM_RULE)_r_obj_getlistitem (rules_list, i);
 
-		if (ptr_rule && ptr_rule->is_enabled)
+		if (ptr_rule && !!ptr_rule->is_enabled)
 			_r_obj_addlistitem (rules, _r_obj_reference (ptr_rule), NULL);
 	}
 
@@ -1378,7 +1378,7 @@ BOOLEAN _wfp_createrulefilters (
 		{
 			ptr_rule = (PITEM_RULE)_r_obj_getlistitem (rules, i);
 
-			if (ptr_rule && ptr_rule->is_enabled)
+			if (ptr_rule && !!ptr_rule->is_enabled)
 			{
 				for (ULONG_PTR j = 0; j < _r_obj_getarraysize (ptr_rule->guids); j++)
 				{
@@ -1463,7 +1463,7 @@ BOOLEAN _wfp_createappfilters (
 	{
 		ptr_app = (PITEM_APP)_r_obj_getlistitem (rules, i);
 
-		if (ptr_app && ptr_app->is_enabled)
+		if (ptr_app && !!ptr_app->is_enabled)
 		{
 			string = _app_getappdisplayname (ptr_app, TRUE);
 
