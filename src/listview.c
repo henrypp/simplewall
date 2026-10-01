@@ -311,6 +311,7 @@ ULONG_PTR _app_listview_getitemcontext (
 	return (!lparam) ? 0 : _app_listview_getcontextcode (lparam);
 }
 
+_Success_ (return)
 BOOLEAN _app_listview_isitemhidden (
 	_In_ LPARAM lparam
 )

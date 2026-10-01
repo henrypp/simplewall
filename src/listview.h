@@ -108,6 +108,7 @@ ULONG_PTR _app_listview_getitemcontext (
 	_In_ INT item_id
 );
 
+_Success_ (return)
 BOOLEAN _app_listview_isitemhidden (
 	_In_ LPARAM lparam
 );
