@@ -883,6 +883,10 @@ IDP_DONATE			PNG		"res\\paypal_fulllogo.png"
 IDP_LOGUI			PNG		"res\\eye.png"
 IDP_SEARCH_LIGHT	PNG		"res\\search_light.png"
 IDP_SEARCH_DARK		PNG		"res\\search_dark.png"
+IDP_REGEX_LIGHT		PNG		"res\\regex_light.png"
+IDP_REGEX_DARK		PNG		"res\\regex_dark.png"
+IDP_CASE_LIGHT		PNG		"res\\case_sensitive_light.png"
+IDP_CASE_DARK		PNG		"res\\case_sensitive_dark.png"
 
 //
 // Icon resources

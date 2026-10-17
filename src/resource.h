@@ -621,6 +621,10 @@
 #define IDP_LOGUI 114
 #define IDP_SEARCH_LIGHT 115
 #define IDP_SEARCH_DARK 116
+#define IDP_REGEX_LIGHT 117
+#define IDP_REGEX_DARK 118
+#define IDP_CASE_LIGHT 119
+#define IDP_CASE_DARK 120
 
 // Icons
 #define IDI_MAIN 100
