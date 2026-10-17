@@ -302,9 +302,6 @@ VOID _app_config_apply (
 
 	hmenu = GetMenu (hwnd);
 
-	if (!hmenu)
-		return;
-
 	switch (ctrl_id)
 	{
 		case IDC_LOADONSTARTUP_CHK:
@@ -314,7 +311,8 @@ VOID _app_config_apply (
 
 			is_enabled = _r_autorun_isenabled ();
 
-			_r_menu_checkitem (hmenu, IDM_LOADONSTARTUP_CHK, 0, MF_BYCOMMAND, is_enabled);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_LOADONSTARTUP_CHK, 0, MF_BYCOMMAND, is_enabled);
 
 			if (hsettings)
 				_r_button_setcheck (hsettings, IDC_LOADONSTARTUP_CHK, is_enabled);
@@ -327,7 +325,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"IsStartMinimized", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_STARTMINIMIZED_CHK, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_STARTMINIMIZED_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -339,7 +338,8 @@ VOID _app_config_apply (
 
 			is_enabled = _r_skipuac_isenabled ();
 
-			_r_menu_checkitem (hmenu, IDM_SKIPUACWARNING_CHK, 0, MF_BYCOMMAND, is_enabled);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_SKIPUACWARNING_CHK, 0, MF_BYCOMMAND, is_enabled);
 
 			if (hsettings)
 				_r_button_setcheck (hsettings, IDC_SKIPUACWARNING_CHK, is_enabled);
@@ -352,7 +352,8 @@ VOID _app_config_apply (
 		{
 			_r_update_enable (new_val);
 
-			_r_menu_checkitem (hmenu, IDM_CHECKUPDATES_CHK, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_CHECKUPDATES_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -362,7 +363,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"BlockOutboundConnections", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_RULE_BLOCKOUTBOUND, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_RULE_BLOCKOUTBOUND, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -372,7 +374,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"BlockInboundConnections", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_RULE_BLOCKINBOUND, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_RULE_BLOCKINBOUND, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -382,7 +385,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"AllowLoopbackConnections", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_RULE_ALLOWLOOPBACK, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_RULE_ALLOWLOOPBACK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -392,7 +396,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"AllowIPv6", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_RULE_ALLOW6TO4, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_RULE_ALLOW6TO4, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -401,7 +406,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"IsWUFixEnabled", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_RULE_ALLOWWINDOWSUPDATE, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -410,7 +416,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setlong (L"ProfileType", 0, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_PLAIN);
 
 			_app_profile_save (hwnd);
 
@@ -421,7 +428,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setlong (L"ProfileType", 1, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_COMPRESSED);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_COMPRESSED);
 
 			_app_profile_save (hwnd);
 
@@ -432,7 +440,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setlong (L"ProfileType", 2, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_ENCRYPTED);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_PROFILETYPE_PLAIN, IDM_PROFILETYPE_ENCRYPTED, MF_BYCOMMAND, IDM_PROFILETYPE_ENCRYPTED);
 
 			_app_profile_save (hwnd);
 
@@ -443,7 +452,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"IsNetworkMonitorEnabled", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_CONNECTIONS_ENABLE, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_CONNECTIONS_ENABLE, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -452,7 +462,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"IsNetworkShowWaitConnections", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_CONNECTIONS_SHOWAITCONNECTIONS, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_CONNECTIONS_SHOWAITCONNECTIONS, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -461,7 +472,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"IsUdpTrafficEnabled", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_CONNECTIONS_MEASUREUDPTRAFFIC, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_CONNECTIONS_MEASUREUDPTRAFFIC, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -492,7 +504,8 @@ VOID _app_config_apply (
 
 			_r_config_setboolean (L"IsCertificatesEnabled", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_USECERTIFICATES_CHK, 0, MF_BYCOMMAND, new_val);
 
 			if (new_val)
 			{
@@ -513,7 +526,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"IsKeepUnusedApps", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_KEEPUNUSED_CHK, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_KEEPUNUSED_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -526,8 +540,11 @@ VOID _app_config_apply (
 
 			_r_config_setboolean (L"IsHashesEnabled", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_USEHASHES_CHK, 0, MF_BYCOMMAND, new_val);
-			_r_menu_enableitem (hmenu, IDM_USEAPPMONITOR_CHK, FALSE, new_val);
+			if (hmenu)
+			{
+				_r_menu_checkitem (hmenu, IDM_USEHASHES_CHK, 0, MF_BYCOMMAND, new_val);
+				_r_menu_enableitem (hmenu, IDM_USEAPPMONITOR_CHK, FALSE, new_val);
+			}
 
 			if (new_val)
 			{
@@ -549,7 +566,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"IsNetworkResolutionsEnabled", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_USENETWORKRESOLUTION_CHK, 0, MF_BYCOMMAND, new_val);
 
 			break;
 		}
@@ -558,7 +576,8 @@ VOID _app_config_apply (
 		{
 			_r_config_setboolean (L"IsEnableAppMonitor", new_val, NULL);
 
-			_r_menu_checkitem (hmenu, IDM_USEAPPMONITOR_CHK, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_USEAPPMONITOR_CHK, 0, MF_BYCOMMAND, new_val);
 
 			_app_fileloggingenable ();
 
@@ -567,7 +586,8 @@ VOID _app_config_apply (
 
 		case IDM_USEDARKTHEME_CHK:
 		{
-			_r_menu_checkitem (hmenu, IDM_USEDARKTHEME_CHK, 0, MF_BYCOMMAND, new_val);
+			if (hmenu)
+				_r_menu_checkitem (hmenu, IDM_USEDARKTHEME_CHK, 0, MF_BYCOMMAND, new_val);
 
 			_r_theme_enable (hwnd, new_val);
 
