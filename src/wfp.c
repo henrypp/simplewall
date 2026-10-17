@@ -1772,13 +1772,21 @@ BOOLEAN _wfp_createglobalfilters (
 		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FWN_BOOTTIME, NULL, 0, &FWPM_LAYER_OUTBOUND_ICMP_ERROR_V6, NULL, FWW_LOWEST, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
 
 		// win7+ boot-time features
-		fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
-		fwfc[0].matchType = FWP_MATCH_FLAGS_NONE_SET;
-		fwfc[0].conditionValue.type = FWP_UINT32;
-		fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_OUTBOUND_PASS_THRU | FWP_CONDITION_FLAG_IS_INBOUND_PASS_THRU;
+		//
+		// note: boot-time filters added while bfe is running are enforced immediately,
+		// so this block stays active the whole time filters are enabled. nothing else
+		// ever permits forwarded traffic, which breaks mobile hotspot, internet
+		// connection sharing and nat'd vm switches (issue #425).
+		if (!_r_config_getboolean (L"AllowIpForwarding", FALSE, NULL))
+		{
+			fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
+			fwfc[0].matchType = FWP_MATCH_FLAGS_NONE_SET;
+			fwfc[0].conditionValue.type = FWP_UINT32;
+			fwfc[0].conditionValue.uint32 = FWP_CONDITION_FLAG_IS_OUTBOUND_PASS_THRU | FWP_CONDITION_FLAG_IS_INBOUND_PASS_THRU;
 
-		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FWN_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V4, NULL, FWW_APP, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
-		_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FWN_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V6, NULL, FWW_APP, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+			_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FWN_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V4, NULL, FWW_APP, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+			_wfp_createfilter (engine_handle, DATA_FILTER_GENERAL, FWN_BOOTTIME, fwfc, 1, &FWPM_LAYER_IPFORWARD_V6, NULL, FWW_APP, FWP_ACTION_BLOCK, FWPM_FILTER_FLAG_BOOTTIME, filter_ids);
+		}
 	}
 
 	action = _r_config_getboolean (L"BlockOutboundConnections", TRUE, NULL) ? FWP_ACTION_BLOCK : FWP_ACTION_PERMIT;
