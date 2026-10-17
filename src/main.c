@@ -237,6 +237,16 @@ VOID _app_config_apply (
 		case IDC_INSTALLBOOTTIMEFILTERS_CHK:
 		{
 			new_val = !_r_config_getboolean (L"InstallBoottimeFilters", TRUE, NULL);
+
+			if (hsettings)
+				_r_ctrl_enable (hsettings, IDC_ALLOWIPFORWARDING_CHK, new_val);
+
+			break;
+		}
+
+		case IDC_ALLOWIPFORWARDING_CHK:
+		{
+			new_val = !_r_config_getboolean (L"AllowIpForwarding", FALSE, NULL);
 			break;
 		}
 
@@ -468,6 +478,12 @@ VOID _app_config_apply (
 			break;
 		}
 
+		case IDC_ALLOWIPFORWARDING_CHK:
+		{
+			_r_config_setboolean (L"AllowIpForwarding", new_val, NULL);
+			break;
+		}
+
 		case IDC_USECERTIFICATES_CHK:
 		case IDM_USECERTIFICATES_CHK:
 		{
@@ -642,9 +658,12 @@ INT_PTR CALLBACK SettingsProc (
 					_r_button_setcheck (hwnd, IDC_RULE_ALLOW6TO4, _r_config_getboolean (L"AllowIPv6", TRUE, NULL));
 					_r_button_setcheck (hwnd, IDC_USESTEALTHMODE_CHK, _r_config_getboolean (L"UseStealthMode", TRUE, NULL));
 					_r_button_setcheck (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, _r_config_getboolean (L"InstallBoottimeFilters", TRUE, NULL));
+					_r_button_setcheck (hwnd, IDC_ALLOWIPFORWARDING_CHK, _r_config_getboolean (L"AllowIpForwarding", FALSE, NULL));
 					_r_button_setcheck (hwnd, IDC_USECERTIFICATES_CHK, _r_config_getboolean (L"IsCertificatesEnabled", TRUE, NULL));
 					_r_button_setcheck (hwnd, IDC_USEHASHES_CHK, _r_config_getboolean (L"IsHashesEnabled", FALSE, NULL));
 					_r_button_setcheck (hwnd, IDC_USENETWORKRESOLUTION_CHK, _r_config_getboolean (L"IsNetworkResolutionsEnabled", TRUE, NULL));
+
+					_r_ctrl_enable (hwnd, IDC_ALLOWIPFORWARDING_CHK, _r_button_ischecked (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK));
 
 					htip = _r_tooltip_create (hwnd);
 
@@ -849,6 +868,7 @@ INT_PTR CALLBACK SettingsProc (
 					_r_ctrl_setstringformat (hwnd, IDC_RULE_ALLOW6TO4, L"%s (%s)", _r_locale_getstring (IDS_RULE_ALLOW6TO4), recommended_string);
 					_r_ctrl_setstringformat (hwnd, IDC_USESTEALTHMODE_CHK, L"%s (%s)", _r_locale_getstring (IDS_USESTEALTHMODE_CHK), recommended_string);
 					_r_ctrl_setstringformat (hwnd, IDC_INSTALLBOOTTIMEFILTERS_CHK, L"%s (%s)", _r_locale_getstring (IDS_INSTALLBOOTTIMEFILTERS_CHK), recommended_string);
+					_r_ctrl_setstring (hwnd, IDC_ALLOWIPFORWARDING_CHK, _r_locale_getstring (IDS_ALLOWIPFORWARDING_CHK));
 
 					_r_ctrl_setstring (hwnd, IDC_USECERTIFICATES_CHK, _r_locale_getstring (IDS_USECERTIFICATES_CHK));
 					_r_ctrl_setstring (hwnd, IDC_USEHASHES_CHK, _r_locale_getstring (IDS_USEHASHES_CHK));
@@ -1219,6 +1239,7 @@ INT_PTR CALLBACK SettingsProc (
 				case IDC_RULE_ALLOW6TO4:
 				case IDC_USESTEALTHMODE_CHK:
 				case IDC_INSTALLBOOTTIMEFILTERS_CHK:
+				case IDC_ALLOWIPFORWARDING_CHK:
 				case IDC_USECERTIFICATES_CHK:
 				case IDC_USEHASHES_CHK:
 				case IDC_USENETWORKRESOLUTION_CHK:
@@ -1352,7 +1373,7 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_LOGPATH_BTN:
 				{
-					COMDLG_FILTERSPEC filters[] = {{L"Log files (*.log, *.csv)", L"*.log;*.csv"}, {L"All files (*.*)", L"*.*"}};
+					COMDLG_FILTERSPEC filters[] = {{L"Log files (*.log, *.csv)", L"*.log;*.csv"},{L"All files (*.*)", L"*.*"}};
 					R_FILE_DIALOG file_dialog;
 					PR_STRING path;
 					HRESULT status;
@@ -1416,7 +1437,7 @@ INT_PTR CALLBACK SettingsProc (
 
 				case IDC_LOGVIEWER_BTN:
 				{
-					COMDLG_FILTERSPEC filters[] = {{L"Executable files (*.exe)", L"*.exe"}, {L"All files (*.*)", L"*.*"}};
+					COMDLG_FILTERSPEC filters[] = {{L"Executable files (*.exe)", L"*.exe"},{L"All files (*.*)", L"*.*"}};
 					R_FILE_DIALOG file_dialog;
 					PR_STRING path;
 					HRESULT status;
@@ -2519,7 +2540,7 @@ INT_PTR CALLBACK DlgProc (
 
 								if (_wfp_isfiltersinstalled ())
 								{
-									rules = _r_obj_createlist (1, NULL);
+									rules = _r_obj_createlist (0x01, NULL);
 
 									_r_obj_addlistitem (rules, ptr_app, NULL);
 
@@ -2840,7 +2861,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_IMPORT:
 				{
-					COMDLG_FILTERSPEC filters[] = {{L"Profile files (*.xml)", L"*.xml"}, {L"All files (*.*)", L"*.*"}};
+					COMDLG_FILTERSPEC filters[] = {{L"Profile files (*.xml)", L"*.xml"},{L"All files (*.*)", L"*.*"}};
 					R_FILE_DIALOG file_dialog;
 					R_STRINGREF sr;
 					PR_STRING path;
@@ -2884,7 +2905,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_EXPORT:
 				{
-					COMDLG_FILTERSPEC filters[] = {{L"Profile files (*.xml)", L"*.xml"}, {L"All files (*.*)", L"*.*"}};
+					COMDLG_FILTERSPEC filters[] = {{L"Profile files (*.xml)", L"*.xml"},{L"All files (*.*)", L"*.*"}};
 					R_FILE_DIALOG file_dialog;
 					R_STRINGREF sr;
 					PR_STRING path;
@@ -3272,7 +3293,7 @@ INT_PTR CALLBACK DlgProc (
 
 				case IDM_ADD_FILE:
 				{
-					COMDLG_FILTERSPEC filters[] = {{L"Executable files (*.exe)", L"*.exe"}, {L"All files (*.*)", L"*.*"}};
+					COMDLG_FILTERSPEC filters[] = {{L"Executable files (*.exe)", L"*.exe"},{L"All files (*.*)", L"*.*"}};
 					R_FILE_DIALOG file_dialog;
 					PITEM_APP ptr_app;
 					PR_STRING path;
