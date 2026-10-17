@@ -2107,7 +2107,7 @@ VOID _app_command_checkbox (
 			{
 				if (!new_val)
 				{
-					_app_timer_reset (hwnd, ptr_app);
+					_app_timer_reset (hwnd, ptr_app, TRUE);
 				}
 				else
 				{
@@ -2256,6 +2256,7 @@ VOID _app_command_delete (
 		if (_r_show_message (hwnd, MB_YESNO | MB_ICONEXCLAMATION, NULL, string->buffer) != IDYES)
 		{
 			_r_obj_dereference (string);
+
 			return;
 		}
 
@@ -2285,7 +2286,7 @@ VOID _app_command_delete (
 				_r_listview_deleteitem (hwnd, tab_context->listview_id, i);
 
 				_app_notify_freeobject (NULL, ptr_app);
-				_app_timer_reset (hwnd, ptr_app);
+				_app_timer_reset (hwnd, ptr_app, FALSE);
 
 				_r_queuedlock_acquireexclusive (&lock_apps);
 				_app_freeapplication (hwnd, hash_code);
@@ -2422,7 +2423,7 @@ VOID _app_command_disable (
 		}
 		else if (ctrl_id == IDM_DISABLETIMER)
 		{
-			_app_timer_reset (hwnd, ptr_app);
+			_app_timer_reset (hwnd, ptr_app, TRUE);
 		}
 
 		_app_listview_updateitemby_id (hwnd, tab_context->listview_id, item_id);
@@ -2838,7 +2839,7 @@ VOID _app_command_purgeunused (
 
 				_app_deleteappitem (hwnd, ptr_app->type, hash_code);
 				_app_notify_freeobject (NULL, ptr_app);
-				_app_timer_reset (NULL, ptr_app);
+				_app_timer_reset (NULL, ptr_app, FALSE);
 
 				_app_freeapplication (hwnd, hash_code);
 			}
@@ -2932,7 +2933,7 @@ VOID _app_command_purgetimers (
 				ptr_app = (PITEM_APP)_r_obj_getlistitem (apps_list, i);
 
 				if (ptr_app)
-					_app_timer_reset (hwnd, ptr_app);
+					_app_timer_reset (hwnd, ptr_app, TRUE);
 			}
 
 			_app_listview_updateby_id (hwnd, DATA_LISTVIEW_CURRENT, PR_UPDATE_TYPE | PR_UPDATE_FORCE);

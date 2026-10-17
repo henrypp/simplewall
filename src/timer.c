@@ -50,7 +50,7 @@ VOID _app_timer_set (
 
 	if (seconds <= 0)
 	{
-		_app_timer_reset (NULL, ptr_app);
+		_app_timer_reset (NULL, ptr_app, TRUE);
 	}
 	else
 	{
@@ -98,7 +98,7 @@ VOID _app_timer_set (
 		}
 		else
 		{
-			_app_timer_reset (NULL, ptr_app);
+			_app_timer_reset (NULL, ptr_app, TRUE);
 		}
 	}
 
@@ -108,10 +108,12 @@ VOID _app_timer_set (
 
 VOID _app_timer_reset (
 	_In_opt_ HWND hwnd,
-	_Inout_ PITEM_APP ptr_app
+	_Inout_ PITEM_APP ptr_app,
+	_In_ BOOLEAN is_destroyfilters
 )
 {
-	_wfp_destroyfilters_array (_wfp_getenginehandle (), ptr_app->guids, DBG_ARG);
+	if (is_destroyfilters && _wfp_isfiltersinstalled ())
+		_wfp_destroyfilters_array (_wfp_getenginehandle (), ptr_app->guids, DBG_ARG);
 
 	ptr_app->is_enabled = FALSE;
 	ptr_app->is_haveerrors = FALSE;
@@ -161,7 +163,7 @@ VOID NTAPI _app_timer_callback (
 
 	hwnd = _r_app_gethwnd ();
 
-	_app_timer_reset (hwnd, ptr_app);
+	_app_timer_reset (hwnd, ptr_app, TRUE);
 
 	if (hwnd)
 		_app_listview_updateby_id (hwnd, ptr_app->type, PR_UPDATE_TYPE | PR_UPDATE_FORCE);

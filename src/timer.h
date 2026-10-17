@@ -17,7 +17,8 @@ VOID _app_timer_set (
 
 VOID _app_timer_reset (
 	_In_opt_ HWND hwnd,
-	_Inout_ PITEM_APP ptr_app
+	_Inout_ PITEM_APP ptr_app,
+	_In_ BOOLEAN is_destroyfilters
 );
 
 VOID _app_timer_remove (
