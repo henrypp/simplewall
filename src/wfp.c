@@ -1773,10 +1773,8 @@ BOOLEAN _wfp_createglobalfilters (
 
 		// win7+ boot-time features
 		//
-		// note: boot-time filters added while bfe is running are enforced immediately,
-		// so this block stays active the whole time filters are enabled. nothing else
-		// ever permits forwarded traffic, which breaks mobile hotspot, internet
-		// connection sharing and nat'd vm switches (issue #425).
+		// NOTE: boot-time filters added while bfe is running are enforced immediately, so this block stays active the whole time filters are enabled. nothing else
+		// ever permits forwarded traffic, which breaks mobile hotspot, internet connection sharing and nat'd vm switches (issue #425).
 		if (!_r_config_getboolean (L"AllowIpForwarding", FALSE, NULL))
 		{
 			fwfc[0].fieldKey = FWPM_CONDITION_FLAGS;
