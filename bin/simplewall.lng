@@ -1693,6 +1693,7 @@
 278=Pas op: via de service-/driverhost (svchost.exe/System) kan internetverkeer onverwacht alsnog naar buiten worden geleid. Doorgaan?
 279=De optie "Netwerkadressen naar domeinnamen omzetten" kan niet worden gebruikt als het hoofdproces is geblokkeerd. Doorgaan?
 280=Totaal
+281=IP-forwarding toestaan
 282=inkomend multicast/broadcast
 283=Verbindingsmonitor inschakelen
 284=Wachtende verbindingen tonen
@@ -3922,7 +3923,7 @@
 ; Русская локализация от Henry++
 
 [Russian]
-000=1792316637
+000=1792991271
 001=Исключить
 002=Файл
 003=Настройки
