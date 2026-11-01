@@ -1631,7 +1631,7 @@ NTSTATUS _app_profile_load (
 	{
 		if (hwnd)
 		{
-			_r_show_errormessage (hwnd, L"Could not intitialize XML library!", NULL, status, ET_WINDOWS);
+			_r_show_errormessage (hwnd, L"Could not initialize XML library!", NULL, status, ET_WINDOWS);
 		}
 		else
 		{
@@ -1720,7 +1720,7 @@ NTSTATUS _app_profile_save (
 	{
 		if (hwnd)
 		{
-			_r_show_errormessage (hwnd, L"Could not intitialize XML library!", NULL, status, ET_WINDOWS);
+			_r_show_errormessage (hwnd, L"Could not initialize XML library!", NULL, status, ET_WINDOWS);
 		}
 		else
 		{
