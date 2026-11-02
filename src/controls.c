@@ -642,10 +642,8 @@ VOID _app_setinterfacestate (
 	ENUM_INSTALL_TYPE install_type;
 	HICON hicon_large, hicon_small;
 	LONG icon_id, icon_large, icon_small;
-	BOOLEAN is_filtersinstalled;
 
 	install_type = _wfp_getinstalltype ();
-	is_filtersinstalled = (install_type != INSTALL_DISABLED);
 
 	icon_small = _r_dc_getsystemmetrics (SM_CXSMICON, dpi_value);
 	icon_large = _r_dc_getsystemmetrics (SM_CXICON, dpi_value);
@@ -662,7 +660,7 @@ VOID _app_setinterfacestate (
 	if (!_wfp_isfiltersapplying ())
 		_r_status_settext (hwnd, IDC_STATUSBAR, 0, _app_getstatelocale (install_type));
 
-	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _app_getstateaction (install_type), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, is_filtersinstalled ? 1 : 0);
+	_r_toolbar_setbutton (config.hrebar, IDC_TOOLBAR, IDM_TRAY_START, _app_getstateaction (install_type), BTNS_BUTTON | BTNS_AUTOSIZE | BTNS_SHOWTEXT, 0, (install_type != INSTALL_DISABLED) ? 1 : 0);
 
 	_app_settrayicon (hwnd, install_type);
 }
@@ -917,7 +915,13 @@ VOID _app_toolbar_resize (
 
 	_app_toolbar_setfont ();
 
-	_r_toolbar_resize (config.htoolbar, 0);
+	// the toolbar only ever grows its button size, so reset it and re-add the buttons; autosize widths (text + padding) are only calculated when the buttons are added, using the current font.
+	// the menu bar is text-only; clear the default bitmap size, which the toolbar height at the creation dpi (e.g. 144 -> 96 dpi).
+	//_r_toolbar_setbitmapsize (config.htoolbar, 0, 0, 0);
+
+	// rescale the item padding for the current DPI (no vertical padding; the button height is set from the font height below).
+	_r_toolbar_setpadding (config.htoolbar, 0, _r_calc_multipledivide (20, _r_dc_getwindowdpi (config.htoolbar), USER_DEFAULT_SCREEN_DPI), 0);
+	_r_toolbar_setbuttonsize (config.htoolbar, 0, 0, 0);
 
 	for (ULONG i = 0; i < _r_rebar_getcount (config.hrebar, 0); i++)
 	{
@@ -936,9 +940,15 @@ VOID _app_toolbar_resize (
 
 			button_size = _r_toolbar_getbuttonsize (config.hrebar, IDC_TOOLBAR);
 
+			// update the band height so the row shrinks/grows with the new button size
 			rbi.cxMinChild = LOWORD (button_size);
 			rbi.cyMinChild = HIWORD (button_size);
 			rbi.cxIdeal = (UINT)ideal_size.cx;
+
+			rbi.cyChild = HIWORD (button_size);
+
+			// variable height bands never shrink below their current height unless capped, so pin the maximum to the child height (e.g. 144 -> 96 DPI)
+			rbi.cyMaxChild = HIWORD (button_size);
 		}
 		else if (rbi.wID == REBAR_SEARCH_ID)
 		{
@@ -953,6 +963,8 @@ VOID _app_toolbar_resize (
 
 		_r_rebar_setinfo (config.hrebar, 0, i, &rbi);
 	}
+
+	_r_toolbar_resize (config.htoolbar, 0);
 }
 
 VOID _app_toolbar_setfont ()
@@ -970,15 +982,13 @@ VOID _app_window_resize (
 	_In_ LONG dpi_value
 )
 {
-	PITEM_TAB_CONTEXT new_context;
-	PITEM_TAB_CONTEXT tab_context;
+	PITEM_TAB_CONTEXT new_context, tab_context;
 	HDWP hdefer;
-	LONG statusbar_height;
 	ULONG rebar_height;
 
 	_app_toolbar_resize (hwnd, dpi_value);
 
-	_r_wnd_sendmessage (config.hrebar, 0, WM_SIZE, 0, 0);
+	//_r_wnd_sendmessage (config.hrebar, 0, WM_SIZE, 0, 0);
 	_r_wnd_sendmessage (hwnd, IDC_STATUSBAR, WM_SIZE, 0, 0);
 
 	tab_context = _app_listview_getcontext (hwnd, INT_ERROR);
@@ -987,14 +997,23 @@ VOID _app_window_resize (
 		return;
 
 	rebar_height = _r_rebar_getheight (hwnd, IDC_REBAR);
-	statusbar_height = _r_status_getheight (hwnd, IDC_STATUSBAR);
 
 	hdefer = BeginDeferWindowPos (2);
 
 	if (hdefer)
 	{
 		hdefer = DeferWindowPos (hdefer, config.hrebar, NULL, 0, 0, rect->right, rebar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-		hdefer = DeferWindowPos (hdefer, GetDlgItem (hwnd, IDC_TAB), NULL, 0, rebar_height, rect->right, rect->bottom - rebar_height - statusbar_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+
+		hdefer = DeferWindowPos (
+			hdefer,
+			GetDlgItem (hwnd, IDC_TAB),
+			NULL,
+			0,
+			rebar_height,
+			rect->right,
+			rect->bottom - rebar_height - _r_status_getheight (hwnd, IDC_STATUSBAR),
+			SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER
+		);
 
 		EndDeferWindowPos (hdefer);
 	}
