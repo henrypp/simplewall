@@ -7,7 +7,7 @@
 ; Bob (Oman)
 ; Discord: 111a1
 
-[Arabic]
+[العربية]
 001=استبعاد
 002=ملف
 003=الإعدادات
@@ -213,7 +213,7 @@
 ; Armenian
 ; Armenian localization from hrach mk
 
-[Armenian]
+[Հայերեն]
 001=Բացառել
 002=Թարմացումներ չկան:
 003=Թարմացումը հասանելի է, ներբեռնե՞լ և տեղադրել:
@@ -391,7 +391,7 @@
 ; Български превод от Руси Димитров (github.com/rddim)
 ; Последна редакция - 07.09.2026
 
-[Bulgarian]
+[Български]
 001=Изключения за
 002=Файл
 003=Настройки
@@ -631,7 +631,7 @@
 ; Catalan
 ; github.com/eric-l10n - 08.11.2021
 
-[Catalan]
+[Català]
 001=Exclou
 002=Fitxer
 003=Configuració
@@ -833,7 +833,7 @@
 ; imba-tjd;nkh0472
 ; Xingnengmao66 2024.07.04
 
-[Chinese (Simplified)]
+[中文（简体）]
 001=排除
 002=文件
 003=设置
@@ -1064,7 +1064,7 @@
 ; 繁體中文 (台灣)
 ; Dogkiller87
 
-[Chinese (Traditional)]
+[中文（繁體）]
 001=排除
 002=檔案
 003=設定
@@ -1247,7 +1247,7 @@
 ; <Czech>
 ; <Daniel Gregor (e-mail: daniel.gregor@post.cz>
 
-[Czech]
+[Čeština]
 001=Vyloučit
 002=Soubor
 003=Nastavení
@@ -1475,7 +1475,7 @@
 ; Dutch
 ; ltGuillaume (GitHub)
 
-[Dutch]
+[Nederlands]
 001=Uitsluiten
 002=Bestand
 003=Instellingen
@@ -1705,7 +1705,7 @@
 ; Finnish v1.0
 ; Toni Ahola
 
-[Finnish]
+[Suomi]
 002=Tiedosto
 003=Asetukset
 004=Sulje
@@ -1814,7 +1814,7 @@
 ; French
 ; Largo, Powsey, huldf
 
-[French]
+[Français]
 001=Exclure
 002=Fichier
 003=Paramètres
@@ -2034,7 +2034,7 @@
 ; German
 ; Deutsche Übersetzung von Phoenix1747, Henry2o1o, SINE, uDEV2019
 
-[German]
+[Deutsch]
 001=Ausschlossen sind
 002=Datei
 003=Einstellungen
@@ -2244,7 +2244,7 @@
 ; <Hungarian>
 ; <Zityi's Translator Team>
 
-[Hungarian]
+[Magyar]
 002=Fájl
 003=Beállítások
 004=Kilépés
@@ -2361,7 +2361,7 @@
 ; Italian - Revised 18.10.2026
 ; Author = Stefano Amico e bovirus (bovirus@gmail.com)
 
-[Italian]
+[Italiano]
 001=Escludi
 003=Impostazioni
 004=Esci
@@ -2598,7 +2598,7 @@
 ; Japanese
 ; Rukoto, 四天王寺
 
-[Japanese]
+[日本語 ]
 001=除外
 002=ファイル
 003=設定
@@ -2828,7 +2828,7 @@
 ; <Korean>
 ; <한글 번역 : WhiteCrowF2>
 
-[Korean]
+[한국어]
 001=제외 항목
 002=파일
 003=설정
@@ -3057,6 +3057,7 @@
 278=주의하십시오, 서비스/드라이버 호스트(svchost.exe/System)를 통해 인터넷 트래픽이 예기치 않은 경로로 유출될 수 있습니다. 계속하시겠습니까?
 279=메인 프로세스를 허용하지 않으면, 네트워크 주소 확인 옵션을 사용할 수 없습니다. 계속하시겠습니까?
 280=총계
+281=IP 포워딩 허용
 282=인바운드 멀티캐스트/브로드캐스트
 283=연결 모니터링 활성화
 284=대기 중인 연결 표시
@@ -3068,7 +3069,7 @@
 ; <Persian>
 ; <Hessam>
 
-[Persian]
+[فارسی]
 001=محرومسازی
 002=فايل
 003=تنظيمات
@@ -3299,7 +3300,7 @@
 280=مجموع
 282=ترافیک ورود یشبکه  از منبع خارجی به همه دستگاه ها/یا اعضا یک گروه خاص
 
-[Polish]
+[Polski]
 001=Wyklucz
 002=Plik
 003=Ustawienia
@@ -3512,7 +3513,7 @@
 ; <Brazilian Portuguese>
 ; <ALFA&ÔMEGA>
 
-[Portuguese (Brazil)]
+[Português do Brasil]
 001=Excluir
 002=Arquivo
 003=Configurações
@@ -3726,7 +3727,7 @@
 265=Atualização disponível, baixar e instalar?
 266=Velocidade
 
-[Portuguese]
+[Português]
 001=Excluir
 002=Ficheiro
 003=Definições
@@ -3922,8 +3923,8 @@
 ; Russian
 ; Русская локализация от Henry++
 
-[Russian]
-000=1792991271
+[Русский]
+000=1793600680
 001=Исключить
 002=Файл
 003=Настройки
@@ -4159,7 +4160,7 @@
 ; Serbian Cyrillic
 ; Prevod: Adeii Schkartowsky (https://github.com/adeii), Radoš Milićev (https://github.com/rammba)
 
-[Serbian (Cyrillic)]
+[Српски (ћирилица)]
 001=Искључи
 002=Фајл
 003=Подешавања
@@ -4393,7 +4394,7 @@
 ; Serbian Latin
 ; Prevod: Adeii Schkartowsky (https://github.com/adeii), Radoš Milićev (https://github.com/rammba)
 
-[Serbian (Latin)]
+[Srpski (latinica)]
 001=Isključi
 002=Fajl
 003=Podešavanja
@@ -4623,7 +4624,7 @@
 ; Slovenčina
 ; Slovenská lokalizácia od vaso@watel.sk
 
-[Slovak]
+[Slovenčina]
 001=Vylúčiť
 002=Súbor
 003=Nastavenia
@@ -4808,7 +4809,7 @@
 ; <Slovenian>
 ; Andrew Poženel (https://github.com/anderlli0053)
 
-[Slovenian]
+[Slovenščina]
 001=Izpusti
 002=Datoteka
 003=Nastavitve
@@ -5037,7 +5038,7 @@
 ; <Spanish>
 ; <Tarkiin>, <Puche>, <FredMan95>, <colorfulparade>
 
-[Spanish]
+[Español]
 001=Excluir
 002=Archivo
 003=Configuración
@@ -5270,7 +5271,7 @@
 ; Swedish
 ; 1FF
 
-[Swedish]
+[Svenska]
 001=Exkludera
 002=Fil
 003=Inställningar
@@ -5482,7 +5483,7 @@
 ; <Türkçe>
 ; <Alcazer Barış TÜRKGÜCÜ - code@alcazer.com>
 
-[Turkish]
+[Türkçe]
 001=Dışla
 002=Dosya
 003=Ayarlar
@@ -5715,7 +5716,7 @@
 ; Ukrainian
 ; Українська локалізація від Henaro aka Ironwool
 
-[Ukrainian]
+[Українська]
 002=Файл
 003=Налаштування
 004=Вийти
@@ -5885,7 +5886,7 @@
 ; Vietnamese
 ; BinhNT, TienNV, KMA
 
-[Vietnamese]
+[Tiếng Việt]
 001=Loại bỏ
 002=Tệp
 003=Cài đặt
