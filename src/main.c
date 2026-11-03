@@ -141,8 +141,7 @@ VOID _app_config_apply (
 )
 {
 	HMENU hmenu;
-	BOOLEAN is_enabled;
-	BOOLEAN new_val;
+	BOOLEAN is_enabled, new_val;
 
 	switch (ctrl_id)
 	{
