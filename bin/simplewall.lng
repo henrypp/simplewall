@@ -3924,7 +3924,7 @@
 ; Русская локализация от Henry++
 
 [Русский]
-000=1793915706
+000=1794336537
 001=Исключить
 002=Файл
 003=Настройки
@@ -5711,7 +5711,14 @@
 278=Dikkat: İnternet trafiği, servis/sürücü ana bilgisayar işlemi (svchost.exe/System) üzerinden beklenmedik yollarla dışarı sızabilir. Devam etmek istiyor musunuz?
 279=Ana işlemin engellenmesi durumunda ağ adreslerini çözümleme seçeneği kullanılamaz. Devam edilsin mi?
 280=Toplam
+281=IP yönlendirmeye izin ver
 282=Gelen çoklu gönderim/yayın
+283=Bağlantı izlemeyi etkinleştir
+284=Bekleyen bağlantıları göster
+285=UDP/QUIC trafiğini ölç (deneysel, yeniden başlatma gerekir)
+286=UDP (QUIC dahil): Bu soketin ilk izlendiği andan itibaren sayılan ETW bayt miktarı.
+287=UDP ölçümü kullanılamıyor veya eksik. Yeniden denemek için simplewall uygulamasını yeniden başlatın. Hata
+288=UDP: Henüz doğrulanmış bir ölçüm yok. İzleme başlamadan önce açılan soketlerin yeniden açılması gerekir.
 
 ; Ukrainian
 ; Українська локалізація від Henaro aka Ironwool
