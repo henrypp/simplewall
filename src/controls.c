@@ -639,9 +639,9 @@ VOID _app_setinterfacestate (
 	_In_ LONG dpi_value
 )
 {
-	ENUM_INSTALL_TYPE install_type;
 	HICON hicon_large, hicon_small;
 	LONG icon_id, icon_large, icon_small;
+	ENUM_INSTALL_TYPE install_type;
 
 	install_type = _wfp_getinstalltype ();
 
@@ -651,6 +651,7 @@ VOID _app_setinterfacestate (
 	icon_id = _app_getstateicon (install_type);
 
 	hicon_small = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
+
 	hicon_large = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large);
 
 	_r_wnd_seticon (hwnd, hicon_small, hicon_large);
@@ -670,14 +671,11 @@ VOID _app_settrayicon (
 	_In_ ENUM_INSTALL_TYPE install_type
 )
 {
-	HICON hicon;
 	LONG icon_size;
 
 	icon_size = _r_dc_getsystemmetrics (SM_CXSMICON, _r_dc_gettaskbardpi ());
 
-	hicon = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (_app_getstateicon (install_type)), icon_size);
-
-	_r_tray_setinfo (hwnd, &GUID_TrayIcon, hicon, _r_app_getname ());
+	_r_tray_setinfo (hwnd, &GUID_TrayIcon, _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (_app_getstateicon (install_type)), icon_size), _r_app_getname ());
 }
 
 VOID _app_imagelist_init (

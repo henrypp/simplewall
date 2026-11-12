@@ -2060,7 +2060,9 @@ INT_PTR CALLBACK DlgProc (
 		case RM_TASKBARCREATED:
 		{
 			// refresh tray icon
-			_r_tray_create (hwnd, &GUID_TrayIcon, RM_TRAYICON, NULL, NULL, FALSE);
+			LONG icon_size = _r_dc_getsystemmetrics (SM_CXSMICON, _r_dc_gettaskbardpi ());
+
+			_r_tray_create (hwnd, &GUID_TrayIcon, RM_TRAYICON, _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (_app_getstateicon (_wfp_getinstalltype ())), icon_size), _r_app_getname (), FALSE);
 
 			_app_settrayicon (hwnd, _wfp_getinstalltype ());
 
