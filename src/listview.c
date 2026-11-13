@@ -574,15 +574,15 @@ VOID _app_listview_loadfont (
 	_In_ BOOLEAN is_forced
 )
 {
-	LOGFONT logfont = {0};
+	LOGFONT lf = {0};
 
 	if (is_forced || !config.hfont)
 	{
 		SAFE_DELETE_OBJECT (config.hfont);
 
-		_r_config_getfont (L"Font", &logfont, dpi_value, NULL);
+		_r_config_getfont (L"Font", &lf, dpi_value, NULL);
 
-		config.hfont = _app_createfont (&logfont, 0, FALSE, 0);
+		config.hfont = _app_createfont (&lf, 0, FALSE, 0);
 	}
 }
 
