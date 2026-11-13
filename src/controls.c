@@ -717,6 +717,8 @@ VOID _app_imagelist_init (
 
 	if (config.himg_toolbar)
 	{
+		_r_imagelist_setimagecount (config.himg_toolbar, RTL_NUMBER_OF (toolbar_ids));
+
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
 		{
 			status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (toolbar_ids[i]), &GUID_ContainerFormatPng, size_toolbar, size_toolbar);
@@ -745,6 +747,8 @@ VOID _app_imagelist_init (
 
 	if (config.himg_rules_small)
 	{
+		_r_imagelist_setimagecount (config.himg_rules_small, RTL_NUMBER_OF (rules_ids));
+
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
 			status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (rules_ids[i]), &GUID_ContainerFormatPng, size_small, size_small);
@@ -770,6 +774,8 @@ VOID _app_imagelist_init (
 
 	if (config.himg_rules_large)
 	{
+		_r_imagelist_setimagecount (config.himg_rules_large, RTL_NUMBER_OF (rules_ids));
+
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
 			status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (rules_ids[i]), &GUID_ContainerFormatPng, size_large, size_large);
