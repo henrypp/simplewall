@@ -383,6 +383,7 @@ VOID _app_notify_show (
 	_app_notify_setposition (hwnd, FALSE);
 
 	ShowWindow (hwnd, SW_SHOWNA);
+	UpdateWindow (hwnd);
 
 	InvalidateRect (hwnd, NULL, TRUE);
 

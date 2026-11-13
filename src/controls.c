@@ -651,7 +651,6 @@ VOID _app_setinterfacestate (
 	icon_id = _app_getstateicon (install_type);
 
 	hicon_small = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_small);
-
 	hicon_large = _r_sys_loadsharedicon (_r_sys_getimagebase (), MAKEINTRESOURCE (icon_id), icon_large);
 
 	_r_wnd_seticon (hwnd, hicon_small, hicon_large);
@@ -717,7 +716,7 @@ VOID _app_imagelist_init (
 
 	if (config.himg_toolbar)
 	{
-		_r_imagelist_setimagecount (config.himg_toolbar, RTL_NUMBER_OF (toolbar_ids));
+		_r_imagelist_setimagecount (config.himg_toolbar, RTL_NUMBER_OF (toolbar_ids) + 1);
 
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (toolbar_ids); i++)
 		{
@@ -747,7 +746,7 @@ VOID _app_imagelist_init (
 
 	if (config.himg_rules_small)
 	{
-		_r_imagelist_setimagecount (config.himg_rules_small, RTL_NUMBER_OF (rules_ids));
+		_r_imagelist_setimagecount (config.himg_rules_small, RTL_NUMBER_OF (rules_ids) + 1);
 
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{
@@ -774,7 +773,7 @@ VOID _app_imagelist_init (
 
 	if (config.himg_rules_large)
 	{
-		_r_imagelist_setimagecount (config.himg_rules_large, RTL_NUMBER_OF (rules_ids));
+		_r_imagelist_setimagecount (config.himg_rules_large, RTL_NUMBER_OF (rules_ids) + 1);
 
 		for (ULONG_PTR i = 0; i < RTL_NUMBER_OF (rules_ids); i++)
 		{

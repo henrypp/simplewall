@@ -2275,9 +2275,7 @@ INT_PTR CALLBACK DlgProc (
 
 		case WM_THEMECHANGED:
 		{
-			LONG dpi_value;
-
-			dpi_value = _r_dc_getwindowdpi (hwnd);
+			LONG dpi_value = _r_dc_getwindowdpi (hwnd);
 
 			_app_windowloadfont (dpi_value);
 			_app_listview_loadfont (dpi_value, TRUE);
@@ -2347,6 +2345,7 @@ INT_PTR CALLBACK DlgProc (
 						break;
 
 					ShowWindow (hlistview, SW_HIDE);
+					UpdateWindow (hlistview);
 
 					break;
 				}
@@ -2370,6 +2369,7 @@ INT_PTR CALLBACK DlgProc (
 					if (hlistview)
 					{
 						ShowWindow (hlistview, SW_SHOWNA);
+						UpdateWindow (hlistview);
 
 						if (_r_wnd_isvisible (hwnd, TRUE)) // HACK!!!
 							SetFocus (hlistview);
@@ -3517,6 +3517,8 @@ INT_PTR CALLBACK DlgProc (
 				case IDM_ZOOM:
 				{
 					ShowWindow (hwnd, IsZoomed (hwnd) ? SW_RESTORE : SW_MAXIMIZE);
+					UpdateWindow (hwnd);
+
 					break;
 				}
 

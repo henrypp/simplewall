@@ -1616,7 +1616,10 @@ INT_PTR CALLBACK EditorProc (
 					hpage = (HWND)_r_tab_getitemlparam (hwnd, IDC_TAB, item_id);
 
 					if (hpage)
+					{
 						ShowWindow (hpage, SW_HIDE);
+						UpdateWindow (hpage);
+					}
 
 					break;
 				}
@@ -1635,6 +1638,8 @@ INT_PTR CALLBACK EditorProc (
 					_r_tab_adjustchild (hwnd, IDC_TAB, hpage);
 
 					ShowWindow (hpage, SW_SHOWNA);
+					UpdateWindow (hpage);
+
 					SetFocus (NULL);
 
 					break;
