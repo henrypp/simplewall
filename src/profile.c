@@ -1605,6 +1605,9 @@ static VOID _app_profile_refresh (
 	_r_obj_clearhashtable (rules_config);
 	_r_queuedlock_releaseexclusive (&lock_rules_config);
 
+	// clear auto rules
+	_app_autorules_clear ();
+
 	if (!hwnd)
 		hwnd = _r_app_gethwnd ();
 

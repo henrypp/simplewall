@@ -1053,7 +1053,7 @@ INT_PTR CALLBACK NotificationProc (
 					if (!context || !_r_ctrl_isenabled (hwnd, (INT)(INT_PTR)nmlp->idFrom))
 						break;
 
-					if (nmlp->idFrom != IDC_ALLOW_BTN && nmlp->idFrom != IDC_RULES_BTN)
+					if (nmlp->idFrom != IDC_ALLOW_BTN && nmlp->idFrom != IDC_BLOCK_BTN && nmlp->idFrom != IDC_RULES_BTN)
 						break;
 
 					ptr_log = _app_notify_getobject (context->app_hash);
@@ -1070,6 +1070,14 @@ INT_PTR CALLBACK NotificationProc (
 					else if (nmlp->idFrom == IDC_ALLOW_BTN)
 					{
 						_app_generate_timerscontrol (hsubmenu, context->app_hash);
+
+						// "allow everything from this publisher / folder"
+						_app_autorules_generatemenu (hsubmenu, context->app_hash, TRUE);
+					}
+					else if (nmlp->idFrom == IDC_BLOCK_BTN)
+					{
+						// "block everything from this publisher / folder"
+						_app_autorules_generatemenu (hsubmenu, context->app_hash, FALSE);
 					}
 
 					if (GetClientRect (nmlp->hwndFrom, &rect))
@@ -1343,6 +1351,15 @@ INT_PTR CALLBACK NotificationProc (
 					if (_r_ctrl_isenabled (hwnd, ctrl_id))
 						_app_notify_command (hwnd, ctrl_id, 0);
 
+					break;
+				}
+
+				case IDM_AUTORULE_ALLOW_PUBLISHER:
+				case IDM_AUTORULE_ALLOW_PATH:
+				case IDM_AUTORULE_BLOCK_PUBLISHER:
+				case IDM_AUTORULE_BLOCK_PATH:
+				{
+					_app_autorules_createfromnotify (hwnd, ctrl_id);
 					break;
 				}
 

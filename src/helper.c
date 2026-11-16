@@ -967,8 +967,10 @@ NTSTATUS _app_verifyfilefromcatalog (
 	return status;
 }
 
-VOID _app_getfilesignatureinfo (
-	_Inout_ PITEM_APP_INFO ptr_app_info,
+// Returns the common name of a valid (trusted) signer of the file, or NULL.
+_Ret_maybenull_
+PR_STRING _app_getfilesignaturestring (
+	_In_ LPCWSTR path,
 	_In_ HANDLE hfile
 )
 {
@@ -976,6 +978,30 @@ VOID _app_getfilesignatureinfo (
 	WINTRUST_FILE_INFO file_info = {0};
 	PR_STRING string = NULL;
 	LONG status;
+
+	file_info.cbStruct = sizeof (WINTRUST_FILE_INFO);
+	file_info.pcwszFilePath = path;
+	file_info.hFile = hfile;
+
+	status = _app_verifyfromfile (WTD_CHOICE_FILE, &file_info, &WinTrustActionGenericVerifyV2, NULL, &string);
+
+	if (status == TRUST_E_NOSIGNATURE)
+	{
+		status = _app_verifyfilefromcatalog (hfile, path, _r_sys_isosversiongreaterorequal (WINDOWS_8) ? BCRYPT_SHA256_ALGORITHM : NULL, &string);
+
+		if (status == TRUST_E_NOSIGNATURE)
+			_app_verifyfilefromcatalog (hfile, path, BCRYPT_SHA1_ALGORITHM, &string);
+	}
+
+	return string;
+}
+
+VOID _app_getfilesignatureinfo (
+	_Inout_ PITEM_APP_INFO ptr_app_info,
+	_In_ HANDLE hfile
+)
+{
+	PR_STRING string;
 
 	// clean value
 	__try
@@ -988,19 +1014,7 @@ VOID _app_getfilesignatureinfo (
 		NOTHING;
 	}
 
-	file_info.cbStruct = sizeof (WINTRUST_FILE_INFO);
-	file_info.pcwszFilePath = ptr_app_info->path->buffer;
-	file_info.hFile = hfile;
-
-	status = _app_verifyfromfile (WTD_CHOICE_FILE, &file_info, &WinTrustActionGenericVerifyV2, NULL, &string);
-
-	if (status == TRUST_E_NOSIGNATURE)
-	{
-		status = _app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, _r_sys_isosversiongreaterorequal (WINDOWS_8) ? BCRYPT_SHA256_ALGORITHM : NULL, &string);
-
-		if (status == TRUST_E_NOSIGNATURE)
-			_app_verifyfilefromcatalog (hfile, ptr_app_info->path->buffer, BCRYPT_SHA1_ALGORITHM, &string);
-	}
+	string = _app_getfilesignaturestring (ptr_app_info->path->buffer, hfile);
 
 	__try
 	{

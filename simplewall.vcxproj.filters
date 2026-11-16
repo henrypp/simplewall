@@ -78,6 +78,9 @@
     <ClCompile Include="src\udpstats.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\autorules.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\main.h">
@@ -102,6 +105,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\autorules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\helper.h">

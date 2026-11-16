@@ -1915,6 +1915,9 @@ VOID _app_initialize (
 	// initialize rules array object
 	rules_list = _r_obj_createlist (0x10, &_r_obj_dereference);
 
+	// initialize auto rules list (publisher / path pattern)
+	_app_autorules_initialize ();
+
 	// initialize rules configuration table
 	rules_config = _r_obj_createhashtable (sizeof (ITEM_RULE_CONFIG), 0x10, &_app_dereferenceruleconfig);
 
@@ -2816,10 +2819,22 @@ INT_PTR CALLBACK DlgProc (
 
 					return 0;
 				}
+				else if (ctrl_id >= IDX_AUTORULES && ctrl_id < (IDX_AUTORULES + AUTORULES_MAX))
+				{
+					_app_autorules_removefrommenu (hwnd, ctrl_id);
+
+					return 0;
+				}
 			}
 
 			switch (ctrl_id)
 			{
+				case IDM_AUTORULES:
+				{
+					_app_autorules_showmanager (hwnd);
+					break;
+				}
+
 				case IDCANCEL: // process Esc key
 				{
 					if (GetFocus () == config.hsearchbar)

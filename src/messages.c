@@ -145,6 +145,7 @@ VOID _app_message_localize (
 		// edit submenu
 		_r_menu_setitemtextformat (hmenu, IDM_PURGE_UNUSED, FALSE, L"%s\tCtrl+Shift+X", _r_locale_getstring (IDS_PURGE_UNUSED));
 		_r_menu_setitemtextformat (hmenu, IDM_PURGE_TIMERS, FALSE, L"%s\tCtrl+Shift+T", _r_locale_getstring (IDS_PURGE_TIMERS));
+		_r_menu_setitemtextformat (hmenu, IDM_AUTORULES, FALSE, L"%s...", _r_locale_getstring (IDS_AUTORULES));
 		_r_menu_setitemtextformat (hmenu, IDM_LOGCLEAR, FALSE, L"%s\tCtrl+X", _r_locale_getstring (IDS_LOGCLEAR));
 		_r_menu_setitemtextformat (hmenu, IDM_REFRESH, FALSE, L"%s\tF5", _r_locale_getstring (IDS_REFRESH));
 
