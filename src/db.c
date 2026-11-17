@@ -1389,7 +1389,10 @@ LPCWSTR _app_db_getservicename (
 			return L"qotd";
 
 		case 18:
-			return L"msp";
+			return L"msp"; // message send protocol
+
+		case 19:
+			return L"chargen"; // character generator
 
 		case 20:
 			return L"ftp-data";
@@ -1601,6 +1604,9 @@ LPCWSTR _app_db_getservicename (
 
 		case 101:
 			return L"hostname";
+
+		case 102:
+			return L"iso-tsap";
 
 		case 105:
 			return L"csnet-ns";
@@ -2087,6 +2093,14 @@ LPCWSTR _app_db_getservicename (
 
 		case 287:
 			return L"k-block";
+
+		case 300:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"tacacss"; // TLS Secure Login Host Protocol (TACACSS)
+
+			break;
+		}
 
 		case 308:
 			return L"novastorbakcup";
@@ -3288,6 +3302,9 @@ LPCWSTR _app_db_getservicename (
 		case 1273:
 			return L"emc-gateway";
 
+		case 1293:
+			return L"pkt-krb-ipsec";
+
 		case 1307:
 			return L"pacmand";
 
@@ -3299,6 +3316,9 @@ LPCWSTR _app_db_getservicename (
 
 		case 1321:
 			return L"pip";
+
+		case 1325:
+			return L"dx-instrument"; // Thermo Fisher Scientific Instrumentation (Formally Dionex)
 
 		case 1333:
 			return L"passwrd-policy";
@@ -3539,6 +3559,9 @@ LPCWSTR _app_db_getservicename (
 
 		case 1931:
 			return L"amdsched";
+
+		case 1980:
+			return L"pearldoc-xact"; // PearlDoc XACT
 
 		case 1981:
 			return L"p2pq";
@@ -3865,13 +3888,43 @@ LPCWSTR _app_db_getservicename (
 			break;
 		}
 
+		case 4319:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"fox-skytale"; // Fox SkyTale encrypted communication
+
+			break;
+		}
+
 		case 4321:
 			return L"rwhois"; // Remote Who Is
+
+		case 4413:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"avi-nms"; // AVI Systems NMS
+
+			break;
+		}
 
 		case 4500:
 		{
 			if (proto == IPPROTO_UDP)
+			{
+				return L"sae-urn"; // ipsec-nat-t
+			}
+			else if (proto == IPPROTO_UDP)
+			{
 				return L"nat-t-ike";
+			}
+
+			break;
+		}
+
+		case 4503:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"m-bus-oms"; // M-Bus-OMS over UDP
 
 			break;
 		}
@@ -3881,6 +3934,12 @@ LPCWSTR _app_db_getservicename (
 
 		case 4687:
 			return L"nst"; // Network Scanner Tool FTP
+
+		case 4688:
+			return L"mobile-p2p"; // Mobile P2P Service
+
+		case 4793:
+			return L"uet"; // Ultra Ethernet Transport
 
 		case 4876:
 			return L"tritium-can";
@@ -3953,6 +4012,20 @@ LPCWSTR _app_db_getservicename (
 
 		case 5432:
 			return L"postgresql";
+
+		case 5555:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"freeciv";
+
+			if (proto == IPPROTO_UDP)
+				return L"rplay";
+
+			break;
+		}
+
+		case 5556:
+			return L"freeciv";
 
 		case 5631:
 			return L"pcanywheredata";
@@ -4172,6 +4245,14 @@ LPCWSTR _app_db_getservicename (
 			break;
 		}
 
+		case 7668:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"authoritygate"; // AuthorityGate Secure API communication for Orchestrated task sequencing
+
+			break;
+		}
+
 		case 8021:
 		{
 			if (proto == IPPROTO_TCP)
@@ -4216,6 +4297,14 @@ LPCWSTR _app_db_getservicename (
 		case 9800:
 			return L"davsrc"; // WebDav Source Port
 
+		case 9986:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"kaostransport"; // KAOS secure message transport protocol for safety-critical environments
+
+			break;
+		}
+
 		case 10107:
 			return L"bctp-server";
 
@@ -4230,6 +4319,30 @@ LPCWSTR _app_db_getservicename (
 			{
 				return L"hkp";
 			}
+
+			break;
+		}
+
+		case 11434:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"ollama";
+
+			break;
+		}
+
+		case 21337:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"xahaud"; // Xahau P2P network protocol
+
+			break;
+		}
+
+		case 24601:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"udpstp"; // UDP-based IP-Layer Capacity and performance measurement protocol
 
 			break;
 		}
@@ -4293,6 +4406,326 @@ LPCWSTR _app_db_getservicename (
 
 		case 33434:
 			return L"traceroute";
+
+		case 44322:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"pmcdproxy"; // PCP proxy (pmproxy)
+
+			break;
+		}
+
+		case 44818:
+			return L"EtherNetIP-2";
+
+		case 44900:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"m3da";
+
+			break;
+		}
+
+		case 45000:
+		{
+			if (proto == IPPROTO_TCP)
+			{
+				return L"asmp";
+			}
+			else if (proto == IPPROTO_UDP)
+			{
+				return L"ciscopop";
+			}
+
+			break;
+		}
+
+		case 45001:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"asmps";
+
+			break;
+		}
+
+		case 45002:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"rs-status"; // Redspeed Status Monitor
+
+			break;
+		}
+
+		case 45045:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"synctest"; // Remote application control protocol
+
+			break;
+		}
+
+		case 45054:
+			return L"invision-ag";
+
+		case 45185:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"witsnet"; // Wire and Wireless transfer on synchroniz
+
+			break;
+		}
+
+		case 45514:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"cloudcheck"; // cloudcheck-ping
+
+			break;
+		}
+
+		case 45678:
+			return L"eba"; // EBA PRISE
+
+		case 45824:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"dai-shell"; // Server for the DAI family of client-server products
+
+			break;
+		}
+
+		case 45825:
+			return L"qdb2service"; // Qpuncture Data Access Service
+
+		case 45966:
+			return L"ssr-servermgr"; // SSRServerMgr
+
+		case 46336:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"inedo"; // Listen port used for Inedo agent communication
+
+			break;
+		}
+
+		case 46998:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"spremotetablet"; // Connection between a desktop computer or server and a signature tablet to capture handwritten signatures
+
+			break;
+		}
+
+		case 46999:
+			return L"mediabox"; // MediaBox Server
+
+		case 47000:
+			return L"mbus"; // Message Bus
+
+		case 47001:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"winrm"; // Windows Remote Management Service
+
+			break;
+		}
+
+		case 47100:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"jvl-mactalk"; // Configuration of motors connected to Industrial Ethernet
+
+			break;
+		}
+
+		case 47557:
+			return L"dbbrowse"; // Databeam Corporation
+
+		case 47624:
+			return L"directplaysrvr"; // Direct Play Server
+
+		case 47806:
+			return L"ap"; // ALC Protocol
+
+		case 47808:
+			return L"bacnet"; // Building Automation and Control Networks
+
+		case 47809:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"presonus-ucnet"; // PreSonus Universal Control Network Protocol
+
+			break;
+		}
+
+		case 48000:
+			return L"nimcontroller"; // Nimbus Controller
+
+		case 48001:
+			return L"nimspooler"; // Nimbus Spooler
+
+		case 48002:
+			return L"nimhub"; // Nimbus Hub
+
+		case 48003:
+			return L"nimgtw"; // Nimbus Gateway
+
+		case 48004:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"nimbusdb"; // NimbusDB Connector
+
+			break;
+		}
+
+		case 48005:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"nimbusdbctrl"; // NimbusDB Control
+
+			break;
+		}
+
+		case 48050:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"weandsf"; // WeFi Access Network Discovery and Selection Function
+
+			break;
+		}
+
+		case 48128:
+			return L"isnetserv"; // Image Systems Network Services
+
+		case 48129:
+			return L"blp5"; // Bloomberg locator
+
+		case 48556:
+			return L"com-bardac-dw";
+
+		case 48619:
+			return L"iqobject";
+
+		case 48653:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"robotraconteur"; //  Robot Raconteur transport
+
+			break;
+		}
+
+		case 48899:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"tc_ads_discovery";
+
+			break;
+		}
+
+		case 49000:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"matahari"; // Matahari Broker
+
+			break;
+		}
+
+		case 49001:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"nusrp"; // Nuance Unity Service Request Protocol | Nuance Unity Service Discovery Protocol
+
+			break;
+		}
+
+		case 49150:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"inspider"; // InSpider System
+
+			break;
+		}
+
+		case 49400:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"compaqdiag"; // Compaq Web-based management
+
+			break;
+		}
+
+		case 50000:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"ibm-db2"; // also Internet/Intranet Input Method Server Framework?
+
+			break;
+		}
+
+		case 50002:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"iiimsf"; // Internet/Intranet Input Method Server Framework
+
+			break;
+		}
+
+		case 54320:
+		case 54321:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"bo2k"; // Back Orifice 2K Default Port
+
+			break;
+		}
+
+		case 61439:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"netprowler-manager";
+
+			break;
+		}
+
+		case 61440:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"netprowler-manager2";
+
+			break;
+		}
+
+		case 61441:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"netprowler-sensor";
+
+			break;
+		}
+
+		case 62078:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"iphone-sync"; // Apparently used by iPhone while syncing - http://code.google.com/p/iphone-elite/source/browse/wiki/Port_62078.wiki
+
+			break;
+		}
+
+		case 64738:
+		{
+			if (proto == IPPROTO_UDP)
+				return L"murmur"; // Murmur is the server-side software for Mumble open source voice chat software
+
+			break;
+		}
+
+		case 65301:
+		{
+			if (proto == IPPROTO_TCP)
+				return L"pcanywhere";
+
+			break;
+		}
 	}
 
 	return NULL;
