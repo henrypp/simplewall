@@ -169,7 +169,7 @@ VOID _app_listview_addlogitem (
 
 	ptr_log->log_id = _InterlockedCompareExchange (&config.log_id, 0, 0);
 
-	_r_listview_additem (hwnd, IDC_LOG, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, 0, _app_listview_createcontext (log_hash));
+	_r_listview_additem (hwnd, IDC_LOG, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, ptr_log->is_allow ? 0 : 1, _app_listview_createcontext (log_hash));
 }
 
 VOID _app_listview_clearitems (
@@ -620,6 +620,11 @@ VOID _app_listview_refreshgroups (
 		group1_title = IDS_TAB_APPS;
 		group2_title = IDS_TAB_SERVICES;
 		group3_title = IDS_TAB_PACKAGES;
+	}
+	else if (listview_id == IDC_LOG)
+	{
+		group1_title = IDS_GROUP_ALLOWED;
+		group2_title = IDS_GROUP_BLOCKED;
 	}
 	else if (listview_id == IDC_APP_RULES_ID)
 	{
