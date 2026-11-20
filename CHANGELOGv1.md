@@ -1,4 +1,4 @@
-v2.4.6 (27 March 2019)
+﻿v2.4.6 (27 March 2019)
 - enabled special rules group by default (issue #352)
 - fixed removing dropped packet items when overflow
 - fixed notifications crashing (issue #360)

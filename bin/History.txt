@@ -1,3 +1,19 @@
+v3.9.2 Beta (21 November 2026)
+- added ip forwarding option to skip boot-time IPFORWARD block (pull request #2165) [thx @blacksheep25]
+- added opt-in UDP/QUIC socket traffic accounting (pull request #2143) [thx @Tarkiin]
+- added exclude main window from capture (issue #1842)
+- added language menu localization (issue #948)
+- added multilanguage installer (issue #1985)
+- added dropped packets log grouping
+- fixed manually clicking "Disable timer" on a program causes it to have full internet access (issue #2159)
+- fixed crash because of rebar changing dpi (issue #2167)
+- fixed parsing user services instances (issue #2123)
+- fixed settings don't persist reboot (issue #2163)
+- fixed blank notifications icon in windows 11
+- fixed GDI memory leak (issue #2135)
+- updated port services list
+- updated project sdk
+
 v3.9.1 Beta (22 July 2026)
 - added network statistics to watch info about speed (issue #2100) [thx @Tarkiin]
 - added option to exclude inbound blocked packets (#2111)
