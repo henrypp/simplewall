@@ -169,7 +169,7 @@ VOID _app_listview_addlogitem (
 
 	ptr_log->log_id = _InterlockedCompareExchange (&config.log_id, 0, 0);
 
-	_r_listview_additem (hwnd, IDC_LOG, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, ptr_log->is_allow ? 0 : 1, _app_listview_createcontext (log_hash));
+	_r_listview_additem (hwnd, IDC_LOG, INT_ERROR, LPSTR_TEXTCALLBACK, I_IMAGECALLBACK, I_GROUPIDCALLBACK, _app_listview_createcontext (log_hash));
 }
 
 VOID _app_listview_clearitems (

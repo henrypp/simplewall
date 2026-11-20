@@ -1643,7 +1643,16 @@ VOID _app_displayinfolog_callback (
 
 	// set group id
 	if ((lpnmlv->item.mask & LVIF_GROUPID) == LVIF_GROUPID)
-		lpnmlv->item.iGroupId = _app_listview_isitemhidden (lpnmlv->item.lParam) ? LV_HIDDEN_GROUP_ID : 0;
+	{
+		if (_app_listview_isitemhidden (lpnmlv->item.lParam))
+		{
+			lpnmlv->item.iGroupId = LV_HIDDEN_GROUP_ID;
+		}
+		else
+		{
+			lpnmlv->item.iGroupId = ptr_log->is_allow ? LV_GROUP_ID_ALLOWED : LV_GROUP_ID_BLOCKED;
+		}
+	}
 }
 
 BOOLEAN _app_message_displayinfo (
