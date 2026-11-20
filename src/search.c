@@ -8,13 +8,9 @@ VOID _app_search_initialize (
 	_Inout_ PSEARCH_CONTEXT context
 )
 {
-	RECT rect;
 	HTHEME htheme;
 	LONG cx_border;
 	HRESULT status;
-
-	if (!GetWindowRect (context->hwnd, &rect))
-		return;
 
 	cx_border = _r_dc_getsystemmetrics (SM_CXBORDER, context->dpi_value);
 
@@ -23,15 +19,19 @@ VOID _app_search_initialize (
 	context->cx_border = cx_border;
 	context->dc_brush = (HBRUSH)GetStockObject (DC_BRUSH);
 
+	context->search_button.index = SC_IMAGE_SEARCH;
+	context->regex_button.index = SC_IMAGE_REGEX;
+	context->case_button.index = SC_IMAGE_CASE;
+
 	if (IsThemeActive ())
 	{
 		htheme = _r_dc_openthemedata (context->hwnd, VSCLASS_EDIT, context->dpi_value);
 
 		if (htheme)
 		{
-			status = GetThemeInt (htheme, 0, 0, TMT_BORDERSIZE, &context->cx_border);
+			status = GetThemeInt (htheme, 0, 0, TMT_BORDERSIZE, &cx_border);
 
-			if (FAILED (status))
+			if (SUCCEEDED (status))
 				context->cx_border = cx_border;
 
 			CloseThemeData (htheme);
@@ -75,7 +75,7 @@ VOID _app_search_initializeimages (
 	_In_ HWND hwnd
 )
 {
-	HICON hicon_prev;
+	LPCWSTR name;
 	HBITMAP hbitmap;
 	NTSTATUS status;
 
@@ -83,30 +83,49 @@ VOID _app_search_initializeimages (
 	context->image_width = _r_dc_getsystemmetrics (SM_CXSMICON, context->dpi_value) + _r_dc_getdpi (4, context->dpi_value);
 	context->image_height = _r_dc_getsystemmetrics (SM_CYSMICON, context->dpi_value) + _r_dc_getdpi (4, context->dpi_value);
 
-	status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SEARCH_LIGHT), &GUID_ContainerFormatPng, context->image_width, context->image_height);
+	if (context->himglist)
+	{
+		_r_imagelist_setsize (context->himglist, context->image_width, context->image_height);
+	}
+	else
+	{
+		_r_imagelist_create (&context->himglist, context->image_width, context->image_height, ILC_MASK | ILC_COLOR32, 5, 5);
+	}
+
+	_r_imagelist_setimagecount (context->himglist, 5);
+
+	// search button
+	name = _r_theme_isenabled () ? MAKEINTRESOURCE (IDP_SEARCH_LIGHT) : MAKEINTRESOURCE (IDP_SEARCH_DARK);
+
+	status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", name, &GUID_ContainerFormatPng, context->image_width, context->image_height);
 
 	if (NT_SUCCESS (status))
 	{
-		hicon_prev = context->hicon_light;
-
-		context->hicon_light = _r_dc_bitmaptoicon (hbitmap, context->image_width, context->image_height);
-
-		if (hicon_prev)
-			DestroyIcon (hicon_prev);
+		_r_imagelist_replace (context->himglist, hbitmap, NULL, SC_IMAGE_SEARCH);
 
 		DeleteObject (hbitmap);
 	}
 
-	status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", MAKEINTRESOURCE (IDP_SEARCH_DARK), &GUID_ContainerFormatPng, context->image_width, context->image_height);
+	// regex button
+	name = _r_theme_isenabled () ? MAKEINTRESOURCE (IDP_REGEX_LIGHT) : MAKEINTRESOURCE (IDP_REGEX_DARK);
+
+	status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", name, &GUID_ContainerFormatPng, context->image_width, context->image_height);
 
 	if (NT_SUCCESS (status))
 	{
-		hicon_prev = context->hicon_dark;
+		_r_imagelist_replace (context->himglist, hbitmap, NULL, SC_IMAGE_REGEX);
 
-		context->hicon_dark = _r_dc_bitmaptoicon (hbitmap, context->image_width, context->image_height);
+		DeleteObject (hbitmap);
+	}
 
-		if (hicon_prev)
-			DestroyIcon (hicon_prev);
+	// case button
+	name = _r_theme_isenabled () ? MAKEINTRESOURCE (IDP_CASE_LIGHT) : MAKEINTRESOURCE (IDP_CASE_DARK);
+
+	status = _r_res_loadimage (&hbitmap, _r_sys_getimagebase (), L"PNG", name, &GUID_ContainerFormatPng, context->image_width, context->image_height);
+
+	if (NT_SUCCESS (status))
+	{
+		_r_imagelist_replace (context->himglist, hbitmap, NULL, SC_IMAGE_CASE);
 
 		DeleteObject (hbitmap);
 	}
@@ -124,10 +143,10 @@ VOID _app_search_themechanged (
 	CallWindowProcW (context->wnd_proc, hwnd, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELPARAM (0, 0));
 
 	// refresh the non-client area
-	SetWindowPos (hwnd, NULL, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+	SetWindowPos (hwnd, NULL, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 
 	// force the edit control to update its non-client area
-	RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+	//RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 }
 
 VOID _app_search_setvisible (
@@ -157,6 +176,8 @@ VOID _app_search_setvisible (
 
 		ShowWindow (hsearch, SW_HIDE);
 	}
+
+	UpdateWindow (hsearch);
 }
 
 VOID _app_search_drawwindow (
@@ -168,7 +189,6 @@ VOID _app_search_drawwindow (
 		return;
 
 	SetDCBrushColor (context->hdc, RGB (65, 65, 65));
-
 	SelectObject (context->hdc, context->dc_brush);
 
 	PatBlt (context->hdc, wnd_rect->left, wnd_rect->top, 1, wnd_rect->bottom - wnd_rect->top, PATCOPY);
@@ -182,7 +202,6 @@ VOID _app_search_drawwindow (
 	PatBlt (context->hdc, wnd_rect->left, wnd_rect->bottom - 1, wnd_rect->right - wnd_rect->left, 1, PATCOPY);
 
 	SetDCBrushColor (context->hdc, RGB (60, 60, 60));
-
 	SelectObject (context->hdc, context->dc_brush);
 
 	PatBlt (context->hdc, wnd_rect->left + 1, wnd_rect->top + 1, 1, wnd_rect->bottom - wnd_rect->top - 2, PATCOPY);
@@ -192,21 +211,21 @@ VOID _app_search_drawwindow (
 }
 
 VOID _app_search_drawbutton (
-	_Inout_ PSEARCH_CONTEXT context,
-	_In_ HWND hwnd,
+	_In_ PSEARCH_CONTEXT context,
+	_In_ PSEARCHCONTROL_BUTTON button,
+	_In_ HDC hdc,
 	_In_ LPCRECT wnd_rect
 )
 {
-	RECT btn_rect;
-	HICON hicon;
+	RECT btn_rect, img_rect;
 
-	_app_search_getbuttonrect (context, wnd_rect, &btn_rect);
+	_app_search_getbuttonrect (context, button, wnd_rect, &btn_rect);
 
-	if (context->is_pushed)
+	if (button->is_pushed)
 	{
 		_r_dc_fillrect (context->hdc, &btn_rect, _r_theme_isenabled () ? RGB (99, 99, 99) : RGB (153, 209, 255));
 	}
-	else if (context->is_hot)
+	else if (button->is_hot)
 	{
 		_r_dc_fillrect (context->hdc, &btn_rect, _r_theme_isenabled () ? RGB (78, 78, 78) : RGB (205, 232, 255));
 	}
@@ -215,13 +234,34 @@ VOID _app_search_drawbutton (
 		_r_dc_fillrect (context->hdc, &btn_rect, _r_theme_isenabled () ? RGB (60, 60, 60) : GetSysColor (COLOR_WINDOW));
 	}
 
-	hicon = _r_theme_isenabled () ? context->hicon_light : context->hicon_dark;
+	if (button->index != INT_ERROR)
+	{
+		SetRect (
+			&img_rect,
+			btn_rect.left,
+			btn_rect.top,
+			btn_rect.left + 1 /*offset*/ + (_r_calc_rectwidth (&btn_rect) - context->cx_width) / 2,
+			btn_rect.top + (_r_calc_rectheight (&btn_rect) - context->cx_width) / 2
+		);
 
-	DrawIconEx (context->hdc, btn_rect.left + 1, btn_rect.top, hicon, context->image_width, context->image_height, 0, NULL, DI_NORMAL);
+		_r_imagelist_draw (context->himglist, button->index, hdc, img_rect.left, img_rect.top, img_rect.right, img_rect.bottom, CLR_DEFAULT, CLR_DEFAULT, ILD_TRANSPARENT, TRUE);
+	}
+}
+
+VOID _app_search_paintbuttons (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HDC hdc,
+	_In_ LPCRECT wnd_rect
+)
+{
+	_app_search_drawbutton (context, &context->search_button, hdc, wnd_rect);
+	//_app_search_drawbutton (context, &context->regex_button, hdc, wnd_rect);
+	//_app_search_drawbutton (context, &context->case_button, hdc, wnd_rect);
 }
 
 VOID _app_search_getbuttonrect (
 	_In_ PSEARCH_CONTEXT context,
+	_In_ PSEARCHCONTROL_BUTTON button,
 	_In_ LPCRECT wnd_rect,
 	_Out_ PRECT btn_rect
 )
@@ -234,8 +274,8 @@ VOID _app_search_getbuttonrect (
 	btn_rect->bottom -= context->cx_border;
 
 	// shift the button rect to the left based on the button index
-	//btn_rect->left -= (context->cx_width + context->cx_border - 1);
-	//btn_rect->right -= (context->cx_width + context->cx_border - 1);
+	btn_rect->left -= ((context->cx_width + context->cx_border - 1) * (SC_BUTTON_COUNT - 1 - button->index));
+	btn_rect->right -= ((context->cx_width + context->cx_border - 1) * (SC_BUTTON_COUNT - 1 - button->index));
 }
 
 BOOLEAN _app_search_isstringfound (
@@ -574,6 +614,215 @@ VOID _app_search_destroybufferedcontext (
 	SAFE_DELETE_DC (context->hdc);
 }
 
+VOID _app_search_restorefocus (
+	_In_ PSEARCH_CONTEXT context
+)
+{
+	if (context->hprev)
+	{
+		SetFocus (context->hprev);
+
+		context->hprev = NULL;
+	}
+}
+
+VOID _app_search_excludeclient (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd,
+	_In_ HDC hdc,
+	_In_ LPCRECT wnd_rect
+)
+{
+	WINDOWINFO window_info = {0};
+
+	window_info.cbSize = sizeof (WINDOWINFO);
+
+	if (GetWindowInfo (hwnd, &window_info))
+	{
+		OffsetRect (&window_info.rcClient, -window_info.rcWindow.left, -window_info.rcWindow.top);
+
+		ExcludeClipRect (hdc, window_info.rcClient.left, window_info.rcClient.top, window_info.rcClient.right, window_info.rcClient.bottom);
+	}
+	else
+	{
+		ExcludeClipRect (
+			hdc,
+			wnd_rect->left + (context->cx_border + 1),
+			wnd_rect->top + (context->cx_border + 1),
+			wnd_rect->right - (context->cx_width * SC_BUTTON_COUNT) - (context->cx_border + 1),
+			wnd_rect->bottom - (context->cx_border + 1)
+		);
+	}
+}
+
+COLORREF _app_search_getframecolor (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd
+)
+{
+	if (GetFocus () == hwnd)
+		return WND_HIGHLIGHT_CLR;
+
+	if (context->is_hot)
+		return _r_theme_isenabled () ? WND_HIGHLIGHT_CLR : RGB (43, 43, 43);
+
+	return _r_theme_isenabled () ? WND_BACKGROUND2_CLR : GetSysColor (COLOR_WINDOWFRAME);
+}
+
+VOID _app_search_paintframe (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd,
+	_In_ HDC hdc,
+	_In_ LPCRECT wnd_rect
+)
+{
+	RECT frame_rect;
+
+	CopyRect (&frame_rect, wnd_rect);
+
+	_r_dc_framerect (hdc, &frame_rect, _app_search_getframecolor (context, hwnd));
+
+	InflateRect (&frame_rect, -1, -1);
+
+	_r_dc_framerect (hdc, &frame_rect, WND_BACKGROUND_CLR);
+}
+
+VOID _app_search_paintnonclient (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd,
+	_In_ HDC hdc,
+	_In_ LPCRECT wnd_rect,
+	_In_ LPCRECT buf_rect
+)
+{
+	_app_search_excludeclient (context, hwnd, hdc, wnd_rect);
+
+	_r_dc_fillrect (hdc, buf_rect, _r_theme_isenabled () ? WND_BACKGROUND_CLR : GetSysColor (COLOR_WINDOW));
+
+	_app_search_paintframe (context, hwnd, hdc, wnd_rect);
+	_app_search_paintbuttons (context, hdc, wnd_rect);
+}
+
+BOOLEAN _app_search_handlenonclientpaint (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd,
+	_In_ WPARAM wparam
+)
+{
+	BP_PAINTPARAMS buf_params = {0};
+	HPAINTBUFFER hpaintbuffer;
+	RECT buf_rect, wnd_rect;
+	HRGN hrgn;
+	HDC hdc, hdc_buffer;
+	ULONG flags = DCX_WINDOW | DCX_CACHE | DCX_USESTYLE;
+	LONG height, width;
+
+	// get the screen coordinates of the window
+	if (!GetWindowRect (hwnd, &wnd_rect))
+		return FALSE;
+
+	width = _r_calc_rectwidth (&wnd_rect);
+	height = _r_calc_rectheight (&wnd_rect);
+
+	if (height <= 0 || width <= 0)
+		return FALSE;
+
+	hrgn = (HRGN)wparam;
+
+	if (hrgn != HRGN_FULL && hrgn != RGN_ERROR)
+	{
+		if (!RectInRegion (hrgn, &wnd_rect))
+			return FALSE; // frame area isn't dirty at all — skip GetDCEx entirely
+	}
+
+	if (hrgn == HRGN_FULL)
+		hrgn = NULL;
+
+	if (hrgn)
+		flags |= DCX_INTERSECTRGN | DCX_NODELETERGN;
+
+	hdc = GetDCEx (hwnd, hrgn, flags);
+
+	if (hdc)
+	{
+		// normalize window coordinates (start from 0,0)
+		OffsetRect (&wnd_rect, -wnd_rect.left, -wnd_rect.top);
+
+		SetRect (&buf_rect, 0, 0, width, height);
+
+		_app_search_excludeclient (context, hwnd, hdc, &wnd_rect);
+
+		buf_params.cbSize = sizeof (BP_PAINTPARAMS);
+		buf_params.dwFlags = BPPF_NONCLIENT;
+
+		hpaintbuffer = BeginBufferedPaint (hdc, &buf_rect, BPBF_COMPATIBLEBITMAP, &buf_params, &hdc_buffer);
+
+		if (hpaintbuffer)
+		{
+			_app_search_paintnonclient (context, hwnd, hdc_buffer, &wnd_rect, &buf_rect);
+
+			EndBufferedPaint (hpaintbuffer, TRUE);
+		}
+		else
+		{
+			_app_search_paintnonclient (context, hwnd, hdc, &wnd_rect, &buf_rect);
+		}
+
+		ReleaseDC (hwnd, hdc);
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+VOID _app_search_controlpaintcuebanner (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HDC hdc,
+	_In_ LPCRECT rect,
+	_In_ BOOLEAN is_erase
+)
+{
+	PR_STRING string;
+	RECT text_rect;
+
+	if (is_erase)
+		_r_dc_fillrect (hdc, rect, GetSysColor (COLOR_WINDOW));
+
+	SetBkMode (hdc, TRANSPARENT);
+	SetTextColor (hdc, _r_theme_isenabled () ? RGB (170, 170, 170) : GetSysColor (COLOR_GRAYTEXT));
+
+	_r_dc_fillrect (hdc, rect, _r_theme_isenabled () ? RGB (60, 60, 60) : GetSysColor (COLOR_WINDOW));
+
+	string = _r_edit_getcuebanner (context->hwnd, 0);
+
+	if (!string)
+		return;
+
+	CopyRect (&text_rect, rect);
+
+	text_rect.left += 2;
+
+	_r_dc_drawtext (NULL, hdc, &string->sr, &text_rect, 0, 0, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP, 0);
+
+	_r_obj_dereference (string);
+}
+
+FORCEINLINE _app_search_ishot (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ BOOLEAN is_washot,
+	_In_ BOOLEAN is_oldsearchhot,
+	_In_ BOOLEAN is_oldregexhot,
+	_In_ BOOLEAN is_oldcasehot
+
+)
+{
+	if (is_washot != !!context->is_hot || is_oldsearchhot != !!context->search_button.is_hot || is_oldregexhot != !!context->regex_button.is_hot || is_oldcasehot != !!context->case_button.is_hot)
+		return TRUE;
+
+	return FALSE;
+}
+
 LRESULT CALLBACK _app_search_subclass_proc (
 	_In_ HWND hwnd,
 	_In_ UINT msg,
@@ -595,8 +844,8 @@ LRESULT CALLBACK _app_search_subclass_proc (
 	{
 		case WM_NCDESTROY:
 		{
-			SAFE_DELETE_ICON (context->hicon_light);
-			SAFE_DELETE_ICON (context->hicon_dark);
+			//SAFE_DELETE_ICON (context->hicon_light);
+			//SAFE_DELETE_ICON (context->hicon_dark);
 
 			_r_wnd_removecontext (context->hwnd, SHORT_MAX);
 
@@ -616,104 +865,31 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 		case WM_NCCALCSIZE:
 		{
-			LPNCCALCSIZE_PARAMS calc_size;
-
-			calc_size = (LPNCCALCSIZE_PARAMS)lparam;
+			LPNCCALCSIZE_PARAMS calc_size = (LPNCCALCSIZE_PARAMS)lparam;
 
 			// let Windows handle the non-client defaults
 			CallWindowProcW (wnd_proc, hwnd, msg, wparam, lparam);
 
-			// deflate the client area to accommodate the custom button
-			calc_size->rgrc[0].right -= context->cx_width;
+			// deflate the client area to accommodate the custom buttons, plus the same border inset reserved on the other three sides below - otherwise the text
+			// area butts directly against the button row with no frame between them, while the other sides show a proper 2px border (dmex)
+			calc_size->rgrc[0].right -= (context->cx_width * SC_BUTTON_COUNT);// +(context->cx_border + 1);
+
+			// Note: also reserve the border drawn by "_app_search_paintframe" (a 2px-deep frame: the outer edge plus an inset edge). without this, the client edit control's
+			// own rect still overlaps those pixels, so its redraws can leave stale fragments of the border behind whenever the non-client area isn't repainted alongside it. (dmex)
+			//calc_size->rgrc[0].left += (context->cx_border + 1);
+			//calc_size->rgrc[0].top += (context->cx_border + 1);
+			//calc_size->rgrc[0].bottom -= (context->cx_border + 1);
 
 			return 0;
 		}
 
 		case WM_NCPAINT:
 		{
-			RECT buf_rect, wnd_rect;
-			HRGN hrgn;
-			HDC hdc;
-			ULONG flags = DCX_WINDOW | DCX_CACHE | DCX_USESTYLE;
-			LONG height, width;
 
-			// get the screen coordinates of the window
-			if (!GetWindowRect (hwnd, &wnd_rect))
-				break;
+			if (_app_search_handlenonclientpaint (context, hwnd, wparam))
+				return 0;
 
-			width = _r_calc_rectwidth (&wnd_rect);
-			height = _r_calc_rectheight (&wnd_rect);
-
-			if (height <= 0 || width <= 0)
-				break;
-
-			hrgn = (HRGN)wparam;
-
-			if (hrgn == HRGN_FULL)
-				hrgn = NULL;
-
-			if (hrgn)
-				flags |= DCX_INTERSECTRGN | DCX_NODELETERGN;
-
-			hdc = GetDCEx (hwnd, hrgn, flags);
-
-			if (hdc)
-			{
-				// normalize window coordinates (start from 0,0)
-				OffsetRect (&wnd_rect, -wnd_rect.left, -wnd_rect.top);
-
-				SetRect (&buf_rect, 0, 0, width, height);
-
-				if (context->hdc && (context->rect.right < buf_rect.right || context->rect.bottom < buf_rect.bottom))
-					_app_search_destroybufferedcontext (context);
-
-				if (!context->hdc)
-					_app_search_createbufferedcontext (context, hdc, &buf_rect);
-
-				if (!context->hdc)
-				{
-					ReleaseDC (hwnd, hdc);
-
-					break;
-				}
-
-				// exclude client area from NC drawing
-				ExcludeClipRect (
-					hdc,
-					wnd_rect.left + context->cx_border + 1,
-					wnd_rect.top + context->cx_border + 1,
-					wnd_rect.right - context->cx_width - (context->cx_border + 1),
-					wnd_rect.bottom - (context->cx_border + 1)
-				);
-
-				// NC frame
-				if ((context->is_mouseactive && context->is_hot) || GetFocus () == hwnd)
-				{
-					_r_dc_framerect (context->hdc, &wnd_rect, _r_theme_isenabled () ? WND_HOT_CLR : GetSysColor (COLOR_HOTLIGHT));
-
-					InflateRect (&wnd_rect, -1, -1);
-
-					_r_dc_framerect (context->hdc, &wnd_rect, GetSysColor (COLOR_WINDOW));
-				}
-				else
-				{
-					_r_dc_framerect (context->hdc, &wnd_rect, GetSysColor (COLOR_WINDOWFRAME));
-
-					InflateRect (&wnd_rect, -1, -1);
-
-					_r_dc_framerect (context->hdc, &wnd_rect, GetSysColor (COLOR_WINDOW));
-				}
-
-				_app_search_drawwindow (context, &wnd_rect);
-				_app_search_drawbutton (context, hwnd, &wnd_rect);
-
-				// commit to the target DC
-				BitBlt (hdc, 0, 0, buf_rect.right, buf_rect.bottom, context->hdc, 0, 0, SRCCOPY);
-
-				ReleaseDC (hwnd, hdc);
-			}
-
-			return 0;
+			break;
 		}
 
 		case WM_NCHITTEST:
@@ -730,9 +906,18 @@ LRESULT CALLBACK _app_search_subclass_proc (
 				break;
 
 			// get the position of the inserted button
-			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
+			_app_search_getbuttonrect (context, &context->search_button, &wnd_rect, &btn_rect);
 
-			// check that the mouse is within the inserted button
+			if (PtInRect (&btn_rect, point))
+				return HTBORDER;
+
+			_app_search_getbuttonrect (context, &context->regex_button, &wnd_rect, &btn_rect);
+
+			if (PtInRect (&btn_rect, point))
+				return HTBORDER;
+
+			_app_search_getbuttonrect (context, &context->case_button, &wnd_rect, &btn_rect);
+
 			if (PtInRect (&btn_rect, point))
 				return HTBORDER;
 
@@ -740,7 +925,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		}
 
 		case WM_NCLBUTTONDOWN:
+		case WM_NCLBUTTONDBLCLK:
 		{
+			// Note: the edit class has CS_DBLCLKS, so a second click shortly after the first arrives as WM_NCLBUTTONDBLCLK instead of WM_NCLBUTTONDOWN. treat it as a normal
+			// press, otherwise the click is dropped. (dmex)
 			RECT btn_rect, wnd_rect;
 			POINT point = {0};
 
@@ -752,10 +940,14 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
-			// get the position of the inserted button
-			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
+			_app_search_getbuttonrect (context, &context->search_button, &wnd_rect, &btn_rect);
+			context->search_button.is_pushed = PtInRect (&btn_rect, point);
 
-			context->is_pushed = PtInRect (&btn_rect, point);
+			_app_search_getbuttonrect (context, &context->regex_button, &wnd_rect, &btn_rect);
+			context->regex_button.is_pushed = PtInRect (&btn_rect, point);
+
+			_app_search_getbuttonrect (context, &context->case_button, &wnd_rect, &btn_rect);
+			context->case_button.is_pushed = PtInRect (&btn_rect, point);
 
 			SetCapture (hwnd);
 
@@ -780,10 +972,8 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
-			// get the position of the inserted button
-			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
+			_app_search_getbuttonrect (context, &context->search_button, &wnd_rect, &btn_rect);
 
-			// check that the mouse is within the inserted button
 			if (PtInRect (&btn_rect, point))
 			{
 				SetFocus (hwnd);
@@ -791,12 +981,44 @@ LRESULT CALLBACK _app_search_subclass_proc (
 				_r_ctrl_setstring (hwnd, 0, L"");
 			}
 
+			//_app_search_getbuttonrect (context, &context->regex_button, &wnd_rect, &btn_rect);
+			//
+			//if (PtInRect (&btn_rect, point))
+			//{
+			//	context->regex_button.is_active = !context->regex_button.is_active;
+			//
+			//	_r_config_setboolean (context->regex_button.settings_name, !!context->regex_button.is_active, NULL);
+			//}
+
+			//_app_search_getbuttonrect (context, &context->case_button, &wnd_rect, &btn_rect);
+			//
+			//if (PtInRect (&btn_rect, point))
+			//{
+			//	context->case_button.is_active = !context->case_button.is_active;
+			//
+			//	_r_config_setboolean (context->case_button.settings_name, !!context->case_button.is_active, NULL);
+			//}
+
 			if (GetCapture () == hwnd)
 			{
-				context->is_pushed = FALSE;
+				context->search_button.is_pushed = FALSE;
+				context->regex_button.is_pushed = FALSE;
+				context->case_button.is_pushed = FALSE;
 
 				ReleaseCapture ();
 			}
+
+			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+
+			break;
+		}
+
+		case WM_CAPTURECHANGED:
+		{
+			// capture can be lost without a button-up (menus, modal dialogs); clear the pushed state so the buttons don't stay painted down
+			context->search_button.is_pushed = FALSE;
+			context->regex_button.is_pushed = FALSE;
+			context->case_button.is_pushed = FALSE;
 
 			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 
@@ -817,6 +1039,26 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			return result;
 		}
 
+		case WM_SETFOCUS:
+		{
+			context->is_windowfocus = TRUE;
+			context->hprev = (HWND)wparam;
+
+			//RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+			InvalidateRect (hwnd, NULL, FALSE);
+
+			break;
+		}
+
+		case WM_KILLFOCUS:
+		{
+			context->is_windowfocus = FALSE;
+
+			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+
+			break;
+		}
+
 		case WM_SETTINGCHANGE:
 		case WM_SYSCOLORCHANGE:
 		case WM_THEMECHANGED:
@@ -834,9 +1076,10 @@ LRESULT CALLBACK _app_search_subclass_proc (
 		case WM_NCMOUSEMOVE:
 		{
 			TRACKMOUSEEVENT tme = {0};
-			RECT btn_rect, wnd_rect;
+			RECT wnd_rect;
 			POINT point = {0};
 			ULONG position;
+			BOOLEAN is_oldcasehot, is_oldregexhot, is_oldsearchhot, is_washot;
 
 			// get the screen coordinates of the mouse
 			position = GetMessagePos ();
@@ -848,25 +1091,36 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
+			is_washot = !!context->is_hot;
+			is_oldsearchhot = !!context->search_button.is_hot;
+			is_oldregexhot = !!context->regex_button.is_hot;
+			is_oldcasehot = !!context->case_button.is_hot;
+
 			context->is_hot = PtInRect (&wnd_rect, point);
 
 			// get the position of the inserted button
-			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
+			//_app_search_getbuttonrect (context, &context->regex_button, &wnd_rect, &btn_rect);
+			//
+			//is_washot = !!context->regex_button.is_hot;
+			//context->regex_button.is_hot = PtInRect (&btn_rect, point);
 
 			// check that the mouse is within the inserted button
-			if (!context->is_mouseactive)
+			if (!context->is_hottrack)
 			{
 				tme.cbSize = sizeof (TRACKMOUSEEVENT);
 				tme.dwFlags = TME_LEAVE | TME_NONCLIENT;
 				tme.hwndTrack = hwnd;
 				tme.dwHoverTime = 0;
 
-				context->is_mouseactive = TRUE;
+				context->is_hottrack = TRUE;
 
 				TrackMouseEvent (&tme);
 			}
 
-			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+			// Note: the buttons are painted in the non-client area, so the frame must be invalidated for the hot state to become visible. only redraw
+			// on the hot-state transition since WM_MOUSEMOVE is generated for every mouse movement. (dmex)
+			if (_app_search_ishot (context, is_washot, is_oldsearchhot, is_oldregexhot, is_oldcasehot))
+				RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 
 			break;
 		}
@@ -878,19 +1132,24 @@ LRESULT CALLBACK _app_search_subclass_proc (
 			RECT btn_rect, wnd_rect;
 			POINT point;
 
-			context->is_mouseactive = FALSE;
+			context->is_hottrack = FALSE;
 
-			// get the screen coordinates of the mouse
 			if (!GetCursorPos (&point))
 				break;
 
-			// get the screen coordinates of the window
 			if (!GetWindowRect (hwnd, &wnd_rect))
 				break;
 
-			_app_search_getbuttonrect (context, &wnd_rect, &btn_rect);
+			context->is_hot = PtInRect (&wnd_rect, point);
 
-			context->is_hot = PtInRect (&btn_rect, point);
+			_app_search_getbuttonrect (context, &context->search_button, &wnd_rect, &btn_rect);
+			context->search_button.is_hot = PtInRect (&btn_rect, point);
+
+			_app_search_getbuttonrect (context, &context->regex_button, &wnd_rect, &btn_rect);
+			context->regex_button.is_hot = PtInRect (&btn_rect, point);
+
+			_app_search_getbuttonrect (context, &context->case_button, &wnd_rect, &btn_rect);
+			context->case_button.is_hot = PtInRect (&btn_rect, point);
 
 			RedrawWindow (hwnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
 
@@ -908,9 +1167,12 @@ LRESULT CALLBACK _app_search_subclass_proc (
 
 		case WM_GETDLGCODE:
 		{
-			// intercept esc key (otherwise it would get sent to parent window)
-			if (wparam == VK_ESCAPE && ((MSG*)lparam)->message == WM_KEYDOWN)
-				return DLGC_WANTMESSAGE;
+			// intercept esc key only when there is text to clear or focus to restore, otherwise let the dialog manager translate it to IDCANCEL (dmex)
+			if (wparam == VK_ESCAPE && lparam && ((PMSG)lparam)->message == WM_KEYDOWN)
+			{
+				if (GetWindowTextLengthW (hwnd) != 0 || context->hprev)
+					return DLGC_WANTMESSAGE;
+			}
 
 			break;
 		}

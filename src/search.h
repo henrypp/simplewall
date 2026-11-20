@@ -4,18 +4,9 @@
 
 #pragma once
 
-typedef struct _SEARCH_CONTEXT
+typedef struct _SEARCHCONTROL_BUTTON
 {
-	RECT rect;
-	HICON hicon_light;
-	HICON hicon_dark;
-	HBITMAP old_bitmap;
-	HBITMAP hbitmap;
-	HBRUSH dc_brush;
-	HWND hwnd;
-	HDC hdc;
-
-	WNDPROC wnd_proc;
+	LPCWSTR settings_name;
 
 	union
 	{
@@ -25,8 +16,43 @@ typedef struct _SEARCH_CONTEXT
 		{
 			ULONG is_hot : 1;
 			ULONG is_pushed : 1;
-			ULONG is_mouseactive : 1;
-			ULONG spare_bits : 29;
+			ULONG is_active : 1;
+			ULONG is_error : 1;
+			ULONG spare_bits : 28;
+		};
+	};
+
+	INT index;
+} SEARCHCONTROL_BUTTON, *PSEARCHCONTROL_BUTTON;
+
+typedef struct _SEARCH_CONTEXT
+{
+	RECT rect;
+	HIMAGELIST himglist;
+	HBITMAP old_bitmap;
+	HBITMAP hbitmap;
+	HBRUSH dc_brush;
+	HWND hprev;
+	HWND hwnd;
+	HDC hdc;
+
+	WNDPROC wnd_proc;
+
+	SEARCHCONTROL_BUTTON search_button;
+	SEARCHCONTROL_BUTTON regex_button;
+	SEARCHCONTROL_BUTTON case_button;
+
+	union
+	{
+		ULONG flags;
+
+		struct
+		{
+			ULONG is_hot : 1;
+			ULONG is_hottrack : 1;
+			ULONG is_windowfocus : 1;
+			ULONG is_usesearchpointer : 1;
+			ULONG spare_bits : 28;
 		};
 	};
 
@@ -38,6 +64,12 @@ typedef struct _SEARCH_CONTEXT
 	INT cx_width;
 	INT cx_border;
 } SEARCH_CONTEXT, *PSEARCH_CONTEXT;
+
+#define SC_BUTTON_COUNT 1
+
+#define SC_IMAGE_SEARCH 0
+#define SC_IMAGE_REGEX 1
+#define SC_IMAGE_CASE 1
 
 VOID _app_search_initialize (
 	_Inout_ PSEARCH_CONTEXT context
@@ -69,13 +101,21 @@ VOID _app_search_drawwindow (
 );
 
 VOID _app_search_drawbutton (
-	_Inout_ PSEARCH_CONTEXT context,
-	_In_ HWND hwnd,
+	_In_ PSEARCH_CONTEXT context,
+	_In_ PSEARCHCONTROL_BUTTON button,
+	_In_ HDC hdc,
+	_In_ LPCRECT wnd_rect
+);
+
+VOID _app_search_paintbuttons (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HDC hdc,
 	_In_ LPCRECT wnd_rect
 );
 
 VOID _app_search_getbuttonrect (
 	_In_ PSEARCH_CONTEXT context,
+	_In_ PSEARCHCONTROL_BUTTON button,
 	_In_ LPCRECT wnd_rect,
 	_Out_ PRECT btn_rect
 );
@@ -98,6 +138,43 @@ VOID _app_search_applyfilter (
 	_In_ HWND hwnd,
 	_In_ INT listview_id,
 	_In_opt_ PR_STRING search_string
+);
+
+VOID _app_search_restorefocus (
+	_In_ PSEARCH_CONTEXT context
+);
+
+VOID _app_search_excludeclient (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd,
+	_In_ HDC hdc,
+	_In_ LPCRECT wnd_rect
+);
+
+COLORREF _app_search_getframecolor (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd
+);
+
+VOID _app_search_paintframe (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd,
+	_In_ HDC hdc,
+	_In_ LPCRECT wnd_rect
+);
+
+VOID _app_search_paintnonclient (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd,
+	_In_ HDC hdc,
+	_In_ LPCRECT wnd_rect,
+	_In_ LPCRECT buf_rect
+);
+
+BOOLEAN _app_search_handlenonclientpaint (
+	_In_ PSEARCH_CONTEXT context,
+	_In_ HWND hwnd,
+	_In_ WPARAM wparam
 );
 
 LRESULT CALLBACK _app_search_subclass_proc (
