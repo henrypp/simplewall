@@ -569,7 +569,7 @@ VOID _app_notify_setposition (
 	PRECT rect;
 	LONG border_x;
 
-	if (!_r_wnd_getposition (hwnd, &window_rect))
+	if (!_r_wnd_getwindowrect (hwnd, &window_rect))
 		return;
 
 	if (!is_forced && _r_wnd_isvisible (hwnd, FALSE))

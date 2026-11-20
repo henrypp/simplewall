@@ -332,6 +332,7 @@ VOID _app_message_localize (
 
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 7, _r_locale_getstring (IDS_PROTOCOL), 0);
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 8, _r_locale_getstring (IDS_STATE), 0);
+
 				_r_obj_movereference ((PVOID_PTR)&localized_string, _r_format_string (L"\u2193 %s", _r_locale_getstring (IDS_UPDATE_SPEED)));
 				_r_listview_setcolumn (hwnd, tab_context->listview_id, 9, localized_string->buffer, 0);
 

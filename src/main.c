@@ -3321,7 +3321,7 @@ INT_PTR CALLBACK DlgProc (
 					PR_STRING path;
 					HRESULT status;
 
-					status = _r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE);
+					status = _r_filedialog_initialize (&file_dialog, PR_FILEDIALOG_OPENFILE | PR_FILEDIALOG_MULTISELECT);
 
 					if (SUCCEEDED (status))
 					{
