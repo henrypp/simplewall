@@ -1,3 +1,6 @@
+v3.9.2.1 Beta (21 November 2026)
+- fixed "Could not load internal profile!" error (issue #2176)
+
 v3.9.2 Beta (21 November 2026)
 - added ip forwarding option to skip boot-time IPFORWARD block (pull request #2165) [thx @blacksheep25]
 - added opt-in UDP/QUIC socket traffic accounting (pull request #2143) [thx @Tarkiin]
