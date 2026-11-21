@@ -1,4 +1,4 @@
-simplewall
+﻿simplewall
 
 Description:
 Simple tool to configure Windows Filtering Platform (WFP) which can configure network activity on your computer.
