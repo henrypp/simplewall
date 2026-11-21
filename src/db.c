@@ -206,8 +206,8 @@ VOID _app_db_parse_app (
 	_Inout_ PDB_INFORMATION db_info
 )
 {
-	PITEM_APP ptr_app;
 	PR_STRING path, string;
+	PITEM_APP ptr_app;
 	LONG64 timer, timestamp;
 	NTSTATUS status;
 
