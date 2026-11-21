@@ -515,6 +515,38 @@ VOID _app_db_parse_ruleconfig (
 	_r_obj_dereference (rule_name);
 }
 
+VOID _app_db_parse_autorule (
+	_Inout_ PDB_INFORMATION db_info
+)
+{
+	PR_STRING publisher, path, action;
+	BOOLEAN is_allow;
+
+	publisher = _r_xml_getattribute_string (&db_info->xml_library, L"publisher");
+	path = _r_xml_getattribute_string (&db_info->xml_library, L"path");
+	action = _r_xml_getattribute_string (&db_info->xml_library, L"action");
+
+	is_allow = (action && _r_str_isequal2 (&action->sr, L"allow", TRUE));
+
+	if (!_r_obj_isstringempty (publisher))
+	{
+		_app_autorules_add (publisher, NULL, is_allow);
+	}
+	else if (!_r_obj_isstringempty (path))
+	{
+		_app_autorules_add (NULL, path, is_allow);
+	}
+
+	if (publisher)
+		_r_obj_dereference (publisher);
+
+	if (path)
+		_r_obj_dereference (path);
+
+	if (action)
+		_r_obj_dereference (action);
+}
+
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_decodebody (
 	_Inout_ PDB_INFORMATION db_info
@@ -815,6 +847,15 @@ BOOLEAN _app_db_parse (
 				}
 			}
 
+			// load auto rules (publisher / path pattern)
+			if (_r_xml_findchildbytagname (&db_info->xml_library, L"autorules"))
+			{
+				while (_r_xml_enumchilditemsbytagname (&db_info->xml_library, L"item"))
+				{
+					_app_db_parse_autorule (db_info);
+				}
+			}
+
 			break;
 		}
 
@@ -880,6 +921,7 @@ NTSTATUS _app_db_savetofile (
 	_app_db_save_app (db_info);
 	_app_db_save_rule (db_info);
 	_app_db_save_ruleconfig (db_info);
+	_app_db_save_autorules (db_info);
 
 	_r_xml_writewhitespace (&db_info->xml_library, L"\r\n");
 	_r_xml_writeendelement (&db_info->xml_library);
@@ -1092,6 +1134,54 @@ VOID _app_db_save_rule (
 	_r_queuedlock_releaseshared (&lock_rules);
 
 	_app_db_writeelementend (db_info);
+}
+
+VOID _app_db_save_autorules (
+	_Inout_ PDB_INFORMATION db_info
+)
+{
+	PITEM_AUTORULE ptr_rule;
+	ULONG_PTR count;
+
+	_r_queuedlock_acquireshared (&lock_autorules);
+
+	count = autorules_list ? _r_obj_getlistsize (autorules_list) : 0;
+
+	if (count)
+	{
+		_app_db_writeelementstart (db_info, L"autorules");
+
+		for (ULONG_PTR i = 0; i < count; i++)
+		{
+			ptr_rule = (PITEM_AUTORULE)_r_obj_getlistitem (autorules_list, i);
+
+			if (!ptr_rule)
+				continue;
+
+			if (_r_obj_isstringempty (ptr_rule->publisher) && _r_obj_isstringempty (ptr_rule->path_pattern))
+				continue;
+
+			_r_xml_writewhitespace (&db_info->xml_library, L"\r\n\t\t");
+			_r_xml_writestartelement (&db_info->xml_library, L"item");
+
+			if (!_r_obj_isstringempty (ptr_rule->publisher))
+			{
+				_r_xml_setattribute (&db_info->xml_library, L"publisher", ptr_rule->publisher->buffer);
+			}
+			else
+			{
+				_r_xml_setattribute (&db_info->xml_library, L"path", ptr_rule->path_pattern->buffer);
+			}
+
+			_r_xml_setattribute (&db_info->xml_library, L"action", ptr_rule->is_allow ? L"allow" : L"block");
+
+			_r_xml_writeendelement (&db_info->xml_library);
+		}
+
+		_app_db_writeelementend (db_info);
+	}
+
+	_r_queuedlock_releaseshared (&lock_autorules);
 }
 
 VOID _app_db_save_ruleconfig (

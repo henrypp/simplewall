@@ -378,6 +378,7 @@
   <ItemGroup>
     <ClCompile Include="..\routine\src\rapp.c" />
     <ClCompile Include="..\routine\src\routine.c" />
+    <ClCompile Include="src\autorules.c" />
     <ClCompile Include="src\controls.c" />
     <ClCompile Include="src\db.c" />
     <ClCompile Include="src\editor.c" />
@@ -406,6 +407,7 @@
     <ClInclude Include="..\routine\src\routine.h" />
     <ClInclude Include="..\routine\src\rtypes.h" />
     <ClInclude Include="src\app.h" />
+    <ClInclude Include="src\autorules.h" />
     <ClInclude Include="src\controls.h" />
     <ClInclude Include="src\db.h" />
     <ClInclude Include="src\editor.h" />

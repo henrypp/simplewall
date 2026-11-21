@@ -135,6 +135,12 @@ VOID _app_getfileicon (
 	_Inout_ PITEM_APP_INFO ptr_app_info
 );
 
+_Ret_maybenull_
+PR_STRING _app_getfilesignaturestring (
+	_In_ LPCWSTR path,
+	_In_ HANDLE hfile
+);
+
 VOID _app_getfilesignatureinfo (
 	_Inout_ PITEM_APP_INFO ptr_app_info,
 	_In_ HANDLE hfile
