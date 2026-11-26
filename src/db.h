@@ -161,6 +161,10 @@ VOID _app_db_parse_ruleconfig (
 	_Inout_ PDB_INFORMATION db_info
 );
 
+VOID _app_db_parse_autorule (
+	_Inout_ PDB_INFORMATION db_info
+);
+
 _Success_ (NT_SUCCESS (return))
 NTSTATUS _app_db_savetofile (
 	_Inout_ PDB_INFORMATION db_info,
@@ -185,6 +189,10 @@ VOID _app_db_save_rule (
 );
 
 VOID _app_db_save_ruleconfig (
+	_Inout_ PDB_INFORMATION db_info
+);
+
+VOID _app_db_save_autorules (
 	_Inout_ PDB_INFORMATION db_info
 );
 

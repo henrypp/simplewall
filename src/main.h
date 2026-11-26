@@ -319,6 +319,10 @@ typedef struct _ITEM_APP
 
 	UINT8 profile; // reserved ffu!
 
+	// runtime only, not saved: signature already checked against auto rules
+	// (own byte, not a bitfield, because it is written from the log thread)
+	volatile BOOLEAN is_autorulechecked;
+
 	struct
 	{
 		ULONG is_undeletable : 1;
@@ -328,6 +332,18 @@ typedef struct _ITEM_APP
 		ULONG spare_bits : 28;
 	} DUMMYSTRUCTNAME;
 } ITEM_APP, *PITEM_APP;
+
+// allow/block every app from one publisher (signature) or one path pattern
+typedef struct _ITEM_AUTORULE
+{
+	PR_STRING publisher; // signer common name, e.g. "Google LLC"
+	PR_STRING path_pattern; // as saved in the profile (may contain %vars%)
+	PR_STRING path_expanded; // used for matching
+
+	BOOLEAN is_allow;
+} ITEM_AUTORULE, *PITEM_AUTORULE;
+
+#define AUTORULES_MAX 100
 
 typedef struct _ITEM_APP_INFO
 {
